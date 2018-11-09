@@ -498,9 +498,8 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[],
   int Nsplit=num_splines;
   if (gpu::device_group_size>1)
   {
+    Nsplit += gpu::device_group_size-1;
     Nsplit /= gpu::device_group_size;
-    if (Nsplit % gpu::device_group_size)
-      Nsplit += 1;
   }
 
   phase_factor_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
@@ -536,9 +535,8 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[], int TwoCopiesInde
   int Nsplit=num_splines;
   if (gpu::device_group_size>1)
   {
+    Nsplit += gpu::device_group_size-1;
     Nsplit /= gpu::device_group_size;
-    if (Nsplit % gpu::device_group_size)
-      Nsplit += 1;
   }
 
   phase_factor_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
@@ -565,9 +563,8 @@ void apply_phase_factors(double kPoints[], int makeTwoCopies[],
   int Nsplit=num_splines;
   if (gpu::device_group_size>1)
   {
+    Nsplit += gpu::device_group_size-1;
     Nsplit /= gpu::device_group_size;
-    if (Nsplit % gpu::device_group_size)
-      Nsplit += 1;
   }
 
   phase_factor_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
@@ -601,9 +598,8 @@ void apply_phase_factors(double kPoints[], int makeTwoCopies[], int TwoCopiesInd
   int Nsplit=num_splines;
   if (gpu::device_group_size>1)
   {
+    Nsplit += gpu::device_group_size-1;
     Nsplit /= gpu::device_group_size;
-    if (Nsplit % gpu::device_group_size)
-      Nsplit += 1;
   }
 
   phase_factor_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
@@ -775,9 +771,8 @@ void apply_phase_factors(float kPoints[], float pos[],
   int Nsplit=num_splines;
   if (gpu::device_group_size>1)
   {
+    Nsplit += gpu::device_group_size-1;
     Nsplit /= gpu::device_group_size;
-    if (Nsplit % gpu::device_group_size)
-      Nsplit += 1;
   }
 
   phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
@@ -795,9 +790,8 @@ void apply_phase_factors(double kPoints[], double pos[],
   int Nsplit=num_splines;
   if (gpu::device_group_size>1)
   {
+    Nsplit += gpu::device_group_size-1;
     Nsplit /= gpu::device_group_size;
-    if (Nsplit % gpu::device_group_size)
-      Nsplit += 1;
   }
 
   phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
@@ -817,9 +811,8 @@ void apply_phase_factors(float kPoints[], float pos[],
   int Nsplit=num_splines;
   if (gpu::device_group_size>1)
   {
+    Nsplit += gpu::device_group_size-1;
     Nsplit /= gpu::device_group_size;
-    if (Nsplit % gpu::device_group_size)
-      Nsplit += 1;
   }
 
   phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
@@ -840,9 +833,8 @@ void apply_phase_factors(double kPoints[], double pos[],
   int Nsplit=num_splines;
   if (gpu::device_group_size>1)
   {
+    Nsplit += gpu::device_group_size-1;
     Nsplit /= gpu::device_group_size;
-    if (Nsplit % gpu::device_group_size)
-      Nsplit += 1;
   }
 
   phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>

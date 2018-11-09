@@ -388,9 +388,8 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
         fprintf(stdout, "Error: Not enough splines (%i) to split across %i devices.\n",N,gpu::device_group_size);
       abort();
     }
+    N += gpu::device_group_size-1;
     N /= gpu::device_group_size;
-    if (N % gpu::device_group_size)
-      N += 1;
     spline_start = N * (gpu::relative_rank%gpu::device_group_size);
 #ifdef SPLIT_SPLINE_DEBUG
     fprintf (stderr, "splines %i - %i of %i\n",spline_start,spline_start+N,spline->num_splines);

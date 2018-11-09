@@ -243,10 +243,10 @@ public:
   }
 
   device_vector(const device_vector<T> &vec) :
-    data_pointer(NULL), current_size(0), alloc_size(0), own_data(true), managedmem(false),
+    data_pointer(NULL), current_size(0), alloc_size(0), own_data(true), managedmem(vec.managedmem),
     name(vec.name)
   {
-    resize(vec.size());
+    resize(vec.size(),1.0,managedmem);
     // fprintf(stderr, "device_vector copy constructor called, name=%s.\n",
     // 	      name.c_str());
 #ifdef QMC_CUDA
