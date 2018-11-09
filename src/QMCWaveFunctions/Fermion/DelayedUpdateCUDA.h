@@ -250,8 +250,8 @@ namespace qmcplusplus {
           cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
           error = cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), norb*norb*sizeof(T), cudaMemcpyDeviceToHost, hstream);
           async_Ainv_update_in_progress = true;
+          delay_count = 0;
         }
-        delay_count = 0;
 
         // block incomplete stream execution
         if(wait_async) waitAinv();

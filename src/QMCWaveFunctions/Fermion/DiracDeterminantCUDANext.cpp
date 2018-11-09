@@ -177,12 +177,9 @@ void DiracDeterminantCUDANext::restore(int iat)
 
 void DiracDeterminantCUDANext::completeUpdates(ParticleSet& P)
 {
-  if (ndelay)
-  {
-    UpdateTimer.start();
-    updateEng.updateInvMat(psiM);
-    UpdateTimer.stop();
-  }
+  UpdateTimer.start();
+  updateEng.updateInvMat(psiM);
+  UpdateTimer.stop();
 }
 
 void DiracDeterminantCUDANext::updateAfterSweep(ParticleSet& P,
