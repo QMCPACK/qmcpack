@@ -12,6 +12,13 @@
 #ifndef QMCPLUSPLUS_RADIAL_JASTROW_BUILDER_H
 #define QMCPLUSPLUS_RADIAL_JASTROW_BUILDER_H
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+
+#if defined(ENABLE_SOA)
+#include "J1OrbitalSoA.h"
+#include "J2OrbitalSoA.h"
+#endif
+
+
 #include <string>
 
 namespace qmcplusplus
@@ -29,10 +36,15 @@ struct RadialJastrowBuilder: public WaveFunctionComponentBuilder
   bool put(xmlNodePtr cur);
   PtclPoolType& ptclPool;
 
-  template<typename RadfuncType>
-  bool RadialJastrowBuilder::createJ2(xmlNodePtr cur, const std::string& jname)
+  // may have a specialization in the cpp file
+  template<typename OneBodyJastrowOrbitalType, typename DiffOneBodyJastrowOrbitalType>
+  bool RadialJastrowBuilder::createJ1(xmlNodePtr cur, const std::string& jname);
 
+  // may have a specialization in the cpp file
+  template<typename TwoBodyJastrowOrbitalType, typename DiffTwoBodyJastrowOrbitalType>
+  bool RadialJastrowBuilder::createJ2(xmlNodePtr cur, const std::string& jname);
 };
-}
+
+
 
 #endif

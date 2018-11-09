@@ -10,9 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "RadialJastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -22,8 +19,31 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 
-#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
+
+
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowSpinOrbital.h"
+
+#if defined(QMC_CUDA)
+#if defined(ENABLE_SOA)
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
+#else
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBsplineAoS.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBsplineAoS.h"
+#endif
+#else // defined(QMC_CUDA)
+#if defined(ENABLE_SOA)
+#include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
+#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
+#else
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#endif
+#endif
+
 
 namespace qmcplusplus
 {
@@ -34,6 +54,92 @@ RadialJastrowBuilder::RadialJastrowBuilder(PartcleSet& target, TrialWaveFunction
 {
   ClassName="RadialJastrowBuilder";
 }
+
+// helper class to simplify and localize ugly ifdef stuff for types
+template<typename precision, template<class> class RadFuncType>
+class JastrowTypeHelper 
+{
+ private:
+ public:
+  typedef RadFuncType<precision> rft;
+#if defined(ENABLE_SOA)
+  typedef J1OrbitalSoA<rft> J1OrbitalType;
+  typedef J1OrbitalSoA<rft> J1OrbitalTypeSpin;
+  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
+  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  typedef J2OrbitalSoA<rft> J2OrbitalType;
+  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+#else
+  typedef OneBodyJastrowOrbital<rft> J1OrbitalType;
+  typedef OneBodyJastrowOrbital<rft> J1OrbitalTypeSpin;
+  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
+  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  typedef TwoBodyJastrowOrbital<rft> J2OrbitalType;
+  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+#endif
+};
+
+
+// specialization for bspline (does this need to be so complicated?)
+// note that this supports CUDA whereas the general case does not
+template<typename precision>
+class JastrowTypeHelper<precision, BsplineFunctor>
+{
+ private:
+ public:
+  typedef BsplineFunctor<precision> rft;
+#if defined(QMC_CUDA) and defined(ENABLE_SOA)
+  typedef OneBodyJastrowOrbitalBspline<rft> J1OrbitalType;
+  typedef OneBodyJastrowOrbitalBspline<rft> J1OrbitalTypeSpin;
+  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalType;
+  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  typedef TwoBodyJastrowOrbitalBspline<rft> J2OrbitalType;
+  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+#if defined(QMC_CUDA) and !defined(ENABLE_SOA)
+  typedef OneBodyJastrowOrbitalBsplineAoS J1OrbitalType;
+  typedef OneBodyJastrowOrbitalBsplineAoS J1OrbitalTypeSpin;
+  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalType;
+  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  typedef TwoBodyJastrowOrbitalBsplineAoS J2OrbitalType;
+  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+#if !defined(QMC_CUDA) and defined(ENABLE_SOA)
+  typedef J1OrbitalSoA<rft> J1OrbitalType;
+  typedef OneBodySpinJastrowOrbital<rft> J1OrbitalTypeSpin;
+  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
+  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  typedef J2OrbitalSoA<rft> J2OrbitalType;
+  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+#if !defined(QMC_CUDA) and !defined(ENABLE_SOA)
+  typedef OneBodyJastrowOrbital<rft> J1OrbitalType;
+  typedef OneBodySpinJastrowOrbital<rft> J1OrbitalTypeSpin;
+  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
+  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  typedef TwoBodyJastrowOrbital<rft> J2OrbitalType;
+  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+};
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 bool RadialJastrowBuilder::put(xmlNodePtr cur)
 {
@@ -87,6 +193,7 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
         std::ostringstream o;
         o<<"j2"<<ia<<ib;
 	// now have a series of if's to pick up various available functors (pade1, pade2, casino, bspline?)
+	// and then call createJ2 with that functor type
 	// we should have some logic to deal with species dependence (also need to have guards a-la bspline
 	// for the case where there is only a single (or zero) electron of a given species
       }
