@@ -22,7 +22,7 @@
 namespace qmcplusplus
 {
 
-template<class T, typename Alloc=std::allocator<T> >
+template<class T, typename Alloc=std::allocator<T>, bool initialize = true >
 class Matrix
 {
 public:
@@ -31,10 +31,10 @@ public:
   typedef T            value_type;
   typedef T*           pointer;
   typedef const T*     const_pointer;
-  typedef Vector<T,Alloc>  Container_t;
+  typedef Vector<T,Alloc,initialize>  Container_t;
   typedef typename Container_t::size_type size_type;
   typedef typename Container_t::iterator iterator;
-  typedef Matrix<T,Alloc>  This_t;
+  typedef Matrix<T,Alloc,initialize>  This_t;
 
   Matrix():D1(0),D2(0),TotSize(0) { } // Default Constructor initializes to zero.
 
@@ -54,7 +54,7 @@ public:
   inline Matrix(T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n*m), X(ref,n*m) {}
 
   // Copy Constructor
-  Matrix(const Matrix<T,Alloc> &rhs)
+  Matrix(const This_t& rhs)
   {
     copy(rhs);
   }
@@ -156,20 +156,20 @@ public:
     D1 += n;
   }
 
-  inline void copy(const Matrix<T,Alloc>& rhs)
+  inline void copy(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
     assign(*this, rhs);
   }
 
   // Assignment Operators
-  inline This_t& operator=(const Matrix<T,Alloc> &rhs)
+  inline This_t& operator=(const This_t& rhs)
   {
     resize(rhs.D1,rhs.D2);
     return assign(*this,rhs);
   }
 
-  inline const This_t &operator=(const Matrix<T,Alloc> &rhs) const
+  inline const This_t &operator=(const This_t& rhs) const
   {
     return assign(*this, rhs);
   }

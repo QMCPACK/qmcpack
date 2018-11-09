@@ -29,7 +29,7 @@
 namespace qmcplusplus
 {
 
-template<class T, typename Alloc=std::allocator<T> >
+template<class T, typename Alloc = std::allocator<T>, bool initialize = true >
 class Vector
 {
 public:
@@ -48,7 +48,7 @@ public:
     if(n)
     {
       resize_impl(n);
-      std::fill_n(X, n, val);
+      if(initialize) std::fill_n(X, n, val);
     }
   }
 
@@ -124,11 +124,11 @@ public:
     if(n>nAllocated)
     {
       resize_impl(n);
-      std::fill_n(X, n, val);
+      if(initialize) std::fill_n(X, n, val);
     }
     else if(n>nLocal)
     {
-      std::fill_n(X+nLocal, n-nLocal, val);
+      if(initialize) std::fill_n(X+nLocal, n-nLocal, val);
       nLocal=n;
     }
     else
