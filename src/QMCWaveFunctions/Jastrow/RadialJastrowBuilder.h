@@ -125,11 +125,11 @@ public:
 	RadFunctorType *functor = new RadFunctorType();
 	int ig = sSet.findSpecies (speciesA);
 
-	/* Need to figure out how to either put these in the put 
+	/* Need to figure out how to either put this in the put 
 	   function or some specialized initializer method...
 	functor->periodic = sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN;
-	functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
 	*/
+	functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
 	int jg=-1;
 	if(speciesB.size())
 	  jg=tSet.findSpecies(speciesB);
