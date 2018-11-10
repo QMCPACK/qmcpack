@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2017 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -13,7 +13,9 @@
 #define QMCPLUSPLUS_DELAYED_UPDATE_H
 
 #include "Numerics/Blasf.h"
+#include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
+#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include <simd/simd.hpp>
 
 namespace qmcplusplus {
@@ -22,6 +24,7 @@ namespace qmcplusplus {
     struct DelayedUpdate
     {
       Matrix<T> U, V, B, Binv, tempMat;
+      Vector<T> temp, rcopy;
       Matrix<T_hp> Binv_hp;
       DiracMatrix<T_hp> deteng;
       std::vector<int> delay_list;
@@ -36,6 +39,7 @@ namespace qmcplusplus {
       {
         V.resize(delay, norb);
         U.resize(delay, norb);
+        temp.resize(norb);
         tempMat.resize(norb, delay);
         B.resize(delay, delay);
         Binv.resize(delay, delay);
@@ -61,13 +65,12 @@ namespace qmcplusplus {
         const T* AinvRow = Ainv[rowchanged];
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
-        T temp[lda_Binv];
         // save AinvRow to new_AinvRow
         simd::copy_n(AinvRow, norb, V[delay_count]);
         // multiply V (NxK) Binv(KxK) U(KxN) AinvRow right to the left
         BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, AinvRow, 1, czero, B[delay_count], 1);
-        BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, B[delay_count], 1, czero, temp, 1);
-        BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, temp, 1, cone, V[delay_count], 1);
+        BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, B[delay_count], 1, czero, temp.data(), 1);
+        BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, temp.data(), 1, cone, V[delay_count], 1);
         Ainv_row_ptr = V[delay_count];
       }
 
@@ -100,7 +103,7 @@ namespace qmcplusplus {
         }
         else
         {
-          throw std::runtime_error("DelayedUpdate : this should never happen!");
+          throw std::runtime_error("DelayedUpdate : this should never happen!\n");
           return T(0);
         }
       }
@@ -116,12 +119,13 @@ namespace qmcplusplus {
         const int lda = a.cols();
         CONSTEXPR T cone(1);
         CONSTEXPR T czero(0);
-        T temp[lda], rcopy[lda];
+        temp.resize(lda);
+        rcopy.resize(lda);
         T c_ratio = cone / curRatio;
-        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, psiV.data(), 1, czero, temp, 1);
+        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, psiV.data(), 1, czero, temp.data(), 1);
         temp[rowchanged] = cone-c_ratio;
-        simd::copy_n(a[rowchanged],m,rcopy);
-        BLAS::ger(m,m,-cone,rcopy,1,temp,1,a.data(),lda);
+        simd::copy_n(a[rowchanged],m,rcopy.data());
+        BLAS::ger(m,m,-cone,rcopy.data(),1,temp.data(),1,a.data(),lda);
       }
 
       // accept with the update delayed
@@ -176,9 +180,9 @@ namespace qmcplusplus {
         if(delay_count==1)
         {
           // Only use the first norb elements of tempMat as a temporal array
-          BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, U[0], 1, czero, tempMat[0], 1);
-          tempMat(0,delay_list[0]) -= cone;
-          BLAS::ger(norb,norb,-Binv[0][0],V[0],1,tempMat[0],1,Ainv.data(),norb);
+          BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, U[0], 1, czero, temp.data(), 1);
+          temp[delay_list[0]] -= cone;
+          BLAS::ger(norb,norb,-Binv[0][0],V[0],1,temp.data(),1,Ainv.data(),norb);
         }
         else
         {
