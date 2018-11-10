@@ -218,7 +218,6 @@
    #define ASSUME_ALIGNED(x)
   #endif
 
-  #define CONSTEXPR constexpr
 #else //capture both C or non-c++11
   #if defined(__KNC__) || defined(__AVX512F__)
     #define QMC_CLINE 64
@@ -227,7 +226,6 @@
   #endif
   #define QMC_ALIGNAS
   #define ASSUME_ALIGNED(x)
-  #define CONSTEXPR const
   #ifndef nullptr
   #define nullptr NULL
   #endif

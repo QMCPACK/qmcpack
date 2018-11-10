@@ -277,7 +277,7 @@ public:
   /// temporal matrix in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
   DiracMatrix<mValueType> detEng;
-  DelayedUpdate<ValueType, mValueType> updateEng;
+  DelayedUpdate<ValueType> updateEng;
 
   ValueType curRatio,cumRatio;
   ParticleSet::SingleParticleValue_t *FirstAddressOfG;
