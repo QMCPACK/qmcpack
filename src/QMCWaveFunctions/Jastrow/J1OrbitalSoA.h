@@ -329,9 +329,9 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
 
   inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
-    Vat.attachReference(buf.lendReference<valT>(Nelec), Nelec);
-    Grad.attachReference(buf.lendReference<posT>(Nelec), Nelec);
-    Lap.attachReference(buf.lendReference<valT>(Nelec), Nelec);
+    Vat.attachReference(MemoryInstance<valT>(buf.lendReference<valT>(Nelec)), Nelec);
+    Grad.attachReference(MemoryInstance<posT>(buf.lendReference<posT>(Nelec)), Nelec);
+    Lap.attachReference(MemoryInstance<valT>(buf.lendReference<valT>(Nelec)), Nelec);
   }
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const

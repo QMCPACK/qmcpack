@@ -95,7 +95,7 @@ void DiracDeterminantCUDANext::resize(int nel, int morb)
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
   memoryPool.resize(nel*norb);
-  psiM_temp.attachReference(memoryPool.data(),nel,norb);
+  psiM_temp.attachReference(MemoryInstance<ValueType>(memoryPool.data()),nel,norb);
   if( typeid(ValueType) != typeid(mValueType) )
     psiM_hp.resize(nel,norb);
   LastIndex = FirstIndex + nel;
@@ -264,9 +264,9 @@ DiracDeterminantCUDANext::RealType DiracDeterminantCUDANext::updateBuffer(Partic
 void DiracDeterminantCUDANext::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
-  psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
-  dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
-  d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
+  psiM.attachReference(MemoryInstance<ValueType>(buf.lendReference<ValueType>(psiM.size())));
+  dpsiM.attachReference(MemoryInstance<GradType>(buf.lendReference<GradType>(dpsiM.size())));
+  d2psiM.attachReference(MemoryInstance<ValueType>(buf.lendReference<ValueType>(d2psiM.size())));
   buf.get(LogValue);
   buf.get(PhaseValue);
   updateEng.transferAinvH2D(psiM);
@@ -315,7 +315,7 @@ void DiracDeterminantCUDANext::evaluateRatios(VirtualParticleSet& VP, std::vecto
     Matrix<ValueType> psiT(memoryPool.data()+offset, nVP, NumOrbitals);
     // SPO scratch memory. Always use existing memory
     SPOSet::ValueAlignedVector_t SPOMem;
-    SPOMem.attachReference((ValueType*)memoryPool.data(),offset);
+    SPOMem.attachReference(MemoryInstance<ValueType>(memoryPool.data()),offset);
     SPOVTimer.start();
     Phi->evaluateValues(VP, psiT, SPOMem);
     SPOVTimer.stop();

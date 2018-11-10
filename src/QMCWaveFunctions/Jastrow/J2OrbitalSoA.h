@@ -220,9 +220,9 @@ struct  J2OrbitalSoA : public WaveFunctionComponent
 
   inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
-    Uat.attachReference(buf.lendReference<valT>(N), N);
+    Uat.attachReference(MemoryInstance<valT>(buf.lendReference<valT>(N)), N);
     dUat.attachReference(N, N_padded, buf.lendReference<valT>(N_padded*OHMMS_DIM));
-    d2Uat.attachReference(buf.lendReference<valT>(N), N);
+    d2Uat.attachReference(MemoryInstance<valT>(buf.lendReference<valT>(N)), N);
   }
 
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)

@@ -94,7 +94,7 @@ void DiracDeterminant::resize(int nel, int morb)
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
   memoryPool.resize(nel*norb);
-  psiM_temp.attachReference(memoryPool.data(),nel,norb);
+  psiM_temp.attachReference(MemoryInstance<ValueType>(memoryPool.data()),nel,norb);
   if( typeid(ValueType) != typeid(mValueType) )
     psiM_hp.resize(nel,norb);
   LastIndex = FirstIndex + nel;
@@ -266,9 +266,9 @@ DiracDeterminant::RealType DiracDeterminant::updateBuffer(ParticleSet& P,
 void DiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
-  psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
-  dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
-  d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
+  psiM.attachReference(MemoryInstance<ValueType>(buf.lendReference<ValueType>(psiM.size())));
+  dpsiM.attachReference(MemoryInstance<GradType>(buf.lendReference<GradType>(dpsiM.size())));
+  d2psiM.attachReference(MemoryInstance<ValueType>(buf.lendReference<ValueType>(d2psiM.size())));
   buf.get(LogValue);
   buf.get(PhaseValue);
   BufferTimer.stop();
@@ -316,7 +316,7 @@ void DiracDeterminant::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueT
     Matrix<ValueType> psiT(memoryPool.data()+offset, nVP, NumOrbitals);
     // SPO scratch memory. Always use existing memory
     SPOSet::ValueAlignedVector_t SPOMem;
-    SPOMem.attachReference((ValueType*)memoryPool.data(),offset);
+    SPOMem.attachReference(MemoryInstance<ValueType>(memoryPool.data()),offset);
     SPOVTimer.start();
     Phi->evaluateValues(VP, psiT, SPOMem);
     SPOVTimer.stop();

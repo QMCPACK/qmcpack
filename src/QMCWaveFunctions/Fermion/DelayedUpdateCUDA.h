@@ -29,12 +29,12 @@ namespace qmcplusplus {
     {
       Matrix<T> U, V, B, Binv;
       //Matrix<T> tempMat; // for debugging only
-      Matrix<T, CUDAAllocator<T>, false> U_gpu, V_gpu, Binv_gpu, temp_gpu, Ainv_gpu;
+      Matrix<T, CUDAAllocator<T>, MemorySpace::CUDA> U_gpu, V_gpu, Binv_gpu, temp_gpu, Ainv_gpu;
       Vector<T> temp, rcopy;
       Matrix<T_hp> Binv_hp;
       DiracMatrix<T_hp> deteng;
       std::vector<int> delay_list;
-      Vector<int, CUDAAllocator<int>, false> delay_list_gpu;
+      Vector<int, CUDAAllocator<int>, MemorySpace::CUDA> delay_list_gpu;
       int delay_count;
 
       const T* Ainv_row_ptr;
@@ -96,8 +96,8 @@ namespace qmcplusplus {
           Ainv_row_ptr = Ainv[rowchanged];
           return;
         }
-        CONSTEXPR T cone(1);
-        CONSTEXPR T czero(0);
+        const T cone(1);
+        const T czero(0);
         const T* AinvRow = Ainv[rowchanged];
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
@@ -157,8 +157,8 @@ namespace qmcplusplus {
 
         const int m = a.rows();
         const int lda = a.cols();
-        CONSTEXPR T cone(1);
-        CONSTEXPR T czero(0);
+        const T cone(1);
+        const T czero(0);
         temp.resize(lda);
         rcopy.resize(lda);
         T c_ratio = cone / curRatio;
@@ -175,8 +175,8 @@ namespace qmcplusplus {
         // safe mechanism
         Ainv_row_ptr = nullptr;
 
-        CONSTEXPR T cone(1);
-        CONSTEXPR T czero(0);
+        const T cone(1);
+        const T czero(0);
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
         simd::copy_n(Ainv[rowchanged], norb, V[delay_count]);
@@ -215,8 +215,8 @@ namespace qmcplusplus {
         // update the inverse matrix
         if( delay_count>0 )
         {
-          CONSTEXPR T cone(1);
-          CONSTEXPR T czero(0);
+          const T cone(1);
+          const T czero(0);
           const int norb=Ainv.rows();
           const int lda_Binv=Binv.cols();
           const T cminusone(-1);

@@ -25,11 +25,12 @@
 #include <iostream>
 #include <type_traits>
 #include <stdexcept>
+#include <simd/MemorySpace.hpp>
 
 namespace qmcplusplus
 {
 
-template<class T, typename Alloc = std::allocator<T>, bool initialize = true >
+template<class T, typename Alloc = std::allocator<T>, unsigned MemType = MemorySpace::HOST>
 class Vector
 {
 public:
@@ -48,7 +49,8 @@ public:
     if(n)
     {
       resize_impl(n);
-      if(initialize) std::fill_n(X, n, val);
+      if( MemType == MemorySpace::HOST )
+        std::fill_n(X, n, val);
     }
   }
 
@@ -60,12 +62,14 @@ public:
     :nLocal(rhs.nLocal), nAllocated(0), X(nullptr)
   {
     resize_impl(rhs.nLocal);
-    std::copy_n(rhs.data(),nLocal,X);
+    if( MemType == MemorySpace::HOST )
+      std::copy_n(rhs.data(),nLocal,X);
   }
 
   // default assignment operator
   inline Vector& operator=(const Vector& rhs)
   {
+    static_assert( MemType == MemorySpace::HOST, "Vector::operator= MemType must be MemorySpace::HOST" );
     if(this==&rhs) return *this;
     if(nLocal!=rhs.nLocal) resize(rhs.nLocal);
     std::copy_n(rhs.data(),nLocal,X);
@@ -76,6 +80,7 @@ public:
   template<typename T1, typename C1>
   inline Vector& operator=(const Vector<T1,C1>& rhs)
   {
+    static_assert( MemType == MemorySpace::HOST, "Vector::operator= the MemType of both sides must be MemorySpace::HOST" );
     if(std::is_convertible<T1,T>::value)
     {
       if(nLocal!=rhs.nLocal) resize(rhs.nLocal);
@@ -88,6 +93,7 @@ public:
   template<class RHS>
   inline Vector& operator=(const RHS& rhs)
   {
+    static_assert( MemType == MemorySpace::HOST, "Vector::operator= MemType must be MemorySpace::HOST" );
     assign(*this,rhs);
     return *this;
   }
@@ -102,12 +108,14 @@ public:
   }
 
   // Attach to pre-allocated memory
-  inline void attachReference(T* ref, size_t n)
+  template<unsigned MT>
+  inline void attachReference(const MemoryInstance<T, MT>& ref, size_t n)
   {
+    static_assert( MemType == MT, "Vector::attachReference MemType must be the same" );
     if(nAllocated) throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
     nLocal=n;
     nAllocated=0;
-    X=ref;
+    X=ref.getPointer();
   }
 
   //! return the current size
@@ -124,11 +132,11 @@ public:
     if(n>nAllocated)
     {
       resize_impl(n);
-      if(initialize) std::fill_n(X, n, val);
+      if(MemType == MemorySpace::HOST) std::fill_n(X, n, val);
     }
     else if(n>nLocal)
     {
-      if(initialize) std::fill_n(X+nLocal, n-nLocal, val);
+      if(MemType == MemorySpace::HOST) std::fill_n(X+nLocal, n-nLocal, val);
       nLocal=n;
     }
     else
@@ -154,11 +162,13 @@ public:
   // Get and Set Operations
   inline Type_t& operator[](size_t i)
   {
+    static_assert( MemType == MemorySpace::HOST, "Vector::operator[] MemType must be MemorySpace::HOST" );
     return X[i];
   }
 
   inline const Type_t& operator[](size_t i) const
   {
+    static_assert( MemType == MemorySpace::HOST, "Vector::operator[] MemType must be MemorySpace::HOST" );
     return X[i];
   }
 
