@@ -102,7 +102,7 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
 TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
 {
   DiracMatrix<ValueType> dm;
-  DelayedUpdate<ValueType, ValueType> updateEng;
+  DelayedUpdate<ValueType> updateEng;
 
   Matrix<ValueType> a;
   a.resize(3,3);

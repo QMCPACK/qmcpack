@@ -122,8 +122,8 @@ int main(int argc, char** argv)
     Vector<ValueType> psiV(nels), Ainv_row(nels);
 
     DiracMatrix<ValueType> detEng;
-    DelayedUpdate<ValueType, mValueType> FahyEng;
-    DelayedUpdate<ValueType, mValueType> delayedEng;
+    DelayedUpdate<ValueType> FahyEng;
+    DelayedUpdate<ValueType> delayedEng;
 
     delayedEng.resize(nels,delay);
 

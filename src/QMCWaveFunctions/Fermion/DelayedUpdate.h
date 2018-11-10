@@ -15,18 +15,18 @@
 #include "Numerics/Blasf.h"
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include <simd/simd.hpp>
 
 namespace qmcplusplus {
 
-  template<typename T, typename T_hp>
+  template<typename T>
     struct DelayedUpdate
     {
-      Matrix<T> U, V, B, Binv, tempMat;
+      Matrix<T> U, V, Binv, tempMat;
+      // temporal scratch space used by SM-1
       Vector<T> temp, rcopy;
-      Matrix<T_hp> Binv_hp;
-      DiracMatrix<T_hp> deteng;
+      // auxiliary arrays for B
+      Vector<T> p, qt_binv;
       std::vector<int> delay_list;
       int delay_count;
 
@@ -39,16 +39,11 @@ namespace qmcplusplus {
       {
         V.resize(delay, norb);
         U.resize(delay, norb);
+        p.resize(delay);
+        qt_binv.resize(delay);
         temp.resize(norb);
         tempMat.resize(norb, delay);
-        B.resize(delay, delay);
         Binv.resize(delay, delay);
-#ifdef MIXED_PRECISION
-        Binv_hp.resize(delay, delay);
-        deteng.reset(Binv_hp, delay);
-#else
-        deteng.reset(Binv, delay);
-#endif
         delay_count = 0;
         delay_list.resize(delay);
       }
@@ -68,9 +63,9 @@ namespace qmcplusplus {
         // save AinvRow to new_AinvRow
         simd::copy_n(AinvRow, norb, V[delay_count]);
         // multiply V (NxK) Binv(KxK) U(KxN) AinvRow right to the left
-        BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, AinvRow, 1, czero, B[delay_count], 1);
-        BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, B[delay_count], 1, czero, temp.data(), 1);
-        BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, temp.data(), 1, cone, V[delay_count], 1);
+        BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, AinvRow, 1, czero, p.data(), 1);
+        BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, qt_binv.data(), 1);
+        BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, qt_binv.data(), 1, cone, V[delay_count], 1);
         Ainv_row_ptr = V[delay_count];
       }
 
@@ -142,31 +137,27 @@ namespace qmcplusplus {
         simd::copy_n(Ainv[rowchanged], norb, V[delay_count]);
         simd::copy_n(psiV.data(), norb, U[delay_count]);
         delay_list[delay_count] = rowchanged;
-        delay_count++;
         // the new row in B has been computed, now compute the new column
-        if(delay_count==1)
-        {
-          B[0][0] = curRatio;
-          Binv[0][0] = T_hp(1.0) / static_cast<T_hp>(B[0][0]);
-        }
+        if(delay_count==0)
+          Binv[0][0] = cone/curRatio;
         else
         {
-          BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, psiV.data(), 1, czero, B.data()+delay_count-1, lda_Binv);
-#ifdef MIXED_PRECISION
+          // the new Binv is [[X Y] [Z x]]
+          BLAS::gemv('T', norb, delay_count+1, cone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
+          // x
+          T y = p[delay_count];
           for(int i=0; i<delay_count; i++)
-            for(int j=0; j<delay_count; j++)
-              Binv_hp[i][j] = B[i][j];
-          deteng.invert(Binv_hp,false,delay_count);
+            y -= qt_binv[i] * p[i];
+          Binv[delay_count][delay_count] = y = cone / y;
+          // Y
+          BLAS::gemv('T', delay_count, delay_count, -y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data()+delay_count, lda_Binv);
+          // Z
           for(int i=0; i<delay_count; i++)
-            for(int j=0; j<delay_count; j++)
-              Binv[i][j] = Binv_hp[i][j];
-#else
-          for(int i=0; i<delay_count; i++)
-            for(int j=0; j<delay_count; j++)
-              Binv[i][j] = B[i][j];
-          deteng.invert(Binv,false,delay_count);
-#endif
+            Binv[delay_count][i] = - y * qt_binv[i];
+          // X
+          BLAS::ger(delay_count, delay_count, -cone, qt_binv.data(), 1, Binv.data()+delay_count, lda_Binv, Binv.data(), lda_Binv);
         }
+        delay_count++;
         if(delay_count==lda_Binv) updateInvMat(Ainv);
       }
 
