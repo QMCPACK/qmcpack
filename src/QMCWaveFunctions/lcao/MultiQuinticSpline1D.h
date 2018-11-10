@@ -121,7 +121,7 @@ struct MultiQuinticSpline1D
 #if 0
     else if(r>=r_max)
     {
-      CONSTEXPR T czero(0);
+      constexpr T czero(0);
       for(size_t i=0; i<num_splines; ++i)
         u[i]=czero;
     }

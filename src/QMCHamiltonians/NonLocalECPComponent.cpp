@@ -107,8 +107,8 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
     int iel, RealType r, const PosType& dr, 
     bool Tmove, std::vector<NonLocalData>& Txy) const
 {
-  CONSTEXPR RealType czero(0);
-  CONSTEXPR RealType cone(1);
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
 
   RealType lpol_[lmax+1];
   RealType vrad_[nchannel];
@@ -193,8 +193,8 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFu
     int iel, RealType r, const PosType& dr, 
     PosType & force_iat, bool Tmove, std::vector<NonLocalData>& Txy) const
 {
-  CONSTEXPR RealType czero(0);
-  CONSTEXPR RealType cone(1);
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
 
   //Array for P_l[cos(theta)].
   RealType lpol_[lmax+1];

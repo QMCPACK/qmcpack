@@ -110,7 +110,7 @@ namespace qmcplusplus {
         //slightly smaller error with the following
         //        logdet+=2.0*std::log(std::abs(x[ii]);
       }
-      CONSTEXPR T one_over_2pi=T(1)/TWOPI;
+      constexpr T one_over_2pi=T(1)/TWOPI;
       phase -= std::floor(phase*one_over_2pi)*TWOPI;
       return 0.5*logdet;
     }

@@ -143,8 +143,8 @@ namespace qmcplusplus
           T r_new;
          // T psi_new, dpsi_x_new, dpsi_y_new, dpsi_z_new,d2psi_new;  
           
-          CONSTEXPR T cone(1);
-          CONSTEXPR T ctwo(2);
+          constexpr T cone(1);
+          constexpr T ctwo(2);
 
           //one can assert the alignment
           value_type* restrict phi=tempS.data(0);

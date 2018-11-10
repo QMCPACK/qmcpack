@@ -211,7 +211,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evaluate_vgl_impl(P
   const size_t N2 = Dets[1]->FirstIndex;
   const size_t NP1 = Dets[0]->NumPtcls;
   const size_t NP2 = Dets[1]->NumPtcls;
-  CONSTEXPR ValueType czero(0);
+  const ValueType czero(0);
   ValueType psi=czero;
   g_tmp=czero;
   l_tmp=czero;
@@ -311,7 +311,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
   {
     APP_ABORT("Fast MSD+BF: evalGrad not implemented. \n");
   }
-  CONSTEXPR RealType cone(1);
+  constexpr RealType cone(1);
   GradType grad_iat;
   ValueType psi=evalGrad_impl(P,iat,false,grad_iat);;
   grad_iat*= (cone/psi);
@@ -327,7 +327,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleS
   }
   UpdateMode=ORB_PBYP_PARTIAL;
 
-  CONSTEXPR RealType cone(1);
+  constexpr RealType cone(1);
   GradType dummy;
   ValueType psiNew=evalGrad_impl(P,iat,true,dummy);
   grad_iat+=(cone/psiNew)*dummy;

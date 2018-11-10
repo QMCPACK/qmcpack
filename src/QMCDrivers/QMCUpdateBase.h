@@ -152,8 +152,8 @@ public:
 
   inline void setMultiplicity(Walker_t& awalker) const
   {
-    CONSTEXPR RealType onehalf(0.5);
-    CONSTEXPR RealType cone(1);
+    constexpr RealType onehalf(0.5);
+    constexpr RealType cone(1);
     RealType M=awalker.Weight;
     if (awalker.Age>MaxAge)
       M = std::min(onehalf,M);
@@ -172,10 +172,6 @@ public:
   /** initialize Walker for walker update
    */
   virtual void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
-
-  /** simple routine to test the performance
-   */
-  void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
 
   /**  process options
    */
