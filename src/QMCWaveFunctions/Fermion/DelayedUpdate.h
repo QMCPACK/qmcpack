@@ -55,8 +55,8 @@ namespace qmcplusplus {
           Ainv_row_ptr = Ainv[rowchanged];
           return;
         }
-        CONSTEXPR T cone(1);
-        CONSTEXPR T czero(0);
+        const T cone(1);
+        const T czero(0);
         const T* AinvRow = Ainv[rowchanged];
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
@@ -112,8 +112,8 @@ namespace qmcplusplus {
 
         const int m = a.rows();
         const int lda = a.cols();
-        CONSTEXPR T cone(1);
-        CONSTEXPR T czero(0);
+        const T cone(1);
+        const T czero(0);
         temp.resize(lda);
         rcopy.resize(lda);
         T c_ratio = cone / curRatio;
@@ -130,8 +130,8 @@ namespace qmcplusplus {
         // safe mechanism
         Ainv_row_ptr = nullptr;
 
-        CONSTEXPR T cone(1);
-        CONSTEXPR T czero(0);
+        const T cone(1);
+        const T czero(0);
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
         simd::copy_n(Ainv[rowchanged], norb, V[delay_count]);
@@ -165,8 +165,8 @@ namespace qmcplusplus {
       {
         if(delay_count==0) return;
         // update the inverse matrix
-        CONSTEXPR T cone(1);
-        CONSTEXPR T czero(0);
+        const T cone(1);
+        const T czero(0);
         const int norb=Ainv.rows();
         if(delay_count==1)
         {
