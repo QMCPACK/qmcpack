@@ -15,7 +15,6 @@
 #include "Numerics/Blasf.h"
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include <simd/simd.hpp>
 
 namespace qmcplusplus {
