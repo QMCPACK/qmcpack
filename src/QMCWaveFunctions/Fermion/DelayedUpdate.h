@@ -26,7 +26,7 @@ namespace qmcplusplus {
       // temporal scratch space used by SM-1
       Vector<T> temp, rcopy;
       // auxiliary arrays for B
-      Vector<T> p, qt_binv;
+      Vector<T> p;
       std::vector<int> delay_list;
       int delay_count;
 
@@ -40,7 +40,6 @@ namespace qmcplusplus {
         V.resize(delay, norb);
         U.resize(delay, norb);
         p.resize(delay);
-        qt_binv.resize(delay);
         temp.resize(norb);
         tempMat.resize(norb, delay);
         Binv.resize(delay, delay);
@@ -64,8 +63,8 @@ namespace qmcplusplus {
         simd::copy_n(AinvRow, norb, V[delay_count]);
         // multiply V (NxK) Binv(KxK) U(KxN) AinvRow right to the left
         BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, AinvRow, 1, czero, p.data(), 1);
-        BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, qt_binv.data(), 1);
-        BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, qt_binv.data(), 1, cone, V[delay_count], 1);
+        BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
+        BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, Binv[delay_count], 1, cone, V[delay_count], 1);
         Ainv_row_ptr = V[delay_count];
       }
 
@@ -130,33 +129,27 @@ namespace qmcplusplus {
         // safe mechanism
         Ainv_row_ptr = nullptr;
 
-        const T cone(1);
+        const T cminusone(-1);
         const T czero(0);
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
         simd::copy_n(Ainv[rowchanged], norb, V[delay_count]);
         simd::copy_n(psiV.data(), norb, U[delay_count]);
         delay_list[delay_count] = rowchanged;
-        // the new row in B has been computed, now compute the new column
-        if(delay_count==0)
-          Binv[0][0] = cone/curRatio;
-        else
-        {
-          // the new Binv is [[X Y] [Z x]]
-          BLAS::gemv('T', norb, delay_count+1, cone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
-          // x
-          T y = p[delay_count];
-          for(int i=0; i<delay_count; i++)
-            y -= qt_binv[i] * p[i];
-          Binv[delay_count][delay_count] = y = cone / y;
-          // Y
-          BLAS::gemv('T', delay_count, delay_count, -y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data()+delay_count, lda_Binv);
-          // Z
-          for(int i=0; i<delay_count; i++)
-            Binv[delay_count][i] = - y * qt_binv[i];
-          // X
-          BLAS::ger(delay_count, delay_count, -cone, qt_binv.data(), 1, Binv.data()+delay_count, lda_Binv, Binv.data(), lda_Binv);
-        }
+        // the new Binv is [[X Y] [Z x]]
+        BLAS::gemv('T', norb, delay_count+1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
+        // x
+        T y = -p[delay_count];
+        for(int i=0; i<delay_count; i++)
+          y += Binv[delay_count][i] * p[i];
+        Binv[delay_count][delay_count] = y = T(1) / y;
+        // Y
+        BLAS::gemv('T', delay_count, delay_count, y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data()+delay_count, lda_Binv);
+        // X
+        BLAS::ger(delay_count, delay_count, cminusone, Binv[delay_count], 1, Binv.data()+delay_count, lda_Binv, Binv.data(), lda_Binv);
+        // Z
+        for(int i=0; i<delay_count; i++)
+          Binv[delay_count][i] *= -y;
         delay_count++;
         if(delay_count==lda_Binv) updateInvMat(Ainv);
       }
