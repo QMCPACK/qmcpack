@@ -26,7 +26,7 @@
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
+#include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA2.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 
 namespace qmcplusplus
@@ -278,7 +278,7 @@ public:
   /// temporal matrix in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
   DiracMatrix<mValueType> detEng;
-  DelayedUpdateCUDA<ValueType, mValueType> updateEng;
+  DelayedUpdateCUDA<ValueType> updateEng;
 
   ValueType curRatio,cumRatio;
   ParticleSet::SingleParticleValue_t *FirstAddressOfG;

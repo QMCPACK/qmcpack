@@ -50,7 +50,11 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     nonLocalPot.resize(ng,0);
   }
   std::string ecpFormat("table");
+#ifdef QMC_CUDA_NEXT
+  std::string NLPP_algo("batched");
+#else
   std::string NLPP_algo("default");
+#endif
   std::string pbc("yes");
   std::string forces("no");
   OhmmsAttributeSet pAttrib;

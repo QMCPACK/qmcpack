@@ -23,7 +23,7 @@
 
 namespace qmcplusplus {
 
-  template<typename T, typename T_hp>
+  template<typename T>
     struct DelayedUpdateCUDA
     {
       Matrix<T> U, V, B, Binv;
