@@ -26,7 +26,7 @@ namespace qmcplusplus {
   template<typename T>
     struct DelayedUpdateCUDA
     {
-      Matrix<T> U, V, B, Binv;
+      //Matrix<T> U, V, B, Binv;
       //Matrix<T> tempMat; // for debugging only
       Matrix<T, CUDAAllocator<T>, MemorySpace::CUDA> U_gpu, V_gpu, Binv_gpu, temp_gpu, Ainv_gpu;
       Vector<T> U_row;
@@ -77,7 +77,7 @@ namespace qmcplusplus {
         //U.resize(delay, norb);
         U_row.resize(norb);
         //p.resize(delay);
-        Binv.resize(delay, delay);
+        //Binv.resize(delay, delay);
         Ainv_row.resize(norb);
         delay_list.resize(delay);
 
@@ -108,11 +108,11 @@ namespace qmcplusplus {
           const int lda_Binv = Binv_gpu.cols();
           // save AinvRow to new_AinvRow
           //simd::copy_n(AinvRow, norb, V[delay_count]);
-          cublasDcopy(handle, norb, Ainv_gpu[rowchanged], 1, Ainv_row_gpu.data(), 1);
+          cublasScopy(handle, norb, Ainv_gpu[rowchanged], 1, Ainv_row_gpu.data(), 1);
           // multiply V (NxK) Binv(KxK) U(KxN) AinvRow right to the left
-          cublasDgemv(handle, CUBLAS_OP_T, norb, delay_count, constants_gpu.data()+1, U_gpu.data(), norb, Ainv_gpu[rowchanged], 1, constants_gpu.data(), p_gpu.data(), 1);
-          cublasDgemv(handle, CUBLAS_OP_N, delay_count, delay_count, constants_gpu.data()+1, Binv_gpu.data(), lda_Binv, p_gpu.data(), 1, constants_gpu.data(), Binv_gpu[delay_count], 1);
-          cublasDgemv(handle, CUBLAS_OP_N, norb, delay_count, constants_gpu.data()+2, V_gpu.data(), norb, Binv_gpu[delay_count], 1, constants_gpu.data()+1, Ainv_row_gpu.data(), 1);
+          cublasSgemv(handle, CUBLAS_OP_T, norb, delay_count, constants_gpu.data()+1, U_gpu.data(), norb, Ainv_gpu[rowchanged], 1, constants_gpu.data(), p_gpu.data(), 1);
+          cublasSgemv(handle, CUBLAS_OP_N, delay_count, delay_count, constants_gpu.data()+1, Binv_gpu.data(), lda_Binv, p_gpu.data(), 1, constants_gpu.data(), Binv_gpu[delay_count], 1);
+          cublasSgemv(handle, CUBLAS_OP_N, norb, delay_count, constants_gpu.data()+2, V_gpu.data(), norb, Binv_gpu[delay_count], 1, constants_gpu.data()+1, Ainv_row_gpu.data(), 1);
           cudaMemcpyAsync(Ainv_row.data(), Ainv_row_gpu.data(), Ainv_row.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream);
         }
         waitStream();
@@ -139,16 +139,13 @@ namespace qmcplusplus {
       template<typename VVT, typename GGT, typename GT>
       inline T ratioGrad(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV, const GGT& dpsiV, GT& g)
       {
-        if(Ainv_row_ind == rowchanged)
+        if(Ainv_row_ind != rowchanged)
         {
-          g = simd::dot(Ainv_row.data(),dpsiV.data(),Ainv_row.size());
-          curRatio = simd::dot(Ainv_row.data(),psiV.data(),Ainv_row.size());
+          Ainv_row_ind = rowchanged;
+          getInvRow(Ainv, rowchanged);
         }
-        else
-        {
-          throw std::runtime_error("DelayedUpdateCUDA::ratioGrad this should never happen!\n");
-          return T(0);
-        }
+        g = simd::dot(Ainv_row.data(),dpsiV.data(),Ainv_row.size());
+        curRatio = simd::dot(Ainv_row.data(),psiV.data(),Ainv_row.size());
         //std::cout << "report ratioGrad " << curRatio << std::endl;
         return curRatio;
       }
@@ -185,24 +182,24 @@ namespace qmcplusplus {
         const int norb = Ainv_gpu.rows();
         const int lda_Binv = Binv_gpu.cols();
         //simd::copy_n(Ainv[rowchanged], norb, V[delay_count]);
-        cublasDcopy(handle, norb, Ainv_gpu[rowchanged], 1, V_gpu[delay_count], 1);
+        cublasScopy(handle, norb, Ainv_gpu[rowchanged], 1, V_gpu[delay_count], 1);
         //save psiV to U_row just in case psiV is changed on the host before cudaMemcpyAsync is completed
         //if the getInvRow is called before the SPO evaluation, this can be removed.
         simd::copy_n(psiV.data(), norb, U_row.data());
         //delay_list[delay_count] = rowchanged;
         cudaMemcpyAsync(U_gpu[delay_count], U_row.data(), norb*sizeof(T), cudaMemcpyHostToDevice, hstream);
         // the new Binv is [[X Y] [Z x]]
-        cublasDgemv(handle, CUBLAS_OP_T, norb, delay_count+1,
+        cublasSgemv(handle, CUBLAS_OP_T, norb, delay_count+1,
                     constants_gpu.data()+2, V_gpu.data(), norb, U_gpu[delay_count], 1, constants_gpu.data(), p_gpu.data(), 1);
         // x
         updateBinv_x_cuda(delay_list_gpu.data(), delay_count, rowchanged, Binv_gpu[delay_count], p_gpu.data(), hstream);
         // Y
-        cublasDgemv(handle, CUBLAS_OP_T, delay_count, delay_count,
+        cublasSgemv(handle, CUBLAS_OP_T, delay_count, delay_count,
                     Binv_gpu[delay_count]+delay_count, Binv_gpu.data(), lda_Binv, p_gpu.data(), 1, constants_gpu.data(), Binv_gpu.data()+delay_count, lda_Binv);
         // X
-        cublasDger(handle, delay_count, delay_count, constants_gpu.data()+2, Binv_gpu[delay_count], 1, Binv_gpu.data()+delay_count, lda_Binv, Binv_gpu.data(), lda_Binv);
+        cublasSger(handle, delay_count, delay_count, constants_gpu.data()+2, Binv_gpu[delay_count], 1, Binv_gpu.data()+delay_count, lda_Binv, Binv_gpu.data(), lda_Binv);
         // Z
-        cublasDscal(handle, delay_count, p_gpu.data()+delay_count, Binv_gpu[delay_count], 1);
+        cublasSscal(handle, delay_count, p_gpu.data()+delay_count, Binv_gpu[delay_count], 1);
         delay_count++;
         if(delay_count==lda_Binv) updateInvMat(Ainv,false);
         /*
