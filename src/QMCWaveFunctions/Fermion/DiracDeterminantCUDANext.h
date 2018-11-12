@@ -26,7 +26,7 @@
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA2.h"
+#include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA3.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 
 namespace qmcplusplus
