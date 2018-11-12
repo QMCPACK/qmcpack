@@ -136,26 +136,20 @@ namespace qmcplusplus {
         simd::copy_n(Ainv[rowchanged], norb, V[delay_count]);
         simd::copy_n(psiV.data(), norb, U[delay_count]);
         delay_list[delay_count] = rowchanged;
-        // the new row in B has been computed, now compute the new column
-        if(delay_count==0)
-          Binv[0][0] = T(1) / curRatio;
-        else
-        {
-          // the new Binv is [[X Y] [Z x]]
-          BLAS::gemv('T', norb, delay_count+1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
-          // x
-          T y = -p[delay_count];
-          for(int i=0; i<delay_count; i++)
-            y += Binv[delay_count][i] * p[i];
-          Binv[delay_count][delay_count] = y = T(1) / y;
-          // Y
-          BLAS::gemv('T', delay_count, delay_count, y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data()+delay_count, lda_Binv);
-          // X
-          BLAS::ger(delay_count, delay_count, cminusone, Binv[delay_count], 1, Binv.data()+delay_count, lda_Binv, Binv.data(), lda_Binv);
-          // Z
-          for(int i=0; i<delay_count; i++)
-            Binv[delay_count][i] *= -y;
-        }
+        // the new Binv is [[X Y] [Z x]]
+        BLAS::gemv('T', norb, delay_count+1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
+        // x
+        T y = -p[delay_count];
+        for(int i=0; i<delay_count; i++)
+          y += Binv[delay_count][i] * p[i];
+        Binv[delay_count][delay_count] = y = T(1) / y;
+        // Y
+        BLAS::gemv('T', delay_count, delay_count, y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data()+delay_count, lda_Binv);
+        // X
+        BLAS::ger(delay_count, delay_count, cminusone, Binv[delay_count], 1, Binv.data()+delay_count, lda_Binv, Binv.data(), lda_Binv);
+        // Z
+        for(int i=0; i<delay_count; i++)
+          Binv[delay_count][i] *= -y;
         delay_count++;
         if(delay_count==lda_Binv) updateInvMat(Ainv);
       }
