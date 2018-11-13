@@ -94,8 +94,8 @@ namespace qmcplusplus {
         p.resize(delay);
         Binv.resize(delay, delay);
         Ainv_row.resize(norb);
-        // prefect 10% more rows corresponding to 95% acceptance ratio
-        Ainv_buffer.resize(std::min(static_cast<int>(delay*1.1),norb), norb);
+        // prefect 8% more rows corresponding to roughly 96% acceptance ratio
+        Ainv_buffer.resize(std::min(static_cast<int>(delay*1.08),norb), norb);
 
         temp_gpu.resize(norb, delay);
         delay_list.resize(delay);
