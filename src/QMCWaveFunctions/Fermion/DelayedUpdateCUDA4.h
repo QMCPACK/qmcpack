@@ -94,7 +94,7 @@ namespace qmcplusplus {
         p.resize(delay);
         Binv.resize(delay, delay);
         Ainv_row.resize(norb);
-        // prefect 10% more rows corresponding to 90% acceptance ratio
+        // prefect 10% more rows corresponding to 95% acceptance ratio
         Ainv_buffer.resize(std::min(static_cast<int>(delay*1.1),norb), norb);
 
         temp_gpu.resize(norb, delay);
@@ -119,7 +119,7 @@ namespace qmcplusplus {
       {
         if(!prefetched_range.checkRange(rowchanged))
         {
-          int last_row = std::min(rowchanged+V.rows(), Ainv.rows());
+          int last_row = std::min(rowchanged+Ainv_buffer.rows(), Ainv.rows());
           cudaMemcpyAsync(Ainv_buffer.data(), Ainv_gpu[rowchanged],
                           Ainv_row.size()*(last_row-rowchanged)*sizeof(T),
                           cudaMemcpyDeviceToHost, hstream);
