@@ -9,8 +9,8 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_DELAYED_UPDATE_CUDA3_H
-#define QMCPLUSPLUS_DELAYED_UPDATE_CUDA3_H
+#ifndef QMCPLUSPLUS_DELAYED_UPDATE_CUDA4_H
+#define QMCPLUSPLUS_DELAYED_UPDATE_CUDA4_H
 
 #include "Numerics/Blasf.h"
 #include <OhmmsPETE/OhmmsVector.h>
@@ -23,9 +23,30 @@
 
 namespace qmcplusplus {
 
+  class Range
+  {
+    // [first, last) rows of Ainv
+    int first, last;
+    public:
+    Range() : first(0), last(0) { };
+    void setRange(int first_in, int last_in)
+    {
+      first = first_in;
+      last  = last_in;
+    }
+    inline void clear() { first = last = 0; };
+    inline int getOffset(int index) const
+    {
+      if(!checkRange(index)) throw std::runtime_error("index not in range \n");
+      return index-first;
+    }
+    inline bool checkRange(int index) const { return (index>=first) && (index<last); };
+  };
+
   template<typename T>
     struct DelayedUpdateCUDA
     {
+      // Data staged during for delayed acceptRows
       Matrix<T> U, V, Binv;
       //Matrix<T> tempMat; // for debugging only
       Matrix<T, CUDAAllocator<T>, MemorySpace::CUDA> U_gpu, V_gpu, Binv_gpu, temp_gpu, Ainv_gpu;
@@ -40,15 +61,18 @@ namespace qmcplusplus {
       Vector<T> Ainv_row;
       // electron id of the up-to-date Ainv_row
       int Ainv_row_ind;
-      // electron id of the prefetched row of delayed Ainv
-      int prefetched_old_Ainv_row_ind;
+      // current ratio
       T curRatio;
+      // the range of prefetched_Ainv_rows
+      Range prefetched_range;
+      // Ainv prefetch buffer
+      Matrix<T> Ainv_buffer;
 
       // CUDA specific variables
       cublasHandle_t handle;
       cudaStream_t hstream;
 
-      DelayedUpdateCUDA(): delay_count(0), Ainv_row_ind(-1), prefetched_old_Ainv_row_ind(-1)
+      DelayedUpdateCUDA(): delay_count(0), Ainv_row_ind(-1)
       {
         cublasCreate(&handle);
         cudaStreamCreate(&hstream);
@@ -69,6 +93,8 @@ namespace qmcplusplus {
         p.resize(delay);
         Binv.resize(delay, delay);
         Ainv_row.resize(norb);
+        // prefect 10% more rows corresponding to 90% acceptance ratio
+        Ainv_buffer.resize(std::min(static_cast<int>(delay*1.1),norb), norb);
 
         temp_gpu.resize(norb, delay);
         delay_list.resize(delay);
@@ -84,20 +110,23 @@ namespace qmcplusplus {
         cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size()*sizeof(T), cudaMemcpyHostToDevice, hstream);
         // safe mechanism
         Ainv_row_ind = -1;
-        prefetched_old_Ainv_row_ind = -1;
+        prefetched_range.clear();
         delay_count = 0;
       }
 
       inline void getInvRow(const Matrix<T>& Ainv, int rowchanged)
       {
-        if(prefetched_old_Ainv_row_ind != rowchanged)
+        if(!prefetched_range.checkRange(rowchanged))
         {
-          cudaMemcpyAsync(Ainv_row.data(), Ainv_gpu[rowchanged], Ainv_row.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream);
-          prefetched_old_Ainv_row_ind = rowchanged;
+          int last_row = std::min(rowchanged+V.rows(), Ainv.rows());
+          cudaMemcpyAsync(Ainv_buffer.data(), Ainv_gpu[rowchanged],
+                          Ainv_row.size()*(last_row-rowchanged)*sizeof(T),
+                          cudaMemcpyDeviceToHost, hstream);
+          prefetched_range.setRange(rowchanged, last_row);
+          waitStream();
         }
-        waitStream();
         // save AinvRow to new_AinvRow
-        simd::copy_n(Ainv_row.data(), Ainv_row.size(), V[delay_count]);
+        simd::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], Ainv_row.size(), Ainv_row.data());
         if ( delay_count > 0 )
         {
           const T cone(1);
@@ -109,7 +138,6 @@ namespace qmcplusplus {
           BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
           BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, Binv[delay_count], 1, cone, Ainv_row.data(), 1);
           // Ainv_row no more has the prefectched value
-          prefetched_old_Ainv_row_ind = -1;
         }
         Ainv_row_ind = rowchanged;
       }
@@ -168,6 +196,7 @@ namespace qmcplusplus {
         const T czero(0);
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
+        simd::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], norb, V[delay_count]);
         simd::copy_n(psiV.data(), norb, U[delay_count]);
         delay_list[delay_count] = rowchanged;
         // the new Binv is [[X Y] [Z x]]
@@ -187,10 +216,6 @@ namespace qmcplusplus {
         delay_count++;
         // update Ainv when maximal delay is reached
         if(delay_count==lda_Binv) updateInvMat(Ainv,false);
-        // prefectch next Ainv_row
-        const int next_row_ind = (rowchanged+1)%norb;
-        cudaMemcpyAsync(Ainv_row.data(), Ainv_gpu[next_row_ind], Ainv_row.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream);
-        prefetched_old_Ainv_row_ind = next_row_ind;
       }
 
       inline void updateInvMat(Matrix<T>& Ainv, bool transfer_to_host = true)
@@ -232,8 +257,8 @@ namespace qmcplusplus {
           //BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
           cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
           delay_count = 0;
-          // Ainv is invalid, hence Ainv_row
-          prefetched_old_Ainv_row_ind = -1;
+          // Ainv is invalid, reset range
+          prefetched_range.clear();
         }
 
         // block incomplete stream execution
