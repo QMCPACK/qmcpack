@@ -26,18 +26,20 @@ namespace qmcplusplus {
   template<typename T>
     struct DelayedUpdateCUDA
     {
-      Matrix<T> U, V, Binv;
+      // Data staged during for delayed acceptRows
+      Matrix<T, CUDAHostAllocator<T>> U, Binv;
+      Matrix<T> V;
       //Matrix<T> tempMat; // for debugging only
       Matrix<T, CUDAAllocator<T>, MemorySpace::CUDA> U_gpu, V_gpu, Binv_gpu, temp_gpu, Ainv_gpu;
       // temporal scratch space used by SM-1
       Vector<T> temp, rcopy;
       // auxiliary arrays for B
       Vector<T> p;
-      std::vector<int> delay_list;
+      Vector<int, CUDAHostAllocator<int>> delay_list;
       Vector<int, CUDAAllocator<int>, MemorySpace::CUDA> delay_list_gpu;
       int delay_count;
 
-      Vector<T> Ainv_row;
+      Vector<T, CUDAHostAllocator<T>> Ainv_row;
       int Ainv_row_ind;
       T curRatio;
 
