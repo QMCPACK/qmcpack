@@ -58,10 +58,13 @@ public:
 
   // has a specialization for RPAFunctor in cpp file
   template<template<class> class RadFuncType>
-  bool RadialJastrowBuilder::createJ1(xmlNodePtr cur); 
+  bool createJ1(xmlNodePtr cur); 
 
   template<template<class> class RadFuncType>
-  bool RadialJastrowBuilder::createJ2(xmlNodePtr cur);
+  bool createJ2(xmlNodePtr cur);
+
+  template<template<class> class RadFuncType>
+  void initTwoBodyFunctor(RadFuncType<RT>* functor, double fac);
 
   void guardAgainstOBC();
   void guardAgainstPBC();

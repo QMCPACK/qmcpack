@@ -8,21 +8,18 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
     
     
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/PadeJastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
-#include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/singleRPAJastrowBuilder.h"
 #if OHMMS_DIM ==3
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #endif
-#include "QMCWaveFunctions/Jastrow/JABBuilder.h"
+#include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 
@@ -110,6 +107,12 @@ bool JastrowBuilder::addOneBody(xmlNodePtr cur)
   bool success=false;
   ParticleSet* sourcePtcl= (*pa_it).second;
   //use lowercase, to be handled by parser later
+  RadialJastrowBuilder rb(targetPtcl,targetPsi,*sourcePtcl);
+  success = rb.put(cur);
+  return success;
+ }
+
+  /*
   tolower(funcOpt);
   if (funcOpt == "bspline" )
   {
@@ -136,6 +139,7 @@ bool JastrowBuilder::addOneBody(xmlNodePtr cur)
     }
   return success;
 }
+  */
 
 bool JastrowBuilder::add_eeI (xmlNodePtr cur)
 {
@@ -163,6 +167,12 @@ bool JastrowBuilder::addTwoBody(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"addTwoBody(xmlNodePtr)");
   bool success=false;
+  RadialJastrowBuilder rb(targetPtcl,targetPsi);
+  return rb.put(cur);
+}
+
+
+  /*
   bool useSpline = (targetPtcl.Lattice.BoxBConds[0] && transformOpt == "yes");
   bool ignoreSpin = (spinOpt == "no");
   //convert to lowercase
@@ -201,7 +211,7 @@ bool JastrowBuilder::addTwoBody(xmlNodePtr cur)
   
   return success;
 }
-
+  */
 
 
 }

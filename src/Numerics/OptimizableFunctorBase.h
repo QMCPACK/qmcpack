@@ -4,7 +4,8 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+// File developed by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+//                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //
@@ -23,6 +24,7 @@
 #include "Optimize/VariableSet.h"
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsPETE/TinyVector.h"
+#include <cstdio>
 
 /** Base class for any functor with optimizable parameters
  *
@@ -102,6 +104,14 @@ struct OptimizableFunctorBase
   */
   virtual void setDensity(real_type n) { }
 
+  /** empty virtual function to help builder classes
+   */
+  virtual void setCusp(real_type cusp) { }
+
+  /** empty virtual function to help builder classes
+   */
+  virtual void setPeriodic(bool periodic) { }
+
   virtual inline bool evaluateDerivatives (real_type r, std::vector<qmcplusplus::TinyVector<real_type,3> >& derivs)
   {
     return false;
@@ -112,6 +122,23 @@ struct OptimizableFunctorBase
   virtual void setGridManager(bool willmanage) { }
 
 };
+
+void print(OptimizableFunctorBase& func, std::ostream& os)
+{
+  typedef OptimizableFunctorBase::real_type real_type;
+  int n = 100;
+  real_type d = func.cuotff_radius/100.,r=0;
+  real_type u, du;
+  for (int i = 0; i < n; ++i)
+  {
+    u = func.f(r);
+    du = func.df(r);
+    os << std::setw(22) << r << std::setw(22) << u << std::setw(22) << du << std::endl;
+    r +=d;
+  }
+}
+
+
 
 #endif
 

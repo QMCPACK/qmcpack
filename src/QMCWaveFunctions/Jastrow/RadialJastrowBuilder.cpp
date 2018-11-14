@@ -41,6 +41,13 @@
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowSpinOrbital.h"
 
+#include "LongRange/LRHandlerBase.h"
+#include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
+#include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
+#include "LongRange/LRRPAHandlerTemp.h"
+#include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
+
+
 
 namespace qmcplusplus
 {
@@ -158,6 +165,39 @@ public:
 };
 
 
+template<template<class> class RadFuncType>
+void RadialJastrowBuilder::initTwoBodyFunctor(RadFuncType<RT>* functor, double fac) { }
+
+template<>
+void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RT>* bfunc, double fac) 
+{
+  if(P.Lattice.SuperCellEnum==SUPERCELL_OPEN) // for open systems, do nothing
+  {
+    return;
+  }
+  std::vector<RT> rpaValues;
+  int npts=bfunc.NumParams;
+  if(rpaValues.empty())
+  {
+    rpaValues.resize(npts);
+    LRRPAHandlerTemp<RPABreakup<T>,LPQHIBasis> rpa(P,-1.0);
+    rpa.Breakup(P,-1.0);
+    RT dr=bfunc.cutoff_radius/static_cast<T>(npts);
+    RT r=0;
+    for (int i=0; i<npts; i++)
+    {
+      rpaValues[i]=rpa.evaluate(r,1.0/r); //y[i]=fac*rpa.evaluate(r,1.0/r);
+      r += dr;
+    }
+  }
+  RT last=rpaValues[npts-1];
+
+  for(int i=0; i<npts; i++)
+    bfunc.Parameters[i]=fac*(rpaValues[i]-last);
+  bfunc.reset();
+}
+
+
 
 template<template<class> class RadFuncType>
 bool RadialJastrowBuilder::createJ2(xmlNodePtr cur) 
@@ -168,8 +208,16 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
-  J2OrbitalType *J2 = new J2OrbitalType(targetPtcl,taskid);
-  DiffJ2OrbitalType *dJ2 = new DiffJ2OrbitalType(targetPtcl);
+  auto *J2 = new J2OrbitalType(targetPtcl,taskid);
+  auto *dJ2 = new DiffJ2OrbitalType(targetPtcl);
+
+  std::string init_mode("0");
+  {
+    OhmmsAttributeSet hAttrib;
+    hAttrib.add(init_mode,"init");
+    hAttrib.put(cur);
+  }
+
   cur = cur->xmlChildrenNode;
   while(cur!=NULL)
   {
@@ -180,29 +228,66 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       RealType cusp=-1e10;
       std::string spA(species.speciesName[0]);
       std::string spB(species.speciesName[0]);
+      std::string pairType("0");
       rAttrib.add(spA,"speciesA");
       rAttrib.add(spB,"speciesB");
+      rAttrib.add(pairType,"pairType");
       rAttrib.add(cusp,"cusp");
       rAttrib.put(cur);
+      if(pairType[0]=='0')
+      {
+	pairType=spA+spB;
+      }
+      else
+      {
+	PRE.warning("pairType is deprecated. Use speciesA/speciesB");
+	//overwrite the species
+	spA=pairType[0];
+	spB=pairType[1];
+      }
+
       int ia = species.findSpecies(spA);
       int ib = species.findSpecies(spB);
       if(ia==species.size() || ib == species.size())
       {
 	PRE.error("Failed. Species are incorrect.",true);
       }
+      if(ia==ib && (targetPtcl.last(ia)-targetPtcl.first(ia)==1))
+	PRE.error("Failed to add "+spA+spB+" correlation for only 1 "+spA+" particle. Please remove it from two-body Jastrow.",true);
       if(cusp<-1e6)
       {
 	RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
 	cusp = (ia==ib)? -0.25*qq:-0.5*qq;
       }
-      std::ostringstream o;
-      o<<"j2"<<ia<<ib;
-      // need to figure out how to set the cusp
-      // fairly sure now that setCusp needs to be in the base class
-      RadFunctorType *functor = new RadFunctorType();
+      app_log() << "  RadialJastrowBuilder adds a functor with cusp = " << cusp << std::endl;
+
+      auto *functor = new RadFunctorType();
+      functor->setCusp(cusp);
+      functor->setPeriodic(targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN);
+      if (targetPtcl.Lattice.WignerSeitzRadius > 0) 
+      {
+	functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
+      }
+      else if (functor->cutoff_radius < 10.0)
+      {
+	functor->cutoff_radius = 10.0;
+      }
       functor->put(cur);
+      initTwoBodyFunctor(functor,-cusp/0.5);
+
       J2->addFunc(ia,ib,functor);
       dJ2->addFunc(ia,ib,functor);
+
+      if(qmc_common.io_node)
+      {
+	char fname[32];
+	if(qmc_common.mpi_groups>1)
+	  sprintf(fname,"J2.%s.g%03d.dat",pairType.c_str(),taskid);
+	else
+	  sprintf(fname,"J2.%s.dat",pairType.c_str());
+	ostream os(fname);
+	print(*func, os);	
+      }
     }
     cur=cur->next;
   }
@@ -210,6 +295,16 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   std::string j2name="J2_"+Jastname;
   targetPsi.addOrbital(J2,j2name.c_str());
   J2->setOptimizable(true);
+}
+
+// specialiation for J2 RPA jastrow.  Note that the long range part is not implemented
+template<>
+bool RadialJastrowBuilder<RPAFunctor>::createJ2(xmlNodePtr cur) 
+{
+  RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl,targetPsi.is_manager());
+  rpajastrow->put(cur);
+  targetPsi.addOrbital(rpajastrow,NameOpt);
+  return true;
 }
 
 template<template<class> class RadFuncType>
@@ -245,14 +340,18 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       rAttrib.add(speciesA,"speciesA");
       rAttrib.add(speciesB,"speciesB");
       rAttrib.put(kids);
-      RadFunctorType *functor = new RadFunctorType();
+      auto *functor = new RadFunctorType();
       int ig = sSet.findSpecies (speciesA);
       
-      /* Need to figure out how to either put this in the put 
-	 function or some specialized initializer method...
-	 functor->periodic = sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN;
-      */
-      functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
+      functor->setPeriodic(sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN);
+      if (targetPtcl.Lattice.WignerSeitzRadius > 0) 
+      {
+	functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
+      }
+      else if (functor->cutoff_radius < 10.0)
+      {
+	functor->cutoff_radius = 10.0;
+      }
       int jg=-1;
       if(speciesB.size())
 	jg=tSet.findSpecies(speciesB);
@@ -262,30 +361,26 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
 	J1->addFunc(ig,functor,jg);
 	dJ1->addFunc(ig,functor,jg);
 	success = true;
-	// for debugging
-	/* to keep this, will need to make setReportLevel and print pure virtual
-	   functions in the OptimizableFunctorBase class
-	   if(qmc_common.io_node)
-	   {
-	   char fname[128];
-	   if(qmc_common.mpi_groups>1)
-	   {
-	   if(speciesB.size())
-	   sprintf(fname,"%s.%s%s.g%03d.dat",j1name.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
-	   else
-	   sprintf(fname,"%s.%s.g%03d.dat",j1name.c_str(),speciesA.c_str(),taskid);
-	   }
-	   else
-	   {
-	   if(speciesB.size())
-	   sprintf(fname,"%s.%s%s.dat",j1name.c_str(),speciesA.c_str(),speciesB.c_str());
-	   else
-	   sprintf(fname,"%s.%s.dat",j1name.c_str(),speciesA.c_str());
-	   }
-	   functor->setReportLevel(rank()==0,fname);
-	   functor->print();
-	   }
-	*/
+	if(qmc_common.io_node)
+        {
+	  char fname[128];
+	  if(qmc_common.mpi_groups>1)
+	  {
+	    if(speciesB.size())
+	      sprintf(fname,"%s.%s%s.g%03d.dat",j1name.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
+	    else
+	      sprintf(fname,"%s.%s.g%03d.dat",j1name.c_str(),speciesA.c_str(),taskid);
+	  }
+	  else
+	  {
+	    if(speciesB.size())
+	      sprintf(fname,"%s.%s%s.dat",j1name.c_str(),speciesA.c_str(),speciesB.c_str());
+	    else
+	      sprintf(fname,"%s.%s.dat",j1name.c_str(),speciesA.c_str());
+	  }
+	  ostream os(fname);
+	  print(*func, os);
+	}
       }
     }
     kids = kids->next;
@@ -305,6 +400,78 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
     delete dJ1;
     return false;
   }
+}
+
+// specialiation for J1 RPA jastrow.  Note that the long range part is not implemented
+template<>
+bool RadialJastrowBuilder<RPAFunctor>::createJ1(xmlNodePtr cur) 
+{
+  typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
+  typedef CubicSplineSingle<RT,SplineEngineType> RadFunctorType;
+  typedef LinearGrid<RealType> GridType;
+  typedef LRHandlerBase HandlerType;
+  typedef JastrowTypeHelper<RadFuncType>::J1OrbitalType J1OrbitalType;
+  typedef JastrowTypeHelper<RadFuncType>::DiffJ1OrbitalType DiffJ1OrbitalType;
+
+  std::string MyName="Jep";
+  std::string rpafunc="RPA";
+  OhmmsAttributeSet a;
+  a.add(MyName,"name");
+  a.add(rpafunc,"function");
+  a.put(cur);
+  ParameterSet params;
+  RealType Rs(-1.0);
+  RealType Kc(-1.0);
+  params.add(Rs,"rs","double");
+  params.add(Kc,"kc","double");
+  params.put(cur);
+
+  HandlerType* myHandler;
+  if(Rs<0)
+  {
+    Rs=std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/ static_cast<RealType>(targetPtcl.getTotalNum()) ,1.0/3.0);
+  }
+  if(Kc<0)
+  {
+    Kc = 1e-6;
+  }
+  if (rpafunc=="RPA")
+  {
+    myHandler= new LRRPAHandlerTemp<EPRPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+    app_log()<<"  using e-p RPA"<< std::endl;
+  }
+  else if (rpafunc=="dRPA")
+  {
+    myHandler= new LRRPAHandlerTemp<derivEPRPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+    app_log()<<"  using e-p derivRPA"<< std::endl;
+  }
+  myHandler->Breakup(targetPtcl,Rs);
+  
+  Rcut = myHandler->get_rc()-0.1;
+  GridType* myGrid = new GridType;
+  int npts=static_cast<int>(Rcut/0.01)+1;
+  myGrid->set(0,Rcut,npts);
+
+  //create the numerical functor
+  RadFunctorType* nfunc = new RadFunctorType;
+  ShortRangePartAdapter<RT>* SRA = new ShortRangePartAdapter<RT>(myHandler);
+  SRA->setRmax(Rcut);
+  nfunc->initialize(SRA, myGrid);
+  
+  J1OrbitalType* J1= new J1OrbitalType(*sourcePtcl, targetPtcl);
+  DiffJ1OrbitalType* dJ1= new DiffJ1OrbitalType(*sourcePtcl, targetPtcl);
+  
+  SpeciesSet &sSet = sourcePtcl->getSpeciesSet();
+  for (int ig=0; ig< sSet.getTotalNum(); ig++) {
+    J1->addFunc(ig,nfunc);
+    dJ1->addFunc(ig,nfunc);
+  }
+  
+  J1->dPsi=dJ1;
+  std::string jname = "J1_"+Jastfunction;
+  targetPsi.addOrbital(J1,jname.c_str());
+  J1->setOptimizable(Opt);
+  return true;
 }
 
 
@@ -366,7 +533,7 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
       guardAgainstPBC();
       success = createJ2<PadeFunctor>(cur);
     }
-    else if (Jastfunction == "rpa") 
+    else if (Jastfunction == "rpa" || Jastfunction = "yukawa") 
     {
 #if !(OHMMS_DIM == 3)
       app_error() << "RPA for one-body jastrow is only available for 3D\n";

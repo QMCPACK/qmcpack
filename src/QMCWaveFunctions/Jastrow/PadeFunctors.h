@@ -9,6 +9,7 @@
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -60,14 +61,19 @@ struct PadeFunctor:public OptimizableFunctorBase
   std::string ID_B;
 
   ///default constructor
-  PadeFunctor(): Scale(1.0),ID_A("0"),ID_B("0") { }
+  PadeFunctor(): Scale(1.0),ID_A("0"),ID_B("0"),A(1.0),B0(1.0),Scale(1.0),Opt_A(false),Opt_b(true) 
+  { 
+    reset();
+  }
 
+  /*
   ///constructor
   explicit PadeFunctor(real_type a, real_type b, real_type s=1.0):
     A(a),B0(b),Scale(s),Opt_A(true),Opt_B(true)
   {
     reset();
   }
+  */
 
   /** constructor with A
    * @param a value of A
@@ -76,9 +82,18 @@ struct PadeFunctor:public OptimizableFunctorBase
    * Special constructor for two-body Jastrow for Coulomb interactions
    * Automatically fix the cusp conditions
    */
+  /*
   explicit PadeFunctor(real_type a, const std::string& ida)
     :A(a),B0(1.0),Scale(1.0),ID_A(ida),Opt_A(false),Opt_B(true)
   {
+    reset();
+  }
+  */
+
+  void setCusp(real_type cusp) 
+  {
+    A=cusp;
+    Opt_A=false;
     reset();
   }
 
