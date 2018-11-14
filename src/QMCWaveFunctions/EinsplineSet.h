@@ -306,8 +306,8 @@ protected:
   void applyPhaseFactors (gpu::device_vector<CudaStorageType*> &storageVector,
                           gpu::device_vector<CTS::RealType*> &phi);
   // Data for vectorized evaluations
-  gpu::host_vector<CTS::PosType> hostPos, NLhostPos;
-  gpu::device_vector<CTS::PosType> cudapos,cudapos2,  NLcudapos;
+  gpu::host_vector<CTS::PosType> hostPos, hostPos2, NLhostPos;
+  gpu::device_vector<CTS::PosType> cudapos, cudapos2,  NLcudapos;
   gpu::host_vector<CTS::RealType> hostSign, NLhostSign;
   gpu::device_vector<CTS::RealType> cudaSign, NLcudaSign;
   // This stores the inverse of the lattice vector matrix in

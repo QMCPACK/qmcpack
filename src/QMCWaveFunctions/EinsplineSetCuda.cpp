@@ -27,11 +27,6 @@
 #include <mkl_vml.h>
 #endif
 
-#include "cuda_profiler_api.h"
-#ifdef USE_NVTX
-#include "nvToolsExt.h"
-#endif
-
 namespace qmcplusplus
 {
 inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_d *in,
@@ -201,11 +196,11 @@ eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_c_cuda *spline,
     devicenr=(i+gpu::relative_rank+1)%gpu::device_group_size;
     curr_gpu=gpu::device_group_numbers[devicenr];
     cudaSetDevice(curr_gpu);
-#ifdef SPLIT_SPLINE_DEBUG
-    std::cerr << "Rank " << OHMMS::Controller->rank() << ", GPU mem before: " << spline->coefs << "; after: " << spline_coefs[devicenr] << "\n";
-#endif
 #ifdef USE_SPLIT_SPLINES_MEM_PREFETCH
     cudaMemPrefetchAsync(pos,3*N*sizeof(float),curr_gpu,spline_streams[devicenr]);
+#endif
+#ifdef SPLIT_SPLINE_DEBUG
+    std::cerr << "Rank " << OHMMS::Controller->rank() << ", GPU mem before: " << spline->coefs << "; after: " << spline_coefs[devicenr] << "\n";
 #endif
     eval_multi_multi_UBspline_3d_c_cudasplit  (spline, pos, phi, N, (float*)spline_coefs[devicenr], devicenr, spline_streams[devicenr]);
     cudaEventRecord(spline_events[devicenr],spline_streams[devicenr]);
@@ -358,6 +353,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
+    hostPos2.resize(N);
     cudapos.resize(N,1.0,split_splines);
     cudapos2.resize(N);
   }
@@ -369,8 +365,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
     hostPos[iw] = ru;
+    hostPos2[iw] = r;
   }
   cudapos = hostPos;
+  cudapos2.asyncCopy(hostPos2); // for phase factors kernel
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
@@ -382,9 +380,6 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     (CudaMultiSpline, (CTS::RealType*)cudapos.data(), CudaValuePointers.data(), N);
   }
   // Now, add on phases
-  for (int iw=0; iw < N; iw++)
-    hostPos[iw] = walkers[iw]->R[iat];
-  cudapos2 = hostPos;
   apply_phase_factors ((CTS::RealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
                        (CTS::RealType*)cudapos2.data(),
@@ -611,6 +606,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
+    hostPos2.resize(N);
     cudapos.resize(N,1.0,split_splines);
     cudapos2.resize(N);
   }
@@ -622,8 +618,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
     hostPos[iw] = ru;
+    hostPos2[iw] = r;
   }
   cudapos = hostPos;
+  cudapos2.asyncCopy(hostPos2); // for phase factors kernel
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
@@ -635,9 +633,6 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     (CudaMultiSpline, (CTS::RealType*)cudapos.data(), CudaValuePointers.data(), N);
   }
   // Now, add on phases
-  for (int iw=0; iw < N; iw++)
-    hostPos[iw] = newpos[iw];
-  cudapos2 = hostPos;
   apply_phase_factors ((CTS::RealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
                        (CTS::RealType*)cudapos2.data(),
@@ -732,6 +727,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
+    hostPos2.resize(N);
     cudapos.resize(N,1.0,split_splines); // use managed memory here for split splines
     cudapos2.resize(N);
     if(split_splines)
@@ -749,8 +745,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
     hostPos[iw] = ru;
+    hostPos2[iw] = r;
   }
   cudapos = hostPos;
+  cudapos2.asyncCopy(hostPos2); // for phase factors kernel
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_vgl_cuda
@@ -821,10 +819,6 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 #endif
 
   // Now, add on phases
-  for (int iw=0; iw < N; iw++)
-    hostPos[iw] = newpos[iw];
-  cudapos2 = hostPos;
-
   /* Original implementation
   apply_phase_factors ((CTS::RealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
@@ -880,6 +874,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
+    hostPos2.resize(N);
     cudapos.resize(N,1.0,split_splines);
     cudapos2.resize(N);
     if(split_splines)
@@ -897,8 +892,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
     hostPos[iw] = ru;
+    hostPos2[iw] = r;
   }
   cudapos = hostPos;
+  cudapos2.asyncCopy(hostPos2); // for phase factors kernel
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_vgl_cuda
@@ -946,9 +943,6 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   }
 #endif
   // Now, add on phases
-  for (int iw=0; iw < N; iw++)
-    hostPos[iw] = newpos[iw];
-  cudapos2 = hostPos;
   apply_phase_factors ((CTS::RealType*) CudakPoints.data(),
                        (CTS::RealType*) cudapos2.data(),
                        (CTS::ValueType**) CudaValuePointers.data(),
@@ -1060,6 +1054,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
+    hostPos2.resize(N);
     cudapos.resize(N,1.0,split_splines);
     cudapos2.resize(N);
     if(split_splines)
@@ -1077,8 +1072,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
     hostPos[iw] = ru;
+    hostPos2[iw] = r;
   }
   cudapos = hostPos;
+  cudapos2.asyncCopy(hostPos2); // for phase factors kernel
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
@@ -1136,9 +1133,6 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     (CudaMultiSpline, (CTS::RealType*)cudapos.data(), CudaValuePointers.data(), N);
   }
   // Now, add on phases
-  for (int iw=0; iw < N; iw++)
-    hostPos[iw] = pos[iw];
-  cudapos2 = hostPos;
   apply_phase_factors((CTS::RealType*) CudakPoints.data(),
                       (CTS::RealType*) cudapos2.data(),
                       CudaValuePointers.data(),

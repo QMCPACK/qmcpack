@@ -55,7 +55,8 @@ private:
   std::map<void*,std::pair<std::string,size_t> > gpu_pointer_map;
 
 public:
-  void *allocate (size_t bytes, std::string name="", bool manage=false);
+  void *allocate (size_t bytes, std::string name="");
+  void *allocate_managed (size_t bytes, std::string name="", unsigned int flags=cudaMemAttachGlobal);
 
   void deallocate (void *p);
 
@@ -78,6 +79,8 @@ private:
   bool own_data;
   // True if managed memory was requested using resize function, starts out false
   bool managedmem;
+  // Flags for managed memory creation (defaults to cudaMemAttachGlobal) that can be set with set_managed_flags function
+  unsigned int managed_flags;
 public:
   typedef T* pointer;
 
@@ -85,21 +88,26 @@ public:
   {
     name = n;
   }
+  
+  void set_managed_flags(unsigned int flags)
+  {
+    managed_flags = flags;
+  }
 
   inline
   device_vector() : data_pointer(NULL), current_size(0),
-    alloc_size(0), own_data(true), managedmem(false)
+    alloc_size(0), own_data(true), managedmem(false), managed_flags(cudaMemAttachGlobal)
   { }
 
   inline
   device_vector(std::string myName) : name(myName), data_pointer(NULL),
     current_size(0), alloc_size(0),
-    own_data(true), managedmem(false)
+    own_data(true), managedmem(false), managed_flags(cudaMemAttachGlobal)
   {  }
 
   inline
   device_vector(size_t size) : data_pointer(NULL), current_size(0),
-    alloc_size(0), own_data(true), managedmem(false)
+    alloc_size(0), own_data(true), managedmem(false), managed_flags(cudaMemAttachGlobal)
   {
     resize (size);
   }
@@ -107,7 +115,7 @@ public:
   inline
   device_vector(std::string myName, size_t size) :
     name(myName), data_pointer(NULL), current_size(0),
-    alloc_size(0), own_data(true), managedmem(false)
+    alloc_size(0), own_data(true), managedmem(false), managed_flags(cudaMemAttachGlobal)
   {
     resize(size);
   }
@@ -153,11 +161,11 @@ public:
     size_t reserve_size = (size_t)std::ceil(reserve_factor*size);
     size_t byte_size = sizeof(T)*reserve_size;
     bool error=false;
-    if(managed!=managedmem)
+    if (managed!=managedmem)
     {
-      if(managedmem)
+      if (managedmem)
       {
-        if(alloc_size>0)
+        if (alloc_size>0) // Only trigger error message if memory is allocated
         {
           fprintf(stderr,"device_vector.resize from managed (%p) ",data_pointer);
           error=true;
@@ -165,31 +173,24 @@ public:
       }
       else
       {
-        if(alloc_size!=0)
+        if (alloc_size!=0)
           fprintf(stderr,"device_vector.resize from non-managed to managed.\n");
       }
     }
-    if (alloc_size == 0)
+    if ((size > alloc_size) || (alloc_size == 0))
     {
-      data_pointer = (T*)cuda_memory_manager.allocate(byte_size, name, managed);
-      current_size = size;
-      alloc_size = reserve_size;
-      own_data = true;
-      managedmem=managed;
-    }
-    else if (size > alloc_size)
-    {
-      if (own_data)
+      if (own_data && (alloc_size>0))
         cuda_memory_manager.deallocate (data_pointer);
-      data_pointer = (T*)cuda_memory_manager.allocate(byte_size, name, managed);
-      current_size = size;
+      if (managed)
+        data_pointer = (T*)cuda_memory_manager.allocate_managed(byte_size, name, managed_flags);
+      else
+        data_pointer = (T*)cuda_memory_manager.allocate(byte_size, name);
       alloc_size = reserve_size;
       own_data = true;
       managedmem=managed;
     }
-    else
-      current_size = size;
-    if(error)
+    current_size = size;
+    if (error)
       fprintf(stderr,"to non-managed (%p).\n",data_pointer);
   }
 
@@ -243,7 +244,7 @@ public:
   }
 
   device_vector(const device_vector<T> &vec) :
-    data_pointer(NULL), current_size(0), alloc_size(0), own_data(true), managedmem(vec.managedmem),
+    data_pointer(NULL), current_size(0), alloc_size(0), own_data(true), managedmem(vec.managedmem), managed_flags(vec.managed_flags),
     name(vec.name)
   {
     resize(vec.size(),1.0,managedmem);
