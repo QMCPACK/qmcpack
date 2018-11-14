@@ -353,9 +353,15 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    hostPos2.resize(N);
+    hostPhasePos.resize(N);
     cudapos.resize(N,1.0,split_splines);
-    cudapos2.resize(N);
+    cudaphasepos.resize(N);
+    if(split_splines)
+    {
+      cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetReadMostly,0);
+      for(unsigned int i=0; i<gpu::device_group_size; i++)
+        cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+    }
   }
   for (int iw=0; iw < N; iw++)
   {
@@ -365,10 +371,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
     hostPos[iw] = ru;
-    hostPos2[iw] = r;
+    hostPhasePos[iw] = r;
   }
   cudapos = hostPos;
-  cudapos2.asyncCopy(hostPos2); // for phase factors kernel
+  cudaphasepos.asyncCopy(hostPhasePos); // for phase factors kernel
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
@@ -382,7 +388,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   // Now, add on phases
   apply_phase_factors ((CTS::RealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
-                       (CTS::RealType*)cudapos2.data(),
+                       (CTS::RealType*)cudaphasepos.data(),
                        (CTS::RealType**)CudaValuePointers.data(),
                        phi.data(), CudaMultiSpline->num_splines,
                        walkers.size());
@@ -606,9 +612,15 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    hostPos2.resize(N);
+    hostPhasePos.resize(N);
     cudapos.resize(N,1.0,split_splines);
-    cudapos2.resize(N);
+    cudaphasepos.resize(N);
+    if(split_splines)
+    {
+      cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetReadMostly,0);
+      for(unsigned int i=0; i<gpu::device_group_size; i++)
+        cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+    }
   }
   for (int iw=0; iw < N; iw++)
   {
@@ -618,10 +630,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
     hostPos[iw] = ru;
-    hostPos2[iw] = r;
+    hostPhasePos[iw] = r;
   }
   cudapos = hostPos;
-  cudapos2.asyncCopy(hostPos2); // for phase factors kernel
+  cudaphasepos.asyncCopy(hostPhasePos); // for phase factors kernel
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
@@ -635,7 +647,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   // Now, add on phases
   apply_phase_factors ((CTS::RealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
-                       (CTS::RealType*)cudapos2.data(),
+                       (CTS::RealType*)cudaphasepos.data(),
                        (CTS::RealType**)CudaValuePointers.data(),
                        phi.data(), CudaMultiSpline->num_splines,
                        walkers.size());
@@ -727,9 +739,9 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    hostPos2.resize(N);
+    hostPhasePos.resize(N);
     cudapos.resize(N,1.0,split_splines); // use managed memory here for split splines
-    cudapos2.resize(N);
+    cudaphasepos.resize(N);
     if(split_splines)
     {
       cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetReadMostly,0);
@@ -745,10 +757,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
     hostPos[iw] = ru;
-    hostPos2[iw] = r;
+    hostPhasePos[iw] = r;
   }
   cudapos = hostPos;
-  cudapos2.asyncCopy(hostPos2); // for phase factors kernel
+  cudaphasepos.asyncCopy(hostPhasePos); // for phase factors kernel
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_vgl_cuda
@@ -831,7 +843,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   apply_phase_factors ((CTS::RealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
                        CudaTwoCopiesIndex.data(),
-                       (CTS::RealType*)cudapos2.data(),
+                       (CTS::RealType*)cudaphasepos.data(),
                        (CTS::RealType**)CudaValuePointers.data(), phi.data(),
                        (CTS::RealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
                        CudaMultiSpline->num_splines,  walkers.size(), row_stride);
@@ -874,9 +886,9 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    hostPos2.resize(N);
+    hostPhasePos.resize(N);
     cudapos.resize(N,1.0,split_splines);
-    cudapos2.resize(N);
+    cudaphasepos.resize(N);
     if(split_splines)
     {
       cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetReadMostly,0);
@@ -892,10 +904,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
     hostPos[iw] = ru;
-    hostPos2[iw] = r;
+    hostPhasePos[iw] = r;
   }
   cudapos = hostPos;
-  cudapos2.asyncCopy(hostPos2); // for phase factors kernel
+  cudaphasepos.asyncCopy(hostPhasePos); // for phase factors kernel
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_vgl_cuda
@@ -944,7 +956,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 #endif
   // Now, add on phases
   apply_phase_factors ((CTS::RealType*) CudakPoints.data(),
-                       (CTS::RealType*) cudapos2.data(),
+                       (CTS::RealType*) cudaphasepos.data(),
                        (CTS::ValueType**) CudaValuePointers.data(),
                        (CTS::ValueType**) phi.data(),
                        (CTS::ValueType**) CudaGradLaplPointers.data(),
@@ -1054,9 +1066,9 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    hostPos2.resize(N);
+    hostPhasePos.resize(N);
     cudapos.resize(N,1.0,split_splines);
-    cudapos2.resize(N);
+    cudaphasepos.resize(N);
     if(split_splines)
     {
       cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetReadMostly,0);
@@ -1072,10 +1084,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
     hostPos[iw] = ru;
-    hostPos2[iw] = r;
+    hostPhasePos[iw] = r;
   }
   cudapos = hostPos;
-  cudapos2.asyncCopy(hostPos2); // for phase factors kernel
+  cudaphasepos.asyncCopy(hostPhasePos); // for phase factors kernel
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
@@ -1089,12 +1101,9 @@ EinsplineSetExtended<std::complex<double> >::evaluate
      CudaValuePointers.data(), N);
   }
   // Now, add on phases
-  for (int iw=0; iw < N; iw++)
-    hostPos[iw] = pos[iw];
-  cudapos2 = hostPos;
   apply_phase_factors ((CTS::RealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
-                       (CTS::RealType*)cudapos2.data(),
+                       (CTS::RealType*)cudaphasepos.data(),
                        (CTS::RealType**)CudaValuePointers.data(),
                        phi.data(), CudaMultiSpline->num_splines, N);
 }
@@ -1110,8 +1119,15 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
+    hostPhasePos.resize(N);
     cudapos.resize(N,1.0,split_splines);
-    cudapos2.resize(N);
+    cudaphasepos.resize(N);
+    if(split_splines)
+    {
+      cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetReadMostly,0);
+      for(unsigned int i=0; i<gpu::device_group_size; i++)
+        cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+    }
   }
   for (int iw=0; iw < N; iw++)
   {
@@ -1120,8 +1136,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     for (int i=0; i<OHMMS_DIM; i++)
       ru[i] -= std::floor (ru[i]);
     hostPos[iw] = ru;
+    hostPhasePos[iw] = r;
   }
   cudapos = hostPos;
+  cudaphasepos.asyncCopy(hostPhasePos); // for phase factors kernel
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
@@ -1134,7 +1152,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   }
   // Now, add on phases
   apply_phase_factors((CTS::RealType*) CudakPoints.data(),
-                      (CTS::RealType*) cudapos2.data(),
+                      (CTS::RealType*) cudaphasepos.data(),
                       CudaValuePointers.data(),
                       phi.data(),
                       CudaMultiSpline->num_splines, N);
