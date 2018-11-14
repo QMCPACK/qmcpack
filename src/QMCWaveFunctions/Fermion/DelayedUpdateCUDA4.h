@@ -266,7 +266,8 @@ namespace qmcplusplus {
         if(transfer_to_host)
         {
           cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream);
-          waitStream();
+          // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
+          //waitStream();
         }
       }
 
