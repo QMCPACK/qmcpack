@@ -17,7 +17,11 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
+#ifdef QMC_CUDA_NEXT
+#include "QMCWaveFunctions/Fermion/DiracDeterminantCUDANext.h"
+#else
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#endif
 
 
 #include <stdio.h>
@@ -253,7 +257,11 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
+#ifdef QMC_CUDA_NEXT
+  DiracDeterminantCUDANext ddb(spo);
+#else
   DiracDeterminant ddb(spo);
+#endif
 
   int norb = 4;
   ddb.set(0,norb);
@@ -355,6 +363,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   //check_value(det_ratio3, det_ratio3_val);
 
   ddb.acceptMove(elec, 2);
+  ddb.completeUpdates(elec);
 
   dm.invert(orig_a,false);
 
@@ -374,7 +383,11 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
+#ifdef QMC_CUDA_NEXT
+  DiracDeterminantCUDANext ddc(spo);
+#else
   DiracDeterminant ddc(spo);
+#endif
 
   int norb = 4;
   ddc.set(0,norb,2);
@@ -477,7 +490,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   //check_value(det_ratio3, det_ratio3_val);
 
   ddc.acceptMove(elec, 2);
-  //ddc.completeUpdates(elec);
+  ddc.completeUpdates(elec);
 
   dm.invert(orig_a,false);
 
