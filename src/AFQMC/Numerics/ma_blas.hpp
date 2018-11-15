@@ -146,6 +146,61 @@ MultiArray2DC gemm(T alpha, MultiArray2DA const& a, MultiArray2DB const& b, T be
 	return std::forward<MultiArray2DC>(c);
 }
 
+// Expect: A[nbatch][nrow][ncol]
+template<char TA, char TB, class T, class MultiArray3DA, class MultiArray3DB, class MultiArray3DC,
+        typename = typename std::enable_if< MultiArray3DA::dimensionality == 3 and
+                                    MultiArray3DB::dimensionality == 3 and
+                                    std::decay<MultiArray3DC>::type::dimensionality == 3>::type
+        >
+MultiArray3DC gemmStridedBatched(T alpha, MultiArray3DA const& a, MultiArray3DB const& b,
+                                 T beta, MultiArray3DC&& c){
+        assert( a.strides()[2] == 1 );
+        assert( b.strides()[2] == 1 );
+        assert( c.strides()[2] == 1 );
+        assert( a.shape()[0] == b.shape()[0] );
+        assert( a.shape()[0] == c.shape()[0] );
+        assert( (TA == 'N') || (TA == 'T') || (TA == 'C')  );
+        assert( (TB == 'N') || (TB == 'T') || (TB == 'C')  );
+        int M = -1;
+        int N = -1;
+        int K = -1;
+        if(TA == 'N' and TB == 'N'){
+                M = a.shape()[2];
+                N = b.shape()[1];
+                K = a.shape()[1];
+                assert(a.shape()[1] == b.shape()[2] and c.shape()[1] == b.shape()[1] and c.shape()[2] == a.shape()[2]);
+        }
+        if((TA == 'T' or TA == 'C') and (TB == 'T' or TB == 'C')){
+                M = a.shape()[1];
+                N = b.shape()[2];
+                K = a.shape()[2];
+                assert(a.shape()[2] == b.shape()[1] and c.shape()[1] == b.shape()[2] and c.shape()[2] == a.shape()[1]);
+        }
+        if((TA == 'T' or TA == 'C') and TB == 'N'){
+                M = a.shape()[1];
+                N = b.shape()[1];
+                K = a.shape()[2];
+                assert(a.shape()[2] == b.shape()[2] and c.shape()[1] == b.shape()[1] and c.shape()[2] == a.shape()[1]);
+        }
+        if(TA == 'N' and (TB == 'T' or TB == 'C')){
+                M = a.shape()[2];
+                N = b.shape()[2];
+                K = a.shape()[1];
+                assert(a.shape()[1] == b.shape()[1] and c.shape()[1] == b.shape()[2] and c.shape()[2] == a.shape()[2]);
+        }
+       BLAS::gemmStridedBatched(
+                TA, TB,
+                M, N, K,
+                alpha,
+                a.origin(), a.strides()[1],a.strides()[0],
+                b.origin(), b.strides()[1],b.strides()[0],
+                beta,
+                c.origin(), c.strides()[1],c.strides()[0],
+                a.shape()[0]
+        );
+        return std::forward<MultiArray3DC>(c);
+}
+
 template<char TA, char TB, class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC>
 MultiArray2DC gemm(MultiArray2DA const& a, MultiArray2DB const& b, MultiArray2DC&& c){
 	return gemm(1., a, b, 0., std::forward<MultiArray2DC>(c));

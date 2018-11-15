@@ -87,6 +87,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
 
   std::vector<int> nmo_per_kp(nkpts);
   std::vector<int> nchol_per_kp(nkpts);
+  std::vector<int> kminus(nkpts);
   shmIMatrix QKtok2({nkpts,nkpts},shared_allocator<int>{TG.Node()});
   shmIMatrix QKtoG({nkpts,nkpts},shared_allocator<int>{TG.Node()});
   ValueType E0; 
@@ -99,6 +100,11 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
     if(!dump.read(nchol_per_kp,"NCholPerKP")) {
       app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading NCholPerKP. \n";
+      APP_ABORT("");
+    }
+    if(!dump.read(kminus,"MinusK")) {
+      app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
+                 <<" Problems reading MinusK. \n";
       APP_ABORT("");
     }
     if(!dump.read(QKtok2,"QKTok2")) {
@@ -120,6 +126,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
     E0 = E_[0]+E_[1];
     if(nmo_per_kp.size() != nkpts ||
        nchol_per_kp.size() != nkpts ||
+       kminus.size() != nkpts ||
        QKtok2.shape()[0] != nkpts ||  
        QKtok2.shape()[1] != nkpts || 
        QKtoG.shape()[0] != nkpts ||  
@@ -130,6 +137,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                  <<nkpts <<" " 
                  <<nmo_per_kp.size() <<" " 
                  <<nchol_per_kp.size() <<" " 
+                 <<kminus.size() <<" "
                  <<QKtok2.shape()[0] <<" " 
                  <<QKtok2.shape()[1] <<" "
                  <<QKtoG.shape()[0] <<" " 
@@ -140,6 +148,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   TG.Global().broadcast_n(&E0,1,0);
   TG.Global().broadcast_n(nmo_per_kp.begin(),nmo_per_kp.size(),0);
   TG.Global().broadcast_n(nchol_per_kp.begin(),nchol_per_kp.size(),0);
+  TG.Global().broadcast_n(kminus.begin(),kminus.size(),0);
   if(TG.Node().root()) { 
     TG.Cores().broadcast_n(std::addressof(*QKtok2.origin()),QKtok2.num_elements(),0);
     TG.Cores().broadcast_n(std::addressof(*QKtoG.origin()),QKtoG.num_elements(),0);
@@ -188,6 +197,14 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   for(int Q=0; Q<nkpts; Q++) {
     int nG = *std::max_element(QKtoG[Q].begin(),QKtoG[Q].end())+1;  
     LQGun.emplace_back( shmSpMatrix({nG*nmu,nchol_per_kp[Q]},
+                                   shared_allocator<SPComplexType>{TG.Node()}) );
+  }  
+  std::vector<shmSpMatrix> rotLQGun;
+  rotLQGun.reserve(nkpts);
+  shmSpMatrix rotPiu({nmo_tot,rotnmu},shared_allocator<SPComplexType>{TG.Node()});
+  for(int Q=0; Q<nkpts; Q++) {
+    int nG = *std::max_element(QKtoG[Q].begin(),QKtoG[Q].end())+1;  
+    rotLQGun.emplace_back( shmSpMatrix({nG*rotnmu,nchol_per_kp[Q]},
                                    shared_allocator<SPComplexType>{TG.Node()}) );
   }  
   if( TG.Node().root() ) {
@@ -380,11 +397,168 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
 
   int global_ncvecs = std::accumulate(nchol_per_kp.begin(),nchol_per_kp.end(),0);
 
+  ComplexType E_(0.0);
+  boost::multi::array<ComplexType,3> G({nkpts,nmo_per_kp[0],nmo_per_kp[0]});
+  for(int K=0; K<nkpts; K++) {
+    auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],K);
+    ma::product(ma::H(Psi),Psi,G[K]); 
+    ma::transpose(G[K]);
+  }
+  boost::multi::array<ComplexType,3> Gc({nkpts,nocc_per_kp[0][0],nmo_per_kp[0]});
+  for(int K=0; K<nkpts; K++) {
+    auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],K);
+    for(int a=0; a<nocc_per_kp[0][K]; a++)
+      for(int j=0; j<nmo_per_kp[K]; j++)
+        Gc[K][a][j] = std::conj(Psi[a][j]);
+  }
+  for(int K=0; K<nkpts; K++) {
+    auto&& G_=G[K];
+    for(int i=0; i<nmo_per_kp[K]; i++) 
+      for(int j=0; j<nmo_per_kp[K]; j++) 
+        E_ += H1[K][i][j]*G_[i][j];
+  }
+  app_log()<<" E1+E0: " <<std::setprecision(12) <<nkpts*E0+2*E_ <<"  ";
+  //app_log()<<" E1+E0: " <<std::setprecision(12) <<nkpts*(E0-1.34789140434)+2*E_ <<"  ";
+  E_=0.0; 
+  for(int K=0; K<nkpts; K++) {
+    auto&& G_=Gc[K];
+    for(int a=0, aj=0; a<nocc_per_kp[0][K]; a++)
+      for(int j=0; j<nmo_per_kp[K]; j++, ++aj)
+        E_ += haj[K][aj]*G_[a][j];
+  }
+  //app_log()<<nkpts*(E0-1.34789140434)+E_ <<std::endl;
+  app_log()<<nkpts*E0+E_ <<std::endl;
+
+  boost::multi::array<int,2> KK2Q({nkpts,nkpts});
+  for(int KI=0; KI<nkpts; KI++)
+  for(int KK=0; KK<nkpts; KK++) {
+    KK2Q[KI][KK]=-1;
+    for(int Q=0; Q<nkpts; Q++) 
+      if(QKtok2[Q][KI]==KK) {
+        KK2Q[KI][KK]=Q;
+        break;
+      }  
+    assert(KK2Q[KI][KK]>=0);  
+  }
+
+  // LIJ[I][J][Q][n] = sum_u u[KI][i][u] u[KJ][j][u] LQGun[Q][G][u][n]
+  boost::multi::array<ComplexType,5> LIJ({nkpts,nkpts,nmo_max,nmo_max,nchol_max});
+  boost::multi::array_ref<ComplexType,4> LIJ4D(LIJ.origin(),{nkpts,nkpts,nmo_max*nmo_max,nchol_max});
+  std::fill_n(LIJ.origin(),LIJ.num_elements(),0);
+  boost::multi::array<ComplexType,2> uij({nmo_max*nmo_max,nmu});
+  for(int KI=0, n_=0; KI<nkpts; KI++)
+  for(int KJ=0; KJ<nkpts; KJ++) {  
+    if((n_++)%TGwfn.Global().size() == TGwfn.Global().rank()) {
+//Timer.reset("T0");
+//Timer.start("T0");
+      int Q = KK2Q[KI][KJ];
+      int G1 = QKtoG[Q][KI];
+      int ni0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KI,0);
+      int nj0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KJ,0);
+      for(int i=0, I=ni0; i<nmo_per_kp[0]; i++, ++I) {
+        auto&& uI(Piu[ni0+i]);
+        for(int j=0, J=nj0; j<nmo_per_kp[0]; j++, ++J) {
+          auto&& uJ(Piu[nj0+j]);
+          auto LIJ_(LIJ[KI][KJ][i][j].origin());  
+          for(int u=0; u<nmu; u++) { 
+            ComplexType uij = conj(uI[u])*uJ[u];
+            auto lq(std::addressof(*LQGun[Q][nmu*G1+u].origin()));
+            for(int n=0; n<nchol_per_kp[Q]; n++) 
+              LIJ_[n] += uij * lq[n]; 
+          }
+        }
+      }
+//Timer.stop("T0");
+//app_log()<<KI <<" " <<KJ <<" " <<Timer.total("T0") <<std::endl;
+    }
+  } 
+  TGwfn.Global().all_reduce_n(LIJ.origin(), LIJ.num_elements(), std::plus<>());
+
+  boost::multi::array<ComplexType,2> IJKL({nmo_max*nmo_max,nmo_max*nmo_max});
+  boost::multi::array<ComplexType,2> Muv({nmu,nmu});
+  boost::multi::array_ref<ComplexType,4> IJKL4D(IJKL.origin(),{nmo_max,nmo_max,nmo_max,nmo_max});
+  ComplexType EX(0.0);
+  ComplexType EJ(0.0);
+  myTimer Timer;
+  Timer.reset("T0");
+  for(int KI=0, n_=0; KI<nkpts; KI++)
+  for(int KL=0; KL<nkpts; KL++) { 
+   for(int KK=0; KK<nkpts; KK++) 
+   {
+    int Q = KK2Q[KI][KK];
+    int KJ = QKtok2[Q][KL];
+    if( not (KI==KK && KL == KJ) ) continue;
+    if((n_++)%TGwfn.Global().size() == TGwfn.Global().rank()) {    
+      int ni0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KI,0);  
+      int nj0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KJ,0);  
+      int nk0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KK,0);  
+      int nl0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KL,0);  
+      //boost::multi::array_ref<ComplexType,2> LKI(std::addressof(*LIJ[KI][KK].origin()),{nmo_max*nmo_max,nchol_per_kp[Q]}); 
+      //boost::multi::array_ref<ComplexType,2> LKL(std::addressof(*LIJ[KL][KJ].origin()),{nmo_max*nmo_max,nchol_per_kp[Q]}); 
+      ma::product(LIJ4D[KI][KK]({0,nmo_max*nmo_max},{0,nchol_per_kp[Q]}),
+                  ma::H(LIJ4D[KL][KJ]({0,nmo_max*nmo_max},{0,nchol_per_kp[Q]})),IJKL);
+/*
+      int G1 = QKtoG[Q][KI]; 
+      int G2 = QKtoG[Q][KL]; 
+//Timer.reset("T0");
+//Timer.start("T0");
+      if( (KI==KK && KL == KJ) ) { //|| (KI==KL && KJ == KK) ){
+        ma::product(LQGun[Q].sliced(nmu*G1,nmu*(G1+1)),ma::H(LQGun[Q].sliced(nmu*G2,nmu*(G2+1))),Muv);
+        for(int i=0; i<nmo_per_kp[0]; i++) {
+          auto&& uI(Piu[ni0+i]);
+        for(int k=0; k<nmo_per_kp[0]; k++) {
+          auto&& uK(Piu[nk0+k]);
+        for(int l=0; l<nmo_per_kp[0]; l++) {
+        for(int j=0; j<nmo_per_kp[0]; j++) {
+          ComplexType e_(0.0);
+          for(int u=0; u<nmu; u++) {
+            ComplexType e__(0.0);
+            auto muv_(Muv[u].origin());
+            auto uL(std::addressof(*Piu[nl0+l].origin()));
+            auto uJ(std::addressof(*Piu[nj0+j].origin()));
+            for(int v=0; v<nmu; v++, ++muv_, ++uJ, ++uL)
+              e__ += (*muv_) * conj((*uJ)) * (*uL); 
+            e_ += e__ * conj(uI[u]) * uK[u];
+          }  
+          IJKL4D[i][k][l][j] = e_;
+        }
+        }
+        }
+        }
+      }   
+*/
+//Timer.stop("T0");
+//app_log()<<i <<" " <<Timer.total("T0") <<std::endl;
+      if(KI==KK && KL == KJ) { // EJ
+        for(int i=0; i<nmo_per_kp[0]; i++)
+        for(int k=0; k<nmo_per_kp[0]; k++)
+        for(int l=0; l<nmo_per_kp[0]; l++) 
+        for(int j=0; j<nmo_per_kp[0]; j++) {
+          EJ += 0.5*IJKL4D[i][k][l][j] * G[KI][i][k] * G[KJ][j][l]; 
+        }
+      } 
+      if(KI==KL && KJ == KK) { // EX
+        for(int i=0; i<nmo_per_kp[0]; i++)
+        for(int k=0; k<nmo_per_kp[0]; k++)
+        for(int l=0; l<nmo_per_kp[0]; l++)  
+        for(int j=0; j<nmo_per_kp[0]; j++) {
+          EX += 0.5*IJKL4D[i][k][l][j] * G[KI][i][l] * G[KJ][j][k];                 
+        }
+      }
+    }
+   }
+  }
+  TGwfn.Global().all_reduce_n(&EX, 1, std::plus<>());
+  TGwfn.Global().all_reduce_n(&EJ, 1, std::plus<>());
+  app_log()<<" EX: " <<std::setprecision(12) <<EX*2 <<std::endl;
+  app_log()<<" EJ: " <<std::setprecision(12) <<EJ*4 <<std::endl;
+
   return HamiltonianOperations(KPTHCOps(TGwfn.TG_local(),type,
-                            std::move(nmo_per_kp),std::move(nchol_per_kp),std::move(nocc_per_kp),
+                            std::move(nmo_per_kp),std::move(nchol_per_kp),
+                            std::move(kminus),std::move(nocc_per_kp),
                             std::move(QKtok2),std::move(QKtoG),
                             std::move(H1),std::move(haj),
-                            std::move(LQGun),std::move(Piu),std::move(cPua),
+                            std::move(rotLQGun),std::move(rotPiu),std::move(rotcPua),
                             std::move(LQGun),std::move(Piu),std::move(cPua),
                             std::move(vn0),E0,global_ncvecs));
 

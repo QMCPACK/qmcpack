@@ -86,6 +86,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
 
   std::vector<int> nmo_per_kp(nkpts);
   std::vector<int> nchol_per_kp(nkpts);
+  std::vector<int> kminus(nkpts);
   shmIMatrix QKtok2({nkpts,nkpts},shared_allocator<int>{TG.Node()});
   ValueType E0; 
   if( TG.Global().root() ) {
@@ -97,6 +98,11 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
     if(!dump.read(nchol_per_kp,"NCholPerKP")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading NCholPerKP. \n";
+      APP_ABORT("");
+    }
+    if(!dump.read(kminus,"MinusK")) {
+      app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
+                 <<" Problems reading MinusK. \n";
       APP_ABORT("");
     }
     if(!dump.read(QKtok2,"QKTok2")) {
@@ -113,6 +119,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
     E0 = E_[0]+E_[1];
     if(nmo_per_kp.size() != nkpts ||
        nchol_per_kp.size() != nkpts ||
+       kminus.size() != nkpts || 
        QKtok2.shape()[0] != nkpts ||  
        QKtok2.shape()[1] != nkpts 
       ) {
@@ -121,6 +128,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
                  <<nkpts <<" " 
                  <<nmo_per_kp.size() <<" " 
                  <<nchol_per_kp.size() <<" " 
+                 <<kminus.size() <<" " 
                  <<QKtok2.shape()[0] <<" " 
                  <<QKtok2.shape()[1] <<std::endl; 
       APP_ABORT("");
@@ -129,6 +137,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
   TG.Global().broadcast_n(&E0,1,0);
   TG.Global().broadcast_n(nmo_per_kp.begin(),nmo_per_kp.size(),0);
   TG.Global().broadcast_n(nchol_per_kp.begin(),nchol_per_kp.size(),0);
+  TG.Global().broadcast_n(kminus.begin(),kminus.size(),0);
   if(TG.Node().root())  
     TG.Cores().broadcast_n(std::addressof(*QKtok2.origin()),QKtok2.num_elements(),0);
   TG.Node().barrier();
@@ -607,7 +616,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
 */
 
   return HamiltonianOperations(KP3IndexFactorization(TGwfn.TG_local(), type,std::move(nmo_per_kp),
-            std::move(nchol_per_kp),std::move(nocc_per_kp),
+            std::move(nchol_per_kp),std::move(kminus),std::move(nocc_per_kp),
             std::move(QKtok2),std::move(H1),std::move(haj),std::move(LQKikn),
             std::move(LQKank),std::move(LQKlnb),
             std::move(vn0),E0,global_ncvecs));

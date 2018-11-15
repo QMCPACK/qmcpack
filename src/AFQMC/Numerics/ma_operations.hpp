@@ -217,6 +217,21 @@ MultiArray2DC product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArray
 }
 //*/
 
+template<class T, class MultiArray3DA, class MultiArray3DB, class MultiArray3DC,
+        typename = typename std::enable_if<
+                MultiArray3DA::dimensionality == 3 and
+                MultiArray3DB::dimensionality == 3 and
+                std::decay<MultiArray3DC>::type::dimensionality == 3
+        >::type
+>
+MultiArray3DC productStridedBatched(T alpha, MultiArray3DA const& A, MultiArray3DB const& B, T beta, MultiArray3DC&& C){
+        return ma::gemmStridedBatched<
+                op_tag<MultiArray3DB>::value,
+                op_tag<MultiArray3DA>::value
+        >
+        (alpha, arg(B), arg(A), beta, std::forward<MultiArray3DC>(C));
+}
+
 //template<class MultiArrayA, class MultiArrayB, class MultiArrayC>
 //MultiArrayC product(MultiArrayA const& A, MultiArrayB const& B, MultiArrayC&& C){
 //        return product(1., A, B, 0., std::forward<MultiArrayC>(C));

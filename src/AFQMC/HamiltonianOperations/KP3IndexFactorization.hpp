@@ -68,6 +68,7 @@ class KP3IndexFactorization
                  WALKER_TYPES type,
                  std::vector<int>&& nopk_,
                  std::vector<int>&& ncholpQ_,
+                 std::vector<int>&& kminus_,
                  shmIMatrix&& nelpk_,
                  shmIMatrix&& QKToK2_,   
                  shmC3Tensor&& hij_,       
@@ -87,6 +88,7 @@ class KP3IndexFactorization
         haj(std::move(h1)),
         nopk(std::move(nopk_)),
         ncholpQ(std::move(ncholpQ_)),
+        kminus(std::move(kminus_)),
         nelpk(std::move(nelpk_)),
         QKToK2(std::move(QKToK2_)),
         LQKikn(std::move(vik)),
@@ -722,6 +724,9 @@ std::cout<<" Time in energy - "
 
     // number of cholesky vectors per Q-point
     std::vector<int> ncholpQ;
+
+    // position of (-K) in kp-list for every K 
+    std::vector<int> kminus;
 
     // number of electrons per k-point
     // nelpk[ndet][nspin*nkpts]
