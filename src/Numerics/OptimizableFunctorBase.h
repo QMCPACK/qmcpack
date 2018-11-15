@@ -123,7 +123,7 @@ struct OptimizableFunctorBase
 
 };
 
-void print(OptimizableFunctorBase& func, std::ostream& os)
+inline void print(OptimizableFunctorBase& func, std::ostream& os)
 {
   typedef OptimizableFunctorBase::real_type real_type;
   int n = 100;

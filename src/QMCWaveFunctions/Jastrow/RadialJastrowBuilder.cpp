@@ -39,14 +39,17 @@
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowSpinOrbital.h"
+#include "QMCWaveFunctions/Jastrow/OneBodySpinJastrowOrbital.h"
 
+#include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "LongRange/LRHandlerBase.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "LongRange/LRRPAHandlerTemp.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
-
+#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
+#include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
+#include <iostream>
 
 
 namespace qmcplusplus
@@ -54,11 +57,11 @@ namespace qmcplusplus
 
 RadialJastrowBuilder::RadialJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
 					   ParticleSet& source):
-  WaveFunctionComponentBuilder(target, psi),SourcePtcl(source)
+  WaveFunctionComponentBuilder(target, psi),SourcePtcl(&source)
 {
   ClassName="RadialJastrowBuilder";
   NameOpt="0";
-  typeOpt="unknown";
+  TypeOpt="unknown";
   Jastfunction="unknown";
   SourceOpt=targetPtcl.getName();
   SpinOpt="no";
@@ -69,7 +72,7 @@ RadialJastrowBuilder::RadialJastrowBuilder(ParticleSet& target, TrialWaveFunctio
 {
   ClassName="RadialJastrowBuilder";
   NameOpt="0";
-  typeOpt="unknown";
+  TypeOpt="unknown";
   Jastfunction="unknown";
   SourceOpt=targetPtcl.getName();
   SpinOpt="no";
@@ -100,67 +103,111 @@ template <typename>
 class RPAFunctor { };
 
 // helper class to simplify and localize ugly ifdef stuff for types
-template<template<class> class RadFuncType>
+template<class precision, template<class> class RadFuncType>
 class JastrowTypeHelper 
 {
 private:
-  typedef RadFuncType<precision> rft;
+  using rft = RadFuncType<precision>;
+  ///typedef typename RadFuncType<precision> rft;
 #if defined(ENABLE_SOA)
-  typedef J1OrbitalSoA<rft> J1OrbitalType;
-  typedef J1OrbitalSoA<rft> J1OrbitalTypeSpin;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef J2OrbitalSoA<rft> J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+  using J1OrbitalType = J1OrbitalSoA<rft>;
+  using J1OrbitalTypeSpin = J1OrbitalSoA<rft>;
+  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<rft>;
+  using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<rft>;
+  using J2OrbitalType = J2OrbitalSoA<rft>;
+  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
+
+  //typedef typename J1OrbitalSoA<rft> J1OrbitalType;
+  //typedef typename J1OrbitalSoA<rft> J1OrbitalTypeSpin;
+  //typedef typename DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
+  //typedef typename DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  //typedef typename J2OrbitalSoA<rft> J2OrbitalType;
+  //typedef typename DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #else
-  typedef OneBodyJastrowOrbital<rft> J1OrbitalType;
-  typedef OneBodyJastrowOrbital<rft> J1OrbitalTypeSpin;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef TwoBodyJastrowOrbital<rft> J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+  using J1OrbitalType = OneBodyJastrowOrbital<rft>;
+  using J1OrbitalTypeSpin = OneBodyJastrowOrbital<rft>;
+  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<rft>;
+  using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<rft>;
+  using J2OrbitalType = TwoBodyJastrowOrbital<rft>;
+  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
+
+  //typedef typename OneBodyJastrowOrbital<rft> J1OrbitalType;
+  //typedef typename OneBodyJastrowOrbital<rft> J1OrbitalTypeSpin;
+  //typedef typename DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
+  //typedef typename DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  //typedef typename TwoBodyJastrowOrbital<rft> J2OrbitalType;
+  //typedef typename DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #endif
 };
 
 // specialization for bspline (does this need to be so complicated?)
 // note that this supports CUDA whereas the general case does not
-template<>
-class JastrowTypeHelper<BsplineFunctor>
+template<class precision>
+class JastrowTypeHelper<precision, BsplineFunctor>
 {
 private:
 public:
-  typedef BsplineFunctor<precision> rft;
+  using rft = BsplineFunctor<precision>;
+  //typedef BsplineFunctor<precision> rft;
 #if defined(QMC_CUDA) and defined(ENABLE_SOA)
-  typedef OneBodyJastrowOrbitalBspline<rft> J1OrbitalType;
-  typedef OneBodyJastrowOrbitalBspline<rft> J1OrbitalTypeSpin;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef TwoBodyJastrowOrbitalBspline<rft> J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+  using J1OrbitalType = OneBodyJastrowOrbitalBspline<rft>;
+  using J1OrbitalTypeSpin = OneBodyJastrowOrbitalBspline<rft>;
+  using DiffJ1OrbitalType = DiffOneBodySpinJastrowOrbital<rft>;
+  using DiffJ1OrbitalTypeSpin = DiffOneBodySpinJastrowOrbital<rft>;
+  using J2OrbitalType = TwoBodyJastrowOrbitalBspline<rft>;
+  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
+
+  //typedef OneBodyJastrowOrbitalBspline<rft> J1OrbitalType;
+  //typedef OneBodyJastrowOrbitalBspline<rft> J1OrbitalTypeSpin;
+  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalType;
+  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  //typedef TwoBodyJastrowOrbitalBspline<rft> J2OrbitalType;
+  //typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #endif
 #if defined(QMC_CUDA) and !defined(ENABLE_SOA)
-  typedef OneBodyJastrowOrbitalBsplineAoS J1OrbitalType;
-  typedef OneBodyJastrowOrbitalBsplineAoS J1OrbitalTypeSpin;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef TwoBodyJastrowOrbitalBsplineAoS J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+  using J1OrbitalType = OneBodyJastrowOrbitalBsplineAoS;
+  using J1OrbitalTypeSpin = OneBodyJastrowOrbitalBsplineAoS;
+  using DiffJ1OrbitalType = DiffOneBodySpinJastrowOrbital<rft>;
+  using DiffJ1OrbitalTypeSpin = DiffOneBodySpinJastrowOrbital<rft>;
+  using J2OrbitalType = TwoBodyJastrowOrbitalBsplineAoS;
+  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
+
+  //typedef OneBodyJastrowOrbitalBsplineAoS J1OrbitalType;
+  //typedef OneBodyJastrowOrbitalBsplineAoS J1OrbitalTypeSpin;
+  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalType;
+  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  //typedef TwoBodyJastrowOrbitalBsplineAoS J2OrbitalType;
+  //typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #endif
 #if !defined(QMC_CUDA) and defined(ENABLE_SOA)
-  typedef J1OrbitalSoA<rft> J1OrbitalType;
-  typedef OneBodySpinJastrowOrbital<rft> J1OrbitalTypeSpin;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef J2OrbitalSoA<rft> J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+  using J1OrbitalType = J1OrbitalSoA<rft>;
+  using J1OrbitalTypeSpin = OneBodySpinJastrowOrbital<rft>;
+  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<rft>;
+  using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<rft>;
+  using J2OrbitalType = J2OrbitalSoA<rft>;
+  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
+
+  //typedef J1OrbitalSoA<rft> J1OrbitalType;
+  //typedef OneBodySpinJastrowOrbital<rft> J1OrbitalTypeSpin;
+  //typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
+  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  //typedef J2OrbitalSoA<rft> J2OrbitalType;
+  //typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #endif
 #if !defined(QMC_CUDA) and !defined(ENABLE_SOA)
-  typedef OneBodyJastrowOrbital<rft> J1OrbitalType;
-  typedef OneBodySpinJastrowOrbital<rft> J1OrbitalTypeSpin;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef TwoBodyJastrowOrbital<rft> J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
+  using J1OrbitalType = OneBodyJastrowOrbital<rft>;
+  using J1OrbitalTypeSpin = OneBodySpinJastrowOrbital<rft>;
+  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<rft>;
+  using DiffJ1OrbitalTypeSpin = DiffOneBodySpinJastrowOrbital<rft>;
+  using J2OrbitalType = TwoBodyJastrowOrbital<rft>;
+  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
+
+  //typedef OneBodyJastrowOrbital<rft> J1OrbitalType;
+  //typedef OneBodySpinJastrowOrbital<rft> J1OrbitalTypeSpin;
+  //typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
+  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
+  //typedef TwoBodyJastrowOrbital<rft> J2OrbitalType;
+  //typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #endif
 };
 
@@ -171,18 +218,18 @@ void RadialJastrowBuilder::initTwoBodyFunctor(RadFuncType<RT>* functor, double f
 template<>
 void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RT>* bfunc, double fac) 
 {
-  if(P.Lattice.SuperCellEnum==SUPERCELL_OPEN) // for open systems, do nothing
+  if(targetPtcl.Lattice.SuperCellEnum==SUPERCELL_OPEN) // for open systems, do nothing
   {
     return;
   }
   std::vector<RT> rpaValues;
-  int npts=bfunc.NumParams;
+  int npts=bfunc->NumParams;
   if(rpaValues.empty())
   {
     rpaValues.resize(npts);
-    LRRPAHandlerTemp<RPABreakup<T>,LPQHIBasis> rpa(P,-1.0);
-    rpa.Breakup(P,-1.0);
-    RT dr=bfunc.cutoff_radius/static_cast<T>(npts);
+    LRRPAHandlerTemp<RPABreakup<RT>,LPQHIBasis> rpa(targetPtcl,-1.0);
+    rpa.Breakup(targetPtcl,-1.0);
+    RT dr=bfunc->cutoff_radius/static_cast<RT>(npts);
     RT r=0;
     for (int i=0; i<npts; i++)
     {
@@ -193,8 +240,8 @@ void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RT>* bfunc, double 
   RT last=rpaValues[npts-1];
 
   for(int i=0; i<npts; i++)
-    bfunc.Parameters[i]=fac*(rpaValues[i]-last);
-  bfunc.reset();
+    bfunc->Parameters[i]=fac*(rpaValues[i]-last);
+  bfunc->reset();
 }
 
 
@@ -202,9 +249,14 @@ void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RT>* bfunc, double 
 template<template<class> class RadFuncType>
 bool RadialJastrowBuilder::createJ2(xmlNodePtr cur) 
 {
-  typedef RadFuncType<RT> RadFunctorType;
-  typedef JastrowTypeHelper<RadFuncType>::J2OrbitalType J2OrbitalType;
-  typedef JastrowTypeHelper<RadFuncType>::DiffJ2OrbitalType DiffJ2OrbitalType;
+  ReportEngine PRE(ClassName,"createJ2(xmlNodePtr)");
+  using RadFunctorType = RadFuncType<RT>;
+  using J2OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::J2OrbitalType;
+  using DiffJ2OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::DiffJ2OrbitalType;
+  
+  //typedef typename RadFuncType<RT> RadFunctorType;
+  //typedef typename JastrowTypeHelper<RT, RadFuncType>::J2OrbitalType J2OrbitalType;
+  //typedef typename JastrowTypeHelper<RT, RadFuncType>::DiffJ2OrbitalType DiffJ2OrbitalType;
   
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
@@ -248,6 +300,7 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 
       int ia = species.findSpecies(spA);
       int ib = species.findSpecies(spB);
+      int chargeInd=species.addAttribute("charge");
       if(ia==species.size() || ib == species.size())
       {
 	PRE.error("Failed. Species are incorrect.",true);
@@ -285,21 +338,21 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 	  sprintf(fname,"J2.%s.g%03d.dat",pairType.c_str(),taskid);
 	else
 	  sprintf(fname,"J2.%s.dat",pairType.c_str());
-	ostream os(fname);
-	print(*func, os);	
+	std::ofstream os(fname);
+	print(*functor, os);	
       }
     }
     cur=cur->next;
   }
   J2->dPsi=dJ2;
-  std::string j2name="J2_"+Jastname;
+  std::string j2name="J2_"+Jastfunction;
   targetPsi.addOrbital(J2,j2name.c_str());
   J2->setOptimizable(true);
 }
 
 // specialiation for J2 RPA jastrow.  Note that the long range part is not implemented
 template<>
-bool RadialJastrowBuilder<RPAFunctor>::createJ2(xmlNodePtr cur) 
+bool RadialJastrowBuilder::createJ2<RPAFunctor>(xmlNodePtr cur) 
 {
   RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl,targetPsi.is_manager());
   rpajastrow->put(cur);
@@ -310,22 +363,28 @@ bool RadialJastrowBuilder<RPAFunctor>::createJ2(xmlNodePtr cur)
 template<template<class> class RadFuncType>
 bool RadialJastrowBuilder::createJ1(xmlNodePtr cur) 
 {
-  typedef RadFuncType<RT> RadFunctorType;
-  typedef JastrowTypeHelper<RadFuncType>::J1OrbitalType J1OrbitalType;
-  typedef JastrowTypeHelper<RadFuncType>::DiffJ1OrbitalType DiffJ1OrbitalType;
+  ReportEngine PRE(ClassName,"createJ1(xmlNodePtr)");
+  using RadFunctorType = RadFuncType<RT>;
+  using J1OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::J1OrbitalType;
+  using DiffJ1OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::DiffJ1OrbitalType;
+
+  //typedef typename RadFuncType<RT> RadFunctorType;
+  //typedef typename JastrowTypeHelper<RT, RadFuncType>::J1OrbitalType J1OrbitalType;
+  //typedef typename JastrowTypeHelper<RT, RadFuncType>::DiffJ1OrbitalType DiffJ1OrbitalType;
    
   int taskid=targetPsi.getGroupID();
-  J1OrbitalType* J1= new J1OrbitalType(*sourcePtcl, targetPtcl);
-  DiffJ1OrbitalType* dJ1= new DiffJ1OrbitalType(*sourcePtcl, targetPtcl);
+  J1OrbitalType* J1= new J1OrbitalType(*SourcePtcl, targetPtcl);
+  DiffJ1OrbitalType* dJ1= new DiffJ1OrbitalType(*SourcePtcl, targetPtcl);
 
   xmlNodePtr kids = cur->xmlChildrenNode;
 
   // Find the number of the source species
-  SpeciesSet &sSet = sourcePtcl->getSpeciesSet();
+  SpeciesSet &sSet = SourcePtcl->getSpeciesSet();
   SpeciesSet &tSet = targetPtcl.getSpeciesSet();
   int numSpecies = sSet.getTotalNum();
   bool success=false;
   bool Opt(true);
+  std::string jname = "J1_"+Jastfunction;      
   while (kids != NULL)
   {
     std::string kidsname = (char*)kids->name;
@@ -342,8 +401,8 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       rAttrib.put(kids);
       auto *functor = new RadFunctorType();
       int ig = sSet.findSpecies (speciesA);
-      
-      functor->setPeriodic(sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN);
+
+      functor->setPeriodic(SourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN);
       if (targetPtcl.Lattice.WignerSeitzRadius > 0) 
       {
 	functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
@@ -367,19 +426,19 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
 	  if(qmc_common.mpi_groups>1)
 	  {
 	    if(speciesB.size())
-	      sprintf(fname,"%s.%s%s.g%03d.dat",j1name.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
+	      sprintf(fname,"%s.%s%s.g%03d.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
 	    else
-	      sprintf(fname,"%s.%s.g%03d.dat",j1name.c_str(),speciesA.c_str(),taskid);
+	      sprintf(fname,"%s.%s.g%03d.dat",jname.c_str(),speciesA.c_str(),taskid);
 	  }
 	  else
 	  {
 	    if(speciesB.size())
-	      sprintf(fname,"%s.%s%s.dat",j1name.c_str(),speciesA.c_str(),speciesB.c_str());
+	      sprintf(fname,"%s.%s%s.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str());
 	    else
-	      sprintf(fname,"%s.%s.dat",j1name.c_str(),speciesA.c_str());
+	      sprintf(fname,"%s.%s.dat",jname.c_str(),speciesA.c_str());
 	  }
-	  ostream os(fname);
-	  print(*func, os);
+	  std::ofstream os(fname);
+	  print(*functor, os);
 	}
       }
     }
@@ -388,7 +447,6 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   if(success)
   {
     J1->dPsi=dJ1;
-    std::string jname = "J1_"+Jastfunction;
     targetPsi.addOrbital(J1,jname.c_str());
     J1->setOptimizable(Opt);
     return true;
@@ -404,14 +462,24 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
 
 // specialiation for J1 RPA jastrow.  Note that the long range part is not implemented
 template<>
-bool RadialJastrowBuilder<RPAFunctor>::createJ1(xmlNodePtr cur) 
+bool RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur) 
 {
-  typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
-  typedef CubicSplineSingle<RT,SplineEngineType> RadFunctorType;
-  typedef LinearGrid<RealType> GridType;
-  typedef LRHandlerBase HandlerType;
-  typedef JastrowTypeHelper<RadFuncType>::J1OrbitalType J1OrbitalType;
-  typedef JastrowTypeHelper<RadFuncType>::DiffJ1OrbitalType DiffJ1OrbitalType;
+  using SplineEngineType = CubicBspline<RT,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>;
+  using RadFunctorType = CubicSplineSingle<RT,SplineEngineType>;
+  using GridType = LinearGrid<RT>;
+  using HandlerType = LRHandlerBase;
+#if defined(ENABLE_SOA)
+  using J1OrbitalType = J1OrbitalSoA<RadFunctorType>;
+#endif
+#if !defined(ENABLE_SOA)
+  using J1OrbitalType = OneBodyJastrowOrbital<RadFunctorType>;
+#endif
+  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFunctorType>;
+
+  /*
+  using J1OrbitalType = JastrowTypeHelper<RT, RadFunctorType>::J1OrbitalType;
+  using DiffJ1OrbitalType = JastrowTypeHelper<RT, RadFunctorType>::DiffJ1OrbitalType;
+  */
 
   std::string MyName="Jep";
   std::string rpafunc="RPA";
@@ -425,6 +493,7 @@ bool RadialJastrowBuilder<RPAFunctor>::createJ1(xmlNodePtr cur)
   params.add(Rs,"rs","double");
   params.add(Kc,"kc","double");
   params.put(cur);
+  bool Opt(true);
 
   HandlerType* myHandler;
   if(Rs<0)
@@ -447,7 +516,7 @@ bool RadialJastrowBuilder<RPAFunctor>::createJ1(xmlNodePtr cur)
   }
   myHandler->Breakup(targetPtcl,Rs);
   
-  Rcut = myHandler->get_rc()-0.1;
+  RT Rcut = myHandler->get_rc()-0.1;
   GridType* myGrid = new GridType;
   int npts=static_cast<int>(Rcut/0.01)+1;
   myGrid->set(0,Rcut,npts);
@@ -458,10 +527,10 @@ bool RadialJastrowBuilder<RPAFunctor>::createJ1(xmlNodePtr cur)
   SRA->setRmax(Rcut);
   nfunc->initialize(SRA, myGrid);
   
-  J1OrbitalType* J1= new J1OrbitalType(*sourcePtcl, targetPtcl);
-  DiffJ1OrbitalType* dJ1= new DiffJ1OrbitalType(*sourcePtcl, targetPtcl);
+  J1OrbitalType* J1= new J1OrbitalType(*SourcePtcl, targetPtcl);
+  DiffJ1OrbitalType* dJ1= new DiffJ1OrbitalType(*SourcePtcl, targetPtcl);
   
-  SpeciesSet &sSet = sourcePtcl->getSpeciesSet();
+  SpeciesSet &sSet = SourcePtcl->getSpeciesSet();
   for (int ig=0; ig< sSet.getTotalNum(); ig++) {
     J1->addFunc(ig,nfunc);
     dJ1->addFunc(ig,nfunc);
@@ -496,7 +565,7 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int chargeInd=species.addAttribute("charge");  
 
-  if (typeOpt.find("one") < typeOpt.size())
+  if (TypeOpt.find("one") < TypeOpt.size())
   {
     // it's a one body jastrow factor
     if (Jastfunction == "bspline") 
@@ -514,14 +583,19 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
       app_error() << "RPA for one-body jastrow is only available for 3D\n";
 #endif
       guardAgainstOBC();
+#if defined(ENABLE_SOA)
+      app_error() << "one body RPA jastrow is not compatible with SOA at the moment\n";
+      success=false;
+#else
       success = createJ1<RPAFunctor>(cur);
+#endif
     }
     else
     {
       app_error() << "Unknown one jastrow body function: " << Jastfunction << ".\n";
     }
   }
-  else if (typeOpt.find("two") < typeOpt.size())
+  else if (TypeOpt.find("two") < TypeOpt.size())
   {
     // it's a two body jastrow factor
     if (Jastfunction == "bspline") 
@@ -533,7 +607,7 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
       guardAgainstPBC();
       success = createJ2<PadeFunctor>(cur);
     }
-    else if (Jastfunction == "rpa" || Jastfunction = "yukawa") 
+    else if (Jastfunction == "rpa" || Jastfunction == "yukawa") 
     {
 #if !(OHMMS_DIM == 3)
       app_error() << "RPA for one-body jastrow is only available for 3D\n";
@@ -547,3 +621,5 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
     }
     }
 }      
+
+}

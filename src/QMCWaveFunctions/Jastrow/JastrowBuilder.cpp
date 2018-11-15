@@ -110,7 +110,7 @@ bool JastrowBuilder::addOneBody(xmlNodePtr cur)
   RadialJastrowBuilder rb(targetPtcl,targetPsi,*sourcePtcl);
   success = rb.put(cur);
   return success;
- }
+}
 
   /*
   tolower(funcOpt);
@@ -212,6 +212,5 @@ bool JastrowBuilder::addTwoBody(xmlNodePtr cur)
   return success;
 }
   */
-
 
 }

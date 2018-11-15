@@ -75,7 +75,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
         0.0, 0.0,  0.0,  3.0,
         0.0, 0.0,  0.0, -3.0,
         0.0, 0.0,  0.0,  1.0},
-    CuspValue(cusp), ResetCount(0), ReportLevel(0), notOpt(false), periodic(true)
+    CuspValue(cusp), ResetCount(0), notOpt(false), periodic(true)
   {
     cutoff_radius = 0.0;
   }

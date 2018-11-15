@@ -143,7 +143,6 @@ bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
 template<typename T>
 struct BsplineInitializer
 {
-
   std::vector<T> rpaValues;
 
   /** initialize with RPA

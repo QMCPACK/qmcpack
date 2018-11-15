@@ -61,7 +61,7 @@ struct PadeFunctor:public OptimizableFunctorBase
   std::string ID_B;
 
   ///default constructor
-  PadeFunctor(): Scale(1.0),ID_A("0"),ID_B("0"),A(1.0),B0(1.0),Scale(1.0),Opt_A(false),Opt_b(true) 
+  PadeFunctor(): Scale(1.0),ID_A("0"),ID_B("0"),A(1.0),B0(1.0),Opt_A(false),Opt_B(true) 
   { 
     reset();
   }

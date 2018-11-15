@@ -268,7 +268,7 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
         if(bsp->cutoff_radius > cutOff)
           cutOff = bsp->cutoff_radius;
         bsp->myVars.setParameterType(optimize::BACKFLOW_P);
-        bsp->print();
+        //bsp->print();
         dum->uniqueRadFun.push_back(bsp);
         offsets.push_back(tbf->numParams);
         tbf->numParams += bsp->NumParams;
