@@ -126,7 +126,7 @@ ELSE()
         ADD_NIO_TEST(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -j ${TEST_DIR}/J123.xml")
       ENDIF (NOT QMC_CUDA)
     ELSE()
-      MESSAGE("${PERF_TEST} not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
+      MESSAGE("performance-NiO-${COMPUTE_TYPE}-a${ATOM_COUNT}-e${ELECTRON_COUNT} not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
     ENDIF()
   ENDFOREACH()
 
