@@ -56,7 +56,7 @@ DiracDeterminant::~DiracDeterminant() {}
 void DiracDeterminant::set(int first, int nel, int delay)
 {
   FirstIndex = first;
-  ndelay = delay>0?delay:1;
+  ndelay = delay;
   resize(nel,nel);
 }
 

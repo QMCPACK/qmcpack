@@ -565,9 +565,9 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     }
 #endif
   }
-  if(delay_rank<=0)
+  if( delay_rank<=0 || delay_rank>lastIndex-firstIndex )
   {
-    APP_ABORT("SlaterDetBuilder::putDeterminant delay_rank must be positive!\n");
+    APP_ABORT("SlaterDetBuilder::putDeterminant delay_rank must be positive and no larger than the electron count within a determinant!\n");
   }
   else if(delay_rank>1)
     app_log() << "Using rank-" << delay_rank << " delayed update" << std::endl;
