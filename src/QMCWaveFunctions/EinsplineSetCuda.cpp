@@ -505,12 +505,9 @@ EinsplineSetExtended<T>::get_split_spline_pointers()
                    gpu::device_group_numbers[gpu::relative_rank%gpu::device_group_size], gpu::device_group_numbers[i], cudaGetErrorString(err));
           abort();
         }
-        cudaStreamCreate(&spline_streams[i]);
       } else
-      {
         spline_rank_pointers[i]=CudaMultiSpline->coefs;
-        spline_streams[i]=gpu::kernelStream;
-      }
+      cudaStreamCreate(&spline_streams[i]);
       cudaEventCreateWithFlags(&spline_events[i],cudaEventDisableTiming);
     }
     cudaSetDevice(gpu::device_group_numbers[gpu::relative_rank%gpu::device_group_size]);
