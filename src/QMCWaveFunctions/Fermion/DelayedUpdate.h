@@ -31,9 +31,11 @@ namespace qmcplusplus {
       int delay_count;
 
       const T* Ainv_row_ptr;
+      // electron id of the up-to-date Ainv_row
+      int Ainv_row_ind;
       T curRatio;
 
-      DelayedUpdate(): delay_count(0), Ainv_row_ptr(nullptr) {}
+      DelayedUpdate(): delay_count(0), Ainv_row_ptr(nullptr), Ainv_row_ind(-1) {}
 
       ///resize the internal storage, 0<delay<=norb
       inline void resize(int norb, int delay)
@@ -44,12 +46,12 @@ namespace qmcplusplus {
         temp.resize(norb);
         tempMat.resize(norb, delay);
         Binv.resize(delay, delay);
-        delay_count = 0;
         delay_list.resize(delay);
       }
 
       inline void getInvRow(const Matrix<T>& Ainv, int rowchanged)
       {
+        Ainv_row_ind = rowchanged;
         if ( delay_count == 0 )
         {
           Ainv_row_ptr = Ainv[rowchanged];
@@ -86,21 +88,10 @@ namespace qmcplusplus {
       template<typename VVT, typename GGT, typename GT>
       inline T ratioGrad(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV, const GGT& dpsiV, GT& g)
       {
-        if( delay_count == 0 )
-        {
-          g = simd::dot(Ainv[rowchanged],dpsiV.data(),Ainv.cols());
-          return curRatio = simd::dot(Ainv[rowchanged],psiV.data(),Ainv.cols());
-        }
-        else if( Ainv_row_ptr )
-        {
-          g = simd::dot(Ainv_row_ptr,dpsiV.data(),Ainv.cols());
-          return curRatio = simd::dot(Ainv_row_ptr,psiV.data(),Ainv.cols());
-        }
-        else
-        {
-          throw std::runtime_error("DelayedUpdate : this should never happen!\n");
-          return T(0);
-        }
+        if(Ainv_row_ind != rowchanged)
+          getInvRow(Ainv, rowchanged);
+        g = simd::dot(Ainv_row_ptr,dpsiV.data(),Ainv.cols());
+        return curRatio = simd::dot(Ainv_row_ptr,psiV.data(),Ainv.cols());
       }
 
       // accept with the update delayed
@@ -108,7 +99,7 @@ namespace qmcplusplus {
       inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
         // safe mechanism
-        Ainv_row_ptr = nullptr;
+        Ainv_row_ind = -1;
 
         const T cminusone(-1);
         const T czero(0);
@@ -158,6 +149,7 @@ namespace qmcplusplus {
           BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
         }
         delay_count = 0;
+        Ainv_row_ind = -1;
       }
     };
 }
