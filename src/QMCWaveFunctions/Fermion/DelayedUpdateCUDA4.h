@@ -110,9 +110,9 @@ namespace qmcplusplus {
       {
         cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size()*sizeof(T), cudaMemcpyHostToDevice, hstream);
         // safe mechanism
+        delay_count = 0;
         Ainv_row_ind = -1;
         prefetched_range.clear();
-        delay_count = 0;
       }
 
       inline void getInvRow(const Matrix<T>& Ainv, int rowchanged)
@@ -166,32 +166,13 @@ namespace qmcplusplus {
         return curRatio = simd::dot(Ainv_row.data(),psiV.data(),Ainv_row.size());
       }
 
-      // SM-1 Fahy immediate update
-      template<typename VVT>
-      inline void updateRow(Matrix<T>& a, int rowchanged, const VVT& psiV)
-      {
-        // safe mechanism
-        Ainv_row_ind = -1;
-
-        const int m = a.rows();
-        const int lda = a.cols();
-        const T cone(1);
-        const T czero(0);
-        temp.resize(lda);
-        rcopy.resize(lda);
-        T c_ratio = cone / curRatio;
-        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, psiV.data(), 1, czero, temp.data(), 1);
-        temp[rowchanged] = cone-c_ratio;
-        simd::copy_n(a[rowchanged],m,rcopy.data());
-        BLAS::ger(m,m,-cone,rcopy.data(),1,temp.data(),1,a.data(),lda);
-      }
-
       // accept with the update delayed
       template<typename VVT>
       inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
         // safe mechanism
         Ainv_row_ind = -1;
+
         // update Binv from delay_count to delay_count+1
         const T cminusone(-1);
         const T czero(0);
@@ -258,6 +239,7 @@ namespace qmcplusplus {
           //BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
           cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
           delay_count = 0;
+          Ainv_row_ind = -1;
           // Ainv is invalid, reset range
           prefetched_range.clear();
         }

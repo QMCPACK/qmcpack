@@ -31,7 +31,7 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 DiracDeterminantCUDANext::DiracDeterminantCUDANext(SPOSetPtr const &spos, int first):
-  DiracDeterminant(spos, first), NP(0), Phi(spos), FirstIndex(first), ndelay(0),
+  DiracDeterminant(spos, first), NP(0), Phi(spos), FirstIndex(first), ndelay(1),
   UpdateTimer("DiracDeterminantCUDANext::update",timer_level_fine),
   RatioTimer("DiracDeterminantCUDANext::ratio",timer_level_fine),
   InverseTimer("DiracDeterminantCUDANext::inverse",timer_level_fine),
@@ -89,7 +89,7 @@ void DiracDeterminantCUDANext::resize(int nel, int morb)
   int norb=morb;
   if(norb <= 0)
     norb = nel; // for morb == -1 (default)
-  if(ndelay) updateEng.resize(norb,ndelay);
+  updateEng.resize(norb,ndelay);
   psiM.resize(nel,norb);
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
@@ -155,10 +155,7 @@ void DiracDeterminantCUDANext::acceptMove(ParticleSet& P, int iat)
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
-  if (ndelay)
-    updateEng.acceptRow(psiM,WorkingIndex,psiV);
-  else
-    updateEng.updateRow(psiM,WorkingIndex,psiV);
+  updateEng.acceptRow(psiM,WorkingIndex,psiV);
   if(UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
