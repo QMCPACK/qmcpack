@@ -4384,7 +4384,7 @@ try:
         raise ValueError("Invalid seekpath version, need >= 1.8.4")
     
     def _getseekpath(structure=None, with_time_reversal=False, recipe='hpkot', reference_distance=0.025, threshold=1E-7, symprec=1E-5, angle_tolerance=1.0):
-        if not isinstance(structure, Structure):
+	if not isinstance(structure, Structure):
             raise TypeError('structure is not of type Structure')
         #end if
         if structure.folded_structure is None:
@@ -4441,7 +4441,8 @@ try:
             axes    = structure.axes
             primlat = seekpathout['primitive_lattice']
             if not isclose(primlat, axes).all():
-                Structure.class_error('Input lattice is not the conventional lattice. If you like otherwise, set check_standard=False.')
+                print primlat, axes
+		Structure.class_error('Input lattice is not the conventional lattice. If you like otherwise, set check_standard=False.')
             #end if
         #end if
         inverse_A_to_inverse_B = 0.529177249
@@ -4569,7 +4570,7 @@ try:
             #end if
         #end if
         #Generate greatest common divisor grid for the given kpts        
-        alphas     = array([x[0] - x[1] for x in itertools.combinations(kpts.values(),2)])
+	alphas     = array([x[0] - x[1] for x in itertools.combinations(kpts.values(),2)])
         abs_alphas = abs(alphas)
         divs       = []
         volfac     = 1e6
@@ -4605,7 +4606,7 @@ try:
         g23    = np.gcd.reduce([n2,n3])
         g123   = np.gcd.reduce([n1, n2, n3])
         #New alphas with the tolerance
-        new_alphas= np.divmod(alphas,1.0/divs)[0]*1./divs ## Check for -+ mod problem, get nearest quotient
+	new_alphas= np.divmod(alphas,1.0/divs)[0]*1./divs ## Check for -+ mod problem, get nearest quotient
         new_rem   = np.divmod(alphas,1.0/divs)[1]
         #Generate possible matrices in the Upper Triangular Hermite Normal Form, from PHYSICAL REVIEW B 92, 184301 (2015)
         mats = []
@@ -4641,7 +4642,15 @@ try:
                 final_s_cubicity = new_s_cubicity
             #end if
         #end for
-        return array(np.matmul(final_mat, np.linalg.inv(axes)))
+        t = array(np.matmul(final_mat, np.linalg.inv(axes)))
+        t_float = t.copy()
+        tol = 10**-6
+        t[abs(t)< tol] = 0
+        t_int = np.floor(t).astype(int)
+        if not (abs(t_int-t_float) < tol).any():
+            print "Tiling matrix has non-integer elements!"
+            exit()
+        return t_int.tolist()
     #end def get_band_tiling
 except:
      get_path = unavailable('seekpath','get_path')
