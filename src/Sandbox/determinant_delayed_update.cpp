@@ -125,6 +125,7 @@ int main(int argc, char** argv)
     DelayedUpdate<ValueType> FahyEng;
     DelayedUpdate<ValueType> delayedEng;
 
+    FahyEng.resize(nels,1);
     delayedEng.resize(nels,delay);
 
     generate(random_th,psiM.data(),nels*nels);
@@ -149,7 +150,7 @@ int main(int argc, char** argv)
         err += std::abs(ratio_1-ratio_0);
         if(std::abs(ratio_0)>0.5*random_th())
         {
-          FahyEng.updateRow(psiM0,iel,psiV);
+          FahyEng.acceptRow(psiM0,iel,psiV);
           delayedEng.acceptRow(psiM_inv,iel,psiV);
         }
       }
@@ -201,7 +202,7 @@ int main(int argc, char** argv)
           {
             naccepted_loc++;
             clock_mc.restart();
-            FahyEng.updateRow(psiM_inv, iel, psiV);
+            FahyEng.acceptRow(psiM_inv, iel, psiV);
             t_accept_loc+=clock_mc.elapsed();
           }
         }

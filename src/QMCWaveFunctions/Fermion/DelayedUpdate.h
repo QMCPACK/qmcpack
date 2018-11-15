@@ -24,7 +24,7 @@ namespace qmcplusplus {
     {
       Matrix<T> U, V, Binv, tempMat;
       // temporal scratch space used by SM-1
-      Vector<T> temp, rcopy;
+      Vector<T> temp;
       // auxiliary arrays for B
       Vector<T> p;
       std::vector<int> delay_list;
@@ -37,6 +37,7 @@ namespace qmcplusplus {
 
       inline void resize(int norb, int delay)
       {
+        if(delay<=0) delay=1;
         V.resize(delay, norb);
         U.resize(delay, norb);
         p.resize(delay);
@@ -100,26 +101,6 @@ namespace qmcplusplus {
           throw std::runtime_error("DelayedUpdate : this should never happen!\n");
           return T(0);
         }
-      }
-
-      // SM-1 Fahy immediate update
-      template<typename VVT>
-      inline void updateRow(Matrix<T>& a, int rowchanged, const VVT& psiV)
-      {
-        // safe mechanism
-        Ainv_row_ptr = nullptr;
-
-        const int m = a.rows();
-        const int lda = a.cols();
-        const T cone(1);
-        const T czero(0);
-        temp.resize(lda);
-        rcopy.resize(lda);
-        T c_ratio = cone / curRatio;
-        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, psiV.data(), 1, czero, temp.data(), 1);
-        temp[rowchanged] = cone-c_ratio;
-        simd::copy_n(a[rowchanged],m,rcopy.data());
-        BLAS::ger(m,m,-cone,rcopy.data(),1,temp.data(),1,a.data(),lda);
       }
 
       // accept with the update delayed

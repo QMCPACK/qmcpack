@@ -99,7 +99,7 @@ public:
    *@param first index of first particle
    *@param nel number of particles in the determinant
    */
-  virtual void set(int first, int nel, int delay=0);
+  virtual void set(int first, int nel, int delay=1);
 
   ///set BF pointers
   virtual

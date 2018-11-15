@@ -31,7 +31,7 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
-  NP(0), Phi(spos), FirstIndex(first), ndelay(0),
+  NP(0), Phi(spos), FirstIndex(first), ndelay(1),
   UpdateTimer("DiracDeterminant::update",timer_level_fine),
   RatioTimer("DiracDeterminant::ratio",timer_level_fine),
   InverseTimer("DiracDeterminant::inverse",timer_level_fine),
@@ -56,7 +56,7 @@ DiracDeterminant::~DiracDeterminant() {}
 void DiracDeterminant::set(int first, int nel, int delay)
 {
   FirstIndex = first;
-  ndelay = delay;
+  ndelay = delay>0?delay:1;
   resize(nel,nel);
 }
 
@@ -88,7 +88,7 @@ void DiracDeterminant::resize(int nel, int morb)
   int norb=morb;
   if(norb <= 0)
     norb = nel; // for morb == -1 (default)
-  if(ndelay) updateEng.resize(norb,ndelay);
+  updateEng.resize(norb,ndelay);
   psiM.resize(nel,norb);
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
@@ -154,10 +154,7 @@ void DiracDeterminant::acceptMove(ParticleSet& P, int iat)
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
-  if (ndelay)
-    updateEng.acceptRow(psiM,WorkingIndex,psiV);
-  else
-    updateEng.updateRow(psiM,WorkingIndex,psiV);
+  updateEng.acceptRow(psiM,WorkingIndex,psiV);
   if(UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);

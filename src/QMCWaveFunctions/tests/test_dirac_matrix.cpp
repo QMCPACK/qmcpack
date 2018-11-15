@@ -103,6 +103,7 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
 {
   DiracMatrix<ValueType> dm;
   DelayedUpdate<ValueType> updateEng;
+  updateEng.resize(3,0);
 
   Matrix<ValueType> a;
   a.resize(3,3);
@@ -130,7 +131,7 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
 
   ValueType det_ratio = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
-  updateEng.updateRow(a, 0, v);
+  updateEng.acceptRow(a, 0, v);
 
   Matrix<ValueType> b;
   b.resize(3,3);
