@@ -35,9 +35,9 @@ namespace qmcplusplus {
 
       DelayedUpdate(): delay_count(0), Ainv_row_ptr(nullptr) {}
 
+      ///resize the internal storage, 0<delay<=norb
       inline void resize(int norb, int delay)
       {
-        if(delay<=0) delay=1;
         V.resize(delay, norb);
         U.resize(delay, norb);
         p.resize(delay);
