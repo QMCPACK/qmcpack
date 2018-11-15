@@ -442,7 +442,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 
   // whether to use an optimizable slater determinant
   std::string optimize("no");
-  int delay_rank(0);
+  int delay_rank(1);
   OhmmsAttributeSet sdAttrib;
   sdAttrib.add(delay_rank,"delay_rank");
   sdAttrib.add(optimize, "optimize");
@@ -565,10 +565,14 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     }
 #endif
   }
-  if(delay_rank>0)
+  if(delay_rank<=0)
+  {
+    APP_ABORT("SlaterDetBuilder::putDeterminant delay_rank must be positive!\n");
+  }
+  else if(delay_rank>1)
     app_log() << "Using rank-" << delay_rank << " delayed update" << std::endl;
   else
-    app_log() << "Using rank-1 Sherman-Morrison update" << std::endl;
+    app_log() << "Using rank-1 Sherman-Morrison Fahy update" << std::endl;
   adet->set(firstIndex,lastIndex-firstIndex, delay_rank);
   slaterdet_0->add(adet,spin_group);
   if (psi->Optimizable)
