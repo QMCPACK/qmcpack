@@ -173,12 +173,9 @@ void DiracDeterminant::restore(int iat)
 
 void DiracDeterminant::completeUpdates(ParticleSet& P)
 {
-  if (ndelay)
-  {
-    UpdateTimer.start();
-    updateEng.updateInvMat(psiM);
-    UpdateTimer.stop();
-  }
+  UpdateTimer.start();
+  updateEng.updateInvMat(psiM);
+  UpdateTimer.stop();
 }
 
 void DiracDeterminant::updateAfterSweep(ParticleSet& P,
