@@ -47,14 +47,10 @@ ENDIF(NOT QMC_COMPLEX)
 #common jastrows
 SET(JASTROW_SRCS
   Jastrow/LRTwoBodyJastrow.cpp
-#  Jastrow/PadeJastrowBuilder.cpp
   Jastrow/JastrowBuilder.cpp
-#  Jastrow/BsplineJastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
-#  Jastrow/singleRPAJastrowBuilder.cpp
-#  Jastrow/JABBuilder.cpp
   Jastrow/RadialJastrowBuilder.cpp
   IonOrbital.cpp
   IonOrbitalBuilder.cpp

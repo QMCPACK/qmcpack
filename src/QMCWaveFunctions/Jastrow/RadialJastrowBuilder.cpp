@@ -108,7 +108,6 @@ class JastrowTypeHelper
 {
 private:
   using rft = RadFuncType<precision>;
-  ///typedef typename RadFuncType<precision> rft;
 #if defined(ENABLE_SOA)
   using J1OrbitalType = J1OrbitalSoA<rft>;
   using J1OrbitalTypeSpin = J1OrbitalSoA<rft>;
@@ -116,13 +115,6 @@ private:
   using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<rft>;
   using J2OrbitalType = J2OrbitalSoA<rft>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
-
-  //typedef typename J1OrbitalSoA<rft> J1OrbitalType;
-  //typedef typename J1OrbitalSoA<rft> J1OrbitalTypeSpin;
-  //typedef typename DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  //typedef typename DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  //typedef typename J2OrbitalSoA<rft> J2OrbitalType;
-  //typedef typename DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #else
   using J1OrbitalType = OneBodyJastrowOrbital<rft>;
   using J1OrbitalTypeSpin = OneBodyJastrowOrbital<rft>;
@@ -130,13 +122,6 @@ private:
   using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<rft>;
   using J2OrbitalType = TwoBodyJastrowOrbital<rft>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
-
-  //typedef typename OneBodyJastrowOrbital<rft> J1OrbitalType;
-  //typedef typename OneBodyJastrowOrbital<rft> J1OrbitalTypeSpin;
-  //typedef typename DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  //typedef typename DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  //typedef typename TwoBodyJastrowOrbital<rft> J2OrbitalType;
-  //typedef typename DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #endif
 };
 
@@ -148,7 +133,6 @@ class JastrowTypeHelper<precision, BsplineFunctor>
 private:
 public:
   using rft = BsplineFunctor<precision>;
-  //typedef BsplineFunctor<precision> rft;
 #if defined(QMC_CUDA) and defined(ENABLE_SOA)
   using J1OrbitalType = OneBodyJastrowOrbitalBspline<rft>;
   using J1OrbitalTypeSpin = OneBodyJastrowOrbitalBspline<rft>;
@@ -156,13 +140,6 @@ public:
   using DiffJ1OrbitalTypeSpin = DiffOneBodySpinJastrowOrbital<rft>;
   using J2OrbitalType = TwoBodyJastrowOrbitalBspline<rft>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
-
-  //typedef OneBodyJastrowOrbitalBspline<rft> J1OrbitalType;
-  //typedef OneBodyJastrowOrbitalBspline<rft> J1OrbitalTypeSpin;
-  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalType;
-  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  //typedef TwoBodyJastrowOrbitalBspline<rft> J2OrbitalType;
-  //typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #endif
 #if defined(QMC_CUDA) and !defined(ENABLE_SOA)
   using J1OrbitalType = OneBodyJastrowOrbitalBsplineAoS;
@@ -171,13 +148,6 @@ public:
   using DiffJ1OrbitalTypeSpin = DiffOneBodySpinJastrowOrbital<rft>;
   using J2OrbitalType = TwoBodyJastrowOrbitalBsplineAoS;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
-
-  //typedef OneBodyJastrowOrbitalBsplineAoS J1OrbitalType;
-  //typedef OneBodyJastrowOrbitalBsplineAoS J1OrbitalTypeSpin;
-  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalType;
-  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  //typedef TwoBodyJastrowOrbitalBsplineAoS J2OrbitalType;
-  //typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #endif
 #if !defined(QMC_CUDA) and defined(ENABLE_SOA)
   using J1OrbitalType = J1OrbitalSoA<rft>;
@@ -186,13 +156,6 @@ public:
   using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<rft>;
   using J2OrbitalType = J2OrbitalSoA<rft>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
-
-  //typedef J1OrbitalSoA<rft> J1OrbitalType;
-  //typedef OneBodySpinJastrowOrbital<rft> J1OrbitalTypeSpin;
-  //typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  //typedef J2OrbitalSoA<rft> J2OrbitalType;
-  //typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #endif
 #if !defined(QMC_CUDA) and !defined(ENABLE_SOA)
   using J1OrbitalType = OneBodyJastrowOrbital<rft>;
@@ -201,13 +164,6 @@ public:
   using DiffJ1OrbitalTypeSpin = DiffOneBodySpinJastrowOrbital<rft>;
   using J2OrbitalType = TwoBodyJastrowOrbital<rft>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<rft>;
-
-  //typedef OneBodyJastrowOrbital<rft> J1OrbitalType;
-  //typedef OneBodySpinJastrowOrbital<rft> J1OrbitalTypeSpin;
-  //typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  //typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  //typedef TwoBodyJastrowOrbital<rft> J2OrbitalType;
-  //typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
 #endif
 };
 
@@ -253,10 +209,6 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   using RadFunctorType = RadFuncType<RT>;
   using J2OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::J2OrbitalType;
   using DiffJ2OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::DiffJ2OrbitalType;
-  
-  //typedef typename RadFuncType<RT> RadFunctorType;
-  //typedef typename JastrowTypeHelper<RT, RadFuncType>::J2OrbitalType J2OrbitalType;
-  //typedef typename JastrowTypeHelper<RT, RadFuncType>::DiffJ2OrbitalType DiffJ2OrbitalType;
   
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
@@ -350,7 +302,7 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   J2->setOptimizable(true);
 }
 
-// specialiation for J2 RPA jastrow.  Note that the long range part is not implemented
+// specialiation for J2 RPA jastrow.
 template<>
 bool RadialJastrowBuilder::createJ2<RPAFunctor>(xmlNodePtr cur) 
 {
@@ -367,10 +319,6 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   using RadFunctorType = RadFuncType<RT>;
   using J1OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::J1OrbitalType;
   using DiffJ1OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::DiffJ1OrbitalType;
-
-  //typedef typename RadFuncType<RT> RadFunctorType;
-  //typedef typename JastrowTypeHelper<RT, RadFuncType>::J1OrbitalType J1OrbitalType;
-  //typedef typename JastrowTypeHelper<RT, RadFuncType>::DiffJ1OrbitalType DiffJ1OrbitalType;
    
   int taskid=targetPsi.getGroupID();
   J1OrbitalType* J1= new J1OrbitalType(*SourcePtcl, targetPtcl);
