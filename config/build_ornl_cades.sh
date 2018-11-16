@@ -74,29 +74,3 @@ cd ..
 ln -sf ./build_cades_cpu_comp_SoA/bin/qmcpack ./qmcpack_cades_cpu_comp_SoA
 
 
-
-# load cuda for gpu build
-module load cuda/8.0
-
-# Configure and build gpu real
-echo ""
-echo ""
-echo "building qmcpack for gpu real for cades"
-mkdir -p build_cades_gpu_real
-cd build_cades_gpu_real
-cmake -D QMC_CUDA=1 ..
-make -j 16
-cd ..
-ln -sf ./build_cades_gpu_real/bin/qmcpack ./qmcpack_cades_gpu_real
-
-# Configure and build gpu complex
-echo ""
-echo ""
-echo "building qmcpack for gpu complex for cades"
-mkdir -p build_cades_gpu_comp
-cd build_cades_gpu_comp
-cmake -D QMC_CUDA=1 -D QMC_COMPLEX=1 ..
-make -j 16
-cd ..
-ln -sf ./build_cades_gpu_comp/bin/qmcpack ./qmcpack_cades_gpu_comp
-
