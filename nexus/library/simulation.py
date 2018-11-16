@@ -1033,15 +1033,17 @@ class Simulation(NexusCore):
 
     def submit(self):
         if not self.submitted:
-            if self.skip_submit:
+            if self.skip_submit and not self.bundled:
                 self.block_dependents(block_self=True)
                 return
             #end if
             self.log('submitting job'+self.idstr(),n=3)
-            if not self.job.local:
-                self.job.submit()
-            else:
-                self.execute() # execute local job immediately
+            if not self.skip_submit:
+                if not self.job.local:
+                    self.job.submit()
+                else:
+                    self.execute() # execute local job immediately
+                #end if
             #end if
             self.submitted = True
             if (self.job.batch_mode or not nexus_core.monitor) and not nexus_core.generate_only:
