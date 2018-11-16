@@ -300,15 +300,6 @@ CTEST_CONFIGURE(
 
 # Run the configure, build and tests
 CTEST_BUILD()
-IF ( USE_VALGRIND )
-    CTEST_MEMCHECK( EXCLUDE procs   PARALLEL_LEVEL ${N_PROCS} )
-ELSEIF (CTEST_COVERAGE_COMMAND)
-  # Skip the normal tests when doing coverage
-ELSE()
-#    CTEST_TEST( INCLUDE short PARALLEL_LEVEL ${N_PROCS} )
-    CTEST_TEST( PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
-ENDIF()
-
 
 # Submit the results to oblivion
 SET( CTEST_DROP_METHOD "https" )
@@ -316,7 +307,34 @@ SET( CTEST_DROP_SITE "cdash.qmcpack.org" )
 SET( CTEST_DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
 SET( CTEST_DROP_SITE_CDASH TRUE )
 SET( DROP_SITE_CDASH TRUE )
-CTEST_SUBMIT()
+CTEST_SUBMIT( PARTS Configure Build )
+
+IF ( USE_VALGRIND )
+    CTEST_MEMCHECK( EXCLUDE procs   PARALLEL_LEVEL ${N_PROCS} )
+    CTEST_SUBMIT( PARTS MemCheck )
+ELSEIF (CTEST_COVERAGE_COMMAND)
+  # Skip the normal tests when doing coverage
+ELSE()
+#    CTEST_TEST( INCLUDE short PARALLEL_LEVEL ${N_PROCS} )
+    # run and submit the classified tests to their corresponding track
+    CTEST_START( "${CTEST_DASHBOARD}" TRACK "Deterministic" APPEND)
+    CTEST_TEST( INCLUDE_LABEL "unit" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_SUBMIT( PARTS Test )
+    CTEST_START( "${CTEST_DASHBOARD}" TRACK "Converter" APPEND)
+    CTEST_TEST( INCLUDE_LABEL "converter" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_SUBMIT( PARTS Test )
+    CTEST_START( "${CTEST_DASHBOARD}" TRACK "Performance" APPEND)
+    CTEST_TEST( INCLUDE_LABEL "performance" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_SUBMIT( PARTS Test )
+    CTEST_START( "${CTEST_DASHBOARD}" TRACK "Unstable" APPEND)
+    CTEST_TEST( INCLUDE_LABEL "unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_SUBMIT( PARTS Test )
+    # run and submit unclassified tests to the default track
+    CTEST_START( "${CTEST_DASHBOARD}" APPEND)
+    CTEST_TEST( EXCLUDE_LABEL "unit|performance|converter|unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_SUBMIT( PARTS Test )
+ENDIF()
+
 
 IF( CTEST_COVERAGE_COMMAND )
 
