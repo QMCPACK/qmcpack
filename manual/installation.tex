@@ -661,7 +661,7 @@ make -j 12
   X will request approval of the network connection for each executable.
 \verbatimfont{\footnotesize}%
 \begin{verbatim}
-ctest -R short
+ctest -R short -LE unstable
 \end{verbatim}
 \end{enumerate}
 
@@ -938,6 +938,34 @@ Currently Loaded Modulefiles:
 
 \end{verbatim}
 
+\subsection{Installing on systems with ARMv8 based processors}
+The following build recipe was verified using the `Arm Compiler for HPC' on the ANL JLSE Comanche system with Cavium ThunderX2 processors on 6 November 2018.
+\begin{verbatim}
+# load armclang compiler
+module load Generic-AArch64/RHEL/7/arm-hpc-compiler/18.4
+# load Arm performance libraries
+module load ThunderX2CN99/RHEL/7/arm-hpc-compiler-18.4/armpl/18.4.0
+# define path to pre-installed packages
+export HDF5_ROOT=</path/to/hdf5/install/>
+export BOOST_ROOT=</path/to/boost/install> # header-only, no need to build
+\end{verbatim}
+Then using the following command
+\begin{verbatim}
+mkdir build_armclang
+cd build_armclang
+cmake -DCMAKE_C_COMPILER=armclang -DCMAKE_CXX_COMPILER=armclang++ -DQMC_MPI=0 \
+      -DCMAKE_C_COMPILER_ID=Clang -DCMAKE_CXX_COMPILER_ID=Clang \
+      -DCMAKE_CXX_COMPILER_VERSION=5.0 -DCMAKE_CXX_STANDARD_COMPUTED_DEFAULT=98 \
+      -DCMAKE_C_FLAGS="-march=armv8-a" -DCMAKE_CXX_FLAGS="-march=armv8-a" \
+      -DLAPACK_LIBRARIES="-L$ARMPL_DIR/lib -larmpl_mp" \
+      -DFFTW_INCLUDE_DIR="$ARMPL_DIR/include" \
+      -DFFTW_LIBRARIES="$ARMPL_DIR/lib/libarmpl_mp.a" \
+      ..
+make -j 56
+\end{verbatim}
+Note that armclang is recognized as an `unknown' compiler by cmake (v3.12.4) and we need to force it as clang to apply necessary flags.
+This workaround will not be necessary in the near future.
+
 \subsection{Installing on Windows}
 Install the Windows Subsystem for Linux and Bash on Windows.
 Open a bash shell and follow the install directions for Ubuntu in Section \ref{sec:buildubuntu}.
@@ -1169,26 +1197,57 @@ against this fork \url{https://github.com/naromero77/spack}
 \section{Testing and validation of QMCPACK}
 \label{sec:testing}
 We \textbf{strongly encourage} running the included tests each time
-QMCPACK is built. These compare the results from the executable with
-known-good mean-field, quantum chemical, and other QMC results.
+QMCPACK is built. A range of unit and integration tests ensure that
+the code behaves as expected and that results are consistent with
+known-good mean-field, quantum chemical, and historical QMC results.
 
-The tests included with QMCPACK currently mainly test the VMC code with
-single determinant wavefunction and simple spline Jastrow
-wavefunctions, and for gaussian and periodic spline basis
-sets. We check that the known mean
-field results are obtained with no Jastrow. When Jastrow functions are
-included we test against previous QMC data. The tests are statistical
-with a generous 3 $\sigma$ tolerance, however the system sizes are
-small, typically $<10$ electrons, so the error bars are typically
-small. Limited DMC and optimizer tests included and are scheduled for expansion.
+The tests include:
+\begin{itemize}
+\item Unit tests : to check fundamental behavior. These should always pass.
+\item Stochastic integration tests : to check computed results from
+  the Monte Carlo methods. These may fail statistically, but rarely,
+  due to the use of three sigma level statistics. These tests are
+  further split into ``short'' tests, which have just sufficient
+  length to have valid statistics, and ``long'' tests, to check
+  behavior to higher statistical accuracy.
+\item Converter tests : to check conversion of trial wavefunctions
+  from codes such as Quantum Espresso and GAMESS to QMCPACK's
+  formats. These should always pass.
+\item Workflow tests : in the case of Quantum Espresso, we test the
+  entire cycle of DFT calculation, trial wavefunction conversion, and
+  a subsequent VMC run.  
+\item Performance : to help performance monitoring. Only the timing of
+  these runs is relevant.  
+\end{itemize}
 
- The ``short'' tests only take a few minutes on a 16
-core machine. You can run these tests using the command below in the
+
+The test types are differentiated by prefixes in their names,
+e.g. ``short-LiH\_dimer\_ae\_vmc\_hf\_noj\_16-1'' indicates a short VMC test
+for the LiH dime. 
+
+QMCPACK also includes tests for developmental features and feature
+that are unsupported on certain platforms. To indicate these, tests
+that are unstable are labeled with the ctest label
+``unstable''. e.g. They are unreliable, unsupported, or known to fail
+due to partial implementation or bugs.
+
+When installing QMCPACK you should run at least the deterministic
+tests
+\begin{verbatim}
+ctest -R deterministic -LE unstable
+\end{verbatim}
+These currently take only a few seconds to run. All should pass. A
+failure here may indicate a major problem with the installation.
+
+If time allows, the ``short'' stochastic tests should also be run.
+The ``short'' tests each take a few minutes each on a 16
+core machine, totally around 1 hour depending on the platform. You can run these tests using the command below in the
 build directory:
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-ctest -R short   # Run the tests with "short" in their name
+ctest -R short -LE unstable  # Run the tests with "short" in their name.
+                             # Exclude any known unstable tests.
 \end{verbatim}
 The output should be similar to the following:
 \verbatimfont{\footnotesize}
@@ -1209,8 +1268,9 @@ Test project build_gcc
 
 Total Test time (real) = 167.14 sec
 \end{verbatim}
+
 Note that the number of tests that are run varies between the
-standard, complex, and GPU compilations.
+standard, complex, and GPU compilations. These tests should pass with three sigma reliability. i.e. They should nearly always pass, and when rerunning a failed test it should usually pass. Overly frequent failures suggest a problem that should be addressed before any scientific production.
 
 The  full set of tests consist of significantly longer versions of the short
 tests, as well as tests of the conversion utilities. The runs require
@@ -1220,7 +1280,7 @@ directory:
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-ctest            # Run all the tests. This will take several hours.
+ctest -LE unstable           # Run all the stable tests. This will take several hours.
 \end{verbatim}
 
 You can also run verbose tests which direct the QMCPACK
@@ -1239,7 +1299,7 @@ Under each physical system directory there may be tests for multiple QMC methods
 The numerical comparisons and test definitions are in the \texttt{CMakeLists.txt} file in each physical system directory.
 
 If \textit{all} the QMC tests fail it is likely
-that the appropriate mpiexec (or aprun, srun) is not being
+that the appropriate mpiexec (or mpirun, aprun, srun, jsrun) is not being
 called or found. If the QMC runs appear to work but all the other
 tests fail it is possible that python is not working on your system -
 we suggest checking some of the test console output in \texttt{build/Testing/Temporary/LastTest.log}
@@ -1247,24 +1307,26 @@ or the output files under \texttt{build/tests/}.
 %The runs occur in \texttt{build/tests/test\_dir/test\_name}.
 
 
-Note that because most of these tests are very small, consisting of only a few
+Note that because most of the tests are very small, consisting of only a few
 electrons, the performance is not representative of larger
 calculations. For example, while the calculations might fit in cache,
 there will be essentially no vectorization due to the small electron
 counts. \textbf{These tests should therefore not be used for any benchmarking or
-performance analysis}.
-
-Example runs that can be used for testing performance are described in
+performance analysis}. Example runs that can be used for testing performance are described in
 Sec. \ref{sec:perftests}
 
-\subsection{Unit tests}
+\subsection{Determinstic and unit tests}
 
-QMCPACK has a set of unit tests.
-All of the unit tests can be run with the following command (in the build directory):
+QMCPACK has a set of deterministic tests, predominantly unit tests.
+All of these tests can be run with the following command (in the build directory):
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-ctest -L unit
+ctest -R deterministic -LE unstable
 \end{verbatim}
+
+These tests should always pass. Failure could indicate a major problem
+with the compiler, compiler settings, or a linked library that would
+give incorrect results.
 
 The output should look similar to the following:
 \verbatimfont{\footnotesize}
@@ -1389,25 +1451,21 @@ We currently test
 the following combinations nightly (workstations) and weekly (supercomputers):
 
 \begin{itemize}
-\item On a Linux Intel Xeon workstation:
+\item On a Linux Intel Xeon workstation, combinations of:
   \begin{itemize}
-  \item GCC 4.8.5 with OpenMPI and CUDA 8.0 (GPU build, run on NVIDIA K40s)
-  \item GCC 4.8.5 with OpenMPI with Netlib BLAS
-  \item GCC 4.8.5 with OpenMPI with Intel MKL
-  \item Intel 2017 with Intel MPI and MKL
-  \item Intel 2015 with Intel MPI and MKL and CUDA 8.0 (GPU build, run on NVIDIA K40s)
-  \item Intel 2015 with Intel MPI  and MKL
+  \item GCC 8.2.0, Intel2019, Clang6, Clang7, PGI2018
+  \item No MPI, Intel MPI, and OpenMPI
+  \item CPU and GPU builds using CUDA 10.0
   \end{itemize}
 \item On a Linux Intel Knight's Landing workstation:
   \begin{itemize}
   \item Intel 2017 with Intel MPI and MKL
- \item GCC 4.8.5 with Intel MPI and MKL
+  \item GCC 6.3.1 with Intel MPI and MKL
   \end{itemize}
 \item On Eos, a Cray XC30 Intel machine:
   \begin{itemize}
 \item The default Intel programming environment and compiler with Cray MPI and Intel MKL
   \end{itemize}
-
 \item On Titan, a Cray XK7 CPU+GPU machine:
   \begin{itemize}
   \item The GCC programming environment and compiler with Cray MPI and CUDA
@@ -1415,7 +1473,7 @@ the following combinations nightly (workstations) and weekly (supercomputers):
   \end{itemize}
 \item On Cetus, an IBM Blue Gene Q machine:
 \begin{itemize}
-\item Blue Gene Clang 4.0
+\item Blue Gene Clang
 \end{itemize}
 \end{itemize}
 

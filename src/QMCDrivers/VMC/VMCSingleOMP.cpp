@@ -300,12 +300,6 @@ void VMCSingleOMP::resetRun()
     for(int ip=0; ip<NumThreads; ++ip)
       wClones[ip]->setNumSamples(nSamplesPerThread);
   nWarmupSteps=0;
-  //Used to debug and benchmark opnemp
-  //#pragma omp parallel for
-  //    for(int ip=0; ip<NumThreads; ip++)
-  //    {
-  //      Movers[ip]->benchMark(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],ip);
-  //    }
 }
 
 bool
