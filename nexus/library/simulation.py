@@ -1734,10 +1734,15 @@ def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True):
         else:
             nlabel = sim.identifier+' '+str(sim.simid)
         #end if
+        nopts = obj()
+        if 'block' in sim and sim.block:
+            nopts.color     = 'black'
+            nopts.fontcolor = 'white'
+        #end if
         node = obj(
             id    = sim.simid,
             sim   = sim,
-            node  = Node(nlabel,style='filled',shape='Mrecord'),
+            node  = Node(nlabel,style='filled',shape='Mrecord',**nopts),
             edges = obj(),
             )
         nodes[node.id] = node
