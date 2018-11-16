@@ -14069,6 +14069,8 @@ using Catch::Detail::Approx;
 #    pragma GCC diagnostic pop
 #endif
 
+#include "complex_approx.hpp"
+
 // end catch_reenable_warnings.h
 // end catch.hpp
 #endif // TWOBLUECUBES_SINGLE_INCLUDE_CATCH_HPP_INCLUDED
