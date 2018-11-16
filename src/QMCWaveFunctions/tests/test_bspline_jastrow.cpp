@@ -25,7 +25,7 @@
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
-#include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #ifdef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
@@ -127,7 +127,7 @@ const char *particles = \
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  BsplineJastrowBuilder jastrow(elec_, psi);
+  RadialJastrowBuilder jastrow(elec_, psi);
   bool build_okay = jastrow.put(jas1);
   REQUIRE(build_okay);
 
@@ -330,7 +330,7 @@ const char *particles = \
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  BsplineJastrowBuilder jastrow(elec_, psi, ions_);
+  RadialJastrowBuilder jastrow(elec_, psi, ions_);
   bool build_okay = jastrow.put(jas1);
   REQUIRE(build_okay);
 
