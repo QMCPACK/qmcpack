@@ -17,15 +17,14 @@ function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check
 
   # add run (task 1)
   set (test_added false)
-  set (test_labels "")
-  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added test_labels ${input_file}.in.xml)
+  set (test_labels "restart")
+  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added ${test_labels} ${input_file}.in.xml)
   if ( test_added )
 
     # add restart (task 2)
     set(restart_name "${base_name}-${procs}-${threads}-restart")
     #set (test_added false)
-    set (test_labels "")
-    RUN_QMC_APP_NO_COPY( ${restart_name} ${CMAKE_CURRENT_BINARY_DIR}/${full_name} ${procs} ${threads} test_added test_labels ${input_file}.restart.xml )
+    RUN_QMC_APP_NO_COPY( ${restart_name} ${CMAKE_CURRENT_BINARY_DIR}/${full_name} ${procs} ${threads} test_added ${test_labels} ${input_file}.restart.xml )
 
     # make restart depend on the initial run
     set_property(TEST ${restart_name} APPEND PROPERTY DEPENDS ${full_name})
@@ -50,7 +49,6 @@ function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check
 
     # make test depend on the restart run
     set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name}-restart)
-    set_property(TEST ${test_name} APPEND PROPERTY LABELS ${test_labels} )
 
   endif()
 
