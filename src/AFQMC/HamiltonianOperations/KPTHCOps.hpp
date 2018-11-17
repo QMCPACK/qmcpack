@@ -79,7 +79,7 @@ class KPTHCOps
                  shmIMatrix&& QKToG_,
                  shmC3Tensor&& h1_,
                  shmCMatrix&& haj_,
-                 std::vector<shmSpMatrix>&& rotlun_,
+                 std::vector<shmSpMatrix>&& rotmuv_,
                  shmCMatrix&& rotpiu_,
                  std::vector<shmSpMatrix>&& rotpau_,
                  std::vector<shmSpMatrix>&& lun_,
@@ -100,13 +100,12 @@ class KPTHCOps
                 nelpk(std::move(nelpk_)),
                 QKToK2(std::move(QKToK2_)),
                 QKToG(std::move(QKToG_)),
-                rotLQGun(std::move(rotlun_)),
+                rotMuv(std::move(rotmuv_)),
                 rotPiu(std::move(rotpiu_)),
                 rotcPua(std::move(rotpau_)),
                 LQGun(std::move(lun_)),
                 Piu(std::move(piu_)),
                 cPua(std::move(pau_)),
-                //Muv(),
                 vn0(std::move(vn0_)),
                 E0(e0_),
                 KK2Q({nopk.size(),nopk.size()},shared_allocator<SPComplexType>{c_}),
@@ -124,14 +123,32 @@ class KPTHCOps
       }  
       app_log()<<"  KPTHCOps: Found " <<nGG <<" {Q,dq} pairs. \n";  
       int nu = Piu.shape()[1]; 
+      int rotnu = rotPiu.shape()[1]; 
       int nkpts = nopk.size();
       local_nCV = std::accumulate(ncholpQ.begin(),ncholpQ.end(),0);
       mutex.reserve(ncholpQ.size());
       for(int nQ=0; nQ<ncholpQ.size(); nQ++)
           mutex.emplace_back(std::make_unique<shared_mutex>(*comm));
+// transposing until Fionn fixes ordering
+      if(comm->root()) {
+        for(int Q=0; Q<nkpts; Q++) {
+          int nG = nGpk[Q];
+          boost::multi::array<SPComplexType,2> T({nG*rotnu,nG*rotnu});
+          std::copy_n(std::addressof(*rotMuv[Q].origin()),rotMuv[Q].num_elements(),T.origin());  
+          boost::multi::array_ref<SPComplexType,4> Muv(std::addressof(*rotMuv[Q].origin()),
+                                                       {nG,nG,rotnu,rotnu});
+          boost::multi::array_ref<SPComplexType,4> T_(T.origin(),
+                                                      {nG,rotnu,nG,rotnu});
+          for(int G1=0; G1<nG; G1++) 
+            for(int G2=0; G2<nG; G2++) 
+              for(int u=0; u<rotnu; u++) 
+                for(int v=0; v<rotnu; v++) 
+                  Muv[G1][G2][u][v] = T_[G1][u][G2][v];
+        }
+      }
+/*
       // storing full matrix for now, switch to upper triangular later
       Muv.reserve(nGG);
-/*
       for(int i=0; i<nGG; i++)
         Muv.emplace_back(shmSpMatrix({nu,nu},shared_allocator<SPComplexType>{c_}));
       comm->barrier();
@@ -222,7 +239,6 @@ class KPTHCOps
     // Kl and Kr must be in shared memory for this to work correctly  
     template<class Mat, class MatB, class MatC, class MatD>
     void energy(Mat&& E, MatB const& Gc, int nd, MatC* KEleft, MatD* KEright, bool addH1=true, bool addEJ=true, bool addEXX=true) {
-return;
       using ma::T;
       using ma::H;
       using std::conj;
@@ -260,8 +276,7 @@ return;
       if(addH1) {
         int na=0, nj=0, nb=0;
         for(int n=0; n<nwalk; n++)
-          E[n][0] = E0*nkpts;
-          //E[n][0] = E0;
+          E[n][0] = E0;
         for(int K=0; K<nkpts; ++K) {
           boost::multi::array_ref<ComplexType,2> haj_K(std::addressof(*haj[nd*nkpts+K].origin()),
                                                       {nelpk[nd][K],nopk[K]});
@@ -294,9 +309,9 @@ return;
       SPComplexType *Krptr, *Klptr;
       int getKr = KEright!=nullptr;
       int getKl = KEleft!=nullptr;
-      int nu = Piu.shape()[1]; 
+      int rotnu = rotPiu.shape()[1]; 
       size_t memory_needs = 0;
-      if(addEXX)  memory_needs += nkpts*nkpts*nu*nu;
+      if(addEXX)  memory_needs += nkpts*nkpts*rotnu*rotnu;
       if(addEJ) {
         if(not getKr) memory_needs += nwalk*local_nCV;
         if(not getKl) memory_needs += nwalk*local_nCV;
@@ -337,37 +352,37 @@ return;
 Timer.reset("T0");
 Timer.reset("T1");
 Timer.reset("T2");
+Timer.reset("T3");
       if(addEXX) {
-        size_t local_memory_needs = nocca_tot*nu + nchol_max + nu;
+        size_t local_memory_needs = nocca_tot*rotnu + nchol_max + rotnu;
         if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
 
-        // Fuv[k1][k2][u][v] = sum_a_l cPua[u][k1][a] * G[k1][a][k2][l] Piu[k2][l][v]
-        boost::multi::array_ref<SPComplexType,4> Fuv(std::addressof(*SM_TMats.origin())+cnt,{nkpts,nkpts,nu,nu});
+        // Fuv[k1][k2][u][v] = sum_a_l rotcPua[u][k1][a] * G[k1][a][k2][l] rotPiu[k2][l][v]
+        boost::multi::array_ref<SPComplexType,4> Fuv(std::addressof(*SM_TMats.origin())+cnt,{nkpts,nkpts,rotnu,rotnu});
         cnt+=Fuv.num_elements();
 
         size_t cnt_local=0;
-        boost::multi::array_ref<SPComplexType,2> TAv(TMats.origin()+cnt_local,{nocca_tot,nu});
+        boost::multi::array_ref<SPComplexType,2> TAv(TMats.origin()+cnt_local,{nocca_tot,rotnu});
         cnt_local+=TAv.num_elements();
-        //boost::multi::array_ref<SPComplexType,2> Muv(TMats.origin()+cnt_local,{nu,nu});
-        //cnt_local+=Muv.num_elements();
 
         // avoiding vectors for now
         SpMatrix_ref Ke_local(TMats.origin()+cnt_local,{nchol_max,1});
         SpMatrix_ref Ke1D(TMats.origin()+cnt_local,{1,nchol_max});
         cnt_local+=Ke_local.num_elements();
         std::fill_n(Ke_local.origin(),Ke_local.num_elements(),SPComplexType(0.0));
-        SpMatrix_ref Fuu(TMats.origin()+cnt_local,{nu,1});
+        SpMatrix_ref Fuu(TMats.origin()+cnt_local,{rotnu,1});
         cnt_local+=Fuu.num_elements();
+
         for(int n=0; n<nwalk; ++n) {
 
-Timer.start("T0");
           size_t nqk=1;  // start count at 1 to "offset" the calcuation of E1 done at root
+Timer.start("T0");
           for(int Kl=0, nl0=0; Kl<nkpts; ++Kl) {
             if((nqk++)%comm->size() == comm->rank()) {
-              ma::product(G3Da[n]({0,nocca_tot},{nl0,nl0+nopk[Kl]}),Piu({nl0,nl0+nopk[Kl]},{0,nu}),TAv);
+              ma::product(G3Da[n]({0,nocca_tot},{nl0,nl0+nopk[Kl]}),rotPiu({nl0,nl0+nopk[Kl]},{0,rotnu}),TAv);
               // write with BatchedGEMM later
               for(int Ka=0, na0=0; Ka<nkpts; ++Ka) { 
-                ma::product( cPua[nd]({0,nu},{na0,na0+nelpk[nd][Ka]}), TAv({na0,na0+nelpk[nd][Ka]},{0,nu}), Fuv[Ka][Kl] );
+                ma::product( rotcPua[nd]({0,rotnu},{na0,na0+nelpk[nd][Ka]}), TAv({na0,na0+nelpk[nd][Ka]},{0,rotnu}), Fuv[Ka][Kl] );
                 na0 += nelpk[nd][Ka];
               }
             }    
@@ -377,6 +392,7 @@ Timer.start("T0");
 Timer.stop("T0");
 
 Timer.start("T2");
+/*
           if(addEJ) {
             nqk=0;  
             for(int Q=0; Q<nkpts; ++Q) {            // momentum conservation index   
@@ -391,10 +407,10 @@ Timer.start("T2");
                     int QK = QKToK2[Q][K];
                     auto fu_(Fuu.origin());
                     auto f_(Fuv[K][QK].origin());
-                    for(int u=0; u<nu; u++, ++fu_, f_ += (nu+1))
+                    for(int u=0; u<rotnu; u++, ++fu_, f_ += (rotnu+1))
                       (*fu_) += (*f_); 
                   }
-                  ma::product(ma::T(LQGun[Q].sliced(nu*G,nu*(G+1))),Fuu,
+                  ma::product(ma::T(LQGun[Q].sliced(rotnu*G,rotnu*(G+1))),Fuu,
                               Ke_local.sliced(0,ncholpQ[Q]));
             
                   { 
@@ -408,7 +424,7 @@ Timer.start("T2");
                     int QK = QKToK2[Q][K];
                     auto fu_(Fuu.origin());
                     auto f_(Fuv[QK][K].origin());
-                    for(int u=0; u<nu; u++, ++fu_, f_ += (nu+1))
+                    for(int u=0; u<rotnu; u++, ++fu_, f_ += (rotnu+1))
                       (*fu_) += (*f_);
                   }
                   //ma::product(ma::T(LQGun[Q].sliced(nu*G,nu*(G+1))),Fuu,
@@ -423,14 +439,17 @@ Timer.start("T2");
               }
             }
           }
+*/
 Timer.stop("T2");
-
 Timer.start("T1");
 // FIX parallelization!!!
           int bsz = 256;
-          int nbu = (nu + bsz - 1) / bsz;
+          int nbu = (rotnu + bsz - 1) / bsz;
           nqk=0;  
           for(int Q=0; Q<nkpts; ++Q) {            // momentum conservation index   
+            int nG = nGpk[Q]; 
+            boost::multi::array_ref<SPComplexType,4> Muv(std::addressof(*rotMuv[Q].origin()),
+                                                         {nG,nG,rotnu,rotnu});
             for(int K1=0; K1<nkpts; ++K1) {
               for(int K2=0; K2<nkpts; ++K2) {
                 if((nqk++)%comm->size() == comm->rank()) {
@@ -438,32 +457,13 @@ Timer.start("T1");
                   int QK2 = QKToK2[Q][K2];
                   // EXX += sum_u_v Muv[u][v] * Fuv[K1][K2][u][v] * Fuv[QK2][QK1][v][u]   
                   ComplexType E_(0.0);
-                  int nG = nGpk[Q]; 
                   int nq = nG2pk[Q] + QKToG[Q][K1]*nG + QKToG[Q][K2];  
-/*
-                  auto&& F1_(Fuv[K1][K2]);
-                  auto&& F2_(Fuv[QK2][QK1]);
-                  for(int bu=0; bu<nbu; ++bu) {
-                    int i0 = bu*bsz;
-                    int iN = std::min((bu+1)*bsz,nu);
-                    for(int bv=0; bv<nbu; ++bv) {
-                      int j0 = bv*bsz;
-                      int jN = std::min((bv+1)*bsz,nu);
-                      for(int i=i0; i<iN; ++i) {
-                        auto F1_i(std::addressof(*F1_[i].origin()));
-                        auto muv_(std::addressof(*Muv[nq][i].origin()));
-                        for(int j=j0; j<jN; ++j)
-                          E_ += F1_i[j] * muv_[j] * F2_[j][i];
-                      }
-                    }
-                  }
-*/
                   auto F1_(std::addressof(*Fuv[K1][K2].origin()));
-                  auto muv_(std::addressof(*Muv[nq].origin()));
+                  auto muv_(Muv[QKToG[Q][K1]][QKToG[Q][K1]].origin());
                   auto F2_(std::addressof(*Fuv[QK2][QK1].origin()));
-                  for(int u=0; u<nu; ++u, ++F2_) {
+                  for(int u=0; u<rotnu; ++u, ++F2_) {
                     auto Fv_(F2_);
-                    for(int v=0; v<nu; ++v,  ++muv_, ++F1_, Fv_ += nu) 
+                    for(int v=0; v<rotnu; ++v,  ++muv_, ++F1_, Fv_ += rotnu) 
                       E_ += (*F1_) * (*muv_) * (*Fv_);
                   }
                   E[n][1] -= 0.5*scl*E_;
@@ -472,45 +472,6 @@ Timer.start("T1");
             }
           }
 Timer.stop("T1");
-/*
-          for(int Q=0; Q<nkpts; ++Q) {            // momentum conservation index   
-            int nG = nGpk[Q]; 
-            for(int G1=0; G1<nG; ++G1) {
-              // Muv is hemitian!!!
-              //for(int G2=G1; G2<nG; ++G2) {
-              for(int G2=0; G2<nG; ++G2) {
-                if((nqk++)%comm->size() == comm->rank()) {
-                  ma::product(LQGun[Q].sliced(nu*G1,nu*(G1+1)),ma::H(LQGun[Q].sliced(nu*G2,nu*(G2+1))),Muv);
-                  for(int K1=0; K1<nkpts; ++K1) {
-                    if(QKToG[Q][K1] != G1) continue;
-                    int QK1 = QKToK2[Q][K1];
-                    for(int K2=0; K2<nkpts; ++K2) {
-                      if(QKToG[Q][K2] != G2) continue;
-                      int QK2 = QKToK2[Q][K2];
-                      // EXX += sum_u_v Muv[u][v] * Fuv[K1][K2][u][v] * Fuv[QK2][QK1][v][u]   
-                      ComplexType E_(0.0);
-                      auto&& F1_(Fuv[K1][K2]);
-                      auto&& F2_(Fuv[QK2][QK1]);
-                      for(int bu=0; bu<nbu; ++bu) {
-                        int i0 = bu*bsz;
-                        int iN = std::min((bu+1)*bsz,nu);
-                        for(int bv=0; bv<nbu; ++bv) {
-                          int j0 = bv*bsz;
-                          int jN = std::min((bv+1)*bsz,nu);
-                          for(int i=i0; i<iN; ++i) {
-                            for(int j=j0; j<jN; ++j)
-                              E_ += F1_[i][j] * Muv[i][j] * F2_[j][i];
-                          }
-                        }
-                      }
-                      E[n][1] -= 0.5*scl*E_;
-                    }
-                  }
-                }
-              }
-            }
-          }
-*/
           if(walker_type==COLLINEAR) {
             APP_ABORT("Error: Finish UHF in KPTHC.\n");
           }
@@ -518,6 +479,7 @@ Timer.stop("T1");
       }
 
 Timer.start("T2");
+/*
       if(addEJ) {
         if(not addEXX) {
           // calculate Kr
@@ -535,6 +497,7 @@ Timer.start("T2");
           }
         }
       }
+*/
 Timer.stop("T2");
 app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Timer.total("T2") <<"\n";
 
@@ -1176,7 +1139,7 @@ app_log()<<" E time: "
     /************************************************/
     // Used in the calculation of the energy
     // Coulomb matrix elements of interpolating vectors
-    std::vector<shmSpMatrix> rotLQGun;
+    std::vector<shmSpMatrix> rotMuv;
 
     // Orbitals at interpolating points
     shmSpMatrix rotPiu;
@@ -1197,7 +1160,7 @@ app_log()<<" E time: "
     /************************************************/
 
     // Muv for energy
-    std::vector<shmSpMatrix> Muv;
+    //std::vector<shmSpMatrix> Muv;
      
     // one-body piece of Hamiltonian factorization
     shmC3Tensor vn0;

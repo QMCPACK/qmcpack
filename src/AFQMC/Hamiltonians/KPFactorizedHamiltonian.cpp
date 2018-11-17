@@ -105,6 +105,12 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
                  <<" Problems reading MinusK. \n";
       APP_ABORT("");
     }
+#define SYMMETRIZE_LQ
+#ifdef SYMMETRIZE_LQ
+    for(int k=0; k<nkpts; k++) {
+      if(kminus[k] < k) nchol_per_kp[k] = nchol_per_kp[kminus[k]];
+    }    
+#endif 
     if(!dump.read(QKtok2,"QKTok2")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading QKTok2. \n";
@@ -171,10 +177,34 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
       APP_ABORT("");
     }
     for(int Q=0; Q<nkpts; Q++) {
-      if(!dump.read(LQKikn[Q],std::string("L")+std::to_string(Q))) {
-        app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
-                 <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n";
-        APP_ABORT("");
+#ifdef SYMMETRIZE_LQ
+      using std::conj;  
+      if(kminus[Q] < Q) {
+        int Qm = kminus[Q];
+        for(int KI=0; KI<nkpts; KI++) {
+          int KJ = QKtok2[Qm][KI]; 
+          int ni = nmo_per_kp[KI];
+          int nj = nmo_per_kp[KJ];
+          boost::multi::array_ref<SPComplexType,3> LQm(std::addressof(*LQKikn[Qm][KI].origin()),
+                                                      {ni,nj,nchol_per_kp[Q]});
+          boost::multi::array_ref<SPComplexType,3> LQ(std::addressof(*LQKikn[Q][KJ].origin()),
+                                                      {nj,ni,nchol_per_kp[Q]});
+          for(int i=0; i<ni; i++)
+            for(int j=0; j<nj; j++) {
+              auto LQ_n(LQ[j][i].origin());  
+              auto LQm_n(LQm[i][j].origin());  
+              for(int n=0; n<nchol_per_kp[Qm]; n++, ++LQ_n, ++LQm_n)
+                (*LQ_n) = conj(*LQm_n);
+            }    
+        }  
+      } else 
+#endif
+      {  
+        if(!dump.read(LQKikn[Q],std::string("L")+std::to_string(Q))) {
+          app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
+                   <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n";
+          APP_ABORT("");
+        }
       }
       if(LQKikn[Q].shape()[0] != nkpts || LQKikn[Q].shape()[1] != nmo_max*nmo_max*nchol_per_kp[Q]) {
         app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"

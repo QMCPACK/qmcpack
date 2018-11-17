@@ -4,6 +4,7 @@
 #include<iostream>
 #include<fstream>
 #include<iomanip>
+#include<cmath>
 #include<map>
 #include<utility>
 #include<vector>
@@ -107,6 +108,12 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                  <<" Problems reading MinusK. \n";
       APP_ABORT("");
     }
+#define SYMMETRIZE_LQ
+#ifdef SYMMETRIZE_LQ
+    for(int k=0; k<nkpts; k++) {
+      if(kminus[k] < k) nchol_per_kp[k] = nchol_per_kp[kminus[k]];
+    }
+#endif
     if(!dump.read(QKtok2,"QKTok2")) {
       app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading QKTok2. \n";
@@ -117,6 +124,32 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                  <<" Problems reading QKToG. \n";
       APP_ABORT("");
     }
+#ifdef SYMMETRIZE_LQ
+    // since I will force L[Q][G][u][n] = L[-Q][G][u][n]*, make sure QKToG is consistent
+    std::vector<int> Gmap(nkpts);
+    for(int Q=0; Q<nkpts; Q++) {
+      if(kminus[Q] < Q) {
+        int Qm = kminus[Q];
+        for(int k=0; k<nkpts; k++) Gmap[k]=-1;
+        for(int KI=0; KI<nkpts; KI++){
+          int G = QKtoG[Q][KI];
+          int KJ = QKtok2[Q][KI];
+          int Gm = QKtoG[Qm][KJ];
+          Gmap[KI] = Gm;
+          // checking for consistency, any (Q,KI) that maps to G must also map (-Q,KJ) to Gm 
+          for(int KI_=0; KI_<nkpts; KI_++){
+            int G_ = QKtoG[Q][KI_];
+            int KJ_ = QKtok2[Q][KI_];
+            int Gm_ = QKtoG[Qm][KJ_];
+            if( G_==G && Gm!=Gm_ )
+              APP_ABORT(" Error: Inconsistent QKtoG map.\n");
+          }
+        }
+        for(int KI=0; KI<nkpts; KI++)
+          QKtoG[Q][KI] = Gmap[KI];
+      }   
+    }
+#endif
     std::vector<ValueType> E_(2);
     if(!dump.read(E_,"Energies")) {
       app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
@@ -124,6 +157,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
       APP_ABORT("");
     }
     E0 = E_[0]+E_[1];
+    E0 = nkpts*(E0-1.34789140434);
     if(nmo_per_kp.size() != nkpts ||
        nchol_per_kp.size() != nkpts ||
        kminus.size() != nkpts ||
@@ -189,7 +223,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   }
   TG.Node().broadcast_n(Idata.begin(),2,0);
   nmu = Idata[0];
-  rotnmu = 0;//Idata[1];
+  rotnmu = 260;//Idata[1];  
 
   std::vector<shmSpMatrix> LQGun;
   LQGun.reserve(nkpts);
@@ -199,21 +233,36 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
     LQGun.emplace_back( shmSpMatrix({nG*nmu,nchol_per_kp[Q]},
                                    shared_allocator<SPComplexType>{TG.Node()}) );
   }  
-  std::vector<shmSpMatrix> rotLQGun;
-  rotLQGun.reserve(nkpts);
+  std::vector<shmSpMatrix> rotMuv;
+  rotMuv.reserve(nkpts);
   shmSpMatrix rotPiu({nmo_tot,rotnmu},shared_allocator<SPComplexType>{TG.Node()});
   for(int Q=0; Q<nkpts; Q++) {
     int nG = *std::max_element(QKtoG[Q].begin(),QKtoG[Q].end())+1;  
-    rotLQGun.emplace_back( shmSpMatrix({nG*rotnmu,nchol_per_kp[Q]},
+    rotMuv.emplace_back( shmSpMatrix({nG*rotnmu,nG*rotnmu},
                                    shared_allocator<SPComplexType>{TG.Node()}) );
   }  
   if( TG.Node().root() ) {
     for(int Q=0; Q<nkpts; Q++) {
       int nG = *std::max_element(QKtoG[Q].begin(),QKtoG[Q].end())+1;  
-      if(!dump.read(LQGun[Q],std::string("L")+std::to_string(Q))) {
-        app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
-                 <<" Problems reading /Hamiltonian/KPTHC/L" <<Q <<". \n";
-        APP_ABORT("");
+#ifdef SYMMETRIZE_LQ
+      using std::conj;
+      if(kminus[Q] < Q) {
+        int Qm = kminus[Q];
+        int nGm = *std::max_element(QKtoG[Qm].begin(),QKtoG[Qm].end())+1;  
+        if(nG != nGm)
+          APP_ABORT(" Error: nG != nGm. \n");
+        auto LQ(std::addressof(*LQGun[Q].origin()));
+        auto LQm(std::addressof(*LQGun[Qm].origin()));
+        for(int Gun=0; Gun<LQGun[Q].num_elements(); Gun++, ++LQ, ++LQm) 
+          (*LQ) = conj(*LQm);
+      } else
+#endif
+      {  
+        if(!dump.read(LQGun[Q],std::string("L")+std::to_string(Q))) {
+          app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
+                   <<" Problems reading /Hamiltonian/KPTHC/L" <<Q <<". \n";
+          APP_ABORT("");
+        }
       }
       if(LQGun[Q].shape()[0] != nG*nmu || LQGun[Q].shape()[1] != nchol_per_kp[Q]) {
         app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
@@ -221,6 +270,26 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                  <<" Unexpected dimensins: " <<LQGun[Q].shape()[0] <<" " <<LQGun[Q].shape()[1] <<std::endl; 
         APP_ABORT("");
       }    
+// adding scaling factor until Fionn does it on his end
+/*
+      {
+        RealType scl = 1.0/std::sqrt(double(nkpts));
+        auto LQ(std::addressof(*LQGun[Q].origin()));
+        for(int Gun=0; Gun<LQGun[Q].num_elements(); Gun++, ++LQ)
+          (*LQ) *= scl; 
+      }
+*/
+      if(!dump.read(rotMuv[Q],std::string("HalfTransformedMuv")+std::to_string(Q))) {
+        app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
+                 <<" Problems reading /Hamiltonian/KPTHC/HalfTransformedMuv0" <<Q <<". \n";
+        APP_ABORT("");
+      }  
+      if(rotMuv[Q].shape()[0] != nG*rotnmu || rotMuv[Q].shape()[1] != nG*rotnmu) {
+        app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
+                 <<" Problems reading /Hamiltonian/KPTHC/L" <<Q <<". \n"
+                 <<" Unexpected dimensins: " <<rotMuv[Q].shape()[0] <<" " <<rotMuv[Q].shape()[1] <<std::endl;
+        APP_ABORT("");
+      }
     }
     if(!dump.read(Piu,std::string("Orbitals"))) {
       app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
@@ -233,6 +302,17 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                <<" Unexpected dimensins: " <<Piu.shape()[0] <<" " <<Piu.shape()[1] <<std::endl; 
       APP_ABORT("");
     }    
+    if(!dump.read(rotPiu,std::string("HalfTransformedFullOrbitals"))) {
+      app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
+               <<" Problems reading /Hamiltonian/KPTHC/HalfTransformedFullOrbitals. \n";
+      APP_ABORT("");
+    }
+    if(rotPiu.shape()[0] != nmo_tot || rotPiu.shape()[1] != rotnmu) {
+      app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
+               <<" Problems reading /Hamiltonian/KPTHC/Orbitals. \n"
+               <<" Unexpected dimensins: " <<rotPiu.shape()[0] <<" " <<rotPiu.shape()[1] <<std::endl;
+      APP_ABORT("");
+    }
     dump.pop();
   }
   TG.Node().barrier();
@@ -340,6 +420,8 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
           assert(Psi.shape()[0] == nocc_per_kp[nd][Q]);
           ma::product(ma::H(Piu({ni0,ni0+nmo_per_kp[Q]},{0,nmu})),ma::T(Psi),
                       cPua[2*nd]({0,nmu},{ne0,ne0+Psi.shape()[0]}));
+          ma::product(ma::H(rotPiu({ni0,ni0+nmo_per_kp[Q]},{0,rotnmu})),ma::T(Psi),
+                      rotcPua[2*nd]({0,rotnmu},{ne0,ne0+Psi.shape()[0]}));
 
           Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],Q);
           ne0 = std::accumulate(std::addressof(*nocc_per_kp[nd].origin())+nkpts,
@@ -347,6 +429,10 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
           assert(Psi.shape()[0] == nocc_per_kp[nd][nkpts+Q]);
           ma::product(ma::H(Piu({ni0,ni0+nmo_per_kp[Q]},{0,nmu})),ma::T(Psi),
                       cPua[2*nd+1]({0,nmu},{ne0,ne0+Psi.shape()[0]}));
+          assert(Psi.shape()[0] == nocc_per_kp[nd][nkpts+Q]);
+          ma::product(ma::H(rotPiu({ni0,ni0+nmo_per_kp[Q]},{0,rotnmu})),ma::T(Psi),
+                      rotcPua[2*nd+1]({0,rotnmu},{ne0,ne0+Psi.shape()[0]}));
+
         } else {
           int ne0 = std::accumulate(std::addressof(*nocc_per_kp[nd].origin()),std::addressof(*nocc_per_kp[nd].origin())+Q,0);  
           int ni0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+Q,0);  
@@ -354,6 +440,8 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
           assert(Psi.shape()[0] == nocc_per_kp[nd][Q]);
           ma::product(ma::H(Piu({ni0,ni0+nmo_per_kp[Q]},{0,nmu})),ma::T(Psi),
                       cPua[nd]({0,nmu},{ne0,ne0+Psi.shape()[0]}));
+          ma::product(ma::H(rotPiu({ni0,ni0+nmo_per_kp[Q]},{0,rotnmu})),ma::T(Psi),
+                      rotcPua[nd]({0,rotnmu},{ne0,ne0+Psi.shape()[0]}));
         }
       }
     }
@@ -417,8 +505,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
       for(int j=0; j<nmo_per_kp[K]; j++) 
         E_ += H1[K][i][j]*G_[i][j];
   }
-  app_log()<<" E1+E0: " <<std::setprecision(12) <<nkpts*E0+2*E_ <<"  ";
-  //app_log()<<" E1+E0: " <<std::setprecision(12) <<nkpts*(E0-1.34789140434)+2*E_ <<"  ";
+  app_log()<<" E1+E0: " <<std::setprecision(12) <<E0+2*E_ <<"  ";
   E_=0.0; 
   for(int K=0; K<nkpts; K++) {
     auto&& G_=Gc[K];
@@ -427,7 +514,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
         E_ += haj[K][aj]*G_[a][j];
   }
   //app_log()<<nkpts*(E0-1.34789140434)+E_ <<std::endl;
-  app_log()<<nkpts*E0+E_ <<std::endl;
+  app_log()<<E0+E_ <<std::endl;
 
   boost::multi::array<int,2> KK2Q({nkpts,nkpts});
   for(int KI=0; KI<nkpts; KI++)
@@ -440,7 +527,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
       }  
     assert(KK2Q[KI][KK]>=0);  
   }
-
+/*
   // LIJ[I][J][Q][n] = sum_u u[KI][i][u] u[KJ][j][u] LQGun[Q][G][u][n]
   boost::multi::array<ComplexType,5> LIJ({nkpts,nkpts,nmo_max,nmo_max,nchol_max});
   boost::multi::array_ref<ComplexType,4> LIJ4D(LIJ.origin(),{nkpts,nkpts,nmo_max*nmo_max,nchol_max});
@@ -497,36 +584,6 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
       //boost::multi::array_ref<ComplexType,2> LKL(std::addressof(*LIJ[KL][KJ].origin()),{nmo_max*nmo_max,nchol_per_kp[Q]}); 
       ma::product(LIJ4D[KI][KK]({0,nmo_max*nmo_max},{0,nchol_per_kp[Q]}),
                   ma::H(LIJ4D[KL][KJ]({0,nmo_max*nmo_max},{0,nchol_per_kp[Q]})),IJKL);
-/*
-      int G1 = QKtoG[Q][KI]; 
-      int G2 = QKtoG[Q][KL]; 
-//Timer.reset("T0");
-//Timer.start("T0");
-      if( (KI==KK && KL == KJ) ) { //|| (KI==KL && KJ == KK) ){
-        ma::product(LQGun[Q].sliced(nmu*G1,nmu*(G1+1)),ma::H(LQGun[Q].sliced(nmu*G2,nmu*(G2+1))),Muv);
-        for(int i=0; i<nmo_per_kp[0]; i++) {
-          auto&& uI(Piu[ni0+i]);
-        for(int k=0; k<nmo_per_kp[0]; k++) {
-          auto&& uK(Piu[nk0+k]);
-        for(int l=0; l<nmo_per_kp[0]; l++) {
-        for(int j=0; j<nmo_per_kp[0]; j++) {
-          ComplexType e_(0.0);
-          for(int u=0; u<nmu; u++) {
-            ComplexType e__(0.0);
-            auto muv_(Muv[u].origin());
-            auto uL(std::addressof(*Piu[nl0+l].origin()));
-            auto uJ(std::addressof(*Piu[nj0+j].origin()));
-            for(int v=0; v<nmu; v++, ++muv_, ++uJ, ++uL)
-              e__ += (*muv_) * conj((*uJ)) * (*uL); 
-            e_ += e__ * conj(uI[u]) * uK[u];
-          }  
-          IJKL4D[i][k][l][j] = e_;
-        }
-        }
-        }
-        }
-      }   
-*/
 //Timer.stop("T0");
 //app_log()<<i <<" " <<Timer.total("T0") <<std::endl;
       if(KI==KK && KL == KJ) { // EJ
@@ -552,13 +609,14 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   TGwfn.Global().all_reduce_n(&EJ, 1, std::plus<>());
   app_log()<<" EX: " <<std::setprecision(12) <<EX*2 <<std::endl;
   app_log()<<" EJ: " <<std::setprecision(12) <<EJ*4 <<std::endl;
+*/
 
   return HamiltonianOperations(KPTHCOps(TGwfn.TG_local(),type,
                             std::move(nmo_per_kp),std::move(nchol_per_kp),
                             std::move(kminus),std::move(nocc_per_kp),
                             std::move(QKtok2),std::move(QKtoG),
                             std::move(H1),std::move(haj),
-                            std::move(rotLQGun),std::move(rotPiu),std::move(rotcPua),
+                            std::move(rotMuv),std::move(rotPiu),std::move(rotcPua),
                             std::move(LQGun),std::move(Piu),std::move(cPua),
                             std::move(vn0),E0,global_ncvecs));
 

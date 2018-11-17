@@ -97,12 +97,14 @@ class KP3IndexFactorization
         vn0(std::move(vn0_)),
         SM_TMats({1,1},shared_allocator<SPComplexType>{c_}),
         TMats({1,1}),
+//        Qave({nopk.size(),nopk.size(),nopk.size()}),
         mutex(0)
     {
         local_nCV = std::accumulate(ncholpQ.begin(),ncholpQ.end(),0); 
         mutex.reserve(ncholpQ.size());
         for(int nQ=0; nQ<ncholpQ.size(); nQ++)
             mutex.emplace_back(std::make_unique<shared_mutex>(*comm));
+//        std::fill_n(Qave.origin(),Qave.num_elements(),0);
     }
 
     ~KP3IndexFactorization() {}
@@ -287,6 +289,82 @@ Timer.start("T0");
         SpMatrix_ref Kr_local(TMats.origin(),{1,nchol_max}); 
         std::fill_n(Kr_local.origin(),Kr_local.num_elements(),SPComplexType(0.0));
         for(int n=0; n<nwalk; ++n) {
+          for(int Kb=0; Kb<nkpts; ++Kb) {       // K is the index of the kpoint pair of (l,k)
+            for(int Q=0; Q<nkpts; ++Q) {            // momentum conservation index   
+              bool haveKE=false;
+              if((nqk++)%comm->size() == comm->rank()) { 
+                int nchol = ncholpQ[Q];
+                int Kl = QKToK2[Q][Kb];
+                int nl = nopk[Kl];
+                int nl0 = std::accumulate(nopk.begin(),nopk.begin()+Kl,0);
+                int nb = nelpk[nd][Kb];
+                int nb0 = std::accumulate(nelpk[nd].begin(),nelpk[nd].begin()+Kb,0);
+
+                SpMatrix_ref Llnb(std::addressof(*LQKlnb[nd*nkpts+Q][Kl].origin()), 
+                                                 {nl,nchol*nb}); 
+                SpMatrix_ref TAnb(TMats.origin()+nchol_max,{nocca_tot-nb0,nchol*nb}); 
+
+Timer.start("T1");  
+// FIX FIX: only need from na0=nb0
+                // T(A,n,b) = sum_l_in_K G(A,l) LQKlnb[Q][K](l,n,b)
+                ma::product(G3Da[n]({nb0,nocca_tot},{nl0,nl0+nl}),Llnb,TAnb);  
+Timer.stop("T1"); 
+
+Timer.start("T2");  
+                if(addEJ) {
+                  haveKE=true;
+                  boost::multi::array_ref<SPComplexType,3> Tanb(TAnb.origin(),{nb,nchol,nb});
+                  for(int nc=0; nc<nchol; nc++)  
+                    for(int b=0; b<nb; b++) 
+                      Kr_local[0][nc] += Tanb[b][nc][b]; 
+                }
+Timer.stop("T2"); 
+
+Timer.start("T3");  
+                //int na0 = 0;
+                int na0 = 0; 
+                for(int Ka=Kb; Ka<nkpts; ++Ka) {  
+                  int na = nelpk[nd][Ka]; 
+                  int nk = nopk[QKToK2[Q][Ka]];
+                  int nk0 = std::accumulate(nopk.begin(),nopk.begin()+QKToK2[Q][Ka],0);
+
+                  SpMatrix_ref Fbk(TMats.origin()+nchol_max+TAnb.num_elements(),{nb,nk}); 
+                  SpMatrix_ref Lank(std::addressof(*LQKank[nd*nkpts+Q][Ka].origin()), 
+                                                 {na*nchol,nk}); 
+                  SpMatrix_ref Tanb(TAnb[na0].origin(),{na*nchol,nb}); 
+              
+                  // F(K1,b,k) = sum_a_in_K1 sum_n  T(a,n,b) * LQKank(a,n,k) 
+                  ma::product(ma::T(Tanb),Lank,Fbk);
+
+                  // EXX += sum_K1 sum_b_in_Q(K) sum_k_in_Q(K1) F(K1,b,k) * G(b,k)
+                  ComplexType E_(0.0);
+                  for(int b=0; b<nb; ++b) 
+                    E_ += ma::dot(Fbk[b],G3Da[n][nb0+b]({nk0,nk0+nk}));  
+                  if(Ka==Kb)
+                    E[n][1] -= scl*0.5*E_;
+                  else
+                    E[n][1] -= 2.0*scl*0.5*E_;
+//Qave[Q][Ka][Kb] -= scl*0.5*E_;
+                  na0 += na;  
+                }
+Timer.stop("T3"); 
+              }
+              if(walker_type==COLLINEAR) {
+                if((nqk++)%comm->size() == comm->rank()) {
+                }
+              }
+              if(addEJ && haveKE) {
+                std::lock_guard<shared_mutex> guard(*mutex[Q]);
+                int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);  
+                ma::axpy(SPComplexType(1.0),Kr_local[0].sliced(0,ncholpQ[Q]),Kr[n]({nc0,nc0+ncholpQ[Q]})); 
+              } // to release the lock
+              if(addEJ && haveKE) 
+                std::fill_n(Kr_local.origin(),Kr_local.num_elements(),SPComplexType(0.0));
+            }
+          }
+        }
+/*
+        for(int n=0; n<nwalk; ++n) {
           for(int Kl=0; Kl<nkpts; ++Kl) {       // K is the index of the kpoint pair of (l,k)
             for(int Q=0; Q<nkpts; ++Q) {            // momentum conservation index   
               bool haveKE=false;
@@ -338,6 +416,7 @@ Timer.start("T3");
                   for(int b=0; b<nb; ++b) 
                     E_ += ma::dot(Fbk[b],G3Da[n][nb0+b]({nk0,nk0+nk}));  
                   E[n][1] -= scl*0.5*E_;
+//Qave[Q][Ka][Kl] -= scl*0.5*E_;
                   na0 += na;  
                 }
 Timer.stop("T3"); 
@@ -356,6 +435,8 @@ Timer.stop("T3");
             }
           }
         }
+*/
+//        cntQave++;
       }  
 Timer.stop("T0"); 
 t2 = Timer.total("T0");          
@@ -487,6 +568,22 @@ std::cout<<" Time in energy - "
         }  
         nq+=2*ncholpQ[Q];
       } 
+      comm->barrier();     
+      //  then combine Q/(-Q) pieces
+      //  X(Q)np = (X(Q)np + X(-Q)nm)
+      for(int Q=0, nq=0; Q<nkpts; ++Q) {
+        int Qm = kminus[Q];
+        int nqm0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Qm,0);
+        int nc0, ncN;
+        std::tie(nc0,ncN) = FairDivideBoundary(comm->rank(),ncholpQ[Q],comm->size());
+        auto Xnp = std::addressof(*X[nq+nc0].origin());
+        auto Xnm = std::addressof(*X[nqm0+ncholpQ[Q]+nc0].origin());
+        for(int n=nc0; n<ncN; ++n) {
+          for(int nw=0; nw<nwalk; ++nw, ++Xnp, ++Xnm) 
+            *Xnp =  ((*Xnp) + (*Xnm));
+        }
+        nq+=2*ncholpQ[Q];
+      }
       // scale v by 'c': assuming contiguous data 
       {
         size_t i0, iN;
@@ -531,6 +628,7 @@ std::cout<<" Time in energy - "
       }
       // adding second half. sync here to avoid need for locks  
       comm->barrier();
+/*
       nqk=0;
       for(int Q=0, nc0=0; Q<nkpts; ++Q) {      // momentum conservation index   
         for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (i,k)
@@ -563,6 +661,7 @@ std::cout<<" Time in energy - "
         nc0+=2*ncholpQ[Q];
       }    
       comm->barrier();
+*/
       // do I need to "rotate" back, can be done if necessary
     }
 
@@ -652,13 +751,16 @@ std::cout<<" Time in energy - "
 
             Sp3Tensor_ref Lank(std::addressof(*LQKank[nd*nkpts+Q][K].origin()),
                                                  {na,nchol,nk});
+/*
             Sp3Tensor_ref Llnb(std::addressof(*LQKlnb[nd*nkpts+Q][K].origin()),
                                                  {nl,nchol,nb});
+*/
 
             // v1[Q][n][nw] += sum_K sum_a_k LQK[a][n][k] G[a][k][nw]
             for(int a=0; a<na; ++a) 
               ma::product(one,Lank[a],G3Da[na0+a]({nk0,nk0+nk},{0,nwalk}),one,v1);
 
+/*
             // v2[Q][n][nw] += sum_K sum_l_b LQK[l][n][b] G[b][l][nw]
             for(int l=0; l<nl; ++l) {
               // might be faster to transpose G -> G[l][nw][b] and then use ma::T(G[l])  
@@ -666,11 +768,32 @@ std::cout<<" Time in energy - "
                 std::copy_n(G3Da[nb0+b][nl0+l].origin(),nwalk,Gl[b].origin());  
               ma::product(one,Llnb[l],Gl({0,nb},{0,nwalk}),one,v2);
             }
+*/
           }
           if(walker_type==COLLINEAR) {
             if((nqk++)%comm->size() == comm->rank()) {
             }
           }
+          if(haveV) {
+            {
+              std::lock_guard<shared_mutex> guard(*mutex[Q]);
+              int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
+              // v+ = 0.5*a*(v1+v2) 
+              ma::axpy(halfa,vlocal.sliced(0,ncholpQ[Q]),v[indices[range_t(nc0,nc0+ncholpQ[Q])][range_t()]]);
+              // v- = -0.5*a*i*(v1-v2) 
+              ma::axpy(minusimhalfa,vlocal.sliced(0,ncholpQ[Q]),v[indices[range_t(nc0+ncholpQ[Q],nc0+2*ncholpQ[Q])][range_t()]]);
+            }
+            int Qm = kminus[Q];
+            int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Qm,0);
+            {
+              std::lock_guard<shared_mutex> guard(*mutex[Qm]);
+              // v+ = 0.5*a*(v1+v2) 
+              ma::axpy(halfa,vlocal.sliced(0,ncholpQ[Qm]),v[indices[range_t(nc0,nc0+ncholpQ[Qm])][range_t()]]);
+              // v- = -0.5*a*i*(v1-v2) 
+              ma::axpy(imhalfa,vlocal.sliced(0,ncholpQ[Qm]),v[indices[range_t(nc0+ncholpQ[Qm],nc0+2*ncholpQ[Qm])][range_t()]]);
+            }
+          } // to release the lock
+/*
           if(haveV) {
             std::lock_guard<shared_mutex> guard(*mutex[Q]);
             int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
@@ -681,6 +804,7 @@ std::cout<<" Time in energy - "
             ma::axpy(minusimhalfa,vlocal({0,ncholpQ[Q]},{0,nwalk}),v[indices[range_t(nc0+ncholpQ[Q],nc0+2*ncholpQ[Q])][range_t()]]);
             ma::axpy(imhalfa,vlocal({ncholpQ[Q],2*ncholpQ[Q]},{0,nwalk}),v[indices[range_t(nc0+ncholpQ[Q],nc0+2*ncholpQ[Q])][range_t()]]);
           } // to release the lock
+*/
           if(haveV)
             std::fill_n(vlocal.origin(),vlocal.num_elements(),SPComplexType(0.0));
         }
@@ -753,6 +877,9 @@ std::cout<<" Time in energy - "
     SpMatrix TMats;
 
     std::vector<std::unique_ptr<shared_mutex>> mutex;
+
+//    boost::multi::array<ComplexType,3> Qave;
+//    int cntQave=0;
 
     myTimer Timer;
 
