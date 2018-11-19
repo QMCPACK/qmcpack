@@ -106,7 +106,7 @@ class RPAFunctor { };
 template<class precision, template<class> class RadFuncType>
 class JastrowTypeHelper 
 {
-private:
+public:
   using rft = RadFuncType<precision>;
 #if defined(ENABLE_SOA)
   using J1OrbitalType = J1OrbitalSoA<rft>;
