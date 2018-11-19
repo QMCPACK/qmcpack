@@ -24,7 +24,8 @@
 #include "Optimize/VariableSet.h"
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsPETE/TinyVector.h"
-#include <cstdio>
+//#include <cstdio>
+#include <iostream>
 
 /** Base class for any functor with optimizable parameters
  *

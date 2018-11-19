@@ -300,6 +300,7 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   std::string j2name="J2_"+Jastfunction;
   targetPsi.addOrbital(J2,j2name.c_str());
   J2->setOptimizable(true);
+  return true;
 }
 
 // specialiation for J2 RPA jastrow.
@@ -568,6 +569,7 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
       app_error() << "Unknown two body jastrow function: " << Jastfunction << ".\n";
     }
     }
-}      
+  return success;
+}
 
 }
