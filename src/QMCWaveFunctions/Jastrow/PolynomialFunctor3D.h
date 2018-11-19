@@ -9,6 +9,7 @@
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -909,11 +910,11 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
 #endif
   }
 
-  inline real_type f(real_type r)
+  inline real_type f(real_type r) const
   {
     return 0.0;
   }
-  inline real_type df(real_type r)
+  inline real_type df(real_type r) const
   {
     return 0.0;
   }

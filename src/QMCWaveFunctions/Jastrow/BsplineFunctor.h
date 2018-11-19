@@ -13,6 +13,7 @@
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //                    Amrita Mathuriya, amrita.mathuriya@intel.com, Intel Corp.
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +154,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
       const T* restrict _distArray, 
       T* restrict distArrayCompressed) const;
 
-  inline real_type evaluate(real_type r)
+  inline real_type evaluate(real_type r) const
   {
     if (r >= cutoff_radius)
       return 0.0;
@@ -172,18 +173,18 @@ struct BsplineFunctor: public OptimizableFunctorBase
        SplineCoefs[i+2]*(A[ 8]*tp[0] + A[ 9]*tp[1] + A[10]*tp[2] + A[11]*tp[3])+
        SplineCoefs[i+3]*(A[12]*tp[0] + A[13]*tp[1] + A[14]*tp[2] + A[15]*tp[3]));
   }
-  inline real_type evaluate(real_type r, real_type rinv)
+  inline real_type evaluate(real_type r, real_type rinv) const
   {
     return Y=evaluate(r,dY,d2Y);
   }
 
-  inline void evaluateAll(real_type r, real_type rinv)
+  inline void evaluateAll(real_type r, real_type rinv) const
   {
     Y=evaluate(r,dY,d2Y);
   }
 
   inline real_type
-  evaluate(real_type r, real_type& dudr, real_type& d2udr2)
+  evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
   {
     if (r >= cutoff_radius)
     {
@@ -227,7 +228,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
 
 
   inline real_type
-  evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type &d3udr3)
+  evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type &d3udr3) const
   {
     if (r >= cutoff_radius)
     {
@@ -350,7 +351,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
     return true;
   }
 
-  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) const
   {
     if (r >= cutoff_radius) return false;
     real_type tp[4],v[4],ipart,t;
@@ -376,13 +377,13 @@ struct BsplineFunctor: public OptimizableFunctorBase
     return true;
   }
 
-  inline real_type f(real_type r)
+  inline real_type f(real_type r) const
   {
     if (r>=cutoff_radius)
       return 0.0;
     return evaluate(r);
   }
-  inline real_type df(real_type r)
+  inline real_type df(real_type r) const
   {
     if (r>=cutoff_radius)
       return 0.0;

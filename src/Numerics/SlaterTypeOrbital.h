@@ -7,6 +7,7 @@
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -19,6 +20,10 @@
 #define QMCPLUSPLUS_SLATERTYPEORBITAL_H
 #include "Numerics/OptimizableFunctorBase.h"
 #include <cmath>
+
+namespace qmcplusplus
+{
+
 
 /** class to evaluate the normalization factors for the Slater-Type orbitals
  */
@@ -45,9 +50,9 @@ struct STONorm
   inline T operator()(int n, T screen)
   {
     return
-      1.0/sqrt(Factorial[2*n+2]/pow(2.0*screen,2*n+3));
+      1.0/std::sqrt(Factorial[2*n+2]/std::pow(2.0*screen,2*n+3));
     //return
-    //  1.0/sqrt(Factorial[2*n+2]*4.0*(4.0*atan(1.0))/pow(2.0*screen,2*n+3));
+    //  1.0/std::sqrt(Factorial[2*n+2]*4.0*(4.0*atan(1.0))/std::pow(2.0*screen,2*n+3));
   }
 
 };
@@ -116,21 +121,21 @@ struct GenericSTO: public OptimizableFunctorBase
 
   inline void setgrid(real_type r) { }
 
-  inline real_type f(real_type r)
+  inline real_type f(real_type r) const
   {
-    return exp(-Z*r)*Norm*pow(r,Power);
+    return std::exp(-Z*r)*Norm*std::pow(r,Power);
   }
 
-  inline real_type df(real_type r)
+  inline real_type df(real_type r) const
   {
-    real_type rnl = exp(-Z*r)*Norm;
+    real_type rnl = std::exp(-Z*r)*Norm;
     if(Power == 0)
     {
       return  -Z*rnl;
     }
     else
     {
-      return rnl*pow(r,Power)*(Power/r-Z);
+      return rnl*std::pow(r,Power)*(Power/r-Z);
     }
   }
 
@@ -140,7 +145,7 @@ struct GenericSTO: public OptimizableFunctorBase
    */
   inline real_type evaluate(real_type r, real_type rinv)
   {
-    return Y = Norm*pow(r,Power)*exp(-Z*r);
+    return Y = Norm*std::pow(r,Power)*std::exp(-Z*r);
   }
 
   inline void evaluateAll(real_type r, real_type rinv)
@@ -150,7 +155,7 @@ struct GenericSTO: public OptimizableFunctorBase
 
   inline real_type evaluate(real_type r, real_type rinv, real_type& drnl, real_type& d2rnl)
   {
-    real_type rnl = Norm*exp(-Z*r);
+    real_type rnl = Norm*std::exp(-Z*r);
     if(Power == 0)
     {
       drnl = -Z*rnl;
@@ -158,7 +163,7 @@ struct GenericSTO: public OptimizableFunctorBase
     }
     else
     {
-      rnl *= pow(r,Power);
+      rnl *= std::pow(r,Power);
       real_type x = Power*rinv-Z;
       drnl = rnl*x;
       d2rnl = rnl*(x*x-Power*rinv*rinv);
@@ -168,7 +173,7 @@ struct GenericSTO: public OptimizableFunctorBase
 
   inline real_type evaluate(real_type r, real_type rinv, real_type& drnl, real_type& d2rnl, real_type& d3rnl)
   {
-    real_type rnl = Norm*exp(-Z*r);
+    real_type rnl = Norm*std::exp(-Z*r);
     if(Power == 0)
     {
       drnl = -Z*rnl;
@@ -177,7 +182,7 @@ struct GenericSTO: public OptimizableFunctorBase
     }
     else
     {
-      rnl *= pow(r,Power);
+      rnl *= std::pow(r,Power);
       real_type x = Power*rinv-Z;
       drnl = rnl*x;
       d2rnl = rnl*(x*x-Power*rinv*rinv);
@@ -222,18 +227,18 @@ struct RadialSTO
 
   inline T f(T r) const
   {
-    return pow(r,NminusOne)*exp(-Z*r)*Norm;
+    return std::pow(r,NminusOne)*std::exp(-Z*r)*Norm;
   }
 
   inline T df(T r) const
   {
-    T rnl = pow(r,NminusOne)*exp(-Z*r)*Norm;
+    T rnl = std::pow(r,NminusOne)*std::exp(-Z*r)*Norm;
     return  (NminusOne/r-Z)*rnl;
   }
 
   inline T evaluate(T r)
   {
-    return pow(r,NminusOne)*exp(-Z*r)*Norm;
+    return std::pow(r,NminusOne)*std::exp(-Z*r)*Norm;
   }
 
   inline void evaluateAll(T r, T rinv)
@@ -243,7 +248,7 @@ struct RadialSTO
 
   inline T evaluate(T r, T rinv, T& drnl, T& d2rnl)
   {
-    T rnl = pow(r,NminusOne)*exp(-Z*r)*Norm;
+    T rnl = std::pow(r,NminusOne)*std::exp(-Z*r)*Norm;
     T x = NminusOne*rinv-Z;
     drnl = rnl*x;
     d2rnl = rnl*(x*x-NminusOne*rinv*rinv);
@@ -251,6 +256,6 @@ struct RadialSTO
   }
 };
 
-
+}
 
 #endif

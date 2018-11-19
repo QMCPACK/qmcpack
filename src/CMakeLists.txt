@@ -13,6 +13,7 @@
 #//                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
 #//                    Marl Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//		       Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+#//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 #//
 #// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
@@ -151,6 +152,7 @@ ENDIF(HAVE_OOMPI)
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
     Numerics/OhmmsBlas.cpp
+    Numerics/OptimizableFunctorBase.cpp
     Platforms/sysutil.cpp
     QMCFactory/OneDimGridFactory.cpp
     Message/Communicate.cpp 

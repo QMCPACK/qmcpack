@@ -6,6 +6,7 @@
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -36,7 +37,7 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
   using CubicBsplineGrid<T,GRIDTYPE,BC>::GridDeltaInv2;
 
   ///index of current grid point
-  int i0,i1,i2,i3;
+  mutable int i0,i1,i2,i3;
   ///constant shift
   value_type OffSet;
   ///coefficients
@@ -103,7 +104,7 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
     this->spline(start,end,yp1,ypn,datain,P);
   }
 
-  inline value_type getValue(point_type x)
+  inline value_type getValue(point_type x) const
   {
     if(this->getGridPoint(x,i0))
       return interpolate0(P[i0],P[i0+1],P[i0+2],P[i0+3]);
@@ -111,7 +112,7 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
       return OffSet;
   }
 
-  inline value_type getDeriv(point_type x)
+  inline value_type getDeriv(point_type x) const
   {
     if(this->getGridPoint(x,i0))
       return interpolate1(P[i0],P[i0+1],P[i0+2],P[i0+3]);
@@ -119,7 +120,7 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
       return OffSet;
   }
 
-  inline value_type getDeriv2(point_type x)
+  inline value_type getDeriv2(point_type x) const
   {
     if(this->getGridPoint(x,i0))
       return interpolate2(P[i0],P[i0+1],P[i0+2],P[i0+3]);
@@ -127,7 +128,7 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
       return OffSet;
   }
 
-  inline value_type getDeriv3(point_type x)
+  inline value_type getDeriv3(point_type x) const
   {
     if(this->getGridPoint(x,i0))
       return GridDeltaInv * GridDeltaInv* GridDeltaInv*
@@ -136,12 +137,12 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
       return OffSet;
   }
 
-  inline value_type operator()(T x)
+  inline value_type operator()(T x) const
   {
     return getValue(x);
   }
 
-  inline value_type splint(T x)
+  inline value_type splint(T x) const
   {
     if(this->getGridPoint(x,i0))
       return interpolate0(P[i0],P[i0+1],P[i0+2],P[i0+3]);
@@ -149,7 +150,7 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
       return OffSet;
   }
 
-  inline value_type splint(point_type x, value_type& dy, value_type& d2y)
+  inline value_type splint(point_type x, value_type& dy, value_type& d2y) const
   {
     if(this->getGridPoint(x,i0))
     {
@@ -176,7 +177,7 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
     //  tp[3]*(A[12]*P[i0]+A[13]*P[i1]+A[14]*P[i2]+A[15]*P[i3]);
   }
   inline value_type interpolate(value_type p0, value_type p1, value_type p2, value_type p3,
-                                value_type& dy, value_type& d2y)
+                                value_type& dy, value_type& d2y) const
   {
     dy= GridDeltaInv*
         (tp[1]*(-0.5*p0+1.5*p1-1.5*p2+0.5*p3)+
@@ -192,7 +193,7 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
             tp[3]*(     p0+4.0*p1+p2));
   }
 
-  inline value_type interpolate0(value_type p0, value_type p1, value_type p2, value_type p3)
+  inline value_type interpolate0(value_type p0, value_type p1, value_type p2, value_type p3) const
   {
     const point_type onesixth=1.0/6.0;
     return onesixth*
@@ -202,7 +203,7 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
             tp[3]*(     p0+4.0*p1+p2));
   }
 
-  inline value_type interpolate1(value_type p0, value_type p1, value_type p2, value_type p3)
+  inline value_type interpolate1(value_type p0, value_type p1, value_type p2, value_type p3) const
   {
     return GridDeltaInv*
            (tp[1]*(-0.5*p0+1.5*p1-1.5*p2+0.5*p3)+
@@ -210,7 +211,7 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
             tp[3]*(-0.5*p0       +0.5*p2));
   }
 
-  inline value_type interpolate2(value_type p0, value_type p1, value_type p2, value_type p3)
+  inline value_type interpolate2(value_type p0, value_type p1, value_type p2, value_type p3) const
   {
     return GridDeltaInv2*
            (tp[2]*(-p0+3.0*p1-3.0*p2+p3)+ tp[3]*(p0-2.0*p1+p2));

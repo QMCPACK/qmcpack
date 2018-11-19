@@ -7,6 +7,7 @@
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -440,12 +441,12 @@ struct PadeOrbital: public OptimizableFunctorBase
 
   void reset() {}
 
-  inline real_type f(real_type r)
+  inline real_type f(real_type r) const
   {
     return a0*std::exp((a1+a2*r)*r/(1.0e0+a3*r));
   }
 
-  inline real_type df(real_type r)
+  inline real_type df(real_type r) const
   {
     value_type t = 1.0/(1.0e0+a3*r);
     value_type z=(a1+a2*r)*r*t;
