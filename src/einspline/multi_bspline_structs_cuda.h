@@ -61,7 +61,6 @@ typedef struct
   double gridInv;
   int num_splines;
   int num_split_splines;
-  int split_spline_start;
   int dim;
 } multi_UBspline_1d_z_cuda;
 

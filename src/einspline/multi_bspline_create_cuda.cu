@@ -50,6 +50,7 @@ create_multi_UBspline_1d_s_cuda (multi_UBspline_1d_s* spline)
     (multi_UBspline_1d_s_cuda*) malloc (sizeof (multi_UBspline_1d_s_cuda));
   
   cuda_spline->num_splines = spline->num_splines;
+  cuda_spline->num_split_splines = spline->num_splines;
 
   int Nx = spline->x_grid.num+3;
   int N = spline->num_splines;
@@ -104,6 +105,7 @@ create_multi_UBspline_1d_s_cuda_conv (multi_UBspline_1d_d* spline)
     (multi_UBspline_1d_s_cuda*) malloc (sizeof (multi_UBspline_1d_s_cuda));
   
   cuda_spline->num_splines = spline->num_splines;
+  cuda_spline->num_split_splines = spline->num_splines;
 
   int Nx = spline->x_grid.num+3;
   int N = spline->num_splines;
@@ -160,6 +162,7 @@ create_multi_UBspline_1d_c_cuda (multi_UBspline_1d_c* spline)
     (multi_UBspline_1d_c_cuda*) malloc (sizeof (multi_UBspline_1d_c_cuda));
   
   cuda_spline->num_splines = spline->num_splines;
+  cuda_spline->num_split_splines = spline->num_splines;
 
   int Nx = spline->x_grid.num+3;
   int N = spline->num_splines;
@@ -221,6 +224,7 @@ create_multi_UBspline_1d_c_cuda_conv (multi_UBspline_1d_z* spline)
     (multi_UBspline_1d_c_cuda*) malloc (sizeof (multi_UBspline_1d_c_cuda));
   
   cuda_spline->num_splines = spline->num_splines;
+  cuda_spline->num_split_splines = spline->num_splines;
 
   int Nx = spline->x_grid.num+3;
   int N = spline->num_splines;
@@ -278,6 +282,7 @@ create_multi_UBspline_3d_c_cuda (multi_UBspline_3d_c* spline)
     (multi_UBspline_3d_c_cuda*) malloc (sizeof (multi_UBspline_3d_c_cuda));
   
   cuda_spline->num_splines = spline->num_splines;
+  cuda_spline->num_split_splines = spline->num_splines;
 
   int Nx = spline->x_grid.num+3;
   int Ny = spline->y_grid.num+3;
@@ -373,6 +378,7 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
     (multi_UBspline_3d_c_cuda*) malloc (sizeof (multi_UBspline_3d_c_cuda));
 
   cuda_spline->num_splines = spline->num_splines;
+  cuda_spline->num_split_splines = spline->num_splines;
 
   int Nx = spline->x_grid.num+3;
   int Ny = spline->y_grid.num+3;
@@ -593,6 +599,7 @@ create_multi_UBspline_3d_s_cuda (multi_UBspline_3d_s* spline)
     (multi_UBspline_3d_s_cuda*) malloc (sizeof (multi_UBspline_3d_s_cuda));
   
   cuda_spline->num_splines = spline->num_splines;
+  cuda_spline->num_split_splines = spline->num_splines;
 
   int Nx = spline->x_grid.num+3;
   int Ny = spline->y_grid.num+3;
@@ -667,6 +674,7 @@ create_multi_UBspline_3d_s_cuda_conv (multi_UBspline_3d_d* spline)
     (multi_UBspline_3d_s_cuda*) malloc (sizeof (multi_UBspline_3d_s_cuda));
   
   cuda_spline->num_splines = spline->num_splines;
+  cuda_spline->num_split_splines = spline->num_splines;
 
   int Nx = spline->x_grid.num+3;
   int Ny = spline->y_grid.num+3;
@@ -750,16 +758,17 @@ create_multi_UBspline_3d_d_cuda (multi_UBspline_3d_d* spline)
     for(unsigned int i=0; i<gpu::device_group_size; i++)
     {
       cudaSetDevice(gpu::device_group_numbers[i]);
-      cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
+      cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(double), 0, cudaMemcpyHostToDevice);
     }
     cudaSetDevice(gpu::device_group_numbers[gpu::relative_rank%gpu::device_group_size]);
   } else
-    cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(double), 0, cudaMemcpyHostToDevice);
 
   multi_UBspline_3d_d_cuda *cuda_spline =
     (multi_UBspline_3d_d_cuda*) malloc (sizeof (multi_UBspline_3d_d_cuda));
   
   cuda_spline->num_splines = spline->num_splines;
+  cuda_spline->num_split_splines = spline->num_splines;
 
   int Nx = spline->x_grid.num+3;
   int Ny = spline->y_grid.num+3;
@@ -830,16 +839,17 @@ create_multi_UBspline_3d_z_cuda (multi_UBspline_3d_z* spline)
     for(unsigned int i=0; i<gpu::device_group_size; i++)
     {
       cudaSetDevice(gpu::device_group_numbers[i]);
-      cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
+      cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(double), 0, cudaMemcpyHostToDevice);
     }
     cudaSetDevice(gpu::device_group_numbers[gpu::relative_rank%gpu::device_group_size]);
   } else
-    cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(double), 0, cudaMemcpyHostToDevice);
 
   multi_UBspline_3d_z_cuda *cuda_spline =
     (multi_UBspline_3d_z_cuda*) malloc (sizeof (multi_UBspline_3d_z_cuda));
   
   cuda_spline->num_splines = spline->num_splines;
+  cuda_spline->num_split_splines = spline->num_splines;
 
   int Nx = spline->x_grid.num+3;
   int Ny = spline->y_grid.num+3;
