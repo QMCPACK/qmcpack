@@ -216,8 +216,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
                             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}"
                         )
                         SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME} )
-                        SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results" )
-                        SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY LABELS ${TEST_LABELS} )
+                        ADD_TEST_LABELS( ${TEST_NAME} "QMCPACK-checking-results" )
                     ENDIF()
                 ENDFOREACH(SCALAR_CHECK)
                 IF (NOT SCALAR_VALUE_FOUND)
@@ -231,7 +230,7 @@ ENDFUNCTION()
 
 
 
-function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_script)
+FUNCTION(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_script)
   
   # "simple run and check" function does 2 things:
   #  1. run qmcpack executable on $input_file located in $base_dir
@@ -239,40 +238,40 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   # note: NAME, COMMAND, and WORKING_DIRECTORY must be upper case in add_test!
 
   # build test name
-  set(full_name "${base_name}-${procs}-${threads}")
-  message("Adding test ${full_name}")
+  SET(full_name "${base_name}-${procs}-${threads}")
+  MESSAGE("Adding test ${full_name}")
 
   # add run (task 1)
-  set (test_added false)
+  SET (test_added false)
   RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added "integration" ${input_file})
-  if ( NOT test_added)
+  IF ( NOT test_added)
     RETURN()
-  endif()
+  ENDIF()
 
   # set up command to run check, assume check_script is in the same folder as input
-  if (EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
-    set(check_cmd "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
-  elseif(EXISTS "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
-    set(check_cmd "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
-  else()
-    message(FATAL_ERROR "Check script not found: ${check_script}")
-  endif()
+  IF (EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
+    SET(check_cmd "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
+  ELSEIF(EXISTS "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
+    SET(check_cmd "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
+  ELSE()
+    MESSAGE(FATAL_ERROR "Check script not found: ${check_script}")
+  ENDIF()
   #message(${check_cmd})
 
   # add test (task 2)
-  set(test_name "${full_name}-check") # hard-code for single test
-  set(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
+  SET(test_name "${full_name}-check") # hard-code for single test
+  SET(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
   #message(${work_dir})
 
-  add_test(
+  ADD_TEST(
     NAME "${test_name}"
     COMMAND ${check_cmd} ${ARGN}
     WORKING_DIRECTORY "${work_dir}"
     )
 
   # make test depend on the run
-  set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})
-  set_property(TEST ${test_name} APPEND PROPERTY LABELS ${test_labels} )
+  SET_PROPERTY(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})
+  ADD_TEST_LABELS( ${test_name} "QMCPACK-checking-results" )
 
 endfunction()
 
