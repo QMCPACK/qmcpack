@@ -167,7 +167,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
     SET( TEST_ADDED FALSE )
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
     MESSAGE("Adding test ${FULL_NAME}")
-    RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED "nolabel" ${INPUT_FILE})
+    RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED "integration" ${INPUT_FILE})
     IF ( TEST_ADDED )
         SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY LABELS "QMCPACK")
     ENDIF()
@@ -244,7 +244,7 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
   # add run (task 1)
   set (test_added false)
-  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added "nolabel" ${input_file})
+  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added "integration" ${input_file})
   if ( NOT test_added)
     RETURN()
   endif()
