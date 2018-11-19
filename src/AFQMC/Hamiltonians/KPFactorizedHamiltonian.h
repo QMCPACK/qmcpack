@@ -46,6 +46,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
     ParameterSet m_param;
     m_param.add(cutoff_cholesky,"cutoff_cholesky","double");
     m_param.add(fileName,"filename","std::string");
+    m_param.add(nsampleQ,"nsampleQ","int");
     m_param.put(cur);
 
   }
@@ -83,6 +84,8 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
   std::string fileName;
 
   double cutoff_cholesky;
+
+  int nsampleQ = -1;
  
 };
 

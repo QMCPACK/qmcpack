@@ -39,6 +39,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
   using shmCTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
   using shmSpMatrix = boost::multi::array<SPComplexType,2,shared_allocator<SPComplexType>>;
   using shmSpTensor = boost::multi::array<SPComplexType,3,shared_allocator<SPComplexType>>;
+  using SpMatrix = boost::multi::array<SPComplexType,2>;
+  using SpMatrix_ref = boost::multi::array_ref<SPComplexType,2>;
 
   // hack until parallel hdf is in place
   bool write_hdf = false;
@@ -179,7 +181,37 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
     for(int Q=0; Q<nkpts; Q++) {
 #ifdef SYMMETRIZE_LQ
       using std::conj;  
-      if(kminus[Q] < Q) {
+      if(kminus[Q]==Q) {
+        if(!dump.read(LQKikn[Q],std::string("L")+std::to_string(Q))) {
+          app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
+                   <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n";
+          APP_ABORT("");
+        }
+        // symmetrize LQ[Ki]ij = LQ[Kj]ji* 
+        for(int KI=0; KI<nkpts; KI++) {
+          int KJ = QKtok2[Q][KI];
+          int ni = nmo_per_kp[KI];
+          int nj = nmo_per_kp[KJ];
+          boost::multi::array_ref<SPComplexType,3> LQI(std::addressof(*LQKikn[Q][KI].origin()),
+                                                      {ni,nj,nchol_per_kp[Q]});
+          boost::multi::array_ref<SPComplexType,3> LQJ(std::addressof(*LQKikn[Q][KJ].origin()),
+                                                      {nj,ni,nchol_per_kp[Q]});
+          if(KI==KJ) {
+            for(int i=0; i<ni; i++) {
+              for(int n=0; n<nchol_per_kp[Q]; n++)
+                LQI[i][i][n] = SPComplexType(real(LQI[i][i][n]),0.0);   
+              for(int j=i+1; j<nj; j++) 
+                for(int n=0; n<nchol_per_kp[Q]; n++)
+                  LQI[i][j][n] = conj(LQI[j][i][n]);   
+            }
+          } else if(KJ > KI) {
+            for(int i=0; i<ni; i++) 
+              for(int j=0; j<nj; j++) 
+                for(int n=0; n<nchol_per_kp[Q]; n++)
+                  LQJ[j][i][n] = conj(LQI[i][j][n]);                   
+          }
+        }
+      } else if(kminus[Q] < Q) {
         int Qm = kminus[Q];
         for(int KI=0; KI<nkpts; KI++) {
           int KJ = QKtok2[Qm][KI]; 
@@ -523,7 +555,6 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
   }
 
   int global_ncvecs = std::accumulate(nchol_per_kp.begin(),nchol_per_kp.end(),0);
-
 /*
   ComplexType E_(0.0);
   boost::multi::array<ComplexType,3> G({nkpts,nmo_per_kp[0],nmo_per_kp[0]});
@@ -645,11 +676,75 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
   std::cout<<" EJ: " <<std::setprecision(12) <<EJ*4 <<std::endl;
 */
 
+  std::vector<RealType> gQ(nkpts);
+  if(nsampleQ>0) {
+    app_log()<<" Sampling EXX energy using distribution over Q vector obtained from "
+             <<" trial energy. \n";
+
+    RealType scl = (type==CLOSED?2.0:1.0);
+    size_t nqk=0;
+    for(int Q=0; Q<nkpts; ++Q) {            // momentum conservation index   
+      int Qm = kminus[Q];
+      for(int Ka=0; Ka<nkpts; ++Ka) {   
+        int Kk = QKtok2[Q][Ka];
+        int Kb = Kk;
+        int Kl = QKtok2[Qm][Kb];
+        if( (Ka != Kl) || (Kb != Kk) )    
+          APP_ABORT(" Error: Problems with EXX.\n"); 
+        if((nqk++)%TG.Global().size() == TG.Global().rank()) {
+          int nchol = nchol_per_kp[Q];
+          int nl = nmo_per_kp[Kl];
+          int nl0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+Kl,0);
+          int nb = nocc_per_kp[0][Kb];
+          int nb0 = std::accumulate(nocc_per_kp[0].begin(),nocc_per_kp[0].begin()+Kb,0);
+          int nk = nmo_per_kp[Kk];
+          int nk0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+Kk,0);
+          int na = nocc_per_kp[0][Ka];
+          int na0 = std::accumulate(nocc_per_kp[0].begin(),nocc_per_kp[0].begin()+Ka,0);
+
+          SpMatrix_ref Lank(std::addressof(*LQKank[Q][Ka].origin()),
+                                           {na*nchol,nk});
+          SpMatrix_ref Llnb(std::addressof(*LQKlnb[Q][Kl].origin()),
+                                           {nl,nchol*nb});
+          SpMatrix Tanb({na,nchol*nb});
+          SpMatrix Fbk({nb,nk});
+
+          auto PsiKa = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],Ka);
+          auto PsiKb = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],Kb);
+          for(int a=0; a<na; ++a)
+            for(int l=0; l<nl; ++l)
+              PsiKa[a][l] = conj(PsiKa[a][l]);
+          for(int b=0; b<nb; ++b)
+            for(int k=0; k<nk; ++k)
+              PsiKb[b][k] = conj(PsiKb[b][k]);
+
+          // T(a,n,b) = sum_l_in_K G(a,l) LQKlnb[Q][K](l,n,b)
+          ma::product(PsiKa,Llnb,Tanb);
+
+          // F(K1,b,k) = sum_a_in_K1 sum_n  T(a,n,b) * LQKank(a,n,k) 
+          ma::product(ma::T(Tanb),Lank,Fbk);
+
+          ComplexType E_(0.0);
+          for(int b=0; b<nb; ++b)
+            E_ += ma::dot(Fbk[b],PsiKb[b]);
+          gQ[Q] -= scl*0.5*real(E_);
+        }
+        if(type==COLLINEAR) {
+          APP_ABORT(" Finish UHF.\n ");
+        }
+      }
+    }
+    TG.Global().all_reduce_in_place_n(gQ.begin(),nkpts,std::plus<>());
+    RealType E_ = std::accumulate(gQ.begin(),gQ.end(),RealType(0.0));
+    for( auto& v: gQ ) v /= E_; 
+    app_log()<<" EXX: " <<E_ <<std::endl;
+  }
+
   return HamiltonianOperations(KP3IndexFactorization(TGwfn.TG_local(), type,std::move(nmo_per_kp),
             std::move(nchol_per_kp),std::move(kminus),std::move(nocc_per_kp),
             std::move(QKtok2),std::move(H1),std::move(haj),std::move(LQKikn),
             std::move(LQKank),std::move(LQKlnb),
-            std::move(vn0),E0,global_ncvecs));
+            std::move(vn0),std::move(gQ),nsampleQ,E0,global_ncvecs));
 
 }
 
