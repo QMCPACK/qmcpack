@@ -8,6 +8,7 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -213,19 +214,24 @@ struct OneDimGridFunctor
    *@param r radial distance
    *@return the value of the function
    */
-  inline value_type f(point_type r)
+  inline value_type f(point_type r) const
   {
     //setgrid(r);
+
     return Y=splint(r);
+    //return splint(r);
   }
 
   /** Evaluate the function and its derivatives, store the derivatives.
    *@param r radial distance
    *@return the derivative of the function
    */
-  inline value_type df(point_type r)
+  inline value_type df(point_type r) const
   {
     //setgrid(r);
+    //value_type l_Y, l_dY, l_d2Y;
+    //l_Y = splint(r,l_dY,l_d2Y);
+    //return l_dY;
     Y=splint(r,dY,d2Y);
     return dY;
   }
@@ -262,13 +268,13 @@ struct OneDimGridFunctor
 
   virtual
   value_type
-  splint(point_type r, value_type& du, value_type& d2u)
+  splint(point_type r, value_type& du, value_type& d2u) const
   {
     return 0.0;
   }
 
   virtual
-  value_type splint(point_type r)
+  value_type splint(point_type r) const
   {
     return 0.0;
   }
@@ -300,11 +306,11 @@ struct OneDimGridFunctor
   grid_type* m_grid;
 
   ///store the value of the function
-  value_type Y;
+  mutable value_type Y;
   ///store the derivative of the function
-  value_type dY;
+  mutable value_type dY;
   ///store the second derivative of the function
-  value_type d2Y;
+  mutable value_type d2Y;
 
   ///data for the function on the grid
   data_type m_Y;
