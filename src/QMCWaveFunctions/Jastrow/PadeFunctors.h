@@ -66,30 +66,6 @@ struct PadeFunctor:public OptimizableFunctorBase
     reset();
   }
 
-  /*
-  ///constructor
-  explicit PadeFunctor(real_type a, real_type b, real_type s=1.0):
-    A(a),B0(b),Scale(s),Opt_A(true),Opt_B(true)
-  {
-    reset();
-  }
-  */
-
-  /** constructor with A
-   * @param a value of A
-   * @param ida id of A
-   *
-   * Special constructor for two-body Jastrow for Coulomb interactions
-   * Automatically fix the cusp conditions
-   */
-  /*
-  explicit PadeFunctor(real_type a, const std::string& ida)
-    :A(a),B0(1.0),Scale(1.0),ID_A(ida),Opt_A(false),Opt_B(true)
-  {
-    reset();
-  }
-  */
-
   void setCusp(real_type cusp) 
   {
     A=cusp;

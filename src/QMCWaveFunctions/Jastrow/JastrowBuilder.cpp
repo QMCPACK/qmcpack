@@ -112,35 +112,6 @@ bool JastrowBuilder::addOneBody(xmlNodePtr cur)
   return success;
 }
 
-  /*
-  tolower(funcOpt);
-  if (funcOpt == "bspline" )
-  {
-    app_log() << "\n  Using BsplineBuilder for one-body jastrow with B-spline functions" << std::endl;
-    BsplineJastrowBuilder jb(targetPtcl,targetPsi,*sourcePtcl);
-    success=jb.put(cur);
-  }
-  else
-    if (funcOpt == "rpa" )
-    {
-#if OHMMS_DIM ==3
-      app_log() << "\n  Using RPA for one-body jastrow" << std::endl;
-      singleRPAJastrowBuilder jb(targetPtcl, targetPsi, *sourcePtcl);
-      success= jb.put(cur);
-#else
-      APP_ABORT("RPA for one-body jastrow is only available for 3D");
-#endif
-    }
-    else
-    {
-      app_log() << "\n  Using JABBuilder for one-body jastrow with analytic functions" << std::endl;
-      JABBuilder jb(targetPtcl,targetPsi,ptclPool);
-      success=jb.put(cur);
-    }
-  return success;
-}
-  */
-
 bool JastrowBuilder::add_eeI (xmlNodePtr cur)
 {
 #if OHMMS_DIM ==3
@@ -170,47 +141,5 @@ bool JastrowBuilder::addTwoBody(xmlNodePtr cur)
   RadialJastrowBuilder rb(targetPtcl,targetPsi);
   return rb.put(cur);
 }
-
-
-  /*
-  bool useSpline = (targetPtcl.Lattice.BoxBConds[0] && transformOpt == "yes");
-  bool ignoreSpin = (spinOpt == "no");
-  //convert to lowercase
-  tolower(funcOpt);
-  if(funcOpt == "pade")
-  {
-    if (targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN)
-    {
-      PRE.warning("Pade Jastrow is requested for a periodic system. Please choose other functors.");
-      return false;
-    }
-    PadeJastrowBuilder pbuilder(targetPtcl,targetPsi,ptclPool);
-    return pbuilder.put(cur);
-  }
-  else if((funcOpt == "yukawa") || (funcOpt == "rpa"))
-  {
-    if(targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-    {
-      PRE.warning("RPA is requested for an open system. Please choose other functors.");
-      return false;
-    }
-    RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl,targetPsi.is_manager());
-    rpajastrow->put(cur);
-    targetPsi.addOrbital(rpajastrow,nameOpt);
-    return true;
-  }
-  else if (funcOpt == "bspline" )
-  {
-    BsplineJastrowBuilder bbuilder(targetPtcl,targetPsi);
-    return bbuilder.put(cur);
-  }
-  else
-  {
-    app_error() << "Unknown two body function: " << funcOpt << ".\n";
-  }
-  
-  return success;
-}
-  */
 
 }
