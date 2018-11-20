@@ -9,8 +9,8 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
-#define QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
+#ifndef QMCPLUSPLUS_DELAYED_UPDATE_CUDA2_H
+#define QMCPLUSPLUS_DELAYED_UPDATE_CUDA2_H
 
 #include "Numerics/Blasf.h"
 #include <OhmmsPETE/OhmmsVector.h>
@@ -23,61 +23,45 @@
 
 namespace qmcplusplus {
 
-  class Range
-  {
-    // [first, last) rows of Ainv
-    int first, last;
-    public:
-    Range() : first(0), last(0) { };
-    void setRange(int first_in, int last_in)
-    {
-      first = first_in;
-      last  = last_in;
-    }
-    inline void clear() { first = last = 0; };
-    inline int getOffset(int index) const
-    {
-      if(!checkRange(index)) throw std::runtime_error("index not in range \n");
-      return index-first;
-    }
-    inline bool checkRange(int index) const { return (index>=first) && (index<last); };
-  };
-
   template<typename T>
     struct DelayedUpdateCUDA
     {
-      // Data staged during for delayed acceptRows
-      Matrix<T, CUDAHostAllocator<T>> U, Binv;
-      Matrix<T> V;
+      //Matrix<T> U, V, B, Binv;
       //Matrix<T> tempMat; // for debugging only
       Matrix<T, CUDAAllocator<T>, MemorySpace::CUDA> U_gpu, V_gpu, Binv_gpu, temp_gpu, Ainv_gpu;
+      Vector<T, CUDAHostAllocator<T>> U_row;
       // temporal scratch space used by SM-1
       Vector<T> temp, rcopy;
       // auxiliary arrays for B
-      Vector<T> p;
-      Vector<int, CUDAHostAllocator<int>> delay_list;
+      //Vector<T> p;
+      Vector<T, CUDAAllocator<T>, MemorySpace::CUDA> p_gpu;
+      //std::vector<int> delay_list;
       Vector<int, CUDAAllocator<int>, MemorySpace::CUDA> delay_list_gpu;
       int delay_count;
 
-      Vector<T> Ainv_row;
+      Vector<T, CUDAHostAllocator<T>> Ainv_row;
+      Vector<T, CUDAAllocator<T>, MemorySpace::CUDA> Ainv_row_gpu;
       // electron id of the up-to-date Ainv_row
       int Ainv_row_ind;
       // current ratio
       T curRatio;
-      // the range of prefetched_Ainv_rows
-      Range prefetched_range;
-      // Ainv prefetch buffer
-      Matrix<T, CUDAHostAllocator<T>> Ainv_buffer;
 
       // CUDA specific variables
       cublasHandle_t handle;
       cudaStream_t hstream;
+      // size 3 constant on GPU for 0, 1, -1
+      Vector<T, CUDAAllocator<T>, MemorySpace::CUDA> constants_gpu;
 
       DelayedUpdateCUDA(): delay_count(0), Ainv_row_ind(-1)
       {
         cublasCreate(&handle);
+        cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
         cudaStreamCreate(&hstream);
-        cublasSetStream(handle,hstream);
+        cublasSetStream(handle, hstream);
+        const T constants[3] = {0, 1, -1};
+        constants_gpu.resize(3);
+        cudaMemcpyAsync(constants_gpu.data(), constants, 3*sizeof(T), cudaMemcpyHostToDevice, hstream);
+        cudaStreamSynchronize(hstream);
       }
 
       ~DelayedUpdateCUDA()
@@ -88,58 +72,52 @@ namespace qmcplusplus {
 
       inline void resize(int norb, int delay)
       {
+        delay_count = 0;
+
         //tempMat.resize(norb, delay);
-        V.resize(delay, norb);
-        U.resize(delay, norb);
-        p.resize(delay);
-        Binv.resize(delay, delay);
+        //V.resize(delay, norb);
+        //U.resize(delay, norb);
+        U_row.resize(norb);
+        //p.resize(delay);
+        //Binv.resize(delay, delay);
         Ainv_row.resize(norb);
-        // prefect 8% more rows corresponding to roughly 96% acceptance ratio
-        Ainv_buffer.resize(std::min(static_cast<int>(delay*1.08),norb), norb);
+        //delay_list.resize(delay);
 
         temp_gpu.resize(norb, delay);
-        delay_list.resize(delay);
         U_gpu.resize(delay, norb);
         V_gpu.resize(delay, norb);
+        p_gpu.resize(delay);
         Binv_gpu.resize(delay, delay);
         Ainv_gpu.resize(norb, norb);
+        Ainv_row_gpu.resize(norb);
         delay_list_gpu.resize(delay);
       }
 
       inline void transferAinvH2D(const Matrix<T>& Ainv)
       {
         cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size()*sizeof(T), cudaMemcpyHostToDevice, hstream);
-        // safe mechanism
-        delay_count = 0;
-        Ainv_row_ind = -1;
-        prefetched_range.clear();
       }
 
       inline void getInvRow(const Matrix<T>& Ainv, int rowchanged)
       {
-        if(!prefetched_range.checkRange(rowchanged))
+        if ( delay_count == 0 )
         {
-          int last_row = std::min(rowchanged+Ainv_buffer.rows(), Ainv.rows());
-          cudaMemcpyAsync(Ainv_buffer.data(), Ainv_gpu[rowchanged],
-                          Ainv_row.size()*(last_row-rowchanged)*sizeof(T),
-                          cudaMemcpyDeviceToHost, hstream);
-          prefetched_range.setRange(rowchanged, last_row);
-          waitStream();
+          cudaMemcpyAsync(Ainv_row.data(), Ainv_gpu[rowchanged], Ainv_row.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream);
         }
-        // save AinvRow to new_AinvRow
-        simd::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], Ainv_row.size(), Ainv_row.data());
-        if ( delay_count > 0 )
+        else
         {
-          const T cone(1);
-          const T czero(0);
-          const int norb = Ainv.rows();
-          const int lda_Binv = Binv.cols();
+          const int norb = Ainv_gpu.rows();
+          const int lda_Binv = Binv_gpu.cols();
+          // save AinvRow to new_AinvRow
+          //simd::copy_n(AinvRow, norb, V[delay_count]);
+          cublasScopy(handle, norb, Ainv_gpu[rowchanged], 1, Ainv_row_gpu.data(), 1);
           // multiply V (NxK) Binv(KxK) U(KxN) AinvRow right to the left
-          BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, Ainv_row.data(), 1, czero, p.data(), 1);
-          BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
-          BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, Binv[delay_count], 1, cone, Ainv_row.data(), 1);
-          // Ainv_row no more has the prefectched value
+          cublasSgemv(handle, CUBLAS_OP_T, norb, delay_count, constants_gpu.data()+1, U_gpu.data(), norb, Ainv_gpu[rowchanged], 1, constants_gpu.data(), p_gpu.data(), 1);
+          cublasSgemv(handle, CUBLAS_OP_N, delay_count, delay_count, constants_gpu.data()+1, Binv_gpu.data(), lda_Binv, p_gpu.data(), 1, constants_gpu.data(), Binv_gpu[delay_count], 1);
+          cublasSgemv(handle, CUBLAS_OP_N, norb, delay_count, constants_gpu.data()+2, V_gpu.data(), norb, Binv_gpu[delay_count], 1, constants_gpu.data()+1, Ainv_row_gpu.data(), 1);
+          cudaMemcpyAsync(Ainv_row.data(), Ainv_row_gpu.data(), Ainv_row.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream);
         }
+        waitStream();
         Ainv_row_ind = rowchanged;
       }
 
@@ -147,6 +125,7 @@ namespace qmcplusplus {
       inline T ratio(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
         getInvRow(Ainv, rowchanged);
+        //std::cout << "report ratio " << std::endl;
         return curRatio = simd::dot(Ainv_row.data(),psiV.data(),Ainv_row.size());
       }
 
@@ -154,6 +133,7 @@ namespace qmcplusplus {
       inline GT evalGrad(const Matrix<T>& Ainv, int rowchanged, const GT* dpsiV)
       {
         getInvRow(Ainv, rowchanged);
+        //std::cout << "report evalGrad " << std::endl;
         return simd::dot(Ainv_row.data(),dpsiV,Ainv_row.size());
       }
 
@@ -163,41 +143,54 @@ namespace qmcplusplus {
         if(Ainv_row_ind != rowchanged)
           getInvRow(Ainv, rowchanged);
         g = simd::dot(Ainv_row.data(),dpsiV.data(),Ainv_row.size());
-        return curRatio = simd::dot(Ainv_row.data(),psiV.data(),Ainv_row.size());
+        curRatio = simd::dot(Ainv_row.data(),psiV.data(),Ainv_row.size());
+        //std::cout << "report ratioGrad " << curRatio << std::endl;
+        return curRatio;
       }
 
       // accept with the update delayed
       template<typename VVT>
       inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
+        //std::cout << "report acceptRow start " << std::endl;
         // safe mechanism
         Ainv_row_ind = -1;
 
-        // update Binv from delay_count to delay_count+1
-        const T cminusone(-1);
-        const T czero(0);
-        const int norb = Ainv.rows();
-        const int lda_Binv = Binv.cols();
-        simd::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], norb, V[delay_count]);
-        simd::copy_n(psiV.data(), norb, U[delay_count]);
-        delay_list[delay_count] = rowchanged;
+        const int norb = Ainv_gpu.rows();
+        const int lda_Binv = Binv_gpu.cols();
+        //simd::copy_n(Ainv[rowchanged], norb, V[delay_count]);
+        cublasScopy(handle, norb, Ainv_gpu[rowchanged], 1, V_gpu[delay_count], 1);
+        //save psiV to U_row just in case psiV is changed on the host before cudaMemcpyAsync is completed
+        //if the getInvRow is called before the SPO evaluation, this can be removed.
+        simd::copy_n(psiV.data(), norb, U_row.data());
+        //delay_list[delay_count] = rowchanged;
+        cudaMemcpyAsync(U_gpu[delay_count], U_row.data(), norb*sizeof(T), cudaMemcpyHostToDevice, hstream);
         // the new Binv is [[X Y] [Z x]]
-        BLAS::gemv('T', norb, delay_count+1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
+        cublasSgemv(handle, CUBLAS_OP_T, norb, delay_count+1,
+                    constants_gpu.data()+2, V_gpu.data(), norb, U_gpu[delay_count], 1, constants_gpu.data(), p_gpu.data(), 1);
         // x
-        T y = -p[delay_count];
-        for(int i=0; i<delay_count; i++)
-          y += Binv[delay_count][i] * p[i];
-        Binv[delay_count][delay_count] = y = T(1) / y;
+        updateBinv_x_cuda(delay_list_gpu.data(), delay_count, rowchanged, Binv_gpu[delay_count], p_gpu.data(), hstream);
         // Y
-        BLAS::gemv('T', delay_count, delay_count, y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data()+delay_count, lda_Binv);
+        cublasSgemv(handle, CUBLAS_OP_T, delay_count, delay_count,
+                    Binv_gpu[delay_count]+delay_count, Binv_gpu.data(), lda_Binv, p_gpu.data(), 1, constants_gpu.data(), Binv_gpu.data()+delay_count, lda_Binv);
         // X
-        BLAS::ger(delay_count, delay_count, cminusone, Binv[delay_count], 1, Binv.data()+delay_count, lda_Binv, Binv.data(), lda_Binv);
+        cublasSger(handle, delay_count, delay_count, constants_gpu.data()+2, Binv_gpu[delay_count], 1, Binv_gpu.data()+delay_count, lda_Binv, Binv_gpu.data(), lda_Binv);
         // Z
-        for(int i=0; i<delay_count; i++)
-          Binv[delay_count][i] *= -y;
+        cublasSscal(handle, delay_count, p_gpu.data()+delay_count, Binv_gpu[delay_count], 1);
         delay_count++;
-        // update Ainv when maximal delay is reached
         if(delay_count==lda_Binv) updateInvMat(Ainv,false);
+        /*
+        cudaError_t error(cudaSuccess);
+        error = cudaMemcpyAsync(Binv.data(), Binv_gpu.data(), lda_Binv*lda_Binv*sizeof(T), cudaMemcpyDeviceToHost, hstream);
+        waitStream();
+        for(int i=0; i<delay_count; i++)
+        {
+          for(int j=0; j<delay_count; j++)
+            std::cout << Binv[i][j] << " ";
+          std::cout << std::endl;
+        }
+        std::cout << "report acceptRow end " << std::endl;
+        */
       }
 
       inline void updateInvMat(Matrix<T>& Ainv, bool transfer_to_host = true)
@@ -205,43 +198,38 @@ namespace qmcplusplus {
         // update the inverse matrix
         if( delay_count>0 )
         {
-          const T cone(1);
-          const T czero(0);
-          const int norb=Ainv.rows();
-          const int lda_Binv=Binv.cols();
-          const T cminusone(-1);
-              cudaError_t error(cudaSuccess);
-              int deviceid;
-              cudaGetDevice(&deviceid);
+          const int norb=Ainv_gpu.rows();
+          const int lda_Binv=Binv_gpu.cols();
+          //    cudaError_t error(cudaSuccess);
+          //    int deviceid;
+          //    cudaGetDevice(&deviceid);
               //std::cout << "delay_count = " << delay_count << " id = " << deviceid << std::endl;
-          error = cudaMemcpyAsync(U_gpu.data(), U.data(), norb*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream);
-              if( error!=cudaSuccess ) std::cout <<"debug error 1 code " << error << std::endl;
+          //error = cudaMemcpyAsync(U_gpu.data(), U.data(), norb*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream);
+          //    if( error!=cudaSuccess ) std::cout <<"debug error 1 code " << error << std::endl;
           //BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
           //    cudaMemPrefetchAsync(Ainv.data(), Ainv.size()*sizeof(T), 0, hstream);
-          cuBLAS::gemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(), norb, Ainv_gpu.data(), norb, &czero, temp_gpu.data(), lda_Binv);
-          error = cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count*sizeof(int), cudaMemcpyHostToDevice, hstream);
-              if( error!=cudaSuccess ) std::cout <<"debug error 2 code " << error << std::endl;
+          cuBLAS::gemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, constants_gpu.data()+1, U_gpu.data(), norb, Ainv_gpu.data(), norb, constants_gpu.data(), temp_gpu.data(), lda_Binv);
+          //error = cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count*sizeof(int), cudaMemcpyHostToDevice, hstream);
+          //    if( error!=cudaSuccess ) std::cout <<"debug error 2 code " << error << std::endl;
           //for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
-          applyW_stageV_cuda(delay_list_gpu.data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(), Ainv_gpu.data(), hstream);
+          applyW_cuda(delay_list_gpu.data(),delay_count, temp_gpu.data(), temp_gpu.cols(), hstream);
           //error = cudaMemcpyAsync(tempMat.data(), temp_gpu.data(), tempMat.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream);
           //    if( error!=cudaSuccess ) std::cout <<"debug error 3 code " << error << std::endl;
           //error = cudaStreamSynchronize(hstream);
           //    if( error!=cudaSuccess ) std::cout <<"debug error 4 code " << error << std::endl;
               //std::cout << "debug tempMat " << tempMat << std::endl;
-          cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream);
+          //cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream);
           //BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
-          cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone, V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb);
+          cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, constants_gpu.data()+1, V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, constants_gpu.data(), U_gpu.data(), norb);
           //error = cudaMemcpyAsync(U.data(), U_gpu.data(), norb*delay_count*sizeof(T), cudaMemcpyDeviceToHost, hstream);
           //    if( error!=cudaSuccess ) std::cout <<"debug error 5 code " << error << std::endl;
           //error = cudaStreamSynchronize(hstream);
           //    if( error!=cudaSuccess ) std::cout <<"debug error 6 code " << error << std::endl;
               //std::cout << "debug U " << U << std::endl;
           //BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
-          cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
+          cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, constants_gpu.data()+2, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, constants_gpu.data()+1, Ainv_gpu.data(), norb);
           delay_count = 0;
           Ainv_row_ind = -1;
-          // Ainv is invalid, reset range
-          prefetched_range.clear();
         }
 
         // transfer Ainv_gpu to Ainv and wait till completion
