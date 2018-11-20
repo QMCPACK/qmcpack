@@ -330,7 +330,7 @@ ELSE()
     CTEST_TEST( INCLUDE_LABEL "unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
     CTEST_SUBMIT( PARTS Test )
     # run and submit unclassified tests to the default track
-    CTEST_START( "${CTEST_DASHBOARD}" APPEND)
+    CTEST_START( "${CTEST_DASHBOARD}" TRACK "${CTEST_DASHBOARD}" APPEND)
     CTEST_TEST( EXCLUDE_LABEL "unit|performance|converter|unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
     CTEST_SUBMIT( PARTS Test )
 ENDIF()
