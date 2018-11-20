@@ -234,8 +234,36 @@ eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_z_cuda *spline,
                                    double *pos, std::complex<double> *phi[], int N,
                                    std::complex<double> *spline_coefs[], cudaEvent_t spline_events[], cudaStream_t spline_streams[])
 {
-  app_error() << "Complex double split spline code path not fully implemented yet.\n";
-  abort();
+  int curr_gpu;
+  int devicenr=0;
+  for (unsigned int i=0; i<gpu::device_group_size; i++)
+  {
+    devicenr=(i+gpu::relative_rank+1)%gpu::device_group_size;
+    curr_gpu=gpu::device_group_numbers[devicenr];
+    cudaSetDevice(curr_gpu);
+#ifdef USE_SPLIT_SPLINES_MEM_PREFETCH
+    cudaMemPrefetchAsync(pos,3*N*sizeof(double),curr_gpu,spline_streams[devicenr]);
+#endif
+#ifdef SPLIT_SPLINE_DEBUG
+    std::cerr << "Rank " << OHMMS::Controller->rank() << ", GPU mem before: " << spline->coefs << "; after: " << spline_coefs[devicenr] << "\n";
+#endif
+    eval_multi_multi_UBspline_3d_z_cudasplit  (spline, pos, phi, N, (double*)spline_coefs[devicenr], devicenr, spline_streams[devicenr]);
+    cudaEventRecord(spline_events[devicenr],spline_streams[devicenr]);
+  }
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess)
+  {
+    fprintf (stderr, "CUDA error in eval_multi_multi_UBspline_3d_cuda (rank %i):\n  %s\n",
+             OHMMS::Controller->rank(),cudaGetErrorString(err));
+    abort();
+  }
+  for (unsigned int i=0; i<gpu::device_group_size; i++)
+    cudaStreamWaitEvent(gpu::kernelStream,spline_events[i],0);
+#ifdef USE_SPLIT_SPLINES_MEM_PREFETCH
+//  This slows things down on Summit
+//  cudaMemPrefetchAsync(phi,N*sizeof(float*),curr_gpu,gpu::kernelStream);
+//  cudaMemPrefetchAsync(&phi[0],2*spline->num_splines*N*sizeof(float),curr_gpu,gpu::kernelStream);
+#endif
 }
 
 inline void eval_multi_multi_UBspline_3d_vgl_cuda
@@ -295,8 +323,36 @@ inline void eval_multi_multi_UBspline_3d_vgl_cuda (multi_UBspline_3d_z_cuda *spl
                                                    std::complex<double> *phi[], std::complex<double> *grad_lapl[], int N, int row_stride,
                                                    std::complex<double> *spline_coefs[], cudaEvent_t spline_events[], cudaStream_t spline_streams[])
 {
-  app_error() << "Complex double split spline code path not fully implemented yet.\n";
-  abort();
+  int curr_gpu;
+  int devicenr=0;
+  for (unsigned int i=0; i<gpu::device_group_size; i++)
+  {
+    devicenr=(i+gpu::relative_rank+1)%gpu::device_group_size;
+    curr_gpu=gpu::device_group_numbers[devicenr];
+    cudaSetDevice(curr_gpu);
+#ifdef USE_SPLIT_SPLINES_MEM_PREFETCH
+    cudaMemPrefetchAsync(pos,3*N*sizeof(double),curr_gpu,spline_streams[devicenr]);
+#endif
+    eval_multi_multi_UBspline_3d_z_vgl_cudasplit
+      (spline, pos, Linv, phi, grad_lapl, N, row_stride, (double*)spline_coefs[devicenr], devicenr, spline_streams[devicenr]);
+    cudaEventRecord(spline_events[devicenr],spline_streams[devicenr]);
+  }
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess)
+  {
+    fprintf (stderr, "CUDA error in eval_multi_multi_UBspline_3d_vgl_cuda (rank %i):\n  %s\n",
+             OHMMS::Controller->rank(),cudaGetErrorString(err));
+    abort();
+  }
+  for (unsigned int i=0; i<gpu::device_group_size; i++)
+    cudaStreamWaitEvent(gpu::kernelStream,spline_events[i],0);
+#ifdef USE_SPLIT_SPLINES_MEM_PREFETCH
+//  This slows things down on Summit
+//  cudaMemPrefetchAsync(phi,N*sizeof(float*),curr_gpu,gpu::kernelStream);
+//  cudaMemPrefetchAsync(grad_lapl,N*sizeof(float*),curr_gpu,gpu::kernelStream);
+//  cudaMemPrefetchAsync(&phi[0],2*spline->num_splines*N*sizeof(float),curr_gpu,gpu::kernelStream);
+//  cudaMemPrefetchAsync(&grad_lapl[0],2*spline->num_splines*N*sizeof(float),curr_gpu,gpu::kernelStream);
+#endif
 }
 
 //////////////////////////////////////////////

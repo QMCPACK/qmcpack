@@ -159,6 +159,11 @@ eval_multi_multi_UBspline_3d_z_cuda
  double *pos_d, complex_double *vals_d[], int num);
 
 extern "C" void
+eval_multi_multi_UBspline_3d_z_cudasplit
+(const multi_UBspline_3d_z_cuda *spline,
+ double *pos_d, complex_double *vals_d[], int num, double *coefs, int device_nr, cudaStream_t s);
+
+extern "C" void
 eval_multi_multi_UBspline_3d_z_vgh_cuda
 (const multi_UBspline_3d_z_cuda *spline, double *pos_d,
  complex_double *vals_d[], complex_double *grads_d[],
@@ -168,6 +173,11 @@ extern "C" void
 eval_multi_multi_UBspline_3d_z_vgl_cuda
 (const multi_UBspline_3d_z_cuda *spline, double *pos_d, double *Linv_d,
  complex_double *vals_d[], complex_double *grad_lapl_d[], int num, int row_stride);
+
+extern "C" void
+eval_multi_multi_UBspline_3d_z_vgl_cudasplit
+(const multi_UBspline_3d_z_cuda *spline, double *pos_d, double *Linv_d,
+ complex_double *vals_d[], complex_double *grad_lapl_d[], int num, int row_stride, double *coefs, int device_nr, cudaStream_t s);
 
 
 #endif
