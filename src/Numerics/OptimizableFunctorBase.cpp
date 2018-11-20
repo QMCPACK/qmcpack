@@ -8,7 +8,8 @@
 //
 // File created by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-    
+
+#include "OptimizableFunctorBase.h"    
     
 void print(OptimizableFunctorBase& func, std::ostream& os)
 {
