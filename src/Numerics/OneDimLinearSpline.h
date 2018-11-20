@@ -7,7 +7,6 @@
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -116,7 +115,7 @@ public:
    * Performance may be tunned: define USE_MEMORYSAVEMODE
    * to evaluate the coefficients instead of using aux. arrays
    */
-  inline value_type splint(point_type r) const
+  inline value_type splint(point_type r)
   {
     if(r>=r_max)
       return ConstValue;
@@ -181,7 +180,7 @@ public:
    * @return value obtained by cubic-spline
    */
   inline value_type
-  splint(point_type r, value_type& du, value_type& d2u) const
+  splint(point_type r, value_type& du, value_type& d2u)
   {
     std::cerr << "  OneDimLinearSpline cannot be used for derivates." << std::endl;
     return 0.0;

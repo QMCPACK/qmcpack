@@ -9,7 +9,6 @@
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -203,7 +202,7 @@ public:
   //  m_grid->locate(r);
   //}
 
-  inline value_type splint(point_type r) const
+  inline value_type splint(point_type r)
   {
     //if(r<r_min) {
     //  return m_Y[0]+first_deriv*(r-r_min);
@@ -250,7 +249,7 @@ public:
    *@return the value of the function
   */
   inline value_type
-  splint(point_type r, value_type& du, value_type& d2u) const
+  splint(point_type r, value_type& du, value_type& d2u)
   {
     if(r<r_min)
       //linear-extrapolation returns y[0]+y'*(r-r[0])
@@ -302,7 +301,7 @@ public:
    *@return the value of the function
   */
   inline value_type
-  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u) const
+  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u)
   {
     if(r<r_min)
       //linear-extrapolation returns y[0]+y'*(r-r[0])

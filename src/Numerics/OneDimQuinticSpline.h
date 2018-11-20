@@ -148,7 +148,7 @@ public:
     F           = a.F;
   }
 
-  inline value_type splint(point_type r) const
+  inline value_type splint(point_type r)
   {
     if(r<r_min)
     {
@@ -168,7 +168,7 @@ public:
   }
 
   inline value_type
-  splint(point_type r, value_type& du, value_type& d2u) const
+  splint(point_type r, value_type& du, value_type& d2u)
   {
     if(r<r_min)
     {
@@ -188,7 +188,7 @@ public:
   }
 
   inline value_type
-  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u) const
+  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u)
   {
     if(r<r_min)
     {
