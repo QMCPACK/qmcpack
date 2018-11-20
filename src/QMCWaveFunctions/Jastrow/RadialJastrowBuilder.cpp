@@ -49,7 +49,6 @@
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
-#include "Numerics/OptimizableFunctorBase.h"
 #include <iostream>
 
 

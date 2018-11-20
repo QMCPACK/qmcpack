@@ -7,7 +7,6 @@
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -21,10 +20,6 @@
 #include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
-
-namespace qmcplusplus
-{
-
 
 template<class T>
 struct GaussianTimesRN: public OptimizableFunctorBase
@@ -69,34 +64,34 @@ struct GaussianTimesRN: public OptimizableFunctorBase
 
     inline void setgrid(real_type r) { }
 
-    inline real_type f(real_type r, real_type rr) const
+    inline real_type f(real_type r, real_type rr)
     {
       if(Power==0)
-        return Coeff*std::exp(MinusSigma*rr);
+        return Coeff*exp(MinusSigma*rr);
       else
         if(Power==1)
-          return r*Coeff*std::exp(MinusSigma*rr);
+          return r*Coeff*exp(MinusSigma*rr);
         else
-          return std::pow(r,Power)*Coeff*std::exp(MinusSigma*rr);
+          return std::pow(r,Power)*Coeff*exp(MinusSigma*rr);
     }
 
-    inline real_type df(real_type r, real_type rr) const
+    inline real_type df(real_type r, real_type rr)
     {
       if(Power==0)
-        return CoeffP*r*std::exp(MinusSigma*rr);
+        return CoeffP*r*exp(MinusSigma*rr);
       else
         if(Power==1)
-          return (Coeff+CoeffP*r)*std::exp(MinusSigma*rr);
+          return (Coeff+CoeffP*r)*exp(MinusSigma*rr);
         else
         {
           return
-            std::pow(r,Power-1)*(PowerC+CoeffP*rr)*std::exp(MinusSigma*rr);
+            std::pow(r,Power-1)*(PowerC+CoeffP*rr)*exp(MinusSigma*rr);
         }
     }
 
     inline real_type evaluate(real_type r, real_type rr, real_type& du, real_type& d2u)
     {
-      T v=std::exp(MinusSigma*rr);
+      T v=exp(MinusSigma*rr);
       if(Power==0)
       {
         du += CoeffP*r*v;
@@ -151,12 +146,12 @@ struct GaussianTimesRN: public OptimizableFunctorBase
     return gset.size();
   }
 
-  inline real_type f(real_type r) const
+  inline real_type f(real_type r)
   {
     real_type res=0;
     real_type r2 = r*r;
-    typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
-    typename std::vector<BasicGaussian>::const_iterator it_end(gset.end());
+    typename std::vector<BasicGaussian>::iterator it(gset.begin());
+    typename std::vector<BasicGaussian>::iterator it_end(gset.end());
     while(it != it_end)
     {
       res += (*it).f(r,r2);
@@ -165,12 +160,12 @@ struct GaussianTimesRN: public OptimizableFunctorBase
     return res;
   }
 
-  inline real_type df(real_type r) const
+  inline real_type df(real_type r)
   {
     real_type res=0;
     real_type r2 = r*r;
-    typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
-    typename std::vector<BasicGaussian>::const_iterator it_end(gset.end());
+    typename std::vector<BasicGaussian>::iterator it(gset.begin());
+    typename std::vector<BasicGaussian>::iterator it_end(gset.end());
     while(it != it_end)
     {
       res += (*it).df(r,r2);
@@ -183,7 +178,7 @@ struct GaussianTimesRN: public OptimizableFunctorBase
   {
     Y=0.0;
     real_type rr = r*r;
-    typename std::vector<BasicGaussian>::const_iterator it(gset.begin()),it_end(gset.end());
+    typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
     while(it != it_end)
     {
       Y+=(*it).f(r,rr);
@@ -198,7 +193,7 @@ struct GaussianTimesRN: public OptimizableFunctorBase
     dY=0.0;
     d2Y=0.0;
     real_type rr = r*r;
-    typename std::vector<BasicGaussian>::const_iterator it(gset.begin()),it_end(gset.end());
+    typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
     while(it != it_end)
     {
       Y+=(*it).evaluate(r,rr,dY,d2Y);
@@ -274,8 +269,6 @@ bool GaussianTimesRN<T>::putBasisGroup(xmlNodePtr cur, int baseOff)
   }
   reset();
   return true;
-}
-
 }
 
 #endif

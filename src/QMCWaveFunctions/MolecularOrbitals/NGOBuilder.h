@@ -8,7 +8,6 @@
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -44,11 +43,11 @@ struct NGOrbital: public OptimizableFunctorBase
   void checkOutVariables(const opt_variables_type& active) {}
   void resetParameters(const opt_variables_type& active) {}
   void reset() {}
-  inline real_type f(real_type r) const
+  inline real_type f(real_type r)
   {
     return myFunc.f(r);
   }
-  inline real_type df(real_type r) const
+  inline real_type df(real_type r)
   {
     return myFunc.df(r);
   }

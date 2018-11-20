@@ -7,7 +7,6 @@
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -134,7 +133,7 @@ struct GaussianCombo: public OptimizableFunctorBase
     return gset.size();
   }
 
-  inline real_type f(real_type r) const
+  inline real_type f(real_type r)
   {
     real_type res=0;
     real_type r2 = r*r;
@@ -147,7 +146,7 @@ struct GaussianCombo: public OptimizableFunctorBase
     }
     return res;
   }
-  inline real_type df(real_type r) const
+  inline real_type df(real_type r)
   {
     real_type res=0;
     real_type r2 = r*r;

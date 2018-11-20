@@ -7,7 +7,6 @@
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -53,11 +52,11 @@ struct SlaterCombo: public OptimizableFunctorBase
     return new SlaterCombo<value_type>(*this);
   }
 
-  inline real_type f(real_type r) const
+  inline real_type f(real_type r)
   {
     real_type res=0;
-    typename std::vector<Component_t>::const_iterator it(sset.begin());
-    typename std::vector<Component_t>::const_iterator it_end(sset.end());
+    typename std::vector<Component_t>::iterator it(sset.begin());
+    typename std::vector<Component_t>::iterator it_end(sset.end());
     while (it != it_end)
     {
       res += (*it).f(r);
@@ -66,11 +65,11 @@ struct SlaterCombo: public OptimizableFunctorBase
     return res;
   }
 
-  inline real_type df(real_type r) const
+  inline real_type df(real_type r)
   {
     real_type res=0;
-    typename std::vector<Component_t>::const_iterator it(sset.begin());
-    typename std::vector<Component_t>::const_iterator it_end(sset.end());
+    typename std::vector<Component_t>::iterator it(sset.begin());
+    typename std::vector<Component_t>::iterator it_end(sset.end());
     while (it != it_end)
     {
       res += (*it).df(r);

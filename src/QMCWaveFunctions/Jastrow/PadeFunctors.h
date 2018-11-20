@@ -159,12 +159,12 @@ struct PadeFunctor:public OptimizableFunctorBase
       valArray[iat] = gradArray[iat] = laplArray[iat] = T(0);
   }
 
-  inline real_type f(real_type r) const
+  inline real_type f(real_type r)
   {
     return evaluate(r)-AoverB;
   }
 
-  inline real_type df(real_type r) const
+  inline real_type df(real_type r)
   {
     real_type dudr,d2udr2;
     real_type res=evaluate(r,dudr,d2udr2);
@@ -357,12 +357,12 @@ struct Pade2ndOrderFunctor:public OptimizableFunctorBase
   }
 
 
-  real_type f(real_type r) const
+  real_type f(real_type r)
   {
     return evaluate(r);
   }
 
-  real_type df(real_type r) const
+  real_type df(real_type r)
   {
     real_type dudr,d2udr2;
     real_type res=evaluate(r,dudr,d2udr2);
@@ -603,12 +603,12 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
   }
 
 
-  real_type f(real_type r) const
+  real_type f(real_type r)
   {
     return evaluate(r);
   }
 
-  real_type df(real_type r) const
+  real_type df(real_type r)
   {
     real_type dudr,d2udr2;
     real_type res=evaluate(r,dudr,d2udr2);
@@ -898,12 +898,12 @@ struct ScaledPadeFunctor:public OptimizableFunctorBase
 
 
 
-  real_type f(real_type r) const
+  real_type f(real_type r)
   {
     return evaluate(r);
   }
 
-  real_type df(real_type r) const
+  real_type df(real_type r)
   {
     real_type dudr,d2udr2;
     real_type res=evaluate(r,dudr,d2udr2);

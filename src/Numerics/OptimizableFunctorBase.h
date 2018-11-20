@@ -44,10 +44,6 @@
  * Unlike VarList which uses map, VariableSet is serialized in that the internal order is according
  * to insert calls.
  */
-
-namespace qmcplusplus
-{
-
 struct OptimizableFunctorBase
 {
   ///typedef for real values
@@ -91,14 +87,14 @@ struct OptimizableFunctorBase
    *
    * virtual function necessary for a transformation to a numerical functor
    */
-  virtual real_type f(real_type r) const = 0;
+  virtual real_type f(real_type r)=0;
 
   /** evaluate the first derivative
    * @param r distance
    *
    * virtual function necessary for a transformation to a numerical functor
    */
-  virtual real_type df(real_type r) const = 0;
+  virtual real_type df(real_type r)=0;
 
   /** process xmlnode and registers variables to optimize
    * @param cur xmlNode for a functor
@@ -128,9 +124,22 @@ struct OptimizableFunctorBase
 
 };
 
-void print(const OptimizableFunctorBase& func, std::ostream& os);
-
+inline void print(OptimizableFunctorBase& func, std::ostream& os)
+{
+  typedef OptimizableFunctorBase::real_type real_type;
+  int n = 100;
+  real_type d = func.cutoff_radius/100.,r=0;
+  real_type u, du;
+  for (int i = 0; i < n; ++i)
+  {
+    u = func.f(r);
+    du = func.df(r);
+    os << std::setw(22) << r << std::setw(22) << u << std::setw(22) << du << std::endl;
+    r +=d;
+  }
 }
+
+
 
 #endif
 

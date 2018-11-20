@@ -6,7 +6,6 @@
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -41,11 +40,11 @@ struct CubicBsplineGrid<T,LINEAR_1DGRID,PBC_CONSTRAINTS>
   int i0,i1,i2,i3;
   point_type GridStart, GridEnd, GridDelta, GridDeltaInv, GridDeltaInv2, L, Linv;
   point_type curPoint;
-  mutable point_type tp[4];
+  point_type tp[4];
 
   inline CubicBsplineGrid():curPoint(-10000) {}
 
-  inline bool getGridPoint(point_type x, int &i) const
+  inline bool getGridPoint(point_type x, int &i)
   {
     //point_type delta = x - GridStart;
     //delta -= std::floor(delta*Linv)*L;
@@ -94,11 +93,11 @@ struct CubicBsplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
   ///number of points
   int Npts;
   point_type GridStart, GridEnd, GridDelta, GridDeltaInv, GridDeltaInv2, L, Linv;
-  mutable point_type tp[4];
+  point_type tp[4];
 
   inline CubicBsplineGrid() {}
 
-  inline bool getGridPoint(point_type x, int &i) const
+  inline bool getGridPoint(point_type x, int &i)
   {
     if(x<GridStart || x>GridEnd)
       return false;

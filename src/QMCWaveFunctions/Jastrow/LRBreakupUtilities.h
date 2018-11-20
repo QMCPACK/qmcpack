@@ -8,7 +8,6 @@
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -573,11 +572,11 @@ struct ShortRangePartAdapter : OptimizableFunctorBase
   {
     return f(r);
   }
-  inline real_type f(real_type r) const
+  inline real_type f(real_type r)
   {
     return myHandler->evaluate(r, 1.0/r)-Uconst;
   }
-  inline real_type df(real_type r) const
+  inline real_type df(real_type r)
   {
     return myHandler->srDf(r, 1.0/r);
   }

@@ -9,7 +9,6 @@
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -146,13 +145,13 @@ struct CubicSplineSingle: public OptimizableFunctorBase
   }
 
   /** implement the virtual function of OptimizableFunctorBase */
-  inline real_type f(real_type r) const
+  inline real_type f(real_type r)
   {
     return OutFunc.splint(r);
   }
 
   /** implement the virtual function of OptimizableFunctorBase  */
-  inline real_type df(real_type r) const
+  inline real_type df(real_type r)
   {
     real_type dudr,d2udr2;
     OutFunc.splint(r,dudr,d2udr2);
