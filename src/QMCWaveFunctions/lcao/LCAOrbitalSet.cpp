@@ -374,6 +374,23 @@ namespace qmcplusplus
       this->exponentiate_antisym_matrix(nmo, &rot_mat[0]);
 
       BLAS::gemm('N','T', nb, nmo, nmo, RealType(1.0), m_init_B->data(), nb, &rot_mat[0], nmo, RealType(0.0), C->data(), nb);
+
+      if (params_supplied)
+      {
+        app_log()<< "PRINTING MO COEFFICIENTS CREATED BY SUPPLIED PARAMS\n";
+        for (int j = 0; j < nmo; j++)
+        {
+          for (int i = 0; i < nb; i++)
+          {
+            app_log() << " " << std::right << std::fixed << std::setprecision(16) << std::setw(23) << std::scientific << *(C->data()+j*nb + i);
+
+            if((j*nb + i + 1)%4==0){ app_log() << std::endl;}
+          }
+        }
+        app_log() << "\n done printing molecular orbital coefficients\n";
+        app_log() << std::endl;
+      }
+
       if(Optimizable)
       {
         Table.resize(nel,nmo);

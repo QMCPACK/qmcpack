@@ -453,9 +453,9 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
 
 void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
 {
-  if(Optimize)
+  if(Optimizable)
   {
-    if(Optimizable && !IsCloned)
+    if(Optimize && !IsCloned)
     {
       if(myVars->size())
         active.insertFrom(*myVars);
@@ -472,9 +472,9 @@ void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
 
 void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& active)
 {
-  if(Optimize)
+  if(Optimizable)
   {
-    if(Optimizable && !IsCloned)
+    if(Optimize && !IsCloned)
       myVars->getIndex(active);
     if(Dets[0]->Optimizable && Dets[1]->Optimizable)
     {
@@ -490,9 +490,9 @@ void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& act
  */
 void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& active)
 {
-  if(Optimize)
+  if(Optimizable)
   {
-    if(Optimizable && !IsCloned)
+    if(Optimize && !IsCloned)
     {
       if(usingCSF)
       {
