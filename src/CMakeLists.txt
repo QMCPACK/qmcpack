@@ -151,6 +151,7 @@ ENDIF(HAVE_OOMPI)
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
     Numerics/OhmmsBlas.cpp
+    Numerics/OptimizableFunctorBase.cpp
     Platforms/sysutil.cpp
     QMCFactory/OneDimGridFactory.cpp
     Message/Communicate.cpp 

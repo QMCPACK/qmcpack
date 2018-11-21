@@ -53,7 +53,6 @@ struct BsplineFunctor: public OptimizableFunctorBase
   std::string fileName;
 
   int ResetCount;
-  int ReportLevel;
   bool notOpt;
   bool periodic;
 
@@ -76,7 +75,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
         0.0, 0.0,  0.0,  3.0,
         0.0, 0.0,  0.0, -3.0,
         0.0, 0.0,  0.0,  1.0},
-    CuspValue(cusp), ResetCount(0), ReportLevel(0), notOpt(false), periodic(true)
+    CuspValue(cusp), ResetCount(0), notOpt(false), periodic(true)
   {
     cutoff_radius = 0.0;
   }
@@ -86,10 +85,14 @@ struct BsplineFunctor: public OptimizableFunctorBase
     return new BsplineFunctor(*this);
   }
 
-  inline void setReportLevel(int i, const std::string& fname)
+  void setCusp(real_type c) 
   {
-    ReportLevel=i;
-    fileName=(ReportLevel)? fname:"0";
+    CuspValue = c;
+  }
+
+  void setPeriodic(bool p)
+  {
+    periodic = p;
   }
 
   void resize(int n)
@@ -619,29 +622,6 @@ struct BsplineFunctor: public OptimizableFunctorBase
     return false;
   }
 
-  void print()
-  {
-    if(ReportLevel)
-    {
-      std::ofstream fout(fileName.c_str());
-      this->print(fout);
-    }
-  }
-
-
-  void print(std::ostream& os)
-  {
-    int n=100;
-    T d=cutoff_radius/100.,r=0;
-    T u,du,d2du;
-    for (int i=0; i<n; ++i)
-    {
-      u=evaluate(r,du,d2du);
-      os << std::setw(22) << r << std::setw(22) << u << std::setw(22) << du
-         << std::setw(22) << d2du << std::endl;
-      r+=d;
-    }
-  }
 };
 
 template<typename T>
