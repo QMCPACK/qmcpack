@@ -210,10 +210,7 @@ namespace qmcplusplus {
           const int norb=Ainv.rows();
           const int lda_Binv=Binv.cols();
           const T cminusone(-1);
-              cudaError_t error(cudaSuccess);
-              int deviceid;
-              cudaGetDevice(&deviceid);
-              //std::cout << "delay_count = " << delay_count << " id = " << deviceid << std::endl;
+          cudaError_t error(cudaSuccess);
           error = cudaMemcpyAsync(U_gpu.data(), U.data(), norb*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream);
               if( error!=cudaSuccess ) std::cout <<"debug error 1 code " << error << std::endl;
           //BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
@@ -228,7 +225,8 @@ namespace qmcplusplus {
           //error = cudaStreamSynchronize(hstream);
           //    if( error!=cudaSuccess ) std::cout <<"debug error 4 code " << error << std::endl;
               //std::cout << "debug tempMat " << tempMat << std::endl;
-          cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream);
+          error = cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream);
+              if( error!=cudaSuccess ) std::cout <<"debug error 3 code " << error << std::endl;
           //BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
           cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone, V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb);
           //error = cudaMemcpyAsync(U.data(), U_gpu.data(), norb*delay_count*sizeof(T), cudaMemcpyDeviceToHost, hstream);

@@ -162,6 +162,7 @@ inline void set_appropriate_device_num(int num)
       num_appropriate++;
       if (num_appropriate == num+1)
       {
+        #pragma omp parallel
         cudaSetDevice (device);
         set_cuda_device=true;
         std::ostringstream out;

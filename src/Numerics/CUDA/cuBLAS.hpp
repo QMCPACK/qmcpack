@@ -31,7 +31,7 @@ struct cuBLAS
   {
     cublasStatus_t cublas_error;
     cublas_error = cublasSgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
-    if( cublas_error != CUBLAS_STATUS_SUCCESS ) throw std::runtime_error("cublasSgemm failed error = " + cublas_error);
+    if( cublas_error != CUBLAS_STATUS_SUCCESS ) throw std::runtime_error("cublasSgemm failed error = " + std::to_string(cublas_error));
   }
 
   static inline
@@ -46,7 +46,7 @@ struct cuBLAS
   {
     cublasStatus_t cublas_error;
     cublas_error = cublasDgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
-    if( cublas_error != CUBLAS_STATUS_SUCCESS ) throw std::runtime_error("cublasDgemm failed error = " + cublas_error);
+    if( cublas_error != CUBLAS_STATUS_SUCCESS ) throw std::runtime_error("cublasDgemm failed error = " + std::to_string(cublas_error));
   }
 };
 

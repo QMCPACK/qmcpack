@@ -41,7 +41,7 @@ struct QMCState
   bool io_node;
   ///true, use Ewald instead of optimal breakup for the Coulomb
   bool use_ewald;
-  ///int for cuda implemenation generation
+  ///QMCPACK cuda implemenation generation
   int cuda_gen;
   ///init for <qmc/> section
   int qmc_counter;
