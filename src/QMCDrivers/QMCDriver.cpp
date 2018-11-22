@@ -617,7 +617,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   }
   else
   { //always reset the walkers
-    int nths=(qmc_common.compute_device)?1:omp_get_max_threads();
+    int nths=(qmc_common.cuda_gen==1)?1:omp_get_max_threads();
     nTargetWalkers=(std::max(nths,(nTargetWalkers/nths)*nths));
     int nw  = W.getActiveWalkers();
     int ndiff = 0;

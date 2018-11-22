@@ -20,15 +20,11 @@
 #ifndef QMCPLUSPLUS_CUDA_INIT_H
 #define QMCPLUSPLUS_CUDA_INIT_H
 
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) || defined(QMC_CUDA_NEXT)
 #include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include <cuda_runtime_api.h>
-#include <unistd.h>
-#include <CUDA/gpu_misc.h>
-
-#define MAX_GPU_SPLINE_SIZE_MB 81920
 
 /** Obtains the number of appropriate Cuda devices on the current MPI rank's node
  */
@@ -184,13 +180,11 @@ inline void set_appropriate_device_num(int num)
   }
 }
 
-inline void Finalize_CUDA()
-{
-  gpu::finalizeCublas();
-  gpu::finalizeCUDAEvents();
-  gpu::finalizeCUDAStreams();
-  cudaDeviceReset();
-}
+#ifdef QMC_CUDA
+#include <unistd.h>
+#include <CUDA/gpu_misc.h>
+
+#define MAX_GPU_SPLINE_SIZE_MB 81920
 
 /** Initialize Cuda device on current MPI rank
  */
@@ -207,8 +201,30 @@ inline void Init_CUDA()
   // Output maximum spline buffer size for first MPI rank
   if(gpu::rank==0)
     std::cerr << "Default MAX_GPU_SPLINE_SIZE_MB is " << gpu::MaxGPUSpineSizeMB << " MB." << std::endl;
-  return;
 }
+
+inline void Finalize_CUDA()
+{
+  gpu::finalizeCublas();
+  gpu::finalizeCUDAEvents();
+  gpu::finalizeCUDAStreams();
+  cudaDeviceReset();
+}
+#else
+/** Initialize Cuda device on current MPI rank
+ */
+inline void Init_CUDA()
+{
+  int devNum = get_device_num();
+  set_appropriate_device_num(devNum);
+}
+
+inline void Finalize_CUDA()
+{
+  cudaDeviceReset();
+}
+#endif
+
 #else
 inline void Init_CUDA()
 {
