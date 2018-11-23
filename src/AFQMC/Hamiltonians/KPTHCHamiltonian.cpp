@@ -40,6 +40,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   using shmCTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
   using shmSpMatrix = boost::multi::array<SPComplexType,2,shared_allocator<SPComplexType>>;
   using shmSpTensor = boost::multi::array<SPComplexType,3,shared_allocator<SPComplexType>>;
+  using SpTensor_ref = boost::multi::array_ref<SPComplexType,3>;
 
   // hack until parallel hdf is in place
   bool write_hdf = false;
@@ -54,7 +55,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   if(ndet > 1)
     APP_ABORT("Error: ndet > 1 not yet implemented in THCHamiltonian::getHamiltonianOperations.\n");
 
-  long nkpts, Q0=0, QN, nQ; 
+  long nkpts, Qbeg=0, QN, nQ; 
   long nmu, rotnmu;
   hdf_archive dump(TGwfn.Global());
   // right now only Node.root() reads 
@@ -84,7 +85,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
     
   // partition Q over nodes if distributed Q
    
-  nQ = QN-Q0; 
+  nQ = QN-Qbeg; 
 
   std::vector<int> nmo_per_kp(nkpts);
   std::vector<int> nchol_per_kp(nkpts);
@@ -108,7 +109,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                  <<" Problems reading MinusK. \n";
       APP_ABORT("");
     }
-#define SYMMETRIZE_LQ
+//#define SYMMETRIZE_LQ
 #ifdef SYMMETRIZE_LQ
     for(int k=0; k<nkpts; k++) {
       if(kminus[k] < k) nchol_per_kp[k] = nchol_per_kp[kminus[k]];
@@ -263,6 +264,15 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                    <<" Problems reading /Hamiltonian/KPTHC/L" <<Q <<". \n";
           APP_ABORT("");
         }
+/*
+        {
+          RealType scl = 1.0/double(nkpts);
+          //RealType scl = 1.0/std::sqrt(double(nkpts));
+          auto LQ(std::addressof(*LQGun[Q].origin()));
+          for(int Gun=0; Gun<LQGun[Q].num_elements(); Gun++, ++LQ)
+            (*LQ) *= scl;
+        }
+// */
       }
       if(LQGun[Q].shape()[0] != nG*nmu || LQGun[Q].shape()[1] != nchol_per_kp[Q]) {
         app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
@@ -270,15 +280,6 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                  <<" Unexpected dimensins: " <<LQGun[Q].shape()[0] <<" " <<LQGun[Q].shape()[1] <<std::endl; 
         APP_ABORT("");
       }    
-// adding scaling factor until Fionn does it on his end
-/*
-      {
-        RealType scl = 1.0/std::sqrt(double(nkpts));
-        auto LQ(std::addressof(*LQGun[Q].origin()));
-        for(int Gun=0; Gun<LQGun[Q].num_elements(); Gun++, ++LQ)
-          (*LQ) *= scl; 
-      }
-*/
       if(!dump.read(rotMuv[Q],std::string("HalfTransformedMuv")+std::to_string(Q))) {
         app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading /Hamiltonian/KPTHC/HalfTransformedMuv0" <<Q <<". \n";
@@ -290,6 +291,15 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                  <<" Unexpected dimensins: " <<rotMuv[Q].shape()[0] <<" " <<rotMuv[Q].shape()[1] <<std::endl;
         APP_ABORT("");
       }
+// adding scaling factor until Fionn does it on his end
+/*
+      {
+        RealType scl = 1.0/double(nkpts);
+        auto MQ(std::addressof(*rotMuv[Q].origin()));
+        for(int u=0; u<rotMuv[Q].num_elements(); u++, ++MQ)
+          (*MQ) *= scl*scl;
+      }
+// */
     }
     if(!dump.read(Piu,std::string("Orbitals"))) {
       app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
@@ -527,12 +537,13 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
       }  
     assert(KK2Q[KI][KK]>=0);  
   }
-/*
+
   // LIJ[I][J][Q][n] = sum_u u[KI][i][u] u[KJ][j][u] LQGun[Q][G][u][n]
   boost::multi::array<ComplexType,5> LIJ({nkpts,nkpts,nmo_max,nmo_max,nchol_max});
   boost::multi::array_ref<ComplexType,4> LIJ4D(LIJ.origin(),{nkpts,nkpts,nmo_max*nmo_max,nchol_max});
   std::fill_n(LIJ.origin(),LIJ.num_elements(),0);
   boost::multi::array<ComplexType,2> uij({nmo_max*nmo_max,nmu});
+/*
   for(int KI=0, n_=0; KI<nkpts; KI++)
   for(int KJ=0; KJ<nkpts; KJ++) {  
     if((n_++)%TGwfn.Global().size() == TGwfn.Global().rank()) {
@@ -561,6 +572,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   } 
   TGwfn.Global().all_reduce_n(LIJ.origin(), LIJ.num_elements(), std::plus<>());
 
+//  std::ofstream out("thc_ints.dat");
   boost::multi::array<ComplexType,2> IJKL({nmo_max*nmo_max,nmo_max*nmo_max});
   boost::multi::array<ComplexType,2> Muv({nmu,nmu});
   boost::multi::array_ref<ComplexType,4> IJKL4D(IJKL.origin(),{nmo_max,nmo_max,nmo_max,nmo_max});
@@ -574,7 +586,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
    {
     int Q = KK2Q[KI][KK];
     int KJ = QKtok2[Q][KL];
-    if( not (KI==KK && KL == KJ) ) continue;
+    //if( not (KI==KK && KL == KJ) ) continue;
     if((n_++)%TGwfn.Global().size() == TGwfn.Global().rank()) {    
       int ni0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KI,0);  
       int nj0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KJ,0);  
@@ -586,6 +598,11 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                   ma::H(LIJ4D[KL][KJ]({0,nmo_max*nmo_max},{0,nchol_per_kp[Q]})),IJKL);
 //Timer.stop("T0");
 //app_log()<<i <<" " <<Timer.total("T0") <<std::endl;
+//      for(int i=0; i<nmo_per_kp[0]; i++)
+//      for(int k=0; k<nmo_per_kp[0]; k++)
+//      for(int j=0; j<nmo_per_kp[0]; j++) 
+//      for(int l=0; l<nmo_per_kp[0]; l++) 
+//        out<<Q <<" " <<KI <<" " <<KK <<" " <<KJ <<" " <<KL <<" " <<i <<" " <<k <<" " <<j <<" " <<l <<" " <<IJKL4D[i][k][l][j] <<"\n";
       if(KI==KK && KL == KJ) { // EJ
         for(int i=0; i<nmo_per_kp[0]; i++)
         for(int k=0; k<nmo_per_kp[0]; k++)
@@ -607,10 +624,510 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   }
   TGwfn.Global().all_reduce_n(&EX, 1, std::plus<>());
   TGwfn.Global().all_reduce_n(&EJ, 1, std::plus<>());
+//  out.close();
   app_log()<<" EX: " <<std::setprecision(12) <<EX*2 <<std::endl;
   app_log()<<" EJ: " <<std::setprecision(12) <<EJ*4 <<std::endl;
+// */
+
+// testing THC strutures using 3Index class
+  // LIJ[I][J][Q][n] = sum_u u[KI][i][u] u[KJ][j][u] LQGun[Q][G][u][n]
+  int Q0=-1;  // if K=(0,0,0) exists, store index here
+  for(int Q=0; Q<nkpts; Q++) {
+    if(kminus[Q]==Q) {
+      bool found=true;
+      for(int KI=0; KI<nkpts; KI++)
+        if(KI != QKtok2[Q][KI]) {
+          found = false;
+          break;
+        }
+      if(found) {
+        Q0=Q;
+        break;
+      }
+    }
+  }
+  std::vector<shmSpMatrix> LQKikn;
+  LQKikn.reserve(nkpts);
+  for(int Q=0; Q<nkpts; Q++) {
+    LQKikn.emplace_back( shmSpMatrix({nkpts,nmo_max*nmo_max*nchol_per_kp[Q]},
+                                   shared_allocator<SPComplexType>{TG.Node()}) );
+    if(TGwfn.Node().root()) 
+      std::fill_n(LQKikn.back().origin(),LQKikn.back().num_elements(),ComplexType(0.0));
+  }  
+  TGwfn.Node().barrier();
+  for(int Q=0; Q<nkpts; Q++) {  
+    if(Q%TGwfn.Global().size() == TGwfn.Global().rank()) {
+      if(kminus[Q]==Q) {
+        for(int KI=0; KI<nkpts; KI++) {
+          int KJ = QKtok2[Q][KI];
+          int G1 = QKtoG[Q][KI];
+          int ni0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KI,0);
+          int nj0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KJ,0);
+          for(int i=0, I=ni0, ij=0; i<nmo_per_kp[0]; i++, ++I) {
+            auto&& uI(Piu[ni0+i]);
+            for(int j=0, J=nj0; j<nmo_per_kp[0]; j++, ++J, ij++) {
+              auto&& uJ(Piu[nj0+j]);
+              auto LIJ_(LQKikn[Q][KI].origin()+ij*nchol_per_kp[Q]);
+              for(int u=0; u<nmu; u++) {
+                ComplexType uij = conj(uI[u])*uJ[u];
+                auto lq(std::addressof(*LQGun[Q][nmu*G1+u].origin()));
+                for(int n=0; n<nchol_per_kp[Q]; n++)
+                  LIJ_[n] += uij * lq[n];
+              }
+            }
+          }
+        }
+        for(int KI=0; KI<nkpts; KI++) {
+          int KJ = QKtok2[Q][KI];
+          // right now the code assumes that Q=0 is the gamma point (0,0,0).  
+          int ni = nmo_per_kp[KI];
+          int nj = nmo_per_kp[KJ];
+          boost::multi::array_ref<SPComplexType,3> LQI(std::addressof(*LQKikn[Q][KI].origin()),
+                                                      {ni,nj,nchol_per_kp[Q]});
+          boost::multi::array_ref<SPComplexType,3> LQJ(std::addressof(*LQKikn[Q][KJ].origin()),
+                                                      {nj,ni,nchol_per_kp[Q]});
+          if(KJ > KI) {
+            for(int i=0; i<ni; i++)
+              for(int j=0; j<nj; j++)
+                for(int n=0; n<nchol_per_kp[Q]; n++)
+                  LQJ[j][i][n] = conj(LQI[i][j][n]);
+          }
+        }
+      } else if(kminus[Q] < Q) {  
+        int Qm = kminus[Q];
+        for(int KI=0; KI<nkpts; KI++) {
+          int KJ = QKtok2[Qm][KI];
+          int ni = nmo_per_kp[KI];
+          int nj = nmo_per_kp[KJ];
+          boost::multi::array_ref<SPComplexType,3> LQm(std::addressof(*LQKikn[Qm][KI].origin()),
+                                                    {ni,nj,nchol_per_kp[Q]});
+          boost::multi::array_ref<SPComplexType,3> LQ(std::addressof(*LQKikn[Q][KJ].origin()),
+                                                    {nj,ni,nchol_per_kp[Q]});
+          for(int i=0; i<ni; i++)
+            for(int j=0; j<nj; j++) {
+              auto LQ_n(LQ[j][i].origin());
+              auto LQm_n(LQm[i][j].origin());
+              for(int n=0; n<nchol_per_kp[Qm]; n++, ++LQ_n, ++LQm_n)
+                (*LQ_n) = conj(*LQm_n);
+            }
+        }
+      } else {  
+        for(int KI=0; KI<nkpts; KI++) {
+          int KJ = QKtok2[Q][KI];
+          int G1 = QKtoG[Q][KI];
+          int ni0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KI,0);
+          int nj0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+KJ,0);
+          for(int i=0, I=ni0, ij=0; i<nmo_per_kp[0]; i++, ++I) {
+            auto&& uI(Piu[ni0+i]);
+            for(int j=0, J=nj0; j<nmo_per_kp[0]; j++, ++J, ij++) {
+              auto&& uJ(Piu[nj0+j]);
+              auto LIJ_(LQKikn[Q][KI].origin()+ij*nchol_per_kp[Q]);  
+              for(int u=0; u<nmu; u++) { 
+                ComplexType uij = conj(uI[u])*uJ[u];
+                auto lq(std::addressof(*LQGun[Q][nmu*G1+u].origin()));
+                for(int n=0; n<nchol_per_kp[Q]; n++) 
+                  LIJ_[n] += uij * lq[n]; 
+              }
+            }
+          }
+        }
+      }
+    }
+  } 
+  TGwfn.Global().barrier();
+  if(TGwfn.Node().root()) 
+    for(int Q=0; Q<nkpts; Q++) 
+      TGwfn.Cores().all_reduce_n(std::addressof(*LQKikn[Q].origin()), LQKikn[Q].num_elements(), std::plus<>());
+
+  std::vector<shmSpMatrix> LQKank;
+  LQKank.reserve(ndet*nspins*(nkpts+1));  // storing 2 components for Q=0, since it is not assumed symmetric 
+  int ank_max = nocc_max*nchol_max*nmo_max;
+  for(int nd=0; nd<ndet; nd++) {
+    for(int Q=0; Q<(nkpts+1); Q++) {
+      LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
+    }
+    if(type==COLLINEAR) {
+      for(int Q=0; Q<(nkpts+1); Q++) {
+        LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
+      }
+    }
+  }
+
+  for(int nd=0, nt=0, nq0=0; nd<ndet; nd++, nq0+=(nkpts+1)*nspins) {
+    for(int Q=0; Q<(nkpts+1); Q++) {
+      for(int K=0; K<nkpts; K++, nt++) {
+        if(nt%TG.Node().size() == TG.Node().rank()) {
+          std::fill_n(std::addressof(*LQKank[nq0+Q][K].origin()),LQKank[nq0+Q][K].num_elements(),SPComplexType(0.0));
+          if(type==COLLINEAR) {
+            std::fill_n(std::addressof(*LQKank[nq0+nkpts+1+Q][K].origin()),LQKank[nq0+nkpts+1+Q][K].num_elements(),SPComplexType(0.0));
+          }
+        }
+      }
+    }
+  }
+/*
+  TG.Node().barrier();
+  for(int nd=0, nt=0, nq0=0; nd<ndet; nd++, nq0+=(nkpts+1)*nspins) {
+    for(int Q=0; Q<nkpts; Q++) {
+      for(int K=0; K<nkpts; K++, nt++) {
+        if(nt%TG.Global().size() == TG.Global().rank()) {
+          // haj and add half-transformed right-handed rotation for Q=0 
+          if(Q==Q0) {
+            if(type==COLLINEAR) {
+              { // Alpha 
+                // doing this "by-hand" now
+                auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd],QKtok2[Q0][K]);
+                boost::multi::array_ref<SPComplexType,2> Likn(std::addressof(*LQKikn[Q0][K].origin()),
+                                                           {nmo_per_kp[K],nmo_per_kp[QKtok2[Q0][K]]*nchol_per_kp[Q0]});
+                boost::multi::array_ref<SPComplexType,3> Llbn(std::addressof(*LQKank[nq0+nkpts][K].origin()),
+                                                           {nmo_per_kp[K],nocc_per_kp[nd][QKtok2[Q0][K]],nchol_per_kp[Q0]});
+                for(int l=0; l<nmo_per_kp[K]; ++l) {
+                  auto psi_bj = Psi.origin();
+                  for(int b=0; b<nocc_per_kp[nd][QKtok2[Q0][K]]; ++b) {
+                    auto Likn_jn = Likn[l].origin();
+                    for(int j=0, jn=0; j<nmo_per_kp[QKtok2[Q0][K]]; ++j, ++psi_bj) {
+                      auto Llbn_lbn = Llbn[l][b].origin();
+                      for(int n=0; n<nchol_per_kp[0]; ++n, ++Likn_jn, ++Llbn_lbn)
+                        (*Llbn_lbn) += (*psi_bj) * conj(*Likn_jn);
+                    }
+                  }
+                }
+                boost::multi::array_ref<SPComplexType,3> Lbnl(std::addressof(*LQKank[nq0+nkpts][K].origin()),
+                                                           {nocc_per_kp[nd][QKtok2[Q0][K]],nchol_per_kp[Q0],nmo_per_kp[K]});
+                boost::multi::array<SPComplexType,3> Llbn_({nmo_per_kp[K],
+                                                            nocc_per_kp[nd][QKtok2[Q0][K]],
+                                                            nchol_per_kp[Q0]});
+                std::copy_n(Llbn.origin(),Llbn.num_elements(),Llbn_.origin());
+                for(int l=0; l<nmo_per_kp[K]; ++l)
+                  for(int b=0; b<nocc_per_kp[nd][QKtok2[Q0][K]]; ++b)
+                    for(int n=0; n<nchol_per_kp[Q0]; ++n)
+                      Lbnl[b][n][l] = Llbn_[l][b][n];
+              }
+
+              { // Beta 
+                // doing this "by-hand" now
+                auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],QKtok2[Q0][K]);
+                boost::multi::array_ref<SPComplexType,2> Likn(std::addressof(*LQKikn[Q0][K].origin()),
+                                                           {nmo_per_kp[K],nmo_per_kp[QKtok2[Q0][K]]*nchol_per_kp[0]});
+                boost::multi::array_ref<SPComplexType,3> Llbn(std::addressof(*LQKank[nq0+2*nkpts+1][K].origin()),
+                                                           {nmo_per_kp[K],nocc_per_kp[nd][nkpts+QKtok2[Q0][K]],nchol_per_kp[Q0]});
+                for(int l=0; l<nmo_per_kp[K]; ++l) {
+                  auto psi_bj = Psi.origin();
+                  for(int b=0; b<nocc_per_kp[nd][nkpts+QKtok2[Q0][K]]; ++b) {
+                    auto Likn_jn = Likn[l].origin();
+                    for(int j=0, jn=0; j<nmo_per_kp[QKtok2[Q0][K]]; ++j, ++psi_bj) {
+                      auto Llbn_lbn = Llbn[l][b].origin();
+                      for(int n=0; n<nchol_per_kp[Q0]; ++n, ++Likn_jn, ++Llbn_lbn)
+                        (*Llbn_lbn) += (*psi_bj) * conj(*Likn_jn);
+                    }
+                  }
+                }
+                boost::multi::array_ref<SPComplexType,3> Lbnl(std::addressof(*LQKank[nq0+2*nkpts+1][K].origin()),
+                                                           {nocc_per_kp[nd][QKtok2[Q0][K]],nchol_per_kp[Q0],nmo_per_kp[K]});
+                boost::multi::array<SPComplexType,3> Llbn_({nmo_per_kp[K],
+                                                            nocc_per_kp[nd][QKtok2[Q0][K]],
+                                                            nchol_per_kp[Q0]});
+                std::copy_n(Llbn.origin(),Llbn.num_elements(),Llbn_.origin());
+                for(int l=0; l<nmo_per_kp[K]; ++l)
+                  for(int b=0; b<nocc_per_kp[nd][QKtok2[Q0][K]]; ++b)
+                    for(int n=0; n<nchol_per_kp[Q0]; ++n)
+                      Lbnl[b][n][l] = Llbn_[l][b][n];
+              }
+            } else {
+              // doing this "by-hand" now
+              auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[nd],QKtok2[Q0][K]);
+              boost::multi::array_ref<SPComplexType,2> Likn(std::addressof(*LQKikn[Q0][K].origin()),
+                                                         {nmo_per_kp[K],nmo_per_kp[QKtok2[Q0][K]]*nchol_per_kp[Q0]});
+              boost::multi::array_ref<SPComplexType,3> Llbn(std::addressof(*LQKank[nq0+nkpts][K].origin()),
+                                                         {nmo_per_kp[K],nocc_per_kp[nd][QKtok2[Q0][K]],nchol_per_kp[Q0]});
+              for(int l=0; l<nmo_per_kp[K]; ++l) {
+                auto psi_bj = Psi.origin();
+                for(int b=0; b<nocc_per_kp[nd][QKtok2[Q0][K]]; ++b) {
+                  auto Likn_jn = Likn[l].origin();
+                  for(int j=0, jn=0; j<nmo_per_kp[QKtok2[Q0][K]]; ++j, ++psi_bj) {
+                    auto Llbn_lbn = Llbn[l][b].origin();
+                    for(int n=0; n<nchol_per_kp[Q0]; ++n, ++Likn_jn, ++Llbn_lbn)
+                      (*Llbn_lbn) += (*psi_bj) * conj(*Likn_jn);
+                  }
+                }
+              }
+              boost::multi::array_ref<SPComplexType,3> Lbnl(std::addressof(*LQKank[nq0+nkpts][K].origin()),
+                                                         {nocc_per_kp[nd][QKtok2[Q0][K]],nchol_per_kp[Q0],nmo_per_kp[K]});
+              boost::multi::array<SPComplexType,3> Llbn_({nmo_per_kp[K],
+                                                          nocc_per_kp[nd][QKtok2[Q0][K]],
+                                                          nchol_per_kp[Q0]});
+              std::copy_n(Llbn.origin(),Llbn.num_elements(),Llbn_.origin());
+              for(int l=0; l<nmo_per_kp[K]; ++l)
+                for(int b=0; b<nocc_per_kp[nd][QKtok2[Q0][K]]; ++b)
+                  for(int n=0; n<nchol_per_kp[Q0]; ++n)
+                    Lbnl[b][n][l] = Llbn_[l][b][n];
+            }
+          }
+          if(type==COLLINEAR) {
+            { // Alpha 
+// change get_PsiK to cast to the value_type of the result 
+              auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd],K);
+              assert(Psi.shape()[0] == nocc_per_kp[nd][K]);
+              boost::multi::array_ref<SPComplexType,2> Likn(std::addressof(*LQKikn[Q][K].origin()),
+                                                           {nmo_per_kp[K],nmo_per_kp[QKtok2[Q][K]]*nchol_per_kp[Q]});
+              boost::multi::array_ref<SPComplexType,2> Lakn(std::addressof(*LQKank[nq0+Q][K].origin()),
+                                                           {nocc_per_kp[nd][K],nmo_per_kp[QKtok2[Q][K]]*nchol_per_kp[Q]});
+              ma::product(Psi,Likn,Lakn);
+              // transpose to form expected by KP3IndexFactorization  
+              for(int a=0; a<nocc_per_kp[nd][K]; a++) {
+                boost::multi::array_ref<SPComplexType,2> Lkn(Lakn[a].origin(),
+                                                           {nmo_per_kp[QKtok2[Q][K]],nchol_per_kp[Q]});
+                boost::multi::array_ref<SPComplexType,2> Lnk(Lakn[a].origin(),
+                                                           {nchol_per_kp[Q],nmo_per_kp[QKtok2[Q][K]]});
+                buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}) = Lkn;
+                ma::transpose(buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}),Lnk);
+              }
+            }
+            { // Beta 
+// change get_PsiK to cast to the value_type of the result 
+              auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],K);
+              assert(Psi.shape()[0] == nocc_per_kp[nd][nkpts+K]);
+              boost::multi::array_ref<SPComplexType,2> Likn(std::addressof(*LQKikn[Q][K].origin()),
+                                                           {nmo_per_kp[K],nmo_per_kp[QKtok2[Q][K]]*nchol_per_kp[Q]});
+              boost::multi::array_ref<SPComplexType,2> Lakn(std::addressof(*LQKank[nq0+nkpts+1+Q][K].origin()),
+                                                           {nocc_per_kp[nd][nkpts+K],nmo_per_kp[QKtok2[Q][K]]*nchol_per_kp[Q]});
+              ma::product(Psi,Likn,Lakn);
+              // transpose to form expected by KP3IndexFactorization  
+              for(int a=0; a<nocc_per_kp[nd][nkpts+K]; a++) {
+                boost::multi::array_ref<SPComplexType,2> Lkn(Lakn[a].origin(),
+                                                           {nmo_per_kp[QKtok2[Q][K]],nchol_per_kp[Q]});
+                boost::multi::array_ref<SPComplexType,2> Lnk(Lakn[a].origin(),
+                                                           {nchol_per_kp[Q],nmo_per_kp[QKtok2[Q][K]]});
+                buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}) = Lkn;
+                ma::transpose(buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}),Lnk);
+              }
+            }
+          } else {
+// change get_PsiK to cast to the value_type of the result 
+            auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[nd],K);
+            assert(Psi.shape()[0] == nocc_per_kp[nd][K]);
+            boost::multi::array_ref<SPComplexType,2> Likn(std::addressof(*LQKikn[Q][K].origin()),
+                                                         {nmo_per_kp[K],nmo_per_kp[QKtok2[Q][K]]*nchol_per_kp[Q]});
+            boost::multi::array_ref<SPComplexType,2> Lakn(std::addressof(*LQKank[nq0+Q][K].origin()),
+                                                         {nocc_per_kp[nd][K],nmo_per_kp[QKtok2[Q][K]]*nchol_per_kp[Q]});
+            ma::product(Psi,Likn,Lakn);
+            // transpose to form expected by KP3IndexFactorization  
+            for(int a=0; a<nocc_per_kp[nd][K]; a++) {
+              boost::multi::array_ref<SPComplexType,2> Lkn(Lakn[a].origin(),
+                                                         {nmo_per_kp[QKtok2[Q][K]],nchol_per_kp[Q]});
+              boost::multi::array_ref<SPComplexType,2> Lnk(Lakn[a].origin(),
+                                                         {nchol_per_kp[Q],nmo_per_kp[QKtok2[Q][K]]});
+              for(int k=0; k<nmo_per_kp[QKtok2[Q][K]]; k++)
+                for(int n=0; n<nchol_per_kp[Q]; n++)
+                  buff[k][n] = Lkn[k][n];
+              for(int k=0; k<nmo_per_kp[QKtok2[Q][K]]; k++)
+                for(int n=0; n<nchol_per_kp[Q]; n++)
+                  Lnk[n][k] = buff[k][n];
+            }
+          }
+        }
+      }
+    }
+  }
+  TG.Global().barrier();
+  if(TG.Node().root()) {
+    TG.Cores().all_reduce_in_place_n(std::addressof(*haj.origin()),
+                                     haj.num_elements(),std::plus<>());
+    for(int Q=0; Q<LQKank.size(); Q++)
+      TG.Cores().all_reduce_in_place_n(std::addressof(*LQKank[Q].origin()),
+                                       LQKank[Q].num_elements(),std::plus<>());
+    std::fill_n(std::addressof(*vn0.origin()),vn0.num_elements(),ComplexType(0.0));
+  }
+  TG.Node().barrier();
+*/
+// /*
+  // calculate (only Q=0) vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] conj(L[0][K][l][j][n])
+  for(int K=0; K<nkpts; K++) {
+    if(K%TG.Node().size() == TG.Node().rank()) {
+      boost::multi::array_ref<SPComplexType,2> Likn(std::addressof(*LQKikn[0][K].origin()),
+                                                   {nmo_per_kp[K],nmo_per_kp[K]*nchol_per_kp[0]});
+      using ma::H;
+      ma::product(-0.5,Likn,H(Likn),0.0,vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+    }
+  }
+  TG.Node().barrier();
+// */
+
+  std::vector<RealType> gQ(nkpts);
+  int nsampleQ=-1;      
+
+
+  std::vector<int> nchol_per_kp_(nkpts);
+
+  hdf_archive dump_(TGwfn.Global());
+  // right now only Node.root() reads 
+  if( TG.Node().root() ) {
+    if(!dump_.open(std::string("kp3index.h5"),H5F_ACC_RDONLY)) {
+      app_error()<<" Error opening integral file in THCHamiltonian. \n";
+      APP_ABORT("");
+    }
+    if(!dump_.push("Hamiltonian",false)) {
+      app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
+                 <<" Group not Hamiltonian found. \n";
+      APP_ABORT("");
+    }
+    if(!dump_.read(nchol_per_kp_,"NCholPerKP")) {
+      app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
+                 <<" Problems reading NCholPerKP. \n";
+      APP_ABORT("");
+    }
+  }
+
+  std::vector<shmSpMatrix> LQKikn_;
+  LQKikn_.reserve(nkpts);
+  for(int Q=0; Q<nkpts; Q++)
+    LQKikn_.emplace_back( shmSpMatrix({nkpts,nmo_max*nmo_max*nchol_per_kp_[Q]},
+                                   shared_allocator<SPComplexType>{TG.Node()}) );
+  if( TG.Node().root() ) {
+    // read LQ
+    if(!dump_.push("KPFactorized",false)) {
+      app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
+                 <<" Group KPFactorized not found. \n";
+      APP_ABORT("");
+    }
+    for(int Q=0; Q<nkpts; Q++) {
+      std::cout<<" reading: " <<Q <<std::endl;
+      using std::conj;
+      if(kminus[Q]==Q) {
+        if(!dump_.read(LQKikn_[Q],std::string("L")+std::to_string(Q))) {
+          app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
+                   <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n";
+          APP_ABORT("");
+        }
+        // symmetrize LQ[Ki]ij = LQ[Kj]ji* 
+        for(int KI=0; KI<nkpts; KI++) {
+          int KJ = QKtok2[Q][KI];
+          // right now the code assumes that Q=0 is the gamma point (0,0,0).  
+          int ni = nmo_per_kp[KI];
+          int nj = nmo_per_kp[KJ];
+          boost::multi::array_ref<SPComplexType,3> LQI(std::addressof(*LQKikn_[Q][KI].origin()),
+                                                      {ni,nj,nchol_per_kp_[Q]});
+          boost::multi::array_ref<SPComplexType,3> LQJ(std::addressof(*LQKikn_[Q][KJ].origin()),
+                                                      {nj,ni,nchol_per_kp_[Q]});
+          if(KJ > KI) {
+            for(int i=0; i<ni; i++)
+              for(int j=0; j<nj; j++)
+                for(int n=0; n<nchol_per_kp_[Q]; n++)
+                  LQJ[j][i][n] = conj(LQI[i][j][n]);
+          }
+        }
+      } else if(kminus[Q] < Q) {
+        int Qm = kminus[Q];
+        for(int KI=0; KI<nkpts; KI++) {
+          int KJ = QKtok2[Qm][KI];
+          int ni = nmo_per_kp[KI];
+          int nj = nmo_per_kp[KJ];
+          boost::multi::array_ref<SPComplexType,3> LQm(std::addressof(*LQKikn_[Qm][KI].origin()),
+                                                      {ni,nj,nchol_per_kp_[Q]});
+          boost::multi::array_ref<SPComplexType,3> LQ(std::addressof(*LQKikn_[Q][KJ].origin()),
+                                                      {nj,ni,nchol_per_kp_[Q]});
+          for(int i=0; i<ni; i++)
+            for(int j=0; j<nj; j++) {
+              auto LQ_n(LQ[j][i].origin());
+              auto LQm_n(LQm[i][j].origin());
+              for(int n=0; n<nchol_per_kp_[Qm]; n++, ++LQ_n, ++LQm_n)
+                (*LQ_n) = conj(*LQm_n);
+            }
+        }
+      } else
+      {
+        if(!dump_.read(LQKikn_[Q],std::string("L")+std::to_string(Q))) {
+          app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
+                   <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n";
+          APP_ABORT("");
+        }
+      }
+      if(LQKikn_[Q].shape()[0] != nkpts || LQKikn_[Q].shape()[1] != nmo_max*nmo_max*nchol_per_kp_[Q]) {
+        app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
+                 <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n"
+                 <<" Unexpected dimensins: " <<LQKikn_[Q].shape()[0] <<" " <<LQKikn_[Q].shape()[1] <<" " <<std::endl;
+        APP_ABORT("");
+      }
+      std::cout<<" done reading: " <<Q <<std::endl;
+    }
+    dump_.pop();
+    dump_.pop();
+  }
+  TG.Node().barrier();
+  std::cout<<" done reading " <<std::endl;
+
+  boost::multi::array<ComplexType,2> IJKL_({nmo_max*nmo_max,nmo_max*nmo_max});
+  boost::multi::array<ComplexType,2> IJKL({nmo_max*nmo_max,nmo_max*nmo_max});
+  boost::multi::array_ref<ComplexType,4> IJKL4D(IJKL.origin(),{nmo_max,nmo_max,nmo_max,nmo_max});
+  boost::multi::array_ref<ComplexType,4> IJKL4D_(IJKL_.origin(),{nmo_max,nmo_max,nmo_max,nmo_max});
+  for(int KI=0, n_=0; KI<nkpts; KI++)
+  for(int KL=0; KL<nkpts; KL++) { 
+   for(int KK=0; KK<nkpts; KK++) 
+   {
+    int Q = KK2Q[KI][KK];
+    int KJ = QKtok2[Q][KL];
+    //if( not (KI==KK && KL == KJ) ) continue;
+    if((n_++)%TGwfn.Global().size() == TGwfn.Global().rank()) {    
+      boost::multi::array_ref<ComplexType,2> LKI(std::addressof(*LQKikn[Q][KI].origin()),{nmo_max*nmo_max,nchol_per_kp[Q]}); 
+      boost::multi::array_ref<ComplexType,2> LKL(std::addressof(*LQKikn[Q][KL].origin()),{nmo_max*nmo_max,nchol_per_kp[Q]}); 
+      boost::multi::array_ref<ComplexType,2> LKI_(std::addressof(*LQKikn_[Q][KI].origin()),{nmo_max*nmo_max,nchol_per_kp_[Q]}); 
+      boost::multi::array_ref<ComplexType,2> LKL_(std::addressof(*LQKikn_[Q][KL].origin()),{nmo_max*nmo_max,nchol_per_kp_[Q]}); 
+      ma::product(LKI,ma::H(LKL),IJKL);
+      ma::product(LKI_,ma::H(LKL_),IJKL_);
+      for(int i=0; i<nmo_per_kp[0]; i++)
+      for(int k=0; k<nmo_per_kp[0]; k++)
+      for(int l=0; l<nmo_per_kp[0]; l++) 
+      for(int j=0; j<nmo_per_kp[0]; j++) 
+       if(std::abs(IJKL4D[i][k][l][j]-IJKL4D_[i][k][l][j]) > 1e-4) {
+         std::cout<<Q <<" " <<KI <<" " <<KK <<" " <<KJ <<" " <<KL <<" " <<i <<" " <<k <<" " <<j <<" " <<l <<" " <<IJKL4D[i][k][l][j] <<" " <<IJKL4D_[i][k][l][j] <<" " <<std::abs(IJKL4D[i][k][l][j]-IJKL4D_[i][k][l][j]) <<"\n";
+       }  
+    }
+   }
+  }
+/*
+  boost::multi::array<ComplexType,2> IJKL({nmo_max*nmo_max,nmo_max*nmo_max});
+  boost::multi::array_ref<ComplexType,4> IJKL4D(IJKL.origin(),{nmo_max,nmo_max,nmo_max,nmo_max});
+  ComplexType EX(0.0);
+  ComplexType EJ(0.0);
+  for(int KI=0; KI<nkpts; KI++)
+  for(int KL=0; KL<nkpts; KL++) { 
+    for(int KK=0; KK<nkpts; KK++) 
+    {
+      int Q = KK2Q[KI][KK];
+      int KJ = QKtok2[Q][KL];
+      boost::multi::array_ref<ComplexType,2> LKI(std::addressof(*LQKikn[Q][KI].origin()),{nmo_max*nmo_max,nchol_per_kp[Q]}); 
+      boost::multi::array_ref<ComplexType,2> LKL(std::addressof(*LQKikn[Q][KL].origin()),{nmo_max*nmo_max,nchol_per_kp[Q]}); 
+      ma::product(LKI,ma::H(LKL),IJKL);
+      for(int i=0; i<nmo_per_kp[0]; i++)
+      for(int k=0; k<nmo_per_kp[0]; k++)
+      for(int j=0; j<nmo_per_kp[0]; j++) 
+      for(int l=0; l<nmo_per_kp[0]; l++) 
+        out<<Q <<" " <<KI <<" " <<KK <<" " <<KJ <<" " <<KL <<" " <<i <<" " <<k <<" " <<j <<" " <<l <<" " <<IJKL4D[i][k][l][j] <<"\n";
+      if(KI==KK && KL == KJ) { // EJ
+        for(int i=0; i<nmo_per_kp[0]; i++)
+        for(int k=0; k<nmo_per_kp[0]; k++)
+        for(int l=0; l<nmo_per_kp[0]; l++) 
+        for(int j=0; j<nmo_per_kp[0]; j++) {
+          EJ += 0.5*IJKL4D[i][k][l][j] * G[KI][i][k] * G[KJ][j][l]; 
+        }
+      } 
+      if(KI==KL && KJ == KK) { // EX
+        for(int i=0; i<nmo_per_kp[0]; i++)
+        for(int k=0; k<nmo_per_kp[0]; k++)
+        for(int l=0; l<nmo_per_kp[0]; l++)  
+        for(int j=0; j<nmo_per_kp[0]; j++) {
+          EX += 0.5*IJKL4D[i][k][l][j] * G[KI][i][l] * G[KJ][j][k];                 
+        }
+      }
+    }
+  }
 */
 
+  return HamiltonianOperations(KP3IndexFactorization(TGwfn.TG_local(), type,std::move(nmo_per_kp),
+            std::move(nchol_per_kp),std::move(kminus),std::move(nocc_per_kp),
+            std::move(QKtok2),std::move(H1),std::move(haj),std::move(LQKikn),
+            std::move(LQKank),std::move(vn0),std::move(gQ),nsampleQ,E0,global_ncvecs));
+/*
   return HamiltonianOperations(KPTHCOps(TGwfn.TG_local(),type,
                             std::move(nmo_per_kp),std::move(nchol_per_kp),
                             std::move(kminus),std::move(nocc_per_kp),
@@ -619,6 +1136,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                             std::move(rotMuv),std::move(rotPiu),std::move(rotcPua),
                             std::move(LQGun),std::move(Piu),std::move(cPua),
                             std::move(vn0),E0,global_ncvecs));
+*/
 
 }
 

@@ -49,6 +49,7 @@ class KPTHCOps
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;
   using SpMatrix_cref = boost::multi::const_array_ref<SPComplexType,2>;
   using SpMatrix_ref = boost::multi::array_ref<SPComplexType,2>;
+  using SpVector_ref = boost::multi::array_ref<SPComplexType,1>;
   using C3Tensor = boost::multi::array<ComplexType,3>;
   using SpMatrix = boost::multi::array<SPComplexType,2>;
   using Sp3Tensor = boost::multi::array<SPComplexType,3>;
@@ -88,6 +89,8 @@ class KPTHCOps
                  shmC3Tensor&& vn0_,
                  ValueType e0_,
                  int gncv,
+                 std::vector<shmSpMatrix>&& vik,
+                 std::vector<shmSpMatrix>&& vak,
                  bool verbose=false ):
                 comm(std::addressof(c_)),
                 walker_type(type),
@@ -111,7 +114,9 @@ class KPTHCOps
                 KK2Q({nopk.size(),nopk.size()},shared_allocator<SPComplexType>{c_}),
                 SM_TMats({1,1},shared_allocator<SPComplexType>{c_}),
                 TMats({1,1}),
-                mutex(0)
+                mutex(0),
+                LQKikn(std::move(vik)),
+                LQKank(std::move(vak))
     {
       nGpk.resize(nopk.size());
       nG2pk.resize(nopk.size());
@@ -257,6 +262,7 @@ class KPTHCOps
       int nmo_tot = std::accumulate(nopk.begin(),nopk.end(),0);
       int nmo_max = *std::max_element(nopk.begin(),nopk.end());
       int nocca_tot = std::accumulate(nelpk[nd].begin(),nelpk[nd].begin()+nkpts,0);
+      int nG_max = *std::max_element(nGpk.begin(),nGpk.end());
       int nocca_max = *std::max_element(nelpk[nd].begin(),nelpk[nd].begin()+nkpts);
       int nchol_max = *std::max_element(ncholpQ.begin(),ncholpQ.end());
       int noccb_tot = 0;
@@ -310,11 +316,12 @@ class KPTHCOps
       int getKr = KEright!=nullptr;
       int getKl = KEleft!=nullptr;
       int rotnu = rotPiu.shape()[1]; 
+      int nGu = std::accumulate(nGpk.begin(),nGpk.end(),0)*rotnu;
       size_t memory_needs = 0;
       if(addEXX)  memory_needs += nkpts*nkpts*rotnu*rotnu;
       if(addEJ) {
-        if(not getKr) memory_needs += nwalk*local_nCV;
-        if(not getKl) memory_needs += nwalk*local_nCV;
+        if(not getKr) memory_needs += nwalk*nGu;
+        if(not getKl) memory_needs += nwalk*nGu;
       }
       set_shm_buffer(memory_needs);
       size_t cnt=0;  
@@ -323,22 +330,22 @@ class KPTHCOps
       size_t Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
-        Knc=local_nCV;
+        Knc=nGu;
         if(getKr) {
-          assert(KEright->shape()[0] == nwalk && KEright->shape()[1] == local_nCV);
+          assert(KEright->shape()[0] == nwalk && KEright->shape()[1] == nGu);
           assert(KEright->strides()[0] == KEright->shape()[1]);
           Krptr = std::addressof(*KEright->origin());
         } else {
           Krptr = std::addressof(*SM_TMats.origin())+cnt;
-          cnt += nwalk*local_nCV;
+          cnt += nwalk*nGu;
         }
         if(getKl) {
-          assert(KEleft->shape()[0] == nwalk && KEleft->shape()[1] == local_nCV);
+          assert(KEleft->shape()[0] == nwalk && KEleft->shape()[1] == nGu);
           assert(KEleft->strides()[0] == KEleft->shape()[1]);
           Klptr = std::addressof(*KEleft->origin());
         } else {
           Klptr = std::addressof(*SM_TMats.origin())+cnt;
-          cnt += nwalk*local_nCV;
+          cnt += nwalk*nGu;
         }
         if(comm->root()) std::fill_n(Krptr,Knr*Knc,SPComplexType(0.0));
         if(comm->root()) std::fill_n(Klptr,Knr*Knc,SPComplexType(0.0));
@@ -354,7 +361,7 @@ Timer.reset("T1");
 Timer.reset("T2");
 Timer.reset("T3");
       if(addEXX) {
-        size_t local_memory_needs = nocca_tot*rotnu + nchol_max + rotnu;
+        size_t local_memory_needs = nocca_tot*rotnu + rotnu;
         if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
 
         // Fuv[k1][k2][u][v] = sum_a_l rotcPua[u][k1][a] * G[k1][a][k2][l] rotPiu[k2][l][v]
@@ -366,12 +373,9 @@ Timer.reset("T3");
         cnt_local+=TAv.num_elements();
 
         // avoiding vectors for now
-        SpMatrix_ref Ke_local(TMats.origin()+cnt_local,{nchol_max,1});
-        SpMatrix_ref Ke1D(TMats.origin()+cnt_local,{1,nchol_max});
-        cnt_local+=Ke_local.num_elements();
-        std::fill_n(Ke_local.origin(),Ke_local.num_elements(),SPComplexType(0.0));
-        SpMatrix_ref Fuu(TMats.origin()+cnt_local,{rotnu,1});
-        cnt_local+=Fuu.num_elements();
+        SpVector_ref Zu(TMats.origin()+cnt_local,{rotnu});
+        cnt_local+=Zu.num_elements();
+        std::fill_n(Zu.origin(),Zu.num_elements(),SPComplexType(0.0));
 
         for(int n=0; n<nwalk; ++n) {
 
@@ -392,54 +396,59 @@ Timer.start("T0");
 Timer.stop("T0");
 
 Timer.start("T2");
-/*
+// NOT OPTIMAL: FIX!!!
           if(addEJ) {
             nqk=0;  
-            for(int Q=0; Q<nkpts; ++Q) {            // momentum conservation index   
+            for(int Q=0, nqGa=0; Q<nkpts; ++Q) {            // momentum conservation index   
               int nG = nGpk[Q]; 
-              for(int G=0; G<nG; ++G) {
+              for(int Ga=0; Ga<nG; ++Ga, nqGa+=rotnu) {
                 if((nqk++)%comm->size() == comm->rank()) {
-                  int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
-                  std::fill_n(Fuu.origin(),Fuu.num_elements(),SPComplexType(0.0));
-                  //std::fill_n(Ke_local.origin(),Ke_local.num_elements(),SPComplexType(0.0));
-                  for(int K=0; K<nkpts; ++K) {
-                    if(QKToG[Q][K] != G) continue;
-                    int QK = QKToK2[Q][K];
-                    auto fu_(Fuu.origin());
-                    auto f_(Fuv[K][QK].origin());
-                    for(int u=0; u<rotnu; u++, ++fu_, f_ += (rotnu+1))
-                      (*fu_) += (*f_); 
+                  boost::multi::array_ref<SPComplexType,4> Muv(std::addressof(*rotMuv[Q].origin()),
+                                                         {nG,nG,rotnu,rotnu});
+                  auto&& KlQa(Kl[n].sliced(nqGa,nqGa+rotnu));
+                  auto&& KrQa(Kr[n].sliced(nqGa,nqGa+rotnu));
+                  std::fill_n(KlQa.origin(),KlQa.num_elements(),SPComplexType(0.0));
+                  std::fill_n(KrQa.origin(),KrQa.num_elements(),SPComplexType(0.0));
+                  // Kl(n,Q,Ga,u) = sum_K_in_Ga F(K,Q[K],u,u)
+                  for(int Ka=0; Ka<nkpts; ++Ka) {
+                    if(QKToG[Q][Ka] != Ga) continue;
+                    int Kk = QKToK2[Q][Ka];
+                    auto f_(Fuv[Ka][Kk].origin());
+                    auto ku_(KlQa.origin());
+                    for(int u=0; u<rotnu; u++, ku_++, f_ += (rotnu+1))
+                      (*ku_) += (*f_); 
                   }
-                  ma::product(ma::T(LQGun[Q].sliced(rotnu*G,rotnu*(G+1))),Fuu,
-                              Ke_local.sliced(0,ncholpQ[Q]));
-            
-                  { 
-                    std::lock_guard<shared_mutex> guard(*mutex[Q]);
-                    ma::axpy(one,Ke1D[0].sliced(0,ncholpQ[Q]),Kl[n]({nc0,nc0+ncholpQ[Q]}));
-                  } 
-                  std::fill_n(Fuu.origin(),Fuu.num_elements(),SPComplexType(0.0));
-                  //std::fill_n(Ke_local.origin(),Ke_local.num_elements(),SPComplexType(0.0));
-                  for(int K=0; K<nkpts; ++K) {
-                    if(QKToG[Q][K] != G) continue;
-                    int QK = QKToK2[Q][K];
-                    auto fu_(Fuu.origin());
-                    auto f_(Fuv[QK][K].origin());
-                    for(int u=0; u<rotnu; u++, ++fu_, f_ += (rotnu+1))
-                      (*fu_) += (*f_);
+                  // Kr(n,Q,Ga,u) = sum_Gl sum_v M(Q,Ga,Gl)(u,v) sum_K_in_Gl F(Q[K],K,u,u)
+                  for(int Gl=0; Gl<nG; ++Gl) {
+                    std::fill_n(Zu.origin(),Zu.num_elements(),SPComplexType(0.0));
+                    for(int Kl=0; Kl<nkpts; ++Kl) {
+                      if(QKToG[Q][Kl] != Gl) continue;
+                      int Kb = QKToK2[Q][Kl];
+                      auto f_(Fuv[Kb][Kl].origin());
+                      auto zu_(Zu.origin());
+                      for(int u=0; u<rotnu; u++, zu_++, f_ += (rotnu+1))
+                        (*zu_) += (*f_); 
+                    }
+                    ma::product(one,Muv[Ga][Gl],Zu,one,KrQa);
                   }
-                  //ma::product(ma::T(LQGun[Q].sliced(nu*G,nu*(G+1))),Fuu,
-                  ma::product(ma::H(LQGun[Q].sliced(nu*G,nu*(G+1))),Fuu,
-                              Ke_local.sliced(0,ncholpQ[Q]));
-
-                  {
-                    std::lock_guard<shared_mutex> guard(*mutex[Q]);
-                    ma::axpy(one,Ke1D[0].sliced(0,ncholpQ[Q]),Kr[n]({nc0,nc0+ncholpQ[Q]}));
+/*
+                  for(int Gb=0; Gb<nG; ++Gb) {
+                    std::fill_n(Zu.origin(),Zu.num_elements(),SPComplexType(0.0));
+                    for(int Kb=0; Kb<nkpts; ++Kb) {
+                      if(QKToG[Q][Kb] != Gb) continue;
+                      int Kl = QKToK2[kminus[Q]][Kb];
+                      auto f_(Fuv[Kb][Kl].origin());
+                      auto zu_(Zu.origin());
+                      for(int u=0; u<rotnu; u++, zu_++, f_ += (rotnu+1))
+                        (*zu_) += (*f_);
+                    }
+                    ma::product(one,Muv[Ga][Gb],Zu,one,KrQa);
                   }
+*/
                 }
               }
             }
           }
-*/
 Timer.stop("T2");
 Timer.start("T1");
 // FIX parallelization!!!
@@ -457,7 +466,7 @@ Timer.start("T1");
                   int QK2 = QKToK2[Q][K2];
                   // EXX += sum_u_v Muv[u][v] * Fuv[K1][K2][u][v] * Fuv[QK2][QK1][v][u]   
                   ComplexType E_(0.0);
-                  int nq = nG2pk[Q] + QKToG[Q][K1]*nG + QKToG[Q][K2];  
+//                  int nq = nG2pk[Q] + QKToG[Q][K1]*nG + QKToG[Q][K2];  
                   auto F1_(std::addressof(*Fuv[K1][K2].origin()));
                   auto muv_(Muv[QKToG[Q][K1]][QKToG[Q][K1]].origin());
                   auto F2_(std::addressof(*Fuv[QK2][QK1].origin()));
@@ -479,7 +488,6 @@ Timer.stop("T1");
       }
 
 Timer.start("T2");
-/*
       if(addEJ) {
         if(not addEXX) {
           // calculate Kr
@@ -490,14 +498,13 @@ Timer.start("T2");
         for(int n=0; n<nwalk; ++n) {
           for(int Q=0; Q<nkpts; ++Q) {      // momentum conservation index   
             if((nqk++)%comm->size() == comm->rank()) {
-              int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
-              E[n][2] += 0.5*scl*scl*ma::dot(Kl[n]({nc0,nc0+ncholpQ[Q]}),
-                                            Kr[n]({nc0,nc0+ncholpQ[Q]}));
+              int nc0 = std::accumulate(nGpk.begin(),nGpk.begin()+Q,0)*rotnu;
+              E[n][2] += 0.5*scl*scl*ma::dot(Kl[n]({nc0,nc0+rotnu*nGpk[Q]}),
+                                            Kr[n]({nc0,nc0+rotnu*nGpk[Q]}));
             }
           }
         }
       }
-*/
 Timer.stop("T2");
 app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Timer.total("T2") <<"\n";
 
@@ -863,39 +870,6 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
         }
         nc0+=2*ncholpQ[Q];
       }
-/*
-      nqk=0;
-      for(int Q=0, nc0=0; Q<nkpts; ++Q) {      // momentum conservation index   
-        for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (i,k)
-          if((nqk++)%comm->size() == comm->rank()) {
-            int nchol = ncholpQ[Q];
-            int ni = nopk[K];
-            int ni0 = std::accumulate(nopk.begin(),nopk.begin()+K,0);
-            int nk = nopk[QKToK2[Q][K]];
-            int nk0 = std::accumulate(nopk.begin(),nopk.begin()+QKToK2[Q][K],0);
-
-            SpMatrix_ref Likn(std::addressof(*LQKikn[Q][K].origin()),
-                              {ni*nk,nchol});
-            SpMatrix_ref vik(TMats.origin(),{nwalk,ni*nk});
-            Sp3Tensor_ref vik3D(TMats.origin(),{nwalk,ni,nk});
-
-            // v[nw][k(in Q(K))][i(in K)] += sum_n conj(LQK[i][k][n]) X[Q][n-][nw]
-            ma::product(T(X[indices[range_t(nc0+nchol,nc0+2*nchol)][range_t()]]),
-                        H(Likn),vik);
-
-            for(int nw=0; nw<nwalk; nw++) {
-              auto&& vik3D_n = vik3D[nw];
-              for(int k=0; k<nk; k++) {
-                ComplexType* v3D_nk = std::addressof(*v3D[nw][nk0+k].origin()) + ni0;
-                for(int i=0; i<ni; i++, ++v3D_nk)
-                  *v3D_nk += vik3D_n[i][k];
-              }
-            }
-          }
-        }
-        nc0+=2*ncholpQ[Q];
-      }
-*/
       comm->barrier();
       // do I need to "rotate" back, can be done if necessary
     }
@@ -1043,7 +1017,7 @@ Timer.start("T0");
                 for(int u=0; u<nu; u++, ++Fu2, cPua_nd_u+=nA) {
                   auto cPua_nd_a(cPua_nd_u);
                   for(int ia=0; ia<na2; ++ia, ++cPua_nd_a, ++Tua2_a)
-                    *(Fu2) += (*cPua_nd_a) * (*Tua2_a);
+                    *(Fu2) += conj((*cPua_nd_a) * (*Tua2_a));
                 }
 //Timer.stop("T3");
               }
@@ -1064,6 +1038,7 @@ Timer.start("T0");
               v2_[j] = conj(v2_[j]);
           }  
           int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
+/*
           for(int i=0; i<nchol; ++i) {
             // v+ = 0.5*a*(v1+v2) 
             BLAS::axpy(nwalk, halfa, v1[i].origin(), 1, v[nc0+i].origin(), 1);
@@ -1072,6 +1047,7 @@ Timer.start("T0");
             BLAS::axpy(nwalk, minusimhalfa, v1[i].origin(), 1, v[nc0+nchol+i].origin(), 1);
             BLAS::axpy(nwalk, imhalfa, v2[i].origin(), 1, v[nc0+nchol+i].origin(), 1);
           }
+*/
         }
       }
       comm->barrier();
@@ -1086,7 +1062,7 @@ app_log()<<" E time: "
     }
 
     bool distribution_over_cholesky_vectors() const { return true; }
-    int number_of_ke_vectors() const{ return std::accumulate(ncholpQ.begin(),ncholpQ.end(),0); }
+    int number_of_ke_vectors() const{ return std::accumulate(nGpk.begin(),nGpk.end(),0)*rotPiu.shape()[1];} 
     int local_number_of_cholesky_vectors() const{ return 2*std::accumulate(ncholpQ.begin(),ncholpQ.end(),0); }
     int global_number_of_cholesky_vectors() const{ return global_nCV; }
 
@@ -1185,6 +1161,13 @@ app_log()<<" E time: "
     }
 
     boost::multi::array<ComplexType,3> eloc;
+
+    //Cholesky Tensor Lik[Q][nk][i][k][n]
+    std::vector<shmSpMatrix> LQKikn;
+
+    // half-tranformed Cholesky tensor
+    std::vector<shmSpMatrix> LQKank;
+
 
 };
 
