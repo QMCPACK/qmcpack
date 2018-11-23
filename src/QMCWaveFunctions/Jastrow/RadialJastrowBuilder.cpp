@@ -340,7 +340,6 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
     tolower(kidsname);
     if (kidsname == "correlation")
     {
-      RealType cusp=0.0;
       std::string speciesA;
       std::string speciesB;
       OhmmsAttributeSet rAttrib;

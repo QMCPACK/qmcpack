@@ -297,7 +297,7 @@ public:
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int n=d_table->size(VisitorIndex);
     curGrad = 0.0;
-    RealType ur,dudr, d2udr2;
+    RealType ur, dudr, d2udr2;
     for (int i=0, nn=iat; i<d_table->size(SourceIndex); ++i,nn+= n)
     {
       if (Fs[i] != nullptr)

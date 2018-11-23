@@ -514,9 +514,8 @@ void GamesFMOParser::getGeometry(std::istream& is)
 
 void GamesFMOParser::getGaussianCenters(std::istream& is)
 {
+  int ng;
   gBound.resize(NumberOfAtoms+1);
-  int ng,nx;
-  int OldShell=1;
   std::string aline;
   std::map<std::string,int> basisDataMap;
   int nUniqAt=0;

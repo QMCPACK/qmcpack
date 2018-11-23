@@ -31,7 +31,7 @@ SkPot::SkPot(ParticleSet& source)
   Fk.resize(NumK);
   Kmag.resize(MaxKshell);
   OneOverDnk.resize(MaxKshell);
-  for(int ks=0, k=0; ks<MaxKshell; ks++)
+  for(int ks=0; ks<MaxKshell; ks++)
   {
     Kmag[ks]=std::sqrt(source.SK->KLists.ksq[Kshell[ks]]);
     OneOverDnk[ks]=1.0/static_cast<RealType>(Kshell[ks+1]-Kshell[ks]);

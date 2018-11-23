@@ -91,7 +91,6 @@ TEST_CASE("double_3d_periodic","[einspline]")
   eval_UBspline_3d_d(s, 0.0, 0.0, 0.0, &val);
   REQUIRE(val == Approx(0.0));
 
-  double x = delta;
   eval_UBspline_3d_d(s, delta, delta, delta, &val);
   REQUIRE(val == Approx(data[N*N + N + 1]));
 

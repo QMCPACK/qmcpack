@@ -137,7 +137,6 @@ bool JastrowBuilder::add_eeI (xmlNodePtr cur)
 bool JastrowBuilder::addTwoBody(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"addTwoBody(xmlNodePtr)");
-  bool success=false;
   RadialJastrowBuilder rb(targetPtcl,targetPsi);
   return rb.put(cur);
 }

@@ -154,8 +154,8 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
 
 void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
 {
-  const StructFact& RhoKA(*(PtclA.SK));
-  const StructFact& RhoKB(*(P.SK));
+  //  const StructFact& RhoKA(*(PtclA.SK));
+  //  const StructFact& RhoKB(*(P.SK));
   //app_log()<<"Calculate Long Range e-I forces"<< std::endl;
   std::vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
   for(int j=0; j<NumSpeciesB; j++)
@@ -266,7 +266,7 @@ void ForceChiesaPBCAA::evaluateSR_AA()
 
 void ForceChiesaPBCAA::evaluateLR_AA()
 {
-  const StructFact& PtclRhoK(*(PtclA.SK));
+  //  const StructFact& PtclRhoK(*(PtclA.SK));
   std::vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
   for(int spec2=0; spec2<NumSpeciesA; spec2++)
   {

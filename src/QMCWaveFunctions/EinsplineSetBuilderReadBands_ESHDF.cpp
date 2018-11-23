@@ -726,7 +726,6 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
       51840,52488,54000,54675,55296,56250,57600,58320,59049,60000,
       60750,61440,62208,62500,64000,64800,65536
     };
-    int numk=0;
     MaxNumGvecs=0;
     //    std::set<TinyVector<int,3> > Gset;
     // Read k-points for all G-vectors and take the union
