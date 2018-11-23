@@ -260,7 +260,6 @@ bool DMCOMP::run()
     for(int ip=0; ip<NumThreads; ip++)
       Movers[ip]->startBlock(nSteps);
 
-    IndexType step = 0;
     for(IndexType step=0; step< nSteps; ++step, CurrentStep+=BranchInterval)
     {
       prof.push("dmc_advance");
@@ -273,7 +272,6 @@ bool DMCOMP::run()
       #pragma omp parallel
       {
         int ip=omp_get_thread_num();
-        int now=CurrentStep;
         Movers[ip]->set_step(sample);
         bool recompute=( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] );
         wClones[ip]->resetCollectables();

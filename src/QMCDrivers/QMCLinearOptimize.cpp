@@ -216,9 +216,9 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
   int Nl(ev.size());
   //Tested the single eigenvalue speed and It was no faster.
   //segfault issues with single eigenvalue problem for some machines
-  bool singleEV(false);
-  if (singleEV)
-  {
+  //  bool singleEV(false);
+  //  if (singleEV)
+  //  {
     /*
     Matrix<double> TAU(Nl,Nl);
     int INFO;
@@ -312,10 +312,10 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     return mappedEigenvalues[0].first;
     */
     // a fake return to reduce warning.
-    return RealType(0.0);
-  }
-  else
-  {
+  //    return RealType(0.0);
+  //  }
+  //  else
+  //  {
 // OLD ROUTINE. CALCULATES ALL EIGENVECTORS
 //   Getting the optimal worksize
     char jl('N');
@@ -366,7 +366,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     for (int i=0; i<Nl; i++)
       ev[i] = eigenT(mappedEigenvalues[0].second,i)/eigenT(mappedEigenvalues[0].second,0);
     return mappedEigenvalues[0].first;
-  }
+    //  }
 }
 
 
@@ -375,7 +375,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
   int Nl(ev.size());
   //Tested the single eigenvalue speed and It was no faster.
   //segfault issues with single eigenvalue problem for some machines
-  bool singleEV(false);
+  //  bool singleEV(false);
 //     if (singleEV)
 //     {
 //         Matrix<double> TAU(Nl,Nl);
@@ -484,8 +484,6 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
   int info;
   int lwork(-1);
   std::vector<RealType> work(1);
-  RealType tt(0);
-  int t(1);
   LAPACK::geev(&jl, &jr, &Nl, A.data(), &Nl,  &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0], &lwork, &info);
   lwork=int(work[0]);
   work.resize(lwork);

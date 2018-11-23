@@ -50,7 +50,6 @@ BackflowBuilder::~BackflowBuilder()
 
 bool BackflowBuilder::put(xmlNodePtr cur)
 {
-  bool first=true;
   bool success=true;
   xmlNodePtr curRoot=cur;
   std::string cname;
@@ -402,7 +401,6 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
   */
   Rs=-1.0;
   Kc=-1.0;
-  RealType my_cusp=0.0;
   OhmmsAttributeSet anAttrib0;
   anAttrib0.add (Rs,"rs");
   anAttrib0.add (Kc,"kc");
@@ -449,7 +447,6 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
   Backflow_ee_kSpace *tbfks = 0;
   // now look for components
   std::string cname;
-  xmlNodePtr curRoot = cur;
   cur = cur->children;
   while (cur != NULL)
   {

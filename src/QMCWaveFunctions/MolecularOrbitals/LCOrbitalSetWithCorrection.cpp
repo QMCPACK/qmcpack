@@ -26,7 +26,6 @@ template<class BS>
 BS* LCOrbitalSetWithCorrection<BS,false>::extractHighYLM( std::vector<bool> &rmv)
 {
   int nUniqCenters = myBasisSet->LOBasisSet.size(), cnt=0;
-  int cntEta;
   std::vector<int> nSorbs;
   std::vector<std::vector<bool> > sOrbs, tags;
   rmv.resize(myBasisSet->BasisSetSize);
@@ -142,7 +141,7 @@ BS* LCOrbitalSetWithCorrection<BS,false>::extractHighYLM( std::vector<bool> &rmv
 template<class BS>
 void LCOrbitalSetWithCorrection<BS,false>::createLCOSets(int centr, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta)
 {
-  int numCtr = myBasisSet->NumCenters;
+  //  int numCtr = myBasisSet->NumCenters;
   int numUniq = myBasisSet->LOBasisSet.size();
   std::vector<bool> rmv;
   int cnt=0;
@@ -527,7 +526,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   corrBasisSet->setBasisSetSize(-1);
   BS *dum3 = extractHighYLM(rmv);
   //dum3->setBasisSetSize(-1);
-  int norb=0, cnt=0;
+  int norb=0;
   for(int i=0; i<rmv.size(); i++)
     if(!rmv[i])
       norb++;

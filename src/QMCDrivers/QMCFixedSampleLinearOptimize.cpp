@@ -1102,9 +1102,6 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
 
-  // prepare vector to hold largest parameter change for each shift
-  RealType max_change(0.0);
-
   // apply the identity shift
   for (int i=1; i<N; i++)
   {

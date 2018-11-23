@@ -218,7 +218,7 @@ public:
   inline void
   evaluate(const ParticleSet& P, ParticleSet& QP, GradVector_t& Bmat, HessMatrix_t& Amat)
   {
-    RealType du,d2u,temp;
+    RealType du,d2u;
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -246,7 +246,7 @@ public:
   inline void
   evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
-    RealType du,d2u,temp;
+    RealType du,d2u;
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -416,7 +416,7 @@ public:
   inline void
   evaluateWithDerivatives(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat, GradMatrix_t& Cmat, GradMatrix_t& Ymat, HessArray_t& Xmat)
   {
-    RealType du,d2u,temp;
+    RealType du,d2u;
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)

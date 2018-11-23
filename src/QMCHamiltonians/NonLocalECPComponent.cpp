@@ -154,7 +154,7 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
   const RealType rinv=cone/r;
   RealType pairpot=0; 
   // Compute spherical harmonics on grid
-  for (int j=0, jl=0; j<nknot ; j++)
+  for (int j=0; j<nknot ; j++)
   {
     RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
     // Forming the Legendre polynomials
@@ -251,8 +251,6 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFu
   else
   { 
     ValueType ratio(0);
-    RealType ratio_mag(0);
-    RealType ratio_r(0),ratio_i(0);
     // Compute ratio of wave functions
     for (int j=0; j<nknot; j++)
     {
@@ -261,9 +259,9 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFu
 #if defined(QMC_COMPLEX)
       gradtmp_=0;
 
-      ratio_mag=psi.ratioGrad(W,iel,gradtmp_);
-      ratio_r=ratio_mag*std::cos(psi.getPhaseDiff());
-      ratio_i=ratio_mag*std::sin(psi.getPhaseDiff());
+      RealType ratio_mag=psi.ratioGrad(W,iel,gradtmp_);
+      RealType ratio_r=ratio_mag*std::cos(psi.getPhaseDiff());
+      RealType ratio_i=ratio_mag*std::sin(psi.getPhaseDiff());
 
       ratio=ValueType(ratio_r,ratio_i);
      
@@ -314,7 +312,7 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFu
 
   RealType pairpot=0; 
   // Compute spherical harmonics on grid
-  for (int j=0, jl=0; j<nknot ; j++)
+  for (int j=0;  j<nknot ; j++)
   {
     RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
     PosType uminusrvec=rrotsgrid_m[j]-zz*dr*rinv;

@@ -34,7 +34,6 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
   SpeciesSet &iSet = sourcePtcl->getSpeciesSet();
   SpeciesSet &eSet = targetPtcl.getSpeciesSet();
   int numiSpecies = iSet.getTotalNum();
-  bool success=false;
   //read in xml
   while (kids != NULL)
   {
@@ -105,7 +104,6 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
 bool eeI_JastrowBuilder::put(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"put(xmlNodePtr)");
-  bool PrintTables=true;
   xmlNodePtr kids = cur->xmlChildrenNode;
   // Create a three-body Jastrow
   if (sourcePtcl)

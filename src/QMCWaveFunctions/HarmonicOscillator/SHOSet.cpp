@@ -233,16 +233,12 @@ namespace qmcplusplus
     {
       RealType x = xpos[d];
       RealType x2  = x*x;
-      RealType Hnm1 = 0.0;
-      RealType Hnm2 = 0.0;
       for(int n=0;n<qn_max[d];++n)
       {
         int ns = n+shift;
         RealType Hn = hermite(ns);
         bvalues(ns) = (-1.0 + x2 - 2*n)*ol2;
         //d2_values(ns) = bvalues(ns);
-        Hnm2 = Hnm1;
-        Hnm1 = Hn;
       }
     }
     for(int s=0;s<state_info.size();++s)

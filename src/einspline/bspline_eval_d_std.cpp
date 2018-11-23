@@ -821,12 +821,6 @@ eval_UBspline_3d_d_vgh (UBspline_3d_d * restrict spline,
   d2c[3] = (d2Ad[14]*tpz[2] + d2Ad[15]*tpz[3]);
   int xs = spline->x_stride;
   int ys = spline->y_stride;
-  int offmax = (ix+3)*xs + (iy+3)*ys + iz+3;
-//   if (offmax > spline->coef_size) {
-//      fprintf (stderr, "Outside bounds in spline evalutation.\n"
-// 	      "offmax = %d  csize = %d\n", offmax, spline->csize);
-//      fprintf (stderr, "ix=%d   iy=%d   iz=%d\n", ix,iy,iz);
-//   }
 #define P(i,j,k) coefs[(ix+(i))*xs+(iy+(j))*ys+(iz+(k))]
   cP[ 0] = (P(0,0,0)*c[0]+P(0,0,1)*c[1]+P(0,0,2)*c[2]+P(0,0,3)*c[3]);
   cP[ 1] = (P(0,1,0)*c[0]+P(0,1,1)*c[1]+P(0,1,2)*c[2]+P(0,1,3)*c[3]);

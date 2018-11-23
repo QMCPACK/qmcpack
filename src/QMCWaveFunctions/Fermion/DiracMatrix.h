@@ -132,7 +132,6 @@ namespace qmcplusplus {
         const int n=amat.rows();
         const int lda=amat.cols();
         if(Lwork<n) reset(amat,n,lda);
-        int status;
         Xgetrf(n,n,amat.data(),lda,m_pivot.data());
         if(computeDet)
         {

@@ -377,7 +377,6 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
 
 void EnergyDensityEstimator::write_Collectables( std::string& label,int& cnt,ParticleSet& P)
 {
-  int v=1;
   //for(int v=0;v<nEDValues;v++){
   int ii = spacegrids[0]->buffer_offset;
   int io = outside_buffer_offset;
