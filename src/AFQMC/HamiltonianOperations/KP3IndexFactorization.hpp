@@ -327,7 +327,7 @@ Timer.start("T0");
         for(int Q=0; Q<nkpts; ++Q) {
           bool haveKE=false;
           for(int Ka=0; Ka<nkpts; ++Ka) {
-            int K0 = ((Q==0)?0:Ka);
+            int K0 = ((Q==Q0)?0:Ka);
             for(int Kb=K0; Kb<nkpts; ++Kb) {
               if((nqk++)%comm->size() == comm->rank()) { 
                 int nchol = ncholpQ[Q];
@@ -360,7 +360,7 @@ Timer.start("T0");
                   for(int a=0; a<na; ++a)
                     for(int b=0; b<nb; ++b)
                       E_ += ma::dot(T4Dwabn[n][a][b],T4Dwban[n][b][a]);
-                  if(Q==0 || Ka==Kb)
+                  if(Q==Q0 || Ka==Kb)
                     E[n][1] -= scl*0.5*E_;
                   else
                     E[n][1] -= 2.0*scl*0.5*E_;
@@ -602,7 +602,9 @@ Timer.start("T0");
               if(K == QK) 
                 APP_ABORT(" Error: Q!=Q0 and K==QK.\n"); 
               // find the position of (K,QK) pair on symmetric list
-              int kpos = std::min(K,QK);  
+              int kpos(0); 
+              for(int K_=0, kmin=std::min(K,QK); K_<kmin; K_++)
+                if(K_ < QKToK2[Q][K_]) kpos++;
               if(K < QK) {
                 SpMatrix_ref vik(TMats.origin(),{nwalk,ni*nk});
                 Sp3Tensor_ref vik3D(TMats.origin(),{nwalk,ni,nk});
