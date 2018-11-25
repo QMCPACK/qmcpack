@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <limits>
 
 using std::string;
 
@@ -52,7 +53,8 @@ TEST_CASE("double_3d_natural","[einspline]")
   eval_UBspline_3d_d(s, 1.0, 1.0, 1.0, &val);
   REQUIRE(val == Approx(2.0));
 
-  eval_UBspline_3d_d(s, 10.0, 10.0, 10.0, &val);
+  double pos=10.0-5*std::numeric_limits<double>::epsilon();
+  eval_UBspline_3d_d(s, pos, pos, pos, &val);
   REQUIRE(val == Approx(9.0));
 
   destroy_Bspline(s);
