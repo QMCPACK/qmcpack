@@ -52,7 +52,6 @@ ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWave
 bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
 {
   int nc(0), nc2(-2);
-  ValueType pol(0);
   ValueType bosonic_eps(-999999);
   ValueType rntype(0);
   PosType twist(0.0);

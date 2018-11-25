@@ -305,7 +305,7 @@ void LCAOParser::getGeometry(const std::string& fname)
     std::string speciesName("species_");
     speciesName=speciesName + std::to_string(AtomIndexmap[i]);
     hin.push(speciesName);
-    int zint,mycore;
+    int zint;
     double z;
     std::string Name;
     hin.read(zint,"atomic_number"); 

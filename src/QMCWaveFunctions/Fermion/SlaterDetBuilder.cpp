@@ -153,7 +153,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   //sposet_builder is defined outside <determinantset/>
   if(spomap.empty())
   {
-    bool needbb=true;
     cur = curRoot->children;
     while (cur != NULL)//check the basis set
     {
@@ -934,7 +933,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
   RealType sumsq=0.0;
   //app_log() <<"alpha reference: \n" <<dummyC_alpha;
   //app_log() <<"beta reference: \n" <<dummyC_beta;
-  size_t ntot=0;
   if(usingCSF)
   {
     app_log() <<"Reading CSFs." << std::endl;
@@ -983,7 +981,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
             detAttrib.add(beta,"beta");
             detAttrib.add(alpha,"alpha");
             detAttrib.put(csf);
-            size_t nq=0,na,nr;
+            size_t nq=0;
             if(alpha.size() < nstates)
             {
               std::cerr <<"alpha: " <<alpha << std::endl;

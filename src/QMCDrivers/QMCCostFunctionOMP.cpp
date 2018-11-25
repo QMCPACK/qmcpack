@@ -72,7 +72,7 @@ void QMCCostFunctionOMP::GradCost(std::vector<Return_t>& PGradient, const std::v
     NumWalkersEff=correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
     curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
-    Return_t curAvg2_w = curAvg_w*curAvg_w;
+    //    Return_t curAvg2_w = curAvg_w*curAvg_w;
     curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
     std::vector<Return_t> EDtotals(NumOptimizables,0.0);
     std::vector<Return_t> EDtotals_w(NumOptimizables,0.0);
@@ -503,7 +503,6 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
   const bool nlpp = (includeNonlocalH != "no");
   Return_t wgt_tot=0.0;
   Return_t wgt_tot2=0.0;
-  Return_t NSm1 = 1.0/NumSamples;
   Return_t inv_n_samples=1.0/NumSamples;
 #pragma omp parallel reduction(+:wgt_tot,wgt_tot2)
   {
@@ -590,7 +589,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
     for (int iw=0; iw<nw; iw++)
     {
       const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-      Return_t weight=saved[REWEIGHT]*wgt_tot;
+      //      Return_t weight=saved[REWEIGHT]*wgt_tot;
       Return_t eloc_new=saved[ENERGY_NEW];
       Return_t delE=std::pow(std::abs(eloc_new-EtargetEff),PowerE);
       SumValue[SUM_E_BARE] += eloc_new;

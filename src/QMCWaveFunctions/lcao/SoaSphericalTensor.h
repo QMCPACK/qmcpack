@@ -242,7 +242,7 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
     }
   }
   // Now to calculate r^l Y_lm. //
-  T sphim,cphim,fac2,temp;
+  T sphim,cphim,temp;
   Ylm[0] = omega; //1.0/sqrt(pi4);
   T rpow = 1.0;
   for (int l=1; l<=Lmax; l++)

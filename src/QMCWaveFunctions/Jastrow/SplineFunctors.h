@@ -158,6 +158,20 @@ struct CubicSplineSingle: public OptimizableFunctorBase
     return dudr;
   }
 
+  inline real_type evaluateV(const int iat, const int iStart, const int iEnd,
+    const real_type* restrict _distArray, real_type* restrict distArrayCompressed ) const
+  {
+    // need to actually implement this!
+  }
+
+  inline void evaluateVGL(const int iat, const int iStart, const int iEnd,
+			  const real_type* distArray,  real_type* restrict valArray,
+			  real_type* restrict gradArray, real_type* restrict laplArray,
+			  real_type* restrict distArrayCompressed, int* restrict distIndices ) const
+  {
+    // need to actually implement this!
+  }
+    
   bool put(xmlNodePtr cur)
   {
     bool s=false;

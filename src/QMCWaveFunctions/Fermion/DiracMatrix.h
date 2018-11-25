@@ -127,12 +127,11 @@ namespace qmcplusplus {
 
       DiracMatrix():Lwork(0) {}
 
-      inline void invert(Matrix<T>& amat, bool computeDet, const int n_in=0)
+      inline void invert(Matrix<T>& amat, bool computeDet)
       {
+        const int n=amat.rows();
         const int lda=amat.cols();
-        const int n=n_in?n_in:amat.rows();
         if(Lwork<lda) reset(amat,lda);
-        int status;
         Xgetrf(n,n,amat.data(),lda,m_pivot.data());
         if(computeDet)
         {

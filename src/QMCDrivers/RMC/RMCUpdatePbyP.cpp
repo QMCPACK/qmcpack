@@ -137,9 +137,6 @@ namespace qmcplusplus
   void RMCUpdatePbyPWithDrift::advanceWalkersVMC ()
   {
     myTimers[0]->start ();
-    IndexType direction = W.reptile->direction;
-    IndexType forward = (1 - direction) / 2;
-    IndexType backward = (1 + direction) / 2;
     Walker_t & curhead = W.reptile->getHead ();
     Walker_t prophead (curhead);
     Walker_t::WFBuffer_t & w_buffer (prophead.DataSet);
@@ -180,7 +177,6 @@ namespace qmcplusplus
 	    if (!W.makeMoveAndCheck (iat, dr))
 	      continue;
 	    RealType ratio = Psi.ratioGrad (W, iat, grad_iat);
-	    bool valid_move = false;
 	    //node is crossed reject the move
 	    if (branchEngine->phaseChanged (Psi.getPhaseDiff ()))
 	      {
@@ -199,7 +195,6 @@ namespace qmcplusplus
 		RealType prob = ratio * ratio * std::exp (logGb - logGf);
 		if (RandomGen () < prob)
 		  {
-		    valid_move = true;
 		    ++nAcceptTemp;
 		    Psi.acceptMove (W, iat);
 		    W.acceptMove (iat);
@@ -218,7 +213,6 @@ namespace qmcplusplus
     myTimers[1]->stop ();
     Psi.completeUpdates(W);
     W.donePbyP();
-    bool advanced = true;
 
     if (nAcceptTemp > 0)
       {
@@ -244,7 +238,6 @@ namespace qmcplusplus
     else
       {
 	//all moves are rejected: does not happen normally with reasonable wavefunctions
-	advanced = false;
 	curhead.Age++;
 	curhead.Properties (R2ACCEPTED) = 0.0;
 	//weight is set to 0 for traces
@@ -278,9 +271,6 @@ namespace qmcplusplus
 
   void RMCUpdatePbyPWithDrift::advanceWalkersRMC ()
   {
-    IndexType direction = W.reptile->direction;
-    IndexType forward = (1 - direction) / 2;
-    IndexType backward = (1 + direction) / 2;
     Walker_t & curhead = W.reptile->getHead ();
     Walker_t prophead (curhead);
     Walker_t::WFBuffer_t & w_buffer (prophead.DataSet);
@@ -293,7 +283,6 @@ namespace qmcplusplus
     //copy the old energy and scale factor of drift
     RealType eold (prophead.Properties (LOCALENERGY));
     RealType vqold (prophead.Properties (DRIFTSCALE));
-    RealType enew (eold);
     RealType rr_proposed = 0.0;
     RealType rr_accepted = 0.0;
     RealType gf_acc = 1.0;
@@ -322,7 +311,6 @@ namespace qmcplusplus
 	    if (!W.makeMoveAndCheck (iat, dr))
 	      continue;
 	    RealType ratio = Psi.ratioGrad (W, iat, grad_iat);
-	    bool valid_move = false;
 	    //node is crossed reject the move
 	    if (branchEngine->phaseChanged (Psi.getPhaseDiff ()))
 	      {
@@ -341,7 +329,6 @@ namespace qmcplusplus
 		RealType prob = ratio * ratio * std::exp (logGb - logGf);
 		if (RandomGen () < prob)
 		  {
-		    valid_move = true;
 		    ++nAcceptTemp;
 		    Psi.acceptMove (W, iat);
 		    W.acceptMove (iat);

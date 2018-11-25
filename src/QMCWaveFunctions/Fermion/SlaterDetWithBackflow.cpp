@@ -174,7 +174,6 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   L0.resize(P.getTotalNum());
   L1.resize(P.getTotalNum());
   L2.resize(P.getTotalNum());
-  ValueType psi0 = 1.0;
   ValueType psi1 = 1.0;
   ValueType psi2 = 1.0;
   RealType dh=0.00001;
@@ -248,7 +247,6 @@ void SlaterDetWithBackflow::evaluateDerivatives(ParticleSet& P,
   {
     // build QP,Amat,Bmat_full,Xmat,Cmat,Ymat
     BFTrans->evaluateDerivatives(P);
-    ValueType psi = 1.0;
     for(int i=0; i<Dets.size(); i++)
       Dets[i]->evaluateDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
   }

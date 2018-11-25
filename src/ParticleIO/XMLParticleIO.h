@@ -86,7 +86,6 @@ class AttribListType: public ParticleTags
   template<typename AT>
     ParticleAttrib<AT>* getAttribute(const std::string& tname, const std::string& oname, ParticleAttrib<AT>*  pa)
   {
-    bool foundit=false;
     typedef ParticleAttrib<AT> attrib_type;
     int oid=AttribList.size();
     std::map<std::string,OhmmsObject*>::iterator it= AttribList.find(oname);
