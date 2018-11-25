@@ -200,7 +200,7 @@ public:
   /** move was accepted, update the real container
    */
   virtual void acceptMove(ParticleSet& P, int iat);
-  virtual void completeUpdates(ParticleSet& P);
+  virtual void completeUpdates();
 
   /** move was rejected. copy the real container to the temporary to move on
    */

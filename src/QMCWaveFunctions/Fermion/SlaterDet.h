@@ -152,10 +152,10 @@ public:
   }
 
   virtual
-  void completeUpdates(ParticleSet& P)
+  void completeUpdates()
   {
     for(int i=0; i<Dets.size(); i++)
-      Dets[i]->completeUpdates(P);
+      Dets[i]->completeUpdates();
   }
 
   virtual inline ValueType ratio(ParticleSet& P, int iat) { return Dets[getDetID(iat)]->ratio(P, iat); }

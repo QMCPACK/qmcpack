@@ -171,7 +171,7 @@ void DiracDeterminant::restore(int iat)
   curRatio=1.0;
 }
 
-void DiracDeterminant::completeUpdates(ParticleSet& P)
+void DiracDeterminant::completeUpdates()
 {
   UpdateTimer.start();
   updateEng.updateInvMat(psiM);

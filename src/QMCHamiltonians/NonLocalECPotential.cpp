@@ -315,7 +315,7 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   }
 
   if(NonLocalMoveAccepted>0)
-    Psi.completeUpdates(P);
+    Psi.completeUpdates();
 
   return NonLocalMoveAccepted;
 }
