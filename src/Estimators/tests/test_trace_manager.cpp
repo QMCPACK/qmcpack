@@ -61,7 +61,6 @@ TEST_CASE("TraceManager", "[estimators]")
 TEST_CASE("TraceManager check_trace_build", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
 
   std::string domain = "domain";
   std::string name   = "name";

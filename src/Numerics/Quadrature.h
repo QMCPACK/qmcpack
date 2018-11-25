@@ -236,7 +236,7 @@ struct Quadrature3D
     assert (xyz_m.size() == nk);
     assert (weight_m.size() == nk);
     double wSum = 0.0;
-    const RealType delta=2*std::numeric_limits<float>::epsilon();
+    //    const RealType delta=2*std::numeric_limits<float>::epsilon();
     for (int k=0; k < nk; k++)
     {
       PosType r = xyz_m[k];

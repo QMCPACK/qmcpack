@@ -112,7 +112,6 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   std::vector<std::vector<RealType> > LastDirections;
   RealType deltaPrms(-1.0);
   bool acceptedOneMove(false);
-  int tooManyTries(20);
   int failedTries(0);
   Matrix<RealType> Left(N,N);
   Matrix<RealType> LeftT(N,N);
