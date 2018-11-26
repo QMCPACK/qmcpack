@@ -363,7 +363,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   //check_value(det_ratio3, det_ratio3_val);
 
   ddb.acceptMove(elec, 2);
-  ddb.completeUpdates(elec);
+  ddb.completeUpdates();
 
   dm.invert(orig_a,false);
 
@@ -457,7 +457,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
   ddc.acceptMove(elec, 0);
-  ddc.completeUpdates(elec);
+  ddc.completeUpdates();
 
   grad = ddc.evalGrad(elec, 1);
   ValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
@@ -490,7 +490,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   //check_value(det_ratio3, det_ratio3_val);
 
   ddc.acceptMove(elec, 2);
-  ddc.completeUpdates(elec);
+  ddc.completeUpdates();
 
   dm.invert(orig_a,false);
 

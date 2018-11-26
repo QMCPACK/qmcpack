@@ -172,7 +172,7 @@ void DiracDeterminantCUDANext::restore(int iat)
   curRatio=1.0;
 }
 
-void DiracDeterminantCUDANext::completeUpdates(ParticleSet& P)
+void DiracDeterminantCUDANext::completeUpdates()
 {
   UpdateTimer.start();
   updateEng.updateInvMat(psiM);

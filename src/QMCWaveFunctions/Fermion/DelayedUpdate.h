@@ -20,7 +20,7 @@
 namespace qmcplusplus {
 
   template<typename T>
-    struct DelayedUpdate
+    class DelayedUpdate
     {
       Matrix<T> U, V, Binv, tempMat;
       // temporal scratch space used by SM-1
@@ -35,6 +35,7 @@ namespace qmcplusplus {
       int Ainv_row_ind;
       T curRatio;
 
+    public:
       DelayedUpdate(): delay_count(0), Ainv_row_ptr(nullptr), Ainv_row_ind(-1) {}
 
       ///resize the internal storage, 0<delay<=norb

@@ -211,7 +211,7 @@ namespace qmcplusplus
 	  }
       }
     myTimers[1]->stop ();
-    Psi.completeUpdates(W);
+    Psi.completeUpdates();
     W.donePbyP();
 
     if (nAcceptTemp > 0)
@@ -345,7 +345,7 @@ namespace qmcplusplus
 	  }
       }
     myTimers[1]->stop ();
-    Psi.completeUpdates(W);
+    Psi.completeUpdates();
     W.donePbyP();
 // In the rare case that all proposed moves fail, we bounce.
     if (nAcceptTemp == 0)

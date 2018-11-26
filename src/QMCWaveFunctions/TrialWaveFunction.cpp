@@ -446,12 +446,12 @@ void TrialWaveFunction::acceptMove(ParticleSet& P, int iat)
     LogValue+= Z[i]->LogValue;
 }
 
-void TrialWaveFunction::completeUpdates(ParticleSet& P)
+void TrialWaveFunction::completeUpdates()
 {
   for (int i=0, ii=ACCEPT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
-    Z[i]->completeUpdates(P);
+    Z[i]->completeUpdates();
     myTimers[ii]->stop();
   }
 }
