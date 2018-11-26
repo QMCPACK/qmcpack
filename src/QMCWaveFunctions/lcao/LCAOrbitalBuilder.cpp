@@ -103,8 +103,8 @@ namespace qmcplusplus
   }
 
 
-  LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur)
-    : targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path(""), doCuspCorrection(false)
+  LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate *comm, xmlNodePtr cur)
+    : SPOSetBuilder(comm), targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path(""), doCuspCorrection(false)
   {
     ClassName="LCAOrbitalBuilder";
     ReportEngine PRE(ClassName,"createBasisSet");
@@ -310,7 +310,6 @@ namespace qmcplusplus
         if(it == ao_built_centers.end())
         {
           AOBasisBuilder<ao_type> any(elementType, myComm);
-          any.setReportLevel(ReportLevel);
           any.put(cur);
           ao_type* aoBasis = any.createAOSet(cur);
           if(aoBasis)
@@ -390,7 +389,6 @@ namespace qmcplusplus
       if(it == ao_built_centers.end())
       {
         AOBasisBuilder<ao_type> any(elementType,myComm);
-        any.setReportLevel(ReportLevel);
         any.putH5(hin);
         ao_type* aoBasis = any.createAOSetH5(hin);
         if(aoBasis)
@@ -670,10 +668,10 @@ namespace qmcplusplus
     LCAOrbitalSet *lcos = nullptr;
     LCAOrbitalSetWithCorrection *lcwc = nullptr;
     if (doCuspCorrection) {
-      lcwc =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, ReportLevel);
+      lcwc =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, rank()==0);
       lcos = lcwc;
     } else {
-      lcos=new LCAOrbitalSet(myBasisSet,ReportLevel);
+      lcos=new LCAOrbitalSet(myBasisSet,rank()==0);
     }
     loadMO(*lcos, cur);
 
