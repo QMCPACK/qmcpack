@@ -36,6 +36,7 @@ inline int get_num_appropriate_devices()
 {
   int deviceCount;
   cudaGetDeviceCount(&deviceCount);
+  gpu::device_group_numbers.resize(deviceCount);
   int num_appropriate=0;
   for (int device=0; device < deviceCount; ++device)
   {
@@ -43,8 +44,13 @@ inline int get_num_appropriate_devices()
     cudaGetDeviceProperties(&deviceProp, device);
     if (((deviceProp.major >= 1) && (deviceProp.minor >= 3)) ||
         deviceProp.major >= 2)
+    {
+      gpu::device_group_numbers[num_appropriate]=device;
       num_appropriate++;
+    }
   }
+  gpu::device_group_size=num_appropriate;
+  gpu::device_group_numbers.resize(gpu::device_group_size); // trim if needed
   return num_appropriate;
 }
 
@@ -144,22 +150,13 @@ inline int get_device_num()
     std::cerr.flush();
   }
   gpu::relative_rank=relative_ranknum;
-  gpu::device_group_size=num_cuda_devices[rank];
   if (ranks_per_node[rank]<num_cuda_devices[rank]) // sanity check (can't use more GPUs than ranks per node)
     gpu::device_group_size=ranks_per_node[rank];
-  gpu::device_group_numbers.resize(gpu::device_group_size);
+  gpu::device_group_numbers.resize(gpu::device_group_size); // not strictly needed but doesn't hurt to trim if too big based on sanity check above
   gpu::device_rank_numbers.resize(gpu::device_group_size);
   int device_rank = 0;
-  for (int i=rank-relative_ranknum; i<rank-relative_ranknum+gpu::device_group_size; i++) // although the indexing looks strange, i is between the actual rank numbers on this rank's node
-  {
-    if (hostnames[i] == myhostname)
-    {
-      gpu::device_rank_numbers[device_rank]=i;
-      device_rank++;
-    }
-    if (device_rank>gpu::device_group_size) // should not happen but better to be safe
-      APP_ABORT("Wrong number of ranks in device group.");
-  }
+  for (int i=0; i<gpu::device_group_size; i++)
+    gpu::device_rank_numbers[i]=i+rank-relative_ranknum;
   // return CUDA device number based on how many appropriate ones exist on the current rank's node and what the relative rank number is
   return relative_ranknum % num_cuda_devices[rank];
 }
@@ -172,7 +169,7 @@ inline void set_appropriate_device_num(int num)
   int deviceCount;
   cudaGetDeviceCount(&deviceCount);
   int num_appropriate=0, device=0;
-  bool set_cuda_device=true;
+  bool set_cuda_device=false;
   for (device = 0; device < deviceCount; ++device)
   {
     cudaDeviceProp deviceProp;
@@ -180,26 +177,22 @@ inline void set_appropriate_device_num(int num)
     if (((deviceProp.major >= 1) && (deviceProp.minor >= 3)) ||
         deviceProp.major >= 2)
     {
-      if (num_appropriate<gpu::device_group_size)
-        gpu::device_group_numbers[num_appropriate] = device;
       num_appropriate++;
       if (num_appropriate == num+1)
       {
-        if (set_cuda_device)
-        {
-          cudaSetDevice (device);
-          set_cuda_device=false;
-          std::ostringstream out;
-          out << "<- Rank " << OHMMS::Controller->rank() << " will use CUDA device #" << device ;
-          out << " (" << deviceProp.name << ")" << std::endl;
-          std::cerr << out.str();
-          std::cerr.flush();
-        }
+        cudaSetDevice (device);
+        set_cuda_device=true;
+        std::ostringstream out;
+        out << "<- Rank " << OHMMS::Controller->rank() << " will use CUDA device #" << device ;
+        out << " (" << deviceProp.name << ")" << std::endl;
+        std::cerr << out.str();
+        std::cerr.flush();
+        break; // the device is set, nothing more to do here
       }
     }
   }
   // This is a fail-safe that should never be triggered
-  if(set_cuda_device)
+  if(!set_cuda_device)
   {
     APP_ABORT("Failure to obtain requested CUDA device.");
   }
