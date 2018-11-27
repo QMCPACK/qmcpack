@@ -18,7 +18,7 @@
     
 
 
-#include "QMCDrivers/QMCCostFunctionOMP.h"
+#include "QMCDrivers/QMCCostFunction.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
@@ -28,17 +28,17 @@
 namespace qmcplusplus
 {
 
-QMCCostFunctionOMP::QMCCostFunctionOMP(MCWalkerConfiguration& w,
+QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm):
   QMCCostFunctionBase(w,psi,h,comm)
 {
   CSWeight=1.0;
-  app_log()<<" Using QMCCostFunctionOMP::QMCCostFunctionOMP"<< std::endl;
+  app_log()<<" Using QMCCostFunction::QMCCostFunction"<< std::endl;
 }
 
 
 /** Clean up the vector */
-QMCCostFunctionOMP::~QMCCostFunctionOMP()
+QMCCostFunction::~QMCCostFunction()
 {
   delete_iter(H_KE_Node.begin(),H_KE_Node.end());
   delete_iter(RngSaved.begin(),RngSaved.end());
@@ -47,7 +47,7 @@ QMCCostFunctionOMP::~QMCCostFunctionOMP()
   delete_iter(HDerivRecords.begin(),HDerivRecords.end());
 }
 
-void QMCCostFunctionOMP::GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff)
+void QMCCostFunction::GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff)
 {
   if (FiniteDiff > 0)
   {
@@ -175,12 +175,12 @@ void QMCCostFunctionOMP::GradCost(std::vector<Return_t>& PGradient, const std::v
 }
 
 
-void QMCCostFunctionOMP::getConfigurations(const std::string& aroot)
+void QMCCostFunction::getConfigurations(const std::string& aroot)
 {
   //makeClones(W,Psi,H);
   if (H_KE_Node.empty())
   {
-    app_log() << "  QMCCostFunctionOMP is created with " << NumThreads << " threads." << std::endl;
+    app_log() << "  QMCCostFunction is created with " << NumThreads << " threads." << std::endl;
     //make H_KE_Node
     H_KE_Node.resize(NumThreads,0);
     RecordsOnNode.resize(NumThreads,0);
@@ -239,7 +239,7 @@ void QMCCostFunctionOMP::getConfigurations(const std::string& aroot)
 }
 
 /** evaluate everything before optimization */
-void QMCCostFunctionOMP::checkConfigurations()
+void QMCCostFunction::checkConfigurations()
 {
   RealType et_tot=0.0;
   RealType e2_tot=0.0;
@@ -342,7 +342,7 @@ void QMCCostFunctionOMP::checkConfigurations()
 
 #ifdef HAVE_LMY_ENGINE
 /** evaluate everything before optimization */
-void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj)
+void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj)
 {
   RealType et_tot=0.0;
   RealType e2_tot=0.0;
@@ -469,7 +469,7 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
 }
 #endif
 
-void QMCCostFunctionOMP::resetPsi(bool final_reset)
+void QMCCostFunction::resetPsi(bool final_reset)
 {
   if (OptVariables.size() < OptVariablesForPsi.size())
     for (int i=0; i<equalVarMap.size(); ++i)
@@ -483,7 +483,7 @@ void QMCCostFunctionOMP::resetPsi(bool final_reset)
     for (int i=0; i<psiClones.size(); ++i)
       psiClones[i]->stopOptimization();
   }
-  //cout << "######### QMCCostFunctionOMP::resetPsi " << std::endl;
+  //cout << "######### QMCCostFunction::resetPsi " << std::endl;
   //OptVariablesForPsi.print(std::cout);
   //cout << "-------------------------------------- " << std::endl;
   Psi.resetParameters(OptVariablesForPsi);
@@ -491,7 +491,7 @@ void QMCCostFunctionOMP::resetPsi(bool final_reset)
     psiClones[i]->resetParameters(OptVariablesForPsi);
 }
 
-QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGrad)
+QMCCostFunction::Return_t QMCCostFunction::correlatedSampling(bool needGrad)
 {
   for(int ip=0; ip<NumThreads; ++ip)
   {
@@ -614,8 +614,8 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
 }
 
 
-QMCCostFunctionOMP::Return_t
-QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right)
+QMCCostFunction::Return_t
+QMCCostFunction::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right)
 {
   RealType b1,b2;
   if (GEVType=="H2")

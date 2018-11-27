@@ -10,7 +10,7 @@
 // File created by: Luning Zhao, zhaoln@berkeley.edu, University of California, Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCDrivers/QMCCostFunctionOMP.h"
+#include "QMCDrivers/QMCCostFunction.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
@@ -21,7 +21,7 @@
 
 namespace qmcplusplus {
 
-int QMCCostFunctionOMP::total_samples() {
+int QMCCostFunction::total_samples() {
 
   // for the unfamiliar, the [] starts a lambda function
   return std::accumulate(wClones.begin(), wClones.begin()+NumThreads, 0, [] (int x, const MCWalkerConfiguration * p) { return x + p->numSamples(); });
@@ -32,7 +32,7 @@ int QMCCostFunctionOMP::total_samples() {
 /// \brief  Computes the cost function using the LMYEngine
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj) {
+QMCCostFunction::Return_t QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj) {
 
   // get total number of samples
   const int m = this->total_samples();

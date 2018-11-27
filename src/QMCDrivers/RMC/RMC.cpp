@@ -16,7 +16,7 @@
     
 
 
-#include "QMCDrivers/RMC/RMCSingleOMP.h"
+#include "QMCDrivers/RMC/RMC.h"
 #include "QMCDrivers/RMC/RMCUpdatePbyP.h"
 #include "QMCDrivers/RMC/RMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -38,14 +38,14 @@ namespace qmcplusplus
 {
 
 /// Constructor.
-  RMCSingleOMP::RMCSingleOMP (MCWalkerConfiguration & w,
+  RMC::RMC (MCWalkerConfiguration & w,
 			      TrialWaveFunction & psi, QMCHamiltonian & h,
 			      WaveFunctionPool & ppool, Communicate* comm)
   :QMCDriver (w, psi, h, ppool, comm), prestepsVMC (-1), rescaleDrift ("no"), beta (-1),
     beads (-1), fromScratch (true)
   {
     RootName = "rmc";
-    QMCType = "RMCSingleOMP";
+    QMCType = "RMC";
     QMCDriverMode.set (QMC_UPDATE_MODE, 1);
     QMCDriverMode.set (QMC_WARMUP, 0);
     m_param.add (rescaleDrift, "drift", "string");
@@ -63,7 +63,7 @@ namespace qmcplusplus
     TransProb[1] = w.addProperty ("TransProbForward");
   }
 
-  bool RMCSingleOMP::run ()
+  bool RMC::run ()
   {
     resetRun ();
     //start the main estimator
@@ -136,7 +136,7 @@ namespace qmcplusplus
     return finalize (nBlocks);
   }
 
-  void RMCSingleOMP::resetRun ()
+  void RMC::resetRun ()
   {
     m_param.put (qmcNode);
     //For now, assume that nReptiles=NumThreads;
@@ -321,14 +321,14 @@ namespace qmcplusplus
     fromScratch = false;
   }
 
-  bool RMCSingleOMP::put (xmlNodePtr q)
+  bool RMC::put (xmlNodePtr q)
   {
     m_param.put (q);
     return true;
   }
 
   //This will resize the MCWalkerConfiguration and initialize the ReptileList.  Does not care for previous runs.  
-  void RMCSingleOMP::resetReptiles (int nReptiles_in, int nbeads_in,
+  void RMC::resetReptiles (int nReptiles_in, int nbeads_in,
 				    RealType tau)
   {
     for (MCWalkerConfiguration::ReptileList_t::iterator it =
@@ -354,13 +354,13 @@ namespace qmcplusplus
 
   }
   //This will resize the MCWalkerConfiguration and initialize Reptile list.  It will then reinitialize the MCWC with a list of Reptile coordinates
-  void RMCSingleOMP::resetReptiles (std::vector< ReptileConfig_t > &reptile_samps,
+  void RMC::resetReptiles (std::vector< ReptileConfig_t > &reptile_samps,
 				    RealType tau)
   {
     if (reptile_samps.empty ())
       {
 	APP_ABORT
-	  ("RMCSingleOMP::resetReptiles(std::vector< ReptileConfig_t > reptile_samps):  No samples!\n");
+	  ("RMC::resetReptiles(std::vector< ReptileConfig_t > reptile_samps):  No samples!\n");
       }
     else
       {
@@ -375,13 +375,13 @@ namespace qmcplusplus
       }
   }
   //For # of walker samples, create that many reptiles with nbeads each.  Initialize each reptile to have the value of the walker "seed".
-  void RMCSingleOMP::resetReptiles (std::vector< ParticlePos_t > &walker_samps,
+  void RMC::resetReptiles (std::vector< ParticlePos_t > &walker_samps,
 				    int nBeads_in, RealType tau)
   {
     if (walker_samps.empty ())
       {
 	APP_ABORT
-	  ("RMCSingleOMP::resetReptiles(std::vector< ParticlePos_t > walker_samps):  No samples!\n");
+	  ("RMC::resetReptiles(std::vector< ParticlePos_t > walker_samps):  No samples!\n");
       }
     else
       {
