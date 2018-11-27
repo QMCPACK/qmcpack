@@ -16,7 +16,7 @@
 
 
 #include "QMCDrivers/VMC/VMCFactory.h"
-#include "QMCDrivers/VMC/VMCSingleOMP.h"
+#include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/CorrelatedSampling/CSVMC.h"
 #if defined(QMC_BUILD_COMPLETE)
 //REMOVE Broken warping
@@ -49,7 +49,7 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
 #endif
     if(VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
     {
-      qmc = new VMCSingleOMP(w,psi,h,ppool,comm);
+      qmc = new VMC(w,psi,h,ppool,comm);
     }
   //else if(VMCMode == 2) //(0,1,0)
   //{

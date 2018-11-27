@@ -19,7 +19,7 @@
     
 
 
-#include "QMCDrivers/DMC/DMCOMP.h"
+#include "QMCDrivers/DMC/DMC.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "QMCApp/HamiltonianPool.h"
@@ -43,12 +43,12 @@ namespace qmcplusplus
 {
 
 /// Constructor.
-DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm)
+DMC::DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm)
   : QMCDriver(w,psi,h,ppool,comm)
   , KillNodeCrossing(0), Reconfiguration("no"), BranchInterval(-1), mover_MaxAge(-1)
 {
   RootName = "dmc";
-  QMCType ="DMCOMP";
+  QMCType ="DMC";
   QMCDriverMode.set(QMC_UPDATE_MODE,1);
   m_param.add(KillWalker,"killnode","string");
   m_param.add(Reconfiguration,"reconfiguration","string");
@@ -60,12 +60,12 @@ DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian&
   ConstPopulation=false;
 }
 
-void DMCOMP::resetComponents(xmlNodePtr cur)
+void DMC::resetComponents(xmlNodePtr cur)
 {
   qmcNode=cur;
   m_param.put(cur);
   put(cur);
-  //app_log()<<"DMCOMP::resetComponents"<< std::endl;
+  //app_log()<<"DMC::resetComponents"<< std::endl;
   Estimators->reset();
   int nw_multi=branchEngine->resetRun(cur);
   if(nw_multi>1)
@@ -114,9 +114,9 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
 }
 
 
-void DMCOMP::resetUpdateEngines()
+void DMC::resetUpdateEngines()
 {
-  ReportEngine PRE("DMCOMP","resetUpdateEngines");
+  ReportEngine PRE("DMC","resetUpdateEngines");
   bool fixW = (Reconfiguration == "yes");
   makeClones(W,Psi,H);
   Timer init_timer;
@@ -229,7 +229,7 @@ void DMCOMP::resetUpdateEngines()
   app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs " << std::endl;
 }
 
-bool DMCOMP::run()
+bool DMC::run()
 {
 
   Profile prof("DMC","run",QMC_DMC_0_EVENT);
@@ -347,7 +347,7 @@ bool DMCOMP::run()
 
 
 bool
-DMCOMP::put(xmlNodePtr q)
+DMC::put(xmlNodePtr q)
 {
   BranchInterval=-1;
   ParameterSet p;

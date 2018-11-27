@@ -136,7 +136,7 @@ void QMCUpdateBase::stopRun()
 }
 
 //ugly, but will use until general usage of stopRun is clear
-//  DMCOMP and VMCSingleOMP do not use stopRun anymore
+//  DMC and VMC do not use stopRun anymore
 void QMCUpdateBase::stopRun2()
 {
 #if !defined(REMOVE_TRACEMANAGER)

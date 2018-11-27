@@ -15,8 +15,8 @@
     
 
 
-#ifndef QMCPLUSPLUS_VMCLINEAROPT_OMP_H
-#define QMCPLUSPLUS_VMCLINEAROPT_OMP_H
+#ifndef QMCPLUSPLUS_VMCLINEAROPT_H
+#define QMCPLUSPLUS_VMCLINEAROPT_H
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Message/CommOperators.h"
@@ -26,14 +26,14 @@ namespace qmcplusplus
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a VMC using particle-by-particle move. Threaded execution.
  */
-class VMCLinearOptOMP: public QMCDriver, public CloneManager
+class VMCLinearOpt: public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+  VMCLinearOpt(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                   HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
 
-  ~VMCLinearOptOMP()
+  ~VMCLinearOpt()
   {
 //         if (UseDrift == "rn")
 //           delete_iter(CSMovers.begin(),CSMovers.end());
@@ -75,9 +75,9 @@ private:
   ///check the run-time environments
   void resetRun();
   /// Copy constructor (disabled)
-  VMCLinearOptOMP(const VMCLinearOptOMP &) = delete;
+  VMCLinearOpt(const VMCLinearOpt &) = delete;
   /// Copy operator (disabled).
-  VMCLinearOptOMP & operator=(const VMCLinearOptOMP &) = delete;
+  VMCLinearOpt & operator=(const VMCLinearOpt &) = delete;
 
   int NumOptimizables;
   RealType w_beta,w_alpha;
