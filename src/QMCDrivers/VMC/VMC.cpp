@@ -18,7 +18,7 @@
     
 
 
-#include "QMCDrivers/VMC/VMCSingleOMP.h"
+#include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "OhmmsApp/RandomNumberControl.h"
@@ -39,12 +39,12 @@ namespace qmcplusplus
 {
 
 /// Constructor.
-VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+VMC::VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                            WaveFunctionPool& ppool, Communicate* comm):
   QMCDriver(w,psi,h,ppool,comm), UseDrift("yes")
 {
   RootName = "vmc";
-  QMCType ="VMCSingleOMP";
+  QMCType ="VMC";
   QMCDriverMode.set(QMC_UPDATE_MODE,1);
   QMCDriverMode.set(QMC_WARMUP,0);
   m_param.add(UseDrift,"useDrift","string");
@@ -55,7 +55,7 @@ VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMC
   prevStepsBetweenSamples=nStepsBetweenSamples;
 }
 
-bool VMCSingleOMP::run()
+bool VMC::run()
 {
   resetRun();
   //start the main estimator
@@ -141,7 +141,7 @@ bool VMCSingleOMP::run()
   return finalize(nBlocks,!wrotesamples);
 }
 
-void VMCSingleOMP::resetRun()
+void VMC::resetRun()
 {
   ////only VMC can overwrite this
   if(nTargetPopulation>0)
@@ -251,7 +251,7 @@ void VMCSingleOMP::resetRun()
     app_log() << "  Anonymous Buffer size per walker : "
               << W[0]->DataSet.byteSize() << " Bytes." << std::endl;
     qmc_common.memory_allocated+=W.getActiveWalkers()*W[0]->DataSet.byteSize();
-    qmc_common.print_memory_change("VMCSingleOMP::resetRun",before);
+    qmc_common.print_memory_change("VMC::resetRun",before);
   }
   //     //JNKIM: THIS IS BAD AND WRONG
 //     if (UseDrift == "rn")
@@ -303,7 +303,7 @@ void VMCSingleOMP::resetRun()
 }
 
 bool
-VMCSingleOMP::put(xmlNodePtr q)
+VMC::put(xmlNodePtr q)
 {
   //grep minimumTargetWalker
   int target_min=-1;

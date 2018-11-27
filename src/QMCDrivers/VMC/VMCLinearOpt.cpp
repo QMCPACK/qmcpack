@@ -16,14 +16,14 @@
     
 
 
-#include "QMCDrivers/VMC/VMCLinearOptOMP.h"
+#include "QMCDrivers/VMC/VMCLinearOpt.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Optimize/VarList.h"
 #include "Numerics/LinearFit.h"
-//#define ENABLE_VMC_OMP_MASTER
+//#define ENABLE_VMC__MASTER
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
@@ -34,14 +34,14 @@ namespace qmcplusplus
 {
 
 /// Constructor.
-VMCLinearOptOMP::VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+VMCLinearOpt::VMCLinearOpt(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                                  HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm):
   QMCDriver(w,psi,h,ppool,comm), UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"),
   w_alpha(0.0),printderivs("no")
 //     myRNWarmupSteps(0), logoffset(2.0), logepsilon(0), beta_errorbars(0), alpha_errorbars(0),
 {
   RootName = "vmc";
-  QMCType ="VMCLinearOptOMP";
+  QMCType ="VMCLinearOpt";
   QMCDriverMode.set(QMC_UPDATE_MODE,1);
   QMCDriverMode.set(QMC_WARMUP,0);
   DumpConfig=false;
@@ -65,7 +65,7 @@ VMCLinearOptOMP::VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& ps
 //     m_param.add(myRNWarmupSteps,"cswarmupsteps","int");
 }
 
-bool VMCLinearOptOMP::run()
+bool VMCLinearOpt::run()
 {
   RngSaved.resize(NumThreads);
   resetRun();
@@ -141,7 +141,7 @@ bool VMCLinearOptOMP::run()
 
 
 
-//   void VMCLinearOptOMP::initCS()
+//   void VMCLinearOpt::initCS()
 //   {
 //     firstWalker=(*W[0]);
 // #pragma omp parallel
@@ -210,7 +210,7 @@ bool VMCLinearOptOMP::run()
 //     clearCSEstimators();
 //   }
 
-//   int VMCLinearOptOMP::runCS(std::vector<std::vector<RealType> >& bestParams, RealType& errorbars)
+//   int VMCLinearOpt::runCS(std::vector<std::vector<RealType> >& bestParams, RealType& errorbars)
 //   {
 //     for (int ip=0; ip<NumThreads; ++ip)
 //     {
@@ -262,7 +262,7 @@ bool VMCLinearOptOMP::run()
 //     else return -1;
 //   }
 
-//   bool VMCLinearOptOMP::bracketing(std::vector<RealType>& lambdas, RealType errorbars)
+//   bool VMCLinearOpt::bracketing(std::vector<RealType>& lambdas, RealType errorbars)
 //   {
 //     //Do some bracketing and line searching if we need to
 //     RealType dl = std::abs(lambdas[1]-lambdas[0]);
@@ -350,7 +350,7 @@ bool VMCLinearOptOMP::run()
 //     return true;
 //   }
 
-//   VMCLinearOptOMP::RealType VMCLinearOptOMP::runCS(std::vector<RealType>& curParams, std::vector<RealType>& curDir, std::vector<RealType>& lambdas)
+//   VMCLinearOpt::RealType VMCLinearOpt::runCS(std::vector<RealType>& curParams, std::vector<RealType>& curDir, std::vector<RealType>& lambdas)
 //   {
 //     bool notConverged(true);
 //
@@ -388,7 +388,7 @@ bool VMCLinearOptOMP::run()
 //     return NE_i[minE];
 //   }
 
-//   VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
+//   VMCLinearOpt::RealType VMCLinearOpt::estimateCS()
 //   {
 //     std::vector<long double> e_i(NumThreads), psi2_i(NumThreads);
 //     long double psi2(0);
@@ -450,7 +450,7 @@ bool VMCLinearOptOMP::run()
 //     return rval;
 //   }
 
-void VMCLinearOptOMP::resetRun()
+void VMCLinearOpt::resetRun()
 {
   //only VMC can overwrite this
   if(nTargetPopulation>0)
@@ -632,7 +632,7 @@ void VMCLinearOptOMP::resetRun()
 //     }
 }
 
-//   void VMCLinearOptOMP::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap)
+//   void VMCLinearOpt::fillMatrices(Matrix<RealType>& H2, Matrix<RealType>& Hamiltonian, Matrix<RealType>& Variance, Matrix<RealType>& Overlap)
 //   {
 //     RealType nrm = 1.0/sW;
 //     //     RealType nrm2 = nrm*nrm;
@@ -708,7 +708,7 @@ void VMCLinearOptOMP::resetRun()
 //     //     app_log()<<V_avg<<"  "<<E_avg<<"  "<<sW<< std::endl;
 //   }
 
-//   VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM)
+//   VMCLinearOpt::RealType VMCLinearOpt::fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM)
 //   {
 //     RealType b1,b2;
 //     if (GEVtype=="H2")
@@ -804,7 +804,7 @@ void VMCLinearOptOMP::resetRun()
 //
 //   }
 
-VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM)
+VMCLinearOpt::RealType VMCLinearOpt::fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM)
 {
   RealType b1,b2;
   if (GEVtype=="H2")
@@ -878,7 +878,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
   return 1.0;
 }
 
-VMCLinearOptOMP::RealType VMCLinearOptOMP::fillComponentMatrices()
+VMCLinearOpt::RealType VMCLinearOpt::fillComponentMatrices()
 {
   std::vector<RealType> g_stats(5,0);
   for (int ip=0; ip<NumThreads; ip++)
@@ -932,7 +932,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillComponentMatrices()
 
 
 bool
-VMCLinearOptOMP::put(xmlNodePtr q)
+VMCLinearOpt::put(xmlNodePtr q)
 {
   //nothing to add
   return true;
