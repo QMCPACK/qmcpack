@@ -30,12 +30,12 @@ namespace qmcplusplus
 {
 
 PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-  : OrbitalBuilderBase(els,psi), ptclPool(psets), hfileID(-1), rootNode(NULL)
-#if !defined(EANBLE_SMARTPOINTER)
+  : WaveFunctionComponentBuilder(els,psi), ptclPool(psets), hfileID(-1), rootNode(NULL)
+#if !defined(ENABLE_SMARTPOINTER)
   ,myBasisSet(0)
 #endif
 {
-  myParam=new PWParameterSet;
+  myParam=new PWParameterSet(myComm);
 }
 
 PWOrbitalBuilder::~PWOrbitalBuilder()
@@ -51,7 +51,7 @@ bool PWOrbitalBuilder::put(xmlNodePtr cur)
   //
   //Get wavefunction data and parameters from XML and HDF5
   //
-  RealType ecut=-1.0;
+
   //close it if open
   if(hfileID>0)
     H5Fclose(hfileID);
@@ -108,7 +108,7 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
   //catch parameters
   myParam->put(cur);
   typedef SlaterDet SlaterDeterminant_t;
-  typedef DiracDeterminantBase Det_t;
+  typedef DiracDeterminant Det_t;
   SlaterDeterminant_t* sdet(new SlaterDeterminant_t(targetPtcl));
   int spin_group=0;
   cur=cur->children;
@@ -127,13 +127,13 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       if(ref == "0")
         ref=id;
       int firstIndex=targetPtcl.first(spin_group);
-      std::map<std::string,SPOSetBasePtr>::iterator lit(spomap.find(ref));
+      std::map<std::string,SPOSetPtr>::iterator lit(spomap.find(ref));
       Det_t* adet=0;
       //int spin_group=0;
       if(lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;;
-        SPOSetBasePtr psi(createPW(cur,spin_group));
+        SPOSetPtr psi(createPW(cur,spin_group));
         sdet->add(psi,ref);
         spomap[ref] = psi;
         adet = new Det_t(psi,firstIndex);
@@ -184,14 +184,11 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   hdfint.read(hfileID,"electrons/number_of_kpoints");
   int nkpts = idata;
   hdfint.read(hfileID,"electrons/number_of_spins");
-  int nspin = idata;
   hdfint.read(hfileID,"electrons/kpoint_0/spin_0/number_of_states");
   int nbands = idata;
   myParam->numBands = nbands;
   app_log() << "Number of bands = " << nbands << std::endl;
-  bool h5coefsreal = true;
   // Cutoff no longer present in the HDF file
-  RealType h5ecut = 0.0;
   RealType ecut = 0.0;
   //end of parameters
   //check if input parameters are valid
@@ -235,7 +232,7 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   return true;
 }
 
-SPOSetBase*
+SPOSet*
 PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
 {
   int nb=targetPtcl.last(spinIndex)-targetPtcl.first(spinIndex);
@@ -399,7 +396,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   RealType dy=1.0/static_cast<RealType>(nG[1]-1);
   RealType dz=1.0/static_cast<RealType>(nG[2]-1);
 #if defined(VERYTINYMEMORY)
-  typedef Array<ParticleSet::ParticleValue_t,3> StorageType;
+  typedef Array<ParticleSet::SingleParticleValue_t,3> StorageType;
   StorageType inData(nG[0],nG[1],nG[2]);
   int ib=0;
   while(ib<myParam->numBands)
@@ -451,7 +448,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
     ++ib;
   }
 #else
-  typedef Array<ParticleSet::ParticleValue_t,3> StorageType;
+  typedef Array<ParticleSet::SingleParticleValue_t,3> StorageType;
   std::vector<StorageType*> inData;
   int nb=myParam->numBands;
   for(int ib=0; ib<nb; ib++)

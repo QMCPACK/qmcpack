@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/Fermion/Backflow_ee_kSpace.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI_spin.h"
-#include "QMCWaveFunctions/Fermion/GaussianFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
@@ -40,7 +39,7 @@ namespace qmcplusplus
 {
 
 BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool, TrialWaveFunction& psi)
-  : OrbitalBuilderBase(els,psi), ptclPool(pool), BFTrans(0), cutOff(-1.0)
+  : WaveFunctionComponentBuilder(els,psi), ptclPool(pool), BFTrans(0), cutOff(-1.0)
 {
   ClassName="BackflowBuilder";
 }
@@ -51,7 +50,6 @@ BackflowBuilder::~BackflowBuilder()
 
 bool BackflowBuilder::put(xmlNodePtr cur)
 {
-  bool first=true;
   bool success=true;
   xmlNodePtr curRoot=cur;
   std::string cname;
@@ -269,7 +267,7 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
         if(bsp->cutoff_radius > cutOff)
           cutOff = bsp->cutoff_radius;
         bsp->myVars.setParameterType(optimize::BACKFLOW_P);
-        bsp->print();
+        //bsp->print();
         dum->uniqueRadFun.push_back(bsp);
         offsets.push_back(tbf->numParams);
         tbf->numParams += bsp->NumParams;
@@ -312,11 +310,6 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
   Backflow_ee<BsplineFunctor<RealType> > *tbf = new Backflow_ee<BsplineFunctor<RealType> >(targetPtcl,targetPtcl);
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   std::vector<int> offsets;
-  if(funct == "Gaussian")
-  {
-    APP_ABORT("Disabled GaussianFunctor for now, \n");
-  }
-  else
     if(funct == "Bspline")
     {
       app_log() <<"Using BsplineFunctor type. \n";
@@ -408,7 +401,6 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
   */
   Rs=-1.0;
   Kc=-1.0;
-  RealType my_cusp=0.0;
   OhmmsAttributeSet anAttrib0;
   anAttrib0.add (Rs,"rs");
   anAttrib0.add (Kc,"kc");
@@ -455,7 +447,6 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
   Backflow_ee_kSpace *tbfks = 0;
   // now look for components
   std::string cname;
-  xmlNodePtr curRoot = cur;
   cur = cur->children;
   while (cur != NULL)
   {

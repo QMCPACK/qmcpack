@@ -24,19 +24,19 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#include "QMCWaveFunctions/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
 
-//std::map<H5OrbSet,SPOSetBase*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
+//std::map<H5OrbSet,SPOSet*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
 //std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> EinsplineSetBuilder::OrbitalMap;
 ////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
-EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur)
-  : TargetPtcl(p),ParticleSets(psets), MixedSplineReader(0), XMLRoot(cur), Format(QMCPACK),
+EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate *comm, xmlNodePtr cur)
+  : SPOSetBuilder(comm), TargetPtcl(p),ParticleSets(psets), MixedSplineReader(0), XMLRoot(cur), Format(QMCPACK),
   TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1),
   NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
   NumBands(0), NumElectrons(0), NumSpins(0), NumTwists(0),
@@ -46,7 +46,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xm
   myTableIndex=1;
 
   MatchingTol=10*std::numeric_limits<float>::epsilon();
-//     for (int i=0; i<3; i++) afm_vector[i]=0;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
       TileMatrix(i,j) = 0;
@@ -86,15 +85,6 @@ EinsplineSetBuilder::~EinsplineSetBuilder()
     H5Fclose(H5FileID);
 }
 
-
-bool
-EinsplineSetBuilder::put(xmlNodePtr cur)
-{
-  std::string hdfName;
-  OhmmsAttributeSet attribs;
-  attribs.add (hdfName, "href");
-  return attribs.put(XMLRoot);
-}
 
 bool
 EinsplineSetBuilder::CheckLattice()
@@ -285,6 +275,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   AtomicCentersInfo.resize(numIons);
   Super2Prim.resize(SourcePtcl->R.size());
   cbuffer.add(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
+  cbuffer.add(AtomicCentersInfo.non_overlapping_radius.begin(), AtomicCentersInfo.non_overlapping_radius.end());
   cbuffer.add(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
   cbuffer.add(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
   cibuffer.add(Super2Prim.begin(),Super2Prim.end());
@@ -298,6 +289,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
     cbuffer.rewind();
     cibuffer.rewind();
     cbuffer.get(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
+    cbuffer.get(AtomicCentersInfo.non_overlapping_radius.begin(), AtomicCentersInfo.non_overlapping_radius.end());
     cbuffer.get(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
     cbuffer.get(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
     cibuffer.get(Super2Prim.begin(),Super2Prim.end());
@@ -484,13 +476,13 @@ EinsplineSetBuilder::AnalyzeTwists2()
     int n_tot_irred(0);
     for (int si=0; si<numSuperTwists; si++)
     {
-      bool irreducible(false);
+//      bool irreducible(false);
       int irrep_wgt(0);
 // 	 for (int i=0; i<superSets[si].size(); i++)
       if(TwistSymmetry[superSets[si][0]]==1)
       {
         irrep_wgt=TwistWeight[superSets[si][0]];
-        irreducible=true;
+//        irreducible=true;
         n_tot_irred++;
       }
 //	if((irreducible) and ((Version[0] >= 2) and (Version[1] >= 0)))
@@ -906,30 +898,6 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
   app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
   app_log() << "There are " << NumCoreOrbs << " core states and "
             << NumValenceOrbs << " valence states.\n";
-//     if(qafm!=0) //afm_vector[0]=qafm;
-//     {afm_vector
-//       bool found(false);
-//       for (int tj=0; tj<TwistAngles.size(); tj++)
-//       {
-//         PosType ku=TwistAngles[tj];
-//         PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//         double dkx = std::abs(afm_vector[0] - k2[0]);
-//         double dky = std::abs(afm_vector[1] - k2[1]);
-//         double dkz = std::abs(afm_vector[2] - k2[2]);
-//         bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-//         if(rightK)
-//         {
-//           afm_vector=k2;
-//           found=true;
-//           break;
-//         }
-//       }
-//       if(!found)
-//       {
-//         app_log()<<"Need twist: ("<<qafm<<",0,0)"<< std::endl;
-//         APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
-//       }
-//     }
 }
 
 }

@@ -73,8 +73,6 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     useSimpleTableFormat();
   }
 
-  RealType rcore_max=0;
-
   ///create LocalECPotential
   bool usePBC =
     !(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no");
@@ -91,13 +89,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
 #endif
       for(int i=0; i<localPot.size(); i++)
-      {
-        if(localPot[i])
-        {
-          apot->add(i,localPot[i],localZeff[i]);
-          rcore_max=std::max(rcore_max,localPot[i]->r_max);
-        }
-      }
+        if(localPot[i]) apot->add(i,localPot[i],localZeff[i]);
       targetH.addOperator(apot,"LocalECP");
     }
     else
@@ -145,17 +137,10 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
               << nknot_max << std::endl;
     if(NLPP_algo=="batched") app_log() << "    Using batched ratio computing in NonLocalECP" << std::endl;
 
-    rcore_max=std::max(rc2,rcore_max);
     targetPtcl.checkBoundBox(2*rc2);
 
     targetH.addOperator(apot,"NonLocalECP");
   }
-
-  //app_log() << "Checking THIS " << std::endl;
-  //DEV::OPTIMIZE_SOA
-  int tid=targetPtcl.addTable(IonConfig,DT_SOA_PREFERRED);
-  targetPtcl.DistTables[tid]->setRmax(rcore_max); //For the optimization only
-  app_log() << "  ECPotential::Rmax " << targetPtcl.DistTables[tid]->Rmax << std::endl;
 
   app_log().flush();
   return true;
@@ -292,7 +277,6 @@ void ECPotentialBuilder::useSimpleTableFormat()
     // Read Number of potentials (local and non) for this atom
     int npotentials;
     fin >> npotentials;
-    RealType r, f1;
     int lmax=-1;
     int numnonloc=0;
     RealType rmax(0.0);

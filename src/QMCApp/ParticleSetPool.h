@@ -101,10 +101,6 @@ public:
    */
   void randomize();
 
-  /** make clones for the ParticleSets of this pool
-   *    */
-  void make_clones(int n);
-
   /**  Access to TileMatrix for testing
    */
   Tensor<int, OHMMS_DIM> &getTileMatrix() { return TileMatrix; }

@@ -18,13 +18,11 @@
 namespace qmcplusplus
 {
 
-SPOSetProxyForMSD::SPOSetProxyForMSD(SPOSetBasePtr const& spos, int first, int last)
+SPOSetProxyForMSD::SPOSetProxyForMSD(SPOSetPtr const& spos, int first, int last)
   : refPhi(spos)
 {
-  Identity=true;
   className="SPOSetProxy";
   OrbitalSetSize=last-first;
-  BasisSetSize=last-first;
   setOrbitalSetSize(refPhi->getOrbitalSetSize());
 }
 

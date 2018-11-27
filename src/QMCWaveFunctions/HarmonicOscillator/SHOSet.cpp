@@ -36,7 +36,6 @@ namespace qmcplusplus
     className = "SHOSet";
 
     OrbitalSetSize = state_info.size();
-    BasisSetSize = OrbitalSetSize;
 
     qn_max = -1;
     for(int s=0;s<state_info.size();++s)
@@ -71,7 +70,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSetBase* SHOSet::makeClone() const
+  SPOSet* SHOSet::makeClone() const
   {
     return new SHOSet(*this);
   }
@@ -234,16 +233,12 @@ namespace qmcplusplus
     {
       RealType x = xpos[d];
       RealType x2  = x*x;
-      RealType Hnm1 = 0.0;
-      RealType Hnm2 = 0.0;
       for(int n=0;n<qn_max[d];++n)
       {
         int ns = n+shift;
         RealType Hn = hermite(ns);
         bvalues(ns) = (-1.0 + x2 - 2*n)*ol2;
         //d2_values(ns) = bvalues(ns);
-        Hnm2 = Hnm1;
-        Hnm1 = Hn;
       }
     }
     for(int s=0;s<state_info.size();++s)
@@ -595,27 +590,5 @@ namespace qmcplusplus
   {
     not_implemented("evaluateGradSource(P,first,last,source,iat,dphi,ddphi,dd2phi)");
   }
-
-  void SHOSet::evaluateBasis(
-    const ParticleSet &P, int first, int last, ValueMatrix_t &basis_val,
-    GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl)
-  {
-    not_implemented("evaluateBasis");
-  }
-
-  void SHOSet::evaluateForDeriv(
-    const ParticleSet &P, int first, int last, ValueMatrix_t &basis_val,
-    GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl)
-  {
-    not_implemented("evaluateForDeriv");
-  }
-
-  void SHOSet::copyParamsFromMatrix(
-    const opt_variables_type& active, const ValueMatrix_t &mat,
-    std::vector<RealType> &destVec)
-  {
-    not_implemented("copyParamsFromMatrix");
-  }
-
 
 }

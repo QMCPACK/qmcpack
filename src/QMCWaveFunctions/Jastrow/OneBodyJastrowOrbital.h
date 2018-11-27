@@ -19,7 +19,7 @@
 #ifndef QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
 #define QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  * @brief generic implementation of one-body Jastrow function.
  *
  *The One-Body Jastrow has the form
@@ -75,7 +75,7 @@ namespace qmcplusplus
  *by MC methods.
  */
 template<class FT>
-class OneBodyJastrowOrbital: public OrbitalBase
+class OneBodyJastrowOrbital: public WaveFunctionComponent
 {
 protected:
   int myTableIndex;
@@ -105,7 +105,7 @@ public:
     //allocate vector of proper size  and set them to 0
     Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),nullptr);
     Fs.resize(CenterRef.getTotalNum(),nullptr);
-    OrbitalName = "OneBodyJastrow";
+    ClassName = "OneBodyJastrow";
   }
 
   ~OneBodyJastrowOrbital() { }
@@ -224,13 +224,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-  
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
     LogValue=0.0;
@@ -304,7 +297,7 @@ public:
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int n=d_table->size(VisitorIndex);
     curGrad = 0.0;
-    RealType ur,dudr, d2udr2;
+    RealType ur, dudr, d2udr2;
     for (int i=0, nn=iat; i<d_table->size(SourceIndex); ++i,nn+= n)
     {
       if (Fs[i] != nullptr)
@@ -394,9 +387,10 @@ public:
 
   void acceptMove(ParticleSet& P, int iat)
   {
-    U[iat] = curVal;
-    dU[iat]=curGrad;
-    d2U[iat]=curLap;
+    LogValue += U[iat]-curVal;
+    U[iat]    = curVal;
+    dU[iat]   = curGrad;
+    d2U[iat]  = curLap;
   }
 
   void evaluateLogAndStore(ParticleSet& P,
@@ -496,7 +490,7 @@ public:
     DEBUG_PSIBUFFER(" OneBodyJastrow::copyFromBuffer ",buf.current());
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     OneBodyJastrowOrbital<FT>* j1copy=new OneBodyJastrowOrbital<FT>(CenterRef,tqp);
     j1copy->Optimizable=Optimizable;
@@ -505,7 +499,7 @@ public:
       if (Funique[i])
         j1copy->addFunc(i,new FT(*Funique[i]));
     }
-    //j1copy->OrbitalName=OrbitalName+"_clone";
+    //j1copy->ClassName=ClassName+"_clone";
     if (dPsi)
     {
       j1copy->dPsi =  dPsi->makeClone(tqp);
@@ -513,10 +507,6 @@ public:
     return j1copy;
   }
 
-  void copyFrom(const OrbitalBase& old)
-  {
-    //nothing to do
-  }
 };
 
 }

@@ -56,6 +56,7 @@ struct LRRPABFeeHandlerTemp: public LRHandlerBase
   LRRPABFeeHandlerTemp(ParticleSet& ref, mRealType kc_in=-1.0):
     LRHandlerBase(kc_in),FirstTime(true), Basis(ref.Lattice)
   {
+    LRHandlerBase::ClassName="LRRPAFeeHandlerTemp";
     myFunc.reset(ref);
   }
 

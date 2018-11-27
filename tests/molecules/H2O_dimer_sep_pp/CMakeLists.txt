@@ -12,7 +12,7 @@ IF (NOT QMC_CUDA)
                     H2O
                     short-H2O-LA.xml
                     1 16
-                    ${MP_SUCCESS}
+                    TRUE
                     2 H2OS2_DMCLA_SCALARS
                     )
 
@@ -24,7 +24,7 @@ IF (NOT QMC_CUDA)
                     H2O
                     short-H2O-TM0.xml
                     1 16
-                    ${MP_SUCCESS}
+                    TRUE
                     2 H2OS2_DMCTM0_SCALARS
                     )
 
@@ -36,7 +36,7 @@ IF (NOT QMC_CUDA)
                     H2O
                     short-H2O-TM1.xml
                     1 16
-                    ${MP_SUCCESS}
+                    TRUE
                     2 H2OS2_DMCTM1_SCALARS
                     )
 
@@ -48,7 +48,7 @@ IF (NOT QMC_CUDA)
                     H2O
                     short-H2O-TM3.xml
                     1 16
-                    ${MP_SUCCESS}
+                    TRUE
                     2 H2OS2_DMCTM1_SCALARS
                     )
 
@@ -61,7 +61,7 @@ IF (NOT QMC_CUDA)
                     H2O
                     long-H2O-LA.xml
                     1 16
-                    ${MP_SUCCESS}
+                    TRUE
                     2 LONG_H2OS2_DMCLA_SCALARS
                     )
 
@@ -73,7 +73,7 @@ IF (NOT QMC_CUDA)
                     H2O
                     long-H2O-TM0.xml
                     1 16
-                    ${MP_SUCCESS}
+                    TRUE
                     2 LONG_H2OS2_DMCTM0_SCALARS
                     )
 
@@ -85,7 +85,7 @@ IF (NOT QMC_CUDA)
                     H2O
                     long-H2O-TM1.xml
                     1 16
-                    ${MP_SUCCESS}
+                    TRUE
                     2 LONG_H2OS2_DMCTM1_SCALARS
                     )
 
@@ -97,7 +97,7 @@ IF (NOT QMC_CUDA)
                     H2O
                     long-H2O-TM3.xml
                     1 16
-                    ${MP_SUCCESS}
+                    TRUE
                     2 LONG_H2OS2_DMCTM1_SCALARS
                     )
 

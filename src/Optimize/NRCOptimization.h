@@ -24,7 +24,7 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/LinearFit.h"
 #include "Configuration.h"
-#include <math.h>
+#include <cmath>
 #if (__GNUC__ == 2)
 #include <algo.h>
 #else
@@ -243,7 +243,7 @@ struct NRCOptimization
     qmcplusplus::Matrix<Return_t> S(points,5);
     for(int i=0; i<points; i++)
       x[i]=Return_t(i-1)*quadstep;
-    Return_t start_cost, cost;
+    Return_t start_cost;
     std::vector<bool> cFailed(points,false);
     int nFailed(0);
     validFuncVal=true;

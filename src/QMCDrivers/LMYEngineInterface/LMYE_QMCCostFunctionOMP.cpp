@@ -13,7 +13,6 @@
 #include "QMCDrivers/QMCCostFunctionOMP.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "Particle/HDFWalkerInputCollect.h"
 #include "Message/CommOperators.h"
 
 //#include "Eigen/Dense"
@@ -73,7 +72,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::LMYEngineCost_detail(cqmc::engi
   // compute energy and target relevant quantities 
   EngineObj->energy_target_compute();
 
-  // prepare variables to hold the ouput of the engine call
+  // prepare variables to hold the output of the engine call
   double energy_avg  = EngineObj->energy_mean(); 
   double energy_sdev = EngineObj->energy_sdev(); 
   double energy_serr = EngineObj->energy_statistical_err();  

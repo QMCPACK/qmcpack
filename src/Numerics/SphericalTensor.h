@@ -320,7 +320,7 @@ void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluate(const Point_t& p)
     }
   }
   // Now to calculate r^l Y_lm. //
-  value_type sphim,cphim,fac2,temp;
+  value_type sphim,cphim,temp;
   Ylm[0] = omega; //1.0/sqrt(pi4);
   value_type rpow = 1.0;
   for (int l=1; l<=Lmax; l++)
@@ -409,7 +409,7 @@ void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateAll(const Point_t& p)
     }
   }
   // Now to calculate r^l Y_lm. //
-  value_type sphim,cphim,fac2,temp;
+  value_type sphim,cphim,temp;
   Ylm[0] = omega; //1.0/sqrt(pi4);
   value_type rpow = 1.0;
   for (int l=1; l<=Lmax; l++)
@@ -568,7 +568,7 @@ void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateWithHessian(const Poin
     }
   }
   // Now to calculate r^l Y_lm. //
-  value_type sphim,cphim,fac2,temp;
+  value_type sphim,cphim,temp;
   Ylm[0] = omega; //1.0/sqrt(pi4);
   value_type rpow = 1.0;
   for (int l=1; l<=Lmax; l++)

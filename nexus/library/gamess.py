@@ -16,7 +16,7 @@
 #      User function to create arbitrary GAMESS input.               #
 #                                                                    #
 #    KeywordGroup                                                    #
-#      Represents an arbitary keyword group in the input file.       #
+#      Represents an arbitrary keyword group in the input file.       #
 #                                                                    #
 #    KeywordSpecGroup                                                #
 #      Base class for specialized keyword groups.                    #
@@ -59,6 +59,12 @@ class Gamess(Simulation):
         Gamess.ericfmt = ericfmt
         Gamess.mcppath = mcppath
     #end def settings
+
+    @staticmethod
+    def restore_default_settings():
+        Gamess.ericfmt = None
+        Gamess.mcppath = None
+    #end def restore_default_settings
 
 
     def post_init(self):

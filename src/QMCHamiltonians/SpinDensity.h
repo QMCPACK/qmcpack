@@ -72,8 +72,6 @@ class SpinDensity : public QMCHamiltonianBase
   void report(const std::string& pad);
   void test(int moves,ParticleSet& P);
   Return_t test_evaluate(ParticleSet& P,int& pmin,int& pmax);
-  void postprocess_density(const std::string& infile,const std::string& species,
-                           pts_t& points,dens_t& density,dens_t& density_err);
   void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
 
 };

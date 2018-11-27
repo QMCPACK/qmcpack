@@ -54,7 +54,7 @@ from debug import *
 try:
     import h5py
     h5py_unavailable = False
-except ImportError:
+except:
     h5py = unavailable('h5py')
     h5py_unavailable = True
 #end try

@@ -33,12 +33,6 @@ DMCUpdateAllWithRejection::DMCUpdateAllWithRejection(MCWalkerConfiguration& w,
 /// destructor
 DMCUpdateAllWithRejection::~DMCUpdateAllWithRejection() { }
 
-//void DMCUpdateAllWithRejection::initWalkers(WalkerIter_t it, WalkerIter_t it_end){
-//}
-
-//void DMCUpdateAllWithRejection::updateWalkers(WalkerIter_t it, WalkerIter_t it_end){
-//}
-
 /** advance all the walkers with killnode==no
  * @param nat number of particles to move
  *
@@ -88,7 +82,6 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     if(!accepted)
     {
       W.update(thisWalker.R);
-      W.donePbyP(true);
       logpsi = Psi.evaluateLog(W);
     }
 
@@ -114,7 +107,14 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     if(NonLocalMoveAcceptedTemp>0)
     {
       W.saveWalker(thisWalker);
-      thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
+      thisWalker.resetProperty(Psi.getLogPsi(),Psi.getPhase(),enew);
+      // debugging lines
+      //logpsi = Psi.getLogPsi();
+      //W.update(true);
+      //RealType logpsi2 = Psi.evaluateLog(W);
+      //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logpsi2 " << logpsi2
+      //                              << " diff " << logpsi2-logpsi << std::endl;
+
       NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
     }
 

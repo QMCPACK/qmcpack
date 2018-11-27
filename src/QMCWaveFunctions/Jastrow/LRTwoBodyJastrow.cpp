@@ -352,14 +352,14 @@ LRTwoBodyJastrow::evalGrad(ParticleSet& P, int iat)
     for(; ki<Kshell[ks+1]; ki++)
     {
     #if defined(USE_REAL_STRUCT_FACTOR)
-      RealType rr=((*eikr1_r)*(*rhok_ptr_r)+(*eikr1_i)*(*rhok_ptr_i));
+      //      RealType rr=((*eikr1_r)*(*rhok_ptr_r)+(*eikr1_i)*(*rhok_ptr_i));
       RealType ii=((*eikr1_r)*(*rhok_ptr_i)-(*eikr1_i)*(*rhok_ptr_r));
       eikr1_r++;
       eikr1_i++;
       rhok_ptr_r++;
       rhok_ptr_i++;
     #else
-      RealType rr=((*eikr1).real()*(*rhok_ptr).real()+(*eikr1).imag()*(*rhok_ptr).imag());
+      //      RealType rr=((*eikr1).real()*(*rhok_ptr).real()+(*eikr1).imag()*(*rhok_ptr).imag());
       RealType ii=((*eikr1).real()*(*rhok_ptr).imag()-(*eikr1).imag()*(*rhok_ptr).real());
       eikr1++;
       rhok_ptr++;
@@ -526,7 +526,7 @@ void LRTwoBodyJastrow::resetByHandler(HandlerType* handler)
 #endif
 }
 
-OrbitalBasePtr LRTwoBodyJastrow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr LRTwoBodyJastrow::makeClone(ParticleSet& tqp) const
 {
   LRTwoBodyJastrow* myclone=new LRTwoBodyJastrow(*this);
   myclone->skRef=tqp.SK;

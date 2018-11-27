@@ -133,23 +133,24 @@ public:
   bool SameMass;
   ///threa id
   Index_t ThreadID;
-  ///the index of the active particle for particle-by-particle moves
+  /** the index of the active particle during particle-by-particle moves
+   *
+   * when a single particle move is proposed, the particle id is assigned to activePtcl
+   * No matter the move is accepted or rejected, activePtcl is marked back to -1.
+   * This state flag is used for picking coordinates and distances for SPO evaluation.
+   */
   Index_t activePtcl;
-  ///the group of the active particle for particle-by-particle moves
+  ///the group of the active particle during particle-by-particle moves
   Index_t activeGroup;
   ///the index of the active bead for particle-by-particle moves
   Index_t activeBead;
   ///the direction reptile traveling
   Index_t direction;
 
-  /** the position of the active particle for particle-by-particle moves
-   *
-   * Saves the position before making a move to handle rejectMove
-   */
+  ///the proposed position of activePtcl during particle-by-particle moves
   SingleParticlePos_t activePos;
 
-  /** the proposed position in the Lattice unit
-   */
+  ///the proposed position in the Lattice unit
   SingleParticlePos_t newRedPos;
 
   ///SpeciesSet of particles
@@ -277,7 +278,7 @@ public:
    *
    * Ensure that the distance for this-this is always created first.
    */
-  int  addTable(const ParticleSet& psrc, int dt_type);
+  int addTable(const ParticleSet& psrc, int dt_type);
 
   /** returns index of a distance table, -1 if not present
    * @param psrc source particle set
@@ -349,7 +350,7 @@ public:
    */
   void setActive(int iat);
 
-  /** return the position of the active partice
+  /** return the position of the active particle
    *
    * activePtcl=-1 is used to flag non-physical moves
    */
@@ -452,18 +453,22 @@ public:
    */
   void saveWalker(Walker_t& awalker);
 
-  /** update the buffer
-   *@param skip SK update if skipSK is true
+  /** update structure factor and unmark activePtcl
+   *
+   * The Coulomb interaction evaluation needs the structure factor.
+   * For these reason, call donePbyP after the loop of single
+   * electron moves before evaluating the Hamiltonian. Unmark
+   * activePtcl is more of a safety measure probably not needed.
    */
-  void donePbyP(bool skipSK=false);
+  void donePbyP();
 
-  //return the address of the values of Hamiltonian terms
+  ///return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase()
   {
     return Properties.data();
   }
 
-  //return the address of the values of Hamiltonian terms
+  ///return the address of the values of Hamiltonian terms
   inline const EstimatorRealType* restrict getPropertyBase() const
   {
     return Properties.data();
@@ -494,11 +499,6 @@ public:
    * Used to initialize an electron ParticleSet by an ion ParticleSet
    */
   void randomizeFromSource (ParticleSet &src);
-
-  /** make clones
-   * @param n number of clones including itself
-   */
-  virtual void make_clones(int n);
 
   /** return the ip-th clone
    * @param ip thread number

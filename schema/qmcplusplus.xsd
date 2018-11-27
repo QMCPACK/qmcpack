@@ -40,7 +40,7 @@
         <xs:element name="particleset" type="particleSetType" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element name="include" minOccurs="0" maxOccurs="unbounded">
           <xs:annotation>
-            <xs:documentation>include an anyURI that conatins qmcsystem</xs:documentation>
+            <xs:documentation>include an anyURI that contains qmcsystem</xs:documentation>
           </xs:annotation>
           <xs:complexType>
             <xs:attribute name="href" type="xs:anyURI" use="required"/>

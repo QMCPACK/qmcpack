@@ -55,33 +55,6 @@ namespace qmcplusplus
     chunked_bcast(comm,buffer->coefs, buffer->coefs_size);
   }
 
-  ///handles reduce
-  template<typename T>
-  inline void chunked_reduce(Communicate* comm, T* buffer, size_t ntot)
-  {
-    if(comm->size()==1) return;
-
-    size_t chunk_size=(1<<30)/sizeof(T); //256 MB
-    int n=static_cast<int>(ntot/chunk_size);
-
-    size_t offset=0;
-    for(int i=0; i<n; ++i, offset+=chunk_size)
-    {
-      comm->reduce_in_place(buffer+offset,static_cast<int>(chunk_size));
-    }
-
-    if(offset<ntot)
-    {
-      comm->reduce_in_place(buffer+offset,static_cast<int>(ntot-offset));
-    }
-  }
-
-  template<typename ENGT>
-  inline void chunked_reduce(Communicate* comm, ENGT* buffer)
-  {
-    chunked_reduce(comm,buffer->coefs, buffer->coefs_size);
-  }
-
   template<typename ENGT>
   inline void gatherv(Communicate* comm, ENGT* buffer, const int ncol, std::vector<int> &offset)
   {

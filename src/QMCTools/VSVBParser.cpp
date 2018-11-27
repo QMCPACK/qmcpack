@@ -193,7 +193,6 @@ void VSVBParser::getGeometry(std::istream& is)
   std::vector<int> atomic_number,core;
   std::vector<double> q,pos;
   int natms=0;
-  int test=0;
   tags.clear();
   //is.seekg(pivot_begin);
   //read atomic info
@@ -253,8 +252,8 @@ void VSVBParser::getGaussianCenters(std::istream& is)
 {
   std::string Shell_temp;
   gBound.resize(NumberOfAtoms+1);
-  int ng,nx;
   std::string aline;
+  int ng;
   std::map<std::string,int> basisDataMap;
   int nUniqAt=0;
   for(int i=0; i<NumberOfAtoms; i++)

@@ -99,6 +99,12 @@ class Pwscf(Simulation):
         Pwscf.vdw_table = vdw_table
     #end def settings              
 
+    @staticmethod
+    def restore_default_settings():
+        Pwscf.vdw_table = None
+    #end def restore_default_settings
+
+
     #def propagate_identifier(self):
     #    self.input.control.prefix = self.identifier        
     ##end def propagate_identifier
@@ -222,11 +228,17 @@ class Pwscf(Simulation):
                 None # don't need to do anything if in same directory
             elif self.sync_from_scf: # rsync output into nscf dir
                 outdir = os.path.join(self.locdir,c.outdir)
-                command = 'rsync -avz {0}/* {1}/'.format(result.outdir,outdir)
+                command = 'rsync -av {0}/* {1}/'.format(result.outdir,outdir)
                 if not os.path.exists(outdir):
                     os.makedirs(outdir)
                 #end if
-                execute(command)
+                sync_record = os.path.join(outdir,'nexus_sync_record')
+                if not os.path.exists(sync_record):
+                    execute(command)
+                    f = open(sync_record,'w')
+                    f.write('\n')
+                    f.close()
+                #end if
             else: # attempt to use symbolic links instead
                 link_loc = os.path.join(self.locdir,c.outdir,c.prefix+'.save')
                 cd_loc = result.location

@@ -14,7 +14,7 @@
     
     
 /** @file PWRealOrbitalSet.h
- * @brief Define PWRealOrbitalSet derived from SPOSetBase
+ * @brief Define PWRealOrbitalSet derived from SPOSet
  *
  * This is a specialized single-particle orbital set for real trial
  * wavefunctions and enabled with QMC_COMPLEX=0
@@ -23,13 +23,13 @@
 #define QMCPLUSPLUS_PLANEWAVE_REALORBITALSET_BLAS_H
 
 #include "QMCWaveFunctions/PlaneWave/PWBasis.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "Numerics/OhmmsBlas.h"
 
 namespace qmcplusplus
 {
 
-class PWRealOrbitalSet: public SPOSetBase
+class PWRealOrbitalSet: public SPOSet
 {
 
 public:
@@ -52,7 +52,7 @@ public:
 
   /** default constructor
   */
-  PWRealOrbitalSet(): OwnBasisSet(false)
+  PWRealOrbitalSet(): OwnBasisSet(false), BasisSetSize(0), myBasisSet(nullptr)
   {
   }
 
@@ -62,7 +62,7 @@ public:
    */
   ~PWRealOrbitalSet();
 
-  SPOSetBase* makeClone() const;
+  SPOSet* makeClone() const;
 
   /** resize  the orbital base
    * @param bset PWBasis
@@ -126,6 +126,8 @@ public:
   PosType TwistAngle;
   ///My basis set
   PWBasisPtr myBasisSet;
+  ///number of basis
+  IndexType BasisSetSize;
   ///Plane-wave coefficients of complex: (iband,g-vector)
   Matrix<ComplexType> CC;
   /// temporary array to perform gemm operation

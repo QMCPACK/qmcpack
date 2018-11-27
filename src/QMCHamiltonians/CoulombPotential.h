@@ -148,7 +148,7 @@ struct CoulombPotential: public QMCHamiltonianBase
   /** JNKIM: Need to check the precision */
   inline T evaluateAB(const DistanceTableData* d, const ParticleScalar_t* restrict Za, const ParticleScalar_t* restrict Zb) 
   {
-    CONSTEXPR T czero(0);
+    constexpr T czero(0);
     T res=czero;
 #if !defined(REMOVE_TRACEMANAGER)
     if( streaming_particles)

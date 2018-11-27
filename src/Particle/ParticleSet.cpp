@@ -87,10 +87,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       addTable(p.DistTables[i]->origin(),p.DistTables[i]->DTType);
   }
   for(int i=0; i<p.DistTables.size(); ++i)
-  {
     DistTables[i]->Need_full_table_loadWalker = p.DistTables[i]->Need_full_table_loadWalker;
-    DistTables[i]->Rmax = p.DistTables[i]->Rmax;
-  }
   if(p.SK)
   {
     LRBox=p.LRBox; //copy LRBox
@@ -448,10 +445,11 @@ int ParticleSet::getTable(const ParticleSet& psrc)
 
 void ParticleSet::update(bool skipSK)
 {
-#if defined(ENABLE_SOA)
-  RSoA.copyIn(R); 
+#if !defined(ENABLE_SOA)
+  if(DistTables.size() && DistTables[0]->DTType==DT_SOA)
 #endif
-  for (int i=0; i< DistTables.size(); i++)
+    RSoA.copyIn(R);
+  for (int i=0; i<DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (!skipSK && SK)
     SK->UpdateAllPart(*this);
@@ -462,10 +460,11 @@ void ParticleSet::update(bool skipSK)
 void ParticleSet::update(const ParticlePos_t& pos)
 {
   R = pos;
-#if defined(ENABLE_SOA)
-  RSoA.copyIn(R); 
+#if !defined(ENABLE_SOA)
+  if(DistTables.size() && DistTables[0]->DTType==DT_SOA)
 #endif
-  for (int i=0; i< DistTables.size(); i++)
+    RSoA.copyIn(R);
+  for (int i=0; i<DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
@@ -577,7 +576,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker
 #if defined(ENABLE_SOA)
   RSoA.copyIn(R); 
 #endif
-  for (int i=0; i< DistTables.size(); i++)
+  for (int i=0; i<DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
     SK->UpdateAllPart(*this);
@@ -610,7 +609,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker
 #if defined(ENABLE_SOA)
   RSoA.copyIn(R); 
 #endif
-  for (int i=0; i< DistTables.size(); i++)
+  for (int i=0; i<DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
     SK->UpdateAllPart(*this);
@@ -651,10 +650,8 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
 #if defined(ENABLE_SOA)
   RSoA.copyIn(R); 
 #endif
-  for (int i=0; i< DistTables.size(); i++)
+  for (int i=0; i<DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
-  for (size_t i=0; i<DistTables.size(); i++)
-    DistTables[i]->donePbyP();
   if (SK)
     SK->UpdateAllPart(*this);
   //every move is valid
@@ -689,10 +686,8 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
   RSoA.copyIn(R); 
 #endif
 
-  for (int i=0; i< DistTables.size(); i++)
+  for (int i=0; i<DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
-  for (size_t i=0; i<DistTables.size(); i++)
-    DistTables[i]->donePbyP();
   if (SK)
     SK->UpdateAllPart(*this);
   //every move is valid
@@ -753,12 +748,10 @@ void ParticleSet::rejectMove(Index_t iat)
   activePtcl=-1;
 }
 
-void ParticleSet::donePbyP(bool skipSK)
+void ParticleSet::donePbyP()
 {
   myTimers[2]->start();
-  for (size_t i=0; i<DistTables.size(); i++)
-    DistTables[i]->donePbyP();
-  if (!skipSK && SK && !SK->DoUpdate)
+  if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   activePtcl=-1;
   myTimers[2]->stop();

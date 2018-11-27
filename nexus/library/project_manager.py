@@ -31,6 +31,14 @@ def trivial(sim,*args,**kwargs):
 
 
 class ProjectManager(NexusCore):
+
+    machine = None
+
+    @staticmethod
+    def restore_default_settings():
+        ProjectManager.machine = None
+    #end def restore_default_settings
+
     def __init__(self):
         modes = nexus_core.modes
         self.persistent_modes = set([modes.submit,modes.all])
@@ -41,6 +49,9 @@ class ProjectManager(NexusCore):
     #end def __init__
 
     def add_simulations(self,*simulations):
+        if len(simulations)==0:
+            self.add_simulations(Simulation.all_sims)
+        #end if
         if len(simulations)>0 and not isinstance(simulations[0],Simulation):
             simulations = simulations[0]
         #end if

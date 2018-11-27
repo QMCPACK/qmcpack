@@ -13,20 +13,20 @@
     
 #ifndef QMCPLUSPLUS_EEI_JASTROW_BUILDER_H
 #define QMCPLUSPLUS_EEI_JASTROW_BUILDER_H
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus
 {
 //forward declaration
 class ParticleSet;
 
-struct eeI_JastrowBuilder: public OrbitalBuilderBase
+struct eeI_JastrowBuilder: public WaveFunctionComponentBuilder
 {
   ParticleSet *sourcePtcl;
   // Two-body constructor
   eeI_JastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
                      ParticleSet& source) :
-    OrbitalBuilderBase(target,psi), sourcePtcl(&source)
+    WaveFunctionComponentBuilder(target,psi), sourcePtcl(&source)
   {
     ClassName="eeI_JastrowBuilder";
   }

@@ -20,12 +20,12 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
-#include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #ifdef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
@@ -127,16 +127,16 @@ const char *particles = \
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  BsplineJastrowBuilder jastrow(elec_, psi);
+  RadialJastrowBuilder jastrow(elec_, psi);
   bool build_okay = jastrow.put(jas1);
   REQUIRE(build_okay);
 
-  OrbitalBase *orb = psi.getOrbitals()[0];
+  WaveFunctionComponent *orb = psi.getOrbitals()[0];
 
 #ifdef ENABLE_SOA
-  typedef J2OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> > J2Type;
+  typedef J2OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType> > J2Type;
 #else
-  typedef TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > J2Type;
+  typedef TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > J2Type;
 #endif
   J2Type *j2 = dynamic_cast<J2Type *>(orb);
   REQUIRE(j2 != NULL);
@@ -182,12 +182,12 @@ const char *particles = \
    };
 
 
-  BsplineFunctor<OrbitalBase::RealType> *bf = j2->F[0];
+  BsplineFunctor<WaveFunctionComponent::RealType> *bf = j2->F[0];
 
   for (int i = 0; i < N; i++) {
-    OrbitalBase::RealType dv = 0.0;
-    OrbitalBase::RealType ddv = 0.0;
-    OrbitalBase::RealType val = bf->evaluate(Vals[i].r,dv,ddv);
+    WaveFunctionComponent::RealType dv = 0.0;
+    WaveFunctionComponent::RealType ddv = 0.0;
+    WaveFunctionComponent::RealType val = bf->evaluate(Vals[i].r,dv,ddv);
     REQUIRE(Vals[i].u == Approx(val));
     REQUIRE(Vals[i].du == Approx(dv));
     REQUIRE(Vals[i].ddu == Approx(ddv));
@@ -236,12 +236,7 @@ const char *particles = \
   ValueType ratio_0 = j2->ratio(elec_,0);
   elec_.rejectMove(0);
 
-  elec_.makeMove(1, newpos-elec_.R[1]);
-  ValueType ratio_1 = j2->ratio(elec_,1);
-  elec_.rejectMove(1);
-
   REQUIRE(ratio_0 == ComplexApprox(0.9522052017).compare_real_only());
-  REQUIRE(ratio_1 == ComplexApprox(0.9871985577).compare_real_only());
 
   VirtualParticleSet VP(elec_,2);
   ParticleSet::ParticlePos_t newpos2(2);
@@ -252,6 +247,16 @@ const char *particles = \
 
   REQUIRE(ratios[0] == ComplexApprox(0.9871985577).compare_real_only());
   REQUIRE(ratios[1] == ComplexApprox(0.9989268241).compare_real_only());
+
+  //test acceptMove
+  elec_.makeMove(1, newpos-elec_.R[1]);
+  ValueType ratio_1 = j2->ratio(elec_,1);
+  j2->acceptMove(elec_,1);
+  elec_.acceptMove(1);
+
+  REQUIRE(ratio_1 == ComplexApprox(0.9871985577).compare_real_only());
+  REQUIRE(j2->LogValue == Approx(0.0883791773));
+
 }
 
 TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
@@ -325,16 +330,16 @@ const char *particles = \
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  BsplineJastrowBuilder jastrow(elec_, psi, ions_);
+  RadialJastrowBuilder jastrow(elec_, psi, ions_);
   bool build_okay = jastrow.put(jas1);
   REQUIRE(build_okay);
 
-  OrbitalBase *orb = psi.getOrbitals()[0];
+  WaveFunctionComponent *orb = psi.getOrbitals()[0];
 
 #ifdef ENABLE_SOA
-  typedef J1OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> > J1Type;
+  typedef J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType> > J1Type;
 #else
-  typedef OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > J1Type;
+  typedef OneBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > J1Type;
 #endif
   J1Type *j1 = dynamic_cast<J1Type *>(orb);
   REQUIRE(j1 != NULL);
@@ -377,15 +382,15 @@ const char *particles = \
 
 
 #ifdef ENABLE_SOA
-  BsplineFunctor<OrbitalBase::RealType> *bf = j1->F[0];
+  BsplineFunctor<WaveFunctionComponent::RealType> *bf = j1->F[0];
 #else
-  BsplineFunctor<OrbitalBase::RealType> *bf = j1->Fs[0];
+  BsplineFunctor<WaveFunctionComponent::RealType> *bf = j1->Fs[0];
 #endif
 
   for (int i = 0; i < N; i++) {
-    OrbitalBase::RealType dv = 0.0;
-    OrbitalBase::RealType ddv = 0.0;
-    OrbitalBase::RealType val = bf->evaluate(Vals[i].r,dv,ddv);
+    WaveFunctionComponent::RealType dv = 0.0;
+    WaveFunctionComponent::RealType ddv = 0.0;
+    WaveFunctionComponent::RealType val = bf->evaluate(Vals[i].r,dv,ddv);
     REQUIRE(Vals[i].u == Approx(val));
     REQUIRE(Vals[i].du == Approx(dv));
     REQUIRE(Vals[i].ddu == Approx(ddv));
@@ -434,12 +439,16 @@ const char *particles = \
   ValueType ratio_0 = j1->ratio(elec_,0);
   elec_.rejectMove(0);
 
+  REQUIRE(ratio_0 == ComplexApprox(0.9819208747).compare_real_only());
+
+  // test acceptMove results
   elec_.makeMove(1, newpos-elec_.R[1]);
   ValueType ratio_1 = j1->ratio(elec_,1);
-  elec_.rejectMove(1);
+  j1->acceptMove(elec_,1);
+  elec_.acceptMove(1);
 
-  REQUIRE(ratio_0 == ComplexApprox(0.9819208747).compare_real_only());
   REQUIRE(ratio_1 == ComplexApprox(1.0040884258).compare_real_only());
+  REQUIRE(j1->LogValue == Approx(0.32013531536));
 
 }
 }

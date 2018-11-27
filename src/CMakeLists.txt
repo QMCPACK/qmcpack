@@ -32,7 +32,7 @@ EXECUTE_PROCESS(
 
 IF (IS_GIT_PROJECT)
   # The following custom command picks up changes to the git revision information
-  # every time the project is rebuilt. Even if the repositiory is updated (git pull)
+  # every time the project is rebuilt. Even if the repository is updated (git pull)
   # without re-running cmake. It also appends '-dirty' to the commit hash if there are
   # unsaved changes to the repository.
   #
@@ -97,7 +97,7 @@ IF (IS_GIT_PROJECT)
 
   # Breaking down the arguments to 'git describe'
   #  --abbrev=40     Size of hash to print.  This should print the entire hash.
-  #  --dirty         Append hash with '-dirty' if there are uncommited changes.
+  #  --dirty         Append hash with '-dirty' if there are uncommitted changes.
   # The behavior of describe looks for a tag in the parents first, and then falls
   # back to the commit hash (if --always is specified)
   #  --always        Show the commit hash as fallback
@@ -137,7 +137,6 @@ ENDIF(HAVE_OOMPI)
   ####################################
   SET(UTILITIES
     qmc_common.cpp
-    Utilities/RandRandom.cpp 
     Utilities/RandomGenerator.cpp 
     Utilities/OhmmsObject.cpp 
     Utilities/SpeciesSet.cpp 
@@ -152,6 +151,7 @@ ENDIF(HAVE_OOMPI)
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
     Numerics/OhmmsBlas.cpp
+    Numerics/OptimizableFunctorBase.cpp
     Platforms/sysutil.cpp
     QMCFactory/OneDimGridFactory.cpp
     Message/Communicate.cpp 
@@ -160,7 +160,7 @@ ENDIF(HAVE_OOMPI)
     io/hdf_archive.cpp
     spline2/einspline_allocator.c
     spline2/bspline_allocator.cpp
-    spline2/MultiBspline.cpp
+    spline2/MultiBsplineData.cpp
     )
 IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")
@@ -228,12 +228,12 @@ ENDIF()
     Particle/DistanceTableAB.cpp
     Particle/DistanceTable.cpp
     Particle/HDFWalkerInputManager.cpp
-    Particle/make_clones.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
     LongRange/LPQHIBasis.cpp
     LongRange/LPQHISRCoulombBasis.cpp
     LongRange/EwaldHandler.cpp
+    LongRange/EwaldHandler3D.cpp
     LongRange/LRCoulombSingleton.cpp
     )
 
@@ -256,7 +256,6 @@ ENDIF()
 
   IF(HAVE_LIBHDF5 OR HAVE_ADIOS)
     SET(PARTICLEIO ${PARTICLEIO}
-      Particle/HDFWalkerIOEngine.cpp 
       Particle/HDFWalkerOutput.cpp
       Particle/HDFWalkerInput_0_0.cpp
       Particle/HDFWalkerInput_0_4.cpp
@@ -275,7 +274,7 @@ ENDIF()
 
   #Need to add this if nothing else but miniapps is compiled
   if(QMC_BUILD_LEVEL GREATER 4)
-    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/OrbitalBase.cpp)
+    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
   endif()
 
   ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO}) 
@@ -310,7 +309,6 @@ ENDIF()
 
   ADD_LIBRARY(adios_config ${ADIOS})
 
-
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
   SUBDIRS(QMCDrivers)
@@ -329,16 +327,7 @@ ENDIF()
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
 
-  IF(BUILD_SQD)
-    SUBDIRS(SQD)
-  ENDIF(BUILD_SQD)
-
   if (BUILD_UNIT_TESTS) #{
-    SET(HAS_TARGET_COMPILE_DEFINITIONS 1)
-    IF (CMAKE_VERSION VERSION_LESS "2.8.11")
-      MESSAGE("CMake version 2.8.10 - some unit tests will not be built")
-      SET(HAS_TARGET_COMPILE_DEFINITIONS 0)
-    ENDIF()
     #Unit test directories
     INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
     INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
@@ -354,12 +343,12 @@ ENDIF()
     SUBDIRS(ParticleIO/tests)
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
-    IF (HAS_TARGET_COMPILE_DEFINITIONS)
-      SUBDIRS(ParticleBase/tests)
-      SUBDIRS(Estimators/tests)
-      SUBDIRS(QMCDrivers/tests)
-      SUBDIRS(QMCApp/tests)
-    ENDIF()
+    SUBDIRS(type_traits/tests)
+  
+    SUBDIRS(ParticleBase/tests)
+    SUBDIRS(Estimators/tests)
+    SUBDIRS(QMCDrivers/tests)
+    SUBDIRS(QMCApp/tests)
   endif() #}
 
 endif() #}}}

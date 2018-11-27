@@ -35,8 +35,8 @@ namespace qmcplusplus
 
 /// Constructor.
 VMCLinearOptOMP::VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                                 HamiltonianPool& hpool, WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool), UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"),
+                                 HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm), UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"),
   w_alpha(0.0),printderivs("no")
 //     myRNWarmupSteps(0), logoffset(2.0), logepsilon(0), beta_errorbars(0), alpha_errorbars(0),
 {
@@ -481,7 +481,6 @@ void VMCLinearOptOMP::resetRun()
   {
     Movers.resize(NumThreads,0);
 //       CSMovers.resize(NumThreads,0);
-    branchClones.resize(NumThreads,0);
     estimatorClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
@@ -502,14 +501,12 @@ void VMCLinearOptOMP::resetRun()
 #endif
       Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
-      branchClones[ip] = new BranchEngineType(*branchEngine);
       if (QMCDriverMode[QMC_UPDATE_MODE])
       {
 //           if (UseDrift == "rn")
 //           {
 //             os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<< std::endl;
 //             Movers[ip]=new VMCUpdatePbyPSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
-//             Movers[ip]->setLogEpsilon(logepsilon);
 //
 //             CSMovers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //             //               Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
@@ -526,7 +523,7 @@ void VMCLinearOptOMP::resetRun()
 //             CSMovers[ip]=
         Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
-        //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+        //Movers[ip]->resetRun(branchEngine,estimatorClones[ip]);
       }
       else
       {
@@ -534,7 +531,6 @@ void VMCLinearOptOMP::resetRun()
 //           {
 //             os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<< std::endl;
 //             Movers[ip] =new VMCUpdateAllSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
-//             Movers[ip]->setLogEpsilon(logepsilon);
 //
 //             CSMovers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
@@ -549,7 +545,7 @@ void VMCLinearOptOMP::resetRun()
 //             CSMovers[ip]=
         Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
-        //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+        //Movers[ip]->resetRun(branchEngine,estimatorClones[ip]);
       }
       if (ip==0)
         app_log() << os.str() << std::endl;
@@ -570,8 +566,8 @@ void VMCLinearOptOMP::resetRun()
     int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
 //       CSMovers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
-//       CSMovers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+    Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
+//       CSMovers[ip]->resetRun(branchEngine,estimatorClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     else
@@ -579,9 +575,7 @@ void VMCLinearOptOMP::resetRun()
 //       if (UseDrift != "rn")
 //       {
     for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-      Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-    if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-      Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
     #pragma omp critical
     {
       wClones[ip]->clearEnsemble();
@@ -624,15 +618,10 @@ void VMCLinearOptOMP::resetRun()
 //             if (std::abs(w_m)>0.01)
 //               logepsilon += w_m;
 //           }
-// #pragma omp barrier
-//           Movers[ip]->setLogEpsilon(logepsilon);
 //         }
 //
 //         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-//
-//         if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-//           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
 //
 // #pragma omp critical
 //         {

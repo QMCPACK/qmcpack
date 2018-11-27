@@ -40,8 +40,8 @@ namespace qmcplusplus
 /// Constructor.
   RMCSingleOMP::RMCSingleOMP (MCWalkerConfiguration & w,
 			      TrialWaveFunction & psi, QMCHamiltonian & h,
-			      WaveFunctionPool & ppool)
-  :QMCDriver (w, psi, h, ppool), prestepsVMC (-1), rescaleDrift ("no"), beta (-1),
+			      WaveFunctionPool & ppool, Communicate* comm)
+  :QMCDriver (w, psi, h, ppool, comm), prestepsVMC (-1), rescaleDrift ("no"), beta (-1),
     beads (-1), fromScratch (true)
   {
     RootName = "rmc";
@@ -106,7 +106,7 @@ namespace qmcplusplus
 	      if (Period4WalkerDump && now_loc % myPeriod4WalkerDump == 0)
 		wClones[ip]->saveEnsemble (wit, wit_end);
 
-	      branchEngine->collect (CurrentStep, W, branchClones);	//Ray Clay:  For now, collects and syncs based on first reptile.  Need a better way to do this.
+	      branchEngine->collect (CurrentStep, W);	//Ray Clay:  For now, collects and syncs based on first reptile.  Need a better way to do this.
 	    }
 	  Movers[ip]->stopBlock (false);
 	}			//end-of-parallel for
@@ -131,7 +131,7 @@ namespace qmcplusplus
     //copy back the random states
     for (int ip = 0; ip < NumThreads; ++ip)
       *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
-    //return nbeads and stuff to its orginal unset state;
+    //return nbeads and stuff to its original unset state;
     resetVars ();
     return finalize (nBlocks);
   }
@@ -211,7 +211,6 @@ namespace qmcplusplus
     if (Movers.empty ())
       {
 	Movers.resize (NumThreads, 0);
-	branchClones.resize (NumThreads, 0);
 	estimatorClones.resize (NumThreads, 0);
 	traceClones.resize (NumThreads, 0);
 	Rng.resize (NumThreads, 0);
@@ -229,7 +228,6 @@ namespace qmcplusplus
 	    traceClones[ip] = Traces->makeClone ();
 #endif
 	    hClones[ip]->setRandomGenerator (Rng[ip]);
-	    branchClones[ip] = new BranchEngineType (*branchEngine);
 	    if (QMCDriverMode[QMC_UPDATE_MODE])
 	      {
 		os <<
@@ -271,7 +269,7 @@ namespace qmcplusplus
     for (int ip = 0; ip < NumThreads; ++ip)
       {
 	Movers[ip]->put (qmcNode);
-	Movers[ip]->resetRun (branchClones[ip], estimatorClones[ip],
+	Movers[ip]->resetRun (branchEngine, estimatorClones[ip],
 			      traceClones[ip]);
 	// wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 	wClones[ip]->reptile = W.ReptileList[ip];
@@ -316,11 +314,8 @@ namespace qmcplusplus
 	  {
 	    Movers[ip]->advanceWalkers (W.begin () + wPerNode[ip],
 					W.begin () + wPerNode[ip + 1], false);
-	    branchEngine->collect (CurrentStep, W, branchClones);
+	    branchEngine->collect (CurrentStep, W);
 	  }
-	Movers[ip]->updateWalkers (W.begin () + wPerNode[ip],
-				   W.begin () + wPerNode[ip + 1]);
-
       }
 
     fromScratch = false;

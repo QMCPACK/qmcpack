@@ -17,6 +17,7 @@
 #include <Configuration.h>
 #include <Particle/ParticleSet.h>
 #include <spline2/MultiBspline.hpp>
+#include <spline2/MultiBsplineEval.hpp>
 #include <simd/allocator.hpp>
 #include <iostream>
 
@@ -169,7 +170,7 @@ namespace qmcplusplus
       {
         auto u=Lattice.toUnit(p);
         for(int i=0; i<nBlocks; ++i)
-          einsplines[i]->evaluate(u,*psi[i]);
+          spline2::evaluate3d(einsplines[i]->spline_m,u,*psi[i]);
       }
 
       /** evaluate psi */
@@ -178,7 +179,7 @@ namespace qmcplusplus
         auto u=Lattice.toUnit(p);
 #pragma omp for nowait
         for(int i=0; i<nBlocks; ++i)
-          einsplines[i]->evaluate(u,*psi[i]);
+          spline2::evaluate3d(einsplines[i]->spline_m,u,*psi[i]);
       }
 
 
@@ -187,7 +188,7 @@ namespace qmcplusplus
       {
         auto u=Lattice.toUnit(p);
         for(int i=0; i<nBlocks; ++i)
-          einsplines[i]->evaluate_vgl(u,*psi[i],*grad[i],*hess[i]);
+          spline2::evaluate3d_vgl(einsplines[i]->spline_m,u,*psi[i],*grad[i],*hess[i]);
       }
 
       /** evaluate psi, grad and lap */
@@ -196,7 +197,7 @@ namespace qmcplusplus
         auto u=Lattice.toUnit(p);
 #pragma omp for nowait
         for(int i=0; i<nBlocks; ++i)
-          einsplines[i]->evaluate_vgl(u,*psi[i],*grad[i],*hess[i]);
+          spline2::evaluate3d_vgl(einsplines[i]->spline_m,u,*psi[i],*grad[i],*hess[i]);
       }
 
       /** evaluate psi, grad and hess */
@@ -204,17 +205,16 @@ namespace qmcplusplus
       {
         auto u=Lattice.toUnit(p);
         for(int i=0; i<nBlocks; ++i)
-          einsplines[i]->evaluate_vgh(u,*psi[i],*grad[i],*hess[i]);
+          spline2::evaluate3d_vgh(einsplines[i]->spline_m,u,*psi[i],*grad[i],*hess[i]);
       }
-
 
       /** evaluate psi, grad and hess */
       inline void evaluate_vgh_pfor(const pos_type& p)
       {
-          auto u=Lattice.toUnit(p);
+        auto u=Lattice.toUnit(p);
 #pragma omp for nowait
-          for(int i=0; i<nBlocks; ++i)
-            einsplines[i]->evaluate_vgh(u,*psi[i],*grad[i],*hess[i]);
+        for(int i=0; i<nBlocks; ++i)
+          spline2::evaluate3d_vgh(einsplines[i]->spline_m,u,*psi[i],*grad[i],*hess[i]);
       }
 
       void print(std::ostream& os)

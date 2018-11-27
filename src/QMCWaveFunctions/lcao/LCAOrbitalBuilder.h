@@ -19,16 +19,18 @@
 #define QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDER_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 
 namespace qmcplusplus
 {
 
-  /** BasisSetBuilder using new LCAOrbitalSet and Soa versions
+  /** SPOSetBuilder using new LCAOrbitalSet and Soa versions
    *
-   * Reimplement MolecularBasisSetBuilder
+   * Reimplement MolecularSPOSetBuilder
    * - support both CartesianTensor and SphericalTensor
    */
-  class LCAOrbitalBuilder: public BasisSetBuilder
+  class LCAOrbitalBuilder: public SPOSetBuilder
   {
     public:
     typedef RealBasisSetBase<RealType> BasisSet_t;
@@ -36,12 +38,10 @@ namespace qmcplusplus
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-    LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur);
+    LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate *comm, xmlNodePtr cur);
     ~LCAOrbitalBuilder();
-    bool put(xmlNodePtr cur);
-    bool putXML(xmlNodePtr cur);
-    bool putH5();
-    SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
+    void loadBasisSetFromXML(xmlNodePtr cur);
+    SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 
     private:
 
@@ -60,6 +60,11 @@ namespace qmcplusplus
     ///Number of periodic Images for Orbital evaluation
     TinyVector<int,3> PBCImages;
 
+    /// Enable cusp correction
+    bool doCuspCorrection;
+
+    ///load basis set from hdf5 file
+    void loadBasisSetFromH5();
     /** create basis set
      *
      * Use ao_traits<T,I,J> to match (ROT)x(SH) combo
@@ -67,6 +72,14 @@ namespace qmcplusplus
     template<int I, int J> BasisSet_t* createBasisSet(xmlNodePtr cur);
     template<int I, int J> BasisSet_t* createBasisSetH5();
 
+    // The following items were previously in SPOSet
+    ///occupation number
+    Vector<RealType> Occ;
+    bool loadMO(LCAOrbitalSet &spo, xmlNodePtr cur);
+    bool putOccupation(LCAOrbitalSet &spo, xmlNodePtr occ_ptr);
+    bool putFromXML(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr);
+    bool putFromH5(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr);
+    bool putPBCFromH5(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr);
   };
 }
 #endif

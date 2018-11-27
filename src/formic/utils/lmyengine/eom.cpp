@@ -441,32 +441,32 @@ void cqmc::engine::EOM::eom_print(std::ostream & fout)
       return;
 
       // print the eigenvectors of the first 10 singlet states 
-      int count = 0;
-      for (int i = 0; i < 11 && count < _energy_index.size(); ) {
-        
-        // check to see if it's a singlet state
-        if ( _ss_vals.at(count).real() < 2.5 ) {
-          
-          // print out eigenvectors 
-          fout << boost::format("eigenvector of the %d th state(energy = %20.12f   + %20.12f i) is") % i % (_energy_index.at(count).first).real() % (_energy_index.at(count).first).imag() << std::endl;
-          for (int j = 0; j < _evecs.rows(); j++) {
-            fout << boost::format("%20.12f   + %20.12f i") % _evecs(j, _energy_index.at(count).second).real() % _evecs(j, _energy_index.at(count).second).imag();
-            
-            // print the corresponding wavefunction variable name 
-            if ( j == 0 ) 
-              fout << boost::format("  undifferentiated wavefunction") << std::endl;
-
-            else if ( j > 0 && j <= _n_sites * _n_sites ) {
-              int row = (j - 1) / _n_sites + 1;
-              int col = j - (row - 1) * _n_sites ;
-              fout << boost::format("  F %d %d") % row % col << std::endl;
-            }
-          }
-          i++;
-          fout << std::endl;
-        }
-        count++;
-      }
+//      int count = 0;
+//      for (int i = 0; i < 11 && count < _energy_index.size(); ) {
+//        
+//        // check to see if it's a singlet state
+//        if ( _ss_vals.at(count).real() < 2.5 ) {
+//          
+//          // print out eigenvectors 
+//          fout << boost::format("eigenvector of the %d th state(energy = %20.12f   + %20.12f i) is") % i % (_energy_index.at(count).first).real() % (_energy_index.at(count).first).imag() << std::endl;
+//          for (int j = 0; j < _evecs.rows(); j++) {
+//            fout << boost::format("%20.12f   + %20.12f i") % _evecs(j, _energy_index.at(count).second).real() % _evecs(j, _energy_index.at(count).second).imag();
+//            
+//            // print the corresponding wavefunction variable name 
+//            if ( j == 0 ) 
+//              fout << boost::format("  undifferentiated wavefunction") << std::endl;
+//
+//            else if ( j > 0 && j <= _n_sites * _n_sites ) {
+//              int row = (j - 1) / _n_sites + 1;
+//              int col = j - (row - 1) * _n_sites ;
+//              fout << boost::format("  F %d %d") % row % col << std::endl;
+//            }
+//          }
+//          i++;
+//          fout << std::endl;
+//        }
+//        count++;
+//      }
     }
 
   } 
@@ -604,7 +604,7 @@ void cqmc::engine::EOM::eom_print(std::ostream & fout)
 //    V.conservativeResize(_n_pm, _n_pm_nonzero);
 //    sin_vals.conservativeResize(_n_pm_nonzero);
 //
-//    // transfrom singular value vector to diagonal matrix 
+//    // transform singular value vector to diagonal matrix 
 //    Eigen::MatrixXd sin_val_matrix = sin_vals.asDiagonal();
 //
 //    // compute S^(-1/2)

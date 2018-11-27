@@ -96,7 +96,7 @@ try:
     from scipy.optimize import fmin
     from scipy.spatial import KDTree,Delaunay,Voronoi
     scipy_unavailable = False
-except ImportError:
+except:
     betainc = unavailable('scipy.special' ,'betainc')
     fmin    = unavailable('scipy.optimize','fmin')
     KDTree,Delaunay,Voronoi  = unavailable('scipy.spatial' ,'KDTree','Delaunay','Voronoi')
@@ -314,7 +314,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
                                           args     = [r,None,morse,pf,cost],
                                           position = 1,
                                           capture  = jcapture)
-        # compute auxilliary jackknife quantities, if desired (e.g. morse_freq, etc)
+        # compute auxiliary jackknife quantities, if desired (e.g. morse_freq, etc)
         if calc_aux:
             psamples = jcapture.jsamples
             for auxname,auxfunc in auxfuncs.iteritems():
@@ -346,7 +346,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
 
 # morse_fit_fine: fit data to a morse potential and interpolate on a fine grid
 #   compute direct jackknife variations in the fitted curves 
-#   by using morse as an auxilliary jackknife function
+#   by using morse as an auxiliary jackknife function
 def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_squares,capture=None):  
     if rfine is None:
         rfine = linspace(r.min(),r.max(),400)
@@ -848,8 +848,8 @@ def simstats(x,dim=None):
         #end if
         error=sqrt(var/Neff)
     else:
-        error = zeros(mean.shape)
-        kappa = zeros(mean.shape)
+        error = zeros(mean.shape,dtype=mean.dtype)
+        kappa = zeros(mean.shape,dtype=mean.dtype)
         for v in xrange(nvars):
             i=0          
             tempC=0.5

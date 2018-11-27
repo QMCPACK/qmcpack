@@ -21,18 +21,9 @@
 
 PROJECT(qmctools)
 
-SET(QMCTOOLS
-  ../QMCWaveFunctions/OrbitalBuilderBase.cpp
-  RGFBuilderBase.cpp
-  GTO2GridBuilder.cpp
-)
-
 SET(MOSRCS
-  ../QMCWaveFunctions/OrbitalBuilderBase.cpp
   ../QMCApp/InitMolecularSystem.cpp
   ../QMCApp/ParticleSetPool.cpp
-  RGFBuilderBase.cpp
-  GTO2GridBuilder.cpp
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
   GamesXmlParser.cpp
@@ -43,14 +34,15 @@ SET(MOSRCS
   GamesFMOParser.cpp
   VSVBParser.cpp
   QPParser.cpp
-  PyscfParser.cpp
+  LCAOH5Parser.cpp
 )
 
 # create libmocommon 
 ADD_LIBRARY(mocommon ${MOSRCS})
 
-set(QTOOLS convert4qmc MSDgenerator extract-eshdf-kvectors trace_density)
+set(QTOOLS convert4qmc extract-eshdf-kvectors)
 ADD_EXECUTABLE(getSupercell getSupercell.cpp)
+ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
 
 FOREACH(p ${QTOOLS})
 

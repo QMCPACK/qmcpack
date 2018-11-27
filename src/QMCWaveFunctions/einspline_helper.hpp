@@ -240,10 +240,25 @@ namespace qmcplusplus
       }
   }
 
-  /** rotate the state after 3dfft
-   *
-   * Compute the phase factor for rotation. The algorithm aims at balacned real and imaginary parts.
-   *
+  /** Compute the norm of an orbital.
+   * @param cG the plane wave coefficients
+   * @return norm of the orbital
+   */
+  template<typename T>
+    inline T compute_norm(const Vector<std::complex<T> >& cG)
+  {
+    T total_norm2(0);
+    #pragma omp parallel for reduction(+:total_norm2)
+    for (size_t ig=0; ig<cG.size(); ++ig)
+      total_norm2 += cG[ig].real()*cG[ig].real()+cG[ig].imag()*cG[ig].imag();
+    return std::sqrt(total_norm2);
+  }
+
+  /** Compute the phase factor for rotation. The algorithm aims at balanced real and imaginary parts.
+   * @param in the real space orbital value on a 3D grid
+   * @param twist k-point in reduced coordinates
+   * @param phase_r output real part of the phase
+   * @param phase_i output imaginary part of the phase
    */
   template<typename T, typename T2>
     inline void compute_phase(const Array<std::complex<T>,3>& in, const TinyVector<T2,3>& twist, T& phase_r, T& phase_i)

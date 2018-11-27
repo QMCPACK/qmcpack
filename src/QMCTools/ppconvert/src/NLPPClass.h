@@ -99,6 +99,7 @@ private:
   double PseudoCharge, TotalEnergy;
   std::string EnergyUnit, LengthUnit;
   int LocalChannel;
+  double DensityMix;
   // The grid is stored in bohr
   SimpleGrid PotentialGrid;
   bool Relativistic;
@@ -133,13 +134,18 @@ public:
   void Write(IOSectionClass &out);
   void Read (IOSectionClass &in);
 
+  void SetDensityMix (double mix)
+  {
+    DensityMix = mix;
+  }
+
   void SetLocalChannel (int local)
   {
     LocalChannel = local;
   }
 
   PseudoClass() : XC(XC_NONE), Relativistic(false), LocalChannel(-1),
-		  grid_delta(0.001), WriteLogGrid(false)
+		  grid_delta(0.001), WriteLogGrid(false), DensityMix(0.75)
   {
     SetupMaps();
   }

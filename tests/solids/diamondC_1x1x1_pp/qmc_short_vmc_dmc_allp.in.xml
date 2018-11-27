@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="qmc_short_vmc_dmc_allp" series="0">
+   <project id="qmc_vmc_dmc_allp" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <qmcsystem>
@@ -87,19 +87,19 @@
      <parameter name="blocks"      > 125 </parameter>
      <parameter name="steps"       > 4   </parameter>
      <parameter name="subSteps"    > 4   </parameter>
-     <parameter name="timestep"    > 1.0 </parameter>
+     <parameter name="timestep"    > 0.2 </parameter>
      <parameter name="warmupSteps" > 10  </parameter>
-     <parameter name="usedrift"    > no  </parameter>
+     <parameter name="usedrift"    > yes </parameter>
    </qmc>
    <qmc method="vmc" move="allp">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="walkers"     > 256 </parameter>
      <parameter name="blocks"      > 125 </parameter>
      <parameter name="steps"       > 4   </parameter>
-     <parameter name="subSteps"    > 4   </parameter>
-     <parameter name="timestep"    > 1.0 </parameter>
+     <parameter name="subSteps"    > 8   </parameter>
+     <parameter name="timestep"    > 0.1 </parameter>
      <parameter name="warmupSteps" > 10  </parameter>
-     <parameter name="usedrift"    > yes </parameter>
+     <parameter name="usedrift"    > no  </parameter>
    </qmc>
    <qmc method="dmc" move="allp" checkpoint="-1">
      <estimator name="LocalEnergy" hdf5="no"/>

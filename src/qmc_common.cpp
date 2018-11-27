@@ -39,7 +39,6 @@ QMCState::QMCState()
 #else
   compute_device=0;
 #endif
-  master_eshd_name="none";
 }
 
 void QMCState::initialize(int argc, char **argv)
@@ -116,6 +115,7 @@ void QMCState::print_memory_change(const std::string& who, size_t before)
 void QMCState::print_git_info_if_present(std::ostream& os)
 {
 #ifdef QMCPACK_GIT_BRANCH
+    os << std::endl;
     os << "  Git branch: " << QMCPACK_GIT_BRANCH << std::endl;
     os << "  Last git commit: " << QMCPACK_GIT_HASH << std::endl;
     os << "  Last git commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED << std::endl;

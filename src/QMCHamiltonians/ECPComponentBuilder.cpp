@@ -17,7 +17,6 @@
 #include "Numerics/GaussianTimesRN.h"
 #include "Numerics/Quadrature.h"
 #include "Numerics/Transform2GridFunctor.h"
-#include "QMCHamiltonians/FSAtomPseudoPot.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/SimpleParser.h"
 #include "Message/CommOperators.h"
@@ -153,7 +152,7 @@ bool ECPComponentBuilder::read_pp_file(const std::string &fname)
 
 bool ECPComponentBuilder::put(xmlNodePtr cur)
 {
-  int nk=0;
+  //  int nk=0;
   //vector<RealType> kpts;
   std::vector<xmlNodePtr> semiPtr;
   cur=cur->children;

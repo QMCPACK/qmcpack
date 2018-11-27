@@ -81,7 +81,6 @@ CloneManager::~CloneManager()
 {
   // delete_iter(CSMovers.begin(),CSMovers.end());
   delete_iter(Movers.begin(),Movers.end());
-  delete_iter(branchClones.begin(),branchClones.end());
   delete_iter(estimatorClones.begin(),estimatorClones.end());
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -154,8 +153,6 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   bool io_node=qmc_common.io_node;
   qmc_common.io_node=false;
 
-  char pname[16];
- 
   for(int ip=1; ip<NumThreads; ++ip)
   {
 	
@@ -197,7 +194,6 @@ void CloneManager::makeClones(TrialWaveFunction& guide)
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
   outputManager.pause();
-  char pname[16];
   for(int ip=1; ip<NumThreads; ++ip)
   {
     guideClones[ip]=guide.makeClone(*wClones[ip]);
@@ -225,7 +221,6 @@ void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guid
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
   outputManager.pause();
-  char pname[16];
   for(int ip=1; ip<NumThreads; ++ip)
   {
     wgClones[ip]=new MCWalkerConfiguration(wg);

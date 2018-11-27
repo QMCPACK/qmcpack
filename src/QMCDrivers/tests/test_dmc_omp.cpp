@@ -25,7 +25,7 @@
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCApp/WaveFunctionPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
@@ -112,7 +112,7 @@ TEST_CASE("DMCOMP", "[drivers][dmc]")
   //EstimatorManagerBase emb(c);
 
 
-  DMCOMP dmc_omp(elec, psi, h, wpool);
+  DMCOMP dmc_omp(elec, psi, h, wpool, c);
 
   const char *dmc_input= \
   "<qmc method=\"dmc\"> \
@@ -136,15 +136,16 @@ TEST_CASE("DMCOMP", "[drivers][dmc]")
 
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See Particle>Base/tests/test_random_seq.cpp for the gaussian random numbers
-  //  Values from diffuse.py for moving two steps
+  //  Values from diffuse.py for moving one step
 
-  REQUIRE(elec[0]->R[0][0] == Approx(0.255340517788193));
+  REQUIRE(elec[0]->R[0][0] == Approx(0.627670258894097));
   REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.744659482211807));
+  REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
 
   REQUIRE(elec.R[1][0] == Approx(0.0));
-  REQUIRE(elec.R[1][1] == Approx(-0.744659482211807));
+  REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
   REQUIRE(elec.R[1][2] == Approx(1.0));
+
 }
 }
 

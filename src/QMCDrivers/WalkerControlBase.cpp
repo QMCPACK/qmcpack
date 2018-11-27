@@ -27,8 +27,7 @@ namespace qmcplusplus
 WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
   : MPIObjectBase(c), SwapMode(0), Nmin(1), Nmax(10)
   , MaxCopy(2), NumWalkersCreated(0), NumWalkersSent(0)
-  , targetEnergyBound(10), targetVar(2), targetSigma(10)
-  , dmcStream(0), WriteRN(rn)
+  , targetSigma(10), dmcStream(0), WriteRN(rn)
 {
   MyMethod=-1; //assign invalid method
   NumContexts=myComm->size();
@@ -50,7 +49,6 @@ WalkerControlBase::~WalkerControlBase()
 //disable it: everything is done by a constructor
 //void WalkerControlBase::setCommunicator(Communicate* c)
 //{
-//  initCommunicator(c);
 //  NumContexts=myComm->size();
 //  MyContext=myComm->rank();
 //  curData.resize(LE_MAX+NumContexts);
@@ -442,34 +440,25 @@ int WalkerControlBase::applyNmaxNmin()
           }
 
           if(n_remove)
-            APP_ABORT("WalkerControlBase::applyNmax not able to remove sufficient walkers on a node!");
+            APP_ABORT("WalkerControlBase::applyNmaxNmin not able to remove sufficient walkers on a node!");
           if(std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size())!=NumPerNode[inode])
-            APP_ABORT("WalkerControlBase::applyNmax walker removal mismatch!");
+            APP_ABORT("WalkerControlBase::applyNmaxNmin walker removal mismatch!");
         }
 
         if(nsub==0) break;
       }
 
-    if(nsub) APP_ABORT("WalkerControlBase::applyNmax not able to remove sufficient walkers overall!");
-  }
-
-  // at least one walker after load-balancing
-  int current_min = current_population / NumContexts;
-  if(current_min==0)
-  {
-    app_error() << "Some MPI ranks have no walkers after load balancing. This should not happen."
-                << "Improve the trial wavefunction or adjust the simulation parameters." << std::endl;
-    APP_ABORT("WalkerControlBase::sortWalkers");
+    if(nsub) APP_ABORT("WalkerControlBase::applyNmaxNmin not able to remove sufficient walkers overall!");
   }
 
   // limit Nmin
-  if(current_min<Nmin)
+  if(current_population/NumContexts<Nmin)
   {
     app_warning() << "The number of walkers is running lower than Min Walkers per MPI rank : "
                   << Nmin << ". Floor is applied" << std::endl;
     int nadd = Nmin * NumContexts - current_population;
     for(int inode=0; inode<NumContexts; inode++)
-      if(NumPerNode[inode]<Nmin)
+      if(NumPerNode[inode]>0 && NumPerNode[inode]<Nmin)
       {
         int n_insert = std::min(nadd, Nmin-NumPerNode[inode]);
         NumPerNode[inode] += n_insert;
@@ -487,16 +476,27 @@ int WalkerControlBase::applyNmaxNmin()
           }
 
           if(std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size())!=NumPerNode[inode])
-            APP_ABORT("WalkerControlBase::applyNmax walker insertion mismatch!");
+            APP_ABORT("WalkerControlBase::applyNmaxNmin walker insertion mismatch!");
         }
 
         if(nadd==0) break;
       }
 
-    if(nadd) APP_ABORT("WalkerControlBase::applyNmax not able to add sufficient walkers overall!");
+    if(nadd) app_warning() << "WalkerControlBase::applyNmaxNmin not able to add sufficient walkers overall!"
+                           << std::endl;
   }
 
-  return std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+  // check current population
+  current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+  // at least one walker after load-balancing
+  if(current_population/NumContexts==0)
+  {
+    app_error() << "Some MPI ranks have no walkers after load balancing. This should not happen."
+                << "Improve the trial wavefunction or adjust the simulation parameters." << std::endl;
+    APP_ABORT("WalkerControlBase::sortWalkers");
+  }
+
+  return current_population;
 }
 
 /** copy good walkers to W
@@ -560,7 +560,6 @@ bool WalkerControlBase::put(xmlNodePtr cur)
   int nw_target=0, nw_max=0;
   std::string nonblocking="yes";
   ParameterSet params;
-  params.add(targetEnergyBound,"energyBound","double");
   params.add(targetSigma,"sigmaBound","double");
   params.add(MaxCopy,"maxCopy","int");
   params.add(nw_target,"targetwalkers","int");

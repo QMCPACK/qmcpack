@@ -19,6 +19,7 @@
 #define QMCPLUSPLUS_MULTI_FUNCTOR_QUINTIC_SPLINE_SET_H
 
 #include "Numerics/OneDimGridBase.h"
+#include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/NRSplineFunctions.h"
 #include <simd/allocator.hpp>
 
@@ -120,7 +121,7 @@ struct MultiQuinticSpline1D
 #if 0
     else if(r>=r_max)
     {
-      CONSTEXPR T czero(0);
+      constexpr T czero(0);
       for(size_t i=0; i<num_splines; ++i)
         u[i]=czero;
     }
@@ -243,7 +244,7 @@ struct MultiQuinticSpline1D
         u[i]  = a[i]+cL*(b[i]+cL*(c[i]+cL*(d[i]+cL*(e[i]+cL*f[i]))));
         du[i] = b[i]+cL*(ctwo*c[i]+cL*(cthree*d[i]+cL*(cfour*e[i]+cL*f[i]*cfive)));
         d2u[i]= ctwo*c[i]+cL*(csix*d[i]+cL*(c12*e[i]+cL*f[i]*c20));
-        d3u[i] = csix*d+cL*(c24*e+cL*f*c60);
+        d3u[i] = csix*d[i]+cL*(c24*e[i]+cL*f[i]*c60);
       }
     }
   }

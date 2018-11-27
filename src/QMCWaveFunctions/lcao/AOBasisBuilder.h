@@ -17,6 +17,8 @@
 #ifndef QMCPLUSPLUS_ATOMICORBITALBUILDER_H
 #define QMCPLUSPLUS_ATOMICORBITALBUILDER_H
 
+
+#include "Message/MPIObjectBase.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
@@ -27,10 +29,10 @@ namespace qmcplusplus
   /** atomic basisset builder
    * @tparam COT, CenteredOrbitalType = SoaAtomicBasisSet<RF,SH>
    *
-   * Reimplement AtomiBasisSetBuilder.h
+   * Reimplement AtomiSPOSetBuilder.h
    */
 template<typename COT>
-struct AOBasisBuilder: public BasisSetBuilder
+struct AOBasisBuilder: public MPIObjectBase
 {
   enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND, CARTESIAN_EXPAND, MOD_NATURAL_EXPAND};
 
@@ -50,12 +52,12 @@ struct AOBasisBuilder: public BasisSetBuilder
   ///map for (n,l,m,s) to its quantum number index
   std::map<std::string,int> nlms_id;
 
-  AOBasisBuilder(const std::string& eName);
+  AOBasisBuilder(const std::string& eName, Communicate* comm);
 
   bool put(xmlNodePtr cur);
   bool putH5(hdf_archive &hin);
 
-  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)
+  SPOSet* createSPOSetFromXML(xmlNodePtr cur)
   {
     return 0;
   }
@@ -67,9 +69,10 @@ struct AOBasisBuilder: public BasisSetBuilder
 };
 
 template<typename COT>
-AOBasisBuilder<COT>::AOBasisBuilder(const std::string& eName):
+AOBasisBuilder<COT>::AOBasisBuilder(const std::string& eName, Communicate* comm):
   addsignforM(false), expandlm(GAUSSIAN_EXPAND), Morder("gaussian"),
-  sph("default"), basisType("Numerical"), elementType(eName)
+  sph("default"), basisType("Numerical"), elementType(eName),
+  radFuncBuilder(comm), MPIObjectBase(comm)
 {
 // mmorales: for "Cartesian Gaussian", m is an integer that maps
 //           the component to Gamess notation, see Numerics/CartesianTensor.h
@@ -83,13 +86,14 @@ template<class COT>
 bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
 {
   ReportEngine PRE("AtomicBasisBuilder","put(xmlNodePtr)");
+  std::string Normalized("yes");
   //Register valid attributes attributes
   OhmmsAttributeSet aAttrib;
-  //aAttrib.add(elementType,"elementType"); aAttrib.add(elementType,"species");
   aAttrib.add(basisType,"type");
   aAttrib.add(sph,"angular");
   aAttrib.add(addsignforM,"expM");
   aAttrib.add(Morder,"expandYlm");
+  aAttrib.add(Normalized,"normalized");
   aAttrib.put(cur);
   PRE.echo(cur);
   bool tmp_addsignforM=addsignforM;
@@ -115,19 +119,25 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
       APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
+
   if(sph == "cartesian" || Morder == "Gamess")
   {
     expandlm = CARTESIAN_EXPAND;
     addsignforM=0;
   }
-  return radFuncBuilder.putCommon(cur);
+
+  radFuncBuilder.Normalized = (Normalized=="yes");
+
+  // Numerical basis is a special case
+  if(basisType == "Numerical") radFuncBuilder.openNumericalBasisH5(cur);
+  return true;
 }
 
 template<class COT>
 bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
 {
   ReportEngine PRE("AtomicBasisBuilder","putH5(hin)");
-  std::string CenterID, Normalized, basisName;
+  std::string CenterID, basisName, Normalized("yes");
 
   if(myComm->rank()==0)
   {
@@ -149,12 +159,12 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
   myComm->bcast(addsignforM);
 
   app_log() << "<input node=\"atomicBasisSet\" name=\"" << basisName
-            << "\" Morder=\"" << Morder
+            << "\" expandYlm=\"" << Morder
             << "\" angular=\"" << sph
-            << "\"  elementType=\"" << CenterID
-            << "\"  normalized=\"" << Normalized
-            << "  basisType=\"" << basisType
-            << "  addSign=\"" <<addsignforM 
+            << "\" elementType=\"" << CenterID
+            << "\" normalized=\"" << Normalized
+            << "\" type=\"" << basisType
+            << "\" expM=\"" << addsignforM
             << "\" />" << std::endl;
   bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
@@ -179,16 +189,14 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
       APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
+
   if(sph == "cartesian" || Morder == "Gamess")
   {
     expandlm = CARTESIAN_EXPAND;
     addsignforM=0;
   }
 
-  if(Normalized=="yes")
-     radFuncBuilder.Normalized=true;
-  else
-     radFuncBuilder.Normalized=false;
+  radFuncBuilder.Normalized = (Normalized=="yes");
 
   return true; 
 }
@@ -260,7 +268,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   aos->NL.resize(num);
   //Now, add distinct Radial Orbitals and (l,m) channels
   radFuncBuilder.setOrbitalSet(aos,elementType); //assign radial orbitals for the new center
-  radFuncBuilder.addGrid(gptr); //assign a radial grid for the new center
+  radFuncBuilder.addGrid(gptr,basisType); //assign a radial grid for the new center
   std::vector<xmlNodePtr>::iterator it(radGroup.begin());
   std::vector<xmlNodePtr>::iterator it_end(radGroup.end());
   std::vector<int> all_nl;
@@ -293,7 +301,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
     if(rnl_it == RnlID.end())
     {
       int nl = aos->RnlID.size();
-      if(radFuncBuilder.addRadialOrbital(cur1, nlms))
+      if(radFuncBuilder.addRadialOrbital(cur1, basisType, nlms))
         RnlID[rnl] = nl;
       all_nl.push_back(nl);
     }
@@ -411,7 +419,7 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive &hin)
     if(rnl_it == RnlID.end())
     {
       int nl = aos->RnlID.size();
-      if(radFuncBuilder.addRadialOrbitalH5(hin, nlms))
+      if(radFuncBuilder.addRadialOrbitalH5(hin, basisType, nlms))
         RnlID[rnl] = nl;
       all_nl.push_back(nl);
     }

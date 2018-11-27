@@ -21,7 +21,7 @@
 #include "Configuration.h"
 #include  <map>
 #include  <numeric>
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
@@ -34,13 +34,13 @@ namespace qmcplusplus
 struct IonData
 {
   typedef std::vector<int> eListType;
-  OrbitalBase::RealType cutoff_radius;
+  WaveFunctionComponent::RealType cutoff_radius;
   eListType elecs_inside;
   IonData() : cutoff_radius(0.0) { }
 };
 
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for three-body Jastrow function using multiple functors
  *
  *Each pair-type can have distinct function \f$u(r_{ij})\f$.
@@ -48,7 +48,7 @@ struct IonData
  *for spins up-up/down-down and up-down/down-up.
  */
 template<class FT>
-class eeI_JastrowOrbital: public OrbitalBase
+class eeI_JastrowOrbital: public WaveFunctionComponent
 {
 
   //flag to prevent parallel output
@@ -110,7 +110,7 @@ public:
   eeI_JastrowOrbital(ParticleSet& ions, ParticleSet& elecs, bool is_master)
     : Write_Chiesa_Correction(is_master), KEcorr(0.0)
   {
-    OrbitalName = "eeI_JastrowOrbital";
+    ClassName = "eeI_JastrowOrbital";
     eRef = &elecs;
     IRef = &ions;
     myTableIndex=elecs.addTable(ions,DT_AOS);
@@ -491,13 +491,6 @@ public:
     // 	  L[j] -= lap;
     // 	}
     // }
-  }
-
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
   }
 
   inline GradType evalGradSourceFD(ParticleSet& P,
@@ -1113,7 +1106,7 @@ public:
     DiffValSum=0.0;
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     eeI_JastrowOrbital<FT>* eeIcopy=
       new eeI_JastrowOrbital<FT>(*IRef, tqp, false);
@@ -1122,7 +1115,6 @@ public:
       for (int eG1=0; eG1<eGroups; eG1++)
         for (int eG2=0; eG2<eGroups; eG2++)
         {
-          int ijk = iG*eGroups*eGroups + eG1*eGroups + eG2;
           if(F(iG,eG1,eG2)==0)
             continue;
           typename std::map<const FT*,FT*>::iterator fit=fcmap.find(F(iG,eG1,eG2));
@@ -1144,12 +1136,6 @@ public:
     eeIcopy->Optimizable = Optimizable;
     return eeIcopy;
   }
-
-  void copyFrom(const OrbitalBase& old)
-  {
-    //nothing to do
-  }
-
 
   void
   finalizeOptimization()

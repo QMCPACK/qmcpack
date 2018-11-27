@@ -169,8 +169,6 @@ qmc1 = generate_qmcpack(
     pseudos      = qmc_pps,
     meshfactor   = xxx,
     precision    = '---',
-    truncate     = False,
-    buffer       = 0.0,
     jastrows     = [],            
     calculations = [
         vmc(
@@ -205,8 +203,6 @@ qmc2 = generate_qmcpack(
     pseudos      = qmc_pps,
     meshfactor   = 1.0,
     precision    = 'double',
-    truncate     = False,
-    buffer       = 1.0,
     jastrows     = [],            
     calculations = [
         vmc(

@@ -17,11 +17,11 @@
 #ifndef QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 #define QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 
-#include <QMCWaveFunctions/OrbitalBuilderBase.h>
-#include <QMCWaveFunctions/SPOSetBase.h>
+#include <QMCWaveFunctions/WaveFunctionComponentBuilder.h>
+#include <QMCWaveFunctions/SPOSet.h>
 #include <config/stdlib/math.h>
 
-#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 
 #if defined(QMC_COMPLEX)
@@ -33,7 +33,7 @@ namespace qmcplusplus
 //forward declaration
 class  BackflowTransformation;
 
-struct RealEGOSet: public SPOSetBase
+struct RealEGOSet: public SPOSet
 {
 
   int KptMax;
@@ -47,7 +47,7 @@ struct RealEGOSet: public SPOSetBase
   inline void resetTargetParticleSet(ParticleSet& P) { }
   void setOrbitalSetSize(int norbs) { }
 
-  SPOSetBase* makeClone() const
+  SPOSet* makeClone() const
   {
     return new RealEGOSet(*this);
   }
@@ -58,7 +58,7 @@ struct RealEGOSet: public SPOSetBase
     if(i>0)
     {
       int ik=(i-1)/2;
-      int even=(i-1)%2;
+//      int even=(i-1)%2;
       PosType k_tmp = K[ik];
       k_tmp *= 1.0/std::sqrt(-mK2[ik]);
 //         if(even)
@@ -303,7 +303,7 @@ struct RealEGOSet: public SPOSetBase
 
 /** OrbitalBuilder for Slater determinants of electron-gas
 */
-class ElectronGasOrbitalBuilder: public OrbitalBuilderBase
+class ElectronGasOrbitalBuilder: public WaveFunctionComponentBuilder
 {
 public:
 
@@ -319,21 +319,19 @@ public:
 
 /** OrbitalBuilder for Slater determinants of electron-gas
 */
-class ElectronGasBasisBuilder: public BasisSetBuilder
+class ElectronGasSPOBuilder: public SPOSetBuilder
 {
 protected:
   HEGGrid<RealType,OHMMS_DIM> egGrid;
   xmlNodePtr spo_node;
 public:
   ///constructor
-  ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur);
+  ElectronGasSPOBuilder(ParticleSet& p, Communicate *comm, xmlNodePtr cur);
 
-  ///implement vritual function
-  bool put(xmlNodePtr cur);
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
+  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 };
 
 }

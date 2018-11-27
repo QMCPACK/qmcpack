@@ -15,10 +15,10 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Numerics/OhmmsBlas.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "simd/simd.hpp"
 
 
@@ -43,7 +43,7 @@ template <typename T1, typename T2> void check_matrix(Matrix<T1> &a, Matrix<T2> 
   }
 }
 
-class FakeSPO : public SPOSetBase
+class FakeSPO : public SPOSet
 {
   public:
 
@@ -192,11 +192,11 @@ FakeSPO::evaluate_notranspose(const ParticleSet& P, int first, int last
   }
 }
 
-TEST_CASE("DiracDeterminantBase_first", "[wavefunction][fermion]")
+TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(3);
-  DiracDeterminantBase ddb(spo);
+  DiracDeterminant ddb(spo);
 
   int norb = 3;
   ddb.set(0,norb);
@@ -227,7 +227,7 @@ TEST_CASE("DiracDeterminantBase_first", "[wavefunction][fermion]")
   check_matrix(ddb.psiM, b);
 
 
-  DiracDeterminantBase::GradType grad;
+  DiracDeterminant::GradType grad;
   ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
   ValueType det_ratio1 = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
@@ -251,11 +251,11 @@ TEST_CASE("DiracDeterminantBase_first", "[wavefunction][fermion]")
 
 //#define DUMP_INFO
 
-TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
+TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
-  DiracDeterminantBase ddb(spo);
+  DiracDeterminant ddb(spo);
 
   int norb = 4;
   ddb.set(0,norb);
@@ -308,7 +308,7 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
   }
 
 
-  DiracDeterminantBase::GradType grad;
+  DiracDeterminant::GradType grad;
   ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
 
   dm.invert(a_update1, true);

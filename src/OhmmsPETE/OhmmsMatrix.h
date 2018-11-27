@@ -257,7 +257,7 @@ public:
   }
 
   // returns val(i,j)
-  inline Type_t operator()( size_type i, size_type j) const
+  inline const Type_t& operator()( size_type i, size_type j) const
   {
     return X[i*D2+j];
   }
@@ -528,8 +528,7 @@ inline void evaluate(Matrix<T,Alloc> &lhs, const Op &op,
   }
   else
   {
-    std::cerr << "Error: LHS and RHS don't conform in OhmmsMatrix." << std::endl;
-    abort();
+    throw std::runtime_error("Error in evaluate: LHS and RHS don't conform in OhmmsMatrix.");
   }
 }
 }

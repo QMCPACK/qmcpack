@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <qmcsystem>
   <wavefunction name="psi0" target="e">
-    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" href="LiH-QPorbs.h5">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" href="LiH-QP.orbs.h5">
       <slaterdeterminant>
         <determinant id="updet" size="2">
           <occupation mode="ground"/>

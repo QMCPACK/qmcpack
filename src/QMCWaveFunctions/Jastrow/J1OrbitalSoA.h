@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_ONEBODYJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_ONEBODYJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include <qmc_common.h>
 #include <simd/allocator.hpp>
@@ -23,11 +23,11 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for one-body Jastrow function using multiple functors
  */
 template<class FT>
-struct  J1OrbitalSoA : public OrbitalBase
+struct  J1OrbitalSoA : public WaveFunctionComponent
 {
   ///alias FuncType
   using FuncType=FT;
@@ -48,7 +48,6 @@ struct  J1OrbitalSoA : public OrbitalBase
   ///reference to the sources (ions)
   const ParticleSet& Ions;
 
-  valT LogValue;
   valT curAt;
   valT curLap;
   posT curGrad;
@@ -65,9 +64,9 @@ struct  J1OrbitalSoA : public OrbitalBase
 
   J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : Ions(ions)
   {
-    initalize(els);
+    initialize(els);
     myTableID=els.addTable(ions,DT_SOA);
-    OrbitalName = "J1OrbitalSoA";
+    ClassName = "J1OrbitalSoA";
   }
 
   J1OrbitalSoA(const J1OrbitalSoA& rhs)=delete;
@@ -79,7 +78,7 @@ struct  J1OrbitalSoA : public OrbitalBase
   }
 
   /* initialize storage */
-  void initalize(ParticleSet& els)
+  void initialize(ParticleSet& els)
   {
     Nions=Ions.getTotalNum();
     NumGroups=Ions.getSpeciesSet().getTotalNum();
@@ -125,13 +124,6 @@ struct  J1OrbitalSoA : public OrbitalBase
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-  
   ValueType ratio(ParticleSet& P, int iat)
   {
     UpdateMode=ORB_PBYP_RATIO;
@@ -236,7 +228,7 @@ struct  J1OrbitalSoA : public OrbitalBase
   {
     if(NumGroups>0)
     {//ions are grouped
-      CONSTEXPR valT czero(0);
+      constexpr valT czero(0);
       std::fill_n(U.data(),Nions,czero);
       std::fill_n(dU.data(),Nions,czero);
       std::fill_n(d2U.data(),Nions,czero);
@@ -342,7 +334,7 @@ struct  J1OrbitalSoA : public OrbitalBase
     Lap.attachReference(buf.lendReference<valT>(Nelec), Nelec);
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     J1OrbitalSoA<FT>* j1copy=new J1OrbitalSoA<FT>(Ions,tqp);
     j1copy->Optimizable=Optimizable;
@@ -357,7 +349,7 @@ struct  J1OrbitalSoA : public OrbitalBase
     return j1copy;
   }
 
-  /**@{ OrbitalBase virtual functions that are not essential for the development */
+  /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
   void resetTargetParticleSet(ParticleSet& P){}
   void reportStatus(std::ostream& os)
   {

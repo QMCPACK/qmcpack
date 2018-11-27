@@ -43,16 +43,14 @@ namespace qmcplusplus
 {
 
 /// Constructor.
-DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool)
-  : QMCDriver(w,psi,h,ppool)
-  , KillNodeCrossing(0) ,Reconfiguration("no"), BenchMarkRun("no")
-  , BranchInterval(-1),mover_MaxAge(-1)
+DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm)
+  : QMCDriver(w,psi,h,ppool,comm)
+  , KillNodeCrossing(0), Reconfiguration("no"), BranchInterval(-1), mover_MaxAge(-1)
 {
   RootName = "dmc";
   QMCType ="DMCOMP";
   QMCDriverMode.set(QMC_UPDATE_MODE,1);
   m_param.add(KillWalker,"killnode","string");
-  m_param.add(BenchMarkRun,"benchmark","string");
   m_param.add(Reconfiguration,"reconfiguration","string");
   //m_param.add(BranchInterval,"branchInterval","string");
   m_param.add(NonLocalMove,"nonlocalmove","string");
@@ -85,10 +83,8 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
   {
     delete Movers[ip];
     delete estimatorClones[ip];
-    delete branchClones[ip];
     estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
     estimatorClones[ip]->setCollectionMode(false);
-    branchClones[ip] = new BranchEngineType(*branchEngine);
 #if !defined(REMOVE_TRACEMANAGER)
     delete traceClones[ip];
     traceClones[ip] = Traces->makeClone();
@@ -101,7 +97,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
     {
       Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
       Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+      Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
     else
@@ -111,7 +107,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
       else
         Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
       Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+      Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
       Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
   }
@@ -136,7 +132,6 @@ void DMCOMP::resetUpdateEngines()
     }
     //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
     Movers.resize(NumThreads,0);
-    branchClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
     estimatorClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
@@ -171,12 +166,11 @@ void DMCOMP::resetUpdateEngines()
       Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
-      branchClones[ip] = new BranchEngineType(*branchEngine);
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
         Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         Movers[ip]->put(qmcNode);
-        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+        Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
         Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       }
       else
@@ -186,7 +180,7 @@ void DMCOMP::resetUpdateEngines()
         else
           Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         Movers[ip]->put(qmcNode);
-        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+        Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
         Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       }
     }
@@ -266,7 +260,6 @@ bool DMCOMP::run()
     for(int ip=0; ip<NumThreads; ip++)
       Movers[ip]->startBlock(nSteps);
 
-    IndexType step = 0;
     for(IndexType step=0; step< nSteps; ++step, CurrentStep+=BranchInterval)
     {
       prof.push("dmc_advance");
@@ -279,20 +272,8 @@ bool DMCOMP::run()
       #pragma omp parallel
       {
         int ip=omp_get_thread_num();
-        int now=CurrentStep;
         Movers[ip]->set_step(sample);
         bool recompute=( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] );
-#if 0
-        MCWalkerConfiguration::iterator
-        wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
-        for(int interval = 0; interval<BranchInterval-1; ++interval,++now)
-          Movers[ip]->advanceWalkers(wit,wit_end,false);
-        wClones[ip]->resetCollectables();
-        Movers[ip]->advanceWalkers(wit,wit_end,false);
-        Movers[ip]->setMultiplicity(wit,wit_end);
-        if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0)
-          Movers[ip]->updateWalkers(wit, wit_end);
-#endif
         wClones[ip]->resetCollectables();
         const size_t nw=W.getActiveWalkers();
 #pragma omp for nowait
@@ -300,7 +281,6 @@ bool DMCOMP::run()
         {
           Walker_t& thisWalker(*W[iw]);
           Movers[ip]->advanceWalker(thisWalker,recompute);
-          //Movers[ip]->setMultiplicity(thisWalker);
         }
       }
 
@@ -314,7 +294,7 @@ bool DMCOMP::run()
         for(int ip=1; ip<NumThreads; ++ip)
           W.Collectables += wClones[ip]->Collectables;
       }
-      branchEngine->branch(CurrentStep, W, branchClones);
+      branchEngine->branch(CurrentStep, W);
       //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
       //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
       //           W.resetWalkerParents();
@@ -365,34 +345,6 @@ bool DMCOMP::run()
   return finalize(nBlocks);
 }
 
-
-void DMCOMP::benchMark()
-{
-  //set the collection mode for the estimator
-  Estimators->setCollectionMode(true);
-  IndexType PopIndex = Estimators->addProperty("Population");
-  IndexType EtrialIndex = Estimators->addProperty("Etrial");
-  //Estimators->reportHeader(AppendRun);
-  //Estimators->reset();
-  IndexType block = 0;
-  RealType Eest = branchEngine->getEref();
-  //resetRun();
-  for(int ip=0; ip<NumThreads; ip++)
-  {
-    char fname[16];
-    sprintf(fname,"test.%i",ip);
-    std::ofstream fout(fname);
-  }
-  for(int istep=0; istep<nSteps; istep++)
-  {
-    FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
-    #pragma omp parallel
-    {
-      int ip = omp_get_thread_num();
-      Movers[ip]->benchMark(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],ip);
-    }
-  }
-}
 
 bool
 DMCOMP::put(xmlNodePtr q)

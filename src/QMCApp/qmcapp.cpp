@@ -51,6 +51,7 @@ int main(int argc, char **argv)
   using namespace qmcplusplus;
   //qmc_common  and MPI is initialized
   OHMMS::Controller->initialize(argc,argv);
+  qmcplusplus::qmc_common.initialize(argc,argv);
   int clones=1;
   bool useGPU=(qmc_common.compute_device == 1);
   std::vector<std::string> fgroup1,fgroup2;
@@ -66,8 +67,6 @@ int main(int argc, char **argv)
         clones=atoi(argv[++i]);
       if (c == "-debug")
         ReportEngine::enableOutput();
-      if (c == "-disable-timers")
-        TimerManager.set_timer_threshold(timer_level_none);
 
       // Default setting is 'timer_level_coarse'
       if (c.find("-enable-timers") < c.size())
@@ -79,7 +78,11 @@ int main(int argc, char **argv)
         if (pos != std::string::npos)
         {
           std::string timer_level = c.substr(pos+1);
-          if (timer_level == "coarse")
+          if (timer_level == "none")
+          {
+            TimerManager.set_timer_threshold(timer_level_none);
+          }
+          else if (timer_level == "coarse")
           {
             TimerManager.set_timer_threshold(timer_level_coarse);
           }

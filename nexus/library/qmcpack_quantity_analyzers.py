@@ -1484,10 +1484,14 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                 loc_data[mname] = mdata
                 for species,d in matrix.iteritems():
                     v = d.value
-                    v2 = d.value_squared
+                    if 'value_squared' in d:
+                        v2 = d.value_squared
+                    #end if
                     if len(v.shape)==4 and v.shape[3]==2:
                         d.value         = v[:,:,:,0]  + i*v[:,:,:,1]
-                        d.value_squared = v2[:,:,:,0] + i*v2[:,:,:,1]
+                        if 'value_squared' in d:
+                            d.value_squared = v2[:,:,:,0] + i*v2[:,:,:,1]
+                        #end if
                         self.info.complex = True
                     #end if
                     mdata[species] = d
@@ -1549,7 +1553,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                 tdata = zeros((len(md_all),))
                 b = 0
                 for mat in md_all:
-                    tdata[b] = trace(mat)
+                    tdata[b] = trace(mat).real # trace sums to N-elec (real)
                     b+=1
                 #end for
                 t,tvar,terr,tkap = simstats(tdata[nbe:])
@@ -1577,6 +1581,9 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                         )
                 else:
                     m,mvar,merr,mkap = simstats(mdata.transpose((1,2,0)))
+
+                    mfull  = m
+                    mefull = merr
 
                     if matrix_name=='number_matrix':
                         # remove states that do not have significant occupation
@@ -1619,7 +1626,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                     insig_coup = ones(m.shape,dtype=bool)
                     for i in range(nsig):
                         for j in range(nsig):
-                            mdiag = min(abs(m[i,i]),abs(m[j,j]))
+                            mdiag = min((abs(m[i,i]),abs(m[j,j])))
                             insig_coup[i,j] = abs(m[i,j])/mdiag < coup_tol
                         #end for
                     #end for
@@ -1638,15 +1645,17 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
 
                     # save common results
                     msres.set(
-                        matrix          = m,
-                        matrix_error    = merr,
-                        sig_states      = sig_states,
-                        sig_occ         = sig_occ,
-                        insig_coup      = insig_coup,
-                        insig_stat      = insig_stat,
-                        insig_coup_stat = insig_coup_stat,
-                        eigval          = eigval,
-                        eigvec          = eigvec
+                        matrix            = m,
+                        matrix_error      = merr,
+                        sig_states        = sig_states,
+                        sig_occ           = sig_occ,
+                        insig_coup        = insig_coup,
+                        insig_stat        = insig_stat,
+                        insig_coup_stat   = insig_coup_stat,
+                        eigval            = eigval,
+                        eigvec            = eigvec,
+                        matrix_full       = mfull,
+                        matrix_error_full = mefull,
                         )
 
                     if jackknife:
@@ -1868,15 +1877,15 @@ class DensityAnalyzerBase(HDFAnalyzer):
         print 'writing to ',self.info.source_path,prefix
 
         # mean
-        f.add_density(cell,density,centered=c,add_ghost=g,transpose=t)
+        f.add_density(cell,density,centered=c,add_ghost=g)
         f.write(os.path.join(self.info.source_path,prefix+'.xsf'))
 
         # mean + errorbar
-        f.add_density(cell,density+density_err,centered=c,add_ghost=g,transpose=t)
+        f.add_density(cell,density+density_err,centered=c,add_ghost=g)
         f.write(os.path.join(self.info.source_path,prefix+'+err.xsf'))
 
         # mean - errorbar
-        f.add_density(cell,density-density_err,centered=c,add_ghost=g,transpose=t)
+        f.add_density(cell,density-density_err,centered=c,add_ghost=g)
         f.write(os.path.join(self.info.source_path,prefix+'-err.xsf'))
     #end def write_single_density
 

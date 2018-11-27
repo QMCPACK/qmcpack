@@ -40,8 +40,8 @@ namespace qmcplusplus
 
 /// Constructor.
 VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                           WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool), UseDrift("yes")
+                           WaveFunctionPool& ppool, Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm), UseDrift("yes")
 {
   RootName = "vmc";
   QMCType ="VMCSingleOMP";
@@ -95,7 +95,6 @@ bool VMCSingleOMP::run()
           wClones[ip]->Collectables *= cnorm;
         Movers[ip]->accumulate(wit,wit_end);
         ++now_loc;
-        //if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
         if (Period4WalkerDump&& now_loc%Period4WalkerDump==0)
           wClones[ip]->saveEnsemble(wit,wit_end);
 //           if(storeConfigs && (now_loc%storeConfigs == 0))
@@ -158,7 +157,6 @@ void VMCSingleOMP::resetRun()
   {
     movers_created=true;
     Movers.resize(NumThreads,0);
-    branchClones.resize(NumThreads,0);
     estimatorClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
@@ -178,7 +176,6 @@ void VMCSingleOMP::resetRun()
       Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
-      branchClones[ip] = new BranchEngineType(*branchEngine);
       if (QMCDriverMode[QMC_UPDATE_MODE])
       {
         Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
@@ -236,7 +233,7 @@ void VMCSingleOMP::resetRun()
   {
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+    Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     else
@@ -245,8 +242,6 @@ void VMCSingleOMP::resetRun()
 //       {
     for (int prestep=0; prestep<nWarmupSteps; ++prestep)
       Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
-    //if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-    //  Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       }
   }
 
@@ -293,15 +288,10 @@ void VMCSingleOMP::resetRun()
 //              if (std::abs(w_m)>0.01)
 //                logepsilon += w_m;
 //            }
-//            #pragma omp barrier
-//            Movers[ip]->setLogEpsilon(logepsilon);
 //           }
 //
 //         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-//
-//         if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-//           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
 //       }
 //     }
   for(int ip=0; ip<NumThreads; ++ip)
@@ -310,12 +300,6 @@ void VMCSingleOMP::resetRun()
     for(int ip=0; ip<NumThreads; ++ip)
       wClones[ip]->setNumSamples(nSamplesPerThread);
   nWarmupSteps=0;
-  //Used to debug and benchmark opnemp
-  //#pragma omp parallel for
-  //    for(int ip=0; ip<NumThreads; ip++)
-  //    {
-  //      Movers[ip]->benchMark(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],ip);
-  //    }
 }
 
 bool

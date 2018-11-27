@@ -13,7 +13,7 @@
 /** @file SoaLocalizedBasisSet.h
  * @brief A derived class from BasisSetBase
  *
- * This is intended as a replacement for MolecularOrbitalBase and
+ * This is intended as a replacement for MolecularWaveFunctionComponent and
  * any other localized basis set.
  */
 #ifndef QMCPLUSPLUS_SOA_LOCALIZEDBASISSET_H
@@ -110,6 +110,25 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
       BasisOffset[c+1] = BasisOffset[c]+LOBasisSet[IonID[c]]->getBasisSetSize();
     }
     BasisSetSize = BasisOffset[NumCenters];
+  }
+
+  /**  Determine which orbitals are S-type.  Used by cusp correction.
+    */
+  void queryOrbitalsForSType(const std::vector<bool> &corrCenter, std::vector<bool> &is_s_orbital) const
+  {
+    int idx = 0;
+    for (int c = 0; c < NumCenters; c++) {
+      int bss = LOBasisSet[IonID[c]]->BasisSetSize;
+      std::vector<bool> local_is_s_orbital(bss);
+      LOBasisSet[IonID[c]]->queryOrbitalsForSType(local_is_s_orbital);
+      for (int k = 0; k < bss; k++) {
+        if (corrCenter[c]) {
+          is_s_orbital[idx++] = local_is_s_orbital[k];
+        } else {
+          is_s_orbital[idx++] = false;
+        }
+      }
+    }
   }
 
 #if 0

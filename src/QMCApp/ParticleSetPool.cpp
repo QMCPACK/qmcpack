@@ -27,7 +27,7 @@
 #if OHMMS_DIM ==3
 #include "ParticleIO/ESHDFParticleParser.h"
 #endif
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -42,16 +42,6 @@ ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
   TileMatrix.diagonal(1);
   ClassName="ParticleSetPool";
   myName=aname;
-}
-
-void ParticleSetPool::make_clones(int n)
-{
-  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
-  while(it != it_end)
-  {
-    (*it).second->make_clones(n);
-    ++it;
-  }
 }
 
 ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)

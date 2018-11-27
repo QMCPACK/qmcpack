@@ -36,7 +36,7 @@ public:
 
   /// Constructor.
   DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-         WaveFunctionPool& ppool);
+         WaveFunctionPool& ppool, Communicate* comm);
 
   bool run();
   bool put(xmlNodePtr cur);
@@ -58,23 +58,16 @@ private:
   std::string Reconfiguration;
   ///input std::string to determine to use nonlocal move
   std::string NonLocalMove;
-  ///input std::string to benchmark OMP performance
-  std::string BenchMarkRun;
   ///input std::string to use fast gradient
   std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
   IndexType mover_MaxAge;
 
-
   void resetUpdateEngines();
-  void benchMark();
   /// Copy Constructor (disabled)
-  DMCOMP(const DMCOMP& a): QMCDriver(a), CloneManager(a) { }
+  DMCOMP(const DMCOMP &) = delete;
   /// Copy operator (disabled).
-  DMCOMP& operator=(const DMCOMP&)
-  {
-    return *this;
-  }
+  DMCOMP & operator=(const DMCOMP&) = delete;
 };
 }
 

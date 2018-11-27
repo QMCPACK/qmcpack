@@ -89,7 +89,7 @@ class LMBlockerMatData {
     // function that returns the number of blocks
     int nb() const { return m_block_beg.size(); }
 
-    // function that returns the begining index of ith block
+    // function that returns the beginning index of ith block
     int bb(const int i) const { return m_block_beg.at(i); }
 
     // function that returns the end index of ith block
