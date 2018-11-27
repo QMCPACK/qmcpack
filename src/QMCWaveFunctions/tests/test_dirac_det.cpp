@@ -377,6 +377,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   DiracDeterminant ddc(spo);
 
   int norb = 4;
+  // maximum delay 2
   ddc.set(0,norb,2);
 
   // occurs in call to registerData
@@ -443,7 +444,9 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
+  // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 0);
+  // force update Ainv in ddc using SM-1 code path
   ddc.completeUpdates();
 
   grad = ddc.evalGrad(elec, 1);
@@ -457,9 +460,11 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
   std::cout << "det ratio 2 = " << det_ratio2 << std::endl;
 #endif
+  // check ratio computed directly and the one computed by ddc with no delay
   //double det_ratio2_val = 0.178276269185;
   REQUIRE(std::abs(det_ratio2) == ValueApprox(det_ratio2_val));
 
+  // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 1);
 
   grad = ddc.evalGrad(elec, 2);
@@ -473,12 +478,15 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   std::cout << "det 3 = " << std::exp(det_update3) << std::endl;
   std::cout << "det ratio 3 = " << det_ratio3 << std::endl;
 #endif
+  // check ratio computed directly and the one computed by ddc with 1 delay
   REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
   //check_value(det_ratio3, det_ratio3_val);
 
+  // maximal delay reached and Ainv is updated fully
   ddc.acceptMove(elec, 2);
   //ddc.completeUpdates();
 
+  // fresh invert orig_a
   dm.invert(orig_a,false);
 
 #ifdef DUMP_INFO
@@ -488,6 +496,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   std::cout << ddc.psiM << std::endl;
 #endif
 
+  // compare all the elements of psiM in ddc and orig_a
   check_matrix(orig_a, ddc.psiM);
 
 
