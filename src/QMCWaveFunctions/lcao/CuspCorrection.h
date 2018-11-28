@@ -143,9 +143,6 @@ private:
 class CuspCorrection
 {
   typedef QMCTraits::RealType RealType;
-  //typedef QMCTraits::ValueType ValueType;
-  //typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  //typedef SPOSet* SPOSetPtr;
 
 public:
   inline RealType phiBar(RealType r, OneMolecularOrbital &phiMO)
@@ -155,20 +152,6 @@ public:
     else
       return phiMO.phi(r);
   }
-
-#if 0
-  RealType phi(RealType r)
-  {
-    TinyVector<RealType, 3> dr = 0;
-    dr[0]                      = r;
-
-    targetPtcl->R[0]             = sourcePtcl->R[curCenter];
-    TinyVector<RealType, 3> ddr2 = targetPtcl->makeMove(0, dr);
-    Psi1->evaluate(*targetPtcl, 0, val1);
-
-    return val1[curOrb];
-  }
-#endif
 
   inline RealType Rr(RealType r) { return cparam.sg * std::exp(pr(r)); }
 
@@ -190,38 +173,9 @@ public:
     return 2.0*alpha[2] + 6.0*alpha[3] * r + 12.0*alpha[4] * r * r;
   }
 
-  //CuspCorrection(ParticleSet* targetP, ParticleSet* sourceP) : targetPtcl(targetP), sourcePtcl(sourceP) {}
-
-  //CuspCorrection(OneMolecularOrbital &MO, const CuspCorrectionParameters &param) : phiMO(MO), cparam(param) {}
   CuspCorrection(const CuspCorrectionParameters &param) : cparam(param) {}
 
-#if 0
-  void setPsi(SPOSetPtr Phi)
-  {
-    Psi1     = Phi;
-    int norb = Psi1->OrbitalSetSize;
-    val1.resize(norb);
-  }
-#endif
-
   CuspCorrectionParameters cparam;
-
-  //OneMolecularOrbital &phiMO;
-  /// Index of orbital
-  //int curOrb;
-
-  /// Index of atomic center
-  //int curCenter;
-
-  /// Temporary storage for real wavefunction values
-  //ValueVector_t val1;
-
-  /// target ParticleSet
-  //ParticleSet* targetPtcl;
-  /// source ParticleSet
-  //ParticleSet* sourcePtcl;
-
-  //SPOSetPtr Psi1;
 };
 
 /// Read cusp correction parameters from XML file
@@ -251,27 +205,106 @@ typedef QMCTraits::ValueType ValueType;
 typedef QMCTraits::GradType GradType;
 typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
 
+/** Ideal local energy at one point
+ * @param r  input radial distance
+ * @param Z  nuclear charge
+ * @param beta0  adjustable parameter to make energy continuous at Rc
+ */
 RealType getOneIdealLocalEnergy(RealType r, RealType Z, RealType beta0);
 
-void getIdealLocalEnergy(const ValueVector_t& pos, RealType Z, RealType Rc, RealType phiAtRc, ValueVector_t& ELideal);
+/** Ideal local energy at a vector of points
+ * @param pos input vector of radial distances
+ * @param Z nuclear charge
+ * @param Rc cutoff radius where the correction meets the actual orbital
+ * @param ELorigAtRc local energy at Rc.  beta0 is adjusted to make energy continuous at Rc
+ * @param ELideal - output the ideal local energy at pos values
+ */
+void getIdealLocalEnergy(const ValueVector_t& pos, RealType Z, RealType Rc, RealType ELorigAtRc, ValueVector_t& ELideal);
 
+/** Evaluate various orbital quantities that enter as constraints on the correction
+ * @param valRc  orbital value at Rc
+ * @param gradRc  orbital gradient at Rc
+ * @param lapRc  orbital laplacian at Rc
+ * @param Rc cutoff radius
+ * @param Z nuclear charge
+ * @param C offset to keep correction to a single sign
+ * @param valAtZero orbital value at zero
+ * @param eta0 value of non-corrected pieces of the orbital at zero
+ * @param X output
+ */
 void evalX(RealType valRc, GradType gradRc, ValueType lapRc, RealType Rc, RealType Z, RealType C,
            RealType valAtZero, RealType eta0, TinyVector<ValueType, 5> &X);
 
+/** Convert constraints to polynomial parameters
+ * @param X input from evalX
+ * @param Rc cutoff radius
+ * @param alpha output the polynomial parameters for the correction
+ */
 void X2alpha(const TinyVector<ValueType, 5> &X, RealType Rc, TinyVector<ValueType, 5> &alpha);
 
+/** Effective nuclear charge to keep effective local energy finite at zero
+ * @param Z nuclear charge
+ * @param etaAtZero value of non-S orbitals at this center
+ * @param phiBarAtZero value of corrected orbital at zero
+ */
 RealType getZeff(RealType Z, RealType etaAtZero, RealType phiBarAtZero);
 
+/**  Compute effective local energy at vector of points
+ * @param pos input vector of radial distances
+ * @param Zeff effective charge from getZeff
+ * @param Rc cutoff radius
+ * @param originalELatRc  Local energy at the center from the uncorrected orbital
+ * @param cusp cusp correction parameters
+ * @param phiMO uncorrected orbital (S-orbitals on this center only)
+ * @param ELcurr output local energy at each distance in pos
+ */
 void getCurrentLocalEnergy(const ValueVector_t& pos, RealType Zeff, RealType Rc, RealType originalELatRc, CuspCorrection &cusp, OneMolecularOrbital& phiMO, ValueVector_t& ELcurr);
 
+/** Local energy from uncorrected orbital
+ * @param pos input vector of radial distances
+ * @param Zeff nuclear charge
+ * @param Rc cutoff radius
+ * @param phiMO uncorrected orbital (S-orbitals on this center only)
+ * @param ELorig output local energy at each distance in pos
+ *
+ * Return is value of local energy at zero.  This is the value needed for subsequent computations.
+ * The routine can be called with an empty vector of positions to get just this value.
+ */
 RealType getOriginalLocalEnergy(const ValueVector_t& pos, RealType Zeff, RealType Rc, OneMolecularOrbital &phiMO, ValueVector_t& Elorig);
 
+/** Sum of squares difference between the current and ideal local energies
+ * This is the objective function to be minimized.
+ * @param Elcurr  current local energy
+ * @param Elideal  ideal local energy
+ */
 RealType getELchi2(const ValueVector_t& ELcurr, const ValueVector_t& ELideal);
 
 
+/** Minimize chi2 with respect to phi at zero for a fixed Rc
+ * @param cusp correction parameters
+ * @param phiMO uncorrected orbital (S-orbitals on this center only)
+ * @param Z nuclear charge
+ * @param eta0 value at zero for parts of the orbital that don't require correction - the non-S-orbitals on this center and all orbitals on other centers
+ * @param pos vector of radial positions
+ * @param Elcurr storage for current local energy
+ * @param Elideal storage for ideal local energy
+ */
 RealType minimizeForPhiAtZero(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType eta0, ValueVector_t &pos, ValueVector_t &ELcurr, ValueVector_t& ELideal);
 
 
+/** Minimize chi2 with respect to Rc and phi at zero.
+ * @param cusp correction parameters
+ * @param phiMO uncorrected orbital (S-orbitals on this center only)
+ * @param Z nuclear charge
+ * @param Rc_init initial value for Rc
+ * @param Rc_max maximum value for Rc
+ * @param eta0 value at zero for parts of the orbital that don't require correction - the non-S-orbitals on this center and all orbitals on other centers
+ * @param pos vector of radial positions
+ * @param Elcurr storage for current local energy
+ * @param Elideal storage for ideal local energy
+ *
+ * Output is parameter values in cusp.cparam
+ */
 void minimizeForRc(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType Rc_init, RealType Rc_max, RealType eta0, ValueVector_t &pos,
 ValueVector_t &ELcurr, ValueVector_t& ELideal);
 

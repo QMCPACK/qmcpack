@@ -636,15 +636,10 @@ namespace qmcplusplus
           }
 
           RealType eta0 = etaMO.phi(0.0);
-          RealType Zeff = getZeff(Z, eta0, phiMO.phi(0.0));
           ValueVector_t ELorig(npts);
-          RealType ELorigAtRc = getOriginalLocalEnergy(pos, Zeff, rc, phiMO, ELorig);
-          getIdealLocalEnergy(pos, Z, rc, ELorigAtRc, ELideal);
           CuspCorrection cusp(info(center_idx, mo_idx));
           minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
           info(center_idx, mo_idx) = cusp.cparam;
-        
-
         }
       }
     }
