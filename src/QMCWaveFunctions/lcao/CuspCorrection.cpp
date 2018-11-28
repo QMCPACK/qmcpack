@@ -199,6 +199,9 @@ void computeRadialPhiBar(ParticleSet* targetP,
 }
 
 typedef QMCTraits::RealType RealType;
+
+// Get the ideal local energy at one point
+// Eq. 17 in the paper.  Coefficients are taken from the paper.
 RealType getOneIdealLocalEnergy(RealType r, RealType Z, RealType beta0)
 {
   RealType beta[7] = {3.25819, -15.0126, 33.7308, -42.8705, 31.2276, -12.1316, 1.94692};
@@ -211,6 +214,7 @@ RealType getOneIdealLocalEnergy(RealType r, RealType Z, RealType beta0)
   return idealEL*Z*Z;
 }
 
+// Get the ideal local energy for a vector of positions
 void
 getIdealLocalEnergy(const ValueVector_t& pos, RealType Z, RealType Rc, RealType ELorigAtRc, ValueVector_t& ELideal)
 {
@@ -223,6 +227,7 @@ getIdealLocalEnergy(const ValueVector_t& pos, RealType Z, RealType Rc, RealType 
   }
 }
 
+// Evaluate constraints. Equations 9-13 in the paper.
 void evalX(RealType valRc, GradType gradRc, ValueType lapRc, RealType Rc, RealType Z, RealType C,
            RealType valAtZero, RealType eta0, TinyVector<ValueType, 5> &X)
 {
@@ -233,6 +238,7 @@ void evalX(RealType valRc, GradType gradRc, ValueType lapRc, RealType Rc, RealTy
   X[4] = std::log(std::abs(valAtZero-C));
 }
 
+// Compute polynomial coefficients from constraints.  Eq. 14 in the paper.
 void X2alpha(const TinyVector<ValueType, 5> &X, RealType Rc, TinyVector<ValueType, 5> &alpha)
 {
    RealType RcInv=1.0/Rc, RcInv2=RcInv*RcInv;
@@ -248,11 +254,14 @@ void X2alpha(const TinyVector<ValueType, 5> &X, RealType Rc, TinyVector<ValueTyp
 
 }
 
+// Eq. 16 in the paper.
 RealType getZeff(RealType Z, RealType etaAtZero, RealType phiBarAtZero)
 {
   return Z*(1.0 + etaAtZero/phiBarAtZero);
 }
 
+// Compute the effective one-electron local energy at a vector of points.
+// Eq. 15 in the paper for r < Rc.  Normal local energy for R > Rc.
 void getCurrentLocalEnergy(const ValueVector_t& pos, RealType Zeff, RealType Rc, RealType originalELatRc, CuspCorrection &cusp, OneMolecularOrbital &phiMO, ValueVector_t& ELcurr)
 {
   // assert(pos.size() == ELcurr.size());
@@ -273,7 +282,7 @@ void getCurrentLocalEnergy(const ValueVector_t& pos, RealType Zeff, RealType Rc,
   }
 }
 
-// Returns value is local energy at Rc
+// Return value is local energy at Rc
 RealType getOriginalLocalEnergy(const ValueVector_t& pos, RealType Zeff, RealType Rc, OneMolecularOrbital &phiMO, ValueVector_t& ELorig)
 {
   // assert(pos.size() == ELorig.size());
@@ -292,6 +301,8 @@ RealType getOriginalLocalEnergy(const ValueVector_t& pos, RealType Zeff, RealTyp
 
 }
 
+// Sum of squares difference between the current local energy and the ideal local energy.
+//  This is the objective function to minimize.
 RealType getELchi2(const ValueVector_t& ELcurr, const ValueVector_t& ELideal)
 {
    assert(ELcurr.size() == ELideal.size());
@@ -304,58 +315,15 @@ RealType getELchi2(const ValueVector_t& ELcurr, const ValueVector_t& ELideal)
   return chi2;
 }
 
-class MinimizePhiAtZero
-{
-public:
-
-  CuspCorrection& cusp;
-
-  OneMolecularOrbital& phiMO;
-
-  ValueType etaAtZero; // phiEta.phi(Rc);
-
-  ValueType valAtRc; // phiMO.phi(Rc);
-  GradType gradAtRc;
-  ValueType lapAtRc;
-
-  RealType Rc;
-  RealType Z;
-
-  RealType ELorigAtRc;
-
-  ValueVector_t& pos;
-  ValueVector_t& ELcurr;
-  ValueVector_t& ELideal;
-
-  MinimizePhiAtZero(ValueVector_t &pos_, ValueVector_t& ELcurr_, ValueVector_t &ELideal_, CuspCorrection &cusp_, OneMolecularOrbital &phiMO_) : pos(pos_), ELcurr(ELcurr_), ELideal(ELideal_), cusp(cusp_), phiMO(phiMO_) {}
-
-
-  RealType operator()(RealType phi0) const {
-    return evaluateForPhi0(phi0);
-  }
-
-  RealType evaluateForPhi0(RealType phi0) const
-  {
-      cusp.cparam.sg = phi0 > 0.0 ? 1.0:-1.0;
-      cusp.cparam.C = (valAtRc*phi0 < 0.0) ? 1.5*valAtRc:0.0;
-      TinyVector<ValueType, 5> X;
-      evalX(valAtRc, gradAtRc, lapAtRc, Rc, Z, cusp.cparam.C, phi0, etaAtZero, X);
-      X2alpha(X, Rc, cusp.cparam.alpha);
-      RealType Zeff = getZeff(Z, etaAtZero, cusp.phiBar(0.0, phiMO));
-      getCurrentLocalEnergy(pos, Zeff, Rc, ELorigAtRc, cusp, phiMO, ELcurr);
-      RealType chi2 = getELchi2(ELcurr, ELideal);
-      std::cout << "  phi0 = " << phi0 << " chi2 =  " << chi2 << std::endl;
-      return chi2;
-  }
-};
 struct ValGradLap
 {
-  ValueType val; // phiMO.phi(Rc);
+  ValueType val;
   GradType grad;
   ValueType lap;
 };
 
-  RealType evaluateForPhi0Body(RealType phi0, ValueVector_t &pos, ValueVector_t &ELcurr, ValueVector_t &ELideal, CuspCorrection &cusp, OneMolecularOrbital &phiMO, ValGradLap phiAtRc, RealType etaAtZero, RealType ELorigAtRc, RealType Z)
+//  Compute the chi squared distance given a value for phi at zero.
+RealType evaluateForPhi0Body(RealType phi0, ValueVector_t &pos, ValueVector_t &ELcurr, ValueVector_t &ELideal, CuspCorrection &cusp, OneMolecularOrbital &phiMO, ValGradLap phiAtRc, RealType etaAtZero, RealType ELorigAtRc, RealType Z)
   {
       cusp.cparam.sg = phi0 > 0.0 ? 1.0:-1.0;
       cusp.cparam.C = (phiAtRc.val*phi0 < 0.0) ? 1.5*phiAtRc.val:0.0;
@@ -369,7 +337,8 @@ struct ValGradLap
       return chi2;
   }
 
-// output is return value and parameter values in cusp.cparam
+// Optimize free parameter (value of phi at zero) to minimize distance to ideal local energy.
+// Output is return value and parameter values are in cusp.cparam
 RealType minimizeForPhiAtZero(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType eta0, ValueVector_t &pos, ValueVector_t &ELcurr, ValueVector_t& ELideal)
 {
   ValGradLap vglAtRc;
@@ -389,6 +358,9 @@ RealType minimizeForPhiAtZero(CuspCorrection &cusp, OneMolecularOrbital &phiMO, 
 }
 
 
+// Optimize the cutoff radius.  There is an inner loop optimizing for phi0 for each value of Rc.
+// Elcurr and ELideal are expected to have the correct size on input (same size as pos)
+// Output is parameter values in cusp.cparam
 void minimizeForRc(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType Rc_init, RealType Rc_max, RealType eta0, ValueVector_t &pos,
 ValueVector_t &ELcurr, ValueVector_t& ELideal)
 {
