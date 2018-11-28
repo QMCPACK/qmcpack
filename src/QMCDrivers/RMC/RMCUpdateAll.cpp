@@ -117,7 +117,6 @@ namespace qmcplusplus
     IndexType backward = (1 + direction) / 2;
     Walker_t & curhead = W.reptile->getHead ();
     W.loadWalker (curhead, false);
-    RealType nodecorr = 1;
     if (scaleDrift == true)
       RealType nodecorr =
 	setScaledDriftPbyPandNodeCorr (m_tauovermass, curhead.G, drift);
@@ -161,7 +160,6 @@ namespace qmcplusplus
     EstimatorRealType *restrict new_headProp (W.getPropertyBase ());
 
     RealType logGb = -m_oneover2tau * Dot (fromdeltaR, fromdeltaR);
-    RealType Action_backward = -0.5 * logGb;
 
     W.reptile->saveTransProb (W, -1, logGb);
     //W.reptile->saveAction(W,-1,Action_backward);
@@ -206,13 +204,11 @@ namespace qmcplusplus
     //////////////////////////////////////////////////////////////////////////
 //      RealType tauscale = W.reptile->tauscale;
 //      W.Properties(W.reptile->Action[2])= 0.5*Tau*eloc*cutoff*tauscale;
-    RealType dS = 0;
     RealType acceptProb = 1;
     if (actionType == SYM_ACTION)
       {
 	RealType oldhead_logpsi = curhead.Properties (LOGPSI);
 	RealType oldtail_logpsi = lastbead.Properties (LOGPSI);
-	RealType newhead_logpsi = logpsi;
 	RealType newtail_logpsi = nextlastbead.Properties (LOGPSI);
 
 	RealType oldhead_e = curhead.Properties (LOCALENERGY);
@@ -468,7 +464,6 @@ namespace qmcplusplus
       {
 	RealType oldhead_logpsi = curhead.Properties (LOGPSI);
 	RealType oldtail_logpsi = lastbead.Properties (LOGPSI);
-	RealType newhead_logpsi = logpsi;
 	RealType newtail_logpsi = nextlastbead.Properties (LOGPSI);
 
 	RealType oldhead_e = curhead.Properties (LOCALENERGY);

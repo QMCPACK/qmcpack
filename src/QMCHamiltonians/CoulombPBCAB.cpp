@@ -416,7 +416,6 @@ CoulombPBCAB::evalSR(ParticleSet& P)
 CoulombPBCAB::Return_t
 CoulombPBCAB::evalLR(ParticleSet& P)
 {
-  const int slab_dir=OHMMS_DIM-1;
   mRealType res=0.0;
   const StructFact& RhoKA(*(PtclA.SK));
   const StructFact& RhoKB(*(P.SK));
@@ -427,6 +426,7 @@ CoulombPBCAB::evalLR(ParticleSet& P)
     {
       mRealType u=0;
 #if !defined(USE_REAL_STRUCT_FACTOR)
+      const int slab_dir=OHMMS_DIM-1;
       for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
         u += Qat[jat]*AB->evaluate_slab(d_ab.dr(nn)[slab_dir], RhoKA.KLists.kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
 #endif
@@ -742,8 +742,8 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
 CoulombPBCAB::Return_t
 CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 {
-  const StructFact& RhoKA(*(PtclA.SK));
-  const StructFact& RhoKB(*(P.SK));
+  //  const StructFact& RhoKA(*(PtclA.SK));
+  //  const StructFact& RhoKB(*(P.SK));
   std::vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
  for(int j=0; j<NumSpeciesB; j++)
   {

@@ -31,7 +31,7 @@
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
-#include "QMCDrivers/DMC/DMCOMP.h"
+#include "QMCDrivers/DMC/DMC.h"
 
 
 #include <stdio.h>
@@ -43,7 +43,7 @@ using std::string;
 namespace qmcplusplus
 {
 
-TEST_CASE("DMCOMP", "[drivers][dmc]")
+TEST_CASE("DMC", "[drivers][dmc]")
 {
 
   Communicate *c;
@@ -112,7 +112,7 @@ TEST_CASE("DMCOMP", "[drivers][dmc]")
   //EstimatorManagerBase emb(c);
 
 
-  DMCOMP dmc_omp(elec, psi, h, wpool, c);
+  DMC dmc_omp(elec, psi, h, wpool, c);
 
   const char *dmc_input= \
   "<qmc method=\"dmc\"> \

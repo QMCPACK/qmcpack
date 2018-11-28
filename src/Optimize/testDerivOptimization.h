@@ -211,8 +211,8 @@ public:
    */
   bool jmacOpt()
   {
-    Return_t gg(0.0) , gam(0.0) , dgg(0.0) ;
-    Return_t step , tmpd ;
+    Return_t gg(0.0) ;
+    Return_t step ;
     dfunc(Parms, a_xi);
     Past_a_xi.push_back(a_xi);
     Past_Parms.push_back(Parms);

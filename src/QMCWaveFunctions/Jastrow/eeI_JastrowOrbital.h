@@ -1115,7 +1115,6 @@ public:
       for (int eG1=0; eG1<eGroups; eG1++)
         for (int eG2=0; eG2<eGroups; eG2++)
         {
-          int ijk = iG*eGroups*eGroups + eG1*eGroups + eG2;
           if(F(iG,eG1,eG2)==0)
             continue;
           typename std::map<const FT*,FT*>::iterator fit=fcmap.find(F(iG,eG1,eG2));

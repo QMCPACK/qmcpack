@@ -293,7 +293,6 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   {
     nonLocalOps.group_by_elec();
     GradType grad_iat;
-    size_t NonLocalMoveAcceptedTemp = 0;
     //make a non-local move per particle
     for(int ig=0; ig<P.groups(); ++ig) //loop over species
     {

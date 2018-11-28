@@ -207,7 +207,6 @@ bool SPOSet::put(xmlNodePtr cur)
 
   return success && success2;
 
- return true;
 }
 
 void SPOSet::checkObject()

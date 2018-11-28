@@ -277,7 +277,6 @@ void ECPotentialBuilder::useSimpleTableFormat()
     // Read Number of potentials (local and non) for this atom
     int npotentials;
     fin >> npotentials;
-    RealType r, f1;
     int lmax=-1;
     int numnonloc=0;
     RealType rmax(0.0);

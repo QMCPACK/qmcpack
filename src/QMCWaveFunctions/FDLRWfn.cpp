@@ -631,14 +631,8 @@ namespace qmcplusplus {
     FDLRWfn::ValueType psi_plus = std::exp(logpsi_plus)*std::cos(phasevalue_plus);
     FDLRWfn::ValueType psi_minus = std::exp(logpsi_minus)*std::cos(phasevalue_minus);
 
-    FDLRWfn::ValueType psi_plus_new = rat_plus*psi_plus;
-    FDLRWfn::ValueType psi_minus_new = rat_minus*psi_minus;
-
     FDLRWfn::ValueType scaling_fac_1 = 1/(1 - psi_minus/psi_plus);
     FDLRWfn::ValueType scaling_fac_2 = 1/(psi_plus/psi_minus - 1);
-
-    FDLRWfn::ValueType scaling_fac_1_new = 1/(1 - psi_minus_new/psi_plus_new);
-    FDLRWfn::ValueType scaling_fac_2_new = 1/(psi_plus_new/psi_minus_new - 1);
 
     // Calculate the ratio of new and old FDLR wave functions:
     // curRatio = \frac{ \psi_+(R_new) - \psi_-(R_new) }{ \psi_+(R_old) - \psi_-(R_old) }
