@@ -3,7 +3,7 @@ PROJECT(Sandbox)
 if(QMC_BUILD_LEVEL GREATER 4)
 # add apps XYZ.cpp, e.g., qmc_particles.cpp
 SET(ESTEST einspline_smp einspline_spo qmc_particles moveonsphere twobody ptclset)
-SET(ESTEST diff_distancetables diff_jeeI diff_j2 diff_j1 einspline_spo einspline_spo_nested determinant restart)
+SET(ESTEST diff_distancetables diff_jeeI diff_j2 diff_j1 einspline_spo einspline_spo_nested determinant restart determinant_delayed_update)
 
 FOREACH(p ${ESTEST})
   ADD_EXECUTABLE( ${p}  ${p}.cpp)

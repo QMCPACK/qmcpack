@@ -184,6 +184,9 @@ public:
   GradVector_t Fmatdiag;
   GradVector_t Fmatdiag_temp;
 
+  Vector<ValueType> WorkSpace;
+  Vector<IndexType> Pivot;
+
   ValueMatrix_t psiMinv_temp;
   ValueType *FirstAddressOfGGG;
   ValueType *LastAddressOfGGG;
