@@ -25,6 +25,7 @@
 
 using std::string;
 
+
 TEST_CASE("double_1d_natural", "[einspline]")
 {
   Ugrid x_grid;
@@ -80,12 +81,39 @@ TEST_CASE("double_1d_multi", "[einspline]")
 }
 
 #ifdef QMC_CUDA
-// If code from the .cu file is not called, the tests there don't get run.
-// Call a simple function to force the link.
-int force_cuda_link();
+void test_multi(multi_UBspline_1d_s *cpuSpline, float *pos, float *vals_cuda);
 
-TEST_CASE("force_cuda_link", "[einspline]")
+TEST_CASE("multi_cuda_wrapper", "[einspline]")
 {
-    int a = force_cuda_link();
+  Ugrid x_grid;
+  // GPU versions require the grid to start at zero
+  x_grid.start = 0.0;
+  x_grid.end = 10.0;
+  x_grid.num = 2;
+
+  float data[2];
+  data[0] = 2.0;
+  data[1] = 3.0;
+
+  BCtype_s xBC;
+  xBC.lCode = NATURAL;
+  xBC.rCode = NATURAL;
+  multi_UBspline_1d_s* s = create_multi_UBspline_1d_s(x_grid, xBC, 1);
+  REQUIRE(s);
+  set_multi_UBspline_1d_s(s, 0, data);
+
+  float pos[1];
+  pos[0] = 0.0;
+
+  // Check the CPU value
+  float cpu_val[1];
+  eval_multi_UBspline_1d_s(s, pos[0], cpu_val);
+  REQUIRE(cpu_val[0] == 2.0);
+
+  // Check the GPU value
+  float vals_output[1];
+  test_multi(s, pos, vals_output);
+  REQUIRE(vals_output[0] == 2.0);
 }
+
 #endif

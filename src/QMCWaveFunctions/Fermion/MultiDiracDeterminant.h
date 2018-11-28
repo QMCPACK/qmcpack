@@ -364,7 +364,7 @@ public:
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;
 
-  ValueType curRatio,cumRatio;
+  ValueType curRatio;
   ValueType *FirstAddressOfGrads;
   ValueType *LastAddressOfGrads;
   ValueType *FirstAddressOfdpsiM;
