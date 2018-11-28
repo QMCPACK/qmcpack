@@ -191,11 +191,6 @@ void computeRadialPhiBar(ParticleSet* targetP,
   OneMolecularOrbital phiMO(targetP, sourceP, Phi);
   phiMO.changeOrbital(curCenter_, curOrb_);
   CuspCorrection cusp(data);
-  //CuspCorrection cusp(targetP, sourceP);
-  //cusp.setPsi(Phi);
-  //cusp.cparam    = data;
-  //cusp.curOrb    = curOrb_;
-  //cusp.curCenter = curCenter_;
 
   for (int i = 0; i < xgrid.size(); i++)
   {

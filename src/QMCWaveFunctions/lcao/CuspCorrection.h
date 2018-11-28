@@ -143,9 +143,6 @@ private:
 class CuspCorrection
 {
   typedef QMCTraits::RealType RealType;
-  //typedef QMCTraits::ValueType ValueType;
-  //typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  //typedef SPOSet* SPOSetPtr;
 
 public:
   inline RealType phiBar(RealType r, OneMolecularOrbital &phiMO)
@@ -155,20 +152,6 @@ public:
     else
       return phiMO.phi(r);
   }
-
-#if 0
-  RealType phi(RealType r)
-  {
-    TinyVector<RealType, 3> dr = 0;
-    dr[0]                      = r;
-
-    targetPtcl->R[0]             = sourcePtcl->R[curCenter];
-    TinyVector<RealType, 3> ddr2 = targetPtcl->makeMove(0, dr);
-    Psi1->evaluate(*targetPtcl, 0, val1);
-
-    return val1[curOrb];
-  }
-#endif
 
   inline RealType Rr(RealType r) { return cparam.sg * std::exp(pr(r)); }
 
@@ -190,38 +173,9 @@ public:
     return 2.0*alpha[2] + 6.0*alpha[3] * r + 12.0*alpha[4] * r * r;
   }
 
-  //CuspCorrection(ParticleSet* targetP, ParticleSet* sourceP) : targetPtcl(targetP), sourcePtcl(sourceP) {}
-
-  //CuspCorrection(OneMolecularOrbital &MO, const CuspCorrectionParameters &param) : phiMO(MO), cparam(param) {}
   CuspCorrection(const CuspCorrectionParameters &param) : cparam(param) {}
 
-#if 0
-  void setPsi(SPOSetPtr Phi)
-  {
-    Psi1     = Phi;
-    int norb = Psi1->OrbitalSetSize;
-    val1.resize(norb);
-  }
-#endif
-
   CuspCorrectionParameters cparam;
-
-  //OneMolecularOrbital &phiMO;
-  /// Index of orbital
-  //int curOrb;
-
-  /// Index of atomic center
-  //int curCenter;
-
-  /// Temporary storage for real wavefunction values
-  //ValueVector_t val1;
-
-  /// target ParticleSet
-  //ParticleSet* targetPtcl;
-  /// source ParticleSet
-  //ParticleSet* sourcePtcl;
-
-  //SPOSetPtr Psi1;
 };
 
 /// Read cusp correction parameters from XML file
