@@ -31,13 +31,13 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
-  NP(0), Phi(spos), FirstIndex(first)
-  ,UpdateTimer("DiracDeterminant::update",timer_level_fine)
-  ,RatioTimer("DiracDeterminant::ratio",timer_level_fine)
-  ,InverseTimer("DiracDeterminant::inverse",timer_level_fine)
-  ,BufferTimer("DiracDeterminant::buffer",timer_level_fine)
-  ,SPOVTimer("DiracDeterminant::spoval",timer_level_fine)
-  ,SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
+  NP(0), Phi(spos), FirstIndex(first), ndelay(1),
+  UpdateTimer("DiracDeterminant::update",timer_level_fine),
+  RatioTimer("DiracDeterminant::ratio",timer_level_fine),
+  InverseTimer("DiracDeterminant::inverse",timer_level_fine),
+  BufferTimer("DiracDeterminant::buffer",timer_level_fine),
+  SPOVTimer("DiracDeterminant::spoval",timer_level_fine),
+  SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
 {
   Optimizable=false;
   if(Phi->Optimizable)
@@ -49,23 +49,14 @@ DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
 ///default destructor
 DiracDeterminant::~DiracDeterminant() {}
 
-#if 0
-DiracDeterminant& DiracDeterminant::operator=(const DiracDeterminant& s)
-{
-  Bytes_in_WFBuffer=s.Bytes_in_WFBuffer;
-  NP=0;
-  resize(s.NumPtcls, s.NumOrbitals);
-  return *this;
-}
-#endif
-
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
  *@param nel number of particles in the determinant
  */
-void DiracDeterminant::set(int first, int nel)
+void DiracDeterminant::set(int first, int nel, int delay)
 {
   FirstIndex = first;
+  ndelay = delay;
   resize(nel,nel);
 }
 
@@ -73,16 +64,15 @@ void DiracDeterminant::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& i
 {
   InverseTimer.start();
 #ifdef MIXED_PRECISION
-  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(), 
-      psiM_hp.data(), NumOrbitals, psiM_hp.cols());
-  ParticleSet::Scalar_t PhaseValue_hp;
-  detEng_hp.invert(psiM_hp,true);
-  LogValue = static_cast<RealType>(detEng_hp.LogDet);
-  PhaseValue = static_cast<RealType>(detEng_hp.Phase);
+  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
+                  psiM_hp.data(), NumOrbitals, psiM_hp.cols());
+  detEng.invert(psiM_hp,true);
+  LogValue = static_cast<RealType>(detEng.LogDet);
+  PhaseValue = static_cast<RealType>(detEng.Phase);
   invMat = psiM_hp;
 #else
-  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(), 
-      invMat.data(), NumOrbitals, invMat.cols());
+  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
+                  invMat.data(), NumOrbitals, invMat.cols());
   detEng.invert(invMat,true);
   LogValue = detEng.LogDet;
   PhaseValue = detEng.Phase;
@@ -98,15 +88,15 @@ void DiracDeterminant::resize(int nel, int morb)
   int norb=morb;
   if(norb <= 0)
     norb = nel; // for morb == -1 (default)
+  updateEng.resize(norb,ndelay);
   psiM.resize(nel,norb);
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
   memoryPool.resize(nel*norb);
   psiM_temp.attachReference(memoryPool.data(),nel,norb);
-#ifdef MIXED_PRECISION
-  psiM_hp.resize(nel,norb);
-#endif
+  if( typeid(ValueType) != typeid(mValueType) )
+    psiM_hp.resize(nel,norb);
   LastIndex = FirstIndex + nel;
   NumPtcls=nel;
   NumOrbitals=norb;
@@ -136,7 +126,7 @@ DiracDeterminant::evalGrad(ParticleSet& P, int iat)
 {
   WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
-  DiracDeterminant::GradType g = simd::dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
+  GradType g = updateEng.evalGrad(psiM, WorkingIndex, dpsiM[WorkingIndex]);
   RatioTimer.stop();
   return g;
 }
@@ -150,8 +140,8 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   RatioTimer.start();
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
-  curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
-  GradType rv=simd::dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
+  GradType rv;
+  curRatio = updateEng.ratioGrad(psiM, WorkingIndex, psiV, dpsiV, rv);
   grad_iat += ((RealType)1.0/curRatio) * rv;
   RatioTimer.stop();
   return curRatio;
@@ -164,7 +154,7 @@ void DiracDeterminant::acceptMove(ParticleSet& P, int iat)
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
-  detEng.updateRow(psiM,psiV.data(),WorkingIndex,curRatio);
+  updateEng.acceptRow(psiM,WorkingIndex,psiV);
   if(UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
@@ -181,12 +171,19 @@ void DiracDeterminant::restore(int iat)
   curRatio=1.0;
 }
 
+void DiracDeterminant::completeUpdates()
+{
+  UpdateTimer.start();
+  updateEng.updateInvMat(psiM);
+  UpdateTimer.stop();
+}
+
 void DiracDeterminant::updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L)
 {
   if(UpdateMode == ORB_PBYP_RATIO)
-  { //need to compute dpsiM and d2psim. Use Phi->t_logpsi. Do not touch psiM!
+  { //need to compute dpsiM and d2psiM. Do not touch psiM!
     SPOVGLTimer.start();
     Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM_temp,dpsiM,d2psiM);
     SPOVGLTimer.stop();
@@ -283,8 +280,7 @@ DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
   Phi->evaluate(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
-  curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
-  //curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
+  curRatio = updateEng.ratio(psiM, WorkingIndex, psiV);
   RatioTimer.stop();
   return curRatio;
 }
@@ -629,12 +625,12 @@ WaveFunctionComponentPtr DiracDeterminant::makeClone(ParticleSet& tqp) const
 DiracDeterminant* DiracDeterminant::makeCopy(SPOSetPtr spo) const
 {
   DiracDeterminant* dclone= new DiracDeterminant(spo);
-  dclone->set(FirstIndex,LastIndex-FirstIndex);
+  dclone->set(FirstIndex,LastIndex-FirstIndex,ndelay);
   return dclone;
 }
 
 DiracDeterminant::DiracDeterminant(const DiracDeterminant& s)
-  : WaveFunctionComponent(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex)
+  : WaveFunctionComponent(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex), ndelay(s.ndelay)
   ,UpdateTimer(s.UpdateTimer)
   ,RatioTimer(s.RatioTimer)
   ,InverseTimer(s.InverseTimer)

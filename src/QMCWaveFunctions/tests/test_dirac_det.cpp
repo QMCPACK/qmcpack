@@ -16,10 +16,8 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "Numerics/OhmmsBlas.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
-#include "simd/simd.hpp"
 
 
 #include <stdio.h>
@@ -368,6 +366,138 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 #endif
 
   check_matrix(orig_a, ddb.psiM);
+
+
+}
+
+TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
+{
+  FakeSPO *spo = new FakeSPO();
+  spo->setOrbitalSetSize(4);
+  DiracDeterminant ddc(spo);
+
+  int norb = 4;
+  // maximum delay 2
+  ddc.set(0,norb,2);
+
+  // occurs in call to registerData
+  ddc.dpsiV.resize(norb);
+  ddc.d2psiV.resize(norb);
+
+
+  ParticleSet elec;
+
+  elec.create(4);
+  ddc.recompute(elec);
+
+  Matrix<ValueType> orig_a;
+  orig_a.resize(4,4);
+  orig_a = spo->a2;
+
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < norb; j++) {
+      orig_a(j,i) = spo->v2(i,j);
+    }
+  }
+
+  //check_matrix(ddc.psiM, b);
+  DiracMatrix<ValueType> dm;
+
+  Matrix<ValueType> a_update1;
+  a_update1.resize(4,4);
+  a_update1 = spo->a2;
+  for (int j = 0; j < norb; j++) {
+    a_update1(j,0) = spo->v2(0,j);
+  }
+
+  Matrix<ValueType> a_update2;
+  a_update2.resize(4,4);
+  a_update2 = spo->a2;
+  for (int j = 0; j < norb; j++) {
+    a_update2(j,0) = spo->v2(0,j);
+    a_update2(j,1) = spo->v2(1,j);
+  }
+
+  Matrix<ValueType> a_update3;
+  a_update3.resize(4,4);
+  a_update3 = spo->a2;
+  for (int j = 0; j < norb; j++) {
+    a_update3(j,0) = spo->v2(0,j);
+    a_update3(j,1) = spo->v2(1,j);
+    a_update3(j,2) = spo->v2(2,j);
+  }
+
+
+  DiracDeterminant::GradType grad;
+  ValueType det_ratio = ddc.ratioGrad(elec, 0, grad);
+
+  dm.invert(a_update1, true);
+  ValueType det_update1 = dm.LogDet;
+  ValueType log_ratio1 = det_update1 - ddc.LogValue;
+  ValueType det_ratio1 = std::exp(log_ratio1);
+#ifdef DUMP_INFO
+  std::cout << "det 0 = " << std::exp(ddc.LogValue) << std::endl;
+  std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
+  std::cout << "det ratio 1 = " << det_ratio1 << std::endl;
+#endif
+  //double det_ratio1 = 0.178276269185;
+
+  REQUIRE(det_ratio1 == ValueApprox(det_ratio));
+
+  // update of Ainv in ddc is delayed
+  ddc.acceptMove(elec, 0);
+  // force update Ainv in ddc using SM-1 code path
+  ddc.completeUpdates();
+
+  grad = ddc.evalGrad(elec, 1);
+  ValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
+  dm.invert(a_update2, true);
+  ValueType det_update2 = dm.LogDet;
+  ValueType log_ratio2 = det_update2 - det_update1;
+  ValueType det_ratio2_val = std::exp(log_ratio2);
+#ifdef DUMP_INFO
+  std::cout << "det 1 = " << std::exp(ddc.LogValue) << std::endl;
+  std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
+  std::cout << "det ratio 2 = " << det_ratio2 << std::endl;
+#endif
+  // check ratio computed directly and the one computed by ddc with no delay
+  //double det_ratio2_val = 0.178276269185;
+  REQUIRE(std::abs(det_ratio2) == ValueApprox(det_ratio2_val));
+
+  // update of Ainv in ddc is delayed
+  ddc.acceptMove(elec, 1);
+
+  grad = ddc.evalGrad(elec, 2);
+  ValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
+  dm.invert(a_update3, true);
+  ValueType det_update3 = dm.LogDet;
+  ValueType log_ratio3 = det_update3 - det_update2;
+  ValueType det_ratio3_val = std::exp(log_ratio3);
+#ifdef DUMP_INFO
+  std::cout << "det 2 = " << std::exp(ddc.LogValue) << std::endl;
+  std::cout << "det 3 = " << std::exp(det_update3) << std::endl;
+  std::cout << "det ratio 3 = " << det_ratio3 << std::endl;
+#endif
+  // check ratio computed directly and the one computed by ddc with 1 delay
+  REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
+  //check_value(det_ratio3, det_ratio3_val);
+
+  // maximal delay reached and Ainv is updated fully
+  ddc.acceptMove(elec, 2);
+  //ddc.completeUpdates();
+
+  // fresh invert orig_a
+  dm.invert(orig_a,false);
+
+#ifdef DUMP_INFO
+  std::cout << "original " << std::endl;
+  std::cout << orig_a << std::endl;
+  std::cout << "delayed update " << std::endl;
+  std::cout << ddc.psiM << std::endl;
+#endif
+
+  // compare all the elements of psiM in ddc and orig_a
+  check_matrix(orig_a, ddc.psiM);
 
 
 }
