@@ -10,7 +10,7 @@ vectors are used, the electrons may not fill up a complete shell.
 This following example can also be used for Helium simulations too, by specifying the
 proper pair interaction in the Hamiltonian section. 
 
-\begin{lstlisting}[caption=2D Fermi Liquid example: particle specification ]
+\begin{lstlisting}[style=XML,caption=2D Fermi Liquid example: particle specification ]
 <qmcsystem>
 <simulationcell name="global">
 <parameter name="rs" pol="0" condition="74">6.5</parameter>
@@ -30,7 +30,7 @@ proper pair interaction in the Hamiltonian section.
 </qmcsystem>
 \end{lstlisting}
 
-\begin{lstlisting}[caption=2D Fermi Liquid example (Slater Jastrow wave function) ]
+\begin{lstlisting}[style=XML,caption=2D Fermi Liquid example (Slater Jastrow wave function) ]
 <qmcsystem>
   <wavefunction name="psi0" target="e">
       <determinantset type="electron-gas" shell="7" shell2="7" randomize="true">

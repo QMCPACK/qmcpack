@@ -156,7 +156,7 @@ The v1 and v3 algorithms are size-consistent and important advances over the pre
 
 \end{itemize}
 
-\begin{lstlisting}[caption=The following is an example of a very simple DMC section. ]
+\begin{lstlisting}[style=XML,caption=The following is an example of a very simple DMC section. ]
   <qmc method="dmc" move="pbyp" target="e">
     <parameter name="blocks">100</parameter>
     <parameter name="steps">400</parameter>
@@ -168,7 +168,7 @@ The time step should be adjusted for each problem individually.  Please refer to
 on diffusion Monte Carlo.
 
 
-\begin{lstlisting}[caption=The following is an example of running a simulation that can be restarted . ]
+\begin{lstlisting}[style=XML,caption=The following is an example of running a simulation that can be restarted . ]
   <qmc method="dmc" move="pbyp"  checkpoint="0">
     <parameter name="timestep">         0.004  </parameter>
     <parameter name="blocks">           100   </parameter>
@@ -186,7 +186,7 @@ BH is the project id and s002 is the calculation number to read in the walkers f
 
 Combining VMC and DMC in a single run (and wave function optimization can be combined in this way too) is the standard way in which QMCPACK is typical run.   There is no need to run two separate jobs, as method sections can be stacked, and walkers are transferred between them.
 
-\begin{lstlisting}[caption=Combined VMC and DMC run ]
+\begin{lstlisting}[style=XML,caption=Combined VMC and DMC run ]
   <qmc method="vmc" move="pbyp" target="e">
     <parameter name="blocks">100</parameter>
     <parameter name="steps">4000</parameter>
