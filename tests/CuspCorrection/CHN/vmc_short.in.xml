@@ -10,7 +10,6 @@
   </hamiltonian>
   <qmc method="vmc" move="pbyp" checkpoint="-1">
     <estimator name="LocalEnergy" hdf5="no"/>
-    <parameter name="walkers">1</parameter>
     <parameter name="samplesperthread">1</parameter>
     <parameter name="stepsbetweensamples">10000</parameter>
     <parameter name="substeps">5</parameter>
