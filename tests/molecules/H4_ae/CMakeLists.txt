@@ -60,6 +60,19 @@ IF (NOT QMC_CUDA)
                     ${MP_SUCCESS}
                     7 H4_OPT_SCALARS # OPT step 7
                     )
+    #
+    # H4 Multi-Slater Jastrow wfn. Fixed CI and J parameters but the orbitals are allowed to relax
+    #
+    LIST(APPEND H4_MSJ_ORB_OPT_SCALARS "totenergy" "-2.160310 0.000810") # total energy
+
+    QMC_RUN_AND_CHECK(short-H4-msj-orb-opt
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      h4
+                      h4_msj_orb_opt.xml
+                      16 1
+                      ${MP_SUCCESS}
+                      4 H4_MSJ_ORB_OPT_SCALARS # OPT step 4
+                      )
 
 
   IF(BUILD_LMYENGINE_INTERFACE)
