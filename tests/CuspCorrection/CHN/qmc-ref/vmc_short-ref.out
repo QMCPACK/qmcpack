@@ -1,4 +1,4 @@
-  Input file(s): Cusp.xml 
+  Input file(s): vmc_short-ref.in.qmc.xml 
 
 =====================================================
                     QMCPACK 3.5.0 
@@ -9,33 +9,36 @@
  J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)
       https://doi.org/10.1088/1361-648X/aab9c3
 
-  Git branch: HEAD
-  Last git commit: 975a195ac9ed860a22f8f36f4d9b6d51476be4ee-dirty
-  Last git commit date: Thu Nov 8 12:43:46 2018 -0600
-  Last git commit subject: Fix unit test with return value change.
+  Git branch: CuspCorrection_SOA
+  Last git commit: 50ec4acb7ac39d2c9381752892965522b15d3328-dirty
+  Last git commit date: Wed Nov 28 17:37:18 2018 -0600
+  Last git commit subject: Merge branch CuspCorrection_SOA of https://github.com/anbenali/qmcpack into CuspCorrection_SOA
 =====================================================
   Global options 
 
-  MPI Nodes            = 1
-  MPI Nodes per group  = 1
-  MPI Group ID         = 0
-  OMP_NUM_THREADS      = 16
+  MPI Nodes             = 1
+  MPI Nodes per group   = 1
+  MPI Group ID          = 0
+  OMP 1st level threads = 16
+  OMP nested threading disabled or only 1 thread on the 2nd level
 
   Precision used in this calculation, see definitions in the manual:
   Base precision      = double
   Full precision      = double
 
-  Input XML = Cusp.xml
+  Structure-of-arrays (SoA) optimization enabled
 
-  Project = frag_00005
-  date    = 2018-11-28 22:18:17 UTC
-  host    = cc013
+  Input XML = vmc_short-ref.in.qmc.xml
+
+  Project = vmc_short-ref
+  date    = 2018-11-29 12:00:13 CST
+  host    = abenali
 
  Random Number
  -------------
-  Offset for the random number seeds based on time: 41
+  Offset for the random number seeds based on time: 301
 
-  Range of prime numbers to use as seeds over processors and threads = 191-277
+  Range of prime numbers to use as seeds over processors and threads = 1999-2113
 
 
  Particle Set 
@@ -66,7 +69,7 @@
     Using structure-of-arrays (SoA) data layout
     Distance computations use open boundary conditions in 3D.
 
-Reading BasisSet from HDF5 file:../frag_00005.h5
+Reading BasisSet from HDF5 file:../CHN.h5
 <input node="atomicBasisSet" name="cc-pvtz" expandYlm="pyscf" angular="spherical" elementType="N" normalized="no" type="Numerical" expM="0" />
   AO BasisSet for N
    Spherical Harmonics contain (-1)^m factor
@@ -155,74 +158,22 @@ Expanding Ylm as L=1 as (1,-1,0) and L>1 as -l,-l+1,...,l-1,l
   Created SPOSet builder named 'LCAOBSet' of type molecularorbital
 Reuse SPOSetBuilder "LCAOBSet" type MolecularOrbital
   Building SPOSet '' with '' basis set.
-Reading cusp info from : ../CuspCorrection/updet.cuspInfo.xml
-Could not find precomputed cusp data for spo set: updet
-Recalculating data.
-Working on Center 0
-Working on Mo 0
-Working on Mo 1
-Working on Mo 2
-Working on Mo 3
-Working on Mo 4
-Working on Mo 5
-Working on Mo 6
-Working on Center 1
-Working on Mo 0
-Working on Mo 1
-Working on Mo 2
-Working on Mo 3
-Working on Mo 4
-Working on Mo 5
-Working on Mo 6
-Working on Center 2
-Working on Mo 0
-Working on Mo 1
-Working on Mo 2
-Working on Mo 3
-Working on Mo 4
-Working on Mo 5
-Working on Mo 6
-Saving resulting cusp Info xml block to: updet.cuspInfo.xml
+Reading cusp info from : updet.cuspInfo.xml
+Found precomputed cusp data for spo set: updet
 Reuse SPOSetBuilder "LCAOBSet" type MolecularOrbital
   Building SPOSet '' with '' basis set.
-Reading cusp info from : ../CuspCorrection/downdet.cuspInfo.xml
-Could not find precomputed cusp data for spo set: downdet
-Recalculating data.
-Working on Center 0
-Working on Mo 0
-Working on Mo 1
-Working on Mo 2
-Working on Mo 3
-Working on Mo 4
-Working on Mo 5
-Working on Mo 6
-Working on Center 1
-Working on Mo 0
-Working on Mo 1
-Working on Mo 2
-Working on Mo 3
-Working on Mo 4
-Working on Mo 5
-Working on Mo 6
-Working on Center 2
-Working on Mo 0
-Working on Mo 1
-Working on Mo 2
-Working on Mo 3
-Working on Mo 4
-Working on Mo 5
-Working on Mo 6
-Saving resulting cusp Info xml block to: downdet.cuspInfo.xml
+Reading cusp info from : downdet.cuspInfo.xml
+Found precomputed cusp data for spo set: downdet
   Creating a determinant updet group=0 sposet=updet
   Reusing a SPO set updet
-Using DiracDeterminantBase 
+Using DiracDeterminant 
 
   Creating a determinant downdet group=1 sposet=downdet
   Reusing a SPO set downdet
-Using DiracDeterminantBase 
+Using DiracDeterminant 
 
   FermionWF = SlaterDet
-  BsplineJastrowBuilder adds a functor with cusp = -0.25
+  RadialJastrowBuilder adds a functor with cusp = -0.25
  size = 10 parameters 
  cusp = -0.25
  rcut = 10
@@ -237,7 +188,7 @@ uu_6 -0.108115 1 1  ON 6
 uu_7 -0.13442 1 1  ON 7
 uu_8 -0.121105 1 1  ON 8
 uu_9 -0.0581075 1 1  ON 9
-  BsplineJastrowBuilder adds a functor with cusp = -0.5
+  RadialJastrowBuilder adds a functor with cusp = -0.5
  size = 10 parameters 
  cusp = -0.5
  rcut = 10
@@ -252,8 +203,6 @@ ud_6 -0.128153 1 1  ON 6
 ud_7 -0.117775 1 1  ON 7
 ud_8 -0.0993797 1 1  ON 8
 ud_9 -0.056155 1 1  ON 9
-
-  Using BsplineBuilder for one-body jastrow with B-spline functions
  size = 10 parameters 
  cusp = 0
  rcut = 10
@@ -479,7 +428,7 @@ QMCHamiltonian::addOperatorType added type coulomb named IonElec
 ParticleSetPool::randomize 
 <init source="ion0" target="e">
 </init>
-  Initialization Execution time = 10.86 secs
+  Initialization Execution time = 0.2698 secs
 =========================================================
  Summary of QMC systems 
 =========================================================
@@ -489,16 +438,16 @@ ParticleSetPool has:
 
     14
 
-    u  1.7588475104e+00 -8.1150687504e-01  3.2441212490e-01
-    u  2.4359714746e+00  2.2030417055e-01  2.7400520666e-01
-    u  1.1439836081e+00 -5.4866828202e-01 -2.1917936211e-01
-    u -2.8173314285e-01 -5.7268229546e-01 -8.0298673297e-01
-    u  4.3036863262e-01 -3.5880241349e-01 -2.7453863969e-01
-    u -1.1357955707e-01 -7.3717522178e-01  3.7916443909e-01
-    u -2.7062462946e-01  5.6186690831e-01  2.6414115634e-01
-    d  1.7015433418e+00  5.6063521365e-01  2.4791178049e-01
-    d  1.3786051909e+00 -8.0899217299e-01 -1.2833706138e-01
-    d  2.0958010996e+00 -4.1935353009e-01  5.9001681305e-01
+    u  2.4287783890e+00 -5.9482455738e-01 -4.2884736715e-01
+    u  1.1357686169e+00 -3.9558929227e-01  1.9231306194e-01
+    u  2.0329433376e+00 -8.5572511792e-01 -4.4496763316e-01
+    u  5.1659633685e-02 -7.2359819454e-01  2.8737966235e-01
+    u  2.1110681233e-01 -7.3885230494e-01 -1.6283760431e-01
+    u -3.6481528599e-01 -7.4220264678e-01 -6.6155070642e-01
+    u -3.1431168974e-01  4.7536027361e-01  3.9494785526e-01
+    d  1.4521533007e+00 -7.3220278235e-01 -5.1918664470e-01
+    d  2.3867945314e+00 -6.2153418332e-01 -4.6469832710e-01
+    d  2.5777653782e+00  1.6743250737e-01 -8.0589622294e-02
     (... and 4 more particle positions ...)
 
   ParticleSet ion0 : 0 1 2 3 
@@ -520,7 +469,7 @@ ParticleSetPool has:
 
 =========================================================
   Start VMCSingleOMP
-  File Root frag_00005.s000 append = no 
+  File Root vmc_short-ref.s000 append = no 
 =========================================================
   Adding 16 walkers to 0 existing sets
   Total number of walkers: 1.6000000000e+01
@@ -534,26 +483,26 @@ ParticleSetPool has:
   steps          = 50
   substeps       = 5
   current        = 0
-  target samples = 1.6000000000e+01
+  target samples = 1.6000000000e+05
   walkers/mpi    = 16
 
-  stepsbetweensamples = 10000
+  stepsbetweensamples = 1
 <parameter name="blocks" condition="int">200</parameter>
 <parameter name="blocks_between_recompute" condition="int">0</parameter>
 <parameter name="check_properties" condition="int">100</parameter>
 <parameter name="checkproperties" condition="int">100</parameter>
 <parameter name="current" condition="int">0</parameter>
-<parameter name="dmcwalkersperthread" condition="real">1.0000000000e+00</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.0000000000e+04</parameter>
 <parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
 <parameter name="record_configs" condition="int">0</parameter>
-<parameter name="record_walkers" condition="int">10000</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
 <parameter name="recordconfigs" condition="int">0</parameter>
-<parameter name="recordwalkers" condition="int">10000</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
 <parameter name="rewind" condition="int">0</parameter>
-<parameter name="samples" condition="real">1.6000000000e+01</parameter>
-<parameter name="samplesperthread" condition="real">1.0000000000e+00</parameter>
+<parameter name="samples" condition="real">1.6000000000e+05</parameter>
+<parameter name="samplesperthread" condition="real">1.0000000000e+04</parameter>
 <parameter name="steps" condition="int">50</parameter>
-<parameter name="stepsbetweensamples" condition="int">10000</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
 <parameter name="store_configs" condition="int">0</parameter>
 <parameter name="storeconfigs" condition="int">0</parameter>
 <parameter name="sub_steps" condition="int">5</parameter>
@@ -567,27 +516,27 @@ ParticleSetPool has:
 <parameter name="warmup_steps" condition="int">20</parameter>
 <parameter name="warmupsteps" condition="int">20</parameter>
   DumpConfig==false Nothing (configurations, state) will be saved.
-  Walker Samples are dumped every 10000 steps.
+  Walker Samples are dumped every 1 steps.
 </vmc>
   CloneManager::makeClones makes 16 clones for W/Psi/H.
   Cloning methods for both Psi and H are used
 ===== Memory Usage before cloning =====
-Available memory on node 0, free + buffers : 374811 MB
-Memory footprint by rank 0 on node 0       : 26 MB
+Available memory on node 0, free + buffers : 21663 MB
+Memory footprint by rank 0 on node 0       : 47 MB
 ==================================================
 ===== Memory Usage after cloning =====
-Available memory on node 0, free + buffers : 374806 MB
-Memory footprint by rank 0 on node 0       : 32 MB
+Available memory on node 0, free + buffers : 21659 MB
+Memory footprint by rank 0 on node 0       : 51 MB
 ==================================================
   Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
 
   Using Particle by Particle moves
   Walker moves without drift
-  Total Sample Size   =16
+  Total Sample Size   =160000
   Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
 ===== Memory Usage after the buffer registration =====
-Available memory on node 0, free + buffers : 374806 MB
-Memory footprint by rank 0 on node 0       : 33 MB
+Available memory on node 0, free + buffers : 21658 MB
+Memory footprint by rank 0 on node 0       : 52 MB
 ==================================================
   Anonymous Buffer size per walker : 6976 Bytes.
 MEMORY increase 0 MB VMCSingleOMP::resetRun
@@ -595,11 +544,11 @@ MEMORY increase 0 MB VMCSingleOMP::resetRun
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
     time step          = 0.5
-    reference energy   = -93.593
-    reference variance = 2.91862
+    reference energy   = -93.4243
+    reference variance = 0.926296
 ====================================================
-  QMC Execution time = 9.5708e+00 secs 
-  Total Execution time = 9.5726e+00 secs
+  QMC Execution time = 4.8512e+01 secs 
+  Total Execution time = 4.8522e+01 secs
 
 =========================================================
-  A new xml input file : frag_00005.s000.cont.xml
+  A new xml input file : vmc_short-ref.s000.cont.xml
