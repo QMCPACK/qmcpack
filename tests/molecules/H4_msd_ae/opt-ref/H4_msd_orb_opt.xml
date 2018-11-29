@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="h4" series="0"/>
+  <project id="H4" series="0"/>
   <random seed="350"/>
   <!-- input from gaussian converter -->
   <include href="H4.ptcl.xml"/>
-  <include href="H4.wfs_4.xml"/>
+  <include href="H4.wfn.xml"/>
   <hamiltonian name="h0" type="generic" target="e"> 
     <pairpot name="ElecElec" type="coulomb" source="e" target="e"/> 
     <pairpot name="IonElec"  type="coulomb" source="ion0"/>
