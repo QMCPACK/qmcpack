@@ -300,7 +300,7 @@ struct WaveFunctionComponent: public QMCTraits
    */
   virtual void acceptMove(ParticleSet& P, int iat) =0;
 
-  /** complete all the delayed updates
+  /** complete all the delayed updates, must be called after each substep or step during pbyp move
    */
   virtual void completeUpdates() {};
 

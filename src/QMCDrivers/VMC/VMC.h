@@ -14,8 +14,8 @@
     
 
 
-#ifndef QMCPLUSPLUS_VMCSINGLE_OMP_H
-#define QMCPLUSPLUS_VMCSINGLE_OMP_H
+#ifndef QMCPLUSPLUS_VMC_H
+#define QMCPLUSPLUS_VMC_H
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 namespace qmcplusplus
@@ -24,11 +24,11 @@ namespace qmcplusplus
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a VMC using particle-by-particle move. Threaded execution.
  */
-class VMCSingleOMP: public QMCDriver, public CloneManager
+class VMC: public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+  VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                WaveFunctionPool& ppool, Communicate* comm);
   bool run();
   bool put(xmlNodePtr cur);
@@ -44,9 +44,9 @@ private:
   ///check the run-time environments
   void resetRun();
   ///copy constructor
-  VMCSingleOMP(const VMCSingleOMP &) = delete;
+  VMC(const VMC &) = delete;
   /// Copy operator (disabled).
-  VMCSingleOMP & operator=(const VMCSingleOMP &) = delete;
+  VMC & operator=(const VMC &) = delete;
 };
 }
 

@@ -22,23 +22,39 @@ namespace qmcplusplus {
   template<typename T>
     class DelayedUpdate
     {
-      Matrix<T> U, V, Binv, tempMat;
-      // temporal scratch space used by SM-1
+      /// orbital values of delayed electrons
+      Matrix<T> U;
+      /// rows of Ainv corresponding to delayed electrons
+      Matrix<T> V;
+      /// Matrix inverse of B, at maximum KxK
+      Matrix<T> Binv;
+      /// scratch space, used during inverse update
+      Matrix<T> tempMat;
+      /// temporal scratch space used by SM-1
       Vector<T> temp;
-      // auxiliary arrays for B
+      /// new column of B
       Vector<T> p;
+      /// list of delayed electrons
       std::vector<int> delay_list;
+      /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
       int delay_count;
 
+      /// pointer to the row of up-to-date Ainv
       const T* Ainv_row_ptr;
-      // electron id of the up-to-date Ainv_row
+      /// electron id of the up-to-date Ainv_row, checked by ratioGrad
       int Ainv_row_ind;
+      /// current determinant ratio
       T curRatio;
 
     public:
+      /// default constructor
       DelayedUpdate(): delay_count(0), Ainv_row_ptr(nullptr), Ainv_row_ind(-1) {}
 
-      ///resize the internal storage, 0<delay<=norb
+      ///resize the internal storage
+      /** resize the internal storage
+       * @param norb number of electrons/orbitals
+       * @param delay, maximum delay 0<delay<=norb
+       */
       inline void resize(int norb, int delay)
       {
         V.resize(delay, norb);
@@ -50,11 +66,16 @@ namespace qmcplusplus {
         delay_list.resize(delay);
       }
 
+      /** compute the row of up-to-date Ainv
+       * @param Ainv inverse matrix
+       * @param rowchanged the row id corresponding to the proposed electron
+       */
       inline void getInvRow(const Matrix<T>& Ainv, int rowchanged)
       {
         Ainv_row_ind = rowchanged;
         if ( delay_count == 0 )
         {
+          // Ainv is fresh, directly access Ainv
           Ainv_row_ptr = Ainv[rowchanged];
           return;
         }
@@ -72,6 +93,11 @@ namespace qmcplusplus {
         Ainv_row_ptr = V[delay_count];
       }
 
+      /** compute determinant ratio of new determinant
+       * @param Ainv inverse matrix
+       * @param rowchanged the row id corresponding to the proposed electron
+       * @param psiV new orbital values
+       */
       template<typename VVT>
       inline T ratio(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
@@ -79,6 +105,11 @@ namespace qmcplusplus {
         return curRatio = simd::dot(Ainv_row_ptr,psiV.data(),Ainv.cols());
       }
 
+      /** compute the old gradient
+       * @param Ainv inverse matrix
+       * @param rowchanged the row id corresponding to the proposed electron
+       * @param dpsiV old orbital derivatives
+       */
       template<typename GT>
       inline GT evalGrad(const Matrix<T>& Ainv, int rowchanged, const GT* dpsiV)
       {
@@ -86,16 +117,30 @@ namespace qmcplusplus {
         return simd::dot(Ainv_row_ptr,dpsiV,Ainv.cols());
       }
 
+      /** compute determinant ratio and gradients of new determinant
+       * @param Ainv inverse matrix
+       * @param rowchanged the row id corresponding to the proposed electron
+       * @param psiV new orbital values
+       * @param dpsiV new orbital derivatives
+       * @param g new gradients
+       */
       template<typename VVT, typename GGT, typename GT>
       inline T ratioGrad(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV, const GGT& dpsiV, GT& g)
       {
+        // check Ainv_row_ind against rowchanged to ensure getInvRow() called before ratioGrad()
         if(Ainv_row_ind != rowchanged)
           getInvRow(Ainv, rowchanged);
         g = simd::dot(Ainv_row_ptr,dpsiV.data(),Ainv.cols());
         return curRatio = simd::dot(Ainv_row_ptr,psiV.data(),Ainv.cols());
       }
 
-      // accept with the update delayed
+      /** accept a move with the update delayed
+       * @param Ainv inverse matrix
+       * @param rowchanged the row id corresponding to the proposed electron
+       * @param psiV new orbital values
+       *
+       * Before delay_count reaches the maximum delay, only Binv is updated with a recursive algorithm
+       */
       template<typename VVT>
       inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
@@ -124,9 +169,13 @@ namespace qmcplusplus {
         for(int i=0; i<delay_count; i++)
           Binv[delay_count][i] *= -y;
         delay_count++;
+        // update Ainv when maximal delay is reached
         if(delay_count==lda_Binv) updateInvMat(Ainv);
       }
 
+      /** update the full Ainv and reset delay_count
+       * @param Ainv inverse matrix
+       */
       inline void updateInvMat(Matrix<T>& Ainv)
       {
         if(delay_count==0) return;
@@ -136,6 +185,7 @@ namespace qmcplusplus {
         const int norb=Ainv.rows();
         if(delay_count==1)
         {
+          // this is a special case invoking the Fahy's variant of Sherman-Morrison update.
           // Only use the first norb elements of tempMat as a temporal array
           BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, U[0], 1, czero, temp.data(), 1);
           temp[delay_list[0]] -= cone;

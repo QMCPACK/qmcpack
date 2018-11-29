@@ -14,8 +14,8 @@
     
 
 
-#ifndef QMCPLUSPLUS_RMCSINGLE_OMP_H
-#define QMCPLUSPLUS_RMCSINGLE_OMP_H
+#ifndef QMCPLUSPLUS_RMC_H
+#define QMCPLUSPLUS_RMC_H
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Particle/Reptile.h"
@@ -25,14 +25,14 @@ namespace qmcplusplus
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a RMC using threaded execution.
  */
-  class RMCSingleOMP:public QMCDriver, public CloneManager
+  class RMC:public QMCDriver, public CloneManager
   {
   public:
     /// Constructor.
     typedef ParticleSet::ParticlePos_t ParticlePos_t;
     typedef Reptile::ReptileConfig_t ReptileConfig_t;
 
-    RMCSingleOMP(MCWalkerConfiguration & w, TrialWaveFunction & psi,
+    RMC(MCWalkerConfiguration & w, TrialWaveFunction & psi,
                 QMCHamiltonian & h, WaveFunctionPool & ppool, Communicate* comm);
     bool run ();
     bool put (xmlNodePtr cur);
@@ -76,9 +76,9 @@ namespace qmcplusplus
     void resetReptiles (std::vector< ParticlePos_t > &walker_samps, int nbeads,
 			RealType tau);
     ///copy constructor (disabled)
-    RMCSingleOMP(const RMCSingleOMP &) = delete;
+    RMC(const RMC &) = delete;
     /// Copy operator (disabled).
-    RMCSingleOMP & operator=(const RMCSingleOMP &) = delete;
+    RMC & operator=(const RMC &) = delete;
 
   };
 }

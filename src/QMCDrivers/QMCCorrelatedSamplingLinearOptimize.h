@@ -16,11 +16,11 @@
 /** @file QMCCorrelatedSamplingLinearOptimize.h
  * @brief Definition of QMCDriver which performs VMC and optimization.
  */
-#ifndef QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_VMCSINGLE_H
-#define QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_VMCSINGLE_H
+#ifndef QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_H
+#define QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_H
 
 #include "QMCDrivers/QMCLinearOptimize.h"
-#include "QMCDrivers/VMC/VMCLinearOptOMP.h"
+#include "QMCDrivers/VMC/VMCLinearOpt.h"
 #include "Optimize/NRCOptimization.h"
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
@@ -63,7 +63,7 @@ private:
 #if defined(QMC_CUDA)
   VMCcuda* vmcCSEngine;
 #else
-  VMCLinearOptOMP* vmcCSEngine;
+  VMCLinearOpt* vmcCSEngine;
 #endif
 
   int NumOfVMCWalkers;
