@@ -38,7 +38,7 @@ Just like one and two-body jastrows, parameterization of the backflow transforma
 \subsection{Example Use Case}
 Having specified the general form, we present a general example of one-body and two-body backflow transformations in a hydrogen-helium mixture.  The H and He ions have independent backflow transformations, as do the like and unlike-spin two-body terms.  One caveat is in order:  ionic backflow transformations must be listed in the order that they appear in the particle set.  If in our example, He is listed first, and H is listed second, the following example would be correct.  However, switching backflow declaration to H first, then He, will result in an error.  Outside of this, declaration of one-body blocks and two-body blocks aren't sensitive to ordering.  
 
-\begin{lstlisting}
+\begin{lstlisting}[style=XML]
 <backflow>
 <!--The One-Body term with independent e-He and e-H terms. IN THAT ORDER -->
 <transformation name="eIonB" type="e-I" function="Bspline" source="ion0">
@@ -72,7 +72,7 @@ Having specified the general form, we present a general example of one-body and 
 
 Currently, backflow only works with single-slater determinant wavefunctions.  When a backflow transformation has been declared, it should be placed within the \texttt{<determinantset>} block, but outside of the \texttt{<slaterdeterminant>} blocks, like so:
 
-\begin{lstlisting}
+\begin{lstlisting}[style=XML]
 <determinantset ... >
     <!--basis set declarations go here, if there are any -->
     
