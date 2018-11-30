@@ -103,3 +103,13 @@ The orbital-space Auxiliary-Field Quantum Monte Carlo (AFMQC) method is now avai
     \item Complex implementation for PBC calculations with complex integrals.
     \item Sparse representation of large matrices for reduced memory usage.
 \end{itemize}
+
+\subsection{GPU spline data splitting}
+
+GPU spline data splitting enables the orbital-wise distribution of the spline table across multiple GPUs on a given computational node. In order to achieve reasonable performance the orbital evaluations remain local to their respective memory (aka GPUs). In other words, the spline evaluation of a given rank now is spread across the visible GPUs. In order to use this feature, the following needs to be done:
+
+\begin{itemize}
+    \item The CUDA Multi-Process Service (MPS) needs to be utilized (e.g. on Summit/SummitDev use "-alloc_flags gpumps" for bsub)
+    \item CUDA visible devices need to be properly set to control each rank's visible CUDA devices (e.g. on Summit/SummitDev one needs to create a resource set containing all GPUs with the respective number of ranks with "jsrun --task-per-rs Ngpus -g Ngpus")
+    \item In the determinant set definition of the <wavefunction> section the "gpusharing" parameter needs to be set (i.e. <determinantset gpusharing="yes">)
+\end{itemize}
