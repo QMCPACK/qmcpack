@@ -153,8 +153,16 @@ inline int get_device_num()
   if (ranks_per_node[rank]<num_cuda_devices[rank]) // sanity check (can't use more GPUs than ranks per node)
     gpu::device_group_size=ranks_per_node[rank];
   gpu::device_group_numbers.resize(gpu::device_group_size); // not strictly needed but doesn't hurt to trim if too big based on sanity check above
+  if (ranks_per_node[rank]>num_cuda_devices[rank]) // now things get interesting: more ranks then GPUs
+  {
+    // need to adjust the device group numbers being overutilized
+    gpu::device_group_size = ranks_per_node[rank];
+    gpu::device_group_numbers.resize(gpu::device_group_size);
+    // circularly extend assignment (same GPUs adjacent in this list would be better due to less cudaSetDevice overhead but requires more extensive code changes down the line)
+    for (int i=num_cuda_devices[rank]; i<gpu::device_group_size; i++)
+      gpu::device_group_numbers[i] = gpu::device_group_numbers[i % num_cuda_devices[rank]];
+  }
   gpu::device_rank_numbers.resize(gpu::device_group_size);
-  int device_rank = 0;
   for (int i=0; i<gpu::device_group_size; i++)
     gpu::device_rank_numbers[i]=i+rank-relative_ranknum;
   // return CUDA device number based on how many appropriate ones exist on the current rank's node and what the relative rank number is
@@ -219,7 +227,7 @@ inline void Init_CUDA()
   gpu::initCublas();
   gpu::MaxGPUSpineSizeMB = MAX_GPU_SPLINE_SIZE_MB;
   std::cerr << "Rank " << gpu::rank << ": relative rank number = " << gpu::relative_rank << ", number of devices = " << gpu::device_group_size << "\n";
-  std::cerr << "Visible device numbers: ";
+  std::cerr << "Assigned device numbers: ";
   for (int i=0; i<gpu::device_group_size; i++)
   {
     if (i>0) std::cerr << ", ";
