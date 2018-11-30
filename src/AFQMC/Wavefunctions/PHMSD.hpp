@@ -205,6 +205,7 @@ class PHMSD: public AFQMCInfo
     bool transposed_G_for_vbias() const { return transposed_G_for_vbias_; }
     bool transposed_G_for_E() const { return transposed_G_for_E_; }
     bool transposed_vHS() const { return transposed_vHS_; }
+    WALKER_TYPES getWalkerType() const {return walker_type; }
 
 /*
     const std::vector<PsiT_Matrix>& getOrbMat() { return OrbMats; }

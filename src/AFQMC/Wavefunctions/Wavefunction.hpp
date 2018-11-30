@@ -62,6 +62,8 @@ class dummy_wavefunction
     return false; 
   }
 
+  WALKER_TYPES getWalkerType() const {return UNDEFINED_WALKER_TYPE; }
+
   bool transposed_G_for_vbias() const { 
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
     return false; 
@@ -218,6 +220,13 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
             *this
         );
     }
+
+    WALKER_TYPES getWalkerType() const {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.getWalkerType();},
+            *this
+        );
+    }    
 
     template<class... Args>
     void vMF(Args&&... args) {

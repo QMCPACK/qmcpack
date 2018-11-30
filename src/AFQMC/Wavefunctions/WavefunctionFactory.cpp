@@ -13,6 +13,8 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
+#include<random>
+
 #include "io/hdf_archive.h"
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/Matrix/csr_hdf5_readers.hpp"
@@ -58,6 +60,8 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   RealType cutv2(0.);   
   int initialDet(1);
   int ndets_to_read(-1); // if not set, read the entire file
+  int initial_configuration=0;  
+  double randomize_guess(0.0);
   std::string starting_det("");
   std::string str("false");
   std::string filename("");
@@ -71,6 +75,8 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   m_param.add(initialDet,"initialDetType","int");
   m_param.add(starting_det,"starting_det","std:string");
   m_param.add(ndets_to_read,"ndet","int");
+  m_param.add(initial_configuration,"initial_configuration","int");
+  m_param.add(randomize_guess,"randomize_guess","double");
   m_param.put(cur);
 
   AFQMCInfo& AFinfo = InfoMap[info];
@@ -249,28 +255,31 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     if( guess == initial_guess.end() ) {
       auto newg = initial_guess.insert(
                 std::make_pair(name,boost::multi_array<ComplexType,3>(extents[2][NMO][NAEA])));
+      int iC = (walker_type!=COLLINEAR?initial_configuration:2*initial_configuration);
+      if( iC >= PsiT.size() )
+        APP_ABORT(" Error: initial_configuration > ndets_to_read \n"); 
       if(!newg.second)
         APP_ABORT(" Error: Problems adding new initial guess. \n"); 
       using std::conj;
       std::fill_n((newg.first)->second.origin(),2*NMO*NAEA,ComplexType(0.0,0.0));
       {  
-        auto pbegin = PsiT[0].pointers_begin(); 
-        auto pend = PsiT[0].pointers_end(); 
+        auto pbegin = PsiT[iC].pointers_begin(); 
+        auto pend = PsiT[iC].pointers_end(); 
         auto p0 = pbegin[0]; 
-        auto v0 = PsiT[0].non_zero_values_data();  
-        auto c0 = PsiT[0].non_zero_indices2_data();  
-        for(int i=0; i<PsiT[0].shape()[0]; i++) 
+        auto v0 = PsiT[iC].non_zero_values_data();  
+        auto c0 = PsiT[iC].non_zero_indices2_data();  
+        for(int i=0; i<PsiT[iC].shape()[0]; i++) 
           for(int ip=pbegin[i]; ip<pend[i]; ip++) { 
             ((newg.first)->second)[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
           }
       }  
       if(walker_type==COLLINEAR) {
-        auto pbegin = PsiT[1].pointers_begin(); 
-        auto pend = PsiT[1].pointers_end();  
+        auto pbegin = PsiT[iC+1].pointers_begin(); 
+        auto pend = PsiT[iC+1].pointers_end();  
         auto p0 = pbegin[0];                
-        auto v0 = PsiT[1].non_zero_values_data();
-        auto c0 = PsiT[1].non_zero_indices2_data();
-        for(int i=0; i<PsiT[1].shape()[0]; i++) 
+        auto v0 = PsiT[iC+1].non_zero_values_data();
+        auto c0 = PsiT[iC+1].non_zero_indices2_data();
+        for(int i=0; i<PsiT[iC+1].shape()[0]; i++) 
           for(int ip=pbegin[i]; ip<pend[i]; ip++) { 
             ((newg.first)->second)[1][c0[ip-p0]][i] = conj(v0[ip-p0]);  
           }
@@ -460,10 +469,21 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
                 std::make_pair(name,boost::multi_array<ComplexType,3>(extents[2][NMO][NAEA])));
       if(!newg.second)
         APP_ABORT(" Error: Problems adding new initial guess. \n"); 
+      auto& Psi0((newg.first)->second);
+      randomize_guess = std::abs(randomize_guess);
+      if(randomize_guess > 1e-12) 
+        app_log()<<" Randomizing initial guess with uniform distribution: " <<randomize_guess <<std::endl;
+      std::default_random_engine generator(777);
+      std::uniform_real_distribution<double> distribution(-randomize_guess,randomize_guess);  
+      int iC = initial_configuration;
+      if( iC >= abij.number_of_configurations() )
+        APP_ABORT(" Error: initial_configuration > ndets \n");
       using std::conj;
       std::fill_n((newg.first)->second.origin(),2*NMO*NAEA,ComplexType(0.0,0.0));
-      auto refc = abij.reference_configuration();
+      //auto refc = abij.reference_configuration();
       {  
+        std::vector<int> alphaC(NAEA);
+        abij.get_alpha_configuration(std::get<0>(*(abij.configurations_begin()+iC)),alphaC);
         auto pbegin = PsiT[0].pointers_begin(); 
         auto pend = PsiT[0].pointers_end(); 
         auto p0 = pbegin[0]; 
@@ -471,12 +491,19 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         auto c0 = PsiT[0].non_zero_indices2_data();  
         // only takinf NAEA states, increase later if super SM is needed
         for(int i=0; i<NAEA; i++) { 
-          int ik = *(refc+i);
+          //int ik = *(refc+i);
+          int ik = alphaC[i]; 
           for(int ip=pbegin[ik]; ip<pend[ik]; ip++) 
-            ((newg.first)->second)[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
+            Psi0[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
         }
+        if(randomize_guess > 1e-12)
+          for(int i=0; i<NMO; i++)
+            for(int a=0; a<NAEA; a++)
+              Psi0[0][i][a] += distribution(generator);
       }  
       if(walker_type==COLLINEAR) {
+        std::vector<int> betaC(NAEB);
+        abij.get_beta_configuration(std::get<1>(*(abij.configurations_begin()+iC)),betaC);
         auto pbegin = PsiT.back().pointers_begin(); 
         auto pend = PsiT.back().pointers_end();  
         auto p0 = pbegin[0];                
@@ -484,10 +511,15 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         auto c0 = PsiT.back().non_zero_indices2_data();
         // only takinf NAEB states, increase later if super SM is needed
         for(int i=0; i<NAEB; i++) { 
-          int ik = *(refc+NAEA+i);
+          //int ik = *(refc+NAEA+i);
+          int ik = betaC[i]; 
           for(int ip=pbegin[ik]; ip<pend[ik]; ip++) 
-            ((newg.first)->second)[1][c0[ip-p0]][i] = conj(v0[ip-p0]);  
+            Psi0[1][c0[ip-p0]][i] = conj(v0[ip-p0]);  
         }
+        if(randomize_guess > 1e-12)
+          for(int i=0; i<NMO; i++)
+            for(int a=0; a<NAEB; a++)
+              Psi0[1][i][a] += distribution(generator);
       }  
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n"); 

@@ -312,7 +312,7 @@ class TaskGroupHandler {
 
   public:
 
-  TaskGroupHandler(afqmc::GlobalTaskGroup& gtg_, int nc):gTG(gtg_),ncores(nc) {}
+  TaskGroupHandler(afqmc::GlobalTaskGroup& gtg_, int nc):gTG_(gtg_),ncores(nc) {}
 
   ~TaskGroupHandler() {}
 
@@ -322,9 +322,9 @@ class TaskGroupHandler {
       APP_ABORT(" Error: Calling TaskGroupHandler::getTG() before setting ncores. \n\n\n");
     auto t = TGMap.find(nn);
     if(t == TGMap.end()) {
-      if( gTG.getTotalNodes()%nn != 0)
+      if( gTG_.getTotalNodes()%nn != 0)
         APP_ABORT("Error: nnodes must divide the total number of processors. \n\n\n");
-      auto p = TGMap.insert(std::make_pair(nn,afqmc::TaskGroup_(gTG,std::string("TaskGroup_")+std::to_string(nn),nn,ncores)));
+      auto p = TGMap.insert(std::make_pair(nn,afqmc::TaskGroup_(gTG_,std::string("TaskGroup_")+std::to_string(nn),nn,ncores)));
       if(!p.second)
         APP_ABORT(" Error: Problems creating new TG in TaskGroupHandler::getTG(int). \n");
       return (p.first)->second;
@@ -334,11 +334,13 @@ class TaskGroupHandler {
 
   void setNCores(int nc) { ncores=nc; } 
 
+  afqmc::GlobalTaskGroup& gTG() { return gTG_; }
+
   private: 
 
   int ncores;
 
-  afqmc::GlobalTaskGroup& gTG;
+  afqmc::GlobalTaskGroup& gTG_;
 
   std::map<int,afqmc::TaskGroup_> TGMap;  
 

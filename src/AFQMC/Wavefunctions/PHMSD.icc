@@ -180,17 +180,17 @@ namespace afqmc
             // reduce_n since Emsd is in shared memory (doing this instead of copy with mutex)
             TG.TG_local().reduce_n(eloc2.origin(),3*nwalk,
                                    std::addressof(*Emsd[spin][nd].origin()),std::plus<>(),0);
-std::cout<<" E: " <<spin <<" " <<nd <<" " <<Ovmsd[spin][nd][0] <<" " 
-<<eloc2[0][0] <<" " 
-<<eloc2[0][1] <<" " 
-<<eloc2[0][2] <<std::endl;
+//std::cout<<" E: " <<spin <<" " <<nd <<" " <<Ovmsd[spin][nd][0] <<" " 
+//<<eloc2[0][0] <<" " 
+//<<eloc2[0][1] <<" " 
+//<<eloc2[0][2] <<std::endl;
             TG.local_barrier();
           } else { 
             HamOp.energy(eloc2,G,orb_spin_indx,&KEleft,dummyMatPtr,TG.TG_local().root(),true,true);
-std::cout<<" E: " <<spin <<" " <<nd <<" " <<Ovmsd[spin][nd][0] <<" "
-<<eloc2[0][0] <<" " 
-<<eloc2[0][1] <<" " 
-<<eloc2[0][2] <<std::endl;
+//std::cout<<" E: " <<spin <<" " <<nd <<" " <<Ovmsd[spin][nd][0] <<" "
+//<<eloc2[0][0] <<" " 
+//<<eloc2[0][1] <<" " 
+//<<eloc2[0][2] <<std::endl;
             // reduce_n since Emsd is in shared memory (doing this instead of copy with mutex)
             TG.TG_local().reduce_n(eloc2.origin(),3*nwalk,
                                    std::addressof(*Emsd[spin][nd].origin()),std::plus<>(),0);

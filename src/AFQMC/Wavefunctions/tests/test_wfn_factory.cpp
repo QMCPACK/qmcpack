@@ -319,9 +319,13 @@ const char *wlk_xml_block_noncol =
         }
       } else {
         Xsum=0;
-        for(int i=0; i<X.shape()[0]; i++)
+        ComplexType Xsum2(0.0);
+        for(int i=0; i<X.shape()[0]; i++) {
           Xsum += X[i][0];
+          Xsum2 += 0.5*X[i][0]*X[i][0];
+        }
         app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
+        app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
       }
 
       wfn2.vHS(X,vHS,sqrtdt);
@@ -1022,7 +1026,7 @@ const char *wlk_xml_block =
   </Wavefunction> \
 ";
 
-//#define __compare__
+#define __compare__
 #ifdef __compare__
     Libxml2Document doc2_;
     okay = doc2_.parseFromString(wfn_xml_block2);
@@ -1041,7 +1045,7 @@ const char *wlk_xml_block =
     
 
     std::default_random_engine generator;
-    std::uniform_real_distribution<double> distribution(-0.05,0.05);
+    std::uniform_real_distribution<double> distribution(-0.005,0.005);
     for(int i=0; i<NMO; i++) {
       for(int j=0; j<NAEA; j++) 
         initial_guess[0][i][j] += distribution(generator); 
@@ -1136,12 +1140,16 @@ else
       }
     } else {
       Xsum=0;
-      for(int i=0; i<X.shape()[0]; i++)
+      ComplexType Xsum2=0;
+      for(int i=0; i<X.shape()[0]; i++) {
         Xsum += X[i][0];
+        Xsum2 += 0.5*X[i][0]*X[i][0];
+      }  
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
+      app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
       for(int n=1; n<nwalk; n++) {
         ComplexType Xsum_=0;
-        for(int i=0; i<X.shape()[0]; i++)
+        for(int i=0; i<X.shape()[0]; i++) 
           Xsum_ += X[i][n];
         REQUIRE( real(Xsum) == Approx(real(Xsum_)) );
         REQUIRE( imag(Xsum) == Approx(imag(Xsum_)) );
@@ -1208,6 +1216,7 @@ else
       int Gdim2_ = (nomsd.transposed_G_for_vbias()?size_of_G2:nwalk);
       boost::multi_array_ref<ComplexType,2> G_(Gbuff2.data(),extents[Gdim1_][Gdim2_]); 
       nomsd.MixedDensityMatrix_for_vbias(wset,G_);
+/*
       std::cout<<" Comparing G \n";
       for(int i=0; i<NMO; i++)
        for(int j=0; j<NMO; j++) {
@@ -1218,12 +1227,17 @@ else
           std::cout<<i <<" -- " <<j <<" " <<G_[i*NMO+j][0] <<" " <<Gno[i*NMO+j][0] <<" "
                    <<std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;
        } 
+*/
       boost::multi_array_ref<ComplexType,2> X2(Xbuff.data()+nCV*nwalk,extents[nCV][nwalk]);
       nomsd.vbias(G_,X2,sqrtdt);
       Xsum=0;
-      for(int i=0; i<X2.shape()[0]; i++)
+      ComplexType Xsum2(0.0);
+      for(int i=0; i<X2.shape()[0]; i++) {
         Xsum += X2[i][0];
+        Xsum2 += 0.5*X2[i][0]*X2[i][0];
+      }  
       app_log()<<" Xsum (NOMSD): " <<setprecision(12) <<Xsum <<std::endl;
+      app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
 
     SHM_Buffer vHSbuff_(TG.TG_local(),NMO*NMO*nwalk);
     int vdim1_ = (nomsd.transposed_vHS()?nwalk:NMO*NMO);
