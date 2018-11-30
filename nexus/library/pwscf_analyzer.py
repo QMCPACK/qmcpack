@@ -18,7 +18,7 @@
 
 
 import os
-from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min, where
+from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min,where
 from generic import obj
 from unit_converter import convert
 from periodic_table import PeriodicTable
