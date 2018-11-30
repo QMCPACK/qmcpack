@@ -4606,8 +4606,11 @@ try:
         g23    = np.gcd.reduce([n2,n3])
         g123   = np.gcd.reduce([n1, n2, n3])
         #New alphas with the tolerance
-	new_alphas= np.divmod(alphas,1.0/divs)[0]*1./divs ## Check for -+ mod problem, get nearest quotient
-        new_rem   = np.divmod(alphas,1.0/divs)[1]
+	alpha_abs   = abs(alphas)
+        alpha_signs = sign(alphas) 
+        alpha_signs[alpha_signs == 0.0] = 1.0 # 0/0 division
+	new_alphas  = np.round(alpha_abs*divs)*1./divs*alpha_signs
+        #new_rem    = np.divmod(alphas,1.0/divs)[1]
         #Generate possible matrices in the Upper Triangular Hermite Normal Form, from PHYSICAL REVIEW B 92, 184301 (2015)
         mats = []
         for p in range(0, g23):
@@ -4620,7 +4623,6 @@ try:
                             comm.append(True)
                         else:
                             comm.append(False)
-                        #pdb.set_trace()
                         #end if
                     #end for
                     if all(comm):
@@ -4629,7 +4631,7 @@ try:
                 #end for
             #end for
         #end for
-        axes             = structure.axes
+	axes             = structure.axes
         final_mat        = []
         final_s_cubicity = 1e6
         mats             = array(mats)
@@ -4642,11 +4644,11 @@ try:
                 final_s_cubicity = new_s_cubicity
             #end if
         #end for
-        t = array(np.matmul(final_mat, np.linalg.inv(axes)))
+	t = array(np.matmul(final_mat, np.linalg.inv(axes)))
         t_float = t.copy()
         tol = 10**-6
         t[abs(t)< tol] = 0
-        t_int = np.floor(t).astype(int)
+        t_int = around(t).astype(int)
         if not (abs(t_int-t_float) < tol).any():
             print "Tiling matrix has non-integer elements!"
             exit()
