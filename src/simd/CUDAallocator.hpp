@@ -37,14 +37,14 @@ namespace qmcplusplus
     {
       void* pt;
       cudaError_t error = cudaMallocManaged(&pt, n*sizeof(T));
-      if(error!=cudaSuccess) throw std::runtime_error("Allocation failed in CUDAManagedAllocator");
+      if(error!=cudaSuccess) throw std::runtime_error("Allocation failed in CUDAManagedAllocator, error = " + std::to_string(error));
       if( (size_t(pt))&(QMC_CLINE-1) ) throw std::runtime_error("Unaligned memory allocated in CUDAManagedAllocator");
       return static_cast<T*>(pt);
     }
     void deallocate(T* p, std::size_t)
     {
       cudaError_t error = cudaFree(p);
-      if(error!=cudaSuccess) throw std::runtime_error("Deallocation failed in CUDAManagedAllocator");
+      if(error!=cudaSuccess) throw std::runtime_error("Deallocation failed in CUDAManagedAllocator, error = " + std::to_string(error));
     }
   };
 
@@ -70,13 +70,13 @@ namespace qmcplusplus
     {
       void* pt;
       cudaError_t error = cudaMalloc(&pt, n*sizeof(T));
-      if(error!=cudaSuccess) throw std::runtime_error("Allocation failed in CUDAAllocator");
+      if(error!=cudaSuccess) throw std::runtime_error("Allocation failed in CUDAAllocator, error = " + std::to_string(error));
       return static_cast<T*>(pt);
     }
     void deallocate(T* p, std::size_t)
     {
       cudaError_t error = cudaFree(p);
-      if(error!=cudaSuccess) throw std::runtime_error("Deallocation failed in CUDAAllocator");
+      if(error!=cudaSuccess) throw std::runtime_error("Deallocation failed in CUDAAllocator, error = " + std::to_string(error));
     }
   };
 
@@ -102,13 +102,13 @@ namespace qmcplusplus
     {
       void* pt;
       cudaError_t error = cudaMallocHost(&pt, n*sizeof(T));
-      if(error!=cudaSuccess) throw std::runtime_error("Allocation failed in CUDAHostAllocator");
+      if(error!=cudaSuccess) throw std::runtime_error("Allocation failed in CUDAHostAllocator, error = " + std::to_string(error));
       return static_cast<T*>(pt);
     }
     void deallocate(T* p, std::size_t)
     {
       cudaError_t error = cudaFreeHost(p);
-      if(error!=cudaSuccess) throw std::runtime_error("Deallocation failed in CUDAHostAllocator");
+      if(error!=cudaSuccess) throw std::runtime_error("Deallocation failed in CUDAHostAllocator, error = " + std::to_string(error));
     }
   };
 
