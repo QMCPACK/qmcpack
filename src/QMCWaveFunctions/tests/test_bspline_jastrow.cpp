@@ -473,12 +473,12 @@ const char *particles = \
 
   xmlNodePtr jas2 = xmlFirstElementChild(root2);
 
-  RadialJastrowBuilder jastrow2(elec_, psi, ions_);
+  TrialWaveFunction psi2 = TrialWaveFunction(c);
+  RadialJastrowBuilder jastrow2(elec_, psi2, ions_);
   bool build_okay2 = jastrow2.put(jas2);
   REQUIRE(build_okay2);
 
-  TrialWaveFunction psi2 = TrialWaveFunction(c);
-  WaveFunctionComponent *orb2 = psi.getOrbitals()[0];
+  WaveFunctionComponent *orb2 = psi2.getOrbitals()[0];
 
   J1Type *j12 = dynamic_cast<J1Type *>(orb2);
   REQUIRE(j12 != NULL);
@@ -519,8 +519,8 @@ const char *particles = \
     WaveFunctionComponent::RealType dv = 0.0;
     WaveFunctionComponent::RealType ddv = 0.0;
     WaveFunctionComponent::RealType val = bf2->evaluate(Vals2[i].r,dv,ddv);
-    REQUIRE(Vals2[i].u == Approx(val));
     REQUIRE(Vals2[i].du == Approx(dv));
+    REQUIRE(Vals2[i].u == Approx(val));
     REQUIRE(Vals2[i].ddu == Approx(ddv));
   }
 
