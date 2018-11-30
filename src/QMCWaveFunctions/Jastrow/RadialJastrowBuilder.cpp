@@ -279,7 +279,7 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 	functor->cutoff_radius = 10.0;
       }
       bool functor_initialized = functor->put(cur);
-      if (!initialized_p && init_mode =="rpa")
+      if (!functor_initialized && init_mode =="rpa")
       {
 	app_log() << "  Initializing Two-Body with RPA Jastrow " << std::endl;
 	initTwoBodyFunctor(functor,-cusp/0.5);
