@@ -347,7 +347,7 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
     {
       std::string speciesA;
       std::string speciesB;
-      RealType cusp = -2;
+      RealType cusp(0);
       OhmmsAttributeSet rAttrib;
       rAttrib.add(speciesA,"elementType");
       rAttrib.add(speciesA,"speciesA");
@@ -366,10 +366,7 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       {
 	functor->cutoff_radius = 10.0;
       }
-      if (cusp > 0) 
-      {
-	functor->setCusp(cusp);
-      }
+      functor->setCusp(cusp);
       int jg=-1;
       if(speciesB.size())
 	jg=tSet.findSpecies(speciesB);
