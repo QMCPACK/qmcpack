@@ -12,7 +12,6 @@
     
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
 #include <Numerics/MatrixOperators.h>
-#include <boost/format.hpp>
 #include <formic/utils/lapack_interface.h>
 
 namespace qmcplusplus
@@ -432,7 +431,6 @@ namespace qmcplusplus
                              const size_t& NP1,
                              const size_t& NP2) 
   {
-//    app_log() << "EVALUATE DERIVATIVE CALLED IN LCAO CLASS SDP\n";
     bool recalculate(false);
     for (int k=0; k<myVars.size(); ++k)
     {
@@ -444,7 +442,6 @@ namespace qmcplusplus
     }
     if(recalculate)
     {
-//      psiCurrent=0.0;
       const int NP = P.getTotalNum();
       myG_temp.resize(NP); myG_temp=0.0;
       myL_temp.resize(NP); myL_temp=0.0;
@@ -461,7 +458,6 @@ namespace qmcplusplus
           const size_t dnC = (*C2node_dn)[i];
           const ValueType tmp1 = C_p[i]*detValues_dn[dnC];
           const ValueType tmp2 = C_p[i]*detValues_up[upC];
-//          psiCurrent+= (C[i]*detValues_up[upC]*detValues_dn[dnC]);
           for(size_t k=0,j=N1; k<NP1; k++,j++)
           {
             myG_temp[j] += tmp1*grads_up(upC,k);
@@ -514,37 +510,6 @@ namespace qmcplusplus
                         N2,
                         NP1,
                         NP2);
-
-////      table_method_eval(myL_J,
-////                        myG_J,
-////                        nels_up,
-////                        m_nmo_up,
-////                        T_up.data(),
-////                        Dets[0]->psiM.data(),
-////                        Dets[0]->psiMinv.data(),
-////                        dlogpsi,
-////                        dhpsioverpsi,
-////                        m_first_var_pos,
-////                        m_act_rot_inds_up.size(),
-////                        &m_act_rot_inds_up,
-////                        0,
-////                        T_up,
-////                        Dets[0]->psiM);
-////
-////      if (false)
-////      {
-////        for (int i=0; i<m_act_rot_inds_up.size(); i++){
-////         int kk= i+m_first_var_pos;
-////             const int p = m_act_rot_inds_up[i].first;
-////             const int q = m_act_rot_inds_up[i].second;
-////             std::vector<char> buff(1000, ' ');
-////             const int len = std::sprintf(&buff[0], " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f   kk = %4i", p, q,dlogpsi[kk], dhpsioverpsi[kk], kk);
-////             for (int k = 0; k < len; k++)
-////               app_log() << buff[k];
-////             app_log() << std::endl;
-////        }
-////      }
-//
     }
   }
 
@@ -620,8 +585,8 @@ namespace qmcplusplus
     }
     // perform matrix multiplication 
     // assume row major
-    formic::xgemm('N','C', n, n, n, std::complex<double>(1.0,0), &mat_d.at(0), n, &mat_h.at(0), n, std::complex<double>(0.0, 0.0), &mat_t.at(0), n);
-    formic::xgemm('N','N', n, n, n, std::complex<double>(1.0,0), &mat_h.at(0), n, &mat_t.at(0), n, std::complex<double>(0.0, 0.0), &mat_d.at(0), n);
+    BLAS::gemm('N','C', n, n, n, std::complex<double>(1.0,0), &mat_d.at(0), n, &mat_h.at(0), n, std::complex<double>(0.0, 0.0), &mat_t.at(0), n);
+    BLAS::gemm('N','N', n, n, n, std::complex<double>(1.0,0), &mat_h.at(0), n, &mat_t.at(0), n, std::complex<double>(0.0, 0.0), &mat_d.at(0), n);
     for(int i = 0; i < n; ++i)
       for(int j = 0; j < n; ++j)
       {
@@ -761,28 +726,17 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
   //possibly replace with BLAS call
   Y4 = Y3 - Y2;
 
-//  app_log() << "printing Bbar \n" << Bbar << std::endl;
-//  app_log() << "printing Ainv \n" << Minv_up << std::endl;
-
-//  app_log() << "printing Y1 \n" << Y1 << std::endl;
-//  app_log() << "printing Y2 \n" << Y2 << std::endl;
-//  app_log() << "printing Y3 \n" << Y3 << std::endl;
-//  app_log() << "printing Y4 \n" << Y4 << std::endl;
-
   //Now we are going to loop through all unique determinants.
   //The few lines above are for the reference matrix contribution.
   //Although I start the loop below from index 0, the loop only performs actions when the index is => 1
   //the detData object contains all the information about the P^T and Q matrices (projection matrices) needed in the table method
   const int* restrict data_it = detData_up->data();
-//  std::vector<int>::iterator data_it = Dets[active_spin]->detData->begin();
   for(int index=0, datum=0; index < num_unique_up_dets; index++)
   {
-//    const int  k = *data_it;
     const int  k = data_it[datum];
 
     if (k==0)
     {
-//      data_it += 3*k+1;
       datum += 3*k+1;
     }
 
@@ -809,30 +763,22 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
       std::fill(Y5.begin(),Y5.end(),0.0);
       for ( int i=0; i<k; i++)
       {
-//        BLAS::copy(nel, T + *(data_it+1+k+i), nmo, Y5.data()+i, k);   
         BLAS::copy(nel, T + data_it[datum+1+k+i], nmo, Y5.data()+i, k);   
       }
 
       std::fill(Y6.begin(),Y6.end(),0.0);
       for ( int i=0; i<k; i++)
       { 
-//        BLAS::copy(k, Y5.data() + (*(data_it+1+i))*k, 1, (Y6.data() + i*k), 1);   
         BLAS::copy(k, Y5.data() + (data_it[datum+1+i])*k, 1, (Y6.data() + i*k), 1);   
       }
 
-//      app_log() << "priting Y5 \n " << Y5 << std::endl;
-//      app_log() << "priting Y6 \n " << Y6 << std::endl;
 
       Vector<ValueType> WS;
       Vector<IndexType> Piv;
       WS.resize(k);
       Piv.resize(k);
-      // not sure if i need the following 2 lines
-  //     std::fill(WS.begin(),WS.end(),0.0);
-  //     std::fill(Piv.begin(),Piv.end(),0);
       RealType PhaseR=0.0;
       InvertWithLog(Y6.data(),k,k,WS.data(),Piv.data(),PhaseR);
-//      app_log() << "priting inv Y6 \n " << Y6 << std::endl;
 
       Y11.resize(nel,  k);  
       Y23.resize(  k,  k);    
@@ -843,18 +789,14 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
       std::fill(Y11.begin(),Y11.end(),0.0);
       for ( int i=0; i<k; i++)
       {
-//        BLAS::copy(nel, Y4.data() + *(data_it+1+k+i), nmo, Y11.data()+i, k);   
         BLAS::copy(nel, Y4.data() + (data_it[datum+1+k+i]), nmo, Y11.data()+i, k);   
       }
-//      app_log() << "priting Y11 \n " << Y11 << std::endl;
 
       std::fill(Y23.begin(),Y23.end(),0.0);
       for ( int i=0; i<k; i++)
       { 
-//        BLAS::copy(k, Y11.data() + (*(data_it+1+i))*k, 1, (Y23.data() + i*k), 1);   
         BLAS::copy(k, Y11.data() + (data_it[datum+1+i])*k, 1, (Y23.data() + i*k), 1);   
       }
-//      app_log() << "priting Y23 \n " << Y23 << std::endl;
 
       BLAS::gemm('N','N',   k,   k,   k, RealType(1.0), Y23.data(),   k,  Y6.data(),   k, RealType(0.0), Y24.data(),   k);
       BLAS::gemm('N','N',   k,   k,   k, RealType(1.0),  Y6.data(),   k, Y24.data(),   k, RealType(0.0), Y25.data(),   k);
@@ -865,7 +807,6 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
       std::fill(Y26.begin(),Y26.end(),0.0);
       for ( int i=0; i<k; i++)
       {
-//        BLAS::copy(k, Y25.data() + i, k, Y26.data() + *(data_it+1+i), nel);   
         BLAS::copy(k, Y25.data() + i, k, Y26.data() + (data_it[datum+1+i]), nel);   
       }
 
@@ -875,11 +816,8 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
       std::fill(Y7.begin(),Y7.end(),0.0);
       for ( int i=0; i<k; i++)
       {
-//        BLAS::copy(k, Y6.data() + i, k, Y7.data() + *(data_it+1+i), nel);   
         BLAS::copy(k, Y6.data() + i, k, Y7.data() + (data_it[datum+1+i]), nel);   
       }
-
-//      app_log() << "priting Y7 \n " << Y7 << std::endl;
       
       // c_Tr_AlphaI_MI is a constant contributing to constant const2
       // c_Tr_AlphaI_MI = Tr[\alpha_{I}^{-1}(P^{T}\widetilde{M} Q)]
@@ -904,11 +842,6 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
 
         for ( int i=0; i<k; i++)
         {
-//          BLAS::axpy(nel, alpha_1, Y7.data() + i*nel,1, pK1.data() + (*(data_it+1+k+i))*nel,1);   
-//          BLAS::axpy(nel, alpha_2, Y7.data() + i*nel,1, pK2.data() + (*(data_it+1+k+i))*nel,1);   
-//          BLAS::axpy(nel, alpha_3, Y7.data() + i*nel,1, pK3.data() + (*(data_it+1+k+i))*nel,1);   
-//          BLAS::axpy(nel, alpha_4, Y7.data() + i*nel,1, pK4.data() + (*(data_it+1+k+i))*nel,1);   
-//          BLAS::axpy(nel, alpha_2,Y26.data() + i*nel,1, pK5.data() + (*(data_it+1+k+i))*nel,1);   
           BLAS::axpy(nel, alpha_1, Y7.data() + i*nel,1, pK1.data() + (data_it[datum+1+k+i])*nel,1);   
           BLAS::axpy(nel, alpha_2, Y7.data() + i*nel,1, pK2.data() + (data_it[datum+1+k+i])*nel,1);   
           BLAS::axpy(nel, alpha_3, Y7.data() + i*nel,1, pK3.data() + (data_it[datum+1+k+i])*nel,1);   
@@ -916,7 +849,6 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
           BLAS::axpy(nel, alpha_2,Y26.data() + i*nel,1, pK5.data() + (data_it[datum+1+k+i])*nel,1);   
         }
       }
-//      data_it += 3*k+1;
       datum += 3*k+1;
     }
 
