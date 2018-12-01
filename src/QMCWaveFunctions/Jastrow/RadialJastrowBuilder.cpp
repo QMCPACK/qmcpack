@@ -19,21 +19,14 @@
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #endif
 
-#if defined(QMC_CUDA) and defined(ENABLE_SOA)
+#if defined(QMC_CUDA)
+#if defined(ENABLE_SOA)
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
-#endif
-#if defined(QMC_CUDA) and !defined(ENABLE_SOA)
+#else
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBsplineAoS.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBsplineAoS.h"
 #endif
-#if !defined(QMC_CUDA) and defined(ENABLE_SOA)
-#include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
-#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
-#endif
-#if !defined(QMC_CUDA) and !defined(ENABLE_SOA)
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #endif
 
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
@@ -56,7 +49,7 @@ namespace qmcplusplus
 {
 
 RadialJastrowBuilder::RadialJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
-					   ParticleSet& source):
+                                           ParticleSet& source):
   WaveFunctionComponentBuilder(target, psi),SourcePtcl(&source)
 {
   ClassName="RadialJastrowBuilder";
@@ -81,13 +74,13 @@ RadialJastrowBuilder::RadialJastrowBuilder(ParticleSet& target, TrialWaveFunctio
 // helper method for dealing with functor incompatible with Open Boundaries
 void RadialJastrowBuilder::guardAgainstOBC()
 {
-  if (targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN) 
+  if (targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
   {
     app_error() << Jastfunction << " relies on the total density for its form\n";
     app_error() << "but open boundary conditions are requested.  Please choose other forms of Jastrow\n";
   }
 }
- 
+
 // helper method for dealing with functor incompatible with PBC
 void RadialJastrowBuilder::guardAgainstPBC()
 {
@@ -99,12 +92,12 @@ void RadialJastrowBuilder::guardAgainstPBC()
 }
 
 // quick template helper to allow use of RPA
-template <typename> 
+template <typename>
 class RPAFunctor { };
 
 // helper class to simplify and localize ugly ifdef stuff for types
 template<class precision, template<class> class RadFuncType>
-class JastrowTypeHelper 
+class JastrowTypeHelper
 {
 public:
   using rft = RadFuncType<precision>;
@@ -172,7 +165,7 @@ template<template<class> class RadFuncType>
 void RadialJastrowBuilder::initTwoBodyFunctor(RadFuncType<RT>* functor, double fac) { }
 
 template<>
-void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RT>* bfunc, double fac) 
+void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RT>* bfunc, double fac)
 {
   if(targetPtcl.Lattice.SuperCellEnum==SUPERCELL_OPEN) // for open systems, do nothing
   {
@@ -203,13 +196,13 @@ void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RT>* bfunc, double 
 
 
 template<template<class> class RadFuncType>
-bool RadialJastrowBuilder::createJ2(xmlNodePtr cur) 
+bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"createJ2(xmlNodePtr)");
   using RadFunctorType = RadFuncType<RT>;
   using J2OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::J2OrbitalType;
   using DiffJ2OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::DiffJ2OrbitalType;
-  
+
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
   auto *J2 = new J2OrbitalType(targetPtcl,taskid);
@@ -237,18 +230,18 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       rAttrib.add(spB,"speciesB");
       rAttrib.add(pairType,"pairType");
       rAttrib.add(cusp,"cusp");
-      
+
       rAttrib.put(cur);
       if(pairType[0]=='0')
       {
-	pairType=spA+spB;
+        pairType=spA+spB;
       }
       else
       {
-	PRE.warning("pairType is deprecated. Use speciesA/speciesB");
-	//overwrite the species
-	spA=pairType[0];
-	spB=pairType[1];
+        PRE.warning("pairType is deprecated. Use speciesA/speciesB");
+        //overwrite the species
+        spA=pairType[0];
+        spB=pairType[1];
       }
 
       int ia = species.findSpecies(spA);
@@ -256,33 +249,33 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       int chargeInd=species.addAttribute("charge");
       if(ia==species.size() || ib == species.size())
       {
-	PRE.error("Failed. Species are incorrect.",true);
+        PRE.error("Failed. Species are incorrect.",true);
       }
       if(ia==ib && (targetPtcl.last(ia)-targetPtcl.first(ia)==1))
-	PRE.error("Failed to add "+spA+spB+" correlation for only 1 "+spA+" particle. Please remove it from two-body Jastrow.",true);
+        PRE.error("Failed to add "+spA+spB+" correlation for only 1 "+spA+" particle. Please remove it from two-body Jastrow.",true);
       if(cusp<-1e6)
       {
-	RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
-	cusp = (ia==ib)? -0.25*qq:-0.5*qq;
+        RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
+        cusp = (ia==ib)? -0.25*qq:-0.5*qq;
       }
       app_log() << "  RadialJastrowBuilder adds a functor with cusp = " << cusp << std::endl;
 
       auto *functor = new RadFunctorType();
       functor->setCusp(cusp);
       functor->setPeriodic(targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN);
-      if (targetPtcl.Lattice.WignerSeitzRadius > 0) 
+      if (targetPtcl.Lattice.WignerSeitzRadius > 0)
       {
-	functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
+        functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
       }
       else if (functor->cutoff_radius < 10.0)
       {
-	functor->cutoff_radius = 10.0;
+        functor->cutoff_radius = 10.0;
       }
       bool functor_initialized = functor->put(cur);
       if (!functor_initialized && init_mode =="rpa")
       {
-	app_log() << "  Initializing Two-Body with RPA Jastrow " << std::endl;
-	initTwoBodyFunctor(functor,-cusp/0.5);
+        app_log() << "  Initializing Two-Body with RPA Jastrow " << std::endl;
+        initTwoBodyFunctor(functor,-cusp/0.5);
       }
 
       J2->addFunc(ia,ib,functor);
@@ -290,13 +283,13 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 
       if(qmc_common.io_node)
       {
-	char fname[32];
-	if(qmc_common.mpi_groups>1)
-	  sprintf(fname,"J2.%s.g%03d.dat",pairType.c_str(),taskid);
-	else
-	  sprintf(fname,"J2.%s.dat",pairType.c_str());
-	std::ofstream os(fname);
-	print(*functor, os);	
+        char fname[32];
+        if(qmc_common.mpi_groups>1)
+          sprintf(fname,"J2.%s.g%03d.dat",pairType.c_str(),taskid);
+        else
+          sprintf(fname,"J2.%s.dat",pairType.c_str());
+        std::ofstream os(fname);
+        print(*functor, os);
       }
     }
     cur=cur->next;
@@ -310,7 +303,7 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 
 // specialiation for J2 RPA jastrow.
 template<>
-bool RadialJastrowBuilder::createJ2<RPAFunctor>(xmlNodePtr cur) 
+bool RadialJastrowBuilder::createJ2<RPAFunctor>(xmlNodePtr cur)
 {
   RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl,targetPsi.is_manager());
   rpajastrow->put(cur);
@@ -319,13 +312,13 @@ bool RadialJastrowBuilder::createJ2<RPAFunctor>(xmlNodePtr cur)
 }
 
 template<template<class> class RadFuncType>
-bool RadialJastrowBuilder::createJ1(xmlNodePtr cur) 
+bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"createJ1(xmlNodePtr)");
   using RadFunctorType = RadFuncType<RT>;
   using J1OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::J1OrbitalType;
   using DiffJ1OrbitalType = typename JastrowTypeHelper<RT, RadFuncType>::DiffJ1OrbitalType;
-   
+
   int taskid=targetPsi.getGroupID();
   J1OrbitalType* J1= new J1OrbitalType(*SourcePtcl, targetPtcl);
   DiffJ1OrbitalType* dJ1= new DiffJ1OrbitalType(*SourcePtcl, targetPtcl);
@@ -338,7 +331,7 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   int numSpecies = sSet.getTotalNum();
   bool success=false;
   bool Opt(true);
-  std::string jname = "J1_"+Jastfunction;      
+  std::string jname = "J1_"+Jastfunction;
   while (kids != NULL)
   {
     std::string kidsname = (char*)kids->name;
@@ -358,44 +351,44 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       int ig = sSet.findSpecies (speciesA);
 
       functor->setPeriodic(SourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN);
-      if (targetPtcl.Lattice.WignerSeitzRadius > 0) 
+      if (targetPtcl.Lattice.WignerSeitzRadius > 0)
       {
-	functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
+        functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
       }
       else if (functor->cutoff_radius < 10.0)
       {
-	functor->cutoff_radius = 10.0;
+        functor->cutoff_radius = 10.0;
       }
       functor->setCusp(cusp);
       int jg=-1;
       if(speciesB.size())
-	jg=tSet.findSpecies(speciesB);
+        jg=tSet.findSpecies(speciesB);
       if (ig < numSpecies)
       {
-	functor->put(kids);
-	J1->addFunc(ig,functor,jg);
-	dJ1->addFunc(ig,functor,jg);
-	success = true;
-	if(qmc_common.io_node)
+        functor->put(kids);
+        J1->addFunc(ig,functor,jg);
+        dJ1->addFunc(ig,functor,jg);
+        success = true;
+        if(qmc_common.io_node)
         {
-	  char fname[128];
-	  if(qmc_common.mpi_groups>1)
-	  {
-	    if(speciesB.size())
-	      sprintf(fname,"%s.%s%s.g%03d.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
-	    else
-	      sprintf(fname,"%s.%s.g%03d.dat",jname.c_str(),speciesA.c_str(),taskid);
-	  }
-	  else
-	  {
-	    if(speciesB.size())
-	      sprintf(fname,"%s.%s%s.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str());
-	    else
-	      sprintf(fname,"%s.%s.dat",jname.c_str(),speciesA.c_str());
-	  }
-	  std::ofstream os(fname);
-	  print(*functor, os);
-	}
+          char fname[128];
+          if(qmc_common.mpi_groups>1)
+          {
+            if(speciesB.size())
+              sprintf(fname,"%s.%s%s.g%03d.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
+            else
+              sprintf(fname,"%s.%s.g%03d.dat",jname.c_str(),speciesA.c_str(),taskid);
+          }
+          else
+          {
+            if(speciesB.size())
+              sprintf(fname,"%s.%s%s.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str());
+            else
+              sprintf(fname,"%s.%s.dat",jname.c_str(),speciesA.c_str());
+          }
+          std::ofstream os(fname);
+          print(*functor, os);
+        }
       }
     }
     kids = kids->next;
@@ -418,7 +411,7 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
 
 // specialiation for J1 RPA jastrow.  Note that the long range part is not implemented
 template<>
-bool RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur) 
+bool RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
 {
   using SplineEngineType = CubicBspline<RT,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>;
   using RadFunctorType = CubicSplineSingle<RT,SplineEngineType>;
@@ -471,7 +464,7 @@ bool RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
     app_log()<<"  using e-p derivRPA"<< std::endl;
   }
   myHandler->Breakup(targetPtcl,Rs);
-  
+
   RT Rcut = myHandler->get_rc()-0.1;
   GridType* myGrid = new GridType;
   int npts=static_cast<int>(Rcut/0.01)+1;
@@ -482,16 +475,16 @@ bool RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
   ShortRangePartAdapter<RT>* SRA = new ShortRangePartAdapter<RT>(myHandler);
   SRA->setRmax(Rcut);
   nfunc->initialize(SRA, myGrid);
-  
+
   J1OrbitalType* J1= new J1OrbitalType(*SourcePtcl, targetPtcl);
   DiffJ1OrbitalType* dJ1= new DiffJ1OrbitalType(*SourcePtcl, targetPtcl);
-  
+
   SpeciesSet &sSet = SourcePtcl->getSpeciesSet();
   for (int ig=0; ig< sSet.getTotalNum(); ig++) {
     J1->addFunc(ig,nfunc);
     dJ1->addFunc(ig,nfunc);
   }
-  
+
   J1->dPsi=dJ1;
   std::string jname = "J1_"+Jastfunction;
   targetPsi.addOrbital(J1,jname.c_str());
@@ -519,21 +512,21 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
   bool success=false;
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  int chargeInd=species.addAttribute("charge");  
+  int chargeInd=species.addAttribute("charge");
 
   if (TypeOpt.find("one") < TypeOpt.size())
   {
     // it's a one body jastrow factor
-    if (Jastfunction == "bspline") 
+    if (Jastfunction == "bspline")
     {
       success = createJ1<BsplineFunctor>(cur);
     }
-    else if (Jastfunction == "pade") 
+    else if (Jastfunction == "pade")
     {
       guardAgainstPBC();
       success = createJ1<PadeFunctor>(cur);
     }
-    else if (Jastfunction == "rpa") 
+    else if (Jastfunction == "rpa")
     {
 #if !(OHMMS_DIM == 3)
       app_error() << "RPA for one-body jastrow is only available for 3D\n";
@@ -554,16 +547,16 @@ bool RadialJastrowBuilder::put(xmlNodePtr cur)
   else if (TypeOpt.find("two") < TypeOpt.size())
   {
     // it's a two body jastrow factor
-    if (Jastfunction == "bspline") 
+    if (Jastfunction == "bspline")
     {
       success = createJ2<BsplineFunctor>(cur);
     }
-    else if (Jastfunction == "pade") 
+    else if (Jastfunction == "pade")
     {
       guardAgainstPBC();
       success = createJ2<PadeFunctor>(cur);
     }
-    else if (Jastfunction == "rpa" || Jastfunction == "yukawa") 
+    else if (Jastfunction == "rpa" || Jastfunction == "yukawa")
     {
 #if !(OHMMS_DIM == 3)
       app_error() << "RPA for one-body jastrow is only available for 3D\n";
