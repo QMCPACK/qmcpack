@@ -57,19 +57,9 @@ public:
   ///default destructor
   ~DiracDeterminantWithBackflow();
 
-  /**copy constructor
-   * @param s existing DiracDeterminantWithBackflow
-   *
-   * This constructor makes a shallow copy of Phi.
-   * Other data members are allocated properly.
-   */
-  DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s);
-
-  DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s);
-
-  ///** return a clone of Phi
-  // */
-  //SPOSetPtr clonePhi() const;
+  // copy constructor and assign operator disabled
+  DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s) = delete;
+  DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
 
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
@@ -142,8 +132,6 @@ public:
   evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L) ;
-
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   /** cloning function
    * @param tqp target particleset

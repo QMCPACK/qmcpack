@@ -42,14 +42,6 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SP
 ///default destructor
 DiracDeterminantWithBackflow::~DiracDeterminantWithBackflow() {}
 
-DiracDeterminantWithBackflow& DiracDeterminantWithBackflow::operator=(const DiracDeterminantWithBackflow& s)
-{
-  NP=0;
-  resize(s.NumPtcls, s.NumOrbitals);
-  return *this;
-}
-
-
 ///reset the size: with the number of particles and number of orbtials
 void DiracDeterminantWithBackflow::resize(int nel, int morb)
 {
@@ -1019,12 +1011,6 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-WaveFunctionComponentPtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
-{
-  APP_ABORT(" Illegal action. Cannot use DiracDeterminantWithBackflow::makeClone");
-  return 0;
-}
-
 DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr spo) const
 {
 //    BackflowTransformation *BF = BFTrans->makeClone();
@@ -1035,19 +1021,6 @@ DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr s
   dclone->set(FirstIndex,LastIndex-FirstIndex);
   return dclone;
 }
-
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s):
-  DiracDeterminant(s),BFTrans(s.BFTrans)
-
-{
-  registerTimers();
-  this->resize(s.NumPtcls,s.NumOrbitals);
-}
-
-//SPOSetPtr  DiracDeterminantWithBackflow::clonePhi() const
-//{
-//  return Phi->makelone();
-//}
 
 void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
 {

@@ -96,10 +96,6 @@ public:
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf);
 
-  virtual void updateAfterSweep(ParticleSet& P,
-                                ParticleSet::ParticleGradient_t& G,
-                                ParticleSet::ParticleLaplacian_t& L);
-
   virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);

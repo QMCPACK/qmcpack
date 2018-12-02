@@ -31,7 +31,8 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
-  NP(0), Phi(spos), FirstIndex(first), ndelay(1),
+  DiracDeterminantBase(spos),
+  NP(0), FirstIndex(first), ndelay(1),
   UpdateTimer("DiracDeterminant::update",timer_level_fine),
   RatioTimer("DiracDeterminant::ratio",timer_level_fine),
   InverseTimer("DiracDeterminant::inverse",timer_level_fine),
@@ -39,11 +40,7 @@ DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
   SPOVTimer("DiracDeterminant::spoval",timer_level_fine),
   SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
 {
-  Optimizable=false;
-  if(Phi->Optimizable)
-    Optimizable=true;
   ClassName="DiracDeterminant";
-  registerTimers();
 }
 
 ///default destructor
@@ -618,47 +615,11 @@ DiracDeterminant::evaluateDerivatives(ParticleSet& P,
 {
 }
 
-WaveFunctionComponentPtr DiracDeterminant::makeClone(ParticleSet& tqp) const
-{
-  APP_ABORT(" Illegal action. Cannot use DiracDeterminant::makeClone");
-  return 0;
-}
-
 DiracDeterminant* DiracDeterminant::makeCopy(SPOSetPtr spo) const
 {
   DiracDeterminant* dclone= new DiracDeterminant(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex,ndelay);
   return dclone;
-}
-
-DiracDeterminant::DiracDeterminant(const DiracDeterminant& s)
-  : WaveFunctionComponent(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex), ndelay(s.ndelay)
-  ,UpdateTimer(s.UpdateTimer)
-  ,RatioTimer(s.RatioTimer)
-  ,InverseTimer(s.InverseTimer)
-  ,BufferTimer(s.BufferTimer)
-  ,SPOVTimer(s.SPOVTimer)
-  ,SPOVGLTimer(s.SPOVGLTimer)
-{
-  registerTimers();
-  this->resize(s.NumPtcls,s.NumOrbitals);
-}
-
-//SPOSetPtr  DiracDeterminant::clonePhi() const
-//{
-//  return Phi->makeClone();
-//}
-
-void DiracDeterminant::registerTimers()
-{
-  UpdateTimer.reset();
-  RatioTimer.reset();
-  TimerManager.addTimer (&UpdateTimer);
-  TimerManager.addTimer (&RatioTimer);
-  TimerManager.addTimer (&InverseTimer);
-  TimerManager.addTimer (&BufferTimer);
-  TimerManager.addTimer (&SPOVTimer);
-  TimerManager.addTimer (&SPOVGLTimer);
 }
 
 }
