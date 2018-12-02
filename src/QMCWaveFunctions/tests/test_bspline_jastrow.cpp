@@ -450,6 +450,80 @@ const char *particles = \
   REQUIRE(ratio_1 == ComplexApprox(1.0040884258).compare_real_only());
   REQUIRE(j1->LogValue == Approx(0.32013531536));
 
+
+  // test to make sure that setting cusp for J1 works properly
+  const char *particles2 = \
+"<tmp> \
+   <jastrow type=\"One-Body\" name=\"J1\" function=\"bspline\" source=\"ion\" print=\"yes\"> \
+       <correlation elementType=\"C\" rcut=\"10\" size=\"8\" cusp=\"2.0\"> \
+               <coefficients id=\"eC\" type=\"Array\"> \
+-0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038 \
+-0.04445345869 -0.02135082917 \
+               </coefficients> \
+            </correlation> \
+         </jastrow> \
+</tmp> \
+";
+
+  Libxml2Document doc2;
+  bool okay2 = doc2.parseFromString(particles2);
+  REQUIRE(okay2);
+
+  xmlNodePtr root2 = doc2.getRoot();
+
+  xmlNodePtr jas2 = xmlFirstElementChild(root2);
+
+  TrialWaveFunction psi2 = TrialWaveFunction(c);
+  RadialJastrowBuilder jastrow2(elec_, psi2, ions_);
+  bool build_okay2 = jastrow2.put(jas2);
+  REQUIRE(build_okay2);
+
+  WaveFunctionComponent *orb2 = psi2.getOrbitals()[0];
+
+  J1Type *j12 = dynamic_cast<J1Type *>(orb2);
+  REQUIRE(j12 != NULL);
+
+  // Cut and paste from output of gen_bspline_jastrow.py
+  // note only the first two rows should change from above
+  const int N2 = 20;
+  JValues Vals2[N2] = {
+    {0.00,   -0.9304041433,               2,    -3.534137754},
+    {0.60,    -0.252599792,    0.4492630825,    -1.634985305},
+    {1.20,   -0.1637586749,    0.0255799351,  -0.01568108497},
+    {1.80,   -0.1506226948,   0.01922435549, -0.005504180392},
+    {2.40,   -0.1394848415,   0.01869442683,  0.001517191423},
+    {3.00,    -0.128023472,   0.01946283614,   0.00104417293},
+    {3.60,   -0.1161729491,   0.02009651096,  0.001689229059},
+    {4.20,   -0.1036884223,   0.02172284322,  0.003731878464},
+    {4.80,  -0.08992443283,    0.0240346508,  0.002736384838},
+    {5.40,  -0.07519614609,   0.02475121662, -0.000347832122},
+    {6.00,  -0.06054074137,   0.02397053075, -0.001842295859},
+    {6.60,  -0.04654631918,    0.0225837382, -0.002780345968},
+    {7.20,  -0.03347994129,   0.02104406699,  -0.00218107833},
+    {7.80,   -0.0211986378,   0.01996899618,  -0.00173646255},
+    {8.40,  -0.01004416026,   0.01635533409,  -0.01030907776},
+    {9.00, -0.002594125744,  0.007782377232,  -0.01556475446},
+    {9.60, -0.0001660240476,  0.001245180357, -0.006225901786},
+    {10.20,               0,               0,               0},
+    {10.80,               0,               0,               0},
+    {11.40,               0,               0,               0}
+  };
+
+#ifdef ENABLE_SOA
+  BsplineFunctor<WaveFunctionComponent::RealType> *bf2 = j12->F[0];
+#else
+  BsplineFunctor<WaveFunctionComponent::RealType> *bf2 = j12->Fs[0];
+#endif
+
+  for (int i = 0; i < N2; i++) {
+    WaveFunctionComponent::RealType dv = 0.0;
+    WaveFunctionComponent::RealType ddv = 0.0;
+    WaveFunctionComponent::RealType val = bf2->evaluate(Vals2[i].r,dv,ddv);
+    REQUIRE(Vals2[i].du == Approx(dv));
+    REQUIRE(Vals2[i].u == Approx(val));
+    REQUIRE(Vals2[i].ddu == Approx(ddv));
+  }
+
 }
 }
 
