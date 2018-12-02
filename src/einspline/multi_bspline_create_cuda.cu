@@ -433,7 +433,7 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
         }
 
     cudaMemcpy(cuda_spline->coefs, spline_buff, size_GPU, cudaMemcpyHostToDevice);
-    cudaThreadSynchronize();
+    cudaDeviceSynchronize();
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
       fprintf (stderr, "Failed to copy spline to GPU memory.  Error:  %s\n", cudaGetErrorString(err));
@@ -500,7 +500,7 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
       }
 
   cudaMemcpy(cuda_spline->coefs, spline_buff, size, cudaMemcpyHostToDevice);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess) {
     fprintf (stderr, "Failed to copy spline to GPU memory.  Error:  %s\n",
@@ -663,7 +663,7 @@ create_multi_UBspline_3d_s_cuda_conv (multi_UBspline_3d_d* spline)
 	  //    	     ix,iy,iz,isp);
 	}
   cudaMemcpy(cuda_spline->coefs, spline_buff, size, cudaMemcpyHostToDevice);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess) {
     fprintf (stderr, "Failed to copy spline to GPU memory.  Error:  %s\n",
