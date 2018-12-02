@@ -113,48 +113,34 @@ public:
   using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<RadFuncType>;
 };
 
-#if 0
-// specialization for bspline (does this need to be so complicated?)
-// note that this supports CUDA whereas the general case does not
 template<>
-class JastrowTypeHelper<BsplineFunctor<RealType>>
+class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>>
 {
-private:
 public:
-#if defined(QMC_CUDA) and defined(ENABLE_SOA)
+  using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
+#if defined(QMC_CUDA)
+#if defined(ENABLE_SOA)
   using J1OrbitalType = OneBodyJastrowOrbitalBspline<RadFuncType>;
-  using J1OrbitalTypeSpin = OneBodyJastrowOrbitalBspline<RadFuncType>;
-  using DiffJ1OrbitalType = DiffOneBodySpinJastrowOrbital<RadFuncType>;
-  using DiffJ1OrbitalTypeSpin = DiffOneBodySpinJastrowOrbital<RadFuncType>;
   using J2OrbitalType = TwoBodyJastrowOrbitalBspline<RadFuncType>;
-  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
-#endif
-#if defined(QMC_CUDA) and !defined(ENABLE_SOA)
+#else
   using J1OrbitalType = OneBodyJastrowOrbitalBsplineAoS;
-  using J1OrbitalTypeSpin = OneBodyJastrowOrbitalBsplineAoS;
-  using DiffJ1OrbitalType = DiffOneBodySpinJastrowOrbital<RadFuncType>;
-  using DiffJ1OrbitalTypeSpin = DiffOneBodySpinJastrowOrbital<RadFuncType>;
   using J2OrbitalType = TwoBodyJastrowOrbitalBsplineAoS;
-  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
 #endif
-#if !defined(QMC_CUDA) and defined(ENABLE_SOA)
+#else
+#if defined(ENABLE_SOA)
   using J1OrbitalType = J1OrbitalSoA<RadFuncType>;
-  using J1OrbitalTypeSpin = OneBodySpinJastrowOrbital<RadFuncType>;
-  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
-  using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<RadFuncType>;
   using J2OrbitalType = J2OrbitalSoA<RadFuncType>;
-  using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
-#endif
-#if !defined(QMC_CUDA) and !defined(ENABLE_SOA)
+#else
   using J1OrbitalType = OneBodyJastrowOrbital<RadFuncType>;
-  using J1OrbitalTypeSpin = OneBodySpinJastrowOrbital<RadFuncType>;
-  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
-  using DiffJ1OrbitalTypeSpin = DiffOneBodySpinJastrowOrbital<RadFuncType>;
   using J2OrbitalType = TwoBodyJastrowOrbital<RadFuncType>;
+#endif
+#endif
+  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
-#endif
+  // spin polarized J1
+  using J1OrbitalTypeSpin = OneBodySpinJastrowOrbital<RadFuncType>;
+  using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<RadFuncType>;
 };
-#endif
 
 template<class RadFuncType>
 void RadialJastrowBuilder::initTwoBodyFunctor(RadFuncType& functor, double fac) { }
