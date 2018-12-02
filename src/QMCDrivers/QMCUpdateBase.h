@@ -173,10 +173,6 @@ public:
    */
   virtual void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
 
-  /** simple routine to test the performance
-   */
-  void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
-
   /**  process options
    */
   virtual bool put(xmlNodePtr cur);

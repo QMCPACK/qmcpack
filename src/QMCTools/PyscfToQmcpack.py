@@ -264,7 +264,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
   #atomicBasisSets Group
   for x in range(NbSpecies):
 
-    MyIdx=idxAtomstoSpecies[x]
+    MyIdx=idxSpeciestoAtoms[x][0]
     atomicBasisSetGroup=GroupBasisSet.create_group("atomicBasisSet"+str(x))
     mylen="S"+str(len(uniq_atoms[x][0]))
 

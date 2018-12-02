@@ -26,7 +26,6 @@ namespace qmcplusplus
 
     int iorb=0;
     int N=bigspace.size();
-    bool skipit=true;
     int n_lower=0; 
     do
     {
@@ -72,7 +71,6 @@ namespace qmcplusplus
 
     int iorb=0;
     int N=bigspace.size();
-    bool skipit=true;
     int n_lower=0; 
     do
     {

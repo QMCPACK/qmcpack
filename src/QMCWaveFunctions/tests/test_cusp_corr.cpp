@@ -236,7 +236,6 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 TEST_CASE("readCuspInfo", "[wavefunction]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
 
   typedef OneDimGridBase<double> GridType;
   typedef LCOrbitalSetWithCorrection<LocalizedBasisSet<SphericalBasisSet<NGOrbital, GridType>>, false> OrbType;

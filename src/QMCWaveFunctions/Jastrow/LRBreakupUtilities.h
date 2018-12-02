@@ -354,7 +354,6 @@ struct DerivYukawaBreakup
       return -0.5*OneOverRs*(1.0-r*OneOverSqrtRs);
     else
     {
-      T rinv=1.0/r;
       T exponential = std::exp(-r*OneOverSqrtRs);
       return -0.5*OneOverRs*std::exp(-r*OneOverSqrtRs);
     }
@@ -376,7 +375,6 @@ struct DerivYukawaBreakup
     T Rc=rc;
     T coskr = std::cos(k*Rc);
     T sinkr = std::sin(k*Rc);
-    T Rs2 = Rs*Rs;
     T oneOverK = 1.0/k;
     T Val = (-0.5*NormFactor*OneOverSqrtRs*oneOverK)*(1.0/((1.0 + k*k* Rs)*(1.0 + k*k* Rs))*std::exp(-rc*OneOverSqrtRs)* SqrtRs* (k* SqrtRs* (rc + 2.0* SqrtRs + k*k* rc* Rs)* coskr + (rc + k*k*rc*Rs + SqrtRs* (1.0 - k*k*Rs))* sinkr));
     return Val;
@@ -673,10 +671,10 @@ struct RPABFeeBreakup
     T veff=vq-vlr;
     T op2=Density*2.0*vq*eq;
 #if OHMMS_DIM==3
-    T op2kf=Density*2.0*(2.0*M_PI*(OHMMS_DIM-1.0))*hbs2m;
+    //    T op2kf=Density*2.0*(2.0*M_PI*(OHMMS_DIM-1.0))*hbs2m;
     T op=(op2+1.2*( kfm[0]*kfm[0] + kfm[1]*kfm[1] )*eq*hbs2m + eq*eq );
 #elif OHMMS_DIM==2
-    T op2kf=Density*2.0*(2.0*M_PI*(OHMMS_DIM-1.0))*std::pow(kf,3.0-OHMMS_DIM)*hbs2m;
+    //    T op2kf=Density*2.0*(2.0*M_PI*(OHMMS_DIM-1.0))*std::pow(kf,3.0-OHMMS_DIM)*hbs2m;
     T op=(op2+1.5*( kfm[0]*kfm[0] + kfm[1]*kfm[1] )*hbs2m*eq + eq*eq );
 #endif
     op=std::sqrt(op);
@@ -744,7 +742,7 @@ struct RPABFeeBreakup
   // mmorales: taken from bopimc (originally by M Holzmann)
   T Dlindhard(T q, T w)
   {
-    T xd1,xd2,small=0.00000001,xdummy,rq1,rq2,sd1,sd2;
+    T xd1,xd2,small=0.00000001,xdummy,rq1,rq2;
     T res=0.0;
     for(int i=0; i<nspin; i++)
     {
@@ -777,6 +775,7 @@ struct RPABFeeBreakup
         xdummy = -1.0+0.5*(1.0-xd1*xd1)/xq*rq1-0.50*(1.0-xd2*xd2)/xq*rq2;
         xdummy *= kfm[i]/(8.0*M_PI*M_PI*hbs2m);
 #elif OHMMS_DIM==2
+	T sd1,sd2;
         if(std::abs(xd1) < small)
           sd1=0.0;
         else
@@ -804,7 +803,7 @@ struct RPABFeeBreakup
   // mmorales: taken from bopimc (originally by M Holzmann)
   T Dlindhardp(T q, T w)
   {
-    T xd1,xd2,small=0.00000001,xdummy,rq1,rq2,sd1,sd2;
+    T xd1,xd2,small=0.00000001,xdummy,rq1,rq2;
     T res=0.0;
     for(int i=0; i<nspin; i++)
     {
@@ -837,6 +836,7 @@ struct RPABFeeBreakup
         xdummy=-xd1/(xq*kfm[i]*kfm[i]*2.0*hbs2m)*rq1+ xd2/(xq*kfm[i]*kfm[i]*2.0*hbs2m)*rq2;
         xdummy *= kfm[i]/(8.0*M_PI*M_PI*hbs2m*xq);
 #elif OHMMS_DIM==2
+	T sd1,sd2;
         if(std::abs(xd1) < small)
           sd1=0.0;
         else

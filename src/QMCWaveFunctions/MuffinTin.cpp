@@ -436,7 +436,6 @@ MuffinTinClass::evaluate (TinyVector<double,3> r,
     {
       for (int m=-l; m<=l; m++)
       {
-        int lm = l*(l+1) + m;
         RadialVec[j] *= r2l;
         j++;
       }
@@ -548,7 +547,6 @@ MuffinTinClass::evaluate (TinyVector<double,3> r,
     for (int i=0; i< RadialVec.size(); i++)
       Small_r_APW_Fits[i].eval (drmag, RadialVec[i], dRadialVec[i], d2RadialVec[i]);
   // Multiply by r^l term
-  int num_lm = (lMax+1)*(lMax+1);
   int j = 0;
   for (int iorb=0; iorb<NumOrbitals; iorb++)
   {
@@ -559,7 +557,6 @@ MuffinTinClass::evaluate (TinyVector<double,3> r,
     {
       for (int m=-l; m<=l; m++)
       {
-        int lm = l*(l+1) + m;
         std::complex<double> u = RadialVec[j];
         std::complex<double> du = dRadialVec[j];
         std::complex<double> d2u = d2RadialVec[j];

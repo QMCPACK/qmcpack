@@ -31,7 +31,7 @@
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
-#include "QMCDrivers/VMC/VMCSingleOMP.h"
+#include "QMCDrivers/VMC/VMC.h"
 
 
 #include <stdio.h>
@@ -43,7 +43,7 @@ using std::string;
 namespace qmcplusplus
 {
 
-TEST_CASE("VMCSingleOMP", "[drivers][vmc]")
+TEST_CASE("VMC", "[drivers][vmc]")
 {
 
   Communicate *c;
@@ -112,7 +112,7 @@ TEST_CASE("VMCSingleOMP", "[drivers][vmc]")
   //EstimatorManagerBase emb(c);
 
 
-  VMCSingleOMP vmc_omp(elec, psi, h, wpool, c);
+  VMC vmc_omp(elec, psi, h, wpool, c);
 
   const char *vmc_input= \
   "<qmc method=\"vmc\" move=\"pbyp\"> \

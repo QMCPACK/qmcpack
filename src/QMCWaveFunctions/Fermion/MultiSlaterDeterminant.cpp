@@ -741,7 +741,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = (RealType)1.0/psi;;
       ValueType lapl_sum=0.0;
       ParticleSet::ParticleGradient_t g(n),gmP(n);
-      ValueType gg=0.0, ggP=0.0;
+      ValueType gg=0.0;
       g=0.0;
       gmP=0.0;
       for(int i=0; i<lapls_up.size(); i++)
@@ -775,7 +775,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
           cnt+=DetsPerCSF[ip];
           continue;
         }
-        ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
+        ValueType cdet=0.0,q0=0.0,v1=0.0;
         for(int k=0; k<DetsPerCSF[ip]; k++)
         {
           int upC = C2node_up[cnt];
@@ -811,7 +811,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = (RealType)1.0/psi;;
       ValueType lapl_sum=0.0;
       ParticleSet::ParticleGradient_t g(n),gmP(n);
-      ValueType gg=0.0, ggP=0.0;
+      ValueType gg=0.0;
       g=0.0;
       gmP=0.0;
       for(int i=0; i<lapls_up.size(); i++)

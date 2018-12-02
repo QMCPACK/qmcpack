@@ -293,7 +293,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     // protect last
     last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
 
-    constexpr ST zero(0);
     constexpr ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),

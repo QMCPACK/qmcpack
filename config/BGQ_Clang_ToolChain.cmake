@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(GNU_OPTS "-O3 -g -ffast-math -fopenmp -fstrict-aliasing -Wno-deprecated -Wno-unused-value -Wno-type-safety -Wno-undefined-var-template")
 set(GNU_FLAGS "-Drestrict=__restrict__ -DADD_ -DHAVE_MASS -DHAVE_MASSV -DSPLINEFLOAT -DBGQPX -D__forceinline=inline")
-set(CMAKE_CXX_FLAGS "${GNU_FLAGS} ${GNU_OPTS} -ftemplate-depth-60" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS "${GNU_FLAGS} ${GNU_OPTS}" CACHE STRING "" FORCE)
 set(CMAKE_C_FLAGS "${GNU_FLAGS} ${GNU_OPTS} -std=c99"  CACHE STRING "" FORCE)
 SET(CMAKE_EXE_LINKER_FLAGS  "-Wl,--allow-multiple-definition" CACHE STRING "" FORCE)
 
@@ -27,7 +27,7 @@ SET(BUILD_QMCTOOLS 1)
 #SET(BUILD_SANDBOX 1)
 
 SET(MPIEXEC "sh")
-SET(MPIEXEC_NUMPROC_FLAG "${qmcpack_SOURCE_DIR}/utils/bgrunjobhelper.sh")
+SET(MPIEXEC_NUMPROC_FLAG "${qmcpack_SOURCE_DIR}/tests/scripts/bgrunjobhelper.sh")
 SET(QE_BIN /soft/applications/quantum_espresso/5.3.0-bgq-omp/bin)
 
 SET(BOOST_ROOT /soft/libraries/boost/1.62.0/cnk-bgclang++11/current/)

@@ -1283,22 +1283,19 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose
       // Copy core states
       for (int j=NumValenceOrbs; j<N; j++)
       {
-        std::complex<double> psi_val, psi_lapl;
+        std::complex<double> psi_val;
         TinyVector<std::complex<double>, OHMMS_DIM> psi_grad;
         psi_val  = StorageValueVector[j];
         psi_grad = StorageGradVector[j];
-        psi_lapl = StorageLaplVector[j];
         psi(i,psiIndex) = real(psi_val);
         for (int n=0; n<OHMMS_DIM; n++)
           dpsi(i,psiIndex)[n] = real(psi_grad[n]);
-        //d2psi(i,psiIndex) = real(psi_lapl);
         psiIndex++;
         if (MakeTwoCopies[j])
         {
           psi(i,psiIndex) = imag(psi_val);
           for (int n=0; n<OHMMS_DIM; n++)
             dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
-          //d2psi(i,psiIndex) = imag(psi_lapl);
           psiIndex++;
         }
       }
@@ -1349,7 +1346,6 @@ EinsplineSetExtended<StorageType>::evaluateGradSource
 {
   if (ionDerivs)
   {
-    std::complex<double> eye(0.0,1.0);
     // Loop over dimensions
     for (int dim=0; dim<OHMMS_DIM; dim++)
     {
@@ -1810,13 +1806,13 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
       StorageGradHessVector[j]=dot(PrimLattice.G,tmpghs);
     }
     std::complex<double> eye (0.0, 1.0);
-    StorageValueVector_t &valVec =
-      StorageValueVector;
-    StorageGradVector_t &gradVec =
-      StorageGradVector;
-    StorageHessVector_t &hessVec =
-      StorageHessVector;
-    Tensor<std::complex<double>,OHMMS_DIM> tmphs;
+//    StorageValueVector_t &valVec =
+//      StorageValueVector;
+//    StorageGradVector_t &gradVec =
+//      StorageGradVector;
+//    StorageHessVector_t &hessVec =
+//      StorageHessVector;
+//    Tensor<std::complex<double>,OHMMS_DIM> tmphs;
     for (int j=0; j<NumValenceOrbs; j++)
     {
 //            std::complex<double> u = valVec[j];
@@ -2225,7 +2221,6 @@ EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P, int fir
     // Check if we are in the muffin tin;  if so, evaluate
     bool inTin = false, need2blend = false;
     PosType disp;
-    double b, db, d2b;
     for (int tin=0; tin<MuffinTins.size(); tin++)
     {
       APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");

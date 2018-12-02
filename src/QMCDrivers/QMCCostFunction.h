@@ -14,8 +14,8 @@
     
 
 
-#ifndef QMCPLUSPLUS_COSTFUNCTIONOMP_H
-#define QMCPLUSPLUS_COSTFUNCTIONOMP_H
+#ifndef QMCPLUSPLUS_COSTFUNCTION_H
+#define QMCPLUSPLUS_COSTFUNCTION_H
 
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
@@ -30,16 +30,16 @@ namespace qmcplusplus
  * Optimization by correlated sampling method with configurations
  * generated from VMC running on a single thread.
  */
-class QMCCostFunctionOMP: public QMCCostFunctionBase, public CloneManager
+class QMCCostFunction: public QMCCostFunctionBase, public CloneManager
 {
 public:
 
   ///Constructor.
-  QMCCostFunctionOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+  QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi,
                      QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  ~QMCCostFunctionOMP();
+  ~QMCCostFunction();
 
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
