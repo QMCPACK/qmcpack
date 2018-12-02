@@ -215,10 +215,7 @@ inline bool test_cudamps()
   std::string controlfile = "/tmp/nvidia-mps"; // this is the default directory
   const char* mps_pipe_dir = std::getenv("CUDA_MPS_PIPE_DIRECTORY"); // the directory can be changed by this environment variable
   if (mps_pipe_dir != NULL)
-  {
-    std::cerr << "here\n";
     controlfile = mps_pipe_dir;
-  }
   controlfile += "/log"; // the file (actually pipe) that's important is log
   if (access(controlfile.c_str(),F_OK) == 0)
     return true;
