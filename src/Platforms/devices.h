@@ -27,6 +27,7 @@
 #include <cuda_runtime_api.h>
 #include <unistd.h>
 #include <CUDA/gpu_misc.h>
+#include <nvml.h>
 
 #define MAX_GPU_SPLINE_SIZE_MB 81920
 
@@ -206,6 +207,24 @@ inline void set_appropriate_device_num(int num)
   }
 }
 
+/** Test if CUDA MPS service is running
+ */
+inline bool test_cudamps()
+{
+  // the idea is to look for CUDA MPS daemon's control file
+  std::string controlfile = "/tmp/nvidia-mps"; // this is the default directory
+  const char* mps_pipe_dir = std::getenv("CUDA_MPS_PIPE_DIRECTORY"); // the directory can be changed by this environment variable
+  if (mps_pipe_dir != NULL)
+  {
+    std::cerr << "here\n";
+    controlfile = mps_pipe_dir;
+  }
+  controlfile += "/log"; // the file (actually pipe) that's important is log
+  if (access(controlfile.c_str(),F_OK) == 0)
+    return true;
+  return false;
+}
+
 inline void Finalize_CUDA()
 {
   gpu::finalizeCublas();
@@ -221,12 +240,16 @@ inline void Init_CUDA()
   int devNum = get_device_num();
   set_appropriate_device_num(devNum);
   cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 1024 * 1024 * 50);
+  gpu::cudamps = test_cudamps(); // test if cuda mps service is running
   gpu::rank=OHMMS::Controller->rank();
   gpu::initCUDAStreams();
   gpu::initCUDAEvents();
   gpu::initCublas();
   gpu::MaxGPUSpineSizeMB = MAX_GPU_SPLINE_SIZE_MB;
-  std::cerr << "Rank " << gpu::rank << ": relative rank number = " << gpu::relative_rank << ", number of devices = " << gpu::device_group_size << "\n";
+  std::cerr << "Rank " << gpu::rank << ": relative rank number = " << gpu::relative_rank << ", number of devices = " << gpu::device_group_size;
+  if (gpu::cudamps)
+    std::cerr << " (MPS enabled)";
+  std::cerr << "\n";
   std::cerr << "Assigned device numbers: ";
   for (int i=0; i<gpu::device_group_size; i++)
   {

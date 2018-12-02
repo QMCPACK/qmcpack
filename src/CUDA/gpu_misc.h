@@ -47,6 +47,7 @@ extern size_t MaxGPUSpineSizeMB;
 extern int rank;
 extern int relative_rank;
 extern int device_group_size;
+extern bool cudamps;
 extern std::vector<int> device_group_numbers;
 extern std::vector<int> device_rank_numbers;
 

@@ -464,14 +464,19 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     app_log() << "Initializing GPU data structures.\n";
     if ((GPUsharing == "yes" || GPUsharing == "1"))
     {
+      if (!gpu::cudamps)
+      {
+        app_log() << "Warning: GPU spline sharing cannot be enabled due to missing Cuda MPS service.\n";
+        gpu::device_group_size=1;
+      }
       if (gpu::device_group_size>1)
-        app_log() << "Splitting spline data across " << gpu::device_group_size << " GPUs.\n";
+        app_log() << "1/" << gpu::device_group_size << " of GPU spline data stored per rank.\n";
       else
-        app_log() << "Spline data residing on each rank's GPU.\n";
+        app_log() << "Full GPU spline data stored per rank.\n";
     } else
     {
       if (gpu::device_group_size>1)
-        app_log() << "Spline data residing on each rank's GPU.\n";
+        app_log() << "Full GPU spline data stored per rank.\n";
       gpu::device_group_size=1;
     }
     OrbitalSet->initGPU();
