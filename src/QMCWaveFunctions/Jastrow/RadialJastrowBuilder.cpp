@@ -263,14 +263,7 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       auto *functor = new RadFunctorType();
       functor->setCusp(cusp);
       functor->setPeriodic(targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN);
-      if (targetPtcl.Lattice.WignerSeitzRadius > 0)
-      {
-        functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
-      }
-      else if (functor->cutoff_radius < 10.0)
-      {
-        functor->cutoff_radius = 10.0;
-      }
+      functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
       bool functor_initialized = functor->put(cur);
       if (!functor_initialized && init_mode =="rpa")
       {
@@ -349,16 +342,8 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       rAttrib.put(kids);
       auto *functor = new RadFunctorType();
       int ig = sSet.findSpecies (speciesA);
-
       functor->setPeriodic(SourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN);
-      if (targetPtcl.Lattice.WignerSeitzRadius > 0)
-      {
-        functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
-      }
-      else if (functor->cutoff_radius < 10.0)
-      {
-        functor->cutoff_radius = 10.0;
-      }
+      functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
       functor->setCusp(cusp);
       int jg=-1;
       if(speciesB.size())
