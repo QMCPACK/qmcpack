@@ -259,6 +259,15 @@ class NOMSD: public AFQMCInfo
     template<class WlkSet, class MatG, class TVec>
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
+    /*
+     * Calculates the back propagated density matrix for all walkers in the walker set.
+     * Options:
+     *  - path_restoration: If false (default), performs traditional back propagation
+     *                        algorithm without any path restoration, otherwise restores
+     *                        phases and cosine factors along path.
+     *  - free_projection: If false (default), assumes using phaseless approximation
+     *                       otherwise assumes using free projection.
+     */
     template<class WlkSet, class MatG>
     void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVector& denom, bool path_restoration=false, bool free_projection=false);
 

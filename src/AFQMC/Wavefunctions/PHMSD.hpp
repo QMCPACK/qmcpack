@@ -320,6 +320,8 @@ class PHMSD: public AFQMCInfo
     template<class WlkSet, class MatG, class TVec>
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
+    template<class WlkSet, class MatG>
+    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVector& denom, bool path_restoration=false, bool free_projection=false);
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
      *   with a format consistent with (and expected by) the vbias routine.
@@ -375,6 +377,12 @@ class PHMSD: public AFQMCInfo
      */
     template<class Mat>
     void OrthogonalizeExcited(Mat&& A, SpinTypes spin);
+
+    /*
+     * Back Propagates the trial wavefunction.
+    */
+    template<class MatA, class Wlk, class MatB>
+    ComplexType BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP);
 
   protected: 
 
