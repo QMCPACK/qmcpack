@@ -238,7 +238,6 @@ namespace spline2
     inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *restrict spline_m, T x, T y, T z,
         T* restrict vals, T* restrict grads, T* restrict hess, T* restrict ghess, size_t out_offset, int first, int last)
     {
-      std::cout<<"in evaluate_vghgh_impl\n";
       int ix,iy,iz;
       T tx,ty,tz;
       T a[4],b[4],c[4];
