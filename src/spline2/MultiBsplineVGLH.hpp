@@ -328,7 +328,7 @@ namespace spline2
           const T pre03 = a[i]*  d3b[j];
           
 
-          #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,gx,gy,gz,hxx,hxy,hxz,hyy,hyz,hzz,vals)
+          #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,gx,gy,gz,hxx,hxy,hxz,hyy,hyz,hzz, gh_xxx,gh_xxy,gh_xxz,gh_xyy,gh_xyz,gh_xzz,gh_yyy,gh_yyz, gh_yzz,gh_zzz,vals)
           for (int n=0; n<num_splines; n++)
           {
             T coefsv = coefs[n];
