@@ -788,6 +788,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       assign_vgh(r,psi,dpsi,grad_grad_psi,first/2,last/2);
     }
   }
+  
+  template<typename VV, typename GV, typename GGV, typename GGGV>
+  void evaluate_vghgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi, GGGV& grad_grad_grad_psi)
+  {
+    APP_ABORT("SplineC2RSoa:  evaluate_vghgh not implemented");
+  }
 };
 
 }
