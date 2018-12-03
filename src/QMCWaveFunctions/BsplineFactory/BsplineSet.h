@@ -143,11 +143,6 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     typedef GradMatrix_t::value_type grad_type;
     typedef HessMatrix_t::value_type hess_type;
     typedef GGGMatrix_t::value_type  ghess_type;
-    app_log()<<"Hi, Made it into evaluate_notranspose!!!!\n";
-    app_log()<<" ============= new evaluate_notranspose ============\n";
-    app_log()<<"  BEFORE____\n";
-    app_log()<<" grad_grad_grad_phi = \n"<<grad_grad_grad_logdet<<std::endl;
-    app_log()<<" -----------------------------------------------\n";
     for(int iat=first, i=0; iat<last; ++iat,++i)
     {
       ValueVector_t v(logdet[i],OrbitalSetSize);
@@ -156,9 +151,6 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
       GGGVector_t  gh(grad_grad_grad_logdet[i],OrbitalSetSize);
       SplineAdoptor::evaluate_vghgh(P,iat,v,g,h,gh);
     }
-    app_log()<<" AFTER________\n";
-    app_log()<<" grad_grad_grad_phi = \n"<<grad_grad_grad_logdet<<std::endl;
-    app_log()<<" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
   }
 
 };
