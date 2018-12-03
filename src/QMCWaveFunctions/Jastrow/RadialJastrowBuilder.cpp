@@ -118,22 +118,21 @@ class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>>
 {
 public:
   using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
-#if defined(QMC_CUDA)
-#if defined(ENABLE_SOA)
+#if defined(QMC_CUDA) && defined(ENABLE_SOA)
   using J1OrbitalType = OneBodyJastrowOrbitalBspline<RadFuncType>;
   using J2OrbitalType = TwoBodyJastrowOrbitalBspline<RadFuncType>;
-#else
+#endif
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   using J1OrbitalType = OneBodyJastrowOrbitalBsplineAoS;
   using J2OrbitalType = TwoBodyJastrowOrbitalBsplineAoS;
 #endif
-#else
-#if defined(ENABLE_SOA)
+#if !defined(QMC_CUDA) && defined(ENABLE_SOA)
   using J1OrbitalType = J1OrbitalSoA<RadFuncType>;
   using J2OrbitalType = J2OrbitalSoA<RadFuncType>;
-#else
+#endif
+#if !defined(QMC_CUDA) && !defined(ENABLE_SOA)
   using J1OrbitalType = OneBodyJastrowOrbital<RadFuncType>;
   using J2OrbitalType = TwoBodyJastrowOrbital<RadFuncType>;
-#endif
 #endif
   using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
