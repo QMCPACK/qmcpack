@@ -551,7 +551,8 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict gh122=mygH.data(8);
     const ST* restrict gh222=mygH.data(9);
 
-    #pragma omp simd
+    //SIMD doesn't work quite right yet.  Comment out until further debugging.
+    //#pragma omp simd
     for (size_t j=first; j<last; ++j)
     {
       int jr=j<<1;
@@ -590,36 +591,46 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       dpsi[psiIndex][1]=ComplexT(c*gY_r -s*gY_i, c*gY_i +s*gY_r);
       dpsi[psiIndex][2]=ComplexT(c*gZ_r -s*gZ_i, c*gZ_i +s*gZ_r);
 
-      const ST h_xx_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g00,g01,g02)+kX*(gX_i+dX_i);
-      const ST h_xy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g10,g11,g12)+kX*(gY_i+dY_i);
-      const ST h_xz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g20,g21,g22)+kX*(gZ_i+dZ_i);
-      const ST h_yx_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g00,g01,g02)+kY*(gX_i+dX_i);
-      const ST h_yy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g10,g11,g12)+kY*(gY_i+dY_i);
-      const ST h_yz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g20,g21,g22)+kY*(gZ_i+dZ_i);
-      const ST h_zx_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g20,g21,g22,g00,g01,g02)+kZ*(gX_i+dX_i);
-      const ST h_zy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g20,g21,g22,g10,g11,g12)+kZ*(gY_i+dY_i);
-      const ST h_zz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g20,g21,g22,g20,g21,g22)+kZ*(gZ_i+dZ_i);
+      //intermediates for computation of hessian. \partial_i \partial_j phi in cartesian coordinates.  
+      const ST f_xx_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g00,g01,g02);
+      const ST f_xy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g10,g11,g12);
+      const ST f_xz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g20,g21,g22);
+      const ST f_yy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g10,g11,g12);
+      const ST f_yz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g20,g21,g22);
+      const ST f_zz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g20,g21,g22,g20,g21,g22);
 
-      const ST h_xx_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g00,g01,g02)-kX*(gX_r+dX_r);
-      const ST h_xy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g10,g11,g12)-kX*(gY_r+dY_r);
-      const ST h_xz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g20,g21,g22)-kX*(gZ_r+dZ_r);
-      const ST h_yx_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g00,g01,g02)-kY*(gX_r+dX_r);
-      const ST h_yy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g10,g11,g12)-kY*(gY_r+dY_r);
-      const ST h_yz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g20,g21,g22)-kY*(gZ_r+dZ_r);
-      const ST h_zx_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g20,g21,g22,g00,g01,g02)-kZ*(gX_r+dX_r);
-      const ST h_zy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g20,g21,g22,g10,g11,g12)-kZ*(gY_r+dY_r);
-      const ST h_zz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g20,g21,g22,g20,g21,g22)-kZ*(gZ_r+dZ_r);
+      const ST f_xx_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g00,g01,g02);
+      const ST f_xy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g10,g11,g12);
+      const ST f_xz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g20,g21,g22);
+      const ST f_yy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g10,g11,g12);
+      const ST f_yz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g20,g21,g22);
+      const ST f_zz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g20,g21,g22,g20,g21,g22);
+
+      const ST h_xx_r=f_xx_r+2*kX*dX_i-kX*kX*val_r;
+      const ST h_xy_r=f_xy_r+(kX*dY_i+kY*dX_i)-kX*kY*val_r;
+      const ST h_xz_r=f_xz_r+(kX*dZ_i+kZ*dX_i)-kX*kZ*val_r;
+      const ST h_yy_r=f_yy_r+2*kY*dY_i-kY*kY*val_r;
+      const ST h_yz_r=f_yz_r+(kY*dZ_i+kZ*dY_i)-kY*kZ*val_r;
+      const ST h_zz_r=f_zz_r+2*kZ*dZ_i-kZ*kZ*val_r;
+
+      const ST h_xx_i=f_xx_i-2*kX*dX_r-kX*kX*val_i;
+      const ST h_xy_i=f_xy_i-(kX*dY_r+kY*dX_r)-kX*kY*val_i;
+      const ST h_xz_i=f_xz_i-(kX*dZ_r+kZ*dX_r)-kX*kZ*val_i;
+      const ST h_yy_i=f_yy_i-2*kY*dY_r-kY*kY*val_i;
+      const ST h_yz_i=f_yz_i-(kZ*dY_r+kY*dZ_r)-kZ*kY*val_i;
+      const ST h_zz_i=f_zz_i-2*kZ*dZ_r-kZ*kZ*val_i;
 
       grad_grad_psi[psiIndex][0]=ComplexT(c*h_xx_r-s*h_xx_i, c*h_xx_i+s*h_xx_r);
       grad_grad_psi[psiIndex][1]=ComplexT(c*h_xy_r-s*h_xy_i, c*h_xy_i+s*h_xy_r);
       grad_grad_psi[psiIndex][2]=ComplexT(c*h_xz_r-s*h_xz_i, c*h_xz_i+s*h_xz_r);
-      grad_grad_psi[psiIndex][3]=ComplexT(c*h_yx_r-s*h_yx_i, c*h_yx_i+s*h_yx_r);
       grad_grad_psi[psiIndex][4]=ComplexT(c*h_yy_r-s*h_yy_i, c*h_yy_i+s*h_yy_r);
       grad_grad_psi[psiIndex][5]=ComplexT(c*h_yz_r-s*h_yz_i, c*h_yz_i+s*h_yz_r);
-      grad_grad_psi[psiIndex][6]=ComplexT(c*h_zx_r-s*h_zx_i, c*h_zx_i+s*h_zx_r);
-      grad_grad_psi[psiIndex][7]=ComplexT(c*h_zy_r-s*h_zy_i, c*h_zy_i+s*h_zy_r);
       grad_grad_psi[psiIndex][8]=ComplexT(c*h_zz_r-s*h_zz_i, c*h_zz_i+s*h_zz_r);
   
+      //symmetry:
+      grad_grad_psi[psiIndex][3]=grad_grad_psi[psiIndex][1];
+      grad_grad_psi[psiIndex][6]=grad_grad_psi[psiIndex][2];
+      grad_grad_psi[psiIndex][7]=grad_grad_psi[psiIndex][5];
       //These are the real and imaginary components of the third SPO derivative.  _xxx denotes
       // third derivative w.r.t. x, _xyz, a derivative with resepect to x,y, and z, and so on.  
       
@@ -646,102 +657,62 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       const ST f3_zzz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g20,g21,g22,g20,g21,g22,g20,g21,g22);
 
       //Here is where we build up the components of the physical hessian gradient, namely, d^3/dx^3(e^{-ik*r}\phi(r)
-      const ST gh_xxx_r= f3_xxx_r + 3*kX*h_xx_i + 3*kX*kX*gX_r - kX*kX*kX*val_i;
-      const ST gh_xxx_i= f3_xxx_i - 3*kX*h_xx_r + 3*kX*kX*gX_i + kX*kX*kX*val_r;
-      const ST gh_xxy_r= f3_xxy_r +(kY*h_xx_i+2*kX*h_xy_i) + (kX*kX*gY_r+2*kX*kY*gX_r)-kX*kX*kY*val_i; 
-      const ST gh_xxy_i= f3_xxy_i -(kY*h_xx_r+2*kX*h_xy_r) + (kX*kX*gY_i+2*kX*kY*gX_i)+kX*kX*kY*val_r; 
-      const ST gh_xxz_r= f3_xxz_r +(kZ*h_xx_i+2*kX*h_xz_i) + (kX*kX*gZ_r+2*kX*kZ*gX_r)-kX*kX*kZ*val_i; 
-      const ST gh_xxz_i= f3_xxz_i -(kZ*h_xx_r+2*kX*h_xz_r) + (kX*kX*gZ_i+2*kX*kZ*gX_i)+kX*kX*kZ*val_r; 
-      const ST gh_xyy_r= f3_xyy_r +(2*kY*h_xy_i+kX*h_yy_i) + (2*kX*kY*gY_r+kY*kY*gX_r)-kX*kY*kY*val_i;
-      const ST gh_xyy_i= f3_xyy_i -(2*kY*h_xy_r+kX*h_yy_r) + (2*kX*kY*gY_i+kY*kY*gX_i)+kX*kY*kY*val_r;
-      const ST gh_xyz_r= f3_xyz_r +(kX*h_yz_i+kY*h_xz_i+kZ*h_xy_i)+(kX*kY*gZ_r+kY*kZ*gX_r+kZ*kX*gY_r) - kX*kY*kZ*val_i;
-      const ST gh_xyz_i= f3_xyz_i -(kX*h_yz_r+kY*h_xz_r+kZ*h_xy_r)+(kX*kY*gZ_i+kY*kZ*gX_i+kZ*kX*gY_i) + kX*kY*kZ*val_r;
-      const ST gh_xzz_r= f3_xzz_r +(2*kZ*h_xz_i+kX*h_zz_i) + (2*kX*kZ*gZ_r+kZ*kZ*gX_r)-kX*kZ*kZ*val_i;
-      const ST gh_xzz_i= f3_xzz_i -(2*kZ*h_xz_r+kX*h_zz_r) + (2*kX*kZ*gZ_i+kZ*kZ*gX_i)+kX*kZ*kZ*val_r;
-      const ST gh_yyy_r= f3_yyy_r + 3*kY*h_yy_i + 3*kY*kY*gY_r - kY*kY*kY*val_r;
-      const ST gh_yyy_i= f3_yyy_i - 3*kY*h_yy_r + 3*kY*kY*gY_i + kY*kY*kY*val_i;
-      const ST gh_yyz_r= f3_yyz_r +(kZ*h_yy_i+2*kY*h_yz_i) + (kY*kY*gZ_r+2*kY*kZ*gY_r)-kY*kY*kZ*val_i; 
-      const ST gh_yyz_i= f3_yyz_i -(kZ*h_yy_r+2*kY*h_yz_r) + (kY*kY*gZ_i+2*kY*kZ*gY_i)+kY*kY*kZ*val_r; 
-      const ST gh_yzz_r= f3_yzz_r +(2*kZ*h_yz_i+kY*h_zz_i) + (2*kY*kZ*gZ_r+kZ*kZ*gY_r)-kY*kZ*kZ*val_i;
-      const ST gh_yzz_i= f3_yzz_i -(2*kZ*h_yz_r+kY*h_zz_r) + (2*kY*kZ*gZ_i+kZ*kZ*gY_i)+kY*kZ*kZ*val_r;
-      const ST gh_zzz_r= f3_zzz_r + 3*kZ*h_zz_i + 3*kZ*kZ*gZ_r - kZ*kZ*kZ*val_r;
-      const ST gh_zzz_i= f3_zzz_i - 3*kZ*h_zz_r + 3*kZ*kZ*gZ_i + kZ*kZ*kZ*val_i;
-      
+      const ST gh_xxx_r= f3_xxx_r + 3*kX*f_xx_i - 3*kX*kX*dX_r - kX*kX*kX*val_i;
+      const ST gh_xxx_i= f3_xxx_i - 3*kX*f_xx_r - 3*kX*kX*dX_i + kX*kX*kX*val_r;
+      const ST gh_xxy_r= f3_xxy_r +(kY*f_xx_i+2*kX*f_xy_i) - (kX*kX*dY_r+2*kX*kY*dX_r)-kX*kX*kY*val_i; 
+      const ST gh_xxy_i= f3_xxy_i -(kY*f_xx_r+2*kX*f_xy_r) - (kX*kX*dY_i+2*kX*kY*dX_i)+kX*kX*kY*val_r; 
+      const ST gh_xxz_r= f3_xxz_r +(kZ*f_xx_i+2*kX*f_xz_i) - (kX*kX*dZ_r+2*kX*kZ*dX_r)-kX*kX*kZ*val_i; 
+      const ST gh_xxz_i= f3_xxz_i -(kZ*f_xx_r+2*kX*f_xz_r) - (kX*kX*dZ_i+2*kX*kZ*dX_i)+kX*kX*kZ*val_r; 
+      const ST gh_xyy_r= f3_xyy_r +(2*kY*f_xy_i+kX*f_yy_i) - (2*kX*kY*dY_r+kY*kY*dX_r)-kX*kY*kY*val_i;
+      const ST gh_xyy_i= f3_xyy_i -(2*kY*f_xy_r+kX*f_yy_r) - (2*kX*kY*dY_i+kY*kY*dX_i)+kX*kY*kY*val_r;
+      const ST gh_xyz_r= f3_xyz_r +(kX*f_yz_i+kY*f_xz_i+kZ*f_xy_i)-(kX*kY*dZ_r+kY*kZ*dX_r+kZ*kX*dY_r) - kX*kY*kZ*val_i;
+      const ST gh_xyz_i= f3_xyz_i -(kX*f_yz_r+kY*f_xz_r+kZ*f_xy_r)-(kX*kY*dZ_i+kY*kZ*dX_i+kZ*kX*dY_i) + kX*kY*kZ*val_r;
+      const ST gh_xzz_r= f3_xzz_r +(2*kZ*f_xz_i+kX*f_zz_i) - (2*kX*kZ*dZ_r+kZ*kZ*dX_r)-kX*kZ*kZ*val_i;
+      const ST gh_xzz_i= f3_xzz_i -(2*kZ*f_xz_r+kX*f_zz_r) - (2*kX*kZ*dZ_i+kZ*kZ*dX_i)+kX*kZ*kZ*val_r;
+      const ST gh_yyy_r= f3_yyy_r + 3*kY*f_yy_i - 3*kY*kY*dY_r - kY*kY*kY*val_i;
+      const ST gh_yyy_i= f3_yyy_i - 3*kY*f_yy_r - 3*kY*kY*dY_i + kY*kY*kY*val_r;
+      const ST gh_yyz_r= f3_yyz_r +(kZ*f_yy_i+2*kY*f_yz_i) - (kY*kY*dZ_r+2*kY*kZ*dY_r)-kY*kY*kZ*val_i; 
+      const ST gh_yyz_i= f3_yyz_i -(kZ*f_yy_r+2*kY*f_yz_r) - (kY*kY*dZ_i+2*kY*kZ*dY_i)+kY*kY*kZ*val_r; 
+      const ST gh_yzz_r= f3_yzz_r +(2*kZ*f_yz_i+kY*f_zz_i) - (2*kY*kZ*dZ_r+kZ*kZ*dY_r)-kY*kZ*kZ*val_i;
+      const ST gh_yzz_i= f3_yzz_i -(2*kZ*f_yz_r+kY*f_zz_r) - (2*kY*kZ*dZ_i+kZ*kZ*dY_i)+kY*kZ*kZ*val_r;
+      const ST gh_zzz_r= f3_zzz_r + 3*kZ*f_zz_i - 3*kZ*kZ*dZ_r - kZ*kZ*kZ*val_i;
+      const ST gh_zzz_i= f3_zzz_i - 3*kZ*f_zz_r - 3*kZ*kZ*dZ_i + kZ*kZ*kZ*val_r;
+      //[x][xx] //These are the unique entries
       grad_grad_grad_psi[psiIndex][0][0]=ComplexT(c*gh_xxx_r-s*gh_xxx_i,c*gh_xxx_i+s*gh_xxx_r);
-      grad_grad_grad_psi[psiIndex][0][]=ComplexT(c*gh_xxy_r-s*gh_xxy_i,c*gh_xxy_i+s*gh_xxy_r);
-      grad_grad_grad_psi[psiIndex][0][]=ComplexT(c*gh_xxz_r-s*gh_xxz_i,c*gh_xxz_i+s*gh_xxz_r);
-      grad_grad_grad_psi[psiIndex][0][]=ComplexT(c*gh_xyy_r-s*gh_xyy_i,c*gh_xyy_i+s*gh_xyy_r);
-      grad_grad_grad_psi[psiIndex][0][]=ComplexT(c*gh_xyz_r-s*gh_xyz_i,c*gh_xyz_i+s*gh_xyz_r);
-      grad_grad_grad_psi[psiIndex][0][]=ComplexT(c*gh_xzz_r-s*gh_xzz_i,c*gh_xzz_i+s*gh_xzz_r);
-      grad_grad_grad_psi[psiIndex][1][]=ComplexT(c*gh_yyy_r-s*gh_yyy_i,c*gh_yyy_i+s*gh_yyy_r);
-      grad_grad_grad_psi[psiIndex][1][]=ComplexT(c*gh_yyz_r-s*gh_yyz_i,c*gh_yyz_i+s*gh_yyz_r);
-      grad_grad_grad_psi[psiIndex][1][]=ComplexT(c*gh_yzz_r-s*gh_yzz_i,c*gh_yzz_i+s*gh_yzz_r);
-      grad_grad_grad_psi[psiIndex][2][]=ComplexT(c*gh_zzz_r-s*gh_zzz_i,c*gh_zzz_i+s*gh_zzz_r);
-      
-      app_log()<<"XXXXXXXX DEBUG XXXXXXXXX\n";
-      app_log()<<"  jr       = "<<jr<<std::endl;
-      app_log()<<"  gh000    = "<<gh000[jr]<<std::endl;
-      app_log()<<"  gh001    = "<<gh001[jr]<<std::endl;
-      app_log()<<"  gh002    = "<<gh002[jr]<<std::endl;
-      app_log()<<"  gh011    = "<<gh011[jr]<<std::endl;
-      app_log()<<"  gh012    = "<<gh012[jr]<<std::endl;
-      app_log()<<"  gh022    = "<<gh022[jr]<<std::endl;
-      app_log()<<"  gh111    = "<<gh111[jr]<<std::endl;
-      app_log()<<"  gh112    = "<<gh112[jr]<<std::endl;
-      app_log()<<"  gh122    = "<<gh122[jr]<<std::endl;
-      app_log()<<"  gh222    = "<<gh222[jr]<<std::endl;
-      app_log()<<"  g00 = "<<g00<<std::endl;
-      app_log()<<"  g01 = "<<g01<<std::endl;
-      app_log()<<"  g02 = "<<g02<<std::endl;
-      app_log()<<"  g10 = "<<g10<<std::endl;
-      app_log()<<"  g11 = "<<g11<<std::endl;
-      app_log()<<"  g12 = "<<g12<<std::endl;
-      app_log()<<"  g20 = "<<g20<<std::endl;
-      app_log()<<"  g21 = "<<g21<<std::endl;
-      app_log()<<"  g22 = "<<g22<<std::endl;
-      app_log()<<"  gh_xxx_r = "<<gh_xxx_r<<std::endl;
-      app_log()<<"  gh_xxx_i = "<<gh_xxx_i<<std::endl;
-      app_log()<<"  f3_xxx_r = "<<f3_xxx_r<<std::endl;
-      app_log()<<"  f3_xxx_i = "<<f3_xxx_i<<std::endl;
-      app_log()<<"  h_xx_r = "<<h_xx_r<<std::endl;
-      app_log()<<"  h_xx_i = "<<h_xx_i<<std::endl;
-      app_log()<<"  gZ_r = "<<gZ_r<<std::endl;
-      app_log()<<"  gZ_i = "<<gZ_i<<std::endl;
-      app_log()<<"  gY_r = "<<gY_i<<std::endl;
-      app_log()<<"  gY_i = "<<gY_i<<std::endl;
-      app_log()<<" Piece A = "<<f3_yzz_r<<std::endl;
-      app_log()<<" Piece B = "<<(2*kZ*h_yz_i+kY*h_zz_i)<<std::endl;
-      app_log()<<" Piece C = "<<(2*kY*kZ*gZ_r+kZ*kZ*gY_r)<<std::endl;
-      app_log()<<" Piece D = "<<kY*kZ*kZ*val_i;
-      app_log()<<" xxx = "<<ComplexT(c*gh_xxx_r-s*gh_xxx_i,c*gh_xxx_i+s*gh_xxx_r)<<std::endl;
-      app_log()<<" xxy = "<<ComplexT(c*gh_xxy_r-s*gh_xxy_i,c*gh_xxy_i+s*gh_xxy_r)<<std::endl;
-      app_log()<<" xxz = "<<ComplexT(c*gh_xxz_r-s*gh_xxz_i,c*gh_xxz_i+s*gh_xxz_r)<<std::endl;
-      app_log()<<" xyy = "<<ComplexT(c*gh_xyy_r-s*gh_xyy_i,c*gh_xyy_i+s*gh_xyy_r)<<std::endl;
-      app_log()<<" xyz = "<<ComplexT(c*gh_xyz_r-s*gh_xyz_i,c*gh_xyz_i+s*gh_xyz_r)<<std::endl;
-      app_log()<<" xzz = "<<ComplexT(c*gh_xzz_r-s*gh_xzz_i,c*gh_xzz_i+s*gh_xzz_r)<<std::endl;
-      app_log()<<" yyy = "<<ComplexT(c*gh_yyy_r-s*gh_yyy_i,c*gh_yyy_i+s*gh_yyy_r)<<std::endl;
-      app_log()<<" yyz = "<<ComplexT(c*gh_yyz_r-s*gh_yyz_i,c*gh_yyz_i+s*gh_yyz_r)<<std::endl;
-      app_log()<<" yzz = "<<ComplexT(c*gh_yzz_r-s*gh_yzz_i,c*gh_yzz_i+s*gh_yzz_r)<<std::endl;
-      app_log()<<" zzz = "<<ComplexT(c*gh_zzz_r-s*gh_zzz_i,c*gh_zzz_i+s*gh_zzz_r)<<std::endl;
-      app_log()<<"    and loaded \n";
-      app_log()<<" xxx = "<<grad_grad_grad_psi[psiIndex][0]<<std::endl;
-      app_log()<<" xxy = "<<grad_grad_grad_psi[psiIndex][1]<<std::endl;
-      app_log()<<" xxz = "<<grad_grad_grad_psi[psiIndex][2]<<std::endl;
-      app_log()<<" xyy = "<<grad_grad_grad_psi[psiIndex][4]<<std::endl;
-      app_log()<<" xyz = "<<grad_grad_grad_psi[psiIndex][5]<<std::endl;
-      app_log()<<" xzz = "<<grad_grad_grad_psi[psiIndex][8]<<std::endl;
-      app_log()<<" yyy = "<<grad_grad_grad_psi[psiIndex][13]<<std::endl;
-      app_log()<<" yyz = "<<grad_grad_grad_psi[psiIndex][14]<<std::endl;
-      app_log()<<" yzz = "<<grad_grad_grad_psi[psiIndex][17]<<std::endl;
-      app_log()<<" zzz = "<<grad_grad_grad_psi[psiIndex][26]<<std::endl;
-      grad_grad_grad_psi[psiIndex][9]=grad_grad_grad_psi[psiIndex][3]=grad_grad_grad_psi[psiIndex][1];
-      grad_grad_grad_psi[psiIndex][18]=grad_grad_grad_psi[psiIndex][6]=grad_grad_grad_psi[psiIndex][2];
-      grad_grad_grad_psi[psiIndex][22]=grad_grad_grad_psi[psiIndex][16]=grad_grad_grad_psi[psiIndex][14];
-      grad_grad_grad_psi[psiIndex][12]=grad_grad_grad_psi[psiIndex][10]=grad_grad_grad_psi[psiIndex][4];
-      grad_grad_grad_psi[psiIndex][24]=grad_grad_grad_psi[psiIndex][20]=grad_grad_grad_psi[psiIndex][8];
-      grad_grad_grad_psi[psiIndex][25]=grad_grad_grad_psi[psiIndex][23]=grad_grad_grad_psi[psiIndex][17];
-      grad_grad_grad_psi[psiIndex][21]=grad_grad_grad_psi[psiIndex][19]=grad_grad_grad_psi[psiIndex][15]=grad_grad_grad_psi[psiIndex][11]=grad_grad_grad_psi[psiIndex][7]=grad_grad_grad_psi[psiIndex][5];
+      grad_grad_grad_psi[psiIndex][0][1]=ComplexT(c*gh_xxy_r-s*gh_xxy_i,c*gh_xxy_i+s*gh_xxy_r);
+      grad_grad_grad_psi[psiIndex][0][2]=ComplexT(c*gh_xxz_r-s*gh_xxz_i,c*gh_xxz_i+s*gh_xxz_r);
+      grad_grad_grad_psi[psiIndex][0][4]=ComplexT(c*gh_xyy_r-s*gh_xyy_i,c*gh_xyy_i+s*gh_xyy_r);
+      grad_grad_grad_psi[psiIndex][0][5]=ComplexT(c*gh_xyz_r-s*gh_xyz_i,c*gh_xyz_i+s*gh_xyz_r);
+      grad_grad_grad_psi[psiIndex][0][8]=ComplexT(c*gh_xzz_r-s*gh_xzz_i,c*gh_xzz_i+s*gh_xzz_r);
     
+      //filling in the symmetric terms.  Filling out the xij terms
+      grad_grad_grad_psi[psiIndex][0][3]=grad_grad_grad_psi[psiIndex][0][1];
+      grad_grad_grad_psi[psiIndex][0][6]=grad_grad_grad_psi[psiIndex][0][2];
+      grad_grad_grad_psi[psiIndex][0][7]=grad_grad_grad_psi[psiIndex][0][5];
+ 
+      //Now for everything that's a permutation of the above:
+      grad_grad_grad_psi[psiIndex][1][0]=grad_grad_grad_psi[psiIndex][0][1];
+      grad_grad_grad_psi[psiIndex][1][1]=grad_grad_grad_psi[psiIndex][0][4];
+      grad_grad_grad_psi[psiIndex][1][2]=grad_grad_grad_psi[psiIndex][0][5];
+      grad_grad_grad_psi[psiIndex][1][3]=grad_grad_grad_psi[psiIndex][0][4];
+      grad_grad_grad_psi[psiIndex][1][6]=grad_grad_grad_psi[psiIndex][0][5];
+
+      grad_grad_grad_psi[psiIndex][2][0]=grad_grad_grad_psi[psiIndex][0][2];
+      grad_grad_grad_psi[psiIndex][2][1]=grad_grad_grad_psi[psiIndex][0][5];
+      grad_grad_grad_psi[psiIndex][2][2]=grad_grad_grad_psi[psiIndex][0][8];
+      grad_grad_grad_psi[psiIndex][2][3]=grad_grad_grad_psi[psiIndex][0][5];
+      grad_grad_grad_psi[psiIndex][2][6]=grad_grad_grad_psi[psiIndex][0][8];
+
+      grad_grad_grad_psi[psiIndex][1][4]=ComplexT(c*gh_yyy_r-s*gh_yyy_i,c*gh_yyy_i+s*gh_yyy_r);
+      grad_grad_grad_psi[psiIndex][1][5]=ComplexT(c*gh_yyz_r-s*gh_yyz_i,c*gh_yyz_i+s*gh_yyz_r);
+      grad_grad_grad_psi[psiIndex][1][8]=ComplexT(c*gh_yzz_r-s*gh_yzz_i,c*gh_yzz_i+s*gh_yzz_r);
+
+      grad_grad_grad_psi[psiIndex][1][7]=grad_grad_grad_psi[psiIndex][1][5];
+      grad_grad_grad_psi[psiIndex][2][4]=grad_grad_grad_psi[psiIndex][1][5];
+      grad_grad_grad_psi[psiIndex][2][5]=grad_grad_grad_psi[psiIndex][1][8];
+      grad_grad_grad_psi[psiIndex][2][7]=grad_grad_grad_psi[psiIndex][1][8];
+
+      grad_grad_grad_psi[psiIndex][2][8]=ComplexT(c*gh_zzz_r-s*gh_zzz_i,c*gh_zzz_i+s*gh_zzz_r);
     }
   }
 
@@ -769,8 +740,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   {
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-  //  app_log()<<" =========== evaluate_vghgh ===========\n";
- //   app_log()<<"ru = "<<ru<<std::endl;
     #pragma omp parallel
     {
       int first, last;
@@ -782,9 +751,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       spline2::evaluate3d_vghgh(SplineInst->spline_m,ru,myV,myG,myH,mygH,first,last);
       assign_vghgh(r,psi,dpsi,grad_grad_psi,grad_grad_grad_psi,first/2,last/2);
     }
-//  app_log()<<" iat = "<<iat<<std::endl;
-//  app_log()<<"grad_grad_psi = "<<grad_grad_grad_psi[iat]<<std::endl;
- // app_log()<<"--------------------------------------------\n";
   }
 };
 
