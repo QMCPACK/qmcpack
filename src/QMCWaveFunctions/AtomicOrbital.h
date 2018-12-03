@@ -20,7 +20,7 @@
 
 #include <config/stdlib/math.h>
 #include <einspline/multi_bspline.h>
-#include <QMCWaveFunctions/SPOSetBase.h>
+#include <QMCWaveFunctions/SPOSet.h>
 #include <Lattice/CrystalLattice.h>
 #include <Configuration.h>
 #include <Utilities/NewTimer.h>

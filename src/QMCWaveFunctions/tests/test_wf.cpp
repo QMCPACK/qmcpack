@@ -21,9 +21,10 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/Jastrow/PadeJastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
+#include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
 
 #include <stdio.h>
@@ -39,7 +40,9 @@ TEST_CASE("Pade functor", "[wavefunction]")
 
   double A = -0.25;
   double B = 0.1;
-  PadeFunctor<double> pf(A, B);
+  PadeFunctor<double> pf;
+  pf.B0=B;
+  pf.setCusp(A);
 
   double r = 1.2;
   double u = pf.evaluate(r);
@@ -111,7 +114,7 @@ const char *particles = \
 
   // cusp = -0.25
   // r_ee = 3.42050023755
-  PadeJastrowBuilder jastrow(elec_, psi, ptcl.getPool());
+  RadialJastrowBuilder jastrow(elec_, psi);
   jastrow.put(jas1);
 
   //target->update();

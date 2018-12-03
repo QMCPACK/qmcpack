@@ -340,7 +340,7 @@ void QPParser::getGaussianCenters(std::istream& is)
 {
   std::string Shell_temp;
   gBound.resize(NumberOfAtoms+1);
-  int ng,nx;
+  int ng;
   std::string aline;
   std::map<std::string,int> basisDataMap;
   int nUniqAt=0;
@@ -580,8 +580,6 @@ void QPParser::getMO_single_set(std::istream& is, Matrix<double> &CartMat, std::
 
 void QPParser::getQPCI(std::istream& is)
 {
-  int Ci_indx;
-  double Ci_Coeff; 
 
   CIcoeff.clear();
   CIalpha.clear();
@@ -623,11 +621,11 @@ void QPParser::getQPCI(std::istream& is)
     std::cerr <<"QMCPack can't handle different number of active orbitals in alpha and beta channels right now. Contact developers for help (Miguel).\n";
     abort();
   }
-  int ds=SpinMultiplicity-1;
-  int neb= (NumberOfEls-ds)/2;
-  int nea= NumberOfEls-NumberOfBeta;
-  ci_nca = nea-ci_nea;
-  ci_ncb = neb-ci_neb;
+//  int ds=SpinMultiplicity-1;
+//  int neb= (NumberOfEls-ds)/2;
+//  int nea= NumberOfEls-NumberOfBeta;
+  ci_nca = 0 ;
+  ci_ncb = 0 ;
   std::cout <<" Done reading CIs!!"<< std::endl;
   ci_nstates = CIalpha[0].size();
 }

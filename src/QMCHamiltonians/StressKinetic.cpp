@@ -14,7 +14,7 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/ProgressReportEngine.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include <numeric>
 
@@ -38,7 +38,7 @@ StressKinetic:: ~StressKinetic() { }
 
 SymTensor<StressKinetic::RealType,OHMMS_DIM> StressKinetic::evaluateKineticSymTensor(ParticleSet& P)
 {
-  OrbitalBase::HessVector_t grad_grad_psi;
+  WaveFunctionComponent::HessVector_t grad_grad_psi;
   Psi.evaluateHessian(P,grad_grad_psi);
   SymTensor<RealType,OHMMS_DIM> kinetic_tensor;
   SymTensor<ComplexType, OHMMS_DIM> complex_ktensor;

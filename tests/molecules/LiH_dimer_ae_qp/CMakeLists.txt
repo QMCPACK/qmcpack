@@ -2,42 +2,43 @@
 IF (NOT QMC_CUDA)
  IF (NOT QMC_COMPLEX)
 #
-# LiH molecular dimer gaussian tests, all electron
+# LiH molecular dimer gaussian tests, all electron using QP
 # Also check results for different number of mpi tasks and threads keeping total constant
 # Energy from Quantum Package: E=-7.987323645629950
 #
-  LIST(APPEND LIH_SCALARS "kinetic" "7.9914014383 0.03") # kinetic energy
-  LIST(APPEND LIH_SCALARS "totenergy" "-7.9873236457 0.003") # total energy
-  LIST(APPEND LIH_SCALARS "eeenergy" "3.4888166386 0.0024") # e-e energy
-  LIST(APPEND LIH_SCALARS "samples" "1600000 0.0") # samples
-#  LIST(APPEND LIH_SCALARS "flux" "0.0 0.1") # sampling check, should be zero
+#   "kinetic" "7.991334  0.000065") # kinetic energy
+#   "totenergy" "-7.9873140 0.0000086 ") # total energy
+#   "eeenergy" "3.488827 0.000011") # e-e energy
+#   "samples" "79626240000 0.0") # samples
 
-  QMC_RUN_AND_CHECK(short-LiH_dimer_ae_QP-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_qp"
-                    vmc_hf_noj
-                    vmc_hf_noj.in.xml 
-                    16 1
-                    TRUE
-                    0 LIH_SCALARS # VMC
-                    )
 
+  LIST(APPEND LIH_SHORT "kinetic" "7.991334 0.0062") # kinetic energy
+  LIST(APPEND LIH_SHORT "totenergy" "-7.9873140 0.00052") # total energy
+  LIST(APPEND LIH_SHORT "eeenergy" "3.488827 0.00088") # e-e energy
+  LIST(APPEND LIH_SHORT "samples" "9600000 0.0") # samples
   QMC_RUN_AND_CHECK(short-LiH_dimer_ae_qp-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_qp"
-                    vmc_hf_noj
-                    vmc_hf_noj.in.xml 
-                    4 4
-                    TRUE
-                    0 LIH_SCALARS # VMC
-                    )
-
-  QMC_RUN_AND_CHECK(short-LiH_dimer_ae_qp-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_qp"
-                    vmc_hf_noj
-                    vmc_hf_noj.in.xml 
+                    vmc_short_noj
+                    vmc_short_noj.in.xml
                     1 16
                     TRUE
-                    0 LIH_SCALARS # VMC
+                    0 LIH_SHORT # VMC
                     )
+
+  LIST(APPEND LIH_LONG "kinetic" "7.991334 0.0022") # kinetic energy
+  LIST(APPEND LIH_LONG "totenergy" "-7.9873140 0.0002") # total energy
+  LIST(APPEND LIH_LONG "eeenergy" "3.488827 0.00026") # e-e energy
+  LIST(APPEND LIH_LONG "samples" "96000000 0.0") # samples
+  QMC_RUN_AND_CHECK(long-LiH_dimer_ae_qp-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_qp"
+                    vmc_long_noj
+                    vmc_long_noj.in.xml
+                    1 16
+                    TRUE
+                    0 LIH_LONG # VMC
+                    )
+
+
  ELSE()
     MESSAGE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
  ENDIF()

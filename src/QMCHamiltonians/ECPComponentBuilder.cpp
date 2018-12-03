@@ -152,7 +152,7 @@ bool ECPComponentBuilder::read_pp_file(const std::string &fname)
 
 bool ECPComponentBuilder::put(xmlNodePtr cur)
 {
-  int nk=0;
+  //  int nk=0;
   //vector<RealType> kpts;
   std::vector<xmlNodePtr> semiPtr;
   cur=cur->children;

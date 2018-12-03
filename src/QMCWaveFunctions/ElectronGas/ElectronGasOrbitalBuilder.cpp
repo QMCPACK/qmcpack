@@ -42,9 +42,9 @@ RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType
 
 ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi):
 #if QMC_BUILD_LEVEL>2
-  OrbitalBuilderBase(els,psi),UseBackflow(false),BFTrans(0)
+  WaveFunctionComponentBuilder(els,psi),UseBackflow(false),BFTrans(0)
 #else
-  OrbitalBuilderBase(els,psi),UseBackflow(false)
+  WaveFunctionComponentBuilder(els,psi),UseBackflow(false)
 #endif
 {
 }
@@ -52,7 +52,6 @@ ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWave
 bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
 {
   int nc(0), nc2(-2);
-  ValueType pol(0);
   ValueType bosonic_eps(-999999);
   ValueType rntype(0);
   PosType twist(0.0);
@@ -201,12 +200,12 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   return true;
 }
 
-ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
-  :egGrid(p.Lattice)
+ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate *comm, xmlNodePtr cur)
+  :SPOSetBuilder(comm), egGrid(p.Lattice)
 {
 }
 
-SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc=0;

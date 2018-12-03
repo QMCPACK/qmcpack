@@ -271,7 +271,6 @@ bool GaussianCombo<T>::put(xmlNodePtr cur)
 template<class T>
 void GaussianCombo<T>::addGaussian(real_type c, real_type alpha)
 {
-  real_type c0=c;
   if(!Normalized) {
     c *= NormL*std::pow(alpha,NormPow);
   }
@@ -331,7 +330,6 @@ bool GaussianCombo<T>::putBasisGroupH5(hdf_archive &hin)
     hin.myComm->bcast(alpha);  
     hin.myComm->bcast(c);  
 
-    real_type c0=c;
     if(!Normalized)
       c *= NormL*std::pow(alpha,NormPow);
     //    LOGMSG("    Gaussian exponent = " << alpha

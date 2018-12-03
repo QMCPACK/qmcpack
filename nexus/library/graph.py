@@ -18,7 +18,7 @@ from generic import obj
 from developer import DevBase,unavailable
 try:
     from pydot import Dot,Node,Edge,Cluster as pdCluster
-except ImportError:
+except:
     Dot,Node,Edge,pdCluster = unavailable('Dot','Node','Edge','pdCluster')
 #end try
 

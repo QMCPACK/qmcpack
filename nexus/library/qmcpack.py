@@ -44,7 +44,7 @@ from developer import unavailable
 from nexus_base import nexus_core
 try:
     import h5py
-except ImportError:
+except:
     h5py = unavailable('h5py')
 #end try
 

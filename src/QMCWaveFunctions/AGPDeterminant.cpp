@@ -426,7 +426,7 @@ void AGPDeterminant::restore(int iat)
   curRatio=1.0;
 }
 
-OrbitalBasePtr AGPDeterminant::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr AGPDeterminant::makeClone(ParticleSet& tqp) const
 {
   AGPDeterminant* myclone = new AGPDeterminant(0);
   myclone->GeminalBasis=GeminalBasis->makeClone();

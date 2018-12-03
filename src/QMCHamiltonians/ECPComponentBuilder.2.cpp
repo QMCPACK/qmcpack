@@ -81,7 +81,6 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   // we may not know which one is local yet.
   std::vector<int> angList;
   std::vector<xmlNodePtr> vpsPtr;
-  int iLocal=-1;
   Lmax=-1;
   // Now read vps sections
   xmlNodePtr cur_vps = cur_semilocal->children;

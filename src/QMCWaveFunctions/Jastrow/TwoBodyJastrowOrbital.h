@@ -22,7 +22,7 @@
 #include "Configuration.h"
 #include  <map>
 #include  <numeric>
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
@@ -32,7 +32,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
  *
  *Each pair-type can have distinct function \f$u(r_{ij})\f$.
@@ -40,7 +40,7 @@ namespace qmcplusplus
  *for spins up-up/down-down and up-down/down-up.
  */
 template<class FT>
-class TwoBodyJastrowOrbital: public OrbitalBase
+class TwoBodyJastrowOrbital: public WaveFunctionComponent
 {
 protected:
 
@@ -79,7 +79,7 @@ public:
     PtclRef = &p;
     init(p);
     FirstTime = true;
-    OrbitalName = "TwoBodyJastrow";
+    ClassName = "TwoBodyJastrow";
     p.addTable(p,DT_AOS);
   }
 
@@ -384,7 +384,7 @@ public:
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     const DistanceTableData* d_table=P.DistTables[0];
-    RealType dudr, d2udr2,u;
+    RealType dudr, d2udr2;
     PosType gr;
     const int* pairid = PairID[iat];
     DiffVal = 0.0;
@@ -518,7 +518,7 @@ public:
     DiffValSum=0.0;
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     //TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,Write_Chiesa_Correction);
     TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,-1);
@@ -544,11 +544,6 @@ public:
     return j2copy;
   }
 
-  void copyFrom(const OrbitalBase& old)
-  {
-    //nothing to do
-  }
-
   RealType ChiesaKEcorrection()
   {
 #if QMC_BUILD_LEVEL<5
@@ -556,7 +551,6 @@ public:
       return 0.0;
     const int numPoints = 1000;
     RealType vol = PtclRef->Lattice.Volume;
-    RealType aparam = 0.0;
     int nsp = PtclRef->groups();
     //FILE *fout=(Write_Chiesa_Correction)?fopen ("uk.dat", "w"):0;
     FILE *fout=0;

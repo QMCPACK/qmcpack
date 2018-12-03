@@ -4,7 +4,8 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+// File developed by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+//                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //
@@ -23,6 +24,8 @@
 #include "Optimize/VariableSet.h"
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsPETE/TinyVector.h"
+//#include <cstdio>
+#include <iostream>
 
 /** Base class for any functor with optimizable parameters
  *
@@ -86,7 +89,7 @@ struct OptimizableFunctorBase
    */
   virtual real_type f(real_type r)=0;
 
-  /** evaluate the first derivate
+  /** evaluate the first derivative
    * @param r distance
    *
    * virtual function necessary for a transformation to a numerical functor
@@ -102,6 +105,14 @@ struct OptimizableFunctorBase
   */
   virtual void setDensity(real_type n) { }
 
+  /** empty virtual function to help builder classes
+   */
+  virtual void setCusp(real_type cusp) { }
+
+  /** empty virtual function to help builder classes
+   */
+  virtual void setPeriodic(bool periodic) { }
+
   virtual inline bool evaluateDerivatives (real_type r, std::vector<qmcplusplus::TinyVector<real_type,3> >& derivs)
   {
     return false;
@@ -112,6 +123,9 @@ struct OptimizableFunctorBase
   virtual void setGridManager(bool willmanage) { }
 
 };
+
+void print(OptimizableFunctorBase& func, std::ostream& os);
+
 
 #endif
 

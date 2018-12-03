@@ -141,7 +141,6 @@ int main(int argc, char** argv)
     OneBodyJastrowOrbital<BsplineFunctor<RealType> > J_aos(ions,els_aos);
 
     DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
-    d_ie->setRmax(Rmax);
 
     RealType r1_cut=std::min(RealType(6.4),els.Lattice.WignerSeitzRadius);
 
@@ -277,29 +276,26 @@ int main(int argc, char** argv)
       r_ratio=0.0;
       constexpr int nknots=12;
       int nsphere=0;
-      for(int iat=0; iat<nions; ++iat)
+      for(int jel=0; jel<nels; ++jel)
       {
-        for(int nj=0, jmax=d_ie->nadj(iat); nj<jmax; ++nj)
-        {
-          const auto r=d_ie->distance(iat,nj);
-          if(r<Rmax)
+        const auto &dist = d_ie->Distances[jel];
+        for(int iat=0; iat<nions; ++iat)
+          if(dist[iat]<Rmax)
           {
-            const int iel=d_ie->iadj(iat,nj);
             nsphere++;
             random_th.generate_uniform(&delta[0][0],nknots*3);
             for(int k=0; k<nknots;++k)
             {
-              els.makeMoveOnSphere(iel,delta[k]);
-              RealType r_soa=J.ratio(els,iel);
-              els.rejectMove(iel);
+              els.makeMoveOnSphere(jel,delta[k]);
+              RealType r_soa=J.ratio(els,jel);
+              els.rejectMove(jel);
 
-              els_aos.makeMoveOnSphere(iel,delta[k]);
-              RealType r_aos=J_aos.ratio(els_aos,iel);
-              els_aos.rejectMove(iel);
+              els_aos.makeMoveOnSphere(jel,delta[k]);
+              RealType r_aos=J_aos.ratio(els_aos,jel);
+              els_aos.rejectMove(jel);
               r_ratio += abs(r_soa/r_aos-1);
             }
           }
-        }
       }
       cout << "ratio with SphereMove  Error = " << r_ratio/nsphere << " # of moves =" << nsphere << endl;
     }

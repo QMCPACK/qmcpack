@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 
 namespace qmcplusplus

@@ -37,12 +37,9 @@ public:
 #else
 private:
   /// Copy Constructor (disabled)
-  DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection& a): QMCUpdateBase(a) {}
+  DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection &) = delete;
   /// Copy operator (disabled).
-  DMCUpdateAllWithRejection& operator=(const DMCUpdateAllWithRejection&)
-  {
-    return *this;
-  }
+  DMCUpdateAllWithRejection & operator=(const DMCUpdateAllWithRejection &) = delete;
 #endif
 };
 
@@ -64,12 +61,9 @@ public:
 #else
 private:
   /// Copy Constructor (disabled)
-  DMCUpdateAllWithKill(const DMCUpdateAllWithKill& a): QMCUpdateBase(a) {}
+  DMCUpdateAllWithKill(const DMCUpdateAllWithKill &) = delete;
   /// Copy operator (disabled).
-  DMCUpdateAllWithKill& operator=(const DMCUpdateAllWithKill&)
-  {
-    return *this;
-  }
+  DMCUpdateAllWithKill & operator=(const DMCUpdateAllWithKill &) = delete;
 #endif
 };
 }

@@ -25,14 +25,17 @@
 #include "type_traits/scalar_traits.h"
 #include "Utilities/RunTimeManager.h"
 #include "qmc_common.h"
+#ifdef USE_NVTX_API
+#include <nvToolsExt.h>
+#endif
 
 namespace qmcplusplus
 {
 
 /// Constructor.
 VMCcuda::VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                 QMCHamiltonian& h,WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool),UseDrift("yes"),
+                 QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm),UseDrift("yes"),
   myPeriod4WalkerDump(0), GEVtype("mixed"), w_alpha(0.0), w_beta(0.0), forOpt(false)
 {
   RootName = "vmc";
@@ -126,6 +129,9 @@ bool VMCcuda::run()
 {
   if (UseDrift == "yes")
     return runWithDrift();
+#ifdef USE_NVTX_API
+  nvtxRangePushA("VMC:run");
+#endif
   resetRun();
   IndexType block = 0;
   IndexType nAcceptTot = 0;
@@ -242,6 +248,9 @@ bool VMCcuda::run()
     std::cerr << "At the end of VMC" << std::endl;
     gpu::cuda_memory_manager.report();
   }
+#ifdef USE_NVTX_API
+  nvtxRangePop();
+#endif
   return finalize(block);
 }
 
@@ -331,6 +340,9 @@ void VMCcuda::advanceWalkersWithDrift()
 
 bool VMCcuda::runWithDrift()
 {
+#ifdef USE_NVTX_API
+  nvtxRangePushA("VMC:runWithDrift");
+#endif
   resetRun();
   IndexType block = 0;
   IndexType nAcceptTot = 0;
@@ -427,6 +439,9 @@ bool VMCcuda::runWithDrift()
     std::cerr << "At the end of VMC with drift" << std::endl;
     gpu::cuda_memory_manager.report();
   }
+#ifdef USE_NVTX_API
+  nvtxRangePop();
+#endif
   return finalize(block);
 }
 
@@ -453,7 +468,7 @@ void VMCcuda::resetRun()
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   app_log() << "Starting VMCcuda::resetRun() " << std::endl;
   Psi.reserve (pool);
-  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaValueType)
+  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CTS::ValueType)
             << " bytes in GPU memory.\n";
   // Now allocate memory on the GPU card for each walker
   // for (int iw=0; iw<W.WalkerList.size(); iw++) {

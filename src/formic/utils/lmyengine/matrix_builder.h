@@ -206,7 +206,7 @@ namespace cqmc {
       /////////////////////////////////////////////////////////////////////////////////////////////
       // \brief  Converts matirx by combining derivatives for dependent variables into derivative
       //         for independent variables
-      // \param[in]    deps    object decribing the variable dependencies
+      // \param[in]    deps    object describing the variable dependencies
       // \param[out]   mat     the matrix to be converted
       //
       /////////////////////////////////////////////////////////////////////////////////////////////
@@ -262,7 +262,7 @@ namespace cqmc {
       formic::Matrix<double> & lovl();
 
       ///////////////////////////////////////////////////////////////////////////////////
-      // \brief do D^(-1/2) transfrom on hamiltonian and overlap matrix 
+      // \brief do D^(-1/2) transform on hamiltonian and overlap matrix 
       //
       //
       //

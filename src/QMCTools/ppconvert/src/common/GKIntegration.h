@@ -120,7 +120,7 @@ class GKIntegration {
   }
 
  private:
-  // funnel all calls through this function and branch to specfic n knot rule
+  // funnel all calls through this function and branch to specific n knot rule
   void GK(IntervalResult & r) {
     GKGeneral(GKRule::n,GKRule::xgk,GKRule::wg,GKRule::wgk,r);
   }
@@ -320,7 +320,7 @@ class GKIntegration {
 	  ir.pop_front();
 	} else break;
       }
-      // do you want to exit with a warning after the first unresolved sub-interval occured?
+      // do you want to exit with a warning after the first unresolved sub-interval occurred?
       if (ir.size()==0 || errorUnresolved>0.0) break;
       // or print as many as occur
       //      if (ir.size()==0) break;

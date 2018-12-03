@@ -29,9 +29,8 @@ namespace qmcplusplus {
     template<typename T1, typename T2>
       inline void copy_n(const T1* restrict first, size_t count, T2* restrict result)
       {
-        ASSUME_ALIGNED(first); ASSUME_ALIGNED(result);
 //#pragma omp simd 
-        for(size_t i=0; i<count;  ++i) 
+        for(size_t i=0; i<count; ++i)
           result[i]=static_cast<T2>(first[i]);
       }
 

@@ -86,7 +86,6 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   std::string title("ElecElec"),pbc("yes");
   std::string forces("no");
   bool physical = true;
-  bool doForce = false;
   OhmmsAttributeSet hAttrib;
   hAttrib.add(title,"id");
   hAttrib.add(title,"name");

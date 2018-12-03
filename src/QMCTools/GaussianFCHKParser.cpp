@@ -87,7 +87,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
   NumberOfBeta=ndown;
   getwords(currentWords,fin); //9 Number of basis functions
   SizeOfBasisSet=atoi(currentWords.back().c_str());
-  getwords(currentWords,fin); //10 Number of independant functions
+  getwords(currentWords,fin); //10 Number of independent functions
   int NumOfIndOrb=atoi(currentWords.back().c_str());
   std::cout <<"Number of independent orbitals: " <<NumOfIndOrb << std::endl;
   numMO = NumOfIndOrb;
@@ -210,7 +210,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
       }
       else
       {
-        std::cerr <<"Gaussian parser currenly works for slater determinant basis only. Use SlaterDet in CAS() or improve parser.\n";
+        std::cerr <<"Gaussian parser currently works for slater determinant basis only. Use SlaterDet in CAS() or improve parser.\n";
         abort();
       }
     }

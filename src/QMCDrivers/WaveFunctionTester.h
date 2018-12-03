@@ -51,7 +51,8 @@ public:
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      ParticleSetPool& ptclPool,
-                     WaveFunctionPool& ppool);
+                     WaveFunctionPool& ppool,
+                     Communicate* comm);
 
   ~WaveFunctionTester();
 
@@ -72,13 +73,10 @@ private:
   FiniteDiffErrData DeltaVsError;
  
   /// Copy Constructor (disabled)
-  WaveFunctionTester(const WaveFunctionTester& a):
-    QMCDriver(a), PtclPool(a.PtclPool) { }
+  WaveFunctionTester(const WaveFunctionTester &) = delete;
   /// Copy Operator (disabled)
-  WaveFunctionTester& operator=(const WaveFunctionTester&)
-  {
-    return *this;
-  }
+  WaveFunctionTester & operator=(const WaveFunctionTester &) = delete;
+
   /** basic tests for G and L */
   void runBasicTest();
   /** the basic ratios check */

@@ -29,7 +29,7 @@ from generic import obj
 from developer import DevBase,unavailable
 try:
     import h5py
-except ImportError:
+except:
     h5py = unavailable('h5py')
 #end try
 from debug import *

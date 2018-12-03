@@ -104,11 +104,10 @@ It is important to note that:
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.3\columnwidth]{figures/Reactant.jpg}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.3\columnwidth]{./figures/Reactant.jpg}
 \end{center}
-\caption{$C_2O_2H_3N$ molecule.
-\label{fig:C2O2H3N}
-}
+\caption{$C_2O_2H_3N$ molecule.}
+\protect{\label{fig:C2O2H3N}}
 \end{figure}
 The CIPSI method
 %\cite{XXXrecentCIPSIpaper}
@@ -160,7 +159,7 @@ To run a simulation with QP, use the binary \textit{qp\_run} with the desired le
 mpirun -np 1 qp_run SCF C2O2H3N.ezfio &> C2O2H3N-SCF.out 
 \end{shade}
 
-If run in serial, the evaluation of the integrals and the Hamiltonian diagonalization would take a substential amount of computer time. It is recommended to add a few more \textit{slave-nodes} to help speed up the calculation.\\
+If run in serial, the evaluation of the integrals and the Hamiltonian diagonalization would take a substantial amount of computer time. It is recommended to add a few more \textit{slave-nodes} to help speed up the calculation.\\
 
 \begin{shade}
 mpirun -np 20 qp_run -slave qp_ao_ints C2O2H3N.ezfio &> C2O2H3N-SCF-Slave.out 
@@ -202,11 +201,10 @@ At this point, the orbitals are modified, a new AO$\rightarrow$MO transformation
 \item Step 6: Analysis of the CIPSI results\\
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 2mm 2mm 2mm 2mm, clip,width=0.95\columnwidth]{figures/CIPSI.jpg}
+\includegraphics[trim = 2mm 2mm 2mm 2mm, clip,width=0.95\columnwidth]{./figures/CIPSI.jpg}
 \end{center}
-\caption{Evolution of the variational energy and the Energy + PT2 as a function of the number of determinants for the $C_2O_2H_3N$ molecule. 
-\label{fig:CIPSI}
-}
+\caption{Evolution of the variational energy and the Energy + PT2 as a function of the number of determinants for the $C_2O_2H_3N$ molecule.}
+\protect{\label{fig:CIPSI}}
 \end{figure}
 Figure \ref{fig:CIPSI} shows the evolution of the variational energy and the energy corrected with PT2 as a function of the number of determinants up to 4M determinants. While it is clear that the raw variational energy is far from being converged, the Energy + PT2 appears converged around 0.4M determinants.\\
 
@@ -295,7 +293,7 @@ and then with the added J3. Trying to initially optimze J1, J2 and J3
 at the same time may lead to numerical instabilities.\\
 
 (3) The parameters of the Jastrow function will need to be optimized
-for each truncation scheme and usually cannot be reused effeciently
+for each truncation scheme and usually cannot be reused efficiently
 from one truncation scheme to another.
 
 \item Step 8: Analyzing DMC results from \qmcpack \\
@@ -353,9 +351,9 @@ ideal benchmark tool for multireference systems.
 \begin{figure}
 \begin{center}
 \includegraphics[trim = 2mm 2mm 2mm 2mm, clip,width=0.9
-\columnwidth]{figures/DMC-Multidet.jpg}
+\columnwidth]{./figures/DMC-Multidet.jpg}
 \end{center}
-\caption{DMC energy of $C_2O_2H_3N$ molecule as a function of different single determinant trial wavefunctions with aug-ccp-VTZ basis set using nodal surfaces from Hartree-Fock (HF), DFT-PBE and DFT with hybrid functionals PBE0 and P3LYP. The CIPSI trial wavefunction contains as indicated 239, 44539, 514380 and 908128 determinants (D). 
-\label{fig:CIPSI-DMC}
-}
+\caption{DMC energy of $C_2O_2H_3N$ molecule as a function of different single determinant trial wavefunctions with aug-ccp-VTZ basis set using nodal surfaces from Hartree-Fock (HF), DFT-PBE and DFT with hybrid functionals PBE0 and P3LYP. The CIPSI trial wavefunction contains as indicated 239, 44539, 514380 and 908128 determinants (D). }
+\protect{\label{fig:CIPSI-DMC}}
+
 \end{figure}

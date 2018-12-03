@@ -27,8 +27,8 @@ namespace qmcplusplus {
 /// \param[in]      nmo            number of optimizable molecular orbitals
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSetBase * spo_ptr, const int up_or_down)
-  : DiracDeterminantBase(spo_ptr, ptcl.first(up_or_down))
+SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSet * spo_ptr, const int up_or_down)
+  : DiracDeterminant(spo_ptr, ptcl.first(up_or_down))
   , m_up_or_down(up_or_down)
   , m_nmo(spo_ptr->size())
   , m_first_var_pos(-1)
@@ -37,7 +37,7 @@ SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSetBase * spo_ptr, const int u
   targetPtcl = &ptcl;
 
   Optimizable=true;
-  OrbitalName="SlaterDetOpt";
+  ClassName="SlaterDetOpt";
   this->resetTargetParticleSet(*targetPtcl);
 
   m_nlc = Phi->OrbitalSetSize;
@@ -117,7 +117,7 @@ void SlaterDetOpt::check_index_sanity() const {
 /// \param[in]      tqp            the particle set the clone should use
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBasePtr SlaterDetOpt::makeClone(ParticleSet& tqp) const {
+WaveFunctionComponentPtr SlaterDetOpt::makeClone(ParticleSet& tqp) const {
   SlaterDetOpt* clone = new SlaterDetOpt(tqp, Phi->makeClone(), m_up_or_down);
 
   clone->Optimizable=Optimizable;
@@ -134,7 +134,7 @@ OrbitalBasePtr SlaterDetOpt::makeClone(ParticleSet& tqp) const {
 /// \param[in]      spo       the single particle orbital set the copy should use
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-DiracDeterminantBase* SlaterDetOpt::makeCopy(SPOSetBasePtr spo) const
+DiracDeterminant* SlaterDetOpt::makeCopy(SPOSetPtr spo) const
 {
   SlaterDetOpt* copy = new SlaterDetOpt(*targetPtcl, spo, m_up_or_down);
 
@@ -260,7 +260,7 @@ void SlaterDetOpt::resetTargetParticleSet(ParticleSet& P) {
 /// \return  the log of the determinant value
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::RealType SlaterDetOpt::evaluate_matrices_from_scratch(ParticleSet& P, const bool all) {
+WaveFunctionComponent::RealType SlaterDetOpt::evaluate_matrices_from_scratch(ParticleSet& P, const bool all) {
 
   //app_log() << " EWN ENTERING SlaterDetOpt::evaluate_matrices_from_scratch(ParticleSet& P, const bool all)" << std::endl;
 
@@ -302,7 +302,7 @@ OrbitalBase::RealType SlaterDetOpt::evaluate_matrices_from_scratch(ParticleSet& 
 /// \return  the log of the determinant value
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::RealType SlaterDetOpt::evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) {
+WaveFunctionComponent::RealType SlaterDetOpt::evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) {
 
   //throw std::runtime_error("SlaterDetOpt::evaluateLog (P, G, L) die");
   LogValue = this->evaluate_matrices_from_scratch(P, false);
@@ -356,12 +356,12 @@ OrbitalBase::RealType SlaterDetOpt::evaluateLog(ParticleSet& P, ParticleSet::Par
 /// \return  the one particle gradient of the log of the determinant value
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::GradType SlaterDetOpt::evalGrad(ParticleSet& P, int iat) {
+WaveFunctionComponent::GradType SlaterDetOpt::evalGrad(ParticleSet& P, int iat) {
 
   // TO DO:  replace the loop(s) with BLAS calls
 
   // compute and return gradient w.r.t. position of particle iat
-  OrbitalBase::GradType g;
+  WaveFunctionComponent::GradType g;
   g = 0.0;
   if ( iat >= m_first && iat < m_last ) {
     // BEGIN EWN DEBUG 
@@ -393,7 +393,7 @@ OrbitalBase::GradType SlaterDetOpt::evalGrad(ParticleSet& P, int iat) {
 /// \return  the ratio of new and old determinant values
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::ValueType SlaterDetOpt::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) {
+WaveFunctionComponent::ValueType SlaterDetOpt::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) {
 
   // no contribution if the particle is not part of this determinant
   if ( iat < m_first || iat >= m_last )
@@ -420,7 +420,7 @@ OrbitalBase::ValueType SlaterDetOpt::ratioGrad(ParticleSet& P, int iat, GradType
 /// \return  ???
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::ValueType SlaterDetOpt::ratio(ParticleSet& P, int iat) {
+WaveFunctionComponent::ValueType SlaterDetOpt::ratio(ParticleSet& P, int iat) {
 //  throw std::runtime_error("SlaterDetOpt::ratio(P, iat) not implemented");
 //  return 0.0;
   // no contribution if the particle is not part of this determinant
@@ -528,7 +528,7 @@ void SlaterDetOpt::registerData(ParticleSet& P, WFBufferType& buf) {
 /// \return  the log of the determinant value
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::RealType SlaterDetOpt::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch) {
+WaveFunctionComponent::RealType SlaterDetOpt::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch) {
 
   // BEGIN EWN DEBUG 
   //app_log() << " EWN ENTERING SlaterDetOpt::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)" << std::endl;
@@ -702,7 +702,7 @@ void SlaterDetOpt::reportStatus(std::ostream& os) {
 ///                            particle's position.  Note that we assume the derivatives of
 ///                            ( H Psi ) / Psi are the same for each of the three directions'
 ///                            (x,y,z) second derivatives and so dh2 is defined as the
-///                            derivaties corresponding to the x coordinate's second derivative,
+///                            derivatives corresponding to the x coordinate's second derivative,
 ///                            NOT the sum of the derivatives for all three x, y, and z.
 /// \param[in]      Bchi       An nl by np column-major-ordered matrix of the values of the
 ///                            molecular orbitals at each particle's position.
@@ -924,7 +924,7 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
   // construct temporary Y matrix
   RealType * const Ymat = &m_work.at(0);
   for (int b = 0; b < m_nel; b++) { // loop over particles
-    const OrbitalBase::GradType g = P.G[m_first+b] - simd::dot(m_orb_inv_mat[b], m_orb_der_mat[b], m_nel);
+    const WaveFunctionComponent::GradType g = P.G[m_first+b] - simd::dot(m_orb_inv_mat[b], m_orb_der_mat[b], m_nel);
     for (int q = 0; q < m_nel; q++) // loop over orbitals
       Ymat[q+b*m_nel] = 0.5 * m_orb_lap_mat(b,q) + qmcplusplus::dot(m_orb_der_mat(b,q), g);
   }
@@ -940,7 +940,7 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
 
   // fill matrices of contributions to local energy derivatives w.r.t. orbital first derivatives
   for (int a = 0; a < m_nel; a++) { // loop over particles
-    const OrbitalBase::GradType g = simd::dot(m_orb_inv_mat[a], m_orb_der_mat[a], m_nel) - P.G[m_first+a];
+    const WaveFunctionComponent::GradType g = simd::dot(m_orb_inv_mat[a], m_orb_der_mat[a], m_nel) - P.G[m_first+a];
     for (int v = 0; v < 3; v++) // loop over particle coordinates x,y,z
     for (int p = 0; p < m_nel; p++) // loop over orbitals
       m_dh1(a+v*m_nel,p) = m_orb_inv_mat(a,p) * g[v];
@@ -988,7 +988,7 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
     }
   }
 
-  // reset the internally stored derivatives to zero in preperation for the next sample
+  // reset the internally stored derivatives to zero in preparation for the next sample
   this->initialize_matrices();
 }
 
@@ -1013,7 +1013,7 @@ void SlaterDetOpt::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t
   RealType * const Ymat = &m_work.at(0);
 
   for (int b = 0; b < m_nel; b++) { // loop over particles
-    const OrbitalBase::GradType g = G_in[m_first+b];
+    const WaveFunctionComponent::GradType g = G_in[m_first+b];
     for (int q = 0; q < m_nel; q++) // loop over orbitals
       Ymat[q+b*m_nel] = - qmcplusplus::dot(m_orb_der_mat(b,q), g);
   }
@@ -1033,7 +1033,7 @@ void SlaterDetOpt::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t
   // fill matrices of contributions to gradient derivatives w.r.t. orbital
   // first derivatives
   for (int a = 0; a < m_nel; a++) { // loop over particles
-    const OrbitalBase::GradType g = G_in[m_first+a];
+    const WaveFunctionComponent::GradType g = G_in[m_first+a];
     for (int v = 0; v < 3; v++) // loop over particle coordinates x,y,z
       for (int p = 0; p < m_nel; p++) // loop over orbitals
         m_dh1(a+v*m_nel,p) = m_orb_inv_mat(a,p) * g[v];
@@ -1072,7 +1072,7 @@ void SlaterDetOpt::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t
     dgradlogpsi.at(m_first_var_pos+i) += m_hder_mat.at(p+q*m_nlc) - m_hder_mat.at(q+p*m_nlc);
   }
 
-  // reset the internally stored derivatives to zero in preperation for the next sample
+  // reset the internally stored derivatives to zero in preparation for the next sample
   this->initialize_matrices();
 }
 
@@ -1149,7 +1149,7 @@ void SlaterDetOpt::buildOptVariables(std::vector<RealType>& input_params,
          << ( q < 1000 ? "0" : "" )
          << q;
 
-    // If the user input parameteres, use those. Otherwise, initialize the
+    // If the user input parameters, use those. Otherwise, initialize the
     // parameter to zero.
     if (params_supplied) {
       myVars.insert(sstr.str(), input_params[i]);

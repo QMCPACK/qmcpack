@@ -233,16 +233,16 @@ def evaluate_spline_3D():
   print
   print '  // symbolic value at pos = ',e.subs(pos)
   print
-  print '  Array<T, 1> v(1);'
+  print '  aligned_vector<T> v(npad);'
   print '  bs.evaluate(pos, v);'
   # the 'expand' after substituting pos is necessary for the triples of coefficients (cx*cy*cz) to
   # be formed so the substitution of coefficients works
   val = e.subs(pos).expand().subs(subslist)
-  print '  REQUIRE(v(0) == Approx(%15.10g));'%(val)
+  print '  REQUIRE(v[0] == Approx(%15.10g));'%(val)
   print
 
-  print '  Array<T, 2> dv(1,3);  // 3 - ndim'
-  print '  Array<T, 2> hess(1, 6); // 6 - number of unique hessian components'
+  print '  VectorSoaContainer<T,3> dv(npad);'
+  print '  VectorSoaContainer<T,6> hess(npad); // 6 - number of unique hessian components'
   print '  bs.evaluate_vgh(pos, v, dv, hess);'
 
 
@@ -250,14 +250,14 @@ def evaluate_spline_3D():
   ey = diff(e, ys).subs(pos).expand().subs(subslist)
   ez = diff(e, zs).subs(pos).expand().subs(subslist)
   print '  // Gradient'
-  print '  REQUIRE(dv(0,%d) == Approx(%15.10g));'%(0,ex)
-  print '  REQUIRE(dv(0,%d) == Approx(%15.10g));'%(1,ey)
-  print '  REQUIRE(dv(0,%d) == Approx(%15.10g));'%(2,ez)
+  print '  REQUIRE(dv[0][%d] == Approx(%15.10g));'%(0,ex)
+  print '  REQUIRE(dv[0][%d] == Approx(%15.10g));'%(1,ey)
+  print '  REQUIRE(dv[0][%d] == Approx(%15.10g));'%(2,ez)
 
   print
   print '  // Hessian'
   print '  for (int i = 0; i < 6; i++) {'
-  print '    REQUIRE(hess(0,i) == Approx(0.0));'
+  print '    REQUIRE(hess[0][i] == Approx(0.0));'
   print '  }'
 
 
@@ -269,40 +269,40 @@ def evaluate_spline_3D():
 
   val = e.subs(pos1).expand().subs(subslist)
   print '  // Value'
-  print '  REQUIRE(v(0) == Approx(%15.10g));'%(val)
+  print '  REQUIRE(v[0] == Approx(%15.10g));'%(val)
   print
   print '  bs.evaluate_vgh(pos, v, dv, hess);'
   print '  // Value'
-  print '  REQUIRE(v(0) == Approx(%15.10g));'%(val)
+  print '  REQUIRE(v[0] == Approx(%15.10g));'%(val)
   ex = diff(e, xs).subs(pos1).expand().subs(subslist)
   ey = diff(e, ys).subs(pos1).expand().subs(subslist)
   ez = diff(e, zs).subs(pos1).expand().subs(subslist)
   print '  // Gradient'
-  print '  REQUIRE(dv(0,%d) == Approx(%15.10g));'%(0,ex)
-  print '  REQUIRE(dv(0,%d) == Approx(%15.10g));'%(1,ey)
-  print '  REQUIRE(dv(0,%d) == Approx(%15.10g));'%(2,ez)
+  print '  REQUIRE(dv[0][%d] == Approx(%15.10g));'%(0,ex)
+  print '  REQUIRE(dv[0][%d] == Approx(%15.10g));'%(1,ey)
+  print '  REQUIRE(dv[0][%d] == Approx(%15.10g));'%(2,ez)
 
   print '  // Hessian'
   for idx,(d1,d2) in enumerate([(xs,xs), (xs,ys), (xs,zs), (ys, ys), (ys, zs), (zs, zs)]):
       hess = diff(diff(e,d1), d2).subs(pos1).expand().subs(subslist)
-      print '  REQUIRE(hess(0, %d) == Approx(%15.10g));'%(idx, hess)
+      print '  REQUIRE(hess[0][%d] == Approx(%15.10g));'%(idx, hess)
       #print d1,d2,hess
 
   print
   print
-  print '  Array<T, 1> lap(1);'
+  print '  VectorSoaContainer<T,3> lap(npad);'
   print '  bs.evaluate_vgl(pos, v, dv, lap);'
 
   lap = diff(e,xs,2) + diff(e,ys,2) + diff(e,zs,2)
   lap_val = lap.subs(pos1).expand().subs(subslist)
   print '  // Value'
-  print '  REQUIRE(v(0) == Approx(%15.10g));'%(val)
+  print '  REQUIRE(v[0] == Approx(%15.10g));'%(val)
   print '  // Gradient'
-  print '  REQUIRE(dv(0,%d) == Approx(%15.10g));'%(0,ex)
-  print '  REQUIRE(dv(0,%d) == Approx(%15.10g));'%(1,ey)
-  print '  REQUIRE(dv(0,%d) == Approx(%15.10g));'%(2,ez)
+  print '  REQUIRE(dv[0][%d] == Approx(%15.10g));'%(0,ex)
+  print '  REQUIRE(dv[0][%d] == Approx(%15.10g));'%(1,ey)
+  print '  REQUIRE(dv[0][%d] == Approx(%15.10g));'%(2,ez)
   print '  // Laplacian'
-  print '  REQUIRE(lap(0) == Approx(%15.10g));'%(lap_val)
+  print '  REQUIRE(lap[0][0] == Approx(%15.10g));'%(lap_val)
 
 
 if __name__ == '__main__':

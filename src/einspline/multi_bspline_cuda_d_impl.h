@@ -250,7 +250,7 @@ eval_multi_multi_UBspline_3d_d_cuda (const multi_UBspline_3d_d_cuda *spline,
     dimGrid.x++;
   eval_multi_multi_UBspline_3d_d_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, spline->coefs, vals_d, spline->dim, spline->stride, spline->num_splines);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {
@@ -347,7 +347,7 @@ eval_multi_multi_UBspline_3d_d_sign_cuda (const multi_UBspline_3d_d_cuda *spline
   eval_multi_multi_UBspline_3d_d_sign_kernel<<<dimGrid,dimBlock>>>
   (pos_d, sign_d, spline->gridInv, spline->coefs,
    vals_d, spline->dim, spline->stride, spline->num_splines);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {
@@ -370,7 +370,7 @@ eval_multi_multi_UBspline_3d_d_vgh_cuda (const multi_UBspline_3d_d_cuda *spline,
   eval_multi_multi_UBspline_3d_d_vgh_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, spline->coefs, vals_d, grads_d, hess_d,
    spline->dim, spline->stride, spline->num_splines);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {
@@ -540,7 +540,7 @@ eval_multi_multi_UBspline_3d_d_vgl_cuda
   eval_multi_multi_UBspline_3d_d_vgl_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, spline->coefs, Linv_d, vals_d,
    grad_lapl_d, spline->dim, spline->stride, spline->num_splines, row_stride);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {
@@ -702,7 +702,7 @@ eval_multi_multi_UBspline_3d_d_vgl_sign_cuda
   eval_multi_multi_UBspline_3d_d_vgl_sign_kernel<<<dimGrid,dimBlock>>>
   (pos_d, sign_d, spline->gridInv, spline->coefs, Linv_d, vals_d,
    grad_lapl_d, spline->dim, spline->stride, spline->num_splines, row_stride);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {

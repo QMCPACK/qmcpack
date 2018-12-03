@@ -29,7 +29,6 @@ namespace qmcplusplus
 TEST_CASE("LocalEnergyOnly", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
 
   LocalEnergyOnlyEstimator le_est;
 
@@ -48,8 +47,6 @@ TEST_CASE("LocalEnergyOnly", "[estimators]")
 TEST_CASE("LocalEnergy", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
-
 
   QMCHamiltonian H;
   LocalEnergyEstimator le_est(H, false);
@@ -80,8 +77,6 @@ TEST_CASE("LocalEnergy", "[estimators]")
 TEST_CASE("LocalEnergy with hdf5", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
-
 
   QMCHamiltonian H;
   LocalEnergyEstimator le_est(H, true);
