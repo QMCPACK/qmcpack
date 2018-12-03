@@ -103,7 +103,6 @@ ForceCeperley::evaluate(ParticleSet& P)
   {
     for(int iat=0; iat<Nnuc; iat++)
     {
-      RealType esum = 0.0;
       // electron contribution (special treatment if distance is inside cutoff!)
       for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++)
       {

@@ -40,7 +40,7 @@ public:
 
   typedef SlaterDet SlaterDeterminant_t;
   typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
-  typedef DiracDeterminantBase Det_t;
+  typedef DiracDeterminant Det_t;
   /** constructor
    * \param els reference to the electrons
    * \param psi reference to the wavefunction
@@ -74,7 +74,7 @@ private:
    * @param firstIndex index of the determinant
    * @return firstIndex+number of orbitals
    */
-  bool putDeterminant(xmlNodePtr cur, int firstIndex, bool slater_det_opt);
+  bool putDeterminant(xmlNodePtr cur, int firstIndex);
 
   bool createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
 

@@ -20,7 +20,7 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 SET(DRIVER_TEST_SRC test_vmc.cpp test_dmc.cpp test_drift.cpp test_clone_manager.cpp test_fixed_node_branch.cpp)
 
 IF (NOT QMC_CUDA)
-  SET(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_vmc_omp.cpp test_dmc_omp.cpp)
+  SET(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_vmc_driver.cpp test_dmc_driver.cpp)
 ENDIF()
 
 IF(HAVE_MPI)
@@ -33,4 +33,3 @@ TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcdriver_unit qmcham qmcwfs qmcbase qmcu
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit")

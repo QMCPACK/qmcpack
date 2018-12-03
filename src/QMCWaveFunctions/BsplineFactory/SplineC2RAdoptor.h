@@ -59,8 +59,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   using BaseType::PrimLattice;
   using BaseType::kPoints;
   using BaseType::MakeTwoCopies;
-  using BaseType::offset_cplx;
-  using BaseType::offset_real;
+  using BaseType::offset;
 
   ///number of complex bands
   int nComplexBands;
@@ -82,7 +81,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   gContainer_type myG;
   hContainer_type myH;
 
-  SplineC2RSoA(): BaseType(), SplineInst(nullptr), MultiSpline(nullptr)
+  SplineC2RSoA(): BaseType(), nComplexBands(0), SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=true;
     this->is_soa_ready=true;
@@ -123,41 +122,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     if(comm->size()==1) return;
     const int Nbands = kPoints.size();
     const int Nbandgroups = comm->size();
-    std::vector<int> offset(Nbandgroups+1,0);
+    offset.resize(Nbandgroups+1,0);
     FairDivideLow(Nbands,Nbandgroups,offset);
 
-#ifdef QMC_CUDA
     for(size_t ib=0; ib<offset.size(); ib++)
       offset[ib] = offset[ib]*2;
     gatherv(comm, MultiSpline, MultiSpline->z_stride, offset);
-#else
-    // complex bands
-    int gid=1;
-    offset_cplx.resize(Nbandgroups+1,0);
-    for(int ib=0; ib<Nbands; ++ib)
-    {
-      if(ib==offset[gid]) gid++;
-      if(MakeTwoCopies[ib])
-        offset_cplx[gid]++;
-    }
-    for(int bg=0; bg<Nbandgroups; ++bg)
-      offset_cplx[bg+1] = offset_cplx[bg+1]*2+offset_cplx[bg];
-    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_cplx);
-
-    // real bands
-    gid=1;
-    offset_real.resize(Nbandgroups+1,0);
-    for(int ib=0; ib<Nbands; ++ib)
-    {
-      if(ib==offset[gid]) gid++;
-      if(!MakeTwoCopies[ib])
-        offset_real[gid]++;
-    }
-    offset_real[0]=nComplexBands*2;
-    for(int bg=0; bg<Nbandgroups; ++bg)
-      offset_real[bg+1] = offset_real[bg+1]*2+offset_real[bg];
-    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_real);
-#endif
   }
 
   template<typename GT, typename BCT>
@@ -184,7 +154,10 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   /** remap kPoints to pack the double copy */
   inline void resize_kpoints()
   {
+#ifndef QMC_CUDA
+    // GPU CUDA code doesn't allow a change of the ordering
     nComplexBands=this->remap_kpoints();
+#endif
     int nk=kPoints.size();
     mKK.resize(nk);
     myKcart.resize(nk);
@@ -197,27 +170,15 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
-#ifdef QMC_CUDA
-    // GPU code needs the old ordering.
-    int iband=ispline;
-#else
-    int iband=this->BandIndexMap[ispline];
-#endif
-    SplineInst->copy_spline(spline_r,2*iband  ,BaseOffset, BaseN);
-    SplineInst->copy_spline(spline_i,2*iband+1,BaseOffset, BaseN);
+    SplineInst->copy_spline(spline_r,2*ispline  ,BaseOffset, BaseN);
+    SplineInst->copy_spline(spline_i,2*ispline+1,BaseOffset, BaseN);
   }
 
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
     Vector<ST> v_r(psi_r,0), v_i(psi_i,0);
-#ifdef QMC_CUDA
-    // GPU code needs the old ordering.
-    int iband=ispline;
-#else
-    int iband=this->BandIndexMap[ispline];
-#endif
-    SplineInst->set(2*iband  ,v_r);
-    SplineInst->set(2*iband+1,v_i);
+    SplineInst->set(2*ispline  ,v_r);
+    SplineInst->set(2*ispline+1,v_i);
   }
 
 
@@ -332,8 +293,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     // protect last
     last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
 
-    CONSTEXPR ST zero(0);
-    CONSTEXPR ST two(2);
+    constexpr ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
@@ -460,7 +420,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV>
   inline void assign_vgl_from_l(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
   {
-    CONSTEXPR ST two(2);
+    constexpr ST two(2);
     const ST x=r[0], y=r[1], z=r[2];
 
     const ST* restrict k0=myKcart.data(0); ASSUME_ALIGNED(k0);

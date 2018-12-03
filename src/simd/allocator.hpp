@@ -34,7 +34,7 @@ namespace qmcplusplus
 
 template<typename T> inline size_t getAlignedSize(size_t n)
 {
-  CONSTEXPR size_t ND=QMC_CLINE/sizeof(T);
+  constexpr size_t ND=QMC_CLINE/sizeof(T);
   return ((n+ND-1)/ND)*ND;
 }
 

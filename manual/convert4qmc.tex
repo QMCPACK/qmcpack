@@ -13,7 +13,7 @@ and GAMESS-FMO\cite{Fedorov2004,schmidt93}
 \subsubsection{General use}
 General usage of convert4qmc can be prompted by running with no options:
 
-\begin{shade}
+\begin{lstlisting}[style=SHELL]
 >convert4qmc
 
  convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-pyscf]
@@ -27,13 +27,13 @@ Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required
 When the input format is missing, the  extension of filename is used to determine
 the format                                                      
  *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.xml -> gamesxml
-\end{shade}
+\end{lstlisting}
 
 
 As an example, to convert a GAMESS calculation using a single determinant, the following usage is sufficient:\\
-\begin{shade}
+\begin{lstlisting}[style=SHELL]
 convert4qmc -gamess MyGamessOutput.out
-\end{shade}
+\end{lstlisting}
 
 By default, the converter will generate multiple files:\\
 \begin{table}[h]

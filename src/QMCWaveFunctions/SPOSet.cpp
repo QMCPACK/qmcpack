@@ -207,7 +207,6 @@ bool SPOSet::put(xmlNodePtr cur)
 
   return success && success2;
 
- return true;
 }
 
 void SPOSet::checkObject()
@@ -383,7 +382,7 @@ void SPOSet::evaluateGradSource (const ParticleSet &P, int first, int last,
 #ifdef QMC_CUDA
 
 void SPOSet::evaluate (std::vector<Walker_t*> &walkers, int iat,
-                           gpu::device_vector<CudaValueType*> &phi)
+                           gpu::device_vector<CTS::ValueType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
@@ -391,7 +390,7 @@ void SPOSet::evaluate (std::vector<Walker_t*> &walkers, int iat,
 }
 
 void SPOSet::evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &new_pos,
-                           gpu::device_vector<CudaValueType*> &phi)
+                           gpu::device_vector<CTS::ValueType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
@@ -400,8 +399,8 @@ void SPOSet::evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &ne
 
 void SPOSet::evaluate (std::vector<Walker_t*> &walkers,
                            std::vector<PosType> &new_pos,
-                           gpu::device_vector<CudaValueType*> &phi,
-                           gpu::device_vector<CudaValueType*> &grad_lapl_list,
+                           gpu::device_vector<CTS::ValueType*> &phi,
+                           gpu::device_vector<CTS::ValueType*> &grad_lapl_list,
                            int row_stride)
 {
   app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSet.\n";
@@ -409,7 +408,7 @@ void SPOSet::evaluate (std::vector<Walker_t*> &walkers,
   abort();
 }
 
-void SPOSet::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
+void SPOSet::evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate "
               << "in SPOSet.\n";
@@ -417,7 +416,7 @@ void SPOSet::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealTyp
   abort();
 }
 
-void SPOSet::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi)
+void SPOSet::evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate "
               << "in SPOSet.\n";

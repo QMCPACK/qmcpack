@@ -14,13 +14,13 @@
     
     
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus
 {
 
-MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, MultiDiracDeterminantBase* up, MultiDiracDeterminantBase* dn):
+MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, MultiDiracDeterminant* up, MultiDiracDeterminant* dn):
   C2node_up(nullptr),C2node_dn(nullptr),C(nullptr),
   CSFcoeff(nullptr),DetsPerCSF(nullptr),CSFexpansion(nullptr),
   IsCloned(false),
@@ -73,8 +73,8 @@ void MultiSlaterDeterminantFast::initialize()
 
 WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
 {
-  MultiDiracDeterminantBase* up_clone = new MultiDiracDeterminantBase(*Dets[0]);
-  MultiDiracDeterminantBase* dn_clone = new MultiDiracDeterminantBase(*Dets[1]);
+  MultiDiracDeterminant* up_clone = new MultiDiracDeterminant(*Dets[0]);
+  MultiDiracDeterminant* dn_clone = new MultiDiracDeterminant(*Dets[1]);
   MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp,up_clone,dn_clone);
   if(usingBF)
   {
@@ -211,7 +211,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evaluate_vgl_impl(P
   const size_t N2 = Dets[1]->FirstIndex;
   const size_t NP1 = Dets[0]->NumPtcls;
   const size_t NP2 = Dets[1]->NumPtcls;
-  CONSTEXPR ValueType czero(0);
+  const ValueType czero(0);
   ValueType psi=czero;
   g_tmp=czero;
   l_tmp=czero;
@@ -311,7 +311,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
   {
     APP_ABORT("Fast MSD+BF: evalGrad not implemented. \n");
   }
-  CONSTEXPR RealType cone(1);
+  constexpr RealType cone(1);
   GradType grad_iat;
   ValueType psi=evalGrad_impl(P,iat,false,grad_iat);;
   grad_iat*= (cone/psi);
@@ -327,7 +327,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleS
   }
   UpdateMode=ORB_PBYP_PARTIAL;
 
-  CONSTEXPR RealType cone(1);
+  constexpr RealType cone(1);
   GradType dummy;
   ValueType psiNew=evalGrad_impl(P,iat,true,dummy);
   grad_iat+=(cone/psiNew)*dummy;

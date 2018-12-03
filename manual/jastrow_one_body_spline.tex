@@ -87,7 +87,7 @@ Specify a spin-independent function with four parameters. Because rcut  is not
 specified, the default cutoff of the Wigner Seitz cell radius is used; this 
 Jastrow must be used with a 3D periodic system such as a bulk solid. The name of 
 the particleset holding the ionic positions is "i".
-\begin{lstlisting}[language=xml]
+\begin{lstlisting}[style=XML]
 <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
  <correlation elementType="C" cusp="0.0" size="4">
    <coefficients id="C" type="Array"> 0  0  0  0  </coefficients>
@@ -100,7 +100,7 @@ The cutoff distance is set to 6 atomic units.  Note here that the particleset ho
 the ions is labeled as ion0 rather than ``i'' in the other example.  Also in this case
 the ion is Lithium with a coulomb potential, so the cusp condition is satisfied by 
 setting cusp="d".
-\begin{lstlisting}[language=xml]
+\begin{lstlisting}[style=XML]
 <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" spin="yes">
   <correlation speciesA="Li" speciesB="u" size="7" rcut="6">
     <coefficients id="eLiu" cusp="3.0" type="Array"> 

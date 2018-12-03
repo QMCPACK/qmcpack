@@ -233,12 +233,6 @@ void cqmc::engine::SpamLMHD::solve_subspace_nonsymmetric(const bool outer)
     //Eigen::ArrayXcd eval_list = (es.eigenvalues()).array();
     std::complex<double> lowest_eval = e_evals.at(0);
 
-    double inner_eval = 0.0;
-    if ( !_ground ) 
-      inner_eval = 1.0 / (_hd_shift - _energy_inner);
-    else 
-      inner_eval = _energy_inner;
-
     // if it's outer iteration, we just make sure that we choose the lowest energy(target function)
     //if ( outer ) {
     for (int j = 1; j < truncate_index; j++) {
@@ -1337,9 +1331,6 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
 
   while(true) {
     
-    // smallest singular value 
-    double smallest_sin_value_outer = 0.0;
-
     // solve subspace eigenvalue problem on root process 
     if ( my_rank == 0 ) { 
       this -> solve_subspace_nonsymmetric(true);
@@ -1473,9 +1464,6 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
     // now enter inner loop 
     while (true) {
      
-      // average of smallest singular value
-      double smallest_sin_val_avg_inner = 0.0;
-
       // solve subspace eigenvalue problem on root process 
       if ( my_rank == 0 ) {
         this -> solve_subspace_nonsymmetric(false);
