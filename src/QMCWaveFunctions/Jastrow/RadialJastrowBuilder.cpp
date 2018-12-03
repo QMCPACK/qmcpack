@@ -151,6 +151,7 @@ void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RealType>& bfunc, d
   {
     return;
   }
+  app_log() << "  Initializing Two-Body with RPA Jastrow " << std::endl;
   std::vector<RealType> rpaValues;
   int npts=bfunc.NumParams;
   if(rpaValues.empty())
@@ -247,8 +248,7 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       bool functor_initialized = functor->put(cur);
       if (!functor_initialized && init_mode =="rpa")
       {
-        app_log() << "  Initializing Two-Body with RPA Jastrow " << std::endl;
-        initTwoBodyFunctor(functor,-cusp/0.5);
+        initTwoBodyFunctor(*functor,-cusp/0.5);
       }
 
       J2->addFunc(ia,ib,functor);
