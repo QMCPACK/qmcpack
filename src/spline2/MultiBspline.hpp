@@ -67,7 +67,7 @@ namespace qmcplusplus
             +h002*(g1x*g2x*g3z+g1x*g2z*g3x+g1z*g2x*g3x)
             +h011*(g1x*g2y*g3y+g1y*g2x*g3y+g1y*g2y*g3x)
             +h012*(g1x*g2y*g3z+g1x*g2z*g3y+g1y*g2x*g3z+g1y*g2z*g3x+g1z*g2x*g3y+g1z*g2y*g3x)
-            +h022*(g1x*g2z*g3z+g1z*g2x*g3z+g1z*g2z+g3x)
+            +h022*(g1x*g2z*g3z+g1z*g2x*g3z+g1z*g2z*g3x)
             +h111*(g1y*g2y*g3y)
             +h112*(g1y*g2y*g3z+g1y*g2z*g3y+g1z*g2y*g3y)
             +h122*(g1y*g2z*g3z+g1z*g2y*g3z+g1z*g2z*g3y)
