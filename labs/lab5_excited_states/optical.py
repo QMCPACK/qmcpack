@@ -6,15 +6,13 @@ from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack,vmc
 from structure import *
-import pdb
 
 settings(
-    pseudo_dir    = '../pseudopotentials',
+    pseudo_dir    = './pseudopotentials',
     status_only   = 0,
     generate_only = 0,
     sleep         = 3,
-    machine       = 'cades',
-    account       = 'qmc'
+    machine       = 'ws16'
     )
 
 #Input structure
@@ -44,7 +42,7 @@ dia2 = generate_physical_system(
 scf = generate_pwscf(
     identifier   = 'scf',
     path         = 'diamond/scf',
-    job          = job(nodes=1,app='pw.x', presub = 'module purge; module load PE-gnu; module load mkl', hours = 1),
+    job          = job(nodes=1,app='pw.x',hours=1),
     input_type   = 'generic',
     calculation  = 'scf',
     nspin        = 2,
@@ -60,8 +58,8 @@ scf = generate_pwscf(
 
 nscf = generate_pwscf(
     identifier   = 'nscf',
-    path         ='diamond/nscf',
-    job          = job(nodes=1,app='pw.x', presub = 'module purge; module load PE-gnu; module load mkl', hours = 1),
+    path         = 'diamond/nscf',
+    job          = job(nodes=1,app='pw.x',hours=1),
     input_type   = 'generic',
     calculation  = 'nscf',
     input_dft    = 'lda', 
@@ -85,18 +83,17 @@ conv = generate_pw2qmcpack(
     dependencies = (nscf,'orbitals'),
     )
 
-qmc = generate_qmcpack(
-    skip_submit  = True,
-    det_format   = 'old',
-    identifier   = 'vmc',
-    path         = 'diamond/vmc_-e',
-    job          = job(cores=16,threads=16,app='qmcpack', hours = 1),
-    input_type   = 'basic',
+qmc_0 = generate_qmcpack(
+    det_format     = 'old',
+    identifier     = 'vmc',
+    path           = 'diamond/vmc',
+    job            = job(cores=16,threads=16,app='qmcpack', hours = 1),
+    input_type     = 'basic',
     spin_polarized = True,
-    system       = dia2,
-    pseudos      = ['C.BFD.xml'],
-    jastrows     = [],
-    calculations = [
+    system         = dia2,
+    pseudos        = ['C.BFD.xml'],
+    jastrows       = [],
+    calculations   = [
         vmc(
             walkers     =  16,
             warmupsteps =  20,
@@ -108,7 +105,29 @@ qmc = generate_qmcpack(
         ],
     dependencies = (conv,'orbitals'),
     )
-qmc.input.simulation.qmcsystem.particlesets.e.groups.u.size +=1
-qmc.input.simulation.qmcsystem.wavefunction.determinantset.slaterdeterminant.determinants.updet.size += 1
 
-run_project(scf,nscf,conv,qmc)
+qmc_optical = generate_qmcpack(
+    det_format     = 'old',
+    identifier     = 'vmc',
+    path           = 'diamond/vmc_optical',
+    job            = job(cores=16,threads=16,app='qmcpack', hours = 1),
+    input_type     = 'basic',
+    spin_polarized = True,
+    system         = dia2,
+    excitation     = ['up', '0 3 4 4'], #
+    pseudos        = ['C.BFD.xml'],
+    jastrows       = [],
+    calculations   = [
+        vmc(
+            walkers     =  16,
+            warmupsteps =  20,
+            blocks      = 1000,
+            steps       =  10,
+            substeps    =   2,
+            timestep    =  .4
+            )
+        ],
+    dependencies = (conv,'orbitals'),
+    )
+
+run_project(scf,nscf,conv,qmc_0,qmc_optical)

@@ -91,6 +91,29 @@ qmc = generate_qmcpack(
     input_type     = 'basic',
     spin_polarized = True,
     system         = dia2,
+    pseudos        = ['C.BFD.xml'],
+    jastrows       = [],
+    calculations   = [
+        vmc(
+            walkers     =  16,
+            warmupsteps =  20,
+            blocks      = 1000,
+            steps       =  10,
+            substeps    =   2,
+            timestep    =  .4
+            )
+        ],
+    dependencies = (conv,'orbitals'),
+    )
+
+qmc_optical = generate_qmcpack(
+    det_format     = 'old',
+    identifier     = 'vmc',
+    path           = 'diamond/vmc_optical',
+    job            = job(cores=16,threads=16,app='qmcpack', hours = 1),
+    input_type     = 'basic',
+    spin_polarized = True,
+    system         = dia2,
     excitation     = ['up', '0 3 4 4'], #
     pseudos        = ['C.BFD.xml'],
     jastrows       = [],
@@ -107,4 +130,4 @@ qmc = generate_qmcpack(
     dependencies = (conv,'orbitals'),
     )
 
-run_project(scf,nscf,conv,qmc)
+run_project(scf,nscf,conv,qmc, qmc_optical)

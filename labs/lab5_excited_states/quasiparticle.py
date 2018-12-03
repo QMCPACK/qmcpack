@@ -8,7 +8,7 @@ from nexus import generate_qmcpack,vmc
 from structure import *
 
 settings(
-    pseudo_dir    = '../pseudopotentials',
+    pseudo_dir    = './pseudopotentials',
     status_only   = 0,
     generate_only = 0,
     sleep         = 3,
@@ -83,7 +83,7 @@ conv = generate_pw2qmcpack(
     dependencies = (nscf,'orbitals'),
     )
 
-qmc = generate_qmcpack(
+qmc_0 = generate_qmcpack(
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'diamond/vmc',
@@ -91,7 +91,6 @@ qmc = generate_qmcpack(
     input_type     = 'basic',
     spin_polarized = True,
     system         = dia2,
-    excitation     = ['up', '0 3 4 4'], #
     pseudos        = ['C.BFD.xml'],
     jastrows       = [],
     calculations   = [
@@ -107,4 +106,54 @@ qmc = generate_qmcpack(
     dependencies = (conv,'orbitals'),
     )
 
-run_project(scf,nscf,conv,qmc)
+qmc_minus = generate_qmcpack(
+    det_format   = 'old',
+    identifier   = 'vmc',
+    path         = 'diamond/vmc_-e',
+    job          = job(cores=16,threads=16,app='qmcpack', hours = 1),
+    input_type   = 'basic',
+    spin_polarized = True,
+    system       = dia2,
+    pseudos      = ['C.BFD.xml'],
+    jastrows     = [],
+    calculations = [
+        vmc(
+            walkers     =  16,
+            warmupsteps =  20,
+            blocks      = 1000,
+            steps       =  10,
+            substeps    =   2,
+            timestep    =  .4
+            )
+        ],
+    dependencies = (conv,'orbitals'),
+    )
+qmc_minus.input.simulation.qmcsystem.particlesets.e.groups.u.size +=1
+qmc_minus.input.simulation.qmcsystem.wavefunction.determinantset.slaterdeterminant.determinants.updet.size += 1
+
+qmc_plus = generate_qmcpack(
+    det_format   = 'old',
+    identifier   = 'vmc',
+    path         = 'diamond/vmc_+e',
+    job          = job(cores=16,threads=16,app='qmcpack', hours = 1),
+    input_type   = 'basic',
+    spin_polarized = True,
+    system       = dia2,
+    pseudos      = ['C.BFD.xml'],
+    jastrows     = [],
+    calculations = [
+        vmc(
+            walkers     =  16,
+            warmupsteps =  20,
+            blocks      = 1000,
+            steps       =  10,
+            substeps    =   2,
+            timestep    =  .4
+            )
+        ],
+    dependencies = (conv,'orbitals'),
+    )
+qmc_plus.input.simulation.qmcsystem.particlesets.e.groups.u.size -=1
+qmc_plus.input.simulation.qmcsystem.wavefunction.determinantset.slaterdeterminant.determinants.updet.size -= 1
+
+run_project(scf,nscf,conv,qmc_0,qmc_minus,qmc_plus)

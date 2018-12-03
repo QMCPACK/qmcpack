@@ -70,7 +70,7 @@ scf = generate_pwscf(
 
 nscf = generate_pwscf(
     identifier   = 'nscf',
-    path         ='diamond/nscf_opt',
+    path         ='diamond/nscf_opt_tiling',
     job          = job(nodes=1, app='pw.x',hours=1),
     input_type   = 'generic',
     calculation  = 'nscf',
@@ -89,7 +89,7 @@ nscf = generate_pwscf(
 
 conv = generate_pw2qmcpack(
     identifier   = 'conv',
-    path         = 'diamond/nscf_opt',
+    path         = 'diamond/nscf_opt_tiling',
     job          = job(cores=1,app='pw2qmcpack.x',hours=1),
     write_psir   = False,
     dependencies = (nscf,'orbitals'),
@@ -98,7 +98,30 @@ conv = generate_pw2qmcpack(
 qmc = generate_qmcpack(
     det_format     = 'old',
     identifier     = 'vmc',
-    path           = 'diamond/vmc_opt',
+    path           = 'diamond/vmc_opt_tiling',
+    job            = job(cores=16,threads=16,app='qmcpack',hours = 1),
+    input_type     = 'basic',
+    spin_polarized = True,
+    system         = dia2,
+    pseudos        = ['C.BFD.xml'],
+    jastrows       = [],
+    calculations   = [
+        vmc(
+            walkers     =  16,
+            warmupsteps =  20,
+            blocks      = 1000,
+            steps       =  10,
+            substeps    =   2,
+            timestep    =  .4
+            )
+        ],
+    dependencies = (conv,'orbitals'),
+    )
+
+qmc_optical = generate_qmcpack(
+    det_format     = 'old',
+    identifier     = 'vmc',
+    path           = 'diamond/vmc_opt_tiling_optical',
     job            = job(cores=16,threads=16,app='qmcpack',hours = 1),
     input_type     = 'basic',
     spin_polarized = True,

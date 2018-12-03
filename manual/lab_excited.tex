@@ -22,9 +22,8 @@
 \begin{shade}
 labs/lab5_excited_properties/
     band.py           - Band structure calculation for Carbon Diamond
-    vmc.py            - VMC calculation using the tiling matrix from band.py
-    vmc_+e.py         - VMC calculation using the tiling matrix from band.py
-    vmc_-e.py         - VMC calculation using the tiling matrix from band.py
+    optical.py        - VMC optical gap calculation using the tiling matrix from band.py
+    quasiparticle.py  - VMC quasiparticle gap calculation using the tiling matrix from band.py
 pseudopotentials      - pseudopotential directory
 	C.BFD.upf         - C PP for Quantum ESPRESSO
 	C.BFD.xml         - C PP for QMCPACK
@@ -121,7 +120,7 @@ Figure \ref{fig:lab_ex_xcrysden} shows the procedure for visualizing the Brillou
 However, the primitive cell is not unique, and the actual shape of the BZ can depend on the structure used. 
 In our example, we use the python libraries of SeeK-path, using a wrapper written in Nexus. 
 SeeK-path includes routines to standardize primitive cells, which will be useful for our work. 
-In the \texttt{bands.py} script, identification of high symmetry k-points and band structure calculations are done within the workflow. 
+In the \texttt{band.py} script, identification of high symmetry k-points and band structure calculations are done within the workflow. 
 In the script, where the \texttt{dia} PhysicalSystem object is used as the input structure, \texttt{dia2\_structure} is the standardized primitive cell and \texttt{dia2\_kpath} is the respective k-path around the iBZ. 
 \texttt{dia2\_kpath} has a dictionary of the k-path in various coordinate systems, please make sure you are using the right one. 
 
@@ -152,7 +151,7 @@ Basically,  \texttt{band.py} will:
 In Fig. \ref{fig:lab_ex_bands}, C-diamond is shown to have an indirect band gap between the red and green dots (CBM and VBM respectively). 
 VBM is located at $\Gamma$. CBM is not located on a high symmetry k-point in this case. 
 Therefore, we can use the symbol $\Delta$ to denote the CBM wavevector in the rest of this document. 
-In \texttt{bands.py} script, once the band structure calculation is finished, you can use the following lines to get the exact location of VBM and CBM using:
+In \texttt{band.py} script, once the band structure calculation is finished, you can use the following lines to get the exact location of VBM and CBM using:
 \begin{lstlisting}
 from pwscf_analyzer import PwscfAnalyzer
 p = PwscfAnalyzer(band)
@@ -286,12 +285,13 @@ A typical workflow for a quasiparticle calculation includes:
 \end{lstlisting}
 Going back to equation \ref{eq:qp}, one can see that it is essential to include VBM and CBM wavevectors in the same twist for quasiparticle calculations as well. 
 Therefore, the added electron will sit at CBM while the subtracted electron will be removed from VBM. 
-However, for the charged cell calculations, one may need to make changes in the input files for the fourth step.  Alternatively, in \texttt{vmc\_\+e.py} file for example, please note the changes for simulations with different charges:
-
+However, for the charged cell calculations, one may need to make changes in the input files for the fourth step.  Alternatively, in \texttt{quasiparticle.py} file the changes in the qmc input are shown for negatively charged system:
 \begin{lstlisting}
 qmc.input.simulation.qmcsystem.particlesets.e.groups.u.size +=1
 qmc.input.simulation.qmcsystem.wavefunction.determinantset.slaterdeterminant.determinants.updet.size += 1
 \end{lstlisting}
+Here, the number of up electrons are increased by one (negatively charged system), and QMCPACK is instructed to read more one orbital in the up channel from the .h5 file. 
+
 QE uses symmetry in order to reduce the number of k-points required for the calculation. 
 Therefore, all symmetry tags in QE (\texttt{nosym}, \texttt{noinv} and \texttt{nosym\_evc}) must be set to false. 
 An easy way to check whether this is the case is to see that all KmK values \texttt{einspline} files are equal to 1. 
@@ -337,7 +337,7 @@ And the \texttt{einspline.tile\_300010003.spin\_0.tw\_0.g0.bandinfo.dat} file mu
 37 37 8	4 0.637231	0.0000 -1.2418 0.0000 -0.6667 0.0000 -0.6667 1
 38 38 0	4 0.699993	0.0000  0.0000 0.0000  0.0000 0.0000  0.0000 1
 \end{lstlisting}
-Alternatively, one can define the excitations within Nexus as shown in \texttt{vmc.py} file:
+Alternatively, one can define the excitations within Nexus as shown in \texttt{optical.py} file:
 \begin{lstlisting}
 qmc = generate_qmcpack(
     ...
@@ -346,3 +346,4 @@ qmc = generate_qmcpack(
     ...
     )
 \end{lstlisting}
+
