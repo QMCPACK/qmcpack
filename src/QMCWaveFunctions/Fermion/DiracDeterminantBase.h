@@ -32,6 +32,7 @@ public:
    */
   DiracDeterminantBase(SPOSetPtr const spos, int first=0)
     : Phi(spos), FirstIndex(first), LastIndex(first+spos->size()),
+    NumPtcls(spos->size()), NumOrbitals(spos->size()),
     UpdateTimer("DiracDeterminantBase::update",timer_level_fine),
     RatioTimer("DiracDeterminantBase::ratio",timer_level_fine),
     InverseTimer("DiracDeterminantBase::inverse",timer_level_fine),
@@ -139,10 +140,11 @@ public:
   virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const = 0;
 
 #ifdef QMC_CUDA
-  using WaveFunctionComponent::recompute;
+  // GPU interfaces
+  //using WaveFunctionComponent::recompute;
   using WaveFunctionComponent::reserve;
   using WaveFunctionComponent::addLog;
-  using WaveFunctionComponent::ratio;
+  //using WaveFunctionComponent::ratio;
   using WaveFunctionComponent::addRatio;
   using WaveFunctionComponent::calcRatio;
   using WaveFunctionComponent::addGradient;
@@ -161,6 +163,10 @@ public:
   int FirstIndex;
   ///index of the last particle with respect to the particle set
   int LastIndex;
+  ///number of single-particle orbitals which belong to this Dirac determinant
+  int NumOrbitals;
+  ///number of particles which belong to this Dirac determinant
+  int NumPtcls;
   /// targetPtcl pointer. YE: to be removed.
   ParticleSet *targetPtcl;
 
@@ -178,8 +184,6 @@ public:
   }
 
 };
-
-
 
 }
 #endif

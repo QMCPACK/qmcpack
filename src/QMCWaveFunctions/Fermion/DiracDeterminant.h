@@ -64,16 +64,6 @@ public:
   DiracDeterminant(const DiracDeterminant& s) = delete;
   DiracDeterminant& operator=(const DiracDeterminant& s) = delete;
 
-  inline IndexType rows() const
-  {
-    return NumPtcls;
-  }
-
-  inline IndexType cols() const
-  {
-    return NumOrbitals;
-  }
-
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
    *@param nel number of particles in the determinant
@@ -165,10 +155,6 @@ public:
   virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
   ///total number of particles
   int NP;
-  ///number of single-particle orbitals which belong to this Dirac determinant
-  int NumOrbitals;
-  ///number of particles which belong to this Dirac determinant
-  int NumPtcls;
   ///index of the particle (or row)
   int WorkingIndex;
 
@@ -212,20 +198,6 @@ public:
   ParticleSet::SingleParticleValue_t *LastAddressOfG;
   ValueType *FirstAddressOfdV;
   ValueType *LastAddressOfdV;
-
-#ifdef QMC_CUDA
-  using WaveFunctionComponent::recompute;
-  using WaveFunctionComponent::reserve;
-  using WaveFunctionComponent::addLog;
-  using WaveFunctionComponent::ratio;
-  using WaveFunctionComponent::addRatio;
-  using WaveFunctionComponent::calcRatio;
-  using WaveFunctionComponent::addGradient;
-  using WaveFunctionComponent::calcGradient;
-  using WaveFunctionComponent::update;
-  using WaveFunctionComponent::gradLapl;
-  using WaveFunctionComponent::NLratios;
-#endif
 
 };
 

@@ -17,11 +17,7 @@
 
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
-#ifdef QMC_CUDA
-#include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
-#else
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
-#endif
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include <map>
 
