@@ -211,15 +211,11 @@ inline void set_appropriate_device_num(int num)
  */
 inline bool test_cudamps()
 {
-  // the idea is to look for CUDA MPS daemon's control file
-  std::string controlfile = "/tmp/nvidia-mps"; // this is the default directory
-  const char* mps_pipe_dir = std::getenv("CUDA_MPS_PIPE_DIRECTORY"); // the directory can be changed by this environment variable
-  if (mps_pipe_dir != NULL)
-    controlfile = mps_pipe_dir;
-  controlfile += "/log"; // the file (actually pipe) that's important is log
-  if (access(controlfile.c_str(),F_OK) == 0)
-    return true;
-  return false;
+  // the idea is to check if the CUDA MPS is running
+  int ret=system("echo get_server_list | nvidia-cuda-mps-control > /dev/null 2>&1");
+  if (ret==1)
+    return false;
+  return true;
 }
 
 inline void Finalize_CUDA()
