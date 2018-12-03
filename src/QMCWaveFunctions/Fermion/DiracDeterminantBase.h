@@ -2,20 +2,14 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers.
 //
-// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
-//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file DiracDeterminantBase.h
  * @brief Declaration of DiracDeterminantBase with a S(ingle)P(article)O(rbital)Set
  */
@@ -51,17 +45,18 @@ public:
   }
 
   ///default destructor
-  virtual ~DiracDeterminantBase() { };
+  virtual ~DiracDeterminantBase() { }
 
   // copy constructor and assign operator disabled
   DiracDeterminantBase(const DiracDeterminantBase& s) = delete;
   DiracDeterminantBase& operator=(const DiracDeterminantBase& s) = delete;
 
   // get the SPO pointer
-  SPOSetPtr getPhi()
-  {
-    return Phi;
-  };
+  inline SPOSetPtr getPhi() const { return Phi; }
+
+  // get FirstIndex, Last Index
+  inline int getFirstIndex() const { return FirstIndex; }
+  inline int getLastIndex() const { return LastIndex; }
 
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
@@ -157,16 +152,15 @@ public:
   using WaveFunctionComponent::NLratios;
 #endif
 
-  ///index of the first particle with respect to the particle set
-  int FirstIndex;
-  ///index of the last particle with respect to the particle set
-  int LastIndex;
-
   protected:
   /// Timers
   NewTimer UpdateTimer, RatioTimer, InverseTimer, BufferTimer, SPOVTimer, SPOVGLTimer;
   /// a set of single-particle orbitals used to fill in the  values of the matrix
   SPOSetPtr const Phi;
+  ///index of the first particle with respect to the particle set
+  int FirstIndex;
+  ///index of the last particle with respect to the particle set
+  int LastIndex;
   /// targetPtcl pointer. YE: to be removed.
   ParticleSet *targetPtcl;
 

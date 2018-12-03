@@ -124,7 +124,7 @@ void SlaterDetOpt::check_index_sanity() const {
 /// \param[in]      spo       the single particle orbital set the copy should use
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-DiracDeterminantBase* SlaterDetOpt::makeCopy(SPOSetPtr spo) const
+SlaterDetOpt* SlaterDetOpt::makeCopy(SPOSetPtr spo) const
 {
   SlaterDetOpt* copy = new SlaterDetOpt(*targetPtcl, spo, m_up_or_down);
 

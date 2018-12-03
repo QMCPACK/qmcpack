@@ -183,7 +183,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-    DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+    SlaterDetOpt* makeCopy(SPOSet* spo) const;
 
     void add_derivatives(const int nl,
                          const int np,

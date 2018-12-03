@@ -808,7 +808,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
         DiracDeterminantBase *det = sd->Dets[isd];
         RealType logpsi2 = det->evaluateLog(W, G, L); // this won't work with backflow
-        fail_log << "  Slater Determiant " << isd << " (for particles " << det->FirstIndex << " to " << det->LastIndex << ") log psi = " << logpsi2 << std::endl;
+        fail_log << "  Slater Determiant " << isd << " (for particles " << det->getFirstIndex() << " to " << det->getLastIndex() << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
         // For now, just ignore values that too small.
         if (logpsi2 < -40.0)
@@ -837,7 +837,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         }
         fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-        if (!checkGradients(det->FirstIndex, det->LastIndex, G, L, G1, L1, fail_log, 2))
+        if (!checkGradients(det->getFirstIndex(), det->getLastIndex(), G, L, G1, L1, fail_log, 2))
         {
           all_okay = false;
         }
@@ -878,7 +878,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           }
           fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-          if (!checkGradients(det->FirstIndex, det->LastIndex, G, L, G1, L1, fail_log, 3))
+          if (!checkGradients(det->getFirstIndex(), det->getLastIndex(), G, L, G1, L1, fail_log, 3))
           {
             all_okay = false;
           }
