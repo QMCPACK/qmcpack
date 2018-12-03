@@ -15,6 +15,7 @@
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANT_BASE_H
 #define QMCPLUSPLUS_DIRACDETERMINANT_BASE_H
+
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"
@@ -41,7 +42,7 @@ public:
     SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
   {
     Optimizable = Phi->Optimizable;
-    ClassName="DiracDeterminantBase";
+    ClassName = "DiracDeterminantBase";
     registerTimers();
   }
 

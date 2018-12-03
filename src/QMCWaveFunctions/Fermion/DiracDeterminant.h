@@ -21,11 +21,8 @@
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANT_H
 #define QMCPLUSPLUS_DIRACDETERMINANT_H
-#include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/SPOSet.h"
+
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "Utilities/NewTimer.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 
