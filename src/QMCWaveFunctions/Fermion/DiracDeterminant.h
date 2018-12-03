@@ -150,10 +150,6 @@ public:
   virtual DiracDeterminant* makeCopy(SPOSet* spo) const;
 
   virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
-  ///total number of particles
-  int NP;
-  ///index of the particle (or row)
-  int WorkingIndex;
 
   /////Current determinant value
   //ValueType CurrentDet;

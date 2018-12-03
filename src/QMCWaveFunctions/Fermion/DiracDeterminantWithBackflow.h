@@ -158,6 +158,8 @@ public:
     return ret;
   };
 #endif
+  ///total number of particles. Ye: used to track first time allocation but I still feel it very strange.
+  int NP;
   int NumParticles;
   GradMatrix_t dFa;
   HessMatrix_t grad_grad_psiM;

@@ -31,10 +31,9 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 DiracDeterminant::DiracDeterminant(SPOSetPtr const spos, int first):
-  DiracDeterminantBase(spos,first),
-  NP(0), ndelay(1)
+  DiracDeterminantBase(spos,first), ndelay(1)
 {
-  ClassName="DiracDeterminant";
+  ClassName = "DiracDeterminant";
 }
 
 ///default destructor
@@ -115,7 +114,7 @@ void DiracDeterminant::resize(int nel, int morb)
 DiracDeterminant::GradType
 DiracDeterminant::evalGrad(ParticleSet& P, int iat)
 {
-  WorkingIndex = iat-FirstIndex;
+  const int WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
   GradType g = updateEng.evalGrad(psiM, WorkingIndex, dpsiM[WorkingIndex]);
   RatioTimer.stop();
@@ -129,7 +128,7 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
   SPOVGLTimer.stop();
   RatioTimer.start();
-  WorkingIndex = iat-FirstIndex;
+  const int WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
   GradType rv;
   curRatio = updateEng.ratioGrad(psiM, WorkingIndex, psiV, dpsiV, rv);
@@ -142,6 +141,7 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 */
 void DiracDeterminant::acceptMove(ParticleSet& P, int iat)
 {
+  const int WorkingIndex = iat-FirstIndex;
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
@@ -202,12 +202,6 @@ void DiracDeterminant::updateAfterSweep(ParticleSet& P,
 void
 DiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  // Ye: no idea about NP.
-  if(NP == 0) //first time, allocate once
-  {
-    NP=P.getTotalNum();
-  }
-
   if ( Bytes_in_WFBuffer == 0 )
   {
     //add the data: inverse, gradient and laplacian
@@ -266,7 +260,7 @@ void DiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
 {
   UpdateMode=ORB_PBYP_RATIO;
-  WorkingIndex = iat-FirstIndex;
+  const int WorkingIndex = iat-FirstIndex;
   SPOVTimer.start();
   Phi->evaluate(P, iat, psiV);
   SPOVTimer.stop();
