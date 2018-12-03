@@ -52,7 +52,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first=0);
+  DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const spos, BackflowTransformation * BF, int first=0);
 
   ///default destructor
   ~DiracDeterminantWithBackflow();

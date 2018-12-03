@@ -36,8 +36,8 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantBase(SPOSetPtr const &spos)
-    : Phi(spos),
+  DiracDeterminantBase(SPOSetPtr const spos, int first=0)
+    : Phi(spos), FirstIndex(first), LastIndex(first+spos->size()),
     UpdateTimer("DiracDeterminantBase::update",timer_level_fine),
     RatioTimer("DiracDeterminantBase::ratio",timer_level_fine),
     InverseTimer("DiracDeterminantBase::inverse",timer_level_fine),
@@ -157,17 +157,16 @@ public:
   using WaveFunctionComponent::NLratios;
 #endif
 
+  ///index of the first particle with respect to the particle set
+  int FirstIndex;
+  ///index of the last particle with respect to the particle set
+  int LastIndex;
+
   protected:
-  /** flag to set the optimization mode */
-  using WaveFunctionComponent::IsOptimizing;
-  // Optimizable flag
-  using WaveFunctionComponent::Optimizable;
-  // Optimizable parameters
-  using WaveFunctionComponent::myVars;
   /// Timers
   NewTimer UpdateTimer, RatioTimer, InverseTimer, BufferTimer, SPOVTimer, SPOVGLTimer;
   /// a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetPtr Phi;
+  SPOSetPtr const Phi;
   /// targetPtcl pointer. YE: to be removed.
   ParticleSet *targetPtcl;
 

@@ -30,15 +30,9 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
-  DiracDeterminantBase(spos),
-  NP(0), FirstIndex(first), ndelay(1),
-  UpdateTimer("DiracDeterminant::update",timer_level_fine),
-  RatioTimer("DiracDeterminant::ratio",timer_level_fine),
-  InverseTimer("DiracDeterminant::inverse",timer_level_fine),
-  BufferTimer("DiracDeterminant::buffer",timer_level_fine),
-  SPOVTimer("DiracDeterminant::spoval",timer_level_fine),
-  SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
+DiracDeterminant::DiracDeterminant(SPOSetPtr const spos, int first):
+  DiracDeterminantBase(spos,first),
+  NP(0), ndelay(1)
 {
   ClassName="DiracDeterminant";
 }

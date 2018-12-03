@@ -495,7 +495,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     return true;
   std::string dname;
   getNodeName(dname,cur);
-  DiracDeterminant* adet=0;
+  DiracDeterminantBase* adet=0;
   {
 #ifdef QMC_CUDA
     adet = new DiracDeterminantCUDA(psi,firstIndex);
@@ -547,7 +547,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       retval->buildOptVariables(params, params_supplied, true);
 
       adet = retval;
-      adet->Optimizable = true;
 #endif
     }
 #endif

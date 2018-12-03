@@ -37,7 +37,7 @@ namespace qmcplusplus
 class SlaterDet : public WaveFunctionComponent
 {
 public:
-  typedef DiracDeterminant Determinant_t;
+  typedef DiracDeterminantBase Determinant_t;
   ///container for the DiracDeterminants
   std::vector<Determinant_t*> Dets;
   ///the last particle of each group
@@ -90,9 +90,6 @@ public:
 
   ///return the total number of Dirac determinants
   inline int size() const { return Dets.size(); }
-
-  ///return the column dimension of the i-th Dirac determinant
-  inline int size(int i) const { return Dets[i]->cols(); }
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf);
 

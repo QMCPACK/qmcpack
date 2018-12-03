@@ -36,13 +36,8 @@ class DiracDeterminant: public DiracDeterminantBase
 {
 protected:
   int ndelay;
+
 public:
-  bool Optimizable;
-  NewTimer UpdateTimer, RatioTimer, InverseTimer, BufferTimer, SPOVTimer, SPOVGLTimer;
-  // Optimizable parameters
-  opt_variables_type myVars;
-
-
   typedef SPOSet::IndexVector_t IndexVector_t;
   typedef SPOSet::ValueVector_t ValueVector_t;
   typedef SPOSet::ValueMatrix_t ValueMatrix_t;
@@ -60,7 +55,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminant(SPOSetPtr const &spos, int first=0);
+  DiracDeterminant(SPOSetPtr const spos, int first=0);
 
   ///default destructor
   virtual ~DiracDeterminant();
@@ -174,10 +169,6 @@ public:
   int NumOrbitals;
   ///number of particles which belong to this Dirac determinant
   int NumPtcls;
-  ///index of the first particle with respect to the particle set
-  int FirstIndex;
-  ///index of the last particle with respect to the particle set
-  int LastIndex;
   ///index of the particle (or row)
   int WorkingIndex;
 
