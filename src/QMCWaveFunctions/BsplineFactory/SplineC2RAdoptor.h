@@ -862,7 +862,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
 
-      const size_t psiIndex=j+first_spo;
+      const size_t psiIndex=first_spo+jr;
       psi[psiIndex] =c*val_r-s*val_i;
       dpsi[psiIndex][0]=c*gX_r -s*gX_i;
       dpsi[psiIndex][1]=c*gY_r -s*gY_i;
@@ -1071,7 +1071,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
 
-      const size_t psiIndex=j+first_spo;
+      const size_t psiIndex=first_spo+nComplexBands+j;
       psi[psiIndex] =c*val_r-s*val_i;
       dpsi[psiIndex][0]=c*gX_r -s*gX_i;
       dpsi[psiIndex][1]=c*gY_r -s*gY_i;
