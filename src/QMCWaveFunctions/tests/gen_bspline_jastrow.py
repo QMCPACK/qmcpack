@@ -7,7 +7,22 @@ from sympy import *
 from collections import defaultdict
 import numpy as np
 
-def to_interval(ival):
+def put_variable_on_lhs(cond, var_name):
+  """Return a conditional with the variable always on the left hand side"""
+  if cond.args[1] == var_name:
+    if isinstance(cond, StrictGreaterThan):
+      return StrictLessThan(var_name, cond.args[0])
+    if isinstance(cond, GreaterThan):
+      return LessThan(var_name, cond.args[0])
+    if isinstance(cond, StrictLessThan):
+      return StrictGreaterThan(var_name, cond.args[0])
+    if isinstance(cond, LessThan):
+      return GreaterThan(var_name, cond.args[0])
+
+  return cond
+
+
+def to_interval(ival, var_name):
     """Convert relational expression to an Interval"""
     min_val = None
     lower_open = False
@@ -15,6 +30,7 @@ def to_interval(ival):
     upper_open = True
     if isinstance(ival, And):
         for rel in ival.args:
+            rel = put_variable_on_lhs(rel, var_name)
             if isinstance(rel, StrictGreaterThan):
                 min_val = rel.args[1]
                 #lower_open = True
@@ -32,19 +48,20 @@ def to_interval(ival):
 
     if min_val == None or max_val == None:
         print('error',ival)
+  
     return Interval(min_val, max_val, lower_open, upper_open)
 
 # Transpose the interval and coefficients
 #  Note that interval [0,1) has the polynomial coefficients found in the einspline code
 #  The other intervals could be shifted, and they would also have the same polynomials
-def transpose_interval_and_coefficients(sym_basis):
+def transpose_interval_and_coefficients(sym_basis, var_name):
     cond_map = defaultdict(list)
 
     i1 = Interval(0,5, False, False) # interval for evaluation
     for idx, s0 in enumerate(sym_basis):
         for expr, cond in s0.args:
             if cond != True:
-                i2 = to_interval(cond)
+                i2 = to_interval(cond, var_name)
                 if not i1.is_disjoint(i2):
                     cond_map[i2].append( (idx, expr) )
     return cond_map
@@ -79,10 +96,10 @@ def gen_bspline_jastrow(nknots, rcut_val, param, cusp_val):
   # Third-order bspline
   jastrow_sym_basis = bspline_basis_set(3, all_knots, xs)
   print("Number of basis functions = ",len(jastrow_sym_basis))
-  #jastrow_sym_basis
+  #print jastrow_sym_basis
 
   # Rearrange the basis and conditionals into a more useful form
-  jastrow_cond_map = transpose_interval_and_coefficients(jastrow_sym_basis)
+  jastrow_cond_map = transpose_interval_and_coefficients(jastrow_sym_basis, xs)
   c = IndexedBase('c',shape=(nknots+3))
   #c = MatrixSymbol('c',nknots+2,1)  # better for code-gen
   jastrow_spline = recreate_piecewise(jastrow_cond_map, c, xs)
@@ -167,7 +184,25 @@ def gen_case_one_body():
   cusp_val = 0.0
   gen_bspline_jastrow(nknots, rcut_val, param, cusp_val)
 
+#   <jastrow type=\"One-Body\" name=\"J1\" function=\"bspline\" source=\"ion0\" print=\"yes\"> \
+#       <correlation elementType=\"C\" size=\"8\" cusp=\"0.0\"> \
+#               <coefficients id=\"eC\" type=\"Array\"> \
+#-0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038 \
+#-0.04445345869 -0.02135082917 \
+#               </coefficients> \
+#            </correlation> \
+#         </jastrow> \
+
+def gen_case_one_body_cusp():
+  rcut_val = 10
+  param = np.array([-0.2032153051, -0.1625595974, -0.143124599, -0.1216434956, -0.09919771951, -0.07111729038, -0.04445345869, -0.02135082917])
+  nknots = 8
+  cusp_val = 2.0
+  gen_bspline_jastrow(nknots, rcut_val, param, cusp_val)
+
+
 if __name__ == '__main__':
   #gen_case_two_body()
-  gen_case_one_body()
+  #gen_case_one_body()
+  gen_case_one_body_cusp()
 

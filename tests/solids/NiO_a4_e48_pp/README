@@ -1,0 +1,77 @@
+
+===============
+L2 test details
+===============
+The tests include short and long VMC runs for a 4 atom cell of NiO 
+with an L2 pseudopotential used for Ni.
+
+Reference data was generated with runs the same overall length 
+(blocks x steps) as those included in ./qmc-ref, but using 10x more blocks 
+and 10x fewer steps.  Using more blocks reduced the statistical error of 
+the error bars, but resulted in output data files that were too large 
+to include in the QMCPACK distribution.  The reference values and error 
+bars were therefore computed from the higher block count runs.  The 
+included reference runs were confirmed to be consistent with the original 
+higher block count runs.  
+
+Version of the code used to create the reference data:
+
+  Git commit 168a57c0e522c5ef9e0e7d96293442688198e24a 
+
+Reference data from the high block count VMC runs is found below:
+
+             LocalEnergy               Variance                 ratio 
+NiO-L2-ref  -371.119855 +/- 0.001945   16.541242 +/- 0.202857   0.0446
+
+For comparison, corresponding data for the lower block count VMC 
+reference data found in ./qmc-ref is:
+
+>qmca -e 2 -q ev qmc-ref/NiO-L2-ref*scalar*
+             LocalEnergy               Variance                 ratio 
+NiO-L2-ref  -371.118862 +/- 0.001859   16.427735 +/- 0.104492   0.0443
+
+>qmca -e 2 -q ts qmc-ref/NiO-L2-ref*scalar*
+NiO-L2-ref   TotalSamples          =  12774400.000000 +/- 0.000000
+
+Test input files were created by reducing the number of steps from the 
+included reference by a factor of 10 for the "long" tests and by a 
+further factor of 10 for the "short" tests.
+
+Reference values for the mean local energy and variance were taken 
+from the high block count reference runs.  Expected error bars were 
+derived from the high block count data by multiplying the reference 
+error bars by a factor of sqrt(10+1) and sqrt(100+1) for the long 
+and short tests, respectively.  The factor of +1 accounts for the 
+error bar intrinsic to the high block count runs.
+
+The target means and error bars for long and short tests are:
+
+                 refmean     referr    longerr   shorterr
+NiO-L2 energy   -371.119855  0.001945  0.006451  0.019547
+
+The number of samples expected from the long and short runs are 
+(with all blocks included):
+
+                TotalSamples
+NiO-L2-long     1280000
+NiO-L2-short    128000
+
+Error bars from typical long and short runs are shown below:
+
+Typical long run results:
+
+              Energy                   Variance                ratio
+NiO-L2-long  -371.126423 +/- 0.006136  16.003283 +/- 0.148233  0.0431
+
+Typical short run results:
+
+              Energy                   Variance                ratio
+NiO-L2-short -371.123245 +/- 0.018611  15.383094 +/- 0.190840  0.0415
+
+Rough timings for the tests on a circa 2018 Intel Skylake system are:
+
+>grep 'Total Exe' *long*/*.out
+long_test/qmc.out:   Total Execution time = 1.6918e+02 secs
+
+>grep 'Total Exe' *short*/*.out
+short_test/qmc.out:  Total Execution time = 1.7596e+01 secs

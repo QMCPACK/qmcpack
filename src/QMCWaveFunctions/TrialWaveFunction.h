@@ -243,6 +243,7 @@ public:
 
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat);
+  void completeUpdates();
 
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */

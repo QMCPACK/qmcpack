@@ -2769,7 +2769,7 @@ test_update()
     update_inverse_cuda2<float,64><<<dimGrid2,dimBlock2>>>
     (AList_d, AinvList_d, uList_d, Ainv_uList_d, Ainv_colkList_d, N, N, row);
   }
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   double end = omp_get_wtime();
   fprintf (stderr, "Rate = %12.8f updates per second.\n",
            (double)(100*NUM_MATS)/(end - start));
@@ -2875,7 +2875,7 @@ test_update_transpose()
     // update_inverse_transpose_cuda_2pass<float,DET_BLOCK_SIZE,N><<<dimGrid,dimBlock>>>
     //   (AList_d, AinvList_d, uList_d, N, N, row);
   }
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   clock_t end = clock();
   fprintf (stderr, "Rate = %12.8f updates per second.\n",
            (double)(1000*NUM_MATS)/((double)(end - start)/(double)CLOCKS_PER_SEC));
@@ -3020,7 +3020,7 @@ test_woodbury()
     (AinvList_d, deltaList_d, Ainv_deltaList_d,
      invBlockList_d, N, N, updateBlock);
   }
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   err = cudaGetLastError();
   if (err != cudaSuccess)
   {

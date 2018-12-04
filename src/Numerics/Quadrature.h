@@ -236,16 +236,16 @@ struct Quadrature3D
     assert (xyz_m.size() == nk);
     assert (weight_m.size() == nk);
     double wSum = 0.0;
-    //    const RealType delta=2*std::numeric_limits<float>::epsilon();
+
     for (int k=0; k < nk; k++)
     {
       PosType r = xyz_m[k];
       double nrm = dot(r,r);
-      assert (std::abs(nrm-1.0) < delta);
+      assert (std::abs(nrm-1.0) < 2*std::numeric_limits<float>::epsilon() );
       wSum += weight_m[k];
       //cout << pp_nonloc->xyz_m[k] << " " << pp_nonloc->weight_m[k] << std::endl;
     }
-    assert (std::abs(wSum - 1.0) < delta);
+    assert (std::abs(wSum - 1.0) < 2*std::numeric_limits<float>::epsilon() );
     // Check the quadrature rule
     // using complex spherical harmonics
     CheckQuadratureRule(lexact);

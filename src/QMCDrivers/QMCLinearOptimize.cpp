@@ -22,8 +22,8 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 //#if defined(ENABLE_OPENMP)
-#include "QMCDrivers/VMC/VMCSingleOMP.h"
-#include "QMCDrivers/QMCCostFunctionOMP.h"
+#include "QMCDrivers/VMC/VMC.h"
+#include "QMCDrivers/QMCCostFunction.h"
 //#endif
 //#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
@@ -772,7 +772,7 @@ QMCLinearOptimize::put(xmlNodePtr q)
       optTarget = new QMCCostFunctionCUDA(W,Psi,H,myComm);
     else
 #endif
-      optTarget = new QMCCostFunctionOMP(W,Psi,H,myComm);
+      optTarget = new QMCCostFunction(W,Psi,H,myComm);
 //#if defined(ENABLE_OPENMP)
 //            if (omp_get_max_threads()>1)
 //            {
@@ -792,7 +792,7 @@ QMCLinearOptimize::put(xmlNodePtr q)
       vmcEngine = new VMCcuda(W,Psi,H,psiPool,myComm);
     else
 #endif
-      vmcEngine = new VMCSingleOMP(W,Psi,H,psiPool,myComm);
+      vmcEngine = new VMC(W,Psi,H,psiPool,myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
 
@@ -813,7 +813,7 @@ void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
     optTarget = new QMCCostFunctionCUDA(W,Psi,H,myComm);
   else
 #endif
-    optTarget = new QMCCostFunctionOMP(W,Psi,H,myComm);
+    optTarget = new QMCCostFunction(W,Psi,H,myComm);
   optTarget->setStream(&app_log());
   optTarget->put(cur);
 
