@@ -198,7 +198,7 @@ recommended update.
 
 * Significantly improved manual entry for "qmca" analysis tool, the
   main recommended tool for statistical analysis of QMCPACK data.
-* Added time step fitting tool "qmc-fit" for timestep extrapolation. Uses
+* Added time step fitting tool "qfit" for timestep extrapolation. Uses
   jack-knife statistical technique.
 * Improved density file postprocessing.
 * Support for Makov-Payne corrections.
