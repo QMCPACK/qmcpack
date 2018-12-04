@@ -433,6 +433,8 @@ DiracDeterminant::evalGradSourcep
 
 void DiracDeterminant::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
+  // Hessian is not often used, so only resize/allocate if used
+  grad_grad_source_psiM.resize(psiM.rows(),psiM.cols());
   //IM A HACK.  Assumes evaluateLog has already been executed.
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
   invertPsiM(psiM_temp,psiM);

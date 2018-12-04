@@ -228,7 +228,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSet {
         // re-orthonormalize
         for (int j = 0; j < m_nlc; j++) {
           const RealType norm = std::abs(std::sqrt(BLAS::dot(m_nb, &m_B.at(0+j*m_nb), &m_B.at(0+j*m_nb))));
-          BLAS::scal(m_nb, 1.0 / norm, &m_B.at(0+j*m_nb));
+          BLAS::scal(m_nb, static_cast<RealType>(1) / norm, &m_B.at(0+j*m_nb));
           for (int k = j+1; k < m_nlc; k++) {
             const RealType x = BLAS::dot(m_nb, &m_B.at(0+j*m_nb), &m_B.at(0+k*m_nb));
             BLAS::axpy(m_nb, -x, &m_B.at(0+j*m_nb), 1, &m_B.at(0+k*m_nb), 1);
