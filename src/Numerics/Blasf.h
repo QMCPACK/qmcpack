@@ -34,8 +34,12 @@
 #define ssymv ssymv_
 #define csymv csymv_
 #define zsymv zsymv_
-#define dscal dscal_
-#define sscal sscal_
+#define sscal  sscal_
+#define cscal  cscal_
+#define dscal  dscal_
+#define zscal  zscal_
+#define csscal  csscal_
+#define zdscal  zdscal_
 #define dcopy dcopy_
 #define zcopy zcopy_
 #define dsyrk  dsyrk_
@@ -77,6 +81,8 @@
 
 #define dsyevr dsyevr_
 #define zheevr zheevr_
+#define ssyevr ssyevr_
+#define cheevr cheevr_
 #define zhegvx zhegvx_
 #define zgeqrf zgeqrf_
 #define zungqr zungqr_
@@ -94,6 +100,11 @@
 #define sorglq sorglq_
 #define zunglq zunglq_
 #define cunglq cunglq_
+
+#define spotrf spotrf_
+#define cpotrf cpotrf_
+#define dpotrf dpotrf_
+#define zpotrf zpotrf_
 
 #if defined(HAVE_MKL)
 #define dzgemv  dzgemv_
@@ -125,8 +136,13 @@ extern "C" {
   double dznrm2(const int& n, const  std::complex<double> *dx, const int& incx);
 
 
-  double dscal(const int& n, const double&, double* x, const int&);
-  double sscal(const int& n, const float&, float* x, const int&);
+  double dscal(const int &n, const double &, double *x, const int &);
+  double sscal(const int &n, const float &, float *x, const int &);
+
+  double cscal(const int &n, const std::complex<float> &, std::complex<float> *x, const int &);
+  double zscal(const int &n, const std::complex<double>&, std::complex<double> *x, const int &);
+  double zdscal(const int &n, const double&, std::complex<double> *x, const int &);
+  double csscal(const int &n, const float&, std::complex<float> *x, const int &);
 
   void  dsymv(const char& uplo, const int& n, const double& alpha,
               const double& a, const int& lda, const double* x, const int& incx,
@@ -243,16 +259,16 @@ extern "C" {
               int* piv, int& st);
 
   void dgetri(const int& n, double* a, const int& n0,
-              int* piv, double* work, const int&, int& st);
+              int const* piv, double* work, const int&, int& st);
 
   void sgetri(const int& n, float* a, const int& n0,
-              int* piv, float* work, const int&, int& st);
+              int const* piv, float* work, const int&, int& st);
 
   void zgetri(const int& n, std::complex<double>* a, const int& n0,
-              int* piv, std::complex<double>* work, const int&, int& st);
+              int const* piv, std::complex<double>* work, const int&, int& st);
 
   void cgetri(const int& n, std::complex<float>* a, const int& n0,
-              int* piv, std::complex<float>* work, const int&, int& st);
+              int const* piv, std::complex<float>* work, const int&, int& st);
 
   void dgesvd(char *JOBU, char* JOBVT, int *M, int *N,
               double *A, int *LDA, double *S, double *U,
@@ -276,16 +292,24 @@ extern "C" {
   void sggev(char *JOBVL, char *JOBVR, int *N, float *A, int *LDA, float *B, int *LDB,float *ALPHAR, float *ALPHAI,
              float *BETA, float *VL, int *LDVL, float *VR, int *LDVR, float *WORK, int *LWORK, int *INFO );
 
-  void dsyevr (char &JOBZ, char &RANGE, char &UPLO, int &N, double *A, int &LDA, double &VL, double &VU, int &IL, 
-             int &IU, double &ABSTOL, int &M, double *W, double* Z, int &LDZ, int* ISUPPZ, double *WORK, 
+  void ssyevr (char &JOBZ, char &RANGE, char &UPLO, int &N, float *A, int &LDA, float &VL, float &VU, int &IL,
+             int &IU, float &ABSTOL, int &M, float *W, float* Z, int &LDZ, int* ISUPPZ, float *WORK,
              int &LWORK, int* IWORK, int &LIWORK, int &INFO);
 
-  void zheevr (char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA, double &VL, double &VU, 
-             int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z, int &LDZ, int* ISUPPZ, 
+  void cheevr (char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<float> *A, int &LDA, float &VL, float &VU,
+             int &IL, int &IU, float &ABSTOL, int &M, float *W, std::complex<float>* Z, int &LDZ, int* ISUPPZ,
+             std::complex<float> *WORK, int &LWORK, float* RWORK, int &LRWORK, int* IWORK, int &LIWORK, int &INFO);
+
+  void dsyevr (char &JOBZ, char &RANGE, char &UPLO, int &N, double *A, int &LDA, double &VL, double &VU, int &IL,
+             int &IU, double &ABSTOL, int &M, double *W, double* Z, int &LDZ, int* ISUPPZ, double *WORK,
+             int &LWORK, int* IWORK, int &LIWORK, int &INFO);
+
+  void zheevr (char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA, double &VL, double &VU,
+             int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z, int &LDZ, int* ISUPPZ,
              std::complex<double> *WORK, int &LWORK, double* RWORK, int &LRWORK, int* IWORK, int &LIWORK, int &INFO);
 
-  void zhegvx (int&, char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA, std::complex<double> *B, 
-             int &LDB, double &VL, double &VU, int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z, 
+  void zhegvx (int&, char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA, std::complex<double> *B,
+             int &LDB, double &VL, double &VU, int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z,
              int &LDZ, std::complex<double> *WORK, int &LWORK, double* RWORK, int* IWORK, int* IFAIL, int &INFO);
 
   void zgeqrf( const int &M, const int &N, std::complex<double> *A, const int &LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int &LWORK, int &INFO );
@@ -348,6 +372,12 @@ extern "C" {
   void dtgexc(const bool *WANTQ, const bool *WANTZ, const int *N, double *A, const int *LDA, double *B, const int *LDB, double *Q, const int *LDQ, double *Z, const int *LDZ, int *IFST, int *ILST, double *WORK, int *LWORK, int *INFO);
 
   void dtgevc(const char *SIDE, const char *HOWMNY, const bool *SELECT, const int *N, double *S, const int *LDS, double *P, const int *LDP, double *VL, const int *LDVL, double *VR, const int *LDVR, const int *MM, int *M, double *WORK, int *INFO );
+
+  void spotrf(const char &UPLO, const int& N, float* A, const int& LDA, int& INFO);
+  void dpotrf(const char &UPLO, const int& N, double* A, const int& LDA, int& INFO);
+  void cpotrf(const char &UPLO, const int& N, std::complex<float>* A, const int& LDA, int& INFO);
+  void zpotrf(const char &UPLO, const int& N, std::complex<double>* A, const int& LDA, int& INFO);
+
 }
 #endif
 
