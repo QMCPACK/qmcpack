@@ -49,7 +49,7 @@ GitHub closely to avoid difficult merges.
 
 * Support for GAMESS HDF5 workflows.
 * Nexus accepts command line inputs.
-* Nexus testing via ntest executable.
+* Nexus testing via nxs-test executable.
 * Added GAMESS-NEXUS examples for RHF, CISD, and CASSCF wavefunction.
 * Added support for -nojastrow workflows.
 * Added support for Stampede supercomputer.

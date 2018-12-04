@@ -98,9 +98,9 @@ class NexusTestTripped(Exception):
 
 
 class NexusTestBase(object):
-    nexus_test_dir = '.nexus_test' # ntest directory
+    nexus_test_dir = '.nexus_test' # nxs-test directory
 
-    launch_path    = None # path from which ntest exe was launched
+    launch_path    = None # path from which nxs-test exe was launched
     current_test   = ''   # current NexusTest.name
     current_label  = ''   # current nlabel()
     test_count     =  0   # current test count
