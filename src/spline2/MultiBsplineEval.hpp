@@ -86,6 +86,12 @@ namespace spline2
     }
 
   template<typename SPLINET, typename PT, typename VT, typename GT, typename HT, typename GHT>
+    __forceinline void evaluate3d_vghgh(const SPLINET &spline, const PT& r, VT& psi, GT& grad, HT& hess, GHT& ghess)
+    {
+      evaluate_vghgh_impl(spline,r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),ghess.data(),psi.size(),0,psi.size());
+    }
+
+  template<typename SPLINET, typename PT, typename VT, typename GT, typename HT, typename GHT>
     __forceinline void evaluate3d_vghgh(const SPLINET &spline, const PT& r, VT& psi, GT& grad, HT& hess, GHT& ghess, int first, int last)
     {
       evaluate_vghgh_impl(spline,r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,ghess.data()+first,psi.size(),first,last);

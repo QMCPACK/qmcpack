@@ -239,6 +239,28 @@ void test_splines()
   // Laplacian
   REQUIRE(lap[0][0] == Approx(    147.1127789));
 
+  VectorSoaContainer<T,10> ghess(npad);
+  spline2::evaluate3d_vghgh(bs.spline_m,pos,v,dv,hess,ghess);
+  // Value
+  REQUIRE(v[0] == Approx(  -0.9476393279));
+  // Gradient
+  REQUIRE(dv[0][0] == Approx(    5.111042137));
+  REQUIRE(dv[0][1] == Approx(    5.989106342));
+  REQUIRE(dv[0][2] == Approx(    1.952244379));
+  // Hessian
+  REQUIRE(hess[0][0] == Approx(   -21.34557341));
+  REQUIRE(hess[0][1] == Approx(1.174505743e-09));
+  REQUIRE(hess[0][2] == Approx( -1.1483271e-09));
+  REQUIRE(hess[0][3] == Approx(    133.9204891));
+  REQUIRE(hess[0][4] == Approx(-2.15319293e-09));
+  REQUIRE(hess[0][5] == Approx(    34.53786329));
+ 
+  // gradient of Hessian.  
+  // Why only 3?  Because the others are in the signal to noise ratio of fixed precision. 
+  REQUIRE(ghess[0][0] == Approx(   -213.45573));
+  REQUIRE(ghess[0][6] == Approx(   -1753.0419));
+  REQUIRE(ghess[0][9] == Approx(   -81.532835));
+
 
 }
 
