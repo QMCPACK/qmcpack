@@ -4533,6 +4533,7 @@ def generate_determinantset_old(type           = 'bspline',
             det = dset.get('downdet')
         #end if
         occ = det.occupation
+	occ.pairs    = 1
         occ.mode     = 'excited'
         occ.contents = '\n'+excitation+'\n'
         if '-' in excitation or '+' in excitation:

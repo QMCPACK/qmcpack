@@ -1629,38 +1629,41 @@ def settings_operation():
     from project_manager import ProjectManager
     from gamess import Gamess
     from pwscf import Pwscf
+    from quantum_package import QuantumPackage
 
     def aux_defaults():
         # check that Job and ProjectManager settings are at default values
         nassert(Job.machine is None)
         nassert(ProjectManager.machine is None)
 
-        # check that Gamess and Pwscf settings are at default values
+        # check that Gamess, Pwscf, and Quantum Package settings are at default values
         nassert(Gamess.ericfmt is None)
         nassert(Gamess.mcppath is None)
         nassert(Pwscf.vdw_table is None)
+        nassert(QuantumPackage.qprc is None)
     #end def aux_defaults
 
     def check_settings_core_noncore():
         nckeys_check = set([
-                'debug', 'dependent_modes', 'emulate', 'file_locations', 
-                'generate_only', 'indent', 'load_images', 'local_directory', 
-                'mode', 'modes', 'monitor', 'primary_modes', 'progress_tty', 
-                'pseudo_dir', 'pseudopotentials', 'remote_directory', 'results', 
-                'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status', 
-                'status_modes', 'status_only', 'trace', 'verbose', 'command_line'
+                'command_line','debug', 'dependent_modes', 'emulate',
+                'file_locations', 'generate_only', 'graph_sims', 'indent',
+                'load_images', 'local_directory', 'mode', 'modes', 'monitor',
+                'primary_modes', 'progress_tty', 'pseudo_dir',
+                'pseudopotentials', 'remote_directory', 'results', 'runs',
+                'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
+                'status_modes', 'status_only', 'trace', 'verbose'
                 ])
         nnckeys_check = set([
                 'basis_dir', 'basissets', 'pseudo_dir', 'pseudopotentials'
                 ])
         setkeys_check = set([
-                'basis_dir', 'basissets', 'debug', 'dependent_modes', 'emulate', 
-                'file_locations', 'generate_only', 'indent', 'load_images', 
-                'local_directory', 'mode', 'modes', 'monitor', 'primary_modes', 
-                'progress_tty', 'pseudo_dir', 'pseudopotentials', 
-                'remote_directory', 'results', 'runs', 'skip_submit', 'sleep', 
-                'stages', 'stages_set', 'status', 'status_modes', 'status_only', 
-                'trace', 'verbose'
+                'command_line','basis_dir', 'basissets', 'debug',
+                'dependent_modes', 'emulate', 'file_locations', 'generate_only',
+                'graph_sims', 'indent', 'load_images', 'local_directory', 'mode',
+                'modes', 'monitor', 'primary_modes', 'progress_tty',
+                'pseudo_dir', 'pseudopotentials', 'remote_directory', 'results',
+                'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
+                'status_modes', 'status_only', 'trace', 'verbose'
                 ])
         setkeys_allowed = setkeys_check | Settings.allowed_vars
 

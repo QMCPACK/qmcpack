@@ -16,7 +16,7 @@
 
 
 #include "QMCDrivers/DMC/DMCFactory.h"
-#include "QMCDrivers/DMC/DMCOMP.h"
+#include "QMCDrivers/DMC/DMC.h"
 #include "Message/OpenMP.h"
 
 #ifdef QMC_CUDA
@@ -34,8 +34,7 @@ QMCDriver* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
   if (GPU)
     return new DMCcuda (w, psi, h, ppool, comm);
 #endif
-  app_log() << "Creating DMCMP for the qmc driver" << std::endl;
-  QMCDriver*  qmc = new DMCOMP(w, psi, h, ppool, comm);
+  QMCDriver*  qmc = new DMC(w, psi, h, ppool, comm);
   qmc->setUpdateMode(PbyPUpdate);
   return qmc;
 }

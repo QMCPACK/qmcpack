@@ -318,7 +318,7 @@ Iterative varational Monte Carlo methods have been developed to handle the non-l
 }
 
 First, we need to update the template particle and wavefunction information in \texttt{O.q0.ptcl.xml} and \texttt{O.q0.wfs.xml}.  We want to simulate the O atom in open boundary conditions (the default is periodic).  To do this open \texttt{O.q0.ptcl.xml} with your favorite text editor (e.g. \texttt{emacs} or \texttt{vi}) and replace
-\begin{lstlisting}[language=xml]
+\begin{lstlisting}[style=XML]
 <parameter name="bconds">
    p p p
 </parameter>
@@ -327,7 +327,7 @@ First, we need to update the template particle and wavefunction information in \
 </parameter>
 \end{lstlisting}
 with
-\begin{lstlisting}[language=xml]
+\begin{lstlisting}[style=XML]
 <parameter name="bconds">
    n n n 
 </parameter>
@@ -673,7 +673,7 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
   \begin{enumerate}
     \item{Copy the optimization input (\texttt{O.q0.opt.in.xml}) to \texttt{O.q1.opt.in.xml}}
     \item{Edit \texttt{O.q1.opt.in.xml} to match the file prefix used in DFT}
-    \begin{lstlisting}[language=xml]
+    \begin{lstlisting}[style=XML]
      ...
      <project id="O.q1.opt" series="0">
      ...
@@ -683,13 +683,13 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
      ...
     \end{lstlisting}
     \item{Edit the particle XML file (O.q1.ptcl.xml) to have open boundary conditions}
-    \begin{lstlisting}[language=xml]
+    \begin{lstlisting}[style=XML]
       <parameter name="bconds">
         n n n 
       </parameter>
     \end{lstlisting}
     \item{Add cutoffs to the Jastrow factors in the wavefunction XML file (O.q1.wfs.xml)}
-    \begin{lstlisting}[language=xml]
+    \begin{lstlisting}[style=XML]
       ...
       <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
       ...
@@ -706,7 +706,7 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
   \begin{enumerate}
     \item{Copy the DMC input (\texttt{O.q0.dmc.in.xml}) to \texttt{O.q1.dmc.in.xml}}
     \item{Edit \texttt{O.q1.dmc.in.xml} to use the DFT prefix and the optimal Jastrow}
-    \begin{lstlisting}[language=xml]
+    \begin{lstlisting}[style=XML]
      ...
      <project id="O.q1.dmc" series="0">
      ...

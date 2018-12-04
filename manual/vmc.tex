@@ -94,7 +94,7 @@ Additional information:
 \end{itemize}
 
 An example VMC section for a simple VMC run:
-\begin{lstlisting}
+\begin{lstlisting}[style=XML]
   <qmc method="vmc" move="pbyp">
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="walkers">    256 </parameter>
@@ -109,7 +109,7 @@ An example VMC section for a simple VMC run:
 Here we set 256 walkers per MPI, have a brief initial equilibration of 100 steps, and then 20 blocks of 100 steps with 5 substeps each.
 
 The following is an example of VMC section storing configurations (walker samples) for optimization.
-\begin{lstlisting}
+\begin{lstlisting}[style=XML]
   <qmc method="vmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="walkers">    256 </parameter>

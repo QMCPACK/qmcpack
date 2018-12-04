@@ -26,6 +26,7 @@
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
+#include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 
 namespace qmcplusplus
 {
@@ -34,6 +35,7 @@ class DiracDeterminant: public WaveFunctionComponent
 {
 protected:
   ParticleSet *targetPtcl;
+  int ndelay;
 public:
   bool Optimizable;
   void registerTimers();
@@ -51,12 +53,8 @@ public:
   typedef SPOSet::HessVector_t  HessVector_t;
   typedef SPOSet::HessType      HessType;
 
-#ifdef MIXED_PRECISION
   typedef ParticleSet::SingleParticleValue_t mValueType;
   typedef OrbitalSetTraits<mValueType>::ValueMatrix_t ValueMatrix_hp_t;
-#else
-  typedef ValueType mValueType;
-#endif
   typedef TinyVector<mValueType,DIM> mGradType;
 
   /** constructor
@@ -101,7 +99,7 @@ public:
    *@param first index of first particle
    *@param nel number of particles in the determinant
    */
-  virtual void set(int first, int nel);
+  virtual void set(int first, int nel, int delay=1);
 
   ///set BF pointers
   virtual
@@ -202,6 +200,7 @@ public:
   /** move was accepted, update the real container
    */
   virtual void acceptMove(ParticleSet& P, int iat);
+  virtual void completeUpdates();
 
   /** move was rejected. copy the real container to the temporary to move on
    */
@@ -274,19 +273,11 @@ public:
   ValueVector_t psiV;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
-  ValueVector_t workV1, workV2;
-  GradVector_t workG;
 
-#ifdef MIXED_PRECISION
-  /// temporal matrix and workspace in higher precision for the accurate inversion.
+  /// temporal matrix in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
-  Vector<ParticleSet::SingleParticleValue_t> WorkSpace_hp;
-  DiracMatrix<mValueType> detEng_hp;
-#endif
-  DiracMatrix<ValueType> detEng;
-
-  Vector<ValueType> WorkSpace;
-  Vector<IndexType> Pivot;
+  DiracMatrix<mValueType> detEng;
+  DelayedUpdate<ValueType> updateEng;
 
   ValueType curRatio,cumRatio;
   ParticleSet::SingleParticleValue_t *FirstAddressOfG;

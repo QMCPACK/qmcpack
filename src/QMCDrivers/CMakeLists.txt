@@ -37,13 +37,13 @@ SET(QMCDRIVERS
   VMC/VMCUpdatePbyP.cpp
   VMC/VMCUpdateAll.cpp
   VMC/VMCFactory.cpp
-  DMC/DMCOMP.cpp
+  DMC/DMC.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyPFast.cpp
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
-  RMC/RMCSingleOMP.cpp
+  RMC/RMC.cpp
   RMC/RMCUpdatePbyP.cpp
   RMC/RMCUpdateAll.cpp
   RMC/RMCFactory.cpp
@@ -66,9 +66,9 @@ IF(QMC_CUDA)
 ENDIF(QMC_CUDA)
 
   SET(QMCDRIVERS ${QMCDRIVERS} 
-      VMC/VMCSingleOMP.cpp
-      VMC/VMCLinearOptOMP.cpp
-      QMCCostFunctionOMP.cpp
+      VMC/VMC.cpp
+      VMC/VMCLinearOpt.cpp
+      QMCCostFunction.cpp
      )
 
 IF(HAVE_MPI) 
@@ -80,7 +80,7 @@ ENDIF(HAVE_MPI)
 # if using the LMYEngine interface, make sure we add the necessary functions
 IF(BUILD_LMYENGINE_INTERFACE)
   SET(QMCDRIVERS ${QMCDRIVERS} 
-      LMYEngineInterface/LMYE_QMCCostFunctionOMP.cpp
+      LMYEngineInterface/LMYE_QMCCostFunction.cpp
      )
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 

@@ -58,10 +58,12 @@ IF(OHMMS_DIM MATCHES 3)
     NonLocalECPComponent.cpp
     NonLocalECPotential.deriv.cpp
     NonLocalECPotential.cpp
+    L2Potential.cpp
     ECPotentialBuilder.cpp
     ECPComponentBuilder.cpp
     ECPComponentBuilder.1.cpp
     ECPComponentBuilder.2.cpp
+    ECPComponentBuilder_L2.cpp
     )
 
 
