@@ -147,12 +147,6 @@ struct BLAS
     csscal(n, alpha, x, incx);
   }
 
-  inline static
-  void scal(int n, float alpha, float* x)
-  {
-    sscal(n,alpha,x,INCX);
-  }
-
   //inline static
   //void gemv(char trans, int n, int m, const double* amat, const double* x, double* y) {
   //  dgemv(trans, n, m, done, amat, n, x, INCX, dzero, y, INCY);
