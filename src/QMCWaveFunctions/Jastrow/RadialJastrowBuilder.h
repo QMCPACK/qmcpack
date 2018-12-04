@@ -41,8 +41,6 @@ public:
   bool put(xmlNodePtr cur);
   
  private:
-  typedef WaveFunctionComponent::RealType RT;
-  
   ///jastrow/@name 
   std::string NameOpt;
   ///jastrow/@type
@@ -57,14 +55,14 @@ public:
   ParticleSet *SourcePtcl;
 
   // has a specialization for RPAFunctor in cpp file
-  template<template<class> class RadFuncType>
+  template<class RadFuncType>
   bool createJ1(xmlNodePtr cur); 
 
-  template<template<class> class RadFuncType>
+  template<class RadFuncType>
   bool createJ2(xmlNodePtr cur);
 
-  template<template<class> class RadFuncType>
-  void initTwoBodyFunctor(RadFuncType<RT>* functor, double fac);
+  template<class RadFuncType>
+  void initTwoBodyFunctor(RadFuncType& functor, double fac);
 
   void guardAgainstOBC();
   void guardAgainstPBC();
