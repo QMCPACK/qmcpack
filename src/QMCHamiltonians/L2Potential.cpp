@@ -11,18 +11,11 @@
     
     
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMCHamiltonians/L2Potential.h"
 #include "Utilities/IteratorUtility.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
 
 namespace qmcplusplus
 {
-
-typedef OrbitalBase::ValueType ValueType;
-typedef OrbitalBase::HessVector_t HessVector_t;
-
 
 L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi):
   IonConfig(ions)
@@ -68,7 +61,7 @@ L2Potential::Return_t
 L2Potential::evaluate(ParticleSet& P)
 {
   // compute the Hessian
-  HessVector_t D2;
+  TrialWaveFunction::HessVector_t D2;
   // evaluateHessian gives the Hessian(log(Psi))
   psi_ref->evaluateHessian(P,D2);
   // add gradient terms to get (Hessian(Psi))/Psi instead
