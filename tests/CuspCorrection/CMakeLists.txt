@@ -1,7 +1,0 @@
-
-
-#
-# CuspCorrection
-#
-
-SUBDIRS("CHN")
