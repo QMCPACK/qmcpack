@@ -39,7 +39,7 @@ public:
 
   Backflow_ee(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els),first(true) //,RadFun(0)
   {
-    myTable = DistanceTable::add(els,DT_AOS);
+    myTable = DistanceTable::add(els,DT_SOA_PREFERRED);
     resize(NumTargets,NumTargets);
     NumGroups=els.groups();
     PairID.resize(NumTargets,NumTargets);
@@ -61,7 +61,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = DistanceTable::add(P,DT_AOS);
+    myTable = DistanceTable::add(P,DT_SOA_PREFERRED);
   }
 
   BackflowFunctionBase* makeClone(ParticleSet& tqp)
@@ -251,6 +251,8 @@ public:
   evaluate(const ParticleSet& P, ParticleSet& QP)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+    #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -264,6 +266,7 @@ public:
         UIJ(i,j) = -1.0*u;
       }
     }
+    #endif
   }
 
   inline void
@@ -271,6 +274,8 @@ public:
   {
     APP_ABORT("This shouldn't be called: Backflow_ee::evaluate(Bmat)");
     PosType du,d2u,temp;
+    #ifdef ENABLE_SOA
+    #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -302,6 +307,7 @@ public:
         Bmat[j] += u;
       }
     }
+    #endif
   }
 
 
@@ -311,6 +317,8 @@ public:
   evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+    #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -347,6 +355,7 @@ public:
         Bmat_full(j,i) -= grad;
       }
     }
+    #endif
   }
 
   /** calculate quasi-particle coordinates after pbyp move
@@ -356,6 +365,8 @@ public:
                ,const std::vector<int>& index)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+    #else
 // myTable->Temp[jat].r1
     int maxI = index.size();
     int iat = index[0];
@@ -368,6 +379,7 @@ public:
       newQP[iat] += u;
       newQP[j] -= u;
     }
+    #endif
   }
 
   /** calculate quasi-particle coordinates after pbyp move
@@ -376,6 +388,8 @@ public:
   evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+    #else
     for(int i=0; i<iat; i++)
     {
       // Temp[j].dr1 = (ri - rj)
@@ -392,6 +406,7 @@ public:
       newQP[iat] += u;
       newQP[i] -= u;
     }
+    #endif
   }
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
@@ -401,6 +416,8 @@ public:
                ,const std::vector<int>& index, HessMatrix_t& Amat)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+    #else
 // myTable->Temp[jat].r1
     int maxI = index.size();
     int iat = index[0];
@@ -427,6 +444,7 @@ public:
       Amat(iat,j) -= dA;
       Amat(j,iat) -= dA;
     }
+    #endif
   }
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
@@ -436,6 +454,8 @@ public:
                , HessMatrix_t& Amat)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+    #else
 // myTable->Temp[jat].r1
     for(int j=0; j<iat; j++)
     {
@@ -481,6 +501,7 @@ public:
       Amat(iat,j) -= dA;
       Amat(j,iat) -= dA;
     }
+    #endif
   }
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
@@ -491,6 +512,8 @@ public:
   {
     RealType du,d2u;
 // myTable->Temp[jat].r1
+    #ifdef ENABLE_SOA
+    #else
     int maxI = index.size();
     int iat = index[0];
     const std::vector<DistanceTableData::TempDistType>& TMP = myTable->Temp;
@@ -525,6 +548,7 @@ public:
       Bmat(iat,j) -= dg;
       Bmat(j,iat) += dg;
     }
+    #endif
   }
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
@@ -534,6 +558,8 @@ public:
                , GradMatrix_t& Bmat, HessMatrix_t& Amat)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+    #else
 // myTable->Temp[jat].r1
     const std::vector<DistanceTableData::TempDistType>& TMP = myTable->Temp;
     for(int j=0; j<iat; j++)
@@ -596,6 +622,7 @@ public:
       Bmat(iat,j) -= dg;
       Bmat(j,iat) += dg;
     }
+    #endif
   }
 
   /** calculate only Bmat
@@ -605,6 +632,8 @@ public:
   evaluateBmatOnly(const ParticleSet& P,GradMatrix_t& Bmat_full)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+    #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -618,6 +647,7 @@ public:
         Bmat_full(j,i) -= u;
       }
     }
+    #endif
   }
 
   /** calculate quasi-particle coordinates, Bmat and Amat
@@ -627,6 +657,8 @@ public:
   evaluateWithDerivatives(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat, GradMatrix_t& Cmat, GradMatrix_t& Ymat, HessArray_t& Xmat)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+    #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -691,6 +723,7 @@ public:
         }
       }
     }
+    #endif
   }
 
 };
