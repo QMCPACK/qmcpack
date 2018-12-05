@@ -20,7 +20,7 @@ place=/projects/PSFMat/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
 #define and load compiler
 #compiler=XL
-compiler=Clang++11
+compiler=Clang
 
 if [ ! -e $place ]; then
 mkdir $place
@@ -84,7 +84,7 @@ if [[ $sys == *"-Mixed"* ]]; then
   CTEST_FLAGS="$CTEST_FLAGS -D QMC_MIXED_PRECISION=1"
 fi
 
-export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-${sys}-Release
+export QMCPACK_TEST_SUBMIT_NAME=${compiler}-${sys}-Release
 
 ctest $CTEST_FLAGS -S $PWD/../CMake/ctest_script.cmake,release --stop-time `date --date=now+55mins +%H:%M:%S` -R "short" -E "dmc|opt|csvmc|heg" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
 

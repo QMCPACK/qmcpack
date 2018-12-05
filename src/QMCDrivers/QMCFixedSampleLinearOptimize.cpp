@@ -23,11 +23,11 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "QMCDrivers/QMCCostFunctionBase.h"
-#include "QMCDrivers/QMCCostFunctionOMP.h"
-#include "QMCDrivers/VMC/VMCSingleOMP.h"
+#include "QMCDrivers/QMCCostFunction.h"
+#include "QMCDrivers/VMC/VMC.h"
 #if defined(ENABLE_OPENMP)
-#include "QMCDrivers/VMC/VMCSingleOMP.h"
-#include "QMCDrivers/QMCCostFunctionOMP.h"
+#include "QMCDrivers/VMC/VMC.h"
+#include "QMCDrivers/QMCCostFunction.h"
 #endif
 //#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
@@ -474,7 +474,7 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
       vmcEngine = new VMCcuda(W,Psi,H,psiPool,myComm);
     else
 #endif
-      vmcEngine = new VMCSingleOMP(W,Psi,H,psiPool,myComm);
+      vmcEngine = new VMC(W,Psi,H,psiPool,myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
 
@@ -489,7 +489,7 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
       optTarget = new QMCCostFunctionCUDA(W,Psi,H,myComm);
     else
 #endif
-      optTarget = new QMCCostFunctionOMP(W,Psi,H,myComm);
+      optTarget = new QMCCostFunction(W,Psi,H,myComm);
     optTarget->setStream(&app_log());
     success=optTarget->put(q);
   }
@@ -1101,9 +1101,6 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   // build the overlap and hamiltonian matrices
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
-
-  // prepare vector to hold largest parameter change for each shift
-  RealType max_change(0.0);
 
   // apply the identity shift
   for (int i=1; i<N; i++)

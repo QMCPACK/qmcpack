@@ -16,9 +16,8 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "Numerics/OhmmsBlas.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "simd/simd.hpp"
+#include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 
 #include <stdio.h>
 #include <string>
@@ -103,6 +102,8 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
 TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
 {
   DiracMatrix<ValueType> dm;
+  DelayedUpdate<ValueType> updateEng;
+  updateEng.resize(3,1);
 
   Matrix<ValueType> a;
   a.resize(3,3);
@@ -126,11 +127,11 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   v[1] = 2.0;
   v[2] = 3.1;
 
-  ValueType det_ratio1 = simd::dot(a[0],v.data(),3);
+  ValueType det_ratio1 = updateEng.ratio(a,0,v);
 
   ValueType det_ratio = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
-  dm.updateRow(a, v.data(), 0, det_ratio);
+  updateEng.acceptRow(a, 0, v);
 
   Matrix<ValueType> b;
   b.resize(3,3);

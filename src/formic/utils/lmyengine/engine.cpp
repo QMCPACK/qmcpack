@@ -1266,12 +1266,6 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps
   // get a convenient variable for the number of special vectors (i.e. the initial wavefunction plus the number of old updates directions)
   const int nsv = 1 + _lmb.ou_mat().cols();
 
-  // choose how many updates to take from each block for each shift
-  const int n_up_per_shift = 1;
-
-  // choose whether to make use of previoud updates
-  const bool use_prev_ups = true;
-
   // prepare an object to hold update directions for each block
   // block_ups[i][j](p,q) refers to the pth element of the qth update vector for the jth shift for the ith block
   //std::vector<std::vector<formic::Matrix<double> > > block_ups(_nblock);

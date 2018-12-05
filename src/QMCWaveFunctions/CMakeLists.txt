@@ -13,6 +13,7 @@
 #//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 #//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 #//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+#//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 #//
 #// File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
 #//////////////////////////////////////////////////////////////////////////////////////
@@ -46,14 +47,11 @@ ENDIF(NOT QMC_COMPLEX)
 #common jastrows
 SET(JASTROW_SRCS
   Jastrow/LRTwoBodyJastrow.cpp
-  Jastrow/PadeJastrowBuilder.cpp
   Jastrow/JastrowBuilder.cpp
-  Jastrow/BsplineJastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
-  Jastrow/singleRPAJastrowBuilder.cpp
-  Jastrow/JABBuilder.cpp
+  Jastrow/RadialJastrowBuilder.cpp
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
   OptimizableSPOBuilder.cpp
@@ -180,14 +178,14 @@ IF(OHMMS_DIM MATCHES 3)
 ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
-  Fermion/DiracDeterminantBase.cpp
+  Fermion/DiracDeterminant.cpp
   Fermion/DiracDeterminantOpt.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
   Fermion/MultiSlaterDeterminant.cpp
   Fermion/MultiSlaterDeterminantFast.cpp
-  Fermion/MultiDiracDeterminantBase.cpp
-  Fermion/MultiDiracDeterminantBase.2.cpp
+  Fermion/MultiDiracDeterminant.cpp
+  Fermion/MultiDiracDeterminant.2.cpp
   Fermion/BackflowBuilder.cpp 
   Fermion/DiracDeterminantWithBackflow.cpp
   Fermion/SlaterDetWithBackflow.cpp

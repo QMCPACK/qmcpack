@@ -21,6 +21,7 @@ module load fftw
 export FFTW_HOME=\$FFTW3_DIR
 module load hdf5
 module load git
+module load cmake/3.6.1
 
 env
 module list
@@ -108,5 +109,14 @@ cp $BUILD_DIR/$BUILD_TAG.o* ../
 
 cp $BUILD_DIR/$BUILD_TAG.o* ../
 
-# explicitly check for correct test output from all builds
+# check for correct test output from all builds
+
+if [ $(grep '100% tests passed, 0 tests failed out of [0-9]*' ../$BUILD_TAG.o* | wc -l) -ne 4 ]
+then
+   echo; echo
+   echo One or more build variants failed. Check the build log for details.
+   echo; echo
+fi
+
+# set the return code for the script
 [ $(grep '100% tests passed, 0 tests failed out of [0-9]*' ../$BUILD_TAG.o* | wc -l) -eq 4 ]

@@ -3593,7 +3593,7 @@ void TestYlmComplex()
     CalcYlmComplex<float,5,BS><<<dimGrid,dimBlock>>>
     (rhat_device, Ylm_ptr, dtheta_ptr, dphi_ptr, numr);
   }
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   end = clock();
   fprintf (stderr, "Ylm rate = %1.8f\n",
            10000*numr/((double)(end-start)/(double)CLOCKS_PER_SEC));
@@ -3687,7 +3687,7 @@ void TestYlmReal()
     CalcYlmReal<float,lmax,BS><<<dimGrid,dimBlock>>>
     (rhat_device, Ylm_ptr, dtheta_ptr, dphi_ptr, numr);
   }
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   end = clock();
   fprintf (stderr, "Ylm rate = %1.8f\n",
            10000*numr/((double)(end-start)/(double)CLOCKS_PER_SEC));

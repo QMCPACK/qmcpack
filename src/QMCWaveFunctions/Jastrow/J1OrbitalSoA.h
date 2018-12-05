@@ -228,7 +228,7 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
   {
     if(NumGroups>0)
     {//ions are grouped
-      CONSTEXPR valT czero(0);
+      constexpr valT czero(0);
       std::fill_n(U.data(),Nions,czero);
       std::fill_n(dU.data(),Nions,czero);
       std::fill_n(d2U.data(),Nions,czero);

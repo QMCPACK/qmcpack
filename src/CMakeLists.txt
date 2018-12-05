@@ -151,6 +151,7 @@ ENDIF(HAVE_OOMPI)
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
     Numerics/OhmmsBlas.cpp
+    Numerics/OptimizableFunctorBase.cpp
     Platforms/sysutil.cpp
     QMCFactory/OneDimGridFactory.cpp
     Message/Communicate.cpp 
@@ -327,11 +328,6 @@ ENDIF()
   #ENDIF(BUILD_QMCTOOLS)
 
   if (BUILD_UNIT_TESTS) #{
-    SET(HAS_TARGET_COMPILE_DEFINITIONS 1)
-    IF (CMAKE_VERSION VERSION_LESS "2.8.11")
-      MESSAGE("CMake version 2.8.10 - some unit tests will not be built")
-      SET(HAS_TARGET_COMPILE_DEFINITIONS 0)
-    ENDIF()
     #Unit test directories
     INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
     INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
@@ -349,12 +345,10 @@ ENDIF()
     SUBDIRS(QMCHamiltonians/tests)
     SUBDIRS(type_traits/tests)
   
-    IF (HAS_TARGET_COMPILE_DEFINITIONS)
-      SUBDIRS(ParticleBase/tests)
-      SUBDIRS(Estimators/tests)
-      SUBDIRS(QMCDrivers/tests)
-      SUBDIRS(QMCApp/tests)
-    ENDIF()
+    SUBDIRS(ParticleBase/tests)
+    SUBDIRS(Estimators/tests)
+    SUBDIRS(QMCDrivers/tests)
+    SUBDIRS(QMCApp/tests)
   endif() #}
 
 endif() #}}}

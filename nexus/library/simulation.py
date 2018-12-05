@@ -909,8 +909,13 @@ class Simulation(NexusCore):
     #end def load_analyzer_image
 
 
+    def attempt_files(self):
+        return (self.infile,self.outfile,self.errfile)
+    #end def attempt_files
+
+
     def save_attempt(self):
-        local = [self.infile,self.outfile,self.errfile]
+        local = self.attempt_files()
         filepaths = []
         for file in local:
             filepath = os.path.join(self.locdir,file)
@@ -938,7 +943,6 @@ class Simulation(NexusCore):
             #os.system('ls '+attempt_dir)
             #exit()
         #end if
-        #self.error('save_attempt')
     #end def save_attempt
 
 
@@ -1011,7 +1015,7 @@ class Simulation(NexusCore):
             if found_file:
                 self.copy_file(local,remote)
             else:
-                self.error('file {0} not found\n  locations checked: {1}'.format(file,file_locations))
+                self.error('file {0} not found\nlocations checked: {1}'.format(file,file_locations))
             #end if
         #end for
         self.sent_files = True
@@ -1029,15 +1033,17 @@ class Simulation(NexusCore):
 
     def submit(self):
         if not self.submitted:
-            if self.skip_submit:
+            if self.skip_submit and not self.bundled:
                 self.block_dependents(block_self=True)
                 return
             #end if
             self.log('submitting job'+self.idstr(),n=3)
-            if not self.job.local:
-                self.job.submit()
-            else:
-                self.execute() # execute local job immediately
+            if not self.skip_submit:
+                if not self.job.local:
+                    self.job.submit()
+                else:
+                    self.execute() # execute local job immediately
+                #end if
             #end if
             self.submitted = True
             if (self.job.batch_mode or not nexus_core.monitor) and not nexus_core.generate_only:
@@ -1728,10 +1734,15 @@ def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True):
         else:
             nlabel = sim.identifier+' '+str(sim.simid)
         #end if
+        nopts = obj()
+        if 'block' in sim and sim.block:
+            nopts.color     = 'black'
+            nopts.fontcolor = 'white'
+        #end if
         node = obj(
             id    = sim.simid,
             sim   = sim,
-            node  = Node(nlabel,style='filled',shape='Mrecord'),
+            node  = Node(nlabel,style='filled',shape='Mrecord',**nopts),
             edges = obj(),
             )
         nodes[node.id] = node

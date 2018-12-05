@@ -151,7 +151,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   //sposet_builder is defined outside <determinantset/>
   if(spomap.empty())
   {
-    bool needbb=true;
     cur = curRoot->children;
     while (cur != NULL)//check the basis set
     {
@@ -223,14 +222,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     else if (cname == sd_tag)
     {
       multiDet=false;
-      // read in whether to use an optimizable slater determinant
-      std::string optimize("no");
-      {
-        OhmmsAttributeSet a;
-        a.add(optimize, "optimize");
-        a.put(cur);
-      }
-
       if(slaterdet_0)
       {
         APP_ABORT("slaterdet is already instantiated.");
@@ -253,7 +244,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         getNodeName(tname,tcur);
         if (tname == det_tag || tname == rn_tag)
         {
-          if(putDeterminant(tcur, spin_group, optimize == "yes"))
+          if(putDeterminant(tcur, spin_group))
             spin_group++;
         }
         tcur = tcur->next;
@@ -304,12 +295,12 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
           APP_ABORT("Backflow is not implemented with multi determinants.");
         }
         app_log() <<"Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
-        MultiDiracDeterminantBase* up_det=0;
-        MultiDiracDeterminantBase* dn_det=0;
+        MultiDiracDeterminant* up_det=0;
+        MultiDiracDeterminant* dn_det=0;
         app_log() <<"Creating base determinant (up) for MSD expansion. \n";
-        up_det = new MultiDiracDeterminantBase((SPOSetPtr) spomap.find(spo_alpha)->second,0);
+        up_det = new MultiDiracDeterminant((SPOSetPtr) spomap.find(spo_alpha)->second,0);
         app_log() <<"Creating base determinant (down) for MSD expansion. \n";
-        dn_det = new MultiDiracDeterminantBase((SPOSetPtr) spomap.find(spo_beta)->second,1);
+        dn_det = new MultiDiracDeterminant((SPOSetPtr) spomap.find(spo_beta)->second,1);
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
         //          up_det->usingBF = UseBackflow;
         //          dn_det->usingBF = UseBackflow;
@@ -415,7 +406,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
 magnetic system
  * Extra attributes to handled the original released-node case
  */
-bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slater_det_opt)
+bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 {
   ReportEngine PRE(ClassName,"putDeterminant(xmlNodePtr,int)");
 
@@ -445,6 +436,14 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   aAttrib.add(rntype,"primary");
   aAttrib.add(spin_name,"group");
   aAttrib.put(cur);
+
+  // whether to use an optimizable slater determinant
+  std::string optimize("no");
+  int delay_rank(1);
+  OhmmsAttributeSet sdAttrib;
+  sdAttrib.add(delay_rank,"delay_rank");
+  sdAttrib.add(optimize, "optimize");
+  sdAttrib.put(cur->parent);
 
   { //check determinant@group
     int spin_group_in=spin_group;
@@ -496,7 +495,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
     return true;
   std::string dname;
   getNodeName(dname,cur);
-  DiracDeterminantBase* adet=0;
+  DiracDeterminant* adet=0;
   {
 #ifdef QMC_CUDA
     adet = new DiracDeterminantCUDA(psi,firstIndex);
@@ -504,7 +503,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
     if(UseBackflow)
       adet = new DiracDeterminantWithBackflow(targetPtcl,psi,BFTrans,firstIndex);
 #ifndef ENABLE_SOA
-    else if (slater_det_opt)
+    else if (optimize == "yes")
     {
 #ifdef QMC_COMPLEX
       app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
@@ -556,12 +555,25 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
       adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
     else
     {
-      app_log()<<"Using DiracDeterminantBase "<< std::endl;
-      adet = new DiracDeterminantBase(psi,firstIndex);
+      app_log()<<"Using DiracDeterminant "<< std::endl;
+      adet = new DiracDeterminant(psi,firstIndex);
     }
 #endif
   }
-  adet->set(firstIndex,lastIndex-firstIndex);
+  if( delay_rank<=0 || delay_rank>lastIndex-firstIndex )
+  {
+    std::ostringstream err_msg;
+    err_msg << "SlaterDetBuilder::putDeterminant delay_rank must be positive "
+            << "and no larger than the electron count within a determinant!\n"
+            << "Acceptable value [1," << lastIndex-firstIndex << "], "
+            << "user input "+std::to_string(delay_rank);
+    APP_ABORT(err_msg.str());
+  }
+  else if(delay_rank>1)
+    app_log() << "Using rank-" << delay_rank << " delayed update" << std::endl;
+  else
+    app_log() << "Using rank-1 Sherman-Morrison Fahy update" << std::endl;
+  adet->set(firstIndex,lastIndex-firstIndex, delay_rank);
   slaterdet_0->add(adet,spin_group);
   if (psi->Optimizable)
     slaterdet_0->Optimizable = true;
@@ -693,7 +705,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
            spo->occup(i,nq++) = k;
          }
        }
-       DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetPtr) spo,0);
+       DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) spo,0);
        adet->set(multiSD->FirstIndex_up,multiSD->nels_up);
        multiSD->dets_up.push_back(adet);
      }
@@ -708,7 +720,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
            spo->occup(i,nq++) = k;
          }
        }
-       DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetPtr) spo,0);
+       DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) spo,0);
        adet->set(multiSD->FirstIndex_dn,multiSD->nels_dn);
        multiSD->dets_dn.push_back(adet);
      }
@@ -752,14 +764,14 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         spo->occup(i,nq++) = k;
       }
     }
-    DiracDeterminantBase* adet;
+    DiracDeterminant* adet;
     if(UseBackflow)
     {
       adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetPtr) spo,0,0);
     }
     else
     {
-      adet = new DiracDeterminantBase((SPOSetPtr) spo,0);
+      adet = new DiracDeterminant((SPOSetPtr) spo,0);
     }
     adet->set(multiSD->FirstIndex_up,multiSD->nels_up);
     multiSD->dets_up.push_back(adet);
@@ -777,14 +789,14 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         spo->occup(i,nq++) = k;
       }
     }
-    DiracDeterminantBase* adet;
+    DiracDeterminant* adet;
     if(UseBackflow)
     {
       adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetPtr) spo,0,0);
     }
     else
     {
-      adet = new DiracDeterminantBase((SPOSetPtr) spo,0);
+      adet = new DiracDeterminant((SPOSetPtr) spo,0);
     }
     adet->set(multiSD->FirstIndex_dn,multiSD->nels_dn);
     multiSD->dets_dn.push_back(adet);
@@ -922,7 +934,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
   RealType sumsq=0.0;
   //app_log() <<"alpha reference: \n" <<dummyC_alpha;
   //app_log() <<"beta reference: \n" <<dummyC_beta;
-  size_t ntot=0;
   if(usingCSF)
   {
     app_log() <<"Reading CSFs." << std::endl;
@@ -971,7 +982,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
             detAttrib.add(beta,"beta");
             detAttrib.add(alpha,"alpha");
             detAttrib.put(csf);
-            size_t nq=0,na,nr;
+            size_t nq=0;
             if(alpha.size() < nstates)
             {
               std::cerr <<"alpha: " <<alpha << std::endl;

@@ -22,10 +22,10 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "QMCDrivers/QMCCostFunctionBase.h"
-#include "QMCDrivers/QMCCostFunctionOMP.h"
+#include "QMCDrivers/QMCCostFunction.h"
 #if defined(ENABLE_OPENMP)
-#include "QMCDrivers/VMC/VMCSingleOMP.h"
-#include "QMCDrivers/QMCCostFunctionOMP.h"
+#include "QMCDrivers/VMC/VMC.h"
+#include "QMCDrivers/QMCCostFunction.h"
 #endif
 //#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
@@ -112,7 +112,6 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   std::vector<std::vector<RealType> > LastDirections;
   RealType deltaPrms(-1.0);
   bool acceptedOneMove(false);
-  int tooManyTries(20);
   int failedTries(0);
   Matrix<RealType> Left(N,N);
   Matrix<RealType> LeftT(N,N);
@@ -344,7 +343,7 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
     vmcCSEngine->setOpt(true);
     vmcEngine = vmcCSEngine;
 #else
-    vmcEngine = vmcCSEngine = new VMCLinearOptOMP(W,Psi,H,hamPool,psiPool,myComm);
+    vmcEngine = vmcCSEngine = new VMCLinearOpt(W,Psi,H,hamPool,psiPool,myComm);
 #endif
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
@@ -356,7 +355,7 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
 #if defined (QMC_CUDA)
     optTarget = new QMCCostFunctionCUDA(W,Psi,H,myComm);
 #else
-    optTarget = new QMCCostFunctionOMP(W,Psi,H,myComm);
+    optTarget = new QMCCostFunction(W,Psi,H,myComm);
 #endif
     optTarget->setneedGrads(false);
     optTarget->setStream(&app_log());

@@ -602,7 +602,7 @@ kSpaceJastrow::ratio(ParticleSet& P, int iat)
 
 /** evaluate the ratio
 */
-inline void kSpaceJastrow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<kSpaceJastrow::ValueType>& ratios)
+void kSpaceJastrow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<kSpaceJastrow::ValueType>& ratios)
 {
   RealType J1new(0.0);
   const PosType &rnew(P.activePos);
