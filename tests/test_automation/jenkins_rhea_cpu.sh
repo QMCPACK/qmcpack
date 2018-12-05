@@ -46,7 +46,7 @@ then
 fi
 
 make -j 24
-ctest -L unit
+ctest -L unit --output-on-failure
 
 
 echo ""
@@ -63,7 +63,7 @@ cd build
 cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_gnu4.8.2/include" .. 2>&1 | tee cmake.out
 
 make -j 24
-ctest -L unit
+ctest -L unit --output-on-failure
 
 echo ""
 echo ""
@@ -79,7 +79,7 @@ cd build
 cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_gnu4.8.2/include" .. 2>&1 | tee cmake.out
 
 make -j 24
-ctest -L unit
+ctest -L unit --output-on-failure
 
 echo ""
 echo ""
@@ -95,7 +95,7 @@ cd build
 cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_gnu4.8.2/include" .. 2>&1 | tee cmake.out
 
 make -j 24
-ctest -L unit
+ctest -L unit --output-on-failure
 
 EOF
 
