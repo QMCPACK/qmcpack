@@ -134,4 +134,34 @@ TEST_CASE("getwords", "[utilities]")
   }
 }
 
+TEST_CASE("getwordsWithMergedNumbers", "[utilities]")
+{
+  // 1.0-2.0 -> 1.0 -2.0
+  // 105 C 5 Z 0.000000 0.000000 -0.567800-103.884284 -2.142253
+  
+  ParseCaseVector_t tlist =
+  {
+    // Input string, list of expected tokens, extra  split characters
+    {"1\n",        {"1"}},
+    {"1 2\n",    {"1","2"}},
+    {"1.0 -2.0\n",    {"1.0","-2.0"}},
+    {"1.0-2.0\n",    {"1.0","-2.0"}},
+    {"-1.0-2.0-3.0\n",    {"-1.0","-2.0","-3.0"}},
+    {"105 C 5 Z 0.000000 0.000000 -0.567800-103.884284 -2.142253\n", {"105","C","5","Z","0.000000","0.000000","-0.567800","-103.884284","-2.142253"}}
+  };
+
+  for (auto &tc : tlist) {
+    SECTION(string("Parsing input: ") + tc.input) {
+      vector<string> outlist;
+      std::istringstream input(tc.input);
+      int num = getwordsWithMergedNumbers(outlist, input);
+      REQUIRE(num == tc.output.size());
+      REQUIRE(outlist.size() == tc.output.size());
+      for (int i = 0; i < tc.output.size(); i++) {
+        REQUIRE(outlist[i] == tc.output[i]);
+      }
+    }
+  }
+}
+  
 }

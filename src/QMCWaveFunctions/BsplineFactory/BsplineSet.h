@@ -136,6 +136,23 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     }
   }
 
+  virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
+                                    , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+  {
+    typedef ValueMatrix_t::value_type value_type;
+    typedef GradMatrix_t::value_type grad_type;
+    typedef HessMatrix_t::value_type hess_type;
+    typedef GGGMatrix_t::value_type  ghess_type;
+    for(int iat=first, i=0; iat<last; ++iat,++i)
+    {
+      ValueVector_t v(logdet[i],OrbitalSetSize);
+      GradVector_t  g(dlogdet[i],OrbitalSetSize);
+      HessVector_t  h(grad_grad_logdet[i],OrbitalSetSize);
+      GGGVector_t  gh(grad_grad_grad_logdet[i],OrbitalSetSize);
+      SplineAdoptor::evaluate_vghgh(P,iat,v,g,h,gh);
+    }
+  }
+
 };
 
 }

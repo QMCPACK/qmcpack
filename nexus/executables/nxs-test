@@ -7,7 +7,7 @@ import traceback
 from optparse import OptionParser
 from numpy import ndarray,array,abs
 
-# find the path to the ntest executable and its parent directory
+# find the path to the nxs-test executable and its parent directory
 scriptpath=os.path.realpath(__file__)
 parent_dir=os.path.dirname(os.path.dirname(scriptpath))
 
@@ -17,17 +17,17 @@ test_dir      = os.path.join(parent_dir,'tests')
 reference_dir = os.path.join(parent_dir,'tests/reference')
 example_dir   = os.path.join(parent_dir,'examples')
 
-# ensure that ntest executable is resident in a nexus directory tree
+# ensure that nxs-test executable is resident in a nexus directory tree
 dirs_check = ['examples','executables','library','tests','tests/reference']
 for d in dirs_check:
     pd = os.path.join(parent_dir,d)
     if not os.path.exists(pd):
-        print('ntest executable is not run within a Nexus directory tree\nthe following directories must be present: {0}\nthe following directories are present: {1}\nexecutable launched from path: {2}'.format(dirs_check,os.listdir(parent_dir),parent_dir))
+        print('nxs-test executable is not run within a Nexus directory tree\nthe following directories must be present: {0}\nthe following directories are present: {1}\nexecutable launched from path: {2}'.format(dirs_check,os.listdir(parent_dir),parent_dir))
         exit(1)
     #end if
 #end for
 
-# enforce association between ntest executable and Nexus library
+# enforce association between nxs-test executable and Nexus library
 sys.path.insert(0,library_dir)
 
 
@@ -190,9 +190,9 @@ class NexusTestTripped(Exception):
 
 
 class NexusTestBase(object):
-    nexus_test_dir = '.nexus_test' # ntest directory
+    nexus_test_dir = '.nexus_test' # nxs-test directory
 
-    launch_path    = None # path from which ntest exe was launched
+    launch_path    = None # path from which nxs-test exe was launched
     current_test   = None # current NexusTest
     current_label  = ''   # current nlabel()
     test_count     =  0   # current test count
@@ -2734,7 +2734,7 @@ if __name__=='__main__':
                       )
     parser.add_option('--pythonpath',dest='pythonpath',
                       default='none',
-                      help='Sets PYTHONPATH environment variable for any scripts executed by ntest.  The default behavior is to use PYTHONPATH as already defined in the host environment.'
+                      help='Sets PYTHONPATH environment variable for any scripts executed by nxs-test.  The default behavior is to use PYTHONPATH as already defined in the host environment.'
                       )
     parser.add_option('--trip',dest='trip',
                       default='none',
