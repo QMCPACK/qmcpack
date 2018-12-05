@@ -109,6 +109,19 @@ inline int get_device_num()
     if (i==rank) rank_node[0]=num_nodes; // node number of current rank (NOTE: node numbers start at 1)
   }
 
+  // Check if CUDA MPS is running
+  std::vector<int> mps_avail(1);
+  // default to true for every rank, expcept the first rank per node (see below)
+  // in this way, these ranks do not affect the MPS test below
+  mps_avail[0]=1;
+  if (relative_ranknum==0) // Only check on first relative rank per node to not overwhelm daemon
+  {
+    mps_avail[0]=0;
+    int ret=system("echo get_server_list | nvidia-cuda-mps-control > /dev/null 2>&1");
+    if (ret==0)
+      mps_avail[0]=1;
+  }
+
   // gather all the information
   std::vector<int> ranks_per_node(size+1); ranks_per_node[size]=-1;
   OHMMS::Controller->allgather(number_ranks,ranks_per_node,1);
@@ -116,6 +129,19 @@ inline int get_device_num()
   OHMMS::Controller->allgather(cuda_devices,num_cuda_devices,1);
   std::vector<int> node_of_rank(size+1); node_of_rank[size]=num_nodes;
   OHMMS::Controller->allgather(rank_node,node_of_rank,1);
+  std::vector<int> mps_per_rank(size+1); mps_per_rank[size]=-1;
+  OHMMS::Controller->allgather(mps_avail,mps_per_rank,1);
+
+  gpu::cudamps=true;
+  for(int i=0; i<size; i++)
+  {
+    // If GPS isn't available for every rank don't use it (could potentially be relaxed in the future)
+    if(mps_per_rank[i]==0)
+    {
+      gpu::cudamps=false;
+      break;
+    }
+  }
 
   // output information for every rank with a different configuration from the previous one (i.e. with all nodes equal this will only be the first rank)
   if ((ranks_per_node[rank] != ranks_per_node[(rank+size)%(size+1)]) || (num_cuda_devices[rank] != num_cuda_devices[(rank+size)%(size+1)]))
@@ -207,17 +233,6 @@ inline void set_appropriate_device_num(int num)
   }
 }
 
-/** Test if CUDA MPS service is running
- */
-inline bool test_cudamps()
-{
-  // the idea is to check if the CUDA MPS is running
-  int ret=system("echo get_server_list | nvidia-cuda-mps-control > /dev/null 2>&1");
-  if (ret==0)
-    return true;
-  return false;
-}
-
 inline void Finalize_CUDA()
 {
   gpu::finalizeCublas();
@@ -233,7 +248,6 @@ inline void Init_CUDA()
   int devNum = get_device_num();
   set_appropriate_device_num(devNum);
   cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 1024 * 1024 * 50);
-  gpu::cudamps = test_cudamps(); // test if cuda mps service is running
   gpu::rank=OHMMS::Controller->rank();
   gpu::initCUDAStreams();
   gpu::initCUDAEvents();
