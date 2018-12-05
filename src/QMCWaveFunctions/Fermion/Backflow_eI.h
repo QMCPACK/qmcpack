@@ -204,6 +204,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluate(P,QP) not implemented for SoA\n");
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
@@ -223,6 +224,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
@@ -254,6 +256,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_full,Amat) not implemented for SoA\n");
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
@@ -286,6 +289,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
     #else
     int maxI = myTable->size(SourceIndex);
     int iat = index[0];
@@ -306,6 +310,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP) not implemented for SoA\n");
     #else
     int maxI = myTable->size(SourceIndex);
     for(int j=0; j<maxI; j++)
@@ -323,6 +328,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
     #else
     int maxI = myTable->size(SourceIndex);
     int iat = index[0];
@@ -348,6 +354,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Amat) not implemented for SoA\n");
     #else
     int maxI = myTable->size(SourceIndex);
     for(int j=0; j<maxI; j++)
@@ -372,6 +379,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
     #else
     int maxI = myTable->size(SourceIndex);
     int iat = index[0];
@@ -399,6 +407,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
     #else
     int maxI = myTable->size(SourceIndex);
     for(int j=0; j<maxI; j++)
@@ -427,6 +436,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluateBmatOnly(P,QP,Bmat) not implemented for SoA\n");
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
@@ -448,6 +458,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluateWithDerivatives(P,QP,Bmat,Amat,Cmat,Ymat,Xmat)\n");
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {

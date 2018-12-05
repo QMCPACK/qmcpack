@@ -252,6 +252,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_ee.h::evaluate(P,QP) not implemented for SoA\n");
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
@@ -275,6 +276,7 @@ public:
     APP_ABORT("This shouldn't be called: Backflow_ee::evaluate(Bmat)");
     PosType du,d2u,temp;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_ee.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
@@ -318,6 +320,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_ee.h::evaluate(P,QP,Bmat_full,Amat) not implemented for SoA\n");
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
@@ -366,6 +369,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
     #else
 // myTable->Temp[jat].r1
     int maxI = index.size();
@@ -389,6 +393,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP) not implemented for SoA\n");
     #else
     for(int i=0; i<iat; i++)
     {
@@ -417,6 +422,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
     #else
 // myTable->Temp[jat].r1
     int maxI = index.size();
@@ -455,6 +461,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Amat) not implemented for SoA\n");
     #else
 // myTable->Temp[jat].r1
     for(int j=0; j<iat; j++)
@@ -513,6 +520,7 @@ public:
     RealType du,d2u;
 // myTable->Temp[jat].r1
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
     #else
     int maxI = index.size();
     int iat = index[0];
@@ -559,6 +567,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
     #else
 // myTable->Temp[jat].r1
     const std::vector<DistanceTableData::TempDistType>& TMP = myTable->Temp;
@@ -633,6 +642,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_ee.h::evaluateBmatOnly(P,QP,Bmat_full) not implemented for SoA\n");
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
@@ -658,6 +668,7 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_ee.h::evaluateWithDerivatives(P,QP,Bmat,Amat,Cmat,Ymat,Xmat)\n");
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
