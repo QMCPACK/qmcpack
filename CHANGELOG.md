@@ -2,6 +2,20 @@
 
 Notable changes to QMCPACK will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+Utilities have been renamed for clarity and to avoid name collisions with other applications.
+
+* getSupercell is renamed qmc-get-supercell
+* extract-eshdf-kvectors is renamed qmc-extract-eshdf-kvectors
+
+### NEXUS
+
+* qfit is renamed qmc-fit
+* ntest, sim, redo are renamed nxs-test, nxs-sim, nxs-redo
+
 ## [3.5.0] - 2018-08-02
 
 ### Notes
