@@ -677,6 +677,7 @@ class Structure(Sobj):
                  scale             = 1.,
                  elem              = None,
                  pos               = None,
+                 elem_pos          = None,
                  mag               = None,
                  center            = None,
                  kpoints           = None,
@@ -698,6 +699,10 @@ class Structure(Sobj):
                  posu              = None,
                  kpath             = None):
 
+        if isinstance(axes,str):
+            axes = array(axes.split(),dtype=float)
+            axes.shape = dim,dim
+        #end if
         if center is None:
             if axes is not None:
                 center = array(axes,dtype=float).sum(0)/2
@@ -711,6 +716,12 @@ class Structure(Sobj):
         if axes is None:
             axes   = []
             bconds = []
+        #end if
+        if elem_pos is not None:
+            ep = array(elem_pos.split(),dtype=str)
+            ep.shape = ep.size/(dim+1),(dim+1)
+            elem = ep[:,0].ravel()
+            pos  = ep[:,1:dim+1]
         #end if
         if elem is None:
             elem = []
@@ -954,6 +965,15 @@ class Structure(Sobj):
             #end if
         #end if
     #end def reshape_axes
+
+
+    def write_axes(self):
+        c = ''
+        for a in self.axes:
+            c+='{0:12.8f} {1:12.8f} {2:12.8f}\n'.format(a[0],a[1],a[2])
+        #end for
+        return c
+    #end def write_axes
 
     
     def corners(self):
@@ -5798,6 +5818,7 @@ def generate_crystal_structure(
     pos            = None,
     frozen         = None,
     posu           = None,
+    elem_pos       = None,
     folded_elem    = None,
     folded_pos     = None,
     folded_units   = None,
@@ -5824,7 +5845,9 @@ def generate_crystal_structure(
     #interface for total manual specification
     # this is only here because 'crystal' is default and must handle other cases
     s = None
-    if elem is not None and (pos is not None or posu is not None):  
+    has_elem_and_pos = elem is not None and (pos is not None or posu is not None)
+    has_elem_and_pos |= elem_pos is not None
+    if has_elem_and_pos:
         s = Structure(
             axes           = axes,
             elem           = elem,
@@ -5841,7 +5864,9 @@ def generate_crystal_structure(
             permute        = permute,
             rescale        = False,
             operations     = operations,
-            posu           = posu)
+            posu           = posu,
+            elem_pos       = elem_pos,
+            )
     elif isinstance(structure,Structure):
         s = structure
         if tiling is not None:
