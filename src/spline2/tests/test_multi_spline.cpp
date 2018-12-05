@@ -255,13 +255,21 @@ void test_splines()
   REQUIRE(hess[0][4] == Approx(-2.15319293e-09));
   REQUIRE(hess[0][5] == Approx(    34.53786329));
  
-  // gradient of Hessian.  
-  // Why only 3?  Because the others are in the signal to noise ratio of fixed precision. 
-  REQUIRE(ghess[0][0] == Approx(   -213.45573));
-  REQUIRE(ghess[0][6] == Approx(   -1753.0419));
-  REQUIRE(ghess[0][9] == Approx(   -81.532835));
 
+  // Catch default is 100*(float epsilson)
+  double eps = 2000*std::numeric_limits<float>::epsilon();
 
+  // Gradient of Hessian
+  REQUIRE(ghess[0][0] == Approx(    -213.455734));
+  REQUIRE(ghess[0][1] == Approx(2.311193459e-09).epsilon(eps));
+  REQUIRE(ghess[0][2] == Approx(3.468205279e-09).epsilon(eps));
+  REQUIRE(ghess[0][3] == Approx( 1.58092329e-07).epsilon(eps));
+  REQUIRE(ghess[0][4] == Approx(1.255694171e-08).epsilon(eps));
+  REQUIRE(ghess[0][5] == Approx( 4.78981157e-08).epsilon(eps));
+  REQUIRE(ghess[0][6] == Approx(   -1753.041961));
+  REQUIRE(ghess[0][7] == Approx(-2.575826885e-09).epsilon(eps));
+  REQUIRE(ghess[0][8] == Approx(-4.683496702e-09).epsilon(eps));
+  REQUIRE(ghess[0][9] == Approx(   -81.53283531));
 }
 
 TEST_CASE("MultiBspline periodic double","[spline2]")
