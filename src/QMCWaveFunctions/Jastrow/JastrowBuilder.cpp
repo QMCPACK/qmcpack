@@ -69,7 +69,16 @@ bool JastrowBuilder::put(xmlNodePtr cur)
     return add_eeI(cur);
   if(typeOpt.find("kSpace") < typeOpt.size())
     return addkSpace(cur);
+  if(typeOpt.find("Counting") < typeOpt.size())
+    return addCounting(cur);
   return false;
+}
+
+bool JastrowBuilder::addCounting(xmlNodePtr cur)
+{
+  ReportEngine PRE(ClassName,"addCounting(xmlNodePtr)");
+  CountingJastrowBuilder cjb(targetPtcl, targetPsi);
+  return cjb.put(cur);
 }
 
 bool JastrowBuilder::addkSpace(xmlNodePtr cur)
