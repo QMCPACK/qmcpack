@@ -3,10 +3,10 @@
 QMCPACK provides a set of lightweight executables that address certain
 common problems in QMC workflow and analysis.  These range from conversion utilities between 
 different file formats and QMCPACK (e.g. ppconvert and convert4qmc),  
-(extract-eshdf-kvectors), to post-processing utilities (trace-density and qmcfinitesize), and to many others.  In this chapter, we cover the use cases, syntax, and features of all additional tools provided with QMCPACK.  
+(qmc-extract-eshdf-kvectors), to post-processing utilities (trace-density and qmcfinitesize), and to many others.  In this chapter, we cover the use cases, syntax, and features of all additional tools provided with QMCPACK.  
 
 \section{Initialization Tools}
-  \subsection{getSupercell}
+  \subsection{qmc-get-supercell}
 
 \section{Post-Processing}
   \subsection{qmca}
@@ -90,6 +90,6 @@ The scf, nscf, pw2qmcpack runs are performed on 16, 12, 12 MPI tasks with 16, 2,
     For this reason, validation of UPF pseudopotentials is always required from the third row and strongly encouraged in general. For example, check that the expected ionization potential and electron affinities are obtained for the atom and check that dimer properties are consistent with those obtained by a Quantum Chemistry code or a plane-wave code that does not use the Kleinman-Bylander projectors.
 \input{pseudopotentials}
 %\section{Miscellaneous}
-%  \subsection{extract-eshdf-kvectors}
+%  \subsection{qmc-extract-eshdf-kvectors}
     
 
