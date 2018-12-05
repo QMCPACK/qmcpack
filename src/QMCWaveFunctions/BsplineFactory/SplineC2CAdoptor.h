@@ -552,7 +552,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict gh222=mygH.data(9);
 
     //SIMD doesn't work quite right yet.  Comment out until further debugging.
-    //#pragma omp simd
+    #pragma omp simd
     for (size_t j=first; j<last; ++j)
     {
       int jr=j<<1;
@@ -623,14 +623,13 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       grad_grad_psi[psiIndex][0]=ComplexT(c*h_xx_r-s*h_xx_i, c*h_xx_i+s*h_xx_r);
       grad_grad_psi[psiIndex][1]=ComplexT(c*h_xy_r-s*h_xy_i, c*h_xy_i+s*h_xy_r);
       grad_grad_psi[psiIndex][2]=ComplexT(c*h_xz_r-s*h_xz_i, c*h_xz_i+s*h_xz_r);
+      grad_grad_psi[psiIndex][3]=ComplexT(c*h_xy_r-s*h_xy_i, c*h_xy_i+s*h_xy_r);
       grad_grad_psi[psiIndex][4]=ComplexT(c*h_yy_r-s*h_yy_i, c*h_yy_i+s*h_yy_r);
       grad_grad_psi[psiIndex][5]=ComplexT(c*h_yz_r-s*h_yz_i, c*h_yz_i+s*h_yz_r);
+      grad_grad_psi[psiIndex][6]=ComplexT(c*h_xz_r-s*h_xz_i, c*h_xz_i+s*h_xz_r);
+      grad_grad_psi[psiIndex][7]=ComplexT(c*h_yz_r-s*h_yz_i, c*h_yz_i+s*h_yz_r);
       grad_grad_psi[psiIndex][8]=ComplexT(c*h_zz_r-s*h_zz_i, c*h_zz_i+s*h_zz_r);
   
-      //symmetry:
-      grad_grad_psi[psiIndex][3]=grad_grad_psi[psiIndex][1];
-      grad_grad_psi[psiIndex][6]=grad_grad_psi[psiIndex][2];
-      grad_grad_psi[psiIndex][7]=grad_grad_psi[psiIndex][5];
       //These are the real and imaginary components of the third SPO derivative.  _xxx denotes
       // third derivative w.r.t. x, _xyz, a derivative with resepect to x,y, and z, and so on.  
       
@@ -677,42 +676,38 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       const ST gh_yzz_i= f3_yzz_i -(2*kZ*f_yz_r+kY*f_zz_r) - (2*kY*kZ*dZ_i+kZ*kZ*dY_i)+kY*kZ*kZ*val_r;
       const ST gh_zzz_r= f3_zzz_r + 3*kZ*f_zz_i - 3*kZ*kZ*dZ_r - kZ*kZ*kZ*val_i;
       const ST gh_zzz_i= f3_zzz_i - 3*kZ*f_zz_r - 3*kZ*kZ*dZ_i + kZ*kZ*kZ*val_r;
-      //[x][xx] //These are the unique entries
+      
       grad_grad_grad_psi[psiIndex][0][0]=ComplexT(c*gh_xxx_r-s*gh_xxx_i,c*gh_xxx_i+s*gh_xxx_r);
       grad_grad_grad_psi[psiIndex][0][1]=ComplexT(c*gh_xxy_r-s*gh_xxy_i,c*gh_xxy_i+s*gh_xxy_r);
       grad_grad_grad_psi[psiIndex][0][2]=ComplexT(c*gh_xxz_r-s*gh_xxz_i,c*gh_xxz_i+s*gh_xxz_r);
+      grad_grad_grad_psi[psiIndex][0][3]=ComplexT(c*gh_xxy_r-s*gh_xxy_i,c*gh_xxy_i+s*gh_xxy_r);
       grad_grad_grad_psi[psiIndex][0][4]=ComplexT(c*gh_xyy_r-s*gh_xyy_i,c*gh_xyy_i+s*gh_xyy_r);
       grad_grad_grad_psi[psiIndex][0][5]=ComplexT(c*gh_xyz_r-s*gh_xyz_i,c*gh_xyz_i+s*gh_xyz_r);
+      grad_grad_grad_psi[psiIndex][0][6]=ComplexT(c*gh_xxz_r-s*gh_xxz_i,c*gh_xxz_i+s*gh_xxz_r);
+      grad_grad_grad_psi[psiIndex][0][7]=ComplexT(c*gh_xyz_r-s*gh_xyz_i,c*gh_xyz_i+s*gh_xyz_r);
       grad_grad_grad_psi[psiIndex][0][8]=ComplexT(c*gh_xzz_r-s*gh_xzz_i,c*gh_xzz_i+s*gh_xzz_r);
     
-      //filling in the symmetric terms.  Filling out the xij terms
-      grad_grad_grad_psi[psiIndex][0][3]=grad_grad_grad_psi[psiIndex][0][1];
-      grad_grad_grad_psi[psiIndex][0][6]=grad_grad_grad_psi[psiIndex][0][2];
-      grad_grad_grad_psi[psiIndex][0][7]=grad_grad_grad_psi[psiIndex][0][5];
- 
-      //Now for everything that's a permutation of the above:
-      grad_grad_grad_psi[psiIndex][1][0]=grad_grad_grad_psi[psiIndex][0][1];
-      grad_grad_grad_psi[psiIndex][1][1]=grad_grad_grad_psi[psiIndex][0][4];
-      grad_grad_grad_psi[psiIndex][1][2]=grad_grad_grad_psi[psiIndex][0][5];
-      grad_grad_grad_psi[psiIndex][1][3]=grad_grad_grad_psi[psiIndex][0][4];
-      grad_grad_grad_psi[psiIndex][1][6]=grad_grad_grad_psi[psiIndex][0][5];
-
-      grad_grad_grad_psi[psiIndex][2][0]=grad_grad_grad_psi[psiIndex][0][2];
-      grad_grad_grad_psi[psiIndex][2][1]=grad_grad_grad_psi[psiIndex][0][5];
-      grad_grad_grad_psi[psiIndex][2][2]=grad_grad_grad_psi[psiIndex][0][8];
-      grad_grad_grad_psi[psiIndex][2][3]=grad_grad_grad_psi[psiIndex][0][5];
-      grad_grad_grad_psi[psiIndex][2][6]=grad_grad_grad_psi[psiIndex][0][8];
-
-      grad_grad_grad_psi[psiIndex][1][4]=ComplexT(c*gh_yyy_r-s*gh_yyy_i,c*gh_yyy_i+s*gh_yyy_r);
+      grad_grad_grad_psi[psiIndex][1][0]=ComplexT(c*gh_xxy_r-s*gh_xxy_i,c*gh_xxy_i+s*gh_xxy_r);
+      grad_grad_grad_psi[psiIndex][1][1]=ComplexT(c*gh_xyy_r-s*gh_xyy_i,c*gh_xyy_i+s*gh_xyy_r); 
+      grad_grad_grad_psi[psiIndex][1][2]=ComplexT(c*gh_xyz_r-s*gh_xyz_i,c*gh_xyz_i+s*gh_xyz_r);
+      grad_grad_grad_psi[psiIndex][1][3]=ComplexT(c*gh_xyy_r-s*gh_xyy_i,c*gh_xyy_i+s*gh_xyy_r);
+      grad_grad_grad_psi[psiIndex][1][4]=ComplexT(c*gh_yyy_r-s*gh_yyy_i,c*gh_yyy_i+s*gh_yyy_r); 
       grad_grad_grad_psi[psiIndex][1][5]=ComplexT(c*gh_yyz_r-s*gh_yyz_i,c*gh_yyz_i+s*gh_yyz_r);
+      grad_grad_grad_psi[psiIndex][1][6]=ComplexT(c*gh_xyz_r-s*gh_xyz_i,c*gh_xyz_i+s*gh_xyz_r);
+      grad_grad_grad_psi[psiIndex][1][7]=ComplexT(c*gh_yyz_r-s*gh_yyz_i,c*gh_yyz_i+s*gh_yyz_r);
       grad_grad_grad_psi[psiIndex][1][8]=ComplexT(c*gh_yzz_r-s*gh_yzz_i,c*gh_yzz_i+s*gh_yzz_r);
 
-      grad_grad_grad_psi[psiIndex][1][7]=grad_grad_grad_psi[psiIndex][1][5];
-      grad_grad_grad_psi[psiIndex][2][4]=grad_grad_grad_psi[psiIndex][1][5];
-      grad_grad_grad_psi[psiIndex][2][5]=grad_grad_grad_psi[psiIndex][1][8];
-      grad_grad_grad_psi[psiIndex][2][7]=grad_grad_grad_psi[psiIndex][1][8];
 
+      grad_grad_grad_psi[psiIndex][2][0]=ComplexT(c*gh_xxz_r-s*gh_xxz_i,c*gh_xxz_i+s*gh_xxz_r);
+      grad_grad_grad_psi[psiIndex][2][1]=ComplexT(c*gh_xyz_r-s*gh_xyz_i,c*gh_xyz_i+s*gh_xyz_r);
+      grad_grad_grad_psi[psiIndex][2][2]=ComplexT(c*gh_xzz_r-s*gh_xzz_i,c*gh_xzz_i+s*gh_xzz_r);
+      grad_grad_grad_psi[psiIndex][2][3]=ComplexT(c*gh_xyz_r-s*gh_xyz_i,c*gh_xyz_i+s*gh_xyz_r);
+      grad_grad_grad_psi[psiIndex][2][4]=ComplexT(c*gh_yyz_r-s*gh_yyz_i,c*gh_yyz_i+s*gh_yyz_r);
+      grad_grad_grad_psi[psiIndex][2][5]=ComplexT(c*gh_yzz_r-s*gh_yzz_i,c*gh_yzz_i+s*gh_yzz_r);
+      grad_grad_grad_psi[psiIndex][2][6]=ComplexT(c*gh_xzz_r-s*gh_xzz_i,c*gh_xzz_i+s*gh_xzz_r);
+      grad_grad_grad_psi[psiIndex][2][7]=ComplexT(c*gh_yzz_r-s*gh_yzz_i,c*gh_yzz_i+s*gh_yzz_r);
       grad_grad_grad_psi[psiIndex][2][8]=ComplexT(c*gh_zzz_r-s*gh_zzz_i,c*gh_zzz_i+s*gh_zzz_r);
+
     }
   }
 
