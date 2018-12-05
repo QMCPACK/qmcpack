@@ -213,9 +213,9 @@ inline bool test_cudamps()
 {
   // the idea is to check if the CUDA MPS is running
   int ret=system("echo get_server_list | nvidia-cuda-mps-control > /dev/null 2>&1");
-  if (ret==1)
-    return false;
-  return true;
+  if (ret==0)
+    return true;
+  return false;
 }
 
 inline void Finalize_CUDA()
