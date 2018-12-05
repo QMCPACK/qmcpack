@@ -29,7 +29,7 @@
 import os
 from copy import deepcopy
 from random import randint
-from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64,sign,matmul,isclose
+from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64,sign,isclose
 from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
@@ -4425,7 +4425,7 @@ try:
         posd        = seekpathout['conv_positions']
         volfac      = seekpathout['volume_original_wrt_conv']
         bcharge     = structure.background_charge*volfac
-        pos         = matmul(posd,axes)
+        pos         = dot(posd,axes)
         sout        = structure.copy()
         elem        = empty(len(enumbers), dtype='str')
         for el in ptable.elements.iteritems():
@@ -4443,7 +4443,7 @@ try:
         posd        = seekpathout['primitive_positions']
         volfac      = seekpathout['volume_original_wrt_prim']
         bcharge     = structure.background_charge*volfac
-        pos         = matmul(posd,axes)
+        pos         = dot(posd,axes)
         sout        = structure.copy()
         elem        = array(enumbers, dtype='str')
         for el in ptable.elements.iteritems():
@@ -4655,7 +4655,7 @@ try:
         final_s_cubicity = 1e6
         mats             = array(mats)
         for m in mats:
-            s_axes         = np.matmul(m, axes)
+            s_axes         = np.dot(m, axes)
             new_s_axes     = reduce_axes(s_axes)
             new_s_cubicity = cube_deviation(new_s_axes)
             if new_s_cubicity < final_s_cubicity:
@@ -4663,7 +4663,7 @@ try:
                 final_s_cubicity = new_s_cubicity
             #end if
         #end for
-	t = array(np.matmul(final_mat, np.linalg.inv(axes)))
+	t = array(np.dot(final_mat, np.linalg.inv(axes)))
         t_float = t.copy()
         tol = 10**-6
         t[abs(t)< tol] = 0
