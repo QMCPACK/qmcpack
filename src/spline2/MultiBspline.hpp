@@ -49,7 +49,30 @@ namespace qmcplusplus
             +g1y*g2x*h01+g1y*g2y*h11+g1y*g2z*h12
             +g1z*g2x*h02+g1z*g2y*h12+g1z*g2z*h22;
     }
-
+  /** Coordinate transform for a 3rd rank symmetric tensor representing coordinate derivatives
+   *  (hence t3_contract, for contraction with vectors).
+   *
+   * hijk are the symmetry inequivalent tensor elements, i,j,k range from 0 to 2 for x to z.
+   * (gix,giy,giz) are vectors, labelled 1, 2 and 3.  g1 is contracted with the first tensor index,
+   * g2 with the second, g3 with the third. 
+   *
+   * This would be easier with a for loop, but I'm sticking with the convention in this section.
+   */
+  template<typename T>
+    T t3_contract(T h000, T h001, T h002, T h011, T h012, T h022, T h111, T h112, T h122, T h222,
+                  T g1x, T g1y, T g1z, T g2x, T g2y, T g2z, T g3x, T g3y, T g3z) 
+    { 
+      return h000*(g1x*g2x*g3x)
+            +h001*(g1x*g2x*g3y+g1x*g2y*g3x+g1y*g2x*g3x)
+            +h002*(g1x*g2x*g3z+g1x*g2z*g3x+g1z*g2x*g3x)
+            +h011*(g1x*g2y*g3y+g1y*g2x*g3y+g1y*g2y*g3x)
+            +h012*(g1x*g2y*g3z+g1x*g2z*g3y+g1y*g2x*g3z+g1y*g2z*g3x+g1z*g2x*g3y+g1z*g2y*g3x)
+            +h022*(g1x*g2z*g3z+g1z*g2x*g3z+g1z*g2z*g3x)
+            +h111*(g1y*g2y*g3y)
+            +h112*(g1y*g2y*g3z+g1y*g2z*g3y+g1z*g2y*g3y)
+            +h122*(g1y*g2z*g3z+g1z*g2y*g3z+g1z*g2z*g3y)
+            +h222*(g1z*g2z*g3z);  
+    } 
   template<typename T>
     struct MultiBspline
     {
