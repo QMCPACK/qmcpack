@@ -320,13 +320,60 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
-     APP_ABORT("Backflow_ee.h::evaluate(P,QP,Bmat_full,Amat) not implemented for SoA\n");
+   //  APP_ABORT("Backflow_ee.h::evaluate(P,QP,Bmat_full,Amat) not implemented for SoA\n");
+    const DistanceTableData* d_table=P.DistTables[0];
+    for(int ig=0; ig<NumGroups; ++ig)
+    {
+      const int igt=ig*NumGroups;
+      for(int iat=P.first(ig),last=P.last(ig); iat<last; ++iat)
+      {
+        const auto &dist  = myTable->Distances[iat];
+        const auto &displ = myTable->Displacements[iat];
+        for(int jat=0; jat<iat; ++jat)
+        {
+	  if(dist[jat]>0)
+          {
+	    app_log()<<"("<<iat<<","<<jat<<")\n";
+            RealType uij = RadFun[PairID(iat,jat)]->evaluate(dist[jat],du,d2u);
+            du /= dist[jat];
+            PosType u = uij*displ[jat];
+            UIJ(jat,iat) = u;
+            UIJ(iat,jat) = -1.0*u;
+            QP.R[iat] -= u;
+            QP.R[jat] += u;
+            HessType& hess = AIJ(iat,jat);
+            hess = du*outerProduct(displ[jat],displ[jat]);
+#if OHMMS_DIM==3
+            hess[0] += uij;
+            hess[4] += uij;
+            hess[8] += uij;
+#elif OHMMS_DIM==2
+            hess[0] += uij;
+            hess[3] += uij;
+#endif
+            AIJ(jat,iat) = hess;
+            Amat(iat,iat) += hess;
+            Amat(jat,jat) += hess;
+            Amat(iat,jat) -= hess;
+            Amat(jat,iat) -= hess;
+            GradType& grad = BIJ(jat,iat);  // dr = r_j - r_i
+            grad = (d2u+(OHMMS_DIM+1)*du)*displ[jat];
+            BIJ(iat,jat) = -1.0*grad;
+            Bmat_full(iat,iat) -= grad;
+            Bmat_full(jat,jat) += grad;
+            Bmat_full(iat,jat) += grad;
+            Bmat_full(jat,iat) -= grad;
+	  }
+        }
+      }
+    }
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
       {
         int j = myTable->J[nn];
+	app_log()<<"("<<i<<","<<j<<")\n";
         RealType uij = RadFun[PairID(i,j)]->evaluate(myTable->r(nn),du,d2u);
         du *= myTable->rinv(nn);
         PosType u = uij*myTable->dr(nn);
@@ -359,6 +406,12 @@ public:
       }
     }
     #endif
+    app_log()<<" QP = "<<QP.R<<std::endl;
+    app_log()<<" Bmat = "<<Bmat_full<<std::endl;
+    app_log()<<" Amat = "<<Amat<<std::endl;
+    app_log()<<" du = "<<du<<std::endl;
+    app_log()<<" d2u = "<<d2u<<std::endl;
+    app_log()<<"=========================================\n";
   }
 
   /** calculate quasi-particle coordinates after pbyp move

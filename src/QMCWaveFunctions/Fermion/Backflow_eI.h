@@ -303,12 +303,6 @@ public:
       }
     }
     #endif
-    app_log()<<" QP = "<<QP.R<<std::endl;
-    app_log()<<" Bmat = "<<Bmat_full<<std::endl;
-    app_log()<<" Amat = "<<Amat<<std::endl;
-    app_log()<<" du = "<<du<<std::endl;
-    app_log()<<" d2u = "<<d2u<<std::endl;
-    app_log()<<"=========================================\n";
   }
 
   /** calculate quasi-particle coordinates after pbyp move
