@@ -104,6 +104,7 @@ public:
 
   inline void reportStatus(std::ostream& os) final { }
 
+  // expose CPU interfaces
   using WaveFunctionComponent::evaluateDerivatives;
   using WaveFunctionComponent::evaluateLog;
   using WaveFunctionComponent::recompute;
@@ -141,7 +142,7 @@ public:
   virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const = 0;
 
 #ifdef QMC_CUDA
-  // GPU interfaces
+  // expose GPU interfaces
   //using WaveFunctionComponent::recompute;
   using WaveFunctionComponent::reserve;
   using WaveFunctionComponent::addLog;
