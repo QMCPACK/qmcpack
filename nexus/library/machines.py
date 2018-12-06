@@ -279,6 +279,8 @@ class Job(NexusCore):
         self.finished           = False
         self.fake_job           = fake
 
+        self.user_app_command = app_command is not None
+
         if app is not None:
             self.app_name = app
         #end if
@@ -418,6 +420,13 @@ class Job(NexusCore):
         # ensure job is processed properly by this initialization stage
         self.process()
     #end def initialize
+
+
+    def renew_app_command(self,sim):
+        if not self.user_app_command:
+            self.app_command = sim.app_command()
+        #end if
+    #end def renew_app_command
 
 
     def set_id(self):

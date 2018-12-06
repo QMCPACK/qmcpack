@@ -270,6 +270,7 @@ class Simulation(NexusCore):
     analyzer_imagefile = 'analyzer.p'
     image_directory    = 'sim'
     supports_restarts  = False
+    renew_app_command  = False
 
     is_bundle = False
 
@@ -841,6 +842,9 @@ class Simulation(NexusCore):
                     #end for
                 #end for
             #end if
+        #end if
+        if self.renew_app_command:
+            self.job.renew_app_command(self)
         #end if
         self.got_dependencies = True
     #end def get_dependencies

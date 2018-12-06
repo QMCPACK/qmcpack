@@ -5488,8 +5488,12 @@ def generate_basic_input(id             = 'qmc',
         QmcpackInput.class_error('generate_basic_input argument system is missing\n  if you really do not want particlesets to be generated, set system to None')
     #end if
     if bconds is None:
-        if system!=None:
-            bconds = system.structure.bconds
+        if system is not None:
+            s = system.structure
+            bconds = s.bconds
+            if len(bconds)==0 or not s.has_axes():
+                bconds = 'nnn'
+            #end if
         else:
             bconds = 'ppp'
         #end if
@@ -5774,8 +5778,8 @@ def generate_opt_jastrow_input(id  = 'qmc',
         jastrows       = jastrows       ,
         corrections    = corrections    ,
         observables    = observables    ,
-        calculations   = opts,
-        det_format     = det_format
+        calculations   = opts           ,
+        det_format     = det_format     ,
         )
 
     return input

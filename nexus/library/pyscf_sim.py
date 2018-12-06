@@ -33,16 +33,29 @@ class Pyscf(Simulation):
     infile_extension   = '.py'
     application        = 'python'
     application_properties = set(['serial','mpi'])
-    application_results    = set([]) 
+    application_results    = set(['orbitals'])
 
 
     def check_result(self,result_name,sim):
-        return False
+        calculating_result = False
+        if result_name=='orbitals':
+            conv_requested  = self.input.save_qmc
+            prefix_provided = self.input.prefix is not None
+            calculating_result = conv_requested and prefix_provided
+        #end if
+        return calculating_result
     #end def check_result
 
 
     def get_result(self,result_name,sim):
-        self.not_implemented()
+        result = obj()
+        if result_name=='orbitals':
+            h5_file = self.input.prefix+'.h5'
+            result.h5_file = os.path.join(self.locdir,h5_file)
+        else:
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if
+        return result
     #end def get_result
 
 
