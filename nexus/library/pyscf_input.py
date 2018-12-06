@@ -117,19 +117,36 @@ class PyscfInput(SimulationInputTemplateDev):
     
 
     def __init__(self,
-                 filepath = None,
-                 text     = None,
-                 custom   = None,
-                 system   = None,
-                 mole     = None,
-                 cell     = None,
-                 mole_var = 'mol',
-                 cell_var = 'cell',
+                 template = None,   # path to template input file
+                 prefix   = None,   # $prefix var for file prefixes
+                 custom   = None,   # obj w/ $ prefixed vars in template
+                 system   = None,   # physical system object
+                 mole     = None,   # obj w/ Mole variables
+                 cell     = None,   # obj w/ Cell variables
+                 sys_var  = None,   # local var name for Mole/Cell
+                 mole_var = 'mol',  # local var name for Mole in written input
+                 cell_var = 'cell', # local var name for Cell in written input
+                 save_qmc = False,  # convert to QMCPACK format
+                 mf_var   = 'mf',   # local var name for mf, used for convert
+                 filepath = None,   # alias for template
+                 text     = None,   # full text of (and alternate to) template 
                  ):
+        if filepath is None and template is not None:
+            filepath = template
+        #end if
         SimulationInputTemplateDev.__init__(self,filepath,text)
+
+        self.prefix   = prefix
+        self.save_qmc = save_qmc
+        self.addendum = None
 
         if custom is not None:
             self.assign(**custom)
+        #end if
+
+        if sys_var is not None:
+            mole_var = sys_var
+            cell_var = sys_var
         #end if
 
         sys_name    = None
@@ -225,10 +242,10 @@ class PyscfInput(SimulationInputTemplateDev):
                 c += 'from numpy import array\n'
             #end if
             if is_mole:
-                c += 'from pyscf import gto_loc\n'
+                c += 'from pyscf import gto as gto_loc\n'
                 c += '{0} = gto_loc.Mole()\n'.format(sys_var)
             elif is_cell:
-                c += 'from pyscf.pbc import gto_loc\n'
+                c += 'from pyscf.pbc import gto as gto_loc\n'
                 c += '{0} = gto_loc.Cell()\n'.format(sys_var)
             #end if
             fmt = sys_var+'.{0:<'+str(klen)+'} = {1}\n'
@@ -256,7 +273,34 @@ class PyscfInput(SimulationInputTemplateDev):
             self.assign(system=c)
         #end if
 
+        if prefix is not None:
+            self.allow_no_assign('prefix')
+            self.assign(prefix=prefix)
+        #end if
+
+        if save_qmc:
+            if prefix is None:
+                self.error('cannot generate save2qmcpack text\nplease provide input variable "prefix"\n(used to set "title" in save2qmcpack)')
+            elif sys_var is None:
+                self.error('cannot generate save2qmcpack text\nplease provide input variable "sys_var"\n(used to set "cell" in save2qmcpack) ')
+            #end if
+            s = '### generated conversion text ###\n'
+            s += 'from PyscfToQmcpack import savetoqmcpack\n'
+            s += "savetoqmcpack({0},{1},'{2}')\n".format(sys_var,mf_var,prefix)
+            s += '### end generated conversion text ###\n'
+            self.addendum = '\n'+s+'\n'
+        #end if
+
     #end def __init__
+
+
+    def write_text(self,filepath=None):
+        text = SimulationInputTemplateDev.write_text(self,filepath)
+        if self.addendum is not None:
+            text += self.addendum
+        #end if
+        return text
+    #end def write_text
 #end class PyscfInput
 
 

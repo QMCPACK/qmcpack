@@ -1500,9 +1500,9 @@ from string import Template
 class SimulationInputTemplateDev(SimulationInput):
     def __init__(self,filepath=None,text=None):
         self.reset()
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath)
-        elif text!=None:
+        elif text is not None:
             self.read_text(text)
         #end if
     #end def __init__
@@ -1511,17 +1511,24 @@ class SimulationInputTemplateDev(SimulationInput):
         self.template = None
         self.keywords = set()
         self.values   = obj()
+        self.allow_not_set = set()
     #end def reset
         
     def clear(self):
         self.values.clear()
     #end def clear
 
+    def allow_no_assign(self,*keys):
+        for k in keys:
+            self.allow_not_set.add(k)
+        #end for
+    #end def allow_no_assign
+
     def assign(self,**values):
         if self.template is None:
             self.error('cannot assign values prior to reading template')
         #end if
-        invalid = set(values.keys()) - self.keywords
+        invalid = set(values.keys()) - self.keywords - self.allow_not_set
         if len(invalid)>0:
             self.error('attempted to assign invalid keywords\ninvalid keywords: {0}\nvalid options are: {1}'.format(sorted(invalid),sorted(self.keywords)))
         #end if

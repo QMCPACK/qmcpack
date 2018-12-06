@@ -85,6 +85,9 @@ def generate_pyscf(**kwargs):
             input_type = inp_args.input_type
             del inp_args.input_type
         #end if
+        if 'prefix' not in inp_args and 'identifier' in sim_args:
+            inp_args['prefix'] = sim_args['identifier']
+        #end if
         sim_args.input = generate_pyscf_input(**inp_args)
     #end if
     py = Pyscf(**sim_args)
