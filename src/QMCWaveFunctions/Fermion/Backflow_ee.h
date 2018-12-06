@@ -333,7 +333,6 @@ public:
         {
 	  if(dist[jat]>0)
           {
-	    app_log()<<"("<<iat<<","<<jat<<")\n";
             RealType uij = RadFun[PairID(iat,jat)]->evaluate(dist[jat],du,d2u);
             du /= dist[jat];
             PosType u = uij*displ[jat];
@@ -373,7 +372,6 @@ public:
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
       {
         int j = myTable->J[nn];
-	app_log()<<"("<<i<<","<<j<<")\n";
         RealType uij = RadFun[PairID(i,j)]->evaluate(myTable->r(nn),du,d2u);
         du *= myTable->rinv(nn);
         PosType u = uij*myTable->dr(nn);
@@ -406,12 +404,6 @@ public:
       }
     }
     #endif
-  //  app_log()<<" QP = "<<QP.R<<std::endl;
-  //  app_log()<<" Bmat = "<<Bmat_full<<std::endl;
-  //  app_log()<<" Amat = "<<Amat<<std::endl;
-  //  app_log()<<" du = "<<du<<std::endl;
-  //  app_log()<<" d2u = "<<d2u<<std::endl;
-  //  app_log()<<"=========================================\n";
   }
 
   /** calculate quasi-particle coordinates after pbyp move
