@@ -256,7 +256,31 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
-     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_full,Amat) not implemented for SoA\n");
+//     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_full,Amat) not implemented for SoA\n");
+    for(int jel=0; jel<P.getTotalNum(); jel++)
+    {
+      const auto &dist  = myTable->Distances[jel];
+      const auto &displ = myTable->Displacements[jel];
+      for(int iat=0; iat<NumCenters; iat++)
+      {
+	if(dist[iat]>0) 
+        {
+          RealType uij = RadFun[iat]->evaluate(dist[iat],du,d2u);
+	  du /= dist[iat];
+          QP.R[jel] += (UIJ(jel,iat) = -uij*displ[iat]);
+          HessType& hess = AIJ(jel,iat);
+          hess = du*outerProduct(displ[iat],displ[iat]);
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+          Amat(jel,jel) += hess;
+// this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
+        //u = (d2u+4.0*du)*myTable->dr(nn);
+          Bmat_full(jel,jel) += (BIJ(jel,iat)=-(d2u+4.0*du)*displ[iat]);
+	}
+      }
+    }
+    
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
@@ -279,6 +303,12 @@ public:
       }
     }
     #endif
+    app_log()<<" QP = "<<QP.R<<std::endl;
+    app_log()<<" Bmat = "<<Bmat_full<<std::endl;
+    app_log()<<" Amat = "<<Amat<<std::endl;
+    app_log()<<" du = "<<du<<std::endl;
+    app_log()<<" d2u = "<<d2u<<std::endl;
+    app_log()<<"=========================================\n";
   }
 
   /** calculate quasi-particle coordinates after pbyp move
