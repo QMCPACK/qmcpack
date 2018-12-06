@@ -39,7 +39,7 @@ public:
     InverseTimer("DiracDeterminantBase::inverse",timer_level_fine),
     BufferTimer("DiracDeterminantBase::buffer",timer_level_fine),
     SPOVTimer("DiracDeterminantBase::spoval",timer_level_fine),
-    SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
+    SPOVGLTimer("DiracDeterminantBase::spovgl",timer_level_fine)
   {
     Optimizable = Phi->Optimizable;
     ClassName = "DiracDeterminantBase";
