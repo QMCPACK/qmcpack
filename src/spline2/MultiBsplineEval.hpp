@@ -43,6 +43,9 @@
 #include <spline2/MultiBsplineVGLH.hpp>
 #endif
 
+///include evaluate_vghgh
+#include <spline2/MultiBsplineVGHGH.hpp>
+
 namespace spline2
 {
 
