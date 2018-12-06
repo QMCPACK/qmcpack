@@ -104,9 +104,11 @@ The orbital-space Auxiliary-Field Quantum Monte Carlo (AFMQC) method is now avai
     \item Sparse representation of large matrices for reduced memory usage.
 \end{itemize}
 
-\subsection{GPU spline data splitting}
+\subsection{Sharing of spline data across GPUs}
 
-GPU spline data splitting enables the orbital-wise distribution of the spline table across multiple GPUs on a given computational node. In order to achieve reasonable performance the orbital evaluations remain local to their respective memory (aka GPUs). In other words, the spline evaluation of a given rank now is spread across the visible GPUs. In order to use this feature, the following needs to be done:
+GPU spline data splitting enables the orbital-wise distribution of the spline table across multiple GPUs on a given computational node. In order to achieve reasonable performance the orbital evaluations remain local to their respective memory (aka GPUs). In other words, the spline evaluation of a given rank now is spread across the visible GPUs. This enables larger spline tables than would fit in the memory of individual GPUs to be utilized, and potentially up to the total GPU memory on a node.
+
+In order to use this feature, the following needs to be done:
 
 \begin{itemize}
     \item The CUDA Multi-Process Service (MPS) needs to be utilized (e.g. on Summit/SummitDev use "-alloc_flags gpumps" for bsub)
