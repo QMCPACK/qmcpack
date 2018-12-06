@@ -406,12 +406,12 @@ public:
       }
     }
     #endif
-    app_log()<<" QP = "<<QP.R<<std::endl;
-    app_log()<<" Bmat = "<<Bmat_full<<std::endl;
-    app_log()<<" Amat = "<<Amat<<std::endl;
-    app_log()<<" du = "<<du<<std::endl;
-    app_log()<<" d2u = "<<d2u<<std::endl;
-    app_log()<<"=========================================\n";
+  //  app_log()<<" QP = "<<QP.R<<std::endl;
+  //  app_log()<<" Bmat = "<<Bmat_full<<std::endl;
+  //  app_log()<<" Amat = "<<Amat<<std::endl;
+  //  app_log()<<" du = "<<du<<std::endl;
+  //  app_log()<<" d2u = "<<d2u<<std::endl;
+  //  app_log()<<"=========================================\n";
   }
 
   /** calculate quasi-particle coordinates after pbyp move
@@ -721,7 +721,80 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
-     APP_ABORT("Backflow_ee.h::evaluateWithDerivatives(P,QP,Bmat,Amat,Cmat,Ymat,Xmat)\n");
+    // APP_ABORT("Backflow_ee.h::evaluateWithDerivatives(P,QP,Bmat,Amat,Cmat,Ymat,Xmat)\n");
+    const DistanceTableData* d_table=P.DistTables[0];
+    for(int ig=0; ig<NumGroups; ++ig)
+    {
+      const int igt=ig*NumGroups;
+      for(int iat=P.first(ig),last=P.last(ig); iat<last; ++iat)
+      {
+        const auto &dist  = myTable->Distances[iat];
+        const auto &displ = myTable->Displacements[iat];
+        for(int jat=0; jat<iat; ++jat)
+        {
+	  if(dist[jat]>0)
+          {
+            RealType uij = RadFun[PairID(iat,jat)]->evaluate(dist[jat],du,d2u);
+        //for(int q=0; q<derivs.size(); q++) derivs[q]=0.0; // I believe this is necessary
+//           std::fill(derivs.begin(),derivs.end(),0.0);
+            int numParamJU = RadFun[PairID(iat,jat)]->NumParams;
+            std::vector<TinyVector<RealType,3> > derivsju(numParamJU);
+            RadFun[PairID(iat,jat)]->evaluateDerivatives(dist[jat],derivsju);
+            du /= dist[jat];
+            PosType u = uij*displ[jat];
+            UIJ(jat,iat) = u;
+            UIJ(iat,jat) = -1.0*u;
+            QP.R[iat] -= u;
+            QP.R[jat] += u;
+            HessType op = outerProduct(displ[jat],displ[jat]);
+            HessType& hess = AIJ(iat,jat);
+            hess = du*op;
+#if OHMMS_DIM==3
+            hess[0] += uij;
+            hess[4] += uij;
+            hess[8] += uij;
+#elif OHMMS_DIM==2
+            hess[0] += uij;
+            hess[3] += uij;
+#endif
+            Amat(iat,iat) += hess;
+            Amat(jat,jat) += hess;
+            Amat(iat,jat) -= hess;
+            Amat(jat,iat) -= hess;
+// this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
+        // d2u + (ndim+1)*du
+            GradType& grad = BIJ(jat,iat);  // dr = r_j - r_i
+            grad = (d2u+(OHMMS_DIM+1)*du)*displ[jat];
+            BIJ(iat,jat) = -1.0*grad;
+            Bmat_full(iat,iat) -= grad;
+            Bmat_full(jat,jat) += grad;
+            Bmat_full(iat,jat) += grad;
+            Bmat_full(jat,iat) -= grad;
+            for(int prm=0,la=indexOfFirstParam+offsetPrms[PairID(iat,jat)]; prm<numParamJU; prm++,la++)
+            {
+              PosType uk = displ[jat]*derivsju[prm][0];
+              Cmat(la,iat) -= uk;
+              Cmat(la,jat) += uk;
+              Xmat(la,iat,jat) -= (derivsju[prm][1]/dist[jat])*op;
+#if OHMMS_DIM==3
+              Xmat(la,iat,jat)[0] -= derivsju[prm][0];
+              Xmat(la,iat,jat)[4] -= derivsju[prm][0];
+              Xmat(la,iat,jat)[8] -= derivsju[prm][0];
+#elif OHMMS_DIM==2
+              Xmat(la,iat,jat)[0] -= derivsju[prm][0];
+              Xmat(la,iat,jat)[3] -= derivsju[prm][0];
+#endif
+              Xmat(la,jat,iat) += Xmat(la,iat,jat);
+              Xmat(la,iat,iat) -= Xmat(la,iat,jat);
+              Xmat(la,jat,jat) -= Xmat(la,iat,jat);
+              uk = 2.0*(derivsju[prm][2]+(OHMMS_DIM+1)*derivsju[prm][1]/dist[jat])*displ[jat];
+              Ymat(la,iat) -= uk;
+              Ymat(la,jat) += uk;
+            }
+          }
+        }
+      }
+    }
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
@@ -729,8 +802,6 @@ public:
       {
         int j = myTable->J[nn];
         RealType uij = RadFun[PairID(i,j)]->evaluate(myTable->r(nn),du,d2u);
-        //for(int q=0; q<derivs.size(); q++) derivs[q]=0.0; // I believe this is necessary
-//           std::fill(derivs.begin(),derivs.end(),0.0);
         int numParamJU = RadFun[PairID(i,j)]->NumParams;
         std::vector<TinyVector<RealType,3> > derivsju(numParamJU);
         RadFun[PairID(i,j)]->evaluateDerivatives(myTable->r(nn),derivsju);
@@ -755,8 +826,6 @@ public:
         Amat(j,j) += hess;
         Amat(i,j) -= hess;
         Amat(j,i) -= hess;
-// this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
-        // d2u + (ndim+1)*du
         GradType& grad = BIJ(j,i);  // dr = r_j - r_i
         grad = (d2u+(OHMMS_DIM+1)*du)*myTable->dr(nn);
         BIJ(i,j) = -1.0*grad;

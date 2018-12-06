@@ -482,7 +482,41 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
-     APP_ABORT("Backflow_eI.h::evaluateWithDerivatives(P,QP,Bmat,Amat,Cmat,Ymat,Xmat)\n");
+    for(int jel=0; jel<P.getTotalNum(); jel++)
+    {
+      const auto &dist  = myTable->Distances[jel];
+      const auto &displ = myTable->Displacements[jel];
+      for(int iat=0; iat<NumCenters; iat++)
+      {
+	if(dist[iat]>0) 
+        {
+          RealType uij = RadFun[iat]->evaluate(dist[iat],du,d2u);
+          int NPrms = RadFun[iat]->NumParams;
+          std::vector<TinyVector<RealType,3> > derivsju(NPrms);
+          RadFun[iat]->evaluateDerivatives(dist[iat],derivsju);
+          du /= dist[iat];
+          QP.R[jel] += (UIJ(jel,iat) = -uij*displ[iat]);
+          HessType op = outerProduct(displ[iat],displ[iat]);
+          HessType& hess = AIJ(jel,iat);
+          hess = du*op;
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+          Amat(jel,jel) += hess;
+          Bmat_full(jel,jel) += (BIJ(jel,iat)=-(d2u+4.0*du)*displ[iat]);
+          for(int prm=0,la=indexOfFirstParam+offsetPrms[iat]; prm<NPrms; prm++,la++)
+          {
+            Cmat(la,jel) -= displ[iat]*derivsju[prm][0];
+            Xmat(la,jel,jel) += (derivsju[prm][1]/dist[iat])*op;
+            Xmat(la,jel,jel)[0] += derivsju[prm][0];
+            Xmat(la,jel,jel)[4] += derivsju[prm][0];
+            Xmat(la,jel,jel)[8] += derivsju[prm][0];
+            Ymat(la,jel) -= (derivsju[prm][2]+4.0*derivsju[prm][1]/dist[iat])*displ[iat];
+          }
+        }
+      }
+    }
+      
     #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
