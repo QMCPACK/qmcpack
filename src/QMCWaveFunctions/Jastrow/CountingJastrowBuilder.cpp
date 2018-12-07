@@ -56,7 +56,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 
   Matrix<RealType>* F = new Matrix<RealType>();
   std::vector<RealType>* G = new std::vector<RealType>();
-  bool opt_R = true, opt_F = true, opt_G = true;
+  bool opt_C = true, opt_F = true, opt_G = true;
 
   // standard child loop
   cur = cur->xmlChildrenNode;
@@ -66,13 +66,14 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
     // create counting region, populate with functions
     if(cname == "region")
     {
-      // read in opt_R option
+      // read in opt_C option
       OhmmsAttributeSet oAttrib;
       std::string opt = "true";
       oAttrib.add(opt, "opt");
       oAttrib.put(cur);
-      opt_R = (opt == "true" || opt == "yes");
-
+      opt_C = (opt == "true" || opt == "yes");
+      // call RegionType->put
+      CR->put(cur);
       // add functions
       xmlNodePtr cur2 = cur->xmlChildrenNode;
       std::string cname2((const char*) cur2->name);
@@ -118,11 +119,11 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
             APP_ABORT(err.str());
           }
           // set F from upper triangular elements
-          F.resize(Fdim, Fdim)
+          F->resize(Fdim, Fdim);
           auto it = F_utri.begin();
           for(int I = 0; I < Fdim; ++I)
             for(int J = I; J < Fdim; ++J, ++it)
-              F(I,J) = F(J,I) = (*it);
+              (*F)(I,J) = (*F)(J,I) = (*it);
         }
         else if (form == "full_matrix")
           putContent(*F, cur);
@@ -136,7 +137,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
         rAttrib2.put(cur2);
         opt = (opt == "yes" || opt == "true");
         // read in G vector
-        putContent(*G, cur2)
+        putContent(*G, cur2);
       }
       if(cname2 == "debug")
       {
@@ -154,10 +155,10 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
     cur = cur->next;
   }
 
-  CJ->addRegion(CR,F,G, opt_R,opt_G,opt_F);
+  CJ->addRegion(CR,F,G, opt_C,opt_G,opt_F);
   dCJ->addRegion(CR);
 
-  CJ->setOptimizable(opt_R || opt_G || opt_F);
+  CJ->setOptimizable(opt_C || opt_G || opt_F);
   CJ->dPsi = dCJ;
 
   std::string cjname = "CJ_"+RegionOpt;
@@ -168,10 +169,6 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 
 bool CountingJastrowBuilder::put(xmlNodePtr cur)
 {
-  // typedefs
-//  typedef NormalizedGaussianRegion<RT> NormGaussRegionType;
-//  typedef SigmoidRegion<RT> SigmoidRegionType;
-
   OhmmsAttributeSet oAttrib;
   oAttrib.add(RegionOpt,"region");
   oAttrib.add(TypeOpt,"type");
@@ -181,10 +178,10 @@ bool CountingJastrowBuilder::put(xmlNodePtr cur)
   {
     createCJ<NormalizedGaussianRegion>(cur);
   }
-  if(RegionOpt.find("sigmoid") < RegionOpt.size())
-  {
-    createCJ<SigmoidRegion>(cur);
-  }
+//  if(RegionOpt.find("sigmoid") < RegionOpt.size())
+//  {
+//    createCJ<SigmoidRegion>(cur);
+//  }
 
   
 
