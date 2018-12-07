@@ -2930,12 +2930,13 @@ class Stampede2(Supercomputer):
     #end def write_job_header
 #end class Stampede2
 
-#
-class Cades(Supercomputer):
 
+
+class Cades(Supercomputer):
     name = 'cades'
     requires_account = True
     batch_capable    = True
+
     def process_job_extra(self,job):
         if job.threads>1 and job.processes_per_node > 1:
             processes_per_socket = int(floor(job.processes_per_node/2))
@@ -2950,9 +2951,9 @@ class Cades(Supercomputer):
         if job.qos is None:
             job.qos = 'std'
         #end if
-    if job.group_list is None:
-        job.group_list = 'cades-qmc'
-    #end if
+        if job.group_list is None:
+            job.group_list = 'cades-qmc'
+        #end if
         c= '#!/bin/bash\n'
         c+='#PBS -A {0}\n'.format(job.account)
         c+='#PBS -W group_list={0}\n'.format(job.group_list) 

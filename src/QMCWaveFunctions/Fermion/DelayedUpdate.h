@@ -41,14 +41,18 @@ namespace qmcplusplus {
 
       /// pointer to the row of up-to-date Ainv
       const T* Ainv_row_ptr;
-      /// electron id of the up-to-date Ainv_row, checked by ratioGrad
-      int Ainv_row_ind;
+      /** row id correspond to the up-to-date Ainv_row_ptr. [0 norb), Ainv_row_ptr is valid; -1, Ainv_row_ptr is not valid.
+       *  This id is set by getInvRow indicating Ainv_row_ptr has been prepared for the Ainv_row_id row
+       *  ratioGrad checks if Ainv_row_id is consistent. If not, Ainv_row_ptr needs to be recomputed.
+       *  acceptRow and updateInvMat mark Ainv_row_ptr invalid by setting Ainv_row_id to -1
+       */
+      int Ainv_row_id;
       /// current determinant ratio
       T curRatio;
 
     public:
       /// default constructor
-      DelayedUpdate(): delay_count(0), Ainv_row_ptr(nullptr), Ainv_row_ind(-1) {}
+      DelayedUpdate(): delay_count(0), Ainv_row_ptr(nullptr), Ainv_row_id(-1) {}
 
       ///resize the internal storage
       /** resize the internal storage
@@ -72,7 +76,7 @@ namespace qmcplusplus {
        */
       inline void getInvRow(const Matrix<T>& Ainv, int rowchanged)
       {
-        Ainv_row_ind = rowchanged;
+        Ainv_row_id = rowchanged;
         if ( delay_count == 0 )
         {
           // Ainv is fresh, directly access Ainv
@@ -127,8 +131,9 @@ namespace qmcplusplus {
       template<typename VVT, typename GGT, typename GT>
       inline T ratioGrad(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV, const GGT& dpsiV, GT& g)
       {
-        // check Ainv_row_ind against rowchanged to ensure getInvRow() called before ratioGrad()
-        if(Ainv_row_ind != rowchanged)
+        // check Ainv_row_id against rowchanged to ensure getInvRow() called before ratioGrad()
+        // This is not a safety check. Some code paths do call ratioGrad without calling evalGrad first.
+        if(Ainv_row_id != rowchanged)
           getInvRow(Ainv, rowchanged);
         g = simd::dot(Ainv_row_ptr,dpsiV.data(),Ainv.cols());
         return curRatio = simd::dot(Ainv_row_ptr,psiV.data(),Ainv.cols());
@@ -144,8 +149,8 @@ namespace qmcplusplus {
       template<typename VVT>
       inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
-        // safe mechanism
-        Ainv_row_ind = -1;
+        // Ainv_row_ptr is no more valid by marking Ainv_row_id -1
+        Ainv_row_id = -1;
 
         const T cminusone(-1);
         const T czero(0);
@@ -178,6 +183,8 @@ namespace qmcplusplus {
        */
       inline void updateInvMat(Matrix<T>& Ainv)
       {
+        // Ainv_row_ptr is no more valid by marking Ainv_row_id -1
+        Ainv_row_id = -1;
         if(delay_count==0) return;
         // update the inverse matrix
         const T cone(1);
@@ -200,7 +207,6 @@ namespace qmcplusplus {
           BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
         }
         delay_count = 0;
-        Ainv_row_ind = -1;
       }
     };
 }
