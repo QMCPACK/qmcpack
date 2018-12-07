@@ -1008,6 +1008,7 @@ DiracDeterminantCUDA::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
   ValueMatrix_t cpu_lapl(grads.rows(), grads.cols());
   for (int iw=0; iw<walkers.size(); iw++)
   {
+    fprintf(stderr,"walker #%i:\n",iw);
     host_data = walkers[iw]->cuda_DataSet;
     for (int iat=0; iat < NumPtcls; iat++)
     {
