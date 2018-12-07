@@ -1,11 +1,13 @@
 
 
+#include "CountingFunctor.h"
+
 // T is precision
 
 template <class T> class NormalizedGaussianRegion
 {
 public:
-  typedef GaussianFunctor FT;
+  typedef GaussianFunctor FunctorType;
 
   // variables
 
@@ -18,13 +20,13 @@ public:
   ~NormalizedGaussianRegion()
   {}
 
-  void addFunc(*FT);
+  void addFunc(*FT, std::string id);
 }
 
 template <class T> class SigmoidRegion
 {
 public:
-//  typedef GaussianFunctor FT;
+  typedef SigmoidFunctor FunctorType<T>;
 
   // variables
 
@@ -37,7 +39,7 @@ public:
   ~SigmoidRegion()
   {}
 
-  void addFunc(*FT);
+  void addFunc(*FT, std::string id);
 public:
   //void addFunc( );
 }

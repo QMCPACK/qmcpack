@@ -76,6 +76,7 @@ IF(OHMMS_DIM MATCHES 3)
 
   SET(JASTROW_SRCS ${JASTROW_SRCS}
     Jastrow/eeI_JastrowBuilder.cpp
+    Jastrow/CountingJastrowBuilder.cpp
     )
 
   IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
