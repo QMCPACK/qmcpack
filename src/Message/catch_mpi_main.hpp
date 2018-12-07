@@ -21,8 +21,9 @@
 // Replacement unit test main function to ensure that MPI is finalized once 
 // (and only once) at the end of the unit test.
 
-int main(int argc, const char* argv[])
+int main(int argc, char* argv[])
 {
+  OHMMS::Controller = new Communicate(argc, argv);
   int result = Catch::Session().run(argc, argv);
   OHMMS::Controller->finalize();
   return result;

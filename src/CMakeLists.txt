@@ -349,6 +349,7 @@ ENDIF()
     SUBDIRS(Estimators/tests)
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
+    SUBDIRS(Message/tests)
   endif() #}
 
 endif() #}}}
