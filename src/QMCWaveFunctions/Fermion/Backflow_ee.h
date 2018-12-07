@@ -506,7 +506,57 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
-     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Amat) not implemented for SoA\n");
+    // APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Amat) not implemented for SoA\n");
+    for(int j=0; j<iat; j++)
+    {
+      if(myTable->Temp_r[j]>0)
+      {
+        RealType uij = RadFun[PairID(iat,j)]->evaluate(myTable->Temp_r[j],du,d2u);
+        PosType u = (UIJ_temp[j]=-uij*myTable->Temp_dr[j])-UIJ(iat,j);
+        newQP[iat] += u;
+        newQP[j] -= u;
+        HessType& hess = AIJ_temp[j];
+        hess = (du/myTable->Temp_r[j])*outerProduct(myTable->Temp_dr[j],myTable->Temp_dr[j]);
+#if OHMMS_DIM==3
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+#elif OHMMS_DIM==2
+        hess[0] += uij;
+        hess[3] += uij;
+#endif
+        HessType dA = hess - AIJ(iat,j);
+        Amat(iat,iat) += dA;
+        Amat(j,j) += dA;
+        Amat(iat,j) -= dA;
+        Amat(j,iat) -= dA;
+      }
+    }
+    for(int j=iat+1; j<NumTargets; j++)
+    {
+      if(myTable->Temp_r[j]>0)
+      {
+        RealType uij = RadFun[PairID(iat,j)]->evaluate(myTable->Temp_r[j],du,d2u);
+        PosType u = (UIJ_temp[j]=-uij*myTable->Temp_dr[j])-UIJ(iat,j);
+        newQP[iat] += u;
+        newQP[j] -= u;
+        HessType& hess = AIJ_temp[j];
+        hess = (du/myTable->Temp_r[j])*outerProduct(myTable->Temp_dr[j],myTable->Temp_dr[j]);
+#if OHMMS_DIM==3
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+#elif OHMMS_DIM==2
+        hess[0] += uij;
+        hess[3] += uij;
+#endif
+        HessType dA = hess - AIJ(iat,j);
+        Amat(iat,iat) += dA;
+        Amat(j,j) += dA;
+        Amat(iat,j) -= dA;
+        Amat(j,iat) -= dA;
+      }
+    }
     #else
 // myTable->Temp[jat].r1
     for(int j=0; j<iat; j++)

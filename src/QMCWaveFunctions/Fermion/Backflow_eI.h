@@ -378,7 +378,24 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
-     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Amat) not implemented for SoA\n");
+//     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Amat) not implemented for SoA\n");
+    int maxI = myTable->size(SourceIndex);
+    for(int j=0; j<maxI; j++)
+    {
+      if(myTable->Temp_r[j]>0)
+      {
+        RealType uij = RadFun[j]->evaluate(myTable->Temp_r[j],du,d2u);
+        PosType u = (UIJ_temp[j]=-uij*myTable->Temp_dr[j])-UIJ(iat,j);
+        newQP[iat] += u;
+        HessType& hess = AIJ_temp[j];
+        hess = (du/myTable->Temp_r[j])*outerProduct(myTable->Temp_dr[j],myTable->Temp_dr[j]);
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+// should I expand this??? Is the compiler smart enough???
+        Amat(iat,iat) += (hess - AIJ(iat,j));
+      }
+    }
     #else
     int maxI = myTable->size(SourceIndex);
     for(int j=0; j<maxI; j++)
