@@ -40,8 +40,8 @@ struct CountingJastrowBuilder: public WaveFunctionComponentBuilder
   ///jastrow/@function
   std::string Jastfunction;
 
-  void createJC(xmlNodePtr cur);
-
+  template<template<class> class RegionType>
+  bool CountingJastrowBuilder::createCJ(xmlNodePtr cur);
 };
 
 }

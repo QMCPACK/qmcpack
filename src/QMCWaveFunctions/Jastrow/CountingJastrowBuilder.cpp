@@ -10,8 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "CountingJastrowBuilder.h"
-#include "QMCWaveFucntions/Jastrow/CountingJastrowOrbital.h"
-#include "QMCWaveFucntions/Jastrow/DiffCountingJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/CountingJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/DiffCountingJastrowOrbital.h"
 #include <iostream>
 
 namespace qmcplusplus
@@ -48,7 +48,6 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   using DiffCJOrbitalType = typename JastrowTypeHelper<RT, RegionType>::DiffCJOrbitalType;
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  int taskid = (targetPsi.is_manager())?targetPsi.getGroupID():-1;
 
 
 
@@ -70,43 +69,32 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
     // orbital/region/functor classes together
 
     // read debug options <var="debug" seqlen="" period="" /> under jastrow
+    // if(...)
+    //   CJ->addDebug(seqlen, period);
     // put these into the wavefunction somehow?
   
-    // auto *CR = new CountingRegionType(num_els)
+    // auto *CR = new CountingRegionType(targetPtcl)
     // iterate through and initialize the functors
     // for cname = ...
     //   if cname=="functor" "function"
     //     auto *CF = new CountingFunctorType(params, opt_flags)
-    //     CF->put(cur); // because these are really short and numerical and this would otherwise be clutter
+           // relegate put to functors because these are really short and numerical 
+           // and depends on the functor and this is otherwise clutter
+    //     CF->put(cur);
     //     CR->addFunc(CF,...) 
 
-    // Not sure what this is for.
-    //if(qmc_common.io_node)
-    //{
-    //	char fname[32];
-    //	if(qmc_common.mpi_groups>1)
-    //	  sprintf(fname,"J2.%s.g%03d.dat",pairType.c_str(),taskid);
-    //	else
-    //	  sprintf(fname,"J2.%s.dat",pairType.c_str());
-    //	std::ofstream os(fname);
-    //	print(*functor, os);	
-    //}
     cur = cur->next;
   }
 
-  // auto *CJ = new CJOrbitalType(targetPtcl, taskid);
-  // CJ->add_linear_parameters(F,G)
-  // CJ->add_debug_parameters(seqlen, period);
-  // CJ->addRegion(CR);
+  // auto *CJ = new CJOrbitalType(targetPtcl);
+  // CJ->addRegion(CR,F,G, opt_R, opt_G, opt_F)
+  // CJ->setOptimizable(opt_R || opt_G || opt_F);
   // auto *dCJ = new DiffCJOrbitalType(targetPtcl);
-  // dCJ->add_opt_parameters(F, G, opt_G, opt_F) // need these for Counting function derivatives
-  // dCJ->add_debug_parameters(seqlen, period);
   // dCJ->addRegion(CR);
 
   CJ->dPsi = dCJ;
   std::string cjname = "CJ_"+Jastfunction;
   targetPsi.addOrbital(CJ,cjname.c_str());
-  CJ->setOptimizable(true);
   return true;
   
 }
@@ -120,6 +108,7 @@ bool CountingJastrowBuilder::put(xmlNodePtr cur)
   if(regionOpt.find("normalized_gaussian") < regionOpt.size())
   {
     // initialize a CountingRegion<...> region using hardcoded functor types
+    // NormalizedGaussianRegion<type> CR = ...
     // instantiate template of CountingRegion based on region node pointer
     // instantiate template based on NormalizedCountingRegion<GaussianFunctor>
     //   createCJ< >

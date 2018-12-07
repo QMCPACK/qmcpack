@@ -1,157 +1,239 @@
-#ifndef QMCPLUSPLUS_COUNTINGJASTROWORBITAL_H
-#define QMCPLUSPLUS_COUNTINGJASTROWORBITAL_H
-#include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/Jastrow/CountingRegion.h"
-#include "QMCWaveFunctions/Jastrow/CountingFunctors.h"
 
-namespace qmcplusplus
+
+
+template <class RegionType> 
+class CountingJastrowOrbital : public WaveFunctionComponent
 {
-class CountingJastrowOrbital : public OrbitalBase
-{
-protected:
-  // number of electrons
-  int num_els;
-  // number of counting regions
-  int num_regions;
-  // debug print flag
-  bool debug;
-  int debug_seqlen;
-  int debug_period;
+  ///** flag to set the optimization mode */
+  //bool IsOptimizing;
 
-  // Jastrow linear coefficients
-  std::vector<RealType> F;
-  std::vector<RealType> G;
-  // Counting Regions
-  CountingRegionBase* C;
+  ///** boolean to set optimization
+  // *
+  // * If true, this object is actively modified during optimization
+  // */
+  //bool Optimizable;
 
-  // Optimization Flags
-  bool opt_F;
-  bool opt_G;
-  bool opt_C;
+  ///** true, if FermionWF */
+  //bool IsFermionWF;
 
-  // flag for using normalized counting regions
-  bool C_norm;
+  ///** true, if it is done with derivatives */
+  //bool derivsDone;
 
-  // Jastrow intermediate Matrix-vector products 
-  std::vector<RealType> FCsum;
-  std::vector<GradType> FCgrad;
-  std::vector<RealType> FClap;
-  
-  // grad dot grad and laplacian sums for evaluateDerivatives
-  std::vector<RealType> FCggsum;
-  std::vector<RealType> FClapsum;
+  ///** true, if compute for the ratio instead of buffering */
+  //bool Need2Compute4PbyP;
 
-  // Jastrow intermediate Matrix-vector products at proposed position
-  std::vector<RealType> FCsum_t;
-  std::vector<GradType> FCgrad_t;
-  std::vector<RealType> FClap_t;
-  
-  // Jastrow exponent values and gradients (by particle index)
-  RealType Jval; 
-  std::vector<GradType> Jgrad;
-  std::vector<RealType> Jlap;
+  ///** define the level of storage in derivative buffer **/
+  //int DerivStorageType;
 
-  // Jastrow exponent values and gradients at proposed position
-  RealType Jval_t;
-  std::vector<GradType> Jgrad_t;
-  std::vector<RealType> Jlap_t;
+  ///** flag to calculate and return ionic derivatives */
+  //bool ionDerivs;
 
-  // containers for counting function derivative quantities
-  std::vector<RealType> dCsum;
-  std::vector<RealType> dCsum_t;
-  std::vector<RealType> dCggsum;
-  std::vector<RealType> dClapsum;
-  std::vector<RealType> dCFCggsum;
-  std::vector<int> dCindex;
+  //int parameterType;
 
+  ///** current update mode */
+  //int UpdateMode;
 
-  
-  // first array index for opt_index, opt_id 
-  enum opt_var { OPT_F, OPT_G, NUM_OPT_VAR };
-  // vectors to store indices and names of active optimizable parameters  
-  std::array<std::vector<int>,NUM_OPT_VAR> opt_index; 
-  std::array<std::vector<std::string>,NUM_OPT_VAR> opt_id;
+  ///** current \f$\log\phi \f$
+  // */
+  //RealType LogValue;
 
-public:
-  CountingJastrowOrbital(ParticleSet& els);
-  ~CountingJastrowOrbital();
-  bool put(xmlNodePtr cur);
-  void initialize();
-  void reportStatus(std::ostream& os);
+  ///** current phase
+  // */
 
-  // internally used functions
-  void evaluateExponents(ParticleSet& P);
-  void evaluateTempExponents(ParticleSet& P, int iat);
+  //RealType PhaseValue;
+  ///** Pointer to the differential orbital of this object
+  // *
+  // * If dPsi=0, this orbital is constant with respect to the optimizable variables
+  // */
+  //DiffWaveFunctionComponentPtr dPsi;
 
-  // print helper functions
-  void evaluateExponents_print(std::ostream& os, ParticleSet& P);
-  void evaluateTempExponents_print(std::ostream& os, ParticleSet& P, int iat);
+  ///** A vector for \f$ \frac{\partial \nabla \log\phi}{\partial \alpha} \f$
+  // */
+  //GradVectorType dLogPsi;
 
+  ///** A vector for \f$ \frac{\partial \nabla^2 \log\phi}{\partial \alpha} \f$
+  // */
+  //ValueVectorType d2LogPsi;
 
-  // === VMC calls ===  
-  // called at the beginning of every VMC run
-  void resetTargetParticleSet(ParticleSet& P);
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
-  // called in VMC runs before each step
-  inline void copyFromBuffer(ParticleSet& P,PooledData<RealType>& buf);
-  // called in VMC runs in advanceWalkers: return Gradient of particle at iat
-  GradType evalGrad(ParticleSet& P, int iat);
-  // called in VMC runs in advanceWalkers: calculate wfn and ratio at particle position iat
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  // called in VMC runs after each substep if step is accepted
-  void acceptMove(ParticleSet& P, int iat);
-  // called in VMC runs after each substep if step is rejected
-  void restore(int iat);
-  // called in VMC runs after each step  
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
-  // update not called?
-  void update(ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL, int iat);
-  // called every nBlocksBetweenRecompute: default 0
-  void recompute(ParticleSet& P);
-  // called after recompute
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
+  ///** Name of the class derived from WaveFunctionComponent
+  // */
+  //std::string ClassName;
 
-  // === linear method calls ===
-  // called from QMCCostFunctionBase.put: once at the beginning of each qmcDriver
+  /////list of variables this orbital handles
+  //opt_variables_type myVars;
+
+  /////Bytes in WFBuffer
+  //size_t Bytes_in_WFBuffer;
+
+  /////assign a differential orbital
+  //virtual void setDiffOrbital(DiffWaveFunctionComponentPtr d);
+
+  /////assembles the full value from LogValue and PhaseValue
+  //ValueType getValue() const
+
   void checkInVariables(opt_variables_type& active);
   void checkOutVariables(const opt_variables_type& active);
-  // called from LMYEngineCost, four times (initial position, three shifts)
   void resetParameters(const opt_variables_type& active);
-  // called in evaluateDeltaLog. Primarly linear method check configurations
-  RealType evaluateLog(ParticleSet& P, 
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L);
-  // called in evaluateValueAndDerivatives
-  ValueType ratio(ParticleSet& P, int iat); 
-  
-  // derivatives of single-particle update for ecp nonlocal quadrature
-  void evaluateTempDerivatives(ParticleSet& P, 
-                                const opt_variables_type& active, 
-                                RealType& psiratio,
-                                std::vector<RealType>& dlogpsi_t, 
-                                int iel,
-                                PosType dr);
+  void reportStatus(std::ostream& os);
+  void resetTargetParticleSet(ParticleSet& P);
 
-  void evaluateDerivatives(ParticleSet& P, 
-                           const opt_variables_type& active, 
-                           std::vector<RealType>& dlogpsi, 
-                           std::vector<RealType>& dhpsioverpsi);
+  RealType
+  evaluateLog(ParticleSet& P,
+              ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  // === DMC method calls === 
-  // called in DMC runs in advanceWalkers
-  ValueType ratio(ParticleSet& P, int iat, ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
+  //void recompute(ParticleSet& P) {};
+  //void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
+  //{
+  //  APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in "+ClassName+" class.");
+  //}
 
-  // storageType = 0 ; store everything. Inherits no 
-  // void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType)
+  /** return the current gradient for the iat-th particle
+   * @param Pquantum particle set
+   * @param iat particle index
+   * @return the gradient of the iat-th particle
+   */
+  GradType evalGrad(ParticleSet& P, int iat);
 
-  // Psi->evaluate(P) // not used? required for basis particle updaters
-  ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  /////** return the logarithmic gradient for the iat-th particle
+  //// * of the source particleset
+  //// * @param Pquantum particle set
+  //// * @param iat particle index
+  //// * @return the gradient of the iat-th particle
+  //// */
+  //GradType evalGradSource(ParticleSet& P,
+  //                                ParticleSet& source,
+  //                                int iat);
 
-  OrbitalBasePtr makeClone(ParticleSet &P) const;
+  /////** Adds the gradient w.r.t. the iat-th particle of the
+  //// *  source particleset (ions) of the logarithmic gradient
+  //// *  and laplacian w.r.t. the target paritlceset (electrons).
+  //// * @param P quantum particle set (electrons)
+  //// * @param source classical particle set (ions)
+  //// * @param iat particle index of source (ion)
+  //// * @param the ion gradient of the elctron gradient
+  //// * @param the ion gradient of the elctron laplacian.
+  //// * @return the log gradient of psi w.r.t. the source particle iat
+  //// */
+  //GradType evalGradSource
+  //(ParticleSet& P, ParticleSet& source, int iat,
+  // TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+  // TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
+
+  /** evaluate the ratio of the new to old orbital value
+   * @param P the active ParticleSet
+   * @param iat the index of a particle
+   * @param grad_iat Gradient for the active particle
+   */
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+
+  /** a move for iat-th particle is accepted. Update the content for the next moves
+   * @param P target ParticleSet
+   * @param iat index of the particle whose new position was proposed
+   */
+  void acceptMove(ParticleSet& P, int iat);
+
+  /** a move for iat-th particle is reject. Restore to the content.
+   * @param iat index of the particle whose new position was proposed
+   */
+  void restore(int iat);
+
+  /** evalaute the ratio of the new to old orbital value
+   *@param P the active ParticleSet
+   *@param iat the index of a particle
+   *@return \f$ \psi( \{ {\bf R}^{'} \} )/ \psi( \{ {\bf R}^{'}\})\f$
+   *
+   *Specialized for particle-by-particle move.
+   */
+  ValueType ratio(ParticleSet& P, int iat);
+
+  /** For particle-by-particle move. Requests space in the buffer
+   *  based on the data type sizes of the objects in this class.
+   * @param P particle set
+   * @param buf Anonymous storage
+   */
+  void registerData(ParticleSet& P, WFBufferType& buf);
+
+  /** For particle-by-particle move. Put the objects of this class
+   *  in the walker buffer or forward the memory cursor.
+   * @param P particle set
+   * @param buf Anonymous storage
+   * @param fromscratch request recomputing the precision critical
+   *        pieces of wavefunction from scratch
+   * @return log value of the wavefunction.
+   */
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+
+  /** For particle-by-particle move. Copy data or attach memory
+   *  from a walker buffer to the objects of this class.
+   *  The log value, P.G and P.L contribution from the objects
+   *  of this class are also added.
+   * @param P particle set
+   * @param buf Anonymous storage
+   */
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+
+  /** make clone
+   * @param tqp target Quantum ParticleSet
+   * @param deepcopy if true, make a decopy
+   *
+   * If not true, return a proxy class
+   */
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
 
-};
+//  virtual void multiplyDerivsByOrbR(std::vector<RealType>& dlogpsi)
+//  {
+//    RealType myrat = std::exp(LogValue)*std::cos(PhaseValue);
+//    for(int j=0; j<myVars.size(); j++)
+//    {
+//      int loc=myVars.where(j);
+//      dlogpsi[loc] *= myrat;
+//    }
+//  };
+
+
+  void finalizeOptimization() { }
+
+  ///** evaluate the ratios of one virtual move with respect to all the particles
+  // * @param P reference particleset
+  // * @param ratios \f$ ratios[i]=\{{\bf R}\}\rightarrow {r_0,\cdots,r_i^p=pos,\cdots,r_{N-1}}\f$
+  // */
+  //void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
+
+  /** evaluate ratios to evaluate the non-local PP
+   * @param VP VirtualParticleSet
+   * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
+   */
+  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
+
+
+
+  // function calls to pass to differential component dPsi
+
+  void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
+    std::vector<ValueType>& ratios, Matrix<ValueType>& dratios)
+  {
+    dPsi->evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
+      std::Vector<ValueType>& ratios, Matrix<ValueType>& dratios);
+  }
+
+  void evaluateDerivatives(ParticleSet& P, const opt_variables_type& optvars,
+    std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
+  {
+    dPsi->evaluateDerivatives(ParticleSet& P, const opt_variables_type& optvars,
+      std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi);
+  }
+
+//  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+//    std::vector<RealType>& dgradlogpsi) 
+//  {
+//    dPsi->evaluateGradDerivatives(const ParticleSet::ParticleGradient_t&G_in,
+//      std::vector<RealType>& dgradlogpsi);
+//  }
+
+//  bool addRegion(RegionType* CR, fmatrixtype F, gvectortype G, boolean opt_CR, boolean opt_G, boolean opt_F);
 
 }
 
-#endif
+
+
