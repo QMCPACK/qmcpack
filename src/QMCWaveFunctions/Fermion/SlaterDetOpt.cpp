@@ -28,7 +28,7 @@ namespace qmcplusplus {
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSet * spo_ptr, const int up_or_down)
-  : DiracDeterminant(spo_ptr, ptcl.first(up_or_down))
+  : DiracDeterminantBase(spo_ptr)
   , m_up_or_down(up_or_down)
   , m_nmo(spo_ptr->size())
   , m_first_var_pos(-1)
@@ -38,7 +38,13 @@ SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSet * spo_ptr, const int up_or
 
   Optimizable=true;
   ClassName="SlaterDetOpt";
-  this->resetTargetParticleSet(*targetPtcl);
+
+  // set which and how many particles we care about
+  m_first = ptcl.first(m_up_or_down);
+  m_last = ptcl.last(m_up_or_down);
+  m_nel = m_last - m_first;
+
+  resize(m_nel, m_nmo);
 
   m_nlc = Phi->OrbitalSetSize;
   m_nb = Phi->BasisSetSize;
@@ -112,29 +118,13 @@ void SlaterDetOpt::check_index_sanity() const {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Makes a clone of the object that uses the supplied particle set.
-///
-/// \param[in]      tqp            the particle set the clone should use
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-WaveFunctionComponentPtr SlaterDetOpt::makeClone(ParticleSet& tqp) const {
-  SlaterDetOpt* clone = new SlaterDetOpt(tqp, Phi->makeClone(), m_up_or_down);
-
-  clone->Optimizable=Optimizable;
-  clone->myVars=myVars;
-  clone->m_first_var_pos = m_first_var_pos;
-
-  return clone;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Makes a clone (copy) of the object that uses the supplied single
 ///         particle orbital set.
 ///
 /// \param[in]      spo       the single particle orbital set the copy should use
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-DiracDeterminant* SlaterDetOpt::makeCopy(SPOSetPtr spo) const
+SlaterDetOpt* SlaterDetOpt::makeCopy(SPOSetPtr spo) const
 {
   SlaterDetOpt* copy = new SlaterDetOpt(*targetPtcl, spo, m_up_or_down);
 
@@ -207,19 +197,10 @@ void SlaterDetOpt::exponentiate_matrix(const int n, RealType * const mat) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  reset which particle set we are using and initialize arrays accordingly
+/// \brief  resize and initialize arrays
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::resetTargetParticleSet(ParticleSet& P) {
-
-  // set which and how many particles we care about
-  m_first = P.first(m_up_or_down);
-  m_last = P.last(m_up_or_down);
-  m_nel = m_last - m_first;
-
-  // reset our optimizable orbitals object
-  Phi->resetTargetParticleSet(P);
-  targetPtcl = &P;
+void SlaterDetOpt::resize(int m_nel, int m_nmo) {
 
   // resize matrices and arrays
   m_orb_val_mat_all.resize(m_nel, m_nmo);
@@ -670,14 +651,6 @@ void SlaterDetOpt::resetParameters(const opt_variables_type& active)
 
   //if (false)
   //  this->print_B();
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Not yet implemented.
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::reportStatus(std::ostream& os) {
-  throw std::runtime_error("SlaterDetOpt::reportStatus(os) not implemented");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
