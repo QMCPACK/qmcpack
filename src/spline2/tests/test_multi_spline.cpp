@@ -239,7 +239,37 @@ void test_splines()
   // Laplacian
   REQUIRE(lap[0][0] == Approx(    147.1127789));
 
+  VectorSoaContainer<T,10> ghess(npad);
+  spline2::evaluate3d_vghgh(bs.spline_m,pos,v,dv,hess,ghess);
+  // Value
+  REQUIRE(v[0] == Approx(  -0.9476393279));
+  // Gradient
+  REQUIRE(dv[0][0] == Approx(    5.111042137));
+  REQUIRE(dv[0][1] == Approx(    5.989106342));
+  REQUIRE(dv[0][2] == Approx(    1.952244379));
+  // Hessian
+  REQUIRE(hess[0][0] == Approx(   -21.34557341));
+  REQUIRE(hess[0][1] == Approx(1.174505743e-09));
+  REQUIRE(hess[0][2] == Approx( -1.1483271e-09));
+  REQUIRE(hess[0][3] == Approx(    133.9204891));
+  REQUIRE(hess[0][4] == Approx(-2.15319293e-09));
+  REQUIRE(hess[0][5] == Approx(    34.53786329));
+ 
 
+  // Catch default is 100*(float epsilson)
+  double eps = 2000*std::numeric_limits<float>::epsilon();
+
+  // Gradient of Hessian
+  REQUIRE(ghess[0][0] == Approx(    -213.455734));
+  REQUIRE(ghess[0][1] == Approx(2.311193459e-09).epsilon(eps));
+  REQUIRE(ghess[0][2] == Approx(3.468205279e-09).epsilon(eps));
+  REQUIRE(ghess[0][3] == Approx( 1.58092329e-07).epsilon(eps));
+  REQUIRE(ghess[0][4] == Approx(1.255694171e-08).epsilon(eps));
+  REQUIRE(ghess[0][5] == Approx( 4.78981157e-08).epsilon(eps));
+  REQUIRE(ghess[0][6] == Approx(   -1753.041961));
+  REQUIRE(ghess[0][7] == Approx(-2.575826885e-09).epsilon(eps));
+  REQUIRE(ghess[0][8] == Approx(-4.683496702e-09).epsilon(eps));
+  REQUIRE(ghess[0][9] == Approx(   -81.53283531));
 }
 
 TEST_CASE("MultiBspline periodic double","[spline2]")

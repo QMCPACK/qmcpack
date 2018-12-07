@@ -9,7 +9,7 @@ import inspect
 try:
     from scipy.optimize import fmin
 except ImportError:
-    print 'qfit error: scipy is not present on your machine\n  please install scipy and retry'
+    print 'qmc-fit error: scipy is not present on your machine\n  please install scipy and retry'
 #end try
 try:
     import matplotlib
@@ -96,13 +96,13 @@ def message(msg,header=None,post_header=' message:',indent='    ',logfile=devlog
 #end def message
 
 
-def warn(msg,header='qfit',indent='    ',logfile=devlog):
+def warn(msg,header='qmc-fit',indent='    ',logfile=devlog):
     post_header=' warning:'
     message(msg,header,post_header,indent,logfile)
 #end def warn
 
 
-def error(msg,header='qfit',exit=True,trace=False,indent='    ',logfile=devlog):
+def error(msg,header='qmc-fit',exit=True,trace=False,indent='    ',logfile=devlog):
     post_header=' error:'
     message(msg,header,post_header,indent,logfile)
     if exit:
@@ -1517,7 +1517,7 @@ def timestep_fit():
 if __name__=='__main__':
     fit_types = sorted(all_fit_functions.keys())
     if len(sys.argv)<2:
-        error('first argument must be type of fit\ne.g. for a timestep fit, type "qfit ts ..."\nvalid fit types are: {0}'.format(fit_types))
+        error('first argument must be type of fit\ne.g. for a timestep fit, type "qmc-fit ts ..."\nvalid fit types are: {0}'.format(fit_types))
     #end if
     fit_type = sys.argv[1]
     if fit_type in fit_types:

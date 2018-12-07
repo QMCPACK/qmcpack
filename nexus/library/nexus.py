@@ -45,6 +45,7 @@ from gamess  import Gamess , GamessInput , GamessAnalyzer , generate_gamess_inpu
 from vasp    import Vasp   , VaspInput   , VaspAnalyzer   , generate_vasp_input   , generate_vasp
 from qmcpack import Qmcpack, QmcpackInput, QmcpackAnalyzer, generate_qmcpack_input, generate_qmcpack
 from quantum_package import QuantumPackage,QuantumPackageInput,QuantumPackageAnalyzer,generate_quantum_package_input,generate_quantum_package
+from pyscf_sim import Pyscf, PyscfInput, PyscfAnalyzer, generate_pyscf_input, generate_pyscf
 
 from qmcpack_converters import Pw2qmcpack , Pw2qmcpackInput , Pw2qmcpackAnalyzer , generate_pw2qmcpack_input , generate_pw2qmcpack
 from qmcpack_converters import Wfconvert  , WfconvertInput  , WfconvertAnalyzer  , generate_wfconvert_input  , generate_wfconvert
