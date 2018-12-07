@@ -334,7 +334,14 @@ public:
   {
     RealType du,d2u;
     #ifdef ENABLE_SOA
-     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP) not implemented for SoA\n");
+    // APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP) not implemented for SoA\n");
+    int maxI = myTable->size(SourceIndex);
+    for(int j=0; j<maxI; j++)
+    {
+      RealType uij = RadFun[j]->evaluate(myTable->Temp_r[j],du,d2u);
+      PosType u = (UIJ_temp[j]=-uij*myTable->Temp_dr[j])-UIJ(iat,j);
+      newQP[iat] += u;
+    }
     #else
     int maxI = myTable->size(SourceIndex);
     for(int j=0; j<maxI; j++)

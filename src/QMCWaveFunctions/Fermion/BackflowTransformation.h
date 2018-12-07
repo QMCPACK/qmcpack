@@ -372,7 +372,11 @@ public:
     activeParticle=iat;
     for(int i=0; i<NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
+    #ifdef ENABLE_SOA
+    newQP[iat] -= myTable->Temp_dr[iat];
+    #else
     newQP[iat] += myTable->Temp[iat].dr1;
+    #endif
     indexQP.clear();
     for(int i=0; i<bfFuns.size(); i++)
       bfFuns[i]->evaluatePbyP(P,iat,newQP);
