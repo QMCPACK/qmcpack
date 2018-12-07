@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrowBuilder.h"
 #if OHMMS_DIM ==3
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/CountingJastrowBuilder.h"
 #endif
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
