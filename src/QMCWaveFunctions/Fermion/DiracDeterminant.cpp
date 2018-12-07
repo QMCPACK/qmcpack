@@ -30,20 +30,10 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
-  NP(0), Phi(spos), FirstIndex(first), ndelay(1),
-  UpdateTimer("DiracDeterminant::update",timer_level_fine),
-  RatioTimer("DiracDeterminant::ratio",timer_level_fine),
-  InverseTimer("DiracDeterminant::inverse",timer_level_fine),
-  BufferTimer("DiracDeterminant::buffer",timer_level_fine),
-  SPOVTimer("DiracDeterminant::spoval",timer_level_fine),
-  SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
+DiracDeterminant::DiracDeterminant(SPOSetPtr const spos, int first):
+  DiracDeterminantBase(spos,first), ndelay(1)
 {
-  Optimizable=false;
-  if(Phi->Optimizable)
-    Optimizable=true;
-  ClassName="DiracDeterminant";
-  registerTimers();
+  ClassName = "DiracDeterminant";
 }
 
 ///default destructor
@@ -124,7 +114,7 @@ void DiracDeterminant::resize(int nel, int morb)
 DiracDeterminant::GradType
 DiracDeterminant::evalGrad(ParticleSet& P, int iat)
 {
-  WorkingIndex = iat-FirstIndex;
+  const int WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
   GradType g = updateEng.evalGrad(psiM, WorkingIndex, dpsiM[WorkingIndex]);
   RatioTimer.stop();
@@ -138,7 +128,7 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
   SPOVGLTimer.stop();
   RatioTimer.start();
-  WorkingIndex = iat-FirstIndex;
+  const int WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
   GradType rv;
   curRatio = updateEng.ratioGrad(psiM, WorkingIndex, psiV, dpsiV, rv);
@@ -151,6 +141,7 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 */
 void DiracDeterminant::acceptMove(ParticleSet& P, int iat)
 {
+  const int WorkingIndex = iat-FirstIndex;
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
@@ -211,12 +202,6 @@ void DiracDeterminant::updateAfterSweep(ParticleSet& P,
 void
 DiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  // Ye: no idea about NP.
-  if(NP == 0) //first time, allocate once
-  {
-    NP=P.getTotalNum();
-  }
-
   if ( Bytes_in_WFBuffer == 0 )
   {
     //add the data: inverse, gradient and laplacian
@@ -275,7 +260,7 @@ void DiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
 {
   UpdateMode=ORB_PBYP_RATIO;
-  WorkingIndex = iat-FirstIndex;
+  const int WorkingIndex = iat-FirstIndex;
   SPOVTimer.start();
   Phi->evaluate(P, iat, psiV);
   SPOVTimer.stop();
@@ -433,6 +418,8 @@ DiracDeterminant::evalGradSourcep
 
 void DiracDeterminant::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
+  // Hessian is not often used, so only resize/allocate if used
+  grad_grad_source_psiM.resize(psiM.rows(),psiM.cols());
   //IM A HACK.  Assumes evaluateLog has already been executed.
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
   invertPsiM(psiM_temp,psiM);
@@ -616,47 +603,11 @@ DiracDeterminant::evaluateDerivatives(ParticleSet& P,
 {
 }
 
-WaveFunctionComponentPtr DiracDeterminant::makeClone(ParticleSet& tqp) const
-{
-  APP_ABORT(" Illegal action. Cannot use DiracDeterminant::makeClone");
-  return 0;
-}
-
 DiracDeterminant* DiracDeterminant::makeCopy(SPOSetPtr spo) const
 {
   DiracDeterminant* dclone= new DiracDeterminant(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex,ndelay);
   return dclone;
-}
-
-DiracDeterminant::DiracDeterminant(const DiracDeterminant& s)
-  : WaveFunctionComponent(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex), ndelay(s.ndelay)
-  ,UpdateTimer(s.UpdateTimer)
-  ,RatioTimer(s.RatioTimer)
-  ,InverseTimer(s.InverseTimer)
-  ,BufferTimer(s.BufferTimer)
-  ,SPOVTimer(s.SPOVTimer)
-  ,SPOVGLTimer(s.SPOVGLTimer)
-{
-  registerTimers();
-  this->resize(s.NumPtcls,s.NumOrbitals);
-}
-
-//SPOSetPtr  DiracDeterminant::clonePhi() const
-//{
-//  return Phi->makeClone();
-//}
-
-void DiracDeterminant::registerTimers()
-{
-  UpdateTimer.reset();
-  RatioTimer.reset();
-  TimerManager.addTimer (&UpdateTimer);
-  TimerManager.addTimer (&RatioTimer);
-  TimerManager.addTimer (&InverseTimer);
-  TimerManager.addTimer (&BufferTimer);
-  TimerManager.addTimer (&SPOVTimer);
-  TimerManager.addTimer (&SPOVGLTimer);
 }
 
 }

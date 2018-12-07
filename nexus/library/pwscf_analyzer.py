@@ -18,7 +18,7 @@
 
 
 import os
-from numpy import array,fromstring,sqrt,dot
+from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min,where
 from generic import obj
 from unit_converter import convert
 from periodic_table import PeriodicTable
@@ -27,6 +27,7 @@ from pwscf_input import PwscfInput
 from pwscf_data_reader import read_qexml
 from debug import *
 import code
+import pdb
 
 pt = PeriodicTable()
 elements = set(pt.elements.keys())
@@ -108,7 +109,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.info = obj(xml=xml,warn=warn)
 
         self.input = PwscfInput(os.path.join(self.path,self.infile_name))
-
+        self.input_structure = sim.system.structure
         if analyze:
             self.analyze()
         #end if
@@ -151,14 +152,42 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 self.warn('energy read failed')
             #end if
         #end try
-
         try:
             # get bands and occupations
             nfound = 0
+            index = -1
             bands = obj()
+            bands.up = []
+            bands.down = []
+            polarized = False
+            if self.input.system.nspin > 1:
+                polarized = True
+            #end if
+            read_kpoints  = False
+            read_2pi_alat = False
+            read_rel      = False
             for i in xrange(len(lines)):
                 l = lines[i]
+                if '- SPIN UP -' in l:
+                    up_spin   = True
+                elif '- SPIN DOWN -' in l:
+                    up_spin   = False
+                    index = -1
+                #end if
+                              
+                if 'number of k points=' in l:
+                    try:
+                        num_kpoints      = int(l.strip().split()[4])
+                    except:
+                        print "Number of k-points {0} is not an integer".format(num_kpoints)
+
+                    kpoints_2pi_alat = lines[i+2:i+2+num_kpoints]
+                    kpoints_rel      = lines[i+4+num_kpoints:i+4+2*num_kpoints]
+                    kpoints_2pi_alat = array([k.strip().split()[4:6] + [k.strip().split()[6][0:-2]] for k in kpoints_2pi_alat], dtype=float)
+                    kpoints_rel      = array([k.strip().split()[4:6] + [k.strip().split()[6][0:-2]] for k in kpoints_rel], dtype=float)
+                #end if
                 if 'bands (ev)' in l:
+                    index+=1
                     nfound+=1
                     i_occ = -1
                     j = i
@@ -179,24 +208,81 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
                         soccs+= lines[j]
                     #end for
-                    occs = array(soccs.split(),dtype=float)
-
-                    if nfound==1:
-                        bands.up = obj(
-                            eigs = eigs,
-                            occs = occs
-                            )
-                    elif nfound==2:
-                        bands.down = obj(
-                            eigs = eigs,
-                            occs = occs
-                            )
+                    occs   = array(soccs.split(),dtype=float)
+                    if polarized:                  
+                        if up_spin:
+                            bands.up.append({'index':index, 'kpoint_2pi_alat':kpoints_2pi_alat[index], 'kpoint_rel':kpoints_rel[index], 'eigs':eigs, 'occs':occs, 'pol':'up'})
+                        elif not up_spin:
+                            bands.down.append({'index':index, 'kpoint_2pi_alat':kpoints_2pi_alat[index], 'kpoint_rel':kpoints_rel[index], 'eigs':eigs, 'occs':occs, 'pol':'up'})
+                        #end if
+                    else:
+                        index = nfound -1 
+                        bands.up.append({'index':index, 'kpoint_2pi_alat':kpoints_2pi_alat[index], 'kpoint_rel':kpoints_rel[index], 'eigs':eigs, 'occs':occs, 'pol':'none'})
+                    #if nfound==1:
+                    #    bands.up = obj(
+                    #        eigs = eigs,
+                    #        occs = occs
+                    #        )
+                    #elif nfound==2:
+                    #    bands.down = obj(
+                    #        eigs = eigs,
+                    #        occs = occs
+                    #        )
                     #end if
                 #end if
             #end for
+            vbm        = obj(energy=-1.0e6)
+            cbm        = obj(energy=1.0e6)
+            direct_gap = obj(energy=1.0e6)
+            for b in bands.up + bands.down:
+                e_val  = max(b['eigs'][b['occs'] > 0.5])
+                e_cond = min(b['eigs'][b['occs'] < 0.5])
+                                              
+                if e_val > vbm.energy:
+                    vbm.energy          = e_val
+                    vbm.kpoint_rel      = b['kpoint_rel']
+                    vbm.kpoint_2pi_alat = b['kpoint_2pi_alat']
+                    vbm.index           = b['index']
+                    vbm.pol             = b['pol']
+                    vbm.band_number     = max(where(b['occs'] > 0.5))
+                #end if
+                if e_cond < cbm.energy:
+                    cbm.energy          = e_cond
+                    cbm.kpoint_rel      = b['kpoint_rel']
+                    cbm.kpoint_2pi_alat = b['kpoint_2pi_alat']
+                    cbm.index           = b['index']
+                    cbm.pol             = b['pol']
+                    cbm.band_number     = min(where(b['occs'] < 0.5))
+                #end if
+                if (e_cond - e_val) < direct_gap.energy:
+                    direct_gap.energy          = e_cond - e_val
+                    direct_gap.kpoint_rel      = b['kpoint_rel']
+                    direct_gap.kpoint_2pi_alat = b['kpoint_2pi_alat']
+                    direct_gap.index           = b['index']
+                    direct_gap.pol             = [vbm.pol, cbm.pol]
+                #end if
+            #end for
+            electronic_structure = ''
+            if (vbm.energy +0.025) >= cbm.energy:
+                if vbm.band_number == cbm.band_number:
+                    electronic_structure = 'metallic'
+                else:
+                    electronic_structure = 'semi-metal'
+                #end if
+            else:
+                electronic_structure = 'insulating'
+                if not equal(vbm.kpoint_rel, cbm.kpoint_rel).all():
+                    indirect_gap = obj(energy=round(cbm.energy-vbm.energy, 3), kpoints=obj(vbm=vbm, cbm=cbm))
+                    bands.indirect_gap = indirect_gap
+            #end if
+            bands.electronic_structure = electronic_structure
+            bands.vbm = vbm
+            bands.cbm = cbm
+            bands.direct_gap = direct_gap
             if nfound>0:
                 self.bands = bands
             #end if
+            # Kayahan edited --end
         except:
             nx+=1
             if self.info.warn:
@@ -586,7 +672,105 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end for
         #end for
     #end def make_movie
-                
+    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True):
+        if 'bands' in self:
+            from structure import get_kpath
+            if filename==None:
+                filename = 'band_structure.pdf'
+            if filepath==None:
+                filepath = os.path.join(self.abspath,filename)
+            else:
+                filepath = os.path.join(filepath,filename)
+            #end if
+            try:
+                import matplotlib
+                gui_envs = ['GTKAgg','TKAgg','agg','Qt4Agg','WXAgg']
+                for gui in gui_envs:
+                    try:
+                        matplotlib.use(gui,warn=False, force=True)
+                        from matplotlib import pyplot
+                        success = True
+                        break
+                    except:
+                        continue
+                    #end try
+                #end for
+                from matplotlib.pyplot import figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,rc,savefig,gca,xticks,axvline, scatter
+                params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
+                              'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
+                rcParams.update(params)
+            except(ImportError, RuntimeError):
+                success = False
+            if not success:
+                figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,bar,xticks,subplot,grid,setp,errorbar,loglog,semilogx,semilogy,text = unavailable('matplotlib.pyplot','figure','plot','xlabel','ylabel','title','show','ylim','legend','xlim','rcParams','savefig','bar','xticks','subplot','grid','setp','errorbar','loglog','semilogx','semilogy','text')
+            #end if
+            fig    = figure()
+            ax     = gca()
+            kpath  = get_kpath(structure=self.input_structure, check_standard=False)
+            x      = kpath['explicit_path_linearcoords']
+            labels = kpath['explicit_kpoints_labels']
+            nbands = self.input.system.nbnd
+            for nb in range(nbands):
+                y = []
+                for bi in self.bands.up:
+                    y.append(bi['eigs'][nb])
+                #end for
+                y = array(y) - self.bands.vbm.energy
+                plot(x, y, 'k')
+                if len(self.bands.down) > 0:
+                    y = []
+                    for bi in self.bands.down:
+                        y.append(bi['eigs'][nb])
+                    #end for
+                    y = array(y) - self.bands.vbm.energy
+                    plot(x, y, 'r')
+                #end if              
+            #end for
+            for ln, li in enumerate(labels):
+                if li is not '':
+                    axvline(x[ln], ymin=-100, ymax=100, linewidth=3, color='k')
+                    if li == 'GAMMA':
+                        labels[ln] = r'$\Gamma$'
+                    elif li is not '':
+                        labels[ln] = '${0}$'.format(li)
+                    #end if
+                    if labels[ln-1] is not '' and ln > 0:
+                        labels[ln] = labels[ln-1]+'|'+labels[ln]
+                        labels[ln-1] = ''
+                    #end if
+                #end if
+            #end for
+            
+            xlim([min(x), max(x)])
+            if max_min_e is None:
+                ylim(-5, +5)
+            else:
+                ylim(max_min_e[0],max_min_e[1])
+            #end if
+            ylabel('Energy (eV)')
+            xticks(x, labels)
+            ax.tick_params(axis='x', which='both', length=0)
+            ax.tick_params(axis='x', which='both', pad=10)
+        #end if
+        if show_vbm_cbm:
+            vbm = self.bands.vbm
+            cbm = self.bands.cbm
+            for kn, ki in enumerate(self.bands.up):
+                if (vbm.kpoint_rel == ki['kpoint_rel']).all():
+                    scatter(x[kn], 0, c='green', s=100)
+                #end if
+                if (cbm.kpoint_rel == ki['kpoint_rel']).all():
+                    scatter(x[kn], cbm.energy-vbm.energy, c='r', s=100)
+                #end if
+            #end for
+        #end if
+        if save:
+            savefig(filename, format='pdf',bbox_inches='tight')
+        #end if
+        if show:
+            show()
+        #end if
+    #end def plot_bandstructure
 
 #end class PwscfAnalyzer
         

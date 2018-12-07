@@ -52,6 +52,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   using vContainer_type=Vector<ST,aligned_allocator<ST> >;
   using gContainer_type=VectorSoaContainer<ST,3>;
   using hContainer_type=VectorSoaContainer<ST,6>;
+  using ghContainer_type=VectorSoaContainer<ST,10>;
 
   using BaseType::first_spo;
   using BaseType::last_spo;
@@ -80,6 +81,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   vContainer_type myL;
   gContainer_type myG;
   hContainer_type myH;
+  ghContainer_type mygH;
 
   SplineC2RSoA(): BaseType(), nComplexBands(0), SplineInst(nullptr), MultiSpline(nullptr)
   {
@@ -94,7 +96,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     nComplexBands(a.nComplexBands),mKK(a.mKK), myKcart(a.myKcart)
   {
     const size_t n=a.myL.size();
-    myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n);
+    myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n); mygH.resize(n);
   }
 
   ~SplineC2RSoA()
@@ -110,6 +112,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     myG.resize(npad);
     myL.resize(npad);
     myH.resize(npad);
+    mygH.resize(npad);
   }
 
   void bcast_tables(Communicate* comm)
@@ -746,6 +749,420 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
       spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH,first,last);
       assign_vgh(r,psi,dpsi,grad_grad_psi,first/2,last/2);
+    }
+  }
+  
+  template<typename VV, typename GV, typename GGV, typename GGGV>
+  void assign_vghgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi, GGGV& grad_grad_grad_psi, int first = 0, int last = -1) const
+  {
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
+    const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
+             g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
+             g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
+    const ST x=r[0], y=r[1], z=r[2];
+
+    const ST* restrict k0=myKcart.data(0);
+    const ST* restrict k1=myKcart.data(1);
+    const ST* restrict k2=myKcart.data(2);
+
+    const ST* restrict g0=myG.data(0);
+    const ST* restrict g1=myG.data(1);
+    const ST* restrict g2=myG.data(2);
+    const ST* restrict h00=myH.data(0);
+    const ST* restrict h01=myH.data(1);
+    const ST* restrict h02=myH.data(2);
+    const ST* restrict h11=myH.data(3);
+    const ST* restrict h12=myH.data(4);
+    const ST* restrict h22=myH.data(5);
+
+    const ST* restrict gh000=mygH.data(0);
+    const ST* restrict gh001=mygH.data(1);
+    const ST* restrict gh002=mygH.data(2);
+    const ST* restrict gh011=mygH.data(3);
+    const ST* restrict gh012=mygH.data(4);
+    const ST* restrict gh022=mygH.data(5);
+    const ST* restrict gh111=mygH.data(6);
+    const ST* restrict gh112=mygH.data(7);
+    const ST* restrict gh122=mygH.data(8);
+    const ST* restrict gh222=mygH.data(9);
+
+    //SIMD doesn't work quite right yet.  Comment out until further debugging.
+    #pragma omp simd
+    for ( size_t j=first; j<std::min(nComplexBands,last); j++ ) 
+    {
+      int jr=j<<1;
+      int ji=jr+1;
+
+      const ST kX=k0[j];
+      const ST kY=k1[j];
+      const ST kZ=k2[j];
+      const ST val_r=myV[jr];
+      const ST val_i=myV[ji];
+
+      //phase
+      ST s, c;
+      sincos(-(x*kX+y*kY+z*kZ),&s,&c);
+
+      //dot(PrimLattice.G,myG[j])
+      const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
+      const ST dY_r = g10*g0[jr]+g11*g1[jr]+g12*g2[jr];
+      const ST dZ_r = g20*g0[jr]+g21*g1[jr]+g22*g2[jr];
+
+      const ST dX_i = g00*g0[ji]+g01*g1[ji]+g02*g2[ji];
+      const ST dY_i = g10*g0[ji]+g11*g1[ji]+g12*g2[ji];
+      const ST dZ_i = g20*g0[ji]+g21*g1[ji]+g22*g2[ji];
+
+      // \f$\nabla \psi_r + {\bf k}\psi_i\f$
+      const ST gX_r=dX_r+val_i*kX;
+      const ST gY_r=dY_r+val_i*kY;
+      const ST gZ_r=dZ_r+val_i*kZ;
+      const ST gX_i=dX_i-val_r*kX;
+      const ST gY_i=dY_i-val_r*kY;
+      const ST gZ_i=dZ_i-val_r*kZ;
+
+      const size_t psiIndex=first_spo+jr;
+      psi[psiIndex] =c*val_r-s*val_i;
+      dpsi[psiIndex][0]=c*gX_r -s*gX_i;
+      dpsi[psiIndex][1]=c*gY_r -s*gY_i;
+      dpsi[psiIndex][2]=c*gZ_r -s*gZ_i;
+
+      psi[psiIndex+1] =c*val_i+s*val_r;
+      dpsi[psiIndex+1][0]=c*gX_i +s*gX_r;
+      dpsi[psiIndex+1][1]=c*gY_i +s*gY_r;
+      dpsi[psiIndex+1][2]=c*gZ_i +s*gZ_r;
+
+      //intermediates for computation of hessian. \partial_i \partial_j phi in cartesian coordinates.  
+      const ST f_xx_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g00,g01,g02);
+      const ST f_xy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g10,g11,g12);
+      const ST f_xz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g20,g21,g22);
+      const ST f_yy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g10,g11,g12);
+      const ST f_yz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g20,g21,g22);
+      const ST f_zz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g20,g21,g22,g20,g21,g22);
+
+      const ST f_xx_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g00,g01,g02);
+      const ST f_xy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g10,g11,g12);
+      const ST f_xz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g20,g21,g22);
+      const ST f_yy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g10,g11,g12);
+      const ST f_yz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g20,g21,g22);
+      const ST f_zz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g20,g21,g22,g20,g21,g22);
+
+      const ST h_xx_r=f_xx_r+2*kX*dX_i-kX*kX*val_r;
+      const ST h_xy_r=f_xy_r+(kX*dY_i+kY*dX_i)-kX*kY*val_r;
+      const ST h_xz_r=f_xz_r+(kX*dZ_i+kZ*dX_i)-kX*kZ*val_r;
+      const ST h_yy_r=f_yy_r+2*kY*dY_i-kY*kY*val_r;
+      const ST h_yz_r=f_yz_r+(kY*dZ_i+kZ*dY_i)-kY*kZ*val_r;
+      const ST h_zz_r=f_zz_r+2*kZ*dZ_i-kZ*kZ*val_r;
+
+      const ST h_xx_i=f_xx_i-2*kX*dX_r-kX*kX*val_i;
+      const ST h_xy_i=f_xy_i-(kX*dY_r+kY*dX_r)-kX*kY*val_i;
+      const ST h_xz_i=f_xz_i-(kX*dZ_r+kZ*dX_r)-kX*kZ*val_i;
+      const ST h_yy_i=f_yy_i-2*kY*dY_r-kY*kY*val_i;
+      const ST h_yz_i=f_yz_i-(kZ*dY_r+kY*dZ_r)-kZ*kY*val_i;
+      const ST h_zz_i=f_zz_i-2*kZ*dZ_r-kZ*kZ*val_i;
+
+      grad_grad_psi[psiIndex][0]=c*h_xx_r-s*h_xx_i;
+      grad_grad_psi[psiIndex][1]=c*h_xy_r-s*h_xy_i;
+      grad_grad_psi[psiIndex][2]=c*h_xz_r-s*h_xz_i;
+      grad_grad_psi[psiIndex][3]=c*h_xy_r-s*h_xy_i;
+      grad_grad_psi[psiIndex][4]=c*h_yy_r-s*h_yy_i;
+      grad_grad_psi[psiIndex][5]=c*h_yz_r-s*h_yz_i;
+      grad_grad_psi[psiIndex][6]=c*h_xz_r-s*h_xz_i;
+      grad_grad_psi[psiIndex][7]=c*h_yz_r-s*h_yz_i;
+      grad_grad_psi[psiIndex][8]=c*h_zz_r-s*h_zz_i;
+  
+      grad_grad_psi[psiIndex+1][0]=c*h_xx_i+s*h_xx_r;
+      grad_grad_psi[psiIndex+1][1]=c*h_xy_i+s*h_xy_r;
+      grad_grad_psi[psiIndex+1][2]=c*h_xz_i+s*h_xz_r;
+      grad_grad_psi[psiIndex+1][3]=c*h_xy_i+s*h_xy_r;
+      grad_grad_psi[psiIndex+1][4]=c*h_yy_i+s*h_yy_r;
+      grad_grad_psi[psiIndex+1][5]=c*h_yz_i+s*h_yz_r;
+      grad_grad_psi[psiIndex+1][6]=c*h_xz_i+s*h_xz_r;
+      grad_grad_psi[psiIndex+1][7]=c*h_yz_i+s*h_yz_r;
+      grad_grad_psi[psiIndex+1][8]=c*h_zz_i+s*h_zz_r;
+  
+      //These are the real and imaginary components of the third SPO derivative.  _xxx denotes
+      // third derivative w.r.t. x, _xyz, a derivative with resepect to x,y, and z, and so on.  
+      
+      const ST f3_xxx_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g00,g01,g02,g00,g01,g02);
+      const ST f3_xxy_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g00,g01,g02,g10,g11,g12);
+      const ST f3_xxz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g00,g01,g02,g20,g21,g22);
+      const ST f3_xyy_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g10,g11,g12,g10,g11,g12);
+      const ST f3_xyz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g10,g11,g12,g20,g21,g22);
+      const ST f3_xzz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g20,g21,g22,g20,g21,g22);
+      const ST f3_yyy_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g10,g11,g12,g10,g11,g12,g10,g11,g12);
+      const ST f3_yyz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g10,g11,g12,g10,g11,g12,g20,g21,g22);
+      const ST f3_yzz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g10,g11,g12,g20,g21,g22,g20,g21,g22);
+      const ST f3_zzz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g20,g21,g22,g20,g21,g22,g20,g21,g22);
+     
+      const ST f3_xxx_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g00,g01,g02,g00,g01,g02);
+      const ST f3_xxy_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g00,g01,g02,g10,g11,g12);
+      const ST f3_xxz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g00,g01,g02,g20,g21,g22);
+      const ST f3_xyy_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g10,g11,g12,g10,g11,g12);
+      const ST f3_xyz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g10,g11,g12,g20,g21,g22);
+      const ST f3_xzz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g20,g21,g22,g20,g21,g22);
+      const ST f3_yyy_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g10,g11,g12,g10,g11,g12,g10,g11,g12);
+      const ST f3_yyz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g10,g11,g12,g10,g11,g12,g20,g21,g22);
+      const ST f3_yzz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g10,g11,g12,g20,g21,g22,g20,g21,g22);
+      const ST f3_zzz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g20,g21,g22,g20,g21,g22,g20,g21,g22);
+
+      //Here is where we build up the components of the physical hessian gradient, namely, d^3/dx^3(e^{-ik*r}\phi(r)
+      const ST gh_xxx_r= f3_xxx_r + 3*kX*f_xx_i - 3*kX*kX*dX_r - kX*kX*kX*val_i;
+      const ST gh_xxx_i= f3_xxx_i - 3*kX*f_xx_r - 3*kX*kX*dX_i + kX*kX*kX*val_r;
+      const ST gh_xxy_r= f3_xxy_r +(kY*f_xx_i+2*kX*f_xy_i) - (kX*kX*dY_r+2*kX*kY*dX_r)-kX*kX*kY*val_i; 
+      const ST gh_xxy_i= f3_xxy_i -(kY*f_xx_r+2*kX*f_xy_r) - (kX*kX*dY_i+2*kX*kY*dX_i)+kX*kX*kY*val_r; 
+      const ST gh_xxz_r= f3_xxz_r +(kZ*f_xx_i+2*kX*f_xz_i) - (kX*kX*dZ_r+2*kX*kZ*dX_r)-kX*kX*kZ*val_i; 
+      const ST gh_xxz_i= f3_xxz_i -(kZ*f_xx_r+2*kX*f_xz_r) - (kX*kX*dZ_i+2*kX*kZ*dX_i)+kX*kX*kZ*val_r; 
+      const ST gh_xyy_r= f3_xyy_r +(2*kY*f_xy_i+kX*f_yy_i) - (2*kX*kY*dY_r+kY*kY*dX_r)-kX*kY*kY*val_i;
+      const ST gh_xyy_i= f3_xyy_i -(2*kY*f_xy_r+kX*f_yy_r) - (2*kX*kY*dY_i+kY*kY*dX_i)+kX*kY*kY*val_r;
+      const ST gh_xyz_r= f3_xyz_r +(kX*f_yz_i+kY*f_xz_i+kZ*f_xy_i)-(kX*kY*dZ_r+kY*kZ*dX_r+kZ*kX*dY_r) - kX*kY*kZ*val_i;
+      const ST gh_xyz_i= f3_xyz_i -(kX*f_yz_r+kY*f_xz_r+kZ*f_xy_r)-(kX*kY*dZ_i+kY*kZ*dX_i+kZ*kX*dY_i) + kX*kY*kZ*val_r;
+      const ST gh_xzz_r= f3_xzz_r +(2*kZ*f_xz_i+kX*f_zz_i) - (2*kX*kZ*dZ_r+kZ*kZ*dX_r)-kX*kZ*kZ*val_i;
+      const ST gh_xzz_i= f3_xzz_i -(2*kZ*f_xz_r+kX*f_zz_r) - (2*kX*kZ*dZ_i+kZ*kZ*dX_i)+kX*kZ*kZ*val_r;
+      const ST gh_yyy_r= f3_yyy_r + 3*kY*f_yy_i - 3*kY*kY*dY_r - kY*kY*kY*val_i;
+      const ST gh_yyy_i= f3_yyy_i - 3*kY*f_yy_r - 3*kY*kY*dY_i + kY*kY*kY*val_r;
+      const ST gh_yyz_r= f3_yyz_r +(kZ*f_yy_i+2*kY*f_yz_i) - (kY*kY*dZ_r+2*kY*kZ*dY_r)-kY*kY*kZ*val_i; 
+      const ST gh_yyz_i= f3_yyz_i -(kZ*f_yy_r+2*kY*f_yz_r) - (kY*kY*dZ_i+2*kY*kZ*dY_i)+kY*kY*kZ*val_r; 
+      const ST gh_yzz_r= f3_yzz_r +(2*kZ*f_yz_i+kY*f_zz_i) - (2*kY*kZ*dZ_r+kZ*kZ*dY_r)-kY*kZ*kZ*val_i;
+      const ST gh_yzz_i= f3_yzz_i -(2*kZ*f_yz_r+kY*f_zz_r) - (2*kY*kZ*dZ_i+kZ*kZ*dY_i)+kY*kZ*kZ*val_r;
+      const ST gh_zzz_r= f3_zzz_r + 3*kZ*f_zz_i - 3*kZ*kZ*dZ_r - kZ*kZ*kZ*val_i;
+      const ST gh_zzz_i= f3_zzz_i - 3*kZ*f_zz_r - 3*kZ*kZ*dZ_i + kZ*kZ*kZ*val_r;
+      
+      grad_grad_grad_psi[psiIndex][0][0]=c*gh_xxx_r-s*gh_xxx_i;
+      grad_grad_grad_psi[psiIndex][0][1]=c*gh_xxy_r-s*gh_xxy_i;
+      grad_grad_grad_psi[psiIndex][0][2]=c*gh_xxz_r-s*gh_xxz_i;
+      grad_grad_grad_psi[psiIndex][0][3]=c*gh_xxy_r-s*gh_xxy_i;
+      grad_grad_grad_psi[psiIndex][0][4]=c*gh_xyy_r-s*gh_xyy_i;
+      grad_grad_grad_psi[psiIndex][0][5]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][0][6]=c*gh_xxz_r-s*gh_xxz_i;
+      grad_grad_grad_psi[psiIndex][0][7]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][0][8]=c*gh_xzz_r-s*gh_xzz_i;
+    
+      grad_grad_grad_psi[psiIndex][1][0]=c*gh_xxy_r-s*gh_xxy_i;
+      grad_grad_grad_psi[psiIndex][1][1]=c*gh_xyy_r-s*gh_xyy_i;
+      grad_grad_grad_psi[psiIndex][1][2]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][1][3]=c*gh_xyy_r-s*gh_xyy_i;
+      grad_grad_grad_psi[psiIndex][1][4]=c*gh_yyy_r-s*gh_yyy_i;
+      grad_grad_grad_psi[psiIndex][1][5]=c*gh_yyz_r-s*gh_yyz_i;
+      grad_grad_grad_psi[psiIndex][1][6]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][1][7]=c*gh_yyz_r-s*gh_yyz_i;
+      grad_grad_grad_psi[psiIndex][1][8]=c*gh_yzz_r-s*gh_yzz_i;
+
+      grad_grad_grad_psi[psiIndex][2][0]=c*gh_xxz_r-s*gh_xxz_i;
+      grad_grad_grad_psi[psiIndex][2][1]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][2][2]=c*gh_xzz_r-s*gh_xzz_i;
+      grad_grad_grad_psi[psiIndex][2][3]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][2][4]=c*gh_yyz_r-s*gh_yyz_i;
+      grad_grad_grad_psi[psiIndex][2][5]=c*gh_yzz_r-s*gh_yzz_i;
+      grad_grad_grad_psi[psiIndex][2][6]=c*gh_xzz_r-s*gh_xzz_i;
+      grad_grad_grad_psi[psiIndex][2][7]=c*gh_yzz_r-s*gh_yzz_i;
+      grad_grad_grad_psi[psiIndex][2][8]=c*gh_zzz_r-s*gh_zzz_i;
+
+      grad_grad_grad_psi[psiIndex+1][0][0]=c*gh_xxx_i+s*gh_xxx_r;
+      grad_grad_grad_psi[psiIndex+1][0][1]=c*gh_xxy_i+s*gh_xxy_r;
+      grad_grad_grad_psi[psiIndex+1][0][2]=c*gh_xxz_i+s*gh_xxz_r;
+      grad_grad_grad_psi[psiIndex+1][0][3]=c*gh_xxy_i+s*gh_xxy_r;
+      grad_grad_grad_psi[psiIndex+1][0][4]=c*gh_xyy_i+s*gh_xyy_r;
+      grad_grad_grad_psi[psiIndex+1][0][5]=c*gh_xyz_i+s*gh_xyz_r;
+      grad_grad_grad_psi[psiIndex+1][0][6]=c*gh_xxz_i+s*gh_xxz_r;
+      grad_grad_grad_psi[psiIndex+1][0][7]=c*gh_xyz_i+s*gh_xyz_r;
+      grad_grad_grad_psi[psiIndex+1][0][8]=c*gh_xzz_i+s*gh_xzz_r;
+    
+      grad_grad_grad_psi[psiIndex+1][1][0]=c*gh_xxy_i+s*gh_xxy_r;
+      grad_grad_grad_psi[psiIndex+1][1][1]=c*gh_xyy_i+s*gh_xyy_r; 
+      grad_grad_grad_psi[psiIndex+1][1][2]=c*gh_xyz_i+s*gh_xyz_r;
+      grad_grad_grad_psi[psiIndex+1][1][3]=c*gh_xyy_i+s*gh_xyy_r;
+      grad_grad_grad_psi[psiIndex+1][1][4]=c*gh_yyy_i+s*gh_yyy_r; 
+      grad_grad_grad_psi[psiIndex+1][1][5]=c*gh_yyz_i+s*gh_yyz_r;
+      grad_grad_grad_psi[psiIndex+1][1][6]=c*gh_xyz_i+s*gh_xyz_r;
+      grad_grad_grad_psi[psiIndex+1][1][7]=c*gh_yyz_i+s*gh_yyz_r;
+      grad_grad_grad_psi[psiIndex+1][1][8]=c*gh_yzz_i+s*gh_yzz_r;
+
+      grad_grad_grad_psi[psiIndex+1][2][0]=c*gh_xxz_i+s*gh_xxz_r;
+      grad_grad_grad_psi[psiIndex+1][2][1]=c*gh_xyz_i+s*gh_xyz_r;
+      grad_grad_grad_psi[psiIndex+1][2][2]=c*gh_xzz_i+s*gh_xzz_r;
+      grad_grad_grad_psi[psiIndex+1][2][3]=c*gh_xyz_i+s*gh_xyz_r;
+      grad_grad_grad_psi[psiIndex+1][2][4]=c*gh_yyz_i+s*gh_yyz_r;
+      grad_grad_grad_psi[psiIndex+1][2][5]=c*gh_yzz_i+s*gh_yzz_r;
+      grad_grad_grad_psi[psiIndex+1][2][6]=c*gh_xzz_i+s*gh_xzz_r;
+      grad_grad_grad_psi[psiIndex+1][2][7]=c*gh_yzz_i+s*gh_yzz_r;
+      grad_grad_grad_psi[psiIndex+1][2][8]=c*gh_zzz_i+s*gh_zzz_r;
+      
+    }
+    #pragma omp simd
+    for (size_t j=std::max(nComplexBands,first); j<last; j++)
+    {
+      int jr=j<<1;
+      int ji=jr+1;
+
+      const ST kX=k0[j];
+      const ST kY=k1[j];
+      const ST kZ=k2[j];
+      const ST val_r=myV[jr];
+      const ST val_i=myV[ji];
+
+      //phase
+      ST s, c;
+      sincos(-(x*kX+y*kY+z*kZ),&s,&c);
+
+      //dot(PrimLattice.G,myG[j])
+      const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
+      const ST dY_r = g10*g0[jr]+g11*g1[jr]+g12*g2[jr];
+      const ST dZ_r = g20*g0[jr]+g21*g1[jr]+g22*g2[jr];
+
+      const ST dX_i = g00*g0[ji]+g01*g1[ji]+g02*g2[ji];
+      const ST dY_i = g10*g0[ji]+g11*g1[ji]+g12*g2[ji];
+      const ST dZ_i = g20*g0[ji]+g21*g1[ji]+g22*g2[ji];
+
+      // \f$\nabla \psi_r + {\bf k}\psi_i\f$
+      const ST gX_r=dX_r+val_i*kX;
+      const ST gY_r=dY_r+val_i*kY;
+      const ST gZ_r=dZ_r+val_i*kZ;
+      const ST gX_i=dX_i-val_r*kX;
+      const ST gY_i=dY_i-val_r*kY;
+      const ST gZ_i=dZ_i-val_r*kZ;
+
+      const size_t psiIndex=first_spo+nComplexBands+j;
+      psi[psiIndex] =c*val_r-s*val_i;
+      dpsi[psiIndex][0]=c*gX_r -s*gX_i;
+      dpsi[psiIndex][1]=c*gY_r -s*gY_i;
+      dpsi[psiIndex][2]=c*gZ_r -s*gZ_i;
+
+      //intermediates for computation of hessian. \partial_i \partial_j phi in cartesian coordinates.  
+      const ST f_xx_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g00,g01,g02);
+      const ST f_xy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g10,g11,g12);
+      const ST f_xz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g20,g21,g22);
+      const ST f_yy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g10,g11,g12);
+      const ST f_yz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g20,g21,g22);
+      const ST f_zz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g20,g21,g22,g20,g21,g22);
+
+      const ST f_xx_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g00,g01,g02);
+      const ST f_xy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g10,g11,g12);
+      const ST f_xz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g20,g21,g22);
+      const ST f_yy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g10,g11,g12);
+      const ST f_yz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g20,g21,g22);
+      const ST f_zz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g20,g21,g22,g20,g21,g22);
+
+      const ST h_xx_r=f_xx_r+2*kX*dX_i-kX*kX*val_r;
+      const ST h_xy_r=f_xy_r+(kX*dY_i+kY*dX_i)-kX*kY*val_r;
+      const ST h_xz_r=f_xz_r+(kX*dZ_i+kZ*dX_i)-kX*kZ*val_r;
+      const ST h_yy_r=f_yy_r+2*kY*dY_i-kY*kY*val_r;
+      const ST h_yz_r=f_yz_r+(kY*dZ_i+kZ*dY_i)-kY*kZ*val_r;
+      const ST h_zz_r=f_zz_r+2*kZ*dZ_i-kZ*kZ*val_r;
+
+      const ST h_xx_i=f_xx_i-2*kX*dX_r-kX*kX*val_i;
+      const ST h_xy_i=f_xy_i-(kX*dY_r+kY*dX_r)-kX*kY*val_i;
+      const ST h_xz_i=f_xz_i-(kX*dZ_r+kZ*dX_r)-kX*kZ*val_i;
+      const ST h_yy_i=f_yy_i-2*kY*dY_r-kY*kY*val_i;
+      const ST h_yz_i=f_yz_i-(kZ*dY_r+kY*dZ_r)-kZ*kY*val_i;
+      const ST h_zz_i=f_zz_i-2*kZ*dZ_r-kZ*kZ*val_i;
+
+      grad_grad_psi[psiIndex][0]=c*h_xx_r-s*h_xx_i;
+      grad_grad_psi[psiIndex][1]=c*h_xy_r-s*h_xy_i;
+      grad_grad_psi[psiIndex][2]=c*h_xz_r-s*h_xz_i;
+      grad_grad_psi[psiIndex][3]=c*h_xy_r-s*h_xy_i;
+      grad_grad_psi[psiIndex][4]=c*h_yy_r-s*h_yy_i;
+      grad_grad_psi[psiIndex][5]=c*h_yz_r-s*h_yz_i;
+      grad_grad_psi[psiIndex][6]=c*h_xz_r-s*h_xz_i;
+      grad_grad_psi[psiIndex][7]=c*h_yz_r-s*h_yz_i;
+      grad_grad_psi[psiIndex][8]=c*h_zz_r-s*h_zz_i;
+      
+      //These are the real and imaginary components of the third SPO derivative.  _xxx denotes
+      // third derivative w.r.t. x, _xyz, a derivative with resepect to x,y, and z, and so on.  
+      
+      const ST f3_xxx_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g00,g01,g02,g00,g01,g02);
+      const ST f3_xxy_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g00,g01,g02,g10,g11,g12);
+      const ST f3_xxz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g00,g01,g02,g20,g21,g22);
+      const ST f3_xyy_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g10,g11,g12,g10,g11,g12);
+      const ST f3_xyz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g10,g11,g12,g20,g21,g22);
+      const ST f3_xzz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g00,g01,g02,g20,g21,g22,g20,g21,g22);
+      const ST f3_yyy_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g10,g11,g12,g10,g11,g12,g10,g11,g12);
+      const ST f3_yyz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g10,g11,g12,g10,g11,g12,g20,g21,g22);
+      const ST f3_yzz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g10,g11,g12,g20,g21,g22,g20,g21,g22);
+      const ST f3_zzz_r=t3_contract(gh000[jr], gh001[jr], gh002[jr], gh011[jr], gh012[jr], gh022[jr], gh111[jr], gh112[jr], gh122[jr], gh222[jr], g20,g21,g22,g20,g21,g22,g20,g21,g22);
+     
+      const ST f3_xxx_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g00,g01,g02,g00,g01,g02);
+      const ST f3_xxy_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g00,g01,g02,g10,g11,g12);
+      const ST f3_xxz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g00,g01,g02,g20,g21,g22);
+      const ST f3_xyy_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g10,g11,g12,g10,g11,g12);
+      const ST f3_xyz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g10,g11,g12,g20,g21,g22);
+      const ST f3_xzz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g00,g01,g02,g20,g21,g22,g20,g21,g22);
+      const ST f3_yyy_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g10,g11,g12,g10,g11,g12,g10,g11,g12);
+      const ST f3_yyz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g10,g11,g12,g10,g11,g12,g20,g21,g22);
+      const ST f3_yzz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g10,g11,g12,g20,g21,g22,g20,g21,g22);
+      const ST f3_zzz_i=t3_contract(gh000[ji], gh001[ji], gh002[ji], gh011[ji], gh012[ji], gh022[ji], gh111[ji], gh112[ji], gh122[ji], gh222[ji], g20,g21,g22,g20,g21,g22,g20,g21,g22);
+
+      //Here is where we build up the components of the physical hessian gradient, namely, d^3/dx^3(e^{-ik*r}\phi(r)
+      const ST gh_xxx_r= f3_xxx_r + 3*kX*f_xx_i - 3*kX*kX*dX_r - kX*kX*kX*val_i;
+      const ST gh_xxx_i= f3_xxx_i - 3*kX*f_xx_r - 3*kX*kX*dX_i + kX*kX*kX*val_r;
+      const ST gh_xxy_r= f3_xxy_r +(kY*f_xx_i+2*kX*f_xy_i) - (kX*kX*dY_r+2*kX*kY*dX_r)-kX*kX*kY*val_i; 
+      const ST gh_xxy_i= f3_xxy_i -(kY*f_xx_r+2*kX*f_xy_r) - (kX*kX*dY_i+2*kX*kY*dX_i)+kX*kX*kY*val_r; 
+      const ST gh_xxz_r= f3_xxz_r +(kZ*f_xx_i+2*kX*f_xz_i) - (kX*kX*dZ_r+2*kX*kZ*dX_r)-kX*kX*kZ*val_i; 
+      const ST gh_xxz_i= f3_xxz_i -(kZ*f_xx_r+2*kX*f_xz_r) - (kX*kX*dZ_i+2*kX*kZ*dX_i)+kX*kX*kZ*val_r; 
+      const ST gh_xyy_r= f3_xyy_r +(2*kY*f_xy_i+kX*f_yy_i) - (2*kX*kY*dY_r+kY*kY*dX_r)-kX*kY*kY*val_i;
+      const ST gh_xyy_i= f3_xyy_i -(2*kY*f_xy_r+kX*f_yy_r) - (2*kX*kY*dY_i+kY*kY*dX_i)+kX*kY*kY*val_r;
+      const ST gh_xyz_r= f3_xyz_r +(kX*f_yz_i+kY*f_xz_i+kZ*f_xy_i)-(kX*kY*dZ_r+kY*kZ*dX_r+kZ*kX*dY_r) - kX*kY*kZ*val_i;
+      const ST gh_xyz_i= f3_xyz_i -(kX*f_yz_r+kY*f_xz_r+kZ*f_xy_r)-(kX*kY*dZ_i+kY*kZ*dX_i+kZ*kX*dY_i) + kX*kY*kZ*val_r;
+      const ST gh_xzz_r= f3_xzz_r +(2*kZ*f_xz_i+kX*f_zz_i) - (2*kX*kZ*dZ_r+kZ*kZ*dX_r)-kX*kZ*kZ*val_i;
+      const ST gh_xzz_i= f3_xzz_i -(2*kZ*f_xz_r+kX*f_zz_r) - (2*kX*kZ*dZ_i+kZ*kZ*dX_i)+kX*kZ*kZ*val_r;
+      const ST gh_yyy_r= f3_yyy_r + 3*kY*f_yy_i - 3*kY*kY*dY_r - kY*kY*kY*val_i;
+      const ST gh_yyy_i= f3_yyy_i - 3*kY*f_yy_r - 3*kY*kY*dY_i + kY*kY*kY*val_r;
+      const ST gh_yyz_r= f3_yyz_r +(kZ*f_yy_i+2*kY*f_yz_i) - (kY*kY*dZ_r+2*kY*kZ*dY_r)-kY*kY*kZ*val_i; 
+      const ST gh_yyz_i= f3_yyz_i -(kZ*f_yy_r+2*kY*f_yz_r) - (kY*kY*dZ_i+2*kY*kZ*dY_i)+kY*kY*kZ*val_r; 
+      const ST gh_yzz_r= f3_yzz_r +(2*kZ*f_yz_i+kY*f_zz_i) - (2*kY*kZ*dZ_r+kZ*kZ*dY_r)-kY*kZ*kZ*val_i;
+      const ST gh_yzz_i= f3_yzz_i -(2*kZ*f_yz_r+kY*f_zz_r) - (2*kY*kZ*dZ_i+kZ*kZ*dY_i)+kY*kZ*kZ*val_r;
+      const ST gh_zzz_r= f3_zzz_r + 3*kZ*f_zz_i - 3*kZ*kZ*dZ_r - kZ*kZ*kZ*val_i;
+      const ST gh_zzz_i= f3_zzz_i - 3*kZ*f_zz_r - 3*kZ*kZ*dZ_i + kZ*kZ*kZ*val_r;
+      //[x][xx] //These are the unique entries
+      grad_grad_grad_psi[psiIndex][0][0]=c*gh_xxx_r-s*gh_xxx_i;
+      grad_grad_grad_psi[psiIndex][0][1]=c*gh_xxy_r-s*gh_xxy_i;
+      grad_grad_grad_psi[psiIndex][0][2]=c*gh_xxz_r-s*gh_xxz_i;
+      grad_grad_grad_psi[psiIndex][0][3]=c*gh_xxy_r-s*gh_xxy_i;
+      grad_grad_grad_psi[psiIndex][0][4]=c*gh_xyy_r-s*gh_xyy_i;
+      grad_grad_grad_psi[psiIndex][0][5]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][0][6]=c*gh_xxz_r-s*gh_xxz_i;
+      grad_grad_grad_psi[psiIndex][0][7]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][0][8]=c*gh_xzz_r-s*gh_xzz_i;
+    
+      grad_grad_grad_psi[psiIndex][1][0]=c*gh_xxy_r-s*gh_xxy_i;
+      grad_grad_grad_psi[psiIndex][1][1]=c*gh_xyy_r-s*gh_xyy_i;
+      grad_grad_grad_psi[psiIndex][1][2]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][1][3]=c*gh_xyy_r-s*gh_xyy_i;
+      grad_grad_grad_psi[psiIndex][1][4]=c*gh_yyy_r-s*gh_yyy_i;
+      grad_grad_grad_psi[psiIndex][1][5]=c*gh_yyz_r-s*gh_yyz_i;
+      grad_grad_grad_psi[psiIndex][1][6]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][1][7]=c*gh_yyz_r-s*gh_yyz_i;
+      grad_grad_grad_psi[psiIndex][1][8]=c*gh_yzz_r-s*gh_yzz_i;
+
+      grad_grad_grad_psi[psiIndex][2][0]=c*gh_xxz_r-s*gh_xxz_i;
+      grad_grad_grad_psi[psiIndex][2][1]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][2][2]=c*gh_xzz_r-s*gh_xzz_i;
+      grad_grad_grad_psi[psiIndex][2][3]=c*gh_xyz_r-s*gh_xyz_i;
+      grad_grad_grad_psi[psiIndex][2][4]=c*gh_yyz_r-s*gh_yyz_i;
+      grad_grad_grad_psi[psiIndex][2][5]=c*gh_yzz_r-s*gh_yzz_i;
+      grad_grad_grad_psi[psiIndex][2][6]=c*gh_xzz_r-s*gh_xzz_i;
+      grad_grad_grad_psi[psiIndex][2][7]=c*gh_yzz_r-s*gh_yzz_i;
+      grad_grad_grad_psi[psiIndex][2][8]=c*gh_zzz_r-s*gh_zzz_i;
+
+    }
+  }
+ 
+  template<typename VV, typename GV, typename GGV, typename GGGV>
+  void evaluate_vghgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi, GGGV& grad_grad_grad_psi)
+  {
+    const PointType& r=P.activeR(iat);
+    PointType ru(PrimLattice.toUnit_floor(r));
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      spline2::evaluate3d_vghgh(SplineInst->spline_m,ru,myV,myG,myH,mygH,first,last);
+      assign_vghgh(r,psi,dpsi,grad_grad_psi,grad_grad_grad_psi,first/2,last/2);
     }
   }
 };

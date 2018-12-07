@@ -218,6 +218,12 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     else
       BaseAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
   }
+  
+  template<typename VV, typename GV, typename GGV, typename GGGV>
+  inline void evaluate_vghgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi, GGGV& grad_grad_grad_psi)
+  {
+    APP_ABORT("HybridCplxSoA::evaluate_vghgh not implemented!");
+  }
 };
 
 }

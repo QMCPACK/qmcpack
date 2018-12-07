@@ -15,8 +15,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#ifndef QMCPLUSPLUS_ORBITALBASE_H
-#define QMCPLUSPLUS_ORBITALBASE_H
+#ifndef QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
+#define QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
