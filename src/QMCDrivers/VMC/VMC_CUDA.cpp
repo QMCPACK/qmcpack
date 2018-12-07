@@ -61,6 +61,8 @@ bool VMCcuda::checkBounds (std::vector<PosType> &newpos,
   return true;
 }
 
+// #define SPLIT_SPLINE_DEBUG
+
 void VMCcuda::advanceWalkers()
 {
   int nat = W.getTotalNum();
@@ -77,6 +79,10 @@ void VMCcuda::advanceWalkers()
 
   for (int isub=0; isub<nSubSteps; isub++)
   {
+#ifdef SPLIT_SPLINE_DEBUG
+    if (gpu::rank==1)
+      std::cerr << "sub step: " << isub << "\n";
+#endif
     for(int iat=0; iat<nat; ++iat)
     {
       //create a 3N-Dimensional Gaussian with variance=1
@@ -99,8 +105,16 @@ void VMCcuda::advanceWalkers()
       std::vector<bool> acc(nw, true);
       if (W.UseBoundBox)
         checkBounds (newpos, acc);
+#ifdef SPLIT_SPLINE_DEBUG
+      if (gpu::rank==1)
+        std::cerr << "iat = " << iat << "\n";
+#endif
       for(int iw=0; iw<nw; ++iw)
       {
+#ifdef SPLIT_SPLINE_DEBUG
+        if (gpu::rank==1)
+          std::cerr << iw << ": " << ratios[iw] << "\n";
+#endif
 #ifdef QMC_COMPLEX
         if(acc[iw] && ratios_real[iw]*ratios_real[iw] > Random())
 #else
@@ -152,7 +166,13 @@ bool VMCcuda::run()
 
   // First do warmup steps
   for (int step=0; step<nWarmupSteps; step++)
+  {
+#ifdef SPLIT_SPLINE_DEBUG
+    if (gpu::rank==1)
+      std::cerr << "Before advanceWalkers(), step " << step << "\n";
+#endif
     advanceWalkers();
+  }
 
   // Then accumulate statistics
   do
@@ -167,9 +187,18 @@ bool VMCcuda::run()
       ++step;
       ++CurrentStep;
       W.resetCollectables();
+#ifdef SPLIT_SPLINE_DEBUG
+      if (gpu::rank==1)
+        std::cerr << "Before advanceWalkers() loop, step " << step << "\n";
+#endif
       advanceWalkers();
       Psi.gradLapl(W, grad, lapl);
       H.evaluate (W, LocalEnergy);
+#ifdef SPLIT_SPLINE_DEBUG
+      if(gpu::rank==1)
+        for(int ip=0; ip<nw; ip++)
+          fprintf(stderr,"walker #%i energy = %f\n",ip,LocalEnergy[ip]);
+#endif
       if (myPeriod4WalkerDump && (CurrentStep % myPeriod4WalkerDump)==0)
         W.saveEnsemble();
       Estimators->accumulate(W);
@@ -248,6 +277,9 @@ bool VMCcuda::run()
     std::cerr << "At the end of VMC" << std::endl;
     gpu::cuda_memory_manager.report();
   }
+#ifdef SPLIT_SPLINE_DEBUG
+    _exit(0);
+#endif
 #ifdef USE_NVTX_API
   nvtxRangePop();
 #endif

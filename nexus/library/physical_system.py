@@ -547,6 +547,11 @@ class PhysicalSystem(Matter):
     #end def tile
 
 
+    def has_folded(self):
+        return self.folded_system is not None
+    #end def has_folded
+
+
     def remove_folded_system(self):
         self.folded_system = None
         self.structure.remove_folded_structure()

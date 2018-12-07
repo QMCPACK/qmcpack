@@ -34,6 +34,11 @@ cublasHandle_t cublasHandle;
 
 size_t MaxGPUSpineSizeMB;
 int rank;
+int relative_rank; // relative rank number on the node the rank is on, counting starts at zero
+int device_group_size; // size of the lists below
+bool cudamps; // is set to true if Cuda MPS service is running
+std::vector<int> device_group_numbers; // on node list of GPU device numbers with respect to relative rank number
+std::vector<int> device_rank_numbers; // on node list of MPI rank numbers (absolute) with respect to relative rank number
 
 void
 initCUDAStreams()

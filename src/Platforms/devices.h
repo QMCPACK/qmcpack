@@ -27,6 +27,7 @@
 #include <cuda_runtime_api.h>
 #include <unistd.h>
 #include <CUDA/gpu_misc.h>
+#include <nvml.h>
 
 #define MAX_GPU_SPLINE_SIZE_MB 81920
 
@@ -36,6 +37,7 @@ inline int get_num_appropriate_devices()
 {
   int deviceCount;
   cudaGetDeviceCount(&deviceCount);
+  gpu::device_group_numbers.resize(deviceCount);
   int num_appropriate=0;
   for (int device=0; device < deviceCount; ++device)
   {
@@ -43,8 +45,13 @@ inline int get_num_appropriate_devices()
     cudaGetDeviceProperties(&deviceProp, device);
     if (((deviceProp.major >= 1) && (deviceProp.minor >= 3)) ||
         deviceProp.major >= 2)
+    {
+      gpu::device_group_numbers[num_appropriate]=device;
       num_appropriate++;
+    }
   }
+  gpu::device_group_size=num_appropriate;
+  gpu::device_group_numbers.resize(gpu::device_group_size); // trim if needed
   return num_appropriate;
 }
 
@@ -102,6 +109,19 @@ inline int get_device_num()
     if (i==rank) rank_node[0]=num_nodes; // node number of current rank (NOTE: node numbers start at 1)
   }
 
+  // Check if CUDA MPS is running
+  std::vector<int> mps_avail(1);
+  // default to true for every rank, expcept the first rank per node (see below)
+  // in this way, these ranks do not affect the MPS test below
+  mps_avail[0]=1;
+  if (relative_ranknum==0) // Only check on first relative rank per node to not overwhelm daemon
+  {
+    mps_avail[0]=0;
+    int ret=system("echo get_server_list | nvidia-cuda-mps-control > /dev/null 2>&1");
+    if (ret==0)
+      mps_avail[0]=1;
+  }
+
   // gather all the information
   std::vector<int> ranks_per_node(size+1); ranks_per_node[size]=-1;
   OHMMS::Controller->allgather(number_ranks,ranks_per_node,1);
@@ -109,6 +129,19 @@ inline int get_device_num()
   OHMMS::Controller->allgather(cuda_devices,num_cuda_devices,1);
   std::vector<int> node_of_rank(size+1); node_of_rank[size]=num_nodes;
   OHMMS::Controller->allgather(rank_node,node_of_rank,1);
+  std::vector<int> mps_per_rank(size+1); mps_per_rank[size]=-1;
+  OHMMS::Controller->allgather(mps_avail,mps_per_rank,1);
+
+  gpu::cudamps=true;
+  for(int i=0; i<size; i++)
+  {
+    // If GPS isn't available for every rank don't use it (could potentially be relaxed in the future)
+    if(mps_per_rank[i]==0)
+    {
+      gpu::cudamps=false;
+      break;
+    }
+  }
 
   // output information for every rank with a different configuration from the previous one (i.e. with all nodes equal this will only be the first rank)
   if ((ranks_per_node[rank] != ranks_per_node[(rank+size)%(size+1)]) || (num_cuda_devices[rank] != num_cuda_devices[(rank+size)%(size+1)]))
@@ -143,6 +176,22 @@ inline int get_device_num()
     std::cerr << out.str();
     std::cerr.flush();
   }
+  gpu::relative_rank=relative_ranknum;
+  if (ranks_per_node[rank]<num_cuda_devices[rank]) // sanity check (can't use more GPUs than ranks per node)
+    gpu::device_group_size=ranks_per_node[rank];
+  gpu::device_group_numbers.resize(gpu::device_group_size); // not strictly needed but doesn't hurt to trim if too big based on sanity check above
+  if (ranks_per_node[rank]>num_cuda_devices[rank]) // now things get interesting: more ranks then GPUs
+  {
+    // need to adjust the device group numbers being overutilized
+    gpu::device_group_size = ranks_per_node[rank];
+    gpu::device_group_numbers.resize(gpu::device_group_size);
+    // circularly extend assignment (same GPUs adjacent in this list would be better due to less cudaSetDevice overhead but requires more extensive code changes down the line)
+    for (int i=num_cuda_devices[rank]; i<gpu::device_group_size; i++)
+      gpu::device_group_numbers[i] = gpu::device_group_numbers[i % num_cuda_devices[rank]];
+  }
+  gpu::device_rank_numbers.resize(gpu::device_group_size);
+  for (int i=0; i<gpu::device_group_size; i++)
+    gpu::device_rank_numbers[i]=i+rank-relative_ranknum;
   // return CUDA device number based on how many appropriate ones exist on the current rank's node and what the relative rank number is
   return relative_ranknum % num_cuda_devices[rank];
 }
@@ -204,6 +253,17 @@ inline void Init_CUDA()
   gpu::initCUDAEvents();
   gpu::initCublas();
   gpu::MaxGPUSpineSizeMB = MAX_GPU_SPLINE_SIZE_MB;
+  std::cerr << "Rank " << gpu::rank << ": relative rank number = " << gpu::relative_rank << ", number of devices = " << gpu::device_group_size;
+  if (gpu::cudamps)
+    std::cerr << " (MPS enabled)";
+  std::cerr << "\n";
+  std::cerr << "Assigned device numbers: ";
+  for (int i=0; i<gpu::device_group_size; i++)
+  {
+    if (i>0) std::cerr << ", ";
+    std::cerr << gpu::device_group_numbers[i];
+  }
+  std::cerr << "\n";
   // Output maximum spline buffer size for first MPI rank
   if(gpu::rank==0)
     std::cerr << "Default MAX_GPU_SPLINE_SIZE_MB is " << gpu::MaxGPUSpineSizeMB << " MB." << std::endl;

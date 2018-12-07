@@ -61,6 +61,8 @@ import os
 from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
 from gamess import Gamess
+from pyscf_sim import Pyscf
+
 
 # read/write functions associated with pw2qmcpack only
 def read_str(sv):
@@ -829,6 +831,12 @@ class Convert4qmc(Simulation):
     application            = 'convert4qmc'
     application_properties = set(['serial'])
     application_results    = set(['orbitals','particles'])
+    renew_app_command      = True
+
+    def __init__(self,*args,**kwargs):
+        Simulation.__init__(self,*args,**kwargs)
+        self.input_code = None
+    #end def __init__
 
 
     def set_app_name(self,app_name):
@@ -905,9 +913,10 @@ class Convert4qmc(Simulation):
 
     def incorporate_result(self,result_name,result,sim):
         implemented = True
+        input = self.input
         if isinstance(sim,Gamess):
+            self.input_code = 'gamess'
             if result_name=='orbitals':
-                input = self.input
                 orbpath = os.path.relpath(result.location,self.locdir)
                 if result.scftyp=='mcscf':
                     input.gamess_ascii = orbpath
@@ -924,6 +933,14 @@ class Convert4qmc(Simulation):
                     input.gamess_ascii = orbpath
                 #end if
                 self.job.app_command = input.app_command()
+            else:
+                implemented = False
+            #end if
+        elif isinstance(sim,Pyscf):
+            self.input_code = 'pyscf'
+            if result_name=='orbitals':
+                orbpath = os.path.relpath(result.h5_file,self.locdir)
+                input.pyscf = orbpath
             else:
                 implemented = False
             #end if

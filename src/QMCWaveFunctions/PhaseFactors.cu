@@ -27,7 +27,7 @@
 template<typename T, int BS> __global__
 void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
                           T *pos, T **phi_in, T **phi_out,
-                          int num_splines, int num_walkers)
+                          int num_splines, int num_walkers, int num_split_splines)
 {
   __shared__ T in_shared[2*BS+1], kPoints_s[BS][3],
              pos_s[BS][3];
@@ -89,13 +89,19 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
       outIndex  = m2c_ps[tid-1];
     T s, c;
     int end = min (BS, num_splines-block*BS);
+    int off = 2*block*BS+tid;
+    int in_off = off/2;
+    int my_off = 2*((in_off%num_split_splines)+num_walkers*num_split_splines*(in_off/num_split_splines))+(off%2);
+    int off_end = off+end;
+    in_off = off_end/2;
+    int my_off_end = 2*((in_off%num_split_splines)+num_walkers*num_split_splines*(in_off/num_split_splines))+(off_end%2);
     if(tid < end)
       for (int i=0; i<numWrite; i++)
       {
-        if ((2*block)*BS+tid < 2*num_splines)
-          in_shared[tid   ] = phi_in_ptr[i][(2*block+0)*BS+tid];
-        if ((2*block)*BS+tid + end < 2*num_splines)
-          in_shared[tid+end] = phi_in_ptr[i][(2*block)*BS+tid + end];
+        if (off < 2*num_splines)
+          in_shared[tid   ] = phi_in_ptr[i][my_off];
+        if (off_end < 2*num_splines)
+          in_shared[tid+end] = phi_in_ptr[i][my_off_end];
         // Compute e^{-ikr}
         T phase = -(pos_s[i][0]*kPoints_s[tid][0] +
                     pos_s[i][1]*kPoints_s[tid][1] +
@@ -341,7 +347,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
                           T *pos, T **phi_in, T **phi_out,
                           T **grad_lapl_in, T **grad_lapl_out,
                           int num_splines, int num_walkers,
-                          int row_stride)
+                          int row_stride, int num_split_splines)
 {
   T in_shared[5][2], kPoints_s[3];
   __shared__ T  pos_s[3];
@@ -364,17 +370,21 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
     int off = block*BS + tid;
     if (off < num_splines)
     {
+      int in_off = off % num_split_splines;
+      int spline_offset = num_walkers*num_split_splines*(off/num_split_splines);
       // Load kpoints
       kPoints_s[0] = kPoints[off*3  ];
       kPoints_s[1] = kPoints[off*3+1];
       kPoints_s[2] = kPoints[off*3+2];
       // Load phi_in
-      in_shared[0][0] = my_phi_in[off*2];
-      in_shared[0][1] = my_phi_in[off*2+1];
+      int my_off=2*(in_off+spline_offset);
+      in_shared[0][0] = my_phi_in[my_off];
+      in_shared[0][1] = my_phi_in[my_off+1];
+      my_off += 6*spline_offset; // in other words, my_off = 2*(in_off+4*spline_start)
       for (int j=0; j<4; j++)
       {
-        in_shared[j+1][0] = my_GL_in[2*j*num_splines+2*off  ];
-        in_shared[j+1][1] = my_GL_in[2*j*num_splines+2*off+1];
+        in_shared[j+1][0] = my_GL_in[2*j*num_split_splines+my_off  ];
+        in_shared[j+1][1] = my_GL_in[2*j*num_split_splines+my_off+1];
       }
       // Load makeTwoCopies
       m2c[tid] = makeTwoCopies[off];
@@ -484,8 +494,16 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[],
   const int BS = 32;
   dim3 dimBlock(BS);
   dim3 dimGrid ((num_walkers+BS-1)/BS);
-  phase_factor_kernel<float,BS><<<dimGrid,dimBlock>>>
-  (kPoints, makeTwoCopies, pos, phi_in, phi_out, num_splines, num_walkers);
+
+  int Nsplit=num_splines;
+  if (gpu::device_group_size>1)
+  {
+    Nsplit += gpu::device_group_size-1;
+    Nsplit /= gpu::device_group_size;
+  }
+
+  phase_factor_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  (kPoints, makeTwoCopies, pos, phi_in, phi_out, num_splines, num_walkers, Nsplit);
   // dim3 dimGrid (num_walkers);
   // phase_factor_kernel_new<float,BS><<<dimGrid,dimBlock>>>
   //   (kPoints, makeTwoCopies, pos, phi_in, phi_out, num_splines);
@@ -513,9 +531,17 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[], int TwoCopiesInde
   const int BS = 128;
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
+
+  int Nsplit=num_splines;
+  if (gpu::device_group_size>1)
+  {
+    Nsplit += gpu::device_group_size-1;
+    Nsplit /= gpu::device_group_size;
+  }
+
   phase_factor_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (kPoints, makeTwoCopies, TwoCopiesIndex, pos, phi_in, phi_out,
-   GL_in, GL_out, num_splines, num_walkers, row_stride);
+   GL_in, GL_out, num_splines, num_walkers, row_stride, Nsplit);
   /*
   const int BS = 32;
   dim3 dimBlock(BS);
@@ -533,8 +559,16 @@ void apply_phase_factors(double kPoints[], int makeTwoCopies[],
   const int BS = 32;
   dim3 dimBlock(BS);
   dim3 dimGrid ((num_walkers+BS-1)/BS);
-  phase_factor_kernel<double,BS><<<dimGrid,dimBlock>>>
-  (kPoints, makeTwoCopies, pos, phi_in, phi_out, num_splines, num_walkers);
+
+  int Nsplit=num_splines;
+  if (gpu::device_group_size>1)
+  {
+    Nsplit += gpu::device_group_size-1;
+    Nsplit /= gpu::device_group_size;
+  }
+
+  phase_factor_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  (kPoints, makeTwoCopies, pos, phi_in, phi_out, num_splines, num_walkers, Nsplit);
 }
 
 
@@ -560,9 +594,17 @@ void apply_phase_factors(double kPoints[], int makeTwoCopies[], int TwoCopiesInd
   const int BS = 128;
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
+
+  int Nsplit=num_splines;
+  if (gpu::device_group_size>1)
+  {
+    Nsplit += gpu::device_group_size-1;
+    Nsplit /= gpu::device_group_size;
+  }
+
   phase_factor_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (kPoints, makeTwoCopies, TwoCopiesIndex, pos, phi_in, phi_out,
-   GL_in, GL_out, num_splines, num_walkers, row_stride);
+   GL_in, GL_out, num_splines, num_walkers, row_stride, Nsplit);
 }
 
 
@@ -578,16 +620,12 @@ void apply_phase_factors(double kPoints[], int makeTwoCopies[], int TwoCopiesInd
 template<typename T, typename T2, int BS> __global__
 void phase_factor_kernel (T *kPoints,
                           T *pos, T2 **phi_in, T2 **phi_out,
-                          int num_splines)
+                          int num_splines, int num_walkers, int num_split_splines)
 {
   __shared__ T pos_s[3];
   __shared__ T2 *phi_in_ptr, *phi_out_ptr;
 
   int tid = threadIdx.x;
-
-  // Copy electron position into shared memory
-  if (tid < 3)
-    pos_s[tid] = pos[3*blockIdx.x+tid];
 
   // Set pointers to point to the address (of the 1st element) where phi for that walker is stored
   if (tid == 0)
@@ -596,27 +634,39 @@ void phase_factor_kernel (T *kPoints,
     phi_out_ptr = phi_out[blockIdx.x];
   }
 
+  // Copy electron position into shared memory
+  if (tid < 3)
+    pos_s[tid] = pos[3*blockIdx.x+tid];
   // BS>warpSize sync needed 
-  //__syncthreads();
+  __syncthreads();
 
   // "ib" is NOT the thread block! This is just a "block" of BS splines that the BS threads
   // process together at one time, so it has to repeat NB times to take care of all the splines
   int NB = (num_splines+BS-1)/BS;
   for (int ib=0; ib<NB; ib++)
   {
+    T kPoints_s[3];
     int off = ib*BS + tid;
     if (off < num_splines)
     {
+      int in_off = off % num_split_splines;
+      int spline_offset = num_walkers*num_split_splines*(off/num_split_splines);
+      // Load kpoints
+      kPoints_s[0] = kPoints[off*3  ];
+      kPoints_s[1] = kPoints[off*3+1];
+      kPoints_s[2] = kPoints[off*3+2];
       // Now compute phase factors
-      T phase = -(kPoints[off*3  ]*pos_s[0] +
-                  kPoints[off*3+1]*pos_s[1] +
-                  kPoints[off*3+2]*pos_s[2]);
+      T phase = -(kPoints_s[0]*pos_s[0] +
+                  kPoints_s[1]*pos_s[1] +
+                  kPoints_s[2]*pos_s[2]);
       T s, c;
       sincos (phase, &s, &c);
       T2 e_mikr = T2(c,s);
+      int my_off=in_off+spline_offset;
+      T2 u = phi_in_ptr[my_off];
 
       // Write back to global memory directly
-      phi_out_ptr[ib*BS+tid] = phi_in_ptr[ib*BS+tid]*e_mikr;
+      phi_out_ptr[off] = u*e_mikr;
     }
   }
 }
@@ -627,7 +677,7 @@ void phase_factor_kernel (T *kPoints,
                           T *pos, T2 **phi_in, T2 **phi_out,
                           T2 **grad_lapl_in, T2 **grad_lapl_out,
                           int num_splines, int num_walkers,
-                          int row_stride)
+                          int row_stride, int num_split_splines)
 {
   // Dummy quantities to make use of shared memory
   __shared__ T  pos_s[3];
@@ -658,6 +708,8 @@ void phase_factor_kernel (T *kPoints,
     int off = block*BS + tid;
     if (off < num_splines)
     {
+      int in_off = off % num_split_splines;
+      int spline_offset = num_walkers*num_split_splines*(off/num_split_splines);
       // Load kpoints
       kPoints_s[0] = kPoints[off*3  ];
       kPoints_s[1] = kPoints[off*3+1];
@@ -672,9 +724,11 @@ void phase_factor_kernel (T *kPoints,
 
       // Temp. storage for phi, grad, lapl in the registers
       T2 u, gradlaplu[4];
-      u = my_phi_in[off];
+      int my_off=in_off+spline_offset;
+      u = my_phi_in[my_off];
+      my_off += 3*spline_offset; // my_off=in_off+4*spline_offset
       for (int j=0; j<4; j++)
-        gradlaplu[j] = my_GL_in[j*num_splines+off];
+        gradlaplu[j] = my_GL_in[my_off+j*num_split_splines];
 
       // Apply e^(-ikr) to the wavefunction
       my_phi_out[off] = u * e_mikr;
@@ -714,8 +768,15 @@ void apply_phase_factors(float kPoints[], float pos[],
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
 
-  phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock>>>
-  (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, num_splines);
+  int Nsplit=num_splines;
+  if (gpu::device_group_size>1)
+  {
+    Nsplit += gpu::device_group_size-1;
+    Nsplit /= gpu::device_group_size;
+  }
+
+  phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, num_splines, num_walkers, Nsplit);
 }
 
 void apply_phase_factors(double kPoints[], double pos[],
@@ -726,8 +787,15 @@ void apply_phase_factors(double kPoints[], double pos[],
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
 
-  phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock>>>
-  (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, num_splines);
+  int Nsplit=num_splines;
+  if (gpu::device_group_size>1)
+  {
+    Nsplit += gpu::device_group_size-1;
+    Nsplit /= gpu::device_group_size;
+  }
+
+  phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, num_splines, num_walkers, Nsplit);
 }
 
 void apply_phase_factors(float kPoints[], float pos[],
@@ -740,9 +808,16 @@ void apply_phase_factors(float kPoints[], float pos[],
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
 
+  int Nsplit=num_splines;
+  if (gpu::device_group_size>1)
+  {
+    Nsplit += gpu::device_group_size-1;
+    Nsplit /= gpu::device_group_size;
+  }
+
   phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, (thrust::complex<float>**)GL_in, (thrust::complex<float>**)GL_out, 
-  num_splines, num_walkers, row_stride);
+  (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, (thrust::complex<float>**)GL_in, (thrust::complex<float>**)GL_out,
+  num_splines, num_walkers, row_stride, Nsplit);
 }
 
 
@@ -755,9 +830,16 @@ void apply_phase_factors(double kPoints[], double pos[],
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
 
+  int Nsplit=num_splines;
+  if (gpu::device_group_size>1)
+  {
+    Nsplit += gpu::device_group_size-1;
+    Nsplit /= gpu::device_group_size;
+  }
+
   phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, (thrust::complex<double>**)GL_in, (thrust::complex<double>**)GL_out, 
-  num_splines, num_walkers, row_stride);
+  (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, (thrust::complex<double>**)GL_in, (thrust::complex<double>**)GL_out,
+  num_splines, num_walkers, row_stride, Nsplit);
 }
 
 #endif
