@@ -30,6 +30,7 @@ typedef struct
   uint stride;
   float gridInv;
   int num_splines;
+  int num_split_splines;
   int dim;
 } multi_UBspline_1d_s_cuda;
 
@@ -39,6 +40,7 @@ typedef struct
   uint stride;
   float gridInv;
   int num_splines;
+  int num_split_splines;
   int dim;
 } multi_UBspline_1d_c_cuda;
 
@@ -48,6 +50,7 @@ typedef struct
   uint stride;
   double gridInv;
   int num_splines;
+  int num_split_splines;
   int dim;
 } multi_UBspline_1d_d_cuda;
 
@@ -57,6 +60,7 @@ typedef struct
   uint stride;
   double gridInv;
   int num_splines;
+  int num_split_splines;
   int dim;
 } multi_UBspline_1d_z_cuda;
 
@@ -70,6 +74,7 @@ typedef struct
   uint2 stride;
   float2 gridInv;
   int num_splines;
+  int num_split_splines;
 } multi_UBspline_2d_s_cuda;
 
 typedef struct
@@ -78,6 +83,7 @@ typedef struct
   uint2 stride;
   float2 gridInv;
   int num_splines;
+  int num_split_splines;
 } multi_UBspline_2d_c_cuda;
 
 typedef struct
@@ -86,6 +92,7 @@ typedef struct
   uint2 stride;
   double gridInv[2];
   int num_splines;
+  int num_split_splines;
 } multi_UBspline_2d_d_cuda;
 
 typedef struct
@@ -94,6 +101,7 @@ typedef struct
   uint2 stride;
   double gridInv[2];
   int num_splines;
+  int num_split_splines;
 } multi_UBspline_2d_z_cuda;
 
 ////////
@@ -107,6 +115,7 @@ typedef struct
   float3 gridInv;
   uint3 dim;
   int num_splines;
+  int num_split_splines;
 } multi_UBspline_3d_s_cuda;
 
 typedef struct
@@ -117,6 +126,7 @@ typedef struct
   float3 gridInv;
   uint3 dim;
   int num_splines;
+  int num_split_splines;
   int host_Nx_offset;
 } multi_UBspline_3d_c_cuda;
 
@@ -127,6 +137,7 @@ typedef struct
   double3 gridInv;
   uint3 dim;
   int num_splines;
+  int num_split_splines;
 } multi_UBspline_3d_d_cuda;
 
 typedef struct
@@ -136,6 +147,7 @@ typedef struct
   double3 gridInv;
   uint3 dim;
   int num_splines;
+  int num_split_splines;
 } multi_UBspline_3d_z_cuda;
 
 

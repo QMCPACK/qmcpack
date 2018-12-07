@@ -41,6 +41,13 @@ namespace spline2
      0.0f, 0.0f, -3.0f,  1.0f,
      0.0f, 0.0f,  1.0f,  0.0f };
 
+  template<>
+  QMC_ALIGNAS const float MultiBsplineData<float>::d3A44[16] =
+  {  0.0f, 0.0f,  0.0f, -1.0f,
+     0.0f, 0.0f,  0.0f,  3.0f,
+     0.0f, 0.0f,  0.0f, -3.0f,
+     0.0f, 0.0f,  0.0f,  1.0f };
+
   /** initialization of static data for MultiBsplineData<double> */
   template<>
   QMC_ALIGNAS const double MultiBsplineData<double>::A44[16] =
@@ -62,5 +69,12 @@ namespace spline2
      0.0, 0.0,  3.0, -2.0,
      0.0, 0.0, -3.0,  1.0,
      0.0, 0.0,  1.0,  0.0 };
+
+  template<>
+  QMC_ALIGNAS const double MultiBsplineData<double>::d3A44[16] =
+  {  0.0, 0.0,  0.0, -1.0,
+     0.0, 0.0,  0.0,  3.0,
+     0.0, 0.0,  0.0, -3.0,
+     0.0, 0.0,  0.0,  1.0 };
 }
 

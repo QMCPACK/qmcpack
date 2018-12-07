@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
 #endif
 
@@ -82,7 +83,7 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     cur = cur->next;
   }
 #endif
-  typedef SlaterDet::Determinant_t Det_t;
+  typedef DiracDeterminant Det_t;
   typedef SlaterDet SlaterDeterminant_t;
   HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
   HEGGrid<RealType,OHMMS_DIM> egGrid2(targetPtcl.Lattice);
