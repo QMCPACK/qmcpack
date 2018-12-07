@@ -85,7 +85,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
         oAttrib2.add(fid,"id");
         oAttrib2.put(cur2);
         // get functor, add to function
-        FunctorType* func = new FunctorType();
+        FunctorType* func = new FunctorType(fid);
         func->put(cur2);
         CR->addFunc(func, fid);
       }

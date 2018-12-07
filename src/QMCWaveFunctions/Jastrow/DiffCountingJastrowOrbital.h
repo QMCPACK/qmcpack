@@ -334,9 +334,15 @@ public:
   //  deriv_print_index++;
   //}
 
-  bool addRegion(RegionType* CR);
+  bool addRegion(RegionType* CR)
+  {
+    return true;
+  }
 
-  bool addDebug(int seqlen, int period);
+  bool addDebug(int seqlen, int period)
+  {
+    return true;
+  }
 
 };
 

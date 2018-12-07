@@ -163,6 +163,12 @@ public:
     }
   }
 
+  void restore(int iat) 
+  {
+    for(int I = 0; I < C.size(); ++I)
+      C[I]->restore(iat);
+  }
+
   void reportStatus(std::ostream& os)
   {
     // print some class variables:
@@ -187,7 +193,8 @@ public:
 //    }
     for(int i = 0; i < C.size(); ++i)
     {
-      FunctorType* Ci = C[i]->makeClone(C_id[i]);
+//      FunctorType* Ci = C[i]->makeClone(C_id[i]);
+      FunctorType* Ci = C[i]->makeClone();
       cr->addFunc(Ci, C_id[i]);
     }
     // initialize
@@ -208,7 +215,8 @@ public:
     if(Cref_id == "none" || C_id_it == C_id.end())
       APP_ABORT("NormalizedGaussianRegion::put: reference function not found:"+ (Cref_id == "none"?" Cref not specified":"\"" + Cref_id + "\"")); 
     // make a copy of the reference gaussian
-    Cref = C[ref_index]->makeClone(Cref_id + "_ref");
+//    Cref = C[ref_index]->makeClone(Cref_id + "_ref");
+    Cref = C[ref_index]->makeClone();
 
 
     // divide all gaussians by the reference

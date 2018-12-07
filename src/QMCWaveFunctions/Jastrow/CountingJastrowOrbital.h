@@ -302,7 +302,7 @@ public:
     std::fill(Jgrad.begin(),Jgrad.end(),0);
     std::fill(Jlap.begin(),Jlap.end(),0);
 
-    std::function<RealType&(int,int)> _F      = [&](int I, int J)->RealType& { return F[I*num_regions +J]; };
+    std::function<RealType&(int,int)> _F      = [&](int I, int J)->RealType& { return F(I*num_regions +J); };
     std::function<GradType&(int,int)> _FCgrad = [&](int I, int i)->GradType& { return FCgrad[I*num_els + i]; };
     std::function<RealType&(int,int)> _FClap = [&](int I, int i)->RealType& { return FClap[I*num_els + i]; };
     // evaluate FC products
@@ -373,7 +373,7 @@ public:
     std::fill(FCgrad_t.begin(),FCgrad_t.end(),0);
     std::fill(FClap_t.begin(),FClap_t.end(),0);
   
-    std::function<RealType&(int,int)> _F      = [&](int I, int J)->RealType& { return F[I*num_regions +J]; };
+    std::function<RealType&(int,int)> _F      = [&](int I, int J)->RealType& { return F(I*num_regions +J); };
     std::function<const GradType&(int,int)> _FCgrad = [&](int I, int i)->const GradType&{ return FCgrad[I*num_els + i] ; };
     // evaluate temp FC arrays
     for(int I = 0; I < num_regions; ++I)
@@ -555,7 +555,7 @@ public:
     buf.add(Jlap_begin, Jlap_end);
     buf.add(Jgrad_begin,Jgrad_end);
     DEBUG_PSIBUFFER(" CountingJastrow::registerData",buf.current());
-    return logValue;
+    //return logValue;
   }
 
   /** For particle-by-particle move. Put the objects of this class
@@ -663,10 +663,12 @@ public:
 
   bool addRegion(RegionType* CR, Matrix<RealType>* F, std::vector<RealType>* G, bool opt_CR, bool opt_G, bool opt_F)
   {
+    return true;
   }
 
   bool addDebug(int seqlen, int period)
   {
+    return true;
   }
 
 };
