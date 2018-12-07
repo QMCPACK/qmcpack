@@ -24,7 +24,7 @@ CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFun
   ClassName="CountingJastrowBuilder";
   NameOpt="0";
   TypeOpt="unknown";
-  RegionOpt="unknown";
+  RegionOpt="normalized_gaussian";
   SourceOpt=targetPtcl.getName();
 }
 
@@ -68,8 +68,11 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
     {
       // read in opt_R option
       OhmmsAttributeSet oAttrib;
-      oAttrib.add(opt_R,"opt");
+      std::string opt = "true";
+      oAttrib.add(opt, "opt");
       oAttrib.put(cur);
+      opt_R = (opt == "true" || opt == "yes");
+
       // add functions
       xmlNodePtr cur2 = cur->xmlChildrenNode;
       std::string cname2((const char*) cur2->name);
@@ -80,7 +83,6 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
         OhmmsAttributeSet oAttrib2;
         oAttrib2.add(fid,"id");
         oAttrib2.put(cur2);
-
         // get functor, add to function
         FunctorType* func = new FunctorType();
         func->put(cur2);
@@ -93,19 +95,58 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
       std::string cname2((const char*) cur2->name);
       if(cname2 == "F")
       {
-        // input F matrix
+        // read in opt_F option and form
+        std::string form = "upper_triang";
+        std::string opt = "true";
+        OhmmsAttributeSet rAttrib2;
+        rAttrib2.add(opt,"opt");
+        rAttrib2.add(form,"form");
+        rAttrib2.put(cur2);
+        opt_F = (opt == "yes" || opt == "true");
+        // read in F matrix
+        if(form == "upper_triang")
+        {
+          // read in upper triangle, set dimension
+          std::vector<RealType> F_utri;
+          putContent(F_utri,cur);
+          int Fdim = (std::sqrt(8*F_utri.size() + 1) - 1)/2;
+
+          if(!(F_utri.size() == Fdim*(Fdim+1)/2))
+          {
+            std::ostringstream err;
+            err << "CountingJastrowOrbital::put: F cannot be the upper-triangular component of a square matrix: " << F_utri.size() << " != " << Fdim*(Fdim+1)/2 << std::endl;
+            APP_ABORT(err.str());
+          }
+          // set F from upper triangular elements
+          F.resize(Fdim, Fdim)
+          auto it = F_utri.begin();
+          for(int I = 0; I < Fdim; ++I)
+            for(int J = I; J < Fdim; ++J, ++it)
+              F(I,J) = F(J,I) = (*it);
+        }
+        else if (form == "full_matrix")
+          putContent(*F, cur);
       }
       if(cname2 == "G")
       {
-        // input G vector
+        // read in opt_G
+        OhmmsAttributeSet rAttrib2;
+        std::string opt = "true";
+        rAttrib2.add(opt,"opt");
+        rAttrib2.put(cur2);
+        opt = (opt == "yes" || opt == "true");
+        // read in G vector
+        putContent(*G, cur2)
       }
       if(cname2 == "debug")
       {
+        // read in debug options
         int period = 10000, seqlen = 10;
-        OhmmsAttributeSet oAttrib;
-        oAttrib.add(period,"period");
-        oAttrib.add(seqlen,"seqlen");
-        oAttrib.put(cur);
+        OhmmsAttributeSet rAttrib2;
+        rAttrib2.add(period,"period");
+        rAttrib2.add(seqlen,"seqlen");
+        rAttrib2.put(cur);
+        // set debug options
         CJ->addDebug(seqlen, period);
         dCJ->addDebug(seqlen, period);
       }
