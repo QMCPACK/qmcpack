@@ -9,9 +9,10 @@
 // File created by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "CountingJastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/CountingJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/CountingJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffCountingJastrowOrbital.h"
+#include "Utilities/ProgressReportEngine.h"
 #include <iostream>
 
 namespace qmcplusplus
@@ -19,40 +20,43 @@ namespace qmcplusplus
 
 CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi):
   WaveFunctionComponentBuilder(target, psi)
-{
+  {
   ClassName="CountingJastrowBuilder";
   NameOpt="0";
   TypeOpt="unknown";
-  Jastfunction="unknown";
+  RegionOpt="unknown";
   SourceOpt=targetPtcl.getName();
-  SpinOpt="no";
 }
 
-template<class precision, template<class> class RegionType>
-class JastrowTypeHelper
+template<class precision, template<class> class CountingRegionType>
+class CountingJastrowTypeHelper
 {
   public:
-    using rft = RegionType<precision>;
+    using rft = CountingRegionType<precision>;
     using CJOrbitalType = CountingJastrowOrbital<rft>;
     using DiffCJOrbitalType = DiffCountingJastrowOrbital<rft>;
-}
+};
 
 
 
-template<template<class> class RegionType>
+template<template<class> class CountingRegionType>
 bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"createCJ(xmlNodePtr)");
-  using RegionType = RegionType<RT>;
+  using RegionType = CountingRegionType<RT>;
   using FunctorType = typename RegionType::FunctorType;
-  using CJOrbitalType = typename JastrowTypeHelper<RT, RegionType>::CJOrbitalType;
-  using DiffCJOrbitalType = typename JastrowTypeHelper<RT, RegionType>::DiffCJOrbitalType;
+  using CJOrbitalType = typename CountingJastrowTypeHelper<RT,CountingRegionType>::CJOrbitalType;
+  using DiffCJOrbitalType = typename CountingJastrowTypeHelper<RT,CountingRegionType>::DiffCJOrbitalType;
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
 
   auto *CJ = new CJOrbitalType(targetPtcl);
   auto *dCJ = new DiffCJOrbitalType(targetPtcl);
-  auto *CR = new RegionType();
+  auto *CR = new RegionType(targetPtcl);
+
+  Matrix<RealType>* F = new Matrix<RealType>();
+  std::vector<RealType>* G = new std::vector<RealType>();
+  bool opt_R = true, opt_F = true, opt_G = true;
 
   // standard child loop
   cur = cur->xmlChildrenNode;
@@ -60,7 +64,6 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   {
     std::string cname((const char*) cur->name);
     // create counting region, populate with functions
-    bool opt_R = true, opt_F = true, opt_G = true;
     if(cname == "region")
     {
       // read in opt_R option
@@ -75,7 +78,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
         // read id
         std::string fid;
         OhmmsAttributeSet oAttrib2;
-        oAttrib2.add(id,"id");
+        oAttrib2.add(fid,"id");
         oAttrib2.put(cur2);
 
         // get functor, add to function
@@ -104,18 +107,19 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
         oAttrib.add(seqlen,"seqlen");
         oAttrib.put(cur);
         CJ->addDebug(seqlen, period);
+        dCJ->addDebug(seqlen, period);
       }
     }
     cur = cur->next;
   }
 
-  CJ->addRegion(CR,F,G, opt_R, opt_G, opt_F)
+  CJ->addRegion(CR,F,G, opt_R,opt_G,opt_F);
   dCJ->addRegion(CR);
 
   CJ->setOptimizable(opt_R || opt_G || opt_F);
   CJ->dPsi = dCJ;
 
-  std::string cjname = "CJ_"+Jastfunction;
+  std::string cjname = "CJ_"+RegionOpt;
   targetPsi.addOrbital(CJ,cjname.c_str());
   return true;
   
@@ -123,21 +127,22 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 
 bool CountingJastrowBuilder::put(xmlNodePtr cur)
 {
-  typedef RealType RT;
   // typedefs
-  typedef NormalizedGaussianRegion<RT> NormGaussRegionType;
-  typedef SigmoidRegion<RT> SigmoidRegionType;
+//  typedef NormalizedGaussianRegion<RT> NormGaussRegionType;
+//  typedef SigmoidRegion<RT> SigmoidRegionType;
 
   OhmmsAttributeSet oAttrib;
-  oAttrib.add(regionOpt,"region");
-  oAttrib.put(cur)
-  if(regionOpt.find("normalized_gaussian") < regionOpt.size())
+  oAttrib.add(RegionOpt,"region");
+  oAttrib.add(TypeOpt,"type");
+  oAttrib.add(NameOpt,"name");
+  oAttrib.put(cur);
+  if(RegionOpt.find("normalized_gaussian") < RegionOpt.size())
   {
-    createCJ<NormGaussRegionType>(cur);
+    createCJ<NormalizedGaussianRegion>(cur);
   }
-  if(regionOpt.find("sigmoid") < regionOpt.size())
+  if(RegionOpt.find("sigmoid") < RegionOpt.size())
   {
-    createCJ<SigmoidRegionType>(cur);
+    createCJ<SigmoidRegion>(cur);
   }
 
   

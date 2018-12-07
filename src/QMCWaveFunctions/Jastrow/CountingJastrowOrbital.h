@@ -1,8 +1,16 @@
+#ifndef QMC_PLUS_PLUS_COUNTING_JASTROW_ORBITAL_H
+#define QMC_PLUS_PLUS_COUNTING_JASTROW_ORBITAL_H
+
+#include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 
-template <class RegionType> 
-class CountingJastrowOrbital : public WaveFunctionComponent
+namespace qmcplusplus
+{
+
+//#template <class RegionType> class CountingJastrowOrbital : public WaveFunctionComponent 
+template <class RegionType>
+class CountingJastrowOrbital: public WaveFunctionComponent 
 {
   ///** flag to set the optimization mode */
   //bool IsOptimizing;
@@ -71,17 +79,39 @@ class CountingJastrowOrbital : public WaveFunctionComponent
   /////assembles the full value from LogValue and PhaseValue
   //ValueType getValue() const
 
-  void checkInVariables(opt_variables_type& active);
-  void checkOutVariables(const opt_variables_type& active);
-  void resetParameters(const opt_variables_type& active);
-  void reportStatus(std::ostream& os);
-  void resetTargetParticleSet(ParticleSet& P);
+public:
+  // constructor
+  CountingJastrowOrbital(ParticleSet& P)
+  {
+
+  }
+
+  void checkInVariables(opt_variables_type& active)
+  {
+  }
+
+  void checkOutVariables(const opt_variables_type& active)
+  {
+  }
+
+  void resetParameters(const opt_variables_type& active)
+  {
+  }
+
+  void reportStatus(std::ostream& os)
+  {
+  }
+
+  void resetTargetParticleSet(ParticleSet& P)
+  {
+  }
 
   RealType
   evaluateLog(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+              ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) { return RealType(0); };
 
-  //void recompute(ParticleSet& P) {};
+  void recompute(ParticleSet& P) {};
+
   //void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
   //{
   //  APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in "+ClassName+" class.");
@@ -92,7 +122,7 @@ class CountingJastrowOrbital : public WaveFunctionComponent
    * @param iat particle index
    * @return the gradient of the iat-th particle
    */
-  GradType evalGrad(ParticleSet& P, int iat) { return GradType(0) };
+  GradType evalGrad(ParticleSet& P, int iat) { return GradType(0); };
 
   /////** return the logarithmic gradient for the iat-th particle
   //// * of the source particleset
@@ -130,12 +160,12 @@ class CountingJastrowOrbital : public WaveFunctionComponent
    * @param P target ParticleSet
    * @param iat index of the particle whose new position was proposed
    */
-  void acceptMove(ParticleSet& P, int iat) { return;} ;
+  void acceptMove(ParticleSet& P, int iat) { return; } ;
 
   /** a move for iat-th particle is reject. Restore to the content.
    * @param iat index of the particle whose new position was proposed
    */
-  void restore(int iat) { return;};
+  void restore(int iat) { return; };
 
   /** evalaute the ratio of the new to old orbital value
    *@param P the active ParticleSet
@@ -144,7 +174,7 @@ class CountingJastrowOrbital : public WaveFunctionComponent
    *
    *Specialized for particle-by-particle move.
    */
-  ValueType ratio(ParticleSet& P, int iat) { return ValueType(0) };
+  ValueType ratio(ParticleSet& P, int iat) { return ValueType(0); };
 
   /** For particle-by-particle move. Requests space in the buffer
    *  based on the data type sizes of the objects in this class.
@@ -212,14 +242,13 @@ class CountingJastrowOrbital : public WaveFunctionComponent
   void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
     std::vector<ValueType>& ratios, Matrix<ValueType>& dratios)
   {
-    dPsi->evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
-      std::Vector<ValueType>& ratios, Matrix<ValueType>& dratios);
+    evaluateRatios(VP, ratios);
+    dPsi->evaluateDerivRatios(VP, optvars, dratios);
   }
   void evaluateDerivatives(ParticleSet& P, const opt_variables_type& optvars,
     std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
   {
-    dPsi->evaluateDerivatives(ParticleSet& P, const opt_variables_type& optvars,
-      std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi);
+    dPsi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
   }
 
 //  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
@@ -229,11 +258,12 @@ class CountingJastrowOrbital : public WaveFunctionComponent
 //      std::vector<RealType>& dgradlogpsi);
 //  }
 
-  bool addRegion(RegionType* CR, Matrix<RealType> F, std::vector<RealType> G, bool opt_CR, bool opt_G, bool opt_F);
+  bool addRegion(RegionType* CR, Matrix<RealType>* F, std::vector<RealType>* G, bool opt_CR, bool opt_G, bool opt_F);
 
   bool addDebug(int seqlen, int period);
 
+};
+
 }
 
-
-
+#endif

@@ -1,18 +1,23 @@
-
+#ifndef QMC_PLUS_PLUS_COUNTING_FUNCTOR_H
+#define QMC_PLUS_PLUS_COUNTING_FUNCTOR_H
 
 #include "CountingFunctor.h"
+#include "Particle/ParticleSet.h"
+
+namespace qmcplusplus
+{
 
 // T is precision
 
 template <class T> class NormalizedGaussianRegion
 {
 public:
-  typedef GaussianFunctor FunctorType;
+  typedef GaussianFunctor<T> FunctorType;
 
   // variables
 
   // constructor
-  NormalizedGaussianRegion()
+  NormalizedGaussianRegion(ParticleSet& targetPtcl)
   {
   }
 
@@ -20,18 +25,18 @@ public:
   ~NormalizedGaussianRegion()
   {}
 
-  void addFunc(*FT, std::string id);
-}
+  void addFunc(FunctorType* func, std::string id);
+};
 
 template <class T> class SigmoidRegion
 {
 public:
-  typedef SigmoidFunctor FunctorType<T>;
+  typedef SigmoidFunctor<T> FunctorType;
 
   // variables
 
   // constructor
-  SigmoidRegion()
+  SigmoidRegion(ParticleSet& targetPtcl)
   {
   }
 
@@ -39,7 +44,9 @@ public:
   ~SigmoidRegion()
   {}
 
-  void addFunc(*FT, std::string id);
-public:
+  void addFunc(FunctorType* func, std::string id);
   //void addFunc( );
+};
+
 }
+#endif

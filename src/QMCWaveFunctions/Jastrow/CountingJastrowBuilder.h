@@ -1,14 +1,3 @@
-//////////////////////////////////////////////////////////////////////////////////////
-// This file is distributed under the University of Illinois/NCSA Open Source License.
-// See LICENSE file in top directory for details.
-//
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
-//
-// File developed by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
-//
-// File created by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
-//////////////////////////////////////////////////////////////////////////////////////
-
 #ifndef QMCPLUSPLUS_COUNTING_JASTROW_BUILDER_H
 #define QMCPLUSPLUS_COUNTING_JASTROW_BUILDER_H
 
@@ -37,11 +26,13 @@ struct CountingJastrowBuilder: public WaveFunctionComponentBuilder
   std::string NameOpt;
   ///jastrow/@type
   std::string TypeOpt;
-  ///jastrow/@function
-  std::string Jastfunction;
+  ///jastrow/@source
+  std::string SourceOpt;
+  ///jastrow/@region
+  std::string RegionOpt;
 
   template<template<class> class RegionType>
-  bool CountingJastrowBuilder::createCJ(xmlNodePtr cur);
+  bool createCJ(xmlNodePtr cur);
 };
 
 }
