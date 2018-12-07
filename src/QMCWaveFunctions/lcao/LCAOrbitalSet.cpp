@@ -12,7 +12,7 @@
     
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
 #include <Numerics/MatrixOperators.h>
-#include <formic/utils/lapack_interface.h>
+#include "Numerics/Blasf.h"
 
 namespace qmcplusplus
 {
@@ -370,7 +370,7 @@ namespace qmcplusplus
       //exponentiate matrices and do BLAS command to perform rotation on m_b
 
       // exponentiate antisymmetric matrix to get the unitary rotation
-      this->exponentiate_antisym_matrix(nmo, &rot_mat[0]);
+      exponentiate_antisym_matrix(nmo, &rot_mat[0]);
 
       BLAS::gemm('N','T', nb, nmo, nmo, RealType(1.0), m_init_B->data(), nb, &rot_mat[0], nmo, RealType(0.0), C->data(), nb);
 
@@ -553,7 +553,6 @@ namespace qmcplusplus
     std::vector<double> rwork(3*n, 0);
     std::vector<std::complex<double> > mat_d(n*n, 0);
     std::vector<std::complex<double> > mat_t(n*n, 0);
-    int info = 0;
     // exponentiating e^X = e^iY (Y hermitian)
     // i(-iX) = X, so -iX is hermitian
     // diagonalize -iX = UDU^T, exponentiate e^iD, and return U e^iD U^T
@@ -567,7 +566,13 @@ namespace qmcplusplus
       }
     }
     // diagonalize the matrix 
-    formic::zheev('V', 'U', n, &mat_h.at(0), n, &eval.at(0), &work.at(0), 2*n, &rwork.at(0), info);
+    char JOBZ('V');
+    char UPLO('U');
+    int N(n);
+    int LDA(n);
+    int LWORK(2*n);
+    int info = 0;
+    zheev(JOBZ, UPLO, N, &mat_h.at(0), LDA, &eval.at(0), &work.at(0), LWORK, &rwork.at(0), info);
     if(info != 0)
     {
       std::ostringstream msg;

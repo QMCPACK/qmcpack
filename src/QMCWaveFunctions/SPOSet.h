@@ -152,9 +152,6 @@ public:
   virtual void checkObject() const {}
 #endif
 
-  ///test function
-  virtual void test() {}
-
   /// create optimizable orbital rotation parameters
   virtual void buildOptVariables(std::vector<RealType>& input_params, bool params_supplied, std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin) {}
   ///reset

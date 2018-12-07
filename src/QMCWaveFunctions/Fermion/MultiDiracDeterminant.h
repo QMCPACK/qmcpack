@@ -110,14 +110,6 @@ public:
     Phi->checkOutVariables(active);
   }
 
-  ///test function
-  void test()
-  {
-    Phi->test();
-    (Phi->Optimizable) ? (app_log()<<"SPOSet Optimizable is set to TRUE \n"):(app_log()<<"SPOSet Optimizable is set to FALSE \n");
-    app_log() << "end of test function\n";
-  }  
-
   /// create optimizable orbital rotation parameters
   void buildOptVariables(std::vector<RealType>& input_params, bool params_supplied, std::vector<size_t>& C2node, const int& spin);
 

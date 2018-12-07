@@ -76,6 +76,7 @@
 #define dtgevc dtgevc_
 
 #define dsyevr dsyevr_
+#define zheev  zheev_
 #define zheevr zheevr_
 #define zhegvx zhegvx_
 #define zgeqrf zgeqrf_
@@ -279,6 +280,9 @@ extern "C" {
   void dsyevr (char &JOBZ, char &RANGE, char &UPLO, int &N, double *A, int &LDA, double &VL, double &VU, int &IL, 
              int &IU, double &ABSTOL, int &M, double *W, double* Z, int &LDZ, int* ISUPPZ, double *WORK, 
              int &LWORK, int* IWORK, int &LIWORK, int &INFO);
+
+  void zheev  (char &JOBZ, char &UPLO, int &N, std::complex<double> *A, int &LDA,
+               double *W, std::complex<double> *WORK, int &LWORK, double* RWORK, int &INFO);
 
   void zheevr (char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA, double &VL, double &VU, 
              int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z, int &LDZ, int* ISUPPZ, 

@@ -28,6 +28,7 @@ namespace qmcplusplus
    */
   struct LCAOrbitalSet: public SPOSet
   {
+  public:
     typedef RealBasisSetBase<RealType> basis_type;
     typedef basis_type::vgl_type vgl_type;
 
@@ -70,11 +71,7 @@ namespace qmcplusplus
     virtual ~LCAOrbitalSet();
 
     SPOSet* makeClone() const;
-    ///test
-    void test()
-    {
-      app_log()<<"test function test function SDP \n";
-    }
+
     /// create optimizable orbital rotation parameters
     void buildOptVariables(std::vector<RealType>& input_params, bool params_supplied, std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin);
 
@@ -194,7 +191,7 @@ namespace qmcplusplus
           rot_mat[q+p*nmo] = -x;
         }
 
-        this->exponentiate_antisym_matrix(nmo, &rot_mat[0]);
+        exponentiate_antisym_matrix(nmo, &rot_mat[0]);
 
         BLAS::gemm('N','T', nb, nmo, nmo, RealType(1.0), m_init_B->data(), nb, &rot_mat[0], nmo, RealType(0.0), C->data(), nb);
 
@@ -261,6 +258,8 @@ namespace qmcplusplus
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) const;
     void evaluate_vgl_impl(const vgl_type& temp, int i,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) const;
+
+  private:
     //helper function to resetParameters
     void exponentiate_antisym_matrix(const int n, RealType* const mat);
 

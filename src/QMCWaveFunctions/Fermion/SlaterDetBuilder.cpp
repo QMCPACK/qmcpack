@@ -277,7 +277,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       std::string spo_beta;
       std::string fastAlg("yes");
       std::string orbopt("no");
-      bool OrbOpt(false);
       OhmmsAttributeSet spoAttrib;
       spoAttrib.add (orbopt,"OrbOpt");
       spoAttrib.add (spo_alpha, "spo_up");
@@ -309,15 +308,14 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         app_log() <<"Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
         MultiDiracDeterminant* up_det=0;
         MultiDiracDeterminant* dn_det=0;
-        if(orbopt=="yes") {OrbOpt=true;}
-        app_log() <<"Multi-Slater Jastrow Orbital Optimization is set to "<< (OrbOpt ? "True" : "False") <<"\n";
+        app_log() <<"Multi-Slater Jastrow Orbital Optimization is set to "<< (orbopt=="yes" ? "True" : "False") <<"\n";
         app_log() <<"Creating base determinant (up) for MSD expansion. \n";
         up_det = new MultiDiracDeterminant((SPOSetPtr) spomap.find(spo_alpha)->second,0);
         app_log() <<"Creating base determinant (down) for MSD expansion. \n";
         dn_det = new MultiDiracDeterminant((SPOSetPtr) spomap.find(spo_beta)->second,1);
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
-        (OrbOpt) ? (up_det->Optimizable=true,dn_det->Optimizable=true): (up_det->Optimizable=false,dn_det->Optimizable=false);
-        (OrbOpt) ? (up_det->Phi->Optimizable=true,dn_det->Phi->Optimizable=true): (up_det->Phi->Optimizable=false,dn_det->Phi->Optimizable=false);
+        (orbopt=="yes") ? (up_det->Optimizable=true,dn_det->Optimizable=true): (up_det->Optimizable=false,dn_det->Optimizable=false);
+        (orbopt=="yes") ? (up_det->Phi->Optimizable=true,dn_det->Phi->Optimizable=true): (up_det->Phi->Optimizable=false,dn_det->Phi->Optimizable=false);
         success = createMSDFast(multislaterdetfast_0,cur);
       // read in orbital rotation coefficients to apply a unitary roation before beginning calculation...
       if (multislaterdetfast_0->Optimize || (up_det->Phi->Optimizable && dn_det->Phi->Optimizable))
