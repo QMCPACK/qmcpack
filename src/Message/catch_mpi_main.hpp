@@ -23,7 +23,9 @@
 
 int main(int argc, char* argv[])
 {
+#ifdef HAVE_MPI
   OHMMS::Controller = new Communicate(argc, argv);
+#endif
   int result = Catch::Session().run(argc, argv);
   OHMMS::Controller->finalize();
   return result;
