@@ -42,12 +42,19 @@ ADD_LIBRARY(mocommon ${MOSRCS})
 
 set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors)
 ADD_EXECUTABLE(qmc-get-supercell getSupercell.cpp)
+INSTALL(TARGETS qmc-get-supercell
+        RUNTIME DESTINATION bin)
 ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
+INSTALL(TARGETS qmc-check-affinity
+        RUNTIME DESTINATION bin)
 
 FOREACH(p ${QTOOLS})
 
   ADD_EXECUTABLE(${p} ${p}.cpp)
   TARGET_LINK_LIBRARIES(${p} mocommon qmcbase qmcutil)
+
+  INSTALL(TARGETS ${p}
+          RUNTIME DESTINATION bin)
 
   FOREACH(l ${QMC_UTIL_LIBS})
     TARGET_LINK_LIBRARIES(${p} ${l})

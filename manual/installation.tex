@@ -262,6 +262,7 @@ CMAKE_CXX_FLAGS      Set the C++ flags.  Note: to prevent default
                      debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
                      Also supported: CMAKE_CXX_FLAGS_DEBUG,
                      CMAKE_CXX_FLAGS_RELEASE, and CMAKE_CXX_FLAGS_RELWITHDEBINFO
+CMAKE_INSTALL_PREFIX Set the install location (if using the optional install step)
 \end{verbatim}
 
 \item Additional QMCPACK build options
@@ -313,6 +314,14 @@ MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
 \end{verbatim}
 
 \end{itemize}
+
+\subsection{Installation from CMake}
+Installation is optional. The QMCPACK executable can be run from the \texttt{bin} directory in the build location.
+If the install step is desired, run \texttt{make install} command to install the QMCPACK executable, the converter,
+and some additional executables.
+Also installed is the \texttt{qmcpack.settings} file that records options used to compile QMCPACK.
+Specify the \texttt{CMAKE\_INSTALL\_PREFIX} CMake variable during configuration to set the install location.
+
 
 \subsection{Role of QMC\_DATA}
 QMCPACK includes a variety of optional performance and integration
