@@ -116,6 +116,9 @@ IF (IS_GIT_PROJECT)
   MESSAGE("Git commit hash: ${GIT_CONFIG_COMMIT_HASH}")
 ENDIF()
 
+if (HAVE_MPI)
+  INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/mpi_wrapper")
+endif()
 
 ####################################
 # create liboompi
