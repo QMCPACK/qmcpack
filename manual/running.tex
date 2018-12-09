@@ -65,6 +65,52 @@ on a single die to increase the total performance and maintain a reasonable
 power draw. QMCPACK takes advantage of all that compute capability on a
 processor by using threads via OpenMP programming model as well as threaded linear algebra libraries. By default, QMCPACK is always built with OpenMP enabled. When launching calculations, users should instruct QMCPACK to create the right number of threads per MPI rank by specifying environment variable OMP\_NUM\_THREADS. Even in the GPU accelerated version, using threads significantly reduces the time spent on the calculations performed by the CPU.
 
+\subsubsection{Nested OpenMP threads}
+For small to medium problem sizes, using one thread on each core working on multiple walkers is the most efficient way because of minimal thread sychronization cost.
+This is the default in QMCPACK and the shortest time-to-solution can be reached by having one walker per thread.
+For large problems (at least 1000 electrons), nested OpenMP threads can be enabled to further reduce the time to advance a walker
+by leveraging the computation of a walker to multiple threads using more cores.
+
+Currently we have this capability available in the evaluation of 3D spline SPOs and certain portion of distance tables.
+For achieving good performance, the batched algorithm in non-local pseudopotential evaluation is recommended to overcome most fork-join overhead.
+The nested OpenMP threading can be accessed by setting \texttt{OMP\_NUM\_THREADS=AA,BB}, \texttt{OMP\_MAX\_ACTIVE\_LEVELS=2} and \texttt{OMP\_NESTED=TRUE}
+where the additional \texttt{BB} is the number of second level threads.
+Setting the right thread affinity is critical to the perfofrmance. However, how to set the affinity is machine dependent.
+QMCPACK provides a tool qmc-check-affinity (source file src/QMCTools/check-affinity.cpp) which may help users to investigate the affinity
+although the knowledge of how OS logical CPU cores (/prco/cpuinfo) are binded to the hardware is needed.
+
+For example, on Blue Gene/Q with Clang compiler, the best way to fully use the 16 cores each with 4 hardware threads is setting
+\begin{verbatim}
+OMP_NESTED=TRUE
+OMP_NUM_THREADS=16,4
+MAX_ACTIVE_LEVELS=2
+OMP_PLACES=threads
+OMP_PROC_BIND=spread,close
+\end{verbatim}
+
+On Intel Xeon Phi KNL with Intel compiler, using 64 cores without using hardware threads is setting
+\begin{verbatim}
+OMP_NESTED=TRUE
+OMP_NUM_THREADS=16,4
+MAX_ACTIVE_LEVELS=2
+OMP_PLACES=cores
+OMP_PROC_BIND=spread,close
+KMP_HOT_TEAMS_MODE=1
+KMP_HOT_TEAMS_MAX_LEVEL=2
+\end{verbatim}
+
+Most BLAS libraries do not spawn threads by default when called from a threaded region.
+It results using only one thread in each second level thread team. In order to fully use the second level threads,
+users should check if turning on the nested threading in BLAS is beneficial or not
+because it depends on the implemenation of BLAS libraries.
+Intel MKL library supports nested threading by setting
+\begin{verbatim}
+MKL_DYNAMIC=FALSE
+MKL_NUM_THREADS=4
+\end{verbatim}
+
+Nested threading is a advanced feature requiring experienced users to finely tune runtime parameters in order to reach the best performance.
+
 \subsubsection{Performance consideration}
 \label{sec:cpu:performance}
 As walkers are the basic units of workload in QMC algorithms, they are loosely coupled and distributed across all the threads. For this reason, the best strategy to run QMCPACK efficiently is to feed enough walkers to the available threads.
