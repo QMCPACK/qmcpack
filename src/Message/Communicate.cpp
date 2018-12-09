@@ -49,11 +49,13 @@ Communicate::Communicate():
 {
 }
 
+#ifdef HAVE_MPI
 Communicate::Communicate(const mpi3::environment &env):
   GroupLeaderComm(nullptr)
 {
   initialize(env);
 }
+#endif
 
 Communicate::~Communicate()
 {
@@ -222,9 +224,5 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
   GroupLeaderComm = new Communicate();
 }
 
-Communicate::Communicate(const Communicate& comm, const std::vector<int>& jobs)
-  : myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0), GroupLeaderComm(nullptr)
-{
-}
 
 #endif // !HAVE_OOMPI
