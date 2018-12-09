@@ -392,6 +392,13 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   # Check that a C++ 14 standard library is configured
   include(CMake/TestCxx14Library.cmake)
 
+  #------------------------------
+  #  check Intel compiler version
+  #------------------------------
+  if ((${COMPILER} MATCHES "Intel") AND (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 18.0))
+    message(FATAL_ERROR "Intel compiler must be version 18 or higher (currently using ${CMAKE_CXX_COMPILER_VERSION})")
+  endif()
+
   #-------------------------------------------------------------------
   #  check MPI installation
   #-------------------------------------------------------------------
