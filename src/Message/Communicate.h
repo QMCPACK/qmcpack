@@ -90,12 +90,6 @@ public:
   //Communicate(const intra_comm_type& c);
   Communicate(const Communicate& comm, int nparts);
 
-  /** constructor
-   * @param comm a communicator which will be split into groups
-   * @param jobs number of tasks per group
-   */
-  Communicate(const Communicate& comm, const std::vector<int>& jobs);
-
   /**destructor
    * Call proper finalization of Communication library
    */

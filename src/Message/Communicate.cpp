@@ -124,43 +124,6 @@ Communicate::Communicate(const Communicate& comm, int nparts)
   MPI_Group_free(&leader_group);
 }
 
-Communicate::Communicate(const Communicate& comm, const std::vector<int>& jobs)
-{
-  //this is a workaround due to the OOMPI bug with split
-  if(jobs.size()>1)
-  {
-    MPI_Comm row;
-    std::vector<int> nplist(jobs.size()+1);
-    int p=-1;
-    nplist[0]=0;
-    for(int i=0; i<jobs.size(); ++i)
-    {
-      nplist[i+1]=nplist[i]+jobs[i];
-      if(comm.rank()>=nplist[i] && comm.rank()<nplist[i+1])
-        p=i;
-    }
-    if(nplist[comm.size()] != comm.size())
-    {
-      APP_ABORT("Communicate::Communicate(comm,jobs) Cannot group MPI tasks. Mismatch of the tasks");
-    }
-    int q=comm.rank()-nplist[p];//rank within a group
-    MPI_Comm_split(comm.getMPI(),p,q,&row);
-    myComm=OOMPI_Intra_comm(row);
-    d_groupid=p;
-  }
-  else
-  {
-    myComm=OOMPI_Intra_comm(comm.getComm());
-    d_groupid=0;
-  }
-  myMPI = myComm.Get_mpi();
-  d_mycontext=myComm.Rank();
-  d_ncontexts=myComm.Size();
-  d_ngroups=jobs.size();
-  GroupLeaderComm=nullptr;
-}
-
-
 
 //================================================================
 // Implements Communicate with OOMPI library
