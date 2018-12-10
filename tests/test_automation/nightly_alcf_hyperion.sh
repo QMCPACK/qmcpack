@@ -1,6 +1,7 @@
 #!/bin/bash
 # source environment
 # MPI wrappers, MKL, and Intel and GCC compiler
+export PATH=/opt/cmake/current/bin:$PATH
 source /opt/rh/devtoolset-6/enable
 source /opt/intel/2017/parallel_studio_xe_2017/psxevars.sh intel64
 
