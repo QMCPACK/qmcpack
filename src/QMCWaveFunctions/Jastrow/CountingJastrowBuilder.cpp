@@ -55,7 +55,8 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   Matrix<RealType> F;
   std::vector<RealType> G;
   bool opt_C = true, opt_F = true, opt_G = true;
-  int period = 10000, seqlen = 10;
+  bool debug_flag = false;
+  int period = 0, seqlen = 0;
 
   // standard child loop
   cur = cur->xmlChildrenNode;
@@ -148,10 +149,10 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
       {
         // read in debug options
         OhmmsAttributeSet rAttrib2;
+        debug_flag = true;
         rAttrib2.add(period,"period");
         rAttrib2.add(seqlen,"seqlen");
         rAttrib2.put(cur);
-        // set debug options
       }
     }
     cur = cur->next;
@@ -160,7 +161,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   auto *CJ = new CJOrbitalType(targetPtcl, C, F, G);
 //  auto *dCJ = new DiffCJOrbitalType(targetPtcl);
 
-  CJ->addDebug(seqlen, period);
+  CJ->addDebug(debug_flag, seqlen, period);
 //  dCJ->addDebug(seqlen, period);
   CJ->addOpt(opt_C,opt_G,opt_F);
 //  dCJ->addRegion(C);

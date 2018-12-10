@@ -671,9 +671,9 @@ public:
     opt_C = opt_C_flag;
   }
 
-  void addDebug(int seqlen, int period)
+  void addDebug(bool debug_flag, int seqlen, int period)
   {
-    debug = true;
+    debug = debug_flag;
     debug_seqlen = seqlen;
     debug_period = period;
 //    app_log() << " addDebug, seqlen: " << seqlen << ", period: " << period << std::endl;
