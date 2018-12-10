@@ -50,7 +50,10 @@ int main(int argc, char **argv)
   //TAU_INIT(&argc, &argv);
   using namespace qmcplusplus;
   //qmc_common  and MPI is initialized
-  OHMMS::Controller->initialize(argc,argv);
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller->initialize(env);
+#endif
   qmcplusplus::qmc_common.initialize(argc,argv);
   int clones=1;
   bool useGPU=(qmc_common.compute_device == 1);
