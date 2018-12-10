@@ -86,7 +86,7 @@
 namespace boost{
 namespace mpi3{
 
-#ifndef OPEN_MPI
+#if !defined(OPEN_MPI) || (OMPI_MAJOR_VERSION < 2)
 #define OMPI_COMM_TYPE_NODE     MPI_COMM_TYPE_SHARED
 #define OMPI_COMM_TYPE_HWTHREAD MPI_COMM_TYPE_SHARED
 #define OMPI_COMM_TYPE_CORE     MPI_COMM_TYPE_SHARED
@@ -1648,7 +1648,7 @@ private:
 				detail::basic_datatype<typename std::iterator_traits<It>::value_type>{},
 			root, impl_)
 		);
-		if(e != error::success) throw std::system_error{e, "cannot broadcast"};
+		if(e != boost::mpi3::error::success) throw std::system_error{e, "cannot broadcast"};
 		return first + count;
 	}
 	template<class It>
