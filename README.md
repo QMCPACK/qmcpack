@@ -4,7 +4,7 @@
 
 # Prerequisites
 
- * C/C++ compilers
+ * C/C++ 14 compilers. e.g. gcc 5.0, Intel 2018, clang 3.5 or newer. 
  * CMake, build utility, http://www.cmake.org
  * BLAS/LAPACK, numerical library, use platform-optimized libraries
  * Libxml2, XML parser, http://xmlsoft.org/
