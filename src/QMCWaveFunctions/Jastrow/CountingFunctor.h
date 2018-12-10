@@ -115,32 +115,47 @@ public:
 
   void multiply_eq(const GaussianFunctor* rhs)
   {
+    return;
   }
 
 
   void divide_eq(const GaussianFunctor* rhs)
   {
+    return;
   }
 
 
   void evaluate(PosType r, RealType& fval, GradType& fgrad, RealType& flap)
   {
+    fval = 0;
+    fgrad = 0;
+    flap = 0;
   }
 
   void evaluateLog(PosType r, RealType& lval, GradType& lgrad, RealType& llap)
   {
+    lval = 0;
+    lgrad = 0;
+    llap = 0;
   }
 
   void evaluateDerivatives(PosType r, std::vector<RealType>& dfval, std::vector<GradType>& dfgrad, std::vector<RealType>& dflap)
   {
+    std::fill(dfval.begin(), dfval.end(), 0);
+    std::fill(dfgrad.begin(), dfgrad.end(), 0);
+    std::fill(dflap.begin(), dflap.end(), 0);
   }
 
   void evaluateLogDerivatives(PosType r, std::vector<RealType>& dlval, std::vector<GradType>& dlgrad, std::vector<RealType>& dllap)
   {
+    std::fill(dlval.begin(), dlval.end(), 0);
+    std::fill(dlgrad.begin(), dlgrad.end(), 0);
+    std::fill(dllap.begin(), dllap.end(), 0);
   }
 
   void evaluateLogTempDerivatives(PosType r, std::vector<RealType>& dlval)
   {
+    std::fill(dlval.begin(), dlval.end(), 0);
   }
 
   void evaluate_print(std::ostream& os, ParticleSet& P)

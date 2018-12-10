@@ -27,7 +27,7 @@ protected:
 
   // number of electrons
   int num_els;
-  // C.size()
+  // number of regions
   int num_regions;
   // counting function id
   std::vector<std::string> C_id;

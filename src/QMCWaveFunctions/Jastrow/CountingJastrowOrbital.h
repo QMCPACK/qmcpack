@@ -37,7 +37,6 @@ protected:
   bool opt_G;
   bool opt_C;
 
-
   // Jastrow intermediate Matrix-vector products 
   std::vector<RealType> FCsum;
   std::vector<GradType> FCgrad;
@@ -81,6 +80,12 @@ protected:
 public:
   // constructor
   CountingJastrowOrbital(ParticleSet& P)
+  {
+    num_els = P.getTotalNum();
+  }
+  // constructor
+  CountingJastrowOrbital(ParticleSet& P, RegionType* c, Matrix<RealType>& f, std::vector<RealType>& g):
+    F(f), G(g), C(c)
   {
     num_els = P.getTotalNum();
   }
@@ -157,7 +162,7 @@ public:
     if(C->normalized)
     {
       G.resize(num_regions);
-      std::fill(G.begin(),G.end(),0);
+      //std::fill(G.begin(),G.end(),0);
     }
     // check that F, C dimensions match
     if(F.size() != num_regions*num_regions)
@@ -659,10 +664,11 @@ public:
 //      std::vector<RealType>& dgradlogpsi);
 //  }
 
-  bool addRegion(RegionType* CR, Matrix<RealType>* F, std::vector<RealType>* G, bool opt_CR, bool opt_G, bool opt_F)
+  void addOpt(bool opt_C_flag, bool opt_G_flag, bool opt_F_flag)
   {
-    C = CR;
-    return true;
+    opt_F = opt_F_flag;
+    opt_G = opt_G_flag;
+    opt_C = opt_C_flag;
   }
 
   void addDebug(int seqlen, int period)
@@ -670,6 +676,7 @@ public:
     debug = true;
     debug_seqlen = seqlen;
     debug_period = period;
+//    app_log() << " addDebug, seqlen: " << seqlen << ", period: " << period << std::endl;
   }
 
 };
