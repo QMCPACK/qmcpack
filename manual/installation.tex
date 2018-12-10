@@ -132,6 +132,16 @@ library during configuration, and will halt with an error if one is not found.
 At sites that use modules, running \texttt{module load gcc} is often sufficient to
 load a newer GCC and that will resolve the issue.
 
+\subsection{Intel compiler}
+The Intel compiler version must be 18 or newer.
+The version 17 compiler cannot compile some of the C++ 14 constructs in the code.
+
+If a newer gcc is needed, the \texttt{-cxxlib} option can be used to point to a different gcc installation.
+(Alternately, the \texttt{-gcc-name} or \texttt{-gxx-name} options can be used.)
+Be sure to pass this flag to the C compiler in addition to the C++ compiler.
+The reason is CMake extracts some library paths from the C compiler and those paths usually also contain to the C++ library.
+The symptom of this problem is C++ 14 standard library functions not found at link time.
+
 \section{Building with CMake}
 \label{sec:cmake}
 The build system for QMCPACK is based on CMake.  It will autoconfigure
@@ -680,7 +690,7 @@ Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argon
 Mira has 49152 compute nodes and each node has a 16-core PowerPC A2 processor with 16 GB DDR3 memory.
 Due to the fact that the login nodes and the compute nodes have different processors with distinct instruction sets,
 cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
-On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang and +cmake-3.8.1 in \$HOME/.soft.
+On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang-mpi3 and +cmake-3.8.1 in \$HOME/.soft.
 In order to build QMCPACK, a toolchain file is provided for setting up CMake.
 \textbf{BGClang is required for C++ 14 support. IBM XL C/C++ compiler should not be used.}
 

@@ -3,20 +3,20 @@
 --->
 [comment]: # (Comment)
 
-# Boost.MPI3
+# [Boost].MPI3
 *Alfredo A. Correa*  
 <alfredo.correa@gmail.com>
 
-Boost.MPI3 is a C++ library wrapper for standard MPI3.
+[Boost].MPI3 is a C++ library wrapper for standard MPI3.
 
-Boost.MPI3 is not an official Boost library.
+[Boost].MPI3 is not an official Boost library.
 However Boost.MPI3 is designed following the principles of Boost and the STL.
 
-Boost.MPI3 is not a derivative of Boost.MPI and it is unrelated to the, now deprecated, official MPI-C++ interface.
+[Boost].MPI3 is not a derivative of Boost.MPI and it is unrelated to the, now deprecated, official MPI-C++ interface.
 It adds features which were missing in Boost.MPI (which only covers MPI-1), with an iterator-based interface and MPI-3 features (RMA and Shared memory).
-Boost.MPI3 is written from scratch in C++14.
+[Boost].MPI3 is written from scratch in C++14.
 
-Boost.MPI3 depends on the MPI library (e.g. OpenMPI or MPICH) and Boost.Serialization (+1.58).
+[Boost].MPI3 depends and has been compiled with Boost +1.58 and one of the MPI library implementations, OpenMPI +2.1.1 or MPICH +3.2.1.
 
 ## Introduction
 
