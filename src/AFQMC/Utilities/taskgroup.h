@@ -21,6 +21,9 @@
 namespace qmcplusplus
 {
 
+namespace afqmc
+{
+
 // sets up communicators and task groups
 // Various divisions are setup:
 //   1. head_of_nodes: used for all shared memory setups
@@ -38,9 +41,9 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   {}
   ~TaskGroup() {};
 
-  void setBuffer(ComplexSMVector* buf) { commBuff = buf; }
+  void setBuffer(SPComplexSMVector* buf) { commBuff = buf; }
 
-  // right now using std::vector and std::string to make the initial implementatino
+  // right now using std::vector and std::string to make the initial implementations
   //   easier, but this is not efficient and can lead to memory fragmentation for large 
   //   processor counts (e.g. > 10k)
   bool setup(int ncore, int nnode, bool print=false) { 
@@ -138,6 +141,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
     node_in_TG = node_number%nnodes_per_TG; 
     myrow = core_number/ncores_per_TG; 
     TG_number = mycol + ncols*myrow; 
+    number_of_TGs = nrows*ncols;
     myComm->split_comm(TG_number,MPI_COMM_TG);
     MPI_Comm_rank(MPI_COMM_TG,&TG_rank);
     MPI_Comm_size(MPI_COMM_TG,&TG_nproc);
@@ -188,7 +192,12 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   }
 
   // sets up new TG with global information from previously defined TG 
-  bool quick_setup(int ncore, int nnode, int node_number, int core_number, int tot_nodes, int tot_cores , bool print=true ) {
+  bool quick_setup(int ncore, int nnode, int node_number_, int core_number_, int tot_nodes_, int tot_cores_ , bool print=true ) {
+
+  tot_nodes = tot_nodes_;
+  tot_cores = tot_cores_;
+  node_number = node_number_;
+  core_number = core_number_;
 
 //    if(!initialized) {
 //      app_error()<<" Error: Call to TaskGroup::quick_setup in uninitialized state. \n";
@@ -219,6 +228,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
     node_in_TG = node_number%nnodes_per_TG; 
     myrow = core_number/ncores_per_TG; 
     TG_number = mycol + ncols*myrow; 
+    number_of_TGs = nrows*ncols;
     myComm->split_comm(TG_number,MPI_COMM_TG);
     MPI_Comm_rank(MPI_COMM_TG,&TG_rank);
     MPI_Comm_size(MPI_COMM_TG,&TG_nproc);
@@ -279,7 +289,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
     max_index=max;
   }
 
-  void get_min_max(int& min, int& max) {
+  void get_min_max(int& min, int& max) const {
     min=min_index;
     max=max_index;
   }
@@ -295,15 +305,19 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
     MPI_Barrier(MPI_COMM_TG_LOCAL);
   }
 
-  MPI_Comm getTGCOMM() { return MPI_COMM_TG; }
+  MPI_Comm getTGCOMM() const { return MPI_COMM_TG; }
 
-  MPI_Comm getTGCommLocal() { return MPI_COMM_TG_LOCAL; }
+  MPI_Comm getTGCommLocal() const { return MPI_COMM_TG_LOCAL; }
 
   void setTGCommLocal(MPI_Comm cm) { MPI_COMM_TG_LOCAL = cm; }
 
-  MPI_Comm getNodeCommLocal() { return MPI_COMM_NODE_LOCAL; }
+  MPI_Comm getNodeCommLocal() const { return MPI_COMM_NODE_LOCAL; }
 
   void setNodeCommLocal(MPI_Comm cm) { MPI_COMM_NODE_LOCAL = cm; }
+
+  MPI_Comm getHeadOfNodesComm() const { return MPI_COMM_HEAD_OF_NODES;}
+
+  void setHeadOfNodesComm(MPI_Comm cm) {MPI_COMM_HEAD_OF_NODES = cm;}
 
   void allgather_TG(std::vector<int>& l, std::vector<int>& g) {
     myComm->allgather(l,g,l.size(),MPI_COMM_TG);
@@ -349,7 +363,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
         myComm->recv(local_buffer.data(),local_buffer.size(),prev_core_root,1001,MPI_COMM_TG,&status);
         // assuming doubles for now, FIX FIX FIX
         MPI_Get_count(&status,MPI_DOUBLE,&nblock);
-        nblock = nblock/2/block_size; // since I'm communicating std::complex
+        nblock = nblock/(block_size*(sizeof(SPComplexType)/sizeof(double))); 
         myComm->send(commBuff->values(),n0*block_size,next_core_root,1002,MPI_COMM_TG);
         std::copy(local_buffer.begin(),local_buffer.begin()+nblock*block_size,commBuff->begin());
       }
@@ -357,24 +371,36 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
     commBuff->share(&nblock,1,core_root);
   } 
 
-  int getCoreRank() { return core_rank; }
+  int getTotalNodes() const { return tot_nodes; }
 
-  int getLocalNodeNumber() { return node_in_TG; }
+  int getTotalCores() const { return tot_cores; }
 
-  int getTGNumber() { return TG_number; }
+  int getNodeID() const { return node_number; }
 
-  int getTGRank() { return TG_rank; }
+  int getCoreID() const { return core_number; }
 
-  int getNCoresPerTG() { return ncores_per_TG; }
+  int getCoreRank() const { return core_rank; }
 
-  int getNNodesPerTG() { return nnodes_per_TG; }
+  int getLocalNodeNumber() const { return node_in_TG; }
+
+  int getTGNumber() const { return TG_number; }
+
+  int getNumberOfTGs() const { return number_of_TGs; }
+
+  int getTGRank() const { return TG_rank; }
+
+  int getTGSize() const { return TG_nproc; }
+
+  int getNCoresPerTG() const { return ncores_per_TG; }
+
+  int getNNodesPerTG() const { return nnodes_per_TG; }
  
-  void getRanksOfRoots(std::vector<int>& ranks, int& pos ) { 
+  void getRanksOfRoots(std::vector<int>& ranks, int& pos ) const { 
     ranks=ranks_of_core_roots; 
     pos=position_in_ranks_of_core_roots; 
   }
 
-  void getSetupInfo(std::vector<int>& data)
+  void getSetupInfo(std::vector<int>& data) const
   {  
     data.resize(5);
     data[0]=node_number;
@@ -385,7 +411,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   }
  
   // must be setup externally to be able to reuse between different TG 
-  ComplexSMVector* commBuff;  
+  SPComplexSMVector* commBuff;  
 
   std::string tgname;
 
@@ -393,7 +419,8 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   bool initialized;
   
   int node_number, core_number, tot_nodes, tot_cores;
-  int TG_number;
+  int TG_number; 
+  int number_of_TGs; 
   // TGs are defined in a 2-D framwork. Rows correspond to different groups in a node 
   // Cols correspond to division of nodes into groups. Every MPI task belongs to a specific
   // TG given by the myrow and mycol integer.      
@@ -408,7 +435,8 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   MPI_Comm MPI_COMM_TG;   // Communicator over all cores in a given TG 
   MPI_Comm MPI_COMM_TG_LOCAL;   // Communicator over all cores in a given TG that reside in the given node 
   MPI_Comm MPI_COMM_NODE_LOCAL; // Communicator over all cores of a node. Must be created externally. Same above
-  std::vector<ComplexType> local_buffer;
+  MPI_Comm MPI_COMM_HEAD_OF_NODES;  // deceiving name for historical reasons, this is a split of COMM_WORLD over core_number. 
+  std::vector<SPComplexType> local_buffer;
 
   int ncores_per_TG;  // total number of cores in all nodes must be a multiple 
   int nnodes_per_TG;  // total number of nodes in communicator must be a multiple  
@@ -431,6 +459,8 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   }
 
 };
+
+}
  
 }
 

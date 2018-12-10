@@ -16,7 +16,7 @@
 
 
 #include "QMCDrivers/VMC/VMCFactory.h"
-#include "QMCDrivers/VMC/VMCSingleOMP.h"
+#include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/CorrelatedSampling/CSVMC.h"
 #if defined(QMC_BUILD_COMPLETE)
 //REMOVE Broken warping
@@ -36,19 +36,20 @@ namespace qmcplusplus
 {
 
 QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                              QMCHamiltonian& h, ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool)
+                              QMCHamiltonian& h, ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool,
+                              Communicate* comm)
 {
   int np=omp_get_max_threads();
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
   QMCDriver* qmc=0;
 #ifdef QMC_CUDA
   if (VMCMode & 16)
-    qmc = new VMCcuda(w,psi,h,ppool);
+    qmc = new VMCcuda(w,psi,h,ppool,comm);
   else
 #endif
     if(VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
     {
-      qmc = new VMCSingleOMP(w,psi,h,hpool,ppool);
+      qmc = new VMC(w,psi,h,ppool,comm);
     }
   //else if(VMCMode == 2) //(0,1,0)
   //{
@@ -60,7 +61,7 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   //}
     else if(VMCMode ==2 || VMCMode ==3)
     {
-      qmc = new CSVMC(w,psi,h,hpool,ppool);
+      qmc = new CSVMC(w,psi,h,ppool,comm);
     }
 //#if !defined(QMC_COMPLEX)
 //    else if(VMCMode == 6) //(1,1,0)
@@ -80,8 +81,3 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   return qmc;
 }
 }
-/***************************************************************************
- * $RCSfile: DMCFactory.cpp,v $   $Author: jnkim $
- * $Revision: 1.3 $   $Date: 2006/04/05 00:49:59 $
- * $Id: DMCFactory.cpp,v 1.3 2006/04/05 00:49:59 jnkim Exp $
- ***************************************************************************/

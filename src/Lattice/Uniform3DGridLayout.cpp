@@ -17,8 +17,8 @@
 
 
 #include "Lattice/Uniform3DGridLayout.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/OpenMP.h"
+#include "Utilities/OutputManager.h"
 #include <limits>
 
 using namespace qmcplusplus;
@@ -64,10 +64,12 @@ void Uniform3DGridLayout::SetLRCutoffs()
   }
   //Set KC for structure-factor and LRbreakups.
   LR_kc = LR_dim_cutoff/LR_rc;
-  LOGMSG("\tLong-range breakup parameters:");
-  LOGMSG("\trc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "\n");
-  LOGMSG("\tWignerSeitzRadius = " << WignerSeitzRadius << "\n");
-  LOGMSG("\tSimulationCellRadius = " << SimulationCellRadius << "\n");
+}
+
+void Uniform3DGridLayout::printCutoffs()
+{
+  app_log() << "  Long-range breakup parameters:" << std::endl;
+  app_log() << "    rc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << std::endl;
 }
 
 void Uniform3DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
@@ -78,7 +80,7 @@ void Uniform3DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
   std::map<int,std::vector<SingleParticleIndex_t>*> rs;
   std::map<int,bool> cb;
   Scalar_t scaleL = static_cast<value_type>(8*NP[0]*NP[1]*NP[2]);
-  int ic=0,ih;
+  int ic=0;
   Scalar_t dx=Delta[0]*0.5;
   Scalar_t dy=Delta[1]*0.5;
   Scalar_t dz=Delta[2]*0.5;
@@ -317,19 +319,15 @@ int Uniform3DGridLayout::connectGrid(value_type int_rad, value_type con_rad)
     }
   }
   MaxConnections = maxnc;
-  //print(std::cout);
   return maxnc; // return the maxmimum number of connected cells
 }
 
-void Uniform3DGridLayout::print(std::ostream& os) const
+void Uniform3DGridLayout::print(std::ostream& os, int level) const
 {
-  os << "<unitcell>" << std::endl;
-  Base_t::print(os);
-  os << "<note>" << std::endl;
-  os << "\tLong-range breakup parameters:" << std::endl;
-  os << "\trc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "\n" << std::endl;
-  os << "</note>" << std::endl;
-  os << "</unitcell>" << std::endl;
+  os << " Unit Cell" << std::endl;
+  os << " ---------" << std::endl;
+  Base_t::print(os, level);
+  os << std::endl;
   ////printGrid(os);
   //for(int ig=0; ig<c_offset.size()-1; ig++) {
   //  os << ig << " has neighboring cell "
@@ -341,8 +339,3 @@ void Uniform3DGridLayout::print(std::ostream& os) const
   //}
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

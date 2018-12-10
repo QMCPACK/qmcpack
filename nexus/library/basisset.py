@@ -782,7 +782,7 @@ class GaussianBasisSet(DevBase):
     #end def remove_channels
                 
 
-    def incorporate(self,other,tol=1e-3):
+    def incorporate(self,other,tol=1e-3,unique=False):
         uncontracted = self.uncontracted() and other.uncontracted()
         lbasis       = self.lbasis()
         lbasis_other = other.lbasis()
@@ -791,7 +791,7 @@ class GaussianBasisSet(DevBase):
             gwidths_other = other.prim_widths()
         #end if
         self.basis.clear()
-        if not uncontracted: # simple, direct merge of basis sets
+        if not unique: # simple, direct merge of basis sets
             for l in self.lset_full:
                 if l in lbasis:
                     lbas = lbasis[l]
@@ -902,9 +902,8 @@ class GaussianBasisSet(DevBase):
                 #end if
                 ylabel('basis functions')
                 legend()
-            else:
-                xlabel('r')
             #end if
+            xlabel('r')
             if show:
                 show_plots()
             #end if
@@ -916,4 +915,60 @@ class GaussianBasisSet(DevBase):
         None
     #end def plot_primitives
 
+
+    def plot_prim_widths(self,show=True,fig=True,sep=False,style='o',fmt=None,nsub=None,semilog=True,label=True):
+        if self.contracted():
+            self.error('cannot plot primitive gaussian widths because basis is contracted')
+        #end if
+        ptitle = '{0} {1} primitive widths'.format(self.name,self.basis_size())
+        if fig:
+            figure()
+        #end if
+        pwidths = self.prim_widths()
+        lcount = self.lcount()
+        if nsub!=None:
+            lcount = max(lcount,nsub)
+        #end if
+        lbasis = self.lbasis()
+        lc = 0
+        for l in self.lset_full:
+            if l in lbasis:
+                lwidths = pwidths[l]
+                lc+=1
+                if sep:
+                    subplot(lcount,1,lc)
+                    ylabel(l)
+                    if lc==1:
+                        title(ptitle)
+                    #end if
+                #end if
+                lstyle=self.lstyles[l]
+                if style!=None:
+                    lstyle = lstyle[0]+style
+                #end if
+                if fmt!=None:
+                    lstyle=fmt
+                #end if
+                if semilog:
+                    plotter = semilogy
+                else:
+                    plotter = plot
+                #end if
+                plotter(range(len(lwidths)),lwidths,lstyle,label=l)
+            #end if
+        #end for
+        if label:
+            if not sep:
+                if self.name!=None:
+                    title(ptitle)
+                #end if
+                ylabel('primitive widths')
+                legend()
+            #end if
+            xlabel('primitive index')
+        #end if
+        if show:
+            show_plots()
+        #end if
+    #end def plot_prim_widths
 #end class GaussianBasisSet

@@ -15,7 +15,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
@@ -27,7 +27,7 @@ namespace qmcplusplus
   {
   public:
     typedef std::map<std::string,ParticleSet*>         PtclPoolType;
-    typedef std::map<std::string,SPOSetBasePtr>        SPOMapType;
+    typedef std::map<std::string,SPOSetPtr>        SPOMapType;
     typedef QMCTraits::RealType                        RealType;
     typedef QMCTraits::ValueType                       ValueType;
     typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
@@ -64,7 +64,7 @@ namespace qmcplusplus
 
       // scanning the SPO sets
       xmlNodePtr cur_save=cur;
-      SPOSetBasePtr mySPOSet;
+      SPOSetPtr mySPOSet;
       for (SPOMapType::iterator spo_iter=SPOMap.begin(); spo_iter!=SPOMap.end(); spo_iter++)
       {
         app_log() << "  Processing SPO " << spo_iter->first << std::endl;
@@ -96,7 +96,7 @@ namespace qmcplusplus
     }
 
     // scanning a path
-    void scan_path(xmlNodePtr cur, SPOSetBasePtr mySPOSet, std::string prefix)
+    void scan_path(xmlNodePtr cur, SPOSetPtr mySPOSet, std::string prefix)
     {
       std::string file_name;
       file_name=prefix+"_v.dat";
@@ -158,7 +158,7 @@ namespace qmcplusplus
         target.makeMoveAndCheck(ind, zero_pos);
         mySPOSet->evaluate(target, ind, SPO_v, SPO_g, SPO_l);
         std::ostringstream o;
-        o << "x,y,z  " << std::fixed << std::setprecision(7) << target.R[ind][0] << " " << target.R[ind][1] << " " << target.R[ind][2] ;
+        o << "x_y_z  " << std::fixed << std::setprecision(7) << target.R[ind][0] << " " << target.R[ind][1] << " " << target.R[ind][2] ;
         output_v << o.str() << " : "  << std::scientific << std::setprecision(12);
         output_g << o.str() << " : "  << std::scientific << std::setprecision(12);
         output_l << o.str() << " : "  << std::scientific << std::setprecision(12);
@@ -197,8 +197,3 @@ namespace qmcplusplus
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: abenali $
- * $Revision: 7138 $   $Date: 2016-09-27 18:45:29 -0500 (Tue, 27 Sep 2016) $
- * $Id: OrbitalBuilderBase.h 7138 2016-09-27 23:45:29Z abenali $
- ***************************************************************************/

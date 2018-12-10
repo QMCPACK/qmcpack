@@ -508,8 +508,3 @@ struct LeafFunctor<Scalar<T>, DereferenceLeaf>
 #endif // PETE_PETE_FUNCTORS_H
 
 // ACL:rcsinfo
-// ----------------------------------------------------------------------
-// $RCSfile$   $Author$
-// $Revision$   $Date$
-// ----------------------------------------------------------------------
-// ACL:rcsinfo

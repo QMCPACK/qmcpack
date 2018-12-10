@@ -52,7 +52,7 @@ if ($numfiles > 1) {
 	    push @twistens, 0.0;
 	    push @twisterrs, 0.0;
 	} else {
-	    die "Cannot find enough raw data files to satsify this request\n";
+	    die "Cannot find enough raw data files to satisfy this request\n";
 	}
 #    print "Looking for a file like $prefix" . $i . ".????$suffix:   found $curfile\n";
     }
@@ -298,9 +298,4 @@ sub formatString {
     return $formatstr;
 }
 
- #**************************************************************************
- # $RCSfile$   $Author: lshulenburger $
- # $Revision: 5115 $   $Date: 2011-9-15 10:19:08 -0700 (Thu, 15 Sep 2011) $
- # $Id: TwistAvg.pl 5115 2011-9-15 10:19:08 lshulenburger $
- #*************************************************************************/
 

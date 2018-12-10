@@ -34,7 +34,7 @@ PulayForce::PulayForce(ParticleSet& ions, ParticleSet& elns,
 void
 PulayForce::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid=P.addTable(Ions);
+  int tid=P.addTable(Ions,DT_AOS);
   if(tid != myTableIndex)
     APP_ABORT("PulayForce::resetTargetParticleSet found inconsistent table index");
 }
@@ -120,7 +120,7 @@ PulayForce::evaluate(ParticleSet& P)
   }
   return Value=0.0;
   //    std::cerr << "In PulayForce::evaluate(ParticleSet& P).\n";
-  // Compute normalization of the warp tranform for each electron
+  // Compute normalization of the warp transform for each electron
   for (int elec=0; elec<Nel; elec++)
     WarpNorm[elec] = 0.0;
   for (int ion=0; ion<Nnuc; ion++)
@@ -134,7 +134,7 @@ PulayForce::evaluate(ParticleSet& P)
   {
     GradLogPsi[ion] = EGradLogPsi[ion] = PosType();
     for(int nn=d_ab.M[ion], elec=0; nn<d_ab.M[ion+1]; ++nn,++elec)
-      GradLogPsi[ion] -= P.G[elec] * static_cast<ParticleSet::ParticleValue_t>(WarpNorm[elec] * WarpFunction(d_ab.r(nn)));
+      GradLogPsi[ion] -= P.G[elec] * static_cast<ParticleSet::SingleParticleValue_t>(WarpNorm[elec] * WarpFunction(d_ab.r(nn)));
       //GradLogPsi[ion] -= P.G[elec] * (ParticleSet::Scalar_t)(WarpNorm[elec] * WarpFunction(d_ab.r(nn)));
     RealType E = tWalker->Properties(0,LOCALENERGY);
     // EGradLogPsi[ion] = P.getPropertyBase()[LOCALENERGY] * GradLogPsi[ion];

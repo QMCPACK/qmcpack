@@ -19,6 +19,7 @@
 #ifndef QMCPLUSPLUS_VMC_CUDA_H
 #define QMCPLUSPLUS_VMC_CUDA_H
 #include "QMCDrivers/QMCDriver.h"
+#include "type_traits/CUDATypes.h"
 namespace qmcplusplus
 {
 
@@ -31,24 +32,25 @@ class VMCcuda: public QMCDriver
 {
 public:
   /// Constructor.
-  VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
+  VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm);
 
-  bool run();
-  bool runWithDrift();
+  GPU_XRAY_TRACE bool run();
+  GPU_XRAY_TRACE bool runWithDrift();
 
   /// advance walkers without drift
-  void advanceWalkers();
+  GPU_XRAY_TRACE void advanceWalkers();
   /// advance walkers with drift
-  void advanceWalkersWithDrift();
+  GPU_XRAY_TRACE void advanceWalkersWithDrift();
 
-  bool put(xmlNodePtr cur);
-  RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
+  GPU_XRAY_TRACE bool put(xmlNodePtr cur);
+  GPU_XRAY_TRACE RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
   inline void setOpt(bool o)
   {
     forOpt=o;
   };
 
 private:
+  using CTS = CUDAGlobalTypes;
   ///previous steps
   int prevSteps;
   ///previous stepsbetweensamples
@@ -60,16 +62,13 @@ private:
   ///period for walker dump
   int myPeriod4WalkerDump;
   /// Copy Constructor (disabled)
-  VMCcuda(const VMCcuda& a): QMCDriver(a) { }
+  VMCcuda(const VMCcuda &) = delete;
   /// Copy operator (disabled).
-  VMCcuda& operator=(const VMCcuda&)
-  {
-    return *this;
-  }
+  VMCcuda & operator=(const VMCcuda &) = delete;
   ///hide initialization from the main function
   bool checkBounds (std::vector<PosType> &newpos, std::vector<bool> &valid);
 
-  void resetRun();
+  GPU_XRAY_TRACE void  resetRun();
 
   opt_variables_type dummy;
   int numParams;
@@ -84,7 +83,7 @@ private:
   std::vector<RealType> D_E, HD2, HD, D;
   RealType sE,sE2,sE4,sW,sN;
 
-  inline void clearComponentMatrices()
+  GPU_XRAY_TRACE void  clearComponentMatrices()
   {
     Olp=0.0;
     Ham=0.0;
@@ -103,7 +102,7 @@ private:
     sN=0;
   }
 
-  void resizeForOpt(int n)
+  GPU_XRAY_TRACE void  resizeForOpt(int n)
   {
     Olp.resize(n,n);
     Ham.resize(n,n);
@@ -118,8 +117,3 @@ private:
 }
 
 #endif
-/***************************************************************************
- * $RCSfile: VMCcuda.h,v $   $Author: jnkim $
- * $Revision: 1.5 $   $Date: 2006/07/17 14:29:40 $
- * $Id: VMCcuda.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $
- ***************************************************************************/

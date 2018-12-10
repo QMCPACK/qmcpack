@@ -157,8 +157,3 @@ struct ParameterSet: public OhmmsElementBase
 
 };
 #endif /*OHMMS_OHMMSPARAMETERSET_H*/
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

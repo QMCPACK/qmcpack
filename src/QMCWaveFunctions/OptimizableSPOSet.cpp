@@ -101,7 +101,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
   if (same_k)
   {
     int off         = BasisOrbitals ? 0 : N;
-    SPOSetBase* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
+    SPOSet* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
     for (int igs=0; igs<N; igs++)
     {
       PosType k_gs = GSOrbitals->get_k(igs);
@@ -256,6 +256,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
           asize=params.size();
       }
 //    for (int i=0; i< params.size(); i++) {
+      ValueMatrix_t& cref(*C);
       int indx=0;
       for (int i=0; i< M; i++)
       {
@@ -266,31 +267,31 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
         sstr << id << "_" << indx;
         if (allowedOrbs(state,i))
         {
-          ParamPointers.push_back(&(C(state,i)));
+          ParamPointers.push_back(&(cref(state,i)));
           ParamIndex.push_back(TinyVector<int,2>(state,i));
           if ((indx<asize)&&(std::abs(params[indx])>thr))
-            C(state,i) = params[indx];
+            cref(state,i) = params[indx];
           else
-            C(state,i) = 0.0;
-          myVars.insert(sstr.str(),C(state,i),true,optimize::SPO_P);
+            cref(state,i) = 0.0;
+          myVars.insert(sstr.str(),cref(state,i),true,optimize::SPO_P);
           indx++;
         }
         else
         {
-          C(state,i) = 0.0;
+          cref(state,i) = 0.0;
 //        myVars.insert(sstr.str(),C(state,i),false,optimize::LINEAR_P);
         }
 #else
         //ParamPointers.push_back(&(C(state,i).real()));
         //ParamPointers.push_back(&(C(state,i).imag()));
-        ParamPointers.push_back(reinterpret_cast<RealType*>(C[state]+i));
-        ParamPointers.push_back(reinterpret_cast<RealType*>(C[state]+i)+1);
+        ParamPointers.push_back(reinterpret_cast<RealType*>(cref[state]+i));
+        ParamPointers.push_back(reinterpret_cast<RealType*>(cref[state]+i)+1);
         ParamIndex.push_back(TinyVector<int,2>(state,i));
         ParamIndex.push_back(TinyVector<int,2>(state,i));
         sstr << id << "_" << 2*i+0;
-        myVars.insert(sstr.str(),C(state,i).real(),true,optimize::SPO_P);
+        myVars.insert(sstr.str(),cref(state,i).real(),true,optimize::SPO_P);
         sstr << id << "_" << 2*i+1;
-        myVars.insert(sstr.str(),C(state,i).imag(),true,optimize::SPO_P);
+        myVars.insert(sstr.str(),cref(state,i).imag(),true,optimize::SPO_P);
 #endif
       }
       for (int i=0; i<params.size(); i++)
@@ -302,7 +303,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
     }
     xmlCoefs = xmlCoefs->next;
   }
-  return SPOSetBase::put(node);
+  return true;
 }
 
 
@@ -382,10 +383,10 @@ OptimizableSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   if (BasisOrbitals)
   {
     BasisOrbitals->evaluate(P,iat,BasisVal);
-    BLAS::gemv_trans (N, M, C.data(), &(BasisVal[0]), &(psi[0]));
+    BLAS::gemv_trans (N, M, C->data(), &(BasisVal[0]), &(psi[0]));
   }
   else
-    BLAS::gemv_trans (N, M, C.data(), &(GSVal[N]), &(psi[0]));
+    BLAS::gemv_trans (N, M, C->data(), &(GSVal[N]), &(psi[0]));
 //       for (int i=0; i<N; i++) {
 // 	psi[i] = 0.0;
 // 	for (int j=0; j<M; j++)
@@ -396,24 +397,17 @@ OptimizableSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 }
 
 void
-OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r,
-                            std::vector<RealType> &psi)
-{
-  app_error() << "OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi)\n  should not be called.  Abort.\n";
-  abort();
-}
-
-void
 OptimizableSPOSet::evaluate(const ParticleSet& P, int iat,
                             ValueVector_t& psi, GradVector_t& dpsi,
                             ValueVector_t& d2psi)
 {
   GSOrbitals->evaluate(P,iat,GSVal,GSGrad,GSLapl);
+  const ValueMatrix_t& cref(*C);
   if (BasisOrbitals)
   {
     BasisOrbitals->evaluate(P,iat,BasisVal,BasisGrad,BasisLapl);
-    BLAS::gemv_trans (N, M, C.data(), &(BasisVal[0]),  &(psi[0]));
-    BLAS::gemv_trans (N, M, C.data(), &(BasisLapl[0]), &(d2psi[0]));
+    BLAS::gemv_trans (N, M, C->data(), &(BasisVal[0]),  &(psi[0]));
+    BLAS::gemv_trans (N, M, C->data(), &(BasisLapl[0]), &(d2psi[0]));
     for (int iorb=0; iorb<N; iorb++)
     {
       psi  [iorb] += GSVal[iorb];
@@ -421,7 +415,7 @@ OptimizableSPOSet::evaluate(const ParticleSet& P, int iat,
       d2psi[iorb] += GSLapl[iorb];
       for (int ibasis=0; ibasis<M; ibasis++)
         for (int dim=0; dim<OHMMS_DIM; dim++)
-          dpsi[iorb][dim] += C(iorb,ibasis) * BasisGrad[ibasis][dim];
+          dpsi[iorb][dim] += cref(iorb,ibasis) * BasisGrad[ibasis][dim];
     }
   }
   else
@@ -433,10 +427,10 @@ OptimizableSPOSet::evaluate(const ParticleSet& P, int iat,
       d2psi[iorb] = GSLapl[iorb];
       for (int ibasis=0; ibasis<M; ibasis++)
       {
-        psi[iorb] += C(iorb,ibasis) * GSVal[N+ibasis];
+        psi[iorb] += cref(iorb,ibasis) * GSVal[N+ibasis];
         for (int dim=0; dim<OHMMS_DIM; dim++)
-          dpsi[iorb][dim] += C(iorb,ibasis) * GSGrad[N+ibasis][dim];
-        d2psi[iorb] += C(iorb,ibasis) * GSLapl[N+ibasis];
+          dpsi[iorb][dim] += cref(iorb,ibasis) * GSGrad[N+ibasis][dim];
+        d2psi[iorb] += cref(iorb,ibasis) * GSLapl[N+ibasis];
       }
     }
     // BLAS::gemv_trans (N, M, C.data(), &(GSVal[N]),  &(psi[0]));
@@ -468,7 +462,7 @@ OptimizableSPOSet::evaluateBasis (const ParticleSet &P, int first, int last,
   {
     for (int iat=first; iat<last; iat++)
     {
-      GSOrbitals->evaluate (P, iat, GSVal, GSGrad, GSLapl);
+      GSOrbitals->evaluate(P, iat, GSVal, GSGrad, GSLapl);
       for (int i=0; i<M; i++)
       {
         basis_val (iat-first,i) = GSVal[N+i];
@@ -536,10 +530,10 @@ OptimizableSPOSet::evaluate_notranspose
     //Use Numerics/MatrixOperators.h
     //for C=AB MatrixOperators::product(C,BasisValMatrix,logdet);
     //for C=AB^t MatrixOperators::ABt(C,BasisValMatrix,logdet);
-    BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
+    BLAS::gemm ('T', 'N', N, N, M, 1.0, C->data(),
                 M, BasisValMatrix.data(), M, 0.0, logdet.data(), N);
     logdet += GSValMatrix;
-    BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
+    BLAS::gemm ('T', 'N', N, N, M, 1.0, C->data(),
                 M, BasisLaplMatrix.data(), M, 0.0, d2logdet.data(), N);
     d2logdet += GSLaplMatrix;
     // Gradient part.
@@ -548,7 +542,7 @@ OptimizableSPOSet::evaluate_notranspose
       for (int i=0; i<M; i++)
         for (int j=0; j<N; j++)
           GradTmpSrc(i,j) = BasisGradMatrix(i,j)[dim];
-      BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(), M,
+      BLAS::gemm ('T', 'N', N, N, M, 1.0, C->data(), M,
                   GradTmpSrc.data(), M, 0.0, GradTmpDest.data(), N);
       for (int i=0; i<N; i++)
         for (int j=0; j<N; j++)
@@ -567,8 +561,9 @@ OptimizableSPOSet::evaluate_notranspose
       for (int iorb=0; iorb<N; iorb++)
       {
         logdet(iel,iorb) = GSValMatrix(iel,iorb);
+        const ValueType *restrict cptr=(*C)[iorb];
         for (int ibasis=0; ibasis<M; ibasis++)
-          logdet(iel,iorb) += C(iorb,ibasis)*GSValMatrix(iel,N+ibasis);
+          logdet(iel,iorb) += cptr[ibasis]*GSValMatrix(iel,N+ibasis);
       }
     //      logdet += GSValMatrix;
     // BLAS::gemm ('T', 'N', N, N, M, 1.0, C.data(),
@@ -576,18 +571,20 @@ OptimizableSPOSet::evaluate_notranspose
     for (int iel=0; iel<N; iel++)
       for (int iorb=0; iorb<N; iorb++)
       {
+        const ValueType *restrict cptr=(*C)[iorb];
         d2logdet(iel,iorb) = GSLaplMatrix(iel,iorb);
         for (int ibasis=0; ibasis<M; ibasis++)
-          d2logdet(iel,iorb) += C(iorb,ibasis)*GSLaplMatrix(iel,N+ibasis);
+          d2logdet(iel,iorb) += cptr[ibasis]*GSLaplMatrix(iel,N+ibasis);
       }
     //d2logdet += GSLaplMatrix;
     // Gradient part.
     for (int i=0; i<N; i++)
       for (int iorb=0; iorb<N; iorb++)
       {
+        const ValueType *restrict cptr=(*C)[iorb];
         dlogdet(i,iorb) = GSGradMatrix(i,iorb);
         for (int n=0; n<M; n++)
-          dlogdet(i,iorb) += C(iorb,n) * GSGradMatrix(i,N+n);
+          dlogdet(i,iorb) += cptr[n]* GSGradMatrix(i,N+n);
       }
     // for (int dim=0; dim<OHMMS_DIM; dim++) {
     // 	for (int i=0; i<M; i++)
@@ -602,19 +599,21 @@ OptimizableSPOSet::evaluate_notranspose
   }
 }
 
-SPOSetBase*
+SPOSet*
 OptimizableSPOSet::makeClone() const
 {
-  SPOSetBase *gs, *basis(0);
+  SPOSet *gs, *basis(0);
   OptimizableSPOSet *clone;
   gs = GSOrbitals->makeClone();
   if (BasisOrbitals)
     basis = BasisOrbitals->makeClone();
   clone = new OptimizableSPOSet(N,gs,basis);
-  clone->C=C;
+  clone->IsCloned=true;
+  clone->C=C; //just pointer
   clone->thr=thr;
   clone->myVars=myVars;
   clone->derivScale=derivScale;
+#if 0
   clone->ParamPointers.clear();
   clone->ParamIndex=ParamIndex;
   for(int i=0; i<ParamIndex.size() ; i++)
@@ -630,6 +629,7 @@ OptimizableSPOSet::makeClone() const
     clone->ParamPointers.push_back(reinterpret_cast<RealType*>(clone->C[ci]+cj)+1);
 #endif
   }
+#endif
 //   for (int i=0; i< N; i++) {
 //   for (int j=0; j< M; j++) {
 //     std::stringstream sstr;

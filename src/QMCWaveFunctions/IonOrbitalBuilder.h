@@ -14,7 +14,7 @@
     
 #ifndef QMCPLUSPLUS_ION_ORBITAL_BUILDER_H
 #define QMCPLUSPLUS_ION_ORBITAL_BUILDER_H
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus
 {
@@ -23,7 +23,7 @@ class OrbitalConstraintsBase;
 
 /** IonOrbital IonOrbital Builder with constraints
  */
-class IonOrbitalBuilder: public OrbitalBuilderBase
+class IonOrbitalBuilder: public WaveFunctionComponentBuilder
 {
 
 public:
@@ -56,8 +56,3 @@ private:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: esler $
- * $Revision: 1666 $   $Date: 2007-01-30 13:00:15 -0600 (Tue, 30 Jan 2007) $
- * $Id: IonOrbitalBuilder.h 1666 2007-01-30 19:00:15Z jnkim $
- ***************************************************************************/

@@ -43,8 +43,15 @@ LRTwoBodyJastrow::LRTwoBodyJastrow(ParticleSet& p ):
 void LRTwoBodyJastrow::resize()
 {
   //set the  maximum k-shell
+#if defined(USE_REAL_STRUCT_FACTOR)
+  Rhok_r.resize(NumKpts);
+  Rhok_i.resize(NumKpts);
+  rokbyF_r.resize(NumPtcls,NumKpts);
+  rokbyF_i.resize(NumPtcls,NumKpts);
+#else
   Rhok.resize(NumKpts);
   rokbyF.resize(NumPtcls,NumKpts);
+#endif
   U.resize(NumPtcls);
   dU.resize(NumPtcls);
   d2U.resize(NumPtcls);
@@ -66,7 +73,6 @@ void LRTwoBodyJastrow::checkOutVariables(const opt_variables_type& active)
 
 void LRTwoBodyJastrow::resetParameters(const opt_variables_type& active)
 {
-//     if(handler) resetByHandler();
 }
 
 void LRTwoBodyJastrow::reportStatus(std::ostream& os)
@@ -75,14 +81,7 @@ void LRTwoBodyJastrow::reportStatus(std::ostream& os)
 
 void LRTwoBodyJastrow::resetTargetParticleSet(ParticleSet& P)
 {
-  // update handler as well, should there also be a reset?
   skRef=P.SK;
-  //Do not update handler and breakup
-  //if(handler)
-  //{
-  //  handler->initBreakup(P);
-  //  resetInternals();
-  //}
 }
 
 LRTwoBodyJastrow::RealType
@@ -92,34 +91,54 @@ LRTwoBodyJastrow::evaluateLog(ParticleSet& P,
 {
   RealType sum(0.0);
 #if defined(USE_REAL_STRUCT_FACTOR)
-  APP_ABORT("LRTwoBodyJastrow::evaluateLog ");
+  std::copy(P.SK->rhok_r[0],P.SK->rhok_r[0]+MaxK,Rhok_r.data());
+  std::copy(P.SK->rhok_i[0],P.SK->rhok_i[0]+MaxK,Rhok_i.data());
+  
+  for(int spec1=1; spec1<NumSpecies; spec1++)
+  {
+    accumulate_elements(P.SK->rhok_r[spec1],P.SK->rhok_r[spec1]+MaxK,Rhok_r.data());
+    accumulate_elements(P.SK->rhok_i[spec1],P.SK->rhok_i[spec1]+MaxK,Rhok_i.data());
+  }
 #else
   //memcopy if necessary but this is not so critcal
-  copy(P.SK->rhok[0],P.SK->rhok[0]+MaxK,Rhok.data());
+  std::copy(P.SK->rhok[0],P.SK->rhok[0]+MaxK,Rhok.data());
   for(int spec1=1; spec1<NumSpecies; spec1++)
     accumulate_elements(P.SK->rhok[spec1],P.SK->rhok[spec1]+MaxK,Rhok.data());
-  //Rhok=0.0;
-  //for(int spec1=0; spec1<NumSpecies; spec1++)
-  //{
-  //  const ComplexType* restrict rhok(P.SK->rhok[spec1]);
-  //  for(int ki=0; ki<MaxK; ki++) Rhok[ki] += rhok[ki];
-  //}
+#endif
   const KContainer::VContainer_t& Kcart(P.SK->KLists.kpts_cart);
   for(int iat=0; iat<NumPtcls; iat++)
   {
     RealType res(0.0),l(0.0);
     PosType g;
+    #if defined(USE_REAL_STRUCT_FACTOR)
+    const RealType* restrict eikr_r_ptr(P.SK->eikr_r[iat]);
+    const RealType* restrict eikr_i_ptr(P.SK->eikr_i[iat]);
+    const RealType* restrict rhok_r_ptr(Rhok_r.data());
+    const RealType* restrict rhok_i_ptr(Rhok_i.data());
+    #else
     const ComplexType* restrict eikr_ptr(P.SK->eikr[iat]);
     const ComplexType* restrict rhok_ptr(Rhok.data());
+    #endif
     int ki=0;
     for(int ks=0; ks<MaxKshell; ks++)
     {
       RealType res_k(0.0),l_k(0.0);
       PosType g_k;
-      for(; ki<Kshell[ks+1]; ki++,eikr_ptr++,rhok_ptr++)
+      for(; ki<Kshell[ks+1]; ki++)
       {
+        #if defined(USE_REAL_STRUCT_FACTOR)
+        RealType rr=((*eikr_r_ptr)*(*rhok_r_ptr)+(*eikr_i_ptr)*(*rhok_i_ptr));
+        RealType ii=((*eikr_r_ptr)*(*rhok_i_ptr)-(*eikr_i_ptr)*(*rhok_r_ptr));
+        eikr_r_ptr++;
+        eikr_i_ptr++;
+        rhok_r_ptr++;
+        rhok_i_ptr++;
+        #else
         RealType rr=((*eikr_ptr).real()*(*rhok_ptr).real()+(*eikr_ptr).imag()*(*rhok_ptr).imag());
         RealType ii=((*eikr_ptr).real()*(*rhok_ptr).imag()-(*eikr_ptr).imag()*(*rhok_ptr).real());
+        eikr_ptr++;
+        rhok_ptr++;
+        #endif
         res_k +=  rr;
         l_k += (1.0-rr);
         g_k += ii*Kcart[ki];
@@ -132,32 +151,7 @@ LRTwoBodyJastrow::evaluateLog(ParticleSet& P,
     G[iat]+=(dU[iat]=g);
     L[iat]+=(d2U[iat]=l);
   }
-#endif
   return 0.5*sum;
-//      const KContainer::SContainer_t& ksq(P.SK->KLists.ksq);
-//      ValueType sum(0.0);
-//      for(int iat=0; iat<NumPtcls; iat++) {
-//        ValueType res(0.0),l(0.0);
-//        GradType g;
-//        const ComplexType* restrict eikr(P.SK->eikr[iat]);
-//        for(int ki=0; ki<MaxK; ki++) {
-//          ComplexType skp((Fk[ki]*conj(eikr[ki])*Rhok[ki]));
-//#if defined(QMC_COMPLEX)
-//          res +=  skp;
-//          l += ksq[ki]*(Fk[ki]-skp);
-//          g += ComplexType(skp.imag(),-skp.real())*kpts[ki];
-//#else
-//          res +=  skp.real();
-//          g += Kcart[ki]*skp.imag();
-//          l += ksq[ki]*(Fk[ki]-skp.real());
-//#endif
-//        }
-//        sum+=(U[iat]=res);
-//        G[iat]+=(dU[iat]=g);
-//        L[iat]+=(d2U[iat]=l);
-//      }
-//
-//      return sum*0.5;
 }
 
 
@@ -170,12 +164,38 @@ LRTwoBodyJastrow::ratio(ParticleSet& P, int iat)
   //restore, if called should do nothing
   NeedToRestore=false;
 #if defined(USE_REAL_STRUCT_FACTOR)
-  APP_ABORT("LRTwoBodyJastrow::ratio(ParticleSet& P, int iat)");
+  const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
+  
+  const RealType* restrict eikr_r_ptr(P.SK->eikr_r[iat]);
+  const RealType* restrict eikr_i_ptr(P.SK->eikr_i[iat]);
+  const RealType* restrict rhok_r_ptr(Rhok_r.data());
+  const RealType* restrict rhok_i_ptr(Rhok_i.data());
+
+  const PosType &pos(P.activePos);
+  curVal=0.0;
+  int ki=0;
+  for(int ks=0; ks<MaxKshell; ks++)
+  {
+    RealType dd=0.0,s,c;
+    for(; ki<Kshell[ks+1]; ki++)
+    {
+      
+      sincos(dot(kpts[ki],pos),&s,&c);
+      dd += c*(c+(*rhok_r_ptr)-(*eikr_r_ptr))
+            + s*(s+(*rhok_i_ptr)-(*eikr_i_ptr));
+
+      eikr_r_ptr++;
+      eikr_i_ptr++;
+      rhok_r_ptr++;
+      rhok_i_ptr++;
+    }
+    curVal += Fk_symm[ks]*dd;
+  }
 #else
   const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
   const ComplexType* restrict eikr_ptr(P.SK->eikr[iat]);
   const ComplexType* restrict rhok_ptr(Rhok.data());
-  PosType pos(P.R[iat]);
+  const PosType &pos(P.activePos);
   curVal=0.0;
   int ki=0;
   for(int ks=0; ks<MaxKshell; ks++)
@@ -189,237 +209,276 @@ LRTwoBodyJastrow::ratio(ParticleSet& P, int iat)
     }
     curVal += Fk_symm[ks]*dd;
   }
-//      const Vector<ComplexType>& eikr1(P.SK->eikr_new);
-//      const Vector<ComplexType>& del_eikr(P.SK->delta_eikr);
-//      //Rhok += del_eikr;
-//      for(int ki=0; ki<MaxK; ki++) {
-//        //ComplexType skp((Fk[ki]*conj(eikr1[ki])*Rhok[ki]));
-//        ComplexType skp((Fk[ki]*conj(eikr1[ki])*(Rhok[ki]+del_eikr[ki])));
-//#if defined(QMC_COMPLEX)
-//        curVal +=  skp;
-//#else
-//        curVal +=  skp.real();
-//#endif
-//      }
 #endif
   return std::exp(curVal-U[iat]);
 }
 
 
 LRTwoBodyJastrow::ValueType
-LRTwoBodyJastrow::logRatio(ParticleSet& P, int iat,
-                           ParticleSet::ParticleGradient_t& dG,
-                           ParticleSet::ParticleLaplacian_t& dL)
+LRTwoBodyJastrow::ratioGrad(ParticleSet& P, int iat, GradType & g)
 {
   NeedToRestore=true;
   const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
   {
+    const PosType &pos(P.activePos);
+    RealType c,s;
+  #if defined(USE_REAL_STRUCT_FACTOR)
+    RealType* restrict eikr1_r(eikr_new_r.data());
+    RealType* restrict eikr1_i(eikr_new_i.data());
+    RealType* restrict deikr_r(delta_eikr_r.data());
+    RealType* restrict deikr_i(delta_eikr_i.data());
+    const RealType* restrict eikr0_r(eikr_r[iat]);
+    const RealType* restrict eikr0_i(eikr_i[iat]);
+    for(int ki=0; ki<MaxK; ki++)
+    {
+      sincos(dot(kpts[ki],pos),&s,&c);
+      (*eikr1_r)=c;
+      (*eikr1_i)=s;
+      (*deikr_r++)=(*eikr1_r++)-(*eikr0_r++);
+      (*deikr_i++)=(*eikr1_i++)-(*eikr0_i++);
+    }
+  #else  
     ComplexType* restrict eikr1(eikr_new.data());
     ComplexType* restrict deikr(delta_eikr.data());
     const ComplexType* restrict eikr0(eikr[iat]);
-    PosType pos(P.R[iat]);
-    RealType c,s;
     for(int ki=0; ki<MaxK; ki++)
     {
       sincos(dot(kpts[ki],pos),&s,&c);
       (*eikr1)=ComplexType(c,s);
       (*deikr++)=(*eikr1++)-(*eikr0++);
     }
+  #endif
   }
+  curVal=0.0;
+  curGrad=0.0;
+#if defined(USE_REAL_STRUCT_FACTOR)
+  //new Rhok: restored by rejectMove
+  Rhok_r += delta_eikr_r;
+  Rhok_i += delta_eikr_i;
+  const RealType* restrict rhok_ptr_r(Rhok_r.data());
+  const RealType* restrict rhok_ptr_i(Rhok_i.data());
+  const RealType* restrict eikr1_r(eikr_new_r.data());
+  const RealType* restrict eikr1_i(eikr_new_i.data());
+#else
   //new Rhok: restored by rejectMove
   Rhok += delta_eikr;
-  curVal=0.0;
-  curLap=0.0;
-  curGrad=0.0;
   const ComplexType* restrict rhok_ptr(Rhok.data());
   const ComplexType* restrict eikr1(eikr_new.data());
+#endif
   for(int ks=0,ki=0; ks<MaxKshell; ks++)
   {
-    RealType v(0.0),l(0.0);
+    RealType v(0.0);
     PosType g;
-    for(; ki<Kshell[ks+1]; ki++,eikr1++,rhok_ptr++)
+    for(; ki<Kshell[ks+1]; ki++)
     {
+    #if defined(USE_REAL_STRUCT_FACTOR)
+      RealType rr=((*eikr1_r)*(*rhok_ptr_r)+(*eikr1_i)*(*rhok_ptr_i));
+      RealType ii=((*eikr1_r)*(*rhok_ptr_i)-(*eikr1_i)*(*rhok_ptr_r));
+      eikr1_r++;
+      eikr1_i++;
+      rhok_ptr_r++;
+      rhok_ptr_i++;
+    #else
       RealType rr=((*eikr1).real()*(*rhok_ptr).real()+(*eikr1).imag()*(*rhok_ptr).imag());
       RealType ii=((*eikr1).real()*(*rhok_ptr).imag()-(*eikr1).imag()*(*rhok_ptr).real());
+      eikr1++;
+      rhok_ptr++;
+    #endif
       v +=  rr;
-      l += 1.0-rr;
       g += ii*kpts[ki];
     }
     curVal += Fk_symm[ks]*v;
     curGrad += Fk_symm[ks]*g;
-    curLap += FkbyKK[ks]*l;
   }
-  for(int jat=0; jat<NumPtcls; jat++)
+  
+  g+=curGrad;
+  return std::exp(curVal-U[iat]);
+
+}
+
+LRTwoBodyJastrow::GradType
+LRTwoBodyJastrow::evalGrad(ParticleSet& P, int iat)
+{
+  NeedToRestore=true;
+  const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
   {
-    if(jat == iat)
-      continue;
-    const ComplexType* restrict eikri(delta_eikr.data());
-    const ComplexType* restrict eikrj(eikr[jat]);
-    RealType v(0.0),l(0.0);
-    PosType g;
-    for(int ks=0,ki=0; ks<MaxKshell; ks++)
+    const PosType &pos(P.R[iat]);
+    RealType c,s;
+  #if defined(USE_REAL_STRUCT_FACTOR)
+    RealType* restrict eikr1_r(eikr_new_r.data());
+    RealType* restrict eikr1_i(eikr_new_i.data());
+    RealType* restrict deikr_r(delta_eikr_r.data());
+    RealType* restrict deikr_i(delta_eikr_i.data());
+    const RealType* restrict eikr0_r(eikr_r[iat]);
+    const RealType* restrict eikr0_i(eikr_i[iat]);
+    for(int ki=0; ki<MaxK; ki++)
     {
-      RealType v_k(0.0),l_k(0.0);
-      PosType g_k;
-      for(; ki<Kshell[ks+1]; ki++,eikri++,eikrj++)
-      {
-        RealType rr=(*eikrj).real()*(*eikri).real()+(*eikrj).imag()*(*eikri).imag();
-        RealType ii=(*eikrj).real()*(*eikri).imag()-(*eikrj).imag()*(*eikri).real();
-        v_k += rr;
-        l_k -= rr;
-        g_k += ii*kpts[ki];
-      }
-      v += Fk_symm[ks]*v_k;
-      g += Fk_symm[ks]*g_k;
-      l += FkbyKK[ks]*l_k;
+      sincos(dot(kpts[ki],pos),&s,&c);
+      (*eikr1_r)=c;
+      (*eikr1_i)=s;
+      (*deikr_r++)=(*eikr1_r++)-(*eikr0_r++);
+      (*deikr_i++)=(*eikr1_i++)-(*eikr0_i++);
     }
-    offU[jat]=v;
-    offdU[jat]=g;
-    offd2U[jat]=l;
-    dG[jat] += g;
-    dL[jat] += l;
+  #else  
+    ComplexType* restrict eikr1(eikr_new.data());
+    ComplexType* restrict deikr(delta_eikr.data());
+    const ComplexType* restrict eikr0(eikr[iat]);
+    for(int ki=0; ki<MaxK; ki++)
+    {
+      sincos(dot(kpts[ki],pos),&s,&c);
+      (*eikr1)=ComplexType(c,s);
+      (*deikr++)=(*eikr1++)-(*eikr0++);
+    }
+  #endif
   }
-//      for(int jat=0;jat<NumPtcls; jat++) {
-//        if(iat==jat) {
-//          for(int ki=0; ki<MaxK; ki++) {
-//            //ComplexType rhok_new(Rhok[ki]+del_eikr[ki]);
-//            //ComplexType skp((Fk[ki]*conj(eikr1[ki])*rhok_new));
-//#if defined(QMC_COMPLEX)
-//            ComplexType skp((Fk[ki]*conj(eikr1[ki])*Rhok[ki]));
-//            curVal +=  skp;
-//            curGrad += ComplexType(skp.imag(),-skp.real())*kpts[ki];
-//            curLap += ksq[ki]*(Fk[ki]-skp);
-//#else
-//            RealType skp_r=Fk[ki]*(eikr1[ki].real()*Rhok[ki].real()+eikr1[ki].imag()*Rhok[ki].imag());
-//            RealType skp_i=Fk[ki]*(eikr1[ki].real()*Rhok[ki].imag()-eikr1[ki].imag()*Rhok[ki].real());
-//            curVal +=  skp_r;
-//            curLap += ksq[ki]*(Fk[ki]-skp_r);
-//            curGrad += kpts[ki]*skp_i;
-//            //curVal +=  skp.real();
-//            //curLap += ksq[ki]*(Fk[ki]-skp.real());
-//            //curGrad += skp.imag()*kpts[ki];
-//#endif
-//          }
-//        } else {
-//          const ComplexType* restrict eikrj(P.SK->eikr[jat]);
-//          GradType g;
-//          ValueType l(0.0), v(0.0);
-//          for(int ki=0; ki<MaxK; ki++) {
-//#if defined(QMC_COMPLEX)
-//            ComplexType skp(Fk[ki]*del_eikr[ki]*conj(eikrj[ki]));
-//            GradType dg(skp.imag()*kpts[ki]);
-//            ValueType dl(skp.real()*ksq[ki]);
-//            v += skp.real();
-//            g +=dg;
-//            l -= dl;
-//#else
-//            ComplexType skp(Fk[ki]*del_eikr[ki]*conj(eikrj[ki]));
-//            //GradType dg(skp.imag()*kpts[ki]);
-//            //ValueType dl(skp.real()*ksq[ki]);
-//            v += skp.real();
-//            l -= skp.real()*ksq[ki];
-//            g += skp.imag()*kpts[ki];
-//#endif
-//            //dG[jat] += Fk[ki]*skp.imag()*kpts[ki];
-//            //dL[jat] -= Fk[ki]*skp.real()*ksq[ki];
-//          }
-//          offU[jat]=v;
-//          offdU[jat]=g;
-//          offd2U[jat]=l;
-//          dG[jat] += g;
-//          dL[jat] += l;
-//        }
-//      }
-//
-  dG[iat] += offdU[iat] = curGrad-dU[iat];
-  dL[iat] += offd2U[iat] = curLap-d2U[iat];
-  return offU[iat] = curVal-U[iat];
+  curGrad=0.0;
+#if defined(USE_REAL_STRUCT_FACTOR)
+  //new Rhok: restored by rejectMove
+  Rhok_r += delta_eikr_r;
+  Rhok_i += delta_eikr_i;
+  const RealType* restrict rhok_ptr_r(Rhok_r.data());
+  const RealType* restrict rhok_ptr_i(Rhok_i.data());
+  const RealType* restrict eikr1_r(eikr_new_r.data());
+  const RealType* restrict eikr1_i(eikr_new_i.data());
+#else
+  //new Rhok: restored by rejectMove
+  Rhok += delta_eikr;
+  const ComplexType* restrict rhok_ptr(Rhok.data());
+  const ComplexType* restrict eikr1(eikr_new.data());
+#endif
+  for(int ks=0,ki=0; ks<MaxKshell; ks++)
+  {
+    PosType g;
+    for(; ki<Kshell[ks+1]; ki++)
+    {
+    #if defined(USE_REAL_STRUCT_FACTOR)
+      //      RealType rr=((*eikr1_r)*(*rhok_ptr_r)+(*eikr1_i)*(*rhok_ptr_i));
+      RealType ii=((*eikr1_r)*(*rhok_ptr_i)-(*eikr1_i)*(*rhok_ptr_r));
+      eikr1_r++;
+      eikr1_i++;
+      rhok_ptr_r++;
+      rhok_ptr_i++;
+    #else
+      //      RealType rr=((*eikr1).real()*(*rhok_ptr).real()+(*eikr1).imag()*(*rhok_ptr).imag());
+      RealType ii=((*eikr1).real()*(*rhok_ptr).imag()-(*eikr1).imag()*(*rhok_ptr).real());
+      eikr1++;
+      rhok_ptr++;
+    #endif
+      g += ii*kpts[ki];
+    }
+    curGrad += Fk_symm[ks]*g;
+  }
+  
+  return curGrad;
+
 }
 
 void LRTwoBodyJastrow::restore(int iat)
 {
   //substract the addition in logRatio
-  if(NeedToRestore)
+  if (NeedToRestore)
+  {
+  #if defined(USE_REAL_STRUCT_FACTOR)
+    Rhok_r -= delta_eikr_r;
+    Rhok_i -= delta_eikr_i;
+  #else
     Rhok -= delta_eikr;
+  #endif
+  }
 }
 
 void LRTwoBodyJastrow::acceptMove(ParticleSet& P, int iat)
 {
-  copy(eikr_new.data(),eikr_new.data()+MaxK,eikr[iat]);
+#if defined(USE_REAL_STRUCT_FACTOR)
+  std::copy(eikr_new_r.data(),eikr_new_r.data()+MaxK,eikr_r[iat]);
+  std::copy(eikr_new_i.data(),eikr_new_i.data()+MaxK,eikr_i[iat]);
+#else
+  std::copy(eikr_new.data(),eikr_new.data()+MaxK,eikr[iat]);
+#endif
   U += offU;
   dU += offdU;
   d2U += offd2U;
 }
 
-void LRTwoBodyJastrow::update(ParticleSet& P,
-                              ParticleSet::ParticleGradient_t& dG,
-                              ParticleSet::ParticleLaplacian_t& dL,
-                              int iat)
-{
-  app_error() << "LRTwoBodyJastrow::update is INCOMPLETE " << std::endl;
-}
-
-
-LRTwoBodyJastrow::RealType
-LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+LRTwoBodyJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   LogValue=evaluateLog(P,P.G,P.L);
+#if defined(USE_REAL_STRUCT_FACTOR)
+  eikr_r.resize(NumPtcls,MaxK);
+  eikr_i.resize(NumPtcls,MaxK);
+  eikr_new_r.resize(MaxK);
+  eikr_new_i.resize(MaxK);
+  delta_eikr_r.resize(MaxK);
+  delta_eikr_i.resize(MaxK);
+
+  for(int iat=0; iat<NumPtcls; iat++)
+  {
+    std::copy(P.SK->eikr_r[iat],P.SK->eikr_r[iat]+MaxK,eikr_r[iat]);
+    std::copy(P.SK->eikr_i[iat],P.SK->eikr_i[iat]+MaxK,eikr_i[iat]);
+  }
+  buf.add(Rhok_r.first_address(), Rhok_r.last_address());
+  buf.add(Rhok_i.first_address(), Rhok_i.last_address());
+#else
   eikr.resize(NumPtcls,MaxK);
   eikr_new.resize(MaxK);
   delta_eikr.resize(MaxK);
-#if defined(USE_REAL_STRUCT_FACTOR)
-  APP_ABORT("LRTwoBodyJastrow::registerData");
-#else
+
   for(int iat=0; iat<NumPtcls; iat++)
-    copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
-#endif
+    std::copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
   buf.add(Rhok.first_address(), Rhok.last_address());
+#endif
+
   buf.add(U.first_address(), U.last_address());
   buf.add(d2U.first_address(), d2U.last_address());
   buf.add(FirstAddressOfdU,LastAddressOfdU);
-  return LogValue;
 }
 
 LRTwoBodyJastrow::RealType
-LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+LRTwoBodyJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch)
 {
   LogValue=evaluateLog(P,P.G,P.L);
 #if defined(USE_REAL_STRUCT_FACTOR)
-  APP_ABORT("LRTwoBodyJastrow::updateBuffer");
+  for(int iat=0; iat<NumPtcls; iat++)
+  {
+    std::copy(P.SK->eikr_r[iat],P.SK->eikr_r[iat]+MaxK,eikr_r[iat]);
+    std::copy(P.SK->eikr_i[iat],P.SK->eikr_i[iat]+MaxK,eikr_i[iat]);
+  }
+  buf.put(Rhok_r.first_address(), Rhok_r.last_address());
+  buf.put(Rhok_i.first_address(), Rhok_i.last_address());
 #else
   for(int iat=0; iat<NumPtcls; iat++)
-    copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
-#endif
+    std::copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
   buf.put(Rhok.first_address(), Rhok.last_address());
+#endif
   buf.put(U.first_address(), U.last_address());
   buf.put(d2U.first_address(), d2U.last_address());
   buf.put(FirstAddressOfdU,LastAddressOfdU);
   return LogValue;
 }
 
-void LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
+#if defined(USE_REAL_STRUCT_FACTOR)
+  buf.get(Rhok_r.first_address(), Rhok_r.last_address());
+  buf.get(Rhok_i.first_address(), Rhok_i.last_address());
+#else
   buf.get(Rhok.first_address(), Rhok.last_address());
+#endif
   buf.get(U.first_address(), U.last_address());
   buf.get(d2U.first_address(), d2U.last_address());
   buf.get(FirstAddressOfdU,LastAddressOfdU);
 #if defined(USE_REAL_STRUCT_FACTOR)
-  APP_ABORT("LRTwoBodyJastrow::copyFromBuffer");
+  for(int iat=0; iat<NumPtcls; iat++)
+  {  
+    std::copy(P.SK->eikr_r[iat],P.SK->eikr_r[iat]+MaxK,eikr_r[iat]);
+    std::copy(P.SK->eikr_i[iat],P.SK->eikr_i[iat]+MaxK,eikr_i[iat]);
+  } 
 #else
   for(int iat=0; iat<NumPtcls; iat++)
-    copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+    std::copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
 #endif
-}
-
-LRTwoBodyJastrow::RealType
-LRTwoBodyJastrow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  buf.put(Rhok.first_address(), Rhok.last_address());
-  buf.put(U.first_address(), U.last_address());
-  buf.put(d2U.first_address(), d2U.last_address());
-  buf.put(FirstAddressOfdU,LastAddressOfdU);
-  return LogValue;
 }
 
 
@@ -446,7 +505,7 @@ void LRTwoBodyJastrow::resetByHandler(HandlerType* handler)
   int ish=0;
   while(ish<MaxKshell && ki<NumKpts)
   {
-    Fk_symm[ish]=Fk[ki];//-1.0*handler->Fk[ki];
+    Fk_symm[ish]=Fk[ki];
     FkbyKK[ish]=Fk_symm[ish]*skRef->KLists.ksq[ki];
     for(; ki<skRef->KLists.kshell[ish+1]; ki++)
       Fk[ki]=Fk_symm[ish];
@@ -454,12 +513,20 @@ void LRTwoBodyJastrow::resetByHandler(HandlerType* handler)
   }
   MaxK=skRef->KLists.kshell[MaxKshell];
   Kshell.resize(MaxKshell+1);
-  copy(skRef->KLists.kshell.begin(),skRef->KLists.kshell.begin()+MaxKshell+1, Kshell.begin());
+  std::copy(skRef->KLists.kshell.begin(),skRef->KLists.kshell.begin()+MaxKshell+1, Kshell.begin());
+
+#if defined(USE_REAL_STRUCT_FACTOR)
+  if (Rhok_r.size()!=MaxK)
+    Rhok_r.resize(MaxK);
+  if (Rhok_i.size()!=MaxK)
+    Rhok_i.resize(MaxK);
+#else
   if (Rhok.size()!=MaxK)
     Rhok.resize(MaxK);
+#endif
 }
 
-OrbitalBasePtr LRTwoBodyJastrow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr LRTwoBodyJastrow::makeClone(ParticleSet& tqp) const
 {
   LRTwoBodyJastrow* myclone=new LRTwoBodyJastrow(*this);
   myclone->skRef=tqp.SK;

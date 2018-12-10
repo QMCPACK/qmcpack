@@ -15,7 +15,7 @@
     
 
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
@@ -72,8 +72,9 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
             SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2),
             SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2),
             SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
-  CheckLattice();
   app_log() << buff;
+  if (!CheckLattice()) APP_ABORT("CheckLattice failed");
+  PrimCell.set(Lattice);
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
       LatticeInv(i,j) = RecipLattice(i,j)/(2.0*M_PI);
@@ -128,7 +129,109 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   HDFAttribIO<Vector<TinyVector<double,3> > > h_IonPos(IonPos);
   h_IonPos.read   (H5FileID, "/atoms/positions");
   for (int i=0; i<IonTypes.size(); i++)
-    app_log() << "Atom type(" << i << ") = " << IonTypes(i) << std::endl;
+    app_log() << "Atom type(" << i << ") = " << IonTypes[i] << std::endl;
+  /////////////////////////////////////
+  // Read atom orbital info from xml //
+  /////////////////////////////////////
+  // construct Super2Prim mapping.
+  if(Super2Prim.size()==0)
+  {
+    //SourcePtcl->convert2Cart(SourcePtcl->R);
+    Super2Prim.resize(SourcePtcl->R.size(),-1);
+    std::vector<int> prim_atom_counts;
+    prim_atom_counts.resize(IonPos.size(),0);
+    for (int i=0; i<SourcePtcl->R.size(); i++)
+    {
+      PosType ref=PrimCell.toUnit_floor(SourcePtcl->R[i]);
+      for (int j=0; j<IonPos.size(); j++)
+      {
+        PosType dr=PrimCell.toUnit_floor(IonPos[j])-ref;
+        for(int k=0; k<OHMMS_DIM; k++)
+          dr[k] -= round(dr[k]);
+        if (dot(dr,dr)<MatchingTol)
+        {
+          if(Super2Prim[i]<0)
+          {
+            Super2Prim[i]=j;
+            prim_atom_counts[j]++;
+          }
+          else
+          {
+            app_error() << "Supercell ion " << i << " at " << SourcePtcl->R[j]
+                      << " was found twice in the primitive cell as ion "
+                      << Super2Prim[i] << " and " << j << std::endl;
+            abort();
+          }
+        }
+      }
+      if(Super2Prim[i]<0)
+      {
+        app_error() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
+        abort();
+      }
+      else
+      {
+        //app_log() << "Supercell ion " << i << " mapped to primitive cell ion " << Super2Prim[i] << std::endl;
+      }
+    }
+    const int tiling_size=std::abs(det(TileMatrix));
+    for(int i=0; i<IonPos.size(); i++)
+      if(prim_atom_counts[i]!=tiling_size)
+      {
+        app_error() << "Primitive cell ion " << i << " was found only " << prim_atom_counts[i]
+                  << " times in the supercell rather than " << tiling_size << std::endl;
+        abort();
+      }
+    // construct AtomicCentersInfo
+    AtomicCentersInfo.resize(IonPos.size());
+    for (int i=0; i<IonPos.size(); i++)
+      AtomicCentersInfo.ion_pos[i]=IonPos[i];
+    SourcePtcl->update(true);
+    int Zind=SourcePtcl->mySpecies.findAttribute("atomicnumber");
+    for (int i=0; i<IonPos.size(); i++)
+      for (int j=0; j<Super2Prim.size(); j++)
+        if (Super2Prim[j]==i)
+        {
+          // set GroupID for each ion in primitive cell
+          if ( (Zind<0) || (SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j])==IonTypes[i]) )
+            AtomicCentersInfo.GroupID[i] = SourcePtcl->GroupID[j];
+          else
+          {
+            app_error() << "Primitive cell ion " << i << " vs supercell ion " << j << " atomic number not matching: "
+                        << IonTypes[i] << " vs " << SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j]) << std::endl;
+            abort();
+          }
+          // set non_overlapping_radius for each ion in primitive cell
+          RealType r(0);
+          PosType dr;
+          SourcePtcl->DistTables[0]->get_first_neighbor(j, r, dr, false);
+          if(r<1e-3) APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo_ESHDF too close ions <1e-3 bohr!");
+          AtomicCentersInfo.non_overlapping_radius[i] = 0.5*r;
+          break;
+        }
+
+    // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.
+    const int inner_cutoff_ind=SourcePtcl->mySpecies.findAttribute("inner_cutoff");
+    const int cutoff_radius_ind=SourcePtcl->mySpecies.findAttribute("cutoff_radius");
+    const int spline_radius_ind=SourcePtcl->mySpecies.findAttribute("spline_radius");
+    const int spline_npoints_ind=SourcePtcl->mySpecies.findAttribute("spline_npoints");
+    const int lmax_ind=SourcePtcl->mySpecies.findAttribute("lmax");
+
+    for(int center_idx=0; center_idx<AtomicCentersInfo.Ncenters; center_idx++)
+    {
+      const int my_GroupID = AtomicCentersInfo.GroupID[center_idx];
+      if(inner_cutoff_ind>=0)
+        AtomicCentersInfo.inner_cutoff[center_idx] = SourcePtcl->mySpecies(inner_cutoff_ind, my_GroupID);
+      if(cutoff_radius_ind>=0)
+        AtomicCentersInfo.cutoff[center_idx] = SourcePtcl->mySpecies(cutoff_radius_ind, my_GroupID);
+      if(spline_radius_ind>=0)
+        AtomicCentersInfo.spline_radius[center_idx] = SourcePtcl->mySpecies(spline_radius_ind, my_GroupID);
+      if(spline_npoints_ind>=0)
+        AtomicCentersInfo.spline_npoints[center_idx] = SourcePtcl->mySpecies(spline_npoints_ind, my_GroupID);
+      if(lmax_ind>=0)
+        AtomicCentersInfo.lmax[center_idx] = SourcePtcl->mySpecies(lmax_ind, my_GroupID);
+    }
+  }
   /////////////////////////////////////
   // Read atomic orbital information //
   /////////////////////////////////////
@@ -403,68 +506,6 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
       }
     }
   }
-//    if(qafm!=0)
-//    {
-//      app_log()<<"Finding AFM pair for first "<<ntoshift<<" orbitals."<< std::endl;
-//
-//      for (int ti=0; ti<ntoshift; ti++)
-//      {
-//        bool found(false);
-//        PosType ku = TwistAngles[SortBands[ti].TwistIndex];
-//        PosType k1 = OrbitalSet->PrimLattice.k_cart(ku);
-//        for (int tj=0; tj<TwistAngles.size(); tj++)
-//        {
-//          if(tj!=SortBands[ti].TwistIndex)
-//          {
-//            ku=TwistAngles[tj];
-//            PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//            double dkx = std::abs(k1[0] - k2[0]);
-//            double dky = std::abs(k1[1] - k2[1]);
-//            double dkz = std::abs(k1[2] - k2[2]);
-//            bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-//            if(rightK)
-//            {
-//              SortBands[ti].TwistIndex = tj;
-//              //               app_log()<<"swapping: "<<ti<<" "<<tj<< std::endl;
-//              found=true;
-//              break;
-//            }
-//          }
-//        }
-//        if(!found)
-//        {
-//          if((std::abs(k1[1])<qafm+0.0001)&&(std::abs(k1[1])>qafm-0.0001)) k1[1]*=-1;
-//          else if((std::abs(k1[2])<qafm+0.0001)&&(std::abs(k1[2])>qafm-0.0001)) k1[2]*=-1;
-//
-//          for (int tj=0; tj<TwistAngles.size(); tj++)
-//          {
-//            if(tj!=SortBands[ti].TwistIndex)
-//            {
-//              ku=TwistAngles[tj];
-//              PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//              double dkx = std::abs(k1[0] - k2[0]);
-//              double dky = std::abs(k1[1] - k2[1]);
-//              double dkz = std::abs(k1[2] - k2[2]);
-//              bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-//              if(rightK)
-//              {
-//                SortBands[ti].TwistIndex = tj;
-//                //               app_log()<<"swapping: "<<ti<<" "<<tj<< std::endl;
-//                found=true;
-//                break;
-//              }
-//            }
-//          }
-//        }
-//
-//        if(!found)
-//        {
-//          app_log()<<"Need twist: ("<<k1[0]+qafm<<","<<k1[1]<<","<<k1[2]<<")"<< std::endl;
-//          app_log()<<"Did not find afm pair for orbital: "<<ti<<", twist index: "<<SortBands[ti].TwistIndex<< std::endl;
-//          APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
-//        }
-//      }
-//    }
   if (occ_format=="energy")
   {
     // To get the occupations right.
@@ -530,7 +571,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
   }
   else if (occ_format=="band")
   {
-    app_log()<<"  Occupying bands based on (bi,ti) data."<< std::endl;
+    app_log()<<"  Occupying bands based on (ti,bi) data."<< std::endl;
     if(Occ.size() != particle_hole_pairs*4)
     {
       app_log()<<" Need Occ = pairs*4. Occ is (ti,bi) of removed, then added."<< std::endl;
@@ -612,8 +653,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
             << NumValenceOrbs << " valence states.\n";
 }
 
-
-#ifdef QMC_CUDA
+#if 0
 /** TODO: FIXME RotateBands_ESHDF need psi_r */
 void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet)
 {
@@ -686,7 +726,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<std:
       else
       {
         fout.close();
-        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writting mode
+        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writing mode
         int BUFFER_SIZE = 128;
         char buffer[BUFFER_SIZE];
         while (!fin.eof() )
@@ -862,7 +902,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
       else
       {
         fout.close();
-        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writting mode
+        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writing mode
         int BUFFER_SIZE = 128;
         char buffer[BUFFER_SIZE];
         while (!fin.eof() )
@@ -969,8 +1009,3 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
 #endif
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jmcminis $
- * $Revision: 5343 $   $Date: 2011-08-18 21:44:30 -0400 (Thu, 18 Aug 2011) $
- * $Id: EinsplineSetBuilderESHDF.cpp 5343 2011-08-19 01:44:30Z jmcminis $
- ***************************************************************************/

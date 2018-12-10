@@ -17,13 +17,13 @@
  * @brief Utility class to handle hdf5
  */
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 
 namespace qmcplusplus
 {
-PWParameterSet::PWParameterSet():
+PWParameterSet::PWParameterSet(Communicate *comm):
+  MPIObjectBase(comm),
   hasSpin(true),
   twistIndex(0),
   numBands(0),
@@ -251,8 +251,3 @@ void PWParameterSet::writeParameters(hid_t gid)
   H5Gclose(h1);
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

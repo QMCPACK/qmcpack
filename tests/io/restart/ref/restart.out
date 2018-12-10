@@ -1,0 +1,517 @@
+  Input file(s): qmc_short.restart.xml 
+
+=====================================================
+                    QMCPACK 3.0.0 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+  Git branch: develop
+  Last git commit: 0098a7097e858fdd1465368b7248be421ab430fc-dirty
+  Last commit date: Thu May 25 13:23:43 2017 -0400
+=====================================================
+  Global options 
+  async_swap=0 : using blocking send/recv for walker swaps 
+
+  MPI Nodes            = 4
+  MPI Nodes per group  = 4
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 4
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = float
+  Full precision      = double
+
+  Input XML = qmc_short.restart.xml
+
+  Project = qmc_short
+  date    = 2017-05-31 21:46:40 CDT
+  host    = ryzen-box
+
+  DO NOT READ DENSITY
+  Random number offset = 2  seeds = 7-71
+  Create Global SuperCell 
+  Simulation cell radius = 1.947495
+  Wigner-Seitz    radius = 2.385185
+<unitcell>
+<parameter name="lattice">
+      3.3731610775      3.3731610775      0.0000000000
+      0.0000000000      3.3731610775      3.3731610775
+      3.3731610775      0.0000000000      3.3731610775
+</parameter>
+<parameter name="bconds">  p  p  p </parameter>
+<note>
+Volume (A^3) = 76.7611083984
+Reciprocal vectors without 2*pi.
+g_1 =       0.1482289135      0.1482289135     -0.1482289135
+g_2 =      -0.1482289135      0.1482289135      0.1482289135
+g_3 =       0.1482289135     -0.1482289135      0.1482289135
+Metric tensor in real-space.
+h_1 = 22.7564315796 11.3782157898 11.3782157898 
+h_2 = 11.3782157898 22.7564315796 11.3782157898 
+h_3 = 11.3782157898 11.3782157898 22.7564315796 
+Metric tensor in g-space.
+h_1 = 2.6022369862 -0.8674122691 -0.8674122691 
+h_2 = -0.8674122691 2.6022369862 -0.8674122691 
+h_3 = -0.8674122691 -0.8674122691 2.6022369862 
+</note>
+<note>
+	Long-range breakup parameters:
+	rc*kc = 15.0000000000; rc = 1000000.0000000000; kc = 0.0000000000
+
+</note>
+</unitcell>
+  Creating e particleset
+  Initializing the lattice of e by the global supercell
+  All the species have the same mass 1.0000000000
+Particles are grouped. Safe to use groups 
+	Long-range breakup parameters:
+	rc*kc = 15.0000000000; rc = 1.9474954605; kc = 7.7022004128
+
+	WignerSeitzRadius = 2.3851850033
+
+	SimulationCellRadius = 1.9474954605
+
+	Long-range breakup parameters:
+	rc*kc = 15.0000000000; rc = 1.9474954605; kc = 7.7022004128
+
+	WignerSeitzRadius = 2.3851850033
+
+	SimulationCellRadius = 1.9474954605
+
+--------------------------------------- 
+<unitcell>
+<parameter name="lattice">
+      3.3731610775      3.3731610775      0.0000000000
+      0.0000000000      3.3731610775      3.3731610775
+      3.3731610775      0.0000000000      3.3731610775
+</parameter>
+<parameter name="bconds">  p  p  p </parameter>
+<note>
+Volume (A^3) = 76.7611083984
+Reciprocal vectors without 2*pi.
+g_1 =       0.1482289135      0.1482289135     -0.1482289135
+g_2 =      -0.1482289135      0.1482289135      0.1482289135
+g_3 =       0.1482289135     -0.1482289135      0.1482289135
+Metric tensor in real-space.
+h_1 = 22.7564315796 11.3782157898 11.3782157898 
+h_2 = 11.3782157898 22.7564315796 11.3782157898 
+h_3 = 11.3782157898 11.3782157898 22.7564315796 
+Metric tensor in g-space.
+h_1 = 2.6022369862 -0.8674122691 -0.8674122691 
+h_2 = -0.8674122691 2.6022369862 -0.8674122691 
+h_3 = -0.8674122691 -0.8674122691 2.6022369862 
+</note>
+<note>
+	Long-range breakup parameters:
+	rc*kc = 15.0000000000; rc = 1.9474954605; kc = 7.7022004128
+
+</note>
+</unitcell>
+--------------------------------------- 
+
+  Creating Structure Factor for periodic systems 7.7022004128
+  KContainer initialised with cutoff 7.7022004128
+   # of K-shell  = 25
+   # of K points = 608
+e
+  Creating ion0 particleset
+  Initializing the lattice of ion0 by the global supercell
+  All the species have the same mass 21894.7135906000
+Particles are grouped. Safe to use groups 
+	Long-range breakup parameters:
+	rc*kc = 15.0000000000; rc = 1.9474954605; kc = 7.7022004128
+
+	WignerSeitzRadius = 2.3851850033
+
+	SimulationCellRadius = 1.9474954605
+
+	Long-range breakup parameters:
+	rc*kc = 15.0000000000; rc = 1.9474954605; kc = 7.7022004128
+
+	WignerSeitzRadius = 2.3851850033
+
+	SimulationCellRadius = 1.9474954605
+
+--------------------------------------- 
+<unitcell>
+<parameter name="lattice">
+      3.3731610775      3.3731610775      0.0000000000
+      0.0000000000      3.3731610775      3.3731610775
+      3.3731610775      0.0000000000      3.3731610775
+</parameter>
+<parameter name="bconds">  p  p  p </parameter>
+<note>
+Volume (A^3) = 76.7611083984
+Reciprocal vectors without 2*pi.
+g_1 =       0.1482289135      0.1482289135     -0.1482289135
+g_2 =      -0.1482289135      0.1482289135      0.1482289135
+g_3 =       0.1482289135     -0.1482289135      0.1482289135
+Metric tensor in real-space.
+h_1 = 22.7564315796 11.3782157898 11.3782157898 
+h_2 = 11.3782157898 22.7564315796 11.3782157898 
+h_3 = 11.3782157898 11.3782157898 22.7564315796 
+Metric tensor in g-space.
+h_1 = 2.6022369862 -0.8674122691 -0.8674122691 
+h_2 = -0.8674122691 2.6022369862 -0.8674122691 
+h_3 = -0.8674122691 -0.8674122691 2.6022369862 
+</note>
+<note>
+	Long-range breakup parameters:
+	rc*kc = 15.0000000000; rc = 1.9474954605; kc = 7.7022004128
+
+</note>
+</unitcell>
+--------------------------------------- 
+
+  Creating Structure Factor for periodic systems 7.7022004128
+  KContainer initialised with cutoff 7.7022004128
+   # of K-shell  = 25
+   # of K points = 608
+ion0
+ Adding WavefunctionFactory for psi0
+EinsplineSetBuilder:  using libeinspline for B-spline orbitals.
+Built BasisSetBuilder "einspline" of type einspline
+ Building SPOset  with  basis set.
+TOKEN=0 createSPOSetFromXML /home/yeluo/opt/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilder_createSPOs.cpp 48
+  Distance table for AA: source/target = e
+    PBC=bulk Orthorhombic=no   Using SymmetricDTD<T,D,PPPG> 7
+
+    Setting Rmax = 1.9475 Using bounding box/reduced coordinates with 
+  ... ParticleSet::addTable Create Table #0 e_e
+  Distance table for AB: source = ion0 target = e
+    PBC=bulk Orthorhombic=no  Using AsymmetricDTD<T,D,PPPG> 7
+    Setting Rmax = 1.9475 Using bonding box/reduced coordinates 
+  ... ParticleSet::addTable Create Table #1 ion0_e
+	  MIXED_PRECISION=1 Overwriting the precision of the einspline storage.
+  TileMatrix = 
+ [  1  0  0
+    0  1  0
+    0  0  1 ]
+  Reading 4 orbitals from HDF5 file.
+TOKEN=1 ReadOrbitalInfo /home/yeluo/opt/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderOld.cpp 37
+  HDF5 orbital file version 2.0.0
+TOKEN=2 ReadOrbitalInfo_ESHDF /home/yeluo/opt/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderESHDF.fft.cpp 49
+  Reading orbital file in ESHDF format.
+  ESHDF orbital file version 2.0.0
+  Lattice = 
+    [  3.373161  3.373161  0.000000
+       0.000000  3.373161  3.373161
+       3.373161  0.000000  3.373161 ]
+TOKEN=3 CheckLattice /home/yeluo/opt/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderCommon.cpp 102
+  SuperLattice = 
+    [  3.373161  3.373161  0.000000
+       0.000000  3.373161  3.373161
+       3.373161  0.000000  3.373161 ]
+bands=8, elecs=8, spins=1, twists=1, muffin tins=0, core states=0
+atomic orbital=0
+Atom type(0) = 6
+Atom type(1) = 6
+   Skip initialization of the density
+TIMER  EinsplineSetBuilder::ReadOrbitalInfo 0.0007872990
+TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo 0.0000198810
+Found 1 distinct supercell twists.
+number of things
+1
+1
+Super twist #0:  [   0.00000   0.00000   0.00000 ]
+  Using supercell twist 0:  [   0.00000   0.00000   0.00000]
+Using 1 copies of twist angle [-0.000, -0.000, -0.000]
+Using real orbitals.
+TOKEN=4 OccupyBands /home/yeluo/opt/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderCommon.cpp 768
+TOKEN=5 OccupyBands_ESHDF /home/yeluo/opt/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderESHDF.fft.cpp 323
+Sorting the bands now:
+We will read 4 distinct orbitals.
+There are 0 core states and 4 valence states.
+TOKEN=6 TileIons /home/yeluo/opt/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderCommon.cpp 294
+Rcut = 0.0000000000
+dilation = 1
+TOKEN=7 bcastSortBands /home/yeluo/opt/qmcpack/src/QMCWaveFunctions/einspline_helper.hpp 345
+BandInfoGroup::selectBands bigspace has 8 distinct orbitals 
+BandInfoGroup::selectBands using distinct orbitals [0,4)
+  Number of distinct bands 4
+  First Band index 0
+  First SPO index 0
+  Size of SPOs 4
+  AdoptorName = SplineR2RAdoptor
+  Using real einspline table
+NumDistinctOrbitals 4 numOrbs = 4
+  TwistIndex = 0 TwistAngle      -0.0000000000     -0.0000000000     -0.0000000000
+   HalfG =                  0                 0                 0
+TOKEN=8 ReadGvectors_ESHDF /home/yeluo/opt/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF.cpp 671
+B-spline mesh factor is 1.0000000000
+B-spline mesh size is (40, 40, 40)
+Maxmimum number of Gvecs 3695
+  Using meshsize=                40                40                40
+  vs input meshsize=                40                40                40
+  SplineAdoptorReader initialize_spline_pio 0.0524280870 sec
+MEMORY increase 1 MB BsplineSetReader
+  MEMORY allocated SplineAdoptorReader 1 MB
+TIMER  EinsplineSetBuilder::ReadBands 0.0561887970
+   Using Identity for the LCOrbitalSet 
+Reuse BasisSetBuilder "einspline" type einspline
+ Building SPOset  with  basis set.
+TOKEN=9 createSPOSetFromXML /home/yeluo/opt/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilder_createSPOs.cpp 48
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+	  MIXED_PRECISION=1 Overwriting the precision of the einspline storage.
+SPOSet parameters match in EinsplineSetBuilder:  cloning EinsplineSet object.
+   Using Identity for the LCOrbitalSet 
+  Creating a determinant updet group=0 sposet=updet
+  Reusing a SPO set updet
+
+  Creating a determinant downdet group=1 sposet=downdet
+  Reusing a SPO set downdet
+
+  FermionWF=SlaterDet
+
+  Using BsplineBuilder for one-body jastrow with B-spline functions
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = 2.3851850033.
+ size = 8 parameters 
+ cusp = 0.0000000000
+ rcut = 2.3851850033
+Parameter     Name      Value
+eC_0 -0.2032153010 1 1  ON 0
+eC_1 -0.1625595987 1 1  ON 1
+eC_2 -0.1431245953 1 1  ON 2
+eC_3 -0.1216434985 1 1  ON 3
+eC_4 -0.0991977230 1 1  ON 4
+eC_5 -0.0711172894 1 1  ON 5
+eC_6 -0.0444534570 1 1  ON 6
+eC_7 -0.0213508289 1 1  ON 7
+  BsplineJastrowBuilder adds a functor with cusp = -0.2500000000
+  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = 2.3851850033.
+ size = 8 parameters 
+ cusp = -0.2500000000
+ rcut = 2.3851850033
+Parameter     Name      Value
+uu_0 0.2797730267 1 1  ON 0
+uu_1 0.2172604203 1 1  ON 1
+uu_2 0.1656173021 1 1  ON 2
+uu_3 0.1216984242 1 1  ON 3
+uu_4 0.0839953497 1 1  ON 4
+uu_5 0.0530206598 1 1  ON 5
+uu_6 0.0291595403 1 1  ON 6
+uu_7 0.0122402580 1 1  ON 7
+  BsplineJastrowBuilder adds a functor with cusp = -0.5000000000
+  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = 2.3851850033.
+ size = 8 parameters 
+ cusp = -0.5000000000
+ rcut = 2.3851850033
+Parameter     Name      Value
+ud_0 0.4631099999 1 1  ON 0
+ud_1 0.3563991189 1 1  ON 1
+ud_2 0.2587895393 1 1  ON 2
+ud_3 0.1829298437 1 1  ON 3
+ud_4 0.1233653277 1 1  ON 4
+ud_5 0.0771470815 1 1  ON 5
+ud_6 0.0414589904 1 1  ON 6
+ud_7 0.0169064589 1 1  ON 7
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #0 e_e
+  ... ParticleSet::addTable Reuse Table #0 e_e
+
+  Creating CoulombHandler with the optimal breakup. 
+  KContainer initialised with cutoff 44.3527679443
+   # of K-shell  = 986
+   # of K points = 113394
+  NUMBER OF OPT_BREAK KVECS = -748125588
+ finding kc:  7.7022004128 , -1.0000000000
+  LRBreakp parameter Kc =7.7022004128
+    Continuum approximation in k = [44.3527661532,3080.8800953138)
+
+   LR Breakup chi^2 = 0.0000000000
+   PBCAA self-interaction term -6.2993685415
+   PBCAA total constant -6.9387246883
+  Maximum K shell 24
+  Number of k vectors 608
+  Fixed Coulomb potential for e
+    e-e Madelung Const. =-0.3298148215
+    Vtot     =0.0000000000
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+  Distance table for AA: source/target = ion0
+    PBC=bulk Orthorhombic=no   Using SymmetricDTD<T,D,PPPG> 7
+
+    Setting Rmax = 1.9475 Using bounding box/reduced coordinates with 
+  ... ParticleSet::addTable Create Table #0 ion0_ion0
+  ... ParticleSet::addTable Reuse Table #0 ion0_ion0
+  Clone CoulombHandler. 
+   PBCAA self-interaction term -25.1974741659
+   PBCAA total constant -25.8368303128
+  Maximum K shell 24
+  Number of k vectors 608
+  Fixed Coulomb potential for ion0
+    e-e Madelung Const. =-0.3298148215
+    Vtot     =-12.7756690979
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
+
+  ECPotential builder for pseudopotential 
+
+  Adding pseudopotential for C
+   Linear grid  ri=0.0000000000 rf=10.0000000000 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+   Number of angular momentum channels 2
+   Maximum angular momentum channel 1
+   Creating a Linear Grid Rmax=1.7000000477
+  Using global grid with delta = 0.0010000000
+   Making L=1 a local potential with a radial cutoff of 9.9989993109
+    Non-local pseudopotential parameters
+    Maximum angular mementum = 0
+    Number of non-local channels = 1
+       l(0)=0
+    Cutoff radius = 1.7009999752
+    Spherical grids and weights: 
+             1.0000000000      0.0000000000      0.0000000000        0.0833333358
+            -1.0000000000      0.0000000000      0.0000000000        0.0833333358
+             0.4472135901      0.8944271803      0.0000000000        0.0833333358
+            -0.4472135901      0.7236068249      0.5257310867        0.0833333358
+             0.4472135901      0.2763932049      0.8506507874        0.0833333358
+            -0.4472135901     -0.2763932049      0.8506507874        0.0833333358
+             0.4472135901     -0.7236068249      0.5257310867        0.0833333358
+            -0.4472135901     -0.8944271803      0.0000000000        0.0833333358
+             0.4472135901     -0.7236068249     -0.5257310867        0.0833333358
+            -0.4472135901     -0.2763932049     -0.8506507874        0.0833333358
+             0.4472135901      0.2763932049     -0.8506507874        0.0833333358
+            -0.4472135901      0.7236068249     -0.5257310867        0.0833333358
+    Maximum cutoff radius 1.7009999752
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  Clone CoulombHandler. 
+   Constant of PBCAB 1.2787122937
+  Maximum K shell 24
+  Number of k vectors 608
+    CoulombPBCAB::add 
+ Setting a linear grid=[0,1.9474954605) number of grid =1948
+    Creating the short-range pseudopotential for species 0
+  QMCHamiltonian::addOperator LocalECP to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+
+  Using NonLocalECP potential 
+    Maximum grid on a sphere for NonLocalECPotential: 12
+WARNING ParticleSet::checkBoundBox 3.4019999504> SimulationCellRadius=1.9474954605
+ Using SLOW method for the sphere update. 
+  QMCHamiltonian::addOperator NonLocalECP to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type pseudo named PseudoPot
+  QMCHamiltonian::addOperator Flux to auxH 
+QMCHamiltonian::addOperatorType added type flux named Flux
+
+  QMCHamiltonian::add2WalkerProperty added
+    6 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+  Hamiltonian disables VirtualMoves
+ParticleSetPool::randomize 
+  Restart from the random number streams from the previous configuration.
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet e : 0 4 8 
+
+    8
+
+    u  2.8881917000e+00  1.0242514610e+00  3.3976430893e+00
+    u  4.3756480217e+00  2.5547695160e+00  4.7785282135e+00
+    u  5.7392807007e+00  3.9771258831e+00  4.8356771469e+00
+    u  1.9290554523e+00  2.8554100990e+00  2.7065122128e+00
+    d  1.9334000349e+00  1.9829595089e+00  5.3563964367e-01
+    d  1.4682782888e+00  2.3200979233e+00  9.5915615559e-01
+    d  3.9773361683e+00  3.4664196968e+00  4.0713877678e+00
+    d  4.0465812683e+00  5.6417484283e+00  3.8271150589e+00
+
+  ParticleSet ion0 : 0 2 
+
+    2
+
+    C  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    C  1.6865805387e+00  1.6865805387e+00  1.6865805387e+00
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombPBCAA potential: e_e
+  IonIon          CoulombPBCAA potential: ion0_ion0
+  LocalECP        CoulombPBCAB potential source: ion0
+  NonLocalECP     NonLocalECPotential: ion0
+
+=========================================================
+  Start VMCSingleOMP
+  File Root qmc_short.s002 append = no 
+=========================================================
+ HDFWalkerInput_0_4::put getting 64 walkers 1536
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 15
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 0.0000000000e+00
+  blocks         = 1
+  steps          = 1
+  substeps       = 0
+  current        = 0
+  target samples = 0.0000000000e+00
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 2
+<parameter name="blocks" condition="int">1</parameter>
+<parameter name="blocks_between_recompute" condition="int">1</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">2</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">2</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">0.0000000000e+00</parameter>
+<parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">2</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">0</parameter>
+<parameter name="substeps" condition="int">0</parameter>
+<parameter name="tau" condition="au">0.0000000000e+00</parameter>
+<parameter name="time_step" condition="au">0.0000000000e+00</parameter>
+<parameter name="timestep" condition="au">0.0000000000e+00</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">0</parameter>
+<parameter name="warmupsteps" condition="int">0</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 2 steps.
+</vmc>
+    Restarting, cummulative properties:
+      energy     = -1.0390248299e+01
+      variance   = 0.0000000000e+00
+      r2accepted = 1.0000000134e-10
+      r2proposed = 1.0000000134e-10
+  Adding a default LocalEnergyEstimator for the MainEstimator 
+  CloneManager::makeClones makes 4 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+  Initial partition of walkers 0 4 8 12 16 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Total Sample Size   =0
+  Walker distribution on root = 0 4 8 12 16 
+  Anonymous Buffer size per walker : 527 in base precision, 96 in full precision, in total 2876 bytes.
+MEMORY increase 0 MB VMCSingleOMP::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 1
+    time step          = 0
+    reference energy   = -10.3905
+    reference variance = 0.55962
+====================================================
+  QMC Execution time = 1.9121e-01 secs 
+  Total Execution time = 1.9217e-01 secs
+
+=========================================================
+  A new xml input file : qmc_short.s002.cont.xml

@@ -36,6 +36,7 @@ namespace qmcplusplus
 			     RandomGenerator_t & rg, std::vector < int >act,
 			     std::vector < int >tp);
      ~RMCUpdateAllWithDrift ();
+    void advanceWalker (Walker_t& thisWalker, bool recompute);
     void advanceWalkers (WalkerIter_t it, WalkerIter_t it_end, bool measure);
     void advanceWalkersVMC ();
     void advanceWalkersRMC ();
@@ -48,16 +49,10 @@ namespace qmcplusplus
 
   private:
     /// Copy Constructor (disabled)
-      RMCUpdateAllWithDrift (const RMCUpdateAllWithDrift &
-			     a):QMCUpdateBase (a), Action (a.Action),
-      TransProb (a.TransProb)
-    {
-    }
+    RMCUpdateAllWithDrift(const RMCUpdateAllWithDrift &) = delete;
     /// Copy operator (disabled).
-    RMCUpdateAllWithDrift & operator= (const RMCUpdateAllWithDrift &)
-    {
-      return *this;
-    }
+    RMCUpdateAllWithDrift & operator=(const RMCUpdateAllWithDrift &) = delete;
+
     std::vector < int >Action, TransProb;
 
     bool scaleDrift;

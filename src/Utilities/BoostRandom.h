@@ -140,6 +140,18 @@ public:
     return uni.engine()()%std::numeric_limits<uint_type>::max();
   }
 
+  /** generate a series of random numbers */
+  template<typename T1>
+  inline void generate_uniform(T1* restrict d, int n)
+  {
+    for(int i=0; i<n; ++i) d[i]=uni();
+  }
+
+  inline void generate_normal(T* restrict d, int n)
+  {
+    BoxMuller2::generate(*this,d,n);
+  }
+
   //inline void bivariate(resul_type& g1, resul_type &g2) {
   //  resul_type v1, v2, r;
   //  do {
@@ -195,8 +207,3 @@ private:
 };
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

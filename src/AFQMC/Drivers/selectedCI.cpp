@@ -59,7 +59,7 @@ bool selectedCI::run()
 // ideas for speed-ups
 // 1. Use the fact that H is stored in sparse ordered form to
 //    only consider terms that have hmat*ci > cut   
-//    To do this, make a routine taht given (i,j) it gets all
+//    To do this, make a routine that given (i,j) it gets all
 //    (k,l) such that h(i,j,k,l)*ci > cut     
 // 2. Keep a different list for those determinants added in the last
 //    step (those new to the list that haven't been "excited" before)
@@ -225,8 +225,8 @@ for(int i=0; i<ntr1; i++)
       app_log()<<" Intermediate determinant list is empty. Stopping iterations. \n";
       break; 
     }
-    bool sucess = diagonalizeTrialWavefunction(eigVal,eigVec,occ_orbs,occ_orbs.size()/ne,intm,intm.size()/ne,true);
-    if(!sucess) {
+    bool success = diagonalizeTrialWavefunction(eigVal,eigVec,occ_orbs,occ_orbs.size()/ne,intm,intm.size()/ne,true);
+    if(!success) {
       app_error()<<" Error: Problems with diagonalizeTrialWavefunction. \n";
       return false;
     }
@@ -315,8 +315,8 @@ for(int i=0; i<ntr1; i++)
        int kk = std::get<1>(dets[ki]);
        for(int kj=0; kj<ne; kj++) intm.push_back(occ_orbs[ kk*ne+kj]);
       }
-      bool sucess = diagonalizeTrialWavefunction(eigVal,eigVec,intm,i,new_dets,0,false);
-      if(!sucess) {
+      bool success = diagonalizeTrialWavefunction(eigVal,eigVec,intm,i,new_dets,0,false);
+      if(!success) {
         app_error()<<" Error: Problems with diagonalizeTrialWavefunction. \n";
         return false;
       }
@@ -448,7 +448,7 @@ bool selectedCI::diagonalizeTrialWavefunction(std::vector<RealType>& eigVal, Val
 {
   ValueType one = ValueType(1.0);
   ValueType zero = ValueType(0.0);
-  bool sucess;
+  bool success;
 
     for(int i=0; i<nci1; i++)
       std::sort(occ1.begin()+i*(NAEA+NAEB),occ1.begin()+(i+1)*(NAEA+NAEB));
@@ -523,7 +523,7 @@ bool selectedCI::diagonalizeTrialWavefunction(std::vector<RealType>& eigVal, Val
 
       eigVal.resize(1);
       if(eigV) eigVec.resize(1,nci);
-      sucess = DenseMatrixOperators::symEigenSysSelect(nci,hm.data(),nci,1,eigVal.data(),eigV,eigVec.data(),eigVec.size2());
+      success = DenseMatrixOperators::symEigenSysSelect(nci,hm.data(),nci,1,eigVal.data(),eigV,eigVec.data(),eigVec.size2());
 
       Timer.stop("Generic4");
       //app_log()<<" Time to diagonalize hamiltonian in diagonalizeTrialWavefunction: " <<Timer.total("Generic2") <<std::endl;
@@ -533,11 +533,11 @@ bool selectedCI::diagonalizeTrialWavefunction(std::vector<RealType>& eigVal, Val
       if(eigV) eigVec.resize(1,nci);
     }
 
-    myComm->bcast(sucess);
+    myComm->bcast(success);
     myComm->bcast(eigVal.data(),eigVal.size(),0,myComm->getMPI());
     if(eigV) myComm->bcast(eigVec.data(),eigVec.size1()*eigVec.size2(),0,myComm->getMPI());
 
-    return sucess;
+    return success;
 
 }
 
@@ -617,6 +617,10 @@ bool selectedCI::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   myComm->split_comm(key,MPI_COMM_TG_LOCAL);
   TG.setTGCommLocal(MPI_COMM_TG_LOCAL);
 
+  key = TG.getCoreID();
+  myComm->split_comm(key,MPI_COMM_HEAD_OF_NODES);
+  TG.setHeadOfNodesComm(MPI_COMM_HEAD_OF_NODES);
+
   CommBuffer.setup(TG.getCoreRank()==0,std::string("COMMBuffer_")+std::to_string(myComm->rank()),MPI_COMM_TG_LOCAL);
   TG.setBuffer(&CommBuffer);
 
@@ -626,12 +630,12 @@ bool selectedCI::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
            <<std::endl;
 
   // hamiltonian
-  if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL)) {
+  if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
     app_error()<<"Error initializing Hamiltonian in selectedCI::setup" <<std::endl; 
     return false; 
   }   
 
-  NuclearCoulombEnergy = toComplex(sHam->NuclearCoulombEnergy).real();
+  NuclearCoulombEnergy = static_cast<ValueType>(sHam->NuclearCoulombEnergy); 
 
   app_log()<<"\n****************************************************\n"   
            <<"****************************************************\n"   

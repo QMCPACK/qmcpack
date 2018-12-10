@@ -151,7 +151,6 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
     double my_largest = 0.0;
     int my_besttile[9];
     double localBestScore = 0.0;
-    int flag = 0;
     #pragma omp for
     for (int i = -range; i <= range; i++)
     {
@@ -361,8 +360,3 @@ int main(int argc, char* argv[])
 }
 
 
-/**************************************************************************
- * $RCSfile$   $Author: lshulenburger $
- * $Revision: 5115 $   $Date: 2011-9-15 10:19:08 -0700 (Thu, 15 Sep 2011) $
- * $Id: getSupercell.cpp 5115 2011-9-15 10:19:08 lshulenburger $
-*************************************************************************/

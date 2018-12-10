@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="hf_vmc_dmc_short_LiH-arb" series="0">
+  </project>
+  <!--random seed="49154"/-->
+
+  <qmcsystem>
+   <wavefunction name="psi0" target="e">
+     <determinantset type="einspline" href="LiH-arb.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" source="i"  precision="double">
+       <slaterdeterminant>
+         <determinant id="updet" size="2" ref="updet">
+           <occupation mode="ground" spindataset="0">
+           </occupation>
+         </determinant>
+         <determinant id="downdet" size="2" ref="downdet">
+           <occupation mode="ground" spindataset="0">
+           </occupation>
+         </determinant>
+       </slaterdeterminant>
+     </determinantset>
+   </wavefunction>
+  </qmcsystem>
+
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml">
+      <pseudo elementType="Li" href="Li.xml"/>
+      <pseudo elementType="H" href="H.xml"/>
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="i" target="i"/>
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <estimator type="flux" name="Flux"/>
+  </hamiltonian>
+
+   <qmc method="vmc" move="pbyp">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers">    256 </parameter>
+    <parameter name="substeps">  1 </parameter>
+    <parameter name="warmupSteps">  100 </parameter>
+    <parameter name="steps">  1 </parameter>
+    <parameter name="blocks">  1 </parameter>
+    <parameter name="timestep">  1.0 </parameter>
+    <parameter name="usedrift">   no </parameter>
+  </qmc>
+
+  <qmc method="dmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="targetwalkers"> 256 </parameter>
+    <parameter name="reconfiguration">   no </parameter>
+    <parameter name="warmupSteps">  100 </parameter>
+    <parameter name="timestep">  0.001 </parameter>
+    <parameter name="steps">   100 </parameter>
+    <parameter name="blocks">  400 </parameter>
+    <parameter name="nonlocalmoves">  no </parameter>
+  </qmc>
+   
+
+</simulation>

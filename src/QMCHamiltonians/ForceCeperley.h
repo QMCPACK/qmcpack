@@ -31,9 +31,9 @@ struct ForceCeperley: public QMCHamiltonianBase, public ForceBase
   double Rcut; // parameter: radial distance within which estimator is used
   int m_exp; // parameter: exponent in polynomial fit
   int N_basis; // parameter: size of polynomial basis set
-  Matrix<RealType> Sinv; // terms in fitting polynomial
-  Vector<RealType> h; // terms in fitting polynomial
-  Vector<RealType> c; // polynomial coefficients
+  Matrix<EstimatorRealType> Sinv; // terms in fitting polynomial
+  Vector<EstimatorRealType> h; // terms in fitting polynomial
+  Vector<EstimatorRealType> c; // polynomial coefficients
   // container for short-range force estimator
 
   ParticleSet::ParticlePos_t forces_ShortRange;
@@ -43,11 +43,6 @@ struct ForceCeperley: public QMCHamiltonianBase, public ForceBase
   Return_t evaluate(ParticleSet& P);
 
   void InitMatrix();
-
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
 
   void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
   {
@@ -87,9 +82,4 @@ struct ForceCeperley: public QMCHamiltonianBase, public ForceBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2945 $   $Date: 2008-08-05 10:21:33 -0500 (Tue, 05 Aug 2008) $
- * $Id: ForceCeperley.h 2945 2008-08-05 15:21:33Z jnkim $
- ***************************************************************************/
 

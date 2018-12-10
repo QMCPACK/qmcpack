@@ -11,17 +11,16 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_NUMERICALGRIDORBITALBUILDER_H
 #define QMCPLUSPLUS_NUMERICALGRIDORBITALBUILDER_H
 
 #include "Configuration.h"
-#include "OhmmsData/HDFAttribIO.h"
-#include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/OptimizableFunctorBase.h"
-#include "QMCWaveFunctions/SphericalBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
+#include "io/hdf_archive.h"
 
 namespace qmcplusplus
 {
@@ -31,11 +30,7 @@ struct NGOrbital: public OptimizableFunctorBase
   typedef real_type                    value_type;
   typedef real_type                    point_type;
   typedef OneDimGridBase<real_type>    grid_type;
-#if QMC_BUILD_LEVEL>2
   typedef OneDimQuinticSpline<real_type> functor_type;
-#else
-  typedef OneDimCubicSpline<real_type> functor_type;
-#endif
   functor_type myFunc;
   real_type Y, dY, d2Y, d3Y;
 
@@ -145,12 +140,14 @@ public:
 
   ///add a grid
   bool addGrid(xmlNodePtr cur);
+  bool addGridH5(hdf_archive &hin);
 
   /** add a radial functor
    * @param cur xml element
    * @param nlms quantum number
    */
   bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+  bool addRadialOrbitalH5(hdf_archive &hin, const QuantumNumberType& nlms);
 
   /** put common element
    * @param cur xml element
@@ -159,6 +156,7 @@ public:
 
 private:
   void addGaussian(xmlNodePtr cur);
+  void addGaussianH5(hdf_archive &hin);
   void addSlater(xmlNodePtr cur);
   void addNumerical(xmlNodePtr cur, const std::string& dsname);
   void addPade(xmlNodePtr cur);
@@ -167,8 +165,3 @@ private:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

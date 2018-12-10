@@ -27,7 +27,7 @@ By default, the quantities reported in the \texttt{.scalar.dat} file include:
 \item[AcceptRatio] The acceptance ratio.
 \end{description}
 
-QMCPACK includes a python utility, \texttt{qmca}, which can be used to process these files. Details and examples are given in chapter~\ref{chap:analysing}.
+QMCPACK includes a python utility, \texttt{qmca}, which can be used to process these files. Details and examples are given in chapter~\ref{chap:analyzing}.
 \section{The .opt.xml file}
 \label{sec:optxml_file}
 This file is generated after a VMC wave function optimization, and contains the part of the input file which lists the optimized optimized jastrow factors.
@@ -59,4 +59,17 @@ This file contains information similar to the \texttt{.scalar.dat} file, but als
 This file contains information from the trial wavefunction about the band structure of the system,
 including the available $k$-points. This can
 be helpful in constructing trial wavefunctions.
+
+
+\section{Checkpoint and restart files}
+\label{sec:checkpoint_files}
+\subsection{The .cont.xml file}
+This file enables continuation of the run.  It is mostly a copy of the input XML file with the series number incremented, and the \texttt{mcwalkerset} element added to read the walkers from a config file.   The \texttt{.cont.xml} file is always created, but other files it depends on are only present if checkpointing is enabled.
+
+\subsection{The .config.h5 file}
+This file contains stored walker configurations.
+
+\subsection{The .random.h5 file}
+This file contains the state of the random number generator to allow restarts.
+(Older versions used an XML file with a suffix of \texttt{.random.xml}).
 

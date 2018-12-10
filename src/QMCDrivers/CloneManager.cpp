@@ -16,7 +16,7 @@
     
     
 
-
+#include "Platforms/sysutil.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
@@ -50,19 +50,37 @@ std::vector<std::vector<MCWalkerConfiguration*> > CloneManager::WPoolClones;
 std::vector<std::vector<TrialWaveFunction*> > CloneManager::PsiPoolClones;
 std::vector<std::vector<QMCHamiltonian*> > CloneManager::HPoolClones;
 
+
+// Clear the static clones so makeClones will work as expected.
+// For now only clearing wClones is strictly necessary.  The storage is not freed,
+// and this will leak memory.
+// Only for use in unit tests.
+void
+CloneManager::clear_for_unit_tests()
+{
+  wClones.clear();
+}
+
 /// Constructor.
-CloneManager::CloneManager(HamiltonianPool& hpool): cloneEngine(hpool)
+CloneManager::CloneManager()
 {
   NumThreads=omp_get_max_threads();
   wPerNode.resize(NumThreads+1,0);
 }
+
+void
+CloneManager::setup(int numThreads)
+{
+  NumThreads = numThreads;
+  wPerNode.resize(NumThreads+1, 0);
+}
+
 
 ///cleanup non-static data members
 CloneManager::~CloneManager()
 {
   // delete_iter(CSMovers.begin(),CSMovers.end());
   delete_iter(Movers.begin(),Movers.end());
-  delete_iter(branchClones.begin(),branchClones.end());
   delete_iter(estimatorClones.begin(),estimatorClones.end());
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -88,8 +106,8 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." << std::endl;
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
-  OhmmsInfo::Log->turnoff();
-  OhmmsInfo::Warn->turnoff();
+  print_mem("Memory Usage before cloning", app_log());
+  outputManager.pause();
 
   #pragma omp parallel for shared(w,psi,ham)
   for(int ip=1; ip<NumThreads; ++ip)
@@ -102,58 +120,11 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
     psiClones[ip]=psi.makeClone(*wClones[ip]);
     hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
   }
-  OhmmsInfo::Log->reset();
-  OhmmsInfo::Warn->reset();
+  infoLog.resume();
+  infoSummary.resume();
+  print_mem("Memory Usage after cloning", app_log());
 }
 
-void CloneManager::makeClones(std::vector<MCWalkerConfiguration*>& wpool,
-                              std::vector<TrialWaveFunction*>& psipool, std::vector<QMCHamiltonian*>& hampool)
-{
- /* if(WPoolClones.size())
-  {
-    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
-    return;
-  }
-  WPoolClones.resize(NumThreads);
-  PsiPoolClones.resize(NumThreads);
-  HPoolClones.resize(NumThreads);
-  WPoolClones[0]=wpool;
-  PsiPoolClones[0]=psipool;
-  HPoolClones[0]=hampool;
-  if(NumThreads==1)
-    return;
-  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." << std::endl;
-  app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
-  OhmmsInfo::Log->turnoff();
-  OhmmsInfo::Warn->turnoff();
-
-  bool io_node=qmc_common.io_node;
-  qmc_common.io_node=false;
-
-  char pname[16];
-  
-  for(int ip=1; ip<NumThreads; ++ip)
-  {
-	IndexType nPsi=psipool.size();
-    WPoolClones[ip].resize(nPsi,0);
-    PsiPoolClones[ip].resize(nPsi,0);
-    HPoolClones[ip].resize(nPsi,0);
-    for(int ipsi=0; ipsi<psipool.size(); ipsi++)
-    {
-
-//#if defined(USE_PARTCILESET_CLONE)
-//      wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
-//#else
-      WPoolClones[ip][ipsi]=new MCWalkerConfiguration(*wpool[ipsi]);
-//#endif
-      PsiPoolClones[ip][ipsi]=psipool[ipsi]->makeClone(*WPoolClones[ip][ipsi]);
-      HPoolClones[ip][ipsi]=hampool[ipsi]->makeClone(*WPoolClones[ip][ipsi],*psiClones[ip]);
-    }
-  }
-  OhmmsInfo::Log->reset();
-  OhmmsInfo::Warn->reset();
-  qmc_common.io_node=io_node;*/
-}
 
 void CloneManager::makeClones(MCWalkerConfiguration& w,
                               std::vector<TrialWaveFunction*>& psipool, std::vector<QMCHamiltonian*>& hampool)
@@ -177,14 +148,11 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." << std::endl;
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
-  OhmmsInfo::Log->turnoff();
-  OhmmsInfo::Warn->turnoff();
+  outputManager.pause();
 
   bool io_node=qmc_common.io_node;
   qmc_common.io_node=false;
 
-  char pname[16];
- 
   for(int ip=1; ip<NumThreads; ++ip)
   {
 	
@@ -203,46 +171,11 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
       HPoolClones[ip][ipsi]=hampool[ipsi]->makeClone(w,*psipool[ipsi]);
     }
   }
-  OhmmsInfo::Log->reset();
-  OhmmsInfo::Warn->reset();
+  infoSummary.resume();
+  infoLog.resume();
   qmc_common.io_node=io_node;
 }
 
-
-void CloneManager::makeClones_new(MCWalkerConfiguration& w,
-                                  TrialWaveFunction& psi, QMCHamiltonian& ham)
-{
-  if(wClones.size())
-  {
-    delete_iter(wClones.begin()+1,wClones.end());
-    delete_iter(psiClones.begin()+1,psiClones.end());
-    delete_iter(hClones.begin()+1,hClones.end());
-  }
-  else
-  {
-    wClones.resize(NumThreads,0);
-    psiClones.resize(NumThreads,0);
-    hClones.resize(NumThreads,0);
-  }
-  wClones[0]=&w;
-  psiClones[0]=&psi;
-  hClones[0]=&ham;
-  if(NumThreads==1)
-    return;
-  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." << std::endl;
-  app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
-  OhmmsInfo::Log->turnoff();
-  OhmmsInfo::Warn->turnoff();
-  char pname[16];
-  for(int ip=1; ip<NumThreads; ++ip)
-  {
-    wClones[ip]=new MCWalkerConfiguration(w);
-    psiClones[ip]=psi.makeClone(*wClones[ip]);
-    hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
-  }
-  OhmmsInfo::Log->reset();
-  OhmmsInfo::Warn->reset();
-}
 
 void CloneManager::makeClones(TrialWaveFunction& guide)
 {
@@ -260,15 +193,13 @@ void CloneManager::makeClones(TrialWaveFunction& guide)
   if(NumThreads==1)
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
-  OhmmsInfo::Log->turnoff();
-  OhmmsInfo::Warn->turnoff();
-  char pname[16];
+  outputManager.pause();
   for(int ip=1; ip<NumThreads; ++ip)
   {
     guideClones[ip]=guide.makeClone(*wClones[ip]);
   }
-  OhmmsInfo::Log->reset();
-  OhmmsInfo::Warn->reset();
+  infoSummary.resume();
+  infoLog.resume();
 }
 void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide)
 {
@@ -289,22 +220,15 @@ void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guid
   if(NumThreads==1)
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
-  OhmmsInfo::Log->turnoff();
-  OhmmsInfo::Warn->turnoff();
-  char pname[16];
+  outputManager.pause();
   for(int ip=1; ip<NumThreads; ++ip)
   {
     wgClones[ip]=new MCWalkerConfiguration(wg);
     guideClones[ip]=guide.makeClone(*wgClones[ip]);
   }
-  OhmmsInfo::Log->reset();
-  OhmmsInfo::Warn->reset();
+  infoSummary.resume();
+  infoLog.resume();
 }
 
 }
 
-/***************************************************************************
- * $RCSfile: CloneManager.cpp,v $   $Author: jnkim $
- * $Revision: 1.5 $   $Date: 2006/10/18 17:23:35 $
- * $Id:CloneManagerDMCPbyPOMP.cpp,v 1.5 2006/10/18 17:23:35 jnkim Exp $
- ***************************************************************************/

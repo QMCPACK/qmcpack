@@ -17,8 +17,8 @@
 /** @file LRHandlerTemp.h
  * @brief Define a LRHandler with two template parameters
  */
-#ifndef QMCPLUSPLUS_EWALD_HANLDER_H
-#define QMCPLUSPLUS_EWALD_HANLDER_H
+#ifndef QMCPLUSPLUS_EWALD_HANDLER_H
+#define QMCPLUSPLUS_EWALD_HANDLER_H
 
 #include "LongRange/LRHandlerBase.h"
 
@@ -109,8 +109,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: bkclark $
- * $Revision: 3798 $   $Date: 2009-04-29 00:38:29 -0500 (Wed, 29 Apr 2009) $
- * $Id: TwoDEwaldHandler.h 3798 2009-04-29 05:38:29Z bkclark $
- ***************************************************************************/

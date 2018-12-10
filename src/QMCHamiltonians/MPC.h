@@ -77,11 +77,6 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   /** implement all-walker stuff */
   virtual void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
 
@@ -102,9 +97,4 @@ public:
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: esler $
- * $Revision: 1581 $   $Date: 2007-01-04 10:02:14 -0600 (Thu, 04 Jan 2007) $
- * $Id: MPC.h 1581 2007-01-04 16:02:14Z esler $
- ***************************************************************************/
 

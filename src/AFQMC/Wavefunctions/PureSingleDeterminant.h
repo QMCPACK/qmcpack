@@ -37,8 +37,8 @@ class PureSingleDeterminant: public WavefunctionBase
 
   public:
 
-    PureSingleDeterminant(Communicate *c):WavefunctionBase(c),trialDensityMatrix_needsupdate(true),cutoff(1e-5),
-    setup_vn_occ_indx(true),rotated_hamiltonian(false),wfntype(0)
+    PureSingleDeterminant(Communicate *c):WavefunctionBase(c),trialDensityMatrix_needsupdate(true),cutoff(1e-6),
+    setup_vn_occ_indx(true),rotated_hamiltonian(false)
     {}
 
     ~PureSingleDeterminant() {}
@@ -74,33 +74,28 @@ class PureSingleDeterminant: public WavefunctionBase
 
     void dist_evaluateLocalEnergy(WalkerHandlerBase* wset , bool first, const int n=-1 );
 
-    void evaluateLocalEnergy(bool addBetaBeta, RealType dt, const ComplexType* , const ComplexSMSpMat&, ComplexType& , ComplexType&, ComplexType& ovl_alpha, ComplexType& ovl_beta, bool, const int n=-1 );
-
     void evaluateOverlap(const ComplexType* , ComplexType& ovl_alpha, ComplexType& ovl_beta, const int n=-1 );
 
     void dist_evaluateOverlap(WalkerHandlerBase* wset, bool first, const int n=-1 );
 
-    void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, ComplexSpMat&, std::vector<ComplexType>& v, const int n=-1);
-    void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, ComplexSMSpMat&, std::vector<ComplexType>& v, const int n=-1);
+    void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, SPValueSMSpMat&, std::vector<SPComplexType>& v, const int n=-1);
+    void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, SPValueSMVector&, std::vector<SPComplexType>& v, const int n=-1);
 
-    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, ComplexSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n=-1);
-    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, ComplexSMSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n=-1);
+    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat&, SPComplexSMSpMat&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1);
+    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector&, SPComplexSMVector&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1);
 
-    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const ComplexType* buff, int i0, int iN, int pi0, ComplexSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n=-1);
-    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const ComplexType* buff, int i0, int iN, int pi0, ComplexSMSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n=-1);
+    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int i0, int iN, SPValueSMSpMat&, SPComplexSMSpMat&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1);
+    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int i0, int iN, SPValueSMVector&, SPComplexSMVector&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1);
 
-    void calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<ComplexType> >& vn, const std::vector<IndexType>& vn_indx, ComplexSpMat&, std::vector<ComplexType>& v, const int n=-1 );
-    void calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<ComplexType> >& vn, const std::vector<IndexType>& vn_indx, ComplexSMSpMat&, std::vector<ComplexType>& v, const int n=-1 );
+    void calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<SPComplexType> >& vn, const std::vector<IndexType>& vn_indx, SPValueSMSpMat&, std::vector<SPComplexType>& v, const int n=-1 );
 
-    void evaluateOneBodyMixedDensityMatrix(WalkerHandlerBase* wset, ComplexSMVector* buf, int wlksz, int gfoffset, bool full=true);
+    void evaluateOneBodyMixedDensityMatrix(WalkerHandlerBase* wset, SPComplexSMVector* buf, int wlksz, int gfoffset, bool transposed, bool full=true);
 
-    bool isOccupAlpha( int i) { 
-      return (isOcc_alpha.find(i) != isOcc_alpha.end());
-    }
+    // for PureSD, I half-rotate the transposed operator to the basis of PsiT.
+    // It is then always in compressed form. 
+    void generateTransposedOneBodyOperator(bool addBetaBeta, SPValueSMVector& Dvn, SPComplexSMVector& DvnT); 
+    void generateTransposedOneBodyOperator(bool addBetaBeta, SPValueSMSpMat& Spvn, SPComplexSMSpMat& SpvnT); 
 
-    bool isOccupBeta( int i) { 
-      return (isOcc_beta.find(i) != isOcc_beta.end());
-    }
 
   //private:
  
@@ -108,16 +103,16 @@ class PureSingleDeterminant: public WavefunctionBase
   
     bool initFromAscii(std::string fileName); 
     bool initFromHDF5(hdf_archive&,const std::string&); 
-    bool initFromXML(std::string fileName) {return true;} 
+    bool initFromXML(std::string fileName) { return false;} 
 
     bool getHamiltonian(HamPtr ); 
 
     // evaluates and stores mixed density matrix in mixed_density_matrix
     // this evaluates the mixed density matrix in reduced format (only NAEX*NMO non-zero sector)
     void local_evaluateOneBodyMixedDensityMatrix(const ComplexType* SlaterMat, ComplexType& ovl_alpha, ComplexType& ovl_beta, bool full=true);
-    void local_evaluateOneBodyMixedDensityMatrix(const ComplexType* SlaterMat, ComplexType& ovl_alpha, ComplexType& ovl_beta, ComplexType* dm, bool full=true);
+    void local_evaluateOneBodyMixedDensityMatrix(const ComplexType* SlaterMat, ComplexType& ovl_alpha, ComplexType& ovl_beta, SPComplexType* dm, bool full=true);
 
-    void split_Ham_rows(IndexType, ComplexSMSpMat::int_iterator, IndexType&, IndexType&); 
+    void split_Ham_rows(IndexType, SPComplexSMSpMat::int_iterator, IndexType&, IndexType&); 
 
     void local_evaluateOneBodyTrialDensityMatrix(bool full=true);
 
@@ -125,7 +120,6 @@ class PureSingleDeterminant: public WavefunctionBase
 
     RealType cutoff;
 
-    int wfntype; 
     bool rotated_hamiltonian; 
     ComplexMatrix OrbMat; 
 
@@ -151,28 +145,29 @@ class PureSingleDeterminant: public WavefunctionBase
     // This is a permutation of the identity matrix, do we need to store it??? 
     bool trialDensityMatrix_needsupdate; 
     ComplexMatrix trial_density_matrix;
+    SPComplexMatrix SPtrial_density_matrix;
 
     // Local storage  
     // Notice that all these matrices are NMOxNAEX, since the rest of the NMO-NAEX columns are zero.
     // Careful must be taken when returning results to other objects in the code.
     ComplexMatrix overlap_inv;
-    ComplexMatrix mixed_density_matrix;
+    ComplexMatrix temp_density_matrix;    // only used for temporary storage
+    SPComplexMatrix mixed_density_matrix;
 
-    std::vector<ComplexType> local_buff; 
+    std::vector<SPComplexType> local_buff; 
+
+    std::vector<SPComplexType> cGF;
 
     // temporary storage
     ComplexMatrix S0,S1,SS0; 
-    ComplexVector V0; 
+    SPComplexVector V0; 
 
     // One-Body Hamiltonian. Stored in sparse form. 
     std::vector<s1D<ValueType> > hij;
     std::vector<s1D<ComplexType> > haj;
 
-    // Storage for two body hamiltonian 
-    // Tensor is stored in sparse form. 
-    ComplexSpMat SpHijkl;
-
-    ComplexSMSpMat SMSpHijkl;
+    SPValueSMSpMat SMSpHijkl;
+    SPComplexSMSpMat SMSpHabkl;
 
     // ik breakup of Spvn
     IndexType ik0, ikN;   //  minimum and maximum values of ik index in Spvn

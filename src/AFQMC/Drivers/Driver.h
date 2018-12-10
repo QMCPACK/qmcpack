@@ -54,11 +54,6 @@ class Driver: public MPIObjectBase, public AFQMCInfo
 
     virtual bool clear()=0;
 
-    void setHeadComm(bool hd, MPI_Comm comm) {
-      head_of_nodes=hd;
-      MPI_COMM_HEAD_OF_NODES = comm;
-    }
-
     std::string name;
 
   protected:  
@@ -79,7 +74,7 @@ class Driver: public MPIObjectBase, public AFQMCInfo
     int nStep;
     int nSubstep;
 
-    TaskGroup TG;
+    afqmc::TaskGroup TG;
 
     int ncores_per_TG;
 
@@ -102,9 +97,8 @@ class Driver: public MPIObjectBase, public AFQMCInfo
 
     EstimatorHandler* estim0;
    
-    ComplexSMVector CommBuffer; 
+    SPComplexSMVector CommBuffer; 
 
-    bool head_of_nodes;
     MPI_Comm MPI_COMM_HEAD_OF_NODES;
     MPI_Comm MPI_COMM_NODE_LOCAL;
     MPI_Comm MPI_COMM_TG_LOCAL;

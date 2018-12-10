@@ -582,7 +582,7 @@ void cqmc::engine::LMYEngine::sample_finish() {
   }
 
   double total_weight = 0.0;
-  formic::mpi::allreduce(&_tw, &total_weight, 1, MPI::SUM);
+  formic::mpi::allreduce(&_tw, &total_weight, 1, MPI_SUM);
 
   // for energy evaluation only calculation, do nothing
   if ( !_wfn_update )
@@ -641,7 +641,7 @@ void cqmc::engine::LMYEngine::sample_finish() {
       double all_samp_weight = 0.0;
 
       // mpi all reduce
-      formic::mpi::allreduce(&total_weight, &all_samp_weight, 1, MPI::SUM);
+      formic::mpi::allreduce(&total_weight, &all_samp_weight, 1, MPI_SUM);
 
       // call the finalize function for the block algorithm object
       _lmb.mpi_finalize(all_samp_weight);
@@ -665,7 +665,7 @@ void cqmc::engine::LMYEngine::sample_finish() {
       double all_samp_weight = 0.0;
 
       // mpi all reduce
-      formic::mpi::allreduce(&tot_weight, &all_samp_weight, 1, MPI::SUM);
+      formic::mpi::allreduce(&tot_weight, &all_samp_weight, 1, MPI_SUM);
       
       // sum over threads for block matrices 
       for (int ip = 1; ip < NumThreads; ip++) {
@@ -678,8 +678,8 @@ void cqmc::engine::LMYEngine::sample_finish() {
       formic::Matrix<double> ss_block_tot(ss_block[0].rows(), ss_block[0].cols());
 
       // compute average of matrices
-      formic::mpi::reduce(&hh_block[0].at(0,0), &hh_block_tot.at(0,0), hh_block[0].size(), MPI::SUM);
-      formic::mpi::reduce(&ss_block[0].at(0,0), &ss_block_tot.at(0,0), ss_block[0].size(), MPI::SUM); 
+      formic::mpi::reduce(&hh_block[0].at(0,0), &hh_block_tot.at(0,0), hh_block[0].size(), MPI_SUM);
+      formic::mpi::reduce(&ss_block[0].at(0,0), &ss_block_tot.at(0,0), ss_block[0].size(), MPI_SUM);
 
       // compute average on root process
       if ( my_rank == 0 ) {
@@ -1265,12 +1265,6 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps
 
   // get a convenient variable for the number of special vectors (i.e. the initial wavefunction plus the number of old updates directions)
   const int nsv = 1 + _lmb.ou_mat().cols();
-
-  // choose how many updates to take from each block for each shift
-  const int n_up_per_shift = 1;
-
-  // choose whether to make use of previoud updates
-  const bool use_prev_ups = true;
 
   // prepare an object to hold update directions for each block
   // block_ups[i][j](p,q) refers to the pth element of the qth update vector for the jth shift for the ith block

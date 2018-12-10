@@ -59,9 +59,4 @@ struct WalkerReconfiguration: public WalkerControlBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile: WalkerReconfiguration.h,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

@@ -54,7 +54,7 @@ from debug import *
 try:
     import h5py
     h5py_unavailable = False
-except ImportError:
+except:
     h5py = unavailable('h5py')
     h5py_unavailable = True
 #end try
@@ -222,6 +222,15 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                     source = os.path.join(sim.resdir,sim.infile),
                     destination = sim.resdir
                     )
+                if 'stat' in request.data_sources:
+                    request.data_sources.remove('stat')
+                #end if
+                if 'storeconfig' in request.data_sources:
+                    request.data_sources.remove('storeconfig')
+                #end if
+                if 'traces' in request.data_sources:
+                    request.data_sources.remove('traces')
+                #end if
             #end if
         elif isinstance(arg0,QmcpackAnalysisRequest):
             request = arg0

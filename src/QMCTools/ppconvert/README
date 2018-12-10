@@ -12,6 +12,11 @@
 
 ppconvert supports conversion of pseudopotentials between different formats
 
-ppconvert is currently not built automatically, but only requires a C++ compiler and BLAS/LAPACK
+ppconvert is currently not built automatically, but can be built on limited platforms
+(Centos7, Ubuntu  with intel 17 or 18 as of now) it may work on other platforms. Clang and GCC support with MKL are planned.
 
-Edit the Makefile to include an appropriate compiler and BLAS source. Examples using MKL are included.
+cmake -DBUILD_PPCONVERT=1
+and
+make ppconvert
+
+If it's broken on your platform ask a developer or post on google groups.

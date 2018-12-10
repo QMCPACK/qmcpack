@@ -1,0 +1,538 @@
+  Input file(s): vmc_hf_sdj_hfd5.xml 
+
+=====================================================
+                    QMCPACK 3.2.0 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+  Git branch: HEAD
+  Last git commit: e743a3ac63deff1e6296cb8f159d0cc999d27ac4-dirty
+  Last commit date: Tue Oct 24 19:35:50 2017 -0500
+=====================================================
+  Global options 
+  async_swap=0 : using blocking send/recv for walker swaps 
+
+  MPI Nodes            = 12
+  MPI Nodes per group  = 12
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 32
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  Input XML = vmc_hf_sdj_hfd5.xml
+
+  Project = vmc_hf_sdj_hdf5
+  date    = 2017-10-25 21:22:51 UTC
+  host    = Q02-I2-J01.vesta.itd
+
+  DO NOT READ DENSITY
+  Offset for the random number seeds based on time 171
+  Random number offset = 171  seeds = 1031-4027
+  Creating e particleset
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+e
+  Creating ion0 particleset
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+ion0
+ Adding WavefunctionFactory for psi0
+Using MolecularBasisBuilder<NGOBuilder>
+  Distance table for AA: source/target = e useSoA =0
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 e_e
+  Distance table for AB: source = ion0 target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates 
+  ... ParticleSet::addTable Create Table #1 ion0_e
+Reading BasisSet from HDF5 file:LiH.orbs.h5
+<input node="atomicBasisSet" name="Gaussian-G2"  angular="cartesian"  elementType="Li"  normalized="no"/>
+  AO BasisSet for Li
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.86599
+              contraction=0.005887 nomralized contraction = 0.023746
+    Gaussian exponent = 0.725995
+              contraction=-0.057751 nomralized contraction = -0.114756
+    Gaussian exponent = 0.309251
+              contraction=-0.111789 nomralized contraction = -0.117124
+    Gaussian exponent = 0.110313
+              contraction=0.361605 nomralized contraction = 0.174872
+    Gaussian exponent = 0.048874
+              contraction=-0.241554 nomralized contraction = -0.0634363
+    Gaussian exponent = 0.021768
+              contraction=1.0279 nomralized contraction = 0.147174
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 1 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.86599
+              contraction=0.021568 nomralized contraction = 0.0869975
+    Gaussian exponent = 0.725995
+              contraction=-0.162539 nomralized contraction = -0.322978
+    Gaussian exponent = 0.309251
+              contraction=0.000231 nomralized contraction = 0.000242025
+    Gaussian exponent = 0.110313
+              contraction=0.104303 nomralized contraction = 0.0504408
+    Gaussian exponent = 0.048874
+              contraction=2.11229 nomralized contraction = 0.554723
+    Gaussian exponent = 0.021768
+              contraction=-1.9748 nomralized contraction = -0.28275
+	Setting GridManager of 1 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 2 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.86599
+              contraction=-0.030846 nomralized contraction = -0.124422
+    Gaussian exponent = 0.725995
+              contraction=0.243037 nomralized contraction = 0.482934
+    Gaussian exponent = 0.309251
+              contraction=0.304338 nomralized contraction = 0.318863
+    Gaussian exponent = 0.110313
+              contraction=-3.80073 nomralized contraction = -1.83803
+    Gaussian exponent = 0.048874
+              contraction=5.12301 nomralized contraction = 1.34539
+    Gaussian exponent = 0.021768
+              contraction=-2.22476 nomralized contraction = -0.318538
+	Setting GridManager of 2 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 3 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.86599
+              contraction=0.300202 nomralized contraction = 1.21091
+    Gaussian exponent = 0.725995
+              contraction=-2.16886 nomralized contraction = -4.30969
+    Gaussian exponent = 0.309251
+              contraction=5.22402 nomralized contraction = 5.47335
+    Gaussian exponent = 0.110313
+              contraction=-6.12413 nomralized contraction = -2.96162
+    Gaussian exponent = 0.048874
+              contraction=4.53128 nomralized contraction = 1.18999
+    Gaussian exponent = 0.021768
+              contraction=-1.48829 nomralized contraction = -0.213092
+	Setting GridManager of 3 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 4 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.02805
+              contraction=1 nomralized contraction = 0.173167
+	Setting GridManager of 4 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 5 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.534
+              contraction=0.0380075 nomralized contraction = 0.189293
+    Gaussian exponent = 0.2749
+              contraction=0.232025 nomralized contraction = 0.134737
+    Gaussian exponent = 0.07362
+              contraction=0.834636 nomralized contraction = 0.0933741
+	Setting GridManager of 5 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 6 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.05578
+              contraction=1 nomralized contraction = 0.0790829
+	Setting GridManager of 6 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 7 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.0205
+              contraction=1 nomralized contraction = 0.0226296
+	Setting GridManager of 7 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 8 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.1874
+              contraction=1 nomralized contraction = 0.139276
+	Setting GridManager of 8 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 9 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.0801
+              contraction=1 nomralized contraction = 0.0314692
+	Setting GridManager of 9 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 10 3 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.1829
+              contraction=1 nomralized contraction = 0.043151
+	Setting GridManager of 10 radial orbital to false
+Adding 10 cartesian gaussian orbitals for l= 3
+   Maximu Angular Momentum   = 3
+   Number of Radial functors = 11
+   Basis size                = 36
+
+<input node="atomicBasisSet" name="Gaussian-G2"  angular="cartesian"  elementType="H"  normalized="no"/>
+  AO BasisSet for H
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 6.3592
+              contraction=-0.004943 nomralized contraction = -0.0500101
+    Gaussian exponent = 3.54664
+              contraction=0.049579 nomralized contraction = 0.323724
+    Gaussian exponent = 1.49344
+              contraction=0.037176 nomralized contraction = 0.126887
+    Gaussian exponent = 0.551948
+              contraction=0.287908 nomralized contraction = 0.465792
+    Gaussian exponent = 0.207203
+              contraction=0.009543 nomralized contraction = 0.00740452
+    Gaussian exponent = 0.079234
+              contraction=0.770084 nomralized contraction = 0.290561
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 1 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 6.3592
+              contraction=-0.016672 nomralized contraction = -0.168677
+    Gaussian exponent = 3.54664
+              contraction=-0.005774 nomralized contraction = -0.0377011
+    Gaussian exponent = 1.49344
+              contraction=-0.227982 nomralized contraction = -0.778138
+    Gaussian exponent = 0.551948
+              contraction=-0.285652 nomralized contraction = -0.462143
+    Gaussian exponent = 0.207203
+              contraction=-1.07158 nomralized contraction = -0.83145
+    Gaussian exponent = 0.079234
+              contraction=1.42377 nomralized contraction = 0.537202
+	Setting GridManager of 1 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 2 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 6.3592
+              contraction=-0.018886 nomralized contraction = -0.191076
+    Gaussian exponent = 3.54664
+              contraction=-0.058854 nomralized contraction = -0.384285
+    Gaussian exponent = 1.49344
+              contraction=-0.556988 nomralized contraction = -1.90109
+    Gaussian exponent = 0.551948
+              contraction=-1.08402 nomralized contraction = -1.75379
+    Gaussian exponent = 0.207203
+              contraction=2.72153 nomralized contraction = 2.11166
+    Gaussian exponent = 0.079234
+              contraction=-1.45809 nomralized contraction = -0.550153
+	Setting GridManager of 2 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 3 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 6.3592
+              contraction=-0.081999 nomralized contraction = -0.829613
+    Gaussian exponent = 3.54664
+              contraction=-0.06946 nomralized contraction = -0.453537
+    Gaussian exponent = 1.49344
+              contraction=-2.07555 nomralized contraction = -7.0842
+    Gaussian exponent = 0.551948
+              contraction=4.12518 nomralized contraction = 6.67393
+    Gaussian exponent = 0.207203
+              contraction=-3.40759 nomralized contraction = -2.64399
+    Gaussian exponent = 0.079234
+              contraction=1.26487 nomralized contraction = 0.47725
+	Setting GridManager of 3 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 4 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.1027
+              contraction=1 nomralized contraction = 0.458345
+	Setting GridManager of 4 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 5 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 2.292
+              contraction=1 nomralized contraction = 8.22721
+	Setting GridManager of 5 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 6 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.838
+              contraction=1 nomralized contraction = 2.33905
+	Setting GridManager of 6 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 7 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.292
+              contraction=1 nomralized contraction = 0.6262
+	Setting GridManager of 7 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 8 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 2.062
+              contraction=1 nomralized contraction = 9.25837
+	Setting GridManager of 8 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 9 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.662
+              contraction=1 nomralized contraction = 1.26774
+	Setting GridManager of 9 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 10 3 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.397
+              contraction=1 nomralized contraction = 4.18507
+	Setting GridManager of 10 radial orbital to false
+Adding 10 cartesian gaussian orbitals for l= 3
+   Maximu Angular Momentum   = 3
+   Number of Radial functors = 11
+   Basis size                = 36
+
+Built BasisSetBuilder "LCAOBSet" of type molecularorbital
+ Building SPOset  with  basis set.
+Creating LCOrbitalSet with the input coefficients
+SPO coefficients are applied by a single dgemm (BLAS3)
+<input node="determinantset"  type="MolecularOrbital"  name="LCAOBSet"  source="ion0"  transform="yes"  href="LiH.orbs.h5"/>
+Reuse BasisSetBuilder "LCAOBSet" type MolecularOrbital
+ Building SPOset  with  basis set.
+Creating LCOrbitalSet with the input coefficients
+SPO coefficients are applied by a single dgemm (BLAS3)
+<input node="determinantset"  type="MolecularOrbital"  name="LCAOBSet"  source="ion0"  transform="yes"  href="LiH.orbs.h5"/>
+  Creating a determinant updet group=0 sposet=updet
+  Reusing a SPO set updet
+Using DiracDeterminantBase 
+
+  Creating a determinant downdet group=1 sposet=downdet
+  Reusing a SPO set downdet
+Using DiracDeterminantBase 
+
+  FermionWF=SlaterDet
+  ... ParticleSet::addTable Reuse Table #0 e_e
+  BsplineJastrowBuilder adds a functor with cusp = -0.5
+ size = 10 parameters 
+ cusp = -0.5
+ rcut = 10
+Parameter     Name      Value
+ud_0 0.769933 1 1  ON 0
+ud_1 0.435026 1 1  ON 1
+ud_2 0.173331 1 1  ON 2
+ud_3 -0.0220696 1 1  ON 3
+ud_4 -0.164846 1 1  ON 4
+ud_5 -0.259026 1 1  ON 5
+ud_6 -0.304136 1 1  ON 6
+ud_7 -0.296083 1 1  ON 7
+ud_8 -0.234731 1 1  ON 8
+ud_9 -0.12881 1 1  ON 9
+
+  Using BsplineBuilder for one-body jastrow with B-spline functions
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eLi_0 -0.0123794 1 1  ON 0
+eLi_1 -0.0676262 1 1  ON 1
+eLi_2 -0.0341452 1 1  ON 2
+eLi_3 -0.0251382 1 1  ON 3
+eLi_4 -0.000700243 1 1  ON 4
+eLi_5 0.0239709 1 1  ON 5
+eLi_6 0.0216687 1 1  ON 6
+eLi_7 0.00501467 1 1  ON 7
+eLi_8 -0.0205721 1 1  ON 8
+eLi_9 -0.0211347 1 1  ON 9
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eH_0 -0.30584 1 1  ON 0
+eH_1 -0.250816 1 1  ON 1
+eH_2 -0.126312 1 1  ON 2
+eH_3 -0.0119631 1 1  ON 3
+eH_4 0.0928789 1 1  ON 4
+eH_5 0.146344 1 1  ON 5
+eH_6 0.188432 1 1  ON 6
+eH_7 0.134841 1 1  ON 7
+eH_8 0.0218866 1 1  ON 8
+eH_9 0.00314166 1 1  ON 9
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #0 e_e
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+  Distance table for AA: source/target = ion0 useSoA =1
+    PBC=open Orthorhombic=NA  Using SoA layout
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 ion0_ion0
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
+
+  ECPotential builder for pseudopotential 
+
+  Adding pseudopotential for H
+   Linear grid  ri=0 rf=10 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+    Only one vps is found. Set the local component=0
+   Number of angular momentum channels 1
+   Maximum angular momentum channel 0
+   Creating a Linear Grid Rmax=2.105
+  Using global grid with delta = 0.001
+   Making L=0 a local potential with a radial cutoff of 9.999
+
+  Adding pseudopotential for Li
+   Linear grid  ri=0 rf=10 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+   Number of angular momentum channels 2
+   Maximum angular momentum channel 1
+   Creating a Linear Grid Rmax=3.16
+  Using global grid with delta = 0.001
+   Making L=1 a local potential with a radial cutoff of 9.999
+    Non-local pseudopotential parameters
+    Maximum angular mementum = 0
+    Number of non-local channels = 1
+       l(0)=0
+    Cutoff radius = 3.16
+    Spherical grids and weights: 
+                        1                 0                 0       0.08333333333
+                       -1   1.224646799e-16                 0       0.08333333333
+             0.4472135955       0.894427191                 0       0.08333333333
+            -0.4472135955      0.7236067977      0.5257311121       0.08333333333
+             0.4472135955      0.2763932023      0.8506508084       0.08333333333
+            -0.4472135955     -0.2763932023      0.8506508084       0.08333333333
+             0.4472135955     -0.7236067977      0.5257311121       0.08333333333
+            -0.4472135955      -0.894427191   1.095357397e-16       0.08333333333
+             0.4472135955     -0.7236067977     -0.5257311121       0.08333333333
+            -0.4472135955     -0.2763932023     -0.8506508084       0.08333333333
+             0.4472135955      0.2763932023     -0.8506508084       0.08333333333
+            -0.4472135955      0.7236067977     -0.5257311121       0.08333333333
+    Maximum cutoff radius 3.16
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  QMCHamiltonian::addOperator LocalECP to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+
+  Using NonLocalECP potential 
+    Maximum grid on a sphere for NonLocalECPotential: 12
+  QMCHamiltonian::addOperator NonLocalECP to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ECPotential::Rmax 9.999
+QMCHamiltonian::addOperatorType added type pseudo named PseudoPot
+  QMCHamiltonian::addOperator Flux to auxH 
+QMCHamiltonian::addOperatorType added type flux named Flux
+
+  QMCHamiltonian::add2WalkerProperty added
+    6 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+<init source="ion0" target="e">
+  ... ParticleSet::addTable Reuse Table #0 ion0_ion0
+</init>
+ParticleSetPool::randomize 
+  Initialization Execution time = 2.407 secs
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet e : 0 1 2 
+
+    2
+
+    u -8.4448316481e-01  6.6749346152e-01 -5.4286158660e-01
+    d  2.6773459907e-01 -7.7107490227e-01  2.1267037579e+00
+
+  ParticleSet ion0 : 0 1 2 
+
+    2
+
+    Li  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    H  0.0000000000e+00  0.0000000000e+00  3.0139239778e+00
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  IonIon          CoulombAA source/target ion0
+
+  LocalECP        LocalECPotential: ion0
+  NonLocalECP     NonLocalECPotential: ion0
+
+=========================================================
+  Start VMCSingleOMP
+  File Root vmc_hf_sdj_xml.s000 append = no 
+=========================================================
+  Adding 32 walkers to 0 existing sets
+  Total number of walkers: 3.8400000000e+02
+  Total weight: 3.8400000000e+02
+  Resetting Properties of the walkers 1 x 15
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 4.0000000000e-01
+  blocks         = 200
+  steps          = 100
+  substeps       = 3
+  current        = 0
+  target samples = 4.0000000000e+03
+  walkers/mpi    = 32
+
+  stepsbetweensamples = 1818
+<parameter name="blocks" condition="int">200</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.1000000000e+01</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1818</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1818</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">4.0000000000e+03</parameter>
+<parameter name="samplesperthread" condition="real">1.1000000000e+01</parameter>
+<parameter name="steps" condition="int">100</parameter>
+<parameter name="stepsbetweensamples" condition="int">1818</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">3</parameter>
+<parameter name="substeps" condition="int">3</parameter>
+<parameter name="tau" condition="au">4.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">4.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">4.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">32</parameter>
+<parameter name="warmup_steps" condition="int">50</parameter>
+<parameter name="warmupsteps" condition="int">50</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1818 steps.
+</vmc>
+  Adding a default LocalEnergyEstimator for the MainEstimator 
+  CloneManager::makeClones makes 32 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+=========== Memory Usage before cloning ===========
+Allocated heap: 19.10 MB, avail. heap: 16236.88 MB
+Allocated stack: 0.02 MB, avail. stack: 16236.88 MB
+==================================================================
+=========== Memory Usage after cloning ===========
+Allocated heap: 520.00 MB, avail. heap: 15735.98 MB
+Allocated stack: 0.02 MB, avail. stack: 15735.98 MB
+==================================================================
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Total Sample Size   =4224
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 
+=========== Memory Usage after the buffer registration ===========
+Allocated heap: 520.00 MB, avail. heap: 15735.98 MB
+Allocated stack: 0.02 MB, avail. stack: 15735.98 MB
+==================================================================
+  Anonymous Buffer size per walker : 47 in base precision, in total 376 bytes.
+MEMORY increase 0 MB VMCSingleOMP::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.4
+    reference energy   = -0.78193
+    reference variance = 0.00464134
+====================================================
+  QMC Execution time = 3.4538e+01 secs 
+  Total Execution time = 3.4570e+01 secs
+
+=========================================================
+  A new xml input file : vmc_hf_sdj_hdf5.s000.cont.xml

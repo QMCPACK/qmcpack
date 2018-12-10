@@ -39,11 +39,12 @@ namespace qmcplusplus
  *
  * Use std::bitset<3> for all the dimension
  */
-enum {SUPERCELL_OPEN=0, //nnn
-      SUPERCELL_WIRE=1,     //nnp
-      SUPERCELL_SLAB=3,     //npp
-      SUPERCELL_BULK=7
-     };    //ppp
+enum {SUPERCELL_OPEN=0, /*!< nnn */
+      SUPERCELL_WIRE=1, /*!< nnp */
+      SUPERCELL_SLAB=3, /*!< npp */
+      SUPERCELL_BULK=7, /*!< ppp */
+      SOA_OFFSET=32     /*!< const to differentiate AoS and SoA */
+     };
 
 /** class to assist copy and unit conversion operations on position vectors
 */
@@ -92,8 +93,10 @@ struct CrystalLattice
   int SuperCellEnum;
   ///The boundary condition in each direction.
   TinyVector<int,D> BoxBConds;
+  ///The scale factor for adding vacuum.
+  T VacuumScale;
   //@{
-  /**@brief Physcial properties of a supercell*/
+  /**@brief Physical properties of a supercell*/
   /// Volume of a supercell
   Scalar_t Volume;
   /// Wigner-Seitz cell radius
@@ -102,6 +105,8 @@ struct CrystalLattice
   Scalar_t SimulationCellRadius;
   /// SimulationCellRadius*SimulationCellRadius
   Scalar_t CellRadiusSq;
+  /// Wigner-Seitz cell radius in reciprocal space
+  Scalar_t WignerSeitzRadius_G;
   ///Real-space unit vectors. R(i,j) i=vector and j=x,y,z
   Tensor_t R;
   ///Reciprocal unit vectors. G(j,i) i=vector and j=x,y,z
@@ -418,8 +423,3 @@ struct CrystalLattice
 
 
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

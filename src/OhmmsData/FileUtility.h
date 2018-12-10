@@ -43,8 +43,3 @@ inline std::string getExtension(const std::string& str)
   return splitted.back();
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

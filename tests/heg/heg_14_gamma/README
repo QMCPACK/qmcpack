@@ -1,0 +1,142 @@
+
+These tests are for a 14 electron homogeneous electron gas at the gamma point.
+
+The tests include:
+  non-interacting          VMC (zero variance)
+  non-interacting          DMC (zero variance)
+  Slater-only              VMC ("Hartree-Fock")
+  Slater-Jastrow           VMC (using older and recent input styles)
+  Slater-Jastrow-Backflow  VMC
+  Slater-Jastrow           DMC
+
+The original files come from the 2012 QMCPACK school.  These were 
+recovered from the old Google Code website as a tar file 
+(qmcpack_tutorial.tar). The original output data (not included) was 
+generated with QMCPACK SVN revision 5548 on 11 July 2012 by Jeremy 
+McMinis.  The original runs include the calculation of the homogeneous 
+pair correlation function, g(r).  The calculation of g(r) is retained 
+in the current tests, but only the energy and its variance are checked 
+at this time.  The original files were rerun using a recent build of 
+SVN revision 6259 and were found to agree.  Subsequent runs of QMCPACK 
+release versions 3.0.0 and 3.1.1 were also found to agree across 
+multiple machines at ORNL.  
+
+The backflow wavefunction in the original files had to be reoptimized 
+because a cutoff larger than the Wigner-Seitz radius had been used 
+originally (this was caught automatically by version 3.1.1).  Both 
+SVN revision 6259 and the 3.1.1 release were capable of reoptimizing 
+the backflow function (quartic optimizer, energy minization) to a 
+similar degree of quality as the original in terms of energy and 
+variance.  A more recent way of specifying HEG wavefunction input was 
+added as a test as were Slater-only runs without an interaction as 
+this provides an exact reference.  
+
+Reference data was generated with runs the same overall length 
+(blocks x steps) as those included in ./qmc-ref, but using 10x more 
+blocks (8000) and 10x fewer steps.  Using more blocks reduced the 
+statistical error of the error bars, but resulted in output data files 
+that were too large to include in the QMCPACK distribution.  The 
+reference values and error bars are therefore computed from the 8000 
+block runs.  The included reference runs were confirmed to be 
+consistent with the original higher block count runs.
+
+Reference data from the high block count runs is found below (25 blocks 
+excluded as equilibration from heg_SJ_dmc, 10 from all others):
+
+                          LocalEnergy               Variance           ratio 
+heg_NI      series 0   0.627711 +/- 0.000000   0.000000 +/- 0.000000   0.0000 
+heg_NI_dmc  series 1   0.627711 +/- 0.000000   0.000000 +/- 0.000000   0.0000 
+heg_HF      series 0  -0.812484 +/- 0.000027   0.193169 +/- 0.001852   0.2378 
+heg_SJ      series 0  -1.073323 +/- 0.000027   0.024574 +/- 0.000018   0.0229 
+heg_SJ_new  series 0  -1.073286 +/- 0.000027   0.024564 +/- 0.000034   0.0229
+heg_SJB     series 0  -1.084963 +/- 0.000025   0.022667 +/- 0.000076   0.0209
+heg_SJ_dmc  series 2  -1.110199 +/- 0.000032   0.022894 +/- 0.000006   0.0206  
+
+
+For comparison, corresponding data for the lower block count reference 
+data found in ./qmc-ref is:
+
+>qmca -e 2 -q ev *scalar*
+                          LocalEnergy               Variance           ratio 
+heg_NI      series 0   0.627711 +/- 0.000000   0.000000 +/- 0.000000   0.0000 
+heg_NI_dmc  series 1   0.627711 +/- 0.000000   0.000000 +/- 0.000000   0.0000 
+heg_HF      series 0  -0.812480 +/- 0.000027   0.191245 +/- 0.000342   0.2354 
+heg_SJ      series 0  -1.073379 +/- 0.000026   0.024530 +/- 0.000009   0.0229 
+heg_SJ_new  series 0  -1.073333 +/- 0.000027   0.024553 +/- 0.000019   0.0229 
+heg_SJB     series 0  -1.084968 +/- 0.000025   0.022614 +/- 0.000026   0.0208 
+heg_SJ_dmc  series 2  -1.110158 +/- 0.000032   0.022906 +/- 0.000006   0.0206 
+
+Tests input files were created by reducing the number of steps from 
+the included reference by a factor of 10 for the "long" tests and by a 
+further factor of 10 for the short tests.  A number of warmup steps 
+was added to match the practice of excluding only the first two blocks 
+within the ctest system (check_scalars.py -e 2 ...).  
+
+Reference values for the mean local energy and variance were taken 
+from the high block count reference runs.  Expected error bars were 
+derived from the high block count data by multiplying the reference 
+error bars by a factor of sqrt(10+1) and sqrt(100+1) for the long 
+and short tests, respectively.  The factor of +1 accounts for the 
+error bar intrinsic to the high block count runs.
+
+The target means and error bars for long and short tests are:
+
+                      refmean   referr    longerr   shorterr
+heg_NI      energy    0.627711  0.000000  0.000001  0.000001  
+            variance  0.000000  0.000000  0.000001  0.000001  
+heg_NI_dmc  energy    0.627711  0.000000  0.000001  0.000001  
+            variance  0.000000  0.000000  0.000001  0.000001  
+heg_HF      energy   -0.812484  0.000027  0.000090  0.000271  
+            variance  0.193169  0.001852  0.006142  0.018612  
+heg_SJ      energy   -1.073323  0.000027  0.000090  0.000271  
+            variance  0.024574  0.000018  0.000060  0.000181  
+heg_SJ_new  energy   -1.073286  0.000027  0.000090  0.000271  
+            variance  0.024564  0.000034  0.000113  0.000342  
+heg_SJB     energy   -1.084963  0.000025  0.000083  0.000251  
+            variance  0.022667  0.000076  0.000252  0.000764  
+heg_SJ_dmc  energy   -1.110199  0.000032  0.000106  0.000322  
+            variance  0.022894  0.000006  0.000020  0.000060  
+
+Error bars from typical long and short runs are shown below:
+
+Typical long run results:
+>qmca -e 2 -q ev *long*scalar*
+                               LocalEnergy               Variance           ratio 
+heg_long_NI      series 0   0.627711 +/- 0.000000   0.000000 +/- 0.000000   0.0000 
+heg_long_NI_dmc  series 1   0.627711 +/- 0.000000   0.000000 +/- 0.000000   0.0000 
+heg_long_HF      series 0  -0.812621 +/- 0.000081   0.189785 +/- 0.000361   0.2335 
+heg_long_SJ      series 0  -1.073216 +/- 0.000085   0.024582 +/- 0.000052   0.0229 
+heg_long_SJ_new  series 0  -1.073202 +/- 0.000085   0.024605 +/- 0.000057   0.0229 
+heg_long_SJB     series 0  -1.084962 +/- 0.000078   0.022531 +/- 0.000029   0.0208 
+heg_long_SJ_dmc  series 2  -1.110036 +/- 0.000103   0.022899 +/- 0.000027   0.0206 
+
+Typical short run results:
+>qmca -e 2 -q ev *short*scalar*
+                                LocalEnergy               Variance           ratio 
+heg_short_NI      series 0   0.627711 +/- 0.000000   0.000000 +/- 0.000000   0.0000 
+heg_short_NI_dmc  series 1   0.627711 +/- 0.000000   0.000000 +/- 0.000000   0.0000 
+heg_short_HF      series 0  -0.812474 +/- 0.000310   0.189679 +/- 0.000867   0.2335 
+heg_short_SJ      series 0  -1.073104 +/- 0.000273   0.024401 +/- 0.000075   0.0227 
+heg_short_SJ_new  series 0  -1.073145 +/- 0.000277   0.024518 +/- 0.000086   0.0228 
+heg_short_SJB     series 0  -1.085005 +/- 0.000256   0.022623 +/- 0.000234   0.0209 
+heg_short_SJ_dmc  series 2  -1.110288 +/- 0.000459   0.022872 +/- 0.000066   0.0206 
+  
+Rough timings for the tests on an old (circa 2013) AMD system are:
+
+>grep 'Total Exe' *long*.out
+heg-long-NI.out:       Total Execution time = 9.4717e-01 secs
+heg-long-NI-dmc.out:   Total Execution time = 2.2727e+00 secs
+heg-long-HF.out:       Total Execution time = 2.0527e+02 secs
+heg-long-SJ.out:       Total Execution time = 3.0473e+01 secs
+heg-long-SJ-new.out:   Total Execution time = 2.8511e+01 secs
+heg-long-SJB.out:      Total Execution time = 3.1974e+02 secs
+heg-long-SJ-dmc.out:   Total Execution time = 3.8034e+02 secs
+
+>grep 'Total Exe' *short*.out
+heg-short-NI.out:      Total Execution time = 1.3245e-01 secs
+heg-short-NI-dmc.out:  Total Execution time = 2.9920e-01 secs
+heg-short-HF.out:      Total Execution time = 2.2165e+01 secs
+heg-short-SJ.out:      Total Execution time = 4.4773e+00 secs
+heg-short-SJ-new.out:  Total Execution time = 3.4323e+00 secs
+heg-short-SJB.out:     Total Execution time = 3.3870e+01 secs
+heg-short-SJ-dmc.out:  Total Execution time = 4.2180e+01 secs

@@ -18,7 +18,7 @@
 
 
 /** @file HDFWalkerOuput.cpp
- * @breif definition  of HDFWalkerOuput  and other support class and functions
+ * @brief definition  of HDFWalkerOuput  and other support class and functions
  */
 #include "Particle/HDFWalkerOutput.h"
 #include "Utilities/IteratorUtility.h"
@@ -196,26 +196,43 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
     block = nblock;
   }
 
-  hout.write(W.WalkerOffsets,"walker_partition");
-
   number_of_walkers=W.WalkerOffsets[myComm->size()];
   hout.write(number_of_walkers,hdf::num_walkers);
 
   TinyVector<int,3> gcounts(number_of_walkers,number_of_particles,OHMMS_DIM);
-  //vector<int> gcounts(3);
-  //gcounts[0]=number_of_walkers;
-  //gcounts[1]=number_of_particles;
-  //gcounts[2]=OHMMS_DIM;
 
-  if(hout.is_collective())
-  { 
-    TinyVector<int,3> counts(W.getActiveWalkers(),            number_of_particles,OHMMS_DIM);
-    TinyVector<int,3> offsets(W.WalkerOffsets[myComm->rank()],number_of_particles,OHMMS_DIM);
-    hyperslab_proxy<BufferType,3> slab(*RemoteData[0],gcounts,counts,offsets);
-    hout.write(slab,hdf::walkers);
+  if(hout.is_parallel())
+  {
+    { // write walker offset.
+      // Though it is a small array, it needs to be written collectively in large scale runs.
+      TinyVector<int,1> gcounts(myComm->size()+1);
+      TinyVector<int,1> counts;
+      TinyVector<int,1> offsets(myComm->rank());
+      std::vector<int> myWalkerOffset;
+      if(myComm->size()-1==myComm->rank())
+      {
+        counts[0]=2;
+        myWalkerOffset.push_back(W.WalkerOffsets[myComm->rank()]);
+        myWalkerOffset.push_back(W.WalkerOffsets[myComm->size()]);
+      }
+      else
+      {
+        counts[0]=1;
+        myWalkerOffset.push_back(W.WalkerOffsets[myComm->rank()]);
+      }
+      hyperslab_proxy<std::vector<int>,1> slab(myWalkerOffset,gcounts,counts,offsets);
+      hout.write(slab,"walker_partition");
+    }
+    { // write walker configuration
+      TinyVector<int,3> counts(W.getActiveWalkers(),number_of_particles,OHMMS_DIM);
+      TinyVector<int,3> offsets(W.WalkerOffsets[myComm->rank()],0,0);
+      hyperslab_proxy<BufferType,3> slab(*RemoteData[0],gcounts,counts,offsets);
+      hout.write(slab,hdf::walkers);
+    }
   }
   else
   { //gaterv to the master and master writes it, could use isend/irecv
+    hout.write(W.WalkerOffsets,"walker_partition");
     if(myComm->size()>1)
     {
       std::vector<int> displ(myComm->size()), counts(myComm->size());
@@ -331,8 +348,3 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 }*/
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

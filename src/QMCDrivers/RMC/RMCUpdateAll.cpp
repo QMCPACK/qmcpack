@@ -83,22 +83,26 @@ namespace qmcplusplus
     if (driftoption)
       {
 	scaleDrift = true;
-	app_log () << "  Using Umrigar scaled drift\n";
+        if (omp_get_thread_num()==0)
+	  app_log () << "  Using Umrigar scaled drift\n";
 	// H.rejectedMove(W,thisWalker);
       }
     else
       {
-	app_log () << "  Using non-scaled drift\n";
+        if (omp_get_thread_num()==0)
+	  app_log () << "  Using non-scaled drift\n";
       }
 
     if (action == "DMC")
       {
 	actionType = DMC_ACTION;
-	app_log () << "  Using DMC link-action\n";
+	if (omp_get_thread_num()==0)
+          app_log () << "  Using DMC link-action\n";
       }
     else
       {
-	app_log () << "  Using Symmetrized Link-Action\n";
+        if (omp_get_thread_num()==0)
+	  app_log () << "  Using Symmetrized Link-Action\n";
       }
 
     return true;
@@ -113,7 +117,6 @@ namespace qmcplusplus
     IndexType backward = (1 + direction) / 2;
     Walker_t & curhead = W.reptile->getHead ();
     W.loadWalker (curhead, false);
-    RealType nodecorr = 1;
     if (scaleDrift == true)
       RealType nodecorr =
 	setScaledDriftPbyPandNodeCorr (m_tauovermass, curhead.G, drift);
@@ -157,7 +160,6 @@ namespace qmcplusplus
     EstimatorRealType *restrict new_headProp (W.getPropertyBase ());
 
     RealType logGb = -m_oneover2tau * Dot (fromdeltaR, fromdeltaR);
-    RealType Action_backward = -0.5 * logGb;
 
     W.reptile->saveTransProb (W, -1, logGb);
     //W.reptile->saveAction(W,-1,Action_backward);
@@ -202,13 +204,11 @@ namespace qmcplusplus
     //////////////////////////////////////////////////////////////////////////
 //      RealType tauscale = W.reptile->tauscale;
 //      W.Properties(W.reptile->Action[2])= 0.5*Tau*eloc*cutoff*tauscale;
-    RealType dS = 0;
     RealType acceptProb = 1;
     if (actionType == SYM_ACTION)
       {
 	RealType oldhead_logpsi = curhead.Properties (LOGPSI);
 	RealType oldtail_logpsi = lastbead.Properties (LOGPSI);
-	RealType newhead_logpsi = logpsi;
 	RealType newtail_logpsi = nextlastbead.Properties (LOGPSI);
 
 	RealType oldhead_e = curhead.Properties (LOCALENERGY);
@@ -281,7 +281,7 @@ namespace qmcplusplus
 	overwriteWalker.Properties (W.reptile->TransProb[backward]) =
 	  W.Properties (W.reptile->TransProb[backward]);
 	overwriteWalker.resetProperty (logpsi, Psi.getPhase (), eloc);
-	H.auxHevaluate (W, overwriteWalker);
+	H.auxHevaluate (W, overwriteWalker,true,false); //properties but not collectables.
 	H.saveProperty (overwriteWalker.getPropertyBase ());
 	overwriteWalker.Age = 0;
 	++nAccept;
@@ -324,6 +324,10 @@ namespace qmcplusplus
     for (int n = 0; n < initsteps; n++)
       advanceWalkersVMC ();
 
+  }
+
+  void RMCUpdateAllWithDrift::advanceWalker (Walker_t& thisWalker, bool recompute)
+  {
   }
 
   void RMCUpdateAllWithDrift::advanceWalkers (WalkerIter_t it,
@@ -460,7 +464,6 @@ namespace qmcplusplus
       {
 	RealType oldhead_logpsi = curhead.Properties (LOGPSI);
 	RealType oldtail_logpsi = lastbead.Properties (LOGPSI);
-	RealType newhead_logpsi = logpsi;
 	RealType newtail_logpsi = nextlastbead.Properties (LOGPSI);
 
 	RealType oldhead_e = curhead.Properties (LOCALENERGY);
@@ -561,7 +564,7 @@ namespace qmcplusplus
 	overwriteWalker.Properties (R2PROPOSED) = r2proposed;
 
 	// lastbead.Properties(R2PROPOSED)=lastbead.Properties(R2ACCEPTED)=nextlastbead.Properties(R2PROPOSED);
-	H.auxHevaluate (W, overwriteWalker);
+	H.auxHevaluate (W, overwriteWalker,true,false); //evaluate properties but not collectables.
 	H.saveProperty (overwriteWalker.getPropertyBase ());
 	overwriteWalker.Age = 0;
 
@@ -582,6 +585,10 @@ namespace qmcplusplus
 	// app_log()<<"Reject\n";
 	return;
       }
+      W.loadWalker(centerbead,true);
+      W.update(false);  //skip S(k) evaluation?  False
+      H.auxHevaluate(W,centerbead,false, true); //collectables, but not properties
+    
   }
 
   void RMCUpdateAllWithDrift::accumulate (WalkerIter_t it,

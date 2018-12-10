@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="vmc_hf_sdj_xml" series="0"/>
+
+  <include href="LiH_dimer_pp-ptcl.xml"/>
+  <include href="LiH_dimer_pp-wfsxml.xml"/>
+
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+    <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+      <pseudo elementType="H" href="H.BFD.xml"/>
+      <pseudo elementType="Li" href="Li.BFD.xml"/>
+     </pairpot>
+    <estimator type="flux" name="Flux"/>
+   </hamiltonian>
+<init source="ion0" target="e"/>
+
+
+   <qmc method="vmc" move="pbyp">
+      <parameter name="walkers"             >    1               </parameter>
+      <parameter name="blocks"              >    200              </parameter>
+      <parameter name="steps"               >    100            </parameter>
+      <parameter name="subSteps"            >    3               </parameter>
+      <parameter name="timestep"            >    0.4             </parameter>
+      <parameter name="warmupSteps"         >    50              </parameter>
+      <parameter name="samples"             >    4000            </parameter>
+   </qmc>
+
+</simulation>

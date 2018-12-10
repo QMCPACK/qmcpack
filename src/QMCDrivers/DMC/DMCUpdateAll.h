@@ -29,17 +29,18 @@ public:
   ///destructor
   ~DMCUpdateAllWithRejection();
 
-  //void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
-  //void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
+
+#if (__cplusplus >= 201103L)
+  DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection& a)=delete;
+  DMCUpdateAllWithRejection& operator=(const DMCUpdateAllWithRejection&)=delete;
+#else
 private:
   /// Copy Constructor (disabled)
-  DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection& a): QMCUpdateBase(a) {}
+  DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection &) = delete;
   /// Copy operator (disabled).
-  DMCUpdateAllWithRejection& operator=(const DMCUpdateAllWithRejection&)
-  {
-    return *this;
-  }
+  DMCUpdateAllWithRejection & operator=(const DMCUpdateAllWithRejection &) = delete;
+#endif
 };
 
 class DMCUpdateAllWithKill: public QMCUpdateBase
@@ -52,23 +53,19 @@ public:
   ///destructor
   ~DMCUpdateAllWithKill();
 
-  //void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
-  //void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
+
+#if (__cplusplus >= 201103L)
+  DMCUpdateAllWithKill(const DMCUpdateAllWithKill& a)=delete;
+  DMCUpdateAllWithKill& operator=(const DMCUpdateAllWithKill&)=delete;
+#else
 private:
   /// Copy Constructor (disabled)
-  DMCUpdateAllWithKill(const DMCUpdateAllWithKill& a): QMCUpdateBase(a) {}
+  DMCUpdateAllWithKill(const DMCUpdateAllWithKill &) = delete;
   /// Copy operator (disabled).
-  DMCUpdateAllWithKill& operator=(const DMCUpdateAllWithKill&)
-  {
-    return *this;
-  }
+  DMCUpdateAllWithKill & operator=(const DMCUpdateAllWithKill &) = delete;
+#endif
 };
 }
 
 #endif
-/***************************************************************************
- * $RCSfile: DMCUpdateAll.h,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

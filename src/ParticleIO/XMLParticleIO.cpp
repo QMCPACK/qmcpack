@@ -23,11 +23,9 @@
 #include "OhmmsData/FileUtility.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleIOUtility.h"
-//#include "ParticleIO/HDFParticleIO.h"
 #include "ParticleBase/ParticleFunctions.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -86,6 +84,8 @@ XMLParticleParser::XMLParticleParser(Particle_t& aptcl, Tensor<int,OHMMS_DIM>& t
                                      , bool donotresize):
   AssignmentOnly(donotresize),ref_(aptcl),TileMatrix(tmat)
 {
+  //add ref particle attributes
+  ref_.createAttributeList(ref_AttribList);
 }
 
 /**reading particleset node from a file
@@ -100,7 +100,6 @@ bool XMLParticleParser::put(const std::string& fname_in,
                             const std::string& fext_in)
 {
   xmlDocPtr doc=NULL;
-  xmlNsPtr ns;
   // build an XML tree from a the file;
   doc = xmlParseFile(fname_in.c_str());
   if (doc == NULL)
@@ -236,7 +235,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
   }
   ntot += nat;
   ref_.setName(pname.c_str());
-  int nloc = ref_.getLocalNum();
+  int nloc = ref_.getTotalNum();
   //treat assignment only differently
   if(AssignmentOnly)
   {
@@ -411,7 +410,8 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
     app_error() << "     <attrib name=\"aname\"  datatype=\"atype\"/>" << std::endl;
     return;
   }
-  int t_id = ref_.getAttribType(otype);
+  int t_id = ref_AttribList.getAttribType(otype);
+
   if(oname == ionid_tag)
   {
     if(otype == stringtype_tag)
@@ -432,24 +432,34 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
   }
   else
   {
+    //very permissive in that a unregistered attribute will be created and stored by ParticleSet
+    //cloning is not going to work
     if(t_id == PA_IndexType)
     {
-      ParticleAttribXmlNode<ParticleIndex_t> a(*(ref_.getIndexAttrib(oname)),utype);
+      ParticleIndex_t* obj=nullptr;
+      obj=ref_AttribList.getAttribute(otype,oname,obj);
+      ParticleAttribXmlNode<ParticleIndex_t> a(*obj,utype);
       a.put(cur,nat,nloc);
     }
     else if(t_id == PA_ScalarType)
     {
-      ParticleAttribXmlNode<ParticleScalar_t> a(*(ref_.getScalarAttrib(oname)),utype);
+      ParticleScalar_t* obj=nullptr;
+      obj=ref_AttribList.getAttribute(otype,oname,obj);
+      ParticleAttribXmlNode<ParticleScalar_t> a(*obj,utype);
       a.put(cur,nat,nloc);
     }
     else if(t_id == PA_PositionType)
     {
-      ParticleAttribXmlNode<ParticlePos_t> a(*(ref_.getVectorAttrib(oname)),utype);
+      ParticlePos_t* obj=nullptr;
+      obj=ref_AttribList.getAttribute(otype,oname,obj);
+      ParticleAttribXmlNode<ParticlePos_t> a(*obj,utype);
       a.put(cur,nat,nloc);
     }
     else if(t_id == PA_TensorType)
     {
-      ParticleAttribXmlNode<ParticleTensor_t> a(*(ref_.getTensorAttrib(oname)),utype);
+      ParticleTensor_t* obj=nullptr;
+      obj=ref_AttribList.getAttribute(otype,oname,obj);
+      ParticleAttribXmlNode<ParticleTensor_t> a(*obj,utype);
       a.put(cur,nat,nloc);
     }
   }
@@ -492,9 +502,10 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
     fxml << "<group name=\"" << SpeciesName[i] << "\"/>" << std::endl;
   }
   //only write the local particles
-  int nloc = ref_.getLocalNum();
+  int nloc = ref_.getTotalNum();
   if(olevel)
   {
+    /*
     Particle_t::PAListIterator it = ref_.first_attrib();
     while(it != ref_.last_attrib())
     {
@@ -507,15 +518,15 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
 //  	}
 // 	IonName.end_node(fxml);
 //       } else {
-      int t_id = ref_.getAttribType(ooref->typeName());
+      int t_id = ref_AttribList.getAttribType(otype);
       int o_id = ooref->id();
       ooref->begin_node(fxml);
       if(t_id == PA_IndexType)
       {
-        const ParticleIndex_t& itmp = *(ref_.getIndexAttrib(o_id));
+        const ParticleIndex_t* itmp=dynamic_cast<ParticleIndex_t*>(ooref);
         for(int iat=0; iat<nloc; iat++)
         {
-          fxml << itmp[iat] << " ";
+          fxml << (*itmp)[iat] << " ";
           if(iat%20 == 19)
             fxml << std::endl;
         }
@@ -523,10 +534,10 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
       else if(t_id == PA_ScalarType)
       {
         fxml.precision(6);
-        const ParticleScalar_t& stmp =*(ref_.getScalarAttrib(o_id));
+        const ParticleScalar_t* stmp=dynamic_cast<ParticleScalar_t*>(ooref);
         for(int iat=0; iat<nloc; iat++)
         {
-          fxml << stmp[iat] << " ";
+          fxml << (*stmp)[iat] << " ";
           if(iat%5 == 4)
             fxml << std::endl;
         }
@@ -536,25 +547,26 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
       else if (t_id == PA_PositionType)
       {
         fxml.precision(15);
-        const ParticlePos_t& rtmp =*(ref_.getVectorAttrib(o_id));
+        const ParticlePos_t* rtmp=dynamic_cast<ParticlePos_t*>(ooref);
         for(int iat=0; iat<nloc; iat++)
         {
-          fxml << rtmp[iat] << std::endl;
+          fxml << (*rtmp)[iat] << std::endl;
         }
       }
       else if (t_id == PA_TensorType)
       {
         fxml.precision(15);
-        const ParticleTensor_t& ttmp =*(ref_.getTensorAttrib(o_id));
+        const ParticleTensor_t* ttmp=dynamic_cast<ParticleTensor_t*>(ooref);
         for(int iat=0; iat<nloc; iat++)
         {
-          fxml << ttmp[iat];
+          fxml << (*ttmp)[iat];
         }
       }
       ooref->end_node(fxml);
       //      }
       it++;
     }
+    */
   }
   else
   {
@@ -677,8 +689,3 @@ xmlNodePtr XMLSaveParticle::createNode(bool addlattice)
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

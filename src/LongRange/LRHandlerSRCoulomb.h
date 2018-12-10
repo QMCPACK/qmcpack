@@ -76,6 +76,7 @@ public:
     rV_force(0), rV_energy(0), drV_force(0), rV_stress(0), drV_stress(0)
 
   {
+    LRHandlerBase::ClassName="LRHandlerSRCoulomb";
     myFunc.reset(ref);
   }
    
@@ -327,7 +328,6 @@ public:
 	  for (int dim1=0; dim1<OHMMS_DIM; dim1++)
 		for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
 		{
-		  mRealType v=0.0;
           deriv_tensor(dim1,dim2)=- evaldYkgstrain(kmag)*k[dim1]*k[dim2]/kmag; //- evaldFk_dk(kmag)*k[dim1]*k[dim2]/kmag ;
           
           if (dim1==dim2) deriv_tensor(dim1,dim2)-= evalYkgstrain(kmag); //+ derivconst;
@@ -349,7 +349,6 @@ public:
     {
 		for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
 		{
-	       mRealType v=0.0;
 
 	       deriv_tensor(dim1,dim2)=r[dim1]*r[dim2]*Sr_r;
 
@@ -444,9 +443,6 @@ private:
    */
   void InitBreakup(ParticleLayout_t& ref,int NumFunctions)
   {
-    mRealType chisqr_f=0.0;
-    mRealType chisqr_df=0.0;
-    mRealType chisqr_strain=0.0; 
     //First we send the new Lattice to the Basis, in case it has been updated.
     Basis.set_Lattice(ref);
     //Compute RC from box-size - in constructor?
@@ -629,8 +625,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 5981 $   $Date: 2013-09-17 14:47:32 -0500 (Tue, 17 Sep 2013) $
- * $Id: LRHandlerSRCoulomb.h 5981 2013-09-17 19:47:32Z jnkim $
- ***************************************************************************/

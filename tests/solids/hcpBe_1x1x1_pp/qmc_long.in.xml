@@ -56,12 +56,6 @@
             </correlation>
          </jastrow>
          <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
-            <correlation speciesA="u" speciesB="u" size="8">
-               <coefficients id="uu" type="Array">                  
-0.5086871406 0.4435499818 0.3418059659 0.232787815 0.14011401 0.07453147455 
-0.03503723166 0.01455612824
-               </coefficients>
-            </correlation>
             <correlation speciesA="u" speciesB="d" size="8">
                <coefficients id="ud" type="Array">                  
 0.7182983331 0.6061682338 0.4584182023 0.3015362926 0.1758671343 0.09837068208 

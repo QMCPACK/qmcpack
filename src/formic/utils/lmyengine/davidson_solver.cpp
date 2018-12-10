@@ -494,7 +494,7 @@ void cqmc::engine::DavidsonLMHD::add_krylov_vector(const formic::ColVec<double> 
     this -> SMatVecOp(_wv1, _wv2);
     // reduce the result vector
     formic::ColVec<double> _wv2_avg(_wv2.size());
-    formic::mpi::reduce(&_wv2.at(0), &_wv2_avg.at(0), _wv2.size(), MPI::SUM);
+    formic::mpi::reduce(&_wv2.at(0), &_wv2_avg.at(0), _wv2.size(), MPI_SUM);
     _wv2 = _wv2_avg.clone();
   }
 
@@ -511,7 +511,7 @@ void cqmc::engine::DavidsonLMHD::add_krylov_vector(const formic::ColVec<double> 
     this -> HMatVecOp(_wv1, hs);
     // reduce the result vector 
     formic::ColVec<double> hs_avg(hs.size());
-    formic::mpi::reduce(&hs.at(0), &hs_avg.at(0), hs.size(), MPI::SUM);
+    formic::mpi::reduce(&hs.at(0), &hs_avg.at(0), hs.size(), MPI_SUM);
     hs = hs_avg.clone();
     //if (my_rank == 0) {
     //  for (int i = 0; i < hs_avg.size(); i++) 
@@ -1047,9 +1047,6 @@ bool cqmc::engine::DavidsonLMHD::iterative_solve(double & eval, std::ostream & o
 
   while(true){
 
-    // average of smallest singular value 
-    double smallest_sin_val_avg = 0.0;
-
     // solve subspace eigenvalue problem on root process
     if (my_rank == 0) {
       this -> solve_subspace(true);
@@ -1105,7 +1102,6 @@ bool cqmc::engine::DavidsonLMHD::iterative_solve(double & eval, std::ostream & o
 
     // compute the residual norm and send it to all processes
     double current_residual;
-    double current_residual_avg;
 
     current_residual = _wv1.norm2();
     formic::mpi::bcast(&current_residual, 1);
@@ -1229,12 +1225,6 @@ bool cqmc::engine::DavidsonLMHD::solve(double & eval, std::ostream & output)
     // bcast tau 
     formic::mpi::bcast(&_tau, 1);
     
-    // flag to tell whether tau is converged
-    bool tau_converged = false;
-
-    // number of iteration of tau
-    int iter_tau = 0;
-
     // return value
     bool retval = false;
 

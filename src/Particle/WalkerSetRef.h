@@ -56,14 +56,11 @@ struct WalkerSetRef: public QMCTraits
     N = 0;
   }
 
-  inline int tag() const
-  {
-    return PtclRef.tag();
-  }
   inline int walkers() const
   {
     return N[Walkers];
   }
+
   inline int particles() const
   {
     return N[Particles];
@@ -107,8 +104,3 @@ struct WalkerSetRef: public QMCTraits
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

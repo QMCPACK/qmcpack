@@ -42,13 +42,7 @@ struct SymmetricDTD
   SymmetricDTD(const ParticleSet& source, const ParticleSet& target)
     : DTD_BConds<T,D,SC>(source.Lattice), DistanceTableData(source,target)
   {
-    create(1);
-  }
-
-  void create(int walkers)
-  {
-    int nw = (walkers>0)? walkers:1;
-    reset(Origin->getTotalNum(),nw);
+    reset(Origin->getTotalNum(),1);
   }
 
   inline void reset(int m, int nactive)
@@ -105,16 +99,6 @@ struct SymmetricDTD
     partial_sort(ri.begin(),ri.begin()+neighbors,ri.end());
   }
 
-
-  /** unsymmetrize dr */
-  inline void setTranspose()
-  {
-    const int n = N[SourceIndex];
-    for(int i=0,ij=0; i<n; i++)
-      for(int j=i+1; j<n; j++, ij++)
-        trans_r(i,j)=trans_r(j,i)=r_m[ij];
-  }
-
   ///evaluate the Distance Table using a set of Particle Positions
   // inline void evaluate(const WalkerSetRef& W) {
   //   int copies = W.walkers();
@@ -140,7 +124,7 @@ struct SymmetricDTD
   //   }
   // }
 
-  inline void evaluate(const ParticleSet& P)
+  inline void evaluate(ParticleSet& P)
   {
     const int n = N[SourceIndex];
     for(int i=0,ij=0; i<n; i++)
@@ -151,77 +135,28 @@ struct SymmetricDTD
     DTD_BConds<T,D,SC>::apply_bc(dr_m,r_m,rinv_m);
   }
 
-  ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew, IndexType jat)
+  inline void evaluate(ParticleSet& P, int jat)
   {
-    activePtcl=jat;
+    APP_ABORT("  No need to call SymmetricDTD::evaluate(ParticleSet& P, int jat)");
+    //based on full evaluation. Only compute it if jat==0
+    if(jat==0) evaluate(P);
+  }
+
+  ///evaluate the temporary pair relations
+  inline void move(const ParticleSet& P, const PosType& rnew)
+  {
     for(int iat=0; iat<N[SourceIndex]; ++iat)
     {
       PosType drij(rnew - P.R[iat]);
-      Temp[iat].dr1_nobox=drij;
       RealType sep=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
       Temp[iat].r1=sep;
       Temp[iat].rinv1=1.0/sep;
       Temp[iat].dr1=drij;
     }
-    //for(int iat=0; iat<jat; iat++) {
-    //  int loc = IJ[iat*N[SourceIndex]+jat];
-    //  PosType drij(rnew - P.R[iat]);
-    //  //old with static type
-    //  //RealType sep=std::sqrt(BC::apply(Origin.Lattice,drij));
-    //  RealType sep=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
-    //  Temp[iat].r1=sep;
-    //  Temp[iat].rinv1=1.0/sep;
-    //  Temp[iat].dr1=drij;
-    //  //Temp[iat].r0=r_m[loc];
-    //  //Temp[iat].rinv0=rinv_m[loc];
-    //  //Temp[iat].dr0=-1.0*dr_m[loc];
-    //}
-    //Temp[jat].reset();
-    //for(int iat=jat+1,nn=jat; iat< N[SourceIndex]; iat++) {
-    //  int loc = IJ[iat*N[SourceIndex]+jat];
-    //  PosType drij(rnew - P.R[iat]);
-    //  //old with static type
-    //  //RealType sep=std::sqrt(BC::apply(Origin.Lattice,drij));
-    //  RealType sep=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
-    //  Temp[iat].r1=sep;
-    //  Temp[iat].rinv1=1.0/sep;
-    //  Temp[iat].dr1=drij;
-    //  //Temp[iat].r0=r_m[loc];
-    //  //Temp[iat].rinv0=rinv_m[loc];
-    //  //Temp[iat].dr0=dr_m[loc];
-    //}
   }
 
-  ///evaluate the temporary pair relations
-  inline void moveby(const ParticleSet& P, const PosType& displ, IndexType iat)
+  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew)
   {
-    activePtcl=iat;
-    for(int jat=0; jat<iat; ++jat)
-      temp_dr[jat]=-1.0*(displ+dr_m[IJ[jat*N[SourceIndex]+iat]]);
-    temp_dr[iat]=0.0;
-    for(int jat=iat+1; jat< N[SourceIndex]; ++jat)
-      temp_dr[jat]=dr_m[IJ[jat*N[SourceIndex]+iat]]-displ;
-    DTD_BConds<T,D,SC>::apply_bc(temp_dr,temp_r);
-    //BC::get_min_distanceX(P.Lattice,Temp);
-    //for(int jat=0; jat<iat; ++jat)
-    //{
-    //  Temp[jat].dr1=-1.0*(displ+dr_m[IJ[jat*N[SourceIndex]+iat]]);
-    //  Temp[jat].r1=std::sqrt(BC::get_min_distance(Origin.Lattice,Temp[jat].dr1,Rmax2));
-    //  //Temp[jat].rinv1=1.0/Temp[jat].r1;
-    //}
-    //Temp[iat].reset();
-    //for(int jat=iat+1; jat< N[SourceIndex]; ++jat)
-    //{
-    //  Temp[jat].dr1=dr_m[IJ[jat*N[SourceIndex]+iat]]-displ;
-    //  Temp[jat].r1=std::sqrt(BC::get_min_distance(Origin.Lattice,Temp[jat].dr1,Rmax2));
-    //  //Temp[jat].rinv1=1.0/Temp[jat].r1;
-    //}
-  }
-
-  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat)
-  {
-    activePtcl=jat;
     for(int iat=0; iat<N[SourceIndex]; ++iat)
     {
       PosType drij(rnew - P.R[iat]);
@@ -255,8 +190,3 @@ struct SymmetricDTD
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

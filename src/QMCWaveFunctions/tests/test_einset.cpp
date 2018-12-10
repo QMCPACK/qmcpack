@@ -10,25 +10,24 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-
 #include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 
 
 #include <stdio.h>
 #include <string>
+#include <limits>
 
 using std::string;
 
@@ -41,16 +40,18 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSet ions_;
   ParticleSet elec_;
 
   ions_.setName("ion");
-  ions_.create(1);
-  ions_.R[0][0] = 2.0;
+  ions_.create(2);
+  ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
+  ions_.R[1][0] = 1.68658058;
+  ions_.R[1][1] = 1.68658058;
+  ions_.R[1][2] = 1.68658058;
 
 
   elec_.setName("elec");
@@ -93,7 +94,11 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec_.addTable(ions_);
+#ifdef ENABLE_SOA
+  elec_.addTable(ions_,DT_SOA);
+#else
+  elec_.addTable(ions_,DT_AOS);
+#endif
   elec_.resetGroups();
   elec_.update();
 
@@ -123,9 +128,106 @@ const char *particles =
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), ein1);
-  SPOSetBase *spo = einSet.createSPOSetFromXML(ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != NULL);
+
+#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
+  // due to the different ordering of bands skip the tests on CUDA+Real builds
+  // checking evaluations, reference values are not independently generated.
+  // for vgl
+  SPOSet::ValueMatrix_t psiM(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet::GradMatrix_t dpsiM(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(),spo->getOrbitalSetSize());
+  spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
+
+  // value
+  REQUIRE(psiM[1][0] == ComplexApprox(-0.8886948824).compare_real_only());
+  REQUIRE(psiM[1][1] == ComplexApprox(1.4194120169).compare_real_only());
+  // grad
+  REQUIRE(dpsiM[1][0][0] == ComplexApprox(-0.0000183403).compare_real_only());
+  REQUIRE(dpsiM[1][0][1] == ComplexApprox(0.1655139178).compare_real_only());
+  REQUIRE(dpsiM[1][0][2] == ComplexApprox(-0.0000193077).compare_real_only());
+  REQUIRE(dpsiM[1][1][0] == ComplexApprox(-1.3131694794).compare_real_only());
+  REQUIRE(dpsiM[1][1][1] == ComplexApprox(-1.1174004078).compare_real_only());
+  REQUIRE(dpsiM[1][1][2] == ComplexApprox(-0.8462534547).compare_real_only());
+  // lapl
+  REQUIRE(d2psiM[1][0] == ComplexApprox(1.3313053846).compare_real_only());
+  REQUIRE(d2psiM[1][1] == ComplexApprox(-4.712583065).compare_real_only());
+
+  // for vgh
+  SPOSet::ValueVector_t psiV(psiM[1],spo->getOrbitalSetSize());
+  SPOSet::GradVector_t dpsiV(dpsiM[1],spo->getOrbitalSetSize());
+  SPOSet::HessVector_t ddpsiV(spo->getOrbitalSetSize());
+  spo->evaluate(elec_, 1, psiV, dpsiV, ddpsiV);
+
+  // Catch default is 100*(float epsilson)
+  double eps = 2000*std::numeric_limits<float>::epsilon();
+  //hess
+  REQUIRE(ddpsiV[1](0,0) == ComplexApprox(-2.3160984034).compare_real_only());
+  REQUIRE(ddpsiV[1](0,1) == ComplexApprox(1.8089479397).compare_real_only());
+  REQUIRE(ddpsiV[1](0,2) == ComplexApprox(0.5608575749).compare_real_only());
+  REQUIRE(ddpsiV[1](1,0) == ComplexApprox(1.8089479397).compare_real_only());
+  REQUIRE(ddpsiV[1](1,1) == ComplexApprox(-0.07996207476).epsilon(eps).compare_real_only());
+  REQUIRE(ddpsiV[1](1,2) == ComplexApprox(0.5237969314).compare_real_only());
+  REQUIRE(ddpsiV[1](2,0) == ComplexApprox(0.5608575749).compare_real_only());
+  REQUIRE(ddpsiV[1](2,1) == ComplexApprox(0.5237969314).compare_real_only());
+  REQUIRE(ddpsiV[1](2,2) == ComplexApprox(-2.316497764).compare_real_only());
+
+  SPOSet::HessMatrix_t hesspsiV(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet::GGGMatrix_t d3psiV(elec_.R.size(),spo->getOrbitalSetSize());
+  spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, hesspsiV,d3psiV);
+
+ //The reference values for grad_grad_grad_psi.
+ /*
+  d3psiV(1,0)[0][0]=(0.046337127685546875,-0.046337127685546875)
+  d3psiV(1,0)[0][1]=(1.1755813360214233,-1.1755813360214233)
+  d3psiV(1,0)[0][2]=(0.066015571355819702,-0.066015541553497314)
+  d3psiV(1,0)[0][4]=(0.041470438241958618,-0.041470438241958618)
+  d3psiV(1,0)[0][5]=(-0.51674127578735352,0.51674127578735352)
+  d3psiV(1,0)[0][8]=(0.065953642129898071,-0.065953642129898071)
+  d3psiV(1,0)[1][4]=(-4.8771157264709473,4.8771157264709473)
+  d3psiV(1,0)[1][5]=(0.041532635688781738,-0.041532605886459351)
+  d3psiV(1,0)[1][8]=(1.1755810976028442,-1.1755810976028442)
+  d3psiV(1,0)[2][8]=(0.046399354934692383,-0.046399354934692383)
+ 
+  d3psiV(1,1)[0][0]=(6.7155771255493164,-7.5906991958618164)
+  d3psiV(1,1)[0][1]=(5.545051097869873,-5.0280308723449707)
+  d3psiV(1,1)[0][2]=(0.98297119140625,-0.50021600723266602)
+  d3psiV(1,1)[0][4]=(-3.1704092025756836,3.8900821208953857)
+  d3psiV(1,1)[0][5]=(-1.9537661075592041,1.7758266925811768)
+  d3psiV(1,1)[0][8]=(1.9305641651153564,-2.1480715274810791)
+  d3psiV(1,1)[1][4]=(3.605137825012207,-3.2767453193664551)
+  d3psiV(1,1)[1][5]=(-0.73825764656066895,-0.33745908737182617)
+  d3psiV(1,1)[1][8]=(5.5741839408874512,-5.0784988403320312)
+  d3psiV(1,1)[2][8]=(3.131234884262085,-1.3596141338348389)
+*/
+
+  #if 0 //Enable when finite precision issue on Rhea is found.
+  REQUIRE(d3psiV(1,0)[0][0] ==ComplexApprox(0.0463371276).compare_real_only());
+  REQUIRE(d3psiV(1,0)[0][1] ==ComplexApprox(1.1755813360).compare_real_only());
+  REQUIRE(d3psiV(1,0)[0][2] ==ComplexApprox(0.0660155713).compare_real_only());
+  REQUIRE(d3psiV(1,0)[0][4] ==ComplexApprox(0.0414704382).compare_real_only());
+  REQUIRE(d3psiV(1,0)[0][5] ==ComplexApprox(-0.5167412758).compare_real_only());
+  REQUIRE(d3psiV(1,0)[0][8] ==ComplexApprox(0.0659536421).compare_real_only());
+  REQUIRE(d3psiV(1,0)[1][4] ==ComplexApprox(-4.8771157264).compare_real_only());
+  REQUIRE(d3psiV(1,0)[1][5] ==ComplexApprox(0.0415326356).compare_real_only());
+  REQUIRE(d3psiV(1,0)[1][8] ==ComplexApprox(1.1755810976).compare_real_only());
+  REQUIRE(d3psiV(1,0)[2][8] ==ComplexApprox(0.0463993549).compare_real_only());
+  
+  REQUIRE(d3psiV(1,1)[0][0] ==ComplexApprox(6.7155771255).compare_real_only());
+  REQUIRE(d3psiV(1,1)[0][1] ==ComplexApprox(5.5450510978).compare_real_only());
+  REQUIRE(d3psiV(1,1)[0][2] ==ComplexApprox(0.9829711914).compare_real_only());
+  REQUIRE(d3psiV(1,1)[0][4] ==ComplexApprox(-3.1704092025).compare_real_only());
+  REQUIRE(d3psiV(1,1)[0][5] ==ComplexApprox(-1.9537661075).compare_real_only());
+  REQUIRE(d3psiV(1,1)[0][8] ==ComplexApprox(1.9305641651).compare_real_only());
+  REQUIRE(d3psiV(1,1)[1][4] ==ComplexApprox(3.6051378250).compare_real_only());
+  REQUIRE(d3psiV(1,1)[1][5] ==ComplexApprox(-0.7382576465).compare_real_only());
+  REQUIRE(d3psiV(1,1)[1][8] ==ComplexApprox(5.5741839408).compare_real_only());
+  REQUIRE(d3psiV(1,1)[2][8] ==ComplexApprox(3.1312348842).compare_real_only());
+  #endif
+  
+#endif
 
 #if 0
   // Dump values of the orbitals
@@ -144,7 +246,7 @@ const char *particles =
         elec_.R[0][1] = y;
         elec_.R[0][2] = z;
         elec_.update();
-        SPOSetBase::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector_t orbs(orbSize);
         spo->evaluate(elec_, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
@@ -157,6 +259,49 @@ const char *particles =
   fclose(fspo);
 #endif
 
+}
+
+TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
+{
+
+  Communicate *c;
+  OHMMS::Controller->initialize(0, NULL);
+  c = OHMMS::Controller;
+
+  ParticleSet *elec = new ParticleSet;
+
+  elec->setName("elec");
+  std::vector<int> agroup(2);
+  agroup[0] = 1;
+  agroup[1] = 1;
+  elec->create(agroup);
+  elec->R[0][0] = 0.00;
+  elec->R[0][1] = 0.0;
+  elec->R[0][2] = 0.0;
+  elec->R[1][0] = 0.0;
+  elec->R[1][1] = 1.0;
+  elec->R[1][2] = 0.0;
+
+  elec->Lattice.R = 0.0;
+  elec->Lattice.R(0,0) = 1.0;
+  elec->Lattice.R(1,1) = 1.0;
+  elec->Lattice.R(2,2) = 1.0;
+
+  EinsplineSetBuilder::PtclPoolType ptcl_map;
+  ptcl_map["e"] = elec;
+
+  xmlNodePtr cur = NULL;
+  EinsplineSetBuilder esb(*elec, ptcl_map, c, cur);
+
+  esb.SuperLattice = 0.0;
+  esb.SuperLattice(0,0) = 1.0;
+  esb.SuperLattice(1,1) = 1.0;
+  esb.SuperLattice(2,2) = 1.0;
+
+  REQUIRE(esb.CheckLattice());
+
+  esb.SuperLattice(0,0) = 1.1;
+  REQUIRE_FALSE(esb.CheckLattice());
 }
 }
 

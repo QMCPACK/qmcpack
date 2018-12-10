@@ -24,13 +24,95 @@
 namespace qmcplusplus
 {
 
-//   struct XMLParticleBase {
-//     static std::string root_tag;
-//     static std::string attrib_tag;
-//     static std::string datatype_tag;
-//     static std::string condition_tag;
-//     static std::string size_tag;
-//   };
+class AttribListType: public ParticleTags
+{
+  std::map<std::string,int>             AttribTypeMap;
+  std::map<std::string,OhmmsObject*>    AttribList;
+  ///** objects created by getXYZAttrib(aname) */
+  //std::vector<OhmmsObject*>             AllocatedList;
+
+  public:
+
+  AttribListType()
+  {
+    //map[type-name] to enum
+    AttribTypeMap[ParticleTags::indextype_tag]  = PA_IndexType;
+    AttribTypeMap[ParticleTags::scalartype_tag] = PA_ScalarType;
+    AttribTypeMap[ParticleTags::stringtype_tag] = PA_StringType;
+    AttribTypeMap[ParticleTags::postype_tag]    = PA_PositionType;
+    AttribTypeMap[ParticleTags::tensortype_tag] = PA_TensorType;
+  }
+
+  /*
+  ~AttribListType()
+  {
+    for(int i=0; i<AllocatedList.size(); i++)
+      delete AllocatedList[i];
+  }
+  */
+
+  /** add ParticleAttrib<AT>
+   * @tparm AT any element type, int, double, float ...
+   */
+  template<typename AT>
+    int add(ParticleAttrib<AT>& pa)
+  {
+    int oid=AttribList.size();
+    std::map<std::string,OhmmsObject*>::iterator it= AttribList.find(pa.objName());
+    if(it == AttribList.end())
+    {
+      AttribList[pa.objName()]=&pa;
+      pa.setID(oid);
+    }
+    else
+    {
+      oid=(*it).second->id();
+    }
+    return oid;
+  }
+
+  ///return a type id: one of the enum values
+  inline int getAttribType(const std::string& tname)
+  {
+    return AttribTypeMap[tname];
+  }
+
+  /** generic get function attribute function
+   * @param tname attribute type name
+   * @param oname attribute name
+   * @param pa pointer to ParticleAttrib<AT>*
+   * @return pointer to the attribute
+   */
+  template<typename AT>
+    ParticleAttrib<AT>* getAttribute(const std::string& tname, const std::string& oname, ParticleAttrib<AT>*  pa)
+  {
+    typedef ParticleAttrib<AT> attrib_type;
+    int oid=AttribList.size();
+    std::map<std::string,OhmmsObject*>::iterator it= AttribList.find(oname);
+    if(it != AttribList.end())
+    {
+      OhmmsObject* o=(*it).second;
+      return dynamic_cast<attrib_type*>(o);
+    }
+    else
+    {
+      APP_ABORT("AttribListType::getAttribute Unknown attribute "+oname+"\n");
+      /*
+      if(pa == nullptr) //only
+      {
+        pa=new attrib_type(tname,oname);
+        pa->resize(LocalNum);
+        pa->setID(AttribList.size());
+
+        AllocatedList.push_back(pa);
+        AttribList[oname]=pa;
+      }
+      */
+    }
+    return pa;
+  }
+
+};
 
 class XMLParticleParser: public ParticleTags
 {
@@ -43,6 +125,7 @@ class XMLParticleParser: public ParticleTags
 
   bool AssignmentOnly;
   Particle_t& ref_;
+  AttribListType ref_AttribList;
   Tensor<int,OHMMS_DIM>& TileMatrix;
 
   bool putSpecial(xmlNodePtr cur);
@@ -86,6 +169,7 @@ class XMLSaveParticle:
   typedef Particle_t::ParticleTensor_t ParticleTensor_t;
 
   Particle_t& ref_;
+  AttribListType ref_AttribList;
   std::string FileRoot;
   std::vector<std::string> SpeciesName;
 
@@ -114,8 +198,3 @@ private:
 
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

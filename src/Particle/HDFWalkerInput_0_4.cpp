@@ -126,7 +126,11 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
     FileStack.pop();
     std::string h5name(FileName);
     //success |= read_hdf5_scatter(h5name);
+#ifdef ENABLE_PHDF5
+    success |= read_phdf5(h5name);
+#else
     success |= read_hdf5(h5name);
+#endif
   }
   return success;
 #endif
@@ -286,55 +290,94 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter( std::string h5name)
 
 bool HDFWalkerInput_0_4::read_phdf5( std::string h5name)
 {
-//Broken
-//#if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
-//  hin.read(aversion,hdf::version);
-//  int found_group=hin.is_group(hdf::main_state);
-//  if(!found_group)
-//    continue;
-//  //start main_state
-//  hin.push(hdf::main_state);
-//  int nw_in=0;
-//  hin.read(nw_in,hdf::num_walkers);
-//  std::vector<int> woffsets(myComm->size()+1,0);
-//  FairDivideLow(nw_in,myComm->size(),woffsets);
-//  int mynode=myComm->rank();
-//  int nw_loc=woffsets[mynode+1]-woffsets[mynode];
-//  std::cout << "node =" << mynode << " nw_loc=" << nw_loc << " nw_in=" << nw_in << std::endl;
-//  //TinyVector<hsize_t,3> gcounts, counts, offset;
-//  hsize_t gcounts[3], counts[3], offset[3];
-//  gcounts[0]=nw_in;
-//  gcounts[1]=targetW.getTotalNum();
-//  gcounts[2]=OHMMS_DIM;
-//  counts[0]=nw_loc;
-//  counts[1]=targetW.getTotalNum();
-//  counts[2]=OHMMS_DIM;
-//  offset[0]=woffsets[mynode];
-//  offset[1]=0;
-//  offset[2]=0;
-//  int nitems=targetW.getTotalNum()*OHMMS_DIM;
-//  typedef std::vector<QMCTraits::RealType>  Buffer_t;
-//  Buffer_t posin(nw_loc*nitems);
-//  hid_t dataset = H5Dopen(hin.top(),hdf::walkers);
-//  hid_t dataspace = H5Dget_space(dataset);
-//  int rank_n = H5Sget_simple_extent_ndims(dataspace);
-//  int status_n = H5Sget_simple_extent_dims(dataspace, gcounts, NULL);
-//  hid_t type_id=get_h5_datatype(posin[0]);
-//  hid_t memspace = H5Screate_simple(3, counts, NULL);
-//  herr_t status = H5Sselect_hyperslab(dataspace,H5S_SELECT_SET, offset,NULL,counts,NULL);
-//  status = H5Dread(dataset, type_id, memspace, dataspace, hin.xfer_plist, &posin[0]);
-//  H5Sclose(dataspace);
-//  H5Sclose(memspace);
-//  H5Dclose(dataset);
-//  int curWalker = targetW.getActiveWalkers();
-//  targetW.createWalkers(nw_loc);
-//  Buffer_t::iterator it(posin.begin());
-//  for(int i=0,iw=curWalker; i<nw_loc; ++i,++iw)
-//  {
-//    copy(it,it+nitems,get_first_address(targetW[iw]->R));
-//    it += nitems;
-//  }
-//#endif
+
+  int nw_in=0;
+  h5name.append(hdf::config_ext);
+  std::vector<int> woffsets;
+  int woffsets_size;
+  bool success;
+
+  { // handle small dataset with master rank
+    hdf_archive hin(myComm,false);
+    if(!myComm->rank())
+    {
+      success=hin.open(h5name,H5F_ACC_RDONLY);
+      //check if hdf and xml versions can work together
+      HDFVersion aversion;
+
+      hin.read(aversion,hdf::version);
+      if(!(aversion < i_info.version))
+      {
+        int found_group=hin.is_group(hdf::main_state);
+        hin.push(hdf::main_state);
+        hin.read(nw_in,hdf::num_walkers);
+        if(nw_in==0)
+        {
+          app_error() << " No walkers in " << h5name << std::endl;
+          success=false;
+        }
+      }
+      else
+      {
+        app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << std::endl;
+        success=false;
+      }
+    }
+    mpi::bcast(*myComm,success);
+    if(!success) return false;
+
+    // load woffsets by master
+    // can not read collectively since the size may differ from Nranks+1.
+    if(!myComm->rank())
+    {
+      hin.read(woffsets,"walker_partition");
+      woffsets_size = woffsets.size();
+      assert(woffsets[woffsets_size-1] == nw_in);
+    }
+
+    mpi::bcast(*myComm,woffsets_size);
+    woffsets.resize(woffsets_size);
+    mpi::bcast(*myComm,woffsets.data(),woffsets_size);
+    nw_in = woffsets[woffsets_size-1];
+  }
+
+  hdf_archive hin(myComm,true); //everone reads this
+  success=hin.open(h5name,H5F_ACC_RDONLY);
+  int found_group=hin.is_group(hdf::main_state);
+  hin.push(hdf::main_state);
+
+  typedef std::vector<QMCTraits::RealType>  Buffer_t;
+  Buffer_t posin;
+  TinyVector<int,3> dims(nw_in,targetW.getTotalNum(), OHMMS_DIM);
+
+  if(woffsets.size()!=myComm->size()+1)
+  {
+    woffsets.resize(myComm->size()+1,0);
+    FairDivideLow(nw_in,myComm->size(),woffsets);
+  }
+
+  int nw_loc=woffsets[myComm->rank()+1]-woffsets[myComm->rank()];
+
+  TinyVector<int,3> counts(nw_loc, targetW.getTotalNum(), OHMMS_DIM);
+  TinyVector<int,3> offsets(woffsets[myComm->rank()], 0, 0);
+  posin.resize(nw_loc*dims[1]*dims[2]);
+
+  hyperslab_proxy<Buffer_t,3> slab(posin, dims, counts, offsets);
+  hin.read(slab,hdf::walkers);
+
+  app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
+  nw_in=woffsets[myComm->rank()+1]-woffsets[myComm->rank()];
+  {
+    int nitems=targetW.getTotalNum()*OHMMS_DIM;
+    int curWalker = targetW.getActiveWalkers();
+    targetW.createWalkers(nw_in);
+    Buffer_t::iterator it(posin.begin());
+    for(int i=0,iw=curWalker; i<nw_in; ++i,++iw)
+    {
+      copy(it,it+nitems,get_first_address(targetW[iw]->R));
+      it += nitems;
+    }
+  }
   return true;
 }
 bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
@@ -470,8 +513,3 @@ bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2303 $   $Date: 2007-11-19 13:25:50 -0600 (Mon, 19 Nov 2007) $
- * $Id: HDFWalkerInput_0_4.cpp 2303 2007-11-19 19:25:50Z jnkim $
- ***************************************************************************/

@@ -81,7 +81,7 @@ struct LatticeAnalyzer<T,3>
   inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,3>& a)
   {
     T rMin = 0.5*std::numeric_limits<T>::max();
-    if(mySC == SUPERCELL_BULK) //bulk type
+    if(mySC == SUPERCELL_BULK || mySC == SUPERCELL_BULK+SOA_OFFSET) //bulk type
     {
       for (int i=-1; i<=1; i++)
         for (int j=-1; j<=1; j++)
@@ -92,7 +92,7 @@ struct LatticeAnalyzer<T,3>
               rMin=std::min(rMin,dot(L,L));
             }
     }
-    else if(mySC == SUPERCELL_SLAB)//slab type
+    else if(mySC == SUPERCELL_SLAB || mySC == SUPERCELL_SLAB+SOA_OFFSET)//slab type
     {
       for (int i=-1; i<=1; i++)
         for (int j=-1; j<=1; j++)
@@ -102,7 +102,7 @@ struct LatticeAnalyzer<T,3>
             rMin=std::min(rMin,dot(L,L));
           }
     }
-    else if(mySC == SUPERCELL_WIRE)//wire
+    else if(mySC == SUPERCELL_WIRE || mySC == SUPERCELL_WIRE+SOA_OFFSET)//wire
     {
       rMin=dot(a[0],a[0]);
     }
@@ -116,9 +116,9 @@ struct LatticeAnalyzer<T,3>
     //{
     for (int i=0; i<3; ++i)
     {
-      SingleParticlePos_t A = a(i);
-      SingleParticlePos_t B = a((i+1)%3);
-      SingleParticlePos_t C = a((i+2)%3);
+      SingleParticlePos_t A = a[i];
+      SingleParticlePos_t B = a[(i+1)%3];
+      SingleParticlePos_t C = a[(i+2)%3];
       SingleParticlePos_t BxC = cross(B,C);
       T dist = 0.5*std::abs(dot(A,BxC))/std::sqrt(dot(BxC,BxC));
       scr = std::min(scr, dist);
@@ -279,7 +279,7 @@ struct LatticeAnalyzer<T,1>
 template<typename T>
 inline bool found_shorter_base(TinyVector<TinyVector<T,3>,3>& rb)
 {
-  const T eps=10.0*std::numeric_limits<float>::epsilon();
+  const T eps=10.0*std::numeric_limits<T>::epsilon();
   int imax=0;
   T r2max=dot(rb[0],rb[0]);
   for(int i=1; i<3; i++)
@@ -291,6 +291,10 @@ inline bool found_shorter_base(TinyVector<TinyVector<T,3>,3>& rb)
       imax=i;
     }
   }
+
+  T rmax = std::sqrt(r2max);
+  T tol = 2.0*rmax*eps; //Error propagation for x^2
+
   TinyVector<TinyVector<T,3>,4> rb_new;
   rb_new[0]=rb[0]+rb[1]-rb[2];
   rb_new[1]=rb[0]+rb[2]-rb[1];
@@ -299,7 +303,7 @@ inline bool found_shorter_base(TinyVector<TinyVector<T,3>,3>& rb)
   for(int i=0; i<4; ++i)
   {
     T r2=dot(rb_new[i],rb_new[i]);
-    if((r2-r2max) < -eps)
+    if((r2-r2max) < -tol)
     {
       rb[imax]=rb_new[i];
       return true;
@@ -310,7 +314,9 @@ inline bool found_shorter_base(TinyVector<TinyVector<T,3>,3>& rb)
 template<typename T>
 inline void find_reduced_basis(TinyVector<TinyVector<T,3>,3>& rb)
 {
-  do
+  int maxIter=10000;
+ 
+  for(int count=0; count<maxIter; count++)
   {
     TinyVector<TinyVector<T,3>,3> saved(rb);
     bool changed=false;
@@ -325,13 +331,8 @@ inline void find_reduced_basis(TinyVector<TinyVector<T,3>,3>& rb)
     if(!changed && !found_shorter_base(rb))
       return;
   }
-  while(1);
+  
 }
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1189 $   $Date: 2006-07-17 10:08:11 -0500 (Mon, 17 Jul 2006) $
- * $Id: DistanceTable.cpp 1189 2006-07-17 15:08:11Z jnkim $
- ***************************************************************************/

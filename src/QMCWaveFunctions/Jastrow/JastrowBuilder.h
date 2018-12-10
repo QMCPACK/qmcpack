@@ -15,7 +15,7 @@
     
 #ifndef QMCPLUSPLUS_GENERALIZED_JASTROWBUILDER_H
 #define QMCPLUSPLUS_GENERALIZED_JASTROWBUILDER_H
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus
 {
@@ -24,7 +24,7 @@ class OrbitalConstraintsBase;
 
 /** Jastrow Jastrow Builder with constraints
  */
-class JastrowBuilder: public OrbitalBuilderBase
+class JastrowBuilder: public WaveFunctionComponentBuilder
 {
 
 public:
@@ -56,8 +56,6 @@ private:
   bool addOneBody(xmlNodePtr cur);
   ///add two-body term
   bool addTwoBody(xmlNodePtr cur);
-  ///add three-body term
-  bool addThreeBody(xmlNodePtr cur);
   /// add electron-electron ion term
   bool add_eeI (xmlNodePtr cur);
   ///add k-Space term
@@ -66,8 +64,3 @@ private:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1666 $   $Date: 2007-01-30 13:00:15 -0600 (Tue, 30 Jan 2007) $
- * $Id: JastrowBuilder.h 1666 2007-01-30 19:00:15Z jnkim $
- ***************************************************************************/

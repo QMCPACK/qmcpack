@@ -36,7 +36,7 @@ public:
 
   ~CSVMCUpdatePbyP();
 
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
 };
@@ -56,15 +56,10 @@ public:
 
   ~CSVMCUpdatePbyPWithDriftFast();
 
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
 };
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1592 $   $Date: 2007-01-04 16:48:00 -0600 (Thu, 04 Jan 2007) $
- * $Id: CSVMCUpdatePbyP.h 1592 2007-01-04 22:48:00Z jnkim $
- ***************************************************************************/

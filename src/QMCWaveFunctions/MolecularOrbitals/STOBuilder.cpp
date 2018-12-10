@@ -9,8 +9,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
 namespace qmcplusplus
 {
@@ -50,8 +50,3 @@ STOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

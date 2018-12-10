@@ -9,7 +9,7 @@
 \hline
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{targetwalkers             } &  integer  & $> 0$ & dep.   & number of walkers per node  \\
+   &   \texttt{targetwalkers             } &  integer  & $> 0$ & dep.   & overall total number of walkers \\
    &   \texttt{blocks              } &  integer  & $\ge 0$ & 1   & number of blocks            \\
    &   \texttt{steps               } &  integer  & $\ge 0$ & 1   & number of steps per block   \\
    &   \texttt{warmupsteps         } &  integer  & $\ge 0$ & 0   & number of steps for warming up\\
@@ -34,10 +34,10 @@
    &   \texttt{sigmaBound          } &  double  & $\ge 0$  & 10   & parameter to cutoff large weights  \\
    &   \texttt{killnode            } &  string  & yes/other & no   & kill or reject walkers that cross nodes  \\
   % &   \texttt{benchmark           } &  string  & $\ge 0$ & 0   & number of sample \\
-   &   \texttt{reconfiguration     } &  string  & yes/pure/other & no   & fixed population t:qechnique  \\
+   &   \texttt{reconfiguration     } &  string  & yes/pure/other & no   & fixed population technique  \\
    &   \texttt{branchInterval      } &  integer  & $\ge 0$ & 1   & branching interval \\
    &   \texttt{substeps            } &  integer  & $\ge 0$ & 1   & branching interval \\
-   &   \texttt{nonlocalmoves       } &  string  & yes/other & no   & run with tmoves  \\
+   &   \texttt{nonlocalmoves       } &  string  & yes,no,v0,v1,v3 & no   & run with T-moves  \\
    &   \texttt{scaleweight         } &  string  & yes/other & yes   & scale weights (CUDA only)  \\
    &   \texttt{MaxAge              } &  double  & $\ge 0$ & 10   & kill persistent walkers  \\
     &   \texttt{MaxCopy             } &  double  & $\ge 0$ &2   & limit population growth \\
@@ -46,6 +46,7 @@
  %  &   \texttt{wlen                } &  integer  & $\ge 0$ & 0   & number of samples per  thread  \\
    &   \texttt{maxDisplSq      } &  real  & all values & -1   & maximum particle move  \\
    &   \texttt{storeconfigs        } &  integer  & all values & 0   & store configurations  \\
+   &   \texttt{use\_nonblocking    } &  string  & yes/no & yes   & using non-blocking send/recv \\
    &   \texttt{blocks\_between\_recompute} &  integer  & $\ge 0$ & dep.  & wavefunction recompute frequency  \\
   \hline
 \end{tabularx}
@@ -79,15 +80,15 @@ where $N$ is the current population.
 
 \item \texttt{refEnergy}. The default reference energy is taken from the VMC run that precedes the DMC run. This value is updated to the current mean whenever branching happens.
 
-\item \texttt{feedback}. Variable used to determine how strong to react to population fluctutations when doing population control.  See the equation in energyUpdateInterval for more details.
+\item \texttt{feedback}. Variable used to determine how strong to react to population fluctuations when doing population control.  See the equation in energyUpdateInterval for more details.
 
 \item \texttt{useBareTau}. The same time step is used whether a move is rejected to not. The default is to use an effective time step when a move is rejected.
 
 \item \texttt{warmupByReconfiguration}.  Warmup DMC is done with a fixed population
 
-\item \texttt{sigmaBound }.  Determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
+\item \texttt{sigmaBound}.  Determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
 
-\item \texttt{killnode }.  When running fixed-node, if a walker attempts to cross a node, the move will normally be rejected.  If killnode = "yes", then walkers are destroyed when they cross a node.
+\item \texttt{killnode}.  When running fixed-node, if a walker attempts to cross a node, the move will normally be rejected.  If killnode = "yes", then walkers are destroyed when they cross a node.
 
 %\item \texttt{benchmark}. 
 
@@ -98,7 +99,15 @@ where $N$ is the current population.
 \item \texttt{substeps}.  Same as BranchInterval.
 
 
-\item \texttt{nonlocalmoves}. DMC driver for running Hamiltonians with non-local moves.  An typical usage is to simulate Hamitonians with non-local psuedopotentials with T-Moves.  Setting this equal to false will impose the locality approximation.
+\item \texttt{nonlocalmoves}. Evaluate pseudopotentials using one of the nonlocal move algorithms such as T-moves.
+\begin{itemize}
+\item no(default): imposes the locality approximation.
+\item yes/v0: implements the algorithm in the 2006 Casula paper~\cite{Casula2006}
+\item v1: implements the v1 algorithm in the 2010 Casula paper~\cite{Casula2010}.
+\item v2: is \textbf{not implemented} and \textbf{skipped} due to the existence of the v2 algorithm in the 2010 Casula paper~\cite{Casula2010}.
+\item v3: implements an algorithm similar to v1 but is much faster. v1 computes the transition probability before each single electron T-move selection due to the acceptance of previous T-moves. v3 reuses the transition probability computed in non-local pseudopotentials, namely before accepting any T-moves. This is an approximation to v1, and results in a different time step error, but significantly reduces the computational cost. v1 and v3 agrees at zero time step.
+\end{itemize}
+The v1 and v3 algorithms are size-consistent and important advances over the previous v0 non-size-consistent algorithm. Investigating the importance of size consistency is highly recommended.
 
 \item \texttt{scaleweight}. Scaling weight per Umrigar/Nightengale.  CUDA only.
 
@@ -108,9 +117,9 @@ where $N$ is the current population.
 
 \item \texttt{fastgrad}. Calculates gradients with either the fast version or the full-ratio version.
 
-\item \texttt{maxDisplSq }.  When running a DMC calculation with particle by particle, this sets the maximum displacement allowed for a single particle move.  All distance displacements larger than the max is rejected.  If initialized to a negative value, it becomes equal to Lattice(LR/rc).
+\item \texttt{maxDisplSq}.  When running a DMC calculation with particle by particle, this sets the maximum displacement allowed for a single particle move.  All distance displacements larger than the max is rejected.  If initialized to a negative value, it becomes equal to Lattice(LR/rc).
 
-\item \texttt{sigmaBound }.  Determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
+\item \texttt{sigmaBound}.  Determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
 
 %\item \texttt{rewind}. \textit{This input is recorded by QMCDriver.cpp, but is never used anywhere else.}
 
@@ -147,7 +156,7 @@ where $N$ is the current population.
 
 \end{itemize}
 
-\begin{lstlisting}[caption=The following is an example of a very simple DMC section. ]
+\begin{lstlisting}[style=XML,caption=The following is an example of a very simple DMC section. ]
   <qmc method="dmc" move="pbyp" target="e">
     <parameter name="blocks">100</parameter>
     <parameter name="steps">400</parameter>
@@ -159,25 +168,25 @@ The time step should be adjusted for each problem individually.  Please refer to
 on diffusion Monte Carlo.
 
 
-\begin{lstlisting}[caption=The following is an example of running a simulation that can be restarted . ]
-  <qmc method="dmc" move="pbyp"  checkpoint="0" dumpconfig="5">
+\begin{lstlisting}[style=XML,caption=The following is an example of running a simulation that can be restarted . ]
+  <qmc method="dmc" move="pbyp"  checkpoint="0">
     <parameter name="timestep">         0.004  </parameter>
     <parameter name="blocks">           100   </parameter>
     <parameter name="steps">            400    </parameter>
   </qmc>
 \end{lstlisting}
-The flags checkpoint and dumpconfig instructs qmcpack to output walker configurations.  This also
-works in variational Monte Carlo.  This will output an h5 file with the name "projectid"."run-number".config.h5.
+The checkpoint flag instructs qmcpack to output walker configurations.  This also
+works in Variational Monte Carlo.  This will output an h5 file with the name "projectid"."run-number".config.h5.
 Check that this file exists before attempting a restart.
 To read in this file for a continuation run, specify the following:
-\begin{lstlisting}[caption=Restart (read wakers from previous run) ]
+\begin{lstlisting}[caption=Restart (read walkers from previous run) ]
  <mcwalkerset fileroot="BH.s002" version="0 6" collected="yes"/>
 \end{lstlisting}
-where, BH is the project id and s002 is the calculation number to read in the walkers from the previous run.\\
+BH is the project id and s002 is the calculation number to read in the walkers from the previous run.\\
 
-Combining VMC and DMC in a single run (and wave function optimization can be combined in this way too) is the standard way in which QMCPACK is typical run.   There is no need to run two separate jobs, as method sections can be stacked, and walkers are transfered between them.
+Combining VMC and DMC in a single run (and wave function optimization can be combined in this way too) is the standard way in which QMCPACK is typical run.   There is no need to run two separate jobs, as method sections can be stacked, and walkers are transferred between them.
 
-\begin{lstlisting}[caption=Combined VMC and DMC run ]
+\begin{lstlisting}[style=XML,caption=Combined VMC and DMC run ]
   <qmc method="vmc" move="pbyp" target="e">
     <parameter name="blocks">100</parameter>
     <parameter name="steps">4000</parameter>

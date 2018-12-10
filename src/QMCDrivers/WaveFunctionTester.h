@@ -51,7 +51,8 @@ public:
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      ParticleSetPool& ptclPool,
-                     WaveFunctionPool& ppool);
+                     WaveFunctionPool& ppool,
+                     Communicate* comm);
 
   ~WaveFunctionTester();
 
@@ -67,16 +68,15 @@ private:
   double deltaParam;
   double toleranceParam;
   bool outputDeltaVsError;
+  bool checkSlaterDet; // flag to perform determinant-resolved test of SlaterDet
+  std::string checkSlaterDetOption;
   FiniteDiffErrData DeltaVsError;
  
   /// Copy Constructor (disabled)
-  WaveFunctionTester(const WaveFunctionTester& a):
-    QMCDriver(a), PtclPool(a.PtclPool) { }
+  WaveFunctionTester(const WaveFunctionTester &) = delete;
   /// Copy Operator (disabled)
-  WaveFunctionTester& operator=(const WaveFunctionTester&)
-  {
-    return *this;
-  }
+  WaveFunctionTester & operator=(const WaveFunctionTester &) = delete;
+
   /** basic tests for G and L */
   void runBasicTest();
   /** the basic ratios check */
@@ -118,8 +118,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -308,8 +308,3 @@ inline T dot_imag(const TinyVector<std::complex<T>,D>& v1, const TinyVector<T,D>
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 4479 $   $Date: 2009-12-09 17:58:57 -0600 (Wed, 09 Dec 2009) $
- * $Id: scalar_traits.h 4479 2009-12-09 23:58:57Z jeongnim.kim $
- ***************************************************************************/

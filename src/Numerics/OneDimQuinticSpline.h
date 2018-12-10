@@ -73,7 +73,7 @@ public:
     int n = nv.size();
     m_Y.resize(nv.size());
     m_Y2.resize(nv.size());
-    copy(nv.begin(), nv.end(), m_Y.data());
+    std::copy(nv.begin(), nv.end(), m_Y.data());
     B.resize(n);
     D.resize(n);
     E.resize(n);
@@ -240,8 +240,3 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 4522 $   $Date: 2010-01-14 18:57:25 -0800 (Thu, 14 Jan 2010) $
- * $Id: OneDimQuinticSpline.h 4522 2010-01-15 02:57:25Z jeongnim.kim $
- ***************************************************************************/

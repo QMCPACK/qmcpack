@@ -4,14 +4,11 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /** @file VirtualParticleSet.h
@@ -28,51 +25,39 @@ namespace qmcplusplus
 
   /** Introduced to handle virtual moves and ratio computations, e.g. for non-local PP evaluations.
    */
-  class VirtualParticleSet:  public ParticleSet
+  class VirtualParticleSet: public ParticleSet
   {
-    /// ParticleSet this object refers to
-    const ParticleSet* myPtcl;
-    /** initialize minimum data
-     *
-     * Create DistTables of AB type
-     */
-    void init_minimum(int np);
-    public:
+    private:
+    /// true, if virtual particles are on a sphere for NLPP
+    bool onSphere;
 
-    std::vector<ValueType> ratios;
+    public:
+    /// Reference particle
+    int refPtcl;
+    /// Reference source particle, used when onSphere=true
+    int refSourcePtcl;
+
+    /// ParticleSet this object refers to
+    const ParticleSet& refPS;
+
+    inline bool isOnSphere() const
+    {
+      return onSphere;
+    }
+
     /** constructor 
      * @param p ParticleSet whose virtual moves are handled by this object
      * @param nptcl number of virtual particles
      */
-    VirtualParticleSet(ParticleSet* p, int nptcl=0);
+    VirtualParticleSet(const ParticleSet& p, int nptcl);
 
-    ~VirtualParticleSet();
-
-    /** move the iat-th particle of myPtcl by multiple displacements
-     *
-     * DistTables[0]=dist(myPtcl,this)
-     * DistTables[other]=dist(other,this)
+    /** move virtual particles to new postions and update distance tables
+     * @param jel reference particle that all the VP moves from
+     * @param vitualPos new positions
+     * @param sphere set true if VP are on a sphere around the reference source particle
+     * @param iat reference source particle
      */
-    void makeMoves(int iat, const ParticlePos_t& displ);
-
-    void validate(int iel, int k);
-
-    inline const DistanceTableData* getVirtualTable(int i) const
-    {
-      return DistTables[i];
-    }
-
-    inline const DistanceTableData* getRealTable(int i) const
-    {
-      return myPtcl->DistTables[i];
-    }
-
-    void reset(const ParticleSet* p);
+    void makeMoves(int jel, const ParticlePos_t& vitualPos, bool sphere=false, int iat=-1);
   };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jtkrogel $
- * $Revision: 5985 $   $Date: 2013-09-27 17:08:27 -0400 (Fri, 27 Sep 2013) $
- * $Id: ParticleSet.h 5985 2013-09-27 21:08:27Z jtkrogel $
- ***************************************************************************/

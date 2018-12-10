@@ -24,11 +24,10 @@
 #include "Message/Communicate.h"
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Utilities/OhmmsInform.h"
 #include "LongRange/StructFact.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Numerics/DeterminantOperators.h"
@@ -43,10 +42,12 @@ namespace qmcplusplus
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
-                                       ParticleSetPool &ptclPool, WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
+                                       ParticleSetPool &ptclPool,
+                                       WaveFunctionPool& ppool,
+                                       Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
   PtclPool(ptclPool), wftricks("no"),checkEloc("no"), checkBasic("yes"), checkRatioV("no"),
-  deltaParam(0.0), toleranceParam(0.0)
+  deltaParam(0.0), toleranceParam(0.0), outputDeltaVsError(false), checkSlaterDet(true)
 {
   m_param.add(checkRatio,"ratio","string");
   m_param.add(checkClone,"clone","string");
@@ -58,6 +59,7 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
   m_param.add(checkRatioV,"virtual_move","string");
   m_param.add(deltaParam,"delta","none");
   m_param.add(toleranceParam,"tolerance","none");
+  m_param.add(checkSlaterDetOption,"sd","string");
 
   deltaR.resize(w.getTotalNum());
   makeGaussRandom(deltaR);
@@ -96,9 +98,10 @@ WaveFunctionTester::run()
   app_log() << "Starting a Wavefunction tester.  Additional information in "  << fname << std::endl;
 
   put(qmcNode);
+  if (checkSlaterDetOption=="no") checkSlaterDet = false;
   if (checkRatio == "yes")
   {
-    runRatioTest();
+    //runRatioTest();
     runRatioTest2();
   }
   else if (checkClone == "yes")
@@ -144,12 +147,6 @@ void WaveFunctionTester::runCloneTest()
     TrialWaveFunction *psi_clone = Psi.makeClone(*w_clone);
     QMCHamiltonian *h_clone = H.makeClone(*w_clone,*psi_clone);
     h_clone->setPrimary(false);
-    IndexType nskipped = 0;
-    RealType sig2Enloc=0, sig2Drift=0;
-    RealType delta = 0.00001;
-    RealType delta2 = 2*delta;
-    ValueType c1 = 1.0/delta/2.0;
-    ValueType c2 = 1.0/delta/delta;
     int nat = W.getTotalNum();
     MCWalkerConfiguration::PropertyContainer_t Properties;
     //pick the first walker
@@ -168,17 +165,23 @@ void WaveFunctionTester::runCloneTest()
     app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << std::endl;
     app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << std::endl;
     app_log() << "Testing pbyp functions " << std::endl;
-    Walker_t::Buffer_t &wbuffer(awalker->DataSet);
+    Walker_t::WFBuffer_t &wbuffer(awalker->DataSet);
     wbuffer.clear();
     app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
-    //W.registerData(wbuffer);
-    logpsi1=Psi.registerData(W,wbuffer);
+    Psi.registerData(W,wbuffer);
+    wbuffer.allocate();
+    Psi.copyFromBuffer(W,wbuffer);
+    Psi.evaluateLog(W);
+    logpsi1 = Psi.updateBuffer(W,wbuffer,false);
     eloc1= H.evaluate(W);
     app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
     wbuffer.clear();
     app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
-    //w_clone->registerData(wbuffer);
-    logpsi2=psi_clone->registerData(W,wbuffer);
+    psi_clone->registerData(W,wbuffer);
+    wbuffer.allocate();
+    Psi.copyFromBuffer(W,wbuffer);
+    Psi.evaluateLog(W);
+    logpsi2 = Psi.updateBuffer(W,wbuffer,false);
     eloc2= H.evaluate(*w_clone);
     app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
     app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << std::endl;
@@ -581,8 +584,8 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
     W.R[it->index] = it->r;
     W.update();
     RealType logpsi0 = Psi.evaluateLog(W);
-    RealType phase0 = Psi.getPhase();
 #if defined(QMC_COMPLEX)
+    RealType phase0 = Psi.getPhase();
     ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
 #else
     ValueType logpsi = logpsi0;
@@ -744,15 +747,15 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
   // TODO - adjust delta and tolerance based on precision of wavefunction
 
   bool all_okay = checkGradients(0, nat, G, L, G1, L1, fail_log);
-  RealType tol = 1e-3;
-  if (toleranceParam> 0.0)
-  {
-    tol = toleranceParam;
-  } 
+//  RealType tol = 1e-3;
+//  if (toleranceParam> 0.0)
+//  {
+//    tol = toleranceParam;
+//  } 
 
   for (int iorb = 0; iorb < Psi.getOrbitals().size(); iorb++)
   {
-    OrbitalBase *orb = Psi.getOrbitals()[iorb];
+    WaveFunctionComponent *orb = Psi.getOrbitals()[iorb];
 
     ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
     ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
@@ -760,7 +763,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
     RealType logpsi1 = orb->evaluateLog(W, G, L);
 
-    fail_log << "Orbital " << iorb << " " << orb->OrbitalName << " log psi = " << logpsi1 << std::endl;
+    fail_log << "WaveFunctionComponent " << iorb << " " << orb->ClassName << " log psi = " << logpsi1 << std::endl;
 
     FiniteDifference::ValueVector logpsi_vals;
     FiniteDifference::PosChangeVector::iterator it;
@@ -773,8 +776,8 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       W.makeMove(it->index,zeroR);
 
       RealType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
-      RealType phase0 = orb->PhaseValue;
 #if defined(QMC_COMPLEX)
+      RealType phase0 = orb->PhaseValue;
       ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
 #else
       ValueType logpsi = logpsi0;
@@ -787,13 +790,15 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     }
     fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-    fout << "  Orbital " << iorb << " " << orb->OrbitalName << std::endl;
+    fout << "  WaveFunctionComponent " << iorb << " " << orb->ClassName << std::endl;
 
     if (!checkGradients(0, nat, G, L, G1, L1, fail_log, 1))
     {
       all_okay = false;
     }
 
+    if (!checkSlaterDet) continue; // skip SlaterDet check if <backflow> is present
+    // DiracDeterminantWithBackflow::evaluateLog requires a call to BackflowTransformation::evaluate in its owning SlaterDetWithBackflow to work correctly.
     SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
     if (sd)
     {
@@ -801,8 +806,8 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       {
         ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
-        DiracDeterminantBase *det = sd->Dets[isd];
-        RealType logpsi2 = det->evaluateLog(W, G, L);
+        DiracDeterminant *det = sd->Dets[isd];
+        RealType logpsi2 = det->evaluateLog(W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det->FirstIndex << " to " << det->LastIndex << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
         // For now, just ignore values that too small.
@@ -819,8 +824,8 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           W.update();
 
           RealType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
-          RealType phase0 = det->PhaseValue;
     #if defined(QMC_COMPLEX)
+          RealType phase0 = det->PhaseValue;
           ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
     #else
           ValueType logpsi = logpsi0;
@@ -840,10 +845,10 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 #if 0
         // Testing single particle orbitals doesn't work yet - probably something
         // with setup after setting the position.
-        std::map<std::string, SPOSetBasePtr>::iterator spo_it = sd->mySPOSet.begin();
+        std::map<std::string, SPOSetPtr>::iterator spo_it = sd->mySPOSet.begin();
         for (; spo_it != sd->mySPOSet.end(); spo_it++)
         {
-          SPOSetBasePtr spo = spo_it->second;
+          SPOSetPtr spo = spo_it->second;
           fail_log << "      SPO set = " << spo_it->first <<  " name = " << spo->className;
           fail_log << " orbital set size = " << spo->size();
           fail_log << " basis set size = " << spo->getBasisSetSize() << std::endl;
@@ -861,7 +866,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
             ParticleSet::SingleParticlePos_t zeroR;
             W.makeMove(it->index,zeroR);
 
-            SPOSetBase::ValueVector_t psi(spo->size());
+            SPOSet::ValueVector_t psi(spo->size());
 
             spo->evaluate(W, it->index, psi);
             ValueType logpsi = psi[0];
@@ -887,7 +892,6 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
 void WaveFunctionTester::runBasicTest()
 {
-  RealType sig2Enloc=0, sig2Drift=0;
 
   int nat = W.getTotalNum();
   fout << "Numerical gradient and Laplacian test" << std::endl;
@@ -1025,7 +1029,7 @@ void WaveFunctionTester::runBasicTest()
       dphase -= 2.0*M_PI;
     ValueType ratDiff=std::complex<OHMMS_PRECISION>(ratioMag*std::cos(dphase),ratioMag*std::sin(dphase)) ;
     // TODO - test complex ratio against a tolerance
-    fout << iat << " ratio " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << std::endl;
+    fout << iat << " " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << " " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff)) << std::endl;
     fout << "     ratioMag " << aratio/ratioMag << " " << ratioMag << std::endl;
     fout << "     PhaseDiff " << phaseDiff/dphase << " " << phaseDiff  <<" " << dphase << std::endl;
 #else
@@ -1045,6 +1049,7 @@ void WaveFunctionTester::runBasicTest()
 
 void WaveFunctionTester::runRatioTest()
 {
+#if 0
   int nat = W.getTotalNum();
   ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
   ParticleSet::ParticleLaplacian_t Lp(nat), dLp(nat);
@@ -1054,7 +1059,7 @@ void WaveFunctionTester::runRatioTest()
   while (it != it_end)
   {
     makeGaussRandom(deltaR);
-    Walker_t::Buffer_t tbuffer;
+    Walker_t::WFBuffer_t tbuffer;
     W.R = (**it).R+Tau*deltaR;
     (**it).R=W.R;
     W.update();
@@ -1084,7 +1089,7 @@ void WaveFunctionTester::runRatioTest()
       fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,pbyp_mode);
-      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
       Psi.copyFromBuffer(W,w_buffer);
       H.copyFromBuffer(W,w_buffer);
 //             Psi.evaluateLog(W);
@@ -1168,7 +1173,7 @@ void WaveFunctionTester::runRatioTest()
       fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,pbyp_mode);
-      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
       //Psi.updateBuffer(W,w_buffer,true);
       Psi.copyFromBuffer(W,w_buffer);
       RealType eold(thisWalker.Properties(LOCALENERGY));
@@ -1229,11 +1234,12 @@ void WaveFunctionTester::runRatioTest()
   //for(it=W.begin();it != it_end; ++it)
   //{
   //  Walker_t& thisWalker(**it);
-  //  Walker_t::Buffer_t& w_buffer((*it)->DataSet);
+  //  Walker_t::WFBuffer_t& w_buffer((*it)->DataSet);
   //  w_buffer.rewind();
   //  W.updateBuffer(**it,w_buffer);
   //  RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
   //}
+ #endif
 }
 
 void WaveFunctionTester::runRatioTest2()
@@ -1246,10 +1252,14 @@ void WaveFunctionTester::runRatioTest2()
   for (; it != it_end; ++it)
   {
     makeGaussRandom(deltaR);
-    Walker_t::Buffer_t tbuffer;
+    Walker_t::WFBuffer_t tbuffer;
     (**it).R  +=  Tau*deltaR;
     W.loadWalker(**it,true);
-    RealType logpsi=Psi.registerData(W,tbuffer);
+    Psi.registerData(W,tbuffer);
+    tbuffer.allocate();
+    Psi.copyFromBuffer(W,tbuffer);
+    Psi.evaluateLog(W);
+    RealType logpsi = Psi.updateBuffer(W,tbuffer,false);
     RealType ene = H.evaluate(W);
     (*it)->DataSet=tbuffer;
     //RealType ene = H.evaluate(W);
@@ -1269,19 +1279,17 @@ void WaveFunctionTester::runRatioTest2()
       fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,true);
-      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
       Psi.copyFromBuffer(W,w_buffer);
       RealType eold(thisWalker.Properties(LOCALENERGY));
       RealType logpsi(thisWalker.Properties(LOGPSI));
-      RealType emixed(eold), enew(eold);
       Psi.evaluateLog(W);
       ParticleSet::ParticleGradient_t realGrad(W.G);
       makeGaussRandom(deltaR);
       //mave a move
-      RealType ratio_accum(1.0);
       for (int iat=0; iat<nat; iat++)
       {
-        TinyVector<ParticleSet::ParticleValue_t,OHMMS_DIM> grad_now=Psi.evalGrad(W,iat);
+        TinyVector<ParticleSet::SingleParticleValue_t,OHMMS_DIM> grad_now=Psi.evalGrad(W,iat);
         GradType grad_new;
         for(int sds=0; sds<3; sds++)
           fout<< realGrad[iat][sds]-grad_now[sds]<<" ";
@@ -1301,7 +1309,7 @@ void WaveFunctionTester::runRatioTest2()
   //for(it=W.begin();it != it_end; ++it)
   //{
   //  Walker_t& thisWalker(**it);
-  //  Walker_t::Buffer_t& w_buffer((*it)->DataSet);
+  //  Walker_t::WFBuffer_t& w_buffer((*it)->DataSet);
   //  w_buffer.rewind();
   //  W.updateBuffer(**it,w_buffer);
   //  RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
@@ -1318,6 +1326,7 @@ inline void randomize(ParticleAttrib<TinyVector<T,D> >& displ, T fac)
 
 void WaveFunctionTester::runRatioV()
 {
+#if 0
   app_log() << "WaveFunctionTester::runRatioV " << std::endl;
   int nat = W.getTotalNum();
   Tau=0.025;
@@ -1337,7 +1346,7 @@ void WaveFunctionTester::runRatioV()
   while (it != it_end)
   {
     makeGaussRandom(deltaR);
-    Walker_t::Buffer_t tbuffer;
+    Walker_t::WFBuffer_t tbuffer;
     W.R = (**it).R+Tau*deltaR;
     (**it).R=W.R;
     W.update();
@@ -1375,6 +1384,7 @@ void WaveFunctionTester::runRatioV()
     }
     ++it;
   }
+#endif
 }
 
 void WaveFunctionTester::runGradSourceTest()
@@ -1388,10 +1398,7 @@ void WaveFunctionTester::runGradSourceTest()
   // if(pit == PtclPool.getPool().end())
   //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");
   ParticleSet& source = *((*pit).second);
-  IndexType nskipped = 0;
-  RealType sig2Enloc=0, sig2Drift=0;
   RealType delta = 0.00001;
-  RealType delta2 = 2*delta;
   ValueType c1 = 1.0/delta/2.0;
   ValueType c2 = 1.0/delta/delta;
   int nat = W.getTotalNum();
@@ -1593,18 +1600,14 @@ WaveFunctionTester::put(xmlNodePtr q)
     tcur = tcur->next;
   }
 
-  return putQMCInfo(q);
+  bool success = putQMCInfo(q);
+
+  return success;
 }
 
 void WaveFunctionTester::runDerivTest()
 {
   app_log()<<" Testing derivatives"<< std::endl;
-  IndexType nskipped = 0;
-  RealType sig2Enloc=0, sig2Drift=0;
-  RealType delta = 1e-6;
-  RealType delta2 = 2*delta;
-  ValueType c1 = 1.0/delta/2.0;
-  ValueType c2 = 1.0/delta/delta;
   int nat = W.getTotalNum();
   MCWalkerConfiguration::PropertyContainer_t Properties;
   //pick the first walker
@@ -1710,12 +1713,6 @@ void WaveFunctionTester::runDerivNLPPTest()
   nlout.precision(15);
 
   app_log()<<" Testing derivatives"<< std::endl;
-  IndexType nskipped = 0;
-  RealType sig2Enloc=0, sig2Drift=0;
-  RealType delta = 1e-6;
-  RealType delta2 = 2*delta;
-  ValueType c1 = 1.0/delta/2.0;
-  ValueType c2 = 1.0/delta/delta;
   int nat = W.getTotalNum();
   MCWalkerConfiguration::PropertyContainer_t Properties;
   //pick the first walker
@@ -1949,13 +1946,13 @@ void WaveFunctionTester::runDerivCloneTest()
 }
 void WaveFunctionTester::runwftricks()
 {
-  std::vector<OrbitalBase*>& Orbitals=Psi.getOrbitals();
+  std::vector<WaveFunctionComponent*>& Orbitals=Psi.getOrbitals();
   app_log()<<" Total of "<<Orbitals.size()<<" orbitals."<< std::endl;
   int SDindex(0);
   for (int i=0; i<Orbitals.size(); i++)
-    if ("SlaterDet"==Orbitals[i]->OrbitalName)
+    if ("SlaterDet"==Orbitals[i]->ClassName)
       SDindex=i;
-  SPOSetBasePtr Phi= dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi();
+  SPOSetPtr Phi= dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi();
   int NumOrbitals=Phi->getBasisSetSize();
   app_log()<<"Basis set size: "<<NumOrbitals<< std::endl;
   std::vector<int> SPONumbers(0,0);
@@ -2019,7 +2016,6 @@ void WaveFunctionTester::runwftricks()
   RealType overG0(1.0/Grid[0]);
   RealType overG1(1.0/Grid[1]);
   RealType overG2(1.0/Grid[2]);
-  RealType overNpoints=  overG0*overG1*overG2;
   std::vector<RealType> NormPhi(Nrotated, 0.0);
   int totsymops = symOp.getSymmetriesSize();
   Matrix<RealType> SymmetryOrbitalValues;
@@ -2057,8 +2053,9 @@ void WaveFunctionTester::runwftricks()
             //evaluate orbitals
 //                 Phi->evaluate(W,0,values);
             Psi.evaluateLog(W);
-            for(int n=0; n<NumOrbitals; n++)
-              values[n] = Phi->t_logpsi(0,n);
+            // YYYY: is the following two lines still maintained?
+            //for(int n=0; n<NumOrbitals; n++)
+            //  values[n] = Phi->t_logpsi(0,n);
             if (l==0)
             {
               identityValues=values;
@@ -2202,7 +2199,7 @@ void  WaveFunctionTester::runNodePlot()
   R_unit.setUnit(PosUnit::LatticeUnit);
   Walker_t& thisWalker(**(W.begin()));
   W.loadWalker(thisWalker,true);
-  Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+  Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
   Psi.copyFromBuffer(W,w_buffer);
 #if OHMMS_DIM==2
   assert(Grid.size()==2);
@@ -2365,8 +2362,3 @@ FiniteDiffErrData::put(xmlNodePtr q)
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

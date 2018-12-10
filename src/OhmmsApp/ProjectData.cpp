@@ -205,9 +205,12 @@ bool ProjectData::PreviousRoot( std::string& oldroot) const
 bool ProjectData::put(xmlNodePtr cur)
 {
   m_cur = cur;
-  xmlDocPtr doc = cur->doc;
   m_title = (const char*)(xmlGetProp(cur, (const xmlChar *) "id"));
-  m_series = atoi((const char*)(xmlGetProp(cur, (const xmlChar *) "series")));
+  const char *series_str = (const char*)(xmlGetProp(cur, (const xmlChar *) "series"));
+  if (series_str)
+  {
+    m_series = atoi(series_str);
+  }
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
@@ -248,8 +251,3 @@ bool ProjectData::put(xmlNodePtr cur)
 
 #endif
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

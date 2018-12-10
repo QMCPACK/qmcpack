@@ -39,10 +39,23 @@ namespace qmcplusplus
         )
   {
     fftbox=std::complex<T>();
+    const int upper_bound[3]={(maxg[0]-1)/2,(maxg[1]-1)/2,(maxg[2]-1)/2};
+    const int lower_bound[3]={upper_bound[0]-maxg[0]+1,upper_bound[1]-maxg[1]+1,upper_bound[2]-maxg[2]+1};
+    //only coefficient indices between [lower_bound,upper_bound] are taken for FFT.
     //this is rather unsafe
-//#pragma omp parallel for
+    //#pragma omp parallel for
     for (int iG=0; iG<cG.size(); iG++) 
     {
+      if ( gvecs[iG][0]>upper_bound[0] || gvecs[iG][0]<lower_bound[0] ||
+           gvecs[iG][1]>upper_bound[1] || gvecs[iG][1]<lower_bound[1] ||
+           gvecs[iG][2]>upper_bound[2] || gvecs[iG][2]<lower_bound[2] )
+      {
+        //std::cout << "Warning: cG out of bound "
+        //          << "x " << gvecs[iG][0]    << " y " << gvecs[iG][1]    << " z " << gvecs[iG][2] << std::endl
+        //          << "xu " << upper_bound[0] << " yu " << upper_bound[1] << " zu " << upper_bound[2] << std::endl
+        //          << "xd " << lower_bound[0] << " yd " << lower_bound[1] << " zd " << lower_bound[2] << std::endl;
+        continue;
+      }
       fftbox((gvecs[iG][0]+maxg[0])%maxg[0]
           ,(gvecs[iG][1]+maxg[1])%maxg[1]
           ,(gvecs[iG][2]+maxg[2])%maxg[2]) = cG[iG];
@@ -118,7 +131,7 @@ namespace qmcplusplus
    */
   template<typename T, typename T1, typename T2>
     inline void fix_phase_rotate_c2r(Array<std::complex<T>,3>& in
-    , Array<T1,3>& out, const TinyVector<T2,3>& twist)
+    , Array<T1,3>& out, const TinyVector<T2,3>& twist, T& phase_r, T& phase_i)
   {
     const T two_pi=-2.0*M_PI;
     const int nx=in.size(0);
@@ -152,11 +165,11 @@ namespace qmcplusplus
       }
     }
 
-    T x = (rNorm-iNorm) / riNorm;
-    T y = 1.0/std::sqrt(x*x+4.0);
-    T phs = std::sqrt(0.5-y);
-    T phase_r = phs;
-    T phase_i = (x<0) ? std::sqrt(1.0-phs*phs) : -std::sqrt(1.0-phs*phs);
+    const T x = (rNorm-iNorm) / riNorm;
+    const T y = 1.0/std::sqrt(x*x+4.0);
+    const T phs = std::sqrt(0.5-y);
+    phase_r = phs;
+    phase_i = (x<0) ? std::sqrt(1.0-phs*phs) : -std::sqrt(1.0-phs*phs);
 
     #pragma omp parallel for
     for (int ix=0; ix<nx; ix++)
@@ -203,79 +216,92 @@ namespace qmcplusplus
 
   template<typename T, typename T1, typename T2>
   inline void fix_phase_rotate_c2c(const Array<std::complex<T>,3>& in
-      , Array<T1,3>& out_r, Array<T1,3>& out_i, const TinyVector<T2,3>& twist)
+      , Array<T1,3>& out_r, Array<T1,3>& out_i, const TinyVector<T2,3>& twist, T& phase_r, T& phase_i)
   {
     const int nx=in.size(0);
     const int ny=in.size(1);
     const int nz=in.size(2);
-    T phase_r, phase_i;
 
     compute_phase(in, twist, phase_r, phase_i);
- 
+
     #pragma omp parallel for
-    for (int ix=0; ix<nx; ++ix)
-    {
-      const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
-      T1* restrict r_ptr=out_r.data()+ix*ny*nz;
-      T1* restrict i_ptr=out_i.data()+ix*ny*nz;
-      //std::complex<T1>* restrict out_ptr=out.data()+ix*ny*nz;
-      for (int iy=0; iy<ny; ++iy)
-        for (int iz=0; iz<nz; ++iz) 
+    for (size_t ix=0; ix<nx; ++ix)
+      for (size_t iy=0; iy<ny; ++iy)
+      {
+        const size_t offset=ix*ny*nz+iy*nz;
+        const std::complex<T>* restrict in_ptr=in.data()+offset;
+        T1* restrict r_ptr=out_r.data()+offset;
+        T1* restrict i_ptr=out_i.data()+offset;
+        for (size_t iz=0; iz<nz; ++iz)
         {
-          *r_ptr++=static_cast<T1>(phase_r*in_ptr->real()-phase_i*in_ptr->imag());
-          *i_ptr++=static_cast<T1>(phase_i*in_ptr->real()+phase_r*in_ptr->imag());
-          ++in_ptr;
+          r_ptr[iz]=static_cast<T1>(phase_r*in_ptr[iz].real()-phase_i*in_ptr[iz].imag());
+          i_ptr[iz]=static_cast<T1>(phase_i*in_ptr[iz].real()+phase_r*in_ptr[iz].imag());
         }
-    }
+      }
   }
 
-  /** rotate the state after 3dfft
-   *
-   * Compute the phase factor for rotation. The algorithm aims at balacned real and imaginary parts.
-   *
+  /** Compute the norm of an orbital.
+   * @param cG the plane wave coefficients
+   * @return norm of the orbital
+   */
+  template<typename T>
+    inline T compute_norm(const Vector<std::complex<T> >& cG)
+  {
+    T total_norm2(0);
+    #pragma omp parallel for reduction(+:total_norm2)
+    for (size_t ig=0; ig<cG.size(); ++ig)
+      total_norm2 += cG[ig].real()*cG[ig].real()+cG[ig].imag()*cG[ig].imag();
+    return std::sqrt(total_norm2);
+  }
+
+  /** Compute the phase factor for rotation. The algorithm aims at balanced real and imaginary parts.
+   * @param in the real space orbital value on a 3D grid
+   * @param twist k-point in reduced coordinates
+   * @param phase_r output real part of the phase
+   * @param phase_i output imaginary part of the phase
    */
   template<typename T, typename T2>
     inline void compute_phase(const Array<std::complex<T>,3>& in, const TinyVector<T2,3>& twist, T& phase_r, T& phase_i)
   {
     const T two_pi=-2.0*M_PI;
-    const int nx=in.size(0);
-    const int ny=in.size(1);
-    const int nz=in.size(2);
-    T nx_i=1.0/static_cast<T>(nx);
-    T ny_i=1.0/static_cast<T>(ny);
-    T nz_i=1.0/static_cast<T>(nz);
+    const size_t nx=in.size(0);
+    const size_t ny=in.size(1);
+    const size_t nz=in.size(2);
+
+    const T nx_i=1.0/static_cast<T>(nx);
+    const T ny_i=1.0/static_cast<T>(ny);
+    const T nz_i=1.0/static_cast<T>(nz);
 
     T rNorm=0.0, iNorm=0.0, riNorm=0.0;
     #pragma omp parallel for reduction(+:rNorm,iNorm,riNorm)
-    for (int ix=0; ix<nx; ++ix) 
+    for (size_t ix=0; ix<nx; ++ix)
     {
-      T s, c, r, i;
-      const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
-      T rux=static_cast<T>(ix)*nx_i*twist[0];
-      T rsum=0, isum=0,risum=0.0;
-      for (int iy=0; iy<ny; ++iy)
+      for (size_t iy=0; iy<ny; ++iy)
       {
-        T ruy=static_cast<T>(iy)*ny_i*twist[1];
-        for (int iz=0; iz<nz; ++iz)
+        const T rux=static_cast<T>(ix)*nx_i*twist[0];
+        T s, c;
+        T rsum=0, isum=0,risum=0.0;
+        const T ruy=static_cast<T>(iy)*ny_i*twist[1];
+        const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz+iy*nz;
+        for (size_t iz=0; iz<nz; ++iz)
         {
-          T ruz=static_cast<T>(iz)*nz_i*twist[2];
+          const T ruz=static_cast<T>(iz)*nz_i*twist[2];
           sincos(two_pi*(rux+ruy+ruz), &s, &c);
-          r = c*in_ptr->real()-s*in_ptr->imag();
-          i = s*in_ptr->real()+c*in_ptr->imag();
-          ++in_ptr;
-          rsum += r*r;
-          isum += i*i;
-          risum+= r*i;
+          const T re=c*in_ptr[iz].real()-s*in_ptr[iz].imag();
+          const T im=s*in_ptr[iz].real()+c*in_ptr[iz].imag();
+          rsum += re*re;
+          isum += im*im;
+          risum += re*im;
         }
+        rNorm += rsum;
+        iNorm += isum;
+        riNorm+= risum;
       }
-      rNorm += rsum;
-      iNorm += isum;
-      riNorm+= risum;
     }
 
-    T x = (rNorm-iNorm) / riNorm;
-    T y = 1.0/std::sqrt(x*x+4.0);
-    T phs = std::sqrt(0.5-y);
+    const T x = (rNorm-iNorm) / riNorm;
+    const T y = 1.0/std::sqrt(x*x+4.0);
+    const T phs = std::sqrt(0.5-y);
     phase_r = phs;
     phase_i = (x<0) ? std::sqrt(1.0-phs*phs) : -std::sqrt(1.0-phs*phs);
   }
@@ -350,7 +376,7 @@ namespace qmcplusplus
     mpi::bcast(*myComm,nbands);
 
     //buffer to serialize BandInfo
-    PooledData<RealType> misc(nbands[0]*5);
+    PooledData<OHMMS_PRECISION_FULL> misc(nbands[0]*5);
     bool isCore=false;
     n=NumDistinctOrbitals=nbands[1];
     NumValenceOrbs=nbands[2];
@@ -422,8 +448,3 @@ namespace qmcplusplus
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 5243 $   $Date: 2011-05-23 09:09:34 -0500 (Mon, 23 May 2011) $
- * $Id: einspine_helper.hpp 5243 2011-05-23 14:09:34Z jeongnim.kim $
- ***************************************************************************/

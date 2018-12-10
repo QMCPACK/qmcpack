@@ -78,19 +78,7 @@ struct StressPBCAA:  public QMCHamiltonianBase, public ForceBase
 
   void update_source(ParticleSet& s);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
 //  Return_t spevaluate(ParticleSet& P);
-
- // Return_t registerData(ParticleSet& P, BufferType& buffer);
-//  Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
- // void copyFromBuffer(ParticleSet& P, BufferType& buf);
-//  void copyToBuffer(ParticleSet& P, BufferType& buf);
-  Return_t evaluatePbyP(ParticleSet& P, int iat);
- // void acceptMove(int iat);
 
   /** Do nothing */
   bool put(xmlNodePtr cur)
@@ -118,7 +106,6 @@ struct StressPBCAA:  public QMCHamiltonianBase, public ForceBase
  // Return_t evalSRwithForces(ParticleSet& P);
 //  Return_t evalLRwithForces(ParticleSet& P);
   SymTensor<RealType, OHMMS_DIM> evalConsts(bool report=true);
- // Return_t evaluateForPbyP(ParticleSet& P);
 
   void addObservables(PropertySetType& plist, BufferType& collectables)
   {
@@ -142,9 +129,4 @@ struct StressPBCAA:  public QMCHamiltonianBase, public ForceBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jtkrogel $
- * $Revision: 5976 $   $Date: 2013-09-13 13:39:44 -0500 (Fri, 13 Sep 2013) $
- * $Id: StressPBCAA.h 5976 2013-09-13 18:39:44Z jtkrogel $
- ***************************************************************************/
 

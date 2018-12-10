@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 
-from nexus import settings,Job,run_project
-from nexus import Structure,PhysicalSystem
+from nexus import settings,job,run_project
+from nexus import read_structure
+from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack
@@ -19,12 +20,8 @@ settings(
 
 
 #generate the C20 physical system
-# specify the xyz file
-structure_file = 'c20.cage.xyz'
-# make an empty structure object
-structure = Structure()
 # read in the xyz file
-structure.read_xyz(structure_file)
+structure = read_structure('c20.cage.xyz')
 # place a bounding box around the structure
 structure.bounding_box(
     box   = 'cubic',         # cube shaped cell
@@ -36,23 +33,19 @@ structure.add_kmesh(
     kshift     = (0,0,0)     # and shift
     )
 # add electronic information
-c20 = PhysicalSystem(
-    structure = structure,   # C20 structure
+c20 = generate_physical_system(
+    structure  = structure,  # C20 structure
     net_charge = 0,          # net charge in units of e
     net_spin   = 0,          # net spin in units of e-spin
-    C          = 4           # C has 4 valence electrons
+    C          = 4,          # C has 4 valence electrons
     ) 
-
-
-# list of simulations in workflow
-sims = []
 
 # scf run produces charge density
 scf = generate_pwscf(
     # nexus inputs
     identifier   = 'scf',           # identifier/file prefix
     path         = 'c20/scf',       # directory for scf run
-    job          = Job(cores=16),   # run on 16 cores
+    job          = job(cores=16),   # run on 16 cores
     pseudos      = ['C.BFD.upf'],   # pwscf PP file
     system       = c20,             # run c20
     # input format selector
@@ -65,20 +58,18 @@ scf = generate_pwscf(
     nosym        = True,            # don't use symmetry
     wf_collect   = True,            # write out orbitals
     )
-sims.append(scf)  
 
 # orbital conversion job for opt and dmc
 p2q = generate_pw2qmcpack(
     # nexus inputs
     identifier   = 'p2q',
     path         = 'c20/nscf',
-    job          = Job(cores=1),
+    job          = job(cores=1),
     # pw2qmcpack input parameters
     write_psir   = False,
     # workflow dependencies
     dependencies = (scf,'orbitals')
     )
-sims.append(p2q)
 
 
 # Jastrow optimization
@@ -86,7 +77,7 @@ opt = generate_qmcpack(
     # nexus inputs
     identifier   = 'opt',           # identifier/file prefix
     path         = 'c20/opt',       # directory for opt run
-    job          = Job(cores=16,app='qmcapp'),
+    job          = job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = c20,             # run c20
     # input format selector   
@@ -115,7 +106,6 @@ opt = generate_qmcpack(
     # workflow dependencies
     dependencies = (p2q,'orbitals')        
     )
-sims.append(opt)
 
     
 # final dmc run
@@ -123,7 +113,7 @@ qmc = generate_qmcpack(
     # nexus inputs
     identifier   = 'qmc',           # identifier/file prefix       
     path         = 'c20/qmc',  # directory for dmc run       
-    job          = Job(cores=16,app='qmcapp'),
+    job          = job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = c20,             # run c20
     # input format selector                                      
@@ -156,7 +146,7 @@ qmc = generate_qmcpack(
 
 
 # nexus monitors all runs
-run_project(sims)
+run_project()
 
 
 

@@ -47,7 +47,7 @@ TrialWaveFunction::recompute
 
 void
 TrialWaveFunction::reserve
-(PointerPool<gpu::device_vector<CudaValueType> > &pool,
+(PointerPool<gpu::device_vector<CTS::ValueType> > &pool,
  bool onlyOptimizable)
 {
   for(int i=0; i<Z.size(); i++)
@@ -413,8 +413,3 @@ TrialWaveFunction::evaluateDerivatives (MCWalkerConfiguration &W,
   }
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author: kpesler $
- * $Revision: 4353 $   $Date: 2009-11-03 12:14:38 -0600 (Tue, 03 Nov 2009) $
- * $Id: TrialWaveFunction.cpp 4353 2009-11-03 18:14:38Z kpesler $
- ***************************************************************************/

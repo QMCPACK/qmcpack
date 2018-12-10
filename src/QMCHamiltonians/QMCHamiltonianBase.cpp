@@ -124,9 +124,4 @@ void QMCHamiltonianBase::addEnergy(MCWalkerConfiguration &W,
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3437 $   $Date: 2008-12-18 13:44:04 -0600 (Thu, 18 Dec 2008) $
- * $Id: QMCHamiltonianBase.cpp 3437 2008-12-18 19:44:04Z jnkim $
- ***************************************************************************/
 

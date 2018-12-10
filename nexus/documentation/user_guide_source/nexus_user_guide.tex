@@ -257,7 +257,7 @@ To install the Python modules on other platforms, please see
 Of course, to run full calculations, the simulation codes and converters 
 involved must be installed as well.  These include a modified version of 
 Quantum Espresso (\texttt{pw.x}, \texttt{pw2qmcpack.x}, optionally 
-\texttt{pw2casino.x}), QMCPACK (\texttt{qmcapp}, \texttt{qmcapp\_complex}, \texttt{convert4qmc}, \texttt{wfconvert}, \texttt{ppconvert}), 
+\texttt{pw2casino.x}), QMCPACK (\texttt{qmcpack}, \texttt{qmcpack\_complex}, \texttt{convert4qmc}, \texttt{wfconvert}, \texttt{ppconvert}), 
 SQD (\texttt{sqd}, packaged with QMCPACK), VASP, and/or GAMESS.  
 Complete coverage of this task is beyond the scope of the current document, but 
 please see ``Helpful Links for Installing Electronic Structure Codes'' 
@@ -534,7 +534,7 @@ The \texttt{generate\_gamess} function also accepts arbitrary GAMESS keywords (\
 qmc = generate_qmcpack(
     identifier   = 'vmc',
     path         = 'diamond/vmc',
-    job          = Job(cores=16,threads=4,app='qmcapp'),
+    job          = Job(cores=16,threads=4,app='qmcpack'),
     input_type   = 'basic',
     system       = dia16,
     pseudos      = ['C.BFD.xml'],
@@ -604,7 +604,7 @@ dmc = generate_qmcpack(
 \end{minted}
 
 \noindent
-As suggested at the beginning of this section, workflow composition logically breaks into two parts: simulation generation and workflow dependency specification.  This type of breakup can also be performed explicity within a Nexus user script, if desired:
+As suggested at the beginning of this section, workflow composition logically breaks into two parts: simulation generation and workflow dependency specification.  This type of breakup can also be performed explicitly within a Nexus user script, if desired:
 \begin{minted}{python}
 # simulation generation
 relax = generate_pwscf(...)
@@ -736,8 +736,8 @@ directory in your Nexus installation:
 \end{shaded}
 \noindent
 The examples assume that you have working versions of \texttt{pw.x}, 
-\texttt{pw2qmcpack.x}, \texttt{qmcapp} (real version), and 
-\texttt{qmcapp\_complex} (complex version) installed and in your \texttt{PATH}. 
+\texttt{pw2qmcpack.x}, \texttt{qmcpack} (real version), and 
+\texttt{qmcpack\_complex} (complex version) installed and in your \texttt{PATH}. 
 A brief description of each example is given below.  
 
 
@@ -769,6 +769,11 @@ A brief description of each example is given below.
     An example demonstrating automation of a simple parameter scan, in this 
     case the interparticle spacing in an oxygen dimer.  The reader will gain 
     some experience modifying Nexus user scripts to produce automated workflows.
+    
+  \item[Bulk Diamond Excited States VMC] \hfill \\
+    A representative bulk excited states calculation.  A simple workflow consisting 
+    of orbital generation with PWSCF, orbital conversion with pw2qmcpack, 
+    and a short VMC calculation with QMCPACK is performed.
 \end{description}
 
 
@@ -901,7 +906,7 @@ conv = generate_pw2qmcpack(
 qmc = generate_qmcpack(
     identifier   = 'vmc',           # identifier/file prefix 
     path         = 'diamond/vmc',   # directory for vmc run
-    job          = Job(cores=16,threads=4,app='qmcapp'),
+    job          = Job(cores=16,threads=4,app='qmcpack'),
     input_type   = 'basic',
     system       = dia16,           # run diamond system
     pseudos      = ['C.BFD.xml'],   # qmcpack PP for C
@@ -926,7 +931,7 @@ run_project(scf,conv,qmc)
 %\end{lstlisting}
 
 
-To fully execute the usage example provided here, copies of PWSCF, QMCPACK, and the orbital converter pw2qmcpack will need to be installed on the local machine.  The example assumes that the executables are in the user's \texttt{PATH} and are named \texttt{pw.x}, \texttt{qmcapp}, and \texttt{pw2qmcpack.x}.  See Sec. \ref{sec:install_code} for download and installation instructions for these codes. A test of Nexus including the generation of input files, but without actual job submission, can be performed without installing these codes.  However, Python itself and NumPy are required to run Nexus (see Sec. \ref{install_python}).    The example also assumes the local machine is a workstation with 16 available cores (``\texttt{ws16}'').  If fewer than 16 cores are available, \emph{e.g.} 4, change the example files to reflect this: \texttt{ws16}$\rightarrow$\texttt{ws4}, \texttt{Job(cores=16,$\ldots$)}$\rightarrow$\texttt{Job(cores=4,$\ldots$)}. 
+To fully execute the usage example provided here, copies of PWSCF, QMCPACK, and the orbital converter pw2qmcpack will need to be installed on the local machine.  The example assumes that the executables are in the user's \texttt{PATH} and are named \texttt{pw.x}, \texttt{qmcpack}, and \texttt{pw2qmcpack.x}.  See Sec. \ref{sec:install_code} for download and installation instructions for these codes. A test of Nexus including the generation of input files, but without actual job submission, can be performed without installing these codes.  However, Python itself and NumPy are required to run Nexus (see Sec. \ref{install_python}).    The example also assumes the local machine is a workstation with 16 available cores (``\texttt{ws16}'').  If fewer than 16 cores are available, \emph{e.g.} 4, change the example files to reflect this: \texttt{ws16}$\rightarrow$\texttt{ws4}, \texttt{Job(cores=16,$\ldots$)}$\rightarrow$\texttt{Job(cores=4,$\ldots$)}. 
 
 In this example, we will run Nexus in three different modes:
 \begin{enumerate}
@@ -1010,7 +1015,7 @@ Next, run the example in generate mode.  Set ``\texttt{status\_only}=0'' and ``\
          Entering ./runs/diamond/vmc 2 
            Would have executed:  
              export OMP_NUM_THREADS=4
-             mpirun -np 4 qmcapp vmc.in.xml 
+             mpirun -np 4 qmcpack vmc.in.xml 
      
        poll 5  memory 60.78 MB 
          Entering ./runs/diamond/vmc 2 
@@ -1188,7 +1193,7 @@ opt = generate_qmcpack(
     # nexus inputs
     identifier   = 'opt',           # identifier/file prefix
     path         = 'graphene/opt',  # directory for opt run
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = graphene,        # run graphene
     # input format selector   
@@ -1261,7 +1266,7 @@ qmc = generate_qmcpack(
     # nexus inputs
     identifier   = 'qmc',           # identifier/file prefix       
     path         = 'graphene/qmc',  # directory for dmc run       
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = graphene,        # run graphene
     # input format selector                                      
@@ -1396,7 +1401,7 @@ Project starting
     Entering ./runs/graphene/opt 6 
       Executing:                        # run qmcpack
         export OMP_NUM_THREADS=1        # w/ complex arithmetic
-        mpirun -np 16 qmcapp_complex opt.in.xml 
+        mpirun -np 16 qmcpack_complex opt.in.xml 
 
   poll 11  memory 56.32 MB 
   poll 12  memory 56.32 MB 
@@ -1421,7 +1426,7 @@ Project starting
     Entering ./runs/graphene/qmc 3 
       Executing:                        # run qmcpack
         export OMP_NUM_THREADS=1
-        mpirun -np 16 qmcapp_complex qmc.in.xml 
+        mpirun -np 16 qmcpack_complex qmc.in.xml 
 
   poll 797  memory 57.31 MB 
   poll 798  memory 57.31 MB 
@@ -1624,7 +1629,7 @@ opt = generate_qmcpack(
     # nexus inputs
     identifier   = 'opt',           # identifier/file prefix
     path         = 'c20/opt',       # directory for opt run
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = c20,             # run c20
     # input format selector   
@@ -1661,7 +1666,7 @@ qmc = generate_qmcpack(
     # nexus inputs
     identifier   = 'qmc',           # identifier/file prefix       
     path         = 'c20/qmc',  # directory for dmc run       
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = c20,             # run c20
     # input format selector                                      
@@ -1781,7 +1786,7 @@ Project starting
     Entering ./runs/c20/opt 3 
       Executing:                    # run qmcpack
         export OMP_NUM_THREADS=1    # w/ real arithmetic
-        mpirun -np 16 qmcapp opt.in.xml 
+        mpirun -np 16 qmcpack opt.in.xml 
 
   poll 13  memory 56.24 MB 
   poll 14  memory 56.24 MB 
@@ -1806,7 +1811,7 @@ Project starting
     Entering ./runs/c20/qmc 2 
       Executing:                    # run qmcpack
         export OMP_NUM_THREADS=1
-        mpirun -np 16 qmcapp qmc.in.xml 
+        mpirun -np 16 qmcpack qmc.in.xml 
 
   poll 208  memory 56.49 MB 
   poll 209  memory 56.49 MB 
@@ -2145,6 +2150,179 @@ Now actually submit the optimization and DMC jobs.  Reset the state of the simul
 After completion, try expanding to the full set of ``\texttt{scale}'' values:\newline \texttt{[0.90,0.925,0.95,0.975,1.00,1.025,1.05,1.075,1.10]}.  Nexus should only run the workflows that correspond to new values.  In this way, Nexus scripts can be expanded over time to include new aspects of growing projects. 
 
 
+\section{Example 5: Bulk Diamond Excited States VMC}\label{excited}
+\section{Example 5: Bulk Diamond Excited States VMC}\label{excited}
+The files for this example are found in:
+\begin{shaded}
+\begin{verbatim}
+/your_download_path/nexus/examples/qmcpack/excited
+\end{verbatim}
+\end{shaded}
+
+Please study Lab 5 in QMCPACK manual for an in-depth discussion of the excited states calculations. The primitive cell for a structure is not unique, therefore it must be standardized to generate reproducible Brillouin zones (BZ). For this end, we use "SeeK-Path" python libraries to generate standardized primitive cells and generate band structure paths. Therefore, SeeK-Path libraries must be installed using "pip install seekpath", prior to running scripts in this example. 
+In this example, input file script "vmc.py" is identical to "optical.py" in Lab5 of the QMCPACK manual. 
+
+We use neutral primitive cells at the wavefunction generation. However, creation / annihilation operations are applied at VMC level to simulate optical excitations. Compared to the ground state bulk calculations, a tiling matrix that is commensurate with the wavevectors involved in the excitation must be chosen. This process has been automatized in Nexus using the "get\_band\_tiling" function. There are two VMC scripts in this lab: \texttt{vmc.py} script uses a non-optimal tiling matrix from Lab 5 in QMCPACK, whereas \texttt{vmc-opt-tiling.py} uses the  "get\_band\_tiling" function. In this example, we will use \texttt{vmc-opt-tiling.py}. 
+
+In Lab5 of the QMCPACK manual we found that VBM is located at $\Gamma$ and the CBM is located at $\Delta$ ([0.377, 0., 0.377]), hence C-diamond is an indirect band gap material. However, studying this transition at the given exact points would involve a very large simulation cell. Therefore, we try to round $\Delta$ to the nearest fraction with integer denominator. Tolerance of this rounding procedure is controlled by "max\_volfac" keyword in the "get\_band\_tiling" function. "max\_volfac" basically controls the maximum volume factor of the supercell being searched, which inherently controls the highest k-point grid density in one dimension. 
+
+In the "qmc" object given below, pay attention to keyword "excitation   = ['up', '0 3 1 4']". Value for the excitation keyword can be given in list or tuple format. Here, first element of the list ('up') denotes the spin channel used to perform the excitation. Whereas '0 3 1 4' denotes the twist-index (ti) and band-index (bi) of annihilation and creation (an/cr) operations in $ti_{an} bi_{an} ti_{cr} bi_{cr}$ format. Another option is to use an indexing of the orbitals depending on their energetic ordering. In this example this would correspond to "excitation   = ['up', '-11 +12']". Band/twist index and energy indexes of the orbitals can be found in "einspline" files or they can be determined after parsing the "nscf.out" file using PwscfAnalyzer. Examples on how to do are provided in Lab 5 of the QMCPACK manual.\\
+%\begin{lstlisting}[caption={Nexus input script for the usage example (\texttt{diamond.py}).  DFT is performed in diamond primitive cell followed by VMC in a 16 atom supercell.},label={ex:d16}]
+\HRule
+\begin{minted}{python}
+#! /usr/bin/env python
+
+from nexus import settings,job,run_project
+from nexus import generate_physical_system
+from nexus import generate_pwscf
+from nexus import generate_pw2qmcpack
+from nexus import generate_qmcpack,vmc
+from structure import *
+
+settings(
+    pseudo_dir    = '../pseudopotentials',
+    status_only   = 0,
+    generate_only = 0,
+    sleep         = 3,
+    machine       = 'ws16'
+    )
+
+#Input structure
+dia = generate_physical_system(
+    units  = 'A',
+    axes   = [[ 1.785,  1.785,  0.   ],
+              [ 0.   ,  1.785,  1.785],
+              [ 1.785,  0.   ,  1.785]],
+    elem   = ['C','C'],
+    pos    = [[ 0.    ,  0.    ,  0.    ],
+              [ 0.8925,  0.8925,  0.8925]],
+    C      = 4
+    )
+
+# Standardized Primitive cell -- run rest of the calculations on this cell
+dia2_structure   = get_primitive_cell(structure=dia.structure)['structure']
+# get_band_tiling and get_primitiev_cell require "SeeK-path" python libraries
+
+# Returns commensurate optimum tiling matrix for the kpoints_rel wavevectors
+# max_volfac is default to 20
+tiling = get_band_tiling(structure   = dia2_structure,
+                         kpoints_rel = [[0.000, 0.000, 0.000],
+                                        [0.3768116, 0.,        0.3768116]])
+# Numerical value for the second wavevector can be different in different computers, 
+# adjust accordingly
+
+# All wavevectors must be on the iBZ k_path! (get_kpath output in band.py)
+
+# K-points can also be defined using their labels 
+# (for high symmetry k-points only). For example:
+# tiling = get_band_tiling(structure   = dia2_structure,
+#                         kpoints_label = ['GAMMA', 'X'])
+
+dia2 = generate_physical_system(
+    structure    = dia2_structure,
+    kgrid  = (1,1,1),
+    kshift = (0,0,0), # Assumes we study transitions from Gamma. 
+    #For non-gamma tilings, use kshift appropriately
+    tiling = tiling,
+    C            = 4,
+    )
+
+scf = generate_pwscf(
+    identifier   = 'scf',
+    path         = 'diamond/scf',
+    job          = job(nodes=1, app='pw.x',hours=1),
+    input_type   = 'generic',
+    calculation  = 'scf',
+    nspin        = 2,
+    input_dft    = 'lda',
+    ecutwfc      = 200,
+    conv_thr     = 1e-8,
+    nosym        = True,
+    wf_collect   = True,
+    system       = dia2,
+    tot_magnetization = 0,
+    pseudos      = ['C.BFD.upf'],
+    )
+
+nscf = generate_pwscf(
+    identifier   = 'nscf',
+    path         ='diamond/nscf_opt_tiling',
+    job          = job(nodes=1, app='pw.x',hours=1),
+    input_type   = 'generic',
+    calculation  = 'nscf',
+    input_dft    = 'lda',
+    ecutwfc      = 200,
+    nspin        = 2,
+    conv_thr     = 1e-8,
+    nosym        = True,
+    wf_collect   = True,
+    system       = dia2,
+    nbnd         = 8,      #a sensible nbnd value can be given
+    verbosity    = 'high', #verbosity must be set to high
+    pseudos      = ['C.BFD.upf'],
+    dependencies = (scf, 'charge_density'),
+)
+
+conv = generate_pw2qmcpack(
+    identifier   = 'conv',
+    path         = 'diamond/nscf_opt_tiling',
+    job          = job(cores=1,app='pw2qmcpack.x',hours=1),
+    write_psir   = False,
+    dependencies = (nscf,'orbitals'),
+    )
+
+qmc = generate_qmcpack(
+    det_format     = 'old',
+    identifier     = 'vmc',
+    path           = 'diamond/vmc_opt_tiling',
+    job            = job(cores=16,threads=16,app='qmcpack',hours = 1),
+    input_type     = 'basic',
+    spin_polarized = True,
+    system         = dia2,
+    pseudos        = ['C.BFD.xml'],
+    jastrows       = [],
+    calculations   = [
+        vmc(
+            walkers     =  16,
+            warmupsteps =  20,
+            blocks      = 1000,
+            steps       =  10,
+            substeps    =   2,
+            timestep    =  .4
+            )
+        ],
+    dependencies = (conv,'orbitals'),
+    )
+
+qmc_optical = generate_qmcpack(
+    det_format     = 'old',
+    identifier     = 'vmc',
+    path           = 'diamond/vmc_opt_tiling_optical',
+    job            = job(cores=16,threads=16,app='qmcpack',hours = 1),
+    input_type     = 'basic',
+    spin_polarized = True,
+    system         = dia2,
+    excitation     = ['up', '0 3 1 4'], #
+    pseudos        = ['C.BFD.xml'],
+    jastrows       = [],
+    calculations   = [
+        vmc(
+            walkers     =  16,
+            warmupsteps =  20,
+            blocks      = 1000,
+            steps       =  10,
+            substeps    =   2,
+            timestep    =  .4
+            )
+        ],
+    dependencies = (conv,'orbitals'),
+    )
+
+run_project(scf,nscf,conv,qmc)
+
+\end{minted}
+\HRule
+
 
 
 
@@ -2302,7 +2480,7 @@ the theory and practice of Quantum Monte Carlo.
   Download: \url{http://www.quantum-espresso.org/} , \url{http://qmcpack.org/downloads/} \\
   Installation instructions: See the \texttt{README} file in \texttt{qmcpack/external\_codes/quantum\_espresso} for instructions on patching Quantum Espresso version 5.1.
 
-\subsection{QMCPACK: qmcapp, qmcapp\_complex, convert4qmc, ppconvert, sqd}
+\subsection{QMCPACK: qmcpack, qmcpack\_complex, convert4qmc, ppconvert, sqd}
   Download: \url{http://qmcpack.org/downloads/}\\ 
   Install: \url{http://docs.qmcpack.org/ug/a00002.html}
 
@@ -2835,7 +3013,7 @@ by hand in post-processing the data.
 In Nexus, the supercell size is controlled through the 
 \texttt{tiling} parameter in the \texttt{generate\_physical\_system}, 
 \texttt{generate\_structure}, \texttt{Structure}, or \texttt{Crystal} 
-convenience functions.  Supercells can also be constructed by tiling exising 
+convenience functions.  Supercells can also be constructed by tiling existing 
 structures through the \texttt{tile} member function of \texttt{Structure} or 
 \texttt{PhysicalSystem} objects.  The k-point grid is controlled through the 
 \texttt{kgrid} parameter in the 
@@ -2875,7 +3053,7 @@ extrapolate to the zero time limit.
 
 The DMC timestep is made available in Nexus through the 
 \texttt{timestep} parameter of the \texttt{dmc} convenience function 
-(which is often used in conjuction with the \texttt{standard\_qmc},  
+(which is often used in conjunction with the \texttt{standard\_qmc},  
 \texttt{basic\_qmc}, \texttt{generate\_qmcpack}, or \texttt{Qmcpack} 
 functions). 
 
@@ -2980,7 +3158,7 @@ Many current calculations also use the OPIUM package (see
 port them directly to QMC.
 
 Whatever the source of pseudopotentials (but perhaps especially so for those 
-derived from DFT), testing and validation remains an important step preceeding 
+derived from DFT), testing and validation remains an important step preceding 
 production calculations.  One option is to perform parallel pseudopotential 
 and all-electron DMC calculations of atoms with varying electron count 
 (\emph{i.e.} ionization potential/electron affinity calculations).  As with 

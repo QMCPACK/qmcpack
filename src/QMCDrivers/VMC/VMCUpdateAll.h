@@ -33,83 +33,15 @@ public:
 
   ~VMCUpdateAll();
 
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-//       void advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i);
-//       void estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
-//     , std::vector<MCWalkerConfiguration*>& wclone
-//     , std::vector<QMCHamiltonian*>& hclone
-//     , std::vector<RandomGenerator_t*>& rng
-//     , std::vector<RealType>& ratio_i_0);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
   /// Copy Constructor (disabled)
-  VMCUpdateAll(const VMCUpdateAll& a): QMCUpdateBase(a) { }
+  VMCUpdateAll(const VMCUpdateAll &) = delete;
   /// Copy operator (disabled).
-  VMCUpdateAll& operator=(const VMCUpdateAll&)
-  {
-    return *this;
-  }
+  VMCUpdateAll & operator=(const VMCUpdateAll &) = delete;
 };
-
-/** @ingroup QMCDrivers  ParticleByParticle
- *@brief Implements the VMC algorithm using particle-by-particle move with the drift equation.
- */
-class VMCUpdateAllWithDrift: public QMCUpdateBase
-{
-public:
-  /// Constructor.
-  VMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                        QMCHamiltonian& h, RandomGenerator_t& rg);
-
-  ~VMCUpdateAllWithDrift();
-
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-//       void advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i);
-
-  RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios);
-
-private:
-  /// Copy Constructor (disabled)
-  VMCUpdateAllWithDrift(const VMCUpdateAllWithDrift& a): QMCUpdateBase(a) { }
-  /// Copy operator (disabled).
-  VMCUpdateAllWithDrift& operator=(const VMCUpdateAllWithDrift&)
-  {
-    return *this;
-  }
-};
-
-
-/** @ingroup QMCDrivers  ParticleByParticle
- *@brief Implements the VMC algorithm using particle-by-particle move.
- */
-//   class VMCUpdateAllSampleRN: public QMCUpdateBase
-//     {
-//     public:
-//       /// Constructor.
-//       VMCUpdateAllSampleRN(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide,
-//                             QMCHamiltonian& h, RandomGenerator_t& rg);
-//
-//       ~VMCUpdateAllSampleRN();
-//
-//       void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-//       void setLogEpsilon(RealType eps) { logEpsilon=eps; }
-//
-//     private:
-//       /// Copy Constructor (disabled)
-//       VMCUpdateAllSampleRN(const VMCUpdateAllSampleRN& a): QMCUpdateBase(a) { }
-//       /// Copy operator (disabled).
-//       VMCUpdateAllSampleRN& operator=(const VMCUpdateAllSampleRN&)
-//       {
-//         return *this;
-//       }
-//       RealType logEpsilon;
-//     };
 
 }
 
 #endif
-/***************************************************************************
- * $RCSfile: VMCUpdateAll.h,v $   $Author: jnkim $
- * $Revision: 1.5 $   $Date: 2006/07/17 14:29:40 $
- * $Id: VMCUpdateAll.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $
- ***************************************************************************/

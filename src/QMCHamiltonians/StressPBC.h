@@ -126,11 +126,6 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
   
   Return_t g_filter(RealType r);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
   {
     registerObservablesF(h5list,gid);
@@ -178,9 +173,4 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2945 $   $Date: 2008-08-05 10:21:33 -0500 (Tue, 05 Aug 2008) $
- * $Id: StressPBC.h 2945 2008-08-05 15:21:33Z jnkim $
- ***************************************************************************/
 

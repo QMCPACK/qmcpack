@@ -24,19 +24,19 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#include "QMCWaveFunctions/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
 
-//std::map<H5OrbSet,SPOSetBase*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
+//std::map<H5OrbSet,SPOSet*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
 //std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> EinsplineSetBuilder::OrbitalMap;
 ////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
-EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur)
-  : TargetPtcl(p),ParticleSets(psets), MixedSplineReader(0), XMLRoot(cur), Format(QMCPACK),
+EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate *comm, xmlNodePtr cur)
+  : SPOSetBuilder(comm), TargetPtcl(p),ParticleSets(psets), MixedSplineReader(0), XMLRoot(cur), Format(QMCPACK),
   TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1),
   NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
   NumBands(0), NumElectrons(0), NumSpins(0), NumTwists(0),
@@ -46,7 +46,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xm
   myTableIndex=1;
 
   MatchingTol=10*std::numeric_limits<float>::epsilon();
-//     for (int i=0; i<3; i++) afm_vector[i]=0;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
       TileMatrix(i,j) = 0;
@@ -88,15 +87,6 @@ EinsplineSetBuilder::~EinsplineSetBuilder()
 
 
 bool
-EinsplineSetBuilder::put(xmlNodePtr cur)
-{
-  std::string hdfName;
-  OhmmsAttributeSet attribs;
-  attribs.add (hdfName, "href");
-  return attribs.put(XMLRoot);
-}
-
-bool
 EinsplineSetBuilder::CheckLattice()
 {
   update_token(__FILE__,__LINE__,"CheckLattice");
@@ -104,7 +94,11 @@ EinsplineSetBuilder::CheckLattice()
   double diff=0.0;
   for (int i=0; i<OHMMS_DIM; i++)
     for (int j=0; j<OHMMS_DIM; j++)
-      diff=std::max(diff,std::abs(SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j)));
+    {
+      double max_abs=std::max(std::abs(SuperLattice(i,j)),static_cast<double>(std::abs(TargetPtcl.Lattice.R(i,j))));
+      if(max_abs>MatchingTol)
+        diff=std::max(diff,std::abs(SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j))/max_abs);
+    }
 
   if(diff>MatchingTol)
   {
@@ -119,9 +113,10 @@ EinsplineSetBuilder::CheckLattice()
     o << TargetPtcl.Lattice.R << std::endl;
     o << " Difference " << std::endl;
     o << SuperLattice-TargetPtcl.Lattice.R << std::endl;
-    o << " Max difference = "<<diff<< std::endl;
-    o << " Tolerance      = "<<MatchingTol<< std::endl;
-    APP_ABORT(o.str());
+    o << " Max relative error = "<< diff << std::endl;
+    o << " Tolerance      = "<< MatchingTol << std::endl;
+    app_error() << o.str();
+    return false;
   }
   return true;
 }
@@ -134,7 +129,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   int numIons = IonTypes.size();
   int numAtomicOrbitals = AtomicOrbitals.size();
   int numDensityGvecs = TargetPtcl.DensityReducedGvecs.size();
-  PooledData<RealType> abuffer;
+  PooledData<double> abuffer;
   PooledData<int>       aibuffer;
   aibuffer.add(Version.begin(),Version.end()); //myComm->bcast(Version);
   aibuffer.add(Format);
@@ -150,7 +145,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   aibuffer.add(NumMuffinTins);
   aibuffer.add(numAtomicOrbitals);
   aibuffer.add(numDensityGvecs);
-  aibuffer.add((int)HaveOrbDerivs);
+  aibuffer.add(HaveOrbDerivs);
   myComm->bcast(abuffer);
   myComm->bcast(aibuffer);
   if(myComm->rank())
@@ -194,7 +189,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
     IonPos.resize(numIons);
   }
   //new buffer
-  PooledData<RealType> bbuffer;
+  PooledData<double> bbuffer;
   PooledData<int> bibuffer;
   for(int i=0; i<numIons; ++i)
     bibuffer.add(IonTypes[i]);
@@ -272,6 +267,38 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
       bbuffer.get  (orb.PolyRadius);
     }
   }
+  //buffer to bcast hybrid representation atomic orbital info
+  PooledData<double> cbuffer;
+  PooledData<int> cibuffer;
+  myComm->bcast(cbuffer);
+  myComm->bcast(cibuffer);
+  AtomicCentersInfo.resize(numIons);
+  Super2Prim.resize(SourcePtcl->R.size());
+  cbuffer.add(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
+  cbuffer.add(AtomicCentersInfo.non_overlapping_radius.begin(), AtomicCentersInfo.non_overlapping_radius.end());
+  cbuffer.add(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
+  cbuffer.add(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
+  cibuffer.add(Super2Prim.begin(),Super2Prim.end());
+  cibuffer.add(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+  cibuffer.add(AtomicCentersInfo.GroupID.begin(), AtomicCentersInfo.GroupID.end());
+  cibuffer.add(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
+  myComm->bcast(cbuffer);
+  myComm->bcast(cibuffer);
+  if(myComm->rank())
+  {
+    cbuffer.rewind();
+    cibuffer.rewind();
+    cbuffer.get(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
+    cbuffer.get(AtomicCentersInfo.non_overlapping_radius.begin(), AtomicCentersInfo.non_overlapping_radius.end());
+    cbuffer.get(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
+    cbuffer.get(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
+    cibuffer.get(Super2Prim.begin(),Super2Prim.end());
+    cibuffer.get(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+    cibuffer.get(AtomicCentersInfo.GroupID.begin(), AtomicCentersInfo.GroupID.end());
+    cibuffer.get(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
+    for (int i=0; i<numIons; i++)
+      AtomicCentersInfo.ion_pos[i]=IonPos[i];
+  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -314,8 +341,8 @@ EinsplineSetBuilder::TileIons()
 
   IonPos.resize(SourcePtcl->getTotalNum());
   IonTypes.resize(SourcePtcl->getTotalNum());
-  copy(SourcePtcl->R.begin(),SourcePtcl->R.end(),IonPos.begin());
-  copy(SourcePtcl->GroupID.begin(),SourcePtcl->GroupID.end(),IonTypes.begin());
+  std::copy(SourcePtcl->R.begin(),SourcePtcl->R.end(),IonPos.begin());
+  std::copy(SourcePtcl->GroupID.begin(),SourcePtcl->GroupID.end(),IonTypes.begin());
 
   //app_log() << "  Primitive Cell\n";
   //SourcePtcl->PrimitiveLattice.print(app_log());
@@ -449,13 +476,13 @@ EinsplineSetBuilder::AnalyzeTwists2()
     int n_tot_irred(0);
     for (int si=0; si<numSuperTwists; si++)
     {
-      bool irreducible(false);
+//      bool irreducible(false);
       int irrep_wgt(0);
 // 	 for (int i=0; i<superSets[si].size(); i++)
       if(TwistSymmetry[superSets[si][0]]==1)
       {
         irrep_wgt=TwistWeight[superSets[si][0]];
-        irreducible=true;
+//        irreducible=true;
         n_tot_irred++;
       }
 //	if((irreducible) and ((Version[0] >= 2) and (Version[1] >= 0)))
@@ -767,6 +794,14 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
 {
   update_token(__FILE__,__LINE__, "OccupyBands");
   if (myComm->rank() != 0) return;
+  if(spin>=NumSpins)
+  {
+    app_error() << "To developer: User is requesting for orbitals in an invalid spin group " << spin
+                << ". Current h5 file only contains spin groups " << "[0.." << NumSpins-1 << "]." << std::endl;
+    app_error() << "To user: Orbital H5 file contains no spin down data and is appropriate only for spin unpolarized calculations. "
+                << "If this is your intent, please replace 'spindataset=1' with 'spindataset=0' in the input file." << std::endl;
+    abort();
+  }
   if (Format == ESHDF)
   {
     OccupyBands_ESHDF (spin, sortBands, numOrbs);
@@ -863,30 +898,6 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
   app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
   app_log() << "There are " << NumCoreOrbs << " core states and "
             << NumValenceOrbs << " valence states.\n";
-//     if(qafm!=0) //afm_vector[0]=qafm;
-//     {afm_vector
-//       bool found(false);
-//       for (int tj=0; tj<TwistAngles.size(); tj++)
-//       {
-//         PosType ku=TwistAngles[tj];
-//         PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//         double dkx = std::abs(afm_vector[0] - k2[0]);
-//         double dky = std::abs(afm_vector[1] - k2[1]);
-//         double dkz = std::abs(afm_vector[2] - k2[2]);
-//         bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-//         if(rightK)
-//         {
-//           afm_vector=k2;
-//           found=true;
-//           break;
-//         }
-//       }
-//       if(!found)
-//       {
-//         app_log()<<"Need twist: ("<<qafm<<",0,0)"<< std::endl;
-//         APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
-//       }
-//     }
 }
 
 }

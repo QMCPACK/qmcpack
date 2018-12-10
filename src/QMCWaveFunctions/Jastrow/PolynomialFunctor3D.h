@@ -8,6 +8,7 @@
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -33,9 +34,6 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
   typedef real_type value_type;
   int N_eI, N_ee;
   Array<real_type,3> gamma;
-  Array<real_type,3> dval_dgamma;
-  Array<TinyVector<real_type,3>,3> dgrad_dgamma;
-  Array<Tensor<real_type,3>,3> dhess_dgamma;
   // Permutation vector, used when we need to pivot
   // columns
   std::vector<int> GammaPerm;
@@ -81,9 +79,6 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
     N_ee = nee;
     const double L = 0.5 * cutoff_radius;
     gamma.resize(N_eI+1, N_eI+1, N_ee+1);
-    dval_dgamma.resize(N_eI+1, N_eI+1, N_ee+1);
-    dgrad_dgamma.resize(N_eI+1, N_eI+1, N_ee+1);
-    dhess_dgamma.resize(N_eI+1, N_eI+1, N_ee+1);
     index.resize(N_eI+1, N_eI+1, N_ee+1);
     NumGamma = ((N_eI+1)*(N_eI+2)/2 * (N_ee+1));
     NumConstraints = (2*N_eI+1) + (N_eI+N_ee+1);
@@ -190,7 +185,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
           IndepVar[col] = true;
       }
       while (max_abs < 1.0e-6);
-#if ( ( __INTEL_COMPILER == 1700 ) && ( __INTEL_COMPILER_UPDATE == 1 ) && ( __cplusplus < 201103L ) )
+#if ( ( __INTEL_COMPILER == 1700 ) && ( __cplusplus < 201103L ) )
       // the swap_rows is sick with Intel compiler 17 update 1, c++11 off
       // manually swap the rows
       for(int ind_col=0; ind_col<ConstraintMatrix.size2(); ind_col++)
@@ -247,7 +242,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
 
   void reset_gamma()
   {
-    // fprintf (stderr, "Paramters:\n");
+    // fprintf (stderr, "Parameters:\n");
     // for (int i=0; i<Parameters.size(); i++)
     // 	fprintf (stderr, " %16.10e\n", Parameters[i]);
     const double L = 0.5 * cutoff_radius;
@@ -345,22 +340,26 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
 
   inline real_type evaluate(real_type r_12,
                             real_type r_1I,
-                            real_type r_2I)
+                            real_type r_2I) const
   {
-    const real_type L = 0.5*cutoff_radius;
+    constexpr real_type czero(0);
+    constexpr real_type cone(1);
+    constexpr real_type chalf(0.5);
+
+    const real_type L = chalf*cutoff_radius;
     if (r_1I >= L || r_2I >= L)
-      return 0.0;
-    real_type val = 0.0;
-    real_type r2l=1.0;
+      return czero;
+    real_type val = czero;
+    real_type r2l(cone);
     for (int l=0; l<=N_eI; l++)
     {
-      real_type r2m=1.0;
+      real_type r2m(r2l);
       for (int m=0; m<=N_eI; m++)
       {
-        real_type r2n=1.0;
+        real_type r2n(r2m);
         for (int n=0; n<=N_ee; n++)
         {
-          val += gamma(l,m,n)*r2l*r2m*r2n;
+          val += gamma(l,m,n)*r2n;
           r2n *= r_12;
         }
         r2m *= r_2I;
@@ -372,76 +371,127 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
     return val;
   }
 
+  // assume r_1I < L && r_2I < L, compression and screening is handled outside
+  inline real_type evaluateV(int Nptcl,
+                             const real_type* restrict r_12_array,
+                             const real_type* restrict r_1I_array,
+                             const real_type* restrict r_2I_array) const
+  {
+    constexpr real_type czero(0);
+    constexpr real_type cone(1);
+    constexpr real_type chalf(0.5);
+
+    const real_type L = chalf*cutoff_radius;
+    real_type val_tot = czero;
+
+    #pragma omp simd aligned(r_12_array,r_1I_array,r_2I_array) reduction(+:val_tot)
+    for(int ptcl=0; ptcl<Nptcl; ptcl++)
+    {
+      const real_type r_12 = r_12_array[ptcl];
+      const real_type r_1I = r_1I_array[ptcl];
+      const real_type r_2I = r_2I_array[ptcl];
+      real_type val = czero;
+      real_type r2l(cone);
+      for (int l=0; l<=N_eI; l++)
+      {
+        real_type r2m(r2l);
+        for (int m=0; m<=N_eI; m++)
+        {
+          real_type r2n(r2m);
+          for (int n=0; n<=N_ee; n++)
+          {
+            val += gamma(l,m,n)*r2n;
+            r2n *= r_12;
+          }
+          r2m *= r_2I;
+        }
+        r2l *= r_1I;
+      }
+      const real_type both_minus_L = (r_2I - L) * (r_1I - L);
+      for (int i=0; i<C; i++)
+        val *= both_minus_L;
+      val_tot += val;
+    }
+
+    return val_tot;
+  }
 
   inline real_type evaluate(real_type r_12, real_type r_1I, real_type r_2I,
                             TinyVector<real_type,3> &grad,
-                            Tensor<real_type,3> &hess)
+                            Tensor<real_type,3> &hess) const
   {
-    const real_type L = 0.5*cutoff_radius;
+    constexpr real_type czero(0);
+    constexpr real_type cone(1);
+    constexpr real_type chalf(0.5);
+    constexpr real_type ctwo(2);
+
+    const real_type L = chalf*cutoff_radius;
     if (r_1I >= L || r_2I >= L)
     {
-      grad = 0.0;
-      hess = 0.0;
-      return 0.0;
+      grad = czero;
+      hess = czero;
+      return czero;
     }
-    real_type val = 0.0;
-    // r2l[0] = r2m[0] = 1.0;
-    // for (int i=1; i<N_eI; i++) {
-    // 	r2l[i] = r2l[i-1] * r_1I;
-    // 	r2m[i] = r2l[i-1] * r_2I;
-    // }
-    // r2n[0] = 1.0;
-    // for (int i=1; i<N_ee; i++)
-    // 	r2n[i] = r2n[i-1] * r_12;
-    grad = 0.0;
-    hess = 0.0;
-    real_type r2l(1.0), r2l_1(0.0), r2l_2(0.0), lf(0.0);
+    real_type val = czero;
+    grad = czero;
+    hess = czero;
+    real_type r2l(cone), r2l_1(czero), r2l_2(czero), lf(czero);
     for (int l=0; l<=N_eI; l++)
     {
-      real_type r2m(1.0), r2m_1(0.0), r2m_2(0.0), mf(0.0);
+      real_type r2m(cone), r2m_1(czero), r2m_2(czero), mf(czero);
       for (int m=0; m<=N_eI; m++)
       {
-        real_type r2n(1.0), r2n_1(0.0), r2n_2(0.0), nf(0.0);
+        real_type r2n(cone), r2n_1(czero), r2n_2(czero), nf(czero);
         for (int n=0; n<=N_ee; n++)
         {
-          real_type g = gamma(l,m,n);
-          val += g*r2l*r2m*r2n;
-          grad[0] += nf * g *r2l   * r2m   * r2n_1;
-          grad[1] += lf * g *r2l_1 * r2m   * r2n  ;
-          grad[2] += mf * g *r2l   * r2m_1 * r2n  ;
-          hess(0,0) += nf*(nf-1.0) * g * r2l   * r2m   * r2n_2  ;
-          hess(0,1) += nf*lf       * g * r2l_1 * r2m   * r2n_1  ;
-          hess(0,2) += nf*mf       * g * r2l   * r2m_1 * r2n_1  ;
-          hess(1,1) += lf*(lf-1.0) * g * r2l_2 * r2m   * r2n    ;
-          hess(1,2) += lf*mf       * g * r2l_1 * r2m_1 * r2n    ;
-          hess(2,2) += mf*(mf-1.0) * g * r2l   * r2m_2 * r2n    ;
-          r2n_2 = r2n_1;
-          r2n_1 = r2n;
+          const real_type g = gamma(l,m,n);
+          const real_type g00x = g * r2l   * r2m  ;
+          const real_type g10x = g * r2l_1 * r2m  ;
+          const real_type g01x = g * r2l   * r2m_1;
+          const real_type gxx0 = g * r2n;
+
+          val += g00x * r2n;
+          grad[0] += g00x * r2n_1;
+          grad[1] += g10x * r2n  ;
+          grad[2] += g01x * r2n  ;
+          hess(0,0) += g00x * r2n_2;
+          hess(0,1) += g10x * r2n_1;
+          hess(0,2) += g01x * r2n_1;
+          hess(1,1) += gxx0 * r2l_2 * r2m  ;
+          hess(1,2) += gxx0 * r2l_1 * r2m_1;
+          hess(2,2) += gxx0 * r2l   * r2m_2;
+          nf += cone;
+          r2n_2 = r2n_1 * nf;
+          r2n_1 = r2n * nf;
           r2n *= r_12;
-          nf += 1.0;
         }
-        r2m_2 = r2m_1;
-        r2m_1 = r2m;
+        mf += cone;
+        r2m_2 = r2m_1 * mf;
+        r2m_1 = r2m * mf;
         r2m *= r_2I;
-        mf += 1.0;
       }
-      r2l_2 = r2l_1;
-      r2l_1 = r2l;
+      lf += cone;
+      r2l_2 = r2l_1 * lf;
+      r2l_1 = r2l * lf;
       r2l *= r_1I;
-      lf += 1.0;
     }
+
+    const real_type r_2I_minus_L = r_2I - L;
+    const real_type r_1I_minus_L = r_1I - L;
+    const real_type both_minus_L = r_2I_minus_L * r_1I_minus_L;
     for (int i=0; i<C; i++)
     {
-      hess(0,0)=(r_1I - L)*(r_2I - L)*hess(0,0);
-      hess(0,1)=(r_1I - L)*(r_2I - L)*hess(0,1)+ (r_2I - L)*grad[0];
-      hess(0,2)=(r_1I - L)*(r_2I - L)*hess(0,2)+ (r_1I - L)*grad[0];
-      hess(1,1)=(r_1I - L)*(r_2I - L)*hess(1,1)+ 2.0*(r_2I - L)*grad[1];
-      hess(1,2)=(r_1I - L)*(r_2I - L)*hess(1,2)+ (r_1I - L)*grad[1] + (r_2I - L)*grad[2] +  val;
-      hess(2,2)=(r_1I - L)*(r_2I - L)*hess(2,2)+ 2.0*(r_1I - L)*grad[2];
-      grad[0] = (r_1I - L)*(r_2I - L)*grad[0];
-      grad[1] = (r_1I - L)*(r_2I - L)*grad[1] + (r_2I - L) * val;
-      grad[2] = (r_1I - L)*(r_2I - L)*grad[2] + (r_1I - L) * val;
-      val *= (r_1I - L)*(r_2I - L);
+
+      hess(0,0)=both_minus_L*hess(0,0);
+      hess(0,1)=both_minus_L*hess(0,1)+ r_2I_minus_L*grad[0];
+      hess(0,2)=both_minus_L*hess(0,2)+ r_1I_minus_L*grad[0];
+      hess(1,1)=both_minus_L*hess(1,1)+ ctwo*r_2I_minus_L*grad[1];
+      hess(1,2)=both_minus_L*hess(1,2)+ r_1I_minus_L*grad[1] + r_2I_minus_L*grad[2] + val;
+      hess(2,2)=both_minus_L*hess(2,2)+ ctwo*r_1I_minus_L*grad[2];
+      grad[0] = both_minus_L*grad[0];
+      grad[1] = both_minus_L*grad[1] + r_2I_minus_L * val;
+      grad[2] = both_minus_L*grad[2] + r_1I_minus_L * val;
+      val *= both_minus_L;
     }
     hess(1,0) = hess(0,1);
     hess(2,0) = hess(0,2);
@@ -449,8 +499,115 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
     return val;
   }
 
+  // assume r_1I < L && r_2I < L, compression and screening is handled outside
+  inline void evaluateVGL(int Nptcl, const real_type* restrict r_12_array,
+                          const real_type* restrict r_1I_array,
+                          const real_type* restrict r_2I_array,
+                          real_type* restrict val_array,
+                          real_type* restrict grad0_array,
+                          real_type* restrict grad1_array,
+                          real_type* restrict grad2_array,
+                          real_type* restrict hess00_array,
+                          real_type* restrict hess11_array,
+                          real_type* restrict hess22_array,
+                          real_type* restrict hess01_array,
+                          real_type* restrict hess02_array) const
+  {
+    constexpr real_type czero(0);
+    constexpr real_type cone(1);
+    constexpr real_type chalf(0.5);
+    constexpr real_type ctwo(2);
 
-  inline real_type evaluate(real_type r_12, real_type r_1I, real_type r_2I,
+    const real_type L = chalf*cutoff_radius;
+    #pragma omp simd aligned(r_12_array,r_1I_array,r_2I_array,val_array, \
+      grad0_array,grad1_array,grad2_array, \
+      hess00_array,hess11_array,hess22_array,hess01_array,hess02_array)
+    for(int ptcl=0; ptcl<Nptcl; ptcl++)
+    {
+      const real_type r_12 = r_12_array[ptcl];
+      const real_type r_1I = r_1I_array[ptcl];
+      const real_type r_2I = r_2I_array[ptcl];
+
+      real_type val(czero);
+      real_type grad0(czero);
+      real_type grad1(czero);
+      real_type grad2(czero);
+      real_type hess00(czero);
+      real_type hess11(czero);
+      real_type hess22(czero);
+      real_type hess01(czero);
+      real_type hess02(czero);
+
+      real_type r2l(cone), r2l_1(czero), r2l_2(czero), lf(czero);
+      for (int l=0; l<=N_eI; l++)
+      {
+        real_type r2m(cone), r2m_1(czero), r2m_2(czero), mf(czero);
+        for (int m=0; m<=N_eI; m++)
+        {
+          real_type r2n(cone), r2n_1(czero), r2n_2(czero), nf(czero);
+          for (int n=0; n<=N_ee; n++)
+          {
+            const real_type g = gamma(l,m,n);
+            const real_type g00x = g * r2l   * r2m  ;
+            const real_type g10x = g * r2l_1 * r2m  ;
+            const real_type g01x = g * r2l   * r2m_1;
+            const real_type gxx0 = g * r2n;
+
+            val += g00x * r2n;
+            grad0 += g00x * r2n_1;
+            grad1 += g10x * r2n  ;
+            grad2 += g01x * r2n  ;
+            hess00 += g00x * r2n_2;
+            hess01 += g10x * r2n_1;
+            hess02 += g01x * r2n_1;
+            hess11 += gxx0 * r2l_2 * r2m  ;
+            hess22 += gxx0 * r2l   * r2m_2;
+            nf += cone;
+            r2n_2 = r2n_1 * nf;
+            r2n_1 = r2n * nf;
+            r2n *= r_12;
+          }
+          mf += cone;
+          r2m_2 = r2m_1 * mf;
+          r2m_1 = r2m * mf;
+          r2m *= r_2I;
+        }
+        lf += cone;
+        r2l_2 = r2l_1 * lf;
+        r2l_1 = r2l * lf;
+        r2l *= r_1I;
+      }
+
+      const real_type r_2I_minus_L = r_2I - L;
+      const real_type r_1I_minus_L = r_1I - L;
+      const real_type both_minus_L = r_2I_minus_L * r_1I_minus_L;
+      for (int i=0; i<C; i++)
+      {
+        hess00=both_minus_L*hess00;
+        hess01=both_minus_L*hess01 + r_2I_minus_L*grad0;
+        hess02=both_minus_L*hess02 + r_1I_minus_L*grad0;
+        hess11=both_minus_L*hess11 + ctwo*r_2I_minus_L*grad1;
+        hess22=both_minus_L*hess22 + ctwo*r_1I_minus_L*grad2;
+        grad0 = both_minus_L*grad0;
+        grad1 = both_minus_L*grad1 + r_2I_minus_L * val;
+        grad2 = both_minus_L*grad2 + r_1I_minus_L * val;
+        val *= both_minus_L;
+      }
+
+      val_array[ptcl] = val;
+      grad0_array[ptcl] = grad0/r_12;
+      grad1_array[ptcl] = grad1/r_1I;
+      grad2_array[ptcl] = grad2/r_2I;
+      hess00_array[ptcl] = hess00;
+      hess11_array[ptcl] = hess11;
+      hess22_array[ptcl] = hess22;
+      hess01_array[ptcl] = hess01/(r_12*r_1I);
+      hess02_array[ptcl] = hess02/(r_12*r_2I);
+    }
+  }
+
+
+  inline real_type evaluate(const real_type r_12, const real_type r_1I, const real_type r_2I,
                             TinyVector<real_type,3> &grad,
                             Tensor<real_type,3> &hess,
                             TinyVector<Tensor<real_type,3>,3> &d3)
@@ -559,14 +716,14 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
   }
 
 
-  inline real_type evaluate(real_type r, real_type rinv)
+  inline real_type evaluate(const real_type r, const real_type rinv)
   {
     return 0.0;
   }
 
 
   inline bool
-  evaluateDerivativesFD (real_type r_12, real_type r_1I, real_type r_2I,
+  evaluateDerivativesFD (const real_type r_12, const real_type r_1I, const real_type r_2I,
                          std::vector<double> &d_vals,
                          std::vector<TinyVector<real_type,3> >& d_grads,
                          std::vector<Tensor<real_type,3> > &d_hess)
@@ -599,7 +756,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
 
 
   inline bool
-  evaluateDerivatives (real_type r_12, real_type r_1I, real_type r_2I,
+  evaluateDerivatives (const real_type r_12, const real_type r_1I, const real_type r_2I,
                        std::vector<real_type> &d_vals,
                        std::vector<TinyVector<real_type,3> >& d_grads,
                        std::vector<Tensor<real_type,3> > &d_hess)
@@ -607,107 +764,94 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
     const real_type L = 0.5*cutoff_radius;
     if (r_1I >= L || r_2I >= L)
       return false;
-    real_type val = 0.0;
-    TinyVector<real_type,3> grad;
-    Tensor<real_type,3> hess;
-    real_type r2l(1.0), r2l_1(0.0), r2l_2(0.0), r2l_3, lf(0.0);
+
+    constexpr real_type czero(0);
+    constexpr real_type cone(1);
+    constexpr real_type ctwo(2);
+
+    real_type dval_dgamma;
+    TinyVector<real_type,3> dgrad_dgamma;
+    Tensor<real_type,3> dhess_dgamma;
+
+    for (int i=0; i<dval_Vec.size(); i++)
+    {
+      dval_Vec[i] = czero;
+      dgrad_Vec[i] = czero;
+      dhess_Vec[i] = czero;
+    }
+
+    const real_type r_2I_minus_L = r_2I - L;
+    const real_type r_1I_minus_L = r_1I - L;
+    const real_type both_minus_L = r_2I_minus_L * r_1I_minus_L;
+
+    real_type r2l(cone), r2l_1(czero), r2l_2(czero), lf(czero);
     for (int l=0; l<=N_eI; l++)
     {
-      real_type r2m(1.0), r2m_1(0.0), r2m_2(0.0), r2m_3, mf(0.0);
+      real_type r2m(cone), r2m_1(czero), r2m_2(czero), mf(czero);
       for (int m=0; m<=N_eI; m++)
       {
-        real_type r2n(1.0), r2n_1(0.0), r2n_2(0.0), r2n_3, nf(0.0);
-        for (int n=0; n<=N_ee; n++)
+        int num;
+        if(m>l)
+          num = ((2*N_eI-l+3)*l/2 + m-l)*(N_ee+1);
+        else
+          num = ((2*N_eI-m+3)*m/2 + l-m)*(N_ee+1);
+        real_type r2n(cone), r2n_1(czero), r2n_2(czero), nf(czero);
+        for (int n=0; n<=N_ee; n++, num++)
         {
-          real_type g = gamma(l,m,n);
-          val += g * r2l*r2m*r2n;
-          grad[0] += g * nf *r2l   * r2m   * r2n_1;
-          grad[1] += g * lf *r2l_1 * r2m   * r2n  ;
-          grad[2] += g * mf *r2l   * r2m_1 * r2n  ;
-          hess(0,0) += g * nf*(nf-1.0) * r2l   * r2m   * r2n_2  ;
-          hess(0,1) += g * nf*lf       * r2l_1 * r2m   * r2n_1  ;
-          hess(0,2) += g * nf*mf       * r2l   * r2m_1 * r2n_1  ;
-          hess(1,1) += g * lf*(lf-1.0) * r2l_2 * r2m   * r2n    ;
-          hess(1,2) += g * lf*mf       * r2l_1 * r2m_1 * r2n    ;
-          hess(2,2) += g * mf*(mf-1.0) * r2l   * r2m_2 * r2n    ;
-          dval_dgamma(l,m,n) = r2l*r2m*r2n;
-          dgrad_dgamma(l,m,n)[0] = nf *r2l   * r2m   * r2n_1;
-          dgrad_dgamma(l,m,n)[1] = lf *r2l_1 * r2m   * r2n  ;
-          dgrad_dgamma(l,m,n)[2] = mf *r2l   * r2m_1 * r2n  ;
-          dhess_dgamma(l,m,n)(0,0) = nf*(nf-1.0) * r2l   * r2m   * r2n_2  ;
-          dhess_dgamma(l,m,n)(0,1) = nf*lf       * r2l_1 * r2m   * r2n_1  ;
-          dhess_dgamma(l,m,n)(0,2) = nf*mf       * r2l   * r2m_1 * r2n_1  ;
-          dhess_dgamma(l,m,n)(1,1) = lf*(lf-1.0) * r2l_2 * r2m   * r2n    ;
-          dhess_dgamma(l,m,n)(1,2) = lf*mf       * r2l_1 * r2m_1 * r2n    ;
-          dhess_dgamma(l,m,n)(2,2) = mf*(mf-1.0) * r2l   * r2m_2 * r2n    ;
-          r2n_3 = r2n_2;
-          r2n_2 = r2n_1;
-          r2n_1 = r2n;
-          r2n *= r_12;
-          nf += 1.0;
-        }
-        r2m_3 = r2m_2;
-        r2m_2 = r2m_1;
-        r2m_1 = r2m;
-        r2m *= r_2I;
-        mf += 1.0;
-      }
-      r2l_3 = r2l_2;
-      r2l_2 = r2l_1;
-      r2l_1 = r2l;
-      r2l *= r_1I;
-      lf += 1.0;
-    }
-    for (int i=0; i<C; i++)
-    {
-      hess(0,0)=(r_1I - L)*(r_2I - L)*hess(0,0);
-      hess(0,1)=(r_1I - L)*(r_2I - L)*hess(0,1)+ (r_2I - L)*grad[0];
-      hess(0,2)=(r_1I - L)*(r_2I - L)*hess(0,2)+ (r_1I - L)*grad[0];
-      hess(1,1)=(r_1I - L)*(r_2I - L)*hess(1,1)+ 2.0*(r_2I - L)*grad[1];
-      hess(1,2)=(r_1I - L)*(r_2I - L)*hess(1,2)+ (r_1I - L)*grad[1] + (r_2I - L)*grad[2] +  val;
-      hess(2,2)=(r_1I - L)*(r_2I - L)*hess(2,2)+ 2.0*(r_1I - L)*grad[2];
-      grad[0] = (r_1I - L)*(r_2I - L)*grad[0];
-      grad[1] = (r_1I - L)*(r_2I - L)*grad[1] + (r_2I - L) * val;
-      grad[2] = (r_1I - L)*(r_2I - L)*grad[2] + (r_1I - L) * val;
-      val *= (r_1I - L)*(r_2I - L);
-      for (int l=0; l<=N_eI; l++)
-        for (int m=0; m<=N_eI; m++)
-          for (int n=0; n<=N_ee; n++)
+          dval_dgamma  = r2l*r2m*r2n;
+          dgrad_dgamma[0] = r2l   * r2m   * r2n_1;
+          dgrad_dgamma[1] = r2l_1 * r2m   * r2n  ;
+          dgrad_dgamma[2] = r2l   * r2m_1 * r2n  ;
+          dhess_dgamma(0,0) = r2l   * r2m   * r2n_2;
+          dhess_dgamma(0,1) = r2l_1 * r2m   * r2n_1;
+          dhess_dgamma(0,2) = r2l   * r2m_1 * r2n_1;
+          dhess_dgamma(1,1) = r2l_2 * r2m   * r2n  ;
+          dhess_dgamma(1,2) = r2l_1 * r2m_1 * r2n  ;
+          dhess_dgamma(2,2) = r2l   * r2m_2 * r2n  ;
+
+          for (int i=0; i<C; i++)
           {
-            dhess_dgamma(l,m,n)(0,0)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(0,0);
-            dhess_dgamma(l,m,n)(0,1)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(0,1)+ (r_2I - L)*dgrad_dgamma(l,m,n)[0];
-            dhess_dgamma(l,m,n)(0,2)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(0,2)+ (r_1I - L)*dgrad_dgamma(l,m,n)[0];
-            dhess_dgamma(l,m,n)(1,1)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(1,1)+ 2.0*(r_2I - L)*dgrad_dgamma(l,m,n)[1];
-            dhess_dgamma(l,m,n)(1,2)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(1,2)+ (r_1I - L)*dgrad_dgamma(l,m,n)[1]
-                                     + (r_2I - L)*dgrad_dgamma(l,m,n)[2] +  dval_dgamma(l,m,n);
-            dhess_dgamma(l,m,n)(2,2)=(r_1I - L)*(r_2I - L)*dhess_dgamma(l,m,n)(2,2)+ 2.0*(r_1I - L)*dgrad_dgamma(l,m,n)[2];
-            dgrad_dgamma(l,m,n)[0] = (r_1I - L)*(r_2I - L)*dgrad_dgamma(l,m,n)[0];
-            dgrad_dgamma(l,m,n)[1] = (r_1I - L)*(r_2I - L)*dgrad_dgamma(l,m,n)[1] + (r_2I - L) * dval_dgamma(l,m,n);
-            dgrad_dgamma(l,m,n)[2] = (r_1I - L)*(r_2I - L)*dgrad_dgamma(l,m,n)[2] + (r_1I - L) * dval_dgamma(l,m,n);
-            dval_dgamma(l,m,n) *= (r_1I - L)*(r_2I - L);
+            dhess_dgamma(0,0) = both_minus_L*dhess_dgamma(0,0);
+            dhess_dgamma(0,1) = both_minus_L*dhess_dgamma(0,1)+ r_2I_minus_L*dgrad_dgamma[0];
+            dhess_dgamma(0,2) = both_minus_L*dhess_dgamma(0,2)+ r_1I_minus_L*dgrad_dgamma[0];
+            dhess_dgamma(1,1) = both_minus_L*dhess_dgamma(1,1)+ ctwo*r_2I_minus_L*dgrad_dgamma[1];
+            dhess_dgamma(1,2) = both_minus_L*dhess_dgamma(1,2)+ r_1I_minus_L*dgrad_dgamma[1]
+                                   + r_2I_minus_L*dgrad_dgamma[2] +  dval_dgamma;
+            dhess_dgamma(2,2) = both_minus_L*dhess_dgamma(2,2)+ ctwo*r_1I_minus_L*dgrad_dgamma[2];
+            dgrad_dgamma[0]   = both_minus_L*dgrad_dgamma[0];
+            dgrad_dgamma[1]   = both_minus_L*dgrad_dgamma[1] + r_2I_minus_L * dval_dgamma;
+            dgrad_dgamma[2]   = both_minus_L*dgrad_dgamma[2] + r_1I_minus_L * dval_dgamma;
+            dval_dgamma      *= both_minus_L;
           }
-    }
-    // Now, pack into vectors
-    int num=0;
-    for (int m=0; m<=N_eI; m++)
-      for (int l=m; l<=N_eI; l++)
-        for (int n=0; n<=N_ee; n++)
-        {
-          // Don't double-count diagonal terms
-          real_type nodiag = (l==m) ? 0.0 : 1.0;
-          dval_Vec[num] = scale*(dval_dgamma(l,m,n) + nodiag*dval_dgamma(m,l,n));
+
+          // Now, pack into vectors
+          dval_Vec[num] += scale*dval_dgamma;
           for (int i=0; i<3; i++)
           {
-            dgrad_Vec[num][i] = scale*(dgrad_dgamma(l,m,n)[i] + nodiag*dgrad_dgamma(m,l,n)[i]);
-            for (int j=i; j<3; j++)
+            dgrad_Vec[num][i] += scale*dgrad_dgamma[i];
+            dhess_Vec[num](i,i) += scale*dhess_dgamma(i,i);
+            for (int j=i+1; j<3; j++)
             {
-              dhess_Vec[num](i,j) = scale*(dhess_dgamma(l,m,n)(i,j) + nodiag*dhess_dgamma(m,l,n)(i,j));
-              dhess_Vec[num](j,i) = scale*(dhess_dgamma(l,m,n)(i,j) + nodiag*dhess_dgamma(m,l,n)(i,j));
+              dhess_Vec[num](i,j) += scale*dhess_dgamma(i,j);
+              dhess_Vec[num](j,i) = dhess_Vec[num](i,j);
             }
           }
-          num++;
+
+          nf += cone;
+          r2n_2 = r2n_1 * nf;
+          r2n_1 = r2n * nf;
+          r2n *= r_12;
         }
-    assert (num == dval_Vec.size());
+        mf += cone;
+        r2m_2 = r2m_1 * mf;
+        r2m_1 = r2m * mf;
+        r2m *= r_2I;
+      }
+      lf += cone;
+      r2l_2 = r2l_1 * lf;
+      r2l_1 = r2l * lf;
+      r2l *= r_1I;
+    }
     // for (int i=0; i<dval_Vec.size(); i++)
     // 	fprintf (stderr, "dval_Vec[%d] = %12.6e\n", i, dval_Vec[i]);
     ///////////////////////////////////////////
@@ -827,7 +971,6 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
             abort(); //you think you know what they should be but don't.
         }
         // Setup parameter names
-        int index=0;
         for (int i=0; i<Parameters.size(); i++)
         {
           std::stringstream sstr;
@@ -950,8 +1093,3 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1691 $   $Date: 2007-02-01 15:51:50 -0600 (Thu, 01 Feb 2007) $
- * $Id: PolynomialFunctor3D.h 1691 2007-02-01 21:51:50Z jnkim $
- ***************************************************************************/

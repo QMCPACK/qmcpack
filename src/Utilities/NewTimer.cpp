@@ -240,13 +240,13 @@ TimerManagerClass::print(Communicate* comm)
 #ifdef USE_STACK_TIMERS
   if(comm == NULL || comm->rank() == 0)
   {
-    printf("Stack timer profile\n");
+    app_log() << "Stack timer profile" << std::endl;
   }
   print_stack(comm);
 #else
   if(comm == NULL || comm->rank() == 0)
   {
-    printf("\nFlat profile\n");
+    app_log() << "\nFlat profile" << std::endl;
   }
   print_flat(comm);
 #endif
@@ -265,16 +265,19 @@ TimerManagerClass::print_flat(Communicate* comm)
   {
     #pragma omp master
     {
+      const int bufsize = 256;
+      char tmpout[bufsize];
       std::map<std::string,int>::iterator it(p.nameList.begin()), it_end(p.nameList.end());
       while(it != it_end)
       {
         int i=(*it).second;
         //if(callList[i]) //skip zeros
-        printf ("%-40s  %9.4f  %13ld  %16.9f  %12.6f TIMER\n"
+        snprintf (tmpout, bufsize, "%-40s  %9.4f  %13ld  %16.9f  %12.6f TIMER\n"
         , (*it).first.c_str()
         , p.timeList[i], p.callList[i]
         , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon())
         , p.timeList[i]/static_cast<double>(omp_get_max_threads()*comm->size()));
+        app_log() << tmpout;
         ++it;
       }
     }
@@ -303,8 +306,8 @@ TimerManagerClass::print_stack(Communicate* comm)
   {
     if (timer_max_level_exceeded)
     {
-      printf("Warning: Maximum stack level (%d) exceeded.  Results may be incorrect.\n",StackKey::max_level);
-      printf("Adjust StackKey in NewTimer.h and recompile.\n");
+      app_warning() << "Maximum stack level (" << StackKey::max_level << ") exceeded.  Results may be incorrect." << std::endl;
+      app_warning() << "Adjust StackKey in NewTimer.h and recompile." << std::endl;
     }
 
     int indent_len = 2;
@@ -318,9 +321,14 @@ TimerManagerClass::print_stack(Communicate* comm)
       max_name_len = std::max(name_len, max_name_len);
     }
 
+    const int bufsize = 256;
+    char tmpout[bufsize];
     std::string timer_name;
     pad_string("Timer", timer_name, max_name_len);
-    printf("%s  %-9s  %-9s  %-10s  %-13s\n",timer_name.c_str(),"Inclusive_time","Exclusive_time","Calls","Time_per_call");
+
+    snprintf(tmpout, bufsize, "%s  %-9s  %-9s  %-10s  %-13s\n",timer_name.c_str(),"Inclusive_time","Exclusive_time","Calls","Time_per_call");
+    app_log() << tmpout;
+
     for (int i = 0; i < p.names.size(); i++)
     {
       std::string stack_name = p.names[i];
@@ -330,12 +338,13 @@ TimerManagerClass::print_stack(Communicate* comm)
       std::string indented_str = indent_str + name;
       std::string padded_name_str;
       pad_string(indented_str, padded_name_str, max_name_len);
-      printf ("%s  %9.4f  %9.4f  %13ld  %16.9f\n"
+      snprintf (tmpout, bufsize, "%s  %9.4f  %9.4f  %13ld  %16.9f\n"
               , padded_name_str.c_str()
               , p.timeList[i]
               , p.timeExclList[i]
               , p.callList[i]
               , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon()));
+      app_log() << tmpout;
     }
   }
 #endif

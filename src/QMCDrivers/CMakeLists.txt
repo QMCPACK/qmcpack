@@ -29,7 +29,6 @@ SET(QMCDRIVERS
   QMCLinearOptimize.cpp
   QMCCorrelatedSamplingLinearOptimize.cpp
   QMCFixedSampleLinearOptimize.cpp
-  QMCCSLinearOptimizeWFmanagerOMP.cpp
   QMCCostFunctionBase.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
@@ -38,14 +37,13 @@ SET(QMCDRIVERS
   VMC/VMCUpdatePbyP.cpp
   VMC/VMCUpdateAll.cpp
   VMC/VMCFactory.cpp
-  DMC/DMCOMP.cpp
+  DMC/DMC.cpp
   DMC/DMCUpdateAll.cpp
-  DMC/DMCUpdatePbyP.cpp
   DMC/DMCUpdatePbyPFast.cpp
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
-  RMC/RMCSingleOMP.cpp
+  RMC/RMC.cpp
   RMC/RMCUpdatePbyP.cpp
   RMC/RMCUpdateAll.cpp
   RMC/RMCFactory.cpp
@@ -56,9 +54,7 @@ SET(QMCDRIVERS
   ../Estimators/CSEnergyEstimator.cpp
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/RMCLocalEnergyEstimator.cpp
-  ../Estimators/LocalEnergyEstimatorHDF.cpp
-  ../Estimators/EstimatorManager.cpp
-  ../Estimators/MultipleEnergyEstimator.cpp
+  ../Estimators/EstimatorManagerBase.cpp
   ../Estimators/CollectablesEstimator.cpp
 )
 
@@ -69,20 +65,10 @@ IF(QMC_CUDA)
    QMCCostFunctionCUDA.cpp)
 ENDIF(QMC_CUDA)
 
-# IF(QMC_BUILD_LEVEL GREATER 2)
-#    SET(QMCDRIVERS ${QMCDRIVERS}
-#    EE/EEFactory.cpp
-#    EE/VMCMultiRenyiOMP.cpp
-#    EE/VMCRenyiOMP.cpp
-#    EE/QMCRenyiUpdateBase.cpp
-#    EE/RenyiUpdatePbyP.cpp
-#    )
-# ENDIF(QMC_BUILD_LEVEL GREATER 2)
-
   SET(QMCDRIVERS ${QMCDRIVERS} 
-      VMC/VMCSingleOMP.cpp
-      VMC/VMCLinearOptOMP.cpp
-      QMCCostFunctionOMP.cpp
+      VMC/VMC.cpp
+      VMC/VMCLinearOpt.cpp
+      QMCCostFunction.cpp
      )
 
 IF(HAVE_MPI) 
@@ -94,34 +80,14 @@ ENDIF(HAVE_MPI)
 # if using the LMYEngine interface, make sure we add the necessary functions
 IF(BUILD_LMYENGINE_INTERFACE)
   SET(QMCDRIVERS ${QMCDRIVERS} 
-      LMYEngineInterface/LMYE_QMCCostFunctionOMP.cpp
+      LMYEngineInterface/LMYE_QMCCostFunction.cpp
      )
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 IF(QMC_BUILD_LEVEL GREATER 1)
   SET(QMCDRIVERS ${QMCDRIVERS}
-#     PolymerEstimator.cpp
-#     MultiChain.cpp
-#     RQMCMultiple.cpp
     ../Estimators/CSEnergyEstimator.cpp
-#     ../Estimators/CSPolymerEstimator.cpp
   )
-# REMOVE broken stuff
-#    ../Estimators/RQMCMultipleEstimator.cpp
-#    SpaceWarp.cpp
-#    RQMCMultiWarp.cpp
-#    VMC/VMCMultipleWarp.cpp
-#    VMC/VMCPbyPMultiWarp.cpp
-#    CorrelatedSampling/CSUpdateBase.cpp
-#    CorrelatedSampling/CSVMC.cpp
-#    CorrelatedSampling/CSVMCUpdateAll.cpp
-#    CorrelatedSampling/CSVMCUpdatePbyP.cpp
-#  IF(NOT QMC_COMPLEX)
-#    SET(QMCDRIVERS ${QMCDRIVERS}
-#    RQMCMultiplePbyP.cpp
-#    )
-#  ENDIF(NOT QMC_COMPLEX)
-
 ENDIF(QMC_BUILD_LEVEL GREATER 1)
 
 
@@ -129,10 +95,8 @@ ENDIF(QMC_BUILD_LEVEL GREATER 1)
 # create libqmc 
 ####################################
 ADD_LIBRARY(qmcdriver ${QMCDRIVERS})
-IF (HAS_TARGET_COMPILE_DEFINITIONS)
-  ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
-  USE_FAKE_RNG(qmcdriver_unit)
-ENDIF()
+ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
+USE_FAKE_RNG(qmcdriver_unit)
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcdriver STATIC ${QMCDRIVERS})
 #ELSE(QMC_BUILD_STATIC)

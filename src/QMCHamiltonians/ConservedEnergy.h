@@ -91,11 +91,6 @@ struct ConservedEnergy: public QMCHamiltonianBase
     return 0.0;
   }
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {
@@ -144,9 +139,4 @@ struct ConservedEnergy: public QMCHamiltonianBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: tillackaf $
- * $Revision: 7408 $   $Date: 2017-01-10 13:29:49 -0500 (Tue, 10 Jan 2017) $
- * $Id: ConservedEnergy.h 7408 2017-01-10 18:29:49Z tillackaf $
- ***************************************************************************/
 

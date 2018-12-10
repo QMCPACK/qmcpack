@@ -57,7 +57,7 @@ public:
 
 
   ///Constructor.
-  QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+  QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
   virtual ~QMCCostFunctionBase();
@@ -103,8 +103,6 @@ public:
   }
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset=false)=0;
-  ///reset Walkers before loadEnsemble
-  virtual void resetWalkers()=0;
 
   inline void getParameterTypes(std::vector<int>& types)
   {
@@ -163,12 +161,7 @@ public:
   bool lineoptimization(const std::vector<Return_t>& x0, const std::vector<Return_t>& gr, Return_t val0,
                         Return_t& dl, Return_t& val_proj, Return_t& lambda_max);
 
-  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap)=0;
-  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap)
-  {
-    APP_ABORT("NOT IMPLEMENTED");
-    return 1;
-  }
+  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right)=0;
 
 #ifdef HAVE_LMY_ENGINE
   Return_t LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine * EngineObj);
@@ -333,14 +326,6 @@ protected:
   //*/
   //vector<std::vector<vector<Return_t> >* > DerivRecords;
   //vector<std::vector<vector<Return_t> >* > HDerivRecords;
-  // std::string that defines whether buffers are used during correlated sampling
-  // to store temporary object
-  std::string usebuffer;
-  // are we using buffers to store derivative informatin
-  bool StoreDerivInfo;
-  // storage level
-  int DerivStorageLevel;
-
 
   typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
   typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
@@ -368,8 +353,3 @@ protected:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1792 $   $Date: 2007-02-21 17:44:40 -0600 (Wed, 21 Feb 2007) $
- * $Id: QMCCostFunctionBase.h 1792 2007-02-21 23:44:40Z jnkim $
- ***************************************************************************/

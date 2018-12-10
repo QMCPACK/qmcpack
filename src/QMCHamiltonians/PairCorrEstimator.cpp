@@ -35,7 +35,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   //use the simulation cell radius if any direction is periodic
   if(elns.Lattice.SuperCellEnum)
   {
-    Dmax=elns.Lattice.SimulationCellRadius;
+    Dmax=elns.Lattice.WignerSeitzRadius;
     Volume=elns.Lattice.Volume;
   }
   else
@@ -57,12 +57,15 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
       pair_map[i*num_species+j]=npairs;
     }
   const DistanceTableData&  dii(*elns.DistTables[0]);
-  pair_ids.resize(dii.getTotNadj());
-  for(int iat=0; iat<dii.centers(); ++iat)
+  if(dii.DTType == DT_AOS)
   {
-    int ig=elns.GroupID[iat]*num_species;
-    for(int nn=dii.M[iat]; nn<dii.M[iat+1]; ++nn)
-      pair_ids[nn]=pair_map[ig+elns.GroupID[dii.J[nn]]];
+    pair_ids.resize(dii.getTotNadj());
+    for(int iat=0; iat<dii.centers(); ++iat)
+    {
+      int ig=elns.GroupID[iat]*num_species;
+      for(int nn=dii.M[iat]; nn<dii.M[iat+1]; ++nn)
+        pair_ids[nn]=pair_map[ig+elns.GroupID[dii.J[nn]]];
+    }
   }
   // source-target tables
   std::vector<std::string> slist, dlist;
@@ -113,33 +116,74 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
 {
   BufferType& collectables(P.Collectables);
   const DistanceTableData&  dii(*P.DistTables[0]);
-  for(int iat=0; iat<dii.centers(); ++iat)
+  if(dii.DTType == DT_SOA)
   {
-    for(int nn=dii.M[iat]; nn<dii.M[iat+1]; ++nn)
+    for(int iat=1; iat<dii.centers(); ++iat)
     {
-      RealType r=dii.r(nn);
-      if(r>=Dmax)
-        continue;
-      int loc=static_cast<int>(DeltaInv*r);
-      collectables[pair_ids[nn]*NumBins+loc+myIndex] += norm_factor(pair_ids[nn]+1,loc);
+      const RealType* restrict dist=dii.Distances[iat];
+      const int ig=P.GroupID[iat];
+      for(int j=0; j<iat; ++j)
+      {
+        const RealType r=dist[j];
+        if(r>=Dmax)
+          continue;
+        const int loc=static_cast<int>(DeltaInv*r);
+        const int jg=P.GroupID[j];
+        const int pair_id=ig*(ig+1)/2+jg;
+        collectables[pair_id*NumBins+loc+myIndex] += norm_factor(pair_id,loc);
+      }
+    }
+    for(int k=0; k<other_ids.size(); ++k)
+    {
+      const DistanceTableData&  d1(*P.DistTables[other_ids[k]]);
+      const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
+      int koff=other_offsets[k];
+      RealType overNI=1.0/d1.centers();
+      for(int iat=0; iat<d1.targets(); ++iat)
+      {
+        const RealType* restrict dist=d1.Distances[iat];
+        for(int j=0; j<d1.centers(); ++j)
+        {
+          const RealType r=dist[j];
+          if(r>=Dmax)
+            continue;
+          int toff= (gid[j]+koff)*NumBins;
+          int loc=static_cast<int>(DeltaInv*r);
+          collectables[toff+loc+myIndex] += norm_factor(0,loc)*overNI;
+        }
+      }
     }
   }
-  for(int k=0; k<other_ids.size(); ++k)
+  else
   {
-    const DistanceTableData&  d1(*P.DistTables[other_ids[k]]);
-    const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
-    int koff=other_offsets[k];
-    for(int iat=0; iat<d1.centers(); ++iat)
+    for(int iat=0; iat<dii.centers(); ++iat)
     {
-      RealType overNI=1.0/d1.centers();
-      int toff= (gid[iat]+koff)*NumBins;
-      for(int nn=d1.M[iat]; nn<d1.M[iat+1]; ++nn)
+      for(int nn=dii.M[iat]; nn<dii.M[iat+1]; ++nn)
       {
         RealType r=dii.r(nn);
         if(r>=Dmax)
           continue;
         int loc=static_cast<int>(DeltaInv*r);
-        collectables[toff+loc+myIndex] += norm_factor(0,loc)*overNI;
+        collectables[pair_ids[nn]*NumBins+loc+myIndex] += norm_factor(pair_ids[nn]+1,loc);
+      }
+    }
+    for(int k=0; k<other_ids.size(); ++k)
+    {
+      const DistanceTableData&  d1(*P.DistTables[other_ids[k]]);
+      const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
+      int koff=other_offsets[k];
+      for(int iat=0; iat<d1.centers(); ++iat)
+      {
+        RealType overNI=1.0/d1.centers();
+        int toff= (gid[iat]+koff)*NumBins;
+        for(int nn=d1.M[iat]; nn<d1.M[iat+1]; ++nn)
+        {
+          RealType r=dii.r(nn);
+          if(r>=Dmax)
+            continue;
+          int loc=static_cast<int>(DeltaInv*r);
+          collectables[toff+loc+myIndex] += norm_factor(0,loc)*overNI;
+        }
       }
     }
   }
@@ -296,8 +340,3 @@ void  PairCorrEstimator::resize(int nbins)
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2945 $   $Date: 2008-08-05 10:21:33 -0500 (Tue, 05 Aug 2008) $
- * $Id: ForceBase.h 2945 2008-08-05 15:21:33Z jnkim $
- ***************************************************************************/

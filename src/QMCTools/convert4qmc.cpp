@@ -26,27 +26,31 @@
 #include "QMCTools/VSVBParser.h"
 #include "QMCTools/QPParser.h"
 #include "QMCTools/GamesFMOParser.h"
+#include "QMCTools/LCAOH5Parser.h"
 #include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsData/FileUtility.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
+#include "Utilities/OutputManager.h"
+#include <sstream>
 
 int main(int argc, char **argv)
 {
   if(argc<2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamessAscii|-gamessFMO |-VSVB| -QP] filename ";
-     std::cout << "[-nojastrow -hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead -add3BodyJ -prefix title -addCusp]"
-              << std::endl;
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-pyscf|-orbitals] filename " << std::endl;
+    std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
+    std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
+    std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead -optDetCoeffs]" << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample" << std::endl;
-    std::cout << "When the input format is missing, the  extension of filename is used to determine the parser " << std::endl;
-    std::cout << " *.Fchk -> gaussian; *.out -> gamessAscii; *.data -> casino; *.xml -> gamesxml" << std::endl;
+    std::cout << "When the input format is missing, the  extension of filename is used to determine the format " << std::endl;
+    std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.xml -> gamesxml" << std::endl;
     return 1;
   }
   OHMMS::Controller->initialize(argc,argv);
-  OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
+  if (OHMMS::Controller->rank() != 0) {
+    outputManager.shutOff();
+  }
   Random.init(0,1,-1);
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
   std::cout.setf(std::ios::right,std::ios::adjustfield);
@@ -55,16 +59,27 @@ int main(int argc, char **argv)
   QMCGaussianParserBase *parser=0;
   int iargc=0;
   std::string in_file(argv[1]);
+
+  
   std::string punch_file;
   std::string psi_tag("psi0");
   std::string ion_tag("ion0");
-  std::string prefix("sample");
+  std::string jastrow("j");
+  std::string prefix;
+
+
   int TargetState=0;
+  bool allH5=false;
+  bool addJastrow=true;
   bool usehdf5=false;
-  bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false;
+  bool useprefix=false;
+  bool debug = false;
+  bool prod=false;
+  bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false,multidet=false,optDetCoeffs=false;
   double thres=0.01;
   int readNO=0; // if > 0, read Natural Orbitals from gamess output
   int readGuess=0; // if > 0, read Initial Guess from gamess output
+  std::vector <int> Image;
   while(iargc<argc)
   {
     std::string a(argv[iargc]);
@@ -78,8 +93,10 @@ int main(int argc, char **argv)
       parser = new GamesXmlParser(argc,argv);
       in_file =argv[++iargc];
     }
-    else if(a == "-gamessAscii")
+    else if(a == "-gamessAscii" || a == "-gamess")
     {
+      if (a == "-gamessAscii" )
+          std::cout<<"Option \"-gamessAscii\" is deprecated and will be removed in the next release. Please use instead the option: \"-gamess\" "<<std::endl;
       parser = new GamesAsciiParser(argc,argv);
       in_file =argv[++iargc];
     }
@@ -87,6 +104,12 @@ int main(int argc, char **argv)
     {
       parser = new QPParser(argc,argv);
       in_file =argv[++iargc];
+    }
+    else if(a == "-pyscf" || a=="-orbitals")
+    {
+      parser = new LCAOParser(argc,argv);
+      in_file =argv[++iargc];
+      allH5=true;
     }
     else if(a == "-VSVB")
     {
@@ -118,6 +141,10 @@ int main(int argc, char **argv)
     {
       psi_tag=argv[++iargc];
     }
+    else if(a == "-production")
+    {
+      prod=true; 
+    }
     else if(a == "-ion_tag")
     {
       ion_tag=argv[++iargc];
@@ -125,11 +152,30 @@ int main(int argc, char **argv)
     else if(a == "-prefix")
     {
       prefix=argv[++iargc];
+      useprefix=true;
     }
     else if(a == "-ci")
     {
       ci=true;
       punch_file = argv[++iargc];
+    }
+    else if(a == "-multidet")
+    {
+      multidet=true;
+      punch_file = argv[++iargc];
+    }
+    else if(a == "-NbImages")
+    {
+      int temp;
+      temp=atoi(argv[++iargc]);
+      temp+=1-temp%2;
+      Image.push_back(temp);
+      temp=atoi(argv[++iargc]);
+      temp+=1-temp%2;
+      Image.push_back(temp);
+      temp=atoi(argv[++iargc]);
+      temp+=1-temp%2;
+      Image.push_back(temp);
     }
     else if(a == "-addCusp" )
     {
@@ -138,6 +184,10 @@ int main(int argc, char **argv)
     else if(a == "-threshold" )
     {
       thres = atof(argv[++iargc]);
+    }
+    else if(a == "-optDetCoeffs" )
+    {
+      optDetCoeffs = true;
     }
     else if(a == "-TargetState" )
     {
@@ -162,6 +212,15 @@ int main(int argc, char **argv)
     else if(a == "-cutoff")
     {
       orderByExcitation = true;
+    }
+    else if(a == "-debug")
+    {
+      debug = true;
+    }
+    else if(a == "-nojastrow")
+    {
+       addJastrow=false;
+       jastrow="noj";
     }
     ++iargc;
   }
@@ -205,6 +264,22 @@ int main(int argc, char **argv)
       exit(1);
     }
   }
+  if (useprefix!=true)
+  {
+    prefix=in_file;
+    std::string delimiter;
+    if (allH5)
+      delimiter =".h5";
+    else
+      delimiter =".out";
+    int pos = 0;
+    std::string token;
+    pos = prefix.find(delimiter);
+    token = prefix.substr(0, pos);
+    prefix.erase(0, pos + delimiter.length());
+    prefix=token;
+  }
+  std::cout << "Using "<<prefix <<" to name output files"<< std::endl;
   if(fmo)
   {
     parser->Title=prefix;
@@ -216,11 +291,32 @@ int main(int argc, char **argv)
   else
   {
     parser->Title=prefix;
+    parser->debug=debug;
     parser->DoCusp=addCusp;
+    parser->ECP=!addCusp;
     parser->UseHDF5=usehdf5;
+    if (usehdf5)
+      parser->h5file=parser->Title+".orbs.h5";
     parser->IonSystem.setName(ion_tag);
-    parser->multideterminant=ci;
+    parser->AllH5=allH5;
+    if(allH5)
+    {
+      parser->UseHDF5=false;
+      parser->h5file=in_file;
+    }
+    if (debug){
+      parser->UseHDF5=false;
+      parser->h5file="";
+      parser->AllH5=false;
+    } 
+    parser->multideterminant=false;
+    if(ci)
+       parser->multideterminant=ci;
+    if(multidet)
+      parser->multideterminant=multidet;
+    parser->production=prod;
     parser->ci_threshold=thres;
+    parser->optDetCoeffs=optDetCoeffs;
     parser->target_state=TargetState;
     parser->readNO=readNO;
     parser->orderByExcitation=orderByExcitation;
@@ -228,9 +324,69 @@ int main(int argc, char **argv)
     parser->readGuess=readGuess;
     parser->outputFile=punch_file;
     parser->VSVB=VSVB;
+    parser->Image=Image;
     parser->parse(in_file);
-    parser->dump(psi_tag, ion_tag);
+    if(prod)
+    {
+       parser->addJastrow=addJastrow;
+       if (parser->PBC){
+          for (int i=0; i<parser->NbKpts;i++)
+          {
+             std::cout<<"Generating Inputs for twist Nb:"<<i<<" with coordinate:"<<parser->Kpoints_Coord[i][0]<<"  "<<parser->Kpoints_Coord[i][1]<<"  "<<parser->Kpoints_Coord[i][2]<<std::endl;
+             std::stringstream ss;
+             ss<<jastrow<<"-Twist"<<i;
+             parser->WFS_name=ss.str();
+             parser->dumpPBC(psi_tag, ion_tag,i);
+             parser->dumpStdInputProd(psi_tag, ion_tag);
+          }
+
+       }
+       else{
+          parser->WFS_name=jastrow;
+          parser->dump(psi_tag, ion_tag);
+          parser->dumpStdInputProd(psi_tag, ion_tag);
+       }
+    }
+    else{
+       parser->addJastrow=false;
+       if (parser->PBC){   
+          for (int i=0; i<parser->NbKpts;i++)
+          {
+             std::cout<<"Generating Inputs for twist Nb:"<<i<<" with coordinate:"<<parser->Kpoints_Coord[i][0]<<"  "<<parser->Kpoints_Coord[i][1]<<"  "<<parser->Kpoints_Coord[i][2]<<std::endl;
+             jastrow="noj";
+             std::stringstream ss;
+             ss<<jastrow<<"-Twist"<<i;
+             parser->WFS_name=ss.str();
+             parser->dumpPBC(psi_tag, ion_tag,i);
+             parser->dumpStdInput(psi_tag, ion_tag);
+         
+             std::stringstream sss;
+             parser->addJastrow=true;
+             jastrow="j";
+             sss<<jastrow<<"-Twist"<<i;
+             parser->WFS_name=sss.str();
+             parser->dumpPBC(psi_tag, ion_tag,i);
+             parser->dumpStdInput(psi_tag, ion_tag);
+          }
+       }
+       else{   
+           jastrow="noj";
+           parser->WFS_name=jastrow;
+           parser->dump(psi_tag, ion_tag);
+           parser->dumpStdInput(psi_tag, ion_tag);
+        
+           parser->addJastrow=true;
+           jastrow="j";
+           parser->WFS_name=jastrow;
+           parser->dump(psi_tag, ion_tag);
+           parser->dumpStdInput(psi_tag, ion_tag);
+       }
+
+    }
+    
+
     OHMMS::Controller->finalize();
+    
 
   }
   return 0;

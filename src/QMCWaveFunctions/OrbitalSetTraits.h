@@ -56,6 +56,7 @@ struct OrbitalSetTraits//: public OrbitalTraits<T>
   typedef TinyVector<Tensor<ValueType,DIM>,DIM> GradHessType;
   typedef Vector<IndexType>     IndexVector_t;
   typedef Vector<ValueType>     ValueVector_t;
+  typedef Vector<ValueType, aligned_allocator<ValueType>>     ValueAlignedVector_t;
   typedef Matrix<ValueType>     ValueMatrix_t;
   typedef Vector<GradType>      GradVector_t;
   typedef Matrix<GradType>      GradMatrix_t;
@@ -63,7 +64,7 @@ struct OrbitalSetTraits//: public OrbitalTraits<T>
   typedef Matrix<HessType>      HessMatrix_t;
   typedef Vector<GradHessType>  GradHessVector_t;
   typedef Matrix<GradHessType>  GradHessMatrix_t;
-
+  typedef VectorSoaContainer<ValueType,DIM+2> VGLVector_t;
 };
 
 ///typedef for a set of variables that are varied during an optimization
@@ -127,8 +128,3 @@ inline double evaluatePhase(const std::complex<double>& psi)
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

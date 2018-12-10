@@ -23,7 +23,6 @@
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
 #include "QMCWaveFunctions/Fermion/Backflow_ee.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
-#include "QMCWaveFunctions/Fermion/GaussianFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Particle/ParticleSet.h"
 #include "Configuration.h"
@@ -38,6 +37,8 @@ class BackflowTransformation  //: public OrbitalSetTraits<QMCTraits::ValueType>
 {
 
 public:
+
+  typedef BackflowFunctionBase::WFBufferType WFBufferType;
 
   // All BF quantities should be real, so eliminating complex (ValueType) possibility
   enum {DIM=OHMMS_DIM};
@@ -166,7 +167,7 @@ public:
   BackflowTransformation(ParticleSet& els):
     targetPtcl(els),QP(els),cutOff(0.0)
   {
-    myTable = DistanceTable::add(els);
+    myTable = DistanceTable::add(els,DT_AOS);
     NumTargets=els.getTotalNum();
     Bmat.resize(NumTargets);
     Bmat_full.resize(NumTargets,NumTargets);
@@ -279,7 +280,7 @@ public:
   void resetTargetParticleSet(ParticleSet& P)
   {
     targetPtcl=P;
-    myTable = DistanceTable::add(P);
+    myTable = DistanceTable::add(P,DT_AOS);
     for(int i=0; i<bfFuns.size(); i++)
       bfFuns[i]->resetTargetParticleSet(P);
   }
@@ -293,7 +294,7 @@ public:
         bfFuns[i]->resetParameters(active);
   }
 
-  void registerData(ParticleSet& P, PooledData<RealType>& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf)
   {
     if(storeQP.size() == 0)
     {
@@ -321,7 +322,7 @@ public:
       bfFuns[i]->registerData(buf);
   }
 
-  void updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool redo)
+  void updateBuffer(ParticleSet& P, WFBufferType& buf, bool redo)
   {
     //if(redo) evaluate(P);
     evaluate(P);
@@ -334,7 +335,7 @@ public:
       bfFuns[i]->updateBuffer(buf);
   }
 
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     buf.get(FirstOfP,LastOfP);
     buf.get(FirstOfA,LastOfA);
@@ -398,7 +399,7 @@ public:
     for(int i=0; i<NumTargets; i++) newQP[i] = dummyQP.R[i];
     * /
     indexQP.clear();
-    indexQP.push_back(iat); // set in the beggining by default
+    indexQP.push_back(iat); // set in the beginning by default
     for(int jat=0; jat<NumTargets; jat++) {
       if(jat!=iat) // && myTable->Temp[jat].r1 < cutOff )
         indexQP.push_back(jat);
@@ -734,7 +735,7 @@ public:
     Amat_0.resize(NumTargets,NumTargets);
     Amat_1.resize(NumTargets,NumTargets);
     P.update();
-    Walker_t::Buffer_t tbuffer;
+    Walker_t::WFBuffer_t tbuffer;
     size_t BufferCursor=tbuffer.current();
     registerData(P,tbuffer);
     tbuffer.rewind(BufferCursor);

@@ -25,12 +25,8 @@
          <cost name="unreweightedvariance">     0.00 </cost>
          <cost name="reweightedvariance">       0.00 </cost>
     <estimator name="LocalEnergy" hdf5="no"/>
-    <parameter name="usebuffer"> no </parameter>
     <parameter name="nonlocalpp"> yes </parameter>
     <parameter name="MinMethod">OneShiftOnly</parameter>
-    <parameter name="stepsize">  0.9 </parameter>
-    <parameter name="shift_s"> 1.00 </parameter>
-    <parameter name="shift_i"> 0.01 </parameter>
   </qmc>
 </loop>
 

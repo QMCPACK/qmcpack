@@ -18,20 +18,34 @@
 
 namespace qmcplusplus {
 
+enum AFQMCTimers {
+  BlockTotal,
+  SubstepPropagate,
+  StepPopControl,
+  StepLoadBalance,
+  StepOrthogonalize
+};
+
+TimerNameList_t<AFQMCTimers> AFQMCTimerNames =
+{
+  {BlockTotal, "Block::Total"},
+  {SubstepPropagate, "Substep::Propagate"},
+  {StepPopControl, "Step:PopControl"},
+  {StepLoadBalance, "Step::LoadBalance"},
+  {StepOrthogonalize, "Step::Orthogonalize"}
+};
+
 bool AFQMCDriver::run()
 {
-
-  if(compare_libraries)
-  {
-    prop0->benchmark();
-    return true;
-  }
+  TimerList_t Timers;
+  setup_timers(Timers, AFQMCTimerNames, timer_level_medium);
 
   if(!restarted) {
     Eshift=wlkBucket->getEloc(0).real();
-    Etav=wlkBucket->getEloc(0).real();
     step0=block0=0;
   }
+
+  std::vector<ComplexType> curData; 
 
   RealType w0 = wlkBucket->GlobalWeight();
   int nwalk_ini = wlkBucket->GlobalPopulation();
@@ -49,46 +63,58 @@ bool AFQMCDriver::run()
   for (iBlock=block0; iBlock<nBlock; ++iBlock) {
 
     LocalTimer.start("Block::TOTAL");
+    Timers[BlockTotal]->start();
     for (int iStep=0; iStep<nStep; ++iStep, ++step_tot) {
 
-      // propagate
-      for (int iSubstep=0; iSubstep<nSubstep; ++iSubstep,++time) {
 
-        LocalTimer.start("SubStep::Propagate");
-        prop0->Propagate(time,wlkBucket,Eshift,Eshift);
-        LocalTimer.stop("SubStep::Propagate");        
+// trying to understand the actual cost of exchanging walkers,
+// // remove this when algorithm works as expected
+myComm->barrier();
 
-        estim0->accumulate_substep(wlkBucket);
 
-      }  // iSubstep
+      // propagate nSubstep 
+      LocalTimer.start("SubStep::Propagate");
+      Timers[SubstepPropagate]->start();
+      prop0->Propagate(nSubstep,time,wlkBucket,Eshift);
 
-      // quantities that are measured once per step 
-      estim0->accumulate_step(wlkBucket);
+// trying to understand the actual cost of exchanging walkers,
+// // remove this when algorithm works as expected
+myComm->barrier();
 
-      if (step_tot != 0 && step_tot % nPopulationControl == 0) {
-        LocalTimer.start("Step::PopControl");
-        wlkBucket->popControl();
-        LocalTimer.stop("Step::PopControl");
-      }
+      LocalTimer.stop("SubStep::Propagate");
+      Timers[SubstepPropagate]->stop();        
 
-      if (step_tot != 0 && step_tot % nloadBalance == 0) {
-        LocalTimer.start("Step::loadBalance");
-        wlkBucket->loadBalance();
-        LocalTimer.stop("Step::loadBalance");
-      }    
- 
-      if (step_tot != 0 && step_tot % nStabalize == 0) { // && it->alive) {
+      if (step_tot != 0 && step_tot % nStabalize == 0) { 
         LocalTimer.start("Step::Orthogonalize");
+        Timers[StepOrthogonalize]->start();
         wlkBucket->Orthogonalize();
         wfn0->evaluateOverlap("ImportanceSampling",-1,wlkBucket);
+
+// trying to understand the actual cost of exchanging walkers,
+// // remove this when algorithm works as expected
+myComm->barrier();
+
         LocalTimer.stop("Step::Orthogonalize");
+        Timers[StepOrthogonalize]->stop();
       }
 
-      //Etav += estim0->getEloc_step();
-      if(time*dt < 1.0)  
-        Etav = estim0->getEloc_step();
-      else
-        Etav += dShift*0.1*(estim0->getEloc_step()-Etav);
+//      if (step_tot != 0 && step_tot % nPopulationControl == 0) 
+      {
+        LocalTimer.start("Step::PopControl");
+        Timers[StepPopControl]->start();
+        // temporarily setting communicator to COMM_WORLD, 
+        // until I finish implementation of new pop. control alg
+        wlkBucket->popControl(MPI_COMM_WORLD,curData);
+
+// trying to understand the actual cost of exchanging walkers,
+// // remove this when algorithm works as expected
+myComm->barrier();
+
+        LocalTimer.stop("Step::PopControl");
+        Timers[StepPopControl]->stop();
+
+        estim0->accumulate_step(wlkBucket,curData);
+      }
 
       if(time*dt < 1.0)  
         Eshift = estim0->getEloc_step();
@@ -115,8 +141,9 @@ bool AFQMCDriver::run()
     estim0->accumulate_block(wlkBucket);
 
     LocalTimer.stop("Block::TOTAL");
+    Timers[BlockTotal]->stop();
 
-    estim0->print(iBlock+1,time*dt,Eshift,Etav,wlkBucket);
+    estim0->print(iBlock+1,time*dt,Eshift,wlkBucket);
 
     if(print_timers > 0 && myComm->rank()==0 && iBlock%print_timers == 0) output_timers(out_timers,iBlock); 
 
@@ -138,7 +165,7 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
 {
   if(cur==NULL) return false;
 
-  std::string str,str1;
+  std::string str,str1("no");
 
   int cmp_lib=0;
   int deb_prop=0;
@@ -175,11 +202,10 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   m_param.put(cur);
 
   min_total_weight = std::max( std::min(min_total_weight , 1.0), 0.1 );
-  if(cmp_lib != 0) compare_libraries=true; 
   if(deb_prop != 0) debug=true;
 
   std::transform(str1.begin(),str1.end(),str1.begin(),(int (*)(int)) tolower);
-  if(str1 == "yes" || str1 == "true")
+  if(str1 == "true" || str1 == "yes")
     set_nWalker_target = true;
 
   estim0 = new EstimatorHandler(myComm); 
@@ -228,9 +254,15 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   // TGdata[0]: node_number
   myComm->split_comm(TGdata[0],MPI_COMM_NODE_LOCAL);
   TG.setNodeCommLocal(MPI_COMM_NODE_LOCAL);
+
   int key = TG.getTGNumber(); // This works because the TG used has nnodes_per_TG=1 
   myComm->split_comm(key,MPI_COMM_TG_LOCAL);
   TG.setTGCommLocal(MPI_COMM_TG_LOCAL);
+
+  key = TG.getCoreID();
+  myComm->split_comm(key,MPI_COMM_HEAD_OF_NODES);  
+  TG.setHeadOfNodesComm(MPI_COMM_HEAD_OF_NODES);
+
   key = TG.getCoreRank();  
   myComm->split_comm(key,MPI_COMM_TG_LOCAL_HEADS);
 
@@ -254,9 +286,9 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   myComm->bcast(restarted);
   if(restarted) {
     app_log()<<" Restarted from file. Block, step: " <<block0 <<" " <<step0 <<std::endl; 
-    app_log()<<"                      Eshift, Etav: " <<Eshift <<" " <<Etav <<std::endl;
+    app_log()<<"                      Eshift: " <<Eshift <<std::endl;
     myComm->bcast(Eshift);
-    myComm->bcast(Etav);
+    myComm->bcast(Eshift);
     myComm->bcast(block0);
     myComm->bcast(step0);
   }
@@ -267,7 +299,7 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
            <<std::endl;
 
   // hamiltonian
-  if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL)) {
+  if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
     app_error()<<"Error initializing Hamiltonian in AFQMCDriver::setup" <<std::endl; 
     return false; 
   }   
@@ -277,7 +309,7 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
            <<"****************************************************\n"
            <<std::endl;
 
-  if(!wfn0->init(TGdata,&CommBuffer,read,hdf_read_tag,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL)) {
+  if(!wfn0->init(TGdata,&CommBuffer,read,hdf_read_tag,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
     app_error()<<"Error initializing Wavefunction in AFQMCDriver::setup" <<std::endl; 
     return false; 
   }   
@@ -287,6 +319,20 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   }   
 
   app_log()<<"\n****************************************************\n"
+           <<"              Initializating Propagator \n"
+           <<"****************************************************\n"
+           <<std::endl;
+
+  // propagator
+  if(!prop0->setup(TGdata,&CommBuffer,ham0,wfn0,dt,read,hdf_read_tag,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) { 
+    app_error()<<"Error in PropagatorBase::setup in AFQMCDriver::setup" <<std::endl; 
+    return false; 
+  }   
+
+  // you will also need the Propagator's TG to handle the distibuted case 
+  wfn0->setupFactorizedHamiltonian(prop0->is_vn_sparse(),prop0->getSpvn(),prop0->getDvn(),dt,prop0->getTG());
+
+  app_log()<<"\n****************************************************\n"
            <<"             Initializating Walker Handler \n"
            <<"****************************************************\n"
            <<std::endl;
@@ -294,28 +340,18 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   // walker set
   wlkBucket->setup(TG.getCoreRank(),ncores_per_TG,TG.getTGNumber(),MPI_COMM_TG_LOCAL_HEADS,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,&LocalTimer);
   wlkBucket->setHF(wfn0->getHF());
-  if(restarted) { 
+  if(restarted) {
     wlkBucket->restartFromHDF5(nWalkers,read,hdf_read_tag,set_nWalker_target);
     app_log()<<"Number of walkers after restart: " <<wlkBucket->GlobalPopulation() <<std::endl;
     wfn0->evaluateLocalEnergyAndOverlap("ImportanceSampling",-1,wlkBucket);
   } else {
     wlkBucket->initWalkers(nWalkers);
     wfn0->evaluateLocalEnergyAndOverlap("ImportanceSampling",-1,wlkBucket);
-  }
-
-  app_log()<<"\n****************************************************\n"
-           <<"              Initializating Propagator \n"
-           <<"****************************************************\n"
-           <<std::endl;
-
-  // propagator
-  if(!prop0->setup(TGdata,&CommBuffer,ham0,wfn0,dt,read,hdf_read_tag,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL)) { 
-    app_error()<<"Error in PropagatorBase::setup in AFQMCDriver::setup" <<std::endl; 
-    return false; 
-  }   
+  }  
 
   if(myComm->rank() == 0) 
     read.close();
+
 
   app_log()<<"\n****************************************************\n"
            <<"              Initializating Estimators \n"
@@ -360,7 +396,7 @@ bool AFQMCDriver::checkpoint(int block, int step)
 
     std::vector<RealType> Rdata(2);
     Rdata[0]=Eshift;
-    Rdata[1]=Etav;
+    Rdata[1]=Eshift;
 
     std::vector<IndexType> Idata(2);
     Idata[0]=block;
@@ -376,7 +412,7 @@ bool AFQMCDriver::checkpoint(int block, int step)
   }
 
   if(!wlkBucket->dumpToHDF5(dump,hdf_write_tag) ) {
-    app_error()<<" Problems writting checkpoint file in Driver/AFQMCDriver::checkpoint(). \n";
+    app_error()<<" Problems writing checkpoint file in Driver/AFQMCDriver::checkpoint(). \n";
     return false;
   }
 
@@ -408,7 +444,7 @@ bool AFQMCDriver::writeSamples()
 
   int nwtowrite=-1;
   if(!wlkBucket->dumpSamplesHDF5(dump,nwtowrite) ) {
-    app_error()<<" Problems writting checkpoint file in Driver/AFQMCDriver::writeSample(). \n";
+    app_error()<<" Problems writing checkpoint file in Driver/AFQMCDriver::writeSample(). \n";
     return false;
   }
 
@@ -436,7 +472,6 @@ bool AFQMCDriver::restart(hdf_archive& read)
   if(!read.read(Rdata,"DriverReals")) return false;
 
   Eshift = Rdata[0];
-  Etav = Rdata[1];
 
   block0=Idata[0];
   step0=Idata[1];
@@ -455,31 +490,33 @@ bool AFQMCDriver::clear()
 void AFQMCDriver::output_timers(std::ofstream& out_timers, int n)
 {
 
-  if(n==0) out_timers<<"Propagate::applyHSPropagator  Propagate::calculateMixedMatrixElementOfOneBodyOperators  Propagate::eloc  Propagate::product_SD  Propagate::sampleGaussianFields  Propagate::apply_expvHS_Ohmms  Propagate::build_vHS  PureSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators  PureSingleDeterminant:evaluateLocalEnergy  PureSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix " <<std::endl;
-  out_timers<<Timer.average("Propagate::applyHSPropagator") <<" "
-   <<Timer.average("Propagate::calculateMixedMatrixElementOfOneBodyOperators") <<" "
-   <<Timer.average("Propagate::eloc") <<" "
-   <<Timer.average("Propagate::eloc2") <<" "
-   <<Timer.average("Propagate::eloc3") <<" "
-   <<Timer.average("Propagate::product_SD") <<" "
-   <<Timer.average("Propagate::sampleGaussianFields") <<" "
-   <<Timer.average("Propagate::apply_expvHS_Ohmms") <<" "
-   <<Timer.average("Propagate::build_vHS") <<" "
-   <<Timer.average("PureSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators") <<" "
-   <<Timer.average("PureSingleDeterminant:evaluateLocalEnergy") <<" "
-   <<Timer.average("PureSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix") <<std::endl;
-   Timer.reset("Propagate::applyHSPropagator");
-   Timer.reset("Propagate::calculateMixedMatrixElementOfOneBodyOperators");
-   Timer.reset("Propagate::eloc");
-   Timer.reset("Propagate::eloc2");
-   Timer.reset("Propagate::eloc3");
-   Timer.reset("Propagate::product_SD");
-   Timer.reset("Propagate::sampleGaussianFields");
-   Timer.reset("Propagate::apply_expvHS_Ohmms");
-   Timer.reset("Propagate::build_vHS");
-   Timer.reset("PureSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators");
-   Timer.reset("PureSingleDeterminant:evaluateLocalEnergy");
-   Timer.reset("PureSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix");
+  if(timer_first_call) {
+    timer_first_call=false;
+    tags.resize(15);
+    tags[0]="Propagate::setup";
+    tags[1]="Propagate::evalG";
+    tags[2]="Propagate::sampleGaussianFields";
+    tags[3]="Propagate::addvHS";
+    tags[4]="Propagate::propg";
+    tags[5]="Propagate::overlaps_and_or_eloc";
+    tags[6]="Propagate::finish_step";
+    tags[7]="Propagate::idle";
+    tags[8]="Propagate::addvHS::setup";
+    tags[9]="Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer";
+    tags[10]="Propagate::addvHS::build_CV0";
+    tags[11]="Propagate::addvHS::shm_copy";
+    tags[12]="Propagate::addvHS::build_vHS";
+    tags[13]="Propagate::addvHS::idle";
+    tags[14]="PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup";
+    for( std::string& str: tags) out_timers<<str <<" ";
+    out_timers<<std::endl;    
+  } 
+
+  for( std::string& str: tags) {
+    out_timers<<Timer.total(str) <<" ";
+    Timer.reset(str);
+  }
+  out_timers<<std::endl;
 
 }
 

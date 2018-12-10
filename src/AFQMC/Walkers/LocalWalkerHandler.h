@@ -38,10 +38,10 @@ class LocalWalkerHandler: public WalkerHandlerBase
   public:
 
   /// constructor
-  LocalWalkerHandler(Communicate* c): WalkerHandlerBase(c,std::string("LocalWalkerHandler")), 
+  LocalWalkerHandler(Communicate* c,  RandomGenerator_t* r): WalkerHandlerBase(c,r,std::string("LocalWalkerHandler")), 
       walkerSizeForCommunication(0),walkerSizeForDump(0),
-      min_weight(0.1),max_weight(10.0)
-      ,reset_weight(5.0),extra_empty_spaces(10),distribution(0.0,1.0)
+      min_weight(0.05),max_weight(4.0)
+      ,reset_weight(1.0),extra_empty_spaces(10)
   { }
 
   /// destructor
@@ -112,10 +112,12 @@ class LocalWalkerHandler: public WalkerHandlerBase
   }
 
   // load balancing algorithm
-  void loadBalance(); 
+  void loadBalance(MPI_Comm comm); 
 
   // population control algorithm
-  void popControl(); 
+  void popControl(MPI_Comm comm, std::vector<ComplexType>& curData); 
+
+  void benchmark(std::string& blist,int maxnW,int delnW,int repeat) {}
 
   void setHF(const ComplexMatrix& HF);
 
@@ -233,10 +235,6 @@ class LocalWalkerHandler: public WalkerHandlerBase
 
   //private:
  
-  // using std::random for simplicity now
-  std::default_random_engine generator;
-  std::uniform_real_distribution<double> distribution;
-
   ComplexType min_weight, max_weight, reset_weight;
 
   int extra_empty_spaces; 

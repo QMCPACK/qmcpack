@@ -34,7 +34,7 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
   registerTimers();
   //Optimizable=true;
   Optimizable=false;
-  OrbitalName="MultiSlaterDeterminant";
+  ClassName="MultiSlaterDeterminant";
   usingCSF=false;
   FirstIndex_up = targetPtcl.first(0);
   LastIndex_up = targetPtcl.last(0);
@@ -48,7 +48,7 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
       DetID[j]=i;
 }
 
-OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
   SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(),FirstIndex_up,LastIndex_up);
   SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(),FirstIndex_dn,LastIndex_dn);
@@ -77,7 +77,7 @@ OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 //           spo->occup(i,nq++) = k;
 //         }
 //       }
-    DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_up,0);
+    DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) clone->spo_up,0);
     adet->set(clone->FirstIndex_up,clone->nels_up);
     adet->resetTargetParticleSet(tqp);
     clone->dets_up.push_back(adet);
@@ -93,13 +93,12 @@ OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 //           spo->occup(i,nq++) = k;
 //         }
 //       }
-    DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_dn,0);
+    DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) clone->spo_dn,0);
     adet->set(clone->FirstIndex_dn,clone->nels_dn);
     adet->resetTargetParticleSet(tqp);
     clone->dets_dn.push_back(adet);
   }
   clone->Optimizable=Optimizable;
-  clone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   clone->C=C;
   clone->myVars=myVars;
   return clone;
@@ -153,7 +152,7 @@ void MultiSlaterDeterminant::resize(int n1, int n2)
   }
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   EvaluateTimer.start();
@@ -165,7 +164,8 @@ OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
     spo_up->prepareFor(i);
     grads_up[i]=0.0;
     lapls_up[i]=0.0;
-    detValues_up[i]=dets_up[i]->evaluate(P,grads_up[i],lapls_up[i]);
+    dets_up[i]->evaluateLog(P,grads_up[i],lapls_up[i]);
+    detValues_up[i]=dets_up[i]->getValue();
     // need \nabla^2 Det / Det
     for(int k=FirstIndex_up; k<LastIndex_up; k++)
       lapls_up[i][k] += dot(grads_up[i][k],grads_up[i][k]);
@@ -175,7 +175,8 @@ OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
     spo_dn->prepareFor(i);
     grads_dn[i]=0.0;
     lapls_dn[i]=0.0;
-    detValues_dn[i]=dets_dn[i]->evaluate(P,grads_dn[i],lapls_dn[i]);
+    dets_dn[i]->evaluateLog(P,grads_dn[i],lapls_dn[i]);
+    detValues_dn[i]=dets_dn[i]->getValue();
     // need \nabla^2 Det / Det
     for(int k=FirstIndex_dn; k<LastIndex_dn; k++)
       lapls_dn[i][k] += dot(grads_dn[i][k],grads_dn[i][k]);
@@ -187,7 +188,7 @@ OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
   {
     int upC = C2node_up[i];
     int dnC = C2node_dn[i];
-    ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
+    ParticleSet::SingleParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
     psi += tmp;
     //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
     myG += grads_up[upC]*tmp; // other spin sector should be zero
@@ -203,19 +204,19 @@ OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
   myL *= psiinv;
   G += myG;
   for(int i=0; i<L.size(); i++)
-    L(i) += myL[i] - dot(myG[i],myG[i]);
+    L[i] += myL[i] - dot(myG[i],myG[i]);
   EvaluateTimer.stop();
   return psi;
 }
 
-OrbitalBase::RealType MultiSlaterDeterminant::evaluateLog(ParticleSet& P
+WaveFunctionComponent::RealType MultiSlaterDeterminant::evaluateLog(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   ValueType psi = evaluate(P,G,L);
   return LogValue = evaluateLogAndPhase(psi,PhaseValue);
 }
 
-OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
+WaveFunctionComponent::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
 {
   GradType grad_iat;
   if(DetID[iat] == 0)
@@ -223,7 +224,7 @@ OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
     for(int i=0; i<dets_up.size(); i++)
     {
       spo_up->prepareFor(i);
-      grads_up[i](iat) = dets_up[i]->evalGrad(P,iat);
+      grads_up[i][iat] = dets_up[i]->evalGrad(P,iat);
     }
     ValueType psi=0.0;
     for(int i=0; i<C.size(); i++)
@@ -232,7 +233,7 @@ OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
       int dnC = C2node_dn[i];
       ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
-      GradType grad_temp = grads_up[upC](iat);
+      GradType grad_temp = grads_up[upC][iat];
       grad_iat += grad_temp*tmp;
     }
     grad_iat *= (RealType)1.0/psi;
@@ -244,7 +245,7 @@ OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
     for(int i=0; i<dets_dn.size(); i++)
     {
       spo_dn->prepareFor(i);
-      grads_dn[i](iat) = dets_dn[i]->evalGrad(P,iat);
+      grads_dn[i][iat] = dets_dn[i]->evalGrad(P,iat);
     }
     for(int i=0; i<C.size(); i++)
     {
@@ -252,7 +253,7 @@ OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
       int dnC = C2node_dn[i];
       ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
-      GradType grad_temp = grads_dn[dnC](iat);
+      GradType grad_temp = grads_dn[dnC][iat];
       grad_iat += grad_temp*tmp;
     }
     grad_iat *= (RealType)1.0/psi;
@@ -260,7 +261,7 @@ OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
   }
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P
     , int iat, GradType& grad_iat)
 {
   UpdateMode=ORB_PBYP_PARTIAL;
@@ -329,133 +330,8 @@ OrbitalBase::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P
 }
 
 
-// This routine need work, sloppy for now
-OrbitalBase::ValueType  MultiSlaterDeterminant::ratio(ParticleSet& P, int iat
-    , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL)
-{
-  UpdateMode=ORB_PBYP_ALL;
-  if(DetID[iat] == 0)
-  {
-    RatioAllTimer.start();
-    spo_up->evaluateAllForPtclMove(P,iat);
-    Ratio1AllTimer.start();
-    for(int i=0; i<dets_up.size(); i++)
-    {
-      spo_up->prepareFor(i);
-      ParticleSet::ParticleLaplacian_t& li = templapl[i];
-      ParticleSet::ParticleGradient_t& gi = tempgrad[i];
-      li=0.0;
-      gi=0.0;
-// HACK HACK HACK, I don't differential properties at this point
-      dets_up[i]->myG=0.0;
-      dets_up[i]->myL=0.0;
-      detsRatios[i]=dets_up[i]->ratio(P,iat,gi,li);
-      for(int k=FirstIndex_up; k<LastIndex_up; k++)
-        li[k] += dot(gi[k],gi[k]);
-    }
-    Ratio1AllTimer.stop();
-    ValueType psiNew=0.0,psiOld=0.0;
-    myG=0.0;
-    myL=0.0;
-    ParticleSet::ParticleLaplacian_t lold(nels_up+nels_dn);
-    ParticleSet::ParticleGradient_t gold(nels_up+nels_dn);
-    for(int i=0; i<C.size(); i++)
-    {
-      int upC = C2node_up[i];
-      int dnC = C2node_dn[i];
-      ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
-      ParticleSet::ParticleValue_t tmp2 = tmp*static_cast<ParticleSet::ParticleValue_t>(detsRatios[upC]);
-      psiNew += tmp2;
-      psiOld += tmp;
-      //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
-      myG += tempgrad[upC]*tmp2; // other spin sector should be zero
-      myL += templapl[upC]*tmp2;
-      myG += grads_dn[dnC]*tmp2; // other spin sector should be zero
-      myL += lapls_dn[dnC]*tmp2;
-      //}
-      //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
-      gold += grads_up[upC]*tmp; // other spin sector should be zero
-      lold += lapls_up[upC]*tmp;
-      gold += grads_dn[dnC]*tmp; // other spin sector should be zero
-      lold += lapls_dn[dnC]*tmp;
-      //}
-    }
-    ValueType psiNinv=(RealType)1.0/psiNew;
-    ValueType psiOinv=(RealType)1.0/psiOld;
-    myG *= psiNinv;
-    gold *= psiOinv;
-    myL *= psiNinv;
-    lold *= psiOinv;
-    dG += myG-gold;
-    for(int i=0; i<dL.size(); i++)
-      dL(i) += myL[i] - lold[i] - dot(myG[i],myG[i]) + dot(gold[i],gold[i]);
-    curRatio = psiNew/psiOld;
-    RatioAllTimer.stop();
-    return curRatio;
-  }
-  else
-  {
-    RatioAllTimer.start();
-    spo_dn->evaluateAllForPtclMove(P,iat);
-    Ratio1AllTimer.start();
-    for(int i=0; i<dets_dn.size(); i++)
-    {
-      spo_dn->prepareFor(i);
-      ParticleSet::ParticleLaplacian_t& li = templapl[i];
-      ParticleSet::ParticleGradient_t& gi = tempgrad[i];
-      li=0.0;
-      gi=0.0;
-// HACK HACK HACK, I don't differential properties at this point
-      dets_dn[i]->myG=0.0;
-      dets_dn[i]->myL=0.0;
-      detsRatios[i]=dets_dn[i]->ratio(P,iat,gi,li);
-      for(int k=FirstIndex_dn; k<LastIndex_dn; k++)
-        li[k] += dot(gi[k],gi[k]);
-    }
-    Ratio1AllTimer.stop();
-    ValueType psiNew=0.0,psiOld=0.0;
-    myG=0.0;
-    myL=0.0;
-    ParticleSet::ParticleLaplacian_t lold(nels_up+nels_dn);
-    ParticleSet::ParticleGradient_t gold(nels_up+nels_dn);
-    for(int i=0; i<C.size(); i++)
-    {
-      int upC = C2node_up[i];
-      int dnC = C2node_dn[i];
-      ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
-      ParticleSet::ParticleValue_t tmp2 = tmp*static_cast<ParticleSet::ParticleValue_t>(detsRatios[dnC]);
-      psiNew += tmp2;
-      psiOld += tmp;
-      //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
-      myG += grads_up[upC]*tmp2; // other spin sector should be zero
-      myL += lapls_up[upC]*tmp2;
-      myG += tempgrad[dnC]*tmp2; // other spin sector should be zero
-      myL += templapl[dnC]*tmp2;
-      //}
-      //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
-      gold += grads_up[upC]*tmp; // other spin sector should be zero
-      lold += lapls_up[upC]*tmp;
-      gold += grads_dn[dnC]*tmp; // other spin sector should be zero
-      lold += lapls_dn[dnC]*tmp;
-      //}
-    }
-    ValueType psiNinv=(RealType)1.0/psiNew;
-    ValueType psiOinv=(RealType)1.0/psiOld;
-    myG *= psiNinv;
-    gold *= psiOinv;
-    myL *= psiNinv;
-    lold *= psiOinv;
-    dG += myG-gold;
-    for(int i=0; i<dL.size(); i++)
-      dL(i) += myL[i] - lold[i] - dot(myG[i],myG[i]) + dot(gold[i],gold[i]);
-    curRatio = psiNew/psiOld;
-    RatioAllTimer.stop();
-    return curRatio;
-  }
-}
-
 // use ci_node for this routine only
-OrbitalBase::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
 {
   UpdateMode=ORB_PBYP_RATIO;
   if(DetID[iat] == 0)
@@ -469,7 +345,7 @@ OrbitalBase::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
       detsRatios[i]=dets_up[i]->ratio(P,iat);
     }
     Ratio1Timer.stop();
-    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<size_t>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
     std::vector<RealType>::iterator it(C.begin()),last(C.end());
     ValueType psiOld=0.0,psiNew=0.0;
     while(it != last)
@@ -496,7 +372,7 @@ OrbitalBase::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
       detsRatios[i]=dets_dn[i]->ratio(P,iat);
     }
     Ratio1Timer.stop();
-    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<size_t>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
     std::vector<RealType>::iterator it(C.begin()),last(C.end());
     ValueType psiOld=0.0,psiNew=0.0;
     while(it != last)
@@ -631,83 +507,30 @@ void MultiSlaterDeterminant::restore(int iat)
   AccRejTimer.stop();
 }
 
-void MultiSlaterDeterminant::update(ParticleSet& P
-                                    , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-                                    , int iat)
+void MultiSlaterDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  APP_ABORT("IMPLEMENT MultiSlaterDeterminant::update");
-}
-
-OrbitalBase::RealType MultiSlaterDeterminant::evaluateLog(ParticleSet& P,BufferType& buf)
-{
-  // Do I need to recalculate LogValue, it should be up to date...
-  RealType logpsi=0.0;
   for (int i=0; i<dets_up.size(); i++)
-    logpsi = dets_up[i]->evaluateLog(P,buf);
+    dets_up[i]->registerData(P,buf);
   for (int i=0; i<dets_dn.size(); i++)
-    logpsi = dets_dn[i]->evaluateLog(P,buf);
-  int TotalDim = PosType::Size*P.getTotalNum();
-  //buf.put(detValues_up.begin(),detValues_up.end());
-  //buf.put(detValues_dn.begin(),detValues_dn.end());
-  buf.put(detValues_up.first_address(),detValues_up.last_address());
-  buf.put(detValues_dn.first_address(),detValues_dn.last_address());
+    dets_dn[i]->registerData(P,buf);
+
+  buf.add(detValues_up.data(),detValues_up.end());
+  buf.add(detValues_dn.data(),detValues_dn.end());
+
   for(int i=0; i<NumUniqueDets_up; i++)
   {
-    buf.put(&(grads_up[i][0][0]), &(grads_up[i][0][0])+TotalDim);
-    buf.put(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
+    buf.add(grads_up[i].data(), grads_up[i].end());
+    buf.add(lapls_up[i].data(), lapls_up[i].end());
   }
   for(int i=0; i<NumUniqueDets_dn; i++)
   {
-    buf.put(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
-    buf.put(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
+    buf.add(grads_dn[i].data(), grads_dn[i].end());
+    buf.add(lapls_dn[i].data(), lapls_dn[i].end());
   }
-  return LogValue;
-}
-
-OrbitalBase::RealType MultiSlaterDeterminant::registerData(ParticleSet& P, BufferType& buf)
-{
-// move resize of pbyp structures to here
-  spo_up->evaluateForWalkerMove(P,FirstIndex_up,LastIndex_up);
-  spo_dn->evaluateForWalkerMove(P,FirstIndex_dn,LastIndex_dn);
-  myG = P.G;
-  myL = P.L;
-  RealType logpsi(0.0);
-  PhaseValue=0.0;
-  for (int i=0; i<dets_up.size(); i++)
-  {
-    spo_up->prepareFor(i);
-    logpsi += dets_up[i]->registerData(P,buf);
-  }
-  for (int i=0; i<dets_dn.size(); i++)
-  {
-    spo_dn->prepareFor(i);
-    logpsi += dets_dn[i]->registerData(P,buf);
-  }
-  P.G = myG;
-  P.L = myL;
-  logpsi = evaluateLog(P,P.G,P.L);
-  int TotalDim = PosType::Size*P.getTotalNum();
-  //buf.add(detValues_up.begin(),detValues_up.end());
-  //buf.add(detValues_dn.begin(),detValues_dn.end());
-  buf.add(detValues_up.first_address(),detValues_up.last_address());
-  buf.add(detValues_dn.first_address(),detValues_dn.last_address());
-  for(int i=0; i<NumUniqueDets_up; i++)
-  {
-    buf.add(&(grads_up[i][0][0]), &(grads_up[i][0][0])+TotalDim);
-//      buf.add(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
-    buf.add(lapls_up[i].first_address(),lapls_up[i].last_address());
-  }
-  for(int i=0; i<NumUniqueDets_dn; i++)
-  {
-    buf.add(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
-//      buf.add(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
-    buf.add(lapls_dn[i].first_address(),lapls_dn[i].last_address());
-  }
-  return LogValue;
 }
 
 // FIX FIX FIX
-OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
+WaveFunctionComponent::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   UpdateTimer.start();
   if(fromscratch || UpdateMode == ORB_PBYP_RATIO)
@@ -721,6 +544,8 @@ OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, Buffe
   PhaseValue=0.0;
   for (int i=0; i<dets_up.size(); i++)
   {
+    P.G = 0.0;
+    P.L = 0.0;
     spo_up->prepareFor(i);
     logpsi = dets_up[i]->updateBuffer(P,buf,fromscratch);
 #if defined(QMC_COMPLEX)
@@ -729,13 +554,15 @@ OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, Buffe
 #else
     detValues_up[i]=std::cos(dets_up[i]->PhaseValue)*std::exp(logpsi);
 #endif
-    grads_up[i]=dets_up[i]->myG;
-    lapls_up[i]=dets_up[i]->myL;
+    grads_up[i]=P.G;
+    lapls_up[i]=P.L;
     for(int k=FirstIndex_up; k<LastIndex_up; k++)
       lapls_up[i][k] += dot(grads_up[i][k],grads_up[i][k]);
   }
   for (int i=0; i<dets_dn.size(); i++)
   {
+    P.G = 0.0;
+    P.L = 0.0;
     spo_dn->prepareFor(i);
     logpsi = dets_dn[i]->updateBuffer(P,buf,fromscratch);
 #if defined(QMC_COMPLEX)
@@ -744,8 +571,8 @@ OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, Buffe
 #else
     detValues_dn[i]=std::cos(dets_dn[i]->PhaseValue)*std::exp(logpsi);
 #endif
-    grads_dn[i]=dets_dn[i]->myG;
-    lapls_dn[i]=dets_dn[i]->myL;
+    grads_dn[i]=P.G;
+    lapls_dn[i]=P.L;
     for(int k=FirstIndex_dn; k<LastIndex_dn; k++)
       lapls_dn[i][k] += dot(grads_dn[i][k],grads_dn[i][k]);
   }
@@ -775,7 +602,7 @@ OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, Buffe
   {
     int upC = C2node_up[i];
     int dnC = C2node_dn[i];
-    ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
+    ParticleSet::SingleParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
     psi += tmp;
     //for(int n=FirstIndex_up; n<LastIndex_up; n++) {
     myG += grads_up[upC]*tmp; // other spin sector should be zero
@@ -791,12 +618,12 @@ OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, Buffe
   myL *= psiinv;
   P.G += myG;
   for(int i=0; i<P.L.size(); i++)
-    P.L(i) += myL[i] - dot(myG[i],myG[i]);
+    P.L[i] += myL[i] - dot(myG[i],myG[i]);
   UpdateTimer.stop();
   return LogValue = evaluateLogAndPhase(psi,PhaseValue);;
 }
 
-void MultiSlaterDeterminant::copyFromBuffer(ParticleSet& P, BufferType& buf)
+void MultiSlaterDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   for (int i=0; i<dets_up.size(); i++)
     dets_up[i]->copyFromBuffer(P,buf);
@@ -879,9 +706,9 @@ void MultiSlaterDeterminant::reportStatus(std::ostream& os)
 {
 }
 
-//   OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
+//   WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 //   {
-//      APP_ABORT("IMPLEMENT OrbitalBase::makeClone");
+//      APP_ABORT("IMPLEMENT WaveFunctionComponent::makeClone");
 //      return 0;
 //   }
 
@@ -914,7 +741,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = (RealType)1.0/psi;;
       ValueType lapl_sum=0.0;
       ParticleSet::ParticleGradient_t g(n),gmP(n);
-      ValueType gg=0.0, ggP=0.0;
+      ValueType gg=0.0;
       g=0.0;
       gmP=0.0;
       for(int i=0; i<lapls_up.size(); i++)
@@ -927,7 +754,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
         int dnC = C2node_dn[i];
         ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
         lapl_sum += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]);
-        ParticleSet::ParticleValue_t tmp_DP(tmp);
+        ParticleSet::SingleParticleValue_t tmp_DP(tmp);
         g += grads_up[upC]*tmp_DP;
         g += grads_dn[dnC]*tmp_DP;
       }
@@ -948,7 +775,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
           cnt+=DetsPerCSF[ip];
           continue;
         }
-        ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
+        ValueType cdet=0.0,q0=0.0,v1=0.0;
         for(int k=0; k<DetsPerCSF[ip]; k++)
         {
           int upC = C2node_up[cnt];
@@ -956,7 +783,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
           ValueType tmp=CSFexpansion[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
           cdet+=tmp;
           q0 += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]);
-          ParticleSet::ParticleValue_t tmp_DP(tmp);
+          ParticleSet::SingleParticleValue_t tmp_DP(tmp);
           v1 += tmp_DP*(Dot(gmP,grads_up[upC])+Dot(gmP,grads_dn[dnC]));
 //           v1 += tmp*(Dot(P.G,grads_up[upC])-Dot(g,grads_up[upC]));
 //           v2 += tmp*(Dot(P.G,grads_dn[dnC])-Dot(g,grads_dn[dnC]));
@@ -984,7 +811,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = (RealType)1.0/psi;;
       ValueType lapl_sum=0.0;
       ParticleSet::ParticleGradient_t g(n),gmP(n);
-      ValueType gg=0.0, ggP=0.0;
+      ValueType gg=0.0;
       g=0.0;
       gmP=0.0;
       for(int i=0; i<lapls_up.size(); i++)
@@ -997,7 +824,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
         int dnC = C2node_dn[i];
         ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
         lapl_sum += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]);
-        ParticleSet::ParticleValue_t tmp_DP(tmp);
+        ParticleSet::SingleParticleValue_t tmp_DP(tmp);
         g += grads_up[upC]*tmp_DP;
         g += grads_dn[dnC]*tmp_DP;
       }
@@ -1052,8 +879,3 @@ void MultiSlaterDeterminant::registerTimers()
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3416 $   $Date: 2008-12-07 11:34:49 -0600 (Sun, 07 Dec 2008) $
- * $Id: MultiSlaterDeterminant.cpp 3416 2008-12-07 17:34:49Z jnkim $
- ***************************************************************************/

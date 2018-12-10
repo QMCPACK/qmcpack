@@ -44,6 +44,7 @@
 #include"AFQMC/Drivers/Driver.h"
 #include"AFQMC/Drivers/selectedCI.h"
 #include"AFQMC/Drivers/AFQMCDriver.h"
+#include"AFQMC/Drivers/BenchmarkDriver.h"
 //#include"AFQMC/Drivers/AFQMCDistDriver.h"
 #include"AFQMC/Drivers/VMCDriver.h"
 
@@ -58,7 +59,6 @@ namespace qmcplusplus
 
 AFQMCFactory::AFQMCFactory(Communicate* c, RandomNumberControl &m):MPIObjectBase(c),myRandomControl(m),m_series(0),project_title("afqmc") 
 {
-  head_of_nodes = myComm->head_nodes(MPI_COMM_HEAD_OF_NODES);
 }
     
 
@@ -126,7 +126,6 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
       // building it right here since there is only 1 option
       // make a builder class that returns the pointer to the created object if necessary later
       HamiltonianBase* obj = (HamiltonianBase*) new SparseGeneralHamiltonian(myComm);
-      obj->setHeadComm(head_of_nodes,MPI_COMM_HEAD_OF_NODES);
       if(!obj->parse(cur)) {
         app_error()<<"Error in SparseGeneralHamiltonian::parse(xmlNodePtr)." <<std::endl;
         return false;
@@ -148,7 +147,6 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
       obj->copyInfo(*InfoMap[info]);
     } else if(cname == "Wavefunction") {
       WavefunctionHandler* obj = new WavefunctionHandler(myComm); 
-      obj->setHeadComm(head_of_nodes,MPI_COMM_HEAD_OF_NODES);
       if(!obj->parse(cur)) {
         app_error()<<"Error in WavefunctionHandler::parse(xmlNodePtr)." <<std::endl;
         return false;
@@ -170,7 +168,7 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
       obj->copyInfo(*InfoMap[info]);
     } else if(cname == "WalkerSet") {
 
-      std::string type("local");
+      std::string type("distributed");
       std::string info("info0");
       OhmmsAttributeSet oAttrib;
       oAttrib.add(info,"info");
@@ -179,10 +177,11 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
 
       WalkerHandlerBase* obj;
       if(type == "distributed" || type == "dist") 
-        obj = (WalkerHandlerBase*) new DistWalkerHandler(myComm); 
-      else if(type=="local") 
-        obj = (WalkerHandlerBase*) new LocalWalkerHandler(myComm); 
-      else {
+        obj = (WalkerHandlerBase*) new DistWalkerHandler(myComm,RandomNumberControl::Children[0]); 
+      else if(type=="local") { 
+        APP_ABORT(" Error: local walker handler has been temporarily disabled. Use type=distributed.");
+        obj = (WalkerHandlerBase*) new LocalWalkerHandler(myComm,RandomNumberControl::Children[0]); 
+      } else {
         app_error()<<"Unknown WalkerSet type: " <<type <<std::endl;
         return false;
       }
@@ -214,13 +213,12 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
       PropagatorBase* obj;
       if(type == "afqmc") 
         obj = (PropagatorBase*) new phaseless_ImpSamp_ForceBias(myComm,RandomNumberControl::Children[0]);
-      else if(type == "vmc") 
-        obj = (PropagatorBase*) new VMCPropagator(myComm,RandomNumberControl::Children[0]);
+//      else if(type == "vmc") 
+//        obj = (PropagatorBase*) new VMCPropagator(myComm,RandomNumberControl::Children[0]);
       else {
         app_error()<<"Unknown propagator type: " <<type <<std::endl;
         return false;
       }
-      obj->setHeadComm(head_of_nodes,MPI_COMM_HEAD_OF_NODES);
       if(!obj->parse(cur)) {
         app_error()<<"Error in phaseless_ImpSamp_ForceBias::parse(xmlNodePtr)." <<std::endl;
         return false;
@@ -290,6 +288,8 @@ bool AFQMCFactory::execute(xmlNodePtr cur)
       oAttrib.put(cur);       
       if(type == "afqmc") 
           driver = (Driver*) new AFQMCDriver(myComm);
+      else if(type == "benchmark")  
+        driver = (Driver*) new BenchmarkDriver(myComm);
       else if(type == "vmc")  
         driver = (Driver*) new VMCDriver(myComm);
       else if(type == "selectedCI" || type == "selectedci" || type == "selCI" || type == "selci") 
@@ -298,7 +298,6 @@ bool AFQMCFactory::execute(xmlNodePtr cur)
         app_error()<<"Unknown execute driver: " <<type <<std::endl;
         return false;
       }
-      driver->setHeadComm(head_of_nodes,MPI_COMM_HEAD_OF_NODES);
 
       WalkerHandlerBase* wlkh0=NULL;
       HamiltonianBase* h0=NULL;

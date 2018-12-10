@@ -1,8 +1,0 @@
-/*!  \mainpage Tutorials
-
-These are tutorials given by the developers.
-
-- \subpage fsu2012 "3D Electron Gas", McMinis
-- \subpage solid_luke "QMC workflow for solids", Shulenburger
-- \subpage n2msdP "N2 using Multi-Slater-Determinant (MSD) trial wavefunction", Morales
-*/

@@ -76,18 +76,20 @@ WavefunctionHandler::WfnPtr WavefunctionHandler::addWfn(xmlNodePtr cur)
     it = (WavefunctionBase*) new MultiPureSingleDeterminant(myComm);
   
   it->parse(cur);
-  it->setHeadComm(head_of_nodes,MPI_COMM_HEAD_OF_NODES);
   wfns.push_back(it);
   return it;
 
 }
  
 
-bool WavefunctionHandler::init(std::vector<int>& TGdata, ComplexSMVector *v, hdf_archive& read, const std::string& tag, MPI_Comm tg_comm, MPI_Comm node_comm)
+bool WavefunctionHandler::init(std::vector<int>& TGdata, SPComplexSMVector *v, hdf_archive& read, const std::string& tag, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm node_heads_comm)
 {
+  MPI_COMM_HEAD_OF_NODES = node_heads_comm;
+  head_of_nodes = (TGdata[1]==0);
+
   for(int i=0; i<wfns.size(); i++) {
     wfns[i]->copyInfo(*this);
-    if(!wfns[i]->init(TGdata,v,read,tag,tg_comm,node_comm))
+    if(!wfns[i]->init(TGdata,v,read,tag,tg_comm,node_comm,node_heads_comm))
       return false;
   } 
   return true;

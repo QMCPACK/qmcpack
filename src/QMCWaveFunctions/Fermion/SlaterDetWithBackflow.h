@@ -80,38 +80,13 @@ public:
     }
   }
 
-  ValueType evaluate(ParticleSet& P
-                     ,ParticleSet::ParticleGradient_t& G
-                     ,ParticleSet::ParticleLaplacian_t& L);
-
   RealType evaluateLog(ParticleSet& P
                        ,ParticleSet::ParticleGradient_t& G
                        ,ParticleSet::ParticleLaplacian_t& L);
 
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L,
-                       PooledData<RealType>& buf,
-                       bool fillBuffer);
-
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
-  inline ValueType ratio(ParticleSet& P, int iat,
-                         ParticleSet::ParticleGradient_t& dG,
-                         ParticleSet::ParticleLaplacian_t& dL)
-  {
-    BFTrans->evaluatePbyPAll(P,iat);
-    //BFTrans->evaluate(P);
-    ValueType psi=1.0;
-    for(int i=0; i<Dets.size(); ++i)
-      psi *= Dets[i]->ratio(P,iat,dG,dL);
-    return psi;
-  }
+  void registerData(ParticleSet& P, WFBufferType& buf);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
@@ -123,24 +98,12 @@ public:
     return psi;
   }
 
-  inline ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    APP_ABORT("Need to implement SlaterDetWithBackflow::ratioGrad() \n");
-    return ValueType();
-  }
-
   GradType evalGrad(ParticleSet& P, int iat)
   {
     QMCTraits::GradType g;
     for(int i=0; i<Dets.size(); ++i)
       g += Dets[i]->evalGrad(P,iat);
     return g;
-  }
-
-  GradType alternateEvalGrad(ParticleSet& P, int iat)
-  {
-    APP_ABORT("Need to implement SlaterDetWithBackflow::alternateEvalGrad() \n");
-    return GradType();
   }
 
   GradType evalGradSource(ParticleSet& P, ParticleSet &src, int iat)
@@ -155,14 +118,6 @@ public:
   {
     APP_ABORT("Need to implement SlaterDetWithBackflow::evalGradSource() \n");
     return GradType();
-  }
-
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
-  {
-    APP_ABORT("Need to implement SlaterDetWithBackflow::logRatio() \n");
-    return ValueType();
   }
 
   inline void acceptMove(ParticleSet& P, int iat)
@@ -190,34 +145,14 @@ public:
     return ratio;
   }
 
-  inline ValueType alternateRatio(ParticleSet& P)
-  {
-    APP_ABORT("Need to implement SlaterDetWithBackflow::alternateRatio() \n");
-    return ValueType();
-  }
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  inline void alternateGrad(ParticleSet::ParticleGradient_t& G)
-  {
-    APP_ABORT("Need to implement SlaterDetWithBackflow::alternateRatio() \n");
-  }
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    for(int i=0; i<Dets.size(); ++i)
-      Dets[i]->update(P,dG,dL,iat);
-  }
-
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
-
-  SPOSetBasePtr getPhi(int i=0)
+  SPOSetPtr getPhi(int i=0)
   {
     return Dets[i]->getPhi();
   }
 
-  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
@@ -231,8 +166,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 4711 $   $Date: 2010-03-07 18:06:54 -0600 (Sun, 07 Mar 2010) $
- * $Id: SlaterDetWithBackflow.h 4711 2010-03-08 00:06:54Z jeongnim.kim $
- ***************************************************************************/

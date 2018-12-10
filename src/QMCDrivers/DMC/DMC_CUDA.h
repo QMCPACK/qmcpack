@@ -20,6 +20,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "Utilities/NewTimer.h"
+#include "type_traits/CUDATypes.h"
 
 namespace qmcplusplus
 {
@@ -33,15 +34,14 @@ class DMCcuda: public QMCDriver
 {
 public:
   /// Constructor.
-  DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
-  bool run();
-  bool runWithNonlocal();
-  bool put(xmlNodePtr cur);
-  void resetUpdateEngine();
+  GPU_XRAY_TRACE DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+			 QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm);
+  GPU_XRAY_TRACE bool run();
+  GPU_XRAY_TRACE bool put(xmlNodePtr cur);
+  GPU_XRAY_TRACE void resetUpdateEngine();
 
 private:
-  ///input std::string to determine to use nonlocal move
-  std::string NonLocalMove;
+  using CTS = CUDAGlobalTypes;
   std::string ScaleWeight;
   /// tau/mass
   RealType m_tauovermass;
@@ -54,33 +54,21 @@ private:
   ///update engine
   QMCUpdateBase* Mover;
   /// Copy Constructor (disabled)
-  DMCcuda(const DMCcuda& a): QMCDriver(a),
-    ResizeTimer("DMCcuda::resize"),
-    DriftDiffuseTimer("DMCcuda::Drift_Diffuse"),
-    BranchTimer("DMCcuda::Branch"),
-    HTimer("DMCcuda::Hamiltonian")
-
-  { }
+  DMCcuda(const DMCcuda &) = delete;
+  /// Copy operator (disabled).
+  DMCcuda & operator=(const DMCcuda &) = delete;
 
   bool checkBounds (const PosType &newpos);
   void checkBounds (std::vector<PosType> &newpos, std::vector<bool> &valid);
 
-  /// Copy operator (disabled).
-  DMCcuda& operator=(const DMCcuda&)
-  {
-    return *this;
-  }
   ///hide initialization from the main function
-  void resetRun();
+  GPU_XRAY_TRACE void resetRun();
   NonLocalTOperator NLop;
+  ///use T-moves
+  int UseTMove;
 
   NewTimer ResizeTimer, DriftDiffuseTimer, BranchTimer, HTimer;
 };
 }
 
 #endif
-/***************************************************************************
- * $RCSfile: DMCcuda.h,v $   $Author: jnkim $
- * $Revision: 1.5 $   $Date: 2006/07/17 14:29:40 $
- * $Id: DMCcuda.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $
- ***************************************************************************/

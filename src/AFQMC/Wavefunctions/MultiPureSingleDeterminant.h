@@ -38,7 +38,7 @@ class MultiPureSingleDeterminant: public WavefunctionBase
 
   public:
 
-    MultiPureSingleDeterminant(Communicate *c):WavefunctionBase(c),trialDensityMatrix_needsupdate(true),ref(0),max_excitation(0),cutoff(1e-5),runtype(0),rotated_hamiltonian(false),wfntype(0),diagHam(true),diag_in_steps(0),iterCI(false)
+    MultiPureSingleDeterminant(Communicate *c):WavefunctionBase(c),trialDensityMatrix_needsupdate(true),ref(0),cutoff(1e-6),runtype(0),rotated_hamiltonian(false),diagHam(true),diag_in_steps(0),iterCI(false),fast_alg(false),test_cnter(0),first_pass(true)
     {}
 
     ~MultiPureSingleDeterminant() {}
@@ -52,6 +52,14 @@ class MultiPureSingleDeterminant: public WavefunctionBase
     bool hdf_write(hdf_archive& read, const std::string& tag, bool include_tensors=true); 
     bool hdf_write();
 
+    int sizeOfInfoForDistributedPropagation()
+    {
+      if(closed_shell)
+          return 2+NMO*NMO;  // green function becomes dense in evaluation of vbias with rotated_hamiltonian
+      else
+          return 2+2*NMO*NMO;
+    }
+
     void evaluateMeanFields()  {}
 
     void evaluateTrialEnergy(ComplexType& ke, ComplexType& pe); 
@@ -64,21 +72,26 @@ class MultiPureSingleDeterminant: public WavefunctionBase
 
     void evaluateOverlap(const ComplexType*  , ComplexType& ovl_alpha, ComplexType& ovl_beta, const int n=-1 );
 
-    void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, ComplexSpMat&, std::vector<ComplexType>& v, const int n=-1 );
-    void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, ComplexSMSpMat&, std::vector<ComplexType>& v, const int n=-1 );
+    void evaluateOneBodyMixedDensityMatrix(WalkerHandlerBase* wset, SPComplexSMVector* buf, int wlksz, int gfoffset, bool transposed, bool full=true);
 
-    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, ComplexSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG,  const int n=-1);
-    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, ComplexSMSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n=-1);
+    void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, SPValueSMSpMat&, std::vector<SPComplexType>& v, const int n=-1 );
+    void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, SPValueSMVector&, std::vector<SPComplexType>& v, const int n=-1 );
 
-    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const ComplexType* buff, int ik0, int ikN, int pik0, ComplexSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n=-1);
-    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const ComplexType* buff, int ik0, int ikN, int pik0, ComplexSMSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n=-1);
+    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat&, SPComplexSMSpMat&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1);
+    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector&, SPComplexSMVector&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1);
 
-    void calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<ComplexType> >& vn, const std::vector<IndexType>& vn_indx, ComplexSpMat&, std::vector<ComplexType>& v, const int n=-1 );
-    void calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<ComplexType> >& vn, const std::vector<IndexType>& vn_indx, ComplexSMSpMat&, std::vector<ComplexType>& v, const int n=-1 );
+    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMSpMat&, SPComplexSMSpMat&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1);
+    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMVector&, SPComplexSMVector&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1);
+
+    void calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<SPComplexType> >& vn, const std::vector<IndexType>& vn_indx, SPValueSMSpMat&, std::vector<SPComplexType>& v, const int n=-1 );
 
     ComplexType local_evaluateOverlapSlaterDet(int detn, const ComplexType* SlaterMat);
 
     int cntExcitations(std::vector<IndexType>&,std::vector<IndexType>&,IndexType&,IndexType&,IndexType&,IndexType&,std::vector<IndexType>&,RealType&);
+
+    int countExct(int N, IndexType* D1, IndexType* D2, bool getIndx, IndexType* loc, IndexType* ik, IndexType* ak, RealType& psign);
+
+    void prepare_excitations();
 
     // very simple algorithm to generate a ci expansion in orthogonal space iteratively
     void iterativeCI(double cutoff, int nmax, int nmax_int, int maxit);
@@ -119,25 +132,33 @@ class MultiPureSingleDeterminant: public WavefunctionBase
     double IterCI_cut; 
 
     bool initFromAscii(std::string fileName);
-    bool initFromHDF5(hdf_archive&,const std::string&) {return true;}
-    bool initFromXML(std::string fileName) {return true;}
+    bool initFromHDF5(hdf_archive&,const std::string&) { return false;}
+    bool initFromXML(std::string fileName) { return false;}
 
 
     bool getHamiltonian(HamPtr ); 
 
     // evaluates and stores mixed density matrix in mixed_density_matrix
     // this evaluates the mixed density matrix in reduced format (only NAEX*NMO non-zero sector)
-    void local_evaluateOneBodyMixedDensityMatrix(int, const ComplexType* SlaterMat, ComplexType& ovl_alpha, ComplexType& ovl_beta, ComplexMatrix&, bool full=false);
+    void local_evaluateOneBodyMixedDensityMatrix(int, const ComplexType* SlaterMat, ComplexType& ovl_alpha, ComplexType& ovl_beta, SPComplexMatrix&, bool full=false);
   
-    void local_evaluateOneBodyMixedDensityMatrixFull(const ComplexType* SlaterMat, ComplexType& ovl, ComplexMatrix&, bool full=false);
+    void local_evaluateOneBodyMixedDensityMatrixFull(const ComplexType* SlaterMat, ComplexType& ovl, SPComplexMatrix&, bool full=false);
 
     void local_rankUpdateOneBodyMixedDensityMatrix(const int ndet, const ComplexType* SlaterMat, ComplexType& ovl_alpha, ComplexType& ovl_beta, bool full=false);
 
-    void local_evaluateOneBodyTrialDensityMatrix(bool full=false);
+    void local_evaluateOneBodyTrialDensityMatrix();
 
     void local_rankUpdateOneBodyTrialDensityMatrix(int n, bool full=false);
 
     bool diagonalizeTrialWavefunction(std::vector<RealType>& eigVal, ComplexMatrix& eigVec, std::vector<IndexType>& occ, int nci, bool eigV=true);
+
+    void calculate_unique_overlaps(ComplexType& ovl_ref, ComplexType& ovl, const ComplexType* SM);
+
+    void calculate_QFull(ComplexType ovl_ref, bool getQFull, bool getGa, bool getGb);
+
+    void prepare_hamiltonian_evaluation();
+
+    void allocate_hamiltonian_evaluation();
 
     bool diagHam;
 
@@ -160,9 +181,7 @@ class MultiPureSingleDeterminant: public WavefunctionBase
     // for testing purposes only!!!
     ComplexMatrix StoreSM;
 
-
     bool rotated_hamiltonian;
-    int wfntype;
     std::vector<ComplexType> OrbMat;
     int orbsize;
 
@@ -172,19 +191,75 @@ class MultiPureSingleDeterminant: public WavefunctionBase
     // 0: single copy of hamiltonian with extra computational cost  
     // 1: full storage of all hamiltonians (only option for rotated_hamiltonian) 
 
-    int max_excitation;
+    bool fast_alg;
+
     IndexType ref;
     // determinant coefficients
     std::vector<ComplexType> ci; 
 
-    // stores differences wrt to reference determinant
-    // stored continuously, tricky to access so careful 
-    std::vector<IndexType> ijab; 
-    // used to determine the number of excitations and their location in the list 
-    std::vector<s2D<IndexType> > excitation_bounds;
+    // one for each excitation level
+    std::vector<ComplexType> Kn;
+    std::vector<SPComplexType> SPKn;
+    std::vector<ComplexType> VB0;
+    ComplexMatrix QFull; 
+    ComplexMatrix G0; 
 
+    // list of occupation numbers of all determinants
     std::vector<IndexType> occ_orbs;
-    std::vector<IndexType> occ_pairs;
+
+    std::vector<RealType> det_sign;  // sign of determinant in iajb convention
+    std::vector<ComplexType> ci_with_psign;   // ci coefficient including appropriate sign in iajb convention 
+
+    int maxEx;
+    int maxExa;
+    int maxExb;
+    int nunique_alpha;
+    int nunique_beta;
+
+    // unique determinants
+    std::vector<IndexType> iajb_unique_alpha;    // compact structure with information on unique dets 
+    std::vector<IndexType> iajb_unique_beta; 
+
+    std::vector<std::pair<int,int>> map2unique;   // map from full determinant to unique lists
+
+    std::vector<ComplexType> ovlp_unique_alpha;   // vector of unique overlaps
+    std::vector<ComplexType> ovlp_unique_beta;
+
+    SPComplexMatrix BB0inv_alpha;                 // SM*(SM_0)^-1
+    SPComplexMatrix BB0inv_beta;
+    SPComplexMatrix tBB0inv_alpha;                 
+    SPComplexMatrix tBB0inv_beta;
+
+    // storage for reference sector of green functions
+    SPComplexMatrix refG;
+    SPComplexMatrix Gia;
+    SPComplexMatrix Gib;
+
+    // storage for local energy evaluation
+    std::vector<SPComplexType> vb;
+    std::vector<SPComplexType> vb_helper;
+
+    // storage for M*G
+    SPComplexMatrix refP;
+    SPComplexMatrix Pia;
+    SPComplexMatrix Pib;
+
+    // matrix of boundaries of SMSpHijkl
+    Matrix<int> Hijkl_bounds; 
+    Matrix<int> local_bounds; 
+
+    SPValueMatrix TVn;
+
+    int test_cnter;
+    
+    // debug
+    bool first_pass; 
+    SPValueSMSpMat H2;
+    std::vector<s1D<ValueType> > thij;
+    SPValueSMSpMat H0;
+    SPValueSMSpMat H1;
+    std::vector<s1D<ValueType> > tthij;
+ 
 
     // storage for results 
     std::vector<ComplexType> overlaps, pe, ke;
@@ -195,20 +270,32 @@ class MultiPureSingleDeterminant: public WavefunctionBase
     bool trialDensityMatrix_needsupdate; 
     // this will always mean the reference determinant trial_density_matrix
     ComplexMatrix trial_density_matrix;
+    SPComplexMatrix SPtrial_density_matrix;
     ComplexMatrix rank_updated_trial_density_matrix;
+    SPComplexMatrix SPrank_updated_trial_density_matrix;
 
     // Local storage  
     // Notice that all these matrices are NMOxNAEX, since the rest of the NMO-NAEX columns are zero.
     // Careful must be taken when returning results to other objects in the code.
     ComplexMatrix overlap_inv;
     // this will always mean the reference determinant mixed_density_matrix
-    ComplexMatrix full_mixed_density_matrix;
-    ComplexMatrix mixed_density_matrix;
-    ComplexMatrix rank_updated_mixed_density_matrix;
+    ComplexMatrix temp_density_matrix;
+    ComplexMatrix temp_density_matrix_full;
+    SPComplexMatrix full_mixed_density_matrix;
+    SPComplexMatrix mixed_density_matrix;
+    SPComplexMatrix rank_updated_mixed_density_matrix;
+
+    std::vector<SPComplexType> cGF;
+
+    std::vector<SPComplexType> local_buff;
+
+    // ik breakup of Spvn
+    IndexType ik0, ikN;   //  minimum and maximum values of ik index in Spvn
+    IndexType pik0;  // locations of bounds of ik0 sector in Spvn 
 
     // temporary storage
     ComplexMatrix S0,S1,SS0; 
-    ComplexVector V0;
+    SPComplexVector V0;
 
     std::vector<IndexType> Iwork;
 
@@ -222,22 +309,8 @@ class MultiPureSingleDeterminant: public WavefunctionBase
 
     std::vector<std::vector<s1D<ComplexType> > > haj;
 
-    // list of pointers defining the beginning and end 
-    // of the elements with first index i 
-    std::vector<s1Dit > hij_indx;
-
-    // Storage for two body hamiltonian 
-    // Tensor is stored in sparse form. 
-    // Contains all possible terms used by all determinants
-    // Terms are sorted to allow systematic access 
-    std::vector<s2D<ValueType> > Vijkl;
-
-    std::vector<ComplexSMSpMat> SMSpHijkl;
-
-    // list of pointers defining the beginning and end 
-    // of the elements with first index i 
-    std::vector<s2Dit > Vijkl_indx;
-    std::vector<int> Vijkl_nterms_per_det; 
+    std::vector<SPValueSMSpMat> SMSpHijkl;
+    std::vector<SPComplexSMSpMat> SMSpHabkl;
 
     // pointer to hamiltonian object 
     SparseGeneralHamiltonian* sHam;

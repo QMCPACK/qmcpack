@@ -16,11 +16,11 @@
 /** @file QMCCorrelatedSamplingLinearOptimize.h
  * @brief Definition of QMCDriver which performs VMC and optimization.
  */
-#ifndef QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_VMCSINGLE_H
-#define QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_VMCSINGLE_H
+#ifndef QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_H
+#define QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_H
 
 #include "QMCDrivers/QMCLinearOptimize.h"
-#include "QMCDrivers/VMC/VMCLinearOptOMP.h"
+#include "QMCDrivers/VMC/VMCLinearOpt.h"
 #include "Optimize/NRCOptimization.h"
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
@@ -41,7 +41,7 @@ public:
 
   ///Constructor.
   QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                                      QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+                                      QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
 
   ///Destructor
   ~QMCCorrelatedSamplingLinearOptimize();
@@ -63,7 +63,7 @@ private:
 #if defined(QMC_CUDA)
   VMCcuda* vmcCSEngine;
 #else
-  VMCLinearOptOMP* vmcCSEngine;
+  VMCLinearOpt* vmcCSEngine;
 #endif
 
   int NumOfVMCWalkers;
@@ -80,8 +80,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 757 $   $Date: 2005-10-31 10:10:28 -0600 (Mon, 31 Oct 2005) $
- * $Id: QMCCorrelatedSamplingLinearOptimize.h 757 2005-10-31 16:10:28Z jnkim $
- ***************************************************************************/

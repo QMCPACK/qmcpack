@@ -16,17 +16,18 @@
 namespace qmcplusplus
 {
 //const hid_t hdf_archive::is_closed;
-hdf_archive::hdf_archive(Communicate* c, bool use_collective)
+hdf_archive::hdf_archive(Communicate* c, bool request_pio)
   : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
 {
   H5Eget_auto (&err_func, &client_data);
   H5Eset_auto (NULL, NULL);
-  set_access_plist(use_collective,c);
+  set_access_plist(request_pio,c);
+  myComm=c;
 }
 
 hdf_archive::~hdf_archive()
 {
-#if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
+#if defined(ENABLE_PHDF5)
   if(xfer_plist != H5P_DEFAULT) H5Pclose(xfer_plist);
   if(access_id != H5P_DEFAULT) H5Pclose(access_id);
 #endif
@@ -48,42 +49,50 @@ void hdf_archive::close()
   file_id=is_closed;
 }
 
-void hdf_archive::set_access_plist(bool use_collective, Communicate* comm)
+void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
 {
   access_id=H5P_DEFAULT;
   if(comm && comm->size()>1) //for parallel communicator
   {
-    bool use_pdf=false;
-    if(use_collective)
+    bool use_phdf5=false;
+    if(request_pio)
     {
-#if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
-//      MPI_Info info=MPI_INFO_NULL;
-//      access_id = H5Pcreate(H5P_FILE_ACCESS);
-//      hid_t ret=H5Pset_fapl_mpio(access_id,comm->getMPI(),info);
-//      xfer_plist = H5Pcreate(H5P_DATASET_XFER);
-//      H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
-//      use_pdf=true;
-//      use_collective=false; // everynode writes something
+#if defined(ENABLE_PHDF5)
+      // enable parallel I/O
+      MPI_Info info=MPI_INFO_NULL;
+      access_id = H5Pcreate(H5P_FILE_ACCESS);
+#if H5_VERSION_GE(1,10,0)
+      H5Pset_all_coll_metadata_ops(access_id,true);
+      H5Pset_coll_metadata_write(access_id,true);
+#endif
+      H5Pset_fapl_mpio(access_id,comm->getMPI(),info);
+      xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+      // enable parallel collective I/O
+      H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
+      use_phdf5=true;
+#else
+      use_phdf5=false;
 #endif
     }
-    Mode.set(IS_PARALLEL,use_pdf);
-    //true, if this task does not need to participate in I/O
-    if(use_collective)
-      Mode.set(NOIO,comm->rank());
+    Mode.set(IS_PARALLEL,use_phdf5);
+    Mode.set(IS_MASTER,!comm->rank());
+    if(request_pio&&!use_phdf5)
+      Mode.set(NOIO,comm->rank()); // master only
     else
-      Mode.set(NOIO,false);
+      Mode.set(NOIO,false); // pio or all.
   }
   else
   {
     Mode.set(IS_PARALLEL,false);
+    Mode.set(IS_MASTER,true);
     Mode.set(NOIO,false);
   }
 }
 
 bool hdf_archive::create(const std::string& fname, unsigned flags)
 {
-  //not I/O node, do nothing
   if(Mode[NOIO]) return true;
+  if(!(Mode[IS_PARALLEL]||Mode[IS_MASTER])) std::runtime_error("Only create file in parallel or by master but not every rank!");
   close(); 
   file_id = H5Fcreate(fname.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,access_id);
   return file_id != is_closed;
@@ -91,8 +100,7 @@ bool hdf_archive::create(const std::string& fname, unsigned flags)
 
 bool hdf_archive::open(const std::string& fname,unsigned flags)
 {
-  if(Mode[NOIO])
-    return true;
+  if(Mode[NOIO]) return true;
   close();
   file_id = H5Fopen(fname.c_str(),flags,access_id);
   return file_id != is_closed;
@@ -100,10 +108,8 @@ bool hdf_archive::open(const std::string& fname,unsigned flags)
 
 bool hdf_archive::is_group(const std::string& aname)
 {
-  if(Mode[NOIO])
-    return true;
-  if(file_id==is_closed)
-    return false;
+  if(Mode[NOIO]) return true;
+  if(file_id==is_closed) return false;
   hid_t p=group_id.empty()? file_id:group_id.top();
   p=(aname[0]=='/')?file_id:p;
   hid_t g=H5Gopen(p,aname.c_str());
@@ -115,8 +121,7 @@ bool hdf_archive::is_group(const std::string& aname)
 
 hid_t hdf_archive::push(const std::string& gname, bool createit)
 {
-  if(Mode[NOIO]||file_id==is_closed)
-    return is_closed;
+  if(Mode[NOIO]||file_id==is_closed) return is_closed;
   hid_t p=group_id.empty()? file_id:group_id.top();
   hid_t g=H5Gopen(p,gname.c_str());
   if(g<0 && createit)
@@ -129,8 +134,3 @@ hid_t hdf_archive::push(const std::string& gname, bool createit)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 894 $   $Date: 2006-02-03 10:52:38 -0600 (Fri, 03 Feb 2006) $
- * $Id: hdf_archive.cpp 894 2006-02-03 16:52:38Z jnkim $
- ***************************************************************************/

@@ -23,48 +23,13 @@
 #include "Utilities/PooledData.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "simd/allocator.hpp"
+#include <OhmmsSoA/VectorSoaContainer.h>
 #include <limits>
 #include <bitset>
 
 namespace qmcplusplus
 {
-
-/** container for the pair data
- */
-template<class T, unsigned D>
-struct PairDataType
-{
-  ///distance-related data
-  T   r, rr, rinv;
-  ///displacement vector
-  TinyVector<T,D> dr;
-  ///default constructor
-  inline PairDataType() {}
-  ///copy constructor
-  inline PairDataType(const PairDataType<T,D>& p):r(p.r),rr(p.rr),rinv(p.rinv),dr(p.dr) {}
-  ///copy operator
-  inline PairDataType<T,D>& operator=(const PairDataType<T,D>& p)
-  {
-    r=p.r;
-    rr=p.rr;
-    rinv=p.rinv;
-    dr=p.dr;
-    return *this;
-  }
-  ///set the values
-  inline void set(const TinyVector<T,D>& displ, T sep2)
-  {
-    r=sqrt(sep2);
-    rr=sep2;
-    rinv=1.0/r;
-    dr=displ;
-  }
-  ///clear the value
-  inline void reset()
-  {
-    r=0.0;
-  }
-};
 
 /** @defgroup nnlist Distance-table group
  * @brief class to manage a set of data for distance relations between ParticleSet objects.
@@ -78,7 +43,6 @@ struct TempDisplacement
   T rinv1;
   ///new displacement
   TinyVector<T,N> dr1;
-  TinyVector<T,N> dr1_nobox;
   inline TempDisplacement():r1(0.0),rinv1(0.0) {}
   inline void reset()
   {
@@ -86,26 +50,27 @@ struct TempDisplacement
     rinv1=0.0;
     dr1=0.0;
   }
-  /////old distance
-  //T r0;
-  /////inverse of old distance
-  //T rinv0;
-  /////old displacement
-  //TinyVector<T,N> dr0;
-  //inline TempDisplacement():r1(0.0),rinv1(0.0),r0(0.0),rinv0(0.0) {}
-  //inline void reset() {r1=0.0;rinv1=0.0;dr1=0.0;r0=0.0;rinv0=0.0;dr0=0.0;}
 };
 
+/** enumerator for DistanceTableData::DTType
+ *
+ * - DT_AOS Use original AoS type
+ * - DT_SOA Use SoA type
+ * - DT_AOS_PREFERRED Create AoS type, if possible.
+ * - DT_SOA_PREFERRED Create SoA type, if possible.
+ * The first user of each pair will decide the type of distance table.
+ * It is the responsibility of the user class to check DTType.
+ */
+enum DistTableType {DT_AOS=0,  DT_SOA, DT_AOS_PREFERRED, DT_SOA_PREFERRED};
 
 /** @ingroup nnlist
  * @brief Abstract class to manage pair data between two ParticleSets.
  *
  * Each DistanceTableData object is fined by Source and Target of ParticleSet types.
  */
-class DistanceTableData: public QMCTraits
+struct DistanceTableData 
 {
-
-public:
+  static constexpr unsigned DIM=OHMMS_DIM;
 
   /**enum for index ordering and storage.
    *@brief Equivalent to using three-dimensional array with (i,j,k)
@@ -114,26 +79,32 @@ public:
    *     k = copies (walkers) index.
    */
   enum {WalkerIndex=0, SourceIndex, VisitorIndex, PairIndex};
-
-  typedef std::vector<IndexType>         IndexVectorType;
+#if (__cplusplus >= 201103L)
+  using IndexType=QMCTraits::IndexType;
+  using RealType=QMCTraits::RealType;
+  using PosType=QMCTraits::PosType;
+  using IndexVectorType=aligned_vector<IndexType>;
+  using TempDistType=TempDisplacement<RealType,DIM>;
+  using ripair=std::pair<RealType,IndexType>;
+  using RowContainer=VectorSoaContainer<RealType,DIM>;
+#else
+  typedef QMCTraits::IndexType IndexType;
+  typedef QMCTraits::RealType RealType;
+  typedef QMCTraits::PosType PosType;
+  typedef aligned_vector<IndexType> IndexVectorType;
   typedef TempDisplacement<RealType,DIM> TempDistType;
-  typedef PooledData<RealType>           BufferType;
-  typedef std::pair<RealType,IndexType>  ripair;
+  typedef std::pair<RealType,IndexType> ripair;
+  typedef VectorSoaContainer<RealType,DIM> RowContainer;
+#endif
 
   ///type of cell
   int CellType;
   ///ID of this table among many
   int ID;
-  ///Index of the particle  with a trial move
-  IndexType activePtcl;
+  ///Type of DT
+  int DTType;
   ///size of indicies
   TinyVector<IndexType,4> N;
-  ///true, if ratio computations need displacement, e.g. LCAO type
-  bool NeedDisplacement;
-  ///** Maximum radius */
-  //RealType Rmax;
-  ///** Maximum square */
-  //RealType Rmax2;
 
   /** @brief M.size() = N[SourceIndex]+1
    *
@@ -156,13 +127,7 @@ public:
   IndexVectorType PairID;
 
   /** Locator of the pair  */
-  std::vector<IndexType> IJ;
-
-  /** full distance matrix with the transposed form */
-  Matrix<RealType> trans_r;
-
-  /** full displacement matrix with the transposed form */
-  Matrix<PosType> trans_dr;
+  IndexVectorType IJ;
 
   /** @brief A NN relation of all the source particles with respect to an activePtcl
    *
@@ -172,15 +137,46 @@ public:
    * If the move is rejected, nothing is done and new data will be overwritten.
    */
   std::vector<TempDistType> Temp;
-  std::vector<RealType> temp_r;
-  std::vector<PosType> temp_dr;
+
+  /**defgroup SoA data */
+  /*@{*/
+  /** Distances[i][j] , [Nsources][Ntargets]
+   *  Note: For derived AA, only the lower triangle (j<i) is up-to-date after pbyp move
+   *          The upper triangle is symmetric to the lower one only when the full table is evaluated from scratch.
+   *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
+   *        For derived BA, the full table is up-to-date after pbyp move
+   */
+  Matrix<RealType, aligned_allocator<RealType> > Distances;
+
+  /** Displacements[Nsources]x[3][Ntargets]
+   *  Note: This is a memory view using the memory space allocated in memoryPool
+   *        Displacements[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
+   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is allocated in memoryPool
+   *          For this reason, Displacements[i] and Displacements[i+1] overlap in memory
+   *          and they must be updated in order during PbyP move.
+   *        For derived BA, A1=A, A2=B, the full table is allocated.
+   */
+  std::vector<RowContainer> Displacements;
+
+  ///actual memory for Displacements
+  aligned_vector<RealType> memoryPool;
+
+  /** temp_r */
+  aligned_vector<RealType> Temp_r;
+
+  /** temp_dr */
+  RowContainer Temp_dr;
+
+  /** true, if full table is needed at loadWalker */
+  bool Need_full_table_loadWalker;
+  /*@}*/
 
   ///name of the table
   std::string Name;
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-    : Origin(&source), N(0), NeedDisplacement(false)//, Rmax(1e6), Rmax2(1e12)
-  {  }
+    : Origin(&source), N(0), Need_full_table_loadWalker(false)
+  { }
 
   ///virutal destructor
   virtual ~DistanceTableData() { }
@@ -195,46 +191,23 @@ public:
   {
     Name = tname;
   }
-  /////set the maximum radius
-  //inline void setRmax(RealType rc) { Rmax=rc;Rmax2=rc*rc;}
+
   ///returns the reference the origin particleset
   const ParticleSet& origin() const
   {
     return *Origin;
   }
-
   inline void reset(const ParticleSet* newcenter)
   {
     Origin=newcenter;
   }
+
+  inline bool is_same_type(int dt_type) const
+  {
+    return DTType == dt_type;
+  }
+
   //@{access functions to the distance, inverse of the distance and directional consine vector
-#ifdef USE_FASTWALKER
-  inline PosType dr(int iw, int iat) const
-  {
-    return dr2_m(iat,iw);
-  }
-  inline RealType r(int iw, int iat) const
-  {
-    return r2_m(iat,iw);
-  }
-  inline RealType rinv(int iw, int iat) const
-  {
-    return rinv2_m(iat,iw);
-  }
-#else
-  inline PosType dr(int iw, int iat) const
-  {
-    return dr2_m(iw,iat);
-  }
-  inline RealType r(int iw, int iat) const
-  {
-    return r2_m(iw,iat);
-  }
-  inline RealType rinv(int iw, int iat) const
-  {
-    return rinv2_m(iw,iat);
-  }
-#endif
   inline PosType dr(int j) const
   {
     return dr_m[j];
@@ -247,6 +220,7 @@ public:
   {
     return rinv_m[j];
   }
+
   //@}
 
   ///returns the number of centers
@@ -267,10 +241,21 @@ public:
     return N[i];
   }
 
-  //inline IndexType getTotNadj() const { return M[M.size()-1];}
   inline IndexType getTotNadj() const
   {
     return npairs_m;
+  }
+
+  /// return the distance |R[iadj(i,nj)]-R[i]|
+  inline RealType distance(int i, int nj) const
+  {
+    return r_m[M[i]+nj];
+  }
+
+  /// return the displacement R[iadj(i,nj)]-R[i]
+  inline PosType displacement(int i, int nj) const
+  {
+    return dr_m[M[i]+nj];
   }
 
   //!< Returns a number of neighbors of the i-th ptcl.
@@ -278,13 +263,11 @@ public:
   {
     return M[i+1]-M[i];
   }
-
-  //!< Returns the id of j-th neighbor for i-th ptcl
-  inline IndexType iadj(int i, int j) const
+  //!< Returns the id of nj-th neighbor for i-th ptcl
+  inline IndexType iadj(int i, int nj) const
   {
-    return J[M[i] +j];
+    return J[M[i] +nj];
   }
-
   //!< Returns the id of j-th neighbor for i-th ptcl
   inline IndexType loc(int i, int j) const
   {
@@ -328,39 +311,58 @@ public:
     return -1;
   }
 
-  /** resiste trans_r and trans_dr
-   */
-  void resizeTranspose()
-  {
-    trans_r.resize(N[VisitorIndex],N[SourceIndex]);
-    if(NeedDisplacement)
-      trans_dr.resize(N[VisitorIndex],N[SourceIndex]);
-  }
+  ///evaluate the full Distance Table
+  virtual void evaluate(ParticleSet& P) = 0;
 
-  /** set trans_r, trans_dr
-   */
-  virtual void setTranspose()=0;
-
-  ///evaluate the Distance Table using ActiveWalkers
-  //virtual void evaluate(const WalkerSetRef& W) = 0;
-
-  ///evaluate the Distance Table using only with position array
-  virtual void evaluate(const ParticleSet& P) = 0;
+  /// evaluate the Distance Table for a given electron
+  virtual void evaluate(ParticleSet& P, int jat)=0;
 
   ///evaluate the temporary pair relations
-  virtual void move(const ParticleSet& P, const PosType& rnew, IndexType jat) =0;
-
-  ///evaluate the temporary pair relations
-  virtual void moveby(const ParticleSet& P, const PosType& displ, IndexType jat) =0;
+  virtual void move(const ParticleSet& P, const PosType& rnew) =0;
 
   ///evaluate the distance tables with a sphere move
-  virtual void moveOnSphere(const ParticleSet& P, const PosType& displ, IndexType jat) =0;
+  virtual void moveOnSphere(const ParticleSet& P, const PosType& rnew) =0;
 
   ///update the distance table by the pair relations
   virtual void update(IndexType jat) = 0;
 
-  ///create storage for nwalkers
-  virtual void create(int walkers) = 0;
+  /** build a compact list of a neighbor for the iat source
+   * @param iat source particle id
+   * @param rcut cutoff radius
+   * @param jid compressed index
+   * @param dist compressed distance
+   * @param displ compressed displacement
+   * @return number of target particles within rcut
+   */
+  virtual size_t get_neighbors(int iat, RealType rcut, int* restrict jid, RealType* restrict dist, PosType* restrict displ) const
+  {
+    return 0;
+  }
+
+  /** find the first nearest neighbor
+   * @param iat source particle id
+   * @param r distance
+   * @param dr displacement
+   * @param newpos if true, use the data in Temp_r and Temp_dr for the proposed move.
+   *        if false, use the data in Distance[iat] and Displacements[iat]
+   * @return the id of the nearest particle, -1 not found
+   */
+  virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
+  {
+    APP_ABORT("DistanceTableData::get_first_neighbor is not implemented in calling base class");
+    return 0;
+  }
+
+  /** build a compact list of a neighbor for the iat source
+   * @param iat source particle id
+   * @param rcut cutoff radius
+   * @param dist compressed distance
+   * @return number of target particles within rcut
+   */
+  virtual size_t get_neighbors(int iat, RealType rcut, RealType* restrict dist) const
+  {
+    return 0;
+  }
 
   /// find index and distance of each nearest neighbor particle
   virtual void nearest_neighbor(std::vector<ripair>& ri,bool transposed=false) const
@@ -391,56 +393,6 @@ public:
       APP_ABORT("DistanceTableData::check_neighbor_size  distance/index vector length is not equal to the number of neighbor particles");
   }
 
-  /** @brief register nnlist data to buf so that it can copyToBuffer and copyFromBuffer
-   *
-   * This function is used for particle-by-particle MC methods to register distance-table data
-   * to an anonymous buffer.
-   */
-  inline void registerData(BufferType& buf)
-  {
-    RealType* first = &(dr_m[0][0]);
-    buf.add(first,first+npairs_m*DIM);
-    buf.add(r_m.begin(), r_m.end());
-    buf.add(rinv_m.begin(), rinv_m.end());
-  }
-
-  /** @brief register nnlist data to buf so that it can copyToBuffer and copyFromBuffer
-   *
-   * This function is used for particle-by-particle MC methods to register distance-table data
-   * to an anonymous buffer.
-   */
-  inline void updateBuffer(BufferType& buf)
-  {
-    RealType* first = &(dr_m[0][0]);
-    buf.put(first,first+npairs_m*DIM);
-    buf.put(r_m.begin(), r_m.end());
-    buf.put(rinv_m.begin(), rinv_m.end());
-  }
-
-  /** @brief copy the data to an anonymous buffer
-   *
-   * Any data that will be used by the next iteration will be copied to a buffer.
-   */
-  inline void copyToBuffer(BufferType& buf)
-  {
-    RealType* first = &(dr_m[0][0]);
-    buf.put(first,first+npairs_m*DIM);
-    buf.put(r_m.begin(), r_m.end());
-    buf.put(rinv_m.begin(), rinv_m.end());
-  }
-
-  /** @brief copy the data from an anonymous buffer
-   *
-   * Any data that is used by the previous iteration will be copied from a buffer.
-   */
-  inline void copyFromBuffer(BufferType& buf)
-  {
-    RealType* first = &(dr_m[0][0]);
-    buf.get(first,first+npairs_m*DIM);
-    buf.get(r_m.begin(), r_m.end());
-    buf.get(rinv_m.begin(), rinv_m.end());
-  }
-
   inline void print(std::ostream& os)
   {
     os << "Table " << Origin->getName() << std::endl;
@@ -448,8 +400,6 @@ public:
       os << r_m[i] << " ";
     os << std::endl;
   }
-
-protected:
 
   const ParticleSet* Origin;
 
@@ -467,9 +417,6 @@ protected:
   std::vector<PosType> dr_m;
   /*@}*/
 
-  Matrix<PosType> dr2_m;
-  Matrix<RealType> r2_m, rinv2_m;
-
   /**resize the storage
    *@param npairs number of pairs which is evaluated by a derived class
    *@param nw number of copies
@@ -484,38 +431,18 @@ protected:
    * responsible to call this function for memory allocation and any
    * change in the indices N.
    */
-  void resize(int npairs, int nw=1)
+  void resize(int npairs, int nw)
   {
     N[WalkerIndex] =nw;
-    if(nw==1)
+    //if(nw==1)
     {
       dr_m.resize(npairs);
       r_m.resize(npairs);
-      //rr_m.resize(npairs);
       rinv_m.resize(npairs);
       Temp.resize(N[SourceIndex]);
-      temp_r.resize(N[SourceIndex]);
-      temp_dr.resize(N[SourceIndex]);
-    }
-    else
-    {
-#ifdef USE_FASTWALKER
-      dr2_m.resize(npairs,nw);
-      r2_m.resize(npairs,nw);
-      rinv2_m.resize(npairs,nw);
-#else
-      dr2_m.resize(nw,npairs);
-      r2_m.resize(nw,npairs);
-      rinv2_m.resize(nw,npairs);
-#endif
     }
   }
 
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

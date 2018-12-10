@@ -50,7 +50,7 @@ SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
   values.resize(3*NumK);
   Kmag.resize(MaxKshell);
   OneOverDnk.resize(MaxKshell);
-  for(int ks=0, k=0; ks<MaxKshell; ks++)
+  for(int ks=0; ks<MaxKshell; ks++)
   {
     Kmag[ks]=std::sqrt(source.SK->KLists.ksq[Kshell[ks]]);
     OneOverDnk[ks]=1.0/static_cast<RealType>(Kshell[ks+1]-Kshell[ks]);
@@ -106,8 +106,10 @@ void SkAllEstimator::evaluateIonIon()
   skfile.close();	
 }
 
+
 SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
 {
+  RealType w=tWalker->Weight;
 #if defined(USE_REAL_STRUCT_FACTOR)
   //sum over species
   std::copy(P.SK->rhok_r[0],P.SK->rhok_r[0]+NumK,RhokTot_r.begin());
@@ -118,7 +120,7 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
     accumulate_elements(P.SK->rhok_i[i],P.SK->rhok_i[i]+NumK,RhokTot_i.begin());
     
     for(int k=0; k<NumK; k++)
-      values[k]=RhokTot_r[k]*RhokTot_r[k]+RhokTot_i[k]*RhokTot_i[k];
+      values[k]=w*(RhokTot_r[k]*RhokTot_r[k]+RhokTot_i[k]*RhokTot_i[k]);
 
 //    for (int ionSpec=0; ionSpec<NumIonSpecies; ionSpec++)
 //    {
@@ -129,10 +131,23 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
 //   	 }	
 //    } 
     
-    for(int k=0,count=0; k<NumK; k++)
+    if(hdf5_out)
     {
-	values[NumK+2*k]=RhokTot_r[k];
-	values[NumK+2*k+1]=RhokTot_i[k];
+      int kc=myIndex;
+      for(int k=0; k<NumK; k++,kc++)
+        P.Collectables[kc] += values[k];
+      for(int k=0; k<NumK; k++,kc++)
+        P.Collectables[kc] += w*RhokTot_r[k];
+      for(int k=0; k<NumK; k++,kc++)
+        P.Collectables[kc] += w*RhokTot_i[k];
+    }
+    else
+    {
+      for(int k=0; k<NumK; k++)
+      {
+	values[NumK+2*k]=w*RhokTot_r[k];
+	values[NumK+2*k+1]=w*RhokTot_i[k];
+      }
     }
 #else
   //sum over species
@@ -141,7 +156,7 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
     accumulate_elements(P.SK->rhok[i],P.SK->rhok[i]+NumK,RhokTot.begin());
     Vector<ComplexType>::const_iterator iit(RhokTot.begin()),iit_end(RhokTot.end());
     for(int k=0; k<NumK; k++)
-      values[k]=rhok[k].real()*rhok[k].real()+rhok[k].imag()*rhok[k].imag();
+      values[k]=w*(rhok[k].real()*rhok[k].real()+rhok[k].imag()*rhok[k].imag());
 
 //    for (int ionSpec=0; ionSpec<NumIonSpecies; ionSpec++)
 //    {
@@ -151,12 +166,25 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
 //		values[(ionSpec+1)*NumK+k]=rhok[k].real()*rhok_A_r+rho_k[k].imag()*rhok_A_i;
 //  	 }	
 //    } 
-    for(int k=0,count=0; k<NumK; k++)
+    if(hdf5_out)
     {
-	value[NumK+count]=rhok[k].real();
+      int kc=myIndex;
+      for(int k=0; k<NumK; k++,kc++)
+        P.Collectables[kc] += values[k];
+      for(int k=0; k<NumK; k++,kc++)
+        P.Collectables[kc] += w*rhok[k].real();
+      for(int k=0; k<NumK; k++,kc++)
+        P.Collectables[kc] += w*rhok[k].imag();
+    }
+    else
+    {
+      for(int k=0,count=0; k<NumK; k++)
+      {
+	value[NumK+count]=w*rhok[k].real();
 	count++;
-	value[NumK+count]=rhok[k].imag();
+	value[NumK+count]=w*rhok[k].imag();
 	count++;
+      }
     }
 #endif
   return 0.0;
@@ -164,14 +192,14 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
 
 void SkAllEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-//  if(hdf5_out)
-//  {
-//    myIndex=collectables.size();
-//    vector<RealType> tmp(NumK);
-//    collectables.add(tmp.begin(),tmp.end());
-//  }
-//  else
-//  {
+  if(hdf5_out)
+  {
+    myIndex=collectables.size();
+    std::vector<RealType> tmp(3*NumK); // space for e-e modulus, e real, e imag
+    collectables.add(tmp.begin(),tmp.end());
+  }
+  else
+  {
     
     myIndex=plist.size();
 //First the electron structure factor
@@ -202,7 +230,7 @@ void SkAllEstimator::addObservables(PropertySetType& plist, BufferType& collecta
 
     }
 
-//  }
+  }
 }
 
 void SkAllEstimator::addObservables(PropertySetType& plist )
@@ -234,7 +262,7 @@ void SkAllEstimator::addObservables(PropertySetType& plist )
 	 int id2=plist.add(sstr2.str());
 
     }
-
+  
 }
 
 void SkAllEstimator::setObservables(PropertySetType& plist)
@@ -254,27 +282,38 @@ void SkAllEstimator::setParticlePropertyList(PropertySetType& plist
 void SkAllEstimator::registerCollectables(std::vector<observable_helper*>& h5desc
                                        , hid_t gid) const
 {
-/*  if (hdf5_out)
+  if(hdf5_out)
   {
-    vector<int> ndim(1,NumK);
-    observable_helper* h5o=new observable_helper(myName);
-    h5o->set_dimensions(ndim,myIndex);
-    h5o->open(gid);
-    h5desc.push_back(h5o);
-    hsize_t kdims[2];
-    kdims[0] = NumK;
-    kdims[1] = OHMMS_DIM;
-    string kpath = myName + "/kpoints";
-    hid_t k_space = H5Screate_simple(2,kdims, NULL);
-    hid_t k_set   = H5Dcreate (gid, kpath.c_str(), H5T_NATIVE_DOUBLE, k_space, H5P_DEFAULT);
-    hid_t mem_space = H5Screate_simple (2, kdims, NULL);
-    double *ptr = &(sourcePtcl->SK->KLists.kpts_cart[0][0]);
-    herr_t ret = H5Dwrite(k_set, H5T_NATIVE_DOUBLE, mem_space, k_space, H5P_DEFAULT, ptr);
-    H5Dclose (k_set);
-    H5Sclose (mem_space);
-    H5Sclose (k_space);
-    H5Fflush(gid, H5F_SCOPE_GLOBAL);
-  } */
+    // Create HDF group in stat.h5 with SkAllEstimator's name
+    hid_t sgid=H5Gcreate(gid,myName.c_str(),0);
+
+    // Add k-point information
+    observable_helper* oh=new observable_helper("kpoints");
+    oh->open(sgid); // add to SkAll hdf group
+    oh->addProperty(const_cast<std::vector<PosType>&>(ions->SK->KLists.kpts_cart),"value");
+    h5desc.push_back(oh);
+
+    // Add electron-electron S(k)
+    std::vector<int> ng(1);
+    ng[0] = NumK;
+    //  modulus
+    oh=new observable_helper("rhok_e_e");
+    oh->set_dimensions(ng,myIndex);
+    oh->open(sgid); // add to SkAll hdf group
+    h5desc.push_back(oh);
+    //  real part
+    oh=new observable_helper("rhok_e_r");
+    oh->set_dimensions(ng,myIndex+NumK);
+    oh->open(sgid); // add to SkAll hdf group
+    h5desc.push_back(oh);
+    //  imaginary part
+    oh=new observable_helper("rhok_e_i");
+    oh->set_dimensions(ng,myIndex+2*NumK);
+    oh->open(sgid); // add to SkAll hdf group
+    h5desc.push_back(oh);
+    
+  }
+
 }
 
 bool SkAllEstimator::put(xmlNodePtr cur)
@@ -317,8 +356,3 @@ QMCHamiltonianBase* SkAllEstimator::makeClone(ParticleSet& qp
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2945 $   $Date: 2008-08-05 10:21:33 -0500 (Tue, 05 Aug 2008) $
- * $Id: ForceBase.h 2945 2008-08-05 15:21:33Z jnkim $
- ***************************************************************************/

@@ -39,8 +39,8 @@ namespace qmcplusplus
 
 /// Constructor.
 CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
-                           HamiltonianPool& hpool, WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool), CloneManager(hpool), multiEstimator(0), Mover(0), UseDrift("yes")
+             WaveFunctionPool& ppool, Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm), multiEstimator(0), Mover(0), UseDrift("yes")
 {
   RootName = "csvmc";
   QMCType ="CSVMC";
@@ -50,11 +50,6 @@ CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h
   equilBlocks=-1;
   m_param.add(equilBlocks,"equilBlocks","int");
   QMCDriverMode.set(QMC_MULTIPLE,1);
-  //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
-  //for(int ipsi=0; ipsi<ppool.size(); ipsi++)
- // {
-	//  add_H_and_Psi(&h,&psi);
- // }
 }
 
 /** allocate internal data here before run() is called
@@ -64,27 +59,10 @@ CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h
  */
 bool CSVMC::put(xmlNodePtr q)
 {
- /* int nPsi=H1.size();
-  //for(int ipsi=0; ipsi<nPsi; ipsi++)
-  //  H1[ipsi]->add2WalkerProperty(W);
-  Estimators = branchEngine->getEstimatorManager();
-  if(Estimators == 0)
-  {
-  //  Estimators = new EstimatorManager(myComm);
-    multiEstimator = new CSEnergyEstimator(H,nPsi);
-    Estimators->add(multiEstimator,Estimators->MainEstimatorName);
-    branchEngine->setEstimatorManager(Estimators);
-  }
-  H1[0]->setPrimary(true);
-  for(int ipsi=1; ipsi<nPsi; ipsi++)
-    H1[ipsi]->setPrimary(false);
-  return true;*/
-  
-    //grep minimumTargetWalker
   int target_min=-1;
   ParameterSet p;
-  p.add(target_min,"minimumtargetwalkers","int"); //p.add(target_min,"minimumTargetWalkers","int"); 
-  p.add(target_min,"minimumsamples","int"); //p.add(target_min,"minimumSamples","int");
+  p.add(target_min,"minimumtargetwalkers","int");
+  p.add(target_min,"minimumsamples","int"); 
   p.put(q);
 
   app_log() << "\n<vmc function=\"put\">"
@@ -164,40 +142,6 @@ bool CSVMC::put(xmlNodePtr q)
  */
 bool CSVMC::run()
 {
- /* resetRun();
-  Mover->startRun(nBlocks,true);
-  IndexType block = 0;
-  int nPsi=Psi1.size();
-  do
-  {
-    IndexType step = 0;
-    nAccept = 0;
-    nReject=0;
-    Mover->startBlock(nSteps);
-    do
-    {
-      Mover->advanceWalkers(W.begin(), W.end(),false);
-      step++;
-      CurrentStep++;
-      Movers[0]->accumulate(W);
-    }
-    while(step<nSteps);
-   // multiEstimator->evaluateDiff();
-    //Modify Norm.
-    if(block < equilBlocks)
-      Mover->updateNorms();
-    Mover->stopBlock();
-    ++block;
-    //record the current configuration
-    recordBlock(block);
-    //if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0)
-    //  Mover->updateCSWalkers(W.begin(),W.end());
-  }
-  while(block<nBlocks);
-  Mover->stopRun();
-  //finalize a qmc section
-  return finalize(block); */
-  
   resetRun();
   //start the main estimator
   Estimators->start(nBlocks);
@@ -215,7 +159,6 @@ bool CSVMC::run()
     #pragma omp parallel
     {
       int ip=omp_get_thread_num();
-      //IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
       IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:0;
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
@@ -232,19 +175,12 @@ bool CSVMC::run()
           wClones[ip]->Collectables *= cnorm;
         CSMovers[ip]->accumulate(wit,wit_end);
         ++now_loc;
-        //app_log()<<"==step==\n";
-        //if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
         if (Period4WalkerDump&& now_loc%Period4WalkerDump==0)
           wClones[ip]->saveEnsemble(wit,wit_end);
-//           if(storeConfigs && (now_loc%storeConfigs == 0))
-//             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
       }
       CSMovers[ip]->stopBlock(false);
-     // app_log()<<"THREAD "<<ip<< std::endl;
-     // CSMovers[ip]->updateAvgWeights();
       
     }//end-of-parallel for
-    //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
     Estimators->stopBlock(estimatorClones);
     ADIOS_PROFILE::profile_adios_end_comp(block);
@@ -301,71 +237,62 @@ void CSVMC::resetRun()
   if(Movers.empty())
   {
 	CSMovers.resize(NumThreads,0);
-    branchClones.resize(NumThreads,0);
     estimatorClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
  
     
-#if !defined(BGP_BUG)
     #pragma omp parallel for
-#endif    
     for(int ip=0; ip<NumThreads; ++ip)
     {
-	  std::ostringstream os;
-	  estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
+      std::ostringstream os;
+      estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
-	  traceClones[ip] = Traces->makeClone();
+      traceClones[ip] = Traces->makeClone();
 #endif
-	  Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+      Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
 	  
-	  //HPoolClones[0]->setPrimary(true);
-	//  for(int ipsi=1; ipsi<nPsi; ipsi++)
-   //     HPoolClones[ipsi]->setPrimary(false);
-     
-      branchClones[ip] = new BranchEngineType(*branchEngine);
-	 //  hClones[ip]->setRandomGenerator(Rng[ip]);
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
-        os << "  Using particle-by-particle update with fast drift" << std::endl;
-        APP_ABORT("CSVMC update particle-by-particle with fast drift is still being debugged\n");
-        CSMovers[ip]=new CSVMCUpdatePbyPWithDriftFast(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
-      }
-      
-      if (UseDrift == "yes")
-      {
-        os << "  Using walker-by-walker update with Drift " << std::endl;
-        CSMovers[ip]=new CSVMCUpdateAllWithDrift(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
+        if (UseDrift == "yes")
+        {
+          os <<"  Using particle-by-particle update with drift "<< std::endl;
+          CSMovers[ip]=new CSVMCUpdatePbyPWithDriftFast(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
+        }
+        else
+        {
+          os << "  Using particle-by-particle update with no drift" << std::endl;
+          CSMovers[ip]=new CSVMCUpdatePbyP(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
+        }
       }
       else
       {
-        os << "  Using walker-by-walker update " << std::endl;
-        CSMovers[ip]=new CSVMCUpdateAll(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
-
+      
+        if (UseDrift == "yes")
+        {
+          os << "  Using walker-by-walker update with Drift " << std::endl;
+          CSMovers[ip]=new CSVMCUpdateAllWithDrift(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
+        }
+        else
+        {
+          os << "  Using walker-by-walker update " << std::endl;
+          CSMovers[ip]=new CSVMCUpdateAll(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
+        }
       }
       if(ip==0)
         app_log() << os.str() << std::endl;
 
-      //traceClones[ip]->transfer_state_from(*Traces);
-
       CSMovers[ip]->put(qmcNode);
-      //CSMovers[ip]->Psi1=PsiPoolClones[ip];
-     // CSMovers[ip]->H1=HPoolClones[ip];
-   //   CSMovers[ip]->multiEstimator= Estimators->getEstimator(Estimators->MainEstimatorName);
-   
-      //estimatorClones[ip]->add(CSMovers[ip]->multiEstimator,Estimators->MainEstimatorName);;
-      CSMovers[ip]->resetRun( branchClones[ip], estimatorClones[ip],traceClones[ip]);
+      CSMovers[ip]->resetRun(branchEngine, estimatorClones[ip],traceClones[ip]);
     }
 
   }
 #if !defined(REMOVE_TRACEMANAGER)
   else
   {
-#if !defined(BGP_BUG)
     #pragma omp parallel for
-#endif
     for(int ip=0; ip<NumThreads; ++ip)
     {
       traceClones[ip]->transfer_state_from(*Traces);
@@ -377,41 +304,24 @@ void CSVMC::resetRun()
   app_log() << "  Walker distribution on root = ";
   copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(app_log()," "));
   app_log() << std::endl;
-  //app_log() << "  Sample Size per node=" << samples_this_node << std::endl;
-  //for (int ip=0; ip<NumThreads; ++ip)
-  //  app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << std::endl;
   app_log().flush();
   
-#if !defined(BGP_BUG)
   #pragma omp parallel for
-#endif
   for(int ip=0; ip<NumThreads; ++ip)
   {
     //int ip=omp_get_thread_num();
     CSMovers[ip]->put(qmcNode);
-    CSMovers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+    CSMovers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
-   //    app_log()<<"QMCDriverMode[QMC_UPDATE_MODE]==True\n";
-     APP_ABORT("Uggh.  PbyP not working");  
-//   CSMovers[ip]->initCSWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
-   // else
+     CSMovers[ip]->initCSWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
+    else
       CSMovers[ip]->initCSWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
-//       if (UseDrift != "rn")
-//       {
+
     for (int prestep=0; prestep<nWarmupSteps; ++prestep)
     {
       CSMovers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-    //  CSMovers[ip]->updateNorms();
-    //  app_log()<<cumnorm<< std::endl;
       if (prestep==nWarmupSteps-1) CSMovers[ip]->updateNorms();
     }
-    
- //   app_log()<<"Norms updated\n";
-    if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-      CSMovers[ip]->updateCSWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-//       }
-    
-    
   }
   
   for(int ip=0; ip<NumThreads; ++ip)
@@ -425,8 +335,3 @@ void CSVMC::resetRun()
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1593 $   $Date: 2007-01-04 17:23:27 -0600 (Thu, 04 Jan 2007) $
- * $Id: CSVMC.cpp 1593 2007-01-04 23:23:27Z jnkim $
- ***************************************************************************/

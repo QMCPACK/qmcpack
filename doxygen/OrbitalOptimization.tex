@@ -1,0 +1,165 @@
+\documentclass[letterpaper]{article}
+\special{papersize=8.5in,11in}
+\setlength{\pdfpageheight}{\paperheight}
+\setlength{\pdfpagewidth}{\paperwidth}
+\usepackage{amsmath}
+\title{Notes on Orbital Optimization}
+\author{Ken Esler}
+\begin{document}
+\maketitle
+\newcommand{\vr}{\mathbf{r}}
+\newcommand{\Aopt}{\tilde{A}}
+
+\section{Trial wave functions in logarithmic form}
+Let us consider a trial wave function, $\psi$, which is a product of
+components,
+\begin{equation}
+  \psi = \psi_1 \psi_2 \psi_3 \dots
+\end{equation}
+To avoid the complicated application of the product rule, we work
+rather with the quantity, $\ln(\psi)$.
+\begin{equation}
+\ln(\psi) = \ln(\psi_1) + \ln(\psi_2) + \ln(\psi_3) \dots
+\end{equation}
+\subsection{Optimizing trial wave functions}
+Each of the components of $\psi$ can be parametrized to allow
+optimization of the trial function.  Efficient optimization algorithms
+can be employed if we can compute the derivatives of two quantities
+with respect to these parameters.  For simplicity, we label one
+parameter as $\alpha$.  We then need to compute
+\begin{eqnarray}
+\partial_\alpha \ln(\psi) & = & \partial_\alpha \ln (\psi_1)
++ \partial_\alpha \ln (\psi_2) + \dots,\ \text{and} \\
+\partial_\alpha \left[ \frac{\nabla^2\psi}{\psi}\right] & = &
+\partial_\alpha \left\{\nabla^2 \ln(\psi) + \left[\nabla
+    \ln(\psi)\right]^2 \right\} \\
+& = & \partial_\alpha \nabla^2 \ln(\psi) + 2 \left[\nabla \ln(\psi)
+\right]\cdot \left[ \partial_\alpha \nabla \ln(\psi)\right].
+\end{eqnarray}
+Let us consider the second term in terms of its components.
+\begin{eqnarray}
+\partial_\alpha \left[ \frac{\nabla^2\psi}{\psi}\right] & = &
+ \partial_\alpha \nabla^2\ln(\psi_1) + \partial_\alpha
+ \nabla^2\ln(\psi_2)+ \dots \\
+& & + 2\left[\nabla \ln(\psi)\right]\cdot
+\left[\partial_\alpha \nabla \ln(\psi_1)\right] +
+2\left[\nabla \ln(\psi)\right]\cdot
+\left[\partial_\alpha \nabla \ln(\psi_2)\right] + \cdots \nonumber
+\end{eqnarray}
+Thus, the contribution of $\psi1$ to the total is given by
+\begin{equation}
+\partial_\alpha \left[ \frac{\nabla^2\psi}{\psi}\right]_{\psi_1} =
+\partial_\alpha \nabla^2\ln(\psi_1) + 2\left[\nabla \ln(\psi)\right]\cdot
+\left[\partial_\alpha \nabla \ln(\psi_1)\right].
+\end{equation}
+
+
+\section{Statement of problem}
+We would like to optimize the occupied single-particle orbitals,
+$\left\{\phi_i(\vr)\right\}$ in a determinant in the basis of the
+single-particle excited states, $\left\{\varphi_j(\vr)\right\}$.
+That is, we write the optimized orbitals,
+$\left\{\tilde{\phi}_i(\vr)\right\}$, as
+\begin{equation}
+\tilde{\phi}_i(\vr) = \phi_i(\vr) + \sum_j c_{ij} \varphi_j(\vr).
+\end{equation}
+
+In this set of notes, we derive the required algebra for computing the
+derivatives of the determinants w.r.t. $c_{ij}$.  First, let
+\begin{equation}
+A_{mn} \equiv \phi_m(\vr_n),\qquad \Aopt_{mn} \equiv \tilde{\phi}_m(\vr_n)
+\end{equation}
+If we let $\vr_n \rightarrow \vr'_n$, we can compute the ratio of the
+new determinant to the old as
+\begin{equation}
+\frac{\det(A')}{\det(A)} = \sum_m \left(A^{-1}\right)_{nm} \phi_m(\vr_n').
+\end{equation}
+Similarly,
+\begin{equation}
+\frac{\nabla_n\det(A)}{\det(A)} = \sum_m \left(A^{-1}\right)_{nm} \nabla\phi_m(\vr_n).
+\end{equation}
+Analogously, 
+\begin{equation}
+\frac{d}{d c_{ij}} \log\left[\det(\Aopt)\right] = \sum_n
+\left(A^{-1}\right)_{ni} \varphi_j(\vr_n).
+\end{equation}
+We need to also compute the derivative of the local kinetic energy
+with respect to $c_{ij}$.  These terms are more complicated.  
+
+
+We first need to compute
+\begin{equation}
+\frac{d}{d_{c_{ij}}} \left(\Aopt^{-1}\right)_{nm} = 
+\end{equation}
+
+\begin{equation}
+\left[A + e_k\delta^T\right]^{-1} = A^{-1} - \frac{A^{-1}e_k\delta^T
+  A^{-1}}{1 + \delta^T A^{-1}e_k},
+\end{equation}
+
+\begin{equation}
+\left[A + e_k\delta^T\right]^{-1}_{nm} = \left[A^{-1}\right]_{nm} - \frac{\left[A^{-1}e_k\right]_n\left[\delta^T
+  A^{-1}\right]_m}{1 + \delta^T A^{-1}e_k},
+\end{equation}
+
+\begin{equation}
+\left[A + e_k\delta^T\right]^{-1}_{nm} = \left[A^{-1}\right]_{nm} - \frac{\left[A^{-1}\right]_{nk}\left[\delta^T
+  A^{-1}\right]_m}{1 + \delta^T A^{-1}e_k},
+\end{equation}
+
+\begin{eqnarray}
+\frac{d \left[\Aopt^{-1}\right]_{nm}}{d_{c_{ij}}} & = &
+-\left[\Aopt^{-1}\right]_{ni}\left[\varphi_j(\vr_k)\Aopt^{-1}\right]_m  \\
+& = & -\left[\Aopt^{-1}\right]_{ni} \sum_k \left(\Aopt^{-1}\right)_{km} \varphi_j(\vr_k) \\
+& = & -\left[\Aopt^{-1}\right]_{ni} \frac{d}{d c_{mj}} \log\left[\det(\Aopt)\right]
+%-\left[\varphi_j(\vr_m)\Aopt^{-1}\right]_i
+\end{eqnarray}
+Define
+\begin{equation}
+\gamma_{mj} \equiv \frac{d}{d c_{mj}} \log\left[\det(\Aopt)\right].
+\end{equation}
+Now, we can compute
+\begin{eqnarray}
+\frac{d}{dc_{ij}} \left[\frac{\nabla^2_n
+    \det(\Aopt)}{\det(\Aopt)}\right] & = & \sum_m \left\{\rule{0cm}{0.6cm}
+-\left[\Aopt^{-1}\right]_{ni}\left[\varphi_j(\vr_i)\Aopt^{-1}\right]_m
+\nabla^2 \phi_m(\vr_n) +
+\left(\Aopt^{-1}\right)_{nm} \nabla^2 \varphi_j(\vr_n)\delta_{i,m} \right\} \nonumber \\
+& = & \sum_m \left\{\rule{0cm}{0.6cm}
+-\left[\Aopt^{-1}\right]_{ni} \gamma_{mj}
+\nabla^2 \phi_m(\vr_n) +
+\left(\Aopt^{-1}\right)_{nm} \nabla^2 \varphi_j(\vr_n) \delta_{i,m}\right\} \\ 
+& = & \sum_m \left\{\rule{0cm}{0.6cm}
+-\left[\Aopt^{-1}\right]_{ni} \gamma_{mj}
+\nabla^2 \phi_m(\vr_n) \right\}+
+\left(\Aopt^{-1}\right)_{ni} \nabla^2 \varphi_j(\vr_n)
+\end{eqnarray}
+Define
+\begin{eqnarray}
+L_{nm} & \equiv & \nabla^2\phi_m(\vr_n) \\
+\mathcal{L}_{nj} & \equiv & \nabla^2\varphi_j(\vr_n)
+\end{eqnarray}
+\begin{equation}
+\frac{d}{dc_{ij}} \left[\frac{\nabla^2_n \det(\Aopt)}{\det(\Aopt)}\right] =
+\sum_m  \left\{\rule{0cm}{0.6cm}
+-\left[\Aopt^{-1}\right]_{ni} L_{nm} \gamma_{mj} \right\} + \left[\Aopt^{-1}\right]_{ni} \mathcal{L}_{nj}
+\end{equation}
+
+\newpage
+When we change $c_{ij}$, a column of $\Aopt$ changes.  Using the Sherman-Morrison formula, we can compute the change in $\Aopt^{-1}$.
+\begin{equation}
+\left[\Aopt^{-1} + \Delta c_{ij} \varphi_j e_i^T\right]^{-1}_{nm} =
+\Aopt^{-1} - \frac{\Delta c_{ij} \left[\sum_k \left(\Aopt^{-1}\right)_{nk} \varphi_j(\vr_k)\right]\Aopt^{-1}_{im}}{1 + \lambda}.
+\end{equation}
+We expand around $\Delta c_{ij}=0$.  Taking the derivative,
+\begin{equation}
+\frac{d}{dc_{ij}} \left[\Aopt^{-1}\right]_{nm} = \underbrace{\left[-\sum_k \Aopt^{-1}_{nk} \varphi_j(\vr_k)\right]}_{\equiv \gamma_{nj}}\Aopt^{-1}_{im}.
+\end{equation}
+Now, let us consider how the gradient with respect particle $m$ changes with
+$c_{ij}$.  Two terms contribute.  First, a term contributes from the
+ratio of 
+
+
+
+
+\end{document}

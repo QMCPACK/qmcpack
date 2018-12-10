@@ -65,7 +65,7 @@ struct PWParameterSet: public MPIObjectBase
   ///xml processor
   ParameterSet m_param;
 
-  PWParameterSet();
+  PWParameterSet(Communicate *comm);
 
   bool put(xmlNodePtr cur)
   {
@@ -106,8 +106,3 @@ struct PWParameterSet: public MPIObjectBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

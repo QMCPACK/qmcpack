@@ -159,7 +159,7 @@ void cqmc::engine::LMBlockerMatData::acc(const double d, const std::vector<doubl
   // loop over blocks
   for (int b = 0; b < this->nb(); b++) {
     
-    // begining index
+    // beginning index
     const int ibeg = 1 + m_block_beg.at(b);
 
     // block length
@@ -313,7 +313,7 @@ void cqmc::engine::LMBlockerMatData::mpi_finalize(const double total_weight) {
 
   // <wfn|wfn>
   double m_ww_tot = 0.0;
-  formic::mpi::reduce(&m_ww[0], &m_ww_tot, 1, MPI::SUM);
+  formic::mpi::reduce(&m_ww[0], &m_ww_tot, 1, MPI_SUM);
   //MPI_Reduce(&m_ww, &m_ww_tot, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   m_ww[0] = m_ww_tot / total_weight;
 
@@ -333,14 +333,14 @@ void cqmc::engine::LMBlockerMatData::mpi_finalize(const double total_weight) {
 
   // do MPI reduce
   for (int i = 0; i < this->nb(); i++) {
-    formic::mpi::reduce(&m_wv[0].at(i).at(0), &m_wv_tot.at(i).at(0), this->bl(i), MPI::SUM);
-    formic::mpi::reduce(&m_vw[0].at(i).at(0), &m_vw_tot.at(i).at(0), this->bl(i), MPI::SUM);
-    formic::mpi::reduce(&m_vv[0].at(i).at(0,0), &m_vv_tot.at(i).at(0,0), m_vv[0].at(i).size(), MPI::SUM);
-    formic::mpi::reduce(&m_wo[0].at(i).at(0), &m_wo_tot.at(i).at(0), m_nou, MPI::SUM);
-    formic::mpi::reduce(&m_ow[0].at(i).at(0), &m_ow_tot.at(i).at(0), m_nou, MPI::SUM); 
-    formic::mpi::reduce(&m_ov[0].at(i).at(0,0), &m_ov_tot.at(i).at(0,0), m_ov[0].at(i).size(), MPI::SUM);
-    formic::mpi::reduce(&m_vo[0].at(i).at(0,0), &m_vo_tot.at(i).at(0,0), m_vo[0].at(i).size(), MPI::SUM);
-    formic::mpi::reduce(&m_oo[0].at(i).at(0,0), &m_oo_tot.at(i).at(0,0), m_oo[0].at(i).size(), MPI::SUM);
+    formic::mpi::reduce(&m_wv[0].at(i).at(0), &m_wv_tot.at(i).at(0), this->bl(i), MPI_SUM);
+    formic::mpi::reduce(&m_vw[0].at(i).at(0), &m_vw_tot.at(i).at(0), this->bl(i), MPI_SUM);
+    formic::mpi::reduce(&m_vv[0].at(i).at(0,0), &m_vv_tot.at(i).at(0,0), m_vv[0].at(i).size(), MPI_SUM);
+    formic::mpi::reduce(&m_wo[0].at(i).at(0), &m_wo_tot.at(i).at(0), m_nou, MPI_SUM);
+    formic::mpi::reduce(&m_ow[0].at(i).at(0), &m_ow_tot.at(i).at(0), m_nou, MPI_SUM);
+    formic::mpi::reduce(&m_ov[0].at(i).at(0,0), &m_ov_tot.at(i).at(0,0), m_ov[0].at(i).size(), MPI_SUM);
+    formic::mpi::reduce(&m_vo[0].at(i).at(0,0), &m_vo_tot.at(i).at(0,0), m_vo[0].at(i).size(), MPI_SUM);
+    formic::mpi::reduce(&m_oo[0].at(i).at(0,0), &m_oo_tot.at(i).at(0,0), m_oo[0].at(i).size(), MPI_SUM);
   }
 
   // evaluate the average across all processors

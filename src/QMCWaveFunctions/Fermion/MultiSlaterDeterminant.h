@@ -16,8 +16,7 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/FermionBase.h>
-#include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
+#include <QMCWaveFunctions/Fermion/DiracDeterminant.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
@@ -25,8 +24,8 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
- *  @brief An AntiSymmetric OrbitalBase composed of a linear combination of SlaterDeterminants.
+/** @ingroup WaveFunctionComponent
+ *  @brief An AntiSymmetric WaveFunctionComponent composed of a linear combination of SlaterDeterminants.
  *
  *\f[
  *MS({\bf R}) = \sum_n c_n S_n({\bf R})
@@ -49,7 +48,7 @@ namespace qmcplusplus
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
-class MultiSlaterDeterminant: public OrbitalBase, public FermionBase
+class MultiSlaterDeterminant: public WaveFunctionComponent
 {
 
 public:
@@ -57,8 +56,8 @@ public:
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer,AccRejTimer,evalOrbTimer;
 
-  typedef DiracDeterminantBase*    DiracDeterminantPtr;
-  typedef SPOSetBase*              SPOSetBasePtr;
+  typedef DiracDeterminant*    DiracDeterminantPtr;
+  typedef SPOSet*              SPOSetPtr;
   typedef SPOSetProxyForMSD*             SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
@@ -101,22 +100,15 @@ public:
 
   virtual GradType evalGrad(ParticleSet& P, int iat);
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  virtual ValueType ratio(ParticleSet& P, int iat
-                          , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
-
   virtual ValueType ratio(ParticleSet& P, int iat);
   virtual void acceptMove(ParticleSet& P, int iat);
   virtual void restore(int iat);
 
-  virtual void update(ParticleSet& P
-                      , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-                      , int iat);
-  virtual RealType evaluateLog(ParticleSet& P,BufferType& buf);
-  virtual RealType registerData(ParticleSet& P, BufferType& buf);
-  virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-  virtual void copyFromBuffer(ParticleSet& P, BufferType& buf);
+  virtual void registerData(ParticleSet& P, WFBufferType& buf);
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<RealType>& dlogpsi,
@@ -146,8 +138,8 @@ public:
   std::vector<DiracDeterminantPtr> dets_dn;
 
   // map determinant in linear combination to unique det list
-  std::vector<int> C2node_up;
-  std::vector<int> C2node_dn;
+  std::vector<size_t> C2node_up;
+  std::vector<size_t> C2node_dn;
 
   std::vector<RealType> C;
 
@@ -157,18 +149,18 @@ public:
 
 // UGLY, how do I get around this? I want to use GradMatrix instead...
   // grads(#uniqueDet,part#)
-  Vector<ParticleSet::ParticleGradient_t> grads_up;
-  Vector<ParticleSet::ParticleGradient_t> grads_dn;
+  std::vector<ParticleSet::ParticleGradient_t> grads_up;
+  std::vector<ParticleSet::ParticleGradient_t> grads_dn;
 
   // lap(#uniqueDet,part#)
-  Vector<ParticleSet::ParticleLaplacian_t> lapls_up;
-  Vector<ParticleSet::ParticleLaplacian_t> lapls_dn;
+  std::vector<ParticleSet::ParticleLaplacian_t> lapls_up;
+  std::vector<ParticleSet::ParticleLaplacian_t> lapls_dn;
 
   // grads(#uniqueDet,part#)
-  Vector<ParticleSet::ParticleGradient_t> tempgrad;
+  std::vector<ParticleSet::ParticleGradient_t> tempgrad;
 
   // lap(#uniqueDet,part#)
-  Vector<ParticleSet::ParticleLaplacian_t> templapl;
+  std::vector<ParticleSet::ParticleLaplacian_t> templapl;
 
   ValueType curRatio;
   ValueType psiCurrent;
@@ -187,16 +179,11 @@ public:
   // coefficients of csfs, these are only used during optm
   std::vector<RealType> CSFcoeff;
   // number of dets per csf
-  std::vector<int> DetsPerCSF;
-  // coefficient of csf expansion (smaller dimension)
+  std::vector<size_t> DetsPerCSF;
+  // coefficiesize_tof csf expansion (smaller dimension)
   std::vector<RealType> CSFexpansion;
 
 };
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: miguel.mmorales $
- * $Revision: 4791 $   $Date: 2010-05-12 12:08:35 -0500 (Wed, 12 May 2010) $
- * $Id: MultiSlaterDeterminant.h 4791 2010-05-12 17:08:35Z miguel.mmorales $
- ***************************************************************************/

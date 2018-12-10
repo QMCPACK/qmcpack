@@ -9,15 +9,15 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_GTO_BUILDER_H
 #define QMCPLUSPLUS_GTO_BUILDER_H
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/SphericalBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
 #include "Numerics/GaussianBasisSet.h"
-
+#include "io/hdf_archive.h"
 namespace qmcplusplus
 {
 
@@ -50,15 +50,19 @@ public:
     return true;
   }
 
+  bool addGridH5(hdf_archive &hin)
+  {
+    return true;
+  }
+
   bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+  bool addRadialOrbitalH5(hdf_archive &hin, const QuantumNumberType& nlms)
+  {
+    return true;
+  }
 
   bool putCommon(xmlNodePtr cur);
 
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

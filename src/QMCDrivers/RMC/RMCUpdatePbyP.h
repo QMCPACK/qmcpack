@@ -40,6 +40,7 @@ namespace qmcplusplus
 
     void advanceWalkersVMC ();
     void advanceWalkersRMC ();
+    void advanceWalker (Walker_t& thisWalker, bool recompute);
     void advanceWalkers (WalkerIter_t it, WalkerIter_t it_end, bool measure);
     void initWalkersForPbyP (WalkerIter_t it, WalkerIter_t it_end);
     void initWalkers (WalkerIter_t it, WalkerIter_t it_end);
@@ -48,16 +49,10 @@ namespace qmcplusplus
     bool put (xmlNodePtr cur);
   private:
     /// Copy Constructor (disabled)
-      RMCUpdatePbyPWithDrift (const RMCUpdatePbyPWithDrift &
-			      a):QMCUpdateBase (a), Action (a.Action),
-      TransProb (a.TransProb)
-    {
-    }
+    RMCUpdatePbyPWithDrift(const RMCUpdatePbyPWithDrift &) = delete;
     /// Copy operator (disabled).
-    RMCUpdatePbyPWithDrift & operator= (const RMCUpdatePbyPWithDrift &)
-    {
-      return *this;
-    }
+    RMCUpdatePbyPWithDrift & operator=(const RMCUpdatePbyPWithDrift &) = delete;
+
     std::vector < int >Action, TransProb;
     bool scaleDrift;
     IndexType actionType;

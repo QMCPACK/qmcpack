@@ -53,6 +53,11 @@ ELSE()
   ADD_EXECUTABLE(${p} ${p}.cpp) 
 ENDIF()
 
+# Clean up git-rev-tmp.h after the build is finished
+ADD_CUSTOM_COMMAND(TARGET qmcpack
+                   POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP})
+
   TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
 
   IF(BUILD_AFQMC)

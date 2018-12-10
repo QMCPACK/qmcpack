@@ -16,8 +16,9 @@
 #ifndef QMCPLUSPLUS_RPA_JASTROW_H
 #define QMCPLUSPLUS_RPA_JASTROW_H
 
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "LongRange/LRHandlerBase.h"
+#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
@@ -31,11 +32,10 @@ namespace qmcplusplus
  *  Modification of RPAJastrow
  *
  */
-struct RPAJastrow: public OrbitalBase
+struct RPAJastrow: public WaveFunctionComponent
 {
   typedef LRHandlerBase HandlerType;
-  typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
-  typedef CubicSplineSingle<RealType,SplineEngineType> FuncType;
+  typedef BsplineFunctor<RealType> FuncType;
   typedef LinearGrid<RealType> GridType;
 
   RPAJastrow(ParticleSet& target, bool is_manager);
@@ -73,40 +73,24 @@ struct RPAJastrow: public OrbitalBase
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL);
-
   ValueType ratio(ParticleSet& P, int iat);
+  GradType evalGrad(ParticleSet& P, int iat);
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   void acceptMove(ParticleSet& P, int iat);
 
   void restore(int iat);
 
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType registerData(ParticleSet& P, BufferType& buf);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
-
-  RealType evaluateLog(ParticleSet& P,BufferType& buf);
-
-  OrbitalBase* makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
 
 private:
 
@@ -129,15 +113,15 @@ private:
   LRTwoBodyJastrow* LongRangeRPA;
   ///@{objects to handle the short-range part
   ///two-body Jastrow function
-  OrbitalBase* ShortRangeRPA;
+  WaveFunctionComponent* ShortRangeRPA;
   ///numerical function owned by ShortRangeRPA
   FuncType* nfunc;
   GridType* myGrid;
   ///adaptor function to initialize nfunc
   ShortRangePartAdapter<RealType>* SRA;
   ParticleSet& targetPtcl;
-  ///A list of OrbitalBase*
-  std::vector<OrbitalBase*> Psi;
+  ///A list of WaveFunctionComponent*
+  std::vector<WaveFunctionComponent*> Psi;
 };
 }
 #endif

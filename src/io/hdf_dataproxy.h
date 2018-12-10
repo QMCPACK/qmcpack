@@ -115,6 +115,7 @@ bool h5d_read(hid_t grp, const std::string& aname, hsize_t ndims,
   return ret != -1;
 }
 
+
 template<typename T>
 inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, 
     const hsize_t* gcounts, const hsize_t* counts, const hsize_t* offsets,
@@ -124,21 +125,34 @@ inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims,
     return true;
   hid_t h5d_type_id=get_h5_datatype(*first);
   hid_t h1 = H5Dopen(grp, aname.c_str());
+  hid_t filespace, memspace;
   herr_t ret=-1;
   if(h1<0) //missing create one
   {
     hid_t dataspace=H5Screate_simple(ndims,gcounts,NULL);
     hid_t dataset=H5Dcreate(grp, aname.c_str(),h5d_type_id, dataspace, H5P_DEFAULT);
 
-    hid_t filespace=H5Dget_space(dataspace);
+    hid_t filespace=H5Dget_space(dataset);
     ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offsets,NULL,counts,NULL); 
 
     hid_t memspace=H5Screate_simple(ndims,counts,NULL);
     ret=H5Dwrite(dataset,h5d_type_id,memspace,filespace,xfer_plist,first);
 
+    H5Dclose(memspace);
     H5Sclose(filespace);
     H5Dclose(dataset);
     H5Sclose(dataspace);
+  }
+  else
+  {
+    filespace=H5Dget_space(h1);
+    ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offsets,NULL,counts,NULL);
+
+    memspace=H5Screate_simple(ndims,counts,NULL);
+    ret = H5Dwrite(h1, h5d_type_id, memspace, filespace, xfer_plist, first);
+
+    H5Sclose(filespace);
+    H5Dclose(memspace);
   }
   H5Dclose(h1);
   return ret != -1;
@@ -290,8 +304,3 @@ template<typename T> struct h5data_proxy
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2764 $   $Date: 2008-06-26 10:21:31 -0500 (Thu, 26 Jun 2008) $
- * $Id: hdf_dataspace.h 2764 2008-06-26 15:21:31Z jnkim $
- ***************************************************************************/

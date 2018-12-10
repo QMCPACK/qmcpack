@@ -124,8 +124,3 @@ OneDimGridFactory::setSmoothCutoff(GridType* agrid, xmlNodePtr cur)
   return rcut;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

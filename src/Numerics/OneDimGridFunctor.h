@@ -24,8 +24,6 @@
 
 namespace qmcplusplus
 {
-template<class T, unsigned D>
-struct FunctorBase { };
 
 /** Implement One-Dimensional function on a radial grid.
  *
@@ -36,13 +34,13 @@ struct FunctorBase { };
  * - CTg container type associated with the grid data
  *
  * Store the values of the function for the
- * cooresponding grid points, \f$ y_i = y(x_i) \f$.
+ * corresponding grid points, \f$ y_i = y(x_i) \f$.
  */
 template <class Td,
          class Tg = Td,
          class CTd= Vector<Td>,
          class CTg= Vector<Tg>  >
-struct OneDimGridFunctor//: public FunctorBase<Td,1> {
+struct OneDimGridFunctor
 {
 
   /// the type of the value on a grid
@@ -362,8 +360,3 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

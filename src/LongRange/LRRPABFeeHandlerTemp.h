@@ -56,6 +56,7 @@ struct LRRPABFeeHandlerTemp: public LRHandlerBase
   LRRPABFeeHandlerTemp(ParticleSet& ref, mRealType kc_in=-1.0):
     LRHandlerBase(kc_in),FirstTime(true), Basis(ref.Lattice)
   {
+    LRHandlerBase::ClassName="LRRPAFeeHandlerTemp";
     myFunc.reset(ref);
   }
 
@@ -272,8 +273,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2301 $   $Date: 2007-11-16 13:02:40 -0600 (Fri, 16 Nov 2007) $
- * $Id: LRHandlerTemp.h 2301 2007-11-16 19:02:40Z jnkim $
- ***************************************************************************/

@@ -13,15 +13,14 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
-#include "QMCWaveFunctions/FermionBase.h"
 #ifdef QMC_CUDA
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #else
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #endif
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include <map>
@@ -30,20 +29,20 @@ namespace qmcplusplus
 {
 // NOTE NOTE NOTE
 // template<bool backflow>
-//  class SlaterDet: public OrbitalBase {}
+//  class SlaterDet: public WaveFunctionComponent {}
 //     then change SlaterDet to SlaterDet<false>
 //     and SlaterDeterminantWithBackflow to SlaterDet<true>
 //     and remove all virtuals and inline them
 
-class SlaterDet: public OrbitalBase, public FermionBase
+class SlaterDet : public WaveFunctionComponent
 {
 public:
-  typedef DiracDeterminantBase Determinant_t;
+  typedef DiracDeterminant Determinant_t;
   ///container for the DiracDeterminants
-  std::vector<Determinant_t*>  Dets;
-  std::vector<int> M;
-  std::vector<int> DetID;
-  std::map<std::string,SPOSetBasePtr> mySPOSet;
+  std::vector<Determinant_t*> Dets;
+  ///the last particle of each group
+  std::vector<int> Last;
+  std::map<std::string, SPOSetPtr> mySPOSet;
 
   /**  constructor
    * @param targetPtcl target Particleset
@@ -54,16 +53,23 @@ public:
   ///destructor
   ~SlaterDet();
 
+  //get Det ID
+  inline int getDetID(const int iat)
+  {
+    int id = 0;
+    while (iat > Last[id])
+      id++;
+    return id;
+  }
+
   ///add a SPOSet
-  void add(SPOSetBasePtr sposet, const std::string& aname);
+  void add(SPOSetPtr sposet, const std::string& aname);
 
   ///add a new DiracDeterminant to the list of determinants
-  virtual
-  void add(Determinant_t* det, int ispin);
+  virtual void add(Determinant_t* det, int ispin);
 
   ///set BF pointers
-  virtual
-  void setBF(BackflowTransformation* BFTrans) {}
+  virtual void setBF(BackflowTransformation* BFTrans) {}
 
   virtual void checkInVariables(opt_variables_type& active);
 
@@ -76,206 +82,89 @@ public:
 
   virtual void resetTargetParticleSet(ParticleSet& P);
 
-  virtual
-  ValueType evaluate(ParticleSet& P
-                     ,ParticleSet::ParticleGradient_t& G
-                     ,ParticleSet::ParticleLaplacian_t& L);
-
-  virtual
-  RealType evaluateLog(ParticleSet& P
-                       ,ParticleSet::ParticleGradient_t& G
-                       ,ParticleSet::ParticleLaplacian_t& L);
+  virtual RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   virtual void recompute(ParticleSet& P);
 
-  virtual
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L,
-                       PooledData<RealType>& buf,
-                       bool fillBuffer);
-                       
-  virtual
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
-
-  void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-      Dets[i]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
-  }
-
-  virtual void  copyFromDerivativeBuffer(ParticleSet& P, BufferType& buf)
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-      Dets[i]->copyFromDerivativeBuffer(P,buf);
-  }
+  virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
 
   ///return the total number of Dirac determinants
-  inline int size() const
-  {
-    return Dets.size();
-  }
+  inline int size() const { return Dets.size(); }
 
   ///return the column dimension of the i-th Dirac determinant
-  inline int size(int i) const
+  inline int size(int i) const { return Dets[i]->cols(); }
+
+  virtual void registerData(ParticleSet& P, WFBufferType& buf);
+
+  virtual void updateAfterSweep(ParticleSet& P,
+                                ParticleSet::ParticleGradient_t& G,
+                                ParticleSet::ParticleLaplacian_t& L);
+
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+
+  virtual inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    return Dets[i]->cols();
+    return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios);
   }
 
-  virtual
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
-
-  virtual
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  inline ValueType ratio(ParticleSet& P, int iat,
-                         ParticleSet::ParticleGradient_t& dG,
-                         ParticleSet::ParticleLaplacian_t& dL)
+  virtual inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    return Dets[DetID[iat]]->ratio(P,iat,dG,dL);
+    return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat);
   }
 
-  virtual
-  inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
-  {
-    return Dets[VP.activeGroup]->evaluateRatios(VP,ratios);
-  }
+  virtual GradType evalGrad(ParticleSet& P, int iat) { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
-  virtual
-  inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    return Dets[DetID[iat]]->ratioGrad(P,iat,grad_iat);
-  }
-
-  virtual
-  inline ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    return Dets[DetID[iat]]->alternateRatioGrad(P,iat,grad_iat);
-  }
-
-  virtual
-  GradType evalGrad(ParticleSet& P, int iat)
-  {
-    return Dets[DetID[iat]]->evalGrad(P,iat);
-  }
-
-  virtual
-  GradType alternateEvalGrad(ParticleSet& P, int iat)
-  {
-    return Dets[DetID[iat]]->alternateEvalGrad(P,iat);
-  }
-
-  virtual
-  GradType evalGradSource(ParticleSet& P, ParticleSet &src, int iat)
+  virtual GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat)
   {
     GradType G = GradType();
-    for (int iz=0; iz < size(); iz++)
+    for (int iz = 0; iz < size(); iz++)
       G += Dets[iz]->evalGradSource(P, src, iat);
     return G;
   }
 
-  virtual
-  GradType evalGradSource (ParticleSet& P, ParticleSet& src, int iat,
-                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-                           TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
+  virtual GradType evalGradSource(ParticleSet& P,
+                                  ParticleSet& src,
+                                  int iat,
+                                  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
+                                  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
   {
     GradType G = GradType();
-    for (int iz=0; iz < size(); iz++)
+    for (int iz = 0; iz < size(); iz++)
       G += Dets[iz]->evalGradSource(P, src, iat, grad_grad, lapl_grad);
     return G;
   }
 
-  virtual
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
+  virtual inline void restore(int iat) { return Dets[getDetID(iat)]->restore(iat); }
+
+  virtual inline void acceptMove(ParticleSet& P, int iat)
   {
-    ValueType r = Dets[DetID[iat]]->ratio(P,iat,dG,dL);
-    return evaluateLogAndPhase(r,PhaseValue);
+    Dets[getDetID(iat)]->acceptMove(P, iat);
+
+    LogValue   = 0.0;
+    PhaseValue = 0.0;
+    for (int i = 0; i < Dets.size(); ++i)
+    {
+      LogValue   += Dets[i]->LogValue;
+      PhaseValue += Dets[i]->PhaseValue;
+    }
   }
 
   virtual
-  inline void restore(int iat)
+  void completeUpdates()
   {
-    return Dets[DetID[iat]]->restore(iat);
+    for(int i=0; i<Dets.size(); i++)
+      Dets[i]->completeUpdates();
   }
 
-  RealType getAlternatePhaseDiff()
-  {
-    RealType ap(0.0);
-    for (int iz=0; iz < size(); iz++)
-      ap += Dets[iz]->getAlternatePhaseDiff();
-    return ap;
-  }
+  virtual inline ValueType ratio(ParticleSet& P, int iat) { return Dets[getDetID(iat)]->ratio(P, iat); }
 
-  RealType getAlternatePhaseDiff(int iat)
-  {
-    return Dets[DetID[iat]]->getAlternatePhaseDiff();
-  }
+  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  virtual
-  inline void acceptMove(ParticleSet& P, int iat)
-  {
-    Dets[DetID[iat]]->acceptMove(P,iat);
-  }
+  virtual SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
 
-  virtual
-  inline ValueType ratio(ParticleSet& P, int iat)
-  {
-    return Dets[DetID[iat]]->ratio(P,iat);
-  }
-
-  virtual
-  inline ValueType alternateRatio(ParticleSet& P)
-  {
-    ValueType v(1.0);
-    for(int i=0; i<Dets.size(); ++i)
-      v *= Dets[i]->alternateRatio(P);
-    return v;
-  }
-
-  virtual
-  inline void alternateGrad(ParticleSet::ParticleGradient_t& G)
-  {
-    for(int i=0; i<Dets.size(); ++i)
-      Dets[i]->alternateGrad(G);
-  }
-
-  virtual
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    return Dets[DetID[iat]]->update(P,dG,dL,iat);
-  }
-
-  virtual
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
-
-  virtual
-  SPOSetBasePtr getPhi(int i=0)
-  {
-    return Dets[i]->getPhi();
-  }
-
-  virtual
-  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
@@ -285,92 +174,105 @@ public:
     // First zero out values, since each determinant only adds on
     // its contribution (i.e. +=) , rather than setting the value
     // (i.e. =)
-    for (int k=0; k<myVars.size(); ++k)
+    for (int k = 0; k < myVars.size(); ++k)
     {
-      int kk=myVars.where(k);
+      int kk = myVars.where(k);
       if (kk >= 0)
         dlogpsi[kk] = dhpsioverpsi[kk] = 0.0;
     }
     // Now add on contribution from each determinant to the derivatives
-    for (int i=0; i<Dets.size(); i++)
+    for (int i = 0; i < Dets.size(); i++)
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
+  }
+
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<RealType>& dgradlogpsi)
+  {
+    for (int i = 0; i < Dets.size(); i++)
+      Dets[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
 
 #ifdef QMC_CUDA
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
-  void recompute(MCWalkerConfiguration &W, bool firstTime)
+  GPU_XRAY_TRACE void recompute(MCWalkerConfiguration& W, bool firstTime)
   {
-    for (int id=0; id<Dets.size(); id++)
+    for (int id = 0; id < Dets.size(); id++)
       Dets[id]->recompute(W, firstTime);
   }
 
-  void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
+  GPU_XRAY_TRACE void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool)
   {
-    for (int id=0; id<Dets.size(); id++)
+    for (int id = 0; id < Dets.size(); id++)
       Dets[id]->reserve(pool);
   }
 
-  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi)
+  GPU_XRAY_TRACE void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi)
   {
-    for (int id=0; id<Dets.size(); id++)
+    for (int id = 0; id < Dets.size(); id++)
       Dets[id]->addLog(W, logPsi);
   }
 
-  void
-  ratio (MCWalkerConfiguration &W, int iat
-         , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
+  GPU_XRAY_TRACE void ratio(MCWalkerConfiguration& W,
+                            int iat,
+                            std::vector<ValueType>& psi_ratios,
+                            std::vector<GradType>& grad,
+                            std::vector<ValueType>& lapl)
   {
-    Dets[DetID[iat]]->ratio(W, iat, psi_ratios, grad, lapl);
+    Dets[getDetID(iat)]->ratio(W, iat, psi_ratios, grad, lapl);
   }
 
-  void
-  calcRatio (MCWalkerConfiguration &W, int iat
-             , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
+  GPU_XRAY_TRACE void calcRatio(MCWalkerConfiguration& W,
+                                int iat,
+                                std::vector<ValueType>& psi_ratios,
+                                std::vector<GradType>& grad,
+                                std::vector<ValueType>& lapl)
   {
-    Dets[DetID[iat]]->calcRatio(W, iat, psi_ratios, grad, lapl);
+    Dets[getDetID(iat)]->calcRatio(W, iat, psi_ratios, grad, lapl);
   }
 
-  void
-  addRatio (MCWalkerConfiguration &W, int iat
-            , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
+  GPU_XRAY_TRACE void addRatio(MCWalkerConfiguration& W,
+                               int iat,
+                               std::vector<ValueType>& psi_ratios,
+                               std::vector<GradType>& grad,
+                               std::vector<ValueType>& lapl)
   {
-    Dets[DetID[iat]]->addRatio(W, iat, psi_ratios, grad, lapl);
+    Dets[getDetID(iat)]->addRatio(W, iat, psi_ratios, grad, lapl);
   }
 
+  GPU_XRAY_TRACE void ratio(std::vector<Walker_t*>& walkers,
+                            std::vector<int>& iatList,
+                            std::vector<PosType>& rNew,
+                            std::vector<ValueType>& psi_ratios,
+                            std::vector<GradType>& grad,
+                            std::vector<ValueType>& lapl);
 
-  void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
-              std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
-              std::vector<GradType>  &grad, std::vector<ValueType> &lapl);
-
-  void calcGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
+  GPU_XRAY_TRACE void calcGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad)
   {
-    Dets[DetID[iat]]->calcGradient(W, iat, grad);
+    Dets[getDetID(iat)]->calcGradient(W, iat, grad);
   }
 
-  void addGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
+  GPU_XRAY_TRACE void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad)
   {
-    Dets[DetID[iat]]->addGradient(W, iat, grad);
+    Dets[getDetID(iat)]->addGradient(W, iat, grad);
   }
 
-  void update (std::vector<Walker_t*> &walkers, int iat)
-  {
-    Dets[DetID[iat]]->update(walkers, iat);
-  }
+  GPU_XRAY_TRACE void update(std::vector<Walker_t*>& walkers, int iat) { Dets[getDetID(iat)]->update(walkers, iat); }
 
-  void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
+  GPU_XRAY_TRACE void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList);
 
-  void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads, ValueMatrix_t &lapl)
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl)
   {
-    for (int id=0; id<Dets.size(); id++)
+    for (int id = 0; id < Dets.size(); id++)
       Dets[id]->gradLapl(W, grads, lapl);
   }
 
-  void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList
-                 , std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
+  GPU_XRAY_TRACE void NLratios(MCWalkerConfiguration& W,
+                               std::vector<NLjob>& jobList,
+                               std::vector<PosType>& quadPoints,
+                               std::vector<ValueType>& psi_ratios)
   {
-    for (int id=0; id<Dets.size(); id++)
+    for (int id = 0; id < Dets.size(); id++)
       Dets[id]->NLratios(W, jobList, quadPoints, psi_ratios);
   }
 #endif
@@ -378,10 +280,5 @@ public:
 private:
   SlaterDet() {}
 };
-}
+} // namespace qmcplusplus
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: yingwai $
- * $Revision: 7279 $   $Date: 2016-11-23 19:21:16 -0500 (Wed, 23 Nov 2016) $
- * $Id: SlaterDet.h 7279 2016-11-24 00:21:16Z yingwai $
- ***************************************************************************/

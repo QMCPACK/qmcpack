@@ -17,7 +17,7 @@ namespace formic {
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  A class to provide reusable arrays that, upon destruction, have their underlying
-  ///         data arrays kept available for future use to help avoid unecessary reallocations
+  ///         data arrays kept available for future use to help avoid unnecessary reallocations
   ///         of memory.  A garbage collection function is available to force all currently
   ///         unused arrays to be deallocated.
   ///

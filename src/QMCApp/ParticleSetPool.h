@@ -50,6 +50,8 @@ public:
   bool get(std::ostream& os) const;
   void reset();
 
+  void output_particleset_info(Libxml2Document &doc, xmlNodePtr root);
+
   ///assign TileMatrix
   bool putTileMatrix(xmlNodePtr cur);
 
@@ -99,9 +101,9 @@ public:
    */
   void randomize();
 
-  /** make clones for the ParticleSets of this pool
-   *    */
-  void make_clones(int n);
+  /**  Access to TileMatrix for testing
+   */
+  Tensor<int, OHMMS_DIM> &getTileMatrix() { return TileMatrix; }
 
 private:
   /** global SimulationCell
@@ -127,8 +129,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

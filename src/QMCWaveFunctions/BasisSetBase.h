@@ -22,12 +22,7 @@
 #define QMCPLUSPLUS_BASISSETBASE_H
 
 #include "Particle/ParticleSet.h"
-#include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "QMCWaveFunctions/SPOSetInfo.h"
-#include <QMCWaveFunctions/SPOSetInputInfo.h>
-#include "QMCWaveFunctions/SPOSetBase.h"
-
 
 namespace qmcplusplus
 {
@@ -140,70 +135,33 @@ struct BasisSetBase: public OrbitalSetTraits<T>
   virtual void evaluateForPtclMoveWithHessian(const ParticleSet& P, int iat)=0;
 };
 
-
-/** base class for the real BasisSet builder
+/** Base for real basis set
  *
- * \warning {
- * We have not quite figured out how to use real/complex efficiently.
- * There are three cases we have to deal with
- * - real basis functions and real coefficients
- * - real basis functions and complex coefficients
- * - complex basis functions and complex coefficients
- * For now, we decide to keep both real and complex basis sets and expect
- * the user classes {\bf KNOW} what they need to use.
- * }
+ * Equivalent to BasisSetBase with minimum requirements
+ * Used by lcao
  */
-struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
+template<typename T>
+struct RealBasisSetBase
 {
-  typedef std::map<std::string,SPOSetBase*> SPOPool_t;
-  typedef std::vector<int> indices_t;
-  typedef std::vector<RealType> energies_t;
+  typedef T value_type;
+  typedef VectorSoaContainer<T,OHMMS_DIM+2> vgl_type;
+  ///size of the basis set
+  int BasisSetSize;
 
-
-  /// whether implementation conforms only to legacy standard
-  bool legacy;
-
-  /// state info of all possible states available in the basis
-  std::vector<SPOSetInfo*> states;
-
-  /// list of all sposets created by this builder
-  std::vector<SPOSetBase*> sposets;
-
-  BasisSetBuilder();
-  virtual ~BasisSetBuilder() {}
-  virtual bool put(xmlNodePtr cur)=0;
-
-  /// reserve space for states (usually only one set, multiple for e.g. spin dependent einspline)
-  void reserve_states(int nsets=1);
-
-  /// allow modification of state information
-  inline void modify_states(int index=0)
+  inline int getBasisSetSize()
   {
-    states[index]->modify();
+    return BasisSetSize;
   }
 
-  /// clear state information
-  inline void clear_states(int index=0)
-  {
-    states[index]->clear();
-  }
+  virtual RealBasisSetBase<T>* makeClone() const = 0;
+  virtual void setBasisSetSize(int nbs)=0;
+  virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)=0;
+  virtual void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals)=0;
+  virtual bool is_S_orbital(int mo_idx, int ao_idx) { return false;}
 
-  /// create an sposet from xml (legacy)
-  virtual SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)=0;
-
-  /// create an sposet from a general xml request
-  virtual SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
-
-  /// create an sposet from xml and save the resulting SPOSet
-  SPOSetBase* createSPOSet(xmlNodePtr cur);
-
-
+  /// Determine which orbitals are S-type.  Used for cusp correction.
+  virtual void queryOrbitalsForSType(const std::vector<bool> &corrCenter, std::vector<bool> &is_s_orbital) const {}
 };
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -36,6 +36,7 @@ typedef struct
   Ugrid x_grid;
   BCtype_s xBC;
   int num_splines;
+  size_t coefs_size;
 } multi_UBspline_1d_s;
 
 typedef struct
@@ -74,6 +75,7 @@ typedef struct
   Ugrid x_grid;
   BCtype_d xBC;
   int num_splines;
+  size_t coefs_size;
 } multi_UBspline_1d_d;
 
 typedef struct
@@ -113,6 +115,7 @@ typedef struct
   Ugrid x_grid;
   BCtype_c xBC;
   int num_splines;
+  size_t coefs_size;
 } multi_UBspline_1d_c;
 
 typedef struct
@@ -155,6 +158,7 @@ typedef struct
   Ugrid x_grid;
   BCtype_z xBC;
   int num_splines;
+  size_t coefs_size;
 } multi_UBspline_1d_z;
 
 typedef struct

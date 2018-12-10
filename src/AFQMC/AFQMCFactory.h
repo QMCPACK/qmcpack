@@ -60,9 +60,6 @@ class AFQMCFactory: public MPIObjectBase
     int m_series;
     std::string project_title;
 
-    bool head_of_nodes;
-    MPI_Comm MPI_COMM_HEAD_OF_NODES;
-
     // container of AFQMCInfo objects 
     std::map<std::string,AFQMCInfo*> InfoMap; 
 

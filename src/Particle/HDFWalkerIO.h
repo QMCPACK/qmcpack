@@ -17,14 +17,8 @@
 #ifndef QMCPLUSPLUS_WALKER_IO_H
 #define QMCPLUSPLUS_WALKER_IO_H
 
-#include "Particle/HDFWalkerInput0.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/HDFWalkerInputManager.h"
 
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

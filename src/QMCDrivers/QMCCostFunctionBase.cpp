@@ -30,14 +30,14 @@
 namespace qmcplusplus
 {
 
-QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-  MPIObjectBase(0),
+QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm):
+  MPIObjectBase(comm),
   W(w),H(h),Psi(psi),  Write2OneXml(true),
   PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(1e6),
-  w_en(0.0), w_var(1.0), w_abs(0.0),w_w(0.0),w_beta(0.0), GEVType("mixed"),
+  w_en(0.9), w_var(0.1), w_abs(0.0), w_w(0.0), w_beta(0.0), GEVType("mixed"),
   CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0),
-  SmallWeight(0),usebuffer("no"), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
-  StoreDerivInfo(true),DerivStorageLevel(-1), targetExcitedStr("no"), targetExcited(false), omega_shift(0.0)
+  SmallWeight(0), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
+  targetExcitedStr("no"), targetExcited(false), omega_shift(0.0)
 {
   GEVType="mixed";
   //paramList.resize(10);
@@ -160,230 +160,17 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
   if(NumWalkersEff < NumSamples*MinNumWalkers)
     //    if (NumWalkersEff < MinNumWalkers)
   {
-    ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << " NumWalkersEff/NumSamples " << 1.0*NumWalkersEff/NumSamples);
+    ERRORMSG("CostFunction-> Number of Effective Walkers is too small! " << std::endl
+          << "  Number of effective walkers (samples) / total number of samples = " << (1.0*NumWalkersEff)/NumSamples << std::endl
+          << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
+          << "  If this message appears frequently. You might have to be cautious. " << std::endl
+          << "  Find info about parameter \"minwalkers\" in the user manual!");
     // ERRORMSG("Going to stop now.")
     IsValid=false;
   }
   return CostValue;
 }
 
-//  /**  Perform the correlated sampling algorthim.
-//   */
-//  QMCCostFunctionBase::Return_t QMCCostFunctionBase::correlatedSampling() {
-//
-//    typedef MCWalkerConfiguration::Walker_t Walker_t;
-//    MCWalkerConfiguration::iterator it(W.begin());
-//    MCWalkerConfiguration::iterator it_end(W.end());
-//    Return_t eloc_new;
-//    int iw=0;
-//    Return_t wgt_tot=0.0;
-//
-//    while(it != it_end) {
-//      Walker_t& thisWalker(**it);
-//      Return_t* restrict saved = Records[iw];
-//
-//      //rewind the buffer to get the data from buffer
-//      thisWalker.DataSet.rewind();
-//      //W is updated by thisWalker
-//      W.copyFromBuffer(thisWalker.DataSet);
-//
-//      Return_t logpsi=0.0;
-//      //copy dL from Buffer
-//      thisWalker.DataSet.get(dL.begin(),dL.end());
-//      logpsi=Psi.evaluateDeltaLog(W);
-//      W.G += thisWalker.Drift;
-//      W.L += dL;
-//
-//      eloc_new=H_KE.evaluate(W)+saved[ENERGY_FIXED];
-//      Return_t weight = UseWeight?exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
-//
-//      saved[ENERGY_NEW]=eloc_new;
-//      saved[REWEIGHT]=weight;
-//      wgt_tot+=weight;
-//      ++it;
-//      ++iw;
-//    }
-//
-//    OHMMS::Controller->barrier();
-//    //collect the total weight for normalization and apply maximum weight
-//    myComm->allreduce(wgt_tot);
-//
-//    for(int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
-//    wgt_tot=1.0/wgt_tot;
-//
-//    Return_t wgt_max=MaxWeight*wgt_tot;
-//    int nw=W.getActiveWalkers();
-//    for(iw=0; iw<nw;iw++) {
-//      Return_t* restrict saved = Records[iw];
-//      Return_t weight=saved[REWEIGHT]*wgt_tot;
-//      Return_t eloc_new=saved[ENERGY_NEW];
-//
-//      weight = (weight>wgt_max)? wgt_max:weight;
-//      Return_t delE=pow(std::abs(eloc_new-EtargetEff),PowerE);
-//      SumValue[SUM_E_BARE] += eloc_new;
-//      SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
-//      SumValue[SUM_ABSE_BARE] += delE;
-//      SumValue[SUM_E_WGT] += eloc_new*weight;
-//      SumValue[SUM_ESQ_WGT] += eloc_new*eloc_new*weight;
-//      SumValue[SUM_ABSE_WGT] += delE*weight;
-//      SumValue[SUM_WGT] += weight;
-//      SumValue[SUM_WGTSQ] += weight*weight;
-//    }
-//
-//    //collect everything
-//    myComm->allreduce(SumValue);
-//
-//    return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
-//  }
-
-//  void
-//  QMCCostFunctionBase::getConfigurations(const std::string& aroot) {
-//    if(aroot.size() && aroot != "invalid") {
-//      app_log() << "  Reading configurations from the previous qmc block" << std::endl;
-//      HDFWalkerInputCollect wReader(aroot);
-//      wReader.putSingle(W);
-//    }
-//
-//#if defined(QMCCOSTFUNCTION_DEBUG)
-//    if(debug_stream) delete debug_stream;
-//    char fname[16];
-//    sprintf(fname,"optdebug.p%d",OHMMS::Controller->mycontext());
-//    debug_stream = new std::ofstream(fname);
-//    debug_stream->setf(std::ios::scientific, std::ios::floatfield);
-//    debug_stream->precision(8);
-//
-//    *debug_stream << "Initial : " << std::endl;
-//    for(int i=0; i<OptParams.size(); i++)
-//      *debug_stream << " " << IDtag[i] << "=" << OptParams[i];
-//    *debug_stream << std::endl;
-//#endif
-//  }
-
-//  /** evaluate everything before optimization */
-//  void
-//  QMCCostFunctionBase::getConfigurations(std::vector<std::string>& ConfigFile,
-//      int partid, int nparts) {
-//    if(ConfigFile.size()) {
-//
-//      app_log() << "  Reading configurations from mcwalkerset " << std::endl;
-//
-//      W.destroyWalkers(W.begin(),W.end());
-//      for(int i=0; i<ConfigFile.size(); i++) {
-//        //JNKIM: needs to change to HDFWalkerInputCollect
-//        //HDFWalkerInput0 wReader(ConfigFile[i],partid,nparts);
-//        HDFWalkerInputCollect wReader(ConfigFile[i]);
-//        wReader.putSingle(W);
-//        //wReader.put(W,-1);
-//      }
-//
-//      //remove input files
-//      ConfigFile.erase(ConfigFile.begin(),ConfigFile.end());
-//    }
-//  }
-
-//  /** evaluate everything before optimization */
-//  void
-//  QMCCostFunctionBase::checkConfigurations() {
-//
-//    dL.resize(W.getTotalNum());
-//    int numLocWalkers=W.getActiveWalkers();
-//    Records.resize(numLocWalkers,6);
-//
-//    typedef MCWalkerConfiguration::Walker_t Walker_t;
-//    MCWalkerConfiguration::iterator it(W.begin());
-//    MCWalkerConfiguration::iterator it_end(W.end());
-//    int nat = W.getTotalNum();
-//    int iw=0;
-//    Etarget=0.0;
-//    while(it != it_end) {
-//
-//      Walker_t& thisWalker(**it);
-//
-//      //clean-up DataSet to save re-used values
-//      thisWalker.DataSet.clear();
-//      //rewind the counter
-//      thisWalker.DataSet.rewind();
-//      //MCWalkerConfiguraton::registerData add distance-table data
-//      W.registerData(thisWalker,thisWalker.DataSet);
-//
-//      Return_t*  saved=Records[iw];
-//#if defined(QMC_COMPLEX)
-//      app_error() << " Optimization is not working with complex wavefunctions yet" << std::endl;
-//      app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << std::endl;
-//#else
-//      Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
-//#endif
-//      thisWalker.DataSet.add(dL.first_address(),dL.last_address());
-//      Etarget += saved[ENERGY_TOT] = H.evaluate(W);
-//      saved[ENERGY_FIXED] = H.getInvariantEnergy();
-//
-//      ++it;
-//      ++iw;
-//    }
-//
-//    //Need to sum over the processors
-//    std::vector<Return_t> etemp(2);
-//    etemp[0]=Etarget;
-//    etemp[1]=static_cast<Return_t>(numLocWalkers);
-//    myComm->allreduce(etemp);
-//    Etarget = static_cast<Return_t>(etemp[0]/etemp[1]);
-//    NumSamples = static_cast<int>(etemp[1]);
-//
-//    setTargetEnergy(Etarget);
-//
-//    ReportCounter=0;
-//  }
-
-//  void QMCCostFunctionBase::resetPsi()
-//  {
-//
-//    OptimizableSetType::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
-//    while(oit != oit_end)
-//    {
-//      Return_t v=(*oit).second;
-//      OptVariablesForPsi[(*oit).first]=v;
-//      std::map<std::string,std::set<std::string>*>::iterator eit(equalConstraints.find((*oit).first));
-//      if(eit != equalConstraints.end())
-//      {
-//        std::set<std::string>::iterator f((*eit).second->begin()),l((*eit).second->end());
-//        while(f != l)
-//        {
-//          OptVariablesForPsi[(*f)]=v;
-//          ++f;
-//        }
-//      }
-//      ++oit;
-//    }
-//
-//    //cout << "QMCCostFunctionBase::resetPsi " << std::endl;
-//    //oit=OptVariablesForPsi.begin();
-//    //oit_end=OptVariablesForPsi.end();
-//    //while(oit != oit_end)
-//    //{
-//    //  std::cout << (*oit).first << "=" << (*oit).second << " ";
-//    //  ++oit;
-//    //}
-//    //cout << std::endl;
-//    Psi.resetParameters(OptVariablesForPsi);
-//  }
-
-/** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$
- *@return true always
- *
- * Reset from the old parameter set \f$ {{\bf \alpha_i}} \f$ to the new parameter
- * set \f$ {{\bf \alpha_{i+1}}}\f$
- */
-//bool
-//QMCCostFunctionBase::resetWaveFunctions() {
-
-//  //loop over all the unique id's
-//  for(int i=0; i<IDtag.size(); i++)
-//  {
-//    OptVariables[IDtag[i]]=OptParams[i];
-//  }
-//  resetPsi();
-//  return true;
-//}
 
 void QMCCostFunctionBase::Report()
 {
@@ -426,7 +213,7 @@ void QMCCostFunctionBase::Report()
 
 void QMCCostFunctionBase::reportParameters()
 {
-  //final reset, restoring the OrbitalBase::IsOptimizing to false
+  //final reset, restoring the WaveFunctionComponent::IsOptimizing to false
   resetPsi(true);
   if (!myComm->rank())
   {
@@ -480,8 +267,6 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(writeXmlPerStep,"dumpXML","string");
   m_param.add(MinNumWalkers,"minwalkers","scalar");
   m_param.add(MaxWeight,"maxWeight","scalar");
-  m_param.add(usebuffer,"useBuffer","string");
-  m_param.add(usebuffer,"usebuffer","string");
   m_param.add(includeNonlocalH,"nonlocalpp","string");
   m_param.add(computeNLPPderiv,"use_nonlocalpp_deriv","string");
   m_param.add(w_beta,"beta","double");
@@ -652,21 +437,17 @@ void QMCCostFunctionBase::resetCostFunction(std::vector<xmlNodePtr>& cset)
   for (int i=0; i<cset.size(); i++)
   {
     std::string pname;
-    Return_t wgt=1.0;
     OhmmsAttributeSet pAttrib;
     pAttrib.add(pname,"name");
     pAttrib.put(cset[i]);
     if (pname == "energy")
       putContent(w_en,cset[i]);
-    else
-      if ((pname == "variance")|| (pname == "unreweightedvariance"))
-        putContent(w_w,cset[i]);
-      else
-        if (pname == "difference")
-          putContent(w_abs,cset[i]);
-        else
-          if ((pname == "reweightedVariance") ||(pname == "reweightedvariance"))
-            putContent(w_var,cset[i]);
+    else if ((pname == "variance") || (pname == "unreweightedvariance"))
+      putContent(w_w,cset[i]);
+    else if (pname == "difference")
+      putContent(w_abs,cset[i]);
+    else if ((pname == "reweightedVariance") || (pname == "reweightedvariance"))
+      putContent(w_var,cset[i]);
   }
 }
 
@@ -894,75 +675,76 @@ QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0, const std
                                       Return_t&  dl, Return_t& val_proj, Return_t& lambda_max)
 {
   return false;
-  const int maxclones=3;
-  const int max_poly=3;
-  //Matrix<Return_t> js(maxclones+1,x0.size());
-  Vector<Return_t> y(maxclones+1);
-  Vector<Return_t> sigma(maxclones+1);
-  Matrix<Return_t> A(maxclones+1,max_poly);
-  sigma=1e-6; //a small value
-  Return_t gr_norm=0.0;
-  for (int j=0; j<x0.size(); ++j)
-  {
-    //js(0,j)=x0[j];
-    gr_norm+=gr[j]*gr[j];
-  }
-  Return_t nw=1.0/static_cast<QMCTraits::RealType>(NumSamples);
-  //Return_t MaxDispl=0.04;
-  gr_norm=std::sqrt(gr_norm);
-  Return_t dx=lambda_max/gr_norm;
-  dx=std::min((QMCTraits::RealType)0.25,dx);
-  if (val0<1e12)
-  {
-    y[0]=val0;
-    sigma[0]=std::sqrt(val0)*nw;
-  }
-  else
-  {
-    for (int j=0; j<x0.size(); ++j)
-      Params(j)=x0[j];
-    Return_t costval=Cost();
-    y[0]=costval;
-    sigma[0]=std::sqrt(costval)*nw;
-  }
-  app_log() << "  lineoptimization (" << 0.0 << "," << y[0] << ")";
-  for (int k=0; k<max_poly; ++k)
-    A(0,k)=0.0;
-  Return_t dxmax=0.0;
-  for (int i=1; i<=maxclones; ++i)
-  {
-    dxmax+=dx;
-    //set OptParams to vary
-    for (int j=0; j<x0.size(); ++j)
-    {
-      //js(i,j)=OptParams[j]=x0[j]+dx*gr[j];
-      Params(j)=x0[j]+dxmax*gr[j];
-    }
-    Return_t costval=Cost();
-    y[i]=costval;
-    sigma[i]=std::sqrt(costval)*nw;
-    for (int k=0; k<max_poly; ++k)
-      A(i,k)=std::pow(dxmax,k);
-    app_log() << " (" << dxmax << "," << y[i] << ")";
-  }
-  app_log() << std::endl;
-  Vector<QMCTraits::RealType> polys(max_poly);
-  Vector<QMCTraits::RealType> errors(max_poly);
-  LeastSquaredFitLU(y,sigma,A,polys,errors);
-  dl=-polys[1]/polys[2]*0.5;
-  val_proj=polys[0]+dl*(polys[1]+dl*polys[2]);
-  if (dl<dx*0.25)
-    lambda_max *=0.5; // narrow the bracket
-  if (dl>dxmax*5.0)
-    lambda_max *=2.0; //widen the bracket
-  app_log() << "    minimum at " << dl << " estimated=" << val_proj << " LambdaMax " << lambda_max;
-  for (int j=0; j<x0.size(); ++j)
-    Params(j)=x0[j]+dl*gr[j];
-  val_proj=Cost();
-  app_log() << "  cost = " << val_proj << std::endl;
-  //Psi.reportStatus(app_log());
-  //return false;
-  return true;
+// PK: Commented out inaccessible code after return false, but why was return added? 
+//  const int maxclones=3;
+//  const int max_poly=3;
+//  //Matrix<Return_t> js(maxclones+1,x0.size());
+//  Vector<Return_t> y(maxclones+1);
+//  Vector<Return_t> sigma(maxclones+1);
+//  Matrix<Return_t> A(maxclones+1,max_poly);
+//  sigma=1e-6; //a small value
+//  Return_t gr_norm=0.0;
+//  for (int j=0; j<x0.size(); ++j)
+//  {
+//    //js(0,j)=x0[j];
+//    gr_norm+=gr[j]*gr[j];
+//  }
+//  Return_t nw=1.0/static_cast<QMCTraits::RealType>(NumSamples);
+//  //Return_t MaxDispl=0.04;
+//  gr_norm=std::sqrt(gr_norm);
+//  Return_t dx=lambda_max/gr_norm;
+//  dx=std::min((QMCTraits::RealType)0.25,dx);
+//  if (val0<1e12)
+//  {
+//    y[0]=val0;
+//    sigma[0]=std::sqrt(val0)*nw;
+//  }
+//  else
+//  {
+//    for (int j=0; j<x0.size(); ++j)
+//      Params(j)=x0[j];
+//    Return_t costval=Cost();
+//    y[0]=costval;
+//    sigma[0]=std::sqrt(costval)*nw;
+//  }
+//  app_log() << "  lineoptimization (" << 0.0 << "," << y[0] << ")";
+//  for (int k=0; k<max_poly; ++k)
+//    A(0,k)=0.0;
+//  Return_t dxmax=0.0;
+//  for (int i=1; i<=maxclones; ++i)
+//  {
+//    dxmax+=dx;
+//    //set OptParams to vary
+//    for (int j=0; j<x0.size(); ++j)
+//    {
+//      //js(i,j)=OptParams[j]=x0[j]+dx*gr[j];
+//      Params(j)=x0[j]+dxmax*gr[j];
+//    }
+//    Return_t costval=Cost();
+//    y[i]=costval;
+//    sigma[i]=std::sqrt(costval)*nw;
+//    for (int k=0; k<max_poly; ++k)
+//      A(i,k)=std::pow(dxmax,k);
+//    app_log() << " (" << dxmax << "," << y[i] << ")";
+//  }
+//  app_log() << std::endl;
+//  Vector<QMCTraits::RealType> polys(max_poly);
+//  Vector<QMCTraits::RealType> errors(max_poly);
+//  LeastSquaredFitLU(y,sigma,A,polys,errors);
+//  dl=-polys[1]/polys[2]*0.5;
+//  val_proj=polys[0]+dl*(polys[1]+dl*polys[2]);
+//  if (dl<dx*0.25)
+//    lambda_max *=0.5; // narrow the bracket
+//  if (dl>dxmax*5.0)
+//    lambda_max *=2.0; //widen the bracket
+//  app_log() << "    minimum at " << dl << " estimated=" << val_proj << " LambdaMax " << lambda_max;
+//  for (int j=0; j<x0.size(); ++j)
+//    Params(j)=x0[j]+dl*gr[j];
+//  val_proj=Cost();
+//  app_log() << "  cost = " << val_proj << std::endl;
+//  //Psi.reportStatus(app_log());
+//  //return false;
+//  return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -978,18 +760,10 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::LMYEngineCost(const bool need
   // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
   const Return_t standardCost = this->Cost(needDeriv);
 
-  // if we are using the LMYEngine, compute and return it's cost function value
+  // since we are using the LMYEngine, compute and return it's cost function value
   return this->LMYEngineCost_detail(EngineObj);
-
-  // otherwise return the standard cost function
-  return standardCost;
 
 }
 #endif
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1793 $   $Date: 2007-02-21 17:51:06 -0600 (Wed, 21 Feb 2007) $
- * $Id: QMCCostFunctionBase.cpp 1793 2007-02-21 23:51:06Z jnkim $
- ***************************************************************************/

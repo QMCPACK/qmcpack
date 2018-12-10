@@ -7,6 +7,7 @@
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Andrew D. Baczewski, adbacze@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -16,7 +17,7 @@
 
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
 #include "Utilities/IteratorUtility.h"
-#include "Utilities/UtilityFunctions.h"
+#include "Utilities/FairDivide.h"
 #include "Utilities/RandomGenerator.h"
 using namespace qmcplusplus;
 
@@ -28,9 +29,6 @@ WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c):
   WalkerControlBase(c), TotalWalkers(0)
 {
   SwapMode=1;
-  UnitZeta=Random();
-  myComm->bcast(UnitZeta);
-  app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << std::endl;
 }
 
 int
@@ -68,13 +66,15 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
     LastWalker=FirstWalker+nw;
     TotalWalkers = nw*NumContexts;
     nwInv = 1.0/static_cast<RealType>(TotalWalkers);
-    DeltaStep = UnitZeta*nwInv;
     ncopy_w.resize(nw);
     wConf.resize(nw);
     //wSum.resize(NumContexts);
     wOffset.resize(NumContexts+1);
     dN.resize(NumContexts+4);
   }
+  UnitZeta=Random();
+  myComm->bcast(UnitZeta);
+  DeltaStep=UnitZeta*nwInv;
   //std::fill(wSum.begin(),wSum.end(),0.0);
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   int iw=0;
@@ -230,7 +230,6 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
         minusN.insert(minusN.end(),-dN[ip],ip);
       }
   }
-  int wbuffer_size=W[0]->byteSize();
   int nswap=plusN.size();
   int last = std::abs(dN[MyContext])-1;
   int ic=0;
@@ -238,10 +237,10 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
   {
     if(plusN[ic]==MyContext)
     {
-      //OOMPI_Packed sendBuffer(wbuffer_size,OOMPI_COMM_WORLD);
-      OOMPI_Packed sendBuffer(wbuffer_size,myComm->getComm());
-      W[plus[last]]->putMessage(sendBuffer);
-      //OOMPI_COMM_WORLD[minusN[ic]].Send(sendBuffer);
+      int im=plus[last];
+      size_t byteSize = W[im]->byteSize();
+      W[im]->updateBuffer();
+      OOMPI_Message sendBuffer(W[im]->DataSet.data(), byteSize);
       myComm->getComm()[minusN[ic]].Send(sendBuffer);
       --last;
     }
@@ -265,7 +264,6 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
         minusN.insert(minusN.end(),-dN[ip],ip);
       }
   }
-  int wbuffer_size=W[0]->byteSize();
   int nswap=plusN.size();
   int last = std::abs(dN[MyContext])-1;
   int ic=0;
@@ -273,12 +271,11 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
   {
     if(minusN[ic]==MyContext)
     {
-      //OOMPI_Packed recvBuffer(wbuffer_size,OOMPI_COMM_WORLD);
-      //OOMPI_COMM_WORLD[plusN[ic]].Recv(recvBuffer);
-      OOMPI_Packed recvBuffer(wbuffer_size,myComm->getComm());
-      myComm->getComm()[plusN[ic]].Recv(recvBuffer);
       int im=minus[last];
-      W[im]->getMessage(recvBuffer);
+      size_t byteSize = W[im]->byteSize();
+      OOMPI_Message recvBuffer(W[im]->DataSet.data(), byteSize);
+      myComm->getComm()[plusN[ic]].Recv(recvBuffer);
+      W[im]->copyFromBuffer();
       W[im]->ParentID=W[im]->ID;
       W[im]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
       --last;
@@ -288,8 +285,3 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
 }
 
 
-/***************************************************************************
- * $RCSfile: WalkerReconfigurationMPI.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -6,6 +6,8 @@
 
 #include "AFQMC/config.h"
 
+#include "AFQMC/Numerics/sparse.h"
+
 namespace qmcplusplus
 {
 
@@ -20,110 +22,309 @@ namespace SparseMatrixOperators
 //
 //   For eack term in A, aik 
 //   C(i,:) += aik * B(k.:) 
-void product_SD(const IndexType K,
-             const s2D<ComplexType>* A, const int nterms,
-             ComplexType* B, const IndexType LDB,  
-             ComplexType* C, IndexType LDC );
+template<typename T>
+inline void product_SD(const IndexType K,
+             const s2D<T>* A, const int nterms,
+             ComplexType* B, const IndexType LDB,
+             ComplexType* C, IndexType LDC )
+{
+  T aik=0;
+  IndexType ii=0,kk=0;
+  ComplexType* lit;
+  ComplexType* rit;
+  for(int cnt1=0; cnt1<nterms; cnt1++) {
+    std::tie(ii,kk,aik) = *(A++);
+    lit=C+ii*LDC;
+    rit=B+kk*LDB;
+    for(int cnt2=0; cnt2<K; cnt2++)
+      *(lit++) += aik*(*(rit++));
+  }
 
-template<class T>
-void product_SpMatV(int nrows,
-             T& A, 
-             ComplexType* B, 
-             ComplexType* C );
+}
 
-template<class T>
-void product_SpMatV(const int M, const int K,
-             const ComplexType& alpha,
+template<class T, typename T1>
+inline void product_SpMatV(int N, 
              const T& A,
-             const ComplexType* B,
-             const ComplexType& beta, 
-             ComplexType* C );
+             const T1* B,
+             T1* C )
+{
+  const char trans = 'N';
+  SPBLAS::csrmv( trans, N, N, T1(1.0), "GxxCxx", A.values() , A.column_data(),  A.row_index(),  A.row_index()+1, B, T1(0.0), C );
+}
 
-template<class T>
-void product_SpMatV(const int M, const int K,
-             const RealType& alpha,
-             const T& A,
-             const RealType* B,
-             const RealType& beta,
-             RealType* C );
-
-void product_SpMatV(const int M, const int K,
-             const RealType& alpha,
-             const RealType* val,
+template<typename T> 
+inline void product_SpMatV(const int M, const int K,
+             const T alpha,
+             const T* val,
              const int* col,
              const int* row,
-             const RealType* B,
-             const RealType& beta,
-             RealType* C );
+             const T* B,
+             const T beta,
+             T* C )
+{
+  const char trans = 'N';
+  SPBLAS::csrmv( trans, M, K, alpha, "GxxCxx", val , col,  row,  row+1, B, beta, C );
+}
 
-void product_SpMatV(const int M, const int K,
-             const ComplexType& alpha,
-             const ComplexType* val,
+template<typename T>
+inline void product_SpMatV(const int M, const int K,
+             const T alpha,
+             const T* val,
+             const int* col,
+             const int* rowb,
+             const int* rowe,
+             const T* B,
+             const T beta,
+             T* C )
+{
+  const char trans = 'N';
+  SPBLAS::csrmv( trans, M, K, alpha, "GxxCxx", val , col,  rowb,  rowe, B, beta, C );
+}
+
+template<class T, typename T1>
+inline void product_SpMatTV(const int M, const int K,
+             const T1 alpha,
+             const T& A,
+             const T1* B,
+             const T1 beta,
+             T1* C )
+{
+  const char trans = 'T';
+  SPBLAS::csrmv( trans, M, K, alpha, "GxxCxx", A.values() , A.column_data(),  A.row_index(),  A.row_index()+1, B, beta, C );
+}
+
+template<typename T>
+inline void product_SpMatTV(const int M, const int K,
+             const T alpha,
+             const T* val,
              const int* col,
              const int* row,
-             const ComplexType* B,
-             const ComplexType& beta,
-             ComplexType* C );
+             const T* B,
+             const T beta,
+             T* C )
+{
+  const char trans = 'T';
+  SPBLAS::csrmv( trans, M, K, alpha, "GxxCxx", val , col,  row,  row+1, B, beta, C );
+}
 
-void product_SpMatTV(const int M, const int K,
-             const ComplexType& alpha,
-             const ComplexType* val,
+template<class T, typename T1>
+inline void product_SpMatM(const int M, const int N, const int K,
+             const T1 alpha,
+             const T& A,
+             const T1* B, const int ldb,
+             const T1 beta,
+             T1* C, int ldc )
+{
+  char trans = 'N';
+  SPBLAS::csrmm( trans, M, N, K, alpha, "GxxCxx", A.values() , A.column_data(),  A.row_index(),  A.row_index()+1, B, ldb, beta, C, ldc);
+}
+
+template<typename T>
+inline void product_SpMatM(const int M, const int N, const int K,
+             const T alpha,
+             const T* val,
              const int* col,
              const int* row,
-             const ComplexType* B,
-             const ComplexType& beta,
-             ComplexType* C );
+             const T* B, const int ldb,
+             const T beta,
+             T* C, int ldc )
+{
+  char trans = 'N';
+  SPBLAS::csrmm( trans, M, N, K, alpha, "GxxCxx", val, col,  row,  row+1, B, ldb, beta, C, ldc);
+}
 
-template<class T>
-void product_SpMatTV(const int M, const int K,
-             const ComplexType& alpha,
+template<typename T>
+inline void product_SpMatM(const int M, const int N, const int K,
+             const T alpha,
+             const T* val,
+             const int* col,
+             const int* rowb,
+             const int* rowe,
+             const T* B, const int ldb,
+             const T beta,
+             T* C, int ldc )
+{
+  char trans = 'N';
+  SPBLAS::csrmm( trans, M, N, K, alpha, "GxxCxx", val, col,  rowb,  rowe, B, ldb, beta, C, ldc);
+}
+
+template<class T, typename T1>
+inline void product_SpMatTM(const int M, const int N, const int K,
+             const T1 alpha,
              const T& A,
-             const ComplexType* B,
-             const ComplexType& beta, 
-             ComplexType* C );
+             const T1* B, const int ldb,
+             const T1 beta,
+             T1* C, int ldc )
+{
+  char trans = 'T';
+  SPBLAS::csrmm( trans, M, N, K, alpha, "GxxCxx", A.values() , A.column_data(),  A.row_index(),  A.row_index()+1, B, ldb, beta, C, ldc);
+}
 
-template<class T>
-void product_SpMatM(const int M, const int N, const int K,
-             const ComplexType& alpha,
-             const T& A,
-             const ComplexType* B, const int ldb,
-             const ComplexType& beta, 
-             ComplexType* C, int ldc );
+template<typename T>
+inline void product_SpMatTM(const int M, const int N, const int K,
+             const T alpha,
+             const T* val,
+             const int* col,
+             const int* row,
+             const T* B, const int ldb,
+             const T beta,
+             T* C, int ldc )
+{
+  char trans = 'T';
+  SPBLAS::csrmm( trans, M, N, K, alpha, "GxxCxx", val, col,  row,  row+1, B, ldb, beta, C, ldc);
+}
 
-template<class T>
-void product_SpMatM(const int M, const int N, const int K,
-             const RealType& alpha,
-             const T& A,
-             const RealType* B, const int ldb,
-             const RealType& beta, 
-             RealType* C, int ldc );
+template<typename T>
+inline void product_SpMatM(const int M, const int N, const int K,
+             const T alpha,
+             const T* val,
+             const int* col,
+             const int* row,
+             const std::complex<T>* B, const int ldb,
+             const T beta,
+             std::complex<T>* C, int ldc )
+{
+  char trans = 'N';
+  const T* B_ = reinterpret_cast<T*>(const_cast<std::complex<T>*>(B));
+  T* C_ = reinterpret_cast<T*>(C);
+  const int N_ = 2*N;
+  const int ldb_ = 2*ldb;
+  const int ldc_ = 2*ldc;
+  SPBLAS::csrmm( trans, M, N_, K, alpha, "GxxCxx", val, col, row,  row+1, B_, ldb_, beta, C_, ldc_);
+}
 
-template<class T>
-void product_SpMatM(const int M, const int N, const int K,
-             const float& alpha,
-             const T& A,
-             const float* B, const int ldb,
-             const float& beta,
-             float* C, int ldc );
+template<typename T>
+inline void product_SpMatM(const int M, const int N, const int K,
+             const T alpha,
+             const T* val,
+             const int* col,
+             const int* rowb,
+             const int* rowe,
+             const std::complex<T>* B, const int ldb,
+             const T beta,
+             std::complex<T>* C, int ldc )
+{
+  char trans = 'N';
+  const T* B_ = reinterpret_cast<T*>(const_cast<std::complex<T>*>(B));
+  T* C_ = reinterpret_cast<T*>(C);
+  const int N_ = 2*N;
+  const int ldb_ = 2*ldb;
+  const int ldc_ = 2*ldc;
+  SPBLAS::csrmm( trans, M, N_, K, alpha, "GxxCxx", val, col, rowb,  rowe, B_, ldb_, beta, C_, ldc_);
+}
 
+template<typename T>
+inline void product_SpMatTV(const int M, const int K,
+             const T alpha,
+             const T* val,
+             const int* col,
+             const int* row,
+             const std::complex<T>* B,
+             const T beta,
+             std::complex<T>* C )
+{
+  const T* B_ = reinterpret_cast<T*>(const_cast<std::complex<T>*>(B));
+  T* C_ = reinterpret_cast<T*>(C);
+  product_SpMatTM(M,2,K,alpha,val,col,row,B_,2,beta,C_,2);
+}
 
+template<typename T>
+inline void product_SpMatV(const int M, const int K,
+             const T alpha,
+             const T* val,
+             const int* col,
+             const int* row,
+             const std::complex<T>* B,
+             const T beta,
+             std::complex<T>* C )
+{
+  const T* B_ = reinterpret_cast<T*>(const_cast<std::complex<T>*>(B));
+  T* C_ = reinterpret_cast<T*>(C);
+  product_SpMatM(M,2,K,alpha,val,col,row,B_,2,beta,C_,2);
+}
 
-// Performs a product between a sparse matrix stored in format s2D and a dense 
-// matrix stored in c format
-//   N: number of rows in B/C 
-//   M: number of columns in B/C
-//   LDB: leading dimension of B
-//
-//   For eack term in A, aik 
-//   C(i,:) += aik * B(k.:) 
-void product_SD(const IndexType K,
-             const s2D<RealType>* A, const int nterms,
-             ComplexType* B, const IndexType LDB,                                            
-             ComplexType* C, IndexType LDC );
+template<typename T>
+inline void product_SpMatV(const int M, const int K,
+             const T alpha,
+             const T* val,
+             const int* col,
+             const int* rowb,
+             const int* rowe,
+             const std::complex<T>* B,
+             const T beta,
+             std::complex<T>* C )
+{
+  const T* B_ = reinterpret_cast<T*>(const_cast<std::complex<T>*>(B));
+  T* C_ = reinterpret_cast<T*>(C);
+  product_SpMatM(M,2,K,alpha,val,col,rowb,rowe,B_,2,beta,C_,2);
+}
+
+template<typename T>
+inline void product_SpMatTM(const int M, const int N, const int K,
+             const T alpha,
+             const T* val,
+             const int* col,
+             const int* row,
+             const std::complex<T>* B, const int ldb,
+             const T beta,
+             std::complex<T>* C, int ldc )
+{
+  char trans = 'T';
+  const T* B_ = reinterpret_cast<T*>(const_cast<std::complex<T>*>(B));
+  T* C_ = reinterpret_cast<T*>(C);
+  const int N_ = 2*N;
+  const int ldb_ = 2*ldb;
+  const int ldc_ = 2*ldc;
+  SPBLAS::csrmm( trans, M, N_, K, alpha, "GxxCxx", val, col, row,  row+1, B_, ldb_, beta, C_, ldc_);
+}
 
 // Dot product between 2 sparse vectors
 template<class T>
-T product_SpVSpV(const int n1, const int* indx1, const T* A1, const int n2, const int* indx2, const T* A2);
+inline T product_SpVSpV(const int n1,const  int* indx1, const T* A1, const int n2, const int* indx2, const T* A2) {
+  T res=T(0);
+  int i=0, j=0;
+  while( i<n1 && j<n2 ) {
+    if( *(indx1+i) < *(indx2+j)   )
+      ++i;
+    else if( *(indx2+j) < *(indx1+i) )
+      ++j;
+    else {
+      res += *(A1+i) * (*(A2+j));
+      ++i;++j;
+    }
+  }
+  return res;
+}
+
+template<class T>
+inline T product_SpVSpVc(const int n1,const  int* indx1, const T* A1, const int n2, const int* indx2, const T* A2) {
+  T res = T(0);
+  int i=0, j=0;
+  if(std::is_same<T,std::complex<RealType>>::value || std::is_same<T,std::complex<SPRealType>>::value) {
+    while( i<n1 && j<n2 ) {
+      if( *(indx1+i) < *(indx2+j)   )
+        ++i;
+      else if( *(indx2+j) < *(indx1+i) )
+        ++j;
+      else {
+        res += *(A1+i) * (myconj(*(A2+j)));
+        ++i;++j;
+      }
+    }
+  } else {
+    while( i<n1 && j<n2 ) {
+      if( *(indx1+i) < *(indx2+j)   )
+        ++i;
+      else if( *(indx2+j) < *(indx1+i) )
+        ++j;
+      else {
+        res += *(A1+i) * (*(A2+j));
+        ++i;++j;
+      }
+    }
+  }
+  return res;
+}
 
 template<class T>
 inline void transpose_SpMat(const T& A, T& AT)

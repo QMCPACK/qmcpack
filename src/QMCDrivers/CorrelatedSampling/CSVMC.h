@@ -39,7 +39,7 @@ class CSVMC: public QMCDriver, public CloneManager
 public:
   /// Constructor.
   CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
-            HamiltonianPool& hpool, WaveFunctionPool& ppool);
+        WaveFunctionPool& ppool, Communicate* comm);
 
   bool run();
   bool put(xmlNodePtr cur);
@@ -51,12 +51,9 @@ private:
   ///blocks over which normalization factors are accumulated
   int equilBlocks;
   /// Copy Constructor (disabled)
-  CSVMC(const CSVMC& a): QMCDriver(a), CloneManager(a) { }
+  CSVMC(const CSVMC &) = delete;
   /// Copy operator (disabled).
-  CSVMC& operator=(const CSVMC&)
-  {
-    return *this;
-  }
+  CSVMC & operator=(const CSVMC &) = delete;
   
   void resetRun();
   
@@ -67,8 +64,3 @@ private:
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1592 $   $Date: 2007-01-04 16:48:00 -0600 (Thu, 04 Jan 2007) $
- * $Id: CSVMC.h 1592 2007-01-04 22:48:00Z jnkim $
- ***************************************************************************/

@@ -24,7 +24,7 @@
 #ifndef QMCPLUSPLUS_LR_RPAJASTROW_H
 #define QMCPLUSPLUS_LR_RPAJASTROW_H
 
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Optimize/VarList.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -34,7 +34,7 @@
 namespace qmcplusplus
 {
 
-class LRTwoBodyJastrow: public OrbitalBase
+class LRTwoBodyJastrow: public WaveFunctionComponent
 {
   bool NeedToRestore;
   IndexType NumPtcls;
@@ -57,7 +57,6 @@ class LRTwoBodyJastrow: public OrbitalBase
   RealType *LastAddressOfdU;
   StructFact* skRef;
   // handler used to do evalFk
-  //typedef RPALRHandler<RealType>::HandlerType HandlerType;
   typedef LRHandlerBase HandlerType;
   HandlerType* handler;
 
@@ -66,17 +65,29 @@ class LRTwoBodyJastrow: public OrbitalBase
   Vector<RealType> offU, offd2U;
   Vector<PosType> offdU;
 
+#if defined(USE_REAL_STRUCT_FACTOR)
+  Matrix<RealType> rokbyF_r;
+  Matrix<RealType> rokbyF_i;
+  Vector<RealType> Rhok_r;
+  Vector<RealType> Rhok_i;
+
+  Matrix<RealType> eikr_r;
+  Matrix<RealType> eikr_i;
+  Vector<RealType> eikr_new_r;
+  Vector<RealType> eikr_new_i;
+  Vector<RealType> delta_eikr_r;
+  Vector<RealType> delta_eikr_i;
+
+#else
   Matrix<ComplexType> rokbyF;
   Vector<ComplexType> Rhok;
 
-  ////Matrix<ComplexType> rhok;
   Matrix<ComplexType> eikr;
   Vector<ComplexType> eikr_new;
   Vector<ComplexType> delta_eikr;
-
+#endif
   std::vector<int> Kshell;
   std::vector<RealType> FkbyKK;
-  //vector<PosType>  Kcart;
 
   void resetInternals();
   void resize();
@@ -126,7 +137,7 @@ public:
     while(ksh<maxshell)
     {
       if(kk[ik]>kcsq)
-        break; //exit
+        break; 
       ik=skRef->KLists.kshell[++ksh];
     }
     MaxKshell=ksh;
@@ -140,7 +151,7 @@ public:
     RealType u0 = -4.0*M_PI/CellVolume;
     for(ksh=0,ik=0; ksh<MaxKshell; ksh++, ik++)
     {
-      RealType v=u0*uk(kk[ik]);//rpa=u0/kk[ik];
+      RealType v=u0*uk(kk[ik]);
       Fk_symm[ksh]=v;
       FkbyKK[ksh]=kk[ik]*v;
       for(; ik<skRef->KLists.kshell[ksh+1]; ik++)
@@ -149,49 +160,23 @@ public:
     Fk_0=Fk;
   }
 
-  inline ValueType evaluate(ParticleSet& P,
-                            ParticleSet::ParticleGradient_t& G,
-                            ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
-
   ValueType ratio(ParticleSet& P, int iat);
 
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return std::exp(logRatio(P,iat,dG,dL));
-  }
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType & g);
 
-  ValueType logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL);
+  GradType evalGrad(ParticleSet& P, int iat);
 
   void restore(int iat);
   void acceptMove(ParticleSet& P, int iat);
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
 
-
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   ///process input file
   bool put(xmlNodePtr cur);
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -22,19 +22,18 @@ namespace qmcplusplus
 class ParticleSetPool;
 class HamiltonianPool;
 
-struct VMCFactory
+class VMCFactory
 {
+  private:
   int VMCMode;
   xmlNodePtr myNode;
+
+  public:
   VMCFactory(int vmode, xmlNodePtr cur):VMCMode(vmode), myNode(cur) {}
+
   QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                    ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+                    ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
 };
 }
 
 #endif
-/***************************************************************************
- * $RCSfile: DMCFactory.h,v $   $Author: jnkim $
- * $Revision: 1.2 $   $Date: 2006/04/05 00:49:59 $
- * $Id: DMCFactory.h,v 1.2 2006/04/05 00:49:59 jnkim Exp $
- ***************************************************************************/

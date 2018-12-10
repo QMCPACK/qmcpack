@@ -12,8 +12,9 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Amrita Mathuriya, amrita.mathuriya@intel.com, Intel Corp.
 //
-// File created by: John R. Gergely,  University of Illinois at Urbana-Champaign
+// File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
     
     
@@ -23,6 +24,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/LinearFit.h"
+#include "simd/allocator.hpp"
 #include <cstdio>
 
 namespace qmcplusplus
@@ -35,12 +37,13 @@ struct BsplineFunctor: public OptimizableFunctorBase
   typedef real_type value_type;
   int NumParams;
   int Dummy;
-  const TinyVector<real_type,16> A, dA, d2A, d3A;
+  const real_type A[16], dA[16], d2A[16], d3A[16];
+  aligned_vector<real_type> SplineCoefs;
+
   //static const real_type A[16], dA[16], d2A[16];
   real_type DeltaR, DeltaRInv;
   real_type CuspValue;
   real_type Y, dY, d2Y;
-  std::vector<real_type> SplineCoefs;
   // Stores the derivatives w.r.t. SplineCoefs
   // of the u, du/dr, and d2u/dr2
   std::vector<TinyVector<real_type,3> > SplineDerivs;
@@ -50,30 +53,29 @@ struct BsplineFunctor: public OptimizableFunctorBase
   std::string fileName;
 
   int ResetCount;
-  int ReportLevel;
   bool notOpt;
   bool periodic;
 
   ///constructor
   BsplineFunctor(real_type cusp=0.0) :
     NumParams(0),
-    A(-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
-      3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
+    A{-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
+       3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
       -3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0,
-      1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0),
-    dA(0.0, -0.5,  1.0, -0.5,
+       1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0},
+    dA{0.0, -0.5,  1.0, -0.5,
        0.0,  1.5, -2.0,  0.0,
        0.0, -1.5,  1.0,  0.5,
-       0.0,  0.5,  0.0,  0.0),
-    d2A(0.0, 0.0, -1.0,  1.0,
+       0.0,  0.5,  0.0,  0.0},
+    d2A{0.0, 0.0, -1.0,  1.0,
         0.0, 0.0,  3.0, -2.0,
         0.0, 0.0, -3.0,  1.0,
-        0.0, 0.0,  1.0,  0.0),
-    d3A(0.0, 0.0,  0.0, -1.0,
+        0.0, 0.0,  1.0,  0.0},
+    d3A{0.0, 0.0,  0.0, -1.0,
         0.0, 0.0,  0.0,  3.0,
         0.0, 0.0,  0.0, -3.0,
-        0.0, 0.0,  0.0,  1.0),
-    CuspValue(cusp), ResetCount(0), ReportLevel(0), notOpt(false), periodic(true)
+        0.0, 0.0,  0.0,  1.0},
+    CuspValue(cusp), ResetCount(0), notOpt(false), periodic(true)
   {
     cutoff_radius = 0.0;
   }
@@ -83,10 +85,14 @@ struct BsplineFunctor: public OptimizableFunctorBase
     return new BsplineFunctor(*this);
   }
 
-  inline void setReportLevel(int i, const std::string& fname)
+  void setCusp(real_type c) 
   {
-    ReportLevel=i;
-    fileName=(ReportLevel)? fname:"0";
+    CuspValue = c;
+  }
+
+  void setPeriodic(bool p)
+  {
+    periodic = p;
   }
 
   void resize(int n)
@@ -109,13 +115,43 @@ struct BsplineFunctor: public OptimizableFunctorBase
     DeltaRInv = 1.0/DeltaR;
     for (int i=0; i<SplineCoefs.size(); i++)
       SplineCoefs[i] = 0.0;
-    // Ensure that cusp conditions is satsified at the origin
+    // Ensure that cusp conditions is satisfied at the origin
     SplineCoefs[1] = Parameters[0];
     SplineCoefs[2] = Parameters[1];
     SplineCoefs[0] = Parameters[1] - 2.0*DeltaR * CuspValue;
     for (int i=2; i<Parameters.size(); i++)
       SplineCoefs[i+1] = Parameters[i];
   }
+
+  /** compute value, gradient and laplacian for [iStart, iEnd) pairs
+   * @param iat dummy
+   * @param iStart starting particle index
+   * @param iEnd ending particle index
+   * @param _distArray distance arrUay
+   * @param _valArray  u(r_j) for j=[iStart,iEnd)
+   * @param _gradArray  du(r_j)/dr /r_j for j=[iStart,iEnd)
+   * @param _lapArray  d2u(r_j)/dr2 for j=[iStart,iEnd)
+   * @param distArrayCompressed temp storage to filter r_j < cutoff_radius
+   * @param distIndices temp storage for the compressed index
+   */
+  void evaluateVGL(const int iat, const int iStart, const int iEnd,
+      const T* _distArray,  
+      T* restrict _valArray,
+      T* restrict _gradArray, 
+      T* restrict _laplArray, 
+      T* restrict distArrayCompressed, int* restrict distIndices ) const;
+
+  /** evaluate sum of the pair potentials for [iStart,iEnd)
+   * @param iat dummy
+   * @param iStart starting particle index
+   * @param iEnd ending particle index
+   * @param _distArray distance arrUay
+   * @param distArrayCompressed temp storage to filter r_j < cutoff_radius
+   * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
+   */
+  T evaluateV(const int iat, const int iStart, const int iEnd,
+      const T* restrict _distArray, 
+      T* restrict distArrayCompressed) const;
 
   inline real_type evaluate(real_type r)
   {
@@ -342,13 +378,13 @@ struct BsplineFunctor: public OptimizableFunctorBase
 
   inline real_type f(real_type r)
   {
-    if (r>cutoff_radius)
+    if (r>=cutoff_radius)
       return 0.0;
     return evaluate(r);
   }
   inline real_type df(real_type r)
   {
-    if (r>cutoff_radius)
+    if (r>=cutoff_radius)
       return 0.0;
     real_type du, d2u;
     evaluate(r, du, d2u);
@@ -369,17 +405,27 @@ struct BsplineFunctor: public OptimizableFunctorBase
     rAttrib.add(radius,      "cutoff");
     rAttrib.put(cur);
     if (radius < 0.0)
-      if(periodic)
-      {
-        app_log() << "  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = "
-                  << cutoff_radius << ".\n";
-      }
+      if (periodic)
+        app_log() << "  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = " << cutoff_radius << ".\n";
       else
       {
-        APP_ABORT("  Jastrow cutoff unspecified.  Cutoff must be given when not using periodic boundary conditions");
+        APP_ABORT("  Jastrow cutoff unspecified.  Cutoff must be given when using open boundary conditions");
       }
     else
-      cutoff_radius = radius;
+      if (periodic && radius > cutoff_radius)
+      {
+        if (radius - cutoff_radius > 1e-4)
+        {
+          APP_ABORT( "  The Jastrow cutoff specified should not be larger than Wigner-Seitz radius.");
+        }
+        else
+        {
+          app_log() << "  The Jastrow cutoff specified is slightly larger than the Wigner-Seitz radius.";
+          app_log() << "  Setting to Wigner-Seitz radius = " << cutoff_radius << ".\n";
+        }
+      }
+      else
+        cutoff_radius = radius;
     if (NumParams == 0)
     {
       PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.",true);
@@ -500,6 +546,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
     app_log() << "New parameters are:\n";
     for (int i=0; i < Parameters.size(); i++)
       app_log() << "   " << Parameters[i] << std::endl;
+#if QMC_BUILD_LEVEL < 5
     if(optimize == "yes")
     {
       // Setup parameter names
@@ -513,6 +560,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
       myVars.print(app_log());
     }
     else
+#endif
     {
       notOpt=true;
       app_log() << "Parameters of BsplineFunctor id:"
@@ -574,34 +622,116 @@ struct BsplineFunctor: public OptimizableFunctorBase
     return false;
   }
 
-  void print()
-  {
-    if(ReportLevel)
-    {
-      std::ofstream fout(fileName.c_str());
-      this->print(fout);
-    }
-  }
-
-
-  void print(std::ostream& os)
-  {
-    int n=100;
-    T d=cutoff_radius/100.,r=0;
-    T u,du,d2du;
-    for (int i=0; i<n; ++i)
-    {
-      u=evaluate(r,du,d2du);
-      os << std::setw(22) << r << std::setw(22) << u << std::setw(22) << du
-         << std::setw(22) << d2du << std::endl;
-      r+=d;
-    }
-  }
 };
+
+template<typename T>
+inline T 
+BsplineFunctor<T>::evaluateV(const int iat, const int iStart, const int iEnd,
+    const T* restrict _distArray, T* restrict distArrayCompressed ) const
+{
+  const real_type* restrict distArray = _distArray + iStart;
+
+  ASSUME_ALIGNED(distArrayCompressed);
+  int iCount = 0;
+  const int iLimit = iEnd-iStart;
+
+#pragma vector always 
+  for ( int jat = 0; jat < iLimit; jat++ ) {
+    real_type r = distArray[jat];
+    // pick the distances smaller than the cutoff and avoid the reference atom
+    if ( r < cutoff_radius && iStart+jat != iat )
+      distArrayCompressed[iCount++] = distArray[jat];
+  }
+
+  real_type d = 0.0;
+#pragma omp simd reduction (+:d)
+  for ( int jat = 0; jat < iCount; jat++ ) {
+    real_type r = distArrayCompressed[jat];
+    r *= DeltaRInv;
+    int i = (int)r;
+    real_type t = r - real_type(i);
+    real_type tp0 = t*t*t;
+    real_type tp1 = t*t;
+    real_type tp2 = t;
+
+    real_type d1 = SplineCoefs[i+0]*(A[ 0]*tp0 + A[ 1]*tp1 + A[ 2]*tp2 + A[ 3]);
+    real_type d2 = SplineCoefs[i+1]*(A[ 4]*tp0 + A[ 5]*tp1 + A[ 6]*tp2 + A[ 7]);
+    real_type d3 = SplineCoefs[i+2]*(A[ 8]*tp0 + A[ 9]*tp1 + A[10]*tp2 + A[11]);
+    real_type d4 = SplineCoefs[i+3]*(A[12]*tp0 + A[13]*tp1 + A[14]*tp2 + A[15]);
+    d += ( d1 + d2 + d3 + d4 );
+  }
+  return d;
+}
+
+template<typename T> 
+inline void BsplineFunctor<T>::evaluateVGL(const int iat, const int iStart, const int iEnd,
+    const T* _distArray,  T* restrict _valArray, 
+    T* restrict _gradArray, T* restrict _laplArray, 
+    T* restrict distArrayCompressed, int* restrict distIndices ) const
+{
+
+  real_type dSquareDeltaRinv = DeltaRInv * DeltaRInv;
+  constexpr real_type cZero(0); 
+  constexpr real_type cOne(1);
+  constexpr real_type cMOne(-1); 
+
+  //    START_MARK_FIRST();
+
+  ASSUME_ALIGNED(distIndices);
+  ASSUME_ALIGNED(distArrayCompressed);
+  int iCount = 0;
+  int iLimit = iEnd-iStart;
+  const real_type* distArray = _distArray + iStart;
+  real_type* valArray = _valArray + iStart;
+  real_type* gradArray = _gradArray + iStart;
+  real_type* laplArray = _laplArray + iStart;
+
+#pragma vector always
+  for ( int jat = 0; jat < iLimit; jat++ ) {
+    real_type r = distArray[jat];
+    if ( r < cutoff_radius && iStart+jat != iat ) {
+      distIndices[iCount] = jat;
+      distArrayCompressed[iCount] = r;
+      iCount++;
+    }
+  }
+
+#pragma omp simd 
+  for ( int j = 0; j < iCount; j++ ) {
+
+    real_type r = distArrayCompressed[j];
+    int iScatter = distIndices[j]; 
+    real_type rinv = cOne/r; 
+    r *= DeltaRInv;
+    int iGather = (int)r;
+    real_type t = r - real_type(iGather);
+    real_type tp0 = t*t*t;
+    real_type tp1 = t*t;
+    real_type tp2 = t;
+
+    real_type sCoef0 = SplineCoefs[iGather+0];
+    real_type sCoef1 = SplineCoefs[iGather+1];
+    real_type sCoef2 = SplineCoefs[iGather+2];
+    real_type sCoef3 = SplineCoefs[iGather+3];
+
+    laplArray[iScatter] = dSquareDeltaRinv *
+      (sCoef0*( d2A[ 2]*tp2 + d2A[ 3])+
+       sCoef1*( d2A[ 6]*tp2 + d2A[ 7])+
+       sCoef2*( d2A[10]*tp2 + d2A[11])+
+       sCoef3*( d2A[14]*tp2 + d2A[15]));
+
+    gradArray[iScatter] = DeltaRInv * rinv *
+      (sCoef0*( dA[ 1]*tp1 + dA[ 2]*tp2 + dA[ 3])+
+       sCoef1*( dA[ 5]*tp1 + dA[ 6]*tp2 + dA[ 7])+
+       sCoef2*( dA[ 9]*tp1 + dA[10]*tp2 + dA[11])+
+       sCoef3*( dA[13]*tp1 + dA[14]*tp2 + dA[15]));
+
+    valArray[iScatter] = (sCoef0*(A[ 0]*tp0 + A[ 1]*tp1 + A[ 2]*tp2 + A[ 3])+
+        sCoef1*(A[ 4]*tp0 + A[ 5]*tp1 + A[ 6]*tp2 + A[ 7])+
+        sCoef2*(A[ 8]*tp0 + A[ 9]*tp1 + A[10]*tp2 + A[11])+
+        sCoef3*(A[12]*tp0 + A[13]*tp1 + A[14]*tp2 + A[15]));
+  }
+
+}
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1691 $   $Date: 2007-02-01 15:51:50 -0600 (Thu, 01 Feb 2007) $
- * $Id: BsplineFunctor.h 1691 2007-02-01 21:51:50Z jnkim $
- ***************************************************************************/

@@ -38,10 +38,10 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool fi
   forces_ShortRange.resize(Nnuc);
   forces_ShortRange = 0.0;
   forces_IonIon=0.0;
-  
+  ions.turnOnPerParticleSK();
   //This sets up the long range breakups. 
   kcdifferent=false;
-  myTableIndex=elns.addTable(ions);
+  myTableIndex=elns.addTable(ions,DT_SOA_PREFERRED);
   initBreakup(elns);
  // app_log()<< "IonIon Force" << std::endl;
  // app_log()<<forces_IonIon<< std::endl; 
@@ -152,12 +152,10 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
  // }
 }
 
-//ForceChiesaPBCAA::Return_t ForceChiesaPBCAA::evaluatePbyP(
-
 void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
 {
-  const StructFact& RhoKA(*(PtclA.SK));
-  const StructFact& RhoKB(*(P.SK));
+  //  const StructFact& RhoKA(*(PtclA.SK));
+  //  const StructFact& RhoKB(*(P.SK));
   //app_log()<<"Calculate Long Range e-I forces"<< std::endl;
   std::vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
   for(int j=0; j<NumSpeciesB; j++)
@@ -178,59 +176,97 @@ void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
 void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
 {
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
-  //RealType res=0.0;
-  //Loop over distinct eln-ion pairs
-  for(int iat=0; iat<NptclA; iat++)
+  if(d_ab.DTType == DT_SOA)
   {
-    //RealType esum = 0.0;
-    //app_log()<<"Long Range force calculation for ion..."<< std::endl;
-    for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
+    for(size_t jat=0; jat<NptclB; ++jat)
     {
-      RealType V;
-      RealType g_f=g_filter(d_ab.r(nn));
-      //rV = rVs->splint(d_ab.r(nn), d_rV_dr, d2_rV_dr2);
-      V = -AB->srDf(d_ab.r(nn),d_ab.rinv(nn));
-     // std::stringstream wee;
-    //  wee<<"srDf() #"<<omp_get_thread_num()<<" V= "<<V<<" "<<iat<<" "<<nn<< std::endl;
-      
-    //  std::cout <<wee.str();
-      
-      PosType drhat = d_ab.rinv(nn) * d_ab.dr(nn);
-      //esum += Qat[jat]*d_ab.rinv(nn)*rV;
-    //  app_log()<<"iat="<<iat<<" elec="<<jat<< std::endl;
-    //  app_log()<<"dr = "<<d_ab.dr(nn)<< std::endl;
-    //  app_log()<<"force = "<<-g_f*Zat[iat]*Qat[jat] * V * drhat<< std::endl;
-      forces[iat] += -g_f*Zat[iat]*Qat[jat] * V * drhat;
+      const RealType* restrict dist=d_ab.Distances[jat];
+
+      for(size_t iat=0; iat<NptclA; ++iat)
+      {
+        const RealType r = dist[iat];
+        const RealType rinv = RealType(1)/r;
+        RealType g_f = g_filter(r);
+        RealType V = -AB->srDf(r,rinv);
+        PosType drhat = rinv*d_ab.Displacements[jat][iat];
+        forces[iat] += g_f*Zat[iat]*Qat[jat]*V*drhat;
+      }
+    }
+    //for(size_t a=0; a<NptclA; ++a)
+    //  std::cout << "debug evaluateSR " << forces[a] << std::endl;
+  }
+  else
+  {
+    //RealType res=0.0;
+    //Loop over distinct eln-ion pairs
+    for(int iat=0; iat<NptclA; iat++)
+    {
+      //RealType esum = 0.0;
+      //app_log()<<"Long Range force calculation for ion..."<< std::endl;
+      for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
+      {
+        RealType V;
+        RealType g_f=g_filter(d_ab.r(nn));
+        //rV = rVs->splint(d_ab.r(nn), d_rV_dr, d2_rV_dr2);
+        V = -AB->srDf(d_ab.r(nn),d_ab.rinv(nn));
+       // std::stringstream wee;
+      //  wee<<"srDf() #"<<omp_get_thread_num()<<" V= "<<V<<" "<<iat<<" "<<nn<< std::endl;
+      //  std::cout <<wee.str();
+        PosType drhat = d_ab.rinv(nn) * d_ab.dr(nn);
+        //esum += Qat[jat]*d_ab.rinv(nn)*rV;
+      //  app_log()<<"iat="<<iat<<" elec="<<jat<< std::endl;
+      //  app_log()<<"dr = "<<d_ab.dr(nn)<< std::endl;
+      //  app_log()<<"force = "<<-g_f*Zat[iat]*Qat[jat] * V * drhat<< std::endl;
+        forces[iat] += -g_f*Zat[iat]*Qat[jat] * V * drhat;
+      }
+      //std::cout << "debug evaluateSR " << forces[iat] << std::endl;
     }
   }
-    
-   
 }
 
 void ForceChiesaPBCAA::evaluateSR_AA()
 {
   const DistanceTableData &d_aa(*PtclA.DistTables[0]);
-  //RealType res=0.0;
-  //Loop over distinct eln-ion pairs
- for(int ipart=0; ipart<NptclA; ipart++)
+  if(d_aa.DTType == DT_SOA)
   {
-    RealType esum = 0.0;
-    for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+    for(size_t ipart=1; ipart<NptclA; ipart++)
     {
-      RealType V = -AB->srDf(d_aa.r(nn),d_aa.rinv(nn));
-      PosType grad = -Zat[jpart]*Zat[ipart]*V*d_aa.rinv(nn)*d_aa.dr(nn);
-      forces_IonIon[ipart] += grad;
-      forces_IonIon[jpart] -= grad;
-   //   app_log()<<"ShortRange Ion Ion component"<< std::endl;
-   //   app_log() <<"grad[" <<ipart<< "] = "<<grad<< std::endl;
-   //   app_log() <<"Zat[" <<ipart<< "] = "<<Zat[ipart]<< std::endl;
+      const RealType* restrict dist=d_aa.Distances[ipart];
+      for(size_t jpart=0; jpart<ipart; ++jpart)
+      {
+        RealType V = -AB->srDf(dist[jpart],RealType(1)/dist[jpart]);
+        PosType grad = -Zat[jpart]*Zat[ipart]*V*dist[jpart]*d_aa.Displacements[ipart][jpart];
+        forces_IonIon[ipart] += grad;
+        forces_IonIon[jpart] -= grad;
+      }
+    }
+    for(size_t ipart=0; ipart<NptclA; ++ipart)
+      std::cout << "debug evaluateSR_AA " << forces_IonIon[ipart] << std::endl;
+  }
+  else
+  {
+    //RealType res=0.0;
+    //Loop over distinct eln-ion pairs
+    for(int ipart=0; ipart<NptclA; ipart++)
+    {
+      for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+      {
+        RealType V = -AB->srDf(d_aa.r(nn),d_aa.rinv(nn));
+        PosType grad = -Zat[jpart]*Zat[ipart]*V*d_aa.rinv(nn)*d_aa.dr(nn);
+        forces_IonIon[ipart] += grad;
+        forces_IonIon[jpart] -= grad;
+     //   app_log()<<"ShortRange Ion Ion component"<< std::endl;
+     //   app_log() <<"grad[" <<ipart<< "] = "<<grad<< std::endl;
+     //   app_log() <<"Zat[" <<ipart<< "] = "<<Zat[ipart]<< std::endl;
+      }
+      std::cout << "debug evaluateSR_AA " << forces_IonIon[ipart] << std::endl;
     }
   }
 }
 
 void ForceChiesaPBCAA::evaluateLR_AA()
 {
-  const StructFact& PtclRhoK(*(PtclA.SK));
+  //  const StructFact& PtclRhoK(*(PtclA.SK));
   std::vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
   for(int spec2=0; spec2<NumSpeciesA; spec2++)
   {
@@ -312,7 +348,7 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
 
 void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid=P.addTable(PtclA);
+  int tid=P.addTable(PtclA,DT_AOS);
   if(tid != myTableIndex)
   {
     APP_ABORT("ForceChiesaPBCAA::resetTargetParticleSet found inconsistent table index");
@@ -340,6 +376,7 @@ QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFuncti
   tmp->h=h; // terms in fitting polynomial
   tmp->c.resize(N_basis);
   tmp->c=c; // polynomial coefficients
+  tmp->addionion=addionion;
   tmp->initBreakup(qp);
 
   return tmp;
@@ -425,8 +462,3 @@ QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFuncti
 //    //cerr << std::endl;
 //  }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3015 $   $Date: 2008-08-18 16:08:06 -0500 (Mon, 18 Aug 2008) $
- * $Id: ForceChiesaPBCAA.cpp 3015 2008-08-18 21:08:06Z jnkim $
- ***************************************************************************/

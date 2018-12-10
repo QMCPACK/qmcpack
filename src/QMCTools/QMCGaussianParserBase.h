@@ -29,6 +29,9 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/SimpleParser.h"
 #include "Particle/ParticleSet.h"
+#include "Numerics/HDFSTLAttrib.h"
+#include "OhmmsData/HDFStringAttrib.h"
+#include "io/hdf_archive.h"
 
 using namespace qmcplusplus;
 
@@ -39,14 +42,20 @@ struct QMCGaussianParserBase
   typedef ParticleSet::SingleParticlePos_t SingleParticlePos_t;
 
   bool multideterminant;
+  bool AllH5;
   bool BohrUnit;
   bool SpinRestricted;
   bool Periodicity;
   bool UseHDF5;
+  bool PBC;
+  bool production;
   bool zeroCI;
   bool orderByExcitation;
   bool addJastrow;
   bool addJastrow3Body;
+  bool ECP;
+  bool debug;
+  bool Structure;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
@@ -60,7 +69,7 @@ struct QMCGaussianParserBase
 // mmorales: number of Molecular orbitals, not always equal to SizeOfBasisSet
   int numMO, readNO, readGuess, numMO2print;
 // benali: Point Charge from FMO ESP 
-  int *  ESPIonChargeIndex;
+  int * ESPIonChargeIndex;
   int * ESPValenceChargeIndex;
   int * ESPAtomicNumberIndex;
   int TotNumMonomer;
@@ -72,6 +81,8 @@ struct QMCGaussianParserBase
   int FMOIndexI,FMOIndexJ,FMOIndexK;
   bool FMO, FMO1,FMO2,FMO3,DoCusp,FixValence,QP;
   
+  std::vector< std::vector <double> > Kpoints_Coord; //Kpoints Coordinates
+  int NbKpts;
 
   std::string Title;
   std::string basisType;
@@ -80,7 +91,9 @@ struct QMCGaussianParserBase
   std::string CurrentCenter;
   std::string outputFile;
   std::string angular_type;
-
+  std::string h5file;
+  std::string WFS_name;
+  std::string CodeName;
   ParticleSet IonSystem;
 
 
@@ -100,9 +113,14 @@ struct QMCGaussianParserBase
   std::vector<std::vector<std::string> > CSFalpha,CSFbeta;
   std::vector<std::vector<double> > CSFexpansion;
   std::vector<double> CIcoeff;
+  std::vector<double> X,Y,Z; //LAttice vectors for PBC
+  std::vector<int> Image ;
+
   std::vector<int> CIexcitLVL;
+
   int ci_size,ci_nca,ci_ncb,ci_nea,ci_neb,ci_nstates;
   double ci_threshold;
+  bool optDetCoeffs;
   bool usingCSF;
   bool VSVB;
 
@@ -116,27 +134,46 @@ struct QMCGaussianParserBase
   void createGridNode(int argc, char** argv);
 
   void createSPOSets(xmlNodePtr,xmlNodePtr);
-  xmlNodePtr createElectronSet();
+  void createSPOSetsH5(xmlNodePtr,xmlNodePtr);
+  void PrepareSPOSetsFromH5(xmlNodePtr,xmlNodePtr);
+  xmlNodePtr createElectronSet(const std::string& ion_tag);
   xmlNodePtr createIonSet();
+  xmlNodePtr createCell();
+  xmlNodePtr createHamiltonian(const std::string& ion_tag, const std::string& psi_tag);
   xmlNodePtr createBasisSet();
+  xmlNodePtr createBasisSetWithHDF5();
   xmlNodePtr createCenter(int iat, int _off);
+  void createCenterH5(int iat, int _off,int numelem);
   void createShell(int n, int ig, int off_, xmlNodePtr abasis);
+  void createShellH5(int n, int ig, int off_,int numelem);
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
   xmlNodePtr createMultiDeterminantSetVSVB();
   xmlNodePtr createMultiDeterminantSetQP();
+  xmlNodePtr createMultiDeterminantSetQPHDF5();
   xmlNodePtr createDeterminantSetWithHDF5();
+  xmlNodePtr createMultiDeterminantSetFromH5();
+  xmlNodePtr PrepareDeterminantSetFromHDF5();
   xmlNodePtr createJ3();
   xmlNodePtr createJ2();
   xmlNodePtr createJ1();
 
+  xmlNodePtr parameter(xmlNodePtr Parent, std::string Mypara ,std::string a);
 
   int numberOfExcitationsCSF( std::string&);
 
-  void map2GridFunctors(xmlNodePtr cur);
   virtual void parse(const std::string& fname) = 0;
 
+  virtual void dumpPBC(const std::string& psi_tag,
+                    const std::string& ion_tag, const int KptsNum);
+
   virtual void dump(const std::string& psi_tag,
+                    const std::string& ion_tag);
+
+  void dumpStdInput(const std::string& psi_tag,
+                    const std::string& ion_tag);
+
+  void dumpStdInputProd(const std::string& psi_tag,
                     const std::string& ion_tag);
 
   virtual void Fmodump(const std::string& psi_tag,

@@ -69,7 +69,7 @@ void QMCAppBase::popDocument()
  */
 bool QMCAppBase::parse(const std::string& infile)
 {
-  app_log() << "  Input XML = " << infile << std::endl;
+  app_summary() << "  Input XML = " << infile << std::endl;
   return pushDocument(infile);
 }
 
@@ -93,8 +93,3 @@ std::string &QMCAppBase::getTitle()
   return myProject.m_title;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

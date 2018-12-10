@@ -20,7 +20,7 @@
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
@@ -44,7 +44,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
   //This sets up the long range breakups. 
   
   kcdifferent=false;
-  myTableIndex=elns.addTable(PtclA);
+  myTableIndex=elns.addTable(PtclA,DT_AOS);
   initBreakup(PtclTarg);
   
   targetconsts=0.0;
@@ -407,7 +407,7 @@ StressPBC::evaluate(ParticleSet& P)
 
 SymTensor<StressPBC::RealType,OHMMS_DIM> StressPBC::evaluateKineticSymTensor(ParticleSet& P)
 {
-  OrbitalBase::HessVector_t grad_grad_psi;
+  WaveFunctionComponent::HessVector_t grad_grad_psi;
   Psi.evaluateHessian(P,grad_grad_psi);
   SymTensor<RealType,OHMMS_DIM> kinetic_tensor;
   Tensor<ComplexType, OHMMS_DIM> complex_ktensor;
@@ -416,7 +416,7 @@ SymTensor<StressPBC::RealType,OHMMS_DIM> StressPBC::evaluateKineticSymTensor(Par
   for (int iat=0; iat<P.getTotalNum(); iat++)
   {
     const RealType minv(1.0/P.Mass[iat]);
-    complex_ktensor+=outerProduct(P.G[iat],P.G[iat])*static_cast<ParticleSet::ParticleValue_t>(minv);
+    complex_ktensor+=outerProduct(P.G[iat],P.G[iat])*static_cast<ParticleSet::SingleParticleValue_t>(minv);
     complex_ktensor+=grad_grad_psi[iat]*minv;
     //complex_ktensor+=(grad_grad_psi[iat] + outerProduct(P.G[iat],P.G[iat]))*(1.0/(P.Mass[iat]));
   }
@@ -485,8 +485,3 @@ QMCHamiltonianBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi
 }
 
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3015 $   $Date: 2008-08-18 16:08:06 -0500 (Mon, 18 Aug 2008) $
- * $Id: StressPBC.cpp 3015 2008-08-18 21:08:06Z jnkim $
- ***************************************************************************/

@@ -23,15 +23,19 @@
 #include "Message/CommOperators.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "type_traits/scalar_traits.h"
+#include "Utilities/RunTimeManager.h"
 #include "qmc_common.h"
+#ifdef USE_NVTX_API
+#include <nvToolsExt.h>
+#endif
 
 namespace qmcplusplus
 {
 
 /// Constructor.
 VMCcuda::VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                 QMCHamiltonian& h,WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool),UseDrift("yes"),
+                 QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm),UseDrift("yes"),
   myPeriod4WalkerDump(0), GEVtype("mixed"), w_alpha(0.0), w_beta(0.0), forOpt(false)
 {
   RootName = "vmc";
@@ -125,6 +129,9 @@ bool VMCcuda::run()
 {
   if (UseDrift == "yes")
     return runWithDrift();
+#ifdef USE_NVTX_API
+  nvtxRangePushA("VMC:run");
+#endif
   resetRun();
   IndexType block = 0;
   IndexType nAcceptTot = 0;
@@ -139,6 +146,10 @@ bool VMCcuda::run()
   Matrix<GradType>  grad(nw, nat);
   double Esum;
 
+  LoopTimer vmc_loop;
+  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  bool enough_time_for_next_iteration = true;
+
   // First do warmup steps
   for (int step=0; step<nWarmupSteps; step++)
     advanceWalkers();
@@ -146,6 +157,7 @@ bool VMCcuda::run()
   // Then accumulate statistics
   do
   {
+    vmc_loop.start();
     IndexType step = 0;
     nAccept = nReject = 0;
     Esum = 0.0;
@@ -217,8 +229,18 @@ bool VMCcuda::run()
     nRejectTot += nReject;
     ++block;
     recordBlock(block);
+
+    vmc_loop.stop();
+    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(vmc_loop);
+    // Rank 0 decides whether the time limit was reached
+    myComm->bcast(enough_time_for_next_iteration);
+    if (!enough_time_for_next_iteration)
+    {
+      app_log() << runtimeControl.time_limit_message("VMC", block);
+    }
+
   }
-  while(block<nBlocks);
+  while(block<nBlocks && enough_time_for_next_iteration);
   //Mover->stopRun();
   //finalize a qmc section
   if (!myComm->rank())
@@ -226,6 +248,9 @@ bool VMCcuda::run()
     std::cerr << "At the end of VMC" << std::endl;
     gpu::cuda_memory_manager.report();
   }
+#ifdef USE_NVTX_API
+  nvtxRangePop();
+#endif
   return finalize(block);
 }
 
@@ -233,9 +258,7 @@ void VMCcuda::advanceWalkersWithDrift()
 {
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  std::vector<RealType>  oldScale(nw), newScale(nw);
   std::vector<PosType>   delpos(nw);
-  std::vector<PosType>   dr(nw);
   std::vector<PosType>   newpos(nw);
   std::vector<ValueType> ratios(nw);
 #ifdef QMC_COMPLEX
@@ -255,14 +278,10 @@ void VMCcuda::advanceWalkersWithDrift()
       Psi.addGradient(W, iat, oldG);
       for(int iw=0; iw<nw; iw++)
       {
-        oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
-#ifdef QMC_COMPLEX
-        convert(oldScale[iw]*oldG[iw], dr[iw]);
-        dr[iw] += m_sqrttau * delpos[iw];
-#else
-        dr[iw] = (m_sqrttau*delpos[iw]) + (oldScale[iw]*oldG[iw]);
-#endif
-        newpos[iw]=W[iw]->R[iat] + dr[iw];
+        PosType dr;
+        delpos[iw] *= m_sqrttau;
+        getScaledDrift(m_tauovermass,oldG[iw],dr);
+        newpos[iw] = W[iw]->R[iat] + delpos[iw] + dr;
         ratios[iw] = 1.0;
 #ifdef QMC_COMPLEX
         ratios_real[iw] = 1.0;
@@ -278,15 +297,7 @@ void VMCcuda::advanceWalkersWithDrift()
       std::vector<RealType> rand_v(nw);
       for(int iw=0; iw<nw; ++iw)
       {
-#ifdef QMC_COMPLEX
-        PosType drOld = 0.0;
-        convert(oldScale[iw] * oldG[iw], drOld);
-        drOld = newpos[iw] - (W[iw]->R[iat] + drOld);
-#else
-        PosType drOld =
-          newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
-#endif
-        logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
+        logGf_v[iw] = -m_oneover2tau * dot(delpos[iw], delpos[iw]);
         rand_v[iw] = Random();
       }
       Psi.addRatio(W, iat, ratios, newG, newL);
@@ -295,18 +306,12 @@ void VMCcuda::advanceWalkersWithDrift()
 #endif
       for(int iw=0; iw<nw; ++iw)
       {
-        newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
-#ifdef QMC_COMPLEX
-        PosType drNew = 0.0;
-        convert(newScale[iw] * newG[iw], drNew);
+        PosType drNew;
+        getScaledDrift(m_tauovermass,newG[iw],drNew);
         drNew += newpos[iw] - W[iw]->R[iat];
-#else
-        PosType drNew  =
-          (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
-#endif
         // if (dot(drNew, drNew) > 25.0)
         //   std::cerr << "Large drift encountered!  Drift = " << drNew << std::endl;
-        RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
+        RealType logGb = -m_oneover2tau * dot(drNew, drNew);
         RealType x = logGb - logGf_v[iw];
 #ifdef QMC_COMPLEX
         RealType prob = ratios_real[iw]*ratios_real[iw]*std::exp(x);
@@ -335,6 +340,9 @@ void VMCcuda::advanceWalkersWithDrift()
 
 bool VMCcuda::runWithDrift()
 {
+#ifdef USE_NVTX_API
+  nvtxRangePushA("VMC:runWithDrift");
+#endif
   resetRun();
   IndexType block = 0;
   IndexType nAcceptTot = 0;
@@ -431,6 +439,9 @@ bool VMCcuda::runWithDrift()
     std::cerr << "At the end of VMC with drift" << std::endl;
     gpu::cuda_memory_manager.report();
   }
+#ifdef USE_NVTX_API
+  nvtxRangePop();
+#endif
   return finalize(block);
 }
 
@@ -457,7 +468,7 @@ void VMCcuda::resetRun()
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   app_log() << "Starting VMCcuda::resetRun() " << std::endl;
   Psi.reserve (pool);
-  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaValueType)
+  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CTS::ValueType)
             << " bytes in GPU memory.\n";
   // Now allocate memory on the GPU card for each walker
   // for (int iw=0; iw<W.WalkerList.size(); iw++) {
@@ -672,8 +683,3 @@ VMCcuda::RealType VMCcuda::fillOverlapHamiltonianMatrices(Matrix<RealType>& Left
 
 }
 
-/***************************************************************************
- * $RCSfile: VMCParticleByParticle.cpp,v $   $Author: jnkim $
- * $Revision: 1.25 $   $Date: 2006/10/18 17:03:05 $
- * $Id: VMCParticleByParticle.cpp,v 1.25 2006/10/18 17:03:05 jnkim Exp $
- ***************************************************************************/

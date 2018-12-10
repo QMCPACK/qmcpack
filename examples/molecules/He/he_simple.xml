@@ -47,16 +47,8 @@
         </atomicBasisSet>
       </basisset>
       <slaterdeterminant>
-        <determinant id="updet" spin="1" size="1">
-          <coefficient id="updetC" type="Array" size="1">
-            1.0
-          </coefficient>
-        </determinant>
-        <determinant id="downdet" spin="-1" size="1">
-          <coefficient id="downdetC" type="Array" size="1">
-            1.0
-          </coefficient>
-        </determinant>
+        <determinant id="updet" spin="1" size="1"/>
+        <determinant id="downdet" spin="-1" size="1"/>
       </slaterdeterminant>
     </determinantset>
   </wavefunction>

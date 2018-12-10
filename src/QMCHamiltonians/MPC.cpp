@@ -37,7 +37,7 @@ MPC::MPC(ParticleSet& ptcl, double cutoff) :
   PtclRef(&ptcl), Ecut(cutoff), FirstTime(true),
   VlongSpline(0), DensitySpline(0)
 {
-  int it=ptcl.addTable(ptcl);
+  int it=ptcl.addTable(ptcl,DT_AOS);
   initBreakup();
 }
 
@@ -276,7 +276,7 @@ MPC::init_spline()
       //          * (4.0*M_PI*volInv/G2 - f_G[iG]);
     }
   }
-  // G=0 component calculated seperately
+  // G=0 component calculated separately
   //GBox(0,0,0) = -vol * f_0 * Rho_G[0];
   //Vconst += 0.5 * vol * vol * f_0 * norm(Rho_G[0]);
   const RealType volf=vol*f_0;
@@ -363,16 +363,31 @@ MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 MPC::Return_t
 MPC::evalSR(ParticleSet& P) const
 {
-  const DistanceTableData* d_aa=P.DistTables[0];
+  const DistanceTableData& d_aa=(*P.DistTables[0]);
   RealType SR=0.0;
-  for(int ipart=0; ipart<NParticles; ipart++)
+  if(d_aa.DTType == DT_SOA)
   {
-    RealType esum = 0.0;
-    for(int nn=d_aa->M[ipart],jpart=ipart+1;
-        nn<d_aa->M[ipart+1]; nn++,jpart++)
-      esum += d_aa->rinv(nn);
-    //Accumulate pair sums...species charge for atom i.
-    SR += esum;
+    const RealType cone(1);
+    for(size_t ipart=0; ipart<NParticles; ipart++)
+    {
+      RealType esum(0);
+      const RealType* restrict dist=d_aa.Distances[ipart];
+      for(size_t j=0; j<ipart; ++j)
+        esum += cone/dist[j];
+      SR += esum;
+    }
+  }
+  else
+  {
+    for(int ipart=0; ipart<NParticles; ipart++)
+    {
+      RealType esum = 0.0;
+      for(int nn=d_aa.M[ipart],jpart=ipart+1;
+          nn<d_aa.M[ipart+1]; nn++,jpart++)
+        esum += d_aa.rinv(nn);
+      //Accumulate pair sums...species charge for atom i.
+      SR += esum;
+    }
   }
   return SR;
 }

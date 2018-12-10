@@ -93,7 +93,6 @@ struct QMCHamiltonianBase: public QMCTraits
     PHYSICAL=3, 
     COLLECTABLE=4, 
     NONLOCAL=5,
-    VIRTUALMOVES=6
   };
   
   ///set the current update mode
@@ -275,16 +274,20 @@ struct QMCHamiltonianBase: public QMCTraits
    */
   virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
-  /** Evaluate the local energies of an N-particle configuration
+  /** Evaluate the local energy contribution of this component
    *@param P input configuration containing N particles
-   *@return the value of the Hamiltonian
+   *@return the value of the Hamiltonian component
    */
   virtual Return_t evaluate(ParticleSet& P) = 0;
   virtual Return_t rejectedMove(ParticleSet& P)
   {
     return 0;
   }
-  virtual Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy) = 0;
+  /** Evaluate the local energy contribution of this component with Toperators updated if requested
+   *@param P input configuration containing N particles
+   *@return the value of the Hamiltonian component
+   */
+  virtual Return_t evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
   
   /** evaluate value and derivatives wrt the optimizables
    *
@@ -305,41 +308,6 @@ struct QMCHamiltonianBase: public QMCTraits
    */
   virtual void update_source(ParticleSet& s) { }
    
-
-  /*@{
-   * @brief Functions to handle particle-by-particle move
-   *
-   * Default implementations use evaluate.
-   */
-  virtual Return_t registerData(ParticleSet& P, BufferType& buffer)
-  {
-    return evaluate(P);
-  }
-  virtual Return_t updateBuffer(ParticleSet& P, BufferType& buf)
-  {
-    return evaluate(P);
-  }
-  virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)
-  {
-    Value=evaluate(P);
-  }
-  virtual void copyToBuffer(ParticleSet& P, BufferType& buf)
-  {
-  }
-  virtual Return_t evaluatePbyP(ParticleSet& P, int active)
-  {
-    APP_ABORT(myName + " missing evaluatePbyP");
-    return NewValue;
-  }
-  virtual void acceptMove(int active)
-  {
-    Value=NewValue;
-  }
-  virtual void rejectMove(int active)
-  {
-  }
-  /*@}*/
-
   /** return an average value by collective operation
    */
   virtual Return_t getEnsembleAverage()
@@ -451,9 +419,4 @@ struct QMCHamiltonianBase: public QMCTraits
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

@@ -17,7 +17,6 @@
 
 
 #include "QMCTools/CasinoParser.h"
-#include "Utilities/OhmmsInfo.h"
 #include <iterator>
 #include <algorithm>
 #include <set>

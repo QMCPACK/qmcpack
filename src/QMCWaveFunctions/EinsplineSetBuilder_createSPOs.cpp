@@ -27,30 +27,102 @@
 #include "Numerics/HDFSTLAttrib.h"
 #include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "Particle/DistanceTableData.h"
 #include <fftw3.h>
 #include <Utilities/ProgressReportEngine.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
-#include "QMCWaveFunctions/EinsplineAdoptor.h"
-#include "QMCWaveFunctions/SplineC2XAdoptor.h"
-#include "QMCWaveFunctions/SplineR2RAdoptor.h"
-#include "QMCWaveFunctions/SplineMixedAdoptor.h"
-
-#include "QMCWaveFunctions/BsplineReaderBase.h"
-#include "QMCWaveFunctions/SplineAdoptorReaderP.h"
-#include "QMCWaveFunctions/SplineMixedAdoptorReaderP.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 
 namespace qmcplusplus
 {
 
-SPOSetBase*
+  ///create R2R, real wavefunction in double
+  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep);
+  ///create R2R, real wavefunction in float
+  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep);
+  ///create C2C or C2R, complex wavefunction in double
+  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep);
+  ///create C2C or C2R, complex wavefunction in single
+  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep);
+
+void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
+{
+  // 1. set a lot of internal parameters in the EinsplineSetBuilder class
+  //  e.g. TileMatrix, UseRealOrbitals, DistinctTwists, MakeTwoCopies.
+  // 2. this is also where metadata for the orbitals are read from the wavefunction hdf5 file
+  //  and broadcast to MPI groups. Variables broadcasted are listed in 
+  //  EinsplineSetBuilderCommon.cpp EinsplineSetBuilder::BroadcastOrbitalInfo()
+  //   
+
+  Timer orb_info_timer;
+  // The tiling can be set by a simple vector, (e.g. 2x2x2), or by a
+  // full 3x3 matrix of integers.  If the tilematrix was not set in
+  // the input file...
+  bool matrixNotSet = true;
+  for (int i=0; i<3; i++)
+    for (int j=0; j<3; j++)
+      matrixNotSet = matrixNotSet && (TileMatrix(i,j) == 0);
+  // then set the matrix to what may have been specified in the
+  // tiling vector
+  if (matrixNotSet)
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++)
+        TileMatrix(i,j) = (i==j) ? TileFactor[i] : 0;
+  char buff[1000];
+  if (myComm->rank() == 0)
+  {
+    snprintf (buff, 1000, "  TileMatrix = \n [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n",
+             TileMatrix(0,0), TileMatrix(0,1), TileMatrix(0,2),
+             TileMatrix(1,0), TileMatrix(1,1), TileMatrix(1,2),
+             TileMatrix(2,0), TileMatrix(2,1), TileMatrix(2,2));
+    app_log() << buff;
+  }  
+  if (numOrbs == 0)
+  {
+    app_error() << "You must specify the number of orbitals in the input file.\n";
+    APP_ABORT("EinsplineSetBuilder::createSPOSet");
+  }
+  else
+    app_log() << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
+  orb_info_timer.restart();
+  /////////////////////////////////////////////////////////////////
+  // Read the basic orbital information, without reading all the //
+  // orbitals themselves.                                        //
+  /////////////////////////////////////////////////////////////////
+  if (myComm->rank() == 0)
+    if (!ReadOrbitalInfo())
+    {
+      app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
+      APP_ABORT("EinsplineSetBuilder::createSPOSet");
+    }
+  app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << orb_info_timer.elapsed() << std::endl;
+  myComm->barrier();
+  orb_info_timer.restart();
+  BroadcastOrbitalInfo();
+
+  app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << orb_info_timer.elapsed() << std::endl;
+  app_log().flush();
+
+  // setup primitive cell and supercell
+  PrimCell.set(Lattice);
+  SuperCell.set(SuperLattice);
+  GGt=dot(transpose(PrimCell.G), PrimCell.G);
+  for (int iat=0; iat<AtomicOrbitals.size(); iat++)
+    AtomicOrbitals[iat].Lattice = Lattice;
+
+  // Now, analyze the k-point mesh to figure out the what k-points  are needed
+  TwistNum = TwistNum_inp;
+  AnalyzeTwists2();
+}
+
+SPOSet*
 EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   update_token(__FILE__,__LINE__,"createSPOSetFromXML");
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
-  BufferLayer=2.0;
-  SPOSetBase *OrbitalSet;
+  SPOSet *OrbitalSet;
   int numOrbs = 0;
-  qafm=0;
   int sortBands(1);
   int spinSet = 0;
   int TwistNum_inp=0;
@@ -58,6 +130,8 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
+  std::string hybrid_rep("no");
+  std::string use_einspline_set_extended("no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
 #if defined(QMC_CUDA)
   std::string useGPU="yes";
 #else
@@ -72,16 +146,16 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (H5FileName, "href");
     a.add (TileFactor, "tile");
     a.add (sortBands,  "sort");
-    a.add (qafm,  "afmshift");
     a.add (TileMatrix, "tilematrix");
     a.add (TwistNum_inp,   "twistnum");
     a.add (givenTwist,   "twist");
     a.add (sourceName, "source");
     a.add (MeshFactor, "meshfactor");
+    a.add (hybrid_rep, "hybridrep");
     a.add (useGPU,     "gpu");
     a.add (spo_prec,   "precision");
     a.add (truncate,   "truncate");
-    a.add (BufferLayer, "buffer");
+    a.add (use_einspline_set_extended,"use_old_spline");
     a.add (myName, "tag");
 #if defined(QMC_CUDA)
     a.add (gpu::MaxGPUSpineSizeMB, "Spline_Size_Limit_MB");
@@ -104,7 +178,12 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   else
   { //keep the one-body distance table index 
-    myTableIndex=TargetPtcl.addTable(*SourcePtcl);
+#if defined(ENABLE_SOA)
+    myTableIndex=TargetPtcl.addTable(*SourcePtcl,DT_SOA_PREFERRED);
+#else
+    myTableIndex=TargetPtcl.addTable(*SourcePtcl,DT_AOS);
+#endif
+    SourcePtcl->addTable(*SourcePtcl,DT_SOA);
   }
 
   ///////////////////////////////////////////////
@@ -157,20 +236,20 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   else
     NewOcc=false;
 #if defined(QMC_CUDA)
-  app_log() << "\t  QMC_CUDA=1 Overwriting the precision of the einspline storage on the host.\n";
+  if(hybrid_rep=="yes") APP_ABORT("The 'hybridrep' feature of spline SPO has not been enabled on GPU. Stay tuned.");
+  app_log() << "\t  QMC_CUDA=1 Overwriting the einspline storage on the host to double precision.\n";
   spo_prec="double"; //overwrite
   truncate="no"; //overwrite
 #endif
 #if defined(MIXED_PRECISION)
-  app_log() << "\t  MIXED_PRECISION=1 Overwriting the precision of the einspline storage.\n";
+  app_log() << "\t  MIXED_PRECISION=1 Overwriting the einspline storage to single precision.\n";
   spo_prec="single"; //overwrite
 #endif
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
-  std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
+  std::map<H5OrbSet,SPOSet*,H5OrbSet>::iterator iter;
   iter = SPOSetMap.find (aset);
-  if ((iter != SPOSetMap.end() ) && (!NewOcc) && (qafm==0))
+  if ((iter != SPOSetMap.end() ) && (!NewOcc))
   {
-    qafm=0;
     app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
               << "cloning EinsplineSet object.\n";
     return iter->second->makeClone();
@@ -178,143 +257,78 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   if(FullBands[spinSet]==0) FullBands[spinSet]=new std::vector<BandInfo>;
 
-  Timer mytimer;
-  if(spinSet==0)
+  // Ensure the first SPO set must be spinSet==0
+  // to correctly initialize key data of EinsplineSetBuilder
+  if ( SPOSetMap.size()==0 && spinSet!=0 )
   {
-    // The tiling can be set by a simple vector, (e.g. 2x2x2), or by a
-    // full 3x3 matrix of integers.  If the tilematrix was not set in
-    // the input file...
-    bool matrixNotSet = true;
-    for (int i=0; i<3; i++)
-      for (int j=0; j<3; j++)
-        matrixNotSet = matrixNotSet && (TileMatrix(i,j) == 0);
-    // then set the matrix to what may have been specified in the
-    // tiling vector
-    if (matrixNotSet)
-      for (int i=0; i<3; i++)
-        for (int j=0; j<3; j++)
-          TileMatrix(i,j) = (i==j) ? TileFactor(i) : 0;
-    char buff[1000];
-    if (myComm->rank() == 0)
+    app_error() << "The first SPO set must have spindataset=\"0\"" << std::endl;
+    abort();
+  }
+
+  // set the internal parameters
+  if (spinSet == 0) set_metadata(numOrbs,TwistNum_inp);
+  //if (use_complex_orb == "yes") UseRealOrbitals = false; // override given user input
+
+  // look for <backflow>, would be a lot easier with xpath, but I cannot get it to work
+  bool has_backflow = false;
+
+  xmlNodePtr wf  = XMLRoot->parent; // <wavefuntion>
+  xmlNodePtr kid = wf->children;
+  while (kid != NULL)
+  {
+    std::string tag((const char*)(kid->name));
+    if (tag=="determinantset" || tag=="sposet_builder")
     {
-      snprintf (buff, 1000, "  TileMatrix = \n [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n",
-               TileMatrix(0,0), TileMatrix(0,1), TileMatrix(0,2),
-               TileMatrix(1,0), TileMatrix(1,1), TileMatrix(1,2),
-               TileMatrix(2,0), TileMatrix(2,1), TileMatrix(2,2));
-      app_log() << buff;
-    }  
-    if (numOrbs == 0)
-    {
-      app_error() << "You must specify the number of orbitals in the input file.\n";
-      APP_ABORT("EinsplineSetBuilder::createSPOSet");
-    }
-    else
-      app_log() << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
-    mytimer.restart();
-    /////////////////////////////////////////////////////////////////
-    // Read the basic orbital information, without reading all the //
-    // orbitals themselves.                                        //
-    /////////////////////////////////////////////////////////////////
-    if (myComm->rank() == 0)
-      if (!ReadOrbitalInfo())
+      xmlNodePtr kid1 = kid->children;
+      while (kid1 != NULL)
       {
-        app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
-        APP_ABORT("EinsplineSetBuilder::createSPOSet");
-      }
-    app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << mytimer.elapsed() << std::endl;
-    myComm->barrier();
-    mytimer.restart();
-    BroadcastOrbitalInfo();
+        std::string tag1((const char*)(kid1->name));
+        if (tag1=="backflow")
+        {
+          has_backflow = true;
+        }
+        kid1 = kid1->next;
+      } 
+    }
+    kid = kid->next; 
+  }
 
-    app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << mytimer.elapsed() << std::endl;
-    app_log().flush();
-
-    // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
-    PrimCell.set(Lattice);
-    SuperCell.set(SuperLattice);
-    GGt=dot(transpose(PrimCell.G), PrimCell.G);
-
-    for (int iat=0; iat<AtomicOrbitals.size(); iat++)
-      AtomicOrbitals[iat].Lattice = Lattice;
-    // Copy supercell into the ParticleSets
-    // app_log() << "Overwriting XML lattice with that from the ESHDF file.\n";
-    // PtclPoolType::iterator piter;
-    // for(piter = ParticleSets.begin(); piter != ParticleSets.end(); piter++)
-    //   piter->second->Lattice.copy(SuperCell);
-    TwistNum = TwistNum_inp;
-    AnalyzeTwists2();
-
-  } //use spinSet==0 to initialize shared properties of orbitals
+  if (has_backflow && use_einspline_set_extended=="yes" && UseRealOrbitals) APP_ABORT("backflow optimization is broken with UseRealOrbitals");
 
   //////////////////////////////////
   // Create the OrbitalSet object
   //////////////////////////////////
+  Timer mytimer;
   mytimer.restart();
-
   OccupyBands(spinSet, sortBands, numOrbs);
   if(spinSet==0) TileIons();
 
   bool use_single= (spo_prec == "single" || spo_prec == "float");
 
+  // safeguard for a removed feature
+  if(truncate=="yes") APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
+
+#if !defined(QMC_COMPLEX)
   if (UseRealOrbitals)
   {
     //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
     if(MixedSplineReader==0)
     {
-      if(truncate=="yes")
-      {
-        if(use_single)
-        {
-          if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<float,RealType,3> >(this);
-          else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<float,RealType,3> >(this);
-          else
-            MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,RealType,3> >(this);
-        }
-        else
-        {
-          if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<double,RealType,3> >(this);
-          else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<double,RealType,3> >(this);
-          else
-            MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<double,RealType,3> >(this);
-        }
-      }
+      if(use_single)
+        MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
       else
-      {
-        if(use_single)
-          MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,RealType,3> >(this);
-        else
-          MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<double,RealType,3> >(this);
-      }
+        MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes");
     }
   }
   else
+#endif
   {
     if(MixedSplineReader==0)
     {
-      if(truncate == "yes")
-      {
-        app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << std::endl;
-      }
       if(use_single)
-      {
-#if defined(QMC_COMPLEX)
-        MixedSplineReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<float,RealType,3> >(this);
-#else
-        MixedSplineReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<float,RealType,3> >(this);
-#endif
-      }
+        MixedSplineReader= createBsplineComplexSingle(this, hybrid_rep=="yes");
       else
-      {
-#if defined(QMC_COMPLEX)
-        MixedSplineReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<double,RealType,3> >(this);
-#else
-        MixedSplineReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<double,RealType,3> >(this);
-#endif
-      }
+        MixedSplineReader= createBsplineComplexDouble(this, hybrid_rep=="yes");
     }
   }
 
@@ -323,46 +337,65 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
   HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
-  SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
+  SPOSet* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
   if(!bspline_zd)
-    APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSetBase*");
+    APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSet*");
   delta_mem=qmc_common.memory_allocated-delta_mem;
   app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << std::endl;
   OrbitalSet = bspline_zd;
-#ifdef QMC_CUDA
-  EinsplineSet *new_OrbitalSet;
-  if (UseRealOrbitals)
+#if defined(MIXED_PRECISION)
+  if(use_einspline_set_extended=="yes")
   {
-    EinsplineSetExtended<double> *temp_OrbitalSet;
-    if (AtomicOrbitals.size() > 0)
-      temp_OrbitalSet = new EinsplineSetHybrid<double>;
-    else
-      temp_OrbitalSet = new EinsplineSetExtended<double>;
-    MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
-    new_OrbitalSet = temp_OrbitalSet;
+    app_error() << "Option use_old_spline is not supported by the mixed precision build!" << std::endl;
+    abort();
   }
-  else
+#else
+#ifndef QMC_CUDA
+  if(use_einspline_set_extended=="yes")
+#endif
   {
-    EinsplineSetExtended<std::complex<double> > *temp_OrbitalSet;
-    if (AtomicOrbitals.size() > 0)
-      temp_OrbitalSet = new EinsplineSetHybrid<std::complex<double> >;
-    else
-      temp_OrbitalSet = new EinsplineSetExtended<std::complex<double> >;
-    MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
-    temp_OrbitalSet->kPoints.resize(NumDistinctOrbitals);
-    temp_OrbitalSet->MakeTwoCopies.resize(NumDistinctOrbitals);
-    for (int iorb=0, num=0; iorb<NumDistinctOrbitals; iorb++)
+    EinsplineSet *new_OrbitalSet;
+    if (UseRealOrbitals)
     {
-      int ti = (*FullBands[spinSet])[iorb].TwistIndex;
-      temp_OrbitalSet->kPoints[iorb] = PrimCell.k_cart(TwistAngles[ti]);
-      temp_OrbitalSet->MakeTwoCopies[iorb] = (num < (numOrbs-1)) && (*FullBands[spinSet])[iorb].MakeTwoCopies;
-      num += temp_OrbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
+      EinsplineSetExtended<double> *temp_OrbitalSet;
+#if defined(QMC_CUDA)
+      if (AtomicOrbitals.size() > 0)
+        temp_OrbitalSet = new EinsplineSetHybrid<double>;
+      else
+#endif
+        temp_OrbitalSet = new EinsplineSetExtended<double>;
+      MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
+      temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
+      temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
+      //set the flags for anti periodic boundary conditions
+      temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptorBase<double,3> *>(OrbitalSet)->HalfG;
+      new_OrbitalSet = temp_OrbitalSet;
     }
-    new_OrbitalSet = temp_OrbitalSet;
+    else
+    {
+      EinsplineSetExtended<std::complex<double> > *temp_OrbitalSet;
+#if defined(QMC_CUDA)
+      if (AtomicOrbitals.size() > 0)
+        temp_OrbitalSet = new EinsplineSetHybrid<std::complex<double> >;
+      else
+#endif
+        temp_OrbitalSet = new EinsplineSetExtended<std::complex<double> >;
+      MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
+      temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
+      temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
+      for (int iorb=0, num=0; iorb<NumDistinctOrbitals; iorb++)
+      {
+        int ti = (*FullBands[spinSet])[iorb].TwistIndex;
+        temp_OrbitalSet->kPoints[iorb] = PrimCell.k_cart(TwistAngles[ti]);
+        temp_OrbitalSet->MakeTwoCopies[iorb] = (num < (numOrbs-1)) && (*FullBands[spinSet])[iorb].MakeTwoCopies;
+        num += temp_OrbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
+      }
+      new_OrbitalSet = temp_OrbitalSet;
+    }
+    //set the internal parameters
+    setTiling(new_OrbitalSet,numOrbs);
+    OrbitalSet = new_OrbitalSet;
   }
-  //set the internal parameters
-  setTiling(new_OrbitalSet,numOrbs);
-  OrbitalSet = new_OrbitalSet;
 #endif
 #ifdef Ye_debug
 #ifndef QMC_COMPLEX
@@ -434,7 +467,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   return OrbitalSet;
 }
 
-SPOSetBase* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
+SPOSet* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
 {
   update_token(__FILE__,__LINE__,"createSPOSet(cur,input_info)");
 
@@ -460,7 +493,7 @@ SPOSetBase* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& in
   int norb=input_info.max_index();
   H5OrbSet aset(H5FileName, spinSet, norb);
 
-  SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,cur,input_info);
+  SPOSet* bspline_zd=MixedSplineReader->create_spline_set(spinSet,cur,input_info);
   //APP_ABORT_TRACE(__FILE__,__LINE__,"DONE");
   if(bspline_zd)
     SPOSetMap[aset] = bspline_zd;

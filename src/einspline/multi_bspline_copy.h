@@ -59,6 +59,12 @@ extern "C" {
                             , int i, const UBspline_3d_d* spline_in
                             , const int* offset, const int* N);
 
+  void copy_UBspline_1d_d(multi_UBspline_1d_d* multi, int i
+      , const UBspline_1d_d* single, const int offset, const int N);
+
+  void copy_UBspline_1d_d_s(multi_UBspline_1d_s* multi, int i
+      , const UBspline_1d_d* single, const int offset, const int N);
+
 #ifdef __cplusplus
 }
 #endif

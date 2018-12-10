@@ -82,8 +82,3 @@ void expandSuperCell(ParticleSet& ref, Tensor<int,OHMMS_DIM>& tmat);
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

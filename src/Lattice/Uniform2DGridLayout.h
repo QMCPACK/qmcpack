@@ -22,7 +22,6 @@
 #endif
 #include <vector>
 #include <iostream>
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/CrystalLattice.h"
 #include "Lattice/UniformCartesianGrid.h"
 
@@ -258,7 +257,7 @@ public:
   ///UniformCartesianGrid for multi levels.
   std::vector<Grid_t*> SuperGrid;
 
-  ///offsets to determine cell conection
+  ///offsets to determine cell connection
   std::vector<int> c_offset, c_max;
 
   ///cell index connected to each cell
@@ -282,8 +281,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3232 $   $Date: 2008-09-30 12:59:05 -0500 (Tue, 30 Sep 2008) $
- * $Id: Uniform3DGridLayout.h 3232 2008-09-30 17:59:05Z jnkim $
- ***************************************************************************/

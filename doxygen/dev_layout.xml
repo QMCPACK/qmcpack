@@ -1,0 +1,6 @@
+<doxygenlayout version="1.0">
+  <navindex>
+    <tab type="user" url="../doxy/index.html" title="Main Page"/>
+    <tab type="mainpage" visiable="yes" url="index.html" title="Developers" intro="help for developers"/>
+  </navindex>
+</doxygenlayout>

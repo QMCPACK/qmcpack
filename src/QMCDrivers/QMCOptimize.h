@@ -42,8 +42,8 @@ class QMCOptimize: public QMCDriver
 public:
 
   ///Constructor.
-  QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-              QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+  QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+              HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
 
   ///Destructor
   ~QMCOptimize();
@@ -90,19 +90,11 @@ private:
   ///list of files storing configurations
   std::vector<std::string> ConfigFile;
   ///Copy Constructor (disabled).
-  QMCOptimize(const QMCOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }
+  QMCOptimize(const QMCOptimize &) = delete;
   ///Copy operator (disabled).
-  QMCOptimize& operator=(const QMCOptimize&)
-  {
-    return *this;
-  }
+  QMCOptimize & operator=(const QMCOptimize &) = delete;
 
   void generateSamples();
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 757 $   $Date: 2005-10-31 10:10:28 -0600 (Mon, 31 Oct 2005) $
- * $Id: QMCOptimize.h 757 2005-10-31 16:10:28Z jnkim $
- ***************************************************************************/

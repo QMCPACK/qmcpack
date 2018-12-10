@@ -94,16 +94,8 @@ public:
   IndexType NumWalkersSent;
   ///trial energy energy
   RealType trialEnergy;
-  ///target average energy
-  RealType targetAvg;
-  ///target average variance
-  RealType targetVar;
   ///target sigma to limit fluctuations of the trial energy
   RealType targetSigma;
-  ///bound of the energy window
-  RealType targetEnergyBound;
-  ///current variance
-  RealType curVar;
   ///number of particle per node
   std::vector<int> NumPerNode;
   ///offset of the particle index
@@ -125,12 +117,14 @@ public:
   std::vector<RealType> accumData;
   ///any temporary data
   std::vector<RealType> curData;
-  ///temporary storage for good walkers
-  std::vector<Walker_t*> good_w;
+  ///temporary storage for good and bad walkers
+  std::vector<Walker_t*> good_w, bad_w;
   ///temporary storage for copy counters
   std::vector<int> ncopy_w;
   ///Add released-node fields to .dmc.dat file
   bool WriteRN;
+  ///Use non-blocking isend/irecv
+  bool use_nonblocking;
 
   /** default constructor
    *
@@ -177,21 +171,17 @@ public:
     return curData[i];
   }
 
-  /** set the target average and variance
-   */
-  inline void setEnergyAndVariance(RealType e, RealType v)
-  {
-    trialEnergy=e;
-    targetAvg=e;
-    targetVar=v;
-  }
-
   /** update properties without branching */
   int doNotBranch(int iter, MCWalkerConfiguration& W);
 
   /** sort Walkers between good and bad and prepare branching
    */
   int sortWalkers(MCWalkerConfiguration& W);
+
+  /** apply per node limit Nmax and Nmin
+   */
+  int applyNmaxNmin();
+
   /** copy good walkers to W
    */
   int copyWalkers(MCWalkerConfiguration& W);
@@ -211,7 +201,7 @@ public:
 
   bool put(xmlNodePtr cur);
 
-
+  void setMinMax(int nw_in, int nmax_in);
 
 //     struct ForwardWalkingData
 //     {
@@ -317,9 +307,4 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

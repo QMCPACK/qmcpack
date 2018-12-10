@@ -1,0 +1,34 @@
+
+NiO-j3-vmc-ref  series 1 
+  LocalEnergy           =        -370.88498 +/-          0.00088 
+  Variance              =            11.118 +/-            0.031 
+  Kinetic               =           230.555 +/-            0.020 
+  LocalPotential        =          -601.440 +/-            0.020 
+  ElecElec              =           78.3624 +/-           0.0077 
+  LocalECP              =          -389.971 +/-            0.022 
+  NonLocalECP           =           -50.534 +/-            0.012 
+  IonIon                =           -239.30 +/-             0.00 
+  LocalEnergy_sq        =         137566.78 +/-             0.65 
+  BlockWeight           =         204800.00 +/-             0.00 
+  BlockCPU              =           3.24586 +/-          0.00018 
+  AcceptRatio           =         0.2257582 +/-        0.0000083 
+  Efficiency            =             69.68 +/-             0.00 
+  TotalTime             =            324.59 +/-             0.00 
+  TotalSamples          =          20480000 +/-                0 
+
+NiO-vmc-ref  series 1 
+  LocalEnergy           =         -370.7944 +/-           0.0011 
+  Variance              =            12.836 +/-            0.052 
+  Kinetic               =           230.471 +/-            0.018 
+  LocalPotential        =          -601.265 +/-            0.018 
+  ElecElec              =           78.4679 +/-           0.0075 
+  LocalECP              =          -389.958 +/-            0.018 
+  NonLocalECP           =           -50.477 +/-            0.011 
+  IonIon                =           -239.30 +/-             0.00 
+  LocalEnergy_sq        =         137501.36 +/-             0.83 
+  BlockWeight           =         204800.00 +/-             0.00 
+  BlockCPU              =           2.60780 +/-          0.00028 
+  AcceptRatio           =         0.2253455 +/-        0.0000086 
+  Efficiency            =             53.89 +/-             0.00 
+  TotalTime             =            260.78 +/-             0.00 
+  TotalSamples          =          20480000 +/-                0 

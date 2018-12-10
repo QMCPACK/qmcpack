@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<simulation method="afqmc">
+  <project id="qmc_hybrid" series="0"/>
+
+  <AFQMCInfo name="info0">
+    <parameter name="NMO">26</parameter>
+    <parameter name="NAEA">4</parameter>
+    <parameter name="NAEB">4</parameter>
+  </AFQMCInfo>
+
+  <Hamiltonian name="ham0" type="SparseGeneral" info="info0">
+    <parameter name="filetype">fcidump</parameter>
+    <parameter name="filename">./pyscf/fcidump.gamma.dat</parameter>
+    <parameter name="cutoff_decomposition">1e-5</parameter>
+  </Hamiltonian>
+
+  <Wavefunction name="wfn0" info="info0">
+    <ImpSamp name="impsamp0" type="PureSD" init="ground">
+      <parameter name="filetype">none</parameter>
+      <parameter name="cutoff">1e-5</parameter>
+    </ImpSamp>
+    <Estimator name="impsamp0"/>
+  </Wavefunction>
+
+  <WalkerSet name="wset0" type="distributed">
+  </WalkerSet>
+
+  <Propagator name="prop0" info="info0">
+    <parameter name="hybrid">yes</parameter>
+  </Propagator>
+
+  <execute wset="wset0" ham="ham0" wfn="wfn0" prop="prop0" info="info0">
+    <parameter name="timestep">0.01</parameter>
+    <parameter name="blocks">250</parameter>
+    <parameter name="steps">2000</parameter>
+    <parameter name="substeps">4</parameter>
+    <parameter name="nWalkers">10</parameter>
+  </execute>
+
+</simulation>

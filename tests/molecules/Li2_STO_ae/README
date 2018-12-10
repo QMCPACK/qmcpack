@@ -1,0 +1,203 @@
+This test reproduces Li2 STO + Pade Jastrow runs from Umrigar, 
+Nightingale, and Runge (UNR)
+
+Reference: C. J. Umrigar et al., J. Chem. Phys. 99 2865 (1993)
+DOI:       http://dx.doi.org/10.1063/1.465195
+
+As part of the test development, the behavior of the QMCPACK Green's 
+function has been compared to the UNR results as a function of 
+timestep.  Here we relate the timestep behavior comparison for 
+validation purposes before going into details specific to the tests. 
+
+
+UNR Reference Data
+==================
+Reference total energies from UNR for VMC and DMC are:
+
+VMC  -14.9472(2) Ha
+DMC  -14.9890(2) Ha (extrapolated to zero timestep)
+
+Other data from UNR include the DMC variance and autocorrelation time, 
+among other quantities (UNR Table III):
+
+sigma : sqrt(variance) (Ha)
+tcorr : auto-correlation time (steps)
+teff/t: ratio of effective to inputted timestep
+ar    : acceptance ratio
+
+tau    sigma tcorr  teff/t   ar  
+0.010  0.408  33.4   0.963   0.968
+0.050  0.390  11.5   0.836   0.858
+0.100  0.378   5.1   0.751   0.786
+0.150  0.371   4.5   0.710   0.753
+0.200  0.370   3.6   0.689   0.740
+0.250  0.368   3.3   0.679   0.734
+
+UNR also includes plots of the DMC total energy and kinetic energy as 
+a function of timestep (Figures 7 and 11, respectively).  The data 
+from UNR Fig. 7 (including the statistical error bars) have been 
+extracted using the "Web Plot Digitizer" tool online at 
+http://arohatgi.info/WebPlotDigitizer/app/.  Systematic errors 
+introduced by the extraction process are estimated to be ~1% of the 
+axis scale, which translates into ~0.00002 Ha for the energy values.  
+This estimate is quantitative since the x-axis values (timesteps) are 
+known.  The extracted data are:
+
+tau       E_DMC        errorbar
+0.2500  -14.993939 +/- 0.000077
+0.2250  -14.992622 +/- 0.000122
+0.2000  -14.992026 +/- 0.000122
+0.1750  -14.991245 +/- 0.000122
+0.1500  -14.990342 +/- 0.000122
+0.1250  -14.989867 +/- 0.000138
+0.1000  -14.989378 +/- 0.000138
+0.0750  -14.989224 +/- 0.000138
+0.0500  -14.988888 +/- 0.000199
+0.0250  -14.988781 +/- 0.000184
+0.0100  -14.989469 +/- 0.000352
+
+
+Comparison of QMCPACK with UNR
+==============================
+Current (v3.2.0) and historical (SVN rev. 6259) QMCPACK total energy 
+values agree with the quoted VMC and extracted DMC values from UNR:
+
+       VMC          DMC (tau=0.01/Ha)
+6259  -14.94721(5) -14.98944(6)
+v320  -14.9470(2)  -14.98949(8)
+UNR   -14.9472(2)  -14.9895(4) 
+
+The timestep study above was recreated with QMCPACK v3.2.0 (see 
+UNR_timestep_comparison directory).  The resulting QMCPACK data 
+are:
+
+tau       E_DMC        errorbar
+0.2500  -15.027879 +/- 0.000462
+0.2250  -15.015879 +/- 0.000119
+0.2000  -15.008000 +/- 0.000077
+0.1750  -15.002293 +/- 0.000069
+0.1500  -14.997681 +/- 0.000069
+0.1250  -14.994168 +/- 0.000069
+0.1000  -14.991667 +/- 0.000068
+0.0750  -14.989910 +/- 0.000070
+0.0500  -14.989020 +/- 0.000084
+0.0250  -14.988972 +/- 0.000080
+0.0100  -14.989505 +/- 0.000078
+0.0050  -14.989772 +/- 0.000067
+
+Comparison plots (with corresponding pdf image files) of the QMCPACK 
+and UNR results can be generated with the script E_DMC_vs_tau.py.  
+The QMCPACK input file used to generate these data is 
+Li2.STO.textrap.in.xml and the raw data from the UNR Fig. 7 extraction 
+is found in UNR_Fig7_E_DMC_vs_tau.csv.
+
+The QMCPACK and UNR data agree closely for timesteps in the range 
+0.025/Ha<tau<0.05/Ha with QMCPACK demonstrating a larger timestep 
+error than UNR beyond 0.05/Ha.  The estimated zero timestep limit 
+of UNR and QMCPACK differ slightly by about 1 mHa:
+
+      E_DMC (t=0 quadratic extrapolation)
+v320 -14.98997(7) Ha 
+UNR  -14.9890(2)  Ha
+
+A comparison between QMCPACK and UNR results for the variance 
+(sigma^2), autocorrelation time, effective timestep, and acceptance 
+ratio are shown below as a function of timestep.  In each case, the 
+first line corresponds to UNR data (from Table III) and the second 
+line is from QMCPACK v3.2.0.
+
+tau    0.010  0.050  0.100  0.150  0.200  0.250
+
+sigma  0.408  0.390  0.378  0.371  0.370  0.368
+       0.389  0.390  0.392  0.396  0.400  0.411  
+
+tcorr   33.4   11.5    5.1    4.5    3.6    3.3
+        40.3    9.0    4.9    6.0    7.2   15.9
+
+teff/t 0.963  0.836  0.751  0.710  0.689  0.679
+       0.979  0.855  0.738  0.647  0.586  0.539
+
+ar     0.968  0.858  0.786  0.753  0.740  0.734
+       0.988  0.913  0.827  0.758  0.701  0.654
+
+
+Test details
+============
+The tests include short and long VMC and DMC (tau=0.01/Ha) runs for a 
+Li dimer. The wavefunction is of Slater-Jastrow form with the Slater 
+determinant orbitals represented in a Slater-type orbital (STO) 
+exponential basis. The Jastrow factor is represented with simple Pade 
+functions.  All wavefunction parameters were taken from UNR.  The 
+original QMCPACK input file was recovered from the informally managed 
+qmcdb.  This test was likely used during early QMCPACK development and 
+testing.  Reference data for the tests was produced with QMCPACK SVN 
+revision 6259.
+
+Reference data was generated with runs the same overall length 
+(blocks x steps) as those included in ./qmc-ref, but using 10x more 
+blocks (8000) and 10x fewer steps.  Using more blocks reduced the 
+statistical error of the error bars, but resulted in output data files 
+that were too large to include in the QMCPACK distribution.  The 
+reference values and error bars were therefore computed from the 8000 
+block runs.  The included reference runs were confirmed to be 
+consistent with the original higher block count runs.
+
+Reference data from the high block count runs is found below:
+
+                   LocalEnergy             Variance               ratio
+Li2.STO series 0  -14.947214 +/- 0.000050  0.170618 +/- 0.000103  0.0114 
+Li2.STO series 1  -14.988797 +/- 0.001006  0.151149 +/- 0.000845  0.0101 
+Li2.STO series 2  -14.989438 +/- 0.000064  0.151118 +/- 0.000031  0.0101 
+
+
+For comparison, corresponding data for the lower block count reference 
+data found in ./qmc-ref is:
+
+>qmca -e 2 -q ev *scalar*
+                   LocalEnergy             Variance               ratio
+Li2.STO series 0  -14.947224 +/- 0.000051  0.170596 +/- 0.000109  0.0114 
+Li2.STO series 1  -14.986769 +/- 0.001208  0.151474 +/- 0.001493  0.0101 
+Li2.STO series 2  -14.989479 +/- 0.000062  0.151159 +/- 0.000035  0.0101 
+
+Test input files were created by reducing the number of steps from the 
+included reference by a factor of 10 for the "long" tests and by a 
+further factor of 10 for the "short" tests.
+
+Reference values for the mean local energy and variance were taken 
+from the high block count reference runs.  Expected error bars were 
+derived from the high block count data by multiplying the reference 
+error bars by a factor of sqrt(10+1) and sqrt(100+1) for the long 
+and short tests, respectively.  The factor of +1 accounts for the 
+error bar intrinsic to the high block count runs.
+
+The target means and error bars for long and short tests are:
+
+                refmean   referr    longerr   shorterr
+VMC  energy   -14.947214  0.000050  0.000166  0.000502
+     variance   0.170618  0.000103  0.000342  0.001035
+DMC  energy   -14.989438  0.000064  0.000212  0.000643
+     variance   0.151118  0.000031  0.000103  0.000312
+
+Error bars from typical long and short runs are shown below:
+
+Typical long run results:
+>qmca -e 2 -q ev *long*scalar*
+                        LocalEnergy             Variance               ratio 
+Li2.STO.long series 0  -14.947014 +/- 0.000152  0.170796 +/- 0.000357  0.0114 
+Li2.STO.long series 1  -14.988692 +/- 0.001624  0.151845 +/- 0.000494  0.0101 
+Li2.STO.long series 2  -14.989612 +/- 0.000216  0.151080 +/- 0.000094  0.0101 
+
+Typical short run results:
+>qmca -e 2 -q ev *short*scalar*
+                         LocalEnergy             Variance               ratio 
+Li2.STO.short series 0  -14.946531 +/- 0.000525  0.171710 +/- 0.001163  0.0115 
+Li2.STO.short series 1  -14.988802 +/- 0.000887  0.152505 +/- 0.000782  0.0102 
+Li2.STO.short series 2  -14.988719 +/- 0.000536  0.150840 +/- 0.000252  0.0101 
+
+Rough timings for the tests on an old (circa 2013) AMD system are:
+
+>grep 'Total Exe' *long*.out
+  Total Execution time = 4.2856237206e+02 secs
+
+>grep 'Total Exe' *short*.out
+  Total Execution time = 4.6398911903e+01 secs

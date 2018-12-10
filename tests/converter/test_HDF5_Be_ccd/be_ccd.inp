@@ -1,0 +1,7 @@
+ $contrl coord=cart icharg=0 ispher=1 mult=1 scftyp=rhf  $end
+ $basis  gbasis=CCD  $end
+ $DATA
+A molecule.
+C1
+Be 4.00       0.00000000       0.00000000       0.00000000
+ $END

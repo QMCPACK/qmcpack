@@ -9,8 +9,8 @@
 //
 // File created by: Anouar Benali, benali@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 
 
 
@@ -75,17 +75,17 @@ GamesFMOParser::GamesFMOParser(int argc, char** argv):
 
 void GamesFMOParser::parse(const std::string& fname)
 {
-  
+
   std::streampos pivot;
   std::ifstream fin(fname.c_str());
   pivot_begin= fin.tellg();
   std::string aline;
   int count;
 
-  IDmer *IDDimer; 
-  IDmer *IDTrimer; 
+  IDmer *IDDimer;
+  IDmer *IDTrimer;
 
-   
+
 
   fin.seekg(pivot_begin);
 
@@ -114,18 +114,18 @@ void GamesFMOParser::parse(const std::string& fname)
   parsewords(aline.c_str(),currentWords);
   FMOMethod = atoi(currentWords[2].c_str());
 
-  
+
   if(FMOMethod==3 && NumTrimer==0){
      std::cerr <<" Problem in the Input file! FMO level is 3 but the number of Trimers is 0"<< std::endl;
      abort();
-  } 
+  }
   std::cout <<" Tot Atoms="<<TotNumAtom<<" NumMonomer="<<NumMonomer<<"  NumDimer="<<NumDimer<<"  NumTrimer="<<NumTrimer<<"  FMOMethod="<<FMOMethod<< std::endl;
 
   MOtype = "Canonical";
   readtype=0;
   TotNumMonomer=NumMonomer;
-  
-  
+
+
 
 
   IDMonomer = new std::string[NumMonomer];
@@ -137,17 +137,17 @@ void GamesFMOParser::parse(const std::string& fname)
   ESPGroupName.resize(NumMonomer);
   ESP.resize(NumMonomer);
 
-  
+
   for (int iesp=0;iesp<NumMonomer;iesp++){
      ESPIonChargeIndex[iesp]=ESPSystem[iesp].getSpeciesSet().addAttribute("charge");
      ESPValenceChargeIndex[iesp]=ESPSystem[iesp].getSpeciesSet().addAttribute("valence");
      ESPAtomicNumberIndex[iesp]=ESPSystem[iesp].getSpeciesSet().addAttribute("atomicnumber");
   }
 
-  
+
   pivot= fin.tellg();
   for(int i=0;i<NumMonomer;i++)
-  { 
+  {
      fin.seekg(pivot);
      std::ostringstream convert;
      convert <<i+1;
@@ -205,7 +205,7 @@ void GamesFMOParser::parse(const std::string& fname)
   Tot_Monomer = new Monomer[NumMonomer];
 
   for(int Mer=0;Mer<FMOMethod;Mer++)
-  { 
+  {
      int This=0;
      if (Mer==0){
         This=NumMonomer;
@@ -213,7 +213,7 @@ void GamesFMOParser::parse(const std::string& fname)
         FMO1=true;
         FMO2=false;
         FMO3=false;
-     } 
+     }
 
      if (Mer==1){
         This=NumDimer;
@@ -221,7 +221,7 @@ void GamesFMOParser::parse(const std::string& fname)
         FMO1=false;
         FMO2=true;
         FMO3=false;
-     } 
+     }
 
      if (Mer==2){
         This=NumTrimer;
@@ -229,7 +229,7 @@ void GamesFMOParser::parse(const std::string& fname)
         FMO1=false;
         FMO2=false;
         FMO3=true;
-     } 
+     }
 
      for (int i=0; i<This; i++)
      {
@@ -246,7 +246,7 @@ void GamesFMOParser::parse(const std::string& fname)
            Frag_Tag="Monomer"+convert.str();
            Mono=true;
            temp_tag=IDMonomer[i];
-           
+
            FMOIndexI=i;
            FMOIndexJ=FMOIndexK=0;
            MonomerID++;
@@ -261,7 +261,7 @@ void GamesFMOParser::parse(const std::string& fname)
            FMOIndexJ=IDDimer[i].IndexJ;
            FMOIndexK=IDDimer[i].IndexK;
          }
- 
+
          if(FMOMethod==3){
             if (Mer==2){
               std::ostringstream convert;
@@ -274,28 +274,28 @@ void GamesFMOParser::parse(const std::string& fname)
             }
          }
 
-         
+
          if(lookFor(fin,temp_tag,aline))
          {
             std::cout <<"temp_tag="<<temp_tag<< std::endl;
-            search(fin,"NUMBER OF ATOMS IN FRAGMENT",aline); 
+            search(fin,"NUMBER OF ATOMS IN FRAGMENT",aline);
             parsewords(aline.c_str(),currentWords);
-            NumberOfAtoms= atoi(currentWords[5].c_str());  
+            NumberOfAtoms= atoi(currentWords[5].c_str());
             std::cout <<"Total Number of Atoms="<<NumberOfAtoms<< std::endl;
 
-            search(fin,"NUMBER OF CARTESIAN ATOMIC ORBITALS",aline); 
+            search(fin,"NUMBER OF CARTESIAN ATOMIC ORBITALS",aline);
             parsewords(aline.c_str(),currentWords);
-            SizeOfBasisSet= atoi(currentWords[5].c_str());  
+            SizeOfBasisSet= atoi(currentWords[5].c_str());
             std::cout <<"Number of Cartesian atomic orbitals="<<SizeOfBasisSet<< std::endl;
 
 
-            search(fin,"SPIN MULTIPLICITY",aline); 
+            search(fin,"SPIN MULTIPLICITY",aline);
             parsewords(aline.c_str(),currentWords);
-            SpinMultiplicity= atoi(currentWords[2].c_str());  
+            SpinMultiplicity= atoi(currentWords[2].c_str());
             std::cout <<"SpinMultiplicity="<<SpinMultiplicity<< std::endl;
             search(fin,"NUMBER OF ELECTRONS ",aline);
             parsewords(aline.c_str(),currentWords);
-            NumberOfEls= atoi(currentWords[3].c_str());  
+            NumberOfEls= atoi(currentWords[3].c_str());
             std::cout <<"Number of electrons="<<NumberOfEls<< std::endl;
             search(fin,"NUMBER OF OCCUPIED ORBITALS (ALPHA)",aline);
             parsewords(aline.c_str(),currentWords);
@@ -305,7 +305,7 @@ void GamesFMOParser::parse(const std::string& fname)
             parsewords(aline.c_str(),currentWords);
             NumberOfBeta = atoi(currentWords[5].c_str());
             std::cout <<"Number of beta electrons: " <<NumberOfBeta << std::endl;
- 
+
 
 
             IonSystem.setName(ion_tag);
@@ -313,25 +313,25 @@ void GamesFMOParser::parse(const std::string& fname)
 
             GroupName.resize(NumberOfAtoms);
             getGeometry(fin);
-  
-            search(fin,"TOTAL NUMBER OF MOS IN VARIATION SPACE",aline); 
+
+            search(fin,"TOTAL NUMBER OF MOS IN VARIATION SPACE",aline);
             parsewords(aline.c_str(),currentWords);
-            numMO= atoi(currentWords[7].c_str());  
+            numMO= atoi(currentWords[7].c_str());
             std::cout <<"Number of Molecular Orbitals="<<numMO<< std::endl;
-            
- 
+
+
             fin.seekg(pivot_begin);
             getGaussianCenters(fin);
             fin.seekg(pivot_begin);
             search(fin,temp_tag,aline);
             //Looking for Eigenvectors
             lookFor(fin,"ATOM CHARGE        X                 Y                 Z (ANGST)   ESP CHARGE");
- 
+
             getMO(fin,temp_tag);
             Fmodump(psi_tag, ion_tag,Frag_Tag);
-             
-            
-            IonSystem.clear();   
+
+
+            IonSystem.clear();
             GroupName.clear();
             fin.close();
          }
@@ -339,7 +339,7 @@ void GamesFMOParser::parse(const std::string& fname)
          {
             std::cerr <<"Could not find all atoms in FMO-Games output"<< std::endl;
             std::cerr <<"	  Problem in "<<temp_tag<< std::endl;
-            abort(); 
+            abort();
          }
       }
    }
@@ -349,10 +349,10 @@ void GamesFMOParser::parse(const std::string& fname)
    }
    ESPGroupName.clear();
    if (FMOMethod==3)
-      delete [] IDTrimer; 
-   
-   delete [] IDMonomer; 
-   delete [] IDDimer; 
+      delete [] IDTrimer;
+
+   delete [] IDMonomer;
+   delete [] IDDimer;
    delete [] Tot_Monomer;
    delete [] ESPIonChargeIndex;
    delete [] ESPValenceChargeIndex;
@@ -377,9 +377,9 @@ void GamesFMOParser::getAllMonomer(std::istream& is, int Index)
   if(search(is,IDMonomer[Index],aline))
   {
     getwords(currentWords,is);
-    MyAtoms= atoi(currentWords[5].c_str());  
-    
-    std::ostringstream temp; 
+    MyAtoms= atoi(currentWords[5].c_str());
+
+    std::ostringstream temp;
     std::string ESP_ion_tag;
     temp<<Index;
     ESP_ion_tag="ESP_Charge"+temp.str();
@@ -387,7 +387,7 @@ void GamesFMOParser::getAllMonomer(std::istream& is, int Index)
     ESPSystem[Index].create(MyAtoms);
     ESPGroupName[Index].resize(MyAtoms);
 
- 
+
     search(is,"ATOM CHARGE        X                 Y                 Z (ANGST)   ESP CHARGE",aline);
     parsewords(aline.c_str(),currentWords);
     if(currentWords[0] == "ATOM" &&
@@ -401,7 +401,7 @@ void GamesFMOParser::getAllMonomer(std::istream& is, int Index)
           double z=atof(currentWords[1].c_str());
           int zint = (int)z;
           atomic_number.push_back(zint);
-          q.push_back(z); 
+          q.push_back(z);
           tags.push_back(currentWords[0]);
           pos.push_back(atof(currentWords[2].c_str()));
           pos.push_back(atof(currentWords[3].c_str()));
@@ -421,7 +421,7 @@ void GamesFMOParser::getAllMonomer(std::istream& is, int Index)
       std::cerr <<"Could not find atomic coordinates for all atoms. \n";
       abort();
     }
- 
+
     SpeciesSet& ESPspecies(ESPSystem[Index].getSpeciesSet());
     for(int i=0, ii=0; i<MyAtoms; i++)
      {
@@ -439,7 +439,7 @@ void GamesFMOParser::getAllMonomer(std::istream& is, int Index)
        ESPspecies(ESPAtomicNumberIndex[Index],speciesID)=1;
        ESPspecies(ESPIonChargeIndex[Index],speciesID)=ESP[Index][i];
       }
-    
+
     ESPSystem[Index].R *= ang_to_bohr;
 
   }
@@ -471,12 +471,12 @@ void GamesFMOParser::getGeometry(std::istream& is)
         double z=atof(currentWords[1].c_str());
         int zint = (int)z;  // is this dangerous???
         atomic_number.push_back(zint);
-        q.push_back(z);  
+        q.push_back(z);
         tags.push_back(currentWords[0]);
         pos.push_back(atof(currentWords[2].c_str()));
         pos.push_back(atof(currentWords[3].c_str()));
         pos.push_back(atof(currentWords[4].c_str()));
-        //cout<<"Atom number "<<natms<<"  Words:"<<currentWords[0]<<"   "<< currentWords[2]<<"   "<< currentWords[3]<<"   "<< currentWords[4]<<"   "<< std::endl; 
+        //cout<<"Atom number "<<natms<<"  Words:"<<currentWords[0]<<"   "<< currentWords[2]<<"   "<< currentWords[3]<<"   "<< currentWords[4]<<"   "<< std::endl;
         getwords(currentWords,is);
 
       }
@@ -514,9 +514,8 @@ void GamesFMOParser::getGeometry(std::istream& is)
 
 void GamesFMOParser::getGaussianCenters(std::istream& is)
 {
+  int ng;
   gBound.resize(NumberOfAtoms+1);
-  int ng,nx;
-  int OldShell=1;
   std::string aline;
   std::map<std::string,int> basisDataMap;
   int nUniqAt=0;
@@ -530,7 +529,7 @@ void GamesFMOParser::getGaussianCenters(std::istream& is)
   }
 
   std::vector<std::vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
-  std::vector<int> nshll(nUniqAt,0); //use this to 
+  std::vector<int> nshll(nUniqAt,0); //use this to
   std::vector<std::vector<int> > ncoeffpershell(nUniqAt);
   std::vector<std::vector<std::string> > shID(nUniqAt);
   std::map<std::string,int> gsMap;
@@ -637,9 +636,11 @@ void GamesFMOParser::getGaussianCenters(std::istream& is)
               std::cerr <<"Can't handle H basis states or higher yet. Fix later.\n";
               abort();
             }
-            std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
-              << ncoeffpershell[currPos][nshll[currPos]] 
-              << " " << shID[currPos][nshll[currPos]] << std::endl;
+            if (debug){
+              std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " "
+                << ncoeffpershell[currPos][nshll[currPos]]
+                << " " << shID[currPos][nshll[currPos]] << std::endl;
+            }
           }
         }
       }
@@ -685,13 +686,13 @@ void GamesFMOParser::getMO(std::istream& is,std::string temp_tag)
   EigVec.resize(2*SizeOfBasisSet*numMO);
   std::string aline;
   for(int i=0;i<NumberOfAtoms;i++)
-     getwords(currentWords,is);  
+     getwords(currentWords,is);
   getwords(currentWords,is);  // ----------------------
-  getwords(currentWords,is);  //  TOTAL NUMBER OF MOS IN VARIATION SPACE 
-  getwords(currentWords,is);  //  Empty Line 
+  getwords(currentWords,is);  //  TOTAL NUMBER OF MOS IN VARIATION SPACE
+  getwords(currentWords,is);  //  Empty Line
 
 
-  
+
   std::vector<double> dummy(50);
   Matrix<double> CartMat(numMO,SizeOfBasisSet);
   std::streampos pivot;
@@ -731,7 +732,7 @@ void GamesFMOParser::getMO(std::istream& is,std::string temp_tag)
   {
     search(is,temp_tag);
     for(int i=0;i<NumberOfAtoms;i++)
-       getwords(currentWords,is);  
+       getwords(currentWords,is);
 
     getwords(currentWords,is);  // ----------------------
     getwords(currentWords,is);  // empty line

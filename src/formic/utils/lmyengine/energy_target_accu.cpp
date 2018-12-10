@@ -130,7 +130,7 @@ double cqmc::engine::ETCompute::bvar(const int nblocks) const
   // compute avergae of each block across all processes
   std::vector<double> full_avgs; 
   full_avgs.assign(nblocks, 0.0);
-  formic::mpi::reduce(&avgs.at(0), &full_avgs.at(0), nblocks, MPI::SUM);
+  formic::mpi::reduce(&avgs.at(0), &full_avgs.at(0), nblocks, MPI_SUM);
   for (int i = 0; i < nblocks; i++) {
     full_avgs.at(i) /= double(rank_num);
   }
@@ -388,7 +388,7 @@ double cqmc::engine::ETCompute::target_fn_serr(std::ostream & fout, const bool p
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// \brief funciton that calculates average energy and target function value
+// \brief function that calculates average energy and target function value
 //
 //
 //
@@ -454,11 +454,6 @@ void cqmc::engine::ETCompute::print_statistics(std::ostream & fout)
   int num_rank = formic::mpi::size();
   //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
   //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
-  // compute mean and variance 
-  double mean = 0.0;
-  if ( !_ground_state )
-    mean = _hd_shift - 1.0 / _target_fn_val;
 
   double le_mean = _energy;
       

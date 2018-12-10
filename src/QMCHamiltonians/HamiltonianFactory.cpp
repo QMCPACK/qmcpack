@@ -26,11 +26,11 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
-#include "QMCHamiltonians/NumericalRadialPotential.h"
+#include "QMCHamiltonians/SpeciesKineticEnergy.h"
+#include "QMCHamiltonians/LatticeDeviationEstimator.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
 #include "QMCHamiltonians/Pressure.h"
 #include "QMCHamiltonians/ForwardWalking.h"
-#include "QMCHamiltonians/NumberFluctuations.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
@@ -41,36 +41,15 @@
 #include "QMCHamiltonians/OrbitalImages.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "QMCHamiltonians/EnergyDensityEstimator.h"
-#include "QMCHamiltonians/NearestNeighborsEstimator.h"
 #include "QMCHamiltonians/DensityMatrices1B.h"
 #endif
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #include "QMCHamiltonians/SkAllEstimator.h"
-#if defined(HAVE_LIBFFTW_LS)
-#include "QMCHamiltonians/ModInsKineticEnergy.h"
-#include "QMCHamiltonians/MomentumDistribution.h"
-#include "QMCHamiltonians/DispersionRelation.h"
-#endif
 #endif
 // #include "QMCHamiltonians/ZeroVarObs.h"
 #if !defined(QMC_CUDA) && QMC_BUILD_LEVEL>2
-#include "QMCHamiltonians/HardSphere.h"
-#include "QMCHamiltonians/GaussianPot.h"
-#include "QMCHamiltonians/HusePot.h"
-#include "QMCHamiltonians/OscillatoryPot.h"
 #include "QMCHamiltonians/SkPot.h"
-#include "QMCHamiltonians/ModPosTelPot.h"
-#include "QMCHamiltonians/HFDHE2Potential_tail.h"
-#include "QMCHamiltonians/HePressure.h"
-#include "QMCHamiltonians/JelliumPotential.h"
-#include "QMCHamiltonians/HFDHE2Potential.h"
-#include "QMCHamiltonians/HeEPotential.h"
-#include "QMCHamiltonians/HeEPotential_tail.h"
-#include "QMCHamiltonians/LennardJones_smoothed.h"
-#include "QMCHamiltonians/HFDHE2_Moroni1995.h"
-//#include "QMCHamiltonians/HFDBHE_smoothed.h"
-#include "QMCHamiltonians/HeSAPT_smoothed.h"
 #endif
 #include "OhmmsData/AttributeSet.h"
 #ifdef QMC_CUDA
@@ -177,36 +156,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         addCoulombPotential(cur);
       }
 #if !defined(QMC_CUDA) && QMC_BUILD_LEVEL>2
-      else if (potType == "hardsphere")
-      {
-        HardSphere* hs = new HardSphere(*targetPtcl);
-        hs->put(cur);
-        targetH->addOperator(hs,"HardSphere",true);
-      }
-      else if (potType == "gaussian")
-      {
-        GaussianPot* hs = new GaussianPot(*targetPtcl);
-        hs->put(cur);
-        targetH->addOperator(hs,"GaussianPot",true);
-      }
-      else if (potType == "huse")
-      {
-        HusePot* hs = new HusePot(*targetPtcl);
-        hs->put(cur);
-        targetH->addOperator(hs,"HusePot",true);
-      }
-      else if (potType == "modpostel")
-      {
-        ModPoschlTeller* hs = new ModPoschlTeller(*targetPtcl);
-        hs->put(cur);
-        targetH->addOperator(hs,"ModPoschlTeller",true);
-      }
-      else if (potType == "oscillatory")
-      {
-        OscillatoryPotential* hs = new OscillatoryPotential(*targetPtcl);
-        hs->put(cur);
-        targetH->addOperator(hs,"OscillatoryPotential",true);
-      }
       else if (potType == "skpot")
       {
         SkPot* hs = new SkPot(*targetPtcl);
@@ -215,17 +164,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       }
 #endif
 #if OHMMS_DIM==3
-      /*
-         else if (potType == "HFDBHE_smoothed") {
-         HFDBHE_smoothed_phy* HFD = new HFDBHE_smoothed_phy(*targetPtcl);
-         targetH->addOperator(HFD,"HFD-B(He)",true);
-         HFD->addCorrection(*targetH);
-         }
-         */
       else if (potType == "MPC" || potType == "mpc")
         addMPCPotential(cur);
-      else if (potType == "VHXC" || potType == "vhxc")
-        addVHXCPotential(cur);
       else if(potType == "pseudo")
         addPseudoPotential(cur);
 #if !defined(QMC_CUDA) && QMC_BUILD_LEVEL>2
@@ -233,79 +173,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         addCorePolPotential(cur);
       }
-      else if (potType == "LJP_smoothed")
-      {
-        LennardJones_smoothed_phy* LJP = new LennardJones_smoothed_phy(*targetPtcl);
-        targetH->addOperator(LJP,"LJP",true);
-        LJP->addCorrection(*targetH);
-      }
-      else if (potType == "HeSAPT_smoothed")
-      {
-        HeSAPT_smoothed_phy* SAPT = new HeSAPT_smoothed_phy(*targetPtcl);
-        targetH->addOperator(SAPT,"HeSAPT",true);
-        SAPT->addCorrection(*targetH);
-      }
-      else if (potType == "HFDHE2_Moroni1995")
-      {
-        HFDHE2_Moroni1995_phy* HFD = new HFDHE2_Moroni1995_phy(*targetPtcl);
-        targetH->addOperator(HFD,"HFD-HE2",true);
-        HFD->addCorrection(*targetH);
-      }
-      else if(potType == "eHe")
-      {
-        std::string SourceName = "e";
-        OhmmsAttributeSet hAttrib;
-        hAttrib.add(SourceName, "source");
-        hAttrib.put(cur);
-        PtclPoolType::iterator pit(ptclPool.find(SourceName));
-        if(pit == ptclPool.end())
-        {
-          APP_ABORT("Unknown source \"" + SourceName + "\" for e-He Potential.");
-        }
-        ParticleSet* source = (*pit).second;
-        HeePotential* eHetype = new HeePotential(*targetPtcl, *source);
-        targetH->addOperator(eHetype,potName,true);
-        // 	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
-      }
-      else if(potType == "jellium")
-      {
-        std::string SourceName = "e";
-        OhmmsAttributeSet hAttrib;
-        hAttrib.add(SourceName, "source");
-        hAttrib.put(cur);
-        PtclPoolType::iterator pit(ptclPool.find(SourceName));
-        if(pit == ptclPool.end())
-        {
-          APP_ABORT("Unknown source \"" + SourceName + "\" for e-He Potential.");
-        }
-        ParticleSet* source = (*pit).second;
-        JelliumPotential* JP = new JelliumPotential(*source, *targetPtcl);
-        targetH->addOperator(JP,potName,true);
-        //    targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
-      }
-      else if(potType == "HFDHE2")
-      {
-        HFDHE2Potential* HFD = new HFDHE2Potential(*targetPtcl);
-        targetH->addOperator(HFD,"HFDHE2",true);
-        //HFD->addCorrection(*targetPtcl,*targetH);
-        targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
-        app_log() << "  Adding HFDHE2Potential(Au) " << std::endl;
-      }
-      else if(cname == "modInsKE")
-      {
-        addModInsKE(cur);
-      }
 #endif
 #endif
-      else if(potType.find("num") < potType.size())
-      {
-        if(sourceInp == targetInp)//only accept the pair-potential for now
-        {
-          NumericalRadialPotential* apot=new NumericalRadialPotential(*targetPtcl);
-          apot->put(cur);
-          targetH->addOperator(apot,potName);
-        }
-      }
     }
     else if(cname == "constant")
     {
@@ -327,6 +196,42 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       if(potType =="flux")
       {
         targetH->addOperator(new ConservedEnergy,potName,false);
+      }
+      else if(potType =="specieskinetic")
+      {
+        SpeciesKineticEnergy* apot = new SpeciesKineticEnergy(*targetPtcl);
+        apot->put(cur);
+        targetH->addOperator(apot,potName,false);
+      }
+      else if(potType =="latticedeviation")
+      {
+        // find target particle set
+        PtclPoolType::iterator pit(ptclPool.find(targetInp));
+        if(pit == ptclPool.end())
+        {
+          APP_ABORT("Unknown target \"" + targetInp + "\" for LatticeDeviation.");
+        }
+        ParticleSet* target_particle_set = (*pit).second;
+
+        // find source particle set
+        PtclPoolType::iterator spit(ptclPool.find(sourceInp));
+        if(spit == ptclPool.end())
+        {
+          APP_ABORT("Unknown source \"" + sourceInp + "\" for LatticeDeviation.");
+        }
+        ParticleSet* source_particle_set = (*spit).second;
+
+        // read xml node
+        OhmmsAttributeSet local_attrib;
+        std::string target_group,source_group;
+        local_attrib.add(target_group,"tgroup");
+        local_attrib.add(source_group,"sgroup");
+        local_attrib.put(cur);
+
+        LatticeDeviationEstimator* apot = new LatticeDeviationEstimator(*target_particle_set
+          ,*source_particle_set,target_group,source_group);
+        apot->put(cur);
+        targetH->addOperator(apot,potName,false);
       }
       else if(potType == "Force")
       {
@@ -351,13 +256,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         }
         ParticleSet* source = (*pit).second;
         LocalMomentEstimator* apot=new LocalMomentEstimator(*targetPtcl,*source);
-        apot->put(cur);
-        targetH->addOperator(apot,potName,false);
-      }
-      else if(potType == "numberfluctuations")
-      {
-        app_log()<<" Adding Number Fluctuation estimator"<< std::endl;
-        NumberFluctuations* apot=new NumberFluctuations(*targetPtcl);
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }
@@ -398,13 +296,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         EnergyDensityEstimator* apot=new EnergyDensityEstimator(ptclPool,defaultKE);
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
-      }
-      else if(potType == "nearestneighbors" || potType == "NearestNeighbors")
-      {
-        app_log()<<"  Adding NearestNeighborsEstimator"<< std::endl;
-        NearestNeighborsEstimator* apot=new NearestNeighborsEstimator(ptclPool);
-        apot->put(cur);
-        targetH->addOperator(apot,"nearest_neighbors",false);
       }
       else if(potType == "dm1b")
       {
@@ -448,6 +339,10 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 #if OHMMS_DIM==3
       else if(potType == "chiesa")
       {
+#ifdef ENABLE_SOA
+        app_warning() << "Skip Chiesa estimator due to the lack of support with SoA."
+                      << " Access the correction via AoS at the moment." << std::endl;
+#else
         std::string PsiName="psi0";
         std::string SourceName = "e";
         OhmmsAttributeSet hAttrib;
@@ -468,6 +363,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         const TrialWaveFunction &psi = *psi_it->second->targetPsi;
         ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
         targetH->addOperator(chiesa,"KEcorr",false);
+#endif
       }
       else if(potType == "skall")
       {
@@ -486,10 +382,10 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         if(PBCType)
         {
 
-                SkAllEstimator* apot=new SkAllEstimator(*source, *targetPtcl);
-                apot->put(cur);
-                targetH->addOperator(apot,potName,false);
-                app_log()<<"Adding S(k) ALL estimator"<<std::endl;
+          SkAllEstimator* apot=new SkAllEstimator(*source, *targetPtcl);
+          apot->put(cur);
+          targetH->addOperator(apot,potName,false);
+          app_log()<<"Adding S(k) ALL estimator"<<std::endl;
         }
       }
 
@@ -507,14 +403,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
           //             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
           //             targetH->addOperator(DMCP,"PressureSum",false);
         }
-#if defined(QMC_BUILD_COMPLETE)
-        else if (estType=="HFDHE2")
-        {
-          HePressure* BP = new HePressure(*targetPtcl);
-          BP-> put(cur);
-          targetH->addOperator(BP,"HePress",false);
-        }
-#endif
       }
       else if(potType=="momentum")
       {
@@ -541,7 +429,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       std::string SourceName = "I";
       OhmmsAttributeSet hAttrib;
       hAttrib.add(TargetName,"Dependant");
-      hAttrib.add(SourceName, "Independant");
+      hAttrib.add(SourceName, "Independent");
       hAttrib.put(cur);
     }
 
@@ -605,121 +493,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   return true;
 }
 
-void
-HamiltonianFactory::addModInsKE(xmlNodePtr cur)
-{
-#if defined(HAVE_LIBFFTW_LS)
-  typedef QMCTraits::RealType    RealType;
-  typedef QMCTraits::IndexType   IndexType;
-  typedef QMCTraits::PosType     PosType;
-  std::string Dimensions, DispRelType, PtclSelType, MomDistType;
-  RealType Cutoff, GapSize(0.0), FermiMomentum(0.0);
-  OhmmsAttributeSet pAttrib;
-  pAttrib.add(Dimensions, "dims");
-  pAttrib.add(DispRelType, "dispersion");
-  pAttrib.add(PtclSelType, "selectParticle");
-  pAttrib.add(Cutoff, "cutoff");
-  pAttrib.add(GapSize, "gapSize");
-  pAttrib.add(FermiMomentum, "kf");
-  pAttrib.add(MomDistType, "momdisttype");
-  pAttrib.put(cur);
-  if (MomDistType == "")
-    MomDistType = "FFT";
-  TrialWaveFunction* psi;
-  psi = (*(psiPool.begin())).second->targetPsi;
-  Vector<PosType> LocLattice;
-  Vector<IndexType> DimSizes;
-  Vector<RealType> Dispersion;
-  if (Dimensions == "3")
-  {
-    gen3DLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
-  }
-  else if (Dimensions == "1" || Dimensions == "1averaged")
-  {
-    gen1DLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
-  }
-  else if (Dimensions == "homogeneous")
-  {
-    genDegenLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
-  }
-  else
-  {
-    ERRORMSG("Dimensions value not recognized!")
-  }
-  if (DispRelType == "freeParticle")
-  {
-    genFreeParticleDispersion(LocLattice, Dispersion);
-  }
-  else if (DispRelType == "simpleModel")
-  {
-    genSimpleModelDispersion(LocLattice, Dispersion, GapSize, FermiMomentum);
-  }
-  else if (DispRelType == "pennModel")
-  {
-    genPennModelDispersion(LocLattice, Dispersion, GapSize, FermiMomentum);
-  }
-  else if (DispRelType == "debug")
-  {
-    genDebugDispersion(LocLattice, Dispersion);
-  }
-  else
-  {
-    ERRORMSG("Dispersion relation not recognized");
-  }
-  PtclChoiceBase* pcp;
-  if (PtclSelType == "random")
-  {
-    pcp = new RandomChoice(*targetPtcl);
-  }
-  else if (PtclSelType == "randomPerWalker")
-  {
-    pcp = new RandomChoicePerWalker(*targetPtcl);
-  }
-  else if (PtclSelType == "constant")
-  {
-    pcp = new StaticChoice(*targetPtcl);
-  }
-  else
-  {
-    ERRORMSG("Particle choice policy not recognized!");
-  }
-  MomDistBase* mdp;
-  if (MomDistType == "direct")
-  {
-    mdp = new RandomMomDist(*targetPtcl, LocLattice, pcp);
-  }
-  else if (MomDistType == "FFT" || MomDistType =="fft")
-  {
-    if (Dimensions == "3")
-    {
-      mdp = new ThreeDimMomDist(*targetPtcl, DimSizes, pcp);
-    }
-    else if (Dimensions == "1")
-    {
-      mdp = new OneDimMomDist(*targetPtcl, DimSizes, pcp);
-    }
-    else if (Dimensions == "1averaged")
-    {
-      mdp = new AveragedOneDimMomDist(*targetPtcl, DimSizes, pcp);
-    }
-    else
-    {
-      ERRORMSG("Dimensions value not recognized!");
-    }
-  }
-  else
-  {
-    ERRORMSG("MomDistType value not recognized!");
-  }
-  delete pcp;
-  QMCHamiltonianBase* modInsKE = new ModInsKineticEnergy(*psi, Dispersion, mdp);
-  modInsKE->put(cur);
-  targetH->addOperator(modInsKE, "ModelInsKE");
-  delete mdp;
-#else
-  app_error() << "  ModelInsulatorKE cannot be used without FFTW " << std::endl;
-#endif
-}
 
 void HamiltonianFactory::renameProperty(const std::string& a, const std::string& b)
 {
@@ -769,22 +542,8 @@ HamiltonianFactory::clone(ParticleSet* qp, TrialWaveFunction* psi,
 bool HamiltonianFactory::put(xmlNodePtr cur)
 {
   bool success=build(cur,false);
-  
-  if(targetH->EnableVirtualMoves)
-  {
-    app_log() << "  Hamiltonian enables VirtualMoves" << std::endl;
-    targetPtcl->enableVirtualMoves();
-  }
-  else
-    app_log() << "  Hamiltonian disables VirtualMoves" << std::endl;
-  
   return success;
 }
 
 void HamiltonianFactory::reset() { }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

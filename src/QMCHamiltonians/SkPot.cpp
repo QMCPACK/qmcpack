@@ -31,7 +31,7 @@ SkPot::SkPot(ParticleSet& source)
   Fk.resize(NumK);
   Kmag.resize(MaxKshell);
   OneOverDnk.resize(MaxKshell);
-  for(int ks=0, k=0; ks<MaxKshell; ks++)
+  for(int ks=0; ks<MaxKshell; ks++)
   {
     Kmag[ks]=std::sqrt(source.SK->KLists.ksq[Kshell[ks]]);
     OneOverDnk[ks]=1.0/static_cast<RealType>(Kshell[ks+1]-Kshell[ks]);
@@ -89,8 +89,3 @@ QMCHamiltonianBase* SkPot::makeClone(ParticleSet& qp
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2945 $   $Date: 2008-08-05 10:21:33 -0500 (Tue, 05 Aug 2008) $
- * $Id: ForceBase.h 2945 2008-08-05 15:21:33Z jnkim $
- ***************************************************************************/

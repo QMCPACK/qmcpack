@@ -4,17 +4,18 @@
 #include<Message/MPIObjectBase.h>
 #include"AFQMC/config.h"
 #include<vector>
+#include<queue>
 #include<string>
 #include<iostream>
 #include<fstream>
 
 #include "io/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
+#include "Utilities/NewTimer.h"
 
 #include "AFQMC/Hamiltonians/HamiltonianBase.h"
 #include "AFQMC/Wavefunctions/WavefunctionHandler.h"
 #include "AFQMC/Walkers/WalkerHandlerBase.h"
-#include "AFQMC/Propagators/PropagatorBase.h"
 #include "AFQMC/Estimators/SlaterDetOperations.h"
 
 namespace qmcplusplus
@@ -27,15 +28,13 @@ class BasicEstimator: public EstimatorBase
 
   typedef HamiltonianBase* HamPtr;
   typedef WavefunctionHandler* WfnPtr;
-  typedef PropagatorBase* PropPtr;
   typedef WalkerHandlerBase* WSetPtr;
 
-  BasicEstimator(Communicate *c):EstimatorBase(c),EstimEloc(false), timers(true), prtnwalk(true),
-                                 overlap(false), diag(false), nstates(0),SDet(c) 
+  BasicEstimator(Communicate *c):EstimatorBase(c),EstimEloc(false), timers(true), prtnwalk(false),
+                                 overlap(false), diag(false), nstates(0),SDet(c),EstimEloc_present(false) 
   {}
 
   ~BasicEstimator() {}
-
 
   void accumulate_block(WSetPtr wlkBucket)
   {
@@ -43,108 +42,76 @@ class BasicEstimator: public EstimatorBase
     int nW = wlkBucket->numWalkers(true);
     ComplexType *sm,eloc,dum,oa,ob,w,ooa,oob;
     LocalTimer->start("Block::EstimatorEloc");
+    BlockTimer->start();
 
     if(EstimEloc) {
       wfn0->evaluateLocalEnergyAndOverlap("Estimator",-1,wlkBucket);
       if(core_rank==0) {
         for(int i=0, cnt=0; i<nW; i++) {
           if(!wlkBucket->isAlive(i) || std::abs(wlkBucket->getWeight(i)) <= 1e-6 || std::isnan(wlkBucket->getWeight(i).real())) continue;
-      
           sm = wlkBucket->getWalker(i,w,dum,ooa,oob);  // "impsampl"
           sm = wlkBucket->getWalker2(i,eloc,oa,ob);     // "estimator"
-          if(std::isnan(ooa.real()) || std::isnan(oob.real()) || std::abs(oa*ob) < 1e-8  || std::abs(ooa*oob) < 1e-8) w=0;
-          dum = w*oa*ob/(ooa*oob);
+          dum = weight_product*w*oa*ob/(ooa*oob);
+          //if( (!std::isfinite(dum.real())) || (!std::isfinite((eloc*dum).real())) || std::abs(oa*ob) < 1e-8  || std::abs(ooa*oob) < 1e-8) continue; 
+          if( (!std::isfinite(dum.real())) || (!std::isfinite((eloc*dum).real())) ) continue; 
           edeno2 += dum; 
           enume2 += eloc*dum;
         }
+        data3[0] = enume2.real();
+        data3[1] = edeno2.real();
+        myComm->allreduce(data3,MPI_COMM_TG_LOCAL_HEADS);
+        data3[0] *= weight_product.real()/data3[1]; 
+        data3[1] = weight_product.real(); 
       }
     }
     LocalTimer->stop("Block::EstimatorEloc");
+    BlockTimer->stop();
   }
 
 
-  void accumulate_step(WSetPtr wlkBucket)
+  //  curData:
+  //  0: inverse of the factor used to rescale the weights
+  //  1: 1/nW * sum_i w_i * Eloc_i   (where w_i is the normalized weight)
+  //  2: 1/nW * sum_i w_i            (where w_i is the normalized weight)
+  //  3: sum_i abs(w_i)       (where w_i is the normalized weight)
+  //  4: 1/nW * sum_i abs(<psi_T|phi_i>)
+  //  5: nW                          (total number of walkers)  
+  //  6: "healthy" nW                (total number of "healthy" walkers)  
+  void accumulate_step(WSetPtr wlkBucket, std::vector<ComplexType>& curData)
   {
 
     ncalls++;
-    int nw=0;
-    RealType instant_weight=0.0;
-    if(core_rank==0) {
-      int nW = wlkBucket->numWalkers(true);
-      enume_sub = edeno_sub = 0.0;
-      ComplexType w,oa,ob,eloc;
-      for(int i=0; i<nW; i++) {
-        ComplexType* dum = wlkBucket->getWalker(i,w,eloc,oa,ob);
-        if(!wlkBucket->isAlive(i) || std::abs(w) <= 1e-6) continue;
-        enume_sub += w*eloc;
-        edeno_sub += w;
-        nw++;
-        instant_weight += std::abs(w);
-      }
-      if(nw>nwalk_max) nwalk_max=nw;
-      if(nw<nwalk_min) nwalk_min=nw;
+    if(nwfacts>0) {
+      weight_product *= (curData[0]/weight_factors.front());
+      weight_factors.pop();
+      weight_factors.push(curData[0]);
+    } else
+      weight_product = ComplexType(1.0,0.0);
 
-      data2[0] = enume_sub.real();
-      data2[1] = edeno_sub.real();
-      data2[4] = nwalk_sub/ncalls_substep;
-      data2[5] = instant_weight; 
-      data2[6] = weight_sub/ncalls_substep;
-      data2[7] = ovlp_sub/ncalls_substep;
+    data2[0] = curData[1].real();
+    data2[1] = curData[2].real();
 
-      myComm->allreduce(data2,MPI_COMM_TG_LOCAL_HEADS);
-
-      wlkBucket->scaleWeight(targetW/data2[5]);
-
-      data2[0] *= targetW/data2[5];
-      data2[1] *= targetW/data2[5];
-
-      nwalk += nwalk_sub/ncalls_substep;
-      enume += enume_sub*targetW/data2[5];
-      edeno += edeno_sub*targetW/data2[5];
-      weight += instant_weight; 
-      ovlp += ovlp_sub/ncalls_substep;
-
-      enume_sub=0.0;
-      edeno_sub=0.0;
-      nwalk_sub = 0;
-      weight_sub=0.0;
-      ncalls_substep=0;
-      ovlp_sub=0;
-
-    }   
-
-    myComm->bcast(data2,MPI_COMM_TG_LOCAL);
-
-  }
-
-  void accumulate_substep(WSetPtr wlkBucket)
-  {
-
-    if(core_rank != 0) return;
-    ncalls_substep++;
-    int nW = wlkBucket->numWalkers(true);
-    ComplexType w,oa,ob,eloc;
-    int cnt1=0; 
-    RealType sumo=0;
-    for(int i=0; i<nW; i++) {
-      ComplexType* dum = wlkBucket->getWalker(i,w,eloc,oa,ob);
-      if(!wlkBucket->isAlive(i) || std::abs(w) <= 1e-6) continue;
-      cnt1++;
-      nwalk_sub++;
-      enume_sub += w*eloc;
-      edeno_sub += w;
-      weight_sub += std::abs(w);
-      sumo += std::abs(oa*ob);
-    }
-    if(cnt1>1) ovlp_sub+=sumo/static_cast<double>(cnt1);
-
+    int nwlk = wlkBucket->numWalkers(false);
+    if(nwlk>nwalk_max) nwalk_max=nwlk;
+    if(nwlk<nwalk_min) nwalk_min=nwlk;
+    enume += (curData[1]/curData[2])*weight_product; 
+    edeno += weight_product;
+    weight += curData[3].real(); 
+    ovlp += curData[4].real();
+    nwalk += static_cast<int>(std::floor(curData[5].real())); 
+    nwalk_good += static_cast<int>(std::floor(curData[6].real())); 
   }
 
   void tags(std::ofstream& out) 
   {
     if(myComm->rank() == 0) {
-      out<<"nWalkers weight  Eloc_nume Eloc_deno  "; 
-      if(EstimEloc) out<<"ElocEstim_nume ElocEstim_deno  ";
+      if(nwfacts>0) {
+        out<<"nWalkers weight  Eloc_nume Eloc_deno  "; 
+        if(EstimEloc) out<<"ElocEstim_nume ElocEstim_deno  ";
+      } else {
+        out<<"nWalkers weight  Eloc  "; 
+        if(EstimEloc) out<<"ElocEstim ";
+      }
       out<<"Ovlp "; 
       if(diag && nstates>0) {
         for(int i=0; i<nstates; i++) out<<"Ediag_" <<i <<" ";
@@ -153,37 +120,33 @@ class BasicEstimator: public EstimatorBase
 #endif
       }
       if(timers && EstimEloc) out<<"TimeEstimEloc  "; 
-      if(timers) out<<"TimePropg  TimePopControl TimeLoadBalance TimeOrtho TimeCommSetup TimeCommResize TimeCommExch TimeBlock "; 
-      if(prtnwalk) out<<"nWmin nWmax ";
+      if(timers) out<<"TimePropg  TimePopControl TimeOrtho TimeBranching TimeIdle TimeCommExch MaxTimeCommExch TimeBlock "; 
+      if(prtnwalk) out<<"MaxBranch MaxExch ";
     }
   }
 
   void print(std::ofstream& out,WSetPtr wlkBucket)
   {
 
-    // average over processors
-    if(core_rank==0) {
-      data[0] = enume.real()/ncalls;
-      data[1] = edeno.real()/ncalls;
-      data[2] = enume2.real();
-      data[3] = edeno2.real();
-      data[4] = nwalk/ncalls;
-      data[6] = weight/ncalls;
-      data[7] = ovlp/num_heads_tg;
+    data[0] = enume.real()/ncalls;
+    data[1] = edeno.real()/ncalls;    
 
-      data[5] = 0.0;
-      int nW = wlkBucket->numWalkers(true);
-      for(int i=0; i<nW; i++) 
-       if(wlkBucket->isAlive(i)) data[5] += std::abs(wlkBucket->getWeight(i));
-      myComm->allreduce(data,MPI_COMM_TG_LOCAL_HEADS);
+    double max_exch_time=0;
+    if(timers) { 
+      double t = LocalTimer->total("WalkerHandler::loadBalance::exchange");
+      MPI_Reduce(&t,&max_exch_time,1,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
     }
 
-    myComm->bcast(data,MPI_COMM_TG_LOCAL);
-
     if(writer) {
-      out<<std::setprecision(6) <<data[4] <<" " <<data[6] <<" " <<std::setprecision(16) <<data[0] <<" " <<data[1] <<" ";
-      if(EstimEloc) out<<data[2] <<" " <<data[3] <<" ";
-      out<<data[7] <<" ";
+      out<<std::setprecision(6) <<nwalk/ncalls <<" " <<weight/ncalls <<" " <<std::setprecision(16);
+      if(nwfacts>0) {
+        out<<enume.real()/ncalls <<" " <<edeno.real()/ncalls <<" ";
+        if(EstimEloc) out<<data3[0] <<" " <<data3[1] <<" ";
+      } else {
+        out<<enume.real()/ncalls <<" ";
+        if(EstimEloc) out<<data3[0] <<" ";
+      }
+      out<<ovlp/ncalls <<" ";
       if(diag && nstates>0) {
         for(int i=0; i<nstates; i++) out<<eigVal[i] <<" ";
 #ifdef AFQMC_TIMER
@@ -197,13 +160,13 @@ class BasicEstimator: public EstimatorBase
                  out<<std::setprecision(3) <<LocalTimer->total("Block::EstimatorEloc") <<" ";
       if(timers) out<<std::setprecision(3) <<LocalTimer->total("SubStep::Propagate") <<" "
                     <<LocalTimer->total("Step::PopControl") <<" " 
-                    <<LocalTimer->total("Step::loadBalance") <<" " 
                     <<LocalTimer->total("Step::Orthogonalize") <<" " 
-                    <<LocalTimer->total("WalkerHandler::loadBalance::setup") <<" " 
-                    <<LocalTimer->total("WalkerHandler::loadBalance::resize") <<" " 
+                    <<LocalTimer->total("WalkerHandler::popControl") <<" " 
+                    <<LocalTimer->total("WalkerHandler::popControl::idle") <<" " 
                     <<LocalTimer->total("WalkerHandler::loadBalance::exchange") <<" " 
+                    <<max_exch_time <<" " 
                     <<LocalTimer->total("Block::TOTAL") <<" "; 
-      if(prtnwalk) out<<wlkBucket->nwalk_min <<" " <<wlkBucket->nwalk_max <<std::setprecision(12) <<" ";
+      if(prtnwalk) out<<wlkBucket->max_nbranch <<" " <<wlkBucket->max_nexch <<std::setprecision(12) <<" ";
     }
 
     enume=0.0;
@@ -213,8 +176,13 @@ class BasicEstimator: public EstimatorBase
     edeno2=0.0;
     ncalls=0;
     nwalk=0;
+    nwalk_good=0;
     nwalk_min=1000000;
     nwalk_max=0;
+    wlkBucket->nwalk_min=0;
+    wlkBucket->nwalk_max=0;
+    wlkBucket->max_nexch=0;
+    wlkBucket->max_nbranch=0;
     ovlp=0;
 
     LocalTimer->reset("SubStep::Propagate");
@@ -225,18 +193,11 @@ class BasicEstimator: public EstimatorBase
     LocalTimer->reset("WalkerHandler::loadBalance::setup"); 
     LocalTimer->reset("WalkerHandler::loadBalance::exchange"); 
     LocalTimer->reset("WalkerHandler::loadBalance::resize"); 
+    LocalTimer->reset("WalkerHandler::popControl");
+    LocalTimer->reset("WalkerHandler::popControl::bcast");
+    LocalTimer->reset("WalkerHandler::popControl::idle");
     LocalTimer->reset("Block::TOTAL"); 
     
-  }
-
-  double getWeight()
-  {
-    return data[5]; 
-  }
-
-  double getWeight_step()
-  {
-    return data2[5]; 
   }
 
   double getEloc()
@@ -265,7 +226,15 @@ class BasicEstimator: public EstimatorBase
     m_param.add(str4,"overlap","std::string");
     m_param.add(str5,"diag","std::string");
     m_param.add(nstates,"nstates","int");
+    m_param.add(nwfacts,"nhist","int");
     m_param.put(cur);
+
+    assert(nwfacts>=0);
+    weight_product=ComplexType(1.0,0.0);
+    for(int i=0; i<nwfacts; i++)  
+      weight_factors.push(weight_product);
+
+    app_log()<<"  BasicEstimator: Number of products in weight history: " <<nwfacts <<std::endl;
 
     std::transform(str1.begin(),str1.end(),str1.begin(),(int (*)(int)) tolower);
     std::transform(str2.begin(),str2.end(),str2.begin(),(int (*)(int)) tolower);
@@ -276,8 +245,8 @@ class BasicEstimator: public EstimatorBase
       EstimEloc = true;
     if(str2 == "no" || str2 == "false")
       timers = false;
-    if(str3 == "no" || str3 == "false")
-      prtnwalk = false;
+    if(str3 == "yes" || str3 == "true")
+      prtnwalk = true;
     if(str1 != "") EstimEloc_present=true; 
     if(str4 == "yes" || str4 == "true") overlap=true;
     if(str5 == "yes" || str5 == "true") diag=true;
@@ -285,7 +254,7 @@ class BasicEstimator: public EstimatorBase
     return true;
   }
 
-  bool setup(std::vector<int>& TGdata, ComplexSMVector *v, HamiltonianBase* ham, WavefunctionHandler* wfn,myTimer* timer, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm heads_of_tg_comm) 
+  bool setup(std::vector<int>& TGdata, SPComplexSMVector *v, HamiltonianBase* ham, WavefunctionHandler* wfn,myTimer* timer, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm heads_of_tg_comm) 
   {
     ncores_per_TG=TGdata[4];
     core_rank = TGdata[1]%ncores_per_TG; 
@@ -294,6 +263,8 @@ class BasicEstimator: public EstimatorBase
     if(!EstimEloc_present) EstimEloc = wfn0->check_initialized("Estimator");
     writer = (myComm->rank()==0);
     LocalTimer = timer;
+
+    BlockTimer = TimerManager.createTimer("Block::EstimatorEloc");
 
     MPI_COMM_TG_LOCAL_HEADS = heads_of_tg_comm;
     MPI_COMM_HEAD_OF_NODES = heads_comm;
@@ -310,6 +281,7 @@ class BasicEstimator: public EstimatorBase
  
     data.resize(10);
     data2.resize(10);
+    data3.resize(2);
 
     enume=0.0;
     edeno=0.0;
@@ -320,6 +292,7 @@ class BasicEstimator: public EstimatorBase
     weight=0.0;
     weight_sub=0.0;
     nwalk = 0;
+    nwalk_good = 0;
     nwalk_sub = 0;
     ncalls=0;
     ncalls_substep=0;
@@ -333,14 +306,18 @@ class BasicEstimator: public EstimatorBase
 
   private:
 
-  std::vector<double> data, data2;  
+  std::vector<double> data, data2, data3;  
+
+  int nwfacts=0;
+  std::queue<ComplexType> weight_factors;
+  ComplexType weight_product=ComplexType(1.0,0.0);
 
   ComplexType enume=0.0,edeno=0.0;
   ComplexType enume_sub=0.0,edeno_sub=0.0;
   ComplexType enume2=0.0,edeno2=0.0;
   RealType weight, weight_sub, ovlp, ovlp_sub;
   RealType targetW=1;
-  int nwalk, ncalls, ncalls_substep, nwalk_sub, nwalk_min, nwalk_max; 
+  int nwalk_good, nwalk, ncalls, ncalls_substep, nwalk_sub, nwalk_min, nwalk_max; 
   int core_rank;
   int ncores_per_TG;
 
@@ -357,6 +334,8 @@ class BasicEstimator: public EstimatorBase
   ComplexType exactEnergy;
 
   myTimer* LocalTimer;
+
+  NewTimer *BlockTimer;
 
   int num_heads_tg;
   MPI_Comm MPI_COMM_HEAD_OF_NODES;

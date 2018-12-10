@@ -17,11 +17,12 @@
  */
 
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
+#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "LongRange/LRHandlerTemp.h"
 #include "LongRange/LRRPAHandlerTemp.h"
 #include "Utilities/IteratorUtility.h"
@@ -36,7 +37,7 @@ RPAJastrow::RPAJastrow(ParticleSet& target, bool is_manager)
   :IsManager(is_manager), targetPtcl(target)
 {
   Optimizable=true;
-  OrbitalName="RPAJastrow";
+  ClassName="RPAJastrow";
 }
 
 RPAJastrow::~RPAJastrow()
@@ -48,6 +49,10 @@ RPAJastrow::~RPAJastrow()
 bool RPAJastrow::put(xmlNodePtr cur)
 {
   ReportEngine PRE("RPAJastrow","put");
+  app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+  app_log()<<"!!!  WARNING:  RPAJastrow is not fully tested for production !!!\n";
+  app_log()<<"!!!      level calculations.  Use at your own risk!          !!!\n";
+  app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
   xmlNodePtr myNode=xmlCopyNode(cur,1);
   //capture attribute jastrow/@name
   MyName="RPA_Jee";
@@ -68,58 +73,6 @@ bool RPAJastrow::put(xmlNodePtr cur)
   params.add(Kc,"kc","double");
   params.put(cur);
   buildOrbital(MyName, useL, useS, rpafunc, Rs, Kc);
-//     app_log() << std::endl<<"   LongRangeForm is "<<rpafunc<< std::endl;
-//
-//     DropLongRange = (useL == "no");
-//     DropShortRange = (useS=="no");
-//
-//     app_log() << "    Rs can be optimized using ID=" << ID_Rs << std::endl;
-//     RealType tlen = std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/ static_cast<RealType>(targetPtcl.getTotalNum()) ,1.0/3.0);
-//
-//     if(Rs<0) {
-//       if(targetPtcl.Lattice.SuperCellEnum) {
-//         Rs=tlen;
-//       } else {
-//         std::cout<<"  Error finding rs. Is this an open system?!"<< std::endl;
-//         Rs=100.0;
-//       }
-//     }
-//
-//     //Add Rs to optimizable list
-//     myVars.insert(ID_Rs,Rs,true);
-//
-//     int indx = targetPtcl.SK->KLists.ksq.size()-1;
-//     double Kc_max=std::pow(targetPtcl.SK->KLists.ksq[indx],0.5);
-//
-//     if(Kc<0){
-//       Kc = 2.0*  std::pow(2.25*M_PI,1.0/3.0)/tlen ;
-//     }
-//
-//     if(Kc>Kc_max){
-//       Kc=Kc_max;
-//       app_log() << "    Kc set too high. Resetting to the maximum value"<< std::endl;
-//     }
-//
-//     app_log() << "    RPAJastrowBuilder::addTwoBodyPart Rs = " << Rs <<  "  Kc= " << Kc << std::endl;
-//
-//     if (rpafunc=="Yukawa" || rpafunc=="breakup"){
-//       myHandler= new LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
-//     } else if (rpafunc=="RPA"){
-//       myHandler= new LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
-//     } else if (rpafunc=="dYukawa"){
-//       myHandler= new LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
-//     } else if (rpafunc=="dRPA"){
-//       myHandler= new LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
-//     }
-//
-//
-//     myHandler->Breakup(targetPtcl,Rs);
-//
-//     app_log() << "  Maximum K shell " << myHandler->MaxKshell << std::endl;
-//     app_log() << "  Number of k vectors " << myHandler->Fk.size() << std::endl;
-//
-//     if(!DropLongRange) makeLongRange();
-//     if(!DropShortRange) makeShortRange();
   return true;
 }
 
@@ -136,7 +89,6 @@ void RPAJastrow::buildOrbital(const std::string& name, const std::string& UL
   app_log() << std::endl<<"   LongRangeForm is "<<rpafunc<< std::endl;
   DropLongRange = (useL == "no");
   DropShortRange = (useS=="no");
-  app_log() << "    Rs can be optimized using ID=" << ID_Rs << std::endl;
   RealType tlen = std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/ static_cast<RealType>(targetPtcl.getTotalNum()) ,1.0/3.0);
   if(Rs<0)
   {
@@ -150,8 +102,6 @@ void RPAJastrow::buildOrbital(const std::string& name, const std::string& UL
       Rs=100.0;
     }
   }
-  //Add Rs to optimizable list
-//     myVars.insert(ID_Rs,Rs,true);
   int indx = targetPtcl.SK->KLists.ksq.size()-1;
   double Kc_max=std::pow(targetPtcl.SK->KLists.ksq[indx],0.5);
   if(Kc<0)
@@ -168,21 +118,22 @@ void RPAJastrow::buildOrbital(const std::string& name, const std::string& UL
   {
     myHandler= new LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
   }
+  else if (rpafunc=="rpa")
+  {
+    myHandler= new LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+  }
+  else if (rpafunc=="dyukawa")
+  {
+    myHandler= new LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
+  }
+  else if (rpafunc=="drpa")
+  {
+    myHandler= new LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
+  }
   else
-    if (rpafunc=="rpa")
-    {
-      myHandler= new LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
-    }
-    else
-      if (rpafunc=="dyukawa")
-      {
-        myHandler= new LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
-      }
-      else
-        if (rpafunc=="drpa")
-        {
-          myHandler= new LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
-        }
+  {
+    APP_ABORT("RPAJastrowBuilder::buildOrbital:  Unrecognized rpa function type.\n");
+  }
   myHandler->Breakup(targetPtcl,Rs);
   app_log() << "  Maximum K shell " << myHandler->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << myHandler->Fk.size() << std::endl;
@@ -207,32 +158,34 @@ void RPAJastrow::makeLongRange()
 
 void RPAJastrow::makeShortRange()
 {
-//     app_log()<< "  Adding Short Range part of RPA function"<< std::endl;
+     app_log()<< "  Adding Short Range part of RPA function"<< std::endl;
   //short-range uses realHandler
   Rcut = myHandler->get_rc()-0.1;
-  myGrid = new GridType;
-  int npts=static_cast<int>(Rcut/0.01)+1;
-  myGrid->set(0,Rcut,npts);
-  //create the numerical functor
+  //create numerical functor of type BsplineFunctor<RealType>.
   nfunc = new FuncType;
   SRA = new ShortRangePartAdapter<RealType>(myHandler);
   SRA->setRmax(Rcut);
-  nfunc->initialize(SRA, myGrid);
-  //Do not write the table
-  //static  int counter=0;
-  //if(IsManager && counter==0)
-  //{
-  //  char fname[32];
-  //  sprintf(fname,"%s.%d.dat",MyName.c_str(),counter++);
-  //  std::ofstream fout(fname);
-  //  for (int i = 0; i < myGrid->size(); i++) {
-  //    RealType r=(*myGrid)(i);
-  //    fout << r << "   " << nfunc->evaluate(r) << "   "
-  //      << myHandler->evaluate(r,1.0/r) << " "
-  //      << myHandler->evaluateLR(r) << std::endl;
-  //  }
-  //}
-  TwoBodyJastrowOrbital<FuncType> *j2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl,IsManager);
+  //This line is for the SoA branch, for whenever we eventually merge this code.  
+ // J2OrbitalSoA<BsplineFunctor<RealType> > *j2 = new J2OrbitalSoA<BsplineFunctor<RealType> >(targetPtcl,IsManager);
+  TwoBodyJastrowOrbital<BsplineFunctor<RealType> > *j2 = new TwoBodyJastrowOrbital<BsplineFunctor<RealType> >(targetPtcl,IsManager);
+  size_t npts=12;
+  RealType delta=Rcut/static_cast<double>(npts);
+  std::vector<RealType> X(npts+1),Y(npts+1);
+  for(size_t i=0; i<npts; ++i)
+  {
+    X[i]=i*delta;
+    Y[i]=SRA->evaluate(X[i]);
+  }
+  X[npts]=npts*delta;
+  Y[npts]=0.0;
+  std::string functype="rpa";
+  std::string useit="no";
+  nfunc->initialize(npts,X,Y,SRA->df(0),Rcut,functype,useit);
+  for(size_t i=0; i<npts; ++i)
+  {
+    X[i]=i*delta;
+    Y[i]=SRA->evaluate(X[i]);
+  }
   j2->addFunc(0,0,nfunc);
   ShortRangeRPA=j2;
   Psi.push_back(ShortRangeRPA);
@@ -240,32 +193,16 @@ void RPAJastrow::makeShortRange()
 
 void RPAJastrow::resetParameters(const opt_variables_type& active)
 {
-  /*
-   int loc=myVars.where(0);
-   if(loc>=0) {
-     Rs=myVars[0]=active[loc];
-     ///Insert breakup etc.
-     myHandler->Breakup(targetPtcl,Rs);
-
-     if(!DropLongRange){
-       delete LongRangeRPA;
-       makeLongRange();
-     }
-     if(!DropShortRange){
-       delete ShortRangeRPA;
-       makeShortRange();
-     }
-   };*/
+  //This code was removed in April6, 2017.  To reimplement, please consult a revision 
+  //earlier than this.
 }
 
 void RPAJastrow::checkOutVariables(const opt_variables_type& active)
 {
-//     myVars.getIndex(active);
 }
 
 void RPAJastrow::checkInVariables(opt_variables_type& active)
 {
-//     active.insertFrom(myVars);
 }
 
 void RPAJastrow::reportStatus(std::ostream& os)
@@ -291,17 +228,6 @@ RPAJastrow::evaluateLog(ParticleSet& P,
 }
 
 RPAJastrow::ValueType
-RPAJastrow::ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-{
-  ValueType r(1.0);
-  for(int i=0; i<Psi.size(); i++)
-    r *= Psi[i]->ratio(P,iat,dG,dL);
-  return r;
-}
-
-RPAJastrow::ValueType
 RPAJastrow::ratio(ParticleSet& P, int iat)
 {
   ValueType r(1.0);
@@ -310,15 +236,26 @@ RPAJastrow::ratio(ParticleSet& P, int iat)
   return r;
 }
 
-//RPAJastrow::ValueType
-//  RPAJastrow::logRatio(ParticleSet& P, int iat,
-//      ParticleSet::ParticleGradient_t& dG,
-//      ParticleSet::ParticleLaplacian_t& dL) {
-//    ValueType r(0.0);
-//    for(int i=0; i<Psi.size(); i++)
-//      r += Psi[i]->logRatio(P,iat,dG,dL);
-//    return r;
-//  }
+RPAJastrow::GradType
+RPAJastrow::evalGrad(ParticleSet& P, int iat)
+{
+  GradType grad(0);
+  for(int i=0; i<Psi.size(); i++)
+    grad += Psi[i]->evalGrad(P,iat);
+  return grad;
+}
+
+RPAJastrow::ValueType
+RPAJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+{
+  ValueType r(1);
+  for(int i=0; i<Psi.size(); i++)
+  {
+    r *= Psi[i]->ratioGrad(P,iat,grad_iat);
+  }
+  return r;
+}
+
 
 void RPAJastrow::acceptMove(ParticleSet& P, int iat)
 {
@@ -332,26 +269,15 @@ void RPAJastrow::restore(int iat)
     Psi[i]->restore(iat);
 }
 
-void RPAJastrow::update(ParticleSet& P,
-                        ParticleSet::ParticleGradient_t& dG,
-                        ParticleSet::ParticleLaplacian_t& dL,
-                        int iat)
+void
+RPAJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   for(int i=0; i<Psi.size(); i++)
-    Psi[i]->update(P,dG,dL,iat);
+    Psi[i]->registerData(P,buf);
 }
 
 RPAJastrow::RealType
-RPAJastrow::registerData(ParticleSet& P, BufferType& buf)
-{
-  LogValue=0.0;
-  for(int i=0; i<Psi.size(); i++)
-    LogValue += Psi[i]->registerData(P,buf);
-  return LogValue;
-}
-
-RPAJastrow::RealType
-RPAJastrow::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
+RPAJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   LogValue=0.0;
   for(int i=0; i<Psi.size(); i++)
@@ -360,43 +286,32 @@ RPAJastrow::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
 }
 
 void
-RPAJastrow::copyFromBuffer(ParticleSet& P, BufferType& buf)
+RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   for(int i=0; i<Psi.size(); i++)
     Psi[i]->copyFromBuffer(P,buf);
 }
 
-RPAJastrow::RealType
-RPAJastrow::evaluateLog(ParticleSet& P,BufferType& buf)
-{
-  LogValue=0.0;
-  for(int i=0; i<Psi.size(); i++)
-    LogValue += Psi[i]->evaluateLog(P,buf);
-  return LogValue;
-}
-
-OrbitalBase* RPAJastrow::makeClone(ParticleSet& tpq) const
+WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
 {
   HandlerType* tempHandler;
   if (rpafunc=="yukawa" || rpafunc=="breakup")
   {
     tempHandler= new LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>(dynamic_cast<const LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
   }
-  else
-    if (rpafunc=="rpa")
-    {
-      tempHandler= new LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(dynamic_cast<const LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
-    }
-    else
-      if (rpafunc=="dyukawa")
-      {
-        tempHandler= new LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis >(dynamic_cast<const LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
-      }
-      else
-        if (rpafunc=="drpa")
-        {
-          tempHandler= new LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis >(dynamic_cast<const LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
-        }
+  else if (rpafunc=="rpa")
+  {
+    tempHandler= new LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(dynamic_cast<const LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
+  }
+  else if (rpafunc=="dyukawa")
+  {
+    tempHandler= new LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis >(dynamic_cast<const LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
+  }
+  else if (rpafunc=="drpa")
+  {
+    tempHandler= new LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis >(dynamic_cast<const LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
+  }
+
   RPAJastrow* myClone = new RPAJastrow(tpq,IsManager);
   myClone->setHandler(tempHandler);
   if(!DropLongRange)

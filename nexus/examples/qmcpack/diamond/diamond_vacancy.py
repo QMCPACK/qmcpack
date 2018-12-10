@@ -10,8 +10,8 @@ settings(
     machine       = 'ws16'
     )
 
-relax_job = Job(cores=16,app='pw.x')
-scf_job   = Job(cores=16,app='pw.x')
+relax_job = job(cores=16,app='pw.x')
+scf_job   = job(cores=16,app='pw.x')
 
 dia16 = generate_physical_system(
     structure = './d16vac.POSCAR',

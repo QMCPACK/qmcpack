@@ -1,0 +1,167 @@
+\newcommand{\bs}{\boldsymbol}
+\newcommand{\tr}{\text{tr}}
+\section{Slater-Backflow Wavefunction Implementation Details}
+
+For simplicity, consider $N$ identical fermions of the same spin (e.g. up electrons) at spatial locations $\{\bs{r}_1,\bs{r}_2,\dots,\bs{r}_{N}\}$. Then the Slater determinant can be written as
+\begin{align}
+S=\det M,
+\end{align}
+where each entry in the determinant is a single-particle orbital evaluated at a particle position
+\begin{align}
+M_{ij} = \phi_i(\bs{r}_j).
+\end{align}
+
+When backflow transformation is applied to the Determinant, the particle coordinates $\bs{r}_i$ that go into the single-particle orbitals are replaced by quasi-particle coordinates $\bs{x}_i$
+\begin{align}
+M_{ij} = \phi_i(\bs{x}_j), \label{eq:psiM}
+\end{align}
+where
+\begin{align}
+\bs{x}_i=\bs{r}_i+\sum\limits_{j=1,j\neq i}^N\eta(r_{ij})(\bs{r}_i-\bs{r}_j). \label{eq:quasi}
+\end{align}
+$r_{ij}=\vert\bs{r}_i-\bs{r}_j\vert$. The integers i,j label the particle/quasi-particle. There is a one-to-one correspondence between the particles and the quasi-particles, which is simplest when $\eta=0$.
+
+\subsection{Value}
+The evaluation of the Slater-Backflow wavefunction is almost identical to that of a Slater wavefunction. The only difference is that the quasi-particles coordinates are used to evaluate the single-particle orbitals. The actual value of the determinant is stored during the inversion of the matrix $M$ (\verb|cgetrf|$\rightarrow$\verb|cgetri|). Suppose $M=LU$, then $S=\prod\limits_{i=1}^N L_{ii} U_{ii}$. \\
+
+\begin{lstlisting}
+// In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
+Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM);
+psiMinv = psiM;
+LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals
+  ,WorkSpace.data(),Pivot.data(),PhaseValue);
+\end{lstlisting}
+
+QMCPACK represents the complex value of the wavefunction in polar coordinates $S=e^Ue^{i\theta}$. Specifically, \verb|LogValue| $U$ and \verb|PhaseValue| $\theta$ are handled separately. In the following, I will consider derivatives of the log value only.
+
+\subsection{Gradient}
+To evaluate particle gradient of the log value of the Slater-Backflow wavefunction, we can use the $\log\det$ identity in eq.~(\ref{eq:logdet}). This identity maps the derivative of $\log\det M$ with respect to a real variable $p$ to a trace over $M^{-1}dM$
+\begin{align}
+\frac{\partial}{\partial p}\log\det M = \tr\left( M^{-1} \frac{\partial M}{\partial p} \right) \label{eq:logdet}.
+\end{align}
+
+Following Kwon, Ceperley, and Martin~\cite{Kwon1993backflow}, the particle gradient
+\begin{align}
+G_i^\alpha \equiv \frac{\partial}{\partial r_i^\alpha} \log\det M = \sum\limits_{j=1}^N \sum\limits_{\beta=1}^3 F_{jj}^\beta A_{jj}^{\alpha\beta}, \label{eq:grad}
+\end{align}
+where the quasi-particle gradient matrix
+\begin{align}
+A_{ij}^{\alpha\beta} \equiv \frac{\partial x_j^\beta}{\partial r_i^\alpha},
+\end{align}
+and the intermediate matrix
+\begin{align}
+F_{ij}^\alpha\equiv\sum\limits_k M^{-1}_{ik} dM_{kj}^\alpha,
+\end{align}
+with the single-particle orbital derivatives (w.r. to quasi-particle coordinates)
+\begin{align}
+dM_{ij}^\alpha \equiv \frac{\partial M_{ij}}{\partial x_j^\alpha}.
+\end{align}
+Notice, I have made the name change of $\phi\rightarrow M$ from the notations of ref.~\cite{Kwon1993backflow}. This name change is intended to help the reader associate M with the QMCPACK variable \verb|psiM|.
+\begin{lstlisting}
+// In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
+for(int i=0; i<num; i++) // k in above formula
+{
+  for(int j=0; j<NumPtcls; j++)
+  {
+    for(int k=0; k<OHMMS_DIM; k++) // alpha in above formula
+    {
+      myG(i) += dot(BFTrans->Amat(i,FirstIndex+j),Fmat(j,j));
+    }
+  }
+}
+\end{lstlisting}
+
+Eq. (\ref{eq:grad}) is still relatively simple to understand. The $A$ matrix maps changes in particle coordinates $d\bs{r}$ to changes in quasi-particle coordinates $d\bs{x}$. Dotting A into F propagates $d\bs{x}$ to $dM$. Thus $F\cdot A$ is the term inside the trace operator of eq.~(\ref{eq:logdet}). Finally, performing the trace completes the evaluation of the derivative.
+
+\subsection{Laplacian}
+The particle laplacian is given in ref.~\cite{Kwon1993backflow} as
+\begin{align}
+L_i \equiv \sum\limits_{\beta} \frac{\partial^2}{\partial (r_i^\beta)^2} \log\det M = \sum\limits_{j\alpha} B_{ij}^\alpha F_{jj}^\alpha - \sum\limits_{jk}\sum\limits_{\alpha\beta\gamma} A_{ij}^{\alpha\beta}A_{ik}^{\alpha\gamma}\times\left(F_{kj}^\alpha F_{jk}^\gamma -\delta_{jk}\sum\limits_m M^{-1}_{jm} d2M_{mj}^{\beta\gamma}\right), \label{eq:lap}
+\end{align}
+where the quasi-particle laplacian matrix
+\begin{align}
+B_{ij}^{\alpha} \equiv \sum\limits_\beta \frac{\partial^2 x_j^\alpha}{\partial (r_i^\beta)^2},
+\end{align}
+with the second derivatives of the single-particles orbitals being
+\begin{align}
+d2M_{ij}^{\alpha\beta} \equiv \frac{\partial^2 M_{ij}}{\partial x_j^\alpha\partial x_j^\beta}.
+\end{align}
+
+Schematically, $L_i$ has contributions from 3 terms of the form $BF, AAFF, \tr(AA,Md2M)$, respectively. $A, B, M ,d2M,$ and $F$ can be calculated and stored before the calculations of $L_i$. The first $BF$ term can be directly calculated in a loop over quasi-particle coordinates $j\alpha$.
+\begin{lstlisting}
+// In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
+for(int j=0; j<NumPtcls; j++)
+  for(int a=0; a<OHMMS_DIM; k++)
+    myL(i) += BFTrans->Bmat_full(i,FirstIndex+j)[a]*Fmat(j,j)[a];
+\end{lstlisting}
+Notice $B_{ij}^\alpha$ is stored in \verb|Bmat_full|, NOT \verb|Bmat|. 
+
+The remaining two terms both involve $AA$. Thus, it is best to define a temporary tensor $AA$
+\begin{align}
+{}_iAA_{jk}^{\beta\gamma} \equiv \sum\limits_\alpha A_{ij}^{\alpha\beta} A_{ij}^{\alpha\gamma},
+\end{align}
+which we will overwrite for each particle $i$. Similarly, define $FF$
+\begin{align}
+FF_{jk}^{\alpha\gamma} \equiv F_{kj}^\alpha F_{jk}^\gamma,
+\end{align}
+which is simply the outer product of $F\otimes F$. Then the $AAFF$ term can be calculated by fully contracting $AA$ with $FF$.
+\begin{lstlisting}
+// In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
+for(int j=0; j<NumPtcls; j++)
+  for(int k=0; k<NumPtcls; k++)
+    for(int i=0; i<num; i++)
+    {
+      Tensor<RealType,OHMMS_DIM> AA = dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k));
+      HessType FF = outerProduct(Fmat(k,j),Fmat(j,k));
+      myL(i) -= traceAtB(AA,FF);
+    }
+\end{lstlisting}
+Finally, define the single-particle orbital derivative term
+\begin{align}
+Md2M_j^{\beta\gamma} \equiv \sum\limits_m M^{-1}_{jm} d2M_{mj}^\beta,
+\end{align}
+then the last term is given by the contraction of $Md2M$ (\verb|q_j|) with the diagonal of $AA$.
+\begin{lstlisting}
+for(int j=0; j<NumPtcls; j++)
+{
+  HessType q_j;
+  q_j=0.0;
+  for(int k=0; k<NumPtcls; k++)
+    q_j += psiMinv(j,k)*grad_grad_psiM(j,k);
+  for(int i=0; i<num; i++)
+  {
+    Tensor<RealType,OHMMS_DIM> AA = dot(
+      transpose(BFTrans->Amat(i,FirstIndex+j)),
+      BFTrans->Amat(i,FirstIndex+j)
+    );
+    myL(i) += traceAtB(AA,q_j);
+  }
+}
+\end{lstlisting}
+
+\subsection{Wavefunction Parameter Derivative}
+In order to use the robust linear optimization method of ref.~\cite{Toulouse2007linear}, the trial wavefunction needs to know its contributions to the overlap and hamiltonian matrices. In particular, we need derivatives of these matrices with respect to wavefunction parameters. As a consequence, the wavefunction $\psi$ needs to be able to evaluate $\frac{\partial}{\partial p} \ln \psi$ and $\frac{\partial}{\partial p} \frac{\mathcal{H}\psi}{\psi}$, where $p$ is a parameter.
+
+When two-body backflow is considered, a wavefunction parameter $p$ enters the $\eta$ function only (eq.~(\ref{eq:quasi})). $\bs{r}$, $\phi$, and $M$ are do not explicitly dependent on $p$. Derivative of the log value is almost identical to particle gradient. Namely, eq. (\ref{eq:grad}) applies upon the substitution $r_i^\alpha\rightarrow p$
+\begin{align}
+\frac{\partial}{\partial p} \ln\det M = \sum\limits_{j=1}^N \sum\limits_{\beta=1}^3 F_{jj}^\beta \left({}_pC_{j}^{\beta}\right),
+\end{align}
+where the quasi-particle derivatives are stored in \verb|Cmat|
+\begin{align}
+{}_pC_{i}^{\alpha} \equiv \frac{\partial}{\partial p} x_{i}^{\alpha}.
+\end{align}
+
+The change in local kinetic energy is a lot more difficult to calculate
+\begin{align}
+\frac{\partial T_{\text{local}}}{\partial p} = \frac{\partial}{\partial p} \left\{ \left( \sum\limits_{i=1}^N \frac{1}{2m_i} \nabla^2_i \right) \ln \det M \right\} = \sum\limits_{i=1}^N \frac{1}{2m_i} \frac{\partial}{\partial p} L_i, \label{eq:dK}
+\end{align}
+where $L_i$ is the particle laplacian defined in eq.~(\ref{eq:lap}). In order to evaluate eq.~(\ref{eq:dK}), we need to calculate parameter derivatives of all three terms defined in the laplacian evalaution. Namely $(B)(F)$, $(AA)(FF)$, and $\tr(AA,Md2M)$, where I have put parentheses around previously identified data structures. After $\frac{\partial}{\partial p}$ hits, each of the 3 terms will split into two terms by the product rule. Each smaller term will contain a contraction of two data structures. Therefore, we will need to calculate the parameter derivatives of each data structure defined in the laplacian evaluation
+\begin{align}
+{}_pX_{ij}^{\alpha\beta} \equiv \frac{\partial}{\partial p} A_{ij}^{\alpha\beta} \\
+{}_pY_{ij}^{\alpha} \equiv \frac{\partial}{\partial p} B_{ij}^{\alpha} \\
+{}_pdF_{ij}^{\alpha} \equiv \frac{\partial}{\partial p} F_{ij}^{\alpha} \\
+{}_{pi}{AA'}_{jk}^{\beta\gamma} \equiv \frac{\partial}{\partial p}  {}_iAA_{jk}^{\beta\gamma} \\
+{}_p {FF'}_{jk}^{\alpha\gamma} \equiv \frac{\partial}{\partial p} FF_{jk}^{\alpha\gamma} \\
+{}_p {Md2M'}_{j}^{\beta\gamma} \equiv \frac{\partial}{\partial p} Md2M_j^{\beta\gamma}
+\end{align}
+X and Y are stored as \verb|Xmat|, and \verb|Ymat_full| (NOT \verb|Ymat|) in the code. dF is \verb|dFa|. $AA'$ is not fully store, intermediate values are stored in \verb|Aij_sum| and \verb|a_j_sum|. $FF'$ is calculated on-the-fly as $dF\otimes F+F\otimes dF$. $Md2M'$ is not stored, intermediate values are stored in \verb|q_j_prime|.

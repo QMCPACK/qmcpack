@@ -24,7 +24,7 @@
 #ifndef QMCPLUSPLUS_LR_KSPACEJASTROW_H
 #define QMCPLUSPLUS_LR_KSPACEJASTROW_H
 
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Optimize/VarList.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -70,7 +70,7 @@ public:
   }
 };
 
-class kSpaceJastrow: public OrbitalBase
+class kSpaceJastrow: public WaveFunctionComponent
 {
 public:
   typedef enum { CRYSTAL, ISOTROPIC, NOSYMM } SymmetryType;
@@ -165,45 +165,22 @@ public:
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L);
 
-  inline ValueType evaluate(ParticleSet& P,
-                            ParticleSet::ParticleGradient_t& G,
-                            ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
-
   ValueType ratio(ParticleSet& P, int iat);
-
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return std::exp(logRatio(P,iat,dG,dL));
-  };
 
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  ValueType logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL);
 
   void restore(int iat);
   void acceptMove(ParticleSet& P, int iat);
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
 
   // Allocate per-walker data in the PooledData buffer
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
   // Walker move has been accepted -- update the buffer
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf,
                         bool fromscratch=false);
   // Pull data from the walker buffer at the beginning of a block of
   // single-particle moves
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   ///process input file
   bool put(xmlNodePtr cur);
@@ -212,7 +189,7 @@ public:
   // structure factors.  Used to sort the G-vectors according to
   // crystal symmetry
   bool operator()(PosType G1, PosType G2);
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
@@ -221,7 +198,7 @@ public:
 
   /** evaluate the ratio
   */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
 private:
   void copyFrom(const kSpaceJastrow& old);
@@ -231,8 +208,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2595 $   $Date: 2008-04-17 07:52:58 -0500 (Thu, 17 Apr 2008) $
- * $Id: kSpaceJastrow.h 2595 2008-04-17 12:52:58Z jnkim $
- ***************************************************************************/

@@ -29,7 +29,7 @@ from generic import obj
 from developer import DevBase,unavailable
 try:
     import h5py
-except ImportError:
+except:
     h5py = unavailable('h5py')
 #end try
 from debug import *
@@ -144,6 +144,15 @@ class HDFgroup(DevBase):
     #end def read_arrays
 
 
+    def get_keys(self):
+        if '_groups' in self:
+            keys = list(self._groups.keys())
+        else:
+            keys = list(self.keys())
+        #end if
+        return keys
+    #end def get_keys
+
     #project interface methods
 
     def zero(self,*names):
@@ -152,11 +161,11 @@ class HDFgroup(DevBase):
                 self[name][:] = 0
             #end if
         #end for
-        for name,value in self._groups.iteritems():
-            if isinstance(value,str):
-                ci(ls(),gs())
+        for name in self.get_keys():
+            value = self[name]
+            if isinstance(value,HDFgroup):
+                value.zero(*names)
             #end if
-            value.zero(*names)
         #end for
         #self.sum(*names)
     #end def zero
@@ -166,13 +175,8 @@ class HDFgroup(DevBase):
         name_set = set(names)
         snames = set(self.keys()) & name_set
         onames = set(other.keys()) & name_set
-        if len(snames)>0 and len(snames)<len(names):
-            self.error('only some names found in self\n  names_requested:'+str(names)+'\n  names found:  '+str(snames))
-        elif len(onames)>0 and len(onames)<len(names):
-            self.error('only some names found in other\n  names_requested:'+str(names)+'\n  names found:  '+str(onames))
-        #end if
-        if len(snames)>0:
-            for name in names:
+        if snames==onames:
+            for name in snames:
                 svalue = self[name]
                 ovalue = other[name]
                 if not isinstance(svalue,ndarray) or not isinstance(ovalue,ndarray):
@@ -182,11 +186,14 @@ class HDFgroup(DevBase):
                 self[name] = resize(svalue,shape)
             #end for
         #end if
-        for name,value in self._groups.iteritems():
-            if name in other and isinstance(other[name],HDFgroup):
-                value.minsize(other[name])
-            else:
-                self.error(name+' not found in minsize partner')
+        for name in self.get_keys():
+            value = self[name]
+            if isinstance(value,HDFgroup):
+                if name in other and isinstance(other[name],HDFgroup):
+                    value.minsize(other[name])
+                else:
+                    self.error(name+' not found in minsize partner')
+                #end if
             #end if
         #end for
         #self.sum(*names)
@@ -197,13 +204,8 @@ class HDFgroup(DevBase):
         name_set = set(names)
         snames = set(self.keys()) & name_set
         onames = set(other.keys()) & name_set
-        if len(snames)>0 and len(snames)<len(names):
-            self.error('only some names found in self\n  names_requested:'+str(names)+'\n  names found:  '+str(snames))
-        elif len(onames)>0 and len(onames)<len(names):
-            self.error('only some names found in other\n  names_requested:'+str(names)+'\n  names found:  '+str(onames))
-        #end if
-        if len(snames)>0:
-            for name in names:
+        if snames==onames:
+            for name in snames:
                 svalue = self[name]
                 ovalue = other[name]
                 if not isinstance(svalue,ndarray) or not isinstance(ovalue,ndarray):
@@ -221,11 +223,14 @@ class HDFgroup(DevBase):
                 svalue += ovalue[ix_(*ranges)]
             #end for
         #end if
-        for name,value in self._groups.iteritems():
-            if name in other and isinstance(other[name],HDFgroup):
-                value.accumulate(other[name])
-            else:
-                self.error(name+' not found in accumulate partner')
+        for name in self.get_keys():
+            value = self[name]
+            if isinstance(value,HDFgroup):
+                if name in other and isinstance(other[name],HDFgroup):
+                    value.accumulate(other[name])
+                else:
+                    self.error(name+' not found in accumulate partner')
+                #end if
             #end if
         #end for
         #self.sum(*names)
@@ -238,8 +243,11 @@ class HDFgroup(DevBase):
                 self[name] /= normalization
             #end if
         #end for
-        for name,value in self._groups.iteritems():
-            value.normalize(normalization,*names)
+        for name in self.get_keys():
+            value = self[name]
+            if isinstance(value,HDFgroup):
+                value.normalize(normalization,*names)
+            #end if
         #end for
         #self.sum(*names)
     #end def normalize

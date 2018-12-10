@@ -47,16 +47,8 @@
         </atomicBasisSet>
       </basisset>
       <slaterdeterminant>
-        <determinant id="updet" spin="1" size="1">
-          <coefficient id="updetC" type="Array" size="1">
-            1.0
-          </coefficient>
-        </determinant>
-        <determinant id="downdet" spin="-1" size="1">
-          <coefficient id="downdetC" type="Array" size="1">
-            1.0
-          </coefficient>
-        </determinant>
+        <determinant id="updet" spin="1" size="1"/>
+        <determinant id="downdet" spin="-1" size="1"/>
       </slaterdeterminant>
     </determinantset>
   </wavefunction>
@@ -91,7 +83,6 @@
       <parameter name="useDrift">  yes </parameter>
       <parameter name="bigchange">10.0</parameter>
       <estimator name="LocalEnergy" hdf5="no"/>
-      <parameter name="usebuffer"> yes </parameter>
       <parameter name="nonlocalpp"> yes </parameter>
       <parameter name="MinMethod">quartic</parameter>
       <parameter name="exp0">-6</parameter>

@@ -22,7 +22,6 @@
 #include <iostream>
 #include <fstream>
 #include "OhmmsData/FileUtility.h"
-#include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
@@ -46,7 +45,12 @@ bool LatticeParser::put(xmlNodePtr cur)
   std::size_t mpigrid = ParticleLayout_t::MPI_GRID;
 
   Tensor<OHMMS_PRECISION_FULL,DIM> lattice_in;
+  bool lattice_defined=false;
+  bool bconds_defined=false;
+  int boxsum=0;
 
+  app_log() << " Lattice" << std::endl;
+  app_log() << " -------" << std::endl;
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
   {
@@ -60,7 +64,13 @@ bool LatticeParser::put(xmlNodePtr cur)
       }
       else if(aname == "lattice")
       {
+        const char *units_prop = (const char *)(xmlGetProp(cur, (const xmlChar *) "units"));
+        if (units_prop && std::string(units_prop) != "bohr") {
+          APP_ABORT("LatticeParser::put. Only atomic units (bohr) supported for lattice units. Input file uses: " << std::string(units_prop));
+        }
+
         putContent(lattice_in,cur);
+        lattice_defined=true;
         //putContent(ref_.R,cur);
       }
       else if(aname == "grid")
@@ -78,7 +88,7 @@ bool LatticeParser::put(xmlNodePtr cur)
       else if(aname == "bconds")
       {
         putContent(bconds,cur);
-        int boxsum=0;
+        bconds_defined=true;
         for(int idir=0; idir<DIM; idir++)
         {
           char b = bconds[idir][0];
@@ -86,16 +96,25 @@ bool LatticeParser::put(xmlNodePtr cur)
           {
             ref_.BoxBConds[idir] = false;
           }
-          else
+          else if(b == 'p' || b == 'P')
           {
             ref_.BoxBConds[idir] = true;
             boxsum++;
           }
+          else
+          {
+            APP_ABORT("LatticeParser::put. Unknown label '" + bconds[idir] +
+                      "' used for periodicity. Only 'p', 'P', 'n' and 'N' are valid!");
+          }
+
+          // Protect BCs which are not implemented.
+          if ( idir>0 && !ref_.BoxBConds[idir-1] && ref_.BoxBConds[idir] )
+            APP_ABORT("LatticeParser::put. In \"bconds\", non periodic directions must be placed after the periodic ones.");
         }
-        //if(boxsum>0 && boxsum<DIM)
-        //{
-        //  APP_ABORT(" LatticeParser::put \n   Mixed boundary is not supported. Set \n   <parameter name=\"bconds\">p p p </parameter>\n");
-        //}
+      }
+      else if(aname == "vacuum")
+      {
+        putContent(ref_.VacuumScale,cur);
       }
       else if(aname == "LR_dim_cutoff")
       {
@@ -103,6 +122,7 @@ bool LatticeParser::put(xmlNodePtr cur)
       }
       else if(aname == "rs")
       {
+        lattice_defined=true;
         OhmmsAttributeSet rAttrib;
         rAttrib.add(nptcl,"condition");
         rAttrib.add(pol,"polarized");
@@ -116,6 +136,29 @@ bool LatticeParser::put(xmlNodePtr cur)
       }
     }
     cur = cur->next;
+  }
+  // checking boundary conditions
+  if(lattice_defined)
+  {
+    if(!bconds_defined)
+    {
+      app_log() << "  Lattice is specified but boundary conditions are not. Assuming PBC." << std::endl;
+      ref_.BoxBConds = true;
+    }
+  }
+  else
+  {
+    if(boxsum==0)
+    {
+      app_log() << "  Lattice is not specified for the Open BC. Add a huge box." << std::endl;
+      lattice_in=0;
+      for(int idir=0; idir<DIM; idir++)
+        lattice_in(idir,idir)=1e5;
+    }
+    else
+    {
+      APP_ABORT(" LatticeParser::put \n   Mixed boundary is supported only when a lattice is specified!");
+    }
   }
   //special heg processing
   if(rs>0.0)
@@ -160,13 +203,13 @@ bool LatticeParser::put(xmlNodePtr cur)
   ref_.makeGrid(grid);
   if(ref_.SuperCellEnum == SUPERCELL_OPEN)
     ref_.WignerSeitzRadius=ref_.SimulationCellRadius;
+  std::string unit_name = "bohr";
   app_log() << std::fixed;
-  app_log() << "  Simulation cell radius = " << ref_.SimulationCellRadius << std::endl;
-  app_log() << "  Wigner-Seitz    radius = " << ref_.WignerSeitzRadius    << std::endl;
+  app_log() << "  Simulation cell radius   = " << ref_.SimulationCellRadius << " " << unit_name << std::endl;
+  app_log() << "  Wigner-Seitz cell radius = " << ref_.WignerSeitzRadius    << " " << unit_name << std::endl;
+  app_log() << std::endl;
 
-  //initialize the global cell
-  //qmc_common.theSuperCell=lattice_in;
-  return true;
+  return lattice_defined;
 }
 
 
@@ -211,8 +254,3 @@ xmlNodePtr LatticeXMLWriter::createNode()
   return cur;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

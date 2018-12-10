@@ -16,7 +16,6 @@
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
@@ -24,11 +23,11 @@
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCApp/ParticleSetPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
-#include "Estimators/EstimatorManager.h"
+#include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 
@@ -48,7 +47,6 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSet ions;
   MCWalkerConfiguration elec;
@@ -71,8 +69,6 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   elec.R[1][1] = 0.0;
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
-  elec.WalkerList[0]->DataSet.resize(9);
-
 
   SpeciesSet &tspecies =  elec.getSpeciesSet();
   int upIdx = tspecies.addSpecies("u");
@@ -84,13 +80,19 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.addTable(ions);
+#ifdef ENABLE_SOA
+  elec.addTable(ions,DT_SOA);
+#else
+  elec.addTable(ions,DT_AOS);
+#endif
   elec.update();
 
 
   TrialWaveFunction psi = TrialWaveFunction(c);
   ConstantOrbital *orb = new ConstantOrbital;
   psi.addOrbital(orb, "Constant");
+  psi.registerData(elec, elec.WalkerList[0]->DataSet);
+  elec.WalkerList[0]->DataSet.allocate();
 
   FakeRandom rg;
 
@@ -101,7 +103,7 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
   VMCUpdatePbyP vmc(elec, psi, h, rg);
-  EstimatorManager EM;
+  EstimatorManagerBase EM;
   SimpleFixedNodeBranch branch(0.1, 1);
   TraceManager TM;
   vmc.resetRun(&branch, &EM, &TM);
@@ -117,12 +119,13 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
 
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See ParticleBase/tests/test_random_seq.cpp for the gaussian random numbers
-  REQUIRE(elec.R[0][0] == Approx(0.6276702589209545));
+  //  Values from diffuse.py
+  REQUIRE(elec.R[0][0] == Approx(0.627670258894097));
   REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.3723297410790455));
+  REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
 
   REQUIRE(elec.R[1][0] == Approx(0.0));
-  REQUIRE(elec.R[1][1] == Approx(-0.3723297410790455));
+  REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
   REQUIRE(elec.R[1][2] == Approx(1.0));
 
 }

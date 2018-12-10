@@ -18,6 +18,7 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/L2Potential.h"
 namespace qmcplusplus
 {
 
@@ -32,6 +33,7 @@ struct ECPotentialBuilder: public MPIObjectBase, public QMCTraits
   typedef LocalECPotential::GridType GridType;
   bool hasLocalPot;
   bool hasNonLocalPot;
+  bool hasL2Pot;
 
   QMCHamiltonian&  targetH;
   ParticleSet& IonConfig;
@@ -41,6 +43,7 @@ struct ECPotentialBuilder: public MPIObjectBase, public QMCTraits
   std::vector<RealType>  localZeff;
   std::vector<RadialPotentialType*>  localPot;
   std::vector<NonLocalECPComponent*>  nonLocalPot;
+  std::vector<L2RadialPotential*>  L2Pot;
 
   ECPotentialBuilder(QMCHamiltonian& h,
                      ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,
@@ -54,9 +57,4 @@ struct ECPotentialBuilder: public MPIObjectBase, public QMCTraits
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

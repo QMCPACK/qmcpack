@@ -30,35 +30,45 @@ extern myTimer Timer;
 #define AFQMC_TIMER 
 
 // careful here that RealType is consistent with this!!!
-#define MKL_Complex8 std::complex<float> 
-#define MKL_Complex16 std::complex<double> 
+#define MKL_INT         int
+#define MKL_Complex8    std::complex<float> 
+#define MKL_Complex16   std::complex<double> 
 
 namespace qmcplusplus
 {
   typedef Vector<IndexType>     IndexVector;
   typedef Vector<RealType>      RealVector;
   typedef Vector<ValueType>     ValueVector;
+  typedef Vector<SPValueType>   SPValueVector;
   typedef Vector<ComplexType>   ComplexVector;
+  typedef Vector<SPComplexType>   SPComplexVector;
 
   typedef SMDenseVector<IndexType>     IndexSMVector;
   typedef SMDenseVector<RealType>      RealSMVector;
   typedef SMDenseVector<ValueType>     ValueSMVector;
+  typedef SMDenseVector<SPValueType>   SPValueSMVector;
   typedef SMDenseVector<ComplexType>   ComplexSMVector;
+  typedef SMDenseVector<SPComplexType>   SPComplexSMVector;
 
   typedef Matrix<IndexType>     IndexMatrix;
   typedef Matrix<RealType>      RealMatrix;
   typedef Matrix<ValueType>     ValueMatrix;
+  typedef Matrix<SPValueType>     SPValueMatrix;
   typedef Matrix<ComplexType>   ComplexMatrix;
+  typedef Matrix<SPComplexType>   SPComplexMatrix;
 
   typedef SparseMatrix<IndexType>     IndexSpMat;
   typedef SparseMatrix<RealType>      RealSpMat;
   typedef SparseMatrix<ValueType>     ValueSpMat;
+  typedef SparseMatrix<SPValueType>   SPValueSpMat;
   typedef SparseMatrix<ComplexType>   ComplexSpMat;
 
   typedef SMSparseMatrix<IndexType>     IndexSMSpMat;
   typedef SMSparseMatrix<RealType>      RealSMSpMat;
   typedef SMSparseMatrix<ValueType>     ValueSMSpMat;
+  typedef SMSparseMatrix<SPValueType>   SPValueSMSpMat;
   typedef SMSparseMatrix<ComplexType>   ComplexSMSpMat;
+  typedef SMSparseMatrix<SPComplexType>   SPComplexSMSpMat;
 
 struct AFQMCInfo 
 {
@@ -165,6 +175,7 @@ struct AFQMCInfo
     if(sR == "yes" || sR == "true") spinRestricted = true;
 
     NMO = NMO_FULL-NCA;
+    if(NETOT==-1) NETOT = NCA+NCB+NAEA+NAEB;
 
     return true;
   }

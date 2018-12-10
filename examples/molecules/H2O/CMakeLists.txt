@@ -9,7 +9,7 @@ IF(NOT QMC_CUDA AND NOT QMC_COMPLEX)
                     H2O 
                     simple-H2O.xml
                     1 1
-                    H2O_SCALARS
-                    2  # check the DMC data
-                    TRUE)
+                    TRUE
+                    2 H2O_SCALARS # check the DMC data
+                    )
 ENDIF()

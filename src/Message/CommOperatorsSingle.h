@@ -28,6 +28,9 @@ template<typename T> inline void Communicate::reduce(T& ) { }
 template<typename T>
 inline void Communicate::reduce(T* restrict , T* restrict, int n) { }
 
+template<typename T>
+inline void Communicate::reduce_in_place(T* restrict, int n) { }
+
 template<typename T> inline void Communicate::bcast(T& ) {  }
 
 template<typename T> inline void Communicate::bcast(T* restrict ,int n) { }
@@ -43,7 +46,10 @@ Communicate::send(int dest, int tag, T&) { }
 
 template<typename T> inline void Communicate::gather(T& sb, T& rb, int dest) { }
 
-template<typename T> inline void Communicate::allgather(T& sb, T& rb, int count) { }
+template<typename T> inline void Communicate::allgather(T& sb, T& rb, int count)
+{
+  for(size_t i=0; i<count; i++) rb[i]=sb[i];
+}
 
 template<typename T> inline void Communicate::scatter(T& sb, T& rb, int dest) { }
 
@@ -111,6 +117,12 @@ void gatherv(T* sb, T* rb, int n,IT& counts, IT& displ, int dest, MPI_Comm comm)
 { }
 #endif
 
+
+template<typename T, typename TMPI, typename IT>
+inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
+{ }
+
+
 template<typename T> 
 void allgather(T& sb, T& rb, int count, Communicate::mpi_comm_type comm)
 { }
@@ -141,8 +153,3 @@ void gmax(T&,Communicate::mpi_comm_type comm)
 
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: kesler $
- * $Revision: 2635 $   $Date: 2008-04-25 16:46:48 -0500 (Fri, 25 Apr 2008) $
- * $Id: CommOperators.h 2635 2008-04-25 21:46:48Z kesler $
- ***************************************************************************/

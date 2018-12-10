@@ -19,7 +19,7 @@
 #ifndef QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
 #define QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  * @brief generic implementation of one-body Jastrow function.
  *
  *The One-Body Jastrow has the form
@@ -75,7 +75,7 @@ namespace qmcplusplus
  *by MC methods.
  */
 template<class FT>
-class OneBodyJastrowOrbital: public OrbitalBase
+class OneBodyJastrowOrbital: public WaveFunctionComponent
 {
 protected:
   int myTableIndex;
@@ -85,10 +85,10 @@ protected:
   ParticleAttrib<RealType> U,d2U;
   ParticleAttrib<PosType> dU;
   RealType *FirstAddressOfdU, *LastAddressOfdU;
-  std::vector<FT*> Fs;
   std::vector<FT*> Funique;
 
 public:
+  std::vector<FT*> Fs;
 
   typedef FT FuncType;
 
@@ -98,11 +98,14 @@ public:
     : CenterRef(centers), FirstAddressOfdU(0), LastAddressOfdU(0)
   {
     U.resize(els.getTotalNum());
-    myTableIndex=els.addTable(CenterRef);
+    dU.resize(els.getTotalNum());
+    d2U.resize(els.getTotalNum());
+
+    myTableIndex=els.addTable(CenterRef,DT_AOS);
     //allocate vector of proper size  and set them to 0
-    Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),0);
-    Fs.resize(CenterRef.getTotalNum(),0);
-    OrbitalName = "OneBodyJastrow";
+    Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),nullptr);
+    Fs.resize(CenterRef.getTotalNum(),nullptr);
+    ClassName = "OneBodyJastrow";
   }
 
   ~OneBodyJastrowOrbital() { }
@@ -146,7 +149,7 @@ public:
     myVars.getIndex(active);
     Optimizable=myVars.is_optimizable();
     for (int i=0; i<Funique.size(); ++i)
-      if (Funique[i])
+      if (Funique[i] != nullptr)
         Funique[i]->checkOutVariables(active);
     if (dPsi)
       dPsi->checkOutVariables(active);
@@ -205,8 +208,7 @@ public:
     for (int i=0; i<d_table->size(SourceIndex); i++)
     {
       FT* func=Fs[i];
-      if (func == 0)
-        continue;
+      if (func == nullptr) continue;
       for (int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++)
       {
         int j = d_table->J[nn];
@@ -222,13 +224,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-  
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
     LogValue=0.0;
@@ -243,8 +238,7 @@ public:
     for (int i=0; i<d_table->size(SourceIndex); i++)
     {
       FT* func=Fs[i];
-      if (func == 0)
-        continue;
+      if (func == nullptr) continue;
       for (int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++)
       {
         int j = d_table->J[nn];
@@ -255,8 +249,6 @@ public:
     }
   } 
   
-//  ValueType evaluate(ParticleSet& P, ParticleSet::
-
   /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
    * @param P active particle set
    * @param iat particle that has been moved.
@@ -266,7 +258,7 @@ public:
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     curVal=0.0;
     for (int i=0; i<d_table->size(SourceIndex); ++i)
-      if (Fs[i])
+      if (Fs[i] != nullptr)
         curVal += Fs[i]->evaluate(d_table->Temp[i].r1);
     return std::exp(U[iat]-curVal);
   }
@@ -279,13 +271,13 @@ public:
     //  if (Fs[i])
     //    for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
     //      myr[j]+=Fs[i]->evaluate(d_table->r(nn));
-    //RealType x=U[VP.activePtcl];
+    //RealType x=U[VP.refPtcl];
     //for(int k=0; k<ratios.size(); ++k)
     //  ratios[k]=std::exp(x-myr[k]);
-    std::vector<RealType> myr(ratios.size(),U[VP.activePtcl]);
+    std::vector<RealType> myr(ratios.size(),U[VP.refPtcl]);
     const DistanceTableData* d_table=VP.DistTables[myTableIndex];
     for (int i=0; i<d_table->size(SourceIndex); ++i)
-      if (Fs[i])
+      if (Fs[i]!=nullptr)
         for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
           myr[j]-=Fs[i]->evaluate(d_table->r(nn));
     for(int k=0; k<ratios.size(); ++k)
@@ -300,71 +292,15 @@ public:
       dPsi->evaluateDerivRatios(VP,optvars,dratios);
   }
 
-
-  /** evaluate the ratio
-   */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
-  {
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    std::fill(ratios.begin(),ratios.end(),0.0);
-    for (int i=0; i<d_table->size(SourceIndex); ++i)
-    {
-      if (Fs[i])
-      {
-        RealType up=Fs[i]->evaluate(d_table->Temp[i].r1);
-        for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
-          ratios[j]+=Fs[i]->evaluate(d_table->r(nn))-up;
-        //delta_u[d_table->J[nn]]+=Fs[i]->evaluate(d_table->r(nn))-u0;
-      }
-    }
-    for(int i=0; i<ratios.size(); ++i)
-      ratios[i] = std::exp(ratios[i]);
-  }
-
-
-  /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$ and fill-in the differential gradients/laplacians
-   * @param P active particle set
-   * @param iat particle that has been moved.
-   * @param dG partial gradients
-   * @param dL partial laplacians
-   */
-  inline ValueType ratio(ParticleSet& P, int iat,
-                         ParticleSet::ParticleGradient_t& dG,
-                         ParticleSet::ParticleLaplacian_t& dL)
-  {
-    //int n=d_table->size(VisitorIndex);
-    //curVal=0.0;
-    //curLap=0.0;
-    //curGrad = 0.0;
-    //RealType dudr, d2udr2;
-    //for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
-    //  if(Fs[i]) {
-    //    curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-    //    dudr *= d_table->Temp[i].rinv1;
-    //    curGrad -= dudr*d_table->Temp[i].dr1;
-    //    curLap  -= d2udr2+2.0*dudr;
-    //  }
-    //  //int ij=d_table->PairID[nn];
-    //  //curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-    //  //dudr *= d_table->Temp[i].rinv1;
-    //  //curGrad -= dudr*d_table->Temp[i].dr1;
-    //  //curLap  -= d2udr2+2.0*dudr;
-    //}
-    //dG[iat] += curGrad-dU[iat];
-    //dL[iat] += curLap-d2U[iat];
-    //return std::exp(U[iat]-curVal);
-    return std::exp(logRatio(P,iat,dG,dL));
-  }
-
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int n=d_table->size(VisitorIndex);
     curGrad = 0.0;
-    RealType ur,dudr, d2udr2;
+    RealType ur, dudr, d2udr2;
     for (int i=0, nn=iat; i<d_table->size(SourceIndex); ++i,nn+= n)
     {
-      if (Fs[i])
+      if (Fs[i] != nullptr)
       {
         ur=Fs[i]->evaluate(d_table->r(nn),dudr,d2udr2);
         dudr *= d_table->rinv(nn);
@@ -436,7 +372,7 @@ public:
     RealType dudr, d2udr2;
     for (int i=0; i<d_table->size(SourceIndex); ++i)
     {
-      if (Fs[i])
+      if (Fs[i] != nullptr)
       {
         curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
         dudr *= d_table->Temp[i].rinv1;
@@ -447,51 +383,14 @@ public:
     return std::exp(U[iat]-curVal);
   }
 
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
-  {
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    int n=d_table->size(VisitorIndex);
-    curVal=0.0;
-    curLap=0.0;
-    curGrad = 0.0;
-    RealType dudr, d2udr2;
-    for (int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n)
-    {
-      if (Fs[i])
-      {
-        curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-        dudr *= d_table->Temp[i].rinv1;
-        curGrad -= dudr*d_table->Temp[i].dr1;
-        curLap  -= d2udr2+2.0*dudr;
-      }
-    }
-    dG[iat] += curGrad-dU[iat];
-    dL[iat] += curLap-d2U[iat];
-    return U[iat]-curVal;
-  }
-
   inline void restore(int iat) {}
 
   void acceptMove(ParticleSet& P, int iat)
   {
-    U[iat] = curVal;
-    dU[iat]=curGrad;
-    d2U[iat]=curLap;
-  }
-
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    dG[iat] += curGrad-dU[iat];
-    dU[iat]=curGrad;
-    dL[iat] += curLap-d2U[iat];
-    d2U[iat]=curLap;
-    U[iat] = curVal;
+    LogValue += U[iat]-curVal;
+    U[iat]    = curVal;
+    dU[iat]   = curGrad;
+    d2U[iat]  = curLap;
   }
 
   void evaluateLogAndStore(ParticleSet& P,
@@ -504,11 +403,10 @@ public:
     d2U=0.0;
     RealType uij, dudr, d2udr2;
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    for (int i=0; i<d_table->size(SourceIndex); i++)
+    for (int i=0,ns=d_table->size(SourceIndex); i<ns; i++)
     {
       FT* func=Fs[i];
-      if (func == 0)
-        continue;
+      if (func ==  nullptr) continue;
       for (int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++)
       {
         int j = d_table->J[nn];
@@ -527,27 +425,24 @@ public:
   }
 
   /** equivalent to evalaute with additional data management */
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    // std::cerr <<"REGISTERING 1 BODY JASTROW "<< std::endl;
-    // std::cerr <<d_table->size(VisitorIndex)<< std::endl;
-    //U.resize(d_table->size(VisitorIndex));
-    d2U.resize(d_table->size(VisitorIndex));
-    dU.resize(d_table->size(VisitorIndex));
     FirstAddressOfdU = &(dU[0][0]);
     LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
-    evaluateLogAndStore(P,P.G,P.L);
     //add U, d2U and dU. Keep the order!!!
     DEBUG_PSIBUFFER(" OneBodyJastrow::registerData ",buf.current());
     buf.add(U.begin(), U.end());
     buf.add(d2U.begin(), d2U.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
     DEBUG_PSIBUFFER(" OneBodyJastrow::registerData ",buf.current());
-    return LogValue;
   }
 
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false)
+  void evaluateGL(ParticleSet& P)
+  {
+    evaluateLogAndStore(P,P.G,P.L);
+  }
+
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {
     evaluateLogAndStore(P,P.G,P.L);
     //LogValue = 0.0;
@@ -586,7 +481,7 @@ public:
    *
    *copyFromBuffer uses the data stored by registerData or evaluate(P,buf)
    */
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     DEBUG_PSIBUFFER(" OneBodyJastrow::copyFromBuffer ",buf.current());
     buf.get(U.first_address(), U.last_address());
@@ -595,25 +490,7 @@ public:
     DEBUG_PSIBUFFER(" OneBodyJastrow::copyFromBuffer ",buf.current());
   }
 
-  /** return the current value and copy the current data to a buffer
-   *@param P the ParticleSet to operate on
-   *@param buf PooledData which stores the data for each walker
-   */
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    RealType sumu = 0.0;
-    for (int i=0; i<U.size(); i++)
-      sumu+=U[i];
-    DEBUG_PSIBUFFER(" OneBodyJastrow::evaluateLog ",buf.current());
-    buf.put(U.first_address(), U.last_address());
-    buf.put(d2U.first_address(), d2U.last_address());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    DEBUG_PSIBUFFER(" OneBodyJastrow::evaluateLog ",buf.current());
-    return -sumu;
-    //return std::exp(-sumu);
-  }
-
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     OneBodyJastrowOrbital<FT>* j1copy=new OneBodyJastrowOrbital<FT>(CenterRef,tqp);
     j1copy->Optimizable=Optimizable;
@@ -622,7 +499,7 @@ public:
       if (Funique[i])
         j1copy->addFunc(i,new FT(*Funique[i]));
     }
-    //j1copy->OrbitalName=OrbitalName+"_clone";
+    //j1copy->ClassName=ClassName+"_clone";
     if (dPsi)
     {
       j1copy->dPsi =  dPsi->makeClone(tqp);
@@ -630,17 +507,8 @@ public:
     return j1copy;
   }
 
-  void copyFrom(const OrbitalBase& old)
-  {
-    //nothing to do
-  }
 };
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

@@ -1142,8 +1142,7 @@ inline void evaluate(ParticleAttrib<T> &lhs,
   }
   else
   {
-    std::cerr << "Error: LHS and RHS don't conform in ParticleAttrib." << std::endl;
-    exit(1);
+    throw std::runtime_error("Error in evaluate: LHS and RHS don't conform in ParticleAttrib.");
   }
 }
 
@@ -1160,8 +1159,3 @@ std::ostream& operator<<(std::ostream& out, const ParticleAttrib<T>& rhs)
 #endif // OHMMS_PARTICLEATTRIB_PEPE_OPERATORS_H
 
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

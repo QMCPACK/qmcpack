@@ -180,8 +180,3 @@ struct ForEach<Reference<T>, FTag, CTag>
 #endif // PETE_PETE_FOREACH_H
 
 // ACL:rcsinfo
-// ----------------------------------------------------------------------
-// $RCSfile$   $Author$
-// $Revision$   $Date$
-// ----------------------------------------------------------------------
-// ACL:rcsinfo

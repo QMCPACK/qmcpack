@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="H2" series="0"/>
+  <random seed="9975"/>
+  <!-- input from gaussian converter -->
+  <include href="h2.ptcl_fdlr.xml"/>
+  <include href="h2.wfs_fdlr.xml"/>
+  <hamiltonian name="h0" type="generic" target="e"> 
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/> 
+    <pairpot name="IonElec"  type="coulomb" source="ion0"/>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/> 
+  </hamiltonian> 
+
+  <loop max="7">
+    <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+      <parameter name="walkers"> 1  </parameter>
+      <parameter name="blocks"> 256  </parameter>
+      <parameter name="warmupsteps"> 500 </parameter>
+      <parameter name="steps"> 1 </parameter>
+      <parameter name="substeps"> 10 </parameter>
+      <parameter name="timestep"> 0.05 </parameter>
+      <parameter name="samples"> 128000 </parameter>
+      <parameter name="useDrift">  yes </parameter>
+      <parameter name="GEVMethod"> mixed </parameter>
+      <parameter name="bigchange">15.0</parameter>
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="usebuffer"> yes </parameter>
+      <parameter name="MinMethod"> adaptive </parameter>
+      <parameter name="shift_i"> 1.0 </parameter>
+      <parameter name="shift_s"> 1.0 </parameter>
+      <parameter name="alloweddifference"> 1.0e-4 </parameter>
+      <parameter name="max_relative_cost_change"> 100.0 </parameter>
+      <parameter name="max_param_change"> 3.0e-1 </parameter>
+      <parameter name="targetExcited"> yes </parameter>
+      <parameter name="variance_correctStr"> no </parameter>
+      <parameter name="omega"> -1.00 </parameter>
+    </qmc>
+  </loop>
+</simulation>

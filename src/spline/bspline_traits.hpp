@@ -110,7 +110,7 @@ namespace qmcplusplus
     typedef UBspline_3d_z single_spline_type;
   };
 
-  /** specialization with multi_UBspline_3d_d
+  /** specialization with multi_UBspline_3d_s
    */
   template<>
   struct bspline_engine_traits<multi_UBspline_3d_s>
@@ -123,7 +123,7 @@ namespace qmcplusplus
     typedef float value_type;
   };
 
-  ///specialization with multi_UBspline_3d_z
+  ///specialization with multi_UBspline_3d_c
   template<>
   struct bspline_engine_traits<multi_UBspline_3d_c>
   {
@@ -174,5 +174,32 @@ namespace qmcplusplus
     typedef std::complex<float> value_type;
   };
 #endif
+
+  /** specialization with multi_UBspline_3d_d
+   */
+  template<>
+  struct bspline_engine_traits<multi_UBspline_1d_d>
+  {
+    enum {DIM=1};
+    typedef multi_UBspline_1d_d SplineType;
+    typedef UBspline_1d_d       SingleSplineType;
+    typedef BCtype_d            BCType;
+    typedef double real_type;
+    typedef double value_type;
+  };
+
+  /** specialization with multi_UBspline_3d_s
+   */
+  template<>
+  struct bspline_engine_traits<multi_UBspline_1d_s>
+  {
+    enum {DIM=1};
+    typedef multi_UBspline_1d_s SplineType;
+    typedef UBspline_1d_s       SingleSplineType;
+    typedef BCtype_s            BCType;
+    typedef float real_type;
+    typedef float value_type;
+  };
+
 }
 #endif

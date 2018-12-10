@@ -16,7 +16,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/Tensor.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/ParticleSet.h"
 #include "ParticleIO/XMLParticleIO.h"
 
@@ -31,9 +30,6 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
-
 
 const char *particles = \
 "<tmp> \

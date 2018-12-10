@@ -31,7 +31,7 @@
 #====================================================================#
 
 
-from generic import obj,object_interface,log,error,warn,devlog
+from generic import obj,object_interface,log,error,warn
 from debug import ci,interact
 
 
@@ -366,3 +366,13 @@ def unavailable(module,*items):
         return voids
     #end if
 #end def unavailable
+
+
+def available(*items):
+    for item in items:
+        if isinstance(item,Void):
+            return False
+        #end if
+    #end for
+    return True
+#end def available

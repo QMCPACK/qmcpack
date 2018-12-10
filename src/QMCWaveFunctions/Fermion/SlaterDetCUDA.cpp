@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 
 namespace qmcplusplus
@@ -46,7 +46,7 @@ SlaterDet::ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
   std::vector<std::vector<GradType> >  grad_det(Dets.size());
   for (int iw=0; iw<walkers.size(); iw++)
   {
-    int det = DetID[iatList[iw]];
+    int det = getDetID(iatList[iw]);
     sorted_walkers[det].push_back(walkers[iw]);
     sorted_iatList[det].push_back(iatList[iw]);
     sorted_rNew[det].push_back(rNew[iw]);
@@ -65,7 +65,7 @@ SlaterDet::ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
   std::vector<int> index(Dets.size());
   for (int iw=0; iw<walkers.size(); iw++)
   {
-    int det = DetID[iatList[iw]];
+    int det = getDetID(iatList[iw]);
     int i = index[det]++;
     psi_ratios[iw] = ratio_det[det][i];
     grad[iw] = grad_det[det][i];
@@ -81,7 +81,7 @@ void SlaterDet::update (const std::vector<Walker_t*> &walkers,
   std::vector<std::vector<int> >       sorted_iatList(Dets.size());
   for (int iw=0; iw<walkers.size(); iw++)
   {
-    int det = DetID[iatList[iw]];
+    int det = getDetID(iatList[iw]);
     sorted_walkers[det].push_back(walkers[iw]);
     sorted_iatList[det].push_back(iatList[iw]);
   }
@@ -92,8 +92,3 @@ void SlaterDet::update (const std::vector<Walker_t*> &walkers,
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jmcminis $
- * $Revision: 4646 $   $Date: 2010-02-23 00:25:45 -0600 (Tue, 23 Feb 2010) $
- * $Id: SlaterDet.h 4646 2010-02-23 06:25:45Z jmcminis $
- ***************************************************************************/

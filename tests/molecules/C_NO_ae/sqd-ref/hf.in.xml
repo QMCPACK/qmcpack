@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE Main SYSTEM "atomhf.dtd">
+<simulation>
+   <project id="C" series="0"/>
+   <atom name="C" num_closed_shells="1">
+      <grid type="log" ri="1e-06" rf="400" npts="2001" scale="6"/>
+      <orbitalset condition="spin_space">
+         <orbital n="2" l="0" m="0" s="-1" c="1.0"/>
+         <orbital n="2" l="0" m="0" s="1" c="1.0"/>
+         <orbital n="2" l="1" m="0" s="1" c="1.0"/>
+         <orbital n="2" l="1" m="1" s="1" c="1.0"/>
+      </orbitalset>
+      <hamiltonian type="nuclear">
+         <parameter name="z"                   >    6         </parameter>
+      </hamiltonian>
+   </atom>
+   <eigensolve>
+      <parameter name="max_iter"            >    1000      </parameter>
+      <parameter name="etot_tol"            >    1e-08      </parameter>
+      <parameter name="eig_tol"             >    1e-12      </parameter>
+      <parameter name="mix_ratio"           >    0.3      </parameter>
+   </eigensolve>
+</simulation>

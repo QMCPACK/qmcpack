@@ -17,8 +17,8 @@
 #define QMCPLUSPLUS_LCORBITALSETBUILDER_H
 
 #include <vector>
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCWaveFunctions/BasisSetFactory.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
@@ -29,18 +29,18 @@
 namespace qmcplusplus
 {
 
-/** derived class from OrbitalBuilderBase
+/** derived class from WaveFunctionComponentBuilder
  *
  * Builder SlaterDeterminant with LCOrbitalSet
  */
-class SlaterDetBuilder: public OrbitalBuilderBase
+class SlaterDetBuilder: public WaveFunctionComponentBuilder
 {
 
 public:
 
   typedef SlaterDet SlaterDeterminant_t;
   typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
-  typedef DiracDeterminantBase Det_t;
+  typedef DiracDeterminant Det_t;
   /** constructor
    * \param els reference to the electrons
    * \param psi reference to the wavefunction
@@ -56,11 +56,12 @@ public:
    */
   bool put(xmlNodePtr cur);
 
+
 private:
 
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
-  BasisSetFactory* myBasisSetFactory;
+  SPOSetBuilderFactory* mySPOSetBuilderFactory;
   SlaterDeterminant_t* slaterdet_0;
   MultiSlaterDeterminant_t* multislaterdet_0;
   MultiSlaterDeterminantFast* multislaterdetfast_0;
@@ -79,13 +80,11 @@ private:
 
   bool createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNodePtr cur);
 
-  bool readDetList(xmlNodePtr cur, std::vector<ci_configuration>& uniqueConfg_up, std::vector<ci_configuration>& uniqueConfg_dn, std::vector<int>& C2node_up, std::vector<int>& C2node_dn, std::vector<std::string>& CItags, std::vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn, std::vector<RealType>& CSFcoeff, std::vector<int>& DetsPerCSF, std::vector<RealType>& CSFexpansion, bool& usingCSF);
+  bool readDetList(xmlNodePtr cur, std::vector<ci_configuration>& uniqueConfg_up, 
+      std::vector<ci_configuration>& uniqueConfg_dn, std::vector<size_t>& C2node_up, std::vector<size_t>& C2node_dn, 
+      std::vector<std::string>& CItags, std::vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn, 
+      std::vector<RealType>& CSFcoeff, std::vector<size_t>& DetsPerCSF, std::vector<RealType>& CSFexpansion, bool& usingCSF);
 
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

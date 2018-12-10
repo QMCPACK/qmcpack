@@ -37,7 +37,6 @@ TEST_CASE("particle set open bc", "[particle]")
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("testlogfile");
 
   typedef SymmetricDTD<double, 3, SUPERCELL_OPEN> sym_dtd_t;
   ParticleSet source;
@@ -65,7 +64,6 @@ TEST_CASE("particle set lattice", "[particle]")
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("testlogfile");
 
   typedef SymmetricDTD<double, 3, SUPERCELL_BULK> sym_dtd_t;
   ParticleSet source;

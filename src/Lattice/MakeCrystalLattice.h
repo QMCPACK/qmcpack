@@ -118,7 +118,7 @@ struct makelattice<CrystalLattice<T,3> >
    *  ::apply(CrystalLattice<T,3>& lattice, std::vector<std::string>& argv)
    *  \param lattice an CrystalLattice to be set
    *  \param argv   input parameters
-   *  \note Keywords to set a speical 3D primitive cell.
+   *  \note Keywords to set a special 3D primitive cell.
    *  \li \p lattice \p cubic \p a
    *  \li \p lattice \p fcc \p a
    *  \li \p lattice \p bcc \p a
@@ -199,8 +199,3 @@ struct makelattice<CrystalLattice<T,3> >
   }
 };
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

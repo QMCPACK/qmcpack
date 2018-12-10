@@ -255,7 +255,7 @@ eval_multi_multi_UBspline_3d_z_cuda (const multi_UBspline_3d_z_cuda *spline,
   eval_multi_multi_UBspline_3d_z_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, (double*)spline->coefs, (double**)vals_d,
    spline->dim, spline->stride, spline->num_splines);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {
@@ -279,7 +279,7 @@ eval_multi_multi_UBspline_3d_z_vgh_cuda (const multi_UBspline_3d_z_cuda *spline,
   (pos_d, spline->gridInv, (double*)spline->coefs,
    (double**)vals_d, (double**)grads_d, (double**)hess_d,
    spline->dim, spline->stride, spline->num_splines);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {
@@ -449,7 +449,7 @@ eval_multi_multi_UBspline_3d_z_vgl_cuda
   eval_multi_multi_UBspline_3d_z_vgl_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, (double*)spline->coefs, Linv_d, (double**)vals_d,
    (double**)grad_lapl_d, spline->dim, spline->stride, spline->num_splines, row_stride);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {

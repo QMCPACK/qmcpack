@@ -14,7 +14,7 @@
 
 
 #include "QMCDrivers/RMC/RMCFactory.h"
-#include "QMCDrivers/RMC/RMCSingleOMP.h"
+#include "QMCDrivers/RMC/RMC.h"
 #include "Message/OpenMP.h"
 
 namespace qmcplusplus
@@ -25,14 +25,18 @@ namespace qmcplusplus
 				 TrialWaveFunction & psi, QMCHamiltonian & h,
 				 ParticleSetPool & ptclpool,
 				 HamiltonianPool & hpool,
-				 WaveFunctionPool & ppool)
+				 WaveFunctionPool & ppool, Communicate* comm)
   {
     int np = omp_get_max_threads ();
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
     QMCDriver *qmc = 0;
+#ifdef QMC_CUDA
+    APP_ABORT("RMCFactory::create. RMC is not supported on GPU.\n");
+#endif
+
     if (RMCMode == 0 || RMCMode == 1)	//(0,0,0) (0,0,1) pbyp and all electron
       {
-	qmc = new RMCSingleOMP (w, psi, h, hpool, ppool);
+	qmc = new RMC (w, psi, h, ppool, comm);
       }
 #if defined(QMC_BUILD_COMPLETE)
 //else if(RMCMode == 2) //(0,1,0)

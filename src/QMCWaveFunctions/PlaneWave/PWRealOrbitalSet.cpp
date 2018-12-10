@@ -32,7 +32,7 @@ PWRealOrbitalSet::~PWRealOrbitalSet()
 #endif
 }
 
-SPOSetBase* PWRealOrbitalSet::makeClone() const
+SPOSet* PWRealOrbitalSet::makeClone() const
 {
   PWRealOrbitalSet *myclone=new PWRealOrbitalSet(*this);
   myclone->myBasisSet = new PWBasis(*myBasisSet);
@@ -65,7 +65,6 @@ void PWRealOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
   CC.resize(OrbitalSetSize,BasisSetSize);
   Temp.resize(OrbitalSetSize,PW_MAXINDEX);
   tempPsi.resize(OrbitalSetSize);
-  t_logpsi.resize(OrbitalSetSize, OrbitalSetSize);
   app_log() << "  PWRealOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize << std::endl;
 }
 
@@ -106,7 +105,7 @@ void PWRealOrbitalSet::addVector(const std::vector<ComplexType>& coefs,int jorb)
 void
 PWRealOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
-  myBasisSet->evaluate(P.R[iat]);
+  myBasisSet->evaluate(P.activeR(iat));
   MatrixOperators::product(CC,myBasisSet->Zv,tempPsi.data());
   for(int j=0; j<OrbitalSetSize; j++)
     psi[j]=tempPsi[j].real();

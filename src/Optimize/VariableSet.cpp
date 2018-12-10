@@ -16,6 +16,7 @@
 
 #include "Optimize/VariableSet.h"
 #include <map>
+#include <stdexcept>
 
 namespace optimize
 {
@@ -72,6 +73,86 @@ void VariableSet::insertFrom(const VariableSet& input)
       (*loc).second=input.NameAndValue[i].second;
   }
   num_active_vars=input.num_active_vars;
+}
+
+void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& input_2)
+{
+  real_type sum_val;
+  std::string vname;
+
+  // Check that objects to be summed together have the same number of active
+  // variables.
+  if (input_1.num_active_vars != input_2.num_active_vars)
+    throw std::runtime_error("Inconsistent number of parameters in two provided "
+                             "variable sets.");
+
+  for(int i=0; i<input_1.size(); ++i)
+  {
+    // Check that each of the equivalent variables in both VariableSet objects
+    // have the same name - otherwise we certainly shouldn't be adding them.
+    if (input_1.NameAndValue[i].first != input_2.NameAndValue[i].first)
+      throw std::runtime_error("Inconsistent parameters exist in the two provided "
+                               "variable sets.");
+
+    sum_val = input_1.NameAndValue[i].second + input_2.NameAndValue[i].second;
+
+    iterator loc=find(input_1.name(i));
+    if(loc==NameAndValue.end())
+    {
+      Index.push_back(input_1.Index[i]);
+      ParameterType.push_back(input_1.ParameterType[i]);
+      Recompute.push_back(input_1.Recompute[i]);
+
+      // We can reuse the above values, which aren't summed between the
+      // objects, but the parameter values themselves need to use the summed
+      // values.
+      vname = input_1.NameAndValue[i].first;
+      NameAndValue.push_back(pair_type(vname, sum_val));
+    }
+    else
+      (*loc).second=sum_val;
+  }
+  num_active_vars=input_1.num_active_vars;
+}
+
+void VariableSet::insertFromDiff(const VariableSet& input_1, const VariableSet& input_2)
+{
+  real_type diff_val;
+  std::string vname;
+
+  // Check that objects to be subtracted have the same number of active
+  // variables.
+  if (input_1.num_active_vars != input_2.num_active_vars)
+    throw std::runtime_error("Inconsistent number of parameters in two provided "
+                             "variable sets.");
+
+  for(int i=0; i<input_1.size(); ++i)
+  {
+    // Check that each of the equivalent variables in both VariableSet objects
+    // have the same name - otherwise we certainly shouldn't be subtracting them.
+    if (input_1.NameAndValue[i].first != input_2.NameAndValue[i].first)
+      throw std::runtime_error("Inconsistent parameters exist in the two provided "
+                               "variable sets.");
+
+    diff_val = input_1.NameAndValue[i].second - input_2.NameAndValue[i].second;
+
+    iterator loc=find(input_1.name(i));
+    if(loc==NameAndValue.end())
+    {
+      Index.push_back(input_1.Index[i]);
+      ParameterType.push_back(input_1.ParameterType[i]);
+      Recompute.push_back(input_1.Recompute[i]);
+
+      // We can reuse the above values, which aren't subtracted between the
+      // objects, but the parameter values themselves need to use the
+      // subtracted values.
+      vname = input_1.NameAndValue[i].first;
+      NameAndValue.push_back(pair_type(vname, diff_val));
+    }
+    else
+      (*loc).second=diff_val;
+  }
+  num_active_vars=input_1.num_active_vars;
 }
 
 void VariableSet::activate(const variable_map_type& selected)
@@ -162,8 +243,3 @@ void VariableSet::print(std::ostream& os)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2550 $   $Date: 2008-03-26 15:17:43 -0500 (Wed, 26 Mar 2008) $
- * $Id: VarList.h 2550 2008-03-26 20:17:43Z jnkim $
- ***************************************************************************/

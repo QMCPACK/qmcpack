@@ -14,14 +14,13 @@
 
 
 #include "Utilities/OhmmsObject.h"
-#include "Utilities/OhmmsInfo.h"
 
 /**@file OhmmsObject.cpp
  *@brief Definitions of the member functions of OhmmsObject
  */
 
 // initialize the object counter
-int OhmmsObject::ObjectCounter = 0;
+//int OhmmsObject::ObjectCounter = 0;
 
 /**default constructor
  *
@@ -33,8 +32,11 @@ OhmmsObject::OhmmsObject():
   TypeName("none"),
   ElementByteSize(0)
 {
-  ObjectID = ObjectCounter;
-  ObjectCounter++;
+//  #pragma omp critical 
+//  {
+//    ObjectID = ObjectCounter;
+//    ObjectCounter++;
+//  }
 }
 
 /**contructor
@@ -47,16 +49,14 @@ OhmmsObject::OhmmsObject(const std::string& tname, const std::string& oname):
   TypeName(tname.c_str()),
   ElementByteSize(0)
 {
-  ObjectID = ObjectCounter;
-  ObjectCounter++;
+//  #pragma omp critical 
+//  {
+//    ObjectID = ObjectCounter;
+//    ObjectCounter++;
+//  }
 }
 
 OhmmsObject::~OhmmsObject()
 {
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

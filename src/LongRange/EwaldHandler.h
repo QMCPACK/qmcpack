@@ -18,8 +18,8 @@
 /** @file LRHandlerTemp.h
  * @brief Define a LRHandler with two template parameters
  */
-#ifndef QMCPLUSPLUS_EWALD_HANLDER_H
-#define QMCPLUSPLUS_EWALD_HANLDER_H
+#ifndef QMCPLUSPLUS_EWALD_HANDLER_H
+#define QMCPLUSPLUS_EWALD_HANDLER_H
 
 #include "LongRange/LRHandlerBase.h"
 
@@ -61,6 +61,7 @@ public:
   EwaldHandler(ParticleSet& ref, mRealType kc_in=-1.0)
     : LRHandlerBase(kc_in)
   {
+    LRHandlerBase::ClassName="EwaldHandler";
     Sigma=LR_kc=ref.Lattice.LR_kc;
   }
 
@@ -152,8 +153,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: bkclark $
- * $Revision: 3798 $   $Date: 2009-04-29 00:38:29 -0500 (Wed, 29 Apr 2009) $
- * $Id: EwaldHandler.h 3798 2009-04-29 05:38:29Z bkclark $
- ***************************************************************************/

@@ -30,7 +30,7 @@ extern const double* restrict d2Ad;
 extern const double* restrict d3Ad;
 
 /************************************************************/
-/* 1D double-precision, real evaulation functions        */
+/* 1D double-precision, real evaluation functions        */
 /************************************************************/
 void
 eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
@@ -40,11 +40,10 @@ eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
   x -= spline->x_grid.start;
   double ux = x*spline->x_grid.delta_inv;
   double ipartx, tx;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
+  tx = modf (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   
   double tpx[4], a[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
-  double* restrict coefs = spline->coefs;
   
   a[0]  = (Ad[ 0]*tpx[0] + Ad[ 1]*tpx[1] + Ad[ 2]*tpx[2] + Ad[ 3]*tpx[3]);
   a[1]  = (Ad[ 4]*tpx[0] + Ad[ 5]*tpx[1] + Ad[ 6]*tpx[2] + Ad[ 7]*tpx[3]);
@@ -53,14 +52,13 @@ eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
 
   intptr_t xs = spline->x_stride;
 
-  for (int n=0; n<spline->num_splines; n++) 
-    vals[n]  = 0.0;
+  double* restrict coefs0 = spline->coefs + ((ix  )*xs);
+  double* restrict coefs1 = spline->coefs + ((ix+1)*xs);
+  double* restrict coefs2 = spline->coefs + ((ix+2)*xs);
+  double* restrict coefs3 = spline->coefs + ((ix+3)*xs);
 
-  for (int i=0; i<4; i++) {
-    double* restrict coefs = spline->coefs + ((ix+i)*xs);
-    for (int n=0; n<spline->num_splines; n++) 
-      vals[n]  +=   a[i] * coefs[n];
-  }
+  for (int n=0; n<spline->num_splines; n++)
+    vals[n] = a[0] * coefs0[n] + a[1] * coefs1[n] + a[2] * coefs2[n] + a[3] * coefs3[n];
 }
 
 
@@ -74,11 +72,10 @@ eval_multi_UBspline_1d_d_vg (const multi_UBspline_1d_d *spline,
   x -= spline->x_grid.start;
   double ux = x*spline->x_grid.delta_inv;
   double ipartx, tx;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
+  tx = modf (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   
   double tpx[4], a[4], da[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
-  double* restrict coefs = spline->coefs;
 
   a[0]  = (Ad[ 0]*tpx[0] + Ad[ 1]*tpx[1] + Ad[ 2]*tpx[2] + Ad[ 3]*tpx[3]);
   a[1]  = (Ad[ 4]*tpx[0] + Ad[ 5]*tpx[1] + Ad[ 6]*tpx[2] + Ad[ 7]*tpx[3]);
@@ -120,11 +117,10 @@ eval_multi_UBspline_1d_d_vgl (const multi_UBspline_1d_d *spline,
   x -= spline->x_grid.start;
   double ux = x*spline->x_grid.delta_inv;
   double ipartx, tx;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
+  tx = modf (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   
   double tpx[4], a[4], da[4], d2a[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
-  double* restrict coefs = spline->coefs;
 
   a[0]  = (Ad[ 0]*tpx[0] + Ad[ 1]*tpx[1] + Ad[ 2]*tpx[2] + Ad[ 3]*tpx[3]);
   a[1]  = (Ad[ 4]*tpx[0] + Ad[ 5]*tpx[1] + Ad[ 6]*tpx[2] + Ad[ 7]*tpx[3]);
@@ -140,26 +136,18 @@ eval_multi_UBspline_1d_d_vgl (const multi_UBspline_1d_d *spline,
   d2a[3] = (d2Ad[12]*tpx[0] + d2Ad[13]*tpx[1] + d2Ad[14]*tpx[2] + d2Ad[15]*tpx[3]);
 
   intptr_t xs = spline->x_stride;
-
-  for (int n=0; n<spline->num_splines; n++) {
-    vals[n]  = 0.0;
-    grads[n] = 0.0;
-    lapl[n]  = 0.0;
-  }
-
-  for (int i=0; i<4; i++) {      
-    double* restrict coefs = spline->coefs + ((ix+i)*xs);
-    for (int n=0; n<spline->num_splines; n++) {
-      vals[n]  +=   a[i] * coefs[n];
-      grads[n] +=  da[i] * coefs[n];
-      lapl[n]  += d2a[i] * coefs[n];
-    }
-  }
-
   double dxInv = spline->x_grid.delta_inv;
-  for (int n=0; n<spline->num_splines; n++) {
-    grads[n] *= dxInv;
-    lapl [n] *= dxInv*dxInv;
+
+  double* restrict coefs0 = spline->coefs + ((ix  )*xs);
+  double* restrict coefs1 = spline->coefs + ((ix+1)*xs);
+  double* restrict coefs2 = spline->coefs + ((ix+2)*xs);
+  double* restrict coefs3 = spline->coefs + ((ix+3)*xs);
+
+  for (int n=0; n<spline->num_splines; n++)
+  {
+    vals[n]  = a[0] * coefs0[n] + a[1] * coefs1[n] + a[2] * coefs2[n] + a[3] * coefs3[n];
+    grads[n] = (da[0] * coefs0[n] + da[1] * coefs1[n] + da[2] * coefs2[n] + da[3] * coefs3[n])*dxInv;
+    lapl[n]  = (d2a[0] * coefs0[n] + d2a[1] * coefs1[n] + d2a[2] * coefs2[n] + d2a[3] * coefs3[n])*dxInv*dxInv;
   }
 }
 
@@ -177,7 +165,7 @@ eval_multi_UBspline_1d_d_vgh (const multi_UBspline_1d_d *spline,
 
 
 /************************************************************/
-/* 2D double-precision, real evaulation functions        */
+/* 2D double-precision, real evaluation functions        */
 /************************************************************/
 void
 eval_multi_UBspline_2d_d (const multi_UBspline_2d_d *spline,
@@ -195,7 +183,6 @@ eval_multi_UBspline_2d_d (const multi_UBspline_2d_d *spline,
   double tpx[4], tpy[4], a[4], b[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
   tpy[0] = ty*ty*ty;  tpy[1] = ty*ty;  tpy[2] = ty;  tpy[3] = 1.0;
-  double* restrict coefs = spline->coefs;
 
   a[0] = (Ad[ 0]*tpx[0] + Ad[ 1]*tpx[1] + Ad[ 2]*tpx[2] + Ad[ 3]*tpx[3]);
   a[1] = (Ad[ 4]*tpx[0] + Ad[ 5]*tpx[1] + Ad[ 6]*tpx[2] + Ad[ 7]*tpx[3]);
@@ -240,7 +227,6 @@ eval_multi_UBspline_2d_d_vg (const multi_UBspline_2d_d *spline,
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
   tpy[0] = ty*ty*ty;  tpy[1] = ty*ty;  tpy[2] = ty;  tpy[3] = 1.0;
-  double* restrict coefs = spline->coefs;
 
   a[0]  = (Ad[ 0]*tpx[0] + Ad[ 1]*tpx[1] + Ad[ 2]*tpx[2] + Ad[ 3]*tpx[3]);
   a[1]  = (Ad[ 4]*tpx[0] + Ad[ 5]*tpx[1] + Ad[ 6]*tpx[2] + Ad[ 7]*tpx[3]);
@@ -309,7 +295,6 @@ eval_multi_UBspline_2d_d_vgl (const multi_UBspline_2d_d *spline,
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4], d2a[4], d2b[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
   tpy[0] = ty*ty*ty;  tpy[1] = ty*ty;  tpy[2] = ty;  tpy[3] = 1.0;
-  double* restrict coefs = spline->coefs;
 
   a[0]  = (Ad[ 0]*tpx[0] + Ad[ 1]*tpx[1] + Ad[ 2]*tpx[2] + Ad[ 3]*tpx[3]);
   a[1]  = (Ad[ 4]*tpx[0] + Ad[ 5]*tpx[1] + Ad[ 6]*tpx[2] + Ad[ 7]*tpx[3]);
@@ -398,7 +383,6 @@ eval_multi_UBspline_2d_d_vgh (const multi_UBspline_2d_d *spline,
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4], d2a[4], d2b[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
   tpy[0] = ty*ty*ty;  tpy[1] = ty*ty;  tpy[2] = ty;  tpy[3] = 1.0;
-  double* restrict coefs = spline->coefs;
 
   a[0]  = (Ad[ 0]*tpx[0] + Ad[ 1]*tpx[1] + Ad[ 2]*tpx[2] + Ad[ 3]*tpx[3]);
   a[1]  = (Ad[ 4]*tpx[0] + Ad[ 5]*tpx[1] + Ad[ 6]*tpx[2] + Ad[ 7]*tpx[3]);
@@ -474,7 +458,7 @@ eval_multi_UBspline_2d_d_vgh (const multi_UBspline_2d_d *spline,
 
 
 /************************************************************/
-/* 3D double-precision, real evaulation functions           */
+/* 3D double-precision, real evaluation functions           */
 /************************************************************/
 
 
@@ -919,7 +903,6 @@ eval_multi_UBspline_3d_d_vgh (const multi_UBspline_3d_d *spline,
   tz = modf (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
 
   double a[4], b[4], c[4],da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-  double* restrict coefs = spline->coefs;
 
   a[0] = ( ( Ad[0]  * tx + Ad[1] ) * tx + Ad[2] ) * tx + Ad[3]; 
   a[1] = ( ( Ad[4]  * tx + Ad[5] ) * tx + Ad[6] ) * tx + Ad[7]; 
@@ -1046,7 +1029,6 @@ eval_multi_UBspline_3d_d_vg (const multi_UBspline_3d_d *spline,
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
   tpy[0] = ty*ty*ty;  tpy[1] = ty*ty;  tpy[2] = ty;  tpy[3] = 1.0;
   tpz[0] = tz*tz*tz;  tpz[1] = tz*tz;  tpz[2] = tz;  tpz[3] = 1.0;
-  double* restrict coefs = spline->coefs;
 
   a[0]  = (Ad[ 0]*tpx[0] + Ad[ 1]*tpx[1] + Ad[ 2]*tpx[2] + Ad[ 3]*tpx[3]);
   a[1]  = (Ad[ 4]*tpx[0] + Ad[ 5]*tpx[1] + Ad[ 6]*tpx[2] + Ad[ 7]*tpx[3]);
@@ -1140,7 +1122,6 @@ eval_multi_UBspline_3d_d_vgl (const multi_UBspline_3d_d *spline,
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
   tpy[0] = ty*ty*ty;  tpy[1] = ty*ty;  tpy[2] = ty;  tpy[3] = 1.0;
   tpz[0] = tz*tz*tz;  tpz[1] = tz*tz;  tpz[2] = tz;  tpz[3] = 1.0;
-  double* restrict coefs = spline->coefs;
 
   a[0]  = (Ad[ 0]*tpx[0] + Ad[ 1]*tpx[1] + Ad[ 2]*tpx[2] + Ad[ 3]*tpx[3]);
   a[1]  = (Ad[ 4]*tpx[0] + Ad[ 5]*tpx[1] + Ad[ 6]*tpx[2] + Ad[ 7]*tpx[3]);
@@ -1256,7 +1237,6 @@ eval_multi_UBspline_3d_d_vghgh (const multi_UBspline_3d_d *spline,
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
   tpy[0] = ty*ty*ty;  tpy[1] = ty*ty;  tpy[2] = ty;  tpy[3] = 1.0;
   tpz[0] = tz*tz*tz;  tpz[1] = tz*tz;  tpz[2] = tz;  tpz[3] = 1.0;
-  double* restrict coefs = spline->coefs;
 
   a[0]  = (Ad[ 0]*tpx[0] + Ad[ 1]*tpx[1] + Ad[ 2]*tpx[2] + Ad[ 3]*tpx[3]);
   a[1]  = (Ad[ 4]*tpx[0] + Ad[ 5]*tpx[1] + Ad[ 6]*tpx[2] + Ad[ 7]*tpx[3]);

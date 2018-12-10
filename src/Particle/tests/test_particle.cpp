@@ -36,10 +36,10 @@ TEST_CASE("symmetric_distance_table", "[particle]")
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("testlogfile");
 
-  typedef SymmetricDTD<ParticleSet::RealType, 3, SUPERCELL_OPEN> sym_dtd_t;
   ParticleSet source;
+
+  source.setName("electrons");
 
   source.create(2);
   source.R[0][0] = 0.0;
@@ -49,13 +49,71 @@ TEST_CASE("symmetric_distance_table", "[particle]")
   source.R[1][1] = 1.0;
   source.R[1][2] = 3.2;
 
-  sym_dtd_t dist(source, source);
-
-  dist.evaluate(source);
-  source.addTable(source);
+  source.addTable(source,DT_SOA_PREFERRED);
   source.update();
 
-  DistanceTableData *dist2 = createDistanceTable(source);
+  DistanceTableData *dist2 = createDistanceTable(source,DT_AOS);
+}
+
+TEST_CASE("particle set lattice with vacuum", "[particle]")
+{
+
+  OHMMS::Controller->initialize(0, NULL);
+
+  typedef SymmetricDTD<double, 3, SUPERCELL_BULK> sym_dtd_t;
+  ParticleSet source;
+
+  Uniform3DGridLayout grid;
+  // PPP case
+  grid.BoxBConds = true;
+  grid.R(0) = 1.0;
+  grid.R(1) = 2.0;
+  grid.R(2) = 3.0;
+
+  grid.R(3) = 0.0;
+  grid.R(4) = 1.0;
+  grid.R(5) = 0.0;
+
+  grid.R(6) = 0.0;
+  grid.R(7) = 0.0;
+  grid.R(8) = 1.0;
+
+  grid.VacuumScale=2.0;
+  grid.reset();
+
+  source.setName("electrons");
+  source.Lattice.copy(grid);
+  source.createSK();
+
+  REQUIRE( source.LRBox.R(0,0) == 1.0 );
+  REQUIRE( source.LRBox.R(0,1) == 2.0 );
+  REQUIRE( source.LRBox.R(0,2) == 3.0 );
+
+  // PPN case
+  grid.BoxBConds[2] = false;
+  grid.reset();
+  source.Lattice.copy(grid);
+  source.createSK();
+
+  REQUIRE( source.LRBox.R(2,0) == 0.0 );
+  REQUIRE( source.LRBox.R(2,1) == 0.0 );
+  REQUIRE( source.LRBox.R(2,2) == 2.0 );
+
+  // PNN case
+  grid.BoxBConds[1] = false;
+  grid.reset();
+  source.Lattice.copy(grid);
+  source.createSK();
+
+  REQUIRE( source.LRBox.R(0,0) ==  1.0 );
+  REQUIRE( source.LRBox.R(0,1) ==  2.0 );
+  REQUIRE( source.LRBox.R(0,2) ==  3.0 );
+  REQUIRE( source.LRBox.R(1,0) ==  0.0 );
+  REQUIRE( source.LRBox.R(1,1) ==  2.0 );
+  REQUIRE( source.LRBox.R(1,2) ==  0.0 );
+  REQUIRE( source.LRBox.R(2,0) ==  0.0 );
+  REQUIRE( source.LRBox.R(2,1) ==  0.0 );
+  REQUIRE( source.LRBox.R(2,2) ==  2.0 );
 }
 
 }

@@ -12,25 +12,25 @@
     
     
 /** @file SPOSetProxy.h
- * @brief declare a proxy class to a SPOSetBase for multi determinants
+ * @brief declare a proxy class to a SPOSet for multi determinants
  */
 #ifndef QMCPLUSPLUS_SPOSETPROXY_FORMSD_H
 #define QMCPLUSPLUS_SPOSETPROXY_FORMSD_H
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 namespace qmcplusplus
 {
 
-/** proxy SPOSetBase
+/** proxy SPOSet
  *
- * This class owns a SPOSetBase for all the states to be evaluated
- * and will be owned by a DiracDeterminantBase object.
+ * This class owns a SPOSet for all the states to be evaluated
+ * and will be owned by a DiracDeterminant object.
  */
-struct SPOSetProxyForMSD: public SPOSetBase
+struct SPOSetProxyForMSD: public SPOSet
 {
 
   ///pointer to the SPOSet which evaluate the single-particle states
-  SPOSetBasePtr refPhi;
+  SPOSetPtr refPhi;
   ///container for the values
   ValueMatrix_t psiM;
   ///container for the gradients
@@ -61,7 +61,7 @@ struct SPOSetProxyForMSD: public SPOSetBase
    * @param first the first particle index
    * @param last the last particle index
    */
-  SPOSetProxyForMSD(SPOSetBasePtr const& spos, int first, int last);
+  SPOSetProxyForMSD(SPOSetPtr const& spos, int first, int last);
   void resetParameters(const opt_variables_type& optVariables);
   void resetTargetParticleSet(ParticleSet& P);
   void setOrbitalSetSize(int norbs);
@@ -104,8 +104,3 @@ struct SPOSetProxyForMSD: public SPOSetBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: kesler $
- * $Revision: 3535 $   $Date: 2009-02-10 13:04:12 -0600 (Tue, 10 Feb 2009) $
- * $Id: SPOSetProxy.h 3535 2009-02-10 19:04:12Z kesler $
- ***************************************************************************/

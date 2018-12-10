@@ -12,8 +12,8 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 
 
 
@@ -29,7 +29,7 @@ void Cartesian2Spherical(int n, double* Cart, double* Sphe);
 
 GamesAsciiParser::GamesAsciiParser()
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
   usingECP=false;
   BohrUnit=true;
@@ -37,14 +37,16 @@ GamesAsciiParser::GamesAsciiParser()
   angular_type="cartesian";
   readtype=0;
   NFZC=0;
+  ECP=false;
 }
 
 GamesAsciiParser::GamesAsciiParser(int argc, char** argv):
   QMCGaussianParserBase(argc,argv)
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
   usingECP=false;
+  ECP=false;
   BohrUnit=true;
   MOtype="Canonical";
   angular_type="cartesian";
@@ -119,6 +121,7 @@ void GamesAsciiParser::parse(const std::string& fname)
   if(usingECP)
   {
     std::cout <<"Using ECP." << std::endl;
+    ECP=true;
     search(fin,"NUMBER OF ELECTRONS KEPT IN THE CALCULATION IS",aline);
     parsewords(aline.c_str(),currentWords);
     NumberOfEls = atoi(currentWords[8].c_str());
@@ -364,6 +367,7 @@ void GamesAsciiParser::getGeometry(std::istream& is)
       // eureka!!!
     {
       usingECP=true;
+      ECP=true;
       core.resize(NumberOfAtoms);
       getwords(currentWords,is); // -------------
 // this only works if all atoms have an ECP, fix later
@@ -474,8 +478,8 @@ void GamesAsciiParser::getGeometry(std::istream& is)
 
 void GamesAsciiParser::getGaussianCenters(std::istream& is)
 {
+  int ng;
   gBound.resize(NumberOfAtoms+1);
-  int ng,nx;
   std::string aline;
   std::map<std::string,int> basisDataMap;
   int nUniqAt=0;
@@ -489,7 +493,7 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
   }
 
   std::vector<std::vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
-  std::vector<int> nshll(nUniqAt,0); //use this to 
+  std::vector<int> nshll(nUniqAt,0); //use this to
   std::vector<std::vector<int> > ncoeffpershell(nUniqAt);
   std::vector<std::vector<std::string> > shID(nUniqAt);
   std::map<std::string,int> gsMap;
@@ -595,20 +599,22 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
               std::cerr <<"Can't handle SP basis states yet. Fix later.\n";
               abort();
             }
-            if(gsMap[currentWords[1]] >= 7)
+            if(gsMap[currentWords[1]] >= 9)
             {
-              std::cerr <<"Can't handle H basis states or higher yet. Fix later.\n";
+              std::cerr <<"Can't handle J basis states or higher yet. Fix later.\n";
               abort();
             }
-            std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
-              << ncoeffpershell[currPos][nshll[currPos]] 
-              << " " << shID[currPos][nshll[currPos]] << std::endl;
+            if(debug){
+               std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " "
+                 << ncoeffpershell[currPos][nshll[currPos]]
+                 << " " << shID[currPos][nshll[currPos]] << std::endl;
+            }
           }
         }
       }
     }
   }
-  
+
 
   /*
   getwords(currentWords,is);  // tag of first atom
@@ -796,7 +802,7 @@ void GamesAsciiParser::getMO(std::istream& is)
     getwords(currentWords,is);  // empty line
     getMO_single_set(is, CartMat, EigVal_beta);
   }
-    
+
   for(int i=0; i<numMO; i++)
     for(int k=0; k<SizeOfBasisSet; k++)
       EigVec[cnt++] = CartMat[i][k];
@@ -822,7 +828,7 @@ void GamesAsciiParser::getMO_single_set(std::istream& is, Matrix<double> &CartMa
     getwords(currentWords,is);
     for(int k=0; k<SizeOfBasisSet; k++)
     {
-      getwords(currentWords,is);
+      getwordsWithMergedNumbers(currentWords,is);
 //cout<<"i,k,size: " <<i <<" " <<k <<" " <<currentWords.size() <<" " <<currentWords[4] << std::endl;
       if(currentWords.size() == 8)
         // G basis or higher TAG gets mixed with atom id
@@ -832,6 +838,14 @@ void GamesAsciiParser::getMO_single_set(std::istream& is, Matrix<double> &CartMa
         CartMat[cnt+2][k] = atof(currentWords[5].c_str()) ;
         CartMat[cnt+3][k] = atof(currentWords[6].c_str()) ;
         CartMat[cnt+4][k] = atof(currentWords[7].c_str()) ;
+      } else if(currentWords.size() == 7)
+        // I basis TAG gets mixed with atom name
+      {
+        CartMat[cnt][k] = atof(currentWords[2].c_str()) ;
+        CartMat[cnt+1][k] = atof(currentWords[3].c_str()) ;
+        CartMat[cnt+2][k] = atof(currentWords[4].c_str()) ;
+        CartMat[cnt+3][k] = atof(currentWords[5].c_str()) ;
+        CartMat[cnt+4][k] = atof(currentWords[6].c_str()) ;
       }
       else
       {
@@ -860,13 +874,20 @@ void GamesAsciiParser::getMO_single_set(std::istream& is, Matrix<double> &CartMa
     getwords(currentWords,is);
     for(int k=0; k<SizeOfBasisSet; k++)
     {
-      getwords(currentWords,is);
+      getwordsWithMergedNumbers(currentWords,is);
       if(currentWords.size() == 3+rem)
         // G basis or higher TAG gets mixed with atom id
       {
         for(int i=0; i<rem; i++)
         {
           CartMat[cnt+i][k] = atof(currentWords[3+i].c_str()) ;
+        }
+      } else if(currentWords.size() == 2+rem)
+        // I basis TAG gets mixed with atom name
+      {
+        for(int i=0; i<rem; i++)
+        {
+          CartMat[cnt+i][k] = atof(currentWords[2+i].c_str()) ;
         }
       }
       else
@@ -1003,9 +1024,9 @@ void GamesAsciiParser::getCSF(std::istream& is)
   coeff2csf.clear();
   usingCSF=true;
 
-  // set a count to check if we arrive our target state or not 
+  // set a count to check if we arrive our target state or not
   int state_num = -1;
-  
+
   std::cout << "Target State Number is " << target_state << std::endl;
 
   do
@@ -1022,7 +1043,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
         currentWords[1] == "COEF" &&
         currentWords[2] == "OCCUPANCY" )
     {
-      
+
       // add the state number by one
       state_num++;
 
@@ -1080,7 +1101,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
   std::cout <<"Done reading csf coefficients." << std::endl;
   std::cout <<"Found: " <<coeff2csf.size() <<" CSFs.\n";
   std::cout.flush();
-// look for highest occupied MO to avoid using unnecesary ones
+// look for highest occupied MO to avoid using unnecessary ones
   ci_nstates = 0;
   for(int i=0; i<CSFocc.size(); i++)
   {
@@ -1113,12 +1134,12 @@ void GamesAsciiParser::getCSF(std::istream& is)
     std::cerr <<"Problems reading DETERMINANT CONTRIBUTION TO CSF'S (1). \n";
     abort();
   }
-  int ds=SpinMultiplicity-1;
-  int neb= (NumberOfEls-ds)/2;
-  int nea= NumberOfEls-NumberOfBeta;
+  //  int ds=SpinMultiplicity-1;
+  //  int neb= (NumberOfEls-ds)/2;
+  //  int nea= NumberOfEls-NumberOfBeta;
   ci_nca = ci_ncb = NFZC;
   std::vector<int> csfOccup;
-  bool done=false,first=true;
+  bool first=true;
   int cnt=1,current=0;
   int naea=0,naeb=0;
   std::string aline;

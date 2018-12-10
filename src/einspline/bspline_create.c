@@ -1230,7 +1230,8 @@ create_UBspline_1d_d (Ugrid x_grid, BCtype_d xBC, double *data)
 #else
   posix_memalign ((void**)&spline->coefs, 16, sizeof(double)*N);
 #endif
-  find_coefs_1d_d (spline->x_grid, xBC, data, 1, spline->coefs, 1);
+  if(data != NULL) // only data is provided
+    find_coefs_1d_d (spline->x_grid, xBC, data, 1, spline->coefs, 1);
     
   init_sse_data();
   return spline;

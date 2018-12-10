@@ -31,6 +31,14 @@ def trivial(sim,*args,**kwargs):
 
 
 class ProjectManager(NexusCore):
+
+    machine = None
+
+    @staticmethod
+    def restore_default_settings():
+        ProjectManager.machine = None
+    #end def restore_default_settings
+
     def __init__(self):
         modes = nexus_core.modes
         self.persistent_modes = set([modes.submit,modes.all])
@@ -41,6 +49,9 @@ class ProjectManager(NexusCore):
     #end def __init__
 
     def add_simulations(self,*simulations):
+        if len(simulations)==0:
+            self.add_simulations(Simulation.all_sims)
+        #end if
         if len(simulations)>0 and not isinstance(simulations[0],Simulation):
             simulations = simulations[0]
         #end if
@@ -330,6 +341,22 @@ class ProjectManager(NexusCore):
     #end def write_cascade_status
 
 
+    def write_sim_dependencies(self,idkey=None):
+        for simid in sorted(self.simulations.keys()):
+            sim = self.simulations[simid]
+            if idkey is None or sim.identifier==idkey:
+                self.log('\n{0} {1} {2}'.format(sim.identifier,simid,sim.locdir))
+                for did in sorted(sim.dependencies.keys()):
+                    dep = sim.dependencies[did]
+                    dsim  = dep.sim
+                    names = dep.result_names
+                    self.log('  {0} {1} {2} {3}'.format(dsim.identifier,dsim.simid,names,dsim.locdir))
+                #end for
+            #end if
+        #end for
+    #end def write_sim_dependencies
+
+
     def write_cascade_dependents(self):
         self.log('cascade dependents',n=1)
         for cascade in self.cascades:
@@ -411,7 +438,7 @@ class ProjectManager(NexusCore):
             cascade.reset_wait_ids()
         #end for
         for cid,cascade in progressing_cascades.iteritems():
-            if not cascade.bundled:
+            if not cascade.bundled or cascade.bundler.finished:
                 cascade.progress()
             #end if
             cascade.check_subcascade()

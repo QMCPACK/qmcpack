@@ -55,6 +55,7 @@ from generic import obj
 from structure import Structure,kmesh
 from physical_system import PhysicalSystem
 from developer import DevBase,warn
+from pseudopotential import pp_elem_label
 from simulation import SimulationInput
 from debug import *
 
@@ -513,7 +514,9 @@ class system(Section):
     atomic_variables = obj(
         hubbard_u = 'Hubbard_U',
         start_mag = 'starting_magnetization',
-        hubbard_j = 'Hubbard_J'
+        hubbard_j = 'Hubbard_J',
+        angle1    = 'angle1',
+        angle2    = 'angle2',
         )
 
     # specialized read for partial array variables (hubbard U, starting mag, etc)
@@ -596,6 +599,8 @@ class system(Section):
                     vtype = bool
                 elif isinstance(val,int):
                     vtype = int
+                else:
+                    self.error('Type "{0}" is not known as a value of variable "{1}".\nThis may reflect a need for added developer attention to support this type.  Please contact a developer.'.format(vtype.__class__.__name__,var))
                 #end if
                 sval = writeval[vtype](val)
 
@@ -1490,7 +1495,7 @@ class PwscfInput(SimulationInput):
     #end def incorporate_system_old
 
         
-    def return_system(self,**valency):
+    def return_system(self,structure_only=False,**valency):
         ibrav = self.system.ibrav
         if ibrav!=0:
             self.error('ability to handle non-zero ibrav not yet implemented')
@@ -1520,6 +1525,10 @@ class PwscfInput(SimulationInput):
             )
         structure.zero_corner()
         structure.recenter()
+
+        if structure_only:
+            return structure
+        #end if
   
         ion_charge = 0
         atoms   = list(self.atomic_positions.atoms)
@@ -1747,7 +1756,8 @@ def generate_any_pwscf_input(**kwargs):
     pseudopotentials = obj()
     atoms = []
     for ppname in pseudos:
-        element = ppname[0:2].strip('.')
+        #element = ppname[0:2].strip('.')
+        label,element = pp_elem_label(ppname,guard=True)
         atoms.append(element)
         pseudopotentials[element] = ppname
     #end for

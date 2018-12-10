@@ -26,9 +26,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
-//#define ENABLE_COMPOSITE_ESTIMATOR
-//#include "Estimators/CompositeEstimators.h"
-#include "Estimators/EstimatorManager.h"
+#include "Estimators/EstimatorManagerBase.h"
 namespace qmcplusplus
 {
 
@@ -71,7 +69,8 @@ public:
   IndexType NonLocalMoveAccepted;
   ///timestep
   RealType Tau;
-
+  ///use Drift
+  bool UseDrift;
 
   /// Constructor.
   QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
@@ -92,9 +91,9 @@ public:
    *
    * Update time-step variables to move walkers
    */
-  void resetRun(BranchEngineType* brancher, EstimatorManager* est);
+  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est);
 
-  void resetRun(BranchEngineType* brancher, EstimatorManager* est, TraceManager* traces);
+  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces);
 
   inline RealType getTau()
   {
@@ -138,8 +137,6 @@ public:
   /** stop a run */
   void stopRun();
   void stopRun2();
-  /** reset the trial energy */
-  void resetEtrial(RealType et);
 
   /** prepare to start a block
    * @param steps number of steps within the block
@@ -153,6 +150,18 @@ public:
   /** set the multiplicity of the walkers to branch */
   void setMultiplicity(WalkerIter_t it, WalkerIter_t it_end);
 
+  inline void setMultiplicity(Walker_t& awalker) const
+  {
+    constexpr RealType onehalf(0.5);
+    constexpr RealType cone(1);
+    RealType M=awalker.Weight;
+    if (awalker.Age>MaxAge)
+      M = std::min(onehalf,M);
+    else
+      if (awalker.Age > 0) M = std::min(cone,M);
+    awalker.Multiplicity = M + RandomGen();
+  }
+
   /** set the multiplicity of the walkers to branch */
   void setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end);
 
@@ -160,21 +169,9 @@ public:
    */
   virtual void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
 
-  /** initalize Walker for walker update
+  /** initialize Walker for walker update
    */
   virtual void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
-
-  /** update Walker buffers for PbyP update
-   */
-  void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
-
-  /** trigger the trial WF recompute
-   */
-  void recomputePsi(WalkerIter_t it, WalkerIter_t it_end);
-
-  /** simple routine to test the performance
-   */
-  void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
 
   /**  process options
    */
@@ -185,24 +182,20 @@ public:
     Estimators->accumulate(W,it,it_end);
   }
 
-  ///move a walker, all-particle (waler) move, using drift
-  // void advanceWalker(Walker_t& thisWalker);
-  ///move a walker, by particle-by-particle move using fast drift
-  // void advancePbyP(Walker_t& thisWalker);
-
   /** advance walkers executed at each step
    *
    * Derived classes implement how to move walkers and accept/reject
    * moves.
    */
-  virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)=0;
+  virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool recompute);
+
+  ///move a walker
+  virtual void advanceWalker(Walker_t& thisWalker, bool recompute)=0;
+
   virtual RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
   {
     return 0.0;
   };
-//       virtual RealType advanceWalkerForCSEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios, std::vector<RealType>& weights, std::vector<RealType>& logs ) {return 0.0;};
-  virtual void setLogEpsilon(RealType eps) {};
-//       virtual void advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i){};
 
   ///normalization offset for cs type runs.
   RealType csoffset;
@@ -234,10 +227,12 @@ public:
 
   inline RealType logBackwardGF(const ParticleSet::ParticlePos_t& displ)
   {
-    RealType t=0.5/Tau;
     RealType logGb=0.0;
     for(int iat=0; iat<W.getTotalNum(); ++iat)
-      logGb += t*MassInvP[iat]*dot(displ[iat],displ[iat]);
+    {
+      RealType mass_over_tau = 1.0/(SqrtTauOverMass[iat]*SqrtTauOverMass[iat]);
+      logGb += 0.5*dot(displ[iat],displ[iat])*mass_over_tau;
+    }
     return -logGb;
   }
 
@@ -247,8 +242,6 @@ public:
 protected:
   ///update particle-by-particle
   bool UpdatePbyP;
-  ///use T-moves
-  bool UseTMove;
   ///number of particles
   IndexType NumPtcl;
   ///Time-step factor \f$ 1/(2\tau)\f$
@@ -270,9 +263,9 @@ protected:
   ///random number generator
   RandomGenerator_t& RandomGen;
   ///branch engine
-  BranchEngineType* branchEngine;
+  const BranchEngineType* branchEngine;
   ///estimator
-  EstimatorManager* Estimators;
+  EstimatorManagerBase* Estimators;
   ///parameters
   ParameterSet myParams;
   ///1/Mass per species
@@ -281,8 +274,6 @@ protected:
   std::vector<RealType> MassInvP;
   ///sqrt(tau/Mass) per particle
   std::vector<RealType> SqrtTauOverMass;
-  ///non local operator
-  NonLocalTOperator nonLocalOps;
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
   ///temporary storage for random displacement
@@ -299,12 +290,8 @@ protected:
    */
   RealType getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled);
 
-  ///copy constructor
-  QMCUpdateBase(const QMCUpdateBase& a);
-
-  /** a VMC step to randomize awalker
-   */
-  void randomize(Walker_t& awalker);
+  ///copy constructor (disabled)
+  QMCUpdateBase(const QMCUpdateBase &) = delete;
 
 private:
 
@@ -315,12 +302,9 @@ private:
   {
     return *this;
   }
+  ///
+  NewTimer* InitWalkersTimer;
 };
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1592 $   $Date: 2007-01-04 16:48:00 -0600 (Thu, 04 Jan 2007) $
- * $Id: QMCUpdateBase.h 1592 2007-01-04 22:48:00Z jnkim $
- ***************************************************************************/

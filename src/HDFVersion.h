@@ -16,8 +16,10 @@
 #ifndef QMCPLUSPLUS_HDFWALKERVERSION_H
 #define QMCPLUSPLUS_HDFWALKERVERSION_H
 
-#include <config.h>
-#include <io/hdf.h>
+#include <Configuration.h>
+#include <io/hdf_dataproxy.h>
+#include <io/hdf_pete.h>
+#include <io/hdf_stl.h>
 
 namespace qmcplusplus
 {
@@ -144,8 +146,3 @@ struct h5data_proxy<HDFVersion>
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1575 $   $Date: 2007-01-04 09:36:37 -0600 (Thu, 04 Jan 2007) $
- * $Id: HDFWalkerIO.h 1575 2007-01-04 15:36:37Z jnkim $
- ***************************************************************************/

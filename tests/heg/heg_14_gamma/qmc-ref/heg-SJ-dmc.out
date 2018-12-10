@@ -1,0 +1,433 @@
+Rank =    0  Free Memory = 61188 MB
+Rank =    1  Free Memory = 61188 MB
+Rank =    2  Free Memory = 61188 MB
+Rank =    3  Free Memory = 61188 MB
+Rank =    4  Free Memory = 61188 MB
+Rank =    5  Free Memory = 61188 MB
+Rank =    6  Free Memory = 61188 MB
+Rank =    7  Free Memory = 61188 MB
+Rank =    8  Free Memory = 61188 MB
+Rank =    9  Free Memory = 61188 MB
+Rank =   10  Free Memory = 61188 MB
+Rank =   11  Free Memory = 61188 MB
+Rank =   12  Free Memory = 61188 MB
+Rank =   13  Free Memory = 61188 MB
+Rank =   14  Free Memory = 61188 MB
+Rank =   15  Free Memory = 61188 MB
+  Input file(s): heg-SJ-dmc.xml 
+
+=====================================================
+                    QMCPACK 3.1.1 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+=====================================================
+  Global options 
+  async_swap=0 : using blocking send/recv for walker swaps 
+
+  MPI Nodes            = 16
+  MPI Nodes per group  = 16
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 1
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  Input XML = heg-SJ-dmc.xml
+
+  Project = heg_SJ_dmc
+  date    = 2017-09-26 17:06:42 EDT
+  host    = nid00301
+
+  hamiltonian has MPC. Will read density if it is found.
+  Offset for the random number seeds based on time 354
+  Random number offset = 354  seeds = 2393-2543
+  Create Global SuperCell 
+  3D HEG system
+     rs  = 5
+     number of up particles = 7
+     number of dn particles = 7
+     filled kshells      = 1
+     lattice constant    = 19.4256 bohr
+  Simulation cell radius = 9.712825
+  Wigner-Seitz    radius = 9.712825
+<unitcell>
+<parameter name="lattice">
+     19.4256496894      0.0000000000      0.0000000000
+      0.0000000000     19.4256496894      0.0000000000
+      0.0000000000      0.0000000000     19.4256496894
+</parameter>
+<parameter name="bconds">  p  p  p </parameter>
+<note>
+Volume (A^3) = 7330.3828583762
+Reciprocal vectors without 2*pi.
+g_1 =       0.0514783297      0.0000000000      0.0000000000
+g_2 =       0.0000000000      0.0514783297      0.0000000000
+g_3 =       0.0000000000      0.0000000000      0.0514783297
+Metric tensor in real-space.
+h_1 = 377.3558658564 0.0000000000 0.0000000000 
+h_2 = 0.0000000000 377.3558658564 0.0000000000 
+h_3 = 0.0000000000 0.0000000000 377.3558658564 
+Metric tensor in g-space.
+h_1 = 0.1046185343 0.0000000000 0.0000000000 
+h_2 = 0.0000000000 0.1046185343 0.0000000000 
+h_3 = 0.0000000000 0.0000000000 0.1046185343 
+</note>
+<note>
+	Long-range breakup parameters:
+	rc*kc = 6.0000000000; rc = 1000000.0000000000; kc = 0.0000000000
+
+</note>
+</unitcell>
+  Creating e particleset
+  Initializing the lattice of e by the global supercell
+  All the species have the same mass 1.0000000000
+Particles are grouped. Safe to use groups 
+	Long-range breakup parameters:
+	rc*kc = 6.0000000000; rc = 9.7128248447; kc = 0.6177399568
+
+	WignerSeitzRadius = 9.7128248447
+
+	SimulationCellRadius = 9.7128248447
+
+	Long-range breakup parameters:
+	rc*kc = 6.0000000000; rc = 9.7128248447; kc = 0.6177399568
+
+	WignerSeitzRadius = 9.7128248447
+
+	SimulationCellRadius = 9.7128248447
+
+--------------------------------------- 
+<unitcell>
+<parameter name="lattice">
+     19.4256496894      0.0000000000      0.0000000000
+      0.0000000000     19.4256496894      0.0000000000
+      0.0000000000      0.0000000000     19.4256496894
+</parameter>
+<parameter name="bconds">  p  p  p </parameter>
+<note>
+Volume (A^3) = 7330.3828583762
+Reciprocal vectors without 2*pi.
+g_1 =       0.0514783297      0.0000000000      0.0000000000
+g_2 =       0.0000000000      0.0514783297      0.0000000000
+g_3 =       0.0000000000      0.0000000000      0.0514783297
+Metric tensor in real-space.
+h_1 = 377.3558658564 0.0000000000 0.0000000000 
+h_2 = 0.0000000000 377.3558658564 0.0000000000 
+h_3 = 0.0000000000 0.0000000000 377.3558658564 
+Metric tensor in g-space.
+h_1 = 0.1046185343 0.0000000000 0.0000000000 
+h_2 = 0.0000000000 0.1046185343 0.0000000000 
+h_3 = 0.0000000000 0.0000000000 0.1046185343 
+</note>
+<note>
+	Long-range breakup parameters:
+	rc*kc = 6.0000000000; rc = 9.7128248447; kc = 0.6177399568
+
+</note>
+</unitcell>
+--------------------------------------- 
+
+  Creating Structure Factor for periodic systems 0.6177399568
+  KContainer initialised with cutoff 0.6177399568
+   # of K-shell  = 4
+   # of K points = 26
+e
+ Adding WavefunctionFactory for psi0
+List of kpoints (half-sphere) 
+0       0.0000000000      0.0000000000      0.3234478850 -0.1046185343
+1       0.0000000000      0.3234478850      0.0000000000 -0.1046185343
+2       0.3234478850      0.0000000000      0.0000000000 -0.1046185343
+  FermionWF=SlaterDet
+  BsplineJastrowBuilder adds a functor with cusp = -0.2500000000
+  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = 9.7128248447.
+ size = 5 parameters 
+ cusp = -0.2500000000
+ rcut = 9.7128248447
+Parameter     Name      Value
+uu_0 1.0828581930 1 1  ON 0
+uu_1 0.6653279375 1 1  ON 1
+uu_2 0.4358910287 1 1  ON 2
+uu_3 0.2243616172 1 1  ON 3
+uu_4 0.1102948764 1 1  ON 4
+  BsplineJastrowBuilder adds a functor with cusp = -0.5000000000
+  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = 9.7128248447.
+ size = 5 parameters 
+ cusp = -0.5000000000
+ rcut = 9.7128248447
+Parameter     Name      Value
+ud_0 1.6961718540 1 1  ON 0
+ud_1 1.0477221540 1 1  ON 1
+ud_2 0.6275148566 1 1  ON 2
+ud_3 0.3175982878 1 1  ON 3
+ud_4 0.1446706214 1 1  ON 4
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  Distance table for AA: source/target = e
+    PBC=bulk Orthorhombic=yes Using SymmetricDTD<T,DIM,PPPO> 9
+ Using bounding box/reduced coordinates with 
+  ... ParticleSet::addTable Create Table #0 e_e
+  ... ParticleSet::addTable Reuse Table #0 e_e
+
+  Creating CoulombHandler with the optimal breakup. 
+  KContainer initialised with cutoff 9.7034365506
+   # of K-shell  = 752
+   # of K points = 112930
+  NUMBER OF OPT_BREAK KVECS = -884272395
+ finding kc:  0.6177399568 , -1.0000000000
+  LRBreakp parameter Kc =0.6177399568
+    Continuum approximation in k = [9.7034365506,617.7399568021)
+
+   LR Breakup chi^2 = 0.0000000135
+   PBCAA self-interaction term -1.3581515357
+   PBCAA total constant -2.6075623142
+  Maximum K shell 3
+  Number of k vectors 26
+  Fixed Coulomb potential for e
+    e-e Madelung Const. =-0.0666581690
+    Vtot     =0.0000000000
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+PairCorrEstimator report
+  num_species = 2
+  Volume      = 7330.3828583762
+  Dmax        = 9.7128250000
+  NumBins     = 200
+  Delta       = 0.0485641250
+  DeltaInv    = 20.5913315642
+end PairCorrEstimator report
+  QMCHamiltonian::addOperator gr to auxH 
+QMCHamiltonian::addOperatorType added type gofr named gr
+
+  QMCHamiltonian::add2WalkerProperty added
+    2 to P::PropertyList 
+    600 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+  Hamiltonian disables VirtualMoves
+ParticleSetPool::randomize 
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet e : 0 7 14 
+
+    14
+
+    u  1.8123297524e+01  9.5657626648e+00  7.6927591822e+00
+    u  1.0311575064e+01  2.0616306956e+00  1.7349929171e+01
+    u  8.7866137015e+00  8.1204145525e+00  2.1433310775e+00
+    u  1.1727573850e+01  1.5080940859e+01  1.2481158490e+01
+    u  1.5288203269e+01  5.8433281338e+00  1.0994609311e+00
+    u  7.8189498916e+00  8.8329348664e-01  1.3877967903e+01
+    u  2.2904814672e+00  7.6810321516e-01  1.2689188348e+01
+    d  1.8977754122e+01  7.1305060289e+00  1.5959141408e+01
+    d  2.3792535992e-01  1.0801899501e+01  1.0669131497e+00
+    d  1.2876555571e+01  1.4872044262e+01  1.6294381515e+01
+    (... and 4 more particle positions ...)
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombPBCAA potential: e_e
+
+=========================================================
+  Start VMCSingleOMP
+  File Root heg_SJ_dmc.s000 append = no 
+=========================================================
+  Adding 1 walkers to 0 existing sets
+  Total number of walkers: 1.6000000000e+01
+  Total weight: 1.6000000000e+01
+  Resetting Properties of the walkers 1 x 11
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 5.0000000000e+00
+  blocks         = 100
+  steps          = 100
+  substeps       = 1
+  current        = 0
+  target samples = 8.0000000000e+02
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 200
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">5.0000000000e+01</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">200</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">200</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">8.0000000000e+02</parameter>
+<parameter name="samplesperthread" condition="real">5.0000000000e+01</parameter>
+<parameter name="steps" condition="int">100</parameter>
+<parameter name="stepsbetweensamples" condition="int">200</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">5.0000000000e+00</parameter>
+<parameter name="time_step" condition="au">5.0000000000e+00</parameter>
+<parameter name="timestep" condition="au">5.0000000000e+00</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">100</parameter>
+<parameter name="warmupsteps" condition="int">100</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 200 steps.
+</vmc>
+  Using CollectablesEstimator for collectables, e.g. sk, gofr, density 
+  Initial partition of walkers 0 1 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Total Sample Size   =800
+  Walker distribution on root = 0 1 
+  Anonymous Buffer size per walker : 1645 in base precision, in total 13160 bytes.
+MEMORY increase 0 MB VMCSingleOMP::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 5
+    reference energy   = -1.10945
+    reference variance = 0.0168109
+====================================================
+  QMC Execution time = 7.9966e-01 secs 
+Creating DMCMP for the qmc driver
+
+=========================================================
+  Start DMCOMP
+  File Root heg_SJ_dmc.s001 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 11
+  Cannot make clones again. Use existing 1 clones
+  Total number of walkers: 8.0000e+02
+  Total weight: 8.0000e+02
+  Creating WalkerController: target  number of walkers = 800
+  Using WalkerControlMPI for dynamic population control.
+  START ALL OVER 
+  WalkerControlBase parameters 
+    maxCopy = 2
+    Max Walkers per node 101
+    Min Walkers per node 11
+  QMC counter      = 1
+  time step        = 5.0000e-01
+  effective time step = 5.0000e-01
+  trial energy     = -1.1095e+00
+  reference energy = -1.1095e+00
+  Feedback = 1.0000e+00
+  reference variance = 1.6811e-02
+  target walkers = 800
+  branching cutoff scheme classic
+  branch cutoff = 5.0000e+00 7.5000e+00
+  Max and mimum walkers per node= 101 11
+  QMC Status (BranchMode) = 0000001101
+  Initial partition of walkers on a node: 0 50 
+  Updates by particle-by-particle moves using fast gradient version 
+  DMC moves are rejected when a node crossing is detected
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -1.08277
+  Energy Variance = 0.0243912
+
+  Fluctuating population
+  Persistent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 100
+  Number of blocks = 80
+
+  DMC Engine Initialization = 6.6490e-03 secs 
+
+ Warmup is completed after 100
+
+  TauEff     = 4.8916e-01
+ TauEff/Tau = 9.7833e-01
+  Etrial     = -1.0790e+00
+ Running average of energy = -1.1053e+00
+                  Variance = 2.2914e-02
+branch cutoff = 5.0000e+00 7.5000e+00
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 1
+    time step                     = 0.5
+    effective time step           = 0.489268
+    trial energy                  = -1.1078
+    reference energy              = -1.1103
+    reference variance            = 0.0229138
+    target walkers                = 800
+    branch cutoff                 = 5 7.5
+    Max and mimum walkers per node= 101 11
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 0000001111
+====================================================
+  QMC Execution time = 2.8740e+01 secs 
+  Reusing DMCOMP
+BRANCH resetRun
+ SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
+ BranchMode : 0000001111 0000001111
+  WalkerControlBase parameters 
+    maxCopy = 2
+    Max Walkers per node 101
+    Min Walkers per node 11
+ iParam (old): 0                 1                 1                 800               101               11                1                 0                 
+ iParam (new): 10                1                 1                 800               101               11                1                 0                 
+ vParam (old): 5.0000000000e-01  4.8926840973e-01  -1.1078010696e+00 -1.1103041998e+00 -1.1127952339e+00 7.5000000000e+00  5.0000000000e+00  4.0000000000e-01  2.2913783808e-02  -8.7725159738e+03 7.9010000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (new): 1.2500000000e-01  4.8926840973e-01  -1.1078010696e+00 -1.1103041998e+00 -1.1127952339e+00 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.2913783808e-02  -8.7725159738e+03 7.9010000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+
+ Using branching cutoff scheme classic
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -1.11372
+  Energy Variance = 0.0228058
+
+
+=========================================================
+  Start DMCOMP
+  File Root heg_SJ_dmc.s002 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 11
+  Cannot make clones again. Use existing 1 clones
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -1.10809
+  Energy Variance = 0.0230327
+
+  Fluctuating population
+  Persistent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 1000
+  Number of blocks = 800
+
+  DMC Engine Initialization = 3.1948089600e-05 secs 
+
+ Warmup is completed after 10
+
+  TauEff     = 1.2463191817e-01
+ TauEff/Tau = 9.9705534539e-01
+  Etrial     = -1.1380779029e+00
+ Running average of energy = -1.1148375839e+00
+                  Variance = 2.2671851136e-02
+branch cutoff = 1.0000000000e+01 1.5000000000e+01
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 2
+    time step                     = 0.125
+    effective time step           = 0.124597
+    trial energy                  = -1.10263
+    reference energy              = -1.11015
+    reference variance            = 0.0226719
+    target walkers                = 800
+    branch cutoff                 = 10 15
+    Max and mimum walkers per node= 101 11
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 0000001111
+====================================================
+  QMC Execution time = 2.8543e+03 secs 
+  Total Execution time = 2.8838e+03 secs
+_pmiu_daemon(SIGCHLD): [NID 00301] [c1-0c1s11n1] [Tue Sep 26 17:54:47 2017] PE RANK 0 exit signal Segmentation fault
+[NID 00301] 2017-09-26 17:54:47 Apid 3700797: initiated application termination
+Application 3700797 exit codes: 139
+Application 3700797 resources: utime ~2847s, stime ~33s, Rss ~32392, inblocks ~12992, outblocks ~364087

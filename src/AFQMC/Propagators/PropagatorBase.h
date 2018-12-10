@@ -14,6 +14,7 @@
 #include "AFQMC/Wavefunctions/WavefunctionHandler.h" 
 //#include "AFQMC/Walkers/SlaterDetWalker.h"
 #include "AFQMC/Walkers/WalkerHandlerBase.h"
+#include "AFQMC/Estimators/EstimatorHandler.h"
 #include "Utilities/RandomGenerator.h"
 #include "AFQMC/Estimators/SlaterDetOperations.h"
 
@@ -25,7 +26,7 @@ class PropagatorBase: public MPIObjectBase, public AFQMCInfo
 {
   public:
        
-  PropagatorBase(Communicate *c, RandomGenerator_t* r): MPIObjectBase(c),TG(c,"PropagatorTG"),rng(r),Order_Taylor_Expansion(6),name(""),hdf_write_tag(""),hdf_write_file(""),hdf_read_tag(""),hdf_read_file(""),parallel_factorization(true),ncores_per_TG(1),nnodes_per_TG(1),parallelPropagation(false),distributeSpvn(false),core_rank(0) 
+  PropagatorBase(Communicate *c, RandomGenerator_t* r): MPIObjectBase(c),TG(c,"PropagatorTG"),rng(r),Order_Taylor_Expansion(6),name(""),hdf_write_tag(""),hdf_write_file(""),hdf_read_tag(""),hdf_read_file(""),parallel_factorization(true),ncores_per_TG(1),nnodes_per_TG(1),parallelPropagation(true),distributeSpvn(false),core_rank(0),sparsePropagator(true) 
   {
   }
 
@@ -33,34 +34,39 @@ class PropagatorBase: public MPIObjectBase, public AFQMCInfo
 
 //  virtual void Propagate(int n, SlaterDetWalker&, RealType& E1, const RealType E2=0)=0;
 
-  virtual void Propagate(int n, WalkerHandlerBase*, RealType& E1, const RealType E2=0)=0;
+  virtual void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1)=0;
 
   virtual bool parse(xmlNodePtr)=0;
 
-  virtual bool setup(std::vector<int>&,ComplexSMVector*,HamiltonianBase*,WavefunctionHandler*, RealType dt, hdf_archive&, const std::string&, MPI_Comm, MPI_Comm)=0;
+  virtual bool setup(std::vector<int>&,SPComplexSMVector*,HamiltonianBase*,WavefunctionHandler*, RealType dt, hdf_archive&, const std::string&, MPI_Comm, MPI_Comm, MPI_Comm)=0;
 
   virtual bool hdf_write(hdf_archive&, const std::string&)=0;
 
   virtual bool hdf_read(hdf_archive&,const std::string&)=0;
 
-  virtual void benchmark()=0;
+  bool is_vn_sparse() { return sparsePropagator; }
 
-  void setHeadComm(bool hd, MPI_Comm comm) {
-    head_of_nodes=hd;
-    MPI_COMM_HEAD_OF_NODES = comm;
-  } 
+  afqmc::TaskGroup* getTG() { return &TG; } 
+
+  virtual SPValueSMVector* getDvn()=0;
+
+  virtual SPValueSMSpMat* getSpvn()=0;
+
+  virtual void benchmark(std::string&,int,int,int,WalkerHandlerBase*)=0;
 
   SlaterDetOperations* SDetOps;
 
   // timestep
   RealType dt; 
 
-  TaskGroup TG;
+  afqmc::TaskGroup TG;
   int ncores_per_TG,nnodes_per_TG;
   int core_rank;
 
   bool parallelPropagation;
   bool distributeSpvn; 
+
+  bool sparsePropagator;
 
   bool parallel_factorization;
   bool head_of_nodes;

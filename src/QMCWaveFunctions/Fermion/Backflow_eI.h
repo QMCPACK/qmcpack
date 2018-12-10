@@ -34,14 +34,14 @@ public:
 
   Backflow_eI(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els)
   {
-    myTable = DistanceTable::add(ions,els);
+    myTable = DistanceTable::add(ions,els,DT_AOS);
     resize(NumTargets,NumCenters);
   }
 
   //  build RadFun manually from builder class
   Backflow_eI(ParticleSet& ions, ParticleSet& els, FT* RF): BackflowFunctionBase(ions,els)
   {
-    myTable = DistanceTable::add(ions,els);
+    myTable = DistanceTable::add(ions,els,DT_AOS);
     // same radial function for all centers by default
     uniqueRadFun.push_back(RF);
     for(int i=0; i<NumCenters; i++)
@@ -52,7 +52,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = DistanceTable::add(CenterSys,P);
+    myTable = DistanceTable::add(CenterSys,P,DT_AOS);
   }
 
   BackflowFunctionBase* makeClone(ParticleSet& tqp)
@@ -138,37 +138,37 @@ public:
     case ORB_PBYP_RATIO:
       num = UIJ.cols();
       for(int i=0; i<num; i++)
-        UIJ(iat,i) = UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
       break;
     case ORB_PBYP_PARTIAL:
       num = UIJ.cols();
       for(int i=0; i<num; i++)
-        UIJ(iat,i) = UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
       num = AIJ.cols();
       for(int i=0; i<num; i++)
-        AIJ(iat,i) = AIJ_temp(i);
+        AIJ(iat,i) = AIJ_temp[i];
       break;
     case ORB_PBYP_ALL:
       num = UIJ.cols();
       for(int i=0; i<num; i++)
-        UIJ(iat,i) = UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
       num = AIJ.cols();
       for(int i=0; i<num; i++)
-        AIJ(iat,i) = AIJ_temp(i);
+        AIJ(iat,i) = AIJ_temp[i];
       num = BIJ.cols();
       for(int i=0; i<num; i++)
-        BIJ(iat,i) = BIJ_temp(i);
+        BIJ(iat,i) = BIJ_temp[i];
       break;
     default:
       num = UIJ.cols();
       for(int i=0; i<num; i++)
-        UIJ(iat,i) = UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
       num = AIJ.cols();
       for(int i=0; i<num; i++)
-        AIJ(iat,i) = AIJ_temp(i);
+        AIJ(iat,i) = AIJ_temp[i];
       num = BIJ.cols();
       for(int i=0; i<num; i++)
-        BIJ(iat,i) = BIJ_temp(i);
+        BIJ(iat,i) = BIJ_temp[i];
       break;
     }
     UIJ_temp=0.0;
@@ -184,7 +184,7 @@ public:
     BIJ_temp=0.0;
   }
 
-  void registerData(PooledData<RealType>& buf)
+  void registerData(WFBufferType& buf)
   {
     FirstOfU = &(UIJ(0,0)[0]);
     LastOfU = FirstOfU + OHMMS_DIM*NumTargets*NumCenters;
@@ -218,7 +218,7 @@ public:
   inline void
   evaluate(const ParticleSet& P, ParticleSet& QP, GradVector_t& Bmat, HessMatrix_t& Amat)
   {
-    RealType du,d2u,temp;
+    RealType du,d2u;
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -235,7 +235,7 @@ public:
         hess[8] += uij;
         Amat(j,j) += hess;
         //u = (d2u+4.0*du)*myTable->dr(nn);
-        Bmat(j) += (BIJ(j,i)=(d2u+4.0*du)*myTable->dr(nn));
+        Bmat[j] += (BIJ(j,i)=(d2u+4.0*du)*myTable->dr(nn));
       }
     }
   }
@@ -246,7 +246,7 @@ public:
   inline void
   evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
-    RealType du,d2u,temp;
+    RealType du,d2u;
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -281,7 +281,7 @@ public:
     for(int j=0; j<maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
     }
   }
@@ -297,7 +297,7 @@ public:
     for(int j=0; j<maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
     }
   }
@@ -312,9 +312,9 @@ public:
     for(int j=0; j<maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
-      HessType& hess = AIJ_temp(j);
+      HessType& hess = AIJ_temp[j];
       hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
       hess[0] += uij;
       hess[4] += uij;
@@ -333,9 +333,9 @@ public:
     for(int j=0; j<maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
-      HessType& hess = AIJ_temp(j);
+      HessType& hess = AIJ_temp[j];
       hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
       hess[0] += uij;
       hess[4] += uij;
@@ -355,17 +355,17 @@ public:
     for(int j=0; j<maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
       du *= myTable->Temp[j].rinv1;
-      HessType& hess = AIJ_temp(j);
+      HessType& hess = AIJ_temp[j];
       hess = du*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
       hess[0] += uij;
       hess[4] += uij;
       hess[8] += uij;
       Amat(iat,iat) += (hess - AIJ(iat,j));
-      BIJ_temp(j)=(d2u+4.0*du)*myTable->Temp[j].dr1;
-      Bmat_full(iat,iat) += (BIJ_temp(j)-BIJ(iat,j));
+      BIJ_temp[j]=(d2u+4.0*du)*myTable->Temp[j].dr1;
+      Bmat_full(iat,iat) += (BIJ_temp[j]-BIJ(iat,j));
     }
   }
 
@@ -378,17 +378,17 @@ public:
     for(int j=0; j<maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable->Temp[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
       du *= myTable->Temp[j].rinv1;
-      HessType& hess = AIJ_temp(j);
+      HessType& hess = AIJ_temp[j];
       hess = du*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
       hess[0] += uij;
       hess[4] += uij;
       hess[8] += uij;
       Amat(iat,iat) += (hess - AIJ(iat,j));
-      BIJ_temp(j)=(d2u+4.0*du)*myTable->Temp[j].dr1;
-      Bmat_full(iat,iat) += (BIJ_temp(j)-BIJ(iat,j));
+      BIJ_temp[j]=(d2u+4.0*du)*myTable->Temp[j].dr1;
+      Bmat_full(iat,iat) += (BIJ_temp[j]-BIJ(iat,j));
     }
   }
 
@@ -416,7 +416,7 @@ public:
   inline void
   evaluateWithDerivatives(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat, GradMatrix_t& Cmat, GradMatrix_t& Ymat, HessArray_t& Xmat)
   {
-    RealType du,d2u,temp;
+    RealType du,d2u;
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)

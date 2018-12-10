@@ -64,8 +64,8 @@ GAMESS numerical results:
             </attrib>
          </group>
       </particleset>
-      <wavefunction target="e" id="psi0">
-         <determinantset type="MolecularOrbital" source="ion0" transform="yes" name="LCAOBSet">
+      <wavefunction name="psi0" target="e">
+         <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
             <basisset name="LCAOBSet">
                <atomicBasisSet type="Gaussian" elementType="Li" normalized="no" name="Gaussian-G2" angular="cartesian">
                   <grid npts="1001" type="log" ri="1e-06" rf="100.0"/>

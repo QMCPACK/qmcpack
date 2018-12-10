@@ -15,16 +15,16 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/Jastrow/PadeJastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
+#include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
 
 #include <stdio.h>
@@ -40,7 +40,9 @@ TEST_CASE("Pade functor", "[wavefunction]")
 
   double A = -0.25;
   double B = 0.1;
-  PadeFunctor<double> pf(A, B);
+  PadeFunctor<double> pf;
+  pf.B0=B;
+  pf.setCusp(A);
 
   double r = 1.2;
   double u = pf.evaluate(r);
@@ -53,7 +55,6 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
     Communicate *c;
     OHMMS::Controller->initialize(0, NULL);
     c = OHMMS::Controller;
-    OhmmsInfo("testlogfile");
 
     ParticleSet ions_;
     ParticleSet elec_;
@@ -65,7 +66,8 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
     ions_.R[0][2] = 0.0;
 
     elec_.setName("elec");
-    elec_.create(2);
+    std::vector<int> ud(2); ud[0]=2; ud[1]=0;
+    elec_.create(ud);
     elec_.R[0][0] = -0.28;
     elec_.R[0][1] = 0.0225;
     elec_.R[0][2] = -2.709;
@@ -80,7 +82,11 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
     tspecies(chargeIdx, upIdx) = -1;
     tspecies(chargeIdx, downIdx) = -1;
 
-    elec_.addTable(ions_);
+#ifdef ENABLE_SOA
+    elec_.addTable(ions_,DT_SOA);
+#else
+    elec_.addTable(ions_,DT_AOS);
+#endif
     elec_.update();
 
 
@@ -108,7 +114,7 @@ const char *particles = \
 
   // cusp = -0.25
   // r_ee = 3.42050023755
-  PadeJastrowBuilder jastrow(elec_, psi, ptcl.getPool());
+  RadialJastrowBuilder jastrow(elec_, psi);
   jastrow.put(jas1);
 
   //target->update();

@@ -287,7 +287,7 @@ bool exponentiateHermitianMatrix(int N, std::complex<double>* A, int LDA, std::c
     expA[i*LDEXPA+j] = std::complex<double>(0.0);
   for(int i=0; i<N; i++) expA[i*LDEXPA+i] = W[i]; 
   // A0 = V*W
-  product(N,N,N,Z.data(),N,expA,LDEXPA,A0.data(),N); 
+  product(N,N,N,one,Z.data(),N,expA,LDEXPA,zero,A0.data(),N); 
   // expA = A0*V^* = V*expA*V^*
   BLAS::gemm('C','N', N, N, N,
           one, &(Z[0]), N, A0.data(), N, 
@@ -310,7 +310,7 @@ bool exponentiateHermitianMatrix(int N, std::complex<double>* A, int LDA, std::c
     expA[i*LDEXPA+j] = std::complex<double>(0.0);
   for(int i=0; i<N; i++) expA[i*LDEXPA+i] = std::exp(W[i]); 
   // A0 = V*expA
-  product(N,N,N,Z.data(),N,expA,LDEXPA,A0.data(),N);
+  product(N,N,N,one,Z.data(),N,expA,LDEXPA,zero,A0.data(),N);
   // expA = A0*V^* = V*expA*V^*
   BLAS::gemm('C','N', N, N, N,
           one, &(Z[0]), N, A0.data(), N, 
@@ -340,7 +340,7 @@ bool exponentiateHermitianMatrix(int N, double* A, int LDA, double* expA, int LD
     expA[i*LDEXPA+j] = 0.0;
   for(int i=0; i<N; i++) expA[i*LDEXPA+i] = W[i]; 
   // A0 = V*W
-  product(N,N,N,Z.data(),N,expA,LDEXPA,A0.data(),N);
+  product(N,N,N,one,Z.data(),N,expA,LDEXPA,zero,A0.data(),N);
   // expA = A0*V' = V*expA*'V
   BLAS::gemm('T','N', N, N, N,
           one, &(Z[0]), N, A0.data(), N, 
@@ -363,7 +363,7 @@ bool exponentiateHermitianMatrix(int N, double* A, int LDA, double* expA, int LD
     expA[i*LDEXPA+j] = 0.0;
   for(int i=0; i<N; i++) expA[i*LDEXPA+i] = std::exp(W[i]); 
   // A0 = V*expA
-  product(N,N,N,Z.data(),N,expA,LDEXPA,A0.data(),N);
+  product(N,N,N,one,Z.data(),N,expA,LDEXPA,zero,A0.data(),N);
   // expA = A0*V' = V*expA*'V
   BLAS::gemm('T','N', N, N, N,
           one, &(Z[0]), N, A0.data(), N, 
@@ -372,92 +372,9 @@ bool exponentiateHermitianMatrix(int N, double* A, int LDA, double* expA, int LD
 
   return true;
 }
-/*
-void product(const int M, const int N, const int K, const std::complex<double>* A, const int LDA, const std::complex<double>* B, const int LDB, std::complex<double>* C, const int LDC )
-{
-  const char transa = 'N';
-  const char transb = 'N';
-  const std::complex<double> one=1.0;
-  const std::complex<double> zero=0.0;  
 
-  // C = A*B -> fortran -> C' = B'*A', 
-  BLAS::gemm(transa,transb, N, M, K,
-          one, B, LDB, A, LDA,
-          zero, C, LDC);  
-}
-
-void product(const int M, const int N, const int K, const std::complex<double> one, const std::complex<double>* A, const int LDA, const std::complex<double>* B, const int LDB, const std::complex<double> zero, std::complex<double>* C, const int LDC )
-{
-  const char transa = 'N';
-  const char transb = 'N';
-
-  // C = A*B -> fortran -> C' = B'*A', 
-  BLAS::gemm(transa,transb, N, M, K,
-          one, B, LDB, A, LDA,
-          zero, C, LDC);  
-}
-
-void product(const int M, const int N, const int K, const double* A, const int LDA, const double* B, const int LDB, double* C, const int LDC )
-{
-  const char transa = 'N';
-  const char transb = 'N';
-  const double one=1.0;
-  const double zero=0.0;  
-
-  // C = A*B -> fortran -> C' = B'*A', 
-  BLAS::gemm(transa,transb, N, M, K,
-          one, B, LDB, A, LDA,
-          zero, C, LDC);  
-}
-
-void product(const int M, const int N, const int K, const double one, const double* A, const int LDA, const double* B, const int LDB, const double zero, double* C, const int LDC )
-{
-  const char transa = 'N';
-  const char transb = 'N';
-
-  // C = A*B -> fortran -> C' = B'*A', 
-  BLAS::gemm(transa,transb, N, M, K,
-          one, B, LDB, A, LDA,
-          zero, C, LDC);  
-}
-*/
 void GeneralizedGramSchmidt(std::complex<double>* A, int LDA, int nR, int nC)
 {
-  /*
-  const std::complex<double> one = std::complex<double>(1.0,0.0); 
-  const std::complex<double> zero = std::complex<double>(0.0,0.0); 
-
-  for(int j=0; j<nC; j++)
-  {
-    // normalize vector
-    //register std::complex<double> norma = 0.0;
-    register double norma = 0.0;
-    std::complex<double>* it = A+j;
-    for(int i=0; i<nR; ++i,it+=LDA) 
-      //norma += *it*(*it); 
-      norma += std::norm(*it); 
-
-    it = A+j;
-    norma = 1.0/std::sqrt(norma); 
-    for(int i=0; i<nR; ++i,it+=LDA) 
-      *it *= norma; 
-
-    for(int k=j+1; k<nC; k++)
-    {
-      register std::complex<double> ovlp = zero;
-      std::complex<double>* itk = A+k;
-      it = A+j;
-      for(int i=0; i<nR; ++i,itk+=LDA,it+=LDA) 
-        //ovlp += *itk*(*it);
-        ovlp += std::conj(*it)*(*itk);
-      itk = A+k;
-      it = A+j;
-      for(int i=0; i<nR; ++i,itk+=LDA,it+=LDA) 
-        *itk -= ovlp*(*it);
-    }
-  }
-  */ 
-
   //  void zgeqrf( const int *M, const int *N, std::complex<double> *A, const int *LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int *LWORK, int *INFO );
   //  void zungqr( const int *M, const int *N, const int *K, std::complex<double> *A, const int *LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int *LWORK, int *INFO );
   //
@@ -472,19 +389,19 @@ void GeneralizedGramSchmidt(std::complex<double>* A, int LDA, int nR, int nC)
   std::vector<std::complex<double> > TAU(K),WORK(1);
   int info,lwork=-1; 
 
-  zgeqrf( &nR, &nC, AT.data(), &nR, TAU.data(), WORK.data(), &lwork, &info);
+  zgeqrf( nR, nC, AT.data(), nR, TAU.data(), WORK.data(), lwork, info);
 
   lwork = int(WORK[0].real());
   WORK.resize(lwork);
 
-  zgeqrf( &nR, &nC, AT.data(), &nR, TAU.data(), WORK.data(), &lwork, &info);
+  zgeqrf( nR, nC, AT.data(), nR, TAU.data(), WORK.data(), lwork, info);
 
   if(info != 0) {
     app_error()<<" Problems with QR decomposition; INFO: " <<info <<std::endl;
     APP_ABORT("Problems with QR decomposition. \n");
   }
   
-  zungqr( &nR, &nC, &K, AT.data(), &nR, TAU.data(), WORK.data(), &lwork, &info);
+  zungqr( nR, nC, K, AT.data(), nR, TAU.data(), WORK.data(), lwork, info);
 
   if(info != 0) {
     app_error()<<" Problems with QR decomposition (zungqr); INFO: " <<info <<std::endl;

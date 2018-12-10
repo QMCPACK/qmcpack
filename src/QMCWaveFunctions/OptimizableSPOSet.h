@@ -18,14 +18,14 @@
 #ifndef OPTIMIZABLE_SPO_SET_H
 #define OPTIMIZABLE_SPO_SET_H
 
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "Numerics/OptimizableFunctorBase.h"
 #include "Optimize/VariableSet.h"
 
 namespace qmcplusplus
 {
 
-class OptimizableSPOSet : public SPOSetBase
+class OptimizableSPOSet : public SPOSet
 {
 protected:
   typedef optimize::VariableSet opt_variables_type;
@@ -34,13 +34,22 @@ protected:
 
   // Number of occupied states, number of basis states
   int N, M;
+  ///number of basis
+  IndexType BasisSetSize;
+  /** pointer to matrix containing the coefficients
+   *
+   * makeClone makes a shallow copy
+   */
+  ValueMatrix_t* C;
+  ///if true, do not clean up
+  bool IsCloned;
 
   RealType derivScale;
   RealType thr;
 
   // If BasisOrbitals==NULL, only GSOrbitals is used and it's evaluate
   // functions should return N+M orbitals.
-  SPOSetBase *GSOrbitals, *BasisOrbitals;
+  SPOSet *GSOrbitals, *BasisOrbitals;
 
   // The first index is the orbital to be optimized, the second is the
   // basis element
@@ -66,7 +75,7 @@ protected:
   std::vector<PosType> CachedPos;
 public:
   ///set of variables to be optimized;  These are mapped to the
-  ///C matrix.  Update:  Moved to SPOSetBase
+  ///C matrix.  Update:  Moved to SPOSet
   // opt_variables_type myVars;
 
   // For each occupied orbital, this lists which of the M
@@ -83,8 +92,8 @@ public:
     Optimizable = true;
   }
 
-  OptimizableSPOSet(int num_orbs, SPOSetBase *gsOrbs,
-                    SPOSetBase* basisOrbs=0) :
+  OptimizableSPOSet(int num_orbs, SPOSet *gsOrbs,
+                    SPOSet* basisOrbs=0) :
     GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs), derivScale(10.0)
   {
     N = num_orbs;
@@ -129,7 +138,6 @@ public:
   // BasisOrbitals->evaluate, then does the matrix product with
   // C.
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-  void evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi);
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,
                 GradVector_t& dpsi, ValueVector_t& d2psi);
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,
@@ -190,15 +198,17 @@ public:
     }
     GradTmpSrc.resize(M,N);
     GradTmpDest.resize(N,N);
-    C.resize(N,M);
+
+    if(C==nullptr) 
+      C=new ValueMatrix_t(N,M);
+    else 
+      C->resize(N,M);
     ActiveBasis.resize(N);
     BasisSetSize = M;
-    ///from inherited class
-    t_logpsi.resize(N,N);
   }
 
   // Make a copy of myself
-  SPOSetBase* makeClone() const;
+  SPOSet* makeClone() const;
 };
 }
 

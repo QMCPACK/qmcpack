@@ -7,6 +7,7 @@
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Andrew D. Baczewski, adbacze@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -16,7 +17,7 @@
 
 #include "QMCDrivers/DMC/WalkerReconfiguration.h"
 #include "Utilities/IteratorUtility.h"
-#include "Utilities/UtilityFunctions.h"
+#include "Utilities/FairDivide.h"
 #include "Utilities/RandomGenerator.h"
 using namespace qmcplusplus;
 
@@ -27,7 +28,6 @@ using namespace qmcplusplus;
 WalkerReconfiguration::WalkerReconfiguration(Communicate* c) :WalkerControlBase(c)
 {
   SwapMode=1;
-  UnitZeta=Random();
   //ofstream fout("check.dat");
 }
 
@@ -64,6 +64,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   curData[R2ACCEPTED_INDEX]=r2_accepted;
   curData[R2PROPOSED_INDEX]=r2_proposed;
   RealType nwInv=1.0/static_cast<RealType>(nw);
+  UnitZeta=Random();
   RealType dstep=UnitZeta*nwInv;
   for(int iw=0; iw<nw; iw++)
   {
@@ -187,9 +188,4 @@ WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigg
   return nwkept;
 }
 
-/***************************************************************************
- * $RCSfile: WalkerReconfiguration.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

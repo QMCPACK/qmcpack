@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<simulation>
+<project id="heg_long_NI" series="0">
+<application name="qmcapp" class="serial">
+Sample qmc run for non-interacting HEG.
+</application>
+</project>
+<include href="heg.ptcl.xml"/>
+<include href="heg.ni.wfs.xml"/>
+<include href="heg.H_NI.xml"/>
+<qmc method="vmc" move="pbyp">
+<parameter name="blocks">800</parameter>
+<parameter name="steps">10</parameter>
+<parameter name="tau">5.0</parameter>
+</qmc>
+</simulation>

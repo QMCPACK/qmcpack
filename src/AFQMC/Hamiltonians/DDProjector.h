@@ -30,8 +30,6 @@ class DDProjector: public ProjectorBase
 
   void calculateHSPotentials(ComplexSMSpMat&);
 
-  void calculateHSPotentials_SparseDiagonalization(ComplexSMSpMat&);
-
   void calculateHSPotentials_Diagonalization(ComplexSMSpMat&);
 
   // parse xml input node
@@ -56,9 +54,9 @@ class DDProjector: public ProjectorBase
   // P(i,j) == 0, P(i,j)==P(j,i)
   ValueMatrix Pmat;
   
-  bool initFromASCII(const std::string& fileName) {return true;}; 
+  bool initFromASCII(const std::string& fileName) { return false;}; 
 
-  bool initFromXML(const std::string& fileName) {return true;};
+  bool initFromXML(const std::string& fileName) { return false; };
 
   bool initFromHDF5(const std::string& fileName); 
   

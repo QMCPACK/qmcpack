@@ -56,6 +56,7 @@ struct LRRPAHandlerTemp: public LRHandlerBase
   LRRPAHandlerTemp(ParticleSet& ref, mRealType kc_in=-1.0):
     LRHandlerBase(kc_in),FirstTime(true), Basis(ref.Lattice)
   {
+    LRHandlerBase::ClassName="LRRPAHandlerTemp";
     myFunc.reset(ref);
   }
 
@@ -134,7 +135,6 @@ struct LRRPAHandlerTemp: public LRHandlerBase
       df += coefs[n]*Basis.df(n,r);
     return df;
   }
-
 
   /** evaluate the contribution from the long-range part for for spline
    */
@@ -275,8 +275,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2301 $   $Date: 2007-11-16 13:02:40 -0600 (Fri, 16 Nov 2007) $
- * $Id: LRHandlerTemp.h 2301 2007-11-16 19:02:40Z jnkim $
- ***************************************************************************/

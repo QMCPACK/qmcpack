@@ -22,12 +22,12 @@ namespace qmcplusplus
 {
 
 DiracDeterminantOpt::DiracDeterminantOpt
-(ParticleSet &ptcl, SPOSetBasePtr const &gs_spos, int first) :
-  DiracDeterminantBase(gs_spos, first)
+(ParticleSet &ptcl, SPOSetPtr const &gs_spos, int first) :
+  DiracDeterminant(gs_spos, first)
 {
   targetPtcl = &ptcl;
   NumOrbitals = gs_spos->OrbitalSetSize;
-  NumBasis    = gs_spos->BasisSetSize;
+  NumBasis    = gs_spos->getBasisSetSize();
   BasisVals.resize(NumOrbitals,NumBasis);
   BasisGrad.resize(NumOrbitals,NumBasis);
   BasisLapl.resize(NumOrbitals,NumBasis);
@@ -41,10 +41,10 @@ DiracDeterminantOpt::DiracDeterminantOpt
   Optimizable = true;
 }
 
-DiracDeterminantBase*
-DiracDeterminantOpt::makeCopy(SPOSetBasePtr spo) const
+DiracDeterminant*
+DiracDeterminantOpt::makeCopy(SPOSetPtr spo) const
 {
-  DiracDeterminantBase* dclone= new DiracDeterminantOpt(*targetPtcl, spo, FirstIndex);
+  DiracDeterminant* dclone= new DiracDeterminantOpt(*targetPtcl, spo, FirstIndex);
   dclone->set(FirstIndex,LastIndex-FirstIndex);
   return dclone;
 }
@@ -58,15 +58,14 @@ DiracDeterminantOpt::resetParameters(const opt_variables_type& optvars)
 {
   Phi->resetParameters(optvars);
   // Update the direct matrices
-  Phi->evaluate(*targetPtcl, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
+  Phi->evaluate_notranspose(*targetPtcl, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
   // Invert PsiM
   if(NumPtcls==1)
-    psiM(0,0) = (RealType)1.0/psiM(0,0);
+    psiM(0,0) = (RealType)1.0/psiM_temp(0,0);
   else
   {
     InverseTimer.start();
-    LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
-                           WorkSpace.data(),Pivot.data(),PhaseValue);
+    invertPsiM(psiM_temp,psiM);
     InverseTimer.stop();
   }
   psiM_temp = psiM;
@@ -78,13 +77,15 @@ DiracDeterminantOpt::evaluateDerivatives(ParticleSet& P,
     std::vector<RealType>& dlogpsi,
     std::vector<RealType>& dhpsioverpsi)
 {
+  APP_ABORT("DiracDeterminantOpt::evaluateDerivatives is currently disabled.\n");
   // The dlogpsi part is simple -- just ratios
   // First, evaluate the basis functions
   // std::cerr << "GEMM 1:\n";
   // fprintf (stderr, "FirstIndex = %d  LastIndex=%d\n", FirstIndex,
   // LastIndex);
   resetParameters(active);
-  Phi->evaluateBasis (P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
+  // Ye: comment out the following operation on Phi, to be revisited
+  //Phi->evaluateBasis (P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
   BLAS::gemm ('N', 'T', NumBasis, NumOrbitals, NumOrbitals, 1.0,
               BasisVals.data(), NumBasis, psiM.data(), NumOrbitals,
               0.0, dlogdet_dC.data(), NumBasis);
@@ -174,8 +175,9 @@ DiracDeterminantOpt::evaluateDerivatives(ParticleSet& P,
 //       }
   // Pull elements from dense d_dC matrices and put into parameter
   // derivatives, dlogpsi and dhpsioverpsi
-  Phi->copyParamsFromMatrix(active, dlogdet_dC, dlogpsi);
-  Phi->copyParamsFromMatrix(active,   dlapl_dC, dhpsioverpsi);
+  // Ye: comment out the following operations on Phi, to be revisited
+  //Phi->copyParamsFromMatrix(active, dlogdet_dC, dlogpsi);
+  //Phi->copyParamsFromMatrix(active,   dlapl_dC, dhpsioverpsi);
 }
 
 void

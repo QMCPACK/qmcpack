@@ -33,6 +33,7 @@ template<class T, unsigned D,bool ORTHO>
 CrystalLattice<T,D,ORTHO>::CrystalLattice()
 {
   BoxBConds=0;
+  VacuumScale=1.0;
   R.diagonal(1e10);
   G = R;
   M = R;
@@ -95,6 +96,7 @@ void
 CrystalLattice<T,D,ORTHO>::set(const CrystalLattice<T,D,ORTHO>& oldlat, int *uc)
 {
   BoxBConds = oldlat.BoxBConds;
+  VacuumScale = oldlat.VacuumScale;
   R = oldlat.R;
   if(uc)
   {
@@ -136,7 +138,12 @@ void CrystalLattice<T,D,ORTHO>::reset()
   DiagonalOnly=ldesc.isDiagonalOnly(R);
   ABC=ldesc.calcSolidAngles(Rv,OneOverLength);
   WignerSeitzRadius = ldesc.calcWignerSeitzRadius(Rv);
+  WignerSeitzRadius_G = ldesc.calcWignerSeitzRadius(Gv);
   SimulationCellRadius = ldesc.calcSimulationCellRadius(Rv);
+  // set equal WignerSeitzRadius and SimulationCellRadius when they are very close.
+  if ( WignerSeitzRadius > SimulationCellRadius &&
+       WignerSeitzRadius-SimulationCellRadius <= WignerSeitzRadius*std::numeric_limits<float>::epsilon()*2 )
+    WignerSeitzRadius = SimulationCellRadius;
   CellRadiusSq=SimulationCellRadius*SimulationCellRadius;
   if(SuperCellEnum)
     ldesc.makeNextCells(R,NextUnitCells);
@@ -199,13 +206,21 @@ void CrystalLattice<T,D,ORTHO>::print(std::ostream& os, int level) const
    *      level == 1: lattice vectors, boundary conditions, grid
    *      level == 2: + all the internal values
    */
-  os << "<parameter name=\"lattice\">" << std::endl;
-  for(int i=0; i<D; ++i)
+  std::string unit_name = "bohr";
+
+  std::string lattice_name = "  Lattice (" + unit_name + "):";
+  std::string pad(lattice_name.length(),' ');
+  os <<  lattice_name;
+  for(int i=0; i<D; ++i) {
+    if (i > 0) {
+      os << pad;
+    }
     os << Rv[i] << std::endl;
-  os << "</parameter>" << std::endl;
+  }
   if(level > 0)
   {
-    os << "<parameter name=\"bconds\"> ";
+    os << std::endl;
+    os << "  Boundary Conditions: ";
     for(int i=0; i<D; ++i)
     {
       if(BoxBConds[i])
@@ -213,29 +228,34 @@ void CrystalLattice<T,D,ORTHO>::print(std::ostream& os, int level) const
       else
         os << " n ";
     }
-    os << "</parameter>" << std::endl;
+    os << std::endl;
+    if(VacuumScale != 1.0)
+      os << "  Vacuum scale: " << VacuumScale << std::endl;
   }
-  os << "<note>"<< std::endl;
   if(level > 1)
   {
-    os << "Volume (A^3) = " << Volume << std::endl;
-    os << "Reciprocal vectors without 2*pi.\n";
+    os << std::endl;
+    os << "  Volume (bohr^3) = " << Volume << std::endl;
+    os << std::endl;
+    os << "  Reciprocal vectors without 2*pi.\n";
     for(int i=0; i<D; ++i)
-      os << "g_"<< i+1<< " = " << Gv[i] << std::endl;
-    os << "Metric tensor in real-space.\n";
+      os << "    g_"<< i+1<< " = " << Gv[i] << std::endl;
+    os << std::endl;
+    os << "  Metric tensor in real-space.\n";
     for(int i=0; i<D; ++i)
     {
-      os << "h_"<< i+1<< " = ";
+      os << "    h_"<< i+1<< " = ";
       for(int j=0; j< D; ++j)
       {
         os << M(i,j) << " ";
       }
       os << std::endl;
     }
-    os << "Metric tensor in g-space.\n";
+    os << std::endl;
+    os << "  Metric tensor in g-space.\n";
     for(int i=0; i<D; ++i)
     {
-      os << "h_"<< i+1<< " = ";
+      os << "    h_"<< i+1<< " = ";
       for(int j=0; j< D; ++j)
       {
         os << Mg(i,j) << " ";
@@ -243,7 +263,6 @@ void CrystalLattice<T,D,ORTHO>::print(std::ostream& os, int level) const
       os << std::endl;
     }
   }
-  os << "</note>"<< std::endl;
 }
 
 template<class T, unsigned D,bool ORTHO>
@@ -271,9 +290,4 @@ inline bool orthorombic(const CrystalLattice<T,D,ORTHO>& a)
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

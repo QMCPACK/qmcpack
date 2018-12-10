@@ -15,7 +15,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/Tensor.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/ParticleSet.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleLayoutIO.h"
@@ -34,8 +33,6 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   // test that particle distances are properly calculated
 
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
 const char *particles =
 "<tmp> \
@@ -98,11 +95,11 @@ const char *particles =
   REQUIRE( electrons.SameMass );
 
   // calculate particle distances
-  electrons.addTable(ions);
+  electrons.addTable(ions,DT_AOS);
   electrons.update();
 
   // get target particle set's distance table data
-  int tid = electrons.getTable(ions);
+  int tid = electrons.getTable(ions); //this is bad
   DistanceTableData* dtable = electrons.DistTables[tid];
   REQUIRE(dtable->getName() == "ion0_e");
 
@@ -127,8 +124,6 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
 const char *particles =
 "<tmp> \
@@ -192,7 +187,7 @@ const char *particles =
   REQUIRE( electrons.SameMass );
 
   // calculate particle distances
-  electrons.addTable(ions);
+  electrons.addTable(ions,DT_AOS);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
@@ -225,8 +220,6 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
   // pull out distances between specific species
 
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
 const char *particles =
 "<tmp> \
@@ -290,7 +283,7 @@ const char *particles =
   REQUIRE( electrons.SameMass );
 
   // calculate particle distances
-  electrons.addTable(ions);
+  electrons.addTable(ions,DT_AOS);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
@@ -331,8 +324,6 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   // There are many details in this example, but the main idea is simple: When a particle is moved by a full lattice vector, no distance should change.
 
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
 const char *particles =
 "<tmp> \
@@ -403,7 +394,7 @@ const char *particles =
   ParticleSet::ParticleLayout_t* SimulationCell = new ParticleSet::ParticleLayout_t;
   LatticeParser lp(*SimulationCell);
   lp.put(part1);
-  SimulationCell->print(app_log());
+  SimulationCell->print(app_log(), 0);
 
   // read particle set
   ParticleSet ions, electrons;
@@ -427,7 +418,7 @@ const char *particles =
   electrons.Lattice.copy(*SimulationCell);
   ions.Lattice.copy(*SimulationCell); // is this applied in qmcpack executable?
   // better be, electron-proton distances used in PairCorrelation estimator
-  electrons.addTable(ions);
+  electrons.addTable(ions,DT_AOS);
   electrons.update();
 
   // get target particle set's distance table data

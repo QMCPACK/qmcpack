@@ -26,11 +26,11 @@
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Utilities/PooledData.h"
+#include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Estimators/EstimatorManager.h"
-#include "Utilities/OhmmsInfo.h"
+#include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 class Communicate;
@@ -91,7 +91,7 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool);
+  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm);
 
   virtual ~QMCDriver();
 
@@ -202,7 +202,7 @@ public:
   //virtual std::vector<RandomGenerator_t*>& getRng() {}
 
   ///Observables manager
-  EstimatorManager* Estimators;
+  EstimatorManagerBase* Estimators;
 
   ///Traces manager
   TraceManager* Traces;
@@ -360,22 +360,19 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  ///stream for the log file
-  //OhmmsInform *LogOut;
-
   ///temporary buffer to accumulate data
   //ostrstream log_buffer;
 
   //PooledData<RealType> HamPool;
 
   ///Copy Constructor (disabled).
-  QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), psiPool(a.psiPool), Estimators(0) {}
+  QMCDriver(const QMCDriver &) = delete;
+  ///Copy operator (disabled).
+  QMCDriver & operator=(const QMCDriver &) = delete;
 
   bool putQMCInfo(xmlNodePtr cur);
 
   void addWalkers(int nwalkers);
-
-  //void updateWalkers();
 
   /** record the state of the block
    * @param block current block
@@ -399,13 +396,10 @@ protected:
   std::string getRotationName( std::string RootName);
   std::string getLastRotationName( std::string RootName);
 
+  NewTimer *checkpointTimer;
+
 };
 /**@}*/
 }
 
 #endif
-/***************************************************************************
- * $RCSfile: QMCDriver.h,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

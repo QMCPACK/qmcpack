@@ -14,7 +14,6 @@
 
 #define USE_FAKE_CLOCK
 #include "Utilities/NewTimer.h"
-#include "Utilities/OhmmsInfo.h"
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -66,8 +65,10 @@ TEST_CASE("test_timer_scoped", "[utilities]")
   {
     ScopedTimer st(t1);
   }
+#if ENABLE_TIMERS
   REQUIRE(t1->get_total() == Approx(1.0));
   REQUIRE(t1->get_num_calls() == 1);
+#endif
 }
 
 TEST_CASE("test_timer_flat_profile", "[utilities]")
@@ -371,9 +372,6 @@ TEST_CASE("test stack exceeded message")
 
 TEST_CASE("test max exceeded message")
 {
-  // initialize app_log
-  OhmmsInfo("testlogfile");
-
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
   std::vector<NewTimer *> timer_list;
@@ -390,6 +388,40 @@ TEST_CASE("test max exceeded message")
   doc.newDoc("resources");
   tm.output_timing(NULL, doc, doc.getRoot());
   doc.dump("tmp5.xml");
+}
+#endif
+
+#if __cplusplus >=201103l
+// Define a list of timers indexed by an enum
+// First, define an enum with the timers
+enum TestTimer
+{
+  MyTimer1,
+  MyTimer2,
+};
+
+// Next define a structure mapping the enum to a string name
+TimerNameList_t<TestTimer> TestTimerNames =
+{
+  {MyTimer1, "Timer name 1"},
+  {MyTimer2, "Timer name 2"}
+};
+
+TEST_CASE("test setup timers","[utilities]")
+{
+  TimerManagerClass tm;
+  // Create  a list of timers and initialize it
+  TimerList_t Timers;
+  setup_timers(Timers, TestTimerNames, timer_level_coarse);
+
+  fake_cpu_clock_increment = 1.0;
+  Timers[MyTimer1]->start();
+  Timers[MyTimer1]->stop();
+
+#ifdef ENABLE_TIMERS
+  REQUIRE(Timers[MyTimer1]->get_total() == Approx(1.0));
+  REQUIRE(Timers[MyTimer1]->get_num_calls() == 1);
+#endif
 }
 #endif
 

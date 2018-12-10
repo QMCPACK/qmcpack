@@ -40,7 +40,7 @@ public:
   CSVMCUpdateAll(MCWalkerConfiguration& w,  std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h,
                  RandomGenerator_t& rg);
 
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
 };
@@ -54,15 +54,10 @@ public:
   CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w,  std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h,
                  RandomGenerator_t& rg);
 
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
 };
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1592 $   $Date: 2007-01-04 16:48:00 -0600 (Thu, 04 Jan 2007) $
- * $Id: VMCMultiple.h 1592 2007-01-04 22:48:00Z jnkim $
- ***************************************************************************/

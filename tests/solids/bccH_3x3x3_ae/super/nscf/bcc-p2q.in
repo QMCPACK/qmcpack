@@ -1,0 +1,6 @@
+&inputpp
+  write_psir = .false.
+  prefix = 'pwscf'
+  cusp_corr = .true.
+  outdir = 'pwscf_output'
+/

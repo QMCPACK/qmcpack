@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<simulation>
+   <project id="qmc_j3_long" series="0">
+      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+   </project>
+   <qmcsystem>
+      <simulationcell>
+         <parameter name="lattice" units="bohr">
+                  5.10509515       -3.23993545        0.00000000
+                  5.10509515        3.23993545       -0.00000000
+                 -6.49690625        0.00000000        7.08268015
+         </parameter>
+         <parameter name="bconds">
+            p p p
+         </parameter>
+         <parameter name="LR_dim_cutoff"       >    15                 </parameter>
+      </simulationcell>
+      <particleset name="e" random="yes">
+         <group name="u" size="6" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+         <group name="d" size="6" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+      </particleset>
+      <particleset name="ion0">
+         <group name="O" size="2" mass="29164.3928678">
+            <parameter name="charge"              >    6                     </parameter>
+            <parameter name="valence"             >    6                     </parameter>
+            <parameter name="atomicnumber"        >    8                     </parameter>
+            <parameter name="mass"                >    29164.3928678            </parameter>
+            <attrib name="position" datatype="posArray" condition="0">
+                    -0.00000000       -0.00000000        1.08659253
+                     0.00000000        0.00000000       -1.08659253
+            </attrib>
+         </group>
+      </particleset>
+      <wavefunction name="psi0" target="e">
+         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+            <slaterdeterminant>
+               <determinant id="updet" size="6">
+                  <occupation mode="ground" spindataset="0"/>
+               </determinant>
+               <determinant id="downdet" size="6">
+                  <occupation mode="ground" spindataset="0"/>
+               </determinant>
+            </slaterdeterminant>
+         </determinantset>
+         <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
+            <correlation elementType="O" size="8" cusp="0.0">
+               <coefficients id="eO" type="Array"> -0.8696890534 -0.7933441198 -0.7025438674 -0.5453877801 -0.3403047754 -0.2291021778 -0.1249523107 -0.05787395961</coefficients>
+            </correlation>
+         </jastrow>
+         <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
+            <correlation speciesA="u" speciesB="u" size="8">
+               <coefficients id="uu" type="Array"> 0.3023075362 0.2303430148 0.169494251 0.1210306138 0.08244364039 0.05163617317 0.02775379295 0.01172449577</coefficients>
+            </correlation>
+            <correlation speciesA="u" speciesB="d" size="8">
+               <coefficients id="ud" type="Array"> 0.48581383 0.3448735978 0.2390201254 0.1622242167 0.1074572884 0.06748900952 0.0373874482 0.0168097496</coefficients>
+            </correlation>
+         </jastrow>
+         <jastrow name="J3" type="eeI" function="polynomial" source="ion0" print="yes">
+           <correlation ispecies="O" especies="u" isize="3" esize="3">
+             <coefficients id="uuO" type="Array" optimize="yes"> -0.003103380779 0.02857628667 0.03590183922 -0.03208413286 0.06303466381 0.02028280939 -0.01637683343 0.01045076917 -0.006159456741 0.02636381262 -0.005324462034 0.0234416233 -0.0272677791 0.0307802581 0.03928462569 0.01545788859 0.01596206888 -0.01690132029 1.855519635e-05 -0.0150372004 0.02502527353 0.01715726243 0.01238460123 0.01318361443 0.01776219906 0.02967045442</coefficients>
+           </correlation>
+           <correlation ispecies="O" especies1="u" especies2="d" isize="3" esize="3">
+             <coefficients id="udO" type="Array" optimize="yes"> -0.03957461434 0.03987834931 -0.004914971037 0.03222743071 0.1130446183 0.007802539618 0.05866717255 0.04406122947 -0.0385877459 -0.02060959354 0.01545782204 0.03181720087 -0.09177584641 0.03522222384 0.04425147857 0.07138256621 0.009504749617 0.004772801499 0.02242981334 -0.02902336727 0.05578580401 0.06586070328 0.01245772376 0.04015709612 0.03998030858 0.03281735495</coefficients>
+           </correlation>
+         </jastrow>
+      </wavefunction>
+      <hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+            <pseudo elementType="O" href="O.BFD.xml"/>
+         </pairpot>
+         <estimator type="flux" name="Flux"/>
+      </hamiltonian>
+   </qmcsystem>
+   <qmc method="vmc" move="pbyp">
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="walkers"     >  1    </parameter>
+      <parameter name="blocks"      >  400  </parameter>
+      <parameter name="steps"       >  320   </parameter>
+      <parameter name="subSteps"    >  4    </parameter>
+      <parameter name="timestep"    >  0.5  </parameter>
+      <parameter name="warmupSteps" >  20   </parameter>
+   </qmc>
+</simulation>

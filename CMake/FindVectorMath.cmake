@@ -10,9 +10,7 @@ IF ( HAVE_MKL_VML )
 # We arrive here if MKL was detected earlier by FindMKL
   SET ( HAVE_VECTOR_MATH 1 )
   MESSAGE(STATUS "Using MKL Vector Math functions")
-ENDIF ()
-
-IF ( NOT HAVE_VECTOR_MATH )
+ELSE()
   #MESSAGE(STATUS "Trying MKL VML")
   # Check for mkl_vml_functions.h
   FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_vml.cxx"
@@ -33,6 +31,18 @@ IF ( NOT HAVE_VECTOR_MATH )
     IF (MKL_FOUND)
       MESSAGE(WARNING "mkl_vml_functions.h check failed but MKL libraries are available. At the risk of losing performance.")
     ENDIF()
+  ENDIF()
+ENDIF()
+
+IF ( NOT HAVE_MKL_VML )
+  FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx"
+      "#include <iostream>\n#if __GLIBC__ == 2 && ( __GLIBC_MINOR__ == 22 || __GLIBC_MINOR__ == 23 )\n#error buggy glibc version\n#endif\n int main() { return 0; }\n" )
+  try_compile(PASS_GLIBC ${CMAKE_BINARY_DIR}
+        ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx
+        CMAKE_FLAGS "${CMAKE_CXX_FLAGS}" )
+
+  IF ( NOT PASS_GLIBC )
+    MESSAGE(WARNING "Using glibc 2.22 or 2.23 which contains a buggy libmvec crashing QMCPACK. Workaround needed for this issue.")
   ENDIF()
 ENDIF()
 

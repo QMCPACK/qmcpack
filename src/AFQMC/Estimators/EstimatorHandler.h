@@ -1,12 +1,12 @@
 #ifndef QMCPLUSPLUS_AFQMC_ESTIMATORHANDLER_H
 #define QMCPLUSPLUS_AFQMC_ESTIMATORHANDLER_H
 
+#include <Platforms/sysutil.h>
 #include<Message/MPIObjectBase.h>
 #include"AFQMC/config.h"
 #include"AFQMC/Estimators/EstimatorBase.h"
 #include"AFQMC/Estimators/BasicEstimator.h"
 #include "AFQMC/Wavefunctions/WavefunctionHandler.h"
-#include "AFQMC/Propagators/PropagatorBase.h"
 #include "AFQMC/Walkers/WalkerHandlerBase.h"
 #include "AFQMC/Hamiltonians/HamiltonianBase.h"
 
@@ -31,38 +31,28 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
     return estimators[0]->getEloc_step();
   } 
 
-  double getWeight() 
-  {
-    return estimators[0]->getWeight();
-  } 
-
-  double getWeight_step() 
-  {
-    return estimators[0]->getWeight_step();
-  } 
-
   // meant for very cheap accumulations
-  void accumulate_substep(WalkerHandlerBase* wlks) 
-  {
+  //void accumulate_substep(WalkerHandlerBase* wlks) 
+  //{
     // only on basic for now
-    estimators[0]->accumulate_substep(wlks); 
-  }
+  //  estimators[0]->accumulate_substep(wlks); 
+  //}
 
-  void print(int block, double time, double Es, double Eav,  WalkerHandlerBase* wlks)
+  void print(int block, double time, double Es, WalkerHandlerBase* wlks)
   {
     out<<block <<" " <<time <<" ";
     for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
       (*it)->print(out,wlks);
-    out<<std::setprecision(12) <<Es <<" " <<Eav;
+    out<<std::setprecision(12) <<Es <<"  " <<freemem();
     out<<std::endl;
     if( (block+1)%10==0 ) out.flush();
   }
 
   // 1) acumulates estimators over steps, and 2) reduces and accumulates substep estimators 
-  void accumulate_step(WalkerHandlerBase* wlks) 
+  void accumulate_step(WalkerHandlerBase* wlks, std::vector<ComplexType>& curData) 
   {
     for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
-      (*it)->accumulate_step(wlks);
+      (*it)->accumulate_step(wlks,curData);
   } 
 
   // 1) acumulates estimators over steps, and 2) reduces and accumulates substep estimators 
@@ -96,7 +86,7 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
         OhmmsAttributeSet oAttrib;
         oAttrib.add(name,"name");
         oAttrib.put(cur);  
-        if(name == "basic" || name == "Basic" || name == "starndard" ) {
+        if(name == "basic" || name == "Basic" || name == "standard" ) {
           if(!estimators[0]->parse(cur)) return false;
         } else {
           // create and parse new estimators 
@@ -110,8 +100,12 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
   }
 
   // Estimator does not use TGs right now
-  bool setup(std::vector<int>& TGdata, ComplexSMVector* v, HamiltonianBase* ham0, WavefunctionHandler* wfn0, myTimer* LocalTimer, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm head_tgs) 
+  bool setup(std::vector<int>& TGdata, SPComplexSMVector* v, HamiltonianBase* ham0, WavefunctionHandler* wfn0, myTimer* LocalTimer, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm head_tgs) 
   {
+
+    for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
+      (*it)->setup(TGdata,v,ham0,wfn0,LocalTimer,heads_comm,tg_comm,node_comm,head_tgs);
+
     if(myComm->rank() == 0) {
       filename = myComm->getName()+".scalar.dat";
       //out.open(filename.c_str(),std::ios_base::app | std::ios_base::out);
@@ -123,12 +117,10 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
       out<<"# block  time  ";
       for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
         (*it)->tags(out);
-      out<<"Eshift Ebound  ";
+      out<<"Eshift freeMemory ";
       out<<std::endl;
     }
 
-    for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
-      (*it)->setup(TGdata,v,ham0,wfn0,LocalTimer,heads_comm,tg_comm,node_comm,head_tgs);
 
     return true;
   }

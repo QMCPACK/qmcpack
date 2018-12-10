@@ -4,8 +4,13 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
+//                    Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
+//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -15,167 +20,352 @@
 
 
 #include "QMCDrivers/DMC/DMC.h"
-#include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
-#include "QMCDrivers/DMC/DMCNonLocalUpdate.h"
+#include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 #include "Message/OpenMP.h"
 #include "Utilities/Timer.h"
+#include "Utilities/RunTimeManager.h"
+#include "OhmmsApp/RandomNumberControl.h"
+#include "Utilities/ProgressReportEngine.h"
+#include <qmc_common.h>
+#include <tau/profiler.h>
+#include "ADIOS/ADIOS_profile.h"
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 
 namespace qmcplusplus
 {
 
 /// Constructor.
-DMC::DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-  QMCDriver(w,psi,h), KillNodeCrossing(0), Reconfiguration("no"), Mover(0), BranchInterval(-1)
+DMC::DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm)
+  : QMCDriver(w,psi,h,ppool,comm)
+  , KillNodeCrossing(0), Reconfiguration("no"), BranchInterval(-1), mover_MaxAge(-1)
 {
-  RootName = "dummy";
+  RootName = "dmc";
   QMCType ="DMC";
   QMCDriverMode.set(QMC_UPDATE_MODE,1);
-  QMCDriverMode.set(QMC_MULTIPLE,1);
   m_param.add(KillWalker,"killnode","string");
-  m_param.add(BenchMarkRun,"benchmark","string");
   m_param.add(Reconfiguration,"reconfiguration","string");
-  m_param.add(BranchInterval,"branchInterval","int");
+  //m_param.add(BranchInterval,"branchInterval","string");
   m_param.add(NonLocalMove,"nonlocalmove","string");
   m_param.add(NonLocalMove,"nonlocalmoves","string");
+  m_param.add(mover_MaxAge,"MaxAge","double");
+  //DMC overwrites ConstPopulation
+  ConstPopulation=false;
 }
 
-bool DMC::run()
+void DMC::resetComponents(xmlNodePtr cur)
 {
-  resetUpdateEngine();
-  //collect is disabled since it is handled by branchEngine->WalkerController
-  Estimators->setCollectionMode(true);
-  Mover->startRun(nBlocks,true);
-  IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
-  Timer myclock;
-  IndexType block = 0;
-  CurrentStep = 0;
-  do // block
+  qmcNode=cur;
+  m_param.put(cur);
+  put(cur);
+  //app_log()<<"DMC::resetComponents"<< std::endl;
+  Estimators->reset();
+  int nw_multi=branchEngine->resetRun(cur);
+  if(nw_multi>1)
   {
-    Mover->startBlock(nSteps);
-    for(IndexType step=0; step< nSteps; step++, CurrentStep+=BranchInterval)
-    {
-      if(storeConfigs && (CurrentStep%storeConfigs == 0))
-      {
-        ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-        W.resetWalkerParents();
-      }
-      for(IndexType interval=0; interval<BranchInterval-1; ++interval)
-        Mover->advanceWalkers(W.begin(),W.end(), false);
-      W.resetCollectables();
-      Mover->advanceWalkers(W.begin(),W.end(), false);
-      Mover->setMultiplicity(W.begin(),W.end());
-      branchEngine->branch(CurrentStep,W);
-    }
-    block++;
-    Mover->stopBlock();
-    recordBlock(block);
-    if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%updatePeriod == 0)
-      Mover->updateWalkers(W.begin(), W.end());
+    app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << std::endl;
+    app_log() << " The target population has changed. Multiply walkers by " << nw_multi << std::endl;
+    W.createWalkers((nw_multi-1)*W.getActiveWalkers());
+    setWalkerOffsets();
+    FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
+    app_log() << " New population " << W.getActiveWalkers() << " per task  total =" << W.getGlobalNumWalkers()  << std::endl;
   }
-  while(block<nBlocks &&  myclock.elapsed()<MaxCPUSecs);
-  Mover->stopRun();
-  return finalize(block);
-}
-
-void DMC::resetUpdateEngine()
-{
-  bool fixW=((Reconfiguration == "yes")||(Reconfiguration == "pure"));
-  if(Mover==0) //disable switching update modes for DMC in a run
+  branchEngine->checkParameters(W);
+  //delete Movers[0];
+  for(int ip=0; ip<NumThreads; ++ip)
   {
-    //load walkers if they were saved
-    W.loadEnsemble();
-    branchEngine->initWalkerController(W,fixW);
+    delete Movers[ip];
+    delete estimatorClones[ip];
+    estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
+    estimatorClones[ip]->setCollectionMode(false);
+#if !defined(REMOVE_TRACEMANAGER)
+    delete traceClones[ip];
+    traceClones[ip] = Traces->makeClone();
+#endif
+  }
+  #pragma omp parallel for
+  for(int ip=0; ip<NumThreads; ++ip)
+  {
     if(QMCDriverMode[QMC_UPDATE_MODE])
     {
-      if(NonLocalMove == "yes")
-      {
-        app_log() << "  Non-local update is used." << std::endl;
-        DMCNonLocalUpdatePbyP* nlocMover= new DMCNonLocalUpdatePbyP(W,Psi,H,Random);
-        nlocMover->put(qmcNode);
-        Mover=nlocMover;
-      }
-      else
-      {
-        Mover= new DMCUpdatePbyPWithRejection(W,Psi,H,Random);
-      }
-      Mover->resetRun(branchEngine,Estimators);
-      Mover->initWalkersForPbyP(W.begin(),W.end());
+      Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+      Movers[ip]->put(cur);
+      Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
+      Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
     else
     {
-      if(NonLocalMove == "yes")
+      if(KillNodeCrossing)
+        Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+      else
+        Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+      Movers[ip]->put(cur);
+      Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
+      Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+    }
+  }
+}
+
+
+void DMC::resetUpdateEngines()
+{
+  ReportEngine PRE("DMC","resetUpdateEngines");
+  bool fixW = (Reconfiguration == "yes");
+  makeClones(W,Psi,H);
+  Timer init_timer;
+  if(Movers.empty())
+  {
+    W.loadEnsemble(wClones);
+    setWalkerOffsets();
+    int nw_multi=branchEngine->initWalkerController(W,fixW,false);
+    if(nw_multi>1)
+    {
+      W.createWalkers((nw_multi-1)*W.getActiveWalkers());
+      setWalkerOffsets();
+    }
+    //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
+    Movers.resize(NumThreads,0);
+    Rng.resize(NumThreads,0);
+    estimatorClones.resize(NumThreads,0);
+    traceClones.resize(NumThreads,0);
+    FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
+    {
+      //log file
+      std::ostringstream o;
+      o << "  Initial partition of walkers on a node: ";
+      copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(o," "));
+      o << "\n";
+      if(QMCDriverMode[QMC_UPDATE_MODE])
+        o << "  Updates by particle-by-particle moves";
+      else
+        o << "  Updates by walker moves";
+      if(KillNodeCrossing)
+        o << "\n  Walkers are killed when a node crossing is detected";
+      else
+        o << "\n  DMC moves are rejected when a node crossing is detected";
+      app_log() << o.str() << std::endl;
+    }
+    #pragma omp parallel for
+    for(int ip=0; ip<NumThreads; ++ip)
+    {
+      estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
+      estimatorClones[ip]->setCollectionMode(false);
+#if !defined(REMOVE_TRACEMANAGER)
+      traceClones[ip] = Traces->makeClone();
+#endif
+#ifdef USE_FAKE_RNG
+      Rng[ip] = new FakeRandom();
+#else
+      Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
+      hClones[ip]->setRandomGenerator(Rng[ip]);
+#endif
+      if(QMCDriverMode[QMC_UPDATE_MODE])
       {
-        app_log() << "  Non-local update is used." << std::endl;
-        DMCNonLocalUpdate* nlocMover= new DMCNonLocalUpdate(W,Psi,H,Random);
-        nlocMover->put(qmcNode);
-        Mover=nlocMover;
+        Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+        Movers[ip]->put(qmcNode);
+        Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
+        Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       }
       else
       {
         if(KillNodeCrossing)
-        {
-          Mover = new DMCUpdateAllWithKill(W,Psi,H,Random);
-        }
+          Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         else
-        {
-          Mover = new DMCUpdateAllWithRejection(W,Psi,H,Random);
-        }
+          Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+        Movers[ip]->put(qmcNode);
+        Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
+        Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       }
-      Mover->resetRun(branchEngine,Estimators);
-      Mover->initWalkers(W.begin(),W.end());
     }
-    branchEngine->checkParameters(W);
   }
+#if !defined(REMOVE_TRACEMANAGER)
   else
   {
-    if(QMCDriverMode[QMC_UPDATE_MODE])
-      Mover->updateWalkers(W.begin(),W.end());
+    #pragma omp parallel for
+    for(int ip=0; ip<NumThreads; ++ip)
+    {
+      traceClones[ip]->transfer_state_from(*Traces);
+    }
   }
+#endif
+  branchEngine->checkParameters(W);
+  int mxage=mover_MaxAge;
   if(fixW)
   {
-    if(QMCDriverMode[QMC_UPDATE_MODE])
-      app_log() << "  DMC PbyP Update with reconfigurations" << std::endl;
-    else
-      app_log() << "  DMC walker Update with reconfigurations" << std::endl;
-    Mover->MaxAge=0;
     if(BranchInterval<0)
-    {
-      BranchInterval=nSteps;
-    }
-    //nSteps=1;
+      BranchInterval=1;
+    mxage=(mover_MaxAge<0)?0:mover_MaxAge;
+    for(int ip=0; ip<Movers.size(); ++ip)
+      Movers[ip]->MaxAge=mxage;
   }
   else
   {
-    if(QMCDriverMode[QMC_UPDATE_MODE])
-    {
-      app_log() << "  DMC PbyP Update with a fluctuating population" << std::endl;
-      Mover->MaxAge=1;
-    }
-    else
-    {
-      app_log() << "  DMC walker Update with a fluctuating population" << std::endl;
-      Mover->MaxAge=3;
-    }
     if(BranchInterval<0)
       BranchInterval=1;
+    int miage=(QMCDriverMode[QMC_UPDATE_MODE])?1:5;
+    mxage=(mover_MaxAge<0)?miage:mover_MaxAge;
+    for(int i=0; i<NumThreads; ++i)
+      Movers[i]->MaxAge=mxage;
   }
-  app_log() << "  BranchInterval = " << BranchInterval << std::endl;
-  app_log() << "  Steps per block = " << nSteps << std::endl;
-  app_log() << "  Number of blocks = " << nBlocks << std::endl;
+  {
+    std::ostringstream o;
+    if(fixW)
+      o << "  Fixed population using reconfiguration method\n";
+    else
+      o << "  Fluctuating population\n";
+    o << "  Persistent walkers are killed after " << mxage << " MC sweeps\n";
+    o << "  BranchInterval = " << BranchInterval << "\n";
+    o << "  Steps per block = " << nSteps << "\n";
+    o << "  Number of blocks = " << nBlocks << "\n";
+    app_log() << o.str() << std::endl;
+  }
+  app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs " << std::endl;
 }
 
-bool DMC::put(xmlNodePtr q)
+bool DMC::run()
 {
+
+  Profile prof("DMC","run",QMC_DMC_0_EVENT);
+  LoopTimer dmc_loop;
+
+  bool variablePop = (Reconfiguration == "no");
+  resetUpdateEngines();
+  //estimator does not need to collect data
+  Estimators->setCollectionMode(true);
+  Estimators->start(nBlocks);
+  for(int ip=0; ip<NumThreads; ip++)
+    Movers[ip]->startRun(nBlocks,false);
+#if !defined(REMOVE_TRACEMANAGER)
+  Traces->startRun(nBlocks,traceClones);
+#endif
+  IndexType block = 0;
+  IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
+  int sample = 0;
+
+  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  bool enough_time_for_next_iteration = true;
+
+  prof.push("dmc_loop");
+  do // block
+  {
+    dmc_loop.start();
+    Estimators->startBlock(nSteps);
+    for(int ip=0; ip<NumThreads; ip++)
+      Movers[ip]->startBlock(nSteps);
+
+    for(IndexType step=0; step< nSteps; ++step, CurrentStep+=BranchInterval)
+    {
+      prof.push("dmc_advance");
+
+      //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
+      //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
+      //           W.resetWalkerParents();
+      //         }
+     
+      #pragma omp parallel
+      {
+        int ip=omp_get_thread_num();
+        Movers[ip]->set_step(sample);
+        bool recompute=( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] );
+        wClones[ip]->resetCollectables();
+        const size_t nw=W.getActiveWalkers();
+#pragma omp for nowait
+        for(size_t iw=0;iw<nw; ++iw)
+        {
+          Walker_t& thisWalker(*W[iw]);
+          Movers[ip]->advanceWalker(thisWalker,recompute);
+        }
+      }
+
+      prof.pop(); //close dmc_advance
+
+      prof.push("dmc_branch");
+      //Collectables are weighted but not yet normalized
+      if(W.Collectables.size())
+      {
+        // only when collectable is not empty, need to generalize for W != wClones[0]
+        for(int ip=1; ip<NumThreads; ++ip)
+          W.Collectables += wClones[ip]->Collectables;
+      }
+      branchEngine->branch(CurrentStep, W);
+      //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
+      //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
+      //           W.resetWalkerParents();
+      //         }
+      if(variablePop)
+        FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
+      sample++;
+      prof.pop(); //close dmc_branch
+    }
+//       branchEngine->debugFWconfig();
+    Estimators->stopBlock(acceptRatio());
+#if !defined(REMOVE_TRACEMANAGER)
+    Traces->write_buffers(traceClones, block);
+#endif
+    block++;
+    if(DumpConfig &&block%Period4CheckPoint == 0)
+    {
+#ifndef USE_FAKE_RNG
+      for(int ip=0; ip<NumThreads; ip++)
+        *(RandomNumberControl::Children[ip])=*(Rng[ip]);
+#endif
+    }
+    recordBlock(block);
+    dmc_loop.stop();
+    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(dmc_loop);
+    // Rank 0 decides whether the time limit was reached
+    myComm->bcast(enough_time_for_next_iteration);
+
+    if (!enough_time_for_next_iteration)
+    {
+      app_log() << runtimeControl.time_limit_message("DMC", block);
+    }
+  } while(block<nBlocks && enough_time_for_next_iteration);
+
+  prof.pop(); //close loop
+
+  //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
+#ifndef USE_FAKE_RNG
+  for(int ip=0; ip<NumThreads; ip++)
+    *(RandomNumberControl::Children[ip])=*(Rng[ip]);
+#endif
+  Estimators->stop();
+  for (int ip=0; ip<NumThreads; ++ip)
+    Movers[ip]->stopRun2();
+#if !defined(REMOVE_TRACEMANAGER)
+  Traces->stopRun();
+#endif
+  return finalize(nBlocks);
+}
+
+
+bool
+DMC::put(xmlNodePtr q)
+{
+  BranchInterval=-1;
+  ParameterSet p;
+  p.add(BranchInterval,"branchInterval","string");
+  p.add(BranchInterval,"branchinterval","string");
+  p.add(BranchInterval,"substeps","int");
+  p.add(BranchInterval,"subSteps","int");
+  p.add(BranchInterval,"sub_steps","int");
+  p.put(q);
+
+  //app_log() << "\n DMC::put qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter<< std::endl;
+  //app_log() << "  timestep       = " << Tau << std::endl;
+  //app_log() << "  blocks         = " << nBlocks << std::endl;
+  //app_log() << "  steps          = " << nSteps << std::endl;
+  //app_log() << "  current        = " << CurrentStep << std::endl;
+  //app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
+  //app_log().flush();
   return true;
 }
-
 }
 
-/***************************************************************************
- * $RCSfile: DMC.cpp,v $   $Author: jnkim $
- * $Revision: 1592 $   $Date: 2007-01-04 16:48:00 -0600 (Thu, 04 Jan 2007) $
- * $Id: DMC.cpp 1592 2007-01-04 22:48:00Z jnkim $
- ***************************************************************************/

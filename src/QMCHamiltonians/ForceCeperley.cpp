@@ -70,29 +70,60 @@ ForceCeperley::evaluate(ParticleSet& P)
   const DistanceTableData* d_ab=P.DistTables[myTableIndex];
   const ParticleScalar_t* restrict Zat=Ions.Z.first_address();
   const ParticleScalar_t* restrict Qat=P.Z.first_address();
-  for(int iat=0; iat<Nnuc; iat++)
+
+  if(d_ab->DTType == DT_SOA)
   {
-    RealType esum = 0.0;
-    // electron contribution (special treatment if distance is inside cutoff!)
-    for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++)
+    for(int jat=0; jat<Nel; jat++)
     {
-      RealType zoverr3=Qat[jat]*Zat[iat]*std::pow(d_ab->rinv(nn),3);
-      if(d_ab->r(nn)>=Rcut)
+      for(int iat=0; iat<Nnuc; iat++)
       {
-        forces[iat] -= zoverr3*d_ab->dr(nn);
-      }
-      else
-      {
-        RealType r = d_ab->r(nn);
-        RealType g_q=0.0;
-        for(int q=0; q<N_basis; q++)
+      // electron contribution (special treatment if distance is inside cutoff!)
+        RealType r = d_ab->Distances[jat][iat];
+        RealType zoverr3=Qat[jat]*Zat[iat]/(r*r*r);
+        if(r>=Rcut)
         {
-          g_q += c[q] * std::pow(r, m_exp+q+1);
+          forces[iat] += zoverr3*d_ab->Displacements[jat][iat];
         }
-        g_q *= zoverr3;
-        // negative sign accounts for definition of target as electrons
-        forces[iat] -= g_q*d_ab->dr(nn);
-        forces_ShortRange[iat] -= g_q*d_ab->dr(nn);
+        else
+        {
+          RealType g_q=0.0;
+          for(int q=0; q<N_basis; q++)
+          {
+            g_q += c[q] * std::pow(r, m_exp+q+1);
+          }
+          g_q *= zoverr3;
+          // negative sign accounts for definition of target as electrons
+          forces[iat] += g_q*d_ab->Displacements[jat][iat];
+          forces_ShortRange[iat] += g_q*d_ab->Displacements[jat][iat];
+        }
+      }
+    }
+  }
+  else
+  {
+    for(int iat=0; iat<Nnuc; iat++)
+    {
+      // electron contribution (special treatment if distance is inside cutoff!)
+      for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++)
+      {
+        RealType zoverr3=Qat[jat]*Zat[iat]*std::pow(d_ab->rinv(nn),3);
+        if(d_ab->r(nn)>=Rcut)
+        {
+          forces[iat] -= zoverr3*d_ab->dr(nn);
+        }
+        else
+        {
+          RealType r = d_ab->r(nn);
+          RealType g_q=0.0;
+          for(int q=0; q<N_basis; q++)
+          {
+            g_q += c[q] * std::pow(r, m_exp+q+1);
+          }
+          g_q *= zoverr3;
+          // negative sign accounts for definition of target as electrons
+          forces[iat] -= g_q*d_ab->dr(nn);
+          forces_ShortRange[iat] -= g_q*d_ab->dr(nn);
+        }
       }
     }
   }
@@ -208,8 +239,3 @@ QMCHamiltonianBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction&
 //    //cerr << std::endl;
 //  }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3015 $   $Date: 2008-08-18 16:08:06 -0500 (Mon, 18 Aug 2008) $
- * $Id: ForceCeperley.cpp 3015 2008-08-18 21:08:06Z jnkim $
- ***************************************************************************/

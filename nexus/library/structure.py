@@ -1,4 +1,4 @@
-##################################################################
+ ##################################################################
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
@@ -29,7 +29,7 @@
 import os
 from copy import deepcopy
 from random import randint
-from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64
+from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64,sign,isclose
 from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
@@ -43,13 +43,13 @@ from debug import ci,ls,gs
 
 try:
     from scipy.special import erfc
-except ImportError:
+except:
     erfc = unavailable('scipy.special','erfc')
 #end try
 try:
     import matplotlib.pyplot as plt
     from matplotlib.pyplot import plot,subplot,title,xlabel,ylabel
-except (ImportError,RuntimeError):
+except:
     plot,subplot,title,xlabel,ylabel,plt = unavailable('matplotlib.pyplot','plot','subplot','title','xlabel','ylabel','plt')
 #end try
 
@@ -62,25 +62,23 @@ except (ImportError,RuntimeError):
 #   cif file support in Nexus currently requires two external libraries
 #     PyCifRW  - base interface to read cif files into object format: CifFile
 #     cif2cell - translation layer from CifFile object to cell reconstruction: CellData
-#   
-#   Nexus is currently compatible with PyCifRW-4.1.1 and cif2cell-1.2.7
-#     compatibility last tested: 7 Aug 2015
-# 
-#   installation of PyCifRW
-#     go to https://pypi.python.org/pypi/PyCifRW/4.1
-#     scroll down to bottom of page, download PyCifRW-4.1.1.tar.gz (md5) 
-#     unpack PyCifRW-4.1.1.tar.gz (tar -xzf PyCifRW-4.1.1.tar.gz)
-#     enter directory (cd PyCifRW-4.1.1)
-#     install with python (python setup.py install)  (sudo python setup.py install)
-#     check python installation (python;  from CifFile import CifFile)
+#     (note: cif2cell installation includes PyCifRW)
 #
-#  "installation" of cif2cell
+#  installation of cif2cell
 #    go to http://sourceforge.net/projects/cif2cell/
-#    click on Download (example: cif2cell-1.2.7.tar.gz)
-#    unpack directory (tar -xzf cif2cell-1.2.7.tar.gz)
-#    add directory to PYTHONPATH in .bashrc after Nexus (export PYTHONPATH=/your/path/to/nexus/library:/your/other/path/to/cif2cell-1.2.7)
-#    apparently an actual install of cif2cell (python setup.py install) will also install PyCifRW, so above install might be redundant
-#
+#    click on Download (example: cif2cell-1.2.10.tar.gz)
+#    unpack directory (tar -xzf cif2cell-1.2.10.tar.gz)
+#    enter directory (cd cif2cell-1.2.10)
+#    install cif2cell (python setup.py install)
+#    check python installation
+#      >python
+#      >>>from CifFile import CifFile
+#      >>>from uctools import CellData
+#   
+#   Nexus is currently compatible with
+#     cif2cell-1.2.10 and PyCifRW-3.3
+#     cif2cell-1.2.7  and PyCifRW-4.1.1 
+#     compatibility last tested: 20 Mar 2017
 #
 try:
     from CifFile import CifFile
@@ -198,7 +196,7 @@ def read_cif(filepath,block=None,grammar='1.1',cell='prim',args_only=False):
 
 # installation instructions for spglib interface
 #
-#  this is bootstrapped of of spglib's ASE Python interface
+#  this is bootstrapped off of spglib's ASE Python interface
 #
 #  installation of spglib
 #    go to http://sourceforge.net/projects/spglib/files/
@@ -396,6 +394,264 @@ def rotate_plane(plane,angle,points,units='degrees'):
 
 
 
+opt_tm_matrices    = obj()
+opt_tm_wig_indices = obj()
+
+def trivial_filter(T):
+    return True
+#end def trival_filter
+
+class MaskFilter(DevBase):
+    def set(self,mask,dim=3):
+        omask = array(mask)
+        mask  = array(mask,dtype=bool)
+        if mask.size==dim:
+            mvec = mask.ravel()
+            mask = empty((dim,dim),dtype=bool)
+            i=0
+            for mi in mvec:
+                j=0
+                for mj in mvec:
+                    mask[i,j] = mi==mj
+                    j+=1
+                #end for
+                i+=1
+            #end for
+        elif mask.shape!=(dim,dim):
+            error('shape of mask array must be {0},{0}\nshape received: {1},{2}\nmask array received: {3}'.format(dim,mask.shape[0],mask.shape[1],omask),'optimal_tilematrix')
+        #end if
+        self.mask = mask==False
+    #end def set
+
+    def __call__(self,T):
+        return (T[self.mask]==0).all()
+    #end def __call__
+#end class MaskFilter
+mask_filter = MaskFilter()
+            
+
+def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None,nc=5):
+    if mask is not None:
+        mask_filter.set(mask)
+        filter = mask_filter
+    #end if
+    dim = 3
+    if isinstance(axes,Structure):
+        axes = axes.axes
+    else:
+        axes = array(axes,dtype=float)
+    #end if
+    if not isinstance(volfac,int):
+        volfac = int(around(volfac))
+    #end if
+    volume = abs(det(axes))*volfac
+    axinv  = inv(axes)
+    cube   = volume**(1./3)*identity(dim)
+    Tref   = array(around(dot(cube,axinv)),dtype=int)
+    # calculate and store all tiling matrix variations
+    if dn not in opt_tm_matrices:
+        mats = []
+        rng = tuple(range(-dn,dn+1))
+        for n1 in rng:
+            for n2 in rng:
+                for n3 in rng:
+                    for n4 in rng:
+                        for n5 in rng:
+                            for n6 in rng:
+                                for n7 in rng:
+                                    for n8 in rng:
+                                        for n9 in rng:
+                                            mats.append((n1,n2,n3,n4,n5,n6,n7,n8,n9))
+                                        #end for
+                                    #end for
+                                #end for
+                            #end for
+                        #end for
+                    #end for
+                #end for
+            #end for
+        #end for
+        mats = array(mats,dtype=int)
+        mats.shape = (2*dn+1)**(dim*dim),dim,dim
+        opt_tm_matrices[dn] = mats
+    else:
+        mats = opt_tm_matrices[dn]
+    #end if
+    # calculate and store all wigner image indices
+    if nc not in opt_tm_wig_indices:
+        inds = []
+        rng = tuple(range(-nc,nc+1))
+        for k in rng:
+            for j in rng:
+                for i in rng:
+                    if i!=0 or j!=0 or k!=0:
+                        inds.append((i,j,k))
+                    #end if
+                #end for
+            #end for
+        #end for
+        inds = array(inds,dtype=int)
+        opt_tm_wig_indices[nc] = inds
+    else:
+        inds = opt_tm_wig_indices[nc]
+    #end if
+    # track counts of tiling matrices
+    ntilings        = len(mats)
+    nequiv_volume   = 0
+    nfilter         = 0
+    nequiv_inscribe = 0
+    nequiv_wigner   = 0
+    nequiv_cubicity = 0
+    nequiv_shape    = 0
+    # try a faster search for cells w/ target volume
+    det_inds_p = [
+        [(0,0),(1,1),(2,2)],
+        [(0,1),(1,2),(2,0)],
+        [(0,2),(1,0),(2,1)]
+        ]
+    det_inds_m = [
+        [(0,0),(1,2),(2,1)],
+        [(0,1),(1,0),(2,2)],
+        [(0,2),(1,1),(2,0)]
+        ]
+    volfacs = zeros((len(mats),),dtype=int)
+    for (i1,j1),(i2,j2),(i3,j3) in det_inds_p:
+        volfacs += (Tref[i1,j1]+mats[:,i1,j1])*(Tref[i2,j2]+mats[:,i2,j2])*(Tref[i3,j3]+mats[:,i3,j3])
+    #end for
+    for (i1,j1),(i2,j2),(i3,j3) in det_inds_m:
+        volfacs -= (Tref[i1,j1]+mats[:,i1,j1])*(Tref[i2,j2]+mats[:,i2,j2])*(Tref[i3,j3]+mats[:,i3,j3])
+    #end for
+    Tmats = mats[abs(volfacs)==volfac]
+    nequiv_volume = len(Tmats)    
+    # find the set of cells with maximal inscribing radius
+    inscribe_tilings = []
+    rmax = -1e99
+    for mat in Tmats:
+        T = Tref + mat
+        if filter(T):
+            nfilter+=1
+            Taxes = dot(T,axes)
+            rc1 = norm(cross(Taxes[0],Taxes[1]))
+            rc2 = norm(cross(Taxes[1],Taxes[2]))
+            rc3 = norm(cross(Taxes[2],Taxes[0]))
+            r   = 0.5*volume/max(rc1,rc2,rc3) # inscribing radius
+            if r>rmax or abs(r-rmax)<tol:
+                inscribe_tilings.append((r,T,Taxes))
+                rmax = r
+            #end if
+        #end if
+    #end for
+    # find the set of cells w/ maximal wigner radius out of the inscribing set
+    wigner_tilings = []
+    rwmax = -1e99
+    for r,T,Taxes in inscribe_tilings:
+        if abs(r-rmax)<tol:
+            nequiv_inscribe+=1
+            rw = 1e99
+            for ind in inds:
+                rw = min(rw,0.5*norm(dot(ind,Taxes)))
+            #end for
+            if rw>rwmax or abs(rw-rwmax)<tol:
+                wigner_tilings.append((rw,T,Taxes))
+                rwmax = rw
+            #end if
+        #end if
+    #end for
+    # find the set of cells w/ maximal cubicity
+    # (minimum cube_deviation)
+    cube_tilings = []            
+    cmin = 1e99
+    for rw,T,Ta in wigner_tilings:
+        if abs(rw-rwmax)<tol:
+            nequiv_wigner+=1
+            dc = volume**(1./3)*sqrt(2.)
+            d1 = abs(norm(Ta[0]+Ta[1])-dc)
+            d2 = abs(norm(Ta[1]+Ta[2])-dc)
+            d3 = abs(norm(Ta[2]+Ta[0])-dc)
+            d4 = abs(norm(Ta[0]-Ta[1])-dc)
+            d5 = abs(norm(Ta[1]-Ta[2])-dc)
+            d6 = abs(norm(Ta[2]-Ta[0])-dc)
+            cube_dev = (d1+d2+d3+d4+d5+d6)/(6*dc)
+            if cube_dev<cmin or abs(cube_dev-cmin)<tol:
+                cube_tilings.append((cube_dev,rw,T,Ta))
+                cmin = cube_dev
+            #end if
+        #end if
+    #end for
+    # prioritize selection by "shapeliness" of tiling matrix
+    #   prioritize positive diagonal elements
+    #   penalize off-diagonal elements
+    #   penalize negative off-diagonal elements
+    shapely_tilings = []
+    smax = -1e99
+    for cd,rw,T,Taxes in cube_tilings:
+        if abs(cd-cmin)<tol:
+            nequiv_cubicity+=1
+            d = diag(T)
+            o = (T-diag(d)).ravel()
+            s = sign(d).sum()-(abs(o)>0).sum()-(o<0).sum()
+            if s>smax or abs(s-smax)<tol:
+                shapely_tilings.append((s,rw,T,Taxes))
+                smax = s
+            #end if
+        #end if
+    #end for
+    # prioritize selection by symmetry of tiling matrix
+    ropt   = -1e99
+    Topt   = None
+    Taxopt = None
+    diagonal      = []
+    symmetric     = []
+    antisymmetric = []
+    other         = []
+    for s,rw,T,Taxes in shapely_tilings:
+        if abs(s-smax)<tol:
+            nequiv_shape+=1
+            Td = diag(diag(T))
+            if abs(Td-T).sum()==0:
+                diagonal.append((rw,T,Taxes))
+            elif abs(T.T-T).sum()==0:
+                symmetric.append((rw,T,Taxes))
+            elif abs(T.T+T-2*Td).sum()==0:
+                antisymmetric.append((rw,T,Taxes))
+            else:
+                other.append((rw,T,Taxes))
+            #end if
+        #end if
+    #end for
+    s = 1
+    if len(diagonal)>0:
+        cells = diagonal
+    elif len(symmetric)>0:
+        cells = symmetric
+    elif len(antisymmetric)>0:
+        cells = antisymmetric
+        s = -1
+    elif len(other)>0:
+        cells = other
+    #end if
+    skew_min = 1e99
+    if len(cells)>0:
+        for rw,T,Taxes in cells:
+            Td = diag(diag(T))
+            skew = abs(T.T-s*T-(1-s)*Td).sum()
+            if skew<skew_min:
+                ropt = rw
+                Topt = T
+                Taxopt = Taxes
+                skew_min = skew
+            #end if
+        #end for
+    #end if
+    if Taxopt is None:
+        error('optimal tilematrix for volfac={0} not found with tolerance {1}\ndifference range (dn): {2}\ntiling matrices searched: {3}\ncells with target volume: {4}\ncells that passed the filter: {5}\ncells with equivalent inscribing radius: {6}\ncells with equivalent wigner radius: {7}\ncells with equivalent cubicity: {8}\nmatrices with equivalent shapeliness: {9}\nplease try again with dn={10}'.format(volfac,tol,dn,ntilings,nequiv_volume,nfilter,nequiv_inscribe,nequiv_wigner,nequiv_cubicity,nequiv_shape,dn+1))
+    #end if
+    if det(Taxopt)<0:
+        Topt = -Topt
+    #end if
+    return Topt,ropt
+#end def optimal_tilematrix
+
 
 class Sobj(DevBase):
     None
@@ -416,12 +672,31 @@ class Structure(Sobj):
     #end def set_operations
 
 
-    def __init__(self,axes=None,scale=1.,elem=None,pos=None,mag=None,
-                 center=None,kpoints=None,kweights=None,kgrid=None,kshift=None,
-                 permute=None,units=None,tiling=None,rescale=True,dim=3,
-                 magnetization=None,magnetic_order=None,magnetic_prim=True,
-                 operations=None,background_charge=0,frozen=None,bconds=None,
-                 posu=None):
+    def __init__(self,
+                 axes              = None,
+                 scale             = 1.,
+                 elem              = None,
+                 pos               = None,
+                 mag               = None,
+                 center            = None,
+                 kpoints           = None,
+                 kweights          = None,
+                 kgrid             = None,
+                 kshift            = None,
+                 permute           = None,
+                 units             = None,
+                 tiling            = None,
+                 rescale           = True,
+                 dim               = 3,
+                 magnetization     = None,
+                 magnetic_order    = None,
+                 magnetic_prim     = True,
+                 operations        = None,
+                 background_charge = 0,
+                 frozen            = None,
+                 bconds            = None,
+                 posu              = None,
+                 kpath             = None):
 
         if center is None:
             if axes is not None:
@@ -440,7 +715,7 @@ class Structure(Sobj):
         if elem is None:
             elem = []
         #end if
-        if posu!=None:
+        if posu is not None:
             pos = posu
         #end if
         if pos is None:
@@ -471,10 +746,10 @@ class Structure(Sobj):
         else:
             self.kaxes=2*pi*inv(self.axes).T
         #end if
-        if posu!=None:
+        if posu is not None:
             self.pos_to_cartesian()
         #end if
-        if frozen!=None:
+        if frozen is not None:
             self.frozen = array(frozen,dtype=bool)
             if self.frozen.shape!=self.pos.shape:
                 self.error('frozen directions must have the same shape as positions\n  positions shape: {0}\n  frozen directions shape: {1}'.format(self.pos.shape,self.frozen.shape))
@@ -488,25 +763,45 @@ class Structure(Sobj):
                       magnetic_prim  = magnetic_prim
                       )
         #end if
-        if kpoints!=None:
+        if kpoints is not None:
             self.add_kpoints(kpoints,kweights)
         #end if
-        if kgrid!=None:
+        if kgrid is not None:
             self.add_kmesh(kgrid,kshift)
-        #end if        
+        #end if
         if rescale:
             self.rescale(scale)
         else:
             self.scale = scale
         #end if
-        if permute!=None:
+        if permute is not None:
             self.permute(permute)
         #end if
-        if operations!=None:
+        if operations is not None:
             self.operate(operations)
         #end if
     #end def __init__
 
+
+    def check_consistent(self,tol=1e-8,exit=True,message=False):
+        msg = ''
+        if self.has_axes():
+            kaxes = 2*pi*inv(self.axes).T
+            abs_diff = abs(self.kaxes-kaxes).sum()
+            if abs_diff>tol:
+                msg += 'direct and reciprocal space axes are not consistent\naxes present:\n{0}\nkaxes present:\n{1}\nconsistent kaxes:\n{2}\nabsolute difference: {3}\n'.format(self.axes,self.kaxes,kaxes,abs_diff)
+            #end if
+        #end if
+        consistent = len(msg)==0
+        if not consistent and exit:
+            self.error(msg)
+        #end if
+        if not message:
+            return consistent
+        else:
+            return consistent,msg
+        #end if
+    #end def check_consistent
 
 
     def set_axes(self,axes):
@@ -542,12 +837,22 @@ class Structure(Sobj):
     def operate(self,operations):
         for op in operations:
             if not op in self.operations:
-                self.error('{0} is not a known operation\n  valid options are:\n    {1}'.format(op,list(self.operations.keys())))
+                self.error('{0} is not a known operation\nvalid options are:\n  {1}'.format(op,list(self.operations.keys())))
             else:
                 self.operations[op](self)
             #end if
         #end for
     #end def operate
+
+
+    def has_tmatrix(self):
+        return 'tmatrix' in self and self.tmatrix is not None
+    #end def has_tmatrix
+
+
+    def is_tiled(self):
+        return self.has_folded() and self.has_tmatrix()
+    #end def is_tiled
 
 
     def set_folded(self,folded):
@@ -566,19 +871,26 @@ class Structure(Sobj):
 
 
     def set_folded_structure(self,folded):
+        if not isinstance(folded,Structure):
+            self.error('cannot set folded structure\nfolded structure must be an object with type Structure\nreceived type: {0}'.format(folded.__class__.__name__))
+        #end if
         self.folded_structure = folded
-        self.tmatrix = self.tilematrix(folded)
+        if self.has_axes():
+            self.tmatrix = self.tilematrix(folded)
+        #end if
     #end def set_folded_structure
 
 
     def remove_folded_structure(self):
         self.folded_structure = None
-        self.tmatrix = None
+        if 'tmatrix' in self:
+            del self.tmatrix
+        #end if
     #end def remove_folded_structure
 
         
     def has_folded_structure(self):
-        return self.folded_structure!=None
+        return self.folded_structure is not None
     #end def has_folded_structure
 
             
@@ -932,6 +1244,19 @@ class Structure(Sobj):
         return self.rinscribe()
     #end def rcell
 
+    # scale invariant measure of deviation from cube shape
+    #   based on deviation of face diagonals from cube
+    def cube_deviation(self):
+        a = self.axes
+        dc = self.volume()**(1./3)*sqrt(2.)
+        d1 = abs(norm(a[0]+a[1])-dc)
+        d2 = abs(norm(a[1]+a[2])-dc)
+        d3 = abs(norm(a[2]+a[0])-dc)
+        d4 = abs(norm(a[0]-a[1])-dc)
+        d5 = abs(norm(a[1]-a[2])-dc)
+        d6 = abs(norm(a[2]-a[0])-dc)
+        return (d1+d2+d3+d4+d5+d6)/(6*dc)
+    #end def cube_deviation
     
     # apply volume preserving shear-removing transformations to cell axes
     #   resulting unsheared cell has orthogonal axes
@@ -2641,7 +2966,7 @@ class Structure(Sobj):
 
         ts.recenter()
         ts.unique_kpoints()
-        if self.folded_structure!=None:
+        if self.is_tiled():
             ts.tmatrix = dot(tilematrix,self.tmatrix)
             ts.folded_structure = self.folded_structure.copy()
         else:
@@ -2725,13 +3050,13 @@ class Structure(Sobj):
     #end def tile_points
 
 
-    def opt_tilematrix(self,volfac,dn=1,tol=1e-3):
-        return optimal_tilematrix(self,volfac,dn,tol)
+    def opt_tilematrix(self,*args,**kwargs):
+        return optimal_tilematrix(self.axes,*args,**kwargs)
     #end def opt_tilematrix
 
 
-    def tile_opt(self,volfac,dn=1,tol=1e-3):
-        Topt,ropt = self.opt_tilematrix(volfac,dn,tol)
+    def tile_opt(self,*args,**kwargs):
+        Topt,ropt = self.opt_tilematrix(*args,**kwargs)
         return self.tile(Topt)
     #end def tile_opt
 
@@ -2889,7 +3214,7 @@ class Structure(Sobj):
             self.unique_kpoints()
         #end if
         self.recenter_k() #added because qmcpack cannot handle kpoints outside the box
-        if self.folded_structure!=None:
+        if self.is_tiled():
             kp,kw = self.kfold(self.tmatrix,kpoints,kweights)
             self.folded_structure.add_kpoints(kp,kw,unique=unique)
         #end if
@@ -2910,8 +3235,11 @@ class Structure(Sobj):
     #end def add_kmesh
 
     
-    def kpoints_unit(self):
-        return dot(self.kpoints,inv(self.kaxes))
+    def kpoints_unit(self,kpoints=None):
+        if kpoints is None:
+            kpoints = self.kpoints
+        #end if
+        return dot(kpoints,inv(self.kaxes))
     #end def kpoints_unit
 
 
@@ -3527,14 +3855,19 @@ class Structure(Sobj):
     #end def interpolate
 
 
+    # returns madelung potential constant v_M
+    #   see equation 7 in PRB 78 125106 (2008) 
     def madelung(self,axes=None,tol=1e-10):
         if self.dim!=3:
             self.error('madelung is currently only implemented for 3 dimensions')
         #end if
-        if axes==None:
-            a = self.axes.T
+        if axes is None:
+            a = self.axes.T.copy()
         else:
-            a = axes.T
+            a = axes.T.copy()
+        #end if
+        if self.units!='B':
+            a = convert(a,self.units,'B')
         #end if
         volume = abs(det(a))
         b = 2*pi*inv(a).T
@@ -3558,7 +3891,7 @@ class Structure(Sobj):
             p.R  = R[0:izero]
             p.G2 = G2[0:izero]
             m.R  = R[izero+1:]
-            m.G2  = G2[izero+1:]
+            m.G2 = G2[izero+1:]
             domains = [p,m]
             vshell.append(0.)
             for d in domains:
@@ -3570,11 +3903,28 @@ class Structure(Sobj):
         #end for
         vm = vmc + vshell[-1]
 
-        if axes==None:
+        if axes is None:
             self.Vmadelung = vm
         #end if
         return vm
     #end def madelung
+
+
+    def makov_payne(self,q=1,eps=1.0,units='Ha',order=1):
+        if order!=1:
+            self.error('Only first order Makov-Payne correction is currently supported.')
+        #end if
+        if 'Vmadelung' not in self:
+            vm = self.madelung()
+        else:
+            vm = self.Vmadelung
+        #end if
+        mp = -0.5*q**2*vm/eps
+        if units!='Ha':
+            mp = convert(mp,'Ha',units)
+        #end if
+        return mp
+    #end def makov_payne
 
 
     def read(self,filepath,format=None,elem=None,block=None,grammar='1.1',cell='prim',contents=False):
@@ -3619,27 +3969,46 @@ class Structure(Sobj):
         elem = []
         pos  = []
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().splitlines()
+            lines = open(filepath,'r').read().strip().splitlines()
         else:
-            lines = filepath.splitlines() # "filepath" is file contents
+            lines = filepath.strip().splitlines() # "filepath" is file contents
         #end if
-        ntot = 1000000
-        natoms = 0
-        for l in lines:
-            ls = l.strip()
-            if ls.isdigit():
-                ntot = int(ls)
-            #end if
-            tokens = ls.split()
-            if len(tokens)==4:
-                elem.append(tokens[0])
-                pos.append(array(tokens[1:],float))
-                natoms+=1
-                if natoms==ntot:
-                    break
+        if len(lines)>1:
+            ntot = int(lines[0].strip())
+            natoms = 0
+            e = None
+            p = None
+            try:
+                tokens = lines[1].split()
+                if len(tokens)==4:
+                    e = tokens[0]
+                    p = array(tokens[1:],float)
                 #end if
+            except:
+                None
+            #end try
+            if p is not None:
+                elem.append(e)
+                pos.append(p)
+                natoms+=1
             #end if
-        #end for
+            if len(lines)>2:
+                for l in lines[2:]:
+                    tokens = l.split()
+                    if len(tokens)==4:
+                        elem.append(tokens[0])
+                        pos.append(array(tokens[1:],float))
+                        natoms+=1
+                        if natoms==ntot:
+                            break
+                        #end if
+                    #end if
+                #end for
+            #end if
+            if natoms!=ntot:
+                self.error('xyz file read failed\nattempted to read file: {0}\nnumber of atoms expected: {1}\nnumber of atoms found: {2}'.format(filepath,ntot,natoms))
+            #end if
+        #end if
         self.dim   = 3
         self.set_elem(elem)
         self.pos   = array(pos)
@@ -3798,6 +4167,8 @@ class Structure(Sobj):
                 elif t0=='atom':
                     pos.append(tokens[1:4])
                     elem.append(tokens[4])
+                elif t0.startswith('initial'):
+                    None
                 else:
                     #None
                     self.error('unrecogonized or not yet supported token in fhi-aims geometry file: {0}'.format(t0))
@@ -4005,6 +4376,306 @@ class Structure(Sobj):
 
 #end class Structure
 Structure.set_operations()
+
+
+## Kayahan edit
+
+# installation instructions for seekpath interface
+#
+#  installation of seekpath
+#    pip install seekpath
+
+from periodic_table import pt as ptable
+try:
+    import seekpath
+    from seekpath import get_explicit_k_path
+    from numpy import array_equal
+    version = seekpath.__version__
+
+    try:
+        version = [int(i) for i in version.split('.')]
+        if len(version) < 3:
+            raise ValueError
+    except ValueError:
+        raise ValueError("Unable to parse version number")
+
+    if tuple(version) < (1, 8, 3):
+        raise ValueError("Invalid seekpath version, need >= 1.8.4")
+    
+    def _getseekpath(structure=None, with_time_reversal=False, recipe='hpkot', reference_distance=0.025, threshold=1E-7, symprec=1E-5, angle_tolerance=1.0):
+	if not isinstance(structure, Structure):
+            raise TypeError('structure is not of type Structure')
+        #end if
+        if structure.folded_structure is None:
+            structure = structure.copy()
+        else:
+            structure = structure.folded_structure.copy()
+        #end if
+        if structure.units is not 'A':
+            structure.change_units('A')
+        #end if
+        cell = (structure.axes, structure.get_scaled_positions(), structure.get_atomic_numbers())
+        return get_explicit_k_path(cell)
+        
+    #end def get_explicit_kpath
+    def get_conventional_cell(structure=None, symprec = 1E-5, angle_tolerance=1.0):
+        seekpathout = _getseekpath(structure=structure, symprec = symprec, angle_tolerance=angle_tolerance)
+        axes        = seekpathout['conv_lattice']
+        enumbers    = seekpathout['conv_types']
+        posd        = seekpathout['conv_positions']
+        volfac      = seekpathout['volume_original_wrt_conv']
+        bcharge     = structure.background_charge*volfac
+        pos         = dot(posd,axes)
+        sout        = structure.copy()
+        elem        = empty(len(enumbers), dtype='str')
+        for el in ptable.elements.iteritems():
+            elem[enumbers==el[1].atomic_number]=el[0]
+        #end for
+        if abs(bcharge-int(bcharge)) > 1E-6:
+            raise ValueError("Invalid background charge for conventional structure")
+        #end if
+        return {'structure': Structure(axes=axes, elem=elem, pos=pos, background_charge = bcharge, units='A')}
+    #end def get_explicit_kpath
+    def get_primitive_cell(structure=None, symprec=1E-5, angle_tolerance=1.0):
+        seekpathout = _getseekpath(structure = structure, symprec = symprec, angle_tolerance=angle_tolerance)
+        axes        = seekpathout['primitive_lattice']
+        enumbers    = seekpathout['primitive_types']
+        posd        = seekpathout['primitive_positions']
+        volfac      = seekpathout['volume_original_wrt_prim']
+        bcharge     = structure.background_charge*volfac
+        pos         = dot(posd,axes)
+        sout        = structure.copy()
+        elem        = array(enumbers, dtype='str')
+        for el in ptable.elements.iteritems():
+            elem[enumbers==el[1].atomic_number]=el[0]
+        #end for
+        return {'structure' : Structure(axes=axes, elem=elem, pos=pos, background_charge=bcharge, units='A'),
+                'T'         : seekpathout['primitive_transformation_matrix']}
+    #end def get_primitive_cell
+    def get_kpath(structure=None, check_standard=True, with_time_reversal=False, recipe='hpkot',
+                  reference_distance=0.025, threshold=1E-7, symprec=1E-5, angle_tolerance=1.0):
+        seekpathout = _getseekpath(structure=structure, symprec = symprec, angle_tolerance=angle_tolerance,
+                                   recipe=recipe, reference_distance=reference_distance, with_time_reversal=with_time_reversal)
+	if check_standard:
+            axes    = structure.axes
+            primlat = seekpathout['primitive_lattice']
+            if not isclose(primlat, axes).all():
+                print primlat, axes
+		Structure.class_error('Input lattice is not the conventional lattice. If you like otherwise, set check_standard=False.')
+            #end if
+        #end if
+        inverse_A_to_inverse_B = 0.529177249
+        return {'explicit_kpoints_abs_inv_A'      : seekpathout['explicit_kpoints_abs'],
+                'explicit_kpoints_abs_inv_B'      : seekpathout['explicit_kpoints_abs']*inverse_A_to_inverse_B,
+                'explicit_kpoints_rel'      : seekpathout['explicit_kpoints_rel'],
+                'explicit_kpoints_labels'   : seekpathout['explicit_kpoints_labels'],
+                'path'                      : seekpathout['path'],
+                'explicit_path_linearcoords': seekpathout['explicit_kpoints_linearcoord'],
+                'point_coords'              : seekpathout['point_coords']}
+    #end def get_kpath
+    def get_symmetry(structure          = None, symprec = 1E-5, angle_tolerance=1.0):
+        seekpathout = _getseekpath(structure = structure, symprec = symprec, angle_tolerance=angle_tolerance)
+        sgint       = seekpathout['spacegroup_international']
+        bravais     = seekpathout['bravais_lattice']
+        invsym      = seekpathout['has_inversion_symmetry']
+        sgnum       = seekpathout['spacegroup_number']
+
+        return {'sgint': sgint, 'bravais': bravais, 'inv_sym_exists': invsym, 'sgnum': sgnum}
+    #end def get_symmetry
+    def get_structure_with_bands(cell=0, structure=None, with_time_reversal=False,reference_distance=0.025, threshold=1E-7, symprec=1E-5, angle_tolerance=1.0):
+        if cell == 0:
+            ''' Use input structure '''
+            struct_band = structure.copy()
+        elif cell == 1:
+            ''' Use conventional structure '''
+            struct_band = get_conventional_cell(structure=structure, symprec=symprec, angle_tolerance=angle_tolerance)['structure']
+        elif cell == 2:
+            ''' Use primitive structure '''
+            struct_band = get_primitive_cell(structure=structure, symprec=symprec, angle_tolerance=angle_tolerance)['structure']
+        else:
+            Structure.class_error('Invalid cell type')
+        #end if
+        kpath = get_kpath(structure=struct_band, check_standard=False, with_time_reversal=with_time_reversal)
+        return Structure(axes              = struct_band.axes,
+                         elem              = struct_band.elem,
+                         pos               = struct_band.pos,
+                         background_charge = struct_band.background_charge,
+                         kpoints           = kpath['explicit_kpoints_rel'],
+                         units             = 'A')
+    #end def band_physical_system
+    def get_band_tiling(structure = None, check_standard = True, use_ktol = True, kpoints_label = None, kpoints_rel = None, max_volfac = 20):
+        import numpy as np
+        import itertools
+        import pdb
+        import time
+        def cube_deviation(axes):
+            a = axes
+            volume = np.abs(np.dot(np.cross(axes[0,:], axes[1,:]), axes[2,:]))
+            dc = volume**(1./3)*sqrt(2.)
+            d1 = abs(norm(a[0]+a[1])-dc)
+            d2 = abs(norm(a[1]+a[2])-dc)
+            d3 = abs(norm(a[2]+a[0])-dc)
+            d4 = abs(norm(a[0]-a[1])-dc)
+            d5 = abs(norm(a[1]-a[2])-dc)
+            d6 = abs(norm(a[2]-a[0])-dc)
+            return (d1+d2+d3+d4+d5+d6)/(6*dc)
+        #end def cube_deviation
+        def reduce_axes(axes):
+            newaxes   = [ axes[0,:] + axes[1,:] + axes[2,:],
+                         -axes[0,:] + axes[1,:] + axes[2,:],
+                          axes[0,:] - axes[1,:] + axes[2,:],
+                          axes[0,:] + axes[1,:] - axes[2,:],
+                         -axes[0,:] - axes[1,:] + axes[2,:],
+                         -axes[0,:] + axes[1,:] - axes[2,:],
+                          axes[0,:] - axes[1,:] - axes[2,:],
+                         -axes[0,:] - axes[1,:] - axes[2,:]]
+            found        = False
+            max_cubicity = cube_deviation(axes)
+            new_axes     = []
+            for na in newaxes:
+                for i in range(0,3):
+                    tempaxes=axes.copy()
+                    tempaxes[i,:] = na 
+                    tempaxes_cubicity = cube_deviation(tempaxes)
+                    if tempaxes_cubicity < max_cubicity:
+                        new_axes = tempaxes
+                        max_cubicity = tempaxes_cubicity
+                        found = True
+                    #end if
+                #end for
+            #end for
+            if found:
+                return reduce_axes(new_axes)
+            else:
+                return axes
+            #end if
+        #end def reduce_axes    
+        kpath       = get_kpath(structure = structure, check_standard = check_standard)
+        kpath_label = array(kpath['explicit_kpoints_labels'])
+        kpath_rel   = kpath['explicit_kpoints_rel']
+        kpts        = dict()
+        ## Read input k-points
+        if kpoints_label is None:
+            kpoints_label = []
+            if kpoints_rel is None:
+                Structure.class_error('Please define symbolic or crystal coordinates for kpoints. e.g. [\'GAMMA\', \'K\']  or [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]')
+            else:
+                for k in kpoints_rel:
+                    kindex = np.isclose(kpath_rel,k, atol=1e-5).all(1)
+                    if any(kindex):
+                        kpts[kpath_label[kindex][0]] = array(k)
+                    else:
+                        Structure.class_error('{0} is not found in the kpath'.format(k))
+                    #end if
+                #end for
+            #end if
+        else:
+            if kpoints_rel is not None:
+                Structure.class_error('Both symbolic and crystal k-points are defined.')
+            else:
+                kpoints_rel = []
+                num_kpoints = 0
+                for k in kpoints_label:
+                    kindex = k == kpath_label
+                    if any(kindex):
+                        if k == '' or k == None:
+                            k = '{0}'.format(num_kpoints)
+                        #end if
+                        kpts[k] = array(kpath_rel[kindex][0])
+                    else:
+                        Structure.class_error('{0} is not found in the kpath'.format(k))
+                    #end if
+                #end for
+            #end if
+        #end if
+        #Generate greatest common divisor grid for the given kpts        
+	alphas     = array([x[0] - x[1] for x in itertools.combinations(kpts.values(),2)])
+        abs_alphas = abs(alphas)
+        divs       = []
+        volfac     = 1e6
+        ktol       = 1.0/max_volfac
+        for i in range(max_volfac, 0, -1):
+            for j in range(max_volfac, 0, -1):
+                for k in range(max_volfac, 0, -1):
+                    rec_grid = array([1./i,1./j,1./k])
+                    rem = np.mod(abs_alphas, rec_grid)
+                    if np.all(np.any([rem<=ktol, rem>=(rec_grid-ktol)], axis=0)):
+                        n1     = i
+                        n2     = j
+                        n3     = k
+                        g12    = np.gcd.reduce([n1,n2])
+                        g13    = np.gcd.reduce([n1,n3])
+                        g23    = np.gcd.reduce([n2,n3])
+                        g123   = np.gcd.reduce([n1, n2, n3])
+                        temp_volfac = n1*n2*n3*g123/(g12*g13*g23)
+                        
+                        if temp_volfac <= volfac:
+                            divs = array([n1, n2, n3])
+                            volfac = temp_volfac
+                        #end if
+                    #end if
+                #end for
+            #end for
+        #end for
+        quotients, rems = np.divmod(alphas,(1./divs))
+        quotients[rems>0.5/divs]+=1
+        n1, n2, n3 = divs
+        g12    = np.gcd.reduce([n1,n2])
+        g13    = np.gcd.reduce([n1,n3])
+        g23    = np.gcd.reduce([n2,n3])
+        g123   = np.gcd.reduce([n1, n2, n3])
+        #New alphas with the tolerance
+	alpha_abs   = abs(alphas)
+        alpha_signs = sign(alphas) 
+        alpha_signs[alpha_signs == 0.0] = 1.0 # 0/0 division
+	new_alphas  = np.round(alpha_abs*divs)*1./divs*alpha_signs
+        #new_rem    = np.divmod(alphas,1.0/divs)[1]
+        #Generate possible matrices in the Upper Triangular Hermite Normal Form, from PHYSICAL REVIEW B 92, 184301 (2015)
+        mats = []
+        for p in range(0, g23):
+            for q in range(0, g12/g123):
+                for r in range(g13*g23/g123):
+                    tmat = [[g123*n1/(g12*g13), q*g123*n2/(g12*g23), r*g123*n3/(g13*g23)], [0, n2/g23, p*n3/g23], [0,0,n3]]
+                    comm = []
+                    for ai in new_alphas:
+                        if (np.abs(np.mod(np.sum(tmat*ai+1e-6, axis=1), 1) <=  4e-6)).all():
+                            comm.append(True)
+                        else:
+                            comm.append(False)
+                        #end if
+                    #end for
+                    if all(comm):
+                        mats.append(tmat)
+                    #end if
+                #end for
+            #end for
+        #end for
+	axes             = structure.axes
+        final_mat        = []
+        final_s_cubicity = 1e6
+        mats             = array(mats)
+        for m in mats:
+            s_axes         = np.dot(m, axes)
+            new_s_axes     = reduce_axes(s_axes)
+            new_s_cubicity = cube_deviation(new_s_axes)
+            if new_s_cubicity < final_s_cubicity:
+                final_mat        = new_s_axes
+                final_s_cubicity = new_s_cubicity
+            #end if
+        #end for
+	t = array(np.dot(final_mat, np.linalg.inv(axes)))
+        t_float = t.copy()
+        tol = 10**-6
+        t[abs(t)< tol] = 0
+        t_int = around(t).astype(int)
+        if not (abs(t_int-t_float) < tol).any():
+            print "Tiling matrix has non-integer elements!"
+            exit()
+        return t_int.tolist()
+    #end def get_band_tiling
+except:
+     get_path = unavailable('seekpath','get_path')
+#end try
 
 
 def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recenter=True,match_com=False,repackage=False,chained=False):
@@ -4841,7 +5512,8 @@ class Jellium(Structure):
     prefactors.transfer_from({1:2*pi,2:4*pi,3:4./3*pi})
 
     def __init__(self,charge=None,background_charge=None,cell=None,volume=None,density=None,rs=None,dim=3,
-                 axes=None,kpoints=None,kweights=None,kgrid=None,kshift=None,units=None):
+                 axes=None,kpoints=None,kweights=None,kgrid=None,kshift=None,units=None,tiling=None):
+        del tiling
         if rs!=None:
             if not dim in self.prefactors:
                 self.error('only 1,2, or 3 dimensional jellium is currently supported\n  you requested one with dimension {0}'.format(dim))
@@ -4934,7 +5606,7 @@ def generate_structure(type='crystal',*args,**kwargs):
     elif type=='basic':
         s = Structure(*args,**kwargs)
     else:
-        Structure.class_error(str(type)+' is not a valid structure type\n  options are crystal, defect, atom, dimer, trimer, jellium, empty, or basic')
+        Structure.class_error(str(type)+' is not a valid structure type\noptions are crystal, defect, atom, dimer, trimer, jellium, empty, or basic')
     #end if
     return s
 #end def generate_structure
@@ -4942,7 +5614,17 @@ def generate_structure(type='crystal',*args,**kwargs):
 
 
 
-def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),bconds=tuple('nnn'),struct_type=Structure):
+def generate_atom_structure(
+    atom        = None,
+    units       = 'A',
+    Lbox        = None,
+    skew        = 0,
+    axes        = None,
+    kgrid       = (1,1,1),
+    kshift      = (0,0,0),
+    bconds      = tuple('nnn'),
+    struct_type = Structure
+    ):
     if atom is None:
         Structure.class_error('atom must be provided','generate_atom_structure')
     #end if
@@ -4960,7 +5642,19 @@ def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid
 #end def generate_atom_structure
 
 
-def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),bconds=tuple('nnn'),struct_type=Structure,axis='x'):
+def generate_dimer_structure(
+    dimer       = None,
+    units       = 'A',
+    separation  = None,
+    Lbox        = None,
+    skew        = 0,
+    axes        = None,
+    kgrid       = (1,1,1),
+    kshift      = (0,0,0),
+    bconds      = tuple('nnn'),
+    struct_type = Structure,
+    axis        = 'x'
+    ):
     if dimer is None:
         Structure.class_error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
     #end if
@@ -4989,7 +5683,22 @@ def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew
 #end def generate_dimer_structure
 
 
-def generate_trimer_structure(trimer=None,units='A',separation=None,angle=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure,axis='x',axis2='y',angular_units='degrees',plane_rot=None):
+def generate_trimer_structure(
+    trimer        = None,
+    units         = 'A',
+    separation    = None,
+    angle         = None,
+    Lbox          = None,
+    skew          = 0,
+    axes          = None,
+    kgrid         = (1,1,1),
+    kshift        = (0,0,0),
+    struct_type   = Structure,
+    axis          = 'x',
+    axis2         = 'y',
+    angular_units = 'degrees',
+    plane_rot     = None
+    ):
     if trimer is None:
         Structure.class_error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
     #end if
@@ -5062,34 +5771,61 @@ def generate_jellium_structure(*args,**kwargs):
 
 
 
-def generate_crystal_structure(lattice=None,cell=None,centering=None,
-                               constants=None,atoms=None,basis=None,
-                               basis_vectors=None,tiling=None,cscale=None,
-                               axes=None,units=None,angular_units='degrees',
-                               magnetization=None,magnetic_order=None,magnetic_prim=True,
-                               kpoints=None,kweights=None,kgrid=None,kshift=(0,0,0),permute=None,
-                               structure=None,shape=None,element=None,scale=None, #legacy inputs
-                               operations=None,
-                               struct_type=Crystal,elem=None,pos=None,frozen=None,
-                               posu=None):    
+def generate_crystal_structure(
+    lattice        = None,
+    cell           = None,
+    centering      = None,
+    constants      = None,
+    atoms          = None,
+    basis          = None,
+    basis_vectors  = None,
+    tiling         = None,
+    cscale         = None,
+    axes           = None,
+    units          = None,
+    angular_units  = 'degrees',
+    magnetization  = None,
+    magnetic_order = None,
+    magnetic_prim  = True,
+    kpoints        = None,
+    kweights       = None,
+    kgrid          = None,
+    kshift         = (0,0,0),
+    permute        = None,
+    operations     = None,
+    struct_type    = Crystal,
+    elem           = None,
+    pos            = None,
+    frozen         = None,
+    posu           = None,
+    folded_elem    = None,
+    folded_pos     = None,
+    folded_units   = None,
+    #legacy inputs
+    structure      = None,
+    shape          = None,
+    element        = None,
+    scale          = None,
+    ):
 
-    if structure!=None:
+    if structure is not None:
         lattice = structure
     #end if
-    if shape!=None:
+    if shape is not None:
         cell = shape
     #end if
-    if element!=None:
+    if element is not None:
         atoms = element
     #end if
-    if scale!=None:
+    if scale is not None:
         constants = scale
     #end if
 
     #interface for total manual specification
     # this is only here because 'crystal' is default and must handle other cases
+    s = None
     if elem is not None and (pos is not None or posu is not None):  
-        return Structure(
+        s = Structure(
             axes           = axes,
             elem           = elem,
             pos            = pos,
@@ -5107,15 +5843,33 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
             operations     = operations,
             posu           = posu)
     elif isinstance(structure,Structure):
-        if kpoints!=None:
-            structure.add_kpoints(kpoints,kweights)
+        s = structure
+        if tiling is not None:
+            s = s.tile(tiling)
         #end if
-        if kgrid!=None:
-            structure.add_kmesh(kgrid,kshift)
+        if kpoints is not None:
+            s.add_kpoints(kpoints,kweights)
+        #end if
+        if kgrid is not None:
+            s.add_kmesh(kgrid,kshift)
         #end if        
-        return structure
     #end if
-
+    if s is not None:
+        # add point group folded molecular system if present
+        if folded_elem is not None and folded_pos is not None:
+            if folded_units is None:
+                folded_units = units
+            #end if
+            fs = Structure(
+                elem    = folded_elem,
+                pos     = folded_pos,
+                units   = folded_units,
+                rescale = False,
+                )
+            s.set_folded(fs)
+        #end if
+        return s
+    #end if
 
     s=Crystal(
         lattice        = lattice       ,  
@@ -5218,79 +5972,6 @@ def read_structure(filepath,elem=None,format=None):
 
 
 
-opt_tm_matrices = obj()
-
-def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3):
-    dim = 3
-    if isinstance(axes,Structure):
-        axes = axes.axes
-    else:
-        axes = array(axes,dtype=float)
-    #end if
-    volume = abs(det(axes))*volfac
-    axinv  = inv(axes)
-    cube   = volume**(1./3)*identity(dim)
-    Tref   = array(around(dot(cube,axinv)),dtype=int)
-    rng = tuple(range(-dn,dn+1))
-    if dn not in opt_tm_matrices:
-        mats = []
-        for n1 in rng:
-            for n2 in rng:
-                for n3 in rng:
-                    for n4 in rng:
-                        for n5 in rng:
-                            for n6 in rng:
-                                for n7 in rng:
-                                    for n8 in rng:
-                                        for n9 in rng:
-                                            mats.append((n1,n2,n3,n4,n5,n6,n7,n8,n9))
-                                        #end for
-                                    #end for
-                                #end for
-                            #end for
-                        #end for
-                    #end for
-                #end for
-            #end for
-        #end for
-        mats = array(mats,dtype=int)
-        mats.shape = (2*dn+1)**(dim*dim),dim,dim
-        opt_tm_matrices[dn] = mats
-    else:
-        mats = opt_tm_matrices[dn]
-    #end if
-    ropt = -1e99
-    Topt = None
-    Taxopt = None
-    vol_diff_min = 1e99
-    for mat in mats:
-        T = Tref + mat
-        vol_diff = abs(abs(det(T))-volfac)
-        if vol_diff < vol_diff_min:
-            vol_diff_min = vol_diff
-        # end if
-        if vol_diff<tol:
-            Taxes = dot(T,axes)
-            rc1 = norm(cross(Taxes[0],Taxes[1]))
-            rc2 = norm(cross(Taxes[1],Taxes[2]))
-            rc3 = norm(cross(Taxes[2],Taxes[0]))
-            r   = 0.5*volume/max(rc1,rc2,rc3)
-            if r>ropt:
-                ropt = r
-                Topt = T
-                Taxopt = Taxes
-            #end if
-        #end if
-    #end for
-    if Taxopt is None:
-        error("optimal tilematrix for volfac=%4.2f not found with tolerance %5.4f\n minimum volume difference was %5.4f" % (volfac,tol,vol_diff_min) )
-    # end if
-    if det(Taxopt)<0:
-        Topt = -Topt
-    #end if
-    return Topt,ropt
-#end def optimal_tilematrix
-
 
 #if __name__=='__main__':
 #    from numpy.random import rand
@@ -5329,15 +6010,19 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3):
 
 
 if __name__=='__main__':
-    a = convert(5.639,'A','B')
-
-    large = generate_structure('diamond','fcc','Ge',(2,2,2),a)
-    small = generate_structure('diamond','fcc','Ge',(1,1,1),a)
-
-    large.add_kmesh((1,1,1))
-
-    kmap = large.fold(small)
+    large = generate_structure(
+        type      = 'crystal',
+        structure = 'diamond',
+        cell      = 'fcc',
+        atoms     = 'Ge',
+        constants = 5.639,
+        units     = 'A',
+        tiling    = (2,2,2),
+        kgrid     = (1,1,1),
+        kshift    = (0,0,0),
+        )
+    
+    small = large.folded_structure
 
     print small.kpoints_unit()
-
 #end if

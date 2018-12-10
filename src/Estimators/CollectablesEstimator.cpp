@@ -69,8 +69,3 @@ void CollectablesEstimator::add2Record(RecordListType& record)
 //    scalars[i](W.Collectables[i],wgt);
 //}
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3020 $   $Date: 2008-08-18 16:49:48 -0500 (Mon, 18 Aug 2008) $
- * $Id: LocalEnergyEstimatorHDF.cpp 3020 2008-08-18 21:49:48Z jnkim $
- ***************************************************************************/

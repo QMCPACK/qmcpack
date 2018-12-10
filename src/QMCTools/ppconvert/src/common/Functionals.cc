@@ -81,11 +81,11 @@ void ExchangePotential (double nup, double ndown,
   Vup *= 0.5;
   Vdown *= 0.5;
   Ex *= 0.5;
-  if (isnan(Vup))
+  if (std::isnan(Vup))
     Vup = 0.0;
-  if (isnan(Vdown))
+  if (std::isnan(Vdown))
     Vdown = 0.0;
-  if (isnan(Ex))
+  if (std::isnan(Ex))
     Ex = 0.0;
 }
   
@@ -316,9 +316,9 @@ void CorrelationPotential(double  nup, double ndown,
   Vup   = EC + n * (dEcP_dn + ddeltaEc_dn) - (zeta-1.0) * ddeltaEc_dzeta;
   Vdown = EC + n * (dEcP_dn + ddeltaEc_dn) - (zeta+1.0) * ddeltaEc_dzeta;
 
-  if (isnan(Vup))
+  if (std::isnan(Vup))
     Vup = 0.0;
-  if (isnan(Vdown))
+  if (std::isnan(Vdown))
     Vdown = 0.0;
 }
 

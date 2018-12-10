@@ -1,0 +1,5 @@
+&inputpp
+  write_psir = .false.
+  prefix = 'pwscf_dR'
+  outdir = 'pwscf_dR_output'
+/

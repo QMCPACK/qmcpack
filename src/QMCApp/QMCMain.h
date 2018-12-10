@@ -91,15 +91,7 @@ private:
   bool executeCMCSection(xmlNodePtr cur);
   ///execute <debug/> element
   bool executeDebugSection(xmlNodePtr cur);
-
-  ///execute <postprocess/> element
-  void postprocess(xmlNodePtr cur,int qacur);
    
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

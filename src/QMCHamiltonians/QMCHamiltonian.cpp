@@ -20,7 +20,6 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/NewTimer.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
@@ -32,7 +31,7 @@ namespace qmcplusplus
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian()
-  :myIndex(0),numCollectables(0),EnableVirtualMoves(false)
+  :myIndex(0),numCollectables(0),nlpp_ptr(nullptr)
 #if !defined(REMOVE_TRACEMANAGER)
   , id_sample(0),pid_sample(0),step_sample(0),gen_sample(0),age_sample(0),mult_sample(0),weight_sample(0),position_sample(0)
 {
@@ -107,8 +106,15 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const std::string& aname, boo
     h->myName=aname;
     auxH.push_back(h);
   }
-  
-  EnableVirtualMoves|= h->getMode(QMCHamiltonianBase::VIRTUALMOVES);
+
+  //assign save NLPP if found
+  if(aname=="NonLocalECP")
+  {
+    if(nlpp_ptr==nullptr)
+      nlpp_ptr = dynamic_cast<NonLocalECPotential*>(h);
+    else
+      APP_ABORT("QMCHamiltonian::addOperator nlpp_ptr is supposed to be null. Something went wrong!");
+  }
 }
 
 
@@ -456,7 +462,6 @@ void QMCHamiltonian::finalize_traces()
 QMCHamiltonian::Return_t
 QMCHamiltonian::evaluate(ParticleSet& P)
 {
-  //if(EnableVirtualMoves) P.initVirtualMoves();
   LocalEnergy = 0.0;
   for(int i=0; i<H.size(); ++i)
   {
@@ -483,7 +488,6 @@ QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
     std::vector<RealType>& dhpsioverpsi,
     bool compute_deriv)
 {
-  //if(EnableVirtualMoves) P.initVirtualMoves();
 
   LocalEnergy=KineticEnergy=H[0]->evaluate(P);
   if(compute_deriv)
@@ -498,7 +502,6 @@ QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
 QMCHamiltonian::RealType 
 QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
 {
-  //if(EnableVirtualMoves) P.initVirtualMoves();
   RealType nlpp=0.0;
   RealType ke=H[0]->evaluate(P);
   if(free_nlpp)
@@ -540,6 +543,28 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
     auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
   }
 }
+///Evaluate properties only.
+void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker,bool do_properties, bool do_collectables)
+{
+#if !defined(REMOVE_TRACEMANAGER)
+  collect_walker_traces(ThisWalker,P.current_step);
+#endif
+  for(int i=0; i<auxH.size(); ++i)
+  {
+    bool is_property = !(auxH[i]->getMode(QMCHamiltonianBase::COLLECTABLE));
+    bool is_collectable = (auxH[i]->getMode(QMCHamiltonianBase::COLLECTABLE));
+    if ( (is_property && do_properties) || (is_collectable && do_collectables) )
+    {
+      auxH[i]->setHistories(ThisWalker);
+      RealType sink = auxH[i]->evaluate(P);
+      auxH[i]->setObservables(Observables);
+#if !defined(REMOVE_TRACEMANAGER)
+      auxH[i]->collect_scalar_traces();
+#endif
+      auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
+    }
+  }
+}
 
 void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
 {
@@ -558,14 +583,13 @@ void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
 }
 
 QMCHamiltonian::Return_t
-QMCHamiltonian::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
+QMCHamiltonian::evaluateWithToperator(ParticleSet& P)
 {
-  //if(EnableVirtualMoves) P.initVirtualMoves();
   LocalEnergy = 0.0;
   for(int i=0; i<H.size(); ++i)
   {
     myTimers[i]->start();
-    LocalEnergy += H[i]->evaluate(P,Txy);
+    LocalEnergy += H[i]->evaluateWithToperator(P);
     H[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
     H[i]->collect_scalar_traces();
@@ -641,88 +665,6 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   //myclone->setTau(tau);
   return myclone;
 }
-
-QMCHamiltonian::Return_t QMCHamiltonian::registerData(ParticleSet& P, BufferType& buffer)
-{
-  LocalEnergy=0.0;
-  for(int i=0; i<H.size(); ++i)
-  {
-    LocalEnergy+=H[i]->registerData(P,buffer);
-    H[i]->setObservables(Observables);
-  }
-  buffer.add(LocalEnergy);
-  return LocalEnergy;
-}
-
-QMCHamiltonian::Return_t QMCHamiltonian::updateBuffer(ParticleSet& P, BufferType& buffer)
-{
-  LocalEnergy=0.0;
-  for(int i=0; i<H.size(); ++i)
-  {
-    LocalEnergy+=H[i]->updateBuffer(P,buffer);
-    H[i]->setObservables(Observables);
-  }
-  buffer.add(LocalEnergy);
-  return LocalEnergy;
-}
-
-void QMCHamiltonian::copyFromBuffer(ParticleSet& P, BufferType& buffer)
-{
-  for(int i=0; i<H.size(); ++i)
-    H[i]->copyFromBuffer(P,buffer);
-  buffer.get(LocalEnergy);
-}
-
-QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P, BufferType& buffer)
-{
-  LocalEnergy = 0.0;
-  for(int i=0; i<H.size(); ++i)
-  {
-    LocalEnergy += H[i]->Value;
-    H[i]->setObservables(Observables);
-#if !defined(REMOVE_TRACEMANAGER)
-    H[i]->collect_scalar_traces();
-#endif
-  }
-  KineticEnergy=H[0]->Value;
-  P.PropertyList[LOCALENERGY]=LocalEnergy;
-  P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
-  for(int i=0; i<auxH.size(); ++i)
-  {
-    RealType sink = auxH[i]->evaluate(P);
-    auxH[i]->setObservables(Observables);
-#if !defined(REMOVE_TRACEMANAGER)
-    auxH[i]->collect_scalar_traces();
-#endif
-  }
-  for(int i=0; i<H.size(); ++i)
-    H[i]->copyToBuffer(P,buffer);
-  buffer.put(LocalEnergy);
-  return LocalEnergy;
-}
-
-QMCHamiltonian::Return_t QMCHamiltonian::evaluatePbyP(ParticleSet& P, int active)
-{
-  NewLocalEnergy = 0.0;
-  for(int i=0; i<H.size(); ++i)
-    NewLocalEnergy +=H[i]->evaluatePbyP(P,active);
-  return NewLocalEnergy;
-}
-void QMCHamiltonian::acceptMove(int active)
-{
-  for(int i=0; i<H.size(); ++i)
-    H[i]->acceptMove(active);
-  LocalEnergy=NewLocalEnergy;
-  for(int i=0; i<H.size(); ++i)
-    H[i]->setObservables(Observables);
-}
-
-void QMCHamiltonian::rejectMove(int active)
-{
-  for(int i=0; i<H.size(); ++i)
-    H[i]->rejectMove(active);
-}
-
 
 #ifdef QMC_CUDA
 void
@@ -825,9 +767,4 @@ QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
 
 
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

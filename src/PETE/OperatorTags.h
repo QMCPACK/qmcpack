@@ -820,8 +820,3 @@ struct FnWhere
 #endif // PETE_PETE_OPERATORTAGS_H
 
 // ACL:rcsinfo
-// ----------------------------------------------------------------------
-// $RCSfile$   $Author$
-// $Revision$   $Date$
-// ----------------------------------------------------------------------
-// ACL:rcsinfo

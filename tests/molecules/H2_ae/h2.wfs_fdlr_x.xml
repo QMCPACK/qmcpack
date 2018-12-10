@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<wfn_x>
+    <determinantset name="LCAOBSet" type="MolecularOrbital" transform="yes" source="ion0">
+      <basisset name="LCAOBSet">
+        <atomicBasisSet name="Gaussian-G2" angular="cartesian" type="Gaussian" elementType="H" normalized="no">
+          <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+          <!-- Possible substitution H00 by a Slater-type orbital
+  <basisGroup rid="H00" n="0" l="0" type="Slater">
+    <radfunc exponent="1.58489" contraction="1.0"/>
+  </basisGroup>
+-->
+          <basisGroup rid="H00" n="0" l="0" type="Gaussian">
+            <radfunc exponent="1.923840000000e+01" contraction="3.282799101900e-02"/>
+            <radfunc exponent="2.898720000000e+00" contraction="2.312039367510e-01"/>
+            <radfunc exponent="6.534720000000e-01" contraction="8.172257764360e-01"/>
+          </basisGroup>
+          <basisGroup rid="H10" n="1" l="0" type="Gaussian">
+            <radfunc exponent="1.630642000000e-01" contraction="1.000000000000e+00"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+
+    <slaterdeterminant optimize="yes">
+      <determinant id="det_up" sposet="spo-up">
+        <opt_vars size="3">
+          0.0 0.0 0.0
+        </opt_vars>
+      </determinant>
+
+      <determinant id="det_down" sposet="spo-dn">
+        <opt_vars size="3">
+          0.0 0.0 0.0
+        </opt_vars>
+      </determinant>
+    </slaterdeterminant>
+
+      <sposet basisset="LCAOBSet" name="spo-up" size="4" optimize="yes">
+        <occupation mode="ground"/>
+        <coefficient size="4" id="updetC">
+  2.83630000000000e-01  3.35683000000000e-01  2.83630000000000e-01  3.35683000000000e-01
+  1.66206000000000e-01  1.22367400000000e+00 -1.66206000000000e-01 -1.22367400000000e+00
+  8.68279000000000e-01 -6.95081000000000e-01  8.68279000000000e-01 -6.95081000000000e-01
+ -9.77898000000000e-01  1.19682400000000e+00  9.77898000000000e-01 -1.19682400000000e+00
+</coefficient>
+      </sposet>
+      <sposet basisset="LCAOBSet" name="spo-dn" size="4" optimize="yes">
+        <occupation mode="ground"/>
+        <coefficient size="4" id="downdetC">
+  2.83630000000000e-01  3.35683000000000e-01  2.83630000000000e-01  3.35683000000000e-01
+  1.66206000000000e-01  1.22367400000000e+00 -1.66206000000000e-01 -1.22367400000000e+00
+  8.68279000000000e-01 -6.95081000000000e-01  8.68279000000000e-01 -6.95081000000000e-01
+ -9.77898000000000e-01  1.19682400000000e+00  9.77898000000000e-01 -1.19682400000000e+00
+</coefficient>
+      </sposet>
+
+    </determinantset>
+</wfn_x>

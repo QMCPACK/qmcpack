@@ -16,7 +16,7 @@
     
 
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
@@ -107,7 +107,7 @@ EinsplineSetBuilder::ReadOrbitalInfo()
             SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2),
             SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2),
             SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
-  CheckLattice();
+  if (!CheckLattice()) APP_ABORT("CheckLattice failed");
   app_log() << buff;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -275,7 +275,7 @@ EinsplineSetBuilder::MuffinTinPath(int ti, int bi, int tin)
   return groupPath.str();
 }
 
-#ifdef QMC_CUDA
+#if 0
 void
 EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet)
@@ -452,7 +452,7 @@ EinsplineSetBuilder::ReadBands
       }
       myComm->bcast (g);
       myComm->bcast (r);
-      double Z = (double)IonTypes(atom);
+      double Z = (double)IonTypes[atom];
       orbitalSet->MuffinTins[atom].addCore (l, m, r, g, k, Z);
       icore++;
     }
@@ -516,7 +516,7 @@ EinsplineSetBuilder::ReadBands
         myComm->bcast(u_lm_r);
         myComm->bcast(du_lm_dr);
         myComm->bcast(k);
-        double Z = (double)IonTypes(tin);
+        double Z = (double)IonTypes[tin];
         orbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
       }
       ival++;
@@ -739,7 +739,7 @@ EinsplineSetBuilder::ReadBands
       }
       myComm->bcast (g);
       myComm->bcast (r);
-      double Z = (double)IonTypes(atom);
+      double Z = (double)IonTypes[atom];
       orbitalSet->MuffinTins[atom].addCore (l, m, r, g, k, Z);
       icore++;
     }
@@ -815,7 +815,7 @@ EinsplineSetBuilder::ReadBands
         myComm->bcast(u_lm_r);
         myComm->bcast(du_lm_dr);
         myComm->bcast(k);
-        double Z = (double)IonTypes(tin);
+        double Z = (double)IonTypes[tin];
         orbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
       }
       ival++;

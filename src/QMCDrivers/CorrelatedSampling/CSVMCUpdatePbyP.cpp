@@ -16,7 +16,6 @@
 
 
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -38,151 +37,122 @@ CSVMCUpdatePbyP::CSVMCUpdatePbyP(MCWalkerConfiguration& w,
 
 CSVMCUpdatePbyP::~CSVMCUpdatePbyP() { }
 
-void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
+void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
-  int iwalker=0;
-  //only used locally
-  std::vector<RealType> ratio(nPsi), uw(nPsi);
-  for(; it != it_end; ++it)
+  W.loadWalker(thisWalker,true);
+
+  //First step, we initialize all Psis, and read up the value of logpsi
+  //from the last run.
+  for(int ipsi=0; ipsi<nPsi; ipsi++)
   {
-    //Walkers loop
-    Walker_t& thisWalker(**it);
-    W.loadWalker(thisWalker,true);
-    Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-    W.R = thisWalker.R;
-    w_buffer.rewind();
-    // Copy walker info in W
-    //W.copyFromBuffer(w_buffer);
-    for(int ipsi=0; ipsi<nPsi; ipsi++)
-    {
-      // Copy wave function info in W and Psi1
-      Psi1[ipsi]->copyFromBuffer(W,w_buffer);
-    //  Psi1[ipsi]->G=W.G;
-    //  Psi1[ipsi]->L=W.L;
-    }
+    Psi1[ipsi]->copyFromBuffer(W,thisWalker.DataSet);
+    logpsi[ipsi] = thisWalker.Properties(ipsi,LOGPSI);
+  }
+ 
+  //Now we compute sumratio and more importantly, ratioij.
+  computeSumRatio(logpsi,avgNorm,RatioIJ,sumratio);
+  RealType r(1.0); //a temporary variable for storing ratio^2.
+ // myTimers[1]->start();
+  for (int iter=0; iter<nSubSteps; ++iter)
+  {
     makeGaussRandomWithEngine(deltaR,RandomGen);
-    for(int ipsi=0; ipsi<nPsi; ipsi++)
+    bool stucked=true;
+    for(int ig=0; ig<W.groups(); ++ig) //loop over species
     {
-      uw[ipsi]= thisWalker.Properties(ipsi,UMBRELLAWEIGHT);
-    }
-    // Point to the correct walker in the ratioij buffer
-    RealType* restrict ratioijPtr=ratioIJ[iwalker];
-    bool moved = false;
-    for(int iat=0; iat<W.getTotalNum(); iat++)
-      //Particles loop
-    {
-      PosType dr = m_sqrttau*deltaR[iat];
-      PosType newpos = W.makeMove(iat,dr);
-      RealType ratio_check=1.0;
-      for(int ipsi=0; ipsi<nPsi; ipsi++)
+      RealType sqrttau = std::sqrt(Tau*MassInvS[ig]);
+      for (int iat=W.first(ig); iat<W.last(ig); ++iat)
       {
-        // Compute ratios before and after the move
-        ratio_check *= ratio[ipsi] = Psi1[ipsi]->ratio(W,iat,*G1[ipsi],*L1[ipsi]);
-        logpsi[ipsi]=std::log(ratio[ipsi]*ratio[ipsi]);
-        // Compute Gradient in new position
-        //*G1[ipsi]=Psi1[ipsi]->G + dG;
-        // Initialize: sumratio[i]=(Psi[i]/Psi[i])^2=1.0
-        sumratio[ipsi]=1.0;
-      }
-      bool accept_move=false;
-      if(ratio_check>1e-12)//if any ratio is too small, reject the move automatically
-      {
-        int indexij(0);
-        // Compute new (Psi[i]/Psi[j])^2 and their sum
-        for(int ipsi=0; ipsi< nPsi-1; ipsi++)
+        W.setActive(iat);
+        mPosType dr = sqrttau*deltaR[iat];
+        //The move proposal for particle iat. 
+        if (W.makeMoveAndCheck(iat,dr))
         {
-          for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++, indexij++)
+          for(int ipsi=0; ipsi<nPsi; ipsi++)
           {
-            // Ratio between norms is already included in ratioijPtr from initialize.
-            RealType rji=std::exp(logpsi[jpsi]-logpsi[ipsi])*ratioijPtr[indexij];
-        //    RealType rji=avgNorm[ipsi]/avgNorm[jpsi]*std::exp(2*(logpsi[jpsi]-logpsi[ipsi]));
-            instRij[indexij]=rji;
-            //ratioij[indexij]=rji;
-            sumratio[ipsi] += rji;
-            sumratio[jpsi] += 1.0/rji;
+            r=Psi1[ipsi]->ratio(W,iat);  
+            ratio[ipsi]=r*r;
+          }
+          //Compute the ratio and acceptance probability.
+          RealType prob=0;
+          for(int ipsi=0; ipsi<nPsi; ipsi++)
+            prob+=ratio[ipsi]/sumratio[ipsi];
+   
+          if (RandomGen() < prob)
+          {
+            stucked=false;
+            ++nAccept;
+            for(int ipsi=0; ipsi<nPsi; ipsi++)
+              Psi1[ipsi]->acceptMove(W,iat);
+           
+            W.acceptMove(iat);
+            //Now we update ratioIJ.
+            updateRatioMatrix(ratio,RatioIJ);
+            computeSumRatio(RatioIJ,sumratio);
+            
+          }
+          else
+          {
+            ++nReject;
+            W.rejectMove(iat);
+            for(int ipsi=0; ipsi<nPsi; ipsi++)
+              Psi1[ipsi]->rejectMove(iat);
           }
         }
-        // Evaluate new Umbrella Weight
-        for(int ipsi=0; ipsi< nPsi ; ipsi++)
-          invsumratio[ipsi]=1.0/sumratio[ipsi];
-        RealType td=ratio[0]*ratio[0]*sumratio[0]/(*it)->Multiplicity;
-        accept_move=Random()<std::min((RealType)1.0,td);
-      }
-      //RealType prob = std::min(1.0,td);
-      //if(Random() < prob)
-      if(accept_move)
-      {
-        // Electron move is accepted. Update:
-        //   -ratio (Psi[i]/Psi[j])^2 for this walker
-        //   -Gradient and laplacian for each Psi1[i]
-        //   -Drift
-        //   -buffered info for each Psi1[i]
-        moved = true;
-        ++nAccept;
-        W.acceptMove(iat);
-        // Update Buffer for (Psi[i]/Psi[j])^2
-        copy(instRij.begin(),instRij.end(),ratioijPtr);
-        // copy new Umbrella weight for averages
-        uw=invsumratio;
-        // Store sumratio for next Accept/Reject step to Multiplicity
-        //thisWalker.Properties(SUMRATIO)=sumratio[0];
-        thisWalker.Multiplicity=sumratio[0];
-        for(int ipsi=0; ipsi< nPsi; ipsi++)
-        {
-          //Update local Psi1[i] buffer for the next move
-          Psi1[ipsi]->acceptMove(W,iat);
-          //Update G and L in Psi1[i]
-          //Psi1[ipsi]->G = *G1[ipsi];
-         // Psi1[ipsi]->G += *G1[ipsi];
-          //Psi1[ipsi]->L += *L1[ipsi];
-          thisWalker.Properties(ipsi,LOGPSI)+=std::log(std::abs(ratio[ipsi]));
-        }
-      }
-      else
-      {
-        ++nReject;
-        W.rejectMove(iat);
-        for(int ipsi=0; ipsi< nPsi; ipsi++)
-          Psi1[ipsi]->rejectMove(iat);
-      }
-    }
-   if(moved)
-    {
-     //  The walker moved: Info are copied back to buffers:
-   //      -copy (Psi[i]/Psi[j])^2 to ratioijBuffer
-    //     -Gradient and laplacian for each Psi1[i]
-    //     -Drift
-   //      -buffered info for each Psi1[i]
-    //     Physical properties are updated */
-      (*it)->Age=0;
-      (*it)->R = W.R;
-   //   w_buffer.rewind();
-    //  W.copyToBuffer(w_buffer);
-      for(int ipsi=0; ipsi< nPsi; ipsi++)
-      {
-        W.G=Psi1[ipsi]->G;
-        W.L=Psi1[ipsi]->L;
-        //ValueType psi = Psi1[ipsi]->evaluate(W,w_buffer);
-       // ValueType logpsi = Psi1[ipsi]->evaluateLog(W,w_buffer);
-        RealType logpsi=Psi1[ipsi]->updateBuffer(W,w_buffer,false);
-        W.saveWalker(thisWalker);
-        RealType et = H1[ipsi]->evaluate(W);
-        //multiEstimator->updateSample(iwalker,ipsi,et,UmbrellaWeight[ipsi]);
-        //Properties is used for UmbrellaWeight and UmbrellaEnergy
-        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=uw[ipsi];
-        thisWalker.Properties(ipsi,LOCALENERGY)=et;
-        H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
-	//app_log()<<"ipsi="<<ipsi<<" logpsi="<<logpsi<<" umweight="<<uw[ipsi]<<" locen="<<et<<" sumratio="<<sumratio[ipsi]<<" mult="<<thisWalker.Multiplicity<<" avgnorm="<<avgNorm[ipsi]<<" cumNorm="<<cumNorm[ipsi]<<" "<<avgWeight[ipsi]<< std::endl;
-      }
-    }
-    else
+        else //reject illegal moves
+          ++nReject;
+      } //iat
+    }//ig for the species
+    if (stucked)
     {
       ++nAllRejected;
     }
-    ++it;
-    ++iwalker;
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+      Psi1[ipsi]->completeUpdates();
+  }
+//  myTimers[1]->stop();
+//  myTimers[2]->start();
+
+  W.donePbyP();
+
+  for(int ipsi=0; ipsi<nPsi; ipsi++)
+  {
+    //now recompute logpsi, gradients, and laplacians of the new R. Save them.
+    logpsi[ipsi]=Psi1[ipsi]->updateBuffer(W,thisWalker.DataSet,recompute);
+    W.saveWalker(thisWalker);
+    //Save G and L for this wavefunction in the working G1, L1 arrays.
+    *G1[ipsi]=thisWalker.G;
+    *L1[ipsi]=thisWalker.L;
+    //Set G and L for this wavefunction.
+    Psi1[ipsi]->G = W.G;
+    Psi1[ipsi]->L = W.L;
+  }
+
+  computeSumRatio(logpsi,avgNorm,sumratio);
+  for(int ipsi=0; ipsi<nPsi; ipsi++)
+    {
+      invsumratio[ipsi]=sumratio[ipsi];
+      cumNorm[ipsi]+=1.0/invsumratio[ipsi];
+    }
+  
+  for(int ipsi=0; ipsi<nPsi; ipsi++)
+  {
+    //Now reload the G and L associated with ipsi into the walker and particle set.
+    //This is required for correct calculation of kinetic energy.
+    thisWalker.G=*G1[ipsi];
+    thisWalker.L=*L1[ipsi];
+    W.L=thisWalker.L;
+    W.G=thisWalker.G;
+    thisWalker.Properties(ipsi,LOCALENERGY)=H1[ipsi]->evaluate(W);
+    thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
+    thisWalker.Properties(ipsi,SIGN) =Psi1[ipsi]->getPhase();
+    thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=1.0/sumratio[ipsi];
+    //Use Multiplicity as a temporary container for sumratio.
+    thisWalker.Multiplicity=sumratio[0];
+    H1[ipsi]->auxHevaluate(W,thisWalker);
+    H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
   }
 }
+
 
 /// UpdatePbyP With Drift Fast.
 CSVMCUpdatePbyPWithDriftFast::CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w,
@@ -191,193 +161,16 @@ CSVMCUpdatePbyPWithDriftFast::CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration
                                  RandomGenerator_t& rg):
   CSUpdateBase(w,psi,h,rg)
 {
+  APP_ABORT("CSVMCUpdatePbyPWithDriftFast currently not working.  Please eliminate \
+             drift option, or choose all electron moves instead.")
 }
 
 CSVMCUpdatePbyPWithDriftFast::~CSVMCUpdatePbyPWithDriftFast() { }
-void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
+
+void CSVMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
-  int iwalker=0;
-  //only used locally
-  std::vector<RealType> ratio(nPsi), uw(nPsi);
-  for(; it != it_end; ++it)
-  {
-    //Walkers loop
-    Walker_t& thisWalker(**it);
-    W.loadWalker(thisWalker,true);
-    Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-    W.R = thisWalker.R;
-    w_buffer.rewind();
-    // Copy walker info in W
-    //W.copyFromBuffer(w_buffer);
-    for(int ipsi=0; ipsi<nPsi; ipsi++)
-    {
-      // Copy wave function info in W and Psi1
-      Psi1[ipsi]->copyFromBuffer(W,w_buffer);
-      uw[ipsi]= thisWalker.Properties(ipsi,UMBRELLAWEIGHT);
-    }
-    makeGaussRandomWithEngine(deltaR,RandomGen);
-    // Point to the correct walker in the ratioij buffer
-    RealType* restrict ratioijPtr=ratioIJ[iwalker];
-    bool moved = false;
-    
-    for(int ig=0; ig<W.groups(); ++ig) //loop over species
-    {
-        RealType tauovermass = Tau*MassInvS[ig];
-        RealType oneover2tau = 0.5/(tauovermass);
-        RealType sqrttau = std::sqrt(tauovermass);
-      //Particles loop
-	    for (int iat=W.first(ig); iat<W.last(ig); ++iat)
-	    {
-	      double logGf(0.0), logGb(0.0); //logs of forward and backward greens functions respectively.  
-	 
-	      PosType dr;  //drift for iat.  
-	      ///Now we need to compute the forward drift.  This is done by computing all gradients
-	      //and weighting by the umbrella weight.  
-	      //
-	      //Here's the combined gradient
-	      GradType cumGrad(0.0);
-	      GradType cumGrad_new(0.0);
-	      for(int ipsi=0; ipsi<nPsi; ipsi++)
-	      {
-		cumGrad+=uw[ipsi]*Psi1[ipsi]->evalGrad(W,iat);
-	      }
-		
-	       getScaledDrift(tauovermass,cumGrad,dr);
-	       dr += sqrttau*deltaR[iat];
-
-	      if (!W.makeMoveAndCheck(iat,dr))
-	      {
-		 ++nReject;
-		 continue;
-	      }
-
-	//      PosType newpos = W.makeMove(iat,dr);
-	      RealType ratio_check=1.0;
-	      for(int ipsi=0; ipsi<nPsi; ipsi++)
-	      {
-		// Compute ratios before and after the move
-		ratio_check *= ratio[ipsi] = Psi1[ipsi]->ratioGrad(W,iat,g1_new[ipsi]);
-		logpsi[ipsi]=std::log(ratio[ipsi]*ratio[ipsi]);
-		// Compute Gradient in new position
-		//*G1[ipsi]=Psi1[ipsi]->G + dG;
-		// Initialize: sumratio[i]=(Psi[i]/Psi[i])^2=1.0
-		sumratio[ipsi]=1.0;
-	      }
-	      bool accept_move=false;
-	      if(ratio_check>1e-12)//if any ratio is too small, reject the move automatically
-	      {
-		int indexij(0);
-		// Compute new (Psi[i]/Psi[j])^2 and their sum
-		for(int ipsi=0; ipsi< nPsi-1; ipsi++)
-		{
-		  for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++, indexij++)
-		  {
-		    // Ratio between norms is already included in ratioijPtr from initialize.
-		    RealType rji=std::exp(logpsi[jpsi]-logpsi[ipsi])*ratioijPtr[indexij];
-		    instRij[indexij]=rji;
-		    //ratioij[indexij]=rji;
-		    sumratio[ipsi] += rji;
-		    sumratio[jpsi] += 1.0/rji;
-		  }
-		}
-		// Evaluate new Umbrella Weight
-		for(int ipsi=0; ipsi< nPsi ; ipsi++)
-		  invsumratio[ipsi]=1.0/sumratio[ipsi];
-
-		//compute the new gradient
-		for(int ipsi=0; ipsi<nPsi; ipsi++)
-		   cumGrad_new+=invsumratio[ipsi]*g1_new[ipsi];
-	       
-	       
-		logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
-		getScaledDrift(tauovermass,cumGrad_new,dr);
-		dr = thisWalker.R[iat]-W.R[iat]-dr;
-		logGb = -oneover2tau*dot(dr,dr);
-		
-		RealType td=ratio[0]*ratio[0]*sumratio[0]/(*it)->Multiplicity*std::exp(logGb-logGf);
-		accept_move=Random()<std::min((RealType)1.0,td);
-	      }
-	      //RealType prob = std::min(1.0,td);
-	      //if(Random() < prob)
-	      if(accept_move)
-	      {
-		// Electron move is accepted. Update:
-		//   -ratio (Psi[i]/Psi[j])^2 for this walker
-		//   -Gradient and laplacian for each Psi1[i]
-		//   -Drift
-		//   -buffered info for each Psi1[i]
-		moved = true;
-		++nAccept;
-		W.acceptMove(iat);
-		// Update Buffer for (Psi[i]/Psi[j])^2
-		std::copy(instRij.begin(),instRij.end(),ratioijPtr);
-		// copy new Umbrella weight for averages
-		uw=invsumratio;
-		// Store sumratio for next Accept/Reject step to Multiplicity
-		//thisWalker.Properties(SUMRATIO)=sumratio[0];
-		thisWalker.Multiplicity=sumratio[0];
-		for(int ipsi=0; ipsi< nPsi; ipsi++)
-		{
-		  //Update local Psi1[i] buffer for the next move
-		  Psi1[ipsi]->acceptMove(W,iat);
-		  //Update G and L in Psi1[i]
-		  //Psi1[ipsi]->G = *G1[ipsi];
-		 // Psi1[ipsi]->G += *G1[ipsi];
-		  //Psi1[ipsi]->L += *L1[ipsi];
-		  thisWalker.Properties(ipsi,LOGPSI)+=std::log(std::abs(ratio[ipsi]));
-		}
-	      }
-	      else
-	      {
-		++nReject;
-		W.rejectMove(iat);
-		for(int ipsi=0; ipsi< nPsi; ipsi++)
-		  Psi1[ipsi]->rejectMove(iat);
-	      }
-	    }
-    }
-   if(moved)
-    {
-     //  The walker moved: Info are copied back to buffers:
-   //      -copy (Psi[i]/Psi[j])^2 to ratioijBuffer
-    //     -Gradient and laplacian for each Psi1[i]
-    //     -Drift
-   //      -buffered info for each Psi1[i]
-    //     Physical properties are updated */
-      (*it)->Age=0;
-      (*it)->R = W.R;
-   //   w_buffer.rewind();
-    //  W.copyToBuffer(w_buffer);
-      for(int ipsi=0; ipsi< nPsi; ipsi++)
-      {
-        W.G=Psi1[ipsi]->G;
-        W.L=Psi1[ipsi]->L;
-        //ValueType psi = Psi1[ipsi]->evaluate(W,w_buffer);
-       // ValueType logpsi = Psi1[ipsi]->evaluateLog(W,w_buffer);
-        RealType logpsi=Psi1[ipsi]->updateBuffer(W,w_buffer,false);
-        W.saveWalker(thisWalker);
-        RealType et = H1[ipsi]->evaluate(W);
-        //multiEstimator->updateSample(iwalker,ipsi,et,UmbrellaWeight[ipsi]);
-        //Properties is used for UmbrellaWeight and UmbrellaEnergy
-        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=uw[ipsi];
-        thisWalker.Properties(ipsi,LOCALENERGY)=et;
-        H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
-	//app_log()<<"ipsi="<<ipsi<<" logpsi="<<logpsi<<" umweight="<<uw[ipsi]<<" locen="<<et<<" sumratio="<<sumratio[ipsi]<<" mult="<<thisWalker.Multiplicity<<" avgnorm="<<avgNorm[ipsi]<<" cumNorm="<<cumNorm[ipsi]<<" "<<avgWeight[ipsi]<< std::endl;
-      }
-    }
-    else
-    {
-      ++nAllRejected;
-    }
-    ++it;
-    ++iwalker;
-  }
 }
+
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1593 $   $Date: 2007-01-04 17:23:27 -0600 (Thu, 04 Jan 2007) $
- * $Id: CSVMCUpdatePbyP.cpp 1593 2007-01-04 23:23:27Z jnkim $
- ***************************************************************************/

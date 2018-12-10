@@ -25,7 +25,7 @@ namespace qmcplusplus
  *  Therefore, users do not have to include this file.
  */
 
-// foward declarations
+// forward declarations
 template<class T, unsigned D> class TinyVector;
 template<class T, unsigned D> class Tensor;
 template<class T, unsigned D> class SymTensor;
@@ -186,8 +186,3 @@ FUNC( TENT<T1,D1,D2>& v1, const T2& v2 )                                      \
  
 #endif // OHMMS_TINY_META_H
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

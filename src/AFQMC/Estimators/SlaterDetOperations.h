@@ -32,12 +32,13 @@ class SlaterDetOperations: public MPIObjectBase, public AFQMCInfo
       ham=h;
       timer=timer_;
       GF.resize(2*NMO,NMO);
+      tGF.resize(2*NMO,NMO);
       V0.resize(2*NMO*NMO);
       Cwork.resize(2*NMO);
       pivot.resize(2*NMO);
     }
 
-    void green_function(ComplexType* A, ComplexType* B, ComplexType& ovlp, ComplexMatrix& G, bool getG=true) {
+    void green_function(ComplexType* A, ComplexType* B, ComplexType& ovlp, SPComplexMatrix& G, bool getG=true) {
       const ComplexType one = ComplexType(1.0);
       const ComplexType zero = ComplexType(0.0); 
 
@@ -47,7 +48,7 @@ class SlaterDetOperations: public MPIObjectBase, public AFQMCInfo
       ComplexMatrix SS0(2*NMO,NAEA);
       
 
-      if(getG) G = ComplexType(0.0); 
+      if(getG) tGF = ComplexType(0.0); 
       S0 = ComplexType(0.0); 
       S1 = ComplexType(0.0); 
 
@@ -58,9 +59,9 @@ class SlaterDetOperations: public MPIObjectBase, public AFQMCInfo
       ovlp = Invert(S0.data(), NAEA, NAEA, Cwork.data(),pivot.data());
 
       // SS0 = B * S0
-      if(getG) DenseMatrixOperators::product(NMO,NAEA,NAEA,B,NAEA,S0.data(),NAEA,SS0.data(),NAEA);   
+      if(getG) DenseMatrixOperators::product(NMO,NAEA,NAEA,one,B,NAEA,S0.data(),NAEA,zero,SS0.data(),NAEA);   
       // G(beta) = SS0*transpose(conjg(A))  
-      if(getG) DenseMatrixOperators::product_ABh(NMO,NMO,NAEA,one,SS0.data(),NAEA,A,NAEA,zero,G.data(),NMO);
+      if(getG) DenseMatrixOperators::product_ABh(NMO,NMO,NAEA,one,SS0.data(),NAEA,A,NAEA,zero,tGF.data(),NMO);
 
       // S1 = transpose(conjg(A))*B  
       DenseMatrixOperators::product_AhB(NAEB,NAEB,NMO,one,A+NMO*NAEA,NAEA,B+NAEA*NMO,NAEA,zero,S1.data(),NAEB);
@@ -71,21 +72,22 @@ class SlaterDetOperations: public MPIObjectBase, public AFQMCInfo
       if(!getG) return;
 
       if(std::abs(ovlp) < 1e-6) {
-        G = ComplexType(0.0);
+        G = SPComplexType(0.0);
         return;
       }
 
       // SS0(beta) = B(beta) * S1
-      DenseMatrixOperators::product(NMO,NAEB,NAEB,B+NAEA*NMO,NAEA,S1.data(),NAEB,SS0.data()+NAEA*NMO,NAEA);
+      DenseMatrixOperators::product(NMO,NAEB,NAEB,one,B+NAEA*NMO,NAEA,S1.data(),NAEB,zero,SS0.data()+NAEA*NMO,NAEA);
 
       // G(beta) = SS0*transpose(conjg(A))  
-      DenseMatrixOperators::product_ABh(NMO,NMO,NAEB,one,SS0.data()+NAEA*NMO,NAEA,A+NAEA*NMO,NAEA,zero,G.data()+NMO*NMO,NMO);
+      DenseMatrixOperators::product_ABh(NMO,NMO,NAEB,one,SS0.data()+NAEA*NMO,NAEA,A+NAEA*NMO,NAEA,zero,tGF.data()+NMO*NMO,NMO);
 
       for(int i=0; i<NMO; i++)
        for(int j=0; j<i; j++) {
-         std::swap(G(i,j),G(j,i));
-         std::swap(G(i+NMO,j),G(j+NMO,i));
+         std::swap(tGF(i,j),tGF(j,i));
+         std::swap(tGF(i+NMO,j),tGF(j+NMO,i));
        }
+      std::copy(tGF.begin(),tGF.end(),G.begin());
 
     }
     
@@ -109,7 +111,7 @@ class SlaterDetOperations: public MPIObjectBase, public AFQMCInfo
       ovlp = Invert(S0.data(), NAEA, NAEA, Cwork.data(),pivot.data());
 
       // SS0 = B * S0
-      if(getG) DenseMatrixOperators::product(NMO,NAEA,NAEA,B.data(),NAEA,S0.data(),NAEA,SS0.data(),NAEA);   
+      if(getG) DenseMatrixOperators::product(NMO,NAEA,NAEA,one,B.data(),NAEA,S0.data(),NAEA,zero,SS0.data(),NAEA);   
       // G(beta) = SS0*transpose(conjg(A))  
       if(getG) DenseMatrixOperators::product_ABh(NMO,NMO,NAEA,one,SS0.data(),NAEA,A.data(),NAEA,zero,G.data(),NMO);
 
@@ -127,7 +129,7 @@ class SlaterDetOperations: public MPIObjectBase, public AFQMCInfo
       }
 
       // SS0(beta) = B(beta) * S1
-      DenseMatrixOperators::product(NMO,NAEB,NAEB,B.data()+NAEA*NMO,NAEA,S1.data(),NAEB,SS0.data()+NAEA*NMO,NAEA);
+      DenseMatrixOperators::product(NMO,NAEB,NAEB,one,B.data()+NAEA*NMO,NAEA,S1.data(),NAEB,zero,SS0.data()+NAEA*NMO,NAEA);
 
       // G(beta) = SS0*transpose(conjg(A))  
       DenseMatrixOperators::product_ABh(NMO,NMO,NAEB,one,SS0.data()+NAEA*NMO,NAEA,A.data()+NAEA*NMO,NAEA,zero,G.data()+NMO*NMO,NMO);
@@ -150,27 +152,27 @@ class SlaterDetOperations: public MPIObjectBase, public AFQMCInfo
         return;
       }
 
-      ComplexSMSpMat *V;
+      SPValueSMSpMat *V;
       std::vector<s1D<ValueType> > *h;
       int nr1=1, nc1=2*NMO*NMO;
-      ComplexType one = ComplexType(1.0,0.0);
-      ComplexType zero = ComplexType(0.0,0.0);
+      SPValueType one = SPValueType(1.0);
+      SPValueType zero = SPValueType(0.0);
 
       ham->getFullHam(h,V);   
 
       hamME = ComplexType(0.0); 
 
-      SparseMatrixOperators::product_SpMatV<ComplexSMSpMat>(nc1,nc1,one,*V,GF.data(),zero,V0.data());
+      SparseMatrixOperators::product_SpMatV(nc1,nc1,one,V->values(), V->column_data(),  V->row_index() ,GF.data(),zero,V0.data());
 
-      ComplexMatrix::iterator itG = GF.begin();
-      ComplexVector::iterator itV = V0.begin();
-      for(int i=0; i<nc1; i++,++itG,++itV) hamME += (*itV) * (*itG);
+      SPComplexMatrix::iterator itG = GF.begin();
+      SPComplexVector::iterator itV = V0.begin();
+      for(int i=0; i<nc1; i++,++itG,++itV) hamME += static_cast<ComplexType>(*itV) * static_cast<ComplexType>(*itG);
       hamME = 0.5*hamME+ham->NuclearCoulombEnergy;    
 
       std::vector<s1D<ValueType> >::iterator end1 = h->end();
       itG = GF.begin();
       for(std::vector<s1D<ValueType> >::iterator it = h->begin(); it != end1; it++)
-        hamME += *(itG + std::get<0>(*it)) * std::get<1>(*it);
+        hamME += static_cast<ComplexType>(*(itG + std::get<0>(*it))) * std::get<1>(*it);
 
       hamME *= ovlp;
 
@@ -264,8 +266,8 @@ out3.close();
 out4.close();
 APP_ABORT("Testing. \n");
 */
-        bool sucess = DenseMatrixOperators::genHermitianEigenSysSelect(N,H.data(),N,S.data(),N,nstates,eigVal.data(),getEigV,eigVec.data(),eigVec.size2(),ifail.data());
-        if(!sucess) for(int i=0; i<nstates; i++) eigVal[i]=0.0;
+        bool success = DenseMatrixOperators::genHermitianEigenSysSelect(N,H.data(),N,S.data(),N,nstates,eigVal.data(),getEigV,eigVec.data(),eigVec.size2(),ifail.data());
+        if(!success) for(int i=0; i<nstates; i++) eigVal[i]=0.0;
         else {
           std::ofstream out("diag.dat",std::ios_base::app | std::ios_base::out);
           std::vector<double> coeff(N);
@@ -378,8 +380,9 @@ APP_ABORT("Testing. \n");
     std::vector<int> pivot;
 
     HamPtr ham; 
-    ComplexMatrix GF;
-    ComplexVector V0;
+    ComplexMatrix tGF;
+    SPComplexMatrix GF;
+    SPComplexVector V0;
     myTimer* timer;
 };
 

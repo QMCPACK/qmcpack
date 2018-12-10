@@ -14,10 +14,7 @@
     
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 
 namespace qmcplusplus
 {
@@ -25,7 +22,7 @@ namespace qmcplusplus
 SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation *BF):SlaterDet(targetPtcl),BFTrans(BF)
 {
   Optimizable=false;
-  OrbitalName="SlaterDetWithBackflow";
+  ClassName="SlaterDetWithBackflow";
 }
 
 ///destructor
@@ -34,10 +31,10 @@ SlaterDetWithBackflow::~SlaterDetWithBackflow()
   ///clean up SPOSet
 }
 
-void SlaterDetWithBackflow::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for(int i=0; i<Dets.size(); ++i)
-    Dets[i]->get_ratios(P,ratios);
+    Dets[i]->evaluateRatiosAlltoOne(P,ratios);
 }
 
 void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)
@@ -45,24 +42,12 @@ void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)
   BFTrans->resetTargetParticleSet(P);
   for (int i = 0; i < Dets.size(); i++)
     Dets[i]->resetTargetParticleSet(BFTrans->QP);
-  std::map<std::string, SPOSetBasePtr>::iterator sit(mySPOSet.begin());
+  std::map<std::string, SPOSetPtr>::iterator sit(mySPOSet.begin());
   while (sit != mySPOSet.end())
   {
     (*sit).second->resetTargetParticleSet(BFTrans->QP);
     ++sit;
   }
-}
-
-SlaterDetWithBackflow::ValueType
-SlaterDetWithBackflow::evaluate(ParticleSet& P,
-                                ParticleSet::ParticleGradient_t& G,
-                                ParticleSet::ParticleLaplacian_t& L)
-{
-  BFTrans->evaluate(P);
-  ValueType psi = 1.0;
-  for(int i=0; i<Dets.size(); i++)
-    psi *= Dets[i]->evaluate(P,G,L);
-  return psi;
 }
 
 SlaterDetWithBackflow::RealType
@@ -81,63 +66,14 @@ SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
   return LogValue;
 }
 
-SlaterDetWithBackflow::RealType
-SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L,
-                       PooledData<RealType>& buf,
-                       bool fillBuffer)
-{
-  BFTrans->evaluate(P);
-  LogValue=0.0;
-  PhaseValue=0.0;
-  for(int i=0; i<Dets.size(); ++i)
-  {
-    LogValue+=Dets[i]->evaluateLog(P,G,L);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
-  return LogValue;
-
-/*   From SlaterDet, finish implementing this later!!!
-  LogValue = 0.0;
-  PhaseValue = 0.0;
-  if(fillBuffer)
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      LogValue +=Dets[i]->evaluateLogForDerivativeBuffer(P, buf);
-      Dets[i]->copyToDerivativeBuffer(P, buf);
-      PhaseValue += Dets[i]->PhaseValue;
-    }
-  }
-  else
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      Dets[i]->copyFromDerivativeBuffer(P,buf);
-      LogValue += Dets[i]->evaluateLogFromDerivativeBuffer(P, buf);
-      PhaseValue += Dets[i]->PhaseValue;
-    }
-  }
-  return LogValue;
-*/
-}
-
-SlaterDetWithBackflow::RealType SlaterDetWithBackflow::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void SlaterDetWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   BFTrans->registerData(P,buf);
-  //BFTrans->evaluate(P);
-  LogValue=0.0;
-  PhaseValue=0.0;
   for(int i=0; i<Dets.size(); ++i)
-  {
-    LogValue+=Dets[i]->registerData(P,buf);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
-  return LogValue;
+    Dets[i]->registerData(P,buf);
 }
 
-SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf,
     bool fromscratch)
 {
   //BFTrans->updateBuffer(P,buf,fromscratch);
@@ -153,7 +89,7 @@ SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet&
   return LogValue;
 }
 
-void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BFTrans->copyFromBuffer(P,buf);
   //BFTrans->evaluate(P);
@@ -161,49 +97,21 @@ void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, PooledData<RealType>&
     Dets[i]->copyFromBuffer(P,buf);
 }
 
-void SlaterDetWithBackflow::dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  for(int i=0; i<Dets.size(); i++)
-    Dets[i]->dumpToBuffer(P,buf);
-}
-
-void SlaterDetWithBackflow::dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  for(int i=0; i<Dets.size(); i++)
-    Dets[i]->dumpFromBuffer(P,buf);
-}
-
-SlaterDetWithBackflow::RealType
-SlaterDetWithBackflow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  BFTrans->updateBuffer(P,buf,false);
-  //BFTrans->evaluate(P);
-  LogValue=0.0;
-  PhaseValue=0.0;
-  for(int i=0; i<Dets.size(); i++)
-  {
-    LogValue += Dets[i]->evaluateLog(P,buf);
-    PhaseValue +=Dets[i]->PhaseValue;
-  }
-  return LogValue;
-}
-
-OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 {
   BackflowTransformation *tr = BFTrans->makeClone(tqp);
 //    tr->resetTargetParticleSet(tqp);
   SlaterDetWithBackflow* myclone=new SlaterDetWithBackflow(tqp,tr);
   myclone->Optimizable=Optimizable;
-  myclone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   if(mySPOSet.size()>1)//each determinant owns its own set
   {
     for(int i=0; i<Dets.size(); ++i)
     {
-      SPOSetBasePtr spo=Dets[i]->getPhi();
+      SPOSetPtr spo=Dets[i]->getPhi();
       // Check to see if this determinants SPOSet has already been
       // cloned
       bool found = false;
-      SPOSetBasePtr spo_clone;
+      SPOSetPtr spo_clone;
       for (int j=0; j<i; j++)
         if (spo == Dets[j]->getPhi())
         {
@@ -227,8 +135,8 @@ OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
   }
   else
   {
-    SPOSetBasePtr spo=Dets[0]->getPhi();
-    SPOSetBasePtr spo_clone=spo->makeClone();
+    SPOSetPtr spo=Dets[0]->getPhi();
+    SPOSetPtr spo_clone=spo->makeClone();
 //      spo_clone->resetTargetParticleSet(tqp);
     myclone->add(spo_clone,spo->objectName);
     for(int i=0; i<Dets.size(); ++i)
@@ -266,7 +174,6 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   L0.resize(P.getTotalNum());
   L1.resize(P.getTotalNum());
   L2.resize(P.getTotalNum());
-  ValueType psi0 = 1.0;
   ValueType psi1 = 1.0;
   ValueType psi2 = 1.0;
   RealType dh=0.00001;
@@ -312,7 +219,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
     BFTrans->evaluate(P);
     for(int k=0; k<Dets.size(); k++)
       psi2 += Dets[k]->evaluateLog(P,G2,L2);
-    ParticleSet::ParticleValue_t tmp=0.0;
+    ParticleSet::SingleParticleValue_t tmp=0.0;
     for(int q=0; q<P.getTotalNum(); q++)
       tmp+=(L1[q]-L2[q])/(2.0*dh);
     app_log() <<i <<"\n"
@@ -340,7 +247,6 @@ void SlaterDetWithBackflow::evaluateDerivatives(ParticleSet& P,
   {
     // build QP,Amat,Bmat_full,Xmat,Cmat,Ymat
     BFTrans->evaluateDerivatives(P);
-    ValueType psi = 1.0;
     for(int i=0; i<Dets.size(); i++)
       Dets[i]->evaluateDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
   }
@@ -348,8 +254,3 @@ void SlaterDetWithBackflow::evaluateDerivatives(ParticleSet& P,
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: kpesler $
- * $Revision: 4721 $   $Date: 2010-03-12 17:11:47 -0600 (Fri, 12 Mar 2010) $
- * $Id: SlaterDetWithBackflow.cpp 4721 2010-03-12 23:11:47Z kpesler $
- ***************************************************************************/

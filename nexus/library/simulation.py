@@ -66,6 +66,7 @@
 
 
 import os
+import sys
 import shutil
 import string
 from subprocess import Popen,PIPE
@@ -119,6 +120,10 @@ class SimulationInput(NexusCore):
         return text
     #end def write
 
+    def return_structure(self):
+        return self.return_system(structure_only=True)
+    #end def return_structure
+
     def read_text(self,text,filepath=None):
         self.not_implemented()
     #end def read_text
@@ -132,7 +137,7 @@ class SimulationInput(NexusCore):
         self.not_implemented()
     #end def incorporate_system
 
-    def return_system(self):
+    def return_system(self,structure_only=False):
         #create a physical system object from input file information
         self.not_implemented()
     #end def return_system
@@ -272,6 +277,7 @@ class Simulation(NexusCore):
     creating_fake_sims = False
 
     sim_directories = dict()
+    all_sims = []
 
     @classmethod
     def code_name(cls):
@@ -292,6 +298,16 @@ class Simulation(NexusCore):
         inp_args = obj()
         sim_args.transfer_from(kwargs,sim_kw)
         inp_args.transfer_from(kwargs,inp_kw)
+        if 'system' in inp_args:
+            system = inp_args.system
+            if not isinstance(system,PhysicalSystem):
+                extra=''
+                if not isinstance(extra,obj):
+                    extra = '\nwith value: {0}'.format(system)
+                #end if
+                cls.class_error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
+            #end if
+        #end if
         if 'pseudos' in inp_args and inp_args.pseudos!=None:
             pseudos = inp_args.pseudos
             # support ppset labels
@@ -320,9 +336,6 @@ class Simulation(NexusCore):
             #end if
             if 'system' in inp_args:
                 system = inp_args.system
-                if not isinstance(system,PhysicalSystem):
-                    cls.class_error('system object must be of type PhysicalSystem')
-                #end if
                 species_labels,species = system.structure.species(symbol=True)
                 pseudopotentials = nexus_core.pseudopotentials
                 for ppfile in pseudos:
@@ -389,6 +402,7 @@ class Simulation(NexusCore):
         self.infile         = None
         self.outfile        = None
         self.errfile        = None
+        self.bundleable     = True
         self.bundled        = False
         self.bundler        = None
         self.fake_sim       = Simulation.creating_fake_sims
@@ -398,6 +412,7 @@ class Simulation(NexusCore):
                              # accessed by dependents when calling get_dependencies
 
         self.set(**kwargs)
+        self.pre_init()
         self.set_directories()
         self.set_files()
         self.propagate_identifier()
@@ -406,6 +421,7 @@ class Simulation(NexusCore):
         #end if
         self.post_init()
 
+        Simulation.all_sims.append(self)
     #end def __init__
 
 
@@ -417,6 +433,8 @@ class Simulation(NexusCore):
     def init_job(self):
         if self.job==None:
             self.error('job not provided.  Input field job must be set to a Job object.')
+        elif not isinstance(self.job,Job):
+            self.error('Input field job must be set to a Job object\nyou provided an object of type: {0}\nwith value: {1}'.format(self.job.__class__.__name__,self.job))
         #end if
         self.job = self.job.copy()
         self.job.initialize(self)
@@ -465,6 +483,11 @@ class Simulation(NexusCore):
         #end if
         if isinstance(self.system,PhysicalSystem):
             self.system = self.system.copy()
+            consistent,msg = self.system.check_consistent(exit=False,message=True)
+            if not consistent:
+                locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
+                self.error('user provided physical system is not internally consistent\nsimulation identifier: {0}\nlocal directory: {1}\nmore details on the user error are given below\n\n{2}'.format(self.identifier,locdir,msg))
+            #end if
         elif self.system!=None:
             self.error('system must be a PhysicalSystem object\nyou provided an object of type: {0}'.format(self.system.__class__.__name__))
         #end if
@@ -559,11 +582,11 @@ class Simulation(NexusCore):
         return ready
     #end def ready
 
-    def check_result(self,result_name):
+    def check_result(self,result_name,sim):
         self.not_implemented()
     #end def check_result
 
-    def get_result(self,result_name):
+    def get_result(self,result_name,sim):
         self.not_implemented()
     #end def get_result
 
@@ -587,6 +610,10 @@ class Simulation(NexusCore):
     def propagate_identifier(self):
         None
     #end def propagate_identifier
+
+    def pre_init(self):
+        None
+    #end def pre_init
 
     def post_init(self):
         None
@@ -819,6 +846,18 @@ class Simulation(NexusCore):
     #end def get_dependencies
         
 
+    def downstream_simids(self,simids=None):
+        if simids is None:
+            simids = set()
+        #end if
+        for sim in self.dependents:
+            simids.add(sim.simid)
+            sim.downstream_simids(simids)
+        #end for
+        return simids
+    #end def downstream_simids
+
+
     def copy_file(self,sourcefile,dest):
         src = os.path.dirname(os.path.abspath(sourcefile))
         dst = os.path.abspath(dest)
@@ -870,8 +909,13 @@ class Simulation(NexusCore):
     #end def load_analyzer_image
 
 
+    def attempt_files(self):
+        return (self.infile,self.outfile,self.errfile)
+    #end def attempt_files
+
+
     def save_attempt(self):
-        local = [self.infile,self.outfile,self.errfile]
+        local = self.attempt_files()
         filepaths = []
         for file in local:
             filepath = os.path.join(self.locdir,file)
@@ -899,7 +943,6 @@ class Simulation(NexusCore):
             #os.system('ls '+attempt_dir)
             #exit()
         #end if
-        #self.error('save_attempt')
     #end def save_attempt
 
 
@@ -913,7 +956,7 @@ class Simulation(NexusCore):
         self.enter(self.locdir,False,self.simid)
         self.log('writing input files'+self.idstr(),n=3)
         self.write_prep()
-        if self.infile!=None:
+        if self.infile is not None:
             infile = os.path.join(self.locdir,self.infile)
             self.input.write(infile)
         #end if
@@ -972,7 +1015,7 @@ class Simulation(NexusCore):
             if found_file:
                 self.copy_file(local,remote)
             else:
-                self.error('file {0} not found\n  locations checked: {1}'.format(file,file_locations))
+                self.error('file {0} not found\nlocations checked: {1}'.format(file,file_locations))
             #end if
         #end for
         self.sent_files = True
@@ -990,6 +1033,10 @@ class Simulation(NexusCore):
 
     def submit(self):
         if not self.submitted:
+            if self.skip_submit and not self.bundled:
+                self.block_dependents(block_self=True)
+                return
+            #end if
             self.log('submitting job'+self.idstr(),n=3)
             if not self.skip_submit:
                 if not self.job.local:
@@ -1662,14 +1709,19 @@ except:
     Dot,Node,Edge = unavailable('pydot','Dot','Node','Edge')
 #end try
 try:
-    import Image
+    from matplotlib.image import imread
+    from matplotlib.pyplot import imshow,show,xticks,yticks
 except:
-    Image = unavailable('Image')
+    imread = unavailable('matplotlib.image','imread')
+    imshow,show,xticks,yticks = unavailable('matplotlib.pyplot','imshow','show','xticks','yticks')
 #end try
 import tempfile
-exit_call = exit
-def graph_sims(sims,useid=False,exit=True,quants=True):
-    graph = Dot(graph_type='digraph')
+exit_call = sys.exit
+def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True):
+    if sims is None:
+        sims = Simulation.all_sims
+    #end if
+    graph = Dot(graph_type='digraph',dpi=300)
     graph.set_label('simulation workflows')
     graph.set_labelloc('t')
     nodes = obj()
@@ -1682,10 +1734,15 @@ def graph_sims(sims,useid=False,exit=True,quants=True):
         else:
             nlabel = sim.identifier+' '+str(sim.simid)
         #end if
+        nopts = obj()
+        if 'block' in sim and sim.block:
+            nopts.color     = 'black'
+            nopts.fontcolor = 'white'
+        #end if
         node = obj(
             id    = sim.simid,
             sim   = sim,
-            node  = Node(nlabel,style='filled',shape='Mrecord'),
+            node  = Node(nlabel,style='filled',shape='Mrecord',**nopts),
             edges = obj(),
             )
         nodes[node.id] = node
@@ -1706,12 +1763,21 @@ def graph_sims(sims,useid=False,exit=True,quants=True):
         #end for
     #end for
 
-    fout = tempfile.NamedTemporaryFile(suffix='png')
-    savefile = fout.name
-    graph.write(savefile,format='png',prog='dot')
+    if savefile is None:
+        fout = tempfile.NamedTemporaryFile(suffix='.png')
+        savefile = fout.name
+        #savefile = './sims.png'
+    #end if
+    fmt = savefile.rsplit('.',1)[1]
+    graph.write(savefile,format=fmt,prog='dot')
 
-    image = Image.open(savefile)
-    image.show()
+    # display the image
+    if fmt=='png':
+        imshow(imread(savefile))
+        xticks([])
+        yticks([])
+        show()
+    #end if
 
     if exit:
         exit_call()

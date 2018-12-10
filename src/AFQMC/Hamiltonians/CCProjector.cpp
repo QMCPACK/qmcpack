@@ -55,13 +55,13 @@ namespace qmcplusplus
     Pmat.resize(na+nb,na+nb); 
     sHam->initializeCCProjector(Pmat);
     for(int i=0; i<Pmat.rows(); i++) Pmat(i,i)=0.0;
-  
+
     return true;
   }
 
   bool CCProjector::initFromHDF5(const std::string& fileName)
   {
-    return false;
+
 /*
     hdf_archive dump(myComm);
     if(!dump.open(fileName,H5F_ACC_RDONLY)) {
@@ -167,6 +167,7 @@ namespace qmcplusplus
 
     return true;
 */
+    return true;
   }
 
   void CCProjector::hdf_write() {
@@ -260,11 +261,6 @@ namespace qmcplusplus
     dump.flush();
     dump.close();
 */
-  }
-
-  void CCProjector::calculateHSPotentials_SparseDiagonalization(ComplexSMSpMat& Spvn)
-  {
-
   }
 
   void CCProjector::calculateHSPotentials_Diagonalization(ComplexSMSpMat& Spvn)

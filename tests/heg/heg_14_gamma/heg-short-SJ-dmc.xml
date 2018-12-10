@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<simulation>
+<project id="heg_short_SJ_dmc" series="0">
+<application name="qmcapp" class="serial">
+Sample qmc run for Slater-Jastrow HEG.
+</application>
+</project>
+<include href="heg.ptcl.xml"/>
+<include href="heg.sj.wfs.xml"/>
+<include href="heg.H.xml"/>
+<qmc method="vmc" move="pbyp">
+<parameter name="blocks">100</parameter>
+<parameter name="steps">10</parameter>
+<parameter name="warmupsteps"> 100 </parameter>
+<parameter name="tau">5.0</parameter>
+<parameter name="samples">800</parameter>
+<estimator name="LocalEnergy" hdf5="no"/>
+</qmc>
+<qmc method="dmc" move="pbyp">
+<parameter name="blocks">80</parameter>
+<parameter name="steps">10</parameter>
+<parameter name="tau">0.5</parameter>
+<parameter name="targetWalkers">800</parameter>
+</qmc>
+<qmc method="dmc" move="pbyp">
+<parameter name="warmupsteps">200</parameter>
+<parameter name="blocks">800</parameter>
+<parameter name="steps">10</parameter>
+<parameter name="targetWalkers">800</parameter>
+<parameter name="tau">0.125</parameter>
+</qmc>
+</simulation>

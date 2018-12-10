@@ -22,7 +22,8 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
-
+#include "OhmmsSoA/VectorSoaContainer.h"
+#include "Particle/DistanceTableData.h"
 namespace qmcplusplus
 {
 
@@ -40,10 +41,14 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
   typedef LRHandlerType::mRealType           mRealType;
 
+  typedef DistanceTableData::RowContainer RowContainerType;
+
   ///source particle set
   ParticleSet& PtclA;
   ///long-range Handler
   LRHandlerType* AB;
+  ///long-range derivative handler
+  LRHandlerType* dAB;
   ///locator of the distance table
   int myTableIndex;
   ///number of species of A particle set
@@ -55,13 +60,17 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   ///number of particles of B
   int NptclB;
   ///const energy after breakup
-  RealType myConst;
+  Return_t myConst;
   ///cutoff radius of the short-range part
   RealType myRcut;
   ///radial grid
   GridType* myGrid;
   ///Always mave a radial functor for the bare coulomb
   RadFunctorType* V0;
+  ///Radial functor for bare coulomb, optimized for forces
+  RadFunctorType* fV0;
+  ///Radial functor for derivative of bare coulomb, optimized for forces
+  RadFunctorType* dfV0;
   /// Flag for whether to compute forces or not
   bool ComputeForces;
   int MaxGridPoints;
@@ -82,6 +91,13 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   std::vector<RadFunctorType*> Vat;
   ///Short-range potential for each species
   std::vector<RadFunctorType*> Vspec;
+  ///Short-range potential (r*V) and potential derivative d/dr(rV) derivative for each ion
+  ///Required for force evaluations.
+  std::vector<RadFunctorType*> fVat;
+  std::vector<RadFunctorType*> fdVat;
+  ////Short-range potential (r*V) and potential derivative d/dr(rV) derivative for each species
+  std::vector<RadFunctorType*> fVspec;
+  std::vector<RadFunctorType*> fdVspec;
   /*@{
    * @brief temporary data for pbyp evaluation
    */
@@ -129,18 +145,6 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
-  Return_t registerData(ParticleSet& P, BufferType& buffer);
-  Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
-  void copyToBuffer(ParticleSet& P, BufferType& buf);
-  Return_t evaluatePbyP(ParticleSet& P, int iat);
-  void acceptMove(int iat);
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {
@@ -154,21 +158,28 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   }
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
-
+  
+  ///Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
   void initBreakup(ParticleSet& P);
 
+  //Do these functions need to be kept?
   Return_t evalConsts_orig(bool report=true);
   Return_t evalSR_old(ParticleSet& P);
   Return_t evalLR_old(ParticleSet& P);
   Return_t evalConsts_old(bool report=true);
+  //
 
-
+  ///Computes the short-range contribution to the coulomb energy.
   Return_t evalSR(ParticleSet& P);
+  ///Computes the long-range contribution to the coulomb energy.
   Return_t evalLR(ParticleSet& P);
+  ///Computes the short-range contribution to the coulomb energy and forces.
   Return_t evalSRwithForces(ParticleSet& P);
+  ///Computes the long-range contribution to the coulomb energy and forces.
   Return_t evalLRwithForces(ParticleSet& P);
+  ///Evaluates madelung and background contributions to total energy.
   Return_t evalConsts(bool report=true);
-  Return_t evaluateForPyP(ParticleSet& P);
+  ///Adds a local pseudopotential channel "ppot" to all source species of type "groupID".
   void add(int groupID, RadFunctorType* ppot);
 
   void addObservables(PropertySetType& plist, BufferType& collectables);
@@ -192,9 +203,4 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

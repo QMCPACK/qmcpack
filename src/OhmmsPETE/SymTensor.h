@@ -496,8 +496,3 @@ std::ostream& operator<<(std::ostream& out, const SymTensor<T,D>& rhs)
 #endif // SYM_TENZOR_H
 
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

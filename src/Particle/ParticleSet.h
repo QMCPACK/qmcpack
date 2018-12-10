@@ -23,12 +23,13 @@
 #define QMCPLUSPLUS_PARTICLESET_H
 
 #include <Configuration.h>
+#include <ParticleTags.h>
 #include <Particle/Walker.h>
 #include <Utilities/SpeciesSet.h>
 #include <Utilities/PooledData.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/NewTimer.h>
-
+#include <OhmmsSoA/Container.h>
 
 namespace qmcplusplus
 {
@@ -62,8 +63,6 @@ struct MCDataType
 };
 
 
-
-
 /** Specialized paritlce class for atomistic simulations
  *
  * Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
@@ -74,15 +73,15 @@ struct MCDataType
 class ParticleSet
   :  public QMCTraits
   , public OhmmsElementBase
-  , public ParticleBase<PtclOnLatticeTraits>
+  , public PtclOnLatticeTraits
 {
 public:
   ///@typedef walker type
-  typedef Walker<QMCTraits,PtclOnLatticeTraits> Walker_t;
+  typedef Walker<QMCTraits,PtclOnLatticeTraits>  Walker_t;
   ///@typedef container type to store the property
-  typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+  typedef Walker_t::PropertyContainer_t          PropertyContainer_t;
   ///@typedef buffer type for a serialized buffer
-  typedef Walker_t::Buffer_t             Buffer_t;
+  typedef PooledData<RealType>                   Buffer_t;
 
   enum quantum_domains {no_quantum_domain=0,classical,quantum};
 
@@ -93,21 +92,13 @@ public:
   ///property of an ensemble represented by this ParticleSet
   MCDataType<EstimatorRealType> EnsembleProperty;
 
-  ///gradients of the particles
-  ParticleGradient_t G;
+  ///ParticleLayout
+  ParticleLayout_t Lattice, PrimitiveLattice;
+  ///Long-range box
+  ParticleLayout_t LRBox;
 
-  ///laplacians of the particles
-  ParticleLaplacian_t L;
-
-  ///differential gradients of the particles
-  ParticleGradient_t dG;
-
-  ///differential laplacians of the particles
-  ParticleLaplacian_t dL;
-
-  ///current position after applying PBC in the Lattice Unit
-  ParticlePos_t Runit;
-
+  ///unique, persistent ID for each particle
+  ParticleIndex_t ID;
   ///index to the primitice cell with tiling
   ParticleIndex_t PCID;
   /** ID map that reflects species group
@@ -115,40 +106,51 @@ public:
    * IsGrouped=true, if ID==IndirectID
    */
   ParticleIndex_t IndirectID;
+  ///Species ID
+  ParticleIndex_t GroupID;
+  ///Position
+  ParticlePos_t R;
+  ///SoA copy of R
+  VectorSoaContainer<RealType,DIM> RSoA;
+  ///gradients of the particles
+  ParticleGradient_t G;
+  ///laplacians of the particles
+  ParticleLaplacian_t L;
+  ///differential gradients of the particles
+  ParticleGradient_t dG;
+  ///differential laplacians of the particles
+  ParticleLaplacian_t dL;
   ///mass of each particle
   ParticleScalar_t Mass;
   ///charge of each particle
   ParticleScalar_t Z;
 
-  ///Long-range box
-  ParticleLayout_t LRBox;
   ///true, if a physical or local bounding box is used
   bool UseBoundBox;
-  ///true if fast update for sphere moves
-  bool UseSphereUpdate;
   ///true if the particles are grouped
   bool IsGrouped;
   ///true if the particles have the same mass
   bool SameMass;
   ///threa id
   Index_t ThreadID;
-  ///the index of the active particle for particle-by-particle moves
+  /** the index of the active particle during particle-by-particle moves
+   *
+   * when a single particle move is proposed, the particle id is assigned to activePtcl
+   * No matter the move is accepted or rejected, activePtcl is marked back to -1.
+   * This state flag is used for picking coordinates and distances for SPO evaluation.
+   */
   Index_t activePtcl;
-  ///the group of the active particle for particle-by-particle moves
+  ///the group of the active particle during particle-by-particle moves
   Index_t activeGroup;
   ///the index of the active bead for particle-by-particle moves
   Index_t activeBead;
   ///the direction reptile traveling
   Index_t direction;
 
-  /** the position of the active particle for particle-by-particle moves
-   *
-   * Saves the position before making a move to handle rejectMove
-   */
+  ///the proposed position of activePtcl during particle-by-particle moves
   SingleParticlePos_t activePos;
 
-  /** the proposed position in the Lattice unit
-   */
+  ///the proposed position in the Lattice unit
   SingleParticlePos_t newRedPos;
 
   ///SpeciesSet of particles
@@ -159,9 +161,6 @@ public:
 
   ///distance tables that need to be updated by moving this ParticleSet
   std::vector<DistanceTableData*> DistTables;
-
-  ///spherical-grids for non-local PP
-  std::vector<ParticlePos_t*> Sphere;
 
   ///Particle density in G-space for MPC interaction
   std::vector<TinyVector<int,OHMMS_DIM> > DensityReducedGvecs;
@@ -214,6 +213,15 @@ public:
 
   ///default destructor
   virtual ~ParticleSet();
+
+  /** create  particles
+   * @param n number of particles
+   */
+  void create(int n);
+  /** create grouped particles
+   * @param agroup number of particles per group
+   */
+  void create(const std::vector<int>& agroup);
 
   ///write to a std::ostream
   bool get(std::ostream& ) const;
@@ -270,7 +278,7 @@ public:
    *
    * Ensure that the distance for this-this is always created first.
    */
-  int  addTable(const ParticleSet& psrc);
+  int addTable(const ParticleSet& psrc, int dt_type);
 
   /** returns index of a distance table, -1 if not present
    * @param psrc source particle set
@@ -285,25 +293,22 @@ public:
   }
 
   /** update the internal data
-   *@param iflag index for the update mode
+   *@param skip SK update if skipSK is true
    */
-  void update(int iflag=0);
+  void update(bool skipSK=false);
 
   /**update the internal data with new position
    *@param pos position vector assigned to R
    */
   void update(const ParticlePos_t& pos);
-  
-  /** prepare internal data to be able to handle virutal moves*/
-  void enableVirtualMoves();
-  
-  /** prepare distance tables to perform virtual moves, e.g., nlpp evals
-   */ 
-  void initVirtualMoves();
 
   /** create Structure Factor with PBCs
    */
   void createSK();
+
+  /** Turn on per particle storage in Structure Factor
+   */
+  void turnOnPerParticleSK();
 
   ///retrun the SpeciesSet of this particle set
   inline SpeciesSet& getSpeciesSet()
@@ -314,18 +319,6 @@ public:
   inline const SpeciesSet& getSpeciesSet() const
   {
     return mySpecies;
-  }
-
-  ///return this id
-  inline int tag() const
-  {
-    return ObjectTag;
-  }
-
-  ///return parent's id
-  inline int parent() const
-  {
-    return ParentTag;
   }
 
   ///return parent's name
@@ -349,6 +342,23 @@ public:
 
   void resetGroups();
 
+  /** set active particle
+   * @param iat particle index
+   *
+   * Compute internal data based on current R[iat]
+   * Introduced to work with update-only methods.
+   */
+  void setActive(int iat);
+
+  /** return the position of the active particle
+   *
+   * activePtcl=-1 is used to flag non-physical moves
+   */
+  inline const PosType& activeR(int iat) const
+  {
+    return (activePtcl == iat)? activePos:R[iat];
+  }
+  
   /**move a particle
    *@param iat the index of the particle to be moved
    *@param displ random displacement of the iat-th particle
@@ -406,11 +416,6 @@ public:
    */
   void rejectMove(Index_t iat);
 
-  inline SingleParticlePos_t getOldPos() const
-  {
-    return activePos;
-  }
-
   void initPropertyList();
   inline int addProperty(const std::string& pname)
   {
@@ -423,7 +428,6 @@ public:
   //        void addPropertyHistoryPoint(int index, RealType data);
 
   void clearDistanceTables();
-  void resizeSphere(int nc);
 
   void convert(const ParticlePos_t& pin, ParticlePos_t& pout);
   void convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout);
@@ -449,20 +453,22 @@ public:
    */
   void saveWalker(Walker_t& awalker);
 
-  //void registerData(Buffer_t& buf);
-  //void registerData(Walker_t& awalker, Buffer_t& buf);
-  //void updateBuffer(Walker_t& awalker, Buffer_t& buf);
-  //void updateBuffer(Buffer_t& buf);
-  //void copyToBuffer(Buffer_t& buf);
-  //void copyFromBuffer(Buffer_t& buf);
+  /** update structure factor and unmark activePtcl
+   *
+   * The Coulomb interaction evaluation needs the structure factor.
+   * For these reason, call donePbyP after the loop of single
+   * electron moves before evaluating the Hamiltonian. Unmark
+   * activePtcl is more of a safety measure probably not needed.
+   */
+  void donePbyP();
 
-  //return the address of the values of Hamiltonian terms
+  ///return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase()
   {
     return Properties.data();
   }
 
-  //return the address of the values of Hamiltonian terms
+  ///return the address of the values of Hamiltonian terms
   inline const EstimatorRealType* restrict getPropertyBase() const
   {
     return Properties.data();
@@ -493,11 +499,6 @@ public:
    * Used to initialize an electron ParticleSet by an ion ParticleSet
    */
   void randomizeFromSource (ParticleSet &src);
-
-  /** make clones
-   * @param n number of clones including itself
-   */
-  virtual void make_clones(int n);
 
   /** return the ip-th clone
    * @param ip thread number
@@ -547,33 +548,149 @@ public:
     return mySpecies.speciesName[GroupID[i]];
   }
 
+  inline int getTotalNum() const
+  {
+    return TotalNum;
+  }
+
+  inline void resize(int numPtcl)
+  {
+    TotalNum = numPtcl;
+
+    R.resize(numPtcl);
+    ID.resize(numPtcl);
+    PCID.resize(numPtcl);
+    GroupID.resize(numPtcl);
+    G.resize(numPtcl);
+    dG.resize(numPtcl);
+    L.resize(numPtcl);
+    dL.resize(numPtcl);
+    Mass.resize(numPtcl);
+    Z.resize(numPtcl);
+    IndirectID.resize(numPtcl);
+
+    RSoA.resize(numPtcl);
+  }
+
+  inline void clear()
+  {
+    TotalNum = 0;
+
+    R.clear();
+    ID.clear();
+    PCID.clear();
+    GroupID.clear();
+    G.clear();
+    dG.clear();
+    L.clear();
+    dL.clear();
+    Mass.clear();
+    Z.clear();
+    IndirectID.clear();
+
+    RSoA.resize(0);
+  }
+
+  inline void assign(const ParticleSet& ptclin)
+  {
+    resize(ptclin.getTotalNum());
+    Lattice = ptclin.Lattice;
+    PrimitiveLattice = ptclin.PrimitiveLattice;
+    R.InUnit = ptclin.R.InUnit;
+    R = ptclin.R;
+    ID = ptclin.ID;
+    GroupID = ptclin.GroupID;
+    if(ptclin.SubPtcl.size())
+    {
+      SubPtcl.resize(ptclin.SubPtcl.size());
+      SubPtcl =ptclin.SubPtcl;
+    }
+  }
+
+  ///return the number of groups
+  inline int groups() const
+  {
+    return SubPtcl.size()-1;
+  }
+
+  ///return the first index of a group i
+  inline int first(int igroup) const
+  {
+    return SubPtcl[igroup];
+  }
+
+  ///return the last index of a group i
+  inline int last(int igroup) const
+  {
+    return SubPtcl[igroup+1];
+  }
+
+  ///add attributes to list for IO
+  template<typename ATList>
+  inline void createAttributeList(ATList& AttribList)
+  {
+    R.setTypeName(ParticleTags::postype_tag);
+    R.setObjName(ParticleTags::position_tag);
+    ID.setTypeName(ParticleTags::indextype_tag);
+    ID.setObjName(ParticleTags::id_tag);
+    GroupID.setTypeName(ParticleTags::indextype_tag);
+    GroupID.setObjName(ParticleTags::ionid_tag);
+    //add basic attributes
+    AttribList.add(R);
+    AttribList.add(ID);
+    AttribList.add(GroupID);
+
+    G.setTypeName(ParticleTags::gradtype_tag);
+    L.setTypeName(ParticleTags::laptype_tag);
+    dG.setTypeName(ParticleTags::gradtype_tag);
+    dL.setTypeName(ParticleTags::laptype_tag);
+
+    G.setObjName("grad");
+    L.setObjName("lap");
+    dG.setObjName("dgrad");
+    dL.setObjName("dlap");
+
+    AttribList.add(G);
+    AttribList.add(L);
+    AttribList.add(dG);
+    AttribList.add(dL);
+
+    //more particle attributes
+    Mass.setTypeName(ParticleTags::scalartype_tag);
+    Mass.setObjName("mass");
+    AttribList.add(Mass);
+
+    Z.setTypeName(ParticleTags::scalartype_tag);
+    Z.setObjName("charge");
+    AttribList.add(Z);
+
+    PCID.setTypeName(ParticleTags::indextype_tag); //add PCID tags
+    PCID.setObjName("pcid");
+    AttribList.add(PCID);
+
+    IndirectID.setTypeName(ParticleTags::indextype_tag); //add IndirectID tags
+    IndirectID.setObjName("id1");
+    AttribList.add(IndirectID);
+  }
+
 protected:
-  ///the number of particle objects
-  static Index_t PtclObjectCounter;
-
-  ///id of this object
-  Index_t ObjectTag;
-
-  ///id of the parent
-  Index_t ParentTag;
-
   /** map to handle distance tables
    *
    * myDistTableMap[source-particle-tag]= locator in the distance table
    * myDistTableMap[ObjectTag] === 0
    */
-  std::map<int,int> myDistTableMap;
-  void initParticleSet();
+  std::map<std::string,int> myDistTableMap;
 
   std::vector<NewTimer*> myTimers;
   SingleParticlePos_t myTwist;
 
   std::string ParentName;
+
+  ///total number of particles
+  int TotalNum;
+
+  ///array to handle a group of distinct particles per species
+  ParticleIndex_t SubPtcl;
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

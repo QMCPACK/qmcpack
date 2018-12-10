@@ -233,12 +233,6 @@ void cqmc::engine::SpamLMHD::solve_subspace_nonsymmetric(const bool outer)
     //Eigen::ArrayXcd eval_list = (es.eigenvalues()).array();
     std::complex<double> lowest_eval = e_evals.at(0);
 
-    double inner_eval = 0.0;
-    if ( !_ground ) 
-      inner_eval = 1.0 / (_hd_shift - _energy_inner);
-    else 
-      inner_eval = _energy_inner;
-
     // if it's outer iteration, we just make sure that we choose the lowest energy(target function)
     //if ( outer ) {
     for (int j = 1; j < truncate_index; j++) {
@@ -379,13 +373,13 @@ void cqmc::engine::SpamLMHD::add_krylov_vector_inner(const formic::ColVec<double
   formic::ColVec<double> hs(_nfds);
   this -> HMatVecOp(_wv1, hs, false, true);
   formic::ColVec<double> hs_avg(hs.size());
-  formic::mpi::reduce(&hs.at(0), &hs_avg.at(0), hs.size(), MPI::SUM);
+  formic::mpi::reduce(&hs.at(0), &hs_avg.at(0), hs.size(), MPI_SUM);
   hs = hs_avg.clone();
 
   // compute the product of approximate overlap matrix times this new krylov vector
   this -> SMatVecOp(_wv1, _wv2, true);
   formic::ColVec<double> _wv2_avg(_wv2.size());
-  formic::mpi::reduce(&_wv2.at(0), &_wv2_avg.at(0), _wv2.size(), MPI::SUM);
+  formic::mpi::reduce(&_wv2.at(0), &_wv2_avg.at(0), _wv2.size(), MPI_SUM);
   _wv2 = _wv2_avg.clone();
 
 
@@ -528,20 +522,20 @@ void cqmc::engine::SpamLMHD::add_krylov_vectors_outer(const formic::Matrix<doubl
   formic::Matrix<double> hs(_nfds, Nnew);
   this -> HMatMatOp(_wm1, hs, false, false);
   formic::Matrix<double> hs_avg(_nfds, Nnew);
-  formic::mpi::reduce(&hs.at(0,0), &hs_avg.at(0,0), hs.size(), MPI::SUM);
+  formic::mpi::reduce(&hs.at(0,0), &hs_avg.at(0,0), hs.size(), MPI_SUM);
   hs = hs_avg.clone();
 
   // compute the product of Hamiltonian transpose times these new krylov vectors
   formic::Matrix<double> ths(_nfds, Nnew);
   this -> HMatMatOp(_wm1, ths, true, false);
   formic::Matrix<double> ths_avg(ths.rows(), ths.cols());
-  formic::mpi::reduce(&ths.at(0,0), &ths_avg.at(0,0), ths.size(), MPI::SUM);
+  formic::mpi::reduce(&ths.at(0,0), &ths_avg.at(0,0), ths.size(), MPI_SUM);
   ths = ths_avg.clone();
 
   // compute the product of the overlap matrix times these new krylov vectors
   this -> SMatMatOp(_wm1, _wm2, false);
   formic::Matrix<double> _wm2_avg(_wm2.rows(), _wm2.cols());
-  formic::mpi::reduce(&_wm2.at(0,0), &_wm2_avg.at(0,0), _wm2.size(), MPI::SUM);
+  formic::mpi::reduce(&_wm2.at(0,0), &_wm2_avg.at(0,0), _wm2.size(), MPI_SUM);
   _wm2 = _wm2_avg.clone();
 
   // modify hamiltonian product to account for "identity" shift
@@ -1337,9 +1331,6 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
 
   while(true) {
     
-    // smallest singular value 
-    double smallest_sin_value_outer = 0.0;
-
     // solve subspace eigenvalue problem on root process 
     if ( my_rank == 0 ) { 
       this -> solve_subspace_nonsymmetric(true);
@@ -1473,9 +1464,6 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
     // now enter inner loop 
     while (true) {
      
-      // average of smallest singular value
-      double smallest_sin_val_avg_inner = 0.0;
-
       // solve subspace eigenvalue problem on root process 
       if ( my_rank == 0 ) {
         this -> solve_subspace_nonsymmetric(false);

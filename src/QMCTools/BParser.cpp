@@ -533,7 +533,7 @@ void BParser::dump(const std::string& psi_tag,
   xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
   {
     //particleset
-    xmlAddChild(qm_root,createElectronSet());
+    xmlAddChild(qm_root,createElectronSet(ion_tag));
     xmlAddChild(qm_root,createIonSet());
     //wavefunction
     xmlNodePtr wfPtr = xmlNewNode(NULL,(const xmlChar*)"wavefunction");

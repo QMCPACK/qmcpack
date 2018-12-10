@@ -11,13 +11,6 @@
 
 #define ASSERT_SPARSEMATRIX 
 
-#if defined(USE_EIGEN)
-namespace qmcplusplus
-{
-}
-
-#else  // In this case, use OhhmsPETE and your sparse matrix class
-
 namespace qmcplusplus
 {
 
@@ -37,15 +30,15 @@ class SparseMatrix
   typedef typename std::vector<T>::const_iterator const_iterator;
   typedef SparseMatrix<T>  This_t;
 
-  SparseMatrix<T>():vals(),colms(),myrows(),rowIndex(),nr(0),nc(0),compressed(false),zero_based(true)
+  SparseMatrix<T>():vals(),colms(),myrows(),rowIndex(),nr(0),nc(0),compressed(false),zero_based(true),storage_format(0)
   {
   }
 
-  SparseMatrix<T>(int n):vals(),colms(),myrows(),rowIndex(),nr(n),nc(n),compressed(false),zero_based(true)
+  SparseMatrix<T>(int n):vals(),colms(),myrows(),rowIndex(),nr(n),nc(n),compressed(false),zero_based(true),storage_format(0)
   {
   }
 
-  SparseMatrix<T>(int n,int m):vals(),colms(),myrows(),rowIndex(),nr(n),nc(m),compressed(false),zero_based(true) 
+  SparseMatrix<T>(int n,int m):vals(),colms(),myrows(),rowIndex(),nr(n),nc(m),compressed(false),zero_based(true),storage_format(0)
   {
   }
 
@@ -63,6 +56,7 @@ class SparseMatrix
     myrows=rhs.myrows;
     colms=rhs.colms;
     rowIndex=rhs.rowIndex;
+    storage_format=rhs.storage_format;
   }
 
   inline void reserve(int n)
@@ -182,15 +176,23 @@ class SparseMatrix
   }  
 
   inline int find_element(int i, int j) {
-    return 0;
+    for (int k = rowIndex[i]; k < rowIndex[i+1]; k++) {
+      if (colms[k] == j) return k;
+    }
+    return -1;
   }
 
+  // DANGER: This returns a reference, which could allow changes to the stored value.
+  // If a zero element is changed, it will change zero everywhere in the matrix.
+  // For now this method is only used for testing so it should not be a problem.
   inline Type_t& operator()(int i, int j)
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<nr && j>=0 && j<nc && compressed); 
 #endif
-    return vals[find_element(i,j)]; 
+    int idx = find_element(i,j);
+    if (idx == -1) return zero;
+    return vals[idx];
   }
 
   inline Type_t operator()( int i, int j) const
@@ -198,7 +200,9 @@ class SparseMatrix
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<nr && j>=0 && j<nc && compressed); 
 #endif
-    return vals[find_element(i,j)]; 
+    int idx = find_element(i,j);
+    if (idx == -1) return 0;
+    return vals[idx];
   }
 
   inline void add(const int i, const int j, const T& v, bool dummy=false) 
@@ -421,11 +425,7 @@ class SparseMatrix
     rowIndex.resize(nr+1);
     rowIndex[0]=0;
     for(int i=0; i<V.size(); i++) {
-      if( std::is_same<T,std::complex<double> >::value  ) {
-        vals[i] = std::complex<double>(std::get<1>(V[i]),0.0);
-      } else {
-       vals[i] = static_cast<T>(std::get<1>(V[i]));
-      }
+      vals[i] = static_cast<T>(std::get<1>(V[i]));
       myrows[i] = 0; 
       colms[i] = std::get<0>(V[i]); 
 #ifdef ASSERT_SPARSEMATRIX
@@ -505,8 +505,10 @@ class SparseMatrix
         for(int i=old+1; i<=curr; i++) rowIndex[i] = n;
       }
     }
-    for(int i=myrows.back()+1; i<rowIndex.size(); i++)
-      rowIndex[i] = vals.size();
+    if (myrows.size() > 0) {
+      for(int i=myrows.back()+1; i<rowIndex.size(); i++)
+        rowIndex[i] = vals.size();
+    }
     compressed=true;
   }
 
@@ -525,11 +527,7 @@ class SparseMatrix
     colms.resize(nnz);
     rowIndex.resize(nr+1);
     for(int i=0; i<V.size(); i++) {
-      if( std::is_same<T,std::complex<double> >::value  ) {
-        vals[i] = std::complex<double>(std::get<2>(V[i]),0.0);
-      } else {
-       vals[i] = static_cast<T>(std::get<2>(V[i]));
-      }
+      vals[i] = static_cast<T>(std::get<2>(V[i]));
       myrows[i] = std::get<0>(V[i]);
       colms[i] = std::get<1>(V[i]);
 #ifdef ASSERT_SPARSEMATRIX
@@ -545,8 +543,10 @@ class SparseMatrix
         for(int i=old+1; i<=curr; i++) rowIndex[i] = n;
       }
     }
-    for(int i=myrows.back()+1; i<rowIndex.size(); i++)
-      rowIndex[i] = vals.size();
+    if (myrows.size() > 0) {
+      for(int i=myrows.back()+1; i<rowIndex.size(); i++)
+        rowIndex[i] = vals.size();
+    }
     compressed=true;
   }
 
@@ -590,43 +590,6 @@ class SparseMatrix
     for (int& i : rowIndex ) i++; 
   }
 
-/*
-  inline SparseMatrix<T>& operator+=(const SparseMatrix<T>& rhs ) 
-  {
-    this->DM += rhs.DM; 
-    return *this; 
-  }
-
-  inline SparseMatrix<T>& operator-=(const SparseMatrix<T>& rhs ) 
-  {
-    this->DM -= rhs.DM; 
-    return *this; 
-  }
-
-  inline SparseMatrix<T> operator+(const SparseMatrix<T>& opB) const {
-    return SparseMatrix<T>(*this) += opB;
-  }
-
-  inline SparseMatrix<T> operator-(const SparseMatrix<T>& opB) const {
-    return SparseMatrix<T>(*this) -= opB;
-  }
-
-  inline SparseMatrix<T> operator*(const SparseMatrix<T>& B) const {
-//#ifdef()
-//  assert(this->colms() == B.myrows());
-//#endif 
-    SparseMatrix<T> C(this->myrows(),B.colms());
-    const char transa = 'N';
-    const char transb = 'N';
-    const double one=1.0;
-    const double zero=0.0;
-    // C = A*B -> fortran -> C' = B'*A', 
-    BLAS::gemm(transa,transb, B.colms(), this->myrows(), this->colms(),
-               one, B.data(), B.colms(), this->data(), this->colms(),
-                         zero, C.data(), this->colms());
-    return C; 
-  }
-*/
   friend std::ostream& operator<<(std::ostream& out, const SparseMatrix<T>& rhs)
   {
     for(int i=0; i<rhs.vals.size(); i++)
@@ -673,35 +636,13 @@ class SparseMatrix
   bool zero_based;
   int storage_format; // 0: CSR, 1: Compressed Matrix (ESSL) 
   int max_in_row;
+  Type_t zero; // zero for return value
 
   _mySort_snD_ my_sort;
-
-/*
-   struct __mySort_snD__ {
-   bool operator() (const s1D<RealType>& lhs, const s1D<RealType>& rhs)
-   { return (bool)(std::get<0>(lhs) < std::get<0>(rhs));
-   }
-   bool operator() (const s2D<RealType>& lhs, const s2D<RealType>& rhs)
-   { return (bool)(std::get<0>(lhs) < std::get<0>(rhs)) ||
-            ( !(bool)(std::get<0>(rhs) < std::get<0>(lhs)) &&
-               (bool)(std::get<1>(lhs) < std::get<1>(rhs)) );
-   }
-   bool operator() (const s1D<std::complex<RealType> >& lhs, const s1D<std::complex<RealType> >& rhs)
-   { return (bool)(std::get<0>(lhs) < std::get<0>(rhs));
-   }
-   bool operator() (const s2D<std::complex<RealType> >& lhs, const s2D<std::complex<RealType> >& rhs)
-   { return (bool)(std::get<0>(lhs) < std::get<0>(rhs)) ||
-           ( !(bool)(std::get<0>(rhs) < std::get<0>(lhs)) &&
-              (bool)(std::get<1>(lhs) < std::get<1>(rhs)) );
-   }
-  } my_sort;
-*/
- 
 
 };
 
 
 }
 
-#endif
 #endif

@@ -11,6 +11,7 @@ SET (AFQMC_SRCS
   Drivers/AFQMCDriver.cpp 
   Drivers/selectedCI.cpp 
   Drivers/VMCDriver.cpp 
+  Drivers/BenchmarkDriver.cpp
   Hamiltonians/SparseGeneralHamiltonian.cpp
   Wavefunctions/WavefunctionHandler.cpp
   Wavefunctions/PureSingleDeterminant.cpp
@@ -28,6 +29,11 @@ SET (AFQMC_SRCS
   Utilities/Utils.cpp
   ) 
 
-INCLUDE_DIRECTORIES(/usr/gapps/qmc/libs/INTEL/eigen-eigen-10219c95fe65/)
 ADD_LIBRARY(afqmc ${AFQMC_SRCS})
+
+IF (BUILD_UNIT_TESTS)
+  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
+  SUBDIRS(Matrix/tests)
+  SUBDIRS(Numerics/tests)
+ENDIF()
 

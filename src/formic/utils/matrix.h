@@ -230,7 +230,7 @@ namespace formic {
     public:
 
       ///////////////////////////////////////////////////////////////////////////////////////////////////
-      /// \brief  constructor without initialization of elements (also the defualt constructor)
+      /// \brief  constructor without initialization of elements (also the default constructor)
       ///
       /// \param[in]      n        the desired number of rows
       /// \param[in]      m        the desired number of columns
@@ -631,7 +631,7 @@ namespace formic {
     public:
 
       ///////////////////////////////////////////////////////////////////////////////////////////////////
-      /// \brief  constructor without initialization of elements (also the defualt constructor)
+      /// \brief  constructor without initialization of elements (also the default constructor)
       ///
       /// \param[in]      n        the desired number of rows
       /// \param[in]      m        the desired number of columns
@@ -1345,7 +1345,7 @@ namespace formic {
     public:
 
       ///////////////////////////////////////////////////////////////////////////////////////////////////
-      /// \brief  constructor without initialization of elements (also the defualt constructor)
+      /// \brief  constructor without initialization of elements (also the default constructor)
       ///
       /// \param[in]      n        the desired number of rows
       ///
@@ -1539,7 +1539,7 @@ namespace formic {
     public:
 
       ///////////////////////////////////////////////////////////////////////////////////////////////////
-      /// \brief  constructor without initialization of elements (also the defualt constructor)
+      /// \brief  constructor without initialization of elements (also the default constructor)
       ///
       /// \param[in]      n        the desired number of columns
       ///

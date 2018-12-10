@@ -17,7 +17,7 @@
  */
 #ifndef QMCPLUSPLUS_ION_ORBITAL
 #define QMCPLUSPLUS_ION_ORBITAL
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 
@@ -26,14 +26,16 @@ namespace qmcplusplus
 
 /** A composite Orbital
  */
-struct IonOrbital : public OrbitalBase
+struct IonOrbital : public WaveFunctionComponent
 {
 private:
   ParticleAttrib<RealType> U,d2U;
   ParticleAttrib<PosType> dU;
   RealType *FirstAddressOfdU, *LastAddressOfdU;
-  DistanceTableData* d_table;
-  ParticleSet &CenterRef, &PtclRef;
+  ///table index
+  int myTableID;
+  ///orbital centers
+  ParticleSet &CenterRef;
   int NumTargetPtcls, NumCenters;
   RealType curVal, curLap;
   PosType curGrad;
@@ -63,17 +65,8 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L);
-
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
-
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL);
 
   ValueType ratio(ParticleSet& P, int iat);
 
@@ -81,34 +74,20 @@ public:
 
   void restore(int iat);
 
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
   RealType
-  registerData(ParticleSet& P, BufferType& buf);
-
-  RealType
-  updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch);
+  updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch);
 
   void
-  copyFromBuffer(ParticleSet& P, BufferType& buf);
-
-  RealType
-  evaluateLog(ParticleSet& P,BufferType& buf);
+  copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   GradType evalGrad(ParticleSet& P, int iat);
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
 
-  OrbitalBase* makeClone(ParticleSet& tqp) const;
-
-  ValueType
-  logRatio(ParticleSet& P, int iat,
-           ParticleSet::ParticleGradient_t& dG,
-           ParticleSet::ParticleLaplacian_t& dL);
+  WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
 
   void evaluateLogAndStore(ParticleSet& P,
                            ParticleSet::ParticleGradient_t& dG,
@@ -118,8 +97,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: esler $
- * $Revision: 3848 $   $Date: 2009-05-20 12:38:03 -0500 (Wed, 20 May 2009) $
- * $Id: IonOrbital.h 3848 2009-05-20 17:38:03Z jnkim $
- ***************************************************************************/

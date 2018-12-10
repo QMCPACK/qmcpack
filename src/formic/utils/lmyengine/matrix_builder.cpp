@@ -254,10 +254,10 @@ void cqmc::engine::HamOvlpBuilderHD::finish_sample(const double total_weight)
   //std::cout << "netering matrix build finish_sample3" << std::endl;
 
   // mpi reduce 
-  formic::mpi::reduce(&_hmat_temp[0].at(0,0), &_hmat.at(0,0), _hmat_temp[0].size(), MPI::SUM);
-  formic::mpi::reduce(&_smat_temp[0].at(0,0), &_smat.at(0,0), _smat_temp[0].size(), MPI::SUM);
+  formic::mpi::reduce(&_hmat_temp[0].at(0,0), &_hmat.at(0,0), _hmat_temp[0].size(), MPI_SUM);
+  formic::mpi::reduce(&_smat_temp[0].at(0,0), &_smat.at(0,0), _smat_temp[0].size(), MPI_SUM);
   if ( _ss_build ) 
-    formic::mpi::reduce(&_ssmat_temp[0].at(0,0), &_ssmat.at(0,0), _ssmat_temp[0].size(), MPI::SUM);   
+    formic::mpi::reduce(&_ssmat_temp[0].at(0,0), &_ssmat.at(0,0), _ssmat_temp[0].size(), MPI_SUM);
 
   //std::cout << "netering matrix build finish_sample4" << std::endl;
  
@@ -417,23 +417,23 @@ void cqmc::engine::HamOvlpBuilderHD::MatrixBuild(std::ostream & output)
   x[1] = _vgsa;
 
   // all reduce 
-  formic::mpi::allreduce(x, y, nred, MPI::SUM);
+  formic::mpi::allreduce(x, y, nred, MPI_SUM);
 
   // record results
   _total_weight = y[0];
   _vgsa = y[1] / _total_weight;
 
   // now do mpi reduce 
-  formic::mpi::reduce(&_hmat_temp.at(0,0), &_hmat.at(0,0), _hmat_temp.size(), MPI::SUM);
-  formic::mpi::reduce(&_smat_temp.at(0,0), &_smat.at(0,0), _smat_temp.size(), MPI::SUM);
+  formic::mpi::reduce(&_hmat_temp.at(0,0), &_hmat.at(0,0), _hmat_temp.size(), MPI_SUM);
+  formic::mpi::reduce(&_smat_temp.at(0,0), &_smat.at(0,0), _smat_temp.size(), MPI_SUM);
 
   // if doing variance correct calculation, reduce nomral linear method overlap matrix 
   if ( _variance_correct ) 
-    formic::mpi::reduce(&_lsmat_temp.at(0,0), &_lsmat.at(0,0), _lsmat_temp.size(), MPI::SUM);
+    formic::mpi::reduce(&_lsmat_temp.at(0,0), &_lsmat.at(0,0), _lsmat_temp.size(), MPI_SUM);
 
   // if requested, also reduce S^2 matrix 
   if ( _ss_build ) 
-    formic::mpi::reduce(&_ssmat_temp.at(0,0), &_ssmat.at(0,0), _ssmat_temp.size(), MPI::SUM);
+    formic::mpi::reduce(&_ssmat_temp.at(0,0), &_ssmat.at(0,0), _ssmat_temp.size(), MPI_SUM);
 
   // finally
   _hmat /= (_total_weight * _vgsa);
@@ -507,8 +507,8 @@ double cqmc::engine::HamOvlpBuilderHD::MatrixAbsorb()
   x_appro[1] = _vgsa_appro;
 
   // all reduce 
-  formic::mpi::allreduce(x, y, nred, MPI::SUM);
-  formic::mpi::allreduce(x_appro, y_appro, nred, MPI::SUM);
+  formic::mpi::allreduce(x, y, nred, MPI_SUM);
+  formic::mpi::allreduce(x_appro, y_appro, nred, MPI_SUM);
 
   // record results
   _total_weight = y[0];
@@ -577,7 +577,7 @@ void cqmc::engine::HamOvlpBuilderHD::reset()
 // \brief  Converts the input matrix by combining derivatives for dependent variables into 
 //         derivative for independent variables
 //
-// \param[in]         deps     object decribing the variable dependencies
+// \param[in]         deps     object describing the variable dependencies
 // \param[in, out]    mat      the matrix to be converted
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::HamOvlpBuilderHD::convert_to_ind_var_form(const formic::VarDeps * dep_ptr, formic::Matrix<double> & mat)
@@ -613,7 +613,7 @@ void cqmc::engine::HamOvlpBuilderHD::convert_to_ind_var_form(const formic::VarDe
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
-// \brief do D^(-1/2) transfrom on hamiltonian and overlap matrix 
+// \brief do D^(-1/2) transform on hamiltonian and overlap matrix 
 //
 //
 //

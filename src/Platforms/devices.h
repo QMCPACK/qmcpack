@@ -23,7 +23,6 @@
 #ifdef QMC_CUDA
 #include "Configuration.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/CommOperators.h"
 #include <cuda_runtime_api.h>
 #include <unistd.h>
@@ -77,6 +76,11 @@ inline int get_device_num()
 
   number_ranks[0] = 0;
   cuda_devices[0]=get_num_appropriate_devices();
+
+  if (cuda_devices[0]==0)
+  {
+    APP_ABORT("get_device_num: One or more MPI ranks have 0 available/eligible CUDA devices");
+  }
 
   int relative_ranknum = 0;
   int num_nodes=0;
@@ -165,7 +169,8 @@ inline void set_appropriate_device_num(int num)
         cudaSetDevice (device);
         set_cuda_device=true;
         std::ostringstream out;
-        out << "<- Rank " << OHMMS::Controller->rank() << " has acquired CUDA device #" << device << std::endl;
+        out << "<- Rank " << OHMMS::Controller->rank() << " will use CUDA device #" << device ;
+        out << " (" << deviceProp.name << ")" << std::endl;
         std::cerr << out.str();
         std::cerr.flush();
         break; // the device is set, nothing more to do here

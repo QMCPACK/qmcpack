@@ -10,9 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-#include "Utilities/OhmmsInfo.h"
+
+
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
@@ -24,7 +23,7 @@ namespace qmcplusplus
 
 GTOMolecularOrbitals::GTOMolecularOrbitals(ParticleSet& els, TrialWaveFunction& psi,
     ParticleSet& ions):
-  OrbitalBuilderBase(els,psi), IonSys(ions), Normalized(false),BasisSet(0), d_table(0)
+  WaveFunctionComponentBuilder(els,psi), IonSys(ions), Normalized(false),BasisSet(0), d_table(0)
 {
   //int d_ie = DistanceTable::add(ions,els);
   d_table = DistanceTable::add(ions,els);
@@ -310,8 +309,3 @@ GTOMolecularOrbitals::expandYlm(const std::string& rnl, const QuantumNumberType&
   return num;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -26,7 +26,7 @@ namespace qmcplusplus
 /** @ingroup longrange
  *\brief A derivative of LRBasis class to provide the functionality
  * of the LPQHI basis.  A 1/r factor is incorporated into the basis functions
- * to faciliate real space representation of the short-ranged coulomb potential, 
+ * to facilitate real space representation of the short-ranged coulomb potential, 
  * following Natoli & Ceperley's 1995 paper on Optimized Breakup.  http://dx.doi.org/10.1006/jcph.1995.1054.
  */
 
@@ -103,7 +103,6 @@ public:
     mRealType ra = delta*(i-1);
     mRealType rb = delta*i;
     mRealType rc = delta*(i+1);
-    mRealType rinv = 1.0/r;
     rc = std::min(m_rc, rc);
     const mRealType* restrict Sa(S[alpha]);
     if(r<ra || r>rc)

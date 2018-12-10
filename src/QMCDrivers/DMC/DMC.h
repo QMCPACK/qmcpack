@@ -5,6 +5,7 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
@@ -14,26 +15,33 @@
     
 
 
-#ifndef QMCPLUSPLUS_DMC_MASTERDRIVER_H
-#define QMCPLUSPLUS_DMC_MASTERDRIVER_H
+/** @file DMC.h
+ * @brief Define OpenMP-able DMC Driver.
+ */
+#ifndef QMCPLUSPLUS_DMC_H
+#define QMCPLUSPLUS_DMC_H
 #include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/CloneManager.h"
 namespace qmcplusplus
 {
 
-class QMCUpdateBase;
-
 /** @ingroup QMCDrivers
- *@brief A dummy QMCDriver for testing
+ * @brief DMC driver using OpenMP paragra
+ *
+ * This is the main DMC driver with MPI/OpenMP loops over the walkers.
  */
-class DMC: public QMCDriver
+class DMC: public QMCDriver, public CloneManager
 {
 public:
 
   /// Constructor.
-  DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+  DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+         WaveFunctionPool& ppool, Communicate* comm);
 
   bool run();
   bool put(xmlNodePtr cur);
+  void setTau(RealType i);
+  void resetComponents(xmlNodePtr cur);
 
 private:
   ///Index to determine what to do when node crossing is detected
@@ -50,24 +58,17 @@ private:
   std::string Reconfiguration;
   ///input std::string to determine to use nonlocal move
   std::string NonLocalMove;
-  ///input std::string to benchmark OMP performance
-  std::string BenchMarkRun;
-  ///update engine
-  QMCUpdateBase* Mover;
-  ///initialize
-  void resetUpdateEngine();
+  ///input std::string to use fast gradient
+  std::string UseFastGrad;
+  ///input to control maximum age allowed for walkers.
+  IndexType mover_MaxAge;
+
+  void resetUpdateEngines();
   /// Copy Constructor (disabled)
-  DMC(const DMC& a): QMCDriver(a) { }
+  DMC(const DMC &) = delete;
   /// Copy operator (disabled).
-  DMC& operator=(const DMC&)
-  {
-    return *this;
-  }
+  DMC & operator=(const DMC&) = delete;
 };
 }
+
 #endif
-/***************************************************************************
- * $RCSfile: DMC.h,v $   $Author: jnkim $
- * $Revision: 1592 $   $Date: 2007-01-04 16:48:00 -0600 (Thu, 04 Jan 2007) $
- * $Id: DMC.h 1592 2007-01-04 22:48:00Z jnkim $
- ***************************************************************************/

@@ -24,7 +24,7 @@
 
 namespace optimize
 {
-/** An enum useful for determing the type of parameter is being optimized.
+/** An enum useful for determining the type of parameter is being optimized.
 *   knowing this in the opt routine can reduce the computational load.
 */
 enum
@@ -271,9 +271,24 @@ struct VariableSet
 //       void insertTo(variable_map_type& output) const;
 
   /** insert a VariableSet to the list
-   * @param input varaibles
+   * @param input variables
    */
   void insertFrom(const VariableSet& input);
+
+  /** sum together the values of the optimizable parameter values in
+   *  two VariableSet objects, and set this object's values to equal them.
+   *  @param first set of input variables
+   *  @param second set of input variables
+   */
+  void insertFromSum(const VariableSet& input_1, const VariableSet& input_2);
+
+  /** take the difference (input_1-input_2) of values of the optimizable
+   *  parameter values in two VariableSet objects, and set this object's
+   *  values to equal them.
+   *  @param first set of input variables
+   *  @param second set of input variables
+   */
+  void insertFromDiff(const VariableSet& input_1, const VariableSet& input_2);
 
   /** activate variables for optimization
    * @param first iterator of the first name
@@ -335,7 +350,7 @@ struct VariableSet
   // */
   //void activate(const std::vector<std::string>& selected, bool reindex);
 
-  /** exlcude variables
+  /** exclude variables
    * @param selected name-value pairs that should be dropped from the set
    */
   void disable(const variable_map_type& selected);
@@ -364,8 +379,3 @@ struct VariableSet
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2550 $   $Date: 2008-03-26 15:17:43 -0500 (Wed, 26 Mar 2008) $
- * $Id: VarList.h 2550 2008-03-26 20:17:43Z jnkim $
- ***************************************************************************/

@@ -270,22 +270,38 @@ class PhysicalSystem(Matter):
         #end if
 
         self.folded_system = None
-        if self.structure.folded_structure!=None:
-            vratio = structure.volume()/structure.folded_structure.volume()
-            ncells = int(round(vratio))
-            if abs(vratio-ncells)>1e-4:
-                self.error('volume of system does not divide evenly into folded system')
+        if self.structure.has_folded():
+            if self.structure.is_tiled():
+                vratio = structure.volume()/structure.folded_structure.volume()
+                ncells = int(round(vratio))
+                if abs(vratio-ncells)>1e-4:
+                    self.error('volume of system does not divide evenly into folded system')
+                #end if
+                if net_charge%ncells!=0:
+                    self.error('net charge of system does not divide evenly into folded system')
+                #end if
+                if isinstance(net_spin,str):
+                    net_spin_fold = net_spin
+                elif net_spin%ncells!=0:
+                    self.error('net_spin of system does not divide evenly into folded system')
+                else:
+                    net_spin_fold = net_spin/ncells 
+                #end if
+                net_charge_fold = net_charge/ncells
+            elif not self.structure.has_axes(): # folded molecule
+                # net charge/spin are not physically meaningful
+                # for a point group folded molecule
+                # set them to safe values; they will not be used later
+                net_charge_fold = 0
+                net_spin_fold   = 'low'
+            else:
+                self.error('folded structure is not correctly integrated with full structure\nfolded physical system cannot be constructed')
             #end if
-            if net_charge%ncells!=0:
-                self.error('net charge of system does not divide evenly into folded system')
-            #end if
-            if net_spin%ncells!=0:
-                self.error('net_spin of system does not divide evenly into folded system')
-            #end if
+                
             self.folded_system = PhysicalSystem(
                 structure  = structure.folded_structure,
-                net_charge = net_charge/ncells,
-                net_spin   = net_spin/ncells,
+                net_charge = net_charge_fold,
+                net_spin   = net_spin_fold,
                 particles  = particles,
                 **valency
                 )
@@ -396,16 +412,48 @@ class PhysicalSystem(Matter):
     #end def pseudize
 
         
-    def check_folded_system(self):
+    def check_folded_system(self,exit=True,message=False):
+        msg = ''
         sys_folded    = self.folded_system!=None
         struct_folded = self.structure.folded_structure!=None
         if sys_folded!=struct_folded:
-            self.error('folding of physical system and structure is not consistent\n  system folded: {0}\n  structure folded: {1}'.format(sys_folded,struct_folded))
+            msg+='folding of physical system and structure is not consistent\nsystem folded: {0}\nstructure folded: {1}\n'.format(sys_folded,struct_folded)
         #end if
         if sys_folded and id(self.structure.folded_structure)!=id(self.folded_system.structure):
-            self.error('structure of folded system and folded structure are distinct\n  this is not allowed and may be a developer error')
+            msg+='structure of folded system and folded structure are distinct\nthis is not allowed and may be a developer error'
+        #end if
+        success = len(msg)==0
+        if not success and exit:
+            self.error(msg)
+        #end if
+        if not message:
+            return success
+        else:
+            return success,msg
         #end if
     #end def check_folded_system
+
+
+    def check_consistent(self,tol=1e-8,exit=True,message=False):
+        fs,fm = self.check_folded_system(exit=False,message=True)
+        cs,cm = self.structure.check_consistent(tol,exit=False,message=True)
+        msg = ''
+        if not fs:
+            msg += fm+'\n'
+        #end if
+        if not cs:
+            msg += cm+'\n'
+        #end if
+        consistent = len(msg)==0
+        if not consistent and exit:
+            self.error(msg)
+        #end if
+        if not message:
+            return consistent
+        else:
+            return consistent,msg
+        #end if
+    #end def check_consistent
 
 
     def change_units(self,units):
@@ -623,14 +671,31 @@ def generate_physical_system(**kwargs):
     if 'structure' in kwargs:
         s = kwargs['structure']
         is_str = isinstance(s,str)
-        if is_str and os.path.exists(s):# and '.' in os.path.split(s)[1]:
-            if 'elem' in kwargs:
-                kwargs['structure'] = read_structure(s,elem=kwargs['elem'])
+        if is_str:
+            if os.path.exists(s):
+                if 'elem' in kwargs:
+                    s = read_structure(s,elem=kwargs['elem'])
+                else:
+                    s = read_structure(s)
+                #end if
+                if 'axes' in kwargs:
+                    s.reset_axes(kwargs['axes'])
+                #end if
+                kwargs['structure'] = s
             else:
-                kwargs['structure'] = read_structure(s)
+                slow = s.lower()
+                format = None
+                if '.' in slow:
+                    format = slow.rsplit('.')[1]
+                elif 'poscar' in slow:
+                    format = 'poscar'
+                #end if
+                is_path = '/' in s
+                is_file = format in set('xyz xsf poscar cif fhi-aims'.split())
+                if is_path or is_file:
+                    PhysicalSystem.class_error('user provided structure file does not exist\nstructure file path: '+s,'generate_physical_system')
+                #end if
             #end if
-        elif is_str and '/' in s:
-            PhysicalSystem.class_error('path provided for structure file does not exist: '+s,'generate_physical_system')
         #end if
     #end if
 
@@ -694,7 +759,9 @@ def generate_physical_system(**kwargs):
         if extensive:
             ncells = int(round(structure.volume()/folded_structure.volume()))
             net_charge = ncells*net_charge
-            net_spin   = ncells*net_spin
+            if not isinstance(net_spin,str):
+                net_spin   = ncells*net_spin
+            #end if
         #end if
         if tiled_spin!=None:
             net_spin = tiled_spin

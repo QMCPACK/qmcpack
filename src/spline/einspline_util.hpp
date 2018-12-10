@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 #define QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 
+#include <mpi/mpi_datatype.h>
 #include <Message/CommOperators.h>
 #include <OhmmsData/FileUtility.h>
 #include <io/hdf_archive.h>
@@ -34,7 +35,7 @@ namespace qmcplusplus
     if(comm->size()==1) return;
 
     size_t chunk_size=(1<<30)/sizeof(T); //256 MB
-    int n=static_cast<int>(ntot/chunk_size); 
+    int n=static_cast<int>(ntot/chunk_size);
 
     size_t offset=0;
     for(int i=0; i<n; ++i, offset+=chunk_size)
@@ -54,26 +55,77 @@ namespace qmcplusplus
     chunked_bcast(comm,buffer->coefs, buffer->coefs_size);
   }
 
+  template<typename ENGT>
+  inline void gatherv(Communicate* comm, ENGT* buffer, const int ncol, std::vector<int> &offset)
+  {
+    std::vector<int> counts(offset.size()-1,0);
+    for(size_t ib=0; ib<counts.size(); ib++)
+      counts[ib] = offset[ib+1] - offset[ib];
+    if( buffer->coefs_size / ncol > (1<<20) )
+    {
+      const size_t xs = buffer->x_stride;
+      const size_t nx = buffer->coefs_size / xs;
+      const int nrow = buffer->coefs_size / (ncol*nx);
+      MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
+      for(size_t iz=0; iz<nx; iz++)
+        comm->gatherv_in_place(buffer->coefs+xs*iz, columntype, counts, offset);
+      mpi::free_column_type(columntype);
+    }
+    else
+    {
+      const int nrow = buffer->coefs_size / ncol;
+      MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
+      comm->gatherv_in_place(buffer->coefs, columntype, counts, offset);
+      mpi::free_column_type(columntype);
+    }
+  }
+
+  template<unsigned DIM>
+  struct dim_traits {};
+
+  // for 3D multi
+  template<>
+  struct dim_traits<4>
+  {
+    template<typename data_type>
+    static void setdim(data_type& a, hsize_t* dims)
+    {
+      dims[0]=a.spliner->x_grid.num+3;
+      dims[1]=a.spliner->y_grid.num+3;
+      dims[2]=a.spliner->z_grid.num+3;
+      dims[3]=a.spliner->z_stride;
+    }
+  };
+
+  // for 1D multi
+  template<>
+  struct dim_traits<2>
+  {
+    template<typename data_type>
+    static void setdim(data_type& a, hsize_t* dims)
+    {
+      dims[0]=a.spliner->x_grid.num+2;
+      dims[1]=a.spliner->x_stride;
+    }
+  };
 
   /** specialization of h5data_proxy for einspline_engine
    */
   template<typename ENGT>
     struct h5data_proxy<einspline_engine<ENGT> >
-    : public h5_space_type<typename einspline_engine<ENGT>::value_type,4>
+    : public h5_space_type<typename einspline_engine<ENGT>::value_type, einspline_engine<ENGT>::D+1 >
   {
+    enum {D=einspline_engine<ENGT>::D};
     typedef typename einspline_engine<ENGT>::value_type value_type;
-    using h5_space_type<value_type,4>::dims;
-    using h5_space_type<value_type,4>::get_address;
+    using h5_space_type<value_type,D+1>::dims;
+    using h5_space_type<value_type,D+1>::get_address;
     typedef einspline_engine<ENGT> data_type;
 
     data_type& ref_;
 
     inline h5data_proxy(data_type& a): ref_(a)
     {
-      dims[0]=a.spliner->x_grid.num+3;
-      dims[1]=a.spliner->y_grid.num+3;
-      dims[2]=a.spliner->z_grid.num+3;
-      dims[3]=a.spliner->z_stride;
+      dim_traits<D+1>::setdim(a,dims);
     }
 
     inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)

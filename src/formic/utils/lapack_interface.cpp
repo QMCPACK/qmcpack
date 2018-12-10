@@ -76,6 +76,8 @@ double formic::ddot(int n, const double *x, int incx, const double *y, int incy)
 double formic::xdot(int n, const double *x, int incx, const double *y, int incy) {
   return ::FC_GLOBAL(ddot,DDOT)(&n, x, &incx, y, &incy);
 }
+
+/* commented to avoid compiler error.
 std::complex<double> formic::zdot(int n, const std::complex<double> *x, int incx, const std::complex<double> *y, int incy) {
   #ifdef FORMIC_HAVE_MKL
   std::complex<double> retval;
@@ -89,6 +91,7 @@ std::complex<double> formic::zdot(int n, const std::complex<double> *x, int incx
 std::complex<double> formic::xdot(int n, const std::complex<double> *x, int incx, const std::complex<double> *y, int incy) {
   return formic::zdot(n, x, incx, y, incy);
 }
+*/
 
 double formic::ddotc(int n, const double *x, int incx, const double *y, int incy) {
   return ::FC_GLOBAL(ddot,DDOT)(&n, x, &incx, y, &incy);
@@ -96,6 +99,8 @@ double formic::ddotc(int n, const double *x, int incx, const double *y, int incy
 double formic::xdotc(int n, const double *x, int incx, const double *y, int incy) {
   return ::FC_GLOBAL(ddot,DDOT)(&n, x, &incx, y, &incy);
 }
+
+/* commented to avoid compiler error.
 std::complex<double> formic::zdotc(int n, const std::complex<double> *x, int incx, const std::complex<double> *y, int incy) {
   #ifdef FORMIC_HAVE_MKL
   std::complex<double> retval;
@@ -108,6 +113,7 @@ std::complex<double> formic::zdotc(int n, const std::complex<double> *x, int inc
 std::complex<double> formic::xdotc(int n, const std::complex<double> *x, int incx, const std::complex<double> *y, int incy) {
   return formic::zdotc(n, x, incx, y, incy);
 }
+*/
 
 void formic::dgemv(char trans, int m, int n,
                    double alpha, const double *a, int lda, const double *x, int incx,

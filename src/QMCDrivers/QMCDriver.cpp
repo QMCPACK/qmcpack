@@ -19,7 +19,6 @@
 
 
 #include "QMCDrivers/QMCDriver.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -45,13 +44,15 @@
 #else
 typedef int TraceManager;
 #endif
-
+#ifdef QMC_CUDA
+#include "type_traits/CUDATypes.h"
+#endif
 
 namespace qmcplusplus
 {
 
-QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool)
-  : MPIObjectBase(0), branchEngine(0), W(w), Psi(psi), H(h), psiPool(ppool),
+QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm)
+  : MPIObjectBase(comm), branchEngine(0), W(w), Psi(psi), H(h), psiPool(ppool),
     Estimators(0),Traces(0), qmcNode(NULL), wOut(0)
 {
   ResetRandom=false;
@@ -121,12 +122,13 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   m_param.add(MaxCPUSecs,"maxcpusecs","real");
   // by default call recompute at the end of each block in the mixed precision case.
 #ifdef QMC_CUDA
-  if (typeid(CudaRealType) == typeid(float))
+  using CTS = CUDAGlobalTypes;
+  if (typeid(CTS::RealType) == typeid(float))
   {
     // gpu mixed precision
     nBlocksBetweenRecompute = 1;
   }
-  else if (typeid(CudaRealType) == typeid(double))
+  else if (typeid(CTS::RealType) == typeid(double))
   {
     // gpu double precision
     nBlocksBetweenRecompute = 0;
@@ -146,6 +148,8 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
   rotation = 0;
+
+  checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
 }
 
 QMCDriver::~QMCDriver()
@@ -197,7 +201,7 @@ void QMCDriver::process(xmlNodePtr cur)
   Estimators = branchEngine->getEstimatorManager();
   if(Estimators==0)
   {
-    Estimators = new EstimatorManager(myComm);
+    Estimators = new EstimatorManagerBase(myComm);
     branchEngine->setEstimatorManager(Estimators);
     branchEngine->read(h5FileRoot);
   }
@@ -223,7 +227,8 @@ void QMCDriver::process(xmlNodePtr cur)
     ResetRandom=false;
   }
   //flush the std::ostreams
-  OhmmsInfo::flush();
+  infoSummary.flush();
+  infoLog.flush();
   //increment QMCCounter of the branch engine
   branchEngine->advanceQMCCounter();
 }
@@ -309,7 +314,7 @@ void QMCDriver::adiosCheckpoint(int block)
 #ifdef HAVE_ADIOS
   int64_t adios_handle;
   uint64_t adios_groupsize, adios_totalsize;
-  EstimatorManager* myEstimator = branchEngine->getEstimatorManager();
+  EstimatorManagerBase* myEstimator = branchEngine->getEstimatorManager();
   if (sizeof(OHMMS_PRECISION) == sizeof(double))
   {
     adios_open(&adios_handle, "checkpoint_double", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());
@@ -434,6 +439,7 @@ void QMCDriver::recordBlock(int block)
 {
   if(DumpConfig && block % Period4CheckPoint == 0)
   {
+    checkpointTimer->start();
     if(ADIOS::useADIOS())
     {
       adiosCheckpoint(block);
@@ -444,6 +450,7 @@ void QMCDriver::recordBlock(int block)
     }
     branchEngine->write(RootName,true); //save energy_history
     RandomNumberControl::write(RootName,myComm);
+    checkpointTimer->stop();
   }
 }
 
@@ -462,7 +469,8 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
     //Estimators->finalize();
     nTargetWalkers = W.getActiveWalkers();
     MyCounter++;
-    OhmmsInfo::flush();
+    infoSummary.flush();
+    infoLog.flush();
   }
 
   branchEngine->finalize(W);
@@ -659,8 +667,3 @@ xmlNodePtr QMCDriver::getQMCNode()
 }
 
 
-/***************************************************************************
- * $RCSfile: QMCDriver.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

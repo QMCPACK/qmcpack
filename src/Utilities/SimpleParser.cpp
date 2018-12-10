@@ -20,7 +20,8 @@
 
 #include <cstdio>
 #include <cstring>
-
+#include <regex>
+#include <string>
 
 #include "Utilities/SimpleParser.h"
 #include <algorithm>
@@ -129,7 +130,26 @@ int getwords(std::vector<std::string>& slist, std::istream &fp, int dummy /* = 0
     return -1;
 }
 
-
+// Variation of getwords that splits merged numbers due to fortran fixed format 
+// Handles unambiguous cases with minus signs only "123-456" -> "123 -456"
+int getwordsWithMergedNumbers(std::vector<std::string>& slist, std::istream &fp, int dummy /* = 0*/,
+             const std::string &extra_tokens /* ="" */)
+{
+  const int max = 1024;
+  char s[max];
+  if(readLine(s,max,fp))
+    {
+      std::regex dash("-");
+      const std::string space_dash(" -");
+      std::string merged(s);
+      std::string unmerged=std::regex_replace(merged,dash,space_dash,std::regex_constants::format_default); 
+      return parsewords(unmerged.c_str(),slist,extra_tokens);
+    }
+  else
+    {
+      return -1;
+    }
+}
 
 void readXmol( std::istream& fxmol,double* data,int numvar)
 {
@@ -284,8 +304,3 @@ getXwords(std::vector<std::string>& slist,std::istream& fpos, const char* termin
   return slist.size();
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

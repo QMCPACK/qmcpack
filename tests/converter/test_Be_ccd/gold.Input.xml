@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<simulation>
+  <!-- Name and Series number of the project.
+-->
+  <project id="gold" series="0"/>
+  <!-- Link to the location of the Atomic Coordinates and the location of the Wavefunction.-->
+  <include href="gold.structure.xml"/>
+  <include href="gold.wfnoj.xml"/>
+  <!-- Hamiltonian of the system. Default ECP name is assumed. Please rename for the type of ECP you will be using.-->
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="PseudoPot" type="pseudo" source="ion0" wavefunction="psi0" format="xml">
+      <pseudo elementType="Be" href="Be.qmcpp.xml"/>
+    </pairpot>
+  </hamiltonian>
+  <!-- 
+ OPTIMIZATION BLOCK!!!!.
+ First VMC Block helps with equilibration!!!.
+-->
+  <qmc method="vmc" move="pbyp" checkpoint="-1" gpu="no">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers">1</parameter>
+    <parameter name="samplesperthread">1</parameter>
+    <parameter name="stepsbetweensamples">10</parameter>
+    <parameter name="substeps">5</parameter>
+    <parameter name="warmupSteps">20</parameter>
+    <parameter name="blocks">10</parameter>
+    <parameter name="timestep">0.5</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+  <!-- 
+ First loop to optimize the Jastrow Coefficients!!!.
+ This First loop has a loose acceptance criterion for cases
+ cases where the starting Jastrow parameters are too far off
+-->
+  <loop max="4">
+    <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="blocks">20</parameter>
+      <parameter name="warmupSteps">2</parameter>
+      <parameter name="timestep">0.5</parameter>
+      <parameter name="walkers">1</parameter>
+      <parameter name="samples">8000</parameter>
+      <parameter name="substeps">5</parameter>
+      <parameter name="usedrift">no</parameter>
+      <parameter name="MinMethod">OneShiftOnly</parameter>
+      <parameter name="minwalkers">0.0001</parameter>
+    </qmc>
+  </loop>
+  <!-- 
+ Final loops to optimize the Jastrow Coefficients!!!.
+ This loop has a strict acceptance criterion
+-->
+  <loop max="10">
+    <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="blocks">40</parameter>
+      <parameter name="warmupSteps">5</parameter>
+      <parameter name="timestep">0.5</parameter>
+      <parameter name="walkers">1</parameter>
+      <parameter name="samples">16000</parameter>
+      <parameter name="substeps">5</parameter>
+      <parameter name="usedrift">no</parameter>
+      <parameter name="MinMethod">OneShiftOnly</parameter>
+      <parameter name="minwalkers">0.5</parameter>
+    </qmc>
+  </loop>
+  <!--
+ VMC AND DMC BLOCKS.
+ ==================.
+ Update JASTROW Parameters in the Wavefunction file
+ to the one that minimize the energy before runing
+ these blocks. Otherwise, you will be running the last
+ set of Jastrows which are not necesseraly the best ones.
+-->
+  <qmc method="vmc" move="pbyp" checkpoint="-1" gpu="no">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers">1</parameter>
+    <parameter name="samplesperthread">1</parameter>
+    <parameter name="stepsbetweensamples">10</parameter>
+    <parameter name="substeps">30</parameter>
+    <parameter name="warmupSteps">100</parameter>
+    <parameter name="blocks">200</parameter>
+    <parameter name="timestep">0.1</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="20" gpu="no">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="targetwalkers">16000</parameter>
+    <parameter name="reconfiguration">no</parameter>
+    <parameter name="warmupSteps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+    <parameter name="steps">20</parameter>
+    <parameter name="blocks">1000</parameter>
+    <parameter name="nonlocalmoves">yes</parameter>
+  </qmc>
+</simulation>

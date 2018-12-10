@@ -15,14 +15,13 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
@@ -42,7 +41,6 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSet ions;
   ParticleSet elec;
@@ -90,7 +88,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.resetGroups();
   elec.update();
 
@@ -131,25 +129,21 @@ const char *particles =
   pw_builder.put(pw1);
 
   REQUIRE(psi.getOrbitals().size() == 1);
-  OrbitalBase *orb = psi.getOrbitals()[0];
+  WaveFunctionComponent *orb = psi.getOrbitals()[0];
   SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetBasePtr spo = sd->mySPOSet.begin()->second;
+  SPOSetPtr spo = sd->mySPOSet.begin()->second;
   REQUIRE(spo != NULL);
-  //SPOSetBase *spo = einSet.createSPOSetFromXML(ein1);
+  //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
 
   int orbSize= spo->getOrbitalSetSize();
   elec.update();
-  SPOSetBase::ValueVector_t orbs(orbSize);
+  SPOSet::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
-#ifdef QMC_COMPLEX
-  REQUIRE(orbs[0].real() == Approx(-1.2473558998));
-#else
-  REQUIRE(orbs[0] == Approx(-1.2473558998));
-#endif
+  REQUIRE(orbs[0] == ComplexApprox(-1.2473558998).compare_real_only());
 
 #if 0
   // Dump values of the orbitals
@@ -169,7 +163,7 @@ const char *particles =
         elec.R[0][1] = y;
         elec.R[0][2] = z;
         elec.update();
-        SPOSetBase::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector_t orbs(orbSize);
         spo->evaluate(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
@@ -195,7 +189,6 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSet ions;
   ParticleSet elec;
@@ -249,7 +242,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.resetGroups();
   elec.update();
 
@@ -290,25 +283,21 @@ const char *particles =
   pw_builder.put(pw1);
 
   REQUIRE(psi.getOrbitals().size() == 1);
-  OrbitalBase *orb = psi.getOrbitals()[0];
+  WaveFunctionComponent *orb = psi.getOrbitals()[0];
   SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetBasePtr spo = sd->mySPOSet.begin()->second;
+  SPOSetPtr spo = sd->mySPOSet.begin()->second;
   REQUIRE(spo != NULL);
-  //SPOSetBase *spo = einSet.createSPOSetFromXML(ein1);
+  //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
 
   int orbSize= spo->getOrbitalSetSize();
   elec.update();
-  SPOSetBase::ValueVector_t orbs(orbSize);
+  SPOSet::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
-#ifdef QMC_COMPLEX
-  REQUIRE(orbs[0].real() == Approx(-14.3744302974));
-#else
-  REQUIRE(orbs[0] == Approx(-14.3744302974));
-#endif
+  REQUIRE(orbs[0] == ComplexApprox(-14.3744302974).compare_real_only());
 
 #if 0
   // Dump values of the orbitals
@@ -328,7 +317,7 @@ const char *particles =
         elec.R[0][1] = y;
         elec.R[0][2] = z;
         elec.update();
-        SPOSetBase::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector_t orbs(orbSize);
         spo->evaluate(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {

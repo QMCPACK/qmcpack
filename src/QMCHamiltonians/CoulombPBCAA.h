@@ -47,7 +47,7 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
   int ChargeAttribIndx;
   int MemberAttribIndx;
   int NumCenters;
-  RealType myConst;
+  Return_t myConst;
   RealType myRcut;
   std::string PtclRefName;
   std::vector<RealType> Zat,Zspec;
@@ -82,19 +82,6 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 
   void update_source(ParticleSet& s);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
-
-  Return_t registerData(ParticleSet& P, BufferType& buffer);
-  Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
-  void copyToBuffer(ParticleSet& P, BufferType& buf);
-  Return_t evaluatePbyP(ParticleSet& P, int iat);
-  void acceptMove(int iat);
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {
@@ -128,7 +115,6 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
   Return_t evalSRwithForces(ParticleSet& P);
   Return_t evalLRwithForces(ParticleSet& P);
   Return_t evalConsts(bool report=true);
-  Return_t evaluateForPbyP(ParticleSet& P);
 
   void addObservables(PropertySetType& plist, BufferType& collectables);
 
@@ -151,9 +137,4 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

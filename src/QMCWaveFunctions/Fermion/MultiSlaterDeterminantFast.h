@@ -16,8 +16,8 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/OrbitalBase.h>
-#include <QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h>
+#include <QMCWaveFunctions/WaveFunctionComponent.h>
+#include <QMCWaveFunctions/Fermion/MultiDiracDeterminant.h>
 #include <QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "Utilities/NewTimer.h"
@@ -26,8 +26,8 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
- *  @brief An AntiSymmetric OrbitalBase composed of a linear combination of SlaterDeterminants.
+/** @ingroup WaveFunctionComponent
+ *  @brief An AntiSymmetric WaveFunctionComponent composed of a linear combination of SlaterDeterminants.
  *
  *\f[
  *MS({\bf R}) = \sum_n c_n S_n({\bf R})
@@ -50,7 +50,7 @@ namespace qmcplusplus
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
-class MultiSlaterDeterminantFast: public OrbitalBase, public FermionBase
+class MultiSlaterDeterminantFast: public WaveFunctionComponent
 {
 
 public:
@@ -59,9 +59,9 @@ public:
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer, AccRejTimer;
 
-  typedef MultiDiracDeterminantBase*    DiracDeterminantPtr;
-  typedef SPOSetBase*              SPOSetBasePtr;
-  typedef SPOSetProxyForMSD*             SPOSetProxyPtr;
+  typedef MultiDiracDeterminant*    DiracDeterminantPtr;
+  typedef SPOSet*                   SPOSetPtr;
+  typedef SPOSetProxyForMSD*            SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
@@ -75,7 +75,7 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,MultiDiracDeterminantBase* up, MultiDiracDeterminantBase* dn);
+  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,MultiDiracDeterminant* up, MultiDiracDeterminant* dn);
 
   ///destructor
   ~MultiSlaterDeterminantFast();
@@ -96,6 +96,10 @@ public:
     Dets[1]->setBF(bf);
   }
 
+  ValueType
+  evaluate_vgl_impl(ParticleSet& P
+           ,ParticleSet::ParticleGradient_t& g_tmp
+           ,ParticleSet::ParticleLaplacian_t& l_tmp);
 
   ValueType
   evaluate(ParticleSet& P
@@ -107,91 +111,69 @@ public:
               , ParticleSet::ParticleGradient_t& G
               , ParticleSet::ParticleLaplacian_t& L);
 
-  RealType
-  evaluateLog(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& G,
-              ParticleSet::ParticleLaplacian_t& L,
-              PooledData<RealType>& buf,
-              bool fillBuffer );
-
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  ValueType ratio(ParticleSet& P, int iat
-                  , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
+  ValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
 
   ValueType ratio(ParticleSet& P, int iat);
+  ValueType ratio_impl(ParticleSet& P, int iat);
+  void evaluateRatiosAlltoOne(ParticleSet& P, int iat)
+  {
+    // the base class routine may probably work, just never tested.
+    // it can also be highly optimized with a specialized implementation.
+    APP_ABORT(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
+  }
+
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
-  void update(ParticleSet& P
-              , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-              , int iat);
-  RealType evaluateLog(ParticleSet& P,BufferType& buf);
-  RealType registerData(ParticleSet& P, BufferType& buf);
-  void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
-  {
-    Dets[0]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
-    Dets[1]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
-  }
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi);
 
-//      void evaluateDerivatives(ParticleSet& P,
-//                                       const opt_variables_type& optvars,
-//                                       std::vector<RealType>& dlogpsi,
-//                                       std::vector<RealType>& dhpsioverpsi,
-//                                       PooledData<RealType>& buf);
-
   void resize(int,int);
+  void initialize();
 
   void testMSD(ParticleSet& P, int iat);
 
-  int NP;
-  int nels_up,nels_dn;
-  int FirstIndex_up;
-  int FirstIndex_dn;
+  size_t NP;
+  size_t nels_up,nels_dn;
+  size_t FirstIndex_up;
+  size_t FirstIndex_dn;
+  size_t ActiveSpin;
   bool usingCSF;
-
-  // assume Dets[0]: up, Dets[1]:down
-  std::vector<MultiDiracDeterminantBase*> Dets;
-
-  std::vector<int> DetID;
-
-  std::map<std::string,int> SPOSetID;
-
-  // map determinant in linear combination to unique det list
-  std::vector<int> C2node_up;
-  std::vector<int> C2node_dn;
-
-  std::vector<RealType> C;
-
+  bool IsCloned;
   ValueType curRatio;
   ValueType psiCurrent;
 
-  ParticleSet::ParticleValue_t *FirstAddressOfG;
-  ParticleSet::ParticleValue_t *LastAddressOfG;
+  // assume Dets[0]: up, Dets[1]:down
+  std::vector<MultiDiracDeterminant*> Dets;
+  std::map<std::string,size_t> SPOSetID;
+
+  // map determinant in linear combination to unique det list
+  std::vector<size_t>* C2node_up;
+  std::vector<size_t>* C2node_dn;
+  std::vector<RealType>* C;
 
   ParticleSet::ParticleGradient_t myG,myG_temp;
   ParticleSet::ParticleLaplacian_t myL,myL_temp;
   ValueVector_t laplSum_up;
   ValueVector_t laplSum_dn;
 
-  opt_variables_type myVars;
-
-// CSFs
+  //optimizable variable is shared with the clones
+  opt_variables_type* myVars;
   // coefficients of csfs, these are only used during optm
-  std::vector<RealType> CSFcoeff;
+  std::vector<RealType>* CSFcoeff;
   // number of dets per csf
-  std::vector<int> DetsPerCSF;
+  std::vector<size_t>* DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)
-  std::vector<RealType> CSFexpansion;
+  std::vector<RealType>* CSFexpansion;
 
   // transformation
   BackflowTransformation *BFTrans;
@@ -210,8 +192,3 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: miguel.mmorales $
- * $Revision: 4791 $   $Date: 2010-05-12 12:08:35 -0500 (Wed, 12 May 2010) $
- * $Id: MultiSlaterDeterminantFast.h 4791 2010-05-12 17:08:35Z miguel.mmorales $
- ***************************************************************************/

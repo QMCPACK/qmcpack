@@ -25,12 +25,12 @@ namespace formic {
 
   double ddot(int n, const double *x, int incx, const double *y, int incy);
   double xdot(int n, const double *x, int incx, const double *y, int incy);
-  std::complex<double> zdot(int n, const std::complex<double> *x, int incx, const std::complex<double> *y, int incy);
-  std::complex<double> xdot(int n, const std::complex<double> *x, int incx, const std::complex<double> *y, int incy);
+  // std::complex<double> zdot(int n, const std::complex<double> *x, int incx, const std::complex<double> *y, int incy);
+  // std::complex<double> xdot(int n, const std::complex<double> *x, int incx, const std::complex<double> *y, int incy);
 
   double ddotc(int n, const double *x, int incx, const double *y, int incy);
   double xdotc(int n, const double *x, int incx, const double *y, int incy);
-  std::complex<double> zdotc(int n, const std::complex<double> *x, int incx, const std::complex<double> *y, int incy);
+  // std::complex<double> zdotc(int n, const std::complex<double> *x, int incx, const std::complex<double> *y, int incy);
   std::complex<double> xdotc(int n, const std::complex<double> *x, int incx, const std::complex<double> *y, int incy);
 
   void dgemv(char trans, int m, int n,

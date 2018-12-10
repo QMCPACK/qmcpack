@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_STDLIB_PORT_H
 #include <config.h>
 #include <cmath>
-#include <cstdlib>
+
 #ifndef TWOPI
 #ifndef M_PI
 #define TWOPI 6.2831853071795862
@@ -23,31 +23,48 @@
 #endif /* M_PI */
 #endif /* TWOPI */
 
-#if __cplusplus < 201103L
-inline float round(float x)
-{
-  return roundf(x);
-}
-#endif
 
-#if defined(HAVE_SINCOS)
+#if __APPLE__
+
+inline void sincos(double a, double* s, double* c)
+{
+  __sincos(a,s,c);
+}
+
 inline void sincos(float a, float* s, float* c)
 {
-  sincosf(a,s,c);
+  __sincosf(a,s,c);
 }
+
+#else // not __APPLE__
+
+#if defined(HAVE_SINCOS)
+
+inline void sincos(float a, float* s, float* c)
+{
+#ifdef __bgq__
+  // BGQ has no sincosf in libmass
+  // libmass sincos is faster than libm sincosf
+  double ds,dc;
+  sincos((double)a,&ds,&dc);
+  *s=ds; *c=dc;
 #else
+  sincosf(a,s,c);
+#endif
+}
+
+#else
+
 template<typename T>
 inline void sincos(T a, T* restrict s, T*  restrict c)
 {
   *s=std::sin(a);
   *c=std::cos(a);
 }
-inline void sincos(float a, float* restrict s, float*  restrict c)
-{
-  *s=sinf(a);
-  *c=cosf(a);
-}
-#endif
+
+#endif // HAVE_SINCOS
+
+#endif // __APPLE__
 
 namespace qmcplusplus
 {
@@ -62,8 +79,3 @@ inline int pow(int i, int n)
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3310 $   $Date: 2008-10-29 19:21:31 -0500 (Wed, 29 Oct 2008) $
- * $Id: stdfunc.h 3310 2008-10-30 00:21:31Z jnkim $
- ***************************************************************************/

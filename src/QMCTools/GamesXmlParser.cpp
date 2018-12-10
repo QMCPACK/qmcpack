@@ -16,7 +16,6 @@
 
 
 
-#include "Utilities/OhmmsInfo.h"
 #include "QMCTools/GamesXmlParser.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
 
@@ -396,8 +395,3 @@ void GamesXmlParser::getEigVectors(std::vector<xmlNodePtr>& ePtrList)
     EigVal_beta=EigVal_alpha;
 }
 //}
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" href="LiH.orbs.h5">
+      <slaterdeterminant>
+        <determinant id="updet" size="1">
+          <occupation mode="ground"/>
+          <coefficient size="62" spindataset="0"/>
+        </determinant>
+        <determinant id="downdet" size="1">
+          <occupation mode="ground"/>
+          <coefficient size="62" spindataset="0"/>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation rcut="10" size="10" speciesA="u" speciesB="d">
+        <coefficients id="ud" type="Array"> 0.7699329793 0.43502574 0.1733312696 -0.02206958708 -0.1648464235 -0.2590264076 -0.3041364683 -0.2960830346 -0.2347311208 -0.1288099232</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+      <correlation rcut="10" size="10" cusp="0" elementType="Li">
+        <coefficients id="eLi" type="Array"> -0.01237940691 -0.06762617874 -0.03414520714 -0.02513824064 -0.0007002428662 0.02397094156 0.02166874029 0.005014672865 -0.02057206437 -0.0211347053</coefficients>
+      </correlation>
+      <correlation rcut="10" size="10" cusp="0" elementType="H">
+        <coefficients id="eH" type="Array"> -0.3058396186 -0.2508160605 -0.1263122868 -0.01196314582 0.09287892255 0.1463438263 0.1884320273 0.1348411291 0.0218866457 0.003141661141</coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+</qmcsystem>

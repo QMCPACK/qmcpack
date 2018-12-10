@@ -39,7 +39,7 @@ namespace qmcplusplus
 {
 
 class WalkerControlBase;
-class EstimatorManager;
+class EstimatorManagerBase;
 
 /** Manages the state of QMC sections and handles population control for DMCs
  *
@@ -108,7 +108,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   {
     B_TAU=0, B_TAUEFF , B_ETRIAL , B_EREF
     , B_ENOW, B_BRANCHMAX, B_BRANCHCUTOFF, B_BRANCHFILTER
-    , B_SIGMA, B_ACC_ENERGY, B_ACC_SAMPLES, B_FEEDBACK
+    , B_SIGMA2, B_ACC_ENERGY, B_ACC_SAMPLES, B_FEEDBACK
     , B_FILTERSCALE, B_VPARAM_MAX=17
   };
 
@@ -133,7 +133,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   ///Backup WalkerController for mixed DMC
   WalkerControlBase* BackupWalkerController;
   ///EstimatorManager
-  EstimatorManager*  MyEstimator;
+  EstimatorManagerBase*  MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<EstimatorRealType> EnergyHist;
   ///a simple accumulator for variance
@@ -150,6 +150,8 @@ struct SimpleFixedNodeBranch: public QMCTraits
   //BlockHistogram<RealType> DMCEnergyHist;
   ///root name
   std::string RootName;
+  ///scheme of branching cutoff
+  std::string branching_cutoff_scheme;
   ///set of parameters
   ParameterSet m_param;
   ///string parameters
@@ -198,7 +200,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   }
 
   /** get the EstimatorManager */
-  EstimatorManager* getEstimatorManager()
+  EstimatorManagerBase* getEstimatorManager()
   {
     return MyEstimator;
   }
@@ -206,7 +208,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   /** set the EstimatorManager
    * @param est estimator created by the first QMCDriver
    * */
-  void setEstimatorManager(EstimatorManager* est)
+  void setEstimatorManager(EstimatorManagerBase* est)
   {
     MyEstimator=est;
   }
@@ -357,33 +359,18 @@ struct SimpleFixedNodeBranch: public QMCTraits
     return vParam[B_TAUEFF];
   }
 
-  inline void setTrialEnergy(RealType etot, RealType wtot=1.0)
-  {
-    vParam[B_EREF]=vParam[B_ETRIAL]=etot/wtot;
-    //Eref=Etrial=etot/wtot;
-  }
-
   /** perform branching
    * @param iter current step
    * @param w Walker configuration
    */
   void branch(int iter, MCWalkerConfiguration& w);
 
-  /** perform branching
-   * @param iter the iteration
-   * @param w the walker ensemble
-   * @param clones of the branch engine for OpenMP threads
-   */
-  void branch(int iter, MCWalkerConfiguration& w, std::vector<ThisType*>& clones);
-
   /** update RMC counters and running averages.
    * @param iter the iteration
    * @param w the walker ensemble
    * @param clones of the branch engine for OpenMP threads
    */
-
   void collect(int iter, MCWalkerConfiguration& w);
-  void collect(int iter, MCWalkerConfiguration& w, std::vector<ThisType*>& clones);
 
   /** restart averaging
    * @param counter Counter to determine the cummulative average will be reset.
@@ -420,7 +407,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   ///finalize the simulation
   void finalize(MCWalkerConfiguration& w);
 
-  void setRN (bool rn);
+  void setRN(bool rn);
 
 
 //     void storeConfigsForForwardWalking(MCWalkerConfiguration& w);
@@ -439,13 +426,10 @@ private:
   //void write(hid_t grp, bool append=false);
   //void read(hid_t grp);
 
+  ///set branch cutoff, max, filter
+  void setBranchCutoff(EstimatorRealType variance, EstimatorRealType targetSigma, EstimatorRealType maxSigma, int Nelec=0);
 };
 
 }
 #endif
-/***************************************************************************
- * $RCSfile: SimpleFixedNodeBranch.h,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

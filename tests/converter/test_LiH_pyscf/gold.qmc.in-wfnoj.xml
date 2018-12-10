@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<simulation>
+  <!--
+ 
+Example QMCPACK input file produced by convert4qmc
+ 
+It is recommend to start with only the initial VMC block and adjust
+parameters based on the measured energies, variance, and statistics.
+
+-->
+  <!--Name and Series number of the project.-->
+  <project id="LiH" series="0"/>
+  <!--Link to the location of the Atomic Coordinates and the location of the Wavefunction.-->
+  <include href="LiH.structure.xml"/>
+  <include href="LiH.wfnoj.xml"/>
+  <!--Hamiltonian of the system.
+-->
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+  </hamiltonian>
+  <!--
+ 
+Example initial VMC to measure initial energy and variance 
+
+-->
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="warmupSteps">100</parameter>
+    <parameter name="blocks">20</parameter>
+    <parameter name="steps">50</parameter>
+    <parameter name="substeps">8</parameter>
+    <parameter name="timestep">0.5</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+</simulation>

@@ -20,6 +20,8 @@
 namespace qmcplusplus
 {
 
+using std::copy;
+
 AGPDeterminant::AGPDeterminant(BasisSetType* bs):
   GeminalBasis(bs), NumPtcls(0)
 {
@@ -95,7 +97,7 @@ void AGPDeterminant::resetTargetParticleSet(ParticleSet& P)
   GeminalBasis->resetTargetParticleSet(P);
 }
 
-/** Calculate the value of the Dirac determinant for particles
+/** Calculate the log value of the Dirac determinant for particles
  *@param P input configuration containing N particles
  *@param G a vector containing N gradients
  *@param L a vector containing N laplacians
@@ -105,73 +107,6 @@ void AGPDeterminant::resetTargetParticleSet(ParticleSet& P)
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-AGPDeterminant::ValueType
-AGPDeterminant::evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
-{
-  APP_ABORT("WHO's calling AGPDeterminant::evaluate!!");
-  return std::exp(LogValue);
-  ////GeminalBasis->evaluate(P);
-  //GeminalBasis->evaluateForWalkerMove(P);//@@
-  ///* evaluate psi_up(iat)= \sum_{j} C_{ij} \phi_j^{u}(r_{iat})
-  // * psi_down(iat-Nup) =  \sum_{j} C_{ij} \phi_j^{d}(r_{iat})
-  // */
-  //MatrixOperators::product(GeminalBasis->Y, Lambda, phiT);
-  //for(int u=0; u<Nup; u++)
-  //{
-  //  for(int d=0, jat=Nup; d<Ndown; d++,jat++) //paired block
-  //  {
-  //    //psiM(d,u) = BLAS::dot(BasisSize,phiT[u],GeminalBasis->y(jat));
-  //    psiM(d,u) = BLAS::dot(BasisSize,phiT[u],GeminalBasis->Y[jat]);//@@
-  //  }
-  //  for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++)//unpaired block Ndown x unpaired
-  //  {
-  //    //psiM(d,u) = BLAS::dot(BasisSize,LambdaUP[unpaired],GeminalBasis->y(u));
-  //    psiM(d,u) = BLAS::dot(BasisSize,LambdaUP[unpaired],GeminalBasis->Y[u]);//@@
-  //  }
-  //}
-  //CurrentDet = Invert(psiM.data(),Nup,Nup,WorkSpace.data(),Pivot.data());
-  //for(int iat=0; iat<Nup; iat++)
-  //{
-  //  GradType rv;
-  //  ValueType lap=0;
-  //  int jat=Nup;
-  //  for(int d=0; d<Ndown; d++,jat++)
-  //  {
-  //    ValueType dfac=psiM(iat,d);
-  //    //rv += dfac*dot(phiT[jat],GeminalBasis->dy(iat),BasisSize);
-  //    //lap += dfac*dot(phiT[jat],GeminalBasis->d2y(iat),BasisSize);
-  //    rv += dfac*dot(phiT[jat],GeminalBasis->dY[iat],BasisSize);//@@
-  //    lap += dfac*dot(phiT[jat],GeminalBasis->d2Y[iat],BasisSize);//@@
-  //  }
-  //  for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++)
-  //  {
-  //    ValueType dfac=psiM(iat,d);
-  //    //rv += dfac*dot(LambdaUP[unpaired],GeminalBasis->dy(iat),BasisSize);
-  //    //lap += dfac*dot(LambdaUP[unpaired],GeminalBasis->d2y(iat),BasisSize);
-  //    rv += dfac*dot(LambdaUP[unpaired],GeminalBasis->dY[iat],BasisSize);//@@
-  //    lap += dfac*dot(LambdaUP[unpaired],GeminalBasis->d2Y[iat],BasisSize);//@@
-  //  }
-  //  G(iat) += rv;
-  //  L(iat) += lap-dot(rv,rv);
-  //}
-  //for(int jat=Nup,d=0; jat<NumPtcls; jat++,d++)
-  //{
-  //  GradType rv;
-  //  ValueType lap=0;
-  //  for(int u=0; u<Nup; u++)
-  //  {
-  //    ValueType dfac=psiM(u,d);
-  //    //rv += dfac*dot(phiT[u],GeminalBasis->dy(jat),BasisSize);
-  //    //lap += dfac*dot(phiT[u],GeminalBasis->d2y(jat),BasisSize);
-  //    rv += dfac*dot(phiT[u],GeminalBasis->dY[jat],BasisSize);//@@
-  //    lap += dfac*dot(phiT[u],GeminalBasis->d2Y[jat],BasisSize);//@@
-  //  }
-  //  G(jat) += rv;
-  //  L(jat) += lap-dot(rv,rv);
-  //}
-  //return CurrentDet;
-}
-
 AGPDeterminant::ValueType
 AGPDeterminant::evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
@@ -246,37 +181,27 @@ AGPDeterminant::evaluateLogAndStore(ParticleSet& P)
   d2Y = GeminalBasis->d2Y;
 }
 
-AGPDeterminant::ValueType
-AGPDeterminant::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+AGPDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  evaluateLogAndStore(P);
-  P.G += myG;
-  P.L += myL;
-  //copy psiM to temporary
-  psiM_temp = psiM;
-  //if(UseBuffer)
-  {
-    //add the data: determinant, inverse, gradient and laplacians
-    //buf.add(CurrentDet);
-    buf.add(LogValue);
-    buf.add(psiM.begin(),psiM.end());
-    buf.add(phiT.begin(),phiT.end());
-    buf.add(d2psiU.begin(),d2psiU.end());
-    buf.add(d2psiD.begin(),d2psiD.end());
-    buf.add(FirstAddressOfdVU,LastAddressOfdVU);
-    buf.add(FirstAddressOfdVD,LastAddressOfdVD);
-    buf.add(d2Y.begin(),d2Y.end());
-    buf.add(FirstAddressOfdY,LastAddressOfdY);
-    buf.add(FirstAddressOfG,LastAddressOfG);
-    buf.add(myL.first_address(), myL.last_address());
-    //buf.add(myL.begin(), myL.end());
-  }
-  return LogValue;
-  //return LogValue = evaluateLogAndPhase(CurrentDet,PhaseValue);
+  //add the data: determinant, inverse, gradient and laplacians
+  //buf.add(CurrentDet);
+  buf.add(LogValue);
+  buf.add(psiM.begin(),psiM.end());
+  buf.add(phiT.begin(),phiT.end());
+  buf.add(d2psiU.begin(),d2psiU.end());
+  buf.add(d2psiD.begin(),d2psiD.end());
+  buf.add(FirstAddressOfdVU,LastAddressOfdVU);
+  buf.add(FirstAddressOfdVD,LastAddressOfdVD);
+  buf.add(d2Y.begin(),d2Y.end());
+  buf.add(FirstAddressOfdY,LastAddressOfdY);
+  buf.add(FirstAddressOfG,LastAddressOfG);
+  buf.add(myL.first_address(), myL.last_address());
+  //buf.add(myL.begin(), myL.end());
 }
 
 AGPDeterminant::ValueType
-AGPDeterminant::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+AGPDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf,
                              bool fromscratch)
 {
   evaluateLogAndStore(P);
@@ -302,7 +227,7 @@ AGPDeterminant::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
   //return CurrentDet;
 }
 
-void AGPDeterminant::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void AGPDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   //if(UseBuffer)
   {
@@ -362,60 +287,6 @@ AGPDeterminant::ratio(ParticleSet& P, int iat)
   return curRatio;
 }
 
-/** return the ratio
- * @param P current configuration
- * @param iat particle whose position is moved
- * @param dG differential Gradients
- * @param dL differential Laplacians
- *
- * Data member *_temp contain the data assuming that the move is accepted
- * and are used to evaluate differential Gradients and Laplacians.
- */
-AGPDeterminant::ValueType
-AGPDeterminant::ratio(ParticleSet& P, int iat,
-                      ParticleSet::ParticleGradient_t& dG,
-                      ParticleSet::ParticleLaplacian_t& dL)
-{
-  UpdateMode=ORB_PBYP_ALL;
-  //copy the iat-row to temporary vectors, restore when rejected
-  copy(phiT[iat],phiT[iat]+BasisSize,phiTv.begin());
-  //GeminalBasis->evaluateAll(P,iat);
-  GeminalBasis->evaluateAllForPtclMove(P,iat);
-  //BLAS::gemv(Lambda.rows(),Lambda.cols(), Lambda.data(), GeminalBasis->y(0), phiT[iat]);
-  BLAS::gemv(Lambda.rows(),Lambda.cols(), Lambda.data(), GeminalBasis->Phi.data(), phiT[iat]);//@@
-  if(iat<Nup)
-    ratioUp(P,iat);
-  else
-    ratioDown(P,iat);
-  for(int kat=0; kat<Nup; kat++)
-  {
-    GradType rv=simd::dot(psiM_temp[kat],dpsiU[kat],Nup);
-    ValueType lap=simd::dot(psiM_temp[kat],d2psiU[kat],Nup);
-    lap -= dot(rv,rv);
-    dG[kat] += (rv-myG[kat]);
-    myG_temp[kat]=rv;
-    dL[kat] += (lap-myL[kat]);
-    myL_temp[kat]=lap;
-  }
-  for(int jat=Nup,d=0; jat<NumPtcls; jat++,d++)
-  {
-    GradType rv;
-    ValueType lap=0;
-    for(int u=0; u<Nup; u++)
-    {
-      ValueType dfac=psiM_temp(u,d);
-      rv += dfac*dpsiD(d,u);
-      lap += dfac*d2psiD(d,u);
-    }
-    lap -= dot(rv,rv);
-    dG[jat] +=  (rv-myG[jat]);
-    myG_temp[jat]=rv;
-    dL[jat] +=  (lap-myL[jat]);
-    myL_temp[jat]=lap;
-  }
-  return curRatio;
-}
-
 void AGPDeterminant::ratioUp(ParticleSet& P, int iat)
 {
   //const ValueType* restrict y_ptr=GeminalBasis->y(0);
@@ -434,8 +305,8 @@ void AGPDeterminant::ratioUp(ParticleSet& P, int iat)
   //curRatio = DetRatio(psiM_temp, psiU.data(),iat);
   curRatio = DetRatioByRow(psiM_temp, psiU,iat);
   InverseUpdateByRow(psiM_temp,psiU,workV1,workV2,iat,curRatio);
-  copy(dpsiU[iat],dpsiU[iat]+Nup,dpsiUv.begin());
-  copy(d2psiU[iat],d2psiU[iat]+Nup,d2psiUv.begin());
+  std::copy(dpsiU[iat],dpsiU[iat]+Nup,dpsiUv.begin());
+  std::copy(d2psiU[iat],d2psiU[iat]+Nup,d2psiUv.begin());
   //const GradType* restrict  dy_ptr = GeminalBasis->dy(0);
   //const ValueType* restrict d2y_ptr = GeminalBasis->d2y(0);
   const BasisSetType::GradType* restrict  dy_ptr = GeminalBasis->dPhi.data();//@@
@@ -472,8 +343,8 @@ void AGPDeterminant::ratioDown(ParticleSet& P, int iat)
   //curRatio = DetRatioTranspose(psiM_temp, psiD.data(),d);
   curRatio = DetRatioByColumn(psiM_temp, psiD,d);
   InverseUpdateByColumn(psiM_temp,psiD,workV1,workV2,d,curRatio);
-  copy(dpsiD[d],dpsiD[d]+Nup,dpsiDv.begin());
-  copy(d2psiD[d],d2psiD[d]+Nup,d2psiDv.begin());
+  std::copy(dpsiD[d],dpsiD[d]+Nup,dpsiDv.begin());
+  std::copy(d2psiD[d],d2psiD[d]+Nup,d2psiDv.begin());
   //const GradType* restrict dy_ptr = GeminalBasis->dy(0);
   //const ValueType* restrict d2y_ptr = GeminalBasis->d2y(0);
   const BasisSetType::GradType* restrict dy_ptr = GeminalBasis->dPhi.data();//@@
@@ -516,8 +387,8 @@ void AGPDeterminant::acceptMove(ParticleSet& P, int iat)
     myL = myL_temp;
     //std::copy(GeminalBasis->dy(0),GeminalBasis->dy(0)+BasisSize,dY[iat]);
     //std::copy(GeminalBasis->d2y(0),GeminalBasis->d2y(0)+BasisSize,d2Y[iat]);
-    copy(GeminalBasis->dPhi.begin(),GeminalBasis->dPhi.end(),dY[iat]);//@@
-    copy(GeminalBasis->d2Phi.begin(),GeminalBasis->d2Phi.end(),d2Y[iat]);//@@
+    std::copy(GeminalBasis->dPhi.begin(),GeminalBasis->dPhi.end(),dY[iat]);//@@
+    std::copy(GeminalBasis->d2Phi.begin(),GeminalBasis->d2Phi.end(),d2Y[iat]);//@@
   }
   curRatio=1.0;
 }
@@ -528,12 +399,12 @@ void AGPDeterminant::restore(int iat)
 {
   if(UpdateMode != ORB_PBYP_RATIO)
   {
-    copy(phiTv.begin(), phiTv.end(),phiT[iat]);
+    std::copy(phiTv.begin(), phiTv.end(),phiT[iat]);
     psiM_temp = psiM;
     if(iat<Nup)
     {
-      copy(dpsiUv.begin(), dpsiUv.end(),dpsiU[iat]);
-      copy(d2psiUv.begin(), d2psiUv.end(),d2psiU[iat]);
+      std::copy(dpsiUv.begin(), dpsiUv.end(),dpsiU[iat]);
+      std::copy(d2psiUv.begin(), d2psiUv.end(),d2psiU[iat]);
       for(int d=0; d<Ndown; d++)
       {
         dpsiD(d,iat)=dpsiDv[d];
@@ -543,8 +414,8 @@ void AGPDeterminant::restore(int iat)
     else
     {
       int d=iat-Nup;
-      copy(dpsiDv.begin(), dpsiDv.end(),dpsiD[d]);
-      copy(d2psiDv.begin(), d2psiDv.end(),d2psiD[d]);
+      std::copy(dpsiDv.begin(), dpsiDv.end(),dpsiD[d]);
+      std::copy(d2psiDv.begin(), d2psiDv.end(),d2psiD[d]);
       for(int kat=0; kat<Nup; kat++)
       {
         dpsiU(kat,d)=dpsiUv[kat];
@@ -555,37 +426,7 @@ void AGPDeterminant::restore(int iat)
   curRatio=1.0;
 }
 
-void AGPDeterminant::update(ParticleSet& P,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL,
-                            int iat)
-{
-}
-
-AGPDeterminant::ValueType AGPDeterminant::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  //if(UseBuffer)
-  {
-    //buf.put(CurrentDet);
-    buf.put(LogValue);
-    buf.put(psiM.begin(),psiM.end());
-    buf.put(phiT.begin(),phiT.end());
-    buf.put(d2psiU.begin(),d2psiU.end());
-    buf.put(d2psiD.begin(),d2psiD.end());
-    buf.put(FirstAddressOfdVU,LastAddressOfdVU);
-    buf.put(FirstAddressOfdVD,LastAddressOfdVD);
-    buf.put(d2Y.begin(),d2Y.end());
-    buf.put(FirstAddressOfdY,LastAddressOfdY);
-    buf.put(FirstAddressOfG,LastAddressOfG);
-    buf.put(myL.first_address(), myL.last_address());
-    //buf.put(myL.begin(), myL.end());
-  }
-  return LogValue;
-  //return evaluateLogAndPhase(CurrentDet,PhaseValue);
-  //return CurrentDet;
-}
-
-OrbitalBasePtr AGPDeterminant::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr AGPDeterminant::makeClone(ParticleSet& tqp) const
 {
   AGPDeterminant* myclone = new AGPDeterminant(0);
   myclone->GeminalBasis=GeminalBasis->makeClone();
@@ -597,8 +438,3 @@ OrbitalBasePtr AGPDeterminant::makeClone(ParticleSet& tqp) const
   return myclone;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

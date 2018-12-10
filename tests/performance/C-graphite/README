@@ -1,0 +1,62 @@
+Carbon Graphite QMC Performance Benchmark
+
+1. Introduction
+
+This benchmark is the "graphite 4x4x1" 256 electron system previously
+used for the CORAL procurement and related benchmarking efforts. Many
+details of the runs (steps, blocks, timestep, nodes) have been changed
+to keep the benchmark short and to only use 1 node. i.e. It is not
+"the" CORAL benchmark. Additionally, the jastrow distance cutoff has
+also been made legal (6.338 vs 6.4), which will permit current
+versions of QMCPACK to run.
+
+See the explanation, discussion, and disclaimer in ../NiO/README for
+general guidelines. Note that for benchmarking of QMCPACK's
+performance for solid-state materials, the QMCPACK developers
+currently prefer the newer NiO benchmarks because they cover a range
+of system sizes. If you are interested in setting up a new benchmark
+or figure of merit, we encourage you to contact the developers.
+
+The ctest integration is sufficient to run the benchmarks and measure
+relative performance from version to version of QMCPACK and assess
+proposed code changes. To obtain highest performance on a particular
+platform, you must run the benchmarks in a standalone manner and tune
+thread counts, placement, walker count (etc.)
+
+2. Simulated system and QMC methods tests
+
+The only simulated system is a 4x4x1 repeat of a graphite primitive
+cell. This is labeled with a number indicating the total electron
+count, 256.
+
+Name  Atoms Electrons  Electrons per spin
+S256   64    256          128
+
+Runs consist of a number of short blocks of (i) VMC without drift (ii)
+VMC with drift term included (iii) DMC with constant population.
+
+3. Requirements
+
+Download the necessary C-graphite h5 orbital file from the following link
+
+https://anl.box.com/s/j5d6jeazpgx5441s04ajtv77iogoyjsh
+
+This link will be updated when a longer term storage host is
+identified.
+
+$ md5sum *.h5
+30323351a2636ba4987e216be5c383a1  lda.pwscf.h5
+
+$ ls -l *.h5
+3187556652 lda.pwscf.h5
+
+The h5 file should be placed in a directory labeled C-graphite.
+QMC_DATA should be set to the directory containing C-graphite
+when CMake is run.
+
+4. Throughput metric
+5. Benchmarking with ctest
+6. Running the benchmarks manually
+7. Additional considerations
+
+See ../NiO/README

@@ -50,8 +50,8 @@ class QMCLinearOptimize: public QMCDriver
 public:
 
   ///Constructor.
-  QMCLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                    QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+  QMCLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+                    HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
 
   ///Destructor
   virtual ~QMCLinearOptimize();
@@ -190,8 +190,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

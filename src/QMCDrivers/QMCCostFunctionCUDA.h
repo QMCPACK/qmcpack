@@ -21,6 +21,7 @@
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "type_traits/CUDATypes.h"
 
 namespace qmcplusplus
 {
@@ -38,21 +39,18 @@ public:
 
   ///Constructor.
   QMCCostFunctionCUDA( MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                       QMCHamiltonian& h, HamiltonianPool& hpool);
+                       QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
   ~QMCCostFunctionCUDA();
 
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
-  void resetWalkers();   
   void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0);
-  Return_t fillOverlapHamiltonianMatrices
-  (Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap);
   Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);
-  Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap);
 
 protected:
+  using CTS = CUDAGlobalTypes;
   Matrix<Return_t> Records;
   typedef TrialWaveFunction::RealMatrix_t  RealMatrix_t;
   typedef TrialWaveFunction::ValueMatrix_t ValueMatrix_t;
@@ -69,16 +67,9 @@ protected:
   std::vector<Matrix<Return_t>* > DerivRecords;
   std::vector<Matrix<Return_t>* > HDerivRecords;
 
-  ///number of vmc walkers
-  int nVMCWalkers;
   Return_t CSWeight;
   void resetPsi(bool final_reset=false);
   Return_t correlatedSampling(bool needDerivs);
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1804 $   $Date: 2007-02-24 14:49:09 -0600 (Sat, 24 Feb 2007) $
- * $Id: QMCCostFunctionCUDA.h 1804 2007-02-24 20:49:09Z jnkim $
- ***************************************************************************/

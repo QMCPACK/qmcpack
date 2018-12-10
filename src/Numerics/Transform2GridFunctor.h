@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_CREATE_GRID_FUNCTION_H
 
 #include <cmath>
+#include <iomanip>
 /**Abstract class to perform a transformation from a function (analytic or grid)
  * to a grid function
  */
@@ -196,8 +197,3 @@ struct TestTransform
 
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -28,10 +28,10 @@ LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els):
   set_energy_domain(potential);
   two_body_quantum_domain(ions,els);
   NumIons=ions.getTotalNum();
-  myTableIndex=els.addTable(ions);
+  myTableIndex=els.addTable(ions,DT_SOA_PREFERRED);
   //allocate null
   PPset.resize(ions.getSpeciesSet().getTotalNum(),0);
-  PP.resize(NumIons,0);
+  PP.resize(NumIons,nullptr);
   Zeff.resize(NumIons,0.0);
   gZeff.resize(ions.getSpeciesSet().getTotalNum(),0);
 }
@@ -48,7 +48,7 @@ LocalECPotential::~LocalECPotential()
 
 void LocalECPotential::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid=P.addTable(IonConfig);
+  int tid=P.addTable(IonConfig,DT_SOA_PREFERRED);
   if(tid != myTableIndex)
   {
     APP_ABORT("  LocalECPotential::resetTargetParticleSet found a different distance table index.");
@@ -107,17 +107,31 @@ LocalECPotential::evaluate(ParticleSet& P)
   {
     const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
     Value=0.0;
-    //loop over all the ions
-    for(int iat=0; iat<NumIons; iat++)
+    if(d_table.DTType==DT_SOA)
     {
-      RadialPotentialType* ppot(PP[iat]);
-      if(ppot==0)
-        continue;
-      Return_t esum(0.0);
-      for(int nn=d_table.M[iat]; nn<d_table.M[iat+1]; ++nn)
-        esum += ppot->splint(d_table.r(nn))*d_table.rinv(nn);
-      //count the sign and effective charge
-      Value -= esum*Zeff[iat];
+      const size_t Nelec = P.getTotalNum();
+      for(size_t iel=0; iel<Nelec; ++iel)
+      {
+        const RealType* restrict dist=d_table.Distances[iel];
+        Return_t esum(0);
+        for(size_t iat=0; iat<NumIons; ++iat)
+          if(PP[iat]!=nullptr) esum+=PP[iat]->splint(dist[iat])*Zeff[iat]/dist[iat];
+        Value -= esum;
+      }
+    }
+    else
+    {
+      //loop over all the ions
+      for(int iat=0; iat<NumIons; iat++)
+      {
+        RadialPotentialType* ppot(PP[iat]);
+        if(ppot==nullptr) continue;
+        Return_t esum(0);
+        for(int nn=d_table.M[iat]; nn<d_table.M[iat+1]; ++nn)
+          esum += ppot->splint(d_table.r(nn))*d_table.rinv(nn);
+        //count the sign and effective charge
+        Value -= esum*Zeff[iat];
+      }
     }
   }
   return Value;
@@ -207,80 +221,6 @@ LocalECPotential::evaluate_orig(ParticleSet& P)
   return Value;
 }
 
-
-LocalECPotential::Return_t
-LocalECPotential::registerData(ParticleSet& P, BufferType& buffer)
-{
-  PPart.resize(P.getTotalNum());
-  NewValue=Value=evaluateForPbyP(P);
-  buffer.add(PPart.begin(),PPart.end());
-  buffer.add(Value);
-  return Value;
-}
-
-LocalECPotential::Return_t
-LocalECPotential::updateBuffer(ParticleSet& P, BufferType& buffer)
-{
-  NewValue=Value=evaluateForPbyP(P);
-  buffer.put(PPart.begin(),PPart.end());
-  buffer.put(Value);
-  return Value;
-}
-
-void LocalECPotential::copyFromBuffer(ParticleSet& P, BufferType& buffer)
-{
-  buffer.get(PPart.begin(),PPart.end());
-  buffer.get(Value);
-}
-
-void LocalECPotential::copyToBuffer(ParticleSet& P, BufferType& buffer)
-{
-  buffer.put(PPart.begin(),PPart.end());
-  buffer.put(Value);
-}
-
-LocalECPotential::Return_t
-LocalECPotential::evaluateForPbyP(ParticleSet& P)
-{
-  const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
-  PPart=0.0;
-  Return_t res=0.0;
-  for(int iat=0; iat<NumIons; ++iat)
-  {
-    RadialPotentialType* ppot(PP[iat]);
-    if(ppot)
-    {
-      Return_t z=-Zeff[iat];
-      for(int nn=d_table.M[iat]; nn<d_table.M[iat+1]; ++nn)
-      {
-        Return_t e= z*ppot->splint(d_table.r(nn))*d_table.rinv(nn);
-        PPart[d_table.J[nn]]+=e;
-        res+=e;
-      }
-    }
-  }
-  return res;
-}
-
-LocalECPotential::Return_t
-LocalECPotential::evaluatePbyP(ParticleSet& P, int active)
-{
-  const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[myTableIndex]->Temp);
-  PPtmp=0.0;
-  for(int iat=0; iat<NumIons; ++iat)
-  {
-    if(PP[iat])
-      PPtmp -= Zeff[iat]*PP[iat]->splint(temp[iat].r1)*temp[iat].rinv1;
-  }
-  return NewValue=Value+PPtmp-PPart[active];
-}
-
-void LocalECPotential::acceptMove(int active)
-{
-  PPart[active]=PPtmp;
-  Value=NewValue;
-}
-
 QMCHamiltonianBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   LocalECPotential* myclone=new LocalECPotential(IonConfig,qp);
@@ -295,9 +235,4 @@ QMCHamiltonianBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFuncti
   return myclone;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 
