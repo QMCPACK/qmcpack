@@ -138,6 +138,7 @@ void CrystalLattice<T,D,ORTHO>::reset()
   DiagonalOnly=ldesc.isDiagonalOnly(R);
   ABC=ldesc.calcSolidAngles(Rv,OneOverLength);
   WignerSeitzRadius = ldesc.calcWignerSeitzRadius(Rv);
+  WignerSeitzRadius_G = ldesc.calcWignerSeitzRadius(Gv);
   SimulationCellRadius = ldesc.calcSimulationCellRadius(Rv);
   // set equal WignerSeitzRadius and SimulationCellRadius when they are very close.
   if ( WignerSeitzRadius > SimulationCellRadius &&

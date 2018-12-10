@@ -2,6 +2,120 @@
 
 Notable changes to QMCPACK will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+Utilities have been renamed for clarity and to avoid name collisions with other applications.
+
+* getSupercell is renamed qmc-get-supercell
+* extract-eshdf-kvectors is renamed qmc-extract-eshdf-kvectors
+
+### NEXUS
+
+* qfit is renamed qmc-fit
+* ntest, sim, redo are renamed nxs-test, nxs-sim, nxs-redo
+
+## [3.5.0] - 2018-08-02
+
+### Notes
+
+This release includes support for the latest Quantum Espresso version 6.3,
+an initial implementation of periodic Gaussian support via PySCF, and a new
+version of the hybrid or "APW" representation of orbitals. Many minor
+bugs have been fixed, configuration and documentation improved. 
+
+Note that the PDF manuals are no longer included with the source. Versions
+are available online via https://qmcpack.org . The PDFs can be built
+using manual/build_manual.sh and
+nexus/documentation/user_guide_source/build_nexus_user_guide.sh
+
+Attention developers: This version contains substantially fewer source
+lines than previous versions due to clean out of old code and unused
+execution paths. Refactoring to improve the internal structure of
+QMCPACK is ongoing. Track the develop branch and follow discussion on
+GitHub closely to avoid difficult merges.
+
+* Support for Quantum Espresso 6.3 and 6.2.1. Check documentation to
+  ensure compiled with required HDF5 support.
+* Support for periodic gaussians and PySCF generated
+  wavefunctions. Initial version is limited to Gamma-point.
+* Improved hybrid representation of single particle orbitals
+  (APW-like) for significantly reduced memory usage and possible
+  accuracy increase compared to conventional spline representation. https://arxiv.org/abs/1805.07406
+* Norms of orbitals are checked inside QMCPACK to catch conversion errors.
+* Added verbosity setting to QMCPACK output.
+* CUDA can now be enabled with SoA builds.
+* Many improvements to QMCPACK manual, including all new features, CIPSI, 3-body
+  jastrow factor description, spack package, and enabling HTML generation.
+* CMake configuration improvements, particularly around MKL handling.
+* Extensive cleanup of unused source files and unused code paths
+  removed, reducing the number of source lines by over 30 percent.
+
+### Known bugs
+
+* Weight of first block of DMC density is incorrect in CPU
+  code. DMC densities in CUDA GPU code are incorrect for all
+  blocks. [\#934](https://github.com/QMCPACK/qmcpack/issues/934) and [\#925](https://github.com/QMCPACK/qmcpack/issues/925)
+* Runs with only a single electron may crash. [\#945](https://github.com/QMCPACK/qmcpack/issues/945)
+
+### NEXUS
+
+* Support for GAMESS HDF5 workflows.
+* Nexus accepts command line inputs.
+* Nexus testing via ntest executable.
+* Added GAMESS-NEXUS examples for RHF, CISD, and CASSCF wavefunction.
+* Added support for -nojastrow workflows.
+* Added support for Stampede supercomputer.
+* Added script to build NEXUS user guide.
+* Various bugfixes including to GAMESS input parsing.
+
+## [3.4.0] - 2018-01-29
+
+### Notes
+
+This release includes size-consistent t-moves, and improvements to
+load balancing and memory usage that will be visible in large
+runs. Significant revisions have been made to the gaussian
+wavefunction reader and a PySCF interface is in progress.  A bug
+affecting non-git installs (from release tarballs) is fixed. Feedback
+is particularly welcome on the new features.
+
+* Size consistent t-moves implemented (Casula 2010 algorithm).
+  Enabled via nonlocalmoves parameter, see manual.
+* Bugfix: For non-git builds, build process failed on some systems
+  due to git-rev.h handling.
+* Optimized load balancing in DMC. Command line option async_swap
+  removed. Parameter use_nonblocking now disables non-blocking MPI
+  load balancing. Non-blocking MPI is now enabled by default.
+* Improved memory handling and usage in SoA code, increases
+  performance.  
+* Improved stability of GPU matrix inversion for large runs.
+* Ongoing improvements to output to improve readability.
+* Initial interface to PySCF for real space QMC trial wavefunctions.
+* Enabled use of HDF5 files for Gaussian based wavefunctions
+  with SoA implementation.
+* Added Appendix to manual listing all known QMCPACK publications.
+  This will be updated on an ongoing basis. Please advise of any
+  missing publications.
+* Optimized momentum distribution estimator. Supported by SoA and
+  1,2,3-body Jastrow functions.
+* Support for labeled timers in Intel VTune based profiling.
+
+### NEXUS
+
+* Minor bugfixes and improvements.
+
+### Known limitations
+
+* PySCF interface is preliminary. convert4qmc is updated, but manual
+  entries are not yet provided. This will be improved in later
+  versions. The interface is currently only for isolated molecular
+  systems. A full periodic implementation is in progress.
+
+* Documentation, examples and tutorials are not yet consistent with
+  the updated converter convert4qmc.
+
 ## [3.3.0] - 2017-12-18
 
 ### Notes
@@ -9,7 +123,7 @@ Notable changes to QMCPACK will be documented in this file.
 This release includes new methods, converter updates, and many
 optimizations, feature improvements, and bug fixes. It is a
 recommended update for all users.
- 
+
 ### QMCPACK updates
 
 * Support for finite difference linear response (FDLR) method and

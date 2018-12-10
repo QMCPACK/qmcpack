@@ -22,7 +22,7 @@
 #include "Configuration.h"
 #include  <map>
 #include  <numeric>
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
@@ -32,7 +32,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
  *
  *Each pair-type can have distinct function \f$u(r_{ij})\f$.
@@ -40,7 +40,7 @@ namespace qmcplusplus
  *for spins up-up/down-down and up-down/down-up.
  */
 template<class FT>
-class TwoBodyJastrowOrbital: public OrbitalBase
+class TwoBodyJastrowOrbital: public WaveFunctionComponent
 {
 protected:
 
@@ -79,7 +79,7 @@ public:
     PtclRef = &p;
     init(p);
     FirstTime = true;
-    OrbitalName = "TwoBodyJastrow";
+    ClassName = "TwoBodyJastrow";
     p.addTable(p,DT_AOS);
   }
 
@@ -292,13 +292,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-  
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
     LogValue=0.0;
@@ -331,10 +324,8 @@ public:
         grad_grad_psi[j] -= hess;
       }
     }
-    
-    
-	  
   }
+
   ValueType ratio(ParticleSet& P, int iat)
   {
     const DistanceTableData* d_table=P.DistTables[0];
@@ -358,7 +349,7 @@ public:
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    const int iat=VP.activePtcl;
+    const int iat=VP.refPtcl;
 
     int nat=iat*N;
     RealType x= std::accumulate(&(U[nat]),&(U[nat+N]),0.0);
@@ -381,22 +372,6 @@ public:
       ratios[k]=std::exp(myr[k]);
   }
 
-  /** evaluate the ratio
-  */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
-  {
-    const DistanceTableData* d_table=P.DistTables[0];
-    for (int i=0,ij=0; i<N; ++i)
-    {
-      RealType res=0.0;
-      for(int j=0; j<N; ++j,++ij)
-        if(i!=j)
-          res+=U[ij]-F[PairID(ij)]->evaluate(d_table->Temp[j].r1);
-      ratios[i]=std::exp(res);
-    }
-  }
-
-
   GradType evalGrad(ParticleSet& P, int iat)
   {
     GradType gr;
@@ -409,7 +384,7 @@ public:
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     const DistanceTableData* d_table=P.DistTables[0];
-    RealType dudr, d2udr2,u;
+    RealType dudr, d2udr2;
     PosType gr;
     const int* pairid = PairID[iat];
     DiffVal = 0.0;
@@ -543,7 +518,7 @@ public:
     DiffValSum=0.0;
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     //TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,Write_Chiesa_Correction);
     TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,-1);
@@ -569,11 +544,6 @@ public:
     return j2copy;
   }
 
-  void copyFrom(const OrbitalBase& old)
-  {
-    //nothing to do
-  }
-
   RealType ChiesaKEcorrection()
   {
 #if QMC_BUILD_LEVEL<5
@@ -581,7 +551,6 @@ public:
       return 0.0;
     const int numPoints = 1000;
     RealType vol = PtclRef->Lattice.Volume;
-    RealType aparam = 0.0;
     int nsp = PtclRef->groups();
     //FILE *fout=(Write_Chiesa_Correction)?fopen ("uk.dat", "w"):0;
     FILE *fout=0;

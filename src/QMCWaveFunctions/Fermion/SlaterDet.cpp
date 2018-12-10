@@ -16,8 +16,6 @@
     
     
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -26,7 +24,7 @@ namespace qmcplusplus
 SlaterDet::SlaterDet(ParticleSet& targetPtcl)
 {
   Optimizable = false;
-  OrbitalName = "SlaterDet";
+  ClassName = "SlaterDet";
 
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)
@@ -42,7 +40,7 @@ SlaterDet::~SlaterDet()
 }
 
 ///add a new SPOSet to the list of determinants
-void SlaterDet::add(SPOSetBase* sposet, const std::string& aname)
+void SlaterDet::add(SPOSet* sposet, const std::string& aname)
 {
   if (mySPOSet.find(aname) == mySPOSet.end())
   {
@@ -51,7 +49,7 @@ void SlaterDet::add(SPOSetBase* sposet, const std::string& aname)
   }
   else
   {
-    APP_ABORT(" SlaterDet::add(SPOSetBase*, const std::string&) Cannot reuse the " + aname )
+    APP_ABORT(" SlaterDet::add(SPOSet*, const std::string&) Cannot reuse the " + aname )
     ;
   }
 }
@@ -105,7 +103,7 @@ void SlaterDet::reportStatus(std::ostream& os)
 
 void SlaterDet::resetTargetParticleSet(ParticleSet& P)
 {
-  std::map<std::string, SPOSetBasePtr>::iterator sit(mySPOSet.begin());
+  std::map<std::string, SPOSetPtr>::iterator sit(mySPOSet.begin());
   while (sit != mySPOSet.end())
   {
     (*sit).second->resetTargetParticleSet(P);
@@ -117,19 +115,10 @@ void SlaterDet::resetTargetParticleSet(ParticleSet& P)
     Dets[i]->resetTargetParticleSet(P);
 }
 
-void SlaterDet::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for (int i = 0; i < Dets.size(); ++i)
-    Dets[i]->get_ratios(P, ratios);
-}
-
-SlaterDet::ValueType SlaterDet::evaluate(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
-{
-  ValueType psi = 1.0;
-  for (int i = 0; i < Dets.size(); i++)
-    psi *= Dets[i]->evaluate(P, G, L);
-  return psi;
+    Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
 SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
@@ -180,16 +169,6 @@ void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
   DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
 }
 
-void SlaterDet::updateAfterSweep(ParticleSet& P,
-      ParticleSet::ParticleGradient_t& G,
-      ParticleSet::ParticleLaplacian_t& L)
-{
-  for (size_t i = 0, n=Dets.size(); i < n; ++i)
-  {
-    Dets[i]->updateAfterSweep(P,G,L);
-  }
-}
-
 SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ",buf.current());
@@ -215,19 +194,19 @@ void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
 }
 
-OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
 {
   SlaterDet* myclone = new SlaterDet(tqp);
   myclone->Optimizable=Optimizable;
   if (mySPOSet.size() > 1)
   {
-    std::map<std::string,SPOSetBasePtr>::const_iterator Mit,Lit;
+    std::map<std::string,SPOSetPtr>::const_iterator Mit,Lit;
     Mit= mySPOSet.begin();
     Lit= mySPOSet.end();
     while (Mit!=Lit)
     {
-      SPOSetBasePtr spo = (*Mit).second;
-      SPOSetBasePtr spo_clone;
+      SPOSetPtr spo = (*Mit).second;
+      SPOSetPtr spo_clone;
       spo_clone = spo->makeClone();
       spo_clone->resetTargetParticleSet(tqp);
       myclone->add(spo_clone,spo->objectName);
@@ -243,38 +222,10 @@ OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
       Mit++;
     }
   }
-//         {
-//       for (int i = 0; i < Dets.size(); ++i)
-//       {
-//         SPOSetBasePtr spo = Dets[i]->getPhi();
-//         // Check to see if this determinants SPOSet has already been
-//         // cloned
-//         bool found = false;
-//         SPOSetBasePtr spo_clone;
-//         for (int j = 0; j < i; j++)
-//           if (spo == Dets[j]->getPhi())
-//           {
-//             found = true;
-//             spo_clone = myclone->Dets[j]->getPhi();
-//             spo_clone->resetTargetParticleSet(tqp);
-//           }
-//         // If it hasn't, clone it now
-//         if (!found)
-//         {
-//           spo_clone = spo->makeClone();
-//           spo_clone->resetTargetParticleSet(tqp);
-//           myclone->add(spo_clone, spo->objectName);
-//         }
-//         // Make a copy of the determinant.
-//         Determinant_t* newD=Dets[i]->makeCopy(spo_clone);
-//         newD->resetTargetParticleSet(tqp);
-//         myclone->add(newD, i);
-//       }
-//     }
   else
   {
-    SPOSetBasePtr spo = Dets[0]->getPhi();
-    SPOSetBasePtr spo_clone = spo->makeClone();
+    SPOSetPtr spo = Dets[0]->getPhi();
+    SPOSetPtr spo_clone = spo->makeClone();
     spo_clone->resetTargetParticleSet(tqp);
     myclone->add(spo_clone, spo->objectName);
     for (int i = 0; i < Dets.size(); ++i)
@@ -284,64 +235,6 @@ OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
       myclone->add(newD, i);
     }
   }
-  //map<SPOSetBase*,SPOSetBase*> spomap;
-  //SlaterDet* myclone= new SlaterDet(*this);
-  //myclone->releasedNode=releasedNode;
-  //for(int i=0; i<Dets.size(); i++)
-  //{
-  //  std::map<SPOSetBase*,SPOSetBase*>::iterator it=spomap.find(Dets[i]->Phi);
-  //  if (releasedNode==1)
-  //  {
-  //    RNDiracDeterminantBase* adet=new RNDiracDeterminantBase(static_cast<RNDiracDeterminantBase&>(*Dets[i]));
-  //    adet->NP=0;
-  //    if(it == spomap.end())
-  //    {
-  //      SPOSetBase* newspo=Dets[i]->clonePhi();
-  //      spomap[Dets[i]->Phi]=newspo;
-  //      adet->Phi=newspo;//assign a new SPOSet
-  //    }
-  //    else
-  //    {
-  //      adet->Phi=(*it).second;//safe to transfer
-  //    }
-  //    adet->resetTargetParticleSet(tqp);
-  //    myclone->Dets[i]=adet;
-  //  }
-  //  else if (releasedNode==2)
-  //  {
-  //    RNDiracDeterminantBaseAlternate* adet=new RNDiracDeterminantBaseAlternate(static_cast<RNDiracDeterminantBaseAlternate&>(*Dets[i]));
-  //    adet->NP=0;
-  //    if(it == spomap.end())
-  //    {
-  //      SPOSetBase* newspo=Dets[i]->clonePhi();
-  //      spomap[Dets[i]->Phi]=newspo;
-  //      adet->Phi=newspo;//assign a new SPOSet
-  //    }
-  //    else
-  //    {
-  //      adet->Phi=(*it).second;//safe to transfer
-  //    }
-  //    adet->resetTargetParticleSet(tqp);
-  //    myclone->Dets[i]=adet;
-  //  }
-  //  else
-  //  {
-  //  Determinant_t* adet=new Determinant_t(*Dets[i]);
-  //  adet->NP=0;
-  //  if(it == spomap.end())
-  //  {
-  //    SPOSetBase* newspo=Dets[i]->clonePhi();
-  //    spomap[Dets[i]->Phi]=newspo;
-  //    adet->Phi=newspo;//assign a new SPOSet
-  //  }
-  //  else
-  //  {
-  //    adet->Phi=(*it).second;//safe to transfer
-  //  }
-  //  adet->resetTargetParticleSet(tqp);
-  //  myclone->Dets[i]=adet;
-  // }
-  //}
   return myclone;
 }
 

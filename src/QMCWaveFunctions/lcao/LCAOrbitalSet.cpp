@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -15,13 +15,17 @@
 
 namespace qmcplusplus
 {
-  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs,int rl): 
-    myBasisSet(nullptr),ReportLevel(rl)
+  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs,int rl):
+    myBasisSet(nullptr), C(nullptr), ReportLevel(rl),
+    BasisSetSize(0), Identity(true), IsCloned(false)
   {
     if(bs != nullptr) setBasisSet(bs);
   }
 
-  LCAOrbitalSet::~LCAOrbitalSet() {}
+  LCAOrbitalSet::~LCAOrbitalSet()
+  {
+    if(!IsCloned && C!= nullptr) delete C;
+  }
 
   void LCAOrbitalSet::setBasisSet(basis_type* bs)
   {
@@ -30,7 +34,27 @@ namespace qmcplusplus
     Temp.resize(BasisSetSize);
   }
 
-  SPOSetBase* LCAOrbitalSet::makeClone() const
+  bool LCAOrbitalSet::setIdentity(bool useIdentity)
+  {
+    Identity = useIdentity;
+    if(Identity) return true;
+
+    if ( C== nullptr && (OrbitalSetSize > 0) && (BasisSetSize > 0) )
+    {
+      C = new ValueMatrix_t(OrbitalSetSize, BasisSetSize);
+    }
+    else
+    {
+      app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
+      app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
+      app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
+      APP_ABORT("LCAOrbitalBuilder::setIdentiy ");
+    }
+
+    return true;
+  }
+
+  SPOSet* LCAOrbitalSet::makeClone() const
   {
     LCAOrbitalSet* myclone = new LCAOrbitalSet(*this);
     myclone->myBasisSet = myBasisSet->makeClone();
@@ -47,7 +71,7 @@ namespace qmcplusplus
     }
     else
     {
-      VectorViewer<ValueType> vTemp(Temp.data(0),BasisSetSize);
+      Vector<ValueType> vTemp(Temp.data(0),BasisSetSize);
       myBasisSet->evaluateV(P,iat,vTemp.data());
       simd::gemv(*C,Temp.data(0),psi.data());
     }
@@ -57,10 +81,10 @@ namespace qmcplusplus
   template<typename T,unsigned D>
     inline void Product_ABt(const VectorSoaContainer<T,D>& A, const Matrix<T>& B, VectorSoaContainer<T,D>& C)
     {
-      CONSTEXPR char transa = 't';
-      CONSTEXPR char transb = 'n';
-      CONSTEXPR T zone(1);
-      CONSTEXPR T zero(0);
+      constexpr char transa = 't';
+      constexpr char transb = 'n';
+      constexpr T zone(1);
+      constexpr T zero(0);
       BLAS::gemm(transa, transb, B.rows(), D, B.cols(),
           zone, B.data(), B.cols(), A.data(), A.capacity(),
           zero, C.data(), C.capacity());
@@ -82,12 +106,11 @@ namespace qmcplusplus
     simd::copy_n(temp.data(4),OrbitalSetSize,d2psi.data());
   }
 
-  void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, 
+  void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat,
       ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
     {
       //TAKE CARE OF IDENTITY
-      const bool trialmove=true;
-      myBasisSet->evaluateVGL(P,iat,Temp,trialmove);
+      myBasisSet->evaluateVGL(P,iat,Temp);
       if(Identity) 
         evaluate_vgl_impl(Temp,psi,dpsi,d2psi);
       else
@@ -97,17 +120,19 @@ namespace qmcplusplus
       }
     }
 
-  void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, 
-      VGLVector_t vgl, bool newpos)
+  void LCAOrbitalSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
   {
-    if(Identity)
-      myBasisSet->evaluateVGL(P,iat,vgl,newpos);
-    else
+    const int nVP = VP.getTotalNum();
+    Matrix<ValueType> basisM(SPOMem.data(), nVP, BasisSetSize);
+    for(size_t j=0; j<nVP; j++)
     {
-      myBasisSet->evaluateVGL(P,iat,Temp,newpos);
-      Product_ABt(Temp,*C,vgl);
+      Vector<RealType> vTemp(basisM[j],BasisSetSize);
+      myBasisSet->evaluateV(VP,j,vTemp.data());
     }
+    MatrixOperators::product_ABt(basisM,*C,psiM);
   }
+
+  size_t LCAOrbitalSet::estimateMemory(const int nP) { return BasisSetSize*nP; }
 
   void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat,
         ValueVector_t& psi, GradVector_t& dpsi,
@@ -141,13 +166,11 @@ namespace qmcplusplus
   void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
       ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
-    CONSTEXPR bool curpos=false; //hint that the full distance table used
-
     if(Identity)
     {
       for(size_t i=0, iat=first; iat<last; i++,iat++)
       {
-        myBasisSet->evaluateVGL(P,iat,Temp,curpos);
+        myBasisSet->evaluateVGL(P,iat,Temp);
         evaluate_vgl_impl(Temp,i,logdet,dlogdet,d2logdet);
       }
     }
@@ -155,7 +178,7 @@ namespace qmcplusplus
     {
       for(size_t i=0, iat=first; iat<last; i++,iat++)
       {
-        myBasisSet->evaluateVGL(P,iat,Temp,curpos);
+        myBasisSet->evaluateVGL(P,iat,Temp);
         Product_ABt(Temp,*C,Tempv);
         evaluate_vgl_impl(Tempv,i,logdet,dlogdet,d2logdet);
       }

@@ -137,7 +137,7 @@ import inspect
 import keyword
 from numpy import fromstring,empty,array,float64,\
     loadtxt,ndarray,dtype,sqrt,pi,arange,exp,eye,\
-    ceil,mod,dot,abs,identity
+    ceil,mod,dot,abs,identity,floor
 from StringIO import StringIO
 from superstring import string2val
 from generic import obj,hidden
@@ -285,42 +285,58 @@ class collection(hidden):
     #end def __init__
 
     def __setitem__(self,name,value):
-        self.error('elements can only be set via the add function')
-        #self.add(value)
+        #self.error('elements can only be set via the add function')
+        self.add(value,key=name)
     #end def __setitem__
 
+    def __delitem__(self,name):
+        #self.error('elements can only be deleted via the remove function')
+        self.remove(name)
+    #end def __delitem__
+
+    def __setattr__(self,name,value):
+        #self.error('elements can only be set via the add function')
+        self.add(value,key=name)
+    #end def __setattr__
+
+    def __delattr__(self,name):
+        #self.error('elements can only be deleted via the remove function')
+        self.remove(name)
+    #end def __delattr__
+
     def add(self,element,strict=True,key=None):
-        if key is None:
-            identifier = element.identifier
-            public = self.public()
-            missing_identifier = False
-            if not element.tag in plurals_inv and element.collection_id is None:
-                self.error('collection cannot be formed\n  encountered non-plural element\n  element class: {0}\n  element tag: {1}\n  tags allowed in a collection: {2}'.format(element.__class__.__name__,element.tag,sorted(plurals_inv.keys())))
-            elif identifier is None:
-                key = len(public)
-            elif isinstance(identifier,str):
-                if identifier in element:
-                    key = element[identifier]
-                else:
-                    missing_identifier = True
-                #end if
+        if not isinstance(element,QIxml):
+            self.error('collection cannot be formed\nadd attempted for non QIxml element\ntype received: {0}'.format(element.__class__.__name__))
+        #end if
+        keyin = key
+        key   = None
+        public = self.public()
+        identifier = element.identifier
+        missing_identifier = False
+        if not element.tag in plurals_inv and element.collection_id is None:
+            self.error('collection cannot be formed\n  encountered non-plural element\n  element class: {0}\n  element tag: {1}\n  tags allowed in a collection: {2}'.format(element.__class__.__name__,element.tag,sorted(plurals_inv.keys())))
+        elif identifier is None:
+            key = len(public)
+        elif isinstance(identifier,str):
+            if identifier in element:
+                key = element[identifier]
             else:
-                key = ''
-                for ident in identifier:
-                    if ident in element:
-                        key+=element[ident]
-                    #end if
-                #end for
-                missing_identifier = key==''
+                missing_identifier = True
             #end if
-            if missing_identifier:
-                key = len(public)
-                #if strict:
-                #    self.error('collection cannot be formed\n  element is missing an identifier\n  element class: {0}\n  element tag: {1}\n  identifier looked for: {2}\n  element contents:\n{3}'.format(element.__class__.__name__,element.tag,identifier,str(element)))
-                #else:
-                #    return False
-                ##end if
-            #end if
+        else:
+            key = ''
+            for ident in identifier:
+                if ident in element:
+                    key+=element[ident]
+                #end if
+            #end for
+            missing_identifier = key==''
+        #end if
+        if missing_identifier:
+            key = len(public)
+        #end if
+        if keyin is not None and not isinstance(key,int) and keyin.lower()!=key.lower():
+            self.error('attempted to add key with incorrect name\nrequested key: {0}\ncorrect key: {1}'.format(keyin,key))
         #end if
         #if key in public:
         #    self.error('attempted to add duplicate key to collection: {0}\n keys present: {1}'.format(key,sorted(public.keys())))
@@ -329,6 +345,16 @@ class collection(hidden):
         self.hidden().order.append(key)
         return True
     #end def add
+
+    def remove(self,key):
+        public = self.public()
+        if key in public:
+            del public[key]
+            self.hidden().order.remove(key)
+        else:
+            raise KeyError
+        #end if
+    #end def remove
 
     def get_single(self,preference=None):
         if len(self)>0:
@@ -1455,6 +1481,8 @@ class QIxmlFactory(Names):
                 type = kw[self.typekey2]
             elif self.default!=None:
                 type = self.default
+            elif self.typeindex==-1:
+                self.error('QMCPACK input file is misformatted\ncannot identify type for <{0}/> element\nwith contents:\n{1}\nplease find the XML element matching this description in the input file to identify the problem\nmost likely, it is missing attributes "{2}" or "{3}"'.format(self.name,str(v).rstrip(),self.typekey,self.typekey2))
             else:
                 type = a[self.typeindex]
             #end if
@@ -1501,7 +1529,7 @@ class Param(Names):
 
     def __call__(self,*args,**kwargs):
         if len(args)==0:
-            self.error('no arguments provided, should have recieved one XMLelement')
+            self.error('no arguments provided, should have received one XMLelement')
         elif not isinstance(args[0],XMLelement):
             return args[0]
             #self.error('first argument is not an XMLelement')
@@ -1734,7 +1762,8 @@ class particleset(QIxml):
 
 class group(QIxml):
     attributes = ['name','size','mass'] # mass attr and param, bad bad bad!!!
-    parameters = ['charge','valence','atomicnumber','mass'] 
+    parameters = ['charge','valence','atomicnumber','mass','lmax',
+                  'cutoff_radius','spline_radius','spline_npoints'] 
     attribs    = ['position']
     identifier = 'name'
 #end class group
@@ -1758,9 +1787,9 @@ class bspline_builder(QIxml):
     identifier  = 'type'
     attributes  = ['type','href','sort','tilematrix','twistnum','twist','source',
                    'version','meshfactor','gpu','transform','precision','truncate',
-                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag']
+                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag','hybridrep']
     elements    = ['sposet']
-    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse)
+    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,hybridrep=yesno)
 #end class bspline_builder
 
 class heg_builder(QIxml):
@@ -1803,7 +1832,7 @@ class wavefunction(QIxml):
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword']
+    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep']
     elements   = ['basisset','sposet','slaterdeterminant','multideterminant','spline','backflow','cubicgrid']
     h5tags     = ['twistindex','twistangle','rcut']
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno)
@@ -1865,6 +1894,7 @@ class determinant(QIxml):
 
 class occupation(QIxml):
     attributes = ['mode','spindataset','size','pairs','format']
+    text       = 'contents'
 #end class occupation
 
 class multideterminant(QIxml):
@@ -1934,7 +1964,7 @@ class jastrow3(QIxml):
 
 class kspace_jastrow(QIxml):
     tag = 'jastrow'
-    attributes = ['type','name','source','function','optimize','symmetry']
+    attributes = ['type','name','source']
     elements   = ['correlation']
     identifier = 'name'
     write_types = obj(optimize=yesno)
@@ -1974,7 +2004,7 @@ class coefficients(QIxml):
 #end class coefficients
 
 class coefficient(QIxml):  # this is bad!!! coefficients/coefficient
-    attributes = ['id','type','size','dataset']
+    attributes = ['id','type','size','dataset','spindataset']
     text       = 'coeff'
     precision  = '16.12e'
 #end class coefficient
@@ -2017,7 +2047,7 @@ class pseudopotential(QIxml):
 #end class pseudopotential
 
 class pseudo(QIxml):
-    attributes = ['elementtype','href','format','cutoff','lmax','nrule','l-local']
+    attributes = ['elementtype','href','format','cutoff','lmax','nrule','l_local']
     elements   = ['header','local','grid']
     identifier = 'elementtype'
 #end class pseudo
@@ -2208,7 +2238,7 @@ class flux(QIxml):
 
 class momentum(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','grid','samples','hdf5','wavefunction']
+    attributes = ['type','name','grid','samples','hdf5','wavefunction','kmax','kmax0','kmax1','kmax2']
     identifier = 'name'
     write_types = obj(hdf5=yesno)
 #end class momentum
@@ -2550,6 +2580,8 @@ Names.set_expanded_names(
     exctlvl          = 'exctLvl',
     pairtype         = 'pairType',
     printeloc        = 'printEloc',
+    spindependent    = 'spinDependent',
+    l_local          = 'l-local',
    )
 for c in classes:
     c.init_class()
@@ -2568,7 +2600,7 @@ project.defaults.set(
     application = application
     )
 application.defaults.set(
-    name='qmcapp',role='molecu',class_='serial',version='1.0'
+    name='qmcpack',role='molecu',class_='serial',version='1.0'
     )
 #simulationcell.defaults.set(
 #    bconds = 'p p p',lr_dim_cutoff=15
@@ -3577,7 +3609,7 @@ class QmcpackInput(SimulationInput,Names):
     #end def incorporate_system
         
 
-    def return_system(self):
+    def return_system(self,structure_only=False):
         input = self.copy()
         input.pluralize()
         axes,ps,H = input.get('lattice','particlesets','hamiltonian')
@@ -3723,7 +3755,11 @@ class QmcpackInput(SimulationInput,Names):
 
         system = PhysicalSystem(structure,net_charge,net_spin,**valency) 
         
-        return system
+        if structure_only:
+            return structure
+        else:
+            return system
+        #end if
     #end def return_system
 
 
@@ -4051,12 +4087,14 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,system=None):
 #end def generate_simulationcell
 
 
-def generate_particlesets(electrons = 'e',
-                          ions      = 'ion0',
-                          up        = 'u',
-                          down      = 'd',
-                          system    = None,
-                          randomsrc = False
+def generate_particlesets(electrons   = 'e',
+                          ions        = 'ion0',
+                          up          = 'u',
+                          down        = 'd',
+                          system      = None,
+                          randomsrc   = False,
+                          hybrid_rcut = None,
+                          hybrid_lmax = None,
                           ):
     if system is None:
         QmcpackInput.class_error('generate_particlesets argument system must not be None')
@@ -4104,6 +4142,23 @@ def generate_particlesets(electrons = 'e',
             eps.randomsrc = iname
         #end if
         ips = particleset(name=iname)
+        # handle hybrid rep
+        hybridrep = hybrid_rcut is not None or hybrid_lmax is not None
+        if hybridrep:
+            hybrid_vars = (
+                ('hybrid_rcut',hybrid_rcut),
+                ('hybrid_lmax',hybrid_lmax),                
+                )
+            for hvar,hval in hybrid_vars:
+                if not isinstance(hval,obj):
+                    QmcpackInput.class_error('generate_particlesets argument "{0}" must be of type obj\nyou provided type: {1}\nwith value: {2}'.format(hvar,hval.__class__.__name__,hval))
+                #end if
+                if set(hval.keys())!=set(ion_species):
+                    QmcpackInput.class_error('generate_particsets argument "{0}" is incorrect\none entry must be present for each atomic species\natomic species present in the simulation: {1}\nvalues provided for the following species: {2}'.format(hvar,sorted(ion_species),sorted(hval.keys())))
+                #end if
+            #end for
+        #end if
+        # make groups
         groups = []
         for ion_spec in ion_species:
             ion = ions[ion_spec]
@@ -4117,6 +4172,19 @@ def generate_particlesets(electrons = 'e',
                 position     = gpos,
                 size         = len(gpos)
                 )
+            if hybridrep:
+                rcut = hybrid_rcut[ion_spec]
+                lmax = hybrid_lmax[ion_spec]
+                # this code should be in qmcpack 
+                # it should not be required of the user
+                dr = 0.02
+                rspline = rcut + 2*dr
+                nspline = int(floor(rspline/dr)) + 1
+                g.lmax           = lmax
+                g.cutoff_radius  = rcut
+                g.spline_radius  = rspline
+                g.spline_npoints = nspline
+            #end if
             groups.append(g)
         #end for
         ips.groups = make_collection(groups)
@@ -4198,6 +4266,7 @@ def generate_bspline_builder(type           = 'bspline',
                              truncate       = False,
                              buffer         = None,
                              spin_polarized = False,
+                             hybridrep      = None,
                              href           = 'MISSING.h5',
                              ions           = 'ion0',
                              spo_up         = 'spo_u',
@@ -4232,6 +4301,9 @@ def generate_bspline_builder(type           = 'bspline',
     #end if
     if truncate and buffer!=None:
         bsb.buffer = buffer
+    #end if
+    if hybridrep is not None:
+        bsb.hybridrep = hybridrep
     #end if
     if twist!=None:
         bsb.twistnum = system.structure.select_twist(twist)
@@ -4392,6 +4464,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 spin_polarized = False,
                                 source         = 'ion0',
                                 href           = 'MISSING.h5',
+                                excitation     = None,
                                 system         = None
                                 ):
     if system is None:
@@ -4436,6 +4509,40 @@ def generate_determinantset_old(type           = 'bspline',
         dset.twistnum = 0
     else:
         dset.twistnum = None
+    #end if
+    if excitation is not None:
+        format_failed = False
+        if not isinstance(excitation,(tuple,list)):
+            QmcpackInput.class_error('excitation must be a tuple or list\nyou provided type: {0}\nwith value: {1}'.format(excitation.__class__.__name__,excitation))
+        elif len(excitation)!=2 or excitation[0] not in ('up','down') or not isinstance(excitation[1],str):
+            format_failed = True
+        else:
+            try:
+                tmp = array(excitation[1].split(),dtype=int)
+            except:
+                format_failed = True
+            #end try
+        #end if
+        if format_failed:
+            QmcpackInput.class_error('excitation must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excitation))
+        #end if
+        spin_channel,excitation = excitation
+        if spin_channel=='up':
+            det = dset.get('updet')
+        elif spin_channel=='down':
+            det = dset.get('downdet')
+        #end if
+        occ = det.occupation
+	occ.pairs    = 1
+        occ.mode     = 'excited'
+        occ.contents = '\n'+excitation+'\n'
+        if '-' in excitation or '+' in excitation:
+            # assume excitation of form '-216 +217'
+            occ.format = 'energy'
+        else:
+            # assume excitation of form '6 36 6 37'
+            occ.format   = 'band'
+        #end if
     #end if
     return dset
 #end def generate_determinantset_old
@@ -4668,20 +4775,15 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
     if isinstance(jastrows,str):
         jorders = set(jastrows.replace('generate',''))
         if '1' in jorders and have_ions:
-            jin.append(
-                generate_jastrow('J1','bspline',8,system=system)
-                )
+            jterm = generate_jastrow('J1','bspline',8,system=system)
         #end if
         if '2' in jorders:
-            jin.append(
-                generate_jastrow('J2','bspline',8,system=system)
-                )
+            jterm = generate_jastrow('J2','bspline',8,system=system)
         #end if
         if '3' in jorders and have_ions:
-            jin.append(
-                generate_jastrow('J3','polynomial',3,3,4.0,system=system)
-                )
+            jterm = generate_jastrow('J3','polynomial',3,3,4.0,system=system)
         #end if
+        jin.append(jterm)
         if len(jin)==0:
             QmcpackInput.class_error('jastrow generation requested but no orders specified (1,2,and/or 3)')
         #end if
@@ -4706,7 +4808,10 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
                 else:
                     jsys = system
                 #end if
-                jin.append(generate_jastrow(jtype,system=jsys,**jdict))
+                jterm = generate_jastrow(jtype,system=jsys,**jdict)
+                if jterm is not None:
+                    jin.append(jterm)
+                #end if
                 del jtype
                 del jsys
             elif jastrow[0] in jset:
@@ -4998,6 +5103,18 @@ def generate_jastrow2(function='bspline',*args,**kwargs):
     else:
         QmcpackInput.class_error('function is invalid\n  you provided: {0}\n  valid options are: bspline or pade'.format(function),'generate_jastrow2')
     #end if
+    if 'system' in kwargs and kwargs['system'] is not None:
+        nup,ndn = kwargs['system'].particles.electron_counts()
+        if nup<2:
+            del j2.correlations.uu
+        #end if
+        if nup<1 or ndn<1:
+            del j2.correlations.ud
+        #end if
+        if len(j2.correlations)==0:
+            j2=None
+        #end if
+    #end if
     return j2
 #end def generate_jastrow2
 
@@ -5258,7 +5375,7 @@ def generate_opt(method,
     blocks = min(blocks,samples_per_proc*decorr)
 
     opt = opt_map[method]()
-
+ 
     opt.set(
         walkers    = walkers,
         blocks     = blocks,
@@ -5338,7 +5455,11 @@ def generate_basic_input(id             = 'qmc',
                          spin_polarized = None,
                          partition      = None,
                          partition_mf   = None,
+                         hybridrep      = None,
+                         hybrid_rcut    = None,
+                         hybrid_lmax    = None,
                          orbitals_h5    = 'MISSING.h5',
+                         excitation     = None,
                          system         = 'missing',
                          pseudos        = None,
                          jastrows       = 'generateJ12',
@@ -5367,8 +5488,12 @@ def generate_basic_input(id             = 'qmc',
         QmcpackInput.class_error('generate_basic_input argument system is missing\n  if you really do not want particlesets to be generated, set system to None')
     #end if
     if bconds is None:
-        if system!=None:
-            bconds = system.structure.bconds
+        if system is not None:
+            s = system.structure
+            bconds = s.bconds
+            if len(bconds)==0 or not s.has_axes():
+                bconds = 'nnn'
+            #end if
         else:
             bconds = 'ppp'
         #end if
@@ -5397,6 +5522,9 @@ def generate_basic_input(id             = 'qmc',
     if partition!=None:
         det_format = 'new'
     #end if
+    if hybrid_rcut is not None or hybrid_lmax is not None:
+        hybridrep = True
+    #end if
 
     metadata = QmcpackInput.default_metadata.copy()
 
@@ -5415,13 +5543,18 @@ def generate_basic_input(id             = 'qmc',
     if system!=None:
         system.structure.set_bconds(bconds)
         particlesets = generate_particlesets(
-            system    = system,
-            randomsrc = randomsrc or tuple(bconds)!=('p','p','p')
+            system      = system,
+            randomsrc   = randomsrc or tuple(bconds)!=('p','p','p'),
+            hybrid_rcut = hybrid_rcut,
+            hybrid_lmax = hybrid_lmax,
             )
     #end if
 
 
     if det_format=='new':
+        if excitation is not None:
+            QmcpackInput.class_error('user provided "excitation" input argument with new style determinant format\nplease add det_format="old" and try again')
+        #end if
         if system!=None and isinstance(system.structure,Jellium):
             ssb = generate_sposet_builder(
                 type           = 'heg',
@@ -5441,6 +5574,7 @@ def generate_basic_input(id             = 'qmc',
                 precision      = precision,
                 truncate       = truncate,
                 buffer         = buffer,
+                hybridrep      = hybridrep,
                 href           = orbitals_h5,
                 spin_polarized = spin_polarized,
                 system         = system
@@ -5472,7 +5606,8 @@ def generate_basic_input(id             = 'qmc',
             precision      = precision,
             href           = orbitals_h5,
             spin_polarized = spin_polarized,
-            system         = system
+            excitation     = excitation,
+            system         = system,
             )
     else:
         QmcpackInput.class_error('generate_basic_input argument det_format is invalid\n  received: {0}\n  valid options are: new,old'.format(det_format))
@@ -5643,8 +5778,8 @@ def generate_opt_jastrow_input(id  = 'qmc',
         jastrows       = jastrows       ,
         corrections    = corrections    ,
         observables    = observables    ,
-        calculations   = opts,
-        det_format     = det_format
+        calculations   = opts           ,
+        det_format     = det_format     ,
         )
 
     return input
@@ -5821,7 +5956,7 @@ if __name__=='__main__':
                     id='C16B',
                     series = 0,
                     application = section(
-                        name = 'qmcapp',
+                        name = 'qmcpack',
                         role = 'molecu',
                         class_ = 'serial',
                         version = .2
@@ -6142,7 +6277,7 @@ if __name__=='__main__':
             simulation = section(
                 project = section(
                     id='C16B',series = 0,
-                    application = section(name='qmcapp',role='molecu',class_='serial',version=.2),
+                    application = section(name='qmcpack',role='molecu',class_='serial',version=.2),
                     host='kraken',date='3 May 2012',user='jtkrogel'
                     ),
                 random = section(seed=13),
@@ -6336,7 +6471,7 @@ if __name__=='__main__':
         q=QmcpackInput()
         q.simulation = section(
             project = section('C16B',0,
-                application = section('qmcapp','molecu','serial',.2),
+                application = section('qmcpack','molecu','serial',.2),
                 host = 'kraken',
                 date = '3 May 2012',
                 user = 'jtkrogel'

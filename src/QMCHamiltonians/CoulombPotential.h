@@ -148,7 +148,7 @@ struct CoulombPotential: public QMCHamiltonianBase
   /** JNKIM: Need to check the precision */
   inline T evaluateAB(const DistanceTableData* d, const ParticleScalar_t* restrict Za, const ParticleScalar_t* restrict Zb) 
   {
-    CONSTEXPR T czero(0);
+    constexpr T czero(0);
     T res=czero;
 #if !defined(REMOVE_TRACEMANAGER)
     if( streaming_particles)
@@ -339,11 +339,6 @@ struct CoulombPotential: public QMCHamiltonianBase
         Value=evaluateAA(P.DistTables[myTableIndex],P.Z.first_address());
     }
     return Value;
-  }
-
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
   }
 
   bool put(xmlNodePtr cur)

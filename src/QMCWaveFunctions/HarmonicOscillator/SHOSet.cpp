@@ -9,8 +9,8 @@
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 
 #include <QMCWaveFunctions/HarmonicOscillator/SHOSet.h>
 #include <Utilities/string_utils.h>
@@ -36,7 +36,6 @@ namespace qmcplusplus
     className = "SHOSet";
 
     OrbitalSetSize = state_info.size();
-    BasisSetSize = OrbitalSetSize;
 
     qn_max = -1;
     for(int s=0;s<state_info.size();++s)
@@ -71,7 +70,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSetBase* SHOSet::makeClone() const
+  SPOSet* SHOSet::makeClone() const
   {
     return new SHOSet(*this);
   }
@@ -95,45 +94,47 @@ namespace qmcplusplus
 
   void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
-    ValueViewer_t p(&psi[0],size());
-    evaluate_v(P.R[iat],p);
+    const PosType &r(P.activeR(iat));
+    ValueVector_t p(&psi[0],size());
+    evaluate_v(r,p);
   }
 
 
-  void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, 
+  void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,
                         GradVector_t& dpsi, ValueVector_t& d2psi)
   {
-    ValueViewer_t   p(  &psi[0],size());
-    GradViewer_t   dp( &dpsi[0],size());
-    ValueViewer_t d2p(&d2psi[0],size());
-    evaluate_vgl(P.R[iat],p,dp,d2p);
+    const PosType &r(P.activeR(iat));
+    ValueVector_t   p(  &psi[0],size());
+    GradVector_t   dp( &dpsi[0],size());
+    ValueVector_t d2p(&d2psi[0],size());
+    evaluate_vgl(r,p,dp,d2p);
   }
-  
+
 
   void SHOSet::evaluate_notranspose(
-    const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
+    const ParticleSet& P, int first, int last, ValueMatrix_t& logdet,
     GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
     for(int iat=first, i=0; iat<last; ++iat,++i)
     {
-      ValueViewer_t   p(  logdet[i],size());
-      GradViewer_t   dp( dlogdet[i],size());
-      ValueViewer_t d2p(d2logdet[i],size());
+      ValueVector_t   p(  logdet[i],size());
+      GradVector_t   dp( dlogdet[i],size());
+      ValueVector_t d2p(d2logdet[i],size());
       evaluate_vgl(P.R[iat],p,dp,d2p);
-    } 
+    }
   }
 
 
-  void SHOSet::evaluate_v(PosType r, ValueViewer_t& psi)
+  void SHOSet::evaluate_v(PosType r, ValueVector_t& psi)
   {
     PosType x = (r-center)/length;
     evaluate_hermite(x);
     evaluate_d0(x,psi);
   }
-  
 
-  void SHOSet::evaluate_vgl(PosType r, ValueViewer_t& psi, 
-                            GradViewer_t& dpsi, ValueViewer_t& d2psi)
+
+  void SHOSet::evaluate_vgl(PosType r, ValueVector_t& psi,
+                            GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     PosType x = (r-center)/length;
     evaluate_hermite(x);
@@ -167,7 +168,7 @@ namespace qmcplusplus
   }
 
 
-  void SHOSet::evaluate_d0(const PosType& xpos, ValueViewer_t& psi)
+  void SHOSet::evaluate_d0(const PosType& xpos, ValueVector_t& psi)
   {
     using std::exp;
     int shift=0;
@@ -188,13 +189,13 @@ namespace qmcplusplus
       RealType phi = 1.0;
       int shift = 0;
       for(int d=0;d<DIM;++d,shift+=nmax)
-        phi *= bvalues(shift+state.quantum_number[d]); 
+        phi *= bvalues(shift+state.quantum_number[d]);
       psi[s] = phi;
     }
   }
 
 
-  void SHOSet::evaluate_d1(const PosType& xpos, ValueViewer_t& psi, GradViewer_t& dpsi)
+  void SHOSet::evaluate_d1(const PosType& xpos, ValueVector_t& psi, GradVector_t& dpsi)
   {
     RealType ol = 1.0/length;
     int shift=0;
@@ -217,14 +218,14 @@ namespace qmcplusplus
       TinyVector<ValueType,DIM> dphi;
       int shift = 0;
       for(int d=0;d<DIM;++d,shift+=nmax)
-        dphi[d] = bvalues(shift+state.quantum_number[d]); 
+        dphi[d] = bvalues(shift+state.quantum_number[d]);
       dphi *= psi[s];
       dpsi[s] = dphi;
     }
   }
 
 
-  void SHOSet::evaluate_d2(const PosType& xpos, ValueViewer_t& psi, ValueViewer_t& d2psi)
+  void SHOSet::evaluate_d2(const PosType& xpos, ValueVector_t& psi, ValueVector_t& d2psi)
   {
     RealType ol2 = 1.0/(length*length);
     int shift = 0;
@@ -232,16 +233,12 @@ namespace qmcplusplus
     {
       RealType x = xpos[d];
       RealType x2  = x*x;
-      RealType Hnm1 = 0.0;
-      RealType Hnm2 = 0.0;
       for(int n=0;n<qn_max[d];++n)
       {
         int ns = n+shift;
         RealType Hn = hermite(ns);
         bvalues(ns) = (-1.0 + x2 - 2*n)*ol2;
         //d2_values(ns) = bvalues(ns);
-        Hnm2 = Hnm1;
-        Hnm1 = Hn;
       }
     }
     for(int s=0;s<state_info.size();++s)
@@ -250,15 +247,15 @@ namespace qmcplusplus
       ValueType d2phi=0.0;
       int shift = 0;
       for(int d=0;d<DIM;++d,shift+=nmax)
-        d2phi += bvalues(shift+state.quantum_number[d]); 
+        d2phi += bvalues(shift+state.quantum_number[d]);
       d2phi *= psi[s];
       d2psi[s] = d2phi;
     }
   }
 
 
-  void SHOSet::evaluate_check(PosType r, ValueViewer_t& psi, 
-                              GradViewer_t& dpsi, ValueViewer_t& d2psi)
+  void SHOSet::evaluate_check(PosType r, ValueVector_t& psi,
+                              GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     using std::exp;
     using std::sqrt;
@@ -315,9 +312,9 @@ namespace qmcplusplus
         app_log()<<"    "<<n<<" "<<d2p[n]/p[n]<< std::endl;
         app_log()<<"    "<<n<<" "<<d2_values(d,n)<< std::endl;
       }
-        
+
     }
-    
+
   }
 
 
@@ -332,7 +329,7 @@ namespace qmcplusplus
 
     PosType o2dr,odr2;
 
-    ValueVector_t   vpsi,vpsitmp; 
+    ValueVector_t   vpsi,vpsitmp;
     GradVector_t   vdpsi,vdpsin;
     ValueVector_t vd2psi,vd2psin;
 
@@ -345,14 +342,14 @@ namespace qmcplusplus
     vdpsin.resize(nphi);
     vd2psin.resize(nphi);
 
-    
-    ValueViewer_t   psi(  &vpsi[0],size());
-    GradViewer_t   dpsi( &vdpsi[0],size());
-    ValueViewer_t d2psi(&vd2psi[0],size());
-    
-    ValueViewer_t   psitmp(&vpsitmp[0],size());
-    GradViewer_t   dpsin(   &vdpsin[0],  size());
-    ValueViewer_t d2psin(  &vd2psin[0],  size());
+
+    ValueVector_t   psi(  &vpsi[0],size());
+    GradVector_t   dpsi( &vdpsi[0],size());
+    ValueVector_t d2psi(&vd2psi[0],size());
+
+    ValueVector_t   psitmp(&vpsitmp[0],size());
+    GradVector_t   dpsin(   &vdpsin[0],  size());
+    ValueVector_t d2psin(  &vd2psin[0],  size());
 
 
     app_log()<<" loading dr"<< std::endl;
@@ -471,12 +468,12 @@ namespace qmcplusplus
 
     ValueVector_t vpsi;
     vpsi.resize(size());
-    ValueViewer_t psi(  &vpsi[0],size());
+    ValueVector_t psi(&vpsi[0],size());
 
     double xmax = 4.0;
     double dx = .1;
     double dr = length*dx;
-    
+
     int nphi = qn_max[d];
     Array<double,2> omat;
     omat.resize(nphi,nphi);
@@ -490,7 +487,7 @@ namespace qmcplusplus
       xp[d] = x;
       evaluate_hermite(xp);
       evaluate_d0(xp,psi);
-      
+
       for(int i=0;i<nphi;++i)
         for(int j=0;j<nphi;++j)
           omat(i,j) += bvalues(d,i)*bvalues(d,j)*dr;
@@ -520,7 +517,7 @@ namespace qmcplusplus
           xp[0]=x; xp[1]=y; xp[2]=z;
           evaluate_hermite(xp);
           evaluate_d0(xp,psi);
-          
+
           for(int i=0;i<nphi;++i)
             for(int j=0;j<nphi;++j)
               omat(i,j) += std::abs(psi[i]*psi[j])*dV;
@@ -544,7 +541,7 @@ namespace qmcplusplus
   {
     not_implemented("resetParameters");
   }
-    
+
   void SHOSet::evaluate(
     const ParticleSet& P, PosType &r, ValueVector_t &psi)
   {
@@ -552,7 +549,7 @@ namespace qmcplusplus
   }
 
   void SHOSet::evaluate(
-    const ParticleSet& P, int iat,ValueVector_t& psi, 
+    const ParticleSet& P, int iat,ValueVector_t& psi,
     GradVector_t& dpsi, HessVector_t& ddpsi)
   {
     not_implemented("evaluate(P,iat,psi,dpsi,ddpsi)");
@@ -565,55 +562,33 @@ namespace qmcplusplus
   }
 
   void SHOSet::evaluate_notranspose(
-    const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
+    const ParticleSet& P, int first, int last, ValueMatrix_t& logdet,
     GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
   {
     not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet)");
   }
 
   void SHOSet::evaluate_notranspose(
-    const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
-    GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, 
+    const ParticleSet& P, int first, int last, ValueMatrix_t& logdet,
+    GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet,
     GGGMatrix_t& grad_grad_grad_logdet)
   {
     not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet,dddlogdet)");
   }
 
   void SHOSet::evaluateGradSource(
-    const ParticleSet &P, int first, int last, 
+    const ParticleSet &P, int first, int last,
     const ParticleSet &source, int iat_src, GradMatrix_t &gradphi)
   {
     not_implemented("evaluateGradSource(P,first,last,source,iat,dphi)");
   }
 
   void SHOSet::evaluateGradSource(
-    const ParticleSet &P, int first, int last, const ParticleSet &source, 
-    int iat_src, GradMatrix_t &grad_phi, HessMatrix_t &grad_grad_phi, 
+    const ParticleSet &P, int first, int last, const ParticleSet &source,
+    int iat_src, GradMatrix_t &grad_phi, HessMatrix_t &grad_grad_phi,
     GradMatrix_t &grad_lapl_phi)
   {
     not_implemented("evaluateGradSource(P,first,last,source,iat,dphi,ddphi,dd2phi)");
   }
-
-  void SHOSet::evaluateBasis(
-    const ParticleSet &P, int first, int last, ValueMatrix_t &basis_val,  
-    GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl)
-  {
-    not_implemented("evaluateBasis");
-  }
-
-  void SHOSet::evaluateForDeriv(
-    const ParticleSet &P, int first, int last, ValueMatrix_t &basis_val,  
-    GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl)
-  {
-    not_implemented("evaluateForDeriv");
-  }
-
-  void SHOSet::copyParamsFromMatrix(
-    const opt_variables_type& active, const ValueMatrix_t &mat, 
-    std::vector<RealType> &destVec)
-  {
-    not_implemented("copyParamsFromMatrix");
-  }
-
 
 }

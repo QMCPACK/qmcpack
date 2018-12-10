@@ -30,7 +30,7 @@
 
 /** generic accumulator of a scalar type
  *
- * To simplify i/o, the values are storged in contens
+ * To simplify i/o, the values are storged in contents
  */
 template<typename T,
   typename = typename std::enable_if<std::is_floating_point<T>::value>::type>

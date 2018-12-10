@@ -31,43 +31,6 @@
 namespace qmcplusplus
 {
 
-/** container for the pair data
- */
-template<class T, unsigned D>
-struct PairDataType
-{
-  ///distance-related data
-  T   r, rr, rinv;
-  ///displacement vector
-  TinyVector<T,D> dr;
-  ///default constructor
-  inline PairDataType() {}
-  ///copy constructor
-  inline PairDataType(const PairDataType<T,D>& p):r(p.r),rr(p.rr),rinv(p.rinv),dr(p.dr) {}
-  ///copy operator
-  inline PairDataType<T,D>& operator=(const PairDataType<T,D>& p)
-  {
-    r=p.r;
-    rr=p.rr;
-    rinv=p.rinv;
-    dr=p.dr;
-    return *this;
-  }
-  ///set the values
-  inline void set(const TinyVector<T,D>& displ, T sep2)
-  {
-    r=sqrt(sep2);
-    rr=sep2;
-    rinv=1.0/r;
-    dr=displ;
-  }
-  ///clear the value
-  inline void reset()
-  {
-    r=0.0;
-  }
-};
-
 /** @defgroup nnlist Distance-table group
  * @brief class to manage a set of data for distance relations between ParticleSet objects.
  */
@@ -80,7 +43,6 @@ struct TempDisplacement
   T rinv1;
   ///new displacement
   TinyVector<T,N> dr1;
-  TinyVector<T,N> dr1_nobox;
   inline TempDisplacement():r1(0.0),rinv1(0.0) {}
   inline void reset()
   {
@@ -108,7 +70,7 @@ enum DistTableType {DT_AOS=0,  DT_SOA, DT_AOS_PREFERRED, DT_SOA_PREFERRED};
  */
 struct DistanceTableData 
 {
-  CONSTEXPR static unsigned DIM=OHMMS_DIM;
+  static constexpr unsigned DIM=OHMMS_DIM;
 
   /**enum for index ordering and storage.
    *@brief Equivalent to using three-dimensional array with (i,j,k)
@@ -141,16 +103,8 @@ struct DistanceTableData
   int ID;
   ///Type of DT
   int DTType;
-  ///Index of the particle  with a trial move
-  IndexType activePtcl;
   ///size of indicies
   TinyVector<IndexType,4> N;
-  ///true, if ratio computations need displacement, e.g. LCAO type
-  bool NeedDisplacement;
-  ///Maximum radius set by a Hamiltonian
-  RealType Rmax;
-  ///** Maximum square */
-  //RealType Rmax2;
 
   /** @brief M.size() = N[SourceIndex]+1
    *
@@ -186,10 +140,22 @@ struct DistanceTableData
 
   /**defgroup SoA data */
   /*@{*/
-  /** Distances[i][j] , [Nsources][Ntargets] */
+  /** Distances[i][j] , [Nsources][Ntargets]
+   *  Note: For derived AA, only the lower triangle (j<i) is up-to-date after pbyp move
+   *          The upper triangle is symmetric to the lower one only when the full table is evaluated from scratch.
+   *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
+   *        For derived BA, the full table is up-to-date after pbyp move
+   */
   Matrix<RealType, aligned_allocator<RealType> > Distances;
 
-  /** Displacements[Nsources]x[3][Ntargets] */
+  /** Displacements[Nsources]x[3][Ntargets]
+   *  Note: This is a memory view using the memory space allocated in memoryPool
+   *        Displacements[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
+   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is allocated in memoryPool
+   *          For this reason, Displacements[i] and Displacements[i+1] overlap in memory
+   *          and they must be updated in order during PbyP move.
+   *        For derived BA, A1=A, A2=B, the full table is allocated.
+   */
   std::vector<RowContainer> Displacements;
 
   ///actual memory for Displacements
@@ -209,11 +175,8 @@ struct DistanceTableData
   std::string Name;
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-    : Origin(&source), N(0), NeedDisplacement(false), Need_full_table_loadWalker(false)
-  {  
-    Rmax=0; //set 0
-    //Rmax=source.Lattice.WignerSeitzRadius;   
-  }
+    : Origin(&source), N(0), Need_full_table_loadWalker(false)
+  { }
 
   ///virutal destructor
   virtual ~DistanceTableData() { }
@@ -228,8 +191,6 @@ struct DistanceTableData
   {
     Name = tname;
   }
-  ///set the maximum radius
-  inline void setRmax(RealType rc) { Rmax=std::max(Rmax,rc);}
 
   ///returns the reference the origin particleset
   const ParticleSet& origin() const
@@ -288,24 +249,24 @@ struct DistanceTableData
   /// return the distance |R[iadj(i,nj)]-R[i]|
   inline RealType distance(int i, int nj) const
   {
-    return (DTType)? r_m2(i,nj): r_m[M[i]+nj];
+    return r_m[M[i]+nj];
   }
 
   /// return the displacement R[iadj(i,nj)]-R[i]
   inline PosType displacement(int i, int nj) const
   {
-    return (DTType)? dr_m2(i,nj): dr_m[M[i]+nj];
+    return dr_m[M[i]+nj];
   }
 
   //!< Returns a number of neighbors of the i-th ptcl.
   inline IndexType nadj(int i) const
   {
-    return (DTType)? M[i]:M[i+1]-M[i];
+    return M[i+1]-M[i];
   }
   //!< Returns the id of nj-th neighbor for i-th ptcl
   inline IndexType iadj(int i, int nj) const
   {
-    return (DTType)? J2(i,nj):J[M[i] +nj];
+    return J[M[i] +nj];
   }
   //!< Returns the id of j-th neighbor for i-th ptcl
   inline IndexType loc(int i, int j) const
@@ -350,23 +311,17 @@ struct DistanceTableData
     return -1;
   }
 
-  ///prepare particle-by-particle moves
-  virtual void setPbyP() { }
-
-  ///update internal data after completing particle-by-particle moves
-  virtual void donePbyP() { }
-
-  ///evaluate the Distance Table using only with position array
+  ///evaluate the full Distance Table
   virtual void evaluate(ParticleSet& P) = 0;
 
-  /// evaluate the Distance Table
+  /// evaluate the Distance Table for a given electron
   virtual void evaluate(ParticleSet& P, int jat)=0;
 
   ///evaluate the temporary pair relations
-  virtual void move(const ParticleSet& P, const PosType& rnew, IndexType jat) =0;
+  virtual void move(const ParticleSet& P, const PosType& rnew) =0;
 
   ///evaluate the distance tables with a sphere move
-  virtual void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat) =0;
+  virtual void moveOnSphere(const ParticleSet& P, const PosType& rnew) =0;
 
   ///update the distance table by the pair relations
   virtual void update(IndexType jat) = 0;
@@ -384,13 +339,18 @@ struct DistanceTableData
     return 0;
   }
 
-  /** find the nearest neighbor
+  /** find the first nearest neighbor
    * @param iat source particle id
+   * @param r distance
+   * @param dr displacement
+   * @param newpos if true, use the data in Temp_r and Temp_dr for the proposed move.
+   *        if false, use the data in Distance[iat] and Displacements[iat]
    * @return the id of the nearest particle, -1 not found
    */
-  virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr) const
+  virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
   {
-    return -1;
+    APP_ABORT("DistanceTableData::get_first_neighbor is not implemented in calling base class");
+    return 0;
   }
 
   /** build a compact list of a neighbor for the iat source
@@ -455,12 +415,6 @@ struct DistanceTableData
   std::vector<RealType> rinv_m;
   /** displacement vectors \f$dr(i,j) = R(j)-R(i)\f$  */
   std::vector<PosType> dr_m;
-  /** full distance AB or AA  return r2_m(iat,jat) */
-  Matrix<RealType,aligned_allocator<RealType> > r_m2;
-  /** full displacement  AB or AA  */
-  Matrix<PosType> dr_m2;
-  /** J2 for compact neighbors */
-  Matrix<int,aligned_allocator<int> > J2;
   /*@}*/
 
   /**resize the storage

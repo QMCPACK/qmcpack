@@ -13,8 +13,9 @@
 #ifndef QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_TEMP_H
 #define QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_TEMP_H
 
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
+
 
 namespace qmcplusplus
 {
@@ -23,7 +24,7 @@ namespace qmcplusplus
    * SoA verson of LCOrtbitalSet
    * Localized basis set is always real 
    */
-  struct LCAOrbitalSet: public SPOSetBase
+  struct LCAOrbitalSet: public SPOSet
   {
     typedef RealBasisSetBase<RealType> basis_type;
     typedef basis_type::vgl_type vgl_type;
@@ -32,6 +33,17 @@ namespace qmcplusplus
     int ReportLevel;
     ///pointer to the basis set
     basis_type* myBasisSet;
+    ///number of Single-particle orbitals
+    IndexType BasisSetSize;
+    /** pointer to matrix containing the coefficients
+     *
+     * makeClone makes a shallow copy
+     */
+    ValueMatrix_t* C;
+    ///true if C is an identity matrix
+    bool Identity;
+    ///if true, do not clean up
+    bool IsCloned;
     ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
     vgl_type Temp; 
     ///Tempv(OrbitalSetSize) Tempv=C*Temp
@@ -45,9 +57,9 @@ namespace qmcplusplus
 
     LCAOrbitalSet(const LCAOrbitalSet& in)=default;
 
-    ~LCAOrbitalSet();
+    virtual ~LCAOrbitalSet();
 
-    SPOSetBase* makeClone() const;
+    SPOSet* makeClone() const;
 
     ///reset
     void resetParameters(const opt_variables_type& active)
@@ -63,7 +75,7 @@ namespace qmcplusplus
 
     /** set the OrbitalSetSize
     */
-    void setOrbitalSetSize(int norbs)
+    virtual void setOrbitalSetSize(int norbs)
     {
       OrbitalSetSize=norbs;
       Tempv.resize(OrbitalSetSize);
@@ -75,16 +87,26 @@ namespace qmcplusplus
 
     /** return the size of the basis set
     */
-    inline int getBasisSetSize() const
+    int getBasisSetSize() const
     {
       return (myBasisSet==nullptr)? 0: myBasisSet->getBasisSetSize();
+    }
+
+    bool setIdentity(bool useIdentity);
+
+    void checkObject() const
+    {
+      if(!(OrbitalSetSize == C->rows() && BasisSetSize == C->cols()))
+        APP_ABORT("   LCAOrbitalSet::checkObject Linear coeffient for LCAOrbitalSet is not consistent with the input.");
     }
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
-    void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t vgl, bool newpos);
+    void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem);
+
+    size_t estimateMemory(const int nP);
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi);
 
@@ -104,6 +126,7 @@ namespace qmcplusplus
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) const;
     void evaluate_vgl_impl(const vgl_type& temp, int i,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) const;
+
   };
 }
 #endif

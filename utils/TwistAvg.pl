@@ -52,7 +52,7 @@ if ($numfiles > 1) {
 	    push @twistens, 0.0;
 	    push @twisterrs, 0.0;
 	} else {
-	    die "Cannot find enough raw data files to satsify this request\n";
+	    die "Cannot find enough raw data files to satisfy this request\n";
 	}
 #    print "Looking for a file like $prefix" . $i . ".????$suffix:   found $curfile\n";
     }

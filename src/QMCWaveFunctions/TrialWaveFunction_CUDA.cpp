@@ -47,7 +47,7 @@ TrialWaveFunction::recompute
 
 void
 TrialWaveFunction::reserve
-(PointerPool<gpu::device_vector<CudaValueType> > &pool,
+(PointerPool<gpu::device_vector<CTS::ValueType> > &pool,
  bool onlyOptimizable, int kblocksize)
 {
   for(int i=0; i<Z.size(); i++)

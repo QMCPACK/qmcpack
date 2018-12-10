@@ -26,7 +26,7 @@ The \texttt{simulationcell} block specifies the geometry of the cell, how the bo
 \end{table}
 
 An example of a \texttt{simulationcell} block is given below:
-\begin{shade}
+\begin{lstlisting}[style=XML]
   <simulationcell>
     <parameter name="lattice">
       3.8       0.0       0.0
@@ -38,7 +38,7 @@ An example of a \texttt{simulationcell} block is given below:
     </parameter>
     <parameter name="LR_dim_cutoff"> 20 </parameter>
   </simulationcell>
-\end{shade}
+\end{lstlisting}
 
 Here, a cubic cell 3.8 bohr on a side will be used.
 This simulation will use periodic boundary conditions, and the maximum
@@ -53,14 +53,14 @@ The cell is specified using 3 lattice vectors.
 QMCPACK offers the capability to use a mixture of open and periodic boundary conditions.
 The \texttt{bconds} parameter expects a single string of three characters separated by
 spaces, \textit{e.g.} ``p p p'' for purely periodic boundary conditions. These characters control
-the behavior of the $x$, $y$, and $z$, axes, respectively.
+the behavior of the $x$, $y$, and $z$, axes, respectively. Non periodic directions must be placed after the periodic ones.
 Examples of valid \texttt{bconds} include:
 
 \begin{description}
 \item[``p p p''] Periodic boundary conditions. Corresponds to a 3D crystal.
-\item[``n n n''] Open boundary conditions. Corresponds to an isolated molecule in a vacuum.
 \item[``p p n''] Slab geometry. Corresponds to a 2D crystal.
 \item[``p n n''] Wire geometry. Corresponds to a 1D crystal.
+\item[``n n n''] Open boundary conditions. Corresponds to an isolated molecule in a vacuum.
 \end{description}
 
 \subsection{Vacuum}
@@ -80,7 +80,7 @@ The default value is 1, no change to the specified axes.
 
 An example of a \texttt{simulationcell} block using \texttt{vacuum} is given below.
 The size of the box along the z-axis increases from 12 to 18 by the vacuum scale of 1.5.
-\begin{shade}
+\begin{lstlisting}[style=XML]
   <simulationcell>
     <parameter name="lattice">
       3.8       0.0       0.0
@@ -93,7 +93,7 @@ The size of the box along the z-axis increases from 12 to 18 by the vacuum scale
     <parameter name="vacuum"> 1.5 </parameter>
     <parameter name="LR_dim_cutoff"> 20 </parameter>
   </simulationcell>
-\end{shade}
+\end{lstlisting}
 
 \subsection{\texttt{LR\_dim\_cutoff}}
 When using periodic boundary conditions direct calculation of the Coulomb energy is

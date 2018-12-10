@@ -117,7 +117,7 @@ void cqmc::engine::LMBlocker::mpi_finalize(const double total_weight) {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::LMBlocker::prep_lm_block_plus_other_ou_dd_matrix(const int b, const int x, formic::Matrix<double> & dd) {
   
-  // begining index of the block
+  // beginning index of the block
   const int ibeg = 1 + m_hdata.bb(b);
 
   // block length
@@ -174,7 +174,7 @@ void cqmc::engine::LMBlocker::solve_for_block_dirs(const formic::VarDeps * dep_p
 
     // loop over blocks
     for (int b = 0; b < m_hdata.nb(); b++) {
-      // block begining index
+      // block beginning index
       const int starti = this->bb(b);
       // block end index
       const int stopi  = this->be(b);
@@ -200,7 +200,7 @@ void cqmc::engine::LMBlocker::solve_for_block_dirs(const formic::VarDeps * dep_p
     // loop over shifts
     for (auto s = shift_scale.begin(); s != shift_scale.end(); s++) {
       
-      // begining index of this block
+      // beginning index of this block
       const int ibeg = 1 + m_hdata.bb(b);
 
       // block length

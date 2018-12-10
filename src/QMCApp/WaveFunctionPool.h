@@ -60,6 +60,11 @@ public:
     return primaryPsi;
   }
 
+  void setPrimary(TrialWaveFunction *psi)
+  {
+    primaryPsi=psi;
+  }
+
   TrialWaveFunction* getWaveFunction(const std::string& pname)
   {
     std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(pname));

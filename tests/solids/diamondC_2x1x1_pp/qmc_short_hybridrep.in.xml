@@ -32,8 +32,6 @@
             <parameter name="atomicnumber"        >    6                     </parameter>
             <parameter name="mass"                >    21894.7135906            </parameter>
             <parameter name="cutoff_radius"       >    1.1                   </parameter>
-            <parameter name="spline_radius"       >    1.2                   </parameter>
-            <parameter name="spline_npoints"      >    121                   </parameter>
             <parameter name="lmax"                >    3                     </parameter>
             <attrib name="position" datatype="posArray" condition="0">
                      0.00000000        0.00000000        0.00000000

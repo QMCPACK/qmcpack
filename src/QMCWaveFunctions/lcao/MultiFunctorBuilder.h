@@ -49,7 +49,7 @@ namespace qmcplusplus
 
       inline value_type rmax() const
       {
-        CONSTEXPR value_type r0(100);
+        constexpr value_type r0(100);
         return r0;
       }
 
@@ -74,6 +74,7 @@ namespace qmcplusplus
 
   template<typename FN, typename SH>
     struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH> >
+      : public MPIObjectBase
     {
       typedef SoaAtomicBasisSet<MultiFunctorAdapter<FN>,SH> COT;
       typedef MultiFunctorAdapter<FN>                       RadialOrbital_t;
@@ -87,25 +88,15 @@ namespace qmcplusplus
       RadialOrbital_t* m_multiset;
 
       ///constructor
-      RadialOrbitalSetBuilder(xmlNodePtr cur=NULL):m_multiset(nullptr)
-      {
-        if(cur != NULL) putCommon(cur);
-        Normalized=true;
-      }
+      RadialOrbitalSetBuilder(Communicate* comm)
+        : m_multiset(nullptr), Normalized(true), MPIObjectBase(comm)
+      { }
 
       ///implement functions used by AOBasisBuilder
       void setOrbitalSet(COT* oset, const std::string& acenter) { m_orbitals = oset; }
-      bool addGrid(xmlNodePtr cur) { return true;}
-      inline bool putCommon(xmlNodePtr cur) 
-      { 
-        const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"normalized");
-        if(a)
-        {
-          if(xmlStrEqual(a,(const xmlChar*)"no"))
-            Normalized=false;
-        }
-        return true;
-      }
+      bool addGrid(xmlNodePtr cur, const std::string& rad_type) { return true;}
+      bool addGridH5(hdf_archive &hin) { return true;}
+      bool openNumericalBasisH5(xmlNodePtr cur) { return true;}
       bool put(xmlNodePtr cur)
       {
         const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"normalized");
@@ -117,7 +108,7 @@ namespace qmcplusplus
         return true;
       }
 
-      bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
+      bool addRadialOrbital(xmlNodePtr cur, const std::string& rad_type, const QuantumNumberType& nlms)
       {
 
         if(m_multiset==nullptr)
@@ -128,6 +119,20 @@ namespace qmcplusplus
 
         m_orbitals->RnlID.push_back(nlms);
         m_multiset->Rnl.push_back(radorb);
+        return true;
+      }
+
+      bool addRadialOrbitalH5(hdf_archive & hin, const std::string& rad_type, const QuantumNumberType& nlms)
+      {
+        if(m_multiset==nullptr)
+          m_multiset=new RadialOrbital_t;
+
+        single_type* radorb= new single_type(nlms[q_l],Normalized);
+        radorb->putBasisGroupH5(hin);
+
+        m_orbitals->RnlID.push_back(nlms);
+        m_multiset->Rnl.push_back(radorb);
+
         return true;
       }
 

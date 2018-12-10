@@ -173,8 +173,6 @@ for factor in factors:
         pseudos      = qmc_pps,
         meshfactor   = factor,
         precision    = 'double',
-        truncate     = False,
-        buffer       = 0.0,
         jastrows     = [],            
         calculations = [
             vmc(

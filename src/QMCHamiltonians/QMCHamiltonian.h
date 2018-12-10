@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
 #endif
@@ -246,12 +247,11 @@ public:
    */
   Return_t evaluate(ParticleSet& P);
 
-  /** evaluate Local and NonLocal energies
+  /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
-   * @param Txy transition matrix of nonlocal Hamiltonians
    * @return Local energy
    */
-  Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy);
+  Return_t evaluateWithToperator(ParticleSet& P);
   
   /** evaluate energy and derivatives wrt to the variables
    * @param P ParticleSet
@@ -265,7 +265,28 @@ public:
       std::vector<RealType>& dlogpsi,
       std::vector<RealType>& dhpsioverpsi,
       bool compute_deriv);
-  
+
+  /** set non local moves options
+   * @param cur the xml input
+   */
+  void setNonLocalMoves(xmlNodePtr cur)
+  {
+    if(nlpp_ptr!=nullptr)
+      nlpp_ptr->setNonLocalMoves(cur);
+  }
+
+  /** make non local moves
+   * @param P particle set
+   * @return the number of accepted moves
+   */
+  int makeNonLocalMoves(ParticleSet& P)
+  {
+    if(nlpp_ptr==nullptr)
+      return 0;
+    else
+      return nlpp_ptr->makeNonLocalMovesPbyP(P);
+  }
+
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable
@@ -324,8 +345,6 @@ private:
   int myIndex;
   ///starting index
   int numCollectables;
-  ///enable virtual moves 
-  bool EnableVirtualMoves;
   ///Current Local Energy
   Return_t LocalEnergy;
   ///Current Kinetic Energy
@@ -336,6 +355,8 @@ private:
   std::string myName;
   ///vector of Hamiltonians
   std::vector<QMCHamiltonianBase*> H;
+  ///pointer to NonLocalECP
+  NonLocalECPotential* nlpp_ptr;
   ///vector of Hamiltonians
   std::vector<QMCHamiltonianBase*> auxH;
   ///timers

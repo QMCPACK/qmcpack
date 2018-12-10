@@ -171,7 +171,7 @@ LRTwoBodyJastrow::ratio(ParticleSet& P, int iat)
   const RealType* restrict rhok_r_ptr(Rhok_r.data());
   const RealType* restrict rhok_i_ptr(Rhok_i.data());
 
-  PosType pos(P.R[iat]);
+  const PosType &pos(P.activePos);
   curVal=0.0;
   int ki=0;
   for(int ks=0; ks<MaxKshell; ks++)
@@ -195,7 +195,7 @@ LRTwoBodyJastrow::ratio(ParticleSet& P, int iat)
   const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
   const ComplexType* restrict eikr_ptr(P.SK->eikr[iat]);
   const ComplexType* restrict rhok_ptr(Rhok.data());
-  PosType pos(P.R[iat]);
+  const PosType &pos(P.activePos);
   curVal=0.0;
   int ki=0;
   for(int ks=0; ks<MaxKshell; ks++)
@@ -220,7 +220,7 @@ LRTwoBodyJastrow::ratioGrad(ParticleSet& P, int iat, GradType & g)
   NeedToRestore=true;
   const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
   {
-    PosType pos(P.R[iat]);
+    const PosType &pos(P.activePos);
     RealType c,s;
   #if defined(USE_REAL_STRUCT_FACTOR)
     RealType* restrict eikr1_r(eikr_new_r.data());
@@ -302,7 +302,7 @@ LRTwoBodyJastrow::evalGrad(ParticleSet& P, int iat)
   NeedToRestore=true;
   const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
   {
-    PosType pos(P.R[iat]);
+    const PosType &pos(P.R[iat]);
     RealType c,s;
   #if defined(USE_REAL_STRUCT_FACTOR)
     RealType* restrict eikr1_r(eikr_new_r.data());
@@ -352,14 +352,14 @@ LRTwoBodyJastrow::evalGrad(ParticleSet& P, int iat)
     for(; ki<Kshell[ks+1]; ki++)
     {
     #if defined(USE_REAL_STRUCT_FACTOR)
-      RealType rr=((*eikr1_r)*(*rhok_ptr_r)+(*eikr1_i)*(*rhok_ptr_i));
+      //      RealType rr=((*eikr1_r)*(*rhok_ptr_r)+(*eikr1_i)*(*rhok_ptr_i));
       RealType ii=((*eikr1_r)*(*rhok_ptr_i)-(*eikr1_i)*(*rhok_ptr_r));
       eikr1_r++;
       eikr1_i++;
       rhok_ptr_r++;
       rhok_ptr_i++;
     #else
-      RealType rr=((*eikr1).real()*(*rhok_ptr).real()+(*eikr1).imag()*(*rhok_ptr).imag());
+      //      RealType rr=((*eikr1).real()*(*rhok_ptr).real()+(*eikr1).imag()*(*rhok_ptr).imag());
       RealType ii=((*eikr1).real()*(*rhok_ptr).imag()-(*eikr1).imag()*(*rhok_ptr).real());
       eikr1++;
       rhok_ptr++;
@@ -526,7 +526,7 @@ void LRTwoBodyJastrow::resetByHandler(HandlerType* handler)
 #endif
 }
 
-OrbitalBasePtr LRTwoBodyJastrow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr LRTwoBodyJastrow::makeClone(ParticleSet& tqp) const
 {
   LRTwoBodyJastrow* myclone=new LRTwoBodyJastrow(*this);
   myclone->skRef=tqp.SK;

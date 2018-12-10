@@ -25,9 +25,8 @@
 
 QPParser::QPParser()
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
-  usingECP=false;
   BohrUnit=true;
   MOtype="Canonical";
   angular_type="cartesian";
@@ -35,16 +34,14 @@ QPParser::QPParser()
   NFZC=0;
   numAO=0;
   FixValence=true;
-  ECP=false;
   
 }
 
 QPParser::QPParser(int argc, char** argv):
   QMCGaussianParserBase(argc,argv)
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
-  usingECP=false;
   BohrUnit=true;
   MOtype="Canonical";
   angular_type="cartesian";
@@ -53,7 +50,6 @@ QPParser::QPParser(int argc, char** argv):
   NFZC=0;
   numAO=0;
   FixValence=true;
-  ECP=false;
 }
 
 void QPParser::parse(const std::string& fname)
@@ -65,14 +61,12 @@ void QPParser::parse(const std::string& fname)
   search(fin,"do_pseudo",aline);
   parsewords(aline.c_str(),currentWords);
   if(currentWords[1]=="True"){
-     usingECP=true; 
      ECP=true;
   }
   else{
-     usingECP=false;
      ECP=false;
   }
-  std::cout <<"usingECP: " <<(usingECP?("yes"):("no")) << std::endl;
+  std::cout <<"usingECP: " <<(ECP?("yes"):("no")) << std::endl;
   std::cout.flush();
 
   search(fin,"multi_det",aline);
@@ -224,7 +218,7 @@ void QPParser::getGeometry(std::istream& is)
     abort();
   }
 //ECP PART!!!
-  if(usingECP==true){
+  if(ECP==true){
     is.seekg(pivot_begin);
     notfound=true;
  
@@ -278,11 +272,9 @@ void QPParser::getGeometry(std::istream& is)
                  if(it != currentWords.end())
                  {
                     it++;
-                    std::cout <<"Avant nq0="<<nq0<<" core[nq0]="<<core[nq0]<<"   q[nq0]="<<q[nq0]<< std::endl;
                     core[nq0] = atoi(it->c_str());
                     q[nq0] -= core[nq0];
                        
-                    std::cout <<"Apres nq0="<<nq0<<" core[nq0]="<<core[nq0]<<"   q[nq0]="<<q[nq0]<< std::endl;
                     std::cout <<"1 Found ECP for atom " <<nq0 <<" with zcore " <<core[nq0] << std::endl;
                  }
                  else
@@ -348,7 +340,7 @@ void QPParser::getGaussianCenters(std::istream& is)
 {
   std::string Shell_temp;
   gBound.resize(NumberOfAtoms+1);
-  int ng,nx;
+  int ng;
   std::string aline;
   std::map<std::string,int> basisDataMap;
   int nUniqAt=0;
@@ -588,8 +580,6 @@ void QPParser::getMO_single_set(std::istream& is, Matrix<double> &CartMat, std::
 
 void QPParser::getQPCI(std::istream& is)
 {
-  int Ci_indx;
-  double Ci_Coeff; 
 
   CIcoeff.clear();
   CIalpha.clear();
@@ -631,11 +621,11 @@ void QPParser::getQPCI(std::istream& is)
     std::cerr <<"QMCPack can't handle different number of active orbitals in alpha and beta channels right now. Contact developers for help (Miguel).\n";
     abort();
   }
-  int ds=SpinMultiplicity-1;
-  int neb= (NumberOfEls-ds)/2;
-  int nea= NumberOfEls-NumberOfBeta;
-  ci_nca = nea-ci_nea;
-  ci_ncb = neb-ci_neb;
+//  int ds=SpinMultiplicity-1;
+//  int neb= (NumberOfEls-ds)/2;
+//  int nea= NumberOfEls-NumberOfBeta;
+  ci_nca = 0 ;
+  ci_ncb = 0 ;
   std::cout <<" Done reading CIs!!"<< std::endl;
   ci_nstates = CIalpha[0].size();
 }

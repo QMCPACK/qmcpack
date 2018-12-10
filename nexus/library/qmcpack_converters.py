@@ -60,6 +60,8 @@
 import os
 from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
+from gamess import Gamess
+from pyscf_sim import Pyscf
 
 
 # read/write functions associated with pw2qmcpack only
@@ -582,68 +584,210 @@ def generate_wfconvert(**kwargs):
 
 
 class Convert4qmcInput(SimulationInput):
-    def __init__(self,
-                 app_name           = 'convert4qmc',
-                 prefix             = None,
-                 gamess_ascii       = None,
-                 ci                 = None,
-                 read_initial_guess = None,
-                 natural_orbitals   = None,
-                 threshold          = None,
-                 zero_ci            = False,
-                 add_3body_J        = False
-                 ):
-        self.prefix             = prefix
-        self.app_name           = app_name
-        self.gamess_ascii       = gamess_ascii      
-        self.ci                 = ci                
-        self.read_initial_guess = read_initial_guess
-        self.natural_orbitals   = natural_orbitals  
-        self.threshold          = threshold         
-        self.zero_ci            = zero_ci           
-        self.add_3body_J        = add_3body_J       
+
+    input_codes = '''
+        pyscf              
+        qp                 
+        gaussian           
+        casino             
+        vsvb               
+        gamess             
+        gamess_ascii       
+        gamess_fmo         
+        gamess_xml         
+        '''.split()
+
+    input_order = input_codes + '''
+        prefix             
+        hdf5               
+        add_cusp           
+        psi_tag            
+        ion_tag            
+        no_jastrow         
+        production         
+        ci                 
+        read_initial_guess 
+        target_state       
+        natural_orbitals   
+        threshold          
+        opt_det_coeffs
+        zero_ci            
+        add_3body_J        
+        '''.split()
+
+    input_aliases = obj(
+        pyscf              = 'pyscf',
+        qp                 = 'QP',
+        gaussian           = 'gaussian',
+        casino             = 'casino',
+        vsvb               = 'VSVB',
+        gamess             = 'gamess',
+        gamess_ascii       = 'gamessAscii',
+        gamess_fmo         = 'gamessFMO',
+        gamess_xml         = 'gamesxml', # not a typo
+        prefix             = 'prefix',
+        hdf5               = 'hdf5',
+        add_cusp           = 'addCusp',
+        psi_tag            = 'psi_tag',
+        ion_tag            = 'ion_tag',
+        no_jastrow         = 'nojastrow',
+        production         = 'production',
+        ci                 = 'ci',
+        read_initial_guess = 'readInitialGuess',
+        target_state       = 'TargetState',
+        natural_orbitals   = 'NaturalOrbitals',
+        threshold          = 'threshold',
+        opt_det_coeffs     = 'optDetCoeffs',
+        zero_ci            = 'zeroCi',
+        add_3body_J        = 'add3BodyJ',
+        )
+
+    input_types = obj(
+        app_name           = str, # executable name
+        pyscf              = str, # file path
+        qp                 = str, # file path
+        gaussian           = str, # file path
+        casino             = str, # file path
+        vsvb               = str, # file path
+        gamess             = str, # file path
+        gamess_ascii       = str, # file path
+        gamess_fmo         = str, # file path
+        gamess_xml         = str, # file path
+        prefix             = str, # any name
+        hdf5               = bool,
+        add_cusp           = bool,
+        psi_tag            = str, # wavefunction tag
+        ion_tag            = str, # particeset tag
+        no_jastrow         = bool,
+        production         = bool,
+        ci                 = str, # file path
+        read_initial_guess = int,
+        target_state       = int,
+        natural_orbitals   = int,
+        threshold          = float,
+        opt_det_coeffs     = bool,
+        zero_ci            = bool,
+        add_3body_J        = bool,
+        )
+
+    input_defaults = obj(
+        app_name           = 'convert4qmc',
+        pyscf              = None, # input codes
+        qp                 = None,
+        gaussian           = None,
+        casino             = None,
+        vsvb               = None,
+        gamess             = None, 
+        gamess_ascii       = None,
+        gamess_fmo         = None,
+        gamess_xml         = None,
+        prefix             = None, # general options
+        hdf5               = False,
+        add_cusp           = False,
+        psi_tag            = None,
+        ion_tag            = None,
+        no_jastrow         = False,
+        production         = False,
+        ci                 = None, # gamess specific below
+        read_initial_guess = None,
+        target_state       = None,
+        natural_orbitals   = None,
+        threshold          = None,
+        opt_det_coeffs     = False,
+        zero_ci            = False,
+        add_3body_J        = False,# deprecated
+        )
+
+
+    def __init__(self,**kwargs):
+        # check that only allowed keyword inputs are provided
+        invalid = set(kwargs.keys())-set(self.input_types.keys())
+        if len(invalid)>0:
+            self.error('invalid inputs encountered\nvalid keyword inputs are: {0}'.format(sorted(self.input_types.keys())))
+        #end if
+
+        # assign inputs
+        self.set(**kwargs)
+
+        # assign default values
+        self.set_optional(**self.input_defaults)
+
+        # check that all keyword inputs are valid
+        self.check_valid()
     #end def __init__
+
+
+    def check_valid(self,exit=True):
+        valid = True
+        # check that all inputs have valid types and assign them
+        for k,v in self.iteritems():
+            if v is not None and not isinstance(v,self.input_types[k]):
+                valid = False
+                if exit:
+                    self.error('keyword input {0} must be of type {1}\nyou provided a value of type {2}\nplease revise your input and try again'.format(k,self.input_types[k].__name__),v.__class__.__name__)
+                #end if
+                break
+            #end if
+        #end for
+        return valid
+    #end def check_valid
+
 
     def set_app_name(self,app_name):
         self.app_name = app_name
     #end def set_app_name
 
+
+    def input_code(self):
+        input_code = None
+        for k in self.input_codes:
+            if k in self and self[k] is not None:
+                if input_code is not None:
+                    input_code = None
+                    break
+                else:
+                    input_code = self[k]
+                #end if
+            #end if
+        #end for
+        return input_code
+    #end def input_code
+
+
+    def has_input_code(self):
+        return self.input_code() is not None
+    #end def has_input_code
+
+
     def app_command(self):
+        self.check_valid()
         c = self.app_name
-        if self.prefix!=None:
-            c += ' -prefix '+self.prefix
-        #end if
-        if self.gamess_ascii!=None:
-            c += ' -gamessAscii '+self.gamess_ascii
-        #end if
-        if self.ci!=None:
-            c += ' -ci '+self.ci
-        #end if
-        if self.threshold!=None:
-            c += ' -threshold '+str(self.threshold)
-        #end if
-        if self.zero_ci:
-            c += ' -zeroCi'
-        #end if
-        if self.read_initial_guess!=None:
-            c += ' -readInitialGuess '+str(self.read_initial_guess)
-        #end if
-        if self.natural_orbitals!=None:
-            c += ' -NaturalOrbitals '+str(self.natural_orbitals)
-        #end if
-        if self.add_3body_J:
-            c += ' -add3BodyJ'
-        #end if
+        for k in self.input_order:
+            if k in self:
+                v = self[k]
+                n = self.input_aliases[k]
+                if isinstance(v,bool):
+                    if v:
+                        c += ' -{0}'.format(n)
+                    #end if
+                elif v is not None:
+                    c += ' -{0} {1}'.format(n,str(v))
+                #end if
+            #end if
+        #end for
         return c
     #end def app_command
+
 
     def read(self,filepath):
         None
     #end def read
 
+
     def write_text(self,filepath=None):
         return self.app_command()
     #end def write_text
+
 
     def output_files(self):
         prefix = 'sample'
@@ -657,9 +801,11 @@ class Convert4qmcInput(SimulationInput):
 #end class Convert4qmcInput
 
 
+
 def generate_convert4qmc_input(**kwargs):
     return Convert4qmcInput(**kwargs)
 #end def generate_convert4qmc_input
+
 
 
 class Convert4qmcAnalyzer(SimulationAnalyzer):
@@ -685,16 +831,52 @@ class Convert4qmc(Simulation):
     application            = 'convert4qmc'
     application_properties = set(['serial'])
     application_results    = set(['orbitals','particles'])
+    renew_app_command      = True
+
+    def __init__(self,*args,**kwargs):
+        Simulation.__init__(self,*args,**kwargs)
+        self.input_code = None
+    #end def __init__
+
 
     def set_app_name(self,app_name):
         self.app_name = app_name
         self.input.set_app_name(app_name)
     #end def set_app_name
 
+
     def propagate_identifier(self):
         None
         #self.input.prefix = self.identifier
     #end def propagate_identifier
+
+
+    def get_prefix(self):
+        input = self.input
+        prefix = 'sample'
+        if input.prefix is not None:
+            prefix = input.prefix
+        #end if
+        return prefix
+    #end def get_prefix
+
+
+    def list_output_files(self):
+        # try to support both pre and post v3.3.0 convert4qmc
+        prefix = self.get_prefix()
+        wfn_file  = prefix+'.Gaussian-G2.xml'
+        ptcl_file = prefix+'.Gaussian-G2.ptcl.xml'
+        if not os.path.exists(os.path.join(self.locdir,ptcl_file)):
+            if self.input.no_jastrow:
+                wfn_file  = prefix+'.wfnoj.xml'
+            else:
+                wfn_file  = prefix+'.wfj.xml'
+            #end if
+            ptcl_file = prefix+'.structure.xml'
+        #end if
+        return wfn_file,ptcl_file
+    #end def list_output_files
+
 
     def check_result(self,result_name,sim):
         calculating_result = False
@@ -709,14 +891,18 @@ class Convert4qmc(Simulation):
         return calculating_result
     #end def check_result
 
+
     def get_result(self,result_name,sim):
         result = obj()
         input = self.input
+        wfn_file,ptcl_file = self.list_output_files()
         if result_name=='orbitals':
-            wfn_file,ptcl_file = input.output_files()
             result.location = os.path.join(self.locdir,wfn_file)
+            if self.input.hdf5==True:
+                orbfile = self.get_prefix()+'.orbs.h5'
+                result.orbfile = os.path.join(self.locdir,orbfile)
+            #end if
         elif result_name=='particles':
-            wfn_file,ptcl_file = input.output_files()
             result.location = os.path.join(self.locdir,ptcl_file)
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
@@ -724,35 +910,55 @@ class Convert4qmc(Simulation):
         return result
     #end def get_result
 
+
     def incorporate_result(self,result_name,result,sim):
-        if result_name=='orbitals':
-            orbpath = os.path.relpath(result.location,self.locdir)
-            if result.scftyp=='mcscf':
-                self.input.gamess_ascii = orbpath
-                self.input.ci           = orbpath
-            elif result.scftyp=='none': # cisd, etc
-                self.input.gamess_ascii = orbpath
-                self.input.ci           = orbpath
-                if result.mos>0:
-                    self.input.read_initial_guess = result.mos
-                elif result.norbitals>0:
-                    self.input.read_initial_guess = result.norbitals
+        implemented = True
+        input = self.input
+        if isinstance(sim,Gamess):
+            self.input_code = 'gamess'
+            if result_name=='orbitals':
+                orbpath = os.path.relpath(result.location,self.locdir)
+                if result.scftyp=='mcscf':
+                    input.gamess_ascii = orbpath
+                    input.ci           = orbpath
+                elif result.scftyp=='none': # cisd, etc
+                    input.gamess_ascii = orbpath
+                    input.ci           = orbpath
+                    if result.mos>0:
+                        input.read_initial_guess = result.mos
+                    elif result.norbitals>0:
+                        input.read_initial_guess = result.norbitals
+                    #end if
+                else:
+                    input.gamess_ascii = orbpath
                 #end if
+                self.job.app_command = input.app_command()
             else:
-                self.input.gamess_ascii = orbpath
+                implemented = False
             #end if
-            self.job.app_command = self.input.app_command()
+        elif isinstance(sim,Pyscf):
+            self.input_code = 'pyscf'
+            if result_name=='orbitals':
+                orbpath = os.path.relpath(result.h5_file,self.locdir)
+                input.pyscf = orbpath
+            else:
+                implemented = False
+            #end if
         else:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
-        #end if                
+            implemented = False
+        #end if
+        if not implemented:
+            self.error('ability to incorporate result {0} from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
+        #end if
     #end def incorporate_result
+
 
     def check_sim_status(self):
         output = open(os.path.join(self.locdir,self.outfile),'r').read()
         #errors = open(os.path.join(self.locdir,self.errfile),'r').read()
 
         success = 'QMCGaussianParserBase::dump' in output
-        for filename in self.input.output_files():
+        for filename in self.list_output_files():
             success &= os.path.exists(os.path.join(self.locdir,filename))
         #end for
 
@@ -760,19 +966,17 @@ class Convert4qmc(Simulation):
         self.finished = self.job.finished
     #end def check_sim_status
 
+
     def get_output_files(self):
         output_files = []
         return output_files
     #end def get_output_files
 
+
     def app_command(self):
         return self.input.app_command()
     #end def app_command
 #end class Convert4qmc
-
-
-
-
 
 
 

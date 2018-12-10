@@ -1,0 +1,25 @@
+generate.sh can be used to generate the wavefunction and all the input files
+for any amount of H2O molecules sitting far apart on a line.
+It starts from the H2O example with orbitals generated from Gamess.
+Since there are only 4 orbitals occupied, we took only the first 4 listed in file band1-4.
+Each water molecule contributes 4 orbitals by filling the molecular orbital coefficients
+of its basis with band 1-4 and other basis with zero.
+For the initial electron configuration, 4 electrons are placed around each water molecule.
+
+MIN_SIZE is the minimal number of molecules.
+MAX_SIZE is the maximal number of molecules.
+DIS is the distance between molecules, in bohr as QMCPACK.
+
+The following files are taken by generate.sh
+elec_down_pos
+elec_up_pos
+atom_pos
+band0
+band1
+band2
+band3
+band4
+H2O.empty.wfs.xml
+H2O.empty.ptcl.xml
+
+dmc_no/v0/v1.dat are the reference data.

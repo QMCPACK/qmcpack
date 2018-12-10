@@ -26,8 +26,6 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
-//#define ENABLE_COMPOSITE_ESTIMATOR
-//#include "Estimators/CompositeEstimators.h"
 #include "Estimators/EstimatorManagerBase.h"
 namespace qmcplusplus
 {
@@ -139,8 +137,6 @@ public:
   /** stop a run */
   void stopRun();
   void stopRun2();
-  /** reset the trial energy */
-  void resetEtrial(RealType et);
 
   /** prepare to start a block
    * @param steps number of steps within the block
@@ -156,8 +152,8 @@ public:
 
   inline void setMultiplicity(Walker_t& awalker) const
   {
-    CONSTEXPR RealType onehalf(0.5);
-    CONSTEXPR RealType cone(1);
+    constexpr RealType onehalf(0.5);
+    constexpr RealType cone(1);
     RealType M=awalker.Weight;
     if (awalker.Age>MaxAge)
       M = std::min(onehalf,M);
@@ -173,17 +169,9 @@ public:
    */
   virtual void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
 
-  /** initalize Walker for walker update
+  /** initialize Walker for walker update
    */
   virtual void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
-
-  /** update Walker buffers for PbyP update
-   */
-  void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
-
-  /** simple routine to test the performance
-   */
-  void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
 
   /**  process options
    */
@@ -208,9 +196,6 @@ public:
   {
     return 0.0;
   };
-//       virtual RealType advanceWalkerForCSEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios, std::vector<RealType>& weights, std::vector<RealType>& logs ) {return 0.0;};
-  virtual void setLogEpsilon(RealType eps) {};
-//       virtual void advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i){};
 
   ///normalization offset for cs type runs.
   RealType csoffset;
@@ -257,8 +242,6 @@ public:
 protected:
   ///update particle-by-particle
   bool UpdatePbyP;
-  ///use T-moves
-  bool UseTMove;
   ///number of particles
   IndexType NumPtcl;
   ///Time-step factor \f$ 1/(2\tau)\f$
@@ -280,7 +263,7 @@ protected:
   ///random number generator
   RandomGenerator_t& RandomGen;
   ///branch engine
-  BranchEngineType* branchEngine;
+  const BranchEngineType* branchEngine;
   ///estimator
   EstimatorManagerBase* Estimators;
   ///parameters
@@ -291,8 +274,6 @@ protected:
   std::vector<RealType> MassInvP;
   ///sqrt(tau/Mass) per particle
   std::vector<RealType> SqrtTauOverMass;
-  ///non local operator
-  NonLocalTOperator nonLocalOps;
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
   ///temporary storage for random displacement
@@ -309,12 +290,8 @@ protected:
    */
   RealType getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled);
 
-  ///copy constructor
-  QMCUpdateBase(const QMCUpdateBase& a);
-
-  /** a VMC step to randomize awalker
-   */
-  void randomize(Walker_t& awalker);
+  ///copy constructor (disabled)
+  QMCUpdateBase(const QMCUpdateBase &) = delete;
 
 private:
 

@@ -22,7 +22,8 @@
 
 namespace qmcplusplus
 {
-PWParameterSet::PWParameterSet():
+PWParameterSet::PWParameterSet(Communicate *comm):
+  MPIObjectBase(comm),
   hasSpin(true),
   twistIndex(0),
   numBands(0),

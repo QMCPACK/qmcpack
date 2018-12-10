@@ -116,11 +116,14 @@ by plotting the trace for each QMC run.
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/qmca_mean_error_trace.pdf}
-\end{center}
-\caption{Trace of the VMC local energy for an 8 atom cell of diamond generated with \texttt{qmca}.  The x-axis (``samples'') refers to the VMC block index in this case.
+\ifdefined\HCode
+\includegraphics[trim = 0mm 0mm 0mm 0mm,clip,width=0.75\textwidth]{./figures/qmca_mean_error_trace.dmn}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm,clip,width=0.75\textwidth]{./figures/qmca_mean_error_trace.pdf}
+\fi
+\caption{Trace of the VMC local energy for an 8 atom cell of diamond generated with \texttt{qmca}.  The x-axis (``samples'') refers to the VMC block index in this case.}
 \label{fig:qmca_mean_error_trace}
-}
+\end{center}
 \end{figure}
 
 If we exclude none of the equilibration data points, we get an 
@@ -203,11 +206,15 @@ proceed without using the ``\texttt{-e}'' option with \texttt{qmca}.
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.9\columnwidth]{figures/qmca_judge_opt.pdf}
+\ifdefined\HCode  
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.9\textwidth]{./figures/qmca_judge_opt.dmn}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.9\columnwidth]{./figures/qmca_judge_opt.pdf}
+\fi
 \end{center}
 \caption{Trace of the local energy during one- and two-body Jastrow optimization for an 8 atom cell of diamond generated with \texttt{qmca}.  Data for each optimization cycle (QMCPACK series) is separated by a vertical black line.
-\label{fig:qmca_judge_opt}
 }
+\label{fig:qmca_judge_opt}
 \end{figure}
 
 After inspecting the trace, we should inspect the text output 
@@ -274,15 +281,19 @@ cycles.
 
 \begin{figure}
   \centering
-  \begin{subfigure}[t]{0.47\textwidth}
-    \centering
-    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qmca_opt_energy.pdf}
-  \end{subfigure}
-  \begin{subfigure}[t]{0.47\textwidth}
-    \centering
-    \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qmca_opt_variance.pdf}
-  \end{subfigure}
-  \caption{Energy and variance vs. optimization series for an 8 atom cell of diamond as plotted by \texttt{qmca}.\label{fig:qmca_opt_ev}}
+  \ifdefined\HCode%
+  \begin{tabularx}{1024pt}{X X}
+    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qmca_opt_energy.dmn}&
+    \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qmca_opt_variance.png}\\
+  \end{tabularx}
+\else%
+  \begin{tabularx}{\textwidth}{X X}
+    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qmca_opt_energy.pdf}&
+    \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qmca_opt_variance.png}\\
+    \end{tabularx}
+\fi%
+  \caption{Energy and variance vs. optimization series for an 8 atom cell of diamond as plotted by \texttt{qmca}.}%
+  \label{fig:qmca_opt_ev}%
 \end{figure}
 
 A good way to choose the optimal wavefunction for use in DMC is to select 
@@ -305,11 +316,14 @@ wavefunctions with larger than necessary variance.
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/qmca_short_dmc.pdf}
+  \ifdefined\HCode  
+\includegraphics[trim = 0mm 0mm 0mm 0mm,clip,width=0.75\columnwidth]{./figures/qmca_short_dmc.dmn}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm,clip,width=0.75\columnwidth]{./figures/qmca_short_dmc.pdf}
+\fi
 \end{center}
-\caption{Trace of the local energy for VMC followed by DMC with a small timestep ($0.002$ Ha$^{-1}$) for an 8 atom cell of diamond generated with \texttt{qmca}.  
+\caption{Trace of the local energy for VMC followed by DMC with a small timestep ($0.002$ Ha$^{-1}$) for an 8 atom cell of diamond generated with \texttt{qmca}.}
 \label{fig:qmca_short_dmc}
-}
 \end{figure}
 
 To illustrate the problems that can arise with respect to slow 
@@ -373,11 +387,14 @@ timestep--\emph{e.g.} $0.002$ Ha$^{-1}$--for a particular problem.
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/qmca_accel_dmc.pdf}
+\ifdefined\HCode  
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/qmca_accel_dmc.dmn}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/qmca_accel_dmc.pdf}
+\fi
 \end{center}
-\caption{Trace of the local energy for VMC followed by a short intermediate DMC with a large timestep ($0.02$ Ha$^{-1}$) and finally a production DMC run with a timestep of $0.01$ Ha$^{-1}$.  Calculations were performed in an 8 atom cell of diamond.  
+\caption{Trace of the local energy for VMC followed by a short intermediate DMC with a large timestep ($0.02$ Ha$^{-1}$) and finally a production DMC run with a timestep of $0.01$ Ha$^{-1}$.  Calculations were performed in an 8 atom cell of diamond.} 
 \label{fig:qmca_accel_dmc}
-}
 \end{figure}
 
 We now rerun the prior example but with an intermediate DMC 
@@ -427,11 +444,14 @@ Our final DMC total energy is estimated to be $-46.0329(2)$ Ha.
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/qmca_pop_trace.pdf}
+  \ifdefined\HCode
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/qmca_pop_trace.dmn}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/qmca_pop_trace.pdf}
+\fi
 \end{center}
-\caption{Trace of the DMC walker population for an 8 atom cell of diamond obtained with \texttt{qmca}.  
+\caption{Trace of the DMC walker population for an 8 atom cell of diamond obtained with \texttt{qmca}.}
 \label{fig:qmca_pop_trace}
-}
 \end{figure}
 
 Another simulation property that should be explicitly monitored  
@@ -681,11 +701,14 @@ Fig. \ref{fig:qmca_twist_overlap}
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.9\columnwidth]{figures/qmca_twist_trace_overlap.pdf}
+\ifdefined\HCode
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.9\columnwidth]{./figures/qmca_twist_trace_overlap.dmn}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.9\columnwidth]{./figures/qmca_twist_trace_overlap.pdf}
+\fi
 \end{center}
-\caption{Overlapped energy traces from VMC to DMC for an 8 supercell of diamond obtained with \texttt{qmca}.  Data for each twist appears in a different color.
+\caption{Overlapped energy traces from VMC to DMC for an 8 supercell of diamond obtained with \texttt{qmca}.  Data for each twist appears in a different color.}
 \label{fig:qmca_twist_overlap}
-}
 \end{figure}
 
 Twist averaging is performed by providing the ``\texttt{-a}'' 
@@ -717,11 +740,14 @@ yielding a twist averaged total energy of $-45.8733(8)$ Ha.
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/qmca_twist_average_trace.pdf}
+\ifdefined\HCode
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/qmca_twist_average_trace.dmn}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/qmca_twist_average_trace.pdf}
+\fi
 \end{center}
-\caption{Twist averaged energy trace from VMC to DMC for an 8 supercell of diamond obtained with \texttt{qmca}.  
+\caption{Twist averaged energy trace from VMC to DMC for an 8 supercell of diamond obtained with \texttt{qmca}.}
 \label{fig:qmca_twist_average}
-}
 \end{figure}
 
 As can be seen from the Fig. \ref{fig:qmca_twist_overlap}, some of the twist 
@@ -1002,25 +1028,25 @@ Obtaining the local, kinetic, and potential energies in eV:
 \end{enumerate}
 
 
-\section{Using the qfit tool for statistical timestep extrapolation and curve fitting}
-\label{sec:qfit}
+\section{Using the qmc-fit tool for statistical timestep extrapolation and curve fitting}
+\label{sec:qmcfit}
 
-The \texttt{qfit} tool is used to provide statistical estimates of
-curve fitting parameters based on QMCPACK data.  While \texttt{qfit}
+The \texttt{qmc-fit} tool is used to provide statistical estimates of
+curve fitting parameters based on QMCPACK data.  While \texttt{qmc-fit}
 will eventually support many types of fitted curves (\emph{e.g.} Morse
 potential binding curves, various equation of state fitting curves, etc.),
 it is currently limited to estimating fitting parameters related to
 timestep extrapolation.
 
 \subsection{The jack-knife statistical technique}
-The \texttt{qfit} tool obtains estimates of fitting parameter
+The \texttt{qmc-fit} tool obtains estimates of fitting parameter
 means and associated error bars via the ``jack-knife''
 technique.  The jack-knife method is a powerful and general tool
 to obtain meaningful error bars for any quantity that is related
 in a non-linear fashion to an underlying set of statistical data.
 For this reason, we give a brief overview of the jack-knife
 technique before proceeding with usage instructions for the
-\texttt{qfit} tool.
+\texttt{qmc-fit} tool.
 
 Consider $N$ statistical variables $\{x_n\}_{n=1}^N$ that have
 been outputted by one or more simulation runs.  If we have
@@ -1092,10 +1118,10 @@ Approximate autocorrelation lengths are also obtained with \texttt{qmca}:
 The autocorrelation must be removed from the data prior to jack-knifing
 and so we will reblock the data by a factor of 4.
 
-The \texttt{qfit} tool can be used in the following way to obtain
+The \texttt{qmc-fit} tool can be used in the following way to obtain
 a linear timestep fit of the data:
 \begin{shade}
->qfit ts -e 30 -b 4 -s 2 -t '0.00125 0.0025 0.005 0.01 0.02 0.04' ./qmc*/*scalar*
+>qmc-fit ts -e 30 -b 4 -s 2 -t '0.00125 0.0025 0.005 0.01 0.02 0.04' ./qmc*/*scalar*
 fit function  : linear
 fitted formula: (-3848.193 +/- 0.037) + (-18.95 +/- 1.95)*t
 intercept     : -3848.193 +/- 0.037  Ha
@@ -1116,28 +1142,32 @@ are printed with error bars obtained with jack-knife resampling and
 the zero timestep ``intercept'' is $-3848.19(4)$ Ha.  In addition to
 text output, the command above will result in a plot of the fit with
 the zero timestep value shown as a red dot, as shown in the left
-panel of Fig.~\ref{fig:qfit_timestep}.
+panel of Fig.~\ref{fig:qmcfit_timestep}.
 
 \begin{figure}
   \centering
-  \begin{subfigure}[t]{0.47\textwidth}
-    \centering
-    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qfit_timestep_linear.pdf}
-  \end{subfigure}
-  \begin{subfigure}[t]{0.47\textwidth}
-    \centering
-    \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qfit_timestep_quadratic.pdf}
-  \end{subfigure}
-  \caption{Linear (left) and quadratic (right) timestep fits to DMC data for a 32 atom supercell of MnO obtained with \texttt{qfit}.  Zero timestep estimates are indicated by the red data point on the left side of either panel.\label{fig:qfit_timestep}}
+\ifdefined\HCode%
+  \begin{tabularx}{1024pt}{X X}
+    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qmcfit_timestep_linear.dmn}&
+    \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qmcfit_timestep_quadratic.dmn}\\
+  \end{tabularx}
+\else%
+  \begin{tabularx}{\textwidth}{X X}
+    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qmcfit_timestep_linear.pdf}&
+    \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qmcfit_timestep_quadratic.pdf}\\
+    \end{tabularx}
+\fi%
+\caption{Linear (left) and quadratic (right) timestep fits to DMC data for a 32 atom supercell of MnO obtained with \texttt{qmc-fit}.  Zero timestep estimates are indicated by the red data point on the left side of either panel.}
+  \label{fig:qmcfit_timestep}
 \end{figure}
 
 Different fitting functions are supported via the ``\texttt{-f}'' option.
 Currently supported options include \texttt{linear} ($a+bt$),
 \texttt{quadratic} ($a+bt+ct^2$), and \texttt{sqrt} ($a+b\sqrt{t}+ct$).
 Results for a quadratic fit are shown below as well as in the right
-panel of Fig.~\ref{fig:qfit_timestep}.
+panel of Fig.~\ref{fig:qmcfit_timestep}.
 \begin{shade}
->qfit ts -f quadratic -e30 -b4 -s2 -t '0.00125 0.0025 0.005 0.01 0.02 0.04' ./qmc*/*scalar*
+>qmc-fit ts -f quadratic -e30 -b4 -s2 -t '0.00125 0.0025 0.005 0.01 0.02 0.04' ./qmc*/*scalar*
 fit function  : quadratic
 fitted formula: (-3848.245 +/- 0.047) + (-7.25 +/- 8.33)*t + (-285.00 +/- 202.39)*t^2
 intercept     : -3848.245 +/- 0.047  Ha
@@ -1156,8 +1186,11 @@ estimated value of $-3848.28(7)$ instead.
 
 \section{Densities and spin-densities}
 \label{sec:densities}
+TBD.
 
-\section{Energy densities}
-\label{sec:energydensities}
+%\section{Energy densities}
+%\label{sec:energydensities}
+
+
 
 

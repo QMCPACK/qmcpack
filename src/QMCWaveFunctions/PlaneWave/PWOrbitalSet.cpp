@@ -24,10 +24,12 @@ PWOrbitalSet::~PWOrbitalSet()
 #if !defined(ENABLE_SMARTPOINTER)
   if(OwnBasisSet&&myBasisSet)
     delete myBasisSet;
+  if(!IsCloned && C!= nullptr)
+    delete C;
 #endif
 }
 
-SPOSetBase* PWOrbitalSet::makeClone() const
+SPOSet* PWOrbitalSet::makeClone() const
 {
   PWOrbitalSet *myclone=new PWOrbitalSet(*this);
   myclone->myBasisSet = new PWBasis(*myBasisSet);
@@ -57,8 +59,7 @@ void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
   OrbitalSetSize=nbands;
   OwnBasisSet=cleanup;
   BasisSetSize=myBasisSet->NumPlaneWaves;
-  //C.resize(OrbitalSetSize,BasisSetSize);
-  setIdentity(false);
+  C = new ValueMatrix_t(OrbitalSetSize,BasisSetSize);
   Temp.resize(OrbitalSetSize,PW_MAXINDEX);
   app_log() << "  PWOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize << std::endl;
 }
@@ -103,7 +104,7 @@ PWOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   //Evaluate every orbital for particle iat.
   //Evaluate the basis-set at these coordinates:
   //myBasisSet->evaluate(P,iat);
-  myBasisSet->evaluate(P.R[iat]);
+  myBasisSet->evaluate(P.activeR(iat));
   MatrixOperators::product(*C,myBasisSet->Zv,&psi[0]);
 }
 

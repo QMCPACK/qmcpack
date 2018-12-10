@@ -40,13 +40,13 @@ typedef TinyMatrix<std::complex<double>,3,3> cMat3;
 //typedef TinyVector<scalar,NDIM> dVec;
 //typedef TinyVector<int,NDIM> dVecInt;
 
-#ifdef MAC
-//  extern "C" double isnan (double x);
-#define isnan(x) __isnand(x)
-#define fpclassify(x) __fpclassifyd(x)
-#define isnormal(x) __isnormald(x)
-#define isinf(x) __isinfd(x)
-#endif
+/* #ifdef MAC */
+/* //  extern "C" double isnan (double x); */
+/* #define isnan(x) __isnand(x) */
+/* #define fpclassify(x) __fpclassifyd(x) */
+/* #define isnormal(x) __isnormald(x) */
+/* #define isinf(x) __isinfd(x) */
+/* #endif */
 
 // using blitz::Array;
 template <class T, int size>

@@ -64,6 +64,10 @@ void Uniform3DGridLayout::SetLRCutoffs()
   }
   //Set KC for structure-factor and LRbreakups.
   LR_kc = LR_dim_cutoff/LR_rc;
+}
+
+void Uniform3DGridLayout::printCutoffs()
+{
   app_log() << "  Long-range breakup parameters:" << std::endl;
   app_log() << "    rc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << std::endl;
 }
@@ -76,7 +80,7 @@ void Uniform3DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
   std::map<int,std::vector<SingleParticleIndex_t>*> rs;
   std::map<int,bool> cb;
   Scalar_t scaleL = static_cast<value_type>(8*NP[0]*NP[1]*NP[2]);
-  int ic=0,ih;
+  int ic=0;
   Scalar_t dx=Delta[0]*0.5;
   Scalar_t dy=Delta[1]*0.5;
   Scalar_t dz=Delta[2]*0.5;

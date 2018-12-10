@@ -1,0 +1,1 @@
+convert4qmc gms.out -hdf5 -nojastrow -prefix LiH-dimer-gms

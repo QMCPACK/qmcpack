@@ -1,0 +1,209 @@
+  Input file(s): input.xml 
+
+=====================================================
+                    QMCPACK 3.4.0 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+  Git branch: develop
+  Last git commit: 6b51273d40e568cb68306c313cce6ee5e2b7a142
+  Last commit date: Thu Mar 22 16:37:46 2018 -0500
+=====================================================
+  Global options 
+
+  MPI Nodes            = 16
+  MPI Nodes per group  = 16
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 1
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  Input XML = input.xml
+
+/*************************************************
+ ********  This is an AFQMC calculation   ********
+ *************************************************
+ Random Number
+ -------------
+  Offset for the random number seeds based on time: 567
+
+  Range of prime numbers to use as seeds over processors and threads = 4133-4261
+
+
+ name: simulation
+
+
+ --------------- Parsing Hamiltonian input ------------------ 
+
+
+
+ --------------- Parsing PureSD input ------------------ 
+
+
+
+ --------------- Parsing DistWalkerHandler input ------------------ 
+
+ Using asynchronous non-blocking swap load balancing algorithm. 
+ Using population control algorithm based on paired walker branching ( a la QWalk). 
+
+
+
+ --------------- Parsing Propagator input ------------------ 
+
+ Using mean-field substraction in propagator. 
+ Calculating factorization of 2-body hamiltonian in parallel. 
+ Using algorithm for parallel propagation (regardless of nnodes/ncores). 
+ Calculating factorization of 2 body interaction with Cholesky method.
+ Running Propagator with 1 nodes per task group. 
+
+
+****************************************************
+****************************************************
+****************************************************
+          Beginning Driver initialization.
+****************************************************
+****************************************************
+****************************************************
+
+ Using 1 cores per node in a TaskGroup. 
+
+**************************************************************
+ Setting up Task Group: 
+ Found: 1 nodes, each with: 16 cores. 
+ Task Group named: DriverTG will be split in 16 groups. 
+ Each group contains 1 nodes * 1 cores/node 
+**************************************************************
+
+****************************************************
+               Initializating Hamiltonian 
+****************************************************
+
+
+**************************************************************
+ Setting up Task Group: 
+ System contains 1 nodes, each with: 16 cores. 
+ Task Group named: HamiltonianTG will be split in 1 groups. 
+ Each group contains 1 nodes * 16 cores/node 
+**************************************************************
+ Initializing Hamiltonian from file: fcidump.h5
+ Time waiting: 2.69413e-05
+ Time sorting: 0.08428
+ Time merging + indexing: 0.458888
+ -- Time to compress Hamiltonian from h5 file: 0.543226
+ Memory used by 2-el integral table: 240.028 MB. 
+ -- Time to initialize Hamiltonian from h5 file: 5.57508
+
+****************************************************
+               Initializating Wavefunction 
+****************************************************
+
+
+**************************************************************
+ Setting up Task Group: 
+ System contains 1 nodes, each with: 16 cores. 
+ Task Group named: WavefunctionTG will be split in 16 groups. 
+ Each group contains 1 nodes * 1 cores/node 
+**************************************************************
+Using a UHF-type trial wave-function in PureSingleDeterminant. 
+ Expecting full MO matrix in PureSingleDeterminant.
+ Expecting MO matrix in Column-major format in PureSingleDeterminant.
+ System is not closed shell. 
+ PureSingleDeterminant - Creating Hamiltonian for Rotated Determinant. 
+ Generating rotated hamiltonian matrices for ROHF/UHF walker type. 
+ Generating V2_full in SparseGeneralHamiltonian::createHamiltonianForGeneralDeterminant() 
+ Time to generate V2_full: 6.07641
+ Size of V2_full: 485.544 MB. 
+size: 5413801 5413801
+ before resize: 
+ after resize: 
+ after bcasts: 
+Time to generate 2-body Hamiltonian: 16.0892
+ Done generating sparse hamiltonians. 
+ Compressing sparse hamiltonians. 
+ Time waiting: 1.00136e-05
+ Time sorting: 0.109888
+ Time merging + indexing: 0.344407
+ Done compressing sparse hamiltonians. 
+
+*********************************************************************: 
+  PureSingleDeterminant: 
+     Number of terms and memory usage of hij:    1824  0.043776  MB. 
+     Number of terms and memory usage of Vijkl:  5413801  129.931  MB. 
+  Ehf:      (-377.658559069,-4.14318991321e-12)  
+  Ekin:     (-217.150719631,1.83038408818e-14)  
+  Epot:     (-160.507839438,-4.16149375409e-12)  
+*********************************************************************: 
+
+
+
+****************************************************
+              Initializating Propagator 
+****************************************************
+
+
+**************************************************************
+ Setting up Task Group: 
+ System contains 1 nodes, each with: 16 cores. 
+ Task Group named: PropagatorTG will be split in 16 groups. 
+ Each group contains 1 nodes * 1 cores/node 
+**************************************************************
+ Calculating HS potentials from scratch. 
+ Found: 510 Cholesky std::vectors with a cutoff of: 1e-05
+ -- Time to generate Cholesky factorization: 0.148783922195
+     -- setup: 0.0482838153839
+     -- av comm time: 5.32879548914e-05
+     -- av insert time: 0.0005336041544
+ -- Time to assemble Cholesky Matrix: 0.347877979279
+Number of HS potentials: 1020
+Number of terms in sparse representation of HS potentials: 6072194
+Compressing Spvn. 
+ Time waiting: 9.05990600586e-06
+ Time sorting: 0.119807958603
+ Time merging + indexing: 0.360641002655
+Done Compressing Spvn. 
+ -- Time to Compress Cholesky Matrix: 0.480484008789
+ -- Time to calculate HS potentials: 0.00187536834971
+Memory used by HS potential: 139.012332916 MB 
+ Largest term in Vn: 0.0697502691839 0.0375770355255
+ -- Average time for dense x dense MM product: 4.41431999207e-05
+ -- Average time for sparse x dense MM product: 9.05513763428e-05
+ -- Time to calculate one body propagator: 0.049684047699
+ -- Number of terms in one body propagator: 3044
+ -- Total number of terms in Cholesky vectors: 6072194
+ -- Sparsity of Cholesky Matrix, # of Cholesky vectors: 0.978489706205 1020
+ Generating transposed matrix of Cholesky vectors.
+ Temporarily transposing Cholesky matrix. 
+ Time waiting: 2.19345092773e-05
+ Time sorting: 0.125222206116
+ Time merging + indexing: 0.340685844421
+ Compressing transposed Cholesky matrix. 
+ Time waiting: 0.000838994979858
+ Time sorting: 0.106920957565
+ Time merging + indexing: 0.212236166
+ Transposing Cholesky matrix back to original form. 
+ Time waiting: 1.59740447998e-05
+ Time sorting: 0.11705493927
+ Time merging + indexing: 0.338984012604
+ -- Time to calculate transposed Cholesky matrix: 1.41124606133
+
+****************************************************
+             Initializating Walker Handler 
+****************************************************
+
+
+****************************************************
+              Initializating Estimators 
+****************************************************
+
+
+****************************************************
+****************************************************
+****************************************************
+          Finished Driver initialization.
+****************************************************
+****************************************************
+****************************************************
+
+Initial weight and number of walkers: 160 160

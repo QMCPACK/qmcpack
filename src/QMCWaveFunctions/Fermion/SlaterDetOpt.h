@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_SLATERDETOPT_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include <QMCWaveFunctions/SPOSetBase.h>
+#include <QMCWaveFunctions/SPOSet.h>
 
 namespace qmcplusplus {
 
@@ -30,7 +30,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
   private:
 
     /// \brief   pointer to the set of optimizable single particle orbitals
-    //SPOSetBase * m_spo;
+    //SPOSet * m_spo;
 
     /// \brief   whether this is for up or down spins (0 for up, 1 for down)
     int m_up_or_down;
@@ -57,46 +57,46 @@ class SlaterDetOpt : public DiracDeterminantBase {
     ValueType curRatio;
 
     /// \brief   matrix of orbital values for orbitals in this determinant
-    SPOSetBase::ValueMatrix_t m_orb_val_mat;
+    SPOSet::ValueMatrix_t m_orb_val_mat;
 
     /// \brief   inverse of the orbital value matrix
-    SPOSetBase::ValueMatrix_t m_orb_inv_mat;
+    SPOSet::ValueMatrix_t m_orb_inv_mat;
 
     /// \brief   matrix of orbital gradients for orbitals in this determinant (each element is a length 3 tiny vector)
-    SPOSetBase::GradMatrix_t  m_orb_der_mat;
+    SPOSet::GradMatrix_t  m_orb_der_mat;
 
     /// \brief   matrix of x,y,z summed orbital laplacians for orbitals in this determinant (each element is the sum of the d2dx2, d2dy2, and d2dz2 derivatives for the orbital)
-    SPOSetBase::ValueMatrix_t m_orb_lap_mat;
+    SPOSet::ValueMatrix_t m_orb_lap_mat;
 
     /// \brief   matrix of orbital values for all molecular orbitals
-    SPOSetBase::ValueMatrix_t m_orb_val_mat_all;
+    SPOSet::ValueMatrix_t m_orb_val_mat_all;
 
     /// \brief   matrix of orbital gradients for all molecular orbitals (each element is a length 3 tiny vector)
-    SPOSetBase::GradMatrix_t  m_orb_der_mat_all;
+    SPOSet::GradMatrix_t  m_orb_der_mat_all;
 
     /// \brief   matrix of x,y,z summed orbital laplacians for all molecular orbitals (each element is the sum of the d2dx2, d2dy2, and d2dz2 derivatives for the orbital)
-    SPOSetBase::ValueMatrix_t m_orb_lap_mat_all;
+    SPOSet::ValueMatrix_t m_orb_lap_mat_all;
 
     /// \brief   vector of orbital values for orbitals in this determinant for a particular particle
-    SPOSetBase::ValueVector_t m_orb_val_vec;
+    SPOSet::ValueVector_t m_orb_val_vec;
 
     /// \brief   vector of orbital gradients for orbitals in this determinant for a particular particle
-    SPOSetBase::GradVector_t  m_orb_der_vec;
+    SPOSet::GradVector_t  m_orb_der_vec;
 
     /// \brief   vector of x,y,z summed orbital laplacians for orbitals in this determinant for a particular particle
-    SPOSetBase::ValueVector_t m_orb_lap_vec;
+    SPOSet::ValueVector_t m_orb_lap_vec;
 
     /// \brief   matrix to hold partial derivatives of the log of determinant with respect to molecular orbital values
-    SPOSetBase::ValueMatrix_t m_dp0;
+    SPOSet::ValueMatrix_t m_dp0;
 
     /// \brief   matrix to hold partial derivatives of the local energy with respect to molecular orbital values
-    SPOSetBase::ValueMatrix_t m_dh0;
+    SPOSet::ValueMatrix_t m_dh0;
 
     /// \brief   matrix to hold partial derivatives of the local energy with respect to molecular orbital gradients
-    SPOSetBase::ValueMatrix_t m_dh1;
+    SPOSet::ValueMatrix_t m_dh1;
 
     /// \brief   matrix to hold partial derivatives of the local energy with respect to molecular orbital laplacians
-    SPOSetBase::ValueMatrix_t m_dh2;
+    SPOSet::ValueMatrix_t m_dh2;
 
     /// \brief   workspace
     std::vector<RealType> m_work;
@@ -122,7 +122,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
   // private member functions
   private:
 
-    OrbitalBase::RealType evaluate_matrices_from_scratch(ParticleSet& P, const bool all);
+    WaveFunctionComponent::RealType evaluate_matrices_from_scratch(ParticleSet& P, const bool all);
 
   // public type definitions
   public:
@@ -141,7 +141,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
   // public member functions
   public:
 
-    SlaterDetOpt(ParticleSet & targetPtcl, SPOSetBase * spo_ptr, const int up_or_down);
+    SlaterDetOpt(ParticleSet & targetPtcl, SPOSet * spo_ptr, const int up_or_down);
 
     ~SlaterDetOpt();
 
@@ -163,11 +163,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     void resetParameters(const opt_variables_type& active);
 
-    void reportStatus(std::ostream& os);
-
-    void resetTargetParticleSet(ParticleSet& P);
-
-    ValueType evaluate(ParticleSet& P ,ParticleSet::ParticleGradient_t& G ,ParticleSet::ParticleLaplacian_t& L);
+    void resize(int m_nel, int m_nmo);
 
     RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
@@ -187,9 +183,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
-
-    DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
+    SlaterDetOpt* makeCopy(SPOSet* spo) const;
 
     void add_derivatives(const int nl,
                          const int np,

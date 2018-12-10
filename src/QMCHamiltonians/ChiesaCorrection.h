@@ -40,12 +40,6 @@ public:
   void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
 #endif
 
-
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   bool put(xmlNodePtr cur);
 
   bool get(std::ostream& os) const

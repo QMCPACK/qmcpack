@@ -36,7 +36,6 @@
 
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/MPC.h"
-#include "QMCHamiltonians/VHXC.h"
 #endif
 #endif
 #include "OhmmsData/AttributeSet.h"
@@ -76,26 +75,6 @@ HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
 #endif // defined(HAVE_LIBFFTW)
 }
 
-void
-HamiltonianFactory::addVHXCPotential(xmlNodePtr cur)
-{
-#if OHMMS_DIM==3 && defined(HAVE_LIBFFTW)
-  std::string a("e"), title("VHXC");
-  OhmmsAttributeSet hAttrib;
-  bool physical = true;
-  hAttrib.add(title,"id");
-  hAttrib.add(title,"name");
-  hAttrib.add(physical,"physical");
-  hAttrib.put(cur);
-  renameProperty(a);
-  VHXC *vhxc = new VHXC (*targetPtcl);
-  app_log() << "physical = " << physical << std::endl;
-  targetH->addOperator(vhxc, "VHXC", physical);
-#else
-  APP_ABORT("HamiltonianFactory::addVHXCPotential VHXC is disabled because FFTW3 was not found during the build process.");
-#endif // defined(HAVE_LIBFFTW)
-}
-
 
 
 void
@@ -107,7 +86,6 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   std::string title("ElecElec"),pbc("yes");
   std::string forces("no");
   bool physical = true;
-  bool doForce = false;
   OhmmsAttributeSet hAttrib;
   hAttrib.add(title,"id");
   hAttrib.add(title,"name");

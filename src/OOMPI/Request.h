@@ -58,7 +58,7 @@ public:
   bool operator!=(const OOMPI_Request &a);
 
   //
-  // Compatibilty
+  // Compatibility
   //
 
   MPI_Request& Get_mpi(void);

@@ -38,12 +38,13 @@ KContainer::UpdateKLists(ParticleLayout_t& lattice, RealType kc, bool useSphere)
   app_log() << "  KContainer initialised with cutoff " << kcutoff << std::endl;
   app_log() << "   # of K-shell  = " << kshell.size() << std::endl;
   app_log() << "   # of K points = " << kpts.size() << std::endl;
+  app_log() << std::endl;
 }
 
 void
 KContainer::FindApproxMMax(ParticleLayout_t& lattice)
 {
-  //Estimate the size of the parallelpiped that encompases a sphere of kcutoff.
+  //Estimate the size of the parallelpiped that encompasses a sphere of kcutoff.
   //mmax is stored as integer translations of the reciprocal cell vectors.
   //Does not require an orthorhombic cell.
   /* Old method.

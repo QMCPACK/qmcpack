@@ -25,6 +25,7 @@ void
 cublas_inverse (cublasHandle_t handle,
                 float *Alist_d[], float *Ainvlist_d[],
                 float *AWorkList_d[], float *AinvWorkList_d[],
+                int *PivotArray, int *infoArray,
                 int N, int rowStride, int numMats,
                 bool useHigherPrecision = true);
 
@@ -54,6 +55,7 @@ void
 cublas_inverse (cublasHandle_t handle,
                 double *Alist_d[], double *Ainvlist_d[],
                 double *AWorklist_d[], double *AinvWorklist_d[],
+                int *PivotArray, int *infoArray,
                 int N, int rowStride, int numMats, 
                 bool useHigherPrecision = true);
 
@@ -83,6 +85,7 @@ void
 cublas_inverse (cublasHandle_t handle,
                 std::complex<float> *Alist_d[], std::complex<float> *Ainvlist_d[],
                 std::complex<float> *AWorkList_d[], std::complex<float> *AinvWorkList_d[],
+                int *PivotArray, int *infoArray,
                 int N, int rowStride, int numMats,
                 bool useHigherPrecision = true);
 
@@ -93,6 +96,7 @@ void
 cublas_inverse (cublasHandle_t handle,
                 std::complex<double> *Alist_d[], std::complex<double> *Ainvlist_d[],
                 std::complex<double> *AWorklist_d[], std::complex<double> *AinvWorklist_d[],
+                int *PivotArray, int *infoArray,
                 int N, int rowStride, int numMats, 
                 bool useHigherPrecision = true);
 

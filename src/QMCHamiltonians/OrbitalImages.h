@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_ORBITAL_IMAGES_H
 
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
-#include <QMCWaveFunctions/SPOSetBase.h>
+#include <QMCWaveFunctions/SPOSet.h>
 
 namespace qmcplusplus
 {
@@ -109,8 +109,8 @@ class OrbitalImages : public QMCHamiltonianBase
  public:
   enum{DIM=OHMMS_DIM};
 
-  typedef SPOSetBase::ValueVector_t ValueVector_t;
-  typedef SPOSetBase::GradVector_t  GradVector_t;
+  typedef SPOSet::ValueVector_t ValueVector_t;
+  typedef SPOSet::GradVector_t  GradVector_t;
   typedef ParticleSet::ParticleLayout_t Lattice_t;
   typedef std::map<std::string,ParticleSet*> PSPool;
 
@@ -153,8 +153,8 @@ class OrbitalImages : public QMCHamiltonianBase
   ///indices of orbitals within each sposet to evaluate
   std::vector<std::vector<int>*> sposet_indices;
 
-  ///sposets obtained by name from BasisSetFactory
-  std::vector<SPOSetBase*> sposets;
+  ///sposets obtained by name from SPOSetBuilderFactory
+  std::vector<SPOSet*> sposets;
 
   ///evaluate points at grid cell centers instead of edges
   bool center_grid;
@@ -211,11 +211,6 @@ class OrbitalImages : public QMCHamiltonianBase
 
   ///hijack estimator evaluate to evaluate and write all orbitals
   Return_t evaluate(ParticleSet& P);
-
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P); 
-  }
 
   //optional standard interface
   //void get_required_traces(TraceManager& tm);

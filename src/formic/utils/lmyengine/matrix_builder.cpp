@@ -577,7 +577,7 @@ void cqmc::engine::HamOvlpBuilderHD::reset()
 // \brief  Converts the input matrix by combining derivatives for dependent variables into 
 //         derivative for independent variables
 //
-// \param[in]         deps     object decribing the variable dependencies
+// \param[in]         deps     object describing the variable dependencies
 // \param[in, out]    mat      the matrix to be converted
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::HamOvlpBuilderHD::convert_to_ind_var_form(const formic::VarDeps * dep_ptr, formic::Matrix<double> & mat)
@@ -613,7 +613,7 @@ void cqmc::engine::HamOvlpBuilderHD::convert_to_ind_var_form(const formic::VarDe
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
-// \brief do D^(-1/2) transfrom on hamiltonian and overlap matrix 
+// \brief do D^(-1/2) transform on hamiltonian and overlap matrix 
 //
 //
 //

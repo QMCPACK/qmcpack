@@ -17,6 +17,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
+#include "QMCHamiltonians/L2Potential.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
 #ifdef QMC_CUDA
@@ -36,7 +37,7 @@ ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
                                        ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,
                                        Communicate* c):
   MPIObjectBase(c),
-  hasLocalPot(false),hasNonLocalPot(false),
+  hasLocalPot(false),hasNonLocalPot(false),hasL2Pot(false),
   targetH(h), IonConfig(ions), targetPtcl(els), targetPsi(psi)
 { }
 
@@ -44,16 +45,19 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 {
   if(localPot.empty())
   {
-    int ng(IonConfig.getSpeciesSet().getTotalNum());
+    int ng = IonConfig.getSpeciesSet().getTotalNum();
     localZeff.resize(ng,1);
     localPot.resize(ng,0);
     nonLocalPot.resize(ng,0);
+    L2Pot.resize(ng,0);
   }
   std::string ecpFormat("table");
+  std::string NLPP_algo("default");
   std::string pbc("yes");
   std::string forces("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat,"format");
+  pAttrib.add(NLPP_algo,"algorithm");
   pAttrib.add(pbc,"pbc");
   pAttrib.add(forces,"forces");
   pAttrib.put(cur);
@@ -71,8 +75,6 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     useSimpleTableFormat();
   }
 
-  RealType rcore_max=0;
-
   ///create LocalECPotential
   bool usePBC =
     !(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no");
@@ -89,13 +91,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
 #endif
       for(int i=0; i<localPot.size(); i++)
-      {
-        if(localPot[i])
-        {
-          apot->add(i,localPot[i],localZeff[i]);
-          rcore_max=std::max(rcore_max,localPot[i]->r_max);
-        }
-      }
+        if(localPot[i]) apot->add(i,localPot[i],localZeff[i]);
       targetH.addOperator(apot,"LocalECP");
     }
     else
@@ -120,14 +116,13 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   if(hasNonLocalPot)
   {
     //resize the sphere
-    targetPtcl.resizeSphere(IonConfig.getTotalNum());
     RealType rc2=0.0;
 #ifdef QMC_CUDA
     NonLocalECPotential_CUDA* apot =
       new NonLocalECPotential_CUDA(IonConfig,targetPtcl,targetPsi,usePBC,doForces);
 #else
     NonLocalECPotential* apot =
-      new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces);
+      new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces, NLPP_algo=="batched");
 #endif
     int nknot_max=0;
     for(int i=0; i<nonLocalPot.size(); i++)
@@ -142,32 +137,21 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     app_log() << "\n  Using NonLocalECP potential \n"
               << "    Maximum grid on a sphere for NonLocalECPotential: "
               << nknot_max << std::endl;
+    if(NLPP_algo=="batched") app_log() << "    Using batched ratio computing in NonLocalECP" << std::endl;
 
-    rcore_max=std::max(rc2,rcore_max);
     targetPtcl.checkBoundBox(2*rc2);
 
     targetH.addOperator(apot,"NonLocalECP");
-    for(int ic=0; ic<IonConfig.getTotalNum(); ic++)
-    {
-      int ig=IonConfig.GroupID[ic];
-      if(nonLocalPot[ig])
-      {
-        if(nonLocalPot[ig]->nknot)
-        {
-          targetPtcl.Sphere[ic]->resize(nknot_max);
-          //targetPsi.resizeSphere(nknot_max);
-          //targetPtcl.Sphere[ic]->resize(nonLocalPot[ig]->nknot);
-          //targetPsi.resizeSphere(nonLocalPot[ig]->nknot);
-        }
-      }
-    }
   }
-
-  //app_log() << "Checking THIS " << std::endl;
-  //DEV::OPTIMIZE_SOA
-  int tid=targetPtcl.addTable(IonConfig,DT_SOA_PREFERRED);
-  targetPtcl.DistTables[tid]->setRmax(rcore_max); //For the optimization only
-  app_log() << "  ECPotential::Rmax " << targetPtcl.DistTables[tid]->Rmax << std::endl;
+  if(hasL2Pot)
+  {
+    L2Potential* apot = new L2Potential(IonConfig,targetPtcl,targetPsi);
+    for(int i=0;i<L2Pot.size();i++)
+      if(L2Pot[i])
+        apot->add(i,L2Pot[i]);
+    app_log()<< "\n  Using L2 potential"<<std::endl;
+    targetH.addOperator(apot,"L2");
+  }
 
   app_log().flush();
   return true;
@@ -234,6 +218,13 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
             hasNonLocalPot=true;
             nonLocalPot[speciesIndex]=ecp.pp_nonloc;
             rmax=std::max(rmax,ecp.pp_nonloc->Rmax);
+          }
+          if(ecp.pp_L2)
+          {
+            hasL2Pot=true;
+            L2Pot[speciesIndex]=ecp.pp_L2;
+            // should this be added or not?
+            //rmax=std::max(rmax,ecp.pp_L2->rcut);
           }
           int rcutIndex=ion_species.addAttribute("rmax_core");
           ion_species(rcutIndex,speciesIndex)=rmax;
@@ -304,7 +295,6 @@ void ECPotentialBuilder::useSimpleTableFormat()
     // Read Number of potentials (local and non) for this atom
     int npotentials;
     fin >> npotentials;
-    RealType r, f1;
     int lmax=-1;
     int numnonloc=0;
     RealType rmax(0.0);

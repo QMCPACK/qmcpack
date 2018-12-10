@@ -26,7 +26,6 @@
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleIOUtility.h"
-//#include "ParticleIO/HDFParticleIO.h"
 #include "ParticleBase/ParticleFunctions.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -101,7 +100,6 @@ bool XMLParticleParser::put(const std::string& fname_in,
                             const std::string& fext_in)
 {
   xmlDocPtr doc=NULL;
-  xmlNsPtr ns;
   // build an XML tree from a the file;
   doc = xmlParseFile(fname_in.c_str());
   if (doc == NULL)

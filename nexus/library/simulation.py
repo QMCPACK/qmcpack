@@ -120,6 +120,10 @@ class SimulationInput(NexusCore):
         return text
     #end def write
 
+    def return_structure(self):
+        return self.return_system(structure_only=True)
+    #end def return_structure
+
     def read_text(self,text,filepath=None):
         self.not_implemented()
     #end def read_text
@@ -133,7 +137,7 @@ class SimulationInput(NexusCore):
         self.not_implemented()
     #end def incorporate_system
 
-    def return_system(self):
+    def return_system(self,structure_only=False):
         #create a physical system object from input file information
         self.not_implemented()
     #end def return_system
@@ -266,6 +270,7 @@ class Simulation(NexusCore):
     analyzer_imagefile = 'analyzer.p'
     image_directory    = 'sim'
     supports_restarts  = False
+    renew_app_command  = False
 
     is_bundle = False
 
@@ -273,6 +278,7 @@ class Simulation(NexusCore):
     creating_fake_sims = False
 
     sim_directories = dict()
+    all_sims = []
 
     @classmethod
     def code_name(cls):
@@ -397,6 +403,7 @@ class Simulation(NexusCore):
         self.infile         = None
         self.outfile        = None
         self.errfile        = None
+        self.bundleable     = True
         self.bundled        = False
         self.bundler        = None
         self.fake_sim       = Simulation.creating_fake_sims
@@ -406,6 +413,7 @@ class Simulation(NexusCore):
                              # accessed by dependents when calling get_dependencies
 
         self.set(**kwargs)
+        self.pre_init()
         self.set_directories()
         self.set_files()
         self.propagate_identifier()
@@ -414,6 +422,7 @@ class Simulation(NexusCore):
         #end if
         self.post_init()
 
+        Simulation.all_sims.append(self)
     #end def __init__
 
 
@@ -574,11 +583,11 @@ class Simulation(NexusCore):
         return ready
     #end def ready
 
-    def check_result(self,result_name):
+    def check_result(self,result_name,sim):
         self.not_implemented()
     #end def check_result
 
-    def get_result(self,result_name):
+    def get_result(self,result_name,sim):
         self.not_implemented()
     #end def get_result
 
@@ -602,6 +611,10 @@ class Simulation(NexusCore):
     def propagate_identifier(self):
         None
     #end def propagate_identifier
+
+    def pre_init(self):
+        None
+    #end def pre_init
 
     def post_init(self):
         None
@@ -830,6 +843,9 @@ class Simulation(NexusCore):
                 #end for
             #end if
         #end if
+        if self.renew_app_command:
+            self.job.renew_app_command(self)
+        #end if
         self.got_dependencies = True
     #end def get_dependencies
         
@@ -897,8 +913,13 @@ class Simulation(NexusCore):
     #end def load_analyzer_image
 
 
+    def attempt_files(self):
+        return (self.infile,self.outfile,self.errfile)
+    #end def attempt_files
+
+
     def save_attempt(self):
-        local = [self.infile,self.outfile,self.errfile]
+        local = self.attempt_files()
         filepaths = []
         for file in local:
             filepath = os.path.join(self.locdir,file)
@@ -926,7 +947,6 @@ class Simulation(NexusCore):
             #os.system('ls '+attempt_dir)
             #exit()
         #end if
-        #self.error('save_attempt')
     #end def save_attempt
 
 
@@ -940,7 +960,7 @@ class Simulation(NexusCore):
         self.enter(self.locdir,False,self.simid)
         self.log('writing input files'+self.idstr(),n=3)
         self.write_prep()
-        if self.infile!=None:
+        if self.infile is not None:
             infile = os.path.join(self.locdir,self.infile)
             self.input.write(infile)
         #end if
@@ -999,7 +1019,7 @@ class Simulation(NexusCore):
             if found_file:
                 self.copy_file(local,remote)
             else:
-                self.error('file {0} not found\n  locations checked: {1}'.format(file,file_locations))
+                self.error('file {0} not found\nlocations checked: {1}'.format(file,file_locations))
             #end if
         #end for
         self.sent_files = True
@@ -1017,6 +1037,10 @@ class Simulation(NexusCore):
 
     def submit(self):
         if not self.submitted:
+            if self.skip_submit and not self.bundled:
+                self.block_dependents(block_self=True)
+                return
+            #end if
             self.log('submitting job'+self.idstr(),n=3)
             if not self.skip_submit:
                 if not self.job.local:
@@ -1480,9 +1504,9 @@ from string import Template
 class SimulationInputTemplateDev(SimulationInput):
     def __init__(self,filepath=None,text=None):
         self.reset()
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath)
-        elif text!=None:
+        elif text is not None:
             self.read_text(text)
         #end if
     #end def __init__
@@ -1491,17 +1515,24 @@ class SimulationInputTemplateDev(SimulationInput):
         self.template = None
         self.keywords = set()
         self.values   = obj()
+        self.allow_not_set = set()
     #end def reset
         
     def clear(self):
         self.values.clear()
     #end def clear
 
+    def allow_no_assign(self,*keys):
+        for k in keys:
+            self.allow_not_set.add(k)
+        #end for
+    #end def allow_no_assign
+
     def assign(self,**values):
         if self.template is None:
             self.error('cannot assign values prior to reading template')
         #end if
-        invalid = set(values.keys()) - self.keywords
+        invalid = set(values.keys()) - self.keywords - self.allow_not_set
         if len(invalid)>0:
             self.error('attempted to assign invalid keywords\ninvalid keywords: {0}\nvalid options are: {1}'.format(sorted(invalid),sorted(self.keywords)))
         #end if
@@ -1689,14 +1720,19 @@ except:
     Dot,Node,Edge = unavailable('pydot','Dot','Node','Edge')
 #end try
 try:
-    import Image
+    from matplotlib.image import imread
+    from matplotlib.pyplot import imshow,show,xticks,yticks
 except:
-    Image = unavailable('Image')
+    imread = unavailable('matplotlib.image','imread')
+    imshow,show,xticks,yticks = unavailable('matplotlib.pyplot','imshow','show','xticks','yticks')
 #end try
 import tempfile
 exit_call = sys.exit
-def graph_sims(sims,useid=False,exit=True,quants=True):
-    graph = Dot(graph_type='digraph')
+def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True):
+    if sims is None:
+        sims = Simulation.all_sims
+    #end if
+    graph = Dot(graph_type='digraph',dpi=300)
     graph.set_label('simulation workflows')
     graph.set_labelloc('t')
     nodes = obj()
@@ -1709,10 +1745,15 @@ def graph_sims(sims,useid=False,exit=True,quants=True):
         else:
             nlabel = sim.identifier+' '+str(sim.simid)
         #end if
+        nopts = obj()
+        if 'block' in sim and sim.block:
+            nopts.color     = 'black'
+            nopts.fontcolor = 'white'
+        #end if
         node = obj(
             id    = sim.simid,
             sim   = sim,
-            node  = Node(nlabel,style='filled',shape='Mrecord'),
+            node  = Node(nlabel,style='filled',shape='Mrecord',**nopts),
             edges = obj(),
             )
         nodes[node.id] = node
@@ -1733,12 +1774,21 @@ def graph_sims(sims,useid=False,exit=True,quants=True):
         #end for
     #end for
 
-    fout = tempfile.NamedTemporaryFile(suffix='png')
-    savefile = fout.name
-    graph.write(savefile,format='png',prog='dot')
+    if savefile is None:
+        fout = tempfile.NamedTemporaryFile(suffix='.png')
+        savefile = fout.name
+        #savefile = './sims.png'
+    #end if
+    fmt = savefile.rsplit('.',1)[1]
+    graph.write(savefile,format=fmt,prog='dot')
 
-    image = Image.open(savefile)
-    image.show()
+    # display the image
+    if fmt=='png':
+        imshow(imread(savefile))
+        xticks([])
+        yticks([])
+        show()
+    #end if
 
     if exit:
         exit_call()

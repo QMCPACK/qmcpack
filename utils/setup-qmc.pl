@@ -12,7 +12,7 @@ use POSIX qw/floor fmod ceil pow/;
 # will allow only the use of ibrav=4 (hcp), ibrav=3 (bcc), ibrav=2 (fcc), ibrav=1 (simple cubic) and ibrav=0 (arbitrary)
 #print "$0 @ARGV\n";
 
-my %config = do "/gpfs/mira-home/projects/qmcpack/qmcpack/utils/setup-qmc-conf.pl";
+my %config = do "/autofs/nccs-svm1_home1/andreas/active_development/qmcpack/utils/setup-qmc-conf.pl";
 
 #print "The location of ppconvert is: $config{ppconvert}\n";
 
@@ -952,7 +952,7 @@ close(FILELIST);
 # TODO: Add facility to use rescaling for optimization rather than quartic.
 #       This will require decoupling optsamples from the number of vmc steps
 #       so that H and S matrices can be relatively well converged without having
-#       too many samples.  This will be extermely useful on machines which have
+#       too many samples.  This will be extremely useful on machines which have
 #       small amounts of memory.
 #
 #
@@ -2182,7 +2182,7 @@ sub getWavefunctionString {
     my $jastrowStartsRef = shift;
     if ($hasJastrow) {
 $#{$jastrowStartsRef}+1 == $sizeOneBody*($#{$atomsNameRef}+1) || die
-    "jastrowStarts must contain inital values for all types of one body jastrow.  As such it has\n to be $sizeOneBody (sizeOneBody) * ($#{$atomsNameRef} + 1) (Number of species in atomsName array) elements long\n";
+    "jastrowStarts must contain initial values for all types of one body jastrow.  As such it has\n to be $sizeOneBody (sizeOneBody) * ($#{$atomsNameRef} + 1) (Number of species in atomsName array) elements long\n";
     }
 
     # Now need to create a data structure that maps from the values in ionIds to the

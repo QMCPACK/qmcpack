@@ -54,11 +54,13 @@ class SimulationBundle(Simulation):
         #end if
         sims = list(sims) # make a copy
         if len(sims)==0:
-            self.error('attempted to bundle 0 simulations\n  at least one simulation must be provided to bundle')
+            self.error('attempted to bundle 0 simulations\nat least one simulation must be provided to bundle')
         #end if
         for sim in sims:
             if not isinstance(sim,Simulation):
                 self.error('attempted to bundle non-simulation object: '+sim.__class__.__name__)
+            elif not sim.bundleable:
+                self.error('attempted to bundle simulation that does not support bundling\nsim type: {0}\nsim identifier: {1}\nsim directory: {2}'.format(sim.__class__.__name__,sim.identifier,sim.locdir))
             #end if
             sim.bundled = True
             sim.bundler = self

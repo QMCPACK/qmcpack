@@ -200,7 +200,7 @@ EinsplineSetExtended<StorageType>::evaluate
 (const ParticleSet& P, int iat, RealValueVector_t& psi)
 {
   ValueTimer.start();
-  PosType r (P.R[iat]);
+  const PosType &r(P.activeR(iat));
   // Do core states first
   int icore = NumValenceOrbs;
   for (int tin=0; tin<MuffinTins.size(); tin++)
@@ -252,7 +252,7 @@ EinsplineSetExtended<StorageType>::evaluate
   {
     if (!inAtom)
     {
-      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      PosType ru(PrimLattice.toUnit(r));
       for (int i=0; i<OHMMS_DIM; i++)
         ru[i] -= std::floor (ru[i]);
       EinsplineTimer.start();
@@ -314,8 +314,8 @@ EinsplineSetExtended<StorageType>::evaluate
 (const ParticleSet& P, int iat, ComplexValueVector_t& psi)
 {
   ValueTimer.start();
-  PosType r (P.R[iat]);
-  PosType ru(PrimLattice.toUnit(P.R[iat]));
+  const PosType &r(P.activeR(iat));
+  PosType ru(PrimLattice.toUnit(r));
   for (int i=0; i<OHMMS_DIM; i++)
     ru[i] -= std::floor (ru[i]);
   EinsplineTimer.start();
@@ -342,7 +342,7 @@ EinsplineSetExtended<double>::evaluate
 (const ParticleSet &P, int iat, RealValueVector_t& psi)
 {
   ValueTimer.start();
-  PosType r (P.R[iat]);
+  const PosType &r(P.activeR(iat));
   bool inAtom = false;
   for (int jat=0; jat<AtomicOrbitals.size(); jat++)
   {
@@ -352,7 +352,7 @@ EinsplineSetExtended<double>::evaluate
   }
   if (!inAtom)
   {
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    PosType ru(PrimLattice.toUnit(r));
     int sign=0;
     for (int i=0; i<OHMMS_DIM; i++)
     {
@@ -411,7 +411,7 @@ EinsplineSetExtended<StorageType>::evaluate
  RealGradVector_t& dpsi, RealValueVector_t& d2psi)
 {
   VGLTimer.start();
-  PosType r (P.R[iat]);
+  const PosType &r(P.activeR(iat));
   std::complex<double> eye (0.0, 1.0);
   // Do core states first
   int icore = NumValenceOrbs;
@@ -478,7 +478,7 @@ EinsplineSetExtended<StorageType>::evaluate
   {
     if (!inAtom)
     {
-      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      PosType ru(PrimLattice.toUnit(r));
       for (int i=0; i<OHMMS_DIM; i++)
         ru[i] -= std::floor (ru[i]);
       EinsplineTimer.start();
@@ -607,7 +607,7 @@ EinsplineSetExtended<StorageType>::evaluate
 // something is wrong below
   /*
       VGLTimer.start();
-      PosType r (P.R[iat]);
+      const PosType &r(P.activeR(iat));
       std::complex<double> eye (0.0, 1.0);
 
       // Do core states first
@@ -673,7 +673,7 @@ EinsplineSetExtended<StorageType>::evaluate
       // Otherwise, evaluate the B-splines
       if (!inTin || need2blend) {
         if (!inAtom) {
-          PosType ru(PrimLattice.toUnit(P.R[iat]));
+          PosType ru(PrimLattice.toUnit(r));
           for (int i=0; i<OHMMS_DIM; i++)
             ru[i] -= std::floor (ru[i]);
           EinsplineTimer.start();
@@ -804,8 +804,8 @@ EinsplineSetExtended<StorageType>::evaluate
  ComplexGradVector_t& dpsi, ComplexValueVector_t& d2psi)
 {
   VGLTimer.start();
-  PosType r (P.R[iat]);
-  PosType ru(PrimLattice.toUnit(P.R[iat]));
+  const PosType &r(P.activeR(iat));
+  PosType ru(PrimLattice.toUnit(r));
   for (int i=0; i<OHMMS_DIM; i++)
     ru[i] -= std::floor (ru[i]);
   EinsplineTimer.start();
@@ -844,8 +844,8 @@ EinsplineSetExtended<StorageType>::evaluate
  ComplexGradVector_t& dpsi, ComplexHessVector_t& grad_grad_psi)
 {
   VGLTimer.start();
-  PosType r (P.R[iat]);
-  PosType ru(PrimLattice.toUnit(P.R[iat]));
+  const PosType &r(P.activeR(iat));
+  PosType ru(PrimLattice.toUnit(r));
   for (int i=0; i<OHMMS_DIM; i++)
     ru[i] -= std::floor (ru[i]);
   EinsplineTimer.start();
@@ -889,7 +889,7 @@ EinsplineSetExtended<double>::evaluate
  RealGradVector_t& dpsi, RealValueVector_t& d2psi)
 {
   VGLTimer.start();
-  PosType r (P.R[iat]);
+  const PosType &r(P.activeR(iat));
   bool inAtom = false;
   for (int jat=0; jat<AtomicOrbitals.size(); jat++)
   {
@@ -899,7 +899,7 @@ EinsplineSetExtended<double>::evaluate
   }
   if (!inAtom)
   {
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    PosType ru(PrimLattice.toUnit(r));
     int sign=0;
     for (int i=0; i<OHMMS_DIM; i++)
     {
@@ -937,7 +937,7 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose
   VGLMatTimer.start();
   for (int iat=first,i=0; iat<last; iat++,i++)
   {
-    PosType r (P.R[iat]);
+    const PosType &r(P.activeR(iat));
     // Do core states first
     int icore = NumValenceOrbs;
     for (int tin=0; tin<MuffinTins.size(); tin++)
@@ -1003,7 +1003,7 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose
     {
       if (!inAtom)
       {
-        PosType ru(PrimLattice.toUnit(P.R[iat]));
+        PosType ru(PrimLattice.toUnit(r));
         for (int i=0; i<OHMMS_DIM; i++)
           ru[i] -= std::floor (ru[i]);
         EinsplineTimer.start();
@@ -1137,7 +1137,7 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose
   VGLMatTimer.start();
   for (int iat=first,i=0; iat<last; iat++,i++)
   {
-    PosType r (P.R[iat]);
+    const PosType &r(P.activeR(iat));
     // Do core states first
     int icore = NumValenceOrbs;
     for (int tin=0; tin<MuffinTins.size(); tin++)
@@ -1206,7 +1206,7 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose
     {
       if (!inAtom)
       {
-        PosType ru(PrimLattice.toUnit(P.R[iat]));
+        PosType ru(PrimLattice.toUnit(r));
         for (int i=0; i<OHMMS_DIM; i++)
           ru[i] -= std::floor (ru[i]);
         EinsplineTimer.start();
@@ -1283,22 +1283,19 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose
       // Copy core states
       for (int j=NumValenceOrbs; j<N; j++)
       {
-        std::complex<double> psi_val, psi_lapl;
+        std::complex<double> psi_val;
         TinyVector<std::complex<double>, OHMMS_DIM> psi_grad;
         psi_val  = StorageValueVector[j];
         psi_grad = StorageGradVector[j];
-        psi_lapl = StorageLaplVector[j];
         psi(i,psiIndex) = real(psi_val);
         for (int n=0; n<OHMMS_DIM; n++)
           dpsi(i,psiIndex)[n] = real(psi_grad[n]);
-        //d2psi(i,psiIndex) = real(psi_lapl);
         psiIndex++;
         if (MakeTwoCopies[j])
         {
           psi(i,psiIndex) = imag(psi_val);
           for (int n=0; n<OHMMS_DIM; n++)
             dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
-          //d2psi(i,psiIndex) = imag(psi_lapl);
           psiIndex++;
         }
       }
@@ -1349,15 +1346,14 @@ EinsplineSetExtended<StorageType>::evaluateGradSource
 {
   if (ionDerivs)
   {
-    std::complex<double> eye(0.0,1.0);
     // Loop over dimensions
     for (int dim=0; dim<OHMMS_DIM; dim++)
     {
       // Loop over electrons
       for(int iel=first,i=0; iel<last; iel++,i++)
       {
-        PosType r (P.R[iel]);
-        PosType ru(PrimLattice.toUnit(P.R[iel]));
+        const PosType &r(P.activeR(iel));
+        PosType ru(PrimLattice.toUnit(r));
         assert (FirstOrderSplines[iat][dim]);
         EinsplineMultiEval (FirstOrderSplines[iat][dim], ru,
                             StorageValueVector);
@@ -1404,8 +1400,8 @@ EinsplineSetExtended<StorageType>::evaluateGradSource
       // Loop over electrons
       for(int iel=first,i=0; iel<last; iel++,i++)
       {
-        PosType r (P.R[iel]);
-        PosType ru(PrimLattice.toUnit(P.R[iel]));
+        const PosType &r(P.activeR(iel));
+        PosType ru(PrimLattice.toUnit(r));
         assert (FirstOrderSplines[iat_src][dim]);
         EinsplineMultiEval (FirstOrderSplines[iat_src][dim], ru,
                             StorageValueVector, StorageGradVector,
@@ -1474,7 +1470,7 @@ EinsplineSetExtended<double>::evaluateGradSource
       // Loop over electrons
       for(int iel=first,i=0; iel<last; iel++,i++)
       {
-        PosType r (P.R[iel]);
+        const PosType &r(P.activeR(iel));
         PosType ru(PrimLattice.toUnit(r));
         int sign=0;
         for (int n=0; n<OHMMS_DIM; n++)
@@ -1532,7 +1528,7 @@ EinsplineSetExtended<double>::evaluateGradSource
       // Loop over electrons
       for(int iel=first,i=0; iel<last; iel++,i++)
       {
-        PosType r (P.R[iel]);
+        const PosType &r(P.activeR(iel));
         PosType ru(PrimLattice.toUnit(r));
         int sign=0;
         for (int n=0; n<OHMMS_DIM; n++)
@@ -1574,8 +1570,8 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose
   VGLMatTimer.start();
   for(int iat=first,i=0; iat<last; iat++,i++)
   {
-    PosType r (P.R[iat]);
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    const PosType &r(P.activeR(iat));
+    PosType ru(PrimLattice.toUnit(r));
     for (int n=0; n<OHMMS_DIM; n++)
       ru[n] -= std::floor (ru[n]);
     EinsplineTimer.start();
@@ -1617,8 +1613,8 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose
   VGLMatTimer.start();
   for(int iat=first,i=0; iat<last; iat++,i++)
   {
-    PosType r (P.R[iat]);
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    const PosType &r(P.activeR(iat));
+    PosType ru(PrimLattice.toUnit(r));
     for (int n=0; n<OHMMS_DIM; n++)
       ru[n] -= std::floor (ru[n]);
     EinsplineTimer.start();
@@ -1664,7 +1660,7 @@ EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P
   VGLMatTimer.start();
   for(int iat=first,i=0; iat<last; iat++,i++)
   {
-    PosType r (P.R[iat]);
+    const PosType &r(P.activeR(iat));
     bool inAtom = false;
     for (int jat=0; jat<AtomicOrbitals.size(); jat++)
     {
@@ -1683,7 +1679,7 @@ EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P
     }
     if (!inAtom)
     {
-      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      PosType ru(PrimLattice.toUnit(r));
       int sign=0;
       for (int n=0; n<OHMMS_DIM; n++)
       {
@@ -1724,7 +1720,7 @@ EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P
   VGLMatTimer.start();
   for(int iat=first,i=0; iat<last; iat++,i++)
   {
-    PosType r (P.R[iat]);
+    const PosType &r(P.activeR(iat));
     bool inAtom = false;
     for (int jat=0; jat<AtomicOrbitals.size(); jat++)
     {
@@ -1743,7 +1739,7 @@ EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P
     }
     if (!inAtom)
     {
-      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      PosType ru(PrimLattice.toUnit(r));
       int sign=0;
       for (int n=0; n<OHMMS_DIM; n++)
       {
@@ -1785,8 +1781,8 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
   VGLMatTimer.start();
   for(int iat=first,i=0; iat<last; iat++,i++)
   {
-    PosType r (P.R[iat]);
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    const PosType &r(P.activeR(iat));
+    PosType ru(PrimLattice.toUnit(r));
     for (int n=0; n<OHMMS_DIM; n++)
       ru[n] -= std::floor (ru[n]);
     EinsplineTimer.start();
@@ -1810,13 +1806,13 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
       StorageGradHessVector[j]=dot(PrimLattice.G,tmpghs);
     }
     std::complex<double> eye (0.0, 1.0);
-    StorageValueVector_t &valVec =
-      StorageValueVector;
-    StorageGradVector_t &gradVec =
-      StorageGradVector;
-    StorageHessVector_t &hessVec =
-      StorageHessVector;
-    Tensor<std::complex<double>,OHMMS_DIM> tmphs;
+//    StorageValueVector_t &valVec =
+//      StorageValueVector;
+//    StorageGradVector_t &gradVec =
+//      StorageGradVector;
+//    StorageHessVector_t &hessVec =
+//      StorageHessVector;
+//    Tensor<std::complex<double>,OHMMS_DIM> tmphs;
     for (int j=0; j<NumValenceOrbs; j++)
     {
 //            std::complex<double> u = valVec[j];
@@ -1909,7 +1905,7 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
 //    std::complex<double> eye(0.0,1.0);
 //    VGLMatTimer.start();
 //    for (int iat=first,i=0; iat<last; iat++,i++) {
-//      PosType r (P.R[iat]);
+//      const PosType &r(P.activeR(iat));
 //
 //      // Do core states first
 //      int icore = NumValenceOrbs;
@@ -1946,7 +1942,7 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
 //      // Otherwise, evaluate the B-splines
 //      if (!inTin || need2blend) {
 //        if (!inAtom) {
-//          PosType ru(PrimLattice.toUnit(P.R[iat]));
+//          PosType ru(PrimLattice.toUnit(r));
 //          for (int i=0; i<OHMMS_DIM; i++)
 //            ru[i] -= std::floor (ru[i]);
 //
@@ -2075,8 +2071,8 @@ EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P, int fir
   APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
 //    VGLMatTimer.start();
 //    for(int iat=first,i=0; iat<last; iat++,i++) {
-//      PosType r (P.R[iat]);
-//      PosType ru(PrimLattice.toUnit(P.R[iat]));
+//      const PosType &r(P.activeR(iat));
+//      PosType ru(PrimLattice.toUnit(r));
 //      for (int n=0; n<OHMMS_DIM; n++)
 //        ru[n] -= std::floor (ru[n]);
 //      EinsplineTimer.start();
@@ -2136,8 +2132,8 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
 //    VGLMatTimer.start();
   for(int iat=first,i=0; iat<last; iat++,i++)
   {
-    PosType r (P.R[iat]);
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    const PosType &r(P.activeR(iat));
+    PosType ru(PrimLattice.toUnit(r));
     for (int n=0; n<OHMMS_DIM; n++)
       ru[n] -= std::floor (ru[n]);
     EinsplineTimer.start();
@@ -2212,7 +2208,7 @@ EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P, int fir
   VGLMatTimer.start();
   for (int iat=first,i=0; iat<last; iat++,i++)
   {
-    PosType r (P.R[iat]);
+    const PosType &r(P.activeR(iat));
     // Do core states first
     int icore = NumValenceOrbs;
     for (int tin=0; tin<MuffinTins.size(); tin++)
@@ -2225,7 +2221,6 @@ EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P, int fir
     // Check if we are in the muffin tin;  if so, evaluate
     bool inTin = false, need2blend = false;
     PosType disp;
-    double b, db, d2b;
     for (int tin=0; tin<MuffinTins.size(); tin++)
     {
       APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
@@ -2306,7 +2301,7 @@ EinsplineSetExtended<StorageType>::registerTimers()
 
 
 
-template<typename StorageType> SPOSetBase*
+template<typename StorageType> SPOSet*
 EinsplineSetExtended<StorageType>::makeClone() const
 {
   EinsplineSetExtended<StorageType> *clone =
@@ -2332,7 +2327,7 @@ EinsplineSetHybrid<double>::Type()
 }
 
 
-template<typename StorageType> SPOSetBase*
+template<typename StorageType> SPOSet*
 EinsplineSetHybrid<StorageType>::makeClone() const
 {
   EinsplineSetHybrid<StorageType> *clone =

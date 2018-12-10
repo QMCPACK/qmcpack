@@ -579,7 +579,7 @@ void MCWalkerConfiguration::updateLists_GPU()
   {
     if (WalkerList[iw]->R_GPU.size() != R.size())
       std::cerr << "Error in R_GPU size for iw = " << iw << "!\n";
-    hostlist[iw] = (CudaRealType*)WalkerList[iw]->R_GPU.data();
+    hostlist[iw] = (CTS::RealType*)WalkerList[iw]->R_GPU.data();
   }
   RList_GPU = hostlist;
 
@@ -587,7 +587,7 @@ void MCWalkerConfiguration::updateLists_GPU()
   {
     if (WalkerList[iw]->Grad_GPU.size() != R.size())
       std::cerr << "Error in Grad_GPU size for iw = " << iw << "!\n";
-    hostlist_valueType[iw] = (CudaValueType*)WalkerList[iw]->Grad_GPU.data();
+    hostlist_valueType[iw] = (CTS::ValueType*)WalkerList[iw]->Grad_GPU.data();
   }
   GradList_GPU = hostlist_valueType;
 
@@ -595,7 +595,7 @@ void MCWalkerConfiguration::updateLists_GPU()
   {
     if (WalkerList[iw]->Lap_GPU.size() != R.size())
       std::cerr << "Error in Lap_GPU size for iw = " << iw << "!\n";
-    hostlist_valueType[iw] = (CudaValueType*)WalkerList[iw]->Lap_GPU.data();
+    hostlist_valueType[iw] = (CTS::ValueType*)WalkerList[iw]->Lap_GPU.data();
   }
   LapList_GPU = hostlist_valueType;
 

@@ -53,7 +53,6 @@ struct BsplineFunctor: public OptimizableFunctorBase
   std::string fileName;
 
   int ResetCount;
-  int ReportLevel;
   bool notOpt;
   bool periodic;
 
@@ -76,7 +75,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
         0.0, 0.0,  0.0,  3.0,
         0.0, 0.0,  0.0, -3.0,
         0.0, 0.0,  0.0,  1.0},
-    CuspValue(cusp), ResetCount(0), ReportLevel(0), notOpt(false), periodic(true)
+    CuspValue(cusp), ResetCount(0), notOpt(false), periodic(true)
   {
     cutoff_radius = 0.0;
   }
@@ -86,10 +85,14 @@ struct BsplineFunctor: public OptimizableFunctorBase
     return new BsplineFunctor(*this);
   }
 
-  inline void setReportLevel(int i, const std::string& fname)
+  void setCusp(real_type c) 
   {
-    ReportLevel=i;
-    fileName=(ReportLevel)? fname:"0";
+    CuspValue = c;
+  }
+
+  void setPeriodic(bool p)
+  {
+    periodic = p;
   }
 
   void resize(int n)
@@ -112,7 +115,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
     DeltaRInv = 1.0/DeltaR;
     for (int i=0; i<SplineCoefs.size(); i++)
       SplineCoefs[i] = 0.0;
-    // Ensure that cusp conditions is satsified at the origin
+    // Ensure that cusp conditions is satisfied at the origin
     SplineCoefs[1] = Parameters[0];
     SplineCoefs[2] = Parameters[1];
     SplineCoefs[0] = Parameters[1] - 2.0*DeltaR * CuspValue;
@@ -619,29 +622,6 @@ struct BsplineFunctor: public OptimizableFunctorBase
     return false;
   }
 
-  void print()
-  {
-    if(ReportLevel)
-    {
-      std::ofstream fout(fileName.c_str());
-      this->print(fout);
-    }
-  }
-
-
-  void print(std::ostream& os)
-  {
-    int n=100;
-    T d=cutoff_radius/100.,r=0;
-    T u,du,d2du;
-    for (int i=0; i<n; ++i)
-    {
-      u=evaluate(r,du,d2du);
-      os << std::setw(22) << r << std::setw(22) << u << std::setw(22) << du
-         << std::setw(22) << d2du << std::endl;
-      r+=d;
-    }
-  }
 };
 
 template<typename T>
@@ -658,7 +638,8 @@ BsplineFunctor<T>::evaluateV(const int iat, const int iStart, const int iEnd,
 #pragma vector always 
   for ( int jat = 0; jat < iLimit; jat++ ) {
     real_type r = distArray[jat];
-    if ( r < cutoff_radius )
+    // pick the distances smaller than the cutoff and avoid the reference atom
+    if ( r < cutoff_radius && iStart+jat != iat )
       distArrayCompressed[iCount++] = distArray[jat];
   }
 
@@ -708,7 +689,7 @@ inline void BsplineFunctor<T>::evaluateVGL(const int iat, const int iStart, cons
 #pragma vector always
   for ( int jat = 0; jat < iLimit; jat++ ) {
     real_type r = distArray[jat];
-    if ( r < cutoff_radius ) {
+    if ( r < cutoff_radius && iStart+jat != iat ) {
       distIndices[iCount] = jat;
       distArrayCompressed[iCount] = r;
       iCount++;

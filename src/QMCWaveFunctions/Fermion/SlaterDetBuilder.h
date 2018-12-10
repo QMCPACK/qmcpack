@@ -17,8 +17,8 @@
 #define QMCPLUSPLUS_LCORBITALSETBUILDER_H
 
 #include <vector>
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCWaveFunctions/BasisSetFactory.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
@@ -29,18 +29,18 @@
 namespace qmcplusplus
 {
 
-/** derived class from OrbitalBuilderBase
+/** derived class from WaveFunctionComponentBuilder
  *
  * Builder SlaterDeterminant with LCOrbitalSet
  */
-class SlaterDetBuilder: public OrbitalBuilderBase
+class SlaterDetBuilder: public WaveFunctionComponentBuilder
 {
 
 public:
 
   typedef SlaterDet SlaterDeterminant_t;
   typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
-  typedef DiracDeterminantBase Det_t;
+  typedef DiracDeterminant Det_t;
   /** constructor
    * \param els reference to the electrons
    * \param psi reference to the wavefunction
@@ -61,7 +61,7 @@ private:
 
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
-  BasisSetFactory* myBasisSetFactory;
+  SPOSetBuilderFactory* mySPOSetBuilderFactory;
   SlaterDeterminant_t* slaterdet_0;
   MultiSlaterDeterminant_t* multislaterdet_0;
   MultiSlaterDeterminantFast* multislaterdetfast_0;
@@ -74,7 +74,7 @@ private:
    * @param firstIndex index of the determinant
    * @return firstIndex+number of orbitals
    */
-  bool putDeterminant(xmlNodePtr cur, int firstIndex, bool slater_det_opt);
+  bool putDeterminant(xmlNodePtr cur, int firstIndex);
 
   bool createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
 

@@ -13,23 +13,22 @@
 #//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 #//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 #//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+#//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 #//
 #// File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
 #//////////////////////////////////////////////////////////////////////////////////////
     
     
 SET(WFBASE_SRCS
-  OrbitalBase.cpp
-  DiffOrbitalBase.cpp
-  OrbitalBuilderBase.cpp
-  BasisSetBuilder.cpp
+  WaveFunctionComponent.cpp
+  DiffWaveFunctionComponent.cpp
+  WaveFunctionComponentBuilder.cpp
+  SPOSetBuilder.cpp
   SPOInfo.cpp
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
-  SPOSetBase.cpp
-  FermionBase.cpp
+  SPOSet.cpp
   OptimizableSPOSet.cpp
-  AFMSPOSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
@@ -48,19 +47,14 @@ ENDIF(NOT QMC_COMPLEX)
 #common jastrows
 SET(JASTROW_SRCS
   Jastrow/LRTwoBodyJastrow.cpp
-  Jastrow/PadeJastrowBuilder.cpp
   Jastrow/JastrowBuilder.cpp
-  Jastrow/BsplineJastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
-  Jastrow/singleRPAJastrowBuilder.cpp
-  Jastrow/JAABuilder.cpp
-  Jastrow/JABBuilder.cpp
+  Jastrow/RadialJastrowBuilder.cpp
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
   OptimizableSPOBuilder.cpp
-  AFMSPOBuilder.cpp
   Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
   )
@@ -82,22 +76,19 @@ IF(OHMMS_DIM MATCHES 3)
 
   SET(JASTROW_SRCS ${JASTROW_SRCS}
     Jastrow/eeI_JastrowBuilder.cpp
-    Jastrow/ThreeBodyGeminal.cpp
-    Jastrow/ThreeBodyBlockSparse.cpp
-    Jastrow/JastrowBasisBuilder.cpp
-    Jastrow/CBSOBuilder.cpp
     )
 
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    MolecularOrbitals/STOBuilder.cpp
-    MolecularOrbitals/GTOBuilder.cpp
-    MolecularOrbitals/NGOBuilder.cpp
-    MolecularOrbitals/BsplineAOBuilder.cpp
-    )
+  IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      MolecularOrbitals/STOBuilder.cpp
+      MolecularOrbitals/GTOBuilder.cpp
+      MolecularOrbitals/NGOBuilder.cpp
+      )
+  ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
 
   IF(NOT QMC_COMPLEX AND ENABLE_SOA)
     #lcao is deigned for localized orbitals in bulk and complex
-    SET(FERMION_SRCS ${FERMION_SRCS}  lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp)
+    SET(FERMION_SRCS ${FERMION_SRCS}  lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp lcao/CuspCorrection.cpp lcao/LCAOrbitalSetWithCorrection.cpp)
   ENDIF(NOT QMC_COMPLEX AND ENABLE_SOA)
 
   IF(QMC_CUDA)
@@ -107,12 +98,21 @@ IF(OHMMS_DIM MATCHES 3)
       Fermion/SlaterDetCUDA.cpp
       TrialWaveFunction_CUDA.cpp
       )
-    SET(JASTROW_SRCS ${JASTROW_SRCS}
-      Jastrow/BsplineJastrowCuda.cu
-      Jastrow/BsplineJastrowCudaPBC.cu
-      Jastrow/OneBodyJastrowOrbitalBspline.cpp
-      Jastrow/TwoBodyJastrowOrbitalBspline.cpp
-      )
+    IF(ENABLE_SOA)
+      SET(JASTROW_SRCS ${JASTROW_SRCS}
+        Jastrow/BsplineJastrowCuda.cu
+        Jastrow/BsplineJastrowCudaPBC.cu
+        Jastrow/OneBodyJastrowOrbitalBspline.cpp
+        Jastrow/TwoBodyJastrowOrbitalBspline.cpp
+        )
+    ELSE(ENABLE_SOA)
+      SET(JASTROW_SRCS ${JASTROW_SRCS}
+        Jastrow/BsplineJastrowCuda.cu
+        Jastrow/BsplineJastrowCudaPBC.cu
+        Jastrow/OneBodyJastrowOrbitalBsplineAoS.cpp
+        Jastrow/TwoBodyJastrowOrbitalBsplineAoS.cpp
+        )
+    ENDIF(ENABLE_SOA)
     IF(HAVE_EINSPLINE)
       SET(FERMION_SRCS ${FERMION_SRCS}
         EinsplineSetCuda.cpp
@@ -138,7 +138,7 @@ IF(OHMMS_DIM MATCHES 3)
       BsplineFactory/createComplexDouble.cpp
       BsplineFactory/createComplexSingle.cpp
       BandInfo.cpp
-      BsplineReaderBase.cpp
+      BsplineFactory/BsplineReaderBase.cpp
       )
 
     IF(NOT QMC_COMPLEX)
@@ -178,32 +178,28 @@ IF(OHMMS_DIM MATCHES 3)
 ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
-  Fermion/DiracDeterminantBase.cpp
-  Fermion/DiracDeterminantSoA.cpp
+  Fermion/DiracDeterminant.cpp
   Fermion/DiracDeterminantOpt.cpp
-  Fermion/DiracDeterminantAFM.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
   Fermion/MultiSlaterDeterminant.cpp
   Fermion/MultiSlaterDeterminantFast.cpp
-  Fermion/MultiDiracDeterminantBase.cpp
-  Fermion/MultiDiracDeterminantBase.2.cpp
+  Fermion/MultiDiracDeterminant.cpp
+  Fermion/MultiDiracDeterminant.2.cpp
   Fermion/BackflowBuilder.cpp 
   Fermion/DiracDeterminantWithBackflow.cpp
   Fermion/SlaterDetWithBackflow.cpp
   Fermion/MultiSlaterDeterminantWithBackflow.cpp
-  BasisSetFactory.cpp
+  SPOSetBuilderFactory.cpp
   TrialWaveFunction.cpp
   WaveFunctionFactory.cpp
   )
 
-IF(NOT QMC_COMPLEX)
+IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
   SET(FERMION_SRCS ${FERMION_SRCS}
-    Fermion/RNDiracDeterminantBase.cpp
-    Fermion/RNDiracDeterminantBaseAlternate.cpp
     Fermion/SlaterDetOpt.cpp
     )
-ENDIF(NOT QMC_COMPLEX)
+ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
 
 ####################################
 # create libqmcwfs

@@ -13,15 +13,15 @@
     
     
 /**@file DiracDeterminantWithBackflowBase.h
- * @brief Declaration of DiracDeterminantWithBackflow with a S(ingle)P(article)O(rbital)SetBase
+ * @brief Declaration of DiracDeterminantWithBackflow with a S(ingle)P(article)O(rbital)Set
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
-#include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus
@@ -29,22 +29,22 @@ namespace qmcplusplus
 
 /** class to handle determinants with backflow
  */
-class DiracDeterminantWithBackflow: public DiracDeterminantBase
+class DiracDeterminantWithBackflow: public DiracDeterminant
 {
 public:
 
-  typedef SPOSetBase::IndexVector_t IndexVector_t;
-  typedef SPOSetBase::ValueVector_t ValueVector_t;
-  typedef SPOSetBase::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSetBase::GradVector_t  GradVector_t;
-  typedef SPOSetBase::GradMatrix_t  GradMatrix_t;
-  typedef SPOSetBase::HessMatrix_t  HessMatrix_t;
-  typedef SPOSetBase::HessVector_t  HessVector_t;
-  typedef SPOSetBase::HessType      HessType;
-  typedef SPOSetBase::GGGType       GGGType;
-  typedef SPOSetBase::GGGVector_t   GGGVector_t;
-  typedef SPOSetBase::GGGMatrix_t   GGGMatrix_t;
-  typedef SPOSetBase::HessArray_t HessArray_t;
+  typedef SPOSet::IndexVector_t IndexVector_t;
+  typedef SPOSet::ValueVector_t ValueVector_t;
+  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
+  typedef SPOSet::GradVector_t  GradVector_t;
+  typedef SPOSet::GradMatrix_t  GradMatrix_t;
+  typedef SPOSet::HessMatrix_t  HessMatrix_t;
+  typedef SPOSet::HessVector_t  HessVector_t;
+  typedef SPOSet::HessType      HessType;
+  typedef SPOSet::GGGType       GGGType;
+  typedef SPOSet::GGGVector_t   GGGVector_t;
+  typedef SPOSet::GGGMatrix_t   GGGMatrix_t;
+  typedef SPOSet::HessArray_t HessArray_t;
   //typedef Array<GradType,3>       GradArray_t;
   //typedef Array<PosType,3>        PosArray_t;
 
@@ -52,24 +52,14 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetBasePtr const &spos, BackflowTransformation * BF, int first=0);
+  DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const spos, BackflowTransformation * BF, int first=0);
 
   ///default destructor
   ~DiracDeterminantWithBackflow();
 
-  /**copy constructor
-   * @param s existing DiracDeterminantWithBackflow
-   *
-   * This constructor makes a shallow copy of Phi.
-   * Other data members are allocated properly.
-   */
-  DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s);
-
-  DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s);
-
-  ///** return a clone of Phi
-  // */
-  //SPOSetBasePtr clonePhi() const;
+  // copy constructor and assign operator disabled
+  DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s) = delete;
+  DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
 
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
@@ -113,12 +103,7 @@ public:
    */
   ValueType ratio(ParticleSet& P, int iat);
 
-  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
-
-  ValueType alternateRatio(ParticleSet& P)
-  {
-    return 1.0;
-  }
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
@@ -148,13 +133,6 @@ public:
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L) ;
 
-  ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L);
-
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
-
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set
@@ -162,9 +140,8 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantWithBackflow* makeCopy(SPOSetBase* spo) const;
+  DiracDeterminantWithBackflow* makeCopy(SPOSet* spo) const;
 
-  inline void setLogEpsilon(ValueType x) { }
   inline ValueType rcdot(TinyVector<RealType,OHMMS_DIM>& lhs, TinyVector<ValueType,OHMMS_DIM>& rhs)
   {
     ValueType ret(0);
@@ -181,6 +158,8 @@ public:
     return ret;
   };
 #endif
+  ///total number of particles. Ye: used to track first time allocation but I still feel it very strange.
+  int NP;
   int NumParticles;
   GradMatrix_t dFa;
   HessMatrix_t grad_grad_psiM;
@@ -195,11 +174,17 @@ public:
   GradVector_t Fmatdiag;
   GradVector_t Fmatdiag_temp;
 
+  Vector<ValueType> WorkSpace;
+  Vector<IndexType> Pivot;
+
   ValueMatrix_t psiMinv_temp;
   ValueType *FirstAddressOfGGG;
   ValueType *LastAddressOfGGG;
   ValueType *FirstAddressOfFm;
   ValueType *LastAddressOfFm;
+
+  ParticleSet::ParticleGradient_t myG, myG_temp;
+  ParticleSet::ParticleLaplacian_t myL, myL_temp;
 
   void testDerivFjj(ParticleSet& P, int pa);
   void testGGG(ParticleSet& P);

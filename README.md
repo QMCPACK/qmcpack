@@ -21,12 +21,13 @@
  extensive use of toolchains, but the system has since been updated to
  eliminate the use of toolchain files for most cases.  The build
  system works with GNU, Intel, and IBM XLC compilers.  Specific compile options
- can be specified either through specific environmental or CMake
+ can be specified either through specific environment or CMake
  variables.  When the libraries are installed in standard locations,
- e.g., /usr, /usr/local, there is no need to set environmental or cmake
+ e.g., /usr, /usr/local, there is no need to set environment or cmake
  variables for the packages.
 
- See the manual in manual/qmcpack_manual.pdf for build examples on Linux, Mac OS X etc.
+ See the manuals linked at https://www.qmcpack.org/documentation or buildable via
+ manual/build_manual.sh for build examples on Linux, Mac OS X etc.
 
 ## Quick build
 
@@ -65,15 +66,15 @@ make -j 8
 
 ## Set the environment
 
- A number of enviornmental variables affect the build.  In particular
+ A number of environment variables affect the build.  In particular
  they can control the default paths for libraries, the default
- compilers, etc.  The list of enviornmental variables is given below:
+ compilers, etc.  The list of environment variables is given below:
 
 | Environment variable | Description |
 |----------------------|-------------|
 |   CXX          |    C++ compiler |
 |   CC           |    C Compiler |
-|   MKL_HOME     |    Path for MKL |
+|   MKL_ROOT     |    Path for MKL |
 |   LIBXML2_HOME |    Path for libxml2 |
 |   HDF5_ROOT    |    Path for HDF5 |
 |   BOOST_ROOT   |    Path for Boost |
@@ -81,10 +82,10 @@ make -j 8
 
 ## CMake options
 
- In addition to reading the enviornmental variables, CMake provides a
+ In addition to reading the environment variables, CMake provides a
  number of optional variables that can be set to control the build and
  configure steps.  When passed to CMake, these variables will take
- precident over the enviornmental and default variables.  To set them
+ precident over the environment and default variables.  To set them
  add -D FLAG=VALUE to the configure line between the cmake command and
  the path to the source directory.
 
@@ -115,64 +116,68 @@ make -j 8
 ```
      QMC_CUDA            Enable CUDA and GPU acceleration (1:yes, 0:no)
      QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
+     QMC_MIXED_PRECISION Build the mixed precision (mixing double/float) version
+                         (1:yes (GPU default), 0:no (CPU default)).
+                         The CPU support is experimental.
+                         Use float and double for base and full precision.
+                         The GPU support is quite mature.
+                         Use always double for host side base and full precision
+                         and use float and double for CUDA base and full precision.
+     ENABLE_TIMERS       Enable fine-grained timers (1:yes, 0:no (default)).
+                         Timers are off by default to avoid potential slowdown in small
+                         systems. For large systems (100+ electrons) there is no risk.
+     ENABLE_SOA          (Experimental) Enable CPU optimization based on Structure-
+                         of-Array (SoA) datatypes (1:yes, 0:no (default)). ```
 ```
 
  * Additional QMC options
 
 ```
-     QMC_DATA            Specify data directory for QMCPACK (currently unused, but
-                         likely to be used for performance tests)
      QMC_INCLUDE         Add extra include paths
      QMC_EXTRA_LIBS      Add extra link libraries
      QMC_BUILD_STATIC    Add -static flags to build
+     QMC_DATA            Specify data directory for QMCPACK performance and integration tests
+     QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
 ```
 
-  * libxml
+  * libxml2 related
 
 ```
      Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
      Libxml2_LIBRARY_DIRS  Specify library directories for libxml2
 ```
 
-  * FFTW
+* HDF5 related
+```
+     ENABLE_PHDF5        1(default)/0, enables/disable parallel collective IO.
+
+```
+
+  * FFTW related
 ```
      FFTW_INCLUDE_DIRS   Specify include directories for FFTW
      FFTW_LIBRARY_DIRS   Specify library directories for FFTW
 ```
 
-## Configure and build
-
-Move to build directory, run cmake and make
-```
-cd build
-cmake ..
-make -j 8
-```
-
 ## Example configure and build
 
-* Set the environments (the examples below assume bash, Intel compilers and MKL library)
-```
-export CXX=icpc
-export CC=icc
-export MKL_HOME=/usr/local/intel/mkl/10.0.3.020
-export LIBXML2_HOME=/usr/local
-export HDF5_ROOT=/usr/local
-export BOOST_ROOT=/usr/local/boost
-export FFTW_HOME=/usr/local/fftw
-```
-* Move to build directory, run cmake and make
+In the build directory, run cmake with appropriate options, then
+make.
+
+* Using Intel compilers and their MPI wrappers. Assumes HDF5 and
+libxml2 will be automatically detected.
+
 ```
 cd build
-cmake -D CMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc ..
 make -j 8
 ```
 
 ##  Special notes
 
 It is recommended to create a helper script that contains the
-configure line for CMake.  This is particularly useful when avoiding
-enviornmental variables, packages are installed in custom locations,
+configure line for CMake.  This is particularly useful when using
+environment variables, packages are installed in custom locations,
 or the configure line may be long or complex.  In this case it is
 recommended to add "rm -rf CMake*" before the configure line to remove
 existing CMake configure files to ensure a fresh configure each time
@@ -200,12 +205,6 @@ cmake                                               \
 
 ##  Additional examples:
 
-QMCPACK includes validation tests to ensure the correctness of the
-code, compilers, tools, and runtime. The tests should ideally be run
-each compilation, and certainly before any research use. The tests
-check the output against known mean-field, quantum chemistry, and
-other QMC results.
-
 Set compile flags manually:
 ```
    cmake                                                \
@@ -229,40 +228,57 @@ Add extra include directories:
 
 # Testing and validation of QMCPACK
 
-For more informaton, consult QMCPACK pages at http://www.qmcpack.org and the manual.
+Before using QMCPACK we highly encourage tests to be run.
+QMCPACK includes extensive validation tests to ensure the correctness of the
+code, compilers, tools, and runtime. The tests should ideally be run
+each compilation, and certainly before any research use. The tests include
+checks of the output against known mean-field, quantum chemistry, and
+other QMC results.
+
+While some tests are fully deterministic, due to QMCPACK's stochastic
+nature some tests are statistical and can occasionally fail. We employ
+a range of test names and labeling to differentiate between these, as
+well as developmental tests that are known to fail. In particular,
+"deterministic" tests include this in their ctest test name, while
+tests known to be unstable (stochastically or otherwise) are labeled
+unstable using ctest labels.
+
+For more informaton, consult http://www.qmcpack.org and the manual.
 The tests currently use up to 16 cores in various combinations of MPI
-tasks and OpenMP threads.
+tasks and OpenMP threads. Current status for many systems can be
+checked at https://cdash.qmcpack.org
 
 Note that due to the small electron and walker counts used in the
 tests, they should not be used for any performance measurements. These
 should be made on problem sizes that are representative of actual
-research calculations.
+research calculations. As described in the manual, performance tests
+are provided to aid in monitoring performance.
 
+## Run the deterministic tests
+
+From the build directory, invoke ctest specifying only tests
+that are deterministic and known to be reliable.
+```
+ctest -R deterministic -LE unstable
+```
+
+These tests currently take a few seconds to run, and include all the
+ unit tests. All tests should pass. Failing tests likely indicate a
+ significant problem that should be solved before using QMCPACK
+ further. This ctest invocation can be used as part of an automated
+ installation verification process.
+ 
 ## Run the short (quick) tests
 
  From the build directory, invoke ctest specifying only tests
- including "short" should be run
+ including "short" to run that are known to be stable.
 ```
-ctest -R short
-```
-
- These tests currently take several minutes to run. All tests should pass.
-
-## Run the long verification tests
-
-For greater surety, the long verification tests use a far greater
-number of statistical samples than the "short" tests. These take
-several hours each to run.
-
-From the build directory, invoke ctest with an increased test timeout
-```
-ctest --timeout 36000
+ctest -R short -LE unstable
 ```
 
-This will run all the defined tests, "short" and "long" as well as the
-unit and other tests. If you are running on a system such as a large
-shared supercomputer you will likely have to run these tests from
-inside a submitted job to avoid run length limits.
+ These tests currently take up to around one hour. On average, all
+ tests should pass at a three sigma level of reliability. Any
+ initially failing test should pass when rerun.
 
 ## Run individual tests
 
@@ -274,8 +290,22 @@ ctest -R name-of-test-to-run
 # Documentation and support
 
 For more informaton, consult QMCPACK pages at http://www.qmcpack.org,
-the linked documentation, and the local copy of the manual in
-manual/qmcpack_manual.pdf
+the manual PDF at https://docs.qmcpack.org/qmcpack_manual.pdf, 
+or its sources in the manual directory.
 
 If you have trouble using or building QMCPACK, or have questions about
-its use, please post to the Google QMCPACK group or contact a developer.
+its use, please post to the [Google QMCPACK group](https://groups.google.com/forum/#!forum/qmcpack) or contact a developer.
+
+# Contributing
+
+Contributions of any size are very welcome. Guidance for contributing
+to QMCPACK is included in Chapter 1 of the manual
+https://docs.qmcpack.org/qmcpack_manual.pdf . We use a git flow model
+including pull request reviews. A continuous integration system runs
+on pull requests. See https://github.com/QMCPACK/qmcpack/wiki for
+details. For an extensive contribution, it can be helpful to discuss
+on the [Google QMCPACK group](https://groups.google.com/forum/#!forum/qmcpack), to create a GitHub issue, or to talk
+directly with a developer.
+
+Contributions are made under the same UIUC/NCSA open source license
+that covers QMCPACK. Please contact us if this is problematic.

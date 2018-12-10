@@ -56,6 +56,7 @@ private:
 
 public:
   void *allocate (size_t bytes, std::string name="");
+  void *allocate_managed (size_t bytes, std::string name="", unsigned int flags=cudaMemAttachGlobal);
 
   void deallocate (void *p);
 
@@ -76,6 +77,10 @@ private:
   // True if the data was allocated by this vector.  False if we're
   // referencing memory
   bool own_data;
+  // True if managed memory was requested using resize function, starts out false
+  bool managedmem;
+  // Flags for managed memory creation (defaults to cudaMemAttachGlobal) that can be set with set_managed_flags function
+  unsigned int managed_flags;
 public:
   typedef T* pointer;
 
@@ -83,21 +88,26 @@ public:
   {
     name = n;
   }
+  
+  void set_managed_flags(unsigned int flags)
+  {
+    managed_flags = flags;
+  }
 
   inline
   device_vector() : data_pointer(NULL), current_size(0),
-    alloc_size(0), own_data(true)
+    alloc_size(0), own_data(true), managedmem(false), managed_flags(cudaMemAttachGlobal)
   { }
 
   inline
   device_vector(std::string myName) : name(myName), data_pointer(NULL),
     current_size(0), alloc_size(0),
-    own_data(true)
+    own_data(true), managedmem(false), managed_flags(cudaMemAttachGlobal)
   {  }
 
   inline
   device_vector(size_t size) : data_pointer(NULL), current_size(0),
-    alloc_size(0), own_data(true)
+    alloc_size(0), own_data(true), managedmem(false), managed_flags(cudaMemAttachGlobal)
   {
     resize (size);
   }
@@ -105,7 +115,7 @@ public:
   inline
   device_vector(std::string myName, size_t size) :
     name(myName), data_pointer(NULL), current_size(0),
-    alloc_size(0), own_data(true)
+    alloc_size(0), own_data(true), managedmem(false), managed_flags(cudaMemAttachGlobal)
   {
     resize(size);
   }
@@ -130,6 +140,7 @@ public:
     current_size = size;
     alloc_size = 0;
     own_data = false;
+    managedmem = false;
   }
 
 
@@ -140,7 +151,7 @@ public:
 
 
   inline void
-  resize(size_t size, double reserve_factor=1.0)
+  resize(size_t size, double reserve_factor=1.0, bool managed=false)
   {
     if (!size)
     {
@@ -149,24 +160,38 @@ public:
     }
     size_t reserve_size = (size_t)std::ceil(reserve_factor*size);
     size_t byte_size = sizeof(T)*reserve_size;
-    if (alloc_size == 0)
+    bool error=false;
+    if (managed!=managedmem)
     {
-      data_pointer = (T*)cuda_memory_manager.allocate(byte_size, name);
-      current_size = size;
-      alloc_size = reserve_size;
-      own_data = true;
+      if (managedmem)
+      {
+        if (alloc_size>0) // Only trigger error message if memory is allocated
+        {
+          fprintf(stderr,"device_vector.resize from managed (%p) ",data_pointer);
+          error=true;
+        }
+      }
+      else
+      {
+        if (alloc_size!=0)
+          fprintf(stderr,"device_vector.resize from non-managed to managed.\n");
+      }
     }
-    else if (size > alloc_size)
+    if ((size > alloc_size) || (alloc_size == 0))
     {
-      if (own_data)
+      if (own_data && (alloc_size>0))
         cuda_memory_manager.deallocate (data_pointer);
-      data_pointer = (T*)cuda_memory_manager.allocate(byte_size, name);
-      current_size = size;
+      if (managed)
+        data_pointer = (T*)cuda_memory_manager.allocate_managed(byte_size, name, managed_flags);
+      else
+        data_pointer = (T*)cuda_memory_manager.allocate(byte_size, name);
       alloc_size = reserve_size;
       own_data = true;
+      managedmem=managed;
     }
-    else
-      current_size = size;
+    current_size = size;
+    if (error)
+      fprintf(stderr,"to non-managed (%p).\n",data_pointer);
   }
 
   inline void
@@ -200,7 +225,7 @@ public:
                  name.c_str(), size(), vec.size());
         abort();
       }
-      resize(vec.size());
+      resize(vec.size(),1.0,managedmem);
     }
 #ifdef QMC_CUDA
     cudaMemcpyAsync (data_pointer, &(vec[0]), this->size()*sizeof(T),
@@ -219,10 +244,10 @@ public:
   }
 
   device_vector(const device_vector<T> &vec) :
-    data_pointer(NULL), current_size(0), alloc_size(0), own_data(true),
+    data_pointer(NULL), current_size(0), alloc_size(0), own_data(true), managedmem(vec.managedmem), managed_flags(vec.managed_flags),
     name(vec.name)
   {
-    resize(vec.size());
+    resize(vec.size(),1.0,managedmem);
     // fprintf(stderr, "device_vector copy constructor called, name=%s.\n",
     // 	      name.c_str());
 #ifdef QMC_CUDA
@@ -254,7 +279,7 @@ public:
         // 	   name.c_str(), size(), vec.size());
         abort();
       }
-      resize(vec.size());
+      resize(vec.size(),1.0,managedmem);
     }
 #ifdef QMC_CUDA
     cudaMemcpyAsync (data_pointer, &(vec[0]), this->size()*sizeof(T),
@@ -262,8 +287,8 @@ public:
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess)
     {
-      fprintf (stderr, "CUDA error in device_vector::operator=(vector):\n  %s\n",
-               cudaGetErrorString(err));
+      fprintf (stderr, "CUDA error in device_vector::operator (%p)=(std::vector %p):\n  %s\n",
+               data_pointer,&(vec[0]),cudaGetErrorString(err));
       abort();
     }
 #endif
@@ -283,7 +308,7 @@ public:
                  name.c_str(), size(), vec.size());
         abort();
       }
-      resize(vec.size());
+      resize(vec.size(),1.0,managedmem);
     }
 #ifdef QMC_CUDA
     cudaMemcpy (&((*this)[0]), &(vec[0]), vec.size()*sizeof(T),
@@ -316,7 +341,7 @@ public:
                  name.c_str(), size(), vec.size());
         abort();
       }
-      resize(vec.size());
+      resize(vec.size(),1.0,managedmem);
     }
 #ifdef QMC_CUDA
     cudaMemcpyAsync (&((*this)[0]), &(vec[0]), vec.size()*sizeof(T),
@@ -387,7 +412,7 @@ public:
                  name.c_str(), size(), vec.size());
         abort();
       }
-      resize(vec.size());
+      resize(vec.size(),1.0,managedmem);
     }
 #ifdef QMC_CUDA
     cudaMemcpyAsync (&((*this)[0]), &(vec[0]), vec.size()*sizeof(T),
@@ -522,7 +547,7 @@ public:
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess)
     {
-      fprintf (stderr, "CUDA error in host_vector::operator=():\n  %s\n",
+      fprintf (stderr, "CUDA error in host_vector::operator=(host_vector):\n  %s\n",
                cudaGetErrorString(err));
       abort();
     }
@@ -541,8 +566,8 @@ public:
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess)
     {
-      fprintf (stderr, "CUDA error in host_vector::operator=():\n  %s\n",
-               cudaGetErrorString(err));
+      fprintf (stderr, "CUDA error in host_vector::operator=(device_vector %p):\n  %s\n",
+               &(vec[0]),cudaGetErrorString(err));
       abort();
     }
 #endif
@@ -647,7 +672,7 @@ public:
 
 template<typename T>
 device_vector<T>::device_vector(const host_vector<T> &vec) :
-  data_pointer(NULL), current_size(0), alloc_size(0), own_data(true)
+  data_pointer(NULL), current_size(0), alloc_size(0), own_data(true), managedmem(false)
 {
   this->resize(vec.size());
 #ifdef QMC_CUDA

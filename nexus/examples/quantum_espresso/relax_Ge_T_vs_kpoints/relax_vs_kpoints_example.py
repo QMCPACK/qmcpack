@@ -1,39 +1,27 @@
 #! /usr/bin/env python
 
 from nexus import settings
-from nexus import Structure,PhysicalSystem
-from nexus import generate_pwscf,Job
+from nexus import generate_physical_system
+from nexus import generate_pwscf,job
 from nexus import run_project
-
 
 
 # set global parameters of nexus
 settings(
     pseudo_dir    = '../pseudopotentials',# directory with pseudopotentials
-    #generate_only   = False,
-    # Complicated setting only so examples can be run in test harness.
-    # For real runs, use the plain setting of 'generate_only' above.
-    generate_only   = globals().get('override_generate_only_setting',False),
-
+    generate_only = 0,                    # only write input files, T/F
     status_only   = 0,                    # only show run status, T/F
     machine       = 'ws16'                # local machine is 16 core workstation
     )
 
 
-
 # describe the physical system
-T_structure = Structure()             # empty structure
-T_structure.read_xyz('./Ge_T_16.xyz') # read in Ge T interstitial structure
-
-T_structure.reset_axes([              # specify cell axes (in Angstrom)
-        [ 5.66,  5.66,  0.  ],
-        [ 0.  ,  5.66,  5.66],
-        [ 5.66,  0.  ,  5.66]
-        ])
-
-T_system = PhysicalSystem(            # make the physical system
-    structure = T_structure,          # out of the T interstitial structure
-    Ge        = 4                     # pseudo-Ge has 4 valence electrons
+T_system = generate_physical_system(     # make the physical system
+    structure = './Ge_T_16.xyz',         # out of the T interstitial structure
+    axes      = [[ 5.66,  5.66,  0.  ],  # specify cell axes (in Angstrom)
+                 [ 0.  ,  5.66,  5.66],
+                 [ 5.66,  0.  ,  5.66]],
+    Ge        = 4,                       # pseudo-Ge has 4 valence electrons
     )
 
 
@@ -44,7 +32,6 @@ supercell_kgrids = [(1,1,1),  #   1 k-point
                     (6,6,6)]  # 216 k-points
 
 
-
 # describe the relaxation calculations
 # and link them together into a simulation cascade
 relaxations = []                        # list of relax simulation objects
@@ -53,7 +40,7 @@ for kgrid in supercell_kgrids:          # loop over supercell kgrids
         identifier = 'relax',               # file prefix
                                             # run directory
         path       = 'relax/kgrid_{0}{1}{2}'.format(*kgrid),
-        job        = Job(cores=16),         # will run with mpirun -np 16
+        job        = job(cores=16),         # will run with mpirun -np 16
         input_type = 'relax',               # this is a relax calculation
         input_dft  = 'pbe',                 # PBE functional
         ecut       = 50,                    # 50 Ry planewave cutoff
@@ -61,7 +48,7 @@ for kgrid in supercell_kgrids:          # loop over supercell kgrids
         kgrid      = kgrid,                 # supercell k-point grid
         kshift     = (1,1,1),               # grid centered at supercell L point
         pseudos    = ['Ge.pbe-kjpaw.UPF'],  # PBE pseudopotential
-        system     = T_system               # the interstitial system
+        system     = T_system,              # the interstitial system
         )
                                         # link together the simulation cascade
                                         #   current relax gets structure from previous
@@ -72,10 +59,8 @@ for kgrid in supercell_kgrids:          # loop over supercell kgrids
 #end for
 
 
-
 # perform the simulations
 run_project(relaxations)
-
 
 
 # analyze the results

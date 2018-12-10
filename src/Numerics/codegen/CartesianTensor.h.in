@@ -1,0 +1,487 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+%dire_codegen_warning
+
+
+#ifndef QMCPLUSPLUS_CARTESIAN_TENSOR_H
+#define QMCPLUSPLUS_CARTESIAN_TENSOR_H
+
+#include "OhmmsPETE/Tensor.h"
+#include "Configuration.h"
+
+/**
+ *
+ * The template parameters
+ * - T, the value_type, e.g. double
+ * - Point_t, a vector type to provide xyz coordinate.
+ * Point_t must have the operator[] defined, e.g., TinyVector\<double,3\>.
+ *
+ * Array ordered as [S,X,Y,Z,XX,YY,ZZ,XY,XZ,YZ,...]
+ *    (following Gamess order)
+ */
+template<class T, class Point_t, class Tensor_t = qmcplusplus::Tensor<T,3> , class GGG_t = qmcplusplus::TinyVector<Tensor_t, 3> >
+class CartesianTensor
+{
+public :
+
+  typedef T value_type;
+  typedef Point_t pos_type;
+  typedef Tensor_t hess_type;
+  typedef GGG_t ggg_type;
+  typedef CartesianTensor<T,Point_t,Tensor_t> This_t;
+
+  /** constructor
+   * @param l_max maximum angular momentum
+   *
+   * Evaluate all the constants and prefactors.
+  */
+  explicit CartesianTensor(const int l_max);
+
+  ///makes a table of \f$ N(a,b,c) x^a y^b z^c \f$ and their gradients up to Lmax.
+  void evaluate(const Point_t& p);
+
+  ///makes a table of \f$ N(a,b,c) x^a y^b z^c \f$ and their gradients up to Lmax.
+  void evaluateAll(const Point_t& p);
+
+  void evaluateTest(const Point_t& p);
+
+  ///makes a table of \f$ N(a,b,c) x^a y^b z^c \f$ and their gradients and hessians up to Lmax.
+  void evaluateWithHessian(const Point_t& p);
+
+  ///makes a table of \f$ N(a,b,c) x^a y^b z^c \f$ and their gradients and hessians and third derivatives up to Lmax.
+  void evaluateWithThirdDeriv(const Point_t& p);
+
+  ///makes a table of Third derivatives of \f$ N(a,b,c) x^a y^b z^c \f$
+  void evaluateThirdDerivOnly(const Point_t& p);
+
+  inline value_type getYlm(int lm) const
+  {
+    return XYZ[lm];
+  }
+
+  inline Point_t getGradYlm(int lm) const
+  {
+    return gradXYZ[lm];
+  }
+
+  inline value_type getLaplYlm(int lm) const
+  {
+    return laplXYZ[lm];
+  }
+
+  inline Tensor_t getHessYlm(int lm) const
+  {
+    return hessXYZ[lm];
+  }
+
+  inline GGG_t getGGGYlm(int lm) const
+  {
+    return gggXYZ[lm];
+  }
+
+  inline int size() const
+  {
+    return XYZ.size();
+  }
+
+  inline int lmax() const
+  {
+    return Lmax;
+  }
+
+  inline void getABC(int n, int& a, int& b, int& c);
+
+  int DFactorial(int num)
+  {
+    return (num<2)? 1: num*DFactorial(num-2);
+  }
+
+  ///maximum angular momentum for the center
+  int Lmax;
+
+  ///values  XYZ\f$=x^a y^b z^c \f$
+  std::vector<value_type> XYZ;
+  /// Normalization factors
+  std::vector<value_type> NormFactor;
+
+  std::vector<Point_t> gradXYZ;
+  // laplacian
+  std::vector<value_type> laplXYZ;
+
+  std::vector<hess_type> hessXYZ;
+
+  std::vector<ggg_type> gggXYZ;
+
+};
+template<class T, class Point_t, class Tensor_t, class GGG_t>
+CartesianTensor<T, Point_t, Tensor_t, GGG_t>::CartesianTensor(const int l_max) : Lmax(l_max)
+{
+  if(Lmax < 0 || Lmax > 6)
+  {
+    std::cerr <<"CartesianTensor can't handle Lmax > 6 or Lmax < 0.\n";
+    APP_ABORT("");
+  }
+  int ntot = 0;
+  for(int i=0; i<=Lmax; i++)
+    ntot+=(i+1)*(i+2)/2;
+  XYZ.resize(ntot);
+  gradXYZ.resize(ntot);
+  laplXYZ.resize(ntot);
+  hessXYZ.resize(ntot);
+  gggXYZ.resize(ntot);
+  NormFactor.resize(ntot,1);
+  int p=0;
+  int a,b,c;
+  const double pi = 4.0*atan(1.0);
+  for(int l=0; l<=Lmax; l++)
+  {
+    int n = (l+1)*(l+2)/2;
+    for(int k=0; k<n; k++)
+    {
+      getABC(p,a,b,c);
+// factor of (alpha^(l+3/2))^(1/2) goes into the radial function
+// mmorales: HACK HACK HACK, to avoid modifyng the radial functions,
+//           I add a term to the normalization to cancel the term
+//           coming from the Spherical Harmonics
+//           NormL = pow(2,L+1)*sqrt(2.0/static_cast<real_type>(DFactorial(2*l+1)))*pow(2.0/pi,0.25)
+      double L = static_cast<double>(l);
+      double NormL = pow(2,L+1)*sqrt(2.0/static_cast<double>(DFactorial(2*l+1)))*pow(2.0/pi,0.25);
+      NormFactor[p++] = pow(2.0/pi,0.75)*pow(4.0,0.5*(a+b+c))*std::sqrt(1.0/static_cast<double>((DFactorial(2*a-1)*DFactorial(2*b-1)*DFactorial(2*c-1))))/NormL;
+    }
+  }
+}
+
+
+%evaluate
+
+%evaluate_all
+
+#if 0
+template<class T, class Point_t, class Tensor_t, class GGG_t>
+void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::evaluateAll(const Point_t& p)
+{
+  value_type x=p[0], y=p[1], z=p[2];
+  value_type x2=x*x, y2=y*y, z2=z*z;
+  value_type x3=x2*x, y3=y2*y, z3=z2*z;
+  value_type x4=x3*x, y4=y3*y, z4=z3*z;
+  value_type x5=x4*x, y5=y4*y, z5=z4*z;
+  int ntot=XYZ.size();
+  for (int i=0; i<ntot; i++)
+    gradXYZ[i]=0.0;
+  for (int i=0; i<ntot; i++)
+    laplXYZ[i]=0.0;
+
+  switch(Lmax)
+  {
+  case 6:
+    XYZ[83] = x2*y2*z2;     // X2Y2Z2
+    gradXYZ[83][0] = 2*x*y2*z2;
+    gradXYZ[83][1] = 2*x2*y*z2;
+    gradXYZ[83][2] = 2*x2*y2*z;
+
+  }
+  for (int i=0; i<ntot; i++)
+    XYZ[i]*= NormFactor[i];
+  for (int i=0; i<ntot; i++)
+    gradXYZ[i]*= NormFactor[i];
+  for (int i=0; i<ntot; i++)
+    laplXYZ[i]*= NormFactor[i];
+}
+#endif
+
+
+%evaluate_with_hessian
+
+%evaluate_with_third_deriv
+
+%evaluate_third_deriv_only
+
+// generated from read_order.py
+template<class T, class Point_t, class Tensor_t, class GGG_t>
+void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::getABC(int n, int& a, int& b, int& c)
+{
+// following Gamess notation
+  switch(n)
+  {
+  // S
+  case 0: // S
+    a = 0; b = 0; c = 0;
+    break;
+  // P
+  case 1: // X
+    a = 1; b = 0; c = 0;
+    break;
+  case 2: // Y
+    a = 0; b = 1; c = 0;
+    break;
+  case 3: // Z
+    a = 0; b = 0; c = 1;
+    break;
+  // D
+  case 4: // XX
+    a = 2; b = 0; c = 0;
+    break;
+  case 5: // YY
+    a = 0; b = 2; c = 0;
+    break;
+  case 6: // ZZ
+    a = 0; b = 0; c = 2;
+    break;
+  case 7: // XY
+    a = 1; b = 1; c = 0;
+    break;
+  case 8: // XZ
+    a = 1; b = 0; c = 1;
+    break;
+  case 9: // YZ
+    a = 0; b = 1; c = 1;
+    break;
+  // F
+  case 10: // XXX
+    a = 3; b = 0; c = 0;
+    break;
+  case 11: // YYY
+    a = 0; b = 3; c = 0;
+    break;
+  case 12: // ZZZ
+    a = 0; b = 0; c = 3;
+    break;
+  case 13: // XXY
+    a = 2; b = 1; c = 0;
+    break;
+  case 14: // XXZ
+    a = 2; b = 0; c = 1;
+    break;
+  case 15: // YYX
+    a = 1; b = 2; c = 0;
+    break;
+  case 16: // YYZ
+    a = 0; b = 2; c = 1;
+    break;
+  case 17: // ZZX
+    a = 1; b = 0; c = 2;
+    break;
+  case 18: // ZZY
+    a = 0; b = 1; c = 2;
+    break;
+  case 19: // XYZ
+    a = 1; b = 1; c = 1;
+    break;
+  // G
+  case 20: // XXXX
+    a = 4; b = 0; c = 0;
+    break;
+  case 21: // YYYY
+    a = 0; b = 4; c = 0;
+    break;
+  case 22: // ZZZZ
+    a = 0; b = 0; c = 4;
+    break;
+  case 23: // XXXY
+    a = 3; b = 1; c = 0;
+    break;
+  case 24: // XXXZ
+    a = 3; b = 0; c = 1;
+    break;
+  case 25: // YYYX
+    a = 1; b = 3; c = 0;
+    break;
+  case 26: // YYYZ
+    a = 0; b = 3; c = 1;
+    break;
+  case 27: // ZZZX
+    a = 1; b = 0; c = 3;
+    break;
+  case 28: // ZZZY
+    a = 0; b = 1; c = 3;
+    break;
+  case 29: // XXYY
+    a = 2; b = 2; c = 0;
+    break;
+  case 30: // XXZZ
+    a = 2; b = 0; c = 2;
+    break;
+  case 31: // YYZZ
+    a = 0; b = 2; c = 2;
+    break;
+  case 32: // XXYZ
+    a = 2; b = 1; c = 1;
+    break;
+  case 33: // YYXZ
+    a = 1; b = 2; c = 1;
+    break;
+  case 34: // ZZXY
+    a = 1; b = 1; c = 2;
+    break;
+  // H
+  case 35: // XXXXX
+    a = 5; b = 0; c = 0;
+    break;
+  case 36: // YYYYY
+    a = 0; b = 5; c = 0;
+    break;
+  case 37: // ZZZZZ
+    a = 0; b = 0; c = 5;
+    break;
+  case 38: // XXXXY
+    a = 4; b = 1; c = 0;
+    break;
+  case 39: // XXXXZ
+    a = 4; b = 0; c = 1;
+    break;
+  case 40: // YYYYX
+    a = 1; b = 4; c = 0;
+    break;
+  case 41: // YYYYZ
+    a = 0; b = 4; c = 1;
+    break;
+  case 42: // ZZZZX
+    a = 1; b = 0; c = 4;
+    break;
+  case 43: // ZZZZY
+    a = 0; b = 1; c = 4;
+    break;
+  case 44: // XXXYY
+    a = 3; b = 2; c = 0;
+    break;
+  case 45: // XXXZZ
+    a = 3; b = 0; c = 2;
+    break;
+  case 46: // YYYXX
+    a = 2; b = 3; c = 0;
+    break;
+  case 47: // YYYZZ
+    a = 0; b = 3; c = 2;
+    break;
+  case 48: // ZZZXX
+    a = 2; b = 0; c = 3;
+    break;
+  case 49: // ZZZYY
+    a = 0; b = 2; c = 3;
+    break;
+  case 50: // XXXYZ
+    a = 3; b = 1; c = 1;
+    break;
+  case 51: // YYYXZ
+    a = 1; b = 3; c = 1;
+    break;
+  case 52: // ZZZXY
+    a = 1; b = 1; c = 3;
+    break;
+  case 53: // XXYYZ
+    a = 2; b = 2; c = 1;
+    break;
+  case 54: // XXZZY
+    a = 2; b = 1; c = 2;
+    break;
+  case 55: // YYZZX
+    a = 1; b = 2; c = 2;
+    break;
+  // I
+  case 56: // X6
+    a = 6; b = 0; c = 0;
+    break;
+  case 57: // Y6
+    a = 0; b = 6; c = 0;
+    break;
+  case 58: // Z6
+    a = 0; b = 0; c = 6;
+    break;
+  case 59: // X5Y
+    a = 5; b = 1; c = 0;
+    break;
+  case 60: // X5Z
+    a = 5; b = 0; c = 1;
+    break;
+  case 61: // Y5X
+    a = 1; b = 5; c = 0;
+    break;
+  case 62: // Y5Z
+    a = 0; b = 5; c = 1;
+    break;
+  case 63: // Z5X
+    a = 1; b = 0; c = 5;
+    break;
+  case 64: // Z5Y
+    a = 0; b = 1; c = 5;
+    break;
+  case 65: // X4Y2
+    a = 4; b = 2; c = 0;
+    break;
+  case 66: // X4Z2
+    a = 4; b = 0; c = 2;
+    break;
+  case 67: // Y4X2
+    a = 2; b = 4; c = 0;
+    break;
+  case 68: // Y4Z2
+    a = 0; b = 4; c = 2;
+    break;
+  case 69: // Z4X2
+    a = 2; b = 0; c = 4;
+    break;
+  case 70: // Z4Y2
+    a = 0; b = 2; c = 4;
+    break;
+  case 71: // X4YZ
+    a = 4; b = 1; c = 1;
+    break;
+  case 72: // Y4XZ
+    a = 1; b = 4; c = 1;
+    break;
+  case 73: // Z4XY
+    a = 1; b = 1; c = 4;
+    break;
+  case 74: // X3Y3
+    a = 3; b = 3; c = 0;
+    break;
+  case 75: // X3Z3
+    a = 3; b = 0; c = 3;
+    break;
+  case 76: // Y3Z3
+    a = 0; b = 3; c = 3;
+    break;
+  case 77: // X3Y2Z
+    a = 3; b = 2; c = 1;
+    break;
+  case 78: // X3Z2Y
+    a = 3; b = 1; c = 2;
+    break;
+  case 79: // Y3X2Z
+    a = 2; b = 3; c = 1;
+    break;
+  case 80: // Y3Z2X
+    a = 1; b = 3; c = 2;
+    break;
+  case 81: // Z3X2Y
+    a = 2; b = 1; c = 3;
+    break;
+  case 82: // Z3Y2X
+    a = 1; b = 2; c = 3;
+    break;
+  case 83: // X2Y2Z2
+    a = 2; b = 2; c = 2;
+    break;
+
+  default:
+    std::cerr <<"CartesianTensor::getABC() - Incorrect index." << std::endl;
+    APP_ABORT("");
+    break;
+  }
+}
+
+#endif

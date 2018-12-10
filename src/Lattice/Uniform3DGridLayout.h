@@ -220,6 +220,8 @@ public:
   ///Set LR_rc = radius of smallest sphere inside box and kc=dim/rc
   void SetLRCutoffs();
 
+  void printCutoffs();
+
   /** set the lattice vector with a tensor
    *@param lat a tensor representing a supercell
    *
@@ -257,7 +259,7 @@ public:
   ///UniformCartesianGrid for multi levels.
   std::vector<Grid_t*> SuperGrid;
 
-  ///offsets to determine cell conection
+  ///offsets to determine cell connection
   std::vector<int> c_offset, c_max;
 
   ///cell index connected to each cell

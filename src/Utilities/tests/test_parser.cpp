@@ -37,81 +37,38 @@ TEST_CASE("parsewords_empty", "[utilities]")
 struct ParseCase
 {
   string input; // input string
-  string extra_split; // extra characters to split on
   vector<string> output; // expected tokens
+  string extra_split; // extra characters to split on
 
   ParseCase(const string &in) : input(in) {}
+  ParseCase(const string &in, const vector<string> &out) : input(in), output(out) {}
+  ParseCase(const string &in, const vector<string> &out, const string &extra) : input(in), output(out), extra_split(extra) {}
 };
 typedef vector<ParseCase> ParseCaseVector_t;
 
 
 TEST_CASE("parsewords", "[utilities]")
 {
-#if 0
-  // C++ 11 code
-  vector<ParseCase> tlist =
+  ParseCaseVector_t tlist =
   {
-    {"a", {"a"}},
-    {"b=", {"b"}},
-    {"=c", {"c"}}
+    // Input string, list of expected tokens, extra  split characters
+    {"a",      {"a"},         },
+    {"b=",     {"b"},         },
+    {"=c",     {"c"},         },
+    {"d=e",    {"d","e"},     },
+    {"f,g",    {"f","g"},     },
+    {"h\ti,j", {"h","i","j"}, },
+    {"k|m",    {"k|m"},       },
+    {"n|o",    {"n","o"},  "|"}
   };
   for (auto &tc : tlist) {
-    vector<string> outlist;
-    unsigned int num = parsewords(tc.input.c_str(), outlist);
-    REQUIRE(num == tc.output.size());
-    REQUIRE(outlist.size() == tc.output.size());
-    for (int i = 0; i < tc.output.size(); i++) {
-        REQUIRE(outlist[i] == tc.output[i]);
-    }
-  }
-#endif
-  ParseCaseVector_t tlist;
-  ParseCase p1("a");
-  p1.output.push_back("a");
-  tlist.push_back(p1);
-
-  ParseCase p2("b=");
-  p2.output.push_back("b");
-  tlist.push_back(p2);
-
-  ParseCase p3("=c");
-  p3.output.push_back("c");
-  tlist.push_back(p3);
-
-  ParseCase p4("d=e");
-  p4.output.push_back("d");
-  p4.output.push_back("e");
-  tlist.push_back(p4);
-  ParseCase p5("f,g");
-  p5.output.push_back("f");
-  p5.output.push_back("g");
-  tlist.push_back(p5);
-
-  ParseCase p6("h\ti,j");
-  p6.output.push_back("h");
-  p6.output.push_back("i");
-  p6.output.push_back("j");
-  tlist.push_back(p6);
-
-  ParseCase p7("k|m");
-  p7.output.push_back("k|m");
-  tlist.push_back(p7);
-
-  ParseCase p8("n|o");
-  p8.extra_split = "|";
-  p8.output.push_back("n");
-  p8.output.push_back("o");
-  tlist.push_back(p8);
-
-
-  for (ParseCaseVector_t::iterator tc = tlist.begin(); tc != tlist.end(); tc++) {
-    SECTION(tc->input) {
+    SECTION(string("Parsing string: ") + tc.input) {
       vector<string> outlist;
-      unsigned int num = parsewords(tc->input.c_str(), outlist, tc->extra_split);
-      REQUIRE(num == tc->output.size());
-      REQUIRE(outlist.size() == tc->output.size());
-      for (int i = 0; i < tc->output.size(); i++) {
-          REQUIRE(outlist[i] == tc->output[i]);
+      unsigned int num = parsewords(tc.input.c_str(), outlist, tc.extra_split);
+      REQUIRE(num == tc.output.size());
+      REQUIRE(outlist.size() == tc.output.size());
+      for (int i = 0; i < tc.output.size(); i++) {
+          REQUIRE(outlist[i] == tc.output[i]);
       }
     }
   }
@@ -120,47 +77,28 @@ TEST_CASE("parsewords", "[utilities]")
 
 TEST_CASE("readLine", "[utilities]")
 {
-  ParseCaseVector_t tlist;
-  ParseCase p1("one");
-  p1.output.push_back("one");
-  tlist.push_back(p1);
-
-  ParseCase p2("one\ntwo");
-  p2.output.push_back("one");
-  p2.output.push_back("two");
-  tlist.push_back(p2);
-
-  ParseCase p3("one;two");
-  p3.output.push_back("one");
-  p3.output.push_back("two");
-  tlist.push_back(p3);
-
-  ParseCase p4("one\\\ntwo");
-  p4.output.push_back("onetwo");
-  tlist.push_back(p4);
-
-  ParseCase p5("");
-  p5.output.push_back("");
-  tlist.push_back(p5);
-
-  ParseCase p6("one\\ two");
-  p6.output.push_back("one\\ two");
-  tlist.push_back(p6);
-
-  ParseCase p7("12345678901234567890extra");
-  p7.output.push_back("1234567890123456789"); // assuming bufLen = 20 below
-  tlist.push_back(p7);
+  ParseCaseVector_t tlist =
+  {
+    // Input string, list of expected tokens, extra  split characters
+    {"",          {""}},
+    {"one",       {"one"}},
+    {"one\ntwo",  {"one","two"}},
+    {"one;two",   {"one","two"}},
+    {"one\\\ntwo", {"onetwo"}},
+    {"one\\ two", {"one\\ two"}},
+    {"12345678901234567890extra", {"1234567890123456789"}}, // assuming bufLen=20 below
+  };
 
 
-  for (ParseCaseVector_t::iterator tc = tlist.begin(); tc != tlist.end(); tc++) {
-    SECTION(tc->input) {
+  for (auto &tc : tlist) {
+    SECTION(string("Parsing string: ") + tc.input) {
       const int bufLen = 20;
       char buf[bufLen];
-      std::istringstream input(tc->input);
-      for (int i = 0; i < tc->output.size(); i++) {
+      std::istringstream input(tc.input);
+      for (int i = 0; i < tc.output.size(); i++) {
         char *out = readLine(buf, bufLen, input);
-        REQUIRE(buf == tc->output[i]);
-        if (i == tc->output.size()-1) {
+        REQUIRE(buf == tc.output[i]);
+        if (i == tc.output.size()-1) {
             REQUIRE(out == NULL);
         } else {
             REQUIRE(out != NULL);
@@ -173,38 +111,57 @@ TEST_CASE("readLine", "[utilities]")
 
 TEST_CASE("getwords", "[utilities]")
 {
-  ParseCaseVector_t tlist;
-  ParseCase p1("one\n");
-  p1.output.push_back("one");
-  tlist.push_back(p1);
+  ParseCaseVector_t tlist =
+  {
+    // Input string, list of expected tokens, extra  split characters
+    {"one\n",        {"one"}},
+    {"one,two\n",    {"one","two"}},
+    {"one|two\n",    {"one|two"}},
+    {"a|b\n",        {"a","b"}, "|"},
+  };
 
-  ParseCase p2("one,two\n");
-  p2.output.push_back("one");
-  p2.output.push_back("two");
-  tlist.push_back(p2);
-
-  ParseCase p3("one|two\n");
-  p3.output.push_back("one|two");
-  tlist.push_back(p3);
-
-  ParseCase p4("a|b\n");
-  p4.output.push_back("a");
-  p4.output.push_back("b");
-  p4.extra_split = "|";
-  tlist.push_back(p4);
-
-  for (ParseCaseVector_t::iterator tc = tlist.begin(); tc != tlist.end(); tc++) {
-    SECTION(tc->input) {
+  for (auto &tc : tlist) {
+    SECTION(string("Parsing input: ") + tc.input) {
       vector<string> outlist;
-      std::istringstream input(tc->input);
-      int num = getwords(outlist, input, 0, tc->extra_split);
-      REQUIRE(num == tc->output.size());
-      REQUIRE(outlist.size() == tc->output.size());
-      for (int i = 0; i < tc->output.size(); i++) {
-        REQUIRE(outlist[i] == tc->output[i]);
+      std::istringstream input(tc.input);
+      int num = getwords(outlist, input, 0, tc.extra_split);
+      REQUIRE(num == tc.output.size());
+      REQUIRE(outlist.size() == tc.output.size());
+      for (int i = 0; i < tc.output.size(); i++) {
+        REQUIRE(outlist[i] == tc.output[i]);
       }
     }
   }
 }
 
+TEST_CASE("getwordsWithMergedNumbers", "[utilities]")
+{
+  // 1.0-2.0 -> 1.0 -2.0
+  // 105 C 5 Z 0.000000 0.000000 -0.567800-103.884284 -2.142253
+  
+  ParseCaseVector_t tlist =
+  {
+    // Input string, list of expected tokens, extra  split characters
+    {"1\n",        {"1"}},
+    {"1 2\n",    {"1","2"}},
+    {"1.0 -2.0\n",    {"1.0","-2.0"}},
+    {"1.0-2.0\n",    {"1.0","-2.0"}},
+    {"-1.0-2.0-3.0\n",    {"-1.0","-2.0","-3.0"}},
+    {"105 C 5 Z 0.000000 0.000000 -0.567800-103.884284 -2.142253\n", {"105","C","5","Z","0.000000","0.000000","-0.567800","-103.884284","-2.142253"}}
+  };
+
+  for (auto &tc : tlist) {
+    SECTION(string("Parsing input: ") + tc.input) {
+      vector<string> outlist;
+      std::istringstream input(tc.input);
+      int num = getwordsWithMergedNumbers(outlist, input);
+      REQUIRE(num == tc.output.size());
+      REQUIRE(outlist.size() == tc.output.size());
+      for (int i = 0; i < tc.output.size(); i++) {
+        REQUIRE(outlist[i] == tc.output[i]);
+      }
+    }
+  }
+}
+  
 }

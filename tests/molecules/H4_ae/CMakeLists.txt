@@ -16,6 +16,52 @@ IF (NOT QMC_CUDA)
                     5 H4_OPT_SCALARS # OPT step 5
                     )
 
+  QMC_RUN_AND_CHECK(short-H4-opt-linear-rescale
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-linear-rescale
+                    optm-linear-rescale.xml
+                    4 4
+                    ${MP_SUCCESS}
+                    5 H4_OPT_SCALARS # OPT step 5
+                    )
+
+  QMC_RUN_AND_CHECK(short-H4-opt-linear-linemin
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-linear-linemin
+                    optm-linear-linemin.xml
+                    16 1
+                    ${MP_SUCCESS}
+                    5 H4_OPT_SCALARS # OPT step 5
+                    )
+
+  QMC_RUN_AND_CHECK(short-H4-opt-cslinear-quartic
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-cslinear-quartic
+                    optm-cslinear-quartic.xml
+                    4 4
+                    ${MP_SUCCESS}
+                    7 H4_OPT_SCALARS # OPT step 7
+                    )
+
+  QMC_RUN_AND_CHECK(short-H4-opt-cslinear-rescale
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-cslinear-rescale
+                    optm-cslinear-rescale.xml
+                    16 1
+                    ${MP_SUCCESS}
+                    7 H4_OPT_SCALARS # OPT step 7
+                    )
+
+  QMC_RUN_AND_CHECK(short-H4-opt-cslinear-linemin
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-cslinear-linemin
+                    optm-cslinear-linemin.xml
+                    16 1
+                    ${MP_SUCCESS}
+                    7 H4_OPT_SCALARS # OPT step 7
+                    )
+
+
   IF(BUILD_LMYENGINE_INTERFACE)
     QMC_RUN_AND_CHECK(short-H4-opt-adaptive
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
@@ -37,7 +83,7 @@ IF (NOT QMC_CUDA)
     #
     # H4 starting from perturbed orbitals, using optimizable determinants, and the adaptive linear method
     #
-    LIST(APPEND H4_ORB_OPT_SCALARS "totenergy" "-1.93045653 0.00837934") # total energy
+    LIST(APPEND H4_ORB_OPT_SCALARS "totenergy" "-2.0889 0.001") # total energy
 
     QMC_RUN_AND_CHECK(short-H4-orb-opt
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
@@ -72,7 +118,7 @@ IF (NOT QMC_CUDA)
                       3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results
                       TRUE)
     #
-    # H4 starting from unoptimized CIS coefficients, targetting the first excited state, and using the adaptive linear method
+    # H4 starting from unoptimized CIS coefficients, targeting the first excited state, and using the adaptive linear method
     #
     LIST(APPEND H4_FDLR_SCALARS "totenergy" "-1.82507816 0.001") # total energy
 

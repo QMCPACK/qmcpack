@@ -5,7 +5,6 @@
 #
 IF (NOT QMC_CUDA)
 
-IF (NOT QMC_COMPLEX)
 #
 # Tests for HEG with 14 electrons at the gamma point and various wavefunctions
 # See tests/heg/heg_14_gamma/README for full details
@@ -88,40 +87,6 @@ IF (NOT QMC_COMPLEX)
                     1 16
                     TRUE
                     0 HEG14GSSJ_NEW_SCALARS # VMC
-                    )
-
-#
-#  HEG14G - Slater-Jastrow-Backflow VMC
-#           Run 16x1, 4x4, 1x16 to test SJB cloning
-#
-  LIST(APPEND HEG14GSSJB_SCALARS "totenergy" "-1.084963  0.000251") # total energy
-  LIST(APPEND HEG14GSSJB_SCALARS "variance"  " 0.022667  0.000764") # energy variance
-
-  QMC_RUN_AND_CHECK(short-heg_14_gamma-sjb
-                    "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
-                    heg_short_SJB
-                    heg-short-SJB.xml
-                    16 1
-                    TRUE
-                    0 HEG14GSSJB_SCALARS # VMC
-                    )
-
-  QMC_RUN_AND_CHECK(short-heg_14_gamma-sjb
-                    "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
-                    heg_short_SJB
-                    heg-short-SJB.xml
-                    4 4
-                    TRUE
-                    0 HEG14GSSJB_SCALARS # VMC
-                    )
-
-  QMC_RUN_AND_CHECK(short-heg_14_gamma-sjb
-                    "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
-                    heg_short_SJB
-                    heg-short-SJB.xml
-                    1 16
-                    TRUE
-                    0 HEG14GSSJB_SCALARS # VMC
                     )
 
 #
@@ -219,6 +184,55 @@ IF (NOT QMC_COMPLEX)
                     )
 
 #
+#  HEG14G - Slater-Jastrow DMC
+#
+  LIST(APPEND HEG14GLSJ_DMC_SCALARS "totenergy" "-1.110199  0.000106") # total energy
+  LIST(APPEND HEG14GLSJ_DMC_SCALARS "variance"  " 0.022894  0.000020") # energy variance
+
+  QMC_RUN_AND_CHECK(long-heg_14_gamma-sj_dmc
+                    "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
+                    heg_long_SJ_dmc
+                    heg-long-SJ-dmc.xml
+                    1 16
+                    TRUE
+                    2 HEG14GLSJ_DMC_SCALARS # DMC
+                    )
+
+IF (NOT QMC_COMPLEX)
+#
+#  HEG14G - Slater-Jastrow-Backflow VMC
+#           Run 16x1, 4x4, 1x16 to test SJB cloning
+#
+  LIST(APPEND HEG14GSSJB_SCALARS "totenergy" "-1.084963  0.000251") # total energy
+  LIST(APPEND HEG14GSSJB_SCALARS "variance"  " 0.022667  0.000764") # energy variance
+
+  QMC_RUN_AND_CHECK(short-heg_14_gamma-sjb
+                    "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
+                    heg_short_SJB
+                    heg-short-SJB.xml
+                    16 1
+                    TRUE
+                    0 HEG14GSSJB_SCALARS # VMC
+                    )
+
+  QMC_RUN_AND_CHECK(short-heg_14_gamma-sjb
+                    "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
+                    heg_short_SJB
+                    heg-short-SJB.xml
+                    4 4
+                    TRUE
+                    0 HEG14GSSJB_SCALARS # VMC
+                    )
+
+  QMC_RUN_AND_CHECK(short-heg_14_gamma-sjb
+                    "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
+                    heg_short_SJB
+                    heg-short-SJB.xml
+                    1 16
+                    TRUE
+                    0 HEG14GSSJB_SCALARS # VMC
+                    )
+#
 #  HEG14G - Slater-Jastrow-Backflow VMC
 #           Run 16x1, 4x4, 1x16 to test SJB cloning
 #
@@ -252,24 +266,10 @@ IF (NOT QMC_COMPLEX)
                     0 HEG14GLSJB_SCALARS # VMC
                     )
 
-#
-#  HEG14G - Slater-Jastrow DMC
-#
-  LIST(APPEND HEG14GLSJ_DMC_SCALARS "totenergy" "-1.110199  0.000106") # total energy
-  LIST(APPEND HEG14GLSJ_DMC_SCALARS "variance"  " 0.022894  0.000020") # energy variance
-
-  QMC_RUN_AND_CHECK(long-heg_14_gamma-sj_dmc
-                    "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
-                    heg_long_SJ_dmc
-                    heg-long-SJ-dmc.xml
-                    1 16
-                    TRUE
-                    2 HEG14GLSJ_DMC_SCALARS # DMC
-                    )
-
  ELSE()
-    MESSAGE("Skipping all HEG tests because they are not supported by complex build (QMC_COMPLEX=1)")  
+    MESSAGE("Skipping HEG backflow tests because they are not supported by complex build (QMC_COMPLEX=1)")
  ENDIF()
+
 ELSE()
     MESSAGE("Skipping all HEG tests because they are not supported by CUDA build (QMC_CUDA=1)")  
 ENDIF()

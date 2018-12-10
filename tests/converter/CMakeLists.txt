@@ -1,4 +1,7 @@
 
+
+INCLUDE("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
+
 # Add tests for conversion of GAMESS to QMCPACK input (via convert4qmc)
 
 FUNCTION(ADD_CONVERTER_TEST test_name)
@@ -7,9 +10,8 @@ FUNCTION(ADD_CONVERTER_TEST test_name)
     IF ( USE_MPI )
         SET(EXE_NAME "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1 ${qmcpack_BINARY_DIR}/bin/convert4qmc")
     ENDIF()
-    ADD_TEST(NAME converter_${test_name} COMMAND python converter_test.py "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe "${EXE_NAME}")
-    SET_TESTS_PROPERTIES(converter_${test_name} PROPERTIES TIMEOUT 120)
-    
+    ADD_TEST(NAME converter_${test_name} COMMAND python converter_test.py "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")
+    SET_TESTS_PROPERTIES(converter_${test_name} PROPERTIES TIMEOUT 120 LABELS "converter")
 ENDFUNCTION()
 
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/converter_test.py" "${CMAKE_CURRENT_BINARY_DIR}")
@@ -21,5 +23,12 @@ ADD_CONVERTER_TEST(test_C_sto3g)
 ADD_CONVERTER_TEST(test_HCNp)
 ADD_CONVERTER_TEST(test_aldet1)
 ADD_CONVERTER_TEST(test_aldet5)
-ADD_CONVERTER_TEST(test_HDF5_FeCO6)
-ADD_CONVERTER_TEST(test_HDF5_Be_ccd)
+IF (HDF5_DIFF_EXECUTABLE)
+  ADD_CONVERTER_TEST(test_HDF5_LiH_qp)
+  ADD_CONVERTER_TEST(test_HDF5_FeCO6)
+  ADD_CONVERTER_TEST(test_HDF5_Be_ccd)
+ELSE()
+  MESSAGE("Skipping converter tests with HDF output because h5diff was not found")
+ENDIF()
+ADD_CONVERTER_TEST(test_LiH_pyscf)
+ADD_CONVERTER_TEST(test_LiH_qp)

@@ -147,8 +147,8 @@ kSpaceJastrow::operator()(PosType G1, PosType G2)
     {
       ComplexType zG1 = rho_G1[i]*qmcplusplus::conj(rho_G1[j]);
       ComplexType zG2 = rho_G2[i]*qmcplusplus::conj(rho_G2[j]);
-      double SG1  = std::real(zG1);
-      double SG2  = std::real(zG2);
+      RealType SG1  = std::real(zG1);
+      RealType SG2  = std::real(zG2);
       if (std::abs(SG1 - SG2) > 1.0e-8)
         return SG1 < SG2;
     }
@@ -169,8 +169,8 @@ kSpaceJastrow::Equivalent(PosType G1, PosType G2)
     {
       ComplexType zG1 = rho_G1[i]*qmcplusplus::conj(rho_G1[j]);
       ComplexType zG2 = rho_G2[i]*qmcplusplus::conj(rho_G2[j]);
-      double SG1  = std::real(zG1);
-      double SG2  = std::real(zG2);
+      RealType SG1  = std::real(zG1);
+      RealType SG2  = std::real(zG2);
       if (std::abs(SG1 - SG2) > 1.0e-8)
         return false;
     }
@@ -207,13 +207,13 @@ kSpaceJastrow::sortGvecs(std::vector<PosType> &gvecs,
     {
       magLess comparator;
       std::sort(gvecs.begin(), gvecs.end(), comparator);
-      double curMag2 = dot(gvecs[0], gvecs[0]);
+      RealType curMag2 = dot(gvecs[0], gvecs[0]);
       kSpaceCoef<T> coef;
       coef.cG = T();
       coef.firstIndex = coef.lastIndex = 0;
       for (int i=1; i<gvecs.size(); i++)
       {
-        double mag2 = dot(gvecs[i],gvecs[i]);
+        RealType mag2 = dot(gvecs[i],gvecs[i]);
         if (std::abs(mag2-curMag2) < 1.0e-10)
           coef.lastIndex = i;
         else
@@ -237,7 +237,7 @@ kSpaceJastrow::sortGvecs(std::vector<PosType> &gvecs,
       }
   app_log() << "Using a total of " << gvecs.size() << " G-vectors in " << coefs.size()
             << " symmetry groups.\n";
-  app_log() << "kSpace coefficent groups:\n";
+  app_log() << "kSpace coefficient groups:\n";
   for (int i=0; i<coefs.size(); i++)
   {
     app_log() << "  Group " << i << ":\n";
@@ -314,7 +314,7 @@ kSpaceJastrow::kSpaceJastrow(ParticleSet& ions, ParticleSet& elecs,
     Ion_rhoG[0] = ComplexType();
     for (int iat=0; iat<ions.getTotalNum(); iat++)
     {
-      double phase = dot(OneBodyGvecs[i],ions.R[iat]);
+      RealType phase = dot(OneBodyGvecs[i],ions.R[iat]);
       Ion_rhoG[i] += ComplexType(std::cos(phase), std::sin(phase));
     }
   }
@@ -383,7 +383,7 @@ kSpaceJastrow::resetTargetParticleSet(ParticleSet& P)
     TwoBody_rhoG[i] = ComplexType();
     for (int iat=0; iat<NumElecs; iat++)
     {
-      double phase, s, c;
+      RealType phase, s, c;
       phase = dot (TwoBodyGvecs[i], P.R[iat]);
       sincos(phase, &s, &c);
       TwoBody_rhoG[i] += ComplexType(c,s);
@@ -515,7 +515,7 @@ kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   ComplexType eye(0.0, 1.0);
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
-  PosType rnew(P.R[iat]), rold(P.getOldPos());
+  const PosType &rnew(P.activePos), &rold(P.R[iat]);
   // Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i=0; i<nOne; i++)
@@ -566,7 +566,7 @@ kSpaceJastrow::ValueType
 kSpaceJastrow::ratio(ParticleSet& P, int iat)
 {
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
-  PosType rnew(P.R[iat]), rold(P.getOldPos());
+  const PosType &rnew(P.activePos), &rold(P.R[iat]);
   // Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i=0; i<nOne; i++)
@@ -602,10 +602,10 @@ kSpaceJastrow::ratio(ParticleSet& P, int iat)
 
 /** evaluate the ratio
 */
-inline void kSpaceJastrow::get_ratios(ParticleSet& P, std::vector<kSpaceJastrow::ValueType>& ratios)
+void kSpaceJastrow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<kSpaceJastrow::ValueType>& ratios)
 {
   RealType J1new(0.0);
-  PosType rnew(P.R[0]);
+  const PosType &rnew(P.activePos);
 //     Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i=0; i<nOne; i++)
@@ -623,11 +623,7 @@ inline void kSpaceJastrow::get_ratios(ParticleSet& P, std::vector<kSpaceJastrow:
   for (int n=0; n<N; n++)
   {
     RealType J1old(0.0), J2Rat(0.0);
-    PosType rold;
-    if (n==0)
-      rold=P.getOldPos();
-    else
-      rold=P.R[n];
+    const PosType &rold(P.R[n]);
     for (int i=0; i<nOne; i++)
       OneBodyPhase[i] = dot(OneBodyGvecs[i], rold);
     eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
@@ -806,7 +802,7 @@ kSpaceJastrow::put(xmlNodePtr cur)
   return true;
 }
 
-OrbitalBasePtr kSpaceJastrow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr kSpaceJastrow::makeClone(ParticleSet& tqp) const
 {
   kSpaceJastrow *kj =new kSpaceJastrow(Ions,tqp);
   kj->copyFrom(*this);

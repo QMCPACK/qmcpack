@@ -32,24 +32,16 @@ namespace qmcplusplus
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h, RandomGenerator_t& rg)
-  : W(w),Psi(psi),Guide(guide),H(h), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+  : W(w), Psi(psi), Guide(guide), H(h), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-  : W(w),Psi(psi),H(h),Guide(psi), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+  : W(w), Psi(psi), H(h), Guide(psi), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();
-}
-
-///copy constructor
-QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a)
-  : W(a.W), Psi(a.Psi), Guide(a.Guide), H(a.H), RandomGen(a.RandomGen)
-  , branchEngine(0), Estimators(0), Traces(0)
-{
-  APP_ABORT("QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a) Not Allowed");
 }
 
 /// destructor
@@ -61,7 +53,6 @@ void QMCUpdateBase::setDefaults()
 {
   UpdatePbyP=true;
   UseDrift=true;
-  UseTMove=false;
   NumPtcl=0;
   nSubSteps=1;
   MaxAge=10;
@@ -85,11 +76,8 @@ void QMCUpdateBase::setDefaults()
 
 bool QMCUpdateBase::put(xmlNodePtr cur)
 {
-  //nonlocal operator is very light
-  UseTMove = nonLocalOps.put(cur);
+  H.setNonLocalMoves(cur);
   bool s=myParams.put(cur);
-  if (branchEngine)
-    branchEngine->put(cur);
   return s;
 }
 
@@ -97,7 +85,6 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* e
 {
   Estimators=est;
   branchEngine=brancher;
-  branchEngine->setEstimatorManager(est);
   NumPtcl = W.getTotalNum();
   deltaR.resize(NumPtcl);
   drift.resize(NumPtcl);
@@ -130,14 +117,6 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* e
   Traces = traces;
 }
 
-
-void QMCUpdateBase::resetEtrial(RealType et)
-{
-  //branchEngine->E_T=et;
-  branchEngine->setTrialEnergy(et,1.0);
-  branchEngine->flush(0);
-}
-
 void QMCUpdateBase::startRun(int blocks, bool record)
 { 
   Estimators->start(blocks,record);
@@ -157,7 +136,7 @@ void QMCUpdateBase::stopRun()
 }
 
 //ugly, but will use until general usage of stopRun is clear
-//  DMCOMP and VMCSingleOMP do not use stopRun anymore
+//  DMC and VMC do not use stopRun anymore
 void QMCUpdateBase::stopRun2()
 {
 #if !defined(REMOVE_TRACEMANAGER)
@@ -215,13 +194,22 @@ void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
 void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
 {
   UpdatePbyP=true;
+  BadState = false;
   InitWalkersTimer->start();
+  if(it==it_end)
+  {
+    // a particular case, no walker enters in this call.
+    // but need to free the memory of Psi.
+    Walker_t dummy_walker(W.getTotalNum());
+    dummy_walker.Properties = W.Properties;
+    dummy_walker.registerData();
+    Psi.registerData(W,dummy_walker.DataSet);
+  }
   for (; it != it_end; ++it)
   {
     Walker_t& awalker(**it);
     W.R=awalker.R;
-    W.update(true);
-    //W.loadWalker(awalker,UpdatePbyP);
+    W.update();
     if (awalker.DataSet.size())
       awalker.DataSet.clear();
     awalker.DataSet.rewind();
@@ -231,93 +219,19 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     Psi.copyFromBuffer(W,awalker.DataSet);
     Psi.evaluateLog(W);
     RealType logpsi=Psi.updateBuffer(W,awalker.DataSet,false);
-    awalker.G=W.G;
-    awalker.L=W.L;
-    randomize(awalker);
+    W.saveWalker(awalker);
+    RealType eloc=H.evaluate(W);
+    BadState |= std::isnan(eloc);
+    awalker.resetProperty(logpsi,Psi.getPhase(), eloc);
+    H.auxHevaluate(W,awalker);
+    H.saveProperty(awalker.getPropertyBase());
+    awalker.ReleasedNodeAge=0;
+    awalker.ReleasedNodeWeight=0;
+    awalker.Weight=1;
   }
   InitWalkersTimer->stop();
   #pragma omp master
   print_mem("Memory Usage after the buffer registration", app_log());
-}
-
-/** randomize a walker with a diffusion MC using gradients */
-void QMCUpdateBase::randomize(Walker_t& awalker)
-{
-  BadState=false;
-  //Walker_t::WFBuffer_t& w_buffer(awalker.DataSet);
-  //W.loadWalker(awalker,true);
-  //Psi.copyFromBuffer(W,w_buffer);
-  RealType eloc_tot=0.0;
-  //create a 3N-Dimensional Gaussian with variance=1
-  makeGaussRandomWithEngine(deltaR,RandomGen);
-  for(int ig=0; ig<W.groups(); ++ig) //loop over species
-  {
-    RealType tauovermass = Tau*MassInvS[ig];
-    RealType oneover2tau = 0.5/(tauovermass);
-    RealType sqrttau = std::sqrt(tauovermass);
-    for (int iat=W.first(ig); iat<W.last(ig); ++iat)
-    {
-      W.setActive(iat);
-      GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-      mPosType dr;
-      getScaledDrift(tauovermass,grad_now,dr);
-      dr += sqrttau*deltaR[iat];
-      if (!W.makeMoveAndCheck(iat,dr))
-        continue;
-      //PosType newpos = W.makeMove(iat,dr);
-      RealType ratio = Psi.ratioGrad(W,iat,grad_new);
-      RealType prob = ratio*ratio;
-      //zero is always rejected
-      if (prob<std::numeric_limits<RealType>::epsilon())
-      {
-        ++nReject;
-        W.rejectMove(iat);
-        Psi.rejectMove(iat);
-        continue;
-      }
-      RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
-      getScaledDrift(tauovermass,grad_new,dr);
-      dr = awalker.R[iat]-W.R[iat]-dr;
-      RealType logGb = -oneover2tau*dot(dr,dr);
-      if (RandomGen() < prob*std::exp(logGb-logGf))
-      {
-        Psi.acceptMove(W,iat);
-        W.acceptMove(iat);
-      }
-      else
-      {
-        W.rejectMove(iat);
-        Psi.rejectMove(iat);
-      }
-    }
-  }
-
-  W.donePbyP();
-  //for subSteps must update thiswalker
-  //awalker.R=W.R;
-  //awalker.G=W.G;
-  //awalker.L=W.L;
-  RealType logpsi = Psi.updateBuffer(W,awalker.DataSet,false);
-  W.saveWalker(awalker);
-
-  RealType eloc=H.evaluate(W);
-#if (__cplusplus >= 201103L)
-  BadState |= std::isnan(eloc);
-#else
-  BadState |= isnan(eloc);
-#endif
-  //thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
-  awalker.resetProperty(logpsi,Psi.getPhase(), eloc);
-  H.auxHevaluate(W,awalker);
-  H.saveProperty(awalker.getPropertyBase());
-  awalker.ReleasedNodeAge=0;
-  awalker.ReleasedNodeWeight=0;
-  awalker.Weight=1;
-
-//  printf("energy  %.3f\n",eloc);
-//  for(size_t i=0, n=W.getTotalNum(); i<n; ++i)
-//    printf("evalGrad  %.3f %.3f %.3f %.3f\n",W.G[i][0],W.G[i][1],W.G[i][2],W.L[i]);
-//
 }
 
 QMCUpdateBase::RealType
@@ -328,20 +242,6 @@ QMCUpdateBase::getNodeCorrection(const ParticleSet::ParticleGradient_t& g, Parti
   //RealType x=m_tauovermass*vsq;
   //return (vsq<std::numeric_limits<RealType>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
   return  setScaledDriftPbyPandNodeCorr(Tau,MassInvP,g,gscaled);
-}
-
-void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end)
-{
-  for (; it != it_end; ++it)
-  {
-    Walker_t& thisWalker(**it);
-    W.loadWalker(thisWalker,UpdatePbyP);
-    //recompute distance tables
-    W.update();
-    Walker_t::WFBuffer_t& w_buffer((*it)->DataSet);
-    RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
-    W.saveWalker(thisWalker);
-  }
 }
 
 void QMCUpdateBase::setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end)
@@ -373,27 +273,6 @@ void QMCUpdateBase::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool re
   {
     advanceWalker(**it,recompute);
   }
-}
-
-void QMCUpdateBase::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip)
-{
-  char fname[16];
-  sprintf(fname,"test.%i",ip);
-  std::ofstream fout(fname,std::ios::app);
-  int i=0;
-  fout << "benchMark started." << std::endl;
-  for (; it != it_end; ++it,++i)
-  {
-    Walker_t& thisWalker(**it);
-    makeGaussRandomWithEngine(deltaR,RandomGen);
-    W.R = m_sqrttau*deltaR+ thisWalker.R;
-    W.update();
-    ValueType logpsi(Psi.evaluateLog(W));
-    RealType e = H.evaluate(W);
-    fout << W.R[0] << W.G[0] << std::endl;
-    fout <<  i << " " << logpsi << " " << e << std::endl;
-  }
-  fout << "benchMark completed." << std::endl;
 }
 
 }
