@@ -381,7 +381,7 @@ xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
   int counter=0;
 
   xmlNodePtr bset = xmlNewNode(NULL,(const xmlChar*)"basisset");
-  hdf_archive hout(0); 
+  hdf_archive hout;
   hout.create(h5file.c_str(),H5F_ACC_TRUNC);
   hout.push("basisset",true);
   std::string BasisSetName("LCAOBSet");
@@ -444,7 +444,7 @@ QMCGaussianParserBase::createDeterminantSetWithHDF5()
   //add udet to slaterdet
   xmlNodePtr cur = xmlAddChild(slaterdet,udet);
   
-  hdf_archive hout(0);
+  hdf_archive hout;
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
   hout.push("Nb_KPTS",true);
   int NbKpts=1;
@@ -725,7 +725,7 @@ QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
   setOccupationNumbers();
   Matrix<double> Ctemp(SizeOfBasisSet,SizeOfBasisSet);
   int n=0;  
-  hdf_archive hout(0);
+  hdf_archive hout;
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
   hout.push("sposet",true);
 
@@ -841,7 +841,7 @@ QMCGaussianParserBase::createMultiDeterminantSetQPHDF5()
   int iv=0;
 
 
-  hdf_archive hout(0); 
+  hdf_archive hout;
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
   hout.push("MultiSlaterDeterminant",true);
 
@@ -1213,7 +1213,7 @@ void QMCGaussianParserBase::createCenterH5(int iat, int off_,int numelem)
   tempElem<<ElemID0<<numelem;
   ElemID=tempElem.str();
 
-  hdf_archive hout(0);
+  hdf_archive hout;
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
   hout.push("basisset");
   hout.push(ElemID.c_str(),true);
@@ -1292,7 +1292,7 @@ QMCGaussianParserBase::createShellH5(int n, int ig, int off_,int numelem)
   tempElem<<ElemID0<<numelem;
   ElemID=tempElem.str();
 
-  hdf_archive hout(0);
+  hdf_archive hout;
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
   hout.push("basisset");
   hout.push(ElemID.c_str());
@@ -1604,7 +1604,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
           xmlNodePtr bsetPtr = createBasisSetWithHDF5();
           //Adding generic code name to the H5 file.
           std::string CodeName("generic");
-          hdf_archive hout(0); 
+          hdf_archive hout;
           hout.open(h5file.c_str(),H5F_ACC_RDWR);
           hout.push("application",true);
           hout.write(CodeName,"code");

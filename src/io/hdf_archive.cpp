@@ -15,15 +15,6 @@
 #include <io/hdf_archive.h>
 namespace qmcplusplus
 {
-//const hid_t hdf_archive::is_closed;
-hdf_archive::hdf_archive(Communicate* c, bool request_pio)
-  : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
-{
-  H5Eget_auto (&err_func, &client_data);
-  H5Eset_auto (NULL, NULL);
-  set_access_plist(request_pio,c);
-  myComm=c;
-}
 
 hdf_archive::~hdf_archive()
 {
@@ -47,6 +38,14 @@ void hdf_archive::close()
   if(file_id!=is_closed)
     H5Fclose(file_id);
   file_id=is_closed;
+}
+
+void hdf_archive::set_access_plist()
+{
+  access_id=H5P_DEFAULT;
+  Mode.set(IS_PARALLEL,false);
+  Mode.set(IS_MASTER,true);
+  Mode.set(NOIO,false);
 }
 
 void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
@@ -88,6 +87,49 @@ void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
     Mode.set(NOIO,false);
   }
 }
+
+#ifdef HAVE_MPI
+void hdf_archive::set_access_plist(bool request_pio, boost::mpi3::communicator& comm)
+{
+  access_id=H5P_DEFAULT;
+  if(comm.size()>1) //for parallel communicator
+  {
+    bool use_phdf5=false;
+    if(request_pio)
+    {
+#if defined(ENABLE_PHDF5)
+      // enable parallel I/O
+      MPI_Info info=MPI_INFO_NULL;
+      access_id = H5Pcreate(H5P_FILE_ACCESS);
+#if H5_VERSION_GE(1,10,0)
+      H5Pset_all_coll_metadata_ops(access_id,true);
+      H5Pset_coll_metadata_write(access_id,true);
+#endif
+      H5Pset_fapl_mpio(access_id,comm.impl_,info);
+      xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+      // enable parallel collective I/O
+      H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
+      use_phdf5=true;
+#else
+      use_phdf5=false;
+#endif
+    }
+    Mode.set(IS_PARALLEL,use_phdf5);
+    Mode.set(IS_MASTER,!comm.rank());
+    if(request_pio&&!use_phdf5)
+      Mode.set(NOIO,comm.rank()); // master only
+    else
+      Mode.set(NOIO,false); // pio or all.
+  }
+  else
+  {
+    Mode.set(IS_PARALLEL,false);
+    Mode.set(IS_MASTER,true);
+    Mode.set(NOIO,false);
+  }
+}
+#endif
+
 
 bool hdf_archive::create(const std::string& fname, unsigned flags)
 {
