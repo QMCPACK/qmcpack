@@ -37,8 +37,6 @@ protected:
   bool opt_G;
   bool opt_C;
 
-//  // flag for using normalized counting regions
-  bool C_norm;
 
   // Jastrow intermediate Matrix-vector products 
   std::vector<RealType> FCsum;
@@ -156,7 +154,7 @@ public:
     Jlap_t.resize(num_els);
   
     // set G = 0 if using normalized counting functions
-    if(C_norm)
+    if(C->normalized)
     {
       G.resize(num_regions);
       std::fill(G.begin(),G.end(),0);
@@ -191,7 +189,7 @@ public:
         for(int J = I, IJ = I*num_regions + I; J < num_regions; ++J, ++IJ)
         {
           // don't optimize bottom-right corner if regions are normalized
-          if(!C_norm || I < (num_regions - 1))
+          if(!C->normalized || I < (num_regions - 1))
           {
             os.str("");
             os << "F_" << I << "_" << J;
@@ -203,7 +201,7 @@ public:
         }
     }
     // only use G when regions aren't normalized
-    if(opt_G && !C_norm)
+    if(opt_G && !C->normalized)
     {
       for(int I = 0; I < num_regions; ++I)
       {
@@ -235,7 +233,7 @@ public:
     }
     os << "  opt_F: " << (opt_F?"true":"false");
     // print G vector
-    if(!C_norm)
+    if(!C->normalized)
     {
       os << "  G vector:" << std::endl << "  ";
       for(int I = 0; I < num_regions; ++I)
@@ -646,12 +644,12 @@ public:
     std::vector<ValueType>& ratios, Matrix<ValueType>& dratios)
   {
     evaluateRatios(VP, ratios);
-    dPsi->evaluateDerivRatios(VP, optvars, dratios);
+//    dPsi->evaluateDerivRatios(VP, optvars, dratios);
   }
   void evaluateDerivatives(ParticleSet& P, const opt_variables_type& optvars,
     std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
   {
-    dPsi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+//    dPsi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
   }
 
 //  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
@@ -663,12 +661,15 @@ public:
 
   bool addRegion(RegionType* CR, Matrix<RealType>* F, std::vector<RealType>* G, bool opt_CR, bool opt_G, bool opt_F)
   {
+    C = CR;
     return true;
   }
 
-  bool addDebug(int seqlen, int period)
+  void addDebug(int seqlen, int period)
   {
-    return true;
+    debug = true;
+    debug_seqlen = seqlen;
+    debug_period = period;
   }
 
 };

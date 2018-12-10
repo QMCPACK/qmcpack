@@ -66,10 +66,9 @@ public:
     num_els = P.getTotalNum();
   }
 
+  const bool normalized = true; // flag for normalized regions
   int size() const                  { return num_regions; }
-
   const opt_variables_type& getVars(int I) {return C[I]->myVars;}
-  
   int max_num_derivs() const   
   { 
     auto comp = [](FunctorType* a, FunctorType* b){ return a->myVars.size() < b->myVars.size(); };
@@ -215,8 +214,7 @@ public:
     if(Cref_id == "none" || C_id_it == C_id.end())
       APP_ABORT("NormalizedGaussianRegion::put: reference function not found:"+ (Cref_id == "none"?" Cref not specified":"\"" + Cref_id + "\"")); 
     // make a copy of the reference gaussian
-//    Cref = C[ref_index]->makeClone(Cref_id + "_ref");
-    Cref = C[ref_index]->makeClone();
+    Cref = C[ref_index]->makeClone(Cref_id + "_ref");
 
 
     // divide all gaussians by the reference
