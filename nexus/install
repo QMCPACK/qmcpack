@@ -58,6 +58,16 @@ if install_dir!=source_dir:
     # copy binaries
     execute('cp {0}/bin/* {1}'.format(source_dir,install_dir))
 
+    # update path in nxs-test
+    nxs_test = os.path.join(install_dir,'nxs-test')
+    f = open(nxs_test,'r')
+    contents = f.read()
+    f.close()
+    contents = contents.replace('host_dir = None','host_dir = "{0}"'.format(source_dir))
+    f = open(nxs_test,'w')
+    f.write(contents)
+    f.close()
+
     # update bin directory for install
     bin_dir = install_dir
 #end if
