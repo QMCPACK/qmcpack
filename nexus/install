@@ -96,49 +96,54 @@ if install_dir!=source_dir:
 # install library (add lib path to PYTHONPATH)
 
 # determine shell
-def get_shell():
-    shells = 'bash tcsh csh ksh zsh'.split()
-    texts = [
-        os.readlink('/proc/%d/exe' % os.getppid()),
-        os.environ['SHELL']
-        ]
-    for text in texts: 
-        for shell in shells:
-            if shell in text:
-                return shell
-            #end if
+if options.leave_paths:
+    shell   = 'bash'
+    rc_file = '.bashrc'
+else:
+    def get_shell():
+        shells = 'bash tcsh csh ksh zsh'.split()
+        texts = [
+            os.readlink('/proc/%d/exe' % os.getppid()),
+            os.environ['SHELL']
+            ]
+        for text in texts: 
+            for shell in shells:
+                if shell in text:
+                    return shell
+                #end if
+            #end for
         #end for
-    #end for
-    error('user shell could not be identified')
-#end def get_shell
-shell = get_shell()
-shell_rc_files = dict(
-    sh   = ['.profile'],
-    ksh  = ['.kshrc','.profile'],
-    csh  = ['.cshrc','.login'],
-    tcsh = ['.tcshrc','.cshrc','.login'],
-    bash = ['.bashrc','.bash_login','.bash_profile','.profile'],
-    zsh  = ['.zshrc','.zlogin','.zprofile','.zshenv'],
-    )
-if shell not in shell_rc_files:
-    error('user shell "{0}" is not recognized'.format(shell))
-#end if
-
-# find config (rc) file for shell
-rc_files = shell_rc_files[shell]
-home = os.path.expanduser('~') # this is cross-platform
-rc_file = None
-search_paths = []
-for rc in rc_files:
-    rc_filepath = os.path.join(home,rc)
-    search_paths.append(rc_filepath)
-    if os.path.exists(rc_filepath):
-        rc_file = rc_filepath
-        break
+        error('user shell could not be identified')
+    #end def get_shell
+    shell = get_shell()
+    shell_rc_files = dict(
+        sh   = ['.profile'],
+        ksh  = ['.kshrc','.profile'],
+        csh  = ['.cshrc','.login'],
+        tcsh = ['.tcshrc','.cshrc','.login'],
+        bash = ['.bashrc','.bash_login','.bash_profile','.profile'],
+        zsh  = ['.zshrc','.zlogin','.zprofile','.zshenv'],
+        )
+    if shell not in shell_rc_files:
+        error('user shell "{0}" is not recognized'.format(shell))
     #end if
-#end for
-if rc_file is None:
-    error('could not identify unix config (rc) file for shell "{0}"\nlocations searched: {1}'.format(shell,search_paths))
+
+    # find config (rc) file for shell
+    rc_files = shell_rc_files[shell]
+    home = os.path.expanduser('~') # this is cross-platform
+    rc_file = None
+    search_paths = []
+    for rc in rc_files:
+        rc_filepath = os.path.join(home,rc)
+        search_paths.append(rc_filepath)
+        if os.path.exists(rc_filepath):
+            rc_file = rc_filepath
+            break
+        #end if
+    #end for
+    if rc_file is None:
+        error('could not identify unix config (rc) file for shell "{0}"\nlocations searched: {1}'.format(shell,search_paths))
+    #end if
 #end if
 
 # get format for setting env variables in shell
@@ -151,12 +156,12 @@ set_env_formats = dict(
     )
 set_env_fmt = set_env_formats[shell]
 
-# add lib path to PYTHONPATH in config file
 header = '### added by Nexus 1.6.0 installer ###'
 footer = '### end Nexus additions ###'
 paths  = set_env_fmt.format('PATH',bin_dir+':$PATH')
 paths += set_env_fmt.format('PYTHONPATH',lib_dir+':$PYTHONPATH')
 
+# add lib path to PYTHONPATH in config file
 if options.leave_paths:
     print('Nexus installation not complete.  Please add the following paths to {0}:\n{1}'.format(rc_file,paths))
 else:
