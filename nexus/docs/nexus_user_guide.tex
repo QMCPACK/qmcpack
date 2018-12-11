@@ -124,11 +124,12 @@
     \textbf{\fontsize{40}{45}\selectfont The Nexus User Guide} \\ 
     \HRule\\
     \vspace{1cm}
-    %\textbf{\fontsize{35}{40}\selectfont User Guide}\\
     \vspace{6cm}
+    Version 1.6.0 \\
+    \vspace{1 cm}
     By Jaron T. Krogel \\
-    \hspace{1cm}\\
-    31 July 2015
+    \vspace{1cm}
+    \today
   \end{center}
 \end{changemargin}
 \pagebreak
@@ -220,20 +221,34 @@ To make your Python installation (must be Python 2.x as 3.x is not supported)
 aware of Nexus, simply set the PYTHONPATH environment variable.  For example, in bash this would look like:
 \begin{shaded}
 \begin{verbatim}
-export PYTHONPATH=/your_download_path/nexus/library
+export PYTHONPATH=/your_download_path/nexus/lib:$PYTHONPATH
 \end{verbatim}
 \end{shaded}
 \noindent
 Add this to \emph{e.g.} your .bashrc file to make Nexus available 
 in future sessions.
-%If you want to use the command line tools, add them to your path:
-%\begin{shaded}
-%\begin{verbatim}
-%export PATH=/your_download_path/nexus/executables:$PATH
-%\end{verbatim}
-%\end{shaded}
+If you want to use the command line tools, add them to your path:
+\begin{shaded}
+\begin{verbatim}
+export PATH=/your_download_path/nexus/bin:$PATH
+\end{verbatim}
+\end{shaded}
 %Add these to \emph{e.g.} your .bashrc file to make Nexus available 
 %to future sessions.
+
+Both of these environment variables can be set automatically by the \texttt{install} script packaged with Nexus.  To use the installer, instead of performing the manual installation above, simply type the following at the command line:
+\begin{shaded}
+\begin{verbatim}
+/your_download_path/nexus/install
+\end{verbatim}
+\end{shaded}
+\noindent
+If you want the Nexus binaries to reside a location different than \texttt{/your\_download\_path/nexus/bin}, simply provide this path to the installer:
+\begin{shaded}
+\begin{verbatim}
+/your_download_path/nexus/install /some/other/location
+\end{verbatim}
+\end{shaded}
 
 \section{Installing Python dependencies}
 In addition to the standard Python installation, the \texttt{numpy} module must 
