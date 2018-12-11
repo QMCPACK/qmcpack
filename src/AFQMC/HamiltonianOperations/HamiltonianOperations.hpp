@@ -128,8 +128,8 @@ class HamiltonianOperations:
 {
 #ifndef QMC_COMPLEX
     using STRR = SparseTensor<RealType,RealType>;
-    using STRC = SparseTensor<RealType,ComplexType>,
-    using STCR = SparseTensor<ComplexType,RealType>,
+    using STRC = SparseTensor<RealType,ComplexType>;
+    using STCR = SparseTensor<ComplexType,RealType>;
 #endif
     using STCC = SparseTensor<ComplexType,ComplexType>;
 
