@@ -38,7 +38,7 @@ namespace qmcplusplus
 template<typename Type, typename IndxType, typename IntType, class Alloc, class is_root>
 void test_csr_matrix_shm_allocator(Alloc A, bool serial)
 {
-        auto world = mpi3::world;
+        auto world = OHMMS::Controller->comm;
         mpi3::shared_communicator node(world.split_shared());
 
         using ucsr_matrix = ma::sparse::ucsr_matrix<Type,IndxType,IntType,Alloc,is_root>;
@@ -457,14 +457,13 @@ TEST_CASE("csr_matrix_serial", "[csr]")
 
 TEST_CASE("csr_matrix_shm", "[csr]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-  auto world = mpi3::world;
+  auto world = OHMMS::Controller->comm;
   mpi3::shared_communicator node(world.split_shared());
 
   {
     using Type = double;
     using Alloc = boost::mpi3::intranode::allocator<Type>;
-    using is_root = boost::mpi3::intranode::is_root;
+    using is_root = ma::sparse::is_root;
     test_csr_matrix_shm_allocator<Type,int,std::size_t,Alloc,is_root>(Alloc(node),false);
     test_csr_matrix_shm_allocator<Type,int,int,Alloc,is_root>(Alloc(node),false);
   }
@@ -472,7 +471,7 @@ TEST_CASE("csr_matrix_shm", "[csr]")
   {
     using Type = std::complex<double>;
     using Alloc = boost::mpi3::intranode::allocator<Type>;
-    using is_root = boost::mpi3::intranode::is_root; 
+    using is_root = ma::sparse::is_root;
     test_csr_matrix_shm_allocator<Type,int,std::size_t,Alloc,is_root>(Alloc(node),false);
     test_csr_matrix_shm_allocator<Type,int,int,Alloc,is_root>(Alloc(node),false);
   }
@@ -480,15 +479,16 @@ TEST_CASE("csr_matrix_shm", "[csr]")
 }
 
 
+//#define TEST_CSR_LARGE_MEMORY
+#ifdef TEST_CSR_LARGE_MEMORY
 TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-  auto world = mpi3::world;
+  auto world = OHMMS::Controller->comm;
   mpi3::shared_communicator node(world.split_shared());
 
   using Type = std::complex<double>;
   using Alloc = boost::mpi3::intranode::allocator<Type>;  
-  using is_root = boost::mpi3::intranode::is_root; 
+  using is_root = ma::sparse::is_root;
 
   using ucsr_matrix = ma::sparse::ucsr_matrix<Type,int,size_t,Alloc,is_root>;
   using csr_matrix = ma::sparse::csr_matrix<Type,int,size_t,Alloc,is_root>;
@@ -512,6 +512,7 @@ TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
   }  
   world.barrier();
 }
+#endif
 
 
 

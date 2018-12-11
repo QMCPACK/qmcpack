@@ -125,7 +125,7 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
   using IType = typename CSR::index_type;
   using PType = typename CSR::int_type;
   using UCSR = typename CSR::base; 
-  //using UCSR = ucsr_matrix<VType,IType,PType,boost::mpi3::intranode::allocator<VType>,boost::mpi3::intranode::is_root>;
+  //using UCSR = ucsr_matrix<VType,IType,PType,boost::mpi3::intranode::allocator<VType>,ma::sparse::is_root>;
 
   std::vector<std::size_t> counts(nr);
   if(TA=='N') 
@@ -262,16 +262,16 @@ CSR construct_csr_matrix_from_distributed_containers(Container const& Q, std::si
   std::size_t maxnterms(*std::max_element(sz_per_node.begin(),sz_per_node.end()));
   std::vector<Type> Qc;
   Qc.reserve(maxnterms);  
-  boost::mpi3::mutex m(TG.Node());
+  boost::mpi3::shm::mutex m(TG.Node());
   for(int ni=0; ni<nnodes; ++ni) {
     Qc.resize(sz_per_node[ni]);
     if(nodeid==ni) 
         std::copy_n(Q.begin(),sz_per_node[ni],Qc.begin());
     //TG.Cores().broadcast_n(Qc.begin(),sz_per_node[ni],ni);
     // replace when tuples can me communicated directly
-    MPI_Bcast(Qc.data(),sz_per_node[ni]*sizeof(Type),MPI_CHAR,ni,TG.Cores().impl_);
+    MPI_Bcast(Qc.data(),sz_per_node[ni]*sizeof(Type),MPI_CHAR,ni,&TG.Cores());
     if(needs_lock) {
-      std::lock_guard<boost::mpi3::mutex> guard(m);  
+      std::lock_guard<boost::mpi3::shm::mutex> guard(m);  
       for(auto& v : Qc) 
         ucsr.emplace({get<0>(v),get<1>(v)},get<2>(v));  
     } else {
@@ -370,7 +370,7 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
       throw std::out_of_range("row size exceeded the maximum");
   }
   MPI_Allgatherv(MPI_IN_PLACE,0,MPI_DATATYPE_NULL,
-                 Q.data(),recvcounts.data(),displ.data(),MPI_CHAR,eq_cores.impl_);
+                 Q.data(),recvcounts.data(),displ.data(),MPI_CHAR,&eq_cores);
 
   Timer.stop("G0");
   qmcplusplus::app_log()<<" In construct_distributed_csr_matrix_from_distributed_containers Allgatherv: " <<Timer.total("G0") <<std::endl;
@@ -384,7 +384,7 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
   boost::multi_array<long,2> counts_per_core(boost::extents[nnodes_per_TG][ncores]);
   std::fill_n(counts_per_core.origin(),ncores*nnodes_per_TG,long(0));
   counts_per_core[node_number][coreid] = nterms_in_local_core;
-  eq_node_group.all_reduce_n(counts_per_core.origin(),ncores*nnodes_per_TG,std::plus<>());
+  eq_node_group.all_reduce_in_place_n(counts_per_core.origin(),ncores*nnodes_per_TG,std::plus<>());
 
   // calculate how many terms each core is potentially sending 
   // when algorithm works, make nplus a vector of pairs to save space, no need to store mostly zeros
@@ -450,7 +450,7 @@ std::ofstream out((std::string("debug.")+std::to_string(TG.Global().rank())).c_s
         int to_send_int = int(to_send*sizeof(Type));
 //out<<" sending " <<to_send <<" " <<deltaN <<" " <<i*ncores <<" " <<i <<std::endl;
         MPI_Send(Q.data()+Q.size()-to_send,
-                to_send_int,MPI_CHAR,i*ncores,tgrank,eq_node_group.impl_);
+                to_send_int,MPI_CHAR,i*ncores,tgrank,&eq_node_group);
 //out<<" done sending " <<to_send <<" " <<deltaN <<" " <<i*ncores <<" " <<i <<std::endl;
         nbefore += to_send;
         deltaN -= to_send; 
@@ -479,7 +479,7 @@ std::ofstream out((std::string("debug.")+std::to_string(TG.Global().rank())).c_s
           Q.resize(curr_sz+to_recv);
 //out<<" receiving " <<to_recv <<" " <<deltaN <<" " <<nbefore <<" " <<ip <<std::endl;
           MPI_Recv(Q.data()+curr_sz,
-                  to_recv_int,MPI_CHAR,ip,ip,eq_node_group.impl_,&st);
+                  to_recv_int,MPI_CHAR,ip,ip,&eq_node_group,&st);
           nbefore += to_recv;
           deltaN -= to_recv;
 //out<<" done receiving " <<to_recv <<" " <<deltaN <<" " <<nbefore <<" " <<ip <<std::endl;
@@ -504,7 +504,7 @@ std::ofstream out((std::string("debug.")+std::to_string(TG.Global().rank())).c_s
 
 
   long final_nterms_node = TG.Node().all_reduce_value(Q.size(),std::plus<>());
-  std::vector<long> final_counts = TG.Cores().gather_value(final_nterms_node);
+  std::vector<long> final_counts = TG.Cores().all_gather_value(final_nterms_node);
   if(TG.Global().root()) {
     qmcplusplus::app_log()<<" In construct_distributed_csr_matrix_from_distributed_containers: \n"; 
     qmcplusplus::app_log()<<" Partitioning of CSR matrix over TG (nnz per node): ";

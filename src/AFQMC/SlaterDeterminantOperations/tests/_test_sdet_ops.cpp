@@ -199,13 +199,11 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 {
 
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
-  //c = OHMMS::Controller;
+  Communicate *c = OHMMS::Controller;
   
   using boost::mpi3::shared_communicator;
 
-  shared_communicator node = boost::mpi3::world.split_shared(boost::mpi3::world.rank()); 
+  shared_communicator node = c->comm.split_shared(c->comm.rank());
 
   const int NMO = 4;
   const int NEL = 3;

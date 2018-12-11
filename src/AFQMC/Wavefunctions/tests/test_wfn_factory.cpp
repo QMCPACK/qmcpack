@@ -66,7 +66,6 @@ using namespace afqmc;
 
 TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -74,7 +73,7 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
   } else {
 
     // mpi3
-    communicator& world = boost::mpi3::world;
+    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -328,7 +327,6 @@ const char *wlk_xml_block_noncol =
 
 TEST_CASE("wfn_fac_sdet_distributed", "[wavefunction_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -336,7 +334,7 @@ TEST_CASE("wfn_fac_sdet_distributed", "[wavefunction_factory]")
   } else {
 
     // mpi3
-    communicator& world = boost::mpi3::world;
+    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -637,7 +635,6 @@ const char *wlk_xml_block_noncol =
 
 TEST_CASE("wfn_fac_collinear_multidet", "[wavefunction_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   if(not file_exists("./afqmc_msd.h5") ||
      not file_exists("./wfn_msd.dat") ) {
@@ -645,7 +642,7 @@ TEST_CASE("wfn_fac_collinear_multidet", "[wavefunction_factory]")
   } else {
 
     // mpi3
-    communicator& world = boost::mpi3::world;
+    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -781,7 +778,6 @@ const char *wlk_xml_block =
 
 TEST_CASE("wfn_fac_collinear_multidet_distributed", "[wavefunction_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   if(not file_exists("./afqmc_msd.h5") ||
      not file_exists("./wfn_msd.dat") ) {
@@ -789,7 +785,7 @@ TEST_CASE("wfn_fac_collinear_multidet_distributed", "[wavefunction_factory]")
   } else {
 
     // mpi3
-    communicator& world = boost::mpi3::world;
+    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     GlobalTaskGroup gTG(world);

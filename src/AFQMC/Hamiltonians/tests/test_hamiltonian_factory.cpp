@@ -69,7 +69,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
   } else {  
 
     // mpi3
-    communicator& world = boost::mpi3::world;
+    communicator& world = OHMMS::Controller->comm;
  
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -259,7 +259,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
   } else {  
 
     // mpi3
-    communicator& world = boost::mpi3::world;
+    communicator& world = OHMMS::Controller->comm;
  
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -446,7 +446,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
   } else {  
 
     // mpi3
-    communicator& world = boost::mpi3::world;
+    communicator& world = OHMMS::Controller->comm;
  
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -639,7 +639,7 @@ TEST_CASE("ham_generation_timing_hdf", "[hamiltonian_factory]")
   } else { 
 
     // mpi3
-    communicator& world = boost::mpi3::world;
+    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);

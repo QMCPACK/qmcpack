@@ -217,13 +217,11 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 {
 
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
-  //c = OHMMS::Controller;
+  Communicate *c = OHMMS::Controller;
   
   using boost::mpi3::shared_communicator;
 
-  shared_communicator node = boost::mpi3::world.split_shared(boost::mpi3::world.rank()); 
+  shared_communicator node = c->comm.split_shared(c->comm.rank());
 
   const int NMO = 4;
   const int NEL = 3;
@@ -544,13 +542,11 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
 TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
 {
 
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
-  //c = OHMMS::Controller;
+  Communicate *c = OHMMS::Controller;
   
   using boost::mpi3::shared_communicator;
 
-  shared_communicator node = boost::mpi3::world.split_shared(boost::mpi3::world.rank()); 
+  shared_communicator node = c->comm.split_shared(c->comm.rank()); 
 
   const int NMO = 4;
   const int NEL = 3;
@@ -729,12 +725,11 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
 TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 {
 
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
+  Communicate *c = OHMMS::Controller;
   
   using boost::mpi3::shared_communicator;
 
-  shared_communicator node = boost::mpi3::world.split_shared(boost::mpi3::world.rank()); 
+  shared_communicator node = c->comm.split_shared(c->comm.rank()); 
 
   const int NMO = 4;
   const int NEL = 3;
@@ -746,7 +741,7 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   using namespace std::complex_literals;
   using csr_matrix = ma::sparse::csr_matrix<Type,int,int,
                                 boost::mpi3::intranode::allocator<Type>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
 
   const Type ov = -7.62332599999999 + 22.20453200000000i;
   const Type ov2 = -10.37150000000000 -  7.15750000000000i;

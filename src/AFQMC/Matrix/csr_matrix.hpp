@@ -30,6 +30,7 @@
 #include "Configuration.h"
 #include "AFQMC/Utilities/tuple_iterator.hpp"
 
+#include "mpi3/shared_communicator.hpp"
 #include "mpi.h"
 
 namespace ma{
@@ -46,6 +47,15 @@ struct null_is_root{
 	int size(){return 1;}
 	int rank(){return 0;}
 	void barrier() {};
+};
+
+struct is_root{
+  mpi3::shared_communicator& comm_;
+  template<class Allocator> is_root(Allocator &a) : comm_(a.comm_) {}
+  bool root() {return comm_.root();}
+  int size() {return comm_.size();}
+  int rank() {return comm_.rank();}
+  void barrier() {comm_.barrier();}
 };
 
 template<

@@ -489,7 +489,7 @@ inline SparseArray2D column_distributed_CSR_from_HDF(hdf_archive& dump, task_gro
   using Alloc = boost::mpi3::intranode::allocator<value_type>;
   using ucsr_matrix = ma::sparse::ucsr_matrix<value_type,index_type,int_type,
                                 boost::mpi3::intranode::allocator<value_type>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
 
   // if not specified, every core reads
   if(nread <= 0) nread = TG.Node().size();
@@ -571,7 +571,7 @@ inline SparseArray2D unstructured_distributed_CSR_from_HDF(hdf_archive& dump, ta
   using Alloc = boost::mpi3::intranode::allocator<value_type>;
   using ucsr_matrix = ma::sparse::ucsr_matrix<value_type,index_type,int_type,
                                 boost::mpi3::intranode::allocator<value_type>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
 
   bool distribute_Ham = (TG.getNNodesPerTG() > 1);
 
@@ -650,7 +650,7 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
       int nnodes_per_TG = TG.getNNodesPerTG();
       for(int core=1; core<nnodes_per_TG; ++core) {
         size_t nnz_;
-        TG.Cores().receive_value(nnz_,core,core);
+        TG.Cores().receive_n(&nnz_,1,core,core);
         int nblk = ((nnz_-size_t(1))/CSR_HDF_BLOCK_SIZE + 1);
         for(int ni=0; ni<nblk; ++ni) {
           size_t sz = std::min(size_t(CSR_HDF_BLOCK_SIZE),nnz_-size_t(ni*CSR_HDF_BLOCK_SIZE));
