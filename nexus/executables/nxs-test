@@ -2130,6 +2130,11 @@ def machines():
         ('bluewaters_xk'  , 'n2'            ) : 'aprun -n 32 test.x',
         ('bluewaters_xk'  , 'n2_t2'         ) : 'aprun -d 2 -n 16 test.x',
         ('bluewaters_xk'  , 'n2_t2_p2'      ) : 'aprun -d 2 -n 4 test.x',
+        ('cades'          , 'n1'            ) : 'mpirun -np 36 test.x',
+        ('cades'          , 'n1_p1'         ) : 'mpirun -np 1 test.x',
+        ('cades'          , 'n2'            ) : 'mpirun -np 72 test.x',
+        ('cades'          , 'n2_t2'         ) : 'mpirun -np 36 --npersocket 9 test.x',
+        ('cades'          , 'n2_t2_p2'      ) : 'mpirun -np 4 --npersocket 1 test.x',
         ('cetus'          , 'n1'            ) : 'runjob --np 16 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
         ('cetus'          , 'n1_p1'         ) : 'runjob --np 1 -p 1 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
         ('cetus'          , 'n2'            ) : 'runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
@@ -2277,6 +2282,7 @@ def machines():
             #sname = "'{0}'".format(name)
             #stype = "'{0}'".format(jtype)
             #print "        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command)
+            #continue
             ref_command = job_run_ref[name,jtype]
             if not job_commands_equal(command,ref_command):
                 nfail('Job.run_command for machine "{0}" does not match the reference\njob inputs: {1}\nreference command: {2}\nincorrect command: {3}'.format(name,job_inputs[jtype],ref_command,command))

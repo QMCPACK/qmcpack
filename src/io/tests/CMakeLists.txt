@@ -18,7 +18,7 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 # Directory where input file is copied to, and working directory for unit test
 SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/io/tmp)
 
-ADD_EXECUTABLE(${UTEST_EXE} test_hdf_archive.cpp)
+ADD_EXECUTABLE(${UTEST_EXE} test_hdf_archive.cpp test_hdf_multiarray.cpp test_hdf_parallel.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY} )
 
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")

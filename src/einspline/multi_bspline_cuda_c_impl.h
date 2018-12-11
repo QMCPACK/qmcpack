@@ -193,13 +193,14 @@ void update_dot (const T a, const T b, const T sum, const T corr, T *new_sum, T 
 
 __global__
 static void
-eval_multi_multi_UBspline_3d_c_kernel (float const * __restrict__ pos,
-                                       float const * __restrict__ coefs_GPU,
-                                       float * const * __restrict__ vals,
+eval_multi_multi_UBspline_3d_c_kernel (float const * pos,
+                                       float const * coefs_GPU,
+                                       float * const * vals,
                                        const float3 drInv, const uint3 dim,
                                        const uint3 strides, int N,
-                                       float const * __restrict__ coefs_host,
-                                       int host_Nx_offset)
+                                       float const * coefs_host,
+                                       int host_Nx_offset,
+                                       int spline_offset)
 
 {
   __shared__ float abc[64];
@@ -231,7 +232,7 @@ eval_multi_multi_UBspline_3d_c_kernel (float const * __restrict__ pos,
   int indy = ind[1];
   int indz = ind[2];
 
-  float const * __restrict__ coefs = indx < host_Nx_offset ? coefs_GPU:coefs_host;
+  float const * coefs = indx < host_Nx_offset ? coefs_GPU:coefs_host;
   if ( indx >= host_Nx_offset ) indx -= host_Nx_offset;
 
   if (tid < 64)
@@ -245,7 +246,7 @@ eval_multi_multi_UBspline_3d_c_kernel (float const * __restrict__ pos,
   int off = blockIdx.x * blockDim.x + tid;
   if (off < 2*N)
   {
-    float * __restrict__ myval = vals[blockIdx.y];
+    float * myval = vals[blockIdx.y];
     int stride_z = strides.z;
     int stride_y = strides.y - 4*stride_z;
     int stride_x = strides.x - 4*strides.y;
@@ -280,9 +281,9 @@ eval_multi_multi_UBspline_3d_c_kernel (float const * __restrict__ pos,
       myPos += stride_x;
     }
 #if COMPENSATED_DOT_PRODUCT
-    myval[off] = sum + corr;
+    myval[spline_offset+off] = sum + corr;
 #else
-    myval[off] = val;
+    myval[spline_offset+off] = val;
 #endif
   }
 }
@@ -441,12 +442,13 @@ __global__ static void
 eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
     float const * __restrict__ coefs_GPU,
     float const * __restrict__ Linv,
-    float* const * __restrict__ vals,
-    float* const * __restrict__ grd_lapl,
-    float3 drInv, uint3 dim,
+    float* const * vals,
+    float* const * grd_lapl,
+    float3 drInv, __restrict__ uint3 dim,
     uint3 strides, int N, int row_stride,
     float const * __restrict__ coefs_host,
-    int host_Nx_offset)
+    int host_Nx_offset,
+    int spline_offset)
 {
   __shared__ float ab[96];
   __shared__ float a[12], b[12], c[12];
@@ -587,20 +589,22 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
   __syncthreads();
   if (off < 2*N)
   {
-    float * __restrict__ myval = vals[ir];
-    float * __restrict__ mygrad_lapl = grd_lapl[ir];
+    float * myval = vals[ir];
+    float * mygrad_lapl = grd_lapl[ir];
     // Store gradients back to global memory
-    myval[off] = v;
-    mygrad_lapl[off+0*row_stride] = G[0][0]*g0 + G[0][1]*g1 + G[0][2]*g2;
-    mygrad_lapl[off+2*row_stride] = G[1][0]*g0 + G[1][1]*g1 + G[1][2]*g2;
-    mygrad_lapl[off+4*row_stride] = G[2][0]*g0 + G[2][1]*g1 + G[2][2]*g2;
+    int out_off=off+spline_offset;
+    myval[out_off] = v;
+    out_off += 3*spline_offset; // in other words, off+4*spline_offset
+    mygrad_lapl[out_off+0] = G[0][0]*g0 + G[0][1]*g1 + G[0][2]*g2;
+    mygrad_lapl[out_off+2*row_stride] = G[1][0]*g0 + G[1][1]*g1 + G[1][2]*g2;
+    mygrad_lapl[out_off+4*row_stride] = G[2][0]*g0 + G[2][1]*g1 + G[2][2]*g2;
     // Store laplacians back to global memory
     // Hessian = H00 H01 H02 H11 H12 H22
     // Matrix = [0 1 2]
     //          [1 3 4]
     //          [2 4 5]
     // laplacian = Trace(GGt*Hessian)
-    mygrad_lapl[off+6*row_stride] =
+    mygrad_lapl[out_off+6*row_stride] =
       (GGt[0][0]*h00 + GGt[1][0]*h01 + GGt[2][0]*h02 +
        GGt[0][1]*h01 + GGt[1][1]*h11 + GGt[2][1]*h12 +
        GGt[0][2]*h02 + GGt[1][2]*h12 + GGt[2][2]*h22);
@@ -620,12 +624,36 @@ eval_multi_multi_UBspline_3d_c_cuda (multi_UBspline_3d_c_cuda *spline,
      synchronization points, we would like run a fair number of thread blocks
      per SM, so limit thread blocks to at most 256 threads.
   */
-  int threadsPerBlock = max(64,min(32*((2*spline->num_splines+31)/32),256));
+  int num_splines=spline->num_splines;
+  int threadsPerBlock = max(64,min(32*((2*num_splines+31)/32),256));
   dim3 dimBlock(threadsPerBlock);
-  dim3 dimGrid((2 * spline->num_splines + dimBlock.x - 1) / dimBlock.x, num);
+  dim3 dimGrid((2 * num_splines + dimBlock.x - 1) / dimBlock.x, num);
   eval_multi_multi_UBspline_3d_c_kernel<<<dimGrid,dimBlock>>>
   (pos_d, (float*)spline->coefs, (float**)vals_d, spline->gridInv,
-   spline->dim, spline->stride, spline->num_splines, (float*)spline->coefs_host, spline->host_Nx_offset);
+   spline->dim, spline->stride, num_splines, (float*)spline->coefs_host, spline->host_Nx_offset, 0);
+}
+
+
+extern "C" void
+eval_multi_multi_UBspline_3d_c_cudasplit (multi_UBspline_3d_c_cuda *spline,
+                                          float *pos_d, complex_float *vals_d[],
+                                          int num, float *coefs, int device_nr, cudaStream_t s)
+{
+  /* The way the kernel is written it requires at least 64 threads to work
+     correctly. The maximum number of threads that can be utilized appears
+     limited by spline->stride.z which seems equal to 2*spline->num_splines.
+     Round up the thread count to the next multiple of a full warp. Because
+     the kernel uses __syncthreads() which limits parallelism around these
+     synchronization points, we would like run a fair number of thread blocks
+     per SM, so limit thread blocks to at most 256 threads.
+  */
+  int num_splines=spline->num_split_splines;
+  int threadsPerBlock = max(64,min(32*((2*num_splines+31)/32),256));
+  dim3 dimBlock(threadsPerBlock);
+  dim3 dimGrid((2 * num_splines + dimBlock.x - 1) / dimBlock.x, num);
+  eval_multi_multi_UBspline_3d_c_kernel<<<dimGrid,dimBlock,0,s>>>
+  (pos_d, coefs, (float**)vals_d, spline->gridInv,
+   spline->dim, spline->stride, num_splines, (float*)spline->coefs_host, spline->host_Nx_offset, 2*device_nr*num_splines*num);
 }
 
 extern "C" void
@@ -656,14 +684,41 @@ eval_multi_multi_UBspline_3d_c_vgl_cuda (multi_UBspline_3d_c_cuda *spline,
      synchronization points, we would like run a fair number of thread blocks
      per SM, so limit thread blocks to at most 256 threads.
   */
-  int threadsPerBlock = max(64,min(32*((2*spline->num_splines+31)/32),256));
+  int num_splines=spline->num_splines;
+  int threadsPerBlock = max(64,min(32*((2*num_splines+31)/32),256));
   dim3 dimBlock(threadsPerBlock);
-  dim3 dimGrid((2 * spline->num_splines + dimBlock.x - 1) / dimBlock.x, num);
+  dim3 dimGrid((2 * num_splines + dimBlock.x - 1) / dimBlock.x, num);
   eval_multi_multi_UBspline_3d_c_vgl_kernel<<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (pos_d, (float*)spline->coefs, Linv_d, (float**)vals_d,
    (float**)grad_lapl_d, spline->gridInv, spline->dim,
-   spline->stride, spline->num_splines, row_stride, (float*)spline->coefs_host, spline->host_Nx_offset);
+   spline->stride, num_splines, row_stride, (float*)spline->coefs_host, spline->host_Nx_offset, 0);
 }
+
+
+extern "C" void
+eval_multi_multi_UBspline_3d_c_vgl_cudasplit (multi_UBspline_3d_c_cuda *spline,
+    float *pos_d, float *Linv_d,
+    float *vals_d[], float *grad_lapl_d[],
+    int num, int row_stride, float *coefs, int device_nr, cudaStream_t s)
+{
+  /* The way the kernel is written it requires at least 64 threads to work
+     correctly. The maximum number of threads that can be utilized appears
+     limited by spline->stride.z which seems equal to 2*spline->num_splines.
+     Round up the thread count to the next multiple of a full warp. Because
+     the kernel uses __syncthreads() which limits parallelism around these
+     synchronization points, we would like run a fair number of thread blocks
+     per SM, so limit thread blocks to at most 256 threads.
+  */
+  int num_splines=spline->num_split_splines;
+  int threadsPerBlock = max(64,min(32*((2*num_splines+31)/32),256));
+  dim3 dimBlock(threadsPerBlock);
+  dim3 dimGrid((2 * num_splines + dimBlock.x - 1) / dimBlock.x, num);
+  eval_multi_multi_UBspline_3d_c_vgl_kernel<<<dimGrid,dimBlock,0,s>>>
+    (pos_d, coefs, Linv_d, (float**)vals_d,
+    (float**)grad_lapl_d, spline->gridInv, spline->dim,
+    spline->stride, num_splines, row_stride, (float*)spline->coefs_host, spline->host_Nx_offset, 2*device_nr*num_splines*num);
+}
+
 
 /*
 

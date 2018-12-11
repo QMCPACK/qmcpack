@@ -21,6 +21,9 @@
 #include <OhmmsPETE/Tensor.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/PooledData.h>
+#if defined(HAVE_LIBBOOST)
+#include "boost/multi_array.hpp"
+#endif
 
 namespace qmcplusplus
 {
@@ -228,5 +231,64 @@ struct container_proxy<Array<T,D> >
     return scalar_traits<T>::get_address(ref.data());
   }
 };
+
+#if defined(HAVE_LIBBOOST)
+template<typename T>
+struct container_proxy<boost::multi_array<T,2> >
+{
+  enum {DIM=scalar_traits<T>::DIM};
+  typedef typename container_proxy<T>::pointer pointer;
+  boost::multi_array<T,2>& ref;
+  inline container_proxy(boost::multi_array<T,2>& a):ref(a) {}
+  inline size_t size() const
+  {
+    return ref.num_elements()*DIM;
+  }
+  inline pointer data()
+  {
+    return scalar_traits<T>::get_address(ref.origin());
+  }
+  inline void resize(size_t n)
+  {
+    APP_ABORT(" Error: Can not resize container_proxy<boost::multi_array_ref<T,D> >. \n");
+  }
+  template<typename I>
+  inline void resize(I* n, int d)
+  {
+    if(d < 2)
+      APP_ABORT(" Error: Inconsistent dimension in container_proxy<boost::multi_array_ref<T,D> >::resize(I*,int). \n");
+    ref.resize(boost::extents[n[0]][n[1]]);
+  }
+};
+
+template<typename T>
+struct container_proxy<boost::multi_array_ref<T,2> >
+{
+  enum {DIM=scalar_traits<T>::DIM};
+  typedef typename container_proxy<T>::pointer pointer;
+  boost::multi_array_ref<T,2>& ref;
+  inline container_proxy(boost::multi_array_ref<T,2>& a):ref(a) {}
+  inline size_t size() const
+  {
+    return ref.num_elements()*DIM;
+  }
+  inline pointer data()
+  {
+    return scalar_traits<T>::get_address(ref.origin());
+  }
+  inline void resize(size_t n)
+  {
+    APP_ABORT(" Error: Can not resize container_proxy<boost::multi_array_ref<T,D> >. \n");
+  }
+
+  template<typename I>
+  inline void resize(I* n, int d)
+  {
+    APP_ABORT(" Error: Can not resize container_proxy<boost::multi_array_ref<T,D> >. \n");
+  }
+
+};
+#endif
+
 }
 #endif

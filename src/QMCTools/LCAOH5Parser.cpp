@@ -53,7 +53,7 @@ LCAOParser::LCAOParser(int argc, char** argv):
 void LCAOParser::parse(const std::string& fname)
 {
 
-  hdf_archive hin(0);
+  hdf_archive hin;
 
   if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
   {
@@ -165,7 +165,7 @@ void LCAOParser::parse(const std::string& fname)
   if(multideterminant)
   {
      outputFile;
-     hdf_archive hin(0);
+     hdf_archive hin;
 
      if(!hin.open(outputFile.c_str(),H5F_ACC_RDONLY))
      {
@@ -250,7 +250,7 @@ void LCAOParser::getCell(const std::string& fname)
   Y.resize(3);
   Z.resize(3);
 
-  hdf_archive hin(0);
+  hdf_archive hin;
 
   if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
   {
@@ -278,7 +278,7 @@ void LCAOParser::getCell(const std::string& fname)
 void LCAOParser::getGeometry(const std::string& fname)
 {
 
-  hdf_archive hin(0);
+  hdf_archive hin;
 
   if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
   {
@@ -339,7 +339,7 @@ void LCAOParser::getGeometry(const std::string& fname)
 void LCAOParser::getKpts(const std::string& fname)
 {
   Matrix <double> MyVec(1,3);
-  hdf_archive hin(0);
+  hdf_archive hin;
 
   if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
   {
@@ -401,7 +401,7 @@ void LCAOParser::getMO(const std::string & fname)
   std::string setname;
   Matrix<double> CartMat(SizeOfBasisSet,SizeOfBasisSet);
 
-  hdf_archive hin(0);
+  hdf_archive hin;
 
   if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
   {
