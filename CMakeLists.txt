@@ -879,10 +879,7 @@ endif()
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
 INSTALL(FILES ${qmcpack_BINARY_DIR}/bin/qmcpack.settings DESTINATION bin)
-IF(NOT CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  MESSAGE("Installing Nexus to ${CMAKE_INSTALL_PREFIX}")
-  EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install ${CMAKE_INSTALL_PREFIX}/bin )
-ENDIF()
+INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
 
 #########################
 # add definitions for adios profile

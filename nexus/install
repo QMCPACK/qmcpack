@@ -3,6 +3,7 @@
 import os
 import sys
 from subprocess import Popen,PIPE
+from optparse import OptionParser
 
 #=======#
 # setup #
@@ -19,7 +20,7 @@ bin_dir    = os.path.join(source_dir,'bin')
 
 # function to report errors
 def error(msg):
-    print 'install error: '+msg
+    print('install error: '+msg)
     sys.exit(1)
 #end def error
 
@@ -37,8 +38,28 @@ def execute(command):
 # main execution #
 #================#
 
+# process command line flags
+parser = OptionParser(
+        usage='usage: %prog [options]',
+        add_help_option=False,
+        version='%prog 1.6'
+        )
+parser.add_option('-h','--help',dest='help',
+                  action='store_true',default=False,
+                  help='Print help information and exit (default=%default).'
+                  )
+parser.add_option('-l','--leave_paths',dest='leave_paths',
+                  action='store_true',default=False,
+                  help='Do not add paths to Linux configuration files, e.g. .bashrc (default=%default).'
+                  )
+options,args = parser.parse_args()
+
+if options.help:
+    print('\n'+parser.format_help().strip())
+    exit()
+#end if
+
 # check user input
-args = sys.argv[1:]
 if len(args)==0:
     install_dir = source_dir
 elif len(args)>1:
@@ -133,22 +154,28 @@ set_env_fmt = set_env_formats[shell]
 # add lib path to PYTHONPATH in config file
 header = '### added by Nexus 1.6.0 installer ###'
 footer = '### end Nexus additions ###'
-execute('cp {0} {0}-nexus.bak'.format(rc_file))
-f = open(rc_file,'r')
-rc_contents = f.read()
-f.close()
-if header in rc_contents and footer in rc_contents:
-    header_loc = rc_contents.find(header)
-    footer_loc = rc_contents.find(footer)
-    before_header = rc_contents[:header_loc]
-    after_footer  = rc_contents[footer_loc+len(footer):]
-    rc_contents = before_header + after_footer
+paths  = set_env_fmt.format('PATH',bin_dir+':$PATH')
+paths += set_env_fmt.format('PYTHONPATH',lib_dir+':$PYTHONPATH')
+
+if options.leave_paths:
+    print('Nexus installation not complete.  Please add the following paths to {0}:\n{1}'.format(rc_file,paths))
+else:
+    execute('cp {0} {0}-nexus.bak'.format(rc_file))
+    f = open(rc_file,'r')
+    rc_contents = f.read()
+    f.close()
+    if header in rc_contents and footer in rc_contents:
+        header_loc = rc_contents.find(header)
+        footer_loc = rc_contents.find(footer)
+        before_header = rc_contents[:header_loc]
+        after_footer  = rc_contents[footer_loc+len(footer):]
+        rc_contents = before_header + after_footer
+    #end if
+    rc_contents = rc_contents.rstrip()+'\n\n\n'
+    rc_contents += header+'\n'
+    rc_contents += paths
+    rc_contents += footer+'\n'
+    f = open(rc_file,'w')
+    f.write(rc_contents)
+    f.close()
 #end if
-rc_contents = rc_contents.rstrip()+'\n\n\n'
-rc_contents += header+'\n'
-rc_contents += set_env_fmt.format('PATH',bin_dir+':$PATH')
-rc_contents += set_env_fmt.format('PYTHONPATH',lib_dir+':$PYTHONPATH')
-rc_contents += footer+'\n'
-f = open(rc_file,'w')
-f.write(rc_contents)
-f.close()
