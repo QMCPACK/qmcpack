@@ -175,8 +175,8 @@ Timer.reset("T8");
 Timer.start("T0");
 */
       // G[nel][nmo]
-      static_assert(E.dimensionality==2);  
-      static_assert(G.dimensionality==2);  
+      //static_assert(E.dimensionality==2);
+      //static_assert(G.dimensionality==2);
       assert(E.shape()[0] == G.shape()[0]);        
       assert(E.shape()[1] == 3);        
       int nwalk = G.shape()[0];
@@ -384,7 +384,7 @@ std::cout
         for(int i=k0; i<kN; i++) {
           auto p_ = Piu.get()[i].origin();  
           for(int u=0; u<nu; u++, ++p_)
-            Qiu[i][u] = Tuw[u][wi]*conj(*p_);
+            Qiu[i][u] = Tuw[u][wi]*std::conj(*p_);
         }
 //Timer.stop("T1");
 //Timer.start("T2");
@@ -592,10 +592,10 @@ app_log()
     template<class MatA, class MatB, class MatC, class MatD>
     void Guv_Guu(MatA const& G, MatB&& Guv, MatC&& Guu, MatD&& T1, int k) {
 
-      static_assert(G.dimensionality == 2);
-      static_assert(T1.dimensionality == 2);
-      static_assert(Guu.dimensionality == 1);
-      static_assert(Guv.dimensionality == 3);
+      //static_assert(G.dimensionality == 2);
+      //static_assert(T1.dimensionality == 2);
+      //static_assert(Guu.dimensionality == 1);
+      //static_assert(Guv.dimensionality == 3);
       int nspin = (walker_type==COLLINEAR)?2:1;
       int nmo_ = int(rotPiu.shape()[0]);
       int nu = int(rotMuv.shape()[0]);  // potentially distributed over nodes
