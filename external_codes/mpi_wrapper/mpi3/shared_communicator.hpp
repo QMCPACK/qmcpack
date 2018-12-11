@@ -39,7 +39,6 @@ private:
 public:
 	shared_communicator& operator=(shared_communicator const& other) = default;
 	shared_communicator& operator=(shared_communicator&& other) = default;
-	shared_window& operator=(shared_window&& other) = default;
 	inline shared_communicator split(int key) const{return split_shared(key);}
 	shared_communicator split(int color, int key) const{
 		return communicator::split(color, key);
