@@ -51,6 +51,7 @@ void hdf_archive::set_access_plist()
 void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
 {
   access_id=H5P_DEFAULT;
+  myComm = comm;
   if(comm && comm->size()>1) //for parallel communicator
   {
     bool use_phdf5=false;
