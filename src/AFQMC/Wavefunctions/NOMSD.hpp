@@ -51,7 +51,7 @@ class NOMSD: public AFQMCInfo
   using CVector = boost::multi_array<ComplexType,1>;  
   using CMatrix = boost::multi_array<ComplexType,2>;  
   using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
-  using shared_mutex = boost::mpi3::mutex;  
+  using shared_mutex = boost::mpi3::shm::mutex;  
 
   public:
 
