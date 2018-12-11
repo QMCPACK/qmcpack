@@ -399,7 +399,7 @@ inline T InvertSmall(T* M, int n, T* restrict work, int* restrict pivot)
   return Invert(M,n,n,work,pivot);
 }
 
-void GeneralizedGramSchmidt(std::complex<double>* A, int LDA, int nR, int nC);
+std::complex<double> GeneralizedGramSchmidt(std::complex<double>* A, int LDA, int nR, int nC);
 
 } // namespace DenseMatrixOperators
 
