@@ -149,7 +149,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   size_t nel_ = ((type==CLOSED)?NAEA:(NAEA+NAEB));
   shm_Cmatrix rotMuv(TGwfn.Node(),{rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0});
   shm_Cmatrix rotPiu(TGwfn.Node(),{size_t(NMO),grotnmu});
-  shm_Vmatrix Piu(TGwfn.Node(),{size_t(NMO),nmu},{NMO,gnmu},{0,nmu0});
+  shm_Vmatrix Piu(TGwfn.Node(),{size_t(NMO),nmu},{size_t(NMO),gnmu},{0,nmu0});
   shm_Vmatrix Luv(TGwfn.Node(),{nmu,gnmu},{gnmu,gnmu},{nmu0,0});
 
   // read Half transformed first
