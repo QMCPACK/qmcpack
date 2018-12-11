@@ -69,21 +69,21 @@ namespace qmcplusplus
   // new types
   using SpCType_shm_csr_matrix = ma::sparse::csr_matrix<SPComplexType,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SPComplexType>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
   using SpVType_shm_csr_matrix = ma::sparse::csr_matrix<SPValueType,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SPValueType>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
   using CType_shm_csr_matrix = ma::sparse::csr_matrix<ComplexType,int,std::size_t,
                                 boost::mpi3::intranode::allocator<ComplexType>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
   using VType_shm_csr_matrix = ma::sparse::csr_matrix<ValueType,int,std::size_t,
                                 boost::mpi3::intranode::allocator<ValueType>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
 
 #ifdef PsiT_IN_SHM
   using PsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
                                 boost::mpi3::intranode::allocator<ComplexType>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
 #else
   using PsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int>;
 #endif
@@ -91,7 +91,7 @@ namespace qmcplusplus
 
   using P1Type = ma::sparse::csr_matrix<ComplexType,int,int,
                                 boost::mpi3::intranode::allocator<ComplexType>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
 
   // old types
 

@@ -50,15 +50,15 @@ class SparseTensor
 #endif
   using T1shm_csr_matrix = ma::sparse::csr_matrix<SpT1,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SpT1>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
   using T1shm_csr_matrix_view = typename T1shm_csr_matrix::template matrix_view<int>; 
   using T2shm_csr_matrix = ma::sparse::csr_matrix<SpT2,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SpT2>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
   using T2shm_csr_matrix_view = typename T2shm_csr_matrix::template matrix_view<int>; 
   using Vshm_csr_matrix = ma::sparse::csr_matrix<SPValueType,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SPValueType>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
   using Vshm_csr_matrix_view = typename Vshm_csr_matrix::template matrix_view<int>; 
   using CVector = boost::multi_array<ComplexType,1>;  
   using CMatrix = boost::multi_array<ComplexType,2>;  

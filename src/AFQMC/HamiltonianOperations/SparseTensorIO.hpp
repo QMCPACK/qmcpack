@@ -45,10 +45,10 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   // NEEDS TO BE FIXED FOR SP CASE
   using T1_shm_csr_matrix = ma::sparse::csr_matrix<SpT1,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SpT1>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
   using T2_shm_csr_matrix = ma::sparse::csr_matrix<SpT2,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SpT2>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
 
   std::vector<int> dims(10);
   int ndet = (type==COLLINEAR?PsiT.size()/2:PsiT.size());
