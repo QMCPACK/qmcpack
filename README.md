@@ -4,7 +4,7 @@
 
 # Prerequisites
 
- * C/C++ compilers
+ * C++ 14 and C99 capable compilers. e.g. gcc 5.0, Intel 2018, clang 3.5 or newer. 
  * CMake, build utility, http://www.cmake.org
  * BLAS/LAPACK, numerical library, use platform-optimized libraries
  * Libxml2, XML parser, http://xmlsoft.org/
@@ -12,7 +12,7 @@
  * BOOST, peer-reviewed portable C++ source libraries, http://www.boost.org
  * FFTW, FFT library, http://www.fftw.org/
 
- Note that the einspline library is no longer required.
+See the manual for more detailed version requirements.
 
 # Building with CMake
 
