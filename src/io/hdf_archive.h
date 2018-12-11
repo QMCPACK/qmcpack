@@ -74,19 +74,12 @@ struct hdf_archive
    *        if false, hdf_archive is in independent IO mode
    */
   template<class Comm=Communicate*>
-  hdf_archive(Comm c, bool request_pio=false)
+  hdf_archive(Comm c=nullptr, bool request_pio=false)
   : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
   {
     H5Eget_auto (&err_func, &client_data);
     H5Eset_auto (NULL, NULL);
     set_access_plist(request_pio,c);
-  }
-  hdf_archive()
-  : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
-  {
-    H5Eget_auto (&err_func, &client_data);
-    H5Eset_auto (NULL, NULL);
-    set_access_plist();
   }
   ///destructor
   ~hdf_archive();
@@ -96,7 +89,6 @@ struct hdf_archive
 #ifdef HAVE_MPI
   void set_access_plist(bool request_pio, boost::mpi3::communicator& comm);
 #endif
-  void set_access_plist();
 
   ///return true if parallel i/o
   inline bool is_parallel() const
