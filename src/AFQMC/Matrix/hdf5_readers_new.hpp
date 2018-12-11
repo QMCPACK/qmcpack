@@ -182,7 +182,7 @@ inline bool multiple_reader_hdf5_SpMat(SpMatrix& SpM, SpMatrix_Partition& split,
   } 
 
 #if defined(ADD_TESTS_TIMERS)
-  MPI_Barrier(TG.Node().impl_);
+  MPI_Barrier(&TG.Node());
   Timer.stop("Gen");
   app_log()<<" multiple_reader_hdf5_SpMat::read data " <<Timer.total("Gen") <<"\n";
   Timer.reset("Gen");
@@ -190,7 +190,7 @@ inline bool multiple_reader_hdf5_SpMat(SpMatrix& SpM, SpMatrix_Partition& split,
 #endif
 
   // compress matrix
-  SpM.compress(TG.Node().impl_);
+  SpM.compress(&TG.Node());
 
 #if defined(ADD_TESTS_TIMERS)
   Timer.stop("Gen");
@@ -288,7 +288,7 @@ inline bool multiple_reader_count_entries(hdf_archive& dump, SpMatrix_Partition&
   }
 
   IVec a(counts);
-  MPI_Allreduce(a.data(),counts.data(),counts.size(),MPI_INT,MPI_SUM,TG.Global().impl_);
+  MPI_Allreduce(a.data(),counts.data(),counts.size(),MPI_INT,MPI_SUM,&TG.Global());
   return true;
 }
 

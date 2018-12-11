@@ -116,13 +116,13 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     if(req_vsend!=MPI_REQUEST_NULL)
         MPI_Request_free(&req_vsend);
     MPI_Send_init(Gwork.origin()+Gak0,(GakN-Gak0)*sizeof(ComplexType),MPI_CHAR,
-                  TG.prev_core(),3456,TG.TG().impl_,&req_Gsend);
+                  TG.prev_core(),3456,&TG.TG(),&req_Gsend);
     MPI_Recv_init(Grecv.origin()+Gak0,(GakN-Gak0)*sizeof(ComplexType),MPI_CHAR,
-                  TG.next_core(),3456,TG.TG().impl_,&req_Grecv);
+                  TG.next_core(),3456,&TG.TG(),&req_Grecv);
     MPI_Send_init(vsend.origin()+vak0,(vakN-vak0)*sizeof(ComplexType),MPI_CHAR,
-                  TG.prev_core(),5678,TG.TG().impl_,&req_vsend);
+                  TG.prev_core(),5678,&TG.TG(),&req_vsend);
     MPI_Recv_init(vrecv.origin()+vak0,(vakN-vak0)*sizeof(ComplexType),MPI_CHAR,
-                  TG.next_core(),5678,TG.TG().impl_,&req_vrecv);
+                  TG.next_core(),5678,&TG.TG(),&req_vrecv);
   }
 
   // local matrices for temporary accumulation

@@ -373,7 +373,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, TaskGroup_&
       // In this case, I need to use a temporary ucsr with an emplace_wrapper
       using ucsr_matrix = ma::sparse::ucsr_matrix<SPComplexType,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SPComplexType>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
       ucsr_matrix ucsr({ncol,nrow},{0,0},0,Alloc(TG.Node()));
       csr::matrix_emplace_wrapper<ucsr_matrix> ucsr_wrapper(ucsr,TG.Node()); 
       sparse_rotate::halfRotateCholeskyMatrix(walker_type,TG,l0,lN,ucsr_wrapper,Alpha,Beta,V2_fact,true,true,cut,true);  
@@ -443,7 +443,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, TaskGroup_&
       nkbounds.push_back(norb-n0);
     }
 
-    MPI_Allgather(&n_,1,MPI_INT,Qknum.data(),1,MPI_INT,TG.Cores().impl_);
+    MPI_Allgather(&n_,1,MPI_INT,Qknum.data(),1,MPI_INT,&TG.Cores());
 
     int ntt = std::accumulate(Qknum.begin(),Qknum.end(),0);
     Qksizes.resize(2*ntt);
@@ -456,15 +456,15 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, TaskGroup_&
       disp[i]=cnt;
       cnt+=cnts[i];
     }
-    MPI_Allgatherv(nkbounds.data(),nkbounds.size(),MPI_INT,Qksizes.data(),cnts.data(),disp.data(),MPI_INT,TG.Cores().impl_ );
+    MPI_Allgatherv(nkbounds.data(),nkbounds.size(),MPI_INT,Qksizes.data(),cnts.data(),disp.data(),MPI_INT,&TG.Cores());
 
   }
 
-  MPI_Bcast(Qknum.data(),nnodes,MPI_INT,0,TG.Node().impl_);
+  MPI_Bcast(Qknum.data(),nnodes,MPI_INT,0,&TG.Node());
   int ntt = std::accumulate(Qknum.begin(),Qknum.end(),0);
   if(!coreid==0)
     Qksizes.resize(2*ntt);
-  MPI_Bcast(Qksizes.data(),Qksizes.size(),MPI_INT,0,TG.Node().impl_);
+  MPI_Bcast(Qksizes.data(),Qksizes.size(),MPI_INT,0,&TG.Node());
 
 // store {nterms,nk} for all nodes 
 // use it to know communication pattern 
@@ -857,7 +857,7 @@ inline void rotateHijklSymmetric(WALKER_TYPES walker_type, TaskGroup_& TG, Conta
       nkbounds.push_back(norb-n0);
     }
 
-    MPI_Allgather(&n_,1,MPI_INT,Qknum.data(),1,MPI_INT,comm.impl_);
+    MPI_Allgather(&n_,1,MPI_INT,Qknum.data(),1,MPI_INT,&comm);
 
     int ntt = std::accumulate(Qknum.begin(),Qknum.end(),0);
     Qksizes.resize(2*ntt);
@@ -870,15 +870,15 @@ inline void rotateHijklSymmetric(WALKER_TYPES walker_type, TaskGroup_& TG, Conta
       disp[i]=cnt;
       cnt+=cnts[i];
     }
-    MPI_Allgatherv(nkbounds.data(),nkbounds.size(),MPI_INT,Qksizes.data(),cnts.data(),disp.data(),MPI_INT,comm.impl_ );
+    MPI_Allgatherv(nkbounds.data(),nkbounds.size(),MPI_INT,Qksizes.data(),cnts.data(),disp.data(),MPI_INT,&comm);
 
   }
 
-  MPI_Bcast(Qknum.data(),comm.size(),MPI_INT,0,TG.Node().impl_);
+  MPI_Bcast(Qknum.data(),comm.size(),MPI_INT,0,&TG.Node());
   int ntt = std::accumulate(Qknum.begin(),Qknum.end(),0);
   if(coreid!=0)
     Qksizes.resize(2*ntt);
-  MPI_Bcast(Qksizes.data(),Qksizes.size(),MPI_INT,0,TG.Node().impl_);
+  MPI_Bcast(Qksizes.data(),Qksizes.size(),MPI_INT,0,&TG.Node());
 
 // store {nterms,nk} for all nodes 
 // use it to know communication pattern 

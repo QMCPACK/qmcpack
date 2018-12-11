@@ -28,7 +28,7 @@ void redistribute_sparse_matrix_size(std::vector<std::size_t>& nnz_per_row, task
   int node_in_TG = TG.getLocalNodeNumber();
   int nodeid = TG.getNodeID();
   MPI_Comm comm;
-  MPI_Comm_split(TG.Cores().impl_,node_in_TG,nodeid,&comm);
+  MPI_Comm_split(&TG.Cores(),node_in_TG,nodeid,&comm);
 
   std::vector<std::size_t> n = nnz_per_row;
   MPI_Allreduce(n.data(),nnz_per_row.data(),n.size(),MPI_UNSIGNED_LONG,MPI_SUM,comm);
@@ -53,7 +53,7 @@ inline void redistribute_sparse_matrix(taskgroup& TG, SpMatrix& SpMat)
     int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
     int node_in_TG = TG.getLocalNodeNumber();
     MPI_Comm comm;
-    MPI_Comm_split(TG.Cores().impl_,node_in_TG,nodeid,&comm);
+    MPI_Comm_split(&TG.Cores(),node_in_TG,nodeid,&comm);
     int grpid,ngrps;
     MPI_Comm_size(comm,&ngrps);
     MPI_Comm_rank(comm,&grpid);
@@ -176,16 +176,16 @@ TG.Cores().barrier();
 
     for(int i=0; i<npr; i++) {
       if(i==rk) { // I send
-        MPI_Bcast(SpMat.row_data(),n0,MPI_INT,i,TG.Cores().impl_);
-        MPI_Bcast(SpMat.column_data(),n0,MPI_INT,i,TG.Cores().impl_);
-        MPI_Bcast(SpMat.values(),n0*sizeof(T),MPI_CHAR,i,TG.Cores().impl_);
+        MPI_Bcast(SpMat.row_data(),n0,MPI_INT,i,&TG.Cores());
+        MPI_Bcast(SpMat.column_data(),n0,MPI_INT,i,&TG.Cores());
+        MPI_Bcast(SpMat.values(),n0*sizeof(T),MPI_CHAR,i,&TG.Cores());
 //        TG.Cores().broadcast_n(SpMat.rows_begin(),n0,i);
 //        TG.Cores().broadcast_n(SpMat.cols_begin(),n0,i);
 //        TG.Cores().broadcast_n(SpMat.vals_begin(),n0,i);
       } else { // I reveive
-        MPI_Bcast(SpMat.row_data()+ptr,size[i],MPI_INT,i,TG.Cores().impl_);
-        MPI_Bcast(SpMat.column_data()+ptr,size[i],MPI_INT,i,TG.Cores().impl_);
-        MPI_Bcast(SpMat.values()+ptr,size[i]*sizeof(T),MPI_CHAR,i,TG.Cores().impl_);
+        MPI_Bcast(SpMat.row_data()+ptr,size[i],MPI_INT,i,&TG.Cores());
+        MPI_Bcast(SpMat.column_data()+ptr,size[i],MPI_INT,i,&TG.Cores());
+        MPI_Bcast(SpMat.values()+ptr,size[i]*sizeof(T),MPI_CHAR,i,&TG.Cores());
 //        TG.Cores().broadcast_n(SpMat.rows_begin()+ptr,size[i],i);
 //        TG.Cores().broadcast_n(SpMat.cols_begin()+ptr,size[i],i);
 //        TG.Cores().broadcast_n(SpMat.vals_begin()+ptr,size[i],i);

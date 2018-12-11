@@ -192,6 +192,7 @@ bool SharedWalkerSet::clean()
 {
   walker_buffer = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),0));
   tot_num_walkers=targetN=targetN_per_TG=0;
+  return true;
 }
 
 /*
@@ -331,11 +332,11 @@ void SharedWalkerSet::benchmark(std::string& blist,int maxnW,int delnW,int repea
 
           if(TG.TG_heads().rank()==0) {
             Timer.start("M1");
-            MPI_Isend(Cbuff.data(),2*Cbuff.size(),MPI_DOUBLE,1,999,TG.TG_heads().impl_,&req);  
+            MPI_Isend(Cbuff.data(),2*Cbuff.size(),MPI_DOUBLE,1,999,&TG.TG_heads(),&req);  
             MPI_Wait(&req,&st);
             Timer.stop("M1");
           } else {
-            MPI_Irecv(Cbuff.data(),2*Cbuff.size(),MPI_DOUBLE,0,999,TG.TG_heads().impl_,&req);  
+            MPI_Irecv(Cbuff.data(),2*Cbuff.size(),MPI_DOUBLE,0,999,&TG.TG_heads(),&req);  
             MPI_Wait(&req,&st);
           }
 

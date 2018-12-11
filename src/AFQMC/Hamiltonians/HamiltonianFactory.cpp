@@ -175,7 +175,9 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
   HamiltonianTypes htype;
   if(head) htype = peekHamType(in);
-  TG.Global().broadcast_value(htype);
+  int tmp_htype = htype;
+  TG.Global().broadcast_value(tmp_htype);
+  htype = static_cast<HamiltonianTypes>(tmp_htype);
 
 
   if(NCA != NCB) {
@@ -221,7 +223,7 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
       APP_ABORT("Found three index terms in FCIDUMP. (Only allowed with factorized hamiltonian. Check!!!");
     }
 
-    SMDenseVector<s4D<ValueType> >  V2(TG.getCoreID()==0,std::string("SparseGeneralHamiltonian_V2"),TG.Node().impl_);
+    SMDenseVector<s4D<ValueType> >  V2(TG.getCoreID()==0,std::string("SparseGeneralHamiltonian_V2"),&TG.Node());
 
     if(TG.getNodeID() == 0) {
       V2.reserve(nTwo); 
@@ -263,7 +265,7 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
       if(!head)         
         H1.resize(sz);
       //TG.Global().broadcast(H1.begin(),H1.end());
-      MPI_Bcast(H1.data(),sizeof(s2D<ValueType>),MPI_CHAR,0,TG.Global().impl_); 
+      MPI_Bcast(H1.data(),sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global()); 
     }
     if(TG.getCoreID()==0) {
       int sz = V2.size();
@@ -271,7 +273,7 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
       if(!head)
         V2.resize_serial(sz);      
       //TG.Cores().broadcast(V2.begin(),V2.end());    
-      MPI_Bcast(V2.values(),V2.size()*sizeof(SPValueType),MPI_CHAR,0,TG.Cores().impl_);
+      MPI_Bcast(V2.values(),V2.size()*sizeof(SPValueType),MPI_CHAR,0,&TG.Cores());
     }
 
     app_log()<<" Memory used by 2-el integral table (on head node): " <<V2.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
@@ -288,7 +290,7 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
       APP_ABORT("");
     }
 
-    SPValueSMSpMat V2(NMO*NMO,n3Vecs,TG.getCoreID()==0,std::string("SparseGeneralHamiltonian_V2"),TG.Node().impl_);
+    SPValueSMSpMat V2(NMO*NMO,n3Vecs,TG.getCoreID()==0,std::string("SparseGeneralHamiltonian_V2"),&TG.Node());
 
     if(TG.getNodeID() == 0) {
       V2.reserve(nThree);
@@ -317,7 +319,7 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
     if(TG.getNodeID() == 0) {
       Timer.reset("Generic");
       Timer.start("Generic");
-      V2.compress(TG.Node().impl_);
+      V2.compress(&TG.Node());
       Timer.stop("Generic");
       app_log()<<" -- Time to sort sparse integral tables: " <<Timer.average("Generic") <<"\n";
     }
@@ -328,17 +330,17 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
       if(!head)
         H1.resize(sz);  
       //TG.Global().broadcast(H1.begin(),H1.end());
-      MPI_Bcast(H1.data(),sizeof(s2D<ValueType>),MPI_CHAR,0,TG.Global().impl_); 
+      MPI_Bcast(H1.data(),sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global()); 
     }
     if(TG.getCoreID()==0) {
       //TG.Cores().broadcast(V2.vals_begin(),V2.vals_end());
       //TG.Cores().broadcast(V2.rows_begin(),V2.rows_end());
       //TG.Cores().broadcast(V2.cols_begin(),V2.cols_end());
       //TG.Cores().broadcast(V2.rowIndex_begin(),V2.rowIndex_end());
-      MPI_Bcast(V2.values(),V2.size()*sizeof(SPValueType),MPI_CHAR,0,TG.Cores().impl_);
-      MPI_Bcast(V2.row_data(),V2.size()*sizeof(int),MPI_CHAR,0,TG.Cores().impl_);
-      MPI_Bcast(V2.column_data(),V2.size()*sizeof(int),MPI_CHAR,0,TG.Cores().impl_);
-      MPI_Bcast(V2.row_index(),(V2.rows()+1)*sizeof(int),MPI_CHAR,0,TG.Cores().impl_);
+      MPI_Bcast(V2.values(),V2.size()*sizeof(SPValueType),MPI_CHAR,0,&TG.Cores());
+      MPI_Bcast(V2.row_data(),V2.size()*sizeof(int),MPI_CHAR,0,&TG.Cores());
+      MPI_Bcast(V2.column_data(),V2.size()*sizeof(int),MPI_CHAR,0,&TG.Cores());
+      MPI_Bcast(V2.row_index(),(V2.rows()+1)*sizeof(int),MPI_CHAR,0,&TG.Cores());
     }
 
     app_log()<<" Memory used by 2-el integral table (on head node): " <<V2.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
@@ -449,7 +451,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
     HamiltonianTypes htype;
     if(head) htype = peekHamType(dump);
-    TG.Global().broadcast_value(htype);
+    int tmp_htype = htype;
+    TG.Global().broadcast_value(tmp_htype);
+    htype = static_cast<HamiltonianTypes>(tmp_htype);
 
     int int_blocks,nvecs;
     std::vector<int> Idata(8);
@@ -586,13 +590,13 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       );
 
       int sz = H1.size();
-      MPI_Bcast(&sz,1,MPI_INT,0,TG.Global().impl_);
-      MPI_Bcast(H1.data(),H1.size()*sizeof(s2D<ValueType>),MPI_CHAR,0,TG.Global().impl_);
+      MPI_Bcast(&sz,1,MPI_INT,0,&TG.Global());
+      MPI_Bcast(H1.data(),H1.size()*sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global());
     } else {
       int sz;
-      MPI_Bcast(&sz,1,MPI_INT,0,TG.Global().impl_);
+      MPI_Bcast(&sz,1,MPI_INT,0,&TG.Global());
       H1.resize(sz);  
-      MPI_Bcast(H1.data(),H1.size()*sizeof(s2D<ValueType>),MPI_CHAR,0,TG.Global().impl_);
+      MPI_Bcast(H1.data(),H1.size()*sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global());
     } 
 
     // now read the integrals

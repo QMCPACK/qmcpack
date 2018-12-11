@@ -96,7 +96,7 @@ inline void getGlobalListOfWalkerWeights(WlkBucket& wlk, std::vector<std::pair<d
   //comm.gather_n(blocal.data(),blocal.size(),buffer.data(),0);
   MPI_Allgather(blocal.data(), blocal.size()*sizeof(Type), MPI_CHAR, 
                   buffer.data(), blocal.size()*sizeof(Type), MPI_CHAR,
-                  comm.impl_);
+                  &comm);
 
 }
 

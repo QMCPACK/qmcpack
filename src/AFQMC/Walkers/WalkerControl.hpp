@@ -182,7 +182,7 @@ inline int swapWalkersAsync(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode
         ComplexType* bf = new ComplexType[countSend*wlk_size];
         buffers.push_back(bf);
         recvCounts.push_back(countSend);
-        requests.emplace_back( comm.ireceive(bf,bf+countSend*wlk_size,plus[ic],plus[ic]+1999) );
+        requests.emplace_back( comm.ireceive_n(bf,countSend*wlk_size,plus[ic],plus[ic]+1999) );
         countSend = 1;
       }
     }

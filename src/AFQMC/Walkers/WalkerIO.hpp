@@ -614,7 +614,7 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
 // MOVE TO mpi3 !!!!
       MPI_Gatherv( MPI_IN_PLACE,0,MPI_DATATYPE_NULL, 
                    Buff.data(), counts.data(), displ.data(), MPI_DOUBLE_COMPLEX, 
-                   0,TG.TG_heads().impl_); 
+                   0,&TG.TG_heads()); 
       nsent += nw_to_send;
 
       if(TG.TG_heads().root()) {  

@@ -465,7 +465,7 @@ namespace afqmc
         sz = std::accumulate(counts.begin()+min_i,counts.begin()+max_i,long(0));
       TG.Node().broadcast_value(sz);
 
-      SPValueSMSpMat V2_fact(nrows,nvecs,TG.getCoreID()==0,std::string("SparseGeneralHamiltonian_V2"),TG.Node().impl_);
+      SPValueSMSpMat V2_fact(nrows,nvecs,TG.getCoreID()==0,std::string("SparseGeneralHamiltonian_V2"),&TG.Node());
       V2_fact.allocate(sz);
 
       Timer.reset("Generic1");
@@ -489,7 +489,7 @@ namespace afqmc
       using Alloc = boost::mpi3::intranode::allocator<ValueType>;
       using ucsr_matrix = ma::sparse::ucsr_matrix<ValueType,int,std::size_t,
                                 boost::mpi3::intranode::allocator<ValueType>,
-                                boost::mpi3::intranode::is_root>;
+                                ma::sparse::is_root>;
 
       int min_i = 0;
       int max_i = nvecs;
@@ -654,7 +654,7 @@ namespace afqmc
       }
 
       long nttot = std::accumulate(ntpo.begin()+min_i,ntpo.begin()+max_i,long(0));
-      SMDenseVector<s4D<ValueType> > V2(TG.getCoreID()==0,std::string("SparseGeneralHamiltonian_V2"),TG.Node().impl_); 
+      SMDenseVector<s4D<ValueType> > V2(TG.getCoreID()==0,std::string("SparseGeneralHamiltonian_V2"),&TG.Node()); 
       V2.reserve(nttot);
 
       if( coreid < nread ) {
@@ -733,7 +733,7 @@ namespace afqmc
           {
             return std::forward_as_tuple(std::get<0>(lhs),std::get<1>(lhs),std::get<2>(lhs),std::get<3>(lhs)) < std::forward_as_tuple(std::get<0>(rhs),std::get<1>(rhs),std::get<2>(rhs),std::get<3>(rhs));
           },
-          TG.Node().impl_);
+          &TG.Node());
       Timer.stop("Generic2");
       app_log()<<" -- Time to compress Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
     return V2;
