@@ -230,14 +230,15 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       int ia = species.findSpecies(spA);
       int ib = species.findSpecies(spB);
       int chargeInd=species.addAttribute("charge");
-      if(ia==species.size())
-      {
-        PRE.error("species "+spA+" requested for Jastrow "+j2name+" does not exist in ParticleSet "+targetPtcl.getName(),true);
-      }
+      std::string illegal_species;
+      if(ia==species.size()) illegal_species = spA;
       if(ib==species.size())
       {
-        PRE.error("species "+spB+" requested for Jastrow "+j2name+" does not exist in ParticleSet "+targetPtcl.getName(),true);
+        if(illegal_species.size()) illegal_species += " and ";
+        illegal_species += spB;
       }
+      if(illegal_species.size())
+        PRE.error("species "+illegal_species+" requested for Jastrow "+j2name+" does not exist in ParticleSet "+targetPtcl.getName(),true);
       if(ia==ib && (targetPtcl.last(ia)-targetPtcl.first(ia)==1))
         PRE.error("Failed to add "+spA+spB+" correlation for only 1 "+spA+" particle. Please remove it from two-body Jastrow.",true);
       if(cusp<-1e6)
@@ -306,8 +307,6 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   // Find the number of the source species
   SpeciesSet &sSet = SourcePtcl->getSpeciesSet();
   SpeciesSet &tSet = targetPtcl.getSpeciesSet();
-  int numSpeciesA = sSet.getTotalNum();
-  int numSpeciesB = tSet.getTotalNum();
   bool success=false;
   bool Opt(true);
   std::string jname = "J1_"+Jastfunction;
@@ -330,44 +329,39 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       functor->setPeriodic(SourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN);
       functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
       functor->setCusp(cusp);
-      int ig = sSet.findSpecies (speciesA);
-      int jg=-1;
-      if(speciesB.size())
-        jg=tSet.findSpecies(speciesB);
-      if(ig==numSpeciesA)
+      const int ig = sSet.findSpecies (speciesA);
+      const int jg = speciesB.size() ? tSet.findSpecies(speciesB) : -1;
+      if(ig==sSet.getTotalNum())
       {
         PRE.error("species "+speciesA+" requested for Jastrow "+jname+" does not exist in ParticleSet "+SourcePtcl->getName(),true);
       }
-      if(jg==numSpeciesA)
+      if(jg==tSet.getTotalNum())
       {
         PRE.error("species "+speciesB+" requested for Jastrow "+jname+" does not exist in ParticleSet "+targetPtcl.getName(),true);
       }
-      if (ig < numSpeciesA)
+      functor->put(kids);
+      J1->addFunc(ig,functor,jg);
+      dJ1->addFunc(ig,functor,jg);
+      success = true;
+      if(qmc_common.io_node)
       {
-        functor->put(kids);
-        J1->addFunc(ig,functor,jg);
-        dJ1->addFunc(ig,functor,jg);
-        success = true;
-        if(qmc_common.io_node)
+        char fname[128];
+        if(qmc_common.mpi_groups>1)
         {
-          char fname[128];
-          if(qmc_common.mpi_groups>1)
-          {
-            if(speciesB.size())
-              sprintf(fname,"%s.%s%s.g%03d.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
-            else
-              sprintf(fname,"%s.%s.g%03d.dat",jname.c_str(),speciesA.c_str(),taskid);
-          }
+          if(speciesB.size())
+            sprintf(fname,"%s.%s%s.g%03d.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
           else
-          {
-            if(speciesB.size())
-              sprintf(fname,"%s.%s%s.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str());
-            else
-              sprintf(fname,"%s.%s.dat",jname.c_str(),speciesA.c_str());
-          }
-          std::ofstream os(fname);
-          print(*functor, os);
+            sprintf(fname,"%s.%s.g%03d.dat",jname.c_str(),speciesA.c_str(),taskid);
         }
+        else
+        {
+          if(speciesB.size())
+            sprintf(fname,"%s.%s%s.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str());
+          else
+            sprintf(fname,"%s.%s.dat",jname.c_str(),speciesA.c_str());
+        }
+        std::ofstream os(fname);
+        print(*functor, os);
       }
     }
     kids = kids->next;
