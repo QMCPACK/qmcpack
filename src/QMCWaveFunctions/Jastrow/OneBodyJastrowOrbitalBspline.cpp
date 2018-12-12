@@ -180,7 +180,7 @@ OneBodyJastrowOrbitalBspline<FT>::ratio
       else
         one_body_ratio_grad (C.data(), W.RList_GPU.data(), first, last,
                              (CTS::RealType*)W.Rnew_GPU.data(), iat,
-                             spline.coefs.data(), spline.coefs.size(), nw
+                             spline.coefs.data(), spline.coefs.size(), nw,
                              spline.rMax, zero, SumGPU.data(), N);
       zero = false;
     }

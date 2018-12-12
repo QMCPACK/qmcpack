@@ -167,7 +167,7 @@ TwoBodyJastrowOrbitalBsplineAoS::addLog (MCWalkerConfiguration &W,
 }
 
 void
-TwoBodyJastrowOrbitalBsplineAoS::update (std::vector<Walker_t*> &walkers, int iat)
+TwoBodyJastrowOrbitalBsplineAoS::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k)
 {
   // for (int iw=0; iw<walkers.size(); iw++)
   //   UpdateListHost[iw] = (CTS::RealType*)walkers[iw]->R_GPU.data();
@@ -249,10 +249,10 @@ TwoBodyJastrowOrbitalBsplineAoS::ratio
   SumHost = SumGPU;
   for (int iw=0; iw<walkers.size(); iw++)
   {
-    psi_ratios[iw] *= std::exp(-SumHost[4*iw+0]);
-    grad[iw][0] -= SumHost[4*iw+1];
-    grad[iw][1] -= SumHost[4*iw+2];
-    grad[iw][2] -= SumHost[4*iw+3];
+    psi_ratios[nw*kcurr+iw] *= std::exp(-SumHost[4*iw+0]);
+    grad[nw*kcurr+iw][0] -= SumHost[4*iw+1];
+    grad[nw*kcurr+iw][1] -= SumHost[4*iw+2];
+    grad[nw*kcurr+iw][2] -= SumHost[4*iw+3];
   }
 #endif
 }
@@ -335,7 +335,7 @@ TwoBodyJastrowOrbitalBsplineAoS::calcRatio
 }
 void
 TwoBodyJastrowOrbitalBsplineAoS::addRatio
-(MCWalkerConfiguration &W, int iat,
+(MCWalkerConfiguration &W, int iat, int k,
  std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
  std::vector<ValueType> &lapl)
 {
@@ -432,7 +432,7 @@ TwoBodyJastrowOrbitalBsplineAoS::NLratios
 }
 
 
-void TwoBodyJastrowOrbitalBsplineAoS::calcGradient(MCWalkerConfiguration &W, int iat,
+void TwoBodyJastrowOrbitalBsplineAoS::calcGradient(MCWalkerConfiguration &W, int iat, int k,
     std::vector<GradType> &grad)
 {
   CTS::RealType sim_cell_radius = W.Lattice.SimulationCellRadius;

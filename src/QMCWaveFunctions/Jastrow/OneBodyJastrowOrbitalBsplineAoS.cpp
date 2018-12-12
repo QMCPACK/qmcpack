@@ -55,22 +55,23 @@ void
 OneBodyJastrowOrbitalBsplineAoS::addLog (MCWalkerConfiguration &W,
                                       std::vector<RealType> &logPsi)
 {
+  int Nr = W.Rnew_GPU.size();
   std::vector<Walker_t*> &walkers = W.WalkerList;
-  if (SumHost.size() < 4*walkers.size())
+  if (SumHost.size() < 4*Nr)
   {
-    SumGPU.resize(4*walkers.size());
-    SumHost.resize(4*walkers.size());
-    UpdateListHost.resize(walkers.size());
-    UpdateListGPU.resize(walkers.size());
+    SumGPU.resize(4*Nr);
+    SumHost.resize(4*Nr);
+    UpdateListHost.resize(Nr);
+    UpdateListGPU.resize(Nr);
   }
-  int numGL = 4*N*walkers.size();
+  int numGL = 4*N*Nr;
   if (GradLaplGPU.size()  < numGL)
   {
     GradLaplGPU.resize(numGL);
     GradLaplHost.resize(numGL);
   }
-  CTS::RealType RHost[OHMMS_DIM*N*walkers.size()];
-  for (int iw=0; iw<walkers.size(); iw++)
+  CTS::RealType RHost[OHMMS_DIM*N*Nr];
+  for (int iw=0; iw<Nr; iw++)
   {
     Walker_t &walker = *(walkers[iw]);
     SumHost[iw] = 0.0;
@@ -90,17 +91,17 @@ OneBodyJastrowOrbitalBsplineAoS::addLog (MCWalkerConfiguration &W,
                           cfirst, clast, efirst, elast,
                           spline.coefs.data(), spline.coefs.size(),
                           spline.rMax, L.data(), Linv.data(),
-                          SumGPU.data(), walkers.size());
+                          SumGPU.data(), Nr);
       else
         one_body_sum (C.data(), W.RList_GPU.data(),
                       cfirst, clast, efirst, elast,
                       spline.coefs.data(), spline.coefs.size(),
-                      spline.rMax, SumGPU.data(), walkers.size());
+                      spline.rMax, SumGPU.data(), Nr);
     }
     // Copy data back to CPU memory
   }
   SumHost = SumGPU;
-  for (int iw=0; iw<walkers.size(); iw++)
+  for (int iw=0; iw<Nr; iw++)
     logPsi[iw] -= SumHost[iw];
 #ifdef CUDA_DEBUG
   DTD_BConds<double,3,SUPERCELL_BULK> bconds;
@@ -122,7 +123,7 @@ OneBodyJastrowOrbitalBsplineAoS::addLog (MCWalkerConfiguration &W,
 }
 
 void
-OneBodyJastrowOrbitalBsplineAoS::update (std::vector<Walker_t*> &walkers, int iat)
+OneBodyJastrowOrbitalBsplineAoS::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k)
 {
   // for (int iw=0; iw<walkers.size(); iw++)
   //   UpdateListHost[iw] = (CTS::RealType*)walkers[iw]->R_GPU.data();
@@ -140,8 +141,8 @@ OneBodyJastrowOrbitalBsplineAoS::ratio
   int N=W.Rnew_GPU.size();
   int nw=walkers.size();
   bool zero = true;
-  if (SumGPU.size() < 4*walkers.size())
-    SumGPU.resize(4*walkers.size());
+  if (SumGPU.size() < 4*N)
+    SumGPU.resize(4*N);
   for (int group=0; group<NumCenterGroups; group++)
   {
     int first = CenterFirst[group];
@@ -206,12 +207,19 @@ OneBodyJastrowOrbitalBsplineAoS::calcRatio
  std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
  std::vector<ValueType> &lapl)
 {
+  int N = W.Rnew_GPU.size();
   std::vector<Walker_t*> &walkers = W.WalkerList;
-  int N=W.Rnew_GPU.size();
-  int nw=walkers.size();
+  int nw = walkers.size();
+  int kd=W.getkDelay();
+  int k = W.getkcurr()-(kd>1);
+  if(k<0)
+    k += W.getkblocksize();
+  int offset=0;
+  if(W.getklinear())
+    offset=k*nw;
   bool zero = true;
-  if (SumGPU.size() < 4*walkers.size())
-    SumGPU.resize(4*walkers.size());
+  if (SumGPU.size() < 4*nw)
+    SumGPU.resize(4*nw);
   for (int group=0; group<NumCenterGroups; group++)
   {
     int first = CenterFirst[group];
@@ -223,16 +231,16 @@ OneBodyJastrowOrbitalBsplineAoS::calcRatio
       {
         bool use_fast_image = W.Lattice.SimulationCellRadius >= spline.rMax;
         one_body_ratio_grad_PBC (C.data(), W.RList_GPU.data(), first, last,
-                                 (CTS::RealType*)W.Rnew_GPU.data(), iat,
+                                 &(((CTS::RealType*)W.Rnew_GPU.data())[3*offset]), iat,
                                  spline.coefs.data(), spline.coefs.size(), nw,
                                  spline.rMax, L.data(), Linv.data(), zero,
-                                 SumGPU.data(), N, use_fast_image);
+                                 SumGPU.data(), nw, use_fast_image);
       }
       else
         one_body_ratio_grad (C.data(), W.RList_GPU.data(), first, last,
-                             (CTS::RealType*)W.Rnew_GPU.data(), iat,
+                             &(((CTS::RealType*)W.Rnew_GPU.data())[3*offset]), iat,
                              spline.coefs.data(), spline.coefs.size(), nw,
-                             spline.rMax, zero, SumGPU.data(), N);
+                             spline.rMax, zero, SumGPU.data(), nw);
       zero = false;
     }
   }
@@ -244,7 +252,7 @@ OneBodyJastrowOrbitalBsplineAoS::calcRatio
 
 void
 OneBodyJastrowOrbitalBsplineAoS::addRatio
-(MCWalkerConfiguration &W, int iat,
+(MCWalkerConfiguration &W, int iat, int k,
  std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
  std::vector<ValueType> &lapl)
 {
@@ -349,7 +357,7 @@ OneBodyJastrowOrbitalBsplineAoS::NLratios
 
 
 void OneBodyJastrowOrbitalBsplineAoS::calcGradient
-(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
+(MCWalkerConfiguration &W, int iat, int k, std::vector<GradType> &grad)
 {
   CTS::RealType sim_cell_radius = W.Lattice.SimulationCellRadius;
   std::vector<Walker_t*> &walkers = W.WalkerList;
