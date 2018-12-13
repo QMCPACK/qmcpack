@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="H4" series="0"/>
+  <random seed="22207"/>
+  <!-- input from gaussian converter -->
+  <include href="H4_cjf.wfs.xml"/>
+  <include href="H4_cjf.ptcl.xml"/>
+  <hamiltonian name="h0" type="generic" target="e"> 
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/> 
+    <pairpot name="IonElec" type="coulomb" source="ion0"/>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/> 
+  </hamiltonian> 
+  <loop max="8">
+    <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+      <parameter name="blocks">256</parameter>
+      <parameter name="steps">500</parameter>
+      <parameter name="samples">64000</parameter>
+      <parameter name="warmupsteps">2000</parameter>
+      <parameter name="timestep">0.05</parameter>
+  
+      <parameter name="MinMethod">adaptive</parameter>
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="usebuffer">yes</parameter>
+  
+      <parameter name="useDrift">yes</parameter>
+      <parameter name="nonlocalpp">yes</parameter>
+      <parameter name="use_nonlocalpp_deriv">no</parameter>
+      <parameter name="max_relative_cost_change">10.0</parameter>
+      <parameter name="max_param_change">30</parameter>
+      <parameter name="shift_i">0.001</parameter>
+      <parameter name="shift_s">0.001</parameter>
+    </qmc>
+  </loop>
+
+  <qmc method="vmc" target="e">
+    <parameter name="blocks">512</parameter>
+    <parameter name="steps">200</parameter>
+    <parameter name="warmupsteps">500</parameter>
+    <parameter name="timestep">0.05</parameter>
+  </qmc>
+
+</simulation>
