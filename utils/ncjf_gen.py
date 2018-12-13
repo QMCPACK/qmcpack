@@ -7,6 +7,7 @@ from copy import deepcopy
 import xml.etree.ElementTree as et
 
 
+
 ## reads in a qmcpack particle file
 ## places a single atom-centered gaussian around each atom
 
@@ -331,10 +332,11 @@ def write_ncjf(outpath, g_list, F, ncjf_name, gref = None):
   et.ElementTree(cjf_tag).write(outpath)
 
 if __name__ == "__main__":
-  ptclfile = sys.argv[1]
-  cjffile = sys.argv[2]
   if len(sys.argv) < 3:
     print "usage: ncjf_gen.py qmc.ptcl.xml cjf.xml"
+    sys.exit(0)
+  ptclfile = sys.argv[1]
+  cjffile = sys.argv[2]
   acoords = atomic_coords(ptclfile)
   g_list = build_cartesian_gaussians(acoords)
   Fdim = len(g_list)
