@@ -661,7 +661,7 @@ public:
   {
     // assume that current state is determined by having called
     // evaluateDerivatives(P,...) immediately before this function
-    P.makeMoveAndCheck(iat,dr);
+    //P.makeMoveAndCheck(iat,dr);
     ratioval = ratio(P,iat);
     // all non-temp variables are set to values associated with position P
     // all temp (_t) variables are set to values for moved position 
@@ -738,7 +738,7 @@ public:
     } // end opt_C
   
     // move particle back to the original position
-    P.makeMoveAndCheck(iat,-1.0*dr);
+    //P.makeMoveAndCheck(iat,-1.0*dr);
   }
 
 
