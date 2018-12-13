@@ -7,18 +7,6 @@
 namespace qmcplusplus
 {
 
-//template <class T> class SigmoidFunctor
-//{
-//  public:
-//
-//  SigmoidFunctor() {}
-//  bool put(xmlNodePtr cur);
-//
-//
-//
-//};
-
-
 // doesn't inherit from OptimizableFunctorBase since this is a function of the entire position vector
 template <class T> class GaussianFunctor: public QMCTraits
 {

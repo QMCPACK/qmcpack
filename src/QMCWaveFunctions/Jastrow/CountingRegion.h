@@ -311,9 +311,6 @@ public:
       C[I]->evaluateLog(P.activePos,Lval_t(I),Lgrad_t(I),Llap_t(I));
       if(Lval_t(I) > Lmax_t)
         Lmax_t = Lval_t(I);
-//      C[I]->evaluateLog(P.R[iat],Lval_t(I),Lgrad_t(I),Llap_t(I));
-//      if(Lval_t(I) > Lmax_t)
-//        Lmax_t = Lval_t(I);
     }
     // build counting function values; subtract off largest log value
     for(int I = 0; I < num_regions; ++I)
@@ -348,8 +345,6 @@ public:
 
   void evaluateTemp_print(std::ostream& os, ParticleSet& P)
   {
-//    for(auto it = C.begin(); it != C.end(); ++it)
-//      (*it)->evaluate_print(os,P);
     os << "NormalizedGaussianRegion::evaluateTemp_print" << std::endl;
     os << "val_t: ";
     std::copy(_val_t.begin(),_val_t.end(),std::ostream_iterator<RealType>(os,", "));
@@ -380,7 +375,6 @@ public:
     dLval_t.resize(mnd);
     
     C[I]->evaluateLogTempDerivatives(P.activePos, dLval_t);
-//    C[I]->evaluateLogTempDerivatives(P.R[iat], dLval_t);
     for(int J = 0; J < num_regions; ++J)
     {
       for(int p = 0; p < num_derivs; ++p)
@@ -413,7 +407,6 @@ public:
     for(int i = 0; i < num_els; ++i)
     {
       // get log derivatives
-      //C[I]->evaluateLogDerivatives(P.R[i], dCval, dLgrad, dLlap);
       C[I]->evaluateLogDerivatives(P.R[i], dLval, dLgrad, dLlap);
       for(int J = 0; J < num_regions; ++J)
       {
@@ -439,29 +432,6 @@ public:
   } // end evaluateDerivatives
 
 };
-
-
-
-
-//template <class T> class SigmoidRegion
-//{
-//public:
-//  typedef SigmoidFunctor<T> FunctorType;
-//
-//  // variables
-//
-//  // constructor
-//  SigmoidRegion(ParticleSet& targetPtcl)
-//  {
-//  }
-//
-//  // destructor
-//  ~SigmoidRegion()
-//  {}
-//
-//  void addFunc(FunctorType* func, std::string id);
-//  //void addFunc( );
-//};
 
 }
 #endif

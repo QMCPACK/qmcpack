@@ -165,13 +165,6 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   CJ->setOptimizable(opt_C || opt_G || opt_F);
   CJ->initialize();
 
-//  auto *dCJ = new DiffCJOrbitalType(targetPtcl);
-//  dCJ->addDebug(seqlen, period);
-//  dCJ->addRegion(C);
-//  dCJ->initialize();
-//  CJ->dPsi = dCJ;
-
-
   std::string cjname = "CJ_"+RegionOpt;
   targetPsi.addOrbital(CJ,cjname.c_str());
   return true;
@@ -189,11 +182,6 @@ bool CountingJastrowBuilder::put(xmlNodePtr cur)
   {
     createCJ<NormalizedGaussianRegion>(cur);
   }
-//  if(RegionOpt.find("sigmoid") < RegionOpt.size())
-//  {
-//    createCJ<SigmoidRegion>(cur);
-//  }
-
   app_log() << "end CountingRegionOrbital::put" << std::endl;
 
   return true;

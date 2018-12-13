@@ -261,9 +261,6 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    //num_els = P.getTotalNum();
-    //initialize();
-    //if(dPsi) dPsi->resetTargetParticleSet(P);
   }
 
 
@@ -286,8 +283,6 @@ public:
   {
     evaluateExponents(P);
   }
-
-//================================================================================
 
   void evaluateExponents(ParticleSet& P)
   {
@@ -432,14 +427,6 @@ public:
     std::copy(Jlap_t.begin(),Jlap_t.end(), std::ostream_iterator<RealType>(os,", "));
     os << std::endl << std::endl;
   }
-
-
-
-  //void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
-  //{
-  //  APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in "+ClassName+" class.");
-  //}
-
   
   GradType evalGrad(ParticleSet& P, int iat)
   {
@@ -447,37 +434,6 @@ public:
     return Jgrad[iat];
   }
 
-
-  /////** return the logarithmic gradient for the iat-th particle
-  //// * of the source particleset
-  //// * @param Pquantum particle set
-  //// * @param iat particle index
-  //// * @return the gradient of the iat-th particle
-  //// */
-  //GradType evalGradSource(ParticleSet& P,
-  //                                ParticleSet& source,
-  //                                int iat);
-
-  /////** Adds the gradient w.r.t. the iat-th particle of the
-  //// *  source particleset (ions) of the logarithmic gradient
-  //// *  and laplacian w.r.t. the target paritlceset (electrons).
-  //// * @param P quantum particle set (electrons)
-  //// * @param source classical particle set (ions)
-  //// * @param iat particle index of source (ion)
-  //// * @param the ion gradient of the elctron gradient
-  //// * @param the ion gradient of the elctron laplacian.
-  //// * @return the log gradient of psi w.r.t. the source particle iat
-  //// */
-  //GradType evalGradSource
-  //(ParticleSet& P, ParticleSet& source, int iat,
-  // TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-  // TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
-
-  /** evaluate the ratio of the new to old orbital value
-   * @param P the active ParticleSet
-   * @param iat the index of a particle
-   * @param grad_iat Gradient for the active particle
-   */
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     evaluateTempExponents(P,iat);
@@ -485,10 +441,6 @@ public:
     return std::exp(Jval_t - Jval);
   }
 
-  /** a move for iat-th particle is accepted. Update the content for the next moves
-   * @param P target ParticleSet
-   * @param iat index of the particle whose new position was proposed
-   */
   void acceptMove(ParticleSet& P, int iat)
   {
     C->acceptMove(P,iat);
@@ -511,38 +463,19 @@ public:
     }
   }
 
-
-
-  /** a move for iat-th particle is reject. Restore to the content.
-   * @param iat index of the particle whose new position was proposed
-   */
   void restore(int iat)
   {
     C->restore(iat);
   }
 
-  /** evalaute the ratio of the new to old orbital value
-   *@param P the active ParticleSet
-   *@param iat the index of a particle
-   *@return \f$ \psi( \{ {\bf R}^{'} \} )/ \psi( \{ {\bf R}^{'}\})\f$
-   *
-   *Specialized for particle-by-particle move.
-   */
   ValueType ratio(ParticleSet& P, int iat)
   {
     evaluateTempExponents(P,iat);
     return std::exp(Jval_t - Jval);
   }
 
-  /** For particle-by-particle move. Requests space in the buffer
-   *  based on the data type sizes of the objects in this class.
-   * @param P particle set
-   * @param buf Anonymous storage
-   */
   void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    // calculates logPsi and registers data with Pooled data ( .add)
-    // underlying PooledData is a vector which is traversed sequentially
     RealType logValue = evaluateLog(P,P.G,P.L);
     RealType *Jlap_begin = &Jlap[0];
     RealType *Jlap_end = Jlap_begin + Jlap.size();
@@ -553,20 +486,10 @@ public:
     buf.add(Jlap_begin, Jlap_end);
     buf.add(Jgrad_begin,Jgrad_end);
     DEBUG_PSIBUFFER(" CountingJastrow::registerData",buf.current());
-    //return logValue;
   }
 
-  /** For particle-by-particle move. Put the objects of this class
-   *  in the walker buffer or forward the memory cursor.
-   * @param P particle set
-   * @param buf Anonymous storage
-   * @param fromscratch request recomputing the precision critical
-   *        pieces of wavefunction from scratch
-   * @return log value of the wavefunction.
-   */
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {
-    // need to recompute?
     RealType logValue = evaluateLog(P,P.G,P.L);
     RealType *Jlap_begin = &Jlap[0];
     RealType *Jlap_end = Jlap_begin + Jlap.size();
@@ -580,17 +503,8 @@ public:
     return Jval;
   }
 
-  /** For particle-by-particle move. Copy data or attach memory
-   *  from a walker buffer to the objects of this class.
-   *  The log value, P.G and P.L contribution from the objects
-   *  of this class are also added.
-   * @param P particle set
-   * @param buf Anonymous storage
-   */
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
-    // copy buffer to wavefunction variables (.get)
-    // buf.get(...), same order as before
     RealType *Jlap_begin = &Jlap[0];
     RealType *Jlap_end = Jlap_begin + Jlap.size();
     RealType *Jgrad_begin = &Jgrad[0][0];
@@ -605,113 +519,13 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const 
   {
-    CountingJastrowOrbital* cjo = new CountingJastrowOrbital(tqp, this->C, this->F, this->G);
+    CountingJastrowOrbital* cjo = new CountingJastrowOrbital(tqp, C, F, G);
     cjo->setOptimizable(opt_C || opt_G || opt_F);
-    cjo->addOpt(this->opt_C, this->opt_G, this->opt_F);
-    cjo->addDebug(this->debug, this->debug_seqlen, this->debug_period);
+    cjo->addOpt(opt_C, opt_G, opt_F);
+    cjo->addDebug(debug, debug_seqlen, debug_period);
     cjo->initialize();
     return cjo;
   }
-
-
-//  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
-//  {
-//  }
-
-//  void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
-//    std::vector<ValueType>& ratios, Matrix<ValueType>& dratios)
-//  {
-//  }
-
-
-//  void evaluateTempDerivatives(ParticleSet& P, 
-//       const opt_variables_type& active, 
-//       RealType& ratioval,
-//       std::vector<RealType>& dlogpsi_t,
-//       int iat,
-//       PosType dr)
-//  {
-//    // assume that current state is determined by having called
-//    // evaluateDerivatives(P,...) immediately before this function
-//    //P.makeMoveAndCheck(iat,dr);
-//    ratioval = ratio(P,iat);
-//    // all non-temp variables are set to values associated with position P
-//    // all temp (_t) variables are set to values for moved position 
-//    // evaluate log of F parameter derivs at moved position
-//  
-//    if(opt_F)
-//    {
-//      for(int oi = 0; oi < opt_index[OPT_F].size(); ++oi)
-//      {
-//  
-//        std::string id = opt_id[OPT_F][oi];
-//        int ia = myVars.getIndex(id);
-//        if(ia == -1)
-//          continue; // ignore inactive parameters
-//        int IJ = opt_index[OPT_F][oi];
-//        int I = IJ/num_regions;
-//        int J = IJ%num_regions;
-//        // coefficient due to symmetry of F: \sum\limits_{I} F_{II} C_I^2 + \sum\limits_{J > I} 2 F_{IJ}*C_I*C_J
-//        RealType x = (I==J)?1:2;
-//        RealType dJF_val = x*(C->sum_t(I)*C->sum_t(J));
-//        dlogpsi_t[ia] += dJF_val;
-//      }
-//    }
-//    // evaluate partial derivatives of G at moved position
-//    if(opt_G)
-//    {
-//      for(int oi = 0; oi < opt_index[OPT_G].size(); ++oi)
-//      {
-//        std::string id = opt_id[OPT_G][oi];
-//        int ia = myVars.getIndex(id);
-//        if(ia == -1)
-//          continue; // ignore inactive params
-//        int I = opt_index[OPT_G][oi];
-//        RealType dJG_val = C->sum_t(I);
-//        dlogpsi_t[ia] += dJG_val;
-//      }
-//    }
-//  
-//    if(opt_C)
-//    {
-//      // difference; easier to calculate than absolute values
-//      static std::vector<RealType> dCdiff;
-//      static int max_num_derivs = C->max_num_derivs();
-//      dCdiff.resize(max_num_derivs*num_regions);
-//      // easy-index functions for evaluateDerivatives calls
-//      std::function<RealType&(int,int)> _dCsum  = [&](int I, int p)->RealType&{ return dCsum[p*num_regions + I]; }; 
-//      std::function<RealType&(int,int)> _dCdiff = [&](int I, int p)->RealType&{ return dCdiff[p*num_regions + I]; }; 
-//      // pointer to C->C[I]->myVars.Index
-//      // for pI in { 0 .. C->num_derivs(I) }
-//      //   dCindex->[pI]  is the index that corresponds to this parameter in active.
-//      //   i.e., active[dCindex->[pI]] <=> C->C[I]->myVars.Index[pI]
-//      std::fill(dCdiff.begin(), dCdiff.end(), 0);
-//      for(int I = 0; I < num_regions; ++I)
-//      {
-//        // get the number of active parameters for the Ith counting region
-//        opt_variables_type I_vars = C->getVars(I); 
-//        int I_num_derivs = I_vars.size();
-//        // evaluateTempDerivatives increments difference of derivative to dCdiff 
-//        C->evaluateTempDerivatives(P, I, iat, _dCdiff);
-//        // loop over parameters for the Ith counting function
-//        for(int pI = 0; pI < I_num_derivs; ++pI)
-//        {
-//          // index for active optimizable variables
-//          int ia = I_vars.Index[pI];
-//          if(ia == -1)
-//            continue; // ignore inactive
-//          for(int J = 0; J < num_regions; ++J)
-//          {
-//            dlogpsi_t[ia] += (_dCsum(J,pI) + _dCdiff(J,pI))*(2*FCsum_t[J] + G[J]);
-//          }
-//        }
-//      }
-//  
-//    } // end opt_C
-//  
-//    // move particle back to the original position
-//    //P.makeMoveAndCheck(iat,-1.0*dr);
-//  }
 
   void evaluateDerivatives(ParticleSet& P, const opt_variables_type& active, 
     std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
@@ -767,10 +581,8 @@ public:
         dhpsioverpsi[ia] += -0.5*dJG_lap - dJG_gg;
       }
     }
-  //
   //  // evaluate partial derivatives of C
     static int deriv_print_index = 0;
-  //
     if(opt_C)
     {
       // containers for CountingRegions' evaluateDerivatives calculations
@@ -908,13 +720,6 @@ public:
     }
   }
 
-//  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
-//    std::vector<RealType>& dgradlogpsi) 
-//  {
-//    dPsi->evaluateGradDerivatives(const ParticleSet::ParticleGradient_t&G_in,
-//      std::vector<RealType>& dgradlogpsi);
-//  }
-
   void addOpt(bool opt_C_flag, bool opt_G_flag, bool opt_F_flag)
   {
     opt_F = opt_F_flag;
@@ -927,7 +732,6 @@ public:
     debug = debug_flag;
     debug_seqlen = seqlen;
     debug_period = period;
-//    app_log() << " addDebug, seqlen: " << seqlen << ", period: " << period << std::endl;
   }
 
 };
