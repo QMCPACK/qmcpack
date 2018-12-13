@@ -11,14 +11,20 @@ from numpy import ndarray,array,abs
 scriptpath=os.path.realpath(__file__)
 parent_dir=os.path.dirname(os.path.dirname(scriptpath))
 
+# allow override during install
+host_dir = None
+if host_dir is not None:
+    parent_dir = host_dir
+#end if
+
 # save nexus directories
-library_dir   = os.path.join(parent_dir,'library')
+library_dir   = os.path.join(parent_dir,'lib')
 test_dir      = os.path.join(parent_dir,'tests')
 reference_dir = os.path.join(parent_dir,'tests/reference')
 example_dir   = os.path.join(parent_dir,'examples')
 
 # ensure that nxs-test executable is resident in a nexus directory tree
-dirs_check = ['examples','executables','library','tests','tests/reference']
+dirs_check = ['examples','bin','lib','tests','tests/reference']
 for d in dirs_check:
     pd = os.path.join(parent_dir,d)
     if not os.path.exists(pd):
