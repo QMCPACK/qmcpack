@@ -159,16 +159,18 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   }
 
   auto *CJ = new CJOrbitalType(targetPtcl, C, F, G);
-//  auto *dCJ = new DiffCJOrbitalType(targetPtcl);
 
   CJ->addDebug(debug_flag, seqlen, period);
-//  dCJ->addDebug(seqlen, period);
   CJ->addOpt(opt_C,opt_G,opt_F);
-//  dCJ->addRegion(C);
-
   CJ->setOptimizable(opt_C || opt_G || opt_F);
   CJ->initialize();
+
+//  auto *dCJ = new DiffCJOrbitalType(targetPtcl);
+//  dCJ->addDebug(seqlen, period);
+//  dCJ->addRegion(C);
+//  dCJ->initialize();
 //  CJ->dPsi = dCJ;
+
 
   std::string cjname = "CJ_"+RegionOpt;
   targetPsi.addOrbital(CJ,cjname.c_str());

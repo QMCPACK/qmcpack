@@ -173,6 +173,7 @@ public:
     // print some class variables:
     os << "NormalizedGaussianRegion::reportStatus begin" << std::endl;
     os << "num_els: " << num_els << ", num_regions: " << num_regions << std::endl;
+    os << "Normalized: " << (normalized?"true":"false") << std::endl;
     os << "Counting Functions: " << std::endl;
     for(int I = 0; I < C.size(); ++I)
       C[I]->reportStatus(os);

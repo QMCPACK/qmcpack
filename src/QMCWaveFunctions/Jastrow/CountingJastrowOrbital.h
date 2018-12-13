@@ -79,17 +79,11 @@ protected:
 
 public:
   // constructor
-  CountingJastrowOrbital(ParticleSet& P)
-  {
-    num_els = P.getTotalNum();
-  }
-  // constructor
-  CountingJastrowOrbital(ParticleSet& P, RegionType* c, Matrix<RealType>& f, std::vector<RealType>& g):
+  CountingJastrowOrbital(ParticleSet& P, RegionType* c, const Matrix<RealType>& f, const std::vector<RealType>& g):
     F(f), G(g), C(c)
   {
     num_els = P.getTotalNum();
   }
-  
 
   void checkInVariables(opt_variables_type& active)
   {
@@ -205,6 +199,7 @@ public:
           }
         }
     }
+
     // only use G when regions aren't normalized
     if(opt_G && !C->normalized)
     {
@@ -268,7 +263,7 @@ public:
   {
     //num_els = P.getTotalNum();
     //initialize();
-    if(dPsi) dPsi->resetTargetParticleSet(P);
+    //if(dPsi) dPsi->resetTargetParticleSet(P);
   }
 
 
@@ -614,132 +609,115 @@ public:
    *
    * If not true, return a proxy class
    */
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const { return 0; };
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const 
+  {
+    CountingJastrowOrbital* cjo = new CountingJastrowOrbital(tqp, this->C, this->F, this->G);
+    cjo->setOptimizable(opt_C || opt_G || opt_F);
+    cjo->addOpt(this->opt_C, this->opt_G, this->opt_F);
+    cjo->addDebug(this->debug, this->debug_seqlen, this->debug_period);
+    cjo->initialize();
+    return cjo;
+  }
 
 
-//  virtual void multiplyDerivsByOrbR(std::vector<RealType>& dlogpsi)
+//  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 //  {
-//    RealType myrat = std::exp(LogValue)*std::cos(PhaseValue);
-//    for(int j=0; j<myVars.size(); j++)
+//  }
+//
+//  void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
+//    std::vector<ValueType>& ratios, Matrix<ValueType>& dratios)
+//  {
+//  }
+
+
+//  void evaluateTempDerivatives(ParticleSet& P, 
+//       const opt_variables_type& active, 
+//       RealType& ratioval,
+//       std::vector<RealType>& dlogpsi_t,
+//       int iat,
+//       PosType dr)
+//  {
+//    // assume that current state is determined by having called
+//    // evaluateDerivatives(P,...) immediately before this function
+//    //P.makeMoveAndCheck(iat,dr);
+//    ratioval = ratio(P,iat);
+//    // all non-temp variables are set to values associated with position P
+//    // all temp (_t) variables are set to values for moved position 
+//    // evaluate log of F parameter derivs at moved position
+//  
+//    if(opt_F)
 //    {
-//      int loc=myVars.where(j);
-//      dlogpsi[loc] *= myrat;
+//      for(int oi = 0; oi < opt_index[OPT_F].size(); ++oi)
+//      {
+//  
+//        std::string id = opt_id[OPT_F][oi];
+//        int ia = myVars.getIndex(id);
+//        if(ia == -1)
+//          continue; // ignore inactive parameters
+//        int IJ = opt_index[OPT_F][oi];
+//        int I = IJ/num_regions;
+//        int J = IJ%num_regions;
+//        // coefficient due to symmetry of F: \sum\limits_{I} F_{II} C_I^2 + \sum\limits_{J > I} 2 F_{IJ}*C_I*C_J
+//        RealType x = (I==J)?1:2;
+//        RealType dJF_val = x*(C->sum_t(I)*C->sum_t(J));
+//        dlogpsi_t[ia] += dJF_val;
+//      }
 //    }
-//  };
-
-
-  void finalizeOptimization() { }
-
-  ///** evaluate the ratios of one virtual move with respect to all the particles
-  // * @param P reference particleset
-  // * @param ratios \f$ ratios[i]=\{{\bf R}\}\rightarrow {r_0,\cdots,r_i^p=pos,\cdots,r_{N-1}}\f$
-  // */
-  //void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
-
-  /** evaluate ratios to evaluate the non-local PP
-   * @param VP VirtualParticleSet
-   * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
-   */
-  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
-  {
-  }
-
-  void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
-    std::vector<ValueType>& ratios, Matrix<ValueType>& dratios)
-  {
-//    evaluateRatios(VP, ratios);
-//    dPsi->evaluateDerivRatios(VP, optvars, dratios);
-  }
-
-
-  void evaluateTempDerivatives(ParticleSet& P, 
-       const opt_variables_type& active, 
-       RealType& ratioval,
-       std::vector<RealType>& dlogpsi_t,
-       int iat,
-       PosType dr)
-  {
-    // assume that current state is determined by having called
-    // evaluateDerivatives(P,...) immediately before this function
-    //P.makeMoveAndCheck(iat,dr);
-    ratioval = ratio(P,iat);
-    // all non-temp variables are set to values associated with position P
-    // all temp (_t) variables are set to values for moved position 
-    // evaluate log of F parameter derivs at moved position
-  
-    if(opt_F)
-    {
-      for(int oi = 0; oi < opt_index[OPT_F].size(); ++oi)
-      {
-  
-        std::string id = opt_id[OPT_F][oi];
-        int ia = myVars.getIndex(id);
-        if(ia == -1)
-          continue; // ignore inactive parameters
-        int IJ = opt_index[OPT_F][oi];
-        int I = IJ/num_regions;
-        int J = IJ%num_regions;
-        // coefficient due to symmetry of F: \sum\limits_{I} F_{II} C_I^2 + \sum\limits_{J > I} 2 F_{IJ}*C_I*C_J
-        RealType x = (I==J)?1:2;
-        RealType dJF_val = x*(C->sum_t(I)*C->sum_t(J));
-        dlogpsi_t[ia] += dJF_val;
-      }
-    }
-    // evaluate partial derivatives of G at moved position
-    if(opt_G)
-    {
-      for(int oi = 0; oi < opt_index[OPT_G].size(); ++oi)
-      {
-        std::string id = opt_id[OPT_G][oi];
-        int ia = myVars.getIndex(id);
-        if(ia == -1)
-          continue; // ignore inactive params
-        int I = opt_index[OPT_G][oi];
-        RealType dJG_val = C->sum_t(I);
-        dlogpsi_t[ia] += dJG_val;
-      }
-    }
-  
-    if(opt_C)
-    {
-      // difference; easier to calculate than absolute values
-      static std::vector<RealType> dCdiff;
-      static int max_num_derivs = C->max_num_derivs();
-      dCdiff.resize(max_num_derivs*num_regions);
-      // easy-index functions for evaluateDerivatives calls
-      std::function<RealType&(int,int)> _dCsum  = [&](int I, int p)->RealType&{ return dCsum[p*num_regions + I]; }; 
-      std::function<RealType&(int,int)> _dCdiff = [&](int I, int p)->RealType&{ return dCdiff[p*num_regions + I]; }; 
-      // pointer to C->C[I]->myVars.Index
-      // for pI in { 0 .. C->num_derivs(I) }
-      //   dCindex->[pI]  is the index that corresponds to this parameter in active.
-      //   i.e., active[dCindex->[pI]] <=> C->C[I]->myVars.Index[pI]
-      std::fill(dCdiff.begin(), dCdiff.end(), 0);
-      for(int I = 0; I < num_regions; ++I)
-      {
-        // get the number of active parameters for the Ith counting region
-        opt_variables_type I_vars = C->getVars(I); 
-        int I_num_derivs = I_vars.size();
-        // evaluateTempDerivatives increments difference of derivative to dCdiff 
-        C->evaluateTempDerivatives(P, I, iat, _dCdiff);
-        // loop over parameters for the Ith counting function
-        for(int pI = 0; pI < I_num_derivs; ++pI)
-        {
-          // index for active optimizable variables
-          int ia = I_vars.Index[pI];
-          if(ia == -1)
-            continue; // ignore inactive
-          for(int J = 0; J < num_regions; ++J)
-          {
-            dlogpsi_t[ia] += (_dCsum(J,pI) + _dCdiff(J,pI))*(2*FCsum_t[J] + G[J]);
-          }
-        }
-      }
-  
-    } // end opt_C
-  
-    // move particle back to the original position
-    //P.makeMoveAndCheck(iat,-1.0*dr);
-  }
+//    // evaluate partial derivatives of G at moved position
+//    if(opt_G)
+//    {
+//      for(int oi = 0; oi < opt_index[OPT_G].size(); ++oi)
+//      {
+//        std::string id = opt_id[OPT_G][oi];
+//        int ia = myVars.getIndex(id);
+//        if(ia == -1)
+//          continue; // ignore inactive params
+//        int I = opt_index[OPT_G][oi];
+//        RealType dJG_val = C->sum_t(I);
+//        dlogpsi_t[ia] += dJG_val;
+//      }
+//    }
+//  
+//    if(opt_C)
+//    {
+//      // difference; easier to calculate than absolute values
+//      static std::vector<RealType> dCdiff;
+//      static int max_num_derivs = C->max_num_derivs();
+//      dCdiff.resize(max_num_derivs*num_regions);
+//      // easy-index functions for evaluateDerivatives calls
+//      std::function<RealType&(int,int)> _dCsum  = [&](int I, int p)->RealType&{ return dCsum[p*num_regions + I]; }; 
+//      std::function<RealType&(int,int)> _dCdiff = [&](int I, int p)->RealType&{ return dCdiff[p*num_regions + I]; }; 
+//      // pointer to C->C[I]->myVars.Index
+//      // for pI in { 0 .. C->num_derivs(I) }
+//      //   dCindex->[pI]  is the index that corresponds to this parameter in active.
+//      //   i.e., active[dCindex->[pI]] <=> C->C[I]->myVars.Index[pI]
+//      std::fill(dCdiff.begin(), dCdiff.end(), 0);
+//      for(int I = 0; I < num_regions; ++I)
+//      {
+//        // get the number of active parameters for the Ith counting region
+//        opt_variables_type I_vars = C->getVars(I); 
+//        int I_num_derivs = I_vars.size();
+//        // evaluateTempDerivatives increments difference of derivative to dCdiff 
+//        C->evaluateTempDerivatives(P, I, iat, _dCdiff);
+//        // loop over parameters for the Ith counting function
+//        for(int pI = 0; pI < I_num_derivs; ++pI)
+//        {
+//          // index for active optimizable variables
+//          int ia = I_vars.Index[pI];
+//          if(ia == -1)
+//            continue; // ignore inactive
+//          for(int J = 0; J < num_regions; ++J)
+//          {
+//            dlogpsi_t[ia] += (_dCsum(J,pI) + _dCdiff(J,pI))*(2*FCsum_t[J] + G[J]);
+//          }
+//        }
+//      }
+//  
+//    } // end opt_C
+//  
+//    // move particle back to the original position
+//    //P.makeMoveAndCheck(iat,-1.0*dr);
+//  }
 
 
 
@@ -747,8 +725,8 @@ public:
     std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
   {
     evaluateExponents(P);
-    // indices, strings
-    // evaluate derivatives of F
+  //  // indices, strings
+  //  // evaluate derivatives of F
     if(opt_F)
     {
       for(int oi = 0; oi < opt_index[OPT_F].size(); ++oi)
@@ -777,7 +755,7 @@ public:
     }
   
     // evaluate partial derivatives of G
-    if(opt_G)
+    if(opt_G && !C->normalized)
     {
       RealType dJG_val, dJG_gg, dJG_lap;
       for(int oi = 0; oi < opt_index[OPT_G].size(); ++oi)
@@ -798,10 +776,10 @@ public:
         dhpsioverpsi[ia] += -0.5*dJG_lap - dJG_gg;
       }
     }
-  
-    // evaluate partial derivatives of C
-    static int deriv_print_index = 0;
-  
+  //
+  //  // evaluate partial derivatives of C
+  //  static int deriv_print_index = 0;
+  //
     if(opt_C)
     {
       // containers for CountingRegions' evaluateDerivatives calculations
@@ -840,24 +818,24 @@ public:
       //   i.e., active[dCindex->[pI]] <=> C->C[I]->myVars.Index[pI]
   
       // external print block
-      if(debug && deriv_print_index < debug_seqlen)
-      {
-        app_log() << std::endl << "=== evaluateDerivatives ===" << std::endl;
-        app_log() << "== print current exponent values ==" << std::endl;
-        evaluateExponents_print(app_log(),P);
-        app_log() << "== additional counting function terms ==" << std::endl;
-        app_log() << "P.G: ";
-        std::copy(P.G.begin(), P.G.end(), std::ostream_iterator<GradType>(app_log(), ", "));
-        app_log() << std::endl << "FCgrad: ";
-        std::copy(FCgrad.begin(), FCgrad.end(), std::ostream_iterator<GradType>(app_log(), ", "));
-        app_log() << std::endl << "FClap: ";
-        std::copy(FClap.begin(), FClap.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-        app_log() << std::endl << "FCggsum: ";
-        std::copy(FCggsum.begin(), FCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-        app_log() << std::endl << "FClapsum: ";
-        std::copy(FClapsum.begin(), FClapsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-        app_log() << std::endl;
-      }
+//      if(debug && deriv_print_index < debug_seqlen)
+//      {
+//        app_log() << std::endl << "=== evaluateDerivatives ===" << std::endl;
+//        app_log() << "== print current exponent values ==" << std::endl;
+//        evaluateExponents_print(app_log(),P);
+//        app_log() << "== additional counting function terms ==" << std::endl;
+//        app_log() << "P.G: ";
+//        std::copy(P.G.begin(), P.G.end(), std::ostream_iterator<GradType>(app_log(), ", "));
+//        app_log() << std::endl << "FCgrad: ";
+//        std::copy(FCgrad.begin(), FCgrad.end(), std::ostream_iterator<GradType>(app_log(), ", "));
+//        app_log() << std::endl << "FClap: ";
+//        std::copy(FClap.begin(), FClap.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+//        app_log() << std::endl << "FCggsum: ";
+//        std::copy(FCggsum.begin(), FCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+//        app_log() << std::endl << "FClapsum: ";
+//        std::copy(FClapsum.begin(), FClapsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+//        app_log() << std::endl;
+//      }
   
       for(int I = 0; I < num_regions; ++I)
       {
@@ -871,30 +849,30 @@ public:
         std::fill(dCFCggsum.begin(),dCFCggsum.end(),0);
         // evaluate all derivatives for the Ith counting function
         C->evaluateDerivatives(P, I, _FCgrad, _dCsum, _dCggsum, _dClapsum, dCFCggsum);
-        if(debug && deriv_print_index < debug_seqlen)
-        {
-          // print out current index information
-          app_log() << std::endl;
-          app_log() << "  == evaluateDerivatives for counting region " << I << ", num_derivs: " << I_num_derivs << " ==" << std::endl;
-          app_log() << "  Indices: ";
-          std::copy(I_vars.Index.begin(), I_vars.Index.end(), std::ostream_iterator<int>(app_log(),", "));
-          app_log() << std::endl << "  Names: ";
-          for(auto it = I_vars.NameAndValue.begin(); it != I_vars.NameAndValue.end(); ++it)
-            app_log() << (*it).first << ", ";
-          app_log() << std::endl << "  Values: ";
-          for(auto it = I_vars.NameAndValue.begin(); it != I_vars.NameAndValue.end(); ++it)
-            app_log() << (*it).second << ", ";
-          // print out values from evaluate derivatives
-          app_log() << std::endl << "  dCsum: ";
-          std::copy(dCsum.begin(), dCsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-          app_log() << std::endl << "  dCggsum: ";
-          std::copy(dCggsum.begin(), dCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-          app_log() << std::endl << "  dClapsum: ";
-          std::copy(dClapsum.begin(), dClapsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-          app_log() << std::endl << "  dCFCggsum: ";
-          std::copy(dCFCggsum.begin(), dCFCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-          app_log() << std::endl;
-        }
+//        if(debug && deriv_print_index < debug_seqlen)
+//        {
+//          // print out current index information
+//          app_log() << std::endl;
+//          app_log() << "  == evaluateDerivatives for counting region " << I << ", num_derivs: " << I_num_derivs << " ==" << std::endl;
+//          app_log() << "  Indices: ";
+//          std::copy(I_vars.Index.begin(), I_vars.Index.end(), std::ostream_iterator<int>(app_log(),", "));
+//          app_log() << std::endl << "  Names: ";
+//          for(auto it = I_vars.NameAndValue.begin(); it != I_vars.NameAndValue.end(); ++it)
+//            app_log() << (*it).first << ", ";
+//          app_log() << std::endl << "  Values: ";
+//          for(auto it = I_vars.NameAndValue.begin(); it != I_vars.NameAndValue.end(); ++it)
+//            app_log() << (*it).second << ", ";
+//          // print out values from evaluate derivatives
+//          app_log() << std::endl << "  dCsum: ";
+//          std::copy(dCsum.begin(), dCsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+//          app_log() << std::endl << "  dCggsum: ";
+//          std::copy(dCggsum.begin(), dCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+//          app_log() << std::endl << "  dClapsum: ";
+//          std::copy(dClapsum.begin(), dClapsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+//          app_log() << std::endl << "  dCFCggsum: ";
+//          std::copy(dCFCggsum.begin(), dCFCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+//          app_log() << std::endl;
+//        }
         // loop over parameters for the Ith counting function
         for(int pI = 0; pI < I_num_derivs; ++pI)
         {
@@ -904,12 +882,12 @@ public:
             continue; // ignore inactive
           // middle laplacian term: 
           dhpsioverpsi[ia] += -0.5*(4.0*dCFCggsum[pI]);
-          if(debug && deriv_print_index < debug_seqlen)
-          {
-            app_log() << "    == evaluateDerivatives calculations ==" << std::endl;
-            app_log() << "    pI: " << pI << ", name: " <<  I_vars.name(pI) <<  ", ia: " << ia << std::endl;
-            app_log() << "    dCFCggsum: " << dCFCggsum[pI] << std::endl;
-          }
+//          if(debug && deriv_print_index < debug_seqlen)
+//          {
+//            app_log() << "    == evaluateDerivatives calculations ==" << std::endl;
+//            app_log() << "    pI: " << pI << ", name: " <<  I_vars.name(pI) <<  ", ia: " << ia << std::endl;
+//            app_log() << "    dCFCggsum: " << dCFCggsum[pI] << std::endl;
+//          }
           for(int J = 0; J < num_regions; ++J)
           {
             dlogpsi[ia] += _dCsum(J,pI)*(2*FCsum[J] + G[J]);
@@ -917,13 +895,13 @@ public:
             dhpsioverpsi[ia] += -1.0*( _dCggsum(J,pI)*(2.0*FCsum[J] + G[J]) + _dCsum(J,pI)*2.0*FCggsum[J]  );
             // outer laplacian terms
             dhpsioverpsi[ia] += -0.5*( 2.0*_dCsum(J,pI)*FClapsum[J] + _dClapsum(J,pI)*(2.0*FCsum[J] + G[J]) ) ;
-            if(debug && deriv_print_index < debug_seqlen)
-            {
-              app_log() << "      J: " << J << std::endl;
-              app_log() << "      dlogpsi term          : " << _dCsum(J,pI)*(2*FCsum[J] + G[J]) << std::endl;
-              app_log() << "      dhpsi/psi, graddotgrad: " << -1.0*( _dCggsum(J,pI)*(2.0*FCsum[J] + G[J]) + _dCsum(J,pI)*2.0*FCggsum[J]  ) << std::endl;
-              app_log() << "      dhpsi/psi, laplacian  : " << -0.5*( 2.0*_dCsum(J,pI)*FClapsum[J] + _dClapsum(J,pI)*(2.0*FCsum[J] + G[J]) ) << std::endl;
-            }
+//            if(debug && deriv_print_index < debug_seqlen)
+//            {
+//              app_log() << "      J: " << J << std::endl;
+//              app_log() << "      dlogpsi term          : " << _dCsum(J,pI)*(2*FCsum[J] + G[J]) << std::endl;
+//              app_log() << "      dhpsi/psi, graddotgrad: " << -1.0*( _dCggsum(J,pI)*(2.0*FCsum[J] + G[J]) + _dCsum(J,pI)*2.0*FCggsum[J]  ) << std::endl;
+//              app_log() << "      dhpsi/psi, laplacian  : " << -0.5*( 2.0*_dCsum(J,pI)*FClapsum[J] + _dClapsum(J,pI)*(2.0*FCsum[J] + G[J]) ) << std::endl;
+//            }
   
   
           }
@@ -931,9 +909,9 @@ public:
       }
   
     } // end opt_C
-    // increment and modulo deriv_print_index
-    deriv_print_index = deriv_print_index % debug_period;
-    deriv_print_index++;
+  //  // increment and modulo deriv_print_index
+  //  deriv_print_index = deriv_print_index % debug_period;
+  //  deriv_print_index++;
   }
 
 //  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
