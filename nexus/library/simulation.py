@@ -432,14 +432,20 @@ class Simulation(NexusCore):
 
 
     def init_job(self):
-        if self.job==None:
+        if self.job is None:
             self.error('job not provided.  Input field job must be set to a Job object.')
         elif not isinstance(self.job,Job):
             self.error('Input field job must be set to a Job object\nyou provided an object of type: {0}\nwith value: {1}'.format(self.job.__class__.__name__,self.job))
         #end if
         self.job = self.job.copy()
+        self.init_job_extra()
         self.job.initialize(self)
     #end def init_job
+
+
+    def init_job_extra(self):
+        None
+    #end def init_job_extra
 
 
     def set_app_name(self,app_name):
