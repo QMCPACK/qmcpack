@@ -54,6 +54,7 @@ def render_array(a,n):
 #end def render_array
 
 
+
 class PyscfInput(SimulationInputTemplateDev):
 
     basic_types = bool,int,float,str,tuple,list,dict
@@ -117,19 +118,22 @@ class PyscfInput(SimulationInputTemplateDev):
     
 
     def __init__(self,
-                 template = None,   # path to template input file
-                 prefix   = None,   # $prefix var for file prefixes
-                 custom   = None,   # obj w/ $ prefixed vars in template
-                 system   = None,   # physical system object
-                 mole     = None,   # obj w/ Mole variables
-                 cell     = None,   # obj w/ Cell variables
-                 sys_var  = None,   # local var name for Mole/Cell
-                 mole_var = 'mol',  # local var name for Mole in written input
-                 cell_var = 'cell', # local var name for Cell in written input
-                 save_qmc = False,  # convert to QMCPACK format
-                 mf_var   = 'mf',   # local var name for mf, used for convert
-                 filepath = None,   # alias for template
-                 text     = None,   # full text of (and alternate to) template 
+                 template   = None,   # path to template input file
+                 prefix     = None,   # $prefix var for file prefixes
+                 custom     = None,   # obj w/ $ prefixed vars in template
+                 system     = None,   # physical system object
+                 units      = None,   # input units desired
+                 use_folded = True,   # use folded system/primitive cell
+                 mole       = None,   # obj w/ Mole variables
+                 cell       = None,   # obj w/ Cell variables
+                 sys_var    = None,   # local var name for Mole/Cell
+                 mole_var   = 'mol',  # local var name for Mole in written input
+                 cell_var   = 'cell', # local var name for Cell in written input
+                 save_qmc   = False,  # convert to QMCPACK format
+                 mf_var     = 'mf',   # local var name for mf, used for convert
+                 kpts_var   = 'kpts', # local var name for kpts, used for convert
+                 filepath   = None,   # alias for template
+                 text       = None,   # full text of (and alternate to) template 
                  ):
         if filepath is None and template is not None:
             filepath = template
@@ -138,7 +142,7 @@ class PyscfInput(SimulationInputTemplateDev):
 
         self.prefix   = prefix
         self.save_qmc = save_qmc
-        self.addendum = None
+        self.addendum = None     # used for save2qmcpack
 
         if custom is not None:
             self.assign(**custom)
@@ -173,10 +177,14 @@ class PyscfInput(SimulationInputTemplateDev):
             if 'system' not in self.keywords:
                 self.error('cannot incorporate "system" input\n$system is not present in template input'+extra)
             #end if
-            if system.has_folded():
+            system = system.copy() # make a local copy
+            if use_folded and system.has_folded():
                 system = system.folded_system
             #end if
             s = system.structure
+            if units is not None:
+                s.change_units(units)
+            #end if
             is_solid    = s.has_axes()
             is_molecule = not is_solid
             if is_solid and is_mole:
@@ -237,6 +245,7 @@ class PyscfInput(SimulationInputTemplateDev):
                 klen = max(klen,len(k))
                 has_array |= isinstance(v,ndarray)
             #end for
+            has_array |= isinstance(sys_kpoints,ndarray)
             c = '\n### generated system text ###\n'
             if has_array:
                 c += 'from numpy import array\n'
@@ -269,6 +278,9 @@ class PyscfInput(SimulationInputTemplateDev):
                 #end if
             #end for
             c += '{0}.build()\n'.format(sys_var)
+            if sys_kpoints is not None:
+                c += '{0} = {1}\n'.format(kpts_var,render_array(sys_kpoints,4))
+            #end if
             c += '### end generated system text ###\n\n'
             self.assign(system=c)
         #end if
@@ -286,7 +298,11 @@ class PyscfInput(SimulationInputTemplateDev):
             #end if
             s = '### generated conversion text ###\n'
             s += 'from PyscfToQmcpack import savetoqmcpack\n'
-            s += "savetoqmcpack({0},{1},'{2}')\n".format(sys_var,mf_var,prefix)
+            if sys_kpoints is None:
+                s += "savetoqmcpack({0},{1},'{2}')\n".format(sys_var,mf_var,prefix)
+            else:
+                s += "savetoqmcpack({0},{1},'{2}',{3})\n".format(sys_var,mf_var,prefix,kpts_var)
+            #end if
             s += '### end generated conversion text ###\n'
             self.addendum = '\n'+s+'\n'
         #end if
@@ -302,6 +318,7 @@ class PyscfInput(SimulationInputTemplateDev):
         return text
     #end def write_text
 #end class PyscfInput
+
 
 
 def generate_pyscf_input(*args,**kwargs):
