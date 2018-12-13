@@ -191,7 +191,6 @@ public:
         std::transform(name.begin(),name.end(),name.begin(), (int (*)(int)) std::tolower);
         if(name == "a") // input is the upper-triangle of A
         {
-          // bits still correspond to sigma, theta optimization 
           opt_A.resize(6);
           if(opt.size() == 6 && is_bitstr)
             std::transform(opt.begin(),opt.end(),opt_A.begin(),[&](char c){return (c == '1');} );
@@ -201,16 +200,6 @@ public:
           put_A = putContent(A_triang.begin(),A_triang.end(),cur);
           // perform conversion
           triang_to_matrix(A_triang,A);
-        }
-        if(name == "aelem") // input is A, by element
-        {
-          opt_A.resize(6);
-          if(opt.size() == 6 && is_bitstr)
-            std::transform(opt.begin(),opt.end(),opt_A.begin(),[&](char c){return (c == '1');} );
-          // default opt = true
-          else
-            std::fill(opt_A.begin(),opt_A.end(), (opt == "true") );
-          put_A = putContent(A.begin(),A.end(),cur);
         }
         if(name == "b")
         {
