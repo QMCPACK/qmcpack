@@ -70,7 +70,8 @@ bool putContent(T& a, xmlNodePtr cur)
   std::istringstream
   stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
   stream >> a;
-  return stream.good();
+  return !stream.fail();
+  //return stream.good();
   //return stream >> a;
 }
 
@@ -83,7 +84,8 @@ bool putContent(IT first, IT last, xmlNodePtr cur)
   while(success && first!=last)
   {
     stream >> *first++;
-    success=stream.good();
+    //success=stream.good();
+    success=!stream.fail();
     //success=( stream >> *first++);
   }
   return success;
