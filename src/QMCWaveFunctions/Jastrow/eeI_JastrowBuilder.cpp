@@ -61,16 +61,17 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
       int eNum2 = eSet.findSpecies (eSpecies2);
       if(iNum==iSet.size())
       {
-        APP_ABORT("species "+iSpecies+" requested for Jastrow "+jname+" does not exist in ParticleSet "+sourcePtcl->getName());
+        APP_ABORT("ion species "+iSpecies+" requested for Jastrow "+jname+" does not exist in ParticleSet "+sourcePtcl->getName());
       }
-      if(eNum1==eSet.size())
-      {
-        APP_ABORT("species "+eSpecies1+" requested for Jastrow "+jname+" does not exist in ParticleSet "+targetPtcl.getName());
-      }
+      std::string illegal_eSpecies;
+      if(eNum1==eSet.size()) illegal_eSpecies = eSpecies1;
       if(eNum2==eSet.size())
       {
-        APP_ABORT("species "+eSpecies2+" requested for Jastrow "+jname+" does not exist in ParticleSet "+targetPtcl.getName());
+        if(illegal_eSpecies.size()) illegal_eSpecies += " and ";
+        illegal_eSpecies += eSpecies2;
       }
+      if(illegal_eSpecies.size())
+        APP_ABORT("electron species "+illegal_eSpecies+" requested for Jastrow "+jname+" does not exist in ParticleSet "+targetPtcl.getName());
       functor->put (kids);
       if (sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN)
       {
