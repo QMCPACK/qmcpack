@@ -603,12 +603,6 @@ public:
     return;
   }
 
-  /** make clone
-   * @param tqp target Quantum ParticleSet
-   * @param deepcopy if true, make a decopy
-   *
-   * If not true, return a proxy class
-   */
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const 
   {
     CountingJastrowOrbital* cjo = new CountingJastrowOrbital(tqp, this->C, this->F, this->G);
@@ -623,7 +617,7 @@ public:
 //  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 //  {
 //  }
-//
+
 //  void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
 //    std::vector<ValueType>& ratios, Matrix<ValueType>& dratios)
 //  {
@@ -719,14 +713,11 @@ public:
 //    //P.makeMoveAndCheck(iat,-1.0*dr);
 //  }
 
-
-
   void evaluateDerivatives(ParticleSet& P, const opt_variables_type& active, 
     std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
   {
     evaluateExponents(P);
-  //  // indices, strings
-  //  // evaluate derivatives of F
+    // evaluate derivatives of F
     if(opt_F)
     {
       for(int oi = 0; oi < opt_index[OPT_F].size(); ++oi)
@@ -754,7 +745,7 @@ public:
       }
     }
   
-    // evaluate partial derivatives of G
+    // evaluate Derivatives of G
     if(opt_G && !C->normalized)
     {
       RealType dJG_val, dJG_gg, dJG_lap;
@@ -778,7 +769,7 @@ public:
     }
   //
   //  // evaluate partial derivatives of C
-  //  static int deriv_print_index = 0;
+    static int deriv_print_index = 0;
   //
     if(opt_C)
     {
@@ -818,24 +809,24 @@ public:
       //   i.e., active[dCindex->[pI]] <=> C->C[I]->myVars.Index[pI]
   
       // external print block
-//      if(debug && deriv_print_index < debug_seqlen)
-//      {
-//        app_log() << std::endl << "=== evaluateDerivatives ===" << std::endl;
-//        app_log() << "== print current exponent values ==" << std::endl;
-//        evaluateExponents_print(app_log(),P);
-//        app_log() << "== additional counting function terms ==" << std::endl;
-//        app_log() << "P.G: ";
-//        std::copy(P.G.begin(), P.G.end(), std::ostream_iterator<GradType>(app_log(), ", "));
-//        app_log() << std::endl << "FCgrad: ";
-//        std::copy(FCgrad.begin(), FCgrad.end(), std::ostream_iterator<GradType>(app_log(), ", "));
-//        app_log() << std::endl << "FClap: ";
-//        std::copy(FClap.begin(), FClap.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-//        app_log() << std::endl << "FCggsum: ";
-//        std::copy(FCggsum.begin(), FCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-//        app_log() << std::endl << "FClapsum: ";
-//        std::copy(FClapsum.begin(), FClapsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-//        app_log() << std::endl;
-//      }
+      if(debug && deriv_print_index < debug_seqlen)
+      {
+        app_log() << std::endl << "=== evaluateDerivatives ===" << std::endl;
+        app_log() << "== print current exponent values ==" << std::endl;
+        evaluateExponents_print(app_log(),P);
+        app_log() << "== additional counting function terms ==" << std::endl;
+        app_log() << "P.G: ";
+        std::copy(P.G.begin(), P.G.end(), std::ostream_iterator<GradType>(app_log(), ", "));
+        app_log() << std::endl << "FCgrad: ";
+        std::copy(FCgrad.begin(), FCgrad.end(), std::ostream_iterator<GradType>(app_log(), ", "));
+        app_log() << std::endl << "FClap: ";
+        std::copy(FClap.begin(), FClap.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+        app_log() << std::endl << "FCggsum: ";
+        std::copy(FCggsum.begin(), FCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+        app_log() << std::endl << "FClapsum: ";
+        std::copy(FClapsum.begin(), FClapsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+        app_log() << std::endl;
+      }
   
       for(int I = 0; I < num_regions; ++I)
       {
@@ -849,30 +840,30 @@ public:
         std::fill(dCFCggsum.begin(),dCFCggsum.end(),0);
         // evaluate all derivatives for the Ith counting function
         C->evaluateDerivatives(P, I, _FCgrad, _dCsum, _dCggsum, _dClapsum, dCFCggsum);
-//        if(debug && deriv_print_index < debug_seqlen)
-//        {
-//          // print out current index information
-//          app_log() << std::endl;
-//          app_log() << "  == evaluateDerivatives for counting region " << I << ", num_derivs: " << I_num_derivs << " ==" << std::endl;
-//          app_log() << "  Indices: ";
-//          std::copy(I_vars.Index.begin(), I_vars.Index.end(), std::ostream_iterator<int>(app_log(),", "));
-//          app_log() << std::endl << "  Names: ";
-//          for(auto it = I_vars.NameAndValue.begin(); it != I_vars.NameAndValue.end(); ++it)
-//            app_log() << (*it).first << ", ";
-//          app_log() << std::endl << "  Values: ";
-//          for(auto it = I_vars.NameAndValue.begin(); it != I_vars.NameAndValue.end(); ++it)
-//            app_log() << (*it).second << ", ";
-//          // print out values from evaluate derivatives
-//          app_log() << std::endl << "  dCsum: ";
-//          std::copy(dCsum.begin(), dCsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-//          app_log() << std::endl << "  dCggsum: ";
-//          std::copy(dCggsum.begin(), dCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-//          app_log() << std::endl << "  dClapsum: ";
-//          std::copy(dClapsum.begin(), dClapsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-//          app_log() << std::endl << "  dCFCggsum: ";
-//          std::copy(dCFCggsum.begin(), dCFCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
-//          app_log() << std::endl;
-//        }
+        if(debug && deriv_print_index < debug_seqlen)
+        {
+          // print out current index information
+          app_log() << std::endl;
+          app_log() << "  == evaluateDerivatives for counting region " << I << ", num_derivs: " << I_num_derivs << " ==" << std::endl;
+          app_log() << "  Indices: ";
+          std::copy(I_vars.Index.begin(), I_vars.Index.end(), std::ostream_iterator<int>(app_log(),", "));
+          app_log() << std::endl << "  Names: ";
+          for(auto it = I_vars.NameAndValue.begin(); it != I_vars.NameAndValue.end(); ++it)
+            app_log() << (*it).first << ", ";
+          app_log() << std::endl << "  Values: ";
+          for(auto it = I_vars.NameAndValue.begin(); it != I_vars.NameAndValue.end(); ++it)
+            app_log() << (*it).second << ", ";
+          // print out values from evaluate derivatives
+          app_log() << std::endl << "  dCsum: ";
+          std::copy(dCsum.begin(), dCsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+          app_log() << std::endl << "  dCggsum: ";
+          std::copy(dCggsum.begin(), dCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+          app_log() << std::endl << "  dClapsum: ";
+          std::copy(dClapsum.begin(), dClapsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+          app_log() << std::endl << "  dCFCggsum: ";
+          std::copy(dCFCggsum.begin(), dCFCggsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
+          app_log() << std::endl;
+        }
         // loop over parameters for the Ith counting function
         for(int pI = 0; pI < I_num_derivs; ++pI)
         {
@@ -882,12 +873,12 @@ public:
             continue; // ignore inactive
           // middle laplacian term: 
           dhpsioverpsi[ia] += -0.5*(4.0*dCFCggsum[pI]);
-//          if(debug && deriv_print_index < debug_seqlen)
-//          {
-//            app_log() << "    == evaluateDerivatives calculations ==" << std::endl;
-//            app_log() << "    pI: " << pI << ", name: " <<  I_vars.name(pI) <<  ", ia: " << ia << std::endl;
-//            app_log() << "    dCFCggsum: " << dCFCggsum[pI] << std::endl;
-//          }
+          if(debug && deriv_print_index < debug_seqlen)
+          {
+            app_log() << "    == evaluateDerivatives calculations ==" << std::endl;
+            app_log() << "    pI: " << pI << ", name: " <<  I_vars.name(pI) <<  ", ia: " << ia << std::endl;
+            app_log() << "    dCFCggsum: " << dCFCggsum[pI] << std::endl;
+          }
           for(int J = 0; J < num_regions; ++J)
           {
             dlogpsi[ia] += _dCsum(J,pI)*(2*FCsum[J] + G[J]);
@@ -895,13 +886,13 @@ public:
             dhpsioverpsi[ia] += -1.0*( _dCggsum(J,pI)*(2.0*FCsum[J] + G[J]) + _dCsum(J,pI)*2.0*FCggsum[J]  );
             // outer laplacian terms
             dhpsioverpsi[ia] += -0.5*( 2.0*_dCsum(J,pI)*FClapsum[J] + _dClapsum(J,pI)*(2.0*FCsum[J] + G[J]) ) ;
-//            if(debug && deriv_print_index < debug_seqlen)
-//            {
-//              app_log() << "      J: " << J << std::endl;
-//              app_log() << "      dlogpsi term          : " << _dCsum(J,pI)*(2*FCsum[J] + G[J]) << std::endl;
-//              app_log() << "      dhpsi/psi, graddotgrad: " << -1.0*( _dCggsum(J,pI)*(2.0*FCsum[J] + G[J]) + _dCsum(J,pI)*2.0*FCggsum[J]  ) << std::endl;
-//              app_log() << "      dhpsi/psi, laplacian  : " << -0.5*( 2.0*_dCsum(J,pI)*FClapsum[J] + _dClapsum(J,pI)*(2.0*FCsum[J] + G[J]) ) << std::endl;
-//            }
+            if(debug && deriv_print_index < debug_seqlen)
+            {
+              app_log() << "      J: " << J << std::endl;
+              app_log() << "      dlogpsi term          : " << _dCsum(J,pI)*(2*FCsum[J] + G[J]) << std::endl;
+              app_log() << "      dhpsi/psi, graddotgrad: " << -1.0*( _dCggsum(J,pI)*(2.0*FCsum[J] + G[J]) + _dCsum(J,pI)*2.0*FCggsum[J]  ) << std::endl;
+              app_log() << "      dhpsi/psi, laplacian  : " << -0.5*( 2.0*_dCsum(J,pI)*FClapsum[J] + _dClapsum(J,pI)*(2.0*FCsum[J] + G[J]) ) << std::endl;
+            }
   
   
           }
@@ -909,9 +900,12 @@ public:
       }
   
     } // end opt_C
-  //  // increment and modulo deriv_print_index
-  //  deriv_print_index = deriv_print_index % debug_period;
-  //  deriv_print_index++;
+    // increment and modulo deriv_print_index
+    if(debug)
+    {
+      deriv_print_index = deriv_print_index % debug_period;
+      deriv_print_index++;
+    }
   }
 
 //  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
