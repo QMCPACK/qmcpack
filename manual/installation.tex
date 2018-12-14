@@ -1400,11 +1400,18 @@ thread counts, placement, walker count (etc.) This is essential to
 fairly compare different machines. Check with the
 developers if you are unsure of what is a fair change.
 
-For large problem sizes, the initialization of spline orbitals may take quite a large portion of runtime.
-Consider running qmcpack once with \texttt{--save\_wfs=1} to save the spline coefficients to the disk and load it for later runs in the same folder..
+For the largest problem sizes, the initialization of spline orbitals may
+take a large portion of overall runtime. When QMCPACK is run at scale
+the initialization is fast because it is fully
+parallelized. However, the performance runs are most usually run on a single node.
+Consider running QMCPACK once with \texttt{--save\_wfs=1} to save the
+converted spline coefficients to the disk and load them for later runs in the same folder..
 
-The delayed update algorithm in section~\ref{sec:singledeterminant} significantly change the performance characteristics of QMCPACK.
-A parameter scan of the maximal number of delays is required for achieving the best performance of every architecture and problem size.
+The delayed update algorithm in section~\ref{sec:singledeterminant}
+significantly changes the performance characteristics of QMCPACK.  A
+parameter scan of the maximal number of delays specific to every
+architecture and problem size is required to achieve the best
+performance.
 
 \subsubsection{NiO performance tests}
 
