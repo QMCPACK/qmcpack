@@ -642,14 +642,13 @@ ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr
 set(Boost_NO_BOOST_CMAKE on)
-find_package(Boost REQUIRED)
+find_package(Boost 1.61.0 REQUIRED)
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
   MESSAGE(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 ELSE()
-  MESSAGE(STATUS "Using MT engine in Utilities/MersenneTwister.h")
-  #MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_ROOT")
+  MESSAGE(FATAL_ERROR "Need boost 1.61.0 or higher.  Set BOOST_ROOT")
 ENDIF()
 
 SET(HAVE_CUDA 0)
