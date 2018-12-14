@@ -36,6 +36,10 @@ for d in dirs_check:
 # enforce association between nxs-test executable and Nexus library
 sys.path.insert(0,library_dir)
 
+# global data
+global_data = dict(
+    job_ref_table = False,
+    )
 
 from generic import generic_settings,object_interface,NexusError
 
@@ -2313,11 +2317,12 @@ def machines():
                       **job_inputs[jtype]
                       )
             command = job.run_command()
-            # uncomment below to get lines for job_run_ref table above
-            sname = "'{0}'".format(name)
-            stype = "'{0}'".format(jtype)
-            print "        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command)
-            continue
+            if global_data['job_ref_table']:
+                sname = "'{0}'".format(name)
+                stype = "'{0}'".format(jtype)
+                print "        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command)
+                continue
+            #end if
             ref_command = job_run_ref[name,jtype]
             if not job_commands_equal(command,ref_command):
                 nfail('Job.run_command for machine "{0}" does not match the reference\njob inputs: {1}\nreference command: {2}\nincorrect command: {3}'.format(name,job_inputs[jtype],ref_command,command))
@@ -2789,6 +2794,10 @@ if __name__=='__main__':
                       action='store_true',default=False,
                       help='Regenerate reference data and overwrite existing reference files.  Intended for developer use (default=%default).'
                       )
+    parser.add_option('--job_ref_table',dest='job_ref_table',
+                      action='store_true',default=False,
+                      help='Print reference data for job run commands on various machines.  Intended for developer use (default=%default).'
+                      )
 
     options,files_in = parser.parse_args()
 
@@ -2807,6 +2816,7 @@ if __name__=='__main__':
         regenerate_reference(update=True)
         exit()
     #end if
+    global_data['job_ref_table'] = options.job_ref_table
 
     if options.regex!='none':
         regex = options.regex
