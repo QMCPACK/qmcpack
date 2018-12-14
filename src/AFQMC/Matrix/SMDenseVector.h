@@ -39,13 +39,19 @@ class SMDenseVector
   typedef std::size_t    indxType;
   typedef typename boost_SMVector<T>::iterator iterator;
   typedef typename boost_SMVector<T>::const_iterator const_iterator;
-  typedef boost_SMVector<T>  This_t;
+  typedef SMDenseVector<T>  This_t;
 
   SMDenseVector<T>():head(false),ID(""),SMallocated(false),vals(NULL),share_buff(NULL),mutex(NULL),
                       segment(NULL),alloc_T(NULL),alloc_mutex(NULL),alloc_uchar(NULL) 
   {
     remover.ID="NULL";
     remover.head=false;
+  }
+
+  SMDenseVector<T>(bool hd, std::string ii, MPI_Comm comm_):head(false),ID(""),SMallocated(false),vals(NULL),share_buff(NULL),mutex(NULL),
+                      segment(NULL),alloc_T(NULL),alloc_mutex(NULL),alloc_uchar(NULL)
+  {
+    setup(hd,ii,comm_);
   }
 
   ~SMDenseVector<T>()
@@ -57,14 +63,47 @@ class SMDenseVector
   }
 
   // this should probably be disallowed
-  SMDenseVector(const SMDenseVector<T> &rhs)
-  {
-//    ID = rhs.ID; // is this a good idea???
-//    head = rhs.head;
-    APP_ABORT(" Error: SMDenseVector(SMDenseVector rhs) copy constructor has been disabled.");       
+  SMDenseVector(const SMDenseVector<T> &rhs) = delete;
+  This_t& operator=(const SMDenseVector<T> &rhs) = delete; 
+
+  SMDenseVector(SMDenseVector<T>&& other):head(false),ID(""),SMallocated(false),vals(NULL),
+                    share_buff(NULL),mutex(NULL),segment(NULL),alloc_T(NULL),alloc_mutex(NULL),
+                    alloc_uchar(NULL) {
+    *this = std::move(other);
   }
 
-  inline void setup(bool hd, std::string ii, MPI_Comm comm_) {
+  This_t& operator=(SMDenseVector<T>&& other)
+  {
+    if(this != &other) {
+
+      if(segment!=NULL) {
+        delete segment;
+        boost::interprocess::shared_memory_object::remove(ID.c_str());
+      }
+
+      remover.ID=other.remover.ID;
+      remover.head=other.remover.head;
+
+      mutex = other.mutex;
+      vals = other.vals;
+      share_buff = other.share_buff;
+      segment = other.segment;
+      alloc_T = other.alloc_T;
+      alloc_mutex = other.alloc_mutex;
+      alloc_uchar = other.alloc_uchar;
+      comm = other.comm;
+      head = other.head;
+      ID = other.ID;
+      SMallocated = other.SMallocated;
+      memory = other.memory;
+      dims = other.dims;
+
+      other.setNull();
+    }
+    return *this;
+  }
+
+   void setup(bool hd, std::string ii, MPI_Comm comm_) {
     head=hd;
     ID=ii;
     remover.ID=ii;
@@ -72,7 +111,7 @@ class SMDenseVector
     comm=comm_;
   }
 
-  inline void reserve(std::size_t nnz, bool allow_reduce = false)
+   void reserve(std::size_t nnz, bool allow_reduce = false)
   {
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz) || (vals!=NULL && vals->capacity() > nnz && allow_reduce)) 
       allocate(nnz,allow_reduce);
@@ -114,11 +153,11 @@ class SMDenseVector
     barrier(); 
   }
 
-  inline void barrier() {
+   void barrier() {
     MPI_Barrier(comm);   
   }
 
-  inline bool deallocate()
+   bool deallocate()
   {
     SMallocated = false;
     barrier();
@@ -148,7 +187,7 @@ class SMDenseVector
   } 
 
   // this routine does not allow grow/shrink, meant in cases where only head can call it
-  inline bool allocate_serial(std::size_t n)
+   bool allocate_serial(std::size_t n)
   {
     if(!head) return false; /* XA: This was returning nothing, I assume false is the right thing to return here */
     if(vals!=NULL && vals->capacity() >= n) return true;
@@ -196,7 +235,7 @@ class SMDenseVector
 
   }
 
-  inline bool allocate(std::size_t n, bool allow_reduce=false)
+   bool allocate(std::size_t n, bool allow_reduce=false)
   {
     bool grow = false;
     uint64_t old_sz = (segment==NULL)?0:(segment->get_size()); 
@@ -300,7 +339,7 @@ class SMDenseVector
   }
 
   // only call this when all arrays have been allocated and modified  
-  inline bool initializeChildren()
+   bool initializeChildren()
   { 
     if(head) return true;
     // delete segment in case this routine is called multiple times.
@@ -326,7 +365,7 @@ class SMDenseVector
   }
 
   // resize is probably the best way to setup the vector 
-  inline void resize(std::size_t nnz, bool allow_reduce=false) 
+   void resize(std::size_t nnz, bool allow_reduce=false) 
   {
     if(vals==NULL) {
       allocate(nnz,allow_reduce);
@@ -364,7 +403,7 @@ class SMDenseVector
   }
 
   // does not allow grow/shrink
-  inline void resize_serial(std::size_t nnz)
+   void resize_serial(std::size_t nnz)
   {
     if(!head) return;
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz) ) 
@@ -373,41 +412,32 @@ class SMDenseVector
     vals->resize(nnz);
   }
 
-  inline void clear() { 
+   void clear() { 
     if(!head) return;
     if(!SMallocated) return;
     vals->clear();
   }
 
-  inline std::size_t size() const
+   std::size_t size() const
   {
     return (vals!=NULL)?(vals->size()):0;
   }
 
-  inline const_pointer values() const 
+   const_pointer values() const 
   {
     return (vals!=NULL)?(&((*vals)[0])):NULL;
   }
 
-  inline pointer values() 
+   pointer values() 
   {
     return (vals!=NULL)?(&((*vals)[0])):NULL;
   }
 
-  inline bool isAllocated() {
+   bool isAllocated() {
     return (SMallocated)&&(vals!=NULL); 
   }
 
-  inline This_t& operator=(const SMDenseVector<T> &rhs) 
-  { 
-    APP_ABORT(" Error: SMDenseVector(SMDenseVector rhs) operator= has been disabled.");       
-    //resize(rhs.size());
-    //if(!head) return *this;
-    //(*vals)=*(rhs.vals);
-    //return *this;
-  }  
-
-  inline Type_t& operator()(std::size_t i)
+   Type_t& operator()(std::size_t i)
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<vals->size());
@@ -415,7 +445,7 @@ class SMDenseVector
     return (*vals)[i]; 
   }
 
-  inline Type_t& operator[](std::size_t i)
+   Type_t& operator[](std::size_t i)
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<vals->size());
@@ -424,7 +454,7 @@ class SMDenseVector
   }
 
   template<typename IType>
-  inline void add(const IType i, const T& v, bool needs_locks=false) 
+   void add(const IType i, const T& v, bool needs_locks=false) 
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<vals->size());
@@ -438,11 +468,11 @@ class SMDenseVector
     }
   }
 
-  inline std::size_t memoryUsage() { return memory; }
+   std::size_t memoryUsage() { return memory; }
 
-  inline std::size_t capacity() { return (vals==NULL)?0:vals->capacity(); }
+   std::size_t capacity() { return (vals==NULL)?0:vals->capacity(); }
 
-  inline void push_back(const T& v, bool needs_locks=false)             
+   void push_back(const T& v, bool needs_locks=false)             
   {
     assert(vals != NULL);
     if(needs_locks) {
@@ -455,7 +485,7 @@ class SMDenseVector
     }
   }
 
-  inline void push_back(const std::vector<T>& v, bool needs_locks=false)
+   void push_back(const std::vector<T>& v, bool needs_locks=false)
   {
     assert(vals != NULL);
     if(needs_locks) {
@@ -470,34 +500,25 @@ class SMDenseVector
     }
   }
 
-  inline void sort() {
+   void sort() {
     if(!head) return;
     if(vals==NULL) return;
     std::sort(vals->begin(),vals->end());
   }
 
   template<class Compare>
-  inline void sort(Compare comp, MPI_Comm local_comm=MPI_COMM_SELF, bool inplace=true) {
+   void sort(Compare comp, MPI_Comm local_comm=MPI_COMM_SELF, bool inplace=true) {
 
     if(vals==NULL) return;
     if(local_comm==MPI_COMM_SELF) {
       std::sort(vals->begin(),vals->end(),comp);
     }
 
-    double t1,t2,t3,t4;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    t1 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
-
     int npr,rank;
     MPI_Comm_rank(local_comm,&rank);
     MPI_Comm_size(local_comm,&npr);
 
     MPI_Barrier(local_comm);
-
-    gettimeofday(&tv, NULL);
-    t2 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
-    app_log()<<" Time waiting: " <<t2-t1 <<std::endl;
 
     if(vals==NULL) return;
     if(vals->size() == 0) return;
@@ -515,32 +536,6 @@ class SMDenseVector
       std::sort(vals->begin()+pos[rank], vals->begin()+pos[rank+1], comp);
 
     MPI_Barrier(local_comm);
-
-    gettimeofday(&tv, NULL);
-    t1 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
-    app_log()<<" Time sorting: " <<t1-t2 <<std::endl;
-
-/*
-    if(head) {
-
-      gettimeofday(&tv, NULL);
-      t4 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
-
-      for(int i=0, mid=1, end=2; i<(nblk-1); i++,mid++,end++) {
-        std::inplace_merge( vals->begin()+pos[0], vals->begin()+pos[mid], vals->begin()+pos[end], comp); 
-
-        gettimeofday(&tv, NULL);
-        t3 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
-        app_log()<<" Time merging: " <<i <<" " <<t3-t4 <<std::endl;
-        t4=t3;
-      }
-    }
-    MPI_Barrier(local_comm);
-*/
-
-    gettimeofday(&tv, NULL);
-    t4 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
-
 
     std::vector<T> temp;
     if (!inplace && rank<nblk) {
@@ -571,37 +566,9 @@ class SMDenseVector
       MPI_Barrier(local_comm);
     }
 
-
-// FIX FIX FIX
-// Why is this not working??????
-/*
-    for(int i=0; i<nlvl; i++) {
-      int np = std::pow(2,i+1);  // number of processors on each group 
-      int del = std::pow(2,i);   // number of "skips" on bounds array  
-      int beg = (rank/np)*np;
-      int mid = beg + del;
-      int end = mid + del;
-      int rk = rank%np;
-      T* ptr_b = &((*vals)[0])+pos[beg];
-      T* ptr_m = &((*vals)[0])+pos[mid];
-      T* ptr_e = &((*vals)[0])+pos[end];
-      if (rank < nblk)   
-        parallel_inplace_merge(np,rk,ptr_b,ptr_m,ptr_e,local_comm,comp);
-        //parallel_inplace_merge(np,rk,vals->begin()+pos[beg],vals->begin()+pos[mid],vals->begin()+pos[end],local_comm,comp);
-      else {
-        for(int k=0; k<3*(i+1); k++)
-         MPI_Barrier(local_comm); 
-      }
-    }
-*/
-
-    gettimeofday(&tv, NULL);
-    t2 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
-    app_log()<<" Time merging + indexing: " <<t2-t1 <<std::endl;
-
   }
 
-  inline SMDenseVector<T>& operator*=(const RealType rhs ) 
+   SMDenseVector<T>& operator*=(const RealType rhs ) 
   {
     if(!head) return *this; 
     for(iterator it=vals->begin(); it!=vals->end(); it++)
@@ -609,7 +576,7 @@ class SMDenseVector
     return *this; 
   }
 
-  inline SMDenseVector<T>& operator*=(const std::complex<RealType> rhs ) 
+   SMDenseVector<T>& operator*=(const std::complex<RealType> rhs ) 
   {
     if(!head) return *this; 
     for(iterator it=vals->begin(); it!=vals->end(); it++)
@@ -626,13 +593,13 @@ class SMDenseVector
 
   // this is ugly, but I need to code quickly 
   // so I'm doing this to avoid adding hdf5 support here 
-  inline boost_SMVector<T>* getVector() const { return vals; } 
+   boost_SMVector<T>* getVector() const { return vals; } 
 
-  inline iterator begin() { assert(vals!=NULL); return vals->begin(); } 
-  inline const_iterator begin() const { assert(vals!=NULL); return vals->begin(); } 
-  inline const_iterator end() const { assert(vals!=NULL); return vals->end(); } 
-  inline iterator end() { assert(vals!=NULL); return vals->end(); } 
-  inline T& back() { assert(vals!=NULL); return vals->back(); } 
+   iterator begin() { assert(vals!=NULL); return vals->begin(); } 
+   const_iterator begin() const { assert(vals!=NULL); return vals->begin(); } 
+   const_iterator end() const { assert(vals!=NULL); return vals->end(); } 
+   iterator end() { assert(vals!=NULL); return vals->end(); } 
+   T& back() { assert(vals!=NULL); return vals->back(); } 
 
   boost::interprocess::interprocess_mutex* getMutex()
   {
@@ -643,11 +610,26 @@ class SMDenseVector
     dims = {nr,nc};  
   }
   
-  inline std::pair<int,int> getDims() { return dims; }
-  inline int rows() { return dims.first; }
-  inline int cols() { return dims.second; }
+   std::pair<int,int> getDims() { return dims; }
+   int rows() { return dims.first; }
+   int cols() { return dims.second; }
 
   private:
+
+  void setNull() {
+    mutex=NULL;
+    vals=NULL;
+    share_buff=NULL;
+    head=false;
+    SMallocated=false;
+    memory=0;
+    segment=NULL;
+    alloc_T=NULL;
+    alloc_mutex=NULL;
+    alloc_uchar=NULL;
+    remover.head=false;
+    remover.ID="";
+  }
 
   boost::interprocess::interprocess_mutex *mutex;
   boost_SMVector<T> *vals;

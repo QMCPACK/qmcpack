@@ -136,6 +136,21 @@ namespace std{
         swap(std::get<2>(*a), std::get<2>(*b));
     }
 
+    template<class T1, class T2>
+    void swap(std::pair<T1 &, T2 &> const& a, std::pair<T1 &, T2 &> const& b) {
+      using std::swap;
+      swap(std::get<0>(a), std::get<0>(b));
+      swap(std::get<1>(a), std::get<1>(b));
+    }
+
+    template<class T1, class T2, class T3>
+    void swap(std::tuple<T1 &, T2 &, T3 &> const& a, std::tuple<T1 &, T2 &, T3 &> const& b) {
+      using std::swap;
+      swap(std::get<0>(a), std::get<0>(b));
+      swap(std::get<1>(a), std::get<1>(b));
+      swap(std::get<2>(a), std::get<2>(b));
+    } 
+
 }
 
 

@@ -157,14 +157,14 @@ bool QMCMain::execute()
     //initialize the random number generator
     xmlNodePtr rptr = myRandomControl.initialize(m_context);
 
-    AFQMCFactory afqmc_fac(myComm,myRandomControl);
+    afqmc::AFQMCFactory afqmc_fac(OHMMS::Controller->comm);
     if(!afqmc_fac.parse(cur)) {
       app_log()<<" Error in AFQMCFactory::parse() ." <<std::endl;
       return false;
     }
     cur=XmlDocStack.top()->getRoot(); 
     return afqmc_fac.execute(cur);
-  } else
+  }
 #else
   if(simulationType == "afqmc") {
     app_error()<<" Executable not compiled with AFQMC. Recompile with BUILD_AFQMC set to 1." <<std::endl; 
@@ -172,33 +172,6 @@ bool QMCMain::execute()
   }
 #endif
 
-#ifdef BUILD_FCIQMC
-
-  if(simulationType == "fciqmc") {
-    app_log() << std::endl << "/*************************************************\n"
-                      << " ********  This is a FCIQMC calculation   ********\n"
-                      << " *************************************************" <<std::endl;
-
-    xmlNodePtr cur=XmlDocStack.top()->getRoot();
-
-    xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
-    //initialize the random number generator
-    xmlNodePtr rptr = myRandomControl.initialize(m_context);
-
-    SQCFactory fciqmc_fac(myComm,myRandomControl);
-    if(!fciqmc_fac.parse(cur)) {
-      app_log()<<" Error in SQCFactory::parse() ." <<std::endl;
-      return false;
-    }
-    cur=XmlDocStack.top()->getRoot();
-    return fciqmc_fac.execute(cur);
-  }
-#else
-  if(simulationType == "fciqmc") {
-    app_error()<<" Executable not compiled with FCIQMC. Recompile with BUILD_FCIQMC set to 1." <<std::endl; 
-    return false;
-  }
-#endif
 
   NewTimer *t2 = TimerManager.createTimer("Total", timer_level_coarse);
   t2->start();
