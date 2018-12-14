@@ -3,6 +3,7 @@
 #define QMCPLUSPLUS_COUNTING_FUNCTOR_H
 
 #include "OhmmsData/AttributeSet.h"
+#include "boost/format.hpp"
 
 namespace qmcplusplus
 {

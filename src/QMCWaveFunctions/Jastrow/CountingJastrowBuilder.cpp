@@ -11,8 +11,8 @@
 
 #include "QMCWaveFunctions/Jastrow/CountingJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/CountingJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/DiffCountingJastrowOrbital.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "OhmmsData/AttributeSet.h"
 #include <iostream>
 
 namespace qmcplusplus
@@ -34,7 +34,6 @@ class CountingJastrowTypeHelper
   public:
     using rft = CountingRegionType<precision>;
     using CJOrbitalType = CountingJastrowOrbital<rft>;
-    using DiffCJOrbitalType = DiffCountingJastrowOrbital<rft>;
 };
 
 
@@ -46,7 +45,6 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   using RegionType = CountingRegionType<RT>;
   using FunctorType = typename RegionType::FunctorType;
   using CJOrbitalType = typename CountingJastrowTypeHelper<RT,CountingRegionType>::CJOrbitalType;
-  using DiffCJOrbitalType = typename CountingJastrowTypeHelper<RT,CountingRegionType>::DiffCJOrbitalType;
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
 

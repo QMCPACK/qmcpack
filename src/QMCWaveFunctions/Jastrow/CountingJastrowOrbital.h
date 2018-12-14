@@ -4,6 +4,7 @@
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "QMCWaveFunctions/Jastrow/CountingRegion.h"
 
 #include "boost/format.hpp"
 
