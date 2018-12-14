@@ -508,6 +508,11 @@ If (BUILD_AFQMC AND NOT QMC_MPI)
   MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
 ENDIF()
 
+# AFQMC does not work with real builds for now
+If (BUILD_AFQMC AND NOT QMC_COMPLEX)
+  MESSAGE(FATAL_ERROR "AFQMC requires building with QMC_COMPLEX=1 for now.")
+ENDIF()
+
 IF (BUILD_AFQMC AND NOT APPLE)
   LINK_LIBRARIES("rt")
 ENDIF()
