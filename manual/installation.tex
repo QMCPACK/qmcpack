@@ -498,7 +498,7 @@ QMCPACK tried to do its best with CMake to facilitate cross-compiling.
 
 The general strategy for cross-compiling should therefore be to
 manually set CMAKE\_C\_FLAGS and CMAKE\_CXX\_FLAGS for the target
-archicture. Using \texttt{make VERBOSE=1} is a useful way to check the
+architecture. Using \texttt{make VERBOSE=1} is a useful way to check the
 final compilation options.  If on a Cray machine, selection of the
 appropriate programming environment should be sufficient.
 
@@ -1335,7 +1335,7 @@ counts. \textbf{These tests should therefore not be used for any benchmarking or
 performance analysis}. Example runs that can be used for testing performance are described in
 Sec. \ref{sec:perftests}
 
-\subsection{Determinstic and unit tests}
+\subsection{Deterministic and unit tests}
 
 QMCPACK has a set of deterministic tests, predominantly unit tests.
 All of these tests can be run with the following command (in the build directory):
@@ -1410,6 +1410,19 @@ platform, you must run the benchmarks in a standalone manner and tune
 thread counts, placement, walker count (etc.) This is essential to
 fairly compare different machines. Check with the
 developers if you are unsure of what is a fair change.
+
+For the largest problem sizes, the initialization of spline orbitals may
+take a large portion of overall runtime. When QMCPACK is run at scale
+the initialization is fast because it is fully
+parallelized. However, the performance runs are most usually run on a single node.
+Consider running QMCPACK once with \texttt{--save\_wfs=1} to save the
+converted spline coefficients to the disk and load them for later runs in the same folder..
+
+The delayed update algorithm in section~\ref{sec:singledeterminant}
+significantly changes the performance characteristics of QMCPACK.  A
+parameter scan of the maximal number of delays specific to every
+architecture and problem size is required to achieve the best
+performance.
 
 \subsubsection{NiO performance tests}
 
