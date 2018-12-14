@@ -205,6 +205,12 @@ SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
 SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
 
 ######################################################################
+# Install options
+# INSTALL_NEXUS install Nexus alongside QMCPACK
+######################################################################
+SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
+
+######################################################################
 # FIXED PARAMETERS for test and legacy reasons
 # DO NOT TOUCH THESE
 # QMC_ORTHO  = 0 for general unit cell, 1 for orthogonal cells
@@ -342,6 +348,13 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     ENDIF(QMC_CUDA)
   ENDIF($ENV{CRAYPE_VERSION} MATCHES ".")
 
+  #--------------------------------
+  #  C++ 14 is the minimum standard
+  #--------------------------------
+  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
   #------------------------------------
   # Identify the compiler -- This serves only to deal with case where only C or CXX is set, refactor? 
   #------------------------------------
@@ -385,11 +398,10 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(WARNING "No default file for compiler (${COMPILER})")
   ENDIF()
 
-  set(CMAKE_CXX_STANDARD 14)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  set(CMAKE_CXX_EXTENSIONS OFF)
 
+  #---------------------------------------------------
   # Check that a C++ 14 standard library is configured
+  #---------------------------------------------------
   include(CMake/TestCxx14Library.cmake)
 
   #-------------------------------------------------------------------
@@ -879,7 +891,9 @@ endif()
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
 INSTALL(FILES ${qmcpack_BINARY_DIR}/bin/qmcpack.settings DESTINATION bin)
-
+IF(INSTALL_NEXUS)
+  INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
+ENDIF()
 
 #########################
 # add definitions for adios profile
