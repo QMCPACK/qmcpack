@@ -67,7 +67,7 @@ class Gamess(Simulation):
     #end def restore_default_settings
 
 
-    def post_init(self):
+    def init_job_extra(self):
         # gamess seems to need lots of environment variables to run properly
         # nearly all of these are names of output/work files
         # setup the environment to run gamess
@@ -82,7 +82,7 @@ class Gamess(Simulation):
         env.ERICFMT = self.ericfmt
         env.MCPPATH = self.mcppath
         self.job.set_environment(**env)
-    #end def post_init
+    #end def init_job_extra
 
 
     def check_result(self,result_name,sim):

@@ -235,6 +235,7 @@ class Job(NexusCore):
         self.full_command       = full_command
         self.outfile            = outfile
         self.errfile            = errfile
+        self.env                = None
         self.user_env           = user_env
         self.presub             = presub
         self.postsub            = postsub
@@ -299,11 +300,6 @@ class Job(NexusCore):
         if options is not None:
             self.run_options.read(options)
         #end if
-        if env is None:
-            self.env = None
-        else:
-            self.set_environment(**env)
-        #end if
 
         if app_props is None:
             self.app_props = []
@@ -327,6 +323,9 @@ class Job(NexusCore):
 
         if machine is not None:
             self.machine = machine
+        #end if
+        if env is not None:
+            self.set_environment(**env)
         #end if
         #check that the machine exists and have it complete the job info
         self.process()
