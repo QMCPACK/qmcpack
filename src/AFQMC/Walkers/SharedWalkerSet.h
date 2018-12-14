@@ -194,20 +194,20 @@ class SharedWalkerSet: public AFQMCInfo
 
       ComplexType* base() {return &w_[0]; }
       int size() const {return w_.shape()[0]; }
-      SMType SlaterMatrix(SpinTypes s) { 
-	if(desc[2] <= 0 && s!=Alpha)
-	  APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
-	return (s==Alpha)?(SMType((&w_[indx[SM]]),extents[desc[0]][desc[1]])):
-			  (SMType((&w_[indx[SM]])+desc[0]*desc[1],extents[desc[0]][desc[2]])); 
-      }	
+      SMType SlaterMatrix(SpinTypes s) {
+        if(desc[2] <= 0 && s!=Alpha)
+          APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
+        return (s==Alpha)?(SMType((&w_[indx[SM]]),extents[desc[0]][desc[1]])):
+              (SMType((&w_[indx[SM]])+desc[0]*desc[1],extents[desc[0]][desc[2]]));
+      }
       SMType SlaterMatrixN(SpinTypes s) {
         if(indx[SMN] < 0)
           APP_ABORT("error: access to uninitialized BP sector. \n");
-	if(desc[2] <= 0 && s!=Alpha)
-	  APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
+        if(desc[2] <= 0 && s!=Alpha)
+          APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
         return (s==Alpha)?(SMType((&w_[indx[SMN]]),extents[desc[0]][desc[1]])):
                           (SMType((&w_[indx[SMN]])+desc[0]*desc[1],extents[desc[0]][desc[2]]));
-      }	
+      }
       ComplexType& weight() { return w_[indx[WEIGHT]]; } 
       ComplexType& phase() { return w_[indx[PHASE]]; } 
       ComplexType& pseudo_energy() { return w_[indx[PSEUDO_ELOC_]]; } 
@@ -223,6 +223,7 @@ class SharedWalkerSet: public AFQMCInfo
       SMType BMatrix() {
         if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
+        }
         auto ip = getHead();
         if(ip < 0 || ip >= desc[3]) {
           APP_ABORT("error: Index out of bounds.\n");
@@ -236,18 +237,20 @@ class SharedWalkerSet: public AFQMCInfo
       void incrementBMatrix() {
         if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
+        }
         auto ip = getHead();
-	if(ip < 0 || ip >= desc[3])
-	  APP_ABORT("error: Index out of bounds.\n");
-        w_[indx[HEAD]] = ComplexType((ip+1)%desc[3],0);	
+        if(ip < 0 || ip >= desc[3])
+          APP_ABORT("error: Index out of bounds.\n");
+        w_[indx[HEAD]] = ComplexType((ip+1)%desc[3],0);
       }
       void decrementBMatrix() {
         if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
+        }
         auto ip = getHead();
-	if(ip < 0 || ip >= desc[3])
-	  APP_ABORT("error: Index out of bounds.\n");
-        w_[indx[HEAD]] = ComplexType((ip-1+desc[3])%desc[3],0);  
+        if(ip < 0 || ip >= desc[3])
+          APP_ABORT("error: Index out of bounds.\n");
+        w_[indx[HEAD]] = ComplexType((ip-1+desc[3])%desc[3],0);
       }
       bool isBMatrixBufferFull() const {
         return getHead() == 0;
