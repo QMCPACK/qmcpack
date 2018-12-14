@@ -142,10 +142,10 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
            <<std::endl;
 
   // walker set
-  wlkBucket->setup(TG.getCoreRank(),ncores_per_TG,TG.getTGNumber(),MPI_COMM_TG_LOCAL_HEADS,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,&LocalTimer);
+  wlkBucket->setup(TG.getCoreRank(),ncores_per_TG,TG.getTGNumber(),prop0->getNBackProp(),MPI_COMM_TG_LOCAL_HEADS,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,&LocalTimer);
   wlkBucket->setHF(wfn0->getHF());
   wlkBucket->initWalkers(maxnW);
-  wfn0->evaluateLocalEnergyAndOverlap("ImportanceSampling",-1,wlkBucket);
+  wfn0->evaluateLocalEnergy(wlkBucket);
 
   app_log()<<"\n****************************************************\n"   
            <<"****************************************************\n"   

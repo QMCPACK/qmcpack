@@ -15,6 +15,8 @@
 #include <boost/interprocess/containers/vector.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 
+#define ADD_TESTS_TIMERS
+
 namespace qmcplusplus
 {
 

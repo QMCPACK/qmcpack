@@ -5,6 +5,7 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -184,6 +185,7 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   using J2OrbitalType = typename JastrowTypeHelper<RadFuncType>::J2OrbitalType;
   using DiffJ2OrbitalType = typename JastrowTypeHelper<RadFuncType>::DiffJ2OrbitalType;
 
+  std::string j2name="J2_"+Jastfunction;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
   auto *J2 = new J2OrbitalType(targetPtcl,taskid);
@@ -228,10 +230,15 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       int ia = species.findSpecies(spA);
       int ib = species.findSpecies(spB);
       int chargeInd=species.addAttribute("charge");
-      if(ia==species.size() || ib == species.size())
+      std::string illegal_species;
+      if(ia==species.size()) illegal_species = spA;
+      if(ib==species.size())
       {
-        PRE.error("Failed. Species are incorrect.",true);
+        if(illegal_species.size()) illegal_species += " and ";
+        illegal_species += spB;
       }
+      if(illegal_species.size())
+        PRE.error("species "+illegal_species+" requested for Jastrow "+j2name+" does not exist in ParticleSet "+targetPtcl.getName(),true);
       if(ia==ib && (targetPtcl.last(ia)-targetPtcl.first(ia)==1))
         PRE.error("Failed to add "+spA+spB+" correlation for only 1 "+spA+" particle. Please remove it from two-body Jastrow.",true);
       if(cusp<-1e6)
@@ -268,7 +275,6 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
     cur=cur->next;
   }
   J2->dPsi=dJ2;
-  std::string j2name="J2_"+Jastfunction;
   targetPsi.addOrbital(J2,j2name.c_str());
   J2->setOptimizable(true);
   return true;
@@ -301,7 +307,6 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   // Find the number of the source species
   SpeciesSet &sSet = SourcePtcl->getSpeciesSet();
   SpeciesSet &tSet = targetPtcl.getSpeciesSet();
-  int numSpecies = sSet.getTotalNum();
   bool success=false;
   bool Opt(true);
   std::string jname = "J1_"+Jastfunction;
@@ -321,39 +326,42 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       rAttrib.add(cusp, "cusp");
       rAttrib.put(kids);
       auto *functor = new RadFuncType();
-      int ig = sSet.findSpecies (speciesA);
       functor->setPeriodic(SourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN);
       functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
       functor->setCusp(cusp);
-      int jg=-1;
-      if(speciesB.size())
-        jg=tSet.findSpecies(speciesB);
-      if (ig < numSpecies)
+      const int ig = sSet.findSpecies (speciesA);
+      const int jg = speciesB.size() ? tSet.findSpecies(speciesB) : -1;
+      if(ig==sSet.getTotalNum())
       {
-        functor->put(kids);
-        J1->addFunc(ig,functor,jg);
-        dJ1->addFunc(ig,functor,jg);
-        success = true;
-        if(qmc_common.io_node)
+        PRE.error("species "+speciesA+" requested for Jastrow "+jname+" does not exist in ParticleSet "+SourcePtcl->getName(),true);
+      }
+      if(jg==tSet.getTotalNum())
+      {
+        PRE.error("species "+speciesB+" requested for Jastrow "+jname+" does not exist in ParticleSet "+targetPtcl.getName(),true);
+      }
+      functor->put(kids);
+      J1->addFunc(ig,functor,jg);
+      dJ1->addFunc(ig,functor,jg);
+      success = true;
+      if(qmc_common.io_node)
+      {
+        char fname[128];
+        if(qmc_common.mpi_groups>1)
         {
-          char fname[128];
-          if(qmc_common.mpi_groups>1)
-          {
-            if(speciesB.size())
-              sprintf(fname,"%s.%s%s.g%03d.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
-            else
-              sprintf(fname,"%s.%s.g%03d.dat",jname.c_str(),speciesA.c_str(),taskid);
-          }
+          if(speciesB.size())
+            sprintf(fname,"%s.%s%s.g%03d.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str(),taskid);
           else
-          {
-            if(speciesB.size())
-              sprintf(fname,"%s.%s%s.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str());
-            else
-              sprintf(fname,"%s.%s.dat",jname.c_str(),speciesA.c_str());
-          }
-          std::ofstream os(fname);
-          print(*functor, os);
+            sprintf(fname,"%s.%s.g%03d.dat",jname.c_str(),speciesA.c_str(),taskid);
         }
+        else
+        {
+          if(speciesB.size())
+            sprintf(fname,"%s.%s%s.dat",jname.c_str(),speciesA.c_str(),speciesB.c_str());
+          else
+            sprintf(fname,"%s.%s.dat",jname.c_str(),speciesA.c_str());
+        }
+        std::ofstream os(fname);
+        print(*functor, os);
       }
     }
     kids = kids->next;

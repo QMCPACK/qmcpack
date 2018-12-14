@@ -205,6 +205,12 @@ SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
 SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
 
 ######################################################################
+# Install options
+# INSTALL_NEXUS install Nexus alongside QMCPACK
+######################################################################
+SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
+
+######################################################################
 # FIXED PARAMETERS for test and legacy reasons
 # DO NOT TOUCH THESE
 # QMC_ORTHO  = 0 for general unit cell, 1 for orthogonal cells
@@ -512,6 +518,11 @@ ENDIF()
 # AFQMC requires MPI
 If (BUILD_AFQMC AND NOT QMC_MPI)
   MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
+ENDIF()
+
+# AFQMC does not work with real builds for now
+If (BUILD_AFQMC AND NOT QMC_COMPLEX)
+  MESSAGE(FATAL_ERROR "AFQMC requires building with QMC_COMPLEX=1 for now.")
 ENDIF()
 
 IF (BUILD_AFQMC AND NOT APPLE)
@@ -885,7 +896,9 @@ endif()
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
 INSTALL(FILES ${qmcpack_BINARY_DIR}/bin/qmcpack.settings DESTINATION bin)
-
+IF(INSTALL_NEXUS)
+  INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
+ENDIF()
 
 #########################
 # add definitions for adios profile
