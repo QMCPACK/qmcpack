@@ -38,11 +38,11 @@ struct CommunicatorTraits
   typedef OOMPI_Intra_comm intra_comm_type;
 };
 #define APP_ABORT(msg) \
-{std::cerr << "Fatal Error. Aborting at " << msg << std::endl; OOMPI_COMM_WORLD.Abort();}
+{std::cerr << "Fatal Error. Aborting at " << msg << std::endl; MPI_Abort(MPI_COMM_WORLD, 1);}
 
 #define APP_ABORT_TRACE(f,l,msg) \
 {std::cerr << "Fatal Error. Aborting at " << l \
-  << "::" << f << "\n " <<  msg << std::endl; OOMPI_COMM_WORLD.Abort();}
+  << "::" << f << "\n " <<  msg << std::endl; MPI_Abort(MPI_COMM_WORLD, 1);}
 
 #else
 struct CommunicatorTraits
