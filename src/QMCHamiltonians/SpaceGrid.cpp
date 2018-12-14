@@ -841,7 +841,6 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
   int nvalues    = values.size2();
   int iu[DIM];
   int buf_index;
-  RealType ou;
   const RealType o2pi = 1.0/(2.0*M_PI);
   if(!chempot)
   {
@@ -1058,7 +1057,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
     }
     //now place samples in the buffer according to how
     // many particles are in each cell
-    int nincell,nincellr;
+    int nincell;
     buf_index = buffer_offset;
     for(nd=0; nd<ndomains; nd++)
     {

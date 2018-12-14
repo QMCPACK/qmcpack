@@ -96,7 +96,6 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       if(!W.makeMoveAndCheck(iat,dr))
         continue;
       RealType ratio = Psi.ratioGrad(W,iat,grad_iat);
-      bool valid_move=false;
       //node is crossed reject the move
       //if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
       //if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
@@ -119,7 +118,6 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         RealType prob = ratio*ratio*std::exp(logGb-logGf);
         if(RandomGen() < prob)
         {
-          valid_move=true;
           ++nAcceptTemp;
           Psi.acceptMove(W,iat);
           W.acceptMove(iat);
@@ -135,11 +133,10 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       }
     }
   }
-
+  Psi.completeUpdates();
   W.donePbyP();
   myTimers[DMC_movePbyP]->stop();
 
-  bool advanced=true;
   if(nAcceptTemp>0)
   {
     //need to overwrite the walker properties
@@ -161,7 +158,6 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   else
   {
     //all moves are rejected: does not happen normally with reasonable wavefunctions
-    advanced=false;
     thisWalker.Age++;
     thisWalker.Properties(R2ACCEPTED)=0.0;
     //weight is set to 0 for traces

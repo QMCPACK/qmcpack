@@ -1575,7 +1575,7 @@ private:
 
   //buffers for storing samples
   // single row of buffer is a single sample from one walker
-  // number of rows adjusts to accomodate walker samples
+  // number of rows adjusts to accommodate walker samples
   TraceBuffer<TraceInt>  int_buffer;
   TraceBuffer<TraceReal> real_buffer;
 

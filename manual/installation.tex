@@ -89,7 +89,7 @@ Section \ref{sec:buildperformance} for performance suggestions.
 
 \begin{itemize}
 \item C/C++ compilers such as GNU, Clang, Intel, IBM XL. C++ compilers
-  are required to support C++11 standard. Use of recent (``current
+  are required to support C++ 14 standard. Use of recent (``current
   year version'') compilers is strongly encouraged.
 \item MPI library such as OpenMPI \url{http://open-mpi.org} or vendor
   optimized MPI.
@@ -118,21 +118,53 @@ inside. The standalone version should \emph{not} be on any standard
 search paths because conflicts between the old and new include files
 can result.
 
+\section{C++ 14 Standard Library}
+The C++ standard consists of language features, which are implemented in the compiler, and library features, which are implemented in the standard library.
+GCC includes its own standard library and headers, but many compilers do not and instead reuse those from an existing GCC install.
+Depending on setup and installation, some of these compilers may not default to using a GCC with C++ 14 headers (e.g. GCC 4.8 is common as a base system compiler, but its standard library only supports C++ 11).
+
+The symptom of having header files that do not support the C++ 14 standard is usually
+compile errors involving standard include header files.
+Look for the GCC library version, which should be present in the path to the include file in the error message, and ensure that it is 5.0 or greater.
+To avoid these errors occurring at compile time, QMCPACK tests for a C++ 14 standard
+library during configuration, and will halt with an error if one is not found.
+
+At sites that use modules, running \texttt{module load gcc} is often sufficient to
+load a newer GCC and that will resolve the issue.
+
+\subsection{Intel compiler}
+The Intel compiler version must be 18 or newer.
+The version 17 compiler cannot compile some of the C++ 14 constructs in the code.
+
+If a newer gcc is needed, the \texttt{-cxxlib} option can be used to point to a different gcc installation.
+(Alternately, the \texttt{-gcc-name} or \texttt{-gxx-name} options can be used.)
+Be sure to pass this flag to the C compiler in addition to the C++ compiler.
+The reason is CMake extracts some library paths from the C compiler and those paths usually also contain to the C++ library.
+The symptom of this problem is C++ 14 standard library functions not found at link time.
+
 \section{Building with CMake}
 \label{sec:cmake}
 The build system for QMCPACK is based on CMake.  It will autoconfigure
 based on the detected compilers and libraries. The most recent
 version of CMake has the best detection for the greatest variety of
-systems - at the time of writing this means CMake 3.4.3. The much
-older CMake 2.8 is known to work, but might not work optimally on your system.
+systems.  The minimum required version of CMake is 3.6.  That is the
+oldest version to support correct application of C++ 14 flags for the Intel compiler.
+Most computer installations have a sufficiently recent CMake, though it may not be
+the default.
+
+If no appropriate version CMake is available, building it from source is straightforward.
+Download a version from \url{https://cmake.org/download/} and unpack the files.
+Run \texttt{./boostrap} from the CMake directory, and then run \texttt{make}
+when that finishes.  The resulting CMake executable will be in the \texttt{bin/} directory.
+The executable can be run directly from that location.
 
 Previously QMCPACK made extensive use of toolchains, but the build system
 has since been updated to eliminate the use of toolchain files for
 most cases.  The build system is verified to work with GNU, Intel, and IBM XLC
 compilers.  Specific compile options can be specified either through
-specific environmental or CMake variables.  When the libraries are
+specific environment or CMake variables.  When the libraries are
 installed in standard locations, e.g., /usr, /usr/local, there is no
-need to set environmental or cmake variables for the packages.
+need to set environment or cmake variables for the packages.
 
 \subsection{Quick build instructions (try first)}
 \label{sec:cmakequick}
@@ -176,9 +208,9 @@ give examples for a number of common systems in Section \ref{sec:installexamples
 
 \subsection{Environment variables}
 \label{sec:envvar}
-A number of environmental variables affect the build.  In particular
+A number of environment variables affect the build.  In particular
 they can control the default paths for libraries, the default
-compilers, etc.  The list of environmental variables is given below:
+compilers, etc.  The list of environment variables is given below:
 \verbatimfont{\footnotesize}%
 \begin{verbatim}
 CXX              C++ compiler
@@ -192,10 +224,10 @@ FFTW_HOME        Path for FFTW
 
 \subsection{Configuration options}
 \label{sec:cmakeoptions}
-In addition to reading the environmental variables, CMake provides a
+In addition to reading the environment variables, CMake provides a
 number of optional variables that can be set to control the build and
 configure steps.  When passed to CMake, these variables will take
-precedent over the environmental and default variables.  To set them
+precedent over the environment and default variables.  To set them
 add -D FLAG=VALUE to the configure line between the cmake command and
 the path to the source directory.
 
@@ -240,6 +272,8 @@ CMAKE_CXX_FLAGS      Set the C++ flags.  Note: to prevent default
                      debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
                      Also supported: CMAKE_CXX_FLAGS_DEBUG,
                      CMAKE_CXX_FLAGS_RELEASE, and CMAKE_CXX_FLAGS_RELWITHDEBINFO
+CMAKE_INSTALL_PREFIX Set the install location (if using the optional install step)
+INSTALL_NEXUS        Install Nexus alongside QMCPACK (if using the optional install step)
 \end{verbatim}
 
 \item Additional QMCPACK build options
@@ -291,6 +325,14 @@ MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
 \end{verbatim}
 
 \end{itemize}
+
+\subsection{Installation from CMake}
+Installation is optional. The QMCPACK executable can be run from the \texttt{bin} directory in the build location.
+If the install step is desired, run \texttt{make install} command to install the QMCPACK executable, the converter,
+and some additional executables.
+Also installed is the \texttt{qmcpack.settings} file that records options used to compile QMCPACK.
+Specify the \texttt{CMAKE\_INSTALL\_PREFIX} CMake variable during configuration to set the install location.
+
 
 \subsection{Role of QMC\_DATA}
 QMCPACK includes a variety of optional performance and integration
@@ -374,7 +416,7 @@ make -j 8
 \subsection{Build scripts}
 It is recommended to create a helper script that contains the
 configure line for CMake.  This is particularly useful when avoiding
-environmental variables, packages are installed in custom locations,
+environment variables, packages are installed in custom locations,
 or if the configure line is long or complex.  In this case it is also
 recommended to add "rm -rf CMake*" before the configure line to remove
 existing CMake configure files to ensure a fresh configure each time
@@ -639,7 +681,7 @@ make -j 12
   X will request approval of the network connection for each executable.
 \verbatimfont{\footnotesize}%
 \begin{verbatim}
-ctest -R short
+ctest -R short -LE unstable
 \end{verbatim}
 \end{enumerate}
 
@@ -649,14 +691,14 @@ Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argon
 Mira has 49152 compute nodes and each node has a 16-core PowerPC A2 processor with 16 GB DDR3 memory.
 Due to the fact that the login nodes and the compute nodes have different processors with distinct instruction sets,
 cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
-On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang and +cmake in \$HOME/.soft.
+On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang-mpi3 and +cmake-3.8.1 in \$HOME/.soft.
 In order to build QMCPACK, a toolchain file is provided for setting up CMake.
-\textbf{BGClang is required for C++11 support. IBM XL C/C++ compiler should not be used.}
+\textbf{BGClang is required for C++ 14 support. IBM XL C/C++ compiler should not be used.}
 
 \verbatimfont{\footnotesize}%
 \begin{verbatim}
 cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_Clang++11_ToolChain.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_Clang_ToolChain.cmake ..
 make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
@@ -668,8 +710,11 @@ Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB 
 \verbatimfont{\footnotesize}%
 \begin{verbatim}
 export CRAYPE_LINK_TYPE=dynamic
+# Do not use cmake 3.9.1, it causes trouble with parallel HDF5.
+module load cmake/3.11.4
 module unload cray-libsci
 module load cray-hdf5-parallel
+module load gcc   # Make C++ 14 standard library available to the Intel compiler
 export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
 cmake ..
 make -j 24
@@ -743,10 +788,11 @@ usually preferred to GNU.
 export CRAYPE_LINK_TYPE=dynamic
 module unload cray-libsci
 module load cray-hdf5
-module load cmake
+module load cmake3/3.6.1   # Or newer
 module load fftw
 export FFTW_HOME=$FFTW_DIR/..
 module load boost
+module swap gcc gcc/6.3.0  # Make C++ 14 standard library available to the Intel compiler
 mkdir build_eos
 cd build_eos
 cmake ..
@@ -789,39 +835,41 @@ ls -l bin/qmcpack
 \subsection{Installing on NERSC Edison Cray XC30}
 
 Edison is a Cray XC30 with dual 12-core Intel "Ivy Bridge" nodes
-installed at NERSC. The build settings are identical to eos.
+installed at NERSC. The build settings are identical to Eos.
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
 export CRAYPE_LINK_TYPE=dynamic
 module unload cray-libsci
 module load boost
-module load cmake
+module load cmake/3.11.4
 module load libxml2
 module load cray-hdf5-parallel
+module load gcc   # Make C++ 14 standard library available to the Intel compiler
 cmake ..
 make -j 8
 ls -l bin/qmcpack
 \end{verbatim}
-When the above was tested on 15 September 2017, the following module and
+When the above was tested on 30 October 2018, the following module and
 software versions were present:
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-qmcpack@edison04:trunk> module list
-urrently Loaded Modulefiles:
-  1) modules/3.2.10.6                              14) rca/2.2.11-6.0.4.0_13.2__g84de67a.ari
-  2) intel/17.0.2.174                              15) atp/2.1.1
-  3) craype-network-aries                          16) PrgEnv-intel/6.0.4
-  4) craype/2.5.12.3                               17) craype-ivybridge
-  5) udreg/2.3.2-6.0.4.0_12.2__g2f9c3ee.ari        18) cray-shmem/7.6.0
-  6) ugni/6.0.14-6.0.4.0_14.1__ge7db4a2.ari        19) cray-mpich/7.6.0
-  7) pmi/5.0.12                                    20) altd/2.0
-  8) dmapp/7.1.1-6.0.4.0_46.2__gb8abda2.ari        21) darshan/3.1.4
-  9) gni-headers/5.0.11-6.0.4.0_7.2__g7136988.ari  22) boost/1.63
- 10) xpmem/2.2.2-6.0.4.0_3.1__g43b0535.ari         23) cmake/3.8.1
- 11) job/2.2.2-6.0.4.0_8.2__g3c644b5.ari           24) cray-hdf5-parallel/1.10.0.3
- 12) dvs/2.7_2.2.30-6.0.4.1_5.4__gd731684          25) libxml2/2.9.4
- 13) alps/6.4.1-6.0.4.0_7.2__g86d0f3d.ari
+build> module list
+Currently Loaded Modulefiles:
+  1) modules/3.2.10.6                                 14) alps/6.6.43-6.0.7.0_26.4__ga796da3.ari
+  2) nsg/1.2.0                                        15) rca/2.2.18-6.0.7.0_33.3__g2aa4f39.ari
+  3) intel/18.0.1.163                                 16) atp/2.1.1
+  4) craype-network-aries                             17) PrgEnv-intel/6.0.4
+  5) craype/2.5.14                                    18) craype-ivybridge
+  6) udreg/2.3.2-6.0.7.0_33.18__g5196236.ari          19) cray-mpich/7.7.0
+  7) ugni/6.0.14.0-6.0.7.0_23.1__gea11d3d.ari         20) altd/2.0
+  8) pmi/5.0.13                                       21) darshan/3.1.4
+  9) dmapp/7.1.1-6.0.7.0_34.3__g5a674e0.ari           22) boost/1.63
+ 10) gni-headers/5.0.12.0-6.0.7.0_24.1__g3b1768f.ari  23) cmake/3.11.4
+ 11) xpmem/2.2.15-6.0.7.1_5.8__g7549d06.ari           24) libxml2/2.9.4
+ 12) job/2.2.3-6.0.7.0_44.1__g6c4e934.ari             25) cray-hdf5-parallel/1.10.1.1
+ 13) dvs/2.7_2.2.112-6.0.7.1_6.4__ge96a422            26) gcc/7.3.0
+
 \end{verbatim}
 
 \subsection{Installing on NERSC Cori, Haswell Partition, Cray XC40}
@@ -834,7 +882,8 @@ export CRAYPE_LINK_TYPE=dynamic
 module unload cray-libsci
 module load boost
 module load cray-hdf5-parallel
-module load cmake
+module load cmake/3.11.4
+module load gcc   # Make C++ 14 standard library available to the Intel compiler
 mkdir build_cori_hsw
 cd build_cori_hsw
 cmake ..
@@ -842,26 +891,27 @@ make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
 
-When the above was tested on 29 August 2017, the following module and
+When the above was tested on 30 October 2018, the following module and
 software versions were present:
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
 build_cori_hsw> module list
 Currently Loaded Modulefiles:
-  1) modules/3.2.10.6                              14) alps/6.4.1-6.0.4.0_7.2__g86d0f3d.ari
-  2) nsg/1.2.0                                     15) rca/2.2.11-6.0.4.0_13.2__g84de67a.ari
-  3) intel/17.0.2.174                              16) atp/2.1.1
-  4) craype-network-aries                          17) PrgEnv-intel/6.0.4
-  5) craype/2.5.12                                 18) craype-haswell
-  6) udreg/2.3.2-6.0.4.0_12.2__g2f9c3ee.ari        19) cray-shmem/7.6.0
-  7) ugni/6.0.14-6.0.4.0_14.1__ge7db4a2.ari        20) cray-mpich/7.6.0
-  8) pmi/5.0.12                                    21) altd/2.0
-  9) dmapp/7.1.1-6.0.4.0_46.2__gb8abda2.ari        22) darshan/3.1.4
- 10) gni-headers/5.0.11-6.0.4.0_7.2__g7136988.ari  23) boost/1.61
- 11) xpmem/2.2.2-6.0.4.0_3.1__g43b0535.ari         24) cmake/3.3.2
- 12) job/2.2.2-6.0.4.0_8.2__g3c644b5.ari           25) cray-hdf5-parallel/1.10.0.3
- 13) dvs/2.7_2.2.31-6.0.4.1_6.1__gb3b87e6
+  1) modules/3.2.10.6                                 14) alps/6.6.43-6.0.7.0_26.4__ga796da3.ari
+  2) nsg/1.2.0                                        15) rca/2.2.18-6.0.7.0_33.3__g2aa4f39.ari
+  3) intel/18.0.1.163                                 16) atp/2.1.1
+  4) craype-network-aries                             17) PrgEnv-intel/6.0.4
+  5) craype/2.5.14                                    18) craype-haswell
+  6) udreg/2.3.2-6.0.7.0_33.18__g5196236.ari          19) cray-mpich/7.7.0
+  7) ugni/6.0.14.0-6.0.7.0_23.1__gea11d3d.ari         20) altd/2.0
+  8) pmi/5.0.13                                       21) darshan/3.1.4
+  9) dmapp/7.1.1-6.0.7.0_34.3__g5a674e0.ari           22) boost/1.63
+ 10) gni-headers/5.0.12.0-6.0.7.0_24.1__g3b1768f.ari  23) cray-hdf5-parallel/1.10.1.1
+ 11) xpmem/2.2.15-6.0.7.1_5.8__g7549d06.ari           24) cmake/3.11.4
+ 12) job/2.2.3-6.0.7.0_44.1__g6c4e934.ari             25) gcc/7.3.0
+ 13) dvs/2.7_2.2.113-6.0.7.1_7.1__g1bbc03e
+
 \end{verbatim}
 
 \subsection{Installing on NERSC Cori, Xeon Phi KNL partition, Cray XC40}
@@ -876,7 +926,8 @@ module swap craype-haswell craype-mic-knl
 module unload cray-libsci
 module load boost
 module load cray-hdf5-parallel
-module load cmake
+module load cmake/3.11.4
+module load gcc   # Make C++ 14 standard library available to the Intel compiler
 mkdir build_cori_knl
 cd build_cori_knl
 cmake ..
@@ -884,23 +935,56 @@ make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
 
-When the above was tested on 29 August 2017, the following module and
+When the above was tested on 30 October 2018, the following module and
 software versions were present:
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
 build_cori_knl> module list
 Currently Loaded Modulefiles:
-  1) modules/3.2.10.6                              10) gni-headers/5.0.11-6.0.4.0_7.2__g7136988.ari  19) cray-shmem/7.6.0
-  2) nsg/1.2.0                                     11) xpmem/2.2.2-6.0.4.0_3.1__g43b0535.ari         20) cray-mpich/7.6.0
-  3) intel/17.0.2.174                              12) job/2.2.2-6.0.4.0_8.2__g3c644b5.ari           21) altd/2.0
-  4) craype-network-aries                          13) dvs/2.7_2.2.31-6.0.4.1_6.1__gb3b87e6          22) darshan/3.1.4
-  5) craype/2.5.12                                 14) alps/6.4.1-6.0.4.0_7.2__g86d0f3d.ari          23) boost/1.61
-  6) udreg/2.3.2-6.0.4.0_12.2__g2f9c3ee.ari        15) rca/2.2.11-6.0.4.0_13.2__g84de67a.ari         24) cray-hdf5-parallel/1.10.0.3
-  7) ugni/6.0.14-6.0.4.0_14.1__ge7db4a2.ari        16) atp/2.1.1                                     25) cmake/3.3.2
-  8) pmi/5.0.12                                    17) PrgEnv-intel/6.0.4
-  9) dmapp/7.1.1-6.0.4.0_46.2__gb8abda2.ari        18) craype-mic-knl
+  1) modules/3.2.10.6                                 14) alps/6.6.43-6.0.7.0_26.4__ga796da3.ari
+  2) nsg/1.2.0                                        15) rca/2.2.18-6.0.7.0_33.3__g2aa4f39.ari
+  3) intel/18.0.1.163                                 16) atp/2.1.1
+  4) craype-network-aries                             17) PrgEnv-intel/6.0.4
+  5) craype/2.5.14                                    18) craype-mic-knl
+  6) udreg/2.3.2-6.0.7.0_33.18__g5196236.ari          19) cray-mpich/7.7.0
+  7) ugni/6.0.14.0-6.0.7.0_23.1__gea11d3d.ari         20) altd/2.0
+  8) pmi/5.0.13                                       21) darshan/3.1.4
+  9) dmapp/7.1.1-6.0.7.0_34.3__g5a674e0.ari           22) boost/1.63
+ 10) gni-headers/5.0.12.0-6.0.7.0_24.1__g3b1768f.ari  23) cray-hdf5-parallel/1.10.1.1
+ 11) xpmem/2.2.15-6.0.7.1_5.8__g7549d06.ari           24) cmake/3.11.4
+ 12) job/2.2.3-6.0.7.0_44.1__g6c4e934.ari             25) gcc/7.3.0
+ 13) dvs/2.7_2.2.113-6.0.7.1_7.1__g1bbc03e
+
 \end{verbatim}
+
+\subsection{Installing on systems with ARMv8 based processors}
+The following build recipe was verified using the `Arm Compiler for HPC' on the ANL JLSE Comanche system with Cavium ThunderX2 processors on 6 November 2018.
+\begin{verbatim}
+# load armclang compiler
+module load Generic-AArch64/RHEL/7/arm-hpc-compiler/18.4
+# load Arm performance libraries
+module load ThunderX2CN99/RHEL/7/arm-hpc-compiler-18.4/armpl/18.4.0
+# define path to pre-installed packages
+export HDF5_ROOT=</path/to/hdf5/install/>
+export BOOST_ROOT=</path/to/boost/install> # header-only, no need to build
+\end{verbatim}
+Then using the following command
+\begin{verbatim}
+mkdir build_armclang
+cd build_armclang
+cmake -DCMAKE_C_COMPILER=armclang -DCMAKE_CXX_COMPILER=armclang++ -DQMC_MPI=0 \
+      -DCMAKE_C_COMPILER_ID=Clang -DCMAKE_CXX_COMPILER_ID=Clang \
+      -DCMAKE_CXX_COMPILER_VERSION=5.0 -DCMAKE_CXX_STANDARD_COMPUTED_DEFAULT=98 \
+      -DCMAKE_C_FLAGS="-march=armv8-a" -DCMAKE_CXX_FLAGS="-march=armv8-a" \
+      -DLAPACK_LIBRARIES="-L$ARMPL_DIR/lib -larmpl_mp" \
+      -DFFTW_INCLUDE_DIR="$ARMPL_DIR/include" \
+      -DFFTW_LIBRARIES="$ARMPL_DIR/lib/libarmpl_mp.a" \
+      ..
+make -j 56
+\end{verbatim}
+Note that armclang is recognized as an `unknown' compiler by cmake (v3.12.4) and we need to force it as clang to apply necessary flags.
+This workaround will not be necessary in the near future.
 
 \subsection{Installing on Windows}
 Install the Windows Subsystem for Linux and Bash on Windows.
@@ -1133,26 +1217,57 @@ against this fork \url{https://github.com/naromero77/spack}
 \section{Testing and validation of QMCPACK}
 \label{sec:testing}
 We \textbf{strongly encourage} running the included tests each time
-QMCPACK is built. These compare the results from the executable with
-known-good mean-field, quantum chemical, and other QMC results.
+QMCPACK is built. A range of unit and integration tests ensure that
+the code behaves as expected and that results are consistent with
+known-good mean-field, quantum chemical, and historical QMC results.
 
-The tests included with QMCPACK currently mainly test the VMC code with
-single determinant wavefunction and simple spline Jastrow
-wavefunctions, and for gaussian and periodic spline basis
-sets. We check that the known mean
-field results are obtained with no Jastrow. When Jastrow functions are
-included we test against previous QMC data. The tests are statistical
-with a generous 3 $\sigma$ tolerance, however the system sizes are
-small, typically $<10$ electrons, so the error bars are typically
-small. Limited DMC and optimizer tests included and are scheduled for expansion.
+The tests include:
+\begin{itemize}
+\item Unit tests : to check fundamental behavior. These should always pass.
+\item Stochastic integration tests : to check computed results from
+  the Monte Carlo methods. These may fail statistically, but rarely,
+  due to the use of three sigma level statistics. These tests are
+  further split into ``short'' tests, which have just sufficient
+  length to have valid statistics, and ``long'' tests, to check
+  behavior to higher statistical accuracy.
+\item Converter tests : to check conversion of trial wavefunctions
+  from codes such as Quantum Espresso and GAMESS to QMCPACK's
+  formats. These should always pass.
+\item Workflow tests : in the case of Quantum Espresso, we test the
+  entire cycle of DFT calculation, trial wavefunction conversion, and
+  a subsequent VMC run.  
+\item Performance : to help performance monitoring. Only the timing of
+  these runs is relevant.  
+\end{itemize}
 
- The ``short'' tests only take a few minutes on a 16
-core machine. You can run these tests using the command below in the
+
+The test types are differentiated by prefixes in their names,
+e.g. ``short-LiH\_dimer\_ae\_vmc\_hf\_noj\_16-1'' indicates a short VMC test
+for the LiH dime. 
+
+QMCPACK also includes tests for developmental features and feature
+that are unsupported on certain platforms. To indicate these, tests
+that are unstable are labeled with the ctest label
+``unstable''. e.g. They are unreliable, unsupported, or known to fail
+due to partial implementation or bugs.
+
+When installing QMCPACK you should run at least the deterministic
+tests
+\begin{verbatim}
+ctest -R deterministic -LE unstable
+\end{verbatim}
+These currently take only a few seconds to run. All should pass. A
+failure here may indicate a major problem with the installation.
+
+If time allows, the ``short'' stochastic tests should also be run.
+The ``short'' tests each take a few minutes each on a 16
+core machine, totally around 1 hour depending on the platform. You can run these tests using the command below in the
 build directory:
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-ctest -R short   # Run the tests with "short" in their name
+ctest -R short -LE unstable  # Run the tests with "short" in their name.
+                             # Exclude any known unstable tests.
 \end{verbatim}
 The output should be similar to the following:
 \verbatimfont{\footnotesize}
@@ -1173,8 +1288,9 @@ Test project build_gcc
 
 Total Test time (real) = 167.14 sec
 \end{verbatim}
+
 Note that the number of tests that are run varies between the
-standard, complex, and GPU compilations.
+standard, complex, and GPU compilations. These tests should pass with three sigma reliability. i.e. They should nearly always pass, and when rerunning a failed test it should usually pass. Overly frequent failures suggest a problem that should be addressed before any scientific production.
 
 The  full set of tests consist of significantly longer versions of the short
 tests, as well as tests of the conversion utilities. The runs require
@@ -1184,7 +1300,7 @@ directory:
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-ctest            # Run all the tests. This will take several hours.
+ctest -LE unstable           # Run all the stable tests. This will take several hours.
 \end{verbatim}
 
 You can also run verbose tests which direct the QMCPACK
@@ -1203,7 +1319,7 @@ Under each physical system directory there may be tests for multiple QMC methods
 The numerical comparisons and test definitions are in the \texttt{CMakeLists.txt} file in each physical system directory.
 
 If \textit{all} the QMC tests fail it is likely
-that the appropriate mpiexec (or aprun, srun) is not being
+that the appropriate mpiexec (or mpirun, aprun, srun, jsrun) is not being
 called or found. If the QMC runs appear to work but all the other
 tests fail it is possible that python is not working on your system -
 we suggest checking some of the test console output in \texttt{build/Testing/Temporary/LastTest.log}
@@ -1211,24 +1327,26 @@ or the output files under \texttt{build/tests/}.
 %The runs occur in \texttt{build/tests/test\_dir/test\_name}.
 
 
-Note that because most of these tests are very small, consisting of only a few
+Note that because most of the tests are very small, consisting of only a few
 electrons, the performance is not representative of larger
 calculations. For example, while the calculations might fit in cache,
 there will be essentially no vectorization due to the small electron
 counts. \textbf{These tests should therefore not be used for any benchmarking or
-performance analysis}.
-
-Example runs that can be used for testing performance are described in
+performance analysis}. Example runs that can be used for testing performance are described in
 Sec. \ref{sec:perftests}
 
-\subsection{Unit tests}
+\subsection{Determinstic and unit tests}
 
-QMCPACK has a set of unit tests.
-All of the unit tests can be run with the following command (in the build directory):
+QMCPACK has a set of deterministic tests, predominantly unit tests.
+All of these tests can be run with the following command (in the build directory):
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-ctest -L unit
+ctest -R deterministic -LE unstable
 \end{verbatim}
+
+These tests should always pass. Failure could indicate a major problem
+with the compiler, compiler settings, or a linked library that would
+give incorrect results.
 
 The output should look similar to the following:
 \verbatimfont{\footnotesize}
@@ -1353,25 +1471,21 @@ We currently test
 the following combinations nightly (workstations) and weekly (supercomputers):
 
 \begin{itemize}
-\item On a Linux Intel Xeon workstation:
+\item On a Linux Intel Xeon workstation, combinations of:
   \begin{itemize}
-  \item GCC 4.8.5 with OpenMPI and CUDA 8.0 (GPU build, run on NVIDIA K40s)
-  \item GCC 4.8.5 with OpenMPI with Netlib BLAS
-  \item GCC 4.8.5 with OpenMPI with Intel MKL
-  \item Intel 2017 with Intel MPI and MKL
-  \item Intel 2015 with Intel MPI and MKL and CUDA 8.0 (GPU build, run on NVIDIA K40s)
-  \item Intel 2015 with Intel MPI  and MKL
+  \item GCC 8.2.0, Intel2019, Clang6, Clang7, PGI2018
+  \item No MPI, Intel MPI, and OpenMPI
+  \item CPU and GPU builds using CUDA 10.0
   \end{itemize}
 \item On a Linux Intel Knight's Landing workstation:
   \begin{itemize}
   \item Intel 2017 with Intel MPI and MKL
- \item GCC 4.8.5 with Intel MPI and MKL
+  \item GCC 6.3.1 with Intel MPI and MKL
   \end{itemize}
 \item On Eos, a Cray XC30 Intel machine:
   \begin{itemize}
 \item The default Intel programming environment and compiler with Cray MPI and Intel MKL
   \end{itemize}
-
 \item On Titan, a Cray XK7 CPU+GPU machine:
   \begin{itemize}
   \item The GCC programming environment and compiler with Cray MPI and CUDA
@@ -1379,7 +1493,7 @@ the following combinations nightly (workstations) and weekly (supercomputers):
   \end{itemize}
 \item On Cetus, an IBM Blue Gene Q machine:
 \begin{itemize}
-\item Blue Gene Clang 4.0
+\item Blue Gene Clang
 \end{itemize}
 \end{itemize}
 

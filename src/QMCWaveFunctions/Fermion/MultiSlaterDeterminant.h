@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
+#include <QMCWaveFunctions/Fermion/DiracDeterminant.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
@@ -56,7 +56,7 @@ public:
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer,AccRejTimer,evalOrbTimer;
 
-  typedef DiracDeterminantBase*    DiracDeterminantPtr;
+  typedef DiracDeterminant*    DiracDeterminantPtr;
   typedef SPOSet*              SPOSetPtr;
   typedef SPOSetProxyForMSD*             SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;

@@ -1,0 +1,71 @@
+#HCN test targets essentially the Cusp Correction algorithm for all electron calculations.
+
+A run will triger the generation of the Cusp Correction parameters as shown in files downdet.cuspInfo.xml  updet.cuspInfo.xml
+
+the VMC energy is then computed to evaluate the local energy and variance.
+The long VMC reference run used to extrapolate the short run reference used the following VMC blocks:
+
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="samplesperthread">1</parameter>
+    <parameter name="stepsbetweensamples">100</parameter>
+    <parameter name="substeps">5</parameter>
+    <parameter name="warmupSteps">20</parameter>
+    <parameter name="blocks">655000</parameter>
+    <parameter name="timestep">0.5</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+
+
+This leads to the following statistics:
+
+frag00005_B3LYP  series 0 
+  LocalEnergy           =         -93.33930 +/-          0.00027 
+  Variance              =             2.381 +/-            0.010 
+  Kinetic               =            93.249 +/-            0.047 
+  LocalPotential        =          -186.588 +/-            0.047 
+  ElecElec              =           55.2886 +/-           0.0013 
+  IonIon                =             24.03 +/-             0.00 
+  IonElec               =          -265.910 +/-            0.047 
+  LocalEnergy_sq        =          8714.606 +/-            0.051 
+  BlockWeight           =           4096.00 +/-             0.00 
+  BlockCPU              =       0.010012609 +/-      0.000000060 
+  AcceptRatio           =         0.3281958 +/-        0.0000037 
+  Efficiency            =          18549.36 +/-             0.00 
+  TotalTime             =            654.39 +/-             0.00 
+  TotalSamples          =         267702272 +/-                0
+
+However, In order to keep the size of the files small in the reference directory, an equivalent VMC block was used using 1 sample per thread and 4096 threads
+
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="samplesperthread">1</parameter>
+    <parameter name="stepsbetweensamples">100000</parameter>
+    <parameter name="substeps">5</parameter>
+    <parameter name="warmupSteps">20</parameter>
+    <parameter name="blocks">200</parameter>
+    <parameter name="timestep">0.5</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+
+
+This leads to the following statistics:
+
+vmc-ref  series 0 
+  LocalEnergy           =         -93.33934 +/-          0.00021 
+  Variance              =            2.3797 +/-           0.0043 
+  Kinetic               =            93.179 +/-            0.045 
+  LocalPotential        =          -186.518 +/-            0.045 
+  ElecElec              =           55.2876 +/-           0.0013 
+  IonIon                =             24.03 +/-             0.00 
+  IonElec               =          -265.839 +/-            0.045 
+  LocalEnergy_sq        =          8714.613 +/-            0.040 
+  BlockWeight           =        2048000.00 +/-             0.00 
+  BlockCPU              =          5.017721 +/-         0.000024 
+  AcceptRatio           =         0.3282004 +/-        0.0000033 
+  Efficiency            =             37.90 +/-             0.00 
+  TotalTime             =           1003.54 +/-             0.00 
+  TotalSamples          =         409600000 +/-                0
+
+
+

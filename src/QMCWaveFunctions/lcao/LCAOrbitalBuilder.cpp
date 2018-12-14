@@ -103,8 +103,8 @@ namespace qmcplusplus
   }
 
 
-  LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur)
-    : targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path(""), doCuspCorrection(false)
+  LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate *comm, xmlNodePtr cur)
+    : SPOSetBuilder(comm), targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path(""), doCuspCorrection(false)
   {
     ClassName="LCAOrbitalBuilder";
     ReportEngine PRE(ClassName,"createBasisSet");
@@ -310,7 +310,6 @@ namespace qmcplusplus
         if(it == ao_built_centers.end())
         {
           AOBasisBuilder<ao_type> any(elementType, myComm);
-          any.setReportLevel(ReportLevel);
           any.put(cur);
           ao_type* aoBasis = any.createAOSet(cur);
           if(aoBasis)
@@ -390,7 +389,6 @@ namespace qmcplusplus
       if(it == ao_built_centers.end())
       {
         AOBasisBuilder<ao_type> any(elementType,myComm);
-        any.setReportLevel(ReportLevel);
         any.putH5(hin);
         ao_type* aoBasis = any.createAOSetH5(hin);
         if(aoBasis)
@@ -418,7 +416,7 @@ namespace qmcplusplus
   }
 
   // Modifies orbital set lcwc
-  void createCuspCorrection(const Matrix<CuspCorrectionParameters> &info, int num_centers,
+  void applyCuspCorrection(const Matrix<CuspCorrectionParameters> &info, int num_centers,
                             int orbital_set_size, ParticleSet& targetPtcl, ParticleSet& sourcePtcl,
                             LCAOrbitalSetWithCorrection& lcwc, const std::string &id)
   {
@@ -500,8 +498,155 @@ namespace qmcplusplus
     }
     removeSTypeOrbitals(corrCenter, lcwc);
   }
+  void saveCusp(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParameters>& info, std::string id)
+  {
 
 
+
+    xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
+    xmlNodePtr cuspRoot = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+    xmlNodePtr spo = xmlNewNode(NULL,(const xmlChar*)"sposet");
+    xmlNewProp(spo,(const xmlChar*)"name",(const xmlChar*)id.c_str());
+    xmlAddChild(cuspRoot,spo);
+    xmlDocSetRootElement(doc, cuspRoot);
+
+    for (int center_idx = 0; center_idx < num_centers; center_idx++) {
+  
+      xmlNodePtr ctr = xmlNewNode(NULL,(const xmlChar*)"center");
+      std::ostringstream num;
+      num <<center_idx;
+      xmlNewProp(ctr,(const xmlChar*)"num",(const xmlChar*)num.str().c_str());
+
+      for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
+          std::ostringstream num0, C, sg, rc, a1,a2,a3,a4,a5;
+          xmlNodePtr orb = xmlNewNode(NULL,(const xmlChar*)"orbital"); 
+          num0<<mo_idx;
+          xmlNewProp(orb,(const xmlChar*)"num",(const xmlChar*)num0.str().c_str());
+
+
+      
+          C.setf(std::ios::scientific, std::ios::floatfield);
+          C.precision(14);
+          C<<info(center_idx, mo_idx).C;
+          sg.setf(std::ios::scientific, std::ios::floatfield);
+          sg.precision(14);
+          sg<<info(center_idx, mo_idx).sg;
+          rc.setf(std::ios::scientific, std::ios::floatfield);
+          rc.precision(14);
+          rc<<info(center_idx, mo_idx).Rc;
+          a1.setf(std::ios::scientific, std::ios::floatfield);
+          a1.precision(14);
+          a1<<info(center_idx, mo_idx).alpha[0];
+          a2.setf(std::ios::scientific, std::ios::floatfield);
+          a2.precision(14);
+          a2<<info(center_idx, mo_idx).alpha[1];
+          a3.setf(std::ios::scientific, std::ios::floatfield);
+          a3.precision(14);
+          a3<<info(center_idx, mo_idx).alpha[2];
+          a4.setf(std::ios::scientific, std::ios::floatfield);
+          a4.precision(14);
+          a4<<info(center_idx, mo_idx).alpha[3];
+          a5.setf(std::ios::scientific, std::ios::floatfield);
+          a5.precision(14);
+          a5<<info(center_idx, mo_idx).alpha[4];
+          xmlNewProp(orb,(const xmlChar*)"C",(const xmlChar*)C.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"sg",(const xmlChar*)sg.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"rc",(const xmlChar*)rc.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"a1",(const xmlChar*)a1.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"a2",(const xmlChar*)a2.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"a3",(const xmlChar*)a3.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"a4",(const xmlChar*)a4.str().c_str());
+          xmlNewProp(orb,(const xmlChar*)"a5",(const xmlChar*)a5.str().c_str());
+          xmlAddChild(ctr,orb);
+       }
+       xmlAddChild(spo,ctr);
+    }
+
+    std::string fname = id+".cuspInfo.xml";
+    app_log() <<"Saving resulting cusp Info xml block to: " <<fname << std::endl;
+    xmlSaveFormatFile(fname.c_str(),doc,1);
+    xmlFreeDoc(doc);
+
+
+  }
+  void generateCuspInfo(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParameters>& info,
+                            ParticleSet& targetPtcl, ParticleSet& sourcePtcl,
+                            LCAOrbitalSetWithCorrection& lcwc,std::string id )
+  {
+    typedef QMCTraits::RealType RealType;
+
+    LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet);
+    phi.setOrbitalSetSize(lcwc.OrbitalSetSize);
+    phi.BasisSetSize = lcwc.BasisSetSize;
+    phi.setIdentity(false);
+
+    LCAOrbitalSet eta = LCAOrbitalSet(lcwc.myBasisSet);
+    eta.setOrbitalSetSize(lcwc.OrbitalSetSize);
+    eta.BasisSetSize = lcwc.BasisSetSize;
+    eta.setIdentity(false);
+
+
+    std::vector<bool> corrCenter(num_centers, "true");
+
+    typedef OneDimGridBase<RealType> GridType;
+    int npts = 500;
+
+
+    
+    for (int center_idx = 0; center_idx < num_centers; center_idx++)
+    {
+      std::cout<<"Working on Center "<<center_idx<<std::endl;
+      *(eta.C) = *(lcwc.C);
+      *(phi.C) = *(lcwc.C);
+      
+      splitPhiEta(center_idx, corrCenter, phi, eta);
+      for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
+        bool corrO = false;
+        auto& cref(*(phi.C));
+        for(int ip=0; ip<cref.cols(); ip++)
+        {
+          if(std::abs(cref(mo_idx,ip)) > 0)
+          {
+            corrO = true;
+            break;
+          }
+        }
+
+        if (corrO) {
+          std::cout<<"Working on Mo "<<mo_idx<<std::endl;
+          OneMolecularOrbital etaMO(&targetPtcl, &sourcePtcl, &eta);
+          etaMO.changeOrbital(center_idx, mo_idx);
+
+          OneMolecularOrbital phiMO(&targetPtcl, &sourcePtcl, &phi);
+          phiMO.changeOrbital(center_idx, mo_idx);
+  
+          SpeciesSet& tspecies(sourcePtcl.getSpeciesSet());
+          int iz = tspecies.addAttribute("charge");
+          RealType Z = tspecies(iz, sourcePtcl.GroupID[center_idx]);
+
+          RealType Rc_max = 0.2;
+          RealType rc = 0.1;
+
+          RealType dx = rc*1.2/npts;
+          ValueVector_t pos(npts);
+          ValueVector_t ELideal(npts);
+          ValueVector_t ELcurr(npts);
+          for (int i = 0; i < npts; i++) {
+            pos[i] = (i+1.0)*dx;
+          }
+
+          RealType eta0 = etaMO.phi(0.0);
+          ValueVector_t ELorig(npts);
+          CuspCorrection cusp(info(center_idx, mo_idx));
+          minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
+          info(center_idx, mo_idx) = cusp.cparam;
+        }
+      }
+    }
+    saveCusp(orbital_set_size,num_centers,info, id);
+  }
+
+  
   SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
@@ -518,32 +663,28 @@ namespace qmcplusplus
     LCAOrbitalSet *lcos = nullptr;
     LCAOrbitalSetWithCorrection *lcwc = nullptr;
     if (doCuspCorrection) {
-      lcwc =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, ReportLevel);
+      lcwc =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, rank()==0);
       lcos = lcwc;
     } else {
-      lcos=new LCAOrbitalSet(myBasisSet,ReportLevel);
+      lcos=new LCAOrbitalSet(myBasisSet,rank()==0);
     }
     loadMO(*lcos, cur);
 
     if (doCuspCorrection) {
-      if (cusp_file == "") {
-          APP_ABORT("cusp file required for now");
-      }
-
       int num_centers = sourcePtcl.getTotalNum();
 
       // Sometimes sposet attribute is 'name' and sometimes it is 'id'
       if (id == "") id = spo_name;
 
       int orbital_set_size = lcos->OrbitalSetSize;
-
       Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
-      bool okay = readCuspInfo(cusp_file, id, orbital_set_size, info);
-      if (!okay) {
-          APP_ABORT("failure in reading cusp info file");
+
+      bool valid= readCuspInfo(cusp_file, id, orbital_set_size, info);
+      if (!valid) {
+         generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, *lcwc, id);
       }
 
-      createCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
+      applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
     }
 
 

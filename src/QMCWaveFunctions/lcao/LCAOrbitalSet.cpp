@@ -81,10 +81,10 @@ namespace qmcplusplus
   template<typename T,unsigned D>
     inline void Product_ABt(const VectorSoaContainer<T,D>& A, const Matrix<T>& B, VectorSoaContainer<T,D>& C)
     {
-      CONSTEXPR char transa = 't';
-      CONSTEXPR char transb = 'n';
-      CONSTEXPR T zone(1);
-      CONSTEXPR T zero(0);
+      constexpr char transa = 't';
+      constexpr char transb = 'n';
+      constexpr T zone(1);
+      constexpr T zero(0);
       BLAS::gemm(transa, transb, B.rows(), D, B.cols(),
           zone, B.data(), B.cols(), A.data(), A.capacity(),
           zero, C.data(), C.capacity());
@@ -119,18 +119,6 @@ namespace qmcplusplus
         evaluate_vgl_impl(Tempv,psi,dpsi,d2psi);
       }
     }
-
-  void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, 
-      VGLVector_t vgl)
-  {
-    if(Identity)
-      myBasisSet->evaluateVGL(P,iat,vgl);
-    else
-    {
-      myBasisSet->evaluateVGL(P,iat,Temp);
-      Product_ABt(Temp,*C,vgl);
-    }
-  }
 
   void LCAOrbitalSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
   {

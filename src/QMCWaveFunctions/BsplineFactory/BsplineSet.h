@@ -67,15 +67,6 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     SplineAdoptor::set_spline(spline_r,spline_i,twist,ispline,level);
   }
 
-  inline ValueType RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
-  {
-    //this is just an example how to resuse t_logpsi
-    int ip=omp_get_thread_num()*2;
-    // YYYY: need to fix
-    //return SplineAdoptor::evaluate_dot(P,iat,arow,reinterpret_cast<DataType*>(t_logpsi[ip]));
-    return ValueType();
-  }
-
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     SplineAdoptor::evaluate_v(P,iat,psi);
@@ -95,30 +86,6 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
                        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     SplineAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
-
-#if 0
-    //debug GL combo
-    CONSTEXPR double eps=std::numeric_limits<float>::epsilon();
-    ValueVector_t psi_copy(psi);
-    GLVector_t gl(psi.size());
-    SplineAdoptor::evaluate_vgl_combo(P,iat,psi_copy,gl);
-    auto gradX=gl.data(0);
-    auto gradY=gl.data(1);
-    auto gradZ=gl.data(2);
-    auto lap=gl.data(3);
-    double v_err=0, g_err=0, l_err=0;
-    for(size_t i=0; i<psi.size(); ++i)
-    {
-      v_err+=std::abs(psi[i]-psi_copy[i]);
-      double dx=std::abs(dpsi[i][0]-gradX[i]);
-      double dy=std::abs(dpsi[i][1]-gradY[i]);
-      double dz=std::abs(dpsi[i][2]-gradZ[i]);
-      g_err+=std::sqrt(dx*dx+dy*dy+dz*dz);
-      l_err+=std::abs(d2psi[i]-lap[i]);
-    }
-    if(v_err>eps || g_err > eps || l_err>eps)
-      std::cout << "ERROR " << v_err << " " << g_err << " " << l_err << std::endl;
-#endif
   }
 
   inline void evaluate(const ParticleSet& P, int iat,
@@ -169,10 +136,21 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     }
   }
 
-  /** einspline does not need any other state data */
-  void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
+  virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
+                                    , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
   {
-    SplineAdoptor::evaluate_vgl_combo(P,iat,vgl);
+    typedef ValueMatrix_t::value_type value_type;
+    typedef GradMatrix_t::value_type grad_type;
+    typedef HessMatrix_t::value_type hess_type;
+    typedef GGGMatrix_t::value_type  ghess_type;
+    for(int iat=first, i=0; iat<last; ++iat,++i)
+    {
+      ValueVector_t v(logdet[i],OrbitalSetSize);
+      GradVector_t  g(dlogdet[i],OrbitalSetSize);
+      HessVector_t  h(grad_grad_logdet[i],OrbitalSetSize);
+      GGGVector_t  gh(grad_grad_grad_logdet[i],OrbitalSetSize);
+      SplineAdoptor::evaluate_vghgh(P,iat,v,g,h,gh);
+    }
   }
 
 };

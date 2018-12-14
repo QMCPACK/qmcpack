@@ -27,6 +27,10 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/NewTimer.h"
+#ifdef QMC_CUDA
+#include "type_traits/CUDATypes.h"
+#endif
+
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
  */
@@ -110,9 +114,7 @@ public:
   typedef WaveFunctionComponent::HessType           HessType;
   typedef WaveFunctionComponent::HessVector_t       HessVector_t;
 #ifdef QMC_CUDA
-  typedef WaveFunctionComponent::CudaValueType   CudaValueType;
-  typedef WaveFunctionComponent::CudaGradType    CudaGradType;
-  typedef WaveFunctionComponent::CudaRealType    CudaRealType;
+  using CTS = CUDAGlobalTypes;
   typedef WaveFunctionComponent::RealMatrix_t    RealMatrix_t;
   typedef WaveFunctionComponent::ValueMatrix_t   ValueMatrix_t;
   typedef WaveFunctionComponent::GradMatrix_t    GradMatrix_t;
@@ -241,6 +243,7 @@ public:
 
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat);
+  void completeUpdates();
 
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */
@@ -342,8 +345,6 @@ private:
   ///fake particleset
   ParticleSet* tempP;
 
-  TrialWaveFunction();
-
   std::vector<NewTimer*> myTimers;
   std::vector<RealType> myTwist;
 
@@ -352,16 +353,16 @@ private:
   ///////////////////////////////////////////
 #ifdef QMC_CUDA
 private:
-  gpu::device_host_vector<CudaValueType>   GPUratios;
-  gpu::device_host_vector<CudaGradType>    GPUgrads;
-  gpu::device_host_vector<CudaValueType>   GPUlapls;
+  gpu::device_host_vector<CTS::ValueType>   GPUratios;
+  gpu::device_host_vector<CTS::GradType>    GPUgrads;
+  gpu::device_host_vector<CTS::ValueType>   GPUlapls;
 
 public:
   void freeGPUmem GPU_XRAY_TRACE ();
 
   void recompute GPU_XRAY_TRACE (MCWalkerConfiguration &W, bool firstTime=true);
 
-  void reserve GPU_XRAY_TRACE (PointerPool<gpu::device_vector<CudaValueType> > &pool,
+  void reserve GPU_XRAY_TRACE (PointerPool<gpu::device_vector<CTS::ValueType> > &pool,
                 bool onlyOptimizable=false);
   void getGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);

@@ -41,7 +41,7 @@ namespace qmcplusplus
     SPOSetInfoSimple<SHOState> basis_states;
 
     //construction/destruction
-    SHOSetBuilder(ParticleSet& P);
+    SHOSetBuilder(ParticleSet& P, Communicate *comm);
 
     ~SHOSetBuilder();
 

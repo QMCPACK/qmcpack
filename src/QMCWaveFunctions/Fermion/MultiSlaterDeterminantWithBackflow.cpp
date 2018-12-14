@@ -22,7 +22,7 @@ namespace qmcplusplus
 MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo, BackflowTransformation *BF):MultiSlaterDeterminant(targetPtcl,upspo,dnspo),BFTrans(BF)
 {
   Optimizable=false;
-  OrbitalName="MultiSlaterDeterminantWithBackflow";
+  ClassName="MultiSlaterDeterminantWithBackflow";
 }
 
 WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
@@ -721,7 +721,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = (RealType)1.0/psi;;
       ValueType lapl_sum=0.0;
       ParticleSet::ParticleGradient_t g(n),gmP(n);
-      ValueType gg=0.0, ggP=0.0;
+      ValueType gg=0.0;
       g=0.0;
       gmP=0.0;
       for(int i=0; i<lapls_up.size(); i++)
@@ -752,7 +752,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
           cnt+=DetsPerCSF[ip];
           continue;
         }
-        ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
+        ValueType cdet=0.0,q0=0.0,v1=0.0;
         for(int k=0; k<DetsPerCSF[ip]; k++)
         {
           int upC = C2node_up[cnt];
@@ -786,7 +786,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = (RealType)1.0/psi;;
       ValueType lapl_sum=0.0;
       ParticleSet::ParticleGradient_t g(n),gmP(n);
-      ValueType gg=0.0, ggP=0.0;
+      ValueType ggP=0.0;
       g=0.0;
       gmP=0.0;
       for(int i=0; i<lapls_up.size(); i++)
@@ -872,6 +872,9 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
             ValueType dpsi2=dpsia_dn(dnC,pa);
             ParticleSet::ParticleGradient_t& g1 = grads_up[upC];
             ParticleSet::ParticleGradient_t& g2 = grads_dn[dnC];
+#if ( ( __INTEL_COMPILER == 1900 ) && ( __INTEL_COMPILER_UPDATE == 0 ) )
+            #pragma omp simd reduction(+:dot1)
+#endif
             for(int k=0; k<n; k++)
               dot1 += dot((g2[k]-gmP[k]),dGa_up(upC,pa,k))
                       + dot((g1[k]-gmP[k]),dGa_dn(dnC,pa,k))

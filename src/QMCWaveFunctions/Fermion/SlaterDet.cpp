@@ -24,7 +24,7 @@ namespace qmcplusplus
 SlaterDet::SlaterDet(ParticleSet& targetPtcl)
 {
   Optimizable = false;
-  OrbitalName = "SlaterDet";
+  ClassName = "SlaterDet";
 
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)
@@ -167,16 +167,6 @@ void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
   for (int i = 0; i < Dets.size(); ++i)
     Dets[i]->registerData(P, buf);
   DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
-}
-
-void SlaterDet::updateAfterSweep(ParticleSet& P,
-      ParticleSet::ParticleGradient_t& G,
-      ParticleSet::ParticleLaplacian_t& L)
-{
-  for (size_t i = 0, n=Dets.size(); i < n; ++i)
-  {
-    Dets[i]->updateAfterSweep(P,G,L);
-  }
 }
 
 SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)

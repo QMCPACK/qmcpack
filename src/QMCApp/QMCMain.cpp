@@ -81,11 +81,28 @@ QMCMain::QMCMain(Communicate* c)
   app_summary()  << "=====================================================\n";
   qmc_common.print_options(app_log());
   app_summary()
-      << "\n  MPI Nodes            = " << OHMMS::Controller->size()
-      << "\n  MPI Nodes per group  = " << myComm->size()
-      << "\n  MPI Group ID         = " << myComm->getGroupID()
-      << "\n  OMP_NUM_THREADS      = " << omp_get_max_threads()
+      << "\n  MPI Nodes             = " << OHMMS::Controller->size()
+      << "\n  MPI Nodes per group   = " << myComm->size()
+      << "\n  MPI Group ID          = " << myComm->getGroupID()
       << std::endl;
+  #pragma omp parallel
+  {
+    const int L1_tid = omp_get_thread_num();
+    if(L1_tid==0)
+      app_summary() << "  OMP 1st level threads = " << omp_get_num_threads() << std::endl;
+    #pragma omp parallel
+    {
+      const int L2_tid = omp_get_thread_num();
+      const int L2_num_threads = omp_get_num_threads();
+      if(L1_tid==0&&L2_tid==0)
+      {
+        if (L2_num_threads==1)
+          app_summary() << "  OMP nested threading disabled or only 1 thread on the 2nd level" << std::endl;
+        else
+          app_summary() << "  OMP 2nd level threads = " << L2_num_threads << std::endl;
+      }
+    }
+  }
   app_summary()
       << "\n  Precision used in this calculation, see definitions in the manual:"
       << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)
@@ -93,6 +110,9 @@ QMCMain::QMCMain(Communicate* c)
 #ifdef QMC_CUDA
       << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION) 
       << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
+#endif
+#ifdef ENABLE_SOA
+      << "\n\n  Structure-of-arrays (SoA) optimization enabled"
 #endif
       << std::endl;
   app_summary() << std::endl;
@@ -137,14 +157,14 @@ bool QMCMain::execute()
     //initialize the random number generator
     xmlNodePtr rptr = myRandomControl.initialize(m_context);
 
-    AFQMCFactory afqmc_fac(myComm,myRandomControl);
+    afqmc::AFQMCFactory afqmc_fac(OHMMS::Controller->comm);
     if(!afqmc_fac.parse(cur)) {
       app_log()<<" Error in AFQMCFactory::parse() ." <<std::endl;
       return false;
     }
     cur=XmlDocStack.top()->getRoot(); 
     return afqmc_fac.execute(cur);
-  } else
+  }
 #else
   if(simulationType == "afqmc") {
     app_error()<<" Executable not compiled with AFQMC. Recompile with BUILD_AFQMC set to 1." <<std::endl; 
@@ -152,33 +172,6 @@ bool QMCMain::execute()
   }
 #endif
 
-#ifdef BUILD_FCIQMC
-
-  if(simulationType == "fciqmc") {
-    app_log() << std::endl << "/*************************************************\n"
-                      << " ********  This is a FCIQMC calculation   ********\n"
-                      << " *************************************************" <<std::endl;
-
-    xmlNodePtr cur=XmlDocStack.top()->getRoot();
-
-    xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
-    //initialize the random number generator
-    xmlNodePtr rptr = myRandomControl.initialize(m_context);
-
-    SQCFactory fciqmc_fac(myComm,myRandomControl);
-    if(!fciqmc_fac.parse(cur)) {
-      app_log()<<" Error in SQCFactory::parse() ." <<std::endl;
-      return false;
-    }
-    cur=XmlDocStack.top()->getRoot();
-    return fciqmc_fac.execute(cur);
-  }
-#else
-  if(simulationType == "fciqmc") {
-    app_error()<<" Executable not compiled with FCIQMC. Recompile with BUILD_FCIQMC set to 1." <<std::endl; 
-    return false;
-  }
-#endif
 
   NewTimer *t2 = TimerManager.createTimer("Total", timer_level_coarse);
   t2->start();

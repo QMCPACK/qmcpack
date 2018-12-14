@@ -4,7 +4,7 @@
 
 # Prerequisites
 
- * C/C++ compilers
+ * C++ 14 and C99 capable compilers. e.g. gcc 5.0, Intel 2018, clang 3.5 or newer. 
  * CMake, build utility, http://www.cmake.org
  * BLAS/LAPACK, numerical library, use platform-optimized libraries
  * Libxml2, XML parser, http://xmlsoft.org/
@@ -12,7 +12,7 @@
  * BOOST, peer-reviewed portable C++ source libraries, http://www.boost.org
  * FFTW, FFT library, http://www.fftw.org/
 
- Note that the einspline library is no longer required.
+See the manual for more detailed version requirements.
 
 # Building with CMake
 
@@ -21,12 +21,13 @@
  extensive use of toolchains, but the system has since been updated to
  eliminate the use of toolchain files for most cases.  The build
  system works with GNU, Intel, and IBM XLC compilers.  Specific compile options
- can be specified either through specific environmental or CMake
+ can be specified either through specific environment or CMake
  variables.  When the libraries are installed in standard locations,
- e.g., /usr, /usr/local, there is no need to set environmental or cmake
+ e.g., /usr, /usr/local, there is no need to set environment or cmake
  variables for the packages.
 
- See the manual in manual/qmcpack_manual.pdf for build examples on Linux, Mac OS X etc.
+ See the manuals linked at https://www.qmcpack.org/documentation or buildable via
+ manual/build_manual.sh for build examples on Linux, Mac OS X etc.
 
 ## Quick build
 
@@ -65,9 +66,9 @@ make -j 8
 
 ## Set the environment
 
- A number of enviornmental variables affect the build.  In particular
+ A number of environment variables affect the build.  In particular
  they can control the default paths for libraries, the default
- compilers, etc.  The list of enviornmental variables is given below:
+ compilers, etc.  The list of environment variables is given below:
 
 | Environment variable | Description |
 |----------------------|-------------|
@@ -81,10 +82,10 @@ make -j 8
 
 ## CMake options
 
- In addition to reading the enviornmental variables, CMake provides a
+ In addition to reading the environment variables, CMake provides a
  number of optional variables that can be set to control the build and
  configure steps.  When passed to CMake, these variables will take
- precident over the enviornmental and default variables.  To set them
+ precident over the environment and default variables.  To set them
  add -D FLAG=VALUE to the configure line between the cmake command and
  the path to the source directory.
 
@@ -176,7 +177,7 @@ make -j 8
 
 It is recommended to create a helper script that contains the
 configure line for CMake.  This is particularly useful when using
-environmental variables, packages are installed in custom locations,
+environment variables, packages are installed in custom locations,
 or the configure line may be long or complex.  In this case it is
 recommended to add "rm -rf CMake*" before the configure line to remove
 existing CMake configure files to ensure a fresh configure each time
@@ -204,12 +205,6 @@ cmake                                               \
 
 ##  Additional examples:
 
-QMCPACK includes validation tests to ensure the correctness of the
-code, compilers, tools, and runtime. The tests should ideally be run
-each compilation, and certainly before any research use. The tests
-check the output against known mean-field, quantum chemistry, and
-other QMC results.
-
 Set compile flags manually:
 ```
    cmake                                                \
@@ -233,40 +228,57 @@ Add extra include directories:
 
 # Testing and validation of QMCPACK
 
-For more informaton, consult QMCPACK pages at http://www.qmcpack.org and the manual.
+Before using QMCPACK we highly encourage tests to be run.
+QMCPACK includes extensive validation tests to ensure the correctness of the
+code, compilers, tools, and runtime. The tests should ideally be run
+each compilation, and certainly before any research use. The tests include
+checks of the output against known mean-field, quantum chemistry, and
+other QMC results.
+
+While some tests are fully deterministic, due to QMCPACK's stochastic
+nature some tests are statistical and can occasionally fail. We employ
+a range of test names and labeling to differentiate between these, as
+well as developmental tests that are known to fail. In particular,
+"deterministic" tests include this in their ctest test name, while
+tests known to be unstable (stochastically or otherwise) are labeled
+unstable using ctest labels.
+
+For more informaton, consult http://www.qmcpack.org and the manual.
 The tests currently use up to 16 cores in various combinations of MPI
-tasks and OpenMP threads.
+tasks and OpenMP threads. Current status for many systems can be
+checked at https://cdash.qmcpack.org
 
 Note that due to the small electron and walker counts used in the
 tests, they should not be used for any performance measurements. These
 should be made on problem sizes that are representative of actual
-research calculations.
+research calculations. As described in the manual, performance tests
+are provided to aid in monitoring performance.
 
+## Run the deterministic tests
+
+From the build directory, invoke ctest specifying only tests
+that are deterministic and known to be reliable.
+```
+ctest -R deterministic -LE unstable
+```
+
+These tests currently take a few seconds to run, and include all the
+ unit tests. All tests should pass. Failing tests likely indicate a
+ significant problem that should be solved before using QMCPACK
+ further. This ctest invocation can be used as part of an automated
+ installation verification process.
+ 
 ## Run the short (quick) tests
 
  From the build directory, invoke ctest specifying only tests
- including "short" should be run
+ including "short" to run that are known to be stable.
 ```
-ctest -R short
-```
-
- These tests currently take several minutes to run. All tests should pass.
-
-## Run the long verification tests
-
-For greater surety, the long verification tests use a far greater
-number of statistical samples than the "short" tests. These take
-several hours each to run.
-
-From the build directory, invoke ctest with an increased test timeout
-```
-ctest --timeout 36000
+ctest -R short -LE unstable
 ```
 
-This will run all the defined tests, "short" and "long" as well as the
-unit and other tests. If you are running on a system such as a large
-shared supercomputer you will likely have to run these tests from
-inside a submitted job to avoid run length limits.
+ These tests currently take up to around one hour. On average, all
+ tests should pass at a three sigma level of reliability. Any
+ initially failing test should pass when rerun.
 
 ## Run individual tests
 

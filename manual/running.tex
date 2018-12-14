@@ -27,12 +27,10 @@ option is disabled.
   coefficients of the single particle wave functions. See the manual
   \ref{sec:spo_spline} for more information.}
 \item[\texttt{-{}-vacuum X}]{Removed, use `vacuum' input tag described in \ref{chap:simulationcell}. }
-\item[\texttt{-{}-verbosity=low|high|debug}]{ Control the output verbosity. }
+\item[\texttt{-{}-verbosity=low|high|debug}]{ Control the output verbosity. The default low verbosity is concise and, e.g., does not include all electron or atomic positions for large systems to reduce output size. Use 'high' to see this information and more details of initialization, allocations, QMC method settings etc.. }
 \item[\texttt{-{}-version}]{ Print version information and optional arguments.
   Same as \texttt{-{}-help}. }
 \end{description}
-
-
 
 
 \section{Input files}
@@ -65,7 +63,7 @@ ranks as the number of GPUs per node in order to let each MPI rank take one GPU.
 Modern processors integrate multiple identical cores even with hardware threads
 on a single die to increase the total performance and maintain a reasonable
 power draw. QMCPACK takes advantage of all that compute capability on a
-processor by using threads via OpenMP programming model as well as threaded linear algebra libraries. By default, QMCPACK is always built with OpenMP enabled. When launching calculations, users should instruct QMCPACK to create the right number of threads per MPI rank by specifying environmental variable OMP\_NUM\_THREADS. Even in the GPU accelerated version, using threads significantly reduces the time spent on the calculations performed by the CPU.
+processor by using threads via OpenMP programming model as well as threaded linear algebra libraries. By default, QMCPACK is always built with OpenMP enabled. When launching calculations, users should instruct QMCPACK to create the right number of threads per MPI rank by specifying environment variable OMP\_NUM\_THREADS. Even in the GPU accelerated version, using threads significantly reduces the time spent on the calculations performed by the CPU.
 
 \subsubsection{Performance consideration}
 \label{sec:cpu:performance}
@@ -74,7 +72,7 @@ As walkers are the basic units of workload in QMC algorithms, they are loosely c
 In a VMC calculation, the code automatically raises the actual number of walkers per MPI rank to the number of available threads if the user-specified number of walkers is smaller, see ``walkers/mpi=XXX'' in the VMC output.
 In a DMC calculation, the target number of walkers should be chosen to be slightly smaller than a multiple of the total number of available threads across all the MPI ranks belongs to this calculation. Since the number of walkers varies from generation to generation, its dynamical value should be slightly smaller or equal to that multiple most of the time.
 
-To achieve better performance, mixed precision version (experimental) has been introduced to the CPU code. The mixed precision CPU code is more aggresive than the GPU version in using single precision (SP) operations. Current implementation utilizes SP on most calculations, except for matrix inversions and reductions where double precision is required to retain high accuracy. All the constant spline data in wavefunction, pseudopotentials and Coulomb potentials are initialized in double precision and later stored in single precision. The mixed precision code is as accurate as the double precision code up to a certain system size. Cross checking and verification of accuracy are encouraged for systems with more than approximately 1500 electrons. The mixed precision code has been tested on solids with real/complex builds with VMC, VMC using drift and DMC runs with wavefunction including single slater determinant and one- and two-body Jastrow factors. Wavefunction optimization will be fixed in the following updates.
+To achieve better performance, mixed precision version (experimental) has been introduced to the CPU code. The mixed precision CPU code is more aggressive than the GPU version in using single precision (SP) operations. Current implementation utilizes SP on most calculations, except for matrix inversions and reductions where double precision is required to retain high accuracy. All the constant spline data in wavefunction, pseudopotentials and Coulomb potentials are initialized in double precision and later stored in single precision. The mixed precision code is as accurate as the double precision code up to a certain system size. Cross checking and verification of accuracy are encouraged for systems with more than approximately 1500 electrons. The mixed precision code has been tested on solids with real/complex builds with VMC, VMC using drift and DMC runs with wavefunction including single slater determinant and one- and two-body Jastrow factors. Wavefunction optimization will be fixed in the following updates.
 
 \subsubsection{Memory consideration}
 When using threads, some memory objects shared by all the threads. Usually these memory are read-only when the walkers are evolving, for instance the ionic distance table and wavefunction coefficients.

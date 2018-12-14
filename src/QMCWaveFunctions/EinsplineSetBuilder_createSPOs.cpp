@@ -51,7 +51,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   // 1. set a lot of internal parameters in the EinsplineSetBuilder class
   //  e.g. TileMatrix, UseRealOrbitals, DistinctTwists, MakeTwoCopies.
   // 2. this is also where metadata for the orbitals are read from the wavefunction hdf5 file
-  //  and broacasted to MPI groups. Variables broadcasted are listed in 
+  //  and broadcast to MPI groups. Variables broadcasted are listed in 
   //  EinsplineSetBuilderCommon.cpp EinsplineSetBuilder::BroadcastOrbitalInfo()
   //   
 
@@ -137,6 +137,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #else
   std::string useGPU="no";
 #endif
+  std::string GPUsharing="no";
   NewTimer* spo_timer = new NewTimer("einspline::CreateSPOSetFromXML", timer_level_medium);
   TimerManager.addTimer(spo_timer);
   spo_timer->start();
@@ -153,6 +154,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (MeshFactor, "meshfactor");
     a.add (hybrid_rep, "hybridrep");
     a.add (useGPU,     "gpu");
+    a.add (GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
     a.add (spo_prec,   "precision");
     a.add (truncate,   "truncate");
     a.add (use_einspline_set_extended,"use_old_spline");
@@ -306,7 +308,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   bool use_single= (spo_prec == "single" || spo_prec == "float");
 
   // safeguard for a removed feature
-  if(truncate=="yes") APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbtial representation.");
+  if(truncate=="yes") APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
 #if !defined(QMC_COMPLEX)
   if (UseRealOrbitals)
@@ -460,6 +462,23 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (useGPU == "yes" || useGPU == "1")
   {
     app_log() << "Initializing GPU data structures.\n";
+    if ((GPUsharing == "yes" || GPUsharing == "1"))
+    {
+      if (!gpu::cudamps)
+      {
+        app_log() << "Warning: GPU spline sharing cannot be enabled due to missing Cuda MPS service.\n";
+        gpu::device_group_size=1;
+      }
+      if (gpu::device_group_size>1)
+        app_log() << "1/" << gpu::device_group_size << " of GPU spline data stored per rank.\n";
+      else
+        app_log() << "Full GPU spline data stored per rank.\n";
+    } else
+    {
+      if (gpu::device_group_size>1)
+        app_log() << "Full GPU spline data stored per rank.\n";
+      gpu::device_group_size=1;
+    }
     OrbitalSet->initGPU();
   }
 #endif

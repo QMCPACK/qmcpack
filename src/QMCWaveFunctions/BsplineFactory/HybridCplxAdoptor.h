@@ -68,7 +68,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   void gather_tables(Communicate* comm)
   {
     BaseAdoptor::gather_tables(comm);
-    HybridBase::gather_atomic_tables(comm, this->offset_cplx, this->offset_real);
+    HybridBase::gather_atomic_tables(comm, BaseAdoptor::offset);
   }
 
   bool read_splines(hdf_archive& h5f)
@@ -170,16 +170,6 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     return BaseAdoptor::estimateMemory(nP)+myV.size()*sizeof(ST)/sizeof(ValueType)*nP;
   }
 
-  template<typename TT>
-  inline TT evaluate_dot(const ParticleSet& P, int iat, const TT* restrict arow, ST* scratch)
-  {
-    Vector<ST> vtmp(scratch,myV.size());
-    if(HybridBase::evaluate_v(P,iat,vtmp))
-      return BaseAdoptor::evaluate_dot(P,iat,arow,scratch,false);
-    else
-      return BaseAdoptor::evaluate_dot(P,iat,arow,scratch,true);
-  }
-
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
@@ -216,24 +206,6 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     }
   }
 
-  /** evaluate VGL using VectorSoaContainer
-   * @param r position
-   * @param psi value container
-   * @param dpsi gradient-laplacian container
-   */
-  template<typename VGL>
-  inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
-  {
-    APP_ABORT("HybridCplxSoA::evaluate_vgl_combo not implemented!");
-    if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
-    {
-      const PointType& r=P.activeR(iat);
-      BaseAdoptor::assign_vgl_soa(r,vgl);
-    }
-    else
-      BaseAdoptor::evaluate_vgl_combo(P,iat,vgl);
-  }
-
   template<typename VV, typename GV, typename GGV>
   inline void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
@@ -245,6 +217,12 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     }
     else
       BaseAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
+  }
+  
+  template<typename VV, typename GV, typename GGV, typename GGGV>
+  inline void evaluate_vghgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi, GGGV& grad_grad_grad_psi)
+  {
+    APP_ABORT("HybridCplxSoA::evaluate_vghgh not implemented!");
   }
 };
 

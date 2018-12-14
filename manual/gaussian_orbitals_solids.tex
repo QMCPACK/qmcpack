@@ -262,7 +262,7 @@ Finally, to generate the HDF5 file needed by \qmcpack we call the \textit{saveto
 from PyscfToQmcpack import savetoqmcpack
 savetoqmcpack(supcell,mf,title=title,kpts=kpts,kmesh=kmesh)
 \end{lstlisting}
-In this call, we simply specify the k-point mesh used in order to force the converter to generate the desired cell. Note that if the parameter \textit{kmesh} is ommited, the converter will still try to ``guess'' it.
+In this call, we simply specify the k-point mesh used in order to force the converter to generate the desired cell. Note that if the parameter \textit{kmesh} is omitted, the converter will still try to ``guess'' it.
 
 
 
@@ -278,7 +278,7 @@ $\Gamma$-point or using multiple k-points will work without further
 modification..
 
 Running convert4qmv will generate 3 input files;\\
-\begin{lstlisting}[caption=CDiamond.structure.xml. This file contains the geometry of the system.]
+\begin{lstlisting}[style=XML,caption=CDiamond.structure.xml. This file contains the geometry of the system.]
 <?xml version="1.0"?>
 <qmcsystem>
   <simulationcell>
@@ -318,7 +318,7 @@ Running convert4qmv will generate 3 input files;\\
   \end{lstlisting}
 
   As one can see, that for both examples the 2 atom primitive cell has been expanded to contain 4 atoms in a 2x1x1 carbon cell.
-\begin{lstlisting}[caption=CDiamond.wfj-Twist0.xml. This file contains the trial wavefunction.]
+\begin{lstlisting}[style=XML,caption=CDiamond.wfj-Twist0.xml. This file contains the trial wavefunction.]
 <?xml version="1.0"?>
 <qmcsystem>
   <wavefunction name="psi0" target="e">

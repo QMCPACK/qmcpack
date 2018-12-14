@@ -28,7 +28,7 @@ namespace qmcplusplus {
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSet * spo_ptr, const int up_or_down)
-  : DiracDeterminantBase(spo_ptr, ptcl.first(up_or_down))
+  : DiracDeterminantBase(spo_ptr)
   , m_up_or_down(up_or_down)
   , m_nmo(spo_ptr->size())
   , m_first_var_pos(-1)
@@ -37,8 +37,14 @@ SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSet * spo_ptr, const int up_or
   targetPtcl = &ptcl;
 
   Optimizable=true;
-  OrbitalName="SlaterDetOpt";
-  this->resetTargetParticleSet(*targetPtcl);
+  ClassName="SlaterDetOpt";
+
+  // set which and how many particles we care about
+  m_first = ptcl.first(m_up_or_down);
+  m_last = ptcl.last(m_up_or_down);
+  m_nel = m_last - m_first;
+
+  resize(m_nel, m_nmo);
 
   m_nlc = Phi->OrbitalSetSize;
   m_nb = Phi->BasisSetSize;
@@ -112,29 +118,13 @@ void SlaterDetOpt::check_index_sanity() const {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Makes a clone of the object that uses the supplied particle set.
-///
-/// \param[in]      tqp            the particle set the clone should use
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-WaveFunctionComponentPtr SlaterDetOpt::makeClone(ParticleSet& tqp) const {
-  SlaterDetOpt* clone = new SlaterDetOpt(tqp, Phi->makeClone(), m_up_or_down);
-
-  clone->Optimizable=Optimizable;
-  clone->myVars=myVars;
-  clone->m_first_var_pos = m_first_var_pos;
-
-  return clone;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Makes a clone (copy) of the object that uses the supplied single
 ///         particle orbital set.
 ///
 /// \param[in]      spo       the single particle orbital set the copy should use
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-DiracDeterminantBase* SlaterDetOpt::makeCopy(SPOSetPtr spo) const
+SlaterDetOpt* SlaterDetOpt::makeCopy(SPOSetPtr spo) const
 {
   SlaterDetOpt* copy = new SlaterDetOpt(*targetPtcl, spo, m_up_or_down);
 
@@ -207,19 +197,10 @@ void SlaterDetOpt::exponentiate_matrix(const int n, RealType * const mat) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  reset which particle set we are using and initialize arrays accordingly
+/// \brief  resize and initialize arrays
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::resetTargetParticleSet(ParticleSet& P) {
-
-  // set which and how many particles we care about
-  m_first = P.first(m_up_or_down);
-  m_last = P.last(m_up_or_down);
-  m_nel = m_last - m_first;
-
-  // reset our optimizable orbitals object
-  Phi->resetTargetParticleSet(P);
-  targetPtcl = &P;
+void SlaterDetOpt::resize(int m_nel, int m_nmo) {
 
   // resize matrices and arrays
   m_orb_val_mat_all.resize(m_nel, m_nmo);
@@ -673,14 +654,6 @@ void SlaterDetOpt::resetParameters(const opt_variables_type& active)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Not yet implemented.
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::reportStatus(std::ostream& os) {
-  throw std::runtime_error("SlaterDetOpt::reportStatus(os) not implemented");
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  add to the Log(Psi) and ( H Psi ) / Psi derivatives
 ///
 /// \param[in]      nl         The number of molecular orbitals.
@@ -702,7 +675,7 @@ void SlaterDetOpt::reportStatus(std::ostream& os) {
 ///                            particle's position.  Note that we assume the derivatives of
 ///                            ( H Psi ) / Psi are the same for each of the three directions'
 ///                            (x,y,z) second derivatives and so dh2 is defined as the
-///                            derivaties corresponding to the x coordinate's second derivative,
+///                            derivatives corresponding to the x coordinate's second derivative,
 ///                            NOT the sum of the derivatives for all three x, y, and z.
 /// \param[in]      Bchi       An nl by np column-major-ordered matrix of the values of the
 ///                            molecular orbitals at each particle's position.
@@ -988,7 +961,7 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
     }
   }
 
-  // reset the internally stored derivatives to zero in preperation for the next sample
+  // reset the internally stored derivatives to zero in preparation for the next sample
   this->initialize_matrices();
 }
 
@@ -1072,7 +1045,7 @@ void SlaterDetOpt::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t
     dgradlogpsi.at(m_first_var_pos+i) += m_hder_mat.at(p+q*m_nlc) - m_hder_mat.at(q+p*m_nlc);
   }
 
-  // reset the internally stored derivatives to zero in preperation for the next sample
+  // reset the internally stored derivatives to zero in preparation for the next sample
   this->initialize_matrices();
 }
 
@@ -1149,7 +1122,7 @@ void SlaterDetOpt::buildOptVariables(std::vector<RealType>& input_params,
          << ( q < 1000 ? "0" : "" )
          << q;
 
-    // If the user input parameteres, use those. Otherwise, initialize the
+    // If the user input parameters, use those. Otherwise, initialize the
     // parameter to zero.
     if (params_supplied) {
       myVars.insert(sstr.str(), input_params[i]);

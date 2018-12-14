@@ -264,7 +264,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
   #atomicBasisSets Group
   for x in range(NbSpecies):
 
-    MyIdx=idxAtomstoSpecies[x]
+    MyIdx=idxSpeciestoAtoms[x][0]
     atomicBasisSetGroup=GroupBasisSet.create_group("atomicBasisSet"+str(x))
     mylen="S"+str(len(uniq_atoms[x][0]))
 
@@ -543,7 +543,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
   
   H5_qmcpack.close()
 
-  print ('Wavefunction successfuly saved to QMCPACK HDF5 Format')
+  print ('Wavefunction successfully saved to QMCPACK HDF5 Format')
   print ('Use: "convert4qmc -pyscf  {}.h5" to generate QMCPACK input files'.format(title))
   # Close the file before exiting
 

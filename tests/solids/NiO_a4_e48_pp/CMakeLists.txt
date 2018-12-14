@@ -65,6 +65,34 @@ IF (EXISTS ${H5_FULL_PATH})
                     1 NIO_A4_E48_J3_SCALARS # VMC
                     )
 
+
+
+IF(NOT QMC_CUDA)
+  LIST(APPEND NIO_A4_E48_L2_SCALARS "totenergy" "-371.119855 0.019547")
+  LIST(APPEND NIO_A4_E48_L2_SCALARS "samples" "128000 0.0")
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj_L2
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-L2-short
+                    NiO-L2-short.in.xml
+                    16 1
+                    TRUE
+                    1 NIO_A4_E48_L2_SCALARS # VMC
+                    )
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj_L2
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-L2-short
+                    NiO-L2-short.in.xml
+                    4 4
+                    TRUE
+                    1 NIO_A4_E48_L2_SCALARS # VMC
+                    )
+ELSE()
+  MESSAGE("Skipping NiO_a4_e48-l2 tests on gpu")
+ENDIF()
+
+
 IF(ENABLE_SOA OR QMC_CUDA)
   QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
                     "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
@@ -85,6 +113,8 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     TRUE
                     1 NIO_A4_E48_J3_SCALARS # VMC
                     )
+
+
 ELSE()
   MESSAGE("Skipping NiO_a4_e48-hybridrep tests because neither SOA nor CUDA is enabled")
 ENDIF()
@@ -116,6 +146,33 @@ ENDIF()
                     TRUE
                     1 LONG_NIO_A4_E48_J3_SCALARS # VMC
                     )
+
+
+IF(NOT QMC_CUDA)
+  LIST(APPEND LONG_NIO_A4_E48_L2_SCALARS "totenergy" "-371.119855 0.006451")
+  LIST(APPEND LONG_NIO_A4_E48_L2_SCALARS "samples" "1280000 0.0")
+
+  QMC_RUN_AND_CHECK(long-NiO_a4_e48_pp-vmc_sdj_L2
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-L2-long
+                    NiO-L2-long.in.xml
+                    16 1
+                    TRUE
+                    1 LONG_NIO_A4_E48_L2_SCALARS # VMC
+                    )
+
+  QMC_RUN_AND_CHECK(long-NiO_a4_e48_pp-vmc_sdj_L2
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-L2-long
+                    NiO-L2-long.in.xml
+                    4 4
+                    TRUE
+                    1 LONG_NIO_A4_E48_L2_SCALARS # VMC
+                    )
+ELSE()
+  MESSAGE("Skipping NiO_a4_e48-l2 tests on gpu")
+ENDIF()
+
 
 ELSE()
   MESSAGE("NiO_a4_e48_pp not added because the corresponding h5 file not found: ${H5_FULL_PATH}")

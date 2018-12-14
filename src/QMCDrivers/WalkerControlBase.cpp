@@ -49,7 +49,6 @@ WalkerControlBase::~WalkerControlBase()
 //disable it: everything is done by a constructor
 //void WalkerControlBase::setCommunicator(Communicate* c)
 //{
-//  initCommunicator(c);
 //  NumContexts=myComm->size();
 //  MyContext=myComm->rank();
 //  curData.resize(LE_MAX+NumContexts);

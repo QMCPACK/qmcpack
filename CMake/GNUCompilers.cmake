@@ -1,6 +1,6 @@
 # Check compiler version
-IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8 )
-MESSAGE(FATAL_ERROR "Requires gcc 4.8 or higher ")
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0 )
+MESSAGE(FATAL_ERROR "Requires gcc 5.0 or higher ")
 ENDIF()
 
 # Set the std
@@ -13,7 +13,7 @@ IF(QMC_OMP)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 ENDIF(QMC_OMP)
 
-# Set gnu specfic flags (which we always want)
+# Set gnu specific flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
 
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")

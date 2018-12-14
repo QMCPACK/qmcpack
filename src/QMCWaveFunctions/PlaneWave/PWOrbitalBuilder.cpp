@@ -18,6 +18,7 @@
  */
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/SPOSetScanner.h"
 #include "OhmmsData/ParameterSet.h"
@@ -35,7 +36,7 @@ PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, Ptc
   ,myBasisSet(0)
 #endif
 {
-  myParam=new PWParameterSet;
+  myParam=new PWParameterSet(myComm);
 }
 
 PWOrbitalBuilder::~PWOrbitalBuilder()
@@ -51,7 +52,7 @@ bool PWOrbitalBuilder::put(xmlNodePtr cur)
   //
   //Get wavefunction data and parameters from XML and HDF5
   //
-  RealType ecut=-1.0;
+
   //close it if open
   if(hfileID>0)
     H5Fclose(hfileID);
@@ -108,7 +109,7 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
   //catch parameters
   myParam->put(cur);
   typedef SlaterDet SlaterDeterminant_t;
-  typedef DiracDeterminantBase Det_t;
+  typedef DiracDeterminant Det_t;
   SlaterDeterminant_t* sdet(new SlaterDeterminant_t(targetPtcl));
   int spin_group=0;
   cur=cur->children;
@@ -184,14 +185,11 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   hdfint.read(hfileID,"electrons/number_of_kpoints");
   int nkpts = idata;
   hdfint.read(hfileID,"electrons/number_of_spins");
-  int nspin = idata;
   hdfint.read(hfileID,"electrons/kpoint_0/spin_0/number_of_states");
   int nbands = idata;
   myParam->numBands = nbands;
   app_log() << "Number of bands = " << nbands << std::endl;
-  bool h5coefsreal = true;
   // Cutoff no longer present in the HDF file
-  RealType h5ecut = 0.0;
   RealType ecut = 0.0;
   //end of parameters
   //check if input parameters are valid

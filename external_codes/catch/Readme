@@ -1,8 +1,10 @@
 C++ Unit test framework
 
-https://github.com/philsquared/Catch
+https://github.com/catchorg/Catch2
 
 The single include file is downloaded from here:
-https://raw.githubusercontent.com/philsquared/Catch/master/single_include/catch.hpp
+https://github.com/catchorg/Catch2/releases/download/v2.4.2/catch.hpp
 
-There are some patches to make it work on the IBM Blue Gene, located in diff_ibm.txt
+The default value of m_scale in Approx was changed from 0.0 to 1.0 to match the
+original Catch behavior, and to avoid adding .scale(1.0) all over the code.
+

@@ -272,7 +272,7 @@ bool VMCDriver::checkpoint(int block, int step)
   }
 
   if(!wlkBucket->dumpToHDF5(dump,hdf_write_tag) ) {
-    app_error()<<" Problems writting checkpoint file in Driver/VMCDriver::checkpoint(). \n";
+    app_error()<<" Problems writing checkpoint file in Driver/VMCDriver::checkpoint(). \n";
     return false;
   }
 

@@ -58,7 +58,7 @@ struct RealEGOSet: public SPOSet
     if(i>0)
     {
       int ik=(i-1)/2;
-      int even=(i-1)%2;
+//      int even=(i-1)%2;
       PosType k_tmp = K[ik];
       k_tmp *= 1.0/std::sqrt(-mK2[ik]);
 //         if(even)
@@ -326,7 +326,7 @@ protected:
   xmlNodePtr spo_node;
 public:
   ///constructor
-  ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur);
+  ElectronGasSPOBuilder(ParticleSet& p, Communicate *comm, xmlNodePtr cur);
 
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node

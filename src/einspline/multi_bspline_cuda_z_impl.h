@@ -20,12 +20,12 @@
 __global__ static void
 eval_multi_multi_UBspline_3d_z_kernel
 (double *pos, double3 drInv, const double *coefs, double *vals[],
- uint3 dim, uint3 strides, int N)
+ uint3 dim, uint3 strides, int N, int spline_offset)
 {
-  int block = blockIdx.x;
-  int thr   = threadIdx.x;
-  int ir    = blockIdx.y;
-  int off   = block*SPLINE_BLOCK_SIZE+thr;
+  int block = blockIdx.x; // block nr out 2*numsplines/SPLINE_BLOCK_SIZE blocks
+  int thr   = threadIdx.x; // thread idx
+  int ir    = blockIdx.y; // walker number
+  int off   = block*SPLINE_BLOCK_SIZE+thr; // +offset depending on which part of the spline memory is there
   __shared__ double *myval;
   __shared__ double abc[64];
   __shared__ double3 r;
@@ -82,7 +82,7 @@ eval_multi_multi_UBspline_3d_z_kernel
   if (thr < 64)
     abc[thr] = a[i]*b[j]*c[k];
   __syncthreads();
-  if (off < 2*N)
+  if (off < 2*N) // N is either number of splines or in case of split splines is num_splines/nr_devices (+leftovers)
   {
     double val = 0.0;
     for (int i=0; i<4; i++)
@@ -94,7 +94,7 @@ eval_multi_multi_UBspline_3d_z_kernel
           val += abc[16*i+4*j+k] * base[off+k*strides.z];
       }
     }
-    myval[off] = val;
+    myval[spline_offset+off] = val;
   }
 }
 
@@ -254,8 +254,8 @@ eval_multi_multi_UBspline_3d_z_cuda (const multi_UBspline_3d_z_cuda *spline,
     dimGrid.x++;
   eval_multi_multi_UBspline_3d_z_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, (double*)spline->coefs, (double**)vals_d,
-   spline->dim, spline->stride, spline->num_splines);
-  cudaThreadSynchronize();
+   spline->dim, spline->stride, spline->num_splines, 0);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {
@@ -265,6 +265,22 @@ eval_multi_multi_UBspline_3d_z_cuda (const multi_UBspline_3d_z_cuda *spline,
     abort();
   }
 }
+
+extern "C" void
+eval_multi_multi_UBspline_3d_z_cudasplit (const multi_UBspline_3d_z_cuda *spline,
+                                          double *pos_d, double *vals_d[], int num,
+                                          double *coefs, int device_nr, cudaStream_t s)
+{
+  int num_splines=spline->num_split_splines;
+  dim3 dimBlock(SPLINE_BLOCK_SIZE);
+  dim3 dimGrid(2*num_splines/SPLINE_BLOCK_SIZE, num);
+  if (2*num_splines % SPLINE_BLOCK_SIZE)
+    dimGrid.x++;
+  eval_multi_multi_UBspline_3d_z_kernel<<<dimGrid,dimBlock,0,s>>>
+  (pos_d, spline->gridInv, coefs, (double**)vals_d,
+   spline->dim, spline->stride, num_splines, 2*device_nr*num_splines*num);
+}
+
 
 extern "C" void
 eval_multi_multi_UBspline_3d_z_vgh_cuda (const multi_UBspline_3d_z_cuda *spline,
@@ -279,7 +295,7 @@ eval_multi_multi_UBspline_3d_z_vgh_cuda (const multi_UBspline_3d_z_cuda *spline,
   (pos_d, spline->gridInv, (double*)spline->coefs,
    (double**)vals_d, (double**)grads_d, (double**)hess_d,
    spline->dim, spline->stride, spline->num_splines);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {
@@ -295,7 +311,7 @@ __global__ static void
 eval_multi_multi_UBspline_3d_z_vgl_kernel
 (double *pos, double3 drInv,  const double *coefs,  double Linv[],
  double *vals[], double *grad_lapl[], uint3 dim, uint3 strides,
- int N, int row_stride)
+ int N, int row_stride, int spline_offset)
 {
   int block = blockIdx.x;
   int thr   = threadIdx.x;
@@ -404,7 +420,6 @@ eval_multi_multi_UBspline_3d_z_vgl_kernel
     h22 *= drInv.z * drInv.z;
     //  __shared__ double buff[6*SPLINE_BLOCK_SIZE];
     // Note, we can reuse abc, by replacing buff with abc.
-    myval[off] = v;
   }
   __shared__ double G[3][3], GGt[3][3];
   int i0 = threadIdx.x/3;
@@ -419,17 +434,20 @@ eval_multi_multi_UBspline_3d_z_vgl_kernel
   __syncthreads();
   if (off < 2*N)
   {
+    int out_off=off+spline_offset;
+    myval[out_off] = v;
+    out_off += 3*spline_offset; // in other words, off+4*spline_offset
     // Store gradients back to global memory
-    mygrad_lapl[off+0*row_stride] = G[0][0]*g0 + G[0][1]*g1 + G[0][2]*g2;
-    mygrad_lapl[off+2*row_stride] = G[1][0]*g0 + G[1][1]*g1 + G[1][2]*g2;
-    mygrad_lapl[off+4*row_stride] = G[2][0]*g0 + G[2][1]*g1 + G[2][2]*g2;
+    mygrad_lapl[out_off+0] = G[0][0]*g0 + G[0][1]*g1 + G[0][2]*g2;
+    mygrad_lapl[out_off+2*row_stride] = G[1][0]*g0 + G[1][1]*g1 + G[1][2]*g2;
+    mygrad_lapl[out_off+4*row_stride] = G[2][0]*g0 + G[2][1]*g1 + G[2][2]*g2;
     // Store laplacians back to global memory
     // Hessian = H00 H01 H02 H11 H12 H22
     // Matrix = [0 1 2]
     //          [1 3 4]
     //          [2 4 5]
     // laplacian = Trace(GGt*Hessian)
-    mygrad_lapl[off+6*row_stride] =
+    mygrad_lapl[out_off+6*row_stride] =
       (GGt[0][0]*h00 + GGt[1][0]*h01 + GGt[2][0]*h02 +
        GGt[0][1]*h01 + GGt[1][1]*h11 + GGt[2][1]*h12 +
        GGt[0][2]*h02 + GGt[1][2]*h12 + GGt[2][2]*h22);
@@ -448,8 +466,8 @@ eval_multi_multi_UBspline_3d_z_vgl_cuda
     dimGrid.x++;
   eval_multi_multi_UBspline_3d_z_vgl_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, (double*)spline->coefs, Linv_d, (double**)vals_d,
-   (double**)grad_lapl_d, spline->dim, spline->stride, spline->num_splines, row_stride);
-  cudaThreadSynchronize();
+   (double**)grad_lapl_d, spline->dim, spline->stride, spline->num_splines, row_stride, 0);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {
@@ -460,10 +478,21 @@ eval_multi_multi_UBspline_3d_z_vgl_cuda
   }
 }
 
-
-
-
-
+extern "C" void
+eval_multi_multi_UBspline_3d_z_vgl_cudasplit
+(const multi_UBspline_3d_z_cuda *spline, double *pos_d, double *Linv_d,
+ double *vals_d[], double *grad_lapl_d[], int num, int row_stride,
+ double *coefs, int device_nr, cudaStream_t s)
+{
+  int num_splines=spline->num_split_splines;
+  dim3 dimBlock(SPLINE_BLOCK_SIZE);
+  dim3 dimGrid(2*num_splines/SPLINE_BLOCK_SIZE, num);
+  if (2*num_splines % SPLINE_BLOCK_SIZE)
+    dimGrid.x++;
+  eval_multi_multi_UBspline_3d_z_vgl_kernel<<<dimGrid,dimBlock,0,s>>>
+  (pos_d, spline->gridInv, coefs, Linv_d, (double**)vals_d,
+   (double**)grad_lapl_d, spline->dim, spline->stride, num_splines, row_stride, 2*device_nr*num_splines*num);
+}
 
 
 #endif

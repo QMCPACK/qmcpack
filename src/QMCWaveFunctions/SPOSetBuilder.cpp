@@ -17,8 +17,8 @@
 namespace qmcplusplus
 {
 
-  SPOSetBuilder::SPOSetBuilder()
-    : MPIObjectBase(0), legacy(true) 
+  SPOSetBuilder::SPOSetBuilder(Communicate *comm)
+    : MPIObjectBase(comm), legacy(true) 
   {
     reserve_states();
   }

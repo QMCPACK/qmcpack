@@ -350,7 +350,7 @@ public:
    */
   void setActive(int iat);
 
-  /** return the position of the active partice
+  /** return the position of the active particle
    *
    * activePtcl=-1 is used to flag non-physical moves
    */

@@ -44,7 +44,7 @@ namespace qmcplusplus {
     //  Optimizable = false;
     Optimizable = true;
 
-    OrbitalName = "FDLR";
+    ClassName = "FDLR";
 
     // Copy variables "x", which are currently encoded in the m_wfn_xmd wave
     // function, to the x_vars object, and similarly for "d" variables,
@@ -246,7 +246,7 @@ namespace qmcplusplus {
 
     // If singlet/triplet symmetry, then the variables are only stored once
     // (for both up- and down-electron determinants, which both have the
-    // same paramaters with singlet symmetry) in the driver objects, whereas
+    // same parameters with singlet symmetry) in the driver objects, whereas
     // for the x_vars and d_vars objects, they are stored twice, repeated,
     // because of the need for both the up and down determinants to have
     // access to the variables, without modifying those classes to deal with
@@ -631,14 +631,8 @@ namespace qmcplusplus {
     FDLRWfn::ValueType psi_plus = std::exp(logpsi_plus)*std::cos(phasevalue_plus);
     FDLRWfn::ValueType psi_minus = std::exp(logpsi_minus)*std::cos(phasevalue_minus);
 
-    FDLRWfn::ValueType psi_plus_new = rat_plus*psi_plus;
-    FDLRWfn::ValueType psi_minus_new = rat_minus*psi_minus;
-
     FDLRWfn::ValueType scaling_fac_1 = 1/(1 - psi_minus/psi_plus);
     FDLRWfn::ValueType scaling_fac_2 = 1/(psi_plus/psi_minus - 1);
-
-    FDLRWfn::ValueType scaling_fac_1_new = 1/(1 - psi_minus_new/psi_plus_new);
-    FDLRWfn::ValueType scaling_fac_2_new = 1/(psi_plus_new/psi_minus_new - 1);
 
     // Calculate the ratio of new and old FDLR wave functions:
     // curRatio = \frac{ \psi_+(R_new) - \psi_-(R_new) }{ \psi_+(R_old) - \psi_-(R_old) }

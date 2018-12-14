@@ -93,7 +93,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSet {
   protected:
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    /// \brief  Ensures the supplied dimension is reasonable and throws an expection if not
+    /// \brief  Ensures the supplied dimension is reasonable and throws an exception if not
     ///
     /// \param[in]      name           a name for the thing whose dimension in being checked
     /// \param[in]      caller         a name for the calling function
@@ -228,7 +228,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSet {
         // re-orthonormalize
         for (int j = 0; j < m_nlc; j++) {
           const RealType norm = std::abs(std::sqrt(BLAS::dot(m_nb, &m_B.at(0+j*m_nb), &m_B.at(0+j*m_nb))));
-          BLAS::scal(m_nb, 1.0 / norm, &m_B.at(0+j*m_nb));
+          BLAS::scal(m_nb, static_cast<RealType>(1) / norm, &m_B.at(0+j*m_nb));
           for (int k = j+1; k < m_nlc; k++) {
             const RealType x = BLAS::dot(m_nb, &m_B.at(0+j*m_nb), &m_B.at(0+k*m_nb));
             BLAS::axpy(m_nb, -x, &m_B.at(0+j*m_nb), 1, &m_B.at(0+k*m_nb), 1);
@@ -356,9 +356,9 @@ template<class BS> class LCOrbitalSetOpt : public SPOSet {
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    /// \brief  clone the object (specialization of the base class virtual funciton)
+    /// \brief  clone the object (specialization of the base class virtual function)
     ///
-    ///         This is a specialization of the SPOSet class virtual funciton.
+    ///         This is a specialization of the SPOSet class virtual function.
     ///
     /// \return  a base class pointer to the clone
     ///
@@ -388,7 +388,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSet {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  reset the basis's target particleset
     ///
-    ///         This is a specialization of the SPOSet class virtual funciton.
+    ///         This is a specialization of the SPOSet class virtual function.
     ///
     /// \param[in,out]  P              ???
     ///
@@ -416,7 +416,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSet {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  set the number of linear combinations of basis functions (i.e. molecular orbitals)
     ///
-    ///         This is a specialization of the SPOSet class virtual funciton.
+    ///         This is a specialization of the SPOSet class virtual function.
     ///
     /// \param[in]      norbs          how many linear combinations are desired
     ///

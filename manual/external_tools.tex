@@ -2,7 +2,7 @@
 \label{chap:external_tools}
 This chapter provides some information on using QMCPACK with external tools.
 
-\section{VTune}
+\section{Intel VTune}
 
 Intel's VTune profiler has an API that allows program control over collection (pause/resume) and can add information to the profile data (e.g. delineating tasks).
 
@@ -43,3 +43,18 @@ amplxe-cl -collect hotspots -knob enable-user-tasks=true ...
 
 Collection with the timers set at "fine" can generate too much task data in the profile.
 Collection with the timers at "medium" collects a more reasonable amount of task data.
+
+\section{Scitools Understand}
+
+Scitools Understand (\url{https://scitools.com/}) is a tool for static
+code analysis. The easiest configuration route is to use the JSON output
+from CMake which the Understand project importer can read directly:
+\begin{enumerate}
+\item Configure QMCPACK by running cmake with
+  CMAKE\_EXPORT\_COMPILE\_COMMANDS=ON, e.g.
+  \texttt{ cmake -DCMAKE\_C\_COMPILER=clang -DCMAKE\_CXX\_COMPILER=clang++ \\
+    -DQMC\_MPI=0 -DCMAKE\_EXPORT\_COMPILE\_COMMANDS=ON ../qmcpack/ }
+\item Run Understand and create a new C++ project. At the import files
+  and settings dialog, import the compile\_commands.json created by
+  cmake in the build directory.  
+\end{enumerate}

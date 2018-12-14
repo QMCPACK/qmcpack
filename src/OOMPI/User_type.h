@@ -22,7 +22,7 @@
 
 
 //
-// This class is only used for inheritence
+// This class is only used for inheritance
 //
 
 class OOMPI_User_type : public OOMPI_Message

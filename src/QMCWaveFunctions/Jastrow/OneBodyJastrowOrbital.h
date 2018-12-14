@@ -105,7 +105,7 @@ public:
     //allocate vector of proper size  and set them to 0
     Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),nullptr);
     Fs.resize(CenterRef.getTotalNum(),nullptr);
-    OrbitalName = "OneBodyJastrow";
+    ClassName = "OneBodyJastrow";
   }
 
   ~OneBodyJastrowOrbital() { }
@@ -297,7 +297,7 @@ public:
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int n=d_table->size(VisitorIndex);
     curGrad = 0.0;
-    RealType ur,dudr, d2udr2;
+    RealType ur, dudr, d2udr2;
     for (int i=0, nn=iat; i<d_table->size(SourceIndex); ++i,nn+= n)
     {
       if (Fs[i] != nullptr)
@@ -499,7 +499,7 @@ public:
       if (Funique[i])
         j1copy->addFunc(i,new FT(*Funique[i]));
     }
-    //j1copy->OrbitalName=OrbitalName+"_clone";
+    //j1copy->ClassName=ClassName+"_clone";
     if (dPsi)
     {
       j1copy->dPsi =  dPsi->makeClone(tqp);
