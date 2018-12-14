@@ -13,7 +13,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR afqmc_prop_factory)
 SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME unit_test_${SRC_DIR})
+SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 ADD_EXECUTABLE(${UTEST_EXE} test_propagator_factory.cpp) 
 TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil
