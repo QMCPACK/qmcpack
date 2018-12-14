@@ -16,6 +16,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
+#include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/SlaterDeterminantOperations/mixed_density_matrix.hpp"
 #include "AFQMC/SlaterDeterminantOperations/apply_expM.hpp"
 
@@ -51,6 +52,7 @@ class SlaterDetOperations
       TMat_NN.resize(extents[NAEA][NAEA]);
       TMat_MM.resize(extents[NMO][NMO]);
       TMat_MM2.resize(extents[NMO][NMO]);
+      TMat_MM3.resize(extents[NMO][NMO]);
 
       // reserve enough space in lapack's work array
       // Make sure it is large enough for:
@@ -142,6 +144,8 @@ class SlaterDetOperations
       int NAEA = A.shape()[1];
       if(TMat_MN.num_elements() < NMO*NAEA)
         TMat_MN.resize(extents[NMO][NAEA]);
+      if(TMat_NM.num_elements() < NMO*NAEA)
+        TMat_NM.resize(extents[NAEA][NMO]);
       boost::multi_array_ref<T,2> TMN(TMat_MN.data(), extents[NMO][NAEA]);
       boost::multi_array_ref<T,2> T1(TMat_NM.data(), extents[NMO][NAEA]);
       boost::multi_array_ref<T,2> T2(TMat_MM.data(), extents[NMO][NAEA]);
@@ -204,6 +208,7 @@ class SlaterDetOperations
     TMatrix TMat_MN;
     TMatrix TMat_MM;
     TMatrix TMat_MM2;
+    TMatrix TMat_MM3;
 
     // shm temporary matrices
     std::unique_ptr<SHM_Buffer> SM_TMats;

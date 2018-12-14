@@ -50,6 +50,8 @@ class NOMSD: public AFQMCInfo
 
   using CVector = boost::multi_array<ComplexType,1>;  
   using CMatrix = boost::multi_array<ComplexType,2>;  
+  using CVector_ref = boost::multi_array_ref<ComplexType,1>;
+  using CMatrix_ref = boost::multi_array_ref<ComplexType,2>;
   using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
   using shared_mutex = boost::mpi3::shm::mutex;  
 
@@ -142,12 +144,6 @@ class NOMSD: public AFQMCInfo
     bool transposed_G_for_vbias() const { return transposed_G_for_vbias_; }
     bool transposed_G_for_E() const { return transposed_G_for_E_; }
     bool transposed_vHS() const { return transposed_vHS_; }
-
-/*
-    const std::vector<PsiT_Matrix>& getOrbMat() { return OrbMats; }
-    int getOrbSize () { return 2*NMO; }
-    const std::vector<ComplexType>& getCiCoeff() { return ci; }
-*/
 
     template<class Vec>
     void vMF(Vec&& v);
@@ -261,6 +257,9 @@ class NOMSD: public AFQMCInfo
     template<class WlkSet, class MatG, class TVec>
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
+    template<class WlkSet, class MatG>
+    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, bool modify_weights=true);
+
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
      *   with a format consistent with (and expected by) the vbias routine.
@@ -317,6 +316,12 @@ class NOMSD: public AFQMCInfo
     template<class Mat>
     void OrthogonalizeExcited(Mat&& A, SpinTypes spin);
 
+    /*
+     * Back Propagates the trial wavefunction.
+    */
+    template<class MatA, class Wlk, class MatB>
+    ComplexType BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP);
+
   protected: 
 
     TaskGroup_& TG;
@@ -329,6 +334,8 @@ class NOMSD: public AFQMCInfo
 
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<PsiT_Matrix> OrbMats;
+    // Buffers for back propagation.
+    boost::multi_array<ComplexType, 2> T1ForBP, T2ForBP, T3ForBP;
 
     std::unique_ptr<SHM_Buffer> shmbuff_for_E;
 
@@ -441,6 +448,8 @@ class NOMSD: public AFQMCInfo
           return arr{-1,-1};
       }
     }
+
+
 
 };
 

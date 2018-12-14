@@ -38,6 +38,7 @@ class EstimatorHandler: public AFQMCInfo
         WavefunctionFactory& WfnFac, 
         Wavefunction& wfn0, 
         Hamiltonian* ham0, 
+        WALKER_TYPES walker_type,
         bool defaultEnergyEstim=false, 
         bool impsamp=true):
             AFQMCInfo(info),
@@ -113,7 +114,7 @@ class EstimatorHandler: public AFQMCInfo
           if (name == "reduced_density_matrix") {
 //            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<OneRdmEstimator>(TGgen.getTG(1),info,title,cur,*wfn)));
           } else if (name == "back_propagation") {
-//            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,cur,*wfn)));
+            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,cur,walker_type,*wfn)));
           } else if (name == "energy") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<EnergyEstimator>(TGgen.getTG(1),info,cur,*wfn,impsamp)));
           } else {
