@@ -464,7 +464,9 @@ public:
          if(kcurr==0) kstart-=kblocksize;
          kupdate=kcurr+kblock*kblocksize-kstart;
          kcurr=0;
+#ifdef QMC_CUDA
          if(!klinear) CurrentParticle-=kupdate-1;
+#endif
       }
     }
     // reset kblock if we're out of matrix blocks

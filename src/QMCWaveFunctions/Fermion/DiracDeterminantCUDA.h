@@ -208,7 +208,7 @@ public:
 
   void reserve (PointerPool<gpu::device_vector<CTS::ValueType> > &pool, int kblocksize=1) {
     RowStride = ((NumOrbitals + 31)/32) * 32;
-    int kblock2 = ((kblocksize * kblocksize + 31)/32) * 32;
+    size_t kblock2 = ((kblocksize * kblocksize + 31)/32) * 32;
     AOffset           = pool.reserve((size_t)    NumPtcls * RowStride);
     AinvOffset        = pool.reserve((size_t)    NumPtcls * RowStride);
     LemmaOffset       = pool.reserve((size_t)              kblock2);

@@ -89,6 +89,7 @@ bool DMCcuda::run()
   IndexType block = 0;
   IndexType nAcceptTot = 0;
   IndexType nRejectTot = 0;
+  bool update_now=false;
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
   std::vector<RealType>  LocalEnergy(nw), LocalEnergyOld(nw);
@@ -154,10 +155,12 @@ bool DMCcuda::run()
       }
       for (int iw=0; iw<nw; iw++)
         W[iw]->Age++;
+      int k=0;
+      int kd=0;
       DriftDiffuseTimer.start();
       for(int iat=0; iat<nat; iat++)
       {
-        Psi.calcGradient (W, iat, oldG);
+        Psi.calcGradient (W, iat, k, oldG);
         //create a 3N-Dimensional Gaussian with variance=1
         makeGaussRandomWithEngine(delpos,Random);
         Psi.addGradient(W, iat, oldG);
@@ -173,12 +176,19 @@ bool DMCcuda::run()
 #endif
           R2prop[iw] += dot(delpos[iw], delpos[iw]);
         }
-        W.proposeMove_GPU(newpos, iat);
+        W.proposeMove_GPU(newpos, iat, nat);
+        update_now = W.update_now(nat);
+        if(update_now)
+        {
+          kd=W.getkupdate();
+        } else kd=W.getkblocksize();
         Psi.calcRatio(W,iat,ratios,newG, newL);
         accepted.clear();
         std::vector<bool> acc(nw, true);
         if (W.UseBoundBox)
           checkBounds (newpos, acc);
+        if (kDelay)
+          Psi.det_lookahead (W, ratios, newG, newL, iat, k, kd, nw);
         std::vector<RealType> logGf_v(nw);
         std::vector<RealType> rand_v(nw);
         for(int iw=0; iw<nw; ++iw)
@@ -186,7 +196,7 @@ bool DMCcuda::run()
           logGf_v[iw] = -m_oneover2tau * dot(delpos[iw], delpos[iw]);
           rand_v[iw] = Random();
         }
-        Psi.addRatio(W, iat, ratios, newG, newL);
+        Psi.addRatio(W, iat, k, ratios, newG, newL);
 #ifdef QMC_COMPLEX
         Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
 #endif
@@ -219,9 +229,13 @@ bool DMCcuda::run()
             nReject++;
           }
         }
-        W.acceptMove_GPU(acc);
-        if (accepted.size())
-          Psi.update(accepted,iat);
+        W.acceptMove_GPU(acc,k);
+        if (accepted.size() || (kDelay>1))
+          Psi.update(&W,accepted,iat,&acc,k);
+        if(kDelay>1)
+          k++;
+        if(update_now)
+          k=0;
       }
       DriftDiffuseTimer.stop();
       Psi.gradLapl(W, grad, lapl);
@@ -386,7 +400,7 @@ void DMCcuda::resetRun()
     gpu::cuda_memory_manager.report();
   // Compute the size of data needed for each walker on the GPU card
   PointerPool<Walker_t::cuda_Buffer_t > pool;
-  Psi.reserve (pool);
+  Psi.reserve (pool,false,W.getkblocksize());
   app_log() << "Each walker requires "
             << pool.getTotalSize() * sizeof(CTS::ValueType)
             << " bytes in GPU memory.\n";
