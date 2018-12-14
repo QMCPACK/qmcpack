@@ -47,11 +47,6 @@ class dummy_Propagator
     throw std::runtime_error("calling visitor on dummy object");
   } 
 
-  int getNBackProp() { 
-    throw std::runtime_error("calling visitor on dummy_Propagator object");
-    return 0; 
-  }
-
   bool hybrid_propagation() { 
     throw std::runtime_error("calling visitor on dummy_Propagator object");
     return false;
@@ -83,13 +78,6 @@ class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCSharedPropa
 
     Propagator& operator=(Propagator const& other) = delete; 
     Propagator& operator=(Propagator&& other) = default; 
-
-    int getNBackProp() {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.getNBackProp();},
-            *this
-        );
-    }
 
     template<class... Args>
     void Propagate(Args&&... args) {

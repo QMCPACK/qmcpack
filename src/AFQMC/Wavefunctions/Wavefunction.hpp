@@ -61,21 +61,6 @@ class dummy_wavefunction
     return false; 
   }
 
-/*
-  const std::vector<PsiT_Matrix>& getOrbMat() {
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
-    return orbs; 
-  } 
-  int getOrbSize () { 
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
-    return 0; 
-  }
-  const std::vector<ComplexType>& getCiCoeff() { 
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
-    return ci; 
-  }
-*/
-
   bool transposed_G_for_vbias() const { 
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
     return false; 
@@ -129,6 +114,16 @@ class dummy_wavefunction
 
   template<class WlkSet, class MatG, class TVec>
   void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false) {
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
+  }
+
+  template<class WlkSet, class MatG>
+  void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, bool modify_weights=false) {
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");
+  }
+
+  template<class MatA, class Wlk, class MatB>
+  void BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
@@ -220,31 +215,6 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD>
         );
     }
 
-
-
-/*
-    std::vector<PsiT_Matrix> const& getOrbMat() const {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.getOrbMat();},
-            *this
-        );
-    }
-
-    std::vector<ComplexType> const& getCiCoeff() const {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.getCiCoeff();},
-            *this
-        );
-    }
-
-    int getOrbSize () const {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.getOrbSize();},
-            *this
-        );
-    }
-*/
-
     template<class... Args>
     void vMF(Args&&... args) {
         boost::apply_visitor(
@@ -314,6 +284,22 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD>
         boost::apply_visitor(
             [&](auto&& a){a.Orthogonalize(std::forward<Args>(args)...);},
             *this
+        );
+    }
+
+    template<class... Args>
+    void BackPropagatedDensityMatrix(Args&&... args) {
+        boost::apply_visitor(
+              [&](auto&& a){a.BackPropagatedDensityMatrix(std::forward<Args>(args)...);},
+              *this
+        );
+    }
+
+    template<class... Args>
+    void BackPropagateOrbMat(Args&&... args) {
+        boost::apply_visitor(
+              [&](auto&& a){a.BackPropagateOrbMat(std::forward<Args>(args)...);},
+              *this
         );
     }
 

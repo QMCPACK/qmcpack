@@ -191,14 +191,13 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   int nnodes_wfn = std::max(1,get_parameter<int>(WfnFac,wfn_name,"nnodes",1));
   RealType cutvn = get_parameter<RealType>(PropFac,prop_name,"cutoff",1e-6);
   std::string wfn_filetype =  get_parameter<std::string>(WfnFac,wfn_name,"filetype","");
-  int back_propagation = get_parameter<int>(PropFac,prop_name,"back_propagation",0);
 
   // setup task groups
   auto& TGprop = TGHandler.getTG(nnodes_propg);
   auto& TGwfn = TGHandler.getTG(nnodes_wfn);
 
   // walker set and type
-  WalkerSet& wset = WSetFac.getWalkerSet(TGHandler.getTG(1),wset_name,rng,back_propagation);
+  WalkerSet& wset = WSetFac.getWalkerSet(TGHandler.getTG(1),wset_name,rng);
   WALKER_TYPES walker_type = wset.getWalkerType();
 
   if(not WfnFac.is_constructed(wfn_name) && wfn_filetype != "hdf5") { 
@@ -248,7 +247,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
 
   // estimator setup
   // FIX issue with Hamiltonian object expected by estimator handler
-  EstimatorHandler estim0(TGHandler,AFinfo,title,cur,WfnFac,wfn0,nullptr,addEnergyEstim, impsamp);
+  EstimatorHandler estim0(TGHandler,AFinfo,title,cur,WfnFac,wfn0,nullptr,walker_type,addEnergyEstim, impsamp);
 
   app_log()<<"\n****************************************************\n"
            <<"****************************************************\n"

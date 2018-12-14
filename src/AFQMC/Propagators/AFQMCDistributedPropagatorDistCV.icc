@@ -244,7 +244,11 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
     // 5. Propagate walkers
     AFQMCTimers[propagate_timer]->start();
-    apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+    if (wset.getNBackProp() > 0) {
+      apply_propagators_construct_propagator(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+    } else {
+      apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+    }
     AFQMCTimers[propagate_timer]->stop();
 
     // 6. Calculate local energy/overlap

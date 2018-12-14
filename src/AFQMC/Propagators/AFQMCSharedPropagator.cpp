@@ -22,7 +22,6 @@ void AFQMCSharedPropagator::parse(xmlNodePtr cur)
 
   // defaults
   vbias_bound=50.0;
-  nback_prop_steps=0;
   free_projection=false;
   hybrid=true;
   importance_sampling=true;
@@ -41,7 +40,6 @@ void AFQMCSharedPropagator::parse(xmlNodePtr cur)
   m_param.add(impsam,"importance_sampling","std::string");
   m_param.add(hyb,"hybrid","std::string");
   m_param.add(freep,"free_projection","std::string");
-  m_param.add(nback_prop_steps,"back_propagation", "int");
 
   //m_param.add(sz_pin_field_file,"sz_pinning_field_file","std::string");
   //m_param.add(sz_pin_field_mag,"sz_pinning_field","double");
