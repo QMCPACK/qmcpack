@@ -66,7 +66,7 @@ bool AFQMCDriver::run(WalkerSet& wset)
   
       if (step_tot != 0 && step_tot % nStabilize == 0) {
         Timers[StepOrthogonalize]->start();
-        wfn0.Orthogonalize(wset,true);
+        wfn0.Orthogonalize(wset,!prop0.free_propagation());
         Timers[StepOrthogonalize]->stop();
       }
 

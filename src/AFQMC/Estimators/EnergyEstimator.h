@@ -29,8 +29,8 @@ class EnergyEstimator: public EstimatorBase
   public:
 
   EnergyEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo info, xmlNodePtr cur, 
-        Wavefunction& wfn, bool timer=true):
-            EstimatorBase(info),TG(tg_),wfn0(wfn)
+        Wavefunction& wfn, bool impsamp_=true, bool timer=true):
+            EstimatorBase(info),TG(tg_),wfn0(wfn),importanceSampling(impsamp_)
   {
 
     data.resize(2);
@@ -56,7 +56,11 @@ class EnergyEstimator: public EstimatorBase
       for(int i=0; i<nwalk; i++) {
         auto wi = wset[i];
         if(std::isnan(real(wi.weight()))) continue;
-        dum = wi.weight()*ovlp[i]/wi.overlap();
+        if(importanceSampling) {
+          dum = wi.weight()*ovlp[i]/wi.overlap();
+        } else {
+          dum = wi.weight()*ovlp[i]*wi.phase();
+        }
         et = eloc[i][0]+eloc[i][1]+eloc[i][2];
         if( (!std::isfinite(real(dum))) || (!std::isfinite(real(et*dum))) ) continue; 
         data[1] += dum; 
@@ -100,6 +104,8 @@ class EnergyEstimator: public EstimatorBase
   boost::multi_array<ComplexType,1> ovlp;
 
   std::vector<std::complex<double> > data;
+
+  bool importanceSampling;
 
 };
 }

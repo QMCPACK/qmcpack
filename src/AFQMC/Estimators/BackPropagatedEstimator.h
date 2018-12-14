@@ -30,11 +30,11 @@ class BackPropagatedEstimator: public EstimatorBase
   public:
 
   BackPropagatedEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
-        std::string title, xmlNodePtr cur, WALKER_TYPES wlk, Wavefunction& wfn) :
+        std::string title, xmlNodePtr cur, WALKER_TYPES wlk, Wavefunction& wfn, bool impsamp_=true) :
                                             EstimatorBase(info),TG(tg_), wfn0(wfn),
                                             greens_function(false),
                                             nStabalize(1), path_restoration(false),
-                                            writer(false)
+                                            writer(false), importanceSampling(impsamp_)
   {
 
     if(cur != NULL) {
@@ -67,6 +67,7 @@ class BackPropagatedEstimator: public EstimatorBase
       DMBuffer.resize(extents[dm_size]);
     }
     std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
+    denom.resize(extents[1]);
   }
 
   ~BackPropagatedEstimator() {}
@@ -81,7 +82,8 @@ class BackPropagatedEstimator: public EstimatorBase
     if(back_propagate) {
       CMatrix_ref BackPropDM(DMBuffer.data(), extents[dm_dims.first][dm_dims.second]);
       // Computes GBP(i,j)
-      wfn0.BackPropagatedDensityMatrix(wset, BackPropDM, path_restoration);
+      denom[0] = ComplexType(0.0,0.0);
+      wfn0.BackPropagatedDensityMatrix(wset, BackPropDM, denom, path_restoration, !importanceSampling);
       for(int iw = 0; iw < wset.size(); iw++) {
         // Resets B matrix buffer to identity, copies current wavefunction and resets weight
         // factor.
@@ -115,21 +117,31 @@ class BackPropagatedEstimator: public EstimatorBase
     if(TG.getGlobalRank() == 0) {
       for(int i = 0; i < dm_dims.first; i++) {
         for(int j = 0; j < dm_dims.second; j++) {
-          out << "G_" << i << "_"  << j << " ";
+          out << "ReG_" << i << "_"  << j << " " << "ImG_" << i << "_" << j << " ";
         }
       }
+      if(!importanceSampling) out << "ReG_denom ImG_denom ";
     }
   }
 
   void print(std::ofstream& out, WalkerSet& wset)
   {
     if(writer) {
-      for(int i = 0; i < DMBuffer.size(); i++) {
-        out << std::setprecision(16) << " " << DMBuffer[i].real() << " ";
+      if(importanceSampling) {
+        for(int i = 0; i < DMBuffer.size(); i++) {
+          out << std::setprecision(16) << " " << DMBuffer[i].real() << " ";
+        }
+      } else {
+        for(int i = 0; i < DMBuffer.size(); i++) {
+          //RealType re_num = DMBuffer[i].real()*denom[0].real() + DMBuffer[i].imag()*denom[0].imag();
+          out << std::setprecision(16) << " " << DMBuffer[i].real() << " " << DMBuffer[i].imag() << " ";
+        }
+        out << denom[0].real() << " " << denom[0].imag() << " ";
       }
     }
     // Zero our estimator array.
     std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
+    denom[0] = ComplexType(0.0,0.0);
   }
 
   private:
@@ -175,10 +187,11 @@ class BackPropagatedEstimator: public EstimatorBase
   int nStabalize;
   // Whether to restore cosine projection and real local energy apprximation for weights
   // along back propagation path.
-  bool path_restoration;
+  bool path_restoration, importanceSampling;
   std::vector<ComplexType> weights;
   int dm_size;
   std::pair<int,int> dm_dims;
+  CVector denom;
 
 };
 }

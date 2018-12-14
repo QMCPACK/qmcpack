@@ -52,6 +52,11 @@ class dummy_Propagator
     return false;
   }  
 
+  bool free_propagation() {
+    throw std::runtime_error("calling visitor on dummy_Propagator object");
+    return false;
+  }
+
 };
 }
 
@@ -87,9 +92,16 @@ class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCSharedPropa
         );
     }
 
-    bool hybrid_propagation() { 
+    bool hybrid_propagation() {
         return boost::apply_visitor(
             [&](auto&& a){return a.hybrid_propagation();},
+            *this
+        );
+    }
+
+    bool free_propagation() {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.free_propagation();},
             *this
         );
     }

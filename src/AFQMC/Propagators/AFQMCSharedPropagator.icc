@@ -119,7 +119,11 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
 
   // 2. Calculate vbias for initial configuration
   AFQMCTimers[vbias_timer]->start();
-  wfn.vbias(G,vbias,sqrtdt);
+  if (free_projection) {
+    std::fill_n(vbias.origin(), localnCV*nwalk, ComplexType(0.0,0.0));
+  } else {
+    wfn.vbias(G,vbias,sqrtdt);
+  }
   AFQMCTimers[vbias_timer]->stop();
 
   // 3. Assemble X(nCV,nsteps,nwalk)
@@ -175,7 +179,7 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
       if(iw%TG.TG_local().size() == TG.TG_local().rank()) { 
         if(free_projection) { 
           free_projection_walker_update(wset[iw],dt,new_overlaps[iw],
-                           MFfactor[ni][iw],hybrid_weight[ni][iw]);
+                           MFfactor[ni][iw],Eshift,hybrid_weight[ni][iw]);
         } else if(hybrid) {
           hybrid_walker_update(wset[iw],dt,apply_constrain,importance_sampling,
                            Eshift,new_overlaps[iw],MFfactor[ni][iw],hybrid_weight[ni][iw]);

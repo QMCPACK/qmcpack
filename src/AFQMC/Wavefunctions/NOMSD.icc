@@ -862,7 +862,7 @@ namespace afqmc
   // Computes back propagated 1RDM.
   // G is computed locally on each core and needs to be reduced.
   template<class WlkSet, class MatG>
-  void NOMSD::BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, bool modify_weights)
+  void NOMSD::BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVector &denom, bool path_restoration, bool free_projection)
   {
     const int nwalk = wset.size();
     const int ndet = ci.size();
@@ -876,9 +876,6 @@ namespace afqmc
       T1ForBP.resize(extents[NAEA][wlk_dims.first]);
       T3ForBP.resize(extents[wlk_dims.first][wlk_dims.second]);
     }
-    CVector denominator;
-    denominator.resize(extents[1]);
-    denominator[0] = ComplexType(0.0, 0.0);
     if(walker_type != COLLINEAR) {
       auto Gdims = dm_dims(not compact,Alpha);
       // Temporaries for determinant component of walker rdm function.
@@ -893,14 +890,20 @@ namespace afqmc
         if( std::abs(wset[iw].weight()) < 1e-10 ) continue;
         std::fill(G21D_.begin(), G21D_.end(), ComplexType(0.0));
         ComplexType overlap = ComplexType(0.0,0.0);
-        ComplexType restore_fac;
-        if(modify_weights) {
-          restore_fac = wset[iw].BPWeightFactor();
-        } else {
-          restore_fac = ComplexType(1.0,0.0);
+        ComplexType factor;
+        if(path_restoration) {
+          // Path restoration
+          factor = wset[iw].BPWeightFactor();
+        } else if(free_projection) {
+          // Free projection.
+          factor = wset[iw].phase();
         }
-        ComplexType wfac = wset[iw].weight() * restore_fac;
-        denominator[0] += wfac;
+        else {
+          // Phaseless
+          factor = ComplexType(1.0,0.0);
+        }
+        ComplexType wfac = wset[iw].weight() * factor;
+        ComplexType trace = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
           // We construct PsiBP^{\dagger}
           CMatrix_ref PsiBP = CMatrix_ref(T2ForBP.data(), extents[NAEA][NMO]);
@@ -913,12 +916,24 @@ namespace afqmc
             ov *= ov;
             detR *= detR;
           }
-          ov *= std::conj(ci[id]);
+          for(int i = 0; i < G2D_.shape()[0]; i++) trace += G2D_[i][i];
+          // By construction detR is real (so no complex conjugation needed).
+          ov *= detR * std::conj(ci[id]);
+          //std::cout << G2D_[0][0] << " " << ov << " " << wfac << std::endl;
           overlap += ov;
           ma::axpy(ov,G1D_,G21D_);
         }
-        ComplexType ov_denom = wfac/overlap;
+        //std::cout << "TRACE: " << trace << " " << std::endl;
+        ComplexType ov_denom;
+        if(free_projection) {
+          ov_denom = wfac;
+          denom[0] += wfac*overlap;
+        } else { 
+          ov_denom = wfac/overlap;
+          denom[0] += wfac;
+        }
         ma::axpy(ov_denom, G21D_, G1D);
+        //std::cout << G1D[0] << " " << denom[0] << std::endl;
       }
     } else {
       auto GAdims = dm_dims(not compact,Alpha);
@@ -941,14 +956,15 @@ namespace afqmc
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         if( std::abs(wset[iw].weight()) < 1e-10 ) continue;
-        ComplexType restore_fac;
-        if(modify_weights) {
-          restore_fac = wset[iw].BPWeightFactor();
+        ComplexType factor;
+        if(path_restoration) {
+          factor = wset[iw].BPWeightFactor();
+        } else if(free_projection) {
+          factor = wset[iw].phase();
         } else {
-          restore_fac = ComplexType(1.0,0.0);
+          factor = ComplexType(1.0,0.0);
         }
-        ComplexType wfac = wset[iw].weight() * restore_fac;
-        denominator[0] += wfac;
+        ComplexType wfac = wset[iw].weight() * factor;
         ComplexType overlap = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
           CMatrix_ref PsiBPAlpha = CMatrix_ref(T2ForBP.data(), extents[NAEA][NMO]);
@@ -963,17 +979,26 @@ namespace afqmc
           ma::axpy(ov_,GA1D_,GA21D_);
           ma::axpy(ov_,GB1D_,GB21D_);
         }
-        ComplexType ov_denom = wfac/overlap;
+        ComplexType ov_denom;
+        if(free_projection) {
+          ov_denom = wfac;
+          denom[0] += wfac*overlap;
+        } else { 
+          ov_denom = wfac/overlap;
+          denom[0] += wfac;
+        }
         ma::axpy(ov_denom, GA21D_, GA1D);
         ma::axpy(ov_denom, GB21D_, GB1D);
       }
     }
     // Average over walker's
-    TG.Global().all_reduce_in_place_n(denominator.origin(),1,std::plus<>());
+    TG.Global().all_reduce_in_place_n(denom.origin(),1,std::plus<>());
     TG.Global().all_reduce_in_place_n(G.origin(),Gsize,std::plus<>());
-    auto denom = ComplexType(1.0,0.0)/denominator[0];
+    auto denominator= ComplexType(1.0,0.0)/denom[0];
     boost::multi_array_ref<ComplexType,1> GFull(G.origin(), extents[Gsize]);
-    ma::scal(denom,GFull);
+    if(!free_projection) {
+      ma::scal(denominator,GFull);
+    }
     TG.local_barrier();
   }
 
@@ -1202,7 +1227,7 @@ namespace afqmc
       }
       T1ForBP = PsiBP;
     }
-    return detR;
+    return detR/1e6;
   }
 
 }

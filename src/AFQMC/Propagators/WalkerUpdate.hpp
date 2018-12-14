@@ -29,9 +29,19 @@ namespace afqmc
 
 template<class Wlk>
 void free_projection_walker_update(Wlk&& w, RealType dt, ComplexType overlap, ComplexType MFfactor,
-                                   ComplexType hybrid_weight)
+                                   RealType Eshift, ComplexType hybrid_weight)
 {
-  APP_ABORT(" Error: Finish \n");
+  ComplexType old_ovlp = w.overlap();
+  ComplexType old_eloc = w.pseudo_energy();
+  ComplexType eloc;
+  RealType scale=1.0;
+  ComplexType ratioOverlaps = ComplexType(1.0,0.0);
+  eloc = MFfactor/dt;
+  ComplexType factor = std::exp( -dt*( 0.5*( eloc + old_eloc ) - Eshift ));
+  w.weight() *= std::abs(factor);
+  w.phase() *= factor / std::abs(factor);
+  w.pseudo_energy() = eloc;
+  w.overlap() = overlap;
 }
 
 template<class Wlk>

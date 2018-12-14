@@ -252,7 +252,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
       if(iw%TG.TG_local().size() == TG.TG_local().rank()) { 
         if(free_projection) { 
           free_projection_walker_update(wset[iw],dt,new_overlaps[iw],
-                           MFfactor[0][ni][iw],hybrid_weight[0][ni][iw]);
+                           MFfactor[0][ni][iw],Eshift,hybrid_weight[0][ni][iw]);
         } else if(hybrid) {
           hybrid_walker_update(wset[iw],dt,apply_constrain,importance_sampling,
                            Eshift,new_overlaps[iw],MFfactor[0][ni][iw],hybrid_weight[0][ni][iw]);

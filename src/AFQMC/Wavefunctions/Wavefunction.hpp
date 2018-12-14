@@ -118,7 +118,7 @@ class dummy_wavefunction
   }
 
   template<class WlkSet, class MatG>
-  void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, bool modify_weights=false) {
+  void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, boost::multi_array<ComplexType,1>& denom, bool path_restoration=false, bool free_projection=false) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
   }
 
