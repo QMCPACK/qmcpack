@@ -32,6 +32,7 @@ struct shared_window : window<T>{
 		shared_window(comm, 0, disp_unit)
 	{}
 	shared_window(shared_window const&) = default;
+  shared_window& operator=(shared_window&& other) = default;
 	shared_window(shared_window&& other) : window<T>{std::move(other)}{}//, comm_{other.comm_}{}
 	using query_t = std::tuple<mpi3::size_t, int, void*>;
 	query_t query(int rank = MPI_PROC_NULL) const{

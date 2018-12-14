@@ -373,21 +373,23 @@ bool exponentiateHermitianMatrix(int N, double* A, int LDA, double* expA, int LD
   return true;
 }
 
-void GeneralizedGramSchmidt(std::complex<double>* A, int LDA, int nR, int nC)
+std::complex<double> GeneralizedGramSchmidt(std::complex<double>* A, int LDA, int nR, int nC)
 {
   //  void zgeqrf( const int *M, const int *N, std::complex<double> *A, const int *LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int *LWORK, int *INFO );
   //  void zungqr( const int *M, const int *N, const int *K, std::complex<double> *A, const int *LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int *LWORK, int *INFO );
   //
- 
+
+  // Determinant of the R part of the QR decomposition.
+  std::complex<double> detR(1.0, 0.0);
   // temporary
   std::vector<std::complex<double> > AT(nR*nC);
   for(int i=0; i<nR; i++)
    for(int j=0; j<nC; j++)
-    AT[ j*nR+i ] = A[ i*LDA+j ];  
-  
+    AT[ j*nR+i ] = A[ i*LDA+j ];
+
   int K = std::min(nR,nC);
   std::vector<std::complex<double> > TAU(K),WORK(1);
-  int info,lwork=-1; 
+  int info,lwork=-1;
 
   zgeqrf( nR, nC, AT.data(), nR, TAU.data(), WORK.data(), lwork, info);
 
@@ -396,11 +398,18 @@ void GeneralizedGramSchmidt(std::complex<double>* A, int LDA, int nR, int nC)
 
   zgeqrf( nR, nC, AT.data(), nR, TAU.data(), WORK.data(), lwork, info);
 
+  // The R part of the QR factorisation should be upper triangular and since we are only
+  // interested in det(R) = prod_i diag(R)_i, we do not need to worry about transposing
+  // the AT matrix back into C format.
+  for (int i = 0; i < nC; i++) {
+    detR *= AT[i*nR+i];
+  }
+
   if(info != 0) {
     app_error()<<" Problems with QR decomposition; INFO: " <<info <<std::endl;
     APP_ABORT("Problems with QR decomposition. \n");
   }
-  
+
   zungqr( nR, nC, K, AT.data(), nR, TAU.data(), WORK.data(), lwork, info);
 
   if(info != 0) {
@@ -410,7 +419,9 @@ void GeneralizedGramSchmidt(std::complex<double>* A, int LDA, int nR, int nC)
 
   for(int i=0; i<nR; i++)
    for(int j=0; j<nC; j++)
-    A[ i*LDA+j ] = AT[ j*nR+i ];  
+    A[ i*LDA+j ] = AT[ j*nR+i ];
+
+  return detR;
 
 }
 
