@@ -111,6 +111,8 @@
 #define scgemv  scgemv_
 #define dzgemm  dzgemm_
 #define scgemm  scgemm_
+typedef enum {CblasRowMajor=101, CblasColMajor=102} CBLAS_LAYOUT;
+typedef enum {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113} CBLAS_TRANSPOSE;
 #endif
 
 #endif
@@ -239,6 +241,34 @@ extern "C" {
              const std::complex<float>& alpha, const float* amat, const int& lda,
              const std::complex<float>* bv, const int& incx,
              const std::complex<float>& beta, std::complex<float>* cv, const int& incy);
+
+void cblas_sgemm_batch (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE* transa_array,
+            const CBLAS_TRANSPOSE* transb_array, const int* m_array, const int* n_array,
+            const int* k_array, const void *alpha_array, const void **a_array,
+            const int* lda_array, const void **b_array, const int* ldb_array,
+            const void *beta_array, void **c_array, const int* ldc_array,
+            const int group_count, const int* group_size);
+
+void cblas_cgemm_batch (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE* transa_array,
+            const CBLAS_TRANSPOSE* transb_array, const int* m_array, const int* n_array,
+            const int* k_array, const void *alpha_array, const void **a_array,
+            const int* lda_array, const void **b_array, const int* ldb_array,
+            const void *beta_array, void **c_array, const int* ldc_array,
+            const int group_count, const int* group_size);
+
+void cblas_dgemm_batch (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE* transa_array,
+            const CBLAS_TRANSPOSE* transb_array, const int* m_array, const int* n_array,
+            const int* k_array, const void *alpha_array, const void **a_array,
+            const int* lda_array, const void **b_array, const int* ldb_array,
+            const void *beta_array, void **c_array, const int* ldc_array,
+            const int group_count, const int* group_size);
+
+void cblas_zgemm_batch (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE* transa_array,
+            const CBLAS_TRANSPOSE* transb_array, const int* m_array, const int* n_array,
+            const int* k_array, const void *alpha_array, const void **a_array,
+            const int* lda_array, const void **b_array, const int* ldb_array,
+            const void *beta_array, void **c_array, const int* ldc_array,
+            const int group_count, const int* group_size);
 
 #endif
 
