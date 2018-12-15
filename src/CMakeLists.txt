@@ -120,6 +120,10 @@ if (HAVE_MPI)
   INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/mpi_wrapper")
 endif()
 
+if (HAVE_LIBBOOST)
+    INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
+endif()
+
 ####################################
 # create liboompi
 ####################################
