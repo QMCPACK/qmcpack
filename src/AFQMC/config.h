@@ -66,6 +66,10 @@ namespace qmcplusplus
 
   enum SpinTypes {Alpha,Beta};  
 
+  // allocators
+  template<class T>
+  using shared_allocator = boost::mpi3::intranode::allocator<T>;
+
   // new types
   using SpCType_shm_csr_matrix = ma::sparse::csr_matrix<SPComplexType,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SPComplexType>,

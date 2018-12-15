@@ -1,0 +1,962 @@
+//////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source
+// License.  See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by:
+// Miguel A. Morales, moralessilva2@llnl.gov 
+//    Lawrence Livermore National Laboratory 
+//
+// File created by:
+// Miguel A. Morales, moralessilva2@llnl.gov 
+//    Lawrence Livermore National Laboratory 
+////////////////////////////////////////////////////////////////////////////////
+
+#include <vector>
+#include <map>
+#include <string>
+#include <iostream>
+#include <tuple>
+#include<mutex>
+
+#include "AFQMC/config.h"
+#include "AFQMC/Numerics/csr_blas.hpp"
+
+//#include "AFQMC/Wavefunctions/PHMSD.h"
+
+namespace qmcplusplus
+{
+
+namespace afqmc
+{
+
+  /*
+   * Calculates the local energy and overlaps of all the walkers in the set and 
+   * returns them in the appropriate data structures
+  */
+  template<class WlkSet, class Mat, class TVec>
+  void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
+  {
+    using std::get;
+    using std::conj;
+    int nspins = 2; //(walker_type==COLLINEAR?2:1);
+    size_t nchol = HamOp.local_number_of_cholesky_vectors();
+    size_t nt = wset.size()*(dm_size(false) + maxn_unique_confg*nspins*4 + 
+                             nchol*(1+abij.number_of_unique_excitations()[0]));
+    // allocte space in shared memory for temporary G (always compact) and ov
+    if(not shmbuff_for_E) 
+      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
+    // in case the number of walkers changes
+    if(shmbuff_for_E->size() < nt)
+      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
+    assert(shmbuff_for_E->size() >= nt);
+    assert(E.dimensionality==2);
+    assert(Ov.dimensionality==1);
+    assert(E.shape()[0]==wset.size()); 
+    assert(Ov.shape()[0]==wset.size()); 
+    assert(E.shape()[1]==3); 
+
+    ComplexType zero(0.0);
+    auto Gsize = dm_size(false);
+    auto nwalk = wset.size();
+    size_t cnt=0;
+    boost::multi_array_ref<ComplexType,3> Ovmsd(shmbuff_for_E->data(),
+                                            extents[nspins][maxn_unique_confg][nwalk]);
+    cnt+=Ovmsd.num_elements();
+    boost::multi_array_ref<ComplexType,4> Emsd(shmbuff_for_E->data()+cnt,
+                                            extents[nspins][maxn_unique_confg][nwalk][3]);
+    cnt+=Emsd.num_elements();
+    boost::multi_array_ref<ComplexType,3> KEright(shmbuff_for_E->data()+cnt,
+                                            extents[abij.number_of_unique_excitations()[0]][nwalk][nchol]);
+    cnt+=KEright.num_elements();
+    boost::multi_array_ref<ComplexType,2> KEleft(shmbuff_for_E->data()+cnt,
+                                            extents[nwalk][nchol]);
+    cnt+=KEleft.num_elements();
+    if(wgt.size() != nwalk) wgt.resize(extents[nwalk]);
+    if(opSpinEJ.size() != nwalk) opSpinEJ.resize(extents[nwalk]);
+    if(localGbuff.size() < 2*Gsize) 
+      localGbuff.resize(extents[2*Gsize]);
+
+    std::fill_n(Ov.origin(),nwalk,zero);
+    std::fill_n(E.origin(),3*nwalk,zero);
+    std::fill_n(opSpinEJ.origin(),nwalk,ComplexType(0.0));
+
+    // dummy: ugly but not sure how to do it better 
+    CMatrix* dummyMatPtr(nullptr);
+
+    auto refc = abij.reference_configuration();
+    std::vector<int> confg(NAEA);
+    auto confgs = abij.configurations_begin();
+
+    if(walker_type != COLLINEAR) 
+      APP_ABORT("Error: Finish implementation of PHMSD for CLOSED/NONCOLLINEAR walkers.\n");
+            
+// FIX FIX FIX: Incorrect if walker_type==CLOSED
+    // 1. calculate eneries for unique determinants
+    //    - Emsd[spin][nd_unique][iw][{0:E1, 1:EXX, 2:--}]
+    //    - Ovmsd[spin][nd_unique][iw]
+    if(fast_ph_energy) {
+      APP_ABORT(" Error: fast_ph_energy not implemented. \n");
+    } else {  
+      ComplexType ov0;  
+      for(int spin=0; spin<nspins; ++spin) {
+        int orb_spin_indx = (OrbMats.size()==2)?spin:0;
+        int wlk_spin_indx = (walker_type==CLOSED)?0:spin;
+        confg.resize((spin==0)?NAEA:NAEB);
+        auto Gdims = dm_dims(false,SpinTypes(spin)); 
+        auto Gdims_ref = dm_dims_ref(false,SpinTypes(spin)); 
+        boost::multi_array_ref<ComplexType,2> G2D_(localGbuff.origin(),
+                                                    extents[Gdims_ref.first][Gdims_ref.second]);
+        int nr=Gdims.first*Gdims.second,nc=nwalk;
+        if(transposed_G_for_E_) std::swap(nr,nc); 
+        boost::multi_array_ref<ComplexType,2> G(shmbuff_for_E->data()+cnt,extents[nr][nc]);
+        for(int nd=0; nd<det_couplings[spin].size(); ++nd) {  
+          abij.get_configuration(spin,nd,confg); 
+          // keeping this simple for now!
+          for(int iw=0; iw<nwalk; iw++) {
+            if(iw%TG.TG_local().size()==TG.TG_local().rank()) {
+              Ovmsd[spin][nd][iw] = SDetOp.MixedDensityMatrixFromConfiguration(OrbMats[orb_spin_indx],
+                                                wset[iw].SlaterMatrix(SpinTypes(wlk_spin_indx)),
+                                                G2D_,confg.data(),true);
+              if(transposed_G_for_E_) { 
+                boost::multi_array_ref<ComplexType,3> G3D(shmbuff_for_E->data()+cnt
+                                    ,extents[nwalk][Gdims.first][Gdims.second]);
+                std::fill_n(G[iw].origin(),Gdims.first*Gdims.second,ComplexType(0.0));
+                for(int k=0; k<confg.size(); ++k) 
+                  G3D[iw][confg[k]] = G2D_[k];
+              } else {  
+                boost::multi_array_ref<ComplexType,3> G3D(shmbuff_for_E->data()+cnt
+                                    ,extents[Gdims.first][Gdims.second][nwalk]);
+                for(int k=0; k<Gdims.first; ++k)
+                  for(int j=0; j<Gdims.second; ++j)
+                    G3D[k][j][iw]=ComplexType(0.0);
+                for(int k=0; k<confg.size(); ++k)
+                  G3D[indices[confg[k]][range_t()][iw]] = G2D_[k];
+              }
+            }
+          }
+          TG.local_barrier();
+          if(spin==0) { 
+            auto KEr = KEright[nd];
+            HamOp.energy(Emsd[spin][nd],G,orb_spin_indx,dummyMatPtr,&KEr,TG.TG_local().root(),true,true);
+          } else { 
+            HamOp.energy(Emsd[spin][nd],G,orb_spin_indx,&KEleft,dummyMatPtr,TG.TG_local().root(),true,true);
+            TG.local_barrier();
+            // round-robin KE contributions
+            // iterators to configurations containing this beta configuration
+            auto it = std::addressof(*det_couplings[1].values()) +
+                                    (*det_couplings[1].pointers_begin(nd));
+            auto ite = std::addressof(*det_couplings[1].values()) +
+                                    (*det_couplings[1].pointers_end(nd));
+            int nt=0;
+            for(; it<ite; ++it) {
+              for(int iw=0; iw<nwalk; ++iw, ++nt) {  
+                if(nt%TG.TG_local().size()==TG.TG_local().rank()) {
+                  size_t nd_alp = get<0>(*(confgs+(*it)));
+                  auto w_ = conj(get<2>(*(confgs+(*it)))) * Ovmsd[0][nd_alp][iw] * Ovmsd[1][nd][iw];
+                  opSpinEJ[iw] += w_*ma::dot(KEleft[iw],KEright[nd_alp][iw]);
+                }  
+              }  
+            }
+          }  
+        }
+      }  
+    }     
+    TG.local_barrier();
+  
+    // 2. assemble sum over configurations
+    int nc=0;
+    for(int spin=0; spin<nspins; ++spin) {
+      for(int nd=0; nd<det_couplings[spin].size(); ++nd) { 
+        if(nc%TG.TG_local().size()==TG.TG_local().rank()) {
+          auto it = std::addressof(*det_couplings[spin].values()) + 
+                                        (*det_couplings[spin].pointers_begin(nd));
+          auto ite = std::addressof(*det_couplings[spin].values()) + 
+                                        (*det_couplings[spin].pointers_end(nd));  
+          std::fill_n(wgt.origin(),nwalk,ComplexType(0.0));
+          if(spin==0) {
+            for(; it<ite; ++it) {
+              auto ci = conj(get<2>(*(confgs+(*it))));  
+              auto Ovmsd_ = Ovmsd[1][get<1>(*(confgs+(*it)))];  
+              for(int iw=0; iw<nwalk; ++iw) 
+                wgt[iw] += ci * Ovmsd_[iw];
+            }
+            for(int iw=0; iw<nwalk; ++iw) { 
+              wgt[iw] *= Ovmsd[0][nd][iw];  
+              Ov[iw] += wgt[iw];
+            }
+          } else {
+            for(; it<ite; ++it) {
+              auto ci = conj(get<2>(*(confgs+(*it))));
+              auto Ovmsd_ = Ovmsd[0][get<0>(*(confgs+(*it)))];
+              for(int iw=0; iw<nwalk; ++iw) 
+                wgt[iw] += ci * Ovmsd_[iw];
+            }
+            for(int iw=0; iw<nwalk; ++iw) 
+              wgt[iw] *= Ovmsd[1][nd][iw];
+          }
+          //Emsd[spin][nd_unique][iw][{0:E1, 1:EXX, 2:EJ}]
+          for(int iw=0; iw<nwalk; ++iw) { // remove scaling from CLOSED shell energy evaluation 
+            E[iw][0] += wgt[iw]*Emsd[spin][nd][iw][0]/2.0;
+            E[iw][1] += wgt[iw]*Emsd[spin][nd][iw][1]/2.0;
+            E[iw][2] += wgt[iw]*Emsd[spin][nd][iw][2]/4.0;
+          }  
+        } //nd%TG.TG_local().size()==TG.TG_local().rank()
+        ++nc;
+      }  //nex
+    }  // spin
+
+    // 3. reduce over TG_local 
+    TG.TG_local().all_reduce_in_place_n(opSpinEJ.origin(),nwalk,std::plus<>());
+    TG.TG_local().all_reduce_in_place_n(E.origin(),3*nwalk,std::plus<>());
+    for(int i=0; i<nwalk; ++i) { 
+      E[i][0] /= Ov[i];   
+      E[i][1] /= Ov[i];  
+      E[i][2] = (E[i][2] + opSpinEJ[i])/Ov[i];  
+    }
+    TG.local_barrier();
+  }
+
+  /*
+   * Calculates the local energy and overlaps of all the walkers in the set and 
+   * returns them in the appropriate data structures
+   */
+  template<class WlkSet, class Mat, class TVec>
+  void PHMSD::Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov)
+  {
+    APP_ABORT(" Error: Finish PHMSD::Energy_distributed. \n");
+/*
+    //1. Calculate G and overlaps
+    //2. Loop over nodes in TG
+    // 2.a isend G to next node. irecv next G from "previous" node 
+    // 2.b add local contribution to current G
+    // 2.c wait for comms to finish
+    //3. all reduce resulting energies    
+
+    assert(ci.size()==1);
+    bool new_shm_space=false; 
+    const int node_number = TG.getLocalNodeNumber();
+    const int nnodes = TG.getNNodesPerTG();
+    const int Gsize = dm_size(false);
+    const ComplexType zero(0.0);
+    const int nwalk = wset.size();
+    // allocte space in shared memory for:
+    //  i.  2 copies of G (always compact),
+    //  ii. ovlps for local walkers
+    //  iii. energies[3] for all walkers on all nodes of TG (assume all nodes have same # of walkers)
+    int nt = nwalk*(2*Gsize+1);
+    if(not shmbuff_for_E) { 
+      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
+      new_shm_space=true;
+    }
+    // in case the number of walkers changes
+    if(shmbuff_for_E->size() < nt) {
+      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
+      new_shm_space=true;
+    }
+    assert(shmbuff_for_E->size() >= nt);
+    assert(E.dimensionality==2);
+    assert(Ov.dimensionality==1);
+    assert(E.shape()[0]==wset.size());
+    assert(Ov.shape()[0]==wset.size());
+    assert(E.shape()[1]==3);
+
+    int nr=Gsize,nc=nwalk;
+    if(transposed_G_for_E_) std::swap(nr,nc);
+    int displ=0;
+    boost::multi_array_ref<ComplexType,2> Gwork(shmbuff_for_E->data(),
+                                                extents[nr][nc]);
+      displ += Gsize*nwalk;
+    boost::multi_array_ref<ComplexType,2> Grecv(shmbuff_for_E->data()+displ,
+                                                extents[nr][nc]);
+      displ += Gsize*nwalk;
+    boost::multi_array_ref<ComplexType,1> overlaps(shmbuff_for_E->data()+displ,
+                                                   extents[nwalk]);
+    if(eloc2.shape()[0] != nnodes*nwalk || eloc2.shape()[1] != 3) 
+        eloc2.resize(extents[nnodes*nwalk][3]);
+    auto elocal = eloc2[node_number*nwalk];
+    int nak0,nak1;
+    std::tie(nak0,nak1) = FairDivideBoundary(TG.getLocalTGRank(),Gsize*nwalk,TG.getNCoresPerTG());
+
+    if(new_shm_space) {
+      // use mpi3 when ready
+      if(req_Grecv!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_Grecv);
+      if(req_Gsend!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_Gsend);
+      MPI_Send_init(Gwork.origin()+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
+                    TG.prev_core(),1234,TG.TG().impl_,&req_Gsend);
+      MPI_Recv_init(Grecv.origin()+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
+                    TG.next_core(),1234,TG.TG().impl_,&req_Grecv);
+    }
+   
+    std::fill_n(eloc2.origin(),3*nnodes*nwalk,ComplexType(0.0)); 
+    TG.local_barrier();
+
+    MPI_Status st;
+
+    // calculate G for local walkers
+    MixedDensityMatrix_for_E(wset,Gwork,overlaps,0);
+
+    for(int k=0; k<nnodes; k++) {
+
+      // wait for G from node behind you, copy to Gwork  
+      if(k>0) {
+        MPI_Wait(&req_Grecv,&st);
+        MPI_Wait(&req_Gsend,&st);     // need to wait for Gsend in order to overwrite Gwork  
+        std::copy_n(Grecv.origin()+nak0,(nak1-nak0),Gwork.origin()+nak0);
+        TG.local_barrier();
+      }
+
+      // post send/recv messages with nodes ahead and behind you
+      if(k < nnodes-1) {
+        MPI_Start(&req_Gsend); 
+        MPI_Start(&req_Grecv); 
+      }
+
+      // calculate your contribution of the local enery to the set of walkers in Gwork
+      int q = (k+node_number)%nnodes;
+      HamOp.energy(eloc2[indices[range_t(q*nwalk,(q+1)*nwalk)][range_t()]],
+                   Gwork,0,TG.TG_local().root() && k==0);
+      TG.local_barrier();
+
+    }
+    TG.TG().all_reduce_in_place_n(eloc2.origin(),3*nnodes*nwalk,std::plus<>());
+    TG.local_barrier();    
+    std::copy_n(elocal.origin(),3*nwalk,E.origin());
+    std::copy_n(overlaps.origin(),nwalk,Ov.origin());
+    TG.local_barrier();    
+*/
+  }
+
+  /*
+   * This routine has (potentially) considerable overhead if either the number of determinants
+   *   or the number of walkers changes.   
+   * G is assumed to be in shared memory
+   * Ov is assumed to be local to the core
+   */ 
+  template<class WlkSet, class MatG, class TVec>
+  void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose)
+  {
+    // if not compact, calculate compact on temporary storage and multiply by OrbMat[] on the left at the end.
+    using ma::T;
+    assert(G.strides()[1]==1);
+    assert(Ov.strides()[0]==1);
+    if(transpose)
+      assert(G.shape()[0] == wset.size() && G.shape()[1] == size_t(dm_size(not compact)));
+    else
+      assert(G.shape()[1] == wset.size() && G.shape()[0] == size_t(dm_size(not compact)));
+    const int nw = wset.size(); 
+    const int ndet = abij.number_of_configurations(); 
+    auto refc = abij.reference_configuration();
+    assert(Ov.size() >= nw);  
+    std::fill_n(Ov.begin(),nw,0);
+    for(int i=0; i<G.shape()[0]; i++)
+      if( i%TG.TG_local().size() == TG.TG_local().rank() )
+        std::fill_n(G[i].origin(),G.shape()[1],ComplexType(0.0));
+    TG.local_barrier();
+    auto Gsize = size_t(dm_size(not compact));
+    if(compact) {
+      if(localGbuff.size() < 2*Gsize) // 3 copies needed
+        localGbuff.resize(extents[2*Gsize]);
+    } else {
+      if(localGbuff.size() < 3*Gsize) // 3 copies needed
+        localGbuff.resize(extents[3*Gsize]);
+    }
+    if(walker_type != COLLINEAR) {
+      APP_ABORT(" Error: FInish implementation of PHMSD::MixedDensityMatrix for CLOSED and NONCOLLINEAR. \n");
+    } else {
+
+      // always calculate compact and multiply by OrbMat at the end if full
+      auto Gsize_c = size_t(dm_size(false));
+      auto GAdims = dm_dims(false,Alpha);
+      auto GBdims = dm_dims(false,Beta);
+      auto GAdims_full = dm_dims(true,Alpha);
+      auto GBdims_full = dm_dims(true,Beta);
+      if(compact) {
+        GAdims_full={0,0};
+        GBdims_full={0,0};
+      }  
+      auto GAdims0 = dm_dims_ref(false,Alpha);
+      auto GBdims0 = dm_dims_ref(false,Beta);
+      size_t cnt=0;
+      // REDUCE ALL THIS TEMPORARY STORAGE!!!
+      // storage for reference Green functions
+      boost::multi_array_ref<ComplexType,2> GA2D0_(localGbuff.origin(),
+                                   extents[GAdims0.first][GAdims0.second]);
+      cnt+=GA2D0_.num_elements();
+      boost::multi_array_ref<ComplexType,2> GB2D0_(localGbuff.origin()+cnt,
+                                   extents[GBdims0.first][GBdims0.second]);
+      cnt+=GB2D0_.num_elements();
+      // storage for Gw in case need to transpose result at the end 
+      boost::multi_array_ref<ComplexType,2> GA2D_(localGbuff.origin()+cnt,
+                                   extents[GAdims.first][GAdims.second]);
+      cnt+=GA2D_.num_elements();
+      boost::multi_array_ref<ComplexType,2> GB2D_(localGbuff.origin()+cnt,
+                                   extents[GBdims.first][GBdims.second]);
+      cnt+=GB2D_.num_elements();
+      boost::multi_array_ref<ComplexType,1> GA1D_(GA2D_.origin(),
+                                   extents[GAdims.first*GAdims.second]);
+      boost::multi_array_ref<ComplexType,1> GB1D_(GB2D_.origin(),
+                                   extents[GBdims.first*GBdims.second]);
+      // storage for full G in case compact=false
+      boost::multi_array_ref<ComplexType,2> Gfulla(localGbuff.origin()+cnt,
+                                   extents[GAdims_full.first][GAdims_full.second]);
+      cnt+=Gfulla.num_elements();
+      boost::multi_array_ref<ComplexType,2> Gfullb(localGbuff.origin()+cnt,
+                                   extents[GBdims_full.first][GBdims_full.second]);
+      cnt+=Gfullb.num_elements();
+
+      const int ntasks_percore = nw/TG.getNCoresPerTG();
+      const int ntasks_total_serial = ntasks_percore*TG.getNCoresPerTG();
+      const int nextra = nw - ntasks_total_serial;
+
+      // each processor does ntasks_percore_serial overlaps serially
+      const int w0 = TG.getLocalTGRank()*ntasks_percore;
+      const int wN = (TG.getLocalTGRank()+1)*ntasks_percore;
+
+      // task_w_d = = wlk_w*ndet + d 
+      local_ov[0][0]=1.0;
+      local_ov[1][0]=1.0;
+      for(int iw=w0; iw<wN; ++iw) {
+        // 1. calculate list of overlaps
+        ComplexType ov0 = SDetOp.MixedDensityMatrixForWoodbury(OrbMats[0],wset[iw].SlaterMatrix(Alpha),
+                                    GA2D0_,refc,local_QQ0inv[0],true);
+        calculate_overlaps(0,1,0,abij,local_QQ0inv[0],Qwork,local_ov[0]);
+        ov0 *= SDetOp.MixedDensityMatrixForWoodbury(OrbMats.back(),wset[iw].SlaterMatrix(Beta),
+                                    GB2D0_,refc+NAEA,local_QQ0inv[1],true);
+        calculate_overlaps(0,1,1,abij,local_QQ0inv[1],Qwork,local_ov[1]);
+        for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) 
+          Ov[iw] += std::conj(std::get<2>(*it))*ov0*
+                    local_ov[0][std::get<0>(*it)]*
+                    local_ov[1][std::get<1>(*it)];
+
+        // 2. generate R[Nact,Nel] and generate G
+        boost::multi_array_ref<ComplexType,2> Ra(Gwork.origin(),extents[NAEA][OrbMats[0].shape()[0]]);
+        calculate_R(0,1,0,abij,det_couplings[0],local_QQ0inv[0],Qwork,local_ov[1],ov0,Ra);
+        if(transpose) {
+          if(compact) {
+            boost::multi_array_ref<ComplexType,2> Gw(G[iw].origin(),
+                                   extents[GAdims.first][GAdims.second]);
+            ma::product(T(Ra),GA2D0_,Gw);
+          } else {
+            boost::multi_array_ref<ComplexType,2> Gw(G[iw].origin(),
+                                   extents[GAdims_full.first][GAdims_full.second]);
+            ma::product(T(Ra),GA2D0_,GA2D_);
+            ma::product(T(OrbMats[0]),GA2D_,Gw);
+          }
+        } else {
+          if(compact) {
+            ma::product(T(Ra),GA2D0_,GA2D_);
+            G[indices[range_t(0,GAdims.first*GAdims.second)][iw]] = GA1D_;
+          } else {
+            boost::multi_array_ref<ComplexType,1> G1D(Gfulla.origin(),
+                                   extents[Gfulla.num_elements()]);
+            ma::product(T(Ra),GA2D0_,GA2D_);
+            ma::product(T(OrbMats[0]),GA2D_,Gfulla);
+            G[indices[range_t(0,Gfulla.num_elements())][iw]] = G1D;
+          }  
+        }
+
+        boost::multi_array_ref<ComplexType,2> Rb(Gwork.origin(),extents[NAEB][OrbMats.back().shape()[0]]);
+        calculate_R(0,1,1,abij,det_couplings[1],local_QQ0inv[1],Qwork,local_ov[0],ov0,Rb);
+        if(transpose) {
+          if(compact) {
+            boost::multi_array_ref<ComplexType,2> Gw(G[iw].origin()+GAdims.first*GAdims.second,
+                                   extents[GBdims.first][GBdims.second]);
+            ma::product(T(Rb),GB2D0_,Gw);
+          } else {
+            boost::multi_array_ref<ComplexType,2> Gw(G[iw].origin()+GAdims_full.first*GAdims_full.second,
+                                   extents[GBdims_full.first][GBdims_full.second]);
+            ma::product(T(Rb),GB2D0_,GB2D_);
+            ma::product(T(OrbMats.back()),GB2D_,Gw);
+          }  
+        } else {
+          if(compact) {
+            ma::product(T(Rb),GB2D0_,GB2D_);
+            G[indices[range_t(GAdims.first*GAdims.second,G.shape()[0])][iw]] = GB1D_;
+          } else {
+            boost::multi_array_ref<ComplexType,1> G1D(Gfullb.origin(),
+                                   extents[Gfullb.num_elements()]);
+            ma::product(T(Rb),GB2D0_,GB2D_);
+            ma::product(T(OrbMats.back()),GB2D_,Gfullb);
+            G[indices[range_t(Gfulla.num_elements(),G.shape()[0])][iw]] = G1D;
+          }
+        }
+      }
+/*
+      // all remaining overlaps are performed in parallel with blocks of cores
+      // partition processors in nextra groups
+      if(nextra > 0) {
+        // check if new communicator is necessary
+        if( last_number_extra_tasks != nextra ) {
+          last_number_extra_tasks = nextra;
+          for(int n=0; n<nextra; n++) {
+            int n0,n1;
+            std::tie(n0,n1) = FairDivideBoundary(n,TG.getNCoresPerTG(),nextra);
+            if(TG.getLocalTGRank()>=n0 && TG.getLocalTGRank()<n1) {
+              last_task_index = n;
+              break;
+            }
+          }
+          // first setup
+          //local_group_comm = std::move(std::make_unique<shared_communicator>(TG.TG_local().split(last_task_index))); 
+          local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index))); 
+          shmbuff_for_G = std::move(std::make_unique<SHM_Buffer>(local_group_comm,dm_size(true)));
+        }
+        if(last_task_index < 0 || last_task_index > nextra)
+          APP_ABORT("Error: Problems in PHMSD::Overlap(WSet,Ov)");
+        {
+          boost::multi_array_ref<ComplexType,2> GA2D_2(shmbuff_for_G->data(),
+                               extents[GAdims.first][GAdims.second]);
+          boost::multi_array_ref<ComplexType,2> GB2D_2(shmbuff_for_G->data()+
+                               GAdims.first*GAdims.second,extents[GBdims.first][GBdims.second]);
+          boost::multi_array_ref<ComplexType,1> GA1D_2(shmbuff_for_G->data(),
+                               extents[GAdims.first*GAdims.second]);
+          boost::multi_array_ref<ComplexType,1> GB1D_2(shmbuff_for_G->data()+
+                               GAdims.first*GAdims.second,extents[GBdims.first*GBdims.second]);
+          int task = (last_task_index+ntasks_total_serial);
+          int iw = task/ndet;
+          int nd = task%ndet;
+          ComplexType ov_ = SDetOp.MixedDensityMatrix(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),
+                                                 GA2D_2,local_group_comm,compact);
+          ov_ *= SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),
+                                                   GB2D_2,local_group_comm,compact);
+          ov_ *= std::conj(ci[nd]);
+          if(local_group_comm.root()) {
+            if(transpose) {
+              std::lock_guard<boost::mpi3::mutex> guard(*mutex);
+              ma::axpy(ov_,GA1D_2,G[indices[iw][range_t(0,GAdims.first*GAdims.second)]]);
+              ma::axpy(ov_,GB1D_2,G[indices[iw][range_t(GAdims.first*GAdims.second,G.shape()[1])]]);
+            } else {
+              std::lock_guard<boost::mpi3::mutex> guard(*mutex);
+              ma::axpy(ov_,GA1D_2,G[indices[range_t(0,GAdims.first*GAdims.second)][iw]]);
+              ma::axpy(ov_,GB1D_2,G[indices[range_t(GAdims.first*GAdims.second,G.shape()[0])][iw]]);
+            }
+            Ov[iw] += ov_;
+          }
+        }
+      }
+*/
+    }
+    // normalize G
+    TG.TG_local().all_reduce_in_place_n(Ov.origin(),nw,std::plus<>());
+    if(transpose) {
+      for(size_t iw=0; iw<G.shape()[0]; ++iw) 
+        if( iw%TG.TG_local().size() == TG.TG_local().rank() ) {
+          auto ov_ = ComplexType(1.0,0.0)/Ov[iw];
+          ma::scal(ov_,G[iw]);
+        }
+    } else {
+      auto Ov_ = Ov.origin();  
+      const size_t nw_ = G.shape()[1];  
+      for(int ik=0; ik<G.shape()[0]; ++ik)
+        if( ik%TG.TG_local().size() == TG.TG_local().rank() ) {
+          auto Gik = G[ik].origin();  
+          for(size_t iw=0; iw<nw_; ++iw)
+            Gik[iw] /= Ov_[iw];
+        }
+    }
+    TG.local_barrier();
+  } 
+
+
+  /*
+   * Calculates the overlaps of all walkers in the set. Returns values in arrays. 
+   * Ov is assumed to be local to the core
+   */
+  template<class WlkSet, class TVec>
+  void PHMSD::Overlap(const WlkSet& wset, TVec&& Ov)
+  {
+    const int nw = wset.size(); 
+    const int ndet = abij.number_of_configurations();
+    assert(Ov.size() >= nw);  
+    std::fill(Ov.begin(),Ov.begin()+nw,0);
+    auto refc = abij.reference_configuration();
+    if(walker_type != COLLINEAR) {
+
+      const int ntasks_percore = nw/TG.getNCoresPerTG();
+      const int ntasks_total_serial = ntasks_percore*TG.getNCoresPerTG();
+      const int nextra = nw - ntasks_total_serial; 
+
+      // each processor does ntasks_percore_serial overlaps serially
+      const int w0 = TG.getLocalTGRank()*ntasks_percore; 
+      const int wN = (TG.getLocalTGRank()+1)*ntasks_percore; 
+
+      // task_w_d = = wlk_w*ndet + d 
+      for(int iw=w0; iw<wN; ++iw) {
+        ComplexType ov0 = SDetOp.OverlapForWoodbury(OrbMats[0],wset[iw].SlaterMatrix(Alpha),refc,local_QQ0inv[0]);
+	local_ov[0][0] = 1.0;
+        calculate_overlaps(0,1,0,abij,local_QQ0inv[0],Qwork,local_ov[0]);
+	for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) { 
+          Ov[iw] += std::conj(std::get<2>(*it))*
+                    ov0*local_ov[0][std::get<0>(*it)]*
+                    ((walker_type==CLOSED)?(ov0*local_ov[0][std::get<0>(*it)]):(ComplexType(1.0,0.0)));
+        }
+      }
+      if(nextra > 0) {
+APP_ABORT(" Finish PHMSD \n");
+        // check if new communicator is necessary
+        if( last_number_extra_tasks != nextra ) {
+          last_number_extra_tasks = nextra;
+          for(int n=0; n<nextra; n++) {
+            int n0,n1;
+            std::tie(n0,n1) = FairDivideBoundary(n,TG.getNCoresPerTG(),nextra);
+            if(TG.getLocalTGRank()>=n0 && TG.getLocalTGRank()<n1) {
+              last_task_index = n;
+              break;
+            }
+          }
+          // first setup
+//          local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index)));
+//          unique_overlaps = std::move(shared_CMatrix({2,maxn_unique_confg},
+//                                            shared_allocator<ComplexType>{local_group_comm}));
+//          QQ0inv = std::move(shared_CTensor({(walker_type==COLLINEAR?2:1),maxnactive,size_t(NAEA)},
+//                                            shared_allocator<ComplexType>{local_group_comm}));
+        }
+        if(last_task_index < 0 || last_task_index > nextra)
+          APP_ABORT("Error: Problems in PHMSD::Overlap(WSet,Ov)");
+        {
+          if(local_group_comm.rank()==0) unique_overlaps[0][0] = 1.0;
+          int iw = (last_task_index+ntasks_total_serial);
+          ComplexType ov = SDetOp.OverlapForWoodbury(OrbMats[0],wset[iw].SlaterMatrix(Alpha),refc,QQ0inv[0],local_group_comm);
+          calculate_overlaps(local_group_comm.rank(),local_group_comm.size(),0,abij,QQ0inv[0],Qwork,unique_overlaps[0]);
+          local_group_comm.barrier();
+          int cnt=0;
+          for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it, cnt++) 
+            if(cnt%local_group_comm.size()==local_group_comm.rank())
+              Ov[iw] += std::conj(std::get<2>(*it))*ov*
+                    unique_overlaps[0][std::get<0>(*it)]*
+                    ((walker_type==CLOSED)?(ov*unique_overlaps[0][std::get<0>(*it)]):(ComplexType(1.0,0.0)));
+        }
+      }
+
+    } else {
+
+      const int ntasks_percore = nw/TG.getNCoresPerTG();
+      const int ntasks_total_serial = ntasks_percore*TG.getNCoresPerTG();
+      const int nextra = nw - ntasks_total_serial;
+
+      // each processor does ntasks_percore_serial overlaps serially
+      const int w0 = TG.getLocalTGRank()*ntasks_percore;
+      const int wN = (TG.getLocalTGRank()+1)*ntasks_percore;
+
+      // task_w_d = = wlk_w*ndet + d 
+      local_ov[0][0]=1.0;  
+      local_ov[1][0]=1.0;  
+      for(int iw=w0; iw<wN; ++iw) {
+        ComplexType ov0 = SDetOp.OverlapForWoodbury(OrbMats[0],wset[iw].SlaterMatrix(Alpha),refc,local_QQ0inv[0]);
+        calculate_overlaps(0,1,0,abij,local_QQ0inv[0],Qwork,local_ov[0]);
+        ov0 *= SDetOp.OverlapForWoodbury(OrbMats.back(),wset[iw].SlaterMatrix(Beta),refc+NAEA,local_QQ0inv[1]);
+        calculate_overlaps(0,1,1,abij,local_QQ0inv[1],Qwork,local_ov[1]);
+        for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) {
+          Ov[iw] += std::conj(std::get<2>(*it))*ov0*
+                    local_ov[0][std::get<0>(*it)]*
+                    local_ov[1][std::get<1>(*it)];
+        }
+      }
+
+      // all remaining overlaps are performed in parallel with blocks of cores
+      // partition processors in nextra groups
+      if(nextra > 0) {
+APP_ABORT(" Finish PHMSD \n");
+        // check if new communicator is necessary
+        if( last_number_extra_tasks != nextra ) {
+          last_number_extra_tasks = nextra;
+          for(int n=0; n<nextra; n++) {
+            int n0,n1;
+            std::tie(n0,n1) = FairDivideBoundary(n,TG.getNCoresPerTG(),nextra);
+            if(TG.getLocalTGRank()>=n0 && TG.getLocalTGRank()<n1) {
+              last_task_index = n;
+              break;
+            }
+          }
+          // first setup
+//          local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index))); 
+//          unique_overlaps = std::move(shared_CMatrix({2,maxn_unique_confg},
+//                                            shared_allocator<ComplexType>{local_group_comm}));
+//          QQ0inv = std::move(shared_CTensor({(walker_type==COLLINEAR?2:1),maxnactive,size_t(NAEA)},
+//                                            shared_allocator<ComplexType>{local_group_comm}));
+        }
+        if(last_task_index < 0 || last_task_index > nextra)
+          APP_ABORT("Error: Problems in PHMSD::Overlap(WSet,Ov)");
+        {
+          if(local_group_comm.rank()==0) unique_overlaps[0][0] = 1.0; 
+          if(local_group_comm.rank()==0) unique_overlaps[1][0] = 1.0; 
+          int iw = (last_task_index+ntasks_total_serial);
+          ComplexType ov = SDetOp.OverlapForWoodbury(OrbMats[0],wset[iw].SlaterMatrix(Alpha),refc,QQ0inv[0],local_group_comm);
+          calculate_overlaps(local_group_comm.rank(),local_group_comm.size(),0,abij,QQ0inv[0],Qwork,unique_overlaps[0]);
+          ov *= SDetOp.OverlapForWoodbury(OrbMats.back(),wset[iw].SlaterMatrix(Beta),refc+NAEA,QQ0inv[1],local_group_comm);
+          calculate_overlaps(local_group_comm.rank(),local_group_comm.size(),1,abij,QQ0inv[1],Qwork,unique_overlaps[1]);
+          local_group_comm.barrier();
+          int cnt=0;
+          for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it, cnt++) {
+            if(cnt%local_group_comm.size()==local_group_comm.rank())
+              Ov[iw] += std::conj(std::get<2>(*it))*ov*
+                    unique_overlaps[0][std::get<0>(*it)]*
+                    unique_overlaps[1][std::get<1>(*it)];
+          }
+
+        }
+      }
+
+    }
+    TG.TG_local().all_reduce_in_place_n(Ov.origin(),nw,std::plus<>());
+  }
+
+  /*
+   * Orthogonalizes the Slater matrices of all walkers in the set.  
+   * Options:
+   *  - bool importanceSamplingt(default=true): use algorithm appropriate for importance sampling. 
+   *         This means that the determinant of the R matrix in the QR decomposition is ignored.
+   *         If false, add the determinant of R to the weight of the walker. 
+   */
+  template<class WlkSet>
+  void PHMSD::Orthogonalize(WlkSet& wset, bool impSamp) {
+    ComplexType detR(1.0,0.0);
+    if(walker_type != COLLINEAR) {
+      int cnt=0;
+      for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
+        if( (cnt++)%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
+          if(excitedState && numExcitations.first>0)
+            OrthogonalizeExcited(it->SlaterMatrix(Alpha),Alpha);
+          else  
+            detR = SDetOp.Orthogonalize(it->SlaterMatrix(Alpha));
+          if(!impSamp) {
+            if(walker_type==CLOSED)
+              it->weight() *= (detR*detR);
+            else  
+              it->weight() *= detR;
+          }
+        }
+      } 
+    } else {
+      int cnt=0;
+      for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
+        if( (2*(cnt++))%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
+          if(excitedState && numExcitations.first>0)
+            OrthogonalizeExcited(it->SlaterMatrix(Alpha),Alpha);
+          else
+            detR = SDetOp.Orthogonalize(it->SlaterMatrix(Alpha));
+          if(!impSamp) {
+            std::lock_guard<boost::mpi3::mutex> guard(*mutex);
+            it->weight() *= detR;
+          }
+        }
+        if( (2*(cnt++)+1)%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
+          if(excitedState && numExcitations.second>0)
+            OrthogonalizeExcited(it->SlaterMatrix(Beta),Beta);
+          else
+            detR = SDetOp.Orthogonalize(it->SlaterMatrix(Beta));
+          if(!impSamp) {
+            std::lock_guard<boost::mpi3::mutex> guard(*mutex);
+            it->weight() *= detR;
+          }
+        }
+      }
+    }   
+    TG.local_barrier();    
+    // recalculate overlaps
+    Overlap(wset);
+  }
+
+  /*
+   * Orthogonalize extended Slater Matrix for excited states calculation
+   * Ret 
+   */
+  template<class Mat>
+  void PHMSD::OrthogonalizeExcited(Mat&& A, SpinTypes spin)
+  {
+    if(walker_type == NONCOLLINEAR)  
+      APP_ABORT(" Error: OrthogonalizeExcited not implemented with NONCOLLINEAR.\n");
+    if(spin==Alpha) {
+      if(extendedMatAlpha.shape()[0] != NMO || extendedMatAlpha.shape()[1] != maxOccupExtendedMat.first)
+        extendedMatAlpha.resize(extents[NMO][maxOccupExtendedMat.first]);
+      extendedMatAlpha[indices[range_t()][range_t(0,NAEA)]] = A;
+      extendedMatAlpha[indices[range_t()][range_t(NAEA+1,maxOccupExtendedMat.first)]] =
+                excitedOrbMat[0][indices[range_t()][range_t(NAEA+1,maxOccupExtendedMat.first)]]; 
+      // move i->a, copy trial orb i  
+      for(auto& i:excitations) 
+        if(i.first < NMO && i.second < NMO ) {
+          extendedMatAlpha[indices[range_t()][i.second]] = extendedMatAlpha[indices[range_t()][i.first]];
+          extendedMatAlpha[indices[range_t()][i.first]] = excitedOrbMat[0][indices[range_t()][i.first]];
+        }
+      ComplexType detR = SDetOp.Orthogonalize(extendedMatAlpha);
+      A[indices[range_t()][range_t(0,NAEA)]] = extendedMatAlpha[indices[range_t()][range_t(0,NAEA)]];  
+      for(auto& i:excitations) 
+        if(i.first < NMO && i.second < NMO ) 
+          A[indices[range_t()][i.first]] = extendedMatAlpha[indices[range_t()][i.second]];
+    } else {
+      if(extendedMatBeta.shape()[0] != NMO || extendedMatBeta.shape()[1] != maxOccupExtendedMat.second)
+        extendedMatBeta.resize(extents[NMO][maxOccupExtendedMat.second]);
+      extendedMatBeta[indices[range_t()][range_t(0,NAEB)]] = A;
+      extendedMatBeta[indices[range_t()][range_t(NAEB+1,maxOccupExtendedMat.second)]] = 
+                excitedOrbMat[1][indices[range_t()][range_t(NAEB+1,maxOccupExtendedMat.second)]];
+      // move i->a, copy trial orb i  
+      for(auto& i:excitations) 
+        if(i.first >= NMO && i.second >= NMO ) {
+          extendedMatBeta[indices[range_t()][i.second]] = extendedMatBeta[indices[range_t()][i.first]];
+          extendedMatBeta[indices[range_t()][i.first]] = excitedOrbMat[1][indices[range_t()][i.first]];
+        }
+      ComplexType detR = SDetOp.Orthogonalize(extendedMatBeta);
+      A[indices[range_t()][range_t(0,NAEB)]] = extendedMatBeta[indices[range_t()][range_t(0,NAEB)]];
+      for(auto& i:excitations) 
+        if(i.first >= NMO && i.second >= NMO ) 
+          A[indices[range_t()][i.first]] = extendedMatBeta[indices[range_t()][i.second]];
+    }
+  }  
+
+  /*
+   * Calculate mean field expectation value of Cholesky potentials
+   * Can put G in shared memory with proper synchronization to avoid duplicated memory
+   * at the expense of synchronization overhead 
+   */
+  template<class Vec>
+  void PHMSD::vMF(Vec&& v) {
+
+    if(walker_type == NONCOLLINEAR) 
+      APP_ABORT(" Error: FInish implementation of PHMSD::MixedDensityMatrix for NONCOLLINEAR. \n");
+
+    using std::get;
+    using ma::T;
+    using std::conj;
+    using std::norm;
+    assert(v.num_elements() == local_number_of_cholesky_vectors());
+    std::fill_n(v.origin(),v.num_elements(),ComplexType(0));  
+    auto Gsize = size_t(dm_size(false));
+    if(localGbuff.size() < Gsize)
+      localGbuff.resize(extents[Gsize]);
+
+    shared_CMatrix ovlps(extents[2][maxn_unique_confg]); //,shared_allocator<ComplexType>{TG.Node()}) 
+    //if(TG.Node().root()) 
+      std::fill_n(std::addressof(*ovlps.origin()), 2*maxn_unique_confg, ComplexType(0.0));
+
+    auto refc = abij.reference_configuration();
+    auto confgs = abij.configurations_begin();
+    std::vector<int> exct(2*NAEA);
+    std::vector<int> Iwork(2*NAEA);
+    std::vector<int> confg(NAEA);
+    std::vector<int> confgB(NAEA);
+    TG.Node().barrier();
+
+    // 1. Overlaps
+    for(int spin=0, nc=0; spin<2; ++spin) {
+      int orb_spin_indx = (OrbMats.size()==2)?spin:0;
+      int wlk_spin_indx = (walker_type==CLOSED)?0:spin;
+      confg.resize((spin==0)?NAEA:NAEB);
+      auto Gdims = dm_dims(false,SpinTypes(spin));
+      auto Gdims_ref = dm_dims_ref(false,SpinTypes(spin));
+      boost::multi_array<ComplexType,2> SM_(extents[Gdims_ref.second][Gdims_ref.first]);
+      for(int nd=0; nd<det_couplings[spin].size(); ++nd, ++nc) {
+        if( nc%TG.Global().size() == TG.Global().rank() ) {
+          abij.get_configuration(spin,nd,confg);
+          csr::CSR2MA('H',OrbMats[orb_spin_indx],SM_,confg);
+          ovlps[spin][nd] = SDetOp.Overlap(SM_);
+        }
+      }
+    }
+    TG.Node().barrier();
+    //if(TG.Node().root()) 
+    //  TG.Cores().all_reduce_in_place_n(std::addressof(*ovlps.origin()),ovlps.num_elements(),std::plus<>());
+      TG.Global().all_reduce_in_place_n(std::addressof(*ovlps.origin()),ovlps.num_elements(),std::plus<>());
+    TG.Node().barrier();
+
+    ComplexType ov(0.0);
+    for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) 
+      ov += norm(std::get<2>(*it))*
+            ovlps[0][std::get<0>(*it)]*
+            ovlps[1][std::get<1>(*it)];
+
+    // 2. Diagonal and off-diagonal components
+    for(int spin=0; spin<2; ++spin) {
+      int other_spin = 1-spin;
+      int orb_spin_indx = (OrbMats.size()==2)?spin:0;
+      int wlk_spin_indx = (walker_type==CLOSED)?0:spin;
+      confg.resize((spin==0)?NAEA:NAEB);
+      auto Gdims = dm_dims(false,SpinTypes(spin));
+      auto Gdims_ref = dm_dims_ref(false,SpinTypes(spin));
+      boost::multi_array_ref<ComplexType,2> G2D_(localGbuff.origin(),
+                                                  extents[Gdims_ref.first][Gdims_ref.second]);
+      boost::multi_array_ref<ComplexType,1> G1D_(G2D_.origin(),extents[G2D_.num_elements()]);
+      boost::multi_array<ComplexType,2> SM_(extents[Gdims_ref.second][Gdims_ref.first]);
+      // store mean field G
+      boost::multi_array<ComplexType,2> G(extents[Gdims.first][Gdims.second]);
+      std::fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+
+      // diagonal contribution
+      for(int nd=0; nd<det_couplings[spin].size(); ++nd) {
+        if( nd%TG.Global().size() == TG.Global().rank() ) {
+          abij.get_configuration(spin,nd,confg);
+          csr::CSR2MA('H',OrbMats[orb_spin_indx],SM_,confg);
+          ComplexType ov_ = SDetOp.MixedDensityMatrix(SM_,G2D_,true);
+          ComplexType wgt(0.0);
+          auto it = std::addressof(*det_couplings[spin].values()) +
+                                        (*det_couplings[spin].pointers_begin(nd));
+          auto ite = std::addressof(*det_couplings[spin].values()) +
+                                        (*det_couplings[spin].pointers_end(nd));
+          for(; it<ite; ++it) 
+            wgt += ovlps[other_spin][get_index(*(confgs+(*it)),other_spin)]*
+                   norm(get<2>(*(confgs+(*it))));
+          wgt *= ovlps[spin][nd]; 
+          for(int k=0; k<confg.size(); ++k)
+            ma::axpy(wgt,G2D_[k],G[confg[k]]);
+        }
+      }
+      // off-diagonal contribution
+      boost::multi_array<ComplexType,2> orbs(extents[2][Gdims.second]);
+      confgB.resize((spin==0)?NAEA:NAEB);
+      ComplexType dummy(0.0);
+      for(int nd=0; nd<det_couplings[other_spin].size(); ++nd) {
+        if( nd%TG.Global().size() == TG.Global().rank() ) {
+          auto it1 = std::addressof(*det_couplings[other_spin].values()) +
+                                        (*det_couplings[other_spin].pointers_begin(nd));
+          auto ite = std::addressof(*det_couplings[other_spin].values()) +
+                                        (*det_couplings[other_spin].pointers_end(nd));
+          for(; it1<ite; ++it1) {
+            auto ci1 = get<2>(*(confgs+(*it1))); 
+            size_t cf1 = get_index(*(confgs+(*it1)),spin); 
+            abij.get_configuration(spin,cf1,confg);
+            sort(confg.begin(),confg.end());
+            for(auto it2 = it1+1; it2<ite; ++it2) {
+              size_t cf2 = get_index(*(confgs+(*it2)),spin); 
+              abij.get_configuration(spin,cf2,confgB);
+              sort(confgB.begin(),confgB.end());
+              exct.clear();
+              int np = get_excitation_number(true,confg,confgB,exct,dummy,Iwork);
+              if(np==1) {
+                ComplexType wgt = conj(ci1)*get<2>(*(confgs+(*it2)));
+                /*
+                 * exct: [0]: location of orbital being excited, [1]: excited orbital 
+                 * confg[exct[0]]: occupied orbital being excited
+                 * WARNING!!! Assumes orthogonal states, needs overlap factor!!!
+                 * Either calculate it (expensive) or demand orthogonality!!!   
+                 */   
+                exct[0] = confg[exct[0]]; 
+                csr::CSR2MA('Z',OrbMats[orb_spin_indx],orbs,exct);
+                ma::axpy(wgt,orbs[0],G[exct[1]]);
+                ma::axpy(conj(wgt),orbs[1],G[exct[0]]);
+              }
+            }  
+          }  
+        }
+      }
+      boost::multi_array_ref<ComplexType,1> G1D(G.origin(),extents[G.num_elements()]);
+      TG.Global().all_reduce_in_place_n(G1D.origin(),G1D.num_elements(),std::plus<>());
+      ma::scal(ComplexType(1.0/ov),G1D);
+      HamOp.vbias(G1D,std::forward<Vec>(v),0.5,1.0);
+    }
+    TG.Node().barrier();
+
+    // since v is not in shared memory, we need to reduce
+    TG.TG_local().all_reduce_in_place_n(v.origin(),v.num_elements(),std::plus<>());
+    // NOTE: since SpvnT is a truncated structure the complex part of vMF, 
+    //       which should be exactly zero, suffers from truncation errors.
+    //       Set it to zero.
+    for(int i=0; i<v.num_elements(); i++)
+      v[i] = ComplexType(real(v[i]),0.0); 
+
+}
+
+}
+}

@@ -24,7 +24,8 @@ namespace afqmc
 {
 
 // Right now, cutvn, cutvn2, TGprop and TGwfn are completely ignored.
-HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, 
+// Note: addCoulomb only has meaning on the sparse hamiltonians, not in THC
+HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool addCoulomb, 
             WALKER_TYPES type,std::vector<PsiT_Matrix>& PsiT, double cutvn, 
             double cutv2,TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& hdf_restart)
 {
@@ -414,7 +415,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
     check_wavefunction_consistency(type,&PsiT[nd],&PsiT[nd+skp],NMO,NAEA,NAEB);
-    hij.emplace_back(rotateHij(type,NMO,NAEA,NAEB,&PsiT[nd],&PsiT[nd+skp],OneBodyHamiltonian::H1));
+    hij.emplace_back(rotateHij(type,&PsiT[nd],&PsiT[nd+skp],OneBodyHamiltonian::H1));
   }
 
   // dense one body hamiltonian

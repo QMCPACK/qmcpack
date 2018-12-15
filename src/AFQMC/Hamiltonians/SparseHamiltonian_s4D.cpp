@@ -1294,7 +1294,7 @@ namespace afqmc
 
     // half-rotate Hij to A basis
     // hij = sum_k A*(k,i) * H1(k,j) 
-    rotateHij(walker_type,NMO,NAEA,NAEB,A,H1,hij,cut);
+    rotateHij(walker_type,A,H1,hij,cut);
 
     if(!v2_full_init)
       V2_full.setup(TG.getCoreID()==0,std::string("SparseGeneralHamiltonian_V2_full"),TG.Node().impl_);

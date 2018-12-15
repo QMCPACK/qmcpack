@@ -42,7 +42,7 @@ namespace HamHelper
 
   template<class Container,
            class Hijkl_op >
-  void generateHijkl(WALKER_TYPES walker_type, TaskGroup_& TG, 
+  void generateHijkl(WALKER_TYPES walker_type, bool addCoulomb, TaskGroup_& TG, 
                             Container& Vijkl, 
                             IndexType NMO,
                             std::map<IndexType,std::pair<bool,IndexType>>& occ_a, 
@@ -54,6 +54,9 @@ namespace HamHelper
     using std::conj;
     using std::abs;
     using std::sqrt;
+
+    if(not addCoulomb)
+      APP_ABORT("Error: addCoulomb=false not yet implemented in generateHijkl. \n"); 
 
     if(walker_type==NONCOLLINEAR) {
       APP_ABORT("Error: GHF density matrix only implemented with spinRestricted integrals. \n");

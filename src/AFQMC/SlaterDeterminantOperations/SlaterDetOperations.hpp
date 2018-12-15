@@ -90,6 +90,17 @@ class SlaterDetOperations
       return SlaterDeterminantOperations::base::MixedDensityMatrix<T>(hermA,B,std::forward<MatC>(C),TNN,TNM,IWORK,WORK,compact);
     }
 
+    template<class MatA, class MatC>
+    T MixedDensityMatrix(const MatA& A, MatC&& C, bool compact=false) {
+      int NMO = A.shape()[0];
+      int NAEA = A.shape()[1];
+      assert(TMat_NN.num_elements() >= NAEA*NAEA);
+      boost::multi_array_ref<T,2> TNN(TMat_NN.data(), extents[NAEA][NAEA]);
+      assert(TMat_NM.num_elements() >= NAEA*NMO);
+      boost::multi_array_ref<T,2> TNM(TMat_NM.data(), extents[NAEA][NMO]);
+      return SlaterDeterminantOperations::base::MixedDensityMatrix_noHerm<T>(A,A,std::forward<MatC>(C),TNN,TNM,IWORK,WORK,compact);
+    }
+
     template<class MatA, class MatB, class MatC>
     T MixedDensityMatrix_noHerm(const MatA& A, const MatB& B, MatC&& C, bool compact=false) {
       int NMO = A.shape()[0];
@@ -111,6 +122,48 @@ class SlaterDetOperations
       boost::multi_array_ref<T,2> TNN(SM_TMats->data(), extents[NAEA][NAEA]);
       boost::multi_array_ref<T,2> TNM(SM_TMats->data()+NAEA*NAEA, extents[NAEA][NMO]);  
       return SlaterDeterminantOperations::shm::MixedDensityMatrix<T>(hermA,B,std::forward<MatC>(C),TNN,TNM,IWORK,WORK,comm,compact);
+    }
+
+    template<class integer, class MatA, class MatB, class MatC, class MatQ>
+    T MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, 
+                                    integer* ref, MatQ&& QQ0, bool compact=false) {
+      int Nact = hermA.shape()[0];
+      int NEL = B.shape()[1];
+      int NMO = B.shape()[0];
+      assert(hermA.shape()[1]==B.shape()[0]);
+      assert(QQ0.shape()[0]==Nact);
+      assert(QQ0.shape()[1]==NEL);
+      assert(TMat_NN.num_elements() >= NEL*NEL);
+      boost::multi_array_ref<T,2> TNN(TMat_NN.data(), extents[NEL][NEL]);
+      assert(TMat_NM.num_elements() >= Nact*NEL);
+      boost::multi_array_ref<T,2> TAB(TMat_NM.data(), extents[Nact][NEL]);
+      assert(TMat_MM.num_elements() >= NMO*NEL);
+      boost::multi_array_ref<T,2> TNM(TMat_MM.data(), extents[NEL][NMO]);
+      return SlaterDeterminantOperations::base::MixedDensityMatrixForWoodbury<T>(hermA,B,std::forward<MatC>(C),std::forward<MatQ>(QQ0),ref,TNN,TAB,TNM,IWORK,WORK,compact);
+    }
+
+    template<class integer, class MatA, class MatB, class MatC>
+    T MixedDensityMatrixFromConfiguration(const MatA& hermA, const MatB& B, MatC&& C,
+                                    integer* ref, bool compact=false) {
+      int Nact = hermA.shape()[0];
+      int NEL = B.shape()[1];
+      int NMO = B.shape()[0];
+      assert(hermA.shape()[1]==B.shape()[0]);
+      assert(TMat_NN.num_elements() >= NEL*NEL);
+      boost::multi_array_ref<T,2> TNN(TMat_NN.data(), extents[NEL][NEL]);
+      assert(TMat_NM.num_elements() >= Nact*NEL);
+      boost::multi_array_ref<T,2> TAB(TMat_NM.data(), extents[Nact][NEL]);
+      assert(TMat_MM.num_elements() >= NMO*NEL);
+      boost::multi_array_ref<T,2> TNM(TMat_MM.data(), extents[NEL][NMO]);
+      return SlaterDeterminantOperations::base::MixedDensityMatrixFromConfiguration<T>(hermA,B,std::forward<MatC>(C),ref,TNN,TAB,TNM,IWORK,WORK,compact);
+    }
+
+    template<class MatA>
+    T Overlap(const MatA& A) {
+      int NAEA = A.shape()[1];
+      assert(TMat_NN.num_elements() >= NAEA*NAEA);
+      boost::multi_array_ref<T,2> TNN(TMat_NN.data(), extents[NAEA][NAEA]);
+      return SlaterDeterminantOperations::base::Overlap_noHerm<T>(A,A,TNN,IWORK);
     }
 
     template<class MatA, class MatB>
@@ -136,6 +189,37 @@ class SlaterDetOperations
       assert(SM_TMats->size() >= NAEA*NAEA);
       boost::multi_array_ref<T,2> TNN(SM_TMats->data(), extents[NAEA][NAEA]);
       return SlaterDeterminantOperations::shm::Overlap<T>(hermA,B,TNN,IWORK,comm);
+    }
+
+    // routines for PHMSD
+    template<typename integer, class MatA, class MatB, class MatC>
+    T OverlapForWoodbury(const MatA& hermA, const MatB& B, integer* ref, MatC&& QQ0) {
+      int Nact = hermA.shape()[0];
+      int NEL = B.shape()[1];
+      assert(hermA.shape()[1]==B.shape()[0]);
+      assert(QQ0.shape()[0]==Nact);  
+      assert(QQ0.shape()[1]==NEL);  
+      assert(TMat_NN.num_elements() >= NEL*NEL);
+      assert(TMat_MM.num_elements() >= Nact*NEL);
+      boost::multi_array_ref<T,2> TNN(TMat_NN.data(), extents[NEL][NEL]);
+      boost::multi_array_ref<T,2> TMN(TMat_MM.data(), extents[Nact][NEL]);
+      return SlaterDeterminantOperations::base::OverlapForWoodbury<T>(hermA,B,std::forward<MatC>(QQ0),ref,TNN,TMN,IWORK,WORK);
+    }    
+
+    template<typename integer, class MatA, class MatB, class MatC>
+    T OverlapForWoodbury(const MatA& hermA, const MatB& B, integer* ref, MatC&& QQ0, communicator& comm) {
+      int Nact = hermA.shape()[0];
+      int NEL = B.shape()[1];
+      assert(hermA.shape()[1]==B.shape()[0]);
+      assert(QQ0.shape()[0]==Nact);
+      assert(QQ0.shape()[1]==NEL);
+      assert(TMat_NN.num_elements() >= NEL*NEL);
+      assert(TMat_MM.num_elements() >= Nact*NEL);
+      set_shm_buffer(comm,NEL*(Nact+NEL));
+      assert(SM_TMats->size() >= NEL*(Nact+NEL));
+      boost::multi_array_ref<T,2> TNN(std::addressof(*SM_TMats->data()), extents[NEL][NEL]);
+      boost::multi_array_ref<T,2> TMN(std::addressof(*(SM_TMats->data()+NEL*NEL)), extents[Nact][NEL]);
+      return SlaterDeterminantOperations::shm::OverlapForWoodbury<T>(hermA,B,std::forward<MatC>(QQ0),ref,TNN,TMN,IWORK,WORK,comm);
     }
 
     template<class Mat, class MatP1, class MatV>

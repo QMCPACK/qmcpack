@@ -540,8 +540,8 @@ namespace afqmc
     const int ndet = ci.size();
     assert(Ov.size() >= nw);  
     std::fill_n(Ov.begin(),nw,0);
-    for(int i=0; i<G.shape()[0]; i++)
-      if( i%TG.TG_local().size() == TG.TG_local().rank() )
+    for(int i=0; i<G.shape()[0]; i++) 
+      if( i%TG.TG_local().size() == TG.TG_local().rank() ) 
         std::fill_n(G[i].origin(),G.shape()[1],ComplexType(0.0));
     TG.local_barrier();
     auto Gsize = size_t(dm_size(not compact));
@@ -648,6 +648,7 @@ namespace afqmc
       // each processor does ntasks_percore_serial overlaps serially
       const int tk0 = TG.getLocalTGRank()*ntasks_percore;
       const int tkN = (TG.getLocalTGRank()+1)*ntasks_percore;
+
 
       // task_w_d = = wlk_w*ndet + d 
       for(int tk=tk0; tk<tkN; ++tk) {

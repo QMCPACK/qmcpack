@@ -47,9 +47,15 @@ class dummy_HOps
     throw std::runtime_error("calling visitor on dummy_HOps object");
     return boost::multi_array<ComplexType,2>{};
   }
-  
+
   template<class Mat, class MatB>
-  void energy(Mat&& E, const MatB& Gc, int k, bool addH1=true, bool addEJ=true, bool addEXX=true) 
+  void energy(Mat&& E, const MatB& Gc, int k, bool addH1=true, bool addEJ=true, bool addEXX=true, bool getKl=false, MatB* Kl=nullptr, bool getKr=false, MatB* Kr=nullptr)
+  {
+    throw std::runtime_error("calling visitor on dummy_HOps object");
+  }
+  
+  template<class Mat, class MatB, class MatC, class MatD>
+  void energy(Mat&& E, const MatB& Gc, int k, MatC* Kl, MatD* Kr, bool addH1=true, bool addEJ=true, bool addEXX=true) 
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
   }

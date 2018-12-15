@@ -157,7 +157,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
     check_wavefunction_consistency(type,&PsiT[nd],&PsiT[nd+skp],NMO,NAEA,NAEB);
-    hij.emplace_back(rotateHij(type,NMO,NAEA,NAEB,&PsiT[nd],&PsiT[nd+skp],H1));
+    hij.emplace_back(rotateHij(type,&PsiT[nd],&PsiT[nd+skp],H1));
   }
 
   // setup views
@@ -170,17 +170,26 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   auto Spvnview(csr::shm::local_balanced_partition(Spvn,TGprop));
 
   if(ndet==1) {
-    auto SpvnT(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
+    std::vector<SpCType_shm_csr_matrix> SpvnT;
+    using matrix_view = typename SpCType_shm_csr_matrix::template matrix_view<int>;
+    std::vector<matrix_view> SpvnTview;	
+    SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
                               &PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0])),
                               Spvn,cutv2));
-    auto SpvnTview(csr::shm::local_balanced_partition(SpvnT,TGprop));
+    SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
 
     return SparseTensor<T1,T2>(type,std::move(H1),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
             std::move(v0),std::move(SpvnT),std::move(SpvnTview),E0,Spvn_ncols);
   } else {
-    auto SpvnT(csr::shm::transpose(Spvn));
-    auto SpvnTview(csr::shm::local_balanced_partition(SpvnT,TGprop));
+    // problem here!!!!!
+    // don't know how to tell if this is NOMSD or PHMSD!!!
+    // whether to rotate or not! That's the question!
+    std::vector<SpVType_shm_csr_matrix> SpvnT;
+    using matrix_view = typename SpVType_shm_csr_matrix::template matrix_view<int>;
+    std::vector<matrix_view> SpvnTview;	
+    SpvnT.emplace_back(csr::shm::transpose(Spvn));
+    SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
 
     return SparseTensor<T1,T2>(type,std::move(H1),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),

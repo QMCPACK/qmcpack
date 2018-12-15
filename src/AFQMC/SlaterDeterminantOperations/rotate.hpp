@@ -137,7 +137,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
     }  
     // reset "amount of work done" to full alpha piece
     cnt=NAEA*(kN_alpha-k0_alpha);
-    if(type==1) {
+    if(type==COLLINEAR) {
       // reset "shift"
       for(int k=k0_beta; k<kN_beta; k++) {
         for(int a=0; a<NAEB; a++, cnt++) {
@@ -192,7 +192,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   }  
   // reset "amount of work done" to full alpha piece
   cnt=NAEA*(kN_alpha-k0_alpha);
-  if(type==1) { 
+  if(type==COLLINEAR) { 
     // reset "shift"
     for(int k=k0_beta; k<kN_beta; k++) {
       for(int a=0; a<NAEB; a++, cnt++) {
@@ -462,6 +462,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
       }
     }
   }
+  TG.Node().barrier();
 }
 
 }

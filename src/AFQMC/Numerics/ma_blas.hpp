@@ -67,7 +67,9 @@ MultiArray1DY gemv(T alpha, MultiArray2DA const& A, MultiArray1DX const& x, T be
 	assert( A.strides()[1] == 1 ); // gemv is not implemented for arrays with non-leading stride != 1
 	int M = A.shape()[1];
 	int N = A.shape()[0];
-	BLAS::gemv(IN, M, N, alpha, A.origin(), A.strides()[0], x.origin(), x.strides()[0], beta, y.origin(), y.strides()[0]);
+	BLAS::gemv(IN, M, N, alpha, std::addressof(*A.origin()), A.strides()[0], 
+                   std::addressof(*x.origin()), x.strides()[0], beta, 
+                   std::addressof(*y.origin()), y.strides()[0]);
 	return std::forward<MultiArray1DY>(y);
 } //y := alpha*A*x + beta*y,
 
@@ -120,10 +122,10 @@ MultiArray2DC gemm(T alpha, MultiArray2DA const& a, MultiArray2DB const& b, T be
 	BLAS::gemm(
 		TA, TB, 
 		M, N, K, alpha, 
-		a.origin(), a.strides()[0], 
-		b.origin(), b.strides()[0],
+		std::addressof(*a.origin()), a.strides()[0], 
+		std::addressof(*b.origin()), b.strides()[0],
 		beta, 
-		c.origin(), c.strides()[0]
+		std::addressof(*c.origin()), c.strides()[0]
 	);
 	return std::forward<MultiArray2DC>(c);
 }

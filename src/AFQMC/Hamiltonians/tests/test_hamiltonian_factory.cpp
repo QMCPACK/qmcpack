@@ -153,7 +153,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         }
 
         // V2 uses std::size_t to store pointers_begin/end.
-        auto V2(ham.generateHijkl(CLOSED,TG,occ_a,occ_a,1e-5));
+        auto V2(ham.generateHijkl(CLOSED,false,TG,occ_a,occ_a,1e-5));
         REQUIRE(V2.shape()[0] == NAEA*NMO);
         REQUIRE(V2.shape()[0] == V2.shape()[1]);
 
@@ -333,7 +333,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         std::size_t zero(0);
 
         // V2 uses std::size_t to store pointers_begin/end.
-        auto V2(ham.halfRotatedHijkl(COLLINEAR,TG,std::addressof(TrialWfn.first),
+        auto V2(ham.halfRotatedHijkl(COLLINEAR,false,TG,std::addressof(TrialWfn.first),
                                           std::addressof(TrialWfn.second),1e-5)); 
         REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
         REQUIRE(V2.shape()[0] == V2.shape()[1]);
@@ -522,7 +522,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         std::size_t zero(0);
 
         // V2 uses std::size_t to store pointers_begin/end.
-        auto V2(ham.halfRotatedHijkl(COLLINEAR,TG,std::addressof(TrialWfn.first),
+        auto V2(ham.halfRotatedHijkl(COLLINEAR,false,TG,std::addressof(TrialWfn.first),
                                           std::addressof(TrialWfn.second),1e-5)); 
         REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
         REQUIRE(V2.shape()[0] == V2.shape()[1]);

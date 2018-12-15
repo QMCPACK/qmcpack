@@ -118,7 +118,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
@@ -249,7 +249,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
@@ -379,7 +379,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,1);
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
@@ -529,7 +529,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,ncores);
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
@@ -681,7 +681,7 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     // NOTE: This will force the replacement of HalfRotatedLuv by Luv to test the energy of the 
     //       non-rotated factorization
     THCHamiltonian& thcHam = boost::get<THCHamiltonian>(ham);
-    auto HOps(thcHam.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(thcHam.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);

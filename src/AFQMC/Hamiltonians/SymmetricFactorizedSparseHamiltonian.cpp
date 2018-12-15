@@ -143,8 +143,11 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
   }
 
   HamiltonianOperations SymmetricFactorizedSparseHamiltonian::getHamiltonianOperations(
-            bool pureSD, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT, 
+            bool pureSD, bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT, 
             double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump) {
+
+    if(not addCoulomb)
+	APP_ABORT(" Error: addCoulomb=false not implemented in SymmetricFactorizedSparseHamiltonian.\n");
 
     if(type==COLLINEAR)
       assert(PsiT.size()%2 == 0);
@@ -176,10 +179,13 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
       std::vector<boost::multi_array<SPComplexType,1>> hij;
       hij.reserve(ndet);
       hij.emplace_back(halfRotatedHij(type,&PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0])))); 
-      auto SpvnT(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
+      std::vector<SpCType_shm_csr_matrix> SpvnT;
+      using matrix_view = typename SpCType_shm_csr_matrix::template matrix_view<int>;
+      std::vector<matrix_view> SpvnTview;
+      SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
                               &PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0])),
                               Spvn,cutv2));
-      auto SpvnTview(csr::shm::local_balanced_partition(SpvnT,TGprop));
+      SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
       Timer.stop("Generic");
       app_log()<<" Time for halfRotateCholeskyMatrixForBias: " <<Timer.total("Generic") <<std::endl;
 
@@ -210,7 +216,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
 
         return HamiltonianOperations(sparse_ham(type,getH1(),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
-            std::move(vn0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs,true));
+            std::move(vn0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs));
       }
     } else {
       // in multi determinant, SpvnT is transposed(Spvn) 
@@ -222,8 +228,11 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
       int skp=((type==COLLINEAR)?1:0); 
       for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) 
          hij.emplace_back(halfRotatedHij(type,&PsiT[nd],&PsiT[nd+skp])); 
-      auto SpvnT(csr::shm::transpose(Spvn));
-      auto SpvnTview(csr::shm::local_balanced_partition(SpvnT,TGprop));
+      std::vector<SpVType_shm_csr_matrix> SpvnT;
+      using matrix_view = typename SpVType_shm_csr_matrix::template matrix_view<int>;
+      std::vector<matrix_view> SpvnTview;
+      SpvnT.emplace_back(csr::shm::transpose(Spvn));
+      SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
       Timer.stop("Generic");
       app_log()<<" Time for halfRotateCholeskyMatrixForBias: " <<Timer.total("Generic") <<std::endl;
 
@@ -254,7 +263,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
 
         return HamiltonianOperations(sparse_ham(type,getH1(),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
-            std::move(vn0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs,true));
+            std::move(vn0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs));
       }
     }
 
