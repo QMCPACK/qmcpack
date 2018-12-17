@@ -130,7 +130,7 @@ struct h5data_proxy<boost::multi::array_ref<T,2,Ptr>>: public h5_space_type<T,2>
     }
     return h5d_read(grp,aname,get_address(std::addressof(*ref_.origin())),xfer_plist);
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=h5p_default)
+  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
   {
     return h5d_write(grp,aname.c_str(),this->size(),dims,get_address(std::addressof(*ref_.origin())),xfer_plist);
   }

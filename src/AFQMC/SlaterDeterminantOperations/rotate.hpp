@@ -25,7 +25,7 @@
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/Matrix/matrix_emplace_wrapper.hpp"
-#include "AFQMC/multi/array_ref.hpp"
+#include "multi/array_ref.hpp"
 //#include <boost/hana.hpp>
 #include "AFQMC/Utilities/afqmc_TTI.hpp"
 #include "mpi.h"

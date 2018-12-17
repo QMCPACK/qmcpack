@@ -23,11 +23,11 @@
 
 #include "Configuration.h"
 #include "AFQMC/config.h"
-#include "alf/boost/mpi3/shared_communicator.hpp"
-#include "AFQMC/multi/array.hpp"
-#include "AFQMC/multi/array_ref.hpp"
+#include "mpi3/shared_communicator.hpp"
+#include "mpi3/shm/mutex.hpp"
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "alf/boost/mpi3/shm/mutex.hpp"
 
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
