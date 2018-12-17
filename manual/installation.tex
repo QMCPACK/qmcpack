@@ -821,8 +821,8 @@ module load boost
 module load cuda
 mkdir build_summit
 cd build_summit
-cmake -DCMAKE_C_COMPILER="mpixlc" \
-      -DCMAKE_CXX_COMPILER="mpixlC" \
+cmake -DCMAKE_C_COMPILER="mpicc" \
+      -DCMAKE_CXX_COMPILER="mpicxx" \
       -DBUILD_LMYENGINE_INTERFACE=0 \
       -DQMC_CUDA=1 \
       -DCUDA_ARCH="sm_70" \
