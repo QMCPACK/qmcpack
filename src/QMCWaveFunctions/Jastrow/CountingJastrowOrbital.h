@@ -1,3 +1,14 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
+//
+// File created by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
+//////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef QMC_PLUS_PLUS_COUNTING_JASTROW_ORBITAL_H
 #define QMC_PLUS_PLUS_COUNTING_JASTROW_ORBITAL_H
 
@@ -6,12 +17,9 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/CountingRegion.h"
 
-#include "boost/format.hpp"
-
 namespace qmcplusplus
 {
 
-//#template <class RegionType> class CountingJastrowOrbital : public WaveFunctionComponent 
 template <class RegionType>
 class CountingJastrowOrbital: public WaveFunctionComponent 
 {
@@ -222,27 +230,19 @@ public:
   {
     os << std::endl << "CountingJastrowOrbital::reportStatus begin" << std::endl;
     // print F matrix
-    os << "  F matrix:" << std::endl;
+    os << "  F matrix:" << ", opt_F: " << (opt_F?"true":"false");
     for(int I = 0; I < num_regions; ++I)
     {
-      os << "  ";
       for(int J = 0, IJ = num_regions*I; J < num_regions; ++J, ++IJ)
-      {
-        os << boost::format("  %10.5f") % F(I,J);
-      }
+        os << "  " << F(IJ);
       os << std::endl;
     }
-    os << "  opt_F: " << (opt_F?"true":"false");
     // print G vector
     if(!C->normalized)
     {
-      os << "  G vector:" << std::endl << "  ";
+      os << "  G vector:" << std::endl << ", opt_G: " << (opt_G?"true":"false");
       for(int I = 0; I < num_regions; ++I)
-      {
-        os << boost::format("  %10.5f") % G[I];
-      }
-      os << std::endl;
-      os << ", opt_G: " << (opt_G?"true":"false");
+        os << "  " << G[I] << std::endl;
     }
     // print additional information
     os << "  num_regions: " << num_regions << ", num_els: " << num_els << std::endl;

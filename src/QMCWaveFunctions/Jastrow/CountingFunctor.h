@@ -1,9 +1,18 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
+//
+// File created by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
+//////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_COUNTING_FUNCTOR_H
 #define QMCPLUSPLUS_COUNTING_FUNCTOR_H
 
 #include "OhmmsData/AttributeSet.h"
-#include "boost/format.hpp"
 
 namespace qmcplusplus
 {
@@ -106,13 +115,13 @@ public:
     {
       os << std::endl;
       for(int J = 0, IJ = I*3; J < 3; ++J, ++IJ)
-        os << boost::format("  %10.5f") % A[IJ];
+        os << "  " << A[IJ];
     }
     os << std::endl << "  opt_A: ";
     std::copy(opt_A.begin(), opt_A.end(), std::ostream_iterator<bool>(os,", "));
     os << std::endl << "  B: "; 
     for(auto it = B.begin(); it != B.end(); ++it)
-      os << boost::format("  %10.5f") % (*it);
+      os << "  " << *it;
     os << std::endl << "  opt_B: "; 
     std::copy(opt_B.begin(), opt_B.end(), std::ostream_iterator<bool>(os,", "));
     os << std::endl << "  C: " << C << std::endl;

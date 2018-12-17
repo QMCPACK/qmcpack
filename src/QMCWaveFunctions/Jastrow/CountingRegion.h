@@ -1,3 +1,14 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
+//
+// File created by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
+//////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef QMC_PLUS_PLUS_COUNTING_FUNCTOR_H
 #define QMC_PLUS_PLUS_COUNTING_FUNCTOR_H
 

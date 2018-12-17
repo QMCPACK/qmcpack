@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+// File developed by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
 //
-// File created by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+// File created by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCWaveFunctions/Jastrow/CountingJastrowBuilder.h"
@@ -28,23 +28,13 @@ CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFun
   SourceOpt=targetPtcl.getName();
 }
 
-template<class precision, template<class> class CountingRegionType>
-class CountingJastrowTypeHelper
-{
-  public:
-    using rft = CountingRegionType<precision>;
-    using CJOrbitalType = CountingJastrowOrbital<rft>;
-};
-
-
-
 template<template<class> class CountingRegionType>
 bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"createCJ(xmlNodePtr)");
   using RegionType = CountingRegionType<RT>;
   using FunctorType = typename RegionType::FunctorType;
-  using CJOrbitalType = typename CountingJastrowTypeHelper<RT,CountingRegionType>::CJOrbitalType;
+  using CJOrbitalType = CountingJastrowOrbital<RegionType>;
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
 
