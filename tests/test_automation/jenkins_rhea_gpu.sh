@@ -116,7 +116,7 @@ time ctest -L unit --output-on-failure
 
 EOF
 
-/home/bgl/blocking_qsub $BUILD_DIR $BUILD_TAG.pbs
+/home/mat151ci_auser/blocking_qsub $BUILD_DIR $BUILD_TAG.pbs
 
 cp $BUILD_DIR/$BUILD_TAG.o* ../
 
