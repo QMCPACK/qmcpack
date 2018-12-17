@@ -24,9 +24,9 @@
 
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/config.h"
-#include "alf/boost/mpi3/shm/mutex.hpp"
-#include "AFQMC/multi/array.hpp"
-#include "AFQMC/multi/array_ref.hpp"
+#include "mpi3/shm/mutex.hpp"
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 #include "AFQMC/Matrix/array_of_sequences.hpp"

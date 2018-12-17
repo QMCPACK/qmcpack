@@ -36,8 +36,8 @@
 #include "AFQMC/Hamiltonians/rotateHamiltonian_Helper2.hpp"
 #include "AFQMC/Hamiltonians/rotateHamiltonian_Helper3.hpp"
 
-#include "AFQMC/multi/array.hpp"
-#include "AFQMC/multi/array_ref.hpp"
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
 
 namespace qmcplusplus
 {
