@@ -800,33 +800,32 @@ make -j 8
 ls -l bin/qmcpack
 \end{verbatim}
 
-\subsection{Installing on ORNL OLCF SummitDev}
-SummitDev is the development cluster for the next GPU accelerated
-supercomputer Summit at Oak Ridge National Laboratory's
-Leadership Computing Facility  (ORNL OLCF). It has IBM Power8 CPUs and NVIDIA Pascal GPUs.
+\subsection{Installing on ORNL OLCF Summit}
+Summit is an IBM system at ORNL OLCF built with IBM Power System AC922
+nodes. They have two IBM Power 9 processors and six NVIDIS Volta V100
+accelerators.
 
 \subsubsection{Building QMCPACK}
 Please note that these build instructions are preliminary as the
-software environment is subject to change. QMCPACK can be build with the following commands:
+software environment is subject to change. As of December 2018, the IBM XL compiler does not support C++14, so we currently utilize the gnu compiler and compatible
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-module load xl
+module load gcc
 module load essl
-module load netlib-lapack
-module load hdf5/1.8.18
+module load netlib-lapack #because ESSL does not provided needed LAPACK functionality
+module load hdf5
 module load fftw
 export FFTW_HOME=$OLCF_FFTW_ROOT
-module load python
 module load cmake
 module load boost
 module load cuda
-mkdir build_summitdev
-cd build_summitdev
+mkdir build_summit
+cd build_summit
 cmake -DCMAKE_C_COMPILER="mpixlc" \
       -DCMAKE_CXX_COMPILER="mpixlC" \
       -DBUILD_LMYENGINE_INTERFACE=0 \
       -DQMC_CUDA=1 \
-      -DCUDA_ARCH="sm_60" \
+      -DCUDA_ARCH="sm_70" \
       ..
 make -j 8
 ls -l bin/qmcpack
