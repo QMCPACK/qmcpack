@@ -23,7 +23,7 @@ module load hdf5
 module load git
 module load cudatoolkit/8.0.44
 module load cmake/3.6.1
-module load boost
+module load boost/1.61.0
 
 env
 module list

@@ -22,7 +22,7 @@ export FFTW_HOME=\$FFTW3_DIR
 module load hdf5
 module load git
 module load cmake/3.6.1
-module load boost
+module load boost/1.61.0
 
 env
 module list
@@ -120,4 +120,4 @@ then
 fi
 
 # set the return code for the script
-[ $(grep '100% tests passed, 0 tests failed out of [0-9]*' ../$BUILD_TAG.o* | wc -l) -eq 5 ]
+[ $(grep '100% tests passed, 0 tests failed out of [0-9]*' ../$BUILD_TAG.o* | wc -l) -eq 4 ]
