@@ -101,7 +101,7 @@ ctest -L unit --output-on-failure
 
 EOF
 
-/home/bgl/blocking_qsub $BUILD_DIR $BUILD_TAG.pbs
+/home/mat151ci_auser/blocking_qsub $BUILD_DIR $BUILD_TAG.pbs
 
 cp $BUILD_DIR/$BUILD_TAG.o* ../
 
@@ -120,4 +120,4 @@ then
 fi
 
 # set the return code for the script
-[ $(grep '100% tests passed, 0 tests failed out of [0-9]*' ../$BUILD_TAG.o* | wc -l) -eq 4 ]
+[ $(grep '100% tests passed, 0 tests failed out of [0-9]*' ../$BUILD_TAG.o* | wc -l) -eq 5 ]
