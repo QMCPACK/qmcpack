@@ -46,3 +46,33 @@ if (add_test)
     latdev_check.py
   )
 endif()
+
+set(sofk_python_reqs numpy;pandas;h5py)
+CHECK_PYTHON_REQS(sofk_python_reqs estimator-sofk add_test)
+
+if (add_test)
+  SIMPLE_RUN_AND_CHECK(estimator-sofk_pbyp-properties
+    "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
+    pbyp_dat-h5.xml
+    1 16
+    check_properties_h5dat.py dat-h5_pbyp
+  )
+  SIMPLE_RUN_AND_CHECK(estimator-sofk_pbyp-collectables
+    "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
+    pbyp_dat-h5.xml
+    1 16
+    check_collectables_h5dat.py dat-h5_pbyp
+  )
+  SIMPLE_RUN_AND_CHECK(estimator-sofk_allp-properties
+    "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
+    allp_dat-h5.xml
+    1 16
+    check_properties_h5dat.py dat-h5_allp
+  )
+  SIMPLE_RUN_AND_CHECK(estimator-sofk_allp-collectables
+    "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
+    allp_dat-h5.xml
+    1 16
+    check_collectables_h5dat.py dat-h5_allp
+  )
+endif()
