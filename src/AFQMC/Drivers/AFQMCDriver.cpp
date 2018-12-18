@@ -47,7 +47,7 @@ bool AFQMCDriver::run(WalkerSet& wset)
   RealType w0 = wset.GlobalWeight();
   int nwalk_ini = wset.GlobalPopulation();
 
-  app_log()<<"Initial weighti and number of walkers: " <<w0 <<" " <<nwalk_ini <<"\n"
+  app_log()<<"Initial weight and number of walkers: " <<w0 <<" " <<nwalk_ini <<"\n"
            <<"Initial Eshift: " <<Eshift <<std::endl;
 
   // problems with using step_tot to do ortho and load balance
@@ -223,7 +223,7 @@ bool AFQMCDriver::writeSamples(WalkerSet& wset)
 
   int nwtowrite=-1;
   if(!dumpSamplesHDF5(wset,dump,nwtowrite) ) {
-    app_error()<<" Problems writting checkpoint file in Driver/AFQMCDriver::writeSample(). \n";
+    app_error()<<" Problems writing checkpoint file in Driver/AFQMCDriver::writeSample(). \n";
     return false;
   }
 
