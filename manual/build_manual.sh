@@ -31,6 +31,7 @@ bibtex qmcpack_manual1
 bibtex qmcpack_manual2
 xelatex qmcpack_manual.tex
 xelatex qmcpack_manual.tex
+xelatex qmcpack_manual.tex
 
 if [ ! -z "$QMCPACK_VER" ]; then
   mv version.save.tex version.tex

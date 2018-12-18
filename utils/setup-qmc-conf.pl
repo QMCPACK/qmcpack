@@ -1,6 +1,6 @@
 ppconvert => '/gprojects/qmcpack/redsky/bin/ppconvert',
 energytool => '/gprojects/qmcpack/redsky/bin/energy.pl',
-supercell => '/gprojects/qmcpack/redsky/bin/getSupercell',
+supercell => '/gprojects/qmcpack/redsky/bin/qmc-get-supercell',
 twenergytool => '/gprojects/qmcpack/redsky/bin/TwistAvg.pl',
 gnuplot => '/usr/bin/gnuplot',
 

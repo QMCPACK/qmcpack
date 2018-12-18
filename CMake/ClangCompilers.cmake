@@ -1,7 +1,7 @@
 # Check compiler version
-IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.3 )
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.4 )
   MESSAGE(STATUS "Compiler Version ${CMAKE_CXX_COMPILER_VERSION}")
-  MESSAGE(FATAL_ERROR "Requires clang 3.3 or higher ")
+  MESSAGE(FATAL_ERROR "Requires clang 3.4 or higher ")
 ENDIF()
 
 # Set the std

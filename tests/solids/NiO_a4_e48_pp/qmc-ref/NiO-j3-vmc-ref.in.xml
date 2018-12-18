@@ -93,7 +93,7 @@
   </wavefunction>
   <hamiltonian name="h0" type="generic" target="e">
     <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml">
-      <pseudo elementType="O" href="../O.xml"/>
+      <pseudo elementType="O" href="../O.ncpp.xml"/>
       <pseudo elementType="Ni" href="../Ni.opt.xml"/>
     </pairpot>
     <constant name="IonIon" type="coulomb" source="i" target="i"/>

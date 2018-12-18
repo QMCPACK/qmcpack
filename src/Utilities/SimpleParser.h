@@ -31,6 +31,7 @@
 char* readLine(char *s, int max, std::istream &fp);
 
 int getwords(std::vector<std::string>& slist, std::istream &fp, int dummy = 0, const std::string &extra_tokens="");
+int getwordsWithMergedNumbers(std::vector<std::string>& slist, std::istream &fp, int dummy = 0, const std::string &extra_tokens="");
 int getwords(std::vector<std::string>& slist, std::istream &fp, std::string& aline );
 int getwords(std::vector<std::string>& slist,std::istream& fpos, const char* field, const char* terminate);
 int getwords(std::vector<std::string>& slist,std::istream& fpos, const char* terminate);

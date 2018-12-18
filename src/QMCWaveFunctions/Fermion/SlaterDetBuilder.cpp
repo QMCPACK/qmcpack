@@ -222,14 +222,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     else if (cname == sd_tag)
     {
       multiDet=false;
-      // read in whether to use an optimizable slater determinant
-      std::string optimize("no");
-      {
-        OhmmsAttributeSet a;
-        a.add(optimize, "optimize");
-        a.put(cur);
-      }
-
       if(slaterdet_0)
       {
         APP_ABORT("slaterdet is already instantiated.");
@@ -252,7 +244,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         getNodeName(tname,tcur);
         if (tname == det_tag || tname == rn_tag)
         {
-          if(putDeterminant(tcur, spin_group, optimize == "yes"))
+          if(putDeterminant(tcur, spin_group))
             spin_group++;
         }
         tcur = tcur->next;
@@ -414,7 +406,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
 magnetic system
  * Extra attributes to handled the original released-node case
  */
-bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slater_det_opt)
+bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 {
   ReportEngine PRE(ClassName,"putDeterminant(xmlNodePtr,int)");
 
@@ -444,6 +436,14 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   aAttrib.add(rntype,"primary");
   aAttrib.add(spin_name,"group");
   aAttrib.put(cur);
+
+  // whether to use an optimizable slater determinant
+  std::string optimize("no");
+  int delay_rank(1);
+  OhmmsAttributeSet sdAttrib;
+  sdAttrib.add(delay_rank,"delay_rank");
+  sdAttrib.add(optimize, "optimize");
+  sdAttrib.put(cur->parent);
 
   { //check determinant@group
     int spin_group_in=spin_group;
@@ -495,7 +495,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
     return true;
   std::string dname;
   getNodeName(dname,cur);
-  DiracDeterminant* adet=0;
+  DiracDeterminantBase* adet=0;
   {
 #ifdef QMC_CUDA
     adet = new DiracDeterminantCUDA(psi,firstIndex);
@@ -503,7 +503,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
     if(UseBackflow)
       adet = new DiracDeterminantWithBackflow(targetPtcl,psi,BFTrans,firstIndex);
 #ifndef ENABLE_SOA
-    else if (slater_det_opt)
+    else if (optimize == "yes")
     {
 #ifdef QMC_COMPLEX
       app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
@@ -547,7 +547,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
       retval->buildOptVariables(params, params_supplied, true);
 
       adet = retval;
-      adet->Optimizable = true;
 #endif
     }
 #endif
@@ -560,7 +559,20 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
     }
 #endif
   }
-  adet->set(firstIndex,lastIndex-firstIndex);
+  if( delay_rank<=0 || delay_rank>lastIndex-firstIndex )
+  {
+    std::ostringstream err_msg;
+    err_msg << "SlaterDetBuilder::putDeterminant delay_rank must be positive "
+            << "and no larger than the electron count within a determinant!\n"
+            << "Acceptable value [1," << lastIndex-firstIndex << "], "
+            << "user input "+std::to_string(delay_rank);
+    APP_ABORT(err_msg.str());
+  }
+  else if(delay_rank>1)
+    app_log() << "Using rank-" << delay_rank << " delayed update" << std::endl;
+  else
+    app_log() << "Using rank-1 Sherman-Morrison Fahy update" << std::endl;
+  adet->set(firstIndex,lastIndex-firstIndex, delay_rank);
   slaterdet_0->add(adet,spin_group);
   if (psi->Optimizable)
     slaterdet_0->Optimizable = true;

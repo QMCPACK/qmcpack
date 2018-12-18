@@ -63,14 +63,33 @@ Contents
    Then you can add one line to the .bashrc file in your 
    home directory:
    
-     export PYTHONPATH=/your/path/to/nexus/library/:$PYTHONPATH
+     export PYTHONPATH=/your/path/to/nexus/lib/:$PYTHONPATH
    
    After adding this line, type "source $HOME/.bashrc".  Now check 
    that Nexus is available by typing "python" then "import nexus".
    You should be able to use Nexus if the the import proceeds 
    without incident (i.e. no messages displayed).
 
-  
+   The executables packaged with Nexus can be used once they are 
+   added to the PATH environment variable.  Do this by adding 
+   the following line to your .bashrc file:
+   
+     export PATH=/your/path/to/nexus/bin/:$PATH
+
+   Both of these steps can alternately be performed by the 
+   installer packaged with Nexus.  To use it, simply type 
+   the following at the command line:
+
+     >/your/path/to/nexus/install
+
+   Check the end of your .bashrc (or equivalent) to make sure the 
+   PATH and PYTHONPATH variables have been set properly.
+
+   If you want the binaries to be copied to a location outside 
+   the downloaded Nexus distribution, then just provide that as 
+   a path to the installer:
+
+     >/your/path/to/nexus/install /some/other/location
 
 
 3. Summary of important library files

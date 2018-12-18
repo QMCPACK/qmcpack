@@ -205,6 +205,12 @@ SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
 SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
 
 ######################################################################
+# Install options
+# INSTALL_NEXUS install Nexus alongside QMCPACK
+######################################################################
+SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
+
+######################################################################
 # FIXED PARAMETERS for test and legacy reasons
 # DO NOT TOUCH THESE
 # QMC_ORTHO  = 0 for general unit cell, 1 for orthogonal cells
@@ -342,6 +348,13 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     ENDIF(QMC_CUDA)
   ENDIF($ENV{CRAYPE_VERSION} MATCHES ".")
 
+  #--------------------------------
+  #  C++ 14 is the minimum standard
+  #--------------------------------
+  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
   #------------------------------------
   # Identify the compiler -- This serves only to deal with case where only C or CXX is set, refactor? 
   #------------------------------------
@@ -385,11 +398,10 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(WARNING "No default file for compiler (${COMPILER})")
   ENDIF()
 
-  set(CMAKE_CXX_STANDARD 14)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  set(CMAKE_CXX_EXTENSIONS OFF)
 
+  #---------------------------------------------------
   # Check that a C++ 14 standard library is configured
+  #---------------------------------------------------
   include(CMake/TestCxx14Library.cmake)
 
   #-------------------------------------------------------------------
@@ -506,6 +518,11 @@ ENDIF()
 # AFQMC requires MPI
 If (BUILD_AFQMC AND NOT QMC_MPI)
   MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
+ENDIF()
+
+# AFQMC does not work with real builds for now
+If (BUILD_AFQMC AND NOT QMC_COMPLEX)
+  MESSAGE(FATAL_ERROR "AFQMC requires building with QMC_COMPLEX=1 for now.")
 ENDIF()
 
 IF (BUILD_AFQMC AND NOT APPLE)
@@ -625,14 +642,13 @@ ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr
 set(Boost_NO_BOOST_CMAKE on)
-find_package(Boost REQUIRED)
+find_package(Boost 1.61.0 REQUIRED)
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
   MESSAGE(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 ELSE()
-  MESSAGE(STATUS "Using MT engine in Utilities/MersenneTwister.h")
-  #MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_ROOT")
+  MESSAGE(FATAL_ERROR "Need boost 1.61.0 or higher.  Set BOOST_ROOT")
 ENDIF()
 
 SET(HAVE_CUDA 0)
@@ -878,6 +894,10 @@ endif()
 
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
+INSTALL(FILES ${qmcpack_BINARY_DIR}/bin/qmcpack.settings DESTINATION bin)
+IF(INSTALL_NEXUS)
+  INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
+ENDIF()
 
 #########################
 # add definitions for adios profile

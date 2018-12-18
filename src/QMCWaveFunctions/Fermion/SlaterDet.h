@@ -17,11 +17,7 @@
 
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
-#ifdef QMC_CUDA
-#include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
-#else
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
-#endif
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include <map>
 
@@ -37,7 +33,7 @@ namespace qmcplusplus
 class SlaterDet : public WaveFunctionComponent
 {
 public:
-  typedef DiracDeterminant Determinant_t;
+  typedef DiracDeterminantBase Determinant_t;
   ///container for the DiracDeterminants
   std::vector<Determinant_t*> Dets;
   ///the last particle of each group
@@ -91,14 +87,7 @@ public:
   ///return the total number of Dirac determinants
   inline int size() const { return Dets.size(); }
 
-  ///return the column dimension of the i-th Dirac determinant
-  inline int size(int i) const { return Dets[i]->cols(); }
-
   virtual void registerData(ParticleSet& P, WFBufferType& buf);
-
-  virtual void updateAfterSweep(ParticleSet& P,
-                                ParticleSet::ParticleGradient_t& G,
-                                ParticleSet::ParticleLaplacian_t& L);
 
   virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
@@ -149,6 +138,13 @@ public:
       LogValue   += Dets[i]->LogValue;
       PhaseValue += Dets[i]->PhaseValue;
     }
+  }
+
+  virtual
+  void completeUpdates()
+  {
+    for(int i=0; i<Dets.size(); i++)
+      Dets[i]->completeUpdates();
   }
 
   virtual inline ValueType ratio(ParticleSet& P, int iat) { return Dets[getDetID(iat)]->ratio(P, iat); }

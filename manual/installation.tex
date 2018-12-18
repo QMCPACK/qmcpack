@@ -100,7 +100,7 @@ Section \ref{sec:buildperformance} for performance suggestions.
 \item CMake, build utility, \url{http://www.cmake.org}
 \item Libxml2, XML parser, \url{http://xmlsoft.org}
 \item HDF5, portable I/O library, \url{http://www.hdfgroup.org/HDF5/}. Good performance at large scale requires parallel version $>=$ 1.10.
-\item BOOST, peer-reviewed portable C++ source libraries, \url{http://www.boost.org}
+\item BOOST, peer-reviewed portable C++ source libraries, \url{http://www.boost.org}.   Minimum version is 1.61.0.
 \item FFTW, FFT library, \url{http://www.fftw.org/}
 \end{itemize}
 
@@ -131,6 +131,16 @@ library during configuration, and will halt with an error if one is not found.
 
 At sites that use modules, running \texttt{module load gcc} is often sufficient to
 load a newer GCC and that will resolve the issue.
+
+\subsection{Intel compiler}
+The Intel compiler version must be 18 or newer.
+The version 17 compiler cannot compile some of the C++ 14 constructs in the code.
+
+If a newer gcc is needed, the \texttt{-cxxlib} option can be used to point to a different gcc installation.
+(Alternately, the \texttt{-gcc-name} or \texttt{-gxx-name} options can be used.)
+Be sure to pass this flag to the C compiler in addition to the C++ compiler.
+The reason is CMake extracts some library paths from the C compiler and those paths usually also contain to the C++ library.
+The symptom of this problem is C++ 14 standard library functions not found at link time.
 
 \section{Building with CMake}
 \label{sec:cmake}
@@ -262,6 +272,8 @@ CMAKE_CXX_FLAGS      Set the C++ flags.  Note: to prevent default
                      debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
                      Also supported: CMAKE_CXX_FLAGS_DEBUG,
                      CMAKE_CXX_FLAGS_RELEASE, and CMAKE_CXX_FLAGS_RELWITHDEBINFO
+CMAKE_INSTALL_PREFIX Set the install location (if using the optional install step)
+INSTALL_NEXUS        Install Nexus alongside QMCPACK (if using the optional install step)
 \end{verbatim}
 
 \item Additional QMCPACK build options
@@ -313,6 +325,14 @@ MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
 \end{verbatim}
 
 \end{itemize}
+
+\subsection{Installation from CMake}
+Installation is optional. The QMCPACK executable can be run from the \texttt{bin} directory in the build location.
+If the install step is desired, run \texttt{make install} command to install the QMCPACK executable, the converter,
+and some additional executables.
+Also installed is the \texttt{qmcpack.settings} file that records options used to compile QMCPACK.
+Specify the \texttt{CMAKE\_INSTALL\_PREFIX} CMake variable during configuration to set the install location.
+
 
 \subsection{Role of QMC\_DATA}
 QMCPACK includes a variety of optional performance and integration
@@ -478,7 +498,7 @@ QMCPACK tried to do its best with CMake to facilitate cross-compiling.
 
 The general strategy for cross-compiling should therefore be to
 manually set CMAKE\_C\_FLAGS and CMAKE\_CXX\_FLAGS for the target
-archicture. Using \texttt{make VERBOSE=1} is a useful way to check the
+architecture. Using \texttt{make VERBOSE=1} is a useful way to check the
 final compilation options.  If on a Cray machine, selection of the
 appropriate programming environment should be sufficient.
 
@@ -671,7 +691,7 @@ Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argon
 Mira has 49152 compute nodes and each node has a 16-core PowerPC A2 processor with 16 GB DDR3 memory.
 Due to the fact that the login nodes and the compute nodes have different processors with distinct instruction sets,
 cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
-On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang and +cmake-3.8.1 in \$HOME/.soft.
+On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang-mpi3 and +cmake-3.8.1 in \$HOME/.soft.
 In order to build QMCPACK, a toolchain file is provided for setting up CMake.
 \textbf{BGClang is required for C++ 14 support. IBM XL C/C++ compiler should not be used.}
 
@@ -780,33 +800,32 @@ make -j 8
 ls -l bin/qmcpack
 \end{verbatim}
 
-\subsection{Installing on ORNL OLCF SummitDev}
-SummitDev is the development cluster for the next GPU accelerated
-supercomputer Summit at Oak Ridge National Laboratory's
-Leadership Computing Facility  (ORNL OLCF). It has IBM Power8 CPUs and NVIDIA Pascal GPUs.
+\subsection{Installing on ORNL OLCF Summit}
+Summit is an IBM system at ORNL OLCF built with IBM Power System AC922
+nodes. They have two IBM Power 9 processors and six NVIDIA Volta V100
+accelerators.
 
 \subsubsection{Building QMCPACK}
 Please note that these build instructions are preliminary as the
-software environment is subject to change. QMCPACK can be build with the following commands:
+software environment is subject to change. As of December 2018, the IBM XL compiler does not support C++14, so we currently utilize the gnu compiler.
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-module load xl
+module load gcc
 module load essl
-module load netlib-lapack
-module load hdf5/1.8.18
+module load netlib-lapack #because ESSL does not provided needed LAPACK functionality
+module load hdf5
 module load fftw
 export FFTW_HOME=$OLCF_FFTW_ROOT
-module load python
 module load cmake
 module load boost
 module load cuda
-mkdir build_summitdev
-cd build_summitdev
-cmake -DCMAKE_C_COMPILER="mpixlc" \
-      -DCMAKE_CXX_COMPILER="mpixlC" \
+mkdir build_summit
+cd build_summit
+cmake -DCMAKE_C_COMPILER="mpicc" \
+      -DCMAKE_CXX_COMPILER="mpicxx" \
       -DBUILD_LMYENGINE_INTERFACE=0 \
       -DQMC_CUDA=1 \
-      -DCUDA_ARCH="sm_60" \
+      -DCUDA_ARCH="sm_70" \
       ..
 make -j 8
 ls -l bin/qmcpack
@@ -1315,7 +1334,7 @@ counts. \textbf{These tests should therefore not be used for any benchmarking or
 performance analysis}. Example runs that can be used for testing performance are described in
 Sec. \ref{sec:perftests}
 
-\subsection{Determinstic and unit tests}
+\subsection{Deterministic and unit tests}
 
 QMCPACK has a set of deterministic tests, predominantly unit tests.
 All of these tests can be run with the following command (in the build directory):
@@ -1390,6 +1409,19 @@ platform, you must run the benchmarks in a standalone manner and tune
 thread counts, placement, walker count (etc.) This is essential to
 fairly compare different machines. Check with the
 developers if you are unsure of what is a fair change.
+
+For the largest problem sizes, the initialization of spline orbitals may
+take a large portion of overall runtime. When QMCPACK is run at scale
+the initialization is fast because it is fully
+parallelized. However, the performance runs are most usually run on a single node.
+Consider running QMCPACK once with \texttt{--save\_wfs=1} to save the
+converted spline coefficients to the disk and load them for later runs in the same folder..
+
+The delayed update algorithm in section~\ref{sec:singledeterminant}
+significantly changes the performance characteristics of QMCPACK.  A
+parameter scan of the maximal number of delays specific to every
+architecture and problem size is required to achieve the best
+performance.
 
 \subsubsection{NiO performance tests}
 

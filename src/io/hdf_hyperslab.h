@@ -74,6 +74,8 @@ struct hyperslab_proxy: public container_proxy<CT>
     if(element_size>1)
     {
       slab_dims[slab_rank]=element_size;
+      slab_dims_local[slab_rank]=element_size;
+      slab_offset[slab_rank]=0;
       slab_rank+=1;
     }
     use_slab=true;

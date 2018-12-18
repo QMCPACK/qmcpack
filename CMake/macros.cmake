@@ -37,10 +37,12 @@ FUNCTION( COPY_DIRECTORY_SYMLINK_H5 SRC_DIR DST_DIR)
     # Copy everything but *.h5 files and pseudopotential files
     FILE(COPY "${SRC_DIR}/" DESTINATION "${DST_DIR}"
          PATTERN "*.h5" EXCLUDE
+         PATTERN "*.opt.xml" EXCLUDE
+         PATTERN "*.ncpp.xml" EXCLUDE
          PATTERN "*.BFD.xml" EXCLUDE)
 
     # Now find and symlink the *.h5 files and psuedopotential files
-    FILE(GLOB_RECURSE H5 "${SRC_DIR}/*.h5" "${SRC_DIR}/*.BFD.xml")
+    FILE(GLOB_RECURSE H5 "${SRC_DIR}/*.h5" "${SRC_DIR}/*.opt.xml" "${SRC_DIR}/*.ncpp.xml" "${SRC_DIR}/*.BFD.xml")
     FOREACH(F IN LISTS H5)
       FILE(RELATIVE_PATH R "${SRC_DIR}" "${F}")
       #MESSAGE("Creating symlink from  ${SRC_DIR}/${R} to ${DST_DIR}/${R}")

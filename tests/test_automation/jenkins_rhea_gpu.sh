@@ -4,7 +4,7 @@ BUILD_DIR=$(pwd)
 echo $BUILD_DIR
 
 cat > $BUILD_TAG.pbs << EOF
-#PBS -A MAT151
+#PBS -A MAT151ci
 #PBS -N $BUILD_TAG
 #PBS -j oe
 #PBS -l walltime=1:00:00,nodes=1
@@ -23,6 +23,7 @@ module load hdf5
 module load git
 module load cudatoolkit/8.0.44
 module load cmake/3.6.1
+module load boost/1.61.0
 
 env
 module list
@@ -50,7 +51,9 @@ fi
 # because Andreas tells me (and I observe) that GPU builds are unstable with Cmake
 time make -j 24
 time make -j 24
-time ctest -L unit
+
+time ctest -L unit --output-on-failure
+
 
 
 echo ""
@@ -68,7 +71,9 @@ time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMP
 
 time make -j 24
 time make -j 24
-time ctest -L unit
+
+time ctest -L unit --output-on-failure
+
 
 
 echo ""
@@ -86,7 +91,9 @@ time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -D
 
 time make -j 24
 time make -j 24
-time ctest -L unit
+
+time ctest -L unit --output-on-failure
+
 
 echo ""
 echo ""
@@ -103,11 +110,13 @@ time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMP
 
 time make -j 24
 time make -j 24
-time ctest -L unit
+
+time ctest -L unit --output-on-failure
+
 
 EOF
 
-/home/bgl/blocking_qsub $BUILD_DIR $BUILD_TAG.pbs
+/home/mat151ci_auser/blocking_qsub $BUILD_DIR $BUILD_TAG.pbs
 
 cp $BUILD_DIR/$BUILD_TAG.o* ../
 

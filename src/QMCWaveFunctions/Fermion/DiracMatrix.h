@@ -16,7 +16,7 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <type_traits/scalar_traits.h>
 
-namespace qmcplusplus { 
+namespace qmcplusplus {
 
   inline void Xgetrf(int n, int m, float* restrict a, int lda, int* restrict piv)
   {
@@ -131,7 +131,7 @@ namespace qmcplusplus {
       {
         const int n=amat.rows();
         const int lda=amat.cols();
-        if(Lwork<n) reset(amat,n,lda);
+        if(Lwork<lda) reset(amat,lda);
         Xgetrf(n,n,amat.data(),lda,m_pivot.data());
         if(computeDet)
         {
@@ -140,36 +140,18 @@ namespace qmcplusplus {
         Xgetri(n,  amat.data(),lda,m_pivot.data(),m_work.data(),Lwork);
       }
 
-      inline void reset(Matrix<T>& amat,int n, int lda)
+      inline void reset(Matrix<T>& amat, const int lda)
       {
-        //Lwork=n;
-        //m_work.resize(n);
-        //m_pivot.resize(n);
         m_pivot.resize(lda);
         Lwork=-1;
         T tmp;
         real_type lw;
-        Xgetri(n, amat.data(),lda,m_pivot.data(),&tmp,Lwork);
+        Xgetri(lda, amat.data(),lda,m_pivot.data(),&tmp,Lwork);
         convert(tmp,lw);
         Lwork=static_cast<int>(lw);
         m_work.resize(Lwork); 
       }
-
-      inline void updateRow(Matrix<T>& a, T* arow, int rowchanged, T c_ratio_in)
-      {
-        const int m=a.rows();
-        const int lda=a.cols();
-        const T cone(1);
-        const T czero(0);
-        T temp[lda], rcopy[lda];
-        T c_ratio=cone/c_ratio_in;
-        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, arow, 1, czero, temp, 1);
-        temp[rowchanged]=cone-c_ratio;
-        simd::copy_n(a[rowchanged],m,rcopy);
-        BLAS::ger(m,m,-cone,rcopy,1,temp,1,a.data(),lda);
-      }
     };
 }
 
-#endif // OHMMS_PETE_MATRIX_H
-
+#endif // QMCPLUSPLUS_DIRAC_MATRIX_H
