@@ -77,7 +77,10 @@ MultiArray2DB transpose(MultiArray2DA&& A, MultiArray2DB&& B){
         assert(A.shape()[1] == B.shape()[0]);
         for(int i = 0; i != A.shape()[0]; ++i) {
                 //B(B.extension(0),i) = A(i,A.extension(1));
-                B(B.extension(0),i) = A[i]; //A(i,A.extension(1)); BUG in multi!!!
+                //B(B.extension(0),i) = A[i]; //A(i,A.extension(1)); BUG in multi!!!
+                for(int j = 0; j != A.shape()[1]; ++j) {
+                  B[i][j] = A[j][i];
+                }
         }
                 //B[boost::indices[range_t()][i]] = A[boost::indices[i][range_t()]];
         return std::forward<MultiArray2DB>(B);
