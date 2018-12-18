@@ -258,7 +258,7 @@ auto transpose(csr_matrix&& A)
 {
   using integer = typename std::decay<csr_matrix>::type::index_type;
   using MatrixType = typename std::decay<csr_matrix>::type;
-  auto& comm = A.getAlloc().comm_.get();
+  auto& comm = A.getAlloc().comm_;
   std::vector<std::size_t> sz_per_row(A.shape()[1]);
   integer r0, rN, ncols = integer(A.shape()[1]);
   integer rank = comm.rank(), size = comm.size();
