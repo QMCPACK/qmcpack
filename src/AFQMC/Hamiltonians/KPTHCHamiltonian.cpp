@@ -737,7 +737,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   TGwfn.Global().barrier();
   if(TGwfn.Node().root()) 
     for(int Q=0; Q<nkpts; Q++) 
-      TGwfn.Cores().all_reduce_n(std::addressof(*LQKikn[Q].origin()), LQKikn[Q].num_elements(), std::plus<>());
+      TGwfn.Cores().all_reduce_in_place_n(std::addressof(*LQKikn[Q].origin()), LQKikn[Q].num_elements(), std::plus<>());
 
   std::vector<shmSpMatrix> LQKank;
   LQKank.reserve(ndet*nspins*(nkpts+1));  // storing 2 components for Q=0, since it is not assumed symmetric 
