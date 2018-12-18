@@ -69,7 +69,6 @@ using namespace afqmc;
 TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
@@ -357,7 +356,6 @@ const char *wlk_xml_block_noncol =
 TEST_CASE("wfn_fac_sdet_distributed", "[wavefunction_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
@@ -665,7 +663,6 @@ const char *wlk_xml_block_noncol =
 TEST_CASE("wfn_fac_collinear_multidet", "[wavefunction_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc_msd.h5") ||
@@ -808,7 +805,6 @@ const char *wlk_xml_block =
 TEST_CASE("wfn_fac_collinear_multidet_distributed", "[wavefunction_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc_msd.h5") ||
@@ -953,7 +949,6 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
-  OhmmsInfo("testlogfile",world.rank());
 
   if(not file_exists("./afqmc_msd.h5") ||
      not file_exists("./wfn_msd.dat") ) {

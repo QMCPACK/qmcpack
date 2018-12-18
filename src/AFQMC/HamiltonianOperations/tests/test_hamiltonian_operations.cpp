@@ -64,7 +64,6 @@ using namespace afqmc;
 TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
@@ -195,7 +194,6 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
@@ -326,7 +324,6 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
 TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./thc.h5") ||
@@ -470,7 +467,6 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
 TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./thc.h5") ||
@@ -618,7 +614,6 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
 TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./thc.h5") ||

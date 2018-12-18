@@ -87,7 +87,6 @@ using communicator = boost::mpi3::communicator;
 void test_basic_walker_features(bool serial)
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD}; 
   auto world = boost::mpi3::environment::get_world_instance();
 
   using Type = std::complex<double>;
@@ -221,7 +220,6 @@ cout<<" after (*it) test  " <<std::endl;
 void test_hyperslab()
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   using Type = std::complex<double>;
@@ -284,7 +282,6 @@ void test_hyperslab()
 void test_double_hyperslab()
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   using Type = std::complex<double>;
@@ -364,7 +361,6 @@ void test_double_hyperslab()
 void test_walker_io()
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
 
   using Type = std::complex<double>;
