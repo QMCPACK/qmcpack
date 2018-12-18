@@ -1676,7 +1676,21 @@ class QBase(DevBase):
         bc  = 'BlockCPU',       ar = 'AcceptRatio',    eff  = 'Efficiency',
         te  = 'TrialEnergy',    de = 'DiffEff',        w    = 'Weight',
         nw  = 'NumOfWalkers',   sw = 'AvgSentWalkers', tt   = 'TotalTime', 
-        ts  = 'TotalSamples',   le2 = 'LocalEnergy_sq'
+        ts  = 'TotalSamples',   le2= 'LocalEnergy_sq', fl   = 'Flux',
+        # RMC
+        k_m  = 'Kinetic_m',     k_p  = 'Kinetic_p',    p_p  = 'LocalPotential_pure',
+        ee_m = 'ElecElec_m',    ee_p = 'ElecElec_p',
+        # CSVMC
+        e_A  = 'LocEne_0',      e_B  = 'LocEne_1',     de_AB  = 'dLocEne_0_1',
+        k_A  = 'Kinetic_0',     k_B  = 'Kinetic_1',    k_AB   = 'dKinetic_0_1',
+        p_A  = 'LocPot_0',      p_B  = 'LocPot_1',     p_AB   = 'dLocPot_0_1',
+        ee_A = 'ElecElec_0',    ee_B = 'ElecElec_1',   dee_AB = 'dElecElec_0_1',
+        ei_A = 'ElecIon_0',     ei_B = 'ElecIon_1',    ei_AB  = 'dElecIon_0_1',
+        ii_A = 'IonIon_0',      ii_B = 'IonIon_1',     dii_AB = 'dIonIon_0_1',
+        fl_A = 'Flux_0',        fl_B = 'Flux_1',       fl_AB  = 'dFlux_0_1',
+        wp_A = 'wpsi_0',        wp_B = 'wpsi_1',
+        # AFQMC
+        el = 'Eloc',            ele = 'ElocEstim'
         )
 
     def log(self,*texts,**kwargs):
@@ -1834,39 +1848,38 @@ class DatAnalyzer(QBase):
             data.CorrectedEnergy  = v
             stats.CorrectedEnergy = self.stat_value(v[nbe:])
         #end if
-        if 'LocalEnergy' in data and 'BlockWeight' in data and 'BlockCPU' in data:
-            bc = data.BlockCPU[nbe:]
-            bw = data.BlockWeight[nbe:]
+        if len(data)>0:
+            example = data.first()
+            if 'NumOfWalkers' in data:
+                ts = data.NumOfWalkers.sum()
+                stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0)
+                data.TotalSamples = 0*example
+            #end if
+            if 'BlockWeight' in data:
+                bw = data.BlockWeight[nbe:]
+                ts = bw.sum()
+                stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0)
+                data.TotalSamples = 0*example
+            #end if
+            if 'BlockCPU' in data:
+                bc = data.BlockCPU[nbe:]
+                tt = bc.sum()
+                stats.TotalTime = obj(mean=tt,var=0.0,error=0.0,kappa=1.0)
+                data.TotalTime = 0*example
+            #end if
+            if 'LocalEnergy' in data and 'BlockWeight' in data and 'BlockCPU' in data:
+                e  = stats.LocalEnergy.error
+                w  = stats.BlockWeight.mean
+                t  = stats.BlockCPU.mean
+                wt = (bc*bw).sum()/3600
 
-            e  = stats.LocalEnergy.error
-            w  = stats.BlockWeight.mean
-            t  = stats.BlockCPU.mean
-            wt = (bc*bw).sum()/3600
-            #tt = bc.sum()/3600
-            tt = bc.sum()
-            ts = bw.sum()
+                # def. of efficiency in energy.pl
+                #stats.Efficiency = obj(mean=w/t,var=0.0,error=0.0,kappa=1.0)
 
-            # def. of efficiency in energy.pl 
-            #stats.Efficiency = obj(mean=w/t,var=0.0,error=0.0,kappa=1.0)
-
-            # efficiency based on total work and error bar
-            stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
-
-            data.Efficiency  = 0*data.LocalEnergy
-
-            # total time
-            stats.TotalTime = obj(mean=tt,var=0.0,error=0.0,kappa=1.0)
-            data.TotalTime = 0*data.LocalEnergy
-
-            # total samples
-            stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0)
-            data.TotalSamples = 0*data.LocalEnergy
-        #end if
-        if 'LocalEnergy' in data and 'NumOfWalkers' in data:
-            ts = data.NumOfWalkers.sum()
-
-            stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0)
-            data.TotalSamples = 0*data.LocalEnergy
+                # efficiency based on total work and error bar
+                stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
+                data.Efficiency  = 0*example
+            #end if
         #end if
     #end def analyze
 
