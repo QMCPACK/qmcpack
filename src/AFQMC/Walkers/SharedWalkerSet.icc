@@ -41,7 +41,7 @@ inline void SharedWalkerSet::loadBalance(Mat&& M) {
   }
   TG.local_barrier();
   // since tot_num_walkers is local, you need to sync it
-  TG.TG_local().broadcast_value(tot_num_walkers);
+  TG.TG_local().broadcast_n(&tot_num_walkers,1,0);
   Timers[LoadBalance]->stop();
 }
 

@@ -13,8 +13,8 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_AFQMC_NOMSD_H
-#define QMCPLUSPLUS_AFQMC_NOMSD_H
+#ifndef QMCPLUSPLUS_AFQMC_PHMSD_HPP
+#define QMCPLUSPLUS_AFQMC_PHMSD_HPP
 
 #include <vector>
 #include <map>
@@ -25,11 +25,17 @@
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/config.h"
 #include "mpi3/shm/mutex.hpp"
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
+#include "AFQMC/Matrix/array_of_sequences.hpp"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
+
+#include "AFQMC/Wavefunctions/phmsd_helpers.hpp"
+#include "AFQMC/Wavefunctions/Excitations.hpp"
 
 
 namespace qmcplusplus
@@ -38,49 +44,103 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-
 /*
  * Class that implements a multi-Slater determinant trial wave-function.
  * Single determinant wfns are also allowed. 
  * No relation between different determinants in the expansion is assumed.
  * Designed for non-orthogonal MSD expansions. 
  * For particle-hole orthogonal MSD wfns, use FastMSD.
+ * NOTE: Optimization note: CLOSED and NONCOLLINEAR calculations with a unique reference
+ *                          only need a single set of unique overlaps/determinants/energies.
+ *                          Fix this to improve performance!!!! 
+ * THERE IS A PROBLEM WITH CLOSED SHELL CALCULATIONS!!!!
+ * INCONSISTENCY WHEN SPIN DEPENDENT QUANTITIES ARE REUESTED, e.g. G. 
+ * SOLUTION: For CLOSED and NONCOLLINEAR, force a single reference PHMSD.
+ *           Then, only calculate alpha component of things and assume beta==alpha when needed,
+ *           even if this is not true.
  */  
-class NOMSD: public AFQMCInfo
+class PHMSD: public AFQMCInfo
 {
 
   using CVector = boost::multi_array<ComplexType,1>;  
   using CMatrix = boost::multi_array<ComplexType,2>;  
-  using CVector_ref = boost::multi_array_ref<ComplexType,1>;
-  using CMatrix_ref = boost::multi_array_ref<ComplexType,2>;
   using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
   using shared_mutex = boost::mpi3::shm::mutex;  
+  using shared_CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+  using shared_C3Tensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
+  using shared_C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
+  using index_aos = ma::sparse::array_of_sequences<int,int,
+                                                   boost::mpi3::intranode::allocator<int>,
+                                                   boost::mpi3::intranode::is_root>;
 
   public:
 
-    NOMSD(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, HamiltonianOperations&& hop_, 
-          std::vector<ComplexType>&& ci_, std::vector<PsiT_Matrix>&& orbs_, 
+    PHMSD(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, HamiltonianOperations&& hop_, 
+          std::map<int,int>&& acta2mo_, std::map<int,int>&& actb2mo_,
+          ph_excitations<int,ComplexType>&& abij_, 
+          index_aos&& beta_coupled_to_unique_alpha__,
+          index_aos&& alpha_coupled_to_unique_beta__,
+          std::vector<PsiT_Matrix>&& orbs_, 
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
                 SDetOp(((wlk!=2)?(NMO):(2*NMO)),((wlk!=2)?(NAEA):(NAEA+NAEB))),
-                HamOp(std::move(hop_)),ci(std::move(ci_)),OrbMats(std::move(orbs_)),
+                HamOp(std::move(hop_)),
+                acta2mo(std::move(acta2mo_)),
+                actb2mo(std::move(actb2mo_)),
+                abij(std::move(abij_)),
+                OrbMats(std::move(orbs_)),
                 walker_type(wlk),NuclearCoulombEnergy(nce),
                 shmbuff_for_E(nullptr),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
                 last_number_extra_tasks(-1),last_task_index(-1),
-                //local_group_comm(nullptr),
-                //local_group_comm(std::make_unique<shared_communicator>(TG.TG_local().split(0))),
                 local_group_comm(),
                 shmbuff_for_G(nullptr),
                 req_Gsend(MPI_REQUEST_NULL),
                 req_Grecv(MPI_REQUEST_NULL),
                 req_SMsend(MPI_REQUEST_NULL),
-                req_SMrecv(MPI_REQUEST_NULL)
+                req_SMrecv(MPI_REQUEST_NULL),
+                maxnactive(std::max(OrbMats[0].shape()[0],OrbMats.back().shape()[0])),
+                max_exct_n(std::max(abij.maximum_excitation_number()[0],
+                                    abij.maximum_excitation_number()[1])),
+                maxn_unique_confg(    
+                    std::max(abij.number_of_unique_excitations()[0],
+                             abij.number_of_unique_excitations()[1])),
+                unique_overlaps({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
+                unique_Etot({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
+                QQ0inv0({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
+                QQ0inv1({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
+                GA2D0_shm({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
+                GB2D0_shm({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
+                local_ov(extents[2][maxn_unique_confg]),
+                local_etot(extents[2][maxn_unique_confg]),
+                local_QQ0inv0({OrbMats[0].shape()[0],NAEA}),
+                local_QQ0inv1({OrbMats.back().shape()[0],NAEB}),
+                Qwork(extents[max_exct_n][max_exct_n]),
+                Gwork(extents[NAEA][maxnactive]),
+                Ovmsd({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
+                Emsd({1,1,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
+                QQ0A({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
+                QQ0B({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
+                GrefA({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
+                GrefB({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
+                KEright({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
+                KEleft({1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
+                det_couplings{std::move(beta_coupled_to_unique_alpha__),
+                              std::move(alpha_coupled_to_unique_beta__)}
     {
-      compact_G_for_vbias = (ci.size()==1); // this should be input, since it is determined by HOps 
+      /* To me, PHMSD is not compatible with walker_type=CLOSED unless
+       * the MSD expansion is symmetric with respect to spin. For this, 
+       * it is better to write a specialized class that assumes either spin symmetry
+       * or e.g. Perfect Pairing.
+       */
+      if(walker_type == CLOSED) 
+        APP_ABORT("Error: PHMSD requires walker_type != CLOSED.\n");
+
+      compact_G_for_vbias = true; 
       transposed_G_for_vbias_ = HamOp.transposed_G_for_vbias();  
       transposed_G_for_E_ = HamOp.transposed_G_for_E();  
       transposed_vHS_ = HamOp.transposed_vHS();  
+      fast_ph_energy = HamOp.fast_ph_energy();
 
       excitedState = false;  
       std::string excited_file("");  
@@ -116,7 +176,7 @@ class NOMSD: public AFQMCInfo
       }    
     }
 
-    ~NOMSD() {
+    ~PHMSD() {
         if(req_SMrecv!=MPI_REQUEST_NULL)
             MPI_Request_free(&req_SMrecv);
         if(req_SMsend!=MPI_REQUEST_NULL)
@@ -127,10 +187,10 @@ class NOMSD: public AFQMCInfo
             MPI_Request_free(&req_Gsend);
     }
 
-    NOMSD(NOMSD const& other) = delete;
-    NOMSD& operator=(NOMSD const& other) = delete;
-    NOMSD(NOMSD&& other) = default;
-    NOMSD& operator=(NOMSD&& other) = default;
+    PHMSD(PHMSD const& other) = delete;
+    PHMSD& operator=(PHMSD const& other) = delete;
+    PHMSD(PHMSD&& other) = default;
+    PHMSD& operator=(PHMSD&& other) = default;
 
     int local_number_of_cholesky_vectors() const 
     { return HamOp.local_number_of_cholesky_vectors(); }
@@ -147,6 +207,12 @@ class NOMSD: public AFQMCInfo
     bool transposed_vHS() const { return transposed_vHS_; }
     WALKER_TYPES getWalkerType() const {return walker_type; }
 
+/*
+    const std::vector<PsiT_Matrix>& getOrbMat() { return OrbMats; }
+    int getOrbSize () { return 2*NMO; }
+    const std::vector<ComplexType>& getCiCoeff() { return ci; }
+*/
+
     template<class Vec>
     void vMF(Vec&& v);
 
@@ -160,29 +226,24 @@ class NOMSD: public AFQMCInfo
      */
     template<class MatG, class MatA>
     void vbias(const MatG& G, MatA&& v, double a=1.0) {
+      assert( v.shape()[0] == HamOp.local_number_of_cholesky_vectors());
+      double scl = (walker_type==COLLINEAR)?0.5:1.0;
       if(transposed_G_for_vbias_) {
         assert( G.shape()[0] == v.shape()[1] );
         assert( G.shape()[1] == size_of_G_for_vbias() );
+        HamOp.vbias(G[indices[range_t()][range_t(0,OrbMats[0].shape()[0]*NMO)]],
+                    std::forward<MatA>(v),scl*a,0.0);
+        if(walker_type==COLLINEAR) 
+          HamOp.vbias(G[indices[range_t()][range_t(OrbMats[0].shape()[0]*NMO,G.shape()[1])]],
+                      std::forward<MatA>(v),scl*a,1.0);
       } else {  
         assert( G.shape()[0] == size_of_G_for_vbias() );
         assert( G.shape()[1] == v.shape()[1] );
-      }  
-      assert( v.shape()[0] == HamOp.local_number_of_cholesky_vectors());
-      if(ci.size()==1) {
-        // HamOp expects a compact Gc with alpha/beta components 
-        HamOp.vbias(G,std::forward<MatA>(v),a);
-      } else {
-        if(walker_type == CLOSED )
-          HamOp.vbias(G,std::forward<MatA>(v),a); // factor of 2 now in HamOps
-        else if(walker_type == NONCOLLINEAR)
-          HamOp.vbias(G,std::forward<MatA>(v),a);
-        else {
-          // HamOp expects either alpha or beta, so must be called twice 
-          HamOp.vbias(G[indices[range_t(0,NMO*NMO)][range_t()]]
-                ,std::forward<MatA>(v),a,0.0);
-          HamOp.vbias(G[indices[range_t(NMO*NMO,2*NMO*NMO)][range_t()]]
-                ,std::forward<MatA>(v),a,1.0);
-        }
+        HamOp.vbias(G[indices[range_t(0,OrbMats[0].shape()[0]*NMO)][range_t()]],
+                    std::forward<MatA>(v),scl*a,0.0);
+        if(walker_type==COLLINEAR) 
+          HamOp.vbias(G[indices[range_t(OrbMats[0].shape()[0]*NMO,G.shape()[0])][range_t()]],
+                      std::forward<MatA>(v),scl*a,1.0);
       }  
       TG.local_barrier();    
     }
@@ -259,18 +320,8 @@ class NOMSD: public AFQMCInfo
     template<class WlkSet, class MatG, class TVec>
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
-    /*
-     * Calculates the back propagated density matrix for all walkers in the walker set.
-     * Options:
-     *  - path_restoration: If false (default), performs traditional back propagation
-     *                        algorithm without any path restoration, otherwise restores
-     *                        phases and cosine factors along path.
-     *  - free_projection: If false (default), assumes using phaseless approximation
-     *                       otherwise assumes using free projection.
-     */
     template<class WlkSet, class MatG>
     void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVector& denom, bool path_restoration=false, bool free_projection=false);
-
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
      *   with a format consistent with (and expected by) the vbias routine.
@@ -341,12 +392,13 @@ class NOMSD: public AFQMCInfo
   
     HamiltonianOperations HamOp;
 
-    std::vector<ComplexType> ci;
+    std::map<int,int> acta2mo;
+    std::map<int,int> actb2mo;
+
+    ph_excitations<int,ComplexType> abij;
 
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<PsiT_Matrix> OrbMats;
-    // Buffers for back propagation.
-    boost::multi_array<ComplexType, 2> T1ForBP, T2ForBP, T3ForBP;
 
     std::unique_ptr<SHM_Buffer> shmbuff_for_E;
 
@@ -373,6 +425,40 @@ class NOMSD: public AFQMCInfo
     shared_communicator local_group_comm; 
     std::unique_ptr<SHM_Buffer> shmbuff_for_G;
 
+    // shared memory arrays for temporary calculations
+    bool fast_ph_energy;
+    size_t maxn_unique_confg; // maximum number of unque configurations 
+    size_t maxnactive;   // maximum number of states in active space
+    size_t max_exct_n;   // maximum excitation number (number of electrons excited simultaneously)
+    // used by OVerlap and MixedDensityMatrix
+    shared_CMatrix unique_overlaps;
+    shared_CMatrix unique_Etot;
+    shared_CMatrix QQ0inv0;  // Q * inv(Q0) 
+    shared_CMatrix QQ0inv1;  // Q * inv(Q0) 
+    shared_CMatrix GA2D0_shm;  
+    shared_CMatrix GB2D0_shm; 
+    boost::multi_array<ComplexType,2> local_ov;
+    boost::multi_array<ComplexType,2> local_etot;
+    boost::multi::array<ComplexType,2> local_QQ0inv0;
+    boost::multi::array<ComplexType,2> local_QQ0inv1;
+    boost::multi_array<ComplexType,2> Qwork;     
+    boost::multi_array<ComplexType,2> Gwork; 
+    // used by Energy_shared 
+    boost::multi_array<ComplexType,1> wgt; 
+    boost::multi_array<ComplexType,1> opSpinEJ; 
+    shared_C3Tensor Ovmsd;   // [nspins][maxn_unique_confg][nwalk]
+    shared_C4Tensor Emsd;    // [nspins][maxn_unique_confg][nwalk][3]
+    shared_C3Tensor QQ0A;    // [nwalk][NAOA][NAEA]
+    shared_C3Tensor QQ0B;    // [nwalk][NAOB][NAEB]
+    shared_C3Tensor GrefA;     // [nwalk][NAOA][NMO]
+    shared_C3Tensor GrefB;     // [nwalk][NAOB][NMO]
+    shared_C3Tensor KEright;   
+    shared_CMatrix KEleft;     
+     
+
+    // array of sequence structure storing the list of connected alpha/beta configurations
+    std::array<index_aos,2> det_couplings; 
+
     // excited states
     bool excitedState;
     std::vector<std::pair<int,int>> excitations;
@@ -389,17 +475,6 @@ class NOMSD: public AFQMCInfo
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_SMsend, req_SMrecv;
 
-    /* 
-     * Computes the mixed density matrix of a single given determinant in the trial wave function.
-     * Intended to be used in combination with the energy evaluation routine.
-     * G and Ov are expected to be in shared memory.
-     */
-    template<class WlkSet, class MatG, class TVec>
-    void MixedDensityMatrix_for_E(const WlkSet& wset, MatG&& G, TVec&& Ov, int nd);
-
-    template<class MatSM, class MatG, class TVec>
-    void MixedDensityMatrix_for_E_from_SM(const MatSM& SM, MatG&& G, TVec&& Ov, int nd); 
-
     /*
      * Calculates the local energy and overlaps of all the walkers in the set and 
      * returns them in the appropriate data structures
@@ -412,29 +487,18 @@ class NOMSD: public AFQMCInfo
      * returns them in the appropriate data structures
      */
     template<class WlkSet, class Mat, class TVec>
-    void Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov) {
-      if(ci.size()==1)
-        Energy_distributed_singleDet(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
-      else
-        Energy_distributed_multiDet(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
-    }
-
-    template<class WlkSet, class Mat, class TVec>
-    void Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, TVec&& Ov);
-
-    template<class WlkSet, class Mat, class TVec>
-    void Energy_distributed_multiDet(const WlkSet& wset, Mat&& E, TVec&& Ov);
+    void Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov); 
 
     int dm_size(bool full) const {
       switch(walker_type) {
         case CLOSED: // closed-shell RHF
-          return (full)?(NMO*NMO):(NAEA*NMO);
+          return (full)?(NMO*NMO):(OrbMats[0].shape()[0]*NMO);
           break;
         case COLLINEAR:
-          return (full)?(2*NMO*NMO):((NAEA+NAEB)*NMO);
+          return (full)?(2*NMO*NMO):((OrbMats[0].shape()[0]+OrbMats.back().shape()[0])*NMO);
           break;
         case NONCOLLINEAR:
-          return (full)?(4*NMO*NMO):((NAEA+NAEB)*2*NMO);
+          return (full)?(4*NMO*NMO):((OrbMats[0].shape()[0])*2*NMO);
           break;
         default:
           APP_ABORT(" Error: Unknown walker_type in dm_size. \n");
@@ -446,13 +510,30 @@ class NOMSD: public AFQMCInfo
       using arr = std::pair<int,int>;
       switch(walker_type) {
         case CLOSED: // closed-shell RHF
+          return (full)?(arr{NMO,NMO}):(arr{OrbMats[0].shape()[0],NMO});
+          break;
+        case COLLINEAR:
+          return (full)?(arr{NMO,NMO}):((sp==Alpha)?(arr{OrbMats[0].shape()[0],NMO}):(arr{OrbMats.back().shape()[0],NMO}));
+          break;
+        case NONCOLLINEAR:
+          return (full)?(arr{2*NMO,2*NMO}):(arr{OrbMats[0].shape()[0],2*NMO});
+          break;
+        default:
+          APP_ABORT(" Error: Unknown walker_type in dm_size. \n");
+          return arr{-1,-1};
+      }
+    }
+    std::pair<int,int> dm_dims_ref(bool full, SpinTypes sp=Alpha) const {
+      using arr = std::pair<int,int>;
+      switch(walker_type) {
+        case CLOSED: // closed-shell RHF
           return (full)?(arr{NMO,NMO}):(arr{NAEA,NMO});
           break;
         case COLLINEAR:
           return (full)?(arr{NMO,NMO}):((sp==Alpha)?(arr{NAEA,NMO}):(arr{NAEB,NMO}));
           break;
         case NONCOLLINEAR:
-          return (full)?(arr{2*NMO,2*NMO}):(arr{NAEA+NAEB,2*NMO});
+          return (full)?(arr{2*NMO,2*NMO}):(arr{NAEA,2*NMO});
           break;
         default:
           APP_ABORT(" Error: Unknown walker_type in dm_size. \n");
@@ -460,15 +541,13 @@ class NOMSD: public AFQMCInfo
       }
     }
 
-
-
 };
 
 }
 
 }
 
-#include "AFQMC/Wavefunctions/NOMSD.icc"
+#include "AFQMC/Wavefunctions/PHMSD.icc"
 
 #endif
 

@@ -62,15 +62,13 @@ using namespace afqmc;
 TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
     app_log()<<" Skipping ham_factory_factorized_closed_pure text. afqmc.h5 or wfn.dat files not found. \n";
   } else {  
 
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
- 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
@@ -153,7 +151,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         }
 
         // V2 uses std::size_t to store pointers_begin/end.
-        auto V2(ham.generateHijkl(CLOSED,TG,occ_a,occ_a,1e-5));
+        auto V2(ham.generateHijkl(CLOSED,false,TG,occ_a,occ_a,1e-5));
         REQUIRE(V2.shape()[0] == NAEA*NMO);
         REQUIRE(V2.shape()[0] == V2.shape()[1]);
 
@@ -252,15 +250,13 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
 TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
     app_log()<<" Skipping ham_factory_factorized_collinear_with_rotation text. afqmc.h5 or wfn.dat files not found. \n";
   } else {  
 
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
- 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
@@ -333,7 +329,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         std::size_t zero(0);
 
         // V2 uses std::size_t to store pointers_begin/end.
-        auto V2(ham.halfRotatedHijkl(COLLINEAR,TG,std::addressof(TrialWfn.first),
+        auto V2(ham.halfRotatedHijkl(COLLINEAR,false,TG,std::addressof(TrialWfn.first),
                                           std::addressof(TrialWfn.second),1e-5)); 
         REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
         REQUIRE(V2.shape()[0] == V2.shape()[1]);
@@ -439,15 +435,13 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
 TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltonian_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
     app_log()<<" Skipping ham_factory_factorized_collinear_with_rotation text. afqmc.h5 or wfn.dat files not found. \n";
   } else {  
 
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
- 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
@@ -522,7 +516,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         std::size_t zero(0);
 
         // V2 uses std::size_t to store pointers_begin/end.
-        auto V2(ham.halfRotatedHijkl(COLLINEAR,TG,std::addressof(TrialWfn.first),
+        auto V2(ham.halfRotatedHijkl(COLLINEAR,false,TG,std::addressof(TrialWfn.first),
                                           std::addressof(TrialWfn.second),1e-5)); 
         REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
         REQUIRE(V2.shape()[0] == V2.shape()[1]);
@@ -534,7 +528,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         boost::multi_array<ComplexType,1> V0(extents[V2.shape()[0]]); 
         ma::product(V2view,G0,V0);
         ComplexType E2 = 0.5*ma::dot(G0,V0);
-        E2 = TG.Cores().all_reduce_value(E2,std::plus<>());
+        E2 = ( TG.Cores() += E2 );
         if(std::abs(file_data.E2)>1e-8) {
           REQUIRE( real(E2) == Approx(real(file_data.E2)));
           REQUIRE( imag(E2) == Approx(imag(file_data.E2)));
@@ -574,7 +568,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         ComplexType Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
-        Xsum = TG.Cores().all_reduce_value(Xsum,std::plus<>());
+        Xsum = ( TG.Cores() += Xsum );
         if(std::abs(file_data.Xsum)>1e-8) {
           REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
           REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
@@ -586,7 +580,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
-        Xsum = TG.Cores().all_reduce_value(Xsum,std::plus<>());
+        Xsum = ( TG.Cores() += Xsum );
         if(std::abs(file_data.Xsum)>1e-8) {
           REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
           REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
@@ -601,7 +595,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
-        Xsum = TG.Cores().all_reduce_value(Xsum,std::plus<>());
+        Xsum = ( TG.Cores() += Xsum );
         if(std::abs(file_data.Xsum)>1e-8) {
           REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
           REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
@@ -614,7 +608,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         ComplexType Vsum=0;
         for(int i=0; i<vHS.size(); i++)
             Vsum += vHS[i];
-        Vsum = TG.Cores().all_reduce_value(Vsum,std::plus<>());
+        Vsum = ( TG.Cores() += Vsum );
         if(std::abs(file_data.Vsum)>1e-8) {
           REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
           REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
@@ -633,13 +627,11 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
 TEST_CASE("ham_generation_timing_hdf", "[hamiltonian_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc_timing.h5")) {
     app_log()<<" Skipping ham_fac_timing text. afqmc_timing.h5 file not found. \n";
   } else { 
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);

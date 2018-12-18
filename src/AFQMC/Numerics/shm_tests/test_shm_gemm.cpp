@@ -52,7 +52,7 @@ void timing_shm_blas(int c)
   int n0=64, npower=6, nmax = n0*std::pow(2,npower-1);
   int ntimes=5;
 
-  communicator& world = OHMMS::Controller->comm;
+  auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared();
 
   int memory_needs = nmax*(c*c*nmax + 2*c*nmax);
@@ -110,8 +110,9 @@ void timing_shm_blas(int c)
 
 int main(int argc, char* argv[])
 {
-  mpi3::environment env(argc, argv);
-  OHMMS::Controller->initialize(env);
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
   int c=10;
   if(argc>1) c = atoi(argv[1]);
   timing_shm_blas(c);

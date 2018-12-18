@@ -625,7 +625,7 @@ bool selectedCI::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   TG.setBuffer(&CommBuffer);
 
   app_log()<<"\n****************************************************\n"
-           <<"               Initializating Hamiltonian \n"
+           <<"               Initializing Hamiltonian \n"
            <<"****************************************************\n"
            <<std::endl;
 

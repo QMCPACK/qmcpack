@@ -19,10 +19,9 @@
 #ifndef  AFQMC_MPI3_SHMBUFFER_HPP 
 #define  AFQMC_MPI3_SHMBUFFER_HPP 
 
-#include "mpi3/shared_window.hpp"
-#include "mpi3/shared_communicator.hpp"
-#include "mpi3/shm/allocator.hpp"
-#include "multi/array.hpp"
+#include "alf/boost/mpi3/shared_communicator.hpp"
+#include "alf/boost/mpi3/shm/allocator.hpp"
+#include "AFQMC/multi/array.hpp"
 #include <memory>
 
 namespace qmcplusplus
@@ -35,12 +34,15 @@ template<typename T>
 class mpi3_SHMBuffer
 {
   using communicator = boost::mpi3::shared_communicator;
-  using shared_window = boost::mpi3::shared_window<T>;  
+  using shared_allocator = std::allocator<T>; //boost::mpi3::shm::allocator<T>;
+  //using shared_array = boost::multi::array<T,1,shared_allocator>;
+  using shared_array = boost::multi_array<T,1>;
 
   public:
 
     mpi3_SHMBuffer(communicator& comm_, size_t n=0):
-        comm(std::addressof(comm_)),win(comm_,(comm_.root()?n:0),sizeof(T))
+        comm(std::addressof(comm_)),array_(extents[n]) //shared_allocator{comm_})
+        //comm(std::addressof(comm_)),array_({n},shared_allocator{}) //shared_allocator{comm_})
     {
     }
 
@@ -49,46 +51,29 @@ class mpi3_SHMBuffer
     mpi3_SHMBuffer<T>(const mpi3_SHMBuffer<T>& other) = delete;
     mpi3_SHMBuffer<T>& operator=(const mpi3_SHMBuffer<T>& other) = delete;
 
-    mpi3_SHMBuffer<T>(mpi3_SHMBuffer<T>&& other) {
-      *this = std::move(other);
-    }
-
-    mpi3_SHMBuffer<T>& operator=(mpi3_SHMBuffer<T>&& other) 
+    mpi3_SHMBuffer<T>(mpi3_SHMBuffer<T>&& other) = default; 
+    mpi3_SHMBuffer<T>& operator=(mpi3_SHMBuffer<T>&& other) = default; 
+/*
     { 
-      assert(comm==other.comm);  
       if(this != &other) {
-        // this should be in mpi3 namespace
-        auto tmp = win.impl_;
-        win.impl_ = other.impl_;
-        other.impl_ = tmp; 
-        //swap(win.impl_,other.impl_);
+        comm = other.comm;
+        other.comm = NULL;
+        win = std::move(other.win);
         comm->barrier();
       }
       return *this;
     }
+*/
 
     void resize(size_t n) {
-      if(size() == n) return;
-      shared_window w0(*comm,(comm->root()?n:0),sizeof(T)); 
-      comm->barrier();
-      if(comm->rank()==0) {
-        if(size() < n) 
-          std::copy(this->data(),this->data()+size(),w0.base(0));
-        else
-          std::copy(this->data(),this->data()+static_cast<size_t>(w0.size(0)),w0.base(0));
-      }   
-      comm->barrier();
-      // this should be in mpi3 namespace
-      auto tmp = win.impl_;
-      win.impl_ = w0.impl_;
-      w0.impl_ = tmp;
-      //swap(win.impl_,w0.impl_);
-      comm->barrier();
+      if(array_.size() != n)
+        array_.resize(extents[n]);
+        //array_.reextent({n});
     }
 
-    T* data() {return win.base(0);} 
-    T const* data() const{return win.base(0);} 
-    size_t size() const{return static_cast<size_t>(win.size(0));} 
+    T* data() {return std::addressof(*array_.data());} 
+    T const* data() const{return std::addressof(*array_.data());} 
+    size_t size() const{return static_cast<size_t>(array_.size());} 
 
     communicator& getCommunicator() const{return *comm;}
 
@@ -99,7 +84,7 @@ class mpi3_SHMBuffer
     // as the communicator comm points to and  that it will remain valid and equivalent. 
     communicator* comm;
     
-    shared_window win;
+    shared_array array_;
 
 };
 

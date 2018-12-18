@@ -22,6 +22,7 @@
 #include "boost/variant.hpp"
 
 #include "AFQMC/Wavefunctions/NOMSD.hpp"
+#include "AFQMC/Wavefunctions/PHMSD.hpp"
 
 namespace qmcplusplus
 {
@@ -61,6 +62,8 @@ class dummy_wavefunction
     return false; 
   }
 
+  WALKER_TYPES getWalkerType() const {return UNDEFINED_WALKER_TYPE; }
+
   bool transposed_G_for_vbias() const { 
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
     return false; 
@@ -93,7 +96,7 @@ class dummy_wavefunction
   }
 
   template<class MatX, class MatA>
-  void vHS(const MatX& X, MatA&& v, double a=1.0) {
+  void vHS(MatX&& X, MatA&& v, double a=1.0) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
@@ -150,7 +153,7 @@ class dummy_wavefunction
 };
 }
 
-class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD>
+class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
 {
     public: 
 
@@ -159,6 +162,9 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD>
     } 
     explicit Wavefunction(NOMSD&& other) : variant(std::move(other)) {}
     explicit Wavefunction(NOMSD const& other) = delete;
+
+    explicit Wavefunction(PHMSD&& other) : variant(std::move(other)) {} 
+    explicit Wavefunction(PHMSD const& other) = delete;
 
     Wavefunction(Wavefunction const& other) = delete; 
     Wavefunction(Wavefunction&& other) = default; 
@@ -214,6 +220,13 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD>
             *this
         );
     }
+
+    WALKER_TYPES getWalkerType() const {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.getWalkerType();},
+            *this
+        );
+    }    
 
     template<class... Args>
     void vMF(Args&&... args) {

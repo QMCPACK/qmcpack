@@ -97,7 +97,7 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   TG.setBuffer(&CommBuffer);
 
   app_log()<<"\n****************************************************\n"
-           <<"               Initializating Hamiltonian \n"
+           <<"               Initializing Hamiltonian \n"
            <<"****************************************************\n"
            <<std::endl;
 
@@ -108,7 +108,7 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   }   
 
   app_log()<<"\n****************************************************\n"
-           <<"               Initializating Wavefunction \n"
+           <<"               Initializing Wavefunction \n"
            <<"****************************************************\n"
            <<std::endl;
 
@@ -123,7 +123,7 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   }   
 
   app_log()<<"\n****************************************************\n"
-           <<"              Initializating Propagator \n"
+           <<"              Initializing Propagator \n"
            <<"****************************************************\n"
            <<std::endl;
 
@@ -137,7 +137,7 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   wfn0->setupFactorizedHamiltonian(prop0->is_vn_sparse(),prop0->getSpvn(),prop0->getDvn(),dt,prop0->getTG());
 
   app_log()<<"\n****************************************************\n"
-           <<"             Initializating Walker Handler \n"
+           <<"             Initializing Walker Handler \n"
            <<"****************************************************\n"
            <<std::endl;
 

@@ -21,6 +21,8 @@ SET (AFQMC_SRCS
 #  Hamiltonians/SparseHamiltonian_s4D_old.cpp
   Hamiltonians/HSPotential_Helpers.cpp
   Hamiltonians/FactorizedSparseHamiltonian.cpp
+  Hamiltonians/KPFactorizedHamiltonian.cpp
+  Hamiltonians/KPTHCHamiltonian.cpp
   Hamiltonians/SymmetricFactorizedSparseHamiltonian.cpp
   Hamiltonians/SparseHamiltonian_s4D.cpp
 #  Hamiltonians/rotateHamiltonian.cpp

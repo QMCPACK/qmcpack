@@ -24,7 +24,8 @@ namespace afqmc
 {
 
 // Right now, cutvn, cutvn2, TGprop and TGwfn are completely ignored.
-HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, 
+// Note: addCoulomb only has meaning on the sparse hamiltonians, not in THC
+HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool addCoulomb, 
             WALKER_TYPES type,std::vector<PsiT_Matrix>& PsiT, double cutvn, 
             double cutv2,TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& hdf_restart)
 {
@@ -38,6 +39,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     assert(PsiT.size()%2 == 0);
   int ndet = ((type!=COLLINEAR)?(PsiT.size()):(PsiT.size()/2));
   bool test_Luv = not useHalfRotatedMuv; 
+
+std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
 
   if(ndet > 1)
     APP_ABORT("Error: ndet > 1 not yet implemented in THCHamiltonian::getHamiltonianOperations.\n");
@@ -99,7 +102,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
 
   // INCONSISTENT IN REAL BUILD!!!!!! FIX FIX FIX
   // Until I figure something else, rotPiu and rotcPua are not distributed because a full copy is needed
-  size_t nel_ = ((type==CLOSED)?NAEA:(NAEA+NAEB));
+  size_t nel_ = PsiT[0].shape()[0] + ((type==CLOSED)?0:(PsiT[1].shape()[0]));
   shm_Cmatrix rotMuv(TG.Node(),{rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0});
   shm_Cmatrix rotPiu(TG.Node(),{size_t(NMO),grotnmu});
   std::vector<shm_Cmatrix> rotcPua;
@@ -168,6 +171,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
   if(TGprop.getNNodesPerTG() > 1) 
   {
 
+    // TOO MUCH MEMORY, FIX FIX FIX!!!
     shm_Vmatrix Piu__(TG.Node(),{size_t(NMO),gnmu});
     shm_Vmatrix Luv__(TG.Node(),{gnmu,gnmu});
     if(TG.Node().root()) {
@@ -199,6 +203,14 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     // This can benefit from 2D split of work 
     ma::product(Luv__.get(),H(Luv__.get()[indices[range_t(c0,cN)][range_t()]]),Muv);
 
+    if(test_Luv) {
+      for(int i=0; i<gnmu; ++i)
+        std::copy_n(Muv[i].origin(),nc,rotMuv.get()[i].origin()+c0);
+      TG.Node().barrier();
+      if(TG.Node().root())
+        TG.Cores().all_reduce_in_place_n(rotMuv.origin(),rotMuv.num_elements(),std::plus<>());
+    }
+
     // since generating v0 takes some effort and temporary space, 
     // v0(i,l) = -0.5*sum_j <i,j|j,l> 
     //         = -0.5 sum_j,u,v conj(Piu(i,u)) conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
@@ -216,76 +228,6 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     // reduce over Global  
     TG.Global().all_reduce_in_place_n(v0.origin(),v0.num_elements(),std::plus<>());
 
-/*
-    using ma::H;
-    using ma::T;
-    using std::conj;
-
-    // split {u,v} space over all cores.
-    int node_number = TGprop.getLocalNodeNumber();
-    int nnodes_per_TG = TGprop.getNNodesPerTG();
-
-    std::size_t eqv_node_rank = std::size_t(TGprop.getNodeID()/nnodes_per_TG);
-    std::size_t eqv_node_size = std::size_t(TGprop.getTotalNodes()/nnodes_per_TG);
-    std::size_t eqv_pos = eqv_node_rank*std::size_t(TGprop.getTotalCores()) + TGprop.getCoreID();
-    std::size_t eqv_size = eqv_node_size*std::size_t(TGprop.getTotalCores());;
-
-    // communicator with cores in same position of all nodes in a TG 
-    boost::mpi3::communicator core_team(TGprop.TG().split(TGprop.getCoreID()));
-
-    std::fill_n(v0.origin(),v0.num_elements(),ValueType(0.0));
-
-    for(int ni=0; ni<nnodes_per_TG; ++ni) { // loop over nodes in TG
-      // split interpolating points of node ni over equivalent nodes and bcast to TG
-     
-      // find partition of node ni
-      std::size_t curr_v0,curr_vN;
-      std::tie(curr_v0,curr_vN) = FairDivideBoundary(std::size_t(ni),gnmu,std::size_t(nnodes_per_TG));
-
-      // split range over cores and over equivalent nodes
-      std::size_t vi0,viN,nv;
-      std::tie(vi0,viN) = FairDivideBoundary(eqv_pos,curr_vN-curr_v0,eqv_size);
-      nv = viN-vi0;
-
-      // bcast vi0-vN over core-team and accumulate contribution
-      boost::multi_array<ValueType,2> Luv_(extents[nv][gnmu]);      
-      boost::multi_array<ValueType,2> Piu_(extents[size_t(NMO)][nv]);      
-      if(node_number == ni) {
-        std::copy_n((Luv.get())[vi0].origin(),nv*Luv.shape()[1],Luv_.origin());
-        for(int i=0; i<NMO; ++i) 
-          std::copy_n( (Piu.get())[i].origin()+vi0, nv, Piu_[i].origin() );
-      }
-      core_team.broadcast_n(Luv_.origin(),Luv_.num_elements(),ni);
-      core_team.broadcast_n(Piu_.origin(),Piu_.num_elements(),ni);
-
-      // accumulate contribution
-      boost::multi_array<ValueType,2> Muv(extents[nmu][nv]);  
-      boost::multi_array<ValueType,2> Tuv(extents[nmu][nv]);  
-      ma::product(Luv.get(),H(Luv_),Muv);
-
-      if(test_Luv)
-        for(int i=0; i<nmu; ++i)
-          std::copy_n(Muv[i].origin(),nv,rotMuv.get()[i].origin()+curr_v0+vi0);
-
-      // since generating v0 takes some effort and temporary space, 
-      // v0(i,l) = -0.5*sum_j <i,j|j,l> 
-      //         = -0.5 sum_j,u,v conj(Piu(i,u)) conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
-      //         = -0.5 sum_u,v conj(Piu(i,u)) W(u,v) Piu(l,u), where
-      // W(u,v) = Muv(u,v) * sum_j Piu(j,u) conj(Piu(j,v))  
-      ma::product(H(Piu.get()),Piu_,Tuv);
-      auto itM = Muv.origin();
-      auto itT = Tuv.origin();
-      for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
-        *(itT) = conj(*itT)*(*itM);   
-      boost::multi_array<ValueType,2> T_(extents[Tuv.shape()[1]][size_t(NMO)]);
-      ma::product(T(Tuv),H(Piu.get()),T_);
-      ma::product(-0.5,T(T_),T(Piu_),1.0,v0); 
-    }
-    if(test_Luv) // need a new communicator to reduce rotMuv if test_Luv is true
-       APP_ABORT("Finish this. \n\n\n"); 
-    // reduce over Global  
-    TG.Global().all_reduce_in_place_n(v0.origin(),v0.num_elements(),std::plus<>());
-*/
   } else {  
     // very simple partitioning until something more sophisticated is in place!!!
     using ma::H;
@@ -301,9 +243,13 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     // This can benefit from 2D split of work 
     ma::product(Luv.get(),H(Luv.get()[indices[range_t(c0,cN)][range_t()]]),Muv);
 
-    if(test_Luv)
+    if(test_Luv) { 
       for(int i=0; i<gnmu; ++i)
         std::copy_n(Muv[i].origin(),nc,rotMuv.get()[i].origin()+c0);
+      TG.Node().barrier();
+      if(TG.Node().root())
+        TG.Cores().all_reduce_in_place_n(rotMuv.origin(),rotMuv.num_elements(),std::plus<>());
+    }
 
     // since generating v0 takes some effort and temporary space, 
     // v0(i,l) = -0.5*sum_j <i,j|j,l> 
@@ -321,50 +267,11 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
 
     // reduce over Global  
     TG.Global().all_reduce_in_place_n(v0.origin(),v0.num_elements(),std::plus<>());
-
-/*
-    using ma::H;
-    using std::conj;
-    int c0,cN;
-    std::tie(c0,cN) = FairDivideBoundary(TG.Node().rank(),int(nmu),TG.Node().size()); 
-    int k0,kN;
-    std::tie(k0,kN) = FairDivideBoundary(TG.Node().rank(),int(Piu.shape()[0]),TG.Node().size()); 
-    // disribute globally !!!!! 
-    shm_Vmatrix Tuv(TG.Node(),{nmu,nmu});
-    shm_Vmatrix Muv(TG.Node(),{nmu,nmu});
-
-    // Muv = Luv * H(Luv)
-    // This can benefit from 2D split of work 
-    ma::product(Luv.get()[indices[range_t(c0,cN)][range_t()]],H(Luv.get()),
-                Muv.get()[indices[range_t(c0,cN)][range_t()]]);
-
-    if(test_Luv)  
-      std::copy_n(Muv.get()[c0].origin(),(cN-c0)*Muv.shape()[1],
-                  rotMuv.get()[c0].origin());
-
-    // since generating v0 takes some effort and temporary space, 
-    // v0(i,l) = -0.5*sum_j <i,j|j,l> 
-    //         = -0.5 sum_j,u,v conj(Piu(i,u)) conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
-    //         = -0.5 sum_u,v conj(Piu(i,u)) W(u,v) Piu(l,u), where
-    // W(u,v) = Muv(u,v) * sum_j Piu(j,u) conj(Piu(j,v))  
-    ma::product(H(Piu.get()[indices[range_t()][range_t(c0,cN)]]),Piu.get(),
-                Tuv.get()[indices[range_t(c0,cN)][range_t()]]);
-    auto itT = Tuv.get()[c0].origin();
-    auto itM = Muv.get()[c0].origin();
-    for(size_t i=0; i<(cN-c0)*nmu; ++i, ++itT, ++itM)
-      *itT *= conj(*itM);   
-    TG.node_barrier();
-    boost::multi_array<ValueType,2> T_(extents[kN-k0][Tuv.shape()[1]]);
-    ma::product(Piu.get()[indices[range_t(k0,kN)][range_t()]],Tuv.get(),
-                T_);
-    ma::product(T_,H(Piu.get()),v0[indices[range_t(k0,kN)][range_t()]]); 
-    for(int i=k0; i<kN; i++)
-      for(int j=0; j<v0.shape()[1]; j++)
-        v0[i][j] = -0.5*conj(v0[i][j]);
-    TG.Node().all_reduce_in_place_n(v0.origin(),v0.num_elements(),std::plus<>());
-*/
   }
   TG.global_barrier();
+
+  int naea_ = PsiT[0].shape()[0];
+  int naeb_ = PsiT.back().shape()[0];
 
   // half-rotated Pia
   std::vector<shm_Cmatrix> cPua;
@@ -375,18 +282,22 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     // simple
     using ma::H;
     if(type==COLLINEAR) {
-      boost::multi_array<ComplexType,2> A(extents[NMO][NAEA]); 
-      boost::multi_array<ComplexType,2> B(extents[NMO][NAEB]); 
+      boost::multi_array<ComplexType,2> A(extents[NMO][naea_]); 
+      boost::multi_array<ComplexType,2> B(extents[NMO][naeb_]); 
       for(int i=0; i<ndet; i++) {
         // cPua = H(Piu) * conj(A)
         csr::CSR2MA('T',PsiT[2*i],A);
-        ma::product(H(Piu.get()),A,cPua[i].get()[indices[range_t()][range_t(0,NAEA)]]);
+        ma::product(H(Piu.get()),A,
+                    cPua[i].get()[indices[range_t()][range_t(0,naea_)]]);
         if(not test_Luv)
-          ma::product(H(rotPiu.get()),A,rotcPua[i].get()[indices[range_t()][range_t(0,NAEA)]]);
+          ma::product(H(rotPiu.get()),A,
+                      rotcPua[i].get()[indices[range_t()][range_t(0,naea_)]]);
         csr::CSR2MA('T',PsiT[2*i+1],B);
-        ma::product(H(Piu.get()),B,cPua[i].get()[indices[range_t()][range_t(NAEA,NAEA+NAEB)]]);
+        ma::product(H(Piu.get()),B, 
+                    cPua[i].get()[indices[range_t()][range_t(naea_,nel_)]]);
         if(not test_Luv)
-          ma::product(H(rotPiu.get()),B,rotcPua[i].get()[indices[range_t()][range_t(NAEA,NAEA+NAEB)]]);
+          ma::product(H(rotPiu.get()),B,
+                      rotcPua[i].get()[indices[range_t()][range_t(naea_,nel_)]]);
       }
     } else {
       boost::multi_array<ComplexType,2> A(extents[PsiT[0].shape()[1]][PsiT[0].shape()[0]]); 
@@ -413,18 +324,20 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
   hij.reserve(ndet);
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
-    check_wavefunction_consistency(type,&PsiT[nd],&PsiT[nd+skp],NMO,NAEA,NAEB);
-    hij.emplace_back(rotateHij(type,NMO,NAEA,NAEB,&PsiT[nd],&PsiT[nd+skp],OneBodyHamiltonian::H1));
+    check_wavefunction_consistency(type,&PsiT[nd],&PsiT[nd+skp],NMO,naea_,naeb_);
+    hij.emplace_back(rotateHij(type,&PsiT[nd],&PsiT[nd+skp],OneBodyHamiltonian::H1));
   }
 
   // dense one body hamiltonian
   auto H1 = getH1(); 
 
+std::cout<<" nmu: " <<Luv.shape()[0] <<" " <<rotMuv.shape()[0] <<std::endl;
+
   if(write_hdf) 
-    writeTHCOps(hdf_restart,type,NMO,NAEA,NAEB,ndet,TGprop,TGwfn,H1,
+    writeTHCOps(hdf_restart,type,NMO,naea_,naeb_,ndet,TGprop,TGwfn,H1,
                 rotPiu,rotMuv,Piu,Luv,v0,E0);
 
-  return HamiltonianOperations(THCOps<ValueType>(TGwfn.TG_local(),NMO,NAEA,NAEB,type,std::move(H1),
+  return HamiltonianOperations(THCOps<ValueType>(TGwfn.TG_local(),NMO,naea_,naeb_,type,std::move(H1),
                                       std::move(hij),std::move(rotMuv),std::move(rotPiu),
                                       std::move(rotcPua),std::move(Luv),
                                       std::move(Piu),std::move(cPua),std::move(v0),E0));
