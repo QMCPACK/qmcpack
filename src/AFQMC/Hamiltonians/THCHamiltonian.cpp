@@ -40,7 +40,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   int ndet = ((type!=COLLINEAR)?(PsiT.size()):(PsiT.size()/2));
   bool test_Luv = not useHalfRotatedMuv;
 
-std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
+  //std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
 
   if(ndet > 1)
     APP_ABORT("Error: ndet > 1 not yet implemented in THCHamiltonian::getHamiltonianOperations.\n");
@@ -331,7 +331,7 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
   // dense one body hamiltonian
   auto H1 = getH1();
 
-std::cout<<" nmu: " <<Luv.shape()[0] <<" " <<rotMuv.shape()[0] <<std::endl;
+//std::cout<<" nmu: " <<Luv.shape()[0] <<" " <<rotMuv.shape()[0] <<std::endl;
 
   if(write_hdf)
     writeTHCOps(hdf_restart,type,NMO,naea_,naeb_,ndet,TGprop,TGwfn,H1,
