@@ -343,7 +343,7 @@ void test_dense_matrix_mult()
                 };
                 multi_array_ref<double, 2> AT(at.data(), extents[4][2]);
                 multi_array<double, 2> B(extents[4][2]);
-                //ma::transpose(A,B);
+                ma::transpose(A,B);
                 verify_approx( AT, B );
         }
         {

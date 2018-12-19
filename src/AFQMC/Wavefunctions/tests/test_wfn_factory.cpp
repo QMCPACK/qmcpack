@@ -950,15 +950,15 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
 
-  if(not file_exists("./afqmc_msd.h5") ||
-     not file_exists("./wfn_msd.dat") ) {
+  if(not file_exists("./afqmc_phmsd.h5") ||
+     not file_exists("./wfn_phmsd.dat") ) {
     app_log()<<" Skipping wfn_fac_collinear_phmsd text. afqmc_msd.h5 and ./wfn_msd.dat files not found. \n";
   } else {
 
     // Global Task Group
     GlobalTaskGroup gTG(world);
 
-    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc_msd.h5");
+    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc_phmsd.h5");
     int NMO=file_data.NMO;
     int NAEA=file_data.NAEA;
     int NAEB=file_data.NAEB;
@@ -969,7 +969,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     const char *ham_xml_block =
 "<Hamiltonian name=\"ham0\" info=\"info0\"> \
     <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"filename\">./afqmc_msd.h5</parameter> \
+    <parameter name=\"filename\">./afqmc_phmsd.h5</parameter> \
     <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
     <parameter name=\"useHalfRotatedMuv\">no</parameter> \
   </Hamiltonian> \
@@ -1000,7 +1000,7 @@ const char *wlk_xml_block =
     const char *wfn_xml_block =
 "<Wavefunction name=\"wfn0\" type=\"phmsd\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">./wfn_msd.dat</parameter> \
+      <parameter name=\"filename\">./wfn_phmsd.dat</parameter> \
       <parameter name=\"cutoff\">1e-6</parameter> \
   </Wavefunction> \
 ";
@@ -1016,7 +1016,7 @@ const char *wlk_xml_block =
     const char *wfn_xml_block2 =
 "<Wavefunction name=\"wfn1\" type=\"nomsd\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">./wfn_msd.dat</parameter> \
+      <parameter name=\"filename\">./wfn_phmsd.dat</parameter> \
       <parameter name=\"cutoff\">1e-6</parameter> \
   </Wavefunction> \
 ";
@@ -1074,7 +1074,7 @@ const char *wlk_xml_block =
     Time.restart();
     wfn.Energy(wset);
     t1=Time.elapsed();
-    app_log()<<" PHMSD E: " <<setprecision(12) <<wset[0].energy() <<" " 
+    app_log()<<" PHMSD E: " <<setprecision(12) <<wset[0].energy() <<" "
              <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<" " <<t1 <<std::endl;
     for(int i=1; i<nwalk; i++) {
       REQUIRE( real(wset[0].E1()) == Approx(real(wset[i].E1())));

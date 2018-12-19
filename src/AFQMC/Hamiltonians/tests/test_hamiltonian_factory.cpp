@@ -72,7 +72,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
-    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc.h5"); 
+    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc.h5");
     int NMO=file_data.NMO;
     int NAEA=file_data.NAEA;
     int NAEB=file_data.NAEB;
@@ -151,7 +151,9 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         }
 
         // V2 uses std::size_t to store pointers_begin/end.
-        auto V2(ham.generateHijkl(CLOSED,false,TG,occ_a,occ_a,1e-5));
+        // TODO (FDM): addCoulomb=false not yet implemented.
+        bool addCoulomb = true;
+        auto V2(ham.generateHijkl(CLOSED,addCoulomb,TG,occ_a,occ_a,1e-5));
         REQUIRE(V2.shape()[0] == NAEA*NMO);
         REQUIRE(V2.shape()[0] == V2.shape()[1]);
 
@@ -252,15 +254,15 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
 
-  if(not file_exists("./afqmc.h5") ||
-     not file_exists("./wfn.dat") ) {
-    app_log()<<" Skipping ham_factory_factorized_collinear_with_rotation text. afqmc.h5 or wfn.dat files not found. \n";
+  if(not file_exists("./afqmc_collinear.h5") ||
+     not file_exists("./wfn_collinear.dat") ) {
+    app_log()<<" Skipping ham_factory_factorized_collinear_with_rotation text. afqmc_collinear.h5 or wfn_collinear.dat files not found. \n";
   } else {  
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
-    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc.h5"); 
+    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc_collinear.h5");
     int NMO=file_data.NMO;
     int NAEA=file_data.NAEA;
     int NAEB=file_data.NAEB;
@@ -271,7 +273,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
     const char *xml_block =
 "<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
     <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"filename\">./afqmc.h5</parameter> \
+    <parameter name=\"filename\">./afqmc_collinear.h5</parameter> \
     <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
   </Hamiltonian> \
 ";
@@ -285,11 +287,11 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
     FactorizedSparseHamiltonian& ham = boost::get<FactorizedSparseHamiltonian>(ham_);   
 
     // build HamiltonianOperations
-    if(file_exists("./wfn.dat")) {
+    if(file_exists("./wfn_collinear.dat")) {
 
         using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
         boost::multi_array<ComplexType,3> OrbMat;
-        readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
+        readWfn(std::string("./wfn_collinear.dat"),OrbMat,NMO,NAEA,NAEB);
 
         std::pair<PsiT_Matrix,PsiT_Matrix> TrialWfn = 
                 std::make_pair(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
@@ -329,7 +331,8 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         std::size_t zero(0);
 
         // V2 uses std::size_t to store pointers_begin/end.
-        auto V2(ham.halfRotatedHijkl(COLLINEAR,false,TG,std::addressof(TrialWfn.first),
+        bool addCoulomb = true;
+        auto V2(ham.halfRotatedHijkl(COLLINEAR,addCoulomb,TG,std::addressof(TrialWfn.first),
                                           std::addressof(TrialWfn.second),1e-5)); 
         REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
         REQUIRE(V2.shape()[0] == V2.shape()[1]);
@@ -425,7 +428,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         }
 
     } else {
-      app_error()<<" Skipping test of HamiltonianOperations. Missing wfn file: wfn.dat. \n";
+      app_error()<<" Skipping test of HamiltonianOperations. Missing wfn file: wfn_collinear.dat. \n";
     }
 
   }
@@ -437,15 +440,15 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
 
-  if(not file_exists("./afqmc.h5") ||
-     not file_exists("./wfn.dat") ) {
-    app_log()<<" Skipping ham_factory_factorized_collinear_with_rotation text. afqmc.h5 or wfn.dat files not found. \n";
+  if(not file_exists("./afqmc_collinear.h5") ||
+     not file_exists("./wfn_collinear.dat") ) {
+    app_log()<<" Skipping ham_factory_factorized_collinear_with_rotation text. afqmc_collinear.h5 or wfn_collinear.dat files not found. \n";
   } else {  
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
-    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc.h5");
+    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc_collinear.h5");
     int NMO=file_data.NMO;
     int NAEA=file_data.NAEA;
     int NAEB=file_data.NAEB;
@@ -457,7 +460,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
 "<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
     <parameter name=\"filetype\">hdf5</parameter> \
     <parameter name=\"version\">new</parameter> \
-    <parameter name=\"filename\">./afqmc.h5</parameter> \
+    <parameter name=\"filename\">./afqmc_collinear.h5</parameter> \
     <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
   </Hamiltonian> \
 ";
@@ -471,12 +474,12 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
     FactorizedSparseHamiltonian& ham = boost::get<FactorizedSparseHamiltonian>(ham_);   
 
     // build HamiltonianOperations
-    if(file_exists("./wfn.dat")) {
+    if(file_exists("./wfn_collinear.dat")) {
 
         // new
         using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
         boost::multi_array<ComplexType,3> OrbMat;
-        readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
+        readWfn(std::string("./wfn_collinear.dat"),OrbMat,NMO,NAEA,NAEB);
 
         std::pair<PsiT_Matrix,PsiT_Matrix> TrialWfn = 
                 std::make_pair(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
@@ -516,7 +519,8 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         std::size_t zero(0);
 
         // V2 uses std::size_t to store pointers_begin/end.
-        auto V2(ham.halfRotatedHijkl(COLLINEAR,false,TG,std::addressof(TrialWfn.first),
+        bool addCoulomb = true;
+        auto V2(ham.halfRotatedHijkl(COLLINEAR,true,TG,std::addressof(TrialWfn.first),
                                           std::addressof(TrialWfn.second),1e-5)); 
         REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
         REQUIRE(V2.shape()[0] == V2.shape()[1]);
@@ -617,7 +621,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         }
 
     } else {
-      app_error()<<" Skipping test of HamiltonianOperations. Missing wfn file: wfn.dat. \n";
+      app_error()<<" Skipping test of HamiltonianOperations. Missing wfn file: wfn_collinear.dat. \n";
     }
 
   }
