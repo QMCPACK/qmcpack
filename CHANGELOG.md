@@ -10,7 +10,8 @@ This release includes a completely new AFQMC implementation,
 significant performance improvements for large runs, greater
 functionality in the structure-of-arrays (SoA) code path, support for
 larger spline data on multiple GPUs, and support for new machines and
-compilers.
+compilers. The manual has been improved, bugs have been fixed, and
+source code cleanup continued.
 
 A C++14 and C99 capable compiler, Boost 1.61.0, and CMake 3.6 or
 greater are now required. 
@@ -44,7 +45,7 @@ greater are now required.
 
 * Build instructions for ARM-based systems.  [\#1148](https://github.com/QMCPACK/qmcpack/pull/1148)
 
-* Setup scripts and python 2 and 3 compatible. [\#1261](https://github.com/QMCPACK/qmcpack/pull/1261)
+* Setup scripts are python 2 and 3 compatible. [\#1261](https://github.com/QMCPACK/qmcpack/pull/1261)
 
 * QMCPACK and NEXUS can now be installed by "make install" after
   configuring CMake with CMAKE_PREFIX_PATH. [\#1020](https://github.com/QMCPACK/qmcpack/issues/1020)
