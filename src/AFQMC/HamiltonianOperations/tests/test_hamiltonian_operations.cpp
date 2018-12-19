@@ -68,7 +68,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
-    app_log()<<" Skipping ham_ops_collinear_sdet text. afqmc.h5 and ./wfn.dat files not found. \n";
+    app_log()<<" Skipping ham_ops_basic_serial. afqmc.h5 and ./wfn.dat files not found. \n";
   } else {
 
     // Global Task Group
@@ -117,7 +117,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
-    auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,true,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
@@ -146,8 +146,8 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
       app_log()<<" E1: " <<setprecision(12) <<Eloc[0][0] <<std::endl;
     }
     if(std::abs(file_data.E2)>1e-8) {
-      REQUIRE( real(Eloc[0][1]) == Approx(real(file_data.E1+file_data.E2)));
-      REQUIRE( imag(Eloc[0][1]) == Approx(imag(file_data.E1+file_data.E2)));
+      REQUIRE( real(Eloc[0][1]) == Approx(real(file_data.E2)));
+      REQUIRE( imag(Eloc[0][1]) == Approx(imag(file_data.E2)));
     } else {
       app_log()<<" EJ: " <<setprecision(12) <<Eloc[0][2] <<std::endl;
       app_log()<<" EXX: " <<setprecision(12) <<Eloc[0][1] <<std::endl;
@@ -196,8 +196,8 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
 
-  if(not file_exists("./afqmc.h5") ||
-     not file_exists("./wfn.dat") ) {
+  if(not file_exists("./afqmc_collinear.h5") ||
+     not file_exists("./wfn_collinear.dat") ) {
     app_log()<<" Skipping ham_ops_collinear_sdet text. afqmc.h5 and ./wfn.dat files not found. \n";
   } else {
 
@@ -247,7 +247,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
-    auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,true,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
@@ -276,8 +276,8 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
       app_log()<<" E1: " <<setprecision(12) <<Eloc[0][0] <<std::endl;
     }
     if(std::abs(file_data.E2)>1e-8) {
-      REQUIRE( real(Eloc[0][1]) == Approx(real(file_data.E1+file_data.E2)));
-      REQUIRE( imag(Eloc[0][1]) == Approx(imag(file_data.E1+file_data.E2)));
+      REQUIRE( real(Eloc[0][1]) == Approx(real(file_data.E2)));
+      REQUIRE( imag(Eloc[0][1]) == Approx(imag(file_data.E2)));
     } else {
       app_log()<<" EJ: " <<setprecision(12) <<Eloc[0][2] <<std::endl;
       app_log()<<" EXX: " <<setprecision(12) <<Eloc[0][1] <<std::endl;
