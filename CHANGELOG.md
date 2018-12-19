@@ -1,20 +1,90 @@
 # Change Log
 
-Notable changes to QMCPACK will be documented in this file.
+Notable changes to QMCPACK are documented in this file.
 
-## Unreleased
+## [3.6.0]  2018-12-19
 
-### Changed
+### Notes
 
-Utilities have been renamed for clarity and to avoid name collisions with other applications.
+This release includes a completely new AFQMC implementation,
+significant performance improvements for large runs, greater
+functionality in the structure-of-arrays (SoA) code path, support for
+larger spline data on multiple GPUs, and support for new machines and
+compilers. The manual has been improved, bugs have been fixed, and
+source code cleanup continued.
 
-* getSupercell is renamed qmc-get-supercell
-* extract-eshdf-kvectors is renamed qmc-extract-eshdf-kvectors
+A C++14 and C99 capable compiler, Boost 1.61.0, and CMake 3.6 or
+greater are now required.
+
+* Completely updated AFQMC implementation including reduced scaling separable density
+  fitting https://arxiv.org/abs/1810.00284 Documentation and examples
+  will be added in v3.7.0. Contact the developers for use instructions
+  in the interim. [\#1245](https://github.com/QMCPACK/qmcpack/pull/1245)
+
+* Implementation of delayed updates for CPU. Substantial speedups for
+  runs with 100s of electrons, with increasing gains at larger
+  electron counts. See manual for details.  [\#1170](https://github.com/QMCPACK/qmcpack/pull/1170)
+
+* Initial support for nested OpenMP to further reduce time-to-solution for large problems. [\#1082](https://github.com/QMCPACK/qmcpack/pull/1082)
+
+* Support for splitting/distributing spline orbital data across multiple GPUs on a
+  single node. [\#1101](https://github.com/QMCPACK/qmcpack/pull/1101)
+
+* Cusp correction for all electron calculations is implemented in the
+  SoA version. [\#1172](https://github.com/QMCPACK/qmcpack/pull/1172)
+
+* Backflow is implemented in the SoA version. [\#1225](https://github.com/QMCPACK/qmcpack/pull/1225)
+
+* K-points with real coefficients are supported in periodic LCAO. [\#1006](https://github.com/QMCPACK/qmcpack/pull/1006)
+
+* Initial support for Summit at OLCF. Revisions may be needed in
+  January 2019 as the software stack is updated. This will be
+  addressed in a new version as required.
+
+* Initial support for PGI compiler.
+
+* Build instructions for ARM-based systems.  [\#1148](https://github.com/QMCPACK/qmcpack/pull/1148)
+
+* Setup scripts are python 2 and 3 compatible. [\#1261](https://github.com/QMCPACK/qmcpack/pull/1261)
+
+* QMCPACK and NEXUS can now be installed by "make install" after
+  configuring CMake with CMAKE_PREFIX_PATH. [\#1020](https://github.com/QMCPACK/qmcpack/issues/1020)
+
+* Significantly reworked test labeling and categorization system. [\#1155](https://github.com/QMCPACK/qmcpack/pull/1155)
+
+* Partial transition to a new MPI wrapper implementation for greater compatibility.
+
+* Utilities have been renamed for clarity and to avoid name collisions
+  with other applications. getSupercell is renamed
+  qmc-get-supercell. extract-eshdf-kvectors is renamed
+  qmc-extract-eshdf-kvectors.
+
+### Known bugs
+
+Several potentially significant bugs are outstanding and will be addressed in the
+next release. See [list of open bugs](https://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
+
+* LCAO (Gaussian basis) molecular calculations are incorrect with
+  certain diffusion functions. The reason for this bug is currently
+  unclear. [\#1145](https://github.com/QMCPACK/qmcpack/issues/1145)
+
+* On NVIDIA Volta GPUs some runs show inconsistencies with the CPU
+  version. Standard carbon diamond and LiH tests pass with good agreement
+  with the CPU implementation. [\#1054](https://github.com/QMCPACK/qmcpack/issues/1054)
+
+* QMCPACK will not build with OpenMPI v4.0.0 due to use of deprecated
+  functions. This will be addressed in the next version as the new MPI
+  wrappers are fully adopted. Older OpenMPI libraries are fully capable.
+
 
 ### NEXUS
 
-* qfit is renamed qmc-fit
-* ntest, sim, redo are renamed nxs-test, nxs-sim, nxs-redo
+* Interface to and support for PySCF. [\#1220](https://github.com/QMCPACK/qmcpack/pull/1220)
+* Interface to and support for Quantum Package (QP). [\#1093](https://github.com/QMCPACK/qmcpack/pull/1093)
+* Support for excited state calculations. [\#1200](https://github.com/QMCPACK/qmcpack/pull/1200)
+* qfit is renamed qmc-fit.
+* ntest, sim, redo are renamed nxs-test, nxs-sim, nxs-redo.
+* Many smaller improvements.
 
 ## [3.5.0] - 2018-08-02
 
@@ -23,7 +93,7 @@ Utilities have been renamed for clarity and to avoid name collisions with other 
 This release includes support for the latest Quantum Espresso version 6.3,
 an initial implementation of periodic Gaussian support via PySCF, and a new
 version of the hybrid or "APW" representation of orbitals. Many minor
-bugs have been fixed, configuration and documentation improved. 
+bugs have been fixed, configuration and documentation improved.
 
 Note that the PDF manuals are no longer included with the source. Versions
 are available online via https://qmcpack.org . The PDFs can be built
@@ -89,7 +159,7 @@ is particularly welcome on the new features.
   removed. Parameter use_nonblocking now disables non-blocking MPI
   load balancing. Non-blocking MPI is now enabled by default.
 * Improved memory handling and usage in SoA code, increases
-  performance.  
+  performance.
 * Improved stability of GPU matrix inversion for large runs.
 * Ongoing improvements to output to improve readability.
 * Initial interface to PySCF for real space QMC trial wavefunctions.
@@ -200,7 +270,7 @@ recommended update.
   complete it.
 * Checkpointing code rewritten for robustness and performance at scale.
   Parallel as well as serial HDF5 supported and autodetected.
-* Improved beta-release of AFQMC code and documentation.  
+* Improved beta-release of AFQMC code and documentation.
 * Backflow documentation and optimization tips added.
 * Correlated sampling VMC drivers reactivated.
 * Added carbon graphite performance test similar to CORAL benchmark.
