@@ -325,7 +325,6 @@ int formic::solve_general_nonsymmetric_eigensystem(const int n,
 
   // compute eigenvalues and eigenvectors of this matrix (evecs placed in columns of evecs_m)
   std::vector<Cplx> evecs_m(m*m, c0);
-  const bool use_eigen_diagonalizer = false;
   {
     int info = 0;
     int lwork = 20*m;

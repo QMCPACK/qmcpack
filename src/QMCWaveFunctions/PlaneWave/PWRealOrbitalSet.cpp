@@ -32,7 +32,7 @@ PWRealOrbitalSet::~PWRealOrbitalSet()
 #endif
 }
 
-SPOSetBase* PWRealOrbitalSet::makeClone() const
+SPOSet* PWRealOrbitalSet::makeClone() const
 {
   PWRealOrbitalSet *myclone=new PWRealOrbitalSet(*this);
   myclone->myBasisSet = new PWBasis(*myBasisSet);

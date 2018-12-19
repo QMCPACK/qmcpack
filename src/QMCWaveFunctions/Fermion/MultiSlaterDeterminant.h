@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
+#include <QMCWaveFunctions/Fermion/DiracDeterminant.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
@@ -24,8 +24,8 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
- *  @brief An AntiSymmetric OrbitalBase composed of a linear combination of SlaterDeterminants.
+/** @ingroup WaveFunctionComponent
+ *  @brief An AntiSymmetric WaveFunctionComponent composed of a linear combination of SlaterDeterminants.
  *
  *\f[
  *MS({\bf R}) = \sum_n c_n S_n({\bf R})
@@ -48,7 +48,7 @@ namespace qmcplusplus
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
-class MultiSlaterDeterminant: public OrbitalBase
+class MultiSlaterDeterminant: public WaveFunctionComponent
 {
 
 public:
@@ -56,8 +56,8 @@ public:
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer,AccRejTimer,evalOrbTimer;
 
-  typedef DiracDeterminantBase*    DiracDeterminantPtr;
-  typedef SPOSetBase*              SPOSetBasePtr;
+  typedef DiracDeterminant*    DiracDeterminantPtr;
+  typedef SPOSet*              SPOSetPtr;
   typedef SPOSetProxyForMSD*             SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
@@ -108,7 +108,7 @@ public:
   virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<RealType>& dlogpsi,

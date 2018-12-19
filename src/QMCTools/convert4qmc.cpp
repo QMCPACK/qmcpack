@@ -26,7 +26,7 @@
 #include "QMCTools/VSVBParser.h"
 #include "QMCTools/QPParser.h"
 #include "QMCTools/GamesFMOParser.h"
-#include "QMCTools/PyscfParser.h"
+#include "QMCTools/LCAOH5Parser.h"
 #include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
@@ -47,7 +47,10 @@ int main(int argc, char **argv)
     std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.xml -> gamesxml" << std::endl;
     return 1;
   }
-  OHMMS::Controller->initialize(argc,argv);
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller->initialize(env);
+#endif
   if (OHMMS::Controller->rank() != 0) {
     outputManager.shutOff();
   }
@@ -107,7 +110,7 @@ int main(int argc, char **argv)
     }
     else if(a == "-pyscf" || a=="-orbitals")
     {
-      parser = new PyscfParser(argc,argv);
+      parser = new LCAOParser(argc,argv);
       in_file =argv[++iargc];
       allH5=true;
     }

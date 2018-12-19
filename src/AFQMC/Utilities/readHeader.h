@@ -15,7 +15,7 @@
 namespace qmcplusplus
 {
 
-  bool readHeader( std::ifstream& in,
+  inline bool readHeader( std::ifstream& in,
      int& NMAX, int& NMO, int& NETOT, int& NAEA, int& NAEB, int& NCA, int& NCB, int& MS2, bool& spinRestricted, int& ISYM, std::vector<IndexType>& occup_alpha, std::vector<IndexType>& occup_beta, std::vector<IndexType>& orbSymm, std::vector<IndexType>& occupPerSymm_alpha, std::vector<IndexType>& occupPerSymm_beta, bool& orderStates, bool factorizedHam)
   {
 
@@ -28,30 +28,27 @@ namespace qmcplusplus
          app_error()<<"Format error in ASCII integral file. End of file in header. \n";
          return false;
        } 
-       for(std::vector<std::string>::iterator it=words.begin(); it!=words.end(); it++) {
+       for(std::vector<std::string>::iterator it=words.begin(); it<words.end(); it++) {
          if(*it == "&FCI") {
            // do nothing   
          } else if(*it == "NORB" || *it == "NMO") {
            if( it+1 == words.end() ) {
              app_error()<<"Format error in ASCII integral file. NORB \n";
              return false;
-           }
-           if(NMO < 0) NMO = atoi((++it)->c_str());   
-           else it++;
+           } 
+           NMO = atoi((++it)->c_str());   
          } else if(*it == "NMAX") {
            if( it+1 == words.end() ) {
              app_error()<<"Format error in ASCII integral file. NMAX \n";
              return false;
            }
-           if(NMAX < 0) NMAX = atoi((++it)->c_str());   
-           else it++;
+           NMAX = atoi((++it)->c_str());   
          } else if(*it == "NAEA") {
            if( it+1 == words.end() )  {
              app_error()<<"Format error in ASCII integral file. NAEA \n";
              return false;
            }
-           if(NAEA < 0) NAEA = atoi((++it)->c_str());   
-           else it++;
+           NAEA = atoi((++it)->c_str());   
          } else if(*it == "NAEB") {
            if( it+1 == words.end() )  {
              app_error()<<"Format error in ASCII integral file. NAEB \n";
@@ -64,29 +61,25 @@ namespace qmcplusplus
              app_error()<<"Format error in ASCII integral file. NAEB \n";
              return false;
            }
-           if(NCB <= 0) NCB = atoi((++it)->c_str());  
-           else it++;
+           NCB = atoi((++it)->c_str());  
          } else if(*it == "NCA") {
            if( it+1 == words.end() )  {
              app_error()<<"Format error in ASCII integral file. NAEB \n";
              return false;
            }
-           if(NCA <= 0) NCA = atoi((++it)->c_str());  
-           else it++;
+           NCA = atoi((++it)->c_str());  
          } else if(*it == "NELEC") {
            if( it+1 == words.end() )  {
              app_error()<<"Format error in ASCII integral file. NETOT \n";
              return false;
            }
-           if(NETOT < 0) NETOT = atoi((++it)->c_str());   
-           else it++;
+           NETOT = atoi((++it)->c_str());   
          } else if(*it == "MS2") {
            if( it+1 == words.end() ) { 
              app_error()<<"Format error in ASCII integral file. MS2 \n";
              return false;
            }
-           if(MS2 < -50) MS2 = atoi((++it)->c_str());   
-           else it++;
+           MS2 = atoi((++it)->c_str());   
          } else if(*it == "ORBSYM") {
            if( NMO < 0 ) { 
              app_error()<<"NMO (NORB) must be defined before ORBSYM in ASCII integral file.\n"; 
@@ -134,7 +127,7 @@ namespace qmcplusplus
              app_error()<<"NCA and NAEA  must be defined before OCCUP_ALPHA in ASCII integral file.\n"; 
              return false;
            }
-           if( it+(NAEA) == words.end() ) {
+           if( it+(NAEA) >= words.end() ) {
              app_error()<<"Format error in ASCII integral file. OCCUP_ALPHA \n";
              return false;
            }
@@ -147,7 +140,7 @@ namespace qmcplusplus
              app_error()<<"NCB and NAEB  must be defined before OCCUP_ALPHA in ASCII integral file.\n";
              return false;
            }
-           if( it+(NAEB) == words.end() ) {
+           if( it+(NAEB) >= words.end() ) {
              app_error()<<"Format error in ASCII integral file. OCCUP_BETA \n";
              return false;
            }

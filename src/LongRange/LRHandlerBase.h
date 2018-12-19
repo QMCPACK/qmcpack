@@ -62,7 +62,7 @@ struct LRHandlerBase
 
   
   //constructor
-  explicit LRHandlerBase(mRealType kc):LR_kc(kc) {}
+  explicit LRHandlerBase(mRealType kc):LR_kc(kc),ClassName("LRHandlerBase") {}
 
   // virtual destructor
   virtual ~LRHandlerBase() {}
@@ -256,8 +256,17 @@ struct LRHandlerBase
   virtual mRealType evaluateLR(mRealType r)=0;
   virtual mRealType srDf(mRealType r, mRealType rinv)=0;
 
+  virtual mRealType lrDf(mRealType r)
+  {
+    APP_ABORT("Error: lrDf(r) is not implemented in "+ClassName+"\n");
+    return 0.0;
+  };
+
   /** make clone */
   virtual LRHandlerBase* makeClone(ParticleSet& ref)=0;
+  
+  protected:
+    std::string ClassName;
 
 };
 

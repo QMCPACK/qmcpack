@@ -242,7 +242,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
 
   void reset_gamma()
   {
-    // fprintf (stderr, "Paramters:\n");
+    // fprintf (stderr, "Parameters:\n");
     // for (int i=0; i<Parameters.size(); i++)
     // 	fprintf (stderr, " %16.10e\n", Parameters[i]);
     const double L = 0.5 * cutoff_radius;
@@ -971,7 +971,6 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
             abort(); //you think you know what they should be but don't.
         }
         // Setup parameter names
-        int index=0;
         for (int i=0; i<Parameters.size(); i++)
         {
           std::stringstream sstr;

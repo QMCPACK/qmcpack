@@ -372,7 +372,11 @@ public:
     activeParticle=iat;
     for(int i=0; i<NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
+    #ifdef ENABLE_SOA
+    newQP[iat] -= myTable->Temp_dr[iat];
+    #else
     newQP[iat] += myTable->Temp[iat].dr1;
+    #endif
     indexQP.clear();
     for(int i=0; i<bfFuns.size(); i++)
       bfFuns[i]->evaluatePbyP(P,iat,newQP);
@@ -399,7 +403,7 @@ public:
     for(int i=0; i<NumTargets; i++) newQP[i] = dummyQP.R[i];
     * /
     indexQP.clear();
-    indexQP.push_back(iat); // set in the beggining by default
+    indexQP.push_back(iat); // set in the beginning by default
     for(int jat=0; jat<NumTargets; jat++) {
       if(jat!=iat) // && myTable->Temp[jat].r1 < cutOff )
         indexQP.push_back(jat);
@@ -419,14 +423,17 @@ public:
     activeParticle=iat;
     for(int i=0; i<NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
+    #ifdef ENABLE_SOA
+    newQP[iat] -= myTable->Temp_dr[iat];
+    #else
     newQP[iat] += myTable->Temp[iat].dr1;
+    #endif
     indexQP.clear();
     std::copy(FirstOfA,LastOfA,FirstOfA_temp);
     for(int i=0; i<bfFuns.size(); i++)
       bfFuns[i]->evaluatePbyP(P,iat,newQP,Amat_temp);
     for(int jat=0; jat<NumTargets; jat++)
     {
-      // make direct routine in OhmmsPETE later
       RealType dr = std::sqrt( dot( newQP[jat]-QP.R[jat], newQP[jat]-QP.R[jat] ) );
       if( dr > 1e-10 )
         indexQP.push_back(jat);

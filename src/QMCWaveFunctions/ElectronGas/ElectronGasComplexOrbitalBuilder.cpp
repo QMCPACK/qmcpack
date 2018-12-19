@@ -16,6 +16,7 @@
     
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #endif
@@ -49,7 +50,7 @@ EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, c
 
 ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(ParticleSet& els,
     TrialWaveFunction& psi):
-  OrbitalBuilderBase(els,psi)
+  WaveFunctionComponentBuilder(els,psi)
 {
 }
 
@@ -64,7 +65,7 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   aAttrib.put(cur);
   //typedef DiracDeterminant<EGOSet>  Det_t;
   //typedef SlaterDeterminant<EGOSet> SlaterDeterminant_t;
-  typedef DiracDeterminantBase  Det_t;
+  typedef DiracDeterminant  Det_t;
   typedef SlaterDet SlaterDeterminant_t;
   int nat=targetPtcl.getTotalNum();
   int nup=nat/2;
@@ -94,12 +95,12 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   return true;
 }
 
-ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
-  :egGrid(p.Lattice),unique_twist(-1.0),has_twist(false)
+ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate *comm, xmlNodePtr cur)
+  : SPOSetBuilder(comm), egGrid(p.Lattice),unique_twist(-1.0),has_twist(false)
 {
 }
 
-SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc=0;
@@ -134,7 +135,7 @@ SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 }
 
 
-SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
+SPOSet* ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
 {
   egGrid.createGrid(indices);
   EGOSet* spo = new EGOSet(egGrid.kpt,egGrid.mk2,egGrid.deg);

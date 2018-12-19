@@ -30,13 +30,13 @@
 namespace qmcplusplus
 {
 
-//std::map<H5OrbSet,SPOSetBase*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
+//std::map<H5OrbSet,SPOSet*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
 //std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> EinsplineSetBuilder::OrbitalMap;
 ////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
-EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur)
-  : TargetPtcl(p),ParticleSets(psets), MixedSplineReader(0), XMLRoot(cur), Format(QMCPACK),
+EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate *comm, xmlNodePtr cur)
+  : SPOSetBuilder(comm), TargetPtcl(p),ParticleSets(psets), MixedSplineReader(0), XMLRoot(cur), Format(QMCPACK),
   TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1),
   NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
   NumBands(0), NumElectrons(0), NumSpins(0), NumTwists(0),
@@ -476,13 +476,13 @@ EinsplineSetBuilder::AnalyzeTwists2()
     int n_tot_irred(0);
     for (int si=0; si<numSuperTwists; si++)
     {
-      bool irreducible(false);
+//      bool irreducible(false);
       int irrep_wgt(0);
 // 	 for (int i=0; i<superSets[si].size(); i++)
       if(TwistSymmetry[superSets[si][0]]==1)
       {
         irrep_wgt=TwistWeight[superSets[si][0]];
-        irreducible=true;
+//        irreducible=true;
         n_tot_irred++;
       }
 //	if((irreducible) and ((Version[0] >= 2) and (Version[1] >= 0)))

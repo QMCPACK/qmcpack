@@ -14,7 +14,7 @@
 
 #include <QMCDrivers/DMC/WalkerControlMPI.h>
 #include <Utilities/IteratorUtility.h>
-#include <Utilities/UtilityFunctions.h>
+#include <Utilities/FairDivide.h>
 #include <Utilities/NewTimer.h>
 #include <Utilities/Timer.h>
 

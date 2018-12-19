@@ -299,8 +299,7 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
 CoulombPBCAA::Return_t
 CoulombPBCAA::evalLRwithForces(ParticleSet& P)
 {
-  RealType LR=0.0;
-  const StructFact& PtclRhoK(*(P.SK));
+  //  const StructFact& PtclRhoK(*(P.SK));
   std::vector<TinyVector<RealType,DIM> > grad(P.getTotalNum());
   for(int spec2=0; spec2<NumSpecies; spec2++)
   {
@@ -407,7 +406,9 @@ CoulombPBCAA::evalSR(ParticleSet& P)
   mRealType SR=0.0;
   if(d_aa.DTType == DT_SOA)
   {
-    for(size_t ipart=1; ipart<NumCenters; ipart++)
+    // Ye: the threading will be enabled when splint is thread safe.
+    //#pragma omp parallel for reduction(+:SR)
+    for(size_t ipart=1; ipart<(NumCenters/2+1); ipart++)
     {
       mRealType esum = 0.0;
       const RealType* restrict dist=d_aa.Distances[ipart];
@@ -416,6 +417,16 @@ CoulombPBCAA::evalSR(ParticleSet& P)
         esum += Zat[j]*rVs->splint(dist[j])/dist[j];
       }
       SR += Zat[ipart]*esum;
+
+      if(ipart==NumCenters-ipart) continue;
+
+      esum = 0.0;
+      dist = d_aa.Distances[NumCenters-ipart];
+      for(size_t j=0; j<NumCenters-ipart; ++j)
+      {
+        esum += Zat[j]*rVs->splint(dist[j])/dist[j];
+      }
+      SR += Zat[NumCenters-ipart]*esum;
     }
   }
   else
@@ -439,7 +450,6 @@ CoulombPBCAA::evalSR(ParticleSet& P)
 CoulombPBCAA::Return_t
 CoulombPBCAA::evalLR(ParticleSet& P)
 {
-  const int slab_dir=OHMMS_DIM-1;
   mRealType res=0.0;
   const StructFact& PtclRhoK(*(P.SK));
   if(PtclRhoK.SuperCellEnum==SUPERCELL_SLAB)
@@ -452,6 +462,7 @@ CoulombPBCAA::evalLR(ParticleSet& P)
       {
         mRealType u=0;
 #if !defined(USE_REAL_STRUCT_FACTOR)
+	const int slab_dir=OHMMS_DIM-1;
         const RealType* restrict d_slab=d_aa.Displacements[iat].data(slab_dir);
         for(int jat=0; jat<iat; ++jat)
           u += Zat[jat]*AA->evaluate_slab(-d_slab[jat],  //JK: Could be wrong. Check the SIGN

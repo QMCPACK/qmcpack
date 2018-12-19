@@ -191,8 +191,8 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
     g01=g(1); g11=g(4); g21=g(7);
     g02=g(2); g12=g(5); g22=g(8);
 
-    CONSTEXPR T minusone(-1);
-    CONSTEXPR T zero(0);
+    constexpr T minusone(-1);
+    constexpr T zero(0);
 
     corners.resize(8);
     corners(0)=zero;
@@ -225,8 +225,8 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
     const T* restrict celly=corners.data(1); ASSUME_ALIGNED(celly);
     const T* restrict cellz=corners.data(2); ASSUME_ALIGNED(cellz);
 
-    CONSTEXPR T minusone(-1);
-    CONSTEXPR T one(1);
+    constexpr T minusone(-1);
+    constexpr T one(1);
     #pragma omp simd aligned(temp_r,px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
@@ -313,8 +313,8 @@ struct DTD_BConds<T,3,PPNG+SOA_OFFSET>
     const T* restrict cellx=corners.data(0); ASSUME_ALIGNED(cellx);
     const T* restrict celly=corners.data(1); ASSUME_ALIGNED(celly);
 
-    CONSTEXPR T minusone(-1);
-    CONSTEXPR T one(1);
+    constexpr T minusone(-1);
+    constexpr T one(1);
     #pragma omp simd aligned(temp_r,px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {

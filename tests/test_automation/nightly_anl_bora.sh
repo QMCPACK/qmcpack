@@ -5,14 +5,15 @@
 # Run the "short" nightlies
 # 
 
+export TEST_SITE_NAME=bora.alcf.anl.gov
+export N_PROCS_BUILD=24
 export N_PROCS=32
 export CC=mpicc
 export CXX=mpicxx
 export BOOST_ROOT=/sandbox/opt/qmcdev/trunk/external_codes/boost_1_55_0
 
-QE_BIN=/sandbox/opt/qe-6.2.1/bin
-QMC_DATA=/sandbox/yeluo/benchmark
-site_name=bora.alcf.anl.gov
+QE_BIN=/sandbox/opt/qe-stable/qe-6.3/bin
+QMC_DATA=/sandbox/opt/h5data
 
 #Must be an absolute path
 place=/sandbox/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
@@ -68,7 +69,7 @@ then
   mkdir -p $place/log/$entry/$mydate
 fi
 
-CTEST_FLAGS="-D QE_BIN=$QE_BIN -D QMC_DATA=$QMC_DATA -D CTEST_SITE=$site_name"
+CTEST_FLAGS="-D QE_BIN=$QE_BIN -D QMC_DATA=$QMC_DATA -D ENABLE_TIMERS=1 -D C_FLAGS=-xCOMMON-AVX512 -D CXX_FLAGS=-xCOMMON-AVX512"
 
 if [[ $sys == *"Complex"* ]]; then
   CTEST_FLAGS="$CTEST_FLAGS -D QMC_COMPLEX=1"
@@ -84,7 +85,7 @@ fi
 
 export QMCPACK_TEST_SUBMIT_NAME=${compiler}-${sys}-Release
 
-ctest $CTEST_FLAGS -S $PWD/../CMake/ctest_script.cmake,release -VV -E 'long' --timeout 600 &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+ctest $CTEST_FLAGS -S $PWD/../CMake/ctest_script.cmake,release -VV -E 'long' --timeout 800 &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
 
 cd ..
 echo --- Finished $sys `date`

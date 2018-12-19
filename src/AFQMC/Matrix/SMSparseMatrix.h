@@ -9,10 +9,11 @@
 #include<vector>
 #include<assert.h>
 #include"AFQMC/config.0.h"
-#include"Utilities/UtilityFunctions.h"
+#include"Utilities/FairDivide.h"
 #include<mpi.h>
 #include <sys/time.h>
 #include <ctime>
+#include <numeric>
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/containers/vector.hpp>
@@ -46,6 +47,7 @@ class SMSparseMatrix
   template<typename spT> using ShmemAllocator = boost::interprocess::allocator<spT, boost::interprocess::managed_shared_memory::segment_manager>;
   template<typename spT> using SMVector = boost::interprocess::vector<spT, ShmemAllocator<spT>>;
 
+  static const int dimensionality = -2;
   typedef T                Type_t;
   typedef T                value_type;
   typedef T*               pointer;
@@ -64,22 +66,32 @@ class SMSparseMatrix
   typedef typename SMVector<intType>::const_iterator const_indx_iterator;
   typedef SMSparseMatrix<T>  This_t;
 
-  SMSparseMatrix<T>():nr(0),nc(0),compressed(false),zero_based(true),head(false),ID(""),SMallocated(false),storage_format(0),vals(NULL),rowIndex(NULL),myrows(NULL),colms(NULL),mutex(NULL),share_buff(NULL),segment(NULL) 
+  SMSparseMatrix<T>():nr(0),nc(0),compressed(false),zero_based(true),head(false),ID(""),SMallocated(false),storage_format(0),vals(NULL),rowIndex(NULL),myrows(NULL),colms(NULL),mutex(NULL),share_buff(NULL),segment(NULL),nterms_per_row(NULL) 
   {
     remover.ID="NULL";
     remover.head=false;
   }
 
-  SMSparseMatrix<T>(int n):nr(n),nc(n),compressed(false),zero_based(true),head(false),ID(""),SMallocated(false),storage_format(0),vals(NULL),rowIndex(NULL),myrows(NULL),colms(NULL),mutex(NULL),share_buff(NULL),segment(NULL)
+  SMSparseMatrix<T>(int n):nr(n),nc(n),compressed(false),zero_based(true),head(false),ID(""),SMallocated(false),storage_format(0),vals(NULL),rowIndex(NULL),myrows(NULL),colms(NULL),mutex(NULL),share_buff(NULL),segment(NULL),nterms_per_row(NULL) 
   {
     remover.ID="NULL";
     remover.head=false;
   }
 
-  SMSparseMatrix<T>(int n,int m):nr(n),nc(m),compressed(false),zero_based(true),head(false),ID(""),SMallocated(false),storage_format(0),vals(NULL),rowIndex(NULL),myrows(NULL),colms(NULL),mutex(NULL),share_buff(NULL),segment(NULL) 
+  SMSparseMatrix<T>(int n,int m):nr(n),nc(m),compressed(false),zero_based(true),head(false),ID(""),SMallocated(false),storage_format(0),vals(NULL),rowIndex(NULL),myrows(NULL),colms(NULL),mutex(NULL),share_buff(NULL),segment(NULL),nterms_per_row(NULL)  
   {
     remover.ID="NULL";
     remover.head=false;
+  }
+
+  SMSparseMatrix<T>(bool hd, std::string ii, MPI_Comm comm_):nr(0),nc(0),compressed(false),zero_based(true),head(false),ID(""),SMallocated(false),storage_format(0),vals(NULL),rowIndex(NULL),myrows(NULL),colms(NULL),mutex(NULL),share_buff(NULL),segment(NULL),nterms_per_row(NULL) 
+  {
+    setup(hd,ii,comm_);
+  }
+
+  SMSparseMatrix<T>(int n, int m, bool hd, std::string ii, MPI_Comm comm_):nr(n),nc(m),compressed(false),zero_based(true),head(false),ID(""),SMallocated(false),storage_format(0),vals(NULL),rowIndex(NULL),myrows(NULL),colms(NULL),mutex(NULL),share_buff(NULL),segment(NULL),nterms_per_row(NULL) 
+  {
+    setup(hd,ii,comm_);
   }
 
   ~SMSparseMatrix<T>()
@@ -90,13 +102,61 @@ class SMSparseMatrix
     }
   }
 
-  // this should probably be disallowed
-  SMSparseMatrix(const SMSparseMatrix<T> &rhs)
-  {
-    APP_ABORT(" Error: SMSparseMatrix copy constructor has been disabled.");
+  SMSparseMatrix(const SMSparseMatrix<T>& rhs) = delete;
+
+  This_t& operator=(const SMSparseMatrix<T>& rhs) = delete;
+
+  SMSparseMatrix<T>(SMSparseMatrix<T>&& other):nr(0),nc(0),compressed(false),zero_based(true),
+                head(false),ID(""),SMallocated(false),storage_format(0),vals(NULL),rowIndex(NULL),
+                myrows(NULL),colms(NULL),mutex(NULL),share_buff(NULL),segment(NULL),
+                nterms_per_row(NULL) {
+    *this = std::move(other);
   }
 
-  inline void setup(bool hd, std::string ii, MPI_Comm comm_) {
+  This_t& operator=(SMSparseMatrix<T>&& other)
+  {
+    if(this != &other) {
+
+      if(segment!=NULL) {
+        delete segment;
+        boost::interprocess::shared_memory_object::remove(ID.c_str());
+      }
+
+      remover.ID=other.remover.ID;
+      remover.head=other.remover.head;
+
+      mutex = other.mutex;
+      vals = other.vals;
+      colms = other.colms;
+      myrows = other.myrows;
+      rowIndex = other.rowIndex;
+      nterms_per_row=other.nterms_per_row;
+      share_buff = other.share_buff;
+      segment = other.segment;
+      alloc_T = other.alloc_T;
+      alloc_mutex = other.alloc_mutex;
+      alloc_uchar = other.alloc_uchar;
+      alloc_int = other.alloc_int;
+      alloc_ulong = other.alloc_ulong;
+      comm = other.comm;
+      head = other.head;
+      ID = other.ID;
+      SMallocated = other.SMallocated;
+      memory = other.memory;
+      compressed = other.compressed;
+      nr=other.nr;
+      nc=other.nc;
+      zero_based=other.zero_based;
+      storage_format=other.storage_format;
+      max_in_row/other.max_in_row;
+
+      other.setNull();
+
+    }
+    return *this;
+  }
+
+  void setup(bool hd, std::string ii, MPI_Comm comm_) {
     head=hd;
     ID=ii;
     remover.ID=ii;
@@ -104,13 +164,15 @@ class SMSparseMatrix
     comm=comm_;
   }
 
-  inline void barrier() {
+   void barrier() {
     MPI_Barrier(comm);
   }
 
-  inline void reserve(std::size_t n, bool allow_reduce = false)
+   void reserve(std::size_t n, bool allow_reduce = false)
   {
     assert(n<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
+    if(vals!=NULL)
+      assert(nterms_per_row->size() == 0);
     if(vals==NULL || (vals!=NULL && vals->capacity() < n) || (vals!=NULL && vals->capacity() > n && allow_reduce)) 
       allocate(n,allow_reduce);
     if(head) {
@@ -120,14 +182,35 @@ class SMSparseMatrix
       vals->reserve(n);
       myrows->reserve(n);
       colms->reserve(n); 
+      nterms_per_row->reserve(0);
       rowIndex->resize(std::max(nr,nc)+1);
       share_buff->resize(1000*sizeof(std::complex<double>));
     }
     barrier();
   }
 
+   void resize(std::vector<std::size_t>& n_p_row)
+  {
+    assert(n_p_row.size() == nr);
+    for(auto n: n_p_row) assert(n >= 0 && n < nc);
+    std::size_t n = std::accumulate(n_p_row.begin(),n_p_row.end(),std::size_t(0));
+    assert(n>0);
+    resize(n,false);
+    if(head) {
+      nterms_per_row->resize(nr);
+      // setup rowIndex
+      int nt=0;  
+      for(std::size_t p=0; p<nr; p++) {
+        (*rowIndex)[p] = nt;
+        nt += n_p_row[p];
+      }  
+      (*rowIndex)[nr] = nt;
+    }
+    barrier();
+  }
+
   // does not allow grow/shrink
-  inline bool allocate_serial(std::size_t n)
+   bool allocate_serial(std::size_t n)
   {
     assert(n<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
     if(!head) { SMallocated=true; return true; }
@@ -177,6 +260,10 @@ class SMSparseMatrix
       colms = segment->construct<SMVector<int>>("colms")(*alloc_int);
       assert(n < colms->max_size());
       colms->reserve(n);
+
+      nterms_per_row = segment->construct<SMVector<int>>("nterms_per_row")(*alloc_int);
+      assert(std::max(nr,nc) < nterms_per_row->max_size());
+      nterms_per_row->reserve(std::max(nr,nc));
           
       vals = segment->construct<SMVector<T>>("vals")(*alloc_T);
       assert(n < vals->max_size());
@@ -192,7 +279,7 @@ class SMSparseMatrix
   }
 
   // all processes must call this routine
-  inline bool allocate(std::size_t n, bool allow_reduce=false)
+   bool allocate(std::size_t n, bool allow_reduce=false)
   {
     assert(n<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
     bool grow = false;
@@ -223,10 +310,14 @@ class SMSparseMatrix
           segment->destroy<SMVector<T>>("vals");
           segment->destroy<SMVector<int>>("myrows");
           segment->destroy<SMVector<int>>("colms");
-          myrows = segment->construct<SMVector<int>>("myrows")(*alloc_T);
+          segment->destroy<SMVector<int>>("nterms_per_row");
+          myrows = segment->construct<SMVector<int>>("myrows")(*alloc_int);
           assert(n < myrows->max_size());
           myrows->reserve(n);
-          colms = segment->construct<SMVector<int>>("colms")(*alloc_T);
+          nterms_per_row = segment->construct<SMVector<int>>("nterms_per_row")(*alloc_int);
+          assert(std::max(nr,nc) < nterms_per_row->max_size());
+          nterms_per_row->reserve(std::max(nr,nc));
+          colms = segment->construct<SMVector<int>>("colms")(*alloc_int);
           assert(n < colms->max_size());
           colms->reserve(n);
           vals = segment->construct<SMVector<T>>("vals")(*alloc_T);
@@ -246,6 +337,7 @@ class SMSparseMatrix
           vals = segment->find<SMVector<T>>("vals").first;
           colms = segment->find<SMVector<int>>("colms").first;
           myrows = segment->find<SMVector<int>>("myrows").first;
+          nterms_per_row = segment->find<SMVector<int>>("nterms_per_row").first;
           rowIndex = segment->find<SMVector<intType>>("rowIndex").first;
           share_buff = segment->find<SMVector<unsigned char>>("share_buff").first;
           mutex = segment->find<boost::interprocess::interprocess_mutex>("mutex").first;
@@ -253,6 +345,7 @@ class SMSparseMatrix
           assert(mutex != 0);
           assert(vals != 0);
           assert(myrows != 0);
+          assert(nterms_per_row != 0);
           assert(colms != 0);
           assert(rowIndex != 0);
           share_buff->resize(1000*sizeof(std::complex<double>)); 
@@ -260,6 +353,8 @@ class SMSparseMatrix
           rowIndex->resize(std::max(nr,nc)+1);
           assert(n < myrows->max_size());
           myrows->reserve(n);
+          assert(std::max(nr,nc) < nterms_per_row->max_size());
+          nterms_per_row->reserve(std::max(nr,nc));
           assert(n < colms->max_size());
           colms->reserve(n);
           assert(n < vals->max_size());
@@ -310,6 +405,10 @@ class SMSparseMatrix
           assert(n < myrows->max_size());
           myrows->reserve(n);
 
+          nterms_per_row = segment->construct<SMVector<int>>("nterms_per_row")(*alloc_int);
+          assert(std::max(nr,nc) < nterms_per_row->max_size());
+          nterms_per_row->reserve(std::max(nr,nc));
+
           colms = segment->construct<SMVector<int>>("colms")(*alloc_int);
           assert(n < colms->max_size());
           colms->reserve(n);
@@ -332,7 +431,7 @@ class SMSparseMatrix
   }
 
   // only call this when all arrays have been allocated and modified  
-  inline bool initializeChildren()
+   bool initializeChildren()
   { 
     if(head) return true;
     // delete segment in case this routine is called multiple times.
@@ -346,6 +445,7 @@ class SMSparseMatrix
       vals = segment->find<SMVector<T>>("vals").first;
       colms = segment->find<SMVector<int>>("colms").first;
       myrows = segment->find<SMVector<int>>("myrows").first;
+      nterms_per_row = segment->find<SMVector<int>>("nterms_per_row").first;
       rowIndex = segment->find<SMVector<intType>>("rowIndex").first;
       share_buff = segment->find<SMVector<unsigned char>>("share_buff").first;
       mutex = segment->find<boost::interprocess::interprocess_mutex>("mutex").first;
@@ -364,17 +464,19 @@ class SMSparseMatrix
   }
 
   // does not allow grow/shrink, aborts if resizing beyond capacity
-  inline void resize_serial(std::size_t nnz)
+   void resize_serial(std::size_t nnz)
   {
     assert(nnz<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
     if(!head) return;
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz))
       APP_ABORT(" Error: Call to SMSparseMatrix::resize_serial without enough capacity. \n");
+    assert(nterms_per_row->size() == 0);
     if(head) {
       assert(nnz < vals->max_size());
       vals->resize(nnz);
       assert(nnz < myrows->max_size());
       myrows->resize(nnz);
+      nterms_per_row->resize(0); // don't allow through this interface
       assert(nnz < colms->max_size());
       colms->resize(nnz);
       assert((nr+1) < rowIndex->max_size());
@@ -383,9 +485,11 @@ class SMSparseMatrix
   } 
 
   // this routine does not preserve information when allow_reduce=true  
-  inline void resize(std::size_t nnz, bool allow_reduce=false)
+   void resize(std::size_t nnz, bool allow_reduce=false)
   {
     assert(nnz<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
+    if(vals!=NULL)
+      assert(nterms_per_row->size() == 0);
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz) ) {
       allocate(nnz,allow_reduce);
     } else if(vals!=NULL && vals->capacity() > nnz && allow_reduce) {
@@ -399,13 +503,14 @@ class SMSparseMatrix
       assert((nr+1) < rowIndex->max_size());
       vals->resize(nnz);
       myrows->resize(nnz);
+      nterms_per_row->resize(0);
       colms->resize(nnz);
       rowIndex->resize(nr+1);
     }
     barrier();
   }
 
-  inline void clear() { 
+   void clear() { 
     compressed=false;
     zero_based=true;
     if(!SMallocated) return; 
@@ -413,10 +518,11 @@ class SMSparseMatrix
     vals->clear();
     colms->clear();
     myrows->clear();
+    nterms_per_row->clear();
     rowIndex->clear();
   }
 
-  inline void setDims(int n, int m)
+   void setDims(int n, int m)
   {
     nr=n;
     nc=m;
@@ -426,7 +532,7 @@ class SMSparseMatrix
   }
 
   template<class T1>
-  inline bool copyToBuffer(std::vector<T1>& v)
+   bool copyToBuffer(std::vector<T1>& v)
   {
     if( v.size()*sizeof(T1) > share_buff->capacity() )
       return false; 
@@ -437,7 +543,7 @@ class SMSparseMatrix
   }
  
   template<class T1>
-  inline bool copyFromBuffer(std::vector<T1>& v)
+   bool copyFromBuffer(std::vector<T1>& v)
   {
     if( v.size()*sizeof(T1) > share_buff->capacity() )
       return false; 
@@ -445,7 +551,7 @@ class SMSparseMatrix
   }  
 
   template<typename T1>
-  inline void share(T1* x, int n, bool sender) {
+   void share(T1* x, int n, bool sender) {
     if(!SMallocated)
       APP_ABORT("Error: Call to SMDenseVector::share with unallocated object. \n");
     assert( sizeof(T1)*n < sizeof(unsigned char)*share_buff->size() );
@@ -460,7 +566,7 @@ class SMSparseMatrix
   }
 
   template<typename T1>
-  inline void share(T1& x, bool sender) {
+   void share(T1& x, bool sender) {
     if(!SMallocated)
       APP_ABORT("Error: Call to SMDenseVector::share with unallocated object. \n");
     if(sender) {
@@ -474,7 +580,7 @@ class SMSparseMatrix
   }
 
   template<typename T1>
-  inline void share(std::vector<T1>& x, int n, bool sender) {
+   void share(std::vector<T1>& x, int n, bool sender) {
     if(!SMallocated)
       APP_ABORT("Error: Call to SMDenseVector::share with unallocated object. \n");
     assert( sizeof(T1)*n < sizeof(unsigned char)*share_buff->size() );
@@ -489,96 +595,81 @@ class SMSparseMatrix
     barrier();
   }
 
-  inline void setCompressed() 
+   void setCompressed() 
   {
     compressed=true;
   }
 
-  inline bool isCompressed() const
+   bool isCompressed() const
   {
     return compressed;
   }
 
-  inline std::size_t memoryUsage() { return memory; }
+   std::size_t memoryUsage() { return memory; }
 
-  inline std::size_t capacity() const
+   std::size_t capacity() const
   {
     return (vals!=NULL)?(vals->capacity()):0;
   }
-  inline std::size_t size() const
+   std::size_t size() const
   {
     return (vals!=NULL)?(vals->size()):0;
   }
-  inline int rows() const
+   int rows() const
   {
     return nr;
   }
-  inline int cols() const
+   int cols() const
   {
     return nc;
   }
 
-  inline const_pointer values(intType n=intType(0)) const 
+   const_pointer values(intType n=intType(0)) const 
   {
     return (vals!=NULL)?(&((*vals)[n])):NULL;
   }
 
-  inline pointer values(intType n=intType(0)) 
+   pointer values(intType n=intType(0)) 
   {
     return (vals!=NULL)?(&((*vals)[n])):NULL;
   }
 
-  inline const_intPtr column_data(intType n=intType(0)) const 
+   const_intPtr column_data(intType n=intType(0)) const 
   {
     return (colms!=NULL)?(&((*colms)[n])):NULL;
   }
-  inline intPtr column_data(intType n=intType(0)) 
+   intPtr column_data(intType n=intType(0)) 
   {
     return (colms!=NULL)?(&((*colms)[n])):NULL;
   }
 
-  inline const_intPtr row_data(intType n=intType(0)) const 
+   const_intPtr row_data(intType n=intType(0)) const 
   {
     return (myrows!=NULL)?(&((*myrows)[n])):NULL;
   }
-  inline intPtr row_data(intType n=intType(0)) 
+   intPtr row_data(intType n=intType(0)) 
   {
     return (myrows!=NULL)?(&((*myrows)[n])):NULL;
   }
 
-  inline const_intPtr row_index(intType n=intType(0)) const 
+   const_intPtr row_index(intType n=intType(0)) const 
   {
     return (rowIndex!=NULL)?(&((*rowIndex)[n])):NULL;
   }
-  inline intPtr row_index(intType n=intType(0)) 
+   intPtr row_index(intType n=intType(0)) 
   {
     return  (rowIndex!=NULL)?(&((*rowIndex)[n])):NULL;
   }
 
-  inline This_t& operator=(const SMSparseMatrix<T> &rhs) 
-  { 
-    APP_ABORT(" Error: SMSharedMatrix::operator= is disabled. \n");
-    compressed=rhs.compressed;
-    zero_based=rhs.zero_based;
-    nr=rhs.nr;
-    nc=rhs.nc;
-    if(!head) return *this;
-    (*vals)=*(rhs.vals);
-    (*myrows)=*(rhs.myrows);
-    (*colms)=*(rhs.colms);
-    (*rowIndex)=*(rhs.rowIndex);
-    return *this;
-  }  
-
   // use binary search PLEASE!!! Not really used anyway
-  inline int find_element(int i, int j) const {
+   int find_element(int i, int j) const {
     for (int k = (*rowIndex)[i]; k<(*rowIndex)[i+1]; k++) {
       if ((*colms)[k] == j) return k;
     }
     return -1;
   }
 
-  inline Type_t operator()( int i, int j) const
+   Type_t operator()( int i, int j) const
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<nr && j>=0 && j<nc && compressed); 
@@ -588,11 +679,15 @@ class SMSparseMatrix
     return (*vals)[idx]; 
   }
 
-  inline void add(const int i, const int j, const T& v, bool needs_locks=false) 
+   void add(const int i, const int j, const T& v, bool needs_locks=false) 
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<nr && j>=0 && j<nc);
 #endif
+    if(nterms_per_row->size() > 0) { 
+      insert_in_rows(i,j,v,needs_locks);
+      return;
+    }
     compressed=false;
     if(needs_locks) {
       boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*mutex);
@@ -608,7 +703,38 @@ class SMSparseMatrix
     assert(vals->size()<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
   }
 
-  inline void add(const std::vector<std::tuple<int,int,T>>& v, bool needs_locks=false)
+   void add(const std::vector<std::tuple<int,int,T>>& v, bool needs_locks=false)
+  {
+    compressed=false;
+    if(nterms_per_row->size() > 0) { 
+      insert_in_rows(v,needs_locks);
+      return;
+    }
+    if(needs_locks) {
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*mutex);
+      for(auto&& a: v) {
+#ifdef ASSERT_SPARSEMATRIX
+        assert(std::get<0>(a)>=0 && std::get<0>(a)<nr && std::get<1>(a)>=0 && std::get<1>(a)<nc);
+#endif
+        myrows->push_back(std::get<0>(a));
+        colms->push_back(std::get<1>(a));
+        vals->push_back(std::get<2>(a));
+      }
+    } else {
+      if(!head) return;
+      for(auto&& a: v) {
+#ifdef ASSERT_SPARSEMATRIX
+        assert(std::get<0>(a)>=0 && std::get<0>(a)<nr && std::get<1>(a)>=0 && std::get<1>(a)<nc);
+#endif
+        myrows->push_back(std::get<0>(a));
+        colms->push_back(std::get<1>(a));
+        vals->push_back(std::get<2>(a));
+      }
+    }
+    assert(vals->size()<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
+  }
+
+  void insert_in_rows(const std::vector<std::tuple<int,int,T>>& v, bool needs_locks=false)
   {
     compressed=false;
     if(needs_locks) {
@@ -617,9 +743,10 @@ class SMSparseMatrix
 #ifdef ASSERT_SPARSEMATRIX
         assert(std::get<0>(a)>=0 && std::get<0>(a)<nr && std::get<1>(a)>=0 && std::get<1>(a)<nc);
 #endif
-        myrows->push_back(std::get<0>(a));
-        colms->push_back(std::get<1>(a));
-        vals->push_back(std::get<2>(a));
+        (*vals)[ (*rowIndex)[std::get<0>(a)] + (*nterms_per_row)[std::get<0>(a)] ] = std::get<2>(a);
+        (*colms)[ (*rowIndex)[std::get<0>(a)] + (*nterms_per_row)[std::get<0>(a)] ] = std::get<1>(a);
+        (*myrows)[ (*rowIndex)[std::get<0>(a)] + (*nterms_per_row)[std::get<0>(a)] ] = std::get<0>(a);  // should not need this, keeping for transpose purposes
+        (*nterms_per_row)[std::get<0>(a)] ++; 
       }
     } else {
       if(!head) return;
@@ -627,15 +754,36 @@ class SMSparseMatrix
 #ifdef ASSERT_SPARSEMATRIX
         assert(std::get<0>(a)>=0 && std::get<0>(a)<nr && std::get<1>(a)>=0 && std::get<1>(a)<nc);
 #endif
-        myrows->push_back(std::get<0>(a));
-        colms->push_back(std::get<1>(a));
-        vals->push_back(std::get<2>(a));
+        (*vals)[ (*rowIndex)[std::get<0>(a)] + (*nterms_per_row)[std::get<0>(a)] ] = std::get<2>(a);
+        (*colms)[ (*rowIndex)[std::get<0>(a)] + (*nterms_per_row)[std::get<0>(a)] ] = std::get<1>(a);
+        (*myrows)[ (*rowIndex)[std::get<0>(a)] + (*nterms_per_row)[std::get<0>(a)] ] = std::get<0>(a);  // should not need this, keeping for transpose purposes
+        (*nterms_per_row)[std::get<0>(a)] ++;
       }
     }
-    assert(vals->size()<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
+
+  }    
+
+  void insert_in_rows(const int i, const int j, const T& v, bool needs_locks=false)
+  {
+    compressed=false;
+    assert((*rowIndex)[i+1]-(*rowIndex)[i] > (*nterms_per_row)[i]);
+    if(needs_locks) {
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*mutex);
+      (*vals)[ (*rowIndex)[i] + (*nterms_per_row)[i] ] = v;
+      (*colms)[ (*rowIndex)[i] + (*nterms_per_row)[i] ] = j;
+      (*myrows)[ (*rowIndex)[i] + (*nterms_per_row)[i] ] = i;  // should not need this, keeping for transpose purposes
+      (*nterms_per_row)[i] ++;
+    } else {
+      if(!head) return;
+      (*vals)[ (*rowIndex)[i] + (*nterms_per_row)[i] ] = v;
+      (*colms)[ (*rowIndex)[i] + (*nterms_per_row)[i] ] = j;
+      (*myrows)[ (*rowIndex)[i] + (*nterms_per_row)[i] ] = i;  // should not need this, keeping for transpose purposes
+      (*nterms_per_row)[i] ++;
+    }
+
   }
 
-  inline bool remove_repeated_and_compress(MPI_Comm local_comm=MPI_COMM_SELF) 
+   bool remove_repeated_and_compress(MPI_Comm local_comm=MPI_COMM_SELF) 
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(myrows->size() == colms->size() && myrows->size() == vals->size());
@@ -723,7 +871,7 @@ class SMSparseMatrix
   //   - the parallel inplace_merge proceeds by performing iteratively block swap calls to break up the 2 sorted subsets into 2^(i+1) sorted consecutive subsets which can be inplace_merged serially by each working core. 
   //   While it is not ideal, you can use MPI_Barrier() to synchronize the work until you find something better. 
   //
-  inline void compress(MPI_Comm local_comm=MPI_COMM_SELF)
+   void compress(MPI_Comm local_comm=MPI_COMM_SELF)
   {
 
     auto comp = [](std::tuple<intType, intType, value_type> const& a, std::tuple<intType, intType, value_type> const& b){return std::get<0>(a) < std::get<0>(b) || (!(std::get<0>(b) < std::get<0>(a)) && std::get<1>(a) < std::get<1>(b));};
@@ -747,10 +895,10 @@ class SMSparseMatrix
       compressed=true;   
     }
 
-    double t1,t2,t3,t4;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    t1 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+    //double t1,t2,t3,t4;
+    //struct timeval tv;
+    //gettimeofday(&tv, NULL);
+    //t1 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
 
     int npr,rank;
     MPI_Comm_rank(local_comm,&rank); 
@@ -758,9 +906,9 @@ class SMSparseMatrix
 
     MPI_Barrier(local_comm);
 
-    gettimeofday(&tv, NULL);
-    t2 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
-    app_log()<<" Time waiting: " <<t2-t1 <<std::endl;
+    //gettimeofday(&tv, NULL);
+    //t2 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+    //app_log()<<" Time waiting: " <<t2-t1 <<std::endl;
 
     assert(myrows->size() == colms->size() && myrows->size() == vals->size());
     if(vals->size() == 0) return;
@@ -780,12 +928,12 @@ class SMSparseMatrix
           comp);
     MPI_Barrier(local_comm);
 
-    gettimeofday(&tv, NULL);
-    t1 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
-    app_log()<<" Time sorting: " <<t1-t2 <<std::endl;
+    //gettimeofday(&tv, NULL);
+    //t1 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+    //app_log()<<" Time sorting: " <<t1-t2 <<std::endl;
 
-      gettimeofday(&tv, NULL);
-      t4 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+    //  gettimeofday(&tv, NULL);
+    //  t4 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
 
 /*
       int mid=1;
@@ -843,99 +991,12 @@ class SMSparseMatrix
     MPI_Barrier(local_comm);
     compressed=true;   
 
-    gettimeofday(&tv, NULL);
-    t2 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
-    app_log()<<" Time merging + indexing: " <<t2-t1 <<std::endl;
+    //gettimeofday(&tv, NULL);
+    //t2 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+    //app_log()<<" Time merging + indexing: " <<t2-t1 <<std::endl;
   }
 
-/*
-  inline void compress_old() 
-  {
-    if(!(myrows->size() == colms->size() && myrows->size() == vals->size()))
-      std::cout<<"problem: " <<myrows->size() <<" " <<colms->size() <<" " <<vals->size() <<std::endl; 
-#ifdef ASSERT_SPARSEMATRIX
-    assert(myrows->size() == colms->size() && myrows->size() == vals->size());
-#endif
-    if(!head) { compressed=true; return; }
-    if(vals->size() == 0) return;
-
-    // order along myrows
-    int n=myrows->size(); 
-    sort_rows(0,n-1);
-    if(!std::is_sorted(myrows->begin(),myrows->end())) 
-      std::cout<<"ERROR: list is not sorted. \n" <<std::endl;
-
-    // define rowIndex
-    rowIndex->resize(nr+1);
-    int curr=-1;
-    for(int n=0; n<myrows->size(); n++) {
-      if( (*myrows)[n] != curr ) {
-        int old = curr;
-        curr = (*myrows)[n];
-        for(int i=old+1; i<=curr; i++) (*rowIndex)[i] = n;
-      }
-    }
-    for(int i=myrows->back()+1; i<rowIndex->size(); i++)
-      (*rowIndex)[i] = vals->size();
-   
-    // order within each rowIndex block
-    for(int k=0; k<nr; k++) {
-      if((*rowIndex)[k] == (*rowIndex)[k+1]) continue;       
-      sort_colms((*rowIndex)[k],(*rowIndex)[k+1]-1);
-    } 
-   
-    compressed=true;
-  }
-
-  void sort_rows(int left, int right) {
-    int i = left, j = right;
-    auto pivot = (*myrows)[(left + right) / 2];
-
-    // partition 
-    while (i <= j) {
-      while ((*myrows)[i] < pivot)
-        i++;
-      while ((*myrows)[j] > pivot)
-        j--;
-      if (i <= j) {
-        std::swap((*myrows)[i],(*myrows)[j]);
-        std::swap((*colms)[i],(*colms)[j]);
-        std::swap((*vals)[i++],(*vals)[j--]);
-      }
-    };
-
-    // recursion 
-    if (left < j)
-      sort_rows(left, j);
-    if (i < right)
-      sort_rows(i, right);
-  }
-
-  void sort_colms(int left, int right) {
-    int i = left, j = right;
-    auto pivot = (*colms)[(left + right) / 2];
-
-    // partition 
-    while (i <= j) {
-      while ((*colms)[i] < pivot)
-        i++;
-      while ((*colms)[j] > pivot)
-        j--;
-      if (i <= j) {
-        std::swap((*colms)[i],(*colms)[j]);
-        std::swap((*vals)[i++],(*vals)[j--]);
-      }
-    };
-
-    // recursion 
-    if (left < j)
-      sort_colms(left, j);
-    if (i < right)
-      sort_colms(i, right);
-  }
-*/
-  
-  inline void transpose(MPI_Comm local_comm=MPI_COMM_SELF)   
+   void transpose(MPI_Comm local_comm=MPI_COMM_SELF)   
   {
     if(!SMallocated) return;
     assert(myrows->size() == colms->size() && myrows->size() == vals->size());
@@ -951,7 +1012,7 @@ class SMSparseMatrix
     compress(local_comm);
   }
 
-  inline void check()
+   void check()
   {
     if(!head) return; 
     for(int i=0; i<rowIndex->size()-1; i++)
@@ -962,7 +1023,7 @@ class SMSparseMatrix
 
   }
 
-  inline SMSparseMatrix<T>& operator*=(const RealType rhs ) 
+   SMSparseMatrix<T>& operator*=(const RealType rhs ) 
   {
     if(!head) return *this; 
     for(iterator it=vals->begin(); it!=vals->end(); it++)
@@ -970,7 +1031,7 @@ class SMSparseMatrix
     return *this; 
   }
 
-  inline SMSparseMatrix<T>& operator*=(const std::complex<RealType> rhs ) 
+   SMSparseMatrix<T>& operator*=(const std::complex<RealType> rhs ) 
   {
     if(!head) return *this; 
     for(iterator it=vals->begin(); it!=vals->end(); it++)
@@ -978,7 +1039,7 @@ class SMSparseMatrix
     return *this; 
   }
 
-  inline void toZeroBase() {
+   void toZeroBase() {
     if(!head) return; 
     if(zero_based) return;
     zero_based=true;
@@ -987,7 +1048,7 @@ class SMSparseMatrix
     for (intType& i : *rowIndex ) i--; 
   }
 
-  inline void toOneBase() {
+   void toOneBase() {
     if(!head) return; 
     if(!zero_based) return;
     zero_based=false;
@@ -1017,28 +1078,31 @@ class SMSparseMatrix
 
   // this is ugly, but I need to code quickly 
   // so I'm doing this to avoid adding hdf5 support here 
-  inline SMVector<T>* getVals() const { return vals; } 
-  inline SMVector<intType>* getRows() const { return myrows; }
-  inline SMVector<intType>* getCols() const { return colms; }
-  inline SMVector<intType>* getRowIndex() const { return rowIndex; }
+   SMVector<T>* getVals() const { return vals; } 
+   SMVector<intType>* getRows() const { return myrows; }
+   SMVector<intType>* getCols() const { return colms; }
+   SMVector<intType>* getRowIndex() const { return rowIndex; }
 
-  inline iterator vals_begin() { assert(vals!=NULL); return vals->begin(); } 
-  inline int_iterator rows_begin() { assert(myrows!=NULL); return myrows->begin(); }
-  inline int_iterator cols_begin() { assert(colms!=NULL); return colms->begin(); }
-  inline indx_iterator rowIndex_begin() { assert(rowIndex!=NULL); return rowIndex->begin(); }
-  inline const_iterator vals_begin() const { return vals->begin(); } 
-  inline const_int_iterator cols_begin() const { assert(colms!=NULL); return colms->begin(); }
-  inline const_indx_iterator rowIndex_begin() const { assert(rowIndex!=NULL); return rowIndex->begin(); }
-  inline const_iterator vals_end() const { assert(vals!=NULL); return vals->end(); } 
-  inline const_int_iterator rows_end() const { assert(myrows!=NULL); return myrows->end(); }
-  inline const_int_iterator cols_end() const { assert(colms!=NULL); return colms->end(); }
-  inline const_indx_iterator rowIndex_end() const { assert(rowIndex!=NULL); return rowIndex->end(); }
-  inline iterator vals_end() { assert(vals!=NULL); return vals->end(); } 
-  inline int_iterator rows_end() { assert(myrows!=NULL); return myrows->end(); }
-  inline int_iterator cols_end() { assert(colms!=NULL); return colms->end(); }
-  inline indx_iterator rowIndex_end() { assert(rowIndex!=NULL); return rowIndex->end(); }
+   iterator vals_begin() { assert(vals!=NULL); return vals->begin(); } 
+   int_iterator rows_begin() { assert(myrows!=NULL); return myrows->begin(); }
+   int_iterator cols_begin() { assert(colms!=NULL); return colms->begin(); }
+   indx_iterator rowIndex_begin() { assert(rowIndex!=NULL); return rowIndex->begin(); }
+   const_iterator vals_begin() const { return vals->begin(); } 
+   const_int_iterator cols_begin() const { assert(colms!=NULL); return colms->begin(); }
+   const_indx_iterator rowIndex_begin() const { assert(rowIndex!=NULL); return rowIndex->begin(); }
+   const_iterator vals_end() const { assert(vals!=NULL); return vals->end(); } 
+   const_int_iterator rows_end() const { assert(myrows!=NULL); return myrows->end(); }
+   const_int_iterator cols_end() const { assert(colms!=NULL); return colms->end(); }
+   const_indx_iterator rowIndex_end() const { assert(rowIndex!=NULL); return rowIndex->end(); }
+   iterator vals_end() { assert(vals!=NULL); return vals->end(); } 
+   int_iterator rows_end() { assert(myrows!=NULL); return myrows->end(); }
+   int_iterator cols_end() { assert(colms!=NULL); return colms->end(); }
+   indx_iterator rowIndex_end() { assert(rowIndex!=NULL); return rowIndex->end(); }
 
-  inline bool isAllocated() {
+   int_iterator nnz_per_row_begin() { assert(nterms_per_row!=NULL); return nterms_per_row->begin(); }
+   int_iterator nnz_per_row_end() { assert(nterms_per_row!=NULL); return nterms_per_row->end(); }
+
+   bool isAllocated() {
     return (SMallocated)&&(vals!=NULL);
   }
 
@@ -1058,6 +1122,27 @@ class SMSparseMatrix
 
   private:
 
+  void setNull() {
+    nr=nc=0;
+    mutex=NULL;
+    vals=NULL;
+    myrows=NULL;
+    colms=NULL;
+    rowIndex=NULL;
+    share_buff=NULL;
+    SMallocated=false;
+    memory=0;
+    segment=NULL;
+    alloc_T=NULL;
+    alloc_mutex=NULL;
+    alloc_uchar=NULL;
+    alloc_ulong=NULL;
+    alloc_int=NULL;
+    comm=0;
+    remover.head=false;
+    remover.ID="";
+  }
+
   boost::interprocess::interprocess_mutex *mutex;
   bool compressed;
   int nr,nc;
@@ -1072,6 +1157,9 @@ class SMSparseMatrix
   int storage_format; // 0: CSR, 1: Compressed Matrix (ESSL) 
   int max_in_row; 
   std::size_t memory=0;
+
+  // temporary hack until I rewrite this class
+  SMVector<intType> *nterms_per_row; 
 
   //_mySort_snD_ my_sort;
 

@@ -22,10 +22,10 @@ namespace qmcplusplus
 MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo, BackflowTransformation *BF):MultiSlaterDeterminant(targetPtcl,upspo,dnspo),BFTrans(BF)
 {
   Optimizable=false;
-  OrbitalName="MultiSlaterDeterminantWithBackflow";
+  ClassName="MultiSlaterDeterminantWithBackflow";
 }
 
-OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
   // mmorales: the proxy classes read from the particle set inside BFTrans
   BackflowTransformation *tr = BFTrans->makeClone(tqp);
@@ -48,14 +48,14 @@ OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) c
   }
   for(int i=0; i<dets_up.size(); i++)
   {
-    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_up[i]->makeCopy((SPOSetBasePtr) clone->spo_up);
+    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_up[i]->makeCopy((SPOSetPtr) clone->spo_up);
     dclne->BFTrans=tr;
     dclne->resetTargetParticleSet(tr->QP);
     clone->dets_up.push_back(dclne);
   }
   for(int i=0; i<dets_dn.size(); i++)
   {
-    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_dn[i]->makeCopy((SPOSetBasePtr) clone->spo_dn);
+    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_dn[i]->makeCopy((SPOSetPtr) clone->spo_dn);
     dclne->BFTrans=tr;
     dclne->resetTargetParticleSet(tr->QP);
     clone->dets_dn.push_back(dclne);
@@ -108,7 +108,7 @@ void MultiSlaterDeterminantWithBackflow::resize(int n1, int n2)
   }
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   EvaluateTimer.start();
@@ -168,14 +168,14 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet&
   return psi;
 }
 
-OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P
+WaveFunctionComponent::RealType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   ValueType psi = evaluate(P,G,L);
   return LogValue = evaluateLogAndPhase(psi,PhaseValue);
 }
 
-OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
+WaveFunctionComponent::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
   GradType grad_iat;
@@ -219,7 +219,7 @@ OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& 
   }
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet& P
     , int iat, GradType& grad_iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
@@ -289,7 +289,7 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet
 }
 
 // use ci_node for this routine only
-OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
   UpdateMode=ORB_PBYP_RATIO;
@@ -508,7 +508,7 @@ void MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferTy
 }
 
 // FIX FIX FIX
-OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+WaveFunctionComponent::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   UpdateTimer.start();
   if(fromscratch || UpdateMode == ORB_PBYP_RATIO)
@@ -685,9 +685,9 @@ void MultiSlaterDeterminantWithBackflow::checkOutVariables(const opt_variables_t
   }
 }
 
-//   OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
+//   WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 //   {
-//      APP_ABORT("IMPLEMENT OrbitalBase::makeClone");
+//      APP_ABORT("IMPLEMENT WaveFunctionComponent::makeClone");
 //      return 0;
 //   }
 
@@ -721,7 +721,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = (RealType)1.0/psi;;
       ValueType lapl_sum=0.0;
       ParticleSet::ParticleGradient_t g(n),gmP(n);
-      ValueType gg=0.0, ggP=0.0;
+      ValueType gg=0.0;
       g=0.0;
       gmP=0.0;
       for(int i=0; i<lapls_up.size(); i++)
@@ -752,7 +752,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
           cnt+=DetsPerCSF[ip];
           continue;
         }
-        ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
+        ValueType cdet=0.0,q0=0.0,v1=0.0;
         for(int k=0; k<DetsPerCSF[ip]; k++)
         {
           int upC = C2node_up[cnt];
@@ -786,7 +786,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = (RealType)1.0/psi;;
       ValueType lapl_sum=0.0;
       ParticleSet::ParticleGradient_t g(n),gmP(n);
-      ValueType gg=0.0, ggP=0.0;
+      ValueType ggP=0.0;
       g=0.0;
       gmP=0.0;
       for(int i=0; i<lapls_up.size(); i++)
@@ -872,6 +872,9 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
             ValueType dpsi2=dpsia_dn(dnC,pa);
             ParticleSet::ParticleGradient_t& g1 = grads_up[upC];
             ParticleSet::ParticleGradient_t& g2 = grads_dn[dnC];
+#if ( ( __INTEL_COMPILER == 1900 ) && ( __INTEL_COMPILER_UPDATE == 0 ) )
+            #pragma omp simd reduction(+:dot1)
+#endif
             for(int k=0; k<n; k++)
               dot1 += dot((g2[k]-gmP[k]),dGa_up(upC,pa,k))
                       + dot((g1[k]-gmP[k]),dGa_dn(dnC,pa,k))

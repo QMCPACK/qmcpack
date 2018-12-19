@@ -17,7 +17,7 @@
  */
 #ifndef QMCPLUSPLUS_AGP_DIRACDETERMINANT_H
 #define QMCPLUSPLUS_AGP_DIRACDETERMINANT_H
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 
-class AGPDeterminant: public OrbitalBase
+class AGPDeterminant: public WaveFunctionComponent
 {
 
 public:
@@ -100,7 +100,7 @@ public:
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L);
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   ///Total number of particles
   int NumPtcls;

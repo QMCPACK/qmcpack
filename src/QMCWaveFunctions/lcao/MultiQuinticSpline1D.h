@@ -19,6 +19,7 @@
 #define QMCPLUSPLUS_MULTI_FUNCTOR_QUINTIC_SPLINE_SET_H
 
 #include "Numerics/OneDimGridBase.h"
+#include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/NRSplineFunctions.h"
 #include <simd/allocator.hpp>
 
@@ -32,6 +33,7 @@ namespace qmcplusplus
       T upper_bound;
       T OneOverLogDelta;
       double LogDelta;
+      aligned_vector<T> r_values;
 
       inline void set(T ri, T rf, int n)
       {
@@ -43,6 +45,11 @@ namespace qmcplusplus
         double dlog_ratio = log_ratio/static_cast<double>(n-1);
         LogDelta = dlog_ratio;
         OneOverLogDelta = 1.0/dlog_ratio;
+        r_values.resize(n);
+        for (int i=0; i<n; i++)
+        {
+          r_values[i] = ri*std::exp(i*dlog_ratio);
+        }
       }
 
       inline int locate(T r) const
@@ -52,7 +59,8 @@ namespace qmcplusplus
 
       inline T operator()(int i)
       {
-        return static_cast<T>(lower_bound*std::exp(i*LogDelta));
+        //return static_cast<T>(lower_bound*std::exp(i*LogDelta));
+        return r_values[i];
       }
 
       //CHECK MIXED PRECISION SENSITIVITY
@@ -60,7 +68,8 @@ namespace qmcplusplus
       {
         loc=static_cast<int>(std::log(r/lower_bound)*OneOverLogDelta);
         //return r-static_cast<T>(lower_bound*std::exp(loc*LogDelta));
-        return r-lower_bound*std::exp(loc*LogDelta);
+        //return r-lower_bound*std::exp(loc*LogDelta);
+        return r-r_values[loc];
       }
     };
 
@@ -120,7 +129,7 @@ struct MultiQuinticSpline1D
 #if 0
     else if(r>=r_max)
     {
-      CONSTEXPR T czero(0);
+      constexpr T czero(0);
       for(size_t i=0; i<num_splines; ++i)
         u[i]=czero;
     }

@@ -31,10 +31,10 @@ namespace qmcplusplus
 template<typename J3type>
 bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
 {
+  std::string jname = "JeeI";
   SpeciesSet &iSet = sourcePtcl->getSpeciesSet();
   SpeciesSet &eSet = targetPtcl.getSpeciesSet();
   int numiSpecies = iSet.getTotalNum();
-  bool success=false;
   //read in xml
   while (kids != NULL)
   {
@@ -59,6 +59,19 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
       int iNum = iSet.findSpecies (iSpecies);
       int eNum1 = eSet.findSpecies (eSpecies1);
       int eNum2 = eSet.findSpecies (eSpecies2);
+      if(iNum==iSet.size())
+      {
+        APP_ABORT("ion species "+iSpecies+" requested for Jastrow "+jname+" does not exist in ParticleSet "+sourcePtcl->getName());
+      }
+      std::string illegal_eSpecies;
+      if(eNum1==eSet.size()) illegal_eSpecies = eSpecies1;
+      if(eNum2==eSet.size())
+      {
+        if(illegal_eSpecies.size()) illegal_eSpecies += " and ";
+        illegal_eSpecies += eSpecies2;
+      }
+      if(illegal_eSpecies.size())
+        APP_ABORT("electron species "+illegal_eSpecies+" requested for Jastrow "+jname+" does not exist in ParticleSet "+targetPtcl.getName());
       functor->put (kids);
       if (sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN)
       {
@@ -97,7 +110,7 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
   }
   //check that each ion species has up and down components
   J3.check_complete();
-  targetPsi.addOrbital(&J3,"JeeI");
+  targetPsi.addOrbital(&J3,jname.c_str());
   J3.setOptimizable(true);
   return true;
 }
@@ -105,7 +118,6 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
 bool eeI_JastrowBuilder::put(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"put(xmlNodePtr)");
-  bool PrintTables=true;
   xmlNodePtr kids = cur->xmlChildrenNode;
   // Create a three-body Jastrow
   if (sourcePtcl)

@@ -1,7 +1,7 @@
 # Check compiler version
-IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.3 )
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.4 )
   MESSAGE(STATUS "Compiler Version ${CMAKE_CXX_COMPILER_VERSION}")
-  MESSAGE(FATAL_ERROR "Requires clang 3.3 or higher ")
+  MESSAGE(FATAL_ERROR "Requires clang 3.4 or higher ")
 ENDIF()
 
 # Set the std
@@ -14,7 +14,7 @@ IF(QMC_OMP)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 ENDIF(QMC_OMP)
 
-# Set clang specfic flags (which we always want)
+# Set clang specific flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
 
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -fstrict-aliasing")

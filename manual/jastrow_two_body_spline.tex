@@ -73,7 +73,7 @@ Specify a spin-dependent function with 4 parameters for each channel.  In this c
 a radius of 4.0 bohr (rather than to the default of the Wigner Seitz cell radius).  Also, in this example,
 the coefficients are set to not be optimized during an optimization step.
 
-\begin{lstlisting}
+\begin{lstlisting}[style=XML]
 <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
   <correlation speciesA="u" speciesB="u" size="8" rcut="4.0">
     <coefficients id="uu" type="Array" optimize="no"> 0.2309049836 0.1312646071 0.05464141356 0.01306231516</coefficients>

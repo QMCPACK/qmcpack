@@ -14,6 +14,8 @@ option is disabled.
 \begin{description}
 \item[\texttt{-{}-dryrun}]{ Validate the input file without performing the simulation.
   This is a good way to ensure that QMCPACK will do what you think it will. }
+\item[\texttt{-{}-enable-timers=none|coarse|medium|fine}]{ Control the timer granularity
+  when the build option \texttt{ENABLE\_TIMER} is enabled. }
 \item[\texttt{-{}-help}]{ Print version information as well as a list of optional
   command-line arguments. }
 \item[\texttt{-{}-noprint}]{ Do not print extra information on Jastrow or pseudopotential.
@@ -24,12 +26,11 @@ option is disabled.
 \item[\texttt{-{}-save\_wfs}]{ Write a \texttt{.h5} file containing the real-space B-spline
   coefficients of the single particle wave functions. See the manual
   \ref{sec:spo_spline} for more information.}
-\item[\texttt{-{}-vacuum X}]{deprecated, use `vacuum' input tag described in \ref{chap:simulationcell}. }
+\item[\texttt{-{}-vacuum X}]{Removed, use `vacuum' input tag described in \ref{chap:simulationcell}. }
+\item[\texttt{-{}-verbosity=low|high|debug}]{ Control the output verbosity. The default low verbosity is concise and, e.g., does not include all electron or atomic positions for large systems to reduce output size. Use 'high' to see this information and more details of initialization, allocations, QMC method settings etc.. }
 \item[\texttt{-{}-version}]{ Print version information and optional arguments.
   Same as \texttt{-{}-help}. }
 \end{description}
-
-
 
 
 \section{Input files}
@@ -62,18 +63,56 @@ ranks as the number of GPUs per node in order to let each MPI rank take one GPU.
 Modern processors integrate multiple identical cores even with hardware threads
 on a single die to increase the total performance and maintain a reasonable
 power draw. QMCPACK takes advantage of all that compute capability on a
-processor by using threads via OpenMP programming model as well as threaded linear algebra libraries. By default, QMCPACK is always built with OpenMP enabled. When launching calculations, users should instruct QMCPACK to create the right number of threads per MPI rank by specifying environmental variable OMP\_NUM\_THREADS. Even in the GPU accelerated version, using threads significantly reduces the time spent on the calculations performed by the CPU.
+processor by using threads via OpenMP programming model as well as threaded linear algebra libraries. By default, QMCPACK is always built with OpenMP enabled. When launching calculations, users should instruct QMCPACK to create the right number of threads per MPI rank by specifying environment variable OMP\_NUM\_THREADS. Even in the GPU accelerated version, using threads significantly reduces the time spent on the calculations performed by the CPU.
 
-\subsubsection{Performance consideration}
+\subsubsection{Nested OpenMP threads}
+Nested threading is a advanced feature requiring experienced users to finely tune runtime parameters in order to reach the best performance.  
+
+For small to medium problem sizes, using one thread per walker or for multiple walkers is most efficient. This is the default in QMCPACK and achieves the shortest time to solution.
+
+For large problems of at least 1000 electrons, use of nested OpenMP threading can be enabled to reduce the time to solution further, although at some loss of efficiency. In this scheme multiple threads are used in the computations of each walker. This capability is implemented for some of the key computational kernels: the 3D spline orbital evaluation, certain portions of the distance tables, and implicitly the BLAS calls in the determinant update. Use of the batched non-local pseudopotential evaluation is also recommended.
+
+Nested threading is enabled by setting \texttt{OMP\_NUM\_THREADS=AA,BB}, \texttt{OMP\_MAX\_ACTIVE\_LEVELS=2} and \texttt{OMP\_NESTED=TRUE} where the additional \texttt{BB} is the number of second level threads.  Choosing the thread affinity is critical to the performance.  QMCPACK provides a tool qmc-check-affinity (source file src/QMCTools/check-affinity.cpp for details) which may help users to investigate the affinity. Knowledge of how the operating system logical CPU cores (/prco/cpuinfo) are bound to the hardware is also needed.
+
+For example, on Blue Gene/Q with Clang compiler, the best way to fully use the 16 cores each with 4 hardware threads is
+\begin{verbatim}
+OMP_NESTED=TRUE
+OMP_NUM_THREADS=16,4
+MAX_ACTIVE_LEVELS=2
+OMP_PLACES=threads
+OMP_PROC_BIND=spread,close
+\end{verbatim}
+
+On Intel Xeon Phi KNL with Intel compiler, to use 64 cores without using hardware threads
+\begin{verbatim}
+OMP_NESTED=TRUE
+OMP_NUM_THREADS=16,4
+MAX_ACTIVE_LEVELS=2
+OMP_PLACES=cores
+OMP_PROC_BIND=spread,close
+KMP_HOT_TEAMS_MODE=1
+KMP_HOT_TEAMS_MAX_LEVEL=2
+\end{verbatim}
+
+Most BLAS libraries do not spawn threads by default when called from a threaded region.
+This results in the use of only a single thread in each second level thread team for BLAS operations. In order to fully use the second level threads,
+users should check if turning on the nested threading in BLAS is beneficial or not
+because it depends on the implementation of BLAS libraries.
+Intel MKL library supports nested threading by setting
+\begin{verbatim}
+MKL_DYNAMIC=FALSE
+MKL_NUM_THREADS=4
+\end{verbatim}
+
+\subsubsection{Performance considerations}
 \label{sec:cpu:performance}
 As walkers are the basic units of workload in QMC algorithms, they are loosely coupled and distributed across all the threads. For this reason, the best strategy to run QMCPACK efficiently is to feed enough walkers to the available threads.
 
-In a VMC calculation, the code automatically raises the actual number of walkers per MPI rank to the number of available threads if the user-specified number of walkers is smaller, see ``walkers/mpi=XXX'' in the VMC output.
-In a DMC calculation, the target number of walkers should be chosen to be slightly smaller than a multiple of the total number of available threads across all the MPI ranks belongs to this calculation. Since the number of walkers varies from generation to generation, its dynamical value should be slightly smaller or equal to that multiple most of the time.
+In a VMC calculation, the code automatically raises the actual number of walkers per MPI rank to the number of available threads if the user-specified number of walkers is smaller, see ``walkers/mpi=XXX'' in the VMC output.  In a DMC calculation, the target number of walkers should be chosen to be slightly smaller than a multiple of the total number of available threads across all the MPI ranks belongs to this calculation. Since the number of walkers varies from generation to generation, its dynamical value should be slightly smaller or equal to that multiple most of the time.
 
-To achieve better performance, mixed precision version (experimental) has been introduced to the CPU code. The mixed precision CPU code is more aggresive than the GPU version in using single precision (SP) operations. Current implementation utilizes SP on most calculations, except for matrix inversions and reductions where double precision is required to retain high accuracy. All the constant spline data in wavefunction, pseudopotentials and Coulomb potentials are initialized in double precision and later stored in single precision. The mixed precision code is as accurate as the double precision code up to a certain system size. Cross checking and verification of accuracy are encouraged for systems with more than approximately 1500 electrons. The mixed precision code has been tested on solids with real/complex builds with VMC, VMC using drift and DMC runs with wavefunction including single slater determinant and one- and two-body Jastrow factors. Wavefunction optimization will be fixed in the following updates.
+To achieve better performance, mixed precision version (experimental) has been introduced to the CPU code. The mixed precision CPU code is currently more aggressive than the GPU version in using single precision (SP) operations. Current implementation utilizes SP on most calculations, except for matrix inversions and reductions where double precision is required to retain high accuracy. All the constant spline data in wavefunction, pseudopotentials and Coulomb potentials are initialized in double precision and later stored in single precision. The mixed precision code is as accurate as the double precision code up to a certain system size. Cross checking and verification of accuracy is always required, but particularly important above approximately 1500 electrons. The mixed precision code is currently tested on solids with real and complex wavefunctions with VMC, VMC using drift and DMC runs with wavefunction including single Slater determinant and one- and two-body Jastrow factors. Wavefunction optimization is currently not supported.
 
-\subsubsection{Memory consideration}
+\subsubsection{Memory considerations}
 When using threads, some memory objects shared by all the threads. Usually these memory are read-only when the walkers are evolving, for instance the ionic distance table and wavefunction coefficients.
 If a wavefunction is represented by B-splines, the whole table is shared by all the threads. It usually takes a large chunk of memory when a large primitive cell was used in the simulation. Its actual size is reported as ``MEMORY increase XXX MB BsplineSetReader'' in the output file.
 See details about how to reduce it in section~\ref{sec:spo_spline}.
@@ -115,4 +154,4 @@ In the GPU implementation, each walker has an anonymous buffer on the GPU's glob
 If the GPU memory is exhausted, reduce the number of walkers per GPU.
 Coarsening the grids of the B-splines representation (by decreasing the value of meshfactor in the input file) can also lower the memory usage,
 at the expense (risk) of obtaining inaccurate results. Proceed with caution if this option has to be considered.
-It is also possible to distrubte the B-spline coefficients table between the host and GPU memory, see option Spline\_Size\_Limit\_MB in Sec.~\ref{sec:spo_spline}.
+It is also possible to distribute the B-spline coefficients table between the host and GPU memory, see option Spline\_Size\_Limit\_MB in Sec.~\ref{sec:spo_spline}.

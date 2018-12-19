@@ -34,7 +34,7 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
   registerTimers();
   //Optimizable=true;
   Optimizable=false;
-  OrbitalName="MultiSlaterDeterminant";
+  ClassName="MultiSlaterDeterminant";
   usingCSF=false;
   FirstIndex_up = targetPtcl.first(0);
   LastIndex_up = targetPtcl.last(0);
@@ -48,7 +48,7 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
       DetID[j]=i;
 }
 
-OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
   SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(),FirstIndex_up,LastIndex_up);
   SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(),FirstIndex_dn,LastIndex_dn);
@@ -77,7 +77,7 @@ OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 //           spo->occup(i,nq++) = k;
 //         }
 //       }
-    DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_up,0);
+    DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) clone->spo_up,0);
     adet->set(clone->FirstIndex_up,clone->nels_up);
     adet->resetTargetParticleSet(tqp);
     clone->dets_up.push_back(adet);
@@ -93,7 +93,7 @@ OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 //           spo->occup(i,nq++) = k;
 //         }
 //       }
-    DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_dn,0);
+    DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) clone->spo_dn,0);
     adet->set(clone->FirstIndex_dn,clone->nels_dn);
     adet->resetTargetParticleSet(tqp);
     clone->dets_dn.push_back(adet);
@@ -152,7 +152,7 @@ void MultiSlaterDeterminant::resize(int n1, int n2)
   }
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   EvaluateTimer.start();
@@ -209,14 +209,14 @@ OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
   return psi;
 }
 
-OrbitalBase::RealType MultiSlaterDeterminant::evaluateLog(ParticleSet& P
+WaveFunctionComponent::RealType MultiSlaterDeterminant::evaluateLog(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   ValueType psi = evaluate(P,G,L);
   return LogValue = evaluateLogAndPhase(psi,PhaseValue);
 }
 
-OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
+WaveFunctionComponent::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
 {
   GradType grad_iat;
   if(DetID[iat] == 0)
@@ -261,7 +261,7 @@ OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
   }
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P
     , int iat, GradType& grad_iat)
 {
   UpdateMode=ORB_PBYP_PARTIAL;
@@ -331,7 +331,7 @@ OrbitalBase::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P
 
 
 // use ci_node for this routine only
-OrbitalBase::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
 {
   UpdateMode=ORB_PBYP_RATIO;
   if(DetID[iat] == 0)
@@ -530,7 +530,7 @@ void MultiSlaterDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 // FIX FIX FIX
-OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+WaveFunctionComponent::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   UpdateTimer.start();
   if(fromscratch || UpdateMode == ORB_PBYP_RATIO)
@@ -706,9 +706,9 @@ void MultiSlaterDeterminant::reportStatus(std::ostream& os)
 {
 }
 
-//   OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
+//   WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 //   {
-//      APP_ABORT("IMPLEMENT OrbitalBase::makeClone");
+//      APP_ABORT("IMPLEMENT WaveFunctionComponent::makeClone");
 //      return 0;
 //   }
 
@@ -741,7 +741,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = (RealType)1.0/psi;;
       ValueType lapl_sum=0.0;
       ParticleSet::ParticleGradient_t g(n),gmP(n);
-      ValueType gg=0.0, ggP=0.0;
+      ValueType gg=0.0;
       g=0.0;
       gmP=0.0;
       for(int i=0; i<lapls_up.size(); i++)
@@ -775,7 +775,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
           cnt+=DetsPerCSF[ip];
           continue;
         }
-        ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
+        ValueType cdet=0.0,q0=0.0,v1=0.0;
         for(int k=0; k<DetsPerCSF[ip]; k++)
         {
           int upC = C2node_up[cnt];
@@ -811,7 +811,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
       ValueType psiinv = (RealType)1.0/psi;;
       ValueType lapl_sum=0.0;
       ParticleSet::ParticleGradient_t g(n),gmP(n);
-      ValueType gg=0.0, ggP=0.0;
+      ValueType gg=0.0;
       g=0.0;
       gmP=0.0;
       for(int i=0; i<lapls_up.size(); i++)

@@ -15,6 +15,8 @@
 #     using a specified script
 #############################################################
 
+INCLUDE("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
+
 # Function to copy a directory
 FUNCTION( COPY_DIRECTORY SRC_DIR DST_DIR )
     EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}" )
@@ -35,10 +37,12 @@ FUNCTION( COPY_DIRECTORY_SYMLINK_H5 SRC_DIR DST_DIR)
     # Copy everything but *.h5 files and pseudopotential files
     FILE(COPY "${SRC_DIR}/" DESTINATION "${DST_DIR}"
          PATTERN "*.h5" EXCLUDE
+         PATTERN "*.opt.xml" EXCLUDE
+         PATTERN "*.ncpp.xml" EXCLUDE
          PATTERN "*.BFD.xml" EXCLUDE)
 
     # Now find and symlink the *.h5 files and psuedopotential files
-    FILE(GLOB_RECURSE H5 "${SRC_DIR}/*.h5" "${SRC_DIR}/*.BFD.xml")
+    FILE(GLOB_RECURSE H5 "${SRC_DIR}/*.h5" "${SRC_DIR}/*.opt.xml" "${SRC_DIR}/*.ncpp.xml" "${SRC_DIR}/*.BFD.xml")
     FOREACH(F IN LISTS H5)
       FILE(RELATIVE_PATH R "${SRC_DIR}" "${F}")
       #MESSAGE("Creating symlink from  ${SRC_DIR}/${R} to ${DST_DIR}/${R}")
@@ -95,38 +99,48 @@ ENDMACRO()
 
 # Runs qmcpack
 #  Note that TEST_ADDED is an output variable
-FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED ${ARGN} )
+FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LABELS ${ARGN} )
     MATH( EXPR TOT_PROCS "${PROCS} * ${THREADS}" )
     SET( QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack" )
-    SET( ${TEST_ADDED} FALSE PARENT_SCOPE )
+    SET( TEST_ADDED_TEMP FALSE )
     IF ( USE_MPI )
         IF ( ${TOT_PROCS} GREATER ${TEST_MAX_PROCS} )
             MESSAGE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
         ELSEIF ( USE_MPI )
             ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${QMC_APP} ${ARGN} )
             SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" 
-                PROCESSORS ${TOT_PROCS} WORKING_DIRECTORY ${WORKDIR}
+                PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
-            SET( ${TEST_ADDED} TRUE PARENT_SCOPE )
+            SET( TEST_ADDED_TEMP TRUE )
         ENDIF()
     ELSE()
         IF ( ( ${PROCS} STREQUAL "1" ) )
             ADD_TEST( ${TESTNAME} ${QMC_APP} ${ARGN} )
             SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" 
-                PROCESSORS ${TOT_PROCS} WORKING_DIRECTORY ${WORKDIR}
+                PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
-            SET( ${TEST_ADDED} TRUE PARENT_SCOPE )
+            SET( TEST_ADDED_TEMP TRUE )
+        ELSE()
+            MESSAGE("Disabling test ${TESTNAME} (building without MPI)")
         ENDIF()
     ENDIF()
+    SET(TEST_LABELS_TEMP "")
+    IF ( TEST_ADDED_TEMP )
+       ADD_TEST_LABELS( ${TESTNAME} TEST_LABELS_TEMP ) 
+    ENDIF()
+    SET( ${TEST_ADDED} ${TEST_ADDED_TEMP} PARENT_SCOPE )
+    SET( ${TEST_LABELS} ${TEST_LABELS_TEMP} PARENT_SCOPE )
 ENDFUNCTION()
 
 # Runs qmcpack
 #  Note that TEST_ADDED is an output variable
-FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED ${ARGN} )
+FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED TEST_LABELS ${ARGN} )
     COPY_DIRECTORY_MAYBE_USING_SYMLINK( "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" )
     SET( TEST_ADDED_TEMP FALSE )
-    RUN_QMC_APP_NO_COPY( ${TESTNAME} ${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME} ${PROCS} ${THREADS} TEST_ADDED_TEMP ${ARGN} )
+    SET( TEST_LABELS_TEMP "" )
+    RUN_QMC_APP_NO_COPY( ${TESTNAME} ${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME} ${PROCS} ${THREADS} TEST_ADDED_TEMP TEST_LABELS_TEMP ${ARGN} )
     SET( ${TEST_ADDED} ${TEST_ADDED_TEMP} PARENT_SCOPE )
+    SET( ${TEST_LABELS} ${TEST_LABELS_TEMP} PARENT_SCOPE )
 ENDFUNCTION()
 
 
@@ -157,9 +171,10 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
 
 
     SET( TEST_ADDED FALSE )
+    SET( TEST_LABELS "")
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
     MESSAGE("Adding test ${FULL_NAME}")
-    RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED ${INPUT_FILE})
+    RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED TEST_LABELS ${INPUT_FILE})
     IF ( TEST_ADDED )
         SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY LABELS "QMCPACK")
     ENDIF()
@@ -201,7 +216,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
                             SET( TEST_NAME "${FULL_NAME}-${SERIES}-${SCALAR_CHECK}" )
                         ENDIF()
                         #MESSAGE("Adding scalar check ${TEST_NAME}")
-                        SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
+                        SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
                         #MESSAGE("check command = ${CHECK_CMD}")
                         ADD_TEST( NAME ${TEST_NAME}
                             COMMAND ${CHECK_CMD}
@@ -209,6 +224,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
                         )
                         SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME} )
                         SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results" )
+                        SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY LABELS ${TEST_LABELS} )
                     ENDIF()
                 ENDFOREACH(SCALAR_CHECK)
                 IF (NOT SCALAR_VALUE_FOUND)
@@ -219,6 +235,8 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
         ENDFOREACH(V)
     ENDIF()
 ENDFUNCTION()
+
+
 
 function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_script)
   
@@ -233,9 +251,10 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
   # add run (task 1)
   set (test_added false)
-  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added ${input_file})
+  set (test_labels "")
+  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added test_labels ${input_file})
   if ( NOT test_added)
-    message(FATAL_ERROR "test ${full_name} cannot be added")
+    RETURN()
   endif()
 
   # set up command to run check, assume check_script is in the same folder as input
@@ -252,12 +271,38 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   set(test_name "${full_name}-check") # hard-code for single test
   set(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
   #message(${work_dir})
-  add_test(NAME "${test_name}"
-    COMMAND "${check_cmd}"
+
+  add_test(
+    NAME "${test_name}"
+    COMMAND ${check_cmd} ${ARGN}
     WORKING_DIRECTORY "${work_dir}"
-  )
+    )
 
   # make test depend on the run
   set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})
+  set_property(TEST ${test_name} APPEND PROPERTY LABELS ${test_labels} )
 
 endfunction()
+
+
+FUNCTION( COVERAGE_RUN TESTNAME SRC_DIR PROCS THREADS ${ARGN} )
+    SET( FULLNAME "coverage-${TESTNAME}")
+    SET( TEST_ADDED FALSE )
+    SET( TEST_LABELS "" )
+    RUN_QMC_APP( ${FULLNAME} ${SRC_DIR} ${PROCS} ${THREADS} TEST_ADDED TEST_LABELS ${ARGN} )
+    IF (TEST_ADDED)
+      SET_PROPERTY(TEST ${FULLNAME} APPEND PROPERTY LABELS "coverage")
+    ENDIF()
+ENDFUNCTION()
+
+
+FUNCTION( CPU_LIMIT_RUN TESTNAME SRC_DIR PROCS THREADS TIME ${ARGN} )
+    SET( FULLNAME "cpu_limit-${TESTNAME}")
+    SET( TEST_ADDED FALSE )
+    SET( TEST_LABELS "" )
+    RUN_QMC_APP( ${FULLNAME} ${SRC_DIR} ${PROCS} ${THREADS} TEST_ADDED TEST_LABELS ${ARGN} )
+    IF (TEST_ADDED)
+      SET_PROPERTY(TEST ${FULLNAME} APPEND PROPERTY TIMEOUT ${TIME})
+      SET_PROPERTY(TEST ${FULLNAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
+    ENDIF()
+ENDFUNCTION()

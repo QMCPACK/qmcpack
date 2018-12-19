@@ -6,7 +6,7 @@
 
 #include "AFQMC/config.h"
 
-#include "AFQMC/Numerics/sparse.h"
+#include "AFQMC/Numerics/spblas.hpp"
 
 namespace qmcplusplus
 {

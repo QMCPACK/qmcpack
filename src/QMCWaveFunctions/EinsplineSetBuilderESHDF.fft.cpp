@@ -15,7 +15,7 @@
     
 
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
@@ -571,7 +571,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
   }
   else if (occ_format=="band")
   {
-    app_log()<<"  Occupying bands based on (bi,ti) data."<< std::endl;
+    app_log()<<"  Occupying bands based on (ti,bi) data."<< std::endl;
     if(Occ.size() != particle_hole_pairs*4)
     {
       app_log()<<" Need Occ = pairs*4. Occ is (ti,bi) of removed, then added."<< std::endl;
@@ -726,7 +726,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<std:
       else
       {
         fout.close();
-        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writting mode
+        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writing mode
         int BUFFER_SIZE = 128;
         char buffer[BUFFER_SIZE];
         while (!fin.eof() )
@@ -902,7 +902,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
       else
       {
         fout.close();
-        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writting mode
+        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writing mode
         int BUFFER_SIZE = 128;
         char buffer[BUFFER_SIZE];
         while (!fin.eof() )

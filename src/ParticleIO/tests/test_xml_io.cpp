@@ -30,8 +30,6 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
-
 
 const char *particles = \
 "<tmp> \

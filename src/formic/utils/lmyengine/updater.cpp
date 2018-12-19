@@ -118,8 +118,6 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_build_matrix(const formic::
   // if we want to correct the finite variance issue, get nomral linear method's overlap matrix 
   formic::Matrix<double> & LMoverlap = mbuilder -> lovl();
 
-  const bool print_mats = false;
-
   boost::shared_ptr< cqmc::engine::EigenSolver > eigensolver(new cqmc::engine::DavidsonLMHD(dep_ptr,
                                                                                             hamiltonian.cols(),
                                                                                             lm_krylov_iter,
@@ -288,8 +286,6 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_build_matrix(const formic::
   //int num_rank;
   //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
   //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
-  const bool print_mats = false;
 
   boost::shared_ptr< cqmc::engine::EigenSolver > eigensolver(new cqmc::engine::DavidsonLMHD(dep_ptr,
                                                                                             hh.cols(),

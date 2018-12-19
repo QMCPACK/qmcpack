@@ -10,8 +10,11 @@
 //
 // File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
+/** @file CuspCorr.h
+  * @brief Corrections to electron-nucleus cusp for all-electron molecular calculations.
+  */
 
 #ifndef _CUSPCORR_
 #define _CUSPCORR_
@@ -34,6 +37,40 @@
 namespace qmcplusplus
 {
 
+/**
+  * @brief Cusp correction parameters
+  *
+  * From "Scheme for adding electron-nuclear cusps to Gaussian orbitals"  Ma, Towler, Drummond, and Needs
+  *  JCP 122, 224322 (2005)
+  *
+  * Equations 7 and 8 in the paper define the correction.  These are the parameters in those equations.
+  */
+
+struct CuspCorrectionParameters
+{
+  typedef QMCTraits::ValueType ValueType;
+  typedef QMCTraits::RealType RealType;
+
+  /// The cutoff radius
+  RealType Rc;
+
+  /// A shift to keep correction to a single sign
+  RealType C;
+
+  /// The sign of the wavefunction at the nucleus
+  RealType sg;
+
+  /// The coefficients of the polynomial \f$p(r)\f$ in Eq 8
+  TinyVector<ValueType, 5> alpha;
+
+  /// Flag to indicate the correction should be recalculated
+  int redo;
+
+  CuspCorrectionParameters(): Rc(0.0), C(0.0), sg(0.0), redo(0), alpha(0.0) {
+  }
+};
+
+
 template<class BS>
 class CuspCorr : public QMCTraits
 {
@@ -42,7 +79,7 @@ class CuspCorr : public QMCTraits
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
-  typedef SPOSetBase*        SPOSetBasePtr;
+  typedef SPOSet*        SPOSetPtr;
 
 public:
 
@@ -66,7 +103,7 @@ public:
     nElms=nIntPnts;
   }
 
-  void setPhiAndEta(SPOSetBasePtr Phi, SPOSetBasePtr Eta)
+  void setPhiAndEta(SPOSetPtr Phi, SPOSetPtr Eta)
   {
       Psi1 = Phi;
       Psi2 = Eta;
@@ -121,7 +158,7 @@ public:
   }
 
 
-  void evaluate(SPOSetBasePtr Psi,TinyVector<RealType,3> r, ValueVector_t& val, GradVector_t  &grad, ValueVector_t &lapl)
+  void evaluate(SPOSetPtr Psi,TinyVector<RealType,3> r, ValueVector_t& val, GradVector_t  &grad, ValueVector_t &lapl)
   {
     targetPtcl->R[0] = sourcePtcl->R[curCenter];
     TinyVector<RealType,3> ddr2=targetPtcl->makeMove(0,r);
@@ -313,7 +350,7 @@ private:
   ///source ParticleSet
   ParticleSet *sourcePtcl;
 
-  SPOSetBasePtr Psi1,Psi2;
+  SPOSetPtr Psi1,Psi2;
 
 public:
   // cutoff

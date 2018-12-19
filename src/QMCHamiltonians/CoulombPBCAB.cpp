@@ -25,17 +25,15 @@ namespace qmcplusplus
 
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
                            bool computeForces):
-  PtclA(ions), myConst(0.0), myGrid(0),V0(0),ComputeForces(computeForces),
+  PtclA(ions), myConst(0.0), myGrid(nullptr),V0(nullptr),fV0(nullptr),dfV0(nullptr),ComputeForces(computeForces),
   ForceBase (ions, elns), MaxGridPoints(10000),Pion(ions),Peln(elns)
 {
-  // if (ComputeForces)
-  // 	InitVarReduction (0.5, 0, 3);
   ReportEngine PRE("CoulombPBCAB","CoulombPBCAB");
   set_energy_domain(potential);
   two_body_quantum_domain(ions,elns);
-  //Use singleton pattern
-  //AB = new LRHandlerType(ions);
   myTableIndex=elns.addTable(ions,DT_SOA_PREFERRED);
+  if(ComputeForces)
+    PtclA.turnOnPerParticleSK();
   initBreakup(elns);
   prefix="Flocal";
   app_log() << "  Rcut                " << myRcut << std::endl;
@@ -62,12 +60,53 @@ QMCHamiltonianBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& 
       }
     }
   }
+  //If forces exist, force arrays will have been allocated.  Iterate over one 
+  //such array to clone.
+  for(int ig=0; ig<fVspec.size(); ig++)
+  {
+    if(fVspec[ig])
+    {
+      RadFunctorType* apot=fVspec[ig]->makeClone();
+      RadFunctorType* dapot=fdVspec[ig]->makeClone();
+      myclone->fVspec[ig]=apot;
+      myclone->fdVspec[ig]=dapot;
+      for(int iat=0; iat<PtclA.getTotalNum(); ++iat)
+      {
+        if(PtclA.GroupID[iat]==ig)
+        {
+          myclone->fVat[iat]=apot;
+          myclone->fdVat[iat]=dapot;
+        }
+      }
+    }
+  } 
   return myclone;
 }
 
 CoulombPBCAB:: ~CoulombPBCAB()
 {
-  //probably need to clean up
+  delete V0;
+  delete fV0;
+  delete dfV0;
+  
+  V0=nullptr;
+  fV0=nullptr;
+  dfV0=nullptr;
+
+  //This takes care of species dependent terms.
+  for(int ig=0; ig<Vspec.size(); ig++)
+  {
+    delete Vspec[ig];
+    Vspec[ig]=nullptr;
+  }
+  //If forces were initialized, fVspec.size()!=0.  This cleans up.
+  for(int ig=0; ig<fVspec.size(); ig++)
+  {
+    delete fVspec[ig];
+    delete fdVspec[ig];
+    fVspec[ig]=nullptr;
+    fdVspec[ig]=nullptr;
+  }
 }
 
 void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
@@ -340,7 +379,7 @@ CoulombPBCAB::evalConsts(bool report)
 CoulombPBCAB::Return_t
 CoulombPBCAB::evalSR(ParticleSet& P)
 {
-  CONSTEXPR mRealType czero(0);
+  constexpr mRealType czero(0);
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
   mRealType res=czero;
   if(d_ab.DTType == DT_SOA)
@@ -377,7 +416,6 @@ CoulombPBCAB::evalSR(ParticleSet& P)
 CoulombPBCAB::Return_t
 CoulombPBCAB::evalLR(ParticleSet& P)
 {
-  const int slab_dir=OHMMS_DIM-1;
   mRealType res=0.0;
   const StructFact& RhoKA(*(PtclA.SK));
   const StructFact& RhoKB(*(P.SK));
@@ -388,6 +426,7 @@ CoulombPBCAB::evalLR(ParticleSet& P)
     {
       mRealType u=0;
 #if !defined(USE_REAL_STRUCT_FACTOR)
+      const int slab_dir=OHMMS_DIM-1;
       for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
         u += Qat[jat]*AB->evaluate_slab(d_ab.dr(nn)[slab_dir], RhoKA.KLists.kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
 #endif
@@ -558,17 +597,35 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   myConst=evalConsts();
   myRcut=AB->get_rc();//Basis.get_rc();
   // create the spline function for the short-range part assuming pure potential
-  if(V0==0)
+  if(V0==nullptr)
   {
     V0 = LRCoulombSingleton::createSpline4RbyVs(AB,myRcut,myGrid);
     if(Vat.size())
     {
-      app_log() << "  Vat is not empty. Something is wrong" << std::endl;
-      OHMMS::Controller->abort();
+      APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
     }
     Vat.resize(NptclA,V0);
-    Vspec.resize(NumSpeciesA,0);//prepare for PP to overwrite it
+    Vspec.resize(NumSpeciesA,nullptr);//prepare for PP to overwrite it
   }
+  
+  //If ComputeForces is true, then we allocate space for the radial derivative functors.
+  if(ComputeForces)
+  {
+    dAB = LRCoulombSingleton::getDerivHandler(P);
+    if(fV0==nullptr)
+      fV0=LRCoulombSingleton::createSpline4RbyVs(dAB,myRcut,myGrid);
+    if(dfV0==nullptr)
+      dfV0=LRCoulombSingleton::createSpline4RbyVsDeriv(dAB,myRcut,myGrid);
+    if(fVat.size())
+    {
+      APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
+    }
+    fVat.resize(NptclA,fV0);
+    fdVat.resize(NptclA,dfV0);
+    fVspec.resize(NumSpeciesA,nullptr);
+    fdVspec.resize(NumSpeciesA,nullptr);
+  }
+
 }
 
 /** add a local pseudo potential
@@ -577,7 +634,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
  */
 void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
 {
-  if(myGrid ==0)
+  if(myGrid ==nullptr)
   {
     myGrid = new LinearGrid<RealType>;
     int ng = std::min(MaxGridPoints, static_cast<int>(myRcut/1e-3)+1);
@@ -585,8 +642,11 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
               << myRcut << ") number of grid =" << ng << std::endl;
     myGrid->set(0,myRcut,ng);
   }
-  if(Vspec[groupID]==0)
+  if(Vspec[groupID]==nullptr)
   {
+    delete V0;
+    V0=nullptr;
+
     app_log() << "    Creating the short-range pseudopotential for species " << groupID << std::endl;
     int ng=myGrid->size();
     std::vector<RealType> v(ng);
@@ -594,7 +654,7 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
     {
       RealType r=(*myGrid)[ig];
       //need to multiply r for the LR
-      v[ig]=r*AB->evaluateLR(r)+ppot->splint(r);
+      v[ig]= -r*AB->evaluateLR(r)+ppot->splint(r);
     }
     v[0] = 2.0*v[1] - v[2];
     //by construction, v has to go to zero at the boundary
@@ -610,6 +670,58 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
         Vat[iat]=rfunc;
     }
   }
+
+  if(ComputeForces && fVspec[groupID]==nullptr)
+  {
+    app_log() << "    Creating the short-range pseudopotential derivatives for species " << groupID << std::endl;
+    int ng=myGrid->size();
+    //This is the value coming from optimized breakup for FORCES, not for energy.
+    //Also.  Goal of this section is to create and store d/dr(rV), not d/dr(V)!!!
+    std::vector<RealType> v(ng);
+    std::vector<RealType> dv(ng);
+    
+    RealType ppot_val(0), ppot_deriv(0), ppot_2deriv(0);
+    RealType lr_val(0),lr_deriv(0);
+    for(int ig=1;ig<ng-2;ig++) 
+    {
+      RealType r=(*myGrid)[ig];
+      ppot_val=ppot->splint(r,ppot_deriv,ppot_2deriv);
+      lr_val=dAB->evaluateLR(r);
+      lr_deriv=dAB->lrDf(r);   
+   
+      v[ig] = ppot_val - r*lr_val;
+      dv[ig] = ppot_deriv - (lr_val+lr_deriv*r);
+    }
+    //This is a linear interpolation from v[2] and v[1] to v[0], assuming linear behavior.
+    v[0]=2.0*v[1] - v[2];
+    v[ng-2]=0.0;
+    v[ng-1]=0.0;
+    
+    dv[0]=2.0*dv[1]-dv[2];
+    dv[ng-2]=0;
+    dv[ng-1]=0;
+    
+    RadFunctorType* ffunc = new RadFunctorType(myGrid,v);
+    RadFunctorType* fdfunc = new RadFunctorType(myGrid,dv);
+
+    RealType fderiv=(dv[1]-dv[0])/((*myGrid)[1]-(*myGrid)[0]);
+   
+    ffunc->spline(0,dv[0],ng-1,0.0);
+    fdfunc->spline(0,fderiv,ng-1,0.0);
+    
+    fVspec[groupID]=ffunc;
+    fdVspec[groupID]=fdfunc;
+    for(int iat=0; iat<NptclA; iat++)
+    {
+      if(PtclA.GroupID[iat]==groupID)
+      {
+        fVat[iat]=ffunc;
+        fdVat[iat]=fdfunc;
+      }
+    }
+    //Done   
+  }
+
   if (ComputeForces)
   {
     if(OHMMS::Controller->rank()==0)
@@ -630,16 +742,16 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
 CoulombPBCAB::Return_t
 CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 {
-  const StructFact& RhoKA(*(PtclA.SK));
-  const StructFact& RhoKB(*(P.SK));
+  //  const StructFact& RhoKA(*(PtclA.SK));
+  //  const StructFact& RhoKB(*(P.SK));
   std::vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
-  for(int j=0; j<NumSpeciesB; j++)
+ for(int j=0; j<NumSpeciesB; j++)
   {
     for (int iat=0; iat<grad.size(); iat++)
       grad[iat] = TinyVector<RealType,DIM>(0.0, 0.0, 0.0);
-    AB->evaluateGrad(PtclA, P, j, Zat, grad);
+    dAB->evaluateGrad(PtclA, P, j, Zat, grad);
     for (int iat=0; iat<grad.size(); iat++)
-      forces[iat] += Qspec[j]*grad[iat];
+      forces[iat] += Qspec[j]*Zat[iat]*grad[iat];
   } // electron species
   return evalLR(P);
 }
@@ -647,25 +759,42 @@ CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 CoulombPBCAB::Return_t
 CoulombPBCAB::evalSRwithForces(ParticleSet& P)
 {
+  constexpr mRealType czero(0);
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
-  mRealType res=0.0;
-  //Loop over distinct eln-ion pairs
-  for(int iat=0; iat<NptclA; iat++)
+  mRealType res=czero;
+  //Temporary variables for computing energy and forces.
+  mRealType rV(0);
+  mRealType frV(0),fdrV(0);
+  mRealType rinv(1.0);
+  //Magnitude of force.
+  mRealType dvdr(0.0);
+  if(d_ab.DTType == DT_SOA)
   {
-    mRealType esum = 0.0;
-    RadFunctorType* rVs=Vat[iat];
-    for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
+    for(size_t b=0; b<NptclB; ++b)
     {
-      RealType rV, d_rV_dr, d2_rV_dr2, V;
-      rV = rVs->splint(d_ab.r(nn), d_rV_dr, d2_rV_dr2);
-      V = rV *d_ab.rinv(nn);
-      PosType drhat = d_ab.rinv(nn) * d_ab.dr(nn);
-      esum += Qat[jat]*d_ab.rinv(nn)*rV;
-      forces[iat] += Zat[iat]*Qat[jat] * //g(d_ab.r(nn)) *
-                     (d_rV_dr - V)*d_ab.rinv(nn) *drhat;
+      const RealType* restrict dist=d_ab.Distances[b];
+      const RowContainerType dr = d_ab.Displacements[b];
+      mRealType esum=czero;
+      for(size_t a=0; a<NptclA; ++a)
+      {
+        //Low hanging SIMD fruit here.  See J1/J2 grad computation.
+        rinv=1.0/dist[a];
+        rV=Vat[a]->splint(dist[a]);
+        frV=fVat[a]->splint(dist[a]);
+        fdrV=fdVat[a]->splint(dist[a]);
+        dvdr=Qat[b]*Zat[a]*(fdrV-frV)*rinv;
+        forces[a][0]-=dvdr*dr[a][0]*rinv;
+        forces[a][1]-=dvdr*dr[a][1]*rinv;
+        forces[a][2]-=dvdr*dr[a][2]*rinv;
+        esum += Zat[a]*rV*rinv; //Total energy accumulation
+        
+      }
+      res += esum*Qat[b];
     }
-    //Accumulate pair sums...species charge for atom i.
-    res += Zat[iat]*esum;
+  }
+  else
+  {
+    APP_ABORT("LocalECP Forces are only supported with SoA version of QMCPACK");
   }
   return res;
 }

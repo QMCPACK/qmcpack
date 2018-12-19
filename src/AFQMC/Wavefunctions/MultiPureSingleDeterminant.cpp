@@ -660,8 +660,8 @@ bool MultiPureSingleDeterminant::getHamiltonian(HamPtr h)
     app_log()<<" Diagonalizing trial wave function in MultiPureSingleDeterminant. \n";
     std::vector<RealType> eigVal(ci.size());
     ComplexMatrix eigVec(1,ci.size());
-    bool sucess = diagonalizeTrialWavefunction(eigVal,eigVec,occ_orbs,ci.size());
-    if(sucess) {
+    bool success = diagonalizeTrialWavefunction(eigVal,eigVec,occ_orbs,ci.size());
+    if(success) {
       app_log()<<" New trial energy and ci coefficients: " <<eigVal[0]+NuclearCoulombEnergy <<std::endl;
       for(int i=0; i<ci.size(); i++) app_log()<<i <<" old: " <<ci[i] <<" new: " <<eigVec(0,i) <<std::endl; 
       for(int i=0; i<ci.size(); i++) ci[i] = eigVec(0,i); 
@@ -1787,7 +1787,7 @@ void MultiPureSingleDeterminant::local_rankUpdateOneBodyTrialDensityMatrix(int n
 APP_ABORT(" Error: runtype=0 not yet implemented for complex integrals. Need to fix L^+ issue. \n\n\n");
 #endif
 
-      // only needed once, hopefuly doesn't waste time
+      // only needed once, hopefully doesn't waste time
       allocate_hamiltonian_evaluation();
      
       // calculate all overlaps first
@@ -2816,7 +2816,7 @@ bool MultiPureSingleDeterminant::diagonalizeTrialWavefunction(std::vector<RealTy
 {
   SPComplexType one = SPComplexType(1.0,0.0);
   SPComplexType zero = SPComplexType(0.0,0.0);
-  bool sucess;
+  bool success;
   //int nci = ci.size(); 
   
   if(rotated_hamiltonian) { 
@@ -2896,17 +2896,17 @@ bool MultiPureSingleDeterminant::diagonalizeTrialWavefunction(std::vector<RealTy
     eigVal.resize(1);
     eigVec.resize(1,nci);
     std::vector<int> ifail(nci); 
-    sucess = DenseMatrixOperators::genHermitianEigenSysSelect(nci,hm.data(),nci,ov.data(),nci,1,eigVal.data(),eigV,eigVec.data(),eigVec.size2(),ifail.data()); 
+    success = DenseMatrixOperators::genHermitianEigenSysSelect(nci,hm.data(),nci,ov.data(),nci,1,eigVal.data(),eigV,eigVec.data(),eigVec.size2(),ifail.data()); 
    } else {
     eigVal.resize(1);
     eigVec.resize(1,nci);
    }
     
-   myComm->bcast(sucess);
+   myComm->bcast(success);
    myComm->bcast(eigVal.data(),eigVal.size(),0,myComm->getMPI());
    myComm->bcast(eigVec.data(),eigVec.size1()*eigVec.size2(),0,myComm->getMPI());
 
-   return sucess;
+   return success;
 
   } else {
 
@@ -2978,7 +2978,7 @@ bool MultiPureSingleDeterminant::diagonalizeTrialWavefunction(std::vector<RealTy
       eigVal.resize(1);
       eigVec.resize(1,nci);
       std::vector<int> ifail(nci);
-      sucess = DenseMatrixOperators::genHermitianEigenSysSelect(nci,hm.data(),nci,ov.data(),nci,1,eigVal.data(),eigV,eigVec.data(),eigVec.size2(),ifail.data());
+      success = DenseMatrixOperators::genHermitianEigenSysSelect(nci,hm.data(),nci,ov.data(),nci,1,eigVal.data(),eigV,eigVec.data(),eigVec.size2(),ifail.data());
 
       Timer.stop("Generic4");
       app_log()<<" Time to diagonalize hamiltonian in diagonalizeTrialWavefunction: " <<Timer.total("Generic4") <<std::endl;
@@ -2988,11 +2988,11 @@ bool MultiPureSingleDeterminant::diagonalizeTrialWavefunction(std::vector<RealTy
       eigVec.resize(1,nci);
     }
 
-    myComm->bcast(sucess);
+    myComm->bcast(success);
     myComm->bcast(eigVal.data(),eigVal.size(),0,myComm->getMPI());
     myComm->bcast(eigVec.data(),eigVec.size1()*eigVec.size2(),0,myComm->getMPI());
 
-    return sucess;
+    return success;
   }
 
 }
@@ -3145,8 +3145,8 @@ void MultiPureSingleDeterminant::iterativeCI(double cutoff, int nmax, int nmax_i
       Timer.reset("Generic1");
       Timer.start("Generic1");
       
-      bool sucess = diagonalizeTrialWavefunction(eigVal,eigVec,intm,nterms);
-      if(!sucess) {
+      bool success = diagonalizeTrialWavefunction(eigVal,eigVec,intm,nterms);
+      if(!success) {
         app_error()<<" Error: Problems with diagonalizeTrialWavefunction. \n";
         return;
       }
@@ -3207,8 +3207,8 @@ void MultiPureSingleDeterminant::iterativeCI(double cutoff, int nmax, int nmax_i
          int kk = std::get<1>(dets[ki]);  
          for(int kj=0; kj<ne; kj++) intm.push_back(occ_orbs[ kk*ne+kj]); 
         }
-        bool sucess = diagonalizeTrialWavefunction(eigVal,eigVec,intm,i,false);
-        if(!sucess) {
+        bool success = diagonalizeTrialWavefunction(eigVal,eigVec,intm,i,false);
+        if(!success) {
           app_error()<<" Error: Problems with diagonalizeTrialWavefunction. \n";
           return;
         }

@@ -51,7 +51,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   // 1. set a lot of internal parameters in the EinsplineSetBuilder class
   //  e.g. TileMatrix, UseRealOrbitals, DistinctTwists, MakeTwoCopies.
   // 2. this is also where metadata for the orbitals are read from the wavefunction hdf5 file
-  //  and broacasted to MPI groups. Variables broadcasted are listed in 
+  //  and broadcast to MPI groups. Variables broadcasted are listed in 
   //  EinsplineSetBuilderCommon.cpp EinsplineSetBuilder::BroadcastOrbitalInfo()
   //   
 
@@ -116,12 +116,12 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   AnalyzeTwists2();
 }
 
-SPOSetBase*
+SPOSet*
 EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   update_token(__FILE__,__LINE__,"createSPOSetFromXML");
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
-  SPOSetBase *OrbitalSet;
+  SPOSet *OrbitalSet;
   int numOrbs = 0;
   int sortBands(1);
   int spinSet = 0;
@@ -137,6 +137,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #else
   std::string useGPU="no";
 #endif
+  std::string GPUsharing="no";
   NewTimer* spo_timer = new NewTimer("einspline::CreateSPOSetFromXML", timer_level_medium);
   TimerManager.addTimer(spo_timer);
   spo_timer->start();
@@ -153,6 +154,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (MeshFactor, "meshfactor");
     a.add (hybrid_rep, "hybridrep");
     a.add (useGPU,     "gpu");
+    a.add (GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
     a.add (spo_prec,   "precision");
     a.add (truncate,   "truncate");
     a.add (use_einspline_set_extended,"use_old_spline");
@@ -246,7 +248,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   spo_prec="single"; //overwrite
 #endif
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
-  std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
+  std::map<H5OrbSet,SPOSet*,H5OrbSet>::iterator iter;
   iter = SPOSetMap.find (aset);
   if ((iter != SPOSetMap.end() ) && (!NewOcc))
   {
@@ -306,7 +308,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   bool use_single= (spo_prec == "single" || spo_prec == "float");
 
   // safeguard for a removed feature
-  if(truncate=="yes") APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbtial representation.");
+  if(truncate=="yes") APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
 #if !defined(QMC_COMPLEX)
   if (UseRealOrbitals)
@@ -337,9 +339,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
   HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
-  SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
+  SPOSet* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
   if(!bspline_zd)
-    APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSetBase*");
+    APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSet*");
   delta_mem=qmc_common.memory_allocated-delta_mem;
   app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << std::endl;
   OrbitalSet = bspline_zd;
@@ -460,6 +462,23 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (useGPU == "yes" || useGPU == "1")
   {
     app_log() << "Initializing GPU data structures.\n";
+    if ((GPUsharing == "yes" || GPUsharing == "1"))
+    {
+      if (!gpu::cudamps)
+      {
+        app_log() << "Warning: GPU spline sharing cannot be enabled due to missing Cuda MPS service.\n";
+        gpu::device_group_size=1;
+      }
+      if (gpu::device_group_size>1)
+        app_log() << "1/" << gpu::device_group_size << " of GPU spline data stored per rank.\n";
+      else
+        app_log() << "Full GPU spline data stored per rank.\n";
+    } else
+    {
+      if (gpu::device_group_size>1)
+        app_log() << "Full GPU spline data stored per rank.\n";
+      gpu::device_group_size=1;
+    }
     OrbitalSet->initGPU();
   }
 #endif
@@ -467,7 +486,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   return OrbitalSet;
 }
 
-SPOSetBase* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
+SPOSet* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
 {
   update_token(__FILE__,__LINE__,"createSPOSet(cur,input_info)");
 
@@ -493,7 +512,7 @@ SPOSetBase* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& in
   int norb=input_info.max_index();
   H5OrbSet aset(H5FileName, spinSet, norb);
 
-  SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,cur,input_info);
+  SPOSet* bspline_zd=MixedSplineReader->create_spline_set(spinSet,cur,input_info);
   //APP_ABORT_TRACE(__FILE__,__LINE__,"DONE");
   if(bspline_zd)
     SPOSetMap[aset] = bspline_zd;

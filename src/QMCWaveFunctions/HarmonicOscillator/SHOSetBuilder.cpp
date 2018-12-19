@@ -22,8 +22,8 @@
 namespace qmcplusplus
 {
 
-  SHOSetBuilder::SHOSetBuilder(ParticleSet& P) 
-  : Ps(P)
+  SHOSetBuilder::SHOSetBuilder(ParticleSet& P, Communicate *comm) 
+  : SPOSetBuilder(comm), Ps(P)
   {
     legacy = false;
     app_log()<<"Constructing SHOSetBuilder"<< std::endl;
@@ -46,7 +46,7 @@ namespace qmcplusplus
   }
   
 
-  SPOSetBase* SHOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+  SPOSet* SHOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     APP_ABORT("SHOSetBuilder::createSPOSetFromXML  SHOSetBuilder should not use legacy interface");
 
@@ -58,7 +58,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSetBase* SHOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input)
+  SPOSet* SHOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input)
   {
     app_log() << "SHOSetBuilder::createSHOSet(indices) " << std::endl;
 
