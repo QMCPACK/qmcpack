@@ -27,20 +27,20 @@ bool VMCDriver::run()
   }
   ComplexType enume=0.0,edeno=0.0;
   std::vector<RealType> data(10);
-  RealType accept=0.0; 
+  RealType accept=0.0;
 
   ComplexType exactEstimatorEnergy;
   SlaterDetOperations SDetOps(myComm);
   SDetOps.copyInfo(*this);
   std::vector<RealType> diagEnergies(diagHam);
-  ComplexMatrix diagEigVec(1); 
+  ComplexMatrix diagEigVec(1);
   if(diagHam > 0 && myComm->size() > 1 ) {
     app_error()<<" Error: Diagonalization of hamiltonian in space of walkers only implemented in serial. \n";
     return false;
-  }  
+  }
   SDetOps.setup(ham0,&LocalTimer);
 
-  prop0->SDetOps = &SDetOps; 
+  prop0->SDetOps = &SDetOps;
 
   std::ofstream out("vmc.dat", std::ios_base::app | std::ios_base::out);
   if(out.fail()) {
@@ -48,15 +48,15 @@ bool VMCDriver::run()
     return false;
   }
   out<<fixed;
- 
-  if(!restarted) { // assume a field of zero 
+
+  if(!restarted) { // assume a field of zero
     ComplexMatrix Mat;
-    for(WalkerHandler::WalkerIterator it=wlkBucket->begin(); it!=wlkBucket->end(); it++) 
+    for(WalkerHandler::WalkerIterator it=wlkBucket->begin(); it!=wlkBucket->end(); it++)
       SDetOps.green_function((it->SlaterMat).data(),(it->SlaterMat).data()+2*NMO*NAEA,it->weight,Mat,false);
-  }  
+  }
 
   // problems with using step_tot to do ortho and load balance
-  int time = step0*nSubstep; 
+  int time = step0*nSubstep;
   for (int iBlock=block0, step_tot=step0; iBlock<nBlock; ++iBlock) {
 
     LocalTimer.start("Block::TOTAL");
@@ -83,7 +83,7 @@ bool VMCDriver::run()
         ComplexType hamME,ovlp;
         SDetOps.matrix_element_and_overlap((it->SlaterMat).data(),(it->SlaterMat).data()+2*NMO*NAEA,ovlp,hamME);
         register ComplexType w = ovlp/std::abs(ovlp);
-        enume += w*hamME/ovlp; 
+        enume += w*hamME/ovlp;
         edeno += w;
       }
     }
@@ -94,27 +94,27 @@ bool VMCDriver::run()
     myComm->allreduce(data);
 
     if(diagHam > 0 && iBlock % diagHam_freq == 0 && iBlock > 200 ) {
-      SDetOps.diag(wlkBucket->begin(),wlkBucket->end(),diagHam,diagEnergies,diagEigVec,exactEstimatorEnergy,&wfn0->getHF()); 
+      SDetOps.diag(wlkBucket->begin(),wlkBucket->end(),diagHam,diagEnergies,diagEigVec,exactEstimatorEnergy,&wfn0->getHF());
     }
 
     if(myComm->rank() == 0) {
       out<<iBlock <<" " <<std::setprecision(6) <<accept/((iBlock-block0+1)*nSubstep*nStep*myComm->size()) <<" " <<data[0]/data[1];
       if(diagHam > 0) {
         for(int i=0; i<diagHam; i++) out<<"  " <<diagEnergies[i];
-        out<<"  " <<exactEstimatorEnergy.real();  
+        out<<"  " <<exactEstimatorEnergy.real();
       }
       out<<" " <<LocalTimer.average("Block::TOTAL") <<std::endl;
     }
 
     // add estimators here
-   
-    // checkpoint 
-    if(iBlock != 0 && iBlock % nCheckpoint == 0) 
+
+    // checkpoint
+    if(iBlock != 0 && iBlock % nCheckpoint == 0)
       if(!checkpoint(iBlock,step_tot)) {
         app_error()<<" Error in VMCDriver::checkpoint(). \n" <<std::endl;
         return false;
       }
- 
+
     LocalTimer.stop("Block::TOTAL");
   }
 
@@ -164,9 +164,9 @@ bool VMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   wfn0=wf0;
   restarted=false;
 
-  app_log()<<"\n****************************************************\n"   
-           <<"          Beginning VMC Driver initialization.\n" 
-           <<"****************************************************\n"   
+  app_log()<<"\n****************************************************\n"
+           <<"          Beginning VMC Driver initialization.\n"
+           <<"****************************************************\n"
            <<std::endl;
 
   hdf_archive read(myComm);
@@ -180,26 +180,26 @@ bool VMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
         read.close();
         app_log()<<" WARNING: Problems restarting simulation. Starting from default settings. \n";
       }
-      
+
     }
   }
   myComm->bcast(restarted);
 
   // hamiltonian
 //  if(!ham0->init()) {
-//    app_error()<<"Error initializing Hamiltonian in VCDriver::setup" <<std::endl; 
-//    return false; 
-//  }   
+//    app_error()<<"Error initializing Hamiltonian in VCDriver::setup" <<std::endl;
+//    return false;
+//  }
 
   // wavefunction
   //if(!wfn0->init(read,hdf_read_tag)) {
-  //  app_error()<<"Error initializing Wavefunction in VMCDriver::setup" <<std::endl; 
-  //  return false; 
-  //}   
+  //  app_error()<<"Error initializing Wavefunction in VMCDriver::setup" <<std::endl;
+  //  return false;
+  //}
   //if(!wfn0->setup(ham0)) {
-  //  app_error()<<"Error in WavefunctionHandler::setup in VMCDriver::setup" <<std::endl; 
-  //  return false; 
-  //}   
+  //  app_error()<<"Error in WavefunctionHandler::setup in VMCDriver::setup" <<std::endl;
+  //  return false;
+  //}
 
   // walker set
 //  wlkBucket->setup(,ncores_per_TG);
@@ -207,32 +207,32 @@ bool VMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   ComplexMatrix HF;
   HF.resize(4*NMO,NAEA);
   for(int i=0; i<NAEA; i++) HF(i,i)=ComplexType(1.0,0.0);
-  for(int i=0; i<NAEB; i++) HF(NMO+i,i)=ComplexType(1.0,0.0); 
+  for(int i=0; i<NAEB; i++) HF(NMO+i,i)=ComplexType(1.0,0.0);
   for(int i=0; i<NAEA; i++) HF(2*NMO+i,i)=ComplexType(1.0,0.0);
-  for(int i=0; i<NAEB; i++) HF(3*NMO+i,i)=ComplexType(1.0,0.0); 
+  for(int i=0; i<NAEB; i++) HF(3*NMO+i,i)=ComplexType(1.0,0.0);
   wlkBucket->setHF(HF);
-  if(restarted) { 
+  if(restarted) {
     wlkBucket->restartFromHDF5(nWalkers,read,hdf_read_tag,false);
   } else {
     wlkBucket->initWalkers(nWalkers);
   }
 
   // propagator
-//  if(!prop0->setup(core_rank,ncores_per_TG,ham0,wfn0,dt,read,hdf_read_tag)) { 
-//    app_error()<<"Error in PropagatorBase::setup in VMCDriver::setup" <<std::endl; 
-//    return false; 
-//  }   
+//  if(!prop0->setup(core_rank,ncores_per_TG,ham0,wfn0,dt,read,hdf_read_tag)) {
+//    app_error()<<"Error in PropagatorBase::setup in VMCDriver::setup" <<std::endl;
+//    return false;
+//  }
 
-  app_log()<<"\n****************************************************\n"   
-           <<"          Finished Driver initialization.\n" 
-           <<"****************************************************\n"   
+  app_log()<<"\n****************************************************\n"
+           <<"          Finished Driver initialization.\n"
+           <<"****************************************************\n"
            <<std::endl;
 
   return true;
 }
 
 // writes checkpoint file
-bool VMCDriver::checkpoint(int block, int step) 
+bool VMCDriver::checkpoint(int block, int step)
 {
 
   hdf_archive dump(myComm,false);
@@ -248,10 +248,10 @@ bool VMCDriver::checkpoint(int block, int step)
     else
       sprintf(fileroot,"%s.g%03d.s%03d",project_title.c_str(),groupid,m_series);
 
-    if(hdf_write_restart != std::string("")) 
+    if(hdf_write_restart != std::string(""))
       file = hdf_write_restart;
     else
-      file = std::string(fileroot)+std::string(".chk.h5"); 
+      file = std::string(fileroot)+std::string(".chk.h5");
 
     if(!dump.create(file)) {
       app_error()<<" Error opening checkpoint file for write. \n";
@@ -262,8 +262,8 @@ bool VMCDriver::checkpoint(int block, int step)
     Idata[0]=block;
     Idata[1]=step;
 
-    // always write driver data and walkers 
-    dump.push("VMCDriver"); 
+    // always write driver data and walkers
+    dump.push("VMCDriver");
     if(hdf_write_tag != std::string("")) dump.push(hdf_write_tag);
     dump.write(Idata,"DriverInts");
     //dump.write(Rdata,"DriverReals");
@@ -283,7 +283,7 @@ bool VMCDriver::checkpoint(int block, int step)
   return true;
 }
 
-// sets up restart archive and reads  
+// sets up restart archive and reads
 bool VMCDriver::restart(hdf_archive&)
 {
   return true;

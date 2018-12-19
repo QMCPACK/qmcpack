@@ -4,11 +4,11 @@ SET(AFQMC_DEBUG 3)
 #-------------------------------------------------------------------
 # Sources
 #-------------------------------------------------------------------
-SET (AFQMC_SRCS 
+SET (AFQMC_SRCS
   AFQMCFactory.cpp
   Walkers/SharedWalkerSet.cpp
-  Drivers/DriverFactory.cpp 
-  Drivers/AFQMCDriver.cpp 
+  Drivers/DriverFactory.cpp
+  Drivers/AFQMCDriver.cpp
 #  Drivers/BenchmarkDriver.cpp
   Propagators/AFQMCSharedPropagator.cpp
   Propagators/PropagatorFactory.cpp
@@ -29,7 +29,7 @@ SET (AFQMC_SRCS
   Hamiltonians/HamiltonianFactory_Helper.cpp
   Hamiltonians/HamiltonianFactory.cpp
   Hamiltonians/THCHamiltonian.cpp
-  ) 
+  )
 
 ADD_LIBRARY(afqmc ${AFQMC_SRCS})
 

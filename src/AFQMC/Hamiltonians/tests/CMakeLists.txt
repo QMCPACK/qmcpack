@@ -4,7 +4,7 @@
 #//
 #// Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
 #//
-#// File developed by: Miguel A. Morales, LLNL 
+#// File developed by: Miguel A. Morales, LLNL
 #//
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
@@ -29,7 +29,7 @@ MAYBE_SYMLINK(${UTEST_WFN_INPUT} ${UTEST_DIR}/wfn.dat)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT2} ${UTEST_DIR}/afqmc_collinear.h5)
 MAYBE_SYMLINK(${UTEST_WFN_INPUT2} ${UTEST_DIR}/wfn_collinear.dat)
 
-ADD_EXECUTABLE(${UTEST_EXE} test_hamiltonian_factory.cpp) 
+ADD_EXECUTABLE(${UTEST_EXE} test_hamiltonian_factory.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil
 ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 

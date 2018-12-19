@@ -6,7 +6,7 @@
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 //#undef NDEBUG
@@ -67,7 +67,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
     app_log()<<" Skipping ham_factory_factorized_closed_pure text. afqmc.h5 or wfn.dat files not found. \n";
-  } else {  
+  } else {
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -91,11 +91,11 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_block);
     REQUIRE(okay);
-    std::string ham_name("ham0"); 
+    std::string ham_name("ham0");
     HamFac.push(ham_name,doc.getRoot());
 
     Hamiltonian& ham_ = HamFac.getHamiltonian(gTG,ham_name);
-    FactorizedSparseHamiltonian& ham = boost::get<FactorizedSparseHamiltonian>(ham_);   
+    FactorizedSparseHamiltonian& ham = boost::get<FactorizedSparseHamiltonian>(ham_);
 
     // build HamiltonianOperations
     if(file_exists("./wfn.dat")) {
@@ -110,7 +110,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
                                         OrbMat[0],1e-8,'H',gTG.Node());
 
         // Calculates Overlap, G
-        SlaterDetOperations<ComplexType> SDet(NMO,NAEA); 
+        SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
 
         boost::multi_array<ComplexType,2> G(extents[NAEA][NMO]);
         boost::multi_array_ref<ComplexType,1> G0(G.origin(),extents[NMO*NAEA]);
@@ -123,7 +123,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
                                                                    std::addressof(TrialWfn),
                                                                    std::addressof(TrialWfn));
         ComplexType E1 = ma::dot(hij,G0);
-        
+
         // this will be slightly dependent on cutoff, so be carefull
         if(std::abs(file_data.E1)>1e-8) {
           REQUIRE( real(E1) == Approx(real(file_data.E1)) );
@@ -131,7 +131,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         } else {
           app_log()<<" E1: " <<setprecision(12) <<E1 <<std::endl;
         }
-       
+
         using array_ = std::array<std::size_t,4>;
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
         std::size_t zero(0);
@@ -161,7 +161,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         auto V2view(V2[array_{zero,V2.shape()[0],zero,V2.shape()[1]}]);
         REQUIRE(V2view.shape()[0] == NAEA*NMO);
         REQUIRE(V2view.shape()[0] == V2view.shape()[1]);
-        boost::multi_array<ComplexType,1> V0(extents[V2.shape()[0]]); 
+        boost::multi_array<ComplexType,1> V0(extents[V2.shape()[0]]);
         ma::product(V2view,G0,V0);
         ComplexType E2 = 0.5*ma::dot(G0,V0);
         if(std::abs(file_data.E2)>1e-8) {
@@ -257,7 +257,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
   if(not file_exists("./afqmc_collinear.h5") ||
      not file_exists("./wfn_collinear.dat") ) {
     app_log()<<" Skipping ham_factory_factorized_collinear_with_rotation text. afqmc_collinear.h5 or wfn_collinear.dat files not found. \n";
-  } else {  
+  } else {
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -280,11 +280,11 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_block);
     REQUIRE(okay);
-    std::string ham_name("ham0"); 
+    std::string ham_name("ham0");
     HamFac.push(ham_name,doc.getRoot());
 
     Hamiltonian& ham_ = HamFac.getHamiltonian(gTG,ham_name);
-    FactorizedSparseHamiltonian& ham = boost::get<FactorizedSparseHamiltonian>(ham_);   
+    FactorizedSparseHamiltonian& ham = boost::get<FactorizedSparseHamiltonian>(ham_);
 
     // build HamiltonianOperations
     if(file_exists("./wfn_collinear.dat")) {
@@ -293,15 +293,15 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         boost::multi_array<ComplexType,3> OrbMat;
         readWfn(std::string("./wfn_collinear.dat"),OrbMat,NMO,NAEA,NAEB);
 
-        std::pair<PsiT_Matrix,PsiT_Matrix> TrialWfn = 
+        std::pair<PsiT_Matrix,PsiT_Matrix> TrialWfn =
                 std::make_pair(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         OrbMat[0],1e-8,'H',gTG.Node()),
                                csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         OrbMat[1],1e-8,'H',gTG.Node())
-                              ); 
+                              );
 
         // Calculates Overlap, G
-        SlaterDetOperations<ComplexType> SDet(NMO,NAEA); 
+        SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
 
         boost::multi_array<ComplexType,2> G(extents[NAEA+NAEB][NMO]);
         boost::multi_array_ref<ComplexType,1> G0(G.origin(),extents[NMO*(NAEA+NAEB)]);
@@ -317,7 +317,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
                                                                    std::addressof(TrialWfn.first),
                                                                    std::addressof(TrialWfn.second));
         ComplexType E1 = ma::dot(hij,G0);
-        
+
         // this will be slightly dependent on cutoff, so be carefull
         if(std::abs(file_data.E1)>1e-8) {
           REQUIRE( real(E1) == Approx(real(file_data.E1)) );
@@ -325,7 +325,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         } else {
           app_log()<<" E1: " <<setprecision(12) <<E1 <<std::endl;
         }
-       
+
         using array_ = std::array<std::size_t,4>;
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
         std::size_t zero(0);
@@ -333,7 +333,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         // V2 uses std::size_t to store pointers_begin/end.
         bool addCoulomb = true;
         auto V2(ham.halfRotatedHijkl(COLLINEAR,addCoulomb,TG,std::addressof(TrialWfn.first),
-                                          std::addressof(TrialWfn.second),1e-5)); 
+                                          std::addressof(TrialWfn.second),1e-5));
         REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
         REQUIRE(V2.shape()[0] == V2.shape()[1]);
 
@@ -341,7 +341,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         auto V2view(V2[array_{zero,V2.shape()[0],zero,V2.shape()[1]}]);
         REQUIRE(V2view.shape()[0] == (NAEA+NAEB)*NMO);
         REQUIRE(V2view.shape()[0] == V2view.shape()[1]);
-        boost::multi_array<ComplexType,1> V0(extents[V2.shape()[0]]); 
+        boost::multi_array<ComplexType,1> V0(extents[V2.shape()[0]]);
         ma::product(V2view,G0,V0);
         ComplexType E2 = 0.5*ma::dot(G0,V0);
         if(std::abs(file_data.E2)>1e-8) {
@@ -443,7 +443,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
   if(not file_exists("./afqmc_collinear.h5") ||
      not file_exists("./wfn_collinear.dat") ) {
     app_log()<<" Skipping ham_factory_factorized_collinear_with_rotation text. afqmc_collinear.h5 or wfn_collinear.dat files not found. \n";
-  } else {  
+  } else {
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -467,11 +467,11 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_block);
     REQUIRE(okay);
-    std::string ham_name("ham0"); 
+    std::string ham_name("ham0");
     HamFac.push(ham_name,doc.getRoot());
 
     Hamiltonian& ham_ = HamFac.getHamiltonian(gTG,ham_name);
-    FactorizedSparseHamiltonian& ham = boost::get<FactorizedSparseHamiltonian>(ham_);   
+    FactorizedSparseHamiltonian& ham = boost::get<FactorizedSparseHamiltonian>(ham_);
 
     // build HamiltonianOperations
     if(file_exists("./wfn_collinear.dat")) {
@@ -481,15 +481,15 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         boost::multi_array<ComplexType,3> OrbMat;
         readWfn(std::string("./wfn_collinear.dat"),OrbMat,NMO,NAEA,NAEB);
 
-        std::pair<PsiT_Matrix,PsiT_Matrix> TrialWfn = 
+        std::pair<PsiT_Matrix,PsiT_Matrix> TrialWfn =
                 std::make_pair(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         OrbMat[0],1e-8,'H',gTG.Node()),
                                csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         OrbMat[1],1e-8,'H',gTG.Node())
-                              ); 
+                              );
 
         // Calculates Overlap, G
-        SlaterDetOperations<ComplexType> SDet(NMO,NAEA); 
+        SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
 
         boost::multi_array<ComplexType,2> G(extents[NAEA+NAEB][NMO]);
         boost::multi_array_ref<ComplexType,1> G0(G.origin(),extents[NMO*(NAEA+NAEB)]);
@@ -505,7 +505,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
                                                                    std::addressof(TrialWfn.first),
                                                                    std::addressof(TrialWfn.second));
         ComplexType E1 = ma::dot(hij,G0);
-        
+
         // this will be slightly dependent on cutoff, so be carefull
         if(std::abs(file_data.E1)>1e-8) {
           REQUIRE( real(E1) == Approx(real(file_data.E1)) );
@@ -513,7 +513,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         } else {
           app_log()<<" E1: " <<setprecision(12) <<E1 <<std::endl;
         }
-       
+
         using array_ = std::array<std::size_t,4>;
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),gTG.getTotalNodes(),gTG.getTotalCores());
         std::size_t zero(0);
@@ -521,7 +521,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         // V2 uses std::size_t to store pointers_begin/end.
         bool addCoulomb = true;
         auto V2(ham.halfRotatedHijkl(COLLINEAR,true,TG,std::addressof(TrialWfn.first),
-                                          std::addressof(TrialWfn.second),1e-5)); 
+                                          std::addressof(TrialWfn.second),1e-5));
         REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
         REQUIRE(V2.shape()[0] == V2.shape()[1]);
 
@@ -529,7 +529,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         auto V2view(V2[array_{zero,V2.shape()[0],zero,V2.shape()[1]}]);
         REQUIRE(V2view.shape()[0] == (NAEA+NAEB)*NMO);
         REQUIRE(V2view.shape()[0] == V2view.shape()[1]);
-        boost::multi_array<ComplexType,1> V0(extents[V2.shape()[0]]); 
+        boost::multi_array<ComplexType,1> V0(extents[V2.shape()[0]]);
         ma::product(V2view,G0,V0);
         ComplexType E2 = 0.5*ma::dot(G0,V0);
         E2 = ( TG.Cores() += E2 );
@@ -635,13 +635,13 @@ TEST_CASE("ham_generation_timing_hdf", "[hamiltonian_factory]")
 
   if(not file_exists("./afqmc_timing.h5")) {
     app_log()<<" Skipping ham_fac_timing text. afqmc_timing.h5 file not found. \n";
-  } else { 
+  } else {
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
     int NMO,NAEA,NAEB;
-    std::tie(NMO,NAEA,NAEB) = read_info_from_hdf("./afqmc_timing.h5"); 
+    std::tie(NMO,NAEA,NAEB) = read_info_from_hdf("./afqmc_timing.h5");
 
     std::map<std::string,AFQMCInfo> InfoMap;
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
@@ -666,8 +666,8 @@ TEST_CASE("ham_generation_timing_hdf", "[hamiltonian_factory]")
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
     Timer_.stop("GenTest0");
     app_log()<<"\n*********************************************************************\n"
-             <<" Time to create hamiltonian in ham_generation_timing_hdf: " 
-             <<Timer_.total("GenTest0")  
+             <<" Time to create hamiltonian in ham_generation_timing_hdf: "
+             <<Timer_.total("GenTest0")
              <<"\n*********************************************************************\n\n";
 
   }

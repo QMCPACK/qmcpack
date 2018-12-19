@@ -6,7 +6,7 @@
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 //#undef NDEBUG
@@ -20,7 +20,7 @@
 #include "io/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/SimpleRandom.h"
-#include "Utilities/Timer.h" 
+#include "Utilities/Timer.h"
 
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
@@ -124,8 +124,8 @@ const char *wlk_xml_block_noncol =
 </WalkerSet> \
 ";
 
-    const char *wlk_xml_block = ( (type==CLOSED)?(wlk_xml_block_closed): 
-                                  (type==COLLINEAR?wlk_xml_block_coll:wlk_xml_block_noncol) );     
+    const char *wlk_xml_block = ( (type==CLOSED)?(wlk_xml_block_closed):
+                                  (type==COLLINEAR?wlk_xml_block_coll:wlk_xml_block_noncol) );
 
     Libxml2Document doc3;
     okay = doc3.parseFromString(wlk_xml_block);
@@ -143,11 +143,11 @@ const char *wlk_xml_block_noncol =
     okay = doc2.parseFromString(wfn_xml_block);
     REQUIRE(okay);
     std::string wfn_name("wfn0");
-    WavefunctionFactory WfnFac(InfoMap); 
+    WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
-    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,type,&ham,1e-6,nwalk); 
+    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,type,&ham,1e-6,nwalk);
 
-    //for(int nw=1; nw<2; nw*=2) 
+    //for(int nw=1; nw<2; nw*=2)
     {
       //nwalk=nw;
       WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
@@ -155,8 +155,8 @@ const char *wlk_xml_block_noncol =
       REQUIRE(initial_guess.shape()[0]==2);
       REQUIRE(initial_guess.shape()[1]==NMO);
       REQUIRE(initial_guess.shape()[2]==NAEA);
-    
-      if(type == COLLINEAR) 
+
+      if(type == COLLINEAR)
         wset.resize(nwalk,initial_guess[0],
                          initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
       else
@@ -185,10 +185,10 @@ const char *wlk_xml_block_noncol =
           REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
         }
       } else {
-        app_log()<<" E: " <<setprecision(12) <<wset[0].energy() <<" Time: " <<t1 <<std::endl; 
-        app_log()<<" E0+E1: " <<setprecision(12) <<wset[0].E1() <<std::endl; 
-        app_log()<<" EJ: " <<setprecision(12) <<wset[0].EJ() <<std::endl; 
-        app_log()<<" EXX: " <<setprecision(12) <<wset[0].EXX() <<std::endl; 
+        app_log()<<" E: " <<setprecision(12) <<wset[0].energy() <<" Time: " <<t1 <<std::endl;
+        app_log()<<" E0+E1: " <<setprecision(12) <<wset[0].E1() <<std::endl;
+        app_log()<<" EJ: " <<setprecision(12) <<wset[0].EJ() <<std::endl;
+        app_log()<<" EXX: " <<setprecision(12) <<wset[0].EXX() <<std::endl;
       }
 
       auto size_of_G = wfn.size_of_G_for_vbias();
@@ -207,7 +207,7 @@ const char *wlk_xml_block_noncol =
       TG.local_barrier();
       t1=Time.elapsed();
       ComplexType Xsum=0;
-      if(std::abs(file_data.Xsum)>1e-8) { 
+      if(std::abs(file_data.Xsum)>1e-8) {
        for(int n=0; n<nwalk; n++) {
            Xsum=0;
           for(int i=0; i<X.shape()[0]; i++)
@@ -221,10 +221,10 @@ const char *wlk_xml_block_noncol =
         for(int i=0; i<X.shape()[0]; i++) {
           Xsum += X[i][0];
           Xsum2 += 0.5*X[i][0]*X[i][0];
-        }  
+        }
         app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<" Time: " <<t1 <<std::endl;
         app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
-      }    
+      }
 
       SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO*nwalk);
       int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
@@ -235,7 +235,7 @@ const char *wlk_xml_block_noncol =
       TG.local_barrier();
       t1=Time.elapsed();
       ComplexType Vsum=0;
-      if(std::abs(file_data.Vsum)>1e-8) { 
+      if(std::abs(file_data.Vsum)>1e-8) {
         for(int n=0; n<nwalk; n++) {
           Vsum=0;
           for(int i=0; i<vHS.shape()[0]; i++)
@@ -251,7 +251,7 @@ const char *wlk_xml_block_noncol =
         } else {
           for(int i=0; i<vHS.shape()[0]; i++)
             Vsum += vHS[i][0];
-        }  
+        }
         app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<" Time: " <<t1 <<std::endl;
       }
 
@@ -297,9 +297,9 @@ const char *wlk_xml_block_noncol =
           REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
         }
       } else {
-        app_log()<<" E0+E1: " <<setprecision(12) <<wset[0].E1() <<std::endl; 
-        app_log()<<" EJ: " <<setprecision(12) <<wset[0].EJ() <<std::endl; 
-        app_log()<<" EXX: " <<setprecision(12) <<wset[0].EXX() <<std::endl; 
+        app_log()<<" E0+E1: " <<setprecision(12) <<wset[0].E1() <<std::endl;
+        app_log()<<" EJ: " <<setprecision(12) <<wset[0].EJ() <<std::endl;
+        app_log()<<" EXX: " <<setprecision(12) <<wset[0].EXX() <<std::endl;
       }
 
       REQUIRE(size_of_G == wfn2.size_of_G_for_vbias());
@@ -430,9 +430,9 @@ const char *wlk_xml_block_noncol =
     okay = doc2.parseFromString(wfn_xml_block);
     REQUIRE(okay);
     std::string wfn_name("wfn0");
-    WavefunctionFactory WfnFac(InfoMap); 
+    WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
-    Wavefunction& wfn = WfnFac.getWavefunction(TGwfn,TGwfn,wfn_name,type,&ham,1e-6,nwalk); 
+    Wavefunction& wfn = WfnFac.getWavefunction(TGwfn,TGwfn,wfn_name,type,&ham,1e-6,nwalk);
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
@@ -455,7 +455,7 @@ const char *wlk_xml_block_noncol =
 
     using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
     using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
- 
+
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
@@ -486,8 +486,8 @@ const char *wlk_xml_block_noncol =
     if(std::abs(file_data.Xsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Xsum=0;
-        if(TGwfn.TG_local().root()) 
-          for(int i=0; i<X.shape()[0]; i++) 
+        if(TGwfn.TG_local().root())
+          for(int i=0; i<X.shape()[0]; i++)
             Xsum += X[i][n];
         Xsum = ( TGwfn.TG() += Xsum );
         REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
@@ -495,7 +495,7 @@ const char *wlk_xml_block_noncol =
       }
     } else {
       Xsum=0;
-      if(TGwfn.TG_local().root()) 
+      if(TGwfn.TG_local().root())
         for(int i=0; i<X.shape()[0]; i++)
           Xsum += X[i][0];
       Xsum = ( TGwfn.TG() += Xsum );
@@ -525,7 +525,7 @@ const char *wlk_xml_block_noncol =
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
-        if(TGwfn.TG_local().root()) 
+        if(TGwfn.TG_local().root())
           for(int i=0; i<vHS.shape()[0]; i++)
             Vsum += vHS[i][n];
         Vsum = ( TGwfn.TG() += Vsum );
@@ -534,7 +534,7 @@ const char *wlk_xml_block_noncol =
       }
     } else {
       Vsum=0;
-      if(TGwfn.TG_local().root()) 
+      if(TGwfn.TG_local().root())
         for(int i=0; i<vHS.shape()[0]; i++)
           Vsum += vHS[i][0];
       Vsum = ( TGwfn.TG() += Vsum );
@@ -593,7 +593,7 @@ const char *wlk_xml_block_noncol =
     wfn2.MixedDensityMatrix_for_vbias(wset2,G);
 
     nCV = wfn2.local_number_of_cholesky_vectors();
-    Xbuff.resize(nCV*nwalk); 
+    Xbuff.resize(nCV*nwalk);
     boost::multi_array_ref<ComplexType,2> X2(Xbuff.data(),extents[nCV][nwalk]);
     wfn2.vbias(G,X2,sqrtdt);
     Xsum=0;
@@ -720,9 +720,9 @@ const char *wlk_xml_block =
     okay = doc2.parseFromString(wfn_xml_block);
     REQUIRE(okay);
     std::string wfn_name("wfn0");
-    WavefunctionFactory WfnFac(InfoMap); 
+    WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
-    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,COLLINEAR,&ham,1e-6,nwalk); 
+    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,COLLINEAR,&ham,1e-6,nwalk);
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
@@ -863,9 +863,9 @@ const char *wlk_xml_block =
     okay = doc2.parseFromString(wfn_xml_block);
     REQUIRE(okay);
     std::string wfn_name("wfn0");
-    WavefunctionFactory WfnFac(InfoMap); 
+    WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
-    Wavefunction& wfn = WfnFac.getWavefunction(TG,TGwfn,wfn_name,COLLINEAR,&ham,1e-6,nwalk); 
+    Wavefunction& wfn = WfnFac.getWavefunction(TG,TGwfn,wfn_name,COLLINEAR,&ham,1e-6,nwalk);
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
@@ -1009,9 +1009,9 @@ const char *wlk_xml_block =
     okay = doc2.parseFromString(wfn_xml_block);
     REQUIRE(okay);
     std::string wfn_name("wfn0");
-    WavefunctionFactory WfnFac(InfoMap); 
+    WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
-    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,COLLINEAR,&ham,1e-6,nwalk); 
+    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,COLLINEAR,&ham,1e-6,nwalk);
 
     const char *wfn_xml_block2 =
 "<Wavefunction name=\"wfn1\" type=\"nomsd\" info=\"info0\"> \
@@ -1037,16 +1037,16 @@ const char *wlk_xml_block =
     REQUIRE(initial_guess.shape()[0]==2);
     REQUIRE(initial_guess.shape()[1]==NMO);
     REQUIRE(initial_guess.shape()[2]==NAEA);
-    
+
 
     std::default_random_engine generator;
     std::uniform_real_distribution<double> distribution(-0.005,0.005);
     for(int i=0; i<NMO; i++) {
-      for(int j=0; j<NAEA; j++) 
-        initial_guess[0][i][j] += distribution(generator); 
-      for(int j=0; j<NAEB; j++) 
-        initial_guess[1][i][j] = initial_guess[0][i][j]; 
-        //initial_guess[1][i][j] += distribution(generator); 
+      for(int j=0; j<NAEA; j++)
+        initial_guess[0][i][j] += distribution(generator);
+      for(int j=0; j<NAEB; j++)
+        initial_guess[1][i][j] = initial_guess[0][i][j];
+        //initial_guess[1][i][j] += distribution(generator);
     }
     wset.resize(nwalk,initial_guess[0],
                          initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
@@ -1088,7 +1088,7 @@ const char *wlk_xml_block =
     Time.restart();
     nomsd.Energy(wset);
     t1=Time.elapsed();
-    app_log()<<" NOMSD E: " <<setprecision(12) <<wset[0].energy() <<" " 
+    app_log()<<" NOMSD E: " <<setprecision(12) <<wset[0].energy() <<" "
              <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<" " <<t1  <<std::endl;
       SHM_Buffer Gbuff_(TG.TG_local(),nwalk*NMO*NMO*4);
       boost::multi_array_ref<ComplexType,2> Gph(Gbuff_.data(),extents[2*NMO*NMO][nwalk]);
@@ -1099,9 +1099,9 @@ const char *wlk_xml_block =
       std::cout<<" Comparing G \n";
       for(int i=0; i<NMO; i++)
        for(int j=0; j<NMO; j++)
-        if(std::abs(Gph[i*NMO+j][0]-Gno[i*NMO+j][0]) > 1e-8) 
-          std::cout<<i <<" " <<j <<" " <<Gph[i*NMO+j][0] <<" " <<Gno[i*NMO+j][0] <<" " 
-                   <<std::abs(Gph[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;  
+        if(std::abs(Gph[i*NMO+j][0]-Gno[i*NMO+j][0]) > 1e-8)
+          std::cout<<i <<" " <<j <<" " <<Gph[i*NMO+j][0] <<" " <<Gno[i*NMO+j][0] <<" "
+                   <<std::abs(Gph[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;
 #endif
 
     auto size_of_G = wfn.size_of_G_for_vbias();
@@ -1139,16 +1139,16 @@ else
       for(int i=0; i<X.shape()[0]; i++) {
         Xsum += X[i][0];
         Xsum2 += 0.5*X[i][0]*X[i][0];
-      }  
+      }
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
       app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
       for(int n=1; n<nwalk; n++) {
         ComplexType Xsum_=0;
-        for(int i=0; i<X.shape()[0]; i++) 
+        for(int i=0; i<X.shape()[0]; i++)
           Xsum_ += X[i][n];
         REQUIRE( real(Xsum) == Approx(real(Xsum_)) );
         REQUIRE( imag(Xsum) == Approx(imag(Xsum_)) );
-      } 
+      }
     }
 
     SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO*nwalk);
@@ -1204,24 +1204,24 @@ else
 
 #ifdef __compare__
     assert(nCV == nomsd.local_number_of_cholesky_vectors());
-   
+
       auto size_of_G2 = nomsd.size_of_G_for_vbias();
       SHM_Buffer Gbuff2(TG.TG_local(),nwalk*size_of_G2);
       int Gdim1_ = (nomsd.transposed_G_for_vbias()?nwalk:size_of_G2);
       int Gdim2_ = (nomsd.transposed_G_for_vbias()?size_of_G2:nwalk);
-      boost::multi_array_ref<ComplexType,2> G_(Gbuff2.data(),extents[Gdim1_][Gdim2_]); 
+      boost::multi_array_ref<ComplexType,2> G_(Gbuff2.data(),extents[Gdim1_][Gdim2_]);
       nomsd.MixedDensityMatrix_for_vbias(wset,G_);
 /*
       std::cout<<" Comparing G \n";
       for(int i=0; i<NMO; i++)
        for(int j=0; j<NMO; j++) {
-        if(std::abs(Gph[i*NMO+j][0]-G_[i*NMO+j][0]) > 1e-8) 
+        if(std::abs(Gph[i*NMO+j][0]-G_[i*NMO+j][0]) > 1e-8)
           std::cout<<i <<" - " <<j <<" " <<Gph[i*NMO+j][0] <<" " <<G_[i*NMO+j][0] <<" "
                    <<std::abs(Gph[i*NMO+j][0]-G_[i*NMO+j][0]) <<std::endl;
-        if(std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) > 1e-8) 
+        if(std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) > 1e-8)
           std::cout<<i <<" -- " <<j <<" " <<G_[i*NMO+j][0] <<" " <<Gno[i*NMO+j][0] <<" "
                    <<std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;
-       } 
+       }
 */
       boost::multi_array_ref<ComplexType,2> X2(Xbuff.data()+nCV*nwalk,extents[nCV][nwalk]);
       nomsd.vbias(G_,X2,sqrtdt);
@@ -1230,7 +1230,7 @@ else
       for(int i=0; i<X2.shape()[0]; i++) {
         Xsum += X2[i][0];
         Xsum2 += 0.5*X2[i][0]*X2[i][0];
-      }  
+      }
       app_log()<<" Xsum (NOMSD): " <<setprecision(12) <<Xsum <<std::endl;
       app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
 
@@ -1269,12 +1269,12 @@ else
     vMFsum=0;
     {
       vMFsum=0;
-      app_log()<<" vMF: " <<std::endl; 
+      app_log()<<" vMF: " <<std::endl;
       for(int i=0; i<vMF2.shape()[0]; i++) {
         vMFsum += vMF2[i];
 //        if(std::abs(vMF[i]-vMF2[i]) > 1e-8)
 //          app_log()<<i <<": " <<setprecision(12) <<vMF[i] <<" " <<vMF2[i] <<" " <<std::abs(vMF[i]-vMF2[i]) <<std::endl;
-      }  
+      }
       app_log()<<" vMFsum: " <<setprecision(12) <<vMFsum <<std::endl;
     }
 

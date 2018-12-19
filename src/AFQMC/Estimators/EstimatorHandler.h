@@ -30,27 +30,27 @@ namespace afqmc
 class EstimatorHandler: public AFQMCInfo
 {
 
-  using EstimPtr = std::shared_ptr<EstimatorBase>; 
+  using EstimPtr = std::shared_ptr<EstimatorBase>;
   using communicator = boost::mpi3::communicator;
 
   public:
 
-  EstimatorHandler(afqmc::TaskGroupHandler& TGgen, AFQMCInfo info, std::string title, xmlNodePtr cur, 
-        WavefunctionFactory& WfnFac, 
-        Wavefunction& wfn0, 
+  EstimatorHandler(afqmc::TaskGroupHandler& TGgen, AFQMCInfo info, std::string title, xmlNodePtr cur,
+        WavefunctionFactory& WfnFac,
+        Wavefunction& wfn0,
         WALKER_TYPES walker_type,
         HamiltonianFactory& HamFac,
-        std::string ham0, 
-        bool defaultEnergyEstim=false, 
+        std::string ham0,
+        bool defaultEnergyEstim=false,
         bool impsamp=true):
             AFQMCInfo(info),
-            project_title(title) 
+            project_title(title)
   {
     estimators.reserve(10);
 
     std::string overwrite_default_energy("no");
-    xmlNodePtr curRoot = cur; 
-    xmlNodePtr curBasic = NULL; 
+    xmlNodePtr curRoot = cur;
+    xmlNodePtr curBasic = NULL;
     cur = curRoot->children;
     while (cur != NULL) {
       std::string cname((const char*)(cur->name));
@@ -64,7 +64,7 @@ class EstimatorHandler: public AFQMCInfo
         } else if(name == "energy" ) {
           ParameterSet m_param;
           m_param.add(overwrite_default_energy,"overwrite","string");
-          m_param.put(cur); 
+          m_param.put(cur);
         }
       }
       cur = cur->next;
@@ -73,7 +73,7 @@ class EstimatorHandler: public AFQMCInfo
     estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BasicEstimator>(TGgen.getTG(1),info,title,curBasic,impsamp)));
 
     // add an EnergyEstimator if requested
-    if(defaultEnergyEstim && not (overwrite_default_energy=="yes")) 
+    if(defaultEnergyEstim && not (overwrite_default_energy=="yes"))
       estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<EnergyEstimator>(TGgen.getTG(1),info,nullptr,wfn0,impsamp)));
 
 
@@ -90,7 +90,7 @@ class EstimatorHandler: public AFQMCInfo
         oAttrib.add(ham_name,"ham");
         oAttrib.put(cur);
 
-        if(name == "basic" || name == "Basic" || name == "standard") { 
+        if(name == "basic" || name == "Basic" || name == "standard") {
         // do nothing
         // first process estimators that do not need a wfn
         } else if (name == "walker_density_matrix") {
@@ -115,7 +115,7 @@ class EstimatorHandler: public AFQMCInfo
             if(ham_name != "") {
               APP_ABORT(" Estimator wfn must used default hamiltonian for execute blovk for now.\n");
             } else {
-              Hamiltonian& ham = HamFac.getHamiltonian(TGgen.gTG(),ham0); 
+              Hamiltonian& ham = HamFac.getHamiltonian(TGgen.gTG(),ham0);
               wfn = std::addressof(WfnFac.getWavefunction(TGgen.getTG(1),TGgen.getTG(nnodes),wfn_name,wfn0.getWalkerType(),std::addressof(ham)));
             }
             if(wfn == nullptr) {
@@ -155,21 +155,21 @@ class EstimatorHandler: public AFQMCInfo
       estimators[0]->tags_timers(out);
       out<<std::endl;
     }
-  
+
 
   }
 
   ~EstimatorHandler() {}
 
-  double getEloc() 
+  double getEloc()
   {
     return estimators[0]->getEloc();
-  } 
+  }
 
-  double getEloc_step() 
+  double getEloc_step()
   {
     return estimators[0]->getEloc_step();
-  } 
+  }
 
   void print(int block, double time, double Es, WalkerSet& wlks)
   {
@@ -182,19 +182,19 @@ class EstimatorHandler: public AFQMCInfo
     if( (block+1)%10==0 ) out.flush();
   }
 
-  // 1) acumulates estimators over steps, and 2) reduces and accumulates substep estimators 
-  void accumulate_step(WalkerSet& wlks, std::vector<ComplexType>& curData) 
+  // 1) acumulates estimators over steps, and 2) reduces and accumulates substep estimators
+  void accumulate_step(WalkerSet& wlks, std::vector<ComplexType>& curData)
   {
     for(std::vector<EstimPtr>::iterator it=estimators.begin(); it!=estimators.end(); it++)
       (*it)->accumulate_step(wlks,curData);
-  } 
+  }
 
-  // 1) acumulates estimators over steps, and 2) reduces and accumulates substep estimators 
-  void accumulate_block(WalkerSet& wlks) 
+  // 1) acumulates estimators over steps, and 2) reduces and accumulates substep estimators
+  void accumulate_block(WalkerSet& wlks)
   {
     for(std::vector<EstimPtr>::iterator it=estimators.begin(); it!=estimators.end(); it++)
       (*it)->accumulate_block(wlks);
-  } 
+  }
 
   private:
 

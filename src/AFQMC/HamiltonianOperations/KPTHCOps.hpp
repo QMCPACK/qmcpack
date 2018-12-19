@@ -5,12 +5,12 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_HAMILTONIANOPERATIONS_KPTHCOPS_HPP
@@ -38,10 +38,10 @@ namespace afqmc
 
 class KPTHCOps
 {
-#if defined(AFQMC_SP) 
+#if defined(AFQMC_SP)
   using SpC = typename to_single_precision<ComplexType>::value_type;
 #else
-  using SpC = ComplexType;  
+  using SpC = ComplexType;
 #endif
 
   using CMatrix = boost::multi::array<ComplexType,2>;
@@ -94,7 +94,7 @@ class KPTHCOps
                  bool verbose=false ):
                 comm(std::addressof(c_)),
                 walker_type(type),
-                global_nCV(gncv), 
+                global_nCV(gncv),
                 H1(std::move(h1_)),
                 haj(std::move(haj_)),
                 nopk(std::move(nopk_)),
@@ -120,15 +120,15 @@ class KPTHCOps
     {
       nGpk.resize(nopk.size());
       nG2pk.resize(nopk.size());
-      int nGG(0);   
-      for(int Q=0; Q<nopk.size(); Q++) { 
+      int nGG(0);
+      for(int Q=0; Q<nopk.size(); Q++) {
         nGpk[Q] = *std::max_element(QKToG[Q].begin(),QKToG[Q].end())+1;
         nG2pk[Q] = nGG;
         nGG += nGpk[Q]*nGpk[Q];
-      }  
-      app_log()<<"  KPTHCOps: Found " <<nGG <<" {Q,dq} pairs. \n";  
-      int nu = Piu.shape()[1]; 
-      int rotnu = rotPiu.shape()[1]; 
+      }
+      app_log()<<"  KPTHCOps: Found " <<nGG <<" {Q,dq} pairs. \n";
+      int nu = Piu.shape()[1];
+      int rotnu = rotPiu.shape()[1];
       int nkpts = nopk.size();
       local_nCV = std::accumulate(ncholpQ.begin(),ncholpQ.end(),0);
       mutex.reserve(ncholpQ.size());
@@ -139,15 +139,15 @@ class KPTHCOps
         for(int Q=0; Q<nkpts; Q++) {
           int nG = nGpk[Q];
           boost::multi::array<SPComplexType,2> T({nG*rotnu,nG*rotnu});
-          std::copy_n(std::addressof(*rotMuv[Q].origin()),rotMuv[Q].num_elements(),T.origin());  
+          std::copy_n(std::addressof(*rotMuv[Q].origin()),rotMuv[Q].num_elements(),T.origin());
           boost::multi::array_ref<SPComplexType,4> Muv(std::addressof(*rotMuv[Q].origin()),
                                                        {nG,nG,rotnu,rotnu});
           boost::multi::array_ref<SPComplexType,4> T_(T.origin(),
                                                       {nG,rotnu,nG,rotnu});
-          for(int G1=0; G1<nG; G1++) 
-            for(int G2=0; G2<nG; G2++) 
-              for(int u=0; u<rotnu; u++) 
-                for(int v=0; v<rotnu; v++) 
+          for(int G1=0; G1<nG; G1++)
+            for(int G2=0; G2<nG; G2++)
+              for(int u=0; u<rotnu; u++)
+                for(int v=0; v<rotnu; v++)
                   Muv[G1][G2][u][v] = T_[G1][u][G2][v];
         }
       }
@@ -157,17 +157,17 @@ class KPTHCOps
       for(int i=0; i<nGG; i++)
         Muv.emplace_back(shmSpMatrix({nu,nu},shared_allocator<SPComplexType>{c_}));
       comm->barrier();
-      // split over  Global later  
-      for(int Q=0, nq=0; Q<nkpts; ++Q) {     
+      // split over  Global later
+      for(int Q=0, nq=0; Q<nkpts; ++Q) {
         int nG = nGpk[Q];
         for(int G1=0; G1<nG; ++G1) {
           //for(int G2=G1; G2<nG; ++G2) {
           for(int G2=0; G2<nG; ++G2, ++nq) {
-            if(nq%comm->size() == comm->rank()) 
+            if(nq%comm->size() == comm->rank())
               ma::product(LQGun[Q].sliced(nu*G1,nu*(G1+1)),ma::H(LQGun[Q].sliced(nu*G2,nu*(G2+1))),Muv[nq]);
           }
         }
-      }    
+      }
 */
       if(comm->root()) {
         for(int KI=0; KI<nkpts; KI++)
@@ -185,12 +185,12 @@ class KPTHCOps
     }
 
     ~KPTHCOps() {}
-    
+
     KPTHCOps(KPTHCOps const& other) = delete;
     KPTHCOps& operator=(KPTHCOps const& other) = delete;
 
     KPTHCOps(KPTHCOps&& other) = default;
-    KPTHCOps& operator=(KPTHCOps&& other) = default; 
+    KPTHCOps& operator=(KPTHCOps&& other) = default;
 
     boost::multi_array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi_array<ComplexType,1> const& vMF) {
       int nkpts = nopk.size();
@@ -217,13 +217,13 @@ class KPTHCOps
           for(int j=i+1, J=I+1; j<nopk[K]; j++, J++) {
             P1[I][J] += H1[K][i][j] + vn0[K][i][j];
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
-            // This is really cutoff dependent!!!  
+            // This is really cutoff dependent!!!
             if( std::abs( P1[I][J] - conj(P1[J][I]) ) > 1e-6 ) {
               app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
               app_error()<<I <<" " <<J <<" " <<P1[I][J] <<" " <<P1[j][i] <<" "
                          <<H1[K][i][j] <<" " <<H1[K][j][i] <<" "
                          <<vn0[K][i][j] <<" " <<vn0[K][j][i] <<std::endl;
-              //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n"); 
+              //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
             }
             P1[I][J] = 0.5*(P1[I][J]+conj(P1[J][I]));
             P1[J][I] = conj(P1[I][J]);
@@ -236,23 +236,23 @@ class KPTHCOps
 
     template<class Mat, class MatB>
     void energy(Mat&& E, MatB const& G, int k, bool addH1=true, bool addEJ=true, bool addEXX=true) {
-      MatB* Kr(nullptr);  
+      MatB* Kr(nullptr);
       MatB* Kl(nullptr);
-      energy(E,G,k,Kl,Kr,addH1,addEJ,addEXX);  
+      energy(E,G,k,Kl,Kr,addH1,addEJ,addEXX);
     }
 
-    // Kl and Kr must be in shared memory for this to work correctly  
+    // Kl and Kr must be in shared memory for this to work correctly
     template<class Mat, class MatB, class MatC, class MatD>
     void energy(Mat&& E, MatB const& Gc, int nd, MatC* KEleft, MatD* KEright, bool addH1=true, bool addEJ=true, bool addEXX=true) {
       using ma::T;
       using ma::H;
       using std::conj;
       if(nd>0)
-	APP_ABORT(" Error: KPTHC not yet implemented for multiple references.\n");	
-      static_assert(E.dimensionality==2);  
-      static_assert(Gc.dimensionality==2);  
-      assert(E.shape()[0] == Gc.shape()[0]);        
-      assert(E.shape()[1] == 3);        
+	APP_ABORT(" Error: KPTHC not yet implemented for multiple references.\n");
+      static_assert(E.dimensionality==2);
+      static_assert(Gc.dimensionality==2);
+      assert(E.shape()[0] == Gc.shape()[0]);
+      assert(E.shape()[1] == 3);
       assert(nd >= 0 && nd < nelpk.size());
 
       SPComplexType one(1.0);
@@ -315,7 +315,7 @@ class KPTHCOps
       SPComplexType *Krptr, *Klptr;
       int getKr = KEright!=nullptr;
       int getKl = KEleft!=nullptr;
-      int rotnu = rotPiu.shape()[1]; 
+      int rotnu = rotPiu.shape()[1];
       int nGu = std::accumulate(nGpk.begin(),nGpk.end(),0)*rotnu;
       size_t memory_needs = 0;
       if(addEXX)  memory_needs += nkpts*nkpts*rotnu*rotnu;
@@ -324,7 +324,7 @@ class KPTHCOps
         if(not getKl) memory_needs += nwalk*nGu;
       }
       set_shm_buffer(memory_needs);
-      size_t cnt=0;  
+      size_t cnt=0;
 
       // messy
       size_t Knr=0, Knc=0;
@@ -385,11 +385,11 @@ Timer.start("T0");
             if((nqk++)%comm->size() == comm->rank()) {
               ma::product(G3Da[n]({0,nocca_tot},{nl0,nl0+nopk[Kl]}),rotPiu({nl0,nl0+nopk[Kl]},{0,rotnu}),TAv);
               // write with BatchedGEMM later
-              for(int Ka=0, na0=0; Ka<nkpts; ++Ka) { 
+              for(int Ka=0, na0=0; Ka<nkpts; ++Ka) {
                 ma::product( rotcPua[nd]({0,rotnu},{na0,na0+nelpk[nd][Ka]}), TAv({na0,na0+nelpk[nd][Ka]},{0,rotnu}), Fuv[Ka][Kl] );
                 na0 += nelpk[nd][Ka];
               }
-            }    
+            }
             nl0 += nopk[Kl];
           }
           comm->barrier();
@@ -398,9 +398,9 @@ Timer.stop("T0");
 Timer.start("T2");
 // NOT OPTIMAL: FIX!!!
           if(addEJ) {
-            nqk=0;  
-            for(int Q=0, nqGa=0; Q<nkpts; ++Q) {            // momentum conservation index   
-              int nG = nGpk[Q]; 
+            nqk=0;
+            for(int Q=0, nqGa=0; Q<nkpts; ++Q) {            // momentum conservation index
+              int nG = nGpk[Q];
               for(int Ga=0; Ga<nG; ++Ga, nqGa+=rotnu) {
                 if((nqk++)%comm->size() == comm->rank()) {
                   boost::multi::array_ref<SPComplexType,4> Muv(std::addressof(*rotMuv[Q].origin()),
@@ -416,7 +416,7 @@ Timer.start("T2");
                     auto f_(Fuv[Ka][Kk].origin());
                     auto ku_(KlQa.origin());
                     for(int u=0; u<rotnu; u++, ku_++, f_ += (rotnu+1))
-                      (*ku_) += (*f_); 
+                      (*ku_) += (*f_);
                   }
                   // Kr(n,Q,Ga,u) = sum_Gl sum_v M(Q,Ga,Gl)(u,v) sum_K_in_Gl F(Q[K],K,u,u)
                   for(int Gl=0; Gl<nG; ++Gl) {
@@ -427,7 +427,7 @@ Timer.start("T2");
                       auto f_(Fuv[Kb][Kl].origin());
                       auto zu_(Zu.origin());
                       for(int u=0; u<rotnu; u++, zu_++, f_ += (rotnu+1))
-                        (*zu_) += (*f_); 
+                        (*zu_) += (*f_);
                     }
                     ma::product(one,Muv[Ga][Gl],Zu,one,KrQa);
                   }
@@ -454,9 +454,9 @@ Timer.start("T1");
 // FIX parallelization!!!
           int bsz = 256;
           int nbu = (rotnu + bsz - 1) / bsz;
-          nqk=0;  
-          for(int Q=0; Q<nkpts; ++Q) {            // momentum conservation index   
-            int nG = nGpk[Q]; 
+          nqk=0;
+          for(int Q=0; Q<nkpts; ++Q) {            // momentum conservation index
+            int nG = nGpk[Q];
             boost::multi::array_ref<SPComplexType,4> Muv(std::addressof(*rotMuv[Q].origin()),
                                                          {nG,nG,rotnu,rotnu});
             for(int K1=0; K1<nkpts; ++K1) {
@@ -464,15 +464,15 @@ Timer.start("T1");
                 if((nqk++)%comm->size() == comm->rank()) {
                   int QK1 = QKToK2[Q][K1];
                   int QK2 = QKToK2[Q][K2];
-                  // EXX += sum_u_v Muv[u][v] * Fuv[K1][K2][u][v] * Fuv[QK2][QK1][v][u]   
+                  // EXX += sum_u_v Muv[u][v] * Fuv[K1][K2][u][v] * Fuv[QK2][QK1][v][u]
                   ComplexType E_(0.0);
-//                  int nq = nG2pk[Q] + QKToG[Q][K1]*nG + QKToG[Q][K2];  
+//                  int nq = nG2pk[Q] + QKToG[Q][K1]*nG + QKToG[Q][K2];
                   auto F1_(std::addressof(*Fuv[K1][K2].origin()));
                   auto muv_(Muv[QKToG[Q][K1]][QKToG[Q][K1]].origin());
                   auto F2_(std::addressof(*Fuv[QK2][QK1].origin()));
                   for(int u=0; u<rotnu; ++u, ++F2_) {
                     auto Fv_(F2_);
-                    for(int v=0; v<rotnu; ++v,  ++muv_, ++F1_, Fv_ += rotnu) 
+                    for(int v=0; v<rotnu; ++v,  ++muv_, ++F1_, Fv_ += rotnu)
                       E_ += (*F1_) * (*muv_) * (*Fv_);
                   }
                   E[n][1] -= 0.5*scl*E_;
@@ -496,7 +496,7 @@ Timer.start("T2");
         RealType scl = (walker_type==CLOSED?2.0:1.0);
         size_t nqk=0;  // start count at 1 to "offset" the calcuation of E1 done at root
         for(int n=0; n<nwalk; ++n) {
-          for(int Q=0; Q<nkpts; ++Q) {      // momentum conservation index   
+          for(int Q=0; Q<nkpts; ++Q) {      // momentum conservation index
             if((nqk++)%comm->size() == comm->rank()) {
               int nc0 = std::accumulate(nGpk.begin(),nGpk.begin()+Q,0)*rotnu;
               E[n][2] += 0.5*scl*scl*ma::dot(Kl[n]({nc0,nc0+rotnu*nGpk[Q]}),
@@ -510,10 +510,10 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
 
     }
 
-    template<class MatE, class MatO, class MatG, class MatQ, class MatB, 
+    template<class MatE, class MatO, class MatG, class MatQ, class MatB,
              class index_aos>
-    void fast_energy(MatE&& E, MatO&& Ov, MatG const& GrefA, MatG const& GrefB, 
-                     MatQ const& QQ0A, MatQ const& QQ0B, MatB&& Qwork,  
+    void fast_energy(MatE&& E, MatO&& Ov, MatG const& GrefA, MatG const& GrefB,
+                     MatQ const& QQ0A, MatQ const& QQ0B, MatB&& Qwork,
                      ph_excitations<int,ComplexType> const& abij,
                      std::array<index_aos,2> const& det_couplings)
     {
@@ -563,13 +563,13 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
       int k0,kN;
       std::tie(k0,kN) = FairDivideBoundary(comm->rank(),nel_,comm->size());
-      // right now the algorithm uses 2 copies of matrices of size nuxnv in COLLINEAR case, 
-      // consider moving loop over spin to avoid storing the second copy which is not used  
+      // right now the algorithm uses 2 copies of matrices of size nuxnv in COLLINEAR case,
+      // consider moving loop over spin to avoid storing the second copy which is not used
       // simultaneously
       size_t memory_needs = nu*nv + nv + nu  + nel_*(nv+2*nu+2*nel_);
       set_shm_buffer(memory_needs);
       size_t cnt=0;
-      // if Alpha/Beta have different references, allocate the largest and 
+      // if Alpha/Beta have different references, allocate the largest and
       // have distinct references for each
       // Guv[nu][nv]
       boost::multi_array_ref<ComplexType,2> Guv(SM_TMats->data(),extents[nu][nv]);
@@ -580,7 +580,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
       // S[nel_][nv]
       boost::multi_array_ref<ComplexType,2> Scu(SM_TMats->data()+cnt,extents[nel_][nv]);
       cnt+=Scu.num_elements();
-      // Qub[nu][nel_]: 
+      // Qub[nu][nel_]:
       boost::multi_array_ref<ComplexType,2> Qub(SM_TMats->data()+cnt,extents[nu][nel_]);
       cnt+=Qub.num_elements();
       boost::multi_array_ref<ComplexType,1> Tuu(SM_TMats->data()+cnt,extents[nu]);
@@ -592,7 +592,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
       boost::multi_array_ref<ComplexType,2> Tub(SM_TMats->data()+cnt,extents[nu][nel_]);
       cnt+=Tub.num_elements();
       assert(cnt <= memory_needs);
-      if(eloc.shape()[0] != 2 || eloc.shape()[1] != nwalk || eloc.shape()[2] != 3) 
+      if(eloc.shape()[0] != 2 || eloc.shape()[1] != nwalk || eloc.shape()[2] != 3)
         eloc.resize(extents[2][nwalk][3]);
 
       std::fill_n(eloc.origin(),eloc.num_elements(),ComplexType(0.0));
@@ -649,9 +649,9 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
           if(k0!=kN)
             ma::product(Scu[indices[range_t(k0,kN)][range_t()]],Tub,
                       Jcb[indices[range_t(k0,kN)][range_t()]]);
-          for(int c=k0; c<kN; ++c) 
+          for(int c=k0; c<kN; ++c)
             eloc[0][wi][1] += -0.5*scl*Xcb[c][c];
-          for(int c=k0; c<kN; ++c) 
+          for(int c=k0; c<kN; ++c)
             eloc[0][wi][2] += 0.5*scl*scl*Jcb[c][c];
         }
 
@@ -706,7 +706,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
             Eb[wi][2] += eloc[1][wi][2];
           }
         }
-      }  
+      }
       comm->barrier();
 */
     }
@@ -728,7 +728,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
             >
     void vHS(MatA & X, MatB&& v, double a=1., double c=0.) {
       int nkpts = nopk.size();
-      int nu = Piu.shape()[1]; 
+      int nu = Piu.shape()[1];
       int nwalk = X.shape()[1];
       assert(v.shape()[0]==nwalk);
       int nspin = (walker_type==COLLINEAR?2:1);
@@ -752,8 +752,8 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
 
       Sp3Tensor_ref v3D(std::addressof(*v.origin()),{nwalk,nmo_tot,nmo_tot});
 
-      // "rotate" X  
-      //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)  
+      // "rotate" X
+      //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
       for(int Q=0, nq=0; Q<nkpts; ++Q) {
         int nc0, ncN;
         std::tie(nc0,ncN) = FairDivideBoundary(comm->rank(),ncholpQ[Q],comm->size());
@@ -768,7 +768,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
         }
         nq+=2*ncholpQ[Q];
       }
-      // scale v by 'c': assuming contiguous data 
+      // scale v by 'c': assuming contiguous data
       {
         size_t i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(v.num_elements()),size_t(comm->size()));
@@ -780,7 +780,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
       using ma::T;
       using ma::H;
       size_t nqk=0;
-      for(int Q=0, nc0=0; Q<nkpts; ++Q) {      // momentum conservation index   
+      for(int Q=0, nc0=0; Q<nkpts; ++Q) {      // momentum conservation index
         if(Q%comm->size() == comm->rank()) {
           int nchol = ncholpQ[Q];
           int nG = nGpk[Q];
@@ -803,7 +803,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
               for(int n=0; n<nwalk; ++n) {
                 auto p_(std::addressof(*Piu[ni0].origin()));
                 for(int i=0; i<ni; ++i) {
-                  auto Tu(Twu[n].origin());  
+                  auto Tu(Twu[n].origin());
                   for(int u=0; u<nu; ++u, ++p_, ++Qniu_, ++Tu)
                     (*Qniu_) = (*Tu)*conj(*p_);
                 }
@@ -813,7 +813,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
 
               // it is possible to add the second half here by calculating the (Q*,K*) pair that maps
               // to the JI term corresponding to this (Q,K) pair. Not doing it for now
-              auto vik_(vik.origin()); 
+              auto vik_(vik.origin());
               for(int n=0; n<nwalk; n++) {
                 auto v_(std::addressof(*v3D[n][ni0].origin())+nk0);
                 for(int i=0; i<ni; i++, vik_+=nk, v_+=nmo_tot)
@@ -824,9 +824,9 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
         }
         nc0+=2*ncholpQ[Q];
       }
-      comm->barrier();  
-      // adding second half. sync here to avoid need for locks  
-      for(int Q=0, nc0=0; Q<nkpts; ++Q) {      // momentum conservation index   
+      comm->barrier();
+      // adding second half. sync here to avoid need for locks
+      for(int Q=0, nc0=0; Q<nkpts; ++Q) {      // momentum conservation index
         if(Q%comm->size() == comm->rank()) {
           int nchol = ncholpQ[Q];
           int nG = nGpk[Q];
@@ -895,7 +895,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
         APP_ABORT(" Error: only ncore==1 for now. \n");
 
       int nkpts = nopk.size();
-      int nu = Piu.shape()[1]; 
+      int nu = Piu.shape()[1];
       assert(nd >= 0 && nd < nelpk.size());
       int nwalk = G.shape()[0];
       assert(v.shape()[0]==2*local_nCV);
@@ -955,10 +955,10 @@ Timer.reset("T3");
 Timer.reset("T4");
 Timer.start("T0");
 */
-      size_t nqk=0;  
-      auto& cPua_nd(cPua[nd]);  
+      size_t nqk=0;
+      auto& cPua_nd(cPua[nd]);
 // for fine grained parallelization, split statically (Q,G) pairs to lead to "even" workload
-      for(int Q=0; Q<nkpts; ++Q) {              
+      for(int Q=0; Q<nkpts; ++Q) {
         if(Q%comm->size() == comm->rank()) {
           int nG = nGpk[Q];
           int nchol = ncholpQ[Q];
@@ -969,7 +969,7 @@ Timer.start("T0");
           for(int G=0; G<nG; ++G) {
             std::fill_n(Fwu.origin(),Fwu.num_elements(),SPComplexType(0.0));
             for(int K=0; K<nkpts; ++K) {
-              if( QKToG[Q][K] != G ) continue;  
+              if( QKToG[Q][K] != G ) continue;
               int QK = QKToK2[Q][K];
               // (K,QK)
               int na1 = nelpk[nd][K];
@@ -989,18 +989,18 @@ Timer.start("T0");
 
               auto Fu1(Fwu.origin());
               for(int n=0; n<nwalk; n++) {
-                // Tua = sum_k T(Piu(k,u)) T(G[n](a,k))  
+                // Tua = sum_k T(Piu(k,u)) T(G[n](a,k))
 //Timer.start("T1");
                 ma::product(ma::T(Piu1_),ma::T(G3Da[n]({na01,na01+na1},{nk01,nk01+nk1})),Tua1);
 //Timer.stop("T1");
 //Timer.start("T3");
                 // Fwu[w][u] = sum_a cPua(u,a) T(u,a)
-                auto Tua1_a(Tua1.origin());  
+                auto Tua1_a(Tua1.origin());
                 auto cPua_nd_u(cPua_nd.origin()+na01);
                 for(int u=0; u<nu; u++, ++Fu1, cPua_nd_u+=nA) {
                   auto cPua_nd_a(cPua_nd_u);
-                  for(int ia=0; ia<na1; ++ia, ++cPua_nd_a, ++Tua1_a) 
-                    *(Fu1) += (*cPua_nd_a) * (*Tua1_a); 
+                  for(int ia=0; ia<na1; ++ia, ++cPua_nd_a, ++Tua1_a)
+                    *(Fu1) += (*cPua_nd_a) * (*Tua1_a);
                 }
 //Timer.stop("T3");
               }
@@ -1033,17 +1033,17 @@ Timer.start("T0");
           }
           // conjugate v2 (use transform?)
           for(int i=0; i<nchol; ++i) {
-            auto v2_(v2[i]);   
-            for(int j=0; j<nwalk; ++j) 
+            auto v2_(v2[i]);
+            for(int j=0; j<nwalk; ++j)
               v2_[j] = conj(v2_[j]);
-          }  
+          }
           int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
 /*
           for(int i=0; i<nchol; ++i) {
-            // v+ = 0.5*a*(v1+v2) 
+            // v+ = 0.5*a*(v1+v2)
             BLAS::axpy(nwalk, halfa, v1[i].origin(), 1, v[nc0+i].origin(), 1);
             BLAS::axpy(nwalk, halfa, v2[i].origin(), 1, v[nc0+i].origin(), 1);
-          // v- = -0.5*a*i*(v1-v2) 
+          // v- = -0.5*a*i*(v1-v2)
             BLAS::axpy(nwalk, minusimhalfa, v1[i].origin(), 1, v[nc0+nchol+i].origin(), 1);
             BLAS::axpy(nwalk, imhalfa, v2[i].origin(), 1, v[nc0+nchol+i].origin(), 1);
           }
@@ -1053,24 +1053,24 @@ Timer.start("T0");
       comm->barrier();
 /*
 Timer.stop("T0");
-app_log()<<" E time: " 
+app_log()<<" E time: "
 <<Timer.total("T0") <<" "
-<<Timer.total("T1") <<" " 
-<<Timer.total("T2") <<" " 
+<<Timer.total("T1") <<" "
+<<Timer.total("T2") <<" "
 <<Timer.total("T3") <<"\n";
 */
     }
 
     bool distribution_over_cholesky_vectors() const { return true; }
-    int number_of_ke_vectors() const{ return std::accumulate(nGpk.begin(),nGpk.end(),0)*rotPiu.shape()[1];} 
+    int number_of_ke_vectors() const{ return std::accumulate(nGpk.begin(),nGpk.end(),0)*rotPiu.shape()[1];}
     int local_number_of_cholesky_vectors() const{ return 2*std::accumulate(ncholpQ.begin(),ncholpQ.end(),0); }
     int global_number_of_cholesky_vectors() const{ return global_nCV; }
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
-    bool transposed_G_for_vbias() const {return true;} 
-    bool transposed_G_for_E() const {return true;} 
+    bool transposed_G_for_vbias() const {return true;}
+    bool transposed_G_for_E() const {return true;}
     // transpose=true means vHS[nwalk][ik], false means vHS[ik][nwalk]
-    bool transposed_vHS() const {return true;} 
+    bool transposed_vHS() const {return true;}
 
     bool fast_ph_energy() const { return false; }
 
@@ -1095,7 +1095,7 @@ app_log()<<" E time: "
     // number of cholesky vectors per Q-point
     std::vector<int> ncholpQ;
 
-    // position of (-K) in kp-list for every K 
+    // position of (-K) in kp-list for every K
     std::vector<int> kminus;
 
     // number of G per Q-point
@@ -1109,7 +1109,7 @@ app_log()<<" E time: "
     // maps (Q,K) --> k2
     shmIMatrix QKToK2;
 
-    // maps (Q,K) --> G 
+    // maps (Q,K) --> G
     shmIMatrix QKToG;
 
     /************************************************/
@@ -1130,14 +1130,14 @@ app_log()<<" E time: "
 
     // Orbitals at interpolating points
     shmSpMatrix Piu;
- 
+
     // Half-rotated Orbitals at interpolating points
     std::vector<shmSpMatrix> cPua;
     /************************************************/
 
     // Muv for energy
     //std::vector<shmSpMatrix> Muv;
-     
+
     // one-body piece of Hamiltonian factorization
     shmC3Tensor vn0;
 

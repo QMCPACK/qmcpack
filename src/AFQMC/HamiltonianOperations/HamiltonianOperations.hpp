@@ -5,12 +5,12 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_HAMILTONIANOPERATIONS_HPP
@@ -38,7 +38,7 @@ namespace dummy
 {
 /*
  * Empty class to avoid need for default constructed HamiltonianOperations.
- * Throws is any visitor is called. 
+ * Throws is any visitor is called.
  */
 class dummy_HOps
 {
@@ -56,20 +56,20 @@ class dummy_HOps
   void energy(Args&&... args)
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
-  }  
+  }
 
   template<class... Args>
   void fast_energy(Args&&... args)
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
-  }  
+  }
 
   bool fast_ph_energy() const
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
     return false;
-  }  
- 
+  }
+
   template<class... Args>
   void vHS(Args&&... args)
   {
@@ -88,7 +88,7 @@ class dummy_HOps
     throw std::runtime_error("calling visitor on dummy_HOps object");
   }
 
-  int number_of_ke_vectors() const 
+  int number_of_ke_vectors() const
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
     return 0;
@@ -105,8 +105,8 @@ class dummy_HOps
     throw std::runtime_error("calling visitor on dummy_HOps object");
     return 0;
   }
-       
-  bool transposed_G_for_vbias() const 
+
+  bool transposed_G_for_vbias() const
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
     return false;
@@ -136,10 +136,10 @@ class dummy_HOps
 
 
 #ifdef QMC_COMPLEX
-class HamiltonianOperations: 
+class HamiltonianOperations:
         public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,SparseTensor<ComplexType,ComplexType>,KP3IndexFactorization,KPTHCOps>
 #else
-class HamiltonianOperations: 
+class HamiltonianOperations:
         public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,
                                   SparseTensor<RealType,RealType>,
                                   SparseTensor<RealType,ComplexType>,
@@ -155,7 +155,7 @@ class HamiltonianOperations:
 #endif
     using STCC = SparseTensor<ComplexType,ComplexType>;
 
-    public: 
+    public:
 
     HamiltonianOperations(): variant() {}
 #ifndef QMC_COMPLEX
@@ -254,7 +254,7 @@ class HamiltonianOperations:
             *this
         );
     }
-    
+
     bool distribution_over_cholesky_vectors() const {
         return boost::apply_visitor(
             [&](auto&& a){return a.distribution_over_cholesky_vectors();},
@@ -291,7 +291,7 @@ class HamiltonianOperations:
         );
     }
 
-}; 
+};
 
 }
 

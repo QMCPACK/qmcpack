@@ -3,8 +3,8 @@
 #define QMCPLUSPLUS_AFQMC_SYMMETRICFACTORIZEDSPARSEHAMILTONIAN_H
 
 #include<iostream>
-#include<vector> 
-#include<map> 
+#include<vector>
+#include<map>
 #include<fstream>
 
 #include "io/hdf_archive.h"
@@ -28,7 +28,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-class SymmetricFactorizedSparseHamiltonian: public OneBodyHamiltonian 
+class SymmetricFactorizedSparseHamiltonian: public OneBodyHamiltonian
 {
 
   typedef std::vector<s1D<ValueType> >::iterator  s1Dit;
@@ -37,10 +37,10 @@ class SymmetricFactorizedSparseHamiltonian: public OneBodyHamiltonian
   public:
 
   using shm_csr_matrix = SpVType_shm_csr_matrix;
-  using csr_matrix_view = shm_csr_matrix::template matrix_view<int>; 
+  using csr_matrix_view = shm_csr_matrix::template matrix_view<int>;
 
- 
-  SymmetricFactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, std::vector<s2D<ValueType> >&& h, 
+
+  SymmetricFactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, std::vector<s2D<ValueType> >&& h,
                               shm_csr_matrix&& v2_, TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
                                     TG(tg_),V2_fact(std::move(v2_)),
@@ -48,13 +48,13 @@ class SymmetricFactorizedSparseHamiltonian: public OneBodyHamiltonian
                                     maximum_buffer_size(1024)
   {
 
-    distribute_Ham = (TG.getNumberOfTGs() > 1 ); 
+    distribute_Ham = (TG.getNumberOfTGs() > 1 );
 
-    if( distribute_Ham ) 
+    if( distribute_Ham )
         APP_ABORT(" Error: Distributed SymmetricFactorizedHamiltonian not yet implemented.\n");
-    
-    if( !distribute_Ham ) 
-      assert(V2_fact.global_origin()[0]==0 && V2_fact.global_origin()[1]==0); 
+
+    if( !distribute_Ham )
+      assert(V2_fact.global_origin()[0]==0 && V2_fact.global_origin()[1]==0);
 
     xmlNodePtr curRoot=cur;
     OhmmsAttributeSet oAttrib;
@@ -96,17 +96,17 @@ class SymmetricFactorizedSparseHamiltonian: public OneBodyHamiltonian
   SpCType_shm_csr_matrix halfRotatedHijkl(WALKER_TYPES type, TaskGroup_& TGHam, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, RealType const cut=1e-6);
 
   SpVType_shm_csr_matrix calculateHSPotentials(double cut, TaskGroup_& TGprop,
-        boost::multi_array<ComplexType,2>& vn0); 
+        boost::multi_array<ComplexType,2>& vn0);
 
-  HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type, 
+  HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type,
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
-            TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump); 
+            TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump);
 
-  ValueType H(IndexType I, IndexType J) const 
+  ValueType H(IndexType I, IndexType J) const
   {  return OneBodyHamiltonian::H(I,J); }
- 
+
   // this should never be used outside initialization routines.
-  ValueType H(IndexType I, IndexType J, IndexType K, IndexType L) const 
+  ValueType H(IndexType I, IndexType J, IndexType K, IndexType L) const
   {
 
     if( (I>=NMO && K<NMO) || (I<NMO && K>=NMO) ) return ValueType(0);
@@ -117,12 +117,12 @@ class SymmetricFactorizedSparseHamiltonian: public OneBodyHamiltonian
     K = (K>=NMO)?(K-NMO):(K);
     L = (L>=NMO)?(L-NMO):(L);
 
-    int ik = I*NMO+Index2Col(NMO,K); 
-    int jl = J*NMO+Index2Col(NMO,L); 
+    int ik = I*NMO+Index2Col(NMO,K);
+    int jl = J*NMO+Index2Col(NMO,L);
     ValueType val = csr::csrvv<ValueType>('N','N',V2_fact.sparse_row(ik),V2_fact.sparse_row(jl));
     return (std::abs(val)>cutoff1bar)?(val):(0);
 
-  } 
+  }
   ValueType H_2bar(IndexType I, IndexType J, IndexType K, IndexType L) const
   {
     if( (I>=NMO && K<NMO) || (I<NMO && K>=NMO) ) return ValueType(0);
@@ -134,13 +134,13 @@ class SymmetricFactorizedSparseHamiltonian: public OneBodyHamiltonian
 
   protected:
 
-  // for hamiltonian distribution 
+  // for hamiltonian distribution
   TaskGroup_& TG;
 
   bool distribute_Ham;
 
-  // factorized Ham : V2(ik,lj) = sum_n V2_fact(ik,n)*conj(V2_fact(lj,n)) 
-  shm_csr_matrix V2_fact; 
+  // factorized Ham : V2(ik,lj) = sum_n V2_fact(ik,n)*conj(V2_fact(lj,n))
+  shm_csr_matrix V2_fact;
 
   // store diagonal part of hamiltonian: Diag(i,k) = H(i,k,i,k);
   ValueMatrix DiagHam;
@@ -148,10 +148,10 @@ class SymmetricFactorizedSparseHamiltonian: public OneBodyHamiltonian
   // options read from xml
   double cutoff1bar;
   double cutoff_cholesky;
-  bool skip_V2; 
+  bool skip_V2;
 
   int maximum_buffer_size;
- 
+
 };
 
 }

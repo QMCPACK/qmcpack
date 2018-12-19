@@ -59,12 +59,12 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
 {
 
   using s2Dit = std::vector<s2D<ValueType> >::iterator;
-  using s4Dit = SMDenseVector<s4D<ValueType> >::iterator; 
+  using s4Dit = SMDenseVector<s4D<ValueType> >::iterator;
 
-  // used to sort snD values using only indexes 
+  // used to sort snD values using only indexes
   _mySort_snD_ mySort;
 
-  // used to identify equal index sets (value is not compared)  
+  // used to identify equal index sets (value is not compared)
   _myEqv_snD_ myEqv;
 
   if(cur == NULL)
@@ -138,11 +138,11 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
   std::ifstream in;
   std::streampos start;
-  if(head) {  
+  if(head) {
     in.open(fileName.c_str());
     if(in.fail()) {
        app_error()<<"Problems opening ASCII integral file:  " <<fileName <<std::endl;
-       APP_ABORT("Problems opening ASCII integral file.\n"); 
+       APP_ABORT("Problems opening ASCII integral file.\n");
     }
 
     int nmo_=-1;
@@ -158,7 +158,7 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
     std::vector<IndexType> orbSymm;
     std::vector<IndexType> occupPerSymm_alpha;
     std::vector<IndexType> occupPerSymm_beta;
-    bool orderStates; 
+    bool orderStates;
     bool factorizedHamiltonian;
 
     if(!readHeader(in,nmax_,nmo_,netot_,naea_,naeb_,nca_,ncb_,ms2_,spinRestricted,ISYM,occup_alpha,occup_beta,orbSymm,occupPerSymm_alpha,occupPerSymm_beta,orderStates,factorizedHamiltonian)) {
@@ -191,12 +191,12 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
   int nOne_core,nOne,nTwo,nTwo_core,nTwo_mixed;
   int nThree,nThree_core,nThree_mixed;
 
-  std::map<IndexType,IndexType> orbMapA; 
-  std::map<IndexType,IndexType> orbMapB; 
+  std::map<IndexType,IndexType> orbMapA;
+  std::map<IndexType,IndexType> orbMapB;
   orbMapA[0]=0;
   orbMapB[0]=0;
-  for(int i=1; i<=NMO; i++) orbMapA[i]=i;   
-  for(int i=1; i<=NMO; i++) orbMapB[i]=i+NMO;   
+  for(int i=1; i<=NMO; i++) orbMapA[i]=i;
+  for(int i=1; i<=NMO; i++) orbMapB[i]=i+NMO;
 
   int n3Vecs=0;
 
@@ -217,7 +217,7 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
   int min_i = 0;
   int max_i = NMO;
 
-  ValueType FrozenCoreEnergy=0, NuclearCoulombEnergy=0;  
+  ValueType FrozenCoreEnergy=0, NuclearCoulombEnergy=0;
 
   if(htype == s4DInts) {
 
@@ -229,9 +229,9 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
     SMDenseVector<s4D<ValueType> >  V2(TG.getCoreID()==0,std::string("SparseGeneralHamiltonian_V2"),&TG.Node());
 
     if(TG.getNodeID() == 0) {
-      V2.reserve(nTwo); 
+      V2.reserve(nTwo);
     } else {
-      V2.resize(nTwo); 
+      V2.resize(nTwo);
     }
 
     if(head) {
@@ -239,7 +239,7 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
       H1.reserve(nOne);
 
       Timer.reset("Generic");
-      Timer.start("Generic");    
+      Timer.start("Generic");
       SPValueSMSpMat* dummy;
       NuclearCoulombEnergy = readElementsFromFCIDUMP(in,cutoff1bar,true,NMO,NCA,NAEA,NAEB,H1,&V2,dummy,orbMapA,orbMapB);
       in.close();
@@ -261,21 +261,21 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
       app_log()<<" -- Time to sort sparse integral tables: " <<Timer.average("Generic") <<"\n";
 
     }
-    
+
     {
       int sz = H1.size();
       TG.Global().broadcast_n(&sz,1,0);
-      if(!head)         
+      if(!head)
         H1.resize(sz);
       //TG.Global().broadcast(H1.begin(),H1.end());
-      MPI_Bcast(H1.data(),sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global()); 
+      MPI_Bcast(H1.data(),sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global());
     }
     if(TG.getCoreID()==0) {
       int sz = V2.size();
       TG.Cores().broadcast_n(&sz,1,0);
       if(!head)
-        V2.resize_serial(sz);      
-      //TG.Cores().broadcast(V2.begin(),V2.end());    
+        V2.resize_serial(sz);
+      //TG.Cores().broadcast(V2.begin(),V2.end());
       MPI_Bcast(V2.values(),V2.size()*sizeof(SPValueType),MPI_CHAR,0,&TG.Cores());
     }
 
@@ -331,9 +331,9 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
       int sz = H1.size();
       TG.Global().broadcast_n(&sz,1,0);
       if(!head)
-        H1.resize(sz);  
+        H1.resize(sz);
       //TG.Global().broadcast(H1.begin(),H1.end());
-      MPI_Bcast(H1.data(),sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global()); 
+      MPI_Bcast(H1.data(),sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global());
     }
     if(TG.getCoreID()==0) {
       //TG.Cores().broadcast(V2.vals_begin(),V2.vals_end());
@@ -375,11 +375,11 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       APP_ABORT("ERROR: Undefined info in execute block. \n");
     }
 
-    AFQMCInfo& AFinfo = InfoMap[info]; 
+    AFQMCInfo& AFinfo = InfoMap[info];
 
-    int NMO = AFinfo.NMO; 
-    int NAEA = AFinfo.NAEA; 
-    int NAEB = AFinfo.NAEB; 
+    int NMO = AFinfo.NMO;
+    int NAEA = AFinfo.NAEA;
+    int NAEB = AFinfo.NAEB;
 
     xmlNodePtr curRoot=cur;
 
@@ -394,7 +394,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     std::string hdf_write_file = "";
     int number_of_TGs = 1;
     int n_reading_cores = -1;
-    bool orderStates=false; 
+    bool orderStates=false;
 
     std::string order("no");
     std::string str("no");
@@ -438,7 +438,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
     app_log()<<" Initializing Hamiltonian from file: " <<fileName <<std::endl;
 
-    // FIX FIX FIX 
+    // FIX FIX FIX
     hdf_archive dump(TG.Global());
     // these cores will read from hdf file
     if( coreid < nread ) {
@@ -447,7 +447,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
         APP_ABORT("");
       }
       if(!dump.push("Hamiltonian",false)) {
-        app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not Hamiltonian found. \n"; 
+        app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not Hamiltonian found. \n";
         APP_ABORT("");
       }
     }
@@ -462,24 +462,24 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
     int int_blocks,nvecs,nkpts=-1;
     std::vector<int> Idata(8);
-    if(head) 
+    if(head)
       if(!dump.read(Idata,"dims")) {
-        app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading dims. \n"; 
+        app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading dims. \n";
         APP_ABORT("");
-      } 
+      }
     TG.Global().broadcast(Idata.begin(),Idata.end());
 
     int_blocks = Idata[2];
     if(Idata[3] != NMO) {
-      app_error()<<" ERROR: NMO differs from value in integral file. \n"; 
+      app_error()<<" ERROR: NMO differs from value in integral file. \n";
       APP_ABORT(" Error: NMO differs from value in integral file. \n");
     }
     if(Idata[4] != NAEA) {
-      app_log()<<" WARNING: NAEA differs from value in integral file. \n"; 
+      app_log()<<" WARNING: NAEA differs from value in integral file. \n";
 //      APP_ABORT(" ");
     }
     if(Idata[5] != NAEB) {
-      app_log()<<" WARNING: NAEB differs from value in integral file. \n"; 
+      app_log()<<" WARNING: NAEB differs from value in integral file. \n";
 //      APP_ABORT(" ");
     }
     nvecs = Idata[7];
@@ -491,38 +491,38 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 //    std::vector<IndexType> occup_alpha(NAEA);
 //    std::vector<IndexType> occup_beta(NAEB);
     ValueType NuclearCoulombEnergy(0);
-    ValueType FrozenCoreEnergy(0); 
+    ValueType FrozenCoreEnergy(0);
 
-    if(head) { 
+    if(head) {
 /*
       std::vector<int> occups(NAEA+NAEB);
-      if(!dump.read(occups,"occups")) { 
-        app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading occups dataset. \n"; 
+      if(!dump.read(occups,"occups")) {
+        app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading occups dataset. \n";
         APP_ABORT(" ");
       }
       for(int i=0; i<NAEA; i++) occup_alpha[i] = occups[i];
       for(int i=NAEA, j=0; i<NAEA+NAEB; i++, j++) occup_beta[j] = occups[i];
 */
       std::vector<ValueType> Rdata(2);
-      if(!dump.read(Rdata,"Energies")) { 
-        app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading  dataset. \n"; 
+      if(!dump.read(Rdata,"Energies")) {
+        app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading  dataset. \n";
         APP_ABORT(" ");
       }
-      if(Rdata.size()>0)  
+      if(Rdata.size()>0)
         NuclearCoulombEnergy = Rdata[0];
-      if(Rdata.size()>1)  
+      if(Rdata.size()>1)
         FrozenCoreEnergy = Rdata[1];
     }
-    
+
 //    TG.Global().broadcast(occup_alpha.begin(),occup_alpha.end());
 //    TG.Global().broadcast(occup_beta.begin(),occup_beta.end());
     TG.Global().broadcast_n(&NuclearCoulombEnergy,1,0);
     TG.Global().broadcast_n(&FrozenCoreEnergy,1,0);
 
 
-    if(head) { 
+    if(head) {
 
-      using std::conj;  
+      using std::conj;
       using std::imag;
       bool foundH1=false;
       boost::multi_array<ValueType,2> hcore(extents[NMO][NMO]);
@@ -537,26 +537,26 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
             app_error()<<" Error: hcore is not hermitian. \n";
             APP_ABORT("");
           }
-          if(std::abs(hcore[i][i]) > cutoff1body) nnz++; 
+          if(std::abs(hcore[i][i]) > cutoff1body) nnz++;
           for(int j=i+1; j<hcore.shape()[1]; j++) {
             if(std::abs(hcore[i][j]-conj(hcore[j][i])) > 1e-12) {
               app_error()<<" Error: hcore is not hermitian. \n";
               APP_ABORT("");
             }
             if(std::abs(hcore[i][j]) > cutoff1body) nnz++;
-          }  
+          }
         }
         H1.resize(nnz);
         nnz = 0;
         for(int i=0; i<hcore.shape()[0]; i++) {
-          if(std::abs(hcore[i][i]) > cutoff1body) 
-            H1[nnz++] = std::make_tuple(OrbitalType(i),OrbitalType(i),ValueType(hcore[i][i]));      
+          if(std::abs(hcore[i][i]) > cutoff1body)
+            H1[nnz++] = std::make_tuple(OrbitalType(i),OrbitalType(i),ValueType(hcore[i][i]));
           for(int j=i+1; j<hcore.shape()[1]; j++) {
-            if(std::abs(hcore[i][j]) > cutoff1body) 
-              H1[nnz++] = std::make_tuple(OrbitalType(i),OrbitalType(j),ValueType(hcore[i][j]));      
-          }        
+            if(std::abs(hcore[i][j]) > cutoff1body)
+              H1[nnz++] = std::make_tuple(OrbitalType(i),OrbitalType(j),ValueType(hcore[i][j]));
+          }
         }
-      } else {    
+      } else {
 
         if(Idata[0] < 1) {
           app_error()<<" Error in HamiltonianFactory::fromHDF5(): Dimensions of H1 < 1.  \n";
@@ -565,15 +565,15 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
         H1.resize(Idata[0]);
 
-        std::vector<OrbitalType> ivec(2*H1.size());    
+        std::vector<OrbitalType> ivec(2*H1.size());
         if(!dump.read(ivec,"H1_indx")) {
           app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1_indx. \n";
           APP_ABORT(" ");
-        } 
-        for(int i=0, j=0; i<H1.size(); i++, j+=2)        
-          H1[i] = std::make_tuple(ivec[j],ivec[j+1],0);  
+        }
+        for(int i=0, j=0; i<H1.size(); i++, j+=2)
+          H1[i] = std::make_tuple(ivec[j],ivec[j+1],0);
 
-        std::vector<ValueType> vvec(H1.size());    
+        std::vector<ValueType> vvec(H1.size());
         if(!dump.read(vvec,"H1")) {
           app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1.  \n";
           APP_ABORT(" ");
@@ -588,7 +588,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
               std::get<2>(H1[i]) = myconj(vvec[i]);
           }
         }
-      } 
+      }
 
       std::sort (H1.begin(), H1.end(),
         [] (const s2D<ValueType>& lhs, const s2D<ValueType>& rhs)
@@ -605,9 +605,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     } else {
       int sz;
       MPI_Bcast(&sz,1,MPI_INT,0,&TG.Global());
-      H1.resize(sz);  
+      H1.resize(sz);
       if(sz>0) MPI_Bcast(H1.data(),H1.size()*sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global());
-    } 
+    }
 
     // now read the integrals
     if(htype == KPTHC) {
@@ -637,7 +637,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
         dump.close();
       }
       TG.global_barrier();
-      // KPFactorizedHamiltonian matrices are read by THCHamiltonian object when needed, 
+      // KPFactorizedHamiltonian matrices are read by THCHamiltonian object when needed,
       // since their ownership is passed to the HamOps object.
       return Hamiltonian(KPFactorizedHamiltonian(AFinfo,cur,std::move(H1),TG,
                                         NuclearCoulombEnergy,FrozenCoreEnergy));
@@ -675,7 +675,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       app_log()<<" -- Time to read move ucsr into csr matrix: "
                <<Timer.average("Generic1") <<"\n";
 
-      app_log()<<" Memory used by factorized 2-el integral table (on head node): " 
+      app_log()<<" Memory used by factorized 2-el integral table (on head node): "
                <<(V2_fact.capacity()*(sizeof(ValueType)+sizeof(IndexType)) + V2_fact.shape()[0]*(2*sizeof(std::size_t)))/1024.0/1024.0 <<" MB. " <<std::endl;
 
       if( coreid < nread ) {
@@ -730,14 +730,14 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
       int min_i=0;
       int max_i=NMO;
-      if(TG.getNumberOfTGs()>1 && number_of_TGs > NMO) 
+      if(TG.getNumberOfTGs()>1 && number_of_TGs > NMO)
         APP_ABORT("Error: number_of_TGs > NMO. \n\n\n");
 
-      //SMDenseVector<s4D<ValueType> > V2 = read_V2(dump,TG,nread,NMO,min_i,max_i,cutoff1bar,int_blocks); 
+      //SMDenseVector<s4D<ValueType> > V2 = read_V2(dump,TG,nread,NMO,min_i,max_i,cutoff1bar,int_blocks);
       size_t nr = NMO*(NMO+1)/2;
       size_t nc = NMO*NMO;
       SpVType_shm_csr_matrix V2({nr,nc},{0,0},1,
-                                    boost::mpi3::intranode::allocator<SPValueType>(TG.Node())); 
+                                    boost::mpi3::intranode::allocator<SPValueType>(TG.Node()));
 
       app_log()<<" Memory used by 2-el integral table (on head node): " <<V2.capacity()*(sizeof(SPValueType)+sizeof(int))/1024.0/1024.0 <<" MB. " <<std::endl;
 

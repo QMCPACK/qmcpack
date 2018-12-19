@@ -5,12 +5,12 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_HAMILTONIANOPERATIONS_SPARSETENSOR_HPP
@@ -40,10 +40,10 @@ namespace afqmc
 template<class T1, class T2=T1>
 class SparseTensor
 {
-  
-#if defined(AFQMC_SP) 
-  using SpT1 = typename to_single_precision<T1>::value_type; 
-  using SpT2 = typename to_single_precision<T2>::value_type; 
+
+#if defined(AFQMC_SP)
+  using SpT1 = typename to_single_precision<T1>::value_type;
+  using SpT2 = typename to_single_precision<T2>::value_type;
 #else
   using SpT1 = T1;
   using SpT2 = T2;
@@ -51,37 +51,37 @@ class SparseTensor
   using T1shm_csr_matrix = ma::sparse::csr_matrix<SpT1,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SpT1>,
                                 ma::sparse::is_root>;
-  using T1shm_csr_matrix_view = typename T1shm_csr_matrix::template matrix_view<int>; 
+  using T1shm_csr_matrix_view = typename T1shm_csr_matrix::template matrix_view<int>;
   using T2shm_csr_matrix = ma::sparse::csr_matrix<SpT2,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SpT2>,
                                 ma::sparse::is_root>;
-  using T2shm_csr_matrix_view = typename T2shm_csr_matrix::template matrix_view<int>; 
+  using T2shm_csr_matrix_view = typename T2shm_csr_matrix::template matrix_view<int>;
   using Vshm_csr_matrix = ma::sparse::csr_matrix<SPValueType,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SPValueType>,
                                 ma::sparse::is_root>;
-  using Vshm_csr_matrix_view = typename Vshm_csr_matrix::template matrix_view<int>; 
-  using CVector = boost::multi_array<ComplexType,1>;  
-  using CMatrix = boost::multi_array<ComplexType,2>;  
-  using T1Vector = boost::multi_array<T1,1>;  
-  using T1Matrix = boost::multi_array<T1,2>;  
-  using SpVector = boost::multi_array<SPComplexType,1>;  
+  using Vshm_csr_matrix_view = typename Vshm_csr_matrix::template matrix_view<int>;
+  using CVector = boost::multi_array<ComplexType,1>;
+  using CMatrix = boost::multi_array<ComplexType,2>;
+  using T1Vector = boost::multi_array<T1,1>;
+  using T1Matrix = boost::multi_array<T1,2>;
+  using SpVector = boost::multi_array<SPComplexType,1>;
   using this_t = SparseTensor<T1,T2>;
 
   public:
 
     SparseTensor(WALKER_TYPES type,
                  CMatrix&& hij_,
-                 std::vector<T1Vector>&& h1, 
-                 std::vector<T1shm_csr_matrix>&& v2, 
-                 std::vector<T1shm_csr_matrix_view>&& v2view, 
-                 Vshm_csr_matrix&& vn, 
-                 Vshm_csr_matrix_view&& vnview, 
-                 CMatrix&& vn0_, 
-                 std::vector<T2shm_csr_matrix>&& vnT, 
-                 std::vector<T2shm_csr_matrix_view>&& vnTview, 
+                 std::vector<T1Vector>&& h1,
+                 std::vector<T1shm_csr_matrix>&& v2,
+                 std::vector<T1shm_csr_matrix_view>&& v2view,
+                 Vshm_csr_matrix&& vn,
+                 Vshm_csr_matrix_view&& vnview,
+                 CMatrix&& vn0_,
+                 std::vector<T2shm_csr_matrix>&& vnT,
+                 std::vector<T2shm_csr_matrix_view>&& vnTview,
                  ValueType e0_,
-                 int gncv): 
-/*  2 defined behaviors: 
+                 int gncv):
+/*  2 defined behaviors:
  *  1. NOMSD expected behavior where a single vnT/vnTview is given and it must be consistent
  *     with a full G: NMO*NMO. In this case, the k index in vbias is ignored.
  *     In this case, only EXX is calculated and assumed to also contain EJ.
@@ -89,7 +89,7 @@ class SparseTensor
  *     vbias must be calculated for each k independently.
  *     v2 is assumed to only contain EXX and EJ is calculated separately.
  *  In summary, vnT.size() determines the behavior of this routine.
- *  NOMSD wavefunctions provide half rotated vnT is single determinant and just transposed vn 
+ *  NOMSD wavefunctions provide half rotated vnT is single determinant and just transposed vn
  *  if multi-determinant.
  *  PHMSD provides different references (alpha/beta or multi-reference PH) in separate locations
  *  in the std:vector's.
@@ -114,12 +114,12 @@ class SparseTensor
 	assert((haj.size() == SpvnT.size()) || (SpvnT.size()==1));
 	assert((haj.size() == SpvnT_view.size()) || (SpvnT_view.size()==1));
 	if((haj.size() > 1) && (SpvnT.size()==1)) // NOMSD with more than 1 determinant
-          separateEJ = false;	
+          separateEJ = false;
 /*
 for(int i=0; i<haj[0].shape()[0]; i++)
   std::cout<<i <<" " <<haj[0][i]  <<"\n";
 std::cout<<"H1:\n";
-for(int i=0; i<hij.shape()[0]; i++) 
+for(int i=0; i<hij.shape()[0]; i++)
   for(int j=0; j<hij.shape()[1]; j++)
     std::cout<<i <<" " <<j <<" " <<hij[i][j]  <<"\n";
 std::cout<<"\n";
@@ -127,15 +127,15 @@ std::cout<<"\n";
     }
 
     ~SparseTensor() {}
-    
+
     SparseTensor(const SparseTensor& other) = delete;
     SparseTensor& operator=(const SparseTensor& other) = delete;
-    SparseTensor(SparseTensor&& other) = default; 
+    SparseTensor(SparseTensor&& other) = default;
     SparseTensor& operator=(SparseTensor&& other) = default;
 
     CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF) {
 
-      int NMO = hij.shape()[0];  
+      int NMO = hij.shape()[0];
       // in non-collinear case with SO, keep SO matrix here and add it
       // for now, stay collinear
       CMatrix H1(extents[NMO][NMO]);
@@ -143,7 +143,7 @@ std::cout<<"\n";
       // add sum_n vMF*Spvn, vMF has local contribution only!
       boost::multi_array_ref<ComplexType,1> H1D(H1.origin(),extents[NMO*NMO]);
       std::fill_n(H1D.origin(),H1D.num_elements(),ComplexType(0));
-      vHS(vMF, H1D);  
+      vHS(vMF, H1D);
       TG.TG().all_reduce_in_place_n(H1D.origin(),H1D.num_elements(),std::plus<>());
 
       // add hij + vn0 and symmetrize
@@ -154,20 +154,20 @@ std::cout<<"\n";
         for(int j=i+1; j<NMO; j++) {
           H1[i][j] += hij[i][j] + vn0[i][j];
           H1[j][i] += hij[j][i] + vn0[j][i];
-          // This is really cutoff dependent!!!  
+          // This is really cutoff dependent!!!
           if( std::abs( H1[i][j] - conj(H1[j][i]) ) > 1e-6 ) {
             app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
-            app_error()<<i <<" " <<j <<" " <<H1[i][j] <<" " <<H1[j][i] <<" " 
+            app_error()<<i <<" " <<j <<" " <<H1[i][j] <<" " <<H1[j][i] <<" "
                        <<hij[i][j] <<" " <<hij[j][i] <<" "
-                       <<vn0[i][j] <<" " <<vn0[j][i] <<std::endl;  
-            //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n"); 
+                       <<vn0[i][j] <<" " <<vn0[j][i] <<std::endl;
+            //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
           }
           H1[i][j] = 0.5*(H1[i][j]+conj(H1[j][i]));
           H1[j][i] = conj(H1[i][j]);
         }
       }
 
-      return H1;  
+      return H1;
     }
 
     template<class Mat, class MatB>
@@ -177,12 +177,12 @@ std::cout<<"\n";
       energy(E,G,k,Kl,Kr,addH1,addEJ,addEXX);
     }
 
-    // Kl and Kr must be in shared memory for this to work correctly  
+    // Kl and Kr must be in shared memory for this to work correctly
     template<class Mat, class MatB, class MatC, class MatD>
     void energy(Mat&& E, MatB const& Gc, int k, MatC* Kl, MatD* Kr, bool addH1=true, bool addEJ=true, bool addEXX=true) {
       assert(E.shape()[1]>=3);
-      assert(k >= 0 && k < haj.size());  
-      assert(k >= 0 && k < Vakbl_view.size());  
+      assert(k >= 0 && k < haj.size());
+      assert(k >= 0 && k < Vakbl_view.size());
       if(Gcloc.num_elements() < Gc.shape()[1] * Vakbl_view[k].shape()[0])
         Gcloc.resize(extents[Vakbl_view[k].shape()[0]*Gc.shape()[1]]);
       boost::multi_array_ref<SPComplexType,2> buff(Gcloc.data(),
@@ -199,7 +199,7 @@ std::cout<<"\n";
       if(addEJ and getKr)
         assert(Kr->shape()[0] == nwalk && Kr->shape()[1] == SpvnT[k].shape()[0]);
 
-      for(int n=0; n<nwalk; n++) 
+      for(int n=0; n<nwalk; n++)
         std::fill_n(E[n].origin(),3,ComplexType(0.));
 
       // one-body contribution
@@ -207,26 +207,26 @@ std::cout<<"\n";
         boost::const_multi_array_ref<ComplexType,1> haj_ref(haj[k].origin(), extents[haj[k].num_elements()]);
         ma::product(ComplexType(1.),ma::T(Gc),haj_ref,ComplexType(1.),E[indices[range_t()][0]]);
         for(int i=0; i<nwalk; i++)
-          E[i][0] += E0;  
+          E[i][0] += E0;
       }
 
-      // move calculation of H1 here	
-      if(addEXX) {  
+      // move calculation of H1 here
+      if(addEXX) {
         shm::calculate_energy(std::forward<Mat>(E),Gc,buff,Vakbl_view[k]);
-      }  
+      }
 
       if(separateEJ && addEJ) {
         using ma::T;
         if(Gcloc.num_elements() < SpvnT[k].shape()[0] * Gc.shape()[1])
           Gcloc.resize(extents[SpvnT[k].shape()[0]*Gc.shape()[1]]);
         assert(SpvnT_view[k].shape()[1] == Gc.shape()[0]);
-        RealType scl = (walker_type==CLOSED?4.0:1.0); 
+        RealType scl = (walker_type==CLOSED?4.0:1.0);
         // SpvnT*G
         boost::multi_array_ref<T2,2> v_(Gcloc.origin()+
                                             SpvnT_view[k].local_origin()[0]*Gc.shape()[1],
                                         extents[SpvnT_view[k].shape()[0]][Gc.shape()[1]]);
-        ma::product(SpvnT_view[k], Gc, v_); 
-        if(getKl || getKr) { 
+        ma::product(SpvnT_view[k], Gc, v_);
+        if(getKl || getKr) {
           for(int wi=0; wi<Gc.shape()[1]; wi++) {
             auto _v_ = v_[indices[range_t()][wi]];
             if(getKl) {
@@ -241,8 +241,8 @@ std::cout<<"\n";
             }
           }
         }
-        for(int wi=0; wi<Gc.shape()[1]; wi++) 
-          E[wi][2] = 0.5*scl*ma::dot(v_[indices[range_t()][wi]],v_[indices[range_t()][wi]]); 
+        for(int wi=0; wi<Gc.shape()[1]; wi++)
+          E[wi][2] = 0.5*scl*ma::dot(v_[indices[range_t()][wi]],v_[indices[range_t()][wi]]);
       }
 
     }
@@ -250,7 +250,7 @@ std::cout<<"\n";
     template<class... Args>
     void fast_energy(Args&&... args)
     {
-      APP_ABORT(" Error: fast_energy not implemented in SparseTensor. \n"); 
+      APP_ABORT(" Error: fast_energy not implemented in SparseTensor. \n");
     }
 
     template<class MatA, class MatB,
@@ -263,8 +263,8 @@ std::cout<<"\n";
       assert( Spvn.shape()[0] == v.shape()[0] );
       using Type = typename std::decay<MatB>::type::element;
 
-      // Spvn*X 
-      boost::multi_array_ref<Type,1> v_(v.origin() + Spvn_view.local_origin()[0], 
+      // Spvn*X
+      boost::multi_array_ref<Type,1> v_(v.origin() + Spvn_view.local_origin()[0],
                                         extents[Spvn_view.shape()[0]]);
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
     }
@@ -279,8 +279,8 @@ std::cout<<"\n";
       assert( X.shape()[1] == v.shape()[1] );
       using Type = typename std::decay<MatB>::type::element;
 
-      // Spvn*X 
-      boost::multi_array_ref<Type,2> v_(v[Spvn_view.local_origin()[0]].origin(), 
+      // Spvn*X
+      boost::multi_array_ref<Type,2> v_(v[Spvn_view.local_origin()[0]].origin(),
                                         extents[Spvn_view.shape()[0]][v.shape()[1]]);
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
     }
@@ -297,7 +297,7 @@ std::cout<<"\n";
       using Type = typename std::decay<MatB>::type::element ;
 
       // SpvnT*G
-      boost::multi_array_ref<Type,1> v_(v.origin() + SpvnT_view[k].local_origin()[0], 
+      boost::multi_array_ref<Type,1> v_(v.origin() + SpvnT_view[k].local_origin()[0],
                                         extents[SpvnT_view[k].shape()[0]]);
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
@@ -310,12 +310,12 @@ std::cout<<"\n";
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
       if(not separateEJ) k=0;
       assert( SpvnT[k].shape()[1] == G.shape()[0] );
-      assert( SpvnT[k].shape()[0] == v.shape()[0] );   
+      assert( SpvnT[k].shape()[0] == v.shape()[0] );
       assert( G.shape()[1] == v.shape()[1] );
       using Type = typename std::decay<MatB>::type::element ;
 
       // SpvnT*G
-      boost::multi_array_ref<Type,2> v_(v[SpvnT_view[k].local_origin()[0]].origin(), 
+      boost::multi_array_ref<Type,2> v_(v[SpvnT_view[k].local_origin()[0]].origin(),
                                         extents[SpvnT_view[k].shape()[0]][v.shape()[1]]);
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
@@ -328,9 +328,9 @@ std::cout<<"\n";
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
     bool transposed_G_for_vbias() const{return false;}
-    bool transposed_G_for_E() const{return false;} 
+    bool transposed_G_for_E() const{return false;}
     // transpose=true means vHS[nwalk][ik], false means vHS[ik][nwalk]
-    bool transposed_vHS() const{return false;} 
+    bool transposed_vHS() const{return false;}
 
     bool fast_ph_energy() const { return false; }
 
@@ -350,28 +350,28 @@ std::cout<<"\n";
     // (potentially half rotated) one body hamiltonian
     std::vector<T1Vector> haj;
 
-    // sparse 2-body 2-electron integrals in matrix form  
-    std::vector<T1shm_csr_matrix> Vakbl; 
+    // sparse 2-body 2-electron integrals in matrix form
+    std::vector<T1shm_csr_matrix> Vakbl;
 
     // sparse sub-matrix view
     std::vector<T1shm_csr_matrix_view> Vakbl_view;
 
-    // Cholesky factorization of 2-electron integrals in sparse matrix form 
+    // Cholesky factorization of 2-electron integrals in sparse matrix form
     Vshm_csr_matrix Spvn;
 
-    // sparse sub-matrix view 
+    // sparse sub-matrix view
     Vshm_csr_matrix_view Spvn_view;
 
-    // Cholesky factorization of 2-electron integrals in sparse matrix form 
+    // Cholesky factorization of 2-electron integrals in sparse matrix form
     std::vector<T2shm_csr_matrix> SpvnT;
 
-    // sparse sub-matrix view 
+    // sparse sub-matrix view
     std::vector<T2shm_csr_matrix_view> SpvnT_view;
 
     // one-body piece of Hamiltonian factorization
     CMatrix vn0;
 
-    // local storage 
+    // local storage
     SpVector Gcloc;
 
 };

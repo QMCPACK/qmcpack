@@ -5,12 +5,12 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_HAMILTONIANOPERATIONS_THCOPS_HPP
@@ -38,12 +38,12 @@ namespace afqmc
 template<class T>
 class THCOps
 {
-#if defined(AFQMC_SP) 
+#if defined(AFQMC_SP)
   using SpT = typename to_single_precision<T>::value_type;
   using SpC = typename to_single_precision<ComplexType>::value_type;
 #else
   using SpT = T;
-  using SpC = ComplexType;  
+  using SpC = ComplexType;
 #endif
 
   using SpTVector = boost::multi_array<SpT,1>;
@@ -61,8 +61,8 @@ class THCOps
      * NAOA/NAOB stands for number of active orbitals alpha/beta (instead of active electrons)
      */
     THCOps(communicator& c_,
-           int nmo_, int naoa_, int naob_,  
-           WALKER_TYPES type, 
+           int nmo_, int naoa_, int naob_,
+           WALKER_TYPES type,
            CMatrix&& hij_,
            std::vector<SpTVector>&& h1,
            shmCMatrix&& rotmuv_,
@@ -87,19 +87,19 @@ class THCOps
                 cPua(std::move(pau_)),
                 v0(std::move(v0_)),
                 E0(e0_),
-                SM_TMats(nullptr) 
+                SM_TMats(nullptr)
     {
 /*
-for(int i=0; i<haj[0].shape()[0]; i++) 
+for(int i=0; i<haj[0].shape()[0]; i++)
   std::cout<<i <<" " <<haj[0][i]  <<"\n";
 std::cout<<"H1:\n";
-for(int i=0; i<hij.shape()[0]; i++) 
-  for(int j=0; j<hij.shape()[1]; j++) 
+for(int i=0; i<hij.shape()[0]; i++)
+  for(int j=0; j<hij.shape()[1]; j++)
     std::cout<<i <<" " <<j <<" " <<hij[i][j]  <<"\n";
 std::cout<<"\n";
 */
       if(haj.size() > 1)
-	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");	
+	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
       assert(comm);
       // current partition over 'u' for L/Piu
       assert(Luv.shape()[0] == Piu.shape()[1]);
@@ -132,19 +132,19 @@ std::cout<<"\n";
     }
 
     ~THCOps() {}
-    
+
     THCOps(THCOps const& other) = delete;
     THCOps& operator=(THCOps const& other) = delete;
 
     THCOps(THCOps&& other) = default;
-    THCOps& operator=(THCOps&& other) = default; 
+    THCOps& operator=(THCOps&& other) = default;
 
     CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF) {
       int NMO = hij.shape()[0];
       // in non-collinear case with SO, keep SO matrix here and add it
       // for now, stay collinear
       CMatrix H1(extents[NMO][NMO]);
- 
+
       // add sum_n vMF*Spvn, vMF has local contribution only!
       boost::multi_array_ref<ComplexType,1> H1D(H1.origin(),extents[NMO*NMO]);
       std::fill_n(H1D.origin(),H1D.num_elements(),ComplexType(0));
@@ -176,55 +176,55 @@ std::cout<<"\n";
 
     template<class Mat, class MatB>
     void energy(Mat&& E, MatB const& G, int k, bool addH1=true, bool addEJ=true, bool addEXX=true) {
-      MatB* Kr(nullptr);  
+      MatB* Kr(nullptr);
       MatB* Kl(nullptr);
-      energy(E,G,k,Kl,Kr,addH1,addEJ,addEXX);  
+      energy(E,G,k,Kl,Kr,addH1,addEJ,addEXX);
     }
 
-    // Kl and Kr must be in shared memory for this to work correctly  
+    // Kl and Kr must be in shared memory for this to work correctly
     template<class Mat, class MatB, class MatC, class MatD>
     void energy(Mat&& E, MatB const& G, int k, MatC* Kl, MatD* Kr, bool addH1=true, bool addEJ=true, bool addEXX=true) {
       if(k>0)
-	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");	
+	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
       // G[nel][nmo]
       //static_assert(E.dimensionality==2);
       //static_assert(G.dimensionality==2);
-      assert(E.shape()[0] == G.shape()[0]);        
-      assert(E.shape()[1] == 3);        
+      assert(E.shape()[0] == G.shape()[0]);
+      assert(E.shape()[1] == 3);
       int nwalk = G.shape()[0];
       int getKr = Kr!=nullptr;
       int getKl = Kl!=nullptr;
 
-      // addH1	
+      // addH1
       std::fill_n(E.origin(),E.num_elements(),ComplexType(0.0));
       if(addH1) {
         ma::product(ComplexType(1.0),G,haj[k],ComplexType(0.0),E[indices[range_t()][0]]);
         for(int i=0; i<nwalk; i++) E[i][0] += E0;
       }
-      if(not (addEJ || addEXX)) return;		
+      if(not (addEJ || addEXX)) return;
 
       int nmo_ = rotPiu.shape()[0];
-      int nu = rotMuv.shape()[0]; 
-      int nu0 = rotMuv.offset()[0]; 
-      int nv = rotMuv.shape()[1]; 
+      int nu = rotMuv.shape()[0];
+      int nu0 = rotMuv.offset()[0];
+      int nv = rotMuv.shape()[1];
       int nel_ = rotcPua[0].shape()[1];
       int nspin = (walker_type==COLLINEAR)?2:1;
-      assert(G.shape()[1] == nel_*nmo_);        
+      assert(G.shape()[1] == nel_*nmo_);
       if(addEJ and getKl)
         assert(Kl->shape()[0] == nwalk && Kl->shape()[1] == nu);
-      if(addEJ and getKr) 
+      if(addEJ and getKr)
         assert(Kr->shape()[0] == nwalk && Kr->shape()[1] == nu);
       using ma::T;
       int u0,uN;
       std::tie(u0,uN) = FairDivideBoundary(comm->rank(),nu,comm->size());
       int v0,vN;
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
-      // right now the algorithm uses 2 copies of matrices of size nuxnv in COLLINEAR case, 
-      // consider moving loop over spin to avoid storing the second copy which is not used  
+      // right now the algorithm uses 2 copies of matrices of size nuxnv in COLLINEAR case,
+      // consider moving loop over spin to avoid storing the second copy which is not used
       // simultaneously
       size_t memory_needs = nspin*nu*nv + nv + nu  + nel_*(nv+nu);
       set_shm_buffer(memory_needs);
-      size_t cnt=0;  
+      size_t cnt=0;
       // Guv[nspin][nu][nv]
       boost::multi_array_ref<ComplexType,3> Guv(SM_TMats->data(),extents[nspin][nu][nv]);
       cnt+=Guv.num_elements();
@@ -237,7 +237,7 @@ std::cout<<"\n";
       boost::multi_array_ref<ComplexType,1> Tuu(SM_TMats->data()+cnt,extents[nu]);
       cnt+=Tuu.num_elements();
 /*
-      // Qub[nu][nel_]: 
+      // Qub[nu][nel_]:
       boost::multi_array_ref<ComplexType,2> Qub(SM_TMats->data()+cnt,extents[nu][nel_]);
       cnt+=Qub.num_elements();
       if(Rbk.shape()[0] != nel_ || Rbk.shape()[1] != nmo_)
@@ -255,7 +255,7 @@ std::cout<<"\n";
         for(int wi=0; wi<nwalk; wi++) {
           boost::const_multi_array_ref<ComplexType,2> Gw(G[wi].origin(),extents[nel_][nmo_]);
           boost::const_multi_array_ref<ComplexType,1> G1D(G[wi].origin(),extents[nel_*nmo_]);
-          // need a new routine if addEXX is false, 
+          // need a new routine if addEXX is false,
           // otherwise it is quite inefficient to get Ej only
           Guv_Guu(Gw,Guv,Guu,T1,k);
           if(addEJ) {
@@ -265,13 +265,13 @@ std::cout<<"\n";
               std::copy_n(std::addressof(*Guu.origin())+nu0+u0,uN-u0,std::addressof(*(*Kl)[wi].origin())+u0);
             if(getKr)
               std::copy_n(std::addressof(*Tuu.origin())+u0,uN-u0,std::addressof(*(*Kr)[wi].origin())+u0);
-            E[wi][2] = 0.5*scl*scl*ma::dot(Guu[indices[range_t(nu0+u0,nu0+uN)]],Tuu[indices[range_t(u0,uN)]]); 
+            E[wi][2] = 0.5*scl*scl*ma::dot(Guu[indices[range_t(nu0+u0,nu0+uN)]],Tuu[indices[range_t(u0,uN)]]);
           }
           if(addEXX) {
 /*
- * NOTE: Why not just do sum_uv Guv Muv Gvu????? Either use fast out of place transposition in blocks 
+ * NOTE: Why not just do sum_uv Guv Muv Gvu????? Either use fast out of place transposition in blocks
  *                                               followed by a dot product, or implement a block-based algorithm
- *                                               This should be mush faster than the Nu^2*Nel scaling of the current alg.    
+ *                                               This should be mush faster than the Nu^2*Nel scaling of the current alg.
  */
 //Timer.reset("T0");
 //Timer.start("T0");
@@ -284,7 +284,7 @@ std::cout<<"\n";
                 int jN = std::min((bv+1)*bsz,nv);
                 for(int i=i0; i<iN; ++i) {
                   for(int j=j0; j<jN; ++j)
-                    E_ += Guv[0][i][j] * M_[i][j] * Guv[0][j][i];  
+                    E_ += Guv[0][i][j] * M_[i][j] * Guv[0][j][i];
                 }
               }
             }
@@ -293,15 +293,15 @@ std::cout<<"\n";
 Timer.stop("T0");
 Timer.reset("T1");
 Timer.start("T1");
-            auto Mptr = rotMuv.get()[u0].origin();  
-            auto Gptr = Guv[0][u0].origin();  
+            auto Mptr = rotMuv.get()[u0].origin();
+            auto Gptr = Guv[0][u0].origin();
             for(size_t k=0, kend=(uN-u0)*nv; k<kend; ++k, ++Gptr, ++Mptr)
-              (*Gptr) *= (*Mptr); 
+              (*Gptr) *= (*Mptr);
             ma::product(Guv[0][indices[range_t(u0,uN)][range_t()]],rotcPua[k].get(),
                         Qub[indices[range_t(u0,uN)][range_t()]]);
             // using this for now, which should not be much worse
             ma::product(T(Qub[indices[range_t(u0,uN)][range_t()]]),
-                        T(rotPiu.get()[indices[range_t()][range_t(nu0+u0,nu0+uN)]]),  
+                        T(rotPiu.get()[indices[range_t()][range_t(nu0+u0,nu0+uN)]]),
                         Rbk);
             E_ = -0.5*scl*ma::dot(R1D,G1D);
 Timer.stop("T1");
@@ -382,14 +382,14 @@ std::cout<<" EXX: " <<wi <<" " <<E_ <<" " <<E[wi][1] <<" " <<Timer.total("T0") <
 */
           }
         }
-      }    
+      }
       comm->barrier();
     }
 
-    template<class MatE, class MatO, class MatG, class MatQ, class MatB, 
+    template<class MatE, class MatO, class MatG, class MatQ, class MatB,
              class index_aos>
-    void fast_energy(MatE&& E, MatO&& Ov, MatG const& GrefA, MatG const& GrefB, 
-                     MatQ const& QQ0A, MatQ const& QQ0B, MatB&& Qwork,  
+    void fast_energy(MatE&& E, MatO&& Ov, MatG const& GrefA, MatG const& GrefB,
+                     MatQ const& QQ0A, MatQ const& QQ0B, MatB&& Qwork,
                      ph_excitations<int,ComplexType> const& abij,
                      std::array<index_aos,2> const& det_couplings)
     {
@@ -397,8 +397,8 @@ std::cout<<" EXX: " <<wi <<" " <<E_ <<" " <<E[wi][1] <<" " <<Timer.total("T0") <
         APP_ABORT(" Error: Single reference implementation currently in THCOps::fast_energy.\n");
       if(walker_type!=CLOSED)
         APP_ABORT(" Error: THCOps::fast_energy requires walker_type==CLOSED.\n");
-      /* 
-       * E[nspins][maxn_unique_confg][nwalk][3]   
+      /*
+       * E[nspins][maxn_unique_confg][nwalk][3]
        * Ov[nspins][maxn_unique_confg][nwalk]
        * GrefA[nwalk][NAOA][NMO]
        * GrefB[nwalk][NAOB][NMO]
@@ -446,13 +446,13 @@ std::cout<<" EXX: " <<wi <<" " <<E_ <<" " <<E[wi][1] <<" " <<Timer.total("T0") <
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
       int k0,kN;
       std::tie(k0,kN) = FairDivideBoundary(comm->rank(),nel_,comm->size());
-      // right now the algorithm uses 2 copies of matrices of size nuxnv in COLLINEAR case, 
-      // consider moving loop over spin to avoid storing the second copy which is not used  
+      // right now the algorithm uses 2 copies of matrices of size nuxnv in COLLINEAR case,
+      // consider moving loop over spin to avoid storing the second copy which is not used
       // simultaneously
       size_t memory_needs = nu*nv + nv + nu  + nel_*(nv+2*nu+2*nel_);
       set_shm_buffer(memory_needs);
       size_t cnt=0;
-      // if Alpha/Beta have different references, allocate the largest and 
+      // if Alpha/Beta have different references, allocate the largest and
       // have distinct references for each
       // Guv[nu][nv]
       boost::multi_array_ref<ComplexType,2> Guv(SM_TMats->data(),extents[nu][nv]);
@@ -463,7 +463,7 @@ std::cout<<" EXX: " <<wi <<" " <<E_ <<" " <<E[wi][1] <<" " <<Timer.total("T0") <
       // S[nel_][nv]
       boost::multi_array_ref<ComplexType,2> Scu(SM_TMats->data()+cnt,extents[nel_][nv]);
       cnt+=Scu.num_elements();
-      // Qub[nu][nel_]: 
+      // Qub[nu][nel_]:
       boost::multi_array_ref<ComplexType,2> Qub(SM_TMats->data()+cnt,extents[nu][nel_]);
       cnt+=Qub.num_elements();
       boost::multi_array_ref<ComplexType,1> Tuu(SM_TMats->data()+cnt,extents[nu]);
@@ -475,7 +475,7 @@ std::cout<<" EXX: " <<wi <<" " <<E_ <<" " <<E[wi][1] <<" " <<Timer.total("T0") <
       boost::multi_array_ref<ComplexType,2> Tub(SM_TMats->data()+cnt,extents[nu][nel_]);
       cnt+=Tub.num_elements();
       assert(cnt <= memory_needs);
-      if(eloc.shape()[0] != 2 || eloc.shape()[1] != nwalk || eloc.shape()[2] != 3) 
+      if(eloc.shape()[0] != 2 || eloc.shape()[1] != nwalk || eloc.shape()[2] != 3)
         eloc.resize(extents[2][nwalk][3]);
 
       std::fill_n(eloc.origin(),eloc.num_elements(),ComplexType(0.0));
@@ -532,15 +532,15 @@ std::cout<<" EXX: " <<wi <<" " <<E_ <<" " <<E[wi][1] <<" " <<Timer.total("T0") <
           if(k0!=kN)
             ma::product(Scu[indices[range_t(k0,kN)][range_t()]],Tub,
                       Jcb[indices[range_t(k0,kN)][range_t()]]);
-          for(int c=k0; c<kN; ++c) 
+          for(int c=k0; c<kN; ++c)
             eloc[0][wi][1] += -0.5*scl*Xcb[c][c];
-          for(int c=k0; c<kN; ++c) 
+          for(int c=k0; c<kN; ++c)
             eloc[0][wi][2] += 0.5*scl*scl*Jcb[c][c];
 /*
           calculate_ph_energies(0,comm->rank(),comm->size(),
                                 E[0],Ov[0],QQ0A,Qwork,
                                 rotMuv,
-                                abij,det_couplings); 
+                                abij,det_couplings);
 */
         }
 
@@ -595,7 +595,7 @@ std::cout<<" EXX: " <<wi <<" " <<E_ <<" " <<E[wi][1] <<" " <<Timer.total("T0") <
             Eb[wi][2] += eloc[1][wi][2];
           }
         }
-      }  
+      }
       comm->barrier();
     }
 
@@ -656,10 +656,10 @@ std::cout<<" EXX: " <<wi <<" " <<E_ <<" " <<E[wi][1] <<" " <<Timer.total("T0") <
       boost::multi_array_ref<RealType,2> Tuw_R(reinterpret_cast<RealType*>(Tuw.origin()),
                                                  extents[nu][2*nwalk]);
       ma::product(Luv_R[indices[range_t(u0,uN)][range_t()]],X_R,
-                  Tuw_R[indices[range_t(u0,uN)][range_t()]]);  
+                  Tuw_R[indices[range_t(u0,uN)][range_t()]]);
 #else
       ma::product(Luv.get()[indices[range_t(u0,uN)][range_t()]],X,
-                  Tuw[indices[range_t(u0,uN)][range_t()]]);  
+                  Tuw[indices[range_t(u0,uN)][range_t()]]);
 #endif
       comm->barrier();
 //Timer.stop("T0");
@@ -671,7 +671,7 @@ std::cout<<" EXX: " <<wi <<" " <<E_ <<" " <<E[wi][1] <<" " <<Timer.total("T0") <
         // O[nmo * nmu]
 //Timer.start("T1");
         for(int i=k0; i<kN; i++) {
-          auto p_ = Piu.get()[i].origin();  
+          auto p_ = Piu.get()[i].origin();
           for(int u=0; u<nu; u++, ++p_)
             Qiu[i][u] = Tuw[u][wi]*std::conj(*p_);
         }
@@ -691,8 +691,8 @@ std::cout<<" EXX: " <<wi <<" " <<E_ <<" " <<E[wi][1] <<" " <<Timer.total("T0") <
       // v[wi][ik] = sum_u Qiu[i][u] * Piu[k][u]
       // O[nmo * nmu]
 //Timer.start("T1");
-      for(int wi=0; wi<nwalk; wi++) 
-        for(int i=k0; i<kN; i++) { 
+      for(int wi=0; wi<nwalk; wi++)
+        for(int i=k0; i<kN; i++) {
           auto p_ = Piu.get()[i].origin();
           for(int u=0; u<nu; u++, ++p_)
             Qwiu[wi][i][u] = Tuw[u][wi]*conj(*p_);
@@ -732,21 +732,21 @@ app_log()
             >
     void vbias(MatA const& G, MatB&& v, double a=1., double c=0., int k=0) {
       if(k>0)
-	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");	
+	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
       int nwalk = G.shape()[0];
       int nmo_ = Piu.shape()[0];
-      int nu = Piu.shape()[1];  
+      int nu = Piu.shape()[1];
       int nel_ = cPua[0].shape()[1];
 #if defined(QMC_COMPLEX)
-      int nchol = 2*Luv.shape()[1];  
+      int nchol = 2*Luv.shape()[1];
 #else
-      int nchol = Luv.shape()[1];  
+      int nchol = Luv.shape()[1];
 #endif
       assert(v.shape()[1]==nwalk);
-      assert(v.shape()[0]==nchol);  
+      assert(v.shape()[0]==nchol);
       using ma::T;
       int c0,cN;
-      std::tie(c0,cN) = FairDivideBoundary(comm->rank(),nchol,comm->size());  
+      std::tie(c0,cN) = FairDivideBoundary(comm->rank(),nchol,comm->size());
       if(haj.size()==1) {
         size_t memory_needs = nwalk*nu + nel_*nu;
         set_shm_buffer(memory_needs);
@@ -787,35 +787,35 @@ app_log()
         ma::product(a,T(Luv.get()[indices[range_t()][range_t(c0,cN)]]),Guu,
                     c,v[indices[range_t(c0,cN)][range_t()]]);
 #endif
-      }  
+      }
       comm->barrier();
     }
 
     bool distribution_over_cholesky_vectors() const { return false; }
-    int number_of_ke_vectors() const{ 
-        return rotMuv.shape()[0]; 
+    int number_of_ke_vectors() const{
+        return rotMuv.shape()[0];
     }
 #if defined(QMC_COMPLEX)
-    int local_number_of_cholesky_vectors() const{ 
-        return 2*Luv.shape()[1]; 
+    int local_number_of_cholesky_vectors() const{
+        return 2*Luv.shape()[1];
     }
     int global_number_of_cholesky_vectors() const{
-        return 2*Luv.shape()[1]; 
+        return 2*Luv.shape()[1];
     }
 #else
-    int local_number_of_cholesky_vectors() const{ 
-        return Luv.shape()[1]; 
+    int local_number_of_cholesky_vectors() const{
+        return Luv.shape()[1];
     }
     int global_number_of_cholesky_vectors() const{
-        return Luv.shape()[1]; 
+        return Luv.shape()[1];
     }
 #endif
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
-    bool transposed_G_for_vbias() const {return true;} 
-    bool transposed_G_for_E() const {return true;} 
+    bool transposed_G_for_vbias() const {return true;}
+    bool transposed_G_for_E() const {return true;}
     // transpose=true means vHS[nwalk][ik], false means vHS[ik][nwalk]
-    bool transposed_vHS() const {return true;} 
+    bool transposed_vHS() const {return true;}
 
     bool fast_ph_energy() const { return true; }
 
@@ -828,12 +828,12 @@ app_log()
       int nu = int(Piu.shape()[1]);
       int nel_ = cPua[0].shape()[1];
       int u0,uN;
-      std::tie(u0,uN) = FairDivideBoundary(comm->rank(),nu,comm->size());  
-      int nw=G.shape()[0];  
+      std::tie(u0,uN) = FairDivideBoundary(comm->rank(),nu,comm->size());
+      int nw=G.shape()[0];
 
       assert(G.shape()[0] == Guu.shape()[1]);
       assert(G.shape()[1] == nel_*nmo_);
-      assert(Guu.shape()[0] == nu); 
+      assert(Guu.shape()[0] == nu);
       assert(T1.shape()[0] == nu);
       assert(T1.shape()[1] == nel_);
 
@@ -847,10 +847,10 @@ app_log()
                   transposed(Giw),
                   T1[indices[range_t(u0,uN)][range_t()]]);
         for(int u=u0; u<uN; ++u)
-          Guu[u][iw] = a*ma::dot(cPua[0].get()[u],T1[u]);               
+          Guu[u][iw] = a*ma::dot(cPua[0].get()[u],T1[u]);
       }
       comm->barrier();
-    }  
+    }
 
     // Guu[nu][nwalk]
     template<class MatA, class MatB, class MatC>
@@ -864,17 +864,17 @@ app_log()
       assert(G.shape()[0] == Guu.shape()[1]);
       assert(Guu.shape()[0] == nu);
       assert(T1.shape()[1] == nu);
-      assert(G.shape()[1] == nmo_*nmo_); 
+      assert(G.shape()[1] == nmo_*nmo_);
       assert(T1.shape()[0] == nmo_);
 
       comm->barrier();
-      std::fill_n(Guu[u0].origin(),nw*(uN-u0),ComplexType(0.0));  
+      std::fill_n(Guu[u0].origin(),nw*(uN-u0),ComplexType(0.0));
       ComplexType a = (walker_type==CLOSED)?ComplexType(2.0):ComplexType(1.0);
       for(int iw=0; iw<nw; ++iw) {
         boost::const_multi_array_ref<ComplexType,2> Giw(G[iw].origin(),extents[nmo_][nmo_]);
         ma::product(Giw,Piu.get()[indices[range_t()][range_t(u0,uN)]],
                   T1[indices[range_t()][range_t(u0,uN)]]);
-        for(int i=0; i<nmo_; ++i) { 
+        for(int i=0; i<nmo_; ++i) {
           auto Ti = T1[i].origin();
           auto Pi = Piu.get()[i].origin();
           for(int u=u0; u<uN; ++u,++Ti,++Pi)
@@ -882,11 +882,11 @@ app_log()
         }
       }
       comm->barrier();
-    }  
+    }
 
     // since this is for energy, only compact is accepted
     // Computes Guv and Guu for a single walker
-    // As opposed to the other Guu routines, 
+    // As opposed to the other Guu routines,
     //  this routine expects G for the walker in matrix form
     // rotMuv is partitioned along 'u'
     // G[nel][nmo]
@@ -927,15 +927,15 @@ app_log()
         using ma::transposed;
         ma::product(G,rotPiu.get()[indices[range_t()][range_t(v0,vN)]],
                     T1[indices[range_t()][range_t(v0,vN)]]);
-        // This operation might benefit from a 2-D work distribution 
+        // This operation might benefit from a 2-D work distribution
         ma::product(rotcPua[k].get()[indices[range_t(nu0,nu0+nu)][range_t()]],
                     T1[indices[range_t()][range_t(v0,vN)]],
                     Guv[0][indices[range_t()][range_t(v0,vN)]]);
-        for(int v=v0; v<vN; ++v) 
+        for(int v=v0; v<vN; ++v)
           if( v < nu0 || v >= nu0+nu ) {
             Guu[v] = ma::dot(rotcPua[k].get()[v],T1[indices[range_t()][v]]);
           } else
-            Guu[v] = Guv[0][v-nu0][v];  
+            Guu[v] = Guv[0][v-nu0][v];
       } else {
         int nel_ = NAOA+NAOB;
         assert(Guv.shape()[0] == 2);
@@ -947,7 +947,7 @@ app_log()
         using ma::transposed;
         ma::product(G,rotPiu.get()[indices[range_t()][range_t(v0,vN)]],
                     T1[indices[range_t()][range_t(v0,vN)]]);
-        // This operation might benefit from a 2-D work distribution 
+        // This operation might benefit from a 2-D work distribution
         // Alpha
         ma::product(rotcPua[k].get()[indices[range_t(nu0,nu0+nu)][range_t(0,NAOA)]],
                     T1[indices[range_t(0,NAOA)][range_t(v0,vN)]],
@@ -955,18 +955,18 @@ app_log()
         ma::product(rotcPua[k].get()[indices[range_t(nu0,nu0+nu)][range_t(NAOA,nel_)]],
                     T1[indices[range_t(NAOA,nel_)][range_t(v0,vN)]],
                     Guv[1][indices[range_t()][range_t(v0,vN)]]);
-        for(int v=v0; v<vN; ++v) 
+        for(int v=v0; v<vN; ++v)
           if( v < nu0 || v >= nu0+nu ) {
             Guu[v] = ma::dot(rotcPua[k].get()[v],T1[indices[range_t()][v]]);
           } else
             Guu[v] = Guv[0][v-nu0][v]+Guv[1][v-nu0][v];
-      } 
+      }
       comm->barrier();
     }
 
     // since this is for energy, only compact is accepted
     // Computes Guv and Guu for a single walker
-    // As opposed to the other Guu routines, 
+    // As opposed to the other Guu routines,
     //  this routine expects G for the walker in matrix form
     // rotMuv is partitioned along 'u'
     // G[nel][nmo]
@@ -1004,15 +1004,15 @@ app_log()
       using ma::transposed;
       ma::product(G,rotPiu.get()[indices[range_t()][range_t(v0,vN)]],
                   T1[indices[range_t()][range_t(v0,vN)]]);
-      // This operation might benefit from a 2-D work distribution 
+      // This operation might benefit from a 2-D work distribution
       ma::product(rotcPua[k].get()[indices[range_t(nu0,nu0+nu)][range_t()]],
                   T1[indices[range_t()][range_t(v0,vN)]],
                   Guv[indices[range_t()][range_t(v0,vN)]]);
-      for(int v=v0; v<vN; ++v) 
+      for(int v=v0; v<vN; ++v)
         if( v < nu0 || v >= nu0+nu ) {
           Guu[v] = ma::dot(rotcPua[k].get()[v],T1[indices[range_t()][v]]);
         } else
-         Guu[v] = Guv[v-nu0][v];  
+         Guu[v] = Guv[v-nu0][v];
       comm->barrier();
     }
 
@@ -1044,18 +1044,18 @@ app_log()
 
     /************************************************/
     // Following 3 used in calculation of vbias and vHS
-    // Cholesky factorization of Muv 
+    // Cholesky factorization of Muv
     shmVMatrix Luv;
 
     // Orbitals at interpolating points
     shmVMatrix Piu;
- 
+
     // Half-rotated Orbitals at interpolating points
     std::vector<shmCMatrix> cPua;
     /************************************************/
-     
+
     // one-body piece of Hamiltonian factorization
-    TMatrix v0;    
+    TMatrix v0;
 
     ValueType E0;
 

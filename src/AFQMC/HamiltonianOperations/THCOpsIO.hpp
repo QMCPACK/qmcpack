@@ -5,12 +5,12 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_THCOPSIO_HPP
@@ -35,7 +35,7 @@ template<typename T>
 THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
 {
 
-#if defined(AFQMC_SP) 
+#if defined(AFQMC_SP)
   using SpT = typename to_single_precision<T>::value_type;
   using SpC = typename to_single_precision<ComplexType>::value_type;
 #else
@@ -57,7 +57,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   // fix later for multidet case
   std::vector<int> dims(10);
   ValueType E0;
-  int global_ncvecs=0; 
+  int global_ncvecs=0;
   std::size_t gnmu,grotnmu,nmu,rotnmu,nmu0,nmuN,rotnmu0,rotnmuN;
 
   // read from HDF
@@ -79,31 +79,31 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
     if(dims[0] != NMO) {
       app_error()<<" Error in loadTHCOps: Inconsistent data in file: NMO. \n";
       APP_ABORT("");
-    }  
+    }
     if(dims[1] != NAEA) {
       app_error()<<" Error in loadTHCOps: Inconsistent data in file: NAEA. \n";
       APP_ABORT("");
-    }  
+    }
     if(dims[2] != NAEB) {
       app_error()<<" Error in loadTHCOps: Inconsistent data in file: NAEB. \n";
       APP_ABORT("");
-    }  
+    }
     if(dims[3] != ndet) {
       app_error()<<" Error in loadTHCOps: Inconsistent data in file: ndet. \n";
       APP_ABORT("");
-    }  
+    }
     if(type == CLOSED && dims[4] != 1) {
       app_error()<<" Error in loadTHCOps: Inconsistent data in file: walker_type. \n";
       APP_ABORT("");
-    }  
+    }
     if(type == COLLINEAR && dims[4] != 2) {
       app_error()<<" Error in loadTHCOps: Inconsistent data in file: walker_type. \n";
       APP_ABORT("");
-    }  
+    }
     if(type == NONCOLLINEAR && dims[4] != 3) {
       app_error()<<" Error in loadTHCOps: Inconsistent data in file: walker_type. \n";
       APP_ABORT("");
-    }  
+    }
     std::vector<ValueType> et;
     if(!dump.read(et,"E0")) {
       app_error()<<" Error in loadTHCOps: Problems reading dataset. \n";
@@ -116,7 +116,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   gnmu = size_t(dims[5]);
   grotnmu = size_t(dims[6]);
 
-  // setup partition, in general matrices are partitioned along 'u' 
+  // setup partition, in general matrices are partitioned along 'u'
   {
     int node_number = TGwfn.getLocalNodeNumber();
     int nnodes_prt_TG = TGwfn.getNNodesPerTG();
@@ -255,9 +255,9 @@ template<class shm_Vmatrix,
 inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, int ndet,
                               TaskGroup_& TGprop, TaskGroup_& TGwfn,
                               boost::multi_array<ComplexType,2> & H1,
-                              shm_Cmatrix & rotPiu,      
-                              shm_Cmatrix & rotMuv,      
-                              shm_Vmatrix & Piu,      
+                              shm_Cmatrix & rotPiu,
+                              shm_Cmatrix & rotMuv,
+                              shm_Vmatrix & Piu,
                               shm_Vmatrix & Luv,
                               boost::multi_array<ComplexType,2> & v0,
                               ValueType E0)

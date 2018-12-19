@@ -67,7 +67,7 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
   //c = OHMMS::Controller;
 
   const int NMO = 4;
-  const int NEL = 3;  
+  const int NEL = 3;
 
   using Type = double;
   using vector = std::vector<Type>;
@@ -79,13 +79,13 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
    0.90000,   2.40000,   3.00000,
    0.40000,   1.00000,   1.20000,
    1.40000,   1.60000,   3.60000,
-   0.40000,   0.20000,   0.10000 
+   0.40000,   0.20000,   0.10000
   };
   vector m_b = {
    1.90000,   1.40000,   0.40000,
    1.40000,   0.20000,   2.20000,
    0.40000,   2.60000,   0.60000,
-   1.10000,   0.30000,   0.90000 
+   1.10000,   0.30000,   0.90000
   };
 
   multi_array A(extents[NMO][NEL]);
@@ -93,7 +93,7 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 
   for(int i=0, k=0; i<A.shape()[0]; i++)
     for(int j=0; j<A.shape()[1]; j++,k++)
-       A[i][j] = m_a[k]; 
+       A[i][j] = m_a[k];
 
   for(int i=0, k=0; i<B.shape()[0]; i++)
     for(int j=0; j<B.shape()[1]; j++,k++)
@@ -104,11 +104,11 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 
   SlaterDetOperations<Type> SDet(NMO,NEL);
 
-  /**** Overlaps ****/  
-  REQUIRE(SDet.Overlap(A,B) == Approx(5.10443199999999)); 
-  REQUIRE(SDet.Overlap(Aref,B) == Approx(5.10443199999999)); 
-  REQUIRE(SDet.Overlap(A,Bref) == Approx(5.10443199999999)); 
-  REQUIRE(SDet.Overlap(Aref,Bref) == Approx(5.10443199999999)); 
+  /**** Overlaps ****/
+  REQUIRE(SDet.Overlap(A,B) == Approx(5.10443199999999));
+  REQUIRE(SDet.Overlap(Aref,B) == Approx(5.10443199999999));
+  REQUIRE(SDet.Overlap(A,Bref) == Approx(5.10443199999999));
+  REQUIRE(SDet.Overlap(Aref,Bref) == Approx(5.10443199999999));
 
   // Test array_view
   REQUIRE(SDet.Overlap(A[indices[range_t()][range_t()]],B) == Approx(5.10443199999999));
@@ -133,12 +133,12 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
   -3.412595172195462,   7.269792211944457,   0.376363129139538,   1.591275973506948,
    0.510630761659672,   0.800731599519788,  -0.707016960946879,   0.524908550060026,
    1.072417068147838,  -3.116820833346399,   0.446937093098704,  -0.860397395831702
-  };  
+  };
   vector v_ref_2 = {
    0.7544916699938296,   0.6202315705419044,  -0.0193822365794349,
    0.3020580015244456,   0.2369061014119270,   0.0238466843308772,
    0.1089615621937494,  -0.2752713150157893,   1.0086022285942438
-  };  
+  };
   vector vc_ref_2 = {
   -0.492541105586005,  -0.860948785887990,   1.276904649559000,
    0.499074443758847,   0.581285615767123,  -0.486915175492723
@@ -149,18 +149,18 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
   multi_array_ref g_ref_2(v_ref_2.data(),extents[3][3]);
   multi_array_ref gc_ref_2(vc_ref_2.data(),extents[2][3]);
 
-  multi_array G(extents[NMO][NMO]);  
-  multi_array Gc(extents[NEL][NMO]);  
+  multi_array G(extents[NMO][NMO]);
+  multi_array Gc(extents[NEL][NMO]);
 
-  SDet.MixedDensityMatrix(A,B,G,false); check(G,g_ref); 
-  SDet.MixedDensityMatrix(Aref,B,G,false); check(G,g_ref); 
-  SDet.MixedDensityMatrix(A,Bref,G,false); check(G,g_ref); 
-  SDet.MixedDensityMatrix(Aref,Bref,G,false); check(G,g_ref); 
+  SDet.MixedDensityMatrix(A,B,G,false); check(G,g_ref);
+  SDet.MixedDensityMatrix(Aref,B,G,false); check(G,g_ref);
+  SDet.MixedDensityMatrix(A,Bref,G,false); check(G,g_ref);
+  SDet.MixedDensityMatrix(Aref,Bref,G,false); check(G,g_ref);
 
   SDet.MixedDensityMatrix(A[indices[range_t(0,3)][range_t(0,2)]],
                           B[indices[range_t(0,3)][range_t(0,2)]],
-                          G[indices[range_t(0,3)][range_t(0,3)]],false); 
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);  
+                          G[indices[range_t(0,3)][range_t(0,3)]],false);
+  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
   SDet.MixedDensityMatrix(A_,
                           B[indices[range_t(0,3)][range_t(0,2)]],
                           G[indices[range_t(0,3)][range_t(0,3)]],false);
@@ -173,7 +173,7 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
   SDet.MixedDensityMatrix(A,B,Gc,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(Aref,B,Gc,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(A,Bref,Gc,true); check(Gc,gc_ref);
-  SDet.MixedDensityMatrix(Aref,Bref,Gc,true); check(Gc,gc_ref);  
+  SDet.MixedDensityMatrix(Aref,Bref,Gc,true); check(Gc,gc_ref);
 
   SDet.MixedDensityMatrix(A[indices[range_t(0,3)][range_t(0,2)]],
                           B[indices[range_t(0,3)][range_t(0,2)]],
@@ -200,7 +200,7 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 {
 
   Communicate *c = OHMMS::Controller;
-  
+
   using boost::mpi3::shared_communicator;
 
   shared_communicator node = c->comm.split_shared(c->comm.rank());
@@ -215,7 +215,7 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 
   const Type ov = 5.10443199999999;
   const Type ov2 = -11.0204000000000;
-   
+
 
   // some arbitrary matrices
   vector m_a = {
@@ -264,7 +264,7 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   REQUIRE(SDet.Overlap(A[indices[range_t(0,3)][range_t(0,2)]],B_) == Approx(-11.0204000000000));
   REQUIRE(SDet.Overlap(A_,B[indices[range_t(0,3)][range_t(0,2)]],node) == Approx(-11.0204000000000));
 
-  shared_communicator node_ = node.split(node.rank()%2); 
+  shared_communicator node_ = node.split(node.rank()%2);
   REQUIRE(SDet.Overlap(A,B,node_) == Approx(5.10443199999999));
   REQUIRE(SDet.Overlap(A[indices[range_t(0,3)][range_t(0,2)]],
                        B[indices[range_t(0,3)][range_t(0,2)]],node_) == Approx(-11.0204000000000));
@@ -354,8 +354,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   SDet.MixedDensityMatrix(A[indices[range_t(0,3)][range_t(0,2)]],
                           B[indices[range_t(0,3)][range_t(0,2)]],
                           Gc2[indices[range_t(0,2)][range_t(0,3)]],node_,true);
-  check(Gc2[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);  
-   
+  check(Gc2[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+
 }
 
 }

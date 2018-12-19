@@ -23,16 +23,16 @@ namespace afqmc
 class DriverFactory
 {
 
-  using communicator = boost::mpi3::communicator;  
+  using communicator = boost::mpi3::communicator;
 
   public:
 
     DriverFactory(GlobalTaskGroup& gtg_,
         TaskGroupHandler& tghandler_,
 	std::map<std::string, AFQMCInfo>& info,
-	WalkerSetFactory& wsetfac_, 
+	WalkerSetFactory& wsetfac_,
 	PropagatorFactory& pfac_,
-	WavefunctionFactory& wfnfac_, 
+	WavefunctionFactory& wfnfac_,
 	HamiltonianFactory& hfac):
 		ncores(-10),
 		gTG(gtg_),
@@ -46,7 +46,7 @@ class DriverFactory
     }
 
     ~DriverFactory() {}
-  
+
 
     bool executeDriver(std::string title, int m_series, xmlNodePtr cur);
 
@@ -61,20 +61,20 @@ class DriverFactory
     GlobalTaskGroup& gTG;
 
     TaskGroupHandler& TGHandler;
-    
-    // container of AFQMCInfo objects
-    std::map<std::string,AFQMCInfo>& InfoMap; 
 
-    // WalkerHandler factory 
+    // container of AFQMCInfo objects
+    std::map<std::string,AFQMCInfo>& InfoMap;
+
+    // WalkerHandler factory
     WalkerSetFactory& WSetFac;
 
-    // Propagator factory 
+    // Propagator factory
     PropagatorFactory& PropFac;
 
-    // Hamiltonian factory 
+    // Hamiltonian factory
     HamiltonianFactory& HamFac;
 
-    // Wavefunction factory 
+    // Wavefunction factory
     WavefunctionFactory& WfnFac;
 
 };

@@ -6,7 +6,7 @@
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 //#undef NDEBUG
@@ -520,7 +520,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     if(file_exists("ncores.txt")) {
       ifstream in("ncores.txt");
       in>>ncores;
-      in.close();  
+      in.close();
     }
 
     hdf_archive dummy;
@@ -668,12 +668,12 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     if(file_exists("ncores.txt")) {
       ifstream in("ncores.txt");
       in>>ncores;
-      in.close();  
+      in.close();
     }
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,ncores);
-    // NOTE: This will force the replacement of HalfRotatedLuv by Luv to test the energy of the 
+    // NOTE: This will force the replacement of HalfRotatedLuv by Luv to test the energy of the
     //       non-rotated factorization
     THCHamiltonian& thcHam = boost::get<THCHamiltonian>(ham);
     auto HOps(thcHam.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));

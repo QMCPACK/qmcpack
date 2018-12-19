@@ -50,7 +50,7 @@ class BackPropagatedEstimator: public EstimatorBase
       }
     }
 
-    ncores_per_TG = TG.getNCoresPerTG(); 
+    ncores_per_TG = TG.getNCoresPerTG();
     core_rank = TG.getLocalTGRank();
     writer = (TG.getGlobalRank()==0);
     if(wlk == CLOSED) {

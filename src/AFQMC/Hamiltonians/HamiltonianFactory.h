@@ -3,8 +3,8 @@
 #define QMCPLUSPLUS_AFQMC_HAMILTONIANFACTORY_H
 
 #include<iostream>
-#include<vector> 
-#include<map> 
+#include<vector>
+#include<map>
 #include<fstream>
 #include "OhmmsData/libxmldefs.h"
 
@@ -31,23 +31,23 @@ class HamiltonianFactory
   ~HamiltonianFactory()
   {
     // delete Hamiltonian objects
-    //for (auto it = hamiltonians.begin(); it != hamiltonians.end(); ++it) 
-    //  delete it->second; 
+    //for (auto it = hamiltonians.begin(); it != hamiltonians.end(); ++it)
+    //  delete it->second;
   }
 
-  bool is_constructed(const std::string& ID) 
+  bool is_constructed(const std::string& ID)
   {
     auto xml = xmlBlocks.find(ID);
     if(xml == xmlBlocks.end())
       APP_ABORT(" Error in WavefunctionFactory::is_constructed(string&): Missing xml block. \n");
     auto ham = hamiltonians.find(ID);
-    if( ham == hamiltonians.end() ) 
+    if( ham == hamiltonians.end() )
       return false;
     else
       return true;
   }
 
-  // returns a pointer to the base Hamiltonian class associated with a given ID 
+  // returns a pointer to the base Hamiltonian class associated with a given ID
   Hamiltonian& getHamiltonian(GlobalTaskGroup& gTG, const std::string& ID)
   {
     auto xml = xmlBlocks.find(ID);
@@ -58,7 +58,7 @@ class HamiltonianFactory
       auto newham = hamiltonians.insert(std::make_pair(ID,buildHamiltonian(gTG,xml->second)));
       if(!newham.second)
         APP_ABORT(" Error: Problems inserting new hamiltonian in HamiltonianFactory::getHamiltonian(streing&). \n");
-      return (newham.first)->second;  
+      return (newham.first)->second;
     } else
       return ham->second;
   }
@@ -83,7 +83,7 @@ class HamiltonianFactory
 
   protected:
 
-  // reference to container of AFQMCInfo objects 
+  // reference to container of AFQMCInfo objects
   std::map<std::string,AFQMCInfo>& InfoMap;
 
   // keep ownership of the TGs in the Factory
@@ -125,8 +125,8 @@ class HamiltonianFactory
 
 //  Hamiltonian fromHDF5_old(GlobalTaskGroup& gTG, xmlNodePtr cur);
 
-  TaskGroup_& getTG(GlobalTaskGroup& gTG, int nTG) 
-  {  
+  TaskGroup_& getTG(GlobalTaskGroup& gTG, int nTG)
+  {
     if( gTG.getTotalNodes()%nTG != 0)
       APP_ABORT("Error: number_of_TGs must divide the total number of processors. \n\n\n");
     int nnodes = gTG.getTotalNodes()/nTG;
@@ -136,8 +136,8 @@ class HamiltonianFactory
       if(!p.second)
         APP_ABORT(" Error: Problems creating new hamiltonian TG in HamiltonianFactory::getTG(int). \n");
       return (p.first)->second;
-    } 
-    return t->second; 
+    }
+    return t->second;
   }
 
   // MAM: should I store a copy rather than a pointer???

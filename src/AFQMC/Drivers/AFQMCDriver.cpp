@@ -13,10 +13,10 @@
 #include "AFQMC/Drivers/AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
 
-namespace qmcplusplus 
+namespace qmcplusplus
 {
 
-namespace afqmc 
+namespace afqmc
 {
 
 enum AFQMCTimers {
@@ -58,12 +58,12 @@ bool AFQMCDriver::run(WalkerSet& wset)
     Timers[BlockTotal]->start();
     for (int iStep=0; iStep<nStep; ++iStep, ++step_tot) {
 
-      // propagate nSubstep 
+      // propagate nSubstep
       Timers[SubstepPropagate]->start();
       prop0.Propagate(nSubstep,wset,Eshift,dt,fix_bias);
       total_time += nSubstep*dt;
       Timers[SubstepPropagate]->stop();
-  
+
       if (step_tot != 0 && step_tot % nStabilize == 0) {
         Timers[StepOrthogonalize]->start();
         wfn0.Orthogonalize(wset,!prop0.free_propagation());
@@ -84,7 +84,7 @@ bool AFQMCDriver::run(WalkerSet& wset)
 
     }
 
-    // checkpoint 
+    // checkpoint
     if(nCheckpoint > 0 && iBlock != 0 && iBlock % nCheckpoint == 0)
       if(!checkpoint(wset,iBlock,step_tot)) {
         app_error()<<" Error in AFQMCDriver::checkpoint(). \n" <<std::endl;
@@ -150,14 +150,14 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   // write all the choices here ...
 
   fix_bias = std::min(fix_bias,nSubstep);
-  if(fix_bias>1) 
+  if(fix_bias>1)
     app_log()<<" Keeping the bias potential fixed for " <<fix_bias <<" steps. \n";
 
   return true;
 }
 
 // writes checkpoint file
-bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step) 
+bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step)
 {
   // hack until hdf_archive works with mpi3
   hdf_archive dump(globalComm,false);
@@ -165,10 +165,10 @@ bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step)
     std::string file;
     char fileroot[128];
     int nproc = globalComm.size();
-    if(hdf_write_restart != std::string("")) 
+    if(hdf_write_restart != std::string(""))
       file = hdf_write_restart;
     else
-      file = project_title+std::string(".chk.h5"); 
+      file = project_title+std::string(".chk.h5");
 
     if(!dump.create(file)) {
       app_error()<<" Error opening checkpoint file for write. \n";
@@ -183,8 +183,8 @@ bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step)
     Idata[0]=block;
     Idata[1]=step;
 
-    // always write driver data and walkers 
-    dump.push("AFQMCDriver"); 
+    // always write driver data and walkers
+    dump.push("AFQMCDriver");
     dump.write(Idata,"DriverInts");
     dump.write(Rdata,"DriverReals");
     dump.pop();

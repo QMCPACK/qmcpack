@@ -38,7 +38,7 @@ void myREQUIRE(std::complex<T> const& a, std::complex<T> const& b)
   REQUIRE(a.imag() == Approx(b.imag()));
 }
 
-template<class M1, 
+template<class M1,
          class M2,
          typename = typename std::enable_if<(M1::dimensionality == 1)>::type,
          typename = typename std::enable_if<(M2::dimensionality == 1)>::type
@@ -50,7 +50,7 @@ void verify_approx(M1 const& A, M2 const& B)
       myREQUIRE(A[i],B[i]);
 }
 
-template<class M1, 
+template<class M1,
          class M2,
          typename = typename std::enable_if<(M1::dimensionality > 1)>::type,
          typename = typename std::enable_if<(M2::dimensionality > 1)>::type,

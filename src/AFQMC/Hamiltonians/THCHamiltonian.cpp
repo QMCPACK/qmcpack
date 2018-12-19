@@ -25,8 +25,8 @@ namespace afqmc
 
 // Right now, cutvn, cutvn2, TGprop and TGwfn are completely ignored.
 // Note: addCoulomb only has meaning on the sparse hamiltonians, not in THC
-HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool addCoulomb, 
-            WALKER_TYPES type,std::vector<PsiT_Matrix>& PsiT, double cutvn, 
+HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool addCoulomb,
+            WALKER_TYPES type,std::vector<PsiT_Matrix>& PsiT, double cutvn,
             double cutv2,TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& hdf_restart)
 {
 
@@ -38,16 +38,16 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   if(type==COLLINEAR)
     assert(PsiT.size()%2 == 0);
   int ndet = ((type!=COLLINEAR)?(PsiT.size()):(PsiT.size()/2));
-  bool test_Luv = not useHalfRotatedMuv; 
+  bool test_Luv = not useHalfRotatedMuv;
 
 std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
 
   if(ndet > 1)
     APP_ABORT("Error: ndet > 1 not yet implemented in THCHamiltonian::getHamiltonianOperations.\n");
 
-  std::size_t gnmu,grotnmu,nmu,rotnmu,nmu0,nmuN,rotnmu0,rotnmuN; 
+  std::size_t gnmu,grotnmu,nmu,rotnmu,nmu0,nmuN,rotnmu0,rotnmuN;
   hdf_archive dump(TGwfn.Global());
-  // right now only Node.root() reads 
+  // right now only Node.root() reads
   if( TG.Node().root() ) {
     if(!dump.open(fileName,H5F_ACC_RDONLY)) {
       app_error()<<" Error opening integral file in THCHamiltonian. \n";
@@ -75,8 +75,8 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
       app_error()<<" ERROR: NMO differs from value in integral file. \n";
       APP_ABORT(" Error: NMO differs from value in integral file. \n");
     }
-    gnmu = std::size_t(Idata[1]);  
-    grotnmu = std::size_t(Idata[2]);  
+    gnmu = std::size_t(Idata[1]);
+    grotnmu = std::size_t(Idata[2]);
   }
   TG.Global().broadcast_value(gnmu);
   TG.Global().broadcast_value(grotnmu);
@@ -84,7 +84,7 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
   if(test_Luv)
     grotnmu = gnmu;
 
-  // setup partition, in general matrices are partitioned along 'u' 
+  // setup partition, in general matrices are partitioned along 'u'
   {
     int node_number = TGwfn.getLocalNodeNumber();
     int nnodes_prt_TG = TGwfn.getNNodesPerTG();
@@ -111,7 +111,7 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
     rotcPua.emplace_back(shm_Cmatrix(TG.Node(),{grotnmu,nel_}));
   shm_Vmatrix Piu(TG.Node(),{size_t(NMO),nmu},{size_t(NMO),gnmu},{0,nmu0});
   shm_Vmatrix Luv(TG.Node(),{nmu,gnmu},{gnmu,gnmu},{nmu0,0});
-  // right now only 1 reader. Use hyperslabs and parallel io later 
+  // right now only 1 reader. Use hyperslabs and parallel io later
   // read Half transformed first
   if(TG.Node().root()) {
     using std::conj;
@@ -168,7 +168,7 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
   TG.global_barrier();
 
   boost::multi_array<ComplexType,2> v0(extents[Piu.shape()[0]][Piu.shape()[0]]);
-  if(TGprop.getNNodesPerTG() > 1) 
+  if(TGprop.getNNodesPerTG() > 1)
   {
 
     // TOO MUCH MEMORY, FIX FIX FIX!!!
@@ -200,7 +200,7 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
     boost::multi_array<ValueType,2> Muv(extents[gnmu][nc]);
 
     // Muv = Luv * H(Luv)
-    // This can benefit from 2D split of work 
+    // This can benefit from 2D split of work
     ma::product(Luv__.get(),H(Luv__.get()[indices[range_t(c0,cN)][range_t()]]),Muv);
 
     if(test_Luv) {
@@ -211,11 +211,11 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
         TG.Cores().all_reduce_in_place_n(rotMuv.origin(),rotMuv.num_elements(),std::plus<>());
     }
 
-    // since generating v0 takes some effort and temporary space, 
-    // v0(i,l) = -0.5*sum_j <i,j|j,l> 
+    // since generating v0 takes some effort and temporary space,
+    // v0(i,l) = -0.5*sum_j <i,j|j,l>
     //         = -0.5 sum_j,u,v conj(Piu(i,u)) conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
     //         = -0.5 sum_u,v conj(Piu(i,u)) W(u,v) Piu(l,u), where
-    // W(u,v) = Muv(u,v) * sum_j Piu(j,u) conj(Piu(j,v))  
+    // W(u,v) = Muv(u,v) * sum_j Piu(j,u) conj(Piu(j,v))
     ma::product(H(Piu__.get()),Piu__.get()[indices[range_t()][range_t(c0,cN)]],Tuv);
     auto itM = Muv.origin();
     auto itT = Tuv.origin();
@@ -225,10 +225,10 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
     ma::product(T(Tuv),H(Piu__.get()),T_);
     ma::product(-0.5,T(T_),T(Piu__.get()[indices[range_t()][range_t(c0,cN)]]),0.0,v0);
 
-    // reduce over Global  
+    // reduce over Global
     TG.Global().all_reduce_in_place_n(v0.origin(),v0.num_elements(),std::plus<>());
 
-  } else {  
+  } else {
     // very simple partitioning until something more sophisticated is in place!!!
     using ma::H;
     using ma::T;
@@ -240,10 +240,10 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
     boost::multi_array<ValueType,2> Muv(extents[gnmu][nc]);
 
     // Muv = Luv * H(Luv)
-    // This can benefit from 2D split of work 
+    // This can benefit from 2D split of work
     ma::product(Luv.get(),H(Luv.get()[indices[range_t(c0,cN)][range_t()]]),Muv);
 
-    if(test_Luv) { 
+    if(test_Luv) {
       for(int i=0; i<gnmu; ++i)
         std::copy_n(Muv[i].origin(),nc,rotMuv.get()[i].origin()+c0);
       TG.Node().barrier();
@@ -251,21 +251,21 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
         TG.Cores().all_reduce_in_place_n(rotMuv.origin(),rotMuv.num_elements(),std::plus<>());
     }
 
-    // since generating v0 takes some effort and temporary space, 
-    // v0(i,l) = -0.5*sum_j <i,j|j,l> 
+    // since generating v0 takes some effort and temporary space,
+    // v0(i,l) = -0.5*sum_j <i,j|j,l>
     //         = -0.5 sum_j,u,v conj(Piu(i,u)) conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
     //         = -0.5 sum_u,v conj(Piu(i,u)) W(u,v) Piu(l,u), where
-    // W(u,v) = Muv(u,v) * sum_j Piu(j,u) conj(Piu(j,v))  
+    // W(u,v) = Muv(u,v) * sum_j Piu(j,u) conj(Piu(j,v))
     ma::product(H(Piu.get()),Piu.get()[indices[range_t()][range_t(c0,cN)]],Tuv);
     auto itM = Muv.origin();
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
-      *(itT) = conj(*itT)*(*itM);           
+      *(itT) = conj(*itT)*(*itM);
     boost::multi_array<ValueType,2> T_(extents[Tuv.shape()[1]][size_t(NMO)]);
     ma::product(T(Tuv),H(Piu.get()),T_);
     ma::product(-0.5,T(T_),T(Piu.get()[indices[range_t()][range_t(c0,cN)]]),0.0,v0);
 
-    // reduce over Global  
+    // reduce over Global
     TG.Global().all_reduce_in_place_n(v0.origin(),v0.num_elements(),std::plus<>());
   }
   TG.global_barrier();
@@ -277,13 +277,13 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
   std::vector<shm_Cmatrix> cPua;
   cPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
-    cPua.emplace_back(shm_Cmatrix(TG.Node(),{nmu,nel_},{gnmu,nel_},{nmu0,0}));  
-  if(TG.Node().root()) {  
+    cPua.emplace_back(shm_Cmatrix(TG.Node(),{nmu,nel_},{gnmu,nel_},{nmu0,0}));
+  if(TG.Node().root()) {
     // simple
     using ma::H;
     if(type==COLLINEAR) {
-      boost::multi_array<ComplexType,2> A(extents[NMO][naea_]); 
-      boost::multi_array<ComplexType,2> B(extents[NMO][naeb_]); 
+      boost::multi_array<ComplexType,2> A(extents[NMO][naea_]);
+      boost::multi_array<ComplexType,2> B(extents[NMO][naeb_]);
       for(int i=0; i<ndet; i++) {
         // cPua = H(Piu) * conj(A)
         csr::CSR2MA('T',PsiT[2*i],A);
@@ -293,25 +293,25 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
           ma::product(H(rotPiu.get()),A,
                       rotcPua[i].get()[indices[range_t()][range_t(0,naea_)]]);
         csr::CSR2MA('T',PsiT[2*i+1],B);
-        ma::product(H(Piu.get()),B, 
+        ma::product(H(Piu.get()),B,
                     cPua[i].get()[indices[range_t()][range_t(naea_,nel_)]]);
         if(not test_Luv)
           ma::product(H(rotPiu.get()),B,
                       rotcPua[i].get()[indices[range_t()][range_t(naea_,nel_)]]);
       }
     } else {
-      boost::multi_array<ComplexType,2> A(extents[PsiT[0].shape()[1]][PsiT[0].shape()[0]]); 
+      boost::multi_array<ComplexType,2> A(extents[PsiT[0].shape()[1]][PsiT[0].shape()[0]]);
       for(int i=0; i<ndet; i++) {
         csr::CSR2MA('T',PsiT[i],A);
         // cPua = H(Piu) * conj(A)
-        ma::product(H(Piu.get()),A,cPua[i].get()); 
+        ma::product(H(Piu.get()),A,cPua[i].get());
         if(not test_Luv)
-          ma::product(H(rotPiu.get()),A,rotcPua[i].get()); 
-      }  
-    }     
-    if(test_Luv) { 
+          ma::product(H(rotPiu.get()),A,rotcPua[i].get());
+      }
+    }
+    if(test_Luv) {
       std::copy_n(Piu.origin(),Piu.num_elements(),rotPiu.origin());
-      for(int i=0; i<ndet; i++) 
+      for(int i=0; i<ndet; i++)
         std::copy_n(cPua[i].origin(),cPua[i].num_elements(),rotcPua[i].origin());
     }
   }
@@ -329,11 +329,11 @@ std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
   }
 
   // dense one body hamiltonian
-  auto H1 = getH1(); 
+  auto H1 = getH1();
 
 std::cout<<" nmu: " <<Luv.shape()[0] <<" " <<rotMuv.shape()[0] <<std::endl;
 
-  if(write_hdf) 
+  if(write_hdf)
     writeTHCOps(hdf_restart,type,NMO,naea_,naeb_,ndet,TGprop,TGwfn,H1,
                 rotPiu,rotMuv,Piu,Luv,v0,E0);
 

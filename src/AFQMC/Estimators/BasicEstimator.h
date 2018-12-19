@@ -19,16 +19,16 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-class BasicEstimator: public EstimatorBase 
+class BasicEstimator: public EstimatorBase
 {
 
   public:
 
-  BasicEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo info, 
+  BasicEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo info,
         std::string title, xmlNodePtr cur, bool impsamp_):
                 EstimatorBase(info),TG(tg_),
-                timers(false), 
-                nwfacts(0),writer(false),importanceSampling(impsamp_) 
+                timers(false),
+                nwfacts(0),writer(false),importanceSampling(impsamp_)
   {
 
     if(cur!=NULL)  {
@@ -101,8 +101,8 @@ class BasicEstimator: public EstimatorBase
   //  2: 1/nW * sum_i w_i            (where w_i is the normalized weight)
   //  3: sum_i abs(w_i)       (where w_i is the normalized weight)
   //  4: 1/nW * sum_i abs(<psi_T|phi_i>)
-  //  5: nW                          (total number of walkers)  
-  //  6: "healthy" nW                (total number of "healthy" walkers)  
+  //  5: nW                          (total number of walkers)
+  //  6: "healthy" nW                (total number of "healthy" walkers)
   void accumulate_step(WalkerSet& wset, std::vector<ComplexType>& curData)
   {
 
@@ -120,36 +120,36 @@ class BasicEstimator: public EstimatorBase
     int nwlk = wset.size();
     if(nwlk>nwalk_max) nwalk_max=nwlk;
     if(nwlk<nwalk_min) nwalk_min=nwlk;
-    enume += (curData[1]/curData[2])*weight_product; 
+    enume += (curData[1]/curData[2])*weight_product;
     edeno += weight_product;
-    weight += curData[3].real(); 
+    weight += curData[3].real();
     ovlp += curData[4].real();
-    nwalk += static_cast<int>(std::floor(curData[5].real())); 
-    nwalk_good += static_cast<int>(std::floor(curData[6].real())); 
+    nwalk += static_cast<int>(std::floor(curData[5].real()));
+    nwalk_good += static_cast<int>(std::floor(curData[6].real()));
   }
 
-  void tags(std::ofstream& out) 
+  void tags(std::ofstream& out)
   {
     if(writer) {
       if(nwfacts>0) {
-        out<<"nWalkers weight Eloc_nume Eloc_deno "; 
+        out<<"nWalkers weight Eloc_nume Eloc_deno ";
       } else {
-        out<<"nWalkers weight PseudoEloc "; 
+        out<<"nWalkers weight PseudoEloc ";
       }
-      out<<"Ovlp "; 
+      out<<"Ovlp ";
     }
   }
 
   void tags_timers(std::ofstream& out)
   {
-    if(writer) 
+    if(writer)
       if(timers) out<<"PseudoEnergy_t vHS_t vbias_t G_t Propagate_t Energy_comm_t vHS_comm_t Block_t ";
   }
 
   void print(std::ofstream& out,WalkerSet& wset)
   {
     data[0] = enume.real()/ncalls;
-    data[1] = edeno.real()/ncalls;    
+    data[1] = edeno.real()/ncalls;
 
     double max_exch_time=0;
 
@@ -165,7 +165,7 @@ class BasicEstimator: public EstimatorBase
 
     enume=0.0;
     edeno=0.0;
-    weight=0.0; 
+    weight=0.0;
     enume2=0.0;
     edeno2=0.0;
     ncalls=0;
@@ -206,12 +206,12 @@ class BasicEstimator: public EstimatorBase
 
   double getEloc()
   {
-    return data[0]/data[1]; 
+    return data[0]/data[1];
   }
 
   double getEloc_step()
   {
-    return data2[0]/data2[1]; 
+    return data2[0]/data2[1];
   }
 
 
@@ -223,7 +223,7 @@ class BasicEstimator: public EstimatorBase
 
   bool importanceSampling;
 
-  std::vector<double> data, data2, data3;  
+  std::vector<double> data, data2, data3;
 
   int nwfacts;
   std::queue<ComplexType> weight_factors;
@@ -233,9 +233,9 @@ class BasicEstimator: public EstimatorBase
   ComplexType enume_sub=0.0,edeno_sub=0.0;
   ComplexType enume2=0.0,edeno2=0.0;
   RealType weight, weight_sub, ovlp, ovlp_sub;
-  int nwalk_good, nwalk, ncalls, ncalls_substep, nwalk_sub, nwalk_min, nwalk_max; 
+  int nwalk_good, nwalk, ncalls, ncalls_substep, nwalk_sub, nwalk_min, nwalk_max;
 
-  // optional 
+  // optional
   bool timers;
 
 };

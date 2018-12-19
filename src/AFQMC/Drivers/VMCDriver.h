@@ -14,7 +14,7 @@
 namespace qmcplusplus
 {
 
-class VMCDriver: public Driver 
+class VMCDriver: public Driver
 {
 
   typedef HamiltonianBase* HamPtr;
@@ -36,17 +36,17 @@ class VMCDriver: public Driver
 
     bool run();
 
-    bool parse(xmlNodePtr); 
+    bool parse(xmlNodePtr);
 
     bool setup(HamPtr,WSetPtr,PropPtr,WfnPtr);
 
     bool checkpoint(int,int);
 
-    bool restart(hdf_archive&); 
+    bool restart(hdf_archive&);
 
     bool clear();
 
-  protected:  
+  protected:
 
     int diagHam;
     int diagHam_freq;

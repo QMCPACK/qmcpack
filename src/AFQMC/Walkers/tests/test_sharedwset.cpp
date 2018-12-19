@@ -91,27 +91,27 @@ void test_basic_walker_features(bool serial)
 
   using Type = std::complex<double>;
 
-  //assert(world.size()%2 == 0); 
+  //assert(world.size()%2 == 0);
 
   int NMO=8,NAEA=2,NAEB=2, nwalkers=10;
 
   //auto node = world.split_shared();
 
   GlobalTaskGroup gTG(world);
-  TaskGroup_ TG(gTG,std::string("TaskGroup"),1,serial?1:gTG.getTotalCores()); 
+  TaskGroup_ TG(gTG,std::string("TaskGroup"),1,serial?1:gTG.getTotalCores());
   AFQMCInfo info;
-  info.NMO = NMO; 
-  info.NAEA = NAEA; 
-  info.NAEB = NAEB; 
+  info.NMO = NMO;
+  info.NAEA = NAEA;
+  info.NAEB = NAEB;
   info.name = "walker";
-  boost::multi_array<Type,2> initA(extents[NMO][NAEA]); 
-  boost::multi_array<Type,2> initB(extents[NMO][NAEB]); 
+  boost::multi_array<Type,2> initA(extents[NMO][NAEA]);
+  boost::multi_array<Type,2> initB(extents[NMO][NAEB]);
   for(int i=0; i<NAEA; i++) initA[i][i] = Type(1.0);
   for(int i=0; i<NAEB; i++) initB[i][i] = Type(1.0);
   //SimpleRandom<MTRand> rng;
   RandomGenerator_t rng;
 
-const char *xml_block = 
+const char *xml_block =
 "<WalkerSet name=\"wset0\">  \
   <parameter name=\"min_weight\">0.05</parameter>  \
   <parameter name=\"max_weight\">4</parameter>  \
@@ -145,7 +145,7 @@ const char *xml_block =
   cnt=0;
   for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     Type d_(cnt*1.0+0.5);
-    REQUIRE( it->weight() == d_ ); 
+    REQUIRE( it->weight() == d_ );
     REQUIRE( it->overlap() == cnt*1.0+0.5 );
     REQUIRE( it->E1() == cnt*1.0+0.5 );
     REQUIRE( it->EXX() == cnt*1.0+0.5 );
@@ -189,24 +189,24 @@ cout<<" after (*it) test  " <<std::endl;
   REQUIRE(wset.get_TG_target_population() == nwalkers);
   REQUIRE(wset.get_global_target_population() == nwalkers*TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == nwalkers*TG.getNumberOfTGs());
-  REQUIRE(wset.GlobalPopulation() == wset.get_global_target_population()); 
+  REQUIRE(wset.GlobalPopulation() == wset.get_global_target_population());
   REQUIRE(wset.getNBackProp() == 0);
   REQUIRE(wset.GlobalWeight() == tot_weight*TG.getNumberOfTGs());
-  
+
   wset.scaleWeight(2.0);
   tot_weight*=2.0;
   REQUIRE(wset.GlobalWeight() == tot_weight*TG.getNumberOfTGs());
-  
+
   std::vector<ComplexType> Wdata;
   wset.popControl(Wdata);
   REQUIRE(wset.get_TG_target_population() == nwalkers);
   REQUIRE(wset.get_global_target_population() == nwalkers*TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == nwalkers*TG.getNumberOfTGs());
-  REQUIRE(wset.GlobalPopulation() == wset.get_global_target_population());  
-  REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population()))); 
+  REQUIRE(wset.GlobalPopulation() == wset.get_global_target_population());
+  REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
   for(int i=0; i<wset.size(); i++) {
     auto w = wset[i];
-    REQUIRE( w.overlap() == w.E1()); 
+    REQUIRE( w.overlap() == w.E1());
     REQUIRE( w.EXX() == w.E1());
     REQUIRE( w.EJ() == w.E1());
   }
@@ -230,28 +230,28 @@ void test_hyperslab()
   int nwalk = 9;
   int nprop = 7;
   int nprop_to_safe = 3;
-  Matrix Data(extents[nwalk][nprop]);  
+  Matrix Data(extents[nwalk][nprop]);
 
   for(int i=0; i<nwalk; i++)
    for(int j=0; j<nprop; j++)
     Data[i][j] = i*10+rank*100+j;
 
   int nwtot = ( world += nwalk );
-  
+
   hdf_archive dump(world,true);
   if(!dump.create("dummy_walkers.h5",H5F_ACC_EXCL)) {
     app_error()<<" Error opening restart file. \n";
     APP_ABORT("");
   }
   dump.push("WalkerSet");
-  
+
   hyperslab_proxy<Matrix,2> hslab(Data,
                                   std::array<int,2>{nwtot,nprop},
                                   std::array<int,2>{nwalk,nprop},
                                   std::array<int,2>{rank*nwalk,0});
-  dump.write(hslab,"Walkers"); 
+  dump.write(hslab,"Walkers");
   dump.close();
-  world.barrier();  
+  world.barrier();
 
   {
     hdf_archive read(world,false);
@@ -292,21 +292,21 @@ void test_double_hyperslab()
   int nwalk = 9;
   int nprop = 3;
   int nprop_to_safe = 3;
-  Matrix Data(extents[nwalk][nprop]);  
+  Matrix Data(extents[nwalk][nprop]);
 
   for(int i=0; i<nwalk; i++)
    for(int j=0; j<nprop; j++)
     Data[i][j] = i*10+rank*100+j;
 
-  int nwtot = ( world += nwalk ); 
-  
+  int nwtot = ( world += nwalk );
+
   hdf_archive dump(world,true);
   if(!dump.create("dummy_walkers.h5",H5F_ACC_EXCL)) {
     app_error()<<" Error opening restart file. \n";
     APP_ABORT("");
   }
   dump.push("WalkerSet");
-  
+
   //double_hyperslab_proxy<Matrix,2> hslab(Data,
   hyperslab_proxy<Matrix,2> hslab(Data,
                                   std::array<int,2>{nwtot,nprop_to_safe},
@@ -316,9 +316,9 @@ void test_double_hyperslab()
 //                                  std::array<int,2>{nwalk,nprop},
 //                                  std::array<int,2>{nwalk,nprop_to_safe},
 //                                  std::array<int,2>{0,0});
-  dump.write(hslab,"Walkers"); 
+  dump.write(hslab,"Walkers");
   dump.close();
-  world.barrier();  
+  world.barrier();
 
   {
     hdf_archive read(world,false);
@@ -365,27 +365,27 @@ void test_walker_io()
 
   using Type = std::complex<double>;
 
-  //assert(world.size()%2 == 0); 
+  //assert(world.size()%2 == 0);
 
   int NMO=8,NAEA=2,NAEB=2, nwalkers=10;
 
   //auto node = world.split_shared();
 
   GlobalTaskGroup gTG(world);
-  TaskGroup_ TG(gTG,std::string("TaskGroup"),1,1); 
+  TaskGroup_ TG(gTG,std::string("TaskGroup"),1,1);
   AFQMCInfo info;
-  info.NMO = NMO; 
-  info.NAEA = NAEA; 
-  info.NAEB = NAEB; 
+  info.NMO = NMO;
+  info.NAEA = NAEA;
+  info.NAEB = NAEB;
   info.name = "walker";
-  boost::multi_array<Type,2> initA(extents[NMO][NAEA]); 
-  boost::multi_array<Type,2> initB(extents[NMO][NAEB]); 
+  boost::multi_array<Type,2> initA(extents[NMO][NAEA]);
+  boost::multi_array<Type,2> initB(extents[NMO][NAEB]);
   for(int i=0; i<NAEA; i++) initA[i][i] = Type(1.0);
   for(int i=0; i<NAEB; i++) initB[i][i] = Type(1.0);
   //SimpleRandom<MTRand> rng;
   RandomGenerator_t rng;
 
-const char *xml_block = 
+const char *xml_block =
 "<WalkerSet name=\"wset0\">  \
   <parameter name=\"walker_type\">closed</parameter>  \
 </WalkerSet> \
@@ -425,7 +425,7 @@ const char *xml_block =
       APP_ABORT("");
     }
   }
- 
+
   // dump restart file
   dumpToHDF5(wset,dump);
   dump.close();

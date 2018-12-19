@@ -47,7 +47,7 @@ bool selectedCI::run()
   ci.reserve(100000);
   new_dets.reserve(ne*100000);
   new_ci.reserve(100000);
-  // occ_orbs: determinants in the permanent list that have already been excited from 
+  // occ_orbs: determinants in the permanent list that have already been excited from
   // new_dets: determinants generated in the previous iteration, from which excitations are generated
   //           in the current iteration
   for(int i=0; i<NAEA; i++)
@@ -58,16 +58,16 @@ bool selectedCI::run()
 
 // ideas for speed-ups
 // 1. Use the fact that H is stored in sparse ordered form to
-//    only consider terms that have hmat*ci > cut   
+//    only consider terms that have hmat*ci > cut
 //    To do this, make a routine that given (i,j) it gets all
-//    (k,l) such that h(i,j,k,l)*ci > cut     
+//    (k,l) such that h(i,j,k,l)*ci > cut
 // 2. Keep a different list for those determinants added in the last
 //    step (those new to the list that haven't been "excited" before)
 //    This is a reasonable approximation since the ci coeffs do not change
-//    much. Then only excite from this list.  
+//    much. Then only excite from this list.
 // 3. For parallelization, we need to solve both hamiltonian storage (which will be bigger now)
-//    and fare share of work. For now, assume hamiltonian is  
-// 4. use (real) parallel? sparse eigenvalue solver that produces only a given # of states 
+//    and fare share of work. For now, assume hamiltonian is
+// 4. use (real) parallel? sparse eigenvalue solver that produces only a given # of states
 
   for(int ite=0; ite<maxit; ite++) {
     app_log()<<" Iteration: " <<ite <<std::endl;
@@ -90,11 +90,11 @@ bool selectedCI::run()
       if(nterms*ne == intm.capacity()) intm.reserve(ne*(nterms+10000));
       // add new_dets[nc] to occ_orbs
       ci.push_back(new_ci[nc]);
-      for(int ii=0; ii<ne; ii++) 
+      for(int ii=0; ii<ne; ii++)
         occ_orbs.push_back(*(it+ii));
 
       double cut = cutoff_list/std::abs(new_ci[nc]);
-      // double excitations 
+      // double excitations
       for(int ia=0; ia<NAEA; ia++) {
         OrbitalType a = *(it+ia);
         // aa
@@ -103,12 +103,12 @@ bool selectedCI::run()
 
           sHam->get_selCI_excitations(a,b,0,cut,&(*it),KLs);
           if((nterms+KLs.size())*ne >= intm.capacity()) intm.reserve(ne*(nterms+KLs.size()+10000));
-          for(std::vector<OrbitalType>::iterator itkl=KLs.begin(); itkl<KLs.end(); itkl+=2) { 
-            for(int ii=0; ii<ne; ii++) indx[ii] = *(it+ii); 
+          for(std::vector<OrbitalType>::iterator itkl=KLs.begin(); itkl<KLs.end(); itkl+=2) {
+            for(int ii=0; ii<ne; ii++) indx[ii] = *(it+ii);
             indx[ia] = *(itkl);
             indx[ib] = *(itkl+1);
             std::sort(indx.begin(),indx.end());
-            intm.insert(intm.end(),std::begin(indx),std::end(indx)); 
+            intm.insert(intm.end(),std::begin(indx),std::end(indx));
             nterms++;
           }
         }
@@ -128,7 +128,7 @@ bool selectedCI::run()
           }
         }
 
-      } 
+      }
 
       for(int ia=NAEA; ia<ne; ia++) {
         int a = *(it+ia);
@@ -148,28 +148,28 @@ bool selectedCI::run()
 
         }
       }
-    }  // states in new_dets 
+    }  // states in new_dets
     Timer.stop("Generic");
     app_log()<<"Time to generate excitations: " <<Timer.total("Generic") <<std::endl;
 
     if(occ_orbs.size() == 0) {
       app_error()<<" Error in selectedCI::run(): Main determinant list is empty. \n";
-      APP_ABORT(" Error in selectedCI::run(): Main determinant list is empty. \n"); 
+      APP_ABORT(" Error in selectedCI::run(): Main determinant list is empty. \n");
     }
     if(ci.size() == 0) {
       app_error()<<" Error in selectedCI::run(): Main ci determinant list is empty. \n";
-      APP_ABORT(" Error in selectedCI::run(): Main ci determinant list is empty. \n"); 
+      APP_ABORT(" Error in selectedCI::run(): Main ci determinant list is empty. \n");
     }
     if(ci.size() != occ_orbs.size()/ne) {
       app_error()<<" Error in selectedCI::run(): Main determinant list size is inconsistent, ci, dets: " <<ci.size() <<" " <<occ_orbs.size() <<" \n";
-      APP_ABORT(" Error in selectedCI::run(): Main determinant list size is inconsistent. \n"); 
+      APP_ABORT(" Error in selectedCI::run(): Main determinant list size is inconsistent. \n");
     }
 
     Timer.reset("Generic");
     Timer.start("Generic");
     // sort occ_orbs/ci
     new_dets.clear();
-    new_ci.clear();   
+    new_ci.clear();
     if(ci.size() > 1)
       sort_multiple(occ_orbs.begin(),occ_orbs.end()-ne,ci.begin(),ci.end()-1);
 
@@ -185,7 +185,7 @@ for(int i=0; i<ntr; i++)
 */
     // clean intm list
     app_log()<<" Intermediate list has " <<nterms <<" new terms (before cleanup)" <<std::endl;
-    if(intm.size() > 0) { 
+    if(intm.size() > 0) {
       val_at_pivot.resize(NAEA+NAEB);
       sort_list(intm.begin(),intm.end()-ne);
 /*
@@ -198,7 +198,7 @@ for(int i=0; i<ntr; i++)
     return false;
   }
 */
-      remove_repeated(intm,occ_orbs);  
+      remove_repeated(intm,occ_orbs);
 /*
 //debug
 int ntr1 = occ_orbs.size()/ne;
@@ -206,7 +206,7 @@ ntr = intm.size()/ne;
 for(int i=0; i<ntr1; i++)
  for(int k=0; k<ntr; k++)
   if(list_equal(occ_orbs.begin()+i*ne,intm.begin()+k*ne)) {
-    app_error()<<" Error: Repeated elements after call to remove_repeated. \n"; 
+    app_error()<<" Error: Repeated elements after call to remove_repeated. \n";
     return false;
   }
 */
@@ -215,15 +215,15 @@ for(int i=0; i<ntr1; i++)
     } else {
       nterms=0;
     }
-    
+
     Timer.stop("Generic");
     app_log()<<"Time to sort and clean new list of dets: " <<Timer.total("Generic") <<std::endl;
-  
+
     app_log()<<" Intermediate list has " <<nterms <<" new terms" <<std::endl;
 
     if(nterms == 0) {
       app_log()<<" Intermediate determinant list is empty. Stopping iterations. \n";
-      break; 
+      break;
     }
     bool success = diagonalizeTrialWavefunction(eigVal,eigVec,occ_orbs,occ_orbs.size()/ne,intm,intm.size()/ne,true);
     if(!success) {
@@ -235,25 +235,25 @@ for(int i=0; i<ntr1; i++)
     int cnt=0;
     nci = ci.size();
     RealType normlz = 0;
-    for(int ii=0; ii<nci; ii++) 
+    for(int ii=0; ii<nci; ii++)
       normlz += mynorm(eigVec(0,ii));
-    for(int ii=0; ii<nterms; ii++) 
-      if(std::abs(eigVec(0,ii+nci)) > cutoff_diag) { 
+    for(int ii=0; ii<nterms; ii++)
+      if(std::abs(eigVec(0,ii+nci)) > cutoff_diag) {
         cnt++;
         normlz += mynorm(eigVec(0,ii+nci));
       }
-    normlz = std::sqrt(normlz); 
+    normlz = std::sqrt(normlz);
     app_log()<<" Normalization of ci vector: " <<normlz <<std::endl;
     new_dets.reserve(cnt);
     new_ci.reserve(cnt);
-    for(int ii=0; ii<nci; ii++) 
+    for(int ii=0; ii<nci; ii++)
       ci[ii] = eigVec(0,ii)/normlz;
     for(int ii=0; ii<nterms; ii++) {
       if(std::abs(eigVec(0,ii+nci)) > cutoff_diag) {
         new_ci.push_back(eigVec(0,ii+nci)/normlz);
         for(int j=0; j<ne; j++)
           new_dets.push_back(intm[ii*ne+j]);
-      }   
+      }
     }
 
     std::ofstream out("iterativeCI.dat");
@@ -277,7 +277,7 @@ for(int i=0; i<ntr1; i++)
           for(int j=0; j<ne; j++) out<<occ_orbs[nt+j]+1 <<" ";
           out<<"\n";
         } else {
-          int nt = -std::get<1>(dets[i])-1; 
+          int nt = -std::get<1>(dets[i])-1;
           out<<new_ci[nt] <<" ";
           for(int j=0; j<ne; j++) out<<new_dets[nt*ne+j]+1 <<" ";
           out<<"\n";
@@ -289,7 +289,7 @@ for(int i=0; i<ntr1; i++)
     app_log()<<" Energy: " <<eigVal[0]+NuclearCoulombEnergy <<std::endl;
     app_log()<<" Number of determinants after truncation: " <<(occ_orbs.size()+new_dets.size())/ne <<std::endl;
 
-  } // iteration 
+  } // iteration
 
   if(diag_in_steps>0) {
     if((occ_orbs.size()+new_dets.size()) > occ_orbs.capacity()) occ_orbs.reserve( occ_orbs.size()+new_dets.size() );
@@ -325,15 +325,15 @@ for(int i=0; i<ntr1; i++)
     app_log()<<"***********************************************" <<std::endl <<std::endl;
   }
 
-  return true; 
+  return true;
 }
 
 void selectedCI::sort_list(std::vector<IndexType>::iterator left, std::vector<IndexType>::iterator right)
 {
   std::vector<IndexType>::iterator i = left, j = right;
-  std::vector<IndexType>::iterator pivot = left; 
-  std::advance(pivot, (std::distance(left,right)/(NAEA+NAEB))/2*(NAEA+NAEB)); 
-  std::copy(pivot,pivot+NAEA+NAEB,val_at_pivot.begin()); 
+  std::vector<IndexType>::iterator pivot = left;
+  std::advance(pivot, (std::distance(left,right)/(NAEA+NAEB))/2*(NAEA+NAEB));
+  std::copy(pivot,pivot+NAEA+NAEB,val_at_pivot.begin());
   pivot = val_at_pivot.begin();
 
   /* partition */
@@ -343,7 +343,7 @@ void selectedCI::sort_list(std::vector<IndexType>::iterator left, std::vector<In
     while (list_order(pivot,j))
       j-=(NAEA+NAEB);
     if(i <= j) {
-      for(int k=0; k<NAEA+NAEB; k++) std::swap( *(i+k), *(j+k) );  
+      for(int k=0; k<NAEA+NAEB; k++) std::swap( *(i+k), *(j+k) );
       i+=(NAEA+NAEB);
       j-=(NAEA+NAEB);
     }
@@ -361,9 +361,9 @@ void selectedCI::sort_multiple(std::vector<IndexType>::iterator left, std::vecto
   if(left==right) return;
   std::vector<IndexType>::iterator i = left, j = right;
   std::vector<ValueType>::iterator vi = vl, vj = vr;
-  std::vector<IndexType>::iterator pivot = left; 
-  std::advance(pivot, (std::distance(left,right)/(NAEA+NAEB))/2*(NAEA+NAEB)); 
-  std::copy(pivot,pivot+NAEA+NAEB,val_at_pivot.begin()); 
+  std::vector<IndexType>::iterator pivot = left;
+  std::advance(pivot, (std::distance(left,right)/(NAEA+NAEB))/2*(NAEA+NAEB));
+  std::copy(pivot,pivot+NAEA+NAEB,val_at_pivot.begin());
   pivot = val_at_pivot.begin();
 
   /* partition */
@@ -377,7 +377,7 @@ void selectedCI::sort_multiple(std::vector<IndexType>::iterator left, std::vecto
       vj--;
     }
     if(i <= j) {
-      for(int k=0; k<NAEA+NAEB; k++) std::swap( *(i+k), *(j+k) );  
+      for(int k=0; k<NAEA+NAEB; k++) std::swap( *(i+k), *(j+k) );
       std::swap(*vi,*vj);
       i+=(NAEA+NAEB);
       j-=(NAEA+NAEB);
@@ -400,37 +400,37 @@ void selectedCI::remove_repeated(std::vector<IndexType>& vnew, std::vector<Index
 
   std::vector<IndexType>::iterator first = vnew.begin();
   std::vector<IndexType>::iterator last = vnew.end();
-  std::vector<IndexType>::iterator new_last = last; 
-  
-  if (first!=last) { 
-    new_last=first;  
+  std::vector<IndexType>::iterator new_last = last;
+
+  if (first!=last) {
+    new_last=first;
     first+=(NAEA+NAEB);
     while (first < last)
     {
-      if (!list_equal(new_last,first)) { 
-        new_last+=(NAEA+NAEB); 
+      if (!list_equal(new_last,first)) {
+        new_last+=(NAEA+NAEB);
         for(int i=0; i<NAEA+NAEB; i++) *(new_last+i) = *(first++);
       } else
-        first+=(NAEA+NAEB); 
+        first+=(NAEA+NAEB);
     }
-    new_last+=(NAEA+NAEB); 
+    new_last+=(NAEA+NAEB);
   }
   // cut part of the vector with repeated elements
   vnew.resize( std::distance(vnew.begin(),new_last) );
 
-  // now new_last points to the end of the good segment of the list 
+  // now new_last points to the end of the good segment of the list
   // remove intersection with vold
-  if(vnew.size() == 0 || vold.size()==0) return; 
+  if(vnew.size() == 0 || vold.size()==0) return;
 
-   
+
   std::vector<IndexType>::iterator vold_first = vold.begin();
   first = vnew.begin();
-  last = vnew.end(); 
+  last = vnew.end();
   new_last = first;
 
-  // loop through vnew, when a good (not found in vold) element is found, copy to new_last 
+  // loop through vnew, when a good (not found in vold) element is found, copy to new_last
   while (first < last)
-  { 
+  {
     if (!mysearch(vold_first,vold.end(),first)) {
       for(int i=0; i<NAEA+NAEB; i++) *(new_last++) = *(first++);
     } else
@@ -566,7 +566,7 @@ bool selectedCI::parse(xmlNodePtr cur)
   m_param.put(cur);
 
   std::transform(str.begin(),str.end(),str.begin(),(int (*)(int)) tolower);
-  if(str == "no" || str == "false") build_full_hamiltonian = false; 
+  if(str == "no" || str == "false") build_full_hamiltonian = false;
 
   return true;
 }
@@ -577,7 +577,7 @@ bool selectedCI::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
 
   if(h0==NULL) {
     app_error()<<" Error: Null Hamiltonian pointer in selectedCI::setup(). \n";
-    return false; 
+    return false;
   }
 
   ham0=h0;
@@ -593,21 +593,21 @@ bool selectedCI::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
     APP_ABORT("");
   }
 
-  app_log()<<"\n****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"          Beginning Driver initialization.\n" 
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
+  app_log()<<"\n****************************************************\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
+           <<"          Beginning Driver initialization.\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
            <<std::endl;
 
   app_log()<<" Using " <<ncores_per_TG <<" cores per node in a TaskGroup. \n";
-  // right now this TG is not used. It is needed for setup purposes and to  
+  // right now this TG is not used. It is needed for setup purposes and to
   // get a unique TG number for every group of cores on a node (used in the WalkerSet)
-  TG.setup(ncores_per_TG,1,false);  
+  TG.setup(ncores_per_TG,1,false);
   std::vector<int> TGdata(5);
-  TG.getSetupInfo(TGdata); 
+  TG.getSetupInfo(TGdata);
 
   // setup local-to-node MPI Comm
   // TGdata[0]: node_number
@@ -631,31 +631,31 @@ bool selectedCI::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
 
   // hamiltonian
   if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
-    app_error()<<"Error initializing Hamiltonian in selectedCI::setup" <<std::endl; 
-    return false; 
-  }   
+    app_error()<<"Error initializing Hamiltonian in selectedCI::setup" <<std::endl;
+    return false;
+  }
 
-  NuclearCoulombEnergy = static_cast<ValueType>(sHam->NuclearCoulombEnergy); 
+  NuclearCoulombEnergy = static_cast<ValueType>(sHam->NuclearCoulombEnergy);
 
-  app_log()<<"\n****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"          Finished Driver initialization.\n" 
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
-           <<"****************************************************\n"   
+  app_log()<<"\n****************************************************\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
+           <<"          Finished Driver initialization.\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
+           <<"****************************************************\n"
            <<std::endl;
 
   return true;
 }
 
 // writes checkpoint file
-bool selectedCI::checkpoint(int block, int step) 
+bool selectedCI::checkpoint(int block, int step)
 {
   return true;
 }
 
-// sets up restart archive and reads  
+// sets up restart archive and reads
 bool selectedCI::restart(hdf_archive& read)
 {
   return true;
