@@ -1,0 +1,15 @@
+{
+    "orbital_file": "aos.h5",
+    "output_file": "thc.h5",
+    "thc_cfac": 5,
+    "thc_half_cfac": 5,
+    "half_rotated": true,
+    "blacs": {
+        "block_cyclic_nrows": 64,
+        "block_cyclic_cocls": 64
+    },
+    "kmeans": {
+        "max_it": 1000,
+        "threshold": 1e-6
+    }
+}
