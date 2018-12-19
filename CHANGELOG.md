@@ -67,7 +67,7 @@ greater are now required.
 ### Known Bugs
 
 Several potentially significant bugs are outstanding and will be addressed in the
-next release. See [list of open bugs](ttps://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
+next release. See [list of open bugs](https://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
 
 * LCAO (Gaussian basis) molecular calculations are incorrect with
   certain diffusion functions. The reason for this bug is currently
