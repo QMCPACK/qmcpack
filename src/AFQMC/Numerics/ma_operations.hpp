@@ -75,10 +75,10 @@ MultiArray2DB transpose(MultiArray2DA&& A, MultiArray2DB&& B){
         using range_t = boost::multi_array_types::index_range;
         assert(A.shape()[0] == B.shape()[1]);
         assert(A.shape()[1] == B.shape()[0]);
-        for(int i = 0; i != A.shape()[0]; ++i) {
+        for(int i = 0; i != B.shape()[0]; ++i) {
                 //B(B.extension(0),i) = A(i,A.extension(1));
                 //B(B.extension(0),i) = A[i]; //A(i,A.extension(1)); BUG in multi!!!
-                for(int j = 0; j != A.shape()[1]; ++j) {
+                for(int j = 0; j != B.shape()[1]; ++j) {
                   B[i][j] = A[j][i];
                 }
         }
