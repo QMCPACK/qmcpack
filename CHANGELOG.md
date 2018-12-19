@@ -59,12 +59,6 @@ greater are now required.
   qmc-get-supercell. extract-eshdf-kvectors is renamed
   qmc-extract-eshdf-kvectors. 
 
-* Improved parameter descriptions in manual.
-
-* Numerous minor bugfixes.
-
-* Continued source code cleanup.
-
 ### Known Bugs
 
 Several potentially significant bugs are outstanding and will be addressed in the
