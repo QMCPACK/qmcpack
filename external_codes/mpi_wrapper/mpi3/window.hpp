@@ -26,7 +26,7 @@ protected:
 	basic_window() = default;
 	basic_window(MPI_Win w) : impl_{w}{}
 public:
-  MPI_Win impl_ = MPI_WIN_NULL;
+	MPI_Win impl_ = MPI_WIN_NULL;
 	MPI_Win& operator&(){return impl_;}
 	MPI_Win const& operator&() const{return impl_;}
 };
