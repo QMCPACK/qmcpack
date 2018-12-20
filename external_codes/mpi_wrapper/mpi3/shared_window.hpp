@@ -254,9 +254,9 @@ struct is_root{
 	template<class Alloc>
 	is_root(Alloc& a) : comm_(a.comm_){}
 	bool root(){return comm_.root();}
-  int size() {return comm_.size();}
-  int rank() {return comm_.rank();}
-  void barrier() {comm_.barrier();}
+  	int size() {return comm_.size();}
+  	int rank() {return comm_.rank();}
+  	void barrier() {comm_.barrier();}
 };
 
 }
