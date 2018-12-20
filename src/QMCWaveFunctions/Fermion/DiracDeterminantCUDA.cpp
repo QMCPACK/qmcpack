@@ -118,6 +118,7 @@ DiracDeterminantCUDA::det_lookahead (MCWalkerConfiguration &W,
                        AinvDeltaList_d.data(), AinvColkList_d.data(),
                        AinvWorkList_d.data(), AWorkList_d.data(), // <- AinvWork takes the place of A^-1*dU (in the USE_TRSM case it's unused)
                        LemmaInvList_d.data(), LemmaLUList_d.data(), // <- LemmaInv is not needed for USE_TRSM
+                       infoArray_d.data(),
                        k+1, kd, 1, NumPtcls, nw, RowStride);
   }
   // calculate and collect ratios, gradients, and laplacians
@@ -180,10 +181,8 @@ DiracDeterminantCUDA::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &
           UpdateList[ws++] = allwalkers[iw]->cuda_DataSet.data();
     }
     UpdateList_d.asyncCopy(UpdateList);
-    if (W->getklinear() && (k<kdelay)) // special attention for "linear" (aka w/ drift) case
-    { // need to update A^-1*dU * lemma^-1 (currently in AWorkList_d from previous smw_update run by det_lookahead) for next round's gradient
-    }
     // kernel containing behavior for acceptance and rejection, side benefit: no memory copying needed anymore
+    // -> also updates A^-1*dU * lemma^-1 for next round's gradient in "linear" (aka w/ drift) case
     update_onemove (UpdateList_d.data(),
                     newRowOffset+k*RowStride, AOffset+(kstart+k)*RowStride,
                     newGradLaplOffset+4*k*RowStride, gradLaplOffset+4*(kstart+k)*RowStride,
@@ -202,6 +201,7 @@ DiracDeterminantCUDA::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &
                          AinvDeltaList_d.data(), AinvList_d.data(),
                          AinvUList_d.data(), AWorkList_d.data(),
                          LemmaInvList_d.data(), LemmaLUList_d.data(),
+                         infoArray_d.data(),
                          kdelay, kdelay, NumPtcls, NumPtcls, nw, RowStride);
     }
   } else
@@ -738,6 +738,7 @@ DiracDeterminantCUDA::calcGradient(MCWalkerConfiguration &W, int iat, int k,
                          AinvDeltaList_d.data(), AinvColkList_d.data(),
                          AinvWorkList_d.data(), AWorkList_d.data(), // <- AinvWork takes the place of A^-1*dU (in the USE_TRSM case it's unused)
                          LemmaInvList_d.data(), LemmaLUList_d.data(),
+                         infoArray_d.data(),
                          k, kd, 1, NumPtcls, nw, RowStride);*/
     }
     // calculate and collect gradients only

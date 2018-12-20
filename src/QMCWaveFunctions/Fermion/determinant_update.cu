@@ -2079,7 +2079,7 @@ update_onemove (T **buff,
       rejval += my_lemmainv[kk1+j] * ainvu_val;
 #endif
     }
-    my_awork[i] = value - (blockIdx.y >= accepted)*rejval*my_lemmainv[i*(k+1)+k]/my_lemmainv[k*(k+2)]; // scale factor lemmainv_ki/lemmainv_kk (remember that lemmainv pitch is k+1, not kdelay)
+    my_awork[i] = value - (blockIdx.y >= accepted)*rejval*my_lemmainv[ik1+k]/my_lemmainv[k*(k+2)]; // scale factor lemmainv_ki/lemmainv_kk (remember that lemmainv pitch is k+1, not kdelay)
   }
   if (i < rowstride)
   {
