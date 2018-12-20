@@ -4,7 +4,7 @@ BUILD_DIR=$(pwd)
 echo $BUILD_DIR
 
 cat > $BUILD_TAG.pbs << EOF
-#PBS -A MAT151
+#PBS -A MAT151ci
 #PBS -N $BUILD_TAG
 #PBS -j oe
 #PBS -l walltime=1:00:00,nodes=1
@@ -22,7 +22,7 @@ export FFTW_HOME=\$FFTW3_DIR
 module load hdf5
 module load git
 module load cmake/3.6.1
-module load boost
+module load boost/1.61.0
 
 env
 module list
@@ -101,7 +101,7 @@ ctest -L unit --output-on-failure
 
 EOF
 
-/home/bgl/blocking_qsub $BUILD_DIR $BUILD_TAG.pbs
+/home/mat151ci_auser/blocking_qsub $BUILD_DIR $BUILD_TAG.pbs
 
 cp $BUILD_DIR/$BUILD_TAG.o* ../
 
