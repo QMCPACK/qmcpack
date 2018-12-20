@@ -28,13 +28,13 @@ class OneRdmEstimator: public EstimatorBase
   using WfnPtr = std::shared_ptr<WavefunctionBase>;
 
   OneRdmEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo info,
-        std::string title, xmlNodePtr cur, WfnPtr wfn) : 
+        std::string title, xmlNodePtr cur, WfnPtr wfn) :
                                     EstimatorBase(info),TG(tg_), full(false), diagonal(false),
-                                    row(false), select(false), SDet(info),wfn0(wfn) 
+                                    row(false), select(false), SDet(info),wfn0(wfn)
   {
     writer = (TG.getGlobalRank()==0);
     parse(cur);
-    setup(); 
+    setup();
   }
 
   ~OneRdmEstimator() {}
@@ -55,7 +55,7 @@ class OneRdmEstimator: public EstimatorBase
         sm = wset->getWalker(i, w, tmp, ooa, oob);  // "impsampl"
         //sm = wset->getWalker2(i, eloc, oa, ob);     // "estimator"
         weight = w * ((oa*ob)/(ooa*oob));
-        if (!std::isfinite(weight.real())) continue; 
+        if (!std::isfinite(weight.real())) continue;
         data[0] += weight;
         SPComplexMatrix::iterator itG = walker_density_matrix.begin();
         std::vector<ComplexType>::iterator itd = data.begin() + 1;

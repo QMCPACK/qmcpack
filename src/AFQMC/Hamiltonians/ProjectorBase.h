@@ -3,8 +3,8 @@
 #define QMCPLUSPLUS_AFQMC_PROJECTORBASE_H
 
 #include<iostream>
-#include<vector> 
-#include<map> 
+#include<vector>
+#include<map>
 #include<fstream>
 #include<Message/MPIObjectBase.h>
 #include "OhmmsData/libxmldefs.h"
@@ -21,10 +21,10 @@ class ProjectorBase: public MPIObjectBase, public AFQMCInfo
   typedef HamiltonianBase* HamPtr;
 
   public:
- 
-  ProjectorBase(Communicate *c):MPIObjectBase(c),name(""),filetype("undefined"),filename("undefined"),test_breakup(false),head_of_nodes(false),cutoff_sparse(1e-5),eigcut(1e-5) 
+
+  ProjectorBase(Communicate *c):MPIObjectBase(c),name(""),filetype("undefined"),filename("undefined"),test_breakup(false),head_of_nodes(false),cutoff_sparse(1e-5),eigcut(1e-5)
   {
-    
+
   }
 
   ~ProjectorBase() {}
@@ -33,21 +33,21 @@ class ProjectorBase: public MPIObjectBase, public AFQMCInfo
   {
     ham0 = h;
     if(filetype == "ascii")
-      return initFromASCII(filename); 
+      return initFromASCII(filename);
     else if(filetype == "xml")
       return initFromXML(filename);
     else if(filetype == "hdf5")
       return initFromHDF5(filename);
     else
       return initFromGuess();
-  } 
+  }
 
-  virtual void calculateHSPotentials(ComplexSMSpMat&)=0; 
+  virtual void calculateHSPotentials(ComplexSMSpMat&)=0;
 
-  virtual void calculateHSPotentials_Diagonalization(ComplexSMSpMat&)=0; 
+  virtual void calculateHSPotentials_Diagonalization(ComplexSMSpMat&)=0;
 
   // parse xml input node
-  virtual bool parse(xmlNodePtr cur)=0; 
+  virtual bool parse(xmlNodePtr cur)=0;
 
   // check object
   virtual bool checkObject()=0;
@@ -63,7 +63,7 @@ class ProjectorBase: public MPIObjectBase, public AFQMCInfo
   virtual void hdf_write()=0;
 
   protected:
-  
+
   HamPtr ham0;
 
   std::string hdf_write_file;
@@ -75,13 +75,13 @@ class ProjectorBase: public MPIObjectBase, public AFQMCInfo
   bool head_of_nodes;
   MPI_Comm MPI_COMM_HEAD_OF_NODES;
 
-  virtual bool initFromASCII(const std::string& fileName)=0; 
+  virtual bool initFromASCII(const std::string& fileName)=0;
 
   virtual bool initFromXML(const std::string& fileName)=0;
 
-  virtual bool initFromHDF5(const std::string& fileName)=0; 
+  virtual bool initFromHDF5(const std::string& fileName)=0;
 
-  virtual bool initFromGuess()=0; 
+  virtual bool initFromGuess()=0;
 
 };
 }

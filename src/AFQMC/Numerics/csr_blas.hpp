@@ -162,8 +162,8 @@ template<class CSR,
 void CSR2MA(char TA, CSR const& A, MultiArray2D& M)
 {
   using Type = typename MultiArray2D::element;
-  assert(TA=='N' || TA=='H' || TA=='T');
-  if(TA=='N')
+  assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
+  if(TA=='N' || TA=='Z')
     M.resize(boost::extents[A.shape()[0]][A.shape()[1]]);
   else if(TA=='T' || TA=='H')
     M.resize(boost::extents[A.shape()[1]][A.shape()[0]]);
@@ -177,6 +177,10 @@ void CSR2MA(char TA, CSR const& A, MultiArray2D& M)
     for(int i=0; i<A.shape()[0]; i++)
       for(int ip=pbegin[i]; ip<pend[i]; ip++)
         M[i][c0[ip-p0]] = static_cast<Type>(v0[ip-p0]);
+  } else if(TA=='Z') {
+    for(int i=0; i<A.shape()[0]; i++)
+      for(int ip=pbegin[i]; ip<pend[i]; ip++)
+        M[i][c0[ip-p0]] = static_cast<Type>(conj(v0[ip-p0]));
   } else if(TA=='T') {
     for(int i=0; i<A.shape()[0]; i++)
       for(int ip=pbegin[i]; ip<pend[i]; ip++)
@@ -185,6 +189,62 @@ void CSR2MA(char TA, CSR const& A, MultiArray2D& M)
     for(int i=0; i<A.shape()[0]; i++)
       for(int ip=pbegin[i]; ip<pend[i]; ip++)
         M[c0[ip-p0]][i] = static_cast<Type>(conj(v0[ip-p0]));
+  }
+}
+
+/* Chooses rows of A based on occups vector and performs CSF2MA on subset of rows */
+template<class CSR,
+         class MultiArray2D,
+         class Vector,
+         typename = typename std::enable_if_t<(MultiArray2D::dimensionality==2)>
+        >
+void CSR2MA(char TA, CSR const& A, MultiArray2D& M, Vector const& occups)
+{
+  using Type = typename MultiArray2D::element;
+  if(occups.size()==0) throw std::runtime_error(" Error: Empty occupation array in CSR2MA.\n");
+  assert(occups.size() <= A.shape()[0]);
+  int nrows = occups.size();
+  assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
+  if(TA=='N' || TA=='Z')
+    if(M.shape()[0] != nrows || M.shape()[1] != A.shape()[1])
+      M.resize(boost::extents[nrows][A.shape()[1]]);
+  else if(TA=='T' || TA=='H')
+    if(M.shape()[1] != nrows || M.shape()[0] != A.shape()[1])
+      M.resize(boost::extents[A.shape()[1]][nrows]);
+  std::fill_n(M.origin(),M.num_elements(),Type(0));
+  auto pbegin = A.pointers_begin();
+  auto pend = A.pointers_end();
+  auto p0 = pbegin[0];
+  auto v0 = A.non_zero_values_data();
+  auto c0 = A.non_zero_indices2_data();
+  if(TA=='N') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.shape()[0]);  
+      int ik = occups[i];  
+      for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
+        M[i][c0[ip-p0]] = static_cast<Type>(v0[ip-p0]);
+    }    
+  } else if(TA=='Z') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.shape()[0]);
+      int ik = occups[i];
+      for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
+        M[i][c0[ip-p0]] = static_cast<Type>(conj(v0[ip-p0]));
+    }
+  } else if(TA=='T') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.shape()[0]);  
+      int ik = occups[i];  
+      for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
+        M[c0[ip-p0]][i] = static_cast<Type>(v0[ip-p0]);
+    }    
+  } else if(TA=='H') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.shape()[0]);  
+      int ik = occups[i];  
+      for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
+        M[c0[ip-p0]][i] = static_cast<Type>(conj(v0[ip-p0]));
+    }    
   }
 }
 

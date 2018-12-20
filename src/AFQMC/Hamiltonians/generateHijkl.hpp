@@ -5,12 +5,12 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_HAMHELPER_GENERATEHIJKL_HPP
@@ -42,18 +42,21 @@ namespace HamHelper
 
   template<class Container,
            class Hijkl_op >
-  void generateHijkl(WALKER_TYPES walker_type, TaskGroup_& TG, 
-                            Container& Vijkl, 
+  void generateHijkl(WALKER_TYPES walker_type, bool addCoulomb, TaskGroup_& TG,
+                            Container& Vijkl,
                             IndexType NMO,
-                            std::map<IndexType,std::pair<bool,IndexType>>& occ_a, 
-                            std::map<IndexType,std::pair<bool,IndexType>>& occ_b, 
-                            Hijkl_op& H, 
+                            std::map<IndexType,std::pair<bool,IndexType>>& occ_a,
+                            std::map<IndexType,std::pair<bool,IndexType>>& occ_b,
+                            Hijkl_op& H,
                             bool reserve_to_fit_=true, bool global_reserve = true,
                             RealType const cut=1e-6)
   {
     using std::conj;
     using std::abs;
     using std::sqrt;
+
+    if(not addCoulomb)
+      APP_ABORT("Error: addCoulomb=false not yet implemented in generateHijkl. \n");
 
     if(walker_type==NONCOLLINEAR) {
       APP_ABORT("Error: GHF density matrix only implemented with spinRestricted integrals. \n");
@@ -85,7 +88,7 @@ namespace HamHelper
       DiagHam[k][i] = DiagHam[i][k];
 #if defined(QMC_COMPLEX)
       if(imag(DiagHam[i][k]) > 1e-8) {
-          app_error()<<" Error: Found complex diagonal on hamiltonian. " <<i <<" " <<k <<" " 
+          app_error()<<" Error: Found complex diagonal on hamiltonian. " <<i <<" " <<k <<" "
                      <<DiagHam[i][k] <<std::endl;
           APP_ABORT("Error: Found complex diagonal on hamiltonian.");
       }
@@ -106,7 +109,7 @@ namespace HamHelper
 
       cnter=0;
       // Approximation: (similar to non factorized case)
-      //   - if <ij|kl>  <  cut, set to zero 
+      //   - if <ij|kl>  <  cut, set to zero
       for(IndexType i=0; i<NMO; i++)  {
       for(IndexType j=i; j<NMO; j++,cnter++)  {
        if( cnter%npr != rk ) continue;
@@ -123,8 +126,8 @@ namespace HamHelper
         // <ik|ik> can get a complex component due to truncation error, eliminate it here
 
         J1=J2=J3=zero;
-        // J1 = <ij|kl>   
-        // J1 < sqrt( <ik|ki> * <lj|jl> )  
+        // J1 = <ij|kl>
+        // J1 < sqrt( <ik|ki> * <lj|jl> )
         if( sqrt( abs(DiagHam[i][k]*DiagHam[l][j]) ) > cut ) {
           J1 = H.H(i,j,k,l);
 #if defined(QMC_COMPLEX)
@@ -132,7 +135,7 @@ namespace HamHelper
 #endif
         }
 
-        // J2 = <ij|lk> 
+        // J2 = <ij|lk>
         if(i==j || l==k) {
           J2=J1;
         } else {
@@ -144,7 +147,7 @@ namespace HamHelper
           }
         }
 
-        // J3 = <ik|jl> 
+        // J3 = <ik|jl>
         if(j==k) {
           J3=J1;
         } else if(i==l) {
@@ -175,7 +178,7 @@ namespace HamHelper
             J2a = H.H(i,k,l,j);
         }
 
-        //  J3a = <il|jk> 
+        //  J3a = <il|jk>
         if(l==j) {
           J3a=J2;
         } else if(i==k) {
@@ -216,15 +219,15 @@ namespace HamHelper
           find_all_contributions_to_hamiltonian_closed_shell(NMO,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
           count_allowed_terms(NMO,sz_local,vs4D,occ_a);
         } else if(walker_type==COLLINEAR) {
-          APP_ABORT(" Error: Finish. \n"); 
+          APP_ABORT(" Error: Finish. \n");
           find_all_contributions_to_hamiltonian_collinear(NMO,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
           count_allowed_terms(sz_local,vs4D,occ_a,occ_b);
         } else if(walker_type==NONCOLLINEAR) {
-          APP_ABORT(" Error: Finish. \n"); 
+          APP_ABORT(" Error: Finish. \n");
           find_all_contributions_to_hamiltonian_ghf(NMO,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
           count_allowed_terms(sz_local,vs4D,occ_a,occ_b);
         } else {
-          APP_ABORT(" Error: Unknown walker type in generateHijkl.\n"); 
+          APP_ABORT(" Error: Unknown walker type in generateHijkl.\n");
         }
 
       }
@@ -242,10 +245,11 @@ namespace HamHelper
       TG.Node().all_reduce_n(sz_local.begin(),sz_local.size(),sz_node.begin(),std::plus<>());
       std::size_t tot_sz_node = std::accumulate(sz_node.begin(),sz_node.end(),std::size_t(0));
 
-      std::size_t sz_node_min= TG.Global().all_reduce_value(tot_sz_node,boost::mpi3::min<>());
-      std::size_t sz_node_max= TG.Global().all_reduce_value(tot_sz_node,boost::mpi3::max<>());
-      std::size_t sz_local_min= TG.Global().all_reduce_value(tot_sz_local,boost::mpi3::min<>());
-      std::size_t sz_local_max= TG.Global().all_reduce_value(tot_sz_local,boost::mpi3::max<>());
+      std::size_t sz_node_min, sz_node_max, sz_local_min, sz_local_max;
+      TG.Global().all_reduce_n(&tot_sz_node,1,&sz_node_min,boost::mpi3::min<>());
+      TG.Global().all_reduce_n(&tot_sz_node,1,&sz_node_max,boost::mpi3::max<>());
+      TG.Global().all_reduce_n(&tot_sz_local,1,&sz_local_min,boost::mpi3::min<>());
+      TG.Global().all_reduce_n(&tot_sz_local,1,&sz_local_max,boost::mpi3::max<>());
 
       app_log()<<"  Number of terms in Vijkl (generateHijkl): \n"
            <<"    Local: (min/max)"
@@ -272,7 +276,7 @@ namespace HamHelper
 
     cnter=0;
     // Approximation: (similar to non factorized case)
-    //   - if <ij|kl>  <  cut, set to zero 
+    //   - if <ij|kl>  <  cut, set to zero
     for(IndexType i=0; i<NMO; i++)  {
     for(IndexType j=i; j<NMO; j++,cnter++)  {
      if( cnter%npr != rk ) continue;
@@ -286,8 +290,8 @@ namespace HamHelper
         if( occi + occj + occk + occl < 2 ) continue;
 
         J1=J2=J3=zero;
-        // J1 = <ij|kl>   
-        // J1 < sqrt( <ik|ki> * <lj|jl> )  
+        // J1 = <ij|kl>
+        // J1 < sqrt( <ik|ki> * <lj|jl> )
         if( sqrt( abs(DiagHam[i][k]*DiagHam[l][j]) ) > cut ) {
           J1 = H.H(i,j,k,l);
 #if defined(QMC_COMPLEX)
@@ -295,7 +299,7 @@ namespace HamHelper
 #endif
         }
 
-        // J2 = <ij|lk> 
+        // J2 = <ij|lk>
         if(i==j || l==k) {
           J2=J1;
         } else {
@@ -307,7 +311,7 @@ namespace HamHelper
           }
         }
 
-        // J3 = <ik|jl> 
+        // J3 = <ik|jl>
         if(j==k) {
           J3=J1;
         } else if(i==l) {
@@ -338,7 +342,7 @@ namespace HamHelper
             J2a = H.H(i,k,l,j);
         }
 
-        //  J3a = <il|jk> 
+        //  J3a = <il|jk>
         if(l==j) {
           J3a=J2;
         } else if(i==k) {
@@ -378,11 +382,11 @@ namespace HamHelper
         vs4D.clear();
         if(walker_type==CLOSED) {
           find_all_contributions_to_hamiltonian_closed_shell(NMO,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
-          add_allowed_terms(NMO,vs4D,occ_a, Vijkl); 
+          add_allowed_terms(NMO,vs4D,occ_a, Vijkl);
         } else if(walker_type==COLLINEAR) {
           APP_ABORT("Finish.\n");
           find_all_contributions_to_hamiltonian_collinear(NMO,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
-          add_allowed_terms(NMO,vs4D,occ_a,occ_b, Vijkl, true, false);                   
+          add_allowed_terms(NMO,vs4D,occ_a,occ_b, Vijkl, true, false);
         } else if(walker_type==NONCOLLINEAR) {
           APP_ABORT("Finish.\n");
           find_all_contributions_to_hamiltonian_ghf(NMO,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);

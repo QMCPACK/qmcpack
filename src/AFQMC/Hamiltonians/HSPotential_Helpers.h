@@ -7,11 +7,11 @@
 // File developed by:
 //
 // File created by:
-// Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_HSPOTENTIAL_HELPERS_H 
-#define AFQMC_HSPOTENTIAL_HELPERS_H 
+#ifndef AFQMC_HSPOTENTIAL_HELPERS_H
+#define AFQMC_HSPOTENTIAL_HELPERS_H
 
 #include <vector>
 #include "AFQMC/config.h"

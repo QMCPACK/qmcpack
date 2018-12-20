@@ -4,17 +4,17 @@
 //
 // Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by:  
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
-// Alfredo Correa, correaa@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// File developed by:
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
+// Alfredo Correa, correaa@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
-// File created by: 
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
-// Alfredo Correa, correaa@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// File created by:
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
+// Alfredo Correa, correaa@llnl.gov
+//    Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "catch.hpp"
@@ -23,7 +23,7 @@
 // Always test the fallback code, regardless of MKL definition
 #undef HAVE_MKL
 #define MKL_INT         int
-#define MKL_Complex8    std::complex<float> 
+#define MKL_Complex8    std::complex<float>
 #define MKL_Complex16   std::complex<double>
 
 #undef APP_ABORT
@@ -76,8 +76,8 @@ void test_sparse_matrix_mult_native()
 
 	vector<double> c2 = {
 		18., 45., 72., 63.,
-		0., 0., 0., 0., 
-		6., 15., 24., 21., 
+		0., 0., 0., 0.,
+		6., 15., 24., 21.,
 		4., 1., 2., 3.
 	};
 	multi_array_ref<double, 2> C2(c2.data(), extents[4][4]);
@@ -91,17 +91,17 @@ void test_sparse_matrix_mult_native()
         using ma::T;
 	ma::product(T(A), B, D); // D = T(A)*B
 	vector<double> d2 = {
-		0, 0, 0, 0, 
-		12, 42, 36, 72, 
-		0, 0, 0, 0, 
-		4, 1, 2, 3 
+		0, 0, 0, 0,
+		12, 42, 36, 72,
+		0, 0, 0, 0,
+		4, 1, 2, 3
 	};
 	multi_array_ref<double, 2> D2(d2.data(), extents[4][4]);
 	REQUIRE(D2.num_elements() == d2.size());
 	verify_approx(D2, D);
 
     }
-    
+
     // matrix-vector
     {
         vector<double> b = {1., 2., 1., 4.};
@@ -129,7 +129,7 @@ void test_sparse_matrix_mult_native()
         multi_array_ref<double, 1> D2(d2.data(), extents[4]);
         REQUIRE(D2.num_elements() == d2.size());
         verify_approx(D2, D);
-   } 
+   }
 
 }
 

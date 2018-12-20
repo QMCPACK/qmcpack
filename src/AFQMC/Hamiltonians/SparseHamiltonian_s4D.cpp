@@ -58,34 +58,34 @@ namespace afqmc
     //cholesky_residuals.clear();
     //cholesky_residuals.reserve(2*NMO*NMO);
 
-      // 0. vn0 = -0.5* sum_{i,l,sigma} (sum_j <i_sigma,j_sigma|j_sigma,l_sigma> ) c+i_sigma cl_sigma 
+      // 0. vn0 = -0.5* sum_{i,l,sigma} (sum_j <i_sigma,j_sigma|j_sigma,l_sigma> ) c+i_sigma cl_sigma
       assert(vn0.rows() >= NMO);
       assert(vn0.cols() == NMO);
-      std::vector<s4D<ValueType> > v2sym; 
+      std::vector<s4D<ValueType> > v2sym;
       vn0 = ValueType(0);
       {
-        long nt=0,rk=0,npr=1; 
+        long nt=0,rk=0,npr=1;
         if(distribute_Ham) {
           npr = static_cast<long>(TG.getTGSize());
           rk = static_cast<long>(TG.getTGRank());
-        } else if(parallel) { 
+        } else if(parallel) {
           npr = static_cast<long>(TG.getGlobalSize());
           rk = static_cast<long>(TG.getGlobalRank());
         }
         for(s4Dit it = V2.begin(); it != V2.end(); it++, nt++) {
           if( nt%npr != rk) continue;
           // dumb and slow, but easy for now
-          find_equivalent_OneBar_for_integral_list(*it,v2sym); 
-          for(int n=0; n<v2sym.size(); n++) {   
+          find_equivalent_OneBar_for_integral_list(*it,v2sym);
+          for(int n=0; n<v2sym.size(); n++) {
             IndexType i,j,k,l;
             ValueType V;
-            std::tie (i,j,k,l,V) = v2sym[n];   
+            std::tie (i,j,k,l,V) = v2sym[n];
             int sector = getSpinSector(NMO,i,j,k,l);
-            // <i,j | j,l> -> v(i,l)  
-            if( (sector==0 || sector==3) && j==k) 
+            // <i,j | j,l> -> v(i,l)
+            if( (sector==0 || sector==3) && j==k)
               vn0(i,Index2Col(NMO,l)) -= 0.5*V;
           }
-        }  
+        }
         if(parallel) {
           std::vector<ComplexType> g(NMO*NMO);
           std::copy(vn0.begin(),vn0.begin()+NMO*NMO,g.begin());
@@ -94,7 +94,7 @@ namespace afqmc
       }
 */
       /********************************************************************
-      *               Calculate Cholesky decomposition 
+      *               Calculate Cholesky decomposition
       *
       *   1. The mapping of the 2-el repulsion integrals to a 2-D matrix
       *      is done as follows:
@@ -105,17 +105,17 @@ namespace afqmc
      Timer.start("Generic");
 
      // used to split (i,k) space over all processors for the construction and storage of cholesky vectors
-     int npr = TG.getGlobalSize(), rk = TG.getGlobalRank(); 
+     int npr = TG.getGlobalSize(), rk = TG.getGlobalRank();
      int ik0=0,ik1=NMO*NMO;
      std::vector<int> ik_partition;
      // used for split of (i,k) space over the processors in a TG during the evaluation of H(i,kmax,k,imax) piece
      // in case the Hamiltonian is distributed
-     int tg_npr = TG.getTGSize(), tg_rk = TG.getTGRank(); 
+     int tg_npr = TG.getTGSize(), tg_rk = TG.getTGRank();
      int tg_ik0=0,tg_ik1=NMO*NMO;
      std::vector<int> tgik_partition;
      std::vector<int> cnts;
      if(parallel) {
-       FairDivide(NMO*NMO,npr,ik_partition); 
+       FairDivide(NMO*NMO,npr,ik_partition);
        ik0 = ik_partition[rk];
        ik1 = ik_partition[rk+1];
        cnts.resize(npr);
@@ -123,15 +123,15 @@ namespace afqmc
          cnts[i] = ik_partition[i+1]-ik_partition[i];
      } else {
        cnts.resize(1);
-       cnts[0] = ik1-ik0; 
+       cnts[0] = ik1-ik0;
      }
      if(distribute_Ham) {
        FairDivide(NMO*NMO,tg_npr,tgik_partition);
        tg_ik0 = tgik_partition[tg_rk];
-       tg_ik1 = tgik_partition[tg_rk+1];       
+       tg_ik1 = tgik_partition[tg_rk+1];
      }
-     int nterms = ik1-ik0; 
-     int maxnterms = *std::max_element(cnts.begin(),cnts.end()); 
+     int nterms = ik1-ik0;
+     int maxnterms = *std::max_element(cnts.begin(),cnts.end());
      if(nterms < 1) {
        APP_ABORT("Error: Too many processors in parallel calculation of HS potential. Try reducing the number of cores, calculating in serial or reading from a file. \n\n\n ");
      }
@@ -142,35 +142,35 @@ namespace afqmc
      L.reserve(NMO*NMO);
 
      std::vector<ValueType> Lnmax(NMO*NMO);
-     std::vector<s2D<ComplexType> > IKLmax(npr); 
+     std::vector<s2D<ComplexType> > IKLmax(npr);
      s2D<ComplexType> mymax;
      int maxloc=0;
 
      std::vector<ValueType> Lcomm, Lcomm2;
      if(distribute_Ham) Lcomm.resize(NMO*NMO);
 
-     // to store diagonal elements to avoid search, since they are used often 
+     // to store diagonal elements to avoid search, since they are used often
      std::vector<ValueType> Duv(nterms);
      if(distribute_Ham) {
        std::fill(Lcomm.begin(),Lcomm.end(),ValueType(0));
        for(IndexType i=0, nt=0; i<NMO; i++) {
          for(IndexType k=0; k<NMO; k++,nt++) {
            if(nt<tg_ik0 || nt>=tg_ik1) continue;
-           // <i,k|k,i> 
+           // <i,k|k,i>
            if( k<i ) {
 #if defined(QMC_COMPLEX)
-             // <k,i|i,k> 
+             // <k,i|i,k>
              if(k>=min_i && k<max_i) Lcomm[nt] = H(k,i,i,k);
 #else
-             // <k,k|i,i> 
+             // <k,k|i,i>
              if(k>=min_i && k<max_i) Lcomm[nt] = H(k,k,i,i);
 #endif
            } else {
 #if defined(QMC_COMPLEX)
-             // <i,k|k,i> 
+             // <i,k|k,i>
              if(i>=min_i && i<max_i) Lcomm[nt] = H(i,k,k,i);
 #else
-             // <i,i|k,k> 
+             // <i,i|k,k>
              if(i>=min_i && i<max_i) Lcomm[nt] = H(i,i,k,k);
 #endif
            }
@@ -192,18 +192,18 @@ namespace afqmc
        }
        {
          Lcomm2 = Lcomm;
-         TG.Global().all_reduce(Lcomm2.begin(),Lcomm2.end(),Lcomm.begin()); 
-       }  
+         TG.Global().all_reduce(Lcomm2.begin(),Lcomm2.end(),Lcomm.begin());
+       }
        std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1, Duv.begin() );
      } else {
        for(IndexType i=0, nt=0, ik=0; i<NMO; i++) {
          for(IndexType k=0; k<NMO; k++,nt++) {
            if(nt<ik0 || nt>=ik1) continue;
-           Duv[ik] = H(i,k,k,i);  
+           Duv[ik] = H(i,k,k,i);
 #ifndef QMC_COMPLEX
            if(Duv[ik] < ValueType(0)) {
-             app_error()<<" WARNING: Found negative Duv: " <<i <<" " <<k <<" " <<Duv[ik] <<std::endl;  
-             if(zero_bad_diag_2eints) 
+             app_error()<<" WARNING: Found negative Duv: " <<i <<" " <<k <<" " <<Duv[ik] <<std::endl;
+             if(zero_bad_diag_2eints)
                Duv[ik] = ValueType(0);
            }
 #else
@@ -220,7 +220,7 @@ namespace afqmc
      }
 
      // D(ik,lj) = H(i,j,k,l) - sum_p Lp(ik) Lp*(lj)
-     // Diagonal:  D(ik,ik) = H(i,k,k,i) - sum_p Lp(ik) Lp*(ik) 
+     // Diagonal:  D(ik,ik) = H(i,k,k,i) - sum_p Lp(ik) Lp*(ik)
      RealType max=0;
      IndexType ii=-1,kk=-1;
      mymax = std::make_tuple(-1,-1,ComplexType(0));
@@ -228,19 +228,19 @@ namespace afqmc
       for(IndexType k=0; k<NMO; k++,nt++) {
         if(nt<ik0 || nt>=ik1) continue;
         if( std::abs(Duv[ik]) > max) {
-          //max = std::get<2>(mymax) =std::abs(Duv[ik]);  
-          max = std::abs(Duv[ik]);  
+          //max = std::get<2>(mymax) =std::abs(Duv[ik]);
+          max = std::abs(Duv[ik]);
           std::get<2>(mymax) = Duv[ik];
           ii=std::get<0>(mymax)=i;
           kk=std::get<1>(mymax)=k;
-        } 
+        }
         ik++;
       }
       if(nt>=ik1) break;
      }
      if(ii<0 || kk<0) {
       app_error()<<"Problems with Cholesky decomposition. \n";
-      APP_ABORT("Problems with Cholesky decomposition. \n");   
+      APP_ABORT("Problems with Cholesky decomposition. \n");
      }
 
      if(parallel) {
@@ -254,7 +254,7 @@ namespace afqmc
            kk=std::get<1>(IKLmax[i]);
            max=std::abs(std::get<2>(IKLmax[i]));
            maxloc=i;
-         } 
+         }
        }
      }
 
@@ -270,39 +270,39 @@ namespace afqmc
 */
        /* <ij|kl> <--> M_(ik)_(lj) where M must be positive definite.
         * --> |M_(ik)_(lj)| <= sqrt( |M_(ik)_(ik)| |M_(lj)_(lj)| )
-        * --> |<ij|kl>| <= sqrt( |<ik|ki>| |<lj|jl| )   
-        *  
+        * --> |<ij|kl>| <= sqrt( |<ik|ki>| |<lj|jl| )
+        *
         *  MAM: Being careful to check influence of cutoff in check!
         */
 /*
        for(s4Dit it = V2.begin(); it != V2.end(); it++) {
          IndexType i,j,k,l;
          ValueType w1,w2,w3;
-         std::tie (i,j,k,l,w1) = *it;  
- 
+         std::tie (i,j,k,l,w1) = *it;
+
          w2 = H(i,k,k,i);
          w3 = H(l,j,j,l);
          ValueType w4 = H(j,l,l,j);
          if( std::abs(w1) > std::sqrt(std::abs(w2*w3)) ) {
-           
+
            if(std::abs(w2) == 0.0 && std::abs(w3) > 0.0) {
-             
+
               // <ik|ki> was truncated, so positive-definiteness is broken
               if( std::abs(w1)*std::abs(w1)/std::abs(w3) < cutoff1bar ) continue;
 
-           } else if(std::abs(w3) == 0.0 && std::abs(w2) > 0.0) { 
+           } else if(std::abs(w3) == 0.0 && std::abs(w2) > 0.0) {
 
               // <lj|jl> was truncated, so positive-definiteness is broken
               if( std::abs(w1)*std::abs(w1)/std::abs(w2) < cutoff1bar ) continue;
 
-           } 
+           }
 
-           app_log()<<" Problems with positive-definiteness: " 
-                    <<i <<" " <<j <<" " <<k <<" " <<l <<" " 
-                    <<w1 <<" " <<w2 <<" " <<w3 <<" " <<w4 <<std::endl; 
+           app_log()<<" Problems with positive-definiteness: "
+                    <<i <<" " <<j <<" " <<k <<" " <<l <<" "
+                    <<w1 <<" " <<w2 <<" " <<w3 <<" " <<w4 <<std::endl;
          }
 
-       } 
+       }
 
      }
 
@@ -316,15 +316,15 @@ namespace afqmc
        //cholesky_residuals.push_back(std::abs(max));
 
        // calculate new cholesky std::vector based on (ii,kk)
-       L.push_back(std::vector<ValueType>(maxnterms));  
+       L.push_back(std::vector<ValueType>(maxnterms));
        std::vector<ValueType>& Ln = L.back();
        std::vector<ValueType>::iterator it = Ln.begin();
 
        if(rk==maxloc) {
          for(int n=0; n<L.size()-1; n++)
-           Lnmax[n] = L[n][ii*NMO+kk-ik0]; 
+           Lnmax[n] = L[n][ii*NMO+kk-ik0];
        }
-       if(parallel && L.size()>1) 
+       if(parallel && L.size()>1)
          TG.Global().broadcast_n(Lnmax.begin(),L.size()-1,maxloc);
 
        if(distribute_Ham) {
@@ -336,7 +336,7 @@ namespace afqmc
              s = std::make_tuple(i,kk,k,ii,ValueType(0));
              bool cjgt = find_smallest_permutation(s);
              if( std::get<0>(s) >= min_i && std::get<0>(s) < max_i ) {
-               s4Dit it_ = std::lower_bound( V2.begin(), V2.end(), s, 
+               s4Dit it_ = std::lower_bound( V2.begin(), V2.end(), s,
                  [](const s4D<ValueType>& lhs, const s4D<ValueType>& rhs)
                  {
                    return std::forward_as_tuple(std::get<0>(lhs),std::get<1>(lhs),std::get<2>(lhs),std::get<3>(lhs)) < std::forward_as_tuple(std::get<0>(rhs),std::get<1>(rhs),std::get<2>(rhs),std::get<3>(rhs));
@@ -350,16 +350,16 @@ namespace afqmc
 #endif
                    Lcomm[nt] = std::get<4>(*it_);
                }
-             } 
+             }
            }
            if(nt>=tg_ik1) break;
          }
          {
            Lcomm2 = Lcomm;
-           TG.Global().all_reduce(Lcomm2.begin(),Lcomm2.end(),Lcomm.begin()); 
-         }  
-         std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1, it );         
-       } else { 
+           TG.Global().all_reduce(Lcomm2.begin(),Lcomm2.end(),Lcomm.begin());
+         }
+         std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1, it );
+       } else {
          for(IndexType i=0, nt=0; i<NMO; i++) {
            for(IndexType k=0; k<NMO; k++, nt++) {
              if(nt<ik0 || nt>=ik1) continue;
@@ -370,19 +370,19 @@ namespace afqmc
        }
 
        for(int n=0; n<L.size()-1; n++) {
-         //ValueType scl = myconj(L[n][ii*NMO+kk]); 
-         ValueType scl = myconj(Lnmax[n]); 
+         //ValueType scl = myconj(L[n][ii*NMO+kk]);
+         ValueType scl = myconj(Lnmax[n]);
          std::vector<ValueType>::iterator it1 = L[n].begin();
          it = Ln.begin();
-         for(IndexType i=0; i<nterms; i++) 
-           *(it++) -= *(it1++)*scl; 
+         for(IndexType i=0; i<nterms; i++)
+           *(it++) -= *(it1++)*scl;
        }
 
        it = Ln.begin();
        for(IndexType i=0; i<nterms; i++)
          *(it++) *= oneOverMax;
        Timer.stop("Generic1");
-       
+
        Timer.start("Generic2");
        max_old = max;
        IndexType ii0=ii,kk0=kk;
@@ -393,19 +393,19 @@ namespace afqmc
        for(IndexType i=0,ik=0,nt=0; i<NMO; i++) {
         for(IndexType k=0; k<NMO; k++,nt++) {
          if(nt<ik0 || nt>=ik1) continue;
-         Duv[ik] -= Ln[ik]*myconj(Ln[ik]);  
+         Duv[ik] -= Ln[ik]*myconj(Ln[ik]);
          if(zero_bad_diag_2eints) {
            if( std::abs(Duv[ik]) > max && toComplex(Duv[ik]).real() > 0) {
-             //max = std::get<2>(mymax) =std::abs(Duv[ik]);  
-             max = std::abs(Duv[ik]);  
+             //max = std::get<2>(mymax) =std::abs(Duv[ik]);
+             max = std::abs(Duv[ik]);
              std::get<2>(mymax) = Duv[ik];
              ii=std::get<0>(mymax)=i;
              kk=std::get<1>(mymax)=k;
            }
          } else {
            if( std::abs(Duv[ik]) > max) {
-             //max = std::get<2>(mymax) =std::abs(Duv[ik]);  
-             max = std::abs(Duv[ik]);  
+             //max = std::get<2>(mymax) =std::abs(Duv[ik]);
+             max = std::abs(Duv[ik]);
              std::get<2>(mymax) = Duv[ik];
              ii=std::get<0>(mymax)=i;
              kk=std::get<1>(mymax)=k;
@@ -438,23 +438,23 @@ namespace afqmc
                     <<" Factorization is likely to fail. \n"
                     <<" This likely happens because: \n"
                     <<"      1) Cutoff of 2-electron integrals is too agresive, \n"
-                    <<"      2) 2-electron integrals are incorrect. \n" 
-                    <<" Consider using fix_2eint=true to remove orbital pairs that lead to break down of positive definiteness. \n"  
-                    <<" Otherwise, 1) reduce cutoff_1bar (preferred) or 2) increase cutoff_cholesky. \n\n"; 
-       }  
+                    <<"      2) 2-electron integrals are incorrect. \n"
+                    <<" Consider using fix_2eint=true to remove orbital pairs that lead to break down of positive definiteness. \n"
+                    <<" Otherwise, 1) reduce cutoff_1bar (preferred) or 2) increase cutoff_cholesky. \n\n";
+       }
        if( TG.getGlobalRank()==0 && printEig)
          app_log()<<L.size() <<" " <<ii <<" " <<kk <<" " <<std::abs(max) <<" " <<Timer.total("Generic1") <<" " <<Timer.total("Generic2")   <<"\n";
        if(max > max_old) {
          cnt_energy_increases++;
-         if(cnt_energy_increases == 3) { 
-           app_error()<<"ERROR: Problems with convergence of Cholesky decomposition. \n" 
+         if(cnt_energy_increases == 3) {
+           app_error()<<"ERROR: Problems with convergence of Cholesky decomposition. \n"
              <<"Number of std::vectors found so far: " <<L.size() <<"\n"
-             <<"Current value of truncation error: " <<max_old <<" " <<max <<std::endl;  
-             APP_ABORT("Problems with convergence of Cholesky decomposition.\n"); 
+             <<"Current value of truncation error: " <<max_old <<" " <<max <<std::endl;
+             APP_ABORT("Problems with convergence of Cholesky decomposition.\n");
          }
        }
      }
-     app_log()<<" Found: " <<L.size() <<" Cholesky std::vectors with a cutoff of: " <<cutoff_cholesky <<"\n";   
+     app_log()<<" Found: " <<L.size() <<" Cholesky std::vectors with a cutoff of: " <<cutoff_cholesky <<"\n";
 
      Timer.stop("Generic");
      app_log()<<" -- Time to generate Cholesky factorization: " <<Timer.average("Generic") <<std::endl;
@@ -468,16 +468,16 @@ namespace afqmc
       RealType s=0.0;
       RealType max=0.0;
       for(IndexType i=0,nt=0,ik=0; i<NMO; i++)
-       for(IndexType j=0; j<NMO; j++) 
+       for(IndexType j=0; j<NMO; j++)
         for(IndexType k=0; k<NMO; k++)
-         for(IndexType l=0; l<NMO; l++,nt++) {     
+         for(IndexType l=0; l<NMO; l++,nt++) {
            if(nt<ik0||nt>=ik1) continue;
            ValueType v2 = H(i,j,k,l);
            ValueType v2c = 0.0;
            // is it L*L or LL*???
            for(int n=0; n<L.size(); n++) v2c += L[n][i*NMO+k]*myconj(L[n][l*NMO+j]);
            s+=std::abs(v2-v2c);
-           if( max < std::abs(v2-v2c) ) max = std::abs(v2-v2c); 
+           if( max < std::abs(v2-v2c) ) max = std::abs(v2-v2c);
            if( std::abs(v2-v2c) > 10*cutoff_cholesky ) {
              app_error()<<" Problems with Cholesky decomposition, i,j,k,l,H2,H2c: "
                        <<i <<" "
@@ -489,7 +489,7 @@ namespace afqmc
            }
            ik++;
          }
-      app_log()<<"\n ********************************************\n Average error due to truncated Cholesky factorization (in units of cutoff), maximum error   : " <<s/cutoff_cholesky/NMO/NMO/NMO/NMO <<"  " <<max <<" \n********************************************\n"<<std::endl; 
+      app_log()<<"\n ********************************************\n Average error due to truncated Cholesky factorization (in units of cutoff), maximum error   : " <<s/cutoff_cholesky/NMO/NMO/NMO/NMO <<"  " <<max <<" \n********************************************\n"<<std::endl;
 
        Timer.stop("Generic");
        app_log()<<" -- Time to test Cholesky factorization: " <<Timer.average("Generic") <<"\n";
@@ -497,9 +497,9 @@ namespace afqmc
      }
 */
       /********************************************************************
-      *  You get 2 potentials per Cholesky std::vector   
+      *  You get 2 potentials per Cholesky std::vector
       *
-      *    vn(+-)_{i,k} = sum_n 0.5*( L^n_{i,k} +- conj(L^n_{k,i}) )            
+      *    vn(+-)_{i,k} = sum_n 0.5*( L^n_{i,k} +- conj(L^n_{k,i}) )
       ********************************************************************/
 /*
       Timer.reset("Generic");
@@ -509,22 +509,22 @@ namespace afqmc
 
       std::vector<int> cnt_per_vec(2*L.size());
       std::vector<int> ik2padded;
-      if(parallel) { 
-        Lcomm.resize(npr*maxnterms); 
+      if(parallel) {
+        Lcomm.resize(npr*maxnterms);
         ik2padded.resize(npr*maxnterms);
         for(int i=0; i<ik2padded.size(); i++) ik2padded[i]=i;
         // to make it independent of behavior of FairDivide
         const int tag = npr*maxnterms+10000;
         std::vector<int>::iterator it = ik2padded.begin(), itc = cnts.begin();
-        for(; itc!=cnts.end(); itc++, it+=maxnterms) 
-          std::fill(it+(*itc), it+maxnterms,tag); 
-        std::stable_partition( ik2padded.begin(), ik2padded.end(), 
+        for(; itc!=cnts.end(); itc++, it+=maxnterms)
+          std::fill(it+(*itc), it+maxnterms,tag);
+        std::stable_partition( ik2padded.begin(), ik2padded.end(),
             [tag] (const int& i) { return i<tag; }
-              ); 
+              );
       } else {
         ik2padded.resize(NMO*NMO);
         for(int i=0; i<NMO*NMO; i++) ik2padded[i]=i;
-      }  
+      }
 
       Timer.reset("Generic2");
       Timer.start("Generic2");
@@ -533,23 +533,23 @@ namespace afqmc
       int cnt=0, cntn=0;
       // generate sparse version
       int nvecs=L.size();
-      for(int n=0; n<L.size(); n++) { 
-        ValueType* Ls; 
+      for(int n=0; n<L.size(); n++) {
+        ValueType* Ls;
         if(parallel) {
           TG.Global().gather_n(L[n].begin(),maxnterms,Lcomm.begin(),0);
           if(TG.getGlobalRank()==0) Ls = Lcomm.data();
         } else {
           Ls = L[n].data();
-        } 
+        }
         if(TG.getGlobalRank()==0) {
           int np=0, nm=0;
-          for(IndexType i=0; i<NMO; i++) 
-           for(IndexType k=0; k<NMO; k++) { 
+          for(IndexType i=0; i<NMO; i++)
+           for(IndexType k=0; k<NMO; k++) {
              // v+
-             if(std::abs( (Ls[ik2padded[i*NMO+k]] + myconj(Ls[ik2padded[k*NMO+i]])) ) > cut) 
+             if(std::abs( (Ls[ik2padded[i*NMO+k]] + myconj(Ls[ik2padded[k*NMO+i]])) ) > cut)
                np++;
              // v-
-             if(std::abs( (Ls[ik2padded[i*NMO+k]] - myconj(Ls[ik2padded[k*NMO+i]])) ) > cut)  
+             if(std::abs( (Ls[ik2padded[i*NMO+k]] - myconj(Ls[ik2padded[k*NMO+i]])) ) > cut)
                nm++;
            }
           cnt_per_vec[2*n] = np;
@@ -558,7 +558,7 @@ namespace afqmc
         }
         if(n>0 && (n%100==0))
           TG.global_barrier();
-      } 
+      }
 
       int nnodes = TGprop.getNNodesPerTG();
       int cv0=0,cvN=2*L.size();
@@ -568,7 +568,7 @@ namespace afqmc
       if(parallel) {
         TG.Global().broadcast(cnt_per_vec.begin(),cnt_per_vec.end());
         int nvec = std::count_if(cnt_per_vec.begin(),cnt_per_vec.end(),
-                 [] (int i) { return i>0; } ); 
+                 [] (int i) { return i>0; } );
         if(sparse) Spvn.setDims(NMO*NMO,nvec);
 
         nvec_per_node.resize(nnodes);
@@ -581,40 +581,40 @@ namespace afqmc
             Dvn.allocate(NMO*NMO*nvec);
             Dvn.resize(NMO*NMO*nvec);
           }
-          nvec_per_node[0] = nvec; 
+          nvec_per_node[0] = nvec;
           sz_per_node[0] = cnt;
         } else {
           sets.resize(nnodes+1);
           if(TG.getGlobalRank()==0) {
             // partition std::vectors over nodes in TG
-            std::vector<int> blocks(2*L.size()+1); 
+            std::vector<int> blocks(2*L.size()+1);
             blocks[0]=0;
             cnt=0;
             for(int i=0; i<2*L.size(); i++) {
               if(sparse) cnt+=cnt_per_vec[i];
               else cnt+= (cnt_per_vec[i]>0)?1:0;
-              blocks[i+1] = cnt; 
+              blocks[i+1] = cnt;
             }
             balance_partition_ordered_set(2*L.size(),blocks.data(),sets);
             TG.Cores().broadcast(sets.begin(),sets.end());
             cv0 = sets[node_number];
             cvN = sets[node_number+1];
-          
+
             // since many std::vectors might have zero size and will be discarded below,
             // count only non-zero
-            for(int i=0; i<nnodes; i++) 
+            for(int i=0; i<nnodes; i++)
               nvec_per_node[i] = std::count_if(cnt_per_vec.begin()+sets[i],cnt_per_vec.begin()+sets[i+1],
-                 [] (int i) { return i>0; } );      
-            for(int i=0; i<nnodes; i++) 
+                 [] (int i) { return i>0; } );
+            for(int i=0; i<nnodes; i++)
               sz_per_node[i] = std::accumulate(cnt_per_vec.begin()+sets[i],cnt_per_vec.begin()+sets[i+1],0);
           } else if(TG.getCoreID()==0) {
             TG.Cores().broadcast(sets.begin(),sets.end());
             cv0 = sets[node_number];
             cvN = sets[node_number+1];
           }
-          TG.Global().broadcast(nvec_per_node.begin(),nvec_per_node.end());  
+          TG.Global().broadcast(nvec_per_node.begin(),nvec_per_node.end());
           TG.Global().broadcast(sz_per_node.begin(),sz_per_node.end());
-          if(sparse) Spvn.reserve(sz_per_node[node_number]); 
+          if(sparse) Spvn.reserve(sz_per_node[node_number]);
           else {
             Dvn.allocate(NMO*NMO*nvec_per_node[node_number]);
             Dvn.resize(NMO*NMO*nvec_per_node[node_number]);
@@ -622,12 +622,12 @@ namespace afqmc
         }
       } else {
         int nvec=0;
-        cnt=0; 
-        for (int i : cnt_per_vec ) 
-          if(i>0) { 
+        cnt=0;
+        for (int i : cnt_per_vec )
+          if(i>0) {
             cnt+=i;
             nvec++;
-          } 
+          }
         nvec_per_node[0] = nvec;
         if(sparse) {
           Spvn.setDims(NMO*NMO,nvec);
@@ -636,10 +636,10 @@ namespace afqmc
           Dvn.allocate_serial(NMO*NMO*nvec);
           Dvn.resize_serial(NMO*NMO*nvec);
         }
-      } 
+      }
 
       int ncols = nvec_per_node[node_number];
-      if(parallel) TG.global_barrier(); 
+      if(parallel) TG.global_barrier();
 
       Timer.stop("Generic2");
       app_log()<<"     -- setup: " <<Timer.average("Generic2") <<"\n";
@@ -653,7 +653,7 @@ namespace afqmc
 #endif
 
       cnt=std::accumulate(nvec_per_node.begin(),nvec_per_node.begin()+node_number,0);
-      for(int n=0; n<L.size(); n++) { 
+      for(int n=0; n<L.size(); n++) {
        if( cnt_per_vec[2*n]==0 && cnt_per_vec[2*n+1]==0 ) continue;
        ValueType* Ls;
        Timer.start("Generic2");
@@ -661,7 +661,7 @@ namespace afqmc
 #if defined(QMC_COMPLEX)
          TG.Global().gather_n(L[n].begin(),maxnterms,Lcomm.begin(),0);
          if(TG.getCoreID()==0)
-           TG.Cores().broadcast(Lcomm.begin(),Lcomm.end());  
+           TG.Cores().broadcast(Lcomm.begin(),Lcomm.end());
 #else
          TG.Global().all_gather_n(L[n].begin(),maxnterms,Lcomm.begin(),0);
 #endif
@@ -675,25 +675,25 @@ namespace afqmc
          int np=0;
          // v+
          for(IndexType i=0; i<NMO; i++)
-          for(IndexType k=0; k<NMO; k++) { 
-           ValueType V = (Ls[ik2padded[i*NMO+k]] + myconj(Ls[ik2padded[k*NMO+i]])); 
-           if(std::abs(V) > cut) { 
+          for(IndexType k=0; k<NMO; k++) {
+           ValueType V = (Ls[ik2padded[i*NMO+k]] + myconj(Ls[ik2padded[k*NMO+i]]));
+           if(std::abs(V) > cut) {
              V*=sqrtdt;
              if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
              else Dvn[(i*NMO+k)*ncols + cnt]=static_cast<SPValueType>(V);
              ++np;
-           } 
+           }
          }
          ++cnt;
-         if(np==0) 
-           APP_ABORT("Error: This should not happen. Found empty cholesky std::vector. \n"); 
+         if(np==0)
+           APP_ABORT("Error: This should not happen. Found empty cholesky std::vector. \n");
        }
        if(TG.getCoreID()==0 && (2*n+1)>=cv0 && (2*n+1)<cvN && cnt_per_vec[2*n+1]>0) {
 #if defined(QMC_COMPLEX)
          int np=0;
          // v-
          for(IndexType i=0; i<NMO; i++)
-          for(IndexType k=0; k<NMO; k++) { 
+          for(IndexType k=0; k<NMO; k++) {
            ValueType V = (Ls[ik2padded[i*NMO+k]] - myconj(Ls[ik2padded[k*NMO+i]]));
            if(std::abs(V) > cut) {
              V*=ComplexType(0.0,1.0)*sqrtdt;
@@ -703,10 +703,10 @@ namespace afqmc
            }
           }
          ++cnt;
-         if(np==0) 
-           APP_ABORT("Error: This should not happen. Found empty cholesky std::vector. \n"); 
+         if(np==0)
+           APP_ABORT("Error: This should not happen. Found empty cholesky std::vector. \n");
 #else
-       APP_ABORT("Error: This should not happen. Found negative cholesky vector. \n"); 
+       APP_ABORT("Error: This should not happen. Found negative cholesky vector. \n");
 #endif
        }
        // necessary to avoid the avalanche of messages to the root from cores that are not head_of_nodes
@@ -720,17 +720,17 @@ namespace afqmc
       Timer.stop("Generic");
       app_log()<<" -- Time to assemble Cholesky Matrix: " <<Timer.average("Generic") <<"\n";
 
-      if(TG.getGlobalRank()==0 && nnodes>1 && parallel) { 
+      if(TG.getGlobalRank()==0 && nnodes>1 && parallel) {
         app_log()<<" Partition of Cholesky Vectors: 0 ";
         cnt=0;
-        for(int i=0; i<nnodes; i++) { 
-          cnt+=nvec_per_node[i]; 
-          app_log()<<cnt <<" ";  
+        for(int i=0; i<nnodes; i++) {
+          cnt+=nvec_per_node[i];
+          app_log()<<cnt <<" ";
         }
         app_log()<<std::endl;
         if(sparse) {
           app_log()<<" Number of terms in Spvn per node in TG: ";
-          for(int i : sz_per_node ) app_log()<<i <<" "; 
+          for(int i : sz_per_node ) app_log()<<i <<" ";
           app_log()<<std::endl;
         }
       }
@@ -753,7 +753,7 @@ namespace afqmc
 
       }
 
-      if(parallel) TG.global_barrier(); 
+      if(parallel) TG.global_barrier();
 
      if(test_breakup) {
 
@@ -802,7 +802,7 @@ namespace afqmc
   bool SparseHamiltonian_s4D::createHamiltonianForPureDeterminant(int walker_type, bool aa_only, std::map<IndexType,bool>& occ_a, std::map<IndexType,bool>& occ_b , std::vector<s1D<ValueType> >& hij, SPValueSMSpMat& Vijkl, const RealType cut)
   {
 
-    // used to identify equal index sets (value is not compared)  
+    // used to identify equal index sets (value is not compared)
     _myEqv_snD_ myEqv;
 
     // teporary until mpi3 is fully integrated
@@ -821,8 +821,8 @@ namespace afqmc
       long N = NMO;
 
 // right now, the algorithm will add all the terms associated with a given quartet (ijkl)
-// at once. For the given ijkl, 3 (6) possible combinations can appear in the list for real (complex)  
-//  Only do the smallest of the 3 (6) possible combinations to avoid duplicated 
+// at once. For the given ijkl, 3 (6) possible combinations can appear in the list for real (complex)
+//  Only do the smallest of the 3 (6) possible combinations to avoid duplicated
 
 #if defined(QMC_COMPLEX)
       std::vector<s4D<ValueType>> ineq_ijkl(6);
@@ -848,18 +848,18 @@ namespace afqmc
       OrbitalType i,j,k,l,j1,k1,l1,j2,k2,l2;
       ValueType J1,J2,J3,J1a=zero,J2a=zero,J3a=zero,fct;
       long p_min=0, p_max=IJ.size()-1;
-// if integrals are distributed, 
+// if integrals are distributed,
 //   distribute work over min_i/max_i sector among processors in the Hamiltonian TG
       if(distribute_Ham) {
         p_min = mapUT(static_cast<long>(min_i),static_cast<long>(min_i),N);
-        if( max_i != NMO)   // FIX FIX FIX with SPIN_RESTRICTED 
+        if( max_i != NMO)   // FIX FIX FIX with SPIN_RESTRICTED
           p_max = mapUT(static_cast<long>(max_i),static_cast<long>(max_i),N);
         // in this case, npr and rk are based on the extended TG (the one which includes all cores within a node)
         npr = TG.getTGSize();
         rk = TG.getTGRank();
       }
       for(long p=p_min, nt=0; p<p_max; p++) {
-        // from n->m, I have all non-zero (k,l) for a given (i,j), with i<=j  
+        // from n->m, I have all non-zero (k,l) for a given (i,j), with i<=j
         long n = IJ[p];
         long m = IJ[p+1];
         if(n==m) continue;
@@ -867,9 +867,9 @@ namespace afqmc
         if( nt%npr != rk ) continue;
         s4Dit end = V2.begin()+m;
         for(s4Dit it = V2.begin()+n; it != end; it++) {
-          // J1 = <ij|kl>   
-          // J2 = <ij|lk> or <ik|lj>   
-          // J3 = <ik|jl> or <il|jk>  
+          // J1 = <ij|kl>
+          // J2 = <ij|lk> or <ik|lj>
+          // J3 = <ik|jl> or <il|jk>
           std::tie (i,j,k,l,J1) = *it;
 
           IndexType occi,occj,occk,occl;
@@ -880,16 +880,16 @@ namespace afqmc
           if( occi+occj+occk+occl < 2) continue;
 
 // the smallest permutation will satisfy  i<=j<=k<=l
-// so need to generte smallest of the other sectors, as long as the smallest one is 
+// so need to generte smallest of the other sectors, as long as the smallest one is
 // in the list. You need to make sure that the smallest one in the list is processed
 // Algorithm:
 //  1. If (i,j,k,l) is the smallest permutation, keep going
-//  2. If it is not, make a ordered list of all inequivalent permutations and record your position in the list 
-//      a. For every term in the list before yours, 
+//  2. If it is not, make a ordered list of all inequivalent permutations and record your position in the list
+//      a. For every term in the list before yours,
 //          i1. If the element is in the list, do nothing and continue to next element in V2.
-//          i2. If not in the list, set the value of the appropriate Jx to zero and test next element in permutation list  
-//  At the end you either do nothing because there is a permutationally inequivalent term smaller than you in the list, 
-//  or you process the current term with all previous Js set to zero to avoid recalculating them.         
+//          i2. If not in the list, set the value of the appropriate Jx to zero and test next element in permutation list
+//  At the end you either do nothing because there is a permutationally inequivalent term smaller than you in the list,
+//  or you process the current term with all previous Js set to zero to avoid recalculating them.
 
 
           if( i<=j && i<=k && i<=l && j<=k && j<=l && k<=l) {
@@ -951,9 +951,9 @@ namespace afqmc
           }
 
           // at this point, I know that:
-          //    1. this is a term I must process 
+          //    1. this is a term I must process
           //    2. the smallest permutation is in ineq_ijkl[0] with J1=std::get<4>(ineq_ijkl[0])
-          //    3. some values of Js might already be calculated based on setJ[k] 
+          //    3. some values of Js might already be calculated based on setJ[k]
           std::tie (i,j,k,l,J1) = ineq_ijkl[0];
 
           // look for <ij|lk>
@@ -997,7 +997,7 @@ namespace afqmc
               J2a = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[3]));
             }
 
-            //  J3a = <il|jk> 
+            //  J3a = <il|jk>
             if(setJ[4]) {
               J3a = std::get<4>(ineq_ijkl[4]);
             } else if(l==j) {
@@ -1057,7 +1057,7 @@ namespace afqmc
       cnt2=0;
 
       for(long p=p_min, nt=0; p<p_max; p++) {
-        // from n->m, I have all non-zero (k,l) for a given (i,j), with i<=j  
+        // from n->m, I have all non-zero (k,l) for a given (i,j), with i<=j
         long n = IJ[p];
         long m = IJ[p+1];
         if(n==m) continue;
@@ -1175,7 +1175,7 @@ namespace afqmc
               J2a = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[3]));
             }
 
-            //  J3a = <il|jk> 
+            //  J3a = <il|jk>
             if(setJ[4]) {
               J3a = std::get<4>(ineq_ijkl[4]);
             } else if(l==j) {
@@ -1246,12 +1246,12 @@ namespace afqmc
 
     Timer.stop("Generic");
     app_log()<<"Time to remove_repeated_and_compress Hamiltonian: " <<Timer.total("Generic") <<std::endl;
-    
+
     return true;
 
   }
 
- 
+
   bool SparseHamiltonian_s4D::createHamiltonianForGeneralDeterminant(int walker_type, const ComplexMatrix& A,std::vector<s1D<ComplexType> >& hij, SPComplexSMSpMat& Vijkl, const RealType cut)
   {
     if(skip_V2)
@@ -1293,8 +1293,8 @@ namespace afqmc
     }
 
     // half-rotate Hij to A basis
-    // hij = sum_k A*(k,i) * H1(k,j) 
-    rotateHij(walker_type,NMO,NAEA,NAEB,A,H1,hij,cut);
+    // hij = sum_k A*(k,i) * H1(k,j)
+    rotateHij(walker_type,A,H1,hij,cut);
 
     if(!v2_full_init)
       V2_full.setup(TG.getCoreID()==0,std::string("SparseGeneralHamiltonian_V2_full"),TG.Node().impl_);

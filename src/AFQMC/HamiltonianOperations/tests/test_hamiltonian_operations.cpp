@@ -6,7 +6,7 @@
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 //#undef NDEBUG
@@ -63,14 +63,13 @@ using namespace afqmc;
 
 TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
-    app_log()<<" Skipping ham_ops_collinear_sdet text. afqmc.h5 and ./wfn.dat files not found. \n";
+    app_log()<<" Skipping ham_ops_basic_serial. afqmc.h5 and ./wfn.dat files not found. \n";
   } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -118,7 +117,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,true,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
@@ -137,9 +136,9 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
     boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[NEL*NMO][1]);
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
+    Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
+    Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
+    Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
@@ -147,8 +146,8 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
       app_log()<<" E1: " <<setprecision(12) <<Eloc[0][0] <<std::endl;
     }
     if(std::abs(file_data.E2)>1e-8) {
-      REQUIRE( real(Eloc[0][1]) == Approx(real(file_data.E1+file_data.E2)));
-      REQUIRE( imag(Eloc[0][1]) == Approx(imag(file_data.E1+file_data.E2)));
+      REQUIRE( real(Eloc[0][1]) == Approx(real(file_data.E2)));
+      REQUIRE( imag(Eloc[0][1]) == Approx(imag(file_data.E2)));
     } else {
       app_log()<<" EJ: " <<setprecision(12) <<Eloc[0][2] <<std::endl;
       app_log()<<" EXX: " <<setprecision(12) <<Eloc[0][1] <<std::endl;
@@ -194,14 +193,13 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 
 TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
 
-  if(not file_exists("./afqmc.h5") ||
-     not file_exists("./wfn.dat") ) {
+  if(not file_exists("./afqmc_collinear.h5") ||
+     not file_exists("./wfn_collinear.dat") ) {
     app_log()<<" Skipping ham_ops_collinear_sdet text. afqmc.h5 and ./wfn.dat files not found. \n";
   } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -249,7 +247,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,true,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
@@ -268,9 +266,9 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
     boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[NEL*NMO][1]);
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
+    Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
+    Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
+    Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
@@ -278,8 +276,8 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
       app_log()<<" E1: " <<setprecision(12) <<Eloc[0][0] <<std::endl;
     }
     if(std::abs(file_data.E2)>1e-8) {
-      REQUIRE( real(Eloc[0][1]) == Approx(real(file_data.E1+file_data.E2)));
-      REQUIRE( imag(Eloc[0][1]) == Approx(imag(file_data.E1+file_data.E2)));
+      REQUIRE( real(Eloc[0][1]) == Approx(real(file_data.E2)));
+      REQUIRE( imag(Eloc[0][1]) == Approx(imag(file_data.E2)));
     } else {
       app_log()<<" EJ: " <<setprecision(12) <<Eloc[0][2] <<std::endl;
       app_log()<<" EXX: " <<setprecision(12) <<Eloc[0][1] <<std::endl;
@@ -325,14 +323,13 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
 
 TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./thc.h5") ||
      not file_exists("./wfn_thc.dat") ) {
     app_log()<<" Skipping test_thc_simple test. thc.h5 and ./wfn.dat files not found. \n";
   } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -379,7 +376,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,1);
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
@@ -469,14 +466,13 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
 
 TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./thc.h5") ||
      not file_exists("./wfn_thc.dat") ) {
     app_log()<<" Skipping test_thc_simple test. thc.h5 and ./wfn.dat files not found. \n";
   } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -524,12 +520,12 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     if(file_exists("ncores.txt")) {
       ifstream in("ncores.txt");
       in>>ncores;
-      in.close();  
+      in.close();
     }
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,ncores);
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
@@ -549,9 +545,9 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     TG.local_barrier();
     Timer.stop("Generic");
     app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
+    Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
+    Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
+    Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
@@ -617,14 +613,13 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
 
 TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./thc.h5") ||
      not file_exists("./wfn_thc.dat") ) {
     app_log()<<" Skipping test_thc_simple test. thc.h5 and ./wfn.dat files not found. \n";
   } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -673,15 +668,15 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     if(file_exists("ncores.txt")) {
       ifstream in("ncores.txt");
       in>>ncores;
-      in.close();  
+      in.close();
     }
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,ncores);
-    // NOTE: This will force the replacement of HalfRotatedLuv by Luv to test the energy of the 
+    // NOTE: This will force the replacement of HalfRotatedLuv by Luv to test the energy of the
     //       non-rotated factorization
     THCHamiltonian& thcHam = boost::get<THCHamiltonian>(ham);
-    auto HOps(thcHam.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(thcHam.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
     SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
@@ -701,9 +696,9 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     TG.local_barrier();
     Timer.stop("Generic");
     app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
+    Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
+    Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
+    Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );

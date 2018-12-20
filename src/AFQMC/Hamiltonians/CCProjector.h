@@ -3,8 +3,8 @@
 #define QMCPLUSPLUS_AFQMC_CCPROJECTOR_H
 
 #include<iostream>
-#include<vector> 
-#include<map> 
+#include<vector>
+#include<map>
 #include<fstream>
 #include<Message/MPIObjectBase.h>
 #include "OhmmsData/libxmldefs.h"
@@ -14,16 +14,16 @@
 namespace qmcplusplus
 {
 
-class CCProjector: public ProjectorBase 
+class CCProjector: public ProjectorBase
 {
 
   typedef HamiltonianBase* HamPtr;
 
   public:
- 
+
   CCProjector(Communicate *c):ProjectorBase(c)
   {
-    
+
   }
 
   ~CCProjector() {}
@@ -33,7 +33,7 @@ class CCProjector: public ProjectorBase
   void calculateHSPotentials_Diagonalization(ComplexSMSpMat&);
 
   // parse xml input node
-  bool parse(xmlNodePtr cur); 
+  bool parse(xmlNodePtr cur);
 
   // check object
   bool checkObject();
@@ -48,22 +48,22 @@ class CCProjector: public ProjectorBase
   protected:
 
   bool parallel_factorization=false;
-  bool use_eig=true;  
+  bool use_eig=true;
   bool symmetric=false;
 
   int na;
   int nb;
 
-  // sum_ij P(i,j) n_i n_j , where n_k = c+_k c_k  
+  // sum_ij P(i,j) n_i n_j , where n_k = c+_k c_k
   // P(i,j) == 0, P(i,j)==P(j,i)
   ComplexMatrix Pmat;
-  
-  bool initFromASCII(const std::string& fileName) {     return false;}; 
+
+  bool initFromASCII(const std::string& fileName) {     return false;};
 
   bool initFromXML(const std::string& fileName) {     return false;};
 
-  bool initFromHDF5(const std::string& fileName); 
-  
+  bool initFromHDF5(const std::string& fileName);
+
   bool initFromGuess();
 
 };

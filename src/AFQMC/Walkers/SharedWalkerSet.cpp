@@ -44,6 +44,7 @@ void SharedWalkerSet::parse(xmlNodePtr cur)
     m_param.add(type,"walker_type","std::string");
     m_param.add(load_balance_type,"load_balance","std::string");
     m_param.add(pop_control_type,"pop_control","std::string");
+    m_param.add(nback_prop,"back_propagation_steps","int");
     m_param.put(cur);
 
     std::for_each(type.begin(), type.end(), [](char & c){
@@ -170,8 +171,8 @@ void SharedWalkerSet::setup()
     data_displ[HEAD] = cnt;        cnt+=1; // current location of propagator matrix in circular buffer.
     data_displ[TAIL] = cnt;        cnt+=1; // position of tail of circular buffer.
     data_displ[SMN] = cnt;         cnt+=nrow*ncol; // Slater Matrix at beggining of BP path 
-    data_displ[COS_FAC] = cnt;     cnt+=nback_prop; // Cosine factors along BP path.
-    data_displ[WEIGHT_FAC] = cnt;  cnt+=nback_prop; // Missing imaginary weight factors along BP path.
+    data_displ[COS_FAC] = cnt;     cnt+=1; // Cosine factors along BP path.
+    data_displ[WEIGHT_FAC] = cnt;  cnt+=1; // Missing imaginary weight factors along BP path.
   } else {
     data_displ[PROPAGATORS] = -1; 
     data_displ[HEAD] = -1;        
@@ -332,11 +333,11 @@ void SharedWalkerSet::benchmark(std::string& blist,int maxnW,int delnW,int repea
 
           if(TG.TG_heads().rank()==0) {
             Timer.start("M1");
-            MPI_Isend(Cbuff.data(),2*Cbuff.size(),MPI_DOUBLE,1,999,&TG.TG_heads(),&req);  
+            MPI_Isend(Cbuff.data(),2*Cbuff.size(),MPI_DOUBLE,1,999,&(TG.TG_heads()),&req);  
             MPI_Wait(&req,&st);
             Timer.stop("M1");
           } else {
-            MPI_Irecv(Cbuff.data(),2*Cbuff.size(),MPI_DOUBLE,0,999,&TG.TG_heads(),&req);  
+            MPI_Irecv(Cbuff.data(),2*Cbuff.size(),MPI_DOUBLE,0,999,&(TG.TG_heads()),&req);  
             MPI_Wait(&req,&st);
           }
 

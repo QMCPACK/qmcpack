@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
-// File created by: 
+// File created by:
 //////////////////////////////////////////////////////////////////////////////////////
 
 #undef NDEBUG
@@ -20,7 +20,7 @@
 
 #include "mpi3/shared_window.hpp"
 #include "mpi3/shared_communicator.hpp"
-//#include "mpi3/shm/allocator.hpp" 
+//#include "mpi3/shm/allocator.hpp"
 
 #include "AFQMC/Matrix/csr_matrix.hpp"
 
@@ -29,7 +29,7 @@ using std::cout;
 using std::cerr;
 using std::get;
 
-namespace mpi3 = boost::mpi3; 
+namespace mpi3 = boost::mpi3;
 
 namespace qmcplusplus
 {
@@ -38,7 +38,7 @@ namespace qmcplusplus
 template<typename Type, typename IndxType, typename IntType, class Alloc, class is_root>
 void test_csr_matrix_shm_allocator(Alloc A, bool serial)
 {
-        auto world = OHMMS::Controller->comm;
+        auto world = boost::mpi3::environment::get_world_instance();
         mpi3::shared_communicator node(world.split_shared());
 
         using ucsr_matrix = ma::sparse::ucsr_matrix<Type,IndxType,IntType,Alloc,is_root>;
@@ -457,7 +457,8 @@ TEST_CASE("csr_matrix_serial", "[csr]")
 
 TEST_CASE("csr_matrix_shm", "[csr]")
 {
-  auto world = OHMMS::Controller->comm;
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
   mpi3::shared_communicator node(world.split_shared());
 
   {
@@ -483,11 +484,12 @@ TEST_CASE("csr_matrix_shm", "[csr]")
 #ifdef TEST_CSR_LARGE_MEMORY
 TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
 {
-  auto world = OHMMS::Controller->comm;
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
   mpi3::shared_communicator node(world.split_shared());
 
   using Type = std::complex<double>;
-  using Alloc = boost::mpi3::intranode::allocator<Type>;  
+  using Alloc = boost::mpi3::intranode::allocator<Type>;
   using is_root = ma::sparse::is_root;
 
   using ucsr_matrix = ma::sparse::ucsr_matrix<Type,int,size_t,Alloc,is_root>;
@@ -500,7 +502,7 @@ TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
     std::cout<<" capacity: " <<umat.capacity() <<std::endl;
     umat.emplace({399999,0},Type(1));
     std::cout<<" pbegin[399999]: " <<umat.pointers_begin()[399999] <<std::endl;
-  }  
+  }
   world.barrier();
   Alloc B(node);
   ucsr_matrix umat2({400000,400000}, {0,0}, 7000, B);
@@ -509,7 +511,7 @@ TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
     std::cout<<" capacity: " <<umat2.capacity() <<std::endl;
     umat2.emplace({399999,0},Type(1));
     std::cout<<" pbegin[399999]: " <<umat2.pointers_begin()[399999] <<std::endl;
-  }  
+  }
   world.barrier();
 }
 #endif

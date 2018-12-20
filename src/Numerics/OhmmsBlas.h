@@ -252,7 +252,106 @@ struct BLAS
   {
     scgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
   }
+
+  inline static void gemm_batch (const CBLAS_LAYOUT Layout,
+            const CBLAS_TRANSPOSE* transa_array,
+            const CBLAS_TRANSPOSE* transb_array, const int* m_array, const int* n_array,
+            const int* k_array, const float *alpha_array, const void **a_array,
+            const int* lda_array, const void **b_array, const int* ldb_array,
+            const void *beta_array, void **c_array, const int* ldc_array,
+            const int group_count, const int* group_size)
+  {
+    cblas_sgemm_batch(Layout,transa_array,transb_array,m_array,n_array,k_array,
+                      alpha_array,a_array,lda_array,b_array,ldb_array,beta_array,
+                      c_array,ldc_array,group_count,group_size);
+  }
+
+  inline static void gemm_batch (const CBLAS_LAYOUT Layout,
+            const CBLAS_TRANSPOSE* transa_array,
+            const CBLAS_TRANSPOSE* transb_array, const int* m_array, const int* n_array,
+            const int* k_array, const double *alpha_array, const void **a_array,
+            const int* lda_array, const void **b_array, const int* ldb_array,
+            const void *beta_array, void **c_array, const int* ldc_array,
+            const int group_count, const int* group_size)
+  {
+    cblas_dgemm_batch(Layout,transa_array,transb_array,m_array,n_array,k_array,
+                      alpha_array,a_array,lda_array,b_array,ldb_array,beta_array,
+                      c_array,ldc_array,group_count,group_size);
+  }
+
+  inline static void gemm_batch (const CBLAS_LAYOUT Layout,
+            const CBLAS_TRANSPOSE* transa_array,
+            const CBLAS_TRANSPOSE* transb_array, const int* m_array, const int* n_array,
+            const int* k_array, const std::complex<float> *alpha_array, const void **a_array,
+            const int* lda_array, const void **b_array, const int* ldb_array,
+            const void *beta_array, void **c_array, const int* ldc_array,
+            const int group_count, const int* group_size)
+  {
+    cblas_cgemm_batch(Layout,transa_array,transb_array,m_array,n_array,k_array,
+                      alpha_array,a_array,lda_array,b_array,ldb_array,beta_array,
+                      c_array,ldc_array,group_count,group_size);
+  }
+
+  inline static void gemm_batch (const CBLAS_LAYOUT Layout,
+            const CBLAS_TRANSPOSE* transa_array,
+            const CBLAS_TRANSPOSE* transb_array, const int* m_array, const int* n_array,
+            const int* k_array, const std::complex<double> *alpha_array, const void **a_array,
+            const int* lda_array, const void **b_array, const int* ldb_array,
+            const void *beta_array, void **c_array, const int* ldc_array,
+            const int group_count, const int* group_size)
+  {
+    cblas_zgemm_batch(Layout,transa_array,transb_array,m_array,n_array,k_array,
+                      alpha_array,a_array,lda_array,b_array,ldb_array,beta_array,
+                      c_array,ldc_array,group_count,group_size);
+  }
 #endif
+
+  template<typename T>
+  inline static void gemmStridedBatched(char Atrans, char Btrans, int M, int N, int K,
+                          T alpha, const T *A, int lda, int strideA,
+                          const T *restrict B, int ldb, int strideB, T beta,
+                          T *restrict C, int ldc, int strideC, int batchSize)
+  {
+#ifdef HAVE_MKL
+    // MKL has batched gemm, but with pointer interface. Translate here
+    std::vector<const void*> Aptrs(batchSize);
+    std::vector<const void*> Bptrs(batchSize);
+    std::vector<void*> Cptrs(batchSize);
+
+    for(int i=0; i<batchSize; i++) {
+        Aptrs[i] = static_cast<const void*>(A+i*strideA);
+        Bptrs[i] = static_cast<const void*>(B+i*strideB);
+        Cptrs[i] = static_cast<const void*>(C+i*strideC);
+    }
+
+    // Expect arrays of size group_count. 
+    // This is 1 in strided case, so passing pointers to everything
+    gemm_batch(CblasColMajor,&Atrans,&Btrans,&M,&N,&K,
+               &alpha,Aptrs.data(),&lda,Bptrs.data(),&ldb,
+               &beta,Cptrs.data(),&ldc,1,&batchSize);
+#else
+    // No batched gemm, :-( gemm loop
+    for(int i=0; i<batchSize; i++)
+        gemm(Atrans,Btrans,M,N,K,alpha,A+i*strideA,lda,B+i*strideB,ldb,beta,C+i*strideC,ldc);
+#endif
+  }
+
+  template<typename T>
+  inline static void gemmBatched(char Atrans, char Btrans, int M, int N, int K,
+                          T alpha, T const** A, int lda,
+                          T const** B, int ldb, T beta,
+                          T ** C, int ldc, int batchSize)
+  {
+#ifdef HAVE_MKL
+    gemm_batch(CblasColMajor,&Atrans,&Btrans,&M,&N,&K,
+               &alpha,A,&lda,B,&ldb,
+               &beta,C,&ldc,1,&batchSize);
+#else
+    // No batched gemm, :-( gemm loop
+    for(int i=0; i<batchSize; i++)
+        gemm(Atrans,Btrans,M,N,K,alpha,A[i],lda,B[i],ldb,beta,C[i],ldc);
+#endif
+  }
 
   inline static
   void gemm (char Atrans, char Btrans, int M, int N, int K, double alpha,

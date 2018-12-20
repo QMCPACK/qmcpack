@@ -4,7 +4,7 @@
 #//
 #// Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
 #//
-#// File developed by: Miguel A. Morales, LLNL 
+#// File developed by: Miguel A. Morales, LLNL
 #//
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////

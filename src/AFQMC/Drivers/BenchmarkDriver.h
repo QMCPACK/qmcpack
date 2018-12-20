@@ -37,7 +37,7 @@ class BenchmarkDriver
 
     bool run();
 
-    bool parse(xmlNodePtr); 
+    bool parse(xmlNodePtr);
 
     bool setup(HamPtr,WSetPtr,PropPtr,WfnPtr);
 
@@ -47,9 +47,9 @@ class BenchmarkDriver
 
     bool clear() { return true; }
 
-  protected:  
+  protected:
 
-    int maxnW,delnW,nrepeat; 
+    int maxnW,delnW,nrepeat;
 
     RealType dt;
 

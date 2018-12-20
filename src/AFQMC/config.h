@@ -66,6 +66,10 @@ namespace qmcplusplus
 
   enum SpinTypes {Alpha,Beta};  
 
+  // allocators
+  template<class T>
+  using shared_allocator = boost::mpi3::intranode::allocator<T>;
+
   // new types
   using SpCType_shm_csr_matrix = ma::sparse::csr_matrix<SPComplexType,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SPComplexType>,
@@ -129,7 +133,7 @@ namespace qmcplusplus
   typedef SMSparseMatrix<ComplexType>   ComplexSMSpMat;
   typedef SMSparseMatrix<SPComplexType>   SPComplexSMSpMat;
 
-  enum HamiltonianTypes {Factorized,SymmetricFactorized,s4DInts,THC};
+  enum HamiltonianTypes {Factorized,SymmetricFactorized,s4DInts,THC,KPTHC,KPFactorized};
 
   extern TimerList_t AFQMCTimers;
   enum AFQMCTimerIDs {    

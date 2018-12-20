@@ -38,6 +38,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+
 /*
  * Class that implements a multi-Slater determinant trial wave-function.
  * Single determinant wfns are also allowed. 
@@ -50,6 +51,8 @@ class NOMSD: public AFQMCInfo
 
   using CVector = boost::multi_array<ComplexType,1>;  
   using CMatrix = boost::multi_array<ComplexType,2>;  
+  using CVector_ref = boost::multi_array_ref<ComplexType,1>;
+  using CMatrix_ref = boost::multi_array_ref<ComplexType,2>;
   using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
   using shared_mutex = boost::mpi3::shm::mutex;  
 
@@ -142,12 +145,7 @@ class NOMSD: public AFQMCInfo
     bool transposed_G_for_vbias() const { return transposed_G_for_vbias_; }
     bool transposed_G_for_E() const { return transposed_G_for_E_; }
     bool transposed_vHS() const { return transposed_vHS_; }
-
-/*
-    const std::vector<PsiT_Matrix>& getOrbMat() { return OrbMats; }
-    int getOrbSize () { return 2*NMO; }
-    const std::vector<ComplexType>& getCiCoeff() { return ci; }
-*/
+    WALKER_TYPES getWalkerType() const {return walker_type; }
 
     template<class Vec>
     void vMF(Vec&& v);
@@ -195,13 +193,13 @@ class NOMSD: public AFQMCInfo
      * v: [NMO^2][nW]
      */
     template<class MatX, class MatA>
-    void vHS(const MatX& X, MatA&& v, double a=1.0) {
+    void vHS(MatX&& X, MatA&& v, double a=1.0) {
       assert( X.shape()[0] == HamOp.local_number_of_cholesky_vectors() );
       if(transposed_G_for_vbias_)
         assert( X.shape()[1] == v.shape()[0] );
       else    
         assert( X.shape()[1] == v.shape()[1] );
-      HamOp.vHS(X,std::forward<MatA>(v),a);
+      HamOp.vHS(std::forward<MatX>(X),std::forward<MatA>(v),a);
       TG.local_barrier();    
     }
 
@@ -262,6 +260,18 @@ class NOMSD: public AFQMCInfo
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
     /*
+     * Calculates the back propagated density matrix for all walkers in the walker set.
+     * Options:
+     *  - path_restoration: If false (default), performs traditional back propagation
+     *                        algorithm without any path restoration, otherwise restores
+     *                        phases and cosine factors along path.
+     *  - free_projection: If false (default), assumes using phaseless approximation
+     *                       otherwise assumes using free projection.
+     */
+    template<class WlkSet, class MatG>
+    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVector& denom, bool path_restoration=false, bool free_projection=false);
+
+    /*
      * Calculates the mixed density matrix for all walkers in the walker set
      *   with a format consistent with (and expected by) the vbias routine.
      * This is implementation dependent, so this density matrix should ONLY be used
@@ -317,6 +327,12 @@ class NOMSD: public AFQMCInfo
     template<class Mat>
     void OrthogonalizeExcited(Mat&& A, SpinTypes spin);
 
+    /*
+     * Back Propagates the trial wavefunction.
+    */
+    template<class MatA, class Wlk, class MatB>
+    ComplexType BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP);
+
   protected: 
 
     TaskGroup_& TG;
@@ -329,6 +345,8 @@ class NOMSD: public AFQMCInfo
 
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<PsiT_Matrix> OrbMats;
+    // Buffers for back propagation.
+    boost::multi_array<ComplexType, 2> T1ForBP, T2ForBP, T3ForBP;
 
     std::unique_ptr<SHM_Buffer> shmbuff_for_E;
 
@@ -441,6 +459,8 @@ class NOMSD: public AFQMCInfo
           return arr{-1,-1};
       }
     }
+
+
 
 };
 

@@ -11,7 +11,7 @@
 namespace qmcplusplus
 {
 
-class selectedCI: public Driver 
+class selectedCI: public Driver
 {
 
   typedef HamiltonianBase* HamPtr;
@@ -31,19 +31,19 @@ class selectedCI: public Driver
 
     bool run();
 
-    bool parse(xmlNodePtr); 
+    bool parse(xmlNodePtr);
 
     bool setup(HamPtr,WSetPtr,PropPtr,WfnPtr);
 
     bool checkpoint(int,int);
 
-    bool restart(hdf_archive&); 
+    bool restart(hdf_archive&);
 
     bool clear();
 
     bool diagonalizeTrialWavefunction(std::vector<RealType>& eigVal, ValueMatrix& eigVec, std::vector<IndexType>& occ1, int nci1, std::vector<IndexType>& occ2, int nci2, bool eigV=true);
 
-  protected:  
+  protected:
 
     SparseGeneralHamiltonian* sHam;
 
@@ -52,8 +52,8 @@ class selectedCI: public Driver
     double cutoff_list;
     double cutoff_diag;
     std::string output_filename;
-    bool build_full_hamiltonian; 
-    ValueType NuclearCoulombEnergy; 
+    bool build_full_hamiltonian;
+    ValueType NuclearCoulombEnergy;
 
     std::vector<IndexType> occ_orbs;
     std::vector<ValueType> ci;
@@ -63,19 +63,19 @@ class selectedCI: public Driver
     void sort_list(std::vector<IndexType>::iterator left, std::vector<IndexType>::iterator right);
     void remove_repeated(std::vector<IndexType>& vnew, std::vector<IndexType>& vold);
     inline bool list_equal(std::vector<IndexType>::iterator left, std::vector<IndexType>::iterator right)
-    { 
+    {
       for(int i=0; i<NAEA+NAEB; i++)
         if(!(*(left++) == *(right++))) return false;
       return true;
     }
     inline bool list_order(std::vector<IndexType>::iterator left, std::vector<IndexType>::iterator right)
-    { 
+    {
       for(int i=0; i<NAEA+NAEB; i++,left++,right++)
-        if(*(left) == *(right)) 
-          continue; 
-        else  
+        if(*(left) == *(right))
+          continue;
+        else
           return *left < *right;
-      return false; // they are equal 
+      return false; // they are equal
     }
     inline bool mysearch(std::vector<IndexType>::iterator& first, std::vector<IndexType>::iterator last, std::vector<IndexType>::iterator val)
     {
@@ -91,13 +91,13 @@ class selectedCI: public Driver
           return true;
         } else if(list_order(middle,val))
           left = middle + (NAEA+NAEB);
-        else 
+        else
           right = middle - (NAEA+NAEB);
       }
       first = left;
-      if(right < left) first = right; 
+      if(right < left) first = right;
       return false;
-    } 
+    }
 
 };
 }

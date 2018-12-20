@@ -5,14 +5,14 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-// Alfredo Correa, correaa@llnl.gov 
-//    Lawrence Livermore National Laboratory 
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Alfredo Correa, correaa@llnl.gov
+//    Lawrence Livermore National Laboratory
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Alfredo Correa, correaa@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Alfredo Correa, correaa@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "catch.hpp"
@@ -52,7 +52,7 @@ void ma_blas_tests()
 			verify_approx( V, V2 );
 		}
 	}
-	
+
 	vector<double> m = {
 		1.,2.,3.,
 		4.,5.,6.,
@@ -131,7 +131,7 @@ void ma_blas_tests()
 		multi_array_ref<double, 1> X(x.data(), extents[x.size()]);
 		vector<double> y = {4.,5.};
 		multi_array_ref<double, 1> Y(y.data(), extents[y.size()]);
-		
+
 		auto const& mm = M[ indices[range_t(0,2,1)][range_t(0,2,1)] ];//, X, 0., Y); // y := M x
 		ma::gemv<'T'>(1., M[ indices[range_t(0,2,1)][range_t(0,2,1)] ], X, 0., Y); // y := M x
 
@@ -182,7 +182,7 @@ void ma_blas_tests()
 		multi_array_ref<double, 2> A(a.data(), extents[2][4]);
 		REQUIRE( A.num_elements() == a.size() );
 		vector<double> b = {
-			9.,24., 6., 8., 
+			9.,24., 6., 8.,
 			4.,10., 2., 5.,
 			14.,16., 9., 0.
 		};
@@ -213,7 +213,7 @@ void ma_blas_tests()
 		multi_array_ref<double, 2> A(a.data(), extents[2][3]);
 		REQUIRE( A.num_elements() == a.size() );
 		vector<double> b = {
-			9.,24., 6., 8., 
+			9.,24., 6., 8.,
 			4.,10., 2., 5.,
 		};
 		multi_array_ref<double, 2> B(b.data(), extents[2][4]);
@@ -247,7 +247,7 @@ void ma_blas_tests()
 		multi_array_ref<double, 2> A(a.data(), extents[4][3]);
 		REQUIRE( A.num_elements() == a.size() );
 		vector<double> b = {
-			9.,24., 6., 8., 
+			9.,24., 6., 8.,
 			4.,10., 2., 5.,
 			14.,16., 9., 0.
 		};
@@ -288,7 +288,7 @@ void ma_blas_tests()
 		multi_array_ref<double, 2> C(c.data(), extents[3][3]);
 		REQUIRE( C.num_elements() == c.size());
 
-		
+
 		ma::gemm<'T', 'T'>(1., A, B, 0., C); // C = T(A*B) = T(B)*T(A) or T(C) = A*B
 		ma::gemm<'T', 'N'>(1., A, B, 0., C); // C = T(A*T(B)) = B*T(A) or T(C) = A*T(B)
 		ma::gemm<'N', 'T'>(1., A, B, 0., C); // C =  T(T(A)*B) = T(B)*A or T(C) = T(A)*B
@@ -302,7 +302,7 @@ void ma_blas_tests()
 		multi_array_ref<double, 2> A(a.data(), extents[2][3]);
 		REQUIRE( A.num_elements() == a.size() );
 		vector<double> b = {
-			9.,24., 6., 8., 
+			9.,24., 6., 8.,
 			4.,10., 2., 5.,
 			14.,16., 9., 0.
 		};

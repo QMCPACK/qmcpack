@@ -670,7 +670,7 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
     } else if(TG.Node().root() && TG.Cores().rank() < TG.getNNodesPerTG()) { // only one TG writes
       int nnodes_per_TG = TG.getNNodesPerTG();
       int rank = TG.Cores().rank();
-      TG.Cores().send_value(nnz,0,rank);
+      TG.Cores().send_n(&nnz,1,0,rank);
       std::vector<value_type> vvec;
       vvec.reserve(CSR_HDF_BLOCK_SIZE);
       std::vector<index_type> ivec;

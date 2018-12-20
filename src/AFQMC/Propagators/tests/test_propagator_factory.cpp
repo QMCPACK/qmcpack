@@ -6,7 +6,7 @@
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 #undef NDEBUG
@@ -66,6 +66,8 @@ using namespace afqmc;
 
 TEST_CASE("propg_fac_shared", "[propagator_factory]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -74,9 +76,6 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
 
     TimerManager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames,timer_level_coarse);
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -125,9 +124,9 @@ const char *wlk_xml_block =
     okay = doc2.parseFromString(wfn_xml_block);
     REQUIRE(okay);
     std::string wfn_name("wfn0");
-    WavefunctionFactory WfnFac(InfoMap); 
+    WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
-    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,CLOSED,&ham,1e-6,nwalk); 
+    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,CLOSED,&ham,1e-6,nwalk);
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
@@ -143,7 +142,7 @@ const char *propg_xml_block =
 ";
     Libxml2Document doc4;
     okay = doc4.parseFromString(propg_xml_block);
-    REQUIRE(okay);    
+    REQUIRE(okay);
     std::string prop_name("prop0");
     PropagatorFactory PropgFac(InfoMap);
     PropgFac.push(prop_name,doc4.getRoot());
@@ -168,10 +167,10 @@ const char *propg_xml_block =
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
         eav += it->weight()*(it->energy());
         ov += it->weight();
-      }    
+      }
       tot_time+=2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
-      wfn.Orthogonalize(wset,true); 
+      wfn.Orthogonalize(wset,true);
     }
     for(int i=0; i<4; i++) {
       prop.Propagate(4,wset,Eshift,dt,1);
@@ -183,7 +182,7 @@ const char *propg_xml_block =
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
-      wfn.Orthogonalize(wset,true); 
+      wfn.Orthogonalize(wset,true);
     }
 
     for(int i=0; i<4; i++) {
@@ -196,7 +195,7 @@ const char *propg_xml_block =
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
-      wfn.Orthogonalize(wset,true); 
+      wfn.Orthogonalize(wset,true);
     }
     for(int i=0; i<4; i++) {
       prop.Propagate(5,wset,Eshift,2*dt,2);
@@ -208,7 +207,7 @@ const char *propg_xml_block =
       }
       tot_time+=5*2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
-      wfn.Orthogonalize(wset,true); 
+      wfn.Orthogonalize(wset,true);
     }
 
   }
@@ -216,6 +215,8 @@ const char *propg_xml_block =
 
 TEST_CASE("propg_fac_distributed", "[propagator_factory]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -224,9 +225,6 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
 
     TimerManager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames,timer_level_coarse);
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -276,9 +274,9 @@ const char *wlk_xml_block =
     okay = doc2.parseFromString(wfn_xml_block);
     REQUIRE(okay);
     std::string wfn_name("wfn0");
-    WavefunctionFactory WfnFac(InfoMap); 
+    WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
-    Wavefunction& wfn = WfnFac.getWavefunction(TGprop,TG,wfn_name,CLOSED,&ham,1e-6,nwalk); 
+    Wavefunction& wfn = WfnFac.getWavefunction(TGprop,TG,wfn_name,CLOSED,&ham,1e-6,nwalk);
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
@@ -296,11 +294,11 @@ const char *propg_xml_block1 =
 </Propagator> \
 ";
     std::string str_ = std::string("<Propagator name=\"prop0\"> <parameter name=\"nnodes\">") +
-                       std::to_string(gTG.getTotalNodes()) + 
+                       std::to_string(gTG.getTotalNodes()) +
                        std::string("</parameter> </Propagator>");
     Libxml2Document doc4;
     okay = doc4.parseFromString(str_.c_str());
-    REQUIRE(okay);    
+    REQUIRE(okay);
     std::string prop_name("prop0");
     PropagatorFactory PropgFac(InfoMap);
     PropgFac.push(prop_name,doc4.getRoot());
@@ -324,10 +322,10 @@ const char *propg_xml_block1 =
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
         eav += it->weight()*(it->energy());
         ov += it->weight();
-      }    
+      }
       tot_time+=2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
-      wfn.Orthogonalize(wset,true); 
+      wfn.Orthogonalize(wset,true);
     }
     for(int i=0; i<4; i++) {
       prop.Propagate(4,wset,Eshift,dt,1);
@@ -339,7 +337,7 @@ const char *propg_xml_block1 =
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
-      wfn.Orthogonalize(wset,true); 
+      wfn.Orthogonalize(wset,true);
     }
 
     for(int i=0; i<4; i++) {
@@ -352,7 +350,7 @@ const char *propg_xml_block1 =
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
-      wfn.Orthogonalize(wset,true); 
+      wfn.Orthogonalize(wset,true);
     }
     for(int i=0; i<4; i++) {
       prop.Propagate(5,wset,Eshift,2*dt,2);
@@ -364,7 +362,7 @@ const char *propg_xml_block1 =
       }
       tot_time+=5*2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
-      wfn.Orthogonalize(wset,true); 
+      wfn.Orthogonalize(wset,true);
     }
 
   }

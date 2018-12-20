@@ -19,13 +19,13 @@ namespace afqmc
 
 
  // This routine assumes that states are ordered (after mapping) in the following way:
- // { core, active+virtual, ignored}, so make sure mappings obey this.   
- // An easy way to implement this is to have a list of all core states and 
+ // { core, active+virtual, ignored}, so make sure mappings obey this.
+ // An easy way to implement this is to have a list of all core states and
  // initialize the mapping (from 1:NC) with the index of the core states.
  // Then complete the mapping with every other orbital index not in the core list.
- // This way you always end up with a mapping with the correct format. 
+ // This way you always end up with a mapping with the correct format.
   template<class shm_vector, class shm_SpMat>
-  inline ValueType readElementsFromFCIDUMP(std::ifstream& in, const RealType cutoff1bar, 
+  inline ValueType readElementsFromFCIDUMP(std::ifstream& in, const RealType cutoff1bar,
          const bool spinRestricted, const int NMO, const int NC, const int NAEA, const int NAEB,
          std::vector<s2D<ValueType> >& V1,
 //         std::vector<s2D<ValueType> >& V1_c,
@@ -41,14 +41,14 @@ namespace afqmc
      IndexType ap,bp,cp,dp,ab,cd;
 
      if(!spinRestricted)
-       APP_ABORT(" Error: spinRestricted has been disabled. \n\n\n"); 
+       APP_ABORT(" Error: spinRestricted has been disabled. \n\n\n");
 
      ValueType val;
      while(!in.eof()) {
        in>>val >>ap >>bp >>cp >>dp;
        if(in.fail()) break;
 
-       // to reduce problems from numerical roundoff 
+       // to reduce problems from numerical roundoff
        if(std::abs(imag(val)) < 1e-8) setImag(val,0.0);
 
        a=orbMapA[ap];
@@ -60,7 +60,7 @@ namespace afqmc
          if( std::abs(val) > cutoff1bar ) {
            V2->push_back(find_smaller_equivalent_OneBar_for_integral_list( std::make_tuple(a-1,c-1,b-1,d-1,val) ));
          }
-       } else if(a > 0 && b > 0 && c>0) { // factorized 2-electron integral 
+       } else if(a > 0 && b > 0 && c>0) { // factorized 2-electron integral
          if( std::abs(val) > cutoff1bar ) {
            V3->add((a-1)*NMO+Index2Col(NMO,b-1),cp-1,val);
          }
@@ -72,7 +72,7 @@ namespace afqmc
        } else if(a==0 && b==0 && c==0 && d==0) {
          NuclearCoulombEnergy = val;
        } else if(a!=0 && b==0 && c==0 && d==0) {
-         // ignore, these are the eigenvalues of the Fock operator printed by VASP  
+         // ignore, these are the eigenvalues of the Fock operator printed by VASP
        } else {
          app_error()<<"Error with ASCII integral file, bad indexing. " <<std::endl;
          APP_ABORT(" Error in readElementsFromFCIDUMP. \n");
@@ -82,20 +82,22 @@ namespace afqmc
   }
 
   inline HamiltonianTypes peekHamType(hdf_archive& dump) {
-    if(dump.is_group( std::string("/Hamiltonian/THC") )) return THC;    
-    if(dump.is_group( std::string("/Hamiltonian/Factorized") )) return Factorized;    
-    if(dump.is_group( std::string("/Hamiltonian/SymmetricFactorized") )) return SymmetricFactorized;    
-    if(dump.is_group( std::string("/Hamiltonian/Integrals") )) return s4DInts;    
+    if(dump.is_group( std::string("/Hamiltonian/KPTHC") )) return KPTHC;
+    if(dump.is_group( std::string("/Hamiltonian/THC") )) return THC;
+    if(dump.is_group( std::string("/Hamiltonian/KPFactorized") )) return KPFactorized;
+    if(dump.is_group( std::string("/Hamiltonian/Factorized") )) return Factorized;
+    if(dump.is_group( std::string("/Hamiltonian/SymmetricFactorized") )) return SymmetricFactorized;
+    if(dump.is_group( std::string("/Hamiltonian/Integrals") )) return s4DInts;
     APP_ABORT("  Error: Invalid hdf file format in peekHamType(hdf_archive). \n");
-    return s4DInts; 
+    return s4DInts;
   }
 
   inline HamiltonianTypes peekHamType(std::ifstream& in) {
     std::streampos start = in.tellg();
     IndexType ap,bp,cp,dp;
-    ValueType val;    
-    in>>val >>ap >>bp >>cp >>dp; 
-    if(in.fail()) 
+    ValueType val;
+    in>>val >>ap >>bp >>cp >>dp;
+    if(in.fail())
       APP_ABORT("Problems reading input file in peekHamType. \n");
     in.clear();
     in.seekg(start);
@@ -106,14 +108,13 @@ namespace afqmc
   }
 
   // old routines
-  SPValueSMSpMat read_V2fact_old(hdf_archive& dump, TaskGroup_& TG, int nread, int NMO, int& mini, int& max, int nvecs, double cutoff1bar, int int_blocks); 
+  SPValueSMSpMat read_V2fact_old(hdf_archive& dump, TaskGroup_& TG, int nread, int NMO, int& mini, int& max, int nvecs, double cutoff1bar, int int_blocks);
 
-   FactorizedSparseHamiltonian::shm_csr_matrix read_V2fact(hdf_archive& dump, TaskGroup_& TG, int nread, int NMO, int nvecs, double cutoff1bar, int int_blocks); 
+   FactorizedSparseHamiltonian::shm_csr_matrix read_V2fact(hdf_archive& dump, TaskGroup_& TG, int nread, int NMO, int nvecs, double cutoff1bar, int int_blocks);
   SMDenseVector<s4D<ValueType> > read_V2(hdf_archive& dump, TaskGroup_& TG, int nread, int NMO, int& min_i, int& max_i, double cutoff1bar, int int_blocks);
-  void read_THC(hdf_archive&); 
 
-  void ascii_write(std::string); 
-  void hdf_write(std::string); 
+  void ascii_write(std::string);
+  void hdf_write(std::string);
 
 }
 

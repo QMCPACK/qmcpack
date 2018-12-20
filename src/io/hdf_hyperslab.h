@@ -138,5 +138,47 @@ struct h5data_proxy<hyperslab_proxy<CT,MAXDIM> >
     }
   }
 };
+
+#if 0
+template<typename T, unsigned MAXDIM>
+struct h5data_proxy<hyperslab_proxy<boost::multi::array<T,2,cuda::cuda_gpu_allocator<T>>,MAXDIM> >
+{
+  typedef boost::multi::array<T,2,cuda::cuda_gpu_allocator<T>> CT;
+  hyperslab_proxy<CT,MAXDIM>& ref_;
+  h5data_proxy(hyperslab_proxy<CT,MAXDIM>& a): ref_(a) {}
+  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+  {
+    if(ref_.use_slab)
+    {
+// later on specialize h5d_read for fancy pointers 
+      std::size_t sz = ref_.ref.num_elements();
+      boost::multi::array<T,1> buf( {sz} );
+      auto ret = h5d_read(grp,aname.c_str(),
+          ref_.slab_rank,
+          ref_.slab_dims.data(),
+          ref_.slab_dims_local.data(),
+          ref_.slab_offset.data(),
+          reinterpret_cast<T*>(buf.data()),xfer_plist);
+      cuda::copy_n(buf.data(),sz,ref_.ref.origin());
+      return ret;
+    }
+    else
+    {
+      int rank=ref_.slab_rank;
+      if(!get_space(grp,aname,rank,ref_.slab_dims.data(),true))
+      {
+        std::cerr<<" Disabled hyperslab resize with boost::multi::array_ref.\n";
+        return false;
+      }
+      return h5d_read(grp,aname,ref_.data(),xfer_plist);
+    }
+  }
+  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+  {
+    std::cerr<<" Disabled hyperslab write with boost::multi::array_ref.\n";
+    return false;
+  }
+};
+#endif
 }
 #endif

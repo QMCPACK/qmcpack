@@ -64,6 +64,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(2*NMO,NAEA+NAEB), // safe for now, since I don't know walker_type
+            TSM(extents[2*NMO][NAEA+NAEB]), // safe for now, since I don't know walker_type
             shmbuff(nullptr),
             local_group_comm(),
             last_nextra(-1),
@@ -101,9 +102,9 @@ class AFQMCSharedPropagator: public AFQMCInfo
     // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
     void reset() { shmbuff.reset(nullptr); }
 
-    int getNBackProp() const { return nback_prop_steps; }
-
     bool hybrid_propagation() { return hybrid; }
+
+    bool free_propagation() { return free_projection; }
 
   protected: 
 
@@ -132,8 +133,6 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     RealType vbias_bound;
 
-    int nback_prop_steps;
-
     // type of propagation
     bool free_projection;
     bool hybrid;
@@ -153,6 +152,8 @@ class AFQMCSharedPropagator: public AFQMCInfo
     CMatrix hybrid_weight;  
 
     CVector vMF;  
+    // Temporary for propagating with constructed B matrix.
+    CMatrix TSM;
  
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);
@@ -168,6 +169,10 @@ class AFQMCSharedPropagator: public AFQMCInfo
     template<class WSet>
     void apply_propagators(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
                            boost::multi_array_ref<ComplexType,3>& vHS3D);
+
+    template<class WSet>
+    void apply_propagators_construct_propagator(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
+                                                boost::multi_array_ref<ComplexType,3>& vHS3D);
 
     ComplexType apply_bound_vbias(ComplexType v, RealType sqrtdt)
     {

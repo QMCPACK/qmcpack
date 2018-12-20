@@ -22,6 +22,7 @@
 #include "boost/variant.hpp"
 
 #include "AFQMC/Wavefunctions/NOMSD.hpp"
+#include "AFQMC/Wavefunctions/PHMSD.hpp"
 
 namespace qmcplusplus
 {
@@ -61,20 +62,7 @@ class dummy_wavefunction
     return false; 
   }
 
-/*
-  const std::vector<PsiT_Matrix>& getOrbMat() {
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
-    return orbs; 
-  } 
-  int getOrbSize () { 
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
-    return 0; 
-  }
-  const std::vector<ComplexType>& getCiCoeff() { 
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
-    return ci; 
-  }
-*/
+  WALKER_TYPES getWalkerType() const {return UNDEFINED_WALKER_TYPE; }
 
   bool transposed_G_for_vbias() const { 
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
@@ -108,7 +96,7 @@ class dummy_wavefunction
   }
 
   template<class MatX, class MatA>
-  void vHS(const MatX& X, MatA&& v, double a=1.0) {
+  void vHS(MatX&& X, MatA&& v, double a=1.0) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
@@ -129,6 +117,16 @@ class dummy_wavefunction
 
   template<class WlkSet, class MatG, class TVec>
   void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false) {
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
+  }
+
+  template<class WlkSet, class MatG>
+  void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, boost::multi_array<ComplexType,1>& denom, bool path_restoration=false, bool free_projection=false) {
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");
+  }
+
+  template<class MatA, class Wlk, class MatB>
+  void BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
@@ -155,7 +153,7 @@ class dummy_wavefunction
 };
 }
 
-class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD>
+class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
 {
     public: 
 
@@ -164,6 +162,9 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD>
     } 
     explicit Wavefunction(NOMSD&& other) : variant(std::move(other)) {}
     explicit Wavefunction(NOMSD const& other) = delete;
+
+    explicit Wavefunction(PHMSD&& other) : variant(std::move(other)) {} 
+    explicit Wavefunction(PHMSD const& other) = delete;
 
     Wavefunction(Wavefunction const& other) = delete; 
     Wavefunction(Wavefunction&& other) = default; 
@@ -220,30 +221,12 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD>
         );
     }
 
-
-
-/*
-    std::vector<PsiT_Matrix> const& getOrbMat() const {
+    WALKER_TYPES getWalkerType() const {
         return boost::apply_visitor(
-            [&](auto&& a){return a.getOrbMat();},
+            [&](auto&& a){return a.getWalkerType();},
             *this
         );
-    }
-
-    std::vector<ComplexType> const& getCiCoeff() const {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.getCiCoeff();},
-            *this
-        );
-    }
-
-    int getOrbSize () const {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.getOrbSize();},
-            *this
-        );
-    }
-*/
+    }    
 
     template<class... Args>
     void vMF(Args&&... args) {
@@ -314,6 +297,22 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD>
         boost::apply_visitor(
             [&](auto&& a){a.Orthogonalize(std::forward<Args>(args)...);},
             *this
+        );
+    }
+
+    template<class... Args>
+    void BackPropagatedDensityMatrix(Args&&... args) {
+        boost::apply_visitor(
+              [&](auto&& a){a.BackPropagatedDensityMatrix(std::forward<Args>(args)...);},
+              *this
+        );
+    }
+
+    template<class... Args>
+    void BackPropagateOrbMat(Args&&... args) {
+        boost::apply_visitor(
+              [&](auto&& a){a.BackPropagateOrbMat(std::forward<Args>(args)...);},
+              *this
         );
     }
 

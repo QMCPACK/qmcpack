@@ -26,7 +26,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentials(double cut, 
+SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentials(double cut,
         TaskGroup_& TGprop, boost::multi_array<ComplexType,2>& vn0) {
 
   using Alloc = boost::mpi3::intranode::allocator<SPValueType>;
@@ -53,10 +53,10 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
 
   } else {
 
-    // you always need to count since some vectors might be empty 
+    // you always need to count since some vectors might be empty
     auto nnz_per_cv = HamHelperSymmetric::count_nnz_per_cholvec(cut,TG,V2_fact,NMO);
 
-    // partition and 
+    // partition and
     std::size_t cv0, cvN;
     if(TGprop.getNNodesPerTG() == 1 ) { // Spvn is not distributed
       cv0 = 0;
@@ -79,9 +79,9 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
       // no need for all cores to do this
       if(TG.Global().root())
         split.partition(TGprop,false,nnz_per_cv,cv_boundaries);
-      TG.Global().broadcast_n(cv_boundaries.begin(),cv_boundaries.size());  
-      cv0 = cv_boundaries[TGprop.getLocalNodeNumber()];  
-      cvN = cv_boundaries[TGprop.getLocalNodeNumber()+1];  
+      TG.Global().broadcast_n(cv_boundaries.begin(),cv_boundaries.size());
+      cv0 = cv_boundaries[TGprop.getLocalNodeNumber()];
+      cvN = cv_boundaries[TGprop.getLocalNodeNumber()+1];
       // no need for all cores to do this
       if(TG.Global().root()) {
         app_log()<<std::endl <<"Partition of cholesky vector over nodes in TG: ";
@@ -89,16 +89,16 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
             app_log()<<std::count_if(nnz_per_cv.begin()+cv_boundaries[i],
                        nnz_per_cv.begin()+cv_boundaries[i+1],
                        [] (std::size_t i) { return i>0; } ) <<" ";
-        app_log()<<std::endl;    
+        app_log()<<std::endl;
         app_log()<<"Number of terms in Cholesky Matrix per node in TG: ";
         for(int i=0; i<TGprop.getNNodesPerTG(); i++)
             app_log()<<std::accumulate(nnz_per_cv.begin()+cv_boundaries[i],
                        nnz_per_cv.begin()+cv_boundaries[i+1],std::size_t(0)) <<" ";
-        app_log()<<std::endl <<std::endl;    
+        app_log()<<std::endl <<std::endl;
       }
     }
 
-    auto nnz_per_ik = HamHelperSymmetric::count_nnz_per_ik(cut,TG,V2_fact,NMO,cv0,cvN); 
+    auto nnz_per_ik = HamHelperSymmetric::count_nnz_per_ik(cut,TG,V2_fact,NMO,cv0,cvN);
 
     std::size_t nvec = std::count_if(nnz_per_cv.begin()+cv0,nnz_per_cv.begin()+cvN,
                [] (std::size_t const& i) { return i>0; } );
@@ -110,7 +110,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
     // and can use emplace_back
     SpVType_shm_csr_matrix csr({NMO*NMO,nvec}, {0,cv_origin}, nnz_per_ik, Alloc(TG.Node()));
 
-    HamHelperSymmetric::generateHSPotential(csr,cut,TG,V2_fact,NMO,cv0,cvN); 
+    HamHelperSymmetric::generateHSPotential(csr,cut,TG,V2_fact,NMO,cv0,cvN);
     TG.node_barrier();
 
     return csr;
@@ -127,7 +127,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
     if(TGHam.getNNodesPerTG() > 1) {
       using tvec = std::vector<std::tuple<int,int,SPComplexType>>;
       tvec tmat;
-      tmat.reserve(100000); // reserve some space  
+      tmat.reserve(100000); // reserve some space
       rotateHijklSymmetric<tvec>(type,TG,tmat,Alpha,Beta,V2_fact,
             cut,maximum_buffer_size,false,false);
       TG.node_barrier();
@@ -143,14 +143,17 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
   }
 
   HamiltonianOperations SymmetricFactorizedSparseHamiltonian::getHamiltonianOperations(
-            bool pureSD, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT, 
+            bool pureSD, bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
             double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump) {
+
+    if(not addCoulomb)
+	APP_ABORT(" Error: addCoulomb=false not implemented in SymmetricFactorizedSparseHamiltonian.\n");
 
     if(type==COLLINEAR)
       assert(PsiT.size()%2 == 0);
 
     Timer.reset("Generic");
-    Timer.start("Generic");   
+    Timer.start("Generic");
     boost::multi_array<ComplexType,2> vn0(extents[NMO][NMO]);
     auto Spvn(std::move(calculateHSPotentials(cutvn,TGprop,vn0)));
     auto Spvnview(csr::shm::local_balanced_partition(Spvn,TGprop));
@@ -161,9 +164,9 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
     int global_ncvecs=0;
     if(TG.getNodeID() == TG.getTotalNodes()-1 && TG.getCoreID()==0)
       global_ncvecs = Spvn.global_origin()[1] + Spvn.shape()[1];
-    global_ncvecs = TG.Global().all_reduce_value(global_ncvecs,std::plus<>());
+    global_ncvecs = (TG.Global() += global_ncvecs);
 
-    ValueType E0 = OneBodyHamiltonian::NuclearCoulombEnergy + 
+    ValueType E0 = OneBodyHamiltonian::NuclearCoulombEnergy +
                    OneBodyHamiltonian::FrozenCoreEnergy;
 
     // several posibilities
@@ -172,18 +175,21 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
     if(ndet==1) {
 
       Timer.reset("Generic");
-      Timer.start("Generic");   
+      Timer.start("Generic");
       std::vector<boost::multi_array<SPComplexType,1>> hij;
       hij.reserve(ndet);
-      hij.emplace_back(halfRotatedHij(type,&PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0])))); 
-      auto SpvnT(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
+      hij.emplace_back(halfRotatedHij(type,&PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0]))));
+      std::vector<SpCType_shm_csr_matrix> SpvnT;
+      using matrix_view = typename SpCType_shm_csr_matrix::template matrix_view<int>;
+      std::vector<matrix_view> SpvnTview;
+      SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
                               &PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0])),
                               Spvn,cutv2));
-      auto SpvnTview(csr::shm::local_balanced_partition(SpvnT,TGprop));
+      SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
       Timer.stop("Generic");
       app_log()<<" Time for halfRotateCholeskyMatrixForBias: " <<Timer.total("Generic") <<std::endl;
 
-      // in single determinant, SpvnT is the half rotated cholesky matrix 
+      // in single determinant, SpvnT is the half rotated cholesky matrix
       if(pureSD) {
         // in pureSD: V2 is ValueType
         using sparse_ham = SparseTensor<ValueType,ComplexType>;
@@ -197,7 +203,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
         using sparse_ham = SparseTensor<ComplexType,ComplexType>;
 
         Timer.reset("Generic");
-        Timer.start("Generic");   
+        Timer.start("Generic");
         std::vector<SpCType_shm_csr_matrix> V2;
         V2.reserve(ndet);
         V2.emplace_back(halfRotatedHijkl(type,TGwfn,&PsiT[0],
@@ -210,20 +216,23 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
 
         return HamiltonianOperations(sparse_ham(type,getH1(),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
-            std::move(vn0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs,true));
+            std::move(vn0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs));
       }
     } else {
-      // in multi determinant, SpvnT is transposed(Spvn) 
+      // in multi determinant, SpvnT is transposed(Spvn)
 
       Timer.reset("Generic");
-      Timer.start("Generic");   
+      Timer.start("Generic");
       std::vector<boost::multi_array<SPComplexType,1>> hij;
       hij.reserve(ndet);
-      int skp=((type==COLLINEAR)?1:0); 
-      for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) 
-         hij.emplace_back(halfRotatedHij(type,&PsiT[nd],&PsiT[nd+skp])); 
-      auto SpvnT(csr::shm::transpose(Spvn));
-      auto SpvnTview(csr::shm::local_balanced_partition(SpvnT,TGprop));
+      int skp=((type==COLLINEAR)?1:0);
+      for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1))
+         hij.emplace_back(halfRotatedHij(type,&PsiT[nd],&PsiT[nd+skp]));
+      std::vector<SpVType_shm_csr_matrix> SpvnT;
+      using matrix_view = typename SpVType_shm_csr_matrix::template matrix_view<int>;
+      std::vector<matrix_view> SpvnTview;
+      SpvnT.emplace_back(csr::shm::transpose(Spvn));
+      SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
       Timer.stop("Generic");
       app_log()<<" Time for halfRotateCholeskyMatrixForBias: " <<Timer.total("Generic") <<std::endl;
 
@@ -240,21 +249,21 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
         using sparse_ham = SparseTensor<ComplexType,ValueType>;
 
         Timer.reset("Generic");
-        Timer.start("Generic");   
+        Timer.start("Generic");
         std::vector<SpCType_shm_csr_matrix> V2;
         V2.reserve(ndet);
-        for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) 
+        for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1))
           V2.emplace_back(halfRotatedHijkl(type,TGwfn,&PsiT[nd],&PsiT[nd+skp],cutv2));
         std::vector<SpCType_shm_csr_matrix::template matrix_view<int>> V2view;
         V2view.reserve(ndet);
-        for(auto& v:V2) 
+        for(auto& v:V2)
           V2view.emplace_back(csr::shm::local_balanced_partition(v,TGwfn));
         Timer.stop("Generic");
         app_log()<<" Time for halfRotateHijkl (for all dets): " <<Timer.total("Generic") <<std::endl;
 
         return HamiltonianOperations(sparse_ham(type,getH1(),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
-            std::move(vn0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs,true));
+            std::move(vn0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs));
       }
     }
 
@@ -309,14 +318,14 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
 #endif
     }
     {
-      ValueMatrix dum(DiagHam);  
-      TG.Global().all_reduce(dum.begin(),dum.end(),DiagHam.begin()); 
+      ValueMatrix dum(DiagHam);
+      TG.Global().all_reduce(dum.begin(),dum.end(),DiagHam.begin());
     }
 
     int occi, occj, occk, occl;
     cnter=0;
     // Approximation: (similar to non factorized case)
-    //   - if <ij|kl>  <  cutoff1bar, set to zero 
+    //   - if <ij|kl>  <  cutoff1bar, set to zero
     for(IndexType i=0; i<NMO; i++)  {
     for(IndexType j=i; j<NMO; j++,cnter++)  {
      if( cnter%npr != rk ) continue;
@@ -333,8 +342,8 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
         // <ik|ik> can get a complex component due to truncation error, eliminate it here
 
         J1=J2=J3=zero;
-        // J1 = <ij|kl>   
-        // J1 < sqrt( <ik|ki> * <lj|jl> )  
+        // J1 = <ij|kl>
+        // J1 < sqrt( <ik|ki> * <lj|jl> )
         if( std::sqrt( std::abs(DiagHam(i,k)*DiagHam(l,j)) ) > cutoff1bar ) {
           J1 = H(i,j,k,l);
 #if defined(QMC_COMPLEX)
@@ -342,7 +351,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
 #endif
         }
 
-        // J2 = <ij|lk> 
+        // J2 = <ij|lk>
         if(i==j || l==k) {
           J2=J1;
         } else {
@@ -354,7 +363,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
           }
         }
 
-        // J3 = <ik|jl> 
+        // J3 = <ik|jl>
         if(j==k) {
           J3=J1;
         } else if(i==l) {
@@ -385,7 +394,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
             J2a = H(i,k,l,j);
         }
 
-        //  J3a = <il|jk> 
+        //  J3a = <il|jk>
         if(l==j) {
           J3a=J2;
         } else if(i==k) {
@@ -448,7 +457,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
 
     cnter=0;
     // Approximation: (similar to non factorized case)
-    //   - if <ij|kl>  <  cutoff1bar, set to zero 
+    //   - if <ij|kl>  <  cutoff1bar, set to zero
     for(IndexType i=0; i<NMO; i++)  {
     for(IndexType j=i; j<NMO; j++,cnter++)  {
      if( cnter%npr != rk ) continue;
@@ -462,8 +471,8 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
         if( occi + occj + occk + occl < 2 ) continue;
 
         J1=J2=J3=zero;
-        // J1 = <ij|kl>   
-        // J1 < sqrt( <ik|ki> * <lj|jl> )  
+        // J1 = <ij|kl>
+        // J1 < sqrt( <ik|ki> * <lj|jl> )
         if( std::sqrt( std::abs(DiagHam(i,k)*DiagHam(l,j)) ) > cutoff1bar ) {
           J1 = H(i,j,k,l);
 #if defined(QMC_COMPLEX)
@@ -471,7 +480,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
 #endif
         }
 
-        // J2 = <ij|lk> 
+        // J2 = <ij|lk>
         if(i==j || l==k) {
           J2=J1;
         } else {
@@ -483,7 +492,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
           }
         }
 
-        // J3 = <ik|jl> 
+        // J3 = <ik|jl>
         if(j==k) {
           J3=J1;
         } else if(i==l) {
@@ -514,7 +523,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
             J2a = H(i,k,l,j);
         }
 
-        //  J3a = <il|jk> 
+        //  J3a = <il|jk>
         if(l==j) {
           J3a=J2;
         } else if(i==k) {
@@ -561,7 +570,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
         } else {
           APP_ABORT(" Error: Unknown walker type in createHamiltonianForPureDeterminant. \n");
         }
-        cnt2+=add_allowed_terms(NMO,vs4D,occ_a,occ_b, Vijkl, true, walker_type==2);                   
+        cnt2+=add_allowed_terms(NMO,vs4D,occ_a,occ_b, Vijkl, true, walker_type==2);
     }
     }
     }

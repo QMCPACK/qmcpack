@@ -5,12 +5,12 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_THCHAMILTONIAN_H
@@ -55,21 +55,21 @@ class THCHamiltonian: public OneBodyHamiltonian
     m_param.put(cur);
 
     std::transform(str.begin(),str.end(),str.begin(),(int (*)(int))tolower);
-    if(str == "no" || str == "false") useHalfRotatedMuv=false; 
-  }  
+    if(str == "no" || str == "false") useHalfRotatedMuv=false;
+  }
 
   ~THCHamiltonian() {}
 
   THCHamiltonian(THCHamiltonian const& other) = default;
   THCHamiltonian(THCHamiltonian && other) = default;
   THCHamiltonian& operator=(THCHamiltonian const& other) = default;
-  THCHamiltonian& operator=(THCHamiltonian && other) = default;  
+  THCHamiltonian& operator=(THCHamiltonian && other) = default;
 
-  ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; } 
+  ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; }
 
   boost::multi_array<ComplexType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
 
-  HamiltonianOperations getHamiltonianOperations(bool pureSD, WALKER_TYPES type,
+  HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type,
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
             TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump);
 
@@ -91,7 +91,7 @@ class THCHamiltonian: public OneBodyHamiltonian
   RealType cutoff_cholesky;
 
   bool useHalfRotatedMuv;
-  
+
 };
 
 }
