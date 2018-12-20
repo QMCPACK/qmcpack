@@ -131,19 +131,17 @@ IF (NOT QMC_CUDA)
                       8 H4_FDLR_SCALARS # Final VMC step
                       TRUE)
 
-    #
-    # H4 using atom-centered counting regions starting from mostly optimized F matrix, optimizing F and counting function params
-    #
-    LIST(APPEND H4_CJS_SCALARS "totenergy" "-2.0772 0.0095") # total energy
+    LIST(APPEND H4_CJS_SCALARS "totenergy" "-2.0438 0.005") # total energy
 
     QMC_RUN_AND_CHECK(short-H4-CJS
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
-                      H4_cjs_opt.xml
-                      8 1
+                      H4_cjs_vmc.xml
+                      16 1
                       ${MP_SUCCESS}
-                      3 H4_CJS_SCALARS # Final VMC step
+                      0 H4_CJS_SCALARS
                       TRUE)
+
 
   ELSE()
    MESSAGE("Skipping H4_ae adaptive optimizer tests because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)")
