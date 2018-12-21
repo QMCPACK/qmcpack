@@ -107,7 +107,9 @@ bool AFQMCDriver::run(WalkerSet& wset)
 
   }
 
-  checkpoint(wset,iBlock,step_tot);
+  if(nCheckpoint > 0) {
+    checkpoint(wset,iBlock,step_tot);
+  }
 
   app_log()<<"----------------------------------------------------------------\n";
   app_log()<<" Timer: \n";
