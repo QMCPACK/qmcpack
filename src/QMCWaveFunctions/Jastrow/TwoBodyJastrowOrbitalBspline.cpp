@@ -245,8 +245,7 @@ TwoBodyJastrowOrbitalBspline<FT>::ratio
     }
     else
       two_body_ratio_grad (W.RList_GPU.data(), first, last,
-                           (CudaReal*)W.Rnew_GPU.data(), iat, kcurr*nw,
-                           (CTS::RealType*)W.Rnew_GPU.data(), iat,
+                           (CTS::RealType*)W.Rnew_GPU.data(), iat, kcurr*nw,
                            spline.coefs.data(), spline.coefs.size(),
                            spline.rMax, zero, SumGPU.data(),
                            nw);
