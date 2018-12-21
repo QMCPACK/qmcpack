@@ -21,16 +21,12 @@
 #include "AFQMC/config.h"
 #include "boost/variant.hpp"
 
-#include "AFQMC/Hamiltonians/SymmetricFactorizedSparseHamiltonian.h"
 #include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian.h"
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
-#include "AFQMC/Hamiltonians/SparseHamiltonian_s4D.h"
 #ifdef QMC_COMPLEX
 #include "AFQMC/Hamiltonians/KPFactorizedHamiltonian.h"
 #include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
 #endif
-//#include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian_old.h"
-//#include "AFQMC/Hamiltonians/SparseHamiltonian_s4D_old.h"
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 
 namespace qmcplusplus
@@ -67,12 +63,6 @@ class dummy_Hamiltonian
 
   boost::multi_array<ComplexType,2> getH1() const{ return boost::multi_array<ComplexType,2>{}; }
 
-  void createHamiltonianForGeneralDeterminant(int type, const ComplexMatrix& A,
-                    std::vector<s1D<ComplexType> >& hij, SPComplexSMSpMat& Vabkl,
-                    const RealType cut=1e-6) {
-    throw std::runtime_error("calling visitor on dummy object");
-  }
-
   boost::multi_array<SPComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta)
   {
     throw std::runtime_error("calling visitor on dummy object");
@@ -84,13 +74,6 @@ class dummy_Hamiltonian
     throw std::runtime_error("calling visitor on dummy object");
     using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
     return SpCType_shm_csr_matrix({0,0},{0,0},0,Alloc(TGWfn.Node()));
-  }
-
-  void calculateHSPotentials(RealType cut, const RealType dt, ComplexMatrix& vn0,
-        SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup_& TGprop,
-        std::vector<int>& nvec_per_node, bool sparse, bool paral)
-  {
-    throw std::runtime_error("calling visitor on dummy object");
   }
 
   SpVType_shm_csr_matrix calculateHSPotentials(double cut, TaskGroup_& TGprop,
@@ -115,9 +98,9 @@ class dummy_Hamiltonian
 }
 
 #ifdef QMC_COMPLEX
-class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSparseHamiltonian,SymmetricFactorizedSparseHamiltonian,SparseHamiltonian_s4D,THCHamiltonian,KPFactorizedHamiltonian,KPTHCHamiltonian>
+class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSparseHamiltonian,THCHamiltonian,KPFactorizedHamiltonian,KPTHCHamiltonian>
 #else
-class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSparseHamiltonian,SymmetricFactorizedSparseHamiltonian,SparseHamiltonian_s4D,THCHamiltonian>
+class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSparseHamiltonian,THCHamiltonian>
 #endif
 {
     using shm_csr_matrix = FactorizedSparseHamiltonian::shm_csr_matrix;
@@ -130,8 +113,6 @@ class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSpar
     }
     explicit Hamiltonian(THCHamiltonian&& other) : variant(std::move(other)) {}
     explicit Hamiltonian(FactorizedSparseHamiltonian&& other) : variant(std::move(other)) {}
-    explicit Hamiltonian(SymmetricFactorizedSparseHamiltonian&& other) : variant(std::move(other)) {}
-    explicit Hamiltonian(SparseHamiltonian_s4D&& other) : variant(std::move(other)) {}
 #ifdef QMC_COMPLEX
     explicit Hamiltonian(KPFactorizedHamiltonian&& other) : variant(std::move(other)) {}
     explicit Hamiltonian(KPTHCHamiltonian&& other) : variant(std::move(other)) {}
@@ -139,8 +120,6 @@ class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSpar
 
     explicit Hamiltonian(THCHamiltonian const& other) = delete;
     explicit Hamiltonian(FactorizedSparseHamiltonian const& other) = delete;
-    explicit Hamiltonian(SymmetricFactorizedSparseHamiltonian const& other) = delete;
-    explicit Hamiltonian(SparseHamiltonian_s4D const& other) = delete;
 #ifdef QMC_COMPLEX
     explicit Hamiltonian(KPFactorizedHamiltonian const& other) = delete;
     explicit Hamiltonian(KPTHCHamiltonian const& other) = delete;
@@ -188,52 +167,6 @@ class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSpar
         );
     }
 
-    // Everything below this point goes away when the code is complete.
-    // Right now it exists for testing mainly
-    /*
-    void createHamiltonianForGeneralDeterminant(int type, const ComplexMatrix& A,
-                    std::vector<s1D<ComplexType> >& hij, SPComplexSMSpMat& Vabkl,
-                    const RealType cut=1e-6) {
-        boost::apply_visitor(
-            [&](auto&& a){a.createHamiltonianForGeneralDeterminant(type,A,hij,Vabkl,cut);},
-            *this
-        );
-    }
-
-    boost::multi_array<SPComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta)
-    {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.halfRotatedHij(type,Alpha,Beta);},
-            *this
-        );
-    }
-
-    SpCType_shm_csr_matrix halfRotatedHijkl(WALKER_TYPES type, TaskGroup_& TGHam, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, const RealType cut=1e-6)
-    {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.halfRotatedHijkl(type,TGHam,Alpha,Beta,cut);},
-            *this
-        );
-    }
-
-    void calculateHSPotentials(RealType cut, const RealType dt, ComplexMatrix& vn0,
-        SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup_& TGprop,
-        std::vector<int>& nvec_per_node, bool sparse, bool paral) {
-        boost::apply_visitor(
-            [&](auto&& a){a.calculateHSPotentials(cut,dt,vn0,Spvn,Dvn,TGprop,
-                    nvec_per_node,sparse,paral);},
-            *this
-        );
-    }
-
-    SpVType_shm_csr_matrix calculateHSPotentials(double cut, TaskGroup_& TGprop,
-        boost::multi_array<ComplexType,2>& vn0) {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.calculateHSPotentials(cut,TGprop, vn0);},
-            *this
-        );
-    }
-    */
 };
 
 }

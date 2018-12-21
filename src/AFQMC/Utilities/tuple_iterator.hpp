@@ -7,7 +7,6 @@
 #include <algorithm> 
 #include<boost/iterator/iterator_facade.hpp>
 #include<boost/iterator/iterator_traits.hpp>
-//#include"AFQMC/Utilities/Utils.h"
 
 
 namespace qmcplusplus{

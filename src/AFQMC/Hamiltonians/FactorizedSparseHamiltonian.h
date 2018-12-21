@@ -16,7 +16,6 @@
 
 #include "AFQMC/Hamiltonians/OneBodyHamiltonian.hpp"
 
-#include "AFQMC/Hamiltonians/Hamiltonian_Utilities.hpp"
 #include "AFQMC/Matrix/matrix_emplace_wrapper.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
@@ -31,16 +30,13 @@ namespace afqmc
 class FactorizedSparseHamiltonian: public OneBodyHamiltonian
 {
 
-  typedef std::vector<s1D<ValueType> >::iterator  s1Dit;
-  typedef std::vector<s2D<ValueType> >::iterator  s2Dit;
-
   public:
 
   using shm_csr_matrix = SpVType_shm_csr_matrix;
   using csr_matrix_view = shm_csr_matrix::template matrix_view<int>;
 
 
-  FactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, std::vector<s2D<ValueType> >&& h,
+  FactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi_array<ComplexType,2>&& h,
                               shm_csr_matrix&& v2_, TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
                                     TG(tg_),V2_fact(std::move(v2_)),
@@ -131,8 +127,8 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
     K = (K>=NMO)?(K-NMO):(K);
     L = (L>=NMO)?(L-NMO):(L);
 
-    int ik = I*NMO+Index2Col(NMO,K);
-    int lj = L*NMO+Index2Col(NMO,J);
+    int ik = I*NMO+K;
+    int lj = L*NMO+J; 
     ValueType val = csr::csrvv<ValueType>('N','C',V2_fact.sparse_row(ik),V2_fact.sparse_row(lj));
     return (std::abs(val)>cutoff1bar)?(val):(0);
 
@@ -154,9 +150,6 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
 
   // factorized Ham : V2(ik,lj) = sum_n V2_fact(ik,n)*conj(V2_fact(lj,n))
   shm_csr_matrix V2_fact;
-
-  // store diagonal part of hamiltonian: Diag(i,k) = H(i,k,i,k);
-  ValueMatrix DiagHam;
 
   // options read from xml
   double cutoff1bar;

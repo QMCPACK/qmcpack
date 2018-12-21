@@ -92,7 +92,7 @@ void read_header(std::ifstream& in, std::string& type, int& wfn_type,  bool& ful
 void skip_determinant(std::ifstream& in, bool Cstyle, bool fullMOMat, int NMO, int NAEA)
 {
       int nread;
-      ComplexType dummy;
+      afqmc::ComplexType dummy;
       if(Cstyle) {
         nread = fullMOMat?NMO:NAEA;
         for(int i=0; i<NMO; i++)
@@ -124,7 +124,7 @@ template<class Mat>
 void read_mat(std::ifstream& in, Mat&& OrbMat, bool Cstyle, bool fullMOMat, int NMO, int NAEA)
 {
       int nread;
-      ComplexType dummy;
+      afqmc::ComplexType dummy;
       if(Cstyle) {
         nread = fullMOMat?NMO:NAEA;
         for(int i=0; i<NMO; i++)
@@ -544,190 +544,6 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
   }
   comm.barrier();
   return ph_struct;
-}
-
-
-// old routine
-bool readWfn( std::string fileName, ComplexMatrix& OrbMat, int NMO, int NAEA, int NAEB)
-{
-
-  std::ifstream in;
-  in.open(fileName.c_str());
-  if(in.fail()) {
-     app_error()<<"Problems opening ASCII integral file:  " <<fileName <<std::endl;
-     APP_ABORT("Problems opening ASCII file in readWfn.hpp.  \n");  
-  }
-
-  bool fullMOMat = false;
-  bool Cstyle = true;
-  int wfn_type;
-  int ndet;
-  std::string type;
-
-  read_header(in,type,wfn_type,fullMOMat,Cstyle,ndet);
-
-    int ncols = NAEA;
-    //int nrows = NMO;
-    if(wfn_type == 2)
-      ncols = NAEA+NAEB;
-
-    ComplexType dummy;
-    int nread;
-
-    if (wfn_type == 0 ) {
-
-      OrbMat.resize(2*NMO,ncols);
-      if(Cstyle) {
-        nread = fullMOMat?NMO:NAEA;
-        for(int i=0; i<NMO; i++)
-          for(int j=0; j<nread; j++) {
-            in>>dummy;
-            if(j<NAEA) OrbMat(i,j) = dummy;
-            if(j<NAEB) OrbMat(i+NMO,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in readWfn.hpp.  \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              APP_ABORT("Problems reading wfn in readWfn.hpp.\n"); 
-            }
-          }
-      } else {
-        nread = fullMOMat?NMO:NAEA;
-        for(int j=0; j<nread; j++)
-          for(int i=0; i<NMO; i++) {
-            in>>dummy;
-            if(j<NAEA) OrbMat(i,j) = dummy;
-            if(j<NAEB) OrbMat(i+NMO,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in readWfn.hpp. \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              APP_ABORT("Problems reading wfn in readWfn.hpp.\n");
-            }
-          }
-      }
-
-    } else if(wfn_type == 1) {
-
-      OrbMat.resize(2*NMO,ncols);
-      if(Cstyle) {
-        nread = fullMOMat?NMO:NAEA;
-        for(int i=0; i<NMO; i++)
-          for(int j=0; j<nread; j++) {
-            in>>dummy;
-            if(j<NAEA) OrbMat(i,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (alpha) \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              APP_ABORT("Problems reading ASCII file in PureSingleDeterminant. (alpha) \n");
-            }
-          }
-        nread = fullMOMat?NMO:NAEB;
-        for(int i=0; i<NMO; i++)
-          for(int j=0; j<nread; j++) {
-            in>>dummy;
-            if(j<NAEB) OrbMat(i+NMO,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (beta) \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              return false;
-            }
-          }
-      } else {
-        nread = fullMOMat?NMO:NAEA;
-        for(int j=0; j<nread; j++)
-          for(int i=0; i<NMO; i++) {
-            in>>dummy;
-            if(j<NAEA) OrbMat(i,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (alpha) \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              return false;
-            }
-          }
-        nread = fullMOMat?NMO:NAEB;
-        for(int j=0; j<nread; j++)
-          for(int i=0; i<NMO; i++) {
-            in>>dummy;
-            if(j<NAEB) OrbMat(i+NMO,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (beta) \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              return false;
-            }
-          }
-      }
-    } else if(wfn_type == 2) {
-
-      if(Cstyle) {
-
-       nread = fullMOMat?NMO:NAEA;
-       int nread2 = fullMOMat?NMO:NAEB;
-       for(int i=0; i<NMO; i++) {
-        for(int j=0; j<nread; j++) {
-          in>>dummy;
-          if(j<NAEA) OrbMat(i,j) = dummy;
-          if(in.fail()) {
-            app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
-            in.close();
-            return false;
-          }
-        }
-        for(int j=0; j<nread2; j++) {
-          in>>dummy;
-          if(j<NAEB) OrbMat(i,j+NAEA) = dummy;
-          if(in.fail()) {
-            app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
-            in.close();
-            return false;
-          }
-        }
-       }
-       for(int i=0; i<NMO; i++) {
-        for(int j=0; j<nread; j++) {
-          in>>dummy;
-          if(j<NAEA) OrbMat(i+NMO,j) = dummy;
-          if(in.fail()) {
-            app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
-            in.close();
-            return false;
-          }
-        }
-        for(int j=0; j<nread2; j++) {
-          in>>dummy;
-          if(j<NAEB) OrbMat(i+NMO,j+NAEA) = dummy;
-          if(in.fail()) {
-            app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
-            in.close();
-            return false;
-          }
-        }
-       }
-
-     } else {
-
-      nread = fullMOMat?2*NMO:NAEA+NAEB;
-      for(int j=0; j<nread; j++) {
-        for(int i=0; i<2*NMO; i++) {
-         in>>dummy;
-         if(j<NAEA+NAEB) OrbMat(i,j) = dummy;
-         if(in.fail()) {
-           app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
-           in.close();
-           return false;
-         }
-       }
-      }
-
-     } // Cstyle
-    }
-
-  in.close();
-
 }
 
 // modify for multideterminant case based on type
