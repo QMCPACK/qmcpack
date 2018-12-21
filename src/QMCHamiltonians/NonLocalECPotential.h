@@ -113,6 +113,8 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   ParticleSet& Peln;
   ///use T-moves
   int UseTMove;
+  ///ture if an electron is affected by other electrons moved by T-moves
+  std::vector<bool> elecTMAffected;
   ///non local operator
   NonLocalTOperator nonLocalOps;
   ///true if we should compute forces
@@ -139,6 +141,8 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
    * @param ref_elec reference electron id
    */
   void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
+
+  void markAffectedElecs(const ParticleSet& P, int iat);
 
 };
 }

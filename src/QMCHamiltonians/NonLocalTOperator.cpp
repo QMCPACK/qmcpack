@@ -88,7 +88,7 @@ void NonLocalTOperator::reserve(int n)
   Txy.push_back(NonLocalData());
 }
 
-int NonLocalTOperator::selectMove(RealType prob)
+const NonLocalData* NonLocalTOperator::selectMove(RealType prob)
 {
   RealType wgt_t=1.0;
   for(int i=1; i<Txy.size(); i++)
@@ -110,7 +110,7 @@ int NonLocalTOperator::selectMove(RealType prob)
     ibar++;
     wsum += Txy[ibar].Weight;
   }
-  return ibar;
+  return ibar > 0 ? &(Txy[ibar]) : nullptr;
 }
 
 int NonLocalTOperator::selectMove(RealType prob,

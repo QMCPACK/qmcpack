@@ -248,13 +248,13 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   RandomGenerator_t& RandomGen(*myRNG);
   if(UseTMove==TMOVE_V0)
   {
-    int ibar = nonLocalOps.selectMove(RandomGen());
+    const NonLocalData *oneTMove = nonLocalOps.selectMove(RandomGen());
     //make a non-local move
-    if(ibar)
+    if(oneTMove)
     {
-      int iat=nonLocalOps.id(ibar);
+      int iat = oneTMove->PID;
       P.setActive(iat);
-      if(P.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
+      if(P.makeMoveAndCheck(iat,oneTMove->Delta))
       {
         GradType grad_iat;
         Psi.ratioGrad(P,iat,grad_iat);
@@ -274,31 +274,7 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
       {
         nonLocalOps.reset();
         computeOneElectronTxy(P,iat);
-        int ibar = nonLocalOps.selectMove(RandomGen());
-        if(ibar)
-        {
-          P.setActive(iat);
-          if(P.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
-          {
-            Psi.ratioGrad(P,iat,grad_iat);
-            Psi.acceptMove(P,iat);
-            P.acceptMove(iat);
-            NonLocalMoveAccepted++;
-          }
-        }
-      }
-    }
-  }
-  else if(UseTMove==TMOVE_V3)
-  {
-    nonLocalOps.group_by_elec();
-    GradType grad_iat;
-    //make a non-local move per particle
-    for(int ig=0; ig<P.groups(); ++ig) //loop over species
-    {
-      for (int iat=P.first(ig); iat<P.last(ig); ++iat)
-      {
-        const NonLocalData *oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
+        const NonLocalData *oneTMove = nonLocalOps.selectMove(RandomGen());
         if(oneTMove)
         {
           P.setActive(iat);
@@ -313,11 +289,58 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
       }
     }
   }
+  else if(UseTMove==TMOVE_V3)
+  {
+    elecTMAffected.resize(P.getTotalNum(),false),
+    nonLocalOps.group_by_elec();
+    GradType grad_iat;
+    //make a non-local move per particle
+    for(int ig=0; ig<P.groups(); ++ig) //loop over species
+    {
+      for (int iat=P.first(ig); iat<P.last(ig); ++iat)
+      {
+        const NonLocalData *oneTMove;
+        if(elecTMAffected[iat])
+        {
+          nonLocalOps.reset();
+          computeOneElectronTxy(P,iat);
+          oneTMove = nonLocalOps.selectMove(RandomGen());
+        }
+        else
+          oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
+        if(oneTMove)
+        {
+          P.setActive(iat);
+          if(P.makeMoveAndCheck(iat,oneTMove->Delta))
+          {
+            Psi.ratioGrad(P,iat,grad_iat);
+            Psi.acceptMove(P,iat);
+            P.acceptMove(iat);
+            NonLocalMoveAccepted++;
+            elecTMAffected[iat] = true;
+            // mark other affected elcctrons
+          }
+        }
+      }
+    }
+  }
 
   if(NonLocalMoveAccepted>0)
     Psi.completeUpdates();
 
   return NonLocalMoveAccepted;
+}
+
+void
+NonLocalECPotential::markAffectedElecs(const ParticleSet& P, int iel)
+{
+  const auto myTable = P.DistTables[myTableIndex];
+  if(myTable->DTType == DT_SOA)
+  {
+  }
+  else
+  {
+  }
 }
 
 void

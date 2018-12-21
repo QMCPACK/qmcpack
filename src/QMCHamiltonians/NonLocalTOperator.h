@@ -58,16 +58,6 @@ struct NonLocalTOperator
     return Txy.size();
   }
 
-  inline int id(int ibar) const
-  {
-    return Txy[ibar].PID;
-  }
-
-  inline PosType delta(int ibar) const
-  {
-    return Txy[ibar].Delta;
-  }
-
   /** initialize the parameters */
   int put(xmlNodePtr cur);
 
@@ -84,7 +74,13 @@ struct NonLocalTOperator
    * @param prob value [0,1)
    * @return the move index k for \f$\sum_i^K T/\sum_i^N < prob\f$
    */
-  int selectMove(RealType prob);
+  const NonLocalData* selectMove(RealType prob);
+
+  /** select the move for a given probability
+   * @param prob value [0,1)
+   * @param txy a given Txy collection
+   * @return the move index k for \f$\sum_i^K T/\sum_i^N < prob\f$
+   */
   int selectMove(RealType prob, std::vector<NonLocalData> &txy);
 
   /** sort all the Txy elements by electron */
