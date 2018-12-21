@@ -13,19 +13,11 @@ SET (AFQMC_SRCS
   Propagators/AFQMCSharedPropagator.cpp
   Propagators/PropagatorFactory.cpp
   Wavefunctions/WavefunctionFactory.cpp
-  Numerics/SparseMatrixOperations.cpp
-  Numerics/DenseMatrixOperations.cpp
-  Utilities/Utils.cpp
   Utilities/readWfn.cpp
-#  Hamiltonians/FactorizedSparseHamiltonian_old.cpp
-#  Hamiltonians/SparseHamiltonian_s4D_old.cpp
   Hamiltonians/HSPotential_Helpers.cpp
   Hamiltonians/FactorizedSparseHamiltonian.cpp
   Hamiltonians/KPFactorizedHamiltonian.cpp
   Hamiltonians/KPTHCHamiltonian.cpp
-  Hamiltonians/SymmetricFactorizedSparseHamiltonian.cpp
-  Hamiltonians/SparseHamiltonian_s4D.cpp
-#  Hamiltonians/rotateHamiltonian.cpp
   Hamiltonians/HamiltonianFactory_Helper.cpp
   Hamiltonians/HamiltonianFactory.cpp
   Hamiltonians/THCHamiltonian.cpp

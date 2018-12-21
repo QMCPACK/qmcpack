@@ -32,17 +32,6 @@ void generateHSPotential(SpVType_shm_csr_matrix& vn, std::vector<int> const& map
 
 }
 
-namespace HamHelperSymmetric
-{
-
-std::vector<std::size_t> count_nnz_per_cholvec(double cut, TaskGroup_& TG, SpVType_shm_csr_matrix& V2, int NMO);
-
-std::vector<std::size_t> count_nnz_per_ik(double cut, TaskGroup_& TG, SpVType_shm_csr_matrix& V2, int NMO, int cv0, int cvN);
-
-void generateHSPotential(SpVType_shm_csr_matrix& vn, double cut, TaskGroup_& TG, SpVType_shm_csr_matrix& V2, int NMO, int cv0, int cvN);
-
-}
-
 }
 }
 #endif

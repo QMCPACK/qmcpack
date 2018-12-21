@@ -14,6 +14,8 @@
 
 namespace qmcplusplus
 {
+namespace afqmc
+{
 
   inline bool readHeader( std::ifstream& in,
      int& NMAX, int& NMO, int& NETOT, int& NAEA, int& NAEB, int& NCA, int& NCB, int& MS2, bool& spinRestricted, int& ISYM, std::vector<IndexType>& occup_alpha, std::vector<IndexType>& occup_beta, std::vector<IndexType>& orbSymm, std::vector<IndexType>& occupPerSymm_alpha, std::vector<IndexType>& occupPerSymm_beta, bool& orderStates, bool factorizedHam)
@@ -246,6 +248,7 @@ namespace qmcplusplus
   return true;
 }
  
+}
 }
 
 #endif

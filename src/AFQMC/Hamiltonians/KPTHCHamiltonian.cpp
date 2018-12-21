@@ -158,7 +158,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
       APP_ABORT("");
     }
     E0 = E_[0]+E_[1];
-    E0 = nkpts*(E0-1.34789140434);
+    E0 = RealType(nkpts)*(E0-1.34789140434);
     if(nmo_per_kp.size() != nkpts ||
        nchol_per_kp.size() != nkpts ||
        kminus.size() != nkpts ||
@@ -515,7 +515,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
       for(int j=0; j<nmo_per_kp[K]; j++)
         E_ += H1[K][i][j]*G_[i][j];
   }
-  app_log()<<" E1+E0: " <<std::setprecision(12) <<E0+2*E_ <<"  ";
+  app_log()<<" E1+E0: " <<std::setprecision(12) <<E0+2.0*E_ <<"  ";
   E_=0.0;
   for(int K=0; K<nkpts; K++) {
     auto&& G_=Gc[K];

@@ -288,12 +288,12 @@ class SlaterDetOperations
           IWORK[i]=-1; 
         else 
           IWORK[i]=1; 
-        detR *= IWORK[i]*A[i][i];
+        detR *= T(IWORK[i])*A[i][i];
       }
       ma::glq(std::forward<Mat>(A),TAU,WORK);
       for(int i=0; i<A.shape()[0]; ++i)
         for(int j=0; j<A.shape()[1]; ++j)
-          A[i][j] *= IWORK[j];
+          A[i][j] *= T(IWORK[j]);
       return detR;
     }
 

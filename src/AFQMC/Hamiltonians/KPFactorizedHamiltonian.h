@@ -15,7 +15,6 @@
 
 #include "AFQMC/Hamiltonians/OneBodyHamiltonian.hpp"
 
-#include "AFQMC/Hamiltonians/Hamiltonian_Utilities.hpp"
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 
 namespace qmcplusplus
@@ -33,7 +32,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
   using CMatrix = boost::multi::array<ComplexType,2>;
 
   KPFactorizedHamiltonian(AFQMCInfo const& info, xmlNodePtr cur,
-                          std::vector<s2D<ValueType> >&& h,
+                          boost::multi_array<ComplexType,2>&& h,
                           TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
                                     TG(tg_),fileName("")

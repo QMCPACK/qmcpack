@@ -106,20 +106,13 @@ class HamiltonianFactory
            <<"****************************************************\n"
            <<std::endl;
 
-    if(type == "fcidump" || type == "ascii")
-      return fromASCII(gTG,cur);
-    else if(type == "hdf5")
-//      if(version=="old")
-//        return fromHDF5_old(gTG,cur);
-//      else
-        return fromHDF5(gTG,cur);
+    if(type == "hdf5")
+      return fromHDF5(gTG,cur);
     else {
       app_error()<<"Unknown Hamiltonian filetype in HamiltonianFactory::buildHamiltonian(): " <<type <<std::endl;
       APP_ABORT(" Error: Unknown Hamiltonian filetype in HamiltonianFactory::buildHamiltonian(). \n");
     }
   }
-
-  Hamiltonian fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur);
 
   Hamiltonian fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur);
 
@@ -144,6 +137,15 @@ class HamiltonianFactory
   std::map<std::string,xmlNodePtr> xmlBlocks;
 
   std::map<std::string,Hamiltonian> hamiltonians;
+
+  inline HamiltonianTypes peekHamType(hdf_archive& dump) {
+    if(dump.is_group( std::string("/Hamiltonian/KPTHC") )) return KPTHC;
+    if(dump.is_group( std::string("/Hamiltonian/THC") )) return THC;
+    if(dump.is_group( std::string("/Hamiltonian/KPFactorized") )) return KPFactorized;
+    if(dump.is_group( std::string("/Hamiltonian/Factorized") )) return Factorized;
+    APP_ABORT("  Error: Invalid hdf file format in peekHamType(hdf_archive). \n");
+    return UNKNOWN;
+  }
 
 };
 }
