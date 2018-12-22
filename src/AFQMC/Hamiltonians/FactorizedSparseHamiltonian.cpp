@@ -30,7 +30,7 @@ namespace afqmc
 {
 
 SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double cut,
-        TaskGroup_& TGprop, boost::multi_array<ComplexType,2>& vn0) {
+        TaskGroup_& TGprop, boost::multi::array<ComplexType,2>& vn0) {
 
   using Alloc = boost::mpi3::intranode::allocator<SPValueType>;
   if(TG.getNumberOfTGs() > 1)
@@ -200,7 +200,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
 
     Timer.reset("Generic");
     Timer.start("Generic");
-    boost::multi_array<ComplexType,2> vn0(extents[NMO][NMO]);
+    boost::multi::array<ComplexType,2> vn0(extents[NMO][NMO]);
     auto Spvn(std::move(calculateHSPotentials(cutvn,TGprop,vn0)));
     auto Spvnview(csr::shm::local_balanced_partition(Spvn,TGprop));
     Timer.stop("Generic");
@@ -225,7 +225,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
 
       Timer.reset("Generic");
       Timer.start("Generic");
-      std::vector<boost::multi_array<SPComplexType,1>> hij;
+      std::vector<boost::multi::array<SPComplexType,1>> hij;
       hij.reserve(ndet);
       hij.emplace_back(halfRotatedHij(type,&PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0]))));
       std::vector<SpCType_shm_csr_matrix> SpvnT;
@@ -307,7 +307,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
 
       Timer.reset("Generic");
       Timer.start("Generic");
-      std::vector<boost::multi_array<SPComplexType,1>> hij;
+      std::vector<boost::multi::array<SPComplexType,1>> hij;
       hij.reserve(ndet);
       int skp=((type==COLLINEAR)?1:0);
       for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1))
@@ -358,7 +358,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       assert(type==CLOSED);
       Timer.reset("Generic");
       Timer.start("Generic");
-      std::vector<boost::multi_array<SPComplexType,1>> hij;
+      std::vector<boost::multi::array<SPComplexType,1>> hij;
       hij.reserve(ndet);
       for(int n=0, nd=0; n<ndet; ++n, nd++)
          hij.emplace_back(halfRotatedHij(type,&PsiT[nd],&PsiT[nd]));

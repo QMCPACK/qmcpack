@@ -137,7 +137,7 @@ void AFQMCSharedPropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqr
   ComplexType im(0.0,1.0);
   ComplexType halfim(0.0,0.5);
   int nCV = int(X.shape()[0]);
-  boost::multi_array_ref<ComplexType,3> X3D(X.origin(),extents[X.shape()[0]][nsteps][nwalk]);
+  boost::multi::array_ref<ComplexType,3> X3D(X.origin(),extents[X.shape()[0]][nsteps][nwalk]);
   // generate random numbers
   if(addRAND)
   {

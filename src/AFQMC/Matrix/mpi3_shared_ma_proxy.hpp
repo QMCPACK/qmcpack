@@ -34,7 +34,7 @@ class mpi3_shared_ma_proxy
   public:
 
     using value_type = T;
-    using ma_type = boost::multi_array_ref<T,2>;
+    using ma_type = boost::multi::array_ref<T,2>;
 
     mpi3_shared_ma_proxy(communicator& comm_,
                          std::array<size_type, 2> s_, 
@@ -77,8 +77,8 @@ class mpi3_shared_ma_proxy
     std::array<size_type, 2> offset() const{return offset_;} 
     std::array<size_type, 2> global_shape() const{return global_shape_;} 
 
-    boost::multi_array_ref<T,2> get() { 
-        return boost::multi_array_ref<T,2>(ptr->data(),extents[shape_[0]][shape_[1]]); 
+    boost::multi::array_ref<T,2> get() { 
+        return boost::multi::array_ref<T,2>(ptr->data(),extents[shape_[0]][shape_[1]]); 
     }
 
   private:

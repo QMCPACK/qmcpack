@@ -81,7 +81,7 @@ inline void calculate_overlaps(int rank, int ngrp, int spin, PH_EXCT const& abij
                                );
         }   
     } else {
-      boost::multi_array_ref<ComplexType,2> Qwork_(Qwork.origin(),extents[nex][nex]);
+      boost::multi::array_ref<ComplexType,2> Qwork_(Qwork.origin(),extents[nex][nex]);
       for(auto it = abij.unique_begin(nex)[spin]; it<abij.unique_end(nex)[spin]; ++it, ++nd) 
         if(nd%ngrp==rank) {
           auto exct = *it;
@@ -134,7 +134,7 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
       R[i][refc[i]] += w;
   }
   for(int nex = 1, nd=1 ; nex<abij.maximum_excitation_number()[spin]; nex++) {
-    boost::multi_array_ref<ComplexType,2> Q(Qwork.origin(),extents[nex][nex]);
+    boost::multi::array_ref<ComplexType,2> Q(Qwork.origin(),extents[nex][nex]);
     for(auto it = abij.unique_begin(nex)[spin]; it<abij.unique_end(nex)[spin]; ++it, ++nd) { 
       if(nd%ngrp==rank) {
         auto e = *it;
@@ -228,7 +228,7 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
       R[i][refc[i]] += w;
   }
   for(int nex = 1, nd=1 ; nex<abij.maximum_excitation_number()[spin]; nex++) {
-    boost::multi_array_ref<ComplexType,2> Q(Qwork.origin(),extents[nex][nex]);
+    boost::multi::array_ref<ComplexType,2> Q(Qwork.origin(),extents[nex][nex]);
     for(auto it = abij.unique_begin(nex)[spin]; it<abij.unique_end(nex)[spin]; ++it, ++nd) {
       if(nd%ngrp==rank) {
         auto e = *it;

@@ -48,8 +48,8 @@ class SharedWalkerSet: public AFQMCInfo
 
 //#define MA_TEST
 
-  using Wlk_Buff = boost::multi_array_ref<ComplexType,2>; 
-  using const_Wlk_Buff = boost::const_multi_array_ref<ComplexType,2>; 
+  using Wlk_Buff = boost::multi::array_ref<ComplexType,2>; 
+  using const_Wlk_Buff = boost::const_multi::array_ref<ComplexType,2>; 
 
   // wlk_descriptor: {nmo, naea, naeb, nback_prop} 
   using wlk_descriptor = std::array<int,4>;
@@ -64,8 +64,8 @@ class SharedWalkerSet: public AFQMCInfo
   static const bool contiguous_storage = true;
   static const bool fixed_population = true;
 
-  using SMType = boost::multi_array_ref<ComplexType,2>;
-  using const_SMType = boost::multi_array_ref<const ComplexType,2>;
+  using SMType = boost::multi::array_ref<ComplexType,2>;
+  using const_SMType = boost::multi::array_ref<const ComplexType,2>;
 
   struct const_walker {
 
@@ -73,7 +73,7 @@ class SharedWalkerSet: public AFQMCInfo
     
       template<class ma>
       const_walker(ma const& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::const_multi_array_ref<ComplexType,1>(a.origin(),extents[a.size()])),indx(i_),desc(d_) 
+        w_(boost::const_multi::array_ref<ComplexType,1>(a.origin(),extents[a.size()])),indx(i_),desc(d_) 
       {
 	static_assert(ma::dimensionality == 1);
 	assert(w_.strides()[0]==1);
@@ -168,7 +168,7 @@ class SharedWalkerSet: public AFQMCInfo
 
       int getHead() const { return static_cast<int>(w_[indx[HEAD]].real()); }
 
-      boost::const_multi_array_ref<ComplexType,1> w_;
+      boost::const_multi::array_ref<ComplexType,1> w_;
       const wlk_indices& indx;
       const wlk_descriptor& desc;	 
   };
@@ -179,7 +179,7 @@ class SharedWalkerSet: public AFQMCInfo
     
       template<class ma>
       walker(ma&& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi_array_ref<ComplexType,1>(a.origin(),extents[a.size()])),indx(i_),desc(d_) 
+        w_(boost::multi::array_ref<ComplexType,1>(a.origin(),extents[a.size()])),indx(i_),desc(d_) 
       {
 	static_assert(ma::dimensionality == 1);
 	assert(w_.strides()[0]==1);
@@ -298,7 +298,7 @@ class SharedWalkerSet: public AFQMCInfo
 
       int getHead() const { return static_cast<int>(w_[indx[HEAD]].real()); }
 
-      boost::multi_array_ref<ComplexType,1> w_;
+      boost::multi::array_ref<ComplexType,1> w_;
       const wlk_indices& indx;
       const wlk_descriptor& desc;	 
       //wlk_indices indx;

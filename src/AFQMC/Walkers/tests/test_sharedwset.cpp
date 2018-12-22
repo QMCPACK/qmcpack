@@ -36,7 +36,7 @@
 #include "mpi3/shared_communicator.hpp"
 //#include "mpi3/environment.hpp"
 
-#include "boost/multi_array.hpp"
+#include "boost/multi::array.hpp"
 //#include "AFQMC/Walkers WalkerSetFactory.hpp"
 #include "AFQMC/Walkers/SharedWalkerSet.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
@@ -48,7 +48,7 @@ using std::endl;
 
 using boost::extents;
 using boost::indices;
-using range_t = boost::multi_array_types::index_range;
+using range_t = boost::multi::array_types::index_range;
 
 namespace qmcplusplus
 {
@@ -104,8 +104,8 @@ void test_basic_walker_features(bool serial)
   info.NAEA = NAEA;
   info.NAEB = NAEB;
   info.name = "walker";
-  boost::multi_array<Type,2> initA(extents[NMO][NAEA]);
-  boost::multi_array<Type,2> initB(extents[NMO][NAEB]);
+  boost::multi::array<Type,2> initA(extents[NMO][NAEA]);
+  boost::multi::array<Type,2> initB(extents[NMO][NAEB]);
   for(int i=0; i<NAEA; i++) initA[i][i] = Type(1.0);
   for(int i=0; i<NAEB; i++) initB[i][i] = Type(1.0);
   //SimpleRandom<MTRand> rng;
@@ -223,7 +223,7 @@ void test_hyperslab()
   auto world = boost::mpi3::environment::get_world_instance();
 
   using Type = std::complex<double>;
-  using Matrix = boost::multi_array<Type,2>;
+  using Matrix = boost::multi::array<Type,2>;
 
   int rank = world.rank();
 
@@ -285,7 +285,7 @@ void test_double_hyperslab()
   auto world = boost::mpi3::environment::get_world_instance();
 
   using Type = std::complex<double>;
-  using Matrix = boost::multi_array<Type,2>;
+  using Matrix = boost::multi::array<Type,2>;
 
   int rank = world.rank();
 
@@ -378,8 +378,8 @@ void test_walker_io()
   info.NAEA = NAEA;
   info.NAEB = NAEB;
   info.name = "walker";
-  boost::multi_array<Type,2> initA(extents[NMO][NAEA]);
-  boost::multi_array<Type,2> initB(extents[NMO][NAEB]);
+  boost::multi::array<Type,2> initA(extents[NMO][NAEA]);
+  boost::multi::array<Type,2> initB(extents[NMO][NAEB]);
   for(int i=0; i<NAEA; i++) initA[i][i] = Type(1.0);
   for(int i=0; i<NAEB; i++) initB[i][i] = Type(1.0);
   //SimpleRandom<MTRand> rng;

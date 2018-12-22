@@ -62,8 +62,8 @@ namespace afqmc
 class PHMSD: public AFQMCInfo
 {
 
-  using CVector = boost::multi_array<ComplexType,1>;  
-  using CMatrix = boost::multi_array<ComplexType,2>;  
+  using CVector = boost::multi::array<ComplexType,1>;  
+  using CMatrix = boost::multi::array<ComplexType,2>;  
   using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
   using shared_mutex = boost::mpi3::shm::mutex;  
   using shared_CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
@@ -437,15 +437,15 @@ class PHMSD: public AFQMCInfo
     shared_CMatrix QQ0inv1;  // Q * inv(Q0) 
     shared_CMatrix GA2D0_shm;  
     shared_CMatrix GB2D0_shm; 
-    boost::multi_array<ComplexType,2> local_ov;
-    boost::multi_array<ComplexType,2> local_etot;
+    boost::multi::array<ComplexType,2> local_ov;
+    boost::multi::array<ComplexType,2> local_etot;
     boost::multi::array<ComplexType,2> local_QQ0inv0;
     boost::multi::array<ComplexType,2> local_QQ0inv1;
-    boost::multi_array<ComplexType,2> Qwork;     
-    boost::multi_array<ComplexType,2> Gwork; 
+    boost::multi::array<ComplexType,2> Qwork;     
+    boost::multi::array<ComplexType,2> Gwork; 
     // used by Energy_shared 
-    boost::multi_array<ComplexType,1> wgt; 
-    boost::multi_array<ComplexType,1> opSpinEJ; 
+    boost::multi::array<ComplexType,1> wgt; 
+    boost::multi::array<ComplexType,1> opSpinEJ; 
     shared_C3Tensor Ovmsd;   // [nspins][maxn_unique_confg][nwalk]
     shared_C4Tensor Emsd;    // [nspins][maxn_unique_confg][nwalk][3]
     shared_C3Tensor QQ0A;    // [nwalk][NAOA][NAEA]
@@ -462,7 +462,7 @@ class PHMSD: public AFQMCInfo
     // excited states
     bool excitedState;
     std::vector<std::pair<int,int>> excitations;
-    boost::multi_array<ComplexType,3> excitedOrbMat; 
+    boost::multi::array<ComplexType,3> excitedOrbMat; 
     CMatrix extendedMatAlpha;
     CMatrix extendedMatBeta;
     std::pair<int,int> maxOccupExtendedMat;

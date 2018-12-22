@@ -61,12 +61,12 @@ class dummy_Hamiltonian
     return 0;
   }
 
-  boost::multi_array<ComplexType,2> getH1() const{ return boost::multi_array<ComplexType,2>{}; }
+  boost::multi::array<ComplexType,2> getH1() const{ return boost::multi::array<ComplexType,2>{}; }
 
-  boost::multi_array<SPComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta)
+  boost::multi::array<SPComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta)
   {
     throw std::runtime_error("calling visitor on dummy object");
-    return boost::multi_array<ComplexType,1>(extents[1]);
+    return boost::multi::array<ComplexType,1>(extents[1]);
   }
 
   SpCType_shm_csr_matrix halfRotatedHijkl(WALKER_TYPES type, TaskGroup_& TGWfn, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, const RealType cut=1e-6)
@@ -77,7 +77,7 @@ class dummy_Hamiltonian
   }
 
   SpVType_shm_csr_matrix calculateHSPotentials(double cut, TaskGroup_& TGprop,
-        boost::multi_array<ComplexType,2>& vn0)
+        boost::multi::array<ComplexType,2>& vn0)
   {
     throw std::runtime_error("calling visitor on dummy object");
     using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
@@ -138,7 +138,7 @@ class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSpar
         );
     }
 
-    boost::multi_array<ComplexType,2> getH1() const{
+    boost::multi::array<ComplexType,2> getH1() const{
         return boost::apply_visitor(
             [&](auto&& a){return a.getH1();},
             *this

@@ -130,8 +130,8 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   }
 
   // read 1-body hamiltonian and exchange potential (v0)
-  boost::multi_array<ComplexType,2> H1(extents[NMO][NMO]);
-  boost::multi_array<ComplexType,2> v0(extents[NMO][NMO]);
+  boost::multi::array<ComplexType,2> H1({NMO,NMO});
+  boost::multi::array<ComplexType,2> v0({NMO,NMO});
   if(TGwfn.Global().root()) {
     if(!dump.read(H1,"H1")) {
       app_error()<<" Error in loadTHCOps: Problems reading dataset. \n";
@@ -211,19 +211,21 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
     // simple
     using ma::H;
     if(type==COLLINEAR) {
-      boost::multi_array<ComplexType,2> A(extents[NMO][NAEA]);
-      boost::multi_array<ComplexType,2> B(extents[NMO][NAEB]);
+      boost::multi::array<ComplexType,2> A({NMO,NAEA});
+      boost::multi::array<ComplexType,2> B({NMO,NAEB});
       for(int i=0; i<ndet; i++) {
         // cPua = H(Piu) * conj(A)
         csr::CSR2MA('T',PsiT[2*i],A);
-        ma::product(H(Piu.get()),A,cPua[i].get()[indices[range_t()][range_t(0,NAEA)]]);
-        ma::product(H(rotPiu.get()),A,rotcPua[i].get()[indices[range_t()][range_t(0,NAEA)]]);
+        auto&& cPua_i(cPua[i].get());
+        auto&& rotcPua_i(rotcPua[i].get());
+        ma::product(H(Piu.get()),A,cPua_i(cPua_i.extensions(0),{0,NAEA}));
+        ma::product(H(rotPiu.get()),A,rotcPua_i(cPua_i.extensions(0),{0,NAEA}));
         csr::CSR2MA('T',PsiT[2*i+1],B);
-        ma::product(H(Piu.get()),B,cPua[i].get()[indices[range_t()][range_t(NAEA,NAEA+NAEB)]]);
-        ma::product(H(rotPiu.get()),B,rotcPua[i].get()[indices[range_t()][range_t(NAEA,NAEA+NAEB)]]);
+        ma::product(H(Piu.get()),B,cPua_i(cPua_i.extensions(0),{NAEA,NAEA+NAEB}));
+        ma::product(H(rotPiu.get()),B,rotcPua_i(cPua_i.extensions(0),{NAEA,NAEA+NAEB}));
       }
     } else {
-      boost::multi_array<ComplexType,2> A(extents[PsiT[0].shape()[1]][PsiT[0].shape()[0]]);
+      boost::multi::array<ComplexType,2> A({PsiT[0].shape()[1],PsiT[0].shape()[0]});
       for(int i=0; i<ndet; i++) {
         csr::CSR2MA('T',PsiT[i],A);
         // cPua = H(Piu) * conj(A)
@@ -235,7 +237,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   TGwfn.node_barrier();
 
   // rotated 1 body hamiltonians
-  std::vector<boost::multi_array<SpT,1>> hij;
+  std::vector<boost::multi::array<SpT,1>> hij;
   hij.reserve(ndet);
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
@@ -254,12 +256,12 @@ template<class shm_Vmatrix,
          class shm_Cmatrix>
 inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, int ndet,
                               TaskGroup_& TGprop, TaskGroup_& TGwfn,
-                              boost::multi_array<ComplexType,2> & H1,
+                              boost::multi::array<ComplexType,2> & H1,
                               shm_Cmatrix & rotPiu,
                               shm_Cmatrix & rotMuv,
                               shm_Vmatrix & Piu,
                               shm_Vmatrix & Luv,
-                              boost::multi_array<ComplexType,2> & v0,
+                              boost::multi::array<ComplexType,2> & v0,
                               ValueType E0)
 {
 

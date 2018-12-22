@@ -11,7 +11,7 @@
 #include "Utilities/SimpleParser.h"
 
 #include "AFQMC/config.h"
-#include "boost/multi_array.hpp"
+#include "boost/multi::array.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Wavefunctions/Excitations.hpp"
@@ -41,7 +41,7 @@ WALKER_TYPES getWalkerType(std::string filename);
 std::string getWfnType(std::ifstream& in);
 
 // modify for multideterminant case based on type
-int readWfn( std::string fileName, boost::multi_array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det = 0);
+int readWfn( std::string fileName, boost::multi::array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det = 0);
 
 }
 

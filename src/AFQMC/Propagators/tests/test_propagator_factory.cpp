@@ -34,7 +34,7 @@
 
 #include "AFQMC/Utilities/test_utils.hpp"
 #include "AFQMC/Utilities/myTimer.h"
-#include "boost/multi_array.hpp"
+#include "boost/multi::array.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
@@ -57,7 +57,7 @@ using std::setprecision;
 
 using boost::extents;
 using boost::indices;
-using range_t = boost::multi_array_types::index_range;
+using range_t = boost::multi::array_types::index_range;
 
 namespace qmcplusplus
 {

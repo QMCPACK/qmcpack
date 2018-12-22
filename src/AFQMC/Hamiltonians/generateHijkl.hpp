@@ -80,7 +80,7 @@ namespace HamHelper
     OrbitalType i,j,k,l,j1,k1,l1,j2,k2,l2;
     ValueType J1,J2,J3,J1a=zero,J2a=zero,J3a=zero,fct;
 
-    boost::multi_array<ValueType,2> DiagHam(extents[NMO][NMO]);
+    boost::multi::array<ValueType,2> DiagHam(extents[NMO][NMO]);
     for(IndexType i=0; i<NMO; i++)
     for(IndexType k=i; k<NMO; k++, cnter++) {
       if( cnter%npr != rk ) continue;

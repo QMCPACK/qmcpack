@@ -19,7 +19,7 @@
 #define MA_LAPACK_HPP
 
 #include "AFQMC/Utilities/type_conversion.hpp"
-#include "boost/multi_array.hpp"
+#include "boost/multi::array.hpp"
 #include "Numerics/OhmmsBlas.h"
 #include<cassert>
 
@@ -296,7 +296,7 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
 
 #ifdef _TEST_MA_LAPACK
 
-#include<boost/multi_array.hpp>
+#include<boost/multi::array.hpp>
 #include<iostream>
 
 using std::cout;
@@ -307,7 +307,7 @@ int main(){
 			1.,2.,
 			3.,4.,
 		};
-		boost::multi_array_ref<double, 2> A(a.data(), boost::extents[2][2]);
+		boost::multi::array_ref<double, 2> A(a.data(), boost::extents[2][2]);
 		std::vector<int> p(std::min(A.shape()[0], A.shape()[1]));
 		ma::getrf(A, p);
 		for(int i = 0; i != A.shape()[0]; ++i, std::cout << '\n')

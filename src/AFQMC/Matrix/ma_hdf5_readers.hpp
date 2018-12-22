@@ -74,7 +74,7 @@ inline void write_distributed_MA(MultiArray & A, std::array<size_t,2> offset, st
 
       std::vector<size_t>::iterator it = ndim.begin()+4;
       for(size_t i=1; i<nnodes_per_TG; i++, it+=4) {
-        using Mat = boost::multi_array<value_type,2>;
+        using Mat = boost::multi::array<value_type,2>;
         Mat T(extents[*(it+2)][*(it+3)]);
         TG.Cores().receive_n(T.origin(),T.num_elements(),i,i);
         hyperslab_proxy<Mat,2> slab(T,

@@ -86,7 +86,7 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
   CMatrix_ref vHS(shmbuff->data()+displ, extents[vhs_nr][vhs_nc]); 
   // second view of vHS matrix for use in propagation step
   // Actual dimensions depend on transposed_vHS_, see above
-  boost::multi_array_ref<ComplexType,3> vHS3D(shmbuff->data()+displ, 
+  boost::multi::array_ref<ComplexType,3> vHS3D(shmbuff->data()+displ, 
                                               extents[vhs3d_n1][vhs3d_n2][vhs3d_n3]); 
 
   // local matrices for temporary accumulation
@@ -197,7 +197,7 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
 template<class WSet>
 void AFQMCSharedPropagator::apply_propagators(WSet& wset, int ni, int tk0, int tkN, 
                                               int ntasks_total_serial,
-                                              boost::multi_array_ref<ComplexType,3>& vHS3D)
+                                              boost::multi::array_ref<ComplexType,3>& vHS3D)
 {  
   int nwalk = wset.size();
   auto walker_type = wset.getWalkerType();
@@ -278,7 +278,7 @@ void AFQMCSharedPropagator::apply_propagators(WSet& wset, int ni, int tk0, int t
 template<class WSet>
 void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, int ni, int tk0, int tkN,
                                                                    int ntasks_total_serial,
-                                                                   boost::multi_array_ref<ComplexType,3>& vHS3D)
+                                                                   boost::multi::array_ref<ComplexType,3>& vHS3D)
 {
   int nwalk = wset.size();
   auto walker_type = wset.getWalkerType();

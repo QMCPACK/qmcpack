@@ -19,7 +19,7 @@
 #include <vector>
 #include<iostream>
 
-#include<boost/multi_array.hpp>
+#include<boost/multi::array.hpp>
 #include "mpi3/communicator.hpp"
 
 #include "AFQMC/config.h"
@@ -33,9 +33,9 @@ using std::endl;
 using std::vector;
 using boost::extents;
 using boost::indices;
-using range_t = boost::multi_array_types::index_range;
-using boost::multi_array;
-using boost::multi_array_ref;
+using range_t = boost::multi::array_types::index_range;
+using boost::multi::array;
+using boost::multi::array_ref;
 
 using namespace qmcplusplus;
 using namespace afqmc;
@@ -46,7 +46,7 @@ void timing_shm_blas(int c)
   using communicator = boost::mpi3::communicator;
   using shm_Alloc = boost::mpi3::intranode::allocator<Type>;
   using SHM_Buffer = mpi3_SHMBuffer<Type>;
-  using Matrix = boost::multi_array_ref<Type,2>;
+  using Matrix = boost::multi::array_ref<Type,2>;
 
   myTimer Timer;
   int n0=64, npower=6, nmax = n0*std::pow(2,npower-1);

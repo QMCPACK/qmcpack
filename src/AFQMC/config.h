@@ -18,7 +18,6 @@
 
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/coo_matrix.hpp"
-#include<boost/multi_array.hpp>
 
 #include "mpi3/shared_window.hpp"
 #include "multi/array.hpp"
@@ -49,11 +48,6 @@ namespace afqmc
 {
 
   enum WALKER_TYPES {UNDEFINED_WALKER_TYPE, CLOSED, COLLINEAR, NONCOLLINEAR};
-
-  //using boost::multi_array_types::index_gen;
-  using boost::extents;
-  using boost::indices;
-  using range_t = boost::multi_array_types::index_range;
 
   template<typename T> using s1D = std::tuple<IndexType,T>;
   template<typename T> using s2D = std::tuple<IndexType,IndexType,T>;
@@ -94,6 +88,9 @@ namespace afqmc
                                 ma::sparse::is_root>;
 
   enum HamiltonianTypes {Factorized,THC,KPTHC,KPFactorized,UNKNOWN};
+
+  template<std::ptrdiff_t D> 
+  using extensions = boost::multi::layout_t<D>::extensions_type;
 
   // general matrix definitions
   template< class Alloc = std::allocator<int> >

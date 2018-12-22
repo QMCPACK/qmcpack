@@ -12,7 +12,7 @@
 #include "AFQMC/Utilities/readWfn.h"
 
 #include "AFQMC/config.h"
-#include "boost/multi_array.hpp"
+#include "boost/multi::array.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 
@@ -263,7 +263,7 @@ void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walke
 
     if(wfn_type == 0) {
 
-      boost::multi_array<ComplexType,2> OrbMat(extents[NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat(extents[NMO][NAEA]);
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -281,7 +281,7 @@ void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walke
 
     } else if(wfn_type == 1) {
 
-      boost::multi_array<ComplexType,2> OrbMat(extents[NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat(extents[NMO][NAEA]);
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -300,7 +300,7 @@ void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walke
 
     } else if(wfn_type == 2) {
 
-      boost::multi_array<ComplexType,2> OrbMat(extents[2*NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat(extents[2*NMO][NAEA]);
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -404,7 +404,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
       APP_ABORT("Error: Wavefunction type mixed requires fullMOMat=true.\n");
     PsiT.reserve( (wfn_type!=1)?1:2 );
 
-    boost::multi_array<ComplexType,2> OrbMat(extents[nmo_][nmo_]);
+    boost::multi::array<ComplexType,2> OrbMat(extents[nmo_][nmo_]);
     if(comm.root()) {
       std::string tag;
       in>>tag;
@@ -547,7 +547,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
 }
 
 // modify for multideterminant case based on type
-int readWfn( std::string fileName, boost::multi_array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det)
+int readWfn( std::string fileName, boost::multi::array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det)
 {
   std::ifstream in;
   in.open(fileName.c_str());

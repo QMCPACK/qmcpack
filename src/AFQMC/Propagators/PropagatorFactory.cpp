@@ -25,8 +25,8 @@ namespace afqmc
 Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cur, 
                                     Wavefunction& wfn, RandomGenerator_t* rng)
 {
-  using CVector = boost::multi_array<ComplexType,1>; 
-  using CMatrix = boost::multi_array<ComplexType,2>; 
+  using CVector = boost::multi::array<ComplexType,1>; 
+  using CMatrix = boost::multi::array<ComplexType,2>; 
 
   // read options from xml
   if(cur == NULL)

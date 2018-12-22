@@ -174,7 +174,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     if(htype == KPFactorized || htype == KPTHC) nkpts=Idata[2];
 
     // 1 body hamiltonian: Why isn't this in shared memory!!!
-    boost::multi_array<ValueType,2> H1(extents[NMO][NMO]);
+    boost::multi::array<ValueType,2> H1(extents[NMO][NMO]);
 
     ValueType NuclearCoulombEnergy(0);
     ValueType FrozenCoreEnergy(0);

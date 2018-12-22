@@ -468,7 +468,7 @@ inline Tp MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Mat&& T
 
   using ma::T;
 //  using boost::indices;
-//  using range_t = boost::multi_array_types::index_range;
+//  using range_t = boost::multi::array_types::index_range;
 
   int N0,Nn,sz=B.shape()[1];
   std::tie(N0,Nn) = FairDivideBoundary(comm.rank(),sz,comm.size());
@@ -558,7 +558,7 @@ inline Tp Overlap(const MatA& hermA, const MatB& B, Mat&& T1, IBuffer& IWORK, co
 
   using ma::T;
 //  using boost::indices;
-//  using range_t = boost::multi_array_types::index_range;
+//  using range_t = boost::multi::array_types::index_range;
 
   int N0,Nn,sz = B.shape()[1];
   std::tie(N0,Nn) = FairDivideBoundary(comm.rank(),sz,comm.size());

@@ -92,7 +92,7 @@ inline void apply_expM( const MatA& V, MatB& S, MatC& T1, MatC& T2, communicator
   assert( S.shape()[1] == T2.shape()[1] );
 
   using boost::indices;
-  using range_t = boost::multi_array_types::index_range;
+  using range_t = boost::multi::array_types::index_range;
   using ComplexType = typename std::decay<MatB>::type::element;
 
   const ComplexType zero(0.);

@@ -113,8 +113,8 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   Spvn_ncols = dims[8];
 
   // read 1-body hamiltonian and exchange potential (v0)
-  boost::multi_array<ComplexType,2> H1(extents[NMO][NMO]);
-  boost::multi_array<ComplexType,2> v0(extents[NMO][NMO]);
+  boost::multi::array<ComplexType,2> H1({NMO,NMO});
+  boost::multi::array<ComplexType,2> v0({NMO,NMO});
   if(TGwfn.Global().root()) {
     if(!dump.read(H1,"H1")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
@@ -152,7 +152,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   dump.pop();
 
   // rotated 1 body hamiltonians
-  std::vector<boost::multi_array<SpT1,1>> hij;
+  std::vector<boost::multi::array<SpT1,1>> hij;
   hij.reserve(ndet);
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
@@ -202,10 +202,10 @@ template<class shm_mat1,
          class shm_mat2>
 inline void writeSparseTensor(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB,
                               TaskGroup_& TGprop, TaskGroup_& TGwfn,
-                              boost::multi_array<ComplexType,2> & H1,
+                              boost::multi::array<ComplexType,2> & H1,
                               std::vector<shm_mat1> const& v2,
                               shm_mat2 const& Spvn,
-                              boost::multi_array<ComplexType,2> & v0,
+                              boost::multi::array<ComplexType,2> & v0,
                               ValueType E0, int gncv, int code)
 {
 

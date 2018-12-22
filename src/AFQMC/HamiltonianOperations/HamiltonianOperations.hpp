@@ -46,10 +46,10 @@ class dummy_HOps
   dummy_HOps() {};
 
   template<class... Args>
-  boost::multi_array<ComplexType,2> getOneBodyPropagatorMatrix(Args&&... args)
+  boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(Args&&... args)
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
-    return boost::multi_array<ComplexType,2>{};
+    return boost::multi::array<ComplexType,2>{};
   }
 
   template<class... Args>
@@ -187,7 +187,7 @@ class HamiltonianOperations:
     HamiltonianOperations& operator=(HamiltonianOperations&& other) = default;
 
     template<class... Args>
-    boost::multi_array<ComplexType,2> getOneBodyPropagatorMatrix(Args&&... args) {
+    boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(Args&&... args) {
         return boost::apply_visitor(
             [&](auto&& a){return a.getOneBodyPropagatorMatrix(std::forward<Args>(args)...);},
             *this

@@ -21,7 +21,7 @@
 #include <complex>
 #include <Utilities/FairDivide.h>
 #include "AFQMC/Matrix/csr_matrix.hpp"
-#include "boost/multi_array.hpp"
+#include "boost/multi::array.hpp"
 
 #include<type_traits> // enable_if
 

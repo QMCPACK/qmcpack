@@ -36,7 +36,7 @@ class mpi3_SHMBuffer
   using communicator = boost::mpi3::shared_communicator;
   using shared_allocator = std::allocator<T>; //boost::mpi3::shm::allocator<T>;
   //using shared_array = boost::multi::array<T,1,shared_allocator>;
-  using shared_array = boost::multi_array<T,1>;
+  using shared_array = boost::multi::array<T,1>;
 
   public:
 
