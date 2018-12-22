@@ -2,7 +2,7 @@
 #include "Configuration.h"
 #include "Numerics/OhmmsBlas.h" 
 #include <Utilities/FairDivide.h>
-#include "AFQMC/Utilities/Utils.h"
+#include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/config.h" 
 #include "AFQMC/Propagators/AFQMCSharedPropagator.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"

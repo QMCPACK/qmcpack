@@ -13,48 +13,39 @@
 #include "Configuration.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include <OhmmsPETE/Tensor.h>
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/TinyVector.h>
 
 #include "AFQMC/config.0.h"
-#include "AFQMC/Matrix/SparseMatrix.h"
-#include "AFQMC/Matrix/SMSparseMatrix.h"
-#include "AFQMC/Matrix/SMDenseVector.h"
 
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/coo_matrix.hpp"
 #include<boost/multi_array.hpp>
 
 #include "mpi3/shared_window.hpp"
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
 
 #include "Utilities/NewTimer.h"
 #include "AFQMC/Utilities/myTimer.h"
 extern myTimer Timer; 
 
-#define AFQMC_DEBUG 3 
-#define AFQMC_TIMER 
-
-#define MAXIMUM_EMPLACE_BUFFER_SIZE 102400 
-
-// maximum size in Bytes for a dataset with walker data on WalkerIO
-#define WALKER_HDF_BLOCK_SIZE 100000000 
-
-// maximum size in Bytes for a block of data in CSR matrix HDF IO 
-#define CSR_HDF_BLOCK_SIZE 2000000 
-
-// careful here that RealType is consistent with this!!!
-#define MKL_INT         int
-#define MKL_Complex8    std::complex<float> 
-#define MKL_Complex16   std::complex<double> 
-
-#define byRows   999
-#define byCols   111
-
-#define PsiT_IN_SHM
-
 namespace qmcplusplus
+{
+
+  extern TimerList_t AFQMCTimers;
+  enum AFQMCTimerIDs {    
+    block_timer,
+    pseudo_energy_timer,
+    energy_timer,
+    vHS_timer,
+    vbias_timer,
+    G_for_vbias_timer,
+    propagate_timer,
+    E_comm_overhead_timer,
+    vHS_comm_overhead_timer
+  };
+  extern TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames;  
+
+namespace afqmc
 {
 
   enum WALKER_TYPES {UNDEFINED_WALKER_TYPE, CLOSED, COLLINEAR, NONCOLLINEAR};
@@ -63,6 +54,11 @@ namespace qmcplusplus
   using boost::extents;
   using boost::indices;
   using range_t = boost::multi_array_types::index_range;
+
+  template<typename T> using s1D = std::tuple<IndexType,T>;
+  template<typename T> using s2D = std::tuple<IndexType,IndexType,T>;
+  template<typename T> using s3D = std::tuple<IndexType,IndexType,IndexType,T>;
+  template<typename T> using s4D = std::tuple<IndexType,IndexType,IndexType,IndexType,T>;
 
   enum SpinTypes {Alpha,Beta};  
 
@@ -97,57 +93,53 @@ namespace qmcplusplus
                                 boost::mpi3::intranode::allocator<ComplexType>,
                                 ma::sparse::is_root>;
 
-  // old types
+  enum HamiltonianTypes {Factorized,THC,KPTHC,KPFactorized,UNKNOWN};
 
-  typedef Vector<IndexType>     IndexVector;
-  typedef Vector<RealType>      RealVector;
-  typedef Vector<ValueType>     ValueVector;
-  typedef Vector<SPValueType>   SPValueVector;
-  typedef Vector<ComplexType>   ComplexVector;
-  typedef Vector<SPComplexType>   SPComplexVector;
+  // general matrix definitions
+  template< class Alloc = std::allocator<int> >
+  using IntegerVector =  boost::multi::array<int,1,Alloc>;
+  template< class Alloc = std::allocator<ValueType> >
+  using ValueVector =  boost::multi::array<ValueType,1,Alloc>;
+  template< class Alloc = std::allocator<ComplexType> >
+  using ComplexVector =  boost::multi::array<ComplexType,1,Alloc>;
+  template< class Alloc = std::allocator<SPComplexType> >
+  using SPComplexVector =  boost::multi::array<SPComplexType,1,Alloc>;
+  template< class Ptr = ComplexType* >
+  using ComplexVector_ref =  boost::multi::array_ref<ComplexType,1,Ptr>;
+  template< class Ptr = SPComplexType* >
+  using SPComplexVector_ref =  boost::multi::array_ref<SPComplexType,1,Ptr>;
 
-  typedef SMDenseVector<IndexType>     IndexSMVector;
-  typedef SMDenseVector<RealType>      RealSMVector;
-  typedef SMDenseVector<ValueType>     ValueSMVector;
-  typedef SMDenseVector<SPValueType>   SPValueSMVector;
-  typedef SMDenseVector<ComplexType>   ComplexSMVector;
-  typedef SMDenseVector<SPComplexType>   SPComplexSMVector;
+  template< class Alloc = std::allocator<int> >
+  using IntegerMatrix =  boost::multi::array<int,2,Alloc>;
+  template< class Alloc = std::allocator<ValueType> >
+  using ValueMatrix =  boost::multi::array<ValueType,2,Alloc>;
+  template< class Alloc = std::allocator<ComplexType> >
+  using ComplexMatrix =  boost::multi::array<ComplexType,2,Alloc>;
+  template< class Alloc = std::allocator<SPComplexType> >
+  using SPComplexMatrix =  boost::multi::array<SPComplexType,2,Alloc>;
+  template< class Ptr = ComplexType* >
+  using ComplexMatrix_ref =  boost::multi::array_ref<ComplexType,2,Ptr>;
+  template< class Ptr = SPComplexType* >
+  using SPComplexMatrix_ref =  boost::multi::array_ref<SPComplexType,2,Ptr>;
 
-  typedef Matrix<IndexType>     IndexMatrix;
-  typedef Matrix<RealType>      RealMatrix;
-  typedef Matrix<ValueType>     ValueMatrix;
-  typedef Matrix<SPValueType>     SPValueMatrix;
-  typedef Matrix<ComplexType>   ComplexMatrix;
-  typedef Matrix<SPComplexType>   SPComplexMatrix;
+  template< class Alloc = std::allocator<ComplexType> >
+  using Complex3Tensor =  boost::multi::array<ComplexType,3,Alloc>;
+  template< class Alloc = std::allocator<SPComplexType> >
+  using SPComplex3Tensor =  boost::multi::array<SPComplexType,3,Alloc>;
+  template< class Ptr = ComplexType* >
+  using Complex3Tensor_ref =  boost::multi::array_ref<ComplexType,3,Ptr>;
+  template< class Ptr = SPComplexType* >
+  using SPComplex3Tensor_ref =  boost::multi::array_ref<SPComplexType,3,Ptr>;
 
-  typedef SparseMatrix<IndexType>     IndexSpMat;
-  typedef SparseMatrix<RealType>      RealSpMat;
-  typedef SparseMatrix<ValueType>     ValueSpMat;
-  typedef SparseMatrix<SPValueType>   SPValueSpMat;
-  typedef SparseMatrix<ComplexType>   ComplexSpMat;
+  template<std::ptrdiff_t D, class Alloc = std::allocator<ComplexType> >
+  using ComplexArray =  boost::multi::array<ComplexType,D,Alloc>;
+  template<std::ptrdiff_t D, class Alloc = std::allocator<SPComplexType> >
+  using SPComplexArray =  boost::multi::array<SPComplexType,D,Alloc>;
+  template<std::ptrdiff_t D, class Ptr = ComplexType* >
+  using ComplexArray_ref =  boost::multi::array_ref<ComplexType,D,Ptr>;
+  template<std::ptrdiff_t D, class Ptr = SPComplexType* >
+  using SPComplexArray_ref =  boost::multi::array_ref<SPComplexType,D,Ptr>;
 
-  typedef SMSparseMatrix<IndexType>     IndexSMSpMat;
-  typedef SMSparseMatrix<RealType>      RealSMSpMat;
-  typedef SMSparseMatrix<ValueType>     ValueSMSpMat;
-  typedef SMSparseMatrix<SPValueType>   SPValueSMSpMat;
-  typedef SMSparseMatrix<ComplexType>   ComplexSMSpMat;
-  typedef SMSparseMatrix<SPComplexType>   SPComplexSMSpMat;
-
-  enum HamiltonianTypes {Factorized,SymmetricFactorized,s4DInts,THC,KPTHC,KPFactorized};
-
-  extern TimerList_t AFQMCTimers;
-  enum AFQMCTimerIDs {    
-    block_timer,
-    pseudo_energy_timer,
-    energy_timer,
-    vHS_timer,
-    vbias_timer,
-    G_for_vbias_timer,
-    propagate_timer,
-    E_comm_overhead_timer,
-    vHS_comm_overhead_timer
-  };
-  extern TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames;  
 
   struct AFQMCInfo 
   {
@@ -271,6 +263,7 @@ namespace qmcplusplus
 
   };
 
+}
 }
 
 #endif

@@ -12,8 +12,6 @@
 #ifndef AFQMC_SPARSE_MATRIX_HELPER_H
 #define AFQMC_SPARSE_MATRIX_HELPER_H
 
-#include "AFQMC/Matrix/SparseMatrix.h"
-
 #include <stdio.h>
 #include <string>
 #include <complex>

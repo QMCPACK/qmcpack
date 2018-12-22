@@ -151,7 +151,7 @@ namespace HamHelper
         if(j==k) {
           J3=J1;
         } else if(i==l) {
-          J3 = myconj(J1);
+          J3 = conj(J1);
         } else {
           if( sqrt( abs(DiagHam[i][j]*DiagHam[l][k]) ) > cut ) {
             J3 = H.H(i,k,j,l);

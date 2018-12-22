@@ -43,8 +43,6 @@ std::string getWfnType(std::ifstream& in);
 // modify for multideterminant case based on type
 int readWfn( std::string fileName, boost::multi_array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det = 0);
 
-bool readWfn( std::string fileName, ComplexMatrix& OrbMat, int NMO, int NAEA, int NAEB);
-
 }
 
 }

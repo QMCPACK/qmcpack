@@ -41,7 +41,7 @@ class THCHamiltonian: public OneBodyHamiltonian
 
   public:
 
-  THCHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, std::vector<s2D<ValueType> >&& h,
+  THCHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi_array<ComplexType,2>&& h,
                  TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                             OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
                             TG(tg_),cutoff_cholesky(1e-6),fileName(""),
