@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/ForceBase.h"
+#include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
 {
@@ -111,6 +112,10 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   int myTableIndex;
   ///reference to the electrons
   ParticleSet& Peln;
+  ///neighborlist of electrons
+  NeighborLists ElecNeighborIons;
+  ///neighborlist of ions
+  NeighborLists IonNeighborElecs;
   ///use T-moves
   int UseTMove;
   ///ture if an electron is affected by other electrons moved by T-moves
