@@ -36,7 +36,6 @@
 #include "mpi3/shared_communicator.hpp"
 //#include "mpi3/environment.hpp"
 
-#include "boost/multi::array.hpp"
 //#include "AFQMC/Walkers WalkerSetFactory.hpp"
 #include "AFQMC/Walkers/SharedWalkerSet.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
@@ -45,10 +44,6 @@ using std::string;
 using std::complex;
 using std::cout;
 using std::endl;
-
-using boost::extents;
-using boost::indices;
-using range_t = boost::multi::array_types::index_range;
 
 namespace qmcplusplus
 {
@@ -104,8 +99,8 @@ void test_basic_walker_features(bool serial)
   info.NAEA = NAEA;
   info.NAEB = NAEB;
   info.name = "walker";
-  boost::multi::array<Type,2> initA(extents[NMO][NAEA]);
-  boost::multi::array<Type,2> initB(extents[NMO][NAEB]);
+  boost::multi::array<Type,2> initA({NMO,NAEA});
+  boost::multi::array<Type,2> initB({NMO,NAEB});
   for(int i=0; i<NAEA; i++) initA[i][i] = Type(1.0);
   for(int i=0; i<NAEB; i++) initB[i][i] = Type(1.0);
   //SimpleRandom<MTRand> rng;
@@ -230,7 +225,7 @@ void test_hyperslab()
   int nwalk = 9;
   int nprop = 7;
   int nprop_to_safe = 3;
-  Matrix Data(extents[nwalk][nprop]);
+  Matrix Data({nwalk,nprop});
 
   for(int i=0; i<nwalk; i++)
    for(int j=0; j<nprop; j++)
@@ -261,7 +256,7 @@ void test_hyperslab()
     }
     read.push("WalkerSet");
 
-    Matrix DataIn(extents[nwalk][nprop]);
+    Matrix DataIn({nwalk,nprop});
 
     hyperslab_proxy<Matrix,2> hslab(DataIn,
                                   std::array<int,2>{nwtot,nprop},
@@ -292,7 +287,7 @@ void test_double_hyperslab()
   int nwalk = 9;
   int nprop = 3;
   int nprop_to_safe = 3;
-  Matrix Data(extents[nwalk][nprop]);
+  Matrix Data({nwalk,nprop});
 
   for(int i=0; i<nwalk; i++)
    for(int j=0; j<nprop; j++)
@@ -328,8 +323,8 @@ void test_double_hyperslab()
     }
     read.push("WalkerSet");
 
-    //Matrix DataIn(extents[nwalk][nprop]);
-    Matrix DataIn(extents[nwalk][nprop_to_safe]);
+    //Matrix DataIn({nwalk,nprop});
+    Matrix DataIn({nwalk,nprop_to_safe});
 
     //double_hyperslab_proxy<Matrix,2> hslab(DataIn,
     hyperslab_proxy<Matrix,2> hslab(DataIn,
@@ -378,8 +373,8 @@ void test_walker_io()
   info.NAEA = NAEA;
   info.NAEB = NAEB;
   info.name = "walker";
-  boost::multi::array<Type,2> initA(extents[NMO][NAEA]);
-  boost::multi::array<Type,2> initB(extents[NMO][NAEB]);
+  boost::multi::array<Type,2> initA({NMO,NAEA});
+  boost::multi::array<Type,2> initB({NMO,NAEB});
   for(int i=0; i<NAEA; i++) initA[i][i] = Type(1.0);
   for(int i=0; i<NAEB; i++) initB[i][i] = Type(1.0);
   //SimpleRandom<MTRand> rng;

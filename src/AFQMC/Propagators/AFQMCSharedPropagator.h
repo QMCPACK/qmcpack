@@ -64,7 +64,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(2*NMO,NAEA+NAEB), // safe for now, since I don't know walker_type
-            TSM(extents[2*NMO][NAEA+NAEB]), // safe for now, since I don't know walker_type
+            TSM({2*NMO,NAEA+NAEB}), // safe for now, since I don't know walker_type
             shmbuff(nullptr),
             local_group_comm(),
             last_nextra(-1),
@@ -74,7 +74,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
     {
       transposed_vHS_ = wfn.transposed_vHS();
       transposed_G_ = wfn.transposed_G_for_vbias();
-      if(not transposed_vHS_) local_vHS.resize(extents[NMO][NMO]);
+      if(not transposed_vHS_) local_vHS.resize({NMO,NMO});
       parse(cur);  
     }
 

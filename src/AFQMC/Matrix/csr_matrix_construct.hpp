@@ -381,14 +381,14 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
   long nterms_final = bounds[node_number+1]-bounds[node_number];
   // nterms_node_before_loadbalance: # of terms in local node before final exchange 
   // bounds[node_number+1]-bounds[node_number]: # of terms after load balance
-  boost::multi::array<long,2> counts_per_core(boost::extents[nnodes_per_TG][ncores]);
+  boost::multi::array<long,2> counts_per_core(boost::{nnodes_per_TG,ncores});
   std::fill_n(counts_per_core.origin(),ncores*nnodes_per_TG,long(0));
   counts_per_core[node_number][coreid] = nterms_in_local_core;
   eq_node_group.all_reduce_in_place_n(counts_per_core.origin(),ncores*nnodes_per_TG,std::plus<>());
 
   // calculate how many terms each core is potentially sending 
   // when algorithm works, make nplus a vector of pairs to save space, no need to store mostly zeros
-  boost::multi::array<long,2> nplus(boost::extents[nnodes_per_TG][ncores]);
+  boost::multi::array<long,2> nplus(boost::{nnodes_per_TG,ncores});
   std::fill_n(nplus.origin(),ncores*nnodes_per_TG,long(0));
   auto tgrank = eq_node_group.rank();
   // number of terms I'm sending

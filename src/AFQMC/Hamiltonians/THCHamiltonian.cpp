@@ -167,7 +167,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   }
   TG.global_barrier();
 
-  boost::multi::array<ComplexType,2> v0(extents[Piu.shape()[0]][Piu.shape()[0]]);
+  boost::multi::array<ComplexType,2> v0({Piu.shape()[0],Piu.shape()[0]});
   if(TGprop.getNNodesPerTG() > 1)
   {
 
@@ -196,12 +196,12 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     size_t c0,cN,nc;
     std::tie(c0,cN) = FairDivideBoundary(size_t(TG.Global().rank()),gnmu,size_t(TG.Global().size()));
     nc = cN-c0;
-    boost::multi::array<ValueType,2> Tuv(extents[gnmu][nc]);
-    boost::multi::array<ValueType,2> Muv(extents[gnmu][nc]);
+    boost::multi::array<ValueType,2> Tuv({gnmu,nc});
+    boost::multi::array<ValueType,2> Muv({gnmu,nc});
 
     // Muv = Luv * H(Luv)
     // This can benefit from 2D split of work
-    ma::product(Luv__.get(),H(Luv__.get()[indices[range_t(c0,cN)][range_t()]]),Muv);
+    ma::product(Luv__.get(),H(Luv__.get().sliced(c0,cN)),Muv);
 
     if(test_Luv) {
       for(int i=0; i<gnmu; ++i)
@@ -221,7 +221,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = conj(*itT)*(*itM);
-    boost::multi::array<ValueType,2> T_(extents[Tuv.shape()[1]][size_t(NMO)]);
+    boost::multi::array<ValueType,2> T_({Tuv.shape()[1],size_t(NMO)});
     ma::product(T(Tuv),H(Piu__.get()),T_);
     ma::product(-0.5,T(T_),T(Piu__.get()[indices[range_t()][range_t(c0,cN)]]),0.0,v0);
 
@@ -236,12 +236,12 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     size_t c0,cN,nc;
     std::tie(c0,cN) = FairDivideBoundary(size_t(TG.Global().rank()),nmu,size_t(TG.Global().size()));
     nc = cN-c0;
-    boost::multi::array<ValueType,2> Tuv(extents[gnmu][nc]);
-    boost::multi::array<ValueType,2> Muv(extents[gnmu][nc]);
+    boost::multi::array<ValueType,2> Tuv({gnmu,nc});
+    boost::multi::array<ValueType,2> Muv({gnmu,nc});
 
     // Muv = Luv * H(Luv)
     // This can benefit from 2D split of work
-    ma::product(Luv.get(),H(Luv.get()[indices[range_t(c0,cN)][range_t()]]),Muv);
+    ma::product(Luv.get(),H(Luv.get().sliced(c0,cN)),Muv);
 
     if(test_Luv) {
       for(int i=0; i<gnmu; ++i)
@@ -261,7 +261,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = conj(*itT)*(*itM);
-    boost::multi::array<ValueType,2> T_(extents[Tuv.shape()[1]][size_t(NMO)]);
+    boost::multi::array<ValueType,2> T_({Tuv.shape()[1],size_t(NMO)});
     ma::product(T(Tuv),H(Piu.get()),T_);
     ma::product(-0.5,T(T_),T(Piu.get()[indices[range_t()][range_t(c0,cN)]]),0.0,v0);
 
@@ -282,8 +282,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     // simple
     using ma::H;
     if(type==COLLINEAR) {
-      boost::multi::array<ComplexType,2> A(extents[NMO][naea_]);
-      boost::multi::array<ComplexType,2> B(extents[NMO][naeb_]);
+      boost::multi::array<ComplexType,2> A({NMO,naea_});
+      boost::multi::array<ComplexType,2> B({NMO,naeb_});
       for(int i=0; i<ndet; i++) {
         // cPua = H(Piu) * conj(A)
         csr::CSR2MA('T',PsiT[2*i],A);
@@ -300,7 +300,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
                       rotcPua[i].get()[indices[range_t()][range_t(naea_,nel_)]]);
       }
     } else {
-      boost::multi::array<ComplexType,2> A(extents[PsiT[0].shape()[1]][PsiT[0].shape()[0]]);
+      boost::multi::array<ComplexType,2> A({PsiT[0].shape()[1],PsiT[0].shape()[0]});
       for(int i=0; i<ndet; i++) {
         csr::CSR2MA('T',PsiT[i],A);
         // cPua = H(Piu) * conj(A)

@@ -244,9 +244,9 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
         int N = A.shape()[0];
         int LDA = A.strides()[0];
         
-            MultiArray1D eigVal(boost::extents[N]);
-            MultiArray2D eigVec(boost::extents[N][N]);
-            MultiArray2D A_(boost::extents[N][N]);
+            MultiArray1D eigVal(boost::extensions<1u>{N});
+            MultiArray2D eigVec(boost::{N,N});
+            MultiArray2D A_(boost::{N,N});
             for(int i=0; i<N; i++)
               for(int j=0; j<N; j++) 
                 A_[i][j] = conj(A[i][j]);                
@@ -307,7 +307,7 @@ int main(){
 			1.,2.,
 			3.,4.,
 		};
-		boost::multi::array_ref<double, 2> A(a.data(), boost::extents[2][2]);
+		boost::multi::array_ref<double, 2> A(a.data(), boost::{2,2});
 		std::vector<int> p(std::min(A.shape()[0], A.shape()[1]));
 		ma::getrf(A, p);
 		for(int i = 0; i != A.shape()[0]; ++i, std::cout << '\n')

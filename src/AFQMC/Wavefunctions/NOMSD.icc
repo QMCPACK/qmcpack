@@ -57,10 +57,10 @@ namespace afqmc
     auto nwalk = wset.size();
     int nr=Gsize,nc=nwalk;
     if(transposed_G_for_E_) std::swap(nr,nc);
-    boost::multi::array_ref<ComplexType,2> G(shmbuff_for_E->data(),extents[nr][nc]);
+    boost::multi::array_ref<ComplexType,2> G(shmbuff_for_E->data(),{nr,nc});
     boost::multi::array_ref<ComplexType,1> ov_(shmbuff_for_E->data()+Gsize*nwalk,
-                                              extents[nwalk]);
-    if(eloc2.shape()[0] != nwalk || eloc2.shape()[1] != 3) eloc2.resize(extents[nwalk][3]); 
+                                              extensions<1u>{nwalk});
+    if(eloc2.shape()[0] != nwalk || eloc2.shape()[1] != 3) eloc2.resize({nwalk,3}); 
 
     std::fill_n(Ov.origin(),nwalk,zero);
     std::fill_n(E.origin(),3*nwalk,zero);
@@ -133,15 +133,15 @@ std::cout<<" E nomsd: " <<nd <<" "
     if(transposed_G_for_E_) std::swap(nr,nc);
     int displ=0;
     boost::multi::array_ref<ComplexType,2> Gwork(shmbuff_for_E->data(),
-                                                extents[nr][nc]);
+                                                {nr,nc});
       displ += Gsize*nwalk;
     boost::multi::array_ref<ComplexType,2> Grecv(shmbuff_for_E->data()+displ,
-                                                extents[nr][nc]);
+                                                {nr,nc});
       displ += Gsize*nwalk;
     boost::multi::array_ref<ComplexType,1> overlaps(shmbuff_for_E->data()+displ,
-                                                   extents[nwalk]);
+                                                   extensions<1u>{nwalk});
     if(eloc2.shape()[0] != nnodes*nwalk || eloc2.shape()[1] != 3) 
-        eloc2.resize(extents[nnodes*nwalk][3]);
+        eloc2.resize({nnodes*nwalk,3});
     auto elocal = eloc2[node_number*nwalk];
     int nak0,nak1;
     std::tie(nak0,nak1) = FairDivideBoundary(TG.getLocalTGRank(),Gsize*nwalk,TG.getNCoresPerTG());
@@ -184,7 +184,7 @@ std::cout<<" E nomsd: " <<nd <<" "
 
       // calculate your contribution of the local enery to the set of walkers in Gwork
       int q = (k+node_number)%nnodes;
-      HamOp.energy(eloc2[indices[range_t(q*nwalk,(q+1)*nwalk)][range_t()]],
+      HamOp.energy(eloc2.sliced(q*nwalk,(q+1)*nwalk),
                    Gwork,0,TG.TG_local().root() && k==0);
       TG.local_barrier();
 
@@ -245,22 +245,22 @@ std::cout<<" E nomsd: " <<nd <<" "
     if(transposed_G_for_E_) std::swap(nr,nc);
     int displ=0;
     boost::multi::array_ref<ComplexType,2> SMwork(shmbuff_for_E->data(),
-                                                extents[nwalk][Gsize]);
+                                                {nwalk,Gsize});
       displ += Gsize*nwalk;
     boost::multi::array_ref<ComplexType,2> SMrecv(shmbuff_for_E->data()+displ,
-                                                extents[nwalk][Gsize]);
+                                                {nwalk,Gsize});
       displ += Gsize*nwalk;
     boost::multi::array_ref<ComplexType,2> Gwork(shmbuff_for_E->data()+displ,
-                                                extents[nr][nc]);
+                                                {nr,nc});
       displ += Gsize*nwalk;
     boost::multi::array_ref<ComplexType,1> overlaps(shmbuff_for_E->data()+displ,
-                                                   extents[nwalk]);
+                                                   extensions<1u>{nwalk});
     // used for temporary storage in ndet loop for local calculation
     if(eloc3.shape()[0] != nwalk || eloc3.shape()[1] != 3) 
-        eloc3.resize(extents[nwalk][3]);
+        eloc3.resize({nwalk,3});
     // used for temporary storage of numerator in energy expression for all walkers in TG
     if(eloc2.shape()[0] != nnodes*nwalk || eloc2.shape()[1] != 3) 
-        eloc2.resize(extents[nnodes*nwalk][3]);
+        eloc2.resize({nnodes*nwalk,3});
     // matrix view to local segment of eloc2, for wasy access later
     // split SM evenly for communication
     int nak0,nak1;
@@ -324,7 +324,7 @@ std::cout<<" E nomsd: " <<nd <<" "
 
     TG.TG().all_reduce_in_place_n(eloc2.origin(),3*nnodes*nwalk,std::plus<>());
     TG.local_barrier();    
-    auto elocal = eloc2[indices[range_t(node_number*nwalk,(node_number+1)*nwalk)][range_t()]];
+    auto elocal = eloc2.sliced(node_number*nwalk,(node_number+1)*nwalk);
     for(int i=0; i<nwalk; i++) {
       E[i][0] = elocal[i][0]/Ov[i];
       E[i][1] = elocal[i][1]/Ov[i];
@@ -361,15 +361,15 @@ std::cout<<" E nomsd: " <<nd <<" "
         std::fill_n(G[i].origin(),G.shape()[1],ComplexType(0.0));
     TG.local_barrier();
     if(localGbuff.size() < Gsize)
-      localGbuff.resize(extents[Gsize]);
+      localGbuff.resize(extensions<1u>{Gsize});
     if(walker_type != COLLINEAR) {
 
       auto Gdims = dm_dims(false,Alpha);
       boost::multi::array_ref<ComplexType,2> G2D_(localGbuff.origin(),
-                                                 extents[Gdims.first][Gdims.second]);
-      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),extents[Gsize]);
+                                                 {Gdims.first,Gdims.second});
+      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),extensions<1u>{Gsize});
       // notice interchange of dimensions
-      boost::const_multi::array_ref<ComplexType,3> A(SM.origin(),extents[nw][Gdims.second][Gdims.first]);
+      boost::const_multi::array_ref<ComplexType,3> A(SM.origin(),{nw,Gdims.second,Gdims.first});
 
       for(int iw=0; iw<nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
@@ -386,18 +386,18 @@ std::cout<<" E nomsd: " <<nd <<" "
     } else {
 
       // store overlaps locally to be able to split alpha/beta pairs
-      if(ovlp2.shape()[0] < 2*nw) ovlp2.resize(extents[2*nw]);
+      if(ovlp2.shape()[0] < 2*nw) ovlp2.resize(extensions<1u>{2*nw});
       std::fill_n(ovlp2.origin(),2*nw,ComplexType(0.0));
       auto GAdims = dm_dims(false,Alpha);
       auto GBdims = dm_dims(false,Beta);
       boost::multi::array_ref<ComplexType,2> GA2D_(localGbuff.origin(),
-                                   extents[GAdims.first][GAdims.second]);
+                                   {GAdims.first,GAdims.second});
       boost::multi::array_ref<ComplexType,2> GB2D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extents[GBdims.first][GBdims.second]);
+                                   {GBdims.first,GBdims.second});
       boost::multi::array_ref<ComplexType,1> GA1D_(localGbuff.origin(),
-                                   extents[GAdims.first*GAdims.second]);
+                                   extensions<1u>{GAdims.first*GAdims.second});
       boost::multi::array_ref<ComplexType,1> GB1D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extents[GBdims.first*GBdims.second]);
+                                   extensions<1u>{GBdims.first*GBdims.second});
 
       for(int iw=0; iw<2*nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
@@ -405,7 +405,7 @@ std::cout<<" E nomsd: " <<nd <<" "
         if(iw%2==0) {
           // notice interchange of dimensions
           boost::const_multi::array_ref<ComplexType,2> M(SM[iw/2].origin(),
-                                                        extents[GAdims.second][GAdims.first]);
+                                                        {GAdims.second,GAdims.first});
           ovlp2[iw] = SDetOp.MixedDensityMatrix(OrbMats[2*nd],M,GA2D_,true);
           if(transposed_G_for_E_) 
             G[indices[iw/2][range_t(0,GAdims.first*GAdims.second)]] = GA1D_;
@@ -414,7 +414,7 @@ std::cout<<" E nomsd: " <<nd <<" "
         } else {
           // notice interchange of dimensions
           boost::const_multi::array_ref<ComplexType,2> M(SM[iw/2].origin()+GAdims.first*GAdims.second,
-                                                        extents[GBdims.second][GBdims.first]);
+                                                        {GBdims.second,GBdims.first});
           ovlp2[iw] = SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],M,GB2D_,true);
           if(transposed_G_for_E_) 
             G[indices[iw/2][range_t(GAdims.first*GAdims.second,G.shape()[1])]] = GB1D_;
@@ -459,13 +459,13 @@ std::cout<<" E nomsd: " <<nd <<" "
     TG.local_barrier();
     auto Gsize = size_t(dm_size(false));
     if(localGbuff.size() < Gsize)
-      localGbuff.resize(extents[Gsize]);
+      localGbuff.resize(extensions<1u>{Gsize});
     if(walker_type != COLLINEAR) {
 
       auto Gdims = dm_dims(false,Alpha);
       boost::multi::array_ref<ComplexType,2> G2D_(localGbuff.origin(),
-                                                 extents[Gdims.first][Gdims.second]);
-      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),extents[Gsize]);
+                                                 {Gdims.first,Gdims.second});
+      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),extensions<1u>{Gsize});
 
       for(int iw=0; iw<nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
@@ -482,18 +482,18 @@ std::cout<<" E nomsd: " <<nd <<" "
     } else {
 
       // store overlaps locally to be able to split alpha/beta pairs
-      if(ovlp2.shape()[0] < 2*nw) ovlp2.resize(extents[2*nw]);
+      if(ovlp2.shape()[0] < 2*nw) ovlp2.resize(extensions<1u>{2*nw});
       std::fill_n(ovlp2.origin(),2*nw,ComplexType(0.0));
       auto GAdims = dm_dims(false,Alpha);
       auto GBdims = dm_dims(false,Beta);
       boost::multi::array_ref<ComplexType,2> GA2D_(localGbuff.origin(),
-                                   extents[GAdims.first][GAdims.second]);
+                                   {GAdims.first,GAdims.second});
       boost::multi::array_ref<ComplexType,2> GB2D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extents[GBdims.first][GBdims.second]);
+                                   {GBdims.first,GBdims.second});
       boost::multi::array_ref<ComplexType,1> GA1D_(localGbuff.origin(),
-                                   extents[GAdims.first*GAdims.second]);
+                                   extensions<1u>{GAdims.first*GAdims.second});
       boost::multi::array_ref<ComplexType,1> GB1D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extents[GBdims.first*GBdims.second]);
+                                   extensions<1u>{GBdims.first*GBdims.second});
 
       for(int iw=0; iw<2*nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
@@ -552,14 +552,14 @@ std::cout<<" E nomsd: " <<nd <<" "
     TG.local_barrier();
     auto Gsize = size_t(dm_size(not compact));
     if(localGbuff.size() < Gsize)
-      localGbuff.resize(extents[Gsize]);
+      localGbuff.resize(extensions<1u>{Gsize});
     auto wlk_dims = wset.walker_dims();
     if(walker_type != COLLINEAR) {
 
       auto Gdims = dm_dims(not compact,Alpha);
       boost::multi::array_ref<ComplexType,2> G2D_(localGbuff.origin(),
-                                                 extents[Gdims.first][Gdims.second]);
-      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),extents[Gsize]);
+                                                 {Gdims.first,Gdims.second});
+      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),extensions<1u>{Gsize});
 
       const int ntasks_percore = (nw*ndet)/TG.getNCoresPerTG();
       const int ntasks_total_serial = ntasks_percore*TG.getNCoresPerTG();
@@ -612,8 +612,8 @@ std::cout<<" E nomsd: " <<nd <<" "
           APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");
         {
           boost::multi::array_ref<ComplexType,2> G2D_2(shmbuff_for_G->data(),
-                                                 extents[Gdims.first][Gdims.second]);
-          boost::multi::array_ref<ComplexType,1> G1D_2(shmbuff_for_G->data(),extents[Gsize]);
+                                                 {Gdims.first,Gdims.second});
+          boost::multi::array_ref<ComplexType,1> G1D_2(shmbuff_for_G->data(),extensions<1u>{Gsize});
           int iw = (last_task_index+ntasks_total_serial)/ndet;
           int nd = (last_task_index+ntasks_total_serial)%ndet;
           ComplexType ov = SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
@@ -639,13 +639,13 @@ std::cout<<" E nomsd: " <<nd <<" "
       auto GAdims = dm_dims(not compact,Alpha);
       auto GBdims = dm_dims(not compact,Beta);
       boost::multi::array_ref<ComplexType,2> GA2D_(localGbuff.origin(),
-                                   extents[GAdims.first][GAdims.second]);
+                                   {GAdims.first,GAdims.second});
       boost::multi::array_ref<ComplexType,2> GB2D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extents[GBdims.first][GBdims.second]);
+                                   {GBdims.first,GBdims.second});
       boost::multi::array_ref<ComplexType,1> GA1D_(localGbuff.origin(),
-                                   extents[GAdims.first*GAdims.second]);
+                                   extensions<1u>{GAdims.first*GAdims.second});
       boost::multi::array_ref<ComplexType,1> GB1D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extents[GBdims.first*GBdims.second]);
+                                   extensions<1u>{GBdims.first*GBdims.second});
 
       const int ntasks_percore = (nw*ndet)/TG.getNCoresPerTG();
       const int ntasks_total_serial = ntasks_percore*TG.getNCoresPerTG();
@@ -700,13 +700,13 @@ std::cout<<" E nomsd: " <<nd <<" "
           APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");
         {
           boost::multi::array_ref<ComplexType,2> GA2D_2(shmbuff_for_G->data(),
-                               extents[GAdims.first][GAdims.second]);
+                               {GAdims.first,GAdims.second});
           boost::multi::array_ref<ComplexType,2> GB2D_2(shmbuff_for_G->data()+
-                               GAdims.first*GAdims.second,extents[GBdims.first][GBdims.second]);
+                               GAdims.first*GAdims.second,{GBdims.first,GBdims.second});
           boost::multi::array_ref<ComplexType,1> GA1D_2(shmbuff_for_G->data(),
-                               extents[GAdims.first*GAdims.second]);
+                               extensions<1u>{GAdims.first*GAdims.second});
           boost::multi::array_ref<ComplexType,1> GB1D_2(shmbuff_for_G->data()+
-                               GAdims.first*GAdims.second,extents[GBdims.first*GBdims.second]);
+                               GAdims.first*GAdims.second,extensions<1u>{GBdims.first*GBdims.second});
           int task = (last_task_index+ntasks_total_serial);
           int iw = task/ndet;
           int nd = task%ndet;
@@ -876,22 +876,22 @@ std::cout<<" E nomsd: " <<nd <<" "
     bool compact = false;
     auto Gsize = size_t(dm_size(not compact));
     if(localGbuff.size() < Gsize)
-      localGbuff.resize(extents[2*Gsize]);
+      localGbuff.resize(extensions<1u>{2*Gsize});
     auto wlk_dims = wset.walker_dims();
     if((T2ForBP.shape()[0] != wlk_dims.first || T2ForBP.shape()[1] != wlk_dims.second)) {
-      T2ForBP.resize(extents[wlk_dims.second][wlk_dims.first]);
-      T1ForBP.resize(extents[NAEA][wlk_dims.first]);
-      T3ForBP.resize(extents[wlk_dims.first][wlk_dims.second]);
+      T2ForBP.resize({wlk_dims.second,wlk_dims.first});
+      T1ForBP.resize({NAEA,wlk_dims.first});
+      T3ForBP.resize({wlk_dims.first,wlk_dims.second});
     }
     if(walker_type != COLLINEAR) {
       auto Gdims = dm_dims(not compact,Alpha);
       // Temporaries for determinant component of walker rdm function.
-      CMatrix_ref G2D_(localGbuff.origin(), extents[Gdims.first][Gdims.second]);
-      CVector_ref G1D_(localGbuff.origin(), extents[Gsize]);
+      CMatrix_ref G2D_(localGbuff.origin(), {Gdims.first,Gdims.second});
+      CVector_ref G1D_(localGbuff.origin(), extensions<1u>{Gsize});
       // Accumulator for trial wavefunction sum.
-      CVector_ref G21D_(localGbuff.origin()+Gsize,extents[Gsize]);
+      CVector_ref G21D_(localGbuff.origin()+Gsize,extensions<1u>{Gsize});
       // 1D view of walker averaged RDM
-      CVector_ref G1D(G.origin(),extents[Gsize]);
+      CVector_ref G1D(G.origin(),extensions<1u>{Gsize});
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         if( std::abs(wset[iw].weight()) < 1e-10 ) continue;
@@ -913,7 +913,7 @@ std::cout<<" E nomsd: " <<nd <<" "
         ComplexType trace = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
           // We construct PsiBP^{\dagger}
-          CMatrix_ref PsiBP = CMatrix_ref(T2ForBP.data(), extents[NAEA][NMO]);
+          CMatrix_ref PsiBP = CMatrix_ref(T2ForBP.data(), {NAEA,NMO});
           ComplexType detR = BackPropagateOrbMat(OrbMats[id], wset[iw], PsiBP);
           // Construct RDM with Slater Matrix from beginning of path.
           ComplexType ov = SDetOp.MixedDensityMatrix(PsiBP,
@@ -946,20 +946,20 @@ std::cout<<" E nomsd: " <<nd <<" "
       auto GAdims = dm_dims(not compact,Alpha);
       auto GBdims = dm_dims(not compact,Beta);
       CMatrix_ref GA2D_(localGbuff.origin(),
-                                   extents[GAdims.first][GAdims.second]);
+                                   {GAdims.first,GAdims.second});
       CMatrix_ref GB2D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extents[GBdims.first][GBdims.second]);
+                                   {GBdims.first,GBdims.second});
       CVector_ref GA1D_(localGbuff.origin(),
-                                   extents[GAdims.first*GAdims.second]);
+                                   extensions<1u>{GAdims.first*GAdims.second});
       CVector_ref GB1D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extents[GBdims.first*GBdims.second]);
+                                   extensions<1u>{GBdims.first*GBdims.second});
       CVector_ref GA21D_(localGbuff.origin()+Gsize,
-                                   extents[GAdims.first*GAdims.second]);
+                                   extensions<1u>{GAdims.first*GAdims.second});
       CVector_ref GB21D_(localGbuff.origin()+Gsize+GAdims.first*GAdims.second,
-                                   extents[GBdims.first*GBdims.second]);
-      CVector_ref GA1D(G.origin(), extents[GAdims.first*GAdims.second]);
+                                   extensions<1u>{GBdims.first*GBdims.second});
+      CVector_ref GA1D(G.origin(), extensions<1u>{GAdims.first*GAdims.second});
       CVector_ref GB1D(G.origin()+GAdims.first*GAdims.second,
-                       extents[GBdims.first*GBdims.second]);
+                       extensions<1u>{GBdims.first*GBdims.second});
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         if( std::abs(wset[iw].weight()) < 1e-10 ) continue;
@@ -974,11 +974,11 @@ std::cout<<" E nomsd: " <<nd <<" "
         ComplexType wfac = wset[iw].weight() * factor;
         ComplexType overlap = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
-          CMatrix_ref PsiBPAlpha = CMatrix_ref(T2ForBP.data(), extents[NAEA][NMO]);
+          CMatrix_ref PsiBPAlpha = CMatrix_ref(T2ForBP.data(), {NAEA,NMO});
           ComplexType detR = BackPropagateOrbMat(OrbMats[2*id], wset[iw], PsiBPAlpha);
           ComplexType ov_ = SDetOp.MixedDensityMatrix(PsiBPAlpha,wset[iw].SlaterMatrixN(Alpha),
                                                       GA2D_,compact);
-          CMatrix_ref PsiBPBeta = CMatrix_ref(T2ForBP.data()+NMO*NAEA, extents[NAEB][NMO]);
+          CMatrix_ref PsiBPBeta = CMatrix_ref(T2ForBP.data()+NMO*NAEA, {NAEB,NMO});
           detR *= BackPropagateOrbMat(OrbMats[2*id+1], wset[iw], PsiBPBeta);
           ov_ *= SDetOp.MixedDensityMatrix(PsiBPBeta,wset[iw].SlaterMatrix(Beta),
                                            GB2D_,compact);
@@ -1002,7 +1002,7 @@ std::cout<<" E nomsd: " <<nd <<" "
     TG.Global().all_reduce_in_place_n(denom.origin(),1,std::plus<>());
     TG.Global().all_reduce_in_place_n(G.origin(),Gsize,std::plus<>());
     auto denominator= ComplexType(1.0,0.0)/denom[0];
-    boost::multi::array_ref<ComplexType,1> GFull(G.origin(), extents[Gsize]);
+    boost::multi::array_ref<ComplexType,1> GFull(G.origin(), extensions<1u>{Gsize});
     if(!free_projection) {
       ma::scal(denominator,GFull);
     }
@@ -1076,7 +1076,7 @@ std::cout<<" E nomsd: " <<nd <<" "
       APP_ABORT(" Error: OrthogonalizeExcited not implemented with NONCOLLINEAR.\n");
     if(spin==Alpha) {
       if(extendedMatAlpha.shape()[0] != NMO || extendedMatAlpha.shape()[1] != maxOccupExtendedMat.first)
-        extendedMatAlpha.resize(extents[NMO][maxOccupExtendedMat.first]);
+        extendedMatAlpha.resize({NMO,maxOccupExtendedMat.first});
       extendedMatAlpha[indices[range_t()][range_t(0,NAEA)]] = A;
       extendedMatAlpha[indices[range_t()][range_t(NAEA+1,maxOccupExtendedMat.first)]] =
                 excitedOrbMat[0][indices[range_t()][range_t(NAEA+1,maxOccupExtendedMat.first)]]; 
@@ -1093,7 +1093,7 @@ std::cout<<" E nomsd: " <<nd <<" "
           A[indices[range_t()][i.first]] = extendedMatAlpha[indices[range_t()][i.second]];
     } else {
       if(extendedMatBeta.shape()[0] != NMO || extendedMatBeta.shape()[1] != maxOccupExtendedMat.second)
-        extendedMatBeta.resize(extents[NMO][maxOccupExtendedMat.second]);
+        extendedMatBeta.resize({NMO,maxOccupExtendedMat.second});
       extendedMatBeta[indices[range_t()][range_t(0,NAEB)]] = A;
       extendedMatBeta[indices[range_t()][range_t(NAEB+1,maxOccupExtendedMat.second)]] = 
                 excitedOrbMat[1][indices[range_t()][range_t(NAEB+1,maxOccupExtendedMat.second)]];
@@ -1129,29 +1129,29 @@ std::cout<<" E nomsd: " <<nd <<" "
       size_t Gsize = dm_size(false);
       if(walker_type != COLLINEAR) {
         auto Gdims = dm_dims(false,Alpha);
-        G.resize(extents[Gdims.first][Gdims.second]);
+        G.resize({Gdims.first,Gdims.second});
         csr::CSR2MA('H',OrbMats[0],PsiT); 
         ComplexType ov = SDetOp.MixedDensityMatrix(OrbMats[0],PsiT,G,true);
       } else {
-        G.resize(extents[NAEA+NAEB][NMO]);
+        G.resize({NAEA+NAEB,NMO});
         csr::CSR2MA('H',OrbMats[0],PsiT);
         ComplexType ov = SDetOp.MixedDensityMatrix(OrbMats[0],PsiT,
-                                       G[indices[range_t(0,NAEA)][range_t()]],true);
+                                       G.sliced(0,NAEA),true);
         csr::CSR2MA('H',OrbMats[1],PsiT);
         ov *= SDetOp.MixedDensityMatrix(OrbMats[1],PsiT,
-                                       G[indices[range_t(NAEA,NAEA+NAEB)][range_t()]],true);
+                                       G.sliced(NAEA,NAEA+NAEB),true);
       }    
-      boost::multi::array_ref<ComplexType,1> G1D(G.origin(),extents[G.num_elements()]);
+      boost::multi::array_ref<ComplexType,1> G1D(G.origin(),extensions<1u>{G.num_elements()});
       HamOp.vbias(G1D,std::forward<Vec>(v));
     } else {
       size_t Gsize = dm_size(true);
       auto Gdims = dm_dims(true,Alpha);
-      boost::multi::array<ComplexType,1> G1D(extents[Gsize]);
+      boost::multi::array<ComplexType,1> G1D(extensions<1u>{Gsize});
       std::fill_n(G1D.origin(),G1D.num_elements(),ComplexType(0));
       ComplexType ov(0);  
       if(walker_type != COLLINEAR) {
-        boost::multi::array<ComplexType,2> G_(extents[Gdims.first][Gdims.second]);
-        boost::multi::array_ref<ComplexType,1> G1D_(G_.origin(),extents[Gdims.first*Gdims.second]);
+        boost::multi::array<ComplexType,2> G_({Gdims.first,Gdims.second});
+        boost::multi::array_ref<ComplexType,1> G1D_(G_.origin(),extensions<1u>{Gdims.first*Gdims.second});
         int n0,n1;
         std::tie(n0,n1) = FairDivideBoundary(TG.getGlobalRank(),ndets*(ndets+1)/2,
                                              TG.getGlobalSize());
@@ -1172,8 +1172,8 @@ std::cout<<" E nomsd: " <<nd <<" "
           }
         }
       } else {
-        boost::multi::array<ComplexType,2> G_(extents[2*NMO][NMO]);
-        boost::multi::array_ref<ComplexType,1> G1D_(G_.origin(),extents[2*NMO*NMO]);
+        boost::multi::array<ComplexType,2> G_({2*NMO,NMO});
+        boost::multi::array_ref<ComplexType,1> G1D_(G_.origin(),extensions<1u>{2*NMO*NMO});
         int n0,n1;
         std::tie(n0,n1) = FairDivideBoundary(TG.getGlobalRank(),ndets*(ndets+1)/2,
                                              TG.getGlobalSize());
@@ -1188,9 +1188,9 @@ std::cout<<" E nomsd: " <<nd <<" "
               csr::CSR2MA('H',OrbMats[2*p+1],PsiTB);
             }
             ComplexType ov_ = SDetOp.MixedDensityMatrix(OrbMats[2*q],PsiT,
-                                G_[indices[range_t(0,NMO)][range_t()]],false);
+                                G_.sliced(0,NMO),false);
             ov_ *= SDetOp.MixedDensityMatrix(OrbMats[2*q+1],PsiTB,
-                                G_[indices[range_t(NMO,2*NMO)][range_t()]],false);
+                                G_.sliced(NMO,2*NMO),false);
             ov += real(conj(ci[q])*ci[p]*ov_);
             for(int i=0; i<G1D.num_elements(); i++)
               G1D[i] += real(conj(ci[q])*ci[p]*ov_*G1D_[i]);

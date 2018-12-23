@@ -47,7 +47,7 @@ namespace afqmc
     assert(H1.strides()[1] == 1);
     int NMO = H1.shape()[0];
     if(TG.TG_local().root()) {   
-      boost::multi::array<ComplexType,2> v(extents[NMO][NMO]);
+      boost::multi::array<ComplexType,2> v({NMO,NMO});
       std::fill_n(v.origin(),v.num_elements(),ComplexType(0));  
 
       for(int i=0; i<NMO; i++) 
@@ -57,7 +57,7 @@ namespace afqmc
 
       return csr::shm::construct_csr_matrix_single_input<P1Type>(P,cut,'N',TG.TG_local());
     } else {
-      boost::multi::array<ComplexType,2> P(extents[1][1]);
+      boost::multi::array<ComplexType,2> P({1,1});
       return csr::shm::construct_csr_matrix_single_input<P1Type>(P,cut,'N',TG.TG_local());
     }    
   }

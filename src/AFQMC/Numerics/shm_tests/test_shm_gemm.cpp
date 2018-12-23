@@ -19,7 +19,6 @@
 #include <vector>
 #include<iostream>
 
-#include<boost/multi::array.hpp>
 #include "mpi3/communicator.hpp"
 
 #include "AFQMC/config.h"
@@ -31,9 +30,6 @@
 using std::cout;
 using std::endl;
 using std::vector;
-using boost::extents;
-using boost::indices;
-using range_t = boost::multi::array_types::index_range;
 using boost::multi::array;
 using boost::multi::array_ref;
 
@@ -70,9 +66,9 @@ void timing_shm_blas(int c)
   for(int p=0; p<npower; p++) {
     int n = n0*std::pow(2,p);
     int nu = c*n; 
-    Matrix A(buff.data(),extents[nu][nu]);
-    Matrix B(buff.data()+nu*nu,extents[nu][n]);
-    Matrix C(buff.data()+nu*nu+nu*n,extents[nu][n]);
+    Matrix A(buff.data(),{nu,nu});
+    Matrix B(buff.data()+nu*nu,{nu,n});
+    Matrix C(buff.data()+nu*nu+nu*n,{nu,n});
 
     for(auto& v: pairs) {
       int nr = v.first;
@@ -87,7 +83,7 @@ void timing_shm_blas(int c)
       std::tie(c0,cN) = FairDivideBoundary(mycol,n,nc); 
 
 
-      ma::product(A[indices[range_t(r0,rN)][range_t()]],
+      ma::product(A.sliced(r0,rN),
                   B[indices[range_t()][range_t(c0,cN)]],
                   C[indices[range_t(r0,rN)][range_t(c0,cN)]]); 
 
@@ -95,7 +91,7 @@ void timing_shm_blas(int c)
       node.barrier();
       Timer.start("Gen");
       for(int t=0; t<ntimes; t++) {
-        ma::product(A[indices[range_t(r0,rN)][range_t()]],
+        ma::product(A.sliced(r0,rN),
                     B[indices[range_t()][range_t(c0,cN)]],
                     C[indices[range_t(r0,rN)][range_t(c0,cN)]]); 
         node.barrier();

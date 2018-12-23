@@ -111,12 +111,12 @@ class PHMSD: public AFQMCInfo
                 QQ0inv1({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
                 GA2D0_shm({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
                 GB2D0_shm({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
-                local_ov(extents[2][maxn_unique_confg]),
-                local_etot(extents[2][maxn_unique_confg]),
+                local_ov({2,maxn_unique_confg}),
+                local_etot({2,maxn_unique_confg}),
                 local_QQ0inv0({OrbMats[0].shape()[0],NAEA}),
                 local_QQ0inv1({OrbMats.back().shape()[0],NAEB}),
-                Qwork(extents[max_exct_n][max_exct_n]),
-                Gwork(extents[NAEA][maxnactive]),
+                Qwork({max_exct_n,max_exct_n}),
+                Gwork({NAEA,maxnactive}),
                 Ovmsd({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 Emsd({1,1,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
                 QQ0A({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
@@ -239,10 +239,10 @@ class PHMSD: public AFQMCInfo
       } else {  
         assert( G.shape()[0] == size_of_G_for_vbias() );
         assert( G.shape()[1] == v.shape()[1] );
-        HamOp.vbias(G[indices[range_t(0,OrbMats[0].shape()[0]*NMO)][range_t()]],
+        HamOp.vbias(G.sliced(0,OrbMats[0].shape()[0]*NMO),
                     std::forward<MatA>(v),scl*a,0.0);
         if(walker_type==COLLINEAR) 
-          HamOp.vbias(G[indices[range_t(OrbMats[0].shape()[0]*NMO,G.shape()[0])][range_t()]],
+          HamOp.vbias(G.sliced(OrbMats[0].shape()[0]*NMO,G.shape()[0]),
                       std::forward<MatA>(v),scl*a,1.0);
       }  
       TG.local_barrier();    
@@ -272,9 +272,9 @@ class PHMSD: public AFQMCInfo
     void Energy(WlkSet& wset) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);
+        ovlp.resize(extensions<1u>{nw});
       if(eloc.shape()[0] != nw || eloc.shape()[1] != 3)
-        eloc.resize(extents[nw][3]);
+        eloc.resize({nw,3});
       Energy(wset,eloc,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {
@@ -313,7 +313,7 @@ class PHMSD: public AFQMCInfo
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);
+        ovlp.resize(extensions<1u>{nw});
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact,transpose);
     }
 
@@ -332,7 +332,7 @@ class PHMSD: public AFQMCInfo
     void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);	
+        ovlp.resize(extensions<1u>{nw});	
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact_G_for_vbias,transposed_G_for_vbias_);
     }
 
@@ -350,7 +350,7 @@ class PHMSD: public AFQMCInfo
     {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);
+        ovlp.resize(extensions<1u>{nw});
       Overlap(wset,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {

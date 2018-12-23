@@ -174,7 +174,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     if(htype == KPFactorized || htype == KPTHC) nkpts=Idata[2];
 
     // 1 body hamiltonian: Why isn't this in shared memory!!!
-    boost::multi::array<ValueType,2> H1(extents[NMO][NMO]);
+    boost::multi::array<ValueType,2> H1({NMO,NMO});
 
     ValueType NuclearCoulombEnergy(0);
     ValueType FrozenCoreEnergy(0);
@@ -207,7 +207,7 @@ std::cout<<" here 0" <<std::endl;
         foundH1 = true;
       } else {
 
-        H1.resize(extents[NMO][NMO]);
+        H1.resize({NMO,NMO});
         if(Idata[0] < 1) {
           app_error()<<" Error in HamiltonianFactory::fromHDF5(): Dimensions of H1 < 1.  \n";
           APP_ABORT(" ");

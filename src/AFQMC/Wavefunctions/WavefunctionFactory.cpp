@@ -254,7 +254,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     auto guess = initial_guess.find(name);
     if( guess == initial_guess.end() ) {
       auto newg = initial_guess.insert(
-                std::make_pair(name,boost::multi::array<ComplexType,3>(extents[2][NMO][NAEA])));
+                std::make_pair(name,boost::multi::array<ComplexType,3>({2,NMO,NAEA})));
       int iC = (walker_type!=COLLINEAR?initial_configuration:2*initial_configuration);
       if( iC >= PsiT.size() )
         APP_ABORT(" Error: initial_configuration > ndets_to_read \n"); 
@@ -466,7 +466,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     auto guess = initial_guess.find(name);
     if( guess == initial_guess.end() ) {
       auto newg = initial_guess.insert(
-                std::make_pair(name,boost::multi::array<ComplexType,3>(extents[2][NMO][NAEA])));
+                std::make_pair(name,boost::multi::array<ComplexType,3>({2,NMO,NAEA})));
       if(!newg.second)
         APP_ABORT(" Error: Problems adding new initial guess. \n"); 
       auto& Psi0((newg.first)->second);
@@ -703,7 +703,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     auto guess = initial_guess.find(name);
     if( guess == initial_guess.end() ) {
       auto newg = initial_guess.insert(
-                std::make_pair(name,boost::multi::array<ComplexType,3>(extents[2][NMO][NAEA])));
+                std::make_pair(name,boost::multi::array<ComplexType,3>({2,NMO,NAEA})));
       if(!newg.second)
         APP_ABORT(" Error: Problems adding new initial guess. \n");
       using std::conj;
@@ -753,7 +753,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     auto guess = initial_guess.find(name);
     if( guess == initial_guess.end() ) {
       auto newg = initial_guess.insert(
-                std::make_pair(name,boost::multi::array<ComplexType,3>(extents[2][NMO][NAEA])));
+                std::make_pair(name,boost::multi::array<ComplexType,3>({2,NMO,NAEA})));
       if(!newg.second)
         APP_ABORT(" Error: Problems adding new initial guess. \n");
       using std::conj;

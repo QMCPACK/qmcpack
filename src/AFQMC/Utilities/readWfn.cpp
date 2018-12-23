@@ -263,7 +263,7 @@ void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walke
 
     if(wfn_type == 0) {
 
-      boost::multi::array<ComplexType,2> OrbMat(extents[NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat({NMO,NAEA});
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -281,7 +281,7 @@ void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walke
 
     } else if(wfn_type == 1) {
 
-      boost::multi::array<ComplexType,2> OrbMat(extents[NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat({NMO,NAEA});
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -300,7 +300,7 @@ void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walke
 
     } else if(wfn_type == 2) {
 
-      boost::multi::array<ComplexType,2> OrbMat(extents[2*NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat({2*NMO,NAEA});
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -404,7 +404,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
       APP_ABORT("Error: Wavefunction type mixed requires fullMOMat=true.\n");
     PsiT.reserve( (wfn_type!=1)?1:2 );
 
-    boost::multi::array<ComplexType,2> OrbMat(extents[nmo_][nmo_]);
+    boost::multi::array<ComplexType,2> OrbMat({nmo_,nmo_});
     if(comm.root()) {
       std::string tag;
       in>>tag;
@@ -582,18 +582,18 @@ int readWfn( std::string fileName, boost::multi::array<ComplexType,3>& OrbMat, i
 
   if (wfn_type == 0 ) {
 
-     OrbMat.resize(extents[1][NMO][NAEA]);
+     OrbMat.resize({1,NMO,NAEA});
      read_mat(in,OrbMat[0],Cstyle,fullMOMat,NMO,NAEA);
 
   } else if(wfn_type == 1) {
 
-    OrbMat.resize(extents[2][NMO][NAEA]);
+    OrbMat.resize({2,NMO,NAEA});
     read_mat(in,OrbMat[0],Cstyle,fullMOMat,NMO,NAEA);
     read_mat(in,OrbMat[1],Cstyle,fullMOMat,NMO,NAEB);
 
   } else if(wfn_type == 2) {
 
-    OrbMat.resize(extents[1][2*NMO][NAEA+NAEB]);
+    OrbMat.resize({1,2*NMO,NAEA+NAEB});
     read_mat(in,OrbMat[0][indices[range_t()][range_t(0,NAEA)]],Cstyle,fullMOMat,2*NMO,NAEA);
     read_mat(in,OrbMat[0][indices[range_t()][range_t(NAEA,NAEA+NAEB)]],Cstyle,fullMOMat,2*NMO,NAEB);
 

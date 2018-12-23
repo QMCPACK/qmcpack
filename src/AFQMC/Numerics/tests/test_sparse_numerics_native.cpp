@@ -36,12 +36,8 @@
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 
-#include<boost/multi::array.hpp>
 
 using std::vector;
-using boost::extents;
-using boost::indices;
-using range_t = boost::multi::array_types::index_range;
 using boost::multi::array;
 using boost::multi::array_ref;
 using csr_matrix = ma::sparse::csr_matrix<double,int,int>;
@@ -65,11 +61,11 @@ void test_sparse_matrix_mult_native()
 		1.,8.,9., 9.,
 		4.,1.,2., 3.
 	};
-	multi::array_ref<double, 2> B(b.data(), extents[4][4]);
+	multi::array_ref<double, 2> B(b.data(), {4,4});
 	REQUIRE(B.num_elements() == b.size());
 
 	vector<double> c(16);
-	multi::array_ref<double, 2> C(c.data(), extents[4][4]);
+	multi::array_ref<double, 2> C(c.data(), {4,4});
 	REQUIRE(C.num_elements() == c.size());
 
 	ma::product(A, B, C); // C = A*B
@@ -80,12 +76,12 @@ void test_sparse_matrix_mult_native()
 		6., 15., 24., 21.,
 		4., 1., 2., 3.
 	};
-	multi::array_ref<double, 2> C2(c2.data(), extents[4][4]);
+	multi::array_ref<double, 2> C2(c2.data(), {4,4});
 	REQUIRE(C2.num_elements() == c2.size());
 	verify_approx(C, C2);
 
 	vector<double> d(16);
-	multi::array_ref<double, 2> D(d.data(), extents[4][4]);
+	multi::array_ref<double, 2> D(d.data(), {4,4});
 	REQUIRE(D.num_elements() == d.size());
 
         using ma::T;
@@ -96,7 +92,7 @@ void test_sparse_matrix_mult_native()
 		0, 0, 0, 0,
 		4, 1, 2, 3
 	};
-	multi::array_ref<double, 2> D2(d2.data(), extents[4][4]);
+	multi::array_ref<double, 2> D2(d2.data(), {4,4});
 	REQUIRE(D2.num_elements() == d2.size());
 	verify_approx(D2, D);
 
@@ -105,28 +101,28 @@ void test_sparse_matrix_mult_native()
     // matrix-vector
     {
         vector<double> b = {1., 2., 1., 4.};
-        multi::array_ref<double, 1> B(b.data(), extents[4]);
+        multi::array_ref<double, 1> B(b.data(), extensions<1u>{4});
         REQUIRE(B.num_elements() == b.size());
 
         vector<double> c(4);
-        multi::array_ref<double, 1> C(c.data(), extents[4]);
+        multi::array_ref<double, 1> C(c.data(), extensions<1u>{4});
         REQUIRE(C.num_elements() == c.size());
 
         ma::product(A, B, C); // C = A*B
 
         vector<double> c2 = { 18., 0., 6., 4.};
-        multi::array_ref<double, 1> C2(c2.data(), extents[4]);
+        multi::array_ref<double, 1> C2(c2.data(), extensions<1u>{4});
         REQUIRE(C2.num_elements() == c2.size());
         verify_approx(C, C2);
 
         vector<double> d(4);
-        multi::array_ref<double, 1> D(d.data(), extents[4]);
+        multi::array_ref<double, 1> D(d.data(), extensions<1u>{4});
         REQUIRE(D.num_elements() == d.size());
 
         using ma::T;
         ma::product(T(A), B, D); // D = T(A)*B
         vector<double> d2 = { 0., 12., 0., 4.};
-        multi::array_ref<double, 1> D2(d2.data(), extents[4]);
+        multi::array_ref<double, 1> D2(d2.data(), extensions<1u>{4});
         REQUIRE(D2.num_elements() == d2.size());
         verify_approx(D2, D);
    }

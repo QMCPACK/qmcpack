@@ -41,7 +41,7 @@ class mpi3_SHMBuffer
   public:
 
     mpi3_SHMBuffer(communicator& comm_, size_t n=0):
-        comm(std::addressof(comm_)),array_(extents[n]) //shared_allocator{comm_})
+        comm(std::addressof(comm_)),array_(extensions<1u>{n}) //shared_allocator{comm_})
         //comm(std::addressof(comm_)),array_({n},shared_allocator{}) //shared_allocator{comm_})
     {
     }
@@ -67,7 +67,7 @@ class mpi3_SHMBuffer
 
     void resize(size_t n) {
       if(array_.size() != n)
-        array_.resize(extents[n]);
+        array_.resize(extensions<1u>{n});
         //array_.reextent({n});
     }
 

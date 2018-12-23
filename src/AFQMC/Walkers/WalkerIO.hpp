@@ -222,9 +222,9 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, hdf_archive& read, bool set
   { // to limit scope
     boost::multi::array<ComplexType,2> PsiA, PsiB;
     if(TG.TG_local().root()) { 
-      PsiA.resize(extents[NMO][NAEA]);
+      PsiA.resize({NMO,NAEA});
       if(wset.getWalkerType() == COLLINEAR)
-        PsiB.resize(extents[NMO][NAEB]);
+        PsiB.resize({NMO,NAEB});
     }
     // PsiA/B only meaningful at root
     wset.resize(nw_local,PsiA,PsiB);
@@ -244,7 +244,7 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, hdf_archive& read, bool set
         // determine block of walkers to read
         int w0 = std::max(0,nW0-ni);
         int nw_ = std::min(ni+wlk_per_blk[bi],nWN) - std::max(ni,nW0); 
-        Data.resize(extents[nw_][wlk_nterms]);
+        Data.resize({nw_,wlk_nterms});
         hyperslab_proxy<boost::multi::array_ref<ComplexType,2>,2> hslab(Data,
                                   std::array<int,2>{wlk_per_blk[bi],wlk_nterms},
                                   std::array<int,2>{nw_,wlk_nterms},
@@ -602,12 +602,12 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
           displ[p]=nt;
         }
 
-        Buff.resize(extents[nwlk_tot][wlk_nterms]);
+        Buff.resize({nwlk_tot,wlk_nterms});
       }  
 
       if(nw_to_send>0) {
         if(not TG.TG_heads().root())
-          Buff.resize(extents[nw_to_send][wlk_nterms]);
+          Buff.resize({nw_to_send,wlk_nterms});
         for(int p=0; p<nw_to_send; p++) 
           wset.copyToIO(Buff[p],nsent+p);                
       }    

@@ -272,7 +272,7 @@ void SharedWalkerSet::popControl(std::vector<ComplexType>& curData)
   // matrix to hold walkers beyond targetN_per_TG
   // doing this to avoid resizing SHMBuffer, instead use local memory
   // will be resized later
-  boost::multi::array<ComplexType,2> Wexcess(extents[0][walker_size]);
+  boost::multi::array<ComplexType,2> Wexcess({0,walker_size});
 
   if(TG.TG_local().root()) {
     nwalk_counts_new.resize(TG.TG_heads().size());

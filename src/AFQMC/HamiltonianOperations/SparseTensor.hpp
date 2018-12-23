@@ -184,9 +184,9 @@ std::cout<<"\n";
       assert(k >= 0 && k < haj.size());
       assert(k >= 0 && k < Vakbl_view.size());
       if(Gcloc.num_elements() < Gc.shape()[1] * Vakbl_view[k].shape()[0])
-        Gcloc.resize(extents[Vakbl_view[k].shape()[0]*Gc.shape()[1]]);
+        Gcloc.resize(extensions<1u>{Vakbl_view[k].shape()[0]*Gc.shape()[1]});
       boost::multi::array_ref<SPComplexType,2> buff(Gcloc.data(),
-                        extents[Vakbl_view[k].shape()[0]][Gc.shape()[1]]);
+                        {Vakbl_view[k].shape()[0],Gc.shape()[1]});
 
       int nwalk = Gc.shape()[1];
       int getKr = Kr!=nullptr;
@@ -204,7 +204,7 @@ std::cout<<"\n";
 
       // one-body contribution
       if(addH1) {
-        boost::const_multi::array_ref<ComplexType,1> haj_ref(haj[k].origin(), extents[haj[k].num_elements()]);
+        boost::const_multi::array_ref<ComplexType,1> haj_ref(haj[k].origin(), extensions<1u>{haj[k].num_elements()});
         ma::product(ComplexType(1.),ma::T(Gc),haj_ref,ComplexType(1.),E(E.extensions(0),0));
         for(int i=0; i<nwalk; i++)
           E[i][0] += E0;
@@ -218,17 +218,17 @@ std::cout<<"\n";
       if(separateEJ && addEJ) {
         using ma::T;
         if(Gcloc.num_elements() < SpvnT[k].shape()[0] * Gc.shape()[1])
-          Gcloc.resize(extents[SpvnT[k].shape()[0]*Gc.shape()[1]]);
+          Gcloc.resize(extensions<1u>{SpvnT[k].shape()[0]*Gc.shape()[1]});
         assert(SpvnT_view[k].shape()[1] == Gc.shape()[0]);
         RealType scl = (walker_type==CLOSED?4.0:1.0);
         // SpvnT*G
         boost::multi::array_ref<T2,2> v_(Gcloc.origin()+
                                             SpvnT_view[k].local_origin()[0]*Gc.shape()[1],
-                                        extents[SpvnT_view[k].shape()[0]][Gc.shape()[1]]);
+                                        {SpvnT_view[k].shape()[0],Gc.shape()[1]});
         ma::product(SpvnT_view[k], Gc, v_);
         if(getKl || getKr) {
           for(int wi=0; wi<Gc.shape()[1]; wi++) {
-            auto _v_ = v_[indices[range_t()][wi]];
+            auto _v_ = v_(v_.extensions(0),wi); 
             if(getKl) {
               auto Kli = (*Kl)[wi];
               for(int ki=0, qi = SpvnT_view[k].local_origin()[0]; ki<_v_.size(); ki++, qi++)
@@ -242,7 +242,7 @@ std::cout<<"\n";
           }
         }
         for(int wi=0; wi<Gc.shape()[1]; wi++)
-          E[wi][2] = 0.5*scl*ma::dot(v_[indices[range_t()][wi]],v_[indices[range_t()][wi]]);
+          E[wi][2] = 0.5*scl*ma::dot(v_(v_.extensions(0),wi),v_(v_.extensions(0),wi));
       }
 
     }
@@ -265,7 +265,7 @@ std::cout<<"\n";
 
       // Spvn*X
       boost::multi::array_ref<Type,1> v_(v.origin() + Spvn_view.local_origin()[0],
-                                        extents[Spvn_view.shape()[0]]);
+                                        extensions<1u>{Spvn_view.shape()[0]});
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
     }
 
@@ -281,7 +281,7 @@ std::cout<<"\n";
 
       // Spvn*X
       boost::multi::array_ref<Type,2> v_(v[Spvn_view.local_origin()[0]].origin(),
-                                        extents[Spvn_view.shape()[0]][v.shape()[1]]);
+                                        {Spvn_view.shape()[0],v.shape()[1]});
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
     }
 
@@ -298,7 +298,7 @@ std::cout<<"\n";
 
       // SpvnT*G
       boost::multi::array_ref<Type,1> v_(v.origin() + SpvnT_view[k].local_origin()[0],
-                                        extents[SpvnT_view[k].shape()[0]]);
+                                        extensions<1u>{SpvnT_view[k].shape()[0]});
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
     }
@@ -316,7 +316,7 @@ std::cout<<"\n";
 
       // SpvnT*G
       boost::multi::array_ref<Type,2> v_(v[SpvnT_view[k].local_origin()[0]].origin(),
-                                        extents[SpvnT_view[k].shape()[0]][v.shape()[1]]);
+                                        {SpvnT_view[k].shape()[0],v.shape()[1]});
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
     }

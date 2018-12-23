@@ -492,24 +492,24 @@ inline Tp MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Mat&& T
   if(compact) {
 
     // C = T(T1) * T(B)
-    //ma::product(T1[indices[range_t(N0,Nn)][range_t()]],
+    //ma::product(T1.sliced(N0,Nn),
     //            T(B),
-    //            C[indices[range_t(N0,Nn)][range_t()]]); 
+    //            C.sliced(N0,Nn)); 
     if(N0!=Nn)
       ma::product(T(T1[indices[range_t()][range_t(N0,Nn)]]),
                 T(B),
-                C[indices[range_t(N0,Nn)][range_t()]]); 
+                C.sliced(N0,Nn)); 
 
   } else {
 
     // T2 = T(T1) * T(B)
-    //ma::product(T1[indices[range_t(N0,Nn)][range_t()]],
+    //ma::product(T1.sliced(N0,Nn),
     //            T(B),
-    //            T2[indices[range_t(N0,Nn)][range_t()]]); 
+    //            T2.sliced(N0,Nn)); 
     if(N0!=Nn)
       ma::product(T(T1[indices[range_t()][range_t(N0,Nn)]]),
                 T(B),
-                T2[indices[range_t(N0,Nn)][range_t()]]); 
+                T2.sliced(N0,Nn)); 
 
     comm.barrier();
     
@@ -627,9 +627,9 @@ inline Tp OverlapForWoodbury(const MatA& hermA, const MatB& B, MatC&& QQ0, integ
   std::tie(M0,Mn) = FairDivideBoundary(comm.rank(),sz,comm.size());
 
   // QQ0 = TMN * inv(TNN) 
-  ma::product(TMN[indices[range_t(M0,Mn)][range_t()]],TNN,
-              QQ0({M0,Mn},QQ0.extension(1))); //[indices[range_t(M0,Mn)][range_t()]]); 
-              //QQ0[indices[range_t(M0,Mn)][range_t()]]); 
+  ma::product(TMN.sliced(M0,Mn),TNN,
+              QQ0({M0,Mn},QQ0.extension(1))); //.sliced(M0,Mn)); 
+              //QQ0.sliced(M0,Mn)); 
   comm.barrier();
   return ovlp;
 }
@@ -698,10 +698,10 @@ inline Tp MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&&
 
   // QQ0 = TAB * inv(TNN) 
   if(P0!=Pn)  
-    ma::product(TAB[indices[range_t(P0,Pn)][range_t()]],
+    ma::product(TAB.sliced(P0,Pn),
               TNN,
               QQ0({P0,Pn},QQ0.extension(1)));  
-              //QQ0[indices[range_t(P0,Pn)][range_t()]]);
+              //QQ0.sliced(P0,Pn));
   if(compact) {
 
     // C = T(TNN) * T(B)
@@ -716,7 +716,7 @@ inline Tp MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&&
     if(N0!=Nn)    
       ma::product(T(TNN[indices[range_t()][range_t(N0,Nn)]]),
                   T(B),
-                  TNM[indices[range_t(N0,Nn)][range_t()]]); 
+                  TNM.sliced(N0,Nn)); 
 
     int sz=TNM.shape()[1];
     std::tie(N0,Nn) = FairDivideBoundary(comm.rank(),sz,comm.size());   

@@ -36,7 +36,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
   if(TG.getNumberOfTGs() > 1)
     APP_ABORT("Error: HSPotential not implemented with distributed Hamiltonian. \n");
 
-  vn0.resize(extents[NMO][NMO]);
+  vn0.resize({NMO,NMO});
   std::fill_n(vn0.data(),NMO*NMO,ComplexType(0));
   for(int i=0, cnt=0; i<NMO; i++)
     for(int l=i; l<NMO; l++, cnt++) {
@@ -200,7 +200,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
 
     Timer.reset("Generic");
     Timer.start("Generic");
-    boost::multi::array<ComplexType,2> vn0(extents[NMO][NMO]);
+    boost::multi::array<ComplexType,2> vn0({NMO,NMO});
     auto Spvn(std::move(calculateHSPotentials(cutvn,TGprop,vn0)));
     auto Spvnview(csr::shm::local_balanced_partition(Spvn,TGprop));
     Timer.stop("Generic");

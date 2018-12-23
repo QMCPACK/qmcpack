@@ -78,7 +78,7 @@ class mpi3_shared_ma_proxy
     std::array<size_type, 2> global_shape() const{return global_shape_;} 
 
     boost::multi::array_ref<T,2> get() { 
-        return boost::multi::array_ref<T,2>(ptr->data(),extents[shape_[0]][shape_[1]]); 
+        return boost::multi::array_ref<T,2>(ptr->data(),{shape_[0],shape_[1]}); 
     }
 
   private:
