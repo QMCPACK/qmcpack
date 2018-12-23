@@ -25,7 +25,6 @@
 #include <iostream>
 #include <cstdio>
 #include <Platforms/sysutil.h>
-#include <tau/profiler.h>
 #include <Utilities/FairDivide.h>
 #include <fstream>
 
