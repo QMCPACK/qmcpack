@@ -147,7 +147,7 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
    */
   void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
 
-  void markAffectedElecs(const DistanceTableData& myTable, int iat);
+  void markAffectedElecs(const DistanceTableData* myTable, int iat);
 
 };
 }

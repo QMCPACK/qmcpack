@@ -332,7 +332,7 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
             Psi.ratioGrad(P,iat,grad_iat);
             Psi.acceptMove(P,iat);
             // mark all affected electrons
-            markAffectedElecs(*P.DistTables[myTableIndex], iat);
+            markAffectedElecs(P.DistTables[myTableIndex], iat);
             P.acceptMove(iat);
             NonLocalMoveAccepted++;
           }
@@ -347,22 +347,22 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
 }
 
 void
-NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, int iel)
+NonLocalECPotential::markAffectedElecs(const DistanceTableData* myTable, int iel)
 {
   std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(iel);
   for(int iat=0; iat<NumIons; iat++)
   {
     if(PP[iat]==nullptr) continue;
     RealType old_distance, new_distance;
-    if(myTable.DTType == DT_SOA)
+    if(myTable->DTType == DT_SOA)
     {
-      old_distance = myTable.Distances[iel][iat];
-      new_distance = myTable.Temp_r[iat];
+      old_distance = myTable->Distances[iel][iat];
+      new_distance = myTable->Temp_r[iat];
     }
     else
     {
-      old_distance = myTable.r(myTable.M[iat]+iel);
-      new_distance = myTable.Temp[iat].r1;
+      old_distance = myTable->r(myTable->M[iat]+iel);
+      new_distance = myTable->Temp[iat].r1;
     }
     bool moved = false;
     // move out
