@@ -309,7 +309,7 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   }
   else if(UseTMove==TMOVE_V3)
   {
-    elecTMAffected.resize(P.getTotalNum(),false),
+    elecTMAffected.assign(P.getTotalNum(),false);
     nonLocalOps.group_by_elec();
     GradType grad_iat;
     //make a non-local move per particle
