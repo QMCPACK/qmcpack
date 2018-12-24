@@ -349,47 +349,50 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
 void
 NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, int iel)
 {
-  if(myTable.DTType == DT_SOA)
+  std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(iel);
+  for(int iat=0; iat<NumIons; iat++)
   {
-    const auto& old_dist  = myTable.Distances[iel];
-    const auto& new_dist  = myTable.Temp_r;
-    std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(iel);
-    for(int iat=0; iat<NumIons; iat++)
+    if(PP[iat]==nullptr) continue;
+    RealType old_distance, new_distance;
+    if(myTable.DTType == DT_SOA)
     {
-      if(PP[iat]==nullptr) continue;
-      bool moved = false;
-      // move out
-      if(old_dist[iat] < PP[iat]->Rmax && new_dist[iat] >= PP[iat]->Rmax)
-      {
-        moved = true;
-        std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
-        auto iter_at = std::find(NeighborIons.begin(), NeighborIons.end(), iat);
-        auto iter_el = std::find(NeighborElecs.begin(), NeighborElecs.end(), iel);
-        *iter_at = NeighborIons.back();
-        *iter_el = NeighborElecs.back();
-        NeighborIons.pop_back();
-        NeighborElecs.pop_back();
-        elecTMAffected[iel] = true;
-      }
-      // move in
-      if(old_dist[iat] >= PP[iat]->Rmax && new_dist[iat] < PP[iat]->Rmax)
-      {
-        moved = true;
-        std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
-        NeighborElecs.push_back(iel);
-        NeighborIons.push_back(iat);
-      }
-      // move around
-      if(moved || old_dist[iat] < PP[iat]->Rmax && new_dist[iat] < PP[iat]->Rmax)
-      {
-        std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
-        for(int jel=0; jel<NeighborElecs.size(); ++jel)
-          elecTMAffected[NeighborElecs[jel]] = true;
-      }
+      old_distance = myTable.Distances[iel][iat];
+      new_distance = myTable.Temp_r[iat];
     }
-  }
-  else
-  {
+    else
+    {
+      old_distance = myTable.r(myTable.M[iat]+iel);
+      new_distance = myTable.Temp[iat].r1;
+    }
+    bool moved = false;
+    // move out
+    if(old_distance < PP[iat]->Rmax && new_distance >= PP[iat]->Rmax)
+    {
+      moved = true;
+      std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
+      auto iter_at = std::find(NeighborIons.begin(), NeighborIons.end(), iat);
+      auto iter_el = std::find(NeighborElecs.begin(), NeighborElecs.end(), iel);
+      *iter_at = NeighborIons.back();
+      *iter_el = NeighborElecs.back();
+      NeighborIons.pop_back();
+      NeighborElecs.pop_back();
+      elecTMAffected[iel] = true;
+    }
+    // move in
+    if(old_distance >= PP[iat]->Rmax && new_distance < PP[iat]->Rmax)
+    {
+      moved = true;
+      std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
+      NeighborElecs.push_back(iel);
+      NeighborIons.push_back(iat);
+    }
+    // move around
+    if(moved || old_distance < PP[iat]->Rmax && new_distance < PP[iat]->Rmax)
+    {
+      std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
+      for(int jel=0; jel<NeighborElecs.size(); ++jel)
+        elecTMAffected[NeighborElecs[jel]] = true;
+    }
   }
 }
 
