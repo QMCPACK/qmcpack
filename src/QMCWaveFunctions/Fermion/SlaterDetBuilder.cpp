@@ -554,7 +554,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
     else
     {
-      app_log()<<"Using DiracDeterminant "<< std::endl;
+      app_log()<<"Using DiracDeterminant"<< std::endl;
       adet = new DiracDeterminant(psi,firstIndex);
     }
 #endif
