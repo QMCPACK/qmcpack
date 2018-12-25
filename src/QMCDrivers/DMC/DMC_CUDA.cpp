@@ -147,10 +147,7 @@ bool DMCcuda::run()
       {
         Txy.resize(nw);
         for (int iw=0; iw<nw; iw++)
-        {
           Txy[iw].clear();
-          Txy[iw].push_back(NonLocalData(-1, 1.0, PosType()));
-        }
       }
       for (int iw=0; iw<nw; iw++)
         W[iw]->Age++;
@@ -241,11 +238,11 @@ bool DMCcuda::run()
         std::vector<PosType> accPos;
         for (int iw=0; iw<nw; iw++)
         {
-          int ibar = NLop.selectMove(Random(), Txy[iw]);
-          if (ibar)
+          const NonLocalData* oneTMove = NLop.selectMove(Random(), Txy[iw]);
+          if (oneTMove)
           {
-            int iat = Txy[iw][ibar].PID;
-            PosType newpos(W[iw]->R[iat] + Txy[iw][ibar].Delta);
+            int iat = oneTMove->PID;
+            PosType newpos(W[iw]->R[iat] + oneTMove->Delta);
             if (checkBounds(newpos))
             {
               accepted.push_back(W[iw]);

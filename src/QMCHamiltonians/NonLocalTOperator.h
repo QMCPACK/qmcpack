@@ -67,13 +67,20 @@ struct NonLocalTOperator
    */
   void reset();
 
+  /** select the move for a given probability
+   * @param prob value [0,1)
+   * @param txy a given Txy collection
+   * @return pointer to NonLocalData
+   */
+  const NonLocalData* selectMove(RealType prob, std::vector<NonLocalData> &txy) const;
+
   /** select the move for a given probability using internal Txy
    * @param prob value [0,1)
    * @return pointer to NonLocalData
    */
   inline const NonLocalData* selectMove(RealType prob)
   {
-    return selectMoveImpl(prob, Txy);
+    return selectMove(prob, Txy);
   }
 
   /** select the move for a given probability using internal Txy_by_elec
@@ -83,26 +90,11 @@ struct NonLocalTOperator
    */
   inline const NonLocalData* selectMove(RealType prob, int iel)
   {
-    return selectMoveImpl(prob, Txy_by_elec[iel]);
+    return selectMove(prob, Txy_by_elec[iel]);
   }
-
-  /** select the move for a given probability
-   * @param prob value [0,1)
-   * @param txy a given Txy collection
-   * @return the move index k for \f$\sum_i^K T/\sum_i^N < prob\f$
-   */
-  int selectMove(RealType prob, std::vector<NonLocalData> &txy);
 
   /** sort all the Txy elements by electron */
   void group_by_elec();
-
-  private:
-  /** select the move for a given probability
-   * @param prob value [0,1)
-   * @param txy a given Txy collection
-   * @return pointer to NonLocalData
-   */
-  const NonLocalData* selectMoveImpl(RealType prob, std::vector<NonLocalData> &txy) const;
 
 };
 
