@@ -234,6 +234,7 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
 void
 NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
 {
+  nonLocalOps.reset();
   std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
   const auto myTable = P.DistTables[myTableIndex];
   const std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(ref_elec);
@@ -289,7 +290,6 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     for(int ig=0; ig<P.groups(); ++ig) //loop over species
       for (int iat=P.first(ig); iat<P.last(ig); ++iat)
       {
-        nonLocalOps.reset();
         computeOneElectronTxy(P,iat);
         const NonLocalData *oneTMove = nonLocalOps.selectMove(RandomGen());
         if(oneTMove)
@@ -318,7 +318,6 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
         if(elecTMAffected[iat])
         {
           // recompute Txy for the given electron effected by Tmoves
-          nonLocalOps.reset();
           computeOneElectronTxy(P,iat);
           oneTMove = nonLocalOps.selectMove(RandomGen());
         }
