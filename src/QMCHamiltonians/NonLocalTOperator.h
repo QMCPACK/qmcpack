@@ -48,7 +48,7 @@ struct NonLocalTOperator
   RealType minusFactor;
 
   std::vector<NonLocalData> Txy;
-  std::vector<std::vector<NonLocalData*> > Txy_by_elec;
+  std::vector<std::vector<NonLocalData> > Txy_by_elec;
   size_t Nelec;
 
   NonLocalTOperator(size_t N);
