@@ -81,18 +81,18 @@ void NonLocalTOperator::reset()
   Txy.clear();
 }
 
-const NonLocalData* NonLocalTOperator::selectMove(RealType prob)
+const NonLocalData* NonLocalTOperator::selectMoveImpl(RealType prob, std::vector<NonLocalData> &txy) const
 {
   RealType wgt_t=1.0;
-  for(int i=0; i<Txy.size(); i++)
+  for(int i=0; i<txy.size(); i++)
   {
-    if(Txy[i].Weight>0)
+    if(txy[i].Weight>0)
     {
-      wgt_t += Txy[i].Weight *=plusFactor;
+      wgt_t += txy[i].Weight *=plusFactor;
     }
     else
     {
-      wgt_t += Txy[i].Weight *=minusFactor;
+      wgt_t += txy[i].Weight *=minusFactor;
     }
   }
   prob *= wgt_t;
@@ -100,10 +100,10 @@ const NonLocalData* NonLocalTOperator::selectMove(RealType prob)
   int ibar=0;
   while(wsum<prob)
   {
-    wsum += Txy[ibar].Weight;
+    wsum += txy[ibar].Weight;
     ibar++;
   }
-  return ibar>0 ? &(Txy[ibar-1]) : nullptr;
+  return ibar>0 ? &(txy[ibar-1]) : nullptr;
 }
 
 int NonLocalTOperator::selectMove(RealType prob,
@@ -146,31 +146,4 @@ void NonLocalTOperator::group_by_elec()
   }
 }
 
-const NonLocalData* NonLocalTOperator::selectMove(RealType prob, int iel)
-{
-  RealType wgt_t=1.0;
-  for(int i=0; i<Txy_by_elec[iel].size(); i++)
-  {
-    if(Txy_by_elec[iel][i].Weight>0)
-    {
-      wgt_t += Txy_by_elec[iel][i].Weight *=plusFactor;
-    }
-    else
-    {
-      wgt_t += Txy_by_elec[iel][i].Weight *=minusFactor;
-    }
-  }
-  prob *= wgt_t;
-  RealType wsum=1.0;
-  int ibar=0;
-  while(wsum<prob)
-  {
-    wsum += Txy_by_elec[iel][ibar].Weight;
-    ibar++;
-  }
-  return ibar>0 ? &(Txy_by_elec[iel][ibar-1]) : nullptr;
 }
-
-}
-
-

@@ -61,20 +61,30 @@ struct NonLocalTOperator
   /** initialize the parameters */
   int put(xmlNodePtr cur);
 
-  /** reserve Txy for memory optimization */
-  void reserve(int n);
-
   /** reset Txy for a new set of non-local moves
    *
    * Txy[0] is always 1 corresponding to the diagonal(no) move
    */
   void reset();
 
-  /** select the move for a given probability
+  /** select the move for a given probability using internal Txy
    * @param prob value [0,1)
-   * @return the move index k for \f$\sum_i^K T/\sum_i^N < prob\f$
+   * @return pointer to NonLocalData
    */
-  const NonLocalData* selectMove(RealType prob);
+  inline const NonLocalData* selectMove(RealType prob)
+  {
+    return selectMoveImpl(prob, Txy);
+  }
+
+  /** select the move for a given probability using internal Txy_by_elec
+   * @param prob value [0,1)
+   * @param iel reference electron
+   * @return pointer to NonLocalData
+   */
+  inline const NonLocalData* selectMove(RealType prob, int iel)
+  {
+    return selectMoveImpl(prob, Txy_by_elec[iel]);
+  }
 
   /** select the move for a given probability
    * @param prob value [0,1)
@@ -86,8 +96,14 @@ struct NonLocalTOperator
   /** sort all the Txy elements by electron */
   void group_by_elec();
 
-  /** select the move for electron iel with a given probability */
-  const NonLocalData* selectMove(RealType prob, int iel);
+  private:
+  /** select the move for a given probability
+   * @param prob value [0,1)
+   * @param txy a given Txy collection
+   * @return pointer to NonLocalData
+   */
+  const NonLocalData* selectMoveImpl(RealType prob, std::vector<NonLocalData> &txy) const;
+
 };
 
 }
