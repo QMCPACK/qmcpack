@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
-  <project id="NiO-vmc-dmc-ref" series="1">
+  <project id="NiO-fcc-S1-vmc-dmc" series="1">
     <application name="qmcapp" role="molecu" class="serial" version="0.2">
       DMC for NiO-fcc-S1-tw0
     </application>

@@ -33,13 +33,14 @@ IF (EXISTS ${H5_FULL_PATH})
                     1 NIO_A4_E48_SCALARS # VMC
                     )
 
-#  LocalEnergy           =  -371.322422 +/- 0.001037   13.197705 +/- 0.020589   0.0355
-#  LocalEnergy           =  -371.287325 +/- 0.000805   13.346030 +/- 0.013380   0.0359
-#  LocalEnergy           =  -371.284699 +/- 0.000786   13.604888 +/- 0.027655   0.0366
-  LIST(APPEND NIO_A4_E48_DMC_SCALARS "totenergy" "-371.322422 0.023")
-  LIST(APPEND NIO_A4_E48_DMC_V0_SCALARS "totenergy" "-371.287325 0.018")
-  LIST(APPEND NIO_A4_E48_DMC_V1_SCALARS "totenergy" "-371.284699 0.018")
-  LIST(APPEND NIO_A4_E48_DMC_V3_SCALARS "totenergy" "-371.284699 0.018")
+#  LocalEnergy           =  -371.322168 +/- 0.000843   13.223478 +/- 0.062204
+#  LocalEnergy           =  -371.288408 +/- 0.000773   13.344812 +/- 0.011638
+#  LocalEnergy           =  -371.283854 +/- 0.001185   13.587116 +/- 0.019469
+#  LocalEnergy           =  -371.284416 +/- 0.000750   13.613860 +/- 0.013540
+  LIST(APPEND NIO_A4_E48_DMC_SCALARS "totenergy" "-371.322168 0.023")
+  LIST(APPEND NIO_A4_E48_DMC_V0_SCALARS "totenergy" "-371.288408 0.018")
+  LIST(APPEND NIO_A4_E48_DMC_V1_SCALARS "totenergy" "-371.283854 0.018")
+  LIST(APPEND NIO_A4_E48_DMC_V3_SCALARS "totenergy" "-371.284416 0.018")
 
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-dmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
