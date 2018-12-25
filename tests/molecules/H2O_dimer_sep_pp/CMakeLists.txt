@@ -16,8 +16,8 @@ IF (NOT QMC_CUDA)
                     2 H2OS2_DMCLA_SCALARS
                     )
 
-  LIST(APPEND H2OS2_DMCTM0_SCALARS "totenergy" "-34.556408  0.0015") # total energy
-  LIST(APPEND H2OS2_DMCTM0_SCALARS "nonlocalecp" "3.3476 0.012") # non local ecp
+  LIST(APPEND H2OS2_DMCTM0_SCALARS "totenergy" "-34.556348  0.0015") # total energy
+  LIST(APPEND H2OS2_DMCTM0_SCALARS "nonlocalecp" "3.339723 0.012") # non local ecp
 
   QMC_RUN_AND_CHECK(short-H2O_dimer_sep_pp-j3_dmc_tm0
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
@@ -28,8 +28,8 @@ IF (NOT QMC_CUDA)
                     2 H2OS2_DMCTM0_SCALARS
                     )
 
-  LIST(APPEND H2OS2_DMCTM1_SCALARS "totenergy" "-34.56012  0.0015") # total energy
-  LIST(APPEND H2OS2_DMCTM1_SCALARS "nonlocalecp" "3.1779 0.012") # non local ecp
+  LIST(APPEND H2OS2_DMCTM1_SCALARS "totenergy" "-34.560303  0.0015") # total energy
+  LIST(APPEND H2OS2_DMCTM1_SCALARS "nonlocalecp" "3.177908 0.012") # non local ecp
 
   QMC_RUN_AND_CHECK(short-H2O_dimer_sep_pp-j3_dmc_tm1
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
@@ -40,8 +40,8 @@ IF (NOT QMC_CUDA)
                     2 H2OS2_DMCTM1_SCALARS
                     )
 
-  LIST(APPEND H2OS2_DMCTM3_SCALARS "totenergy" "-34.56071  0.0015") # total energy
-  LIST(APPEND H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.1750 0.012") # non local ecp
+  LIST(APPEND H2OS2_DMCTM3_SCALARS "totenergy" "-34.560980  0.0015") # total energy
+  LIST(APPEND H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.174425 0.012") # non local ecp
 
   QMC_RUN_AND_CHECK(short-H2O_dimer_sep_pp-j3_dmc_tm3
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
@@ -65,8 +65,8 @@ IF (NOT QMC_CUDA)
                     2 LONG_H2OS2_DMCLA_SCALARS
                     )
 
-  LIST(APPEND LONG_H2OS2_DMCTM0_SCALARS "totenergy" "-34.556408  0.0005") # total energy
-  LIST(APPEND LONG_H2OS2_DMCTM0_SCALARS "nonlocalecp" "3.3476 0.0045") # non local ecp
+  LIST(APPEND LONG_H2OS2_DMCTM0_SCALARS "totenergy" "-34.556348  0.0005") # total energy
+  LIST(APPEND LONG_H2OS2_DMCTM0_SCALARS "nonlocalecp" "3.339723 0.0045") # non local ecp
 
   QMC_RUN_AND_CHECK(long-H2O_dimer_sep_pp-j3_dmc_tm0
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
@@ -77,8 +77,8 @@ IF (NOT QMC_CUDA)
                     2 LONG_H2OS2_DMCTM0_SCALARS
                     )
 
-  LIST(APPEND LONG_H2OS2_DMCTM1_SCALARS "totenergy" "-34.56012  0.0005") # total energy
-  LIST(APPEND LONG_H2OS2_DMCTM1_SCALARS "nonlocalecp" "3.1779 0.0045") # non local ecp
+  LIST(APPEND LONG_H2OS2_DMCTM1_SCALARS "totenergy" "-34.560303  0.0005") # total energy
+  LIST(APPEND LONG_H2OS2_DMCTM1_SCALARS "nonlocalecp" "3.177908 0.0045") # non local ecp
 
   QMC_RUN_AND_CHECK(long-H2O_dimer_sep_pp-j3_dmc_tm1
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
@@ -89,8 +89,8 @@ IF (NOT QMC_CUDA)
                     2 LONG_H2OS2_DMCTM1_SCALARS
                     )
 
-  LIST(APPEND LONG_H2OS2_DMCTM3_SCALARS "totenergy" "-34.56071  0.0005") # total energy
-  LIST(APPEND LONG_H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.1750 0.0045") # non local ecp
+  LIST(APPEND LONG_H2OS2_DMCTM3_SCALARS "totenergy" "-34.560980  0.0005") # total energy
+  LIST(APPEND LONG_H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.174425 0.0045") # non local ecp
 
   QMC_RUN_AND_CHECK(long-H2O_dimer_sep_pp-j3_dmc_tm3
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"

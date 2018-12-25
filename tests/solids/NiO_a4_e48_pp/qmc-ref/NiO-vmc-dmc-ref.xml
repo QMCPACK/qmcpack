@@ -103,7 +103,7 @@
     <parameter name="targetwalkers">        32768 </parameter>
     <parameter name="warmupSteps">          100 </parameter>
     <parameter name="steps">                 40 </parameter>
-    <parameter name="blocks">               100 </parameter>
+    <parameter name="blocks">               400 </parameter>
     <parameter name="timestep">            0.01 </parameter>
     <parameter name="reconfiguration">       no </parameter>
     <parameter name="nonlocalmoves">         no </parameter>
@@ -113,7 +113,7 @@
     <parameter name="targetwalkers">        32768 </parameter>
     <parameter name="warmupSteps">          100 </parameter>
     <parameter name="steps">                 40 </parameter>
-    <parameter name="blocks">               100 </parameter>
+    <parameter name="blocks">               400 </parameter>
     <parameter name="timestep">            0.01 </parameter>
     <parameter name="reconfiguration">       no </parameter>
     <parameter name="nonlocalmoves">         v0 </parameter>
@@ -123,7 +123,7 @@
     <parameter name="targetwalkers">        32768 </parameter>
     <parameter name="warmupSteps">          100 </parameter>
     <parameter name="steps">                 40 </parameter>
-    <parameter name="blocks">               100 </parameter>
+    <parameter name="blocks">               400 </parameter>
     <parameter name="timestep">            0.01 </parameter>
     <parameter name="reconfiguration">       no </parameter>
     <parameter name="nonlocalmoves">         v1 </parameter>
@@ -133,7 +133,7 @@
     <parameter name="targetwalkers">        32768 </parameter>
     <parameter name="warmupSteps">          100 </parameter>
     <parameter name="steps">                 40 </parameter>
-    <parameter name="blocks">               100 </parameter>
+    <parameter name="blocks">               400 </parameter>
     <parameter name="timestep">            0.01 </parameter>
     <parameter name="reconfiguration">       no </parameter>
     <parameter name="nonlocalmoves">         v3 </parameter>
