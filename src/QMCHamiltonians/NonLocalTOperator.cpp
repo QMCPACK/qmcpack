@@ -78,20 +78,13 @@ int NonLocalTOperator::put(xmlNodePtr cur)
 
 void NonLocalTOperator::reset()
 {
-  Txy.erase(Txy.begin(),Txy.end());
-  Txy.push_back(NonLocalData());
-}
-
-void NonLocalTOperator::reserve(int n)
-{
-  Txy.reserve(n);
-  Txy.push_back(NonLocalData());
+  Txy.clear();
 }
 
 const NonLocalData* NonLocalTOperator::selectMove(RealType prob)
 {
   RealType wgt_t=1.0;
-  for(int i=1; i<Txy.size(); i++)
+  for(int i=0; i<Txy.size(); i++)
   {
     if(Txy[i].Weight>0)
     {
@@ -103,21 +96,21 @@ const NonLocalData* NonLocalTOperator::selectMove(RealType prob)
     }
   }
   prob *= wgt_t;
-  RealType wsum=Txy[0].Weight;
+  RealType wsum=1.0;
   int ibar=0;
   while(wsum<prob)
   {
-    ibar++;
     wsum += Txy[ibar].Weight;
+    ibar++;
   }
-  return ibar>0 ? &(Txy[ibar]) : nullptr;
+  return ibar>0 ? &(Txy[ibar-1]) : nullptr;
 }
 
 int NonLocalTOperator::selectMove(RealType prob,
                                   std::vector<NonLocalData> &txy)
 {
   RealType wgt_t=1.0;
-  for(int i=1; i<txy.size(); i++)
+  for(int i=0; i<txy.size(); i++)
   {
     if(txy[i].Weight>0)
     {
@@ -147,7 +140,7 @@ void NonLocalTOperator::group_by_elec()
     Txy_by_elec[i].clear();
   }
 
-  for(int i=1; i<Txy.size(); i++)
+  for(int i=0; i<Txy.size(); i++)
   {
     Txy_by_elec[Txy[i].PID].push_back(Txy[i]);
   }
