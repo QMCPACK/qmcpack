@@ -45,8 +45,6 @@ void output_hardware_info(Communicate *comm, Libxml2Document &doc, xmlNodePtr ro
  */
 int main(int argc, char **argv)
 {
-  //TAU_PROFILE("int main(int, char **)", " ", TAU_DEFAULT);
-  //TAU_INIT(&argc, &argv);
   using namespace qmcplusplus;
   //qmc_common  and MPI is initialized
 #ifdef HAVE_MPI
