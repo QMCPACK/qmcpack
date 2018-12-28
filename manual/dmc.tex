@@ -105,7 +105,7 @@ where $N$ is the current population.
 \item yes/v0: implements the algorithm in the 2006 Casula paper~\cite{Casula2006}
 \item v1: implements the v1 algorithm in the 2010 Casula paper~\cite{Casula2010}.
 \item v2: is \textbf{not implemented} and \textbf{skipped} due to the existence of the v2 algorithm in the 2010 Casula paper~\cite{Casula2010}.
-\item v3: implements an algorithm similar to v1 but is much faster. v1 computes the transition probability before each single electron T-move selection due to the acceptance of previous T-moves. v3 reuses the transition probability computed in non-local pseudopotentials, namely before accepting any T-moves. This is an approximation to v1, and results in a different time step error, but significantly reduces the computational cost. v1 and v3 agrees at zero time step.
+\item v3: implements an algorithm similar to v1 but is much faster. v1 computes the transition probability before each single electron T-move selection due to the acceptance of previous T-moves. v3 mostly reuses the transition probability computed during the evaluation of non-local pseudopotentials for the local energy, namely before accepting any T-moves, and only recomputes the transition probability of the electrons within the same pseudopotential region of any electrons touched by T-moves. This is an approximation to v1, and results in a slightly different time step error, but significantly reduces the computational cost. v1 and v3 agrees at zero time step.
 \end{itemize}
 The v1 and v3 algorithms are size-consistent and important advances over the previous v0 non-size-consistent algorithm. Investigating the importance of size consistency is highly recommended.
 
