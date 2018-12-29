@@ -187,7 +187,6 @@ void LCAOParser::parse(const std::string& fname)
            CIcoeff.resize(ci_size);
            CIalpha.resize(ci_size);
            CIbeta.resize(ci_size);
-           std::cout<<"NbDet="<<ci_size<<std::endl;
 
            hin.read(ci_nstates,"nstate");
            int N_int;
@@ -215,10 +214,10 @@ void LCAOParser::parse(const std::string& fname)
 		for (int k=0; k<N_int; k++)
                 {
 		    long int a = tempAlpha[ni][k];
-		    std::bitset<64> a2 = a;
+		    std::bitset<bit_kind> a2 = a;
 			
 		    auto b = tempBeta[ni][k];
-		    auto b2 =  std::bitset<64>(b);
+		    auto b2 =  std::bitset<bit_kind>(b);
 
 
 		    // ci_nstates == n_orbital
@@ -408,7 +407,7 @@ void LCAOParser::getMO(const std::string & fname)
   EigVec.resize(2*SizeOfBasisSet*numMO);
   
   std::string setname;
-  Matrix<double> CartMat(SizeOfBasisSet,SizeOfBasisSet);
+  Matrix<double> CartMat(numMO,SizeOfBasisSet);
 
   hdf_archive hin;
 
@@ -426,8 +425,6 @@ void LCAOParser::getMO(const std::string & fname)
        APP_ABORT(setname.c_str());
     }
     hin.close();
-  //hin.push("KPTS_0");
-  //hin.read(CartMat,"eingenset_0"); 
   int cnt=0;
   for(int i=0; i<numMO; i++)
     for(int k=0; k<SizeOfBasisSet; k++)

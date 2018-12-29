@@ -630,7 +630,6 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   list_up.resize(uniqueConfg_up.size());
   for(int i=0; i<list_up.size(); i++)
   {
-    std::cout<<"ANOUAR!!!="<<uniqueConfg_up[i]<<std::endl;
     list_up[i].occup.resize(nels_up);
     int cnt=0;
     for(int k=0; k<uniqueConfg_up[i].occup.size(); k++)
@@ -638,7 +637,6 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
         list_up[i].occup[cnt++]=k;
     if(cnt!=nels_up)
     {
-
       APP_ABORT("Error in SlaterDetBuilder::createMSDFast, problems with ci configuration list. \n");
     }
   }
@@ -1333,8 +1331,6 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur, std::vector<ci_configuratio
   }
        
   hin.read(N_int,"Nbits");
-
-
   CIcoeff.resize(ndets);
   ConfigTag.resize(ndets);
   hin.read(CIcoeff,"Coeff");
@@ -1361,8 +1357,6 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur, std::vector<ci_configuratio
   for(size_t i=0; i<nstates; i++)
     dummyC_beta.occup[i]=true;
 
-
-
   hin.close(); 
   std::cout <<" Done reading CIs from H5!!"<< std::endl;
 
@@ -1381,10 +1375,10 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur, std::vector<ci_configuratio
      for (int k=0; k<N_int; k++)
      {
        long int a = tempAlpha[ni][k];
-       std::bitset<64> a2 = a;
+       std::bitset<bit_kind> a2 = a;
     		
        auto b = tempBeta[ni][k];
-       auto b2 =  std::bitset<64>(b);
+       auto b2 =  std::bitset<bit_kind>(b);
 
        for(int i=0; i<bit_kind;i++) 
        {
@@ -1396,8 +1390,6 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur, std::vector<ci_configuratio
     	   }
        }
      }
-
-
      coeff.push_back(CIcoeff[ni]);
      std::ostringstream h5tag;
      h5tag<<"CIcoeff_" <<ni;
