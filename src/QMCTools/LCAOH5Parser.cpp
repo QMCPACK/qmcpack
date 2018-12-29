@@ -79,10 +79,10 @@ void LCAOParser::parse(const std::string& fname)
   std::cout <<"usingECP: " <<(ECP?("yes"):("no")) << std::endl;
   std::cout.flush();
 
-//  multideterminant=false;
-  std::cout <<"Multideterminant: " <<(multideterminant?("yes"):("no")) << std::endl;
-  hin.read(SpinRestricted,"SpinResticted");
+  std::cout <<"Multideterminants: " <<(multideterminant?("yes"):("no")) << std::endl;
+  std::cout.flush();
 
+  hin.read(SpinRestricted,"SpinResticted");
   if(SpinRestricted)
   { 
      hin.read(numAO,"numAO");
@@ -175,7 +175,7 @@ void LCAOParser::parse(const std::string& fname)
      
      if(!hin.push("MultiDet"))
      {
-          std::cerr<<"Could not open H5 file"<<std::endl;
+          std::cerr<<"Could not open Multidet Group in H5 file"<<std::endl;
           abort();
      }
      else
@@ -187,18 +187,17 @@ void LCAOParser::parse(const std::string& fname)
            CIcoeff.resize(ci_size);
            CIalpha.resize(ci_size);
            CIbeta.resize(ci_size);
-
+           std::cout<<"NbDet="<<ci_size<<std::endl;
 
            hin.read(ci_nstates,"nstate");
            int N_int;
            const int bit_kind = 64; 
            hin.read(N_int,"Nbits");
 
-
-           Matrix<unsigned long int> tempAlpha(ci_size,N_int);
+           Matrix< long int> tempAlpha(ci_size,N_int);
            hin.read(tempAlpha,"CI_Alpha");
 
-           Matrix<unsigned long int> tempBeta(ci_size,N_int);
+           Matrix< long int> tempBeta(ci_size,N_int);
            hin.read(tempBeta,"CI_Beta");
             
            std::string MyCItempAlpha,MyCItempBeta;
@@ -208,27 +207,36 @@ void LCAOParser::parse(const std::string& fname)
            for (int ni=0; ni<ci_size;ni++)
            {
                 int j=0;
-                int jj=0;
-                for (int k=0; k<N_int; k++)
+                for (int i=0; i< ci_nstates;i++)
                 {
+                   MyCItempAlpha[i] = '9';
+                   MyCItempBeta[i] = '9';
+                }
+		for (int k=0; k<N_int; k++)
+                {
+		    long int a = tempAlpha[ni][k];
+		    std::bitset<64> a2 = a;
+			
+		    auto b = tempBeta[ni][k];
+		    auto b2 =  std::bitset<64>(b);
+
+
+		    // ci_nstates == n_orbital
       	 	    for(int i=0; i<bit_kind;i++) 
                     {
-                        if ( j <ci_nstates ) 
+  
+			if ( j <ci_nstates ) 
                         {
-                     	   MyCItempAlpha[j] = binpad(tempAlpha[ni][k],bit_kind)[i]; 
+                     	   MyCItempAlpha[j] = a2[i] ? '1' : '0'; 
+                     	   MyCItempBeta[j] = b2[i] ? '1' : '0'; 
              		   j++;
-        		}
-                        if ( jj <ci_nstates ) 
-                        {
-                     	   MyCItempBeta[jj] = binpad(tempBeta[ni][k],bit_kind)[i]; 
-             		   jj++;
         		}
                      }
                 }
+                
                 CIalpha[ni]=MyCItempAlpha;
                 CIbeta[ni]=MyCItempBeta;
            }
-
            hin.read(CIcoeff,"Coeff");
 
            int ds=SpinMultiplicity-1;
@@ -242,6 +250,7 @@ void LCAOParser::parse(const std::string& fname)
            hin.close(); 
      }     
   }  
+           
 }
 
 void LCAOParser::getCell(const std::string& fname)
