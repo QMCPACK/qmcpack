@@ -3,8 +3,8 @@
 #define QMCPLUSPLUS_AFQMC_FACTORIZEDSPARSEHAMILTONIAN_H
 
 #include<iostream>
-#include<vector> 
-#include<map> 
+#include<vector>
+#include<map>
 #include<fstream>
 
 #include "io/hdf_archive.h"
@@ -16,7 +16,6 @@
 
 #include "AFQMC/Hamiltonians/OneBodyHamiltonian.hpp"
 
-#include "AFQMC/Hamiltonians/Hamiltonian_Utilities.hpp"
 #include "AFQMC/Matrix/matrix_emplace_wrapper.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
@@ -28,19 +27,16 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-class FactorizedSparseHamiltonian: public OneBodyHamiltonian 
+class FactorizedSparseHamiltonian: public OneBodyHamiltonian
 {
-
-  typedef std::vector<s1D<ValueType> >::iterator  s1Dit;
-  typedef std::vector<s2D<ValueType> >::iterator  s2Dit;
 
   public:
 
   using shm_csr_matrix = SpVType_shm_csr_matrix;
-  using csr_matrix_view = shm_csr_matrix::template matrix_view<int>; 
+  using csr_matrix_view = shm_csr_matrix::template matrix_view<int>;
 
- 
-  FactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, std::vector<s2D<ValueType> >&& h, 
+
+  FactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi_array<ComplexType,2>&& h,
                               shm_csr_matrix&& v2_, TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
                                     TG(tg_),V2_fact(std::move(v2_)),
@@ -48,13 +44,13 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
                                     factorizedHalfRotationType("DD"),maximum_buffer_size(1024)
   {
 
-    distribute_Ham = (TG.getNumberOfTGs() > 1 ); 
+    distribute_Ham = (TG.getNumberOfTGs() > 1 );
 
-    if( distribute_Ham ) 
+    if( distribute_Ham )
         APP_ABORT(" Error: Distributed FactorizedHamiltonian not yet implemented.\n");
-    
-    if( !distribute_Ham ) 
-      assert(V2_fact.global_origin()[0]==0 && V2_fact.global_origin()[1]==0); 
+
+    if( !distribute_Ham )
+      assert(V2_fact.global_origin()[0]==0 && V2_fact.global_origin()[1]==0);
 
     xmlNodePtr curRoot=cur;
     OhmmsAttributeSet oAttrib;
@@ -100,30 +96,27 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
 
   boost::multi_array<ComplexType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
 
-  // Haj[0:NAEA*NMO] for type CLOSED,
-  // Haj[0:(NAEA+NAEB)*NMO] for type COLLINEAR,
-  // Haj[0:(NAEA+NAEB)*2*NMO] for type NONCOLLINEAR
   boost::multi_array<SPComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta) {
     check_wavefunction_consistency(type,Alpha,Beta,NMO,NAEA,NAEB);
-    return rotateHij(type,NMO,NAEA,NAEB,Alpha,Beta,OneBodyHamiltonian::H1);
+    return rotateHij(type,Alpha,Beta,OneBodyHamiltonian::H1);
   }
 
-  SpVType_shm_csr_matrix generateHijkl(WALKER_TYPES type, TaskGroup_& TGwfn, std::map<IndexType,std::pair<bool,IndexType>>& occ_a, std::map<IndexType,std::pair<bool,IndexType>>& occ_b , RealType const cut=1e-6); 
+  SpVType_shm_csr_matrix generateHijkl(WALKER_TYPES type, bool addCoulomb, TaskGroup_& TGwfn, std::map<IndexType,std::pair<bool,IndexType>>& occ_a, std::map<IndexType,std::pair<bool,IndexType>>& occ_b , RealType const cut=1e-6);
 
-  SpCType_shm_csr_matrix halfRotatedHijkl(WALKER_TYPES type, TaskGroup_& TGHam, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, RealType const cut=1e-6);
+  SpCType_shm_csr_matrix halfRotatedHijkl(WALKER_TYPES type, bool addCoulomb, TaskGroup_& TGHam, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, RealType const cut=1e-6);
 
   SpVType_shm_csr_matrix calculateHSPotentials(double cut, TaskGroup_& TGprop,
-        boost::multi_array<ComplexType,2>& vn0); 
+        boost::multi_array<ComplexType,2>& vn0);
 
-  HamiltonianOperations getHamiltonianOperations(bool pureSD, WALKER_TYPES type, 
+  HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type,
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
-            TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump); 
+            TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump);
 
-  ValueType H(IndexType I, IndexType J) const 
+  ValueType H(IndexType I, IndexType J) const
   {  return OneBodyHamiltonian::H(I,J); }
- 
+
   // this should never be used outside initialization routines.
-  ValueType H(IndexType I, IndexType J, IndexType K, IndexType L) const 
+  ValueType H(IndexType I, IndexType J, IndexType K, IndexType L) const
   {
 
     if( (I>=NMO && K<NMO) || (I<NMO && K>=NMO) ) return ValueType(0);
@@ -134,12 +127,12 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
     K = (K>=NMO)?(K-NMO):(K);
     L = (L>=NMO)?(L-NMO):(L);
 
-    int ik = I*NMO+Index2Col(NMO,K); 
-    int lj = L*NMO+Index2Col(NMO,J); 
+    int ik = I*NMO+K;
+    int lj = L*NMO+J; 
     ValueType val = csr::csrvv<ValueType>('N','C',V2_fact.sparse_row(ik),V2_fact.sparse_row(lj));
     return (std::abs(val)>cutoff1bar)?(val):(0);
 
-  } 
+  }
   ValueType H_2bar(IndexType I, IndexType J, IndexType K, IndexType L) const
   {
     if( (I>=NMO && K<NMO) || (I<NMO && K>=NMO) ) return ValueType(0);
@@ -150,25 +143,22 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
 
   protected:
 
-  // for hamiltonian distribution 
+  // for hamiltonian distribution
   TaskGroup_& TG;
 
   bool distribute_Ham;
 
-  // factorized Ham : V2(ik,lj) = sum_n V2_fact(ik,n)*conj(V2_fact(lj,n)) 
-  shm_csr_matrix V2_fact; 
-
-  // store diagonal part of hamiltonian: Diag(i,k) = H(i,k,i,k);
-  ValueMatrix DiagHam;
+  // factorized Ham : V2(ik,lj) = sum_n V2_fact(ik,n)*conj(V2_fact(lj,n))
+  shm_csr_matrix V2_fact;
 
   // options read from xml
   double cutoff1bar;
   double cutoff_cholesky;
-  bool skip_V2; 
+  bool skip_V2;
 
   std::string factorizedHalfRotationType;
   int maximum_buffer_size;
- 
+
 };
 
 //#include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian.icc"

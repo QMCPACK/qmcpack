@@ -25,6 +25,7 @@
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/Matrix/matrix_emplace_wrapper.hpp"
+#include "multi/array_ref.hpp"
 //#include <boost/hana.hpp>
 #include "AFQMC/Utilities/afqmc_TTI.hpp"
 #include "mpi.h"
@@ -137,7 +138,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
     }  
     // reset "amount of work done" to full alpha piece
     cnt=NAEA*(kN_alpha-k0_alpha);
-    if(type==1) {
+    if(type==COLLINEAR) {
       // reset "shift"
       for(int k=k0_beta; k<kN_beta; k++) {
         for(int a=0; a<NAEB; a++, cnt++) {
@@ -192,7 +193,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   }  
   // reset "amount of work done" to full alpha piece
   cnt=NAEA*(kN_alpha-k0_alpha);
-  if(type==1) { 
+  if(type==COLLINEAR) { 
     // reset "shift"
     for(int k=k0_beta; k<kN_beta; k++) {
       for(int a=0; a<NAEB; a++, cnt++) {
@@ -461,6 +462,65 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
 
       }
     }
+  }
+  TG.Node().barrier();
+}
+
+template< class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
+void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, 
+                                MultiArray3DC&& Lank, MultiArray2D && buff)  
+{
+  int na = Aai.shape()[0];
+  int ni = Aai.shape()[1];
+  int nk = Likn.shape()[1];
+  int nchol = Likn.shape()[2];
+  assert(Likn.shape()[0]==ni);
+  assert(Lank.shape()[0]==na);
+  assert(Lank.shape()[1]==nchol);
+  assert(Lank.shape()[2]==nk);
+  assert(buff.shape()[0] >= nk);
+  assert(buff.shape()[1] >= nchol);
+
+  using element = typename std::decay<MultiArray3DC>::type::element;
+  boost::multi::array_ref<element,2> Li_kn(std::addressof(*Likn.origin()),
+                                           {ni,nk*nchol});      
+  boost::multi::array_ref<element,2> La_kn(std::addressof(*Lank.origin()),
+                                           {na,nk*nchol});      
+
+  ma::product(Aai,Li_kn,La_kn);
+  for(int a=0; a<na; a++) {
+    boost::multi::array_ref<element,2> Lkn(std::addressof(*Lank[a].origin()),
+                                           {nk,nchol});
+    boost::multi::array_ref<element,2> Lnk(std::addressof(*Lank[a].origin()),
+                                           {nchol,nk});
+    buff({0,nk},{0,nchol}) = Lkn;
+    ma::transpose(buff({0,nk},{0,nchol}),Lnk);
+  }
+}
+
+template< class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
+void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
+                                MultiArray3DC&& Lank, MultiArray2D && buff)
+{
+  int na = Aai.shape()[0];
+  int ni = Aai.shape()[1];
+  int nk = Lkin.shape()[0];
+  int nchol = Lkin.shape()[2];
+  assert(Lkin.shape()[0]==ni);
+  assert(Lank.shape()[0]==na);
+  assert(Lank.shape()[1]==nchol);
+  assert(Lank.shape()[2]==nk);
+  assert(buff.num_elements() >= na*nchol);
+
+  using Type = typename std::decay<MultiArray3DC>::type::element;
+  boost::multi::array_ref<Type,2> bna(std::addressof(*buff.origin()),
+                                      {nchol,na});      
+  // Lank[a][n][k] = sum_i Aai[a][i] conj(Lkin[k][i][n])
+  for(int k=0; k<nk; k++) {
+    ma::product(ma::H(Lkin[k]),ma::T(Aai),bna);
+    for(int a=0; a<na; a++)    
+      for(int n=0; n<nchol; n++)
+        Lank[a][n][k] = bna[n][a];     
   }
 }
 

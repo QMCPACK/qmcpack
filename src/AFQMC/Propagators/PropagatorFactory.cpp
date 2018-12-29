@@ -71,10 +71,10 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
     }
   }
 
-  RealType vmax=0;
+  RealType vmax=0,v_=0;
   for(int i=0; i<vMF.size(); i++)
-    vmax = std::max(vmax,std::abs(vMF[i]));
-  TG.Global().all_reduce_value(vmax,boost::mpi3::max<>()); 
+    v_ = std::max(v_,std::abs(vMF[i]));
+  TG.Global().all_reduce_n(&v_,1,&vmax,boost::mpi3::max<>()); 
   app_log()<<" Largest component of Mean-field substraction potential: " <<vmax <<std::endl; 
   if(vmax > vbias_bound)
     app_log()<<" WARNING: Mean-field substraction potential has components outside vbias_bound.\n"

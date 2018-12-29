@@ -169,6 +169,7 @@ template<class WalkerSet,
         >
 bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, hdf_archive& read, bool set_to_target)
 {
+  APP_ABORT(" Error: restartFromHDF5 not yet finished.\n");
 
   TaskGroup_& TG = wset.getTG();
 
@@ -456,6 +457,7 @@ template<class WalkerSet,
         >
 bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
 {
+  APP_ABORT(" Error: dumpToHDF5 not yet finished.\n");
   TaskGroup_& TG = wset.getTG();
 
   if(TG.TG_local().root()) { 
@@ -614,7 +616,7 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
 // MOVE TO mpi3 !!!!
       MPI_Gatherv( MPI_IN_PLACE,0,MPI_DATATYPE_NULL, 
                    Buff.data(), counts.data(), displ.data(), MPI_DOUBLE_COMPLEX, 
-                   0,&TG.TG_heads()); 
+                   0,&(TG.TG_heads())); 
       nsent += nw_to_send;
 
       if(TG.TG_heads().root()) {  

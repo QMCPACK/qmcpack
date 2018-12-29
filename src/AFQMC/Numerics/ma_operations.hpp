@@ -21,6 +21,7 @@
 #include "ma_blas.hpp"
 #include "ma_lapack.hpp"
 #include "spblas.hpp"
+#include "AFQMC/Numerics/ma_small_mat_ops.hpp"
 
 #include<type_traits> // enable_if
 #include<vector>
@@ -74,8 +75,14 @@ MultiArray2DB transpose(MultiArray2DA&& A, MultiArray2DB&& B){
         using range_t = boost::multi_array_types::index_range;
         assert(A.shape()[0] == B.shape()[1]);
         assert(A.shape()[1] == B.shape()[0]);
-        for(int i = 0; i != A.shape()[0]; ++i)
-                B[boost::indices[range_t()][i]] = A[boost::indices[i][range_t()]];
+        for(int i = 0; i != B.shape()[0]; ++i) {
+                //B(B.extension(0),i) = A(i,A.extension(1));
+                //B(B.extension(0),i) = A[i]; //A(i,A.extension(1)); BUG in multi!!!
+                for(int j = 0; j != B.shape()[1]; ++j) {
+                  B[i][j] = A[j][i];
+                }
+        }
+                //B[boost::indices[range_t()][i]] = A[boost::indices[i][range_t()]];
         return std::forward<MultiArray2DB>(B);
 }
 
@@ -125,7 +132,8 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
             std::addressof(*arg(A).non_zero_indices2_data()),
             std::addressof(*arg(A).pointers_begin()),  
             std::addressof(*arg(A).pointers_end()),
-            arg(B).origin(), beta, std::forward<MultiArray1DC>(C).origin());
+            std::addressof(*arg(B).origin()), beta, 
+            std::addressof(*std::forward<MultiArray1DC>(C).origin()));
 
         return std::forward<MultiArray1DC>(C);
 }
@@ -191,9 +199,10 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
             std::addressof(*(arg(A).non_zero_indices2_data())),
             std::addressof(*(arg(A).pointers_begin())),  
             std::addressof(*(arg(A).pointers_end())),
-            arg(B).origin(), arg(B).strides()[0], 
+            std::addressof(*arg(B).origin()), arg(B).strides()[0], 
             beta, 
-            std::forward<MultiArray2DC>(C).origin(), std::forward<MultiArray2DC>(C).strides()[0]);
+            std::addressof(*std::forward<MultiArray2DC>(C).origin()), 
+            std::forward<MultiArray2DC>(C).strides()[0]);
 
         return std::forward<MultiArray2DC>(C);
 }
@@ -210,6 +219,21 @@ MultiArray2DC product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArray
         return product(1., A, B, 0., std::forward<MultiArray2DC>(C));
 }
 //*/
+
+template<class T, class MultiArray3DA, class MultiArray3DB, class MultiArray3DC,
+        typename = typename std::enable_if<
+                MultiArray3DA::dimensionality == 3 and
+                MultiArray3DB::dimensionality == 3 and
+                std::decay<MultiArray3DC>::type::dimensionality == 3
+        >::type
+>
+MultiArray3DC productStridedBatched(T alpha, MultiArray3DA const& A, MultiArray3DB const& B, T beta, MultiArray3DC&& C){
+        return ma::gemmStridedBatched<
+                op_tag<MultiArray3DB>::value,
+                op_tag<MultiArray3DA>::value
+        >
+        (alpha, arg(B), arg(A), beta, std::forward<MultiArray3DC>(C));
+}
 
 //template<class MultiArrayA, class MultiArrayB, class MultiArrayC>
 //MultiArrayC product(MultiArrayA const& A, MultiArrayB const& B, MultiArrayC&& C){
@@ -320,6 +344,8 @@ T invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK){
 			detvalue *= -static_cast<T>(m[i][i]);
 		}
 	}
+        if(detvalue == T(0.0))
+            return detvalue;
 	getri(std::forward<MultiArray2D>(m), pivot, WORK);
 	return detvalue;
 }
@@ -368,7 +394,7 @@ MultiArray2D exp(MultiArray2D const& A) {
         size_t N = A.shape()[0];
 
         MultiArray2D ExpA(boost::extents[N][N]);
-        std::fill_n(ExpA.origin(),N*N,Type(0));
+        std::fill_n(std::addressof(*ExpA.origin()),N*N,Type(0));
 
         if(is_hermitian(A)) { 
         

@@ -29,9 +29,19 @@ namespace afqmc
 
 template<class Wlk>
 void free_projection_walker_update(Wlk&& w, RealType dt, ComplexType overlap, ComplexType MFfactor,
-                                   ComplexType hybrid_weight)
+                                   RealType Eshift, ComplexType hybrid_weight)
 {
-  APP_ABORT(" Error: Finish \n");
+  ComplexType old_ovlp = w.overlap();
+  ComplexType old_eloc = w.pseudo_energy();
+  ComplexType eloc;
+  RealType scale=1.0;
+  ComplexType ratioOverlaps = ComplexType(1.0,0.0);
+  eloc = MFfactor/dt;
+  ComplexType factor = std::exp( -dt*( 0.5*( eloc + old_eloc ) - Eshift ));
+  w.weight() *= std::abs(factor);
+  w.phase() *= factor / std::abs(factor);
+  w.pseudo_energy() = eloc;
+  w.overlap() = overlap;
 }
 
 template<class Wlk>
@@ -81,8 +91,10 @@ std::cout<<" update: "
 <<"    scale:         " <<scale <<"\n" <<std::endl;
 #endif
 
-  w.weight() *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + old_eloc.real() ) -
-                            Eshift )),0.0);
+  w.weight() *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + old_eloc.real() ) - Eshift )),0.0);
+  if(w.NumBackProp() > 0 && std::abs(scale) > 1e-16) {
+    w.BPWeightFactor() *= std::exp( -ComplexType(0.0,dt) * ( 0.5*( eloc.imag() + old_eloc.imag()) ) ) / scale;
+  }
 
   w.pseudo_energy() = eloc;
   w.overlap() = overlap;
@@ -119,6 +131,9 @@ void local_energy_walker_update(Wlk&& w, RealType dt, bool apply_constrain, Real
 
   w.weight() *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + old_eloc.real() ) - 
                             Eshift )),0.0);
+  if(w.NumBackProp() > 0 && std::abs(scale) > 1e-16) {
+    w.BPWeightFactor() *= std::exp( -ComplexType(0.0,dt) * ( 0.5*( eloc.imag() + old_eloc.imag()) ) ) / scale;
+  }
   w.pseudo_energy() = eloc;
   w.E1() = energies[0];
   w.EXX() = energies[1];

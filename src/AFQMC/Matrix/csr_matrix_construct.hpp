@@ -269,7 +269,7 @@ CSR construct_csr_matrix_from_distributed_containers(Container const& Q, std::si
         std::copy_n(Q.begin(),sz_per_node[ni],Qc.begin());
     //TG.Cores().broadcast_n(Qc.begin(),sz_per_node[ni],ni);
     // replace when tuples can me communicated directly
-    MPI_Bcast(Qc.data(),sz_per_node[ni]*sizeof(Type),MPI_CHAR,ni,&TG.Cores());
+    MPI_Bcast(Qc.data(),sz_per_node[ni]*sizeof(Type),MPI_CHAR,ni,&(TG.Cores()));
     if(needs_lock) {
       std::lock_guard<boost::mpi3::shm::mutex> guard(m);  
       for(auto& v : Qc) 
@@ -317,13 +317,13 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
   int nnodes_per_TG = TG.getNNodesPerTG();  
 
   // 1. Define new communicator for equivalent cores
-  boost::mpi3::communicator eq_cores(TG.Cores().split(node_number)); 
+  boost::mpi3::communicator eq_cores(TG.Cores().split(node_number,TG.Cores().rank())); 
   // this comm is similar to TG.TG, but includes all the cores in the node in the same comm
   // it is used to balance the distribution within the nodes on each TG.TG
-  boost::mpi3::communicator eq_node_group(TG.Global().split(nodeid/nnodes_per_TG)); 
+  boost::mpi3::communicator eq_node_group(TG.Global().split(nodeid/nnodes_per_TG,TG.Global().rank())); 
   
   // 2. count elements
-  long nterms_total = TG.Global().all_reduce_value(Q.size(),std::plus<>());
+  long nterms_total = (TG.Global() += Q.size());
   auto nterms_per_core = eq_cores.all_gather_value(Q.size());
   long nterms_in_local_core = std::accumulate(nterms_per_core.begin(),
                                                 nterms_per_core.end(),long(0)); 
@@ -503,8 +503,9 @@ std::ofstream out((std::string("debug.")+std::to_string(TG.Global().rank())).c_s
   Timer.start("G0");
 
 
-  long final_nterms_node = TG.Node().all_reduce_value(Q.size(),std::plus<>());
-  std::vector<long> final_counts = TG.Cores().all_gather_value(final_nterms_node);
+  long final_nterms_node = (TG.Node() += Q.size());
+  std::vector<long> final_counts(TG.Cores().size());
+  TG.Cores().gather_n(&final_nterms_node,1,final_counts.data(),0);
   if(TG.Global().root()) {
     qmcplusplus::app_log()<<" In construct_distributed_csr_matrix_from_distributed_containers: \n"; 
     qmcplusplus::app_log()<<" Partitioning of CSR matrix over TG (nnz per node): ";

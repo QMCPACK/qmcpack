@@ -391,10 +391,10 @@ protected:
 	ElementPtr data_; // TODO call it base_ ?
 	basic_array(ElementPtr data, Layout layout) : Layout{layout}, data_{data}{}
 	// note here that I am protecting the cctor and making the inplace new a friend, this seems to be a way to allow initializer_list for a move-only  
+public:
 	basic_array(basic_array const& o) : Layout{o.layout()}, data_{o.data_}{}
 	template<class TT, class...As> 
 	friend void detail::construct_from_initializer_list(TT*, As&&...);
-public:
 	element_ptr        base(){return data_;}
 	element_ptr        base() const{return data_;}
 	element_const_ptr cbase() const{return base();}

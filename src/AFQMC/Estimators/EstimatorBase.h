@@ -29,13 +29,13 @@ class EstimatorBase: public AFQMCInfo
 
   virtual void accumulate_step(WalkerSet& wlks, std::vector<ComplexType>& curData)=0;
 
-  virtual void print(std::ofstream& out,WalkerSet& wlks)=0; 
+  virtual void print(std::ofstream& out,WalkerSet& wlks)=0;
 
   virtual void print_timers(std::ofstream& out) {}
 
-  virtual void tags(std::ofstream& out)=0; 
+  virtual void tags(std::ofstream& out)=0;
 
-  virtual void tags_timers(std::ofstream& out) {} 
+  virtual void tags_timers(std::ofstream& out) {}
 
   virtual double getEloc() {return 0;}
 

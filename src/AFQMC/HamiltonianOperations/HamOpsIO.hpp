@@ -5,12 +5,12 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_HAMOPSIO_HPP
@@ -41,28 +41,28 @@ HamiltonianOperations loadHamOps(hdf_archive& dump, WALKER_TYPES type, int NMO, 
       app_error()<<" Error in loadHamOps: Group HamiltonianOperations not found. \n";
       APP_ABORT("");
     }
-    if(dump.is_group( std::string("THCOps"))) 
-      hops_type = 1; 
-    else if(dump.is_group( std::string("SparseTensor"))) { 
+    if(dump.is_group( std::string("THCOps")))
+      hops_type = 1;
+    else if(dump.is_group( std::string("SparseTensor"))) {
       dump.push("SparseTensor",false);
       std::vector<int> type;
       if(!dump.read(type,"type")) {
         app_error()<<" Error in loadHamOps: Problems reading type dataset. \n";
         APP_ABORT("");
-      }  
+      }
       if(type[0]==11)
-        hops_type = 211; 
+        hops_type = 211;
       else if(type[0]==12)
-        hops_type = 212; 
+        hops_type = 212;
       else if(type[0]==21)
-        hops_type = 221; 
+        hops_type = 221;
       else if(type[0]==22)
-        hops_type = 222; 
+        hops_type = 222;
       else {
         app_error()<<" Unknown SparseTensor/type: " <<type[0] <<std::endl;
         APP_ABORT("");
-      }  
-      dump.pop();  
+      }
+      dump.pop();
     } else {
       app_error()<<" Error in loadHamOps: Missing dataset. \n";
       APP_ABORT("");

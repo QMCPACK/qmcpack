@@ -29,8 +29,8 @@ class WalkerDMEstimator : public EstimatorBase
   using WfnPtr = std::shared_ptr<WavefunctionBase>;
 
   WalkerDMEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo info,
-        std::string title, xmlNodePtr cur) : 
-                        EstimatorBase(info), TG(tg_), SDet(info) 
+        std::string title, xmlNodePtr cur) :
+                        EstimatorBase(info), TG(tg_), SDet(info)
   {
 
     ncores_per_TG = TG.getNCoresPerTG();

@@ -22,8 +22,8 @@ class AFQMCDriver: public AFQMCInfo
 
   public:
 
-    AFQMCDriver(boost::mpi3::communicator& comm, AFQMCInfo& info, 
-        std::string& title, int mser, int blk0, int stp0, double eshft_, xmlNodePtr cur, 
+    AFQMCDriver(boost::mpi3::communicator& comm, AFQMCInfo& info,
+        std::string& title, int mser, int blk0, int stp0, double eshft_, xmlNodePtr cur,
         Wavefunction& wfn_, Propagator& prpg_, EstimatorHandler& estim_):
                 AFQMCInfo(info),
 		globalComm(comm),
@@ -46,13 +46,13 @@ class AFQMCDriver: public AFQMCInfo
 
     bool run(WalkerSet&);
 
-    bool parse(xmlNodePtr); 
+    bool parse(xmlNodePtr);
 
     bool checkpoint(WalkerSet&,int,int);
 
     bool clear();
 
-  protected:  
+  protected:
 
     boost::mpi3::communicator& globalComm;
 
@@ -85,7 +85,7 @@ class AFQMCDriver: public AFQMCInfo
 
     int samplePeriod;
 
-    RealType dShift; 
+    RealType dShift;
     RealType Eshift;
     RealType Etav;
 

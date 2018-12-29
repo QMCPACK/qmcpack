@@ -4,17 +4,17 @@
 //
 // Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by:  
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
-// Alfredo Correa, correaa@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// File developed by:
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
+// Alfredo Correa, correaa@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
-// File created by: 
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
-// Alfredo Correa, correaa@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// File created by:
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
+// Alfredo Correa, correaa@llnl.gov
+//    Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -25,7 +25,7 @@
 // Always test the fallback code, regardless of MKL definition
 //#undef HAVE_MKL
 #define MKL_INT         int
-#define MKL_Complex8    std::complex<float> 
+#define MKL_Complex8    std::complex<float>
 #define MKL_Complex16   std::complex<double>
 
 // Avoid the need to link with other libraries just to get APP_ABORT
@@ -77,7 +77,7 @@ void test_dense_matrix_mult()
 
 		using ma::T;
 		ma::product(M, X, Y); // Y := M X
-		
+
 		vector<double> mx = {147., 60.,154.};
 		multi_array_ref<double, 1> MX(mx.data(), extents[mx.size()]);
                 verify_approx(MX, Y);
@@ -117,7 +117,7 @@ void test_dense_matrix_mult()
 
 		using ma::T;
 		ma::product(T(M), X, Y); // Y := T(M) X
-		
+
 		vector<double> mx = {59., 92., 162., 64.};
 		multi_array_ref<double, 1> MX(mx.data(), extents[mx.size()]);
 		verify_approx( MX, Y );
@@ -134,7 +134,7 @@ void test_dense_matrix_mult()
 		vector<double> y = {4.,5.,6.};
 		multi_array_ref<double, 1> Y(y.data(), extents[y.size()]);
 		ma::product(M, X, Y); // y := M x
-		
+
 		vector<double> y2 = {183., 88.,158.};
 		multi_array_ref<double, 1> Y2(y2.data(), extents[y2.size()]);
 		verify_approx( Y, Y2 );
@@ -168,7 +168,7 @@ void test_dense_matrix_mult()
 	{
 	vector<double> a = {
 		1.,0.,1.,
-		3.,5.,8., 
+		3.,5.,8.,
 		4.,8.,9.
 	};
 	multi_array_ref<double, 2> A(a.data(), extents[3][3]);
@@ -184,7 +184,7 @@ void test_dense_matrix_mult()
 	vector<double> c(9);
 	multi_array_ref<double, 2> C(c.data(), extents[3][3]);
 	REQUIRE( C.num_elements() == c.size() );
-	
+
 	ma::product(A, B, C);
 
 	vector<double> ab = {
@@ -202,12 +202,12 @@ void test_dense_matrix_mult()
 	verify_approx(C, AB);
 
 	using ma::T;
-	
+
 	ma::product(T(A), B, C);
 	vector<double> atb = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
 	multi_array_ref<double, 2> AtB(atb.data(), extents[3][3]);
 	verify_approx(C, AtB);
-	
+
 	ma::product(A, T(B), C);
 	vector<double> abt = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
 	multi_array_ref<double, 2> ABt(abt.data(), extents[3][3]);
@@ -228,7 +228,7 @@ void test_dense_matrix_mult()
         vector<double> abh = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
         multi_array_ref<double, 2> ABh(abh.data(), extents[3][3]);
         verify_approx(C, ABh);
-	
+
 	}
 	{
 		vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
@@ -242,7 +242,7 @@ void test_dense_matrix_mult()
 
 		multi_array<double, 2> Id2(extents[3][3]);
 		ma::product(A, B, Id2);
-						
+
 		verify_approx(Id, Id2);
 	}
         {
@@ -351,14 +351,14 @@ void test_dense_matrix_mult()
                 vector<std::complex<double>> m_a = {
                     1.90000,   1.40000 + 0.90000i,   0.40000 + 0.80000i,
                     1.40000 - 0.90000i,   0.20000,   2.20000 + 0.60000i,
-                    0.40000 - 0.80000i,   2.20000 - 0.60000i,   0.60000 
+                    0.40000 - 0.80000i,   2.20000 - 0.60000i,   0.60000
                 };
-                vector<std::complex<double>> m_b = {              
-                    25.9622476651464 +  0.0000000000000i,   17.7794485121929 + 13.1574958765530i,   
+                vector<std::complex<double>> m_b = {
+                    25.9622476651464 +  0.0000000000000i,   17.7794485121929 + 13.1574958765530i,
                     11.2649352514491 + 16.4823940873968i,
-                    17.7794485121928 - 13.1574958765530i,   20.5657808536051 -  0.0000000000000i,   
+                    17.7794485121928 - 13.1574958765530i,   20.5657808536051 -  0.0000000000000i,
                     17.9925255171787 +  6.0065935802308i,
-                    11.2649352514491 - 16.4823940873968i,   17.9925255171787 -  6.0065935802308i,   
+                    11.2649352514491 - 16.4823940873968i,   17.9925255171787 -  6.0065935802308i,
                     17.9429273455619 -  0.0000000000000i
                 };
 
@@ -379,7 +379,7 @@ void test_dense_matrix_mult()
 
 TEST_CASE("dense_ma_operations", "[matrix_operations]")
 {
-  test_dense_matrix_mult(); 
+  test_dense_matrix_mult();
 }
 
 }
