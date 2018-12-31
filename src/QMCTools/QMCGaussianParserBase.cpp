@@ -30,6 +30,8 @@
 #include <map>
 #include "QMCApp/InitMolecularSystem.h"
 #include <sstream>
+#include <bitset>
+
 
 //std::vector<std::string> QMCGaussianParserBase::IonName;
 const int OhmmsAsciiParser::bufferSize;
@@ -332,6 +334,47 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
     ionSpecies(AtomicNumberIndex,i)=z;
   }
   XMLSaveParticle o(IonSystem);
+  if(UseHDF5)
+  {
+     hdf_archive hout;
+     hout.open(h5file.c_str(),H5F_ACC_RDWR);
+     hout.push("atoms",true);
+     hout.write(NumberOfAtoms,"number_of_atoms");
+     auto nbspecies=ionSpecies.getTotalNum();
+     hout.write(nbspecies,"number_of_species");
+     Matrix<double> Position(NumberOfAtoms,3);
+     std::vector <int> speciesID;
+     speciesID.resize(NumberOfAtoms);
+     for(auto i=0;i<NumberOfAtoms;i++)
+     {
+         Position[i][0]=IonSystem.R[i][0];
+         Position[i][1]=IonSystem.R[i][1];
+         Position[i][2]=IonSystem.R[i][2];
+         speciesID[i]=IonSystem.GroupID[i];
+     }
+
+     hout.write(speciesID,"species_ids");
+     hout.write(Position,"positions");
+
+     for(auto i=0;i<nbspecies;i++)
+     {
+        std::ostringstream SpecieID;
+        SpecieID<<"species_"<<i;
+        hout.push(SpecieID.str().c_str(),true);
+        int z = static_cast<int>(ionSpecies(AtomicNumberIndex,i));
+        double valence = ionSpecies(IonChargeIndex,i);
+        if(valence>CoreTable[z]&& FixValence!=true)
+           valence-=CoreTable[z];
+        hout.write(z,"charge");
+        hout.write(z,"atomic_number");
+        hout.write(valence,"core");
+        hout.write(IonName[static_cast<int>(ionSpecies(AtomicNumberIndex,i))],"name");
+        hout.pop(); 
+
+     }
+    
+     hout.close();
+  }
   return o.createNode(Periodicity);
 }
 
@@ -382,7 +425,7 @@ xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
 
   xmlNodePtr bset = xmlNewNode(NULL,(const xmlChar*)"basisset");
   hdf_archive hout;
-  hout.create(h5file.c_str(),H5F_ACC_TRUNC);
+  hout.open(h5file.c_str(),H5F_ACC_RDWR);
   hout.push("basisset",true);
   std::string BasisSetName("LCAOBSet");
   hout.write(BasisSetName,"name");
@@ -446,23 +489,18 @@ QMCGaussianParserBase::createDeterminantSetWithHDF5()
   
   hdf_archive hout;
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
-  hout.push("Nb_KPTS",true);
-  int NbKpts=1;
-  hout.write(NbKpts,"Nbkpts");
-  hout.pop();
   hout.push("KPTS_0",true);
 
-  Matrix<double> Ctemp(SizeOfBasisSet,SizeOfBasisSet);
+  Matrix<double> Ctemp(numMO,SizeOfBasisSet);
 
   int n=0;  
-  for (int i=0; i<SizeOfBasisSet; i++)
+  for (int i=0; i<numMO; i++)
      for (int j=0; j<SizeOfBasisSet; j++){
          Ctemp[i][j]=EigVec[n];
          n++;
      }
 
   hout.write(Ctemp,"eigenset_0");
-
 
   xmlNodePtr ddet;
   if(SpinRestricted)
@@ -486,7 +524,7 @@ QMCGaussianParserBase::createDeterminantSetWithHDF5()
     o = xmlAddSibling(o,c);
 
   n=numMO*SizeOfBasisSet;  
-  for (int i=0; i<SizeOfBasisSet; i++)
+  for (int i=0; i<numMO; i++)
      for (int j=0; j<SizeOfBasisSet; j++){
          Ctemp[i][j]=EigVec[n];
          n++;
@@ -615,7 +653,6 @@ QMCGaussianParserBase::createDeterminantSet()
     eigD.setf(std::ios::right,std::ios::adjustfield);
     eigD.precision(14);
     eigD << "\n";
-    //b=SizeOfBasisSet*SizeOfBasisSet;
     b=numMO*SizeOfBasisSet;
     for(int k=0; k<n; k++)
     {
@@ -695,7 +732,6 @@ QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN)
     eigD.setf(std::ios::right,std::ios::adjustfield);
     eigD.precision(14);
     eigD << "\n";
-    //b=SizeOfBasisSet*SizeOfBasisSet;
     b=numMO*SizeOfBasisSet;
     for(int k=0; k<n; k++)
     {
@@ -723,12 +759,12 @@ void
 QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
 {
   setOccupationNumbers();
-  Matrix<double> Ctemp(SizeOfBasisSet,SizeOfBasisSet);
+  Matrix<double> Ctemp(numMO,SizeOfBasisSet);
   int n=0;  
   hdf_archive hout;
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
-  hout.push("sposet",true);
-
+  hout.push("KPTS_0",true);
+  
   std::ostringstream up_size, down_size, b_size, occ, nstates_alpha,nstates_beta;
   up_size <<NumberOfAlpha;
   down_size << NumberOfBeta;
@@ -766,7 +802,7 @@ QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
   xmlAddChild(spoUP,coeff_data);
 
 
-  for (int i=0; i<SizeOfBasisSet; i++)
+  for (int i=0; i<numMO; i++)
      for (int j=0; j<SizeOfBasisSet; j++){
          Ctemp[i][j]=EigVec[n];
          n++;
@@ -774,6 +810,8 @@ QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
 
 
   hout.write(Ctemp,"eigenset_0");
+
+
 
   //add occupation DN
   occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
@@ -788,7 +826,7 @@ QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
   { 
     xmlNewProp(coeff_data,(const xmlChar*)"spindataset",(const xmlChar*)"1");
     n=numMO*SizeOfBasisSet;  
-    for (int i=0; i<SizeOfBasisSet; i++)
+    for (int i=0; i<numMO; i++)
        for (int j=0; j<SizeOfBasisSet; j++){
            Ctemp[i][j]=EigVec[n];
            n++;
@@ -828,6 +866,7 @@ QMCGaussianParserBase::createMultiDeterminantSetQPHDF5()
   xmlNewProp(detlist,(const xmlChar*)"neb",(const xmlChar*)cineb.str().c_str());
   xmlNewProp(detlist,(const xmlChar*)"nstates",(const xmlChar*)nstates.str().c_str());
   xmlNewProp(detlist,(const xmlChar*)"cutoff",(const xmlChar*)ci_thr.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"href",(const xmlChar*)h5file.c_str());
   if(CIcoeff.size() == 0)
   {
     std::cerr <<" CI configuration list is empty. \n";
@@ -838,30 +877,77 @@ QMCGaussianParserBase::createMultiDeterminantSetQPHDF5()
     std::cerr <<" Problem with CI configuration lists. \n";
     exit(102);
   }
-  int iv=0;
-
+  const int bitwise=64;
+  int N_int;
+  N_int=int(ci_nstates/bitwise);
+  if (ci_nstates%bitwise>0)
+       N_int+=1;
 
   hdf_archive hout;
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
-  hout.push("MultiSlaterDeterminant",true);
+  hout.push("MultiDet",true);
+  hout.write(ci_size,"NbDet");
+  hout.write(ci_nstates,"nstate");
+  hout.write(CIcoeff,"Coeff");
+  hout.write(N_int,"Nbits");
+  int nbexcitedstates=1;
+  hout.write(nbexcitedstates,"nexcitedstate");
 
+  Matrix< long int> tempAlpha(ci_size,N_int);
+  Matrix< long int> tempBeta(ci_size,N_int);
   for(int i=0; i<CIcoeff.size(); i++)
   {
       std::string loc_alpha=CIalpha[i].substr(0,ci_nstates);
       std::string loc_beta=CIbeta[i].substr(0,ci_nstates);
-      std::ostringstream coeff;
-      std::ostringstream qc_coeff;
-      qc_coeff<<CIcoeff[i];
-      coeff<<CIcoeff[i];
-      std::ostringstream tag;
-      tag<<"CIcoeff_" <<iv++;
-      hout.push(tag.str().c_str(),true);
-      hout.write(CIcoeff[i],"coeff");
-      hout.write(CIcoeff[i],"qc_coeff");
-      hout.write(loc_alpha,"alpha");
-      hout.write(loc_beta,"beta");
-      hout.pop();
+      std::string BiteSizeStringAlpha;
+      std::string BiteSizeStringBeta;
+      std::vector<unsigned long int> Val_alpha, Val_beta;
+      Val_alpha.resize(N_int);
+      Val_beta.resize(N_int);
+      BiteSizeStringAlpha.resize(N_int*bitwise);
+      BiteSizeStringBeta.resize(N_int*bitwise);
+
+      for (std::size_t n=0; n<(N_int*bitwise) ;n++)
+      {
+              BiteSizeStringAlpha[n]='0';
+              BiteSizeStringBeta[n]='0';
+      }
+ 
+      for (std::size_t n=0; n<ci_nstates;n++)
+      {
+              BiteSizeStringAlpha[n]=loc_alpha[n];
+              BiteSizeStringBeta[n]=loc_beta[n];
+      }
+
+      std::size_t offset=0 ;
+      for (std::size_t l=0;l<N_int;l++)
+      {     
+            offset=bitwise*l;
+            long int Val;
+            std::string Var_alpha, Var_beta;
+            Var_alpha.resize(bitwise);
+            Var_beta.resize(bitwise);
+
+            for (auto j=0;j<bitwise;j++)
+            {
+               Var_alpha[j]=BiteSizeStringAlpha[j+offset];
+               Var_beta[j]=BiteSizeStringBeta[j+offset];
+            }
+            std::reverse(Var_alpha.begin(), Var_alpha.end());
+            std::reverse(Var_beta.begin(), Var_beta.end());
+            std::bitset<bitwise> bit_alpha(Var_alpha);
+            std::bitset<bitwise> bit_beta(Var_beta);
+            tempAlpha[i][l]=bit_alpha.to_ulong();
+            tempBeta[i][l]=bit_beta.to_ulong();
+      }
+      
+      
+
   }
+  hout.write(tempAlpha,"CI_Alpha");
+  hout.write(tempBeta,"CI_Beta");
+
+  hout.pop();
   xmlAddChild(multislaterdet,detlist);
   hout.close();
   return multislaterdet;
@@ -1126,6 +1212,7 @@ void QMCGaussianParserBase::createCenterH5(int iat, int off_,int numelem)
   int numbasisgroups(0);
   std::stringstream tempcenter;
   std::string CenterID;
+  std::string expandYlm("Gamess");
   tempcenter<<CurrentCenter<<"";
   CenterID=tempcenter.str();
   std::stringstream tempElem;
@@ -1140,6 +1227,7 @@ void QMCGaussianParserBase::createCenterH5(int iat, int off_,int numelem)
   hout.write(basisName,"name");
   hout.write(angular_type,"angular");
   hout.write(CenterID,"elementType");
+  hout.write(expandYlm,"expandYlm");
   hout.write(Normalized,"normalized");
 
   double ValgridFirst(1.e-6), ValgridLast(1.e2);
@@ -1486,6 +1574,25 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
   std::cout << " QMCGaussianParserBase::dump " << std::endl;
   if (!Structure)
   {
+    if(UseHDF5 || multidetH5)
+    {
+       hdf_archive hout;
+       hout.create(h5file.c_str(),H5F_ACC_TRUNC);
+       hout.push("Nb_KPTS",true);
+       int NbKpts=1;
+       hout.write(NbKpts,"Nbkpts");
+       hout.pop();
+       hout.push("PBC",true);
+       hout.write(PBC,"PBC");
+       hout.pop();
+       //Adding generic code name to the H5 file.
+       std::string CodeName("generic");
+       hout.push("application",true);
+       hout.write(CodeName,"code");
+       hout.pop(); 
+       hout.close();
+    }
+
     xmlDocPtr doc_p = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
     if(PBC)
@@ -1515,23 +1622,10 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
       if (DoCusp==true)
          xmlNewProp(detPtr,(const xmlChar*)"cuspCorrection",(const xmlChar*)"yes");
       if(UseHDF5 || AllH5)
-      {
          xmlNewProp(detPtr,(const xmlChar*)"href",(const xmlChar*)h5file.c_str());
-      }
       {
         if(UseHDF5)
-        {
           xmlNodePtr bsetPtr = createBasisSetWithHDF5();
-          //Adding generic code name to the H5 file.
-          std::string CodeName("generic");
-          hdf_archive hout;
-          hout.open(h5file.c_str(),H5F_ACC_RDWR);
-          hout.push("application",true);
-          hout.write(CodeName,"code");
-          hout.pop(); 
-          hout.close();
-           
-        }
         else
         {
           if(!AllH5)
@@ -1574,9 +1668,9 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
              else
              {
                 if(UseHDF5)
-                   multislaterdetPtr = createMultiDeterminantSetQPHDF5();
+                  multislaterdetPtr = createMultiDeterminantSetQPHDF5();
                 else
-                   multislaterdetPtr = createMultiDeterminantSetQP();
+                  multislaterdetPtr = createMultiDeterminantSetQP();
            
              }
              xmlAddChild(detPtr,multislaterdetPtr);

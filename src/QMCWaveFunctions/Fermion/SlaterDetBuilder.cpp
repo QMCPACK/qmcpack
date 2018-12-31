@@ -1358,14 +1358,14 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur, std::vector<ci_configuratio
     dummyC_beta.occup[i]=true;
 
   hin.close(); 
-  std::cout <<" Done reading CIs from H5!!"<< std::endl;
+  app_log() <<" Done reading CIs from H5!!"<< std::endl;
 
   int cntup=0;
   int cntdn=0;
   std::unordered_map<std::string,int>  MyMapUp;
   std::unordered_map<std::string,int>  MyMapDn;
 
-  std::cout <<" Sorting unique CIs"<< std::endl;
+  app_log() <<" Sorting unique CIs"<< std::endl;
   for (int ni=0; ni<ndets;ni++)
   {
      if(std::abs(CIcoeff[ni]) < cutoff)
@@ -1424,7 +1424,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur, std::vector<ci_configuratio
      sumsq += CIcoeff[ni]*CIcoeff[ni];
   }
    
-  std::cout <<" Done Sorting unique CIs"<< std::endl;
+  app_log() <<" Done Sorting unique CIs"<< std::endl;
   app_log() <<"Found " <<coeff.size() <<" terms in the MSD expansion.\n";
   app_log() <<"Norm of ci vector (sum of ci^2): " <<sumsq << std::endl;
   
