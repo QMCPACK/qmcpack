@@ -493,7 +493,7 @@ protected:
   ///delayed update streak parameter k
   int kDelay;
   ///block dimension (usually k) in case delayed updates are used (there are nat/kblocksize blocks available)
-  int kblocksize;
+  int kblocksize=1;
   ///current block
   int kblock;
   ///current k within current block
