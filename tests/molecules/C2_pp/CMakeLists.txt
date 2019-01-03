@@ -1,4 +1,3 @@
-IF (ENABLE_SOA)
 IF (NOT QMC_CUDA)
  IF (NOT QMC_COMPLEX)
 
@@ -15,6 +14,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND C2_PP_MSDJ_SHORT "totenergy" "-11.059755 0.00099") # total energy
   LIST(APPEND C2_PP_MSDJ_SHORT "eeenergy" "12.142072 0.0052") # e-e energy
   LIST(APPEND C2_PP_MSDJ_SHORT "samples" "160000 0.0") # samples
+  IF(ENABLE_SOA)
   QMC_RUN_AND_CHECK(vmc_short_pp_msdj-H5
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_SHORT_H5_MSDJ
@@ -23,7 +23,9 @@ IF (NOT QMC_CUDA)
                     TRUE
                     1 C2_PP_MSDJ_SHORT # VMC
                     )
- 
+  ELSE()
+    MESSAGE("Skipping C2_pp H5 tests because H5 gaussian basis sets are not supported by AOS (ENABLE_SOA=0)")
+  ENDIF()
   QMC_RUN_AND_CHECK(vmc_short_pp_msdj-XML
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_SHORT_XML_MSDJ
@@ -33,10 +35,22 @@ IF (NOT QMC_CUDA)
                     1 C2_PP_MSDJ_SHORT # VMC
                     )
  
+  QMC_RUN_AND_CHECK(vmc_short_pp_msdj-XML-traditional
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
+                    C2_TZ_PP_SHORT_XML_MSDJ_TRAD
+                    vmc_short_pp_msdj-XML-traditional.xml
+                    1 16
+                    TRUE
+                    1 C2_PP_MSDJ_SHORT # VMC
+                    )
+
+
+
   LIST(APPEND C2_PP_MSDJ_LONG "kinetic" "7.72378 0.0034") # kinetic energy
   LIST(APPEND C2_PP_MSDJ_LONG "totenergy" "-11.059755 0.00037") # total energy
   LIST(APPEND C2_PP_MSDJ_LONG "eeenergy" "12.142072 0.0020") # e-e energy
   LIST(APPEND C2_PP_MSDJ_LONG "samples" "160000 0.0") # samples
+  IF(ENABLE_SOA)
   QMC_RUN_AND_CHECK(vmc_long_pp_msdj-H5
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_LONG_H5_MSDJ
@@ -45,7 +59,10 @@ IF (NOT QMC_CUDA)
                     TRUE
                     1 C2_PP_MSDJ_LONG # VMC
                     )
- 
+  ELSE()
+    MESSAGE("Skipping C2_pp H5 tests because H5 gaussian basis sets are not supported by AOS (ENABLE_SOA=0)")
+  ENDIF()
+
   QMC_RUN_AND_CHECK(vmc_long_pp_msdj-XML
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_LONG_XML_MSDJ
@@ -65,6 +82,3 @@ IF (NOT QMC_CUDA)
 ELSE()
     MESSAGE("Skipping C2_pp tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
-ELSE()
-    MESSAGE("Skipping C2_pp tests because gaussian basis sets with multideterminants and HDF5 support is not supported by AOS (SOA=1)")
-ENDIF()   

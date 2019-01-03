@@ -434,7 +434,7 @@ The following options are specific to using MCSCF multideterminants from Gamess.
 \item keyword \textbf{-ci}\\
 Path/name of the file containing the CI expansion in a gamess Format.
 \item keyword \textbf{-threshold}\\
-The CI expansion contains coefficients (weights) for each determinant. This option sets the maximum coefficient to include in the QMC run. By default it is set to 1e-20 (meaning all determinants in a expansion are taken into account).
+The CI expansion contains coefficients (weights) for each determinant. This option sets the maximum coefficient to include in the QMC run. By default it is set to 1e-20 (meaning all determinants in a expansion are taken into account). At the same time, if the threshold is set to a different value, for example $1e-5$, any determinant with a weight, $abs(weight) < 1e-5$ will be discarded and the determinant will not be considered. 
 \item keyword \textbf{-TargetState}\\
 ?
 \item keyword \textbf{-NaturalOrbitals}\\
