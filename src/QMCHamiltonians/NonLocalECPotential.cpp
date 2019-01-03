@@ -35,6 +35,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
     TrialWaveFunction& psi, bool computeForces, bool useVP):
   IonConfig(ions), Psi(psi), UseTMove(TMOVE_OFF), myRNG(&Random),
   nonLocalOps(els.getTotalNum()), ComputeForces(computeForces),
+  IonNeighborElecs(ions), ElecNeighborIons(els),
   UseVP(useVP), ForceBase(ions,els), Peln(els)
 {
   set_energy_domain(potential);
@@ -46,7 +47,6 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
   prefix="FNL";
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum(),0);
   PulayTerm.resize(NumIons);
-  
   UpdateMode.set(NONLOCAL,1);
 }
 
@@ -141,7 +141,12 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
     if(PPset[ipp]) PPset[ipp]->randomize_grid(*myRNG);
   //loop over all the ions
   const auto myTable = P.DistTables[myTableIndex];
-  
+  // clear all the electron and ion neighbor lists
+  for(int iat=0; iat<NumIons; iat++)
+    IonNeighborElecs.getNeighborList(iat).clear();
+  for(int jel=0; jel<P.getTotalNum(); jel++)
+    ElecNeighborIons.getNeighborList(jel).clear();
+
   if (ComputeForces)
   {
     forces=0;
@@ -149,11 +154,16 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
     {
       for(int jel=0; jel<P.getTotalNum(); jel++)
       {
-        const auto &dist  = myTable->Distances[jel];
-        const auto &displ = myTable->Displacements[jel];
+        const auto& dist  = myTable->Distances[jel];
+        const auto& displ = myTable->Displacements[jel];
+        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
         for(int iat=0; iat<NumIons; iat++)
           if(PP[iat]!=nullptr && dist[iat]<PP[iat]->Rmax)
+          {
             Value += PP[iat]->evaluateOneWithForces(P,iat,Psi,jel,dist[iat],RealType(-1)*displ[iat],forces[iat],Tmove,Txy);
+            NeighborIons.push_back(iat);
+            IonNeighborElecs.getNeighborList(iat).push_back(jel);
+          }
       }
     }
     else
@@ -167,11 +177,16 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
     {
       for(int jel=0; jel<P.getTotalNum(); jel++)
       {
-        const auto &dist  = myTable->Distances[jel];
-        const auto &displ = myTable->Displacements[jel];
+        const auto& dist  = myTable->Distances[jel];
+        const auto& displ = myTable->Displacements[jel];
+        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
         for(int iat=0; iat<NumIons; iat++)
           if(PP[iat]!=nullptr && dist[iat]<PP[iat]->Rmax)
+          {
             Value += PP[iat]->evaluateOne(P,iat,Psi,jel,dist[iat],RealType(-1)*displ[iat],Tmove,Txy);
+            NeighborIons.push_back(iat);
+            IonNeighborElecs.getNeighborList(iat).push_back(jel);
+          }
       }
     }
     else
@@ -179,11 +194,14 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
       for(int iat=0; iat<NumIons; iat++)
       {
         if(PP[iat]==nullptr) continue;
+        std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
         for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
         {
           const RealType r(myTable->r(nn));
           if(r>PP[iat]->Rmax) continue;
           Value += PP[iat]->evaluateOne(P,iat,Psi,iel,r,myTable->dr(nn),Tmove,Txy);
+          NeighborElecs.push_back(iel);
+          ElecNeighborIons.getNeighborList(iel).push_back(iat);
         }
       }
     }
@@ -216,27 +234,28 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
 void
 NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
 {
+  nonLocalOps.reset();
   std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
   const auto myTable = P.DistTables[myTableIndex];
+  const std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(ref_elec);
+
   if(myTable->DTType == DT_SOA)
   {
     const auto &dist  = myTable->Distances[ref_elec];
     const auto &displ = myTable->Displacements[ref_elec];
-    for(int iat=0; iat<NumIons; iat++)
-      if(PP[iat]!=nullptr && dist[iat]<PP[iat]->Rmax)
-        PP[iat]->evaluateOne(P,iat,Psi,ref_elec,dist[iat],RealType(-1)*displ[iat],true,Txy);
+    for(int atom_index=0; atom_index<NeighborIons.size(); atom_index++)
+    {
+      const int iat = NeighborIons[atom_index];
+      PP[iat]->evaluateOne(P,iat,Psi,ref_elec,dist[iat],RealType(-1)*displ[iat],true,Txy);
+    }
   }
   else
   {
-    for(int iat=0; iat<NumIons; iat++)
+    for(int atom_index=0; atom_index<NeighborIons.size(); atom_index++)
     {
-      if(PP[iat]==nullptr) continue;
-      for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
-      {
-        const RealType r(myTable->r(nn));
-        if(r<PP[iat]->Rmax && iel==ref_elec)
-          PP[iat]->evaluateOne(P,iat,Psi,iel,r,myTable->dr(nn),true,Txy);
-      }
+      const int iat = NeighborIons[atom_index];
+      int nn=myTable->M[iat]+ref_elec;
+      PP[iat]->evaluateOne(P,iat,Psi,ref_elec,myTable->r(nn),myTable->dr(nn),true,Txy);
     }
   }
 }
@@ -248,13 +267,13 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   RandomGenerator_t& RandomGen(*myRNG);
   if(UseTMove==TMOVE_V0)
   {
-    int ibar = nonLocalOps.selectMove(RandomGen());
+    const NonLocalData *oneTMove = nonLocalOps.selectMove(RandomGen());
     //make a non-local move
-    if(ibar)
+    if(oneTMove)
     {
-      int iat=nonLocalOps.id(ibar);
+      int iat = oneTMove->PID;
       P.setActive(iat);
-      if(P.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
+      if(P.makeMoveAndCheck(iat,oneTMove->Delta))
       {
         GradType grad_iat;
         Psi.ratioGrad(P,iat,grad_iat);
@@ -269,36 +288,10 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     GradType grad_iat;
     //make a non-local move per particle
     for(int ig=0; ig<P.groups(); ++ig) //loop over species
-    {
       for (int iat=P.first(ig); iat<P.last(ig); ++iat)
       {
-        nonLocalOps.reset();
         computeOneElectronTxy(P,iat);
-        int ibar = nonLocalOps.selectMove(RandomGen());
-        if(ibar)
-        {
-          P.setActive(iat);
-          if(P.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
-          {
-            Psi.ratioGrad(P,iat,grad_iat);
-            Psi.acceptMove(P,iat);
-            P.acceptMove(iat);
-            NonLocalMoveAccepted++;
-          }
-        }
-      }
-    }
-  }
-  else if(UseTMove==TMOVE_V3)
-  {
-    nonLocalOps.group_by_elec();
-    GradType grad_iat;
-    //make a non-local move per particle
-    for(int ig=0; ig<P.groups(); ++ig) //loop over species
-    {
-      for (int iat=P.first(ig); iat<P.last(ig); ++iat)
-      {
-        const NonLocalData *oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
+        const NonLocalData *oneTMove = nonLocalOps.selectMove(RandomGen());
         if(oneTMove)
         {
           P.setActive(iat);
@@ -311,13 +304,95 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
           }
         }
       }
-    }
+  }
+  else if(UseTMove==TMOVE_V3)
+  {
+    elecTMAffected.assign(P.getTotalNum(),false);
+    nonLocalOps.group_by_elec();
+    GradType grad_iat;
+    //make a non-local move per particle
+    for(int ig=0; ig<P.groups(); ++ig) //loop over species
+      for (int iat=P.first(ig); iat<P.last(ig); ++iat)
+      {
+        const NonLocalData *oneTMove;
+        if(elecTMAffected[iat])
+        {
+          // recompute Txy for the given electron effected by Tmoves
+          computeOneElectronTxy(P,iat);
+          oneTMove = nonLocalOps.selectMove(RandomGen());
+        }
+        else
+          oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
+        if(oneTMove)
+        {
+          P.setActive(iat);
+          if(P.makeMoveAndCheck(iat,oneTMove->Delta))
+          {
+            Psi.ratioGrad(P,iat,grad_iat);
+            Psi.acceptMove(P,iat);
+            // mark all affected electrons
+            markAffectedElecs(P.DistTables[myTableIndex], iat);
+            P.acceptMove(iat);
+            NonLocalMoveAccepted++;
+          }
+        }
+      }
   }
 
   if(NonLocalMoveAccepted>0)
     Psi.completeUpdates();
 
   return NonLocalMoveAccepted;
+}
+
+void
+NonLocalECPotential::markAffectedElecs(const DistanceTableData* myTable, int iel)
+{
+  std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(iel);
+  for(int iat=0; iat<NumIons; iat++)
+  {
+    if(PP[iat]==nullptr) continue;
+    RealType old_distance, new_distance;
+    if(myTable->DTType == DT_SOA)
+    {
+      old_distance = myTable->Distances[iel][iat];
+      new_distance = myTable->Temp_r[iat];
+    }
+    else
+    {
+      old_distance = myTable->r(myTable->M[iat]+iel);
+      new_distance = myTable->Temp[iat].r1;
+    }
+    bool moved = false;
+    // move out
+    if(old_distance < PP[iat]->Rmax && new_distance >= PP[iat]->Rmax)
+    {
+      moved = true;
+      std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
+      auto iter_at = std::find(NeighborIons.begin(), NeighborIons.end(), iat);
+      auto iter_el = std::find(NeighborElecs.begin(), NeighborElecs.end(), iel);
+      *iter_at = NeighborIons.back();
+      *iter_el = NeighborElecs.back();
+      NeighborIons.pop_back();
+      NeighborElecs.pop_back();
+      elecTMAffected[iel] = true;
+    }
+    // move in
+    if(old_distance >= PP[iat]->Rmax && new_distance < PP[iat]->Rmax)
+    {
+      moved = true;
+      std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
+      NeighborElecs.push_back(iel);
+      NeighborIons.push_back(iat);
+    }
+    // move around
+    if(moved || old_distance < PP[iat]->Rmax && new_distance < PP[iat]->Rmax)
+    {
+      std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
+      for(int jel=0; jel<NeighborElecs.size(); ++jel)
+        elecTMAffected[NeighborElecs[jel]] = true;
+    }
+  }
 }
 
 void
