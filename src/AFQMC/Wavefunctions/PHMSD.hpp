@@ -231,10 +231,10 @@ class PHMSD: public AFQMCInfo
       if(transposed_G_for_vbias_) {
         assert( G.shape()[0] == v.shape()[1] );
         assert( G.shape()[1] == size_of_G_for_vbias() );
-        HamOp.vbias(G[indices[range_t()][range_t(0,OrbMats[0].shape()[0]*NMO)]],
+        HamOp.vbias(G(G.extension(0),{0,long(OrbMats[0].shape()[0]*NMO)}),
                     std::forward<MatA>(v),scl*a,0.0);
         if(walker_type==COLLINEAR) 
-          HamOp.vbias(G[indices[range_t()][range_t(OrbMats[0].shape()[0]*NMO,G.shape()[1])]],
+          HamOp.vbias(G(G.extension(0),{long(OrbMats[0].shape()[0]*NMO),G.shape()[1]}),
                       std::forward<MatA>(v),scl*a,1.0);
       } else {  
         assert( G.shape()[0] == size_of_G_for_vbias() );
@@ -272,9 +272,9 @@ class PHMSD: public AFQMCInfo
     void Energy(WlkSet& wset) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extensions<1u>{nw});
+        ovlp.reextent(extensions<1u>{nw});
       if(eloc.shape()[0] != nw || eloc.shape()[1] != 3)
-        eloc.resize({nw,3});
+        eloc.reextent({nw,3});
       Energy(wset,eloc,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {
@@ -313,7 +313,7 @@ class PHMSD: public AFQMCInfo
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extensions<1u>{nw});
+        ovlp.reextent(extensions<1u>{nw});
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact,transpose);
     }
 
@@ -332,7 +332,7 @@ class PHMSD: public AFQMCInfo
     void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extensions<1u>{nw});	
+        ovlp.reextent(extensions<1u>{nw});	
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact_G_for_vbias,transposed_G_for_vbias_);
     }
 
@@ -350,7 +350,7 @@ class PHMSD: public AFQMCInfo
     {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extensions<1u>{nw});
+        ovlp.reextent(extensions<1u>{nw});
       Overlap(wset,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {

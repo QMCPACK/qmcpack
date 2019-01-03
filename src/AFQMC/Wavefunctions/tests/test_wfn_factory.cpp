@@ -153,7 +153,7 @@ const char *wlk_xml_block_noncol =
 
       if(type == COLLINEAR)
         wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
       else
         wset.resize(nwalk,initial_guess[0],
                          initial_guess[0]);
@@ -273,7 +273,7 @@ const char *wlk_xml_block_noncol =
 
       if(type == COLLINEAR)
         wset2.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
       else
         wset2.resize(nwalk,initial_guess[0],
                          initial_guess[0]);
@@ -437,7 +437,7 @@ const char *wlk_xml_block_noncol =
 
     if(type == COLLINEAR)
         wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
     else
         wset.resize(nwalk,initial_guess[0],
                          initial_guess[0]);
@@ -559,7 +559,7 @@ const char *wlk_xml_block_noncol =
 
     if(type == COLLINEAR)
         wset2.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
     else
         wset2.resize(nwalk,initial_guess[0],
                          initial_guess[0]);
@@ -725,7 +725,7 @@ const char *wlk_xml_block =
     REQUIRE(initial_guess.shape()[1]==NMO);
     REQUIRE(initial_guess.shape()[2]==NAEA);
     wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
 
     // no guarantee that overlap is 1.0
     wfn.Overlap(wset);
@@ -868,7 +868,7 @@ const char *wlk_xml_block =
     REQUIRE(initial_guess.shape()[1]==NMO);
     REQUIRE(initial_guess.shape()[2]==NAEA);
     wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
 
     // no guarantee that overlap is 1.0
     wfn.Overlap(wset);
@@ -1044,7 +1044,7 @@ const char *wlk_xml_block =
         //initial_guess[1][i][j] += distribution(generator);
     }
     wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
     qmcplusplus::Timer Time;
     // no guarantee that overlap is 1.0
     double t1;

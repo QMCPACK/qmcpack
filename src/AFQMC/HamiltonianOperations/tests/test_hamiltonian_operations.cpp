@@ -107,7 +107,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
                                         OrbMat[0],1e-8,'H',gTG.Node()));
     if(walker_type>0)
       PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
                                         1e-8,'H',gTG.Node()));
 
     hdf_archive dummy;
@@ -123,7 +123,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
         G.sliced(0,NAEA),true);
     if(WTYPE==COLLINEAR)
-      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1](OrbMat.extension(1),{0,NAEB}),
         G.sliced(NAEA,NAEA+NAEB),true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
@@ -237,7 +237,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
                                         OrbMat[0],1e-8,'H',gTG.Node()));
     if(WTYPE==COLLINEAR)
       PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
                                         1e-8,'H',gTG.Node()));
 
     hdf_archive dummy;
@@ -253,7 +253,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
         G.sliced(0,NAEA),true);
     if(WTYPE==COLLINEAR)
-      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1](OrbMat.extension(1),{0,NAEB}),
         G.sliced(NAEA,NAEA+NAEB),true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
@@ -366,7 +366,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
                                         OrbMat[0],1e-8,'H',gTG.Node()));
     if(WTYPE==COLLINEAR)
       PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
                                         1e-8,'H',gTG.Node()));
 
     hdf_archive dummy;
@@ -508,7 +508,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
                                         OrbMat[0],1e-8,'H',gTG.Node()));
     if(WTYPE==COLLINEAR)
       PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
                                         1e-8,'H',gTG.Node()));
 
     int ncores = gTG.getTotalCores();
@@ -656,7 +656,7 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
                                         OrbMat[0],1e-8,'H',gTG.Node()));
     if(WTYPE==COLLINEAR)
       PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
                                         1e-8,'H',gTG.Node()));
 
     int ncores = gTG.getTotalCores();

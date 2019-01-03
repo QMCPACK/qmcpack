@@ -47,12 +47,12 @@ class SlaterDetOperations
       IWORK.resize(NMO);
 
       // local temporary storage
-      TMat_NM.resize({NAEA,NMO});
-      TMat_MN.resize({NMO,NAEA});
-      TMat_NN.resize({NAEA,NAEA});
-      TMat_MM.resize({NMO,NMO});
-      TMat_MM2.resize({NMO,NMO});
-      TMat_MM3.resize({NMO,NMO});
+      TMat_NM.reextent({NAEA,NMO});
+      TMat_MN.reextent({NMO,NAEA});
+      TMat_NN.reextent({NAEA,NAEA});
+      TMat_MM.reextent({NMO,NMO});
+      TMat_MM2.reextent({NMO,NMO});
+      TMat_MM3.reextent({NMO,NMO});
 
       // reserve enough space in lapack's work array
       // Make sure it is large enough for:
@@ -68,7 +68,7 @@ class SlaterDetOperations
       WORK.reserve(  ma::glq_optimal_workspace_size(TMat_MN) );
 
       // TAU: T used in QR routines 
-      TAU.resize(extensions<1u>{NMO});
+      TAU.reextent(extensions<1u>{NMO});
 
     }
 
@@ -248,9 +248,9 @@ class SlaterDetOperations
       int NMO = A.shape()[0];
       int NAEA = A.shape()[1];
       if(TMat_MN.num_elements() < NMO*NAEA)
-        TMat_MN.resize({NMO,NAEA});
+        TMat_MN.reextent({NMO,NAEA});
       if(TMat_NM.num_elements() < NMO*NAEA)
-        TMat_NM.resize({NAEA,NMO});
+        TMat_NM.reextent({NAEA,NMO});
       boost::multi::array_ref<T,2> TMN(TMat_MN.data(), {NMO,NAEA});
       boost::multi::array_ref<T,2> T1(TMat_NM.data(), {NMO,NAEA});
       boost::multi::array_ref<T,2> T2(TMat_MM.data(), {NMO,NAEA});

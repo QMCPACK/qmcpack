@@ -184,7 +184,7 @@ std::cout<<"\n";
       assert(k >= 0 && k < haj.size());
       assert(k >= 0 && k < Vakbl_view.size());
       if(Gcloc.num_elements() < Gc.shape()[1] * Vakbl_view[k].shape()[0])
-        Gcloc.resize(extensions<1u>{Vakbl_view[k].shape()[0]*Gc.shape()[1]});
+        Gcloc.reextent(extensions<1u>{Vakbl_view[k].shape()[0]*Gc.shape()[1]});
       boost::multi::array_ref<SPComplexType,2> buff(Gcloc.data(),
                         {Vakbl_view[k].shape()[0],Gc.shape()[1]});
 
@@ -204,8 +204,8 @@ std::cout<<"\n";
 
       // one-body contribution
       if(addH1) {
-        boost::const_multi::array_ref<ComplexType,1> haj_ref(haj[k].origin(), extensions<1u>{haj[k].num_elements()});
-        ma::product(ComplexType(1.),ma::T(Gc),haj_ref,ComplexType(1.),E(E.extensions(0),0));
+        boost::multi::const_array_ref<ComplexType,1> haj_ref(haj[k].origin(), extensions<1u>{haj[k].num_elements()});
+        ma::product(ComplexType(1.),ma::T(Gc),haj_ref,ComplexType(1.),E(E.extension(0),0));
         for(int i=0; i<nwalk; i++)
           E[i][0] += E0;
       }
@@ -218,7 +218,7 @@ std::cout<<"\n";
       if(separateEJ && addEJ) {
         using ma::T;
         if(Gcloc.num_elements() < SpvnT[k].shape()[0] * Gc.shape()[1])
-          Gcloc.resize(extensions<1u>{SpvnT[k].shape()[0]*Gc.shape()[1]});
+          Gcloc.reextent(extensions<1u>{SpvnT[k].shape()[0]*Gc.shape()[1]});
         assert(SpvnT_view[k].shape()[1] == Gc.shape()[0]);
         RealType scl = (walker_type==CLOSED?4.0:1.0);
         // SpvnT*G
@@ -228,7 +228,7 @@ std::cout<<"\n";
         ma::product(SpvnT_view[k], Gc, v_);
         if(getKl || getKr) {
           for(int wi=0; wi<Gc.shape()[1]; wi++) {
-            auto _v_ = v_(v_.extensions(0),wi); 
+            auto _v_ = v_(v_.extension(0),wi); 
             if(getKl) {
               auto Kli = (*Kl)[wi];
               for(int ki=0, qi = SpvnT_view[k].local_origin()[0]; ki<_v_.size(); ki++, qi++)
@@ -242,7 +242,7 @@ std::cout<<"\n";
           }
         }
         for(int wi=0; wi<Gc.shape()[1]; wi++)
-          E[wi][2] = 0.5*scl*ma::dot(v_(v_.extensions(0),wi),v_(v_.extensions(0),wi));
+          E[wi][2] = 0.5*scl*ma::dot(v_(v_.extension(0),wi),v_(v_.extension(0),wi));
       }
 
     }

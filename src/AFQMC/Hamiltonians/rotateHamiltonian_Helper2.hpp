@@ -63,8 +63,8 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_&
 
     // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
     // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-    ma::product(Qk,Rl[indices[range_t()][range_t(bl0,blN)]],
-                   Ta[indices[range_t()][range_t(bl0,blN)]]);
+    ma::product(Qk,Rl(Rl.extension(0),{bl0,blN}),
+                   Ta(Ta.extension(0),{bl0,blN}));
     TG.node_barrier();
     Type four = Type(4.0);
     Type two = Type(2.0);
@@ -93,8 +93,8 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_&
 
         // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
         // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk,Rl[indices[range_t()][range_t(bl0,blN)]],
-                   Ta[indices[range_t()][range_t(bl0,blN)]]);
+        ma::product(Qk,Rl(Rl.extension(0),{bl0,blN}),
+                   Ta(Ta.extension(0),{bl0,blN}));
         TG.node_barrier();
         for(int k=k0, ka=0; k<kN; k++) {
           for(int a=0; a<NAEA; a++, ka++) {
@@ -114,8 +114,8 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_&
         }
       } else if(std::abs(EJX) > 1e-8) {
         // <a,b | k,l> = Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk,Rl[indices[range_t()][range_t(bl0,blN)]],
-                   Ta[indices[range_t()][range_t(bl0,blN)]]);
+        ma::product(Qk,Rl(Rl.extension(0),{bl0,blN}),
+                   Ta(Ta.extension(0),{bl0,blN}));
         TG.node_barrier();
         for(int k=k0, ka=0; k<kN; k++) {
           for(int a=0; a<NAEA; a++, ka++) {
@@ -135,8 +135,8 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_&
       if(!amIAlpha) {
         // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
         // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk,Rl[indices[range_t()][range_t(bl0,blN)]],
-                   Ta[indices[range_t()][range_t(bl0,blN)]]);
+        ma::product(Qk,Rl(Rl.extension(0),{bl0,blN}),
+                   Ta(Ta.extension(0),{bl0,blN}));
         TG.node_barrier();
         for(int k=k0, ka=0; k<kN; k++) {
           for(int a=0; a<NAEB; a++, ka++) {
@@ -199,8 +199,8 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, i
 
     // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
     // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-    ma::product(Qk,Rl[indices[range_t()][range_t(bl0,blN)]],
-                   Ta[indices[range_t()][range_t(bl0,blN)]]);
+    ma::product(Qk,Rl(Rl.extension(0),{bl0,blN}),
+                   Ta(Ta.extension(0),{bl0,blN}));
     TG.node_barrier();
     Type four = Type(4.0);
     Type two = Type(2.0);
@@ -232,8 +232,8 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, i
 
         // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
         // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk,Rl[indices[range_t()][range_t(bl0,blN)]],
-                   Ta[indices[range_t()][range_t(bl0,blN)]]);
+        ma::product(Qk,Rl(Rl.extension(0),{bl0,blN}),
+                   Ta(Ta.extension(0),{bl0,blN}));
         TG.node_barrier();
         for(int ka=ka0; ka<kaN; ka++) {  // ka = local range index
           int k = ka/NAEA+k0;  // global index
@@ -255,8 +255,8 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, i
         }
       } else if(std::abs(EJX) > 1e-8) {
         // <a,b | k,l> = Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk,Rl[indices[range_t()][range_t(bl0,blN)]],
-                   Ta[indices[range_t()][range_t(bl0,blN)]]);
+        ma::product(Qk,Rl(Rl.extension(0),{bl0,blN}),
+                   Ta(Ta.extension(0),{bl0,blN}));
         TG.node_barrier();
         for(int ka=ka0; ka<kaN; ka++) {  // ka = local range index
           int k = ka/NAEA+k0;  // global index
@@ -277,8 +277,8 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, i
       if(!amIAlpha) {
         // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
         // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk,Rl[indices[range_t()][range_t(bl0,blN)]],
-                   Ta[indices[range_t()][range_t(bl0,blN)]]);
+        ma::product(Qk,Rl(Rl.extension(0),{bl0,blN}),
+                   Ta(Ta.extension(0),{bl0,blN}));
         TG.node_barrier();
         for(int ka=ka0; ka<kaN; ka++) {  // ka = local range index
           int k = ka/NAEB+k0;  // global index

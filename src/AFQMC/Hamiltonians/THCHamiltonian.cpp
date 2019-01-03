@@ -45,7 +45,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   if(ndet > 1)
     APP_ABORT("Error: ndet > 1 not yet implemented in THCHamiltonian::getHamiltonianOperations.\n");
 
-  std::size_t gnmu,grotnmu,nmu,rotnmu,nmu0,nmuN,rotnmu0,rotnmuN;
+  size_t gnmu,grotnmu,nmu,rotnmu,nmu0,nmuN,rotnmu0,rotnmuN;
   hdf_archive dump(TGwfn.Global());
   // right now only Node.root() reads
   if( TG.Node().root() ) {
@@ -75,8 +75,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
       app_error()<<" ERROR: NMO differs from value in integral file. \n";
       APP_ABORT(" Error: NMO differs from value in integral file. \n");
     }
-    gnmu = std::size_t(Idata[1]);
-    grotnmu = std::size_t(Idata[2]);
+    gnmu = size_t(Idata[1]);
+    grotnmu = size_t(Idata[2]);
   }
   TG.Global().broadcast_value(gnmu);
   TG.Global().broadcast_value(grotnmu);
@@ -84,16 +84,16 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   if(test_Luv)
     grotnmu = gnmu;
 
-  // setup partition, in general matrices are partitioned along 'u'
+  // setup partition, in general matrices are partitioned asize_t 'u'
   {
     int node_number = TGwfn.getLocalNodeNumber();
     int nnodes_prt_TG = TGwfn.getNNodesPerTG();
-    std::tie(rotnmu0,rotnmuN) = FairDivideBoundary(std::size_t(node_number),grotnmu,std::size_t(nnodes_prt_TG));
+    std::tie(rotnmu0,rotnmuN) = FairDivideBoundary(size_t(node_number),grotnmu,size_t(nnodes_prt_TG));
     rotnmu = rotnmuN-rotnmu0;
 
     node_number = TGprop.getLocalNodeNumber();
     nnodes_prt_TG = TGprop.getNNodesPerTG();
-    std::tie(nmu0,nmuN) = FairDivideBoundary(std::size_t(node_number),gnmu,std::size_t(nnodes_prt_TG));
+    std::tie(nmu0,nmuN) = FairDivideBoundary(size_t(node_number),gnmu,size_t(nnodes_prt_TG));
     nmu = nmuN-nmu0;
   }
 
@@ -216,14 +216,14 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     //         = -0.5 sum_j,u,v conj(Piu(i,u)) conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
     //         = -0.5 sum_u,v conj(Piu(i,u)) W(u,v) Piu(l,u), where
     // W(u,v) = Muv(u,v) * sum_j Piu(j,u) conj(Piu(j,v))
-    ma::product(H(Piu__.get()),Piu__.get()[indices[range_t()][range_t(c0,cN)]],Tuv);
+    ma::product(H(Piu__.get()),Piu__.get()({0,long(NMO)},{long(c0),long(cN)}),Tuv);
     auto itM = Muv.origin();
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = conj(*itT)*(*itM);
     boost::multi::array<ValueType,2> T_({Tuv.shape()[1],size_t(NMO)});
     ma::product(T(Tuv),H(Piu__.get()),T_);
-    ma::product(-0.5,T(T_),T(Piu__.get()[indices[range_t()][range_t(c0,cN)]]),0.0,v0);
+    ma::product(-0.5,T(T_),T(Piu__.get()({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
 
     // reduce over Global
     TG.Global().all_reduce_in_place_n(v0.origin(),v0.num_elements(),std::plus<>());
@@ -256,22 +256,22 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     //         = -0.5 sum_j,u,v conj(Piu(i,u)) conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
     //         = -0.5 sum_u,v conj(Piu(i,u)) W(u,v) Piu(l,u), where
     // W(u,v) = Muv(u,v) * sum_j Piu(j,u) conj(Piu(j,v))
-    ma::product(H(Piu.get()),Piu.get()[indices[range_t()][range_t(c0,cN)]],Tuv);
+    ma::product(H(Piu.get()),Piu.get()({0,long(NMO)},{long(c0),long(cN)}),Tuv);
     auto itM = Muv.origin();
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = conj(*itT)*(*itM);
     boost::multi::array<ValueType,2> T_({Tuv.shape()[1],size_t(NMO)});
     ma::product(T(Tuv),H(Piu.get()),T_);
-    ma::product(-0.5,T(T_),T(Piu.get()[indices[range_t()][range_t(c0,cN)]]),0.0,v0);
+    ma::product(-0.5,T(T_),T(Piu.get()({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
 
     // reduce over Global
     TG.Global().all_reduce_in_place_n(v0.origin(),v0.num_elements(),std::plus<>());
   }
   TG.global_barrier();
 
-  int naea_ = PsiT[0].shape()[0];
-  int naeb_ = PsiT.back().shape()[0];
+  long naea_ = PsiT[0].shape()[0];
+  long naeb_ = PsiT.back().shape()[0];
 
   // half-rotated Pia
   std::vector<shm_Cmatrix> cPua;
@@ -288,16 +288,16 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
         // cPua = H(Piu) * conj(A)
         csr::CSR2MA('T',PsiT[2*i],A);
         ma::product(H(Piu.get()),A,
-                    cPua[i].get()[indices[range_t()][range_t(0,naea_)]]);
+                    cPua[i].get()({0,long(nmu)},{0,long(naea_)}));
         if(not test_Luv)
           ma::product(H(rotPiu.get()),A,
-                      rotcPua[i].get()[indices[range_t()][range_t(0,naea_)]]);
+                      rotcPua[i].get()({0,long(grotnmu)},{0,long(naea_)}));
         csr::CSR2MA('T',PsiT[2*i+1],B);
         ma::product(H(Piu.get()),B,
-                    cPua[i].get()[indices[range_t()][range_t(naea_,nel_)]]);
+                    cPua[i].get()({0,long(nmu)},{naea_,long(nel_)}));
         if(not test_Luv)
           ma::product(H(rotPiu.get()),B,
-                      rotcPua[i].get()[indices[range_t()][range_t(naea_,nel_)]]);
+                      rotcPua[i].get()({0,long(grotnmu)},{naea_,long(nel_)}));
       }
     } else {
       boost::multi::array<ComplexType,2> A({PsiT[0].shape()[1],PsiT[0].shape()[0]});

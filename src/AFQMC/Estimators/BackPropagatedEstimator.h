@@ -64,10 +64,10 @@ class BackPropagatedEstimator: public EstimatorBase
       dm_dims = {2*NMO,2*NMO};
     }
     if(DMBuffer.size() < dm_size) {
-      DMBuffer.resize(typename CVector::extensions_typedm_size});
+      DMBuffer.reextent(extensions<1u>{dm_size});
     }
     std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
-    denom.resize(typename CVector::extensions_type1});
+    denom.reextent({1});
   }
 
   ~BackPropagatedEstimator() {}

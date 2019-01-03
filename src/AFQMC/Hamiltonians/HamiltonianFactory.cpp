@@ -194,8 +194,6 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     TG.Global().broadcast_n(&NuclearCoulombEnergy,1,0);
     TG.Global().broadcast_n(&FrozenCoreEnergy,1,0);
 
-std::cout<<" here 0" <<std::endl;
-
     if(head) {
 
       using std::conj;
@@ -207,7 +205,7 @@ std::cout<<" here 0" <<std::endl;
         foundH1 = true;
       } else {
 
-        H1.resize({NMO,NMO});
+        H1.reextent({NMO,NMO});
         if(Idata[0] < 1) {
           app_error()<<" Error in HamiltonianFactory::fromHDF5(): Dimensions of H1 < 1.  \n";
           APP_ABORT(" ");
@@ -237,8 +235,6 @@ std::cout<<" here 0" <<std::endl;
       }
     }
     TG.Global().broadcast_n(std::addressof(*H1.origin()),H1.num_elements(),0);
-
-std::cout<<" here 1" <<std::endl;
 
     // now read the integrals
     if(htype == KPTHC) {

@@ -75,14 +75,14 @@ inline boost::multi::array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, 
   int NAEA = Alpha->shape()[0];
   int NMO = Alpha->shape()[1];
 
-  boost::multi::array<SPComplexType,1> N;
+  boost::multi::array<SPComplexType,1> N(extensions<1u>{1});
   const ComplexType one = ComplexType(1.0);
   const ComplexType zero = ComplexType(0.0);
 
   // 1-body part
   if(walker_type == CLOSED || walker_type == NONCOLLINEAR) {
 
-    N.resize(extensions<1u>{NAEA*NMO});
+    N.reextent(extensions<1u>{NAEA*NMO});
 #if(AFQMC_SP)
     boost::multi::array<ComplexType,2> N_({NAEA,NMO});
 #else
@@ -100,7 +100,7 @@ inline boost::multi::array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, 
     assert(Beta!=nullptr);
     int NAEB = Beta->shape()[0];
 
-    N.resize(extensions<1u>{(NAEA+NAEB)*NMO});
+    N.reextent(extensions<1u>{(NAEA+NAEB)*NMO});
 #if(AFQMC_SP)
     boost::multi::array<ComplexType,2> NA_({NAEA,NMO});
     boost::multi::array<ComplexType,2> NB_({NAEB,NMO});
@@ -308,7 +308,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
         int n0_,n1_,sz_ = Qk.shape()[0];
         std::tie(n0_, n1_) = FairDivideBoundary(coreid,sz_,ncores);
         if(n1_-n0_>0)
-          ma::tranpose(Qk.sliced(n0_,n1_),Rl[range_t()][range_t(n0_,n1_)]);
+          ma::tranpose(Qk.sliced(n0_,n1_),Rl(Rl.extension(0),{n0_,n1_}));
       }
     }
 #endif
@@ -723,7 +723,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
       int n0_,n1_,sz_ = Qk_.shape()[0];
       std::tie(n0_, n1_) = FairDivideBoundary(coreid,sz_,ncores);
       if(n1_-n0_>0)
-        ma::tranpose(Qk_.sliced(n0_,n1_),Rl_[range_t()][range_t(n0_,n1_)]);
+        ma::tranpose(Qk_.sliced(n0_,n1_),Rl_(Rl_.extension(0),{n0_,n1_}));
     }
 #endif
   }
@@ -763,13 +763,13 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
         if(type == "SD")
           count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0,kN,0,NMO,NMO,NAEA,NAEB,
 			SpQk[{size_t(k0*NAEA),std::size_t(kN*NAEA)}],
-			Rl[indices[range_t()][range_t(0,NAEA*NMO)]],Ta,cut);
+			Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
 			//Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
         else if(type == "DD")  {
           boost::multi::array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())+k0*NAEA*nvec,
 					 {NAEA*nk,nvec});
           count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0,kN,0,NMO,NMO,NAEA,NAEB,
-			Qk_,Rl[indices[range_t()][range_t(0,NAEA*NMO)]],Ta,cut);
+			Qk_,Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
 			//Qk({size_t(k0*NAEA),size_t(kN*NAEA)},Qk.extension(1)),
 			//Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
 	}
@@ -782,14 +782,14 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
         if(type == "SD")
           count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
                         SpQk[{size_t(NAEA*NMO+k0*NAEB),std::size_t(NAEA*NMO+kN*NAEB)}],
-			Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,cut);
+			Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
                         //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
         else if(type == "DD") {
           boost::multi::array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())
 					 + NMO*NAEA*nvec+nvec*k0*NAEB,
 					 {NAEB*nk,nvec});
           count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
-			Qk_,Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,cut);
+			Qk_,Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
                         //Qk({NAEA*NMO+k0*NAEB,NAEA*NMO+kN*NAEB},Qk.extension(1)),
                         //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
 	}
@@ -801,13 +801,13 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
           if(type == "SD")
             count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,
                         SpQk[{size_t(k0*NAEA),std::size_t(kN*NAEA)}],
-			Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,cut);
+			Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
                         //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta_,cut);
           else if(type == "DD") {
             boost::multi::array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())+k0*NAEA*nvec,
                                      {NAEA*nk,nvec});
             count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,
-			Qk_,Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,cut);
+			Qk_,Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
                         //Qk({k0*NAEA,kN*NAEA},Qk.extension(1)),
                         //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta_,cut);
 	  }
@@ -862,13 +862,13 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
       if(type == "SD")
         Qk_x_Rl(walker_type,EJX,TG,k0,kN,0,NMO,NMO,NAEA,NAEB,
                       SpQk[{size_t(k0*NAEA),std::size_t(kN*NAEA)}],
-                      Rl[indices[range_t()][range_t(0,NAEA*NMO)]],Ta,Vijkl,cut);
+                      Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,Vijkl,cut);
                       //Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
       else if(type == "DD")  {
         boost::multi::array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())+k0*NAEA*nvec,
                                        {NAEA*nk,nvec});
         Qk_x_Rl(walker_type,EJX,TG,k0,kN,0,NMO,NMO,NAEA,NAEB,
-                      Qk_,Rl[indices[range_t()][range_t(0,NAEA*NMO)]],Ta,Vijkl,cut);
+                      Qk_,Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,Vijkl,cut);
                       //Qk({size_t(k0*NAEA),size_t(kN*NAEA)},Qk.extension(1)),
                       //Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
       }
@@ -881,14 +881,14 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
       if(type == "SD")
         Qk_x_Rl(walker_type,EJX,TG,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
                       SpQk[{size_t(NAEA*NMO+k0*NAEB),std::size_t(NAEA*NMO+kN*NAEB)}],
-                      Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,Vijkl,cut);
+                      Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,Vijkl,cut);
                       //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
       else if(type == "DD") {
         boost::multi::array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())
                                        + NMO*NAEA*nvec+nvec*k0*NAEB,
                                        {NAEB*nk,nvec});
         Qk_x_Rl(walker_type,EJX,TG,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
-                      Qk_,Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,Vijkl,cut);
+                      Qk_,Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,Vijkl,cut);
                       //Qk({NAEA*NMO+k0*NAEB,NAEA*NMO+kN*NAEB},Qk.extension(1)),
                       //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
       }
@@ -900,13 +900,13 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
         if(type == "SD")
           Qk_x_Rl(walker_type,EJX,TG,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,
                       SpQk[{size_t(k0*NAEA),std::size_t(kN*NAEA)}],
-                      Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,Vijkl,cut);
+                      Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,Vijkl,cut);
                       //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta_,cut);
         else if(type == "DD") {
           boost::multi::array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())+k0*NAEA*nvec,
                                    {NAEA*nk,nvec});
           Qk_x_Rl(walker_type,EJX,TG,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,
-                      Qk_,Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,Vijkl,cut);
+                      Qk_,Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,Vijkl,cut);
                       //Qk({k0*NAEA,kN*NAEA},Qk.extension(1)),
                       //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta_,cut);
         }

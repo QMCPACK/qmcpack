@@ -11,7 +11,6 @@
 #include "Utilities/SimpleParser.h"
 
 #include "AFQMC/config.h"
-#include "boost/multi::array.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Wavefunctions/Excitations.hpp"

@@ -218,11 +218,11 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
         csr::CSR2MA('T',PsiT[2*i],A);
         auto&& cPua_i(cPua[i].get());
         auto&& rotcPua_i(rotcPua[i].get());
-        ma::product(H(Piu.get()),A,cPua_i(cPua_i.extensions(0),{0,NAEA}));
-        ma::product(H(rotPiu.get()),A,rotcPua_i(cPua_i.extensions(0),{0,NAEA}));
+        ma::product(H(Piu.get()),A,cPua_i(cPua_i.extension(0),{0,NAEA}));
+        ma::product(H(rotPiu.get()),A,rotcPua_i(cPua_i.extension(0),{0,NAEA}));
         csr::CSR2MA('T',PsiT[2*i+1],B);
-        ma::product(H(Piu.get()),B,cPua_i(cPua_i.extensions(0),{NAEA,NAEA+NAEB}));
-        ma::product(H(rotPiu.get()),B,rotcPua_i(cPua_i.extensions(0),{NAEA,NAEA+NAEB}));
+        ma::product(H(Piu.get()),B,cPua_i(cPua_i.extension(0),{NAEA,NAEA+NAEB}));
+        ma::product(H(rotPiu.get()),B,rotcPua_i(cPua_i.extension(0),{NAEA,NAEA+NAEB}));
       }
     } else {
       boost::multi::array<ComplexType,2> A({PsiT[0].shape()[1],PsiT[0].shape()[0]});

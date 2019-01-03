@@ -84,16 +84,16 @@ void timing_shm_blas(int c)
 
 
       ma::product(A.sliced(r0,rN),
-                  B[indices[range_t()][range_t(c0,cN)]],
-                  C[indices[range_t(r0,rN)][range_t(c0,cN)]]); 
+                  B(B.extension(0),{c0,cN}),
+                  C({r0,rN},{c0,cN})); 
 
       Timer.reset("Gen");
       node.barrier();
       Timer.start("Gen");
       for(int t=0; t<ntimes; t++) {
         ma::product(A.sliced(r0,rN),
-                    B[indices[range_t()][range_t(c0,cN)]],
-                    C[indices[range_t(r0,rN)][range_t(c0,cN)]]); 
+                    B(B.extension(0),{c0,cN}),
+                    C({r0,rN},{c0,cN})); 
         node.barrier();
       }
       Timer.stop("Gen");

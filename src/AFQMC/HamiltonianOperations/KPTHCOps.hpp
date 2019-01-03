@@ -688,7 +688,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
              typename = void
             >
     void vbias(MatA const& G, MatB&& v, double a=1., double c=0., int k=0) {
-        boost::const_multi::array_ref<ComplexType,2> G_(G.origin(),{1,G.shape()[0]});
+        boost::multi::const_array_ref<ComplexType,2> G_(G.origin(),{1,G.shape()[0]});
         boost::multi::array_ref<ComplexType,2> v_(v.origin(),{v.shape()[0],1});
         vbias(G_,v_,a,c,k);
     }

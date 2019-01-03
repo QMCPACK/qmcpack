@@ -42,6 +42,8 @@
 #include <string>
 #include <complex>
 #include <vector>
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
 
 using std::string;
 using std::complex;
@@ -50,6 +52,8 @@ using std::endl;
 using std::vector;
 using boost::multi::array;
 using boost::multi::array_ref;
+template<std::ptrdiff_t D>
+using extensions = typename boost::multi::layout_t<D>::extensions_type;
 
 namespace qmcplusplus
 {
@@ -64,18 +68,18 @@ void test_dense_matrix_mult()
 			14.,16.,36.//,
 		//	9., 6., 1.
 		};
-		multi::array_ref<double, 2> M(m.data(), {3,3});
+		array_ref<double, 2> M(m.data(), {3,3});
 		REQUIRE(M.num_elements() == m.size());
 		vector<double> x = {1.,2.,3.};
-		multi::array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
+		array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
 		vector<double> y(3);
-		multi::array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
+		array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
 
 		using ma::T;
 		ma::product(M, X, Y); // Y := M X
 
 		vector<double> mx = {147., 60.,154.};
-		multi::array_ref<double, 1> MX(mx.data(), extensions<1u>{mx.size()});
+		array_ref<double, 1> MX(mx.data(), extensions<1u>{mx.size()});
                 verify_approx(MX, Y);
 	}
 	{
@@ -84,18 +88,18 @@ void test_dense_matrix_mult()
 			4.,10.,12., 1.,
 			14.,16.,36., 20.
 		};
-		multi::array_ref<double, 2> M(m.data(), {3,4});
+		array_ref<double, 2> M(m.data(), {3,4});
 		REQUIRE(M.num_elements() == m.size());
 		vector<double> x = {1.,2.,3., 4.};
-		multi::array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
+		array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
 		vector<double> y(3);
-		multi::array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
+		array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
 
 		using ma::T;
 		ma::product(M, X, Y); // Y := M X
 
 		vector<double> mx = {155., 64.,234.};
-		multi::array_ref<double, 1> MX(mx.data(), extensions<1u>{mx.size()});
+		array_ref<double, 1> MX(mx.data(), extensions<1u>{mx.size()});
 		verify_approx( MX, Y );
 	}
 	{
@@ -104,18 +108,18 @@ void test_dense_matrix_mult()
 			4.,10.,12., 1.,
 			14.,16.,36., 20.
 		};
-		multi::array_ref<double, 2> M(m.data(), {3,4});
+		array_ref<double, 2> M(m.data(), {3,4});
 		REQUIRE(M.num_elements() == m.size());
 		vector<double> x = {1.,2.,3.};
-		multi::array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
+		array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
 		vector<double> y(4);
-		multi::array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
+		array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
 
 		using ma::T;
 		ma::product(T(M), X, Y); // Y := T(M) X
 
 		vector<double> mx = {59., 92., 162., 64.};
-		multi::array_ref<double, 1> MX(mx.data(), extensions<1u>{mx.size()});
+		array_ref<double, 1> MX(mx.data(), extensions<1u>{mx.size()});
 		verify_approx( MX, Y );
 	}
 	{
@@ -124,15 +128,15 @@ void test_dense_matrix_mult()
 			4.,10.,12., 7.,
 			14.,16.,36., 1.
 		};
-		multi::array_ref<double, 2> M(m.data(), {3,4});
+		array_ref<double, 2> M(m.data(), {3,4});
 		vector<double> x = {1.,2.,3., 4.};
-		multi::array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
+		array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
 		vector<double> y = {4.,5.,6.};
-		multi::array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
+		array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
 		ma::product(M, X, Y); // y := M x
 
 		vector<double> y2 = {183., 88.,158.};
-		multi::array_ref<double, 1> Y2(y2.data(), extensions<1u>{y2.size()});
+		array_ref<double, 1> Y2(y2.data(), extensions<1u>{y2.size()});
 		verify_approx( Y, Y2 );
 	}
 
@@ -142,7 +146,7 @@ void test_dense_matrix_mult()
 		2.,5.,8.,
 		1.,8.,9.
 	};
-	multi::array_ref<double, 2> M(m.data(), {3,3});
+	array_ref<double, 2> M(m.data(), {3,3});
 	REQUIRE( ma::is_hermitian(M) );
 	}{
 	vector<double> m = {
@@ -150,7 +154,7 @@ void test_dense_matrix_mult()
 		2.,0.  , 5.,0. ,  8.,-1.,
 		1.,0.  , 8.,1. ,  9.,0.,
 	};
-	multi::array_ref<complex<double>, 2> M(reinterpret_cast<complex<double>*>(m.data()), {3,3});
+	array_ref<complex<double>, 2> M(reinterpret_cast<complex<double>*>(m.data()), {3,3});
 	REQUIRE( ma::is_hermitian(M) );
 	}{
 	vector<double> m = {
@@ -158,7 +162,7 @@ void test_dense_matrix_mult()
 		2.,5.,8.,
 		1.,8.,9.
 	};
-	multi::array_ref<double, 2> M(m.data(), {3,3});
+	array_ref<double, 2> M(m.data(), {3,3});
 	REQUIRE( ma::is_hermitian(M) );
 	}
 	{
@@ -167,18 +171,18 @@ void test_dense_matrix_mult()
 		3.,5.,8.,
 		4.,8.,9.
 	};
-	multi::array_ref<double, 2> A(a.data(), {3,3});
+	array_ref<double, 2> A(a.data(), {3,3});
 	REQUIRE( A.num_elements() == a.size() );
 	vector<double> b = {
 		6.,2.,8.,
 		9.,5.,5.,
 		1.,7.,9.
 	};
-	multi::array_ref<double, 2> B(b.data(), {3,3});
+	array_ref<double, 2> B(b.data(), {3,3});
 	REQUIRE( B.num_elements() == b.size() );
 
 	vector<double> c(9);
-	multi::array_ref<double, 2> C(c.data(), {3,3});
+	array_ref<double, 2> C(c.data(), {3,3});
 	REQUIRE( C.num_elements() == c.size() );
 
 	ma::product(A, B, C);
@@ -188,7 +192,7 @@ void test_dense_matrix_mult()
 		71., 87., 121.,
 		105., 111., 153.
 	};
-	multi::array_ref<double, 2> AB(ab.data(), {3,3});
+	array_ref<double, 2> AB(ab.data(), {3,3});
 	REQUIRE( AB.num_elements() == ab.size() );
 
 	verify_approx(C, AB);
@@ -201,126 +205,127 @@ void test_dense_matrix_mult()
 
 	ma::product(T(A), B, C);
 	vector<double> atb = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
-	multi::array_ref<double, 2> AtB(atb.data(), {3,3});
+	array_ref<double, 2> AtB(atb.data(), {3,3});
 	verify_approx(C, AtB);
 
 	ma::product(A, T(B), C);
 	vector<double> abt = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
-	multi::array_ref<double, 2> ABt(abt.data(), {3,3});
+	array_ref<double, 2> ABt(abt.data(), {3,3});
 	verify_approx(C, ABt);
 
 	ma::product(T(A), T(B), C);
 	vector<double> atbt = {44., 44., 58., 74., 65., 107., 94., 94., 138.};
-	multi::array_ref<double, 2> AtBt(atbt.data(), {3,3});
+	array_ref<double, 2> AtBt(atbt.data(), {3,3});
 	verify_approx(C, AtBt);
 
 	using ma::H;
         ma::product(H(A), T(B), C);
         vector<double> ahbt = {44., 44., 58., 74., 65., 107., 94., 94., 138.};
-        multi::array_ref<double, 2> AhBt(ahbt.data(), {3,3});
+        array_ref<double, 2> AhBt(ahbt.data(), {3,3});
         verify_approx(C, AhBt);
 
         ma::product(A, H(B), C);
         vector<double> abh = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
-        multi::array_ref<double, 2> ABh(abh.data(), {3,3});
+        array_ref<double, 2> ABh(abh.data(), {3,3});
         verify_approx(C, ABh);
 
 	}
+
 	{
 		vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
-		multi::array_ref<double, 2> A(a.data(), {3,3});
+		array_ref<double, 2> A(a.data(), {3,3});
 		REQUIRE(A.num_elements() == a.size());
-		multi::array<double, 2> B = A;
+		array<double, 2> B = A;
 		ma::invert(A);
 
-		multi::array<double, 2> Id({3,3});
+		array<double, 2> Id({3,3});
 		ma::set_identity(Id);
 
-		multi::array<double, 2> Id2({3,3});
+		array<double, 2> Id2({3,3});
 		ma::product(A, B, Id2);
 
 		verify_approx(Id, Id2);
 	}
         {
                 std::vector<double> WORK;
-                boost::multi::array<double,1> TAU(extensions<1u>{3});
+                array<double,1> TAU(extensions<1u>{3});
 
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
-                multi::array_ref<double, 2> A(a.data(), {3,3});
+                array_ref<double, 2> A(a.data(), {3,3});
                 REQUIRE(A.num_elements() == a.size());
                 WORK.reserve(  ma::gelqf_optimal_workspace_size(A) );
                 WORK.reserve(  ma::glq_optimal_workspace_size(A) );
                 ma::gelqf(A,TAU,WORK);
                 ma::glq(A,TAU,WORK);
 
-                multi::array<double, 2> Id({3,3});
+                array<double, 2> Id({3,3});
                 ma::set_identity(Id);
 
                 using ma::H;
-                multi::array<double, 2> Id2({3,3});
+                array<double, 2> Id2({3,3});
                 ma::product(H(A), A, Id2);
 
                 verify_approx(Id, Id2);
         }
         {
                 std::vector<double> WORK;
-                boost::multi::array<double,1> TAU(extensions<1u>{4});
+                array<double,1> TAU(extensions<1u>{4});
 
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
-                multi::array_ref<double, 2> A(a.data(), {4,3});
+                array_ref<double, 2> A(a.data(), {4,3});
                 REQUIRE(A.num_elements() == a.size());
                 WORK.reserve(  ma::gelqf_optimal_workspace_size(A) );
                 WORK.reserve(  ma::glq_optimal_workspace_size(A) );
                 ma::gelqf(A,TAU,WORK);
                 ma::glq(A,TAU,WORK);
 
-                multi::array<double, 2> Id({3,3});
+                array<double, 2> Id({3,3});
                 ma::set_identity(Id);
 
                 using ma::H;
-                multi::array<double, 2> Id2({3,3});
+                array<double, 2> Id2({3,3});
                 ma::product(H(A), A, Id2);
 
                 verify_approx(Id, Id2);
         }
         {
                 std::vector<double> WORK;
-                boost::multi::array<double,1> TAU(extensions<1u>{3});
+                array<double,1> TAU(extensions<1u>{3});
 
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
-                multi::array_ref<double, 2> A(a.data(), {3,3});
+                array_ref<double, 2> A(a.data(), {3,3});
                 REQUIRE(A.num_elements() == a.size());
                 WORK.reserve(  ma::geqrf_optimal_workspace_size(A) );
                 WORK.reserve(  ma::gqr_optimal_workspace_size(A) );
                 ma::geqrf(A,TAU,WORK);
                 ma::gqr(A,TAU,WORK);
 
-                multi::array<double, 2> Id({3,3});
+                array<double, 2> Id({3,3});
                 ma::set_identity(Id);
 
                 using ma::H;
-                multi::array<double, 2> Id2({3,3});
+                array<double, 2> Id2({3,3});
                 ma::product(H(A), A, Id2);
 
                 verify_approx(Id, Id2);
         }
         {
                 std::vector<double> WORK;
-                boost::multi::array<double,1> TAU(extensions<1u>{4});
+                array<double,1> TAU(extensions<1u>{4});
 
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
-                multi::array_ref<double, 2> A(a.data(), {3,4});
+                array_ref<double, 2> A(a.data(), {3,4});
                 REQUIRE(A.num_elements() == a.size());
                 WORK.reserve(  ma::geqrf_optimal_workspace_size(A) );
                 WORK.reserve(  ma::gqr_optimal_workspace_size(A) );
                 ma::geqrf(A,TAU,WORK);
                 ma::gqr(A,TAU,WORK);
 
-                multi::array<double, 2> Id({3,3});
+                array<double, 2> Id({3,3});
                 ma::set_identity(Id);
 
                 using ma::H;
-                multi::array<double, 2> Id2({3,3});
+                array<double, 2> Id2({3,3});
                 ma::product(A, H(A), Id2);
 
                 verify_approx(Id, Id2);
@@ -330,15 +335,15 @@ void test_dense_matrix_mult()
                         9.,24.,30., 45.,
                         4.,10.,12., 12.
                 };
-                multi::array_ref<double, 2> A(a.data(), {2,4});
+                array_ref<double, 2> A(a.data(), {2,4});
                 vector<double> at = {
                         9.,4.,
                         24.,10.,
                         30.,12.,
                         45.,12.
                 };
-                multi::array_ref<double, 2> AT(at.data(), {4,2});
-                multi::array<double, 2> B({4,2});
+                array_ref<double, 2> AT(at.data(), {4,2});
+                array<double, 2> B({4,2});
                 ma::transpose(A,B);
                 verify_approx( AT, B );
         }
@@ -358,8 +363,8 @@ void test_dense_matrix_mult()
                     17.9429273455619 -  0.0000000000000i
                 };
 
-                multi::array<std::complex<double>,2> A({3,3});
-                multi::array<std::complex<double>,2> B({3,3});
+                array<std::complex<double>,2> A({3,3});
+                array<std::complex<double>,2> B({3,3});
 
                 for(int i=0, k=0; i<A.shape()[0]; i++)
                     for(int j=0; j<A.shape()[1]; j++,k++)
@@ -368,7 +373,7 @@ void test_dense_matrix_mult()
                     for(int j=0; j<A.shape()[1]; j++,k++)
                         B[i][j] = m_b[k];
 
-                multi::array<std::complex<double>,2> C = ma::exp(A);
+                array<std::complex<double>,2> C = ma::exp(A);
                 verify_approx( C, B );
         }
 }

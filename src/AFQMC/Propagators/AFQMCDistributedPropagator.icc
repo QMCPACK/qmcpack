@@ -117,20 +117,20 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
 
   // local matrices for temporary accumulation
   if(MFfactor.shape()[1] != nsteps || MFfactor.shape()[2] != nwalk)
-    MFfactor.resize({2,nsteps,nwalk});
+    MFfactor.reextent({2,nsteps,nwalk});
   if(hybrid_weight.shape()[1] != nsteps || hybrid_weight.shape()[2] != nwalk)
-    hybrid_weight.resize({2,nsteps,nwalk});
+    hybrid_weight.reextent({2,nsteps,nwalk});
 
-  if(new_overlaps.shape()[0] != nwalk) new_overlaps.resize(extensions<1u>{nwalk});
+  if(new_overlaps.shape()[0] != nwalk) new_overlaps.reextent(extensions<1u>{nwalk});
   if(new_energies.shape()[0] != nwalk || new_energies.shape()[1] != 3) 
-    new_energies.resize({nwalk,3});
+    new_energies.reextent({nwalk,3});
   if(not transposed_vHS_) {  
     if(walker_type==NONCOLLINEAR)
       if(local_vHS.shape()[0] != 2*NMO || local_vHS.shape()[1] != 2*NMO)
-        local_vHS.resize({2*NMO,2*NMO});
+        local_vHS.reextent({2*NMO,2*NMO});
     else
       if(local_vHS.shape()[0] != NMO || local_vHS.shape()[1] != NMO)
-        local_vHS.resize({NMO,NMO});
+        local_vHS.reextent({NMO,NMO});
   }
 
   // if timestep changed, recalculate one body propagator

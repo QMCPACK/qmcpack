@@ -198,7 +198,7 @@ std::cout<<"\n";
       // addH1
       std::fill_n(E.origin(),E.num_elements(),ComplexType(0.0));
       if(addH1) {
-        ma::product(ComplexType(1.0),G,haj[k],ComplexType(0.0),E(E.extensions(0),0));
+        ma::product(ComplexType(1.0),G,haj[k],ComplexType(0.0),E(E.extension(0),0));
         for(int i=0; i<nwalk; i++) E[i][0] += E0;
       }
       if(not (addEJ || addEXX)) return;
@@ -245,8 +245,8 @@ std::cout<<"\n";
       if(walker_type==CLOSED || walker_type==NONCOLLINEAR) {
         RealType scl = (walker_type==CLOSED?2.0:1.0);
         for(int wi=0; wi<nwalk; wi++) {
-          boost::const_multi::array_ref<ComplexType,2> Gw(G[wi].origin(),{nel_,nmo_});
-          boost::const_multi::array_ref<ComplexType,1> G1D(G[wi].origin(),extensions<1u>{nel_*nmo_});
+          boost::multi::const_array_ref<ComplexType,2> Gw(G[wi].origin(),{nel_,nmo_});
+          boost::multi::const_array_ref<ComplexType,1> G1D(G[wi].origin(),extensions<1u>{nel_*nmo_});
           // need a new routine if addEXX is false,
           // otherwise it is quite inefficient to get Ej only
           Guv_Guu(Gw,Guv,Guu,T1,k);
@@ -280,9 +280,9 @@ std::cout<<"\n";
         }
       } else {
         for(int wi=0; wi<nwalk; wi++) {
-          boost::const_multi::array_ref<ComplexType,2> Gw(G[wi].origin(),{nel_,nmo_});
-          boost::const_multi::array_ref<ComplexType,1> G1DA(G[wi].origin(),extensions<1u>{NAOA*nmo_});
-          boost::const_multi::array_ref<ComplexType,1> G1DB(G[wi].origin()+NAOA*nmo_,extensions<1u>{NAOB*nmo_});
+          boost::multi::const_array_ref<ComplexType,2> Gw(G[wi].origin(),{nel_,nmo_});
+          boost::multi::const_array_ref<ComplexType,1> G1DA(G[wi].origin(),extensions<1u>{NAOA*nmo_});
+          boost::multi::const_array_ref<ComplexType,1> G1DB(G[wi].origin()+NAOA*nmo_,extensions<1u>{NAOB*nmo_});
           Guv_Guu(Gw,Guv,Guu,T1,k);
           // move calculation of Guv/Guu here to avoid storing 2 copies of Guv for alpha/beta
           if(addEJ) {
@@ -418,7 +418,7 @@ std::cout<<"\n";
       cnt+=Tub.num_elements();
       assert(cnt <= memory_needs);
       if(eloc.shape()[0] != 2 || eloc.shape()[1] != nwalk || eloc.shape()[2] != 3)
-        eloc.resize({2,nwalk,3});
+        eloc.reextent({2,nwalk,3});
 
       std::fill_n(eloc.origin(),eloc.num_elements(),ComplexType(0.0));
 
@@ -429,10 +429,10 @@ std::cout<<"\n";
         std::fill_n(std::addressof(*Ov[1][1].origin()),nwalk*(Ov.shape()[1]-1),ComplexType(0.0));
         auto Ea = E[0][0];
         auto Eb = E[1][0];
-        boost::const_multi::array_ref<ComplexType,2> G2DA(std::addressof(*GrefA.origin()),
+        boost::multi::const_array_ref<ComplexType,2> G2DA(std::addressof(*GrefA.origin()),
                                           {nwalk,GrefA[0].num_elements()});
         ma::product(ComplexType(1.0),G2DA,haj[0],ComplexType(0.0),Ea(Ea.extension(0),0));
-        boost::const_multi::array_ref<ComplexType,2> G2DB(std::addressof(*GrefA.origin()),
+        boost::multi::const_array_ref<ComplexType,2> G2DB(std::addressof(*GrefA.origin()),
                                           {nwalk,GrefA[0].num_elements()});
         ma::product(ComplexType(1.0),G2DB,haj[0],ComplexType(0.0),Eb(Eb.extension(0),0));
         for(int i=0; i<nwalk; i++) {
@@ -445,7 +445,7 @@ std::cout<<"\n";
 
         { // Alpha
           auto Gw = GrefA[wi];
-          boost::const_multi::array_ref<ComplexType,1> G1D(std::addressof(*Gw.origin()),
+          boost::multi::const_array_ref<ComplexType,1> G1D(std::addressof(*Gw.origin()),
                                                         extensions<1u>{Gw.num_elements()});
           Guv_Guu2(Gw,Guv,Gvv,Scu,0);
           if(u0!=uN)
@@ -488,7 +488,7 @@ std::cout<<"\n";
 
         { // Beta: Unnecessary in CLOSED walker type (on Walker)
           auto Gw = GrefB[wi];
-          boost::const_multi::array_ref<ComplexType,1> G1D(std::addressof(*Gw.origin()),
+          boost::multi::const_array_ref<ComplexType,1> G1D(std::addressof(*Gw.origin()),
                                                         extensions<1u>{Gw.num_elements()});
           Guv_Guu2(Gw,Guv,Gvv,Scu,0);
           if(u0!=uN)
@@ -547,7 +547,7 @@ std::cout<<"\n";
              typename = void
             >
     void vHS(MatA & X, MatB&& v, double a=1., double c=0.) {
-        boost::const_multi::array_ref<ComplexType,2> X_(X.origin(),{X.shape()[0],1});
+        boost::multi::const_array_ref<ComplexType,2> X_(X.origin(),{X.shape()[0],1});
         boost::multi::array_ref<ComplexType,2> v_(v.origin(),{1,v.shape()[0]});
         vHS(X_,v_,a,c);
     }
@@ -593,7 +593,7 @@ std::cout<<"\n";
       // reinterpret as RealType matrices with 2x the columns
       boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(Luv.origin()),
                                                  {Luv.shape()[0],2*Luv.shape()[1]});
-      boost::const_multi::array_ref<RealType,2> X_R(reinterpret_cast<RealType const*>(X.origin()),
+      boost::multi::const_array_ref<RealType,2> X_R(reinterpret_cast<RealType const*>(X.origin()),
                                                  {X.shape()[0],2*X.shape()[1]});
       boost::multi::array_ref<RealType,2> Tuw_R(reinterpret_cast<RealType*>(Tuw.origin()),
                                                  {nu,2*nwalk});
@@ -663,7 +663,7 @@ app_log()
              typename = void
             >
     void vbias(MatA const& G, MatB&& v, double a=1., double c=0., int k=0) {
-        boost::const_multi::array_ref<ComplexType,2> G_(G.origin(),{1,G.shape()[0]});
+        boost::multi::const_array_ref<ComplexType,2> G_(G.origin(),{1,G.shape()[0]});
         boost::multi::array_ref<ComplexType,2> v_(v.origin(),{v.shape()[0],1});
         vbias(G_,v_,a,c,k);
     }
@@ -703,10 +703,10 @@ app_log()
                                                  {nu,2*nwalk});
         boost::multi::array_ref<RealType,2> v_R(reinterpret_cast<RealType*>(v.origin()),
                                                  {v.shape()[0],2*v.shape()[1]});
-        ma::product(a,T(Luv_R[indices[range_t()][range_t(c0,cN)]]),Guu_R,
+        ma::product(a,T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
                     c,v_R.sliced(c0,cN));
 #else
-        ma::product(a,T(Luv.get()[indices[range_t()][range_t(c0,cN)]]),Guu,
+        ma::product(a,T(Luv.get()(Luv.get().extension(0),{c0,cN})),Guu,
                     c,v.sliced(c0,cN));
 #endif
       } else {
@@ -723,10 +723,10 @@ app_log()
                                                  {nu,2*nwalk});
         boost::multi::array_ref<RealType,2> v_R(reinterpret_cast<RealType*>(v.origin()),
                                                  {v.shape()[0],2*v.shape()[1]});
-        ma::product(a,T(Luv_R[indices[range_t()][range_t(c0,cN)]]),Guu_R,
+        ma::product(a,T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
                     c,v_R.sliced(c0,cN));
 #else
-        ma::product(a,T(Luv.get()[indices[range_t()][range_t(c0,cN)]]),Guu,
+        ma::product(a,T(Luv.get()(Luv.get().extension(0),{c0,cN})),Guu,
                     c,v.sliced(c0,cN));
 #endif
       }
@@ -783,9 +783,9 @@ app_log()
       comm->barrier();
       ComplexType a = (walker_type==CLOSED)?ComplexType(2.0):ComplexType(1.0);
       for(int iw=0; iw<nw; ++iw) {
-        boost::const_multi::array_ref<ComplexType,2> Giw(G[iw].origin(),{nel_,nmo_});
+        boost::multi::const_array_ref<ComplexType,2> Giw(G[iw].origin(),{nel_,nmo_});
         // transposing inetermediary to make dot products faster in the next step
-        ma::product(transposed(Piu.get()[indices[range_t()][range_t(u0,uN)]]),
+        ma::product(transposed(Piu.get()({0,nmo_},{u0,uN})),
                   transposed(Giw),
                   T1.sliced(u0,uN));
         for(int u=u0; u<uN; ++u)
@@ -813,9 +813,9 @@ app_log()
       std::fill_n(Guu[u0].origin(),nw*(uN-u0),ComplexType(0.0));
       ComplexType a = (walker_type==CLOSED)?ComplexType(2.0):ComplexType(1.0);
       for(int iw=0; iw<nw; ++iw) {
-        boost::const_multi::array_ref<ComplexType,2> Giw(G[iw].origin(),{nmo_,nmo_});
-        ma::product(Giw,Piu.get()[indices[range_t()][range_t(u0,uN)]],
-                  T1[indices[range_t()][range_t(u0,uN)]]);
+        boost::multi::const_array_ref<ComplexType,2> Giw(G[iw].origin(),{nmo_,nmo_});
+        ma::product(Giw,Piu.get()({0,nmo_},{u0,uN}),
+                  T1(T1.extension(0),{u0,uN}));
         for(int i=0; i<nmo_; ++i) {
           auto Ti = T1[i].origin();
           auto Pi = Piu.get()[i].origin();
@@ -867,15 +867,15 @@ app_log()
         assert(T1.shape()[1] == size_t(nv));
 
         using ma::transposed;
-        ma::product(G,rotPiu.get()[indices[range_t()][range_t(v0,vN)]],
-                    T1[indices[range_t()][range_t(v0,vN)]]);
+        ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),
+                    T1(T1.extension(0),{v0,vN}));
         // This operation might benefit from a 2-D work distribution
         ma::product(rotcPua[k].get().sliced(nu0,nu0+nu),
-                    T1[indices[range_t()][range_t(v0,vN)]],
-                    Guv[0][indices[range_t()][range_t(v0,vN)]]);
+                    T1(T1.extension(0),{v0,vN}),
+                    Guv[0]({0,nu},{v0,vN}));
         for(int v=v0; v<vN; ++v)
           if( v < nu0 || v >= nu0+nu ) {
-            Guu[v] = ma::dot(rotcPua[k].get()[v],T1[indices[range_t()][v]]);
+            Guu[v] = ma::dot(rotcPua[k].get()[v],T1(T1.extension(0),v)); 
           } else
             Guu[v] = Guv[0][v-nu0][v];
       } else {
@@ -887,19 +887,19 @@ app_log()
         assert(T1.shape()[1] == nv);
 
         using ma::transposed;
-        ma::product(G,rotPiu.get()[indices[range_t()][range_t(v0,vN)]],
-                    T1[indices[range_t()][range_t(v0,vN)]]);
+        ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),
+                    T1(T1.extension(0),{v0,vN}));
         // This operation might benefit from a 2-D work distribution
         // Alpha
-        ma::product(rotcPua[k].get()[indices[range_t(nu0,nu0+nu)][range_t(0,NAOA)]],
-                    T1[indices[range_t(0,NAOA)][range_t(v0,vN)]],
-                    Guv[0][indices[range_t()][range_t(v0,vN)]]);
-        ma::product(rotcPua[k].get()[indices[range_t(nu0,nu0+nu)][range_t(NAOA,nel_)]],
-                    T1[indices[range_t(NAOA,nel_)][range_t(v0,vN)]],
-                    Guv[1][indices[range_t()][range_t(v0,vN)]]);
+        ma::product(rotcPua[k].get()({nu0,nu0+nu},{0,NAOA}),
+                    T1({0,NAOA},{v0,vN}),
+                    Guv[0]({0,nu},{v0,vN}));
+        ma::product(rotcPua[k].get()({nu0,nu0+nu},{NAOA,nel_}),
+                    T1({NAOA,nel_},{v0,vN}),
+                    Guv[1]({0,nu},{v0,vN}));
         for(int v=v0; v<vN; ++v)
           if( v < nu0 || v >= nu0+nu ) {
-            Guu[v] = ma::dot(rotcPua[k].get()[v],T1[indices[range_t()][v]]);
+            Guu[v] = ma::dot(rotcPua[k].get()[v],T1(T1.extension(0),v));
           } else
             Guu[v] = Guv[0][v-nu0][v]+Guv[1][v-nu0][v];
       }
@@ -944,15 +944,15 @@ app_log()
       assert(T1.shape()[1] == size_t(nv));
 
       using ma::transposed;
-      ma::product(G,rotPiu.get()[indices[range_t()][range_t(v0,vN)]],
-                  T1[indices[range_t()][range_t(v0,vN)]]);
+      ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),
+                  T1(T1.extension(0),{v0,vN}));
       // This operation might benefit from a 2-D work distribution
       ma::product(rotcPua[k].get().sliced(nu0,nu0+nu),
-                  T1[indices[range_t()][range_t(v0,vN)]],
-                  Guv[indices[range_t()][range_t(v0,vN)]]);
+                  T1(T1.extension(0),{v0,vN}),
+                  Guv(Guv.extension(0),{v0,vN}));
       for(int v=v0; v<vN; ++v)
         if( v < nu0 || v >= nu0+nu ) {
-          Guu[v] = ma::dot(rotcPua[k].get()[v],T1[indices[range_t()][v]]);
+          Guu[v] = ma::dot(rotcPua[k].get()[v],T1(T1.extension(0),v)); 
         } else
          Guu[v] = Guv[v-nu0][v];
       comm->barrier();

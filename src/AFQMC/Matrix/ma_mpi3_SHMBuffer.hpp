@@ -67,7 +67,7 @@ class mpi3_SHMBuffer
 
     void resize(size_t n) {
       if(array_.size() != n)
-        array_.resize(extensions<1u>{n});
+        array_.reextent(extensions<1u>{n});
         //array_.reextent({n});
     }
 

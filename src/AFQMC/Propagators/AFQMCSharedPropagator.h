@@ -74,7 +74,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
     {
       transposed_vHS_ = wfn.transposed_vHS();
       transposed_G_ = wfn.transposed_G_for_vbias();
-      if(not transposed_vHS_) local_vHS.resize({NMO,NMO});
+      if(not transposed_vHS_) local_vHS.reextent({NMO,NMO});
       parse(cur);  
     }
 

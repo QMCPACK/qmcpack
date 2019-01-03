@@ -67,7 +67,7 @@ inline void write_distributed_MA(MultiArray & A, std::array<size_t,2> offset, st
       {
         hyperslab_proxy<typename std::decay<MultiArray>::type,2> slab(A,
                                          gdim, 
-                                         std::array<size_t,2>{A.shape()[0],A.shape()[1]},
+                                         std::array<size_t,2>{size_t(A.shape()[0]),size_t(A.shape()[1])},
                                          offset); 
         dump.write(slab,name); 
       }

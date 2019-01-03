@@ -346,7 +346,7 @@ inline void SerialBranching(WalkerSet& wset, BRANCHING_ALGORITHM type, double mi
 
   // reserve space for extra walkers
   if(wlk_counts[comm.rank()] > target)
-    Wexcess.resize({std::max(0,wlk_counts[comm.rank()]-target),wset.single_walker_size()});
+    Wexcess.reextent({std::max(0,wlk_counts[comm.rank()]-target),wset.single_walker_size()});
 
   // perform local branching
   // walkers beyond target go in Wexcess  

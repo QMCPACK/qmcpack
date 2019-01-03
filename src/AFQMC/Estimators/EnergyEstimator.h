@@ -13,8 +13,6 @@
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/NewTimer.h"
 
-#include "boost/multi::array.hpp"
-
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 
@@ -45,9 +43,9 @@ class EnergyEstimator: public EstimatorBase
     AFQMCTimers[energy_timer]->start();
     size_t nwalk = wset.size();
     if(eloc.shape()[0] != nwalk || eloc.shape()[1] != 3)
-      eloc.resize({nwalk,3});
+      eloc.reextent({nwalk,3});
     if(ovlp.shape()[0] != nwalk)
-      ovlp.resize(typename ComplexVector::extensions_type{nwalk});
+      ovlp.reextent(extensions<1u>{nwalk});
 
     ComplexType dum, et;
     wfn0.Energy(wset,eloc,ovlp);
@@ -100,8 +98,8 @@ class EnergyEstimator: public EstimatorBase
 
   Wavefunction& wfn0;
 
-  ComplexMatrix eloc;
-  ComplexVector ovlp;
+  ComplexMatrix<std::allocator<ComplexType>> eloc;
+  ComplexVector<std::allocator<ComplexType>> ovlp;
 
   std::vector<std::complex<double> > data;
 

@@ -374,7 +374,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         ma::product(sqrtdt,T(Spvnview),
                     G0M.sliced(0,NMO*NMO),0.,X);
         ma::product(sqrtdt,T(Spvnview),
-                    G0M[indices[range_t(NMO*NMO,2*NMO*NMO)]],1.,X);
+                    G0M.sliced(NMO*NMO,2*NMO*NMO),1.,X);
         ComplexType Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -399,7 +399,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         ma::product(sqrtdt,SpvnTview,
                     G0M.sliced(0,NMO*NMO),0.,X);
         ma::product(sqrtdt,SpvnTview,
-                    G0M[indices[range_t(NMO*NMO,2*NMO*NMO)]],1.,X);
+                    G0M.sliced(NMO*NMO,2*NMO*NMO),1.,X);
         Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -563,7 +563,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         ma::product(sqrtdt,T(Spvnview),
                     G0M.sliced(0,NMO*NMO),0.,X);
         ma::product(sqrtdt,T(Spvnview),
-                    G0M[indices[range_t(NMO*NMO,2*NMO*NMO)]],1.,X);
+                    G0M.sliced(NMO*NMO,2*NMO*NMO),1.,X);
         ComplexType Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -590,7 +590,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         ma::product(sqrtdt,SpvnTview,
                     G0M.sliced(0,NMO*NMO),0.,X);
         ma::product(sqrtdt,SpvnTview,
-                    G0M[indices[range_t(NMO*NMO,2*NMO*NMO)]],1.,X);
+                    G0M.sliced(NMO*NMO,2*NMO*NMO),1.,X);
         Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];

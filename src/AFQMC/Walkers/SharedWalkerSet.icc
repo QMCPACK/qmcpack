@@ -56,7 +56,7 @@ inline void SharedWalkerSet::resize(int n, MatA&& A, MatB&& B) {
       while(pos < n) {
         std::fill_n(W[pos].origin(),W[pos].shape()[0],ComplexType(0,0));
         walker w0(W[pos],data_displ,wlk_desc);
-        w0.SlaterMatrix(Alpha) = A; 
+        w0.SlaterMatrix(Alpha) = A;
         if(walkerType == COLLINEAR)
           w0.SlaterMatrix(Beta) = B; 
         w0.weight() = ComplexType(1.0,0.0);
