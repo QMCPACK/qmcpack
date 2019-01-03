@@ -75,7 +75,7 @@ void VMCcuda::advanceWalkers()
   std::vector<ValueType> ratios(kd*nw);
   std::vector<RealType> acc_random_nrs(kd*nw);
 #ifdef QMC_COMPLEX
-  std::vector<RealType> ratios_real(nw);
+  std::vector<RealType> ratios_real(kd*nw);
 #endif
   std::vector<GradType>  newG(nw*kd);
   std::vector<ValueType> newL(nw*kd);

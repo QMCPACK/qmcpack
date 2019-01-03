@@ -1134,7 +1134,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
  int row_stride, int k, bool klinear)
 {
   int nw = walkers.size();
-  int N = walkers.size();
+  int N = newpos.size(); // should work out-of-the-box for k-delayed positions now
   int offset = 0;
   if((nw != N) && klinear)
   {
@@ -1219,10 +1219,10 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   apply_phase_factors ((CTS::RealType*) CudakPoints.data(),
                        (CTS::RealType*) cudaphasepos.data(),
                        (CTS::ValueType**) CudaValuePointers.data(),
-                       (CTS::ValueType**) phi.data(),
+                       (CTS::ValueType**) &(phi.data()[offset]),
                        (CTS::ValueType**) CudaGradLaplPointers.data(),
-                       (CTS::ValueType**) grad_lapl.data(),
-                       CudaMultiSpline->num_splines, walkers.size(), row_stride);
+                       (CTS::ValueType**) &(grad_lapl.data()[offset]),
+                       CudaMultiSpline->num_splines, N, row_stride);
 // AT debug:
 /*  if((gpu::rank==1) && (abort_counter%768==0))
   {
