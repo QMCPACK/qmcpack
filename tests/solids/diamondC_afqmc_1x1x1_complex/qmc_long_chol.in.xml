@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation method="afqmc">
-  <project id="qmc_short_chol" series="0"/>
+  <project id="qmc_long_chol" series="0"/>
 
   <AFQMCInfo name="info0">
     <parameter name="NMO">26</parameter>
@@ -28,7 +28,7 @@
   <execute wset="wset0" ham="ham0" wfn="wfn0" prop="prop0" info="info0">
     <parameter name="timestep">0.01</parameter>
     <parameter name="blocks">1000</parameter>
-    <parameter name="steps">10</parameter>
+    <parameter name="steps">100</parameter>
     <parameter name="nWalkers">20</parameter>
   </execute>
 
