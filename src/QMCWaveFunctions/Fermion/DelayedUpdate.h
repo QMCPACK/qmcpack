@@ -105,7 +105,10 @@ namespace qmcplusplus {
       template<typename VVT>
       inline T ratio(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
-        getInvRow(Ainv, rowchanged);
+        // check Ainv_row_id against rowchanged to see if getInvRow() has been called
+        // This is intended to save redundant compuation in TM1 and TM3
+        if(Ainv_row_id != rowchanged)
+          getInvRow(Ainv, rowchanged);
         return curRatio = simd::dot(Ainv_row_ptr,psiV.data(),Ainv.cols());
       }
 

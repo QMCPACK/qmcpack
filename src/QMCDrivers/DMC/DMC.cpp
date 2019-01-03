@@ -225,7 +225,7 @@ void DMC::resetUpdateEngines()
     o << "  Number of blocks = " << nBlocks << "\n";
     app_log() << o.str() << std::endl;
   }
-  app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs " << std::endl;
+  app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs" << std::endl;
 }
 
 bool DMC::run()
