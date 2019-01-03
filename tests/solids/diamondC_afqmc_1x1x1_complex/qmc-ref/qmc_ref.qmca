@@ -1,0 +1,14 @@
+
+qmc_ref_thc series 0 
+  EnergyEstim__deno_imag=  0.000000000000000000024 +/- 0.000000000000000000033 
+  EnergyEstim__deno_real=              1.00 +/-             0.00 
+  EnergyEstim__nume_imag=          0.000208 +/-         0.000096 
+  EnergyEstim__nume_real=         -10.33408 +/-          0.00043 
+  EnergyEstim__timer    =        0.00032045 +/-       0.00000026 
+  Eshift                =           6.56291 +/-          0.00075 
+  Ovlp                  =           0.40740 +/-          0.00017 
+  PseudoEloc            =           6.56204 +/-          0.00037 
+  freeMemory            =         124804.68 +/-             2.35 
+  nWalkers              =            320.00 +/-             0.00 
+  time                  =           5005.50 +/-          1820.99 
+  weight                =         319.93007 +/-          0.00017 
