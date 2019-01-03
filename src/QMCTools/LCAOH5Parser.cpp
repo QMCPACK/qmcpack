@@ -22,7 +22,6 @@
 #include <sstream>
 
 
-char *binpad (unsigned long int  n, size_t sz);
 
 LCAOParser::LCAOParser()
 {
@@ -384,21 +383,6 @@ void LCAOParser::getKpts(const std::string& fname)
 
 
 }
-
-
-
-char *binpad (unsigned long int n, size_t sz)
-{
-    static char s[64 + 1] = {0};
-    char *p = s + 64 ;
-
-    for (int i = sz ; i > 0; i--)
-        *--p = ( (n>> (i-1) ) & 1) ? '1' : '0';
-    
-    return p;
-}
-
-
 
 void LCAOParser::getMO(const std::string & fname)
 {
