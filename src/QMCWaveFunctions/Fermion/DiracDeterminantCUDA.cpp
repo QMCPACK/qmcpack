@@ -141,7 +141,11 @@ DiracDeterminantCUDA::det_lookahead (MCWalkerConfiguration &W,
                  ratio_host[5*iw+3]);
       if (k==0)
       {
+#ifdef QMC_COMPLEX
+        CTS::ValueType invR = std::conj(ratio_host[5*iw])/std::norm(ratio_host[5*iw]);
+#else
         CTS::ValueType invR = 1.0/ratio_host[5*iw];
+#endif
         g *= invR;
       }
       grad[iw+k*nw] += g;
@@ -1093,7 +1097,11 @@ void DiracDeterminantCUDA::addRatio (MCWalkerConfiguration &W, int iat, int k,
                ratio_host[5*iw+3]);
     if (W.getkDelay() && (k==0))
     {
+#ifdef QMC_COMPLEX
+      CTS::ValueType invR = std::conj(ratio_host[5*iw])/std::norm(ratio_host[5*iw]);
+#else
       CTS::ValueType invR = 1.0/ratio_host[5*iw];
+#endif
       g *= invR;
     }
     grad[iw] += g;

@@ -1131,9 +1131,16 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
  gpu::device_vector<CTS::ComplexType*> &phi,
  gpu::device_vector<CTS::ComplexType*> &grad_lapl,
- int row_stride)
+ int row_stride, int k, bool klinear)
 {
+  int nw = walkers.size();
   int N = walkers.size();
+  int offset = 0;
+  if((nw != N) && klinear)
+  {
+    offset = k*nw;
+    N = nw;
+  }
   int M = CudaMultiSpline->num_splines;
   if (CudaValuePointers.size() < N)
     resize_cuda(N);
@@ -1152,7 +1159,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   }
   for (int iw=0; iw < N; iw++)
   {
-    PosType r = newpos[iw];
+    PosType r = newpos[iw+offset];
     PosType ru(PrimLattice.toUnit(r));
     ru[0] -= std::floor (ru[0]);
     ru[1] -= std::floor (ru[1]);

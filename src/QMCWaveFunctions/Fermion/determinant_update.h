@@ -176,43 +176,36 @@ calc_grad_lapl (std::complex<double> *Ainv_list[], std::complex<double> *grad_la
 
 void
 update_onemove (float *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num);
-
 void
 update_onemove (double *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num);
 
 void
 multi_row_copy (float *dest[], float *src[], int len, int offset, int rows, int stride, int num);
-
 void
 multi_row_copy (double *dest[], double *src[], int len, int offset, int rows, int stride, int num);
 
 void
 calc_lemma_column (float *ainv[], float *newrow[], float *lemma[], float *ainvu[], int k, int kd, int kstart, int N, int stride, int num);
-
 void
 calc_lemma_column (double *ainv[], double *newrow[], double *lemma[], double *ainvu[], int k, int kd, int kstart, int N, int stride, int num);
 
 void
 copy_update_block (float *lemma_lu[], float *lemma[], float *ainv_work[], float *ainv_kblock[], int k, int kd, int stride, int num);
-
 void
 copy_update_block (double *lemma_lu[], double *lemma[], double *ainv_work[], double *ainv_kblock[], int k, int kd, int stride, int num);
 
 void
 copy_delayed (float *lemma_lu[], float *lemma[], float *ainv_row[], float *ainv_kblock[], int k, int kd, int stride, int num);
-
 void
 copy_delayed (double *lemma_lu[], double *lemma[], double *ainv_row[], double *ainv_kblock[], int k, int kd, int stride, int num);
 
 void
 calc_gradlapl_and_collect (float *lemma_lu[], float *Ainv_row[], float *GL_col[], float ratios[], int k, int kdelay, int N, int rowstride, int num);
-
 void
 calc_gradlapl_and_collect (double *lemma_lu[], double *Ainv_row[], double *GL_col[], double ratios[], int k, int kdelay, int N, int rowstride, int num);
 
 void
 calc_gradient_delayed (float *Ainv_row[], float *GL_col[], float ratios[], int N, int rowstride, int num);
-
 void
 calc_gradient_delayed (double *Ainv_row[], double *GL_col[], double ratios[], int N, int rowstride, int num);
 
@@ -228,6 +221,41 @@ multi_copy (double *buff[], int dest_off, int src_off, int len, int num);
 
 
 #ifdef QMC_COMPLEX
+void
+update_onemove (std::complex<float> *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num);
+void
+update_onemove (std::complex<double> *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num);
+
+void
+multi_row_copy (std::complex<float> *dest[], std::complex<float> *src[], int len, int offset, int rows, int stride, int num);
+void
+multi_row_copy (std::complex<double> *dest[], std::complex<double> *src[], int len, int offset, int rows, int stride, int num);
+
+void
+calc_lemma_column (std::complex<float> *ainv[], std::complex<float> *newrow[], std::complex<float> *lemma[], std::complex<float> *ainvu[], int k, int kd, int kstart, int N, int stride, int num);
+void
+calc_lemma_column (std::complex<double> *ainv[], std::complex<double> *newrow[], std::complex<double> *lemma[], std::complex<double> *ainvu[], int k, int kd, int kstart, int N, int stride, int num);
+
+void
+copy_update_block (std::complex<float> *lemma_lu[], std::complex<float> *lemma[], std::complex<float> *ainv_work[], std::complex<float> *ainv_kblock[], int k, int kd, int stride, int num);
+void
+copy_update_block (std::complex<double> *lemma_lu[], std::complex<double> *lemma[], std::complex<double> *ainv_work[], std::complex<double> *ainv_kblock[], int k, int kd, int stride, int num);
+
+void
+copy_delayed (std::complex<float> *lemma_lu[], std::complex<float> *lemma[], std::complex<float> *ainv_row[], std::complex<float> *ainv_kblock[], int k, int kd, int stride, int num);
+void
+copy_delayed (std::complex<double> *lemma_lu[], std::complex<double> *lemma[], std::complex<double> *ainv_row[], std::complex<double> *ainv_kblock[], int k, int kd, int stride, int num);
+
+void
+calc_gradlapl_and_collect (std::complex<float> *lemma_lu[], std::complex<float> *Ainv_row[], std::complex<float> *GL_col[], std::complex<float> ratios[], int k, int kdelay, int N, int rowstride, int num);
+void
+calc_gradlapl_and_collect (std::complex<double> *lemma_lu[], std::complex<double> *Ainv_row[], std::complex<double> *GL_col[], std::complex<double> ratios[], int k, int kdelay, int N, int rowstride, int num);
+
+void
+calc_gradient_delayed (std::complex<float> *Ainv_row[], std::complex<float> *GL_col[], std::complex<float> ratios[], int N, int rowstride, int num);
+void
+calc_gradient_delayed (std::complex<double> *Ainv_row[], std::complex<double> *GL_col[], std::complex<double> ratios[], int N, int rowstride, int num);
+
 void
 multi_copy (std::complex<float> *dest[], std::complex<float> *src[], int len, int num);
 void

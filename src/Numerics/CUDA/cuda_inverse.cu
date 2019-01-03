@@ -41,6 +41,7 @@
 #include <cuda.h>
 #include <cublas_v2.h>
 #include <cuComplex.h>
+#include <thrust/complex.h>
 
 #define CONVERT_BS 256
 #define INVERSE_BS 16
@@ -498,6 +499,179 @@ cublas_smw_update (cublasHandle_t handle,
   }
 #endif
 }
+
+/** Calculate Lemma Matrix: I_k + V' * ( A^(-1) * U )
+  * for each walker
+  * -> returns L-U decomposed lemma matrix for easy determinant calculations and inverse calculation later
+  */
+void
+cublas_lemma_mats (cublasHandle_t handle,
+                   std::complex<float> *AList_d[], std::complex<float> *AWorkList_d[],
+                   std::complex<float> *AinvList_d[], std::complex<float> *AinvkList_d[], std::complex<float> *U_d[],
+                   std::complex<float> *lemma_d[], std::complex<float> *AinvUList_d[],
+                   int k, int N, int nw, int RowStride)
+{
+  cuComplex one = make_cuComplex(1.0f,0.0f);
+  cuComplex zero = make_cuComplex(0.0f,0.0f);
+  // Calculate Lemma Matrix
+  // V^-1 * A^(-1) * U
+  // per walker: [k x N] * [N x k] = [k x k]
+  callAndCheckError( cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, k, k, N,
+                                         &one,
+                                         (const cuComplex**)AinvkList_d, RowStride,
+                                         (const cuComplex**)U_d, RowStride, &zero,
+                                         (cuComplex**)lemma_d, k,
+                                         nw), __LINE__ );
+  // Calculate - A^-1*dU
+  dim3 dimBlockConvert (CONVERT_BS);
+  dim3 dimGridConvert ((k*RowStride + (CONVERT_BS-1)) / CONVERT_BS, nw);
+  // Calculate -dU=U(old)-U(new)
+  subtract <<< dimGridConvert, dimBlockConvert >>> ((thrust::complex<float>**)AWorkList_d, (thrust::complex<float>**)AList_d, (thrust::complex<float>**)U_d, k*RowStride);
+  // -A^(-1) * dU
+  // per walker: [N x N] * [N x k] = [N x k]
+#ifndef AINVU_TRANSPOSE
+  callAndCheckError( cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, N, k, N,
+                                         &one,
+                                         (const cuComplex**)AinvList_d, RowStride,
+                                         (const cuComplex**)AWorkList_d, RowStride, &zero,
+                                         (cuComplex**)AinvUList_d, RowStride,
+                                         nw), __LINE__ );
+#else
+  // calculate AinvU as row major
+  // per walker: [N x k]^T * [N x N]^T = [k x N] * [N x N] = [k x N]
+  callAndCheckError( cublasCgemmBatched( handle, CUBLAS_OP_T, CUBLAS_OP_T, k, N, N,
+                                         &one,
+                                         (const cuComplex**)AWorkList_d, RowStride,
+                                         (const cuComplex**)AinvList_d, RowStride, &zero,
+                                         (cuComplex**)AinvUList_d, k,
+                                         nw), __LINE__ );
+#endif
+//  cudaDeviceSynchronize();
+}
+
+void
+cublas_ainv_row (cublasHandle_t handle,
+                 std::complex<float> *AinvkList_d[], std::complex<float> *AWorkList_d[], std::complex<float> *AinvList_d[],
+                 int k, int N, int nw, int RowStride)
+{
+  cuComplex one = make_cuComplex(1.0f,0.0f);
+  // A^-1 - { A^-1 * dU  * Lemma^-1 } * { V' * A^(-1) }
+  // per walker: [1 x N] - [1 x k] * [k x N] = [1 x N]
+  callAndCheckError( cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, 1, N, k,
+                                         &one,
+                                         (const cuComplex**)AWorkList_d, 1,
+                                         (const cuComplex**)AinvkList_d, RowStride, &one,
+                                         (cuComplex**)AinvList_d, 1,
+                                         nw), __LINE__ );
+}
+
+void
+cublas_smw_update (cublasHandle_t handle,
+                   std::complex<float> *AinvkList_d[], std::complex<float> *AinvList_d[],
+                   std::complex<float> *AinvUList_d[], std::complex<float> *AWorkList_d[],
+                   std::complex<float> *lemma_inv[], std::complex<float> *lemma_lu[],
+                   int *infoArray,
+                   int k, int kd, int M, int N, int nw, int RowStride)
+{
+#ifdef DEBUG_DELAYED
+  fprintf(stderr,"*** Sherman-Morrison-Woodbury Update (k = %i, %i walkers) ***\n",k,nw);
+#endif
+  int pitch=RowStride;
+  if(M==1) pitch=1;
+  cuComplex one = make_cuComplex(1.0f,0.0f);
+
+  // LU decomposition needs to be updated
+  callAndCheckError( cublasCgetrfBatched( handle, k, (cuComplex**)lemma_lu, kd, NULL,
+                                          infoArray, nw), __LINE__ );
+
+#ifdef USE_TRSM
+  if(M==1)
+  {
+    // {-A^-1 * dU } * Lemma^(-1) => solve for y: Lemma y * (L * U) = (y * L) * U = -A^-1 * dU
+    // z * U = -A^-1 *dU
+    callAndCheckError( cublasCtrsmBatched( handle, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT,
+                                           M, k, &one, (const cuComplex**) lemma_lu, kd,
+                                           (cuComplex**)AWorkList_d, pitch, nw), __LINE__ );
+    // y * L = z => y = {-A^-1 * dU } * Lemma^(-1)
+    callAndCheckError( cublasCtrsmBatched( handle, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT,
+                                           M, k, &one, (const cuComplex**) lemma_lu, kd,
+                                           (cuComplex**)AWorkList_d, pitch, nw), __LINE__ );
+    // A^-1 + { -A^-1 * dU *  Lemma^-1 } * { V' * A^(-1) }
+    // per walker: [1 x N] - [1 x k] * [k x N] = [1 x N]
+    callAndCheckError( cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, k,
+                                           &one,
+                                           (const cuComplex**)AWorkList_d, M,
+                                           (const cuComplex**)AinvkList_d, RowStride, &one,
+                                           (cuComplex**)AinvList_d, pitch,
+                                           nw), __LINE__ );
+  } else
+  {
+    // Lemma^(-1) * V' * A^(-1) => solve for y: Lemma (L * U) * y = L * (U * y) = V' * A^(-1)
+    // L * z = V' * A^(-1)
+    callAndCheckError( cublasCtrsmBatched( handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT,
+                                           k, N, &one, (const cuComplex**) lemma_lu, kd,
+                                           (cuComplex**)AWorkList_d, k, nw), __LINE__ );
+    // U * y = z => y = Lemma^(-1) * V' * A^(-1)
+    callAndCheckError( cublasCtrsmBatched( handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT,
+                                           k, N, &one, (const cuComplex**) lemma_lu, kd,
+                                           (cuComplex**)AWorkList_d, k, nw), __LINE__ );
+    // A^-1 + { -A^-1 * dU } * { Lemma^-1 * V' * A^(-1) }
+    // per walker: [M x N] - [M x k] * [k x N] = [M x N]
+    callAndCheckError( cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, k,
+                                           &one,
+                                           (const cuComplex**)AinvUList_d, RowStride,
+                                           (const cuComplex**)AWorkList_d, k, &one,
+                                           (cuComplex**)AinvList_d, pitch,
+                                           nw), __LINE__ );
+  }
+#else
+  cuComplex zero = make_cuComplex(0.0f,0.0f);
+  // Calculate Lemma Inverse and store it in lemma_d
+  // per walker: [k x k]^-1 = [k x k]
+  callAndCheckError( cublasCgetriBatched( handle, k, (const cuComplex**) lemma_lu, kd, NULL,
+                                          (cuComplex**)lemma_inv, k, infoArray, nw), __LINE__ );
+  // Calculate new A inverse using Sherman-Morrison-Woodbury formula
+  if(M==1) // row update can use different order to save flops
+  {
+    // { -A^-1 * dU } * Lemma^-1
+    // per walker: [M x k] * [k x k] = [M x k]
+    callAndCheckError( cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, M, k, k,
+                                           &one,
+                                           (const cuComplex**)AinvUList_d, RowStride,
+                                           (const cuComplex**)lemma_inv, k, &zero,
+                                           (cuComplex**)AWorkList_d, M,
+                                           nw), __LINE__ );
+    // A^-1 - { A^-1 * dU  * Lemma^-1 } * { V' * A^(-1) }
+    // per walker: [M x N] - [M x k] * [k x N] = [M x N]
+    callAndCheckError( cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, k,
+                                           &one,
+                                           (const cuComplex**)AWorkList_d, M,
+                                           (const cuComplex**)AinvkList_d, RowStride, &one,
+                                           (cuComplex**)AinvList_d, pitch,
+                                           nw), __LINE__ );
+  } else
+  {
+    // Need to use this matrix order for the overall update as AinvList and AinvkList have overlapping memory
+    // Lemma^-1 * V' * A^(-1)
+    // per walker: [k x k] * [k x N] = [k x N]
+    callAndCheckError( cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, k, N, k,
+                                           &one,
+                                           (const cuComplex**)lemma_inv, k,
+                                           (const cuComplex**)AinvkList_d, RowStride, &zero,
+                                           (cuComplex**)AWorkList_d, k,
+                                           nw), __LINE__ );
+    // A^-1 + { -A^-1 * dU } * { Lemma^-1 * V' * A^(-1) }
+    // per walker: [M x N] - [M x k] * [k x N] = [M x N]
+    callAndCheckError( cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, k,
+                                           &one,
+                                           (const cuComplex**)AinvUList_d, RowStride,
+                                           (const cuComplex**)AWorkList_d, k, &one,
+                                           (cuComplex**)AinvList_d, pitch,
+                                           nw), __LINE__ );
+  }
+#endif
+}
+
 
 // Four matrix inversion functions
 // 1. for float matrices

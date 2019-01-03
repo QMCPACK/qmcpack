@@ -420,10 +420,19 @@ public:
                  gpu::device_vector<CTS::RealType*> &phi,
                  gpu::device_vector<CTS::RealType*> &grad_lapl,
                  int row_stride, int k, bool klinear);
+
+  inline
+  void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+                  gpu::device_vector<CTS::ComplexType*> &phi,
+                  gpu::device_vector<CTS::ComplexType*> &grad_lapl,
+                  int row_stride)
+  {
+    evaluate(walkers,newpos,phi,grad_lapl,row_stride,0,false);
+  }
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                                 gpu::device_vector<CTS::ComplexType*> &phi,
-                                 gpu::device_vector<CTS::ComplexType*> &grad_lapl,
-                                 int row_stride);
+                  gpu::device_vector<CTS::ComplexType*> &phi,
+                  gpu::device_vector<CTS::ComplexType*> &grad_lapl,
+                  int row_stride, int k, bool klinear);
   GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi);
 #endif

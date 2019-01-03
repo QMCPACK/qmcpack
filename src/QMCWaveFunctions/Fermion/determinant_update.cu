@@ -2111,7 +2111,6 @@ update_onemove (T **buff,
   }
 }
 
-
 void
 update_onemove (float *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num)
 {
@@ -2120,7 +2119,6 @@ update_onemove (float *buff[], int newrow_off, int row_off, int newgl_off, int g
   update_onemove<float><<<dimGrid,dimBlock>>>(buff, newrow_off, row_off, newgl_off, gl_off, ainvu_off, lemma_off, lemmainv_off, awork_off, accepted, k, kstart, kdelay, rowstride);
 }
 
-
 void
 update_onemove (double *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num)
 {
@@ -2128,7 +2126,6 @@ update_onemove (double *buff[], int newrow_off, int row_off, int newgl_off, int 
   dim3 dimGrid ((rowstride+COPY_BS-1)/COPY_BS, num);
   update_onemove<double><<<dimGrid,dimBlock>>>(buff, newrow_off, row_off, newgl_off, gl_off, ainvu_off, lemma_off, lemmainv_off, awork_off, accepted, k, kstart, kdelay, rowstride);
 }
-
 
 
 template<typename T>
@@ -2168,6 +2165,7 @@ multi_row_copy (double *dest[], double *src[], int len, int offset, int rows, in
     dimGrid.x++;
   multi_row_copy<double><<<dimGrid,dimBlock>>>(dest, src, len, offset, rows, stride);
 }
+
 
 template<typename T>
 __global__ void
@@ -2261,6 +2259,7 @@ copy_delayed (double *lemma_lu[], double *lemma[], double *ainv_row[], double *a
   dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
   copy_delayed<double><<<dimGrid,dimBlock>>>(lemma_lu, lemma, ainv_row, ainv_kblock, k, kd, stride);
 }
+
 
 
 template<typename T>
@@ -2437,6 +2436,132 @@ multi_copy (double *dest[], double *src[], int len, int num)
 
 #ifdef QMC_COMPLEX
 void
+update_onemove (std::complex<float> *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((rowstride+COPY_BS-1)/COPY_BS, num);
+  update_onemove< thrust::complex<float> ><<<dimGrid,dimBlock>>>((thrust::complex<float>**)buff, newrow_off, row_off, newgl_off, gl_off, ainvu_off, lemma_off, lemmainv_off, awork_off, accepted, k, kstart, kdelay, rowstride);
+}
+
+void
+update_onemove (std::complex<double> *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((rowstride+COPY_BS-1)/COPY_BS, num);
+  update_onemove< thrust::complex<double> ><<<dimGrid,dimBlock>>>((thrust::complex<double>**)buff, newrow_off, row_off, newgl_off, gl_off, ainvu_off, lemma_off, lemmainv_off, awork_off, accepted, k, kstart, kdelay, rowstride);
+}
+
+
+void
+multi_row_copy (std::complex<float> *dest[], std::complex<float> *src[], int len, int offset, int rows, int stride, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  multi_row_copy< thrust::complex<float> ><<<dimGrid,dimBlock>>>((thrust::complex<float>**)dest, (thrust::complex<float>**)src, len, offset, rows, stride);
+}
+
+
+void
+multi_row_copy (std::complex<double> *dest[], std::complex<double> *src[], int len, int offset, int rows, int stride, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid (len/COPY_BS, num);
+  if (len % COPY_BS)
+    dimGrid.x++;
+  multi_row_copy< thrust::complex<double> ><<<dimGrid,dimBlock>>>((thrust::complex<double>**)dest, (thrust::complex<double>**)src, len, offset, rows, stride);
+}
+
+void
+calc_lemma_column (std::complex<float> *ainv[], std::complex<float> *newrow[], std::complex<float> *lemma[], std::complex<float> *ainvu[], int k, int kd, int kstart, int N, int stride, int num)
+{
+  int len = stride;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  calc_lemma_column< thrust::complex<float> ><<<dimGrid,dimBlock>>>((thrust::complex<float>**)ainv, (thrust::complex<float>**)newrow, (thrust::complex<float>**)lemma, (thrust::complex<float>**)ainvu, k, kd, kstart, N, stride);
+}
+
+void
+calc_lemma_column (std::complex<double> *ainv[], std::complex<double> *newrow[], std::complex<double> *lemma[], std::complex<double> *ainvu[], int k, int kd, int kstart, int N, int stride, int num)
+{
+  int len = stride;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  calc_lemma_column< thrust::complex<double> ><<<dimGrid,dimBlock>>>((thrust::complex<double>**)ainv, (thrust::complex<double>**)newrow, (thrust::complex<double>**)lemma, (thrust::complex<double>**)ainvu, k, kd, kstart, N, stride);
+}
+
+void
+copy_delayed (std::complex<float> *lemma_lu[], std::complex<float> *lemma[], std::complex<float> *ainv_row[], std::complex<float> *ainv_kblock[], int k, int kd, int stride, int num)
+{
+  int len = stride;
+  if ((k+1)*kd > len)
+    len = (k+1)*kd;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  copy_delayed< thrust::complex<float> ><<<dimGrid,dimBlock>>>((thrust::complex<float>**)lemma_lu, (thrust::complex<float>**)lemma, (thrust::complex<float>**)ainv_row, (thrust::complex<float>**)ainv_kblock, k, kd, stride);
+}
+
+void
+copy_delayed (std::complex<double> *lemma_lu[], std::complex<double> *lemma[], std::complex<double> *ainv_row[], std::complex<double> *ainv_kblock[], int k, int kd, int stride, int num)
+{
+  int len = stride;
+  if ((k+1)*kd > len)
+    len = (k+1)*kd;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  copy_delayed< thrust::complex<double> ><<<dimGrid,dimBlock>>>((thrust::complex<double>**)lemma_lu, (thrust::complex<double>**)lemma, (thrust::complex<double>**)ainv_row, (thrust::complex<double>**)ainv_kblock, k, kd, stride);
+}
+
+void
+copy_update_block (std::complex<float> *lemma_lu[], std::complex<float> *lemma[], std::complex<float> *ainv_work[], std::complex<float> *ainv_kblock[], int k, int kd, int stride, int num)
+{
+  int len = (k+1)*stride;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  copy_update_block< thrust::complex<float> ><<<dimGrid,dimBlock>>>((thrust::complex<float>**)lemma_lu, (thrust::complex<float>**)lemma, (thrust::complex<float>**)ainv_work, (thrust::complex<float>**)ainv_kblock, k+1, kd, stride);
+}
+
+void
+copy_update_block (std::complex<double> *lemma_lu[], std::complex<double> *lemma[], std::complex<double> *ainv_work[], std::complex<double> *ainv_kblock[], int k, int kd, int stride, int num)
+{
+  int len = (k+1)*stride;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  copy_update_block< thrust::complex<double> ><<<dimGrid,dimBlock>>>((thrust::complex<double>**)lemma_lu, (thrust::complex<double>**)lemma, (thrust::complex<double>**)ainv_work, (thrust::complex<double>**)ainv_kblock, k+1, kd, stride);
+}
+
+void
+calc_gradlapl_and_collect (std::complex<float> *lemma_lu[], std::complex<float> *Ainv_row[], std::complex<float> *GL_col[], std::complex<float> ratios[], int k, int kdelay, int N, int rowstride, int num)
+{
+  dim3 dimBlock(4);
+  dim3 dimGrid (num);
+  calc_gradlapl_and_collect< thrust::complex<float> ><<<dimGrid,dimBlock>>>((thrust::complex<float>**)lemma_lu, (thrust::complex<float>**)Ainv_row, (thrust::complex<float>**)GL_col, (thrust::complex<float>*)ratios, k, kdelay, N, rowstride);
+}
+
+void
+calc_gradlapl_and_collect (std::complex<double> *lemma_lu[], std::complex<double> *Ainv_row[], std::complex<double> *GL_col[], std::complex<double> ratios[], int k, int kdelay, int N, int rowstride, int num)
+{
+  dim3 dimBlock(4);
+  dim3 dimGrid (num);
+  calc_gradlapl_and_collect< thrust::complex<double> ><<<dimGrid,dimBlock>>>((thrust::complex<double>**)lemma_lu, (thrust::complex<double>**)Ainv_row, (thrust::complex<double>**)GL_col, (thrust::complex<double>*)ratios, k, kdelay, N, rowstride);
+}
+
+void
+calc_gradient_delayed (std::complex<float> *Ainv_row[], std::complex<float> *GL_col[], std::complex<float> ratios[], int N, int rowstride, int num)
+{
+  dim3 dimBlock(3);
+  dim3 dimGrid (num);
+  calc_gradient_delayed< thrust::complex<float> ><<<dimGrid,dimBlock>>>((thrust::complex<float>**)Ainv_row, (thrust::complex<float>**)GL_col, (thrust::complex<float>*)ratios, N, rowstride);
+}
+
+void
+calc_gradient_delayed (std::complex<double> *Ainv_row[], std::complex<double> *GL_col[], std::complex<double> ratios[], int N, int rowstride, int num)
+{
+  dim3 dimBlock(3);
+  dim3 dimGrid (num);
+  calc_gradient_delayed< thrust::complex<double> ><<<dimGrid,dimBlock>>>((thrust::complex<double>**)Ainv_row, (thrust::complex<double>**)GL_col, (thrust::complex<double>*)ratios, N, rowstride);
+}
+
+void
 multi_copy (std::complex<float> *dest[], std::complex<float> *src[], int len, int num)
 {
   dim3 dimBlock(COPY_BS);
@@ -2454,7 +2579,6 @@ multi_copy (std::complex<double> *dest[], std::complex<double> *src[], int len, 
   multi_copy<thrust::complex<double> ><<<dimGrid,dimBlock>>>((thrust::complex<double>**)dest, (thrust::complex<double>**)src, len);
 }
 #endif
-
 
 
 void

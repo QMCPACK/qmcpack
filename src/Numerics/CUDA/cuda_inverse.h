@@ -91,6 +91,26 @@ cublas_inverse (cublasHandle_t handle,
                 int N, int rowStride, int numMats,
                 bool useHigherPrecision = true);
 
+void
+cublas_lemma_mats (cublasHandle_t handle,
+                   std::complex<float> *AList_d[], std::complex<float> *AWorkList_d[],
+                   std::complex<float> *AinvList_d[], std::complex<float> *AinvkList_d[], std::complex<float> *U_d[],
+                   std::complex<float> *lemma_d[], std::complex<float> *AinvUList_d[],
+                   int k, int N, int nw, int RowStride);
+
+void
+cublas_ainv_row (cublasHandle_t handle,
+                 std::complex<float> *AinvkList_d[], std::complex<float> *AWorkList_d[], std::complex<float> *AinvList_d[],
+                 int k, int N, int nw, int RowStride);
+
+void
+cublas_smw_update (cublasHandle_t handle,
+                   std::complex<float> *AinvkList_d[], std::complex<float> *AinvList_d[], 
+                   std::complex<float> *AinvUList_d[], std::complex<float> *AWorkList_d[],
+                   std::complex<float> *lemma_inv[], std::complex<float> *lemma_lu[],
+                   int *info_array,
+                   int k, int kd, int M, int N, int nw, int RowStride);
+
 //////////////////////////////
 // Complex double precision //
 //////////////////////////////
