@@ -25,8 +25,8 @@ namespace afqmc
 class BackPropagatedEstimator: public EstimatorBase
 {
 
-  using CMatrix_ref = boost::multi_array_ref<ComplexType,2>;
-  using CVector = boost::multi_array<ComplexType,1>;
+  using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;
+  using CVector = boost::multi::array<ComplexType,1>;
   public:
 
   BackPropagatedEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
@@ -64,10 +64,10 @@ class BackPropagatedEstimator: public EstimatorBase
       dm_dims = {2*NMO,2*NMO};
     }
     if(DMBuffer.size() < dm_size) {
-      DMBuffer.resize(extents[dm_size]);
+      DMBuffer.reextent(extensions<1u>{dm_size});
     }
     std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
-    denom.resize(extents[1]);
+    denom.reextent({1});
   }
 
   ~BackPropagatedEstimator() {}
@@ -80,7 +80,7 @@ class BackPropagatedEstimator: public EstimatorBase
     // check to see whether we should be accumulating estimates.
     bool back_propagate = wset[0].isBMatrixBufferFull();
     if(back_propagate) {
-      CMatrix_ref BackPropDM(DMBuffer.data(), extents[dm_dims.first][dm_dims.second]);
+      CMatrix_ref BackPropDM(DMBuffer.data(), {dm_dims.first,dm_dims.second});
       // Computes GBP(i,j)
       denom[0] = ComplexType(0.0,0.0);
       wfn0.BackPropagatedDensityMatrix(wset, BackPropDM, denom, path_restoration, !importanceSampling);
@@ -94,7 +94,7 @@ class BackPropagatedEstimator: public EstimatorBase
   }
 
   //template <typename T>
-  //ComplexType back_propagate_wavefunction(const boost::multi_array<ComplexType,2>& trialSM, SMType& psiBP, T& walker, int nback_prop)
+  //ComplexType back_propagate_wavefunction(const boost::multi::array<ComplexType,2>& trialSM, SMType& psiBP, T& walker, int nback_prop)
   //{
     //ComplexType detR = one;
     //walker.decrementBMatrix();

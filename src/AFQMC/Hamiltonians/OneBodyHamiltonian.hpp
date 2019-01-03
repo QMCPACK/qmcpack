@@ -20,7 +20,7 @@ class OneBodyHamiltonian: public AFQMCInfo
 
   public:
 
-  OneBodyHamiltonian(const AFQMCInfo& info, boost::multi_array<ComplexType,2>&& h,
+  OneBodyHamiltonian(const AFQMCInfo& info, boost::multi::array<ComplexType,2>&& h,
                      ValueType nuc=0, ValueType frz=0):
                             AFQMCInfo(info), H1(h),
                             NuclearCoulombEnergy(nuc),FrozenCoreEnergy(frz)
@@ -35,7 +35,7 @@ class OneBodyHamiltonian: public AFQMCInfo
 
   ~OneBodyHamiltonian() {}
 
-  boost::multi_array<ComplexType,2> getH1() const
+  boost::multi::array<ComplexType,2> getH1() const
   {
     return H1;
   }
@@ -52,7 +52,7 @@ class OneBodyHamiltonian: public AFQMCInfo
 
   protected:
 
-  boost::multi_array<ComplexType,2> H1;
+  boost::multi::array<ComplexType,2> H1;
 
   // nuclear coulomb term
   ValueType NuclearCoulombEnergy;

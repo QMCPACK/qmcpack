@@ -31,7 +31,6 @@
 #include <iomanip>
 
 #include "AFQMC/config.h"
-#include "boost/multi_array.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
@@ -51,10 +50,6 @@ using std::cerr;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
-
-using boost::extents;
-using boost::indices;
-using range_t = boost::multi_array_types::index_range;
 
 namespace qmcplusplus
 {
@@ -99,7 +94,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
     using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    boost::multi_array<ComplexType,3> OrbMat;
+    boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
     int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
     WALKER_TYPES WTYPE = CLOSED;
@@ -112,7 +107,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
                                         OrbMat[0],1e-8,'H',gTG.Node()));
     if(walker_type>0)
       PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
                                         1e-8,'H',gTG.Node()));
 
     hdf_archive dummy;
@@ -124,17 +119,17 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 
     using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
     SHM_Buffer Gbuff(TG.TG_local(),NMO*NEL);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[NEL][NMO]);
+    boost::multi::array_ref<ComplexType,2> G(Gbuff.data(),{NEL,NMO});
     auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
-        G[indices[range_t(0,NAEA)][range_t()]],true);
+        G.sliced(0,NAEA),true);
     if(WTYPE==COLLINEAR)
-      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
-        G[indices[range_t(NAEA,NAEA+NAEB)][range_t()]],true);
+      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1](OrbMat.extension(1),{0,NAEB}),
+        G.sliced(NAEA,NAEA+NAEB),true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-    boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
-    boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[NEL*NMO][1]);
+    boost::multi::array<ComplexType,2> Eloc({1,3});
+    boost::multi::array_ref<ComplexType,2> Gw(Gbuff.data(),{NEL*NMO,1});
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
     Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
@@ -157,7 +152,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     SHM_Buffer Xbuff(TG.TG_local(),nCV);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][1]);
+    boost::multi::array_ref<ComplexType,2> X(Xbuff.data(),{nCV,1});
     HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
     ComplexType Xsum=0;
@@ -171,7 +166,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     }
 
     SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[NMO*NMO][1]);
+    boost::multi::array_ref<ComplexType,2> vHS(vHSbuff.data(),{NMO*NMO,1});
     TG.local_barrier();
     Timer.reset("Generic");
     Timer.start("Generic");
@@ -229,7 +224,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
     using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    boost::multi_array<ComplexType,3> OrbMat;
+    boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
     int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
     WALKER_TYPES WTYPE = CLOSED;
@@ -242,7 +237,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
                                         OrbMat[0],1e-8,'H',gTG.Node()));
     if(WTYPE==COLLINEAR)
       PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
                                         1e-8,'H',gTG.Node()));
 
     hdf_archive dummy;
@@ -254,17 +249,17 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
 
     using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
     SHM_Buffer Gbuff(TG.TG_local(),NMO*NEL);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[NEL][NMO]);
+    boost::multi::array_ref<ComplexType,2> G(Gbuff.data(),{NEL,NMO});
     auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
-        G[indices[range_t(0,NAEA)][range_t()]],true);
+        G.sliced(0,NAEA),true);
     if(WTYPE==COLLINEAR)
-      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
-        G[indices[range_t(NAEA,NAEA+NAEB)][range_t()]],true);
+      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1](OrbMat.extension(1),{0,NAEB}),
+        G.sliced(NAEA,NAEA+NAEB),true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-    boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
-    boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[NEL*NMO][1]);
+    boost::multi::array<ComplexType,2> Eloc({1,3});
+    boost::multi::array_ref<ComplexType,2> Gw(Gbuff.data(),{NEL*NMO,1});
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
     Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
@@ -287,7 +282,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     SHM_Buffer Xbuff(TG.TG_local(),nCV);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][1]);
+    boost::multi::array_ref<ComplexType,2> X(Xbuff.data(),{nCV,1});
     HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
     ComplexType Xsum=0;
@@ -301,7 +296,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     }
 
     SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[NMO*NMO][1]);
+    boost::multi::array_ref<ComplexType,2> vHS(vHSbuff.data(),{NMO*NMO,1});
     TG.local_barrier();
     Timer.reset("Generic");
     Timer.start("Generic");
@@ -358,7 +353,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
     using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    boost::multi_array<ComplexType,3> OrbMat;
+    boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);
     int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
     WALKER_TYPES WTYPE = CLOSED;
@@ -371,7 +366,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
                                         OrbMat[0],1e-8,'H',gTG.Node()));
     if(WTYPE==COLLINEAR)
       PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
                                         1e-8,'H',gTG.Node()));
 
     hdf_archive dummy;
@@ -385,13 +380,13 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
 
     using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
     SHM_Buffer Gbuff(TG.TG_local(),nw*NMO*NEL);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[NEL][NMO]);
+    boost::multi::array_ref<ComplexType,2> G(Gbuff.data(),{NEL,NMO});
     auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-    boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[nw][NEL*NMO]);
-    boost::multi_array<ComplexType,2> Eloc(extents[nw][3]);
+    boost::multi::array_ref<ComplexType,2> Gw(Gbuff.data(),{nw,NEL*NMO});
+    boost::multi::array<ComplexType,2> Eloc({nw,3});
 
     if(TG.Node().root())
       for(int i=1; i<nw; i++)
@@ -421,7 +416,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     SHM_Buffer Xbuff(TG.TG_local(),nCV*nw);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][nw]);
+    boost::multi::array_ref<ComplexType,2> X(Xbuff.data(),{nCV,nw});
     Timer.reset("Generic");
     Timer.start("Generic");
     HOps.vbias(Gw,X,sqrtdt);
@@ -439,7 +434,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     }
 
     SHM_Buffer vHSbuff(TG.TG_local(),nw*NMO*NMO);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[nw][NMO*NMO]);
+    boost::multi::array_ref<ComplexType,2> vHS(vHSbuff.data(),{nw,NMO*NMO});
     // doing twice to get reasonable timing estimate
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
@@ -500,7 +495,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
     using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    boost::multi_array<ComplexType,3> OrbMat;
+    boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);
     int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
     WALKER_TYPES WTYPE = CLOSED;
@@ -513,7 +508,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
                                         OrbMat[0],1e-8,'H',gTG.Node()));
     if(WTYPE==COLLINEAR)
       PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
                                         1e-8,'H',gTG.Node()));
 
     int ncores = gTG.getTotalCores();
@@ -532,13 +527,13 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
 
     using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
     SHM_Buffer Gbuff(TG.TG_local(),NMO*NEL);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[NEL][NMO]);
+    boost::multi::array_ref<ComplexType,2> G(Gbuff.data(),{NEL,NMO});
     auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-    boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[1][NEL*NMO]);
-    boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
+    boost::multi::array_ref<ComplexType,2> Gw(Gbuff.data(),{1,NEL*NMO});
+    boost::multi::array<ComplexType,2> Eloc({1,3});
     Timer.reset("Generic");
     Timer.start("Generic");
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
@@ -566,7 +561,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     SHM_Buffer Xbuff(TG.TG_local(),nCV);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][1]);
+    boost::multi::array_ref<ComplexType,2> X(Xbuff.data(),{nCV,1});
     Timer.reset("Generic");
     Timer.start("Generic");
     HOps.vbias(Gw,X,sqrtdt);
@@ -586,7 +581,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     }
 
     SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[1][NMO*NMO]);
+    boost::multi::array_ref<ComplexType,2> vHS(vHSbuff.data(),{1,NMO*NMO});
     // doing twice to get reasonable timing estimate
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
@@ -648,7 +643,7 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
     using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    boost::multi_array<ComplexType,3> OrbMat;
+    boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);
     int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
     WALKER_TYPES WTYPE = CLOSED;
@@ -661,7 +656,7 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
                                         OrbMat[0],1e-8,'H',gTG.Node()));
     if(WTYPE==COLLINEAR)
       PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
                                         1e-8,'H',gTG.Node()));
 
     int ncores = gTG.getTotalCores();
@@ -683,13 +678,13 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
 
     using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
     SHM_Buffer Gbuff(TG.TG_local(),NMO*NEL);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[NEL][NMO]);
+    boost::multi::array_ref<ComplexType,2> G(Gbuff.data(),{NEL,NMO});
     auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-    boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[1][NEL*NMO]);
-    boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
+    boost::multi::array_ref<ComplexType,2> Gw(Gbuff.data(),{1,NEL*NMO});
+    boost::multi::array<ComplexType,2> Eloc({1,3});
     Timer.reset("Generic");
     Timer.start("Generic");
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
@@ -717,7 +712,7 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     SHM_Buffer Xbuff(TG.TG_local(),nCV);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][1]);
+    boost::multi::array_ref<ComplexType,2> X(Xbuff.data(),{nCV,1});
     Timer.reset("Generic");
     Timer.start("Generic");
     HOps.vbias(Gw,X,sqrtdt);
@@ -737,7 +732,7 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     }
 
     SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[1][NMO*NMO]);
+    boost::multi::array_ref<ComplexType,2> vHS(vHSbuff.data(),{1,NMO*NMO});
     // doing twice to get reasonable timing estimate
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();

@@ -45,7 +45,10 @@ namespace afqmc
   }
 
   template<typename T>
-  inline ComplexType toComplex(const T& a);
+  inline ComplexType toComplex(const T& a)
+  {
+    return a;
+  }
 
   template<>
   inline ComplexType toComplex(const RealType& a) 

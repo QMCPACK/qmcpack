@@ -248,7 +248,12 @@ struct layout_t<1u>{
 	index stride_;
 	index offset_;
 	index nelems_;
-	layout_t() = default;
+	//layout_t() = default;
+        constexpr layout_t() :
+                stride_{1},
+                offset_{0},
+                nelems_{0}
+        {}
 	constexpr layout_t(index_extension ie, layout_t<0> const&) : 
 		stride_{1}, 
 		offset_{0}, 

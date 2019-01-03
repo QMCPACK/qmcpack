@@ -96,7 +96,7 @@ class WavefunctionFactory
   }
 
   // returns the xmlNodePtr associated with ID
-  boost::multi_array<ComplexType,3>& getInitialGuess(const std::string& ID)
+  boost::multi::array<ComplexType,3>& getInitialGuess(const std::string& ID)
   {
     auto mat = initial_guess.find(ID);
     if(mat == initial_guess.end()) { 
@@ -155,7 +155,7 @@ class WavefunctionFactory
 
   std::map<std::string,Wavefunction> wavefunctions;
 
-  std::map<std::string,boost::multi_array<ComplexType,3>> initial_guess; 
+  std::map<std::string,boost::multi::array<ComplexType,3>> initial_guess; 
 
   //std::map<AFQMCInfo,SlaterDetOperations>
 

@@ -14,8 +14,6 @@
 #ifndef AFQMC_TYPE_CONVERSION_HPP 
 #define AFQMC_TYPE_CONVERSION_HPP 
 
-#include "boost/hana.hpp"
-
 namespace qmcplusplus
 {
 namespace afqmc

@@ -19,8 +19,8 @@
 #define MA_LAPACK_HPP
 
 #include "AFQMC/Utilities/type_conversion.hpp"
-#include "boost/multi_array.hpp"
 #include "Numerics/OhmmsBlas.h"
+#include "multi/array_ref.hpp"
 #include<cassert>
 
 namespace ma{
@@ -238,15 +238,16 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
         using eigSys = std::pair<MultiArray1D,MultiArray2D>;
         using Type = typename MultiArray2D::element; 
         using RealType = typename qmcplusplus::afqmc::remove_complex<Type>::value_type; 
+        using extensions = typename boost::multi::layout_t<1u>::extensions_type;
         assert(A.shape()[0]==A.shape()[1]);
         assert(A.strides()[1]==1);
         assert(A.shape()[0]>0);
         int N = A.shape()[0];
         int LDA = A.strides()[0];
         
-            MultiArray1D eigVal(boost::extents[N]);
-            MultiArray2D eigVec(boost::extents[N][N]);
-            MultiArray2D A_(boost::extents[N][N]);
+            MultiArray1D eigVal(extensions{N});
+            MultiArray2D eigVec({N,N});
+            MultiArray2D A_({N,N});
             for(int i=0; i<N; i++)
               for(int j=0; j<N; j++) 
                 A_[i][j] = conj(A[i][j]);                
@@ -296,7 +297,6 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
 
 #ifdef _TEST_MA_LAPACK
 
-#include<boost/multi_array.hpp>
 #include<iostream>
 
 using std::cout;
@@ -307,7 +307,7 @@ int main(){
 			1.,2.,
 			3.,4.,
 		};
-		boost::multi_array_ref<double, 2> A(a.data(), boost::extents[2][2]);
+		boost::multi::array_ref<double, 2> A(a.data(), {2,2});
 		std::vector<int> p(std::min(A.shape()[0], A.shape()[1]));
 		ma::getrf(A, p);
 		for(int i = 0; i != A.shape()[0]; ++i, std::cout << '\n')

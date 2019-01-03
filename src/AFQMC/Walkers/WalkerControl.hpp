@@ -37,7 +37,7 @@ namespace afqmc
  *
  * The algorithm ensures that the load per node can differ only by one walker.
  * The communication is one-dimensional.
- * Wexcess is an object with multi_array concept which contains walkers beyond the expected
+ * Wexcess is an object with multi::array concept which contains walkers beyond the expected
  * pupolation target. 
  */
 template<class WlkBucket, 
@@ -97,7 +97,7 @@ inline int swapWalkersSimple(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNod
     if(minus[ic]==MyContext)
     {
       comm.receive_n(buff.data(),buff.size(),plus[ic],plus[ic]+999);
-      wset.push_walkers(boost::multi_array_ref<ComplexType,2>(buff.data(),extents[1][wlk_size]));
+      wset.push_walkers(boost::multi::array_ref<ComplexType,2>(buff.data(),{1,wlk_size}));
     }
   }
   return nswap; 
@@ -192,7 +192,7 @@ inline int swapWalkersAsync(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode
     for(int ip = 0; ip < requests.size(); ++ip)
     {
       requests[ip].wait();
-      wset.push_walkers(boost::multi_array_ref<ComplexType,2>(buffers[ip],extents[recvCounts[ip]][wlk_size]));
+      wset.push_walkers(boost::multi::array_ref<ComplexType,2>(buffers[ip],{recvCounts[ip],wlk_size}));
       delete[] buffers[ip];
     }
   } else {
@@ -346,7 +346,7 @@ inline void SerialBranching(WalkerSet& wset, BRANCHING_ALGORITHM type, double mi
 
   // reserve space for extra walkers
   if(wlk_counts[comm.rank()] > target)
-    Wexcess.resize(extents[std::max(0,wlk_counts[comm.rank()]-target)][wset.single_walker_size()]);
+    Wexcess.reextent({std::max(0,wlk_counts[comm.rank()]-target),wset.single_walker_size()});
 
   // perform local branching
   // walkers beyond target go in Wexcess  
