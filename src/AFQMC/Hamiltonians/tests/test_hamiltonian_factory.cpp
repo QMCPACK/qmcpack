@@ -39,7 +39,6 @@
 
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Numerics/ma_blas.hpp"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 
 using std::string;
 using std::complex;
@@ -104,6 +103,8 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         PsiT_Matrix TrialWfn = csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         OrbMat[0],1e-8,'H',gTG.Node());
 
+        auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
+
         // Calculates Overlap, G
         SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
 
@@ -128,7 +129,6 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         }
 
         using array_ = std::array<std::size_t,4>;
-        auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
         std::size_t zero(0);
 
         std::map<IndexType,std::pair<bool,IndexType>> occ_a;
@@ -295,6 +295,8 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
                                         OrbMat[1],1e-8,'H',gTG.Node())
                               );
 
+        auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
+
         // Calculates Overlap, G
         SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
 
@@ -322,7 +324,6 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         }
 
         using array_ = std::array<std::size_t,4>;
-        auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
         std::size_t zero(0);
 
         // V2 uses std::size_t to store pointers_begin/end.
@@ -483,6 +484,9 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
                                         OrbMat[1],1e-8,'H',gTG.Node())
                               );
 
+
+        auto TG = TaskGroup_(gTG,std::string("DummyTG"),gTG.getTotalNodes(),gTG.getTotalCores());
+
         // Calculates Overlap, G
         SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
 
@@ -510,7 +514,6 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         }
 
         using array_ = std::array<std::size_t,4>;
-        auto TG = TaskGroup_(gTG,std::string("DummyTG"),gTG.getTotalNodes(),gTG.getTotalCores());
         std::size_t zero(0);
 
         // V2 uses std::size_t to store pointers_begin/end.

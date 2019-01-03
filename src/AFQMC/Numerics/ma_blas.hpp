@@ -69,7 +69,7 @@ MultiArray2DB axpy(T x, MultiArray2DA const& a, MultiArray2DB&& b){
         assert( b.strides()[1] == 1 );            // only on contiguous arrays 
         //using BLAS_CPU::axpy;
         //using BLAS_GPU::axpy;
-        BLAS::axpy(a.num_elements(), x, a.origin(), 1, b.origin(), 1);
+        BLAS::axpy(a.num_elements(), x, std::addressof(*a.origin()), 1, std::addressof(*b.origin()), 1);
         return std::forward<MultiArray2DB>(b);
 }
 
