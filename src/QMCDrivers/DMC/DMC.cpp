@@ -31,7 +31,6 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <qmc_common.h>
-#include <tau/profiler.h>
 #include "ADIOS/ADIOS_profile.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
@@ -232,7 +231,6 @@ void DMC::resetUpdateEngines()
 bool DMC::run()
 {
 
-  Profile prof("DMC","run",QMC_DMC_0_EVENT);
   LoopTimer dmc_loop;
 
   bool variablePop = (Reconfiguration == "no");
@@ -252,7 +250,6 @@ bool DMC::run()
   RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
   bool enough_time_for_next_iteration = true;
 
-  prof.push("dmc_loop");
   do // block
   {
     dmc_loop.start();
@@ -262,7 +259,6 @@ bool DMC::run()
 
     for(IndexType step=0; step< nSteps; ++step, CurrentStep+=BranchInterval)
     {
-      prof.push("dmc_advance");
 
       //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
       //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
@@ -284,9 +280,6 @@ bool DMC::run()
         }
       }
 
-      prof.pop(); //close dmc_advance
-
-      prof.push("dmc_branch");
       //Collectables are weighted but not yet normalized
       if(W.Collectables.size())
       {
@@ -302,7 +295,6 @@ bool DMC::run()
       if(variablePop)
         FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
       sample++;
-      prof.pop(); //close dmc_branch
     }
 //       branchEngine->debugFWconfig();
     Estimators->stopBlock(acceptRatio());
@@ -329,7 +321,6 @@ bool DMC::run()
     }
   } while(block<nBlocks && enough_time_for_next_iteration);
 
-  prof.pop(); //close loop
 
   //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
 #ifndef USE_FAKE_RNG

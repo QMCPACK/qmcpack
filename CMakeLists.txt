@@ -236,8 +236,6 @@ SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 SET(MAC_VECLIB 0)
-set(ENABLE_TAU_PROFILE 0 CACHE BOOL "Enable tau for profiling")
-set(TAU_HOME $ENV{TAU_HOME})
 
 ######################################################
 # Directory where customize cmake files reside
@@ -709,48 +707,6 @@ IF(USE_NVTX_API)
     LINK_LIBRARIES(${NVTX_API_LIB})
   ENDIF(HAVE_CUDA)
 ENDIF(USE_NVTX_API)
-
-#INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
-##################################################################
-# TODO:use profile tools
-##################################################################
-#IF(MPIP_PROFILE)
-#  LINK_LIBRARIES("/usr/apps/tools/mpip/lib/cmpi/libmpiP.a")
-#  LINK_LIBRARIES("/usr/lib/libbfd.a")
-#  LINK_LIBRARIES("/usr/lib/libiberty.a")
-#ENDIF(MPIP_PROFILE)
-#if(ENABLE_TAU_PROFILE)
-#  INCLUDE(${PROJECT_CMAKE}/FindTau.cmake)
-#endif(ENABLE_TAU_PROFILE)
-#    #add tau stuff
-#    IF(FOUND_TAU)
-#      ADD_DEFINITIONS(
-#        -DTAU_MPI
-#        -DTAU_MPI_THREADED
-#        -DTAU_MPIGREQUEST
-#        -DTAU_MPIDATAREP
-#        -DTAU_MPIERRHANDLER
-#        -DTAU_MPIATTRFUNCTION
-#        -DTAU_MPITYPEEX
-#        -DTAU_MPIADDERROR
-#      )
-#      #build libtau
-#      subdirs(src/tau)
-#      LINK_LIBRARIES(tau)
-#    ENDIF(FOUND_TAU)
-#IF(FOUND_TAU)
-#  INCLUDE_DIRECTORIES(${TAU_INCLUDE_DIR})
-#  ADD_DEFINITIONS (-DPROFILING_ON
-#      -DTAU_STDCXXLIB
-#      -DTAU_DOT_H_LESS_HEADERS
-#      -DTAU_CALLPATH
-#      -DTAU_LARGEFILE64_SOURCE
-#      -DTAU_BFD
-#      )
-#  if(ENABLE_OPENMP)
-#    ADD_DEFINITIONS(-DTAU_OPENMP)
-#  endif(ENABLE_OPENMP)
-#ENDIF(FOUND_TAU)
 
 ######################################################
 # Add optional macros
