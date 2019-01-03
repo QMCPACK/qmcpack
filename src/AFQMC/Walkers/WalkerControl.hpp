@@ -121,7 +121,8 @@ inline int swapWalkersAsync(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode
   static_assert(std::decay<Mat>::type::dimensionality==2);
   if(wset.single_walker_size() != Wexcess.shape()[1])
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
-  if(1 != Wexcess.strides()[1] || Wexcess.shape()[1] != Wexcess.strides()[0])
+  if(1 != Wexcess.strides()[1] || 
+     (Wexcess.shape()[0] > 0 && Wexcess.shape()[1] != Wexcess.strides()[0])) 
     throw std::runtime_error("Array shape error in swapWalkersAsync().");
   if(CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
