@@ -121,10 +121,12 @@ struct array_ptr{
 	operator array_ptr<T const>() const{
 		array_ptr<T const> ret;
 		ret.wSP_ = wSP_;
+                ret.offset = offset;
 		return ret;
 	}
 	operator array_ptr<void const>() const{
 		array_ptr<void const> ret;
+                ret.offset = offset;
 		ret.wSP_ = wSP_;
 		return ret;
 	}

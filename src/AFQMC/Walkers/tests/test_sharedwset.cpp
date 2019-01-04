@@ -101,8 +101,8 @@ void test_basic_walker_features(bool serial)
   info.name = "walker";
   boost::multi::array<Type,2> initA({NMO,NAEA});
   boost::multi::array<Type,2> initB({NMO,NAEB});
-  for(int i=0; i<NAEA; i++) initA[i][i] = Type(1.0);
-  for(int i=0; i<NAEB; i++) initB[i][i] = Type(1.0);
+  for(int i=0; i<NAEA; i++) initA[i][i] = Type(0.22);
+  for(int i=0; i<NAEB; i++) initB[i][i] = Type(0.22);
   //SimpleRandom<MTRand> rng;
   RandomGenerator_t rng;
 
@@ -159,13 +159,6 @@ const char *xml_block =
     REQUIRE( it->EJ() == cnt*1.0+0.5 );
     cnt++;
   }
-/*
-cout<<" after -> " <<std::endl;
-for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.begin()+1; ++it) {
-  REQUIRE( (*it).weight() == cnt*1.0+0.5 );
-}
-cout<<" after (*it) test  " <<std::endl;
-*/
   for(int i=0; i<wset.size(); i++) {
     REQUIRE( wset[i].weight() == i*1.0+0.5 );
     REQUIRE( wset[i].overlap() == i*1.0+0.5 );
