@@ -998,7 +998,7 @@ const char *wlk_xml_block =
   </Wavefunction> \
 ";
 
-#define __compare__
+//#define __compare__
 #ifdef __compare__
     Libxml2Document doc2_;
     okay = doc2_.parseFromString(wfn_xml_block2);
