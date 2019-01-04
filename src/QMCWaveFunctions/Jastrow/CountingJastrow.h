@@ -21,7 +21,7 @@ namespace qmcplusplus
 {
 
 template <class RegionType>
-class CountingJastrowOrbital: public WaveFunctionComponent
+class CountingJastrow: public WaveFunctionComponent
 {
 
 protected:
@@ -88,7 +88,7 @@ protected:
 
 public:
   // constructor
-  CountingJastrowOrbital(ParticleSet& P, RegionType* c, const Matrix<RealType>& f, const std::vector<RealType>& g):
+  CountingJastrow(ParticleSet& P, RegionType* c, const Matrix<RealType>& f, const std::vector<RealType>& g):
     F(f), G(g), C(c)
   {
     num_els = P.getTotalNum();
@@ -171,14 +171,14 @@ public:
     if(F.size() != num_regions*num_regions)
     {
       std::ostringstream err;
-      err << "CountingJastrowOrbital::initialize: F, C dimension mismatch: F: " << F.size() << ", C: " << num_regions << std::endl;
+      err << "CountingJastrow::initialize: F, C dimension mismatch: F: " << F.size() << ", C: " << num_regions << std::endl;
       APP_ABORT(err.str());
     }
     // check that G, C dimensions match
     if(G.size() != num_regions)
     {
       std::ostringstream err;
-      err << "CountingJastrowOrbital::initialize: G, C dimension mismatch: G: " << G.size() << ", C: " << num_regions << std::endl;
+      err << "CountingJastrow::initialize: G, C dimension mismatch: G: " << G.size() << ", C: " << num_regions << std::endl;
       APP_ABORT(err.str());
     }
 
@@ -228,7 +228,7 @@ public:
 
   void reportStatus(std::ostream& os)
   {
-    os << std::endl << "CountingJastrowOrbital::reportStatus begin" << std::endl;
+    os << std::endl << "CountingJastrow::reportStatus begin" << std::endl;
     // print F matrix
     os << "  F matrix:" << ", opt_F: " << (opt_F?"true":"false");
     for(int I = 0; I < num_regions; ++I)
@@ -256,7 +256,7 @@ public:
     os << std::endl;
     // print counting region status
     C->reportStatus(os);
-    app_log() << "CountingJastrowOrbital::reportStatus end" << std::endl;
+    app_log() << "CountingJastrow::reportStatus end" << std::endl;
   }
 
 
@@ -339,7 +339,7 @@ public:
     // print counting regions
     C->evaluate_print(app_log(),P);
     // FCsum, FCgrad, FClap
-    os << "CountingJastrowOrbital::evaluateExponents_print: ";
+    os << "CountingJastrow::evaluateExponents_print: ";
     os << std::endl << "FCsum: ";
     std::copy(FCsum.begin(),FCsum.end(), std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "FCgrad: ";
@@ -413,7 +413,7 @@ public:
     // print counting regions
     C->evaluateTemp_print(app_log(),P);
     // FCsum, FCgrad, FClap
-    os << "CountingJastrowOrbital::evaluateTempExponents_print: iat: " << iat;
+    os << "CountingJastrow::evaluateTempExponents_print: iat: " << iat;
     os << std::endl << "FCsum_t: ";
     std::copy(FCsum_t.begin(),FCsum_t.end(), std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "FCgrad_t: ";
@@ -520,7 +520,7 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
-    CountingJastrowOrbital* cjo = new CountingJastrowOrbital(tqp, C, F, G);
+    CountingJastrow* cjo = new CountingJastrow(tqp, C, F, G);
     cjo->setOptimizable(opt_C || opt_G || opt_F);
     cjo->addOpt(opt_C, opt_G, opt_F);
     cjo->addDebug(debug, debug_seqlen, debug_period);
