@@ -427,7 +427,9 @@ public:
                   gpu::device_vector<CTS::ComplexType*> &grad_lapl,
                   int row_stride)
   {
+#ifdef QMC_COMPLEX
     evaluate(walkers,newpos,phi,grad_lapl,row_stride,0,false);
+#endif
   }
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                   gpu::device_vector<CTS::ComplexType*> &phi,
