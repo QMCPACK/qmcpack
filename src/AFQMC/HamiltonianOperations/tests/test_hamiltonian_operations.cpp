@@ -316,7 +316,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
 
   if(not file_exists("./thc.h5") ||
      not file_exists("./wfn_thc.dat") ) {
-    app_log()<<" Skipping test_thc_simple test. thc.h5 and ./wfn.dat files not found. \n";
+    app_log()<<" Skipping test_thc_simple test. thc.h5 and ./wfn_thc.dat files not found. \n";
   } else {
 
     // Global Task Group
@@ -457,7 +457,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
 
   if(not file_exists("./thc.h5") ||
      not file_exists("./wfn_thc.dat") ) {
-    app_log()<<" Skipping test_thc_simple test. thc.h5 and ./wfn.dat files not found. \n";
+    app_log()<<" Skipping test_thc_simple test. thc.h5 and ./wfn_thc.dat files not found. \n";
   } else {
 
     // Global Task Group
