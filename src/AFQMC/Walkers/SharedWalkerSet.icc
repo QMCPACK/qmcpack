@@ -87,7 +87,7 @@ inline void SharedWalkerSet::resize(int n, MatA&& A, MatB&& B) {
 template<class Mat>
 inline void SharedWalkerSet::pop_walkers(Mat&& M) {
 
-  static_assert(std::decay<Mat>::type::dimensionality == 2);
+  static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
   if(tot_num_walkers < int(M.shape()[0]))
     APP_ABORT("Insufficient walkers");
   if(walker_size != int(M.shape()[1]))
@@ -109,7 +109,7 @@ inline void SharedWalkerSet::pop_walkers(Mat&& M) {
 template<class Mat>
 inline void SharedWalkerSet::push_walkers(Mat&& M) {
 
-  static_assert(std::decay<Mat>::type::dimensionality == 2);
+  static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
   if(tot_num_walkers+M.shape()[0] > capacity())
     APP_ABORT("Insufficient capacity");
   if(walker_size != M.shape()[1])

@@ -50,7 +50,7 @@ inline int swapWalkersSimple(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNod
   int NumContexts, MyContext; 
   NumContexts = comm.size();
   MyContext = comm.rank();  
-  static_assert(std::decay<Mat>::type::dimensionality==2);
+  static_assert(std::decay<Mat>::type::dimensionality==2, "Wrong dimensionality");
   if(wset.single_walker_size() != Wexcess.shape()[1])
     throw std::runtime_error("Array dimension error in swapWalkersSimple().");
   if(1 != Wexcess.strides()[1]) 
@@ -118,7 +118,7 @@ inline int swapWalkersAsync(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode
   int NumContexts, MyContext;
   NumContexts = comm.size();
   MyContext = comm.rank();  
-  static_assert(std::decay<Mat>::type::dimensionality==2);
+  static_assert(std::decay<Mat>::type::dimensionality==2, "Wrong dimensionality");
   if(wset.single_walker_size() != Wexcess.shape()[1])
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
   if(1 != Wexcess.strides()[1] || Wexcess.shape()[1] != Wexcess.strides()[0])

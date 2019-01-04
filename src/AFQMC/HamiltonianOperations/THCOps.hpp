@@ -347,12 +347,12 @@ std::cout<<"\n";
        * QQ0A[nwalk][NAOA][NAEA]
        * QQ0B[nwalk][NAOA][NAEA]
        */
-      static_assert(E.dimensionality==4);
-      static_assert(Ov.dimensionality==3);
-      static_assert(GrefA.dimensionality==3);
-      static_assert(GrefB.dimensionality==3);
-      static_assert(QQ0A.dimensionality==3);
-      static_assert(QQ0B.dimensionality==3);
+      static_assert(E.dimensionality==4, "Wrong dimensionality");
+      static_assert(Ov.dimensionality==3, "Wrong dimensionality");
+      static_assert(GrefA.dimensionality==3, "Wrong dimensionality");
+      static_assert(GrefB.dimensionality==3, "Wrong dimensionality");
+      static_assert(QQ0A.dimensionality==3, "Wrong dimensionality");
+      static_assert(QQ0B.dimensionality==3, "Wrong dimensionality");
       int nspin = E.shape()[0];
       int nrefs = haj.size();
       int nwalk = GrefA.shape()[0];
@@ -918,10 +918,10 @@ app_log()
     template<class MatA, class MatB, class MatC, class MatD>
     void Guv_Guu2(MatA const& G, MatB&& Guv, MatC&& Guu, MatD&& T1, int k) {
 
-      static_assert(G.dimensionality == 2);
-      static_assert(T1.dimensionality == 2);
-      static_assert(Guu.dimensionality == 1);
-      static_assert(Guv.dimensionality == 2);
+      static_assert(G.dimensionality == 2, "Wrong dimensionality");
+      static_assert(T1.dimensionality == 2, "Wrong dimensionality");
+      static_assert(Guu.dimensionality == 1, "Wrong dimensionality");
+      static_assert(Guv.dimensionality == 2, "Wrong dimensionality");
       int nmo_ = int(rotPiu.shape()[0]);
       int nu = int(rotMuv.shape()[0]);  // potentially distributed over nodes
       int nv = int(rotMuv.shape()[1]);  // not distributed over nodes
