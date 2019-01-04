@@ -106,7 +106,7 @@ inline SparseArray2D HDF2CSR(hdf_archive& dump, shared_communicator& node) //, A
   }
 
   node.broadcast_n(nnz_per_row.begin(),nnz_per_row.size());
-  SparseArray2D SpM({nrows,ncols},{0,0},nnz_per_row,Alloc(node));
+  SparseArray2D SpM(std::tuple<std::size_t,std::size_t>{nrows,ncols},std::tuple<std::size_t,std::size_t>{0,0},nnz_per_row,Alloc(node));
 
   if(node.root()) {
     std::vector<value_type> data;
@@ -541,7 +541,7 @@ inline SparseArray2D column_distributed_CSR_from_HDF(hdf_archive& dump, task_gro
 
   }
 
-  ucsr_matrix ucsr({nrows,cN-c0},{0,c0},row_counts,Alloc(TG.Node()));
+  ucsr_matrix ucsr(tp_ul_ul{nrows,cN-c0},tp_ul_ul{0,c0},row_counts,Alloc(TG.Node()));
   csr::matrix_emplace_wrapper<ucsr_matrix> csr_wrapper(ucsr,TG.Node());
 
   csr_hdf5::multiple_reader_hdf5_csr<value_type,index_type>(csr_wrapper,

@@ -277,7 +277,7 @@ auto transpose(csr_matrix&& A)
       ++sz_per_row[*c0];
   }
   comm.all_reduce_in_place_n(sz_per_row.begin(),sz_per_row.size(),std::plus<>());
-  MatrixType csr( {A.shape()[1], A.shape()[0]},{0,0},sz_per_row,A.getAlloc());
+  MatrixType csr( std::tuple<std::size_t,std::size_t>{A.shape()[1], A.shape()[0]},std::tuple<std::size_t,std::size_t>{0,0},sz_per_row,A.getAlloc());
     for(integer i=0; i<integer(A.shape()[0]); i++) {
     auto pbi = *(A.pointers_begin(i));
     auto pei = *(A.pointers_end(i));
