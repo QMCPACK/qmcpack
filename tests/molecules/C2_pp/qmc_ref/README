@@ -1,7 +1,7 @@
 #C2_PP test targets the Multideterminant route of the code. The wavefunction data is  stored in a XML format AND HDF5 Format. Both files should be run
 Energy from QP:-10.9015995458600 Ha
 
-0- The trial wavefunction was generated using quantum Package as described in ~/qmcpack/tests/molecules/C2_pp/QuantumPackag/script.sh 
+0- The trial wavefunction was generated using quantum Package as described in tests/molecules/C2_pp/QuantumPackage/script.sh 
 This will generate 202 determinants. 
 The wavefunction is then dumped from QP as follow:
   > qp_run save_for_qmcpack C2.ezfio > C2
