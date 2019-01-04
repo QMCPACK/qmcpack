@@ -50,7 +50,9 @@ struct matrix_emplace_wrapper {
         buff.reserve(other.buff.size());
     }
     matrix_emplace_wrapper operator=(matrix_emplace_wrapper const& other) = delete;
-    matrix_emplace_wrapper(matrix_emplace_wrapper && other) = delete;
+    matrix_emplace_wrapper(matrix_emplace_wrapper && other) {
+        APP_ABORT(" Error: matrix_emplace_wrapper move constructor has been disabled. \n");
+    }
     matrix_emplace_wrapper operator=(matrix_emplace_wrapper && other) = delete;
 
     std::array<std::size_t, 2> shape() { 

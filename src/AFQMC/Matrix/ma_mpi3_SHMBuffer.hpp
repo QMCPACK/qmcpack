@@ -36,12 +36,12 @@ class mpi3_SHMBuffer
   using communicator = boost::mpi3::shared_communicator;
   using shared_allocator = std::allocator<T>; //boost::mpi3::shm::allocator<T>;
   //using shared_array = boost::multi::array<T,1,shared_allocator>;
-  using shared_array = boost::multi_array<T,1>;
+  using shared_array = boost::multi::array<T,1>;
 
   public:
 
     mpi3_SHMBuffer(communicator& comm_, size_t n=0):
-        comm(std::addressof(comm_)),array_(extents[n]) //shared_allocator{comm_})
+        comm(std::addressof(comm_)),array_(extensions<1u>{n}) //shared_allocator{comm_})
         //comm(std::addressof(comm_)),array_({n},shared_allocator{}) //shared_allocator{comm_})
     {
     }
@@ -67,7 +67,7 @@ class mpi3_SHMBuffer
 
     void resize(size_t n) {
       if(array_.size() != n)
-        array_.resize(extents[n]);
+        array_.reextent(extensions<1u>{n});
         //array_.reextent({n});
     }
 

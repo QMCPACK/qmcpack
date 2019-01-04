@@ -47,10 +47,10 @@ class AFQMCSharedPropagator: public AFQMCInfo
 {
   protected:
 
-  using CVector = boost::multi_array<ComplexType,1>;  
-  using CVector_ref = boost::multi_array_ref<ComplexType,1>;  
-  using CMatrix = boost::multi_array<ComplexType,2>;  
-  using CMatrix_ref = boost::multi_array_ref<ComplexType,2>;  
+  using CVector = boost::multi::array<ComplexType,1>;  
+  using CVector_ref = boost::multi::array_ref<ComplexType,1>;  
+  using CMatrix = boost::multi::array<ComplexType,2>;  
+  using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;  
   using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
 
   public:
@@ -64,7 +64,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(2*NMO,NAEA+NAEB), // safe for now, since I don't know walker_type
-            TSM(extents[2*NMO][NAEA+NAEB]), // safe for now, since I don't know walker_type
+            TSM({2*NMO,NAEA+NAEB}), // safe for now, since I don't know walker_type
             shmbuff(nullptr),
             local_group_comm(),
             last_nextra(-1),
@@ -74,7 +74,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
     {
       transposed_vHS_ = wfn.transposed_vHS();
       transposed_G_ = wfn.transposed_G_for_vbias();
-      if(not transposed_vHS_) local_vHS.resize(extents[NMO][NMO]);
+      if(not transposed_vHS_) local_vHS.reextent({NMO,NMO});
       parse(cur);  
     }
 
@@ -168,11 +168,11 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     template<class WSet>
     void apply_propagators(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
-                           boost::multi_array_ref<ComplexType,3>& vHS3D);
+                           boost::multi::array_ref<ComplexType,3>& vHS3D);
 
     template<class WSet>
     void apply_propagators_construct_propagator(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
-                                                boost::multi_array_ref<ComplexType,3>& vHS3D);
+                                                boost::multi::array_ref<ComplexType,3>& vHS3D);
 
     ComplexType apply_bound_vbias(ComplexType v, RealType sqrtdt)
     {

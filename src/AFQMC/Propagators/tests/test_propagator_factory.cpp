@@ -34,7 +34,6 @@
 
 #include "AFQMC/Utilities/test_utils.hpp"
 #include "AFQMC/Utilities/myTimer.h"
-#include "boost/multi_array.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
@@ -54,10 +53,6 @@ using std::cerr;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
-
-using boost::extents;
-using boost::indices;
-using range_t = boost::multi_array_types::index_range;
 
 namespace qmcplusplus
 {
@@ -134,7 +129,7 @@ const char *wlk_xml_block =
     REQUIRE(initial_guess.shape()[1]==NMO);
     REQUIRE(initial_guess.shape()[2]==NAEA);
     wset.resize(nwalk,initial_guess[0],initial_guess[0]);
-//                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+//                         initial_guess[1](XXX.extension(0),{0,NAEB}));
 
 const char *propg_xml_block =
 "<Propagator name=\"prop0\">  \
@@ -284,7 +279,7 @@ const char *wlk_xml_block =
     REQUIRE(initial_guess.shape()[1]==NMO);
     REQUIRE(initial_guess.shape()[2]==NAEA);
     wset.resize(nwalk,initial_guess[0],initial_guess[0]);
-//                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+//                         initial_guess[1](XXX.extension(0),{0,NAEB}));
 
 const char *propg_xml_block0 =
 "<Propagator name=\"prop0\">  \

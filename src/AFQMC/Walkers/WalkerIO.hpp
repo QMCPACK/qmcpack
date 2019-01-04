@@ -220,11 +220,11 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, hdf_archive& read, bool set
   }
   int nw_local = nWN-nW0;
   { // to limit scope
-    boost::multi_array<ComplexType,2> PsiA, PsiB;
+    boost::multi::array<ComplexType,2> PsiA, PsiB;
     if(TG.TG_local().root()) { 
-      PsiA.resize(extents[NMO][NAEA]);
+      PsiA.reextent({NMO,NAEA});
       if(wset.getWalkerType() == COLLINEAR)
-        PsiB.resize(extents[NMO][NAEB]);
+        PsiB.reextent({NMO,NAEB});
     }
     // PsiA/B only meaningful at root
     wset.resize(nw_local,PsiA,PsiB);
@@ -235,7 +235,7 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, hdf_archive& read, bool set
     std::vector<int> wlk_per_blk;
     read.read(wlk_per_blk,"wlk_per_blk");
 
-    boost::multi_array<ComplexType,2> Data;
+    boost::multi::array<ComplexType,2> Data;
 
     // loop through blocks and read when necessary
     int ni=0, nread=0, bi=0;
@@ -244,8 +244,8 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, hdf_archive& read, bool set
         // determine block of walkers to read
         int w0 = std::max(0,nW0-ni);
         int nw_ = std::min(ni+wlk_per_blk[bi],nWN) - std::max(ni,nW0); 
-        Data.resize(extents[nw_][wlk_nterms]);
-        hyperslab_proxy<boost::multi_array_ref<ComplexType,2>,2> hslab(Data,
+        Data.reextent({nw_,wlk_nterms});
+        hyperslab_proxy<boost::multi::array_ref<ComplexType,2>,2> hslab(Data,
                                   std::array<int,2>{wlk_per_blk[bi],wlk_nterms},
                                   std::array<int,2>{nw_,wlk_nterms},
                                   std::array<int,2>{w0,0});
@@ -531,7 +531,7 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
     int nblks = (nWtot-1)/nwlk_per_block + 1;
     std::vector<int> wlk_per_blk, counts, displ;
 
-    boost::multi_array<ComplexType,2> Buff;
+    boost::multi::array<ComplexType,2> Buff;
   
     if(TG.TG_heads().root()) {
 
@@ -602,12 +602,12 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
           displ[p]=nt;
         }
 
-        Buff.resize(extents[nwlk_tot][wlk_nterms]);
+        Buff.reextent({nwlk_tot,wlk_nterms});
       }  
 
       if(nw_to_send>0) {
         if(not TG.TG_heads().root())
-          Buff.resize(extents[nw_to_send][wlk_nterms]);
+          Buff.reextent({nw_to_send,wlk_nterms});
         for(int p=0; p<nw_to_send; p++) 
           wset.copyToIO(Buff[p],nsent+p);                
       }    

@@ -25,8 +25,8 @@ namespace afqmc
 Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cur, 
                                     Wavefunction& wfn, RandomGenerator_t* rng)
 {
-  using CVector = boost::multi_array<ComplexType,1>; 
-  using CMatrix = boost::multi_array<ComplexType,2>; 
+  using CVector = boost::multi::array<ComplexType,1>; 
+  using CMatrix = boost::multi::array<ComplexType,2>; 
 
   // read options from xml
   if(cur == NULL)
@@ -59,7 +59,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
     app_log()<<" Using mean-field substraction in propagator: " <<name <<"\n";
 
   // buld mean field expectation value of the Cholesky matrix
-  CVector vMF(extents[wfn.local_number_of_cholesky_vectors()]);
+  CVector vMF(extensions<1u>{wfn.local_number_of_cholesky_vectors()});
   std::fill_n(vMF.origin(),vMF.num_elements(),ComplexType(0));
   if(substractMF) { 
     wfn.vMF(vMF);
