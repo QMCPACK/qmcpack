@@ -21,7 +21,7 @@ namespace qmcplusplus
 {
 
 template <class RegionType>
-class CountingJastrowOrbital: public WaveFunctionComponent 
+class CountingJastrowOrbital: public WaveFunctionComponent
 {
 
 protected:
@@ -37,7 +37,7 @@ protected:
 
   // Jastrow linear coefficients
   Matrix<RealType> F;
-  std::vector<RealType> G; 
+  std::vector<RealType> G;
   // Counting Regions
   RegionType* C;
 
@@ -46,28 +46,28 @@ protected:
   bool opt_G;
   bool opt_C;
 
-  // Jastrow intermediate Matrix-vector products 
+  // Jastrow intermediate Matrix-vector products
   std::vector<RealType> FCsum;
-  std::vector<GradType> FCgrad;
+  std::vector<PosType> FCgrad;
   std::vector<RealType> FClap;
-  
+
   // grad dot grad and laplacian sums for evaluateDerivatives
   std::vector<RealType> FCggsum;
   std::vector<RealType> FClapsum;
 
   // Jastrow intermediate Matrix-vector products at proposed position
   std::vector<RealType> FCsum_t;
-  std::vector<GradType> FCgrad_t;
+  std::vector<PosType> FCgrad_t;
   std::vector<RealType> FClap_t;
-  
+
   // Jastrow exponent values and gradients (by particle index)
-  RealType Jval; 
-  std::vector<GradType> Jgrad;
+  RealType Jval;
+  std::vector<PosType> Jgrad;
   std::vector<RealType> Jlap;
 
   // Jastrow exponent values and gradients at proposed position
   RealType Jval_t;
-  std::vector<GradType> Jgrad_t;
+  std::vector<PosType> Jgrad_t;
   std::vector<RealType> Jlap_t;
 
   // containers for counting function derivative quantities
@@ -77,11 +77,11 @@ protected:
   std::vector<RealType> dClapsum;
   std::vector<RealType> dCFCggsum;
   std::vector<int> dCindex;
-  
-  // first array index for opt_index, opt_id 
+
+  // first array index for opt_index, opt_id
   enum opt_var { OPT_F, OPT_G, NUM_OPT_VAR };
-  // vectors to store indices and names of active optimizable parameters  
-  std::array<std::vector<int>,NUM_OPT_VAR> opt_index; 
+  // vectors to store indices and names of active optimizable parameters
+  std::array<std::vector<int>,NUM_OPT_VAR> opt_index;
   std::array<std::vector<std::string>,NUM_OPT_VAR> opt_id;
 
 //================================================================================
@@ -143,24 +143,24 @@ public:
   {
     // allocate memory and assign variables
     num_regions = C->size();
-  
+
     FCsum.resize(num_regions);
     FCgrad.resize(num_regions*num_els);
     FClap.resize(num_regions*num_els);
-  
+
     FCggsum.resize(num_regions);
     FClapsum.resize(num_regions);
-    
+
     FCsum_t.resize(num_regions);
     FCgrad_t.resize(num_regions);
     FClap_t.resize(num_regions);
-  
+
     Jgrad.resize(num_els);
     Jlap.resize(num_els);
-  
+
     Jgrad_t.resize(num_els);
     Jlap_t.resize(num_els);
-  
+
     // set G = 0 if using normalized counting functions
     if(C->normalized)
     {
@@ -181,7 +181,7 @@ public:
       err << "CountingJastrowOrbital::initialize: G, C dimension mismatch: G: " << G.size() << ", C: " << num_regions << std::endl;
       APP_ABORT(err.str());
     }
-  
+
     // for CountingRegion optimization: don't allocate every evalDeriv call
     int max_num_derivs = C->max_num_derivs();
     dCsum.resize(max_num_derivs*num_regions);
@@ -254,7 +254,7 @@ public:
     os << "  Optimizable variables:" << std::endl;
     myVars.print(os);
     os << std::endl;
-    // print counting region status 
+    // print counting region status
     C->reportStatus(os);
     app_log() << "CountingJastrowOrbital::reportStatus end" << std::endl;
   }
@@ -297,7 +297,7 @@ public:
     std::fill(Jlap.begin(),Jlap.end(),0);
 
     std::function<RealType&(int,int)> _F      = [&](int I, int J)->RealType& { return F(I*num_regions +J); };
-    std::function<GradType&(int,int)> _FCgrad = [&](int I, int i)->GradType& { return FCgrad[I*num_els + i]; };
+    std::function<PosType&(int,int)> _FCgrad = [&](int I, int i)->PosType& { return FCgrad[I*num_els + i]; };
     std::function<RealType&(int,int)> _FClap = [&](int I, int i)->RealType& { return FClap[I*num_els + i]; };
     // evaluate FC products
     for(int I = 0; I < num_regions; ++I)
@@ -343,13 +343,13 @@ public:
     os << std::endl << "FCsum: ";
     std::copy(FCsum.begin(),FCsum.end(), std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "FCgrad: ";
-    std::copy(FCgrad.begin(),FCgrad.end(), std::ostream_iterator<GradType>(os,", "));
+    std::copy(FCgrad.begin(),FCgrad.end(), std::ostream_iterator<PosType>(os,", "));
     os << std::endl << "FClap: ";
     std::copy(FClap.begin(),FClap.end(), std::ostream_iterator<RealType>(os,", "));
     // Jval, Jgrad, Jlap
     os << std::endl << "Jval: " << Jval;
     os << std::endl << "Jgrad: ";
-    std::copy(Jgrad.begin(),Jgrad.end(), std::ostream_iterator<GradType>(os,", "));
+    std::copy(Jgrad.begin(),Jgrad.end(), std::ostream_iterator<PosType>(os,", "));
     os << std::endl << "Jlap:  ";
     std::copy(Jlap.begin(),Jlap.end(), std::ostream_iterator<RealType>(os,", "));
     os << std::endl << std::endl;
@@ -358,7 +358,7 @@ public:
 
   void evaluateTempExponents(ParticleSet& P, int iat)
   {
-    // evaluate temporary counting regions  
+    // evaluate temporary counting regions
     C->evaluateTemp(P,iat);
     Jval_t = 0;
     std::fill(Jgrad_t.begin(),Jgrad_t.end(),0);
@@ -366,15 +366,15 @@ public:
     std::fill(FCsum_t.begin(),FCsum_t.end(),0);
     std::fill(FCgrad_t.begin(),FCgrad_t.end(),0);
     std::fill(FClap_t.begin(),FClap_t.end(),0);
-  
+
     std::function<RealType&(int,int)> _F      = [&](int I, int J)->RealType& { return F(I*num_regions +J); };
-    std::function<const GradType&(int,int)> _FCgrad = [&](int I, int i)->const GradType&{ return FCgrad[I*num_els + i] ; };
+    std::function<const PosType&(int,int)> _FCgrad = [&](int I, int i)->const PosType&{ return FCgrad[I*num_els + i] ; };
     // evaluate temp FC arrays
     for(int I = 0; I < num_regions; ++I)
     {
       for(int J = 0; J < num_regions; ++J)
       {
-        FCsum_t[I] += _F(I,J)*C->sum_t(J); 
+        FCsum_t[I] += _F(I,J)*C->sum_t(J);
         FCgrad_t[I] += _F(I,J)*C->grad_t(J);
         FClap_t[I] += _F(I,J)*C->lap_t(J);
       }
@@ -417,18 +417,18 @@ public:
     os << std::endl << "FCsum_t: ";
     std::copy(FCsum_t.begin(),FCsum_t.end(), std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "FCgrad_t: ";
-    std::copy(FCgrad_t.begin(),FCgrad_t.end(), std::ostream_iterator<GradType>(os,", "));
+    std::copy(FCgrad_t.begin(),FCgrad_t.end(), std::ostream_iterator<PosType>(os,", "));
     os << std::endl << "FClap_t: ";
     std::copy(FClap_t.begin(),FClap_t.end(), std::ostream_iterator<RealType>(os,", "));
     // Jval, Jgrad, Jlap
     os << std::endl << "Jval_t: " << Jval_t;
     os << std::endl << "Jgrad_t: ";
-    std::copy(Jgrad_t.begin(),Jgrad_t.end(), std::ostream_iterator<GradType>(os,", "));
+    std::copy(Jgrad_t.begin(),Jgrad_t.end(), std::ostream_iterator<PosType>(os,", "));
     os << std::endl << "Jlap_t:  ";
     std::copy(Jlap_t.begin(),Jlap_t.end(), std::ostream_iterator<RealType>(os,", "));
     os << std::endl << std::endl;
   }
-  
+
   GradType evalGrad(ParticleSet& P, int iat)
   {
     evaluateExponents(P);
@@ -446,7 +446,7 @@ public:
   {
     C->acceptMove(P,iat);
     // update values for C, FC to those at proposed position
-    std::function<GradType&(int,int)> _FCgrad = [&](int I, int i)->GradType& { return FCgrad[I*num_els + i]; };
+    std::function<PosType&(int,int)> _FCgrad = [&](int I, int i)->PosType& { return FCgrad[I*num_els + i]; };
     std::function<RealType&(int,int)> _FClap = [&](int I, int i)->RealType& { return FClap[I*num_els + i]; };
     // copy over temporary values
     for(int I = 0; I < num_regions; ++I)
@@ -518,7 +518,7 @@ public:
     return;
   }
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const 
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     CountingJastrowOrbital* cjo = new CountingJastrowOrbital(tqp, C, F, G);
     cjo->setOptimizable(opt_C || opt_G || opt_F);
@@ -528,16 +528,19 @@ public:
     return cjo;
   }
 
-  void evaluateDerivatives(ParticleSet& P, const opt_variables_type& active, 
+  void evaluateDerivatives(ParticleSet& P, const opt_variables_type& active,
     std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
   {
+#ifdef QMC_COMPLEX
+    APP_ABORT("CountingJastrow::evaluateDerivatives is not available on complex builds.");
+#else
     evaluateExponents(P);
     // evaluate derivatives of F
     if(opt_F)
     {
       for(int oi = 0; oi < opt_index[OPT_F].size(); ++oi)
       {
-  
+
         std::string id = opt_id[OPT_F][oi];
         int ia = myVars.getIndex(id);
         if(ia == -1)
@@ -556,10 +559,10 @@ public:
         }
         dlogpsi[ia] += dJF_val;
         dhpsioverpsi[ia] += -0.5*dJF_lap - dJF_gg;
-        
+
       }
     }
-  
+
     // evaluate Derivatives of G
     if(opt_G && !C->normalized)
     {
@@ -591,20 +594,20 @@ public:
       // ex: dNsum = \sum\limits_k [ [dC1 / dp1] [dC2 / dp1] .. ]
       // Where each [dCi / dpj] block is n_p x 1 vector of derivatives of parameters
       //   for counting region j as summed over electron coordinate k
-  
+
       // exception: dNFN ggsum is an n_p x 1 vector since it is an evaluation of a quadratic form:
-      // \sum\limits_{kI} [\nabla_k dC_I/dpj] dot [ (F \nabla_k C)_I ] 
+      // \sum\limits_{kI} [\nabla_k dC_I/dpj] dot [ (F \nabla_k C)_I ]
       // since we have the premultiplied (F\nabla_k C) vector on hand.
       // make a lambda function FCgrad(I,i) which gives the appropriate element of FCgrad[iI]
-  
+
       // clear some vectors
       std::fill(FCggsum.begin(),FCggsum.end(),0);
       std::fill(FClapsum.begin(),FClapsum.end(),0);
-  
+
       // easy-index functions for evaluateDerivatives calls
-      std::function<const GradType&(int,int)> _FCgrad = [&](int I, int i)->const GradType&{ return FCgrad[I*num_els + i] ; };
+      std::function<const PosType&(int,int)> _FCgrad = [&](int I, int i)->const PosType&{ return FCgrad[I*num_els + i] ; };
       std::function<const RealType&(int,int)> _FClap  = [&](int I, int i)->const RealType&{ return FClap[I*num_els + i] ; };
-      std::function<RealType&(int,int)> _dCsum        = [&](int I, int p)->RealType&{ return dCsum[p*num_regions + I]; }; 
+      std::function<RealType&(int,int)> _dCsum        = [&](int I, int p)->RealType&{ return dCsum[p*num_regions + I]; };
       std::function<RealType&(int,int)> _dCggsum      = [&](int I, int p)->RealType&{ return dCggsum[p*num_regions + I] ; };
       std::function<RealType&(int,int)> _dClapsum     = [&](int I, int p)->RealType&{ return dClapsum[p*num_regions + I] ; };
       // evaluate FCggsum
@@ -620,7 +623,7 @@ public:
       // for pI in { 0 .. C->num_derivs(I) }
       //   dCindex->[pI]  is the index that corresponds to this parameter in active.
       //   i.e., active[dCindex->[pI]] <=> C->C[I]->myVars.Index[pI]
-  
+
       // external print block
       if(debug && deriv_print_index < debug_seqlen)
       {
@@ -629,9 +632,9 @@ public:
         evaluateExponents_print(app_log(),P);
         app_log() << "== additional counting function terms ==" << std::endl;
         app_log() << "P.G: ";
-        std::copy(P.G.begin(), P.G.end(), std::ostream_iterator<GradType>(app_log(), ", "));
+        std::copy(P.G.begin(), P.G.end(), std::ostream_iterator<PosType>(app_log(), ", "));
         app_log() << std::endl << "FCgrad: ";
-        std::copy(FCgrad.begin(), FCgrad.end(), std::ostream_iterator<GradType>(app_log(), ", "));
+        std::copy(FCgrad.begin(), FCgrad.end(), std::ostream_iterator<PosType>(app_log(), ", "));
         app_log() << std::endl << "FClap: ";
         std::copy(FClap.begin(), FClap.end(), std::ostream_iterator<RealType>(app_log(), ", "));
         app_log() << std::endl << "FCggsum: ";
@@ -640,11 +643,11 @@ public:
         std::copy(FClapsum.begin(), FClapsum.end(), std::ostream_iterator<RealType>(app_log(), ", "));
         app_log() << std::endl;
       }
-  
+
       for(int I = 0; I < num_regions; ++I)
       {
         // get the number of active parameters for the Ith counting region
-        opt_variables_type I_vars = C->getVars(I); 
+        opt_variables_type I_vars = C->getVars(I);
         int I_num_derivs = I_vars.size();
         // clear arrays before each evaluate
         std::fill(dCsum.begin(),dCsum.end(),0);
@@ -684,7 +687,7 @@ public:
           int ia = I_vars.Index[pI];
           if(ia == -1)
             continue; // ignore inactive
-          // middle laplacian term: 
+          // middle laplacian term:
           dhpsioverpsi[ia] += -0.5*(4.0*dCFCggsum[pI]);
           if(debug && deriv_print_index < debug_seqlen)
           {
@@ -706,12 +709,12 @@ public:
               app_log() << "      dhpsi/psi, graddotgrad: " << -1.0*( _dCggsum(J,pI)*(2.0*FCsum[J] + G[J]) + _dCsum(J,pI)*2.0*FCggsum[J]  ) << std::endl;
               app_log() << "      dhpsi/psi, laplacian  : " << -0.5*( 2.0*_dCsum(J,pI)*FClapsum[J] + _dClapsum(J,pI)*(2.0*FCsum[J] + G[J]) ) << std::endl;
             }
-  
-  
+
+
           }
         }
       }
-  
+
     } // end opt_C
     // increment and modulo deriv_print_index
     if(debug)
@@ -719,6 +722,7 @@ public:
       deriv_print_index = deriv_print_index % debug_period;
       deriv_print_index++;
     }
+#endif
   }
 
   void addOpt(bool opt_C_flag, bool opt_G_flag, bool opt_F_flag)
