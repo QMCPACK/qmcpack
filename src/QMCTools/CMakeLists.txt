@@ -32,7 +32,6 @@ SET(MOSRCS
   BParser.cpp
   BMakeFunc.cpp
   GamesFMOParser.cpp
-  VSVBParser.cpp
   QPParser.cpp
   LCAOH5Parser.cpp
 )

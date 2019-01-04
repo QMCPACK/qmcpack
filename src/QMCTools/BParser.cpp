@@ -190,7 +190,7 @@ void BParser::getBasisSetForDet(std::istream& is)
     {
       b = (*it).second;
     }
-    char rname[8];
+    char rname[64];
     sprintf(rname,"R%d%d",centerID,rnl[centerID]);
     rnl[centerID]+=1;
     detBasisPerAtom[centerID]+=2*angL+1;
@@ -230,7 +230,7 @@ void BParser::getBasisSetForJ3(std::istream& is)
     {
       b = (*it).second;
     }
-    char rname[8];
+    char rname[64];
     sprintf(rname,"R%d%d",centerID,rnl[centerID]);
     rnl[centerID]+=1;
     j3BasisPerAtom[centerID]+=2*angL+1;
