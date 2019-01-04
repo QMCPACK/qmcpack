@@ -52,7 +52,8 @@ class SharedWalkerSet: public AFQMCInfo
   // wlk_descriptor: {nmo, naea, naeb, nback_prop} 
   using wlk_descriptor = std::array<int,4>;
   using wlk_indices = std::array<int,14>;
-  using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
+  using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+  using CMatrix = boost::multi::array<ComplexType,2>;
 
   public:
 
@@ -71,7 +72,7 @@ class SharedWalkerSet: public AFQMCInfo
     
       template<class ma>
       const_walker(ma const& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi::const_array_ref<ComplexType,1>(a.origin(),extensions<1u>{a.size()})),indx(i_),desc(d_) 
+        w_(boost::multi::const_array_ref<ComplexType,1>(std::addressof(*a.origin()),extensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
 	static_assert(std::decay<ma>::type::dimensionality == 1);
 	assert(w_.strides()[0]==1);
@@ -177,7 +178,7 @@ class SharedWalkerSet: public AFQMCInfo
     
       template<class ma>
       walker(ma&& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi::array_ref<ComplexType,1>(a.origin(),extensions<1u>{a.size()})),indx(i_),desc(d_) 
+        w_(boost::multi::array_ref<ComplexType,1>(std::addressof(*a.origin()),extensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
 	static_assert(std::decay<ma>::type::dimensionality == 1);
 	assert(w_.strides()[0]==1);
@@ -383,7 +384,8 @@ class SharedWalkerSet: public AFQMCInfo
         RandomGenerator_t* r):
                 TG(tg_),AFQMCInfo(info),rng(r),
                 walker_memory_usage(0),tot_num_walkers(0),
-		walker_buffer({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
+		walker_buffer({1,1}),
+		//walker_buffer({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
                 load_balance(UNDEFINED_LOAD_BALANCE),
                 pop_control(UNDEFINED_BRANCHING),min_weight(0.05),max_weight(4.0),
                 walkerType(UNDEFINED_WALKER_TYPE),nback_prop(0)
@@ -437,9 +439,7 @@ class SharedWalkerSet: public AFQMCInfo
     if(i<0 || i>tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
     assert(walker_buffer.shape()[1] == walker_size);
-    // no other way to remove shm_ptr 
-    boost::multi::array_ref<ComplexType,1> w_(std::addressof(*walker_buffer[i].origin()),extensions<1u>{walker_size});
-    return walker(w_,data_displ,wlk_desc);
+    return walker(walker_buffer[i],data_displ,wlk_desc);
   }
 
   /*
@@ -449,8 +449,7 @@ class SharedWalkerSet: public AFQMCInfo
     if(i<0 || i>tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
     assert(walker_buffer.shape()[1] == walker_size);
-    boost::multi::const_array_ref<ComplexType,1> w_(std::addressof(*walker_buffer[i].origin()),extensions<1u>{walker_size});
-    return const_walker(w_,data_displ,wlk_desc);
+    return const_walker(walker_buffer[i],data_displ,wlk_desc);
   }
 
   // cleans state of object. 
@@ -507,7 +506,7 @@ class SharedWalkerSet: public AFQMCInfo
     RealType res=0;
     assert(walker_buffer.shape()[1] == walker_size);
     if(TG.TG_local().root()) {
-      for(int i=0; i<tot_num_walkers; i++)
+      for(int i=0; i<tot_num_walkers; i++) 
         res += std::abs(walker_buffer[i][data_displ[WEIGHT]]);
     }
     return (TG.Global() += res);
@@ -633,7 +632,8 @@ class SharedWalkerSet: public AFQMCInfo
 
   afqmc::TaskGroup_& TG;  
 
-  shmCMatrix walker_buffer;
+  CMatrix walker_buffer;
+  //shmCMatrix walker_buffer;
 
   // reads xml and performs setup
   void parse(xmlNodePtr cur); 
