@@ -49,7 +49,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND C2_PP_MSDJ_LONG "kinetic" "7.72378 0.0034") # kinetic energy
   LIST(APPEND C2_PP_MSDJ_LONG "totenergy" "-11.059755 0.00037") # total energy
   LIST(APPEND C2_PP_MSDJ_LONG "eeenergy" "12.142072 0.0020") # e-e energy
-  LIST(APPEND C2_PP_MSDJ_LONG "samples" "160000 0.0") # samples
+  LIST(APPEND C2_PP_MSDJ_LONG "samples" "1280000 0.0") # samples
   IF(ENABLE_SOA)
   QMC_RUN_AND_CHECK(vmc_long_C2_pp_msdj-H5
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
@@ -74,7 +74,7 @@ IF (NOT QMC_CUDA)
 
   QMC_RUN_AND_CHECK(vmc_long_C2_pp_msdj-XML-traditional
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
-                    C2_TZ_PP_LONG_XML_MSDJ
+                    C2_TZ_PP_LONG_XML_MSDJ_TRAD
                     vmc_long_pp_msdj-XML-traditional.xml
                     1 16
                     TRUE

@@ -18,7 +18,6 @@
 
   <qmc method="vmc" move="pbyp" checkpoint="-1">
     <estimator name="LocalEnergy" hdf5="no"/>
-    <parameter name="samples">160000</parameter>
     <parameter name="steps">400</parameter>
     <parameter name="substeps">10</parameter>
     <parameter name="warmupSteps">20</parameter>
