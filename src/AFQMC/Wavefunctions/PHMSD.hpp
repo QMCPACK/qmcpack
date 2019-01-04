@@ -28,7 +28,6 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 #include "AFQMC/Matrix/array_of_sequences.hpp"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
@@ -64,11 +63,11 @@ class PHMSD: public AFQMCInfo
 
   using CVector = boost::multi::array<ComplexType,1>;  
   using CMatrix = boost::multi::array<ComplexType,2>;  
-  using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
   using shared_mutex = boost::mpi3::shm::mutex;  
   using shared_CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
   using shared_C3Tensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
   using shared_C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
+  using shmCVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;
   using index_aos = ma::sparse::array_of_sequences<int,int,
                                                    boost::mpi3::intranode::allocator<int>,
                                                    boost::mpi3::intranode::is_root>;
@@ -400,7 +399,7 @@ class PHMSD: public AFQMCInfo
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<PsiT_Matrix> OrbMats;
 
-    std::unique_ptr<SHM_Buffer> shmbuff_for_E;
+    std::unique_ptr<shmCVector> shmbuff_for_E;
 
     std::unique_ptr<shared_mutex> mutex;
 
@@ -423,7 +422,7 @@ class PHMSD: public AFQMCInfo
     // shared_communicator for parallel work within TG_local()
     //std::unique_ptr<shared_communicator> local_group_comm; 
     shared_communicator local_group_comm; 
-    std::unique_ptr<SHM_Buffer> shmbuff_for_G;
+    std::unique_ptr<shmCVector> shmbuff_for_G;
 
     // shared memory arrays for temporary calculations
     bool fast_ph_energy;

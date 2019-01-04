@@ -204,7 +204,7 @@ std::cout<<"\n";
 
       int nmo_ = rotPiu.shape()[0];
       int nu = rotMuv.shape()[0];
-      int nu0 = rotMuv.offset()[0];
+      int nu0 = rotMuv.global_offset()[0];
       int nv = rotMuv.shape()[1];
       int nel_ = rotcPua[0].shape()[1];
       int nspin = (walker_type==COLLINEAR)?2:1;
@@ -361,7 +361,7 @@ std::cout<<"\n";
       int naeb_ = QQ0B.shape()[2];
       int nmo_ = rotPiu.shape()[0];
       int nu = rotMuv.shape()[0];
-      int nu0 = rotMuv.offset()[0];
+      int nu0 = rotMuv.global_offset()[0];
       int nv = rotMuv.shape()[1];
       int nel_ = rotcPua[0].shape()[1];
       // checking
@@ -848,7 +848,7 @@ app_log()
       assert(rotPiu.shape()[1] = nv);
       int v0,vN;
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
-      int nu0 = rotMuv.offset()[0];
+      int nu0 = rotMuv.global_offset()[0];
       ComplexType zero(0.0,0.0);
 
       assert(Guu.shape()[0] == nv);
@@ -927,7 +927,7 @@ app_log()
       assert(rotPiu.shape()[1] = nv);
       int v0,vN;
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
-      int nu0 = rotMuv.offset()[0];
+      int nu0 = rotMuv.global_offset()[0];
       ComplexType zero(0.0,0.0);
 
       assert(Guu.shape()[0] == nv);
