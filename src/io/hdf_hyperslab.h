@@ -60,8 +60,8 @@ struct hyperslab_proxy: public container_proxy<CT>
     }
   }
 
-  template<typename IC>
-  inline hyperslab_proxy(CT& a, const IC& dims_in, const IC& dims_loc, const IC& offsets_in)
+  template<typename IC1, typename IC2, typename IC3>
+  inline hyperslab_proxy(CT& a, const IC1& dims_in, const IC2& dims_loc, const IC3& offsets_in)
   :container_proxy<CT>(a)
   {
     slab_rank=dims_in.size();

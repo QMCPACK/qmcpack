@@ -166,7 +166,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
     hyperslab_proxy<typename shm_Cmatrix::ma_type,2> hslab(muv_,
                                                            rotMuv.global_shape(),
                                                            rotMuv.shape(),
-                                                           rotMuv.offset());
+                                                           rotMuv.global_offset());
     if(!dump.read(hslab,"HalfTransformedMuv")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                 <<" Problems reading HalfTransformedMuv. \n";
@@ -177,7 +177,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
     hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab2(piu_,
                                                          Piu.global_shape(),
                                                          Piu.shape(),
-                                                         Piu.offset());
+                                                         Piu.global_offset());
     if(!dump.read(hslab2,"Orbitals")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Orbitals. \n";
@@ -188,7 +188,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
     hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab3(luv_,
                                                          Luv.global_shape(),
                                                          Luv.shape(),
-                                                         Luv.offset());
+                                                         Luv.global_offset());
     if(!dump.read(hslab3,"Luv")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Luv. \n";
@@ -279,11 +279,11 @@ inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA,
     auto rotMuv_(rotMuv.get());
     auto Luv_(Luv.get());
     dump.write(rotPiu_,"HalfTransformedFullOrbitals");
-    ma_hdf5::write_distributed_MA(rotMuv_,rotMuv.offset(),rotMuv.global_shape(),
+    ma_hdf5::write_distributed_MA(rotMuv_,rotMuv.global_offset(),rotMuv.global_shape(),
                                   dump,"HalfTransformedMuv",TGwfn);
-    ma_hdf5::write_distributed_MA(Piu_,Piu.offset(),Piu.global_shape(),
+    ma_hdf5::write_distributed_MA(Piu_,Piu.global_offset(),Piu.global_shape(),
                                   dump,"Orbitals",TGprop);
-    ma_hdf5::write_distributed_MA(Luv_,Luv.offset(),Luv.global_shape(),
+    ma_hdf5::write_distributed_MA(Luv_,Luv.global_offset(),Luv.global_shape(),
                                   dump,"Luv",TGprop);
     dump.pop();
     dump.pop();
@@ -291,11 +291,11 @@ inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA,
     auto Piu_(Piu.get());
     auto rotMuv_(rotMuv.get());
     auto Luv_(Luv.get());
-    ma_hdf5::write_distributed_MA(rotMuv_,rotMuv.offset(),rotMuv.global_shape(),
+    ma_hdf5::write_distributed_MA(rotMuv_,rotMuv.global_offset(),rotMuv.global_shape(),
                                   dump,"HalfTransformedMuv",TGwfn);
-    ma_hdf5::write_distributed_MA(Piu_,Piu.offset(),Piu.global_shape(),
+    ma_hdf5::write_distributed_MA(Piu_,Piu.global_offset(),Piu.global_shape(),
                                   dump,"Orbitals",TGprop);
-    ma_hdf5::write_distributed_MA(Luv_,Luv.offset(),Luv.global_shape(),
+    ma_hdf5::write_distributed_MA(Luv_,Luv.global_offset(),Luv.global_shape(),
                                   dump,"Luv",TGprop);
   }
   TGwfn.Global().barrier();

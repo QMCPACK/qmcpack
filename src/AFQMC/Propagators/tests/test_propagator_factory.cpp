@@ -44,7 +44,6 @@
 
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Numerics/ma_blas.hpp"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 
 using std::string;
 using std::complex;

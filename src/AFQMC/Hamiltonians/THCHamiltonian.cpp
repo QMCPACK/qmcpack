@@ -129,7 +129,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
       hyperslab_proxy<typename shm_Cmatrix::ma_type,2> hslab(muv_,
                                                            rotMuv.global_shape(),
                                                            rotMuv.shape(),
-                                                           rotMuv.offset());
+                                                           rotMuv.global_offset());
       if(!dump.read(hslab,"HalfTransformedMuv")) {
         app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading HalfTransformedMuv. \n";
@@ -146,7 +146,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab(piu_,
                                                          Piu.global_shape(),
                                                          Piu.shape(),
-                                                         Piu.offset());
+                                                         Piu.global_offset());
     if(!dump.read(hslab,"Orbitals")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Orbitals. \n";
@@ -157,7 +157,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab2(luv_,
                                                          Luv.global_shape(),
                                                          Luv.shape(),
-                                                         Luv.offset());
+                                                         Luv.global_offset());
     if(!dump.read(hslab2,"Luv")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Luv. \n";

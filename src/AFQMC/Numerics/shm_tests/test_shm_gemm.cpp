@@ -23,7 +23,6 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 #include <Utilities/FairDivide.h>
 #include "AFQMC/Utilities/myTimer.h"
 
@@ -41,7 +40,6 @@ void timing_shm_blas(int c)
   using Type = double; 
   using communicator = boost::mpi3::communicator;
   using shm_Alloc = boost::mpi3::intranode::allocator<Type>;
-  using SHM_Buffer = mpi3_SHMBuffer<Type>;
   using Matrix = boost::multi::array_ref<Type,2>;
 
   myTimer Timer;
@@ -52,7 +50,8 @@ void timing_shm_blas(int c)
   auto node = world.split_shared();
 
   int memory_needs = nmax*(c*c*nmax + 2*c*nmax);
-  SHM_Buffer buff(node,memory_needs);
+  boost::multi::array<Type,1,shared_allocator<Type>> buff(extensions<1u>{memory_needs},
+                                    shared_allocator<Type>{node});
 
   std::vector<std::pair<int,int>> pairs;
   {

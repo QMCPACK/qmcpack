@@ -282,7 +282,7 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   REQUIRE(SDet.Overlap(A({0,2},{0,3}),B_) == Approx(ov2));
   REQUIRE(SDet.Overlap(A_,B({0,3},{0,2}),node) == Approx(ov2));
 
-  shared_communicator node_ = node.split(node.rank()%2);
+  shared_communicator node_ = node.split(node.rank()%2,node.rank());
   REQUIRE(SDet.Overlap(A,B,node_) == Approx(ov));
   REQUIRE(SDet.Overlap(A({0,2},{0,3}),
                        B({0,3},{0,2}),node_) == Approx(ov2));
@@ -315,11 +315,11 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   array_ref g_ref_2(v_ref_2.data(),{3,3});
   array_ref gc_ref_2(vc_ref_2.data(),{2,3});
 
-  using SHM_Buffer = mpi3_SHMBuffer<Type>;
-  SHM_Buffer SMbuff(node,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node});  
 
-  array_ref G(SMbuff.data(),{NMO,NMO});
-  array_ref Gc(SMbuff.data()+NMO*NMO,{NEL,NMO});
+  array_ref G(std::addressof(*SMbuff.origin()),{NMO,NMO});
+  array_ref Gc(std::addressof(*SMbuff.origin())+NMO*NMO,{NEL,NMO});
 
   SDet.MixedDensityMatrix(A,B,G,node,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Aref,B,G,node,false); check(G,g_ref);
@@ -357,10 +357,11 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
                           Gc({0,2},{0,3}),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
 
-  SHM_Buffer SMbuff2(node_,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node_});
 
-  array_ref G2(SMbuff2.data(),{NMO,NMO});
-  array_ref Gc2(SMbuff2.data()+NMO*NMO,{NEL,NMO});
+  array_ref G2(std::addressof(*SMbuff2.origin()),{NMO,NMO});
+  array_ref Gc2(std::addressof(*SMbuff2.origin())+NMO*NMO,{NEL,NMO});
 
   // switch comm
   SDet.MixedDensityMatrix(A,B,G2,node_,false); check(G2,g_ref);
@@ -608,7 +609,7 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   myREQUIRE(SDet.Overlap(A({0,2},{0,3}),B_),ov2);
   myREQUIRE(SDet.Overlap(A_,B({0,3},{0,2}),node),ov2);
 
-  shared_communicator node_ = node.split(node.rank()%2);
+  shared_communicator node_ = node.split(node.rank()%2,node.rank());
   myREQUIRE(SDet.Overlap(A,B,node_),ov);
   myREQUIRE(SDet.Overlap(A({0,2},{0,3}),
                        B({0,3},{0,2}),node_),ov2);
@@ -659,11 +660,11 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   array_ref g_ref_2(v_ref_2.data(),{3,3});
   array_ref gc_ref_2(vc_ref_2.data(),{2,3});
 
-  using SHM_Buffer = mpi3_SHMBuffer<Type>;
-  SHM_Buffer SMbuff(node,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node});
 
-  array_ref G(SMbuff.data(),{NMO,NMO});
-  array_ref Gc(SMbuff.data()+NMO*NMO,{NEL,NMO});
+  array_ref G(std::addressof(*SMbuff.origin()),{NMO,NMO});
+  array_ref Gc(std::addressof(*SMbuff.origin())+NMO*NMO,{NEL,NMO});
 
   SDet.MixedDensityMatrix(A,B,G,node,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Aref,B,G,node,false); check(G,g_ref);
@@ -701,10 +702,11 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
                           Gc({0,2},{0,3}),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
 
-  SHM_Buffer SMbuff2(node_,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node_});
 
-  array_ref G2(SMbuff2.data(),{NMO,NMO});
-  array_ref Gc2(SMbuff2.data()+NMO*NMO,{NEL,NMO});
+  array_ref G2(std::addressof(*SMbuff2.origin()),{NMO,NMO});
+  array_ref Gc2(std::addressof(*SMbuff2.origin())+NMO*NMO,{NEL,NMO});
 
   // switch comm
   SDet.MixedDensityMatrix(A,B,G2,node_,false); check(G2,g_ref);
@@ -787,7 +789,7 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   myREQUIRE(SDet.Overlap(Acsr,B(B.extension(0),B.extension(1)),node),ov);
   myREQUIRE(SDet.Overlap(Acsr,B(B.extension(0),B.extension(1))),ov);
 
-  shared_communicator node_ = node.split(node.rank()%2);
+  shared_communicator node_ = node.split(node.rank()%2,node.rank());
   myREQUIRE(SDet.Overlap(Acsr,B,node_),ov);
 
   array B_ = B({0,3},{0,2});
@@ -840,11 +842,11 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   array_ref g_ref_2(v_ref_2.data(),{3,3});
   array_ref gc_ref_2(vc_ref_2.data(),{2,3});
 
-  using SHM_Buffer = mpi3_SHMBuffer<Type>;
-  SHM_Buffer SMbuff(node,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node});
 
-  array_ref G(SMbuff.data(),{NMO,NMO});
-  array_ref Gc(SMbuff.data()+NMO*NMO,{NEL,NMO});
+  array_ref G(std::addressof(*SMbuff.origin()),{NMO,NMO});
+  array_ref Gc(std::addressof(*SMbuff.origin())+NMO*NMO,{NEL,NMO});
 
   SDet.MixedDensityMatrix(Acsr,B,G,node,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Acsr,Bref,G,node,false); check(G,g_ref);
@@ -870,10 +872,11 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
                           Gc({0,2},{0,3}),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
 
-  SHM_Buffer SMbuff2(node_,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node_});
 
-  array_ref G2(SMbuff2.data(),{NMO,NMO});
-  array_ref Gc2(SMbuff2.data()+NMO*NMO,{NEL,NMO});
+  array_ref G2(std::addressof(*SMbuff2.origin()),{NMO,NMO});
+  array_ref Gc2(std::addressof(*SMbuff2.origin())+NMO*NMO,{NEL,NMO});
 
   // switch comm
   SDet.MixedDensityMatrix(Acsr,B,G2,node_,false); check(G2,g_ref);
