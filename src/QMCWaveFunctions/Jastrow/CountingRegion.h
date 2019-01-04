@@ -401,7 +401,7 @@ public:
                           int I, 
                           std::function<const PosType&(int,int)> FCgrad,
                           std::function<RealType&(int,int)> dNsum,
-                          std::function<RealType&(int,int)> dNggsum,
+                          std::function<ValueType&(int,int)> dNggsum,
                           std::function<RealType&(int,int)> dNlapsum,
                           std::vector<RealType>& dNFNggsum)
   {
