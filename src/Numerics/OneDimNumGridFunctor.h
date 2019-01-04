@@ -81,6 +81,7 @@ struct OneDimNumGridFunctor
 
   bool put(xmlNodePtr cur)
   {
+    return true;
   }
 };
 }
