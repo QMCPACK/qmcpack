@@ -28,11 +28,10 @@ CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFun
   SourceOpt=targetPtcl.getName();
 }
 
-template<template<class> class CountingRegionType>
 bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"createCJ(xmlNodePtr)");
-  using RegionType = CountingRegionType<RT>;
+  using RegionType = NormalizedGaussianRegion<RealType>;
   using FunctorType = typename RegionType::FunctorType;
   using CJOrbitalType = CountingJastrowOrbital<RegionType>;
 
@@ -168,7 +167,7 @@ bool CountingJastrowBuilder::put(xmlNodePtr cur)
   oAttrib.put(cur);
   if(RegionOpt.find("normalized_gaussian") < RegionOpt.size())
   {
-    createCJ<NormalizedGaussianRegion>(cur);
+    createCJ(cur);
   }
   app_log() << "end CountingRegionOrbital::put" << std::endl;
 
