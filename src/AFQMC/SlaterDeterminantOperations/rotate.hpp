@@ -26,7 +26,6 @@
 #include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/Matrix/matrix_emplace_wrapper.hpp"
 #include "multi/array_ref.hpp"
-//#include <boost/hana.hpp>
 #include "AFQMC/Utilities/afqmc_TTI.hpp"
 #include "mpi.h"
 
@@ -99,10 +98,12 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   int ak0, ak1;
   int Qdim = NAEA*(kN_alpha-k0_alpha) + NAEB*(kN_beta-k0_beta);
   if(transpose) {
-    if(not check_shape(Q,{nvec,Qdim}))
+    //if(not check_shape(Q,{nvec,Qdim}))
+    if(not (Q.shape()[0]==nvec && Q.shape()[1]==Qdim))
       APP_ABORT(" Error: Container Q has incorrect dimensions in halfRotateCholeskyMatrix. \n");
   } else {
-    if(not check_shape(Q,{Qdim,nvec}))
+    //if(not check_shape(Q,{Qdim,nvec}))
+    if(not (Q.shape()[0]==Qdim && Q.shape()[1]==nvec))
       APP_ABORT(" Error: Container Q has incorrect dimensions in halfRotateCholeskyMatrix. \n");
   }  
   std::tie(ak0,ak1) = FairDivideBoundary(coreid,Qdim,ncores);
@@ -110,7 +111,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   if(type==NONCOLLINEAR)
     APP_ABORT(" GHF not yet implemented. \n");
 
-  boost::multi_array<SPComplexType,1> vec(extents[nvec]);
+  boost::multi::array<SPComplexType,1> vec(extensions<1u>{nvec});
   if(reserve_to_fit_) {
     std::vector<std::size_t> sz_per_row( Qdim ); 
     int cnt=0;
@@ -256,7 +257,7 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_g
   if(type==NONCOLLINEAR)
     APP_ABORT(" GHF not yet implemented. \n");
 
-  boost::multi_array<SPComplexType,1> vec(extents[nvec]);
+  boost::multi::array<SPComplexType,1> vec(extensions<1u>{nvec});
   std::vector<std::size_t> sz_per_row( nvec ); 
   std::size_t cnt=0;
   for(int a=0; a<NAEA; a++) {
@@ -400,7 +401,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
       if( cnt < ak0 ) continue;
       if( cnt >= ak1 ) break;  
       if(transpose) {
-        auto vec = Q[indices[range_t()][cnt]];
+        auto vec = Q(Q.extension(0),cnt);
         for(auto& v:vec) v=SPComplexType(0,0); 
         auto Aa = (*Alpha)[a];
         for(int ip = 0; ip<Aa.num_non_zero_elements(); ++ip) {
@@ -435,7 +436,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
         if( cnt < ak0 ) continue;
         if( cnt >= ak1 ) break;
         if(transpose) {
-          auto vec = Q[indices[range_t()][cnt]];
+          auto vec = Q(Q.extension(0),cnt);
           for(auto& v:vec) v=SPComplexType(0,0);
           auto Aa = (*Beta)[a];
           for(int ip = 0; ip<Aa.num_non_zero_elements(); ++ip) {

@@ -72,7 +72,7 @@ QMCMain::QMCMain(Communicate* c)
   app_summary()
       << "\n=====================================================\n"
       <<  "                    QMCPACK "
-      << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH << " \n\n"
+      << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH << "\n\n"
       << "       (c) Copyright 2003-  QMCPACK developers\n\n"
       << "                    Please cite:\n"
       << " J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)\n"
@@ -614,7 +614,7 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     t1->start();
     qmcDriver->run();
     t1->stop();
-    app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs " << std::endl;
+    app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
     //keeps track of the configuration file
     PrevConfigFile = myProject.CurrentMainRoot();
     return true;

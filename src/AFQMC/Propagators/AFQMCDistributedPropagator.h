@@ -28,7 +28,6 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 #include "mpi3/shm/mutex.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
@@ -100,8 +99,8 @@ class AFQMCDistributedPropagator: public AFQMCSharedPropagator
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);
 
     // additional dimension for temporary computation
-    boost::multi_array<ComplexType,3> MFfactor;
-    boost::multi_array<ComplexType,3> hybrid_weight;
+    boost::multi::array<ComplexType,3> MFfactor;
+    boost::multi::array<ComplexType,3> hybrid_weight;
 
 };
 

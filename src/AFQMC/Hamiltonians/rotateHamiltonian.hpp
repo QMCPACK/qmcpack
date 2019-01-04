@@ -25,7 +25,6 @@
 #include "Numerics/OhmmsBlas.h"
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 #include "AFQMC/Matrix/matrix_emplace_wrapper.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/rotate.hpp"
@@ -69,24 +68,24 @@ inline void check_wavefunction_consistency(WALKER_TYPES type, PsiT_Matrix *A, Ps
     }
 }
 
-inline boost::multi_array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, const boost::multi_array<ComplexType,2>& H1)
+inline boost::multi::array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, const boost::multi::array<ComplexType,2>& H1)
 {
   assert(Alpha!=nullptr);
   int NAEA = Alpha->shape()[0];
   int NMO = Alpha->shape()[1];
 
-  boost::multi_array<SPComplexType,1> N;
+  boost::multi::array<SPComplexType,1> N(extensions<1u>{1});
   const ComplexType one = ComplexType(1.0);
   const ComplexType zero = ComplexType(0.0);
 
   // 1-body part
   if(walker_type == CLOSED || walker_type == NONCOLLINEAR) {
 
-    N.resize(extents[NAEA*NMO]);
+    N.reextent(extensions<1u>{NAEA*NMO});
 #if(AFQMC_SP)
-    boost::multi_array<ComplexType,2> N_(extents[NAEA][NMO]);
+    boost::multi::array<ComplexType,2> N_({NAEA,NMO});
 #else
-    boost::multi_array_ref<ComplexType,2> N_(N.origin(),extents[NAEA][NMO]);
+    boost::multi::array_ref<ComplexType,2> N_(N.origin(),{NAEA,NMO});
 #endif
 
     ma::product(*Alpha,H1,N_);
@@ -100,13 +99,13 @@ inline boost::multi_array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, P
     assert(Beta!=nullptr);
     int NAEB = Beta->shape()[0];
 
-    N.resize(extents[(NAEA+NAEB)*NMO]);
+    N.reextent(extensions<1u>{(NAEA+NAEB)*NMO});
 #if(AFQMC_SP)
-    boost::multi_array<ComplexType,2> NA_(extents[NAEA][NMO]);
-    boost::multi_array<ComplexType,2> NB_(extents[NAEB][NMO]);
+    boost::multi::array<ComplexType,2> NA_({NAEA,NMO});
+    boost::multi::array<ComplexType,2> NB_({NAEB,NMO});
 #else
-    boost::multi_array_ref<ComplexType,2> NA_(N.origin(),extents[NAEA][NMO]);
-    boost::multi_array_ref<ComplexType,2> NB_(N.origin()+NAEA*NMO,extents[NAEB][NMO]);
+    boost::multi::array_ref<ComplexType,2> NA_(N.origin(),{NAEA,NMO});
+    boost::multi::array_ref<ComplexType,2> NB_(N.origin()+NAEA*NMO,{NAEB,NMO});
 #endif
 
     ma::product(*Alpha,H1,NA_);
@@ -163,9 +162,8 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
     app_log()<<"Dense x Dense";
   app_log()<<" matrix multiplication. \n";
 
-  mpi3_SHMBuffer<SPComplexType> tQk_shmbuff(TG.Node(),1);
-  mpi3_SHMBuffer<SPComplexType> Qk_shmbuff(TG.Node(),1);
-  mpi3_SHMBuffer<SPComplexType> Rl_shmbuff(TG.Node(),1);
+  using shmSpVector = SPComplexVector<shared_allocator<SPComplexType>>;
+  using shmSpMatrix = SPComplexMatrix<shared_allocator<SPComplexType>>;
 
   int NMO2 = (walker_type == CLOSED)?NMO:2*NMO;
   int ngrp = std::min(NMO2,nnodes);
@@ -235,29 +233,20 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   const int ncol = nvec;
   int dummy_nrow=nrow, dummy_ncol=ncol;
   int mat_size = nrow*ncol;
-  if(nodeid < ngrp) {
-    if(not sparseQk) {
-      Qk_shmbuff.resize(mat_size);
-      if(coreid==0) std::fill_n(Qk_shmbuff.data(),Qk_shmbuff.size(),SPComplexType(0.0));
-    }
-    if(not sparseRl) {
-      Rl_shmbuff.resize(mat_size);
-      if(coreid==0) std::fill_n(Rl_shmbuff.data(),Rl_shmbuff.size(),SPComplexType(0.0));
-    }
-  } else {
+  if(nodeid >= ngrp || sparseQk) 
     dummy_nrow=dummy_ncol=0;
-  }
 
   using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
   // global_origin is not set correctly, careful not to rely on it
   SpCType_shm_csr_matrix SpQk({nrow,ncol},{0,0},0,Alloc(TG.Node()));
   SpCType_shm_csr_matrix SpRl({ncol,nrow},{0,0},0,Alloc(TG.Node()));
 
-  if(sparseQk)  dummy_nrow=dummy_ncol=0;
-  boost::multi_array_ref<SPComplexType,2> Qk(Qk_shmbuff.data(),extents[dummy_nrow][dummy_ncol]);
+  shmSpMatrix Qk({dummy_nrow,dummy_ncol},shared_allocator<SPComplexType>{TG.Node()});
+  if(coreid==0) std::fill_n(Qk.origin(),Qk.num_elements(),SPComplexType(0.0));
   dummy_nrow=nrow; dummy_ncol=ncol;
   if(sparseRl or nodeid >= ngrp )  dummy_nrow=dummy_ncol=0;
-  boost::multi_array_ref<SPComplexType,2> Rl(Rl_shmbuff.data(),extents[dummy_ncol][dummy_nrow]);
+  shmSpMatrix Rl({dummy_ncol,dummy_nrow},shared_allocator<SPComplexType>{TG.Node()});
+  if(coreid==0) std::fill_n(Rl.origin(),Rl.num_elements(),SPComplexType(0.0));
 
   if(distribute_Ham) {
    APP_ABORT(" Finish THIS (43)!!! \n\n\n");
@@ -308,7 +297,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
         int n0_,n1_,sz_ = Qk.shape()[0];
         std::tie(n0_, n1_) = FairDivideBoundary(coreid,sz_,ncores);
         if(n1_-n0_>0)
-          ma::tranpose(Qk[indices[range_t(n0_,n1_)][range_t()]],Rl[range_t()][range_t(n0_,n1_)]);
+          ma::tranpose(Qk.sliced(n0_,n1_),Rl(Rl.extension(0),{n0_,n1_}));
       }
     }
 #endif
@@ -387,16 +376,17 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
            <<"   Temporary integral matrix Ta: " <<norb*NAEA*maxnk*NAEA*sizeof(SPComplexType)/1024.0/1024.0 <<" MB " <<std::endl;
 
   // temporary shared memory space for local "dense" result
-  mpi3_SHMBuffer<SPComplexType> Ta_shmbuff(TG.Node(),norb*NAEA*maxnk*NAEA);
+  shmSpVector Ta_shmbuff(extensions<1u>{norb*NAEA*maxnk*NAEA},shared_allocator<SPComplexType>{TG.Node()});
 
   // setup working sparse matrix
   dummy_nrow=maxnk * NAEA; dummy_ncol=nvec;
+  shmSpVector tQk_shmbuff(extensions<1u>{1},shared_allocator<SPComplexType>{TG.Node()});
   SpCType_shm_csr_matrix SptQk({maxnk * NAEA,nvec},{0,0},0,Alloc(TG.Node()));
   if(sparseQk) {
     std::size_t sz_ = std::ceil(maxqksize/SptQk.shape()[0]);
     SptQk.reserve(sz_);
   } else
-    tQk_shmbuff.resize(maxnk * NAEA * nvec);
+    tQk_shmbuff.reextent(extensions<1u>{maxnk * NAEA * nvec});
   if(sparseQk)  dummy_nrow=dummy_ncol=0;
 
   myTimer Timer_;
@@ -428,7 +418,8 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
         int NEL0 = (k0<NMO)?NAEA:NAEB;   // number of electrons in this spin block
         assert(nk > 0 && nk <= maxnk );  // just checking
 
-        boost::multi_array_ref<SPComplexType,2> tQk(tQk_shmbuff.data(),extents[nk*NEL0][nvec]);
+        boost::multi::array_ref<SPComplexType,2> tQk(std::addressof(*tQk_shmbuff.origin()),
+                                                     {nk*NEL0,nvec});
 
         Timer_.reset("T0");
         Timer_.start("T0");
@@ -478,7 +469,8 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
         app_log()<<" Loop: " <<nn <<"/" <<comm.size() <<" " <<bi <<"/" <<nblk
                  <<" communication: " <<Timer_.total("T0") <<" ";
 
-        boost::multi_array_ref<ComplexType,2> Ta(Ta_shmbuff.data(),extents[nk*NEL0][nrow]);
+        boost::multi::array_ref<ComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+                                                  {nk*NEL0,nrow});
 
         Timer_.reset("T0");
         Timer_.start("T0");
@@ -548,7 +540,8 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
       int NEL0 = (k0<NMO)?NAEA:NAEB;   // number of electrons in this spin block
       assert(nk > 0 && nk <= maxnk );  // just checking
 
-      boost::multi_array_ref<SPComplexType,2> tQk(tQk_shmbuff.data(),extents[nk*NEL0][nvec]);
+      boost::multi::array_ref<SPComplexType,2> tQk(std::addressof(*tQk_shmbuff.origin()),
+                                                   {nk*NEL0,nvec});
 
       Timer_.reset("T0");
       Timer_.start("T0");
@@ -597,7 +590,8 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
       app_log()<<" Loop: " <<nn <<"/" <<comm.size() <<" " <<bi <<"/" <<nblk
                  <<" communication: " <<Timer_.total("T0") <<" ";
 
-      boost::multi_array_ref<ComplexType,2> Ta(Ta_shmbuff.data(),extents[nk*NEL0][nrow]);
+      boost::multi::array_ref<ComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+                                                {nk*NEL0,nrow});
 
       Timer_.reset("T0");
       Timer_.start("T0");
@@ -672,37 +666,25 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
            <<"   Maximum size of communication buffer: " <<maximum_buffer_size <<" MB" <<std::endl;
 
 
-  using Allocator = boost::mpi3::intranode::allocator<SPComplexType>;
+  using Allocator = shared_allocator<SPComplexType>;
+  using shmSpVector = SPComplexVector<shared_allocator<SPComplexType>>;
+  using shmSpMatrix = SPComplexMatrix<shared_allocator<SPComplexType>>;
   Allocator alloc{TG.Node()};
-
-  // until I move to multi::array<,,shared_allocator>
-  mpi3_SHMBuffer<SPComplexType> Qk_shmbuff(TG.Node(),1);
-  mpi3_SHMBuffer<SPComplexType> Rl_shmbuff(TG.Node(),1);
 
   // allocate Qk or SpQk
   // sadly no std::optional in c++14!!!
   int nx = (sparseQk?0:1);
-  if(not sparseQk) {
-    Qk_shmbuff.resize(NMO*NEL*nvec);
-    if(coreid==0) std::fill_n(Qk_shmbuff.data(),Qk_shmbuff.size(),SPComplexType(0.0));
-  }
-  boost::multi_array_ref<SPComplexType,2> Qk(Qk_shmbuff.data(),extents[nx*NMO*NEL][nx*nvec]);
+  shmSpMatrix Qk({nx*NMO*NEL,nx*nvec},shared_allocator<SPComplexType>{TG.Node()});
+  if(coreid==0) std::fill_n(Qk.origin(),Qk.num_elements(),SPComplexType(0.0));
   nx = (sparseQk?1:0);
   SpCType_shm_csr_matrix SpQk({nx*NMO*NEL,nx*nvec},{0,0},0,alloc);
 
-  Rl_shmbuff.resize(NMO*NEL*nvec);
-  if(coreid==0) std::fill_n(Rl_shmbuff.data(),Rl_shmbuff.size(),SPComplexType(0.0));
-  boost::multi_array_ref<SPComplexType,2> Rl(Rl_shmbuff.data(),extents[nvec][NMO*NEL]);
+  shmSpMatrix Rl({nvec,NMO*NEL},shared_allocator<SPComplexType>{TG.Node()});
+  if(coreid==0) std::fill_n(Rl.origin(),Rl.num_elements(),SPComplexType(0.0));
 
   {
     //   Q(k,a,n) = sum_i conj(Amat(i,a)) * V2_fact(ik,n)
     //   R(l,a,n) = sum_i conj(Amat(i,a)) * conj(V2_fact(li,n))
-
-    // until I move to boost::multi::array
-    boost::multi_array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin()),
-                                     extents[Qk.shape()[0]][Qk.shape()[1]]);
-    boost::multi_array_ref<SPComplexType,2> Rl_(std::addressof(*Rl.origin()),
-                                     extents[Rl.shape()[0]][Rl.shape()[1]]);
 
     // Construct SpQk[k,n,nvec]
     int NMO2 = (walker_type!=CLOSED)?2*NMO:NMO;
@@ -710,20 +692,20 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
       sparse_rotate::halfRotateCholeskyMatrix(walker_type,TG,0,NMO2,SpQk,Alpha,Beta,V2_fact,false,false,cut,true);
       SpQk.remove_empty_spaces();  // just in case
     } else
-      ma_rotate::halfRotateCholeskyMatrix(walker_type,TG,0,NMO2,Qk_,Alpha,Beta,V2_fact,false,false,cut);
+      ma_rotate::halfRotateCholeskyMatrix(walker_type,TG,0,NMO2,Qk,Alpha,Beta,V2_fact,false,false,cut);
 
 #if defined(QMC_COMPLEX)
-    ma_rotate::halfRotateCholeskyMatrix(walker_type,TG,0,NMO2,Rl_,Alpha,Beta,V2_fact,true,true,cut);
+    ma_rotate::halfRotateCholeskyMatrix(walker_type,TG,0,NMO2,Rl,Alpha,Beta,V2_fact,true,true,cut);
 #else
     if(sparseQk) {
-      csr::shm::transpose(SpQk,Rl_);
+      csr::shm::transpose(SpQk,Rl);
     } else {
       // Qk[norb*NAEA,nvec]
       // Rl[nvec,norb*NAEA]
-      int n0_,n1_,sz_ = Qk_.shape()[0];
+      int n0_,n1_,sz_ = Qk.shape()[0];
       std::tie(n0_, n1_) = FairDivideBoundary(coreid,sz_,ncores);
       if(n1_-n0_>0)
-        ma::tranpose(Qk_[indices[range_t(n0_,n1_)][range_t()]],Rl_[range_t()][range_t(n0_,n1_)]);
+        ma::tranpose(Qk.sliced(n0_,n1_),Rl(Rl.extension(0),{n0_,n1_}));
     }
 #endif
   }
@@ -738,8 +720,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
 
   app_log()<<"   Temporary integral matrix Ta: " <<NMO*NAEA*maxnk*NAEA*sizeof(SPComplexType)/1024.0/1024.0 <<" MB " <<std::endl;
 
-  mpi3_SHMBuffer<SPComplexType> Ta_shmbuff(TG.Node(),1);
-  Ta_shmbuff.resize(NMO*NAEA*maxnk*NAEA);
+  shmSpVector Ta_shmbuff(extensions<1u>{NMO*NAEA*maxnk*NAEA},shared_allocator<SPComplexType>{TG.Node()});
   myTimer Timer_;
 
   ComplexType EJX(0.0);
@@ -758,58 +739,45 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
       int kN = std::min(k0+maxnk,NMO);
       int nk = kN-k0;
       { // alpha-alpha
-        boost::multi_array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.data()),
-					 extents[nk*NAEA][NAEA*NMO]);
+        boost::multi::array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+					 {nk*NAEA,NAEA*NMO});
         if(type == "SD")
           count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0,kN,0,NMO,NMO,NAEA,NAEB,
 			SpQk[{size_t(k0*NAEA),std::size_t(kN*NAEA)}],
-			Rl[indices[range_t()][range_t(0,NAEA*NMO)]],Ta,cut);
-			//Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
+			Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
         else if(type == "DD")  {
-          boost::multi_array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())+k0*NAEA*nvec,
-					 extents[NAEA*nk][nvec]);
           count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0,kN,0,NMO,NMO,NAEA,NAEB,
-			Qk_,Rl[indices[range_t()][range_t(0,NAEA*NMO)]],Ta,cut);
-			//Qk({size_t(k0*NAEA),size_t(kN*NAEA)},Qk.extension(1)),
-			//Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
+			Qk.sliced(size_t(k0*NAEA),size_t(kN*NAEA)),
+			Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
 	}
       }
       TG.Node().barrier();
       if(walker_type==COLLINEAR)
       { // beta-beta
-        boost::multi_array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.data()),
-                                         extents[nk*NAEB][NAEB*NMO]);
+        boost::multi::array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+                                         {nk*NAEB,NAEB*NMO});
         if(type == "SD")
           count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
                         SpQk[{size_t(NAEA*NMO+k0*NAEB),std::size_t(NAEA*NMO+kN*NAEB)}],
-			Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,cut);
-                        //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
+			Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
         else if(type == "DD") {
-          boost::multi_array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())
-					 + NMO*NAEA*nvec+nvec*k0*NAEB,
-					 extents[NAEB*nk][nvec]);
           count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
-			Qk_,Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,cut);
-                        //Qk({NAEA*NMO+k0*NAEB,NAEA*NMO+kN*NAEB},Qk.extension(1)),
-                        //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
+                        Qk.sliced(NAEA*NMO+k0*NAEB,NAEA*NMO+kN*NAEB),
+                        Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
 	}
         TG.Node().barrier();
 	if(addCoulomb)
         { // alpha-beta
-          boost::multi_array_ref<SPComplexType,2> Ta_(std::addressof(*Ta_shmbuff.data()),
-                                         extents[nk*NAEA][NAEB*NMO]);
           if(type == "SD")
             count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,
                         SpQk[{size_t(k0*NAEA),std::size_t(kN*NAEA)}],
-			Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,cut);
-                        //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta_,cut);
+			Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
           else if(type == "DD") {
-            boost::multi_array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())+k0*NAEA*nvec,
-                                     extents[NAEA*nk][nvec]);
+            boost::multi::array_ref<SPComplexType,2> Ta_(std::addressof(*Ta_shmbuff.origin()),
+                                        {nk*NAEA,NAEB*NMO});
             count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,
-			Qk_,Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,cut);
-                        //Qk({k0*NAEA,kN*NAEA},Qk.extension(1)),
-                        //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta_,cut);
+                        Qk.sliced(k0*NAEA,kN*NAEA),
+                        Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta_,cut);
 	  }
         }
         TG.Node().barrier();
@@ -857,58 +825,45 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
     int kN = std::min(k0+maxnk,NMO);
     int nk = kN-k0;
     { // alpha-alpha
-      boost::multi_array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.data()),
-                                       extents[nk*NAEA][NAEA*NMO]);
+      boost::multi::array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+                                       {nk*NAEA,NAEA*NMO});
       if(type == "SD")
         Qk_x_Rl(walker_type,EJX,TG,k0,kN,0,NMO,NMO,NAEA,NAEB,
                       SpQk[{size_t(k0*NAEA),std::size_t(kN*NAEA)}],
-                      Rl[indices[range_t()][range_t(0,NAEA*NMO)]],Ta,Vijkl,cut);
-                      //Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
+                      Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,Vijkl,cut);
       else if(type == "DD")  {
-        boost::multi_array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())+k0*NAEA*nvec,
-                                       extents[NAEA*nk][nvec]);
         Qk_x_Rl(walker_type,EJX,TG,k0,kN,0,NMO,NMO,NAEA,NAEB,
-                      Qk_,Rl[indices[range_t()][range_t(0,NAEA*NMO)]],Ta,Vijkl,cut);
-                      //Qk({size_t(k0*NAEA),size_t(kN*NAEA)},Qk.extension(1)),
-                      //Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,cut);
+                      Qk.sliced(k0*NAEA,kN*NAEA),
+                      Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,Vijkl,cut);
       }
     }
     TG.Node().barrier();
     if(walker_type==COLLINEAR)
     { // beta-beta
-      boost::multi_array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.data()),
-                                       extents[nk*NAEB][NAEB*NMO]);
+      boost::multi::array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+                                       {nk*NAEB,NAEB*NMO});
       if(type == "SD")
         Qk_x_Rl(walker_type,EJX,TG,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
                       SpQk[{size_t(NAEA*NMO+k0*NAEB),std::size_t(NAEA*NMO+kN*NAEB)}],
-                      Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,Vijkl,cut);
-                      //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
+                      Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,Vijkl,cut);
       else if(type == "DD") {
-        boost::multi_array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())
-                                       + NMO*NAEA*nvec+nvec*k0*NAEB,
-                                       extents[NAEB*nk][nvec]);
         Qk_x_Rl(walker_type,EJX,TG,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
-                      Qk_,Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,Vijkl,cut);
-                      //Qk({NAEA*NMO+k0*NAEB,NAEA*NMO+kN*NAEB},Qk.extension(1)),
-                      //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
+                      Qk.sliced(NAEA*NMO+k0*NAEB,NAEA*NMO+kN*NAEB),
+                      Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,Vijkl,cut);
       }
       TG.Node().barrier();
       if(addCoulomb)
       { // alpha-beta
-        boost::multi_array_ref<SPComplexType,2> Ta_(std::addressof(*Ta_shmbuff.data()),
-                                       extents[nk*NAEA][NAEB*NMO]);
+        boost::multi::array_ref<SPComplexType,2> Ta_(std::addressof(*Ta_shmbuff.origin()),
+                                       {nk*NAEA,NAEB*NMO});
         if(type == "SD")
           Qk_x_Rl(walker_type,EJX,TG,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,
                       SpQk[{size_t(k0*NAEA),std::size_t(kN*NAEA)}],
-                      Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,Vijkl,cut);
-                      //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta_,cut);
+                      Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,Vijkl,cut);
         else if(type == "DD") {
-          boost::multi_array_ref<SPComplexType,2> Qk_(std::addressof(*Qk.origin())+k0*NAEA*nvec,
-                                   extents[NAEA*nk][nvec]);
           Qk_x_Rl(walker_type,EJX,TG,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,
-                      Qk_,Rl[indices[range_t()][range_t(NAEA*NMO,(NAEA+NAEB)*NMO)]],Ta,Vijkl,cut);
-                      //Qk({k0*NAEA,kN*NAEA},Qk.extension(1)),
-                      //Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta_,cut);
+                      Qk.sliced(k0*NAEA,kN*NAEA),
+                      Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta_,Vijkl,cut);
         }
       }
       TG.Node().barrier();

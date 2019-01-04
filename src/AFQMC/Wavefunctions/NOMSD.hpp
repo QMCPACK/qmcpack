@@ -26,7 +26,6 @@
 #include "AFQMC/config.h"
 #include "mpi3/shm/mutex.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
@@ -49,11 +48,11 @@ namespace afqmc
 class NOMSD: public AFQMCInfo
 {
 
-  using CVector = boost::multi_array<ComplexType,1>;  
-  using CMatrix = boost::multi_array<ComplexType,2>;  
-  using CVector_ref = boost::multi_array_ref<ComplexType,1>;
-  using CMatrix_ref = boost::multi_array_ref<ComplexType,2>;
-  using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
+  using CVector = boost::multi::array<ComplexType,1>;  
+  using CMatrix = boost::multi::array<ComplexType,2>;  
+  using CVector_ref = boost::multi::array_ref<ComplexType,1>;
+  using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;
+  using shmCVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;  
   using shared_mutex = boost::mpi3::shm::mutex;  
 
   public:
@@ -178,9 +177,9 @@ class NOMSD: public AFQMCInfo
           HamOp.vbias(G,std::forward<MatA>(v),a);
         else {
           // HamOp expects either alpha or beta, so must be called twice 
-          HamOp.vbias(G[indices[range_t(0,NMO*NMO)][range_t()]]
+          HamOp.vbias(G.sliced(0,NMO*NMO)
                 ,std::forward<MatA>(v),a,0.0);
-          HamOp.vbias(G[indices[range_t(NMO*NMO,2*NMO*NMO)][range_t()]]
+          HamOp.vbias(G.sliced(NMO*NMO,2*NMO*NMO)
                 ,std::forward<MatA>(v),a,1.0);
         }
       }  
@@ -211,9 +210,9 @@ class NOMSD: public AFQMCInfo
     void Energy(WlkSet& wset) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);
+        ovlp.reextent(extensions<1u>{nw});
       if(eloc.shape()[0] != nw || eloc.shape()[1] != 3)
-        eloc.resize(extents[nw][3]);
+        eloc.reextent({nw,3});
       Energy(wset,eloc,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {
@@ -252,7 +251,7 @@ class NOMSD: public AFQMCInfo
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);
+        ovlp.reextent(extensions<1u>{nw});
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact,transpose);
     }
 
@@ -281,7 +280,7 @@ class NOMSD: public AFQMCInfo
     void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);	
+        ovlp.reextent(extensions<1u>{nw});	
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact_G_for_vbias,transposed_G_for_vbias_);
     }
 
@@ -299,7 +298,7 @@ class NOMSD: public AFQMCInfo
     {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);
+        ovlp.reextent(extensions<1u>{nw});
       Overlap(wset,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {
@@ -346,9 +345,9 @@ class NOMSD: public AFQMCInfo
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<PsiT_Matrix> OrbMats;
     // Buffers for back propagation.
-    boost::multi_array<ComplexType, 2> T1ForBP, T2ForBP, T3ForBP;
+    boost::multi::array<ComplexType, 2> T1ForBP, T2ForBP, T3ForBP;
 
-    std::unique_ptr<SHM_Buffer> shmbuff_for_E;
+    std::unique_ptr<shmCVector> shmbuff_for_E;
 
     std::unique_ptr<shared_mutex> mutex;
 
@@ -371,12 +370,12 @@ class NOMSD: public AFQMCInfo
     // shared_communicator for parallel work within TG_local()
     //std::unique_ptr<shared_communicator> local_group_comm; 
     shared_communicator local_group_comm; 
-    std::unique_ptr<SHM_Buffer> shmbuff_for_G;
+    std::unique_ptr<shmCVector> shmbuff_for_G;
 
     // excited states
     bool excitedState;
     std::vector<std::pair<int,int>> excitations;
-    boost::multi_array<ComplexType,3> excitedOrbMat; 
+    boost::multi::array<ComplexType,3> excitedOrbMat; 
     CMatrix extendedMatAlpha;
     CMatrix extendedMatBeta;
     std::pair<int,int> maxOccupExtendedMat;

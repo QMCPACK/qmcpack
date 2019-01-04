@@ -36,7 +36,6 @@
 
 #include "AFQMC/Utilities/test_utils.hpp"
 
-#include "boost/multi_array.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Utilities/myTimer.h"
@@ -46,7 +45,6 @@
 
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Numerics/ma_blas.hpp"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 
 using std::string;
 using std::complex;
@@ -55,10 +53,6 @@ using std::cerr;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
-
-using boost::extents;
-using boost::indices;
-using range_t = boost::multi_array_types::index_range;
 
 namespace qmcplusplus
 {
@@ -158,7 +152,7 @@ const char *wlk_xml_block_noncol =
 
       if(type == COLLINEAR)
         wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
       else
         wset.resize(nwalk,initial_guess[0],
                          initial_guess[0]);
@@ -169,8 +163,7 @@ const char *wlk_xml_block_noncol =
         REQUIRE(imag(it->overlap()) == Approx(0.0));
       }
 
-      using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-      using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
+      using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
 
       qmcplusplus::Timer Time;
       double t1;
@@ -192,16 +185,14 @@ const char *wlk_xml_block_noncol =
       }
 
       auto size_of_G = wfn.size_of_G_for_vbias();
-      SHM_Buffer Gbuff(TG.TG_local(),nwalk*size_of_G);
       int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
       int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
-      boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[Gdim1][Gdim2]);
+      shmCMatrix G({Gdim1,Gdim2},shared_allocator<ComplexType>{TG.TG_local()});
       wfn.MixedDensityMatrix_for_vbias(wset,G);
 
       double sqrtdt = std::sqrt(0.01);
       auto nCV = wfn.local_number_of_cholesky_vectors();
-      SHM_Buffer Xbuff(TG.TG_local(),nCV*nwalk);
-      boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][nwalk]);
+      shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
       Time.restart();
       wfn.vbias(G,X,sqrtdt);
       TG.local_barrier();
@@ -226,10 +217,9 @@ const char *wlk_xml_block_noncol =
         app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
       }
 
-      SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO*nwalk);
       int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
       int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
-      boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[vdim1][vdim2]);
+      shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
       Time.restart();
       wfn.vHS(X,vHS,sqrtdt);
       TG.local_barrier();
@@ -278,7 +268,7 @@ const char *wlk_xml_block_noncol =
 
       if(type == COLLINEAR)
         wset2.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
       else
         wset2.resize(nwalk,initial_guess[0],
                          initial_guess[0]);
@@ -442,7 +432,7 @@ const char *wlk_xml_block_noncol =
 
     if(type == COLLINEAR)
         wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
     else
         wset.resize(nwalk,initial_guess[0],
                          initial_guess[0]);
@@ -453,8 +443,7 @@ const char *wlk_xml_block_noncol =
       REQUIRE(imag(it->overlap()) == Approx(0.0));
     }
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
+    using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
 
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
@@ -470,16 +459,14 @@ const char *wlk_xml_block_noncol =
     }
 
     auto size_of_G = wfn.size_of_G_for_vbias();
-    SHM_Buffer Gbuff(TG.TG_local(),nwalk*size_of_G);
     int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
     int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[Gdim1][Gdim2]);
+    shmCMatrix G({Gdim1,Gdim2},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.MixedDensityMatrix_for_vbias(wset,G);
 
     double sqrtdt = std::sqrt(0.01);
     auto nCV = wfn.local_number_of_cholesky_vectors();
-    SHM_Buffer Xbuff(TG.TG_local(),nCV*nwalk);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][nwalk]);
+    shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.vbias(G,X,sqrtdt);
 
     ComplexType Xsum=0;
@@ -504,21 +491,20 @@ const char *wlk_xml_block_noncol =
 
     // vbias must be reduced if false
     if(not wfn.distribution_over_cholesky_vectors()) {
-      boost::multi_array<ComplexType,2> T(extents[nCV][nwalk]);
+      boost::multi::array<ComplexType,2> T({nCV,nwalk});
       if(TGwfn.TG_local().root())
         std::copy_n(X.origin(),X.num_elements(),T.origin());
       else
         std::fill_n(T.origin(),T.num_elements(),ComplexType(0.0,0.0));
-      TGwfn.TG().all_reduce_in_place_n(T.origin(),T.num_elements(),std::plus<>());
+      TGwfn.TG().all_reduce_in_place_n(std::addressof(*T.origin()),T.num_elements(),std::plus<>());
       if(TGwfn.TG_local().root())
         std::copy_n(T.origin(),T.num_elements(),X.origin());
       TGwfn.TG_local().barrier();
     }
 
-    SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO*nwalk);
     int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[vdim1][vdim2]);
+    shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
     ComplexType Vsum=0;
@@ -564,7 +550,7 @@ const char *wlk_xml_block_noncol =
 
     if(type == COLLINEAR)
         wset2.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
     else
         wset2.resize(nwalk,initial_guess[0],
                          initial_guess[0]);
@@ -593,8 +579,7 @@ const char *wlk_xml_block_noncol =
     wfn2.MixedDensityMatrix_for_vbias(wset2,G);
 
     nCV = wfn2.local_number_of_cholesky_vectors();
-    Xbuff.resize(nCV*nwalk);
-    boost::multi_array_ref<ComplexType,2> X2(Xbuff.data(),extents[nCV][nwalk]);
+    boost::multi::array_ref<ComplexType,2> X2(std::addressof(*X.origin()),{nCV,nwalk});
     wfn2.vbias(G,X2,sqrtdt);
     Xsum=0;
     if(std::abs(file_data.Xsum)>1e-8) {
@@ -618,12 +603,12 @@ const char *wlk_xml_block_noncol =
 
     // vbias must be reduced if false
     if(not wfn.distribution_over_cholesky_vectors()) {
-      boost::multi_array<ComplexType,2> T(extents[nCV][nwalk]);
+      boost::multi::array<ComplexType,2> T({nCV,nwalk});
       if(TGwfn.TG_local().root())
         std::copy_n(X2.origin(),X2.num_elements(),T.origin());
       else
         std::fill_n(T.origin(),T.num_elements(),ComplexType(0.0,0.0));
-      TGwfn.TG().all_reduce_in_place_n(T.origin(),T.num_elements(),std::plus<>());
+      TGwfn.TG().all_reduce_in_place_n(std::addressof(*T.origin()),T.num_elements(),std::plus<>());
       if(TGwfn.TG_local().root())
         std::copy_n(T.origin(),T.num_elements(),X.origin());
       TGwfn.TG_local().barrier();
@@ -730,13 +715,12 @@ const char *wlk_xml_block =
     REQUIRE(initial_guess.shape()[1]==NMO);
     REQUIRE(initial_guess.shape()[2]==NAEA);
     wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
 
     // no guarantee that overlap is 1.0
     wfn.Overlap(wset);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
+    using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
 
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
@@ -750,16 +734,14 @@ const char *wlk_xml_block =
     }
 
     auto size_of_G = wfn.size_of_G_for_vbias();
-    SHM_Buffer Gbuff(TG.TG_local(),nwalk*size_of_G);
     int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
     int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[Gdim1][Gdim2]);
+    shmCMatrix G({Gdim1,Gdim2},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.MixedDensityMatrix_for_vbias(wset,G);
 
     double sqrtdt = std::sqrt(0.01);
     auto nCV = wfn.local_number_of_cholesky_vectors();
-    SHM_Buffer Xbuff(TG.TG_local(),nCV*nwalk);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][nwalk]);
+    shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.vbias(G,X,sqrtdt);
     ComplexType Xsum=0;
     if(std::abs(file_data.Xsum)>1e-8) {
@@ -778,10 +760,9 @@ const char *wlk_xml_block =
     }
 
 
-    SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO*nwalk);
     int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[vdim1][vdim2]);
+    shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
     ComplexType Vsum=0;
@@ -873,13 +854,12 @@ const char *wlk_xml_block =
     REQUIRE(initial_guess.shape()[1]==NMO);
     REQUIRE(initial_guess.shape()[2]==NAEA);
     wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
 
     // no guarantee that overlap is 1.0
     wfn.Overlap(wset);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
+    using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
 
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
@@ -893,16 +873,14 @@ const char *wlk_xml_block =
     }
 
     auto size_of_G = wfn.size_of_G_for_vbias();
-    SHM_Buffer Gbuff(TG.TG_local(),nwalk*size_of_G);
     int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
     int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[Gdim1][Gdim2]);
+    shmCMatrix G({Gdim1,Gdim2},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.MixedDensityMatrix_for_vbias(wset,G);
 
     double sqrtdt = std::sqrt(0.01);
     auto nCV = wfn.local_number_of_cholesky_vectors();
-    SHM_Buffer Xbuff(TG.TG_local(),nCV*nwalk);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][nwalk]);
+    shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.vbias(G,X,sqrtdt);
     ComplexType Xsum=0;
     if(std::abs(file_data.Xsum)>1e-8) {
@@ -921,10 +899,9 @@ const char *wlk_xml_block =
     }
 
 
-    SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO*nwalk);
     int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[vdim1][vdim2]);
+    shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
     ComplexType Vsum=0;
@@ -1021,7 +998,7 @@ const char *wlk_xml_block =
   </Wavefunction> \
 ";
 
-#define __compare__
+//#define __compare__
 #ifdef __compare__
     Libxml2Document doc2_;
     okay = doc2_.parseFromString(wfn_xml_block2);
@@ -1049,7 +1026,7 @@ const char *wlk_xml_block =
         //initial_guess[1][i][j] += distribution(generator);
     }
     wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
     qmcplusplus::Timer Time;
     // no guarantee that overlap is 1.0
     double t1;
@@ -1068,8 +1045,7 @@ const char *wlk_xml_block =
       REQUIRE( imag(wset[0].overlap()) == Approx(imag(wset[i].overlap())));
     }
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
+    using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
 
     Time.restart();
     wfn.Energy(wset);
@@ -1090,10 +1066,9 @@ const char *wlk_xml_block =
     t1=Time.elapsed();
     app_log()<<" NOMSD E: " <<setprecision(12) <<wset[0].energy() <<" "
              <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<" " <<t1  <<std::endl;
-      SHM_Buffer Gbuff_(TG.TG_local(),nwalk*NMO*NMO*4);
-      boost::multi_array_ref<ComplexType,2> Gph(Gbuff_.data(),extents[2*NMO*NMO][nwalk]);
-      boost::multi_array_ref<ComplexType,2> Gno(Gbuff_.data()+Gph.num_elements(),
-                                                             extents[2*NMO*NMO][nwalk]);
+     
+      shmCMatrix Gph({2*NMO*NMO,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
+      shmCMatrix Gno({2*NMO*NMO,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
       wfn.MixedDensityMatrix(wset,Gph,false,false);
       nomsd.MixedDensityMatrix(wset,Gno,false,false);
       std::cout<<" Comparing G \n";
@@ -1105,10 +1080,9 @@ const char *wlk_xml_block =
 #endif
 
     auto size_of_G = wfn.size_of_G_for_vbias();
-    SHM_Buffer Gbuff(TG.TG_local(),nwalk*size_of_G);
     int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
     int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[Gdim1][Gdim2]);
+    shmCMatrix G({Gdim1,Gdim2},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.MixedDensityMatrix_for_vbias(wset,G);
 /*
 std::cout<<" G: \n";
@@ -1121,8 +1095,7 @@ else
 */
     double sqrtdt = std::sqrt(0.01);
     auto nCV = wfn.local_number_of_cholesky_vectors();
-    SHM_Buffer Xbuff(TG.TG_local(),2*nCV*nwalk);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][nwalk]);
+    shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.vbias(G,X,sqrtdt);
     ComplexType Xsum=0;
     if(std::abs(file_data.Xsum)>1e-8) {
@@ -1151,10 +1124,9 @@ else
       }
     }
 
-    SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO*nwalk);
     int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[vdim1][vdim2]);
+    shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
     ComplexType Vsum=0;
@@ -1192,7 +1164,7 @@ else
       }
     }
 
-    boost::multi_array<ComplexType,1> vMF(extents[nCV]);
+    boost::multi::array<ComplexType,1> vMF(extensions<1u>{nCV});
     wfn.vMF(vMF);
     ComplexType vMFsum=0;
     {
@@ -1206,10 +1178,9 @@ else
     assert(nCV == nomsd.local_number_of_cholesky_vectors());
 
       auto size_of_G2 = nomsd.size_of_G_for_vbias();
-      SHM_Buffer Gbuff2(TG.TG_local(),nwalk*size_of_G2);
       int Gdim1_ = (nomsd.transposed_G_for_vbias()?nwalk:size_of_G2);
       int Gdim2_ = (nomsd.transposed_G_for_vbias()?size_of_G2:nwalk);
-      boost::multi_array_ref<ComplexType,2> G_(Gbuff2.data(),extents[Gdim1_][Gdim2_]);
+      shmCMatrix G_({Gdim1_,Gdim2_},shared_allocator<ComplexType>{TG.TG_local()});
       nomsd.MixedDensityMatrix_for_vbias(wset,G_);
 /*
       std::cout<<" Comparing G \n";
@@ -1223,7 +1194,7 @@ else
                    <<std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;
        }
 */
-      boost::multi_array_ref<ComplexType,2> X2(Xbuff.data()+nCV*nwalk,extents[nCV][nwalk]);
+      boost::multi::array_ref<ComplexType,2> X2(std::addressof(*X.origin())+nCV*nwalk,{nCV,nwalk});
       nomsd.vbias(G_,X2,sqrtdt);
       Xsum=0;
       ComplexType Xsum2(0.0);
@@ -1234,10 +1205,9 @@ else
       app_log()<<" Xsum (NOMSD): " <<setprecision(12) <<Xsum <<std::endl;
       app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
 
-    SHM_Buffer vHSbuff_(TG.TG_local(),NMO*NMO*nwalk);
     int vdim1_ = (nomsd.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2_ = (nomsd.transposed_vHS()?NMO*NMO:nwalk);
-    boost::multi_array_ref<ComplexType,2> vHS_(vHSbuff_.data(),extents[vdim1_][vdim2_]);
+    shmCMatrix vHS_({vdim1_,vdim2_},shared_allocator<ComplexType>{TG.TG_local()});
     nomsd.vHS(X2,vHS_,sqrtdt);
     TG.local_barrier();
     Vsum=0;
@@ -1264,7 +1234,7 @@ else
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
 
-    boost::multi_array<ComplexType,1> vMF2(extents[nCV]);
+    boost::multi::array<ComplexType,1> vMF2(extensions<1u>{nCV});
     nomsd.vMF(vMF2);
     vMFsum=0;
     {

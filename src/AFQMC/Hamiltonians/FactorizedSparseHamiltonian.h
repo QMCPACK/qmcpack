@@ -36,7 +36,7 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
   using csr_matrix_view = shm_csr_matrix::template matrix_view<int>;
 
 
-  FactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi_array<ComplexType,2>&& h,
+  FactorizedSparseHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi::array<ComplexType,2>&& h,
                               shm_csr_matrix&& v2_, TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
                                     TG(tg_),V2_fact(std::move(v2_)),
@@ -94,9 +94,9 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
   FactorizedSparseHamiltonian& operator=(FactorizedSparseHamiltonian const& other) = delete;
   FactorizedSparseHamiltonian& operator=(FactorizedSparseHamiltonian && other) = default;
 
-  boost::multi_array<ComplexType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
+  boost::multi::array<ComplexType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
 
-  boost::multi_array<SPComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta) {
+  boost::multi::array<SPComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta) {
     check_wavefunction_consistency(type,Alpha,Beta,NMO,NAEA,NAEB);
     return rotateHij(type,Alpha,Beta,OneBodyHamiltonian::H1);
   }
@@ -106,7 +106,7 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
   SpCType_shm_csr_matrix halfRotatedHijkl(WALKER_TYPES type, bool addCoulomb, TaskGroup_& TGHam, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, RealType const cut=1e-6);
 
   SpVType_shm_csr_matrix calculateHSPotentials(double cut, TaskGroup_& TGprop,
-        boost::multi_array<ComplexType,2>& vn0);
+        boost::multi::array<ComplexType,2>& vn0);
 
   HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type,
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,

@@ -41,8 +41,8 @@ namespace afqmc
 class KP3IndexFactorization
 {
 
-  using CVector = boost::multi_array<ComplexType,1>;
-  using SpVector = boost::multi_array<SPComplexType,1>;
+  using CVector = boost::multi::array<ComplexType,1>;
+  using SpVector = boost::multi::array<SPComplexType,1>;
   using CMatrix = boost::multi::array<ComplexType,2>;
   using CMatrix_cref = boost::multi::const_array_ref<ComplexType,2>;
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;
@@ -140,17 +140,17 @@ class KP3IndexFactorization
     KP3IndexFactorization(KP3IndexFactorization&& other) = default;
     KP3IndexFactorization& operator=(KP3IndexFactorization&& other) = default;
 
-    boost::multi_array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi_array<ComplexType,1> const& vMF) {
+    boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi::array<ComplexType,1> const& vMF) {
 
       int nkpts = nopk.size();
       int NMO = std::accumulate(nopk.begin(),nopk.end(),0);
       // in non-collinear case with SO, keep SO matrix here and add it
       // for now, stay collinear
-      boost::multi_array<ComplexType,2> P1(extents[NMO][NMO]);
+      boost::multi::array<ComplexType,2> P1({NMO,NMO});
 
       // making a copy of vMF since it will be modified
       set_shm_buffer(vMF.shape()[0]);
-      boost::multi_array_ref<ComplexType,1> vMF_(std::addressof(*SM_TMats.origin()),extents[vMF.shape()[0]]);
+      boost::multi::array_ref<ComplexType,1> vMF_(std::addressof(*SM_TMats.origin()),{vMF.shape()[0]});
 
       boost::multi::array_ref<ComplexType,1> P1D(std::addressof(*P1.origin()),{NMO*NMO});
       std::fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));
@@ -290,14 +290,14 @@ class KP3IndexFactorization
                                                       {nelpk[nd][K],nopk[K]});
           for(int a=0; a<nelpk[nd][K]; ++a)
             ma::product(ComplexType(1.),ma::T(G3Da[na+a].sliced(nk,nk+nopk[K])),haj_K[a],
-                        ComplexType(1.),E[indices[range_t()][0]]);
+                        ComplexType(1.),E(E.extension(0),0));
           na+=nelpk[nd][K];
           if(walker_type==COLLINEAR) {
             boost::multi::array_ref<ComplexType,2> haj_Kb(haj_K.origin()+haj_K.num_elements(),
                                                           {nelpk[nd][nkpts+K],nopk[K]});
             for(int b=0; b<nelpk[nd][nkpts+K]; ++b)
               ma::product(ComplexType(1.),ma::T(G3Db[nb+b].sliced(nk,nk+nopk[K])),haj_Kb[b],
-                        ComplexType(1.),E[indices[range_t()][0]]);
+                        ComplexType(1.),E(E.extension(0),0));
             nb+=nelpk[nd][nkpts+K];
           }
           nk+=nopk[K];
@@ -308,14 +308,14 @@ class KP3IndexFactorization
             CVector_ref haj_K(std::addressof(*haj[nd*nkpts+K].origin()),
                               {na*nk});
             SpMatrix_ref Gaj(std::addressof(*GKK[0][K][K].origin()),{nwalk,na*nk});
-            ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E[indices[range_t()][0]]);
+            ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E(E.extension(0),0));
           }
           if(walker_type==COLLINEAR) {
             na = nelpk[nd][nkpts+K];
             CVector_ref haj_K(std::addressof(*haj[nd*nkpts+K].origin())+nelpk[nd][K]*nk,
                               {na*nk});
             SpMatrix_ref Gaj(std::addressof(*GKK[1][K][K].origin()),{nwalk,na*nk});
-            ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E[indices[range_t()][0]]);
+            ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E(E.extension(0),0));
           }
 #endif
         }
@@ -570,14 +570,14 @@ class KP3IndexFactorization
                                                       {nelpk[nd][K],nopk[K]});
           for(int a=0; a<nelpk[nd][K]; ++a)
             ma::product(ComplexType(1.),ma::T(G3Da[na+a].sliced(nk,nk+nopk[K])),haj_K[a],
-                        ComplexType(1.),E[indices[range_t()][0]]);
+                        ComplexType(1.),E(E.extension(0),0));
           na+=nelpk[nd][K];
           if(walker_type==COLLINEAR) {
             boost::multi::array_ref<ComplexType,2> haj_Kb(haj_K.origin()+haj_K.num_elements(),
                                                           {nelpk[nd][nkpts+K],nopk[K]});
             for(int b=0; b<nelpk[nd][nkpts+K]; ++b)
               ma::product(ComplexType(1.),ma::T(G3Db[nb+b].sliced(nk,nk+nopk[K])),haj_Kb[b],
-                        ComplexType(1.),E[indices[range_t()][0]]);
+                        ComplexType(1.),E(E.extension(0),0));
             nb+=nelpk[nd][nkpts+K];
           }
           nk+=nopk[K];
@@ -588,14 +588,14 @@ class KP3IndexFactorization
             CVector_ref haj_K(std::addressof(*haj[nd*nkpts+K].origin()),
                               {na*nk});
             SpMatrix_ref Gaj(std::addressof(*GKK[0][K][K].origin()),{nwalk,na*nk});
-            ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E[indices[range_t()][0]]);
+            ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E(E.extension(0),0));
           }
           if(walker_type==COLLINEAR) {
             na = nelpk[nd][nkpts+K];
             CVector_ref haj_K(std::addressof(*haj[nd*nkpts+K].origin())+nelpk[nd][K]*nk,
                               {na*nk});
             SpMatrix_ref Gaj(std::addressof(*GKK[1][K][K].origin()),{nwalk,na*nk});
-            ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E[indices[range_t()][0]]);
+            ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E(E.extension(0),0));
           }
 #endif
         }
@@ -838,10 +838,10 @@ class KP3IndexFactorization
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
       using BType = typename std::decay<MatB>::type::element ;
       using AType = typename std::decay<MatA>::type::element ;
-      boost::multi_array_ref<BType,2> v_(std::addressof(*v.origin()),
-                                        extents[v.shape()[0]][1]);
-      boost::multi_array_ref<AType,2> X_(std::addressof(*X.origin()),
-                                        extents[X.shape()[0]][1]);
+      boost::multi::array_ref<BType,2> v_(std::addressof(*v.origin()),
+                                        {v.shape()[0],1});
+      boost::multi::array_ref<AType,2> X_(std::addressof(*X.origin()),
+                                        {X.shape()[0],1});
       return vHS(X_,v_,a,c);
     }
 
@@ -936,7 +936,7 @@ class KP3IndexFactorization
               Sp3Tensor_ref vik3D(TMats.origin(),{nwalk,ni,nk});
               SpMatrix_ref Likn(std::addressof(*LQKikn[Q][K].origin()),
                               {ni*nk,nchol});
-              ma::product(T(X[indices[range_t(nc0,nc0+nchol)][range_t()]]),
+              ma::product(T(X.sliced(nc0,nc0+nchol)),
                         T(Likn),vik);
               for(int nw=0; nw<nwalk; nw++)
                 for(int i=0; i<ni; i++)
@@ -946,7 +946,7 @@ class KP3IndexFactorization
               Sp3Tensor_ref vki3D(TMats.origin(),{nwalk,nk,ni});
               SpMatrix_ref Likn(std::addressof(*LQKikn[kminus[Q]][QK].origin()),
                               {nk*ni,nchol});
-              ma::product(T(X[indices[range_t(nc0,nc0+nchol)][range_t()]]),
+              ma::product(T(X.sliced(nc0,nc0+nchol)),
                         H(Likn),vki);
               for(int nw=0; nw<nwalk; nw++) {
                 auto&& vki_n(vki3D[nw]);
@@ -968,7 +968,7 @@ class KP3IndexFactorization
                 Sp3Tensor_ref vik3D(TMats.origin(),{nwalk,ni,nk});
                 SpMatrix_ref Likn(std::addressof(*LQKikn[Q][kpos].origin()),
                               {ni*nk,nchol});
-                ma::product(T(X[indices[range_t(nc0,nc0+nchol)][range_t()]]),
+                ma::product(T(X.sliced(nc0,nc0+nchol)),
                           T(Likn),vik);
                 for(int nw=0; nw<nwalk; nw++)
                   for(int i=0; i<ni; i++)
@@ -978,7 +978,7 @@ class KP3IndexFactorization
                 Sp3Tensor_ref vki3D(TMats.origin(),{nwalk,nk,ni});
                 SpMatrix_ref Likn(std::addressof(*LQKikn[Q][kpos].origin()),
                                 {nk*ni,nchol});
-                ma::product(T(X[indices[range_t(nc0,nc0+nchol)][range_t()]]),
+                ma::product(T(X.sliced(nc0,nc0+nchol)),
                           H(Likn),vki);
                 for(int nw=0; nw<nwalk; nw++) {
                   auto&& vki_n(vki3D[nw]);
@@ -1011,7 +1011,7 @@ class KP3IndexFactorization
             SpMatrix_ref vik(TMats.origin(),{nwalk,ni*nk});
             Sp3Tensor_ref vik3D(TMats.origin(),{nwalk,ni,nk});
             // v[nw][k(in Q(K))][i(in K)] += sum_n conj(LQK[i][k][n]) X[Q][n-][nw]
-            ma::product(T(X[indices[range_t(nc0+nchol,nc0+2*nchol)][range_t()]]),
+            ma::product(T(X.sliced(nc0+nchol,nc0+2*nchol)),
                         H(Likn),vik);
             for(int nw=0; nw<nwalk; nw++) {
               auto&& vik3D_n = vik3D[nw];
@@ -1036,10 +1036,10 @@ class KP3IndexFactorization
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
       using BType = typename std::decay<MatB>::type::element ;
       using AType = typename std::decay<MatA>::type::element ;
-      boost::multi_array_ref<BType,2> v_(std::addressof(*v.origin()),
-                                        extents[v.shape()[0]][1]);
-      boost::const_multi_array_ref<AType,2> G_(std::addressof(*G.origin()),
-                                        extents[G.shape()[0]][1]);
+      boost::multi::array_ref<BType,2> v_(std::addressof(*v.origin()),
+                                        {v.shape()[0],1});
+      boost::multi::const_array_ref<AType,2> G_(std::addressof(*G.origin()),
+                                        {G.shape()[0],1});
       return vbias(G_,v_,a,c,k);
     }
 
@@ -1125,18 +1125,18 @@ class KP3IndexFactorization
               std::lock_guard<shared_mutex> guard(*mutex[Q]);
               int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
               // v+ = 0.5*a*(v1+v2)
-              ma::axpy(halfa,vlocal.sliced(0,ncholpQ[Q]),v[indices[range_t(nc0,nc0+ncholpQ[Q])][range_t()]]);
+              ma::axpy(halfa,vlocal.sliced(0,ncholpQ[Q]),v.sliced(nc0,nc0+ncholpQ[Q]));
               // v- = -0.5*a*i*(v1-v2)
-              ma::axpy(minusimhalfa,vlocal.sliced(0,ncholpQ[Q]),v[indices[range_t(nc0+ncholpQ[Q],nc0+2*ncholpQ[Q])][range_t()]]);
+              ma::axpy(minusimhalfa,vlocal.sliced(0,ncholpQ[Q]),v.sliced(nc0+ncholpQ[Q],nc0+2*ncholpQ[Q]));
             }
             int Qm = kminus[Q];
             int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Qm,0);
             if(Q != Q0) {
               std::lock_guard<shared_mutex> guard(*mutex[Qm]);
               // v+ = 0.5*a*(v1+v2)
-              ma::axpy(halfa,vlocal.sliced(0,ncholpQ[Qm]),v[indices[range_t(nc0,nc0+ncholpQ[Qm])][range_t()]]);
+              ma::axpy(halfa,vlocal.sliced(0,ncholpQ[Qm]),v.sliced(nc0,nc0+ncholpQ[Qm]));
               // v- = -0.5*a*i*(v1-v2)
-              ma::axpy(imhalfa,vlocal.sliced(0,ncholpQ[Qm]),v[indices[range_t(nc0+ncholpQ[Qm],nc0+2*ncholpQ[Qm])][range_t()]]);
+              ma::axpy(imhalfa,vlocal.sliced(0,ncholpQ[Qm]),v.sliced(nc0+ncholpQ[Qm],nc0+2*ncholpQ[Qm]));
             }
           } // to release the lock
           if(haveV)
@@ -1174,9 +1174,9 @@ class KP3IndexFactorization
               std::lock_guard<shared_mutex> guard(*mutex[Q0]);
               int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q0,0);
               // v+ = 0.5*a*(v1+v2)
-              ma::axpy(halfa,vlocal.sliced(0,ncholpQ[Q0]),v[indices[range_t(nc0,nc0+ncholpQ[Q0])][range_t()]]);
+              ma::axpy(halfa,vlocal.sliced(0,ncholpQ[Q0]),v.sliced(nc0,nc0+ncholpQ[Q0]));
               // v- = -0.5*a*i*(v1-v2)
-              ma::axpy(imhalfa,vlocal.sliced(0,ncholpQ[Q0]),v[indices[range_t(nc0+ncholpQ[Q0],nc0+2*ncholpQ[Q0])][range_t()]]);
+              ma::axpy(imhalfa,vlocal.sliced(0,ncholpQ[Q0]),v.sliced(nc0+ncholpQ[Q0],nc0+2*ncholpQ[Q0]));
             }
           } // to release the lock
           if(haveV)

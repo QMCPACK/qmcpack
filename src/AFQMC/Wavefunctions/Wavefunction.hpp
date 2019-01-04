@@ -85,9 +85,9 @@ class dummy_wavefunction
   }
 
   template<class MultiArray1D, class task_group>
-  boost::multi_array<ComplexType,2> getOneBodyPropagatorMatrix(task_group& tg, MultiArray1D const& vMF) {
+  boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(task_group& tg, MultiArray1D const& vMF) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
-    return boost::multi_array<ComplexType,2>{};
+    return boost::multi::array<ComplexType,2>{};
   }   
 
   template<class MatG, class MatA>
@@ -121,7 +121,7 @@ class dummy_wavefunction
   }
 
   template<class WlkSet, class MatG>
-  void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, boost::multi_array<ComplexType,1>& denom, bool path_restoration=false, bool free_projection=false) {
+  void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, boost::multi::array<ComplexType,1>& denom, bool path_restoration=false, bool free_projection=false) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
   }
 
@@ -245,7 +245,7 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     }
 
     template<class... Args>
-    boost::multi_array<ComplexType,2> getOneBodyPropagatorMatrix(Args&&... args) {
+    boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(Args&&... args) {
         return boost::apply_visitor(
             [&](auto&& a){return a.getOneBodyPropagatorMatrix(std::forward<Args>(args)...);},
             *this

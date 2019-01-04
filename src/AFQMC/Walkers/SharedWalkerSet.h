@@ -27,10 +27,10 @@
 #include "AFQMC/Walkers/WalkerControl.hpp"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
-
 namespace qmcplusplus
 {
+
+// NOTE: Remove get_walkers_matrix and use walker_buffer directly. Only need to be careful about prt type.
 
 namespace afqmc
 {
@@ -48,13 +48,13 @@ class SharedWalkerSet: public AFQMCInfo
 
 //#define MA_TEST
 
-  using Wlk_Buff = boost::multi_array_ref<ComplexType,2>; 
-  using const_Wlk_Buff = boost::const_multi_array_ref<ComplexType,2>; 
+  using Wlk_Buff = boost::multi::array_ref<ComplexType,2>; 
+  using const_Wlk_Buff = boost::multi::const_array_ref<ComplexType,2>; 
 
   // wlk_descriptor: {nmo, naea, naeb, nback_prop} 
   using wlk_descriptor = std::array<int,4>;
   using wlk_indices = std::array<int,14>;
-  using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
+  using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
 
   public:
 
@@ -64,8 +64,8 @@ class SharedWalkerSet: public AFQMCInfo
   static const bool contiguous_storage = true;
   static const bool fixed_population = true;
 
-  using SMType = boost::multi_array_ref<ComplexType,2>;
-  using const_SMType = boost::multi_array_ref<const ComplexType,2>;
+  using SMType = boost::multi::array_ref<ComplexType,2>;
+  using const_SMType = boost::multi::array_ref<const ComplexType,2>;
 
   struct const_walker {
 
@@ -73,7 +73,7 @@ class SharedWalkerSet: public AFQMCInfo
     
       template<class ma>
       const_walker(ma const& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::const_multi_array_ref<ComplexType,1>(a.origin(),extents[a.size()])),indx(i_),desc(d_) 
+        w_(boost::multi::const_array_ref<ComplexType,1>(a.origin(),extensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
 	static_assert(ma::dimensionality == 1);
 	assert(w_.strides()[0]==1);
@@ -91,16 +91,16 @@ class SharedWalkerSet: public AFQMCInfo
       const_SMType SlaterMatrix(SpinTypes s) const{ 
 	if(desc[2] <= 0 && s!=Alpha)
 	  APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
-	return (s==Alpha)?(const_SMType((&w_[indx[SM]]),extents[desc[0]][desc[1]])):
-			  (const_SMType((&w_[indx[SM]])+desc[0]*desc[1],extents[desc[0]][desc[2]]));
+	return (s==Alpha)?(const_SMType((&w_[indx[SM]]),{desc[0],desc[1]})):
+			  (const_SMType((&w_[indx[SM]])+desc[0]*desc[1],{desc[0],desc[2]}));
       }
       const_SMType SlaterMatrixN(SpinTypes s) const {
         if(indx[SMN] < 0)
           APP_ABORT("error: access to uninitialized BP sector. \n");
         if(desc[2] <= 0 && s!=Alpha)
           APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
-        return (s==Alpha)?(const_SMType((&w_[indx[SMN]]),extents[desc[0]][desc[1]])):
-                          (const_SMType((&w_[indx[SMN]])+desc[0]*desc[1],extents[desc[0]][desc[2]]));
+        return (s==Alpha)?(const_SMType((&w_[indx[SMN]]),{desc[0],desc[1]})):
+                          (const_SMType((&w_[indx[SMN]])+desc[0]*desc[1],{desc[0],desc[2]}));
       }
       ComplexType weight() const { return w_[indx[WEIGHT]]; } 
       ComplexType phase() const { return w_[indx[PHASE]]; } 
@@ -120,7 +120,7 @@ class SharedWalkerSet: public AFQMCInfo
         if(ip < 0 || ip >= desc[3])
           APP_ABORT("error: Index out of bounds.\n");
         return const_SMType( &(w_[indx[PROPAGATORS] + desc[0]*desc[0]*ip]) ,
-                                                        extents[desc[0]][desc[0]]);
+                                                        {desc[0],desc[0]});
       }
       //void incrementBMatrix() const {
         //if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
@@ -168,7 +168,7 @@ class SharedWalkerSet: public AFQMCInfo
 
       int getHead() const { return static_cast<int>(w_[indx[HEAD]].real()); }
 
-      boost::const_multi_array_ref<ComplexType,1> w_;
+      boost::multi::const_array_ref<ComplexType,1> w_;
       const wlk_indices& indx;
       const wlk_descriptor& desc;	 
   };
@@ -179,7 +179,7 @@ class SharedWalkerSet: public AFQMCInfo
     
       template<class ma>
       walker(ma&& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi_array_ref<ComplexType,1>(a.origin(),extents[a.size()])),indx(i_),desc(d_) 
+        w_(boost::multi::array_ref<ComplexType,1>(a.origin(),extensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
 	static_assert(ma::dimensionality == 1);
 	assert(w_.strides()[0]==1);
@@ -197,16 +197,16 @@ class SharedWalkerSet: public AFQMCInfo
       SMType SlaterMatrix(SpinTypes s) {
         if(desc[2] <= 0 && s!=Alpha)
           APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
-        return (s==Alpha)?(SMType((&w_[indx[SM]]),extents[desc[0]][desc[1]])):
-              (SMType((&w_[indx[SM]])+desc[0]*desc[1],extents[desc[0]][desc[2]]));
+        return (s==Alpha)?(SMType((&w_[indx[SM]]),{desc[0],desc[1]})):
+              (SMType((&w_[indx[SM]])+desc[0]*desc[1],{desc[0],desc[2]}));
       }
       SMType SlaterMatrixN(SpinTypes s) {
         if(indx[SMN] < 0)
           APP_ABORT("error: access to uninitialized BP sector. \n");
         if(desc[2] <= 0 && s!=Alpha)
           APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
-        return (s==Alpha)?(SMType((&w_[indx[SMN]]),extents[desc[0]][desc[1]])):
-                          (SMType((&w_[indx[SMN]])+desc[0]*desc[1],extents[desc[0]][desc[2]]));
+        return (s==Alpha)?(SMType((&w_[indx[SMN]]),{desc[0],desc[1]})):
+                          (SMType((&w_[indx[SMN]])+desc[0]*desc[1],{desc[0],desc[2]}));
       }
       ComplexType& weight() { return w_[indx[WEIGHT]]; } 
       ComplexType& phase() { return w_[indx[PHASE]]; } 
@@ -229,7 +229,7 @@ class SharedWalkerSet: public AFQMCInfo
           APP_ABORT("error: Index out of bounds.\n");
         }
         return SMType(&(w_[indx[PROPAGATORS]+desc[0]*desc[0]*ip]),
-                      extents[desc[0]][desc[0]]);
+                      {desc[0],desc[0]});
       }
       int NumBackProp() {
         return desc[3];
@@ -263,7 +263,7 @@ class SharedWalkerSet: public AFQMCInfo
         int nbp = desc[3];
         for(int ip = 0; ip < nbp; ip++) {
           SMType B = SMType(&(w_[indx[PROPAGATORS]+desc[0]*desc[0]*ip]),
-                            extents[desc[0]][desc[0]]);
+                            {desc[0],desc[0]});
           for(int i = 0; i < desc[0]; i++) {
             for(int j = 0; j < desc[0]; j++) {
               B[i][j] = ((i==j)?ComplexType(1.0,0.0):ComplexType(0.0,0.0));
@@ -298,7 +298,7 @@ class SharedWalkerSet: public AFQMCInfo
 
       int getHead() const { return static_cast<int>(w_[indx[HEAD]].real()); }
 
-      boost::multi_array_ref<ComplexType,1> w_;
+      boost::multi::array_ref<ComplexType,1> w_;
       const wlk_indices& indx;
       const wlk_descriptor& desc;	 
       //wlk_indices indx;
@@ -383,8 +383,7 @@ class SharedWalkerSet: public AFQMCInfo
         RandomGenerator_t* r):
                 TG(tg_),AFQMCInfo(info),rng(r),
                 walker_memory_usage(0),tot_num_walkers(0),
-		walker_buffer(std::make_unique<SHM_Buffer>
-                                    (TG.TG_local(),0)),
+		walker_buffer({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 load_balance(UNDEFINED_LOAD_BALANCE),
                 pop_control(UNDEFINED_BRANCHING),min_weight(0.05),max_weight(4.0),
                 walkerType(UNDEFINED_WALKER_TYPE),nback_prop(0)
@@ -412,7 +411,7 @@ class SharedWalkerSet: public AFQMCInfo
    * Returns the maximum number of walkers in the set that can be stored without reallocation.
    */	
   int capacity() const{ 
-    return walker_buffer->size()/walker_size; 
+    return int(walker_buffer.shape()[0]); 
   } 
 
   /*
@@ -623,20 +622,22 @@ class SharedWalkerSet: public AFQMCInfo
   TimerList_t Timers;
 
   Wlk_Buff get_walkers_matrix() {
-    if(walker_buffer->size() < tot_num_walkers*walker_size)
+    assert(walker_buffer.shape()[1] == walker_size);
+    if(walker_buffer.shape()[0] < tot_num_walkers)
       APP_ABORT("error: problems with walker buffer.\n"); 
-    return Wlk_Buff(walker_buffer->data(),extents[tot_num_walkers][walker_size]);
+    return Wlk_Buff(std::addressof(*walker_buffer.origin()),{tot_num_walkers,walker_size});
   }
 
   const_Wlk_Buff const_get_walkers_matrix() const {
-    if(walker_buffer->size() < tot_num_walkers*walker_size)
+    assert(walker_buffer.shape()[1] == walker_size);
+    if(walker_buffer.shape()[0] < tot_num_walkers)
       APP_ABORT("error: problems with walker buffer.\n"); 
-    return const_Wlk_Buff(walker_buffer->data(),extents[tot_num_walkers][walker_size]);
+    return const_Wlk_Buff(std::addressof(*walker_buffer.origin()),{tot_num_walkers,walker_size});
   }
 
   afqmc::TaskGroup_& TG;  
 
-  std::unique_ptr<SHM_Buffer> walker_buffer;
+  shmCMatrix walker_buffer;
 
   // reads xml and performs setup
   void parse(xmlNodePtr cur); 

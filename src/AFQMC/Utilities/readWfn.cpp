@@ -12,7 +12,6 @@
 #include "AFQMC/Utilities/readWfn.h"
 
 #include "AFQMC/config.h"
-#include "boost/multi_array.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 
@@ -263,7 +262,7 @@ void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walke
 
     if(wfn_type == 0) {
 
-      boost::multi_array<ComplexType,2> OrbMat(extents[NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat({NMO,NAEA});
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -275,13 +274,13 @@ void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walke
                                         OrbMat,1e-8,'H',comm));
         if(walker_type==COLLINEAR)
           PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat(OrbMat.extension(0),{0,NAEB}),
                                         1e-8,'H',comm));
       }  
 
     } else if(wfn_type == 1) {
 
-      boost::multi_array<ComplexType,2> OrbMat(extents[NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat({NMO,NAEA});
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -291,16 +290,16 @@ void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walke
         }
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         OrbMat,1e-8,'H',comm));
-        if(comm.rank()==0)  read_mat(in,OrbMat[indices[range_t()][range_t(0,NAEB)]],
+        if(comm.rank()==0)  read_mat(in,OrbMat(OrbMat.extension(0),{0,NAEB}),
                 Cstyle,fullMOMat,NMO,NAEB);
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat(OrbMat.extension(0),{0,NAEB}),
                                         1e-8,'H',comm));
       }
 
     } else if(wfn_type == 2) {
 
-      boost::multi_array<ComplexType,2> OrbMat(extents[2*NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat({2*NMO,NAEA});
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -310,10 +309,10 @@ void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walke
         }
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         OrbMat,1e-8,'H',comm));
-        if(comm.rank()==0)  read_mat(in,OrbMat[indices[range_t()][range_t(0,NAEB)]],
+        if(comm.rank()==0)  read_mat(in,OrbMat(OrbMat.extension(0),{0,NAEB}),
                                         Cstyle,fullMOMat,NMO,NAEB);
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat(OrbMat.extension(0),{0,NAEB}),
                                         1e-8,'H',comm));
       }
 
@@ -404,7 +403,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
       APP_ABORT("Error: Wavefunction type mixed requires fullMOMat=true.\n");
     PsiT.reserve( (wfn_type!=1)?1:2 );
 
-    boost::multi_array<ComplexType,2> OrbMat(extents[nmo_][nmo_]);
+    boost::multi::array<ComplexType,2> OrbMat({nmo_,nmo_});
     if(comm.root()) {
       std::string tag;
       in>>tag;
@@ -547,7 +546,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
 }
 
 // modify for multideterminant case based on type
-int readWfn( std::string fileName, boost::multi_array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det)
+int readWfn( std::string fileName, boost::multi::array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det)
 {
   std::ifstream in;
   in.open(fileName.c_str());
@@ -582,20 +581,18 @@ int readWfn( std::string fileName, boost::multi_array<ComplexType,3>& OrbMat, in
 
   if (wfn_type == 0 ) {
 
-     OrbMat.resize(extents[1][NMO][NAEA]);
+     OrbMat.reextent({1,NMO,NAEA});
      read_mat(in,OrbMat[0],Cstyle,fullMOMat,NMO,NAEA);
 
   } else if(wfn_type == 1) {
 
-    OrbMat.resize(extents[2][NMO][NAEA]);
+    OrbMat.reextent({2,NMO,NAEA});
     read_mat(in,OrbMat[0],Cstyle,fullMOMat,NMO,NAEA);
     read_mat(in,OrbMat[1],Cstyle,fullMOMat,NMO,NAEB);
 
   } else if(wfn_type == 2) {
 
-    OrbMat.resize(extents[1][2*NMO][NAEA+NAEB]);
-    read_mat(in,OrbMat[0][indices[range_t()][range_t(0,NAEA)]],Cstyle,fullMOMat,2*NMO,NAEA);
-    read_mat(in,OrbMat[0][indices[range_t()][range_t(NAEA,NAEA+NAEB)]],Cstyle,fullMOMat,2*NMO,NAEB);
+    APP_ABORT(" Error: wfn_type == 2 not implemented. \n"); 
 
   } //type 
 

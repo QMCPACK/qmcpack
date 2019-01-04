@@ -68,9 +68,8 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   bool new_shm_space=false;  
 
   // 0. Allocate memory and set shared memory structures
-  if(not shmbuff || shmbuff->size() < memory_needs ) {
-    shmbuff.reset(); // destroy current SHM_Buffer in case it is large
-    shmbuff = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),memory_needs));  
+  if(shmbuff.num_elements() < memory_needs ) {
+    shmbuff.reextent(extensions<1u>{memory_needs});
     new_shm_space=true;
   }  
   /* 
@@ -80,30 +79,30 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
    */
   size_t displ=0;
   // Mixed Density Matrix for walkers at original configuration
-  CMatrix_ref G(shmbuff->data()+displ, extents[G_nr][G_nc]); 
+  CMatrix_ref G(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // Mixed Density Matrix used for computation/communication 
-  CMatrix_ref Gwork(shmbuff->data()+displ, extents[G_nr][G_nc]); 
+  CMatrix_ref Gwork(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // right hand side matrix in calculation of HS potential for all steps: ~ sigma + (vbias-vMF)
   // The same vbias is used in all steps
-  CMatrix_ref X(shmbuff->data()+displ, extents[nCV][nwalk*nsteps]); 
+  CMatrix_ref X(std::addressof(*shmbuff.origin())+displ, {nCV,nwalk*nsteps}); 
     displ+=nCV*nwalk*nsteps;
   // Store RNGs  
-  CMatrix_ref RNG(shmbuff->data()+displ, extents[nCV][nwalk*nsteps]); 
+  CMatrix_ref RNG(std::addressof(*shmbuff.origin())+displ, {nCV,nwalk*nsteps}); 
     displ+=nCV*nwalk*nsteps;
   // vias potential for walkers at original configuration
-  CMatrix_ref vbias(shmbuff->data()+displ, extents[nCV][nwalk]); 
+  CMatrix_ref vbias(std::addressof(*shmbuff.origin())+displ, {nCV,nwalk}); 
     displ+=nCV*nwalk;
   // HS potential for all steps.
-  CMatrix_ref vHS(shmbuff->data()+displ, extents[vhs_nr][vhs_nc]); 
+  CMatrix_ref vHS(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
     displ+=vhs_nr*vhs_nc;
   // HS potential for computation/communication 
-  CMatrix_ref vHSwork(shmbuff->data()+displ, extents[vhs_nr][vhs_nc]); 
+  CMatrix_ref vHSwork(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
     displ+=vhs_nr*vhs_nc;
   // second view of vHS matrix for use in propagation step
-  boost::multi_array_ref<ComplexType,3> vHS3D(vHS.origin(), 
-                                              extents[vhs3d_n1][vhs3d_n2][vhs3d_n3]); 
+  boost::multi::array_ref<ComplexType,3> vHS3D(vHS.origin(), 
+                                              {vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
 
   // partition G and v for communications: all cores communicate a piece of the matrix
   int vak0,vakN;
@@ -117,20 +116,20 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
 
   // local matrices for temporary accumulation
   if(MFfactor.shape()[1] != nsteps || MFfactor.shape()[2] != nwalk)
-    MFfactor.resize(extents[2][nsteps][nwalk]);
+    MFfactor.reextent({2,nsteps,nwalk});
   if(hybrid_weight.shape()[1] != nsteps || hybrid_weight.shape()[2] != nwalk)
-    hybrid_weight.resize(extents[2][nsteps][nwalk]);
+    hybrid_weight.reextent({2,nsteps,nwalk});
 
-  if(new_overlaps.shape()[0] != nwalk) new_overlaps.resize(extents[nwalk]);
+  if(new_overlaps.shape()[0] != nwalk) new_overlaps.reextent(extensions<1u>{nwalk});
   if(new_energies.shape()[0] != nwalk || new_energies.shape()[1] != 3) 
-    new_energies.resize(extents[nwalk][3]);
+    new_energies.reextent({nwalk,3});
   if(not transposed_vHS_) {  
     if(walker_type==NONCOLLINEAR)
       if(local_vHS.shape()[0] != 2*NMO || local_vHS.shape()[1] != 2*NMO)
-        local_vHS.resize(extents[2*NMO][2*NMO]);
+        local_vHS.reextent({2*NMO,2*NMO});
     else
       if(local_vHS.shape()[0] != NMO || local_vHS.shape()[1] != NMO)
-        local_vHS.resize(extents[NMO][NMO]);
+        local_vHS.reextent({NMO,NMO});
   }
 
   // if timestep changed, recalculate one body propagator
@@ -187,8 +186,8 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     AFQMCTimers[vHS_comm_overhead_timer]->stop();
 
     // 4b. Assemble X(nCV,nsteps,nwalk)
-    CMatrix_ref mf_(MFfactor[1].origin(), extents[nsteps][nwalk]);
-    CMatrix_ref hw_(hybrid_weight[1].origin(), extents[nsteps][nwalk]);
+    CMatrix_ref mf_(MFfactor[1].origin(), {nsteps,nwalk});
+    CMatrix_ref hw_(hybrid_weight[1].origin(), {nsteps,nwalk});
     assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_,false);
     if(k == node_number) {
       TG.TG_local().all_reduce_n(MFfactor[1].origin(),MFfactor[1].num_elements(),

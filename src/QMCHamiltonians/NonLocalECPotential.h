@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/ForceBase.h"
+#include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
 {
@@ -111,8 +112,14 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   int myTableIndex;
   ///reference to the electrons
   ParticleSet& Peln;
+  ///neighborlist of electrons
+  NeighborLists ElecNeighborIons;
+  ///neighborlist of ions
+  NeighborLists IonNeighborElecs;
   ///use T-moves
   int UseTMove;
+  ///ture if an electron is affected by other electrons moved by T-moves
+  std::vector<bool> elecTMAffected;
   ///non local operator
   NonLocalTOperator nonLocalOps;
   ///true if we should compute forces
@@ -139,6 +146,12 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
    * @param ref_elec reference electron id
    */
   void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
+
+  /** mark all the electrons affected by Tmoves
+   * @param myTable electron ion distance table
+   * @param iel reference electron
+   */
+  void markAffectedElecs(const DistanceTableData* myTable, int iel);
 
 };
 }

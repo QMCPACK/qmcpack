@@ -60,11 +60,11 @@ class SparseTensor
                                 boost::mpi3::intranode::allocator<SPValueType>,
                                 ma::sparse::is_root>;
   using Vshm_csr_matrix_view = typename Vshm_csr_matrix::template matrix_view<int>;
-  using CVector = boost::multi_array<ComplexType,1>;
-  using CMatrix = boost::multi_array<ComplexType,2>;
-  using T1Vector = boost::multi_array<T1,1>;
-  using T1Matrix = boost::multi_array<T1,2>;
-  using SpVector = boost::multi_array<SPComplexType,1>;
+  using CVector = boost::multi::array<ComplexType,1>;
+  using CMatrix = boost::multi::array<ComplexType,2>;
+  using T1Vector = boost::multi::array<T1,1>;
+  using T1Matrix = boost::multi::array<T1,2>;
+  using SpVector = boost::multi::array<SPComplexType,1>;
   using this_t = SparseTensor<T1,T2>;
 
   public:
@@ -138,10 +138,10 @@ std::cout<<"\n";
       int NMO = hij.shape()[0];
       // in non-collinear case with SO, keep SO matrix here and add it
       // for now, stay collinear
-      CMatrix H1(extents[NMO][NMO]);
+      CMatrix H1({NMO,NMO});
 
       // add sum_n vMF*Spvn, vMF has local contribution only!
-      boost::multi_array_ref<ComplexType,1> H1D(H1.origin(),extents[NMO*NMO]);
+      boost::multi::array_ref<ComplexType,1> H1D(H1.origin(),{NMO*NMO});
       std::fill_n(H1D.origin(),H1D.num_elements(),ComplexType(0));
       vHS(vMF, H1D);
       TG.TG().all_reduce_in_place_n(H1D.origin(),H1D.num_elements(),std::plus<>());
@@ -184,9 +184,9 @@ std::cout<<"\n";
       assert(k >= 0 && k < haj.size());
       assert(k >= 0 && k < Vakbl_view.size());
       if(Gcloc.num_elements() < Gc.shape()[1] * Vakbl_view[k].shape()[0])
-        Gcloc.resize(extents[Vakbl_view[k].shape()[0]*Gc.shape()[1]]);
-      boost::multi_array_ref<SPComplexType,2> buff(Gcloc.data(),
-                        extents[Vakbl_view[k].shape()[0]][Gc.shape()[1]]);
+        Gcloc.reextent(extensions<1u>{Vakbl_view[k].shape()[0]*Gc.shape()[1]});
+      boost::multi::array_ref<SPComplexType,2> buff(Gcloc.data(),
+                        {Vakbl_view[k].shape()[0],Gc.shape()[1]});
 
       int nwalk = Gc.shape()[1];
       int getKr = Kr!=nullptr;
@@ -204,8 +204,8 @@ std::cout<<"\n";
 
       // one-body contribution
       if(addH1) {
-        boost::const_multi_array_ref<ComplexType,1> haj_ref(haj[k].origin(), extents[haj[k].num_elements()]);
-        ma::product(ComplexType(1.),ma::T(Gc),haj_ref,ComplexType(1.),E[indices[range_t()][0]]);
+        boost::multi::const_array_ref<ComplexType,1> haj_ref(std::addressof(*haj[k].origin()), extensions<1u>{haj[k].num_elements()});
+        ma::product(ComplexType(1.),ma::T(Gc),haj_ref,ComplexType(1.),E(E.extension(0),0));
         for(int i=0; i<nwalk; i++)
           E[i][0] += E0;
       }
@@ -218,17 +218,17 @@ std::cout<<"\n";
       if(separateEJ && addEJ) {
         using ma::T;
         if(Gcloc.num_elements() < SpvnT[k].shape()[0] * Gc.shape()[1])
-          Gcloc.resize(extents[SpvnT[k].shape()[0]*Gc.shape()[1]]);
+          Gcloc.reextent(extensions<1u>{SpvnT[k].shape()[0]*Gc.shape()[1]});
         assert(SpvnT_view[k].shape()[1] == Gc.shape()[0]);
         RealType scl = (walker_type==CLOSED?4.0:1.0);
         // SpvnT*G
-        boost::multi_array_ref<T2,2> v_(Gcloc.origin()+
+        boost::multi::array_ref<T2,2> v_(Gcloc.origin()+
                                             SpvnT_view[k].local_origin()[0]*Gc.shape()[1],
-                                        extents[SpvnT_view[k].shape()[0]][Gc.shape()[1]]);
+                                        {SpvnT_view[k].shape()[0],Gc.shape()[1]});
         ma::product(SpvnT_view[k], Gc, v_);
         if(getKl || getKr) {
           for(int wi=0; wi<Gc.shape()[1]; wi++) {
-            auto _v_ = v_[indices[range_t()][wi]];
+            auto _v_ = v_(v_.extension(0),wi); 
             if(getKl) {
               auto Kli = (*Kl)[wi];
               for(int ki=0, qi = SpvnT_view[k].local_origin()[0]; ki<_v_.size(); ki++, qi++)
@@ -242,7 +242,7 @@ std::cout<<"\n";
           }
         }
         for(int wi=0; wi<Gc.shape()[1]; wi++)
-          E[wi][2] = 0.5*scl*ma::dot(v_[indices[range_t()][wi]],v_[indices[range_t()][wi]]);
+          E[wi][2] = 0.5*scl*ma::dot(v_(v_.extension(0),wi),v_(v_.extension(0),wi));
       }
 
     }
@@ -264,8 +264,8 @@ std::cout<<"\n";
       using Type = typename std::decay<MatB>::type::element;
 
       // Spvn*X
-      boost::multi_array_ref<Type,1> v_(v.origin() + Spvn_view.local_origin()[0],
-                                        extents[Spvn_view.shape()[0]]);
+      boost::multi::array_ref<Type,1> v_(std::addressof(*v.origin()) + Spvn_view.local_origin()[0],
+                                        extensions<1u>{Spvn_view.shape()[0]});
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
     }
 
@@ -280,8 +280,8 @@ std::cout<<"\n";
       using Type = typename std::decay<MatB>::type::element;
 
       // Spvn*X
-      boost::multi_array_ref<Type,2> v_(v[Spvn_view.local_origin()[0]].origin(),
-                                        extents[Spvn_view.shape()[0]][v.shape()[1]]);
+      boost::multi::array_ref<Type,2> v_(std::addressof(*v[Spvn_view.local_origin()[0]].origin()),
+                                        {Spvn_view.shape()[0],v.shape()[1]});
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
     }
 
@@ -297,8 +297,8 @@ std::cout<<"\n";
       using Type = typename std::decay<MatB>::type::element ;
 
       // SpvnT*G
-      boost::multi_array_ref<Type,1> v_(v.origin() + SpvnT_view[k].local_origin()[0],
-                                        extents[SpvnT_view[k].shape()[0]]);
+      boost::multi::array_ref<Type,1> v_(std::addressof(*v.origin()) + SpvnT_view[k].local_origin()[0],
+                                        extensions<1u>{SpvnT_view[k].shape()[0]});
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
     }
@@ -315,8 +315,8 @@ std::cout<<"\n";
       using Type = typename std::decay<MatB>::type::element ;
 
       // SpvnT*G
-      boost::multi_array_ref<Type,2> v_(v[SpvnT_view[k].local_origin()[0]].origin(),
-                                        extents[SpvnT_view[k].shape()[0]][v.shape()[1]]);
+      boost::multi::array_ref<Type,2> v_(std::addressof(*v[SpvnT_view[k].local_origin()[0]].origin()),
+                                        {SpvnT_view[k].shape()[0],v.shape()[1]});
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
     }

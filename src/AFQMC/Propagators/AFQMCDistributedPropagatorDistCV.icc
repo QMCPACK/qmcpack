@@ -68,37 +68,36 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   bool new_shm_space=false;  
 
   // 0. Allocate memory and set shared memory structures
-  if(not shmbuff || shmbuff->size() < memory_needs ) {
-    shmbuff.reset(); // destroy current SHM_Buffer in case it is large
-    shmbuff = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),memory_needs));  
+  if(shmbuff.num_elements() < memory_needs ) {
+    shmbuff.reextent(extensions<1u>{memory_needs});
     new_shm_space=true;
   }  
   size_t displ=0;
   // Mixed Density Matrix for walkers at original configuration
-  CMatrix_ref Gwork(shmbuff->data()+displ, extents[G_nr][G_nc]); 
+  CMatrix_ref Gwork(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // Mixed Density Matrix used for communication 
-  CMatrix_ref Grecv(shmbuff->data()+displ, extents[G_nr][G_nc]); 
+  CMatrix_ref Grecv(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // vias potential for walkers at original configuration
-  CMatrix_ref vbias(shmbuff->data()+displ, extents[localnCV][nwalk]); 
+  CMatrix_ref vbias(std::addressof(*shmbuff.origin())+displ, {localnCV,nwalk}); 
     displ+=localnCV*nwalk;
   // right hand side matrix in calculation of HS potential for all steps: ~ sigma + (vbias-vMF)
   // The same vbias is used in all steps
-  CMatrix_ref X(shmbuff->data()+displ, extents[localnCV][nwalk*nsteps]); 
+  CMatrix_ref X(std::addressof(*shmbuff.origin())+displ, {localnCV,nwalk*nsteps}); 
     displ+=localnCV*nwalk*nsteps;
   // HS potential for all steps.
-  CMatrix_ref vHS(shmbuff->data()+displ, extents[vhs_nr][vhs_nc]); 
+  CMatrix_ref vHS(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
     displ+=vhs_nr*vhs_nc;
   // HS potential for communication 
-  CMatrix_ref vsend(shmbuff->data()+displ, extents[vhs_nr][vhs_nc]); 
+  CMatrix_ref vsend(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
     displ+=vhs_nr*vhs_nc;
   // HS potential for communication
-  CMatrix_ref vrecv(shmbuff->data()+displ, extents[vhs_nr][vhs_nc]); 
+  CMatrix_ref vrecv(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
   // second view of vHS matrix for use in propagation step
   // notice that the final vHS matrix will be in vrecv, received in the last step
-  boost::multi_array_ref<ComplexType,3> vHS3D(shmbuff->data()+displ, 
-                                              extents[vhs3d_n1][vhs3d_n2][vhs3d_n3]); 
+  boost::multi::array_ref<ComplexType,3> vHS3D(std::addressof(*shmbuff.origin())+displ, 
+                                              {vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
 
   // partition G and v for communications: all cores communicate a piece of the matrix
   int vak0,vakN;
@@ -127,19 +126,19 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
   // local matrices for temporary accumulation
   if(MFfactor.shape()[0] != nnodes*nsteps || MFfactor.shape()[1] != nwalk)
-    MFfactor.resize(extents[nnodes*nsteps][nwalk]);
+    MFfactor.reextent({nnodes*nsteps,nwalk});
   if(hybrid_weight.shape()[0] != nnodes*nsteps || hybrid_weight.shape()[1] != nwalk)
-    hybrid_weight.resize(extents[nnodes*nsteps][nwalk]);
-  if(new_overlaps.shape()[0] != nwalk) new_overlaps.resize(extents[nwalk]);
+    hybrid_weight.reextent({nnodes*nsteps,nwalk});
+  if(new_overlaps.shape()[0] != nwalk) new_overlaps.reextent(extensions<1u>{nwalk});
   if(new_energies.shape()[0] != nwalk || new_energies.shape()[1] != 3) 
-    new_energies.resize(extents[nwalk][3]);
+    new_energies.reextent({nwalk,3});
   if(not transposed_vHS_) {  
     if(walker_type==NONCOLLINEAR)
       if(local_vHS.shape()[0] != 2*NMO || local_vHS.shape()[1] != 2*NMO)
-        local_vHS.resize(extents[2*NMO][2*NMO]);
+        local_vHS.reextent({2*NMO,2*NMO});
     else
       if(local_vHS.shape()[0] != NMO || local_vHS.shape()[1] != NMO)
-        local_vHS.resize(extents[NMO][NMO]);
+        local_vHS.reextent({NMO,NMO});
   }
 
   // if timestep changed, recalculate one body propagator
@@ -184,8 +183,8 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
     // 4b. Assemble X(nCV,nsteps,nwalk)
     int q = (node_number+k)%nnodes;
-    CMatrix_ref mf_(MFfactor[q*nsteps].origin(), extents[nsteps][nwalk]);
-    CMatrix_ref hw_(hybrid_weight[q*nsteps].origin(), extents[nsteps][nwalk]);
+    CMatrix_ref mf_(MFfactor[q*nsteps].origin(), {nsteps,nwalk});
+    CMatrix_ref hw_(hybrid_weight[q*nsteps].origin(), {nsteps,nwalk});
     assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_);
 
     // 4c. Calculate vHS(M*M,nsteps,nwalk)

@@ -28,7 +28,6 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 #include "AFQMC/Matrix/array_of_sequences.hpp"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
@@ -62,13 +61,13 @@ namespace afqmc
 class PHMSD: public AFQMCInfo
 {
 
-  using CVector = boost::multi_array<ComplexType,1>;  
-  using CMatrix = boost::multi_array<ComplexType,2>;  
-  using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
+  using CVector = boost::multi::array<ComplexType,1>;  
+  using CMatrix = boost::multi::array<ComplexType,2>;  
   using shared_mutex = boost::mpi3::shm::mutex;  
   using shared_CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
   using shared_C3Tensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
   using shared_C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
+  using shmCVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;
   using index_aos = ma::sparse::array_of_sequences<int,int,
                                                    boost::mpi3::intranode::allocator<int>,
                                                    boost::mpi3::intranode::is_root>;
@@ -111,12 +110,12 @@ class PHMSD: public AFQMCInfo
                 QQ0inv1({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
                 GA2D0_shm({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
                 GB2D0_shm({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
-                local_ov(extents[2][maxn_unique_confg]),
-                local_etot(extents[2][maxn_unique_confg]),
+                local_ov({2,maxn_unique_confg}),
+                local_etot({2,maxn_unique_confg}),
                 local_QQ0inv0({OrbMats[0].shape()[0],NAEA}),
                 local_QQ0inv1({OrbMats.back().shape()[0],NAEB}),
-                Qwork(extents[max_exct_n][max_exct_n]),
-                Gwork(extents[NAEA][maxnactive]),
+                Qwork({max_exct_n,max_exct_n}),
+                Gwork({NAEA,maxnactive}),
                 Ovmsd({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 Emsd({1,1,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
                 QQ0A({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
@@ -231,18 +230,18 @@ class PHMSD: public AFQMCInfo
       if(transposed_G_for_vbias_) {
         assert( G.shape()[0] == v.shape()[1] );
         assert( G.shape()[1] == size_of_G_for_vbias() );
-        HamOp.vbias(G[indices[range_t()][range_t(0,OrbMats[0].shape()[0]*NMO)]],
+        HamOp.vbias(G(G.extension(0),{0,long(OrbMats[0].shape()[0]*NMO)}),
                     std::forward<MatA>(v),scl*a,0.0);
         if(walker_type==COLLINEAR) 
-          HamOp.vbias(G[indices[range_t()][range_t(OrbMats[0].shape()[0]*NMO,G.shape()[1])]],
+          HamOp.vbias(G(G.extension(0),{long(OrbMats[0].shape()[0]*NMO),G.shape()[1]}),
                       std::forward<MatA>(v),scl*a,1.0);
       } else {  
         assert( G.shape()[0] == size_of_G_for_vbias() );
         assert( G.shape()[1] == v.shape()[1] );
-        HamOp.vbias(G[indices[range_t(0,OrbMats[0].shape()[0]*NMO)][range_t()]],
+        HamOp.vbias(G.sliced(0,OrbMats[0].shape()[0]*NMO),
                     std::forward<MatA>(v),scl*a,0.0);
         if(walker_type==COLLINEAR) 
-          HamOp.vbias(G[indices[range_t(OrbMats[0].shape()[0]*NMO,G.shape()[0])][range_t()]],
+          HamOp.vbias(G.sliced(OrbMats[0].shape()[0]*NMO,G.shape()[0]),
                       std::forward<MatA>(v),scl*a,1.0);
       }  
       TG.local_barrier();    
@@ -272,9 +271,9 @@ class PHMSD: public AFQMCInfo
     void Energy(WlkSet& wset) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);
+        ovlp.reextent(extensions<1u>{nw});
       if(eloc.shape()[0] != nw || eloc.shape()[1] != 3)
-        eloc.resize(extents[nw][3]);
+        eloc.reextent({nw,3});
       Energy(wset,eloc,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {
@@ -313,7 +312,7 @@ class PHMSD: public AFQMCInfo
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);
+        ovlp.reextent(extensions<1u>{nw});
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact,transpose);
     }
 
@@ -332,7 +331,7 @@ class PHMSD: public AFQMCInfo
     void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);	
+        ovlp.reextent(extensions<1u>{nw});	
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact_G_for_vbias,transposed_G_for_vbias_);
     }
 
@@ -350,7 +349,7 @@ class PHMSD: public AFQMCInfo
     {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.resize(extents[nw]);
+        ovlp.reextent(extensions<1u>{nw});
       Overlap(wset,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {
@@ -400,7 +399,7 @@ class PHMSD: public AFQMCInfo
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<PsiT_Matrix> OrbMats;
 
-    std::unique_ptr<SHM_Buffer> shmbuff_for_E;
+    std::unique_ptr<shmCVector> shmbuff_for_E;
 
     std::unique_ptr<shared_mutex> mutex;
 
@@ -423,7 +422,7 @@ class PHMSD: public AFQMCInfo
     // shared_communicator for parallel work within TG_local()
     //std::unique_ptr<shared_communicator> local_group_comm; 
     shared_communicator local_group_comm; 
-    std::unique_ptr<SHM_Buffer> shmbuff_for_G;
+    std::unique_ptr<shmCVector> shmbuff_for_G;
 
     // shared memory arrays for temporary calculations
     bool fast_ph_energy;
@@ -437,15 +436,15 @@ class PHMSD: public AFQMCInfo
     shared_CMatrix QQ0inv1;  // Q * inv(Q0) 
     shared_CMatrix GA2D0_shm;  
     shared_CMatrix GB2D0_shm; 
-    boost::multi_array<ComplexType,2> local_ov;
-    boost::multi_array<ComplexType,2> local_etot;
+    boost::multi::array<ComplexType,2> local_ov;
+    boost::multi::array<ComplexType,2> local_etot;
     boost::multi::array<ComplexType,2> local_QQ0inv0;
     boost::multi::array<ComplexType,2> local_QQ0inv1;
-    boost::multi_array<ComplexType,2> Qwork;     
-    boost::multi_array<ComplexType,2> Gwork; 
+    boost::multi::array<ComplexType,2> Qwork;     
+    boost::multi::array<ComplexType,2> Gwork; 
     // used by Energy_shared 
-    boost::multi_array<ComplexType,1> wgt; 
-    boost::multi_array<ComplexType,1> opSpinEJ; 
+    boost::multi::array<ComplexType,1> wgt; 
+    boost::multi::array<ComplexType,1> opSpinEJ; 
     shared_C3Tensor Ovmsd;   // [nspins][maxn_unique_confg][nwalk]
     shared_C4Tensor Emsd;    // [nspins][maxn_unique_confg][nwalk][3]
     shared_C3Tensor QQ0A;    // [nwalk][NAOA][NAEA]
@@ -462,7 +461,7 @@ class PHMSD: public AFQMCInfo
     // excited states
     bool excitedState;
     std::vector<std::pair<int,int>> excitations;
-    boost::multi_array<ComplexType,3> excitedOrbMat; 
+    boost::multi::array<ComplexType,3> excitedOrbMat; 
     CMatrix extendedMatAlpha;
     CMatrix extendedMatBeta;
     std::pair<int,int> maxOccupExtendedMat;

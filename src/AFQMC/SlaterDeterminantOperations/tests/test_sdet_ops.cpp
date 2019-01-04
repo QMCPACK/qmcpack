@@ -31,7 +31,9 @@
 #include "mpi3/shared_communicator.hpp"
 #include "mpi3/environment.hpp"
 
-#include "boost/multi_array.hpp"
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
+
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/mixed_density_matrix.hpp"
@@ -40,10 +42,6 @@ using std::string;
 using std::complex;
 using std::cout;
 using std::endl;
-
-using boost::extents;
-using boost::indices;
-using range_t = boost::multi_array_types::index_range;
 
 namespace qmcplusplus
 {
@@ -82,8 +80,8 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 
   using Type = double;
   using vector = std::vector<Type>;
-  using multi_array = boost::multi_array<Type,2>;
-  using multi_array_ref = boost::multi_array_ref<Type,2>;
+  using array = boost::multi::array<Type,2>;
+  using array_ref = boost::multi::array_ref<Type,2>;
 
   const Type ov = 5.10443199999999;
   const Type ov2 = -11.0204000000000;
@@ -106,8 +104,8 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
    1.10000,   0.30000,   0.90000
   };
 
-  multi_array A(extents[NEL][NMO]);
-  multi_array B(extents[NMO][NEL]);
+  array A({NEL,NMO});
+  array B({NMO,NEL});
 
   for(int i=0, k=0; i<A.shape()[0]; i++)
     for(int j=0; j<A.shape()[1]; j++,k++)
@@ -117,8 +115,8 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
     for(int j=0; j<B.shape()[1]; j++,k++)
        B[i][j] = m_b[k];
 
-  multi_array_ref Aref(m_a.data(),extents[NEL][NMO]);
-  multi_array_ref Bref(m_b.data(),extents[NMO][NEL]);
+  array_ref Aref(m_a.data(),{NEL,NMO});
+  array_ref Bref(m_b.data(),{NMO,NEL});
 
   SlaterDetOperations<Type> SDet(NMO,NEL);
 
@@ -129,15 +127,15 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
   REQUIRE(SDet.Overlap(Aref,Bref) == Approx(ov));
 
   // Test array_view
-  REQUIRE(SDet.Overlap(A[indices[range_t()][range_t()]],B) == Approx(ov));
-  REQUIRE(SDet.Overlap(A,B[indices[range_t()][range_t()]]) == Approx(ov));
+  REQUIRE(SDet.Overlap(A(A.extension(0),A.extension(1)),B) == Approx(ov));
+  REQUIRE(SDet.Overlap(A,B(B.extension(0),B.extension(1))) == Approx(ov));
 
-  multi_array A_ = A[indices[range_t(0,2)][range_t(0,3)]];
-  multi_array B_ = B[indices[range_t(0,3)][range_t(0,2)]];
-  REQUIRE(SDet.Overlap(A[indices[range_t(0,2)][range_t(0,3)]],
-                       B[indices[range_t(0,3)][range_t(0,2)]]) == Approx(ov2));
-  REQUIRE(SDet.Overlap(A[indices[range_t(0,2)][range_t(0,3)]],B_) == Approx(ov2));
-  REQUIRE(SDet.Overlap(A_,B[indices[range_t(0,3)][range_t(0,2)]]) == Approx(ov2));
+  array A_ = A({0,2},{0,3});
+  array B_ = B({0,3},{0,2});
+  REQUIRE(SDet.Overlap(A({0,2},{0,3}),
+                       B({0,3},{0,2})) == Approx(ov2));
+  REQUIRE(SDet.Overlap(A({0,2},{0,3}),B_) == Approx(ov2));
+  REQUIRE(SDet.Overlap(A_,B({0,3},{0,2})) == Approx(ov2));
 
 
   /**** Density Matrices *****/
@@ -162,51 +160,51 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
    0.499074443758847,   0.581285615767123,  -0.486915175492723
   };
 
-  multi_array_ref g_ref(v_ref.data(),extents[NMO][NMO]);
-  multi_array_ref gc_ref(vc_ref.data(),extents[NEL][NMO]);
-  multi_array_ref g_ref_2(v_ref_2.data(),extents[3][3]);
-  multi_array_ref gc_ref_2(vc_ref_2.data(),extents[2][3]);
+  array_ref g_ref(v_ref.data(),{NMO,NMO});
+  array_ref gc_ref(vc_ref.data(),{NEL,NMO});
+  array_ref g_ref_2(v_ref_2.data(),{3,3});
+  array_ref gc_ref_2(vc_ref_2.data(),{2,3});
 
-  multi_array G(extents[NMO][NMO]);
-  multi_array Gc(extents[NEL][NMO]);
+  array G({NMO,NMO});
+  array Gc({NEL,NMO});
 
   SDet.MixedDensityMatrix(A,B,G,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Aref,B,G,false); check(G,g_ref);
   SDet.MixedDensityMatrix(A,Bref,G,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Aref,Bref,G,false); check(G,g_ref);
 
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G[indices[range_t(0,3)][range_t(0,3)]],false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          G({0,3},{0,3}),false);
+  check(G({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(A_,
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G[indices[range_t(0,3)][range_t(0,3)]],false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
+                          B({0,3},{0,2}),
+                          G({0,3},{0,3}),false);
+  check(G({0,3},{0,3}),g_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          G[indices[range_t(0,3)][range_t(0,3)]],false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+                          G({0,3},{0,3}),false);
+  check(G({0,3},{0,3}),g_ref_2);
 
   SDet.MixedDensityMatrix(A,B,Gc,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(Aref,B,Gc,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(A,Bref,Gc,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(Aref,Bref,Gc,true); check(Gc,gc_ref);
 
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          Gc({0,2},{0,3}),true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
   SDet.MixedDensityMatrix(A_,
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
+                          B({0,3},{0,2}),
+                          Gc({0,2},{0,3}),true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+                          Gc({0,2},{0,3}),true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
 
-  multi_array Q=B;
+  array Q=B;
 
   // Orthogonalize
   Type detR = SDet.Orthogonalize(Q);
@@ -228,8 +226,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 
   using Type = double;
   using vector = std::vector<Type>;
-  using multi_array = boost::multi_array<Type,2>;
-  using multi_array_ref = boost::multi_array_ref<Type,2>;
+  using array = boost::multi::array<Type,2>;
+  using array_ref = boost::multi::array_ref<Type,2>;
 
   const Type ov = 5.10443199999999;
   const Type ov2 = -11.0204000000000;
@@ -251,8 +249,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
    1.10000,   0.30000,   0.90000
   };
 
-  multi_array A(extents[NEL][NMO]);
-  multi_array B(extents[NMO][NEL]);
+  array A({NEL,NMO});
+  array B({NMO,NEL});
 
   for(int i=0, k=0; i<A.shape()[0]; i++)
     for(int j=0; j<A.shape()[1]; j++,k++)
@@ -262,8 +260,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
     for(int j=0; j<B.shape()[1]; j++,k++)
        B[i][j] = m_b[k];
 
-  multi_array_ref Aref(m_a.data(),extents[NEL][NMO]);
-  multi_array_ref Bref(m_b.data(),extents[NMO][NEL]);
+  array_ref Aref(m_a.data(),{NEL,NMO});
+  array_ref Bref(m_b.data(),{NMO,NEL});
 
   SlaterDetOperations<Type> SDet(NMO,NEL);
 
@@ -274,20 +272,20 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   REQUIRE(SDet.Overlap(Aref,Bref,node) == Approx(ov));
 
   // Test array_view
-  REQUIRE(SDet.Overlap(A[indices[range_t()][range_t()]],B,node) == Approx(ov));
-  REQUIRE(SDet.Overlap(A,B[indices[range_t()][range_t()]],node) == Approx(ov));
+  REQUIRE(SDet.Overlap(A(A.extension(0),A.extension(1)),B,node) == Approx(ov));
+  REQUIRE(SDet.Overlap(A,B(B.extension(0),B.extension(1)),node) == Approx(ov));
 
-  multi_array A_ = A[indices[range_t(0,2)][range_t(0,3)]];
-  multi_array B_ = B[indices[range_t(0,3)][range_t(0,2)]];
-  REQUIRE(SDet.Overlap(A[indices[range_t(0,2)][range_t(0,3)]],
-                       B[indices[range_t(0,3)][range_t(0,2)]],node) == Approx(ov2));
-  REQUIRE(SDet.Overlap(A[indices[range_t(0,2)][range_t(0,3)]],B_) == Approx(ov2));
-  REQUIRE(SDet.Overlap(A_,B[indices[range_t(0,3)][range_t(0,2)]],node) == Approx(ov2));
+  array A_ = A({0,2},{0,3});
+  array B_ = B({0,3},{0,2});
+  REQUIRE(SDet.Overlap(A({0,2},{0,3}),
+                       B({0,3},{0,2}),node) == Approx(ov2));
+  REQUIRE(SDet.Overlap(A({0,2},{0,3}),B_) == Approx(ov2));
+  REQUIRE(SDet.Overlap(A_,B({0,3},{0,2}),node) == Approx(ov2));
 
-  shared_communicator node_ = node.split(node.rank()%2);
+  shared_communicator node_ = node.split(node.rank()%2,node.rank());
   REQUIRE(SDet.Overlap(A,B,node_) == Approx(ov));
-  REQUIRE(SDet.Overlap(A[indices[range_t(0,2)][range_t(0,3)]],
-                       B[indices[range_t(0,3)][range_t(0,2)]],node_) == Approx(ov2));
+  REQUIRE(SDet.Overlap(A({0,2},{0,3}),
+                       B({0,3},{0,2}),node_) == Approx(ov2));
 
 
   /**** Density Matrices *****/
@@ -312,69 +310,70 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
    0.499074443758847,   0.581285615767123,  -0.486915175492723
   };
 
-  multi_array_ref g_ref(v_ref.data(),extents[NMO][NMO]);
-  multi_array_ref gc_ref(vc_ref.data(),extents[NEL][NMO]);
-  multi_array_ref g_ref_2(v_ref_2.data(),extents[3][3]);
-  multi_array_ref gc_ref_2(vc_ref_2.data(),extents[2][3]);
+  array_ref g_ref(v_ref.data(),{NMO,NMO});
+  array_ref gc_ref(vc_ref.data(),{NEL,NMO});
+  array_ref g_ref_2(v_ref_2.data(),{3,3});
+  array_ref gc_ref_2(vc_ref_2.data(),{2,3});
 
-  using SHM_Buffer = mpi3_SHMBuffer<Type>;
-  SHM_Buffer SMbuff(node,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node});  
 
-  multi_array_ref G(SMbuff.data(),extents[NMO][NMO]);
-  multi_array_ref Gc(SMbuff.data()+NMO*NMO,extents[NEL][NMO]);
+  array_ref G(std::addressof(*SMbuff.origin()),{NMO,NMO});
+  array_ref Gc(std::addressof(*SMbuff.origin())+NMO*NMO,{NEL,NMO});
 
   SDet.MixedDensityMatrix(A,B,G,node,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Aref,B,G,node,false); check(G,g_ref);
   SDet.MixedDensityMatrix(A,Bref,G,node,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Aref,Bref,G,node,false); check(G,g_ref);
 
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G[indices[range_t(0,3)][range_t(0,3)]],node,false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          G({0,3},{0,3}),node,false);
+  check(G({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(A_,
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G[indices[range_t(0,3)][range_t(0,3)]],node,false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
+                          B({0,3},{0,2}),
+                          G({0,3},{0,3}),node,false);
+  check(G({0,3},{0,3}),g_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          G[indices[range_t(0,3)][range_t(0,3)]],node,false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+                          G({0,3},{0,3}),node,false);
+  check(G({0,3},{0,3}),g_ref_2);
 
   SDet.MixedDensityMatrix(A,B,Gc,node,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(Aref,B,Gc,node,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(A,Bref,Gc,node,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(Aref,Bref,Gc,node,true); check(Gc,gc_ref);
 
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],node,true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          Gc({0,2},{0,3}),node,true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
   SDet.MixedDensityMatrix(A_,
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],node,true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
+                          B({0,3},{0,2}),
+                          Gc({0,2},{0,3}),node,true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],node,true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+                          Gc({0,2},{0,3}),node,true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
 
-  SHM_Buffer SMbuff2(node_,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node_});
 
-  multi_array_ref G2(SMbuff2.data(),extents[NMO][NMO]);
-  multi_array_ref Gc2(SMbuff2.data()+NMO*NMO,extents[NEL][NMO]);
+  array_ref G2(std::addressof(*SMbuff2.origin()),{NMO,NMO});
+  array_ref Gc2(std::addressof(*SMbuff2.origin())+NMO*NMO,{NEL,NMO});
 
   // switch comm
   SDet.MixedDensityMatrix(A,B,G2,node_,false); check(G2,g_ref);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G2[indices[range_t(0,3)][range_t(0,3)]],node_,false);
-  check(G2[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          G2({0,3},{0,3}),node_,false);
+  check(G2({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(A,B,Gc2,node_,true); check(Gc2,gc_ref);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc2[indices[range_t(0,2)][range_t(0,3)]],node_,true);
-  check(Gc2[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          Gc2({0,2},{0,3}),node_,true);
+  check(Gc2({0,2},{0,3}),gc_ref_2);
 
 }
 
@@ -389,8 +388,8 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
 
   using Type = std::complex<double>;
   using vector = std::vector<Type>;
-  using multi_array = boost::multi_array<Type,2>;
-  using multi_array_ref = boost::multi_array_ref<Type,2>;
+  using array = boost::multi::array<Type,2>;
+  using array_ref = boost::multi::array_ref<Type,2>;
   using namespace std::complex_literals;
 
   const Type ov = -7.62332599999999 + 22.20453200000000i;
@@ -413,8 +412,8 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
    1.10000 + 0.50000i,   0.30000 + 0.60000i,   0.90000 + 0.70000i
   };
 
-  multi_array A(extents[NEL][NMO]);
-  multi_array B(extents[NMO][NEL]);
+  array A({NEL,NMO});
+  array B({NMO,NEL});
 
   for(int i=0, k=0; i<A.shape()[0]; i++)
     for(int j=0; j<A.shape()[1]; j++,k++)
@@ -424,8 +423,8 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
     for(int j=0; j<B.shape()[1]; j++,k++)
        B[i][j] = m_b[k];
 
-  multi_array_ref Aref(m_a.data(),extents[NEL][NMO]);
-  multi_array_ref Bref(m_b.data(),extents[NMO][NEL]);
+  array_ref Aref(m_a.data(),{NEL,NMO});
+  array_ref Bref(m_b.data(),{NMO,NEL});
 
   SlaterDetOperations<Type> SDet(NMO,NEL);
 
@@ -436,15 +435,15 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
   myREQUIRE(SDet.Overlap(Aref,Bref),ov);
 
   // Test array_view
-  myREQUIRE(SDet.Overlap(A[indices[range_t()][range_t()]],B),ov);
-  myREQUIRE(SDet.Overlap(A,B[indices[range_t()][range_t()]]),ov);
+  myREQUIRE(SDet.Overlap(A(A.extension(0),A.extension(1)),B),ov);
+  myREQUIRE(SDet.Overlap(A,B(B.extension(0),B.extension(1))),ov);
 
-  multi_array A_ = A[indices[range_t(0,2)][range_t(0,3)]];
-  multi_array B_ = B[indices[range_t(0,3)][range_t(0,2)]];
-  myREQUIRE(SDet.Overlap(A[indices[range_t(0,2)][range_t(0,3)]],
-                       B[indices[range_t(0,3)][range_t(0,2)]]),ov2);
-  myREQUIRE(SDet.Overlap(A[indices[range_t(0,2)][range_t(0,3)]],B_),ov2);
-  myREQUIRE(SDet.Overlap(A_,B[indices[range_t(0,3)][range_t(0,2)]]),ov2);
+  array A_ = A({0,2},{0,3});
+  array B_ = B({0,3},{0,2});
+  myREQUIRE(SDet.Overlap(A({0,2},{0,3}),
+                       B({0,3},{0,2})),ov2);
+  myREQUIRE(SDet.Overlap(A({0,2},{0,3}),B_),ov2);
+  myREQUIRE(SDet.Overlap(A_,B({0,3},{0,2})),ov2);
 
   /**** Density Matrices *****/
   vector v_ref = {
@@ -487,51 +486,51 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
   -0.455373025165330 - 0.129360996228044i
   };
 
-  multi_array_ref g_ref(v_ref.data(),extents[NMO][NMO]);
-  multi_array_ref gc_ref(vc_ref.data(),extents[NEL][NMO]);
-  multi_array_ref g_ref_2(v_ref_2.data(),extents[3][3]);
-  multi_array_ref gc_ref_2(vc_ref_2.data(),extents[2][3]);
+  array_ref g_ref(v_ref.data(),{NMO,NMO});
+  array_ref gc_ref(vc_ref.data(),{NEL,NMO});
+  array_ref g_ref_2(v_ref_2.data(),{3,3});
+  array_ref gc_ref_2(vc_ref_2.data(),{2,3});
 
-  multi_array G(extents[NMO][NMO]);
-  multi_array Gc(extents[NEL][NMO]);
+  array G({NMO,NMO});
+  array Gc({NEL,NMO});
 
   SDet.MixedDensityMatrix(A,B,G,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Aref,B,G,false); check(G,g_ref);
   SDet.MixedDensityMatrix(A,Bref,G,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Aref,Bref,G,false); check(G,g_ref);
 
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G[indices[range_t(0,3)][range_t(0,3)]],false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          G({0,3},{0,3}),false);
+  check(G({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(A_,
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G[indices[range_t(0,3)][range_t(0,3)]],false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
+                          B({0,3},{0,2}),
+                          G({0,3},{0,3}),false);
+  check(G({0,3},{0,3}),g_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          G[indices[range_t(0,3)][range_t(0,3)]],false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+                          G({0,3},{0,3}),false);
+  check(G({0,3},{0,3}),g_ref_2);
 
   SDet.MixedDensityMatrix(A,B,Gc,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(Aref,B,Gc,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(A,Bref,Gc,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(Aref,Bref,Gc,true); check(Gc,gc_ref);
 
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          Gc({0,2},{0,3}),true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
   SDet.MixedDensityMatrix(A_,
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
+                          B({0,3},{0,2}),
+                          Gc({0,2},{0,3}),true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+                          Gc({0,2},{0,3}),true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
 
-  multi_array Q=B;
+  array Q=B;
 
   // Orthogonalize
   Type detR = SDet.Orthogonalize(Q);
@@ -553,8 +552,8 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
 
   using Type = std::complex<double>;
   using vector = std::vector<Type>;
-  using multi_array = boost::multi_array<Type,2>;
-  using multi_array_ref = boost::multi_array_ref<Type,2>;
+  using array = boost::multi::array<Type,2>;
+  using array_ref = boost::multi::array_ref<Type,2>;
   using namespace std::complex_literals;
 
   const Type ov = -7.62332599999999 + 22.20453200000000i;
@@ -577,8 +576,8 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
    1.10000 + 0.50000i,   0.30000 + 0.60000i,   0.90000 + 0.70000i
   };
 
-  multi_array A(extents[NEL][NMO]);
-  multi_array B(extents[NMO][NEL]);
+  array A({NEL,NMO});
+  array B({NMO,NEL});
 
   for(int i=0, k=0; i<A.shape()[0]; i++)
     for(int j=0; j<A.shape()[1]; j++,k++)
@@ -588,8 +587,8 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
     for(int j=0; j<B.shape()[1]; j++,k++)
        B[i][j] = m_b[k];
 
-  multi_array_ref Aref(m_a.data(),extents[NEL][NMO]);
-  multi_array_ref Bref(m_b.data(),extents[NMO][NEL]);
+  array_ref Aref(m_a.data(),{NEL,NMO});
+  array_ref Bref(m_b.data(),{NMO,NEL});
 
   SlaterDetOperations<Type> SDet(NMO,NEL);
 
@@ -600,20 +599,20 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   myREQUIRE(SDet.Overlap(Aref,Bref,node),ov);
 
   // Test array_view
-  myREQUIRE(SDet.Overlap(A[indices[range_t()][range_t()]],B,node),ov);
-  myREQUIRE(SDet.Overlap(A,B[indices[range_t()][range_t()]],node),ov);
+  myREQUIRE(SDet.Overlap(A(A.extension(0),A.extension(1)),B,node),ov);
+  myREQUIRE(SDet.Overlap(A,B(B.extension(0),B.extension(1)),node),ov);
 
-  multi_array A_ = A[indices[range_t(0,2)][range_t(0,3)]];
-  multi_array B_ = B[indices[range_t(0,3)][range_t(0,2)]];
-  myREQUIRE(SDet.Overlap(A[indices[range_t(0,2)][range_t(0,3)]],
-                       B[indices[range_t(0,3)][range_t(0,2)]],node),ov2);
-  myREQUIRE(SDet.Overlap(A[indices[range_t(0,2)][range_t(0,3)]],B_),ov2);
-  myREQUIRE(SDet.Overlap(A_,B[indices[range_t(0,3)][range_t(0,2)]],node),ov2);
+  array A_ = A({0,2},{0,3});
+  array B_ = B({0,3},{0,2});
+  myREQUIRE(SDet.Overlap(A({0,2},{0,3}),
+                       B({0,3},{0,2}),node),ov2);
+  myREQUIRE(SDet.Overlap(A({0,2},{0,3}),B_),ov2);
+  myREQUIRE(SDet.Overlap(A_,B({0,3},{0,2}),node),ov2);
 
-  shared_communicator node_ = node.split(node.rank()%2);
+  shared_communicator node_ = node.split(node.rank()%2,node.rank());
   myREQUIRE(SDet.Overlap(A,B,node_),ov);
-  myREQUIRE(SDet.Overlap(A[indices[range_t(0,2)][range_t(0,3)]],
-                       B[indices[range_t(0,3)][range_t(0,2)]],node_),ov2);
+  myREQUIRE(SDet.Overlap(A({0,2},{0,3}),
+                       B({0,3},{0,2}),node_),ov2);
 
   /**** Density Matrices *****/
   vector v_ref = {
@@ -656,69 +655,70 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   -0.455373025165330 - 0.129360996228044i
   };
 
-  multi_array_ref g_ref(v_ref.data(),extents[NMO][NMO]);
-  multi_array_ref gc_ref(vc_ref.data(),extents[NEL][NMO]);
-  multi_array_ref g_ref_2(v_ref_2.data(),extents[3][3]);
-  multi_array_ref gc_ref_2(vc_ref_2.data(),extents[2][3]);
+  array_ref g_ref(v_ref.data(),{NMO,NMO});
+  array_ref gc_ref(vc_ref.data(),{NEL,NMO});
+  array_ref g_ref_2(v_ref_2.data(),{3,3});
+  array_ref gc_ref_2(vc_ref_2.data(),{2,3});
 
-  using SHM_Buffer = mpi3_SHMBuffer<Type>;
-  SHM_Buffer SMbuff(node,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node});
 
-  multi_array_ref G(SMbuff.data(),extents[NMO][NMO]);
-  multi_array_ref Gc(SMbuff.data()+NMO*NMO,extents[NEL][NMO]);
+  array_ref G(std::addressof(*SMbuff.origin()),{NMO,NMO});
+  array_ref Gc(std::addressof(*SMbuff.origin())+NMO*NMO,{NEL,NMO});
 
   SDet.MixedDensityMatrix(A,B,G,node,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Aref,B,G,node,false); check(G,g_ref);
   SDet.MixedDensityMatrix(A,Bref,G,node,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Aref,Bref,G,node,false); check(G,g_ref);
 
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G[indices[range_t(0,3)][range_t(0,3)]],node,false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          G({0,3},{0,3}),node,false);
+  check(G({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(A_,
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G[indices[range_t(0,3)][range_t(0,3)]],node,false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
+                          B({0,3},{0,2}),
+                          G({0,3},{0,3}),node,false);
+  check(G({0,3},{0,3}),g_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          G[indices[range_t(0,3)][range_t(0,3)]],node,false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+                          G({0,3},{0,3}),node,false);
+  check(G({0,3},{0,3}),g_ref_2);
 
   SDet.MixedDensityMatrix(A,B,Gc,node,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(Aref,B,Gc,node,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(A,Bref,Gc,node,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(Aref,Bref,Gc,node,true); check(Gc,gc_ref);
 
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],node,true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          Gc({0,2},{0,3}),node,true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
   SDet.MixedDensityMatrix(A_,
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],node,true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
+                          B({0,3},{0,2}),
+                          Gc({0,2},{0,3}),node,true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],node,true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+                          Gc({0,2},{0,3}),node,true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
 
-  SHM_Buffer SMbuff2(node_,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node_});
 
-  multi_array_ref G2(SMbuff2.data(),extents[NMO][NMO]);
-  multi_array_ref Gc2(SMbuff2.data()+NMO*NMO,extents[NEL][NMO]);
+  array_ref G2(std::addressof(*SMbuff2.origin()),{NMO,NMO});
+  array_ref Gc2(std::addressof(*SMbuff2.origin())+NMO*NMO,{NEL,NMO});
 
   // switch comm
   SDet.MixedDensityMatrix(A,B,G2,node_,false); check(G2,g_ref);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G2[indices[range_t(0,3)][range_t(0,3)]],node_,false);
-  check(G2[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          G2({0,3},{0,3}),node_,false);
+  check(G2({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(A,B,Gc2,node_,true); check(Gc2,gc_ref);
-  SDet.MixedDensityMatrix(A[indices[range_t(0,2)][range_t(0,3)]],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc2[indices[range_t(0,2)][range_t(0,3)]],node_,true);
-  check(Gc2[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+  SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                          B({0,3},{0,2}),
+                          Gc2({0,2},{0,3}),node_,true);
+  check(Gc2({0,2},{0,3}),gc_ref_2);
 
 }
 
@@ -737,8 +737,8 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 
   using Type = std::complex<double>;
   using vector = std::vector<Type>;
-  using multi_array = boost::multi_array<Type,2>;
-  using multi_array_ref = boost::multi_array_ref<Type,2>;
+  using array = boost::multi::array<Type,2>;
+  using array_ref = boost::multi::array_ref<Type,2>;
   using namespace std::complex_literals;
   using csr_matrix = ma::sparse::csr_matrix<Type,int,int,
                                 boost::mpi3::intranode::allocator<Type>,
@@ -761,8 +761,8 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
    1.10000 + 0.50000i,   0.30000 + 0.60000i,   0.90000 + 0.70000i
   };
 
-  multi_array A(extents[NMO][NEL]); // Will be transposed when Acsr is built
-  multi_array B(extents[NMO][NEL]);
+  array A({NMO,NEL}); // Will be transposed when Acsr is built
+  array B({NMO,NEL});
 
   for(int i=0, k=0; i<A.shape()[0]; i++)
     for(int j=0; j<A.shape()[1]; j++,k++)
@@ -772,7 +772,7 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
     for(int j=0; j<B.shape()[1]; j++,k++)
        B[i][j] = m_b[k];
 
-  multi_array_ref Bref(m_b.data(),extents[NMO][NEL]);
+  array_ref Bref(m_b.data(),{NMO,NEL});
 
   csr_matrix Acsr(csr::shm::construct_csr_matrix_single_input<csr_matrix>(A,0.0,'T',node));
 
@@ -786,13 +786,13 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   myREQUIRE(SDet.Overlap(Acsr,Bref),ov);
 
   // Test array_view
-  myREQUIRE(SDet.Overlap(Acsr,B[indices[range_t()][range_t()]],node),ov);
-  myREQUIRE(SDet.Overlap(Acsr,B[indices[range_t()][range_t()]]),ov);
+  myREQUIRE(SDet.Overlap(Acsr,B(B.extension(0),B.extension(1)),node),ov);
+  myREQUIRE(SDet.Overlap(Acsr,B(B.extension(0),B.extension(1))),ov);
 
-  shared_communicator node_ = node.split(node.rank()%2);
+  shared_communicator node_ = node.split(node.rank()%2,node.rank());
   myREQUIRE(SDet.Overlap(Acsr,B,node_),ov);
 
-  multi_array B_ = B[indices[range_t(0,3)][range_t(0,2)]];
+  array B_ = B({0,3},{0,2});
 
   myREQUIRE(SDet.Overlap(Acsr[{0,2,0,3}],B_),ov2);
 
@@ -837,57 +837,58 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   -0.455373025165330 - 0.129360996228044i
   };
 
-  multi_array_ref g_ref(v_ref.data(),extents[NMO][NMO]);
-  multi_array_ref gc_ref(vc_ref.data(),extents[NEL][NMO]);
-  multi_array_ref g_ref_2(v_ref_2.data(),extents[3][3]);
-  multi_array_ref gc_ref_2(vc_ref_2.data(),extents[2][3]);
+  array_ref g_ref(v_ref.data(),{NMO,NMO});
+  array_ref gc_ref(vc_ref.data(),{NEL,NMO});
+  array_ref g_ref_2(v_ref_2.data(),{3,3});
+  array_ref gc_ref_2(vc_ref_2.data(),{2,3});
 
-  using SHM_Buffer = mpi3_SHMBuffer<Type>;
-  SHM_Buffer SMbuff(node,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node});
 
-  multi_array_ref G(SMbuff.data(),extents[NMO][NMO]);
-  multi_array_ref Gc(SMbuff.data()+NMO*NMO,extents[NEL][NMO]);
+  array_ref G(std::addressof(*SMbuff.origin()),{NMO,NMO});
+  array_ref Gc(std::addressof(*SMbuff.origin())+NMO*NMO,{NEL,NMO});
 
   SDet.MixedDensityMatrix(Acsr,B,G,node,false); check(G,g_ref);
   SDet.MixedDensityMatrix(Acsr,Bref,G,node,false); check(G,g_ref);
 
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G[indices[range_t(0,3)][range_t(0,3)]],node,false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+                          B({0,3},{0,2}),
+                          G({0,3},{0,3}),node,false);
+  check(G({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
                           B_,
-                          G[indices[range_t(0,3)][range_t(0,3)]],node,false);
-  check(G[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+                          G({0,3},{0,3}),node,false);
+  check(G({0,3},{0,3}),g_ref_2);
 
   SDet.MixedDensityMatrix(Acsr,B,Gc,node,true); check(Gc,gc_ref);
   SDet.MixedDensityMatrix(Acsr,Bref,Gc,node,true); check(Gc,gc_ref);
 
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],node,true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+                          B({0,3},{0,2}),
+                          Gc({0,2},{0,3}),node,true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
                           B_,
-                          Gc[indices[range_t(0,2)][range_t(0,3)]],node,true);
-  check(Gc[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+                          Gc({0,2},{0,3}),node,true);
+  check(Gc({0,2},{0,3}),gc_ref_2);
 
-  SHM_Buffer SMbuff2(node_,NMO*(NMO+NEL));
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(extensions<1u>{NMO*(NMO+NEL)},
+                                                            shared_allocator<Type>{node_});
 
-  multi_array_ref G2(SMbuff2.data(),extents[NMO][NMO]);
-  multi_array_ref Gc2(SMbuff2.data()+NMO*NMO,extents[NEL][NMO]);
+  array_ref G2(std::addressof(*SMbuff2.origin()),{NMO,NMO});
+  array_ref Gc2(std::addressof(*SMbuff2.origin())+NMO*NMO,{NEL,NMO});
 
   // switch comm
   SDet.MixedDensityMatrix(Acsr,B,G2,node_,false); check(G2,g_ref);
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          G2[indices[range_t(0,3)][range_t(0,3)]],node_,false);
-  check(G2[indices[range_t(0,3)][range_t(0,3)]],g_ref_2);
+                          B({0,3},{0,2}),
+                          G2({0,3},{0,3}),node_,false);
+  check(G2({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(Acsr,B,Gc2,node_,true); check(Gc2,gc_ref);
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
-                          B[indices[range_t(0,3)][range_t(0,2)]],
-                          Gc2[indices[range_t(0,2)][range_t(0,3)]],node_,true);
-  check(Gc2[indices[range_t(0,2)][range_t(0,3)]],gc_ref_2);
+                          B({0,3},{0,2}),
+                          Gc2({0,2},{0,3}),node_,true);
+  check(Gc2({0,2},{0,3}),gc_ref_2);
 
 }
 

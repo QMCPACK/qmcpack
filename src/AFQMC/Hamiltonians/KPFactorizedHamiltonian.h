@@ -32,7 +32,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
   using CMatrix = boost::multi::array<ComplexType,2>;
 
   KPFactorizedHamiltonian(AFQMCInfo const& info, xmlNodePtr cur,
-                          boost::multi_array<ComplexType,2>&& h,
+                          boost::multi::array<ComplexType,2>&& h,
                           TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
                                     TG(tg_),fileName("")
@@ -59,7 +59,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
 
   ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; }
 
-  boost::multi_array<ComplexType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
+  boost::multi::array<ComplexType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
 
   HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type,
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,

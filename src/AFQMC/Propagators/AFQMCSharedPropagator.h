@@ -28,7 +28,6 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
@@ -47,11 +46,11 @@ class AFQMCSharedPropagator: public AFQMCInfo
 {
   protected:
 
-  using CVector = boost::multi_array<ComplexType,1>;  
-  using CVector_ref = boost::multi_array_ref<ComplexType,1>;  
-  using CMatrix = boost::multi_array<ComplexType,2>;  
-  using CMatrix_ref = boost::multi_array_ref<ComplexType,2>;  
-  using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
+  using CVector = boost::multi::array<ComplexType,1>;  
+  using CVector_ref = boost::multi::array_ref<ComplexType,1>;  
+  using CMatrix = boost::multi::array<ComplexType,2>;  
+  using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;  
+  using shmCVector = ComplexVector<shared_allocator<ComplexType>>; 
 
   public:
 
@@ -60,12 +59,12 @@ class AFQMCSharedPropagator: public AFQMCInfo
                           RandomGenerator_t* r):
             AFQMCInfo(info),TG(tg_),wfn(wfn_),
             H1(std::move(h1_)),
-            P1(P1Type({0,0},{0,0},0,boost::mpi3::intranode::allocator<ComplexType>(tg_.TG_local()))),
+            P1(P1Type({0,0},{0,0},0,boost::mpi3::intranode::allocator<ComplexType>(TG.TG_local()))),
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(2*NMO,NAEA+NAEB), // safe for now, since I don't know walker_type
-            TSM(extents[2*NMO][NAEA+NAEB]), // safe for now, since I don't know walker_type
-            shmbuff(nullptr),
+            TSM({2*NMO,NAEA+NAEB}), // safe for now, since I don't know walker_type
+            shmbuff(extensions<1u>{1},shared_allocator<ComplexType>{TG.TG_local()}),
             local_group_comm(),
             last_nextra(-1),
             last_task_index(-1),
@@ -74,7 +73,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
     {
       transposed_vHS_ = wfn.transposed_vHS();
       transposed_G_ = wfn.transposed_G_for_vbias();
-      if(not transposed_vHS_) local_vHS.resize(extents[NMO][NMO]);
+      if(not transposed_vHS_) local_vHS.reextent({NMO,NMO});
       parse(cur);  
     }
 
@@ -100,7 +99,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     // reset shared memory buffers
     // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
-    void reset() { shmbuff.reset(nullptr); }
+    void reset() { shmbuff.reextent(extensions<1u>{0}); }
 
     bool hybrid_propagation() { return hybrid; }
 
@@ -122,7 +121,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     SlaterDetOperations<ComplexType> SDetOp;
 
-    std::unique_ptr<SHM_Buffer> shmbuff;    
+    shmCVector shmbuff;    
 
     shared_communicator local_group_comm;
 
@@ -168,11 +167,11 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     template<class WSet>
     void apply_propagators(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
-                           boost::multi_array_ref<ComplexType,3>& vHS3D);
+                           boost::multi::array_ref<ComplexType,3>& vHS3D);
 
     template<class WSet>
     void apply_propagators_construct_propagator(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
-                                                boost::multi_array_ref<ComplexType,3>& vHS3D);
+                                                boost::multi::array_ref<ComplexType,3>& vHS3D);
 
     ComplexType apply_bound_vbias(ComplexType v, RealType sqrtdt)
     {

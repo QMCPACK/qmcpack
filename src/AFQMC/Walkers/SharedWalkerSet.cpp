@@ -191,7 +191,7 @@ void SharedWalkerSet::setup()
 
 bool SharedWalkerSet::clean()
 {
-  walker_buffer = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),0));
+  walker_buffer.reextent({0,0});
   tot_num_walkers=targetN=targetN_per_TG=0;
   return true;
 }
@@ -202,7 +202,7 @@ bool SharedWalkerSet::clean()
 void SharedWalkerSet::reserve(int n)
 {
   if(capacity() < n) 
-    walker_buffer->resize(walker_size*n);
+    walker_buffer.reextent({n,walker_size});
 }
 
 /*
@@ -272,7 +272,7 @@ void SharedWalkerSet::popControl(std::vector<ComplexType>& curData)
   // matrix to hold walkers beyond targetN_per_TG
   // doing this to avoid resizing SHMBuffer, instead use local memory
   // will be resized later
-  boost::multi_array<ComplexType,2> Wexcess(extents[0][walker_size]);
+  boost::multi::array<ComplexType,2> Wexcess({0,walker_size});
 
   if(TG.TG_local().root()) {
     nwalk_counts_new.resize(TG.TG_heads().size());
