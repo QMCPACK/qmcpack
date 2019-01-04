@@ -6,7 +6,7 @@ MAYBE_SYMLINK(${TEST_HDF_INPUT} ${CMAKE_CURRENT_BINARY_DIR}/choldump.h5)
 #symlink wfn file
 MAYBE_SYMLINK(${TEST_WFN_INPUT} ${CMAKE_CURRENT_BINARY_DIR}/wfn.dat)
 
-LIST(APPEND DIAMOND_AFQMC_SCALARS_CHOL "EnergyEstim__nume_real" "-379.2037 0.0282")
+LIST(APPEND DIAMOND_AFQMC_SCALARS_CHOL "EnergyEstim__nume_real" "-10.55201 0.00332")
 
 QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_cholesky"
                   "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
@@ -17,7 +17,7 @@ QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_cholesky"
                   0 DIAMOND_AFQMC_SCALARS_CHOL
                   )
 
-LIST(APPEND LONG_DIAMOND_AFQMC_SCALARS_CHOL "EnergyEstim__nume_real" "-379.2037 0.0043")
+LIST(APPEND LONG_DIAMOND_AFQMC_SCALARS_CHOL "EnergyEstim__nume_real" "-10.55201 0.00109")
 
 QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_cholesky"
                   "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
