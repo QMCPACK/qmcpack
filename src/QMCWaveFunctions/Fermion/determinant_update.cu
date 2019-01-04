@@ -2079,7 +2079,9 @@ update_onemove (T **buff,
       rejval += my_lemmainv[kk1+j] * ainvu_val;
 #endif
     }
-    my_awork[i] = value - (blockIdx.y >= accepted)*rejval*my_lemmainv[ik1+k]/my_lemmainv[k*(k+2)]; // scale factor lemmainv_ki/lemmainv_kk (remember that lemmainv pitch is k+1, not kdelay)
+    my_awork[i] = value;
+    if(blockIdx.y >= accepted)
+      my_awork[i] -= rejval*my_lemmainv[ik1+k]/my_lemmainv[k*(k+2)]; // scale factor lemmainv_ki/lemmainv_kk (remember that lemmainv pitch is k+1, not kdelay)
   }
   if (i < rowstride)
   {
@@ -2191,8 +2193,10 @@ calc_lemma_column (T **ainv, T **newrow, T **lemma, T** ainvu, int k, int kd, in
       prod += mynewrow[j] * myainv[i+j*stride];
     // now we can calculate -A^-1 * dU
     // dU = A_k-U_k => A^-1*dU = A^-1*A_k - A^-1*U_k
+    myainvu_col[i] = -prod;
     // A^-1*A_k is only different from zero when we multiply same row of A^-1 with the respective column from A
-    myainvu_col[i] = 1.0*(i==k+kstart)-prod;
+    if(i==k+kstart)
+      myainvu_col[i] += 1.0;
   }
   // Use the portions needed for the lemma matrix
   if ((l >= 0) && (l<kd))
