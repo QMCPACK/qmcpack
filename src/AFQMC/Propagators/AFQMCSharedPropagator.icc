@@ -65,28 +65,26 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
   size_t memory_needs = nwalk * ( Gsize + localnCV*(nsteps+1) + NMO*NMO*nsteps );
 
   // 0. Allocate memory and set shared memory structures
-  if(not shmbuff || shmbuff->size() < memory_needs ) {
-    shmbuff.reset(); // destroy current SHM_Buffer in case it is large
-    shmbuff = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),memory_needs));  
-  }  
+  if(shmbuff.num_elements() < memory_needs ) 
+    shmbuff.reextent(extensions<1u>{memory_needs});
   size_t displ=0;
   // Mixed Density Matrix for walkers at original configuration
   // Actual dimensions depend on transposed_G_, see above
-  CMatrix_ref G(shmbuff->data()+displ, {G_nr,G_nc}); 
+  CMatrix_ref G(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // vias potential for walkers at original configuration
-  CMatrix_ref vbias(shmbuff->data()+displ, {localnCV,nwalk}); 
+  CMatrix_ref vbias(std::addressof(*shmbuff.origin())+displ, {localnCV,nwalk}); 
     displ+=localnCV*nwalk;
   // right hand side matrix in calculation of HS potential for all steps: ~ sigma + (vbias-vMF)
   // The same vbias is used in all steps
-  CMatrix_ref X(shmbuff->data()+displ, {localnCV,nwalk*nsteps}); 
+  CMatrix_ref X(std::addressof(*shmbuff.origin())+displ, {localnCV,nwalk*nsteps}); 
     displ+=localnCV*nwalk*nsteps;
   // HS potential for all steps.
   // Actual dimensions depend on transposed_vHS_, see above
-  CMatrix_ref vHS(shmbuff->data()+displ, {vhs_nr,vhs_nc}); 
+  CMatrix_ref vHS(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
   // second view of vHS matrix for use in propagation step
   // Actual dimensions depend on transposed_vHS_, see above
-  boost::multi::array_ref<ComplexType,3> vHS3D(shmbuff->data()+displ, 
+  boost::multi::array_ref<ComplexType,3> vHS3D(std::addressof(*shmbuff.origin())+displ, 
                                               {vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
 
   // local matrices for temporary accumulation

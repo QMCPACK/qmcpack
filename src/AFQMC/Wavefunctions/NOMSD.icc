@@ -41,11 +41,13 @@ namespace afqmc
     size_t nt = wset.size()*(1+dm_size(false));
     // allocte space in shared memory for temporary G (always compact) and ov
     if(not shmbuff_for_E) 
-      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+                                                shared_allocator<ComplexType>{TG.TG_local()}));
     // in case the number of walkers changes
-    if(shmbuff_for_E->size() < nt)
-      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
-    assert(shmbuff_for_E->size() >= nt);
+    if(shmbuff_for_E->num_elements() < nt)
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+                                                shared_allocator<ComplexType>{TG.TG_local()}));
+    assert(shmbuff_for_E->num_elements() >= nt);
     assert(E.dimensionality==2);
     assert(Ov.dimensionality==1);
     assert(E.shape()[0]==wset.size()); 
@@ -57,8 +59,8 @@ namespace afqmc
     auto nwalk = wset.size();
     int nr=Gsize,nc=nwalk;
     if(transposed_G_for_E_) std::swap(nr,nc);
-    boost::multi::array_ref<ComplexType,2> G(shmbuff_for_E->data(),{nr,nc});
-    boost::multi::array_ref<ComplexType,1> ov_(shmbuff_for_E->data()+Gsize*nwalk,
+    boost::multi::array_ref<ComplexType,2> G(std::addressof(*shmbuff_for_E->origin()),{nr,nc});
+    boost::multi::array_ref<ComplexType,1> ov_(std::addressof(*shmbuff_for_E->origin())+Gsize*nwalk,
                                               extensions<1u>{nwalk});
     if(eloc2.shape()[0] != nwalk || eloc2.shape()[1] != 3) eloc2.reextent({nwalk,3}); 
 
@@ -114,15 +116,17 @@ std::cout<<" E nomsd: " <<nd <<" "
     //  iii. energies[3] for all walkers on all nodes of TG (assume all nodes have same # of walkers)
     int nt = nwalk*(2*Gsize+1);
     if(not shmbuff_for_E) { 
-      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+                                                shared_allocator<ComplexType>{TG.TG_local()}));
       new_shm_space=true;
     }
     // in case the number of walkers changes
-    if(shmbuff_for_E->size() < nt) {
-      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
+    if(shmbuff_for_E->num_elements() < nt) {
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+                                                shared_allocator<ComplexType>{TG.TG_local()}));
       new_shm_space=true;
     }
-    assert(shmbuff_for_E->size() >= nt);
+    assert(shmbuff_for_E->num_elements() >= nt);
     assert(E.dimensionality==2);
     assert(Ov.dimensionality==1);
     assert(E.shape()[0]==wset.size());
@@ -132,13 +136,13 @@ std::cout<<" E nomsd: " <<nd <<" "
     int nr=Gsize,nc=nwalk;
     if(transposed_G_for_E_) std::swap(nr,nc);
     int displ=0;
-    boost::multi::array_ref<ComplexType,2> Gwork(shmbuff_for_E->data(),
+    boost::multi::array_ref<ComplexType,2> Gwork(std::addressof(*shmbuff_for_E->origin()),
                                                 {nr,nc});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,2> Grecv(shmbuff_for_E->data()+displ,
+    boost::multi::array_ref<ComplexType,2> Grecv(std::addressof(*shmbuff_for_E->origin())+displ,
                                                 {nr,nc});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,1> overlaps(shmbuff_for_E->data()+displ,
+    boost::multi::array_ref<ComplexType,1> overlaps(std::addressof(*shmbuff_for_E->origin())+displ,
                                                    extensions<1u>{nwalk});
     if(eloc2.shape()[0] != nnodes*nwalk || eloc2.shape()[1] != 3) 
         eloc2.reextent({nnodes*nwalk,3});
@@ -226,15 +230,17 @@ std::cout<<" E nomsd: " <<nd <<" "
     //  iii. ovlps for local walkers
     int nt = nwalk*(3*Gsize+1);
     if(not shmbuff_for_E) { 
-      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+                                                shared_allocator<ComplexType>{TG.TG_local()}));
       new_shm_space=true;
     }
     // in case the number of walkers changes
-    if(shmbuff_for_E->size() < nt) {
-      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
+    if(shmbuff_for_E->num_elements() < nt) {
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+                                                shared_allocator<ComplexType>{TG.TG_local()}));
       new_shm_space=true;
     }
-    assert(shmbuff_for_E->size() >= nt);
+    assert(shmbuff_for_E->num_elements() >= nt);
     assert(E.dimensionality==2);
     assert(Ov.dimensionality==1);
     assert(E.shape()[0]==wset.size());
@@ -244,16 +250,16 @@ std::cout<<" E nomsd: " <<nd <<" "
     int nr=Gsize,nc=nwalk;
     if(transposed_G_for_E_) std::swap(nr,nc);
     int displ=0;
-    boost::multi::array_ref<ComplexType,2> SMwork(shmbuff_for_E->data(),
+    boost::multi::array_ref<ComplexType,2> SMwork(std::addressof(*shmbuff_for_E->origin()),
                                                 {nwalk,Gsize});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,2> SMrecv(shmbuff_for_E->data()+displ,
+    boost::multi::array_ref<ComplexType,2> SMrecv(std::addressof(*shmbuff_for_E->origin())+displ,
                                                 {nwalk,Gsize});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,2> Gwork(shmbuff_for_E->data()+displ,
+    boost::multi::array_ref<ComplexType,2> Gwork(std::addressof(*shmbuff_for_E->origin())+displ,
                                                 {nr,nc});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,1> overlaps(shmbuff_for_E->data()+displ,
+    boost::multi::array_ref<ComplexType,1> overlaps(std::addressof(*shmbuff_for_E->origin())+displ,
                                                    extensions<1u>{nwalk});
     // used for temporary storage in ndet loop for local calculation
     if(eloc3.shape()[0] != nwalk || eloc3.shape()[1] != 3) 
@@ -606,14 +612,15 @@ std::cout<<" E nomsd: " <<nd <<" "
           }   
           // first setup
           local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,TG.TG_local().rank()))); 
-          shmbuff_for_G = std::move(std::make_unique<SHM_Buffer>(local_group_comm,dm_size(true)));
+          shmbuff_for_G = std::move(std::make_unique<shmCVector>(extensions<1u>{dm_size(true)},
+                                                shared_allocator<ComplexType>{local_group_comm}));
         } 
         if(last_task_index < 0 || last_task_index > nextra) 
           APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");
         {
-          boost::multi::array_ref<ComplexType,2> G2D_2(shmbuff_for_G->data(),
+          boost::multi::array_ref<ComplexType,2> G2D_2(std::addressof(*shmbuff_for_G->origin()),
                                                  {Gdims.first,Gdims.second});
-          boost::multi::array_ref<ComplexType,1> G1D_2(shmbuff_for_G->data(),extensions<1u>{Gsize});
+          boost::multi::array_ref<ComplexType,1> G1D_2(std::addressof(*shmbuff_for_G->origin()),extensions<1u>{Gsize});
           int iw = (last_task_index+ntasks_total_serial)/ndet;
           int nd = (last_task_index+ntasks_total_serial)%ndet;
           ComplexType ov = SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
@@ -694,18 +701,19 @@ std::cout<<" E nomsd: " <<nd <<" "
           // first setup
           //local_group_comm = std::move(std::make_unique<shared_communicator>(TG.TG_local().split(last_task_index))); 
           local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,TG.TG_local().rank()))); 
-          shmbuff_for_G = std::move(std::make_unique<SHM_Buffer>(local_group_comm,dm_size(true)));
+          shmbuff_for_G = std::move(std::make_unique<shmCVector>(extensions<1u>{dm_size(true)},
+                                                shared_allocator<ComplexType>{local_group_comm}));
         }
         if(last_task_index < 0 || last_task_index > nextra)
           APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");
         {
-          boost::multi::array_ref<ComplexType,2> GA2D_2(shmbuff_for_G->data(),
+          boost::multi::array_ref<ComplexType,2> GA2D_2(std::addressof(*shmbuff_for_G->origin()),
                                {GAdims.first,GAdims.second});
-          boost::multi::array_ref<ComplexType,2> GB2D_2(shmbuff_for_G->data()+
+          boost::multi::array_ref<ComplexType,2> GB2D_2(std::addressof(*shmbuff_for_G->origin())+
                                GAdims.first*GAdims.second,{GBdims.first,GBdims.second});
-          boost::multi::array_ref<ComplexType,1> GA1D_2(shmbuff_for_G->data(),
+          boost::multi::array_ref<ComplexType,1> GA1D_2(std::addressof(*shmbuff_for_G->origin()),
                                extensions<1u>{GAdims.first*GAdims.second});
-          boost::multi::array_ref<ComplexType,1> GB1D_2(shmbuff_for_G->data()+
+          boost::multi::array_ref<ComplexType,1> GB1D_2(std::addressof(*shmbuff_for_G->origin())+
                                GAdims.first*GAdims.second,extensions<1u>{GBdims.first*GBdims.second});
           int task = (last_task_index+ntasks_total_serial);
           int iw = task/ndet;
@@ -797,7 +805,8 @@ std::cout<<" E nomsd: " <<nd <<" "
           }   
           // first setup
           local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,TG.TG_local().rank()))); 
-          shmbuff_for_G = std::move(std::make_unique<SHM_Buffer>(local_group_comm,dm_size(true)));
+          shmbuff_for_G = std::move(std::make_unique<shmCVector>(extensions<1u>{dm_size(true)},
+                                                shared_allocator<ComplexType>{local_group_comm}));
         } 
         if(last_task_index < 0 || last_task_index > nextra) 
           APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");
@@ -846,7 +855,8 @@ std::cout<<" E nomsd: " <<nd <<" "
           }
           // first setup
           local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,TG.TG_local().rank()))); 
-          shmbuff_for_G = std::move(std::make_unique<SHM_Buffer>(local_group_comm,dm_size(true)));
+          shmbuff_for_G = std::move(std::make_unique<shmCVector>(extensions<1u>{dm_size(true)},
+                                                shared_allocator<ComplexType>{local_group_comm}));
         }
         if(last_task_index < 0 || last_task_index > nextra)
           APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");

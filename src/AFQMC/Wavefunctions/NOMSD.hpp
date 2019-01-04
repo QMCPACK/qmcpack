@@ -26,7 +26,6 @@
 #include "AFQMC/config.h"
 #include "mpi3/shm/mutex.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
@@ -53,7 +52,7 @@ class NOMSD: public AFQMCInfo
   using CMatrix = boost::multi::array<ComplexType,2>;  
   using CVector_ref = boost::multi::array_ref<ComplexType,1>;
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;
-  using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
+  using shmCVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;  
   using shared_mutex = boost::mpi3::shm::mutex;  
 
   public:
@@ -348,7 +347,7 @@ class NOMSD: public AFQMCInfo
     // Buffers for back propagation.
     boost::multi::array<ComplexType, 2> T1ForBP, T2ForBP, T3ForBP;
 
-    std::unique_ptr<SHM_Buffer> shmbuff_for_E;
+    std::unique_ptr<shmCVector> shmbuff_for_E;
 
     std::unique_ptr<shared_mutex> mutex;
 
@@ -371,7 +370,7 @@ class NOMSD: public AFQMCInfo
     // shared_communicator for parallel work within TG_local()
     //std::unique_ptr<shared_communicator> local_group_comm; 
     shared_communicator local_group_comm; 
-    std::unique_ptr<SHM_Buffer> shmbuff_for_G;
+    std::unique_ptr<shmCVector> shmbuff_for_G;
 
     // excited states
     bool excitedState;

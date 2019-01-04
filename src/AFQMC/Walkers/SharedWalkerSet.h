@@ -27,10 +27,10 @@
 #include "AFQMC/Walkers/WalkerControl.hpp"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
-
 namespace qmcplusplus
 {
+
+// NOTE: Remove get_walkers_matrix and use walker_buffer directly. Only need to be careful about prt type.
 
 namespace afqmc
 {
@@ -54,7 +54,7 @@ class SharedWalkerSet: public AFQMCInfo
   // wlk_descriptor: {nmo, naea, naeb, nback_prop} 
   using wlk_descriptor = std::array<int,4>;
   using wlk_indices = std::array<int,14>;
-  using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
+  using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
 
   public:
 
@@ -383,8 +383,7 @@ class SharedWalkerSet: public AFQMCInfo
         RandomGenerator_t* r):
                 TG(tg_),AFQMCInfo(info),rng(r),
                 walker_memory_usage(0),tot_num_walkers(0),
-		walker_buffer(std::make_unique<SHM_Buffer>
-                                    (TG.TG_local(),0)),
+		walker_buffer({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 load_balance(UNDEFINED_LOAD_BALANCE),
                 pop_control(UNDEFINED_BRANCHING),min_weight(0.05),max_weight(4.0),
                 walkerType(UNDEFINED_WALKER_TYPE),nback_prop(0)
@@ -412,7 +411,7 @@ class SharedWalkerSet: public AFQMCInfo
    * Returns the maximum number of walkers in the set that can be stored without reallocation.
    */	
   int capacity() const{ 
-    return walker_buffer->size()/walker_size; 
+    return int(walker_buffer.shape()[0]); 
   } 
 
   /*
@@ -623,20 +622,22 @@ class SharedWalkerSet: public AFQMCInfo
   TimerList_t Timers;
 
   Wlk_Buff get_walkers_matrix() {
-    if(walker_buffer->size() < tot_num_walkers*walker_size)
+    assert(walker_buffer.shape()[1] == walker_size);
+    if(walker_buffer.shape()[0] < tot_num_walkers)
       APP_ABORT("error: problems with walker buffer.\n"); 
-    return Wlk_Buff(walker_buffer->data(),{tot_num_walkers,walker_size});
+    return Wlk_Buff(std::addressof(*walker_buffer.origin()),{tot_num_walkers,walker_size});
   }
 
   const_Wlk_Buff const_get_walkers_matrix() const {
-    if(walker_buffer->size() < tot_num_walkers*walker_size)
+    assert(walker_buffer.shape()[1] == walker_size);
+    if(walker_buffer.shape()[0] < tot_num_walkers)
       APP_ABORT("error: problems with walker buffer.\n"); 
-    return const_Wlk_Buff(walker_buffer->data(),{tot_num_walkers,walker_size});
+    return const_Wlk_Buff(std::addressof(*walker_buffer.origin()),{tot_num_walkers,walker_size});
   }
 
   afqmc::TaskGroup_& TG;  
 
-  std::unique_ptr<SHM_Buffer> walker_buffer;
+  shmCMatrix walker_buffer;
 
   // reads xml and performs setup
   void parse(xmlNodePtr cur); 

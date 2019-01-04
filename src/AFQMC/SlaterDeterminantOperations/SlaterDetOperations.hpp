@@ -21,7 +21,6 @@
 #include "AFQMC/SlaterDeterminantOperations/apply_expM.hpp"
 
 #include "mpi3/shared_communicator.hpp"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 #include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
@@ -36,12 +35,12 @@ class SlaterDetOperations
   using communicator = boost::mpi3::shared_communicator;
   using TVector = boost::multi::array<T,1>;  
   using TMatrix = boost::multi::array<T,2>;  
-  using SHM_Buffer = mpi3_SHMBuffer<T>; 
+  using shmTVector = boost::multi::array<T,1,shared_allocator<T>>;  
 
   public:
 
     SlaterDetOperations(int NMO, int NAEA):
-        SM_TMats(nullptr) 
+        SM_TMats(nullptr)
     {
       // IWORK: integer buffer for getri/getrf
       IWORK.resize(NMO);
@@ -118,9 +117,9 @@ class SlaterDetOperations
       int NMO = hermA.shape()[1];
       int NAEA = hermA.shape()[0];
       set_shm_buffer(comm,NAEA*(NAEA+NMO));
-      assert(SM_TMats->size() >= NAEA*(NAEA+NMO));
-      boost::multi::array_ref<T,2> TNN(SM_TMats->data(), {NAEA,NAEA});
-      boost::multi::array_ref<T,2> TNM(SM_TMats->data()+NAEA*NAEA, {NAEA,NMO});  
+      assert(SM_TMats->num_elements() >= NAEA*(NAEA+NMO));
+      boost::multi::array_ref<T,2> TNN(std::addressof(*SM_TMats->origin()), {NAEA,NAEA});
+      boost::multi::array_ref<T,2> TNM(std::addressof(*SM_TMats->origin())+NAEA*NAEA, {NAEA,NMO});  
       return SlaterDeterminantOperations::shm::MixedDensityMatrix<T>(hermA,B,std::forward<MatC>(C),TNN,TNM,IWORK,WORK,comm,compact);
     }
 
@@ -153,13 +152,13 @@ class SlaterDetOperations
       assert(QQ0.shape()[1]==NEL);
 
       set_shm_buffer(comm,NEL*(NEL+Nact+NMO));
-      assert(SM_TMats->size() >= NEL*(NEL+Nact+NMO));
+      assert(SM_TMats->num_elements() >= NEL*(NEL+Nact+NMO));
       size_t cnt=0;
-      boost::multi::array_ref<T,2> TNN(SM_TMats->data(), {NEL,NEL});
+      boost::multi::array_ref<T,2> TNN(std::addressof(*SM_TMats->origin()), {NEL,NEL});
       cnt+=TNN.num_elements();
-      boost::multi::array_ref<T,2> TAB(SM_TMats->data()+cnt, {Nact,NEL});
+      boost::multi::array_ref<T,2> TAB(std::addressof(*SM_TMats->origin())+cnt, {Nact,NEL});
       cnt+=TAB.num_elements();
-      boost::multi::array_ref<T,2> TNM(SM_TMats->data()+cnt, {NEL,NMO});
+      boost::multi::array_ref<T,2> TNM(std::addressof(*SM_TMats->origin())+cnt, {NEL,NMO});
       return SlaterDeterminantOperations::shm::MixedDensityMatrixForWoodbury<T>(hermA,B,std::forward<MatC>(C),std::forward<MatQ>(QQ0),ref,TNN,TAB,TNM,IWORK,WORK,comm,compact);
     }
 
@@ -207,8 +206,8 @@ class SlaterDetOperations
     T Overlap(const MatA& hermA, const MatB& B, communicator& comm) { 
       int NAEA = hermA.shape()[0];
       set_shm_buffer(comm,NAEA*NAEA);
-      assert(SM_TMats->size() >= NAEA*NAEA);
-      boost::multi::array_ref<T,2> TNN(SM_TMats->data(), {NAEA,NAEA});
+      assert(SM_TMats->num_elements() >= NAEA*NAEA);
+      boost::multi::array_ref<T,2> TNN(std::addressof(*SM_TMats->origin()), {NAEA,NAEA});
       return SlaterDeterminantOperations::shm::Overlap<T>(hermA,B,TNN,IWORK,comm);
     }
 
@@ -237,9 +236,9 @@ class SlaterDetOperations
       assert(TMat_NN.num_elements() >= NEL*NEL);
       assert(TMat_MM.num_elements() >= Nact*NEL);
       set_shm_buffer(comm,NEL*(Nact+NEL));
-      assert(SM_TMats->size() >= NEL*(Nact+NEL));
-      boost::multi::array_ref<T,2> TNN(std::addressof(*SM_TMats->data()), {NEL,NEL});
-      boost::multi::array_ref<T,2> TMN(std::addressof(*(SM_TMats->data()+NEL*NEL)), {Nact,NEL});
+      assert(SM_TMats->num_elements() >= NEL*(Nact+NEL));
+      boost::multi::array_ref<T,2> TNN(std::addressof(*std::addressof(*SM_TMats->origin())), {NEL,NEL});
+      boost::multi::array_ref<T,2> TMN(std::addressof(*(std::addressof(*SM_TMats->origin())+NEL*NEL)), {Nact,NEL});
       return SlaterDeterminantOperations::shm::OverlapForWoodbury<T>(hermA,B,std::forward<MatC>(QQ0),ref,TNN,TMN,IWORK,WORK,comm);
     }
 
@@ -264,10 +263,10 @@ class SlaterDetOperations
       int NMO = A.shape()[0];
       int NAEA = A.shape()[1];
       set_shm_buffer(comm,3*NAEA*NMO);
-      assert(SM_TMats->size() >= 3*NAEA*NAEA);
-      boost::multi::array_ref<T,2> T0(SM_TMats->data(), {NMO,NAEA});
-      boost::multi::array_ref<T,2> T1(SM_TMats->data()+NMO*NAEA, {NMO,NAEA});
-      boost::multi::array_ref<T,2> T2(SM_TMats->data()+2*NMO*NAEA, {NMO,NAEA});
+      assert(SM_TMats->num_elements() >= 3*NAEA*NAEA);
+      boost::multi::array_ref<T,2> T0(std::addressof(*SM_TMats->origin()), {NMO,NAEA});
+      boost::multi::array_ref<T,2> T1(std::addressof(*SM_TMats->origin())+NMO*NAEA, {NMO,NAEA});
+      boost::multi::array_ref<T,2> T2(std::addressof(*SM_TMats->origin())+2*NMO*NAEA, {NMO,NAEA});
       if(comm.root()) 
         ma::product(P1,std::forward<Mat>(A),T0);
       comm.barrier();
@@ -316,18 +315,15 @@ class SlaterDetOperations
     TMatrix TMat_MM3;
 
     // shm temporary matrices
-    std::unique_ptr<SHM_Buffer> SM_TMats;
+    std::unique_ptr<shmTVector> SM_TMats;
 
     // somewhat sensitive piece of code
-    // is this correct?
     void set_shm_buffer(communicator& comm, size_t N) {
-      if(SM_TMats == nullptr) {
-        SM_TMats = std::move(std::make_unique<SHM_Buffer>(comm,N)); 
-      } else if(comm != SM_TMats->getCommunicator()) {
-        SM_TMats = std::move(std::make_unique<SHM_Buffer>(comm,N));  
-      } else if(SM_TMats->size() < N) {
-        SM_TMats->resize(N);
-      } 
+      // since there is no way to extract the communicator from SM_TMats  
+      if( SM_TMats == nullptr || SM_TMats->get_allocator() != shared_allocator<T>{comm} ) { 
+        SM_TMats = std::move(std::make_unique<shmTVector>(extensions<1u>{N},shared_allocator<T>{comm}));
+      } else if(SM_TMats->num_elements() < N) 
+        SM_TMats->reextent(extensions<1u>{N});
     }
 };
 

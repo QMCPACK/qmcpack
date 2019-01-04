@@ -191,7 +191,7 @@ void SharedWalkerSet::setup()
 
 bool SharedWalkerSet::clean()
 {
-  walker_buffer = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),0));
+  walker_buffer.reextent({0,0});
   tot_num_walkers=targetN=targetN_per_TG=0;
   return true;
 }
@@ -202,7 +202,7 @@ bool SharedWalkerSet::clean()
 void SharedWalkerSet::reserve(int n)
 {
   if(capacity() < n) 
-    walker_buffer->resize(walker_size*n);
+    walker_buffer.reextent({n,walker_size});
 }
 
 /*

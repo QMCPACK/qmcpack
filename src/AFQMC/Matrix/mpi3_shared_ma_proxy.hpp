@@ -16,7 +16,6 @@
 #define  AFQMC_MPI3_SHARED_MA_PROXY_HPP 
 
 #include "mpi3/shared_communicator.hpp"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 
 namespace qmcplusplus
 {
@@ -28,7 +27,7 @@ template<typename T>
 class mpi3_shared_ma_proxy
 {
   using communicator = boost::mpi3::shared_communicator;
-  using buffer = mpi3_SHMBuffer<T>; 
+  using shmCMatrix = boost::multi::array<T,2,shared_allocator<T>>;
   using size_type = std::size_t;
 
   public:
@@ -40,13 +39,12 @@ class mpi3_shared_ma_proxy
                          std::array<size_type, 2> s_, 
                          std::array<size_type, 2> gs_={0,0},
                          std::array<size_type, 2> o_={0,0}):   
-       shape_(s_),
        global_shape_(gs_),
        offset_(o_),
-       ptr(std::make_unique<buffer>(comm_,s_[0]*s_[1])) 
+       M({s_[0],s_[1]},shared_allocator<T>{comm_}) 
     {
       if(gs_[0] == 0 || gs_[1] == 0) 
-        global_shape_ = shape_;
+        global_shape_ = s_;
     }
 
     mpi3_shared_ma_proxy(mpi3_shared_ma_proxy const& other) = delete;
@@ -55,38 +53,25 @@ class mpi3_shared_ma_proxy
     mpi3_shared_ma_proxy(mpi3_shared_ma_proxy && other) = default;
     mpi3_shared_ma_proxy& operator=(mpi3_shared_ma_proxy && other) = default;
 
-    void reshape(std::array<size_type, 2> s_, 
-                 std::array<size_type, 2> gs_={0,0},
-                 std::array<size_type, 2> o_={0,0}) {
-      shape_=s_;
-      if(gs_[0] == 0 || gs_[1] == 0) 
-        global_shape_ = shape_;
-      else
-        global_shape_=gs_;
-      offset_=o_;  
-      ptr->resize(s_[0]*s_[1]);
-    }
-
-    T* origin() {return ptr->data();} 
-    T const* origin() const{return ptr->data();} 
-    T* data() {return ptr->data();} 
-    T const* data() const{return ptr->data();} 
-    size_type num_elements() const{return shape_[0]*shape_[1];} 
-    std::array<size_type, 2> shape() const{return shape_;} 
-    std::array<size_type, 2> strides() const{return std::array<size_type, 2>{shape_[1],1};} 
-    std::array<size_type, 2> offset() const{return offset_;} 
+    T* origin() {return std::addressof(*M.origin());} 
+    T const* origin() const{return std::addressof(*M.origin());} 
+    T* data() {return std::addressof(*M.data());} 
+    T const* data() const{return std::addressof(*M.data());} 
+    size_type num_elements() const{return M.num_elements(); } 
+    auto shape() const{return M.shape();} 
+    auto strides() const{return M.strides();} 
+    std::array<size_type, 2> global_offset() const{return offset_;} 
     std::array<size_type, 2> global_shape() const{return global_shape_;} 
 
     boost::multi::array_ref<T,2> get() { 
-        return boost::multi::array_ref<T,2>(ptr->data(),{shape_[0],shape_[1]}); 
+        return boost::multi::array_ref<T,2>(this->origin(),M.extensions()); 
     }
 
   private:
 
-    std::array<size_type, 2> shape_;
     std::array<size_type, 2> global_shape_;
     std::array<size_type, 2> offset_;
-    std::unique_ptr<buffer> ptr;
+    shmCMatrix M;
 
 };
 

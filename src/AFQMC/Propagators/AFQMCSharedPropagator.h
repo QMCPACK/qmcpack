@@ -28,7 +28,6 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
@@ -51,7 +50,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
   using CVector_ref = boost::multi::array_ref<ComplexType,1>;  
   using CMatrix = boost::multi::array<ComplexType,2>;  
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;  
-  using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
+  using shmCVector = ComplexVector<shared_allocator<ComplexType>>; 
 
   public:
 
@@ -65,7 +64,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
             rng(r),
             SDetOp(2*NMO,NAEA+NAEB), // safe for now, since I don't know walker_type
             TSM({2*NMO,NAEA+NAEB}), // safe for now, since I don't know walker_type
-            shmbuff(nullptr),
+            shmbuff(extensions<1u>{1},shared_allocator<ComplexType>{TG.TG_local()}),
             local_group_comm(),
             last_nextra(-1),
             last_task_index(-1),
@@ -100,7 +99,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     // reset shared memory buffers
     // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
-    void reset() { shmbuff.reset(nullptr); }
+    void reset() { shmbuff.reextent(extensions<1u>{0}); }
 
     bool hybrid_propagation() { return hybrid; }
 
@@ -122,7 +121,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     SlaterDetOperations<ComplexType> SDetOp;
 
-    std::unique_ptr<SHM_Buffer> shmbuff;    
+    shmCVector shmbuff;    
 
     shared_communicator local_group_comm;
 

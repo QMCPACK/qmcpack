@@ -50,7 +50,7 @@ inline void SharedWalkerSet::resize(int n, MatA&& A, MatB&& B) {
   reserve(n);
   if(n > tot_num_walkers) {
     if(TG.TG_local().root()) {
-      auto W = Wlk_Buff(walker_buffer->data(),{n,walker_size}); 
+      auto W = Wlk_Buff(std::addressof(*walker_buffer.origin()),{n,walker_size}); 
       auto pos = tot_num_walkers; 
       // careful here!!!
       while(pos < n) {
@@ -122,7 +122,7 @@ inline void SharedWalkerSet::push_walkers(Mat&& M) {
     return;
   }  
 
-  auto W = Wlk_Buff(walker_buffer->data(),{tot_num_walkers+M.shape()[0],walker_size}); 
+  auto W = Wlk_Buff(std::addressof(*walker_buffer.origin()),{tot_num_walkers+M.shape()[0],walker_size}); 
   for(int i=0; i<M.shape()[0]; i++)
     W[tot_num_walkers++] = M[i];
 
