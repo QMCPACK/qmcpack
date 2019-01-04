@@ -807,7 +807,9 @@ accelerators.
 
 \subsubsection{Building QMCPACK}
 Please note that these build instructions are preliminary as the
-software environment is subject to change. As of December 2018, the IBM XL compiler does not support C++14, so we currently utilize the gnu compiler.
+software environment is subject to change. As of December 2018, the
+IBM XL compiler does not support C++14, so we currently utilize the
+gnu compiler. 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
 module load gcc
@@ -819,6 +821,7 @@ export FFTW_HOME=$OLCF_FFTW_ROOT
 module load cmake
 module load boost
 module load cuda
+module load python/2.7.15-anaconda2-5.3.0
 mkdir build_summit
 cd build_summit
 cmake -DCMAKE_C_COMPILER="mpicc" \
