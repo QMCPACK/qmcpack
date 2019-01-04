@@ -18,7 +18,7 @@ IF (NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(vmc_short_C2_pp_msdj-H5
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_SHORT_H5_MSDJ
-                    vmc_short_pp_msdj-H5.xml 
+                    vmc_short_pp_msdj-H5.xml
                     1 16
                     TRUE
                     1 C2_PP_MSDJ_SHORT # VMC
@@ -29,12 +29,12 @@ IF (NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(vmc_short_C2_pp_msdj-XML
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_SHORT_XML_MSDJ
-                    vmc_short_pp_msdj-XML.xml 
+                    vmc_short_pp_msdj-XML.xml
                     1 16
                     TRUE
                     1 C2_PP_MSDJ_SHORT # VMC
                     )
- 
+
   QMC_RUN_AND_CHECK(vmc_short_C2_pp_msdj-XML-traditional
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_SHORT_XML_MSDJ_TRAD
@@ -54,7 +54,7 @@ IF (NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(vmc_long_C2_pp_msdj-H5
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_LONG_H5_MSDJ
-                    vmc_long_pp_msdj-H5.xml 
+                    vmc_long_pp_msdj-H5.xml
                     1 16
                     TRUE
                     1 C2_PP_MSDJ_LONG # VMC
@@ -66,15 +66,20 @@ IF (NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(vmc_long_C2_pp_msdj-XML
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_LONG_XML_MSDJ
-                    vmc_long_pp_msdj-XML.xml 
+                    vmc_long_pp_msdj-XML.xml
                     1 16
                     TRUE
                     1 C2_PP_MSDJ_LONG # VMC
                     )
- 
- 
 
- 
+  QMC_RUN_AND_CHECK(vmc_long_C2_pp_msdj-XML-traditional
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
+                    C2_TZ_PP_LONG_XML_MSDJ
+                    vmc_long_pp_msdj-XML-traditional.xml
+                    1 16
+                    TRUE
+                    1 C2_PP_MSDJ_LONG # VMC
+                    )
 
  ELSE()
     MESSAGE("Skipping C2_pp tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
