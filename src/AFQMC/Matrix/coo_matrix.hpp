@@ -42,7 +42,7 @@ class coo_matrix{
 	coo_matrix(coo_matrix&&     ) = default;
 	bool operator==(coo_matrix const&) const = delete;
 	coo_matrix(
-		std::tuple<index, index> const& arr = {0,0}, 
+		std::tuple<index, index> const& arr = std::tuple<index,index>{0,0}, 
 		std::initializer_list<std::pair<std::tuple<index, index>, element>> il = {}
 	) : 
 		cols_(std::get<0>(arr)), 

@@ -87,7 +87,7 @@ inline void SharedWalkerSet::resize(int n, MatA&& A, MatB&& B) {
 template<class Mat>
 inline void SharedWalkerSet::pop_walkers(Mat&& M) {
 
-  static_assert(std::decay<Mat>::type::dimensionality == 2);
+  static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
   if(tot_num_walkers < int(M.shape()[0]))
     APP_ABORT("Insufficient walkers");
   if(walker_size != int(M.shape()[1]))
@@ -99,9 +99,8 @@ inline void SharedWalkerSet::pop_walkers(Mat&& M) {
     tot_num_walkers -= int(M.shape()[0]);
     return;
   }  
-  auto W = get_walkers_matrix();
   for(int i=0; i<M.shape()[0]; i++)
-    M[i] = W[--tot_num_walkers];  
+    M[i] = walker_buffer[--tot_num_walkers];  
 
 }
 
@@ -109,7 +108,7 @@ inline void SharedWalkerSet::pop_walkers(Mat&& M) {
 template<class Mat>
 inline void SharedWalkerSet::push_walkers(Mat&& M) {
 
-  static_assert(std::decay<Mat>::type::dimensionality == 2);
+  static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
   if(tot_num_walkers+M.shape()[0] > capacity())
     APP_ABORT("Insufficient capacity");
   if(walker_size != M.shape()[1])
@@ -154,8 +153,6 @@ inline void SharedWalkerSet::branch(std::vector<std::pair<double,int>>::iterator
     return;
   } 
 
-  auto W = get_walkers_matrix();
-
   //1. push/swap all dead walkers to the end and adjust tot_num_walkers 
   {
     auto kill = itbegin;
@@ -177,7 +174,7 @@ inline void SharedWalkerSet::branch(std::vector<std::pair<double,int>>::iterator
 
       // 3. swap
       std::swap(*kill,*keep); 
-      W[std::distance(itbegin,kill)] = W[--tot_num_walkers]; 
+      walker_buffer[std::distance(itbegin,kill)] = walker_buffer[--tot_num_walkers]; 
       --keep;  
 
     }
@@ -201,16 +198,16 @@ inline void SharedWalkerSet::branch(std::vector<std::pair<double,int>>::iterator
     if(itbegin->second <= 0) { // just checking
       APP_ABORT("Error in SharedWalkerSet::branch(): Problems during branch.\n");
     } else if(itbegin->second == 1) {
-      W[pos][data_displ[WEIGHT]] = ComplexType(itbegin->first,0.0);
+      walker_buffer[pos][data_displ[WEIGHT]] = ComplexType(itbegin->first,0.0);
     } else {
       // if there is space, branch within walker set
       // otherwise send excess to M
       int n = std::min(targetN_per_TG-tot_num_walkers,itbegin->second-1);
-      W[pos][data_displ[WEIGHT]] = ComplexType(itbegin->first,0.0);
+      walker_buffer[pos][data_displ[WEIGHT]] = ComplexType(itbegin->first,0.0);
       for(int i=0; i<n; i++) 
-        W[tot_num_walkers++] = W[pos];
+        walker_buffer[tot_num_walkers++] = walker_buffer[pos];
       for(int i=0, in=itbegin->second-1-n; i<in; i++, cnt++) 
-        M[cnt] = W[pos];  
+        M[cnt] = walker_buffer[pos];  
     }
   }
 

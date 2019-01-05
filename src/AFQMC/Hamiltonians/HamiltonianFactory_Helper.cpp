@@ -107,7 +107,7 @@ namespace afqmc
       app_log()<<" -- Time to count elements in hdf5 read: "
                <<Timer.average("Generic1") <<"\n";
 
-      ucsr_matrix ucsr({nrows,max_i-min_i},{0,min_i},row_counts,Alloc(TG.Node()));
+      ucsr_matrix ucsr(tp_ul_ul{nrows,max_i-min_i},tp_ul_ul{0,min_i},row_counts,Alloc(TG.Node()));
       csr::matrix_emplace_wrapper<ucsr_matrix> csr_wrapper(ucsr,TG.Node());
 
       Timer.reset("Generic1");

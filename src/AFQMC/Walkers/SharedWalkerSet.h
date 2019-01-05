@@ -30,8 +30,6 @@
 namespace qmcplusplus
 {
 
-// NOTE: Remove get_walkers_matrix and use walker_buffer directly. Only need to be careful about prt type.
-
 namespace afqmc
 {
 
@@ -54,7 +52,8 @@ class SharedWalkerSet: public AFQMCInfo
   // wlk_descriptor: {nmo, naea, naeb, nback_prop} 
   using wlk_descriptor = std::array<int,4>;
   using wlk_indices = std::array<int,14>;
-  using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
+  using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+  using CMatrix = boost::multi::array<ComplexType,2>;
 
   public:
 
@@ -73,9 +72,10 @@ class SharedWalkerSet: public AFQMCInfo
     
       template<class ma>
       const_walker(ma const& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi::const_array_ref<ComplexType,1>(a.origin(),extensions<1u>{a.size()})),indx(i_),desc(d_) 
+        w_(boost::multi::const_array_ref<ComplexType,1>(std::addressof(*a.origin()),extensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
-	static_assert(ma::dimensionality == 1);
+
+	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
 	assert(w_.strides()[0]==1);
       }
       
@@ -179,9 +179,10 @@ class SharedWalkerSet: public AFQMCInfo
     
       template<class ma>
       walker(ma&& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi::array_ref<ComplexType,1>(a.origin(),extensions<1u>{a.size()})),indx(i_),desc(d_) 
+        w_(boost::multi::array_ref<ComplexType,1>(std::addressof(*a.origin()),extensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
-	static_assert(ma::dimensionality == 1);
+
+	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
 	assert(w_.strides()[0]==1);
       }
       
@@ -316,8 +317,9 @@ class SharedWalkerSet: public AFQMCInfo
 	>
   {
     public:
-    walker_iterator(int k, Wlk_Buff w_, const wlk_indices& i_, const wlk_descriptor& d_): 
-	pos(k),W(std::make_unique<Wlk_Buff>(w_)),indx(&i_),desc(&d_)  {}
+    template<class WBuff>
+    walker_iterator(int k, WBuff&& w_, const wlk_indices& i_, const wlk_descriptor& d_): 
+	pos(k),W(std::addressof(*w_.origin()),w_.extensions()),indx(&i_),desc(&d_)  {}
 
     using difference_type = std::ptrdiff_t;
     using reference = walker;
@@ -325,7 +327,7 @@ class SharedWalkerSet: public AFQMCInfo
     private:
 
     int pos;
-    std::unique_ptr<Wlk_Buff> W;
+    Wlk_Buff W;
     wlk_indices const* indx;
     wlk_descriptor const* desc; 
 
@@ -334,7 +336,7 @@ class SharedWalkerSet: public AFQMCInfo
     void increment(){++pos;}
     void decrement(){--pos;}
     bool equal(walker_iterator const& other) const{ return pos == other.pos; }
-    reference dereference() const { return reference((*W)[pos],*indx,*desc);}
+    reference dereference() const { return reference(W[pos],*indx,*desc);}
     void advance(difference_type n){pos += n;}
     difference_type distance_to(walker_iterator other) const{ return other.pos - pos; }
   };
@@ -349,8 +351,9 @@ class SharedWalkerSet: public AFQMCInfo
         >
   {
     public:
-    const_walker_iterator(int k, const_Wlk_Buff w_, const wlk_indices& i_, const wlk_descriptor& d_):
-        pos(k),W(std::make_unique<const_Wlk_Buff>(w_)),indx(&i_),desc(&d_)  {}
+    template<class WBuff>
+    const_walker_iterator(int k, WBuff&& w_, const wlk_indices& i_, const wlk_descriptor& d_):
+        pos(k),W(std::addressof(*w_.origin()),w_.extensions()),indx(&i_),desc(&d_)  {}
 
     using difference_type = std::ptrdiff_t;
     using reference = const_walker;
@@ -358,7 +361,7 @@ class SharedWalkerSet: public AFQMCInfo
     private:
 
     int pos;
-    std::unique_ptr<const_Wlk_Buff> W;
+    const_Wlk_Buff W;
     wlk_indices const* indx;
     wlk_descriptor const* desc;
 
@@ -367,7 +370,7 @@ class SharedWalkerSet: public AFQMCInfo
     void increment(){++pos;}
     void decrement(){--pos;}
     bool equal(const_walker_iterator const& other) const{  return pos == other.pos;  }
-    reference dereference() const { return reference((*W)[pos],*indx,*desc);}
+    reference dereference() const { return reference(W[pos],*indx,*desc);}
     void advance(difference_type n){pos += n;}
     difference_type distance_to(const_walker_iterator other) const{ return other.pos - pos; }
   };
@@ -383,7 +386,8 @@ class SharedWalkerSet: public AFQMCInfo
         RandomGenerator_t* r):
                 TG(tg_),AFQMCInfo(info),rng(r),
                 walker_memory_usage(0),tot_num_walkers(0),
-		walker_buffer({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
+		walker_buffer({1,1}),
+		//walker_buffer({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
                 load_balance(UNDEFINED_LOAD_BALANCE),
                 pop_control(UNDEFINED_BRANCHING),min_weight(0.05),max_weight(4.0),
                 walkerType(UNDEFINED_WALKER_TYPE),nback_prop(0)
@@ -418,14 +422,16 @@ class SharedWalkerSet: public AFQMCInfo
    * Returns iterator to the first walker in the set
    */
   iterator begin() {
-    return iterator(0,get_walkers_matrix(),data_displ,wlk_desc);
+    assert(walker_buffer.shape()[1] == walker_size);
+    return iterator(0,walker_buffer,data_displ,wlk_desc);
   }
 
   /*
    * Returns iterator to the past-the-end walker in the set
    */
   iterator end() {
-    return iterator(tot_num_walkers,get_walkers_matrix(),data_displ,wlk_desc);
+    assert(walker_buffer.shape()[1] == walker_size);
+    return iterator(tot_num_walkers,walker_buffer,data_displ,wlk_desc);
   }
 
   /*
@@ -434,7 +440,8 @@ class SharedWalkerSet: public AFQMCInfo
   reference operator[](int i) {
     if(i<0 || i>tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
-    return walker(get_walkers_matrix()[i],data_displ,wlk_desc);
+    assert(walker_buffer.shape()[1] == walker_size);
+    return walker(walker_buffer[i],data_displ,wlk_desc);
   }
 
   /*
@@ -443,7 +450,8 @@ class SharedWalkerSet: public AFQMCInfo
   const_reference operator[](int i) const {
     if(i<0 || i>tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
-    return const_walker(const_get_walkers_matrix()[i],data_displ,wlk_desc);
+    assert(walker_buffer.shape()[1] == walker_size);
+    return const_walker(walker_buffer[i],data_displ,wlk_desc);
   }
 
   // cleans state of object. 
@@ -490,6 +498,7 @@ class SharedWalkerSet: public AFQMCInfo
 
   int GlobalPopulation() const{
     int res=0;
+    assert(walker_buffer.shape()[1] == walker_size);
     if(TG.TG_local().root())
       res += tot_num_walkers;
     return (TG.Global() += res);
@@ -497,10 +506,10 @@ class SharedWalkerSet: public AFQMCInfo
 
   RealType GlobalWeight() const {
     RealType res=0;
+    assert(walker_buffer.shape()[1] == walker_size);
     if(TG.TG_local().root()) {
-      auto W = const_get_walkers_matrix();
-      for(int i=0; i<tot_num_walkers; i++)
-        res += std::abs(W[i][data_displ[WEIGHT]]);
+      for(int i=0; i<tot_num_walkers; i++) 
+        res += std::abs(walker_buffer[i][data_displ[WEIGHT]]);
     }
     return (TG.Global() += res);
   }
@@ -523,17 +532,17 @@ class SharedWalkerSet: public AFQMCInfo
   template<class T>
   void scaleWeight(const T& w0) {
     if(!TG.TG_local().root()) return;
-    auto W = get_walkers_matrix(); 
+    assert(walker_buffer.shape()[1] == walker_size);
     for(int i=0; i<tot_num_walkers; i++) 
-      W[i][data_displ[WEIGHT]]*=w0; 
+      walker_buffer[i][data_displ[WEIGHT]]*=w0; 
   } 
 
   void scaleWeightsByOverlap() {
     if(!TG.TG_local().root()) return;
-    auto W = get_walkers_matrix();
+    assert(walker_buffer.shape()[1] == walker_size);
     for(int i=0; i<tot_num_walkers; i++) {
-      W[i][data_displ[WEIGHT]] *= ComplexType(1.0/std::abs(W[i][data_displ[OVLP]]),0.0);
-      W[i][data_displ[PHASE]] *= std::exp(ComplexType(0.0, -std::arg(W[i][data_displ[OVLP]]))); 
+      walker_buffer[i][data_displ[WEIGHT]] *= ComplexType(1.0/std::abs(walker_buffer[i][data_displ[OVLP]]),0.0);
+      walker_buffer[i][data_displ[PHASE]] *= std::exp(ComplexType(0.0, -std::arg(walker_buffer[i][data_displ[OVLP]]))); 
     }
   }
 
@@ -558,7 +567,8 @@ class SharedWalkerSet: public AFQMCInfo
   void copyToIO(Vec&& x, int n) {
     assert(n < tot_num_walkers);
     assert(x.size() >= walkerSizeIO());
-    auto ptr = get_walkers_matrix()[n].origin(); // pointer to walker data
+    assert(walker_buffer.shape()[1] == walker_size);
+    auto ptr = walker_buffer[n].origin(); // pointer to walker data
     auto xd = std::addressof(x[0]);
     xd[0] = ptr[WEIGHT];
     xd[1] = ptr[PHASE];
@@ -582,7 +592,8 @@ class SharedWalkerSet: public AFQMCInfo
   void copyFromIO(Vec&& x, int n) {
     assert(n < tot_num_walkers);
     assert(x.size() >= walkerSizeIO());
-    auto ptr = get_walkers_matrix()[n].origin(); // pointer to walker data
+    assert(walker_buffer.shape()[1] == walker_size);
+    auto ptr = walker_buffer[n].origin(); // pointer to walker data
     auto xd = std::addressof(x[0]);
     ptr[WEIGHT] = xd[0];
     ptr[PHASE] = xd[1];
@@ -621,23 +632,10 @@ class SharedWalkerSet: public AFQMCInfo
 
   TimerList_t Timers;
 
-  Wlk_Buff get_walkers_matrix() {
-    assert(walker_buffer.shape()[1] == walker_size);
-    if(walker_buffer.shape()[0] < tot_num_walkers)
-      APP_ABORT("error: problems with walker buffer.\n"); 
-    return Wlk_Buff(std::addressof(*walker_buffer.origin()),{tot_num_walkers,walker_size});
-  }
-
-  const_Wlk_Buff const_get_walkers_matrix() const {
-    assert(walker_buffer.shape()[1] == walker_size);
-    if(walker_buffer.shape()[0] < tot_num_walkers)
-      APP_ABORT("error: problems with walker buffer.\n"); 
-    return const_Wlk_Buff(std::addressof(*walker_buffer.origin()),{tot_num_walkers,walker_size});
-  }
-
   afqmc::TaskGroup_& TG;  
 
-  shmCMatrix walker_buffer;
+  CMatrix walker_buffer;
+  //shmCMatrix walker_buffer;
 
   // reads xml and performs setup
   void parse(xmlNodePtr cur); 
@@ -651,29 +649,6 @@ class SharedWalkerSet: public AFQMCInfo
   // load balancing algorithm
   template<class Mat>
   void loadBalance(Mat&& M); 
-/*
-  {
-
-    Timers[LoadBalance]->start();
-    if(load_balance == SIMPLE) {
-
-      if(TG.TG_local().root())
-        afqmc::swapWalkersSimple(*this,std::forward<Mat>(M),
-            nwalk_counts_old,nwalk_counts_new,TG.TG_heads());
-
-    } else if(load_balance == ASYNC) {
-
-      if(TG.TG_local().root())
-        afqmc::swapWalkersAsync(*this,std::forward<Mat>(M),
-            nwalk_counts_old,nwalk_counts_new,TG.TG_heads());
-
-    }
-    TG.local_barrier();
-    // since tot_num_walkers is local, you need to sync it
-    TG.TG_local().broadcast_n(&tot_num_walkers,1,0);
-    Timers[LoadBalance]->stop();
-  } 
-*/
 
   // branching algorithm
   BRANCHING_ALGORITHM pop_control; 

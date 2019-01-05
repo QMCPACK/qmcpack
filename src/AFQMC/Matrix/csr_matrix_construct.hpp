@@ -82,7 +82,7 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA,
   if(comm.rank()!=0) counts.resize(nr);
   comm.broadcast_n(counts.begin(),counts.size());
   
-  CSR csr_mat({nr,nc},{0,0},counts,boost::mpi3::intranode::allocator<typename CSR::value_type>(comm));
+  CSR csr_mat(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},counts,boost::mpi3::intranode::allocator<typename CSR::value_type>(comm));
 
   if(comm.rank()==0) {
     if(TA == 'N') {
@@ -143,7 +143,7 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
   Timer.reset("G0");
   Timer.start("G0");
 
-  UCSR ucsr_mat({nr, nc}, {0,0}, counts, boost::mpi3::intranode::allocator<VType>(comm));
+  UCSR ucsr_mat(std::tuple<std::size_t,std::size_t>{nr, nc}, std::tuple<std::size_t,std::size_t>{0,0}, counts, boost::mpi3::intranode::allocator<VType>(comm));
 
   for(std::size_t r=0; r<comm.size(); r++) {
     comm.barrier();
@@ -245,7 +245,7 @@ CSR construct_csr_matrix_from_distributed_containers(Container const& Q, std::si
   using std::get;
   using Type = typename Container::value_type;
   if(nr==0 || nc==0)
-    return CSR({nr,nc},{0,0},0,typename CSR::alloc_type(TG.Node()));
+    return CSR(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},0,typename CSR::alloc_type(TG.Node()));
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
 
@@ -255,9 +255,9 @@ CSR construct_csr_matrix_from_distributed_containers(Container const& Q, std::si
   TG.Global().all_reduce_in_place_n(counts_global.begin(),counts_global.size(),std::plus<>());
 
   if(std::accumulate(counts_global.begin(),counts_global.end(),std::size_t(0))==0) 
-    return CSR({nr,nc},{0,0},0,typename CSR::alloc_type(TG.Node()));
+    return CSR(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},0,typename CSR::alloc_type(TG.Node()));
 
-  typename CSR::base ucsr({nr,nc},{0,0},counts_global,typename CSR::alloc_type(TG.Node()));  
+  typename CSR::base ucsr(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},counts_global,typename CSR::alloc_type(TG.Node()));  
 
   std::size_t nterms = Q.size();
   auto sz_per_node = TG.Cores().all_gather_value(nterms);
@@ -312,7 +312,7 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
   using std::get;
   using Type = typename Container::value_type;
   if(nr==0 || nc==0)
-    return CSR({nr,nc},{0,0},0,typename CSR::alloc_type(TG.Node()));
+    return CSR(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},0,typename CSR::alloc_type(TG.Node()));
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int node_number = TG.getLocalNodeNumber();

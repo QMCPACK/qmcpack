@@ -51,7 +51,7 @@ namespace qmcplusplus
 // tests dispatching through ma_operations
 void test_sparse_matrix_mult()
 {
-    csr_matrix A( {4, 4}, {0,0}, 4);
+    csr_matrix A( std::tuple<std::size_t,std::size_t>{4, 4}, std::tuple<std::size_t,std::size_t>{0,0}, 4);
     A[3][3] = 1.;
     A[2][1] = 3.;
     A[0][1] = 9.;

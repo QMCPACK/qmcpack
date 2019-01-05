@@ -120,9 +120,9 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
       // add reference  
       ci.emplace_back(std::get<2>(*abij.configurations_begin()));  
       if(wfn_type == "occ")
-        PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},1,Alloc(TGwfn.Node())));
+        PsiT.emplace_back(PsiT_Matrix(tp_ul_ul{NEL,N_},tp_ul_ul{0,0},1,Alloc(TGwfn.Node())));
       else 
-        PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},
+        PsiT.emplace_back(PsiT_Matrix(tp_ul_ul{NEL,N_},tp_ul_ul{0,0},
                           get_nnz(PsiT_MO[0],refc,NEL,0),Alloc(TGwfn.Node())));
       if(TGwfn.Node().root()) {
         if(wfn_type == "occ") {
@@ -140,9 +140,9 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
       }
       if(walker_type==COLLINEAR) {
         if(wfn_type == "occ")
-          PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},1,Alloc(TGwfn.Node())));
+          PsiT.emplace_back(PsiT_Matrix(tp_ul_ul{NAEB,NMO},tp_ul_ul{0,0},1,Alloc(TGwfn.Node())));
         else
-          PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},
+          PsiT.emplace_back(PsiT_Matrix(tp_ul_ul{NAEB,NMO},tp_ul_ul{0,0},
                             get_nnz(PsiT_MO.back(),refc+NAEA,NAEB,NMO),Alloc(TGwfn.Node())));
         if(TGwfn.Node().root()) {
           if(wfn_type == "occ") {
@@ -167,9 +167,9 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         ci.emplace_back(std::get<2>(*configurations));
         abij.get_alpha_configuration( std::get<0>(*configurations) ,iwork); 
         if(wfn_type == "occ")
-          PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},1,Alloc(TGwfn.Node())));
+          PsiT.emplace_back(PsiT_Matrix(tp_ul_ul{NEL,N_},tp_ul_ul{0,0},1,Alloc(TGwfn.Node())));
         else 
-          PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},
+          PsiT.emplace_back(PsiT_Matrix(tp_ul_ul{NEL,N_},tp_ul_ul{0,0},
                         get_nnz(PsiT_MO[0],iwork.data(),NEL,0),Alloc(TGwfn.Node())));
         if(TGwfn.Node().root()) { 
           // add excited configuration
@@ -189,9 +189,9 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         if(walker_type==COLLINEAR) {
           abij.get_beta_configuration( std::get<1>(*configurations) ,iwork); 
           if(wfn_type == "occ")
-            PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},1,Alloc(TGwfn.Node())));
+            PsiT.emplace_back(PsiT_Matrix(tp_ul_ul{NAEB,NMO},tp_ul_ul{0,0},1,Alloc(TGwfn.Node())));
           else
-            PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},
+            PsiT.emplace_back(PsiT_Matrix(tp_ul_ul{NAEB,NMO},tp_ul_ul{0,0},
                             get_nnz(PsiT_MO.back(),iwork.data(),NAEB,NMO),Alloc(TGwfn.Node())));
           if(TGwfn.Node().root()) { 
             if(wfn_type == "occ") {
@@ -315,7 +315,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
       ComplexType one(1.0,0.0);
       // wfn_type == "occ" implies a single reference now, since integrals can't be UHF
       PsiT_MO.reserve(1);
-      PsiT_MO.emplace_back(PsiT_Matrix({N_,N_},{0,0},1,Alloc(TGwfn.Node())));
+      PsiT_MO.emplace_back(PsiT_Matrix(tp_ul_ul{N_,N_},tp_ul_ul{0,0},1,Alloc(TGwfn.Node())));
       if(TGwfn.Node().root())  
         for(int k=0; k<N_; k++) 
           PsiT_MO.back().emplace_back({k,k},one); 
@@ -351,7 +351,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     }
     if(PsiT_MO.size() == 1) {
       // RHF reference
-      PsiT.emplace_back(PsiT_Matrix({active_combined.size(),NMO},{0,0},
+      PsiT.emplace_back(PsiT_Matrix(tp_ul_ul{active_combined.size(),NMO},tp_ul_ul{0,0},
                      get_nnz(PsiT_MO[0],active_combined.data(),active_combined.size(),0),
                      Alloc(TGwfn.Node())));
       if(TGwfn.Node().root()) {
@@ -365,7 +365,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
       }
     } else {
       // UHF reference
-      PsiT.emplace_back(PsiT_Matrix({active_alpha.size(),NMO},{0,0},
+      PsiT.emplace_back(PsiT_Matrix(tp_ul_ul{active_alpha.size(),NMO},tp_ul_ul{0,0},
                      get_nnz(PsiT_MO[0],active_alpha.data(),active_alpha.size(),0),
                      Alloc(TGwfn.Node())));
       if(TGwfn.Node().root()) {
@@ -377,7 +377,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
             PsiT.back().emplace_back({k,*col},*val);
         }
       }
-      PsiT.emplace_back(PsiT_Matrix({active_beta.size(),NMO},{0,0},
+      PsiT.emplace_back(PsiT_Matrix(tp_ul_ul{active_beta.size(),NMO},tp_ul_ul{0,0},
                      get_nnz(PsiT_MO[1],active_beta.data(),active_beta.size(),0),
                      Alloc(TGwfn.Node())));
       if(TGwfn.Node().root()) {

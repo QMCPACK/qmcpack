@@ -28,6 +28,7 @@ using std::endl;
 using std::cout;
 using std::cerr;
 using std::get;
+using tp_ul_ul = std::tuple<std::size_t,std::size_t>;
 
 namespace mpi3 = boost::mpi3;
 
@@ -52,7 +53,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
         std::vector<int> max_non_zero_per_row = {5,3,4,2};
 
         {
-                ucsr_matrix small({4,4}, {0,0}, 2, A);
+                ucsr_matrix small(tp_ul_ul{4,4}, tp_ul_ul{0,0}, 2, A);
                 if(serial || node.rank()==0) small[3][3] = 1;
                 if(serial || node.rank()==0) small[0][2] = 9;
                 node.barrier();
@@ -75,7 +76,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
         }
 
         {
-                ucsr_matrix small({4,4}, {0,0}, non_zero_per_row, A);
+                ucsr_matrix small(tp_ul_ul{4,4}, tp_ul_ul{0,0}, non_zero_per_row, A);
                 if(serial || node.rank()==0) small[3][3] = 1;
                 if(serial || node.rank()==0) small[0][2] = 9;
                 node.barrier();
@@ -100,7 +101,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
         }
 
         {
-                ucsr_matrix small({4,4}, {0,0}, max_non_zero_per_row, A);
+                ucsr_matrix small(tp_ul_ul{4,4}, tp_ul_ul{0,0}, max_non_zero_per_row, A);
                 if(serial || node.rank()==0) small[3][3] = 1;
                 if(serial || node.rank()==0) small[0][2] = 9;
                 node.barrier();
@@ -125,7 +126,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
         }
 
         {
-                ucsr_matrix small({4,4}, {0,0}, 2, A);
+                ucsr_matrix small(tp_ul_ul{4,4}, tp_ul_ul{0,0}, 2, A);
 
                 if(serial || node.rank()==0) small[3][3] = 1;
                 if(serial || node.rank()==0) small[0][2] = 9;
@@ -148,7 +149,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
 
                 node.barrier();
 
-                ucsr_matrix small0({4,4}, {0,0}, 2, A);
+                ucsr_matrix small0(tp_ul_ul{4,4}, tp_ul_ul{0,0}, 2, A);
 
                 if(serial || node.rank()==0) small0[3][3] = 1;
                 if(serial || node.rank()==0) small0[0][2] = 9;
@@ -185,7 +186,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
 
                 node.barrier();
 
-                ucsr_matrix small3({0,0},{0,0},0, A);
+                ucsr_matrix small3(tp_ul_ul{0,0},tp_ul_ul{0,0},0, A);
                 small3 = std::move(small2);
                 REQUIRE(small3.num_non_zero_elements() == 4);
                 val = small3.non_zero_values_data();
@@ -216,7 +217,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                   }
                 }
 
-                ucsr_matrix small5({4,4}, {0,0}, non_zero_per_row, A);
+                ucsr_matrix small5(tp_ul_ul{4,4}, tp_ul_ul{0,0}, non_zero_per_row, A);
                 if(serial || node.rank()==0) small5[3][3] = 1;
                 if(serial || node.rank()==0) small5[0][2] = 9;
                 node.barrier();
@@ -237,7 +238,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                   }
                 }
 
-                ucsr_matrix small6({4,4}, {0,0}, max_non_zero_per_row, A);
+                ucsr_matrix small6(tp_ul_ul{4,4}, tp_ul_ul{0,0}, max_non_zero_per_row, A);
                 if(serial || node.rank()==0) small6[3][3] = 1;
                 if(serial || node.rank()==0) small6[0][2] = 9;
                 node.barrier();
@@ -258,7 +259,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                   }
                 }
 
-                csr_matrix small7({4,4}, {0,0}, max_non_zero_per_row, A);
+                csr_matrix small7(tp_ul_ul{4,4}, tp_ul_ul{0,0}, max_non_zero_per_row, A);
                 if(serial || node.rank()==0) small7[3][3] = 1;
                 if(serial || node.rank()==0) small7[0][2] = 9;
                 node.barrier();
@@ -286,7 +287,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
         c_ = {1,2,1,3};
 
         {
-                csr_matrix small({4,4}, {0,0}, 2, A);
+                csr_matrix small(tp_ul_ul{4,4}, tp_ul_ul{0,0}, 2, A);
                 if(serial || node.rank()==0) small[3][3] = 1;
                 if(serial || node.rank()==0) small[0][2] = 9;
                 node.barrier();
@@ -384,7 +385,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
 
         }
         {
-                csr_matrix small({4,4}, {0,0}, non_zero_per_row, A);
+                csr_matrix small(tp_ul_ul{4,4}, tp_ul_ul{0,0}, non_zero_per_row, A);
                 if(serial || node.rank()==0) small[3][3] = 1;
                 if(serial || node.rank()==0) small[0][2] = 9;
                 node.barrier();
@@ -409,7 +410,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
         }
 
         {
-                csr_matrix small({4,4}, {0,0}, max_non_zero_per_row, A);
+                csr_matrix small(tp_ul_ul{4,4}, tp_ul_ul{0,0}, max_non_zero_per_row, A);
                 if(serial || node.rank()==0) small[3][3] = 1;
                 if(serial || node.rank()==0) small[0][2] = 9;
                 node.barrier();
@@ -496,7 +497,7 @@ TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
   using csr_matrix = ma::sparse::csr_matrix<Type,int,size_t,Alloc,is_root>;
 
   Alloc A(node);
-  ucsr_matrix umat({400000,400000}, {0,0}, 7000, A);
+  ucsr_matrix umat({400000,400000}, tp_ul_ul{0,0}, 7000, A);
   world.barrier();
   if(node.root()) {
     std::cout<<" capacity: " <<umat.capacity() <<std::endl;
@@ -505,7 +506,7 @@ TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
   }
   world.barrier();
   Alloc B(node);
-  ucsr_matrix umat2({400000,400000}, {0,0}, 7000, B);
+  ucsr_matrix umat2({400000,400000}, tp_ul_ul{0,0}, 7000, B);
   world.barrier();
   if(node.root()) {
     std::cout<<" capacity: " <<umat2.capacity() <<std::endl;

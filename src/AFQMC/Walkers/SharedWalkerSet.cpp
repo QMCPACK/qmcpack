@@ -221,11 +221,10 @@ void SharedWalkerSet::resize(int n) {
   reserve(n);
   if(n > tot_num_walkers) {
     if(TG.TG_local().root()) {
-      auto W = get_walkers_matrix();
       auto pos = tot_num_walkers;
       auto i0=0;
       while(pos < n) {
-        W[pos++] = W[i0];
+        walker_buffer[pos++] = walker_buffer[i0];
         i0 = (i0+1)%tot_num_walkers;
       } 
     }

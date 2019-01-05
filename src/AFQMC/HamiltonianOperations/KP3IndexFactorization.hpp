@@ -949,7 +949,7 @@ class KP3IndexFactorization
               ma::product(T(X.sliced(nc0,nc0+nchol)),
                         H(Likn),vki);
               for(int nw=0; nw<nwalk; nw++) {
-                auto&& vki_n(vki3D[nw]);
+                const auto&& vki_n(vki3D[nw]);
                 for(int i=0; i<ni; i++) {
                   auto v3D_ni(std::addressof(*v3D[nw][ni0+i].origin()) + nk0);
                   for(int k=0; k<nk; k++, ++v3D_ni)
@@ -981,7 +981,7 @@ class KP3IndexFactorization
                 ma::product(T(X.sliced(nc0,nc0+nchol)),
                           H(Likn),vki);
                 for(int nw=0; nw<nwalk; nw++) {
-                  auto&& vki_n(vki3D[nw]);
+                  const auto&& vki_n(vki3D[nw]);
                   for(int i=0; i<ni; i++) {
                     auto v3D_ni(std::addressof(*v3D[nw][ni0+i].origin()) + nk0);
                     for(int k=0; k<nk; k++, ++v3D_ni)
@@ -1014,7 +1014,7 @@ class KP3IndexFactorization
             ma::product(T(X.sliced(nc0+nchol,nc0+2*nchol)),
                         H(Likn),vik);
             for(int nw=0; nw<nwalk; nw++) {
-              auto&& vik3D_n = vik3D[nw];
+              const auto&& vik3D_n = vik3D[nw];
               for(int k=0; k<nk; k++) {
                 ComplexType* v3D_nk = std::addressof(*v3D[nw][nk0+k].origin()) + ni0;
                 for(int i=0; i<ni; i++, ++v3D_nk)
