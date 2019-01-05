@@ -73,7 +73,7 @@ class dummy_Hamiltonian
   {
     throw std::runtime_error("calling visitor on dummy object");
     using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
-    return SpCType_shm_csr_matrix({0,0},{0,0},0,Alloc(TGWfn.Node()));
+    return SpCType_shm_csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,Alloc(TGWfn.Node()));
   }
 
   SpVType_shm_csr_matrix calculateHSPotentials(double cut, TaskGroup_& TGprop,
@@ -81,7 +81,7 @@ class dummy_Hamiltonian
   {
     throw std::runtime_error("calling visitor on dummy object");
     using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
-    return SpCType_shm_csr_matrix({0,0},{0,0},0,Alloc(TGprop.Node()));
+    return SpCType_shm_csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,Alloc(TGprop.Node()));
   }
 
   template<class... Args>

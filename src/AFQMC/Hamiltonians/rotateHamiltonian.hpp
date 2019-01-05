@@ -238,8 +238,8 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
 
   using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
   // global_origin is not set correctly, careful not to rely on it
-  SpCType_shm_csr_matrix SpQk({nrow,ncol},{0,0},0,Alloc(TG.Node()));
-  SpCType_shm_csr_matrix SpRl({ncol,nrow},{0,0},0,Alloc(TG.Node()));
+  SpCType_shm_csr_matrix SpQk(tp_ul_ul{nrow,ncol},tp_ul_ul{0,0},0,Alloc(TG.Node()));
+  SpCType_shm_csr_matrix SpRl(tp_ul_ul{ncol,nrow},tp_ul_ul{0,0},0,Alloc(TG.Node()));
 
   shmSpMatrix Qk({dummy_nrow,dummy_ncol},shared_allocator<SPComplexType>{TG.Node()});
   if(coreid==0) std::fill_n(Qk.origin(),Qk.num_elements(),SPComplexType(0.0));
@@ -270,7 +270,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
       using ucsr_matrix = ma::sparse::ucsr_matrix<SPComplexType,int,std::size_t,
                                 boost::mpi3::intranode::allocator<SPComplexType>,
                                 ma::sparse::is_root>;
-      ucsr_matrix ucsr({ncol,nrow},{0,0},0,Alloc(TG.Node()));
+      ucsr_matrix ucsr(tp_ul_ul{ncol,nrow},tp_ul_ul{0,0},0,Alloc(TG.Node()));
       csr::matrix_emplace_wrapper<ucsr_matrix> ucsr_wrapper(ucsr,TG.Node());
       sparse_rotate::halfRotateCholeskyMatrix(walker_type,TG,l0,lN,ucsr_wrapper,Alpha,Beta,V2_fact,true,true,cut,true);
       ucsr_wrapper.push_buffer(); // push any remaining elements in temporary buffer
@@ -381,7 +381,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   // setup working sparse matrix
   dummy_nrow=maxnk * NAEA; dummy_ncol=nvec;
   shmSpVector tQk_shmbuff(extensions<1u>{1},shared_allocator<SPComplexType>{TG.Node()});
-  SpCType_shm_csr_matrix SptQk({maxnk * NAEA,nvec},{0,0},0,Alloc(TG.Node()));
+  SpCType_shm_csr_matrix SptQk(tp_ul_ul{maxnk * NAEA,nvec},tp_ul_ul{0,0},0,Alloc(TG.Node()));
   if(sparseQk) {
     std::size_t sz_ = std::ceil(maxqksize/SptQk.shape()[0]);
     SptQk.reserve(sz_);
@@ -677,7 +677,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
   shmSpMatrix Qk({nx*NMO*NEL,nx*nvec},shared_allocator<SPComplexType>{TG.Node()});
   if(coreid==0) std::fill_n(Qk.origin(),Qk.num_elements(),SPComplexType(0.0));
   nx = (sparseQk?1:0);
-  SpCType_shm_csr_matrix SpQk({nx*NMO*NEL,nx*nvec},{0,0},0,alloc);
+  SpCType_shm_csr_matrix SpQk(tp_ul_ul{nx*NMO*NEL,nx*nvec},tp_ul_ul{0,0},0,alloc);
 
   shmSpMatrix Rl({nvec,NMO*NEL},shared_allocator<SPComplexType>{TG.Node()});
   if(coreid==0) std::fill_n(Rl.origin(),Rl.num_elements(),SPComplexType(0.0));
