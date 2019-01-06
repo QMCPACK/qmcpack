@@ -57,3 +57,33 @@ QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_thc"
                   TRUE
                   0 LONG_DIAMOND_AFQMC_SCALARS_THC
                   )
+
+SET(TEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/afqmc/C_uhf/choldump.h5)
+SET(TEST_WFN_INPUT ${qmcpack_SOURCE_DIR}/tests/afqmc/C_uhf/wfn.dat)
+
+#symlink h5 file
+MAYBE_SYMLINK(${TEST_HDF_INPUT} ${CMAKE_CURRENT_BINARY_DIR}/choldump_uhf.h5)
+#symlink wfn file
+MAYBE_SYMLINK(${TEST_WFN_INPUT} ${CMAKE_CURRENT_BINARY_DIR}/wfn_uhf.dat)
+
+LIST(APPEND DIAMOND_AFQMC_SCALARS_UHF "EnergyEstim__nume_real" "-10.55151 0.00312")
+
+QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_uhf"
+                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+                  qmc_short_uhf
+                  qmc_short_uhf.in.xml
+                  16 1
+                  TRUE
+                  0 DIAMOND_AFQMC_SCALARS_UHF
+                  )
+
+LIST(APPEND LONG_DIAMOND_AFQMC_SCALARS_UHF "EnergyEstim__nume_real" "-10.55151 0.00103")
+
+QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_uhf"
+                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+                  qmc_long_uhf
+                  qmc_long_uhf.in.xml
+                  16 1
+                  TRUE
+                  0 LONG_DIAMOND_AFQMC_SCALARS_UHF
+                  )

@@ -26,3 +26,17 @@ qmc_ref_chol  series 0
   nWalkers              =            320.00 +/-             0.00 
   time                  =           5005.50 +/-          1820.99 
   weight                =         319.77758 +/-          0.00045 
+
+qmc_ref_uhf  series 0 
+  EnergyEstim__deno_imag=  0.000000000000000000038 +/- 0.000000000000000000054 
+  EnergyEstim__deno_real=              1.00 +/-             0.00 
+  EnergyEstim__nume_imag=           0.00014 +/-          0.00014 
+  EnergyEstim__nume_real=         -10.55151 +/-          0.00031 
+  EnergyEstim__timer    =         0.0008867 +/-        0.0000012 
+  Eshift                =           6.27941 +/-          0.00092 
+  Ovlp                  =           0.19761 +/-          0.00012 
+  PseudoEloc            =           6.28059 +/-          0.00028 
+  freeMemory            =         123301.02 +/-             1.07 
+  nWalkers              =            320.00 +/-             0.00 
+  time                  =           5005.50 +/-          1820.99 
+  weight                =         319.77846 +/-          0.00039 
