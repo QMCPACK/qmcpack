@@ -50,7 +50,7 @@ namespace qmc_cuda
           >
   inline static void copy(int n, ptr x, int incx, ptr y, int incy)
   {
-    using BLAS_CPU::copy;
+    using ma::copy;
     return copy(n,to_address(x),incx,to_address(y),incy);
   }
 
@@ -72,7 +72,7 @@ namespace qmc_cuda
           >
   inline static void scal(int n, T alpha, ptr x, int incx)
   {
-    using BLAS_CPU::scal;
+    using ma::scal;
     return scal(n,alpha,to_address(x),incx);
   }
 
@@ -97,7 +97,7 @@ namespace qmc_cuda
           >
   inline static auto dot(int const n, ptrA const& x, int const incx, ptrB const& y, int const incy)
   {
-    using BLAS_CPU::dot;
+    using ma::dot;
     return dot(n,to_address(x),incx,to_address(y),incy);  
   }
 
@@ -130,7 +130,7 @@ namespace qmc_cuda
                           ptrA const& x, int incx,
                           ptrB && y, int incy)
   {
-    using BLAS_CPU::axpy;
+    using ma::axpy;
     axpy(n,a,to_address(x),incx,to_address(y),incy);
   }
 
@@ -174,7 +174,7 @@ namespace qmc_cuda
                           T beta,
                           ptrC && y, int incy)
   {
-    using BLAS_CPU::gemv;
+    using ma::gemv;
     gemv(Atrans,M,N,alpha,to_address(A),lda,to_address(x),incx,beta,to_address(y),incy);
 /*
     const char Btrans('N');
@@ -270,7 +270,7 @@ namespace qmc_cuda
                          ptrB const& B, int ldb,
                          ptrC C, int ldc)
   {
-    using BLAS_CPU::geam;
+    using ma::geam;
     return geam(Atrans,Btrans,M,N,alpha,to_address(A),lda,beta,to_address(B),ldb,to_address(C),ldc); 
   }
 
@@ -327,7 +327,7 @@ namespace qmc_cuda
           >
   inline static void adotpby(int const n, T const alpha, ptrA const& x, int const incx, ptrB const& y, int const incy, Q const beta, ptrC result)
   {
-    using BLAS_CPU::adotpby;
+    using ma::adotpby;
     adotpby(n,alpha,to_address(x),incx,to_address(y),incy,beta,to_address(result));
   }
 
@@ -363,7 +363,7 @@ namespace qmc_cuda
                          ptrA const x, int incx,
                          ptrB y, int incy)
   {
-    using BLAS_CPU::axty;
+    using ma::axty;
     axty(n,alpha,to_address(x),incx,to_address(y),incy);
   }
 
@@ -404,7 +404,7 @@ namespace qmc_cuda
                              T const beta,
                              ptrB B, int ldb)
   {
-    using BLAS_CPU::acAxpbB;
+    using ma::acAxpbB;
     acAxpbB(m,n,alpha,to_address(A),lda,to_address(x),incx,beta,to_address(B),ldb);
   }
 
@@ -437,7 +437,7 @@ namespace qmc_cuda
                          ptrA const A, int lda,
                          ptrB y, int incy)
   {
-    using BLAS_CPU::adiagApy;
+    using ma::adiagApy;
     adiagApy(n,alpha,to_address(A),lda,to_address(y),incy);
   }
 
@@ -463,7 +463,7 @@ namespace qmc_cuda
           >
   inline static auto sum(int n, ptr const x, int incx)
   {
-    using BLAS_CPU::sum;
+    using ma::sum;
     return sum(n,to_address(x),incx);
   }
 
@@ -473,7 +473,7 @@ namespace qmc_cuda
           >
   inline static auto sum(int m, int n, ptr const A, int lda)
   {
-    using BLAS_CPU::sum;
+    using ma::sum;
     return sum(m,n,to_address(A),lda);
   }
 
@@ -510,7 +510,7 @@ namespace qmc_cuda
                           ptrB const B, int ldb, int strideB, T beta,
                           ptrC C, int ldc, int strideC, int batchSize)
   {
-    using BLAS_CPU::gemmStridedBatched;
+    using ma::gemmStridedBatched;
     gemmStridedBatched(Atrans,Btrans,M,N,K,
                alpha,to_address(A),lda,strideA,to_address(B),ldb,strideB,
                beta,to_address(C),ldc,strideC,batchSize);
@@ -584,7 +584,7 @@ namespace qmc_cuda
       B_d[i] = to_address(B[i]);
       C_d[i] = to_address(C[i]);
     }
-    using BLAS_CPU::gemmBatched;
+    using ma::gemmBatched;
     gemmBatched(Atrans,Btrans,M,N,K,
                alpha,A_d,lda,B_d,ldb,beta,C_d,ldc,batchSize);
     delete [] A_d;

@@ -23,7 +23,7 @@
 
 namespace cublas 
 {
-  using cuda::cublasOperation; 
+  using qmc_cuda::cublasOperation; 
 
   // cublasXt Level 3
   inline cublasStatus_t cublasXt_gemm(cublasXtHandle_t handle,

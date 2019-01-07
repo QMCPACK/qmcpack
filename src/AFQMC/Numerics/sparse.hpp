@@ -1,6 +1,22 @@
+//////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source
+// License.  See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by:
+// Miguel A. Morales, moralessilva2@llnl.gov 
+//    Lawrence Livermore National Laboratory 
+// Alfredo Correa, correaa@llnl.gov 
+//    Lawrence Livermore National Laboratory 
+//
+// File created by:
+// Miguel A. Morales, moralessilva2@llnl.gov 
+//    Lawrence Livermore National Laboratory 
+////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_SPARSE_H
-#define AFQMC_SPARSE_H
+#ifndef AFQMC_SPARSE_HPP
+#define AFQMC_SPARSE_HPP
 
 #include "AFQMC/Numerics/spblas.h"
 #include<cassert>
@@ -15,10 +31,11 @@ struct mySPBLAS
   {
     assert(matdescra[0]=='G' && (matdescra[3]=='C' || matdescra[3]=='F'));
     int disp = (matdescra[3]=='C')?0:-1;
+    int p0 = *pntrb;
     if(transa=='n' || transa=='N') {  
       for(int nr=0; nr<M; nr++,y++,pntrb++,pntre++) {
         (*y) *= beta;
-        for(int i=*pntrb; i<*pntre; i++) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*(indx+i)+disp >= K) continue;
           *y += alpha * (*(A+i)) * ( *( x + (*(indx+i)) + disp) );
         }
@@ -27,16 +44,16 @@ struct mySPBLAS
       for(int k=0; k<K; k++) 
         (*(y+k)) *= beta;
       for(int nr=0; nr<M; nr++,pntrb++,pntre++,x++) {
-        for(int i=*pntrb; i<*pntre; i++) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*(indx+i)+disp >= K) continue;
           *(y+(*(indx+i))+disp) += alpha * (*(A+i)) * (*x);
         }
       }
-    } else if(transa=='h' || transa=='H') {
+    } else if(transa=='h' || transa=='H' || transa=='c' || transa=='C') {
       for(int k=0; k<K; k++)
         (*(y+k)) *= beta;
       for(int nr=0; nr<M; nr++,pntrb++,pntre++,x++) {
-        for(int i=*pntrb; i<*pntre; i++) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*indx+disp >= K) continue;
           *(y+(*(indx+i))+disp) += alpha * (*(A+i)) * (*x);
         }
@@ -50,10 +67,11 @@ struct mySPBLAS
   {
     assert(matdescra[0]=='G' && (matdescra[3]=='C')); // || matdescra[3]=='F'));
     int disp = (matdescra[3]=='C')?0:-1;
+    int p0 = *pntrb;
     if(transa=='n' || transa=='N') {
       for(int nr=0; nr<M; nr++,y++,pntrb++,pntre++) {
         (*y) *= beta;
-        for(int i=*pntrb; i<*pntre; i++) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*(indx+i)+disp >= K) continue;
           *y += alpha * (*(A+i)) * ( *( x + (*(indx+i)) + disp) );
         }
@@ -62,16 +80,16 @@ struct mySPBLAS
       for(int k=0; k<K; k++)
         (*(y+k)) *= beta;
       for(int nr=0; nr<M; nr++,pntrb++,pntre++,x++) {
-        for(int i=*pntrb; i<*pntre; i++) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*(indx+i)+disp >= K) continue;
           *(y+(*(indx+i))+disp) += alpha * (*(A+i)) * (*x);
         }
       }
-    } else if(transa=='h' || transa=='H') {
+    } else if(transa=='h' || transa=='H' || transa=='c' || transa=='C') {
       for(int k=0; k<K; k++)
         (*(y+k)) *= beta;
       for(int nr=0; nr<M; nr++,pntrb++,pntre++,x++) {
-        for(int i=*pntrb; i<*pntre; i++) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*indx+disp >= K) continue;
           *(y+(*(indx+i))+disp) += alpha * std::conj(*(A+i)) * (*x);
         }
@@ -84,12 +102,13 @@ struct mySPBLAS
   void csrmm(const char transa, const int M, const int N, const int K, const T alpha, const char *matdescra, const T *A, const int *indx, const int *pntrb, const int *pntre, const T *B, const int ldb, const T beta, T *C, const int ldc)
   {
     assert(matdescra[0]=='G' && (matdescra[3]=='C')); // || matdescra[3]=='F'));
+    int p0 = *pntrb;
     int disp = (matdescra[3]=='C')?0:-1;
     if(transa=='n' || transa=='N') {
       for(int nr=0; nr<M; nr++,pntrb++,pntre++,C+=ldc) {
         for(int i=0; i<N; i++)
           (*(C+i)) *= beta;
-        for(int i=*pntrb; i<*pntre; i++) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*(indx+i)+disp >= K) continue;
           // at this point *(A+i) is A_rc, c=*(indx+i)+disp, *C is C(r,0)
           // C(r,:) = A_rc * B(c,:)
@@ -105,8 +124,8 @@ struct mySPBLAS
       for(int i=0; i<K; i++)
        for(int j=0; j<N; j++)
         (*(C+i*ldc+j)) *= beta;
-      for(int nr=0; nr<M; nr++,pntrb++,pntre++) {
-        for(int i=*pntrb; i<*pntre; i++, B+=ldb) {
+      for(int nr=0; nr<M; nr++,pntrb++,pntre++, B+=ldb) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*(indx+i)+disp >= K) continue;
           // at this point *(A+i) is A_rc, c=*(indx+i)+disp
           // C(c,:) = A_rc * B(r,:)
@@ -117,13 +136,13 @@ struct mySPBLAS
             *Cc += Arc * (*Br);
         }
       }
-    } else if(transa=='h' || transa=='H') {
+    } else if(transa=='h' || transa=='H' || transa=='c' || transa=='C') {
       // not optimal, but simple
       for(int i=0; i<K; i++)
        for(int j=0; j<N; j++)
         (*(C+i*ldc+j)) *= beta;
-      for(int nr=0; nr<M; nr++,pntrb++,pntre++) {
-        for(int i=*pntrb; i<*pntre; i++, B+=ldb) {
+      for(int nr=0; nr<M; nr++,pntrb++,pntre++, B+=ldb) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*(indx+i)+disp >= K) continue;
           // at this point *(A+i) is A_rc, c=*(indx+i)+disp
           // C(c,:) = A_rc * B(r,:)
@@ -143,11 +162,12 @@ struct mySPBLAS
   {
     assert(matdescra[0]=='G' && (matdescra[3]=='C')); // || matdescra[3]=='F'));
     int disp = (matdescra[3]=='C')?0:-1;
+    int p0 = *pntrb;
     if(transa=='n' || transa=='N') {
       for(int nr=0; nr<M; nr++,pntrb++,pntre++,C+=ldc) {
         for(int i=0; i<N; i++)
           (*(C+i)) *= beta;
-        for(int i=*pntrb; i<*pntre; i++) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*(indx+i)+disp >= K) continue;
           // at this point *(A+i) is A_rc, c=*(indx+i)+disp, *C is C(r,0)
           // C(r,:) = A_rc * B(c,:)
@@ -163,8 +183,8 @@ struct mySPBLAS
       for(int i=0; i<K; i++)
        for(int j=0; j<N; j++)
         (*(C+i*ldc+j)) *= beta;
-      for(int nr=0; nr<M; nr++,pntrb++,pntre++) {
-        for(int i=*pntrb; i<*pntre; i++, B+=ldb) {
+      for(int nr=0; nr<M; nr++,pntrb++,pntre++,B+=ldb) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*(indx+i)+disp >= K) continue;
           // at this point *(A+i) is A_rc, c=*(indx+i)+disp
           // C(c,:) = A_rc * B(r,:)
@@ -175,13 +195,13 @@ struct mySPBLAS
             *Cc += Arc * (*Br);
         }
       }
-    } else if(transa=='h' || transa=='H') {
+    } else if(transa=='h' || transa=='H' || transa=='c' || transa=='C') {
       // not optimal, but simple
       for(int i=0; i<K; i++)
        for(int j=0; j<N; j++)
         (*(C+i*ldc+j)) *= beta;
-      for(int nr=0; nr<M; nr++,pntrb++,pntre++) {
-        for(int i=*pntrb; i<*pntre; i++, B+=ldb) {
+      for(int nr=0; nr<M; nr++,pntrb++,pntre++, B+=ldb) {
+        for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*(indx+i)+disp >= K) continue;
           // at this point *(A+i) is A_rc, c=*(indx+i)+disp
           // C(c,:) = A_rc * B(r,:)

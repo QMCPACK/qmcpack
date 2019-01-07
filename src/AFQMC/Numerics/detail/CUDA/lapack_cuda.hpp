@@ -18,7 +18,7 @@
 #include<cassert>
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Memory/custom_pointers.hpp"
-#include "AFQMC/Numerics/detail/CUDA/lapack_cpu.hpp"
+#include "AFQMC/Numerics/detail/lapack_cpu.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cublas_wrapper.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cusolver_wrapper.hpp"
 #include "AFQMC/Kernels/setIdentity.cuh"
@@ -44,7 +44,7 @@ namespace qmc_cuda
                          ptrR RWORK, int &LRWORK, 
                          ptrI IWORK, int &LIWORK, int& INFO)
   {
-    using LAPACK_CPU::hevr;
+    using ma::hevr;
     hevr (JOBZ,RANGE,UPLO,N,to_address(A),LDA,VL,VU,IL,IU,ABSTOL,M,to_address(W),to_address(Z),LDZ,to_address(ISUPPZ),
            to_address(WORK),LWORK,to_address(RWORK),LRWORK,to_address(IWORK),LIWORK,INFO);
   }
@@ -75,7 +75,7 @@ namespace qmc_cuda
           >
   inline static void getrf_bufferSize (const int n, const int m, ptr a, int lda, int& lwork) 
   {
-    using LAPACK_CPU::getrf_bufferSize;
+    using ma::getrf_bufferSize;
     getrf_bufferSize(n, m, to_address(a), lda, &lwork);
   }
 
@@ -98,7 +98,7 @@ namespace qmc_cuda
           >
   inline static void getrf (const int n, const int m, ptr const a, int lda, ptrI piv, int &st, ptrW work) 
   {
-    using LAPACK_CPU::getrf;
+    using ma::getrf;
     getrf(n, m, to_address(a), lda, to_address(piv), st);
   }
 
@@ -138,7 +138,7 @@ namespace qmc_cuda
     A_h = new Q*[batchSize];
     for(int i=0; i<batchSize; i++)
       A_h[i] = to_address(a[i]);
-    using LAPACK_CPU::getrfBatched;
+    using ma::getrfBatched;
     getrfBatched(n, A_h, lda, to_address(piv), to_address(info), batchSize);
     delete [] A_h;
   }
@@ -174,7 +174,7 @@ namespace qmc_cuda
           >
   inline static void getri_bufferSize (int n, ptr a, int lda, int& lwork)
   {
-    using LAPACK_CPU::getri_bufferSize;
+    using ma::getri_bufferSize;
     getri_bufferSize(n, to_address(a), lda, lwork);
   }
 
@@ -197,7 +197,7 @@ namespace qmc_cuda
           >
   inline static void getri(int n, ptr a, int n0, ptrI piv, ptrW work, int& n1, int& status)
   {
-    using LAPACK_CPU::getri;
+    using ma::getri;
     getri(n, to_address(a), n0, to_address(piv), to_address(work), n1, status);
   }
 
@@ -226,7 +226,7 @@ namespace qmc_cuda
     std::vector<int> Ibuff(n+1);
     cudaMemcpy(buff.data(),to_address(a),sizeof(typename ptr::value_type)*n*n,cudaMemcpyDeviceToHost);
     cudaMemcpy(Ibuff.data(),to_address(piv),sizeof(int)*(n+1),cudaMemcpyDeviceToHost);
-    using LAPACK_CPU::getri;
+    using ma::getri;
     getri(n, buff.data(), lda, Ibuff.data(), w_.data(), n1, status);
     cudaMemcpy(to_address(a),buff.data(),sizeof(typename ptr::value_type)*n*n,cudaMemcpyHostToDevice);
 */
@@ -257,7 +257,7 @@ namespace qmc_cuda
       A_h[i] = to_address(a[i]);
       C_h[i] = to_address(c[i]);
     }
-    using LAPACK_CPU::getriBatched;
+    using ma::getriBatched;
     getriBatched(n, to_address(a), lda, to_address(piv), C_h, lwork, to_address(info), batchSize);
     delete [] A_h;
     delete [] C_h;
@@ -306,7 +306,7 @@ namespace qmc_cuda
           >
   inline static void geqrf(int M, int N, ptr A, const int LDA, ptr TAU, ptr WORK, int &LWORK, int& INFO) 
   {
-    using LAPACK_CPU::geqrf;
+    using ma::geqrf;
     geqrf(M, N, to_address(A), LDA, to_address(TAU), to_address(WORK), LWORK, INFO);
   }
 

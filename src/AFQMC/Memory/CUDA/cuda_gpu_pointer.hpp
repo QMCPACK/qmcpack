@@ -36,9 +36,9 @@ struct cuda_gpu_ptr{
   using const_pointer = T const*;
   static const int memory_type = GPU_MEMORY_POINTER_TYPE; 
   T* impl_;
-  cuda::gpu_handles handles;
+  qmc_cuda::gpu_handles handles;
   cuda_gpu_ptr() = default;
-  cuda_gpu_ptr(T* impl__, cuda::gpu_handles handles_ = cuda::gpu_handles{}):
+  cuda_gpu_ptr(T* impl__, qmc_cuda::gpu_handles handles_ = qmc_cuda::gpu_handles{}):
                          impl_(impl__),handles(handles_) {}
 // eventually check if memory types and blas types are convertible, e.g. CPU_MEMORY to CPU_OUTOFCARD
   template<typename Q,
@@ -84,8 +84,8 @@ template<class T> struct cuda_gpu_allocator{
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
-  cuda::gpu_handles handles_;
-  cuda_gpu_allocator(cuda::gpu_handles handles__) : handles_(handles__) {}                        
+  qmc_cuda::gpu_handles handles_;
+  cuda_gpu_allocator(qmc_cuda::gpu_handles handles__) : handles_(handles__) {}                        
   cuda_gpu_allocator() = delete;
   ~cuda_gpu_allocator() = default;
   cuda_gpu_allocator(cuda_gpu_allocator const& other) : handles_(other.handles_) {}

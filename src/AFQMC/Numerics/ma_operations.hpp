@@ -32,9 +32,6 @@
 
 namespace ma{
 
-inline double const& conj(double const& d){return d;}
-inline float const& conj(float const& f){return f;}
-
 template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::dimensionality > 1)>::type>
 bool is_hermitian(MultiArray2D const& A){
 	using std::conj;

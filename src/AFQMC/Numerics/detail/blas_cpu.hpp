@@ -437,7 +437,6 @@ namespace ma
                          T* C, int ldc)
   {
     if(n==0 || m==0) return;
-    using std::conj;
     assert(ldc >= m);
     // Special cases
     // S1. set C to zero
@@ -474,7 +473,7 @@ namespace ma
         assert(lda >= n);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = conj(A[ j + i*lda ]);
+            C[ i + j*ldc ] = ma::conj(A[ j + i*lda ]);
       } else {
         throw std::runtime_error("Error: Invalid Atrans in geam.");
       }
@@ -504,7 +503,7 @@ namespace ma
         assert(ldb >= n);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = conj(B[ j + i*ldb ]);
+            C[ i + j*ldc ] = ma::conj(B[ j + i*ldb ]);
       } else {
         throw std::runtime_error("Error: Invalid Btrans in geam.");
       }
@@ -537,7 +536,7 @@ namespace ma
         assert(ldb >= n);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = alpha*C[ i + j*lda ] + beta*conj(B[ j + i*ldb ]);
+            C[ i + j*ldc ] = alpha*C[ i + j*lda ] + beta*ma::conj(B[ j + i*ldb ]);
       } else {
         throw std::runtime_error("Error: Invalid Btrans in geam.");
       }
@@ -569,7 +568,7 @@ namespace ma
         assert(lda >= n);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = beta*C[ i + j*lda ] + alpha*conj(A[ j + i*lda ]);
+            C[ i + j*ldc ] = beta*C[ i + j*lda ] + alpha*ma::conj(A[ j + i*lda ]);
       } else {
         throw std::runtime_error("Error: Invalid Atrans in geam.");
       }
@@ -609,7 +608,7 @@ namespace ma
         assert(ldb >= n);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = alpha*A[ i + j*lda ] + beta*conj(B[ j + i*ldb ]);
+            C[ i + j*ldc ] = alpha*A[ i + j*lda ] + beta*ma::conj(B[ j + i*ldb ]);
       } else {
         throw std::runtime_error("Error: Invalid Btrans in geam.");
       } 
@@ -629,7 +628,7 @@ namespace ma
         assert(ldb >= n);
         for(int i=0; i<m; i++)
           for(int j=0; j<n; j++)
-            C[ i + j*ldc ] = alpha*A[ j + i*lda ] + beta*conj(B[ j + i*ldb ]);
+            C[ i + j*ldc ] = alpha*A[ j + i*lda ] + beta*ma::conj(B[ j + i*ldb ]);
       } else {
         throw std::runtime_error("Error: Invalid Btrans in geam.");
       }
@@ -639,17 +638,17 @@ namespace ma
         assert(ldb >= m);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = alpha*conj(A[ j + i*lda ]) + beta*B[ i + j*ldb ];
+            C[ i + j*ldc ] = alpha*ma::conj(A[ j + i*lda ]) + beta*B[ i + j*ldb ];
       } else if(Btrans == 'T' || Btrans == 't') {
         assert(ldb >= n);
         for(int i=0; i<m; i++)
           for(int j=0; j<n; j++)
-            C[ i + j*ldc ] = alpha*conj(A[ j + i*lda ]) + beta*B[ j + i*ldb ];
+            C[ i + j*ldc ] = alpha*ma::conj(A[ j + i*lda ]) + beta*B[ j + i*ldb ];
       } else if(Btrans == 'C' || Btrans == 'c') {
         assert(ldb >= n);
         for(int i=0; i<m; i++)
           for(int j=0; j<n; j++)
-            C[ i + j*ldc ] = alpha*conj(A[ j + i*lda ]) + beta*conj(B[ j + i*ldb ]);
+            C[ i + j*ldc ] = alpha*ma::conj(A[ j + i*lda ]) + beta*ma::conj(B[ j + i*ldb ]);
       } else {
         throw std::runtime_error("Error: Invalid Btrans in geam.");
       }
@@ -728,12 +727,11 @@ namespace ma
                              T const beta,
                              T * B, int ldb)
   {
-    using std::conj;
     for(int j=0; j<n; j++) {
       auto Bj = B+j*ldb;
       auto Aj = A+j*lda;
       for(int i=0; i<m; i++)
-        Bj[i] = beta*Bj[i] + alpha * conj(Aj[i]) * x[i*incx]; 
+        Bj[i] = beta*Bj[i] + alpha * ma::conj(Aj[i]) * x[i*incx]; 
     }
   }
 

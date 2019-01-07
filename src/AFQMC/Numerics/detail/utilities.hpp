@@ -12,14 +12,21 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_BLAS_OPTIONS_HPP
-#define AFQMC_BLAS_OPTIONS_HPP
+#ifndef AFQMC_MA_UTILITIES_HPP
+#define AFQMC_MA_UTILITIES_HPP
 
-#include<cassert>
-#include "AFQMC/Numerics/detail/utilities.hpp"
-#include "AFQMC/Numerics/detail/blas_cpu.hpp"
-#if defined(QMC_CUDA)
-#include "AFQMC/Numerics/detail/CUDA/blas_cuda.hpp"
-#endif
+#include<complex>
+
+namespace ma {
+
+inline double const& real(double const& d){return d;}
+inline float const& real(float const& f){return f;}
+
+inline double conj(double const& d){return d;}
+inline float conj(float const& f){return f;}
+
+inline std::complex<double> conj(std::complex<double> const& d){return std::conj(d);}
+inline std::complex<float>  conj(std::complex<float> const& f){return std::conj(f);}
+}
 
 #endif

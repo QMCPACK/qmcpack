@@ -30,11 +30,10 @@
 
 // generic header for blas routines
 #include "AFQMC/Numerics/detail/Blasf.h"
+#include "AFQMC/Numerics/detail/utilities.hpp"
 
 namespace ma 
 {
-  inline double const& real(double const& d){return d;}
-  inline float const& real(float const& f){return f;}
 
   inline static void gesvd(char *jobu, char *jobvt, int *m, int *n, float *a,
                            int *lda, float *s, float *u, int *ldu, float *vt,

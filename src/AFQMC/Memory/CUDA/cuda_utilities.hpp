@@ -83,6 +83,12 @@ namespace qmc_cuda {
     cublasHandle_t* cublas_handle;
     cublasXtHandle_t* cublasXt_handle;
     cusolverDnHandle_t* cusolverDn_handle; 
+    bool operator==(gpu_handles const& other) const {
+      return (cublas_handle==other.cublas_handle &&
+              cublasXt_handle==other.cublasXt_handle &&
+              cusolverDn_handle==other.cusolverDn_handle);
+    }
+    bool operator!=(gpu_handles const& other) const { not (*this == other); }
   };
 }
 

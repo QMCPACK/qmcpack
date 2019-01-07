@@ -22,7 +22,7 @@
 
 namespace cusolver {
 
-  using cuda::cublasOperation;
+  using qmc_cuda::cublasOperation;
 
   inline cusolverStatus_t 
   cusolver_getrf_bufferSize(cusolverDnHandle_t handle,

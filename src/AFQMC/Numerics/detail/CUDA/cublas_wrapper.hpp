@@ -22,7 +22,7 @@
 
 namespace cublas {
 
-  using cuda::cublasOperation;
+  using qmc_cuda::cublasOperation;
 
   // Level-1
   inline cublasStatus_t cublas_copy(cublasHandle_t handle, int n,
