@@ -49,6 +49,9 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+  // ultil we switch to c++17, to reduce extra lines 
+  using tp_ul_ul = std::tuple<std::size_t,std::size_t>;
+
   enum WALKER_TYPES {UNDEFINED_WALKER_TYPE, CLOSED, COLLINEAR, NONCOLLINEAR};
 
   template<typename T> using s1D = std::tuple<IndexType,T>;

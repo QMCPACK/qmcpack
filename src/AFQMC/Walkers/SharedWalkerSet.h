@@ -74,7 +74,8 @@ class SharedWalkerSet: public AFQMCInfo
       const_walker(ma const& a, const wlk_indices& i_, const wlk_descriptor& d_): 
         w_(boost::multi::const_array_ref<ComplexType,1>(std::addressof(*a.origin()),extensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
-	static_assert(std::decay<ma>::type::dimensionality == 1);
+
+	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
 	assert(w_.strides()[0]==1);
       }
       
@@ -180,7 +181,8 @@ class SharedWalkerSet: public AFQMCInfo
       walker(ma&& a, const wlk_indices& i_, const wlk_descriptor& d_): 
         w_(boost::multi::array_ref<ComplexType,1>(std::addressof(*a.origin()),extensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
-	static_assert(std::decay<ma>::type::dimensionality == 1);
+
+	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
 	assert(w_.strides()[0]==1);
       }
       

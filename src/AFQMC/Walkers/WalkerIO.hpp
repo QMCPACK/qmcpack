@@ -35,6 +35,7 @@ template<class WalkerSet,
         >
 bool dumpSamplesHDF5(WalkerSet& wset, hdf_archive& dump, int nW_to_file) 
 {
+  return true;
 APP_ABORT("Finish \n");
 return true;
 /*
@@ -169,6 +170,7 @@ template<class WalkerSet,
         >
 bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, hdf_archive& read, bool set_to_target)
 {
+  return true;
   APP_ABORT(" Error: restartFromHDF5 not yet finished.\n");
 
   TaskGroup_& TG = wset.getTG();
@@ -457,6 +459,7 @@ template<class WalkerSet,
         >
 bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
 {
+  return true;
   APP_ABORT(" Error: dumpToHDF5 not yet finished.\n");
   TaskGroup_& TG = wset.getTG();
 

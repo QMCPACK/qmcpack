@@ -36,6 +36,7 @@
 namespace ma{
 namespace sparse{
 
+using tp_ul_ul = std::tuple<std::size_t,std::size_t>;
 using size_type           = std::size_t;
 //using difference_type     = std::ptrdiff_t;
 //using index               = std::ptrdiff_t;
@@ -226,7 +227,7 @@ class csr_matrix_view:
         std::vector<int_type> ptre;
 	using base = csr_matrix_ref<ValTypePtr,IndxTypePtr,IntTypePtr>;
 	using this_t = csr_matrix_view<ValTypePtr,IndxTypePtr,IntTypePtr>;
-        csr_matrix_view(): base({0,0},{0,0},{0,0},0,nullptr,nullptr,nullptr,nullptr) {}
+        csr_matrix_view(): base(tp_ul_ul{0,0},tp_ul_ul{0,0},tp_ul_ul{0,0},0,nullptr,nullptr,nullptr,nullptr) {}
         public: 
         using row_type = std::tuple<size_type,ValTypePtr,IndxTypePtr>;
         static const bool sparse = true;
@@ -364,7 +365,7 @@ class ucsr_matrix:
 		ValType_alloc alloc = ValType_alloc{}
 	) : 
 		csr_matrix_ref<ValTypePtr,IndxTypePtr,IntTypePtr>(arr,
-			{0,0},  
+			tp_ul_ul{0,0},  
 			global,
                         std::get<0>(arr)*nnzpr_unique,
 			ValTypePtr(nullptr),
@@ -398,7 +399,7 @@ class ucsr_matrix:
                 ValType_alloc alloc = ValType_alloc{}
         ) :
                 csr_matrix_ref<ValTypePtr,IndxTypePtr,IntTypePtr>(arr,
-			{0,0},
+			tp_ul_ul{0,0},
 			global,
                         0,
 			ValTypePtr(nullptr),
@@ -435,7 +436,7 @@ class ucsr_matrix:
         }
 	ucsr_matrix(const this_t& other) = delete;  
 	ucsr_matrix& operator=(const this_t& other) = delete;  
-	ucsr_matrix(this_t&& other):ucsr_matrix({0,0},{0,0},0,other.Valloc_)
+	ucsr_matrix(this_t&& other):ucsr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,other.Valloc_)
 	{ *this = std::move(other); } 
         // Instead of moving allocators, require they are the same right now
 	ucsr_matrix& operator=(this_t&& other) {
@@ -468,8 +469,8 @@ class ucsr_matrix:
                         minN = std::min(minN,base::pointers_begin_[i+1]-base::pointers_begin_[i]);
                 if( static_cast<IntType>(nnzpr_unique) <= minN) 
                         return;
-                this_t other({base::size1_,base::size2_},
-                        {base::global_origin1_,base::global_origin2_},nnzpr_unique,Valloc_);
+                this_t other(tp_ul_ul{base::size1_,base::size2_},
+                        tp_ul_ul{base::global_origin1_,base::global_origin2_},nnzpr_unique,Valloc_);
                 if(base::capacity_ > 0) {
                     IsRoot r(Valloc_);
                     if(r.root()){
@@ -503,8 +504,8 @@ class ucsr_matrix:
                         }
                 if(not resz)
                         return;
-                this_t other({base::size1_,base::size2_},
-                        {base::global_origin1_,base::global_origin2_},nnzpr,Valloc_);
+                this_t other(tp_ul_ul{base::size1_,base::size2_},
+                        tp_ul_ul{base::global_origin1_,base::global_origin2_},nnzpr,Valloc_);
                 if(base::capacity_ > 0) {
                     IsRoot r(Valloc_);
                     if(r.root()){
@@ -618,9 +619,9 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
         {}
 	csr_matrix(this_t const& ucsr) = delete;
 	csr_matrix& operator=(this_t const& ucsr) = delete;
-	csr_matrix(this_t&& other):csr_matrix({0,0},{0,0},0,other.Valloc_) { *this = std::move(other); }
+	csr_matrix(this_t&& other):csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,other.Valloc_) { *this = std::move(other); }
 	csr_matrix(ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRoot>&& ucsr):
-		csr_matrix({0,0},{0,0},0,ucsr.getAlloc()) {
+		csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,ucsr.getAlloc()) {
 		*this = std::move(ucsr);
 	}
         csr_matrix& operator=(csr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRoot>&& other) {
@@ -824,9 +825,9 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                 for(size_type i=arr[0]; i<arr[1]; i++)
                     cap += base::capacity(i); 
                 // careful!!! elements or row 'r' are always indexed with pointer_begin[r]-pointer_begin[0]
-                return sub_matrix({(arr[1]-arr[0]),base::size2_},
-                        {arr[0],0},
-                        {base::global_origin1_+arr[0],base::global_origin2_},
+                return sub_matrix(tp_ul_ul{(arr[1]-arr[0]),base::size2_},
+                        tp_ul_ul{arr[0],0},
+                        tp_ul_ul{base::global_origin1_+arr[0],base::global_origin2_},
                         cap, 
                         base::data_ + disp,
                         base::jdata_ + disp,
@@ -869,9 +870,9 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
 
                   // columns always begin in 0, since column values can't be shifted
                   // but only columns in range [arr[2],arr[3]) are accessible/visible
-                  return matrix_view<IntT>({(arr[1]-arr[0]),arr[3]},
-                        {arr[0],arr[2]},  // local_origin2_ is the only way to know the "true" origin
-                        {base::global_origin1_+arr[0],base::global_origin2_},
+                  return matrix_view<IntT>(tp_ul_ul{(arr[1]-arr[0]),arr[3]},
+                        tp_ul_ul{arr[0],arr[2]},  // local_origin2_ is the only way to know the "true" origin
+                        tp_ul_ul{base::global_origin1_+arr[0],base::global_origin2_},
                         base::non_zero_values_data(arr[0]),
                         base::non_zero_indices2_data(arr[0]),
                         std::move(ptrb),
@@ -912,9 +913,9 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
 
                   // columns always begin in 0, since column values can't be shifted
                   // but only columns in range [arr[2],arr[3]) are accessible/visible
-                  return matrix_view<IntT>({(arr[1]-arr[0]),arr[3]},
-                        {arr[0],arr[2]},  // local_origin2_ is the only way to know the "true" origin
-                        {base::global_origin1_+arr[0],base::global_origin2_},
+                  return matrix_view<IntT>(tp_ul_ul{(arr[1]-arr[0]),arr[3]},
+                        tp_ul_ul{arr[0],arr[2]},  // local_origin2_ is the only way to know the "true" origin
+                        tp_ul_ul{base::global_origin1_+arr[0],base::global_origin2_},
                         base::data_ + d0,
                         base::jdata_ + d0,
                         std::move(ptrb), 

@@ -52,7 +52,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
   if(TG.getNumberOfTGs() > 1) {
 
     APP_ABORT(" Finish HS. \n");
-    return SpVType_shm_csr_matrix({0,0},{0,0},0,Alloc(TG.Node()));
+    return SpVType_shm_csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,Alloc(TG.Node()));
 
   } else {
 
@@ -118,7 +118,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
 
     // can build csr directly since cores work on non-overlapping rows
     // and can use emplace_back
-    SpVType_shm_csr_matrix csr({NMO*NMO,nvec}, {0,cv_origin}, nnz_per_ik, Alloc(TG.Node()));
+    SpVType_shm_csr_matrix csr(tp_ul_ul{NMO*NMO,nvec}, tp_ul_ul{0,cv_origin}, nnz_per_ik, Alloc(TG.Node()));
 
     HamHelper::generateHSPotential(csr,map_,cut,TG,V2_fact,NMO,cv0,cvN);
     TG.node_barrier();
@@ -149,7 +149,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       return csr::shm::construct_distributed_csr_matrix_from_distributed_containers<SpCType_shm_csr_matrix>(tmat,nr,nr,TGHam);
     } else {
       using ucsr_mat = SpCType_shm_csr_matrix::base;
-      ucsr_mat ucsr({nr,nr},{0,0},0,Alloc(TG.Node()));
+      ucsr_mat ucsr(tp_ul_ul{nr,nr},tp_ul_ul{0,0},0,Alloc(TG.Node()));
       if(TG.getTotalNodes() > 1)
         rotateHijkl<ucsr_mat>(factorizedHalfRotationType,type,addCoulomb,TG,ucsr,Alpha,Beta,
             V2_fact,cut,maximum_buffer_size,true,true);
@@ -171,12 +171,12 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     if(type==NONCOLLINEAR) nr *= 2;
     if(TGwfn.getNNodesPerTG() > 1) {
       APP_ABORT("Finish \n");
-      return SpVType_shm_csr_matrix({0,0},{0,0},0,Alloc(TG.Node()));
+      return SpVType_shm_csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,Alloc(TG.Node()));
     } else {
       using ucsr_mat = SpVType_shm_csr_matrix::base;
       using wrapper = csr::matrix_emplace_wrapper<ucsr_mat>;
       using namespace std::placeholders;
-      ucsr_mat ucsr({nr,nr},{0,0},0,Alloc(TG.Node()));
+      ucsr_mat ucsr(tp_ul_ul{nr,nr},tp_ul_ul{0,0},0,Alloc(TG.Node()));
       wrapper ucsr_wrapper(ucsr,TG.Node());
       HamHelper::generateHijkl(type,addCoulomb,TG,ucsr_wrapper,NMO,occ_a,occ_b,*this,true,true,cut);
       ucsr_wrapper.push_buffer();

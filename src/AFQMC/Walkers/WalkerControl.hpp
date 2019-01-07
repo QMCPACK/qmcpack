@@ -50,7 +50,7 @@ inline int swapWalkersSimple(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNod
   int NumContexts, MyContext; 
   NumContexts = comm.size();
   MyContext = comm.rank();  
-  static_assert(std::decay<Mat>::type::dimensionality==2);
+  static_assert(std::decay<Mat>::type::dimensionality==2, "Wrong dimensionality");
   if(wset.single_walker_size() != Wexcess.shape()[1])
     throw std::runtime_error("Array dimension error in swapWalkersSimple().");
   if(1 != Wexcess.strides()[1]) 
@@ -118,7 +118,7 @@ inline int swapWalkersAsync(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode
   int NumContexts, MyContext;
   NumContexts = comm.size();
   MyContext = comm.rank();  
-  static_assert(std::decay<Mat>::type::dimensionality==2);
+  static_assert(std::decay<Mat>::type::dimensionality==2, "Wrong dimensionality");
   if(wset.single_walker_size() != Wexcess.shape()[1])
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
   if(1 != Wexcess.strides()[1] || 
@@ -243,7 +243,7 @@ inline void pair_branch(std::vector<std::pair<double,int>>& buff, Random& rng, d
   int nw = buff.size();
   std::vector<tp> wlks(nw);
   for(int i=0,sz=0,ni=0; i<nw; i++) 
-    wlks[i] = {buff[i].first,1,i};
+    wlks[i] = tp{buff[i].first,1,i};
 
   std::sort( wlks.begin(), wlks.end(),  
              [] (const tp& a, const tp& b) {

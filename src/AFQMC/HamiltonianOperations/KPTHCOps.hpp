@@ -249,8 +249,8 @@ class KPTHCOps
       using std::conj;
       if(nd>0)
 	APP_ABORT(" Error: KPTHC not yet implemented for multiple references.\n");
-      static_assert(E.dimensionality==2);
-      static_assert(Gc.dimensionality==2);
+      static_assert(E.dimensionality==2, "Wrong dimensionality");
+      static_assert(Gc.dimensionality==2, "Wrong dimensionality");
       assert(E.shape()[0] == Gc.shape()[0]);
       assert(E.shape()[1] == 3);
       assert(nd >= 0 && nd < nelpk.size());

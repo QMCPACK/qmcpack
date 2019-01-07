@@ -834,6 +834,45 @@ make -j 8
 ls -l bin/qmcpack
 \end{verbatim}
 
+\subsubsection{Building Quantum Espresso}
+The v6.3 release of Quantum Espresso does not officially support the
+Power 9 architecture, and several steps of the configuration process
+require updating to build successfully. v6.4 is expected to support
+the new architecture officially. The following can be used to build a
+CPU version of QE on Summit, placing the script in the
+external\_codes/quantum\_espresso directory. Note that performance is
+not yet optimized although vendor libraries are
+utilized. Alternatively, the wavefunction files can be generated on
+another system and the converted HDF5 files copied over.
+
+\verbatimfont{\footnotesize}
+\begin{verbatim}
+#!/usr/bin/bash
+module load gcc/6.4.0 #6.4.0 was default on 2019-01-03
+module load essl
+module load netlib-lapack #because ESSL does not provided needed LAPACK functionality
+module load hdf5
+module load fftw
+export FFTW_HOME=$OLCF_FFTW_ROOT
+module -t list
+./download_and_patch_qe6.3.sh
+cd qe-6.3
+cd archive
+mv fox.tgz fox.tgz_orig
+wget https://gitlab.com/QEF/q-e/raw/develop/archive/fox.tgz # Latest FoX on develop is patched for PPC64 architectures
+cd ..
+./configure --with-hdf5=$OLCF_HDF5_ROOT
+cp -p make.inc make.inc_orig
+sed -e 's/libhdf5.a /libhdf5.a -L/g' make.inc_orig >make.inc # Incorrect awk in install/configure drops library dir for zlib
+sed -i 's/-D__FFTW3/-D__LINUX_ESSL/g' make.inc
+sed -i "s|-lblas|-L${OLCF_ESSL_ROOT}/lib64 -lessl|g" make.inc
+sed -i 's/-lfftw3/ /g' make.inc # Use the ESSL FFTW
+sed -i 's/^LAPACK_LIBS .*=.*/LAPACK_LIBS = -lessl -llapack -lessl/g' make.inc
+echo --- Starting build `date`
+make all
+echo --- Finished build `date`
+\end{verbatim}
+
 \subsection{Installing on NERSC Edison Cray XC30}
 
 Edison is a Cray XC30 with dual 12-core Intel "Ivy Bridge" nodes
