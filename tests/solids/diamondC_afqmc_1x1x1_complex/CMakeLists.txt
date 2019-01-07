@@ -110,7 +110,7 @@ QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_phmsd"
                   0 DIAMOND_AFQMC_SCALARS_PHMSD
                   )
 
-LIST(APPEND LONG_DIAMOND_AFQMC_SCALARS_PHMSD "EnergyEstim__nume_real" "-10.55085 0.00086")
+LIST(APPEND LONG_DIAMOND_AFQMC_SCALARS_PHMSD "EnergyEstim__nume_real" "-10.55085 0.00119")
 
 QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_phmsd"
                   "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
