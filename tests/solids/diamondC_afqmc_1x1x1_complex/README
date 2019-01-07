@@ -1,10 +1,13 @@
 These tests include short and long AFQMC runs for a two atom diamond
 primitive cell at the gamma point. Tests exist for both the Cholesky
-and ISDF factorization of the integrals. For the Cholesky
+and ISDF/THC factorization of the integrals. For the Cholesky
 factorization there are tests for RHF, UHF and particle-hole
 multi-Slater determinant (PHMSD) trial wavefunctions. For the ISDF
-factorization a RHF trial wavefunction is used.  Reference data from
-the high block count AFQMC runs is found below:
+factorization a RHF trial wavefunction is used. The integrals and
+trial wavefunctions were generated using pyscf. The relevant scripts
+and files are available in tests/afqmc as these files are re-used for
+afqmc unit tests.
+Reference data from the high block count AFQMC runs is found below:
 
                       EnergyEstim__num_real
 afqmc cholesky rhf   -10.55201 +/- 0.00033
