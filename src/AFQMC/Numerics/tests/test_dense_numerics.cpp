@@ -236,7 +236,7 @@ void test_dense_matrix_mult()
 		array_ref<double, 2> A(a.data(), {3,3});
 		REQUIRE(A.num_elements() == a.size());
 		array<double, 2> B = A;
-		ma::invert(A);
+		ma::invert(B);
 
 		array<double, 2> Id({3,3});
 		ma::set_identity(Id);
@@ -253,8 +253,8 @@ void test_dense_matrix_mult()
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
                 array_ref<double, 2> A(a.data(), {3,3});
                 REQUIRE(A.num_elements() == a.size());
-                WORK.reserve(  ma::gelqf_optimal_workspace_size(A) );
-                WORK.reserve(  ma::glq_optimal_workspace_size(A) );
+                WORK.resize( std::max(ma::gelqf_optimal_workspace_size(A),
+                                      ma::glq_optimal_workspace_size(A)) );
                 ma::gelqf(A,TAU,WORK);
                 ma::glq(A,TAU,WORK);
 
@@ -274,8 +274,8 @@ void test_dense_matrix_mult()
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
                 array_ref<double, 2> A(a.data(), {4,3});
                 REQUIRE(A.num_elements() == a.size());
-                WORK.reserve(  ma::gelqf_optimal_workspace_size(A) );
-                WORK.reserve(  ma::glq_optimal_workspace_size(A) );
+                WORK.resize( std::max(ma::gelqf_optimal_workspace_size(A),
+                                      ma::glq_optimal_workspace_size(A)) );
                 ma::gelqf(A,TAU,WORK);
                 ma::glq(A,TAU,WORK);
 
@@ -295,8 +295,8 @@ void test_dense_matrix_mult()
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
                 array_ref<double, 2> A(a.data(), {3,3});
                 REQUIRE(A.num_elements() == a.size());
-                WORK.reserve(  ma::geqrf_optimal_workspace_size(A) );
-                WORK.reserve(  ma::gqr_optimal_workspace_size(A) );
+                WORK.resize( std::max(ma::geqrf_optimal_workspace_size(A),
+                                      ma::gqr_optimal_workspace_size(A)) );
                 ma::geqrf(A,TAU,WORK);
                 ma::gqr(A,TAU,WORK);
 
@@ -316,8 +316,8 @@ void test_dense_matrix_mult()
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
                 array_ref<double, 2> A(a.data(), {3,4});
                 REQUIRE(A.num_elements() == a.size());
-                WORK.reserve(  ma::geqrf_optimal_workspace_size(A) );
-                WORK.reserve(  ma::gqr_optimal_workspace_size(A) );
+                WORK.resize( std::max(ma::geqrf_optimal_workspace_size(A),
+                                      ma::gqr_optimal_workspace_size(A)) );
                 ma::geqrf(A,TAU,WORK);
                 ma::gqr(A,TAU,WORK);
 

@@ -1,6 +1,5 @@
 
 #include "Configuration.h"
-#include "Numerics/OhmmsBlas.h" 
 #include <Utilities/FairDivide.h>
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/config.h" 

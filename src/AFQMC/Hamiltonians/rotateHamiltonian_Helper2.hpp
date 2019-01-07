@@ -20,7 +20,6 @@
 #include<tuple>
 #include<mpi.h>
 
-#include "Numerics/OhmmsBlas.h"
 #include <Utilities/FairDivide.h>
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"

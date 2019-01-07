@@ -20,8 +20,10 @@
 
 #include "ma_blas.hpp"
 #include "ma_lapack.hpp"
-#include "spblas.hpp"
-#include "AFQMC/Numerics/ma_small_mat_ops.hpp"
+#include "sparse.hpp"
+#include "AFQMC/Numerics/helpers/determinant.hpp"
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
 
 #include<type_traits> // enable_if
 #include<vector>
@@ -53,14 +55,21 @@ bool is_symmetric(MultiArray2D const& A){
 	return true;
 }
 
+template<class MA> struct op_tag : std::integral_constant<char, 'N'>{}; // see specializations
+template<class MA> MA arg(MA&& ma){return std::forward<MA>(ma);} // see specializations below
+
 template<class MultiArray2D, typename = typename std::enable_if<(std::decay<MultiArray2D>::type::dimensionality > 1)>::type>
 MultiArray2D transpose(MultiArray2D&& A){
 	assert(A.shape()[0] == A.shape()[1]);
-	using std::swap;
-	for(int i = 0; i != A.shape()[0]; ++i)
-		for(int j = 0; j != i; ++j)
-			swap(A[i][j], A[j][i]);
-	return std::forward<MultiArray2D>(A);
+        typename std::decay<MultiArray2D>::type::element one(1.0);
+        return ma::geam< 'T' > (one, arg(A), std::forward<MultiArray2D>(A));
+}
+
+template<class MultiArray2D, typename = typename std::enable_if<(std::decay<MultiArray2D>::type::dimensionality == 2)>::type>
+void transform(MultiArray2D&& A){
+        assert(arg(A).shape()[0] == arg(A).shape()[1]);
+        typename std::decay<MultiArray2D>::type::element one(1.0);
+        ma::geam< op_tag<typename std::decay<MultiArray2D>::type>::value > (one, arg(A), arg(A));
 }
 
 template<class MultiArray2DA, 
@@ -71,15 +80,51 @@ template<class MultiArray2DA,
                                                 == std::decay<MultiArray2DB>::type::dimensionality)>::type
         >
 MultiArray2DB transpose(MultiArray2DA&& A, MultiArray2DB&& B){
-        assert(A.shape()[0] == B.shape()[1]);
-        assert(A.shape()[1] == B.shape()[0]);
-        for(int i = 0; i != A.shape()[0]; ++i) 
-                B(B.extension(0),i) = A[i]; 
-        return std::forward<MultiArray2DB>(B);
+        typename std::decay<MultiArray2DA>::type::element one(1.0);
+        return ma::geam< 'T' > (one, arg(A), std::forward<MultiArray2DB>(B));
 }
 
-template<class MA> struct op_tag : std::integral_constant<char, 'N'>{}; // see specializations
-template<class MA> MA arg(MA&& ma){return std::forward<MA>(ma);} // see specializations below
+template<class MultiArray2DA,
+         class MultiArray2DB,
+         typename = typename std::enable_if<(std::decay<MultiArray2DA>::type::dimensionality > 1)>::type,
+         typename = typename std::enable_if<(std::decay<MultiArray2DB>::type::dimensionality > 1)>::type,
+         typename = typename std::enable_if<(std::decay<MultiArray2DA>::type::dimensionality
+                                                == std::decay<MultiArray2DB>::type::dimensionality)>::type
+        >
+MultiArray2DB transform(MultiArray2DA const& A, MultiArray2DB&& B){
+        typename std::decay<MultiArray2DA>::type::element one(1.0);
+        return ma::geam< op_tag<MultiArray2DA>::value > (one, arg(A), std::forward<MultiArray2DB>(B));
+}
+
+template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
+        typename = typename std::enable_if<
+                MultiArray2DA::dimensionality == 2 and
+                MultiArray2DB::dimensionality == 2 and
+                std::decay<MultiArray2DC>::type::dimensionality == 2
+        >::type
+>
+MultiArray2DC add(T alpha, MultiArray2DA const& A, T beta, MultiArray2DB const& B, MultiArray2DC&& C){
+        return ma::geam<
+                op_tag<MultiArray2DA>::value,
+                op_tag<MultiArray2DB>::value
+        >
+        (alpha, arg(A), beta, arg(B), std::forward<MultiArray2DC>(C));
+}
+
+template<class T, class MultiArray3DA, class MultiArray3DB, class MultiArray3DC,
+        typename = typename std::enable_if<
+                MultiArray3DA::dimensionality == 3 and
+                MultiArray3DB::dimensionality == 3 and
+                std::decay<MultiArray3DC>::type::dimensionality == 3
+        >::type
+>
+MultiArray3DC productStridedBatched(T alpha, MultiArray3DA const& A, MultiArray3DB const& B, T beta, MultiArray3DC&& C){
+        return ma::gemmStridedBatched<
+                op_tag<MultiArray3DB>::value,
+                op_tag<MultiArray3DA>::value
+        >
+        (alpha, arg(B), arg(A), beta, std::forward<MultiArray3DC>(C));
+}
 
 template<class T, class MultiArray2DA, class MultiArray1DB, class MultiArray1DC,
 	typename = typename std::enable_if<
@@ -117,6 +162,7 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
             assert(arg(A).shape()[1] == std::forward<MultiArray1DC>(C).shape()[0]);
         }
 
+// need backend for sparse
         SPBLAS::csrmv( op_tag<SparseMatrixA>::value,
             arg(A).shape()[0], arg(A).shape()[1],
             alpha, "GxxCxx",
@@ -199,7 +245,6 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
         return std::forward<MultiArray2DC>(C);
 }
 
-///*
 template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
         typename = typename std::enable_if<
                 (MultiArray2DA::dimensionality == 2 or MultiArray2DA::dimensionality == -2) and
@@ -210,27 +255,6 @@ template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
 MultiArray2DC product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArray2DC&& C){
         return product(1., A, B, 0., std::forward<MultiArray2DC>(C));
 }
-//*/
-
-template<class T, class MultiArray3DA, class MultiArray3DB, class MultiArray3DC,
-        typename = typename std::enable_if<
-                MultiArray3DA::dimensionality == 3 and
-                MultiArray3DB::dimensionality == 3 and
-                std::decay<MultiArray3DC>::type::dimensionality == 3
-        >::type
->
-MultiArray3DC productStridedBatched(T alpha, MultiArray3DA const& A, MultiArray3DB const& B, T beta, MultiArray3DC&& C){
-        return ma::gemmStridedBatched<
-                op_tag<MultiArray3DB>::value,
-                op_tag<MultiArray3DA>::value
-        >
-        (alpha, arg(B), arg(A), beta, std::forward<MultiArray3DC>(C));
-}
-
-//template<class MultiArrayA, class MultiArrayB, class MultiArrayC>
-//MultiArrayC product(MultiArrayA const& A, MultiArrayB const& B, MultiArrayC&& C){
-//        return product(1., A, B, 0., std::forward<MultiArrayC>(C));
-//}
 
 template<class MultiArray2D>
 struct normal_tag{
@@ -316,61 +340,66 @@ template<class MA2D> auto herm(MA2D&& arg)
 //	return normal(std::forward<MA2D>(arg));
 //}
 
-
 template<class MultiArray2D>
 int invert_optimal_workspace_size(MultiArray2D const& m){
 	return getri_optimal_workspace_size(m);
 }
 
+template<class MultiArray2D, class T = typename std::decay<MultiArray2D>::type::element>
+T invert(MultiArray2D&& m){
+        using element = typename std::decay<MultiArray2D>::type::element;
+        using allocator_type = typename std::decay<MultiArray2D>::type::allocator_type;
+        using iallocator_type = typename allocator_type::template rebind<int>::other;
+        using extensions = typename boost::multi::layout_t<1u>::extensions_type;
+        size_t bufferSize(invert_optimal_workspace_size(std::forward<MultiArray2D>(m)));
+        boost::multi::array<element,1,allocator_type> WORK(extensions{bufferSize},
+                                                            m.get_allocator()); 
+        boost::multi::array<int,1,iallocator_type> pivot(extensions{m.shape()[0]+1},
+                                                    iallocator_type{m.get_allocator()}); 
+
+        getrf(std::forward<MultiArray2D>(m), pivot, WORK);
+        T detvalue = determinant_from_getrf<T>(m.shape()[0], m.origin(), m.strides()[0], pivot.data());
+        getri(std::forward<MultiArray2D>(m), pivot, WORK);
+        return detvalue;
+}
+
 template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>
 T invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK){
-	assert(m.shape()[0] == m.shape()[1]);
-	assert(pivot.size() >= m.shape()[0]);
+        assert(m.shape()[0] == m.shape()[1]);
+        assert(pivot.size() >= m.shape()[0]+1);
 
-	getrf(std::forward<MultiArray2D>(m), pivot);
-	T detvalue(1.0);
-	for(int i=0, ip=1, m_ = m.shape()[0]; i != m_; i++, ip++){
-		if(pivot[i]==ip){
-			detvalue *= +static_cast<T>(m[i][i]);
-		}else{
-			detvalue *= -static_cast<T>(m[i][i]);
-		}
-	}
-        if(detvalue == T(0.0))
-            return detvalue;
-	getri(std::forward<MultiArray2D>(m), pivot, WORK);
-	return detvalue;
+        getrf(std::forward<MultiArray2D>(m), pivot, WORK);
+        T detvalue = determinant_from_getrf<T>(m.shape()[0], m.origin(), m.strides()[0], pivot.data());
+        getri(std::forward<MultiArray2D>(m), pivot, WORK);
+        return detvalue;
 }
 
-template<class MultiArray2D, class MultiArray1D, class T = typename std::decay<MultiArray2D>::type::element>
-T invert(MultiArray2D&& m, MultiArray1D&& pivot){
-	std::vector<typename std::decay<MultiArray2D>::type::element> WORK;
-	WORK.reserve(invert_optimal_workspace_size(m));
-	return invert(m, pivot, WORK);
+template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>
+void invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T* detvalue){
+        assert(m.shape()[0] == m.shape()[1]);
+        assert(pivot.size() >= m.shape()[0]+1);
+
+        getrf(std::forward<MultiArray2D>(m), pivot, WORK);
+        determinant_from_getrf<T>(m.shape()[0], m.origin(), m.strides()[0], pivot.data(), detvalue);
+        getri(std::forward<MultiArray2D>(m), pivot, WORK);
 }
 
-template<class MultiArray2D, class T = typename std::decay<MultiArray2D>::type::element>
-MultiArray2D invert(MultiArray2D&& m){
-	std::vector<int> pivot(m.shape()[0]);
-	auto det = invert(m, pivot);
-	return std::forward<MultiArray2D>(m);
+template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>
+T determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK){
+        assert(m.shape()[0] == m.shape()[1]);
+        assert(pivot.size() >= m.shape()[0]);
+
+        getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot), WORK);
+        return determinant_from_getrf<T>(m.shape()[0], m.origin(), m.strides()[0], pivot.data());
 }
 
-template<class MultiArray2D, class MultiArray1D, class T = typename std::decay<MultiArray2D>::type::element>
-T determinant(MultiArray2D&& m, MultiArray1D&& pivot){
-	assert(m.shape()[0] == m.shape()[1]);
-	assert(pivot.size() >= m.shape()[0]);
-        
-	getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot));
-	T detvalue(1.0);
-	for(int i=0,ip=1,m_=m.shape()[0]; i<m_; i++, ip++){
-		if(pivot[i]==ip){
-			detvalue *= static_cast<T>(m[i][i]);
-		}else{
-			detvalue *= -static_cast<T>(m[i][i]);
-		}
-	}
-	return detvalue;
+template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>
+void determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T* detvalue){
+        assert(m.shape()[0] == m.shape()[1]);
+        assert(pivot.size() >= m.shape()[0]);
+
+        getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot), WORK);
+        determinant_from_getrf<T>(m.shape()[0], m.origin(), m.strides()[0], pivot.data(), detvalue);
 }
 
 template<class MultiArray2D,

@@ -33,6 +33,7 @@ template<class T = ComplexType>
 class SlaterDetOperations 
 {
   using communicator = boost::mpi3::shared_communicator;
+  using IVector = boost::multi::array<int,1>;  
   using TVector = boost::multi::array<T,1>;  
   using TMatrix = boost::multi::array<T,2>;  
   using shmTVector = boost::multi::array<T,1,shared_allocator<T>>;  
@@ -42,8 +43,8 @@ class SlaterDetOperations
     SlaterDetOperations(int NMO, int NAEA):
         SM_TMats(nullptr)
     {
-      // IWORK: integer buffer for getri/getrf
-      IWORK.resize(NMO);
+      // IWORK: integer buffer for getri/getrf, which expects NMO+1 
+      IWORK.reextent( extensions<1u>{NMO+1});
 
       // local temporary storage
       TMat_NM.reextent({NAEA,NMO});
@@ -56,19 +57,19 @@ class SlaterDetOperations
       // reserve enough space in lapack's work array
       // Make sure it is large enough for:
       // 1. getri( TMat_NN )
-      WORK.reserve(  ma::getri_optimal_workspace_size(TMat_NN) );
       //  2. geqrf( TMat_NM )
-      WORK.reserve(  ma::geqrf_optimal_workspace_size(TMat_NM) );
+      int mem_needs = std::max(ma::getri_optimal_workspace_size(TMat_NN),
+                                  ma::geqrf_optimal_workspace_size(TMat_NM));  
       //  3. gqr( TMat_NM )
-      WORK.reserve(  ma::gqr_optimal_workspace_size(TMat_NM) );
+      mem_needs = std::max(mem_needs, ma::gqr_optimal_workspace_size(TMat_NM) );
       //  4. gelqf( TMat_MN )
-      WORK.reserve(  ma::gelqf_optimal_workspace_size(TMat_MN) );
+      mem_needs = std::max(mem_needs, ma::gelqf_optimal_workspace_size(TMat_MN) ); 
       //  5. glq( TMat_MN )
-      WORK.reserve(  ma::glq_optimal_workspace_size(TMat_MN) );
+      mem_needs = std::max(mem_needs, ma::glq_optimal_workspace_size(TMat_MN) ); 
+      WORK.reextent( extensions<1u>{mem_needs} );   
 
       // TAU: T used in QR routines 
       TAU.reextent(extensions<1u>{NMO});
-
     }
 
     ~SlaterDetOperations() {}
@@ -183,7 +184,9 @@ class SlaterDetOperations
       int NAEA = A.shape()[1];
       assert(TMat_NN.num_elements() >= NAEA*NAEA);
       boost::multi::array_ref<T,2> TNN(TMat_NN.data(), {NAEA,NAEA});
-      return SlaterDeterminantOperations::base::Overlap_noHerm<T>(A,A,TNN,IWORK);
+      assert(TMat_NM.num_elements() >= NAEA*NAEA);
+      boost::multi::array_ref<T,2> TNN2(TMat_NM.data(), {NAEA,NAEA});
+      return SlaterDeterminantOperations::base::Overlap_noHerm<T>(A,A,TNN,IWORK,TNN2);
     }
 
     template<class MatA, class MatB>
@@ -191,7 +194,9 @@ class SlaterDetOperations
       int NAEA = hermA.shape()[0];
       assert(TMat_NN.num_elements() >= NAEA*NAEA);
       boost::multi::array_ref<T,2> TNN(TMat_NN.data(), {NAEA,NAEA});
-      return SlaterDeterminantOperations::base::Overlap<T>(hermA,B,TNN,IWORK);
+      assert(TMat_NM.num_elements() >= NAEA*NAEA);
+      boost::multi::array_ref<T,2> TNN2(TMat_NM.data(), {NAEA,NAEA});
+      return SlaterDeterminantOperations::base::Overlap<T>(hermA,B,TNN,IWORK,TNN2);
     } 
 
     template<class MatA, class MatB>
@@ -199,16 +204,19 @@ class SlaterDetOperations
       int NAEA = A.shape()[1];
       assert(TMat_NN.num_elements() >= NAEA*NAEA);
       boost::multi::array_ref<T,2> TNN(TMat_NN.data(), {NAEA,NAEA});
-      return SlaterDeterminantOperations::base::Overlap_noHerm<T>(A,B,TNN,IWORK);
+      assert(TMat_NM.num_elements() >= NAEA*NAEA);
+      boost::multi::array_ref<T,2> TNN2(TMat_NM.data(), {NAEA,NAEA});
+      return SlaterDeterminantOperations::base::Overlap_noHerm<T>(A,B,TNN,IWORK,TNN2);
     }
 
     template<class MatA, class MatB>
     T Overlap(const MatA& hermA, const MatB& B, communicator& comm) { 
       int NAEA = hermA.shape()[0];
-      set_shm_buffer(comm,NAEA*NAEA);
-      assert(SM_TMats->num_elements() >= NAEA*NAEA);
+      set_shm_buffer(comm,2*NAEA*NAEA);
+      assert(SM_TMats->num_elements() >= 2*NAEA*NAEA);
       boost::multi::array_ref<T,2> TNN(std::addressof(*SM_TMats->origin()), {NAEA,NAEA});
-      return SlaterDeterminantOperations::shm::Overlap<T>(hermA,B,TNN,IWORK,comm);
+      boost::multi::array_ref<T,2> TNN2(std::addressof(*SM_TMats->origin())+NAEA*NAEA, {NAEA,NAEA});
+      return SlaterDeterminantOperations::shm::Overlap<T>(hermA,B,TNN,IWORK,TNN2,comm);
     }
 
     // routines for PHMSD
@@ -298,8 +306,8 @@ class SlaterDetOperations
 
   private:
 
-    std::vector<T> WORK;
-    std::vector<int> IWORK;
+    TVector WORK;
+    IVector IWORK;
 
     // Vector used in QR routines 
     TVector TAU;

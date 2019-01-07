@@ -115,8 +115,19 @@ struct array_ptr{
 	T& operator[](int idx) const{return ((T*)(wSP_->base(0)) + offset)[idx];}
 	T* operator->() const{return (T*)(wSP_->base(0)) + offset;}
 	T* get() const{return wSP_->base(0) + offset;}
-	explicit operator bool() const{return (bool)wSP_;}//.get();}
-	bool operator==(std::nullptr_t) const{return (bool)wSP_;}
+	operator T*() { 
+// do I need to guard against nullptr state?
+            if( not (bool)wSP_ ) return nullptr;
+            return wSP_->base(0) + offset;
+        }
+	operator T*() const { 
+            if( not (bool)wSP_ ) return nullptr;
+            return wSP_->base(0) + offset;
+        }
+        // need non-const version, otherwise operator T*() gets precedence in some situations
+	explicit operator bool() { return (bool)wSP_;}//.get();}
+	explicit operator bool() const{ return (bool)wSP_;}//.get();}
+	bool operator==(std::nullptr_t) const{return not ((bool)wSP_);}
 	bool operator!=(std::nullptr_t) const{return not operator==(nullptr);}
 	operator array_ptr<T const>() const{
 		array_ptr<T const> ret;

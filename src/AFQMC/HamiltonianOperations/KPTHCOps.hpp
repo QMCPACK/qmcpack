@@ -623,9 +623,9 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
               // to the JI term corresponding to this (Q,K) pair. Not doing it for now
               auto vik_(vik.origin());
               for(int n=0; n<nwalk; n++) {
-                auto v_(std::addressof(*v3D[n][ni0].origin())+nk0);
+                auto v_(v3D[n][ni0].origin()+nk0);
                 for(int i=0; i<ni; i++, vik_+=nk, v_+=nmo_tot)
-                  BLAS::axpy(nk,one,vik_,1,v_,1);
+                  ma::axpy(nk,one,vik_,1,v_,1);
               }
             }
           }
@@ -669,9 +669,9 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
               // to the JI term corresponding to this (Q,K) pair. Not doing it for now
               auto vki_(vki.origin());
               for(int n=0; n<nwalk; n++) {
-                auto v_(std::addressof(*v3D[n][nk0].origin())+ni0);
+                auto v_(v3D[n][nk0].origin()+ni0);
                 for(int k=0; k<nk; k++, vki_+=ni, v_+=nmo_tot)
-                  BLAS::axpy(ni,one,vki_,1,v_,1);
+                  ma::axpy(ni,one,vki_,1,v_,1);
               }
             }
           }
@@ -849,11 +849,11 @@ Timer.start("T0");
 /*
           for(int i=0; i<nchol; ++i) {
             // v+ = 0.5*a*(v1+v2)
-            BLAS::axpy(nwalk, halfa, v1[i].origin(), 1, v[nc0+i].origin(), 1);
-            BLAS::axpy(nwalk, halfa, v2[i].origin(), 1, v[nc0+i].origin(), 1);
+            axpy(nwalk, halfa, v1[i].origin(), 1, v[nc0+i].origin(), 1);
+            axpy(nwalk, halfa, v2[i].origin(), 1, v[nc0+i].origin(), 1);
           // v- = -0.5*a*i*(v1-v2)
-            BLAS::axpy(nwalk, minusimhalfa, v1[i].origin(), 1, v[nc0+nchol+i].origin(), 1);
-            BLAS::axpy(nwalk, imhalfa, v2[i].origin(), 1, v[nc0+nchol+i].origin(), 1);
+            axpy(nwalk, minusimhalfa, v1[i].origin(), 1, v[nc0+nchol+i].origin(), 1);
+            axpy(nwalk, imhalfa, v2[i].origin(), 1, v[nc0+nchol+i].origin(), 1);
           }
 */
         }

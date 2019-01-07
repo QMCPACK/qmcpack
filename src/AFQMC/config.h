@@ -16,6 +16,8 @@
 
 #include "AFQMC/config.0.h"
 
+#include "AFQMC/Memory/custom_pointers.hpp"
+
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/coo_matrix.hpp"
 
