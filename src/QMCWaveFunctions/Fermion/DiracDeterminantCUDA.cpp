@@ -21,6 +21,7 @@
 #include "DiracDeterminantCUDA.h"
 #include "Numerics/CUDA/cuda_inverse.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
+#include "QMCWaveFunctions/Fermion/delayed_update.h"
 #include "Numerics/CUDA/cuda_inverse.h"
 #include "Numerics/DeterminantOperators.h"
 #include <unistd.h>
@@ -720,30 +721,6 @@ DiracDeterminantCUDA::calcGradient(MCWalkerConfiguration &W, int iat, int k,
       cublas_ainv_row (gpu::cublasHandle,
                        AinvDeltaList_d.data(), AWorkList_d.data(), AinvColkList_d.data(),
                        k, NumPtcls, nw, RowStride);
-      // copy lemma matrix to lemma_lu (for an updated LU decomposition)
-      // and copy the k-th row of the A inverse matrix into Ainvcolk (apart from the name that's the place to put it)
-/*      copy_delayed (LemmaLUList_d.data(), LemmaList_d.data(),
-                    AinvColkList_d.data(), AinvDeltaList_d.data(), // AinvDeltaList gets initialized in calc_ratio and will be present for k>0
-                    k,kd,RowStride,nw);
-#ifdef USE_TRSM
-      multi_row_copy(AWorkList_d.data(),AinvUList_d.data(),k,kstk,1,RowStride,nw);
-#else
-#ifndef AINVU_TRANSPOSE
-      int curr_ainvu_row=AinvUOffset + kstk; // points to the current row in AinvU
-#else
-      int curr_ainvu_row=AinvUOffset + k*kd; // points to the current row in AinvU
-#endif // ainvu_transpose
-      for (int iw=0; iw<nw; iw++)
-        AinvWorkList[iw]    =  &(walkers[iw]->cuda_DataSet.data()[curr_ainvu_row]); // don't want to overwrite AinvU list
-      AinvWorkList_d.asyncCopy(AinvWorkList);
-#endif // use_trsm
-      gpu::streamsSynchronize();
-      cublas_smw_update (gpu::cublasHandle,
-                         AinvDeltaList_d.data(), AinvColkList_d.data(),
-                         AinvWorkList_d.data(), AWorkList_d.data(), // <- AinvWork takes the place of A^-1*dU (in the USE_TRSM case it's unused)
-                         LemmaInvList_d.data(), LemmaLUList_d.data(),
-                         infoArray_d.data(),
-                         k, kd, 1, NumPtcls, nw, RowStride);*/
     }
     // calculate and collect gradients only
     calc_gradient_delayed (AinvColkList_d.data(), GLList_d.data(), ratio_d.data(), NumPtcls, RowStride, nw);
