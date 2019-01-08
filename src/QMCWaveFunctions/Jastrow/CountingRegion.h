@@ -29,7 +29,6 @@ public:
   // counting function pointers
   std::vector<FunctorType*> C;
 
-protected:
   RealType Nval_t;
 
   // reference gaussian id, pointer 
@@ -44,28 +43,28 @@ protected:
   std::vector<std::string> C_id;
 
   // value arrays
-  std::vector<RealType> _val;
-  std::vector<RealType> _sum;
-  std::vector<PosType> _grad;
-  std::vector<RealType> _lap;
+  Matrix<RealType> val;
+  std::vector<RealType> sum;
+  Matrix<PosType> grad;
+  Matrix<RealType> lap;
   std::vector<RealType> Nval;
 
   // log values arrays
-  std::vector<RealType> _Lval;
-  std::vector<PosType> _Lgrad;
-  std::vector<RealType> _Llap;
+  Matrix<RealType> Lval;
+  Matrix<PosType> Lgrad;
+  Matrix<RealType> Llap;
   std::vector<RealType> Lmax; 
 
   // temporary value arrays
-  std::vector<RealType> _val_t;
-  std::vector<RealType> _sum_t;
-  std::vector<PosType> _grad_t;
-  std::vector<RealType> _lap_t;
+  std::vector<RealType> val_t;
+  std::vector<RealType> sum_t;
+  std::vector<PosType> grad_t;
+  std::vector<RealType> lap_t;
   
   //memory for temporary log value arrays
-  std::vector<RealType> _Lval_t;
-  std::vector<PosType> _Lgrad_t;
-  std::vector<RealType> _Llap_t;
+  std::vector<RealType> Lval_t;
+  std::vector<PosType> Lgrad_t;
+  std::vector<RealType> Llap_t;
   RealType Lmax_t;
 
   std::vector<RealType> _dLval_saved;
@@ -87,23 +86,6 @@ public:
     return Cmax->myVars.size();
   }
 
-  // sum/grad/lap getters: index convention defined in base
-  inline RealType& val(int I, int i)  { return _val[I*num_els + i]; }
-  inline RealType& sum(int I)         { return _sum[I]; }
-  inline PosType& grad(int I, int i) { return _grad[I*num_els + i]; }
-  inline RealType& lap(int I, int i)  { return _lap[I*num_els + i]; }
-  inline RealType& val_t(int I)       { return _val_t[I]; }
-  inline RealType& sum_t(int I)       { return _sum_t[I]; }
-  inline PosType& grad_t(int I)      { return _grad_t[I]; }
-  inline RealType& lap_t(int I)       { return _lap_t[I]; }
-
-  inline RealType& Lval(int I, int i)  { return _Lval[I*num_els + i]; }
-  inline PosType& Lgrad(int I, int i) { return _Lgrad[I*num_els + i]; }
-  inline RealType& Llap(int I, int i)  { return _Llap[I*num_els + i]; }
-
-  inline RealType& Lval_t(int I)  { return _Lval_t[I]; }
-  inline PosType& Lgrad_t(int I) { return _Lgrad_t[I]; }
-  inline RealType& Llap_t(int I)  { return _Llap_t[I]; }
   inline RealType& dLval_saved(int I, int p, int i)  { return _dLval_saved[I*max_num_derivs()*num_els + p*num_els + i]; }
 
   void addFunc(FunctorType* func, std::string fid)
@@ -117,27 +99,28 @@ public:
     app_log() << "NormalizedGaussianRegion::initialize" << std::endl;
     num_regions = C.size();
     // resize arrays
-    _val.resize(num_regions*num_els);
-    _sum.resize(num_regions);
-    _grad.resize(num_regions*num_els);
-    _lap.resize(num_regions*num_els);
+    val.resize(num_regions, num_els);
+    sum.resize(num_regions);
+    grad.resize(num_regions, num_els);
+    lap.resize(num_regions, num_els);
     Nval.resize(num_els);
 
-    _val_t.resize(num_regions);
-    _sum_t.resize(num_regions);
-    _grad_t.resize(num_regions);
-    _lap_t.resize(num_regions);
+    val_t.resize(num_regions);
+    sum_t.resize(num_regions);
+    grad_t.resize(num_regions);
+    lap_t.resize(num_regions);
 
-    _Lval.resize(num_regions*num_els);
-    _Lgrad.resize(num_regions*num_els);
-    _Llap.resize(num_regions*num_els);
+    Lval.resize(num_regions, num_els);
+    Lgrad.resize(num_regions, num_els);
+    Llap.resize(num_regions, num_els);
     Lmax.resize(num_els);
 
-    _Lval_t.resize(num_regions);
-    _Lgrad_t.resize(num_regions);
-    _Llap_t.resize(num_regions);
-    _dLval_saved.resize(max_num_derivs()*num_regions*num_els);
+    Lval_t.resize(num_regions);
+    Lgrad_t.resize(num_regions);
+    Llap_t.resize(num_regions);
+
     // store log derivative values for single particle moves
+    _dLval_saved.resize(max_num_derivs()*num_regions*num_els);
   }
 
   void checkInVariables(opt_variables_type& active)
@@ -162,14 +145,14 @@ public:
     Lmax[iat] = Lmax_t;
     for(int I = 0; I < num_regions; ++I)
     {
-      sum(I) = sum_t(I); 
-      val(I,iat) = val_t(I);
-      grad(I,iat) = grad_t(I);
-      lap(I,iat) = lap_t(I);
+      sum[I] = sum_t[I]; 
+      val(I,iat) = val_t[I];
+      grad(I,iat) = grad_t[I];
+      lap(I,iat) = lap_t[I];
 
-      Lval(I,iat) = Lval_t(I);
-      Lgrad(I,iat) = Lgrad_t(I);
-      Llap(I,iat) = Llap_t(I);
+      Lval(I,iat) = Lval_t[I];
+      Lgrad(I,iat) = Lgrad_t[I];
+      Llap(I,iat) = Llap_t[I];
     }
   }
 
@@ -232,13 +215,13 @@ public:
   void evaluate(ParticleSet& P)
   {
     // clear arrays
-    std::fill(_val.begin(),_val.end(),0);
-    std::fill(_sum.begin(),_sum.end(),0);
-    std::fill(_grad.begin(),_grad.end(),0);
-    std::fill(_lap.begin(),_lap.end(),0);
-    std::fill(_Lval.begin(),_Lval.end(),0);
-    std::fill(_Lgrad.begin(),_Lgrad.end(),0);
-    std::fill(_Llap.begin(),_Llap.end(),0);
+    std::fill(val.begin(),val.end(),0);
+    std::fill(sum.begin(),sum.end(),0);
+    std::fill(grad.begin(),grad.end(),0);
+    std::fill(lap.begin(),lap.end(),0);
+    std::fill(Lval.begin(),Lval.end(),0);
+    std::fill(Lgrad.begin(),Lgrad.end(),0);
+    std::fill(Llap.begin(),Llap.end(),0);
     std::fill(Nval.begin(),Nval.end(),0);
     std::fill(Lmax.begin(),Lmax.end(),0);
     // temporary variables: Lval = ln(C), Lgrad = \nabla ln(C), Llap = \nabla^2 ln(C)
@@ -263,7 +246,7 @@ public:
       for(int I = 0; I < num_regions; ++I)
       {
         val(I,i) = val(I,i) / Nval[i];
-        sum(I) += val(I,i);
+        sum[I] += val(I,i);
         gLN_sum += Lgrad(I,i) * val(I,i);
         lLN_sum += Llap(I,i) * val(I,i);
       }
@@ -288,13 +271,13 @@ public:
       (*it)->evaluate_print(os,P);
     os << "NormalizedGaussianRegions::evaluate_print" << std::endl;
     os << "val: ";
-    std::copy(_val.begin(),_val.end(),std::ostream_iterator<RealType>(os,", "));
+    std::copy(val.begin(), val.end(),std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "sum: ";
-    std::copy(_sum.begin(),_sum.end(),std::ostream_iterator<RealType>(os,", "));
+    std::copy(sum.begin(),sum.end(),std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "grad: ";
-    std::copy(_grad.begin(),_grad.end(),std::ostream_iterator<PosType>(os,", "));
+    std::copy(grad.begin(),grad.end(),std::ostream_iterator<PosType>(os,", "));
     os << std::endl << "lap: ";
-    std::copy(_lap.begin(),_lap.end(),std::ostream_iterator<RealType>(os,", "));
+    std::copy(lap.begin(),lap.end(),std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "Nval: ";
     std::copy(Nval.begin(),Nval.end(),std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "Lmax: "; 
@@ -306,50 +289,50 @@ public:
   void evaluateTemp(ParticleSet& P, int iat)
   {
     // clear arrays
-    std::fill(_val_t.begin(),_val_t.end(),0);
-    std::fill(_sum_t.begin(),_sum_t.end(),0);
-    std::fill(_grad_t.begin(),_grad_t.end(),0);
-    std::fill(_lap_t.begin(),_lap_t.end(),0);
-    std::fill(_Lval_t.begin(),_Lval_t.end(),0);
-    std::fill(_Lgrad_t.begin(),_Lgrad_t.end(),0);
-    std::fill(_Llap_t.begin(),_Llap_t.end(),0);
+    std::fill(val_t.begin(),val_t.end(),0);
+    std::fill(sum_t.begin(),sum_t.end(),0);
+    std::fill(grad_t.begin(),grad_t.end(),0);
+    std::fill(lap_t.begin(),lap_t.end(),0);
+    std::fill(Lval_t.begin(),Lval_t.end(),0);
+    std::fill(Lgrad_t.begin(),Lgrad_t.end(),0);
+    std::fill(Llap_t.begin(),Llap_t.end(),0);
 
     Lmax_t = Lmax[iat];
     Nval_t = 0;
     // temporary variables
     for(int I = 0; I < num_regions; ++I)
     {
-      C[I]->evaluateLog(P.activePos,Lval_t(I),Lgrad_t(I),Llap_t(I));
-      if(Lval_t(I) > Lmax_t)
-        Lmax_t = Lval_t(I);
+      C[I]->evaluateLog(P.activePos,Lval_t[I],Lgrad_t[I],Llap_t[I]);
+      if(Lval_t[I] > Lmax_t)
+        Lmax_t = Lval_t[I];
     }
     // build counting function values; subtract off largest log value
     for(int I = 0; I < num_regions; ++I)
     {
-      val_t(I) = std::exp(Lval_t(I) - Lmax_t);
-      Nval_t += val_t(I);
+      val_t[I] = std::exp(Lval_t[I] - Lmax_t);
+      Nval_t += val_t[I];
     }
     PosType gLN_sum_t = 0; // \sum\limits_I \nabla L_{Ii} N_{Ii}
     RealType lLN_sum_t = 0; // \sum\limits_I \nabla^2 L_{Ii} N_{Ii}
     // build normalized counting function value, intermediate values for gradient
     for(int I = 0; I < num_regions; ++I)
     {
-      val_t(I) = val_t(I) / Nval_t;
-      sum_t(I) = sum(I) + val_t(I) - val(I,iat);
-      gLN_sum_t += Lgrad_t(I) * val_t(I);
-      lLN_sum_t += Llap_t(I) * val_t(I);
+      val_t[I] = val_t[I] / Nval_t;
+      sum_t[I] = sum[I] + val_t[I] - val(I,iat);
+      gLN_sum_t += Lgrad_t[I] * val_t[I];
+      lLN_sum_t += Llap_t[I] * val_t[I];
     }
     RealType gLgN_sum_t = 0; // \sum\limits_{I} \nabla L_{Ii} \cdot \nabla N_{Ii}
     // build gradient, intermediate values for laplacian
     for(int I = 0; I < num_regions; ++I)
     {
-      grad_t(I) = (Lgrad_t(I) - gLN_sum_t)*val_t(I);
-      gLgN_sum_t += dot(Lgrad_t(I), grad_t(I));
+      grad_t[I] = (Lgrad_t[I] - gLN_sum_t)*val_t[I];
+      gLgN_sum_t += dot(Lgrad_t[I], grad_t[I]);
     }
     //build laplacian
     for(int I = 0; I < num_regions; ++I)
     {
-      lap_t(I) = (Llap_t(I) - lLN_sum_t - gLgN_sum_t)*val_t(I) + dot(grad_t(I), Lgrad_t(I) - gLN_sum_t);
+      lap_t[I] = (Llap_t[I] - lLN_sum_t - gLgN_sum_t)*val_t[I] + dot(grad_t[I], Lgrad_t[I] - gLN_sum_t);
     }
     
   }
@@ -358,13 +341,13 @@ public:
   {
     os << "NormalizedGaussianRegion::evaluateTemp_print" << std::endl;
     os << "val_t: ";
-    std::copy(_val_t.begin(),_val_t.end(),std::ostream_iterator<RealType>(os,", "));
+    std::copy(val_t.begin(),val_t.end(),std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "sum_t: ";
-    std::copy(_sum_t.begin(),_sum_t.end(),std::ostream_iterator<RealType>(os,", "));
+    std::copy(sum_t.begin(),sum_t.end(),std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "grad_t: ";
-    std::copy(_grad_t.begin(),_grad_t.end(),std::ostream_iterator<PosType>(os,", "));
+    std::copy(grad_t.begin(),grad_t.end(),std::ostream_iterator<PosType>(os,", "));
     os << std::endl << "lap_t: ";
-    std::copy(_lap_t.begin(),_lap_t.end(),std::ostream_iterator<RealType>(os,", "));
+    std::copy(lap_t.begin(),lap_t.end(),std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "Nval_t: " << Nval_t;
     os << std::endl << "Lmax_t: " << Lmax_t;
     os << std::endl;
@@ -391,8 +374,8 @@ public:
       for(int p = 0; p < num_derivs; ++p)
       {
         RealType val_Ii = (I==J) - val(I,iat);
-        RealType val_It = (I==J) - val_t(I);
-        dNdiff(J,p) = val_t(J)*dLval_t[p]*val_It - val(J,iat)*dLval_saved(I,p,iat)*val_Ii;
+        RealType val_It = (I==J) - val_t[I];
+        dNdiff(J,p) = val_t[J]*dLval_t[p]*val_It - val(J,iat)*dLval_saved(I,p,iat)*val_Ii;
       }
     }
   }

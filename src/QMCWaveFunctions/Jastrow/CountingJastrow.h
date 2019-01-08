@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
@@ -48,8 +48,8 @@ protected:
 
   // Jastrow intermediate Matrix-vector products
   std::vector<RealType> FCsum;
-  std::vector<PosType> FCgrad;
-  std::vector<RealType> FClap;
+  Matrix<PosType> FCgrad;
+  Matrix<RealType> FClap;
 
   // grad dot grad and laplacian sums for evaluateDerivatives
   std::vector<RealType> FCggsum;
@@ -71,10 +71,10 @@ protected:
   std::vector<RealType> Jlap_t;
 
   // containers for counting function derivative quantities
-  std::vector<RealType> dCsum;
+  Matrix<RealType> dCsum;
+  Matrix<RealType> dCggsum;
+  Matrix<RealType> dClapsum;
   std::vector<RealType> dCsum_t;
-  std::vector<RealType> dCggsum;
-  std::vector<RealType> dClapsum;
   std::vector<RealType> dCFCggsum;
   std::vector<int> dCindex;
 
@@ -145,8 +145,8 @@ public:
     num_regions = C->size();
 
     FCsum.resize(num_regions);
-    FCgrad.resize(num_regions*num_els);
-    FClap.resize(num_regions*num_els);
+    FCgrad.resize(num_regions, num_els);
+    FClap.resize(num_regions, num_els);
 
     FCggsum.resize(num_regions);
     FClapsum.resize(num_regions);
@@ -184,9 +184,9 @@ public:
 
     // for CountingRegion optimization: don't allocate every evalDeriv call
     int max_num_derivs = C->max_num_derivs();
-    dCsum.resize(max_num_derivs*num_regions);
-    dCggsum.resize(max_num_derivs*num_regions);
-    dClapsum.resize(max_num_derivs*num_regions);
+    dCsum.resize(max_num_derivs, num_regions);
+    dCggsum.resize(max_num_derivs, num_regions);
+    dClapsum.resize(max_num_derivs, num_regions);
     dCFCggsum.resize(max_num_derivs);
     // register optimizable parameters
     std::ostringstream os;
@@ -296,30 +296,27 @@ public:
     std::fill(Jgrad.begin(),Jgrad.end(),0);
     std::fill(Jlap.begin(),Jlap.end(),0);
 
-    std::function<RealType&(int,int)> _F      = [&](int I, int J)->RealType& { return F(I*num_regions +J); };
-    std::function<PosType&(int,int)> _FCgrad = [&](int I, int i)->PosType& { return FCgrad[I*num_els + i]; };
-    std::function<RealType&(int,int)> _FClap = [&](int I, int i)->RealType& { return FClap[I*num_els + i]; };
     // evaluate FC products
     for(int I = 0; I < num_regions; ++I)
     {
       for(int J = 0; J < num_regions; ++J)
       {
-        FCsum[I] += _F(I,J)*C->sum(J); // MV
+        FCsum[I] += F(I,J)*C->sum[J]; // MV
         for(int i = 0; i < num_els; ++i)
         {
-          _FCgrad(I,i) += _F(I,J)*C->grad(J,i); // 3*nels*MV
-          _FClap(I,i) += _F(I,J)*C->lap(J,i); // nels*MV
+          FCgrad(I,i) += F(I,J)*C->grad(J,i); // 3*nels*MV
+          FClap(I,i) += F(I,J)*C->lap(J,i); // nels*MV
         }
       }
     }
     // evaluate components of J
     for(int I = 0; I < num_regions; ++I)
     {
-      Jval += (FCsum[I] + G[I])*C->sum(I); // VV
+      Jval += (FCsum[I] + G[I])*C->sum[I]; // VV
       for(int i = 0; i < num_els; ++i)
       {
         Jgrad[i] += (2*FCsum[I] + G[I])*C->grad(I,i); // 3*nels*VV
-        Jlap[i] += (2*FCsum[I] + G[I])*C->lap(I,i) + 2*dot(_FCgrad(I,i),C->grad(I,i)); // nels*VV
+        Jlap[i] += (2*FCsum[I] + G[I])*C->lap(I,i) + 2*dot(FCgrad(I,i),C->grad(I,i)); // nels*VV
       }
     }
     // print out results every so often
@@ -367,33 +364,31 @@ public:
     std::fill(FCgrad_t.begin(),FCgrad_t.end(),0);
     std::fill(FClap_t.begin(),FClap_t.end(),0);
 
-    std::function<RealType&(int,int)> _F      = [&](int I, int J)->RealType& { return F(I*num_regions +J); };
-    std::function<const PosType&(int,int)> _FCgrad = [&](int I, int i)->const PosType&{ return FCgrad[I*num_els + i] ; };
     // evaluate temp FC arrays
     for(int I = 0; I < num_regions; ++I)
     {
       for(int J = 0; J < num_regions; ++J)
       {
-        FCsum_t[I] += _F(I,J)*C->sum_t(J);
-        FCgrad_t[I] += _F(I,J)*C->grad_t(J);
-        FClap_t[I] += _F(I,J)*C->lap_t(J);
+        FCsum_t[I] += F(I,J)*C->sum_t[J];
+        FCgrad_t[I] += F(I,J)*C->grad_t[J];
+        FClap_t[I] += F(I,J)*C->lap_t[J];
       }
     }
     // evaluate components of the exponent
     for(int I = 0; I < num_regions; ++I)
     {
-      Jval_t += C->sum_t(I)*(FCsum_t[I] + G[I]);
+      Jval_t += C->sum_t[I]*(FCsum_t[I] + G[I]);
       for(int i = 0; i < num_els; ++i)
       {
         if(i == iat)
         {
-          Jgrad_t[i] += C->grad_t(I)*(2*FCsum_t[I] + G[I]);
-          Jlap_t[i]  += C->lap_t(I)*(2*FCsum_t[I] + G[I]) + 2*dot(C->grad_t(I),FCgrad_t[I]);
+          Jgrad_t[i] += C->grad_t[I]*(2*FCsum_t[I] + G[I]);
+          Jlap_t[i]  += C->lap_t[I]*(2*FCsum_t[I] + G[I]) + 2*dot(C->grad_t[I],FCgrad_t[I]);
         }
         else
         {
           Jgrad_t[i] += C->grad(I,i)*(2*FCsum_t[I] + G[I]);
-          Jlap_t[i]  += C->lap(I,i)*(2*FCsum_t[I] + G[I])  + 2*dot(C->grad(I,i),_FCgrad(I,i));
+          Jlap_t[i]  += C->lap(I,i)*(2*FCsum_t[I] + G[I])  + 2*dot(C->grad(I,i),FCgrad(I,i));
         }
       }
     }
@@ -446,14 +441,12 @@ public:
   {
     C->acceptMove(P,iat);
     // update values for C, FC to those at proposed position
-    std::function<PosType&(int,int)> _FCgrad = [&](int I, int i)->PosType& { return FCgrad[I*num_els + i]; };
-    std::function<RealType&(int,int)> _FClap = [&](int I, int i)->RealType& { return FClap[I*num_els + i]; };
     // copy over temporary values
     for(int I = 0; I < num_regions; ++I)
     {
       FCsum[I] = FCsum_t[I];
-      _FCgrad(I,iat) = FCgrad_t[I];
-      _FClap(I,iat) = FClap_t[I];
+      FCgrad(I,iat) = FCgrad_t[I];
+      FClap(I,iat) = FClap_t[I];
     }
     // update exponent values to that at proposed position
     Jval = Jval_t;
@@ -550,12 +543,12 @@ public:
         int J = IJ%num_regions;
         // coefficient due to symmetry of F: \sum\limits_{I} F_{II} C_I^2 + \sum\limits_{J > I} 2 F_{IJ}*C_I*C_J
         RealType x = (I==J)?1:2;
-        RealType dJF_val = C->sum(I)*C->sum(J)*x;
+        RealType dJF_val = C->sum[I]*C->sum[J]*x;
         RealType dJF_gg = 0, dJF_lap = 0;
         for(int i = 0; i < num_els; ++i)
         {
-           dJF_gg += x*(dot(C->grad(I,i),P.G[i])*C->sum(J) + C->sum(I)*dot(C->grad(J,i),P.G[i]));
-           dJF_lap += x*(C->lap(I,i)*C->sum(J) + 2*dot(C->grad(I,i),C->grad(J,i)) + C->lap(J,i)*C->sum(I));
+           dJF_gg += x*(dot(C->grad(I,i),P.G[i])*C->sum[J] + C->sum[I]*dot(C->grad(J,i),P.G[i]));
+           dJF_lap += x*(C->lap(I,i)*C->sum[J] + 2*dot(C->grad(I,i),C->grad(J,i)) + C->lap(J,i)*C->sum[I]);
         }
         dlogpsi[ia] += dJF_val;
         dhpsioverpsi[ia] += -0.5*dJF_lap - dJF_gg;
@@ -574,7 +567,7 @@ public:
         if(ia == -1)
           continue; // ignore inactive params
         int I = opt_index[OPT_G][oi];
-        RealType dJG_val = C->sum(I);
+        RealType dJG_val = C->sum[I];
         RealType dJG_gg = dJG_lap = 0;
         for(int i = 0; i < num_els; ++i)
         {
@@ -604,19 +597,13 @@ public:
       std::fill(FCggsum.begin(),FCggsum.end(),0);
       std::fill(FClapsum.begin(),FClapsum.end(),0);
 
-      // easy-index functions for evaluateDerivatives calls
-      std::function<const PosType&(int,int)> _FCgrad = [&](int I, int i)->const PosType&{ return FCgrad[I*num_els + i] ; };
-      std::function<const RealType&(int,int)> _FClap  = [&](int I, int i)->const RealType&{ return FClap[I*num_els + i] ; };
-      std::function<RealType&(int,int)> _dCsum        = [&](int I, int p)->RealType&{ return dCsum[p*num_regions + I]; };
-      std::function<RealType&(int,int)> _dCggsum      = [&](int I, int p)->RealType&{ return dCggsum[p*num_regions + I] ; };
-      std::function<RealType&(int,int)> _dClapsum     = [&](int I, int p)->RealType&{ return dClapsum[p*num_regions + I] ; };
       // evaluate FCggsum
       for(int I = 0; I < num_regions; ++I)
       {
         for(int i = 0; i < num_els; ++i)
         {
-          FCggsum[I] += dot(_FCgrad(I,i),P.G[i]);
-          FClapsum[I] += _FClap(I,i);
+          FCggsum[I] += dot(FCgrad(I,i),P.G[i]);
+          FClapsum[I] += FClap(I,i);
         }
       }
       // pointer to C->C[I]->myVars.Index
@@ -655,7 +642,7 @@ public:
         std::fill(dClapsum.begin(),dClapsum.end(),0);
         std::fill(dCFCggsum.begin(),dCFCggsum.end(),0);
         // evaluate all derivatives for the Ith counting function
-        C->evaluateDerivatives(P, I, _FCgrad, _dCsum, _dCggsum, _dClapsum, dCFCggsum);
+        C->evaluateDerivatives(P, I, FCgrad, dCsum, dCggsum, dClapsum, dCFCggsum);
         if(debug && deriv_print_index < debug_seqlen)
         {
           // print out current index information
@@ -697,17 +684,17 @@ public:
           }
           for(int J = 0; J < num_regions; ++J)
           {
-            dlogpsi[ia] += _dCsum(J,pI)*(2*FCsum[J] + G[J]);
+            dlogpsi[ia] += dCsum(J,pI)*(2*FCsum[J] + G[J]);
             // grad dot grad terms
-            dhpsioverpsi[ia] += -1.0*( _dCggsum(J,pI)*(2.0*FCsum[J] + G[J]) + _dCsum(J,pI)*2.0*FCggsum[J]  );
+            dhpsioverpsi[ia] += -1.0*( dCggsum(J,pI)*(2.0*FCsum[J] + G[J]) + dCsum(J,pI)*2.0*FCggsum[J]  );
             // outer laplacian terms
-            dhpsioverpsi[ia] += -0.5*( 2.0*_dCsum(J,pI)*FClapsum[J] + _dClapsum(J,pI)*(2.0*FCsum[J] + G[J]) ) ;
+            dhpsioverpsi[ia] += -0.5*( 2.0*dCsum(J,pI)*FClapsum[J] + dClapsum(J,pI)*(2.0*FCsum[J] + G[J]) ) ;
             if(debug && deriv_print_index < debug_seqlen)
             {
               app_log() << "      J: " << J << std::endl;
-              app_log() << "      dlogpsi term          : " << _dCsum(J,pI)*(2*FCsum[J] + G[J]) << std::endl;
-              app_log() << "      dhpsi/psi, graddotgrad: " << -1.0*( _dCggsum(J,pI)*(2.0*FCsum[J] + G[J]) + _dCsum(J,pI)*2.0*FCggsum[J]  ) << std::endl;
-              app_log() << "      dhpsi/psi, laplacian  : " << -0.5*( 2.0*_dCsum(J,pI)*FClapsum[J] + _dClapsum(J,pI)*(2.0*FCsum[J] + G[J]) ) << std::endl;
+              app_log() << "      dlogpsi term          : " << dCsum(J,pI)*(2*FCsum[J] + G[J]) << std::endl;
+              app_log() << "      dhpsi/psi, graddotgrad: " << -1.0*( dCggsum(J,pI)*(2.0*FCsum[J] + G[J]) + dCsum(J,pI)*2.0*FCggsum[J]  ) << std::endl;
+              app_log() << "      dhpsi/psi, laplacian  : " << -0.5*( 2.0*dCsum(J,pI)*FClapsum[J] + dClapsum(J,pI)*(2.0*FCsum[J] + G[J]) ) << std::endl;
             }
 
 
