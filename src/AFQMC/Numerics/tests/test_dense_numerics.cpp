@@ -32,6 +32,20 @@
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x; exit(0);}
 
+/*
+#if defined(QMC_CUDA)
+#include "cuda_runtime.h"
+#include "cublas_v2.h"
+#include "cublasXt.h"
+#include "cusolverDn.h"
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
+#include "mpi3/communicator.hpp"
+#include "mpi3/shared_communicator.hpp"
+#include "AFQMC/Memory/custom_pointers.hpp"
+#endif
+*/
+
 #include "AFQMC/Matrix/tests/matrix_helpers.h"
 
 // Include the templates directly so all the needed types get instantiated
@@ -382,6 +396,79 @@ TEST_CASE("dense_ma_operations", "[matrix_operations]")
 {
   test_dense_matrix_mult();
 }
+/*
+#if defined(QMC_CUDA)
+template<class Allocator>
+void test_dense_matrix_mult_device(Allocator alloc)
+{
+  using T = typename Allocator::value_type;
+
+  { 
+    vector<T> m = {
+            9.,24.,30.,
+            4.,10.,12.,
+            14.,16.,36.
+    };
+    array_ref<T, 2> M(m.data(), {3,3});
+    vector<T> x = {1.,2.,3.};
+    array_ref<T, 1> X(x.data(), extensions<1u>{x.size()});
+    vector<T> y(3);
+    array_ref<T, 1> Y(y.data(), extensions<1u>{y.size()});
+
+    array<T,2,Allocator> M_dev({3,3},alloc);
+
+    array<T,1,Allocator> X_dev(extensions<1u>{x.size()},alloc);
+    array<T,1,Allocator> Y_dev(extensions<1u>{x.size()},alloc);
+
+    copy_n(M.origin(),M.num_elements(),M_dev.origin());
+    REQUIRE(M_dev.num_elements() == m.size());
+    copy_n(x.data(),x.size(),X_dev.origin());
+    REQUIRE(X_dev.num_elements() == x.size());
+
+    ma::product(M_dev, X_dev, Y_dev); // Y := M X
+
+    REQUIRE(Y_dev.num_elements() == y.size());
+    copy_n(Y_dev.origin(),Y_dev.num_elements(),Y.origin());
+
+    vector<T> mx = {147., 60.,154.};
+    array_ref<T, 1> MX(mx.data(), extensions<1u>{mx.size()});
+    verify_approx(MX, Y);
+  } 
+}
+
+TEST_CASE("dense_ma_operations_device", "[matrix_operations]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+
+  {
+    using T = std::complex<double>;
+    using Alloc = qmc_cuda::cuda_gpu_allocator<T>;
+    using qmc_cuda::cublas_check;
+    using qmc_cuda::curand_check;
+    using qmc_cuda::cusolver_check;
+
+    qmc_cuda::cuda_check(cudaSetDevice(world.rank()),"cudaSetDevice()");
+
+    cublasHandle_t cublas_handle;
+    cublasXtHandle_t cublasXt_handle;
+    cusolverDnHandle_t cusolverDn_handle;
+    cublas_check(cublasCreate (& cublas_handle ), "cublasCreate");
+    cublas_check(cublasXtCreate (& cublasXt_handle ), "cublasXtCreate");
+    int devID[8] {0,1,2,3,4,5,6,7};
+    cublas_check(cublasXtDeviceSelect(cublasXt_handle, 1, devID), "cublasXtDeviceSelect");
+    cublas_check(cublasXtSetPinningMemMode(cublasXt_handle, CUBLASXT_PINNING_ENABLED), "cublasXtSetPinningMemMode");
+//    cusolver_check(cusolverDnCreate (& cusolverDn_handle ), "cusolverDnCreate");
+
+    qmc_cuda::gpu_handles handles{&cublas_handle,&cublasXt_handle,&cusolverDn_handle};
+
+    Alloc gpu_alloc(handles);
+ 
+    test_dense_matrix_mult_device<Alloc>(gpu_alloc);
+  }
+}
+#endif
+*/
 
 }
 

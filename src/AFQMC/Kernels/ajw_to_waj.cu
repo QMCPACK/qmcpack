@@ -19,7 +19,7 @@
 #include<cuda_runtime.h>
 #include "AFQMC/Kernels/cuda_settings.h"
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
 
 namespace kernels 
 {
@@ -64,7 +64,7 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
                 double * B) 
 {
   kernel_ajw_to_waj<<<na,128>>>(na,nj,nw,inca,A,B);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void ajw_to_waj(int na, int nj, int nw, int inca,
@@ -72,7 +72,7 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
                 float * B)
 {
   kernel_ajw_to_waj<<<na,128>>>(na,nj,nw,inca,A,B);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void ajw_to_waj(int na, int nj, int nw, int inca,
@@ -82,7 +82,7 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
   kernel_ajw_to_waj<<<na,128>>>(na,nj,nw,inca,
                 reinterpret_cast<thrust::complex<double> const*>(A),
                 reinterpret_cast<thrust::complex<double> *>(B));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void ajw_to_waj(int na, int nj, int nw, int inca,
@@ -92,7 +92,7 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
   kernel_ajw_to_waj<<<na,128>>>(na,nj,nw,inca,
                 reinterpret_cast<thrust::complex<float> const*>(A),
                 reinterpret_cast<thrust::complex<float> *>(B));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 }

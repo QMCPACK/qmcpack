@@ -19,8 +19,13 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 
-ADD_EXECUTABLE(${UTEST_EXE} test_dense_numerics.cpp test_ma_blas.cpp
+IF(QMC_CUDA)
+  CUDA_ADD_EXECUTABLE(${UTEST_EXE} test_dense_numerics.cpp test_ma_blas.cpp
 test_sparse_numerics.cpp test_sparse_numerics_native.cpp)
+ELSE(QMC_CUDA)
+  ADD_EXECUTABLE(${UTEST_EXE} test_dense_numerics.cpp test_ma_blas.cpp
+test_sparse_numerics.cpp test_sparse_numerics_native.cpp)
+ENDIF(QMC_CUDA)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

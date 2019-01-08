@@ -18,7 +18,7 @@
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
 
 namespace kernels 
 {
@@ -58,7 +58,7 @@ __global__ void kernel_determinant_from_getrf(int N, T *m, int lda, int *piv, T 
 void determinant_from_getrf_gpu(int N, double *m, int lda, int *piv, double* res)
 {
   kernel_determinant_from_getrf<<<1,256>>>(N,m,lda,piv,res);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *piv, std::complex<double>* res)
@@ -66,7 +66,7 @@ void determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *pi
   kernel_determinant_from_getrf<<<1,256>>>(N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,piv,
                                     reinterpret_cast<thrust::complex<double> *>(res) );
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 }

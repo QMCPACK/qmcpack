@@ -19,7 +19,7 @@
 #include<cuda_runtime.h>
 #include "AFQMC/Kernels/cuda_settings.h"
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
 
 namespace kernels
 {
@@ -90,7 +90,7 @@ void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
   dim3 grid_dim(nkpts,nkpts,1);
   kernel_KaKjw_to_KKwaj<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,A,B);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -103,7 +103,7 @@ void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
   dim3 grid_dim(nkpts,nkpts,1);
   kernel_KaKjw_to_KKwaj<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,A,B);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -116,7 +116,7 @@ void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
   dim3 grid_dim(nkpts,nkpts,1);
   kernel_KaKjw_to_KKwaj<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,A,B);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -131,7 +131,7 @@ void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                                                  nmo,nmo0,nocc,nocc0,
                 reinterpret_cast<thrust::complex<double> const*>(A),
                 reinterpret_cast<thrust::complex<double> *>(B));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -146,7 +146,7 @@ void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                                                  nmo,nmo0,nocc,nocc0,
                 reinterpret_cast<thrust::complex<float> const*>(A),
                 reinterpret_cast<thrust::complex<float> *>(B));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -161,7 +161,7 @@ void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                                                  nmo,nmo0,nocc,nocc0,
                 reinterpret_cast<thrust::complex<double> const*>(A),
                 reinterpret_cast<thrust::complex<float> *>(B));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 

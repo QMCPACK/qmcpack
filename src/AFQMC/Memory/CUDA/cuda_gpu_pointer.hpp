@@ -178,10 +178,19 @@ cuda_gpu_ptr<T> fill_n(cuda_gpu_ptr<T> first, Size n, Args&&...args){
 }
 
 /**************** uninitialized_fill_n *****************/
+/*
 template<typename T, typename Size, typename... Args>
 cuda_gpu_ptr<T> uninitialized_fill_n(cuda_gpu_ptr<T> first, Size n, Args&&...args){
   if(n == 0) return first;
   kernels::uninitialized_fill_n(to_address(first), n, std::forward<Args>(args)...); 
+  return first + n;
+}
+*/
+
+template<typename T, typename Size>
+cuda_gpu_ptr<T> uninitialized_fill_n(cuda_gpu_ptr<T> first, Size n, T const& val){
+  if(n == 0) return first;
+  kernels::uninitialized_fill_n(to_address(first), n, val);
   return first + n;
 }
 

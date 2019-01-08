@@ -19,7 +19,10 @@
 #include<cuda_runtime.h>
 #include "AFQMC/Kernels/cuda_settings.h"
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
+#if __CUDA_ARCH__ < 600
+#include "AFQMC/Kernels/myAtomicAdd.cu"
+#endif
 
 namespace kernels 
 {
@@ -60,8 +63,13 @@ __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, in
         T2 re = (alp * cache[ 0 ]).real();
         T2 im = (alp * cache[ 0 ]).imag();
         T2* re_ = reinterpret_cast<T2*>(y+w*incy);
-        atomicAdd_system(re_,re); 
-        atomicAdd_system(re_+1,im); 
+#if __CUDA_ARCH__ < 600
+        myAtomicAdd(re_,re); 
+        myAtomicAdd(re_+1,im); 
+#else
+        atomicAdd(re_,re); 
+        atomicAdd(re_+1,im); 
+#endif
     }
 }
 
@@ -75,7 +83,7 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                                    reinterpret_cast<thrust::complex<double> const*>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol, 
@@ -88,7 +96,7 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                                    reinterpret_cast<thrust::complex<float> const*>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(y),incy);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol, 
@@ -101,7 +109,7 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                                    reinterpret_cast<thrust::complex<float> const*>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 

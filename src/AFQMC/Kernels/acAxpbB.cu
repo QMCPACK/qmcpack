@@ -18,7 +18,7 @@
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
 
 namespace kernels 
 {
@@ -62,7 +62,7 @@ void acAxpbB(int m, int n, double const alpha, double const* A, int lda,
   dim3 block_dim(xblock_dim,yblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim); 
   kernel_acAxpbB<<<grid_dim, block_dim>>>(m,n,alpha,A,lda,x,incx,beta,B,ldb);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void acAxpbB(int m, int n, float const alpha, float const* A, int lda,
@@ -76,7 +76,7 @@ void acAxpbB(int m, int n, float const alpha, float const* A, int lda,
   dim3 block_dim(xblock_dim,yblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim);
   kernel_acAxpbB<<<grid_dim, block_dim>>>(m,n,alpha,A,lda,x,incx,beta,B,ldb);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void acAxpbB(int m, int n, std::complex<double> const alpha, 
@@ -97,7 +97,7 @@ void acAxpbB(int m, int n, std::complex<double> const alpha,
                             reinterpret_cast<thrust::complex<double> const*>(x),incx,
                             static_cast<thrust::complex<double> const>(beta),
                             reinterpret_cast<thrust::complex<double> *>(B),ldb);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void acAxpbB(int m, int n, std::complex<float> const alpha,
@@ -118,7 +118,7 @@ void acAxpbB(int m, int n, std::complex<float> const alpha,
                             reinterpret_cast<thrust::complex<float> const*>(x),incx,
                             static_cast<thrust::complex<float> const>(beta),
                             reinterpret_cast<thrust::complex<float> *>(B),ldb);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 

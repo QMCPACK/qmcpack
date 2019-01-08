@@ -23,7 +23,40 @@ SET (AFQMC_SRCS
   Hamiltonians/THCHamiltonian.cpp
   )
 
-ADD_LIBRARY(afqmc ${AFQMC_SRCS})
+IF(QMC_CUDA)
+  SET(AFQMC_SRCS ${AFQMC_SRCS} 
+    Kernels/determinant.cu 
+    Kernels/adotpby.cu
+    Kernels/fill_n.cu
+    Kernels/uninitialized_fill_n.cu
+    Kernels/axty.cu
+    Kernels/adiagApy.cu
+    Kernels/sum.cu
+    Kernels/acAxpbB.cu
+    Kernels/print.cu
+    Kernels/setIdentity.cu
+    Kernels/zero_complex_part.cu
+    Kernels/batchedDot.cu
+    Kernels/copy_n_cast.cu
+    Kernels/ajw_to_waj.cu 
+    Kernels/dot_wabn_wban.cu 
+    Kernels/vKKwij_to_vwKiKj.cu 
+    Kernels/KaKjw_to_QKajw.cu
+    Kernels/vbias_from_v1.cu
+    Kernels/KaKjw_to_KKwaj.cu
+    Kernels/batched_dot_wabn_wban.cu
+    Kernels/batched_Tab_to_Klr.cu
+#    Kernels/myAtomicAdd.cu
+  )
+ENDIF(QMC_CUDA)
+
+IF(QMC_CUDA)
+  CUDA_ADD_LIBRARY(afqmc ${AFQMC_SRCS})
+  CUDA_ADD_CUBLAS_TO_TARGET(afqmc)
+ELSE(QMC_CUDA)
+  ADD_LIBRARY(afqmc ${AFQMC_SRCS})
+ENDIF(QMC_CUDA)
+
 
 IF (BUILD_UNIT_TESTS)
   INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)

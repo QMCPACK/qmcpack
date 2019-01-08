@@ -19,7 +19,7 @@
 #include <thrust/transform.h>
 #include <thrust/functional.h>
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
 
 namespace kernels 
 {

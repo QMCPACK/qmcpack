@@ -18,7 +18,7 @@
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
 
 namespace kernels 
 {
@@ -44,14 +44,14 @@ void copy_n_cast(double const* A, int n, float* B)
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_copy_n_cast<<<grid_dim, block_dim>>>(A,n,B);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void copy_n_cast(float const* A, int n, double* B)
 {
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_copy_n_cast<<<grid_dim, block_dim>>>(A,n,B);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void copy_n_cast(std::complex<double> const* A, int n, std::complex<float>* B)
 {
@@ -59,7 +59,7 @@ void copy_n_cast(std::complex<double> const* A, int n, std::complex<float>* B)
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_copy_n_cast<<<grid_dim, block_dim>>>(reinterpret_cast<thrust::complex<double> const*>(A),n,
                                               reinterpret_cast<thrust::complex<float> *>(B));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void copy_n_cast(std::complex<float> const* A, int n, std::complex<double>* B)
 {
@@ -67,7 +67,7 @@ void copy_n_cast(std::complex<float> const* A, int n, std::complex<double>* B)
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_copy_n_cast<<<grid_dim, block_dim>>>(reinterpret_cast<thrust::complex<float> const*>(A),n,
                                               reinterpret_cast<thrust::complex<double> *>(B));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 }

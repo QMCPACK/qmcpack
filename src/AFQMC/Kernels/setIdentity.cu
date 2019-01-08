@@ -18,7 +18,7 @@
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
 
 namespace kernels 
 {
@@ -58,7 +58,7 @@ void setIdentity(int n, double * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,xgrid_dim); 
   kernel_setIdentity<<<grid_dim, block_dim>>>(n,A,lda);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void setIdentity(int n, float * A, int lda)
@@ -68,7 +68,7 @@ void setIdentity(int n, float * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,xgrid_dim);
   kernel_setIdentity<<<grid_dim, block_dim>>>(n,A,lda);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void setIdentity(int n, std::complex<double> * A, int lda)
@@ -78,7 +78,7 @@ void setIdentity(int n, std::complex<double> * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,xgrid_dim);
   kernel_setIdentity<<<grid_dim, block_dim>>>(n,reinterpret_cast<thrust::complex<double> *>(A),lda);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void setIdentity(int n, std::complex<float> * A, int lda)
@@ -88,7 +88,7 @@ void setIdentity(int n, std::complex<float> * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,xgrid_dim);
   kernel_setIdentity<<<grid_dim, block_dim>>>(n,reinterpret_cast<thrust::complex<float> *>(A),lda);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 }

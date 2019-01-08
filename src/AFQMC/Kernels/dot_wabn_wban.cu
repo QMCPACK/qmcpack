@@ -19,7 +19,10 @@
 #include<cuda_runtime.h>
 #include "AFQMC/Kernels/cuda_settings.h"
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
+#if __CUDA_ARCH__ < 600
+#include "AFQMC/Kernels/myAtomicAdd.cu"
+#endif
 
 namespace kernels 
 {
@@ -50,7 +53,11 @@ __global__ void kernel_dot_wabn_wban( int nw, int na, int nb, int nc,
         i /= 2; //not sure bitwise operations are actually faster
     }
     //if( threadIdx.x == 0 ) *(y+w*incy) = (*(y+w*incy)) + alpha * cache[ 0 ];
-    if( threadIdx.x == 0 ) atomicAdd_system(y+w*incy,alpha * cache[ 0 ]); 
+#if __CUDA_ARCH__ < 600
+    if( threadIdx.x == 0 ) myAtomicAdd(y+w*incy,alpha * cache[ 0 ]); 
+#else
+    if( threadIdx.x == 0 ) atomicAdd(y+w*incy,alpha * cache[ 0 ]); 
+#endif
 }
 
 template<typename T, typename T2>
@@ -84,8 +91,13 @@ __global__ void kernel_dot_wabn_wban( int nw, int na, int nb, int nc,
         T2 re = (alpha * cache[ 0 ]).real();
         T2 im = (alpha * cache[ 0 ]).imag();
         T2* re_ = reinterpret_cast<T2*>(y+w*incy);
-        atomicAdd_system(re_,re); 
-        atomicAdd_system(re_+1,im); 
+#if __CUDA_ARCH__ < 600
+        myAtomicAdd(re_,re); 
+        myAtomicAdd(re_+1,im); 
+#else
+        atomicAdd(re_,re); 
+        atomicAdd(re_+1,im); 
+#endif
     }
 }
 
@@ -94,7 +106,7 @@ void dot_wabn_wban( int nw, int na, int nb, int nc,
 {
   int n_=nw*na*nb;
   kernel_dot_wabn_wban<<<n_,DOT_BLOCK_SIZE>>>(nw,na,nb,nc,alpha,A,B,y,incy);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void dot_wabn_wban( int nw, int na, int nb, int nc,
@@ -102,7 +114,7 @@ void dot_wabn_wban( int nw, int na, int nb, int nc,
 {
   int n_=nw*na*nb;
   kernel_dot_wabn_wban<<<n_,DOT_BLOCK_SIZE>>>(nw,na,nb,nc,alpha,A,B,y,incy);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void dot_wabn_wban( int nw, int na, int nb, int nc,
@@ -115,7 +127,7 @@ void dot_wabn_wban( int nw, int na, int nb, int nc,
                                    reinterpret_cast<thrust::complex<double> const*>(A),
                                    reinterpret_cast<thrust::complex<double> const*>(B),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void dot_wabn_wban( int nw, int na, int nb, int nc,
@@ -128,7 +140,7 @@ void dot_wabn_wban( int nw, int na, int nb, int nc,
                                    reinterpret_cast<thrust::complex<float> const*>(A),
                                    reinterpret_cast<thrust::complex<float> const*>(B),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 }

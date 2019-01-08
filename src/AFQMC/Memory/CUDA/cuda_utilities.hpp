@@ -74,9 +74,10 @@ namespace qmc_cuda {
       return CUBLAS_OP_T;
     else if(A=='C' or A=='c')
       return CUBLAS_OP_C;
-    else
+    else {
       throw std::runtime_error("unknown cublasOperation option"); 
-    return CUBLAS_OP_N;
+      //return CUBLAS_OP_N;
+    }
   }
 
   struct gpu_handles {
@@ -88,7 +89,7 @@ namespace qmc_cuda {
               cublasXt_handle==other.cublasXt_handle &&
               cusolverDn_handle==other.cusolverDn_handle);
     }
-    bool operator!=(gpu_handles const& other) const { not (*this == other); }
+    bool operator!=(gpu_handles const& other) const { return not (*this == other); }
   };
 }
 

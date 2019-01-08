@@ -18,7 +18,7 @@
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
 
 namespace kernels 
 {
@@ -46,7 +46,7 @@ void adiagApy(int N, double const alpha, double const* A, int lda, double *y, in
   int block_dim = 256;
   int grid_dim = (N + block_dim - 1)/block_dim;
   kernel_adiagApy<<<grid_dim, block_dim>>>(N,alpha,A,lda,y,incy);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void adiagApy(int N, std::complex<double> const alpha, std::complex<double> const* A, int lda, 
@@ -57,7 +57,7 @@ void adiagApy(int N, std::complex<double> const alpha, std::complex<double> cons
   kernel_adiagApy<<<grid_dim, block_dim>>>(N,static_cast<thrust::complex<double> const>(alpha),
                             reinterpret_cast<thrust::complex<double> const*>(A),lda,
                             reinterpret_cast<thrust::complex<double> *>(y),incy );
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void adiagApy(int N, float const alpha, float const* A, int lda, float *y, int incy)
@@ -65,7 +65,7 @@ void adiagApy(int N, float const alpha, float const* A, int lda, float *y, int i
   int block_dim = 256;
   int grid_dim = (N + block_dim - 1)/block_dim;
   kernel_adiagApy<<<grid_dim, block_dim>>>(N,alpha,A,lda,y,incy);
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void adiagApy(int N, std::complex<float> const alpha, std::complex<float> const* A, int lda,
@@ -76,7 +76,7 @@ void adiagApy(int N, std::complex<float> const alpha, std::complex<float> const*
   kernel_adiagApy<<<grid_dim, block_dim>>>(N,static_cast<thrust::complex<float> const>(alpha),
                             reinterpret_cast<thrust::complex<float> const*>(A),lda,
                             reinterpret_cast<thrust::complex<float> *>(y),incy );
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 }

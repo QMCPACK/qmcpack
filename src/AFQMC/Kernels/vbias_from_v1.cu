@@ -19,7 +19,7 @@
 #include<cuda_runtime.h>
 #include "AFQMC/Kernels/cuda_settings.h"
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
 
 namespace kernels
 {
@@ -89,7 +89,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
                 static_cast<thrust::complex<double> const >(alpha),
                 reinterpret_cast<thrust::complex<double> const*>(v1),
                 reinterpret_cast<thrust::complex<double> *>(vb));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
@@ -103,7 +103,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
                 static_cast<thrust::complex<float> const >(alpha),
                 reinterpret_cast<thrust::complex<float> const*>(v1),
                 reinterpret_cast<thrust::complex<float> *>(vb));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
@@ -117,7 +117,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
                 static_cast<thrust::complex<double> const >(alpha),
                 reinterpret_cast<thrust::complex<float> const*>(v1),
                 reinterpret_cast<thrust::complex<double> *>(vb));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 }

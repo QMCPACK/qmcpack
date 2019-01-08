@@ -18,7 +18,7 @@
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
 #define QMC_CUDA 1
-#include "Numerics/detail/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
 
 namespace kernels 
 {
@@ -36,7 +36,7 @@ void zero_complex_part(int n, std::complex<double> * x)
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_zero_complex_part<<<grid_dim, block_dim>>>(n,reinterpret_cast<thrust::complex<double>*>(x));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void zero_complex_part(int n, std::complex<float> * x)
@@ -44,7 +44,7 @@ void zero_complex_part(int n, std::complex<float> * x)
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_zero_complex_part<<<grid_dim, block_dim>>>(n,reinterpret_cast<thrust::complex<float>*>(x));
-  cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void zero_complex_part(int n, double * x)

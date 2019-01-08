@@ -53,6 +53,8 @@ namespace afqmc
   using tp_ul_ul = std::tuple<std::size_t,std::size_t>;
 
   enum WALKER_TYPES {UNDEFINED_WALKER_TYPE, CLOSED, COLLINEAR, NONCOLLINEAR};
+  // when QMC_CUDA is not set, DEVICE and TG_LOCAL are the same
+  enum ALLOCATOR_TYPES {STD,NODE,STD_DEVICE,SHARED_LOCAL_DEVICE,SHARED_DEVICE};
 
   template<typename T> using s1D = std::tuple<IndexType,T>;
   template<typename T> using s2D = std::tuple<IndexType,IndexType,T>;
