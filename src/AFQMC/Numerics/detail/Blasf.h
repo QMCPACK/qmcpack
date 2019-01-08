@@ -40,6 +40,11 @@
 #define csymv csymv_
 #define zsymv zsymv_
 #define dscal dscal_
+#define sscal  sscal_
+#define cscal  cscal_
+#define zscal  zscal_
+#define csscal  csscal_
+#define zdscal  zdscal_
 #define dcopy dcopy_
 #define zcopy zcopy_
 #define dsyrk dsyrk_
