@@ -19,43 +19,46 @@
 #define MA_LAPACK_HPP
 
 #include "AFQMC/Utilities/type_conversion.hpp"
-#include "Numerics/OhmmsBlas.h"
+#include "AFQMC/Numerics/detail/lapack.hpp"
 #include "multi/array_ref.hpp"
 #include<cassert>
 
 namespace ma{
 
-inline double const& real(double const& d){return d;}
-inline float const& real(float const& f){return f;}
+template<class MultiArray2D>
+int getrf_optimal_workspace_size(MultiArray2D && A){
+        assert(A.strides()[0] > 0);
+        assert(A.strides()[1] == 1);
 
-template<class MultiArray2D, class Array1D>
-MultiArray2D getrf(MultiArray2D&& m, Array1D& pivot){
-	assert(m.strides()[0] >= std::max(std::size_t(1), size_t(m.shape()[1])));
-	assert(m.strides()[1] == 1);
-	assert(pivot.size() >= std::min(m.shape()[1], m.shape()[0]));
-	
-	int status = -1;
-	LAPACK::getrf(
-		m.shape()[1], m.shape()[0], m.origin(), m.strides()[0], 
-		pivot.data(), 
-		status
-	);
-	assert(status>=0); // status>0 signals singular matrix, catch problem later
-	return std::forward<MultiArray2D>(m);
+        int res;
+        getrf_bufferSize(A.shape()[1], A.shape()[0],A.origin(),A.strides()[0],res);
+        return res;
+}
+
+template<class MultiArray2D, class Array1D, class Buffer>
+MultiArray2D getrf(MultiArray2D&& m, Array1D& pivot, Buffer&& WORK){
+        assert(m.strides()[0] >= std::max(std::size_t(1), std::size_t(m.shape()[1])));
+        assert(m.strides()[1] == 1);
+        assert(pivot.size() >= std::min(m.shape()[1], m.shape()[0]+1));
+
+        int status = -1;
+        getrf(
+                m.shape()[1], m.shape()[0], m.origin(), m.strides()[0],
+                pivot.data(),
+                status,
+                WORK.data()
+        );
+        assert(status==0);
+        return std::forward<MultiArray2D>(m);
 }
 
 template<class MultiArray2D>
-int getri_optimal_workspace_size(MultiArray2D const& A){
-	typename MultiArray2D::element WORK;
-	int status = -1;
-	LAPACK::getri(
-		A.shape()[0], nullptr, A.strides()[0], 
-		nullptr, 
-		&WORK, /*lwork*/ -1, 
-		status
-	);
-	assert(status == 0);
-	return real(WORK);
+int getri_optimal_workspace_size(MultiArray2D && A){
+        assert(A.strides()[1] == 1);
+        assert(A.shape()[0] == A.shape()[1]);
+        int lwork = -1;
+        getri_bufferSize(A.shape()[0], A.origin(), A.strides()[0],lwork);
+        return lwork;
 }
 
 template<class MultiArray2D, class MultiArray1D, class Buffer>
@@ -63,13 +66,13 @@ MultiArray2D getri(MultiArray2D&& A, MultiArray1D const& IPIV, Buffer&& WORK){
 //	assert(A.strides()[0] > std::max(std::size_t(1), A.shape()[1]));
 	assert(A.strides()[1] == 1);
 	assert(IPIV.size() >= size_t(A.shape()[0]));
-	assert(WORK.capacity() >= std::max(std::size_t(1), size_t(A.shape()[0])));
+	assert(WORK.size() >= std::max(std::size_t(1), size_t(A.shape()[0])));
 	
 	int status = -1;
-	LAPACK::getri(
+	getri(
 		A.shape()[0], A.origin(), A.strides()[0], 
 		IPIV.data(), 
-		WORK.data(), WORK.capacity(), 
+		WORK.data(), WORK.size(), 
 		status
 	);
 	assert(status == 0);
@@ -81,16 +84,9 @@ int geqrf_optimal_workspace_size(MultiArray2D const& A){
 	assert(A.strides()[0] > 0);
 	assert(A.strides()[1] == 1);
 
-	typename MultiArray2D::element WORK;
-	int status = -1;
-	LAPACK::geqrf(
-		A.shape()[1], A.shape()[0], nullptr, A.strides()[0], 
-		nullptr, 
-		&WORK, -1, 
-		status
-	);
-	assert(status==0);
-	return real(WORK);
+        int res;
+        geqrf_bufferSize(A.shape()[1], A.shape()[0],A.origin(),A.strides()[0],res);
+        return res;
 }
 
 template<class MultiArray2D, class Array1D, class Buffer>
@@ -100,13 +96,13 @@ MultiArray2D geqrf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 	assert(A.strides()[1] == 1);
 	assert(TAU.strides()[0] == 1);
 	assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(A.shape()[0], A.shape()[1]))));
-	assert(WORK.capacity() >= std::max(std::size_t(1), size_t(A.shape()[0])));
+	assert(WORK.size() >= std::max(std::size_t(1), size_t(A.shape()[0])));
 	
 	int status = -1;
-	LAPACK::geqrf(
+	geqrf(
 		A.shape()[1], A.shape()[0], A.origin(), A.strides()[0], 
 		TAU.data(), 
-		WORK.data(), WORK.capacity(),
+		WORK.data(), WORK.size(),
 		status
 	);
 	assert(status==0);
@@ -118,16 +114,9 @@ int gelqf_optimal_workspace_size(MultiArray2D const& A){
 	assert(A.strides()[0] > 0);
 	assert(A.strides()[1] == 1);
 
-	typename MultiArray2D::element WORK;
-	int status = -1;
-	LAPACK::gelqf(
-		A.shape()[1], A.shape()[0], nullptr, A.strides()[0], 
-		nullptr, 
-		&WORK, -1, 
-		status
-	);
-	assert(status==0);
-	return real(WORK);
+        int res;
+        gelqf_bufferSize(A.shape()[1], A.shape()[0],A.origin(),A.strides()[0],res);
+	return res;
 }
 
 template<class MultiArray2D, class Array1D, class Buffer>
@@ -136,12 +125,12 @@ MultiArray2D gelqf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 	assert(A.strides()[1] == 1);
 	assert(TAU.strides()[0] == 1);
 	assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(A.shape()[0], A.shape()[1]))));
-	assert(WORK.capacity() >= std::max(std::size_t(1), size_t(A.shape()[1])));
+	assert(WORK.size() >= std::max(std::size_t(1), size_t(A.shape()[1])));
 
 	int status = -1;
-	LAPACK::gelqf(
+	gelqf(
 		A.shape()[1], A.shape()[0], A.origin(), A.strides()[0], TAU.data(),
-		WORK.data(), WORK.capacity(), 
+		WORK.data(), WORK.size(), 
 		status
 	);
 	assert(status==0);
@@ -154,16 +143,11 @@ int gqr_optimal_workspace_size(MultiArray2D const& A){
 	assert(A.strides()[0] > 0);
 	assert(A.strides()[1] == 1);
 
-	typename MultiArray2D::element WORK;
-	int status = -1;
-	LAPACK::gqr(
-		A.shape()[1], A.shape()[0], std::max(std::size_t(1), size_t(std::min(A.shape()[0], A.shape()[1]))), 
-                nullptr, A.strides()[0], nullptr, 
-		&WORK, -1, 
-		status
-	);
-	assert(status==0);
-	return real(WORK);
+        int res;
+        gqr_bufferSize(A.shape()[1], A.shape()[0],
+                       std::max(std::size_t(1), size_t(std::min(A.shape()[0], A.shape()[1]))),
+                       A.origin(),A.strides()[0],res);
+        return res;
 }
 
 template<class MultiArray2D, class Array1D, class Buffer>
@@ -171,13 +155,13 @@ MultiArray2D gqr(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 	assert(A.strides()[1] == 1);
 	assert(TAU.strides()[0] == 1);
 	assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(A.shape()[0], A.shape()[1]))));
-	assert(WORK.capacity() >= std::max(std::size_t(1), size_t(A.shape()[0])));
+	assert(WORK.size() >= std::max(std::size_t(1), size_t(A.shape()[0])));
 
 	int status = -1;
-	LAPACK::gqr(
+	gqr(
 		A.shape()[1], A.shape()[0], std::max(std::size_t(1), size_t(std::min(A.shape()[0], A.shape()[1]))), 
 		A.origin(), A.strides()[0], TAU.data(), 
-		WORK.data(), WORK.capacity(), 
+		WORK.data(), WORK.size(), 
 		status
 	);
 	assert(status==0);
@@ -189,16 +173,11 @@ int glq_optimal_workspace_size(MultiArray2D const& A){
 	assert(A.strides()[0] > 0);
 	assert(A.strides()[1] == 1);
 
-	typename MultiArray2D::element WORK;
-	int status = -1;
-	LAPACK::glq(
-		A.shape()[1], A.shape()[0], std::max(std::size_t(1), size_t(std::min(A.shape()[0], A.shape()[1]))), 
-                nullptr, A.strides()[0], nullptr, 
-		&WORK, -1, 
-		status
-	);
-	assert(status==0);
-	return real(WORK);
+        int res;
+        glq_bufferSize(A.shape()[1], A.shape()[0],
+                       std::max(std::size_t(1), size_t(std::min(A.shape()[0], A.shape()[1]))),
+                       A.origin(),A.strides()[0],res);
+        return res;
 }
 
 template<class MultiArray2D, class Array1D, class Buffer>
@@ -206,13 +185,13 @@ MultiArray2D glq(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 	assert(A.strides()[1] == 1);
 	assert(TAU.strides()[0] == 1);
 	assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(A.shape()[0], A.shape()[1]))));
-	assert(WORK.capacity() >= std::max(std::size_t(1), size_t(A.shape()[1])));
+	assert(WORK.size() >= std::max(std::size_t(1), size_t(A.shape()[1])));
 
 	int status = -1;
-	LAPACK::glq(
+	glq(
 		A.shape()[1], A.shape()[0], std::max(std::size_t(1), size_t(std::min(A.shape()[0], A.shape()[1]))), 
 		A.origin(), A.strides()[0], TAU.data(), 
-		WORK.data(), WORK.capacity(), 
+		WORK.data(), WORK.size(), 
 		status
 	);
 	assert(status==0);
@@ -225,7 +204,7 @@ template<class MultiArray2D,
 MultiArray2D potrf(MultiArray2D&& A) {
         assert(A.shape()[0]==A.shape()[1]);
         int INFO;
-        LAPACK::potrf('U',A.shape()[0],A.origin(),A.strides()[0],INFO);
+        potrf('U',A.shape()[0],A.origin(),A.strides()[0],INFO);
         if(INFO != 0) throw std::runtime_error(" error in ma::potrf: Error code != 0");
 }
 
@@ -269,7 +248,7 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
             int LIWORK=-1;
             int INFO;
 
-            LAPACK::hevr (JOBZ, RANGE, UPLO, N, A_.origin(), LDA, VL, VU, IL, IU, ABSTOL, 
+            hevr (JOBZ, RANGE, UPLO, N, A_.origin(), LDA, VL, VU, IL, IU, ABSTOL, 
                           M,eigVal.origin(), eigVec.origin(), N, ISUPPZ.data(), WORK.data(), LWORK, 
                           RWORK.data(), LRWORK, IWORK.data(), LIWORK, INFO);
 
@@ -280,7 +259,7 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
             LIWORK = int(IWORK[0]);
             IWORK.resize(LIWORK);
 
-            LAPACK::hevr (JOBZ, RANGE, UPLO, N, A_.origin(), LDA, VL, VU, IL, IU, ABSTOL, 
+            hevr (JOBZ, RANGE, UPLO, N, A_.origin(), LDA, VL, VU, IL, IU, ABSTOL, 
                           M,eigVal.origin(), eigVec.origin(), N, ISUPPZ.data(), WORK.data(), LWORK, 
                           RWORK.data(), LRWORK, IWORK.data(), LIWORK, INFO);
             if(INFO != 0) throw std::runtime_error(" error in ma::eig: Error code != 0");
@@ -295,28 +274,5 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
 
 }
 
-#ifdef _TEST_MA_LAPACK
-
-#include<iostream>
-
-using std::cout;
-
-int main(){
-	{
-		std::vector<double> a = {
-			1.,2.,
-			3.,4.,
-		};
-		boost::multi::array_ref<double, 2> A(a.data(), {2,2});
-		std::vector<int> p(std::min(A.shape()[0], A.shape()[1]));
-		ma::getrf(A, p);
-		for(int i = 0; i != A.shape()[0]; ++i, std::cout << '\n')
-			for(int j = 0; j != A.shape()[1]; ++j)
-				std::cout << A[i][j] << ' ';
-	}
-	cout << "end test" << std::endl;
-}
-
-#endif
 #endif
 

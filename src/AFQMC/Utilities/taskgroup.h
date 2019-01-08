@@ -15,9 +15,6 @@
 #include <mpi.h>
 
 #include"AFQMC/config.h"
-#include<Message/MPIObjectBase.h>
-#include<Message/CommOperators.h>
-
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 

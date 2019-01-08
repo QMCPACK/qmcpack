@@ -114,7 +114,7 @@ class PHMSD: public AFQMCInfo
                 local_etot({2,maxn_unique_confg}),
                 local_QQ0inv0({OrbMats[0].shape()[0],NAEA}),
                 local_QQ0inv1({OrbMats.back().shape()[0],NAEB}),
-                Qwork({max_exct_n,max_exct_n}),
+                Qwork({2*max_exct_n,max_exct_n}),
                 Gwork({NAEA,maxnactive}),
                 Ovmsd({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 Emsd({1,1,1,1},shared_allocator<ComplexType>{TG.TG_local()}),

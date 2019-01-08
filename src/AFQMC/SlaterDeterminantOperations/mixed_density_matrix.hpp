@@ -324,9 +324,10 @@ template< class Tp,
           class MatA,
           class MatB,
           class Mat,
+          class Buffer,
           class IBuffer
         >
-inline Tp Overlap(const MatA& hermA, const MatB& B, Mat&& T1, IBuffer& IWORK)
+inline Tp Overlap(const MatA& hermA, const MatB& B, Mat&& T1, IBuffer& IWORK, Buffer& WORK)
 {
   // check dimensions are consistent
   assert( hermA.shape()[1] == B.shape()[0] );
@@ -339,7 +340,7 @@ inline Tp Overlap(const MatA& hermA, const MatB& B, Mat&& T1, IBuffer& IWORK)
   // T(B)*conj(A) 
   ma::product(hermA,B,std::forward<Mat>(T1));   
 
-  return static_cast<Tp>(ma::determinant(std::forward<Mat>(T1),IWORK));
+  return static_cast<Tp>(ma::determinant(std::forward<Mat>(T1),IWORK,WORK));
 }
 
 template< class Tp,
@@ -398,9 +399,10 @@ template< class Tp,
           class MatA,
           class MatB,
           class Mat,
+          class Buffer,
           class IBuffer
         >
-inline Tp Overlap_noHerm(const MatA& A, const MatB& B, Mat&& T1, IBuffer& IWORK)
+inline Tp Overlap_noHerm(const MatA& A, const MatB& B, Mat&& T1, IBuffer& IWORK, Buffer& WORK)
 {
   // check dimensions are consistent
   assert( A.shape()[0] == B.shape()[0] );
@@ -414,7 +416,7 @@ inline Tp Overlap_noHerm(const MatA& A, const MatB& B, Mat&& T1, IBuffer& IWORK)
   // T(B)*conj(A) 
   ma::product(H(A),B,std::forward<Mat>(T1));    
 
-  return static_cast<Tp>(ma::determinant(std::forward<Mat>(T1),IWORK));
+  return static_cast<Tp>(ma::determinant(std::forward<Mat>(T1),IWORK,WORK));
 }
 
 } // namespace base
@@ -544,9 +546,10 @@ template< class Tp,
           class MatB,
           class Mat,
           class IBuffer,
+          class Buffer,
           class communicator
         >
-inline Tp Overlap(const MatA& hermA, const MatB& B, Mat&& T1, IBuffer& IWORK, communicator& comm)
+inline Tp Overlap(const MatA& hermA, const MatB& B, Mat&& T1, IBuffer& IWORK, Buffer& WORK, communicator& comm)
 {
   // check dimensions are consistent
   assert( hermA.shape()[1] == B.shape()[0] );
@@ -569,7 +572,7 @@ inline Tp Overlap(const MatA& hermA, const MatB& B, Mat&& T1, IBuffer& IWORK, co
 
   Tp ovlp=Tp(0.);
   if(comm.rank()==0)
-   ovlp = static_cast<Tp>(ma::determinant(std::forward<Mat>(T1),IWORK));
+   ovlp = static_cast<Tp>(ma::determinant(std::forward<Mat>(T1),IWORK,WORK));
   comm.broadcast_n(&ovlp,1,0);  
 
   return ovlp; 

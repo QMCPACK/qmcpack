@@ -202,7 +202,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     }
 
     // 6. add local contribution to vsend
-    BLAS::axpy(vakN-vak0,one,vHS.origin()+vak0,1,vsend.origin()+vak0,1);
+    ma::axpy(vakN-vak0,one,vHS.origin()+vak0,1,vsend.origin()+vak0,1);
 
     // 7. start v communication
     MPI_Start(&req_vsend);

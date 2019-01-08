@@ -18,6 +18,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
+#include "AFQMC/Numerics/ma_small_mat_ops.hpp"
 
 namespace qmcplusplus
 {
@@ -82,13 +83,15 @@ inline void calculate_overlaps(int rank, int ngrp, int spin, PH_EXCT const& abij
         }   
     } else {
       boost::multi::array_ref<ComplexType,2> Qwork_(Qwork.origin(),{nex,nex});
+      boost::multi::array_ref<ComplexType,1> Qwork2_(Qwork.origin()+Qwork_.num_elements(),
+                                                     extensions<1u>{nex*nex});
       for(auto it = abij.unique_begin(nex)[spin]; it<abij.unique_end(nex)[spin]; ++it, ++nd) 
         if(nd%ngrp==rank) {
           auto exct = *it;
           for(int p=0; p<nex; p++)
             for(int q=0; q<nex; q++)
               Qwork_[p][q] = T[exct[p+nex]][exct[q]];
-          ov[nd] = ma::determinant(Qwork_,IWORK);
+          ov[nd] = ma::determinant(Qwork_,IWORK,Qwork2_);
         }
     }
   }

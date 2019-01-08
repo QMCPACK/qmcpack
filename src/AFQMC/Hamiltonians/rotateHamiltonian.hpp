@@ -22,7 +22,6 @@
 #include<algorithm>
 #include<numeric>
 
-#include "Numerics/OhmmsBlas.h"
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Matrix/matrix_emplace_wrapper.hpp"

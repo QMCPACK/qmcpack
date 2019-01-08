@@ -321,8 +321,8 @@ class ucsr_matrix:
                 IsRoot r(Valloc_);
                 // calling barrier for safety right now
                 r.barrier();
+                size_type tot_sz = base::capacity();
                 if(r.root()){
-                        size_type tot_sz = base::capacity();
                         if(base::data_ && base::pointers_begin_ && base::pointers_end_) 
                                 for(size_type i = 0; i != base::size1_; ++i)
                                         for(auto p = base::data_ + base::pointers_begin_[i]; 
@@ -340,15 +340,16 @@ class ucsr_matrix:
                                 }
                                 Palloc_.destroy(std::addressof(base::pointers_begin_[base::size1_]));
                         }
-                        if(base::data_)   
-                                Valloc_.deallocate(base::data_, tot_sz);
-                        if(base::jdata_)   
-                                Ialloc_.deallocate(base::jdata_, tot_sz);
-                        if(base::pointers_begin_)   
-                                Palloc_.deallocate(base::pointers_begin_, base::size1_+1);
-                        if(base::pointers_end_)   
-                                Palloc_.deallocate(base::pointers_end_  , base::size1_);
                 }
+                r.barrier();
+                if(base::data_)   
+                       Valloc_.deallocate(base::data_, tot_sz);
+                if(base::jdata_)   
+                        Ialloc_.deallocate(base::jdata_, tot_sz);
+                if(base::pointers_begin_)   
+                        Palloc_.deallocate(base::pointers_begin_, base::size1_+1);
+                if(base::pointers_end_)   
+                        Palloc_.deallocate(base::pointers_end_  , base::size1_);
                 base::reset();
                 r.barrier();
         }
