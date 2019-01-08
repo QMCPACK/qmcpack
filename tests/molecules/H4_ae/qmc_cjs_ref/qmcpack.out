@@ -16,8 +16,8 @@
 =====================================================
   Global options 
 
-  MPI Nodes             = 16
-  MPI Nodes per group   = 16
+  MPI Nodes             = 64
+  MPI Nodes per group   = 64
   MPI Group ID          = 0
   OMP 1st level threads = 1
   OMP nested threading disabled or only 1 thread on the 2nd level
@@ -29,14 +29,14 @@
   Input XML = qmcpack_ae.xml
 
   Project = H4
-  date    = 2018-12-19 15:13:53 PST
-  host    = n0011.savio3
+  date    = 2018-12-19 15:00:21 PST
+  host    = n0013.savio3
 
  Random Number
  -------------
   Offset for the random number seeds from input file (mod 1024): 703
 
-  Range of prime numbers to use as seeds over processors and threads = 5323-5449
+  Range of prime numbers to use as seeds over processors and threads = 5323-5851
 
 
  Particle Set 
@@ -314,7 +314,7 @@ QMCHamiltonian::addOperatorType added type coulomb named IonIon
     0 to P::Collectables 
     starting Index of the observables in P::PropertyList = 9
 ParticleSetPool::randomize 
-  Initialization Execution time = 0.07028 secs
+  Initialization Execution time = 0.07372 secs
 =========================================================
  Summary of QMC systems 
 =========================================================
@@ -352,37 +352,37 @@ ParticleSetPool has:
   File Root H4.s000 append = no 
 =========================================================
   Adding 1 walkers to 0 existing sets
-  Total number of walkers: 1.6000000000e+01
-  Total weight: 1.6000000000e+01
+  Total number of walkers: 6.4000000000e+01
+  Total weight: 6.4000000000e+01
   Resetting Properties of the walkers 1 x 13
 
 <vmc function="put">
   qmc_counter=0  my_counter=0
   time step      = 5.0000000000e-02
-  blocks         = 100
+  blocks         = 500
   steps          = 500
   substeps       = 1
   current        = 0
-  target samples = 1.0000000000e+04
+  target samples = 1.0000000000e+06
   walkers/mpi    = 1
 
-  stepsbetweensamples = 80
-<parameter name="blocks" condition="int">100</parameter>
+  stepsbetweensamples = 16
+<parameter name="blocks" condition="int">500</parameter>
 <parameter name="blocks_between_recompute" condition="int">0</parameter>
 <parameter name="check_properties" condition="int">100</parameter>
 <parameter name="checkproperties" condition="int">100</parameter>
 <parameter name="current" condition="int">0</parameter>
-<parameter name="dmcwalkersperthread" condition="real">6.2500000000e+02</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.5625000000e+04</parameter>
 <parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
 <parameter name="record_configs" condition="int">0</parameter>
-<parameter name="record_walkers" condition="int">80</parameter>
+<parameter name="record_walkers" condition="int">16</parameter>
 <parameter name="recordconfigs" condition="int">0</parameter>
-<parameter name="recordwalkers" condition="int">80</parameter>
+<parameter name="recordwalkers" condition="int">16</parameter>
 <parameter name="rewind" condition="int">0</parameter>
-<parameter name="samples" condition="real">1.0000000000e+04</parameter>
-<parameter name="samplesperthread" condition="real">6.2500000000e+02</parameter>
+<parameter name="samples" condition="real">1.0000000000e+06</parameter>
+<parameter name="samplesperthread" condition="real">1.5625000000e+04</parameter>
 <parameter name="steps" condition="int">500</parameter>
-<parameter name="stepsbetweensamples" condition="int">80</parameter>
+<parameter name="stepsbetweensamples" condition="int">16</parameter>
 <parameter name="store_configs" condition="int">0</parameter>
 <parameter name="storeconfigs" condition="int">0</parameter>
 <parameter name="sub_steps" condition="int">1</parameter>
@@ -393,21 +393,21 @@ ParticleSetPool has:
 <parameter name="use_drift" condition="string">yes</parameter>
 <parameter name="usedrift" condition="string">yes</parameter>
 <parameter name="walkers" condition="int">1</parameter>
-<parameter name="warmup_steps" condition="int">100</parameter>
-<parameter name="warmupsteps" condition="int">100</parameter>
+<parameter name="warmup_steps" condition="int">10000</parameter>
+<parameter name="warmupsteps" condition="int">10000</parameter>
   DumpConfig==false Nothing (configurations, state) will be saved.
-  Walker Samples are dumped every 80 steps.
+  Walker Samples are dumped every 16 steps.
 </vmc>
   Adding a default LocalEnergyEstimator for the MainEstimator 
   Initial partition of walkers 0 1 
 
   Using Particle by Particle moves
   Walker moves with drift
-  Total Sample Size   =10000
+  Total Sample Size   =1000000
   Walker distribution on root = 0 1 
 ===== Memory Usage after the buffer registration =====
-Available memory on node 0, free + buffers : 88233 MB
-Memory footprint by rank 0 on node 0       : 49 MB
+Available memory on node 0, free + buffers : 88044 MB
+Memory footprint by rank 0 on node 0       : 50 MB
 ==================================================
   Anonymous Buffer size per walker : 20904 Bytes.
 MEMORY increase 0 MB VMC::resetRun
@@ -415,11 +415,11 @@ MEMORY increase 0 MB VMC::resetRun
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
     time step          = 0.05
-    reference energy   = -2.17105
-    reference variance = 0.126397
+    reference energy   = -2.05262
+    reference variance = 0.376914
 ====================================================
-  QMC Execution time = 4.6861e+01 secs 
-  Total Execution time = 4.6937e+01 secs
+  QMC Execution time = 2.5811e+02 secs 
+  Total Execution time = 2.5812e+02 secs
 
 =========================================================
   A new xml input file : H4.s000.cont.xml

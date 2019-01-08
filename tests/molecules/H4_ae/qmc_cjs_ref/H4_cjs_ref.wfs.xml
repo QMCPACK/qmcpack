@@ -13,14 +13,17 @@
         <coefficients id="ud" optimize="yes" type="Array">7.1760e-01 3.8142e-01 1.3990e-01 -3.5024e-02 -1.5834e-01 -2.3552e-01 -2.7216e-01 -2.7656e-01 -2.1929e-01 -4.2253e-02</coefficients>
       </correlation>
     </jastrow>
-    <jastrow debug="false" name="ncjf" type="Counting">
-      <var name="F" opt="true">
+    <jastrow name="ncjf" type="Counting" region="normalized_gaussian">
+      <var name="G" opt="true">
+        0.00000  0.00000  0.00000  0.00000
+      </var>
+      <var name="F" opt="true" form="upper_triang">
         4.4903e-01 5.3502e-01 5.2550e-01 6.8081e-01
                    5.1408e-01 4.8658e-01 6.2182e-01
                               2.7189e-01 9.4951e-01
                                          0.0000e+00
       </var>
-      <region function="gaussian" norm="true" opt="true" reference_id="g0">
+      <region norm="true" function="gaussian" opt="true" reference_id="g0">
         <function id="g0">
           <var name="A" opt="False">-1.0 -0.0 -0.0 -1.0 -0.0 -1.0</var>
           <var name="B" opt="False">-2.6136335251 -5.01928226905 0.0</var>
