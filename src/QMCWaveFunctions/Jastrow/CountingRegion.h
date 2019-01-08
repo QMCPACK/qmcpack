@@ -46,25 +46,25 @@ protected:
   // value arrays
   std::vector<RealType> _val;
   std::vector<RealType> _sum;
-  std::vector<GradType> _grad;
+  std::vector<PosType> _grad;
   std::vector<RealType> _lap;
   std::vector<RealType> Nval;
 
   // log values arrays
   std::vector<RealType> _Lval;
-  std::vector<GradType> _Lgrad;
+  std::vector<PosType> _Lgrad;
   std::vector<RealType> _Llap;
   std::vector<RealType> Lmax; 
 
   // temporary value arrays
   std::vector<RealType> _val_t;
   std::vector<RealType> _sum_t;
-  std::vector<GradType> _grad_t;
+  std::vector<PosType> _grad_t;
   std::vector<RealType> _lap_t;
   
   //memory for temporary log value arrays
   std::vector<RealType> _Lval_t;
-  std::vector<GradType> _Lgrad_t;
+  std::vector<PosType> _Lgrad_t;
   std::vector<RealType> _Llap_t;
   RealType Lmax_t;
 
@@ -90,19 +90,19 @@ public:
   // sum/grad/lap getters: index convention defined in base
   inline RealType& val(int I, int i)  { return _val[I*num_els + i]; }
   inline RealType& sum(int I)         { return _sum[I]; }
-  inline GradType& grad(int I, int i) { return _grad[I*num_els + i]; }
+  inline PosType& grad(int I, int i) { return _grad[I*num_els + i]; }
   inline RealType& lap(int I, int i)  { return _lap[I*num_els + i]; }
   inline RealType& val_t(int I)       { return _val_t[I]; }
   inline RealType& sum_t(int I)       { return _sum_t[I]; }
-  inline GradType& grad_t(int I)      { return _grad_t[I]; }
+  inline PosType& grad_t(int I)      { return _grad_t[I]; }
   inline RealType& lap_t(int I)       { return _lap_t[I]; }
 
   inline RealType& Lval(int I, int i)  { return _Lval[I*num_els + i]; }
-  inline GradType& Lgrad(int I, int i) { return _Lgrad[I*num_els + i]; }
+  inline PosType& Lgrad(int I, int i) { return _Lgrad[I*num_els + i]; }
   inline RealType& Llap(int I, int i)  { return _Llap[I*num_els + i]; }
 
   inline RealType& Lval_t(int I)  { return _Lval_t[I]; }
-  inline GradType& Lgrad_t(int I) { return _Lgrad_t[I]; }
+  inline PosType& Lgrad_t(int I) { return _Lgrad_t[I]; }
   inline RealType& Llap_t(int I)  { return _Llap_t[I]; }
   inline RealType& dLval_saved(int I, int p, int i)  { return _dLval_saved[I*max_num_derivs()*num_els + p*num_els + i]; }
 
@@ -257,7 +257,7 @@ public:
         val(I,i) = std::exp(Lval(I,i) - Lmax[i]);
         Nval[i] += val(I,i);
       }
-      GradType gLN_sum = 0; // \sum\limits_I \nabla L_{Ii} N_{Ii}
+      PosType gLN_sum = 0; // \sum\limits_I \nabla L_{Ii} N_{Ii}
       RealType lLN_sum = 0; // \sum\limits_I \nabla^2 L_{Ii} N_{Ii}
       // build normalized counting function value, intermediate values for gradient
       for(int I = 0; I < num_regions; ++I)
@@ -292,7 +292,7 @@ public:
     os << std::endl << "sum: ";
     std::copy(_sum.begin(),_sum.end(),std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "grad: ";
-    std::copy(_grad.begin(),_grad.end(),std::ostream_iterator<GradType>(os,", "));
+    std::copy(_grad.begin(),_grad.end(),std::ostream_iterator<PosType>(os,", "));
     os << std::endl << "lap: ";
     std::copy(_lap.begin(),_lap.end(),std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "Nval: ";
@@ -329,7 +329,7 @@ public:
       val_t(I) = std::exp(Lval_t(I) - Lmax_t);
       Nval_t += val_t(I);
     }
-    GradType gLN_sum_t = 0; // \sum\limits_I \nabla L_{Ii} N_{Ii}
+    PosType gLN_sum_t = 0; // \sum\limits_I \nabla L_{Ii} N_{Ii}
     RealType lLN_sum_t = 0; // \sum\limits_I \nabla^2 L_{Ii} N_{Ii}
     // build normalized counting function value, intermediate values for gradient
     for(int I = 0; I < num_regions; ++I)
@@ -362,7 +362,7 @@ public:
     os << std::endl << "sum_t: ";
     std::copy(_sum_t.begin(),_sum_t.end(),std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "grad_t: ";
-    std::copy(_grad_t.begin(),_grad_t.end(),std::ostream_iterator<GradType>(os,", "));
+    std::copy(_grad_t.begin(),_grad_t.end(),std::ostream_iterator<PosType>(os,", "));
     os << std::endl << "lap_t: ";
     std::copy(_lap_t.begin(),_lap_t.end(),std::ostream_iterator<RealType>(os,", "));
     os << std::endl << "Nval_t: " << Nval_t;
@@ -373,7 +373,7 @@ public:
 
 
   // calculates derivatives of single particle move of particle with index iat
-  void evaluateTempDerivatives(ParticleSet& P, 
+  void evaluateTempDerivatives(ParticleSet& P,
                                const int I, // index of the counting function parameter derivatives are associated with
                                int iat,
                                std::function<RealType&(int,int)> dNdiff)
@@ -399,15 +399,15 @@ public:
 
   void evaluateDerivatives(ParticleSet& P, 
                           int I, 
-                          std::function<const GradType&(int,int)> FCgrad, 
-                          std::function<RealType&(int,int)> dNsum, 
-                          std::function<RealType&(int,int)> dNggsum,
-                          std::function<RealType&(int,int)> dNlapsum, 
+                          std::function<const PosType&(int,int)> FCgrad,
+                          std::function<RealType&(int,int)> dNsum,
+                          std::function<ValueType&(int,int)> dNggsum,
+                          std::function<RealType&(int,int)> dNlapsum,
                           std::vector<RealType>& dNFNggsum)
   {
     evaluate(P);
     static std::vector<RealType> dLval;
-    static std::vector<GradType> dLgrad;
+    static std::vector<PosType> dLgrad;
     static std::vector<RealType> dLlap;
     static int mnd = max_num_derivs();
     dLval.resize(mnd);
@@ -426,7 +426,7 @@ public:
           RealType val_Ii = (I==J) - val(I,i);
 
           RealType dNval = val(J,i)*dLval[p]*val_Ii;
-          GradType dNgrad = grad(J,i)*dLval[p]*val_Ii + val(J,i)*dLgrad[p]*val_Ii  - val(J,i)*dLval[p]*grad(I,i);
+          PosType dNgrad = grad(J,i)*dLval[p]*val_Ii + val(J,i)*dLgrad[p]*val_Ii  - val(J,i)*dLval[p]*grad(I,i);
 
           RealType dNlap = lap(J,i)*dLval[p]*val_Ii + 2*dot(grad(J,i),dLgrad[p])*val_Ii - 2*dot(grad(J,i),grad(I,i))*dLval[p] 
                                                       + val(J,i)*dLlap[p]*val_Ii          - 2*val(J,i)*dot(dLgrad[p],grad(I,i)) 

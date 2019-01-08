@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCWaveFunctions/Jastrow/CountingJastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/CountingJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/CountingJastrow.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include <iostream>
@@ -28,13 +28,12 @@ CountingJastrowBuilder::CountingJastrowBuilder(ParticleSet& target, TrialWaveFun
   SourceOpt=targetPtcl.getName();
 }
 
-template<template<class> class CountingRegionType>
 bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"createCJ(xmlNodePtr)");
-  using RegionType = CountingRegionType<RT>;
+  using RegionType = NormalizedGaussianRegion<RealType>;
   using FunctorType = typename RegionType::FunctorType;
-  using CJOrbitalType = CountingJastrowOrbital<RegionType>;
+  using CJOrbitalType = CountingJastrow<RegionType>;
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
 
@@ -109,7 +108,7 @@ bool CountingJastrowBuilder::createCJ(xmlNodePtr cur)
           if(!(F_utri.size() == Fdim*(Fdim+1)/2))
           {
             std::ostringstream err;
-            err << "CountingJastrowOrbital::put: F cannot be the upper-triangular component of a square matrix: " << F_utri.size() << " != " << Fdim*(Fdim+1)/2 << std::endl;
+            err << "CountingJastrow::put: F cannot be the upper-triangular component of a square matrix: " << F_utri.size() << " != " << Fdim*(Fdim+1)/2 << std::endl;
             APP_ABORT(err.str());
           }
           // set F from upper triangular elements
@@ -168,7 +167,7 @@ bool CountingJastrowBuilder::put(xmlNodePtr cur)
   oAttrib.put(cur);
   if(RegionOpt.find("normalized_gaussian") < RegionOpt.size())
   {
-    createCJ<NormalizedGaussianRegion>(cur);
+    createCJ(cur);
   }
   app_log() << "end CountingRegionOrbital::put" << std::endl;
 

@@ -23,7 +23,6 @@ struct CountingJastrowBuilder: public WaveFunctionComponentBuilder
   bool put(xmlNodePtr cur);
   
  private:
-  typedef WaveFunctionComponent::RealType RT;
   
   ///jastrow/@name 
   std::string NameOpt;
@@ -34,7 +33,6 @@ struct CountingJastrowBuilder: public WaveFunctionComponentBuilder
   ///jastrow/@region
   std::string RegionOpt;
 
-  template<template<class> class RegionType>
   bool createCJ(xmlNodePtr cur);
 };
 
