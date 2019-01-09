@@ -43,9 +43,9 @@ namespace afqmc
   P1Type generate1BodyPropagator(TaskGroup_& TG, RealType cut, RealType dt, MultiArray2D const& H1)
   {
     assert(H1.dimensionality==2);
-    assert(H1.shape()[0] == H1.shape()[1]);
-    assert(H1.strides()[1] == 1);
-    int NMO = H1.shape()[0];
+    assert(H1.size(0) == H1.size(1));
+    assert(H1.stride(1) == 1);
+    int NMO = H1.size(0);
     if(TG.TG_local().root()) {   
       boost::multi::array<ComplexType,2> v({NMO,NMO});
       std::fill_n(v.origin(),v.num_elements(),ComplexType(0));  

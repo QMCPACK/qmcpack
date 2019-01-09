@@ -43,8 +43,8 @@ template<class M1,
          >
 void verify_approx(M1 const& A, M2 const& B)
 {
-  REQUIRE(A.shape()[0] == B.shape()[0]);
-  for(int i=0; i<A.shape()[0]; i++)
+  REQUIRE(A.size(0) == B.size(0));
+  for(int i=0; i<A.size(0); i++)
       myREQUIRE(A[i],B[i]);
 }
 
@@ -56,8 +56,8 @@ template<class M1,
          >
 void verify_approx(M1 const& A, M2 const& B)
 {
-  REQUIRE(A.shape()[0] == B.shape()[0]);
-  for(int i=0; i<A.shape()[0]; i++)
+  REQUIRE(A.size(0) == B.size(0));
+  for(int i=0; i<A.size(0); i++)
     verify_approx(A[i],B[i]);
 }
 

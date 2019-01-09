@@ -126,8 +126,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
     if(nmo_per_kp.size() != nkpts ||
        nchol_per_kp.size() != nkpts ||
        kminus.size() != nkpts ||
-       QKtok2.shape()[0] != nkpts ||
-       QKtok2.shape()[1] != nkpts
+       QKtok2.size(0) != nkpts ||
+       QKtok2.size(1) != nkpts
       ) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Inconsistent dimension (NMOPerKP,NCholPerKP,QKtTok2): "
@@ -135,8 +135,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
                  <<nmo_per_kp.size() <<" "
                  <<nchol_per_kp.size() <<" "
                  <<kminus.size() <<" "
-                 <<QKtok2.shape()[0] <<" "
-                 <<QKtok2.shape()[1] <<std::endl;
+                 <<QKtok2.size(0) <<" "
+                 <<QKtok2.size(1) <<std::endl;
       APP_ABORT("");
     }
   }
@@ -238,10 +238,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
                    <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n";
           APP_ABORT("");
         }
-        if(LQKikn[Q].shape()[0] != nkpts || LQKikn[Q].shape()[1] != nmo_max*nmo_max*nchol_per_kp[Q]) {
+        if(LQKikn[Q].size(0) != nkpts || LQKikn[Q].size(1) != nmo_max*nmo_max*nchol_per_kp[Q]) {
           app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n"
-                 <<" Unexpected dimensins: " <<LQKikn[Q].shape()[0] <<" " <<LQKikn[Q].shape()[1] <<std::endl;
+                 <<" Unexpected dimensins: " <<LQKikn[Q].size(0) <<" " <<LQKikn[Q].size(1) <<std::endl;
           APP_ABORT("");
         }
       }
@@ -337,14 +337,14 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
             if(type==COLLINEAR) {
               { // Alpha
                 auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd],K);
-                assert(Psi.shape()[0] == na);
+                assert(Psi.size(0) == na);
                 boost::multi::array_ref<ComplexType,2> haj_r(std::addressof(*haj[nd*nkpts+K].origin()),
                                                              {na,ni});
                 ma::product(Psi,H1[K]({0,ni},{0,ni}),haj_r);
               }
               { // Beta
                 auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],K);
-                assert(Psi.shape()[0] == nb);
+                assert(Psi.size(0) == nb);
                 boost::multi::array_ref<ComplexType,2> haj_r(std::addressof(*haj[nd*nkpts+K].origin())+
                                                                             na*ni,
                                                              {nb,ni});
@@ -352,7 +352,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
               }
             } else {
               auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[nd],K);
-              assert(Psi.shape()[0] == na);
+              assert(Psi.size(0) == na);
               boost::multi::array_ref<ComplexType,2> haj_r(std::addressof(*haj[nd*nkpts+K].origin()),
                                                            {na,ni});
               ma::product(ComplexType(2.0),Psi,H1[K]({0,ni},{0,ni}),
@@ -363,7 +363,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
             { // Alpha
 // change get_PsiK to cast to the value_type of the result
               auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd],K);
-              assert(Psi.shape()[0] == nocc_per_kp[nd][K]);
+              assert(Psi.size(0) == nocc_per_kp[nd][K]);
               if(Q < Qm || Q==Q0 || ((Q==Qm)&&(K<QK))) {
                 int kpos = K;
                 if( Q==Qm && Q!=Q0 ) { //find position in symmetric list
@@ -399,7 +399,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
             { // Beta
 // change get_PsiK to cast to the value_type of the result
               auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],K);
-              assert(Psi.shape()[0] == nb);
+              assert(Psi.size(0) == nb);
               if(Q < Qm || Q==Q0 || ((Q==Qm)&&(K<QK))) {
                 int kpos = K;
                 if( Q==Qm && Q!=Q0 ) { //find position in symmetric list
@@ -435,7 +435,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
           } else {
 // change get_PsiK to cast to the value_type of the result
             auto Psi = get_PsiK<SpMatrix>(nmo_per_kp,PsiT[nd],K);
-            assert(Psi.shape()[0] == na);
+            assert(Psi.size(0) == na);
             if(Q < Qm || Q==Q0 || ((Q==Qm)&&(K<QK))) {
               int kpos = K;
               if( Q==Qm && Q!=Q0 ) { //find position in symmetric list

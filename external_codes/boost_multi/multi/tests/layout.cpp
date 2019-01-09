@@ -1,9 +1,11 @@
 #ifdef COMPILATION_INSTRUCTIONS
-time clang++ -O3 -std=c++14 -Wall -Wfatal-errors -I$HOME/prj $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
+c++ -O3 -std=c++14 -Wall -Wfatal-errors -I$HOME/prj $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
 #endif
 //  (C) Copyright Alfredo A. Correa 2018.
 #include "../array_ref.hpp"
 #include "../array.hpp"
+#include "../utility.hpp"
+
 #include<boost/multi_array.hpp>
 #include<iostream>
 #include<tuple>
@@ -20,6 +22,17 @@ int main(){
 	assert( size(AAAA) == 50 );
 	assert( size(AAAA[0]) == 50 );
 	assert( size(AAAA[0][0]) == 50 );
+	
+	
+	double DA[50][50][50];
+	using multi::size;
+	assert( size(DA) == 50);
+
+	using multi::extension;
+	assert(( extension(DA) == multi::index_extension{0, 50} ));
+	assert(( extension(DA) == multi::iextension{0, 50} ));
+
+	assert(( extension(DA) == multi::irange{0, 50} ));
 
 	{
 	multi::array<double, 2> B({50, 50});
@@ -35,15 +48,15 @@ int main(){
 		 {4., 5., 6.}, 
 		 {7., 8., 9.}};
 #if 1
-	multi::array<int, 2> A({multi::iextension{4}, {4}});
+	multi::array<int, 2> A({4, 4});
 	assert( size(A) == 4 );
 	A[3][3] = 99.;
 	
 	decltype(A({0,2}, {0,2}))::decay_type Acopy = A({0,2}, {0,2});
 
-	multi::array<decltype(A({0,0}, {0,0})), 2> Ab =
-		{{A({0,2}, {0,2}), A({0, 2}, {2, 4})},
-		 {A({2,4}, {0,2}), A({2, 4}, {2, 4})}};
+//	multi::array<decltype(A({0,0}, {0,0})), 2> Ab =
+//		{{A({0,2}, {0,2}), A({0, 2}, {2, 4})},
+//		 {A({2,4}, {0,2}), A({2, 4}, {2, 4})}};
 //	assert( &Ab[1][1][1][1] == &A[3][3] );
 //	assert( Ab.dimensionality == 2 );
 //	assert( Ab[1].dimensionality == 1 );
@@ -71,7 +84,7 @@ int main(){
 
 
 	double* p = new double[3*4*5];
-	multi::array_cref<double, 3> B(p, {3, 4, 5});
+	multi::array_cref<double, 3> B({3, 4, 5}, p);
 	multi::array<double, 2> BB = {{1.,2.},{3.,4.}};
 //	multi::layout_t<3> L({3, 4, 5});
 //	assert( A == B );
@@ -81,20 +94,6 @@ int main(){
 	delete[] p;
 #endif
 	
-	return 0;
-	{
-	//	multi::layout_t<2> l({10, 20});
-		auto e = multi::extents[10][20];
-		cout << e.extent_ << std::endl;
-		cout << e.sub.extent_ << std::endl;
-		cout << head(e) << std::endl;
-		cout << head(e.sub) << std::endl;
-		multi::layout_t<2> l(multi::extents[10][20]);
-		cout << l.size() << std::endl;
-		assert( l.size() == 10 );
-		assert( l.size(0) == 10 );
-		assert( l.size(1) == 20 );
-	}
 	return 0;
 	
 	multi::layout_t<2> l({4,5});

@@ -40,8 +40,9 @@ struct h5data_proxy<boost::multi::array<T,1,Alloc>>
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
   {
+    using extensions = typename boost::multi::layout_t<1u>::extensions_type;
     if(!get_space(grp,aname,this->size(),dims))
-      ref_.resize({dims[0]});
+      ref_.reextent(extensions{dims[0]});
     return h5d_read(grp,aname,get_address(std::addressof(*ref_.origin())),xfer_plist);
   }
 
@@ -60,8 +61,8 @@ struct h5data_proxy<boost::multi::array<T,2,Alloc>>: public h5_space_type<T,2>
   data_type& ref_;
   inline h5data_proxy(data_type& a): ref_(a)
   {
-    dims[0]=ref_.shape(0);
-    dims[1]=ref_.shape(1);
+    dims[0]=ref_.size(0);
+    dims[1]=ref_.size(1);
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
   {
@@ -94,7 +95,7 @@ struct h5data_proxy<boost::multi::array_ref<T,1,Ptr>>
     if(!get_space(grp,aname,this->size(),dims)) {
       if(dims[0] > 0) {
         std::cerr<<" Error: multi::array_ref can't be resized in h5data_proxy<>::read." <<std::endl;
-        std::cerr<<dims[0] <<" " <<ref_.shape(0) <<std::endl;
+        std::cerr<<dims[0] <<" " <<ref_.size(0) <<std::endl;
       }
       return false;
     }
@@ -116,15 +117,15 @@ struct h5data_proxy<boost::multi::array_ref<T,2,Ptr>>: public h5_space_type<T,2>
   data_type& ref_;
   inline h5data_proxy(data_type& a): ref_(a)
   {
-    dims[0]=ref_.shape(0);
-    dims[1]=ref_.shape(1);
+    dims[0]=ref_.size(0);
+    dims[1]=ref_.size(1);
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
   {
     if(!get_space(grp,aname,this->size(),dims)) {
       if(dims[0]*dims[1] > 0) {
         std::cerr<<" Error: multi::array_ref can't be resized in h5data_proxy<>::read." <<std::endl;
-        std::cerr<<dims[0] <<" " <<dims[1] <<" " <<ref_.shape(0) <<" " <<ref_.shape(1) <<std::endl;
+        std::cerr<<dims[0] <<" " <<dims[1] <<" " <<ref_.size(0) <<" " <<ref_.size(1) <<std::endl;
       }
       return false;
     }

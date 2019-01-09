@@ -124,9 +124,9 @@ const char *wlk_xml_block =
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.shape()[0]==2);
-    REQUIRE(initial_guess.shape()[1]==NMO);
-    REQUIRE(initial_guess.shape()[2]==NAEA);
+    REQUIRE(initial_guess.size(0)==2);
+    REQUIRE(initial_guess.size(1)==NMO);
+    REQUIRE(initial_guess.size(2)==NAEA);
     wset.resize(nwalk,initial_guess[0],initial_guess[0]);
 //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
 
@@ -274,9 +274,9 @@ const char *wlk_xml_block =
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.shape()[0]==2);
-    REQUIRE(initial_guess.shape()[1]==NMO);
-    REQUIRE(initial_guess.shape()[2]==NAEA);
+    REQUIRE(initial_guess.size(0)==2);
+    REQUIRE(initial_guess.size(1)==NMO);
+    REQUIRE(initial_guess.size(2)==NAEA);
     wset.resize(nwalk,initial_guess[0],initial_guess[0]);
 //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
 

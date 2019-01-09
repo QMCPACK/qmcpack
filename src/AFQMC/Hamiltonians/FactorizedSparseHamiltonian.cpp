@@ -84,7 +84,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       }
     } else {
       std::vector<std::size_t> cv_boundaries(TGprop.getNNodesPerTG()+1);
-      simple_matrix_partition<TaskGroup_,std::size_t,double> split(V2_fact.shape()[0],
+      simple_matrix_partition<TaskGroup_,std::size_t,double> split(V2_fact.size(0),
                                                                    nnz_per_cv.size(),cut);
       // no need for all cores to do this
       if(TG.Global().root())
@@ -133,8 +133,8 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
     assert(Alpha!=nullptr);
     if(type==COLLINEAR) assert(Beta!=nullptr);
-    std::size_t nr=Alpha->shape()[0]*Alpha->shape()[1];
-    if(type==COLLINEAR) nr = (Alpha->shape()[0]+Beta->shape()[0])*Alpha->shape()[1];
+    std::size_t nr=Alpha->size(0)*Alpha->size(1);
+    if(type==COLLINEAR) nr = (Alpha->size(0)+Beta->size(0))*Alpha->size(1);
     if(TGHam.getNNodesPerTG() > 1) {
       using tvec = std::vector<std::tuple<int,int,SPComplexType>>;
       tvec tmat;
@@ -209,7 +209,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     // trick: the last node always knows what the total # of chol vecs is
     int global_ncvecs=0;
     if(TG.getNodeID() == TG.getTotalNodes()-1 && TG.getCoreID()==0)
-      global_ncvecs = Spvn.global_origin()[1] + Spvn.shape()[1];
+      global_ncvecs = Spvn.global_origin()[1] + Spvn.size(1);
     global_ncvecs = (TG.Global() += global_ncvecs);
 
     ValueType E0 = OneBodyHamiltonian::NuclearCoulombEnergy +
@@ -248,7 +248,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
 
         std::map<IndexType,std::pair<bool,IndexType>> occ_a;
         for(int i=0; i<NMO; i++) occ_a[i] = {false,0};
-        auto nel = PsiT[0].shape()[0];
+        auto nel = PsiT[0].size(0);
         for(std::size_t i=0; i<nel; i++) {
           if(PsiT[0].num_non_zero_elements(i) != 1)
             APP_ABORT(" Error: PsiT is not of pureSD form: Too many nnz. \n");

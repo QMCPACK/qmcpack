@@ -44,21 +44,21 @@ namespace afqmc
 inline void check_wavefunction_consistency(WALKER_TYPES type, PsiT_Matrix *A, PsiT_Matrix *B, int NMO, int NAEA, int NAEB)
 {
     if(type == CLOSED) {
-      if(A->shape()[1] != NMO || A->shape()[0] < NAEA) {
-        app_error()<<" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency(): wfn_type=0, NMO, NAEA, A.rows, A.cols: " <<NMO <<" " <<NAEA <<" " <<A->shape()[0] <<" " <<A->shape()[1] <<std::endl;
+      if(A->size(1) != NMO || A->size(0) < NAEA) {
+        app_error()<<" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency(): wfn_type=0, NMO, NAEA, A.rows, A.cols: " <<NMO <<" " <<NAEA <<" " <<A->size(0) <<" " <<A->size(1) <<std::endl;
         APP_ABORT(" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency().\n");
       }
     } else if(type == COLLINEAR) {
-      if(A->shape()[1] != NMO || A->shape()[0] < NAEA || B->shape()[1] != NMO || B->shape()[0] < NAEB) {
+      if(A->size(1) != NMO || A->size(0) < NAEA || B->size(1) != NMO || B->size(0) < NAEB) {
         app_error()<<" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency(): wfn_type=1, NMO, NAEA, NAEB, A.rows, A.cols, B.rows, B.cols: "
         <<NMO <<" " <<NAEA <<" " <<NAEB <<" "
-        <<A->shape()[0] <<" " <<A->shape()[1] <<" "
-        <<B->shape()[0] <<" " <<B->shape()[1] <<std::endl;
+        <<A->size(0) <<" " <<A->size(1) <<" "
+        <<B->size(0) <<" " <<B->size(1) <<std::endl;
         APP_ABORT(" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency().\n");
       }
     } else if(type==NONCOLLINEAR) {
-      if(A->shape()[1] != 2*NMO || A->shape()[0] < (NAEB+NAEA)) {
-        app_error()<<" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency(): wfn_type=1, NMO, NAEA, NAEB, A.rows, A.cols: " <<NMO <<" " <<NAEA <<" " <<NAEB <<" " <<A->shape()[0] <<" " <<A->shape()[1] <<std::endl;
+      if(A->size(1) != 2*NMO || A->size(0) < (NAEB+NAEA)) {
+        app_error()<<" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency(): wfn_type=1, NMO, NAEA, NAEB, A.rows, A.cols: " <<NMO <<" " <<NAEA <<" " <<NAEB <<" " <<A->size(0) <<" " <<A->size(1) <<std::endl;
         APP_ABORT(" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency().\n");
       }
     } else {
@@ -70,8 +70,8 @@ inline void check_wavefunction_consistency(WALKER_TYPES type, PsiT_Matrix *A, Ps
 inline boost::multi::array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, const boost::multi::array<ComplexType,2>& H1)
 {
   assert(Alpha!=nullptr);
-  int NAEA = Alpha->shape()[0];
-  int NMO = Alpha->shape()[1];
+  int NAEA = Alpha->size(0);
+  int NMO = Alpha->size(1);
 
   boost::multi::array<SPComplexType,1> N(extensions<1u>{1});
   const ComplexType one = ComplexType(1.0);
@@ -96,7 +96,7 @@ inline boost::multi::array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, 
   } else if(walker_type == COLLINEAR) {
 
     assert(Beta!=nullptr);
-    int NAEB = Beta->shape()[0];
+    int NAEB = Beta->size(0);
 
     N.reextent(extensions<1u>{(NAEA+NAEB)*NMO});
 #if(AFQMC_SP)
@@ -129,10 +129,10 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   if(distribute_Ham)
     APP_ABORT(" Distributed V2_fact not yet implemented. \n");
 
-  int NAEA = Alpha->shape()[0];
-  int NMO = Alpha->shape()[1];
+  int NAEA = Alpha->size(0);
+  int NMO = Alpha->size(1);
   int NAEB = NAEA;
-  if( walker_type == COLLINEAR ) NAEB = Beta->shape()[0];
+  if( walker_type == COLLINEAR ) NAEB = Beta->size(0);
 
   // <ab||kl> = sum_n Qk(a,n) * Rl(b,n) - Rl(a,n)*Qk(b,n),
   // where:
@@ -218,7 +218,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   int norb = lN-l0;
   int maxnorb = 0;
   for(int i=0; i<ngrp; i++) maxnorb = std::max(maxnorb,M_split[i+1]-M_split[i]);
-  int nvec = V2_fact.shape()[1];
+  int nvec = V2_fact.size(1);
   // must gather over heads of TG to get nchol per TG and total # chol vecs
   // Rl(k, a, m), k:[0:NMO2], a:[0:NAEA], m:[0:nvec]
 
@@ -293,7 +293,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
       } else {
         // Qk[norb*NAEA,nvec]
         // Rl[nvec,norb*NAEA]
-        int n0_,n1_,sz_ = Qk.shape()[0];
+        int n0_,n1_,sz_ = Qk.size(0);
         std::tie(n0_, n1_) = FairDivideBoundary(coreid,sz_,ncores);
         if(n1_-n0_>0)
           ma::tranpose(Qk.sliced(n0_,n1_),Rl(Rl.extension(0),{n0_,n1_}));
@@ -382,7 +382,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   shmSpVector tQk_shmbuff(extensions<1u>{1},shared_allocator<SPComplexType>{TG.Node()});
   SpCType_shm_csr_matrix SptQk(tp_ul_ul{maxnk * NAEA,nvec},tp_ul_ul{0,0},0,Alloc(TG.Node()));
   if(sparseQk) {
-    std::size_t sz_ = std::ceil(maxqksize/SptQk.shape()[0]);
+    std::size_t sz_ = std::ceil(maxqksize/SptQk.size(0));
     SptQk.reserve(sz_);
   } else
     tQk_shmbuff.reextent(extensions<1u>{maxnk * NAEA * nvec});
@@ -445,9 +445,9 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
             }
             comm.broadcast_value(nterms,nn);
             comm.broadcast_n(std::addressof(*SptQk.pointers_begin()),
-                                  SptQk.shape()[0],nn);
+                                  SptQk.size(0),nn);
             comm.broadcast_n(std::addressof(*SptQk.pointers_end()),
-                                  SptQk.shape()[0],nn);
+                                  SptQk.size(0),nn);
             comm.broadcast_n(std::addressof(*SptQk.non_zero_values_data()),
                                   nterms,nn);
             comm.broadcast_n(std::addressof(*SptQk.non_zero_indices2_data()),
@@ -567,9 +567,9 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
           }
           comm.broadcast_value(nterms,nn);
           comm.broadcast_n(std::addressof(*SptQk.pointers_begin()),
-                                  SptQk.shape()[0],nn);
+                                  SptQk.size(0),nn);
           comm.broadcast_n(std::addressof(*SptQk.pointers_end()),
-                                  SptQk.shape()[0],nn);
+                                  SptQk.size(0),nn);
           comm.broadcast_n(std::addressof(*SptQk.non_zero_values_data()),
                                   nterms,nn);
           comm.broadcast_n(std::addressof(*SptQk.non_zero_indices2_data()),
@@ -622,10 +622,10 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
   if(distribute_Ham)
     APP_ABORT(" Distributed V2_fact not yet implemented. \n");
 
-  int NAEA = Alpha->shape()[0];
-  int NMO = Alpha->shape()[1];
+  int NAEA = Alpha->size(0);
+  int NMO = Alpha->size(1);
   int NAEB = NAEA;
-  if( walker_type == COLLINEAR ) NAEB = Beta->shape()[0];
+  if( walker_type == COLLINEAR ) NAEB = Beta->size(0);
 
   // <ab||kl> = sum_n Qk(a,n) * Rl(b,n) - Rl(a,n)*Qk(b,n),
   // where:
@@ -656,7 +656,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
 
   int NEL = NAEA + (walker_type == COLLINEAR?NAEB:0);
 
-  int nvec = V2_fact.shape()[1];
+  int nvec = V2_fact.size(1);
 
   app_log()<<" Approximate memory usage for half-rotated Hamiltonian construction: \n"
            <<"   max. number of orbital in a node: " <<NMO <<"\n"
@@ -701,7 +701,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
     } else {
       // Qk[norb*NAEA,nvec]
       // Rl[nvec,norb*NAEA]
-      int n0_,n1_,sz_ = Qk.shape()[0];
+      int n0_,n1_,sz_ = Qk.size(0);
       std::tie(n0_, n1_) = FairDivideBoundary(coreid,sz_,ncores);
       if(n1_-n0_>0)
         ma::tranpose(Qk.sliced(n0_,n1_),Rl(Rl.extension(0),{n0_,n1_}));

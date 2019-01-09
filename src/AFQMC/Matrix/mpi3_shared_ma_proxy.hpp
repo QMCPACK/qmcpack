@@ -39,12 +39,12 @@ class mpi3_shared_ma_proxy
                          std::array<size_type, 2> s_, 
                          std::array<size_type, 2> gs_={0,0},
                          std::array<size_type, 2> o_={0,0}):   
-       global_shape_(gs_),
+       global_size_(gs_),
        offset_(o_),
        M({s_[0],s_[1]},shared_allocator<T>{comm_}) 
     {
       if(gs_[0] == 0 || gs_[1] == 0) 
-        global_shape_ = s_;
+        global_size_ = s_;
     }
 
     mpi3_shared_ma_proxy(mpi3_shared_ma_proxy const& other) = delete;
@@ -58,10 +58,20 @@ class mpi3_shared_ma_proxy
     T* data() {return std::addressof(*M.data());} 
     T const* data() const{return std::addressof(*M.data());} 
     size_type num_elements() const{return M.num_elements(); } 
-    auto shape() const{return M.shape();} 
+    std::array<size_type, 2> shape() const{
+        auto s(M.shape());
+        std::array<size_type, 2> res{size_type(std::get<0>(s)),size_type(std::get<1>(s))};
+        return res; 
+    } 
+    template<class Size>
+    auto size(Size d) const{return M.size(d);} 
     auto strides() const{return M.strides();} 
+    template<class Size>
+    auto stride(Size d) const{return M.stride(d);} 
     std::array<size_type, 2> global_offset() const{return offset_;} 
-    std::array<size_type, 2> global_shape() const{return global_shape_;} 
+    template<class Size>
+    size_type global_size(Size d) const{return global_size_[d];} 
+    std::array<size_type, 2> global_size() const{return global_size_;} 
 
     boost::multi::array_ref<T,2> get() { 
         return boost::multi::array_ref<T,2>(this->origin(),M.extensions()); 
@@ -69,7 +79,7 @@ class mpi3_shared_ma_proxy
 
   private:
 
-    std::array<size_type, 2> global_shape_;
+    std::array<size_type, 2> global_size_;
     std::array<size_type, 2> offset_;
     shmCMatrix M;
 

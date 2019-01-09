@@ -214,7 +214,7 @@ inline void writeSparseTensor(hdf_archive& dump, WALKER_TYPES type, int NMO, int
     dump.push("HamiltonianOperations");
     dump.push("SparseTensor");
     std::vector<int> dims{NMO,NAEA,NAEB,int(v2.size()),type,
-                          int(v2[0].shape()[0]),int(v2[0].shape()[1]),int(Spvn.shape()[0]),gncv};
+                          int(v2[0].size(0)),int(v2[0].size(1)),int(Spvn.size(0)),gncv};
     dump.write(dims,"dims");
     std::vector<int> dm{code};
     dump.write(dm,"type");

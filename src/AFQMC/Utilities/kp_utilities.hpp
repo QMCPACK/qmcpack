@@ -23,8 +23,8 @@ template<class Vector, class CSR, class Array>
 bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per_kp)
 {
   int nkpts = nmo_per_kp.size();
-  int N = PsiT.shape()[0];
-  int M = PsiT.shape()[1];
+  int N = PsiT.size(0);
+  int M = PsiT.size(1);
   assert(nocc_per_kp.size() == nkpts);  
 
   std::fill_n(std::addressof(*nocc_per_kp.origin()), nkpts, 0);
@@ -65,8 +65,8 @@ template<class Array, class Vector, class CSR>
 Array get_PsiK(Vector const& nmo_per_kp, CSR const& PsiT, int K) 
 {
   int nkpts = nmo_per_kp.size();
-  int N = PsiT.shape()[0];
-  int M = PsiT.shape()[1];
+  int N = PsiT.size(0);
+  int M = PsiT.size(1);
 
   int nel=0;
   std::vector<int> bounds(nkpts+1);

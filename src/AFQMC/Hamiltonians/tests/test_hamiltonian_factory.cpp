@@ -133,7 +133,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
 
         std::map<IndexType,std::pair<bool,IndexType>> occ_a;
         for(int i=0; i<NMO; i++) occ_a[i] = {false,0};
-        auto nel = TrialWfn.shape()[0];
+        auto nel = TrialWfn.size(0);
         REQUIRE( nel == NAEA );
         for(std::size_t i=0; i<nel; i++) {
           if(TrialWfn.num_non_zero_elements(i) != 1)
@@ -149,14 +149,14 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         // TODO (FDM): addCoulomb=false not yet implemented.
         bool addCoulomb = true;
         auto V2(ham.generateHijkl(CLOSED,addCoulomb,TG,occ_a,occ_a,1e-5));
-        REQUIRE(V2.shape()[0] == NAEA*NMO);
-        REQUIRE(V2.shape()[0] == V2.shape()[1]);
+        REQUIRE(V2.size(0) == NAEA*NMO);
+        REQUIRE(V2.size(0) == V2.size(1));
 
         // to get rid of narrowing warnings
-        auto V2view(V2[array_{zero,V2.shape()[0],zero,V2.shape()[1]}]);
-        REQUIRE(V2view.shape()[0] == NAEA*NMO);
-        REQUIRE(V2view.shape()[0] == V2view.shape()[1]);
-        boost::multi::array<ComplexType,1> V0(extensions<1u>{V2.shape()[0]});
+        auto V2view(V2[array_{zero,V2.size(0),zero,V2.size(1)}]);
+        REQUIRE(V2view.size(0) == NAEA*NMO);
+        REQUIRE(V2view.size(0) == V2view.size(1));
+        boost::multi::array<ComplexType,1> V0(extensions<1u>{V2.size(0)});
         ma::product(V2view,G0,V0);
         ComplexType E2 = 0.5*ma::dot(G0,V0);
         if(std::abs(file_data.E2)>1e-8) {
@@ -176,9 +176,9 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
                                 std::addressof(TrialWfn),
                                 Spvn,1e-6));
 
-        auto Spvnview(Spvn[array_{zero,Spvn.shape()[0],zero,Spvn.shape()[1]}]);
-        auto SpvnTview(SpvnT[array_{zero,SpvnT.shape()[0],zero,SpvnT.shape()[1]}]);
-        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.shape()[0],zero,rotSpvnT.shape()[1]}]);
+        auto Spvnview(Spvn[array_{zero,Spvn.size(0),zero,Spvn.size(1)}]);
+        auto SpvnTview(SpvnT[array_{zero,SpvnT.size(0),zero,SpvnT.size(1)}]);
+        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.size(0),zero,rotSpvnT.size(1)}]);
 
         boost::multi::array<ComplexType,3> GM({1,NMO,NMO});
         boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),extensions<1u>{NMO*NMO});
@@ -187,7 +187,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         REQUIRE( real(Ovlp*Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp*Ovlp) == Approx(0.0) );
 
-        boost::multi::array<ComplexType,1> X(extensions<1u>{Spvn.shape()[1]});
+        boost::multi::array<ComplexType,1> X(extensions<1u>{Spvn.size(1)});
         using ma::T;
         ma::product(2.0*sqrtdt,T(Spvnview),
                     G0M.sliced(0,NMO*NMO),0.,X);
@@ -330,14 +330,14 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         bool addCoulomb = true;
         auto V2(ham.halfRotatedHijkl(COLLINEAR,addCoulomb,TG,std::addressof(TrialWfn.first),
                                           std::addressof(TrialWfn.second),1e-5));
-        REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
-        REQUIRE(V2.shape()[0] == V2.shape()[1]);
+        REQUIRE(V2.size(0) == (NAEA+NAEB)*NMO);
+        REQUIRE(V2.size(0) == V2.size(1));
 
         // to get rid of narrowing warnings
-        auto V2view(V2[array_{zero,V2.shape()[0],zero,V2.shape()[1]}]);
-        REQUIRE(V2view.shape()[0] == (NAEA+NAEB)*NMO);
-        REQUIRE(V2view.shape()[0] == V2view.shape()[1]);
-        boost::multi::array<ComplexType,1> V0(extensions<1u>{V2.shape()[0]});
+        auto V2view(V2[array_{zero,V2.size(0),zero,V2.size(1)}]);
+        REQUIRE(V2view.size(0) == (NAEA+NAEB)*NMO);
+        REQUIRE(V2view.size(0) == V2view.size(1));
+        boost::multi::array<ComplexType,1> V0(extensions<1u>{V2.size(0)});
         ma::product(V2view,G0,V0);
         ComplexType E2 = 0.5*ma::dot(G0,V0);
         if(std::abs(file_data.E2)>1e-8) {
@@ -357,9 +357,9 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
                                 std::addressof(TrialWfn.second),
                                 Spvn,1e-6));
 
-        auto Spvnview(Spvn[array_{zero,Spvn.shape()[0],zero,Spvn.shape()[1]}]);
-        auto SpvnTview(SpvnT[array_{zero,SpvnT.shape()[0],zero,SpvnT.shape()[1]}]);
-        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.shape()[0],zero,rotSpvnT.shape()[1]}]);
+        auto Spvnview(Spvn[array_{zero,Spvn.size(0),zero,Spvn.size(1)}]);
+        auto SpvnTview(SpvnT[array_{zero,SpvnT.size(0),zero,SpvnT.size(1)}]);
+        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.size(0),zero,rotSpvnT.size(1)}]);
 
         boost::multi::array<ComplexType,3> GM({2,NMO,NMO});
         boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),extensions<1u>{2*NMO*NMO});
@@ -370,7 +370,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-        boost::multi::array<ComplexType,1> X(extensions<1u>{Spvn.shape()[1]});
+        boost::multi::array<ComplexType,1> X(extensions<1u>{Spvn.size(1)});
         using ma::T;
         ma::product(sqrtdt,T(Spvnview),
                     G0M.sliced(0,NMO*NMO),0.,X);
@@ -520,14 +520,14 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         bool addCoulomb = true;
         auto V2(ham.halfRotatedHijkl(COLLINEAR,true,TG,std::addressof(TrialWfn.first),
                                           std::addressof(TrialWfn.second),1e-5));
-        REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
-        REQUIRE(V2.shape()[0] == V2.shape()[1]);
+        REQUIRE(V2.size(0) == (NAEA+NAEB)*NMO);
+        REQUIRE(V2.size(0) == V2.size(1));
 
         // to get rid of narrowing warnings
-        auto V2view(V2[array_{zero,V2.shape()[0],zero,V2.shape()[1]}]);
-        REQUIRE(V2view.shape()[0] == (NAEA+NAEB)*NMO);
-        REQUIRE(V2view.shape()[0] == V2view.shape()[1]);
-        boost::multi::array<ComplexType,1> V0(extensions<1u>{V2.shape()[0]});
+        auto V2view(V2[array_{zero,V2.size(0),zero,V2.size(1)}]);
+        REQUIRE(V2view.size(0) == (NAEA+NAEB)*NMO);
+        REQUIRE(V2view.size(0) == V2view.size(1));
+        boost::multi::array<ComplexType,1> V0(extensions<1u>{V2.size(0)});
         ma::product(V2view,G0,V0);
         ComplexType E2 = 0.5*ma::dot(G0,V0);
         E2 = ( TG.Cores() += E2 );
@@ -548,9 +548,9 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
                                 std::addressof(TrialWfn.second),
                                 Spvn,1e-6));
 
-        auto Spvnview(Spvn[array_{zero,Spvn.shape()[0],zero,Spvn.shape()[1]}]);
-        auto SpvnTview(SpvnT[array_{zero,SpvnT.shape()[0],zero,SpvnT.shape()[1]}]);
-        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.shape()[0],zero,rotSpvnT.shape()[1]}]);
+        auto Spvnview(Spvn[array_{zero,Spvn.size(0),zero,Spvn.size(1)}]);
+        auto SpvnTview(SpvnT[array_{zero,SpvnT.size(0),zero,SpvnT.size(1)}]);
+        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.size(0),zero,rotSpvnT.size(1)}]);
 
         boost::multi::array<ComplexType,3> GM({2,NMO,NMO});
         boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),extensions<1u>{2*NMO*NMO});
@@ -561,7 +561,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-        boost::multi::array<ComplexType,1> X(extensions<1u>{Spvn.shape()[1]});
+        boost::multi::array<ComplexType,1> X(extensions<1u>{Spvn.size(1)});
         using ma::T;
         ma::product(sqrtdt,T(Spvnview),
                     G0M.sliced(0,NMO*NMO),0.,X);

@@ -115,9 +115,9 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
   std::vector<ComplexType> WORK(abij.maximum_excitation_number()[spin]*abij.maximum_excitation_number()[spin]);
   auto confgs = abij.configurations_begin();  
   auto refc = abij.reference_configuration(spin);
-  for(int i=0; i<R.shape()[0]; i++)
-    std::fill_n(R[i].origin(),R.shape()[1],ComplexType(0));  
-  int NEL = T.shape()[1];
+  for(int i=0; i<R.size(0); i++)
+    std::fill_n(R[i].origin(),R.size(1),ComplexType(0));  
+  int NEL = T.size(1);
   std::vector<int> orbs(NEL);
   ComplexType ov_a;
   // add reference contribution!!!
@@ -209,9 +209,9 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
   std::vector<ComplexType> WORK(abij.maximum_excitation_number()[spin]*abij.maximum_excitation_number()[spin]);
   auto confgs = abij.configurations_begin();
   auto refc = abij.reference_configuration(spin);
-  for(int i=0; i<R.shape()[0]; i++)
-    std::fill_n(R[i].origin(),R.shape()[1],ComplexType(0));
-  int NEL = T.shape()[1];
+  for(int i=0; i<R.size(0); i++)
+    std::fill_n(R[i].origin(),R.size(1),ComplexType(0));
+  int NEL = T.size(1);
   std::vector<int> orbs(NEL);
   ComplexType ov_a;
   // add reference contribution!!!

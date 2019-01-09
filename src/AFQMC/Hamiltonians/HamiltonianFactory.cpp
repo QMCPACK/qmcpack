@@ -303,7 +303,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
                <<Timer.average("Generic1") <<"\n";
 
       app_log()<<" Memory used by factorized 2-el integral table (on head node): "
-               <<(V2_fact.capacity()*(sizeof(ValueType)+sizeof(IndexType)) + V2_fact.shape()[0]*(2*sizeof(std::size_t)))/1024.0/1024.0 <<" MB. " <<std::endl;
+               <<(V2_fact.capacity()*(sizeof(ValueType)+sizeof(IndexType)) + V2_fact.size(0)*(2*sizeof(std::size_t)))/1024.0/1024.0 <<" MB. " <<std::endl;
 
       if( coreid < nread ) {
         dump.pop();

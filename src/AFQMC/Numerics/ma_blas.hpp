@@ -33,7 +33,7 @@ template<class MultiArray1DX,
          typename = typename std::enable_if_t<std::decay<MultiArray1DY>::type::dimensionality == 1>
         >
 MultiArray1DY copy(MultiArray1DX&& x, MultiArray1DY&& y){
-        copy(x.size(), x.origin(), x.strides()[0], y.origin(), y.strides()[0]);
+        copy(x.size(), x.origin(), x.stride(0), y.origin(), y.stride(0));
         return std::forward<MultiArray1DY>(y);
 }
 
@@ -44,8 +44,8 @@ template<class MultiArray2DX,
          typename = void
         >
 MultiArray2DY copy(MultiArray2DX&& x, MultiArray2DY&& y){
-        assert( x.strides()[0] == x.shape()[1] ); // only on contiguous arrays 
-        assert( x.strides()[1] == 1 );            // only on contiguous arrays 
+        assert( x.stride(0) == x.size(1) ); // only on contiguous arrays 
+        assert( x.stride(1) == 1 );            // only on contiguous arrays 
         copy(x.num_elements(), x.origin(), 1, y.origin(), 1);
         return std::forward<MultiArray2DY>(y);
 }
@@ -60,12 +60,12 @@ typename std::decay<MultiArray1Dx>::type::element
 dot(MultiArray1Dx&& x, MultiArray1Dy&& y){
         assert(x.size() == y.size());
 // FIX FIX FIX
-        return dot(x.size(), std::addressof(*x.origin()), x.strides()[0], std::addressof(*y.origin()), y.strides()[0]);
+        return dot(x.size(), std::addressof(*x.origin()), x.stride(0), std::addressof(*y.origin()), y.stride(0));
 }
 
 template<class T, class MultiArray1D, typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type >
 MultiArray1D scal(T a, MultiArray1D&& x){
-	scal(x.size(), a, x.origin(), x.strides()[0]);
+	scal(x.size(), a, x.origin(), x.stride(0));
 	return std::forward<MultiArray1D>(x);
 }
 
@@ -78,8 +78,8 @@ template<class T, class MultiArray1DA, class MultiArray1DB,
 	typename = typename std::enable_if<std::decay<MultiArray1DA>::type::dimensionality == 1 and std::decay<MultiArray1DB>::type::dimensionality == 1>::type
 >
 MultiArray1DB axpy(T x, MultiArray1DA const& a, MultiArray1DB&& b){
-	assert( a.shape()[0] == b.shape()[0] );
-	axpy(a.shape()[0], x, a.origin(), a.strides()[0], b.origin(), b.strides()[0]);
+	assert( a.size(0) == b.size(0) );
+	axpy(a.size(0), x, a.origin(), a.stride(0), b.origin(), b.stride(0));
 	return std::forward<MultiArray1DB>(b);
 }
 
@@ -89,10 +89,10 @@ template<class T, class MultiArray2DA, class MultiArray2DB,
 >
 MultiArray2DB axpy(T x, MultiArray2DA const& a, MultiArray2DB&& b){
         assert( a.num_elements() == b.num_elements() );
-        assert( a.strides()[0] == a.shape()[1] ); // only on contiguous arrays 
-        assert( a.strides()[1] == 1 );            // only on contiguous arrays 
-        assert( b.strides()[0] == b.shape()[1] ); // only on contiguous arrays 
-        assert( b.strides()[1] == 1 );            // only on contiguous arrays 
+        assert( a.stride(0) == a.size(1) ); // only on contiguous arrays 
+        assert( a.stride(1) == 1 );            // only on contiguous arrays 
+        assert( b.stride(0) == b.size(1) ); // only on contiguous arrays 
+        assert( b.stride(1) == 1 );            // only on contiguous arrays 
         axpy(a.num_elements(), x, a.origin(), 1, b.origin(), 1);
         return std::forward<MultiArray2DB>(b);
 }
@@ -102,14 +102,14 @@ template<char IN, class T, class MultiArray2DA, class MultiArray1DX, class Multi
 >
 MultiArray1DY gemv(T alpha, MultiArray2DA const& A, MultiArray1DX const& x, T beta, MultiArray1DY&& y){
         assert( (IN == 'N') || (IN == 'T') || (IN == 'C')  );
-	if(IN == 'T' or IN == 'C') assert( x.shape()[0] == A.shape()[1] and y.shape()[0] == A.shape()[0]);
-	else if(IN == 'N') assert( x.shape()[0] == A.shape()[0] and y.shape()[0] == A.shape()[1]);
-	assert( A.strides()[1] == 1 ); // gemv is not implemented for arrays with non-leading stride != 1
-	int M = A.shape()[1];
-	int N = A.shape()[0];
-	gemv(IN, M, N, alpha, A.origin(), A.strides()[0], 
-                   x.origin(), x.strides()[0], beta, 
-                   y.origin(), y.strides()[0]);
+	if(IN == 'T' or IN == 'C') assert( x.size(0) == A.size(1) and y.size(0) == A.size(0));
+	else if(IN == 'N') assert( x.size(0) == A.size(0) and y.size(0) == A.size(1));
+	assert( A.stride(1) == 1 ); // gemv is not implemented for arrays with non-leading stride != 1
+	int M = A.size(1);
+	int N = A.size(0);
+	gemv(IN, M, N, alpha, A.origin(), A.stride(0), 
+                   x.origin(), x.stride(0), beta, 
+                   y.origin(), y.stride(0));
 	return std::forward<MultiArray1DY>(y);
 } //y := alpha*A*x + beta*y,
 
@@ -127,45 +127,45 @@ template<char TA, char TB, class T, class MultiArray2DA, class MultiArray2DB, cl
 	typename = typename std::enable_if< MultiArray2DA::dimensionality == 2 and MultiArray2DB::dimensionality == 2 and std::decay<MultiArray2DC>::type::dimensionality == 2>::type
 >
 MultiArray2DC gemm(T alpha, MultiArray2DA const& a, MultiArray2DB const& b, T beta, MultiArray2DC&& c){
-	assert( a.strides()[1] == 1 );
-	assert( b.strides()[1] == 1 );
-	assert( c.strides()[1] == 1 );
+	assert( a.stride(1) == 1 );
+	assert( b.stride(1) == 1 );
+	assert( c.stride(1) == 1 );
 	assert( (TA == 'N') || (TA == 'T') || (TA == 'C')  );
 	assert( (TB == 'N') || (TB == 'T') || (TB == 'C')  );
 	int M = -1;
 	int N = -1;
 	int K = -1;
 	if(TA == 'N' and TB == 'N'){
-		M = a.shape()[1];
-		N = b.shape()[0];
-		K = a.shape()[0];
-		assert(a.shape()[0] == b.shape()[1] and c.shape()[0] == b.shape()[0] and c.shape()[1] == a.shape()[1]);
+		M = a.size(1);
+		N = b.size(0);
+		K = a.size(0);
+		assert(a.size(0) == b.size(1) and c.size(0) == b.size(0) and c.size(1) == a.size(1));
 	}
 	if((TA == 'T' or TA == 'C') and (TB == 'T' or TB == 'C')){
-		M = a.shape()[0];
-		N = b.shape()[1];
-		K = a.shape()[1];
-		assert(a.shape()[1] == b.shape()[0] and c.shape()[0] == b.shape()[1] and c.shape()[1] == a.shape()[0]);
+		M = a.size(0);
+		N = b.size(1);
+		K = a.size(1);
+		assert(a.size(1) == b.size(0) and c.size(0) == b.size(1) and c.size(1) == a.size(0));
 	}
 	if((TA == 'T' or TA == 'C') and TB == 'N'){
-		M = a.shape()[0];
-		N = b.shape()[0];
-		K = a.shape()[1];
-		assert(a.shape()[1] == b.shape()[1] and c.shape()[0] == b.shape()[0] and c.shape()[1] == a.shape()[0]);
+		M = a.size(0);
+		N = b.size(0);
+		K = a.size(1);
+		assert(a.size(1) == b.size(1) and c.size(0) == b.size(0) and c.size(1) == a.size(0));
 	}
 	if(TA == 'N' and (TB == 'T' or TB == 'C')){
-		M = a.shape()[1];
-		N = b.shape()[1];
-		K = a.shape()[0];
-		assert(a.shape()[0] == b.shape()[0] and c.shape()[0] == b.shape()[1] and c.shape()[1] == a.shape()[1]);
+		M = a.size(1);
+		N = b.size(1);
+		K = a.size(0);
+		assert(a.size(0) == b.size(0) and c.size(0) == b.size(1) and c.size(1) == a.size(1));
 	}
 	gemm(
 		TA, TB, 
 		M, N, K, alpha, 
-		a.origin(), a.strides()[0], 
-		b.origin(), b.strides()[0],
+		a.origin(), a.stride(0), 
+		b.origin(), b.stride(0),
 		beta, 
-		c.origin(), c.strides()[0]
+		c.origin(), c.stride(0)
 	);
 	return std::forward<MultiArray2DC>(c);
 }
@@ -178,49 +178,49 @@ template<char TA, char TB, class T, class MultiArray3DA, class MultiArray3DB, cl
         >
 MultiArray3DC gemmStridedBatched(T alpha, MultiArray3DA const& a, MultiArray3DB const& b,
                                  T beta, MultiArray3DC&& c){
-        assert( a.strides()[2] == 1 );
-        assert( b.strides()[2] == 1 );
-        assert( c.strides()[2] == 1 );
-        assert( a.shape()[0] == b.shape()[0] );
-        assert( a.shape()[0] == c.shape()[0] );
+        assert( a.stride(2) == 1 );
+        assert( b.stride(2) == 1 );
+        assert( c.stride(2) == 1 );
+        assert( a.size(0) == b.size(0) );
+        assert( a.size(0) == c.size(0) );
         assert( (TA == 'N') || (TA == 'T') || (TA == 'C')  );
         assert( (TB == 'N') || (TB == 'T') || (TB == 'C')  );
         int M = -1;
         int N = -1;
         int K = -1;
         if(TA == 'N' and TB == 'N'){
-                M = a.shape()[2];
-                N = b.shape()[1];
-                K = a.shape()[1];
-                assert(a.shape()[1] == b.shape()[2] and c.shape()[1] == b.shape()[1] and c.shape()[2] == a.shape()[2]);
+                M = a.size(2);
+                N = b.size(1);
+                K = a.size(1);
+                assert(a.size(1) == b.size(2) and c.size(1) == b.size(1) and c.size(2) == a.size(2));
         }
         if((TA == 'T' or TA == 'C') and (TB == 'T' or TB == 'C')){
-                M = a.shape()[1];
-                N = b.shape()[2];
-                K = a.shape()[2];
-                assert(a.shape()[2] == b.shape()[1] and c.shape()[1] == b.shape()[2] and c.shape()[2] == a.shape()[1]);
+                M = a.size(1);
+                N = b.size(2);
+                K = a.size(2);
+                assert(a.size(2) == b.size(1) and c.size(1) == b.size(2) and c.size(2) == a.size(1));
         }
         if((TA == 'T' or TA == 'C') and TB == 'N'){
-                M = a.shape()[1];
-                N = b.shape()[1];
-                K = a.shape()[2];
-                assert(a.shape()[2] == b.shape()[2] and c.shape()[1] == b.shape()[1] and c.shape()[2] == a.shape()[1]);
+                M = a.size(1);
+                N = b.size(1);
+                K = a.size(2);
+                assert(a.size(2) == b.size(2) and c.size(1) == b.size(1) and c.size(2) == a.size(1));
         }
         if(TA == 'N' and (TB == 'T' or TB == 'C')){
-                M = a.shape()[2];
-                N = b.shape()[2];
-                K = a.shape()[1];
-                assert(a.shape()[1] == b.shape()[1] and c.shape()[1] == b.shape()[2] and c.shape()[2] == a.shape()[2]);
+                M = a.size(2);
+                N = b.size(2);
+                K = a.size(1);
+                assert(a.size(1) == b.size(1) and c.size(1) == b.size(2) and c.size(2) == a.size(2));
         }
         gemmStridedBatched(
                 TA, TB,
                 M, N, K,
                 alpha,
-                a.origin(), a.strides()[1],a.strides()[0],
-                b.origin(), b.strides()[1],b.strides()[0],
+                a.origin(), a.stride(1),a.stride(0),
+                b.origin(), b.stride(1),b.stride(0),
                 beta,
-                c.origin(), c.strides()[1],c.strides()[0],
-                a.shape()[0]
+                c.origin(), c.stride(1),c.stride(0),
+                a.size(0)
         );
         return std::forward<MultiArray3DC>(c);
 }
@@ -236,31 +236,31 @@ template<char TA, char TB, class T, class MultiArray2DA, class MultiArray2DB, cl
                                             std::decay<MultiArray2DC>::type::dimensionality == 2>::type
 >
 MultiArray2DC geam(T alpha, MultiArray2DA const& a, T beta, MultiArray2DB const& b, MultiArray2DC&& c){
-        assert( a.strides()[1] == 1 );
-        assert( b.strides()[1] == 1 );
-        assert( c.strides()[1] == 1 );
+        assert( a.stride(1) == 1 );
+        assert( b.stride(1) == 1 );
+        assert( c.stride(1) == 1 );
         assert( (TA == 'N') || (TA == 'T') || (TA == 'C')  );
         assert( (TB == 'N') || (TB == 'T') || (TB == 'C')  );
         if(TA == 'N' and TB == 'N'){
-                assert(a.shape()[0] == c.shape()[0] and a.shape()[1] == c.shape()[1]);
-                assert(b.shape()[0] == c.shape()[0] and b.shape()[1] == c.shape()[1]);
+                assert(a.size(0) == c.size(0) and a.size(1) == c.size(1));
+                assert(b.size(0) == c.size(0) and b.size(1) == c.size(1));
         }
         if((TA == 'T' or TA == 'C') and (TB == 'T' or TB == 'C')){
-                assert(a.shape()[1] == c.shape()[0] and a.shape()[0] == c.shape()[1]);
-                assert(b.shape()[1] == c.shape()[0] and b.shape()[0] == c.shape()[1]);
+                assert(a.size(1) == c.size(0) and a.size(0) == c.size(1));
+                assert(b.size(1) == c.size(0) and b.size(0) == c.size(1));
         }
         if((TA == 'T' or TA == 'C') and TB == 'N'){
-                assert(a.shape()[1] == c.shape()[0] and a.shape()[0] == c.shape()[1]);
-                assert(b.shape()[0] == c.shape()[0] and b.shape()[1] == c.shape()[1]);
+                assert(a.size(1) == c.size(0) and a.size(0) == c.size(1));
+                assert(b.size(0) == c.size(0) and b.size(1) == c.size(1));
         }
         if(TA == 'N' and (TB == 'T' or TB == 'C')){
-                assert(a.shape()[0] == c.shape()[0] and a.shape()[1] == c.shape()[1]);
-                assert(b.shape()[1] == c.shape()[0] and b.shape()[0] == c.shape()[1]);
+                assert(a.size(0) == c.size(0) and a.size(1) == c.size(1));
+                assert(b.size(1) == c.size(0) and b.size(0) == c.size(1));
         }
-        geam(   TA, TB, c.shape()[1], c.shape()[0],
-                alpha, a.origin(), a.strides()[0],
-                beta, b.origin(), b.strides()[0],
-                c.origin(), c.strides()[0]
+        geam(   TA, TB, c.size(1), c.size(0),
+                alpha, a.origin(), a.stride(0),
+                beta, b.origin(), b.stride(0),
+                c.origin(), c.stride(0)
         );
         return std::forward<MultiArray2DC>(c);
 }
@@ -270,20 +270,20 @@ template<char TA, class T, class MultiArray2DA, class MultiArray2DC,
                                             std::decay<MultiArray2DC>::type::dimensionality == 2>::type
 >
 MultiArray2DC geam(T alpha, MultiArray2DA const& a, MultiArray2DC&& c){
-        assert( a.strides()[1] == 1 );
-        assert( c.strides()[1] == 1 );
+        assert( a.stride(1) == 1 );
+        assert( c.stride(1) == 1 );
         assert( (TA == 'N') || (TA == 'T') || (TA == 'C')  );
         if(TA == 'N'){
-                assert(a.shape()[0] == c.shape()[0] and a.shape()[1] == c.shape()[1]);
+                assert(a.size(0) == c.size(0) and a.size(1) == c.size(1));
         }
         if((TA == 'T' or TA == 'C')) {
-                assert(a.shape()[1] == c.shape()[0] and a.shape()[0] == c.shape()[1]);
+                assert(a.size(1) == c.size(0) and a.size(0) == c.size(1));
         }
         auto aorg(a.origin());
-        geam(   TA, TA, c.shape()[1], c.shape()[0],
-                alpha, a.origin(), a.strides()[0],
-                T(0), a.origin(), a.strides()[0],
-                c.origin(), c.strides()[0]
+        geam(   TA, TA, c.size(1), c.size(0),
+                alpha, a.origin(), a.stride(0),
+                T(0), a.origin(), a.stride(0),
+                c.origin(), c.stride(0)
         );
         return std::forward<MultiArray2DC>(c);
 }

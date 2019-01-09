@@ -148,6 +148,11 @@ class csr_matrix_ref {
                 return static_cast<size_type>(pointers_end_[i] - pointers_begin_[i]);
         }
         auto shape() const{return std::array<size_type, 2>{{size(),size2_}};}
+	template<typename integer_type=size_type>
+        auto size(integer_type d) const{
+            assert( d==integer_type{0} || d==integer_type{1} ); 
+            return (d==integer_type{0})?size():size2_;
+        }
         auto non_zero_values_data(size_type i=0) const{return data_+(pointers_begin_[i]-pointers_begin_[0]);}
         auto non_zero_indices2_data(size_type i=0) const{return jdata_+(pointers_begin_[i]-pointers_begin_[0]);}
         auto sparse_row(int i) const{
@@ -789,6 +794,8 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                 }
                 auto capacity() const{return self_.capacity(i_); }
                 auto shape() const{return std::array<size_type, 1>{{self_.size2_}}; } 
+                template<typename integer_type=size_type>
+                auto size(integer_type d) const{ return size_type{self_.size2_}; }
         };
 
         struct const_row_reference{
@@ -804,6 +811,8 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                 }
                 auto capacity() const{return self_.capacity(i_); }
                 auto shape() const{return std::array<size_type, 1>{{self_.size2_}}; } 
+                template<typename integer_type=size_type>
+                auto size(integer_type d) const{ return size_type{self_.size2_}; }
         };
 
         public:

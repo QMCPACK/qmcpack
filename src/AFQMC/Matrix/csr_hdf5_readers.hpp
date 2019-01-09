@@ -151,8 +151,8 @@ inline void CSR2HDF(hdf_archive& dump, SparseArray2D const& SpM)
 
   using size_type = ma::sparse::size_type;
   size_type nnz = SpM.num_non_zero_elements();
-  size_type nrows = SpM.shape()[0];
-  size_type ncols = SpM.shape()[1];
+  size_type nrows = SpM.size(0);
+  size_type ncols = SpM.size(1);
   {
     std::vector<size_type> dims{nrows,ncols,nnz};
     dump.write(dims,"dims"); 
@@ -622,7 +622,7 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
       std::vector<index_type> ivec;
       ivec.reserve(2*CSR_HDF_BLOCK_SIZE);
       size_t cnt = 0;
-      for(size_t r = 0; r<SpM.shape()[0]; ++r) {      
+      for(size_t r = 0; r<SpM.size(0); ++r) {      
         size_t nzr = SpM.num_non_zero_elements(r);
         auto val = SpM.non_zero_values_data(r);
         auto col = SpM.non_zero_indices2_data(r);
@@ -677,7 +677,7 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
       ivec.reserve(2*CSR_HDF_BLOCK_SIZE);
       index_type offset_r = index_type(SpM.global_origin()[0]);
       index_type offset_c = index_type(SpM.global_origin()[1]);
-      for(size_t r = 0; r<SpM.shape()[0]; ++r) {
+      for(size_t r = 0; r<SpM.size(0); ++r) {
         size_t nzr = SpM.num_non_zero_elements(r);
         auto val = SpM.non_zero_values_data(r);
         auto col = SpM.non_zero_indices2_data(r);
@@ -707,7 +707,7 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
       std::vector<index_type> ivec;
       ivec.reserve(2*CSR_HDF_BLOCK_SIZE);
       size_t cnt = 0;
-      for(size_t r = 0; r<SpM.shape()[0]; ++r) { 
+      for(size_t r = 0; r<SpM.size(0); ++r) { 
         size_t nzr = SpM.num_non_zero_elements(r);
         auto val = SpM.non_zero_values_data(r);
         auto col = SpM.non_zero_indices2_data(r);

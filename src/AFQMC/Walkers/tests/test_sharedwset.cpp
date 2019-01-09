@@ -69,10 +69,10 @@ void myREQUIRE(const std::complex<double>& a, const std::complex<double>& b)
 template<class M1, class M2>
 void check(M1&& A, M2& B)
 {
-  REQUIRE(A.shape()[0] == B.shape()[0]);
-  REQUIRE(A.shape()[1] == B.shape()[1]);
-  for(int i=0; i<A.shape()[0]; i++)
-    for(int j=0; j<A.shape()[1]; j++)
+  REQUIRE(A.size(0) == B.size(0));
+  REQUIRE(A.size(1) == B.size(1));
+  for(int i=0; i<A.size(0); i++)
+    for(int j=0; j<A.size(1); j++)
       myREQUIRE(A[i][j],B[i][j]);
 }
 
