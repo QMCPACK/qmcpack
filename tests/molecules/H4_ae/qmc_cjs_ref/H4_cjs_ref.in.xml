@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="H4" series="0"/>
+  <random seed="22207"/>
+  <!-- input from gaussian converter -->
+  <include href="H4_cjs_ref.wfs.xml"/>
+  <include href="H4_cjs_ref.ptcl.xml"/>
+  <hamiltonian name="h0" type="generic" target="e"> 
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/> 
+    <pairpot name="IonElec" type="coulomb" source="ion0"/>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/> 
+  </hamiltonian> 
+  <qmc method="vmc" move="pbyp" checkpoint="-1" gpu="no">
+    <parameter name="blocks">500</parameter>
+    <parameter name="steps">500</parameter>
+    <parameter name="samples">1000000</parameter>
+    <parameter name="warmupsteps">10000</parameter>
+    <parameter name="timestep">0.05</parameter>
+
+    <parameter name="useDrift">yes</parameter>
+  </qmc>
+
+</simulation>
