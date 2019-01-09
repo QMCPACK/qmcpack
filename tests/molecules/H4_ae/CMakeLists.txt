@@ -131,7 +131,7 @@ IF (NOT QMC_CUDA)
                       8 H4_FDLR_SCALARS # Final VMC step
                       TRUE)
 
-    LIST(APPEND H4_CJS_SCALARS "totenergy" "-2.0438 0.005") # total energy
+    LIST(APPEND H4_CJS_SCALARS "totenergy" "-2.0438 0.001") # total energy
 
     QMC_RUN_AND_CHECK(short-H4-cjs
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
