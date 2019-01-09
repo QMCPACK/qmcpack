@@ -560,7 +560,9 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   Period4CheckPoint=-1;
   // set default for delayed update streak k to zero, meaning use the original Sherman-Morrison rank-1 update
   // if kdelay is set to k (k>1), then the new rank-k scheme is used
+#ifdef QMC_CUDA
   kDelay=Psi.getndelay();
+#endif
   int defaultw = omp_get_max_threads();
   OhmmsAttributeSet aAttrib;
   aAttrib.add(Period4CheckPoint,"checkpoint");
