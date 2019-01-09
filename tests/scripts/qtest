@@ -529,6 +529,10 @@ def read_command_line():
                       action='store_true',default=False,
                       help='Analyze test results and print a summary (default=%default).'
                       )
+    parser.add_option('-e','--equil',dest='equil',
+                      type=int,default=20,
+                      help='Number of blocks to exclude as equilibration during data analysis or joining (default=%default).'
+                      )
     parser.add_option('--sleep',dest='sleep',
                       type=float,default=3,
                       help='Print list of selected tests and exit (default=%default).'
@@ -544,6 +548,10 @@ def read_command_line():
     parser.add_option('--join',dest='join',
                       default='',
                       help='List of testset labels to join (default=%default).'
+                      )
+    parser.add_option('--njoined',dest='njoined',
+                      type=int,default=1,
+                      help='Number of reference data sets that have been joined.  Used only in conjunction with -a if --join was used previously to combine reference data (default=%default).'
                       )
 
 
@@ -787,6 +795,37 @@ def write_file(filename,contents):
 #end def write_file
 
 
+# line_count function adapted from:
+#   https://stackoverflow.com/questions/845058/how-to-get-line-count-cheaply-in-python
+# based on "map_count"
+import mmap
+def line_count(filename):
+    f = open(filename, "r+")
+    buf = mmap.mmap(f.fileno(), 0)
+    lines = 0
+    readline = buf.readline
+    while readline():
+        lines += 1
+    #end while
+    f.close()
+    return lines
+#end def line_count
+##   based on "raw_count", python3 only
+#def line_count(filename):
+#    f = open(filename, 'rb')
+#    lines = 0
+#    buf_size = 1024 * 1024
+#    read_f = f.raw.read
+#
+#    buf = read_f(buf_size)
+#    while buf:
+#        lines += buf.count(b'\n')
+#        buf = read_f(buf_size)
+#    #end while
+#    return lines
+##end def line_count
+
+
 def filter_tests(short_tests):
     tests = sorted(short_tests.keys())
     for st in short_tests:
@@ -872,7 +911,8 @@ def join_test_sets(short_tests):
         #end if
 
         # search for all scalar files matching the prefix
-        scalar_files = obj()
+        scalar_files  = obj()
+        scalar_series = obj()
         for tpath in testset_paths:
             test_path = os.path.join(tpath,name)
             if not os.path.exists(test_path):
@@ -886,6 +926,14 @@ def join_test_sets(short_tests):
                         scalar_files[key] = []
                     #end if
                     scalar_files[key].append(os.path.join(test_path,file))
+                    series = None
+                    for t in file.split('.'):
+                        if len(t)==4 and t[0]=='s' and t[1:].isdigit():
+                            series = str(int(t[1:]))
+                            break
+                        #end if
+                    #end for
+                    scalar_series[key] = series
                 elif file=='sim_qmc':
                     test_sim_path = os.path.join(test_path,'sim_qmc')
                     join_sim_path = os.path.join(join_path,'sim_qmc')
@@ -896,13 +944,14 @@ def join_test_sets(short_tests):
             #end for
         #end for
         if len(scalar_files)==0:
-            vlog('no scalar files found',n=3)
+            vlog('cannot join data\nno scalar files found\n',n=3)
             continue
         #end if
 
         # ensure that all testsets have the same set of scalar files
         can_join = True
-        for filepaths in scalar_files:
+        for key,filepaths in scalar_files.iteritems():
+            series = scalar_series[key]
             if len(filepaths)!=nsets:
                 can_join = False
                 fps = ''
@@ -910,6 +959,28 @@ def join_test_sets(short_tests):
                     fps += '  '+fp+'\n'
                 #end for
                 vlog('cannot join data\nmissing some scalar.dat files\nexpected {0} files, found {1}\nscalar files found:\n{2}'.format(nsets,len(filepaths),fps),n=3)
+            else:
+                deficient = False
+                lines_files = []
+                min_lines = 1
+                if series in st.refdata:
+                    min_lines += options.equil
+                #end if
+                for fp in filepaths:
+                    nlines = line_count(fp)
+                    lines_files.append((nlines,fp))
+                    if nlines<min_lines:
+                        deficient = True
+                    #end if
+                #end for
+                if deficient:
+                    can_join = False
+                    msg = 'cannot join data\nsome scalar files have too few lines\nminimum number of lines required (e.g. for equil): {0}\nline counts of files:\n'.format(min_lines)
+                    for nlines,fp in lines_files:
+                        msg+='  {0} {1}\n'.format(nlines,fp)
+                    #end for
+                    vlog(msg,n=3)
+                #end if
             #end if
         #end for
         if not can_join:
@@ -917,18 +988,26 @@ def join_test_sets(short_tests):
         #end if
 
         # combine each scalar file and write into joined test directory
+        success = True
         for k in sorted(scalar_files.keys()):
             filepaths = scalar_files[k]
-            contents = None
+            series    = scalar_series[k]
+            lines_exclude = 1
+            if series in st.refdata:
+                lines_exclude += options.equil
+            #end if
+            contents = ''
             for filepath in filepaths:
                 data = read_file(filepath)
-                if contents is None:
+                tokens = data.split('\n',lines_exclude)
+                header = tokens[0]
+                data   = tokens[-1]
+                if len(contents)==0:
                     filename = os.path.basename(filepath)
                     vlog('joining '+filename,n=3)
-                    contents = data
-                else:
-                    contents += data.split('\n',1)[1].rstrip()+'\n'
+                    contents = header.rstrip()+'\n'
                 #end if
+                contents += data.rstrip()+'\n'
             #end for
             join_filepath = os.path.join(join_path,filename)
             write_file(join_filepath,contents)
@@ -1294,40 +1373,46 @@ check_scalars_to_ctest = obj(
     )
 
 # quantity mapping for check_scalars.py to qmcpack output (see check_scalars.py)
-check_scalars_to_qmcpack = obj(
-    ar      = 'AcceptRatio',
-    le      = 'LocalEnergy',
-    va      = 'Variance',
-    ke      = 'Kinetic',
-    lp      = 'LocalPotential',
-    ee      = 'ElecElec',
-    cl      = 'Coulomb',
-    ii      = 'IonIon',
-    lpp     = 'LocalECP',
-    nlpp    = 'NonLocalECP',
-    mpc     = 'MPC',
-    kec     = 'KEcorr',
-    bw      = 'BlockWeight',
-    ts      = 'TotalSamples',
-    fl      = 'Flux',
-    latdev  = 'latdev',
-    ke_m    = 'Kinetic_m',
-    ke_p    = 'Kinetic_p',
-    ee_m    = 'ElecElec_m',
-    ee_p    = 'ElecElec_p',
-    lp_p    = 'LocalPotential_pure',
-    le_A    = 'LocEne_0',
-    le_B    = 'LocEne_1',
-    dle_AB  = 'dLocEne_0_1',
-    ii_A    = 'IonIon_0',
-    ii_B    = 'IonIon_1',
-    dii_AB  = 'dIonIon_0_1',
-    ee_A    = 'ElecElec_0',
-    ee_B    = 'ElecElec_1',
-    dee_AB  = 'dElecElec_0_1',
-    eloc    = 'Eloc',
-    elocest = 'ElocEstim',
-    )
+check_scalars_to_qmcpack_ordered = [
+    ('le'      , 'LocalEnergy'),
+    ('va'      , 'Variance'),
+    ('ke'      , 'Kinetic'),
+    ('lp'      , 'LocalPotential'),
+    ('ee'      , 'ElecElec'),
+    ('cl'      , 'Coulomb'),
+    ('ii'      , 'IonIon'),
+    ('lpp'     , 'LocalECP'),
+    ('nlpp'    , 'NonLocalECP'),
+    ('mpc'     , 'MPC'),
+    ('kec'     , 'KEcorr'),
+    ('fl'      , 'Flux'),
+    ('latdev'  , 'latdev'),
+    ('ke_m'    , 'Kinetic_m'),
+    ('ke_p'    , 'Kinetic_p'),
+    ('ee_m'    , 'ElecElec_m'),
+    ('ee_p'    , 'ElecElec_p'),
+    ('lp_p'    , 'LocalPotential_pure'),
+    ('le_A'    , 'LocEne_0'),
+    ('le_B'    , 'LocEne_1'),
+    ('dle_AB'  , 'dLocEne_0_1'),
+    ('ee_A'    , 'ElecElec_0'),
+    ('ee_B'    , 'ElecElec_1'),
+    ('dee_AB'  , 'dElecElec_0_1'),
+    ('ii_A'    , 'IonIon_0'),
+    ('ii_B'    , 'IonIon_1'),
+    ('dii_AB'  , 'dIonIon_0_1'),
+    ('eloc'    , 'Eloc'),
+    ('elocest' , 'ElocEstim'),
+    ('ar'      , 'AcceptRatio'),
+    ('bw'      , 'BlockWeight'),
+    ('ts'      , 'TotalSamples'),
+    ]
+check_scalars_to_qmcpack = obj(dict(check_scalars_to_qmcpack_ordered))
+
+qmcpack_quantity_order = []
+for n1,n2 in check_scalars_to_qmcpack_ordered:
+    qmcpack_quantity_order.append(n2)
+#end for
 
 # quantity mapping from ctest to qmcpack
 ctest_to_qmcpack = obj()
@@ -1337,6 +1422,11 @@ for a,c in check_scalars_to_ctest.iteritems():
     #end if
 #end for
 qmcpack_to_ctest = ctest_to_qmcpack.inverse()
+
+# quantities that will not be updated
+non_update_quants = set([
+    'samples'
+    ])
 
 # quantities that are not statistical in nature (no fluctuations)
 non_stat_quants = set([
@@ -1360,7 +1450,7 @@ def get_scalar_filename(st,series):
 #end def get_scalar_filename
 
 # read quantities from qmca output saved in a file
-def read_qmca(filename):
+def read_qmca(filename,full=False):
     data = obj()
     text = read_file(filename).strip()
     if len(text)==0:
@@ -1378,7 +1468,9 @@ def read_qmca(filename):
         except:
             error('qmca file read failed ({0})\nline could not be processed: {1}'.format(filename,line))
         #end try
-        if qname in qmcpack_to_ctest:
+        if full:
+            data[qname] = qmean,qerror
+        elif qname in qmcpack_to_ctest:
             cname = qmcpack_to_ctest[qname]
             data[cname] = qmean,qerror
         #end if
@@ -1386,41 +1478,17 @@ def read_qmca(filename):
     return data
 #end def read_qmca
 
-# line_count function adapted from:
-#   https://stackoverflow.com/questions/845058/how-to-get-line-count-cheaply-in-python
-# based on "map_count"
-import mmap
-def line_count(filename):
-    f = open(filename, "r+")
-    buf = mmap.mmap(f.fileno(), 0)
-    lines = 0
-    readline = buf.readline
-    while readline():
-        lines += 1
-    #end while
-    f.close()
-    return lines
-#end def line_count
-##   based on "raw_count", python3 only
-#def line_count(filename):
-#    f = open(filename, 'rb')
-#    lines = 0
-#    buf_size = 1024 * 1024
-#    read_f = f.raw.read
-#
-#    buf = read_f(buf_size)
-#    while buf:
-#        lines += buf.count(b'\n')
-#        buf = read_f(buf_size)
-#    #end while
-#    return lines
-##end def line_count
-
 
 def analyze_tests(short_tests):
     vlog('\nanalyzing test results')
 
     # analyze each test
+    scomp = '' # string for comparison data file write
+    sref  = '' # string for reference data file write
+    sref_full = '' # string for full reference data file write
+    scomp += '# {0:<44}  {1:<4}   {2:<15}    {3:<18}  {4:<18}  {5:<18}  {6:<18}  {7:<18}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_short_err','ctest_mean','ctest_short_err')
+    sref += '# {0:<44}  {1:<4}   {2:<15}    {3:<18}  {4:<18}  {5:<12}  {6:<18}  {7:<12}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_steps','short_err','short_steps')
+    sref_full += '# {0:<44}  {1:<4}   {2:<15}    {3:<28}  {4:<28}  {5:<12}  {6:<28}  {7:<12}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_steps','short_err','short_steps')
     tests = sorted(short_tests.keys())
     for t in tests:
         st = short_tests[t]
@@ -1460,6 +1528,18 @@ def analyze_tests(short_tests):
                 #end if
             #end if
 
+            # set equilibration steps
+            nequil_qmca     = options.equil
+            nequil_blocks   = options.equil
+            if options.njoined>1:
+                nequil_qmca   = 0 # equil steps removed from joined data
+                nequil_blocks = options.njoined*options.equil # blocks were removed from each set
+            #end if
+
+            # nequil_check is equilibration used by testing system
+            #   this is hard coded in macros.cmake
+            nequil_check = 2
+
             # determine the status of the output data
             #   options are unknown/absent/partial/complete
             data_status = 'complete'
@@ -1467,29 +1547,30 @@ def analyze_tests(short_tests):
                 data_status = 'unknown'
             #end if
             for series,(blocks,steps) in st.blocks_steps.iteritems():
+                blocks_expected = blocks
+                if options.njoined>1 and str(series) in st.refdata:
+                    blocks_expected -= nequil_blocks
+                #end if
                 filename = get_scalar_filename(st,series)
                 if not os.path.exists(filename):
                     data_status = 'absent'
                     break
                 else:
                     nlines = line_count(filename)
-                    if nlines!=blocks+1:
+                    if nlines!=blocks_expected+1:
                         data_status = 'partial'
                         break
                     #end if
                 #end if
             #end for
 
-            # set equilibration steps to 20 blocks
-            #   may move this up to user option level in future
-            nequil = 20
-
-            # nequil_check is equilibration used by testing system
-            #   this is hard coded in macros.cmake
-            nequil_check = 2
+            #vlog('run/data status: {0}/{1}'.format(run_status,data_status),n=2)
 
             # postprocess all reference data with qmca
             if data_status=='complete':
+                scomp += '\n'
+                sref  += '\n'
+                sref_full += '\n'
                 # compare old and new ref data for each series
                 for series in sorted(st.refdata.keys()):
                     old_refdata = st.refdata[series]
@@ -1502,7 +1583,7 @@ def analyze_tests(short_tests):
                     qmca_out = '{0}.s{1}.qmca.out'.format(st.prefix,sfill)
                     if not os.path.exists(qmca_out):
                         vlog('creating '+qmca_out,n=2)
-                        command = 'qmca -e {0} {1}'.format(nequil,scalar_file)
+                        command = "qmca --fp='18.12f' -e {0} {1}".format(nequil_qmca,scalar_file)
                         write_file(qmca_in,command)
                         out = execute(command)[0]
                         write_file(qmca_out,out)
@@ -1512,7 +1593,7 @@ def analyze_tests(short_tests):
                     new_refdata = read_qmca(qmca_out)
 
                     # steps for new reference data
-                    steps_new = (blocks-nequil)*steps
+                    steps_new = (blocks-nequil_blocks)*steps
 
                     # steps in target short run (corresponds to old ref data)
                     steps_old = (blocks/options.block_factor-nequil_check)*steps/options.step_factor
@@ -1536,7 +1617,7 @@ def analyze_tests(short_tests):
                         # compare the two
                         dval = val_old-val_new
                         if q in non_stat_quants:
-                            None
+                            target_err = 0.0
                         else:
                             nsigma = abs(dval)/err_new
                             target_err = err_factor*err_new
@@ -1544,7 +1625,25 @@ def analyze_tests(short_tests):
                             vlog('{0:<15} series {1}   nsigma diff {2:3.2f}  errorbar relerr {3:3.2f}'.format(q,series,nsigma,relerr),n=2)
                         #end if
 
+
+                        # get test/file information
+                        if q not in non_update_quants:
+                            scomp += ' {0:<50}  {1:<2}  {2:<15}  {3: 18.12f}  {4: 18.12f}  {5: 18.12f}  {6: 18.12f}  {7: 18.12f}\n'.format(st.sname,series,q,val_new,err_new,target_err,val_old,err_old)
+                            sref += ' {0:<50}  {1:<2}  {2:<15}  {3: 18.12f}  {4: 18.12f}    {5:<12}{6: 18.12f}    {7:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old)
+                        #end if
+
+
                     #end for
+
+                    new_refdata_full = read_qmca(qmca_out,full=True)
+                    for q in qmcpack_quantity_order:
+                        if q in new_refdata_full:
+                            val_new,err_new = new_refdata_full[q]
+                            target_err = err_factor*err_new
+                            sref_full += ' {0:<50}  {1:<2}  {2:<15}  {3: 28.12f}  {4: 28.12f}    {5:<12}{6: 28.12f}    {7:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old)
+                        #end if
+                    #end for
+
                 #end for
 
             #end if
@@ -1553,7 +1652,20 @@ def analyze_tests(short_tests):
             os.chdir(cwd)
         #end if
     #end for
-#end if
+
+    f = open('./scalar_comparison.dat','w')
+    f.write(scomp)
+    f.close()
+
+    f = open('./scalar_reference.dat','w')
+    f.write(sref)
+    f.close()
+
+    f = open('./scalar_reference_full.dat','w')
+    f.write(sref_full)
+    f.close()
+
+#end def analyze_tests
 
 
 
