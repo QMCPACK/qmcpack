@@ -1787,7 +1787,6 @@ public:
 			root
 		);			
 	}
-protected:
 	template<class T, class Op = std::plus<> >
 	void all_reduce_value(T const& t, T& ret, Op op = {}){
 		all_reduce_n(std::addressof(t), 1, std::addressof(ret), op); 

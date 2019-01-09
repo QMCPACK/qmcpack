@@ -9,7 +9,7 @@
  * BLAS/LAPACK, numerical library, use platform-optimized libraries
  * Libxml2, XML parser, http://xmlsoft.org/
  * HDF5, portable I/O library, http://www.hdfgroup.org/HDF5/
- * BOOST, peer-reviewed portable C++ source libraries, http://www.boost.org
+ * BOOST, peer-reviewed portable C++ source libraries, http://www.boost.org , version 1.61.0 or higher.
  * FFTW, FFT library, http://www.fftw.org/
 
 See the manual for more detailed version requirements.

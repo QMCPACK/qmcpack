@@ -107,7 +107,6 @@ TrialWaveFunction::addOrbital(WaveFunctionComponent* aterm, const std::string& a
 TrialWaveFunction::RealType
 TrialWaveFunction::evaluateLog(ParticleSet& P)
 {
-  //TAU_PROFILE("TrialWaveFunction::evaluateLog","ParticleSet& P", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
   ValueType logpsi(0.0);
@@ -144,7 +143,6 @@ void TrialWaveFunction::recompute(ParticleSet& P)
 TrialWaveFunction::RealType
 TrialWaveFunction::evaluateLogOnly(ParticleSet& P)
 {
-  //TAU_PROFILE("TrialWaveFunction::evaluateLogOnly","ParticleSet& P", TAU_USER);
   tempP->R=P.R;
   tempP->L=0.0;
   tempP->G=0.0;
@@ -240,7 +238,6 @@ TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
                                     , RealType& logpsi_fixed_r, RealType& logpsi_opt_r
                                     , ParticleSet::ParticleGradient_t& fixedG, ParticleSet::ParticleLaplacian_t& fixedL)
 {
-  //TAU_PROFILE("TrialWaveFunction::evaluateDeltaLog","ParticleSet& P", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
   fixedL = 0.0;
@@ -303,7 +300,6 @@ void TrialWaveFunction::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad
 
 TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
 {
-  //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
   ValueType r(1.0);
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
@@ -335,7 +331,6 @@ TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P,int ia
 
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat)
 {
-  //TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
   GradType grad_iat;
   for (int i=0, ii=VGL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
@@ -517,7 +512,6 @@ void TrialWaveFunction::registerData(ParticleSet& P, WFBufferType& buf)
 TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
     , WFBufferType& buf, bool fromscratch)
 {
-  //TAU_PROFILE("TrialWaveFunction::updateBuffer","(P,..)", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
   buf.rewind(BufferCursor,BufferCursor_scalar);
@@ -543,7 +537,6 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
 void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.rewind(BufferCursor,BufferCursor_scalar);
-  //TAU_PROFILE("TrialWaveFunction::copyFromBuffer","(P,..)", TAU_USER);
   for (int i=0, ii=BUFFER_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();

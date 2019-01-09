@@ -32,7 +32,6 @@ SET(MOSRCS
   BParser.cpp
   BMakeFunc.cpp
   GamesFMOParser.cpp
-  VSVBParser.cpp
   QPParser.cpp
   LCAOH5Parser.cpp
 )
@@ -59,10 +58,6 @@ FOREACH(p ${QTOOLS})
   FOREACH(l ${QMC_UTIL_LIBS})
     TARGET_LINK_LIBRARIES(${p} ${l})
   ENDFOREACH(l ${QMC_UTIL_LIBS})
-
-  if(ENABLE_TAU_PROFILE)
-    TARGET_LINK_LIBRARIES(${p} tau)
-  endif(ENABLE_TAU_PROFILE)
 
   IF(MPI_LIBRARY)
     TARGET_LINK_LIBRARIES(${p} ${MPI_LIBRARY})

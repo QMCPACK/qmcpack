@@ -517,12 +517,12 @@ except:
 # get labels from known sets
 try:
     labels = []
-    for label,label_set in positive_label_sets.iteritems():
+    for label,label_set in positive_label_sets.items():
         if test in label_set or full_test in label_set:
             labels.append(label)
         #end if
     #end for
-    for label,label_set in negative_label_sets.iteritems():
+    for label,label_set in negative_label_sets.items():
         if test not in label_set and full_test not in label_set:
             labels.append(label)
         #end if
