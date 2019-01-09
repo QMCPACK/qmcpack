@@ -12,10 +12,8 @@
   <qmc method="vmc" move="pbyp" checkpoint="-1" gpu="no">
     <parameter name="blocks">100</parameter>
     <parameter name="steps">500</parameter>
-    <parameter name="samples">10000</parameter>
     <parameter name="warmupsteps">100</parameter>
     <parameter name="timestep">0.05</parameter>
-  
     <parameter name="useDrift">yes</parameter>
   </qmc>
 
