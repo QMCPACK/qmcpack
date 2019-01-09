@@ -400,9 +400,11 @@ public:
     kDelay=k;
     if (kDelay<0)
     {
-      app_log() << "  Warning: Specified negative delayed updates k = " << k << ", setting to zero." << std::endl;
+      app_log() << "  Warning: Specified negative delayed updates k = " << k << ", setting to zero (no delay)." << std::endl;
       kDelay=0;
     }
+    if (kDelay==1)
+      kDelay=0; // use old algorithm as additional overhead for k=1 is not doing anything useful outside of code development
     kblocksize=1;
     kblock=0;
     kcurr=0;

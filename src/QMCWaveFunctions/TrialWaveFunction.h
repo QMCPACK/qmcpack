@@ -356,6 +356,7 @@ private:
   gpu::device_host_vector<CTS::ValueType>   GPUratios;
   gpu::device_host_vector<CTS::GradType>    GPUgrads;
   gpu::device_host_vector<CTS::ValueType>   GPUlapls;
+  int ndelay;
 
 public:
   void freeGPUmem GPU_XRAY_TRACE ();
@@ -451,6 +452,16 @@ public:
                             RealMatrix_t &dlogpsi,
                             RealMatrix_t &dhpsioverpsi);
 
+
+  void setndelay GPU_XRAY_TRACE (int delay)
+  {
+    ndelay=delay;
+  }
+
+  int getndelay GPU_XRAY_TRACE ()
+  {
+    return ndelay;
+  }
 #endif
 
 
