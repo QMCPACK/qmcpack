@@ -570,10 +570,10 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   aAttrib.put(cur);
 #ifdef QMC_CUDA
   W.setkDelay(kDelay);
-  kDelay=W.getkDelay(); // in case number is sanitized
 #else // ignore for CPU (in other words, do not use this code path)
   W.setkDelay(0);
 #endif
+  kDelay=W.getkDelay(); // in case number is sanitized
   if(cur != NULL)
   {
     //initialize the parameter set
