@@ -97,6 +97,7 @@ reference_code_hashes = obj(
     r6361       = 'deaca41a22cf0cbd4f76d1fd467a7b873ca9c0df', # JTK
     r7115       = 'aab82c60cd3d124a8a5cb9ee38d7ebceb9a689e8', # PK
     r7309       = 'd9825b9402c580ef6bbf9fea4585cd4f04425eda', # YL
+    v300        = '0d4d897bf55776caa4dec1a9e4c60a77e2c1c807', # PK
     v300_170319 = '25fb25a4a0fb2e0ca8e8e2405b96b8e0080d9c80', # YL
     v300_170407 = 'cdd68c9a77a1c44e1d7e7ddb9e53055a284e2126', # RC
     v300_170524 = 'dc06dbd3d600b43daa2dba64c7e5e668327532a4', # PY
@@ -213,7 +214,7 @@ reference_code_tests = obj(
         short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
         short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
         '''.split(),
-    v300_170524 = ''',
+    v300_170524 = '''
         short-bccH_1x1x1_ae-vmc-all_sdj
         short-bccH_1x1x1_ae-dmc-all_sdj
         short-bccH_1x1x1_ae-vmc-all-nodrift_sdj
@@ -317,14 +318,25 @@ for code,test_list in reference_code_tests.iteritems():
 #end for
 
 
-def get_reference_code(short_test):
+def get_reference_code(short_test,hash=False):
+    hash_ = hash
     test_name = short_test.sname
     if test_name not in reference_code_by_test:
         code = 'missing'
+        hash = None
     else:
         code = reference_code_by_test[test_name]
+        c = code
+        for k in build_type_map.keys():
+            c = c.replace('_'+k,'')
+        #end for
+        hash = reference_code_hashes[c]
     #end if
-    return code
+    if not hash_:
+        return code
+    else:
+        return code,hash
+    #end if
 #end def get_reference_code
 
 
@@ -582,13 +594,16 @@ def read_command_line():
 # parse_qmcpack_cmakelists and sub-functions #
 #============================================#
 
+non_short_tests = []
+
 def parse_scalar_test(text,ref_lists):
     text = text.replace('QMC_RUN_AND_CHECK','').strip().strip('()')
     tokens = text.split()
-    name = tokens[0]
+    name = tokens[0].strip('"')
 
     #check that the test is actually short
     if not name.startswith('short'):
+        non_short_tests.append(name)
         return None
     elif not name.startswith('short-'):
         error('short test name misformatted in QMCPACK\nname should start with "short-"\ntest name: '+name)
@@ -618,10 +633,11 @@ def parse_scalar_test(text,ref_lists):
 def parse_stat_test(text):
     text = text.replace('SIMPLE_RUN_AND_CHECK','').strip().strip('()')
     tokens = text.split()
-    name = tokens[0]
+    name = tokens[0].strip('"')
 
     #check that the test is actually short
     if not name.startswith('short'):
+        non_short_tests.append(name)
         return None
     elif not name.startswith('short-'):
         error('short test name misformatted in QMCPACK\nname should start with "short-"\ntest name: '+name)
@@ -744,7 +760,31 @@ def parse_qmcpack_cmakelists():
             #end if
         #end for
     #end for
-    
+
+    vlog('\ntests found:',n=1)
+    tests_found = []
+    for st in short_tests:
+        tests_found.append(st.sname)
+    #end for
+    tests_found = sorted(tests_found)
+    for t in tests_found:
+        vlog(t,n=2)
+    #end for
+
+    vlog('\ntests ignored (not short or long)',n=1)
+    for t in non_short_tests:
+        if not t.startswith('long'):
+            vlog(t,n=2)
+        #end if
+    #end for
+
+    vlog('\ntests not found:',n=1)
+    tests_with_ref_code = set(reference_code_by_test.keys())
+    tests_not_found = tests_with_ref_code - set(tests_found)
+    for t in tests_not_found:
+        vlog(t,n=2)
+    #end for
+
     return short_tests
 #end def parse_qmcpack_cmakelists
 
@@ -1488,8 +1528,9 @@ def analyze_tests(short_tests):
     sref_full = '' # string for full reference data file write
     scomp += '# {0:<44}  {1:<4}   {2:<15}    {3:<18}  {4:<18}  {5:<18}  {6:<18}  {7:<18}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_short_err','ctest_mean','ctest_short_err')
     sref += '# {0:<44}  {1:<4}   {2:<15}    {3:<18}  {4:<18}  {5:<12}  {6:<18}  {7:<12}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_steps','short_err','short_steps')
-    sref_full += '# {0:<44}  {1:<4}   {2:<15}    {3:<28}  {4:<28}  {5:<12}  {6:<28}  {7:<12}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_steps','short_err','short_steps')
+    sref_full += '# {0:<44}  {1:<4}   {2:<15}    {3:^28}  {4:^28}  {5:<12}  {6:^28}  {7:<12}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_steps','short_err','short_steps')
     tests = sorted(short_tests.keys())
+    tests_analyzed = []
     for t in tests:
         st = short_tests[t]
         # only analyze tests included by request
@@ -1568,9 +1609,12 @@ def analyze_tests(short_tests):
 
             # postprocess all reference data with qmca
             if data_status=='complete':
+                tests_analyzed.append(t)
+                ref_code,ref_code_hash = get_reference_code(st,hash=True)
                 scomp += '\n'
                 sref  += '\n'
                 sref_full += '\n'
+                sref_full += '# ref_code: {0:<20}  ref_code_hash: {1}\n'.format(ref_code,ref_code_hash)
                 # compare old and new ref data for each series
                 for series in sorted(st.refdata.keys()):
                     old_refdata = st.refdata[series]
@@ -1620,7 +1664,7 @@ def analyze_tests(short_tests):
                             target_err = 0.0
                         else:
                             nsigma = abs(dval)/err_new
-                            target_err = err_factor*err_new
+                            target_err = sqrt(1.0+err_factor**2)*err_new
                             relerr = abs(err_old-target_err)/target_err
                             vlog('{0:<15} series {1}   nsigma diff {2:3.2f}  errorbar relerr {3:3.2f}'.format(q,series,nsigma,relerr),n=2)
                         #end if
@@ -1639,7 +1683,7 @@ def analyze_tests(short_tests):
                     for q in qmcpack_quantity_order:
                         if q in new_refdata_full:
                             val_new,err_new = new_refdata_full[q]
-                            target_err = err_factor*err_new
+                            target_err = sqrt(1.0+err_factor**2)*err_new
                             sref_full += ' {0:<50}  {1:<2}  {2:<15}  {3: 28.12f}  {4: 28.12f}    {5:<12}{6: 28.12f}    {7:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old)
                         #end if
                     #end for
@@ -1664,6 +1708,22 @@ def analyze_tests(short_tests):
     f = open('./scalar_reference_full.dat','w')
     f.write(sref_full)
     f.close()
+
+
+    vlog('\n')
+    vlog('tests analyzed:',n=1)
+    for t in tests_analyzed:
+        vlog(t,n=2)
+    #end for
+
+    vlog('\n')
+    vlog('tests not analyzed:',n=1)
+    for t in tests:
+        st = short_tests[t]
+        if st.type=='scalar' and t not in tests_analyzed:
+            vlog(t,n=2)
+        #end if
+    #end for
 
 #end def analyze_tests
 
