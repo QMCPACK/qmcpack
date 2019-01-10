@@ -8,7 +8,7 @@ from nexus import generate_qmcpack,vmc
 from structure import *
 
 settings(
-    pseudo_dir    = '../pseudopotentials',
+    pseudo_dir    = './pseudopotentials',
     status_only   = 0,
     generate_only = 0,
     sleep         = 3,

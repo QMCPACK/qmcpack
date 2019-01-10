@@ -4416,13 +4416,23 @@ try:
         version = [int(i) for i in version.split('.')]
         if len(version) < 3:
             raise ValueError
+        #end if
     except ValueError:
         raise ValueError("Unable to parse version number")
-
+    #end try
     if tuple(version) < (1, 8, 3):
         raise ValueError("Invalid seekpath version, need >= 1.8.4")
-    
-    def _getseekpath(structure=None, with_time_reversal=False, recipe='hpkot', reference_distance=0.025, threshold=1E-7, symprec=1E-5, angle_tolerance=1.0):
+    #end if
+
+    def _getseekpath(
+        structure          = None, 
+        with_time_reversal = False, 
+        recipe             = 'hpkot', 
+        reference_distance = 0.025, 
+        threshold          = 1E-7, 
+        symprec            = 1E-5, 
+        angle_tolerance    = 1.0,
+        ):
 	if not isinstance(structure, Structure):
             raise TypeError('structure is not of type Structure')
         #end if
@@ -4436,9 +4446,13 @@ try:
         #end if
         cell = (structure.axes, structure.get_scaled_positions(), structure.get_atomic_numbers())
         return get_explicit_k_path(cell)
-        
-    #end def get_explicit_kpath
-    def get_conventional_cell(structure=None, symprec = 1E-5, angle_tolerance=1.0):
+    #end def _getseekpath
+
+    def get_conventional_cell(
+        structure       = None, 
+        symprec         = 1E-5, 
+        angle_tolerance = 1.0,
+        ):
         seekpathout = _getseekpath(structure=structure, symprec = symprec, angle_tolerance=angle_tolerance)
         axes        = seekpathout['conv_lattice']
         enumbers    = seekpathout['conv_types']
@@ -4455,8 +4469,13 @@ try:
             raise ValueError("Invalid background charge for conventional structure")
         #end if
         return {'structure': Structure(axes=axes, elem=elem, pos=pos, background_charge = bcharge, units='A')}
-    #end def get_explicit_kpath
-    def get_primitive_cell(structure=None, symprec=1E-5, angle_tolerance=1.0):
+    #end def get_conventional_cell
+
+    def get_primitive_cell(
+        structure       = None, 
+        symprec         = 1E-5, 
+        angle_tolerance = 1.0,
+        ):
         seekpathout = _getseekpath(structure = structure, symprec = symprec, angle_tolerance=angle_tolerance)
         axes        = seekpathout['primitive_lattice']
         enumbers    = seekpathout['primitive_types']
@@ -4472,8 +4491,17 @@ try:
         return {'structure' : Structure(axes=axes, elem=elem, pos=pos, background_charge=bcharge, units='A'),
                 'T'         : seekpathout['primitive_transformation_matrix']}
     #end def get_primitive_cell
-    def get_kpath(structure=None, check_standard=True, with_time_reversal=False, recipe='hpkot',
-                  reference_distance=0.025, threshold=1E-7, symprec=1E-5, angle_tolerance=1.0):
+
+    def get_kpath(
+        structure          = None, 
+        check_standard     = True, 
+        with_time_reversal = False, 
+        recipe             = 'hpkot',
+        reference_distance = 0.025, 
+        threshold          = 1E-7, 
+        symprec            = 1E-5, 
+        angle_tolerance    = 1.0,
+        ):
         seekpathout = _getseekpath(structure=structure, symprec = symprec, angle_tolerance=angle_tolerance,
                                    recipe=recipe, reference_distance=reference_distance, with_time_reversal=with_time_reversal)
 	if check_standard:
@@ -4493,7 +4521,12 @@ try:
                 'explicit_path_linearcoords': seekpathout['explicit_kpoints_linearcoord'],
                 'point_coords'              : seekpathout['point_coords']}
     #end def get_kpath
-    def get_symmetry(structure          = None, symprec = 1E-5, angle_tolerance=1.0):
+
+    def get_symmetry(
+        structure       = None, 
+        symprec         = 1E-5, 
+        angle_tolerance = 1.0
+        ):
         seekpathout = _getseekpath(structure = structure, symprec = symprec, angle_tolerance=angle_tolerance)
         sgint       = seekpathout['spacegroup_international']
         bravais     = seekpathout['bravais_lattice']
@@ -4502,7 +4535,16 @@ try:
 
         return {'sgint': sgint, 'bravais': bravais, 'inv_sym_exists': invsym, 'sgnum': sgnum}
     #end def get_symmetry
-    def get_structure_with_bands(cell=0, structure=None, with_time_reversal=False,reference_distance=0.025, threshold=1E-7, symprec=1E-5, angle_tolerance=1.0):
+
+    def get_structure_with_bands(
+        cell               = 0, 
+        structure          = None, 
+        with_time_reversal = False,
+        reference_distance = 0.025, 
+        threshold          = 1E-7, 
+        symprec            = 1E-5, 
+        angle_tolerance    = 1.0,
+        ):
         if cell == 0:
             ''' Use input structure '''
             struct_band = structure.copy()
@@ -4522,8 +4564,16 @@ try:
                          background_charge = struct_band.background_charge,
                          kpoints           = kpath['explicit_kpoints_rel'],
                          units             = 'A')
-    #end def band_physical_system
-    def get_band_tiling(structure = None, check_standard = True, use_ktol = True, kpoints_label = None, kpoints_rel = None, max_volfac = 20):
+    #end def get_structure_with_bands
+
+    def get_band_tiling(
+        structure      = None, 
+        check_standard = True, 
+        use_ktol       = True, 
+        kpoints_label  = None, 
+        kpoints_rel    = None, 
+        max_volfac     = 20,
+        ):
         import numpy as np
         import itertools
         import pdb
@@ -4694,7 +4744,7 @@ try:
         return t_int.tolist()
     #end def get_band_tiling
 except:
-     get_path = unavailable('seekpath','get_path')
+     get_conventional_cell,get_primitive_cell,get_kpath,get_symmetry,get_structure_with_bands,get_band_tiling = unavailable('seekpath','get_conventional_cell','get_primitive_cell','get_kpath','get_symmetry','get_structure_with_bands','get_band_tiling')
 #end try
 
 
