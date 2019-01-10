@@ -119,7 +119,13 @@ For example, one can use pymatgen, \cite{Ong2013} XCRYSDEN \cite{Kokalj1999} or 
 Figure \ref{fig:lab_ex_xcrysden} shows the procedure for visualizing the Brillouin Zone using XCRYSDEN after the structure file is loaded. 
 However, the primitive cell is not unique, and the actual shape of the BZ can depend on the structure used. 
 In our example, we use the python libraries of SeeK-path, using a wrapper written in Nexus. 
-SeeK-path includes routines to standardize primitive cells, which will be useful for our work. 
+SeeK-path includes routines to standardize primitive cells, which will be useful for our work.
+
+SeeK-path can be installed easily using \texttt{pip}:
+\begin{shade}
+>pip install --user seekpath
+\end{shade}
+ 
 In the \texttt{band.py} script, identification of high symmetry k-points and band structure calculations are done within the workflow. 
 In the script, where the \texttt{dia} PhysicalSystem object is used as the input structure, \texttt{dia2\_structure} is the standardized primitive cell and \texttt{dia2\_kpath} is the respective k-path around the iBZ. 
 \texttt{dia2\_kpath} has a dictionary of the k-path in various coordinate systems, please make sure you are using the right one. 
