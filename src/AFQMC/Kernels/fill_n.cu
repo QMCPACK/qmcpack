@@ -19,7 +19,7 @@
 #include <thrust/device_ptr.h>
 #include <thrust/fill.h>
 #define QMC_CUDA 1
-#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.h"
 //#include "AFQMC/Kernels/strided_range.hpp"
 
 namespace kernels 

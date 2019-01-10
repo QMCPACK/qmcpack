@@ -80,7 +80,7 @@ MultiArray2D getri(MultiArray2D&& A, MultiArray1D const& IPIV, Buffer&& WORK){
 }
 
 template<class MultiArray2D>
-int geqrf_optimal_workspace_size(MultiArray2D const& A){
+int geqrf_optimal_workspace_size(MultiArray2D & A){
 	assert(A.strides()[0] > 0);
 	assert(A.strides()[1] == 1);
 
@@ -110,7 +110,7 @@ MultiArray2D geqrf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 }
 
 template<class MultiArray2D>
-int gelqf_optimal_workspace_size(MultiArray2D const& A){
+int gelqf_optimal_workspace_size(MultiArray2D & A){
 	assert(A.strides()[0] > 0);
 	assert(A.strides()[1] == 1);
 
@@ -139,7 +139,7 @@ MultiArray2D gelqf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 
 
 template<class MultiArray2D>
-int gqr_optimal_workspace_size(MultiArray2D const& A){
+int gqr_optimal_workspace_size(MultiArray2D & A){
 	assert(A.strides()[0] > 0);
 	assert(A.strides()[1] == 1);
 
@@ -169,7 +169,7 @@ MultiArray2D gqr(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 }
 
 template<class MultiArray2D>
-int glq_optimal_workspace_size(MultiArray2D const& A){
+int glq_optimal_workspace_size(MultiArray2D & A){
 	assert(A.strides()[0] > 0);
 	assert(A.strides()[1] == 1);
 

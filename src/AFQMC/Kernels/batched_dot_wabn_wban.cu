@@ -19,7 +19,7 @@
 #include<cuda_runtime.h>
 #include "AFQMC/Kernels/cuda_settings.h"
 #define QMC_CUDA 1
-#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #if __CUDA_ARCH__ < 600
 #include "AFQMC/Kernels/myAtomicAdd.cu"
 #endif

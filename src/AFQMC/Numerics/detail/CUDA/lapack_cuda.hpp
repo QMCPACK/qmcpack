@@ -195,7 +195,7 @@ namespace qmc_cuda
            class ptrW,
            typename = typename std::enable_if_t< (ptr::memory_type != GPU_MEMORY_POINTER_TYPE) > 
           >
-  inline static void getri(int n, ptr a, int n0, ptrI piv, ptrW work, int& n1, int& status)
+  inline static void getri(int n, ptr a, int n0, ptrI piv, ptrW work, int n1, int& status)
   {
     using ma::getri;
     getri(n, to_address(a), n0, to_address(piv), to_address(work), n1, status);
@@ -208,13 +208,8 @@ namespace qmc_cuda
            typename = typename std::enable_if_t< (ptr::memory_type == GPU_MEMORY_POINTER_TYPE)>,
            typename = void
           >
-  inline static void getri(int n, ptr a, int lda, ptrI piv, ptrW work, int& n1, int& status)
+  inline static void getri(int n, ptr a, int lda, ptrI piv, ptrW work, int n1, int& status)
   {
-    if(n1==-1) {
-      n1 = n*n;  
-      status=0;  
-      return;
-    }
     if(n1 < n*n)
       throw std::runtime_error("Error: getri<GPU_MEMORY_POINTER_TYPE> required buffer space of n*n."); 
     if(lda != n)
@@ -302,9 +297,30 @@ namespace qmc_cuda
 
   // geqrf
   template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type != GPU_MEMORY_POINTER_TYPE) >
+          >
+  inline static void geqrf_bufferSize (int m, int n, ptr a, int lda, int& lwork)
+  {
+    using ma::geqrf_bufferSize;
+    geqrf_bufferSize(m, n, to_address(a), lda, lwork); 
+  }
+
+
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type == GPU_MEMORY_POINTER_TYPE) >,
+           typename = void
+          >
+  inline static void geqrf_bufferSize (int m, int n, ptr a, int lda, int& lwork)
+  {
+    if(CUSOLVER_STATUS_SUCCESS != cusolver::cusolver_geqrf_bufferSize(*a.handles.cusolverDn_handle,
+                m, n, to_address(a), lda, &lwork))
+      throw std::runtime_error("Error: cusolver_geqrf_bufferSize returned error code.");
+  }
+
+  template<class ptr,
            typename = typename std::enable_if_t< (ptr::memory_type != GPU_MEMORY_POINTER_TYPE) > 
           >
-  inline static void geqrf(int M, int N, ptr A, const int LDA, ptr TAU, ptr WORK, int &LWORK, int& INFO) 
+  inline static void geqrf(int M, int N, ptr A, const int LDA, ptr TAU, ptr WORK, int LWORK, int& INFO) 
   {
     using ma::geqrf;
     geqrf(M, N, to_address(A), LDA, to_address(TAU), to_address(WORK), LWORK, INFO);
@@ -314,10 +330,156 @@ namespace qmc_cuda
            typename = typename std::enable_if_t< (ptr::memory_type == GPU_MEMORY_POINTER_TYPE) >,
            typename = void
           >
-  inline static void geqrf(int M, int N, ptr A, const int LDA, ptr TAU, ptr WORK, int &LWORK, int& INFO) 
+  inline static void geqrf(int M, int N, ptr A, const int LDA, ptr TAU, ptr WORK, int LWORK, int& INFO) 
   {
-    throw std::runtime_error("Error: geqrf not implemented in gpu.");
+    // allocating here for now
+    int* piv;
+    if(cudaSuccess != cudaMalloc ((void**)&piv,sizeof(int))) {
+      std::cerr<<" Error geqrf: Error allocating on GPU." <<std::endl;
+      throw std::runtime_error("Error: cudaMalloc returned error code.");
+    }
+    
+    cusolverStatus_t status = cusolver::cusolver_geqrf(*A.handles.cusolverDn_handle, M, N,
+                   to_address(A), LDA, to_address(TAU), to_address(WORK), LWORK, piv);
+    cudaMemcpy(&INFO,piv,sizeof(int),cudaMemcpyDeviceToHost);
+    if(CUSOLVER_STATUS_SUCCESS != status) {
+      int st;
+      std::cerr<<" cublas_getrf status, info: " <<status <<" " <<INFO <<std::endl; std::cerr.flush();
+      throw std::runtime_error("Error: cublas_geqrf returned error code.");
+    }
+    cudaFree(piv);
   }
+
+
+  // gelqf
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type != GPU_MEMORY_POINTER_TYPE) >
+          >
+  inline static void gelqf_bufferSize (int m, int n, ptr a, int lda, int& lwork)
+  {
+    using ma::gelqf_bufferSize;
+    gelqf_bufferSize(m, n, to_address(a), lda, lwork);
+  }
+
+
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type == GPU_MEMORY_POINTER_TYPE) >,
+           typename = void
+          >
+  inline static void gelqf_bufferSize (int m, int n, ptr a, int lda, int& lwork)
+  {
+      throw std::runtime_error("Error: gelqf_bufferSize not implemented in CUDA backend. \n"); 
+  }
+
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type != GPU_MEMORY_POINTER_TYPE) >
+          >
+  inline static void gelqf(int M, int N, ptr A, const int LDA, ptr TAU, ptr WORK, int LWORK, int& INFO)
+  {
+    using ma::gelqf;
+    gelqf(M, N, to_address(A), LDA, to_address(TAU), to_address(WORK), LWORK, INFO);
+  }
+
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type == GPU_MEMORY_POINTER_TYPE) >,
+           typename = void
+          >
+  inline static void gelqf(int M, int N, ptr A, const int LDA, ptr TAU, ptr WORK, int LWORK, int& INFO)
+  {
+      throw std::runtime_error("Error: gelqf not implemented in CUDA backend. \n"); 
+  }
+
+ // gqr
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type != GPU_MEMORY_POINTER_TYPE) >
+          >
+  static void gqr_bufferSize (int m, int n, int k, ptr a, int lda, int& lwork)
+  {
+    using ma::gqr_bufferSize;
+    gqr_bufferSize(m, n, k, to_address(a), lda, lwork);
+  }
+
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type == GPU_MEMORY_POINTER_TYPE) >,
+           typename = void
+          >
+  static void gqr_bufferSize (int m, int n, int k, ptr a, int lda, int& lwork)
+  {
+    if(CUSOLVER_STATUS_SUCCESS != cusolver::cusolver_gqr_bufferSize(*a.handles.cusolverDn_handle,
+                                            m,n,k,to_address(a),lda,&lwork))
+      throw std::runtime_error("Error: cusolver_gqr_bufferSize returned error code.");
+  }
+
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type != GPU_MEMORY_POINTER_TYPE) >
+          >
+  void static gqr(int M, int N, int K, ptr A, const int LDA, ptr TAU, ptr WORK, int LWORK, int& INFO)
+  {
+    using ma::gqr;
+    gqr(M, N, K, to_address(A), LDA, to_address(TAU), to_address(WORK), LWORK, INFO);
+  }
+
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type == GPU_MEMORY_POINTER_TYPE) >,
+           typename = void
+          >
+  void static gqr(int M, int N, int K, ptr A, const int LDA, ptr TAU, ptr WORK, int LWORK, int& INFO)
+  {
+    // allocating here for now
+    int* piv;
+    if(cudaSuccess != cudaMalloc ((void**)&piv,sizeof(int))) {
+      std::cerr<<" Error gqr: Error allocating on GPU." <<std::endl;
+      throw std::runtime_error("Error: cudaMalloc returned error code.");
+    }
+
+    cusolverStatus_t status = cusolver::cusolver_gqr(*A.handles.cusolverDn_handle, M, N, K,
+                   to_address(A), LDA, to_address(TAU), to_address(WORK), LWORK, piv);
+    cudaMemcpy(&INFO,piv,sizeof(int),cudaMemcpyDeviceToHost);
+    if(CUSOLVER_STATUS_SUCCESS != status) {
+      int st;
+      std::cerr<<" cublas_getrf status, info: " <<status <<" " <<INFO <<std::endl; std::cerr.flush();
+      throw std::runtime_error("Error: cublas_gqr returned error code.");
+    }
+    cudaFree(piv);
+  }
+
+  // glq 
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type != GPU_MEMORY_POINTER_TYPE) >
+          >
+  static void glq_bufferSize (int m, int n, int k, ptr a, int lda, int& lwork)
+  {
+    using ma::glq_bufferSize;
+    glq_bufferSize(m, n, k, to_address(a), lda, lwork);
+  }
+
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type == GPU_MEMORY_POINTER_TYPE) >,
+           typename = void
+          >
+  static void glq_bufferSize (int m, int n, int k, ptr a, int lda, int& lwork)
+  {
+      throw std::runtime_error("Error: glq not implemented in CUDA backend. \n"); 
+  }
+
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type != GPU_MEMORY_POINTER_TYPE) >
+          >
+  void static glq(int M, int N, int K, ptr A, const int LDA, ptr TAU, ptr WORK, int LWORK, int& INFO)
+  {
+    using ma::glq;
+    glq(M, N, K, to_address(A), LDA, to_address(TAU), to_address(WORK), LWORK, INFO);
+  }
+
+  template<class ptr,
+           typename = typename std::enable_if_t< (ptr::memory_type == GPU_MEMORY_POINTER_TYPE) >,
+           typename = void
+          >
+  void static glq(int M, int N, int K, ptr A, const int LDA, ptr TAU, ptr WORK, int LWORK, int& INFO)
+  {
+      throw std::runtime_error("Error: glq not implemented in CUDA backend. \n"); 
+  }
+
 
 }
 

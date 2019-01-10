@@ -21,7 +21,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/uninitialized_fill.h>
 #define QMC_CUDA 1
-#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.h"
 //#include "AFQMC/Kernels/strided_range.hpp"
 
 namespace kernels 

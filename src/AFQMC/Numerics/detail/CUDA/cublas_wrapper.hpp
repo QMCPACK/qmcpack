@@ -18,7 +18,7 @@
 #include<cassert>
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
-#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace cublas {
 
@@ -745,8 +745,16 @@ namespace cublas {
     return sucess;
   }
 
-
-
+/*
+cublasStatus_t cublasDgeqrfBatched( cublasHandle_t handle, 
+                                    int m, 
+                                    int n,
+                                    double *Aarray[],  
+                                    int lda, 
+                                    double *TauArray[],                                                         
+                                    int *info,
+                                    int batchSize);
+*/
 
 
 }

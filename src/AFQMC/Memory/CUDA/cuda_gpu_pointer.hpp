@@ -20,7 +20,7 @@
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
 #include "cublasXt.h"
-#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #include "AFQMC/Kernels/fill_n.cuh"
 #include "AFQMC/Kernels/uninitialized_fill_n.cuh"
 #include "AFQMC/Kernels/copy_n_cast.cuh"
@@ -28,28 +28,32 @@
 
 namespace qmc_cuda {
 
+struct base_cuda_gpu_ptr
+{
+  static gpu_handles handles;
+};
+
 template<class T>
-struct cuda_gpu_ptr{
+struct cuda_gpu_ptr: base_cuda_gpu_ptr{
   using value_type = T;
   using const_value_type = T const;
   using pointer = T*;
   using const_pointer = T const*;
   static const int memory_type = GPU_MEMORY_POINTER_TYPE; 
   T* impl_;
-  qmc_cuda::gpu_handles handles;
   cuda_gpu_ptr() = default;
-  cuda_gpu_ptr(T* impl__, qmc_cuda::gpu_handles handles_ = qmc_cuda::gpu_handles{}):
-                         impl_(impl__),handles(handles_) {}
+  cuda_gpu_ptr(T* impl__):
+                         impl_(impl__) {}
 // eventually check if memory types and blas types are convertible, e.g. CPU_MEMORY to CPU_OUTOFCARD
   template<typename Q,
            typename = typename std::enable_if_t<cuda_gpu_ptr<Q>::memory_type == memory_type>
               >
-  cuda_gpu_ptr(cuda_gpu_ptr<Q> const& ptr):impl_(ptr.impl_),handles(ptr.handles) {}
+  cuda_gpu_ptr(cuda_gpu_ptr<Q> const& ptr):impl_(ptr.impl_) {}
   T& operator*() const{return *impl_;}
   T& operator[](std::ptrdiff_t n) const{return impl_[n];}
   T* operator->() const{return impl_;}
   explicit operator bool() const{return (impl_!=nullptr);}
-  auto operator+(std::ptrdiff_t n) const{return cuda_gpu_ptr{impl_ + n,handles};} 
+  auto operator+(std::ptrdiff_t n) const{return cuda_gpu_ptr{impl_ + n};} 
   std::ptrdiff_t operator-(cuda_gpu_ptr other) const{return std::ptrdiff_t(impl_-other.impl_);}
   cuda_gpu_ptr& operator++() {++impl_; return *this;} 
   cuda_gpu_ptr& operator--() {--impl_; return *this;} 
@@ -64,7 +68,7 @@ struct cuda_gpu_ptr{
   friend decltype(auto) to_address(cuda_gpu_ptr const& self){return self.to_address();}
   template<class Q>
   friend cuda_gpu_ptr<Q> pointer_cast(cuda_gpu_ptr const& self){
-    return cuda_gpu_ptr<Q>{reinterpret_cast<Q*>(self.impl_),self.handles};
+    return cuda_gpu_ptr<Q>{reinterpret_cast<Q*>(self.impl_)};
   }
 };
 
@@ -84,13 +88,11 @@ template<class T> struct cuda_gpu_allocator{
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
-  qmc_cuda::gpu_handles handles_;
-  cuda_gpu_allocator(qmc_cuda::gpu_handles handles__) : handles_(handles__) {}                        
-  cuda_gpu_allocator() = delete;
+  cuda_gpu_allocator() = default; 
   ~cuda_gpu_allocator() = default;
-  cuda_gpu_allocator(cuda_gpu_allocator const& other) : handles_(other.handles_) {}
+  cuda_gpu_allocator(cuda_gpu_allocator const& other) = default;
   template<class U>
-  cuda_gpu_allocator(cuda_gpu_allocator<U> const& other) : handles_(other.handles_) {}
+  cuda_gpu_allocator(cuda_gpu_allocator<U> const& other) {}
 
   cuda_gpu_ptr<T> allocate(size_type n, const void* hint = 0){
     if(n == 0) return cuda_gpu_ptr<T>{};
@@ -99,16 +101,16 @@ template<class T> struct cuda_gpu_allocator{
       std::cerr<<" Error allocating " <<n*sizeof(T)/1024.0/1024.0 <<" MBs on GPU." <<std::endl;
       throw std::runtime_error("Error: cudaMalloc returned error code."); 
     }
-    return cuda_gpu_ptr<T>{p,handles_};
+    return cuda_gpu_ptr<T>{p};
   }
   void deallocate(cuda_gpu_ptr<T> ptr, size_type){
     cudaFree(ptr.impl_); 
   }
   bool operator==(cuda_gpu_allocator const& other) const{
-    return (handles_ == other.handles_); 
+    return true; 
   }
   bool operator!=(cuda_gpu_allocator const& other) const{
-    return not (other == *this);
+    return false; 
   }
   template<class U, class... Args>
   void construct(U* p, Args&&... args){

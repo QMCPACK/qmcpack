@@ -16,9 +16,12 @@
 #include <complex>
 #include<cuda.h>
 #include <thrust/complex.h>
+#include <thrust/device_ptr.h>
+#include <thrust/device_malloc.h>
+#include <thrust/device_free.h>
 #include<cuda_runtime.h>
 #define QMC_CUDA 1
-#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace kernels 
 {
@@ -67,6 +70,31 @@ void determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *pi
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,piv,
                                     reinterpret_cast<thrust::complex<double> *>(res) );
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+double determinant_from_getrf_gpu(int N, double *m, int lda, int *piv)
+{
+  thrust::device_ptr<double> d_ptr = thrust::device_malloc<double>(1);
+  kernel_determinant_from_getrf<<<1,256>>>(N,m,lda,piv,thrust::raw_pointer_cast(d_ptr));
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  double res = *d_ptr;
+  thrust::device_free(d_ptr);
+  return res;
+}
+
+std::complex<double> determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *piv)
+{
+  std::complex<double> res;
+  thrust::device_ptr<thrust::complex<double>> d_ptr = thrust::device_malloc<thrust::complex<double>>(1);
+  kernel_determinant_from_getrf<<<1,256>>>(N,
+                                    reinterpret_cast<thrust::complex<double> *>(m),lda,piv,
+                                    thrust::raw_pointer_cast(d_ptr) );
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  cudaMemcpy(std::addressof(res),thrust::raw_pointer_cast(d_ptr),
+                sizeof(std::complex<double>),cudaMemcpyDeviceToHost);
+  thrust::device_free(d_ptr);
+  return res;
+  
 }
 
 }

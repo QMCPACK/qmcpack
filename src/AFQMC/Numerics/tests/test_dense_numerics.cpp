@@ -18,8 +18,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+//#define CATCH_CONFIG_MAIN
+//#include "catch.hpp"
+
+#include "Message/catch_mpi_main.hpp"
 #include "Configuration.h"
 
 // Always test the fallback code, regardless of MKL definition
@@ -32,32 +34,24 @@
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x; exit(0);}
 
-/*
-#if defined(QMC_CUDA)
-#include "cuda_runtime.h"
-#include "cublas_v2.h"
-#include "cublasXt.h"
-#include "cusolverDn.h"
-#include "multi/array.hpp"
-#include "multi/array_ref.hpp"
-#include "mpi3/communicator.hpp"
-#include "mpi3/shared_communicator.hpp"
-#include "AFQMC/Memory/custom_pointers.hpp"
-#endif
-*/
-
-#include "AFQMC/Matrix/tests/matrix_helpers.h"
-
-// Include the templates directly so all the needed types get instantiated
-//  and so the undef of HAVE_MKL has an effect
-#include "AFQMC/Numerics/ma_operations.hpp"
-
 #include <stdio.h>
 #include <string>
 #include <complex>
 #include <vector>
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
+
+#if defined(QMC_CUDA)
+#include "mpi3/communicator.hpp"
+#include "mpi3/shared_communicator.hpp"
+#include "AFQMC/Memory/custom_pointers.hpp"
+#endif
+
+#include "AFQMC/Matrix/tests/matrix_helpers.h"
+
+// Include the templates directly so all the needed types get instantiated
+//  and so the undef of HAVE_MKL has an effect
+#include "AFQMC/Numerics/ma_operations.hpp"
 
 using std::string;
 using std::complex;
@@ -396,7 +390,7 @@ TEST_CASE("dense_ma_operations", "[matrix_operations]")
 {
   test_dense_matrix_mult();
 }
-/*
+
 #if defined(QMC_CUDA)
 template<class Allocator>
 void test_dense_matrix_mult_device(Allocator alloc)
@@ -409,66 +403,386 @@ void test_dense_matrix_mult_device(Allocator alloc)
             4.,10.,12.,
             14.,16.,36.
     };
-    array_ref<T, 2> M(m.data(), {3,3});
     vector<T> x = {1.,2.,3.};
-    array_ref<T, 1> X(x.data(), extensions<1u>{x.size()});
     vector<T> y(3);
-    array_ref<T, 1> Y(y.data(), extensions<1u>{y.size()});
 
-    array<T,2,Allocator> M_dev({3,3},alloc);
+    array<T,2,Allocator> M({3,3},alloc);
+    array<T,1,Allocator> X(extensions<1u>{x.size()},alloc);
+    array<T,1,Allocator> Y(extensions<1u>{y.size()},alloc);
 
-    array<T,1,Allocator> X_dev(extensions<1u>{x.size()},alloc);
-    array<T,1,Allocator> Y_dev(extensions<1u>{x.size()},alloc);
+    copy_n(m.data(),m.size(),M.origin());
+    REQUIRE(M.num_elements() == m.size());
+    copy_n(x.data(),x.size(),X.origin());
+    REQUIRE(X.num_elements() == x.size());
+    REQUIRE(Y.num_elements() == y.size());
 
-    copy_n(M.origin(),M.num_elements(),M_dev.origin());
-    REQUIRE(M_dev.num_elements() == m.size());
-    copy_n(x.data(),x.size(),X_dev.origin());
-    REQUIRE(X_dev.num_elements() == x.size());
+    ma::product(M, X, Y); // Y := M X
 
-    ma::product(M_dev, X_dev, Y_dev); // Y := M X
-
-    REQUIRE(Y_dev.num_elements() == y.size());
-    copy_n(Y_dev.origin(),Y_dev.num_elements(),Y.origin());
+    array<T,1> Z(extensions<1u>{y.size()});
+    copy_n(Y.origin(),Y.num_elements(),Z.origin());
 
     vector<T> mx = {147., 60.,154.};
     array_ref<T, 1> MX(mx.data(), extensions<1u>{mx.size()});
-    verify_approx(MX, Y);
+    verify_approx(MX, Z);
   } 
+
+  {
+    vector<T> m = {
+            9.,24.,30., 2.,
+            4.,10.,12., 1.,
+            14.,16.,36., 20.
+    };
+    vector<T> x = {1.,2.,3., 4.};
+    vector<T> y(3);
+
+    array<T,2,Allocator> M({3,4},alloc);
+    array<T,1,Allocator> X(extensions<1u>{x.size()},alloc);
+    array<T,1,Allocator> Y(extensions<1u>{y.size()},alloc);
+
+    copy_n(m.data(),m.size(),M.origin());
+    REQUIRE(M.num_elements() == m.size());
+    copy_n(x.data(),x.size(),X.origin());
+    REQUIRE(X.num_elements() == x.size());
+    REQUIRE(Y.num_elements() == y.size());
+
+    ma::product(M, X, Y); // Y := M X
+
+    array<T,1> Z(extensions<1u>{y.size()});
+    copy_n(Y.origin(),Y.num_elements(),Z.origin());
+
+    vector<T> mx = {155., 64.,234.};
+    array_ref<T, 1> MX(mx.data(), extensions<1u>{mx.size()});
+    verify_approx( MX, Z );
+  }
+  {
+    vector<T> m = {
+            9.,24.,30., 2.,
+            4.,10.,12., 1.,
+            14.,16.,36., 20.
+    };
+    vector<T> x = {1.,2.,3.};
+    vector<T> y(4);
+
+    array<T,2,Allocator> M({3,4},alloc);
+    array<T,1,Allocator> X(extensions<1u>{x.size()},alloc);
+    array<T,1,Allocator> Y(extensions<1u>{y.size()},alloc);
+
+    copy_n(m.data(),m.size(),M.origin());
+    REQUIRE(M.num_elements() == m.size());
+    copy_n(x.data(),x.size(),X.origin());
+    REQUIRE(X.num_elements() == x.size());
+    REQUIRE(Y.num_elements() == y.size());
+
+    ma::product(ma::T(M), X, Y); // Y := M X
+
+    array<T,1> Z(extensions<1u>{y.size()});
+    copy_n(Y.origin(),Y.num_elements(),Z.origin());
+
+    vector<T> mx = {59., 92., 162., 64.};
+    array_ref<T, 1> MX(mx.data(), extensions<1u>{mx.size()});
+    verify_approx( MX, Z );
+  }
+
+
+  {
+    vector<T> m = {
+ 	9.,24.,30., 9.,
+	4.,10.,12., 7.,
+	14.,16.,36., 1.
+    };
+    vector<T> x = {1.,2.,3., 4.};
+    vector<T> y = {4.,5.,6.};
+
+    array<T,2,Allocator> M({3,4},alloc);
+    copy_n(m.data(),m.size(),M.origin());
+    REQUIRE(M.num_elements() == m.size());
+
+    array<T,1,Allocator> X(extensions<1u>{x.size()},alloc);
+    copy_n(x.data(),x.size(),X.origin()); 
+    REQUIRE(X.num_elements() == x.size());
+
+    array<T,1,Allocator> Y(extensions<1u>{y.size()},alloc);
+    REQUIRE(Y.num_elements() == y.size());
+
+    ma::product(M, X, Y); // Y := M X
+
+    array<T,1> Z(extensions<1u>{y.size()});
+    copy_n(Y.origin(),Y.num_elements(),Z.origin());
+
+    vector<T> y2 = {183., 88.,158.};
+    array_ref<T, 1> Y2(y2.data(), extensions<1u>{y2.size()});
+    verify_approx( Z, Y2 );
+  }
+
+  {
+    vector<T> m = {
+	1.,2.,1.,
+	2.,5.,8.,
+	1.,8.,9.
+    };
+    array<T,2,Allocator> M({3,3},alloc);
+    copy_n(m.data(),m.size(),M.origin()); 
+    REQUIRE(M.num_elements() == m.size());
+// not yet implemented in GPU
+//    REQUIRE( ma::is_hermitian(M) );
+  }
+  {
+    vector<T> m = {
+	1.,2.,1.,
+	2.,5.,8.,
+	1.,8.,9.
+    };
+    array<T,2,Allocator> M({3,3},alloc);
+    copy_n(m.data(),m.size(),M.origin());          
+    REQUIRE(M.num_elements() == m.size());
+
+    array_ref<T,2,typename Allocator::pointer> Mref(M.origin(),M.extensions());
+// not yet implemented in GPU
+//    REQUIRE( ma::is_hermitian(Mref) );
+  }
+  {
+    vector<T> a = {
+	1.,0.,1.,
+	3.,5.,8.,
+	4.,8.,9.
+    };
+    vector<T> b = {
+	6.,2.,8.,
+	9.,5.,5.,
+	1.,7.,9.
+    };
+
+    array<T,2,Allocator> A({3,3},alloc);
+    copy_n(a.data(),a.size(),A.origin());
+    REQUIRE(A.num_elements() == a.size());
+
+    array<T,2,Allocator> B({3,3},alloc);
+    copy_n(b.data(),b.size(),B.origin());
+    REQUIRE(B.num_elements() == b.size());
+
+    array<T,2,Allocator> D({3,3},alloc);
+    array<T, 2> C({3,3});
+
+    ma::product(A, B, D);
+    copy_n(D.origin(),D.num_elements(),C.origin());
+
+    vector<T> ab = {
+	7., 9., 17.,
+	71., 87., 121.,
+	105., 111., 153.
+    };
+    array_ref<T, 2> AB(ab.data(), {3,3});
+    verify_approx(C, AB);
+
+    ma::product(ma::N(A), ma::N(B), D);
+    copy_n(D.origin(),D.num_elements(),C.origin());
+    verify_approx(C, AB);
+
+    ma::product(ma::T(A), B, D);
+    copy_n(D.origin(),D.num_elements(),C.origin());
+    vector<T> atb = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+    array_ref<T, 2> AtB(atb.data(), {3,3});
+    verify_approx(C, AtB);
+
+    ma::product(A, ma::T(B), D);
+    copy_n(D.origin(),D.num_elements(),C.origin());
+    vector<T> abt = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
+    array_ref<T, 2> ABt(abt.data(), {3,3});
+    verify_approx(C, ABt);
+
+    ma::product(ma::T(A), ma::T(B), D);
+    copy_n(D.origin(),D.num_elements(),C.origin());
+    vector<T> atbt = {44., 44., 58., 74., 65., 107., 94., 94., 138.};
+    array_ref<T, 2> AtBt(atbt.data(), {3,3});
+    verify_approx(C, AtBt);
+
+    ma::product(ma::H(A), ma::T(B), D);
+    copy_n(D.origin(),D.num_elements(),C.origin());
+    vector<T> ahbt = {44., 44., 58., 74., 65., 107., 94., 94., 138.};
+    array_ref<T, 2> AhBt(ahbt.data(), {3,3});
+    verify_approx(C, AhBt);
+
+    ma::product(A, ma::H(B), D);
+    copy_n(D.origin(),D.num_elements(),C.origin());
+    vector<T> abh = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
+    array_ref<T, 2> ABh(abh.data(), {3,3});
+    verify_approx(C, ABh);
+
+  }
+
+  {
+    vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+    vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+
+    array<T,2,Allocator> A({3,3},alloc);
+    copy_n(a.data(),a.size(),A.origin());
+    REQUIRE(A.num_elements() == a.size());
+
+    array<T,2,Allocator> B({3,3},alloc);
+    copy_n(a.data(),a.size(),B.origin());
+    REQUIRE(B.num_elements() == a.size());
+
+    array<T,2,Allocator> I({3,3},alloc);
+
+    ma::invert(B);
+
+    ma::product(A, B, I);
+
+    array<T, 2> Id({3,3});
+    copy_n(I.origin(),I.num_elements(),Id.origin());
+
+    array_ref<T, 2> Id2(id.data(),{3,3});
+    verify_approx(Id, Id2);
+  }
+/* 
+ * No gelqf or glq on cusolver/cublas
+  {
+    vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+    vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+
+    array<T,2,Allocator> A({3,3},alloc);
+    copy_n(a.data(),a.size(),A.origin());
+    REQUIRE(A.num_elements() == a.size());
+
+    array<T,2,Allocator> I({3,3},alloc);
+
+    size_t sz =  std::max(ma::gelqf_optimal_workspace_size(A),
+                          ma::glq_optimal_workspace_size(A));
+    array<T,1,Allocator> WORK(extensions<1u>{sz},alloc);
+    array<T,1,Allocator> TAU(extensions<1u>{3},alloc);
+
+    ma::gelqf(A,TAU,WORK);
+    ma::glq(A,TAU,WORK);
+
+    ma::product(ma::H(A), A, I);
+
+    array<T, 2> Id({3,3});
+    copy_n(I.origin(),I.num_elements(),Id.origin());
+
+    array_ref<T, 2> Id2(id.data(),{3,3});
+    verify_approx(Id, Id2);
+  }
+  {
+    std::vector<T> WORK;
+    array<T,1> TAU(extensions<1u>{4});
+
+    vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
+    array_ref<T, 2> A(a.data(), {4,3});
+    REQUIRE(A.num_elements() == a.size());
+    WORK.resize( std::max(ma::gelqf_optimal_workspace_size(A),
+                                     ma::glq_optimal_workspace_size(A)) );
+    ma::gelqf(A,TAU,WORK);
+    ma::glq(A,TAU,WORK);
+
+    array<TId({3,3});
+    ma::set_identity(Id);
+
+    using ma::H;
+    array<T, 2> Id2({3,3});
+    ma::product(H(A), A, Id2);
+
+    verify_approx(Id, Id2);
+   }
+*/
+
+   {
+     vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+     vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+
+     array<T,2,Allocator> A({3,3},alloc);
+     copy_n(a.data(),a.size(),A.origin());
+     REQUIRE(A.num_elements() == a.size());
+
+     array<T,2,Allocator> Id({3,3},alloc);
+
+     size_t sz =  std::max(ma::geqrf_optimal_workspace_size(A),
+                          ma::gqr_optimal_workspace_size(A));
+     array<T,1,Allocator> WORK(extensions<1u>{sz},alloc);
+     array<T,1,Allocator> TAU(extensions<1u>{3},alloc);
+
+     ma::geqrf(A,TAU,WORK);
+     ma::gqr(A,TAU,WORK);
+
+     ma::product(ma::H(A), A, Id);
+
+     array<T, 2> I({3,3});
+     copy_n(Id.origin(),Id.num_elements(),I.origin());
+
+     array_ref<T, 2> Id2(id.data(),{3,3});
+     verify_approx(I, Id2);
+   }
+   {
+     vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
+     vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+
+     array<T,2,Allocator> A({3,4},alloc);
+     copy_n(a.data(),a.size(),A.origin());
+     REQUIRE(A.num_elements() == a.size());
+
+     array<T,2,Allocator> Id({3,3},alloc);
+
+     size_t sz =  std::max(ma::geqrf_optimal_workspace_size(A),
+                          ma::gqr_optimal_workspace_size(A));
+     array<T,1,Allocator> WORK(extensions<1u>{sz},alloc);
+     array<T,1,Allocator> TAU(extensions<1u>{3},alloc);
+
+     ma::geqrf(A,TAU,WORK);
+     ma::gqr(A,TAU,WORK);
+
+     ma::product(A, ma::H(A), Id);
+
+     array<T, 2> I({3,3});
+     copy_n(Id.origin(),Id.num_elements(),I.origin());
+
+     array_ref<T, 2> Id2(id.data(),{3,3});
+     verify_approx(I, Id2);
+   }
+   {
+     vector<T> a = {
+             9.,24.,30., 45.,
+             4.,10.,12., 12.
+     };
+     vector<T> at = {
+             9.,4.,
+             24.,10.,
+             30.,12.,
+             45.,12.
+     };
+
+     array<T,2,Allocator> A({2,4},alloc);
+     copy_n(a.data(),a.size(),A.origin());
+     REQUIRE(A.num_elements() == a.size());
+
+     array<T,2,Allocator> B({4,2},alloc);
+     ma::transpose(A,B);
+
+     array<T, 2> C({4,2});
+     copy_n(B.origin(),B.num_elements(),C.origin());
+
+     array_ref<T, 2> AT(at.data(),{4,2});
+     verify_approx( AT, C );
+   }
+
 }
 
 TEST_CASE("dense_ma_operations_device", "[matrix_operations]")
 {
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
+
+  qmc_cuda::CUDA_INIT(node);
 
   {
     using T = std::complex<double>;
     using Alloc = qmc_cuda::cuda_gpu_allocator<T>;
-    using qmc_cuda::cublas_check;
-    using qmc_cuda::curand_check;
-    using qmc_cuda::cusolver_check;
 
-    qmc_cuda::cuda_check(cudaSetDevice(world.rank()),"cudaSetDevice()");
-
-    cublasHandle_t cublas_handle;
-    cublasXtHandle_t cublasXt_handle;
-    cusolverDnHandle_t cusolverDn_handle;
-    cublas_check(cublasCreate (& cublas_handle ), "cublasCreate");
-    cublas_check(cublasXtCreate (& cublasXt_handle ), "cublasXtCreate");
-    int devID[8] {0,1,2,3,4,5,6,7};
-    cublas_check(cublasXtDeviceSelect(cublasXt_handle, 1, devID), "cublasXtDeviceSelect");
-    cublas_check(cublasXtSetPinningMemMode(cublasXt_handle, CUBLASXT_PINNING_ENABLED), "cublasXtSetPinningMemMode");
-//    cusolver_check(cusolverDnCreate (& cusolverDn_handle ), "cusolverDnCreate");
-
-    qmc_cuda::gpu_handles handles{&cublas_handle,&cublasXt_handle,&cusolverDn_handle};
-
-    Alloc gpu_alloc(handles);
+    Alloc gpu_alloc{};
  
     test_dense_matrix_mult_device<Alloc>(gpu_alloc);
   }
 }
 #endif
-*/
 
 }
 

@@ -21,8 +21,8 @@
 namespace kernels 
 {
 
-//double determinant_from_getrf_gpu(int N, double *m, int lda, int *piv);
-//std::complex<double> determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *piv);
+double determinant_from_getrf_gpu(int N, double *m, int lda, int *piv);
+std::complex<double> determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *piv);
 
 void determinant_from_getrf_gpu(int N, double *m, int lda, int *piv, double* res);
 void determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *piv, std::complex<double>* res);

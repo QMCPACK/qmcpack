@@ -18,7 +18,7 @@
 #include<cassert>
 #include <cuda_runtime.h>
 #include "cusolverDn.h"
-#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace cusolver {
 
@@ -355,6 +355,9 @@ namespace cusolver {
 
 
   //gqr_bufferSize
+// MAM: There is an inconsistency between the documentation online and the header files
+// in cuda.9.2.148 in the declaration of: cusolverDnXungqr_bufferSize and cusolverDnXorgqr_bufferSize
+//  I'm going to hack it right here, under the assumption that *tau is not used at all.
   inline cusolverStatus_t 
   cusolver_gqr_bufferSize(
     cusolverDnHandle_t handle,
@@ -363,11 +366,12 @@ namespace cusolver {
     int k,
     const float *A,
     int lda,
-    const float *tau,
     int *lwork)
   {
     cusolverStatus_t sucess =
-              cusolverDnSorgqr_bufferSize(handle,m,n,k,A,lda,tau,lwork);
+              cusolverDnSorgqr_bufferSize(handle,m,n,k,A,lda,A,lwork);
+// HACK 
+//              cusolverDnSorgqr_bufferSize(handle,m,n,k,A,lda,lwork);
     cudaDeviceSynchronize ();
     return sucess;
   }
@@ -380,11 +384,12 @@ namespace cusolver {
     int k,
     const double *A,
     int lda,
-    const double *tau,
     int *lwork)
   {
     cusolverStatus_t sucess =
-              cusolverDnDorgqr_bufferSize(handle,m,n,k,A,lda,tau,lwork);
+              cusolverDnDorgqr_bufferSize(handle,m,n,k,A,lda,A,lwork);
+// HACK 
+//              cusolverDnDorgqr_bufferSize(handle,m,n,k,A,lda,lwork);
     cudaDeviceSynchronize ();
     return sucess;
   }
@@ -397,12 +402,13 @@ namespace cusolver {
     int k,
     const std::complex<float> *A,
     int lda,
-    const std::complex<float> *tau,
     int *lwork)
   {
     cusolverStatus_t sucess =
               cusolverDnCungqr_bufferSize(handle,m,n,k,reinterpret_cast<cuComplex const *>(A),lda,  
-                                          reinterpret_cast<cuComplex const *>(tau),lwork);
+                                          reinterpret_cast<cuComplex const *>(A),lwork);
+// HACK 
+//                                          lwork);
     cudaDeviceSynchronize ();
     return sucess;
   }
@@ -415,12 +421,13 @@ namespace cusolver {
     int k,
     const std::complex<double> *A,
     int lda,
-    const std::complex<double> *tau,
     int *lwork)
   {
     cusolverStatus_t sucess =
               cusolverDnZungqr_bufferSize(handle,m,n,k,reinterpret_cast<cuDoubleComplex const*>(A),lda,
-                                          reinterpret_cast<cuDoubleComplex const *>(tau),lwork);
+                                          reinterpret_cast<cuDoubleComplex const*>(A),lwork);
+// HACK 
+//                                          lwork);
     cudaDeviceSynchronize ();
     return sucess;
   }
