@@ -26,6 +26,8 @@
 #include "AFQMC/Kernels/copy_n_cast.cuh"
 #include "AFQMC/Kernels/print.cuh"
 
+#include "multi/array_ref.hpp"
+
 namespace qmc_cuda {
 
 struct base_cuda_gpu_ptr
@@ -53,6 +55,7 @@ struct cuda_gpu_ptr: base_cuda_gpu_ptr{
   T& operator[](std::ptrdiff_t n) const{return impl_[n];}
   T* operator->() const{return impl_;}
   explicit operator bool() const{return (impl_!=nullptr);}
+  operator cuda_gpu_ptr<T const>() const{return cuda_gpu_ptr<T const>{impl_}; }
   auto operator+(std::ptrdiff_t n) const{return cuda_gpu_ptr{impl_ + n};} 
   std::ptrdiff_t operator-(cuda_gpu_ptr other) const{return std::ptrdiff_t(impl_-other.impl_);}
   cuda_gpu_ptr& operator++() {++impl_; return *this;} 
@@ -95,6 +98,7 @@ template<class T> struct cuda_gpu_allocator{
   cuda_gpu_allocator(cuda_gpu_allocator<U> const& other) {}
 
   cuda_gpu_ptr<T> allocate(size_type n, const void* hint = 0){
+std::cout<<" cuda_gpu_allocator::allocate " <<std::endl;
     if(n == 0) return cuda_gpu_ptr<T>{};
     T* p;
     if(cudaSuccess != cudaMalloc ((void**)&p,n*sizeof(T))) {
@@ -121,6 +125,7 @@ template<class T> struct cuda_gpu_allocator{
     //p->~U();
   }
 };
+
 
 /* Don't know how to implement this on the kernel side, without propagating the 
  * cuda code upstream due to the template needed to pass the UnaryOperator
@@ -150,6 +155,22 @@ T* copy_n(cuda_gpu_ptr<T> const A, Size n, T* B) {
   if(cudaSuccess != cudaMemcpy(B,to_address(A),n*sizeof(T),cudaMemcpyDefault))
    throw std::runtime_error("Error: cudaMemcpy returned error code.");
   return B+n;
+}
+
+/**************** copy *****************/
+template<typename T>
+cuda_gpu_ptr<T> copy(cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, cuda_gpu_ptr<T> B) {
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
+}
+
+template<typename T>
+cuda_gpu_ptr<T> copy(T* const Abeg, T* const Aend, cuda_gpu_ptr<T> B) {
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
+}
+
+template<typename T>
+T* copy(cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, T* B) {
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
 
 /**************** copy_n_cast *****************/
@@ -210,6 +231,44 @@ void print(std::string str, cuda_gpu_ptr<T> p, int n) {
   kernels::print(str,to_address(p),n);
 }
 
+}
+
+namespace boost
+{
+namespace multi
+{
+  template<>
+  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<std::complex<double>>> {
+    using allocator_type = qmc_cuda::cuda_gpu_allocator<std::complex<double>>;
+    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<std::complex<double>>){return allocator_type{};}
+  };
+  template<>
+  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<std::complex<float>>> {
+    using allocator_type = qmc_cuda::cuda_gpu_allocator<std::complex<float>>;
+    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<std::complex<float>>){return allocator_type{};}
+  };
+  template<>
+  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<double>> {
+    using allocator_type = qmc_cuda::cuda_gpu_allocator<double>;
+    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<double>){return allocator_type{};}
+  };
+  template<>
+  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<float>> {
+    using allocator_type = qmc_cuda::cuda_gpu_allocator<float>;
+    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<float>){return allocator_type{};}
+  };
+  template<>
+  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<int>> {
+    using allocator_type = qmc_cuda::cuda_gpu_allocator<int>;
+    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<int>){return allocator_type{};}
+  };
+/*
+  struct pointer_traits : std::pointer_traits<qmc_cuda::cuda_gpu_ptr<std::complex<double>>>{
+    using allocator_type = qmc_cuda::cuda_gpu_allocator<std::complex<double>>;
+    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<std::complex<double>>){return allocator_type{};}
+  };
+*/
+}
 }
   
 #endif

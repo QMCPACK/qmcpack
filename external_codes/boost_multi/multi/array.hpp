@@ -229,9 +229,13 @@ public:
 		array_ref<T, D, typename array::element_ptr>{nullptr, extensions(o)}, 
 		allocator_{pointer_traits<typename array::element_ptr>::allocator_of(o.base())}
 	{
+std::cout<<" here 0 " <<std::endl;
 		this->data_ = alloc_traits::allocate(allocator_, array::num_elements());
+std::cout<<" here 1 " <<std::endl;
 		array_ref<T, D, typename std::allocator_traits<Alloc>::pointer>::operator=(o);
+std::cout<<" here 2 " <<std::endl;
 		detail::uninitialized_copy<D>(o.begin(), o.end(), this->begin());
+std::cout<<" here 3 " <<std::endl;
 	}
 	explicit array(allocator_type const& alloc) : array(typename array::extensions_type{}, alloc)
 	{}

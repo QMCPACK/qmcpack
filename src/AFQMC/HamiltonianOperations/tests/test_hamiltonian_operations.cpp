@@ -115,7 +115,8 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,true,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
     shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
     ComplexType Ovlp;
@@ -246,7 +247,8 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,true,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
     shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
     ComplexType Ovlp;
@@ -376,7 +378,8 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
     int nw=1;
 
@@ -524,7 +527,8 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
     shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
     ComplexType Ovlp;
@@ -673,7 +677,8 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     auto HOps(thcHam.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
     shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
     ComplexType Ovlp;

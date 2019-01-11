@@ -182,7 +182,8 @@ template<class MultiArray2DA, class MultiArray1DB, class MultiArray1DC,
         >::type, typename = void // TODO change to use dispatch 
 >
 MultiArray1DC product(MultiArray2DA const& A, MultiArray1DB const& B, MultiArray1DC&& C){
-        return product(1., A, B, 0., std::forward<MultiArray1DC>(C));
+        using Type = typename std::decay<MultiArray1DC>::type::element;
+        return product(Type(1.), A, B, Type(0.), std::forward<MultiArray1DC>(C));
 }
 //*/
 
@@ -250,7 +251,8 @@ template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
         >::type
 >
 MultiArray2DC product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArray2DC&& C){
-        return product(1., A, B, 0., std::forward<MultiArray2DC>(C));
+        using Type = typename std::decay<MultiArray2DC>::type::element;
+        return product(Type(1.), A, B, Type(0.), std::forward<MultiArray2DC>(C));
 }
 
 template<class MultiArray2D>

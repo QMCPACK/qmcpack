@@ -16,6 +16,7 @@
 #include "boost/variant.hpp"
 
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations_shared.hpp"
+#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations_serial.hpp"
 
 namespace qmcplusplus
 {
@@ -24,8 +25,11 @@ namespace afqmc
 {
 
 class SlaterDetOperations:
-        public boost::variant<SlaterDetOperations_shared<ComplexType>>
-        //public boost::variant<SlaterDetOperations_shared<ComplexType>, SlaterDetOperations_shared<RealType>>
+#ifdef QMC_CUDA
+        public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<device_allocator<ComplexType>>,SlaterDetOperations_serial<std::allocator<ComplexType>>>
+#else
+        public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<std::allocator<ComplexType>>>
+#endif
 {
 
     public:
@@ -35,10 +39,15 @@ class SlaterDetOperations:
     }
 
     explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType>&& other) : variant(std::move(other)) {}
-//    explicit SlaterDetOperations(SlaterDetOperations_shared<RealType>&& other) : variant(std::move(other)) {}
+    explicit SlaterDetOperations(SlaterDetOperations_serial<std::allocator<ComplexType>>&& other) : variant(std::move(other)) {}
 
     explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType> const& other) = delete;
-//    explicit SlaterDetOperations(SlaterDetOperations_shared<RealType> const& other) = delete;
+    explicit SlaterDetOperations(SlaterDetOperations_serial<std::allocator<ComplexType>> const& other) = delete;
+
+#ifdef QMC_CUDA
+    explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>> const& other) = delete;
+    explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>>&& other) : variant(std::move(other)) {}
+#endif
 
     SlaterDetOperations(SlaterDetOperations const& other) = delete;
     SlaterDetOperations(SlaterDetOperations && other) = default;

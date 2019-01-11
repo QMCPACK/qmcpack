@@ -45,6 +45,8 @@ using std::endl;
 
 namespace qmcplusplus
 {
+namespace afqmc
+{
 
 void myREQUIRE(const double& a, const double& b)
 {
@@ -377,19 +379,19 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 
 }
 */
-TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
+
+template<class Allocator, class SDet_Type>
+void SDetOps_complex_serial(Allocator alloc)
 {
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
-  //c = OHMMS::Controller;
+  static_assert(std::is_same<typename Allocator::value_type, ComplexType>::value,"Incorrect type.\n");
 
   const int NMO = 4;
   const int NEL = 3;
 
   using Type = ComplexType; 
   using vector = std::vector<Type>;
-  using array = boost::multi::array<Type,2>;
-  using array_ref = boost::multi::array_ref<Type,2>;
+  using array = boost::multi::array<Type,2,Allocator>;
+  using array_ref = boost::multi::array_ref<Type,2,typename Allocator::pointer>;
   using namespace std::complex_literals;
 
   const Type ov = -7.62332599999999 + 22.20453200000000i;
@@ -397,10 +399,6 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
 
   // some arbitrary matrices
   vector m_a = {
-//   0.90000 + 0.10000i,   2.40000 + 0.20000i,   3.00000 + 0.30000i,
-//   0.40000 + 0.40000i,   1.00000 + 0.50000i,   1.20000 + 0.10000i,
-//   1.40000 + 0.20000i,   1.60000 + 0.30000i,   3.60000 + 0.40000i,
-//   0.40000 + 0.50000i,   0.20000 + 0.10000i,   0.10000 + 0.20000i
     0.90000 +0.10000i , 0.40000 + 0.40000i, 1.40000 + 0.20000i , 0.40000 + 0.50000i,
     2.40000 +0.20000i , 1.00000 + 0.50000i, 1.60000 + 0.30000i , 0.20000 + 0.10000i,
     3.00000 +0.30000i , 1.20000 + 0.10000i, 3.60000 + 0.40000i , 0.10000 + 0.20000i
@@ -413,20 +411,15 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
   };
 
   array A({NEL,NMO});
+  copy_n(m_a.data(),m_a.size(),A.origin());
   array B({NMO,NEL});
+  copy_n(m_b.data(),m_b.size(),B.origin());
 
-  for(int i=0, k=0; i<A.shape()[0]; i++)
-    for(int j=0; j<A.shape()[1]; j++,k++)
-       A[i][j] = m_a[k];
+  array_ref Aref(A.origin(),{NEL,NMO});
+  array_ref Bref(B.origin(),{NMO,NEL});
 
-  for(int i=0, k=0; i<B.shape()[0]; i++)
-    for(int j=0; j<B.shape()[1]; j++,k++)
-       B[i][j] = m_b[k];
-
-  array_ref Aref(m_a.data(),{NEL,NMO});
-  array_ref Bref(m_b.data(),{NMO,NEL});
-
-  SlaterDetOperations SDet( SlaterDetOperations_shared<Type>(NMO,NEL) );
+  //SlaterDetOperations SDet( SDet_Type(NMO,NEL) );
+  SDet_Type SDet(NMO,NEL);
 
   /**** Overlaps ****/
   Type ov_;  
@@ -440,6 +433,7 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
   SDet.Overlap(A,B(B.extension(0),B.extension(1)),std::addressof(ov_)); myREQUIRE(ov_,ov);
 
   array A_ = A({0,2},{0,3});
+return;
   array B_ = B({0,3},{0,2});
   SDet.Overlap(A({0,2},{0,3}),B({0,3},{0,2}),std::addressof(ov_)); myREQUIRE(ov_,ov2);
   SDet.Overlap(A({0,2},{0,3}),B_,std::addressof(ov_)); myREQUIRE(ov_,ov2);
@@ -592,7 +586,8 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   array_ref Aref(m_a.data(),{NEL,NMO});
   array_ref Bref(m_b.data(),{NMO,NEL});
 
-  SlaterDetOperations SDet( SlaterDetOperations_shared<Type>(NMO,NEL) );
+  //SlaterDetOperations SDet( SlaterDetOperations_shared<Type>(NMO,NEL) );
+  SlaterDetOperations_shared<ComplexType> SDet(NMO,NEL);
 
   /**** Overlaps ****/
   Type ov_;
@@ -779,7 +774,8 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 
   csr_matrix Acsr(csr::shm::construct_csr_matrix_single_input<csr_matrix>(A,0.0,'T',node));
 
-  SlaterDetOperations SDet( SlaterDetOperations_shared<Type>(NMO,NEL) );
+  //SlaterDetOperations SDet( SlaterDetOperations_shared<Type>(NMO,NEL) );
+  SlaterDetOperations_shared<ComplexType> SDet(NMO,NEL);
 
   /**** Overlaps ****/
   Type ov_;
@@ -904,4 +900,34 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 
 }
 
+TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
+
+  using stdAlloc = std::allocator<ComplexType>;
+  SDetOps_complex_serial<stdAlloc,SlaterDetOperations_serial<stdAlloc>>(stdAlloc{});
+
+#ifdef QMC_CUDA
+  qmc_cuda::CUDA_INIT(node);
+  using devAlloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+  SDetOps_complex_serial<devAlloc,SlaterDetOperations_serial<devAlloc>>(devAlloc{});
+#endif
+
+}
+
+/*
+TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
+{
+
+
+}
+
+TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
+{
+
+}
+*/
+}
 }

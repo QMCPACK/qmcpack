@@ -482,7 +482,7 @@ public:
 			const_reference{cr}, stride_{stride}
 		{}
 		friend struct basic_array;
-		explicit operator bool() const{return this->data_;}
+		explicit operator bool() const{return bool(this->data_);}
 	public:
 		using difference_type = basic_array::difference_type; //	using value_type = typename basic_array<T, D, ElementPtr>::value_type;
 		using pointer = void;
@@ -521,7 +521,7 @@ public:
 			basic_array<T, D-1, element_ptr>{cr}, stride_{stride}
 		{}
 		friend struct basic_array;
-		explicit operator bool() const{return this->data_;}
+		explicit operator bool() const{return bool(this->data_);}
 	public:
 		operator const_iterator() const{
 			return const_iterator{static_cast<reference const&>(*this), stride_};
@@ -633,13 +633,17 @@ protected:
 	}
 public:
 	basic_array const& operator=(basic_array const& other) const{
+std::cout<<" basic_array const& operator= " <<std::endl;
 		return operator=<basic_array>(other);
 	}
 	template<class Array>
 	basic_array const& operator=(Array const& other) const{
+std::cout<<" template basic_array const& operator= 0" <<std::endl;
 		assert(this->extension() == extension(other));
 		using std::copy; using std::begin; using std::end;
+std::cout<<" template basic_array const& operator= 1" <<std::endl;
 		copy(begin(other), end(other), this->begin());
+std::cout<<" template basic_array const& operator= 2" <<std::endl;
 		return *this;
 	}
 	template<class Array>

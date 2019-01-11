@@ -106,7 +106,8 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
 
         // Calculates Overlap, G
-        SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+        SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
+        //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 
         boost::multi::array<ComplexType,2> G({NAEA,NMO});
         boost::multi::array_ref<ComplexType,1> G0(G.origin(),extensions<1u>{NMO*NAEA});
@@ -299,7 +300,8 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
 
         // Calculates Overlap, G
-        SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+        //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+        SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
         boost::multi::array<ComplexType,2> G({NAEA+NAEB,NMO});
         boost::multi::array_ref<ComplexType,1> G0(G.origin(),extensions<1u>{NMO*(NAEA+NAEB)});
@@ -492,7 +494,8 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),gTG.getTotalNodes(),gTG.getTotalCores());
 
         // Calculates Overlap, G
-        SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+        //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+        SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
         boost::multi::array<ComplexType,2> G({NAEA+NAEB,NMO});
         boost::multi::array_ref<ComplexType,1> G0(G.origin(),extensions<1u>{NMO*(NAEA+NAEB)});

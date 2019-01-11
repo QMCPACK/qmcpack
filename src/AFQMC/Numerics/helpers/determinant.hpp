@@ -56,7 +56,7 @@ namespace ma
 namespace qmc_cuda{
   // using thrust for now to avoid kernels!!!
   template<class T>
-  inline void determinant_from_getrf(int n, cuda_gpu_ptr<T> A, int lda, cuda_gpu_ptr<int> piv, T*res)
+  inline void determinant_from_getrf(int n, cuda_gpu_ptr<T> A, int lda, cuda_gpu_ptr<int> piv, T* res)
   {
     kernels::determinant_from_getrf_gpu(n,to_address(A),lda,to_address(piv),res);
   }
