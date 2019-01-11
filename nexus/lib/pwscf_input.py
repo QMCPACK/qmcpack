@@ -1790,7 +1790,7 @@ def generate_any_pwscf_input(**kwargs):
         #end if
         s.adjust_axes(axes)
         if use_folded:
-            system = system.get_primitive()
+            system = system.get_smallest()
         #end if
         pw.incorporate_system(system)
     #end if
@@ -2029,7 +2029,7 @@ def generate_scf_input(prefix       = 'pwscf',
     s.adjust_axes(axes)
 
     if use_folded:
-        system = system.get_primitive()
+        system = system.get_smallest()
     #end if
         
     if start_mag!=None:
@@ -2233,7 +2233,7 @@ def generate_relax_input(prefix       = 'pwscf',
     #end if
     if system!=None:
         if use_folded:
-            system = system.get_primitive()
+            system = system.get_smallest()
         #end if
         pw.incorporate_system_old(system,spin_polarized=spin_polarized)
     #end if
