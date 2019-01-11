@@ -359,7 +359,7 @@ public:
   void evaluateTempDerivatives(ParticleSet& P,
                                const int I, // index of the counting function parameter derivatives are associated with
                                int iat,
-                               Matrix<RealType> dNdiff)
+                               Matrix<RealType>& dNdiff)
   {
     // may assume evaluate and evaluateTemp has already been called
     int num_derivs = getVars(I).size();
