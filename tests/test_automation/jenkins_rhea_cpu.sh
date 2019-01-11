@@ -31,6 +31,7 @@ module list
 echo ""
 echo ""
 echo "starting new test for real full precision"
+echo "at $(date)"
 echo ""
 echo ""
 
@@ -54,6 +55,7 @@ ctest -L unit --output-on-failure
 echo ""
 echo ""
 echo "starting new test for real mixed precision"
+echo "at $(date)"
 echo ""
 echo ""
 
@@ -70,6 +72,7 @@ ctest -L unit --output-on-failure
 echo ""
 echo ""
 echo "starting new test for complex full precision"
+echo "at $(date)"
 echo ""
 echo ""
 
@@ -86,6 +89,7 @@ ctest -L unit --output-on-failure
 echo ""
 echo ""
 echo "starting new test for complex mixed precision"
+echo "at $(date)"
 echo ""
 echo ""
 
