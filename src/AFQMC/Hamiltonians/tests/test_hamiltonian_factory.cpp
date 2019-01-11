@@ -106,11 +106,12 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
 
         // Calculates Overlap, G
-        SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+        SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 
         boost::multi::array<ComplexType,2> G({NAEA,NMO});
         boost::multi::array_ref<ComplexType,1> G0(G.origin(),extensions<1u>{NMO*NAEA});
-        auto Ovlp = SDet.MixedDensityMatrix(TrialWfn,OrbMat[0],G,true);
+        ComplexType Ovlp;
+        SDet.MixedDensityMatrix(TrialWfn,OrbMat[0],G,std::addressof(Ovlp),true);
         REQUIRE( real(Ovlp*Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp*Ovlp) == Approx(0.0) );
 
@@ -182,8 +183,8 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
 
         boost::multi::array<ComplexType,3> GM({1,NMO,NMO});
         boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),extensions<1u>{NMO*NMO});
-        Ovlp = SDet.MixedDensityMatrix(TrialWfn,OrbMat[0],
-            GM[0],false);
+        SDet.MixedDensityMatrix(TrialWfn,OrbMat[0],
+            GM[0],std::addressof(Ovlp),false);
         REQUIRE( real(Ovlp*Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp*Ovlp) == Approx(0.0) );
 
@@ -298,14 +299,16 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
 
         // Calculates Overlap, G
-        SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+        SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 
         boost::multi::array<ComplexType,2> G({NAEA+NAEB,NMO});
         boost::multi::array_ref<ComplexType,1> G0(G.origin(),extensions<1u>{NMO*(NAEA+NAEB)});
-        auto Ovlp = SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
-            G.sliced(0,NAEA),true);
-        Ovlp *= SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
-            G.sliced(NAEA,NAEA+NAEB),true);
+        ComplexType Ovlp, ov_;
+        SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
+            G.sliced(0,NAEA),std::addressof(Ovlp),true);
+        SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
+            G.sliced(NAEA,NAEA+NAEB),std::addressof(ov_),true);
+        Ovlp *= ov_;
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
@@ -363,10 +366,11 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
 
         boost::multi::array<ComplexType,3> GM({2,NMO,NMO});
         boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),extensions<1u>{2*NMO*NMO});
-        Ovlp = SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
-            GM[0],false);
-        Ovlp *= SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
-            GM[1],false);
+        SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
+            GM[0],std::addressof(Ovlp),false);
+        SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
+            GM[1],std::addressof(ov_),false);
+        Ovlp *= ov_;
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
@@ -488,14 +492,16 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),gTG.getTotalNodes(),gTG.getTotalCores());
 
         // Calculates Overlap, G
-        SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+        SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 
         boost::multi::array<ComplexType,2> G({NAEA+NAEB,NMO});
         boost::multi::array_ref<ComplexType,1> G0(G.origin(),extensions<1u>{NMO*(NAEA+NAEB)});
-        auto Ovlp = SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
-            G.sliced(0,NAEA),true);
-        Ovlp *= SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
-            G.sliced(NAEA,NAEA+NAEB),true);
+        ComplexType Ovlp, ov_;
+        SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
+            G.sliced(0,NAEA),std::addressof(Ovlp),true);
+        SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
+            G.sliced(NAEA,NAEA+NAEB),std::addressof(ov_),true);
+        Ovlp *= ov_;
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
@@ -554,10 +560,11 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
 
         boost::multi::array<ComplexType,3> GM({2,NMO,NMO});
         boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),extensions<1u>{2*NMO*NMO});
-        Ovlp = SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
-            GM[0],false);
-        Ovlp *= SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
-            GM[1],false);
+        SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
+            GM[0],std::addressof(Ovlp),false);
+        SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
+            GM[1],std::addressof(ov_),false);
+        Ovlp *= ov_;
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 

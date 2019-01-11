@@ -62,7 +62,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
             P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,boost::mpi3::intranode::allocator<ComplexType>(tg_.TG_local()))),
             vMF(std::move(vmf_)),
             rng(r),
-            SDetOp(2*NMO,NAEA+NAEB), // safe for now, since I don't know walker_type
+            SDetOp(SlaterDetOperations_shared<ComplexType>(2*NMO,NAEA+NAEB)),
             TSM({2*NMO,NAEA+NAEB}), // safe for now, since I don't know walker_type
             shmbuff(extensions<1u>{1},shared_allocator<ComplexType>{TG.TG_local()}),
             local_group_comm(),
@@ -119,7 +119,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     RandomGenerator_t* rng;
 
-    SlaterDetOperations<ComplexType> SDetOp;
+    SlaterDetOperations SDetOp;
 
     shmCVector shmbuff;    
 

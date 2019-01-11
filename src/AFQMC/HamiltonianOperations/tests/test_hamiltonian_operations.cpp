@@ -115,14 +115,18 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,true,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+    SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 
     shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
-        G.sliced(0,NAEA),true);
-    if(WTYPE==COLLINEAR)
-      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1](OrbMat.extension(1),{0,NAEB}),
-        G.sliced(NAEA,NAEA+NAEB),true);
+    ComplexType Ovlp;
+    SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
+        G.sliced(0,NAEA),std::addressof(Ovlp),true);
+    if(WTYPE==COLLINEAR) {
+      ComplexType Ovlp_;
+      SDet.MixedDensityMatrix(PsiT[1],OrbMat[1](OrbMat.extension(1),{0,NAEB}),
+        G.sliced(NAEA,NAEA+NAEB),std::addressof(Ovlp_),true);
+      Ovlp *= Ovlp_; 
+    }
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
@@ -242,14 +246,18 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,true,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+    SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 
     shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
-        G.sliced(0,NAEA),true);
-    if(WTYPE==COLLINEAR)
-      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1](OrbMat.extension(1),{0,NAEB}),
-        G.sliced(NAEA,NAEA+NAEB),true);
+    ComplexType Ovlp;
+    SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
+        G.sliced(0,NAEA),std::addressof(Ovlp),true);
+    if(WTYPE==COLLINEAR) {
+      ComplexType Ovlp_;  
+      SDet.MixedDensityMatrix(PsiT[1],OrbMat[1](OrbMat.extension(1),{0,NAEB}),
+        G.sliced(NAEA,NAEA+NAEB),std::addressof(Ovlp_),true);
+      Ovlp *= Ovlp_;
+    }  
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
@@ -368,13 +376,14 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+    SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 
     int nw=1;
 
     shmCMatrix Gbuff({nw,NEL*NMO},shared_allocator<ComplexType>{TG.TG_local()});
     boost::multi::array_ref<ComplexType,2> G(std::addressof(*Gbuff.origin()),{NEL,NMO});
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
+    ComplexType Ovlp;
+    SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,std::addressof(Ovlp),true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
@@ -515,10 +524,11 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+    SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 
     shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
+    ComplexType Ovlp;
+    SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,std::addressof(Ovlp),true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
@@ -663,10 +673,11 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     auto HOps(thcHam.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+    SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 
     shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
+    ComplexType Ovlp;
+    SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,std::addressof(Ovlp),true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 

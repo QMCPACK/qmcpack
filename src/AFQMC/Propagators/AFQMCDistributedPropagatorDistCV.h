@@ -29,7 +29,6 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "mpi3/shm/mutex.hpp"
-#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 

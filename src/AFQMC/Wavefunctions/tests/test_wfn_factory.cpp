@@ -39,7 +39,6 @@
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Utilities/myTimer.h"
-#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 

@@ -94,7 +94,7 @@ inline void apply_expM( const MatA& V, MatB& S, MatC& T1, MatC& T2, communicator
   using ComplexType = typename std::decay<MatB>::type::element;
 
   const ComplexType zero(0.);
-  const ComplexType im(0.0,1.0);
+  const ComplexType im{0.0,1.0};
   MatC* pT1 = &T1;
   MatC* pT2 = &T2;
 

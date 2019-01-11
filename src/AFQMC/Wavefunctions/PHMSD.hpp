@@ -82,7 +82,9 @@ class PHMSD: public AFQMCInfo
           std::vector<PsiT_Matrix>&& orbs_, 
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
-                SDetOp(((wlk!=2)?(NMO):(2*NMO)),((wlk!=2)?(NAEA):(NAEA+NAEB))),
+                SDetOp( SlaterDetOperations_shared<ComplexType>(
+                        ((wlk!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                        ((wlk!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB))) ),
                 HamOp(std::move(hop_)),
                 acta2mo(std::move(acta2mo_)),
                 actb2mo(std::move(actb2mo_)),
@@ -387,7 +389,7 @@ class PHMSD: public AFQMCInfo
 
     TaskGroup_& TG;
  
-    SlaterDetOperations<ComplexType> SDetOp;
+    SlaterDetOperations SDetOp;
   
     HamiltonianOperations HamOp;
 
