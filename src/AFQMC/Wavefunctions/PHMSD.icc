@@ -489,7 +489,7 @@ namespace afqmc
                     local_ov[1][std::get<1>(*it)];
 
         // 2. generate R[Nact,Nel] and generate G
-        boost::multi::array_ref<ComplexType,2> Ra(Gwork.origin(),{NAEA,OrbMats[0].size(0)});
+        boost::multi::array_ref<ComplexType,2> Ra(Gwork.origin(),{NAEA,long(OrbMats[0].size(0))});
         calculate_R(0,1,0,abij,det_couplings[0],local_QQ0inv0,Qwork,local_ov[1],ov0,Ra);
         if(transpose) {
           if(compact) {
@@ -508,14 +508,14 @@ namespace afqmc
             G({0,GAdims.first*GAdims.second},iw) = GA1D_;
           } else {
             boost::multi::array_ref<ComplexType,1> G1D(Gfulla.origin(),
-                                   extensions<1u>{Gfulla.num_elements()});
+                                   extensions<1u>{long(Gfulla.num_elements())});
             ma::product(T(Ra),GA2D0_,GA2D_);
             ma::product(T(OrbMats[0]),GA2D_,Gfulla);
             G({0,Gfulla.num_elements()},iw) = G1D;
           }  
         }
 
-        boost::multi::array_ref<ComplexType,2> Rb(Gwork.origin(),{NAEB,OrbMats.back().size(0)});
+        boost::multi::array_ref<ComplexType,2> Rb(Gwork.origin(),{NAEB,long(OrbMats.back().size(0))});
         calculate_R(0,1,1,abij,det_couplings[1],local_QQ0inv1,Qwork,local_ov[0],ov0,Rb);
         if(transpose) {
           if(compact) {
@@ -610,7 +610,7 @@ namespace afqmc
                       unique_overlaps[1][std::get<1>(*it)];
 
           // 2. generate R[Nact,Nel] and generate G
-          boost::multi::array_ref<ComplexType,2> Ra(Gwork.origin(),{NAEA,OrbMats[0].size(0)});
+          boost::multi::array_ref<ComplexType,2> Ra(Gwork.origin(),{NAEA,long(OrbMats[0].size(0))});
           calculate_R(local_group_comm.rank(),local_group_comm.size(),0,
                       abij,det_couplings[0],QQ0inv0,Qwork,unique_overlaps[1],ov0,Ra);
           local_group_comm.all_reduce_in_place_n(std::addressof(*Ra.origin()),
@@ -638,7 +638,7 @@ namespace afqmc
                           GA2D0_shm(GA2D0_shm.extension(0),{M0,Mn}),
                           GA2D_(GA2D_.extension(0),{M0,Mn}));  // can be local
               boost::multi::array_ref<ComplexType,3> Gw(std::addressof(*G.origin()),
-                                     {GAdims.first,GAdims.second,G.size(1)});
+                                     {GAdims.first,GAdims.second,long(G.size(1))});
               // copying by hand for now, implement strided copy in ma_blas   
               for(size_t k=0; k<GA2D_.size(0); ++k)
                 for(size_t m=M0; m<Mn; ++m) 
@@ -651,7 +651,7 @@ namespace afqmc
                           GA2D_(GA2D_.extension(0),{M0,Mn}),
                           Gfulla(Gfulla.extension(0),{M0,Mn}));  // can be local
               boost::multi::array_ref<ComplexType,3> Gw(std::addressof(*G.origin()),
-                                     {Gfulla.size(0),Gfulla.size(1),G.size(1)});
+                                     {long(Gfulla.size(0)),long(Gfulla.size(1)),long(G.size(1))});
               // copying by hand for now, implement strided copy in ma_blas   
               for(size_t k=0; k<Gfulla.size(0); ++k)
                 for(size_t m=M0; m<Mn; ++m)
@@ -659,7 +659,7 @@ namespace afqmc
             }
           }
 
-          boost::multi::array_ref<ComplexType,2> Rb(Gwork.origin(),{NAEB,OrbMats.back().size(0)});
+          boost::multi::array_ref<ComplexType,2> Rb(Gwork.origin(),{NAEB,long(OrbMats.back().size(0))});
           calculate_R(local_group_comm.rank(),local_group_comm.size(),1,
                       abij,det_couplings[1],QQ0inv1,Qwork,unique_overlaps[0],ov0,Rb);
           local_group_comm.all_reduce_in_place_n(std::addressof(*Rb.origin()),
@@ -687,7 +687,7 @@ namespace afqmc
                           GB2D0_shm(GB2D0_shm.extension(0),{M0,Mn}),
                           GB2D_(GB2D_.extension(0),{M0,Mn}));  // can be local
               boost::multi::array_ref<ComplexType,3> Gw(std::addressof(*G[GAdims.first*GAdims.second].origin()),
-                                     {GBdims.first,GBdims.second,G.size(1)});
+                                     {GBdims.first,GBdims.second,long(G.size(1))});
               // copying by hand for now, implement strided copy in ma_blas   
               for(size_t k=0; k<GB2D_.size(0); ++k)
                 for(size_t m=M0; m<Mn; ++m)
@@ -700,7 +700,7 @@ namespace afqmc
                           GB2D_(GB2D_.extension(0),{M0,Mn}),
                           Gfullb(Gfullb.extension(0),{M0,Mn}));  // can be local
               boost::multi::array_ref<ComplexType,3> Gw(std::addressof(*G[Gfulla.num_elements()].origin()),
-                                     {Gfullb.size(0),Gfullb.size(1),G.size(1)});
+                                     {long(Gfullb.size(0)),long(Gfullb.size(1)),long(G.size(1))});
               // copying by hand for now, implement strided copy in ma_blas   
               for(size_t k=0; k<Gfullb.size(0); ++k)
                 for(size_t m=M0; m<Mn; ++m)

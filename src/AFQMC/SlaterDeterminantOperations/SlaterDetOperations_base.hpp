@@ -96,8 +96,8 @@ class SlaterDetOperations_base
 
     template<class MatA, class MatB, class MatC>
     void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T* res, bool compact=false) {
-      int NMO = hermA.shape()[1];
-      int NAEA = hermA.shape()[0];
+      int NMO = hermA.size(1);
+      int NAEA = hermA.size(0);
       assert(TMat_NN.num_elements() >= NAEA*NAEA);
       TMatrix_ref TNN(TMat_NN.data(), {NAEA,NAEA});
       assert(TMat_NM.num_elements() >= NAEA*NMO);
@@ -107,8 +107,8 @@ class SlaterDetOperations_base
 
     template<class MatA, class MatC>
     void MixedDensityMatrix(const MatA& A, MatC&& C, T* res, bool compact=false) {
-      int NMO = A.shape()[0];
-      int NAEA = A.shape()[1];
+      int NMO = A.size(0);
+      int NAEA = A.size(1);
       assert(TMat_NN.num_elements() >= NAEA*NAEA);
       TMatrix_ref TNN(TMat_NN.data(), {NAEA,NAEA});
       assert(TMat_NM.num_elements() >= NAEA*NMO);
@@ -118,8 +118,8 @@ class SlaterDetOperations_base
 
     template<class MatA, class MatB, class MatC>
     void MixedDensityMatrix_noHerm(const MatA& A, const MatB& B, MatC&& C, T* res, bool compact=false) {
-      int NMO = A.shape()[0];
-      int NAEA = A.shape()[1];
+      int NMO = A.size(0);
+      int NAEA = A.size(1);
       assert(TMat_NN.num_elements() >= NAEA*NAEA);
       TMatrix_ref TNN(TMat_NN.data(), {NAEA,NAEA});
       assert(TMat_NM.num_elements() >= NAEA*NMO);
@@ -130,12 +130,12 @@ class SlaterDetOperations_base
     template<class integer, class MatA, class MatB, class MatC, class MatQ>
     void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, T* res, 
                                     integer* ref, MatQ&& QQ0, bool compact=false) {
-      int Nact = hermA.shape()[0];
-      int NEL = B.shape()[1];
-      int NMO = B.shape()[0];
-      assert(hermA.shape()[1]==B.shape()[0]);
-      assert(QQ0.shape()[0]==Nact);
-      assert(QQ0.shape()[1]==NEL);
+      int Nact = hermA.size(0);
+      int NEL = B.size(1);
+      int NMO = B.size(0);
+      assert(hermA.size(1)==B.size(0));
+      assert(QQ0.size(0)==Nact);
+      assert(QQ0.size(1)==NEL);
       assert(TMat_NN.num_elements() >= NEL*NEL);
       TMatrix_ref TNN(TMat_NN.data(), {NEL,NEL});
       assert(TMat_NM.num_elements() >= Nact*NEL);
@@ -148,10 +148,10 @@ class SlaterDetOperations_base
     template<class integer, class MatA, class MatB, class MatC>
     void MixedDensityMatrixFromConfiguration(const MatA& hermA, const MatB& B, MatC&& C, T* res,
                                     integer* ref, bool compact=false) {
-      int Nact = hermA.shape()[0];
-      int NEL = B.shape()[1];
-      int NMO = B.shape()[0];
-      assert(hermA.shape()[1]==B.shape()[0]);
+      int Nact = hermA.size(0);
+      int NEL = B.size(1);
+      int NMO = B.size(0);
+      assert(hermA.size(1)==B.size(0));
       assert(TMat_NN.num_elements() >= NEL*NEL);
       TMatrix_ref TNN(TMat_NN.data(), {NEL,NEL});
       assert(TMat_NM.num_elements() >= Nact*NEL);
@@ -163,7 +163,7 @@ class SlaterDetOperations_base
 
     template<class MatA>
     void Overlap(const MatA& A, T* res) {
-      int NAEA = A.shape()[1];
+      int NAEA = A.size(1);
       assert(TMat_NN.num_elements() >= NAEA*NAEA);
       TMatrix_ref TNN(TMat_NN.data(), {NAEA,NAEA});
       assert(TMat_NM.num_elements() >= NAEA*NAEA);
@@ -173,7 +173,7 @@ class SlaterDetOperations_base
 
     template<class MatA, class MatB>
     void Overlap(const MatA& hermA, const MatB& B, T* res) {
-      int NAEA = hermA.shape()[0];
+      int NAEA = hermA.size(0);
       assert(TMat_NN.num_elements() >= NAEA*NAEA);
       TMatrix_ref TNN(TMat_NN.data(), {NAEA,NAEA});
       assert(TMat_NM.num_elements() >= NAEA*NAEA);
@@ -183,7 +183,7 @@ class SlaterDetOperations_base
 
     template<class MatA, class MatB>
     void Overlap_noHerm(const MatA& A, const MatB& B, T* res) {
-      int NAEA = A.shape()[1];
+      int NAEA = A.size(1);
       assert(TMat_NN.num_elements() >= NAEA*NAEA);
       TMatrix_ref TNN(TMat_NN.data(), {NAEA,NAEA});
       assert(TMat_NM.num_elements() >= NAEA*NAEA);
@@ -194,11 +194,11 @@ class SlaterDetOperations_base
     // routines for PHMSD
     template<typename integer, class MatA, class MatB, class MatC>
     void OverlapForWoodbury(const MatA& hermA, const MatB& B, T* res, integer* ref, MatC&& QQ0) {
-      int Nact = hermA.shape()[0];
-      int NEL = B.shape()[1];
-      assert(hermA.shape()[1]==B.shape()[0]);
-      assert(QQ0.shape()[0]==Nact);  
-      assert(QQ0.shape()[1]==NEL);  
+      int Nact = hermA.size(0);
+      int NEL = B.size(1);
+      assert(hermA.size(1)==B.size(0));
+      assert(QQ0.size(0)==Nact);  
+      assert(QQ0.size(1)==NEL);  
       assert(TMat_NN.num_elements() >= NEL*NEL);
       assert(TMat_MM.num_elements() >= Nact*NEL);
       TMatrix_ref TNN(TMat_NN.data(), {NEL,NEL});
@@ -208,8 +208,8 @@ class SlaterDetOperations_base
 
     template<class Mat, class MatP1, class MatV>
     void Propagate(Mat&& A, const MatP1& P1, const MatV& V, int order=6) {
-      int NMO = A.shape()[0];
-      int NAEA = A.shape()[1];
+      int NMO = A.size(0);
+      int NAEA = A.size(1);
       if(TMat_MN.num_elements() < NMO*NAEA)
         TMat_MN.reextent({NMO,NAEA});
       if(TMat_NM.num_elements() < NMO*NAEA)
@@ -228,7 +228,7 @@ class SlaterDetOperations_base
       ma::gelqf(std::forward<Mat>(A),TAU,WORK);
       if(res != nullptr) {
         *res = T(1.0); 
-        for (int i = 0; i < A.shape()[1]; i++) { 
+        for (int i = 0; i < A.size(1); i++) { 
           if (real(A[i][i]) < 0) 
             IWORK[i]=-1; 
           else 
@@ -237,8 +237,8 @@ class SlaterDetOperations_base
         }
       }
       ma::glq(std::forward<Mat>(A),TAU,WORK);
-      for(int i=0; i<A.shape()[0]; ++i)
-        for(int j=0; j<A.shape()[1]; ++j)
+      for(int i=0; i<A.size(0); ++i)
+        for(int j=0; j<A.size(1); ++j)
           A[i][j] *= T(IWORK[j]);
     }
 

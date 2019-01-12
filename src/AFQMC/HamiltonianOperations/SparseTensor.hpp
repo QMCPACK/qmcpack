@@ -186,7 +186,7 @@ std::cout<<"\n";
       if(Gcloc.num_elements() < Gc.size(1) * Vakbl_view[k].size(0))
         Gcloc.reextent(extensions<1u>{Vakbl_view[k].size(0)*Gc.size(1)});
       boost::multi::array_ref<SPComplexType,2> buff(Gcloc.data(),
-                        {Vakbl_view[k].size(0),Gc.size(1)});
+                        {long(Vakbl_view[k].size(0)),long(Gc.size(1))});
 
       int nwalk = Gc.size(1);
       int getKr = Kr!=nullptr;
@@ -224,7 +224,7 @@ std::cout<<"\n";
         // SpvnT*G
         boost::multi::array_ref<T2,2> v_(Gcloc.origin()+
                                             SpvnT_view[k].local_origin()[0]*Gc.size(1),
-                                        {SpvnT_view[k].size(0),Gc.size(1)});
+                                        {long(SpvnT_view[k].size(0)),long(Gc.size(1))});
         ma::product(SpvnT_view[k], Gc, v_);
         if(getKl || getKr) {
           for(int wi=0; wi<Gc.size(1); wi++) {
@@ -281,7 +281,7 @@ std::cout<<"\n";
 
       // Spvn*X
       boost::multi::array_ref<Type,2> v_(std::addressof(*v[Spvn_view.local_origin()[0]].origin()),
-                                        {Spvn_view.size(0),v.size(1)});
+                                        {long(Spvn_view.size(0)),long(v.size(1))});
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
     }
 
@@ -316,7 +316,7 @@ std::cout<<"\n";
 
       // SpvnT*G
       boost::multi::array_ref<Type,2> v_(std::addressof(*v[SpvnT_view[k].local_origin()[0]].origin()),
-                                        {SpvnT_view[k].size(0),v.size(1)});
+                                        {long(SpvnT_view[k].size(0)),long(v.size(1))});
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
     }

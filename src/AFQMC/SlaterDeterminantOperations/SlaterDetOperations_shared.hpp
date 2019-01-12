@@ -88,8 +88,8 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
     // C must live in shared memory for this routine to work as expected
     template<class MatA, class MatB, class MatC>
     void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T* res, communicator& comm, bool compact=false) {
-      int NMO = hermA.shape()[1];
-      int NAEA = hermA.shape()[0];
+      int NMO = hermA.size(1);
+      int NAEA = hermA.size(0);
       set_shm_buffer(comm,NAEA*(NAEA+NMO));
       assert(SM_TMats->num_elements() >= NAEA*(NAEA+NMO));
       boost::multi::array_ref<T,2> TNN(std::addressof(*SM_TMats->origin()), {NAEA,NAEA});
@@ -100,12 +100,12 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
     template<class integer, class MatA, class MatB, class MatC, class MatQ>
     void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, T* res,
                                     integer* ref, MatQ&& QQ0, communicator& comm, bool compact=false) {
-      int Nact = hermA.shape()[0];
-      int NEL = B.shape()[1];
-      int NMO = B.shape()[0];
-      assert(hermA.shape()[1]==B.shape()[0]);
-      assert(QQ0.shape()[0]==Nact);
-      assert(QQ0.shape()[1]==NEL);
+      int Nact = hermA.size(0);
+      int NEL = B.size(1);
+      int NMO = B.size(0);
+      assert(hermA.size(1)==B.size(0));
+      assert(QQ0.size(0)==Nact);
+      assert(QQ0.size(1)==NEL);
 
       set_shm_buffer(comm,NEL*(NEL+Nact+NMO));
       assert(SM_TMats->num_elements() >= NEL*(NEL+Nact+NMO));
@@ -120,7 +120,7 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
 
     template<class MatA, class MatB>
     void Overlap(const MatA& hermA, const MatB& B, T* res, communicator& comm) { 
-      int NAEA = hermA.shape()[0];
+      int NAEA = hermA.size(0);
       set_shm_buffer(comm,2*NAEA*NAEA);
       assert(SM_TMats->num_elements() >= 2*NAEA*NAEA);
       boost::multi::array_ref<T,2> TNN(std::addressof(*SM_TMats->origin()), {NAEA,NAEA});
@@ -130,11 +130,11 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
 
     template<typename integer, class MatA, class MatB, class MatC>
     void OverlapForWoodbury(const MatA& hermA, const MatB& B, T* res, integer* ref, MatC&& QQ0, communicator& comm) {
-      int Nact = hermA.shape()[0];
-      int NEL = B.shape()[1];
-      assert(hermA.shape()[1]==B.shape()[0]);
-      assert(QQ0.shape()[0]==Nact);
-      assert(QQ0.shape()[1]==NEL);
+      int Nact = hermA.size(0);
+      int NEL = B.size(1);
+      assert(hermA.size(1)==B.size(0));
+      assert(QQ0.size(0)==Nact);
+      assert(QQ0.size(1)==NEL);
       assert(TMat_NN.num_elements() >= NEL*NEL);
       assert(TMat_MM.num_elements() >= Nact*NEL);
       set_shm_buffer(comm,NEL*(Nact+NEL));
@@ -146,8 +146,8 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
 
     template<class Mat, class MatP1, class MatV>
     void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order=6) {
-      int NMO = A.shape()[0];
-      int NAEA = A.shape()[1];
+      int NMO = A.size(0);
+      int NAEA = A.size(1);
       set_shm_buffer(comm,3*NAEA*NMO);
       assert(SM_TMats->num_elements() >= 3*NAEA*NAEA);
       boost::multi::array_ref<T,2> T0(std::addressof(*SM_TMats->origin()), {NMO,NAEA});

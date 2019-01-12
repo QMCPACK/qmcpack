@@ -232,7 +232,7 @@ class KP3IndexFactorization
 
       // messy
       SPComplexType *Krptr, *Klptr;
-      size_t Knr=0, Knc=0;
+      long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
         Knc=local_nCV;
@@ -258,8 +258,8 @@ class KP3IndexFactorization
       } else if(getKr or getKl) {
         APP_ABORT(" Error: Kr and/or Kl can only be calculated with addEJ=true.\n");
       }
-      SpMatrix_ref Kl(Klptr,{Knr,Knc});
-      SpMatrix_ref Kr(Krptr,{Knr,Knc});
+      SpMatrix_ref Kl(Klptr,{long(Knr),long(Knc)});
+      SpMatrix_ref Kr(Krptr,{long(Knr),long(Knc)});
 
       for(int n=0; n<nwalk; n++)
         std::fill_n(E[n].origin(),3,ComplexType(0.));
@@ -511,7 +511,7 @@ class KP3IndexFactorization
 
       // messy
       SPComplexType *Krptr, *Klptr;
-      size_t Knr=0, Knc=0;
+      long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
         Knc=local_nCV;
@@ -537,8 +537,8 @@ class KP3IndexFactorization
       } else if(getKr or getKl) {
         APP_ABORT(" Error: Kr and/or Kl can only be calculated with addEJ=true.\n");
       }
-      SpMatrix_ref Kl(Klptr,{Knr,Knc});
-      SpMatrix_ref Kr(Krptr,{Knr,Knc});
+      SpMatrix_ref Kl(Klptr,{long(Knr),long(Knc)});
+      SpMatrix_ref Kr(Krptr,{long(Knr),long(Knc)});
 
       for(int n=0; n<nwalk; n++)
         std::fill_n(E[n].origin(),3,ComplexType(0.));

@@ -331,11 +331,11 @@ protected:
 	friend struct basic_array<T, dimensionality_type{types::dimensionality + 1}, typename types::element_ptr&>;
 //	friend struct basic_array<T, dimensionality_type{types::dimensionality + 1}, typename std::pointer_traits<typename types::element_ptr>::template rebind<typename types::element>>;
 
+public:
 	template<class TT, dimensionality_type DD, typename EP, class LLayout>
 	friend struct basic_array;
 	template<class TT, dimensionality_type DD, class Alloc> friend struct array;
 	basic_array(basic_array const&) = default;
-public:
 	basic_array_ptr<basic_array, Layout> operator&() const{
 		return {this->base_, this->layout(), this->nelems_};
 	}

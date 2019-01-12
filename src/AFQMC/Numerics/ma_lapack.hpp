@@ -81,8 +81,8 @@ MultiArray2D getri(MultiArray2D&& A, MultiArray1D const& IPIV, Buffer&& WORK){
 
 template<class MultiArray2D>
 int geqrf_optimal_workspace_size(MultiArray2D & A){
-	assert(A.strides(0) > 0);
-	assert(A.strides(1) == 1);
+	assert(A.stride(0) > 0);
+	assert(A.stride(1) == 1);
 
         int res;
         geqrf_bufferSize(A.size(1), A.size(0),A.origin(),A.stride(0),res);
@@ -111,8 +111,8 @@ MultiArray2D geqrf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 
 template<class MultiArray2D>
 int gelqf_optimal_workspace_size(MultiArray2D & A){
-	assert(A.strides(0) > 0);
-	assert(A.strides(1) == 1);
+	assert(A.stride(0) > 0);
+	assert(A.stride(1) == 1);
 
         int res;
         gelqf_bufferSize(A.size(1), A.size(0),A.origin(),A.stride(0),res);

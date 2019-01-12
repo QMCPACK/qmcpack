@@ -327,7 +327,7 @@ class KPTHCOps
       size_t cnt=0;
 
       // messy
-      size_t Knr=0, Knc=0;
+      long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
         Knc=nGu;

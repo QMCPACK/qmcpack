@@ -39,11 +39,11 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 {
   const ComplexType one(1.),zero(0.);
   auto walker_type = wset.getWalkerType();
-  size_t nsteps= size_t(nsteps_);
-  size_t nwalk = wset.size();
+  int nsteps= nsteps_;
+  int nwalk = wset.size();
   RealType sqrtdt = std::sqrt(dt);  
-  size_t Gsize = wfn.size_of_G_for_vbias();
-  size_t localnCV = wfn.local_number_of_cholesky_vectors();
+  long Gsize = wfn.size_of_G_for_vbias();
+  long localnCV = wfn.local_number_of_cholesky_vectors();
   const int nnodes = TG.getNNodesPerTG();  
   const int node_number = TG.getLocalNodeNumber();
   // if transposed_XXX_=true  --> XXX[nwalk][...], 
@@ -80,11 +80,11 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   CMatrix_ref Grecv(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // vias potential for walkers at original configuration
-  CMatrix_ref vbias(std::addressof(*shmbuff.origin())+displ, {localnCV,nwalk}); 
+  CMatrix_ref vbias(std::addressof(*shmbuff.origin())+displ, {long(localnCV),nwalk}); 
     displ+=localnCV*nwalk;
   // right hand side matrix in calculation of HS potential for all steps: ~ sigma + (vbias-vMF)
   // The same vbias is used in all steps
-  CMatrix_ref X(std::addressof(*shmbuff.origin())+displ, {localnCV,nwalk*nsteps}); 
+  CMatrix_ref X(std::addressof(*shmbuff.origin())+displ, {long(localnCV),nwalk*nsteps}); 
     displ+=localnCV*nwalk*nsteps;
   // HS potential for all steps.
   CMatrix_ref vHS(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
@@ -183,8 +183,8 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
     // 4b. Assemble X(nCV,nsteps,nwalk)
     int q = (node_number+k)%nnodes;
-    CMatrix_ref mf_(MFfactor[q*nsteps].origin(), {nsteps,nwalk});
-    CMatrix_ref hw_(hybrid_weight[q*nsteps].origin(), {nsteps,nwalk});
+    CMatrix_ref mf_(MFfactor[q*nsteps].origin(), {long(nsteps),long(nwalk)});
+    CMatrix_ref hw_(hybrid_weight[q*nsteps].origin(), {long(nsteps),long(nwalk)});
     assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_);
 
     // 4c. Calculate vHS(M*M,nsteps,nwalk)
