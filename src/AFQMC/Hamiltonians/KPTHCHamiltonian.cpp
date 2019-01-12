@@ -162,10 +162,10 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
     if(nmo_per_kp.size() != nkpts ||
        nchol_per_kp.size() != nkpts ||
        kminus.size() != nkpts ||
-       QKtok2.shape()[0] != nkpts ||
-       QKtok2.shape()[1] != nkpts ||
-       QKtoG.shape()[0] != nkpts ||
-       QKtoG.shape()[1] != nkpts
+       QKtok2.size(0) != nkpts ||
+       QKtok2.size(1) != nkpts ||
+       QKtoG.size(0) != nkpts ||
+       QKtoG.size(1) != nkpts
       ) {
       app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
                  <<" Inconsistent dimension (NMOPerKP,NCholPerKP,QKtTok2,QKToG): "
@@ -173,10 +173,10 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                  <<nmo_per_kp.size() <<" "
                  <<nchol_per_kp.size() <<" "
                  <<kminus.size() <<" "
-                 <<QKtok2.shape()[0] <<" "
-                 <<QKtok2.shape()[1] <<" "
-                 <<QKtoG.shape()[0] <<" "
-                 <<QKtoG.shape()[1] <<std::endl;
+                 <<QKtok2.size(0) <<" "
+                 <<QKtok2.size(1) <<" "
+                 <<QKtoG.size(0) <<" "
+                 <<QKtoG.size(1) <<std::endl;
       APP_ABORT("");
     }
   }
@@ -274,10 +274,10 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
         }
 // */
       }
-      if(LQGun[Q].shape()[0] != nG*nmu || LQGun[Q].shape()[1] != nchol_per_kp[Q]) {
+      if(LQGun[Q].size(0) != nG*nmu || LQGun[Q].size(1) != nchol_per_kp[Q]) {
         app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading /Hamiltonian/KPTHC/L" <<Q <<". \n"
-                 <<" Unexpected dimensins: " <<LQGun[Q].shape()[0] <<" " <<LQGun[Q].shape()[1] <<std::endl;
+                 <<" Unexpected dimensins: " <<LQGun[Q].size(0) <<" " <<LQGun[Q].size(1) <<std::endl;
         APP_ABORT("");
       }
       if(!dump.read(rotMuv[Q],std::string("HalfTransformedMuv")+std::to_string(Q))) {
@@ -285,10 +285,10 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                  <<" Problems reading /Hamiltonian/KPTHC/HalfTransformedMuv0" <<Q <<". \n";
         APP_ABORT("");
       }
-      if(rotMuv[Q].shape()[0] != nG*rotnmu || rotMuv[Q].shape()[1] != nG*rotnmu) {
+      if(rotMuv[Q].size(0) != nG*rotnmu || rotMuv[Q].size(1) != nG*rotnmu) {
         app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading /Hamiltonian/KPTHC/L" <<Q <<". \n"
-                 <<" Unexpected dimensins: " <<rotMuv[Q].shape()[0] <<" " <<rotMuv[Q].shape()[1] <<std::endl;
+                 <<" Unexpected dimensins: " <<rotMuv[Q].size(0) <<" " <<rotMuv[Q].size(1) <<std::endl;
         APP_ABORT("");
       }
 // adding scaling factor until Fionn does it on his end
@@ -306,10 +306,10 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                <<" Problems reading /Hamiltonian/KPTHC/Orbitals. \n";
       APP_ABORT("");
     }
-    if(Piu.shape()[0] != nmo_tot || Piu.shape()[1] != nmu) {
+    if(Piu.size(0) != nmo_tot || Piu.size(1) != nmu) {
       app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
                <<" Problems reading /Hamiltonian/KPTHC/Orbitals. \n"
-               <<" Unexpected dimensins: " <<Piu.shape()[0] <<" " <<Piu.shape()[1] <<std::endl;
+               <<" Unexpected dimensins: " <<Piu.size(0) <<" " <<Piu.size(1) <<std::endl;
       APP_ABORT("");
     }
     if(!dump.read(rotPiu,std::string("HalfTransformedFullOrbitals"))) {
@@ -317,10 +317,10 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                <<" Problems reading /Hamiltonian/KPTHC/HalfTransformedFullOrbitals. \n";
       APP_ABORT("");
     }
-    if(rotPiu.shape()[0] != nmo_tot || rotPiu.shape()[1] != rotnmu) {
+    if(rotPiu.size(0) != nmo_tot || rotPiu.size(1) != rotnmu) {
       app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
                <<" Problems reading /Hamiltonian/KPTHC/Orbitals. \n"
-               <<" Unexpected dimensins: " <<rotPiu.shape()[0] <<" " <<rotPiu.shape()[1] <<std::endl;
+               <<" Unexpected dimensins: " <<rotPiu.size(0) <<" " <<rotPiu.size(1) <<std::endl;
       APP_ABORT("");
     }
     dump.pop();
@@ -399,14 +399,14 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
         if(type==COLLINEAR) {
           { // Alpha
             auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd],Q);
-            assert(Psi.shape()[0] == nocc_per_kp[nd][Q]);
+            assert(Psi.size(0) == nocc_per_kp[nd][Q]);
             boost::multi::array_ref<ComplexType,2> haj_r(std::addressof(*haj[nd*nkpts+Q].origin()),
                                                          {nocc_per_kp[nd][Q],nmo_per_kp[Q]});
             ma::product(Psi,H1[Q]({0,nmo_per_kp[Q]},{0,nmo_per_kp[Q]}),haj_r);
           }
           { // Beta
             auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],Q);
-            assert(Psi.shape()[0] == nocc_per_kp[nd][nkpts+Q]);
+            assert(Psi.size(0) == nocc_per_kp[nd][nkpts+Q]);
             boost::multi::array_ref<ComplexType,2> haj_r(std::addressof(*haj[nd*nkpts+Q].origin())+
                                                                         nocc_per_kp[nd][Q]*nmo_per_kp[Q],
                                                          {nocc_per_kp[nd][nkpts+Q],nmo_per_kp[Q]});
@@ -414,7 +414,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
           }
         } else {
           auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[nd],Q);
-          assert(Psi.shape()[0] == nocc_per_kp[nd][Q]);
+          assert(Psi.size(0) == nocc_per_kp[nd][Q]);
           boost::multi::array_ref<ComplexType,2> haj_r(std::addressof(*haj[nd*nkpts+Q].origin()),
                                                        {nocc_per_kp[nd][Q],nmo_per_kp[Q]});
           ma::product(ComplexType(2.0),Psi,H1[Q]({0,nmo_per_kp[Q]},{0,nmo_per_kp[Q]}),
@@ -427,31 +427,31 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
           auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd],Q);
           int ne0 = std::accumulate(std::addressof(*nocc_per_kp[nd].origin()),std::addressof(*nocc_per_kp[nd].origin())+Q,0);
           int ni0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+Q,0);
-          assert(Psi.shape()[0] == nocc_per_kp[nd][Q]);
+          assert(Psi.size(0) == nocc_per_kp[nd][Q]);
           ma::product(ma::H(Piu({ni0,ni0+nmo_per_kp[Q]},{0,nmu})),ma::T(Psi),
-                      cPua[2*nd]({0,nmu},{ne0,ne0+Psi.shape()[0]}));
+                      cPua[2*nd]({0,nmu},{ne0,ne0+Psi.size(0)}));
           ma::product(ma::H(rotPiu({ni0,ni0+nmo_per_kp[Q]},{0,rotnmu})),ma::T(Psi),
-                      rotcPua[2*nd]({0,rotnmu},{ne0,ne0+Psi.shape()[0]}));
+                      rotcPua[2*nd]({0,rotnmu},{ne0,ne0+Psi.size(0)}));
 
           Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],Q);
           ne0 = std::accumulate(std::addressof(*nocc_per_kp[nd].origin())+nkpts,
                                 std::addressof(*nocc_per_kp[nd].origin())+nkpts+Q,0);
-          assert(Psi.shape()[0] == nocc_per_kp[nd][nkpts+Q]);
+          assert(Psi.size(0) == nocc_per_kp[nd][nkpts+Q]);
           ma::product(ma::H(Piu({ni0,ni0+nmo_per_kp[Q]},{0,nmu})),ma::T(Psi),
-                      cPua[2*nd+1]({0,nmu},{ne0,ne0+Psi.shape()[0]}));
-          assert(Psi.shape()[0] == nocc_per_kp[nd][nkpts+Q]);
+                      cPua[2*nd+1]({0,nmu},{ne0,ne0+Psi.size(0)}));
+          assert(Psi.size(0) == nocc_per_kp[nd][nkpts+Q]);
           ma::product(ma::H(rotPiu({ni0,ni0+nmo_per_kp[Q]},{0,rotnmu})),ma::T(Psi),
-                      rotcPua[2*nd+1]({0,rotnmu},{ne0,ne0+Psi.shape()[0]}));
+                      rotcPua[2*nd+1]({0,rotnmu},{ne0,ne0+Psi.size(0)}));
 
         } else {
           int ne0 = std::accumulate(std::addressof(*nocc_per_kp[nd].origin()),std::addressof(*nocc_per_kp[nd].origin())+Q,0);
           int ni0 = std::accumulate(nmo_per_kp.begin(),nmo_per_kp.begin()+Q,0);
           auto Psi = get_PsiK<boost::multi::array<ComplexType,2>>(nmo_per_kp,PsiT[nd],Q);
-          assert(Psi.shape()[0] == nocc_per_kp[nd][Q]);
+          assert(Psi.size(0) == nocc_per_kp[nd][Q]);
           ma::product(ma::H(Piu({ni0,ni0+nmo_per_kp[Q]},{0,nmu})),ma::T(Psi),
-                      cPua[nd]({0,nmu},{ne0,ne0+Psi.shape()[0]}));
+                      cPua[nd]({0,nmu},{ne0,ne0+Psi.size(0)}));
           ma::product(ma::H(rotPiu({ni0,ni0+nmo_per_kp[Q]},{0,rotnmu})),ma::T(Psi),
-                      rotcPua[nd]({0,rotnmu},{ne0,ne0+Psi.shape()[0]}));
+                      rotcPua[nd]({0,rotnmu},{ne0,ne0+Psi.size(0)}));
         }
       }
     }
@@ -867,7 +867,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
             { // Alpha
 // change get_PsiK to cast to the value_type of the result
               auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd],K);
-              assert(Psi.shape()[0] == nocc_per_kp[nd][K]);
+              assert(Psi.size(0) == nocc_per_kp[nd][K]);
               boost::multi::array_ref<SPComplexType,2> Likn(std::addressof(*LQKikn[Q][K].origin()),
                                                            {nmo_per_kp[K],nmo_per_kp[QKtok2[Q][K]]*nchol_per_kp[Q]});
               boost::multi::array_ref<SPComplexType,2> Lakn(std::addressof(*LQKank[nq0+Q][K].origin()),
@@ -879,14 +879,14 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                                                            {nmo_per_kp[QKtok2[Q][K]],nchol_per_kp[Q]});
                 boost::multi::array_ref<SPComplexType,2> Lnk(Lakn[a].origin(),
                                                            {nchol_per_kp[Q],nmo_per_kp[QKtok2[Q][K]]});
-                buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}) = Lkn;
-                ma::transpose(buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}),Lnk);
+                buff({0,Lkn.size(0)},{0,Lkn.size(1)}) = Lkn;
+                ma::transpose(buff({0,Lkn.size(0)},{0,Lkn.size(1)}),Lnk);
               }
             }
             { // Beta
 // change get_PsiK to cast to the value_type of the result
               auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],K);
-              assert(Psi.shape()[0] == nocc_per_kp[nd][nkpts+K]);
+              assert(Psi.size(0) == nocc_per_kp[nd][nkpts+K]);
               boost::multi::array_ref<SPComplexType,2> Likn(std::addressof(*LQKikn[Q][K].origin()),
                                                            {nmo_per_kp[K],nmo_per_kp[QKtok2[Q][K]]*nchol_per_kp[Q]});
               boost::multi::array_ref<SPComplexType,2> Lakn(std::addressof(*LQKank[nq0+nkpts+1+Q][K].origin()),
@@ -898,14 +898,14 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
                                                            {nmo_per_kp[QKtok2[Q][K]],nchol_per_kp[Q]});
                 boost::multi::array_ref<SPComplexType,2> Lnk(Lakn[a].origin(),
                                                            {nchol_per_kp[Q],nmo_per_kp[QKtok2[Q][K]]});
-                buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}) = Lkn;
-                ma::transpose(buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}),Lnk);
+                buff({0,Lkn.size(0)},{0,Lkn.size(1)}) = Lkn;
+                ma::transpose(buff({0,Lkn.size(0)},{0,Lkn.size(1)}),Lnk);
               }
             }
           } else {
 // change get_PsiK to cast to the value_type of the result
             auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[nd],K);
-            assert(Psi.shape()[0] == nocc_per_kp[nd][K]);
+            assert(Psi.size(0) == nocc_per_kp[nd][K]);
             boost::multi::array_ref<SPComplexType,2> Likn(std::addressof(*LQKikn[Q][K].origin()),
                                                          {nmo_per_kp[K],nmo_per_kp[QKtok2[Q][K]]*nchol_per_kp[Q]});
             boost::multi::array_ref<SPComplexType,2> Lakn(std::addressof(*LQKank[nq0+Q][K].origin()),
@@ -1042,10 +1042,10 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
           APP_ABORT("");
         }
       }
-      if(LQKikn_[Q].shape()[0] != nkpts || LQKikn_[Q].shape()[1] != nmo_max*nmo_max*nchol_per_kp_[Q]) {
+      if(LQKikn_[Q].size(0) != nkpts || LQKikn_[Q].size(1) != nmo_max*nmo_max*nchol_per_kp_[Q]) {
         app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n"
-                 <<" Unexpected dimensins: " <<LQKikn_[Q].shape()[0] <<" " <<LQKikn_[Q].shape()[1] <<" " <<std::endl;
+                 <<" Unexpected dimensins: " <<LQKikn_[Q].size(0) <<" " <<LQKikn_[Q].size(1) <<" " <<std::endl;
         APP_ABORT("");
       }
       std::cout<<" done reading: " <<Q <<std::endl;

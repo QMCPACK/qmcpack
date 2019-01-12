@@ -23,12 +23,6 @@
 #include <io/hdf_hyperslab.h>
 #include <io/hdf_double_hyperslab.h>
 #include <io/hdf_multi.h>
-#if defined(HAVE_LIBBOOST)
-#include <io/hdf_ma.h>
-#if !defined(__bgq__)
-#include <io/hdf_boost_smvector.h>
-#endif
-#endif
 #endif
 #include <stack>
 #include <bitset>

@@ -90,7 +90,7 @@ inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, const 
 
 // MAM: Make new h5d_read/write overloads that take more parameters which allow you to
 // use a hyperslab on the memory space too. Then use it through a template specialization of
-// hyperslap for multi_array that allows you to define the memory space hyperslab using 
+// hyperslap for multi::array that allows you to define the memory space hyperslab using 
 // shape and strides. 
 
 /** return true, if successful */

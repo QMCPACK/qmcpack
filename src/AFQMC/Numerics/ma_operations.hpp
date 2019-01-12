@@ -36,18 +36,18 @@ template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::d
 bool is_hermitian(MultiArray2D const& A){
 	using std::conj;
 	using ma::conj;
-	if(A.shape()[0] != A.shape()[1]) return false;
-	for(int i = 0; i != A.shape()[0]; ++i)
-		for(int j = i + 1; j != A.shape()[1]; ++j)
+	if(A.size(0) != A.size(1)) return false;
+	for(int i = 0; i != A.size(0); ++i)
+		for(int j = i + 1; j != A.size(1); ++j)
 			if( std::abs(A[i][j] - conj(A[j][i])) > 1e-12 ) return false;
 	return true;
 }
 
 template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::dimensionality > 1)>::type>
 bool is_symmetric(MultiArray2D const& A){
-	if(A.shape()[0] != A.shape()[1]) return false;
-	for(int i = 0; i != A.shape()[0]; ++i)
-		for(int j = i + 1; j != A.shape()[1]; ++j)
+	if(A.size(0) != A.size(1)) return false;
+	for(int i = 0; i != A.size(0); ++i)
+		for(int j = i + 1; j != A.size(1); ++j)
 			if( std::abs(A[i][j] - A[j][i]) > 1e-12 ) return false;
 	return true;
 }
@@ -57,14 +57,14 @@ template<class MA> MA arg(MA&& ma){return std::forward<MA>(ma);} // see speciali
 
 template<class MultiArray2D, typename = typename std::enable_if<(std::decay<MultiArray2D>::type::dimensionality > 1)>::type>
 MultiArray2D transpose(MultiArray2D&& A){
-	assert(A.shape()[0] == A.shape()[1]);
+	assert(A.size(0) == A.size(1));
         typename std::decay<MultiArray2D>::type::element one(1.0);
         return ma::geam< 'T' > (one, arg(A), std::forward<MultiArray2D>(A));
 }
 
 template<class MultiArray2D, typename = typename std::enable_if<(std::decay<MultiArray2D>::type::dimensionality == 2)>::type>
 void transform(MultiArray2D&& A){
-        assert(arg(A).shape()[0] == arg(A).shape()[1]);
+        assert(arg(A).size(0) == arg(A).size(1));
         typename std::decay<MultiArray2D>::type::element one(1.0);
         ma::geam< op_tag<typename std::decay<MultiArray2D>::type>::value > (one, arg(A), arg(A));
 }
@@ -152,16 +152,16 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
         assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T');
         assert(op_tag<MultiArray1DB>::value == 'N');
         if(op_tag<SparseMatrixA>::value == 'N') {
-            assert(arg(A).shape()[0] == std::forward<MultiArray1DC>(C).shape()[0]);
-            assert(arg(A).shape()[1] == arg(B).shape()[0]);
+            assert(arg(A).size(0) == std::forward<MultiArray1DC>(C).size(0));
+            assert(arg(A).size(1) == arg(B).size(0));
         } else {
-            assert(arg(A).shape()[0] == arg(B).shape()[0]);
-            assert(arg(A).shape()[1] == std::forward<MultiArray1DC>(C).shape()[0]);
+            assert(arg(A).size(0) == arg(B).size(0));
+            assert(arg(A).size(1) == std::forward<MultiArray1DC>(C).size(0));
         }
 
 // need backend for sparse
         SPBLAS::csrmv( op_tag<SparseMatrixA>::value,
-            arg(A).shape()[0], arg(A).shape()[1],
+            arg(A).size(0), arg(A).size(1),
             alpha, "GxxCxx",
             std::addressof(*arg(A).non_zero_values_data()),
             std::addressof(*arg(A).non_zero_indices2_data()),
@@ -216,29 +216,29 @@ template<class T, class SparseMatrixA, class MultiArray2DB, class MultiArray2DC,
 MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C){
         assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T'); 
         assert(op_tag<MultiArray2DB>::value == 'N');
-        assert( arg(B).strides()[1] == 1 );
-        assert( std::forward<MultiArray2DC>(C).strides()[1] == 1 );
+        assert( arg(B).stride(1) == 1 );
+        assert( std::forward<MultiArray2DC>(C).stride(1) == 1 );
         if(op_tag<SparseMatrixA>::value == 'N') {
-            assert(arg(A).shape()[0] == std::forward<MultiArray2DC>(C).shape()[0]);
-            assert(arg(A).shape()[1] == arg(B).shape()[0]);
-            assert(arg(B).shape()[1] == std::forward<MultiArray2DC>(C).shape()[1]);
+            assert(arg(A).size(0) == std::forward<MultiArray2DC>(C).size(0));
+            assert(arg(A).size(1) == arg(B).size(0));
+            assert(arg(B).size(1) == std::forward<MultiArray2DC>(C).size(1));
         } else {
-            assert(arg(A).shape()[0] == arg(B).shape()[0]);
-            assert(arg(A).shape()[1] == std::forward<MultiArray2DC>(C).shape()[0]);
-            assert(arg(B).shape()[1] == std::forward<MultiArray2DC>(C).shape()[1]);
+            assert(arg(A).size(0) == arg(B).size(0));
+            assert(arg(A).size(1) == std::forward<MultiArray2DC>(C).size(0));
+            assert(arg(B).size(1) == std::forward<MultiArray2DC>(C).size(1));
         }        
 
         SPBLAS::csrmm( op_tag<SparseMatrixA>::value, 
-            arg(A).shape()[0], arg(B).shape()[1], arg(A).shape()[1], 
+            arg(A).size(0), arg(B).size(1), arg(A).size(1), 
             alpha, "GxxCxx", 
             std::addressof(*(arg(A).non_zero_values_data())) , 
             std::addressof(*(arg(A).non_zero_indices2_data())),
             std::addressof(*(arg(A).pointers_begin())),  
             std::addressof(*(arg(A).pointers_end())),
-            std::addressof(*arg(B).origin()), arg(B).strides()[0], 
+            std::addressof(*arg(B).origin()), arg(B).stride(0), 
             beta, 
             std::addressof(*std::forward<MultiArray2DC>(C).origin()), 
-            std::forward<MultiArray2DC>(C).strides()[0]);
+            std::forward<MultiArray2DC>(C).stride(0));
 
         return std::forward<MultiArray2DC>(C);
 }
@@ -353,52 +353,52 @@ T invert(MultiArray2D&& m){
         size_t bufferSize(invert_optimal_workspace_size(std::forward<MultiArray2D>(m)));
         boost::multi::array<element,1,allocator_type> WORK(extensions{bufferSize},
                                                             m.get_allocator()); 
-        boost::multi::array<int,1,iallocator_type> pivot(extensions{m.shape()[0]+1},
+        boost::multi::array<int,1,iallocator_type> pivot(extensions{m.size(0)+1},
                                                     iallocator_type{m.get_allocator()}); 
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
-        T detvalue = determinant_from_getrf<T>(m.shape()[0], m.origin(), m.strides()[0], pivot.data());
+        T detvalue = determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data());
         getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
 }
 
 template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>
 T invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK){
-        assert(m.shape()[0] == m.shape()[1]);
-        assert(pivot.size() >= m.shape()[0]+1);
+        assert(m.size(0) == m.size(1));
+        assert(pivot.size() >= m.size(0)+1);
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
-        T detvalue = determinant_from_getrf<T>(m.shape()[0], m.origin(), m.strides()[0], pivot.data());
+        T detvalue = determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data());
         getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
 }
 
 template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>
 void invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T* detvalue){
-        assert(m.shape()[0] == m.shape()[1]);
-        assert(pivot.size() >= m.shape()[0]+1);
+        assert(m.size(0) == m.size(1));
+        assert(pivot.size() >= m.size(0)+1);
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
-        determinant_from_getrf<T>(m.shape()[0], m.origin(), m.strides()[0], pivot.data(), detvalue);
+        determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data(), detvalue);
         getri(std::forward<MultiArray2D>(m), pivot, WORK);
 }
 
 template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>
 T determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK){
-        assert(m.shape()[0] == m.shape()[1]);
-        assert(pivot.size() >= m.shape()[0]);
+        assert(m.size(0) == m.size(1));
+        assert(pivot.size() >= m.size(0));
 
         getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot), WORK);
-        return determinant_from_getrf<T>(m.shape()[0], m.origin(), m.strides()[0], pivot.data());
+        return determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data());
 }
 
 template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>
 void determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T* detvalue){
-        assert(m.shape()[0] == m.shape()[1]);
-        assert(pivot.size() >= m.shape()[0]);
+        assert(m.size(0) == m.size(1));
+        assert(pivot.size() >= m.size(0));
 
         getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot), WORK);
-        determinant_from_getrf<T>(m.shape()[0], m.origin(), m.strides()[0], pivot.data(), detvalue);
+        determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data(), detvalue);
 }
 
 template<class MultiArray2D,
@@ -410,8 +410,8 @@ MultiArray2D exp(MultiArray2D const& A) {
         using TVec = boost::multi::array<RealType,1>;
         using TMat = boost::multi::array<Type,2>;
         using eigSys = std::pair<TVec,TMat>; 
-        assert(A.shape()[0]==A.shape()[1]);
-        size_t N = A.shape()[0];
+        assert(A.size(0)==A.size(1));
+        size_t N = A.size(0);
 
         MultiArray2D ExpA({N,N});
         std::fill_n(std::addressof(*ExpA.origin()),N*N,Type(0));
@@ -439,7 +439,7 @@ template<class MultiArray2D,
          typename = typename std::enable_if_t<MultiArray2D::dimensionality == 2>
         >
 MultiArray2D cholesky(MultiArray2D&& A){
-        assert(A.shape()[0]==A.shape()[1]);
+        assert(A.size(0)==A.size(1));
         if(is_hermitian(A)) { 
           return potrf( transpose( std::forward<MultiArray2D>(A)) );
         } else {
@@ -450,19 +450,19 @@ MultiArray2D cholesky(MultiArray2D&& A){
 
 template<class MultiArray2D>
 MultiArray2D set_identity(MultiArray2D&& m){
-	assert(m.shape()[0] == m.shape()[1]);
-	for(int i = 0; i != m.shape()[0]; ++i)
-		for(int j = 0; j != m.shape()[1]; ++j)
+	assert(m.size(0) == m.size(1));
+	for(int i = 0; i != m.size(0); ++i)
+		for(int j = 0; j != m.size(1); ++j)
 			m[i][j] = ((i==j)?1:0);
 	return std::forward<MultiArray2D>(m);
 }
 
 template<class MultiArray2DA, class MultiArray2DB, class T>
 bool equal(MultiArray2DB const& a, MultiArray2DA const& b, T tol = 0){
-	if(a.shape()[0] != b.shape()[0] or a.shape()[0] != b.shape()[0]) return false; 
+	if(a.size(0) != b.size(0) or a.size(0) != b.size(0)) return false; 
 	using std::abs;
-	for(int i = 0; i != a.shape()[0]; ++i)
-		for(int j = 0; j != a.shape()[1]; ++j)
+	for(int i = 0; i != a.size(0); ++i)
+		for(int j = 0; j != a.size(1); ++j)
 			if(abs(a[i][j] - b[i][j]) > tol) return false;
 	return true;
 }
@@ -614,8 +614,8 @@ int main(){
 	boost::multi::array_ref<double, 2> AB(ab.data(), {3,3});
 	assert( AB.num_elements() == ab.size() );
 
-	for(int i = 0; i != C.shape()[0]; ++i, cout << '\n')
-		for(int j = 0; j != C.shape()[1]; ++j)
+	for(int i = 0; i != C.size(0); ++i, cout << '\n')
+		for(int j = 0; j != C.size(1); ++j)
 			cout << C[i][j] << ' ';
 	cout << '\n';
 

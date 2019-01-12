@@ -54,7 +54,7 @@ inline void SharedWalkerSet::resize(int n, MatA&& A, MatB&& B) {
       auto pos = tot_num_walkers; 
       // careful here!!!
       while(pos < n) {
-        std::fill_n(W[pos].origin(),W[pos].shape()[0],ComplexType(0,0));
+        std::fill_n(W[pos].origin(),W[pos].size(0),ComplexType(0,0));
         walker w0(W[pos],data_displ,wlk_desc);
         w0.SlaterMatrix(Alpha) = A;
         if(walkerType == COLLINEAR)
@@ -88,18 +88,18 @@ template<class Mat>
 inline void SharedWalkerSet::pop_walkers(Mat&& M) {
 
   static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
-  if(tot_num_walkers < int(M.shape()[0]))
+  if(tot_num_walkers < int(M.size(0)))
     APP_ABORT("Insufficient walkers");
-  if(walker_size != int(M.shape()[1]))
+  if(walker_size != int(M.size(1)))
     APP_ABORT("Incorrect dimensions.");
-  if(M.strides()[1] != 1)
+  if(M.stride(1) != 1)
     APP_ABORT("Incorrect strides.");
 
   if(!TG.TG_local().root()) {
-    tot_num_walkers -= int(M.shape()[0]);
+    tot_num_walkers -= int(M.size(0));
     return;
   }  
-  for(int i=0; i<M.shape()[0]; i++)
+  for(int i=0; i<M.size(0); i++)
     M[i] = walker_buffer[--tot_num_walkers];  
 
 }
@@ -109,20 +109,20 @@ template<class Mat>
 inline void SharedWalkerSet::push_walkers(Mat&& M) {
 
   static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
-  if(tot_num_walkers+M.shape()[0] > capacity())
+  if(tot_num_walkers+M.size(0) > capacity())
     APP_ABORT("Insufficient capacity");
-  if(walker_size != M.shape()[1])
+  if(walker_size != M.size(1))
     APP_ABORT("Incorrect dimensions.");
-  if(M.strides()[1] != 1)
+  if(M.stride(1) != 1)
     APP_ABORT("Incorrect strides.");
 
   if(!TG.TG_local().root()) {
-    tot_num_walkers += M.shape()[0];
+    tot_num_walkers += M.size(0);
     return;
   }  
 
-  auto W = Wlk_Buff(std::addressof(*walker_buffer.origin()),{tot_num_walkers+M.shape()[0],walker_size}); 
-  for(int i=0; i<M.shape()[0]; i++)
+  auto W = Wlk_Buff(std::addressof(*walker_buffer.origin()),{tot_num_walkers+M.size(0),walker_size}); 
+  for(int i=0; i<M.size(0); i++)
     W[tot_num_walkers++] = M[i];
 
 }
@@ -139,12 +139,12 @@ inline void SharedWalkerSet::branch(std::vector<std::pair<double,int>>::iterator
   // checking purposes
   int nW = 0;
   for(auto it=itbegin; it!=itend; ++it) nW += it->second;
-  if(int(M.shape()[0]) < std::max(0,nW-targetN_per_TG)) {
+  if(int(M.size(0)) < std::max(0,nW-targetN_per_TG)) {
     std::cout<<" Error in SharedWalkerSet::branch(): Not enough space in excess matrix. \n"
-               <<M.shape()[0] <<" " <<nW <<" " <<targetN_per_TG <<std::endl; 
+               <<M.size(0) <<" " <<nW <<" " <<targetN_per_TG <<std::endl; 
     APP_ABORT("Error in SharedWalkerSet::branch(): Not enough space in excess matrix.\n");
   }
-  if(int(M.shape()[1]) < walker_size) 
+  if(int(M.size(1)) < walker_size) 
     APP_ABORT("Error in SharedWalkerSet::branch(): Wrong dimensions in excess matrix.\n"); 
 
   // if all walkers are dead, don't bother with routine, reset tot_num_walkers and return

@@ -45,27 +45,27 @@ namespace afqmc
     size_t nkev = HamOp.number_of_ke_vectors();
     assert(E.dimensionality==2);
     assert(Ov.dimensionality==1);
-    assert(E.shape()[0]==wset.size()); 
-    assert(Ov.shape()[0]==wset.size()); 
-    assert(E.shape()[1]==3); 
+    assert(E.size(0)==wset.size()); 
+    assert(Ov.size(0)==wset.size()); 
+    assert(E.size(1)==3); 
 
     ComplexType zero(0.0);
     auto Gsize = dm_size(false);
     auto nwalk = wset.size();
     // resize shm structures if needed
-    if(Ovmsd.shape() != std::array<long,3>{long(nspins),long(maxn_unique_confg),long(nwalk)}) 
+    if(Ovmsd.shape() != std::make_tuple(long(nspins),long(maxn_unique_confg),long(nwalk))) 
       Ovmsd.reextent({nspins,maxn_unique_confg,nwalk});
-    if(Emsd.shape() != std::array<long,4>{long(nspins),long(maxn_unique_confg),long(nwalk),3l}) 
+    if(Emsd.shape() != std::make_tuple(long(nspins),long(maxn_unique_confg),long(nwalk),3l)) 
       Emsd.reextent({nspins,maxn_unique_confg,nwalk,3});
     // resize Alpha here, if beta is needed resize below
     if(GrefA.shape() != 
-        std::array<long,3>{nwalk,dm_dims(false,Alpha).first,dm_dims(false,Alpha).second}) 
+        std::make_tuple(nwalk,dm_dims(false,Alpha).first,dm_dims(false,Alpha).second)) 
       GrefA.reextent({nwalk,dm_dims(false,Alpha).first,dm_dims(false,Alpha).second});
     if(wgt.size() != nwalk) wgt.reextent(extensions<1u>{nwalk});
     if(opSpinEJ.size() != nwalk) opSpinEJ.reextent(extensions<1u>{nwalk});
     if(localGbuff.size() < 2*Gsize) 
       localGbuff.reextent(extensions<1u>{2*Gsize});
-    if(eloc2.shape()[0] != nwalk || eloc2.shape()[1] != 3) eloc2.reextent({nwalk,3});
+    if(eloc2.size(0) != nwalk || eloc2.size(1) != 3) eloc2.reextent({nwalk,3});
 
     std::fill_n(Ov.origin(),nwalk,zero);
     std::fill_n(E.origin(),3*nwalk,zero);
@@ -88,14 +88,14 @@ namespace afqmc
     if(fast_ph_energy) {
       // assume [nwalk][ik] for now. If needed, generalize later
       if(GrefB.shape() != 
-          std::array<long,3>{nwalk,dm_dims(false,Beta).first,dm_dims(false,Beta).second})
+          std::make_tuple(nwalk,dm_dims(false,Beta).first,dm_dims(false,Beta).second))
         GrefB.reextent({nwalk,dm_dims(false,Beta).first,dm_dims(false,Beta).second});
       if(QQ0A.shape() != 
-          std::array<long,3>{nwalk,long(OrbMats[0].shape()[0]),NAEA})
-        QQ0A.reextent({nwalk,OrbMats[0].shape()[0],NAEA});
+          std::make_tuple(nwalk,long(OrbMats[0].size(0)),NAEA))
+        QQ0A.reextent({nwalk,OrbMats[0].size(0),NAEA});
       if(QQ0B.shape() != 
-          std::array<long,3>{nwalk,long(OrbMats.back().shape()[0]),NAEB})
-        QQ0B.reextent({nwalk,OrbMats.back().shape()[0],NAEB});
+          std::make_tuple(nwalk,long(OrbMats.back().size(0)),NAEB))
+        QQ0B.reextent({nwalk,OrbMats.back().size(0),NAEB});
 
       for(int iw=0, nc=0; iw<nwalk; iw++) {
         if(nc%TG.TG_local().size()==TG.TG_local().rank()) {
@@ -134,9 +134,9 @@ namespace afqmc
     } else {  
       ComplexType ov0;  
       if(KEright.shape() != 
-            std::array<long,3>{long(abij.number_of_unique_excitations()[0]),long(nwalk),long(nkev)})
+            std::make_tuple(long(abij.number_of_unique_excitations()[0]),long(nwalk),long(nkev)))
         KEright.reextent({abij.number_of_unique_excitations()[0],nwalk,nkev});
-      if(KEleft.shape() != std::array<long,2>{long(nwalk),long(nkev)})
+      if(KEleft.shape() != std::make_tuple(long(nwalk),long(nkev)))
         KEleft.reextent({nwalk,nkev});
       for(int spin=0; spin<nspins; ++spin) {
         int orb_spin_indx = (OrbMats.size()==2)?spin:0;
@@ -178,7 +178,7 @@ namespace afqmc
           TG.local_barrier();
           if(spin==0) { 
             auto KEr = KEright[nd];
-            HamOp.energy(eloc2,G,orb_spin_indx,dummyMatPtr,&KEr,TG.TG_local().root(),true,true);
+            HamOp.energy(eloc2,G,orb_spin_indx,dummyMatPtr,std::addressof(KEr),TG.TG_local().root(),true,true);
             // reduce_n since Emsd is in shared memory (doing this instead of copy with mutex)
             TG.TG_local().reduce_n(eloc2.origin(),3*nwalk,
                                    std::addressof(*Emsd[spin][nd].origin()),std::plus<>(),0);
@@ -188,7 +188,7 @@ namespace afqmc
 //<<eloc2[0][2] <<std::endl;
             TG.local_barrier();
           } else { 
-            HamOp.energy(eloc2,G,orb_spin_indx,&KEleft,dummyMatPtr,TG.TG_local().root(),true,true);
+            HamOp.energy(eloc2,G,orb_spin_indx,std::addressof(KEleft),dummyMatPtr,TG.TG_local().root(),true,true);
 //std::cout<<" E: " <<spin <<" " <<nd <<" " <<Ovmsd[spin][nd][0] <<" "
 //<<eloc2[0][0] <<" " 
 //<<eloc2[0][1] <<" " 
@@ -312,9 +312,9 @@ namespace afqmc
     assert(shmbuff_for_E->num_elements() >= nt);
     assert(E.dimensionality==2);
     assert(Ov.dimensionality==1);
-    assert(E.shape()[0]==wset.size());
-    assert(Ov.shape()[0]==wset.size());
-    assert(E.shape()[1]==3);
+    assert(E.size(0)==wset.size());
+    assert(Ov.size(0)==wset.size());
+    assert(E.size(1)==3);
 
     int nr=Gsize,nc=nwalk;
     if(transposed_G_for_E_) std::swap(nr,nc);
@@ -327,7 +327,7 @@ namespace afqmc
       displ += Gsize*nwalk;
     boost::multi::array_ref<ComplexType,1> overlaps(std::addressof(*shmbuff_for_E->origin())+displ,
                                                    extensions<1u>{nwalk});
-    if(eloc2.shape()[0] != nnodes*nwalk || eloc2.shape()[1] != 3) 
+    if(eloc2.size(0) != nnodes*nwalk || eloc2.size(1) != 3) 
         eloc2.resize({nnodes*nwalk,3});
     auto elocal = eloc2[node_number*nwalk];
     int nak0,nak1;
@@ -395,20 +395,20 @@ namespace afqmc
   {
     // if not compact, calculate compact on temporary storage and multiply by OrbMat[] on the left at the end.
     using ma::T;
-    assert(G.strides()[1]==1);
-    assert(Ov.strides()[0]==1);
+    assert(G.stride(1)==1);
+    assert(Ov.stride(0)==1);
     if(transpose)
-      assert(G.shape()[0] == wset.size() && G.shape()[1] == size_t(dm_size(not compact)));
+      assert(G.size(0) == wset.size() && G.size(1) == size_t(dm_size(not compact)));
     else
-      assert(G.shape()[1] == wset.size() && G.shape()[0] == size_t(dm_size(not compact)));
+      assert(G.size(1) == wset.size() && G.size(0) == size_t(dm_size(not compact)));
     const int nw = wset.size(); 
     const int ndet = abij.number_of_configurations(); 
     auto refc = abij.reference_configuration();
     assert(Ov.size() >= nw);  
     std::fill_n(Ov.begin(),nw,0);
-    for(int i=0; i<G.shape()[0]; i++)
+    for(int i=0; i<G.size(0); i++)
       if( i%TG.TG_local().size() == TG.TG_local().rank() )
-        std::fill_n(G[i].origin(),G.shape()[1],ComplexType(0.0));
+        std::fill_n(G[i].origin(),G.size(1),ComplexType(0.0));
     TG.local_barrier();
     auto Gsize = size_t(dm_size(not compact));
     if(compact) {
@@ -489,7 +489,7 @@ namespace afqmc
                     local_ov[1][std::get<1>(*it)];
 
         // 2. generate R[Nact,Nel] and generate G
-        boost::multi::array_ref<ComplexType,2> Ra(Gwork.origin(),{NAEA,OrbMats[0].shape()[0]});
+        boost::multi::array_ref<ComplexType,2> Ra(Gwork.origin(),{NAEA,OrbMats[0].size(0)});
         calculate_R(0,1,0,abij,det_couplings[0],local_QQ0inv0,Qwork,local_ov[1],ov0,Ra);
         if(transpose) {
           if(compact) {
@@ -515,7 +515,7 @@ namespace afqmc
           }  
         }
 
-        boost::multi::array_ref<ComplexType,2> Rb(Gwork.origin(),{NAEB,OrbMats.back().shape()[0]});
+        boost::multi::array_ref<ComplexType,2> Rb(Gwork.origin(),{NAEB,OrbMats.back().size(0)});
         calculate_R(0,1,1,abij,det_couplings[1],local_QQ0inv1,Qwork,local_ov[0],ov0,Rb);
         if(transpose) {
           if(compact) {
@@ -531,13 +531,13 @@ namespace afqmc
         } else {
           if(compact) {
             ma::product(T(Rb),GB2D0_,GB2D_);
-            G({GAdims.first*GAdims.second,G.shape()[0]},iw) = GB1D_;
+            G({GAdims.first*GAdims.second,G.size(0)},iw) = GB1D_;
           } else {
             boost::multi::array_ref<ComplexType,1> G1D(Gfullb.origin(),
                                    extensions<1u>{Gfullb.num_elements()});
             ma::product(T(Rb),GB2D0_,GB2D_);
             ma::product(T(OrbMats.back()),GB2D_,Gfullb);
-            G({Gfulla.num_elements(),G.shape()[0]},iw) = G1D;
+            G({Gfulla.num_elements(),G.size(0)},iw) = G1D;
           }
         }
       }
@@ -564,11 +564,11 @@ namespace afqmc
             unique_overlaps.swap(unique_overlaps_);
           }
           {
-            shared_CMatrix QQ0inv0_({OrbMats[0].shape()[0],NAEA},shared_allocator<ComplexType>{local_group_comm}); 
+            shared_CMatrix QQ0inv0_({OrbMats[0].size(0),NAEA},shared_allocator<ComplexType>{local_group_comm}); 
             QQ0inv0.swap(QQ0inv0_);
           }
           {
-            shared_CMatrix QQ0inv1_({OrbMats.back().shape()[0],NAEB},shared_allocator<ComplexType>{local_group_comm}); 
+            shared_CMatrix QQ0inv1_({OrbMats.back().size(0),NAEB},shared_allocator<ComplexType>{local_group_comm}); 
             QQ0inv1.swap(QQ0inv1_);
           }
           {
@@ -610,7 +610,7 @@ namespace afqmc
                       unique_overlaps[1][std::get<1>(*it)];
 
           // 2. generate R[Nact,Nel] and generate G
-          boost::multi::array_ref<ComplexType,2> Ra(Gwork.origin(),{NAEA,OrbMats[0].shape()[0]});
+          boost::multi::array_ref<ComplexType,2> Ra(Gwork.origin(),{NAEA,OrbMats[0].size(0)});
           calculate_R(local_group_comm.rank(),local_group_comm.size(),0,
                       abij,det_couplings[0],QQ0inv0,Qwork,unique_overlaps[1],ov0,Ra);
           local_group_comm.all_reduce_in_place_n(std::addressof(*Ra.origin()),
@@ -638,9 +638,9 @@ namespace afqmc
                           GA2D0_shm(GA2D0_shm.extension(0),{M0,Mn}),
                           GA2D_(GA2D_.extension(0),{M0,Mn}));  // can be local
               boost::multi::array_ref<ComplexType,3> Gw(std::addressof(*G.origin()),
-                                     {GAdims.first,GAdims.second,G.shape()[1]});
+                                     {GAdims.first,GAdims.second,G.size(1)});
               // copying by hand for now, implement strided copy in ma_blas   
-              for(size_t k=0; k<GA2D_.shape()[0]; ++k)
+              for(size_t k=0; k<GA2D_.size(0); ++k)
                 for(size_t m=M0; m<Mn; ++m) 
                   Gw[k][m][iw] = GA2D_[k][m];  
             } else {
@@ -651,15 +651,15 @@ namespace afqmc
                           GA2D_(GA2D_.extension(0),{M0,Mn}),
                           Gfulla(Gfulla.extension(0),{M0,Mn}));  // can be local
               boost::multi::array_ref<ComplexType,3> Gw(std::addressof(*G.origin()),
-                                     {Gfulla.shape()[0],Gfulla.shape()[1],G.shape()[1]});
+                                     {Gfulla.size(0),Gfulla.size(1),G.size(1)});
               // copying by hand for now, implement strided copy in ma_blas   
-              for(size_t k=0; k<Gfulla.shape()[0]; ++k)
+              for(size_t k=0; k<Gfulla.size(0); ++k)
                 for(size_t m=M0; m<Mn; ++m)
                   Gw[k][m][iw] = Gfulla[k][m];
             }
           }
 
-          boost::multi::array_ref<ComplexType,2> Rb(Gwork.origin(),{NAEB,OrbMats.back().shape()[0]});
+          boost::multi::array_ref<ComplexType,2> Rb(Gwork.origin(),{NAEB,OrbMats.back().size(0)});
           calculate_R(local_group_comm.rank(),local_group_comm.size(),1,
                       abij,det_couplings[1],QQ0inv1,Qwork,unique_overlaps[0],ov0,Rb);
           local_group_comm.all_reduce_in_place_n(std::addressof(*Rb.origin()),
@@ -687,9 +687,9 @@ namespace afqmc
                           GB2D0_shm(GB2D0_shm.extension(0),{M0,Mn}),
                           GB2D_(GB2D_.extension(0),{M0,Mn}));  // can be local
               boost::multi::array_ref<ComplexType,3> Gw(std::addressof(*G[GAdims.first*GAdims.second].origin()),
-                                     {GBdims.first,GBdims.second,G.shape()[1]});
+                                     {GBdims.first,GBdims.second,G.size(1)});
               // copying by hand for now, implement strided copy in ma_blas   
-              for(size_t k=0; k<GB2D_.shape()[0]; ++k)
+              for(size_t k=0; k<GB2D_.size(0); ++k)
                 for(size_t m=M0; m<Mn; ++m)
                   Gw[k][m][iw] = GB2D_[k][m];
             } else {
@@ -700,9 +700,9 @@ namespace afqmc
                           GB2D_(GB2D_.extension(0),{M0,Mn}),
                           Gfullb(Gfullb.extension(0),{M0,Mn}));  // can be local
               boost::multi::array_ref<ComplexType,3> Gw(std::addressof(*G[Gfulla.num_elements()].origin()),
-                                     {Gfullb.shape()[0],Gfullb.shape()[1],G.shape()[1]});
+                                     {Gfullb.size(0),Gfullb.size(1),G.size(1)});
               // copying by hand for now, implement strided copy in ma_blas   
-              for(size_t k=0; k<Gfullb.shape()[0]; ++k)
+              for(size_t k=0; k<Gfullb.size(0); ++k)
                 for(size_t m=M0; m<Mn; ++m)
                   Gw[k][m][iw] = Gfullb[k][m];
             }
@@ -714,15 +714,15 @@ namespace afqmc
     // normalize G
     TG.TG_local().all_reduce_in_place_n(Ov.origin(),nw,std::plus<>());
     if(transpose) {
-      for(size_t iw=0; iw<G.shape()[0]; ++iw) 
+      for(size_t iw=0; iw<G.size(0); ++iw) 
         if( iw%TG.TG_local().size() == TG.TG_local().rank() ) {
           auto ov_ = ComplexType(1.0,0.0)/Ov[iw];
           ma::scal(ov_,G[iw]);
         }
     } else {
       auto Ov_ = Ov.origin();  
-      const size_t nw_ = G.shape()[1];  
-      for(int ik=0; ik<G.shape()[0]; ++ik)
+      const size_t nw_ = G.size(1);  
+      for(int ik=0; ik<G.size(0); ++ik)
         if( ik%TG.TG_local().size() == TG.TG_local().rank() ) {
           auto Gik = std::addressof(*G[ik].origin());  
           for(size_t iw=0; iw<nw_; ++iw)
@@ -883,11 +883,11 @@ namespace afqmc
             unique_overlaps.swap(unique_overlaps_);
           }
           {
-            shared_CMatrix QQ0inv0_({OrbMats[0].shape()[0],NAEA},shared_allocator<ComplexType>{local_group_comm});
+            shared_CMatrix QQ0inv0_({OrbMats[0].size(0),NAEA},shared_allocator<ComplexType>{local_group_comm});
             QQ0inv0.swap(QQ0inv0_);
           }
           {
-            shared_CMatrix QQ0inv1_({OrbMats.back().shape()[0],NAEB},shared_allocator<ComplexType>{local_group_comm});
+            shared_CMatrix QQ0inv1_({OrbMats.back().size(0),NAEB},shared_allocator<ComplexType>{local_group_comm});
             QQ0inv1.swap(QQ0inv1_);
           }
           // don't need them here, but allocate anyway to avoid dimension check every time 
@@ -996,7 +996,7 @@ namespace afqmc
     if(walker_type == NONCOLLINEAR)  
       APP_ABORT(" Error: OrthogonalizeExcited not implemented with NONCOLLINEAR.\n");
     if(spin==Alpha) {
-      if(extendedMatAlpha.shape()[0] != NMO || extendedMatAlpha.shape()[1] != maxOccupExtendedMat.first)
+      if(extendedMatAlpha.size(0) != NMO || extendedMatAlpha.size(1) != maxOccupExtendedMat.first)
         extendedMatAlpha.reextent({NMO,maxOccupExtendedMat.first});
       extendedMatAlpha(extendedMatAlpha.extension(0),{0,NAEA}) = A;
       extendedMatAlpha(extendedMatAlpha.extension(0),{NAEA+1,maxOccupExtendedMat.first}) =
@@ -1014,7 +1014,7 @@ namespace afqmc
         if(i.first < NMO && i.second < NMO ) 
           A(A.extension(0),i.first) = extendedMatAlpha(extendedMatAlpha.extension(0),i.second);
     } else {
-      if(extendedMatBeta.shape()[0] != NMO || extendedMatBeta.shape()[1] != maxOccupExtendedMat.second)
+      if(extendedMatBeta.size(0) != NMO || extendedMatBeta.size(1) != maxOccupExtendedMat.second)
         extendedMatBeta.reextent({NMO,maxOccupExtendedMat.second});
       extendedMatBeta(extendedMatBeta.extension(0),{0,NAEB}) = A;
       extendedMatBeta(extendedMatBeta.extension(0),{NAEB+1,maxOccupExtendedMat.second}) = 

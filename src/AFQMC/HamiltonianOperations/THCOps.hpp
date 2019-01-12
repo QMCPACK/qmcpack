@@ -89,11 +89,11 @@ class THCOps
                 SM_TMats({1,1},shared_allocator<SPComplexType>{c_})
     {
 /*
-for(int i=0; i<haj[0].shape()[0]; i++)
+for(int i=0; i<haj[0].size(0); i++)
   std::cout<<i <<" " <<haj[0][i]  <<"\n";
 std::cout<<"H1:\n";
-for(int i=0; i<hij.shape()[0]; i++)
-  for(int j=0; j<hij.shape()[1]; j++)
+for(int i=0; i<hij.size(0); i++)
+  for(int j=0; j<hij.size(1); j++)
     std::cout<<i <<" " <<j <<" " <<hij[i][j]  <<"\n";
 std::cout<<"\n";
 */
@@ -101,32 +101,32 @@ std::cout<<"\n";
 	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
       assert(comm);
       // current partition over 'u' for L/Piu
-      assert(Luv.shape()[0] == Piu.shape()[1]);
+      assert(Luv.size(0) == Piu.size(1));
       for(int i=0; i<rotcPua.size(); i++) {
         // rot Ps are not yet distributed
-        assert(rotcPua[i].shape()[0] == rotPiu.shape()[1]);
+        assert(rotcPua[i].size(0) == rotPiu.size(1));
         if(walker_type==CLOSED)
-          assert(rotcPua[i].shape()[1]==NAOA);
+          assert(rotcPua[i].size(1)==NAOA);
         else if(walker_type==COLLINEAR)
-          assert(rotcPua[i].shape()[1]==NAOA+NAOB);
+          assert(rotcPua[i].size(1)==NAOA+NAOB);
         else if(walker_type==NONCOLLINEAR)
-          assert(rotcPua[i].shape()[1]==NAOA+NAOB);
+          assert(rotcPua[i].size(1)==NAOA+NAOB);
       }
       for(int i=0; i<cPua.size(); i++) {
-        assert(cPua[i].shape()[0]==Luv.shape()[0]);
+        assert(cPua[i].size(0)==Luv.size(0));
         if(walker_type==CLOSED)
-          assert(cPua[i].shape()[1]==NAOA);
+          assert(cPua[i].size(1)==NAOA);
         else if(walker_type==COLLINEAR)
-          assert(cPua[i].shape()[1]==NAOA+NAOB);
+          assert(cPua[i].size(1)==NAOA+NAOB);
         else if(walker_type==NONCOLLINEAR)
-          assert(cPua[i].shape()[1]==NAOA+NAOB);
+          assert(cPua[i].size(1)==NAOA+NAOB);
       }
       if(walker_type==NONCOLLINEAR) {
-        assert(Piu.shape()[0]==2*NMO);
-        assert(rotPiu.shape()[0]==2*NMO);
+        assert(Piu.size(0)==2*NMO);
+        assert(rotPiu.size(0)==2*NMO);
       } else {
-        assert(Piu.shape()[0]==NMO);
-        assert(rotPiu.shape()[0]==NMO);
+        assert(Piu.size(0)==NMO);
+        assert(rotPiu.size(0)==NMO);
       }
     }
 
@@ -139,7 +139,7 @@ std::cout<<"\n";
     THCOps& operator=(THCOps&& other) = default;
 
     CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF) {
-      int NMO = hij.shape()[0];
+      int NMO = hij.size(0);
       // in non-collinear case with SO, keep SO matrix here and add it
       // for now, stay collinear
       CMatrix H1({NMO,NMO});
@@ -188,9 +188,9 @@ std::cout<<"\n";
       // G[nel][nmo]
       //static_assert(E.dimensionality==2);
       //static_assert(G.dimensionality==2);
-      assert(E.shape()[0] == G.shape()[0]);
-      assert(E.shape()[1] == 3);
-      int nwalk = G.shape()[0];
+      assert(E.size(0) == G.size(0));
+      assert(E.size(1) == 3);
+      int nwalk = G.size(0);
       int getKr = Kr!=nullptr;
       int getKl = Kl!=nullptr;
 
@@ -202,17 +202,17 @@ std::cout<<"\n";
       }
       if(not (addEJ || addEXX)) return;
 
-      int nmo_ = rotPiu.shape()[0];
-      int nu = rotMuv.shape()[0];
+      int nmo_ = rotPiu.size(0);
+      int nu = rotMuv.size(0);
       int nu0 = rotMuv.global_offset()[0];
-      int nv = rotMuv.shape()[1];
-      int nel_ = rotcPua[0].shape()[1];
+      int nv = rotMuv.size(1);
+      int nel_ = rotcPua[0].size(1);
       int nspin = (walker_type==COLLINEAR)?2:1;
-      assert(G.shape()[1] == nel_*nmo_);
+      assert(G.size(1) == nel_*nmo_);
       if(addEJ and getKl)
-        assert(Kl->shape()[0] == nwalk && Kl->shape()[1] == nu);
+        assert(Kl->size(0) == nwalk && Kl->size(1) == nu);
       if(addEJ and getKr)
-        assert(Kr->shape()[0] == nwalk && Kr->shape()[1] == nu);
+        assert(Kr->size(0) == nwalk && Kr->size(1) == nu);
       using ma::T;
       int u0,uN;
       std::tie(u0,uN) = FairDivideBoundary(comm->rank(),nu,comm->size());
@@ -244,8 +244,8 @@ std::cout<<"\n";
       if(walker_type==CLOSED || walker_type==NONCOLLINEAR) {
         RealType scl = (walker_type==CLOSED?2.0:1.0);
         for(int wi=0; wi<nwalk; wi++) {
-          boost::multi::const_array_ref<ComplexType,2> Gw(std::addressof(*G[wi].origin()),{nel_,nmo_});
-          boost::multi::const_array_ref<ComplexType,1> G1D(std::addressof(*G[wi].origin()),extensions<1u>{nel_*nmo_});
+          boost::multi::array_cref<ComplexType,2> Gw(std::addressof(*G[wi].origin()),{nel_,nmo_});
+          boost::multi::array_cref<ComplexType,1> G1D(std::addressof(*G[wi].origin()),extensions<1u>{nel_*nmo_});
           // need a new routine if addEXX is false,
           // otherwise it is quite inefficient to get Ej only
           Guv_Guu(Gw,Guv,Guu,T1,k);
@@ -279,9 +279,9 @@ std::cout<<"\n";
         }
       } else {
         for(int wi=0; wi<nwalk; wi++) {
-          boost::multi::const_array_ref<ComplexType,2> Gw(std::addressof(*G[wi].origin()),{nel_,nmo_});
-          boost::multi::const_array_ref<ComplexType,1> G1DA(std::addressof(*G[wi].origin()),extensions<1u>{NAOA*nmo_});
-          boost::multi::const_array_ref<ComplexType,1> G1DB(std::addressof(*G[wi].origin())+NAOA*nmo_,extensions<1u>{NAOB*nmo_});
+          boost::multi::array_cref<ComplexType,2> Gw(std::addressof(*G[wi].origin()),{nel_,nmo_});
+          boost::multi::array_cref<ComplexType,1> G1DA(std::addressof(*G[wi].origin()),extensions<1u>{NAOA*nmo_});
+          boost::multi::array_cref<ComplexType,1> G1DB(std::addressof(*G[wi].origin())+NAOA*nmo_,extensions<1u>{NAOB*nmo_});
           Guv_Guu(Gw,Guv,Guu,T1,k);
           // move calculation of Guv/Guu here to avoid storing 2 copies of Guv for alpha/beta
           if(addEJ) {
@@ -352,29 +352,29 @@ std::cout<<"\n";
       static_assert(GrefB.dimensionality==3, "Wrong dimensionality");
       static_assert(QQ0A.dimensionality==3, "Wrong dimensionality");
       static_assert(QQ0B.dimensionality==3, "Wrong dimensionality");
-      int nspin = E.shape()[0];
+      int nspin = E.size(0);
       int nrefs = haj.size();
-      int nwalk = GrefA.shape()[0];
-      int naoa_ = QQ0A.shape()[1];
-      int naob_ = QQ0B.shape()[1];
-      int naea_ = QQ0A.shape()[2];
-      int naeb_ = QQ0B.shape()[2];
-      int nmo_ = rotPiu.shape()[0];
-      int nu = rotMuv.shape()[0];
+      int nwalk = GrefA.size(0);
+      int naoa_ = QQ0A.size(1);
+      int naob_ = QQ0B.size(1);
+      int naea_ = QQ0A.size(2);
+      int naeb_ = QQ0B.size(2);
+      int nmo_ = rotPiu.size(0);
+      int nu = rotMuv.size(0);
       int nu0 = rotMuv.global_offset()[0];
-      int nv = rotMuv.shape()[1];
-      int nel_ = rotcPua[0].shape()[1];
+      int nv = rotMuv.size(1);
+      int nel_ = rotcPua[0].size(1);
       // checking
-      assert(E.shape()[2] == nwalk);
-      assert(E.shape()[3] == 3);
-      assert(Ov.shape()[0] == nspin);
-      assert(Ov.shape()[1] == E.shape()[1]);
-      assert(Ov.shape()[2] == nwalk);
-      assert(GrefA.shape()[1] == naoa_);
-      assert(GrefA.shape()[2] == nmo_);
-      assert(GrefB.shape()[0] == nwalk);
-      assert(GrefB.shape()[1] == naob_);
-      assert(GrefB.shape()[2] == nmo_);
+      assert(E.size(2) == nwalk);
+      assert(E.size(3) == 3);
+      assert(Ov.size(0) == nspin);
+      assert(Ov.size(1) == E.size(1));
+      assert(Ov.size(2) == nwalk);
+      assert(GrefA.size(1) == naoa_);
+      assert(GrefA.size(2) == nmo_);
+      assert(GrefB.size(0) == nwalk);
+      assert(GrefB.size(1) == naob_);
+      assert(GrefB.size(2) == nmo_);
       // limited to single reference now
       assert(rotcPua.size() == nrefs);
       assert(nel_ == naoa_);
@@ -416,7 +416,7 @@ std::cout<<"\n";
       boost::multi::array_ref<ComplexType,2> Tub(std::addressof(*SM_TMats.origin())+cnt,{nu,nel_});
       cnt+=Tub.num_elements();
       assert(cnt <= memory_needs);
-      if(eloc.shape()[0] != 2 || eloc.shape()[1] != nwalk || eloc.shape()[2] != 3)
+      if(eloc.size(0) != 2 || eloc.size(1) != nwalk || eloc.size(2) != 3)
         eloc.reextent({2,nwalk,3});
 
       std::fill_n(eloc.origin(),eloc.num_elements(),ComplexType(0.0));
@@ -424,14 +424,14 @@ std::cout<<"\n";
       RealType scl = (walker_type==CLOSED?2.0:1.0);
       if(comm->root()) {
         std::fill_n(std::addressof(*E.origin()),E.num_elements(),ComplexType(0.0));
-        std::fill_n(std::addressof(*Ov[0][1].origin()),nwalk*(Ov.shape()[1]-1),ComplexType(0.0));
-        std::fill_n(std::addressof(*Ov[1][1].origin()),nwalk*(Ov.shape()[1]-1),ComplexType(0.0));
+        std::fill_n(std::addressof(*Ov[0][1].origin()),nwalk*(Ov.size(1)-1),ComplexType(0.0));
+        std::fill_n(std::addressof(*Ov[1][1].origin()),nwalk*(Ov.size(1)-1),ComplexType(0.0));
         auto Ea = E[0][0];
         auto Eb = E[1][0];
-        boost::multi::const_array_ref<ComplexType,2> G2DA(std::addressof(*GrefA.origin()),
+        boost::multi::array_cref<ComplexType,2> G2DA(std::addressof(*GrefA.origin()),
                                           {nwalk,GrefA[0].num_elements()});
         ma::product(ComplexType(1.0),G2DA,haj[0],ComplexType(0.0),Ea(Ea.extension(0),0));
-        boost::multi::const_array_ref<ComplexType,2> G2DB(std::addressof(*GrefA.origin()),
+        boost::multi::array_cref<ComplexType,2> G2DB(std::addressof(*GrefA.origin()),
                                           {nwalk,GrefA[0].num_elements()});
         ma::product(ComplexType(1.0),G2DB,haj[0],ComplexType(0.0),Eb(Eb.extension(0),0));
         for(int i=0; i<nwalk; i++) {
@@ -444,7 +444,7 @@ std::cout<<"\n";
 
         { // Alpha
           auto Gw = GrefA[wi];
-          boost::multi::const_array_ref<ComplexType,1> G1D(std::addressof(*Gw.origin()),
+          boost::multi::array_cref<ComplexType,1> G1D(std::addressof(*Gw.origin()),
                                                         extensions<1u>{Gw.num_elements()});
           Guv_Guu2(Gw,Guv,Gvv,Scu,0);
           if(u0!=uN)
@@ -487,7 +487,7 @@ std::cout<<"\n";
 
         { // Beta: Unnecessary in CLOSED walker type (on Walker)
           auto Gw = GrefB[wi];
-          boost::multi::const_array_ref<ComplexType,1> G1D(std::addressof(*Gw.origin()),
+          boost::multi::array_cref<ComplexType,1> G1D(std::addressof(*Gw.origin()),
                                                         extensions<1u>{Gw.num_elements()});
           Guv_Guu2(Gw,Guv,Gvv,Scu,0);
           if(u0!=uN)
@@ -526,7 +526,7 @@ std::cout<<"\n";
       comm->reduce_in_place_n(eloc.origin(),eloc.num_elements(),std::plus<>(),0);
       if(comm->root()) {
         // add Eref contributions to all configurations
-        for(int nd=0; nd<E.shape()[1]; ++nd) {
+        for(int nd=0; nd<E.size(1); ++nd) {
           auto Ea = E[0][nd];
           auto Eb = E[1][nd];
           for(int wi=0; wi<nwalk; wi++) {
@@ -546,8 +546,8 @@ std::cout<<"\n";
              typename = void
             >
     void vHS(MatA & X, MatB&& v, double a=1., double c=0.) {
-        boost::multi::const_array_ref<ComplexType,2> X_(std::addressof(*X.origin()),{X.shape()[0],1});
-        boost::multi::array_ref<ComplexType,2> v_(std::addressof(*v.origin()),{1,v.shape()[0]});
+        boost::multi::array_cref<ComplexType,2> X_(std::addressof(*X.origin()),{X.size(0),1});
+        boost::multi::array_ref<ComplexType,2> v_(std::addressof(*v.origin()),{1,v.size(0)});
         vHS(X_,v_,a,c);
     }
 
@@ -559,18 +559,18 @@ std::cout<<"\n";
 //Timer.reset("T0");
 //Timer.reset("T1");
 //Timer.reset("T2");
-      int nwalk = X.shape()[1];
+      int nwalk = X.size(1);
 #if defined(QMC_COMPLEX)
-      int nchol = 2*Luv.shape()[1];
+      int nchol = 2*Luv.size(1);
 #else
-      int nchol = Luv.shape()[1];
+      int nchol = Luv.size(1);
 #endif
-      int nmo_ = Piu.shape()[0];
-      int nu = Piu.shape()[1];
-      assert(Luv.shape()[0]==nu);
-      assert(X.shape()[0]==nchol);
-      assert(v.shape()[0]==nwalk);
-      assert(v.shape()[1]==nmo_*nmo_);
+      int nmo_ = Piu.size(0);
+      int nu = Piu.size(1);
+      assert(Luv.size(0)==nu);
+      assert(X.size(0)==nchol);
+      assert(v.size(0)==nwalk);
+      assert(v.size(1)==nmo_*nmo_);
       using ma::T;
       int u0,uN;
       std::tie(u0,uN) = FairDivideBoundary(comm->rank(),nu,comm->size());
@@ -591,9 +591,9 @@ std::cout<<"\n";
 #if defined(QMC_COMPLEX)
       // reinterpret as RealType matrices with 2x the columns
       boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(Luv.origin()),
-                                                 {Luv.shape()[0],2*Luv.shape()[1]});
-      boost::multi::const_array_ref<RealType,2> X_R(reinterpret_cast<RealType const*>(std::addressof(*X.origin())),
-                                                 {X.shape()[0],2*X.shape()[1]});
+                                                 {Luv.size(0),2*Luv.size(1)});
+      boost::multi::array_cref<RealType,2> X_R(reinterpret_cast<RealType const*>(std::addressof(*X.origin())),
+                                                 {X.size(0),2*X.size(1)});
       boost::multi::array_ref<RealType,2> Tuw_R(reinterpret_cast<RealType*>(Tuw.origin()),
                                                  {nu,2*nwalk});
       ma::product(Luv_R.sliced(u0,uN),X_R,
@@ -662,8 +662,8 @@ app_log()
              typename = void
             >
     void vbias(MatA const& G, MatB&& v, double a=1., double c=0., int k=0) {
-        boost::multi::const_array_ref<ComplexType,2> G_(std::addressof(*G.origin()),{1,G.shape()[0]});
-        boost::multi::array_ref<ComplexType,2> v_(std::addressof(*v.origin()),{v.shape()[0],1});
+        boost::multi::array_cref<ComplexType,2> G_(std::addressof(*G.origin()),{1,G.size(0)});
+        boost::multi::array_ref<ComplexType,2> v_(std::addressof(*v.origin()),{v.size(0),1});
         vbias(G_,v_,a,c,k);
     }
 
@@ -674,17 +674,17 @@ app_log()
     void vbias(MatA const& G, MatB&& v, double a=1., double c=0., int k=0) {
       if(k>0)
 	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
-      int nwalk = G.shape()[0];
-      int nmo_ = Piu.shape()[0];
-      int nu = Piu.shape()[1];
-      int nel_ = cPua[0].shape()[1];
+      int nwalk = G.size(0);
+      int nmo_ = Piu.size(0);
+      int nu = Piu.size(1);
+      int nel_ = cPua[0].size(1);
 #if defined(QMC_COMPLEX)
-      int nchol = 2*Luv.shape()[1];
+      int nchol = 2*Luv.size(1);
 #else
-      int nchol = Luv.shape()[1];
+      int nchol = Luv.size(1);
 #endif
-      assert(v.shape()[1]==nwalk);
-      assert(v.shape()[0]==nchol);
+      assert(v.size(1)==nwalk);
+      assert(v.size(0)==nchol);
       using ma::T;
       int c0,cN;
       std::tie(c0,cN) = FairDivideBoundary(comm->rank(),nchol,comm->size());
@@ -697,11 +697,11 @@ app_log()
 #if defined(QMC_COMPLEX)
         // reinterpret as RealType matrices with 2x the columns
         boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(Luv.origin()),
-                                                 {Luv.shape()[0],2*Luv.shape()[1]});
+                                                 {Luv.size(0),2*Luv.size(1)});
         boost::multi::array_ref<RealType,2> Guu_R(reinterpret_cast<RealType*>(Guu.origin()),
                                                  {nu,2*nwalk});
         boost::multi::array_ref<RealType,2> v_R(reinterpret_cast<RealType*>(std::addressof(*v.origin())),
-                                                 {v.shape()[0],2*v.shape()[1]});
+                                                 {v.size(0),2*v.size(1)});
         ma::product(a,T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
                     c,v_R.sliced(c0,cN));
 #else
@@ -717,11 +717,11 @@ app_log()
 #if defined(QMC_COMPLEX)
         // reinterpret as RealType matrices with 2x the columns
         boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(Luv.origin()),
-                                                 {Luv.shape()[0],2*Luv.shape()[1]});
+                                                 {Luv.size(0),2*Luv.size(1)});
         boost::multi::array_ref<RealType,2> Guu_R(reinterpret_cast<RealType*>(Guu.origin()),
                                                  {nu,2*nwalk});
         boost::multi::array_ref<RealType,2> v_R(reinterpret_cast<RealType*>(std::addressof(*v.origin())),
-                                                 {v.shape()[0],2*v.shape()[1]});
+                                                 {v.size(0),2*v.size(1)});
         ma::product(a,T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
                     c,v_R.sliced(c0,cN));
 #else
@@ -734,21 +734,21 @@ app_log()
 
     bool distribution_over_cholesky_vectors() const { return false; }
     int number_of_ke_vectors() const{
-        return rotMuv.shape()[0];
+        return rotMuv.size(0);
     }
 #if defined(QMC_COMPLEX)
     int local_number_of_cholesky_vectors() const{
-        return 2*Luv.shape()[1];
+        return 2*Luv.size(1);
     }
     int global_number_of_cholesky_vectors() const{
-        return 2*Luv.shape()[1];
+        return 2*Luv.size(1);
     }
 #else
     int local_number_of_cholesky_vectors() const{
-        return Luv.shape()[1];
+        return Luv.size(1);
     }
     int global_number_of_cholesky_vectors() const{
-        return Luv.shape()[1];
+        return Luv.size(1);
     }
 #endif
 
@@ -765,24 +765,24 @@ app_log()
     // Guu[nu][nwalk]
     template<class MatA, class MatB, class MatC>
     void Guu_from_compact(MatA const& G, MatB&& Guu, MatC&& T1) {
-      int nmo_ = int(Piu.shape()[0]);
-      int nu = int(Piu.shape()[1]);
-      int nel_ = cPua[0].shape()[1];
+      int nmo_ = int(Piu.size(0));
+      int nu = int(Piu.size(1));
+      int nel_ = cPua[0].size(1);
       int u0,uN;
       std::tie(u0,uN) = FairDivideBoundary(comm->rank(),nu,comm->size());
-      int nw=G.shape()[0];
+      int nw=G.size(0);
 
-      assert(G.shape()[0] == Guu.shape()[1]);
-      assert(G.shape()[1] == nel_*nmo_);
-      assert(Guu.shape()[0] == nu);
-      assert(T1.shape()[0] == nu);
-      assert(T1.shape()[1] == nel_);
+      assert(G.size(0) == Guu.size(1));
+      assert(G.size(1) == nel_*nmo_);
+      assert(Guu.size(0) == nu);
+      assert(T1.size(0) == nu);
+      assert(T1.size(1) == nel_);
 
       using ma::transposed;
       comm->barrier();
       ComplexType a = (walker_type==CLOSED)?ComplexType(2.0):ComplexType(1.0);
       for(int iw=0; iw<nw; ++iw) {
-        boost::multi::const_array_ref<ComplexType,2> Giw(std::addressof(*G[iw].origin()),{nel_,nmo_});
+        boost::multi::array_cref<ComplexType,2> Giw(std::addressof(*G[iw].origin()),{nel_,nmo_});
         // transposing inetermediary to make dot products faster in the next step
         ma::product(transposed(Piu.get()({0,nmo_},{u0,uN})),
                   transposed(Giw),
@@ -796,23 +796,23 @@ app_log()
     // Guu[nu][nwalk]
     template<class MatA, class MatB, class MatC>
     void Guu_from_full(MatA const& G, MatB&& Guu, MatC&& T1) {
-      int nmo_ = int(Piu.shape()[0]);
-      int nu = int(Piu.shape()[1]);
+      int nmo_ = int(Piu.size(0));
+      int nu = int(Piu.size(1));
       int u0,uN;
       std::tie(u0,uN) = FairDivideBoundary(comm->rank(),nu,comm->size());
-      int nw=G.shape()[0];
+      int nw=G.size(0);
 
-      assert(G.shape()[0] == Guu.shape()[1]);
-      assert(Guu.shape()[0] == nu);
-      assert(T1.shape()[1] == nu);
-      assert(G.shape()[1] == nmo_*nmo_);
-      assert(T1.shape()[0] == nmo_);
+      assert(G.size(0) == Guu.size(1));
+      assert(Guu.size(0) == nu);
+      assert(T1.size(1) == nu);
+      assert(G.size(1) == nmo_*nmo_);
+      assert(T1.size(0) == nmo_);
 
       comm->barrier();
       std::fill_n(Guu[u0].origin(),nw*(uN-u0),ComplexType(0.0));
       ComplexType a = (walker_type==CLOSED)?ComplexType(2.0):ComplexType(1.0);
       for(int iw=0; iw<nw; ++iw) {
-        boost::multi::const_array_ref<ComplexType,2> Giw(std::addressof(*G[iw].origin()),{nmo_,nmo_});
+        boost::multi::array_cref<ComplexType,2> Giw(std::addressof(*G[iw].origin()),{nmo_,nmo_});
         ma::product(Giw,Piu.get()({0,nmo_},{u0,uN}),
                   T1(T1.extension(0),{u0,uN}));
         for(int i=0; i<nmo_; ++i) {
@@ -842,28 +842,28 @@ app_log()
       //static_assert(Guu.dimensionality == 1);
       //static_assert(Guv.dimensionality == 3);
       int nspin = (walker_type==COLLINEAR)?2:1;
-      int nmo_ = int(rotPiu.shape()[0]);
-      int nu = int(rotMuv.shape()[0]);  // potentially distributed over nodes
-      int nv = int(rotMuv.shape()[1]);  // not distributed over nodes
-      assert(rotPiu.shape()[1] = nv);
+      int nmo_ = int(rotPiu.size(0));
+      int nu = int(rotMuv.size(0));  // potentially distributed over nodes
+      int nv = int(rotMuv.size(1));  // not distributed over nodes
+      assert(rotPiu.size(1) == nv);
       int v0,vN;
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
       int nu0 = rotMuv.global_offset()[0];
       ComplexType zero(0.0,0.0);
 
-      assert(Guu.shape()[0] == nv);
-      assert(Guv.shape()[1] == nu);
-      assert(Guv.shape()[2] == nv);
+      assert(Guu.size(0) == nv);
+      assert(Guv.size(1) == nu);
+      assert(Guv.size(2) == nv);
 
       // sync first
       comm->barrier();
       if(walker_type==CLOSED || walker_type==NONCOLLINEAR) {
         int nel_ = (walker_type==CLOSED)?NAOA:(NAOA+NAOB);
-        assert(Guv.shape()[0] == 1);
-        assert(G.shape()[0] == size_t(nel_));
-        assert(G.shape()[1] == size_t(nmo_));
-        assert(T1.shape()[0] == size_t(nel_));
-        assert(T1.shape()[1] == size_t(nv));
+        assert(Guv.size(0) == 1);
+        assert(G.size(0) == size_t(nel_));
+        assert(G.size(1) == size_t(nmo_));
+        assert(T1.size(0) == size_t(nel_));
+        assert(T1.size(1) == size_t(nv));
 
         using ma::transposed;
         ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),
@@ -879,11 +879,11 @@ app_log()
             Guu[v] = Guv[0][v-nu0][v];
       } else {
         int nel_ = NAOA+NAOB;
-        assert(Guv.shape()[0] == 2);
-        assert(G.shape()[0] == nel_);
-        assert(G.shape()[1] == nmo_);
-        assert(T1.shape()[0] == nel_);
-        assert(T1.shape()[1] == nv);
+        assert(Guv.size(0) == 2);
+        assert(G.size(0) == nel_);
+        assert(G.size(1) == nmo_);
+        assert(T1.size(0) == nel_);
+        assert(T1.size(1) == nv);
 
         using ma::transposed;
         ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),
@@ -921,26 +921,26 @@ app_log()
       static_assert(T1.dimensionality == 2, "Wrong dimensionality");
       static_assert(Guu.dimensionality == 1, "Wrong dimensionality");
       static_assert(Guv.dimensionality == 2, "Wrong dimensionality");
-      int nmo_ = int(rotPiu.shape()[0]);
-      int nu = int(rotMuv.shape()[0]);  // potentially distributed over nodes
-      int nv = int(rotMuv.shape()[1]);  // not distributed over nodes
-      assert(rotPiu.shape()[1] = nv);
+      int nmo_ = int(rotPiu.size(0));
+      int nu = int(rotMuv.size(0));  // potentially distributed over nodes
+      int nv = int(rotMuv.size(1));  // not distributed over nodes
+      assert(rotPiu.size(1) == nv);
       int v0,vN;
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
       int nu0 = rotMuv.global_offset()[0];
       ComplexType zero(0.0,0.0);
 
-      assert(Guu.shape()[0] == nv);
-      assert(Guv.shape()[0] == nu);
-      assert(Guv.shape()[1] == nv);
+      assert(Guu.size(0) == nv);
+      assert(Guv.size(0) == nu);
+      assert(Guv.size(1) == nv);
 
       // sync first
       comm->barrier();
       int nel_ = (walker_type==CLOSED)?NAOA:(NAOA+NAOB);
-      assert(G.shape()[0] == size_t(nel_));
-      assert(G.shape()[1] == size_t(nmo_));
-      assert(T1.shape()[0] == size_t(nel_));
-      assert(T1.shape()[1] == size_t(nv));
+      assert(G.size(0) == size_t(nel_));
+      assert(G.size(1) == size_t(nmo_));
+      assert(T1.size(0) == size_t(nel_));
+      assert(T1.size(1) == size_t(nv));
 
       using ma::transposed;
       ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),

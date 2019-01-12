@@ -44,10 +44,10 @@ class KP3IndexFactorization
   using CVector = boost::multi::array<ComplexType,1>;
   using SpVector = boost::multi::array<SPComplexType,1>;
   using CMatrix = boost::multi::array<ComplexType,2>;
-  using CMatrix_cref = boost::multi::const_array_ref<ComplexType,2>;
+  using CMatrix_cref = boost::multi::array_cref<ComplexType,2>;
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;
   using CVector_ref = boost::multi::array_ref<ComplexType,1>;
-  using SpMatrix_cref = boost::multi::const_array_ref<SPComplexType,2>;
+  using SpMatrix_cref = boost::multi::array_cref<SPComplexType,2>;
   using SpVector_ref = boost::multi::array_ref<SPComplexType,1>;
   using SpMatrix_ref = boost::multi::array_ref<SPComplexType,2>;
   using C3Tensor = boost::multi::array<ComplexType,3>;
@@ -149,8 +149,8 @@ class KP3IndexFactorization
       boost::multi::array<ComplexType,2> P1({NMO,NMO});
 
       // making a copy of vMF since it will be modified
-      set_shm_buffer(vMF.shape()[0]);
-      boost::multi::array_ref<ComplexType,1> vMF_(std::addressof(*SM_TMats.origin()),{vMF.shape()[0]});
+      set_shm_buffer(vMF.size(0));
+      boost::multi::array_ref<ComplexType,1> vMF_(std::addressof(*SM_TMats.origin()),{vMF.size(0)});
 
       boost::multi::array_ref<ComplexType,1> P1D(std::addressof(*P1.origin()),{NMO*NMO});
       std::fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));
@@ -204,10 +204,10 @@ class KP3IndexFactorization
     void energy_exact(Mat&& E, MatB const& Gc, int nd, MatC* KEleft, MatD* KEright, bool addH1=true, bool addEJ=true, bool addEXX=true) {
 
       int nkpts = nopk.size();
-      assert(E.shape()[1]>=3);
+      assert(E.size(1)>=3);
       assert(nd >= 0 && nd < nelpk.size());
 
-      int nwalk = Gc.shape()[1];
+      int nwalk = Gc.size(1);
       int nspin = (walker_type==COLLINEAR?2:1);
       int nmo_tot = std::accumulate(nopk.begin(),nopk.end(),0);
       int nmo_max = *std::max_element(nopk.begin(),nopk.end());
@@ -219,7 +219,7 @@ class KP3IndexFactorization
                                       nelpk[nd].begin()+2*nkpts,0);
       int getKr = KEright!=nullptr;
       int getKl = KEleft!=nullptr;
-      if(E.shape()[0] != nwalk || E.shape()[1] < 3)
+      if(E.size(0) != nwalk || E.size(1) < 3)
         APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix dimensions \n");
 
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
@@ -238,16 +238,16 @@ class KP3IndexFactorization
         Knc=local_nCV;
         cnt=0;
         if(getKr) {
-          assert(KEright->shape()[0] == nwalk && KEright->shape()[1] == local_nCV);
-          assert(KEright->strides()[0] == KEright->shape()[1]);
+          assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
+          assert(KEright->stride(0) == KEright->size(1));
           Krptr = std::addressof(*KEright->origin());
         } else {
           Krptr = std::addressof(*SM_TMats.origin());
           cnt += nwalk*local_nCV;
         }
         if(getKl) {
-          assert(KEleft->shape()[0] == nwalk && KEleft->shape()[1] == local_nCV);
-          assert(KEleft->strides()[0] == KEleft->shape()[1]);
+          assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
+          assert(KEleft->stride(0) == KEleft->size(1));
           Klptr = std::addressof(*KEleft->origin());
         } else {
           Klptr = std::addressof(*SM_TMats.origin())+cnt;
@@ -265,9 +265,9 @@ class KP3IndexFactorization
         std::fill_n(E[n].origin(),3,ComplexType(0.));
 
       assert(Gc.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-      boost::multi::const_array_ref<ComplexType,3> G3Da(std::addressof(*Gc.origin()),
+      boost::multi::array_cref<ComplexType,3> G3Da(std::addressof(*Gc.origin()),
                                                         {nocca_tot,nmo_tot,nwalk} );
-      boost::multi::const_array_ref<ComplexType,3> G3Db(std::addressof(*Gc.origin())+
+      boost::multi::array_cref<ComplexType,3> G3Db(std::addressof(*Gc.origin())+
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
 
@@ -483,10 +483,10 @@ class KP3IndexFactorization
     void energy_sampleQ(Mat&& E, MatB const& Gc, int nd, MatC* KEleft, MatD* KEright, bool addH1=true, bool addEJ=true, bool addEXX=true) {
 
       int nkpts = nopk.size();
-      assert(E.shape()[1]>=3);
+      assert(E.size(1)>=3);
       assert(nd >= 0 && nd < nelpk.size());
 
-      int nwalk = Gc.shape()[1];
+      int nwalk = Gc.size(1);
       int nspin = (walker_type==COLLINEAR?2:1);
       int nmo_tot = std::accumulate(nopk.begin(),nopk.end(),0);
       int nmo_max = *std::max_element(nopk.begin(),nopk.end());
@@ -498,7 +498,7 @@ class KP3IndexFactorization
                                       nelpk[nd].begin()+2*nkpts,0);
       int getKr = KEright!=nullptr;
       int getKl = KEleft!=nullptr;
-      if(E.shape()[0] != nwalk || E.shape()[1] < 3)
+      if(E.size(0) != nwalk || E.size(1) < 3)
         APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix dimensions \n");
 
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
@@ -517,16 +517,16 @@ class KP3IndexFactorization
         Knc=local_nCV;
         cnt=0;
         if(getKr) {
-          assert(KEright->shape()[0] == nwalk && KEright->shape()[1] == local_nCV);
-          assert(KEright->strides()[0] == KEright->shape()[1]);
+          assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
+          assert(KEright->stride(0) == KEright->size(1));
           Krptr = std::addressof(*KEright->origin());
         } else {
           Krptr = std::addressof(*SM_TMats.origin());
           cnt += nwalk*local_nCV;
         }
         if(getKl) {
-          assert(KEleft->shape()[0] == nwalk && KEleft->shape()[1] == local_nCV);
-          assert(KEleft->strides()[0] == KEleft->shape()[1]);
+          assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
+          assert(KEleft->stride(0) == KEleft->size(1));
           Klptr = std::addressof(*KEleft->origin());
         } else {
           Klptr = std::addressof(*SM_TMats.origin())+cnt;
@@ -544,9 +544,9 @@ class KP3IndexFactorization
         std::fill_n(E[n].origin(),3,ComplexType(0.));
 
       assert(Gc.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-      boost::multi::const_array_ref<ComplexType,3> G3Da(std::addressof(*Gc.origin()),
+      boost::multi::array_cref<ComplexType,3> G3Da(std::addressof(*Gc.origin()),
                                                         {nocca_tot,nmo_tot,nwalk} );
-      boost::multi::const_array_ref<ComplexType,3> G3Db(std::addressof(*Gc.origin())+
+      boost::multi::array_cref<ComplexType,3> G3Db(std::addressof(*Gc.origin())+
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
 
@@ -606,7 +606,7 @@ class KP3IndexFactorization
       //       Not sure how to do it for COLLINEAR.
       if(addEXX) {
 
-        if(Qwn.shape()[0] != nwalk || Qwn.shape()[1] != nsampleQ)
+        if(Qwn.size(0) != nwalk || Qwn.size(1) != nsampleQ)
           Qwn.reextent({nwalk,nsampleQ});
         comm->barrier();
         if(comm->root()) {
@@ -839,9 +839,9 @@ class KP3IndexFactorization
       using BType = typename std::decay<MatB>::type::element ;
       using AType = typename std::decay<MatA>::type::element ;
       boost::multi::array_ref<BType,2> v_(std::addressof(*v.origin()),
-                                        {v.shape()[0],1});
+                                        {v.size(0),1});
       boost::multi::array_ref<AType,2> X_(std::addressof(*X.origin()),
-                                        {X.shape()[0],1});
+                                        {X.size(0),1});
       return vHS(X_,v_,a,c);
     }
 
@@ -851,8 +851,8 @@ class KP3IndexFactorization
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
       int nkpts = nopk.size();
-      int nwalk = X.shape()[1];
-      assert(v.shape()[0]==nwalk);
+      int nwalk = X.size(1);
+      assert(v.size(0)==nwalk);
       int nspin = (walker_type==COLLINEAR?2:1);
       int nmo_tot = std::accumulate(nopk.begin(),nopk.end(),0);
       int nmo_max = *std::max_element(nopk.begin(),nopk.end());
@@ -1037,9 +1037,9 @@ class KP3IndexFactorization
       using BType = typename std::decay<MatB>::type::element ;
       using AType = typename std::decay<MatA>::type::element ;
       boost::multi::array_ref<BType,2> v_(std::addressof(*v.origin()),
-                                        {v.shape()[0],1});
-      boost::multi::const_array_ref<AType,2> G_(std::addressof(*G.origin()),
-                                        {G.shape()[0],1});
+                                        {v.size(0),1});
+      boost::multi::array_cref<AType,2> G_(std::addressof(*G.origin()),
+                                        {G.size(0),1});
       return vbias(G_,v_,a,c,k);
     }
 
@@ -1050,9 +1050,9 @@ class KP3IndexFactorization
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int nd=0) {
       int nkpts = nopk.size();
       assert(nd >= 0 && nd < nelpk.size());
-      int nwalk = G.shape()[1];
-      assert(v.shape()[0]==2*local_nCV);
-      assert(v.shape()[1]==nwalk);
+      int nwalk = G.size(1);
+      assert(v.size(0)==2*local_nCV);
+      assert(v.size(1)==nwalk);
       int nspin = (walker_type==COLLINEAR?2:1);
       int nmo_tot = std::accumulate(nopk.begin(),nopk.end(),0);
       int nmo_max = *std::max_element(nopk.begin(),nopk.end());
@@ -1079,16 +1079,16 @@ class KP3IndexFactorization
       SpMatrix_ref Gl(TMats.origin()+vlocal.num_elements(),{std::max(nocca_max,noccb_max),nwalk});
 
       assert(G.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-      boost::multi::const_array_ref<ComplexType,3> G3Da(std::addressof(*G.origin()),
+      boost::multi::array_cref<ComplexType,3> G3Da(std::addressof(*G.origin()),
                                                         {nocca_tot,nmo_tot,nwalk} );
-      boost::multi::const_array_ref<ComplexType,3> G3Db(std::addressof(*G.origin())+
+      boost::multi::array_cref<ComplexType,3> G3Db(std::addressof(*G.origin())+
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
 
 
       {
         size_t i0, iN;
-        std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(v.shape()[0]),size_t(comm->size()));
+        std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(v.size(0)),size_t(comm->size()));
         for(size_t i=i0; i<iN; ++i)
           ma::scal(c,v[i]);
       }
@@ -1275,13 +1275,13 @@ class KP3IndexFactorization
                           int nocca_tot, int noccb_tot, int nmo_tot, int akmax)
     {
       int nspin = (walker_type==COLLINEAR?2:1);
-      int nwalk = GKaKj.shape()[1];
+      int nwalk = GKaKj.size(1);
       int nkpts = nopk.size();
       assert(GKaKj.num_elements() == nocca_tot*nmo_tot*nwalk);
       assert(GKKaj.num_elements() == nkpts*nkpts*akmax*nwalk);
-      boost::multi::const_array_ref<ComplexType,3> Gca(std::addressof(*GKaKj.origin()),
+      boost::multi::array_cref<ComplexType,3> Gca(std::addressof(*GKaKj.origin()),
                                                        {nocca_tot,nmo_tot,nwalk} );
-      boost::multi::const_array_ref<ComplexType,3> Gcb(std::addressof(*GKaKj.origin())+
+      boost::multi::array_cref<ComplexType,3> Gcb(std::addressof(*GKaKj.origin())+
                                                        Gca.num_elements(),
                                                        {noccb_tot,nmo_tot,nwalk} );
       boost::multi::array_ref<SPComplexType,4> GKK(std::addressof(*GKKaj.origin()),
@@ -1349,8 +1349,8 @@ class KP3IndexFactorization
     template<class MatA, class MatB>
     void GwAK_to_GAKw(MatA const& GwAK, MatB && GAKw)
     {
-      int nwalk = GwAK.shape()[0];
-      int nAK = GwAK.shape()[1];
+      int nwalk = GwAK.size(0);
+      int nAK = GwAK.size(1);
       for(int w=0; w<nwalk; w++)
         for(int AK=0; AK<nAK; AK++)
           GAKw[AK][w] = GwAK[w][AK];

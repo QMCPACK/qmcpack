@@ -125,19 +125,19 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   }
 
   // local matrices for temporary accumulation
-  if(MFfactor.shape()[0] != nnodes*nsteps || MFfactor.shape()[1] != nwalk)
+  if(MFfactor.size(0) != nnodes*nsteps || MFfactor.size(1) != nwalk)
     MFfactor.reextent({nnodes*nsteps,nwalk});
-  if(hybrid_weight.shape()[0] != nnodes*nsteps || hybrid_weight.shape()[1] != nwalk)
+  if(hybrid_weight.size(0) != nnodes*nsteps || hybrid_weight.size(1) != nwalk)
     hybrid_weight.reextent({nnodes*nsteps,nwalk});
-  if(new_overlaps.shape()[0] != nwalk) new_overlaps.reextent(extensions<1u>{nwalk});
-  if(new_energies.shape()[0] != nwalk || new_energies.shape()[1] != 3) 
+  if(new_overlaps.size(0) != nwalk) new_overlaps.reextent(extensions<1u>{nwalk});
+  if(new_energies.size(0) != nwalk || new_energies.size(1) != 3) 
     new_energies.reextent({nwalk,3});
   if(not transposed_vHS_) {  
     if(walker_type==NONCOLLINEAR)
-      if(local_vHS.shape()[0] != 2*NMO || local_vHS.shape()[1] != 2*NMO)
+      if(local_vHS.size(0) != 2*NMO || local_vHS.size(1) != 2*NMO)
         local_vHS.reextent({2*NMO,2*NMO});
     else
-      if(local_vHS.shape()[0] != NMO || local_vHS.shape()[1] != NMO)
+      if(local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
         local_vHS.reextent({NMO,NMO});
   }
 

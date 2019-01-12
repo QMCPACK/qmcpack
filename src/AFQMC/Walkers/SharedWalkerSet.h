@@ -47,7 +47,7 @@ class SharedWalkerSet: public AFQMCInfo
 //#define MA_TEST
 
   using Wlk_Buff = boost::multi::array_ref<ComplexType,2>; 
-  using const_Wlk_Buff = boost::multi::const_array_ref<ComplexType,2>; 
+  using const_Wlk_Buff = boost::multi::array_cref<ComplexType,2>; 
 
   // wlk_descriptor: {nmo, naea, naeb, nback_prop} 
   using wlk_descriptor = std::array<int,4>;
@@ -72,11 +72,11 @@ class SharedWalkerSet: public AFQMCInfo
     
       template<class ma>
       const_walker(ma const& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi::const_array_ref<ComplexType,1>(std::addressof(*a.origin()),extensions<1u>{a.size()})),indx(i_),desc(d_) 
+        w_(boost::multi::array_cref<ComplexType,1>(std::addressof(*a.origin()),extensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
 
 	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
-	assert(w_.strides()[0]==1);
+	assert(stride(w_)==1);
       }
       
       ~const_walker() {}
@@ -87,7 +87,7 @@ class SharedWalkerSet: public AFQMCInfo
       const_walker& operator=(const_walker const& other) = delete; 
 
       ComplexType const* base() const {return &w_[0]; }
-      int size() const {return w_.shape()[0]; }
+      int size() const {return w_.size(0); }
       const_SMType SlaterMatrix(SpinTypes s) const{ 
 	if(desc[2] <= 0 && s!=Alpha)
 	  APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
@@ -168,7 +168,7 @@ class SharedWalkerSet: public AFQMCInfo
 
       int getHead() const { return static_cast<int>(w_[indx[HEAD]].real()); }
 
-      boost::multi::const_array_ref<ComplexType,1> w_;
+      boost::multi::array_cref<ComplexType,1> w_;
       const wlk_indices& indx;
       const wlk_descriptor& desc;	 
   };
@@ -183,7 +183,7 @@ class SharedWalkerSet: public AFQMCInfo
       {
 
 	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
-	assert(w_.strides()[0]==1);
+	assert(stride(w_)==1);
       }
       
       ~walker() {}
@@ -194,7 +194,7 @@ class SharedWalkerSet: public AFQMCInfo
       walker& operator=(walker const& other) = delete; 
 
       ComplexType* base() {return &w_[0]; }
-      int size() const {return w_.shape()[0]; }
+      int size() const {return w_.size(0); }
       SMType SlaterMatrix(SpinTypes s) {
         if(desc[2] <= 0 && s!=Alpha)
           APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
@@ -415,14 +415,14 @@ class SharedWalkerSet: public AFQMCInfo
    * Returns the maximum number of walkers in the set that can be stored without reallocation.
    */	
   int capacity() const{ 
-    return int(walker_buffer.shape()[0]); 
+    return int(walker_buffer.size(0)); 
   } 
 
   /*
    * Returns iterator to the first walker in the set
    */
   iterator begin() {
-    assert(walker_buffer.shape()[1] == walker_size);
+    assert(walker_buffer.size(1) == walker_size);
     return iterator(0,walker_buffer,data_displ,wlk_desc);
   }
 
@@ -430,7 +430,7 @@ class SharedWalkerSet: public AFQMCInfo
    * Returns iterator to the past-the-end walker in the set
    */
   iterator end() {
-    assert(walker_buffer.shape()[1] == walker_size);
+    assert(walker_buffer.size(1) == walker_size);
     return iterator(tot_num_walkers,walker_buffer,data_displ,wlk_desc);
   }
 
@@ -440,7 +440,7 @@ class SharedWalkerSet: public AFQMCInfo
   reference operator[](int i) {
     if(i<0 || i>tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
-    assert(walker_buffer.shape()[1] == walker_size);
+    assert(walker_buffer.size(1) == walker_size);
     return walker(walker_buffer[i],data_displ,wlk_desc);
   }
 
@@ -450,7 +450,7 @@ class SharedWalkerSet: public AFQMCInfo
   const_reference operator[](int i) const {
     if(i<0 || i>tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
-    assert(walker_buffer.shape()[1] == walker_size);
+    assert(walker_buffer.size(1) == walker_size);
     return const_walker(walker_buffer[i],data_displ,wlk_desc);
   }
 
@@ -498,7 +498,7 @@ class SharedWalkerSet: public AFQMCInfo
 
   int GlobalPopulation() const{
     int res=0;
-    assert(walker_buffer.shape()[1] == walker_size);
+    assert(walker_buffer.size(1) == walker_size);
     if(TG.TG_local().root())
       res += tot_num_walkers;
     return (TG.Global() += res);
@@ -506,7 +506,7 @@ class SharedWalkerSet: public AFQMCInfo
 
   RealType GlobalWeight() const {
     RealType res=0;
-    assert(walker_buffer.shape()[1] == walker_size);
+    assert(walker_buffer.size(1) == walker_size);
     if(TG.TG_local().root()) {
       for(int i=0; i<tot_num_walkers; i++) 
         res += std::abs(walker_buffer[i][data_displ[WEIGHT]]);
@@ -532,14 +532,14 @@ class SharedWalkerSet: public AFQMCInfo
   template<class T>
   void scaleWeight(const T& w0) {
     if(!TG.TG_local().root()) return;
-    assert(walker_buffer.shape()[1] == walker_size);
+    assert(walker_buffer.size(1) == walker_size);
     for(int i=0; i<tot_num_walkers; i++) 
       walker_buffer[i][data_displ[WEIGHT]]*=w0; 
   } 
 
   void scaleWeightsByOverlap() {
     if(!TG.TG_local().root()) return;
-    assert(walker_buffer.shape()[1] == walker_size);
+    assert(walker_buffer.size(1) == walker_size);
     for(int i=0; i<tot_num_walkers; i++) {
       walker_buffer[i][data_displ[WEIGHT]] *= ComplexType(1.0/std::abs(walker_buffer[i][data_displ[OVLP]]),0.0);
       walker_buffer[i][data_displ[PHASE]] *= std::exp(ComplexType(0.0, -std::arg(walker_buffer[i][data_displ[OVLP]]))); 
@@ -567,7 +567,7 @@ class SharedWalkerSet: public AFQMCInfo
   void copyToIO(Vec&& x, int n) {
     assert(n < tot_num_walkers);
     assert(x.size() >= walkerSizeIO());
-    assert(walker_buffer.shape()[1] == walker_size);
+    assert(walker_buffer.size(1) == walker_size);
     auto ptr = walker_buffer[n].origin(); // pointer to walker data
     auto xd = std::addressof(x[0]);
     xd[0] = ptr[WEIGHT];
@@ -592,7 +592,7 @@ class SharedWalkerSet: public AFQMCInfo
   void copyFromIO(Vec&& x, int n) {
     assert(n < tot_num_walkers);
     assert(x.size() >= walkerSizeIO());
-    assert(walker_buffer.shape()[1] == walker_size);
+    assert(walker_buffer.size(1) == walker_size);
     auto ptr = walker_buffer[n].origin(); // pointer to walker data
     auto xd = std::addressof(x[0]);
     ptr[WEIGHT] = xd[0];

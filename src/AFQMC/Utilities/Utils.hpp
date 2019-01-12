@@ -303,7 +303,7 @@ template<class Mat,
         >
 void sampleGaussianFields(Mat&& M, RandomNumberGenerator_& rng)
 {
-  for(int i=0, iend=M.shape()[0]; i<iend; ++i)
+  for(int i=0, iend=M.size(0); i<iend; ++i)
     sampleGaussianFields(M[i],rng);
 }
 

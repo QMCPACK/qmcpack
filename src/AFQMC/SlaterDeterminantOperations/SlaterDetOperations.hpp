@@ -55,7 +55,6 @@ class SlaterDetOperations:
     SlaterDetOperations& operator=(SlaterDetOperations const& other) = delete;
     SlaterDetOperations& operator=(SlaterDetOperations && other) = default;
 
-
     // member functions visible outside the variant
     template<class... Args>
     void MixedDensityMatrix(Args&&... args) {

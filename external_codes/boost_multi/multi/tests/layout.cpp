@@ -1,9 +1,11 @@
 #ifdef COMPILATION_INSTRUCTIONS
-time clang++ -O3 -std=c++14 -Wall -Wfatal-errors -I$HOME/prj $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
+$CXX -O3 -std=c++14 -Wall -Wfatal-errors $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
 #endif
 //  (C) Copyright Alfredo A. Correa 2018.
 #include "../array_ref.hpp"
 #include "../array.hpp"
+#include "../utility.hpp"
+
 #include<boost/multi_array.hpp>
 #include<iostream>
 #include<tuple>
@@ -11,18 +13,57 @@ time clang++ -O3 -std=c++14 -Wall -Wfatal-errors -I$HOME/prj $0 -o $0.x && time 
 using std::cout; using std::cerr;
 namespace multi = boost::multi;
 
+template<class T, typename = decltype(std::declval<T>().f())>
+std::true_type has_f_aux(T const&);
+std::false_type has_f_aux(...);
+
+template<class T> struct has_f : decltype(has_f_aux(std::declval<T>())){};
+
+struct A{
+	int n;
+	A() : n{5}{}
+	void f() const{};
+};
+struct B{
+	int n;
+	B() : n{5}{}
+};
+
 int main(){
 
+	assert( has_f<A>{} );
+	assert( not has_f<B>{} );
+	assert( not has_f<std::string>{} );
+	
+#if not __INTEL_COMPILER
 	multi::array<double, 3> AAAA({50, 50, 50});
+#else
+	multi::array<double, 3> AAAA(multi::iextensions<3>{50, 50, 50});
+#endif
 	assert( AAAA.size() == 50 );
 	assert( AAAA[0].size() == 50 );
 	assert( AAAA[0][0].size() == 50 );
 	assert( size(AAAA) == 50 );
 	assert( size(AAAA[0]) == 50 );
 	assert( size(AAAA[0][0]) == 50 );
+	
+	
+	double DA[50][50][50];
+	using multi::size;
+	assert( size(DA) == 50);
+
+	using multi::extension;
+	assert(( extension(DA) == multi::index_extension{0, 50} ));
+	assert(( extension(DA) == multi::iextension{0, 50} ));
+
+	assert(( extension(DA) == multi::irange{0, 50} ));
 
 	{
+#if not __INTEL_COMPILER
 	multi::array<double, 2> B({50, 50});
+#else
+	multi::array<double, 2> B(multi::iextensions<2>{50, 50});
+#endif
 	assert( size(B) == 50 );
 	assert( B[0].sliced(10, 20).size() == 10 );
 	assert( B(0, {10, 20}).dimensionality == 1 );
@@ -31,19 +72,27 @@ int main(){
 //	assert( B(0, {10, 20}).size() == 10 );
 	}
 	multi::array<double, 2> AAA = 
+	#if defined(__INTEL_COMPILER)
+		(double[3][3])
+	#endif
 		{{1., 2., 3.}, 
 		 {4., 5., 6.}, 
 		 {7., 8., 9.}};
 #if 1
-	multi::array<int, 2> A({multi::iextension{4}, {4}});
+#if not __INTEL_COMPILER
+	multi::array<int, 2> A({4, 4});
+#else
+	using extents2 = multi::iextensions<2>;
+	multi::array<int, 2> A(extents2{4, 4});
+#endif
 	assert( size(A) == 4 );
 	A[3][3] = 99.;
 	
 	decltype(A({0,2}, {0,2}))::decay_type Acopy = A({0,2}, {0,2});
 
-	multi::array<decltype(A({0,0}, {0,0})), 2> Ab =
-		{{A({0,2}, {0,2}), A({0, 2}, {2, 4})},
-		 {A({2,4}, {0,2}), A({2, 4}, {2, 4})}};
+//	multi::array<decltype(A({0,0}, {0,0})), 2> Ab =
+//		{{A({0,2}, {0,2}), A({0, 2}, {2, 4})},
+//		 {A({2,4}, {0,2}), A({2, 4}, {2, 4})}};
 //	assert( &Ab[1][1][1][1] == &A[3][3] );
 //	assert( Ab.dimensionality == 2 );
 //	assert( Ab[1].dimensionality == 1 );
@@ -81,20 +130,6 @@ int main(){
 	delete[] p;
 #endif
 	
-	return 0;
-	{
-	//	multi::layout_t<2> l({10, 20});
-		auto e = multi::extents[10][20];
-		cout << e.extent_ << std::endl;
-		cout << e.sub.extent_ << std::endl;
-		cout << head(e) << std::endl;
-		cout << head(e.sub) << std::endl;
-		multi::layout_t<2> l(multi::extents[10][20]);
-		cout << l.size() << std::endl;
-		assert( l.size() == 10 );
-		assert( l.size(0) == 10 );
-		assert( l.size(1) == 20 );
-	}
 	return 0;
 	
 	multi::layout_t<2> l({4,5});

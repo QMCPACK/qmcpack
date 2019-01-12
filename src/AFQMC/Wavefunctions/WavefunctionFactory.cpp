@@ -268,7 +268,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         auto p0 = pbegin[0]; 
         auto v0 = PsiT[iC].non_zero_values_data();  
         auto c0 = PsiT[iC].non_zero_indices2_data();  
-        for(int i=0; i<PsiT[iC].shape()[0]; i++) 
+        for(int i=0; i<PsiT[iC].size(0); i++) 
           for(int ip=pbegin[i]; ip<pend[i]; ip++) { 
             ((newg.first)->second)[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
           }
@@ -279,7 +279,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         auto p0 = pbegin[0];                
         auto v0 = PsiT[iC+1].non_zero_values_data();
         auto c0 = PsiT[iC+1].non_zero_indices2_data();
-        for(int i=0; i<PsiT[iC+1].shape()[0]; i++) 
+        for(int i=0; i<PsiT[iC+1].size(0); i++) 
           for(int ip=pbegin[i]; ip<pend[i]; ip++) { 
             ((newg.first)->second)[1][c0[ip-p0]][i] = conj(v0[ip-p0]);  
           }
@@ -714,7 +714,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
         auto p0 = pbegin[0];
         auto v0 = PsiT[0].non_zero_values_data();
         auto c0 = PsiT[0].non_zero_indices2_data();
-        for(int i=0; i<PsiT[0].shape()[0]; i++)
+        for(int i=0; i<PsiT[0].size(0); i++)
           for(int ip=pbegin[i]; ip<pend[i]; ip++)
             ((newg.first)->second)[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
       }
@@ -724,7 +724,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
         auto p0 = pbegin[0];
         auto v0 = PsiT[1].non_zero_values_data();
         auto c0 = PsiT[1].non_zero_indices2_data();
-        for(int i=0; i<PsiT[1].shape()[0]; i++)
+        for(int i=0; i<PsiT[1].size(0); i++)
           for(int ip=pbegin[i]; ip<pend[i]; ip++)
             ((newg.first)->second)[1][c0[ip-p0]][i] = conj(v0[ip-p0]);
       }
@@ -764,7 +764,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
         auto p0 = pbegin[0];
         auto v0 = PsiT[0].non_zero_values_data();
         auto c0 = PsiT[0].non_zero_indices2_data();
-        for(int i=0; i<PsiT[0].shape()[0]; i++)
+        for(int i=0; i<PsiT[0].size(0); i++)
           for(int ip=pbegin[i]; ip<pend[i]; ip++)
             ((newg.first)->second)[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
       }
@@ -774,7 +774,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
         auto p0 = pbegin[0];
         auto v0 = PsiT[1].non_zero_values_data();
         auto c0 = PsiT[1].non_zero_indices2_data();
-        for(int i=0; i<PsiT[1].shape()[0]; i++)
+        for(int i=0; i<PsiT[1].size(0); i++)
           for(int ip=pbegin[i]; ip<pend[i]; ip++)
             ((newg.first)->second)[1][c0[ip-p0]][i] = conj(v0[ip-p0]);
       }

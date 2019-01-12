@@ -101,7 +101,7 @@ class PHMSD: public AFQMCInfo
                 req_Grecv(MPI_REQUEST_NULL),
                 req_SMsend(MPI_REQUEST_NULL),
                 req_SMrecv(MPI_REQUEST_NULL),
-                maxnactive(std::max(OrbMats[0].shape()[0],OrbMats.back().shape()[0])),
+                maxnactive(std::max(OrbMats[0].size(0),OrbMats.back().size(0))),
                 max_exct_n(std::max(abij.maximum_excitation_number()[0],
                                     abij.maximum_excitation_number()[1])),
                 maxn_unique_confg(    
@@ -115,8 +115,8 @@ class PHMSD: public AFQMCInfo
                 GB2D0_shm({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
                 local_ov({2,maxn_unique_confg}),
                 local_etot({2,maxn_unique_confg}),
-                local_QQ0inv0({OrbMats[0].shape()[0],NAEA}),
-                local_QQ0inv1({OrbMats.back().shape()[0],NAEB}),
+                local_QQ0inv0({OrbMats[0].size(0),NAEA}),
+                local_QQ0inv1({OrbMats.back().size(0),NAEB}),
                 Qwork({2*max_exct_n,max_exct_n}),
                 Gwork({NAEA,maxnactive}),
                 Ovmsd({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
@@ -228,23 +228,23 @@ class PHMSD: public AFQMCInfo
      */
     template<class MatG, class MatA>
     void vbias(const MatG& G, MatA&& v, double a=1.0) {
-      assert( v.shape()[0] == HamOp.local_number_of_cholesky_vectors());
+      assert( v.size(0) == HamOp.local_number_of_cholesky_vectors());
       double scl = (walker_type==COLLINEAR)?0.5:1.0;
       if(transposed_G_for_vbias_) {
-        assert( G.shape()[0] == v.shape()[1] );
-        assert( G.shape()[1] == size_of_G_for_vbias() );
-        HamOp.vbias(G(G.extension(0),{0,long(OrbMats[0].shape()[0]*NMO)}),
+        assert( G.size(0) == v.size(1) );
+        assert( G.size(1) == size_of_G_for_vbias() );
+        HamOp.vbias(G(G.extension(0),{0,long(OrbMats[0].size(0)*NMO)}),
                     std::forward<MatA>(v),scl*a,0.0);
         if(walker_type==COLLINEAR) 
-          HamOp.vbias(G(G.extension(0),{long(OrbMats[0].shape()[0]*NMO),G.shape()[1]}),
+          HamOp.vbias(G(G.extension(0),{long(OrbMats[0].size(0)*NMO),G.size(1)}),
                       std::forward<MatA>(v),scl*a,1.0);
       } else {  
-        assert( G.shape()[0] == size_of_G_for_vbias() );
-        assert( G.shape()[1] == v.shape()[1] );
-        HamOp.vbias(G.sliced(0,OrbMats[0].shape()[0]*NMO),
+        assert( G.size(0) == size_of_G_for_vbias() );
+        assert( G.size(1) == v.size(1) );
+        HamOp.vbias(G.sliced(0,OrbMats[0].size(0)*NMO),
                     std::forward<MatA>(v),scl*a,0.0);
         if(walker_type==COLLINEAR) 
-          HamOp.vbias(G.sliced(OrbMats[0].shape()[0]*NMO,G.shape()[0]),
+          HamOp.vbias(G.sliced(OrbMats[0].size(0)*NMO,G.size(0)),
                       std::forward<MatA>(v),scl*a,1.0);
       }  
       TG.local_barrier();    
@@ -257,11 +257,11 @@ class PHMSD: public AFQMCInfo
      */
     template<class MatX, class MatA>
     void vHS(MatX&& X, MatA&& v, double a=1.0) {
-      assert( X.shape()[0] == HamOp.local_number_of_cholesky_vectors() );
+      assert( X.size(0) == HamOp.local_number_of_cholesky_vectors() );
       if(transposed_G_for_vbias_)
-        assert( X.shape()[1] == v.shape()[0] );
+        assert( X.size(1) == v.size(0) );
       else    
-        assert( X.shape()[1] == v.shape()[1] );
+        assert( X.size(1) == v.size(1) );
       HamOp.vHS(std::forward<MatX>(X),std::forward<MatA>(v),a);
       TG.local_barrier();    
     }
@@ -275,7 +275,7 @@ class PHMSD: public AFQMCInfo
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
         ovlp.reextent(extensions<1u>{nw});
-      if(eloc.shape()[0] != nw || eloc.shape()[1] != 3)
+      if(eloc.size(0) != nw || eloc.size(1) != 3)
         eloc.reextent({nw,3});
       Energy(wset,eloc,ovlp);
       TG.local_barrier();
@@ -495,13 +495,13 @@ class PHMSD: public AFQMCInfo
     int dm_size(bool full) const {
       switch(walker_type) {
         case CLOSED: // closed-shell RHF
-          return (full)?(NMO*NMO):(OrbMats[0].shape()[0]*NMO);
+          return (full)?(NMO*NMO):(OrbMats[0].size(0)*NMO);
           break;
         case COLLINEAR:
-          return (full)?(2*NMO*NMO):((OrbMats[0].shape()[0]+OrbMats.back().shape()[0])*NMO);
+          return (full)?(2*NMO*NMO):((OrbMats[0].size(0)+OrbMats.back().size(0))*NMO);
           break;
         case NONCOLLINEAR:
-          return (full)?(4*NMO*NMO):((OrbMats[0].shape()[0])*2*NMO);
+          return (full)?(4*NMO*NMO):((OrbMats[0].size(0))*2*NMO);
           break;
         default:
           APP_ABORT(" Error: Unknown walker_type in dm_size. \n");
@@ -513,13 +513,13 @@ class PHMSD: public AFQMCInfo
       using arr = std::pair<int,int>;
       switch(walker_type) {
         case CLOSED: // closed-shell RHF
-          return (full)?(arr{NMO,NMO}):(arr{OrbMats[0].shape()[0],NMO});
+          return (full)?(arr{NMO,NMO}):(arr{OrbMats[0].size(0),NMO});
           break;
         case COLLINEAR:
-          return (full)?(arr{NMO,NMO}):((sp==Alpha)?(arr{OrbMats[0].shape()[0],NMO}):(arr{OrbMats.back().shape()[0],NMO}));
+          return (full)?(arr{NMO,NMO}):((sp==Alpha)?(arr{OrbMats[0].size(0),NMO}):(arr{OrbMats.back().size(0),NMO}));
           break;
         case NONCOLLINEAR:
-          return (full)?(arr{2*NMO,2*NMO}):(arr{OrbMats[0].shape()[0],2*NMO});
+          return (full)?(arr{2*NMO,2*NMO}):(arr{OrbMats[0].size(0),2*NMO});
           break;
         default:
           APP_ABORT(" Error: Unknown walker_type in dm_size. \n");

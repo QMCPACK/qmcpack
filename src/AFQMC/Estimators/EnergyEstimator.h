@@ -42,9 +42,9 @@ class EnergyEstimator: public EstimatorBase
   {
     AFQMCTimers[energy_timer]->start();
     size_t nwalk = wset.size();
-    if(eloc.shape()[0] != nwalk || eloc.shape()[1] != 3)
+    if(eloc.size(0) != nwalk || eloc.size(1) != 3)
       eloc.reextent({nwalk,3});
-    if(ovlp.shape()[0] != nwalk)
+    if(ovlp.size(0) != nwalk)
       ovlp.reextent(extensions<1u>{nwalk});
 
     ComplexType dum, et;

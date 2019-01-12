@@ -448,7 +448,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     Timer.stop("Generic");
     app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
-    for(int i=0; i<vHS.shape()[1]; i++)
+    for(int i=0; i<vHS.size(1); i++)
         Vsum += vHS[0][i];
     if(std::abs(file_data.Vsum)>1e-8) {
       REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
@@ -594,7 +594,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     Timer.stop("Generic");
     app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
-    for(int i=0; i<vHS.shape()[1]; i++)
+    for(int i=0; i<vHS.size(1); i++)
         Vsum += vHS[0][i];
     if(std::abs(file_data.Vsum)>1e-8) {
       REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
@@ -744,7 +744,7 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     Timer.stop("Generic");
     app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
-    for(int i=0; i<vHS.shape()[1]; i++)
+    for(int i=0; i<vHS.size(1); i++)
         Vsum += vHS[0][i];
     if(std::abs(file_data.Vsum)>1e-8) {
       REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );

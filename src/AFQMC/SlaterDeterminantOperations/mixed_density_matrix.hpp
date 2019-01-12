@@ -65,18 +65,18 @@ template< class Tp,
 inline void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Tp* ovlp, Mat1&& T1, Mat2&& T2, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
 {
   // check dimensions are consistent
-  assert( hermA.shape()[1] == B.shape()[0] );
-  assert( hermA.shape()[0] == B.shape()[1] );
-  assert( hermA.shape()[0] == T1.shape()[0] );
-  assert( B.shape()[1] == T1.shape()[1] );
+  assert( hermA.size(1) == B.size(0) );
+  assert( hermA.size(0) == B.size(1) );
+  assert( hermA.size(0) == T1.size(0) );
+  assert( B.size(1) == T1.size(1) );
   if(compact) {
-    assert( C.shape()[0] == T1.shape()[1] );
-    assert( C.shape()[1] == B.shape()[0] );
+    assert( C.size(0) == T1.size(1) );
+    assert( C.size(1) == B.size(0) );
   } else {
-    assert( T2.shape()[1] == B.shape()[0] );
-    assert( T2.shape()[0] == T1.shape()[1] );
-    assert( C.shape()[0] == hermA.shape()[1] );
-    assert( C.shape()[1] == T2.shape()[1] );
+    assert( T2.size(1) == B.size(0) );
+    assert( T2.size(0) == T1.size(1) );
+    assert( C.size(0) == hermA.size(1) );
+    assert( C.size(1) == T2.size(1) );
   }
 
   using ma::T;
@@ -119,22 +119,22 @@ template< class Tp,
 inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, Tp* ovlp, MatD&& QQ0, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
 {
   // check dimensions are consistent
-  int NEL = B.shape()[1];
-  assert( hermA.shape()[1] == B.shape()[0] );
-  assert( hermA.shape()[0] == TAB.shape()[0] );
-  assert( B.shape()[1] == TAB.shape()[1] );
-  assert( B.shape()[1] == TNN.shape()[0] );
-  assert( B.shape()[1] == TNN.shape()[1] );
-  assert( hermA.shape()[0] == QQ0.shape()[0] );
-  assert( B.shape()[1] == QQ0.shape()[1] );
+  int NEL = B.size(1);
+  assert( hermA.size(1) == B.size(0) );
+  assert( hermA.size(0) == TAB.size(0) );
+  assert( B.size(1) == TAB.size(1) );
+  assert( B.size(1) == TNN.size(0) );
+  assert( B.size(1) == TNN.size(1) );
+  assert( hermA.size(0) == QQ0.size(0) );
+  assert( B.size(1) == QQ0.size(1) );
   if(compact) {
-    assert( C.shape()[0] == TNN.shape()[1] );
-    assert( C.shape()[1] == B.shape()[0] );
+    assert( C.size(0) == TNN.size(1) );
+    assert( C.size(1) == B.size(0) );
   } else {
-    assert( TNM.shape()[1] == B.shape()[0] );
-    assert( TNM.shape()[0] == TNN.shape()[1] );
-    assert( C.shape()[0] == hermA.shape()[1] );
-    assert( C.shape()[1] == TNM.shape()[1] );
+    assert( TNM.size(1) == B.size(0) );
+    assert( TNM.size(0) == TNN.size(1) );
+    assert( C.size(0) == hermA.size(1) );
+    assert( C.size(1) == TNM.size(1) );
   }
 
   using ma::T;
@@ -182,20 +182,20 @@ template< class Tp,
 inline void MixedDensityMatrixFromConfiguration(const MatA& hermA, const MatB& B, MatC&& C, Tp* ovlp, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
 {
   // check dimensions are consistent
-  int NEL = B.shape()[1];
-  assert( hermA.shape()[1] == B.shape()[0] );
-  assert( hermA.shape()[0] == TAB.shape()[0] );
-  assert( B.shape()[1] == TAB.shape()[1] );
-  assert( B.shape()[1] == TNN.shape()[0] );
-  assert( B.shape()[1] == TNN.shape()[1] );
+  int NEL = B.size(1);
+  assert( hermA.size(1) == B.size(0) );
+  assert( hermA.size(0) == TAB.size(0) );
+  assert( B.size(1) == TAB.size(1) );
+  assert( B.size(1) == TNN.size(0) );
+  assert( B.size(1) == TNN.size(1) );
   if(compact) {
-    assert( C.shape()[0] == TNN.shape()[1] );
-    assert( C.shape()[1] == B.shape()[0] );
+    assert( C.size(0) == TNN.size(1) );
+    assert( C.size(1) == B.size(0) );
   } else {
-    assert( TNM.shape()[1] == B.shape()[0] );
-    assert( TNM.shape()[0] == TNN.shape()[1] );
-    assert( C.shape()[0] == hermA.shape()[1] );
-    assert( C.shape()[1] == TNM.shape()[1] );
+    assert( TNM.size(1) == B.size(0) );
+    assert( TNM.size(0) == TNN.size(1) );
+    assert( C.size(0) == hermA.size(1) );
+    assert( C.size(1) == TNM.size(1) );
   }
 
   using ma::T;
@@ -256,18 +256,18 @@ template< class Tp,
 inline void MixedDensityMatrix_noHerm(const MatA& A, const MatB& B, MatC&& C, Tp* ovlp, Mat1&& T1, Mat2&& T2, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
 {
   // check dimensions are consistent
-  assert( A.shape()[0] == B.shape()[0] );
-  assert( A.shape()[1] == B.shape()[1] );
-  assert( A.shape()[1] == T1.shape()[0] );
-  assert( B.shape()[1] == T1.shape()[1] );
+  assert( A.size(0) == B.size(0) );
+  assert( A.size(1) == B.size(1) );
+  assert( A.size(1) == T1.size(0) );
+  assert( B.size(1) == T1.size(1) );
   if(compact) {
-    assert( C.shape()[0] == T1.shape()[1] );
-    assert( C.shape()[1] == B.shape()[0] );
+    assert( C.size(0) == T1.size(1) );
+    assert( C.size(1) == B.size(0) );
   } else {
-    assert( T2.shape()[1] == B.shape()[0] );
-    assert( T2.shape()[0] == T1.shape()[1] );
-    assert( C.shape()[0] == A.shape()[0] );
-    assert( C.shape()[1] == T2.shape()[1] );
+    assert( T2.size(1) == B.size(0) );
+    assert( T2.size(0) == T1.size(1) );
+    assert( C.size(0) == A.size(0) );
+    assert( C.size(1) == T2.size(1) );
   }
 
   using ma::T;
@@ -318,10 +318,10 @@ template< class Tp,
 inline void Overlap(const MatA& hermA, const MatB& B, Tp* ovlp, Mat&& T1, IBuffer& IWORK, Buffer& WORK)
 {
   // check dimensions are consistent
-  assert( hermA.shape()[1] == B.shape()[0] );
-  assert( hermA.shape()[0] == B.shape()[1] );
-  assert( hermA.shape()[0] == T1.shape()[0] );
-  assert( B.shape()[1] == T1.shape()[1] );
+  assert( hermA.size(1) == B.size(0) );
+  assert( hermA.size(0) == B.size(1) );
+  assert( hermA.size(0) == T1.size(0) );
+  assert( B.size(1) == T1.size(1) );
 
   using ma::T;
 
@@ -345,14 +345,14 @@ inline void OverlapForWoodbury(const MatA& hermA, const MatB& B, Tp* ovlp, MatC&
                              MatD && TNN, MatE && TMN, IBuffer& IWORK, TBuffer& WORK)
 {
   // check dimensions are consistent
-  int NEL = B.shape()[1];
-  assert( hermA.shape()[1] == B.shape()[0] );
-  assert( hermA.shape()[0] == TMN.shape()[0] );
-  assert( B.shape()[1] == TMN.shape()[1] );
-  assert( B.shape()[1] == TNN.shape()[0] );
-  assert( B.shape()[1] == TNN.shape()[1] );
-  assert( hermA.shape()[0] == QQ0.shape()[0] );
-  assert( B.shape()[1] == QQ0.shape()[1] );
+  int NEL = B.size(1);
+  assert( hermA.size(1) == B.size(0) );
+  assert( hermA.size(0) == TMN.size(0) );
+  assert( B.size(1) == TMN.size(1) );
+  assert( B.size(1) == TNN.size(0) );
+  assert( B.size(1) == TNN.size(1) );
+  assert( hermA.size(0) == QQ0.size(0) );
+  assert( B.size(1) == QQ0.size(1) );
 
   using ma::T;
 
@@ -391,10 +391,10 @@ template< class Tp,
 inline void Overlap_noHerm(const MatA& A, const MatB& B, Tp* ovlp, Mat&& T1, IBuffer& IWORK, Buffer& WORK)
 {
   // check dimensions are consistent
-  assert( A.shape()[0] == B.shape()[0] );
-  assert( A.shape()[1] == B.shape()[1] );
-  assert( A.shape()[1] == T1.shape()[0] );
-  assert( B.shape()[1] == T1.shape()[1] );
+  assert( A.size(0) == B.size(0) );
+  assert( A.size(1) == B.size(1) );
+  assert( A.size(1) == T1.size(0) );
+  assert( B.size(1) == T1.size(1) );
 
   using ma::T;
   using ma::H;
@@ -440,23 +440,23 @@ template< class Tp,
 inline void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Tp* ovlp, Mat&& T1, Mat&& T2, IBuffer& IWORK, TBuffer& WORK, communicator& comm, bool compact=true)
 {
   // check dimensions are consistent
-  assert( hermA.shape()[1] == B.shape()[0] );
-  assert( hermA.shape()[0] == B.shape()[1] );
-  assert( hermA.shape()[0] == T1.shape()[0] );
-  assert( B.shape()[1] == T1.shape()[1] );
+  assert( hermA.size(1) == B.size(0) );
+  assert( hermA.size(0) == B.size(1) );
+  assert( hermA.size(0) == T1.size(0) );
+  assert( B.size(1) == T1.size(1) );
   if(compact) {
-    assert( C.shape()[0] == T1.shape()[1] );
-    assert( C.shape()[1] == B.shape()[0] );
+    assert( C.size(0) == T1.size(1) );
+    assert( C.size(1) == B.size(0) );
   } else {
-    assert( T2.shape()[1] == B.shape()[0] );
-    assert( T2.shape()[0] == T1.shape()[1] );
-    assert( C.shape()[0] == hermA.shape()[1] );
-    assert( C.shape()[1] == T2.shape()[1] );
+    assert( T2.size(1) == B.size(0) );
+    assert( T2.size(0) == T1.size(1) );
+    assert( C.size(0) == hermA.size(1) );
+    assert( C.size(1) == T2.size(1) );
   }
 
   using ma::T;
 
-  int N0,Nn,sz=B.shape()[1];
+  int N0,Nn,sz=B.size(1);
   std::tie(N0,Nn) = FairDivideBoundary(comm.rank(),sz,comm.size());
 
   // T(B)*conj(A) 
@@ -497,7 +497,7 @@ inline void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Tp* o
 
     comm.barrier();
     
-    sz=T2.shape()[1];
+    sz=T2.size(1);
     std::tie(N0,Nn) = FairDivideBoundary(comm.rank(),sz,comm.size());
 
     // C = conj(A) * T2
@@ -533,14 +533,14 @@ template< class Tp,
 inline void Overlap(const MatA& hermA, const MatB& B, Tp* ovlp, Mat&& T1, IBuffer& IWORK, Buffer& WORK, communicator& comm)
 {
   // check dimensions are consistent
-  assert( hermA.shape()[1] == B.shape()[0] );
-  assert( hermA.shape()[0] == B.shape()[1] );
-  assert( hermA.shape()[0] == T1.shape()[0] );
-  assert( B.shape()[1] == T1.shape()[1] );
+  assert( hermA.size(1) == B.size(0) );
+  assert( hermA.size(0) == B.size(1) );
+  assert( hermA.size(0) == T1.size(0) );
+  assert( B.size(1) == T1.size(1) );
 
   using ma::T;
 
-  int N0,Nn,sz = B.shape()[1];
+  int N0,Nn,sz = B.size(1);
   std::tie(N0,Nn) = FairDivideBoundary(comm.rank(),sz,comm.size());
 
   // T(B)*conj(A) 
@@ -571,18 +571,18 @@ template< class Tp,
 inline void OverlapForWoodbury(const MatA& hermA, const MatB& B, Tp* ovlp, MatC&& QQ0, integer *ref, MatD&& TNN, MatE& TMN, IBuffer& IWORK, TBuffer& WORK, communicator& comm)
 {
   // check dimensions are consistent
-  int NEL = B.shape()[1];
-  assert( hermA.shape()[1] == B.shape()[0] );
-  assert( hermA.shape()[0] == TMN.shape()[0] );
-  assert( B.shape()[1] == TMN.shape()[1] );
-  assert( B.shape()[1] == TNN.shape()[0] );
-  assert( B.shape()[1] == TNN.shape()[1] );
-  assert( hermA.shape()[0] == QQ0.shape()[0] );
-  assert( B.shape()[1] == QQ0.shape()[1] );
+  int NEL = B.size(1);
+  assert( hermA.size(1) == B.size(0) );
+  assert( hermA.size(0) == TMN.size(0) );
+  assert( B.size(1) == TMN.size(1) );
+  assert( B.size(1) == TNN.size(0) );
+  assert( B.size(1) == TNN.size(1) );
+  assert( hermA.size(0) == QQ0.size(0) );
+  assert( B.size(1) == QQ0.size(1) );
 
   using ma::T;
 
-  int N0,Nn,sz = B.shape()[1];
+  int N0,Nn,sz = B.size(1);
   std::tie(N0,Nn) = FairDivideBoundary(comm.rank(),sz,comm.size());
 
   // T(B)*conj(A) 
@@ -599,7 +599,7 @@ inline void OverlapForWoodbury(const MatA& hermA, const MatB& B, Tp* ovlp, MatC&
   comm.broadcast_n(ovlp,1,0);
 
   int M0,Mn;
-  sz = TMN.shape()[0];
+  sz = TMN.size(0);
   std::tie(M0,Mn) = FairDivideBoundary(comm.rank(),sz,comm.size());
 
   // QQ0 = TMN * inv(TNN) 
@@ -625,22 +625,22 @@ template< class Tp,
 inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, Tp* ovlp, MatD&& QQ0, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, communicator& comm, bool compact=true)
 {
   // check dimensions are consistent
-  int NEL = B.shape()[1];
-  assert( hermA.shape()[1] == B.shape()[0] );
-  assert( hermA.shape()[0] == TAB.shape()[0] );
-  assert( B.shape()[1] == TAB.shape()[1] );
-  assert( B.shape()[1] == TNN.shape()[0] );
-  assert( B.shape()[1] == TNN.shape()[1] );
-  assert( hermA.shape()[0] == QQ0.shape()[0] );
-  assert( B.shape()[1] == QQ0.shape()[1] );
+  int NEL = B.size(1);
+  assert( hermA.size(1) == B.size(0) );
+  assert( hermA.size(0) == TAB.size(0) );
+  assert( B.size(1) == TAB.size(1) );
+  assert( B.size(1) == TNN.size(0) );
+  assert( B.size(1) == TNN.size(1) );
+  assert( hermA.size(0) == QQ0.size(0) );
+  assert( B.size(1) == QQ0.size(1) );
   if(compact) {
-    assert( C.shape()[0] == TNN.shape()[1] );
-    assert( C.shape()[1] == B.shape()[0] );
+    assert( C.size(0) == TNN.size(1) );
+    assert( C.size(1) == B.size(0) );
   } else {
-    assert( TNM.shape()[1] == B.shape()[0] );
-    assert( TNM.shape()[0] == TNN.shape()[1] );
-    assert( C.shape()[0] == hermA.shape()[1] );
-    assert( C.shape()[1] == TNM.shape()[1] );
+    assert( TNM.size(1) == B.size(0) );
+    assert( TNM.size(0) == TNN.size(1) );
+    assert( C.size(0) == hermA.size(1) );
+    assert( C.size(1) == TNM.size(1) );
   }
 
   using ma::T;
@@ -667,7 +667,7 @@ inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC
   comm.broadcast_n(ovlp,1,0);
 
   int P0,Pn;
-  std::tie(P0,Pn) = FairDivideBoundary(comm.rank(),int(TAB.shape()[0]),comm.size());
+  std::tie(P0,Pn) = FairDivideBoundary(comm.rank(),int(TAB.size(0)),comm.size());
 
   // QQ0 = TAB * inv(TNN) 
   if(P0!=Pn)  
@@ -691,7 +691,7 @@ inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC
                   T(B),
                   TNM.sliced(N0,Nn)); 
 
-    int sz=TNM.shape()[1];
+    int sz=TNM.size(1);
     std::tie(N0,Nn) = FairDivideBoundary(comm.rank(),sz,comm.size());   
     comm.barrier();
 

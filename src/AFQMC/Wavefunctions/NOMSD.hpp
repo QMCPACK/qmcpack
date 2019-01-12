@@ -163,13 +163,13 @@ class NOMSD: public AFQMCInfo
     template<class MatG, class MatA>
     void vbias(const MatG& G, MatA&& v, double a=1.0) {
       if(transposed_G_for_vbias_) {
-        assert( G.shape()[0] == v.shape()[1] );
-        assert( G.shape()[1] == size_of_G_for_vbias() );
+        assert( G.size(0) == v.size(1) );
+        assert( G.size(1) == size_of_G_for_vbias() );
       } else {  
-        assert( G.shape()[0] == size_of_G_for_vbias() );
-        assert( G.shape()[1] == v.shape()[1] );
+        assert( G.size(0) == size_of_G_for_vbias() );
+        assert( G.size(1) == v.size(1) );
       }  
-      assert( v.shape()[0] == HamOp.local_number_of_cholesky_vectors());
+      assert( v.size(0) == HamOp.local_number_of_cholesky_vectors());
       if(ci.size()==1) {
         // HamOp expects a compact Gc with alpha/beta components 
         HamOp.vbias(G,std::forward<MatA>(v),a);
@@ -196,11 +196,11 @@ class NOMSD: public AFQMCInfo
      */
     template<class MatX, class MatA>
     void vHS(MatX&& X, MatA&& v, double a=1.0) {
-      assert( X.shape()[0] == HamOp.local_number_of_cholesky_vectors() );
+      assert( X.size(0) == HamOp.local_number_of_cholesky_vectors() );
       if(transposed_G_for_vbias_)
-        assert( X.shape()[1] == v.shape()[0] );
+        assert( X.size(1) == v.size(0) );
       else    
-        assert( X.shape()[1] == v.shape()[1] );
+        assert( X.size(1) == v.size(1) );
       HamOp.vHS(std::forward<MatX>(X),std::forward<MatA>(v),a);
       TG.local_barrier();    
     }
@@ -214,7 +214,7 @@ class NOMSD: public AFQMCInfo
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
         ovlp.reextent(extensions<1u>{nw});
-      if(eloc.shape()[0] != nw || eloc.shape()[1] != 3)
+      if(eloc.size(0) != nw || eloc.size(1) != 3)
         eloc.reextent({nw,3});
       Energy(wset,eloc,ovlp);
       TG.local_barrier();

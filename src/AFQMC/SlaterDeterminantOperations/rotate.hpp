@@ -67,17 +67,17 @@ template< class Container,
         >
 void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, Container& Q, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6, bool reserve_to_fit_=true)
 {
-  int NAEA = Alpha->shape()[0]; 
-  int NAEB = Alpha->shape()[0]; 
-  int NMO = Alpha->shape()[1]; 
+  int NAEA = Alpha->size(0); 
+  int NAEB = Alpha->size(0); 
+  int NMO = Alpha->size(1); 
   if(type==COLLINEAR)
-    NAEB = Beta->shape()[0];
+    NAEB = Beta->size(0);
   int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
-  int nvec = CholMat.shape()[1];  
+  int nvec = CholMat.size(1);  
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();  
 
-  assert(CholMat.shape()[0]==NMO*NMO); 
+  assert(CholMat.size(0)==NMO*NMO); 
   assert(kN > k0); 
   if(type == CLOSED && kN > NMO)
     APP_ABORT(" Error: kN > NMO in halfRotateCholeskyMatrix. \n");
@@ -99,11 +99,11 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   int Qdim = NAEA*(kN_alpha-k0_alpha) + NAEB*(kN_beta-k0_beta);
   if(transpose) {
     //if(not check_shape(Q,{nvec,Qdim}))
-    if(not (Q.shape()[0]==nvec && Q.shape()[1]==Qdim))
+    if(not (Q.size(0)==nvec && Q.size(1)==Qdim))
       APP_ABORT(" Error: Container Q has incorrect dimensions in halfRotateCholeskyMatrix. \n");
   } else {
     //if(not check_shape(Q,{Qdim,nvec}))
-    if(not (Q.shape()[0]==Qdim && Q.shape()[1]==nvec))
+    if(not (Q.size(0)==Qdim && Q.size(1)==nvec))
       APP_ABORT(" Error: Container Q has incorrect dimensions in halfRotateCholeskyMatrix. \n");
   }  
   std::tie(ak0,ak1) = FairDivideBoundary(coreid,Qdim,ncores);
@@ -233,20 +233,20 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
 template<class task_group>
 SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_group& TG, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, double cutoff=1e-6)
 {
-  int NAEA = Alpha->shape()[0]; 
-  int NAEB = Alpha->shape()[0]; 
-  int NMO = Alpha->shape()[1]; 
+  int NAEA = Alpha->size(0); 
+  int NAEB = Alpha->size(0); 
+  int NMO = Alpha->size(1); 
   if(type!=CLOSED)
-    NAEB = Beta->shape()[0];
+    NAEB = Beta->size(0);
   int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
-  int nvec = CholMat.shape()[1];  
+  int nvec = CholMat.size(1);  
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();  
 
 // to speed up, generate new communicator for eqv_nodes and split full work among all
 // cores in this comm. Then build from distributed container?
 
-  assert(CholMat.shape()[0]==NMO*NMO); 
+  assert(CholMat.size(0)==NMO*NMO); 
 
   std::size_t Qdim = NAEA*NMO;
   if(type==COLLINEAR) Qdim += NAEB*NMO;
@@ -354,17 +354,17 @@ template< class MultiArray2D,
         >
 void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, MultiArray2D&& Q, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6)
 {
-  int NAEA = Alpha->shape()[0]; 
+  int NAEA = Alpha->size(0); 
   int NAEB = 0; 
-  int NMO = Alpha->shape()[1]; 
+  int NMO = Alpha->size(1); 
   if(type==COLLINEAR)
-    NAEB = Beta->shape()[0];
+    NAEB = Beta->size(0);
   int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
-  int nvec = CholMat.shape()[1];  
+  int nvec = CholMat.size(1);  
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();  
 
-  assert(CholMat.shape()[0]==NMO*NMO); 
+  assert(CholMat.size(0)==NMO*NMO); 
   if(type == CLOSED && kN > NMO)
     APP_ABORT(" Error: kN > NMO in halfRotateCholeskyMatrix. \n");
 
@@ -384,11 +384,11 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   int ak0, ak1;
   int Qdim = NAEA*(kN_alpha-k0_alpha) + NAEB*(kN_beta-k0_beta);
   if(transpose) {
-    assert(Q.shape()[0]==nvec);
-    assert(Q.shape()[1]==Qdim);
+    assert(Q.size(0)==nvec);
+    assert(Q.size(1)==Qdim);
   } else {
-    assert(Q.shape()[0]==Qdim);
-    assert(Q.shape()[1]==nvec);
+    assert(Q.size(0)==Qdim);
+    assert(Q.size(1)==nvec);
   }
   std::tie(ak0,ak1) = FairDivideBoundary(coreid,Qdim,ncores);
 
@@ -471,16 +471,16 @@ template< class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class M
 void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, 
                                 MultiArray3DC&& Lank, MultiArray2D && buff)  
 {
-  int na = Aai.shape()[0];
-  int ni = Aai.shape()[1];
-  int nk = Likn.shape()[1];
-  int nchol = Likn.shape()[2];
-  assert(Likn.shape()[0]==ni);
-  assert(Lank.shape()[0]==na);
-  assert(Lank.shape()[1]==nchol);
-  assert(Lank.shape()[2]==nk);
-  assert(buff.shape()[0] >= nk);
-  assert(buff.shape()[1] >= nchol);
+  int na = Aai.size(0);
+  int ni = Aai.size(1);
+  int nk = Likn.size(1);
+  int nchol = Likn.size(2);
+  assert(Likn.size(0)==ni);
+  assert(Lank.size(0)==na);
+  assert(Lank.size(1)==nchol);
+  assert(Lank.size(2)==nk);
+  assert(buff.size(0) >= nk);
+  assert(buff.size(1) >= nchol);
 
   using element = typename std::decay<MultiArray3DC>::type::element;
   boost::multi::array_ref<element,2> Li_kn(std::addressof(*Likn.origin()),
@@ -503,14 +503,14 @@ template< class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class M
 void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
                                 MultiArray3DC&& Lank, MultiArray2D && buff)
 {
-  int na = Aai.shape()[0];
-  int ni = Aai.shape()[1];
-  int nk = Lkin.shape()[0];
-  int nchol = Lkin.shape()[2];
-  assert(Lkin.shape()[0]==ni);
-  assert(Lank.shape()[0]==na);
-  assert(Lank.shape()[1]==nchol);
-  assert(Lank.shape()[2]==nk);
+  int na = Aai.size(0);
+  int ni = Aai.size(1);
+  int nk = Lkin.size(0);
+  int nchol = Lkin.size(2);
+  assert(Lkin.size(0)==ni);
+  assert(Lank.size(0)==na);
+  assert(Lank.size(1)==nchol);
+  assert(Lank.size(2)==nk);
   assert(buff.num_elements() >= na*nchol);
 
   using Type = typename std::decay<MultiArray3DC>::type::element;
