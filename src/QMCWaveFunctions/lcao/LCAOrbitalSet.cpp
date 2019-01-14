@@ -394,37 +394,37 @@ namespace qmcplusplus
       {
         Table.resize(nel,nmo);
 
-			  Bbar.resize(nel,nmo);
-
-				Y1.resize(nel,nel);
-				Y2.resize(nel,nmo);
-				Y3.resize(nel,nmo);
-				Y4.resize(nel,nmo);
-
-				pK1.resize(nmo,nel);
-				K1T.resize(nmo,nmo);
-				TK1T.resize(nel,nmo);
-
-				pK2.resize(nmo,nel);
-				K2AiB.resize(nmo,nmo);
-				TK2AiB.resize(nel,nmo);
-				K2XA.resize(nmo,nmo);
-				TK2XA.resize(nel,nmo);
-				K2T.resize(nmo,nmo);
-				TK2T.resize(nel,nmo);
-				MK2T.resize(nel,nmo);
-
-				pK3.resize(nmo,nel);
-				K3T.resize(nmo,nmo);
-				TK3T.resize(nel,nmo);
-
-				pK4.resize(nmo,nel);
-				K4T.resize(nmo,nmo);
-				TK4T.resize(nel,nmo);
-
-				pK5.resize(nmo,nel);
-				K5T.resize(nmo,nmo);
-				TK5T.resize(nel,nmo);
+         Bbar.resize(nel,nmo);
+        
+         Y1.resize(nel,nel);
+         Y2.resize(nel,nmo);
+         Y3.resize(nel,nmo);
+         Y4.resize(nel,nmo);
+        
+         pK1.resize(nmo,nel);
+         K1T.resize(nmo,nmo);
+         TK1T.resize(nel,nmo);
+        
+         pK2.resize(nmo,nel);
+         K2AiB.resize(nmo,nmo);
+         TK2AiB.resize(nel,nmo);
+         K2XA.resize(nmo,nmo);
+         TK2XA.resize(nel,nmo);
+         K2T.resize(nmo,nmo);
+         TK2T.resize(nel,nmo);
+         MK2T.resize(nel,nmo);
+        
+         pK3.resize(nmo,nel);
+         K3T.resize(nmo,nmo);
+         TK3T.resize(nel,nmo);
+        
+         pK4.resize(nmo,nel);
+         K4T.resize(nmo,nmo);
+         TK4T.resize(nel,nmo);
+        
+         pK5.resize(nmo,nel);
+         K5T.resize(nmo,nmo);
+         TK5T.resize(nel,nmo);
 
       }
       else
@@ -684,16 +684,16 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
 
   double* T(Table.data());
 
-	construct_tables(
-									 B_grad,
-									 B_lapl,
-									 M_up,
-									 Minv_up,
-									 nel,
-									 nmo,
-									 offset1,
-									 T
-									);
+  construct_tables(
+                   B_grad,
+                   B_lapl,
+                   M_up,
+                   Minv_up,
+                   nel,
+                   nmo,
+                   offset1,
+                   T
+                  );
 
 
   //Need to create the constants: (Oi, const0, const1, const2)to take advantage of minimal BLAS commands; 
@@ -719,11 +719,11 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
     const1 += c * Oi[down] * (detValues_up[up] / detValues_up[0]);
   }
 
-	std::fill(pK1.begin(),pK1.end(),0.0);
-	std::fill(pK2.begin(),pK2.end(),0.0);
-	std::fill(pK3.begin(),pK3.end(),0.0);
-	std::fill(pK4.begin(),pK4.end(),0.0);
-	std::fill(pK5.begin(),pK5.end(),0.0);
+  std::fill(pK1.begin(),pK1.end(),0.0);
+  std::fill(pK2.begin(),pK2.end(),0.0);
+  std::fill(pK3.begin(),pK3.end(),0.0);
+  std::fill(pK4.begin(),pK4.end(),0.0);
+  std::fill(pK5.begin(),pK5.end(),0.0);
 
   //Now we are going to loop through all unique determinants.
   //The few lines above are for the reference matrix contribution.
@@ -934,15 +934,15 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
 
 
 void LCAOrbitalSet::construct_tables(
-											 	const GradMatrix_t& B_grad,
-												const ValueMatrix_t& B_lapl,
-											  const ValueMatrix_t& M_up,
- 											 	const ValueMatrix_t& Minv_up,
-											  const size_t& nel,
-											  const size_t& nmo,
-												const int& offset1,
-												double* T
-												)
+                                     const GradMatrix_t& B_grad,
+                                     const ValueMatrix_t& B_lapl,
+                                     const ValueMatrix_t& M_up,
+                                     const ValueMatrix_t& Minv_up,
+                                     const size_t& nel,
+                                     const size_t& nmo,
+                                     const int& offset1,
+                                     double* T
+)
 {
 	//possibly replace wit BLAS calls 
   for(int i=0; i<nel; i++)

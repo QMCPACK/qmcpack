@@ -217,53 +217,53 @@ namespace qmcplusplus
     //helper function to resetParameters
     void exponentiate_antisym_matrix(const int n, RealType* const mat);
 
-		//helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
-		void table_method_eval(std::vector<RealType>& dlogpsi,
-													 std::vector<RealType>& dhpsioverpsi,
-													 const ParticleSet::ParticleLaplacian_t& myL_J,
-													 const ParticleSet::ParticleGradient_t& myG_J,
-													 const size_t& nel,
-													 const size_t& nmo,
-													 const ValueType& psiCurrent,
-													 std::vector<RealType> const * const Coeff,
-													 std::vector<size_t> const * const C2node_up,
-													 std::vector<size_t> const * const C2node_dn,
-													 const ValueVector_t& detValues_up, 
-													 const ValueVector_t& detValues_dn, 
-													 const GradMatrix_t& grads_up, 
-													 const GradMatrix_t& grads_dn, 
-													 const ValueMatrix_t& lapls_up, 
-													 const ValueMatrix_t& lapls_dn,
-													 const ValueMatrix_t& M_up,
-													 const ValueMatrix_t& M_dn,
-													 const ValueMatrix_t& Minv_up,
-													 const ValueMatrix_t& Minv_dn,
-													 const GradMatrix_t& B_grad,
-													 const ValueMatrix_t& B_lapl,
-													 std::vector<int> const * const detData_up,
-													 const size_t& N1,
-													 const size_t& N2,
-													 const size_t& NP1,
-													 const size_t& NP2); 
+    //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
+    void table_method_eval(std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi,
+                           const ParticleSet::ParticleLaplacian_t& myL_J,
+                           const ParticleSet::ParticleGradient_t& myG_J,
+                           const size_t& nel,
+                           const size_t& nmo,
+                           const ValueType& psiCurrent,
+                           std::vector<RealType> const * const Coeff,
+                           std::vector<size_t> const * const C2node_up,
+                           std::vector<size_t> const * const C2node_dn,
+                           const ValueVector_t& detValues_up, 
+                           const ValueVector_t& detValues_dn, 
+                           const GradMatrix_t& grads_up, 
+                           const GradMatrix_t& grads_dn, 
+                           const ValueMatrix_t& lapls_up, 
+                           const ValueMatrix_t& lapls_dn,
+                           const ValueMatrix_t& M_up,
+                           const ValueMatrix_t& M_dn,
+                           const ValueMatrix_t& Minv_up,
+                           const ValueMatrix_t& Minv_dn,
+                           const GradMatrix_t& B_grad,
+                           const ValueMatrix_t& B_lapl,
+                           std::vector<int> const * const detData_up,
+                           const size_t& N1,
+                           const size_t& N2,
+                           const size_t& NP1,
+                           const size_t& NP2); 
 
-		//helper function to contruct tables 'T' and 'M', which must be computed for both the single slater and multi-slater wfns.
-		//Also computes the special O operator matrix that is needed in both cases as well. 
-		void construct_tables(
-													const GradMatrix_t& B_grad,
-													const ValueMatrix_t& B_lapl,
-													const ValueMatrix_t& M_up,
-													const ValueMatrix_t& Minv_up,
-													const size_t& nel,
-													const size_t& nmo,
-													const int& offset1,
-													double* T
-													);
-	
+    //helper function to contruct tables 'T' and 'M', which must be computed for both the single slater and multi-slater wfns.
+    //Also computes the special O operator matrix that is needed in both cases as well. 
+    void construct_tables(
+                          const GradMatrix_t& B_grad,
+                          const ValueMatrix_t& B_lapl,
+                          const ValueMatrix_t& M_up,
+                          const ValueMatrix_t& Minv_up,
+                          const size_t& nel,
+                          const size_t& nmo,
+                          const int& offset1,
+                          double* T
+                          );
 
-		ValueMatrix_t  Table;
-	  ValueMatrix_t Bbar;
-		ValueMatrix_t Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y11,Y23,Y24,Y25,Y26;
-		ValueMatrix_t pK1,K1T,TK1T, pK2,K2AiB,TK2AiB,K2XA,TK2XA,K2T,TK2T,MK2T, pK3,K3T,TK3T, pK4,K4T,TK4T, pK5,K5T,TK5T;
+
+    ValueMatrix_t  Table;
+    ValueMatrix_t Bbar;
+    ValueMatrix_t Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y11,Y23,Y24,Y25,Y26;
+    ValueMatrix_t pK1,K1T,TK1T, pK2,K2AiB,TK2AiB,K2XA,TK2XA,K2T,TK2T,MK2T, pK3,K3T,TK3T, pK4,K4T,TK4T, pK5,K5T,TK5T;
 
   };
 }
