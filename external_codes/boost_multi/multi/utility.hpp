@@ -13,8 +13,8 @@ namespace boost{
 namespace multi{
 
 template<class T, typename = typename T::rank>
-std::true_type has_rank_aux(T const&);
-std::false_type has_rank_aux(...);
+std::true_type has_rank_aux(T const&){return {};}
+std::false_type has_rank_aux(...){return {};}
 
 template<class T> struct has_rank : decltype(has_rank_aux(std::declval<T>())){};
 

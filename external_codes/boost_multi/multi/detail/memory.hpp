@@ -92,24 +92,67 @@ struct uninitialized_copy_aux<1u>{
 	}
 };
 
-template<class Pointer>
-struct pointer_traits : std::pointer_traits<Pointer>{
-//	using default_allocator_type = 
-//		decltype(default_allocator_of(std::declval<Pointer const&>()));
-	using allocator_type = std::allocator<std::decay_t<typename pointer_traits::element_type>>;
-	template<class P2>
-	static allocator_type allocator_of(P2 const&){return {};}
+template<dimensionality_type N> struct fill_aux;
+
+template<dimensionality_type N, class Out, class T>
+void fill(Out f, Out l, T const& value){return fill_aux<N>::call(f, l, value);}
+
+template<dimensionality_type N>
+struct fill_aux{
+	template<class Out, class T>
+	static auto call(Out first, Out last, T const& value){
+		using std::begin; using std::end;
+		for(; first != last; ++first)
+			fill<N-1>(begin(*first), end(*first), value); // (*first).begin() instead of first->begin() to make it work with T[][]
+	}
 };
 
-template<class T>
-auto default_allocator_of(T*){
-	return std::allocator<std::decay_t<typename std::pointer_traits<T*>::element_type>>{};
-}
+template<> struct fill_aux<1u>{
+	template<class O, class T> 
+	static auto call(O f, O l, T const& v){using std::fill; return fill(f, l, v);}
+};
 
-template<class Ptr>
-auto default_allocator_of(Ptr){
-	return std::allocator<std::decay_t<typename std::pointer_traits<Ptr>::element_type>>{};
-}
+template<dimensionality_type N> struct uninitialized_fill_aux;
+
+template<dimensionality_type N, class Out, class T>
+void uninitialized_fill(Out f, Out l, T const& value){return uninitialized_fill_aux<N>::call(f, l, value);}
+
+template<dimensionality_type N>
+struct uninitialized_fill_aux{
+	template<class Out, class T>
+	static auto call(Out first, Out last, T const& value){
+		using std::begin; using std::end;
+		for(; first != last; ++first)
+			uninitialized_fill<N-1>(begin(*first), end(*first), value); // (*first).begin() instead of first->begin() to make it work with T[][]
+	}
+};
+
+template<> struct uninitialized_fill_aux<1u>{
+	template<class O, class T> 
+	static auto call(O f, O l, T const& v){using std::uninitialized_fill; return uninitialized_fill(f, l, v);}
+};
+
+template<class T, typename = decltype(std::declval<T const&>().default_allocator())>
+std::true_type           has_default_allocator_aux(T const&);
+std::false_type          has_default_allocator_aux(...);
+template<class T> struct has_default_allocator : decltype(has_default_allocator_aux(std::declval<T>())){};
+
+template<class Pointer, class T = void> struct pointer_traits;
+
+template<class P>
+struct pointer_traits<P, std::enable_if_t<has_default_allocator<P>{}> > : std::pointer_traits<P>{
+	static auto default_allocator_of(typename pointer_traits::pointer const& p){return p.default_allocator();}
+	using default_allocator_type = decltype(std::declval<P const&>().default_allocator());
+};
+template<class P>
+struct pointer_traits<P, std::enable_if_t<not has_default_allocator<P>{}> > : std::pointer_traits<P>{
+	using default_allocator_type = std::allocator<std::decay_t<typename pointer_traits::element_type> >;
+	static default_allocator_type default_allocator_of(typename pointer_traits::pointer const&){return {};}
+};
+
+template<class P>
+typename pointer_traits<P>::default_allocator_type 
+default_allocator_of(P const& p){return pointer_traits<P>::default_allocator_of(p);}
 
 }}
 
@@ -118,6 +161,10 @@ auto default_allocator_of(Ptr){
 namespace multi = boost::multi;
 
 int main(){
+
+	double* p;
+	auto a = multi::default_allocator_of(p);
+	static_assert(std::is_same<decltype(a), std::allocator<double>>{}, "!");
 
 }
 #endif

@@ -73,7 +73,7 @@ struct random_iterable : B{
 	decltype(auto) cback()  const{return static_cast<T const&>(*this).back() ;}
 	friend auto cfront(T const& s){return s.cfront();}
 	friend auto cback (T const& s){return s.cback() ;}
-	friend auto size(T const& self){return self.size();}
+//	friend typename T::size_type size(T const& self){return self.size();}
 };
 
 }}

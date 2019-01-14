@@ -62,7 +62,7 @@ constexpr auto to_tuple_impl(std::array<From, sizeof...(I)> arr, std::index_sequ
 
 template<class To, size_t N, class From>
 constexpr auto to_tuple(std::array<From, N> arr){
-	return to_tuple_impl<To>(arr, std::make_index_sequence<N>());
+	return to_tuple_impl<To, From>(arr, std::make_index_sequence<N>());
 }
 
 #if 0
@@ -158,8 +158,9 @@ struct layout_t
 		nelems_{std::get<0>(e).size()*sub.num_elements()} 
 	{}
 #if defined(__INTEL_COMPILER) or (defined(__GNUC) && (__GNUC<6))
-	constexpr layout_t(std::initializer_list<index_extension> il) noexcept : layout_t{multi::detail::to_tuple<D, index_extension>(il)}{}
-	constexpr layout_t(std::initializer_list<index> il) noexcept : layout_t{multi::detail::to_tuple<D, index_extension>(il)}{}
+//	constexpr layout_t(std::initializer_list<index_extension> il) noexcept : layout_t{multi::detail::to_tuple<D, index_extension>(il)}{}
+//	constexpr layout_t(std::initializer_list<index> il) noexcept : layout_t{multi::detail::to_tuple<D, index_extension>(il)}{}
+	constexpr layout_t(std::array<index_extension, D> x) noexcept : layout_t{multi::detail::to_tuple<index_extension>(x)}{}
 #endif
 #if 0
 	constexpr layout_t(f_tag, extensions_type const& e = {}) : 
@@ -216,8 +217,8 @@ struct layout_t
 	friend size_type num_elements(layout_t const& s){return s.num_elements();}
 	constexpr bool empty() const{return not nelems_;} friend
 	constexpr bool empty(layout_t const& s){return s.empty();}
-	constexpr size_type size() const {return nelems_/stride_;} friend 
-	constexpr size_type size(layout_t const& l){return l.size();}
+	constexpr size_type size() const {return nelems_/stride_;} 
+	friend constexpr size_type size(layout_t const& l){return l.size();}
 	size_type size(dimensionality_type d) const{return d?sub.size(d-1):size();}
 
 	constexpr index stride() const{return stride_;}

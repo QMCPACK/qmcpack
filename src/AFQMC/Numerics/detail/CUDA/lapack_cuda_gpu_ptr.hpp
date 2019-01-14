@@ -96,12 +96,19 @@ namespace qmc_cuda
     if(lda != n)
       throw std::runtime_error("Error: getri<GPU_MEMORY_POINTER_TYPE> required lda = 1."); 
 
+    int* info;
+    if(cudaSuccess != cudaMalloc ((void**)&info,sizeof(int))) {
+      std::cerr<<" Error gqr: Error allocating on GPU." <<std::endl;
+      throw std::runtime_error("Error: cudaMalloc returned error code.");
+    }
+
     kernels::setIdentity(n,to_address(work),n);
     if(CUSOLVER_STATUS_SUCCESS != cusolver::cusolver_getrs(*a.handles.cusolverDn_handle, CUBLAS_OP_N, n, n,
-                   to_address(a), lda, to_address(piv), to_address(work), n, to_address(piv)+n))    
+                   to_address(a), lda, to_address(piv), to_address(work), n, info))    
       throw std::runtime_error("Error: cusolver_getrs returned error code."); 
     cudaMemcpy(to_address(a),to_address(work),n*n*sizeof(T),cudaMemcpyDeviceToDevice);
-    cudaMemcpy(&status,to_address(piv)+n,sizeof(int),cudaMemcpyDeviceToHost);
+    cudaMemcpy(&status,info,sizeof(int),cudaMemcpyDeviceToHost);
+    cudaFree(info);
 
   }
 

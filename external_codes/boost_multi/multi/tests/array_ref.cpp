@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-clang++ -O3 -std=c++14 -Wall -Wextra -Wpedantic -Wfatal-errors $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
+clang++ -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
 #endif
 
 #include "../array_ref.hpp"
@@ -26,7 +26,7 @@ int main(){
 		{10, 11, 12, 13, 14}, 
 		{15, 16, 17, 18, 19}
 	};
-	multi::array_ref<double, 2, double const*> d2D_cref(&d2D[0][0], {4, 5});
+	multi::array_ref<double, 2, double const*> d2D_cref(&d2D[0][0], multi::iextensions<2>{4, 5});
 
 	decltype(d2D_cref)::value_type a_row = d2D_cref[2];
 	decltype(d2D_cref[2])::decay_type b_row = d2D_cref[2];
@@ -98,7 +98,7 @@ int main(){
 		for(auto it2 = it1->begin()   ; it2 != it1->end()   ||!endl(cout); ++it2)
 			cout << *it2 << ' ';
 
-	multi::array_ref<double, 2, double const*> d2D_crefref{data(d2D_cref), extensions(d2D_cref)};
+	multi::array_ref<double, 2, double const*> d2D_crefref(data(d2D_cref), extensions(d2D_cref));
 
 	using std::for_each;
 	using std::begin;
@@ -167,8 +167,8 @@ int main(){
 		{ 0,  0,  0,  0,  0}, 
 		{ 0,  0,  0,  0,  0}
 	};
-#if defined(__INTEL_COMPILER)
-	auto d2D_null_cref = multi::make_array_ref<2>(&d2D_null[0][0], {4, 5});
+#if defined(__INTEL_COMPILER) or (defined(__GNUC__) && (__GNUC__<6))
+	auto d2D_null_cref = multi::make_array_ref<2>(&d2D_null[0][0], multi::iextensions<2>{4, 5});
 #else
 	auto d2D_null_cref = multi::make_array_ref(&d2D_null[0][0], {4, 5});
 #endif
