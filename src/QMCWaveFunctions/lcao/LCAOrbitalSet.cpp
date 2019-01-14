@@ -12,7 +12,7 @@
     
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
 #include <Numerics/MatrixOperators.h>
-#include "Numerics/Blasf.h"
+#include "Numerics/OhmmsBlas.h"
 
 namespace qmcplusplus
 {
@@ -572,11 +572,11 @@ namespace qmcplusplus
     int LDA(n);
     int LWORK(2*n);
     int info = 0;
-    zheev(JOBZ, UPLO, N, &mat_h.at(0), LDA, &eval.at(0), &work.at(0), LWORK, &rwork.at(0), info);
+    LAPACK::heev(JOBZ, UPLO, N, &mat_h.at(0), LDA, &eval.at(0), &work.at(0), LWORK, &rwork.at(0), info);
     if(info != 0)
     {
       std::ostringstream msg;
-      msg << "zheev failed with info = " << info << " in MultiSlaterDeterminantFast::exponentiate_antisym_matrix";
+      msg << "heev failed with info = " << info << " in MultiSlaterDeterminantFast::exponentiate_antisym_matrix";
       app_log() << msg.str() << std::endl;
       APP_ABORT(msg.str());
     }

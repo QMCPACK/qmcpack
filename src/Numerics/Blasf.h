@@ -281,8 +281,11 @@ extern "C" {
              int &IU, double &ABSTOL, int &M, double *W, double* Z, int &LDZ, int* ISUPPZ, double *WORK, 
              int &LWORK, int* IWORK, int &LIWORK, int &INFO);
 
+  void cheev  (char &JOBZ, char &UPLO, int &N, std::complex<float> *A, int &LDA,
+               float *W, std::complex<float> *WORK, int &LWORK, float *RWORK, int &INFO);
+
   void zheev  (char &JOBZ, char &UPLO, int &N, std::complex<double> *A, int &LDA,
-               double *W, std::complex<double> *WORK, int &LWORK, double* RWORK, int &INFO);
+               double *W, std::complex<double> *WORK, int &LWORK, double *RWORK, int &INFO);
 
   void zheevr (char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA, double &VL, double &VU, 
              int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z, int &LDZ, int* ISUPPZ, 
