@@ -39,7 +39,8 @@ struct array_types : Layout{ //	template<class... As> array_types(As&&... as) : 
 	using reference       = std::conditional_t<
 		dimensionality!=1, 
 		basic_array<element, dimensionality-1, element_ptr>, 
-		typename std::iterator_traits<element_ptr>::reference 	//	typename pointer_traits<element_ptr>::element_type&
+		//typename std::iterator_traits<element_ptr>::reference 	//	typename pointer_traits<element_ptr>::element_type&
+			typename pointer_traits<element_ptr>::element_type&
 	>;
 	element_ptr        base() const{return base_;} //	element_const_ptr cbase() const{return base();}
 	layout_t const& layout() const{return *this;}

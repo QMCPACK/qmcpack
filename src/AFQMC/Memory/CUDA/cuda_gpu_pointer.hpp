@@ -37,10 +37,15 @@ struct base_cuda_gpu_ptr
 
 template<class T>
 struct cuda_gpu_ptr: base_cuda_gpu_ptr{
+  using difference_type = std::ptrdiff_t;
   using value_type = T;
+  using element_type = T;
   using const_value_type = T const;
   using pointer = T*;
   using const_pointer = T const*;
+// this is wrong!!! but no synthetic references yet!!!
+  using reference = T&;
+  using const_reference = T const&;
   static const int memory_type = GPU_MEMORY_POINTER_TYPE; 
   T* impl_;
   cuda_gpu_ptr() = default;
@@ -82,6 +87,7 @@ struct cuda_gpu_ptr: base_cuda_gpu_ptr{
  */
 template<class T> struct cuda_gpu_allocator{
   template<class U> struct rebind{typedef cuda_gpu_allocator<U> other;};
+  using element_type = T;
   using value_type = T;
   using const_value_type = T const;
   using pointer = cuda_gpu_ptr<T>;
@@ -217,6 +223,27 @@ cuda_gpu_ptr<T> uninitialized_fill_n(cuda_gpu_ptr<T> first, Size n, T const& val
   return first + n;
 }
 
+
+/******************/
+
+
+template<typename T, typename Size>
+cuda_gpu_ptr<T> uninitialized_default_construct_n(cuda_gpu_ptr<T> first, Size n){
+  return first+n;
+// what to do???
+}
+template<typename T, typename Size>
+cuda_gpu_ptr<T> uninitialized_value_construct_n(cuda_gpu_ptr<T> first, Size n){
+  return first+n;
+// what to do???
+}
+
+template<class T> 
+cuda_gpu_ptr<T> uninitialized_copy(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, cuda_gpu_ptr<T> dest){
+        return dest + std::distance(first,last); 
+}
+
+
 /**************** destroy_n *****************/
 // NOTE: Not sure what to do here
 // should at least guard agains non-trivial types
@@ -238,27 +265,33 @@ namespace boost
 namespace multi
 {
   template<>
-  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<std::complex<double>>> {
+  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<std::complex<double>>>:  
+            std::pointer_traits<std::complex<double>>{
+//    using element_type = std::complex<double>;
     using allocator_type = qmc_cuda::cuda_gpu_allocator<std::complex<double>>;
     static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<std::complex<double>>){return allocator_type{};}
   };
   template<>
   struct pointer_traits<qmc_cuda::cuda_gpu_ptr<std::complex<float>>> {
+    using element_type = std::complex<float>;
     using allocator_type = qmc_cuda::cuda_gpu_allocator<std::complex<float>>;
     static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<std::complex<float>>){return allocator_type{};}
   };
   template<>
   struct pointer_traits<qmc_cuda::cuda_gpu_ptr<double>> {
+    using element_type = double; 
     using allocator_type = qmc_cuda::cuda_gpu_allocator<double>;
     static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<double>){return allocator_type{};}
   };
   template<>
   struct pointer_traits<qmc_cuda::cuda_gpu_ptr<float>> {
+    using element_type = float; 
     using allocator_type = qmc_cuda::cuda_gpu_allocator<float>;
     static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<float>){return allocator_type{};}
   };
   template<>
   struct pointer_traits<qmc_cuda::cuda_gpu_ptr<int>> {
+    using element_type = int; 
     using allocator_type = qmc_cuda::cuda_gpu_allocator<int>;
     static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<int>){return allocator_type{};}
   };

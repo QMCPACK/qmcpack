@@ -226,6 +226,7 @@ class SlaterDetOperations_base
     template<class Mat>
     void Orthogonalize(Mat&& A, T* res=nullptr) {
       ma::gelqf(std::forward<Mat>(A),TAU,WORK);
+/*
       if(res != nullptr) {
         *res = T(1.0); 
         for (int i = 0; i < A.size(1); i++) { 
@@ -236,10 +237,14 @@ class SlaterDetOperations_base
           *res *= T(IWORK[i])*A[i][i];
         }
       }
+*/
       ma::glq(std::forward<Mat>(A),TAU,WORK);
+APP_ABORT(" Finish Ortho.\n");
+/*
       for(int i=0; i<A.size(0); ++i)
         for(int j=0; j<A.size(1); ++j)
           A[i][j] *= T(IWORK[j]);
+*/
     }
 
   protected:
