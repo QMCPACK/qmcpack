@@ -393,6 +393,39 @@ namespace qmcplusplus
       if(Optimizable)
       {
         Table.resize(nel,nmo);
+
+			  Bbar.resize(nel,nmo);
+
+				Y1.resize(nel,nel);
+				Y2.resize(nel,nmo);
+				Y3.resize(nel,nmo);
+				Y4.resize(nel,nmo);
+
+				pK1.resize(nmo,nel);
+				K1T.resize(nmo,nmo);
+				TK1T.resize(nel,nmo);
+
+				pK2.resize(nmo,nel);
+				K2AiB.resize(nmo,nmo);
+				TK2AiB.resize(nel,nmo);
+				K2XA.resize(nmo,nmo);
+				TK2XA.resize(nel,nmo);
+				K2T.resize(nmo,nmo);
+				TK2T.resize(nel,nmo);
+				MK2T.resize(nel,nmo);
+
+				pK3.resize(nmo,nel);
+				K3T.resize(nmo,nmo);
+				TK3T.resize(nel,nmo);
+
+				pK4.resize(nmo,nel);
+				K4T.resize(nmo,nmo);
+				TK4T.resize(nel,nmo);
+
+				pK5.resize(nmo,nel);
+				K5T.resize(nmo,nmo);
+				TK5T.resize(nel,nmo);
+
       }
       else
       {
@@ -644,23 +677,25 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
   //B_grad holds the gardient operator
   //B_lapl holds the laplacian operator
   //B_bar will hold our special O operator
-  ValueMatrix_t Bbar;
-  Bbar.resize(nel,nmo);
-
 
   const int offset1  (N1);
   const int offset2  (N2);   
   const int NPother  (NP2);
 
-// possibly replace wit BLAS calls 
-  for(int i=0; i<nel; i++)
-    for(int j=0; j<nmo; j++)
-      Bbar(i,j) = B_lapl(i,j) + 2*dot(myG_J[i+offset1], B_grad(i,j)) + myL_J[i+offset1]*M_up(i,j);
-
-  const double* restrict B(Bbar.data());
-  const double* restrict A(M_up.data());
-  const double* restrict Ainv(Minv_up.data());
   double* T(Table.data());
+
+	construct_tables(
+									 B_grad,
+									 B_lapl,
+									 M_up,
+									 Minv_up,
+									 nel,
+									 nmo,
+									 offset1,
+									 T
+									);
+
+
   //Need to create the constants: (Oi, const0, const1, const2)to take advantage of minimal BLAS commands; 
   //Oi is the special operator applied to the slater matrix "A subscript i" from the total CI expansion
   //\hat{O_{i}} = \hat{O}D_{i} with D_{i}=det(A_{i}) and Multi-Slater component defined as \sum_{i=0} C_{i} D_{i\uparrow}D_{i\downarrow}
@@ -684,56 +719,15 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
     const1 += c * Oi[down] * (detValues_up[up] / detValues_up[0]);
   }
 
-
-  ValueMatrix_t Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y11,Y23,Y24,Y25,Y26;
-  Y1.resize(nel,nel);
-  Y2.resize(nel,nmo);
-  Y3.resize(nel,nmo);
-  Y4.resize(nel,nmo);
-
-  ValueMatrix_t pK1,K1T,TK1T, pK2,K2AiB,TK2AiB,K2XA,TK2XA,K2T,TK2T,MK2T, pK3,K3T,TK3T, pK4,K4T,TK4T, pK5,K5T,TK5T;
-  pK1.resize(nmo,nel);
-  K1T.resize(nmo,nmo);
-  TK1T.resize(nel,nmo);
-
-  pK2.resize(nmo,nel);
-  K2AiB.resize(nmo,nmo);
-  TK2AiB.resize(nel,nmo);
-  K2XA.resize(nmo,nmo);
-  TK2XA.resize(nel,nmo);
-  K2T.resize(nmo,nmo);
-  TK2T.resize(nel,nmo);
-  MK2T.resize(nel,nmo);
-
-  pK3.resize(nmo,nel);
-  K3T.resize(nmo,nmo);
-  TK3T.resize(nel,nmo);
-
-  pK4.resize(nmo,nel);
-  K4T.resize(nmo,nmo);
-  TK4T.resize(nel,nmo);
-
-  pK5.resize(nmo,nel);
-  K5T.resize(nmo,nmo);
-  TK5T.resize(nel,nmo);
-
-  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
-  // The T matrix should be calculated and stored for use      
-  // T = A^{-1} \widetilde A
-  //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
-  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    A, nmo,       Ainv, nel, RealType(0.0),          T, nmo);
-
-
-  BLAS::gemm('N','N', nel, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y1.data(), nel);
-  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    T, nmo,  Y1.data(), nel, RealType(0.0),  Y2.data(), nmo);
-  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y3.data(), nmo);
-
-  //possibly replace with BLAS call
-  Y4 = Y3 - Y2;
+	std::fill(pK1.begin(),pK1.end(),0.0);
+	std::fill(pK2.begin(),pK2.end(),0.0);
+	std::fill(pK3.begin(),pK3.end(),0.0);
+	std::fill(pK4.begin(),pK4.end(),0.0);
+	std::fill(pK5.begin(),pK5.end(),0.0);
 
   //Now we are going to loop through all unique determinants.
   //The few lines above are for the reference matrix contribution.
-  //Although I start the loop below from index 0, the loop only performs actions when the index is => 1
+  //Although I start the loop below from index 0, the loop only performs actions when the index is >= 1
   //the detData object contains all the information about the P^T and Q matrices (projection matrices) needed in the table method
   const int* restrict data_it = detData_up->data();
   for(int index=0, datum=0; index < num_unique_up_dets; index++)
@@ -938,6 +932,40 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
 
 }
 
+
+void LCAOrbitalSet::construct_tables(
+											 	const GradMatrix_t& B_grad,
+												const ValueMatrix_t& B_lapl,
+											  const ValueMatrix_t& M_up,
+ 											 	const ValueMatrix_t& Minv_up,
+											  const size_t& nel,
+											  const size_t& nmo,
+												const int& offset1,
+												double* T
+												)
+{
+	//possibly replace wit BLAS calls 
+  for(int i=0; i<nel; i++)
+    for(int j=0; j<nmo; j++)
+      Bbar(i,j) = B_lapl(i,j) + 2*dot(myG_J[i+offset1], B_grad(i,j)) + myL_J[i+offset1]*M_up(i,j);
+
+  const double* restrict B(Bbar.data());
+  const double* restrict A(M_up.data());
+  const double* restrict Ainv(Minv_up.data());
+  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
+  // The T matrix should be calculated and stored for use      
+  // T = A^{-1} \widetilde A
+  //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
+  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    A, nmo,       Ainv, nel, RealType(0.0),          T, nmo);
+
+  BLAS::gemm('N','N', nel, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y1.data(), nel);
+  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    T, nmo,  Y1.data(), nel, RealType(0.0),  Y2.data(), nmo);
+  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y3.data(), nmo);
+
+  //possibly replace with BLAS call
+  Y4 = Y3 - Y2;
+
+}
 
 
 }

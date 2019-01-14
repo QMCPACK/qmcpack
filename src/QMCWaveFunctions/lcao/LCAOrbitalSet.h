@@ -44,7 +44,6 @@ namespace qmcplusplus
      */
     ValueMatrix_t* C;
     ValueMatrix_t* m_init_B;
-    ValueMatrix_t  Table;
 
     ParticleSet::ParticleGradient_t myG_temp, myG_J;
     ParticleSet::ParticleLaplacian_t myL_temp, myL_J;
@@ -103,51 +102,6 @@ namespace qmcplusplus
                              const size_t& N2,
                              const size_t& NP1,
                              const size_t& NP2);
-
-  //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
-  void table_method_eval(std::vector<RealType>& dlogpsi,
-                         std::vector<RealType>& dhpsioverpsi,
-                         const ParticleSet::ParticleLaplacian_t& myL_J,
-                         const ParticleSet::ParticleGradient_t& myG_J,
-                         const size_t& nel,
-                         const size_t& nmo,
-                         const ValueType& psiCurrent,
-                         std::vector<RealType> const * const Coeff,
-                         std::vector<size_t> const * const C2node_up,
-                         std::vector<size_t> const * const C2node_dn,
-                         const ValueVector_t& detValues_up, 
-                         const ValueVector_t& detValues_dn, 
-                         const GradMatrix_t& grads_up, 
-                         const GradMatrix_t& grads_dn, 
-                         const ValueMatrix_t& lapls_up, 
-                         const ValueMatrix_t& lapls_dn,
-                         const ValueMatrix_t& M_up,
-                         const ValueMatrix_t& M_dn,
-                         const ValueMatrix_t& Minv_up,
-                         const ValueMatrix_t& Minv_dn,
-                         const GradMatrix_t& B_grad,
-                         const ValueMatrix_t& B_lapl,
-                         std::vector<int> const * const detData_up,
-                         const size_t& N1,
-                         const size_t& N2,
-                         const size_t& NP1,
-                         const size_t& NP2); 
-
-//  void table_method_eval(const ParticleSet::ParticleLaplacian_t& myL_J,
-//                         const ParticleSet::ParticleGradient_t& myG_J,
-//                         const size_t& nel,
-//                         const size_t& nmo,
-//                         double const * T,
-//                         double const * A,
-//                         double const * Ainv,
-//                         std::vector<RealType>& dlogpsi,
-//                         std::vector<RealType>& dhpsioverpsi,
-//                         const int parameter_start_index,
-//                         const int parameters_size,
-//                         const std::vector<std::pair<int,int>>* const m_act_rot_inds,
-//                         const int active_spin,
-//                         const ValueMatrix_t& Tr,
-//                         const ValueMatrix_t& Ar);
 
     
     void checkInVariables(opt_variables_type& active)
@@ -262,6 +216,54 @@ namespace qmcplusplus
   private:
     //helper function to resetParameters
     void exponentiate_antisym_matrix(const int n, RealType* const mat);
+
+		//helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
+		void table_method_eval(std::vector<RealType>& dlogpsi,
+													 std::vector<RealType>& dhpsioverpsi,
+													 const ParticleSet::ParticleLaplacian_t& myL_J,
+													 const ParticleSet::ParticleGradient_t& myG_J,
+													 const size_t& nel,
+													 const size_t& nmo,
+													 const ValueType& psiCurrent,
+													 std::vector<RealType> const * const Coeff,
+													 std::vector<size_t> const * const C2node_up,
+													 std::vector<size_t> const * const C2node_dn,
+													 const ValueVector_t& detValues_up, 
+													 const ValueVector_t& detValues_dn, 
+													 const GradMatrix_t& grads_up, 
+													 const GradMatrix_t& grads_dn, 
+													 const ValueMatrix_t& lapls_up, 
+													 const ValueMatrix_t& lapls_dn,
+													 const ValueMatrix_t& M_up,
+													 const ValueMatrix_t& M_dn,
+													 const ValueMatrix_t& Minv_up,
+													 const ValueMatrix_t& Minv_dn,
+													 const GradMatrix_t& B_grad,
+													 const ValueMatrix_t& B_lapl,
+													 std::vector<int> const * const detData_up,
+													 const size_t& N1,
+													 const size_t& N2,
+													 const size_t& NP1,
+													 const size_t& NP2); 
+
+		//helper function to contruct tables 'T' and 'M', which must be computed for both the single slater and multi-slater wfns.
+		//Also computes the special O operator matrix that is needed in both cases as well. 
+		void construct_tables(
+													const GradMatrix_t& B_grad,
+													const ValueMatrix_t& B_lapl,
+													const ValueMatrix_t& M_up,
+													const ValueMatrix_t& Minv_up,
+													const size_t& nel,
+													const size_t& nmo,
+													const int& offset1,
+													double* T
+													);
+	
+
+		ValueMatrix_t  Table;
+	  ValueMatrix_t Bbar;
+		ValueMatrix_t Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y11,Y23,Y24,Y25,Y26;
+		ValueMatrix_t pK1,K1T,TK1T, pK2,K2AiB,TK2AiB,K2XA,TK2XA,K2T,TK2T,MK2T, pK3,K3T,TK3T, pK4,K4T,TK4T, pK5,K5T,TK5T;
 
   };
 }
