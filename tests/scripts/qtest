@@ -68,11 +68,11 @@ requires_qmc_data = set(qmc_data_files.keys())
 build_type_order = ('array','value','device','precision')
 
 build_types = obj(
-    array     = ('aos' ,'soa'    ),
-    value     = ('real','complex'),
-    device    = ('cpu' ,'gpu'    ),
-    precision = ('full','mixed'  ),
-    method    = ('standard','afqmc'),
+    array     = ('aos'  ,'soa'    ),
+    value     = ('real' ,'complex'),
+    device    = ('cpu'  ,'gpu'    ),
+    precision = ('full' ,'mixed'  ),
+    method    = ('rsqmc','afqmc'  ),
     )
 
 build_type_map = obj()
@@ -318,7 +318,7 @@ for code,test_list in reference_code_tests.iteritems():
 #end for
 
 
-def get_reference_code(short_test,hash=False):
+def get_reference_code(short_test,hash=False,full=False):
     hash_ = hash
     test_name = short_test.sname
     if test_name not in reference_code_by_test:
@@ -326,11 +326,23 @@ def get_reference_code(short_test,hash=False):
         hash = None
     else:
         code = reference_code_by_test[test_name]
-        c = code
+        code_build_types = set(code.split('_')) & set(build_type_map.keys())
         for k in build_type_map.keys():
-            c = c.replace('_'+k,'')
+            code = code.replace('_'+k,'')
         #end for
-        hash = reference_code_hashes[c]
+        hash = reference_code_hashes[code]
+        if full:
+            for k in build_type_order:
+                bt_list = build_types[k]
+                bt_used = bt_list[0] # default build type
+                for bt in bt_list:
+                    if bt in code_build_types:
+                        bt_used = bt
+                    #end if
+                #end for
+                code += '_'+bt_used
+            #end for
+        #end if
     #end if
     if not hash_:
         return code
@@ -1610,11 +1622,11 @@ def analyze_tests(short_tests):
             # postprocess all reference data with qmca
             if data_status=='complete':
                 tests_analyzed.append(t)
-                ref_code,ref_code_hash = get_reference_code(st,hash=True)
+                ref_code,ref_code_hash = get_reference_code(st,hash=True,full=True)
                 scomp += '\n'
                 sref  += '\n'
                 sref_full += '\n'
-                sref_full += '# ref_code: {0:<20}  ref_code_hash: {1}\n'.format(ref_code,ref_code_hash)
+                sref_full += '# ref_code: {0:<40} ref_code_hash: {1}\n'.format(ref_code,ref_code_hash)
                 # compare old and new ref data for each series
                 for series in sorted(st.refdata.keys()):
                     old_refdata = st.refdata[series]
