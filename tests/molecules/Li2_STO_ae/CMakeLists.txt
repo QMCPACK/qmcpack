@@ -7,10 +7,10 @@ IF (NOT QMC_CUDA)
 #
 
 # Short tests
-  LIST(APPEND LI2STOSJS_VMC_SCALARS "totenergy" "-14.947214  0.000502") # total energy
-  LIST(APPEND LI2STOSJS_VMC_SCALARS "variance"  "  0.170618  0.001035") # energy variance
-  LIST(APPEND LI2STOSJS_DMC_SCALARS "totenergy" "-14.989438  0.000643") # total energy
-  LIST(APPEND LI2STOSJS_DMC_SCALARS "variance"  "  0.151118  0.000312") # energy variance
+  LIST(APPEND LI2STOSJS_VMC_SCALARS "totenergy" "-14.947221704021  0.000491521212") # total energy
+  LIST(APPEND LI2STOSJS_VMC_SCALARS "variance"  "  0.170589099144  0.001406847789") # energy variance
+  LIST(APPEND LI2STOSJS_DMC_SCALARS "totenergy" "-14.989463714638  0.000690481867") # total energy
+  LIST(APPEND LI2STOSJS_DMC_SCALARS "variance"  "  0.151150336595  0.000378095395") # energy variance
 
   QMC_RUN_AND_CHECK(short-li2_sto-sj_dmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/Li2_STO_ae"

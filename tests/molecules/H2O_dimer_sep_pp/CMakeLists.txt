@@ -4,8 +4,8 @@ IF (NOT QMC_CUDA)
 
 # 2 water molecules far away test for Tmoves.
 # short tests
-  LIST(APPEND H2OS2_DMCLA_SCALARS "totenergy" "-34.550288  0.0015") # total energy
-  LIST(APPEND H2OS2_DMCLA_SCALARS "nonlocalecp" "3.7922 0.012") # non local ecp
+  LIST(APPEND H2OS2_DMCLA_SCALARS "totenergy" "-34.549539898120  0.001538707986") # total energy
+  LIST(APPEND H2OS2_DMCLA_SCALARS "nonlocalecp" "3.796204397761 0.016487176409") # non local ecp
 
   QMC_RUN_AND_CHECK(short-H2O_dimer_sep_pp-j3_dmc_la
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
@@ -16,8 +16,8 @@ IF (NOT QMC_CUDA)
                     2 H2OS2_DMCLA_SCALARS
                     )
 
-  LIST(APPEND H2OS2_DMCTM0_SCALARS "totenergy" "-34.556348  0.0015") # total energy
-  LIST(APPEND H2OS2_DMCTM0_SCALARS "nonlocalecp" "3.339723 0.012") # non local ecp
+  LIST(APPEND H2OS2_DMCTM0_SCALARS "totenergy" "-34.556070141054  0.001522544760") # total energy
+  LIST(APPEND H2OS2_DMCTM0_SCALARS "nonlocalecp" "3.341925103599 0.013031467636") # non local ecp
 
   QMC_RUN_AND_CHECK(short-H2O_dimer_sep_pp-j3_dmc_tm0
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
@@ -28,8 +28,8 @@ IF (NOT QMC_CUDA)
                     2 H2OS2_DMCTM0_SCALARS
                     )
 
-  LIST(APPEND H2OS2_DMCTM1_SCALARS "totenergy" "-34.560303  0.0015") # total energy
-  LIST(APPEND H2OS2_DMCTM1_SCALARS "nonlocalecp" "3.177908 0.012") # non local ecp
+  LIST(APPEND H2OS2_DMCTM1_SCALARS "totenergy" "-34.560423250334  0.001457944721") # total energy
+  LIST(APPEND H2OS2_DMCTM1_SCALARS "nonlocalecp" "3.175475067660 0.013122004395") # non local ecp
 
   QMC_RUN_AND_CHECK(short-H2O_dimer_sep_pp-j3_dmc_tm1
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
@@ -40,8 +40,8 @@ IF (NOT QMC_CUDA)
                     2 H2OS2_DMCTM1_SCALARS
                     )
 
-  LIST(APPEND H2OS2_DMCTM3_SCALARS "totenergy" "-34.560980  0.0015") # total energy
-  LIST(APPEND H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.174425 0.012") # non local ecp
+  LIST(APPEND H2OS2_DMCTM3_SCALARS "totenergy" "-34.560683215187  0.001479939483") # total energy
+  LIST(APPEND H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.183908083459 0.013476329953") # non local ecp
 
   QMC_RUN_AND_CHECK(short-H2O_dimer_sep_pp-j3_dmc_tm3
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"

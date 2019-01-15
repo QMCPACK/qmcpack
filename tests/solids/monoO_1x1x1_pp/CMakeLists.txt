@@ -1,5 +1,5 @@
 
-  LIST(APPEND MONO_O_SCALARS "totenergy" "-31.776596 0.006")
+  LIST(APPEND MONO_O_SCALARS "totenergy" "-31.776474023774 0.001495532678")
   LIST(APPEND MONO_O_SCALARS "samples" "64000 0.0")
 #  LIST(APPEND MONO_O_SCALARS "flux" "0.0 0.5")
 
@@ -12,7 +12,7 @@
                     0 MONO_O_SCALARS # VMC
                     )
 
-  LIST(APPEND MONO_O_J3_SCALARS "totenergy" "-31.913838 0.0025")
+  LIST(APPEND MONO_O_J3_SCALARS "totenergy" "-31.913805831973 0.002573538103")
   LIST(APPEND MONO_O_J3_SCALARS "samples" "204800 0.0")
   QMC_RUN_AND_CHECK(short-monoO_1x1x1_pp-vmc_sdj3
                     "${CMAKE_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp"

@@ -20,8 +20,8 @@ IF (EXISTS ${H5_FULL_PATH})
 #  LocalECP              =          -389.958 +/-            0.018
 #  NonLocalECP           =           -50.477 +/-            0.011
 #  IonIon                =           -239.30 +/-             0.00
-  LIST(APPEND NIO_A4_E48_SCALARS "totenergy" "-370.7944 0.024")
-  LIST(APPEND NIO_A4_E48_SCALARS "kinetic" "230.471 0.46")
+  LIST(APPEND NIO_A4_E48_SCALARS "totenergy" "-370.794177544740 0.006342976745")
+  LIST(APPEND NIO_A4_E48_SCALARS "kinetic" "230.431678590485 0.123445863645")
   LIST(APPEND NIO_A4_E48_SCALARS "samples" "32000 0.0")
 
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj
@@ -74,8 +74,8 @@ IF (EXISTS ${H5_FULL_PATH})
 #  LocalECP              =          -389.971 +/-            0.022
 #  NonLocalECP           =           -50.534 +/-            0.012
 #  IonIon                =           -239.30 +/-             0.00
-  LIST(APPEND NIO_A4_E48_J3_SCALARS "totenergy" "-370.88498 0.023")
-  LIST(APPEND NIO_A4_E48_J3_SCALARS "kinetic" "230.555 0.46")
+  LIST(APPEND NIO_A4_E48_J3_SCALARS "totenergy" "-370.883771046888 0.006021219782")
+  LIST(APPEND NIO_A4_E48_J3_SCALARS "kinetic" "230.544178159003 0.121516267322")
   LIST(APPEND NIO_A4_E48_J3_SCALARS "samples" "32000 0.0")
 
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj3

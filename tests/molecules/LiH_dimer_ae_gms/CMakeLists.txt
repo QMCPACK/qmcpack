@@ -16,9 +16,9 @@ IF (NOT QMC_CUDA)
 #   "eeenergy" "3.488823  0.000010") # e-e energy
 #   "samples" "79134720000 0.0") # samples
 
-  LIST(APPEND LIH_SHORT "kinetic" "7.9914014383 0.012") # kinetic energy
-  LIST(APPEND LIH_SHORT "totenergy" "-7.9873236457 0.0009") # total energy
-  LIST(APPEND LIH_SHORT "eeenergy" "3.4888166386 0.00086") # e-e energy
+  LIST(APPEND LIH_SHORT "kinetic" "7.9914014383 0.013495820110") # kinetic energy
+  LIST(APPEND LIH_SHORT "totenergy" "-7.9873236457 0.001488986491") # total energy
+  LIST(APPEND LIH_SHORT "eeenergy" "3.4888166386 0.000930726491") # e-e energy
   LIST(APPEND LIH_SHORT "samples" "9600000 0.0") # samples
   QMC_RUN_AND_CHECK(short-LiH_dimer_ae_gms-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_gms"

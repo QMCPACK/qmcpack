@@ -2,8 +2,8 @@
 # LiH solid einspline wavefunction tests for different k-points
 # Wavefunctions from quantum espresso. Reference energies obtained via pw2casino option
 #
-  LIST(APPEND LIH_GAMMA_SCALARS "kinetic" "7.4145221704067854 0.024")
-  LIST(APPEND LIH_GAMMA_SCALARS "localecp" "-11.718808431876706 0.025")
+  LIST(APPEND LIH_GAMMA_SCALARS "kinetic" "7.413658906823 0.005862893825")
+  LIST(APPEND LIH_GAMMA_SCALARS "localecp" "-11.717809906484 0.006298280380")
   LIST(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
 #  LIST(APPEND LIH_GAMMA_SCALARS "flux" "0.0 0.05")
 
@@ -27,8 +27,8 @@
                     )
 
 
-  LIST(APPEND LIH_X_SCALARS "kinetic" "7.3772282047321536 0.024")
-  LIST(APPEND LIH_X_SCALARS "localecp" "-11.414410381100344 0.025")
+  LIST(APPEND LIH_X_SCALARS "kinetic" "7.376986438813 0.005530557842")
+  LIST(APPEND LIH_X_SCALARS "localecp" "-11.414079406620 0.005928504244")
   LIST(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
 #  LIST(APPEND LIH_X_SCALARS "flux" "0.0 0.05")
 
@@ -64,8 +64,8 @@ ELSE()
 ENDIF()
 
 # Arbitrary k-point requires complex build to run. Ensure fails with real/non-complex build
-  LIST(APPEND LIH_ARB_SCALARS "kinetic" "7.4201207734399359 0.024")
-  LIST(APPEND LIH_ARB_SCALARS "localecp" "-11.615276430529056 0.025")
+  LIST(APPEND LIH_ARB_SCALARS "kinetic" "7.419827418978 0.005759385541")
+  LIST(APPEND LIH_ARB_SCALARS "localecp" "-11.614884910880 0.006180516891")
   LIST(APPEND LIH_ARB_SCALARS "samples" "1600000 0.0") # samples
 #  LIST(APPEND LIH_ARB_SCALARS "flux" "0.0 0.05")
 
@@ -97,7 +97,7 @@ ENDIF()
 
 # DMC tests for LiH, locality and non-local (t-moves) variants
 
-  LIST(APPEND LIH_GAMMA_DMC_SCALARS "totenergy" "-8.54823 0.004")
+  LIST(APPEND LIH_GAMMA_DMC_SCALARS "totenergy" "-8.549259572801 0.003482134264")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmc_short_LiH-gamma
@@ -107,7 +107,7 @@ ENDIF()
                     1 LIH_GAMMA_DMC_SCALARS # DMC
                     )
 
-  LIST(APPEND LIH_X_DMC_SCALARS "totenergy" "-8.31413 0.004")
+  LIST(APPEND LIH_X_DMC_SCALARS "totenergy" "-8.313999197826 0.003808000775")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-x-dmc-hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmc_short_LiH-x
@@ -117,7 +117,7 @@ ENDIF()
                     1 LIH_X_DMC_SCALARS # DMC
                     )
 
-  LIST(APPEND LIH_ARB_DMC_SCALARS "totenergy" "-8.45401 0.004")
+  LIST(APPEND LIH_ARB_DMC_SCALARS "totenergy" "-8.452566362555 0.003537580321")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmc_short_LiH-arb
@@ -127,7 +127,7 @@ ENDIF()
                     1 LIH_ARB_DMC_SCALARS # DMC
                     )
 
-  LIST(APPEND LIH_GAMMA_DMCNL_SCALARS "totenergy" "-8.54979 0.004")
+  LIST(APPEND LIH_GAMMA_DMCNL_SCALARS "totenergy" "-8.549096647695 0.003462822048")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmcnl_short_LiH-gamma
@@ -137,7 +137,7 @@ ENDIF()
                     1 LIH_GAMMA_DMCNL_SCALARS # DMC
                     )
 
-  LIST(APPEND LIH_X_DMCNL_SCALARS "totenergy" "-8.31369 0.004")
+  LIST(APPEND LIH_X_DMCNL_SCALARS "totenergy" "-8.313818769037 0.003650894459")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmcnl_short_LiH-x
@@ -147,7 +147,7 @@ ENDIF()
                     1 LIH_X_DMCNL_SCALARS # DMC
                     )
 
-  LIST(APPEND LIH_ARB_DMCNL_SCALARS "totenergy" "-8.45174 0.004")
+  LIST(APPEND LIH_ARB_DMCNL_SCALARS "totenergy" "-8.452200683195 0.003540336881")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmcnl_short_LiH-arb
