@@ -47,6 +47,8 @@ struct cuda_gpu_ptr: base_cuda_gpu_ptr{
   using reference = T&;
   using const_reference = T const&;
   static const int memory_type = GPU_MEMORY_POINTER_TYPE; 
+  using default_allocator_type = cuda_gpu_allocator<T>;
+  default_allocator_type default_allocator() const{ return cuda_gpu_allocator<T>{}; };
   T* impl_;
   cuda_gpu_ptr() = default;
   cuda_gpu_ptr(T* impl__):
@@ -259,7 +261,7 @@ void print(std::string str, cuda_gpu_ptr<T> p, int n) {
 }
 
 }
-
+/*
 namespace boost
 {
 namespace multi
@@ -295,13 +297,8 @@ namespace multi
     using allocator_type = qmc_cuda::cuda_gpu_allocator<int>;
     static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<int>){return allocator_type{};}
   };
-/*
-  struct pointer_traits : std::pointer_traits<qmc_cuda::cuda_gpu_ptr<std::complex<double>>>{
-    using allocator_type = qmc_cuda::cuda_gpu_allocator<std::complex<double>>;
-    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<std::complex<double>>){return allocator_type{};}
-  };
+}
+}
 */
-}
-}
   
 #endif

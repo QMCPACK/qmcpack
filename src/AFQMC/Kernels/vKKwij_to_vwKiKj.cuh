@@ -12,6 +12,9 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef AFQMC_VKKWIJ_TO_VWKIKJ_H
+#define AFQMC_VKKWIJ_TO_VWKIKJ_H
+
 #include <complex>
 
 namespace kernels
@@ -29,3 +32,5 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
                                 bool* kk, int* nmo, int* nmo0, std::complex<float> const* A, std::complex<double> * B);
 }
+
+#endif

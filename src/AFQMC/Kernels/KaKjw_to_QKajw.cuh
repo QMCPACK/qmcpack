@@ -12,6 +12,9 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef AFQMC_KAKJW_to_QKAJW_H
+#define AFQMC_KAKJW_to_QKAJW_H
+
 #include<cassert>
 #include <complex>
 #include "AFQMC/Kernels/cuda_settings.h"
@@ -44,3 +47,5 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                      int* nocc, int* nocc0, int* QKtok2,
                      std::complex<double> const* A, std::complex<float> * B);
 }
+
+#endif

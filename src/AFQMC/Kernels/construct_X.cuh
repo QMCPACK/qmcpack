@@ -12,20 +12,22 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_BATCHED_TAB_TO_KLR_H
-#define AFQMC_BATCHED_TAB_TO_KLR_H
+#ifndef AFQMC_CONSTRUCT_X_H
+#define AFQMC_CONSTRUCT_X_H
 
 #include<cassert>
 #include <complex>
 
-namespace kernels 
+namespace kernels
 {
 
-void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
-                    int nchol_tot, int ncholQ, int ncholQ0, int* kdiag,
-                    std::complex<double> const* Tab,
-                    std::complex<double> * Kl,
-                    std::complex<double> * Kr);
+void construct_X( int nCV, int nsteps, int nwalk, bool free_projection, 
+                        double sqrtdt, double vbound,
+                        std::complex<double> const* vMF,
+                        std::complex<double> const* vbias,
+                        std::complex<double>* HW,
+                        std::complex<double>* MF,
+                        std::complex<double>* X );
 
 }
 

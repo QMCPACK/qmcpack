@@ -12,6 +12,9 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef AFQMC_DOT_WABN_WBAN_H
+#define AFQMC_DOT_WABN_WBAN_H
+
 #include<cassert>
 #include <complex>
 
@@ -29,3 +32,5 @@ void dot_wabn_wban( int nw, int na, int nb, int nc,
                     std::complex<double> const alpha, std::complex<float> const* A, 
                     std::complex<float> const* B, std::complex<double>* y, int incy);
 }
+
+#endif

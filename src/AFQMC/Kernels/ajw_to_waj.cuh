@@ -12,8 +12,8 @@
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_BATCHEDDOT_KERNELS_HPP
-#define AFQMC_BATCHEDDOT_KERNELS_HPP
+#ifndef AFQMC_AJW_TO_WAJ_H
+#define AFQMC_AJW_TO_WAJ_H
 
 #include <complex>
 

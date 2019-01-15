@@ -12,6 +12,9 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef AFQMC_VBIAS_FROM_V1_H
+#define AFQMC_VBIAS_FROM_V1_H
+
 #include<cassert>
 #include <complex>
 #include "AFQMC/Kernels/cuda_settings.h"
@@ -29,3 +32,5 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
                     int* ncholpQ, int* ncholpQ0, std::complex<double> const alpha,
                     std::complex<float> const* v1, std::complex<double> * vb);
 }
+
+#endif

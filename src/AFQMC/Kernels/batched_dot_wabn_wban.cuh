@@ -12,6 +12,9 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef AFQMC_BATCHED_DOT_WABN_WBAN_H
+#define AFQMC_BATCHED_DOT_WABN_WBAN_H
+
 #include<cassert>
 #include <complex>
 #include "AFQMC/Kernels/cuda_settings.h"
@@ -29,3 +32,5 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                     std::complex<float> const* alpha, std::complex<float> const* Tab,
                     std::complex<double>* y, int incy);
 }
+
+#endif

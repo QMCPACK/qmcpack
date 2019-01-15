@@ -16,5 +16,6 @@
 #define AFQMC_KERNELS_SETTINGS_HPP
 
 static const size_t DOT_BLOCK_SIZE = 64; 
+static const size_t REDUCE_BLOCK_SIZE = 1024; 
 
 #endif

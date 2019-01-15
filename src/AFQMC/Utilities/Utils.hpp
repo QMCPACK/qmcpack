@@ -25,6 +25,8 @@
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/config.0.h"
 
+#include "AFQMC/Memory/custom_poiners.hpp"
+
 namespace qmcplusplus 
 { 
 
@@ -323,6 +325,13 @@ void sampleGaussianFields_n(T* V, int n, RandomNumberGenerator_& rng)
     RealType temp1=1-0.9999999999*rng(), temp2=rng();
     V[n-1]=std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2);
   }
+}
+
+template<class T,
+        class Dummy>
+void sampleGaussianFields_n(qmc_cuda::cuda_gpu_ptr<T>& V, int n, Dummy &r) 
+{
+  kernels::sampleGaussianRNG(to_address(V),n,afqmc_curand_generator);
 }
 
 }

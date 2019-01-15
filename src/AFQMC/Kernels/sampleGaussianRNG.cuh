@@ -12,21 +12,19 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_BATCHED_TAB_TO_KLR_H
-#define AFQMC_BATCHED_TAB_TO_KLR_H
+#ifndef AFQMC_SAMPLEGAUSSIANRNG_H
+#define AFQMC_SAMPLEGAUSSIANRNG_H
 
 #include<cassert>
 #include <complex>
+#include "curand.h"
 
-namespace kernels 
+namespace kernels
 {
 
-void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
-                    int nchol_tot, int ncholQ, int ncholQ0, int* kdiag,
-                    std::complex<double> const* Tab,
-                    std::complex<double> * Kl,
-                    std::complex<double> * Kr);
+void sampleGaussianRNG( double* V, int n, curandGenerator_t & gen); 
+void sampleGaussianRNG( float* V, int n, curandGenerator_t & gen); 
+void sampleGaussianRNG( std::complex<double>* V, int n, curandGenerator_t & gen); 
+void sampleGaussianRNG( std::complex<float>* V, int n, curandGenerator_t & gen);
 
 }
-
-#endif
