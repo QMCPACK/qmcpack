@@ -459,10 +459,10 @@ namespace qmcplusplus
                              const GradMatrix_t& B_grad,
                              const ValueMatrix_t& B_lapl,
                              std::vector<int> const * const detData_up,
-                             const size_t& N1,
-                             const size_t& N2,
-                             const size_t& NP1,
-                             const size_t& NP2) 
+                             const size_t N1,
+                             const size_t N2,
+                             const size_t NP1,
+                             const size_t NP2) 
   {
     bool recalculate(false);
     for (int k=0; k<myVars.size(); ++k)
@@ -480,9 +480,9 @@ namespace qmcplusplus
       myL_temp.resize(NP); myL_temp=0.0;
       myG_J.resize(NP); myG_J=0.0;
       myL_J.resize(NP); myL_J=0.0;
-      const size_t& nmo = OrbitalSetSize;
-      const size_t& nb = BasisSetSize;
-      const size_t& nel = P.last(0)-P.first(0); 
+      const size_t nmo = OrbitalSetSize;
+      const size_t nb = BasisSetSize;
+      const size_t nel = P.last(0)-P.first(0); 
 
       const RealType *restrict C_p=Coeff->data();
       for(int i=0; i<Coeff->size(); i++)
@@ -640,8 +640,8 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
                                       std::vector<RealType>& dhpsioverpsi,
                                       const ParticleSet::ParticleLaplacian_t& myL_J,
                                       const ParticleSet::ParticleGradient_t& myG_J,
-                                      const size_t& nel,
-                                      const size_t& nmo,
+                                      const size_t nel,
+                                      const size_t nmo,
                                       const ValueType& psiCurrent,
                                       std::vector<RealType> const * const Coeff,
                                       std::vector<size_t> const * const C2node_up,
@@ -659,10 +659,10 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
                                       const GradMatrix_t& B_grad,
                                       const ValueMatrix_t& B_lapl,
                                       std::vector<int> const * const detData_up,
-                                      const size_t& N1,
-                                      const size_t& N2,
-                                      const size_t& NP1,
-                                      const size_t& NP2)
+                                      const size_t N1,
+                                      const size_t N2,
+                                      const size_t NP1,
+                                      const size_t NP2)
 {
   const int parameters_size(m_act_rot_inds.size());
   const int parameter_start_index(0);  
@@ -938,9 +938,9 @@ void LCAOrbitalSet::construct_tables(
                                      const ValueMatrix_t& B_lapl,
                                      const ValueMatrix_t& M_up,
                                      const ValueMatrix_t& Minv_up,
-                                     const size_t& nel,
-                                     const size_t& nmo,
-                                     const int& offset1,
+                                     const size_t nel,
+                                     const size_t nmo,
+                                     const int offset1,
                                      double* T
 )
 {

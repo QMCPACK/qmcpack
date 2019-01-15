@@ -183,10 +183,10 @@ public:
                                    const GradMatrix_t& B_grad,
                                    const ValueMatrix_t& B_lapl,
                                    std::vector<int> const * const detData_up,
-                                   const size_t& N1,
-                                   const size_t& N2,
-                                   const size_t& NP1,
-                                   const size_t& NP2){}
+                                   const size_t N1,
+                                   const size_t N2,
+                                   const size_t NP1,
+                                   const size_t NP2){}
 
 
   ///reset the target particleset

@@ -98,10 +98,10 @@ namespace qmcplusplus
                              const GradMatrix_t& B_grad,
                              const ValueMatrix_t& B_lapl,
                              std::vector<int> const * const detData_up, 
-                             const size_t& N1,
-                             const size_t& N2,
-                             const size_t& NP1,
-                             const size_t& NP2);
+                             const size_t N1,
+                             const size_t N2,
+                             const size_t NP1,
+                             const size_t NP2);
 
     
     void checkInVariables(opt_variables_type& active)
@@ -222,8 +222,8 @@ namespace qmcplusplus
                            std::vector<RealType>& dhpsioverpsi,
                            const ParticleSet::ParticleLaplacian_t& myL_J,
                            const ParticleSet::ParticleGradient_t& myG_J,
-                           const size_t& nel,
-                           const size_t& nmo,
+                           const size_t nel,
+                           const size_t nmo,
                            const ValueType& psiCurrent,
                            std::vector<RealType> const * const Coeff,
                            std::vector<size_t> const * const C2node_up,
@@ -241,10 +241,10 @@ namespace qmcplusplus
                            const GradMatrix_t& B_grad,
                            const ValueMatrix_t& B_lapl,
                            std::vector<int> const * const detData_up,
-                           const size_t& N1,
-                           const size_t& N2,
-                           const size_t& NP1,
-                           const size_t& NP2); 
+                           const size_t N1,
+                           const size_t N2,
+                           const size_t NP1,
+                           const size_t NP2); 
 
     //helper function to contruct tables 'T' and 'M', which must be computed for both the single slater and multi-slater wfns.
     //Also computes the special O operator matrix that is needed in both cases as well. 
@@ -253,9 +253,9 @@ namespace qmcplusplus
                           const ValueMatrix_t& B_lapl,
                           const ValueMatrix_t& M_up,
                           const ValueMatrix_t& Minv_up,
-                          const size_t& nel,
-                          const size_t& nmo,
-                          const int& offset1,
+                          const size_t nel,
+                          const size_t nmo,
+                          const int offset1,
                           double* T
                           );
 

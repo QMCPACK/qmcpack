@@ -144,10 +144,10 @@ public:
 
     std::vector<int> const * const detData_up = detData;
 
-    const size_t& N1  = FirstIndex;
-    const size_t& N2  = pseudo_dn->FirstIndex;
-    const size_t& NP1 = NumPtcls;
-    const size_t& NP2 = pseudo_dn->NumPtcls;
+    const size_t N1  = FirstIndex;
+    const size_t N2  = pseudo_dn->FirstIndex;
+    const size_t NP1 = NumPtcls;
+    const size_t NP2 = pseudo_dn->NumPtcls;
     
     Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent,
                                                                 Coeff,
