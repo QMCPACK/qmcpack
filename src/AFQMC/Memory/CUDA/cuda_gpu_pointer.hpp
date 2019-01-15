@@ -23,6 +23,7 @@
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #include "AFQMC/Kernels/fill_n.cuh"
 #include "AFQMC/Kernels/uninitialized_fill_n.cuh"
+#include "AFQMC/Kernels/uninitialized_copy_n.cuh"
 #include "AFQMC/Kernels/copy_n_cast.cuh"
 #include "AFQMC/Kernels/print.cuh"
 
@@ -48,6 +49,7 @@ struct cuda_gpu_ptr: base_cuda_gpu_ptr{
 // this is wrong!!! but no synthetic references yet!!!
   using reference = T&;
   using const_reference = T const&;
+  using iterator_category = std::random_access_iterator_tag; 
   static const int memory_type = GPU_MEMORY_POINTER_TYPE; 
   using default_allocator_type = cuda_gpu_allocator<T>;
   default_allocator_type default_allocator() const{ return cuda_gpu_allocator<T>{}; };
@@ -242,9 +244,17 @@ cuda_gpu_ptr<T> uninitialized_value_construct_n(cuda_gpu_ptr<T> first, Size n){
 // what to do???
 }
 
+/**************** uninitialized_copy_n *****************/
+template<typename T, typename Size> 
+cuda_gpu_ptr<T> uninitialized_copy_n(cuda_gpu_ptr<T> first, Size n, cuda_gpu_ptr<T> dest){
+  if(n == 0) return first;
+  kernels::uninitialized_copy_n(to_address(first), n, to_address(dest));
+  return first + n;
+}
+
 template<class T> 
 cuda_gpu_ptr<T> uninitialized_copy(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, cuda_gpu_ptr<T> dest){
-        return dest + std::distance(first,last); 
+  return uninitialized_copy_n(first,std::distance(first,last),dest); 
 }
 
 

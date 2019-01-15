@@ -55,7 +55,9 @@ inline void apply_expM( const MatA& V, MatB& S, MatC& T1, MatC& T2, int order=6)
   auto pT1(std::addressof(T1));
   auto pT2(std::addressof(T2));
 
-  T1 = S;
+  // getting around issue in multi, fix later  
+  //T1 = S;
+  T1.sliced(0,T1.size(0)) = S;
   for(int n=1; n<=order; n++) {
     ComplexType fact = ComplexType(0.0,1.0)*static_cast<ComplexType>(1.0/static_cast<double>(n));
     ma::product(fact,V,*pT1,zero,*pT2);

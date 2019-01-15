@@ -26,7 +26,9 @@
 #include "AFQMC/config.0.h"
 
 #include "AFQMC/Memory/custom_pointers.hpp"
+#ifdef QMC_CUDA
 #include "AFQMC/Kernels/sampleGaussianRNG.cuh"
+#endif
 
 namespace qmcplusplus 
 { 
@@ -328,12 +330,14 @@ void sampleGaussianFields_n(T* V, int n, RandomNumberGenerator_& rng)
   }
 }
 
+#ifdef QMC_CUDA
 template<class T,
         class Dummy>
 void sampleGaussianFields_n(qmc_cuda::cuda_gpu_ptr<T>& V, int n, Dummy &r) 
 {
-  kernels::sampleGaussianRNG(to_address(V),n,afqmc_curand_generator);
+  kernels::sampleGaussianRNG(to_address(V),n,qmc_cuda::afqmc_curand_generator);
 }
+#endif
 
 }
 

@@ -30,6 +30,7 @@ IF(QMC_CUDA)
     Kernels/adotpby.cu
     Kernels/fill_n.cu
     Kernels/uninitialized_fill_n.cu
+    Kernels/uninitialized_copy_n.cu
     Kernels/axty.cu
     Kernels/adiagApy.cu
     Kernels/sum.cu
