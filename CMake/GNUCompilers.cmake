@@ -1,6 +1,6 @@
 # Check compiler version
-IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8 )
-MESSAGE(FATAL_ERROR "Requires gcc 4.8 or higher ")
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0 )
+MESSAGE(FATAL_ERROR "Requires gcc 5.0 or higher ")
 ENDIF()
 
 # Set the std
@@ -43,8 +43,8 @@ if(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
   endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" AND CMAKE_C_FLAGS MATCHES "-march=")
 else() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
   # use -march=native
-  SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS}")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -march=native")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
 
 ENDIF((NOT $ENV{CRAYPE_VERSION} MATCHES ".") AND (NOT CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64"))

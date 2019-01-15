@@ -43,6 +43,8 @@ DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetPtr const spos, int first) :
   newGradLaplList_d("DiracDeterminant::newGradLaplList_d"),
   AWorkList_d("DiracDeterminant::AWorkList_d"),
   AinvWorkList_d("DiracDeterminant::AinvWorkList_d"),
+  PivotArray_d("DiracDeterminant::PivotArray_d"),
+  infoArray_d("DiracDeterminant::infoArray_d"),
   GLList_d("DiracDeterminant::GLList_d"),
   LemmaList_d("DiracDeterminant::LemmaList_d"),
   LemmaLUList_d("DiracDeterminant::LemmaLUList_d"),

@@ -19,14 +19,14 @@ SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -Wno-deprecated -Wno-unused-value")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-unused-value")
 
 # Set extra optimization specific flags
-# SET( CMAKE_C_FLAGS_RELEASE   "-O3 -DNDEBUG" )
-# SET( CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" )
-# SET( CMAKE_C_FLAGS_RELWITHDEBINFO   "-g -O3" )
-# SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O3" )
+SET( CMAKE_C_FLAGS_RELEASE   "-O3 -DNDEBUG" )
+SET( CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" )
+SET( CMAKE_C_FLAGS_RELWITHDEBINFO   "-g -O3" )
+SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O3" )
 
 # Set language standardards
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=gnu11 -O3")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -qnoxlcompatmacros -O3")
+SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=gnu11")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -qnoxlcompatmacros")
 
 IF(QMC_OMP)
   SET(ENABLE_OPENMP 1)
