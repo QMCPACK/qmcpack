@@ -13,7 +13,7 @@ IF (NOT QMC_CUDA)
 
 
   LIST(APPEND LIH_SHORT "kinetic" "7.991334 0.0062") # kinetic energy
-  LIST(APPEND LIH_SHORT "totenergy" "-7.9873140 0.00052") # total energy
+  LIST(APPEND LIH_SHORT "totenergy" "-7.987323645629950 0.00052") # total energy
   LIST(APPEND LIH_SHORT "eeenergy" "3.488827 0.00088") # e-e energy
   LIST(APPEND LIH_SHORT "samples" "9600000 0.0") # samples
   QMC_RUN_AND_CHECK(short-LiH_dimer_ae_qp-vmc_hf_noj
@@ -26,7 +26,7 @@ IF (NOT QMC_CUDA)
                     )
 
   LIST(APPEND LIH_LONG "kinetic" "7.991334 0.0022") # kinetic energy
-  LIST(APPEND LIH_LONG "totenergy" "-7.9873140 0.0002") # total energy
+  LIST(APPEND LIH_LONG "totenergy" "-7.987323645629950 0.0002") # total energy
   LIST(APPEND LIH_LONG "eeenergy" "3.488827 0.00026") # e-e energy
   LIST(APPEND LIH_LONG "samples" "96000000 0.0") # samples
   QMC_RUN_AND_CHECK(long-LiH_dimer_ae_qp-vmc_hf_noj

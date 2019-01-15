@@ -4,6 +4,14 @@ IF (NOT QMC_CUDA)
 #
 # LiH molecular dimer pseudopotential tests
 #
+# Energies from GAMESS
+#   total     = -0.7507264125
+#   kinetic   =  0.6354491487
+#   potential = -1.3861755612
+#   elec-elec =  0.4814819907
+#   elec-nuc  = -2.1994509240
+#   nuc-nuc   =  0.3317933721
+
   LIST(APPEND LIH_PP_SCALARS "kinetic" "0.6354491487 0.0013")
   LIST(APPEND LIH_PP_SCALARS "totenergy" "-0.7507264125 0.00043")
   LIST(APPEND LIH_PP_SCALARS "eeenergy" "0.4814819907 0.00061")
