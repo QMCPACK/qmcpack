@@ -1504,7 +1504,7 @@ exact_mean_tests = set([
     'LiH_dimer_ae_gms-vmc_hf_noj',
     'LiH_dimer_ae_pyscf-vmc_hf_noj',
     'LiH_dimer_ae_qp-vmc_hf_noj',
-    'short-LiH_dimer_pp-vmc_hf_noj',
+    'LiH_dimer_pp-vmc_hf_noj',
     'c_no-hf_vmc',
     'heg_14_gamma-hf',
     ])
@@ -1767,13 +1767,19 @@ def update_tests(short_tests):
     vlog('\n\nupdating test results')
 
     tests = sorted(short_tests.keys())
+    tests_updated = []
     for t in tests:
         st = short_tests[t]
         if options.update and 'new_refdata' in st:
             vlog('\nupdating '+st.name,n=1)
+            tests_updated.append(t)
+
+            # open CMakeLists.txt file
             f = open(st.cmakelists,'r')
             text = f.read()
             f.close()
+
+            # update CMakeLists.txt contents
             for series,qref_new in st.new_refdata.iteritems():
                 qref_old = st.refdata[series]
                 qref_lines = st.reflines[series]
@@ -1821,14 +1827,26 @@ def update_tests(short_tests):
                         vlog('updating {0:<20}    update type: {1}'.format(q,utype),n=2)
                         vlog(line_old.strip(),n=3)
                         vlog(line_new.strip(),n=3)
-                        #text = text.replace(line_old,line_new)
+                        text = text.replace(line_old,line_new)
                     else:
                         vlog('not updating '+q,n=2)
                     #end if
                 #end for
             #end for
+
+            # write updated CMakeLists.txt file
+            f = open(st.cmakelists,'w')
+            f.write(text)
+            f.close()
+
         #end if
     #end for
+
+    vlog('\n\ntests updated:',n=1)
+    for t in tests_updated:
+        vlog(t,n=2)
+    #end for
+
 #end def update_tests
 
 
