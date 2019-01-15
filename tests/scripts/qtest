@@ -541,6 +541,10 @@ def read_command_line():
                       action='store_true',default=False,
                       help='Analyze test results and print a summary (default=%default).'
                       )
+    parser.add_option('-u','--update',
+                      action='store_true',default=False,
+                      help='Update reference values in CMakeLists.txt files (default=%default).'
+                      )
     parser.add_option('-e','--equil',dest='equil',
                       type=int,default=20,
                       help='Number of blocks to exclude as equilibration during data analysis or joining (default=%default).'
@@ -596,7 +600,7 @@ def read_command_line():
 
 non_short_tests = []
 
-def parse_scalar_test(text,ref_lists):
+def parse_scalar_test(text,ref_lists,ref_lines):
     text = text.replace('QMC_RUN_AND_CHECK','').strip().strip('()')
     tokens = text.split()
     name = tokens[0].strip('"')
@@ -611,18 +615,20 @@ def parse_scalar_test(text,ref_lists):
 
     # parse test contents
     test = obj(
-        type    = 'scalar',
-        name    = name.split('-',1)[1],
-        sname   = name,
-        path    = tokens[1].replace('${CMAKE_SOURCE_DIR}',source_dir).strip('"'),
-        prefix  = tokens[2],
-        infile  = tokens[3],
-        refdata = obj(),
+        type     = 'scalar',
+        name     = name.split('-',1)[1],
+        sname    = name,
+        path     = tokens[1].replace('${CMAKE_SOURCE_DIR}',source_dir).strip('"'),
+        prefix   = tokens[2],
+        infile   = tokens[3],
+        refdata  = obj(),
+        reflines = obj(),
         )
     for n in range(7,len(tokens)-1,2):
         series    = tokens[n]
         list_name = tokens[n+1]
         test.refdata[series] = ref_lists[list_name]
+        test.reflines[series] = ref_lines[list_name]
     #end for
 
     return test
@@ -680,6 +686,7 @@ def parse_qmcpack_cmakelists():
                 # remove comments from the file contents
                 text  = ''
                 lines = []
+                full_lines = []
                 for line in raw.splitlines():
                     ls = line.strip()
                     if not ls.startswith('#'):
@@ -690,6 +697,7 @@ def parse_qmcpack_cmakelists():
                         #end if
                         text += line+'\n'
                         lines.append(ls)
+                        full_lines.append(line)
                     #end if
                 #end for
 
@@ -702,7 +710,8 @@ def parse_qmcpack_cmakelists():
 
                 # find and parse all LIST() statements
                 ref_lists = obj()
-                for ls in lines:
+                ref_lines = obj()
+                for ls,line in zip(lines,full_lines):
                     if ls.startswith('LIST') or ls.startswith('list'):
                         s = ls.replace('(',' ( ').replace(')',' ) ')
                         tokens = re.findall(r'(?:[^\s,"]|"(?:\\.|[^"])*")+', s)
@@ -712,8 +721,10 @@ def parse_qmcpack_cmakelists():
                             ref_value  = tuple(tokens[5].strip('"').split())
                             if list_name not in ref_lists:
                                 ref_lists[list_name] = obj()
+                                ref_lines[list_name] = obj()
                             #end if
                             ref_lists[list_name][quant_name] = ref_value
+                            ref_lines[list_name][quant_name] = line
                         #end if
                     #end if
                 #end for
@@ -728,9 +739,11 @@ def parse_qmcpack_cmakelists():
                         if iend!=-1:
                             test = parse_scalar_test(
                                 text      = text[istart:iend+1],
-                                ref_lists = ref_lists
+                                ref_lists = ref_lists,
+                                ref_lines = ref_lines,
                                 )
                             if test is not None and test.name not in short_tests:
+                                test.cmakelists = filepath
                                 short_tests[test.name] = test
                             #end if
                         #end if
@@ -750,6 +763,7 @@ def parse_qmcpack_cmakelists():
                                 text = text[istart:iend+1],
                                 )
                             if test is not None and test.name not in short_tests:
+                                test.cmakelists = filepath
                                 short_tests[test.name] = test
                             #end if
                         #end if
@@ -1484,6 +1498,17 @@ exact_wavefunction_tests = set([
     'sho-vmc',
     ])
 
+# tests that have exact mean values (e.g. Hartree-Fock reference)
+#   below are keys that are used to match against test names
+exact_mean_tests = set([
+    'LiH_dimer_ae_gms-vmc_hf_noj',
+    'LiH_dimer_ae_pyscf-vmc_hf_noj',
+    'LiH_dimer_ae_qp-vmc_hf_noj',
+    'short-LiH_dimer_pp-vmc_hf_noj',
+    'c_no-hf_vmc',
+    'heg_14_gamma-hf',
+    ])
+
 # returns filename for a scalar.dat file
 def get_scalar_filename(st,series):
     return '{0}.s{1}.scalar.dat'.format(st.prefix,str(series).zfill(3))
@@ -1605,7 +1630,7 @@ def analyze_tests(short_tests):
                 #end if
             #end for
 
-            #vlog('run/data status: {0}/{1}'.format(run_status,data_status),n=2)
+            vlog('run/data status: {0}/{1}'.format(run_status,data_status),n=2)
 
             # postprocess all reference data with qmca
             if data_status=='complete':
@@ -1616,6 +1641,7 @@ def analyze_tests(short_tests):
                 sref_full += '\n'
                 sref_full += '# ref_code: {0:<20}  ref_code_hash: {1}\n'.format(ref_code,ref_code_hash)
                 # compare old and new ref data for each series
+                st.new_refdata = obj()
                 for series in sorted(st.refdata.keys()):
                     old_refdata = st.refdata[series]
                     scalar_file = get_scalar_filename(st,series)
@@ -1669,6 +1695,11 @@ def analyze_tests(short_tests):
                             vlog('{0:<15} series {1}   nsigma diff {2:3.2f}  errorbar relerr {3:3.2f}'.format(q,series,nsigma,relerr),n=2)
                         #end if
 
+                        # store new reference data
+                        if series not in st.new_refdata:
+                            st.new_refdata[series] = obj()
+                        #end if
+                        st.new_refdata[series][q] = val_new,target_err
 
                         # get test/file information
                         if q not in non_update_quants:
@@ -1680,14 +1711,15 @@ def analyze_tests(short_tests):
                     #end for
 
                     new_refdata_full = read_qmca(qmca_out,full=True)
+                    short_target_err = obj()
                     for q in qmcpack_quantity_order:
                         if q in new_refdata_full:
                             val_new,err_new = new_refdata_full[q]
                             target_err = sqrt(1.0+err_factor**2)*err_new
+                            short_target_err[q] = target_err
                             sref_full += ' {0:<50}  {1:<2}  {2:<15}  {3: 28.12f}  {4: 28.12f}    {5:<12}{6: 28.12f}    {7:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old)
                         #end if
                     #end for
-
                 #end for
 
             #end if
@@ -1725,10 +1757,79 @@ def analyze_tests(short_tests):
         #end if
     #end for
 
+
+
 #end def analyze_tests
 
 
 
+def update_tests(short_tests):
+    vlog('\n\nupdating test results')
+
+    tests = sorted(short_tests.keys())
+    for t in tests:
+        st = short_tests[t]
+        if options.update and 'new_refdata' in st:
+            vlog('\nupdating '+st.name,n=1)
+            f = open(st.cmakelists,'r')
+            text = f.read()
+            f.close()
+            for series,qref_new in st.new_refdata.iteritems():
+                qref_old = st.refdata[series]
+                qref_lines = st.reflines[series]
+                for q,(val_new,err_new) in qref_new.iteritems():
+                    # get value/line information
+                    val_old,err_old = qref_old[q]
+                    line_old = qref_lines[q]
+
+                    # determine whether to update mean/error
+                    if q in non_update_quants:
+                        utype = 'non_update_quants'
+                        update_mean = False
+                        update_err  = False
+                    elif q in non_stat_quants:
+                        utype = 'non_stat_quants'
+                        update_mean = True
+                        update_err  = False
+                    elif st.name in exact_wavefunction_tests:
+                        utype = 'exact_wavefunction'
+                        update_mean = False
+                        update_err  = True
+                        if q in ('totenergy','variance'):
+                            update_err = False
+                        #end if
+                    elif st.name in exact_mean_tests:
+                        utype = 'exact_mean'
+                        update_mean = False
+                        update_err  = True
+                    else:
+                        utype = 'normal'
+                        update_mean = True
+                        update_err  = True
+                    #end if
+
+                    # update mean/error as appropriate
+                    update = update_mean or update_err
+                    line_new = str(line_old)
+                    if update_mean:
+                        line_new = line_new.replace(val_old,'{0:16.12f}'.format(val_new).strip())
+                    #end if
+                    if update_err:
+                        line_new = line_new.replace(err_old,'{0:16.12f}'.format(err_new).strip())
+                    #end if
+                    if update:
+                        vlog('updating {0:<20}    update type: {1}'.format(q,utype),n=2)
+                        vlog(line_old.strip(),n=3)
+                        vlog(line_new.strip(),n=3)
+                        #text = text.replace(line_old,line_new)
+                    else:
+                        vlog('not updating '+q,n=2)
+                    #end if
+                #end for
+            #end for
+        #end if
+    #end for
+#end def update_tests
 
 
 #================#
@@ -1755,6 +1856,11 @@ if __name__=='__main__':
     # analyze results
     if options.analyze:
         analyze_tests(short_tests)
+    #end if
+
+    # update CMakeLists.txt reference data
+    if options.update:
+        update_tests(short_tests)
     #end if
 
     vexit()
