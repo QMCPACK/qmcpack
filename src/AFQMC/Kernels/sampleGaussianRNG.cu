@@ -18,44 +18,47 @@
 #include "curand.h"
 #include<cuda_runtime.h>
 #include "AFQMC/Kernels/cuda_settings.h"
-#include "AFQMC/Kernels/zero_complex_part.hpp"
+#include "AFQMC/Kernels/zero_complex_part.cuh"
 #define QMC_CUDA 1
+#include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace kernels
 {
 
 void sampleGaussianRNG( double* V, int n, curandGenerator_t & gen) 
 {
-  qmc_cuda::cuda_check(curandGenerateNormalDouble(gen,V,n,0.0,1.0),
+  qmc_cuda::curand_check(curandGenerateNormalDouble(gen,V,n,0.0,1.0),
                                           "curandGenerateNormalDouble");
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
+/*
+ // Convert to double if really necessary
 void sampleGaussianRNG( float* V, int n, curandGenerator_t & gen) 
 {
-  qmc_cuda::cuda_check(curandGenerateNormalFloat(gen,V,n,0.0,1.0),
+  qmc_cuda::curand_check(curandGenerateNormalFloat(gen,V,n,0.0,1.0),
                                           "curandGenerateNormalFloat");
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-
+*/
 void sampleGaussianRNG( std::complex<double>* V, int n, curandGenerator_t & gen) 
 {
-  qmc_cuda::cuda_check(curandGenerateNormalDouble(gen,
+  qmc_cuda::curand_check(curandGenerateNormalDouble(gen,
                         reinterpret_cast<double*>(V),2*n,0.0,1.0),
                                           "curandGenerateNormalDouble");
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
   // hack hack hack!!!
   kernels::zero_complex_part(n,V);
 }
-
+/*
 void sampleGaussianRNG( std::complex<float>* V, int n, curandGenerator_t & gen) 
 {
-  qmc_cuda::cuda_check(curandGenerateNormalFloat(gen,
+  qmc_cuda::curand_check(curandGenerateNormalFloat(gen,
                         reinterpret_cast<float*>(V),2*n,0.0,1.0),
                                           "curandGenerateNormalFloat");
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
   // hack hack hack!!!
   kernels::zero_complex_part(n,V);
 } 
-
+*/
 }

@@ -30,6 +30,8 @@
 
 namespace qmc_cuda {
 
+template<class T> struct cuda_gpu_allocator;
+
 struct base_cuda_gpu_ptr
 {
   static gpu_handles handles;

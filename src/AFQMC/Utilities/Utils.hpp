@@ -25,7 +25,8 @@
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/config.0.h"
 
-#include "AFQMC/Memory/custom_poiners.hpp"
+#include "AFQMC/Memory/custom_pointers.hpp"
+#include "AFQMC/Kernels/sampleGaussianRNG.cuh"
 
 namespace qmcplusplus 
 { 

@@ -38,8 +38,8 @@ namespace qmc_cuda {
   extern cublasHandle_t afqmc_cublas_handle;
   extern cublasXtHandle_t afqmc_cublasXt_handle;
   extern cusolverDnHandle_t afqmc_cusolverDn_handle;
-  extern curandGenerator_t afqmc_curand_generator;
 */
+  extern curandGenerator_t afqmc_curand_generator;
 
   void cuda_check(cudaError_t sucess, std::string message="");
   void cublas_check(cublasStatus_t sucess, std::string message="");

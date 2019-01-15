@@ -53,9 +53,17 @@ __global__ void kernel_construct_X( int nCV, int nsteps, int nwalk,
   int dvb_ = nwalk;
   int dX = nsteps*nwalk; 
 
+  thrust::complex<T> vmf_t,vb_t; 
   for(int m=threadIdx.x; m<nCV; m+=blockDim.x) {
-    thrust::complex<T> vmf_t = sqrtdt*bound(vmf_[m],1.0); 
-    thrust::complex<T> vb_t = bound(vb_[m*dvb_],sqrtdt); 
+
+    if( abs(vmf_[m]) > vbound )
+        vmf_t = sqrtdt*vmf_[m]/(abs(vmf_[m])/vbound);
+    else
+        vmf_t = sqrtdt*vmf_[m];
+    if( abs(vb_[m*dvb_]) > vbound*sqrtdt )
+        vb_t = vb_[m*dvb_]/(abs(vb_[m*dvb_])/(vbound*sqrtdt));
+    else
+        vb_t = vb_[m*dvb_];
 
     thrust::complex<T> vdiff = (im*(vb_t-vmf_t));
     X_[m*dX] += vdiff;
@@ -99,7 +107,7 @@ __global__ void kernel_construct_X( int nCV, int nsteps, int nwalk,
 
 template<typename T>
 __global__ void kernel_construct_X_free_projection( int nCV, int nsteps, int nwalk, 
-                        T sqrtdt, T vbound,
+                        T sqrtdt,
                         thrust::complex<T> const* vMF, 
                         thrust::complex<T>* MF,   
                         thrust::complex<T>* X ) 
@@ -113,7 +121,6 @@ __global__ void kernel_construct_X_free_projection( int nCV, int nsteps, int nwa
   thrust::complex<T> im(0.0,1.0);
   thrust::complex<T> const* vmf_(vMF); 
   thrust::complex<T> * X_(X + ni*nwalk + iw); 
-  int dvb_ = nwalk;
   int dX = nsteps*nwalk; 
 
   for(int m=threadIdx.x; m<nCV; m+=blockDim.x) 
@@ -156,15 +163,15 @@ void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
                         std::complex<double>* X )
 {
   dim3 block_dim(REDUCE_BLOCK_SIZE,1,1);
-  dim3 grid_dim(nsteps,nwalks,1);
+  dim3 grid_dim(nsteps,nwalk,1);
   if(free_projection)
-    kernel_construct_X_free_projection<<<grid_dim, block_dim>>>(nCV,nsteps,nwalk,sqrtdt,vbound,
-                        reinterpret_cast<thrust::complex<double> const*>(vbound),
+    kernel_construct_X_free_projection<<<grid_dim, block_dim>>>(nCV,nsteps,nwalk,sqrtdt,
+                        reinterpret_cast<thrust::complex<double> const*>(vMF),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<double> *>(X));
   else
     kernel_construct_X<<<grid_dim, block_dim>>>(nCV,nsteps,nwalk,sqrtdt,vbound,
-                        reinterpret_cast<thrust::complex<double> const*>(vbound),
+                        reinterpret_cast<thrust::complex<double> const*>(vMF),
                         reinterpret_cast<thrust::complex<double> const*>(vbias),
                         reinterpret_cast<thrust::complex<double> *>(HW),
                         reinterpret_cast<thrust::complex<double> *>(MF),

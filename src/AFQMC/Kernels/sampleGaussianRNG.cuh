@@ -28,3 +28,5 @@ void sampleGaussianRNG( std::complex<double>* V, int n, curandGenerator_t & gen)
 void sampleGaussianRNG( std::complex<float>* V, int n, curandGenerator_t & gen);
 
 }
+
+#endif
