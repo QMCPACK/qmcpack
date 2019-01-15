@@ -1,0 +1,45 @@
+These tests include short and long AFQMC runs for a two atom diamond
+primitive cell at the gamma point. Tests exist for both the Cholesky
+and ISDF/THC factorization of the integrals. For the Cholesky
+factorization there are tests for RHF, UHF and particle-hole
+multi-Slater determinant (PHMSD) trial wavefunctions. For the ISDF
+factorization a RHF trial wavefunction is used. The integrals and
+trial wavefunctions were generated using pyscf. The relevant scripts
+and files are available in tests/afqmc as these files are re-used for
+afqmc unit tests.
+Reference data from the high block count AFQMC runs is found below:
+
+                      EnergyEstim__num_real
+afqmc cholesky rhf   -10.55201 +/- 0.00033
+afqmc cholesky uhf   -10.55151 +/- 0.00031
+afqmc cholesky phmsd -10.55085 +/- 0.00026
+afqmc isdf     rhf   -10.33408 +/- 0.00043
+
+These values can also be found in qmc-ref/qmc_ref.qmca. The scalar.dat
+files were too large to include with qmcpack. The first 10 blocks were
+discarded from the reference scalar.dat files during analysis with the
+qmca script.
+
+Test input files were created by reducing the number of steps from the
+included reference by a factor of 10 for the "long" tests and by a
+further factor of 10 for the "short" tests.
+
+A reference value for the mean local energy was taken from the high
+block count reference run.  Expected error bars for tests using
+single determinant trial wavefunctions were derived from the high
+block count data by multiplying the reference error bars by a factor
+of sqrt(10+1) and sqrt(100+1) for the long and short tests,
+respectively.  The factor of +1 accounts for the error bar intrinsic
+to the high block count runs. Similarly for multi determinant case,
+the reference error bars were multiplied by a factor of sqrt(20+1) and
+sqrt(201+1) for the long and short tests. The tests were made half as
+long due to the additional overhead associated with running
+multi-determinant calculations.
+
+The target means and error bars for long and short tests are:
+
+                      refmean      referr    longerr   shorterr
+afqmc cholesky rhf   -10.55201 +/- 0.00033   0.00109   0.00332
+afqmc cholesky uhf   -10.55151 +/- 0.00031   0.00103   0.00312
+afqmc cholesky phmsd -10.55085 +/- 0.00026   0.00119   0.00369
+afqmc isdf     rhf   -10.33408 +/- 0.00043   0.00143   0.00432

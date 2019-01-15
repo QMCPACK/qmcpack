@@ -82,9 +82,13 @@ private:
 
   bool readDetList(xmlNodePtr cur, std::vector<ci_configuration>& uniqueConfg_up, 
       std::vector<ci_configuration>& uniqueConfg_dn, std::vector<size_t>& C2node_up, std::vector<size_t>& C2node_dn, 
-      std::vector<std::string>& CItags, std::vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn, 
+      std::vector<std::string>& CItags, std::vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn,
       std::vector<RealType>& CSFcoeff, std::vector<size_t>& DetsPerCSF, std::vector<RealType>& CSFexpansion, bool& usingCSF);
+      
 
+  bool readDetListH5(xmlNodePtr cur, std::vector<ci_configuration>& uniqueConfg_up, 
+      std::vector<ci_configuration>& uniqueConfg_dn, std::vector<size_t>& C2node_up, std::vector<size_t>& C2node_dn, 
+      std::vector<std::string>& CItags, std::vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn);
 };
 }
 #endif

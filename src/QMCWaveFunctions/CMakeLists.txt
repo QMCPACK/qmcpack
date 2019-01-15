@@ -52,6 +52,7 @@ SET(JASTROW_SRCS
   Jastrow/kSpaceJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
   Jastrow/RadialJastrowBuilder.cpp
+  Jastrow/CountingJastrowBuilder.cpp
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
   OptimizableSPOBuilder.cpp
@@ -76,6 +77,7 @@ IF(OHMMS_DIM MATCHES 3)
 
   SET(JASTROW_SRCS ${JASTROW_SRCS}
     Jastrow/eeI_JastrowBuilder.cpp
+    Jastrow/CountingJastrowBuilder.cpp
     )
 
   IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)

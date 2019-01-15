@@ -19,5 +19,7 @@ SUBDIRS("NiO_a4_e48_pp")
 IF (BUILD_AFQMC AND NOT QMC_COMPLEX)
    SUBDIRS("diamondC_afqmc")
    SUBDIRS("NiO_afqmc")
+ELSEIF (BUILD_AFQMC AND QMC_COMPLEX)
+   SUBDIRS("diamondC_afqmc_1x1x1_complex")
 ENDIF()
 

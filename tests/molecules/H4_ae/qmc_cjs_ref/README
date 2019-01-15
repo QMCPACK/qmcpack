@@ -1,0 +1,20 @@
+============
+Test details
+============
+
+This is a short VMC run for a strongly correlated H4 geometry using
+a pre-optimized Counting Jastrow.
+
+Reference runs were performed using 100x as many total samples as the test.
+
+-------------------------------
+References files for VMC energy
+-------------------------------
+
+# reference input files
+H4_cjs_ref.in.xml
+H4_cjs_ref.ptcl.xml
+H4_cjs_ref.wfs.xml
+
+# command run
+check_scalars.py --ns 1 -p H4 -s '0' --le '-2.0438 0.001'

@@ -554,7 +554,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
     else
     {
-      app_log()<<"Using DiracDeterminant "<< std::endl;
+      app_log()<<"Using DiracDeterminant"<< std::endl;
       adet = new DiracDeterminant(psi,firstIndex);
     }
 #endif
@@ -590,14 +590,40 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   bool success=true;
   std::vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
   std::vector<std::string> CItags;
+  std::string HDF5Path(""),cname;
   bool optimizeCI;
   int nels_up = multiSD->nels_up;
   int nels_dn = multiSD->nels_dn;
   multiSD->initialize();
-  success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,
-      *(multiSD->C2node_up), *(multiSD->C2node_dn),CItags,
-      *(multiSD->C),optimizeCI,nels_up,nels_dn,
-      *(multiSD->CSFcoeff),*(multiSD->DetsPerCSF),*(multiSD->CSFexpansion),multiSD->usingCSF);
+  //Check id multideterminants are in HDF5
+
+  xmlNodePtr  curTemp=cur,DetListNode;
+  curTemp=curTemp->children;
+  OhmmsAttributeSet ciAttrib;
+  while (curTemp != NULL)//check the basis set
+  {
+    getNodeName(cname,curTemp);
+    if(cname == "detlist")
+    {
+      DetListNode=curTemp;
+    }
+    curTemp = curTemp->next;
+  }
+  ciAttrib.add (HDF5Path,"href");
+  ciAttrib.put(DetListNode);
+
+  if (HDF5Path!="")
+  {
+     app_log()<<"Found Multideterminants in H5 File"<< std::endl;
+     success = readDetListH5(cur,uniqueConfg_up,uniqueConfg_dn,
+         *(multiSD->C2node_up), *(multiSD->C2node_dn),CItags,
+         *(multiSD->C),optimizeCI,nels_up,nels_dn);
+  }  
+  else
+      success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,
+         *(multiSD->C2node_up), *(multiSD->C2node_dn),CItags,
+         *(multiSD->C),optimizeCI,nels_up,nels_dn,
+         *(multiSD->CSFcoeff),*(multiSD->DetsPerCSF),*(multiSD->CSFexpansion),multiSD->usingCSF);
   if(!success)
     return false;
 // you should choose the det with highest weight for reference
@@ -1221,4 +1247,194 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
   return success;
 }
 
+
+
+bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur, std::vector<ci_configuration>& uniqueConfg_up, std::vector<ci_configuration>& uniqueConfg_dn, std::vector<size_t>& C2node_up, std::vector<size_t>& C2node_dn, std::vector<std::string>& CItags, std::vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn)
+{
+
+  bool success=true;
+  uniqueConfg_up.clear();
+  uniqueConfg_dn.clear();
+  C2node_up.clear();
+  C2node_dn.clear();
+  CItags.clear();
+  coeff.clear();
+  std::vector<ci_configuration> confgList_up;
+  std::vector<ci_configuration> confgList_dn;
+  std::vector<RealType> CIcoeff;
+  std::vector<std::string> ConfigTag;
+  std::string optCI="no";
+  RealType cutoff=0.0;
+  OhmmsAttributeSet ciAttrib;
+  ciAttrib.add (optCI,"optimize");
+  ciAttrib.put(cur);
+  optimizeCI = (optCI=="yes");
+  xmlNodePtr curRoot=cur,DetListNode;
+  std::string cname,cname0,multidetH5path;
+  cur = curRoot->children;
+  while (cur != NULL)//check the basis set
+  {
+    getNodeName(cname,cur);
+    if(cname == "detlist")
+    {
+      DetListNode=cur;
+      app_log() <<"Found determinant list. \n";
+    }
+    cur = cur->next;
+  }
+  size_t NCA,NCB,NEA,NEB,nstates,ndets=0,count=0,cnt0=0;
+  size_t H5_ndets,H5_nstates;
+  int N_int;
+  const int bit_kind = 64; 
+  std::string Dettype="DETS";
+  RealType sumsq=0.0;
+  OhmmsAttributeSet spoAttrib;
+  spoAttrib.add (NCA, "nca");
+  spoAttrib.add (NCB, "ncb");
+  spoAttrib.add (NEA, "nea");
+  spoAttrib.add (NEB, "neb");
+  spoAttrib.add (ndets, "size");
+  spoAttrib.add (Dettype, "type");
+  spoAttrib.add (nstates, "nstates");
+  spoAttrib.add (cutoff,"cutoff");
+  spoAttrib.add (multidetH5path,"href");
+  spoAttrib.put(DetListNode);
+  if(ndets==0)
+  {
+    APP_ABORT("size==0 in detlist is not allowed. Use slaterdeterminant in this case.\n");
+  }
+  if(Dettype != "DETS" && Dettype != "Determinants")
+    APP_ABORT("Reading from HDF5 is only enabled for CI DETS. Must be accessed through (type=\"DETS\") or (type=\"Determinants\") .\n");
+  app_log() <<"Reading CI expansion from HDF5:" << multidetH5path<<std::endl;
+   
+  hdf_archive hin;
+  if(!hin.open(multidetH5path.c_str(),H5F_ACC_RDONLY))
+  {
+      std::cerr<<"Could not open H5 file"<<std::endl;
+      abort();
+  }
+      
+  if(!hin.push("MultiDet"))
+  {
+      std::cerr<<"Could not open Multidet Group in H5 file"<<std::endl;
+      abort();
+  }
+
+  hin.read(H5_ndets,"NbDet");
+  if (ndets!=H5_ndets)
+  {
+      std::cerr<<"Number of determinants in H5 file ("<<H5_ndets<<") different from number of dets in XML ("<<ndets<<")"<<std::endl;
+      abort();
+  }
+       
+  hin.read(H5_nstates,"nstate");
+  if  (nstates!=H5_nstates){
+     std::cerr<<"Number of states/orbitals in H5 file ("<<H5_nstates<<") different from number of states/orbitals in XML ("<<nstates<<")"<<std::endl;
+     abort();
+  }
+       
+  hin.read(N_int,"Nbits");
+  CIcoeff.resize(ndets);
+  ConfigTag.resize(ndets);
+  hin.read(CIcoeff,"Coeff");
+
+  Matrix< long int> tempAlpha(ndets,N_int);
+  hin.read(tempAlpha,"CI_Alpha");
+
+  Matrix< long int> tempBeta(ndets,N_int);
+  hin.read(tempBeta,"CI_Beta");
+        
+  std::string MyCIAlpha,MyCIBeta;
+  MyCIAlpha.resize(nstates);
+  MyCIBeta.resize(nstates);
+   
+  ci_configuration dummyC_alpha;
+  ci_configuration dummyC_beta;
+
+  dummyC_alpha.occup.resize(nstates,false);
+  dummyC_beta.occup.resize(nstates,false);
+
+  for(size_t i=0; i<nstates; i++)
+    dummyC_alpha.occup[i]=true;
+
+  for(size_t i=0; i<nstates; i++)
+    dummyC_beta.occup[i]=true;
+
+  hin.close(); 
+  app_log() <<" Done reading CIs from H5!!"<< std::endl;
+
+  int cntup=0;
+  int cntdn=0;
+  std::unordered_map<std::string,int>  MyMapUp;
+  std::unordered_map<std::string,int>  MyMapDn;
+
+  app_log() <<" Sorting unique CIs"<< std::endl;
+  for (int ni=0; ni<ndets;ni++)
+  {
+     if(std::abs(CIcoeff[ni]) < cutoff)
+          continue;
+
+     int j=0;
+     for (int k=0; k<N_int; k++)
+     {
+       long int a = tempAlpha[ni][k];
+       std::bitset<bit_kind> a2 = a;
+    		
+       auto b = tempBeta[ni][k];
+       auto b2 =  std::bitset<bit_kind>(b);
+
+       for(int i=0; i<bit_kind;i++) 
+       {
+     	   if ( j <nstates ) 
+           {
+              MyCIAlpha[j] = a2[i] ? '1' : '0'; 
+              MyCIBeta[j] = b2[i] ? '1' : '0'; 
+              j++;
+    	   }
+       }
+     }
+     coeff.push_back(CIcoeff[ni]);
+     std::ostringstream h5tag;
+     h5tag<<"CIcoeff_" <<ni;
+     CItags.push_back(h5tag.str());
+
+     std::unordered_map<std::string,int>::const_iterator gotup = MyMapUp.find (MyCIAlpha);
+
+     if(gotup==MyMapUp.end()){
+        uniqueConfg_up.push_back(dummyC_alpha);
+        uniqueConfg_up.back().add_occupation(MyCIAlpha);
+        C2node_up.push_back(cntup);
+        MyMapUp.insert (std::pair<std::string,int>(MyCIAlpha,cntup));
+        cntup++;
+     }
+     else{
+        C2node_up.push_back(gotup->second);
+     }
+
+     std::unordered_map<std::string,int>::const_iterator gotdn = MyMapDn.find (MyCIBeta);
+
+     if(gotdn==MyMapDn.end()){
+        uniqueConfg_dn.push_back(dummyC_beta);
+        uniqueConfg_dn.back().add_occupation(MyCIBeta);
+        C2node_dn.push_back(cntdn);
+        MyMapDn.insert (std::pair<std::string,int>(MyCIBeta,cntdn));
+        cntdn++;
+     }
+     else{
+        C2node_dn.push_back(gotdn->second);
+     }
+
+     sumsq += CIcoeff[ni]*CIcoeff[ni];
+  }
+   
+  app_log() <<" Done Sorting unique CIs"<< std::endl;
+  app_log() <<"Found " <<coeff.size() <<" terms in the MSD expansion.\n";
+  app_log() <<"Norm of ci vector (sum of ci^2): " <<sumsq << std::endl;
+  
+  app_log() <<"Found " <<uniqueConfg_up.size() <<" unique up determinants.\n";
+  app_log() <<"Found " <<uniqueConfg_dn.size() <<" unique down determinants.\n";
+  
+  
+  return success;
+}
 }

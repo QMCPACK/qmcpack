@@ -24,7 +24,6 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
-#include "tau/profiler.h"
 #include <qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
 #include "ADIOS/ADIOS_profile.h"

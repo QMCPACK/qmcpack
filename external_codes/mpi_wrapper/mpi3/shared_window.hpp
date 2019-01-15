@@ -32,6 +32,7 @@ struct shared_window : window<T>{
 		shared_window(comm, 0, disp_unit)
 	{}
 	shared_window(shared_window const&) = default;
+  shared_window& operator=(shared_window&& other) = default;
 	shared_window(shared_window&& other) : window<T>{std::move(other)}{}//, comm_{other.comm_}{}
 	using query_t = std::tuple<mpi3::size_t, int, void*>;
 	query_t query(int rank = MPI_PROC_NULL) const{
@@ -114,16 +115,29 @@ struct array_ptr{
 	T& operator[](int idx) const{return ((T*)(wSP_->base(0)) + offset)[idx];}
 	T* operator->() const{return (T*)(wSP_->base(0)) + offset;}
 	T* get() const{return wSP_->base(0) + offset;}
-	explicit operator bool() const{return (bool)wSP_;}//.get();}
-	bool operator==(std::nullptr_t) const{return (bool)wSP_;}
+	operator T*() { 
+// do I need to guard against nullptr state?
+            if( not (bool)wSP_ ) return nullptr;
+            return wSP_->base(0) + offset;
+        }
+	operator T*() const { 
+            if( not (bool)wSP_ ) return nullptr;
+            return wSP_->base(0) + offset;
+        }
+        // need non-const version, otherwise operator T*() gets precedence in some situations
+	explicit operator bool() { return (bool)wSP_;}//.get();}
+	explicit operator bool() const{ return (bool)wSP_;}//.get();}
+	bool operator==(std::nullptr_t) const{return not ((bool)wSP_);}
 	bool operator!=(std::nullptr_t) const{return not operator==(nullptr);}
 	operator array_ptr<T const>() const{
 		array_ptr<T const> ret;
 		ret.wSP_ = wSP_;
+                ret.offset = offset;
 		return ret;
 	}
 	operator array_ptr<void const>() const{
 		array_ptr<void const> ret;
+                ret.offset = offset;
 		ret.wSP_ = wSP_;
 		return ret;
 	}
@@ -253,6 +267,9 @@ struct is_root{
 	template<class Alloc>
 	is_root(Alloc& a) : comm_(a.comm_){}
 	bool root(){return comm_.root();}
+	int size() {return comm_.size();}
+	int rank() {return comm_.rank();}
+	void barrier() {comm_.barrier();}
 };
 
 }

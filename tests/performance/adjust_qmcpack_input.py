@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 # Rewrite parts of a QMCPACK input file
 #   walkers
@@ -34,7 +35,7 @@ def change_number_of_walkers(tree, new_number_of_walkers):
 def use_NLPP_algorithm(tree):
     nodes = tree.findall(".//hamiltonian/pairpot[@type='pseudo']")
     if len(nodes) == 0:
-        print 'NLPP not found'
+        print('NLPP not found')
         return
     for node in nodes:
       add_or_change_attribute(node, 'algorithm', 'batched')
@@ -42,7 +43,7 @@ def use_NLPP_algorithm(tree):
 def use_delayed_update(tree, delay):
     nodes = tree.findall(".//wavefunction/determinantset/slaterdeterminant")
     if len(nodes) == 0:
-        print 'slaterdeterminant not found'
+        print('slaterdeterminant not found')
         return
     for node in nodes:
       add_or_change_attribute(node, 'delay_rank', str(delay))
@@ -50,7 +51,7 @@ def use_delayed_update(tree, delay):
 def change_jastrow(tree, j3_tree):
     wf_nodes = tree.findall('.//wavefunction')
     if len(wf_nodes) != 1:
-        print 'No wavefunction nodes found, or more than one'
+        print('No wavefunction nodes found, or more than one')
         return
     wf_node = wf_nodes[0]
     jastrow_nodes = wf_node.findall("./jastrow")
@@ -104,5 +105,5 @@ if __name__ == '__main__':
     if args.inplace:
       tree.write(fname_in)
     else:
-      print "Nothing has been changed. Use -i or -o options for in-place change or output to a file."
+      print("Nothing has been changed. Use -i or -o options for in-place change or output to a file.")
 

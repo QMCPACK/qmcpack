@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<simulation method="afqmc">
+  <project id="qmc_ref_uhf" series="0"/>
+
+  <AFQMCInfo name="info0">
+    <parameter name="NMO">26</parameter>
+    <parameter name="NAEA">4</parameter>
+    <parameter name="NAEB">4</parameter>
+  </AFQMCInfo>
+
+  <Hamiltonian name="ham0" type="Factorized" info="info0">
+    <parameter name="filetype">hdf5</parameter>
+    <parameter name="filename">../choldump_uhf.h5</parameter>
+  </Hamiltonian>
+
+  <Wavefunction name="wfn0" type="MSD" info="info0">
+    <parameter name="filetype">ascii</parameter>
+    <parameter name="filename">../wfn_uhf.dat</parameter>
+  </Wavefunction>
+
+  <WalkerSet name="wset0">
+    <parameter name="walker_type">collinear</parameter>
+  </WalkerSet>
+
+  <Propagator name="prop0" info="info0">
+  </Propagator>
+
+  <execute wset="wset0" ham="ham0" wfn="wfn0" prop="prop0" info="info0">
+    <parameter name="timestep">0.01</parameter>
+    <parameter name="blocks">1000</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="nWalkers">20</parameter>
+  </execute>
+
+</simulation>
+
