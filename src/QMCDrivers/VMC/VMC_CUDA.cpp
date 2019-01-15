@@ -381,15 +381,7 @@ void VMCcuda::advanceWalkersWithDrift()
       std::vector<RealType> rand_v(nw);
       for(int iw=0; iw<nw; ++iw)
       {
-#ifdef QMC_COMPLEX
-        PosType drOld = 0.0;
-        convert(oldScale[iw] * oldG[iw], drOld);
-        drOld = newpos[iw] - (W[iw]->R[iat] + drOld);
-#else
-        PosType drOld =
-          newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
-#endif
-        logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
+        logGf_v[iw] = -m_oneover2tau * dot(delpos[iw], delpos[iw]);
         rand_v[iw] = Random();
       }
       Psi.addRatio(W, iat, k, ratios, newG, newL);
