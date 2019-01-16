@@ -40,14 +40,14 @@ inline void BasicWalkerData(WlkBucket& wlk, DVec& curData, communicator& comm)
   int wi=0;
   for(typename WlkBucket::iterator it=wlk.begin(); it!=wlk.end(); ++it) { 
     auto w0 = *it;
-    ComplexType weight = w0.weight();
-    ComplexType ovlp = w0.overlap(); 
-    ComplexType eloc = w0.pseudo_energy();
+    ComplexType weight = *w0.weight();
+    ComplexType ovlp = *w0.overlap(); 
+    ComplexType eloc = *w0.pseudo_energy();
     data[6]++;   // all walkers
     if( std::abs(weight) <= 1e-6 || (!std::isfinite( std::abs(ovlp) )) || (!std::isfinite( (weight*eloc).real() )) || (!std::isfinite( (weight*eloc).imag() )) ) {
-        w0.weight() = ComplexType(0.0,0.0);
-        w0.overlap() = ComplexType(1.0,0.0);
-        w0.pseudo_energy() = ComplexType(0.0,0.0);
+        *w0.weight() = ComplexType(0.0,0.0);
+        *w0.overlap() = ComplexType(1.0,0.0);
+        *w0.pseudo_energy() = ComplexType(0.0,0.0);
         continue;
     }
     data[0] += (weight*eloc).real();
@@ -92,7 +92,7 @@ inline void getGlobalListOfWalkerWeights(WlkBucket& wlk, std::vector<std::pair<d
   std::vector<Type> blocal(target);
   std::vector<Type>::iterator itv = blocal.begin();
   for(typename WlkBucket::iterator it=wlk.begin(); it!=wlk.end(); ++it, ++itv) 
-    *itv = {std::abs(it->weight()),1};
+    *itv = {std::abs(*it->weight()),1};
   //comm.gather_n(blocal.data(),blocal.size(),buffer.data(),0);
   MPI_Allgather(blocal.data(), blocal.size()*sizeof(Type), MPI_CHAR, 
                   buffer.data(), blocal.size()*sizeof(Type), MPI_CHAR,

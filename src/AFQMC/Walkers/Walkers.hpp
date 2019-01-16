@@ -27,19 +27,20 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-
+/*
   template<class Ptr>
   struct const_walker {
 
     public:
 
-      using pointer = const Ptr;
-      using element = typename pointer::value_type;  
+      using pointer = const typename std::decay<Ptr>::type; 
+      using element = typename std::pointer_traits<typename std::decay<Ptr>::type>::element_type;
+//      using element = __element;
       using SMType = boost::multi::array_ref<element,2,pointer>;
     
       template<class ma>
       const_walker(ma const& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi::array_cref<element,1,pointer>(a.origin(),extensions<1u>{a.size()})),indx(i_),desc(d_) 
+        w_(boost::multi::array_ref<element,1,pointer>(a.origin(),extensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
 	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
 	assert(stride(w_)==1);
@@ -85,7 +86,7 @@ namespace afqmc
           APP_ABORT("error: access to uninitialized BP sector. \n");
         if(ip < 0 || ip >= desc[3])
           APP_ABORT("error: Index out of bounds.\n");
-        return SMType( get_(PROPAGATORS) + desc[0]*desc[0]*ip] ,
+        return SMType( get_(PROPAGATORS) + desc[0]*desc[0]*ip ,
                                                         {desc[0],desc[0]});
       }
       bool isBMatrixBufferFull() const {
@@ -109,12 +110,13 @@ namespace afqmc
       // needs new strategy for gpu!!!
       int getHead() const { return static_cast<int>(*get_(HEAD).real()); }
 
-      boost::multi::array_cref<element,1,pointer> w_;
+      boost::multi::array_ref<element,1,pointer> w_;
       const wlk_indices& indx;
       const wlk_descriptor& desc;	 
 
       pointer get_(int P) const { return w_.origin() + indx[P]; }   
   };
+*/
 
   template<class Ptr>
   struct walker {
@@ -122,7 +124,7 @@ namespace afqmc
     public:
 
       using pointer = Ptr;
-      using element = typename pointer::value_type;  
+      using element = typename std::pointer_traits<pointer>::element_type;
       using SMType = boost::multi::array_ref<element,2,pointer>;
     
       template<class ma>
@@ -176,10 +178,18 @@ namespace afqmc
         if(ip < 0 || ip >= desc[3]) {
           APP_ABORT("error: Index out of bounds.\n");
         }
-        return SMType(get_(PROPAGATORS)+desc[0]*desc[0]*ip],
+        return SMType(get_(PROPAGATORS)+desc[0]*desc[0]*ip,
                       {desc[0],desc[0]});
       }
-      int NumBackProp() {
+      SMType BMatrix(int ip) const {
+        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0)
+          APP_ABORT("error: access to uninitialized BP sector. \n");
+        if(ip < 0 || ip >= desc[3])
+          APP_ABORT("error: Index out of bounds.\n");
+        return SMType( get_(PROPAGATORS) + desc[0]*desc[0]*ip ,
+                                                        {desc[0],desc[0]});
+      }
+      int NumBackProp() const {
         return desc[3];
       }
       void incrementBMatrix() {
@@ -212,7 +222,7 @@ namespace afqmc
         }
         int nbp = desc[3];
         for(int ip = 0; ip < nbp; ip++) {
-          SMType B = SMType(get_(PROPAGATORS)+desc[0]*desc[0]*ip],
+          SMType B = SMType(get_(PROPAGATORS)+desc[0]*desc[0]*ip,
                             {desc[0],desc[0]});
           for(int i = 0; i < desc[0]; i++) {
             for(int j = 0; j < desc[0]; j++) {
@@ -220,16 +230,16 @@ namespace afqmc
             }
           }
         }
-        BPWeightFactor() = element(1.0);
+        *BPWeightFactor() = element(1.0);
         setSlaterMatrixN();
       }
       // Weight factors for partial path restoration approximation.
 // problems on GPU
-      element& BPWeightFactor() {
+      pointer BPWeightFactor() {
         if(indx[WEIGHT_FAC] < 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         }
-        return *get_(WEIGHT_FAC);
+        return get_(WEIGHT_FAC);
       }
       void copy_to_buffer(Ptr data) {
         copy(base(),base()+size(),data);
@@ -247,7 +257,7 @@ namespace afqmc
 
     private:
 
-      int getHead() const { return static_cast<int>(*get_(HEAD).real()); }
+      int getHead() const { return static_cast<int>(get_(HEAD)->real()); }
 
       boost::multi::array_ref<element,1,Ptr> w_;
       const wlk_indices& indx;
@@ -273,7 +283,7 @@ namespace afqmc
 	pos(k),W(w_.origin(),w_.extensions()),indx(&i_),desc(&d_)  {}
 
     using pointer = Ptr;
-    using element = typename pointer::value_type;  
+    using element = typename std::pointer_traits<pointer>::element_type;
     using Wlk_Buff = boost::multi::array_ref<element,2,Ptr>;
     using difference_type = std::ptrdiff_t;
     using reference = walker<Ptr>;
@@ -295,6 +305,7 @@ namespace afqmc
     difference_type distance_to(walker_iterator other) const{ return other.pos - pos; }
   };
 
+/*
   template<class Ptr>
   struct const_walker_iterator:
         public boost::iterator_facade<
@@ -311,7 +322,7 @@ namespace afqmc
         pos(k),W(std::addressof(*w_.origin()),w_.extensions()),indx(&i_),desc(&d_)  {}
 
     using pointer = const Ptr;
-    using element = typename pointer::value_type;  
+    using element = typename std::pointer_traits<pointer>::element_type;
     using Wlk_Buff = boost::multi::array_ref<element,2,pointer>;
     using difference_type = std::ptrdiff_t;
     using reference = const_walker<Ptr>;
@@ -332,7 +343,7 @@ namespace afqmc
     void advance(difference_type n){pos += n;}
     difference_type distance_to(const_walker_iterator other) const{ return other.pos - pos; }
   };
-
+*/
 }
 
 }

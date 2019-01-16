@@ -146,21 +146,21 @@ const char *propg_xml_block =
     {
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       app_log()<<" Initial Energy: " <<(eav/ov).real() <<std::endl;
     }
     double tot_time=0;
     RealType dt=0.01;
-    RealType Eshift=std::abs(wset[0].overlap());
+    RealType Eshift=std::abs(*wset[0].overlap());
     for(int i=0; i<4; i++) {
       prop.Propagate(2,wset,Eshift,dt,1);
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -171,8 +171,8 @@ const char *propg_xml_block =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -184,8 +184,8 @@ const char *propg_xml_block =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -196,8 +196,8 @@ const char *propg_xml_block =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=5*2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -301,21 +301,21 @@ const char *propg_xml_block1 =
     {
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       app_log()<<" Initial Energy: " <<(eav/ov).real() <<std::endl;
     }
     double tot_time=0;
     RealType dt=0.01;
-    RealType Eshift=std::abs(wset[0].overlap());
+    RealType Eshift=std::abs(*wset[0].overlap());
     for(int i=0; i<4; i++) {
       prop.Propagate(2,wset,Eshift,dt,1);
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -326,8 +326,8 @@ const char *propg_xml_block1 =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -339,8 +339,8 @@ const char *propg_xml_block1 =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -351,8 +351,8 @@ const char *propg_xml_block1 =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=5*2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;

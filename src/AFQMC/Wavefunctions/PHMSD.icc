@@ -950,9 +950,9 @@ namespace afqmc
             SDetOp.Orthogonalize(it->SlaterMatrix(Alpha),std::addressof(detR));
           if(!impSamp) {
             if(walker_type==CLOSED)
-              it->weight() *= (detR*detR);
+              *it->weight() *= (detR*detR);
             else  
-              it->weight() *= detR;
+              *it->weight() *= detR;
           }
         }
       } 
@@ -966,7 +966,7 @@ namespace afqmc
             SDetOp.Orthogonalize(it->SlaterMatrix(Alpha),std::addressof(detR));
           if(!impSamp) {
             std::lock_guard<shared_mutex> guard(*mutex);
-            it->weight() *= detR;
+            *it->weight() *= detR;
           }
         }
         if( (2*(cnt++)+1)%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
@@ -976,7 +976,7 @@ namespace afqmc
             SDetOp.Orthogonalize(it->SlaterMatrix(Beta),std::addressof(detR));
           if(!impSamp) {
             std::lock_guard<shared_mutex> guard(*mutex);
-            it->weight() *= detR;
+            *it->weight() *= detR;
           }
         }
       }

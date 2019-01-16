@@ -49,7 +49,7 @@ class SharedWalkerSet: public AFQMCInfo
   using element = ComplexType;
   using pointer = element *; 
   using const_element = const ComplexType;
-  using const_pointer = const_element *; 
+  using const_pointer = ComplexType const*; 
 
   using CMatrix = boost::multi::array<element,2>;
   using shmCMatrix = boost::multi::array<element,2,shared_allocator<element>>;
@@ -63,9 +63,11 @@ class SharedWalkerSet: public AFQMCInfo
   static const bool fixed_population = true;
 
   using reference = walker<pointer>; 
-  using const_reference = const_walker<const_pointer>; 
   using iterator = walker_iterator<pointer>; 
-  using const_iterator = const_walker_iterator<const_pointer>; 
+  //using const_reference = const_walker<const_pointer>; 
+  //using const_iterator = const_walker_iterator<const_pointer>; 
+  using const_reference = walker<pointer>; 
+  using const_iterator = walker_iterator<pointer>; 
 
   /// constructor
   SharedWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 
@@ -108,7 +110,7 @@ class SharedWalkerSet: public AFQMCInfo
    */
   iterator begin() {
     assert(walker_buffer.size(1) == walker_size);
-    return iterator(0,multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
+    return iterator(0,boost::multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
   }
 
   /*
@@ -116,7 +118,7 @@ class SharedWalkerSet: public AFQMCInfo
    */
   iterator end() {
     assert(walker_buffer.size(1) == walker_size);
-    return iterator(tot_num_walkers,multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
+    return iterator(tot_num_walkers,boost::multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
   }
 
   /*
@@ -126,7 +128,7 @@ class SharedWalkerSet: public AFQMCInfo
     if(i<0 || i>tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
     assert(walker_buffer.size(1) == walker_size);
-    return walker(multi::static_array_cast<element, pointer>(walker_buffer)[i],data_displ,wlk_desc);
+    return reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i],data_displ,wlk_desc);
   }
 
   /*
@@ -136,7 +138,7 @@ class SharedWalkerSet: public AFQMCInfo
     if(i<0 || i>tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
     assert(walker_buffer.size(1) == walker_size);
-    return const_walker(multi::static_array_cast<element, pointer>(walker_buffer)[i],data_displ,wlk_desc);
+    return const_reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i],data_displ,wlk_desc);
   }
 
   // cleans state of object. 

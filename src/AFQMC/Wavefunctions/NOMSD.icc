@@ -915,22 +915,22 @@ std::cout<<" E nomsd: " <<nd <<" "
       CVector_ref G1D(G.origin(),extensions<1u>{Gsize});
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
-        if( std::abs(wset[iw].weight()) < 1e-10 ) continue;
+        if( std::abs(*wset[iw].weight()) < 1e-10 ) continue;
         std::fill(G21D_.begin(), G21D_.end(), ComplexType(0.0));
         ComplexType overlap = ComplexType(0.0,0.0);
         ComplexType factor;
         if(path_restoration) {
           // Path restoration
-          factor = wset[iw].BPWeightFactor();
+          factor = *wset[iw].BPWeightFactor();
         } else if(free_projection) {
           // Free projection.
-          factor = wset[iw].phase();
+          factor = *wset[iw].phase();
         }
         else {
           // Phaseless
           factor = ComplexType(1.0,0.0);
         }
-        ComplexType wfac = wset[iw].weight() * factor;
+        ComplexType wfac = (*wset[iw].weight()) * factor;
         ComplexType trace = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
           // We construct PsiBP^{\dagger}
@@ -983,16 +983,16 @@ std::cout<<" E nomsd: " <<nd <<" "
                        extensions<1u>{GBdims.first*GBdims.second});
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
-        if( std::abs(wset[iw].weight()) < 1e-10 ) continue;
+        if( std::abs(*wset[iw].weight()) < 1e-10 ) continue;
         ComplexType factor;
         if(path_restoration) {
-          factor = wset[iw].BPWeightFactor();
+          factor = *wset[iw].BPWeightFactor();
         } else if(free_projection) {
-          factor = wset[iw].phase();
+          factor = *wset[iw].phase();
         } else {
           factor = ComplexType(1.0,0.0);
         }
-        ComplexType wfac = wset[iw].weight() * factor;
+        ComplexType wfac = (*wset[iw].weight()) * factor;
         ComplexType overlap = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
           CMatrix_ref PsiBPAlpha = CMatrix_ref(T2ForBP.data(), {NAEA,NMO});
@@ -1051,9 +1051,9 @@ std::cout<<" E nomsd: " <<nd <<" "
             SDetOp.Orthogonalize(it->SlaterMatrix(Alpha),std::addressof(detR));
           if(!impSamp) {
             if(walker_type==CLOSED)
-              it->weight() *= (detR*detR);
+              *it->weight() *= (detR*detR);
             else  
-              it->weight() *= detR;
+              *it->weight() *= detR;
           }
         }
       } 
@@ -1067,7 +1067,7 @@ std::cout<<" E nomsd: " <<nd <<" "
             SDetOp.Orthogonalize(it->SlaterMatrix(Alpha),std::addressof(detR));
           if(!impSamp) {
             std::lock_guard<shared_mutex> guard(*mutex);
-            it->weight() *= detR;
+            *it->weight() *= detR;
           }
         }
         if( (2*(cnt++)+1)%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
@@ -1077,7 +1077,7 @@ std::cout<<" E nomsd: " <<nd <<" "
             SDetOp.Orthogonalize(it->SlaterMatrix(Beta),std::addressof(detR));
           if(!impSamp) {
             std::lock_guard<shared_mutex> guard(*mutex);
-            it->weight() *= detR;
+            *it->weight() *= detR;
           }
         }
       }
@@ -1250,7 +1250,8 @@ std::cout<<" E nomsd: " <<nd <<" "
     ComplexType detR = ComplexType(1.0, 0.0), detR_;
     const int nbp = walker.NumBackProp();
     int ip = nbp - 1;
-    boost::multi::array_ref<const ComplexType, 2> B = walker.BMatrix(ip);
+    //boost::multi::array_ref<const ComplexType, 2> B = walker.BMatrix(ip);
+    auto B(walker.BMatrix(ip));
     ma::product(OrbMat, B, T1ForBP);
     for (int i = 0; i < nbp-1; i++) {
       ip -= 1;

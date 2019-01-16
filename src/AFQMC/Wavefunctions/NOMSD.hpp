@@ -221,10 +221,10 @@ class NOMSD: public AFQMCInfo
       if(TG.getLocalTGRank()==0) {
 	int p=0;
 	for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it, ++p) {
-	  it->overlap() = ovlp[p];
-	  it->E1() = eloc[p][0];		
-	  it->EXX() = eloc[p][1];		
-	  it->EJ() = eloc[p][2];		
+	  *it->overlap() = ovlp[p];
+	  *it->E1() = eloc[p][0];		
+	  *it->EXX() = eloc[p][1];		
+	  *it->EJ() = eloc[p][2];		
 	}
       }  
       TG.local_barrier();
@@ -307,7 +307,7 @@ class NOMSD: public AFQMCInfo
       if(TG.getLocalTGRank()==0) {
         int p=0;
         for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it, ++p) 
-          it->overlap() = ovlp[p];
+          *it->overlap() = ovlp[p];
       }	 
       TG.local_barrier();
     }

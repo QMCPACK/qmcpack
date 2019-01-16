@@ -158,8 +158,8 @@ const char *wlk_xml_block_noncol =
 
       wfn.Overlap(wset);
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
-        REQUIRE(real(it->overlap()) == Approx(1.0));
-        REQUIRE(imag(it->overlap()) == Approx(0.0));
+        REQUIRE(real(*it->overlap()) == Approx(1.0));
+        REQUIRE(imag(*it->overlap()) == Approx(0.0));
       }
 
       using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
@@ -172,15 +172,15 @@ const char *wlk_xml_block_noncol =
       t1=Time.elapsed();
       if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
         for(auto it = wset.begin(); it!=wset.end(); ++it) {
-          REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-          REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+          REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+          REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
           REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
         }
       } else {
         app_log()<<" E: " <<setprecision(12) <<wset[0].energy() <<" Time: " <<t1 <<std::endl;
-        app_log()<<" E0+E1: " <<setprecision(12) <<wset[0].E1() <<std::endl;
-        app_log()<<" EJ: " <<setprecision(12) <<wset[0].EJ() <<std::endl;
-        app_log()<<" EXX: " <<setprecision(12) <<wset[0].EXX() <<std::endl;
+        app_log()<<" E0+E1: " <<setprecision(12) <<*wset[0].E1() <<std::endl;
+        app_log()<<" EJ: " <<setprecision(12) <<*wset[0].EJ() <<std::endl;
+        app_log()<<" EXX: " <<setprecision(12) <<*wset[0].EXX() <<std::endl;
       }
 
       auto size_of_G = wfn.size_of_G_for_vbias();
@@ -274,21 +274,21 @@ const char *wlk_xml_block_noncol =
 
       wfn2.Overlap(wset2);
       for(auto it = wset2.begin(); it!=wset2.end(); ++it) {
-        REQUIRE(real(it->overlap()) == Approx(1.0));
-        REQUIRE(imag(it->overlap()) == Approx(0.0));
+        REQUIRE(real(*it->overlap()) == Approx(1.0));
+        REQUIRE(imag(*it->overlap()) == Approx(0.0));
       }
 
       wfn2.Energy(wset2);
       if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
         for(auto it = wset2.begin(); it!=wset2.end(); ++it) {
-          REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-          REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+          REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+          REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
           REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
         }
       } else {
-        app_log()<<" E0+E1: " <<setprecision(12) <<wset[0].E1() <<std::endl;
-        app_log()<<" EJ: " <<setprecision(12) <<wset[0].EJ() <<std::endl;
-        app_log()<<" EXX: " <<setprecision(12) <<wset[0].EXX() <<std::endl;
+        app_log()<<" E0+E1: " <<setprecision(12) <<*wset[0].E1() <<std::endl;
+        app_log()<<" EJ: " <<setprecision(12) <<*wset[0].EJ() <<std::endl;
+        app_log()<<" EXX: " <<setprecision(12) <<*wset[0].EXX() <<std::endl;
       }
 
       REQUIRE(size_of_G == wfn2.size_of_G_for_vbias());
@@ -438,8 +438,8 @@ const char *wlk_xml_block_noncol =
 
     wfn.Overlap(wset);
     for(auto it = wset.begin(); it!=wset.end(); ++it) {
-      REQUIRE(real(it->overlap()) == Approx(1.0));
-      REQUIRE(imag(it->overlap()) == Approx(0.0));
+      REQUIRE(real(*it->overlap()) == Approx(1.0));
+      REQUIRE(imag(*it->overlap()) == Approx(0.0));
     }
 
     using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
@@ -447,14 +447,14 @@ const char *wlk_xml_block_noncol =
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
-        REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-        REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+        REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+        REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
         REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
       }
     } else {
-      app_log()<<" E0+E1: " <<setprecision(12) <<wset[0].E1() <<std::endl;
-      app_log()<<" EJ: " <<setprecision(12) <<wset[0].EJ() <<std::endl;
-      app_log()<<" EXX: " <<setprecision(12) <<wset[0].EXX() <<std::endl;
+      app_log()<<" E0+E1: " <<setprecision(12) <<*wset[0].E1() <<std::endl;
+      app_log()<<" EJ: " <<setprecision(12) <<*wset[0].EJ() <<std::endl;
+      app_log()<<" EXX: " <<setprecision(12) <<*wset[0].EXX() <<std::endl;
     }
 
     auto size_of_G = wfn.size_of_G_for_vbias();
@@ -556,22 +556,22 @@ const char *wlk_xml_block_noncol =
 
     wfn2.Overlap(wset2);
     for(auto it = wset2.begin(); it!=wset2.end(); ++it) {
-      REQUIRE(real(it->overlap()) == Approx(1.0));
-      REQUIRE(imag(it->overlap()) == Approx(0.0));
+      REQUIRE(real(*it->overlap()) == Approx(1.0));
+      REQUIRE(imag(*it->overlap()) == Approx(0.0));
     }
 
     wfn2.Energy(wset2);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
       for(auto it = wset2.begin(); it!=wset2.end(); ++it) {
-        REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-        REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+        REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+        REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
         REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
       }
     } else {
       app_log()<<" E: " <<wset[0].energy() <<std::endl;
-      app_log()<<" E0+E1: " <<wset[0].E1() <<std::endl;
-      app_log()<<" EJ: " <<wset[0].EJ() <<std::endl;
-      app_log()<<" EXX: " <<wset[0].EXX() <<std::endl;
+      app_log()<<" E0+E1: " <<*wset[0].E1() <<std::endl;
+      app_log()<<" EJ: " <<*wset[0].EJ() <<std::endl;
+      app_log()<<" EXX: " <<*wset[0].EXX() <<std::endl;
     }
 
     REQUIRE(size_of_G == wfn2.size_of_G_for_vbias());
@@ -724,12 +724,12 @@ const char *wlk_xml_block =
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
-        REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-        REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+        REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+        REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
         REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
       }
     } else {
-      app_log()<<" E: " <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<std::endl;
+      app_log()<<" E: " <<*wset[0].E1() <<" " <<*wset[0].EXX() <<" " <<*wset[0].EJ() <<std::endl;
     }
 
     auto size_of_G = wfn.size_of_G_for_vbias();
@@ -863,8 +863,8 @@ const char *wlk_xml_block =
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
-        REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-        REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+        REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+        REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
         REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
       }
     } else {
@@ -1033,15 +1033,15 @@ const char *wlk_xml_block =
     Time.restart();
     nomsd.Overlap(wset);
     t1=Time.elapsed();
-    app_log()<<" NOMSD Overlap: " <<setprecision(12) <<wset[0].overlap() <<" " <<t1 <<std::endl;
+    app_log()<<" NOMSD Overlap: " <<setprecision(12) <<*wset[0].overlap() <<" " <<t1 <<std::endl;
 #endif
     Time.restart();
     wfn.Overlap(wset);
     t1=Time.elapsed();
-    app_log()<<" PHMSD Overlap: " <<setprecision(12) <<wset[0].overlap() <<" " <<t1 <<std::endl;
+    app_log()<<" PHMSD Overlap: " <<setprecision(12) <<*wset[0].overlap() <<" " <<t1 <<std::endl;
     for(int i=1; i<nwalk; i++) {
-      REQUIRE( real(wset[0].overlap()) == Approx(real(wset[i].overlap())));
-      REQUIRE( imag(wset[0].overlap()) == Approx(imag(wset[i].overlap())));
+      REQUIRE( real(*wset[0].overlap()) == Approx(real(*wset[i].overlap())));
+      REQUIRE( imag(*wset[0].overlap()) == Approx(imag(*wset[i].overlap())));
     }
 
     using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
@@ -1050,21 +1050,21 @@ const char *wlk_xml_block =
     wfn.Energy(wset);
     t1=Time.elapsed();
     app_log()<<" PHMSD E: " <<setprecision(12) <<wset[0].energy() <<" "
-             <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<" " <<t1 <<std::endl;
+             <<*wset[0].E1() <<" " <<*wset[0].EXX() <<" " <<*wset[0].EJ() <<" " <<t1 <<std::endl;
     for(int i=1; i<nwalk; i++) {
-      REQUIRE( real(wset[0].E1()) == Approx(real(wset[i].E1())));
-      REQUIRE( imag(wset[0].E1()) == Approx(imag(wset[i].E1())));
-      REQUIRE( real(wset[0].EJ()) == Approx(real(wset[i].EJ())));
-      REQUIRE( imag(wset[0].EJ()) == Approx(imag(wset[i].EJ())));
-      REQUIRE( real(wset[0].EXX()) == Approx(real(wset[i].EXX())));
-      REQUIRE( imag(wset[0].EXX()) == Approx(imag(wset[i].EXX())));
+      REQUIRE( real(*wset[0].E1()) == Approx(real(*wset[i].E1())));
+      REQUIRE( imag(*wset[0].E1()) == Approx(imag(*wset[i].E1())));
+      REQUIRE( real(*wset[0].EJ()) == Approx(real(*wset[i].EJ())));
+      REQUIRE( imag(*wset[0].EJ()) == Approx(imag(*wset[i].EJ())));
+      REQUIRE( real(*wset[0].EXX()) == Approx(real(*wset[i].EXX())));
+      REQUIRE( imag(*wset[0].EXX()) == Approx(imag(*wset[i].EXX())));
     }
 #ifdef __compare__
     Time.restart();
     nomsd.Energy(wset);
     t1=Time.elapsed();
     app_log()<<" NOMSD E: " <<setprecision(12) <<wset[0].energy() <<" "
-             <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<" " <<t1  <<std::endl;
+             <<*wset[0].E1() <<" " <<*wset[0].EXX() <<" " <<*wset[0].EJ() <<" " <<t1  <<std::endl;
      
       shmCMatrix Gph({2*NMO*NMO,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
       shmCMatrix Gno({2*NMO*NMO,nwalk},shared_allocator<ComplexType>{TG.TG_local()});

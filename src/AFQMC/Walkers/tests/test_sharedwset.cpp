@@ -128,11 +128,11 @@ const char *xml_block =
   for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     auto sm = it->SlaterMatrix(Alpha);
     REQUIRE( it->SlaterMatrix(Alpha) == initA );
-    it->weight() = cnt*1.0+0.5;
-    it->overlap() = cnt*1.0+0.5;
-    it->E1() = cnt*1.0+0.5;
-    it->EXX() = cnt*1.0+0.5;
-    it->EJ() = cnt*1.0+0.5;
+    *it->weight() = cnt*1.0+0.5;
+    *it->overlap() = cnt*1.0+0.5;
+    *it->E1() = cnt*1.0+0.5;
+    *it->EXX() = cnt*1.0+0.5;
+    *it->EJ() = cnt*1.0+0.5;
     tot_weight+=cnt*1.0+0.5;
     cnt++;
   }
@@ -140,11 +140,11 @@ const char *xml_block =
   cnt=0;
   for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     Type d_(cnt*1.0+0.5);
-    REQUIRE( it->weight() == d_ );
-    REQUIRE( it->overlap() == cnt*1.0+0.5 );
-    REQUIRE( it->E1() == cnt*1.0+0.5 );
-    REQUIRE( it->EXX() == cnt*1.0+0.5 );
-    REQUIRE( it->EJ() == cnt*1.0+0.5 );
+    REQUIRE( *it->weight() == d_ );
+    REQUIRE( *it->overlap() == cnt*1.0+0.5 );
+    REQUIRE( *it->E1() == cnt*1.0+0.5 );
+    REQUIRE( *it->EXX() == cnt*1.0+0.5 );
+    REQUIRE( *it->EJ() == cnt*1.0+0.5 );
     cnt++;
   }
 
@@ -152,27 +152,27 @@ const char *xml_block =
   REQUIRE(wset.capacity() == 20);
   cnt=0;
   for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
-    REQUIRE( it->weight() == cnt*1.0+0.5 );
-    REQUIRE( it->overlap() == cnt*1.0+0.5 );
-    REQUIRE( it->E1() == cnt*1.0+0.5 );
-    REQUIRE( it->EXX() == cnt*1.0+0.5 );
-    REQUIRE( it->EJ() == cnt*1.0+0.5 );
+    REQUIRE( *it->weight() == cnt*1.0+0.5 );
+    REQUIRE( *it->overlap() == cnt*1.0+0.5 );
+    REQUIRE( *it->E1() == cnt*1.0+0.5 );
+    REQUIRE( *it->EXX() == cnt*1.0+0.5 );
+    REQUIRE( *it->EJ() == cnt*1.0+0.5 );
     cnt++;
   }
   for(int i=0; i<wset.size(); i++) {
-    REQUIRE( wset[i].weight() == i*1.0+0.5 );
-    REQUIRE( wset[i].overlap() == i*1.0+0.5 );
-    REQUIRE( wset[i].E1() == i*1.0+0.5 );
-    REQUIRE( wset[i].EXX() == i*1.0+0.5 );
-    REQUIRE( wset[i].EJ() == i*1.0+0.5 );
+    REQUIRE( *wset[i].weight() == i*1.0+0.5 );
+    REQUIRE( *wset[i].overlap() == i*1.0+0.5 );
+    REQUIRE( *wset[i].E1() == i*1.0+0.5 );
+    REQUIRE( *wset[i].EXX() == i*1.0+0.5 );
+    REQUIRE( *wset[i].EJ() == i*1.0+0.5 );
   }
   for(int i=0; i<wset.size(); i++) {
     auto w = wset[i];
-    REQUIRE( w.weight() == i*1.0+0.5 );
-    REQUIRE( w.overlap() == i*1.0+0.5 );
-    REQUIRE( w.E1() == i*1.0+0.5 );
-    REQUIRE( w.EXX() == i*1.0+0.5 );
-    REQUIRE( w.EJ() == i*1.0+0.5 );
+    REQUIRE( *w.weight() == i*1.0+0.5 );
+    REQUIRE( *w.overlap() == i*1.0+0.5 );
+    REQUIRE( *w.E1() == i*1.0+0.5 );
+    REQUIRE( *w.EXX() == i*1.0+0.5 );
+    REQUIRE( *w.EJ() == i*1.0+0.5 );
   }
   REQUIRE(wset.get_TG_target_population() == nwalkers);
   REQUIRE(wset.get_global_target_population() == nwalkers*TG.getNumberOfTGs());
@@ -194,9 +194,9 @@ const char *xml_block =
   REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
   for(int i=0; i<wset.size(); i++) {
     auto w = wset[i];
-    REQUIRE( w.overlap() == w.E1());
-    REQUIRE( w.EXX() == w.E1());
-    REQUIRE( w.EJ() == w.E1());
+    REQUIRE( *w.overlap() == *w.E1());
+    REQUIRE( *w.EXX() == *w.E1());
+    REQUIRE( *w.EJ() == *w.E1());
   }
 
   wset.clean();
@@ -391,11 +391,11 @@ const char *xml_block =
   for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     auto sm = it->SlaterMatrix(Alpha);
     REQUIRE( it->SlaterMatrix(Alpha) == initA );
-    it->weight() = cnt*1.0+0.5;
-    it->overlap() = cnt*1.0+0.5;
-    it->E1() = cnt*1.0+0.5;
-    it->EXX() = cnt*1.0+0.5;
-    it->EJ() = cnt*1.0+0.5;
+    *it->weight() = cnt*1.0+0.5;
+    *it->overlap() = cnt*1.0+0.5;
+    *it->E1() = cnt*1.0+0.5;
+    *it->EXX() = cnt*1.0+0.5;
+    *it->EJ() = cnt*1.0+0.5;
     tot_weight+=cnt*1.0+0.5;
     cnt++;
   }

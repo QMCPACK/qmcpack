@@ -53,11 +53,11 @@ class EnergyEstimator: public EstimatorBase
       data[0] = data[1] = std::complex<double>(0,0);
       for(int i=0; i<nwalk; i++) {
         auto wi = wset[i];
-        if(std::isnan(real(wi.weight()))) continue;
+        if(std::isnan(real(*wi.weight()))) continue;
         if(importanceSampling) {
-          dum = wi.weight()*ovlp[i]/wi.overlap();
+          dum = (*wi.weight())*ovlp[i]/(*wi.overlap());
         } else {
-          dum = wi.weight()*ovlp[i]*wi.phase();
+          dum = (*wi.weight())*ovlp[i]*(*wi.phase());
         }
         et = eloc[i][0]+eloc[i][1]+eloc[i][2];
         if( (!std::isfinite(real(dum))) || (!std::isfinite(real(et*dum))) ) continue;
