@@ -475,6 +475,8 @@ namespace qmcplusplus
     }
     if(recalculate)
     {
+      ParticleSet::ParticleGradient_t myG_temp, myG_J;
+      ParticleSet::ParticleLaplacian_t myL_temp, myL_J;
       const int NP = P.getTotalNum();
       myG_temp.resize(NP); myG_temp=0.0;
       myL_temp.resize(NP); myL_temp=0.0;
@@ -663,6 +665,117 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
                                       const size_t N2,
                                       const size_t NP1,
                                       const size_t NP2)
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GUIDE TO THE MATICES BEING BUILT
+----------------------------------------------
+The idea here is that there is a loop over all unique determinants. For each determiant the table method is employed to calculate the contributions to the parameter derivatives (dhpsioverpsi/dlogpsi)
+
+  loop through unquie determinants 
+    loop through parameters
+      evaluate contributaion to dlogpsi and dhpsioverpsi
+\noindent 
+
+  BLAS GUIDE  for matrix multiplication of  [  alpha * A.B + beta * C = C ]
+  Matrix A is of dimensions a1,a2 and Matrix B is b1,b2   in which a2=b1
+  The BLAS command is as follows...
+
+ BLAS::gemm('N','N', b2, a1, a2 ,alpha, B, b2, A, a2, beta, C, b2);
+
+Below is a human readable format for the matrix multiplications performed below...
+
+This notation is inspired by http://dx.doi.org/10.1063/1.4948778
+\newline
+\hfill\break
+$
+    A_{i,j}=\phi_j(r_{i}) \\
+    T = A^{-1} \widetilde{A} \\
+    B_{i,j} =\nabla^2 \phi_{j}(r_i) + \frac{\nabla_{i}J}{J} \cdot \nabla \phi_{j}(r_{i})  + \frac{\nabla^2_i J}{J} \phi_{j}(r_{i}) \\
+    \hat{O_{I}} = \hat{O}D_{I} \\
+    D_{I}=det(A_{I}) \newline 
+    \psi_{MS} = \sum_{I=0} C_{I} D_{I\uparrow}D_{I\downarrow} \\
+    \Psi_{total} = \psi_{J}\psi_{MS} \\
+    \alpha_{I} = P^{T}_{I}TQ_{I} \\
+    M_{I} = P^{T}_{I} \widetilde{M} Q_{I} = P^{T}_{I} (A^{-1}\widetilde{B} - A^{-1} B A^{-1}\widetilde{A} )Q_{I} \\
+$
+\newline
+There are three constants I use in the expressions for dhpsioverpsi and dlogpsi
+\newline
+\hfill\break
+$
+  const0 = C_{0}*det(A_{0\downarrow})+\sum_{I=1} C_{I}*det(A_{I\downarrow})* det(\alpha_{I\uparrow}) \\
+  const1 = C_{0}*\hat{O} det(A_{0\downarrow})+\sum_{I=1} C_{I}*\hat{O}det(A_{I\downarrow})* det(\alpha_{I\uparrow}) \\
+  const2 = \sum_{I=1} C_{I}*det(A_{I\downarrow})* Tr[\alpha_{I}^{-1}M_{I}]*det(\alpha_{I}) \\
+$
+\newline
+Below is a translation of the shorthand I use to represent matrices independent of ``excitation matrix".
+\newline
+\hfill\break
+$
+    Y_{1} =  A^{-1}B   \\
+    Y_{2} = A^{-1}BA^{-1}\widetilde{A} \\
+    Y_{3} = A^{-1}\widetilde{B} \\
+    Y_{4} = \widetilde{M} = (A^{-1}\widetilde{B} - A^{-1} B A^{-1}\widetilde{A} )\\
+$
+\newline
+Below is a translation of the shorthand I use to represent matrices dependent on ``excitation" with respect to the reference Matrix and sums of matrices. Above this line I have represented these excitation matrices with a subscript ``I" but from this point on The subscript will be omitted and it is clear that whenever a matrix depends on $P^{T}_I$ and $Q_{I}$ that this is an excitation matrix. The reference matrix is always $A_{0}$ and is always the Hartree Fock Matrix.
+\newline
+\hfill\break
+$
+    Y_{5} = TQ \\
+    Y_{6} = (P^{T}TQ)^{-1} = \alpha_{I}^{-1}\\
+    Y_{7} = \alpha_{I}^{-1} P^{T} \\
+    Y_{11} = \widetilde{M}Q \\
+    Y_{23} = P^{T}\widetilde{M}Q \\
+    Y_{24} = \alpha_{I}^{-1}P^{T}\widetilde{M}Q \\
+    Y_{25} = \alpha_{I}^{-1}P^{T}\widetilde{M}Q\alpha_{I}^{-1} \\
+    Y_{26} = \alpha_{I}^{-1}P^{T}\widetilde{M}Q\alpha_{I}^{-1}P^{T}\\
+$
+\newline
+So far you will notice that I have not included up or down arrows to specify what spin the matrices are of. This is because we are calculating the derivative of all up or all down spin orbital rotation parameters at a time. If we are finding the up spin derivatives then any term that is down spin will be constant. The following assumes that we are taking up-spin MO rotation parameter derivatives. Of course the down spin expression can be retrieved by swapping the up and down arrows. I have dubbed any expression with lowercase p prefix as a "precursor" to an expression actually used...
+\newline
+\hfill\break
+$
+    \dot{C_{I}} = C_{I}*det(A_{I\downarrow})\\
+    \ddot{C_{I}} = C_{I}*\hat{O}det(A_{I\downarrow}) \\
+    pK1 = \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) Tr[\alpha_{I}^{-1}M_{I}] (Q\alpha_{I}^{-1}P^{T}) \\
+    pK2 = \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) (Q\alpha_{I}^{-1}P^{T}) \\
+    pK3 = \sum_{I=1} \ddot{C_{I}} det(\alpha_{I}) (Q\alpha_{I}^{-1}P^{T}) \\
+    pK4 = \sum_{I=1} \dot{C_{I}} det(A_{I}) (Q\alpha_{I}^{-1}P^{T}) \\
+    pK5 = \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) (Q\alpha_{I}^{-1} M_{I} \alpha_{I}^{-1}P^{T}) \\
+$
+\newline
+Now these p matrices will be used to make various expressions via BLAS commands.
+\newline
+\hfill\break
+$
+    K1T = const0^{-1}*pK1.T =const0^{-1} \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) Tr[\alpha_{I}^{-1}M_{I}] (Q\alpha_{I}^{-1}P^{T}T) \\
+    TK1T = T.K1T = const0^{-1} \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) Tr[\alpha_{I}^{-1}M_{I}] (TQ\alpha_{I}^{-1}P^{T}T)\\ \\
+    K2AiB = const0^{-1}  \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) (Q\alpha_{I}^{-1}P^{T}A^{-1}\widetilde{B})\\
+    TK2AiB = T.K2AiB = const0^{-1}  \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) (TQ\alpha_{I}^{-1}P^{T}A^{-1}\widetilde{B})\\
+    K2XA =  const0^{-1}  \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) (Q\alpha_{I}^{-1}P^{T}X\widetilde{A})\\
+    TK2XA = T.K2XA = const0^{-1}  \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) (TQ\alpha_{I}^{-1}P^{T}X\widetilde{A})\\ \\
+    K2T = \frac{const1}{const0^{2}} \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) (Q\alpha_{I}^{-1}P^{T}T) \\
+    TK2T = T.K2T =\frac{const1}{const0^{2}} \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) (TQ\alpha_{I}^{-1}P^{T}T) \\
+    MK2T = \frac{const0}{const1} Y_{4}.K2T= const0^{-1}  \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) (\widetilde{M}Q\alpha_{I}^{-1}P^{T}T)\\ \\
+    K3T = const0^{-1}  \sum_{I=1} \ddot{C_{I}} det(\alpha_{I}) (Q\alpha_{I}^{-1}P^{T}T) \\
+    TK3T = T.K3T  = const0^{-1}  \sum_{I=1} \ddot{C_{I}} det(\alpha_{I}) (TQ\alpha_{I}^{-1}P^{T}T)\\ \\
+    K4T = \sum_{I=1} \dot{C_{I}} det(A_{I}) (Q\alpha_{I}^{-1}P^{T}T) \\
+    TK4T = T.K4T = \sum_{I=1} \dot{C_{I}} det(A_{I}) (TQ\alpha_{I}^{-1}P^{T}T) \\ \\
+    K5T =  const0^{-1} \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) (Q\alpha_{I}^{-1} M_{I} \alpha_{I}^{-1}P^{T} T)  \\
+    TK5T = T.K5T  = \sum_{I=1} \dot{C_{I}} det(\alpha_{I}) (T Q\alpha_{I}^{-1} M_{I} \alpha_{I}^{-1}P^{T} T)  \\
+$
+\newline
+Now with all these matrices and constants the expressions of dhpsioverpsi and dlogpsi can be created.
+
+
+
+
+In addition I will be using a special generalization of the kinetic operator which I will denote as O. Our Slater matrix with the special O operator applied to each element will be called B_bar
+
+$
+``Bbar"_{i,j} =\nabla^2 \phi_{j}(r_i) + \frac{\nabla_{i}J}{J} \cdot \nabla \phi_{j}(r_{i})  + \frac{\nabla^2_i J}{J} \phi_{j}(r_{i})
+$
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 {
   const int parameters_size(m_act_rot_inds.size());
   const int parameter_start_index(0);  
@@ -685,6 +798,8 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
   double* T(Table.data());
 
   construct_tables(
+                   myL_J,
+                   myG_J,
                    B_grad,
                    B_lapl,
                    M_up,
@@ -934,6 +1049,8 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
 
 
 void LCAOrbitalSet::construct_tables(
+                                     const ParticleSet::ParticleLaplacian_t& myL_J,
+                                     const ParticleSet::ParticleGradient_t& myG_J,
                                      const GradMatrix_t& B_grad,
                                      const ValueMatrix_t& B_lapl,
                                      const ValueMatrix_t& M_up,
