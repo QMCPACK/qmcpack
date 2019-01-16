@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
 #endif
 
@@ -52,7 +53,6 @@ ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWave
 bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
 {
   int nc(0), nc2(-2);
-  ValueType pol(0);
   ValueType bosonic_eps(-999999);
   ValueType rntype(0);
   PosType twist(0.0);
@@ -83,7 +83,7 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     cur = cur->next;
   }
 #endif
-  typedef SlaterDet::Determinant_t Det_t;
+  typedef DiracDeterminant Det_t;
   typedef SlaterDet SlaterDeterminant_t;
   HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
   HEGGrid<RealType,OHMMS_DIM> egGrid2(targetPtcl.Lattice);

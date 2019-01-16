@@ -34,14 +34,14 @@ public:
 
   Backflow_eI(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els)
   {
-    myTable = DistanceTable::add(ions,els,DT_AOS);
+    myTable = DistanceTable::add(ions,els,DT_SOA_PREFERRED);
     resize(NumTargets,NumCenters);
   }
 
   //  build RadFun manually from builder class
   Backflow_eI(ParticleSet& ions, ParticleSet& els, FT* RF): BackflowFunctionBase(ions,els)
   {
-    myTable = DistanceTable::add(ions,els,DT_AOS);
+    myTable = DistanceTable::add(ions,els,DT_SOA_PREFERRED);
     // same radial function for all centers by default
     uniqueRadFun.push_back(RF);
     for(int i=0; i<NumCenters; i++)
@@ -52,7 +52,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = DistanceTable::add(CenterSys,P,DT_AOS);
+    myTable = DistanceTable::add(CenterSys,P,DT_SOA_PREFERRED);
   }
 
   BackflowFunctionBase* makeClone(ParticleSet& tqp)
@@ -203,6 +203,9 @@ public:
   evaluate(const ParticleSet& P, ParticleSet& QP)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluate(P,QP) not implemented for SoA\n");
+    #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -212,13 +215,17 @@ public:
         QP.R[j] += (UIJ(j,i) = uij*myTable->dr(nn));  // dr(ij) = r_j-r_i
       }
     }
+    #endif
   }
 
 
   inline void
   evaluate(const ParticleSet& P, ParticleSet& QP, GradVector_t& Bmat, HessMatrix_t& Amat)
   {
-    RealType du,d2u,temp;
+    RealType du,d2u;
+    #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
+    #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -238,6 +245,7 @@ public:
         Bmat[j] += (BIJ(j,i)=(d2u+4.0*du)*myTable->dr(nn));
       }
     }
+    #endif
   }
 
 
@@ -246,7 +254,34 @@ public:
   inline void
   evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
-    RealType du,d2u,temp;
+    RealType du,d2u;
+    #ifdef ENABLE_SOA
+//     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_full,Amat) not implemented for SoA\n");
+    for(int jel=0; jel<P.getTotalNum(); jel++)
+    {
+      const auto &dist  = myTable->Distances[jel];
+      const auto &displ = myTable->Displacements[jel];
+      for(int iat=0; iat<NumCenters; iat++)
+      {
+	if(dist[iat]>0) 
+        {
+          RealType uij = RadFun[iat]->evaluate(dist[iat],du,d2u);
+	  du /= dist[iat];
+          QP.R[jel] += (UIJ(jel,iat) = -uij*displ[iat]);
+          HessType& hess = AIJ(jel,iat);
+          hess = du*outerProduct(displ[iat],displ[iat]);
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+          Amat(jel,jel) += hess;
+// this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
+        //u = (d2u+4.0*du)*myTable->dr(nn);
+          Bmat_full(jel,jel) += (BIJ(jel,iat)=-(d2u+4.0*du)*displ[iat]);
+	}
+      }
+    }
+    
+    #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -267,6 +302,7 @@ public:
         Bmat_full(j,j) += (BIJ(j,i)=(d2u+4.0*du)*myTable->dr(nn));
       }
     }
+    #endif
   }
 
   /** calculate quasi-particle coordinates after pbyp move
@@ -276,6 +312,9 @@ public:
                ,const std::vector<int>& index)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
+    #else
     int maxI = myTable->size(SourceIndex);
     int iat = index[0];
     for(int j=0; j<maxI; j++)
@@ -284,6 +323,7 @@ public:
       PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
     }
+    #endif
   }
 
 
@@ -293,6 +333,16 @@ public:
   evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+    // APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP) not implemented for SoA\n");
+    int maxI = myTable->size(SourceIndex);
+    for(int j=0; j<maxI; j++)
+    {
+      RealType uij = RadFun[j]->evaluate(myTable->Temp_r[j],du,d2u);
+      PosType u = (UIJ_temp[j]=-uij*myTable->Temp_dr[j])-UIJ(iat,j);
+      newQP[iat] += u;
+    }
+    #else
     int maxI = myTable->size(SourceIndex);
     for(int j=0; j<maxI; j++)
     {
@@ -300,6 +350,7 @@ public:
       PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
     }
+    #endif
   }
 
   inline void
@@ -307,6 +358,9 @@ public:
                ,const std::vector<int>& index, HessMatrix_t& Amat)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
+    #else
     int maxI = myTable->size(SourceIndex);
     int iat = index[0];
     for(int j=0; j<maxI; j++)
@@ -322,6 +376,7 @@ public:
 // should I expand this??? Is the compiler smart enough???
       Amat(iat,iat) += (hess - AIJ(iat,j));
     }
+    #endif
   }
 
   inline void
@@ -329,6 +384,26 @@ public:
                ,ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+//     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Amat) not implemented for SoA\n");
+    int maxI = myTable->size(SourceIndex);
+    for(int j=0; j<maxI; j++)
+    {
+      if(myTable->Temp_r[j]>0)
+      {
+        RealType uij = RadFun[j]->evaluate(myTable->Temp_r[j],du,d2u);
+        PosType u = (UIJ_temp[j]=-uij*myTable->Temp_dr[j])-UIJ(iat,j);
+        newQP[iat] += u;
+        HessType& hess = AIJ_temp[j];
+        hess = (du/myTable->Temp_r[j])*outerProduct(myTable->Temp_dr[j],myTable->Temp_dr[j]);
+        hess[0] += uij;
+        hess[4] += uij;
+        hess[8] += uij;
+// should I expand this??? Is the compiler smart enough???
+        Amat(iat,iat) += (hess - AIJ(iat,j));
+      }
+    }
+    #else
     int maxI = myTable->size(SourceIndex);
     for(int j=0; j<maxI; j++)
     {
@@ -343,6 +418,7 @@ public:
 // should I expand this??? Is the compiler smart enough???
       Amat(iat,iat) += (hess - AIJ(iat,j));
     }
+    #endif
   }
 
   inline void
@@ -350,6 +426,9 @@ public:
                ,const std::vector<int>& index, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
+    #else
     int maxI = myTable->size(SourceIndex);
     int iat = index[0];
     for(int j=0; j<maxI; j++)
@@ -367,6 +446,7 @@ public:
       BIJ_temp[j]=(d2u+4.0*du)*myTable->Temp[j].dr1;
       Bmat_full(iat,iat) += (BIJ_temp[j]-BIJ(iat,j));
     }
+    #endif
   }
 
   inline void
@@ -374,6 +454,9 @@ public:
                , GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
+    #else
     int maxI = myTable->size(SourceIndex);
     for(int j=0; j<maxI; j++)
     {
@@ -390,6 +473,7 @@ public:
       BIJ_temp[j]=(d2u+4.0*du)*myTable->Temp[j].dr1;
       Bmat_full(iat,iat) += (BIJ_temp[j]-BIJ(iat,j));
     }
+    #endif
   }
 
   /** calculate only Bmat
@@ -399,6 +483,9 @@ public:
   evaluateBmatOnly(const ParticleSet& P,GradMatrix_t& Bmat_full)
   {
     RealType du,d2u;
+    #ifdef ENABLE_SOA
+     APP_ABORT("Backflow_eI.h::evaluateBmatOnly(P,QP,Bmat) not implemented for SoA\n");
+    #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -408,6 +495,7 @@ public:
         Bmat_full(j,j) += (BIJ(j,i)=(d2u+4.0*du*myTable->rinv(nn))*myTable->dr(nn));
       }
     }
+    #endif
   }
 
   /** calculate quasi-particle coordinates, Bmat and Amat
@@ -416,7 +504,44 @@ public:
   inline void
   evaluateWithDerivatives(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat, GradMatrix_t& Cmat, GradMatrix_t& Ymat, HessArray_t& Xmat)
   {
-    RealType du,d2u,temp;
+    RealType du,d2u;
+    #ifdef ENABLE_SOA
+    for(int jel=0; jel<P.getTotalNum(); jel++)
+    {
+      const auto &dist  = myTable->Distances[jel];
+      const auto &displ = myTable->Displacements[jel];
+      for(int iat=0; iat<NumCenters; iat++)
+      {
+	if(dist[iat]>0) 
+        {
+          RealType uij = RadFun[iat]->evaluate(dist[iat],du,d2u);
+          int NPrms = RadFun[iat]->NumParams;
+          std::vector<TinyVector<RealType,3> > derivsju(NPrms);
+          RadFun[iat]->evaluateDerivatives(dist[iat],derivsju);
+          du /= dist[iat];
+          QP.R[jel] += (UIJ(jel,iat) = -uij*displ[iat]);
+          HessType op = outerProduct(displ[iat],displ[iat]);
+          HessType& hess = AIJ(jel,iat);
+          hess = du*op;
+          hess[0] += uij;
+          hess[4] += uij;
+          hess[8] += uij;
+          Amat(jel,jel) += hess;
+          Bmat_full(jel,jel) += (BIJ(jel,iat)=-(d2u+4.0*du)*displ[iat]);
+          for(int prm=0,la=indexOfFirstParam+offsetPrms[iat]; prm<NPrms; prm++,la++)
+          {
+            Cmat(la,jel) -= displ[iat]*derivsju[prm][0];
+            Xmat(la,jel,jel) += (derivsju[prm][1]/dist[iat])*op;
+            Xmat(la,jel,jel)[0] += derivsju[prm][0];
+            Xmat(la,jel,jel)[4] += derivsju[prm][0];
+            Xmat(la,jel,jel)[8] += derivsju[prm][0];
+            Ymat(la,jel) -= (derivsju[prm][2]+4.0*derivsju[prm][1]/dist[iat])*displ[iat];
+          }
+        }
+      }
+    }
+      
+    #else
     for(int i=0; i<myTable->size(SourceIndex); i++)
     {
       for(int nn=myTable->M[i]; nn<myTable->M[i+1]; nn++)
@@ -451,6 +576,7 @@ public:
         }
       }
     }
+    #endif
   }
 
 };

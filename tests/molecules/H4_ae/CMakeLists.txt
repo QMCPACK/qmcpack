@@ -130,6 +130,18 @@ IF (NOT QMC_CUDA)
                       8 H4_FDLR_SCALARS # Final VMC step
                       TRUE)
 
+    LIST(APPEND H4_CJS_SCALARS "totenergy" "-2.0438 0.0045") # total energy
+
+    QMC_RUN_AND_CHECK(short-H4-cjs
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      H4
+                      H4_cjs_vmc.xml
+                      16 1
+                      ${MP_SUCCESS}
+                      0 H4_CJS_SCALARS
+                      TRUE)
+
+
   ELSE()
    MESSAGE("Skipping H4_ae adaptive optimizer tests because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)")
   ENDIF(BUILD_LMYENGINE_INTERFACE)

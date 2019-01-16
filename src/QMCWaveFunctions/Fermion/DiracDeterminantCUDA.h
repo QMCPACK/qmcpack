@@ -21,7 +21,7 @@
 #ifndef QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
 #define QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
 #include <typeinfo>
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
 #include "Numerics/CUDA/cuda_inverse.h"
@@ -29,7 +29,7 @@
 
 namespace qmcplusplus
 {
-class DiracDeterminantCUDA: public DiracDeterminant
+class DiracDeterminantCUDA: public DiracDeterminantBase
 {
 public:
   typedef SPOSet::IndexVector_t IndexVector_t;
@@ -39,7 +39,7 @@ public:
   typedef SPOSet::GradMatrix_t  GradMatrix_t;
   typedef ParticleSet::Walker_t     Walker_t;
 
-  DiracDeterminantCUDA(SPOSetPtr const &spos, int first=0);
+  DiracDeterminantCUDA(SPOSetPtr const spos, int first=0);
   DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;
 
 protected:
@@ -141,11 +141,56 @@ protected:
   }
 
 public:
-  ValueType ratio(ParticleSet& P, int iat)
+
+  // safe-guard all CPU interfaces
+  DiracDeterminantCUDA* makeCopy(SPOSet* spo) const
   {
-    return DiracDeterminant::ratio (P, iat);
+    APP_ABORT("Calling DiracDeterminantCUDA::makeCopy is illegal!");
   }
 
+  RealType evaluateLog(ParticleSet& P,
+              ParticleSet::ParticleGradient_t& G,
+              ParticleSet::ParticleLaplacian_t& L)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
+  }
+
+  void acceptMove(ParticleSet& P, int iat)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::acceptMove is illegal!");
+  }
+
+  void restore(int iat)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::restore is illegal!");
+  }
+
+  ValueType ratio(ParticleSet& P, int iat)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::ratio is illegal!");
+  }
+
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::ratioGrad is illegal!");
+  }
+
+  void registerData(ParticleSet& P, WFBufferType& buf)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::registerData is illegal!");
+  }
+
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::updateBuffer is illegal!");
+  }
+
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::copyFromBuffer is illegal!");
+  }
+
+  // GPU interfaces
   void update (std::vector<Walker_t*> &walkers, int iat);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
 

@@ -971,7 +971,6 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
             abort(); //you think you know what they should be but don't.
         }
         // Setup parameter names
-        int index=0;
         for (int i=0; i<Parameters.size(); i++)
         {
           std::stringstream sstr;

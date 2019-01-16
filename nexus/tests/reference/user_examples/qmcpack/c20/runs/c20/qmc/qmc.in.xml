@@ -11,7 +11,7 @@
                   0.00000000        0.00000000       12.42462807
          </parameter>
          <parameter name="bconds"              >
-           
+           n n n
          </parameter>
       </simulationcell>
       <particleset name="e" random="yes" randomsrc="ion0">

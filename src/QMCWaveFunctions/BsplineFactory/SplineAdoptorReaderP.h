@@ -157,7 +157,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       APP_ABORT("EinsplineAdoptorReader needs psi_g. Set precision=\"double\".");
     }
     bspline->create_spline(xyz_grid,xyz_bc);
-    int TwistNum = mybuilder->TwistNum;
+    //    int TwistNum = mybuilder->TwistNum;
     std::ostringstream oo;
     oo<<bandgroup.myName << ".g"<<MeshSize[0]<<"x"<<MeshSize[1]<<"x"<<MeshSize[2]<<".h5";
     std::string splinefile= oo.str(); //bandgroup.myName+".h5";

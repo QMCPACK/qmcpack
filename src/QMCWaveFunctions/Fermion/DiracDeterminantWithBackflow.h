@@ -52,24 +52,14 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first=0);
+  DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const spos, BackflowTransformation * BF, int first=0);
 
   ///default destructor
   ~DiracDeterminantWithBackflow();
 
-  /**copy constructor
-   * @param s existing DiracDeterminantWithBackflow
-   *
-   * This constructor makes a shallow copy of Phi.
-   * Other data members are allocated properly.
-   */
-  DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s);
-
-  DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s);
-
-  ///** return a clone of Phi
-  // */
-  //SPOSetPtr clonePhi() const;
+  // copy constructor and assign operator disabled
+  DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s) = delete;
+  DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
 
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
@@ -143,8 +133,6 @@ public:
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L) ;
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
-
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set
@@ -170,6 +158,8 @@ public:
     return ret;
   };
 #endif
+  ///total number of particles. Ye: used to track first time allocation but I still feel it very strange.
+  int NP;
   int NumParticles;
   GradMatrix_t dFa;
   HessMatrix_t grad_grad_psiM;
@@ -183,6 +173,9 @@ public:
   GradMatrix_t Fmat;
   GradVector_t Fmatdiag;
   GradVector_t Fmatdiag_temp;
+
+  Vector<ValueType> WorkSpace;
+  Vector<IndexType> Pivot;
 
   ValueMatrix_t psiMinv_temp;
   ValueType *FirstAddressOfGGG;

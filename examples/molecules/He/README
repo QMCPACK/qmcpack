@@ -18,7 +18,7 @@ One the output files, `He.s000.scalar.dat` contains scalar values, such as
 the local energy (first column).  There should be one line of data for each
 block (the file should have `<blocks>` lines, plus one for the header).
 
-To analyze this data, use the `qmca` script (in the `nexus/executables` directory)
+To analyze this data, use the `qmca` script (in the `nexus/bin` directory)
 on the scalar data file: `qmca He.s000.scalar.dat`.  It should print out average
 values for each scalar along with an error estimate.
 

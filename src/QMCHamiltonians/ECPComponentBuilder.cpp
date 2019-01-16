@@ -30,7 +30,7 @@ namespace qmcplusplus
 ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c):
   MPIObjectBase(c),
   RcutMax(-1), NumNonLocal(0), Lmax(0), AtomicNumber(0), Zeff(0), Species(aname), Nrule(4),
-  grid_global(0),pp_loc(0), pp_nonloc(0)
+  grid_global(0),pp_loc(0), pp_nonloc(0), pp_L2(0)
 {
   angMon["s"]=0;
   angMon["p"]=1;
@@ -152,7 +152,7 @@ bool ECPComponentBuilder::read_pp_file(const std::string &fname)
 
 bool ECPComponentBuilder::put(xmlNodePtr cur)
 {
-  int nk=0;
+  //  int nk=0;
   //vector<RealType> kpts;
   std::vector<xmlNodePtr> semiPtr;
   cur=cur->children;
@@ -168,6 +168,10 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
     {
       //capture the global grid
       grid_global = createGrid(cur);
+    }
+    else if(cname == "L2")
+    {
+      buildL2(cur);
     }
     else if(cname == "semilocal")
     {

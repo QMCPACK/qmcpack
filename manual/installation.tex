@@ -100,7 +100,7 @@ Section \ref{sec:buildperformance} for performance suggestions.
 \item CMake, build utility, \url{http://www.cmake.org}
 \item Libxml2, XML parser, \url{http://xmlsoft.org}
 \item HDF5, portable I/O library, \url{http://www.hdfgroup.org/HDF5/}. Good performance at large scale requires parallel version $>=$ 1.10.
-\item BOOST, peer-reviewed portable C++ source libraries, \url{http://www.boost.org}
+\item BOOST, peer-reviewed portable C++ source libraries, \url{http://www.boost.org}.   Minimum version is 1.61.0.
 \item FFTW, FFT library, \url{http://www.fftw.org/}
 \end{itemize}
 
@@ -131,6 +131,16 @@ library during configuration, and will halt with an error if one is not found.
 
 At sites that use modules, running \texttt{module load gcc} is often sufficient to
 load a newer GCC and that will resolve the issue.
+
+\subsection{Intel compiler}
+The Intel compiler version must be 18 or newer.
+The version 17 compiler cannot compile some of the C++ 14 constructs in the code.
+
+If a newer gcc is needed, the \texttt{-cxxlib} option can be used to point to a different gcc installation.
+(Alternately, the \texttt{-gcc-name} or \texttt{-gxx-name} options can be used.)
+Be sure to pass this flag to the C compiler in addition to the C++ compiler.
+The reason is CMake extracts some library paths from the C compiler and those paths usually also contain to the C++ library.
+The symptom of this problem is C++ 14 standard library functions not found at link time.
 
 \section{Building with CMake}
 \label{sec:cmake}
@@ -262,6 +272,8 @@ CMAKE_CXX_FLAGS      Set the C++ flags.  Note: to prevent default
                      debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
                      Also supported: CMAKE_CXX_FLAGS_DEBUG,
                      CMAKE_CXX_FLAGS_RELEASE, and CMAKE_CXX_FLAGS_RELWITHDEBINFO
+CMAKE_INSTALL_PREFIX Set the install location (if using the optional install step)
+INSTALL_NEXUS        Install Nexus alongside QMCPACK (if using the optional install step)
 \end{verbatim}
 
 \item Additional QMCPACK build options
@@ -313,6 +325,14 @@ MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
 \end{verbatim}
 
 \end{itemize}
+
+\subsection{Installation from CMake}
+Installation is optional. The QMCPACK executable can be run from the \texttt{bin} directory in the build location.
+If the install step is desired, run \texttt{make install} command to install the QMCPACK executable, the converter,
+and some additional executables.
+Also installed is the \texttt{qmcpack.settings} file that records options used to compile QMCPACK.
+Specify the \texttt{CMAKE\_INSTALL\_PREFIX} CMake variable during configuration to set the install location.
+
 
 \subsection{Role of QMC\_DATA}
 QMCPACK includes a variety of optional performance and integration
@@ -478,7 +498,7 @@ QMCPACK tried to do its best with CMake to facilitate cross-compiling.
 
 The general strategy for cross-compiling should therefore be to
 manually set CMAKE\_C\_FLAGS and CMAKE\_CXX\_FLAGS for the target
-archicture. Using \texttt{make VERBOSE=1} is a useful way to check the
+architecture. Using \texttt{make VERBOSE=1} is a useful way to check the
 final compilation options.  If on a Cray machine, selection of the
 appropriate programming environment should be sufficient.
 
@@ -661,7 +681,7 @@ make -j 12
   X will request approval of the network connection for each executable.
 \verbatimfont{\footnotesize}%
 \begin{verbatim}
-ctest -R short
+ctest -R short -LE unstable
 \end{verbatim}
 \end{enumerate}
 
@@ -671,7 +691,7 @@ Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argon
 Mira has 49152 compute nodes and each node has a 16-core PowerPC A2 processor with 16 GB DDR3 memory.
 Due to the fact that the login nodes and the compute nodes have different processors with distinct instruction sets,
 cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
-On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang and +cmake-3.8.1 in \$HOME/.soft.
+On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang-mpi3 and +cmake-3.8.1 in \$HOME/.soft.
 In order to build QMCPACK, a toolchain file is provided for setting up CMake.
 \textbf{BGClang is required for C++ 14 support. IBM XL C/C++ compiler should not be used.}
 
@@ -780,36 +800,77 @@ make -j 8
 ls -l bin/qmcpack
 \end{verbatim}
 
-\subsection{Installing on ORNL OLCF SummitDev}
-SummitDev is the development cluster for the next GPU accelerated
-supercomputer Summit at Oak Ridge National Laboratory's
-Leadership Computing Facility  (ORNL OLCF). It has IBM Power8 CPUs and NVIDIA Pascal GPUs.
+\subsection{Installing on ORNL OLCF Summit}
+Summit is an IBM system at ORNL OLCF built with IBM Power System AC922
+nodes. They have two IBM Power 9 processors and six NVIDIA Volta V100
+accelerators.
 
 \subsubsection{Building QMCPACK}
 Please note that these build instructions are preliminary as the
-software environment is subject to change. QMCPACK can be build with the following commands:
+software environment is subject to change. As of December 2018, the
+IBM XL compiler does not support C++14, so we currently utilize the
+gnu compiler. 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-module load xl
+module load gcc
 module load essl
-module load netlib-lapack
-module load hdf5/1.8.18
+module load netlib-lapack #because ESSL does not provided needed LAPACK functionality
+module load hdf5
 module load fftw
 export FFTW_HOME=$OLCF_FFTW_ROOT
-module load python
 module load cmake
 module load boost
 module load cuda
-mkdir build_summitdev
-cd build_summitdev
-cmake -DCMAKE_C_COMPILER="mpixlc" \
-      -DCMAKE_CXX_COMPILER="mpixlC" \
+module load python/2.7.15-anaconda2-5.3.0
+mkdir build_summit
+cd build_summit
+cmake -DCMAKE_C_COMPILER="mpicc" \
+      -DCMAKE_CXX_COMPILER="mpicxx" \
       -DBUILD_LMYENGINE_INTERFACE=0 \
       -DQMC_CUDA=1 \
-      -DCUDA_ARCH="sm_60" \
+      -DCUDA_ARCH="sm_70" \
       ..
 make -j 8
 ls -l bin/qmcpack
+\end{verbatim}
+
+\subsubsection{Building Quantum Espresso}
+The v6.3 release of Quantum Espresso does not officially support the
+Power 9 architecture, and several steps of the configuration process
+require updating to build successfully. v6.4 is expected to support
+the new architecture officially. The following can be used to build a
+CPU version of QE on Summit, placing the script in the
+external\_codes/quantum\_espresso directory. Note that performance is
+not yet optimized although vendor libraries are
+utilized. Alternatively, the wavefunction files can be generated on
+another system and the converted HDF5 files copied over.
+
+\verbatimfont{\footnotesize}
+\begin{verbatim}
+#!/usr/bin/bash
+module load gcc/6.4.0 #6.4.0 was default on 2019-01-03
+module load essl
+module load netlib-lapack #because ESSL does not provided needed LAPACK functionality
+module load hdf5
+module load fftw
+export FFTW_HOME=$OLCF_FFTW_ROOT
+module -t list
+./download_and_patch_qe6.3.sh
+cd qe-6.3
+cd archive
+mv fox.tgz fox.tgz_orig
+wget https://gitlab.com/QEF/q-e/raw/develop/archive/fox.tgz # Latest FoX on develop is patched for PPC64 architectures
+cd ..
+./configure --with-hdf5=$OLCF_HDF5_ROOT
+cp -p make.inc make.inc_orig
+sed -e 's/libhdf5.a /libhdf5.a -L/g' make.inc_orig >make.inc # Incorrect awk in install/configure drops library dir for zlib
+sed -i 's/-D__FFTW3/-D__LINUX_ESSL/g' make.inc
+sed -i "s|-lblas|-L${OLCF_ESSL_ROOT}/lib64 -lessl|g" make.inc
+sed -i 's/-lfftw3/ /g' make.inc # Use the ESSL FFTW
+sed -i 's/^LAPACK_LIBS .*=.*/LAPACK_LIBS = -lessl -llapack -lessl/g' make.inc
+echo --- Starting build `date`
+make all
+echo --- Finished build `date`
 \end{verbatim}
 
 \subsection{Installing on NERSC Edison Cray XC30}
@@ -937,6 +998,34 @@ Currently Loaded Modulefiles:
  13) dvs/2.7_2.2.113-6.0.7.1_7.1__g1bbc03e
 
 \end{verbatim}
+
+\subsection{Installing on systems with ARMv8 based processors}
+The following build recipe was verified using the `Arm Compiler for HPC' on the ANL JLSE Comanche system with Cavium ThunderX2 processors on 6 November 2018.
+\begin{verbatim}
+# load armclang compiler
+module load Generic-AArch64/RHEL/7/arm-hpc-compiler/18.4
+# load Arm performance libraries
+module load ThunderX2CN99/RHEL/7/arm-hpc-compiler-18.4/armpl/18.4.0
+# define path to pre-installed packages
+export HDF5_ROOT=</path/to/hdf5/install/>
+export BOOST_ROOT=</path/to/boost/install> # header-only, no need to build
+\end{verbatim}
+Then using the following command
+\begin{verbatim}
+mkdir build_armclang
+cd build_armclang
+cmake -DCMAKE_C_COMPILER=armclang -DCMAKE_CXX_COMPILER=armclang++ -DQMC_MPI=0 \
+      -DCMAKE_C_COMPILER_ID=Clang -DCMAKE_CXX_COMPILER_ID=Clang \
+      -DCMAKE_CXX_COMPILER_VERSION=5.0 -DCMAKE_CXX_STANDARD_COMPUTED_DEFAULT=98 \
+      -DCMAKE_C_FLAGS="-march=armv8-a" -DCMAKE_CXX_FLAGS="-march=armv8-a" \
+      -DLAPACK_LIBRARIES="-L$ARMPL_DIR/lib -larmpl_mp" \
+      -DFFTW_INCLUDE_DIR="$ARMPL_DIR/include" \
+      -DFFTW_LIBRARIES="$ARMPL_DIR/lib/libarmpl_mp.a" \
+      ..
+make -j 56
+\end{verbatim}
+Note that armclang is recognized as an `unknown' compiler by cmake (v3.12.4) and we need to force it as clang to apply necessary flags.
+This workaround will not be necessary in the near future.
 
 \subsection{Installing on Windows}
 Install the Windows Subsystem for Linux and Bash on Windows.
@@ -1169,26 +1258,57 @@ against this fork \url{https://github.com/naromero77/spack}
 \section{Testing and validation of QMCPACK}
 \label{sec:testing}
 We \textbf{strongly encourage} running the included tests each time
-QMCPACK is built. These compare the results from the executable with
-known-good mean-field, quantum chemical, and other QMC results.
+QMCPACK is built. A range of unit and integration tests ensure that
+the code behaves as expected and that results are consistent with
+known-good mean-field, quantum chemical, and historical QMC results.
 
-The tests included with QMCPACK currently mainly test the VMC code with
-single determinant wavefunction and simple spline Jastrow
-wavefunctions, and for gaussian and periodic spline basis
-sets. We check that the known mean
-field results are obtained with no Jastrow. When Jastrow functions are
-included we test against previous QMC data. The tests are statistical
-with a generous 3 $\sigma$ tolerance, however the system sizes are
-small, typically $<10$ electrons, so the error bars are typically
-small. Limited DMC and optimizer tests included and are scheduled for expansion.
+The tests include:
+\begin{itemize}
+\item Unit tests : to check fundamental behavior. These should always pass.
+\item Stochastic integration tests : to check computed results from
+  the Monte Carlo methods. These may fail statistically, but rarely,
+  due to the use of three sigma level statistics. These tests are
+  further split into ``short'' tests, which have just sufficient
+  length to have valid statistics, and ``long'' tests, to check
+  behavior to higher statistical accuracy.
+\item Converter tests : to check conversion of trial wavefunctions
+  from codes such as Quantum Espresso and GAMESS to QMCPACK's
+  formats. These should always pass.
+\item Workflow tests : in the case of Quantum Espresso, we test the
+  entire cycle of DFT calculation, trial wavefunction conversion, and
+  a subsequent VMC run.  
+\item Performance : to help performance monitoring. Only the timing of
+  these runs is relevant.  
+\end{itemize}
 
- The ``short'' tests only take a few minutes on a 16
-core machine. You can run these tests using the command below in the
+
+The test types are differentiated by prefixes in their names,
+e.g. ``short-LiH\_dimer\_ae\_vmc\_hf\_noj\_16-1'' indicates a short VMC test
+for the LiH dime. 
+
+QMCPACK also includes tests for developmental features and feature
+that are unsupported on certain platforms. To indicate these, tests
+that are unstable are labeled with the ctest label
+``unstable''. e.g. They are unreliable, unsupported, or known to fail
+due to partial implementation or bugs.
+
+When installing QMCPACK you should run at least the deterministic
+tests
+\begin{verbatim}
+ctest -R deterministic -LE unstable
+\end{verbatim}
+These currently take only a few seconds to run. All should pass. A
+failure here may indicate a major problem with the installation.
+
+If time allows, the ``short'' stochastic tests should also be run.
+The ``short'' tests each take a few minutes each on a 16
+core machine, totally around 1 hour depending on the platform. You can run these tests using the command below in the
 build directory:
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-ctest -R short   # Run the tests with "short" in their name
+ctest -R short -LE unstable  # Run the tests with "short" in their name.
+                             # Exclude any known unstable tests.
 \end{verbatim}
 The output should be similar to the following:
 \verbatimfont{\footnotesize}
@@ -1209,8 +1329,9 @@ Test project build_gcc
 
 Total Test time (real) = 167.14 sec
 \end{verbatim}
+
 Note that the number of tests that are run varies between the
-standard, complex, and GPU compilations.
+standard, complex, and GPU compilations. These tests should pass with three sigma reliability. i.e. They should nearly always pass, and when rerunning a failed test it should usually pass. Overly frequent failures suggest a problem that should be addressed before any scientific production.
 
 The  full set of tests consist of significantly longer versions of the short
 tests, as well as tests of the conversion utilities. The runs require
@@ -1220,7 +1341,7 @@ directory:
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-ctest            # Run all the tests. This will take several hours.
+ctest -LE unstable           # Run all the stable tests. This will take several hours.
 \end{verbatim}
 
 You can also run verbose tests which direct the QMCPACK
@@ -1239,7 +1360,7 @@ Under each physical system directory there may be tests for multiple QMC methods
 The numerical comparisons and test definitions are in the \texttt{CMakeLists.txt} file in each physical system directory.
 
 If \textit{all} the QMC tests fail it is likely
-that the appropriate mpiexec (or aprun, srun) is not being
+that the appropriate mpiexec (or mpirun, aprun, srun, jsrun) is not being
 called or found. If the QMC runs appear to work but all the other
 tests fail it is possible that python is not working on your system -
 we suggest checking some of the test console output in \texttt{build/Testing/Temporary/LastTest.log}
@@ -1247,24 +1368,26 @@ or the output files under \texttt{build/tests/}.
 %The runs occur in \texttt{build/tests/test\_dir/test\_name}.
 
 
-Note that because most of these tests are very small, consisting of only a few
+Note that because most of the tests are very small, consisting of only a few
 electrons, the performance is not representative of larger
 calculations. For example, while the calculations might fit in cache,
 there will be essentially no vectorization due to the small electron
 counts. \textbf{These tests should therefore not be used for any benchmarking or
-performance analysis}.
-
-Example runs that can be used for testing performance are described in
+performance analysis}. Example runs that can be used for testing performance are described in
 Sec. \ref{sec:perftests}
 
-\subsection{Unit tests}
+\subsection{Deterministic and unit tests}
 
-QMCPACK has a set of unit tests.
-All of the unit tests can be run with the following command (in the build directory):
+QMCPACK has a set of deterministic tests, predominantly unit tests.
+All of these tests can be run with the following command (in the build directory):
 \verbatimfont{\footnotesize}
 \begin{verbatim}
-ctest -L unit
+ctest -R deterministic -LE unstable
 \end{verbatim}
+
+These tests should always pass. Failure could indicate a major problem
+with the compiler, compiler settings, or a linked library that would
+give incorrect results.
 
 The output should look similar to the following:
 \verbatimfont{\footnotesize}
@@ -1329,6 +1452,19 @@ thread counts, placement, walker count (etc.) This is essential to
 fairly compare different machines. Check with the
 developers if you are unsure of what is a fair change.
 
+For the largest problem sizes, the initialization of spline orbitals may
+take a large portion of overall runtime. When QMCPACK is run at scale
+the initialization is fast because it is fully
+parallelized. However, the performance runs are most usually run on a single node.
+Consider running QMCPACK once with \texttt{--save\_wfs=1} to save the
+converted spline coefficients to the disk and load them for later runs in the same folder..
+
+The delayed update algorithm in section~\ref{sec:singledeterminant}
+significantly changes the performance characteristics of QMCPACK.  A
+parameter scan of the maximal number of delays specific to every
+architecture and problem size is required to achieve the best
+performance.
+
 \subsubsection{NiO performance tests}
 
 Follow the instructions in tests/performance/NiO/README to
@@ -1389,25 +1525,21 @@ We currently test
 the following combinations nightly (workstations) and weekly (supercomputers):
 
 \begin{itemize}
-\item On a Linux Intel Xeon workstation:
+\item On a Linux Intel Xeon workstation, combinations of:
   \begin{itemize}
-  \item GCC 4.8.5 with OpenMPI and CUDA 8.0 (GPU build, run on NVIDIA K40s)
-  \item GCC 4.8.5 with OpenMPI with Netlib BLAS
-  \item GCC 4.8.5 with OpenMPI with Intel MKL
-  \item Intel 2017 with Intel MPI and MKL
-  \item Intel 2015 with Intel MPI and MKL and CUDA 8.0 (GPU build, run on NVIDIA K40s)
-  \item Intel 2015 with Intel MPI  and MKL
+  \item GCC 8.2.0, Intel2019, Clang6, Clang7, PGI2018
+  \item No MPI, Intel MPI, and OpenMPI
+  \item CPU and GPU builds using CUDA 10.0
   \end{itemize}
 \item On a Linux Intel Knight's Landing workstation:
   \begin{itemize}
   \item Intel 2017 with Intel MPI and MKL
- \item GCC 4.8.5 with Intel MPI and MKL
+  \item GCC 6.3.1 with Intel MPI and MKL
   \end{itemize}
 \item On Eos, a Cray XC30 Intel machine:
   \begin{itemize}
 \item The default Intel programming environment and compiler with Cray MPI and Intel MKL
   \end{itemize}
-
 \item On Titan, a Cray XK7 CPU+GPU machine:
   \begin{itemize}
   \item The GCC programming environment and compiler with Cray MPI and CUDA
@@ -1415,7 +1547,7 @@ the following combinations nightly (workstations) and weekly (supercomputers):
   \end{itemize}
 \item On Cetus, an IBM Blue Gene Q machine:
 \begin{itemize}
-\item Blue Gene Clang 4.0
+\item Blue Gene Clang
 \end{itemize}
 \end{itemize}
 

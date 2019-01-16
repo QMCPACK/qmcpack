@@ -76,7 +76,6 @@ bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
   typedef MCWalkerConfiguration::PropertyContainer_t ProtertyContainer_t;
   typedef Matrix<TinyVector<double, OHMMS_DIM> >  PosContainer_t;
   int nwt = 0;
-  int npt = 0;
   //2D array of PosTypes (x,y,z) indexed by (walker,particle)
   PosContainer_t Pos_temp;
   //open the group

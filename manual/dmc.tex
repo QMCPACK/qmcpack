@@ -105,7 +105,7 @@ where $N$ is the current population.
 \item yes/v0: implements the algorithm in the 2006 Casula paper~\cite{Casula2006}
 \item v1: implements the v1 algorithm in the 2010 Casula paper~\cite{Casula2010}.
 \item v2: is \textbf{not implemented} and \textbf{skipped} due to the existence of the v2 algorithm in the 2010 Casula paper~\cite{Casula2010}.
-\item v3: implements an algorithm similar to v1 but is much faster. v1 computes the transition probability before each single electron T-move selection due to the acceptance of previous T-moves. v3 reuses the transition probability computed in non-local pseudopotentials, namely before accepting any T-moves. This is an approximation to v1, and results in a different time step error, but significantly reduces the computational cost. v1 and v3 agrees at zero time step.
+\item v3: (Experimental) implements an algorithm similar to v1 but is much faster. v1 computes the transition probability before each single electron T-move selection due to the acceptance of previous T-moves. v3 mostly reuses the transition probability computed during the evaluation of non-local pseudopotentials for the local energy, namely before accepting any T-moves, and only recomputes the transition probability of the electrons within the same pseudopotential region of any electrons touched by T-moves. This is an approximation to v1, and results in a slightly different time step error, but significantly reduces the computational cost. v1 and v3 agrees at zero time step. This faster algorithm will be the topic of a paper currently in preparation.
 \end{itemize}
 The v1 and v3 algorithms are size-consistent and important advances over the previous v0 non-size-consistent algorithm. Investigating the importance of size consistency is highly recommended.
 
@@ -156,7 +156,7 @@ The v1 and v3 algorithms are size-consistent and important advances over the pre
 
 \end{itemize}
 
-\begin{lstlisting}[caption=The following is an example of a very simple DMC section. ]
+\begin{lstlisting}[style=XML,caption=The following is an example of a very simple DMC section. ]
   <qmc method="dmc" move="pbyp" target="e">
     <parameter name="blocks">100</parameter>
     <parameter name="steps">400</parameter>
@@ -168,7 +168,7 @@ The time step should be adjusted for each problem individually.  Please refer to
 on diffusion Monte Carlo.
 
 
-\begin{lstlisting}[caption=The following is an example of running a simulation that can be restarted . ]
+\begin{lstlisting}[style=XML,caption=The following is an example of running a simulation that can be restarted . ]
   <qmc method="dmc" move="pbyp"  checkpoint="0">
     <parameter name="timestep">         0.004  </parameter>
     <parameter name="blocks">           100   </parameter>
@@ -186,7 +186,7 @@ BH is the project id and s002 is the calculation number to read in the walkers f
 
 Combining VMC and DMC in a single run (and wave function optimization can be combined in this way too) is the standard way in which QMCPACK is typical run.   There is no need to run two separate jobs, as method sections can be stacked, and walkers are transferred between them.
 
-\begin{lstlisting}[caption=Combined VMC and DMC run ]
+\begin{lstlisting}[style=XML,caption=Combined VMC and DMC run ]
   <qmc method="vmc" move="pbyp" target="e">
     <parameter name="blocks">100</parameter>
     <parameter name="steps">4000</parameter>

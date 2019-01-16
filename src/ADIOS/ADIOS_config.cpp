@@ -19,7 +19,7 @@
 static bool UseHDF5 = false;
 static bool UseADIOS = false;
 static std::string adios_xml_filename;
-const static std::string empty("");
+static const std::string empty("");
 static bool rdADIOS = false;
 static bool rdHDF5 = false;
 static bool adios_first_open = true;

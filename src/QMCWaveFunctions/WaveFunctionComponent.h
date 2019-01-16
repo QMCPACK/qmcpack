@@ -15,8 +15,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#ifndef QMCPLUSPLUS_ORBITALBASE_H
-#define QMCPLUSPLUS_ORBITALBASE_H
+#ifndef QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
+#define QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
@@ -299,6 +299,10 @@ struct WaveFunctionComponent: public QMCTraits
    * @param iat index of the particle whose new position was proposed
    */
   virtual void acceptMove(ParticleSet& P, int iat) =0;
+
+  /** complete all the delayed updates, must be called after each substep or step during pbyp move
+   */
+  virtual void completeUpdates() {};
 
   /** a move for iat-th particle is reject. Restore to the content.
    * @param iat index of the particle whose new position was proposed

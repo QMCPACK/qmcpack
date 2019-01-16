@@ -4,13 +4,13 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+// File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
 //////////////////////////////////////////////////////////////////////////////////////
+
+#ifndef QMCPLUSPLUS_AFQMC_WALKERCONTROL_HPP
+#define QMCPLUSPLUS_AFQMC_WALKERCONTROL_HPP
     
     
 #include<tuple>
@@ -20,6 +20,12 @@
 #include <mpi.h>
 #include<AFQMC/config.0.h>
 #include <Utilities/FairDivide.h>
+
+#include "AFQMC/Walkers/WalkerConfig.hpp"
+#include "AFQMC/Walkers/WalkerUtilities.hpp"
+
+#include "mpi3/communicator.hpp"
+#include "mpi3/request.hpp"
 
 namespace qmcplusplus
 {
@@ -31,18 +37,28 @@ namespace afqmc
  *
  * The algorithm ensures that the load per node can differ only by one walker.
  * The communication is one-dimensional.
+ * Wexcess is an object with multi::array concept which contains walkers beyond the expected
+ * pupolation target. 
  */
 template<class WlkBucket, 
+         class Mat,
          class IVec = std::vector<int>
          >
-// eventually generalize MPI_Comm to a MPI wrapper
-inline int swapWalkersSimple(WlkBucket& wlk, IVec& CurrNumPerNode, IVec& NewNumPerNode, MPI_Comm comm)
+inline int swapWalkersSimple(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode, IVec& NewNumPerNode, communicator& comm)
 {
+  
   int NumContexts, MyContext; 
-  MPI_Comm_size(comm,&NumContexts);
-  MPI_Comm_rank(comm,&MyContext);
-  assert(CurrNumPerNode.size() >= NumContexts);  
-  assert(NewNumPerNode.size() >= NumContexts);  
+  NumContexts = comm.size();
+  MyContext = comm.rank();  
+  static_assert(std::decay<Mat>::type::dimensionality==2, "Wrong dimensionality");
+  if(wset.single_walker_size() != Wexcess.shape()[1])
+    throw std::runtime_error("Array dimension error in swapWalkersSimple().");
+  if(1 != Wexcess.strides()[1]) 
+    throw std::runtime_error("Array shape error in swapWalkersSimple().");
+  if(CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
+    throw std::runtime_error("Array dimension error in swapWalkersSimple().");
+  if(wset.capacity() < NewNumPerNode[MyContext])
+    throw std::runtime_error("Insufficient capacity in swapWalkersSimple().");
   std::vector<int> minus, plus;
   int deltaN;
   for(int ip=0; ip<NumContexts; ip++)
@@ -62,22 +78,26 @@ inline int swapWalkersSimple(WlkBucket& wlk, IVec& CurrNumPerNode, IVec& NewNumP
   }
   int nswap=std::min(plus.size(), minus.size());
   int nsend=0;
-  int wlk_size = wlk.single_walker_size();
-  // 1 walker at a time
-  std::vector<ComplexType> buff(wlk_size);  
+  if(deltaN <=0 && wset.size() != CurrNumPerNode[MyContext])
+    throw std::runtime_error("error in swapWalkersSimple().");
+  if(deltaN > 0 && 
+    (wset.size() != NewNumPerNode[MyContext] || int(Wexcess.shape()[0]) != deltaN))
+    throw std::runtime_error("error in swapWalkersSimple().");
+  int wlk_size = wset.single_walker_size();
+  std::vector<ComplexType> buff;
+  if(deltaN<0)
+    buff.resize(wlk_size);
   for(int ic=0; ic<nswap; ic++)
   {
     if(plus[ic]==MyContext)
     {
-      wlk.pop_walkers(1,buff);
-      MPI_Send(buff.data(),2*buff.size(),MPI_DOUBLE,minus[ic],plus[ic]+999,comm);
+      comm.send_n(Wexcess[nsend].origin(),Wexcess[nsend].size(),minus[ic],plus[ic]+999);
       ++nsend;
     }
     if(minus[ic]==MyContext)
     {
-      MPI_Status st;
-      MPI_Recv(buff.data(),2*buff.size(),MPI_DOUBLE,plus[ic],plus[ic]+999,comm,&st);
-      wlk.push_walkers(1,buff);
+      comm.receive_n(buff.data(),buff.size(),plus[ic],plus[ic]+999);
+      wset.push_walkers(boost::multi::array_ref<ComplexType,2>(buff.data(),{1,wlk_size}));
     }
   }
   return nswap; 
@@ -89,16 +109,25 @@ inline int swapWalkersSimple(WlkBucket& wlk, IVec& CurrNumPerNode, IVec& NewNumP
  * The communication is one-dimensional.
  */
 template<class WlkBucket, 
+         class Mat,
          class IVec = std::vector<int>
          >
 // eventually generalize MPI_Comm to a MPI wrapper
-inline int swapWalkersAsync(WlkBucket& wlk, IVec& CurrNumPerNode, IVec& NewNumPerNode, MPI_Comm comm)
+inline int swapWalkersAsync(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode, IVec& NewNumPerNode, communicator& comm)
 {
   int NumContexts, MyContext;
-  MPI_Comm_size(comm,&NumContexts);
-  MPI_Comm_rank(comm,&MyContext);
-  assert(CurrNumPerNode.size() >= NumContexts);
-  assert(NewNumPerNode.size() >= NumContexts);
+  NumContexts = comm.size();
+  MyContext = comm.rank();  
+  static_assert(std::decay<Mat>::type::dimensionality==2, "Wrong dimensionality");
+  if(wset.single_walker_size() != Wexcess.shape()[1])
+    throw std::runtime_error("Array dimension error in swapWalkersAsync().");
+  if(1 != Wexcess.strides()[1] || 
+     (Wexcess.shape()[0] > 0 && Wexcess.shape()[1] != Wexcess.strides()[0])) 
+    throw std::runtime_error("Array shape error in swapWalkersAsync().");
+  if(CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
+    throw std::runtime_error("Array dimension error in swapWalkersAsync().");
+  if(wset.capacity() < NewNumPerNode[MyContext])
+    throw std::runtime_error("Insufficient capacity in swapWalkersAsync().");
   std::vector<int> minus, plus;
   int deltaN;
   for(int ip=0; ip<NumContexts; ip++)
@@ -118,10 +147,15 @@ inline int swapWalkersAsync(WlkBucket& wlk, IVec& CurrNumPerNode, IVec& NewNumPe
   }
   int nswap=std::min(plus.size(), minus.size());
   int nsend=0;
-  int wlk_size = wlk.single_walker_size();
+  int wlk_size = wset.single_walker_size();
   int countSend = 1;
+  if(deltaN <=0 && wset.size() != CurrNumPerNode[MyContext])
+    throw std::runtime_error("error(1) in swapWalkersAsync().");
+  if(deltaN > 0 &&
+    (wset.size() != NewNumPerNode[MyContext] || int(Wexcess.shape()[0]) != deltaN))
+    throw std::runtime_error("error(2) in swapWalkersAsync().");
   std::vector<ComplexType*> buffers;
-  std::vector<MPI_Request> requests;
+  std::vector<boost::mpi3::request> requests;
   std::vector<int> recvCounts;
   for(int ic=0; ic<nswap; ic++)
   {
@@ -133,11 +167,7 @@ inline int swapWalkersAsync(WlkBucket& wlk, IVec& CurrNumPerNode, IVec& NewNumPe
       }
       else
       {
-        ComplexType* bf = new ComplexType[countSend*wlk_size];   
-        buffers.push_back(bf);
-        wlk.pop_walkers(countSend,bf);
-        requests.push_back(MPI_Request());
-        MPI_Isend(bf,2*countSend*wlk_size,MPI_DOUBLE,minus[ic],plus[ic]+1999,comm,std::addressof(requests.back()));
+        requests.emplace_back( comm.isend(Wexcess[nsend].origin(),Wexcess[nsend].origin()+countSend*Wexcess.shape()[1],minus[ic],plus[ic]+1999) );
         nsend += countSend;
         countSend = 1;
       }
@@ -152,55 +182,68 @@ inline int swapWalkersAsync(WlkBucket& wlk, IVec& CurrNumPerNode, IVec& NewNumPe
       {
         ComplexType* bf = new ComplexType[countSend*wlk_size];
         buffers.push_back(bf);
-        requests.push_back(MPI_Request());
         recvCounts.push_back(countSend);
-        MPI_Irecv(bf,2*countSend*wlk_size,MPI_DOUBLE,plus[ic],plus[ic]+1999,comm,std::addressof(requests.back()));
+        requests.emplace_back( comm.ireceive_n(bf,countSend*wlk_size,plus[ic],plus[ic]+1999) );
         countSend = 1;
       }
     }
   }
   if(deltaN < 0) {
     // receiving nodes
-    MPI_Status st;
     for(int ip = 0; ip < requests.size(); ++ip)
     {
-      MPI_Wait(std::addressof(requests[ip]),std::addressof(st));
-      wlk.push_walkers(recvCounts[ip],buffers[ip]);
+      requests[ip].wait();
+      wset.push_walkers(boost::multi::array_ref<ComplexType,2>(buffers[ip],{recvCounts[ip],wlk_size}));
       delete[] buffers[ip];
     }
   } else {
     // sending nodes
-    MPI_Status st;
     for(int ip = 0; ip < requests.size(); ++ip)
-    {
-      MPI_Wait(std::addressof(requests[ip]),std::addressof(st));
-      delete[] buffers[ip]; 
-    }
+      requests[ip].wait();
   }
   return nswap;
 }
 
+
 /** 
- * Implements the paired branching algorithm on a popultion of walkers.
+ * Implements Cafarrel's minimum branching algorithm. 
+ *   - buff: array of walker info (weight,num).
+ */
+template<class Random
+         >
+inline void min_branch(std::vector<std::pair<double,int>>& buff, Random& rng, double max_c, double min_c)
+{
+  APP_ABORT(" Error: min_branch not implemented yet. \n\n\n");
+}
+
+/** 
+ * Implements Cafarrel's minimum branching algorithm. 
+ *   - buff: array of walker info (weight,num).
+ */
+template<class Random
+         >
+inline void serial_comb(std::vector<std::pair<double,int>>& buff, Random& rng)
+{
+  APP_ABORT(" Error: serial_comb not implemented yet. \n\n\n");
+}
+
+/** 
+ * Implements the paired branching algorithm on a popultion of walkers,
+ * given a list of walker weights. For each walker in the list, returns the weight 
+ * and number of times the walker should appear in the new list. 
  *   - buff: array of walker info (weight,num).
  */ 
 template<class Random 
          >
-inline void SerialPairBranching(std::vector<char>& buff, Random& rng, double max_c, double min_c)
+inline void pair_branch(std::vector<std::pair<double,int>>& buff, Random& rng, double max_c, double min_c)
 {
   typedef std::tuple<double,int,int>  tp; 
   typedef std::vector<tp>::iterator  tp_it; 
 // slow for now, not efficient!!!
-  int nw = buff.size()/(sizeof(double)+sizeof(int));
+  int nw = buff.size();
   std::vector<tp> wlks(nw);
-  double e;
-  for(int i=0,sz=0,ni=0; i<nw; i++) {
-    std::memcpy(&e,buff.data()+sz,sizeof(double));  
-    sz+=sizeof(double)+sizeof(int);
-    std::get<0>(wlks[i]) = e;
-    std::get<1>(wlks[i]) = 1;
-    std::get<2>(wlks[i]) = i;
-  }
+  for(int i=0,sz=0,ni=0; i<nw; i++) 
+    wlks[i] = tp{buff[i].first,1,i};
 
   std::sort( wlks.begin(), wlks.end(),  
              [] (const tp& a, const tp& b) {
@@ -233,293 +276,102 @@ inline void SerialPairBranching(std::vector<char>& buff, Random& rng, double max
 
   }
 
-  int sz = sizeof(double) + sizeof(int);
   int nnew=0;
-  for(int i=0,ni=0,ic=0; i<nw; i++) {
-    e = std::get<0>(wlks[i]);
-    ni = std::get<1>(wlks[i]);
-    ic = std::get<2>(wlks[i]);
-    nnew += ni;
-    std::memcpy(buff.data()+ic*sz,&e,sizeof(double));
-    std::memcpy(buff.data()+ic*sz+sizeof(double),&ni,sizeof(int));
+  int nzero=0;
+  for(auto& w:wlks) {
+    buff[std::get<2>(w)] = {std::get<0>(w),std::get<1>(w)};
+    nnew += std::get<1>(w);
+    if(std::get<1>(w)>0 && std::abs(std::get<0>(w))<1e-7)
+      nzero++;
   }
-  assert(nw==nnew);
- 
+  if(nzero>0) {
+    app_error()<<" Error in pair_branch: nzero>0: " <<nzero <<std::endl;
+    app_error()<<" Found walkers with zero weight after branch.\n"
+               <<" Try reducing subSteps or reducing the time step." <<std::endl;
+    APP_ABORT("Error in pair_branch.");
+  }
+  if(nw != nnew)
+    APP_ABORT("Error: Problems with pair_branching.\n");
+
 }
 
-/** Pair branching with with Irecv/Send
- *    THIS ROUTINE DOESN'T WORK !!! ONLY FOR TESTING PURPOSES !!!
+/** 
+ * Implements the serial branching algorithm on the set of walkers. 
+ * Serial branch involves gathering the list of weights on the root node
+ * and making the decisions locally. The new list of walker weights is then bcasted. 
+ * This implementation requires contiguous walkers and fixed population walker sets. 
  */
-template<class WlkBucket, 
-         class Random // = std::uniform_real_distribution<double>,
+template<class WalkerSet,
+         class Mat,
+         class Random,
+         typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type, 
+         typename = typename std::enable_if<(WalkerSet::fixed_population)>::type
          >
-inline int NaivePairBranching(WlkBucket& wlk, Random& rng, MPI_Comm comm)
+inline void SerialBranching(WalkerSet& wset, BRANCHING_ALGORITHM type, double min_, double max_, std::vector<int>& wlk_counts, Mat& Wexcess, Random& rng, communicator& comm)
 {
-  int NumContexts, MyContext;
-  MPI_Comm_size(comm,&NumContexts);
-  MPI_Comm_rank(comm,&MyContext);
+  std::vector<std::pair<double,int>> buffer(wset.get_global_target_population());
 
-  // local pair branching 
-  std::vector<int> windx; // this are the positions of walkers that are candidates for global pair branching
-  int sg = wlk.local_pair_branching(windx);  // sg: +0 for large weights, -1 for small weights
-  int nw2b = windx.size()*sg;
-//std::cout<<MyContext <<" " <<nw2b <<std::endl;
+  // assemble list of weights
+  getGlobalListOfWalkerWeights(wset,buffer,comm);
 
-  std::vector<int> WCnt(NumContexts);
-  MPI_Allgather(&nw2b, 1, MPI_INT, WCnt.data(), 1, MPI_INT, comm);
-
-  std::vector<int> minus, plus;
-  int deltaN;
-  for(int ip=0; ip<NumContexts; ip++)
-  {
-    int dn=WCnt[ip];
-    if(ip == MyContext)
-      deltaN=dn;
-    if(dn>0)
-    {
-      plus.insert(plus.end(),dn,ip);
-    }
+  // using global weight list, use pair branching algorithm
+  if(comm.root()) {
+    if(type == PAIR) 
+      pair_branch(buffer,rng,max_,min_);
+    else if(type == MIN_BRANCH)
+      min_branch(buffer,rng,max_,min_);
+    else if(type == SERIAL_COMB)
+      serial_comb(buffer,rng);
     else
-      if(dn<0)
-      {
-        minus.insert(minus.end(),-dn,ip);
-      }
-  }
-  int nswap=std::min(plus.size(), minus.size());
-  int nleft = plus.size()-minus.size();
-  if(nswap == 0)
-    return 0;
-
-  int nsend=0;
-  int wlk_size = wlk.single_walker_size();
-  int countSend = 1, wlkPos=0;
-  std::vector<ComplexType*> buffers;
-  std::vector<MPI_Request> requests;
-  std::vector<double> wgts_out(2*windx.size()); 
-  std::vector<double> wgts_in(2*windx.size()); 
-  requests.reserve(2*windx.size());
-  buffers.reserve(2*windx.size());
-  for(int i=0; i<windx.size(); i++) 
-  {
-    wgts_out[2*i] = wlk.getWeight(windx[i]).real();
-    wgts_out[2*i+1] = rng(); 
-  }
-  // send weigts and random numbers (on plus side)
-  for(int ic=0; ic<nswap; ic++)
-  {
-    if(plus[ic]==MyContext)
-    {
-      if((ic < nswap - 1) && (plus[ic] == plus[ic+1]) && (minus[ic] == minus[ic+1]))
-      {
-        countSend++;
-      }
-      else
-      {
-        requests.push_back(MPI_Request());
-        MPI_Isend(wgts_out.data()+2*wlkPos,2*countSend,MPI_DOUBLE,minus[ic],plus[ic]+1999,comm,std::addressof(requests.back()));
-        requests.push_back(MPI_Request());
-        MPI_Irecv(wgts_in.data()+2*wlkPos,2*countSend,MPI_DOUBLE,minus[ic],plus[ic]+999,comm,std::addressof(requests.back()));
-        wlkPos+=countSend;
-        countSend = 1;
-        nsend++;
-      }
-    }
-    if(minus[ic]==MyContext)
-    {
-      if((ic < nswap - 1) && (plus[ic] == plus[ic+1]) && (minus[ic] == minus[ic+1]))
-      {
-        countSend++;
-      }
-      else
-      {
-        requests.push_back(MPI_Request());
-        MPI_Isend(wgts_out.data()+2*wlkPos,2*countSend,MPI_DOUBLE,plus[ic],plus[ic]+999,comm,std::addressof(requests.back()));
-        requests.push_back(MPI_Request());
-        MPI_Irecv(wgts_in.data()+2*wlkPos,2*countSend,MPI_DOUBLE,plus[ic],plus[ic]+1999,comm,std::addressof(requests.back()));
-        wlkPos+=countSend;
-        countSend = 1;
-        nsend++;
-      }
-    }
-  }  
-
-  MPI_Status st;
-  std::vector<int> exch(nsend);
-  std::stack<int> branch, remv;
-  std::stack<int> gremv;
-  wlkPos=0; 
-  nsend=0;
-  countSend = 1;
-  // now perform branching and exchange data 
-  for(int ic=0; ic<nswap; ic++)
-  {
-    if(plus[ic]==MyContext)
-    {
-      if((ic < nswap - 1) && (plus[ic] == plus[ic+1]) && (minus[ic] == minus[ic+1]))
-      {
-        countSend++;
-      }
-      else
-      {
-        // wait for Irecv
-        MPI_Wait(std::addressof(requests[2*nsend+1]),std::addressof(st)); 
-        // count exchanges
-        assert(branch.size()==0);
-        assert(remv.size()==0);
-        for(int i=0; i<countSend; i++) {
-          double w12 = wgts_out[2*(wlkPos+i)] + wgts_in[2*(wlkPos+i)]; 
-          if( wgts_out[2*(wlkPos+i)+1] < wgts_out[2*(wlkPos+i)]/w12 ) {
-            // branch large weight 
-            branch.push(wlkPos+i);
-          } else {
-            // branch small weight 
-            remv.push(wlkPos+i);
-          }
-        }
-        int nlocal = std::min(branch.size(),remv.size());
-        for(int i=0; i<nlocal; i++) {
-          int ib = branch.top();
-          int ir = remv.top();
-          double w12 = 0.5*(wgts_out[2*ib] + wgts_in[2*ib]);
-          wlk.pair_branch(w12,windx[ib],windx[ir]);
-          branch.pop();
-          remv.pop();
-        } 
-        if(branch.size() > 0) {
-          exch[nsend] = branch.size();
-
-          ComplexType* bf = new ComplexType[exch[nsend]*wlk_size];
-          buffers.push_back(bf);
-          int bsz = branch.size();
-          for(int i=0; i<bsz; i++) {
-            int ib = branch.top();
-            branch.pop();
-            double w12 = 0.5*(wgts_out[2*ib] + wgts_in[2*ib]);
-            wlk.setWeight(windx[ib],w12);
-            wlk.copy_to_buffer(windx[ib],bf+i*wlk_size);
-          }
-          MPI_Isend(bf,2*exch[nsend]*wlk_size,MPI_DOUBLE,minus[ic],plus[ic]+2999,comm,std::addressof(requests[2*nsend+1]));
-        } else if(remv.size() > 0) {
-          exch[nsend] = remv.size();
-
-          for(int i=0; i<exch[nsend]; i++) {
-            gremv.push( windx[remv.top()] );
-            remv.pop();
-          } 
- 
-          ComplexType* bf = new ComplexType[exch[nsend]*wlk_size];
-          buffers.push_back(bf);
-          MPI_Irecv(bf,2*exch[nsend]*wlk_size,MPI_DOUBLE,minus[ic],plus[ic]+3999,comm,std::addressof(requests[2*nsend+1]));
-
-          exch[nsend] *= -1;
-        } else 
-          exch[nsend] = 0;
-
-        nsend++;
-        wlkPos+=countSend;
-        countSend = 1;
-      }
-    }
-    if(minus[ic]==MyContext)
-    {
-      if((ic < nswap - 1) && (plus[ic] == plus[ic+1]) && (minus[ic] == minus[ic+1]))
-      {
-        countSend++;
-      }
-      else
-      {
-        // wait for Irecv
-        MPI_Wait(std::addressof(requests[2*nsend+1]),std::addressof(st)); 
-        // count exchanges
-        assert(branch.size()==0);
-        assert(remv.size()==0);
-        for(int i=0; i<countSend; i++) {
-          double w12 = wgts_out[2*(wlkPos+i)] + wgts_in[2*(wlkPos+i)]; 
-          if( wgts_in[2*(wlkPos+i)+1] < wgts_in[2*(wlkPos+i)]/w12 ) {
-            // branch large weight 
-            remv.push(wlkPos+i);
-          } else {
-            // branch small weight 
-            branch.push(wlkPos+i);
-          }
-        }
-        int nlocal = std::min(branch.size(),remv.size());
-        for(int i=0; i<nlocal; i++) {
-          int ib = branch.top();
-          int ir = remv.top();
-          branch.pop();
-          remv.pop();
-          double w12 = 0.5*(wgts_out[2*ib] + wgts_in[2*ib]);
-          wlk.pair_branch(w12,windx[ib],windx[ir]);
-        } 
-        if(branch.size() > 0) {
-          exch[nsend] = branch.size();
-
-          ComplexType* bf = new ComplexType[exch[nsend]*wlk_size];
-          buffers.push_back(bf);
-          int bsz = branch.size();
-          for(int i=0; i<bsz; i++) {
-            int ib = branch.top();
-            branch.pop();
-            double w12 = 0.5*(wgts_out[2*ib] + wgts_in[2*ib]);
-            wlk.setWeight(windx[ib],w12);
-            wlk.copy_to_buffer(windx[ib],bf+i*wlk_size);
-          }
-          MPI_Isend(bf,2*exch[nsend]*wlk_size,MPI_DOUBLE,plus[ic],plus[ic]+3999,comm,std::addressof(requests[2*nsend+1]));
-        } else if(remv.size() > 0) {
-          exch[nsend] = remv.size();
-
-          for(int i=0; i<exch[nsend]; i++) { 
-            gremv.push( windx[remv.top()] );
-            remv.pop();
-          } 
-
-          ComplexType* bf = new ComplexType[exch[nsend]*wlk_size];
-          buffers.push_back(bf);
-          MPI_Irecv(bf,2*exch[nsend]*wlk_size,MPI_DOUBLE,plus[ic],plus[ic]+2999,comm,std::addressof(requests[2*nsend+1]));
-
-          exch[nsend] *= -1;
-        } else 
-          exch[nsend] = 0;
-
-        nsend++;
-        wlkPos+=countSend;
-        countSend = 1;
-      }
-    }
+      APP_ABORT("Error: Unknown branching type in SerialBranching. \n");
   }
 
-  // now receive messages and Wait for communications
-  nsend=0;
-  for(int ic=0,bfcnt=0; ic<exch.size(); ic++)
-  {
-    // wait for original ISend
-    MPI_Wait(std::addressof(requests[2*ic]),std::addressof(st)); 
-    if(exch[ic] > 0) {
-      // just wait for ISend and delete buffer
-      MPI_Wait(std::addressof(requests[2*ic+1]),std::addressof(st)); 
-      delete[] buffers[bfcnt++]; 
-    } else if(exch[ic] < 0) {
-      MPI_Wait(std::addressof(requests[2*ic+1]),std::addressof(st)); 
-      int nw = -1*exch[ic];
-      for(int i=0; i<nw; i++) {
-        int ir = gremv.top();
-        gremv.pop();
-        wlk.copy_from_buffer(ir,buffers[bfcnt]+i*wlk_size);
-      }
-      delete[] buffers[bfcnt++];
-    }
+  // bcast walker information and calculate new walker counts locally
+  comm.broadcast_n(buffer.data(),buffer.size());
+
+  int target = wset.get_TG_target_population();
+  wlk_counts.resize(comm.size());
+  for(int i=0, p=0; i<comm.size(); i++) {
+    int cnt=0;
+    for(int k=0; k<target; k++, p++) 
+      cnt += buffer[p].second;
+    wlk_counts[i]=cnt;
+  }
+  if(wset.get_global_target_population() != 
+      std::accumulate(wlk_counts.begin(),wlk_counts.end(),0)) {
+    app_error()<<" Error: targetN != nwold: " <<target <<" "
+             <<std::accumulate(wlk_counts.begin(),wlk_counts.end(),0)
+             <<std::endl;
+    APP_ABORT(" Error: targetN != nwold.");
   }
 
-  // stack of deleted walkers should be empty
-  assert(gremv.size()==0);
-  
-  return nleft;
+  // reserve space for extra walkers
+  if(wlk_counts[comm.rank()] > target)
+    Wexcess.reextent({std::max(0,wlk_counts[comm.rank()]-target),wset.single_walker_size()});
 
+  // perform local branching
+  // walkers beyond target go in Wexcess  
+  wset.branch(buffer.begin()+target*comm.rank(),
+             buffer.begin()+target*(comm.rank()+1),
+             Wexcess);
+}  
+
+/** 
+ * Implements the distributed comb branching algorithm. 
+ */
+template<class WalkerSet,
+         class Mat,
+         class Random,
+         typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type,
+         typename = typename std::enable_if<(WalkerSet::fixed_population)>::type
+         >
+inline void CombBranching(WalkerSet& wset, BRANCHING_ALGORITHM type, std::vector<int>& wlk_counts, Mat& Wexcess, Random& rng, communicator& comm)
+{
+  APP_ABORT("Error: comb not implemented yet. \n"); 
 }
-
 
 }
 
 }
 
+#endif

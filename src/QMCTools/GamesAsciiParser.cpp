@@ -478,8 +478,8 @@ void GamesAsciiParser::getGeometry(std::istream& is)
 
 void GamesAsciiParser::getGaussianCenters(std::istream& is)
 {
+  int ng;
   gBound.resize(NumberOfAtoms+1);
-  int ng,nx;
   std::string aline;
   std::map<std::string,int> basisDataMap;
   int nUniqAt=0;
@@ -828,7 +828,7 @@ void GamesAsciiParser::getMO_single_set(std::istream& is, Matrix<double> &CartMa
     getwords(currentWords,is);
     for(int k=0; k<SizeOfBasisSet; k++)
     {
-      getwords(currentWords,is);
+      getwordsWithMergedNumbers(currentWords,is);
 //cout<<"i,k,size: " <<i <<" " <<k <<" " <<currentWords.size() <<" " <<currentWords[4] << std::endl;
       if(currentWords.size() == 8)
         // G basis or higher TAG gets mixed with atom id
@@ -874,7 +874,7 @@ void GamesAsciiParser::getMO_single_set(std::istream& is, Matrix<double> &CartMa
     getwords(currentWords,is);
     for(int k=0; k<SizeOfBasisSet; k++)
     {
-      getwords(currentWords,is);
+      getwordsWithMergedNumbers(currentWords,is);
       if(currentWords.size() == 3+rem)
         // G basis or higher TAG gets mixed with atom id
       {
@@ -1134,12 +1134,12 @@ void GamesAsciiParser::getCSF(std::istream& is)
     std::cerr <<"Problems reading DETERMINANT CONTRIBUTION TO CSF'S (1). \n";
     abort();
   }
-  int ds=SpinMultiplicity-1;
-  int neb= (NumberOfEls-ds)/2;
-  int nea= NumberOfEls-NumberOfBeta;
+  //  int ds=SpinMultiplicity-1;
+  //  int neb= (NumberOfEls-ds)/2;
+  //  int nea= NumberOfEls-NumberOfBeta;
   ci_nca = ci_ncb = NFZC;
   std::vector<int> csfOccup;
-  bool done=false,first=true;
+  bool first=true;
   int cnt=1,current=0;
   int naea=0,naeb=0;
   std::string aline;

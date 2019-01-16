@@ -27,8 +27,8 @@
 
 namespace qmcplusplus
 {
-DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetPtr const &spos, int first) :
-  DiracDeterminant(spos, first),
+DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetPtr const spos, int first) :
+  DiracDeterminantBase(spos, first),
   UpdateJobList_d("DiracDeterminant::UpdateJobList_d"),
   srcList_d("DiracDeterminant::srcList_d"),
   destList_d("DiracDeterminant::destList_d"),
@@ -1008,6 +1008,7 @@ DiracDeterminantCUDA::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
   ValueMatrix_t cpu_lapl(grads.rows(), grads.cols());
   for (int iw=0; iw<walkers.size(); iw++)
   {
+    fprintf(stderr,"walker #%i:\n",iw);
     host_data = walkers[iw]->cuda_DataSet;
     for (int iat=0; iat < NumPtcls; iat++)
     {

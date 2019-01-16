@@ -136,7 +136,7 @@ void QMCUpdateBase::stopRun()
 }
 
 //ugly, but will use until general usage of stopRun is clear
-//  DMCOMP and VMCSingleOMP do not use stopRun anymore
+//  DMC and VMC do not use stopRun anymore
 void QMCUpdateBase::stopRun2()
 {
 #if !defined(REMOVE_TRACEMANAGER)
@@ -273,27 +273,6 @@ void QMCUpdateBase::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool re
   {
     advanceWalker(**it,recompute);
   }
-}
-
-void QMCUpdateBase::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip)
-{
-  char fname[16];
-  sprintf(fname,"test.%i",ip);
-  std::ofstream fout(fname,std::ios::app);
-  int i=0;
-  fout << "benchMark started." << std::endl;
-  for (; it != it_end; ++it,++i)
-  {
-    Walker_t& thisWalker(**it);
-    makeGaussRandomWithEngine(deltaR,RandomGen);
-    W.R = m_sqrttau*deltaR+ thisWalker.R;
-    W.update();
-    ValueType logpsi(Psi.evaluateLog(W));
-    RealType e = H.evaluate(W);
-    fout << W.R[0] << W.G[0] << std::endl;
-    fout <<  i << " " << logpsi << " " << e << std::endl;
-  }
-  fout << "benchMark completed." << std::endl;
 }
 
 }

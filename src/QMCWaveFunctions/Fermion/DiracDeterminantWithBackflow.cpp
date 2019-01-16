@@ -29,7 +29,7 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first): DiracDeterminant(spos,first)
+DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const spos, BackflowTransformation * BF, int first): DiracDeterminant(spos,first)
 {
   Optimizable=true;
   ClassName="DiracDeterminantWithBackflow";
@@ -41,14 +41,6 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SP
 
 ///default destructor
 DiracDeterminantWithBackflow::~DiracDeterminantWithBackflow() {}
-
-DiracDeterminantWithBackflow& DiracDeterminantWithBackflow::operator=(const DiracDeterminantWithBackflow& s)
-{
-  NP=0;
-  resize(s.NumPtcls, s.NumOrbitals);
-  return *this;
-}
-
 
 ///reset the size: with the number of particles and number of orbtials
 void DiracDeterminantWithBackflow::resize(int nel, int morb)
@@ -380,7 +372,6 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
   }
   // calculate gradients and first piece of laplacians
   GradType temp;
-  ValueType temp2;
   int num = P.getTotalNum();
   for(int i=0; i<num; i++)
     for(int j=0; j<NumPtcls; j++)
@@ -684,7 +675,6 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     ValueType dLa=0;
     GradType temp;
     temp=0;
-    ValueType temp2(0);
     for(int i=0; i<NumPtcls; i++)
       for(int j=0; j<NumPtcls; j++)
       {
@@ -828,7 +818,6 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     Gtemp=ConstZero;
     ValueType dLa=ConstZero;
     GradType temp;
-    ValueType temp2;
     for(int i=0; i<NumPtcls; i++)
       for(int j=0; j<NumPtcls; j++)
       {
@@ -938,7 +927,6 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     //ValueType dLa=0.0;
     La1=La2=La3=ConstZero;
     GradType temp;
-    ValueType temp2;
     int num = P.getTotalNum();
     for(int i=0; i<NumPtcls; i++)
       for(int j=0; j<NumPtcls; j++)
@@ -1023,12 +1011,6 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-WaveFunctionComponentPtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
-{
-  APP_ABORT(" Illegal action. Cannot use DiracDeterminantWithBackflow::makeClone");
-  return 0;
-}
-
 DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr spo) const
 {
 //    BackflowTransformation *BF = BFTrans->makeClone();
@@ -1039,19 +1021,6 @@ DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr s
   dclone->set(FirstIndex,LastIndex-FirstIndex);
   return dclone;
 }
-
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s):
-  DiracDeterminant(s),BFTrans(s.BFTrans)
-
-{
-  registerTimers();
-  this->resize(s.NumPtcls,s.NumOrbitals);
-}
-
-//SPOSetPtr  DiracDeterminantWithBackflow::clonePhi() const
-//{
-//  return Phi->makelone();
-//}
 
 void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
 {
@@ -1329,9 +1298,8 @@ void DiracDeterminantWithBackflow::testDerivLi(ParticleSet& P, int pa)
   wfvar_prime= wfVars;
   RealType dh=0.00001;
   //BFTrans->evaluate(P);
-  ValueType L1a,L2a,L3a,L0a;
-  ValueType L1b,L2b,L3b,L0b;
-  ValueType L1c,L2c,L3c,L0c;
+  ValueType L1a,L2a,L3a;
+  ValueType L1b,L2b,L3b;
   //dummyEvalLi(L1,L2,L3);
   myG=0.0;
   myL=0.0;
@@ -1389,7 +1357,6 @@ void DiracDeterminantWithBackflow::dummyEvalLi(ValueType& L1, ValueType& L2, Val
       Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
   GradType temp;
-  ValueType temp2;
   int num = BFTrans->QP.getTotalNum();
   for(int i=0; i<num; i++)
   {
