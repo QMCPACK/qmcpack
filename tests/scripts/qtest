@@ -598,31 +598,48 @@ def read_command_line():
 # parse_qmcpack_cmakelists and sub-functions #
 #============================================#
 
-non_short_tests = []
+non_short_long_tests = []
 
-def parse_scalar_test(text,ref_lists,ref_lines):
+def check_short_long(name):
+    length = None
+    if name.startswith('short'):
+        length = 'short'
+        if not name.startswith('short-'):
+            error('short test name misformatted in QMCPACK\nname should start with "short-"\ntest name: '+name)
+        #end if
+    elif name.startswith('long'):
+        length = 'long'
+        if not name.startswith('long-'):
+            error('long test name misformatted in QMCPACK\nname should start with "long-"\ntest name: '+name)
+        #end if
+    #end if
+    return length
+#end def check_short_long
+
+
+def parse_scalar_test(filepath,text,ref_lists,ref_lines):
     text = text.replace('QMC_RUN_AND_CHECK','').strip().strip('()')
     tokens = text.split()
     name = tokens[0].strip('"')
 
-    #check that the test is actually short
-    if not name.startswith('short'):
-        non_short_tests.append(name)
+    #check that the test is actually short or long
+    length = check_short_long(name)
+    if length is None:
         return None
-    elif not name.startswith('short-'):
-        error('short test name misformatted in QMCPACK\nname should start with "short-"\ntest name: '+name)
     #end if
 
     # parse test contents
     test = obj(
-        type     = 'scalar',
-        name     = name.split('-',1)[1],
-        sname    = name,
-        path     = tokens[1].replace('${CMAKE_SOURCE_DIR}',source_dir).strip('"'),
-        prefix   = tokens[2],
-        infile   = tokens[3],
-        refdata  = obj(),
-        reflines = obj(),
+        type       = 'scalar',
+        length     = length,
+        name       = name.split('-',1)[1],
+        sname      = name,
+        cmakelists = filepath,
+        path       = tokens[1].replace('${CMAKE_SOURCE_DIR}',source_dir).strip('"'),
+        prefix     = tokens[2],
+        infile     = tokens[3],
+        refdata    = obj(),
+        reflines   = obj(),
         )
     for n in range(7,len(tokens)-1,2):
         series    = tokens[n]
@@ -636,26 +653,26 @@ def parse_scalar_test(text,ref_lists,ref_lines):
 
 
 
-def parse_stat_test(text):
+def parse_stat_test(filepath,text):
     text = text.replace('SIMPLE_RUN_AND_CHECK','').strip().strip('()')
     tokens = text.split()
     name = tokens[0].strip('"')
 
-    #check that the test is actually short
-    if not name.startswith('short'):
-        non_short_tests.append(name)
+    #check that the test is actually short or long
+    length = check_short_long(name)
+    if length is None:
         return None
-    elif not name.startswith('short-'):
-        error('short test name misformatted in QMCPACK\nname should start with "short-"\ntest name: '+name)
     #end if
 
     # parse test contents
     test = obj(
-        type   = 'stat',
-        name   = name.split('-',1)[1],
-        sname  = name,
-        path   = tokens[1].replace('${CMAKE_SOURCE_DIR}',source_dir).strip('"'),
-        infile = tokens[2].replace('${IFEXT}',''),
+        type       = 'stat',
+        length     = length,
+        name       = name.split('-',1)[1],
+        sname      = name,
+        cmakelists = filepath,
+        path       = tokens[1].replace('${CMAKE_SOURCE_DIR}',source_dir).strip('"'),
+        infile     = tokens[2].replace('${IFEXT}',''),
         )
 
     return test
@@ -668,8 +685,9 @@ def parse_qmcpack_cmakelists():
     vlog('reading test info from QMCPACK CMakeLists.txt')
     vlog('  test directory: '+test_dir)
 
-    # data structure to hold parsed short test information
+    # data structures to hold parsed short/long test information
     short_tests = obj()
+    long_tests  = obj()
 
     # recursive walk over test directories
     for path,dirs,files in os.walk(test_dir):
@@ -729,7 +747,7 @@ def parse_qmcpack_cmakelists():
                     #end if
                 #end for
 
-                # find and parse all short scalar tests
+                # find and parse all short/long scalar tests
                 istart = 0
                 iend   = 0
                 while istart!=-1:
@@ -738,20 +756,24 @@ def parse_qmcpack_cmakelists():
                         iend = text.find(')',istart)
                         if iend!=-1:
                             test = parse_scalar_test(
+                                filepath  = filepath,
                                 text      = text[istart:iend+1],
                                 ref_lists = ref_lists,
                                 ref_lines = ref_lines,
                                 )
-                            if test is not None and test.name not in short_tests:
-                                test.cmakelists = filepath
-                                short_tests[test.name] = test
+                            if test is not None:
+                                if test.length=='short' and test.name not in short_tests:
+                                    short_tests[test.name] = test
+                                elif test.length=='long' and test.name not in long_tests:
+                                    long_tests[test.name] = test
+                                #end if
                             #end if
                         #end if
                         istart = iend
                     #end if
                 #end while
 
-                # find and parse all short stat.h5 tests
+                # find and parse all short/long stat.h5 tests
                 istart = 0
                 iend   = 0
                 while istart!=-1:
@@ -760,11 +782,15 @@ def parse_qmcpack_cmakelists():
                         iend = text.find(')',istart)
                         if iend!=-1:
                             test = parse_stat_test(
+                                filepath = filepath,
                                 text = text[istart:iend+1],
                                 )
-                            if test is not None and test.name not in short_tests:
-                                test.cmakelists = filepath
-                                short_tests[test.name] = test
+                            if test is not None:
+                                if test.length=='short' and test.name not in short_tests:
+                                    short_tests[test.name] = test
+                                elif test.length=='long' and test.name not in long_tests:
+                                    long_tests[test.name] = test
+                                #end if
                             #end if
                         #end if
                         istart = iend
@@ -776,20 +802,17 @@ def parse_qmcpack_cmakelists():
     #end for
 
     vlog('\ntests found:',n=1)
-    tests_found = []
-    for st in short_tests:
-        tests_found.append(st.sname)
-    #end for
-    tests_found = sorted(tests_found)
-    for t in tests_found:
+    short_tests_found = [st.name for st in short_tests]
+    #long_tests_found  = [lt.name for lt in long_tests ]
+    #tests_found = short_tests_found + long_tests_found
+    tests_found = short_tests_found
+    for t in sorted(tests_found):
         vlog(t,n=2)
     #end for
 
     vlog('\ntests ignored (not short or long)',n=1)
-    for t in non_short_tests:
-        if not t.startswith('long'):
-            vlog(t,n=2)
-        #end if
+    for t in non_short_long_tests:
+        vlog(t,n=2)
     #end for
 
     vlog('\ntests not found:',n=1)
@@ -799,7 +822,12 @@ def parse_qmcpack_cmakelists():
         vlog(t,n=2)
     #end for
 
-    return short_tests
+    tests = obj(
+        short = short_tests,
+        long  = long_tests,
+        )
+
+    return tests
 #end def parse_qmcpack_cmakelists
 
 
@@ -922,7 +950,8 @@ def filter_tests(short_tests):
 #end def filter_tests
 
 
-def join_test_sets(short_tests):
+def join_test_sets(tests):
+    short_tests = tests.short
     vlog('\njoining test sets')
     vlog('test sets to join:',n=1)
     testset_paths = []
@@ -1299,7 +1328,9 @@ def get_adjusted_input(short_test):
 
 
 
-def run_adjusted_tests(short_tests):
+def run_adjusted_tests(tests):
+    short_tests = tests.short
+    long_tests  = tests.long
 
     vlog('\nrunning tests with {0}x more blocks and {1}x more steps'.format(options.block_factor,options.step_factor))
     
@@ -1372,6 +1403,10 @@ def run_adjusted_tests(short_tests):
                         make_symlinks(qmc,short_test)
                     #end if
                     short_test.sim = qmc
+                    # extract long test blocks/steps
+                    if test_name in long_tests:
+                        get_adjusted_input(long_tests[test_name])
+                    #end if
                 #end if
                 n += 1
             #end if
@@ -1544,7 +1579,10 @@ def read_qmca(filename,full=False):
 #end def read_qmca
 
 
-def analyze_tests(short_tests):
+def analyze_tests(tests):
+    short_tests = tests.short
+    long_tests  = tests.long
+
     vlog('\nanalyzing test results')
 
     # analyze each test
@@ -1553,11 +1591,12 @@ def analyze_tests(short_tests):
     sref_full = '' # string for full reference data file write
     scomp += '# {0:<44}  {1:<4}   {2:<15}    {3:<18}  {4:<18}  {5:<18}  {6:<18}  {7:<18}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_short_err','ctest_mean','ctest_short_err')
     sref += '# {0:<44}  {1:<4}   {2:<15}    {3:<18}  {4:<18}  {5:<12}  {6:<18}  {7:<12}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_steps','short_err','short_steps')
-    sref_full += '# {0:<44}  {1:<4}   {2:<15}    {3:^28}  {4:^28}  {5:<12}  {6:^28}  {7:<12}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_steps','short_err','short_steps')
+    sref_full += '# {0:<44}  {1:<4}   {2:<15}    {3:^28}  {4:^20}  {5:<12}  {6:^20}  {7:<12}  {8:^20}  {9:<12}\n'.format('test_name','series','quantity','ref_mean','ref_err','ref_steps','short_err','short_steps','long_err','long_steps')
     tests = sorted(short_tests.keys())
     tests_analyzed = []
     for t in tests:
         st = short_tests[t]
+        lt = long_tests.get_optional(t,None)
         # only analyze tests included by request
         if st.included:
             sim = st.sim
@@ -1642,6 +1681,9 @@ def analyze_tests(short_tests):
                 sref_full += '# ref_code: {0:<20}  ref_code_hash: {1}\n'.format(ref_code,ref_code_hash)
                 # compare old and new ref data for each series
                 st.new_refdata = obj()
+                if lt is not None:
+                    lt.new_refdata = obj()
+                #end if
                 for series in sorted(st.refdata.keys()):
                     old_refdata = st.refdata[series]
                     scalar_file = get_scalar_filename(st,series)
@@ -1669,6 +1711,14 @@ def analyze_tests(short_tests):
                     steps_old = (blocks/options.block_factor-nequil_check)*steps/options.step_factor
                     # factor to scale ref error to get target error for test
                     err_factor = sqrt(steps_new*1.0/steps_old)
+
+                    # get error factor for long test
+                    if lt is not None:
+                        lblocks,lsteps = lt.blocks_steps[int(series)]
+                        steps_long = (lblocks/options.block_factor-nequil_check)*lsteps/options.step_factor
+                        err_factor_long = sqrt(steps_new*1.0/steps_long)
+                        long_refdata = lt.refdata[series]
+                    #end if
 
                     # compare old and new ref data for each quantity
                     for q in sorted(old_refdata.keys()):
@@ -1701,12 +1751,31 @@ def analyze_tests(short_tests):
                         #end if
                         st.new_refdata[series][q] = val_new,target_err
 
+                        # get long ref data
+                        if lt is not None and q in long_refdata:
+                            val_long,err_long = long_refdata[q]
+                            val_long = float(val_long)
+                            err_long = float(err_long)
+                            if q in non_stat_quants:
+                                target_err_long = 0.0
+                            else:
+                                target_err_long = sqrt(1.0+err_factor_long**2)*err_new
+                            #end if
+                            if series not in lt.new_refdata:
+                                lt.new_refdata[series] = obj()
+                            #end if
+                            lt.new_refdata[series][q] = val_new,target_err_long
+                        #end if
+
                         # get test/file information
                         if q not in non_update_quants:
                             scomp += ' {0:<50}  {1:<2}  {2:<15}  {3: 18.12f}  {4: 18.12f}  {5: 18.12f}  {6: 18.12f}  {7: 18.12f}\n'.format(st.sname,series,q,val_new,err_new,target_err,val_old,err_old)
-                            sref += ' {0:<50}  {1:<2}  {2:<15}  {3: 18.12f}  {4: 18.12f}    {5:<12}{6: 18.12f}    {7:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old)
+                            if lt is None or q not in long_refdata:
+                                sref += ' {0:<50}  {1:<2}  {2:<15}  {3: 18.12f}  {4: 18.12f}    {5:<12}{6: 18.12f}    {7:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old)
+                            else:
+                                sref += ' {0:<50}  {1:<2}  {2:<15}  {3: 18.12f}  {4: 18.12f}    {5:<12}{6: 18.12f}    {7:<12}{8: 18.12f}    {9:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old,target_err_long,steps_long)
+                            #end if
                         #end if
-
 
                     #end for
 
@@ -1717,7 +1786,12 @@ def analyze_tests(short_tests):
                             val_new,err_new = new_refdata_full[q]
                             target_err = sqrt(1.0+err_factor**2)*err_new
                             short_target_err[q] = target_err
-                            sref_full += ' {0:<50}  {1:<2}  {2:<15}  {3: 28.12f}  {4: 28.12f}    {5:<12}{6: 28.12f}    {7:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old)
+                            if lt is None:
+                                sref_full += ' {0:<50}  {1:<2}  {2:<15}  {3: 28.12f}  {4: 20.12f}    {5:<12}{6: 20.12f}    {7:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old)
+                            else:
+                                target_err_long = sqrt(1.0+err_factor_long**2)*err_new
+                                sref_full += ' {0:<50}  {1:<2}  {2:<15}  {3: 28.12f}  {4: 20.12f}    {5:<12}{6: 20.12f}    {7:<12}{8: 20.12f}    {9:<12}\n'.format(st.sname,series,q,val_new,err_new,steps_new,target_err,steps_old,target_err_long,steps_long)
+                            #end if
                         #end if
                     #end for
                 #end for
@@ -1757,21 +1831,29 @@ def analyze_tests(short_tests):
         #end if
     #end for
 
-
-
 #end def analyze_tests
 
 
 
-def update_tests(short_tests):
+def update_tests(tests):
+    short_tests = tests.short
+    long_tests  = tests.long
+
     vlog('\n\nupdating test results')
 
     tests = sorted(short_tests.keys())
-    tests_updated = []
+    up_tests = [short_tests[t] for t in tests]
     for t in tests:
-        st = short_tests[t]
+        if t in long_tests:
+            up_tests.append(long_tests[t])
+        #end if
+    #end for
+
+    tests_updated = []
+    for st in up_tests:
+        t = st.sname
         if options.update and 'new_refdata' in st:
-            vlog('\nupdating '+st.name,n=1)
+            vlog('\nupdating '+st.sname,n=1)
             tests_updated.append(t)
 
             # open CMakeLists.txt file
@@ -1860,25 +1942,25 @@ if __name__=='__main__':
     read_command_line()
 
     # extract short tests from QMCPACK CMakeLists.txt files
-    short_tests = parse_qmcpack_cmakelists()
+    tests = parse_qmcpack_cmakelists()
 
     # join testsets, if requested
     if options.join!='':
-        join_test_sets(short_tests)
+        join_test_sets(tests)
         vexit()
     #end if
 
     # run adjusted tests with Nexus
-    run_adjusted_tests(short_tests)
+    run_adjusted_tests(tests)
 
     # analyze results
     if options.analyze:
-        analyze_tests(short_tests)
+        analyze_tests(tests)
     #end if
 
     # update CMakeLists.txt reference data
     if options.update:
-        update_tests(short_tests)
+        update_tests(tests)
     #end if
 
     vexit()
