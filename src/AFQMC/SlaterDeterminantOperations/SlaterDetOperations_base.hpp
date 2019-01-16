@@ -41,6 +41,7 @@ class SlaterDetOperations_base
 
     using IVector = boost::multi::array<int,1,IAlloc>;  
     using TVector = boost::multi::array<T,1,Alloc>;  
+    using TVector_ref = boost::multi::array_ref<T,1,pointer>;  
     using TMatrix = boost::multi::array<T,2,Alloc>;  
     using TMatrix_ref = boost::multi::array_ref<T,2,pointer>;  
 
@@ -225,8 +226,26 @@ class SlaterDetOperations_base
     // need to check if this is equivalent to QR!!!
     template<class Mat>
     void Orthogonalize(Mat&& A, T* res=nullptr) {
+#ifdef QMC_CUDA
+// doing this explicitly for now, since there is no lgf or glq in cuSOlverDn anyway
+      // QR on the transpose
+      TMatrix_ref AT(TMat_MM.data(), {A.size(1),A.size(0)});
+      ma::transpose(A,AT);   
+      ma::geqrf(AT,TAU,WORK);
+// check if determinant_from_geqrf is correct!!! May need conjugation!!!
+      using ma::determinant_from_geqrf;
+      using ma::scale_columns;  
+      if(res != nullptr)
+        determinant_from_geqrf(AT.size(1),AT.origin(),AT.stride(0),TMat_NM.origin(),res);
+      else {
+        T res_;
+        determinant_from_geqrf(AT.size(1),AT.origin(),AT.stride(0),TMat_NM.origin(),&res_);
+      }
+      ma::gqr(AT,TAU,WORK);
+      ma::transpose(AT,A);   
+      scale_columns(A.size(0),A.size(1),A.origin(),A.stride(0),TMat_NM.origin());
+#else
       ma::gelqf(std::forward<Mat>(A),TAU,WORK);
-/*
       if(res != nullptr) {
         *res = T(1.0); 
         for (int i = 0; i < A.size(1); i++) { 
@@ -237,14 +256,11 @@ class SlaterDetOperations_base
           *res *= T(IWORK[i])*A[i][i];
         }
       }
-*/
       ma::glq(std::forward<Mat>(A),TAU,WORK);
-APP_ABORT(" Finish Ortho.\n");
-/*
       for(int i=0; i<A.size(0); ++i)
         for(int j=0; j<A.size(1); ++j)
           A[i][j] *= T(IWORK[j]);
-*/
+#endif
     }
 
   protected:

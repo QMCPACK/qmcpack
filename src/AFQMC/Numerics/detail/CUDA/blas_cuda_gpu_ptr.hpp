@@ -101,12 +101,12 @@ namespace qmc_cuda
 
   // Blas Extensions
   // geam  
-  template<typename T>
+  template<typename T, typename Q1, typename Q2>
   inline static void geam(char Atrans, char Btrans, int M, int N,
                          T const alpha,
-                         cuda_gpu_ptr<T const> A, int lda,
+                         cuda_gpu_ptr<Q1> A, int lda,
                          T const beta,
-                         cuda_gpu_ptr<T const> B, int ldb,
+                         cuda_gpu_ptr<Q2> B, int ldb,
                          cuda_gpu_ptr<T> && C, int ldc)
   {
     if(CUBLAS_STATUS_SUCCESS != cublas::cublas_geam(*A.handles.cublas_handle,Atrans,Btrans,M,N,alpha,to_address(A),lda,

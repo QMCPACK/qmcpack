@@ -58,6 +58,72 @@ __global__ void kernel_determinant_from_getrf(int N, T *m, int lda, int *piv, T 
    __syncthreads();
 }
 
+template<typename T>
+__global__ void kernel_determinant_from_geqrf(int N, T *m, int lda, T* buff, T *det) {
+   // assert(blockIdx.x==0 and blockIdx.y==0 and blockIdx.z==0)
+
+   __shared__ T tmp[256];
+   int t = threadIdx.x;
+
+   tmp[t]=T(1.0);
+
+   for(int ip=threadIdx.x; ip<N; ip+=blockDim.x)
+   {
+     if (m[ip*lda+ip] < 0)
+       buff[ip]=T(-1.0);
+     else
+       buff[ip]=T(1.0);
+     tmp[t] = tmp[t] * buff[ip]*m[ip*lda+ip];
+   }
+   __syncthreads();
+
+   // not optimal but ok for now
+   if (threadIdx.x == 0) {
+     int imax = (N > blockDim.x)?blockDim.x:N;
+     for(int i=1; i<imax; i++)
+       tmp[0] = tmp[0] * tmp[i];
+     *det = tmp[0];
+   }
+   __syncthreads();
+}
+
+template<typename T>
+__global__ void kernel_determinant_from_geqrf(int N, thrust::complex<T> *m, int lda, thrust::complex<T>* buff, thrust::complex<T> *det) {
+   // assert(blockIdx.x==0 and blockIdx.y==0 and blockIdx.z==0)
+
+   __shared__ thrust::complex<T> tmp[256];
+   int t = threadIdx.x;
+
+   tmp[t]=thrust::complex<T>(1.0);
+
+   for(int ip=threadIdx.x; ip<N; ip+=blockDim.x)
+   {
+     if (m[ip*lda+ip].real() < 0)
+       buff[ip]=thrust::complex<T>(-1.0);
+     else
+       buff[ip]=thrust::complex<T>(1.0);
+     tmp[t] = tmp[t] * buff[ip]*m[ip*lda+ip];
+   }
+   __syncthreads();
+
+   // not optimal but ok for now
+   if (threadIdx.x == 0) {
+     int imax = (N > blockDim.x)?blockDim.x:N;
+     for(int i=1; i<imax; i++)
+       tmp[0] = tmp[0] * tmp[i];
+     *det = tmp[0];
+   }
+   __syncthreads();
+}
+
+template<typename T>
+__global__ void kernel_scale_columns(int n, int m, T* A, int lda, T* scl) {
+
+   for(int ip=threadIdx.x; ip<n; ip+=blockDim.x)
+     for(int jp=threadIdx.y; jp<m; jp+=blockDim.y)
+        A[ ip*lda + jp ] *= scl[jp];
+}
+
 void determinant_from_getrf_gpu(int N, double *m, int lda, int *piv, double* res)
 {
   kernel_determinant_from_getrf<<<1,256>>>(N,m,lda,piv,res);
@@ -68,6 +134,21 @@ void determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *pi
 {
   kernel_determinant_from_getrf<<<1,256>>>(N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,piv,
+                                    reinterpret_cast<thrust::complex<double> *>(res) );
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void determinant_from_geqrf_gpu(int N, double *m, int lda, double *buff, double* res)
+{
+  kernel_determinant_from_geqrf<<<1,256>>>(N,m,lda,buff,res);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::complex<double> *buff, std::complex<double>* res)
+{
+  kernel_determinant_from_geqrf<<<1,256>>>(N,
+                                    reinterpret_cast<thrust::complex<double> *>(m),lda,
+                                    reinterpret_cast<thrust::complex<double> *>(buff), 
                                     reinterpret_cast<thrust::complex<double> *>(res) );
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
@@ -95,6 +176,18 @@ std::complex<double> determinant_from_getrf_gpu(int N, std::complex<double> *m, 
   thrust::device_free(d_ptr);
   return res;
   
+}
+
+void scale_columns(int n, int m, double* A, int lda, double* scl)
+{
+  kernel_scale_columns<<<32,32>>>(n,m,A,lda,scl);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+void scale_columns(int n, int m, std::complex<double>* A, int lda, std::complex<double>* scl)
+{
+  kernel_scale_columns<<<32,32>>>(n,m,reinterpret_cast<thrust::complex<double> *>(A),lda,
+                                    reinterpret_cast<thrust::complex<double> *>(scl) );
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 }

@@ -287,6 +287,7 @@ template<>
 struct layout_t<dimensionality_type{0}>{
 	static constexpr dimensionality_type dimensionality = 0;
 	friend constexpr auto dimensionality(layout_t const& l){return l.dimensionality;}
+	using difference_type = multi::difference_type;
 };
 
 template<>

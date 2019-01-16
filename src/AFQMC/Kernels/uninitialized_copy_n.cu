@@ -24,52 +24,49 @@ namespace kernels
 {
 
 template<typename T, typename Size>
-__global__ void kernel_uninitialized_copy_n(Size N, T* x, T const* arr)
+__global__ void kernel_uninitialized_copy_n(Size N, T const* x, Size incx, T * arr, Size incy)
 {
-   Size nloop = Size((N+blockDim.x-1)/blockDim.x);
-   for(Size i=0, ip=Size(threadIdx.x); i<nloop; i++, ip+=Size(blockDim.x))
-    if(ip < N)
-    {
-      x[ip] = arr[ip];
-    }
-   __syncthreads();
+   for(Size ip=Size(threadIdx.x); ip<N; ip+=Size(blockDim.x))
+   {
+     arr[ip*incy] = x[ip*incx];
+   }
 }
 
 
-void uninitialized_copy_n(double * first, int N, double const* array)
+void uninitialized_copy_n(int N, double const* first, int incx, double * array, int incy)
 {
-  kernel_uninitialized_copy_n<<<1,256>>>(N,first,array);
+  kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-void uninitialized_copy_n(std::complex<double>* first, int N, std::complex<double> const* array)
+void uninitialized_copy_n(int N, std::complex<double> const* first, int incx, std::complex<double> * array, int incy)
 {
-  kernel_uninitialized_copy_n<<<1,256>>>(N,first,array);
+  kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-void uninitialized_copy_n(int* first, int N, int const* array)
+void uninitialized_copy_n(int N, int const* first, int incx, int * array, int incy)
 {
-  kernel_uninitialized_copy_n<<<1,256>>>(N,first,array);
+  kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 // long
-void uninitialized_copy_n(double * first, long N, double const* array)
+void uninitialized_copy_n(long N, double const* first, long incx, double * array, long incy)
 {
-  kernel_uninitialized_copy_n<<<1,256>>>(N,first,array);
+  kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-void uninitialized_copy_n(std::complex<double>* first, long N, std::complex<double> const* array)
+void uninitialized_copy_n(long N, std::complex<double> const* first, long incx, std::complex<double> * array, long incy)
 {
-  kernel_uninitialized_copy_n<<<1,256>>>(N,first,array);
+  kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-void uninitialized_copy_n(int* first, long N, int const* array)
+void uninitialized_copy_n(long N, int const* first, long incx, int * array, long incy)
 {
-  kernel_uninitialized_copy_n<<<1,256>>>(N,first,array);
+  kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 

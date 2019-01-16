@@ -184,7 +184,8 @@ public:
 	using const_iterator = typename std::conditional<
 		array::dimensionality != 1,
 		basic_array_ptr<const_reference, typename layout_t<D>::sub_t>,
-		typename basic_array<typename array::element, dimensionality_type{1}, typename array::element_ptr>::template basic_iterator<element_const_ptr, const_reference>
+		multi::array_iterator<T, 1, element_const_ptr, const_reference>
+	//	typename basic_array<typename array::element, dimensionality_type{1}, typename array::element_ptr>::template basic_iterator<element_const_ptr, const_reference>
 	>::type;
 
 	reference       operator[](index i)      {return ref::operator[](i);}

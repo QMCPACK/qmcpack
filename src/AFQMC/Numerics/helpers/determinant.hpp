@@ -17,6 +17,7 @@
 
 #include<cassert>
 #if defined(QMC_CUDA)
+#include <boost/stacktrace.hpp>
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #endif
 #include "AFQMC/Kernels/determinant.cuh"
@@ -50,6 +51,27 @@ namespace ma
     }
   }
 
+  template<class T>
+  inline void determinant_from_geqrf(int n, T* M, int lda, T* buff, T* res)
+  {
+    *res = T(1.0); 
+    for (int i = 0; i < n; i++) { 
+      if (real(M[i*lda+i]) < 0) 
+        buff[i]=T(-1.0); 
+      else 
+        buff[i]=T(1.0); 
+      *res *= buff[i]*M[i*lda+i];
+    }
+  }
+
+  template<class T>
+  inline void scale_columns(int n, int m, T* A, int lda, T* scl)
+  {
+    for (int i = 0; i < n; i++) 
+      for (int j = 0; j < m; j++) 
+        A[ i*lda + j ] *= scl[j];
+  }
+
 }
 
 #if defined(QMC_CUDA)
@@ -66,6 +88,26 @@ namespace qmc_cuda{
   {
     return kernels::determinant_from_getrf_gpu(n,to_address(A),lda,to_address(piv));
   }
+
+  template<class T>
+  inline void determinant_from_geqrf(int n, cuda_gpu_ptr<T> M, int lda, cuda_gpu_ptr<T> buff, T* res)
+  {
+    return kernels::determinant_from_geqrf_gpu(n,to_address(M),lda,to_address(buff),res);
+  }
+
+  template<class T>
+  inline void scale_columns(int n, int m, cuda_gpu_ptr<T> A, int lda, cuda_gpu_ptr<T> scl)
+  {
+    return kernels::scale_columns(n,m,to_address(A),lda,to_address(scl));
+  }
+
+  template<class ptrA, class ptrB>
+  inline void scale_columns(int n, int m, ptrA A, int lda, ptrB scl)
+  {
+    std::cout << boost::stacktrace::stacktrace();
+    throw std::runtime_error("Error: Calling qmc_cuda::scale_columns atch all.");
+  }
+
 }
 #endif
 

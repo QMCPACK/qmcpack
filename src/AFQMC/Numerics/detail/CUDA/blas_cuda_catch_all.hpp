@@ -15,6 +15,9 @@
 #ifndef AFQMC_BLAS_CUDA_CATCH_ALL_HPP
 #define AFQMC_BLAS_CUDA_CATCH_ALL_HPP
 
+// guard with directive that checks if boost version is >=1.65
+#include <boost/stacktrace.hpp>
+
 #include<cassert>
 
 // Currently available:
@@ -28,6 +31,7 @@ namespace qmc_cuda
   template<class ptrA, class ptrB>
   inline static void copy(int n, ptrA x, int incx, ptrB y, int incy)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Calling qmc_cuda::copy catch all."); 
   }
 
@@ -35,6 +39,7 @@ namespace qmc_cuda
   template<class ptrA, class ptrB>
   inline static auto dot(int const n, ptrA const& x, int const incx, ptrB const& y, int const incy)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Calling qmc_cuda::dot catch all."); 
   }
 
@@ -44,6 +49,7 @@ namespace qmc_cuda
                           ptrA const& x, int incx, 
                           ptrB && y, int incy)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Calling qmc_cuda::axpy catch all."); 
   }
 
@@ -56,6 +62,7 @@ namespace qmc_cuda
                           T beta,
                           ptrC && y, int incy)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Calling qmc_cuda::gemv catch all."); 
   }
 
@@ -67,6 +74,7 @@ namespace qmc_cuda
                           T beta,
                           ptrC && C, int ldc)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Unimplemented qmc_cuda::gemm with mixed pointers."); 
   }
 
@@ -81,6 +89,7 @@ namespace qmc_cuda
                          ptrB const& B, int ldb,
                          ptrC C, int ldc)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Calling qmc_cuda::geam catch all."); 
   }
 
@@ -88,6 +97,7 @@ namespace qmc_cuda
   template<typename T, typename Q, class ptrA, class ptrB, class ptrC>
   inline static void adotpby(int const n, T const alpha, ptrA const& x, int const incx, ptrB const& y, int const incy, Q const beta, ptrC result)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Calling qmc_cuda::adotpby catch all."); 
   }
 
@@ -98,6 +108,7 @@ namespace qmc_cuda
                          ptrA const x, int incx,
                          ptrB y, int incy)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Calling qmc_cuda::axty catch all."); 
   }
 
@@ -110,6 +121,7 @@ namespace qmc_cuda
                              T const beta,
                              ptrB B, int ldb)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Calling qmc_cuda::acAxpbB catch all."); 
   }
 
@@ -122,6 +134,7 @@ namespace qmc_cuda
                          ptrA const A, int lda,
                          ptrB y, int incy)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Calling qmc_cuda::adiagApy catch all."); 
   }
 
@@ -134,6 +147,7 @@ namespace qmc_cuda
                           ptrB const B, int ldb, int strideB, T beta,
                           ptrC C, int ldc, int strideC, int batchSize)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Calling qmc_cuda::gemmStridedBatched catch all."); 
   }
 
@@ -146,6 +160,7 @@ namespace qmc_cuda
                           ptrB const* B, int ldb, T beta,
                           ptrC * C, int ldc, int batchSize)
   {
+    std::cout << boost::stacktrace::stacktrace();
     throw std::runtime_error("Error: Calling qmc_cuda::gemmBatched catch all."); 
   }
 

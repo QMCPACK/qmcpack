@@ -110,7 +110,6 @@ template<class T> struct cuda_gpu_allocator{
   cuda_gpu_allocator(cuda_gpu_allocator<U> const& other) {}
 
   cuda_gpu_ptr<T> allocate(size_type n, const void* hint = 0){
-std::cout<<" cuda_gpu_allocator::allocate " <<std::endl;
     if(n == 0) return cuda_gpu_ptr<T>{};
     T* p;
     if(cudaSuccess != cudaMalloc ((void**)&p,n*sizeof(T))) {
@@ -247,9 +246,9 @@ cuda_gpu_ptr<T> uninitialized_value_construct_n(cuda_gpu_ptr<T> first, Size n){
 /**************** uninitialized_copy_n *****************/
 template<typename T, typename Size> 
 cuda_gpu_ptr<T> uninitialized_copy_n(cuda_gpu_ptr<T> first, Size n, cuda_gpu_ptr<T> dest){
-  if(n == 0) return first;
-  kernels::uninitialized_copy_n(to_address(first), n, to_address(dest));
-  return first + n;
+  if(n == 0) return dest;
+  kernels::uninitialized_copy_n(n,to_address(first), 1, to_address(dest), 1);
+  return dest + n;
 }
 
 template<class T> 
@@ -273,6 +272,58 @@ void print(std::string str, cuda_gpu_ptr<T> p, int n) {
 }
 
 }
+
+namespace boost::multi{
+
+/**************** copy *****************/
+template<class T>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy( 
+           multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,
+           multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> last,
+           multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+  assert( stride(first) == stride(last) );
+  if(std::distance(first,last) == 0 ) return dest;
+  kernels::uninitialized_copy_n(std::distance(first,last),to_address(base(first)),stride(first),
+                                                          to_address(base(dest)),stride(dest));
+  return dest+std::distance(first,last);
+}
+
+template<class T, typename Size>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy_n( 
+             multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,
+             Size N,
+             multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+  if(N==0) return dest;  
+  kernels::uninitialized_copy_n(N,to_address(base(first)),stride(first),
+                                  to_address(base(dest)),stride(dest));
+  return dest+N;
+}
+
+template<class T>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy( 
+                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,
+                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> last,
+                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+  assert( stride(first) == stride(last) );
+  if(std::distance(first,last) == 0 ) return dest;
+  kernels::uninitialized_copy_n(std::distance(first,last),to_address(base(first)),stride(first),
+                                                          to_address(base(dest)),stride(dest));
+  return dest+std::distance(first,last); 
+}
+
+template<class T, typename Size>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n( 
+                           multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,
+                           Size N,
+                           multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+  if(N==0) return dest;
+  kernels::uninitialized_copy_n(N,to_address(base(first)),stride(first),
+                                  to_address(base(dest)),stride(dest));
+  return dest+N;
+}
+
+}
+
 /*
 namespace boost
 {

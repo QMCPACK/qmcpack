@@ -21,14 +21,14 @@
 namespace kernels 
 {
 
-void uninitialized_copy_n(double * first, int N, double const* array);
-void uninitialized_copy_n(std::complex<double>* first, int N, std::complex<double> const* array);
-void uninitialized_copy_n(int* first, int N, int const* array);
+void uninitialized_copy_n(int N, double const* first, int incx, double * array, int incy);
+void uninitialized_copy_n(int N, std::complex<double> const* first, int incx, std::complex<double> * array, int incy);
+void uninitialized_copy_n(int N, int const* first, int incx, int * array, int incy);
 
 // long
-void uninitialized_copy_n(double * first, long N, double const* array);
-void uninitialized_copy_n(std::complex<double>* first, long N, std::complex<double> const* array);
-void uninitialized_copy_n(int* first, long N, int const* array);
+void uninitialized_copy_n(long N, double const* first, long incx, double * array, long incy);
+void uninitialized_copy_n(long N, std::complex<double> const* first, long incx, std::complex<double> * array, long incy);
+void uninitialized_copy_n(long N, int const* first, long incx, int * array, long incy);
 
 }
 
