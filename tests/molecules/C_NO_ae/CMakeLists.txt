@@ -41,11 +41,11 @@ IF (NOT QMC_CUDA)
                     )
 
 # Long tests
-  LIST(APPEND CNOHFL_VMC_SCALARS "totenergy" "-37.68858615 0.000749") # total energy
-  LIST(APPEND CNOSJL_VMC_SCALARS "totenergy" "-37.769812   0.000352") # total energy
-  LIST(APPEND CNOSJL_VMC_SCALARS "variance"  "  0.632539   0.000600") # energy variance
-  LIST(APPEND CNOSJL_DMC_SCALARS "totenergy" "-37.828225   0.000289") # total energy
-  LIST(APPEND CNOSJL_DMC_SCALARS "variance"  "  0.622712   0.000279") # energy variance
+  LIST(APPEND CNOHFL_VMC_SCALARS "totenergy" "-37.68858615 0.000731146702") # total energy
+  LIST(APPEND CNOSJL_VMC_SCALARS "totenergy" "-37.769709615159   0.000327891077") # total energy
+  LIST(APPEND CNOSJL_VMC_SCALARS "variance"  "  0.632569308194   0.000762451558") # energy variance
+  LIST(APPEND CNOSJL_DMC_SCALARS "totenergy" "-37.828242297763   0.000268138571") # total energy
+  LIST(APPEND CNOSJL_DMC_SCALARS "variance"  "  0.622617021499   0.000287930738") # energy variance
 
   QMC_RUN_AND_CHECK(long-c_no-hf_vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C_NO_ae"

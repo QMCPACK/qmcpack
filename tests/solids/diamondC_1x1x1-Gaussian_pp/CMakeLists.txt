@@ -28,7 +28,7 @@ IF(ENABLE_SOA)
 # Long tests
 #
 
-  LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.495941 0.0017")
+  LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.495853296208 0.000544919799")
   LIST(APPEND LONG_DIAMOND_SCALARS "samples" "160000 0.0")
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_gaussian_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"

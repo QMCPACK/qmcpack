@@ -26,7 +26,7 @@ IF(ENABLE_SOA)
 #
 
 # Reference VMC run in qmc-ref "-21.70152 +/- 0.00042"
-  LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-21.70152   0.008351")
+  LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-21.701059413048   0.002239292047")
   LIST(APPEND LONG_DIAMOND_SCALARS "samples" "32000 0.0")
 
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-vmc_gaussian_sdj
