@@ -1173,6 +1173,19 @@ def set_attribute(name,value,line):
 #end def get_attribute
 
 
+def get_parameter(line):
+    i1 = line.find('>')+1
+    i2 = line.rfind('<')
+    token = line[i1:i2].strip()
+    try:
+        n = int(token)
+    except:
+        n = int(float(token))
+    #end try
+    return n
+#end def get_parameter
+
+
 def rescale_parameter(scale,line):
     i1 = line.find('>')+1
     i2 = line.rfind('<')
@@ -1228,6 +1241,7 @@ def get_adjusted_input(short_test):
     method_list  = []
     blocks_list  = []
     steps_list   = []
+    walkers      = obj()
 
     f = open(infilepath,'r')
     in_comment = False
@@ -1289,6 +1303,10 @@ def get_adjusted_input(short_test):
                         line,steps = rescale_parameter(options.step_factor,line)
                         replaced_steps = True
                         steps_list.append(steps)
+                    elif '"walkers"' in line:
+                        w = get_parameter(line)
+                        s = series_start + len(method_list) - 1
+                        walkers[s] = w
                     #end if
                 elif in_opt:
                     None # not handling this case for now
@@ -1307,9 +1325,13 @@ def get_adjusted_input(short_test):
     methods = obj()
     blocks_steps = obj()
     for s,m in enumerate(method_list):
-        methods[series_start+s] = m
+        ss = series_start+s
+        methods[ss] = m
         if m in xmc_methods:
-            blocks_steps[series_start+s] = (blocks_list[s],steps_list[s])
+            blocks_steps[ss] = (blocks_list[s],steps_list[s])
+        #end if
+        if ss not in walkers:
+            walkers[ss] = 1
         #end if
     #end for
 
@@ -1321,6 +1343,7 @@ def get_adjusted_input(short_test):
         hrefs        = hrefs,
         methods      = methods,
         blocks_steps = blocks_steps,
+        walkers      = walkers,
         )
 
     return input
@@ -1688,6 +1711,7 @@ def analyze_tests(tests):
                     old_refdata = st.refdata[series]
                     scalar_file = get_scalar_filename(st,series)
                     blocks,steps = st.blocks_steps[int(series)]
+                    walker_factor = st.walkers[int(series)]
 
                     # run qmca on the new reference output
                     sfill = str(int(series)).zfill(3)
@@ -1710,13 +1734,13 @@ def analyze_tests(tests):
                     # steps in target short run (corresponds to old ref data)
                     steps_old = (blocks/options.block_factor-nequil_check)*steps/options.step_factor
                     # factor to scale ref error to get target error for test
-                    err_factor = sqrt(steps_new*1.0/steps_old)
+                    err_factor = sqrt(walker_factor*steps_new*1.0/steps_old)
 
                     # get error factor for long test
                     if lt is not None:
                         lblocks,lsteps = lt.blocks_steps[int(series)]
                         steps_long = (lblocks/options.block_factor-nequil_check)*lsteps/options.step_factor
-                        err_factor_long = sqrt(steps_new*1.0/steps_long)
+                        err_factor_long = sqrt(walker_factor*steps_new*1.0/steps_long)
                         long_refdata = lt.refdata[series]
                     #end if
 
