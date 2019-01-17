@@ -2381,6 +2381,27 @@ def machines():
 
 
 
+def pwscf_input():
+    # divert logging function
+    nlog_divert()
+
+    nlabel('imports')
+    import pwscf_input as pwi
+    from pwscf_input import check_new_variables,check_section_classes
+
+    nlabel('internal_spec')
+    check_new_variables(exit=False)
+    check_section_classes(exit=False)
+
+    #nlabel('compose')
+    #print test_dir
+
+    # restore logging function
+    nlog_restore()
+#end def pwscf_input
+
+
+
 example_information = dict(
     pwscf_relax_Ge_T = dict(
         path = 'quantum_espresso/relax_Ge_T_vs_kpoints', 
@@ -2624,6 +2645,7 @@ NexusTest( generic_extensions )
 NexusTest( nexus_imports      )
 NexusTest( settings_operation , 'settings' )
 NexusTest( machines           )
+NexusTest( pwscf_input        )
 
 for label in example_information.keys():
     NexusTest(

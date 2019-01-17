@@ -54,7 +54,7 @@ from unit_converter import convert
 from generic import obj
 from structure import Structure,kmesh
 from physical_system import PhysicalSystem
-from developer import DevBase,warn
+from developer import DevBase,log,warn,error
 from pseudopotential import pp_elem_label
 from simulation import SimulationInput
 from debug import *
@@ -165,6 +165,8 @@ class PwscfInputBase(DevBase):
         'sw_nstep','modenum','n_charge_compensation','nlev','lda_plus_u_kind',
         # 5.4 additions
         'nqx1','nqx2','nqx3','esm_nfit','space_group','origin_choice',
+        # 6.3 additions
+        'dftd3_version',
         ]
     floats=[
         # pre 5.4
@@ -183,6 +185,9 @@ class PwscfInputBase(DevBase):
         'conv_thr_init','conv_thr_multi','efield_cart','screening_parameter',
         'ecutvcut','Hubbard_J0','Hubbard_beta','Hubbard_J','esm_w',
         'esm_efield','fcp_mu','london_c6','london_rvdw','xdm_a1','xdm_a2',
+        # 6.3 additions
+        'block_1','block_2','block_height','zgate','ts_vdw_econv_thr',
+        'starting_charge',
         ]
     strs=[
         # pre 5.4
@@ -195,6 +200,8 @@ class PwscfInputBase(DevBase):
         'cell_dofree','which_compensation','assume_isolated','exxdiv_treatment',
         # 5.4 additions
         'esm_bc','vdw_corr',
+        # 6.3 additions
+        'efield_phase',
         ]
     bools=[
         # pre 5.4
@@ -207,6 +214,8 @@ class PwscfInputBase(DevBase):
         'lorbm','lfcpopt','scf_must_converge','adaptive_thr','no_t_rev',
         'use_all_frac','one_atom_occupations','starting_spin_angle',
         'x_gamma_extrapolation','xdm','uniqueb','rhombohedral',
+        # 6.3 additions
+        'gate','block','relaxz','dftd3_threebody','ts_vdw_isolated','lforcet',
         ]
 
     # real arrays: celldm,starting_magnetization, hubbard_alpha, hubbard_u,
@@ -219,22 +228,27 @@ class PwscfInputBase(DevBase):
     # multidimensional arrays: starting_ns_eigenvalue(3), hubbard_j(2)
     #   
 
+    ints   = [v.lower() for v in ints  ]
+    floats = [v.lower() for v in floats]
+    strs   = [v.lower() for v in strs  ]
+    bools  = [v.lower() for v in bools ]
+
     all_variables = set(ints+floats+strs+bools)
 
     section_aliases = dict(celldm1='celldm(1)',celldm2='celldm(2)',celldm3='celldm(3)',celldm4='celldm(4)',celldm5='celldm(5)',celldm6='celldm(6)')
 
     var_types = dict()
     for v in ints:
-        var_types[v.lower()]=int
+        var_types[v]=int
     #end for
     for v in floats:
-        var_types[v.lower()]=float
+        var_types[v]=float
     #end for
     for v in strs:
-        var_types[v.lower()]=str
+        var_types[v]=str
     #end for
     for v in bools:
-        var_types[v.lower()]=bool
+        var_types[v]=bool
     #end for
 #end class PwscfInputBase
 
@@ -804,7 +818,9 @@ for sec in section_classes:
 #end for
 
 
-def check_new_variables(*sections):
+exit_ = exit
+def check_new_variables(exit=True):
+    sections = section_classes
     msg = ''
     for section in sections:
         if section.class_has('new_variables'):
@@ -817,17 +833,20 @@ def check_new_variables(*sections):
         #end if
     #end for
     if len(msg)>0:
-        print 'some sections are missing variables, see below'
-        print msg
+        msg = 'some sections are missing variables, see below\n'+msg
+        error(msg)
     else:
-        print 'section checks of new variables passed'
+        log('section checks of new variables passed')
     #end if
-    exit()
+    if exit:
+        exit_()
+    #end if
 #end def check_new_variables
-#check_new_variables(*section_classes)
+#check_new_variables()
 
 
-def check_section_classes(*sections):
+def check_section_classes(exit=True):
+    sections = section_classes
     all_variables = PwscfInputBase.all_variables
     global_missing = set(all_variables)
     local_missing = obj()
@@ -860,13 +879,15 @@ def check_section_classes(*sections):
                 #end if
             #end for
         #end if
-        print msg
+        error(msg)
     else:
-        print 'pwscf input checks passed'
+        log('pwscf input checks passed')
     #end if
-    exit()
+    if exit:
+        exit_()
+    #end if
 #end def check_section_classes
-#check_section_classes(*section_classes)
+#check_section_classes()
 
 
 
@@ -1013,7 +1034,6 @@ class atomic_forces(Card):
         return c
     #end def write_text
 #end class atomic_forces
-
 
 
 
@@ -1269,7 +1289,7 @@ class PwscfInput(SimulationInput):
         if len(elements)==1 and os.path.exists(elements[0]):
             self.read(elements[0])
         elif len(elements)==1 and ('.' in elements[0] or '/' in elements[0]):
-            self.error('input file '+elements[0]+' does not seem to exist')
+            self.error('input file '+elements[0]+' does not exist')
         else:
             for element in self.required_elements:
                 if element not in elements:
