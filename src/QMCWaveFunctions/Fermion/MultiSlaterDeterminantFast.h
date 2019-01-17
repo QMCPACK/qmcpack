@@ -55,7 +55,6 @@ class MultiSlaterDeterminantFast: public WaveFunctionComponent
 
 public:
 
-  bool Optimize;
   void registerTimers();
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer, AccRejTimer;

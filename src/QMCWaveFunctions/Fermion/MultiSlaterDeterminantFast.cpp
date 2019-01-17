@@ -35,7 +35,6 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, 
   AccRejTimer("MultiSlaterDeterminantFast::Accept_Reject")
 {
   registerTimers();
-  Optimize=false;
   //Optimizable=true;
   Optimizable=true;
   ClassName="MultiSlaterDeterminantFast";
@@ -453,34 +452,30 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
 
 void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
 {
-  if(Optimizable)
+  if(Optimizable && !IsCloned)
   {
-    if(Optimize && !IsCloned)
-    {
-      if(myVars->size())
-        active.insertFrom(*myVars);
-      else
-        Optimizable=false;
-    }
-    if(Dets[0]->Optimizable && Dets[1]->Optimizable)
-    {
-      Dets[0]->checkInVariables(active);
-      Dets[1]->checkInVariables(active);
-    }
+    if(myVars->size())
+      active.insertFrom(*myVars);
+    else
+      Optimizable=false;
+  }
+  if(Dets[0]->Optimizable && Dets[1]->Optimizable)
+  {
+    Dets[0]->checkInVariables(active);
+    Dets[1]->checkInVariables(active);
   }
 }
 
 void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& active)
 {
-  if(Optimizable)
+  if(Optimizable && !IsCloned)
   {
-    if(Optimize && !IsCloned)
-      myVars->getIndex(active);
-    if(Dets[0]->Optimizable && Dets[1]->Optimizable)
-    {
-      Dets[0]->checkOutVariables(active);
-      Dets[1]->checkOutVariables(active);
-    }
+    myVars->getIndex(active);
+  }
+  if(Dets[0]->Optimizable && Dets[1]->Optimizable)
+  {
+    Dets[0]->checkOutVariables(active);
+    Dets[1]->checkOutVariables(active);
   }
 }
 
@@ -490,53 +485,51 @@ void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& act
  */
 void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& active)
 {
-  if(Optimizable)
+  if(Optimizable && !IsCloned)
   {
-    if(Optimize && !IsCloned)
+    
+    if(usingCSF)
     {
-      if(usingCSF)
+      RealType *restrict CSFcoeff_p=CSFcoeff->data();
+      for(int i=0; i<CSFcoeff->size()-1; i++)
       {
-        RealType *restrict CSFcoeff_p=CSFcoeff->data();
-        for(int i=0; i<CSFcoeff->size()-1; i++)
+        int loc=myVars->where(i);
+        if(loc>=0)
         {
-          int loc=myVars->where(i);
-          if(loc>=0)
-          {
-            CSFcoeff_p[i+1]= (*myVars)[i]=active[loc];
-          }
+          CSFcoeff_p[i+1]= (*myVars)[i]=active[loc];
         }
-        int cnt=0;
-        RealType *restrict C_p=C->data();
-        const RealType *restrict CSFexpansion_p=CSFexpansion->data();
-        for(int i=0; i<DetsPerCSF->size(); i++)
-        {
-          for(int k=0; k<(*DetsPerCSF)[i]; k++)
-          {
-            C_p[cnt] = CSFcoeff_p[i]*CSFexpansion_p[cnt];
-            cnt++;
-          }
-        }
-        //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
       }
-      else
+      int cnt=0;
+      RealType *restrict C_p=C->data();
+      const RealType *restrict CSFexpansion_p=CSFexpansion->data();
+      for(int i=0; i<DetsPerCSF->size(); i++)
       {
-        RealType *restrict C_p=C->data();
-        for(int i=0; i<C->size()-1; i++)
+        for(int k=0; k<(*DetsPerCSF)[i]; k++)
         {
-          int loc=myVars->where(i);
-          if(loc>=0)
-          {
-            C_p[i+1]=(*myVars)[i]=active[loc];
-          }
+          C_p[cnt] = CSFcoeff_p[i]*CSFexpansion_p[cnt];
+          cnt++;
         }
-        //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
       }
+      //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
     }
-    if(Dets[0]->Optimizable && Dets[1]->Optimizable)
+    else
     {
-      Dets[0]->resetParameters(active);
-      Dets[1]->resetParameters(active);
+      RealType *restrict C_p=C->data();
+      for(int i=0; i<C->size()-1; i++)
+      {
+        int loc=myVars->where(i);
+        if(loc>=0)
+        {
+          C_p[i+1]=(*myVars)[i]=active[loc];
+        }
+      }
+      //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
     }
+  }
+  if(Dets[0]->Optimizable && Dets[1]->Optimizable)
+  {
+    Dets[0]->resetParameters(active);
+    Dets[1]->resetParameters(active);
   }
 }
 void MultiSlaterDeterminantFast::reportStatus(std::ostream& os)
