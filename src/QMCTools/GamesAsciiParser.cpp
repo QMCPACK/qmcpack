@@ -1401,6 +1401,13 @@ void GamesAsciiParser::getCI(std::istream& is)
   CIcoeff.clear();
   CIalpha.clear();
   CIbeta.clear();
+  
+  // set a count to check if we arrive our target state or not
+  int state_num = -1;
+
+  std::cout << "Target State Number is " << target_state << std::endl;
+
+  
   do
   {
     if(is.eof())
@@ -1413,8 +1420,16 @@ void GamesAsciiParser::getCI(std::istream& is)
       continue;
     if(currentWords[0].find("ALP") == 0 &&
         currentWords[1].find("BET") == 0 &&
-        currentWords[2] == "COEFFICIENT" )
+        (currentWords[2] == "COEFFICIENT" || currentWords[3] == "COEFFICIENT") )
     {
+      
+      // add the state number by one
+      state_num++;
+
+      // if we have not reached target state, continue
+      if (state_num != target_state)
+        continue;
+      
       getwords(currentWords,is);  // --------
       notfound=false;
       getwords(currentWords,is);
