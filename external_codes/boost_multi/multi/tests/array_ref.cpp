@@ -252,5 +252,18 @@ int main(){
 		g(v) = g(x);
 		assert( v[10] == 3. );
 	}
+	{
+		std::vector<double> a(100, 1.), b(100, 2.);
+		multi::array_ref<double, 1> A1(a.data(), {100}), B1(b.data(), {100});
+		A1 = B1;
+		assert( a[10] == b[10] );
+		assert( A1[10] == B1[10] and &A1[10] != &B1[10] );
+
+		iota(begin(a), end(a), 0.); iota(begin(b), end(b), 10.);
+		multi::array_ref<double, 2> A2(a.data(), {10, 10}), B2(b.data(), {10, 10});
+		A2 = B2;
+		assert( a[10] == b[10] );
+		assert( A2[4][5] == B2[4][5] and &A2[4][5] != &B2[4][5] );
+	}
 }
 

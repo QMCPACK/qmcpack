@@ -11,55 +11,48 @@
 namespace boost{
 namespace multi{
 
-#if __cplusplus < 201703L
+#if __cplusplus >= 201703L
+using std::uninitialized_default_construct_n;
+using std::uninitialized_value_construct_n;
+using std::destroy_at;
+using std::destroy;
+using std::destroy_n;
+#else
 // https://en.cppreference.com/w/cpp/memory/destroy_at
 template<class T> void destroy_at(T* p){p->~T();}
 // https://en.cppreference.com/w/cpp/memory/destroy_n
 template<class ForwardIt, class Size>
 ForwardIt destroy_n(ForwardIt first, Size n){
-	for(; n > 0; (void)++first, --n)
-		destroy_at(std::addressof(*first));
+	for(; n > 0; (void) ++first, --n) destroy_at(std::addressof(*first));
 	return first;
 }
-// https://en.cppreference.com/w/cpp/memory/destroy
+//https://en.cppreference.com/w/cpp/memory/destroy
 template<class ForwardIt>
 void destroy(ForwardIt first, ForwardIt last){
-  for(; first != last; ++first) destroy_at(std::addressof(*first));
+	for(; first != last; ++first) destroy_at(std::addressof(*first));
 }
-#else
-using std::destroy_at;
-using std::destroy_n;
-using std::destroy;
-#endif
 
-#if __cplusplus < 201703L
 template<class ForwardIt, class Size>
 ForwardIt uninitialized_default_construct_n(ForwardIt first, Size n){
-    using T = typename std::iterator_traits<ForwardIt>::value_type;
-    ForwardIt current = first;
-    try{
-        for(; n > 0 ; (void) ++current, --n) ::new (static_cast<void*>(std::addressof(*current))) T;
-        return current;
-    }catch(...){
-        destroy(first, current); throw;
-    }
+	using T = typename std::iterator_traits<ForwardIt>::value_type;
+	ForwardIt current = first;
+	try{
+		for(; n > 0; (void) ++current, --n)
+			::new (static_cast<void*>(std::addressof(*current))) T;
+		return current;
+	}catch(...){destroy(first, current); throw;}
 }
 template<class ForwardIt, class Size>
 ForwardIt uninitialized_value_construct_n(ForwardIt first, Size n){
-    using T = typename std::iterator_traits<ForwardIt>::value_type;
-    ForwardIt current = first;
-    try{
-        for(; n > 0 ; (void) ++current, --n) ::new (static_cast<void*>(std::addressof(*current))) T();
-        return current;
-    }catch(...){
-        destroy(first, current); throw;
-    }
+	using T = typename std::iterator_traits<ForwardIt>::value_type;
+	ForwardIt current = first;
+	try{
+		for(; n > 0; (void) ++current, --n)
+			::new (static_cast<void*>(std::addressof(*current))) T();
+		return current;
+    }catch(...){destroy(first, current); throw;}
 }
-#else
-using std::uninitialized_default_construct_n;
-using std::uninitialized_value_construct_n;
 #endif
-
 
 template<dimensionality_type N> struct uninitialized_copy_aux;
 
@@ -84,7 +77,7 @@ struct uninitialized_copy_aux{
 };
 
 template<>
-struct uninitialized_copy_aux<1u>{
+struct uninitialized_copy_aux<1>{
 	template<class InputIt, class ForwardIt>
 	static auto call(InputIt first, InputIt last, ForwardIt dest){
 		using std::uninitialized_copy;
@@ -107,7 +100,7 @@ struct fill_aux{
 	}
 };
 
-template<> struct fill_aux<1u>{
+template<> struct fill_aux<1>{
 	template<class O, class T> 
 	static auto call(O f, O l, T const& v){using std::fill; return fill(f, l, v);}
 };
@@ -115,7 +108,9 @@ template<> struct fill_aux<1u>{
 template<dimensionality_type N> struct uninitialized_fill_aux;
 
 template<dimensionality_type N, class Out, class T>
-void uninitialized_fill(Out f, Out l, T const& value){return uninitialized_fill_aux<N>::call(f, l, value);}
+void uninitialized_fill(Out f, Out l, T const& value){
+	return uninitialized_fill_aux<N>::call(f, l, value);
+}
 
 template<dimensionality_type N>
 struct uninitialized_fill_aux{
@@ -127,7 +122,7 @@ struct uninitialized_fill_aux{
 	}
 };
 
-template<> struct uninitialized_fill_aux<1u>{
+template<> struct uninitialized_fill_aux<1>{
 	template<class O, class T> 
 	static auto call(O f, O l, T const& v){using std::uninitialized_fill; return uninitialized_fill(f, l, v);}
 };
@@ -168,77 +163,5 @@ int main(){
 
 }
 #endif
-#endif
-
-#if 0
-template<dimensionality_type N> struct uninitialized_copy_from_initializer_list_aux;
-
-template<dimensionality_type N, class InputIt, class ForwardIt>
-ForwardIt uninitialized_copy_from_initializer_list(InputIt first, InputIt last, ForwardIt dest){
-	return uninitialized_copy_from_initializer_list_aux<N>::call(first, last, dest);
-}
-
-template<dimensionality_type N>
-struct uninitialized_copy_from_il;
-
-template<>
-struct uninitialized_copy_from_il<1u>{
-	template<class InpIt, class FwdIt>
-	static auto call(InpIt first, InpIt last, FwdIt dest){
-		while(first != last){
-		//	construct_from_il(std::addressof(*dest), *first);
-			using T = typename std::iterator_traits<FwdIt>::value_type;
-			::new(static_cast<void*>(std::addressof(*dest))) T(*first);
-		    ++first;
-		    ++dest;
-		}
-		return dest;
-	}
-};
-
-template<dimensionality_type N>
-struct uninitialized_copy_from_il{
-	template<class InIt, class FwdIt>
-	static auto call(InIt first, InIt last, FwdIt dest){
-		while(first != last){
-			uninitialized_copy_from_il<N-1>::call(
-				first->begin(), first->end(), dest->begin()
-			);
-			++first;
-			++dest;
-		}
-		return dest;
-	}
-};
-
-template<dimensionality_type N>
-struct uninitialized_copy_from_initializer_list_aux{
-	template<class InputIt, class ForwardIt>
-	static auto call(InputIt first, InputIt last, ForwardIt dest){
-		while(first != last){
-			uninitialized_copy_from_initializer_list<N-1>(
-				first->begin(), first->end(), dest->begin()
-			);
-			++first;
-			++dest;
-		}
-		return dest;		
-	}
-};
-
-template<>
-struct uninitialized_copy_from_initializer_list_aux<1u>{
-	template<class InputIt, class ForwardIt>
-	static auto call(InputIt first, InputIt last, ForwardIt dest){
-		while(first != last){
-			construct_from_initializer_list(std::addressof(*dest), *first);
-		//	using T = typename std::iterator_traits<ForwardIt>::value_type;
-		//	::new(static_cast<void*>(std::addressof(*dest))) T(*first);
-		    ++first;
-		    ++dest;
-		}
-		return dest;
-	}
-};
 #endif
 

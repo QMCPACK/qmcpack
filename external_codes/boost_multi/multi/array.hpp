@@ -128,7 +128,10 @@ public:
 		}
 		return *this;
 	}
-	array& operator=(array const& other){return operator=<array const&>(other);}
+	array& operator=(array const& other){
+		if(this == std::addressof(other)) return *this;
+		return operator=<array const&>(other);
+	}
 	void swap(array& other) noexcept{
 		using std::swap;
 		swap(this->base_, other.base_);
@@ -139,7 +142,7 @@ public:
 		);
 	}
 	friend void swap(array& a, array& b){a.swap(b);}
-	array& operator=(array&& other){clear(); swap(other); return *this;}
+	array& operator=(array&& other){if(this!=std::addressof(other)) clear(); swap(other); return *this;}
 	void assign(typename array::extensions_type x, typename array::element const& e){
 		if(array::extensions()==x){
 			fill<D>(begin(), end(), e);
@@ -210,53 +213,26 @@ public:
 
 	typename array::iterator begin() const{return ref::begin();}
 	typename array::iterator end()   const{return ref::end();}
-#if 0
-	friend auto begin(array&       s){return s.begin();}
-	friend auto begin(array const& s){return s.begin();}
-	friend auto end  (array&       s){return s.end();}
-	friend auto end  (array const& s){return s.end();}
 
-	auto cbegin() const{return begin();}
-	auto cend()   const{return end();}
-	friend auto cbegin(array const& s){return s.cbegin();}
-	friend auto cend  (array const& s){return s.cend();}
-
-	typename array::reverse_iterator rbegin(){return ref::rbegin();}
-	typename array::reverse_iterator rend() {return ref::rend();}
-	typename array::const_reverse_iterator rbegin() const{return ref::rbegin();}
-	typename array::const_reverse_iterator rend() const{return ref::rend();}
-#endif
-
-#if 0
-	friend auto begin(array const& s){return s.begin();}
-	friend auto end(array const& s){return s.end();}
-	friend auto begin(array& s){return s.begin();}
-	friend auto end(array& s){return s.end();}
-	typename array::const_reference front() const{assert(not this->empty()); return *this->cbegin();}
-	typename array::const_reference back() const{assert(not this->empty()); return *(this->cbegin() + (this->size() - 1));}
-	typename array::reference front(){return array_ref<T, D, typename std::allocator_traits<Alloc>::pointer>::front();}
-	typename array::reference back(){return array_ref<T, D, typename std::allocator_traits<Alloc>::pointer>::back();}
-#endif
-	void clear() noexcept{
-		destroy(); 
-		deallocate();
-		layout_t<D>::operator=({});
-	}
+	void clear() noexcept{destroy(); deallocate(); layout_t<D>::operator=({});}
 	friend void clear(array& self) noexcept{self.clear();}
-	~array() noexcept{clear();}	
+	~array() noexcept{clear();}
 private:
-	void destroy(){destroy_n(this->data(), this->num_elements());}
+	void destroy(){
+		using multi::destroy_n; 
+		destroy_n(this->data(), this->num_elements());
+	}
 	template<typename It>
 	auto uninitialized_copy(It it){
 		using std::uninitialized_copy_n;
 		return uninitialized_copy_n(it, this->num_elements(), this->data());
 	}
 	auto uninitialized_default_construct(){
-	//	using std::uninitialized_default_construct_n;
+		using multi::uninitialized_default_construct_n;
 		return uninitialized_default_construct_n(this->base_, this->num_elements());
 	}
 	auto uninitialized_value_construct(){
-	//	using std::uninitialized_value_construct_n;
+		using multi::uninitialized_value_construct_n;
 		return uninitialized_value_construct_n(this->base_, this->num_elements());
 	}
 	auto uninitialized_fill(typename array::element const& el){

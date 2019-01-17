@@ -6,8 +6,8 @@ SET(AFQMC_DEBUG 3)
 #-------------------------------------------------------------------
 SET (AFQMC_SRCS
   AFQMCFactory.cpp
-  Walkers/SharedWalkerSet.cpp
   Drivers/DriverFactory.cpp
+#  Walkers/WalkerSetBase.cpp
   Drivers/AFQMCDriver.cpp
 #  Drivers/BenchmarkDriver.cpp
   Propagators/AFQMCSharedPropagator.cpp

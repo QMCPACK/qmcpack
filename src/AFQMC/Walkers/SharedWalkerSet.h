@@ -27,6 +27,7 @@
 #include "AFQMC/Walkers/Walkers.hpp"
 #include "AFQMC/Walkers/WalkerControl.hpp"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
+#include "AFQMC/Walkers/WalkerSetBase.h"
 
 namespace qmcplusplus
 {
@@ -39,13 +40,12 @@ namespace afqmc
  * Implements communication, load balancing, and I/O operations.   
  * Walkers are always accessed through the handler.
  */
-class SharedWalkerSet: public AFQMCInfo 
+class SharedWalkerSet: public WalkerSetBase<shared_allocator<ComplexType>,ComplexType*> 
 {
-  enum SharedWalkerSetTimers { LoadBalance, PopControl };
 
-//  // wlk_descriptor: {nmo, naea, naeb, nback_prop} 
-//  using wlk_descriptor = std::array<int,4>;
-//  using wlk_indices = std::array<int,14>;
+  using Base = WalkerSetBase<shared_allocator<ComplexType>,ComplexType*>;
+
+/*
   using element = ComplexType;
   using pointer = element *; 
   using const_element = const ComplexType;
@@ -53,9 +53,11 @@ class SharedWalkerSet: public AFQMCInfo
 
   using CMatrix = boost::multi::array<element,2>;
   using shmCMatrix = boost::multi::array<element,2,shared_allocator<element>>;
+*/
 
   public:
 
+/*
   // contiguous_walker = true means that all the data of a walker is continguous in memory
   static const bool contiguous_walker = true;
   // contiguous_storage = true means that the data of all walker is continguous in memory
@@ -68,19 +70,13 @@ class SharedWalkerSet: public AFQMCInfo
   //using const_iterator = const_walker_iterator<const_pointer>; 
   using const_reference = walker<pointer>; 
   using const_iterator = walker_iterator<pointer>; 
+*/
 
   /// constructor
   SharedWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 
         RandomGenerator_t* r):
-                TG(tg_),AFQMCInfo(info),rng(r),
-                walker_memory_usage(0),tot_num_walkers(0),
-		walker_buffer({1,1},shared_allocator<element>{TG.TG_local()}),
-                load_balance(UNDEFINED_LOAD_BALANCE),
-                pop_control(UNDEFINED_BRANCHING),min_weight(0.05),max_weight(4.0),
-                walkerType(UNDEFINED_WALKER_TYPE),nback_prop(0)
+                Base(tg_,cur,info,r,shared_allocator<element>{tg_.TG_local()})
   {
-    parse(cur);
-    setup(); 
   }
 
   /// destructor
@@ -94,61 +90,61 @@ class SharedWalkerSet: public AFQMCInfo
   /*
    * Returns the current number of walkers in the set.
    */	
-  int size() const { 
-    return tot_num_walkers; 
-  } 
+//  int size() const { 
+//    return tot_num_walkers; 
+//  } 
 
   /*
    * Returns the maximum number of walkers in the set that can be stored without reallocation.
    */	
-  int capacity() const{ 
-    return int(walker_buffer.size(0)); 
-  } 
+//  int capacity() const{ 
+//    return int(walker_buffer.size(0)); 
+//  } 
 
   /*
    * Returns iterator to the first walker in the set
    */
-  iterator begin() {
-    assert(walker_buffer.size(1) == walker_size);
-    return iterator(0,boost::multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
-  }
+//  iterator begin() {
+//    assert(walker_buffer.size(1) == walker_size);
+//    return iterator(0,boost::multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
+//  }
 
   /*
    * Returns iterator to the past-the-end walker in the set
    */
-  iterator end() {
-    assert(walker_buffer.size(1) == walker_size);
-    return iterator(tot_num_walkers,boost::multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
-  }
+//  iterator end() {
+//    assert(walker_buffer.size(1) == walker_size);
+//    return iterator(tot_num_walkers,boost::multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
+//  }
 
   /*
    * Returns a reference to a walker
    */
-  reference operator[](int i) {
-    if(i<0 || i>tot_num_walkers)
-      APP_ABORT("error: index out of bounds.\n");
-    assert(walker_buffer.size(1) == walker_size);
-    return reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i],data_displ,wlk_desc);
-  }
+//  reference operator[](int i) {
+//    if(i<0 || i>tot_num_walkers)
+//      APP_ABORT("error: index out of bounds.\n");
+//    assert(walker_buffer.size(1) == walker_size);
+//    return reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i],data_displ,wlk_desc);
+//  }
 
   /*
    * Returns a reference to a walker
    */
-  const_reference operator[](int i) const {
-    if(i<0 || i>tot_num_walkers)
-      APP_ABORT("error: index out of bounds.\n");
-    assert(walker_buffer.size(1) == walker_size);
-    return const_reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i],data_displ,wlk_desc);
-  }
+//  const_reference operator[](int i) const {
+//    if(i<0 || i>tot_num_walkers)
+//      APP_ABORT("error: index out of bounds.\n");
+//    assert(walker_buffer.size(1) == walker_size);
+//    return const_reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i],data_displ,wlk_desc);
+//  }
 
   // cleans state of object. 
   //   -erases allocated memory 
-  bool clean(); 
+//  bool clean(); 
 
   /*
    * Increases the capacity of the containers to n.
    */
-  void reserve(int n);
+//  void reserve(int n);
 
   /*
    * Adds/removes the number of walkers in the set to match the requested value.
@@ -159,7 +155,7 @@ class SharedWalkerSet: public AFQMCInfo
    * Capacity is increased if necessary.
    * Target Populations are set to n.
    */  
-  void resize(int n);
+//  void resize(int n);
 
   /*
    * Adds/removes the number of walkers in the set to match the requested value.
@@ -169,20 +165,21 @@ class SharedWalkerSet: public AFQMCInfo
    * Capacity is increased if necessary.
    * Target Populations are set to n.
    */ 
-  template<class MatA, class MatB>
-  void resize(int n, MatA&& A, MatB&& B);
+//  template<class MatA, class MatB>
+//  void resize(int n, MatA&& A, MatB&& B);
 
   // perform and report tests/timings
-  void benchmark(std::string& blist,int maxnW,int delnW,int repeat);
+//  void benchmark(std::string& blist,int maxnW,int delnW,int repeat);
 
-  int get_TG_target_population() const{ return targetN_per_TG; }
-  int get_global_target_population() const{ return targetN; }
+//  int get_TG_target_population() const{ return targetN_per_TG; }
+//  int get_global_target_population() const{ return targetN; }
 
-  int getNBackProp() const { return nback_prop; }
-  std::pair<int,int> walker_dims() const {
-    return std::pair<int,int> {wlk_desc[0], wlk_desc[1]};
-  }
+//  int getNBackProp() const { return nback_prop; }
+//  std::pair<int,int> walker_dims() const {
+//    return std::pair<int,int> {wlk_desc[0], wlk_desc[1]};
+//  }
 
+/*
   int GlobalPopulation() const{
     int res=0;
     assert(walker_buffer.size(1) == walker_size);
@@ -300,7 +297,7 @@ class SharedWalkerSet: public AFQMCInfo
     }
   }
 
-  private:
+  protected:
 
   RandomGenerator_t* rng;
 
@@ -341,6 +338,7 @@ class SharedWalkerSet: public AFQMCInfo
   double min_weight, max_weight;
 
   std::vector<int> nwalk_counts_new, nwalk_counts_old;
+*/
 
 };
 

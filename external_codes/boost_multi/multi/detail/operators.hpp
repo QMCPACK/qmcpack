@@ -43,37 +43,32 @@ struct partially_ordered2<T, void, B> : B{
 
 template<class T, class B = empty_base>
 struct random_iterable : B{
+//	using iterator = Iterator;
 	auto cbegin() const{return typename T::const_iterator{static_cast<T const&>(*this).begin()};}
 	auto cend()   const{return typename T::const_iterator{static_cast<T const*>(this)->end()};}
-//	template<class SS>//, typename = std::enable_if_t<std::is_same<std::decay_t<SS>, T>{}> >
-//	friend auto cbegin(SS const& s, T* = 0)->decltype(s.cbegin()){return s.cbegin();}
 	friend auto cbegin(T const& s){return static_cast<random_iterable const&>(s).cbegin();}
 	friend auto cend  (T const& s){return static_cast<random_iterable const&>(s).cend  ();}
+
 	auto crbegin() const{return typename T::const_reverse_iterator{cend  ()};}
 	auto crend  () const{return typename T::const_reverse_iterator{cbegin()};}
 	friend auto crbegin(T const& s){return static_cast<random_iterable const&>(s).cbegin();}
 	friend auto crend  (T const& s){return static_cast<random_iterable const&>(s).cend  ();}
+
 	friend auto begin(T const& t){return t.begin();}
+	friend auto end  (T const& t){return t.end();}
+
 	friend auto begin(T& t){return t.begin();}
-	friend auto end(T const& t){return t.end();}
-	friend auto end(T& t){return t.end();}
-//	template<class S>//, typename = std::enable_if_t<std::is_same<std::decay_t<S>, T>{}> > 
-//	friend auto  begin(S&& s, T* =0){return std::forward<S>(s). begin();}
-//	template<class S>//, typename = std::enable_if_t<std::is_same<std::decay_t<S>, T>{}> > 
-//	friend auto  end  (S&& s, T* =0){return std::forward<S>(s). end  ();}
+	friend auto end  (T& t){return t.end();}
+
 	auto rbegin(){return typename T::reverse_iterator{static_cast<T&>(*this).end  ()};}
 	auto rend  (){return typename T::reverse_iterator{static_cast<T&>(*this).begin()};}
 	friend auto rbegin(T& s){return static_cast<random_iterable&>(s).rbegin();}
 	friend auto rend  (T& s){return static_cast<random_iterable&>(s).rend  ();}
-//	template<class S>
-//	friend auto crbegin(S const& s, ...){return s.crbegin();}
-//	template<class S>
-//	friend auto crend  (S const& s, T* =0){return s.crend  ();}
+
 	decltype(auto) cfront() const{return static_cast<T const&>(*this).front();}
 	decltype(auto) cback()  const{return static_cast<T const&>(*this).back() ;}
 	friend auto cfront(T const& s){return s.cfront();}
 	friend auto cback (T const& s){return s.cback() ;}
-//	friend typename T::size_type size(T const& self){return self.size();}
 };
 
 }}

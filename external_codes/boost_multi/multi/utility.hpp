@@ -44,7 +44,7 @@ constexpr auto size(const T(&)[N]) noexcept{return multi::size_type{N};}
 
 template<class T>
 auto has_num_elements_aux(T const& t)->decltype(t.num_elements(), std::true_type {});
-auto has_num_elements_aux(...       )->decltype(                  std::false_type{});
+inline auto has_num_elements_aux(...       )->decltype(                  std::false_type{});
 template<class T> struct has_num_elements : decltype(has_num_elements_aux(std::declval<T>())){};
 
 template<class A, typename = std::enable_if_t<has_num_elements<A>{}> > 
@@ -74,7 +74,7 @@ auto extension(Container const& c) // TODO consider "extent"
 
 template<class T>
 auto has_dimensionaliy_aux(T const& t)->decltype(t.dimensionality(), std::true_type {});
-auto has_dimensionaliy_aux(...       )->decltype(                    std::false_type{});
+inline auto has_dimensionaliy_aux(...       )->decltype(                    std::false_type{});
 template<class T> struct has_dimensionality : decltype(has_dimensionaliy_aux(std::declval<T>())){};
 
 template<class Container, typename = std::enable_if_t<has_dimensionality<Container>{}> >
@@ -84,7 +84,7 @@ constexpr auto dimensionality(Container const& con)
 
 template<class T>
 auto has_dimensionaliy_member_aux(T const& t)->decltype(size_t(t.dimensionality), std::true_type {});
-auto has_dimensionaliy_member_aux(...       )->decltype(                          std::false_type{});
+inline auto has_dimensionaliy_member_aux(...       )->decltype(                          std::false_type{});
 template<class T> struct has_dimensionality_member : decltype(has_dimensionaliy_member_aux(std::declval<T>())){};
 
 template<class C> constexpr auto dimensionality(C const&)->decltype(C::dimensionality){return C::dimensionality;}
@@ -100,7 +100,7 @@ constexpr auto dimensionality(std::array<T, N> const&){return 1 + dimensionality
 
 template<class T, typename = decltype(std::declval<T>().sizes())>
 std::true_type has_sizes_aux(T const&);
-std::false_type has_sizes_aux(...);
+inline std::false_type has_sizes_aux(...);
 
 template<class T> struct has_sizes : decltype(has_sizes_aux(std::declval<T>())){};
 
@@ -131,7 +131,7 @@ constexpr auto corigin(const T(&t)[N]) noexcept{return corigin(t[0]);}
 
 template<class T, typename = decltype(std::declval<T>().extensions())>
 std::true_type has_extensions_aux(T const&);
-std::false_type has_extensions_aux(...);
+inline std::false_type has_extensions_aux(...);
 
 template<class T> struct has_extensions : decltype(has_extensions_aux(std::declval<T>())){};
 
@@ -190,7 +190,7 @@ template<class T1> struct extension_t_aux{
 
 template<class T, typename = decltype(std::declval<T const&>().layout())>
 std::true_type has_layout_member_aux(T const&);
-std::false_type has_layout_member_aux(...);
+inline std::false_type has_layout_member_aux(...);
 
 template<class T>
 struct has_layout_member : decltype(has_layout_member_aux(std::declval<T const&>())){};

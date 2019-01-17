@@ -5,10 +5,12 @@ $CXX -O3 -std=c++17 -Wall -Wextra -Wpedantic $0 -o $0.x && $0.x $@ && rm -f $0.x
 #include "../array.hpp"
 
 #include<complex>
+#include<iostream>
 
 namespace multi = boost::multi;
 
 int main(){
+#if 1
 {
 	multi::array<double, 1> const A = {1.2,3.4,5.6}; 
 	assert( size(A) == 3 );
@@ -191,7 +193,7 @@ int main(){
 	auto C3 = B3; 
 }
 #endif
-
+#endif
 
 }
 

@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-$CXX -O3 -std=c++14 -Wall `#-DNDEBUG` -Wextra $0 -o $0.x && $0.x $@ && rm -f $0.x; exit
+$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic -Wfatal-errors $0 -o $0.x && $0.x $@ && rm -f $0.x; exit
 #endif
 
 #include<iostream>
@@ -9,7 +9,8 @@ $CXX -O3 -std=c++14 -Wall `#-DNDEBUG` -Wextra $0 -o $0.x && $0.x $@ && rm -f $0.
 namespace multi = boost::multi;
 
 using std::cout;
-void print(double const& d){cout<<d;};
+void print(double const& d){cout<<d;}
+
 template<class MultiArray> 
 void print(MultiArray const& ma){
 	cout<<"{";
@@ -26,24 +27,16 @@ decltype(auto) take(MA&& ma){return ma[0];}
 
 int main(){
 {
-	cout << "GNUC " << __GNUC__ << " " << __GNUC_MINOR__ << std::endl;
-
-#if not __INTEL_COMPILER
-	multi::array<double, 3> A {
-		{{ 1.2,  1.1}, { 2.4, 1.}},
-		{{11.2,  3.0}, {34.4, 4.}},
-		{{ 1.2,  1.1}, { 2.4, 1.}}
-	};
-#else
-	multi::array<double, 3> A(
+	multi::array<double, 3> A =
+	#if defined(__INTEL_COMPILER)
 		(double[3][2][2])
+	#endif
 		{
 			{{ 1.2,  1.1}, { 2.4, 1.}},
 			{{11.2,  3.0}, {34.4, 4.}},
 			{{ 1.2,  1.1}, { 2.4, 1.}}
 		}
-	);
-#endif
+	;
 
 	assert( begin(A) < end(A) );
 	assert( cbegin(A) < cend(A) );
