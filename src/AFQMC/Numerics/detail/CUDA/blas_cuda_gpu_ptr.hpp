@@ -35,11 +35,31 @@
 namespace qmc_cuda 
 {
   // copy Specializations
-  template<typename T>
-  inline static void copy(int n, cuda_gpu_ptr<T const> x, int incx, cuda_gpu_ptr<T> && y, int incy)
+  template<typename T, typename Q>
+  inline static void copy(int n, cuda_gpu_ptr<Q> x, int incx, cuda_gpu_ptr<T> && y, int incy)
   {
     if(CUBLAS_STATUS_SUCCESS != cublas::cublas_copy(*x.handles.cublas_handle,n,to_address(x),incx,to_address(y),incy))
       throw std::runtime_error("Error: cublas_copy returned error code.");
+  }
+
+  template<typename T>
+  inline static void copy(int n, T const* x, int incx, cuda_gpu_ptr<T> && y, int incy)
+  {
+    if(cudaSuccess != cudaMemcpy2D(to_address(y),sizeof(T)*incy,
+                                   x,sizeof(T)*incx,
+                                   sizeof(T),n,cudaMemcpyDeviceToHost))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+  }
+
+  template<typename T, typename Q>
+  inline static void copy(int n, cuda_gpu_ptr<Q> x, int incx, T* y, int incy)
+  {
+    static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
+    assert(sizeof(Q)==sizeof(T));
+    if(cudaSuccess != cudaMemcpy2D(y,sizeof(T)*incy,
+                                   to_address(x),sizeof(Q)*incx,
+                                   sizeof(T),n,cudaMemcpyHostToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   }
 
   // scal Specializations

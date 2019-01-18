@@ -37,7 +37,7 @@
 //#include "mpi3/environment.hpp"
 
 //#include "AFQMC/Walkers WalkerSetFactory.hpp"
-#include "AFQMC/Walkers/SharedWalkerSet.h"
+#include "AFQMC/Walkers/SharedWalkerSet.hpp"
 #include "AFQMC/Walkers/WalkerIO.hpp"
 
 using std::string;
@@ -186,7 +186,11 @@ const char *xml_block =
   REQUIRE(wset.GlobalWeight() == tot_weight*TG.getNumberOfTGs());
 
   std::vector<ComplexType> Wdata;
+std::cout<<" before wset.popControl " <<std::endl;
   wset.popControl(Wdata);
+std::cout<<" after wset.popControl " <<std::endl;
+  REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
+std::cout<<" after wset.GlobalWeight " <<std::endl;
   REQUIRE(wset.get_TG_target_population() == nwalkers);
   REQUIRE(wset.get_global_target_population() == nwalkers*TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == nwalkers*TG.getNumberOfTGs());

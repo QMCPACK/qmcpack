@@ -70,9 +70,13 @@ namespace afqmc
 #if defined(QMC_CUDA)
   template<class T>
   using device_allocator = qmc_cuda::cuda_gpu_allocator<T>;
+  template<class T>
+  using device_ptr = qmc_cuda::cuda_gpu_ptr<T>;
 #else
   template<class T>
   using device_allocator = std::allocator<T>;
+  template<class T>
+  using device_ptr = T*;
 #endif
 
   // new types

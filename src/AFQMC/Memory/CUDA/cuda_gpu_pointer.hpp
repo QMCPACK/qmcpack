@@ -204,10 +204,17 @@ T* copy_n_cast(cuda_gpu_ptr<T> const A, Size n, T* B) {
 }
 
 /**************** fill_n *****************/
-template<typename T, typename Size, typename... Args>
-cuda_gpu_ptr<T> fill_n(cuda_gpu_ptr<T> first, Size n, Args&&...args){
+//template<typename T, typename Size, typename... Args>
+//cuda_gpu_ptr<T> fill_n(cuda_gpu_ptr<T> first, Size n, Args&&...args){
+//  if(n == 0) return first;
+//  kernels::fill_n(to_address(first), n, std::forward<Args>(args)...);
+//  return first + n;
+//}
+
+template<typename T, typename Size>
+cuda_gpu_ptr<T> fill_n(cuda_gpu_ptr<T> first, Size n, T const& val){
   if(n == 0) return first;
-  kernels::fill_n(to_address(first), n, std::forward<Args>(args)...);
+  kernels::fill_n(to_address(first), n, val);
   return first + n;
 }
 
@@ -276,6 +283,7 @@ void print(std::string str, cuda_gpu_ptr<T> p, int n) {
 namespace boost::multi{
 
 /**************** copy *****************/
+// Can always call cudaMemcopy2D like you do in the blas backend
 template<class T>
 multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy( 
            multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,

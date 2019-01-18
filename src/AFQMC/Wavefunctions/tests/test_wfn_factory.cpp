@@ -158,8 +158,11 @@ const char *wlk_xml_block_noncol =
 
       wfn.Overlap(wset);
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
+std::cout<<" here 0 " <<std::endl;
         REQUIRE(real(*it->overlap()) == Approx(1.0));
+std::cout<<" here 1 " <<std::endl;
         REQUIRE(imag(*it->overlap()) == Approx(0.0));
+std::cout<<" here 2 " <<std::endl;
       }
 
       using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;

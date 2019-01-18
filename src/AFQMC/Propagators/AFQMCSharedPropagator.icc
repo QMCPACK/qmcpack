@@ -289,7 +289,7 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
       // in this case, tk corresponds to 2x the walker number
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk/2;
-        CMatrix_ref B = wset[tk/2].BMatrix();
+        auto B(wset[tk/2].BMatrix());
         SDetOp.Propagate(B,P1,vHS3D[nt],order);
         if(tk%2==0) {
           TAlpha = wset[tk/2].SlaterMatrix(Alpha);
@@ -303,7 +303,7 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
       if(last_nextra > 0) {
         int tk = (ntasks_total_serial+last_task_index);
         int nt = ni*nwalk+tk/2;
-        CMatrix_ref B = wset[tk/2].BMatrix();
+        auto B(wset[tk/2].BMatrix());
         SDetOp.Propagate(B,P1,vHS3D[nt],order);
         if(tk%2==0) {
           TAlpha = wset[tk/2].SlaterMatrix(Alpha);
@@ -318,7 +318,7 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
       // in this case, tk corresponds to walker number
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk;
-        CMatrix_ref B = wset[tk].BMatrix();
+        auto B(wset[tk].BMatrix());
         SDetOp.Propagate(B,P1,vHS3D[nt],order);
         TAlpha = wset[tk].SlaterMatrix(Alpha);
         ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
@@ -327,7 +327,7 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
       if(last_nextra > 0) {
         int iw = ntasks_total_serial+last_task_index;
         int nt = ni*nwalk+iw;
-        CMatrix_ref B = wset[iw].BMatrix();
+        auto B(wset[iw].BMatrix());
         SDetOp.Propagate(B,P1,vHS3D[nt],order);
         TAlpha = wset[iw].SlaterMatrix(Alpha);
         ma::product(B, TAlpha, wset[iw].SlaterMatrix(Alpha));
@@ -344,7 +344,7 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
           local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
           oldw=tk/2;
         }
-        CMatrix_ref B = wset[tk/2].BMatrix();
+        auto B(wset[tk/2].BMatrix());
         SDetOp.Propagate(B,P1,local_vHS,order);
         if(tk%2==0) {
           TAlpha = wset[tk/2].SlaterMatrix(Alpha);
@@ -359,7 +359,7 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
         int tk = (ntasks_total_serial+last_task_index);
         int nt = ni*nwalk+tk/2;
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        CMatrix_ref B = wset[tk/2].BMatrix();
+        auto B(wset[tk/2].BMatrix());
         SDetOp.Propagate(B,P1,local_vHS,order);
         if(tk%2==0) {
           TAlpha = wset[tk/2].SlaterMatrix(Alpha);
@@ -375,7 +375,7 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk;
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        CMatrix_ref B = wset[tk].BMatrix();
+        auto B(wset[tk].BMatrix());
         SDetOp.Propagate(B,P1,local_vHS,order);
         TAlpha = wset[tk].SlaterMatrix(Alpha);
         ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
@@ -385,7 +385,7 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
         int iw = ntasks_total_serial+last_task_index;
         int nt = ni*nwalk+iw;
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        CMatrix_ref B = wset[iw].BMatrix();
+        auto B(wset[iw].BMatrix());
         SDetOp.Propagate(B,P1,local_vHS,order);
         TAlpha = wset[iw].SlaterMatrix(Alpha);
         ma::product(B, TAlpha, wset[iw].SlaterMatrix(Alpha));
