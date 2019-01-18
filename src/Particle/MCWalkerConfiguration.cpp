@@ -730,7 +730,6 @@ void MCWalkerConfiguration::NLMove_GPU(std::vector<Walker_t*> &walkers,
     NLlist_GPU.resize(N);
     NLlist_host.resize(N);
   }
-// TODO: In case delayed updates are including DMC, need to work here (AT)
   if (Rnew_GPU.size() < N)
   {
     Rnew_host.resize(N);

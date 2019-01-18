@@ -456,7 +456,7 @@ public:
   {
     // in case that we finished the current k-block (kcurr=0) *or* (<- This case also takes care of no delayed updates as kcurr will always be zero then)
     // if we run out of electrons (nat) but still have some k's in the current k-block, an update needs to happen now
-    bool end_of_matrix = (kcurr+kblock*kblocksize>=getnat(iat)); // TODO: Make sure we do *not* divide by two if there is no spin up/down matrix savings
+    bool end_of_matrix = (kcurr+kblock*kblocksize>=getnat(iat));
     bool update=((!kcurr) || end_of_matrix);
     kupdate=kblocksize;
     if(update)
