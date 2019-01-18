@@ -725,6 +725,26 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
     app_log() <<"CI coefficients are not optimizable. \n";
     multiSD->Optimizable=false;
   }
+
+//safety checks for orbital optimization
+  if(multiSD->Dets[0]->Optimizable == true || multiSD->Dets[1]->Optimizable == true)
+  { 
+    if (multiSD->usingCSF)
+      APP_ABORT("Currently, Using CSF is not available with MSJ Orbital Optimization \n");
+
+    //checks that the hartree fock determinant is the first in the multislater expansion
+    for (int i=0; i < nels_up; i++)
+    {
+      if (uniqueConfg_up[0].occup[i] != true)
+        APP_ABORT("The Hartree Fock alpha Determinant must be first in the Multi-Slater expansion \n");
+    }
+    for (int i=0; i < nels_dn; i++)
+    {
+      if (uniqueConfg_dn[0].occup[i] != true)
+        APP_ABORT("The Hartree Fock beta Determinant must be first in the Multi-Slater expansion \n");
+    }
+    app_log() << "WARNING: Unrestricted Orbital Optimization will be performed. Spin symmetry is not guaranteed to be preserved \n";
+  }
   return success;
 }
 /*
