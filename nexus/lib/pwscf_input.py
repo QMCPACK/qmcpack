@@ -52,6 +52,7 @@ from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil
 from numpy.linalg import inv
 from unit_converter import convert
 from generic import obj
+from periodic_table import is_element
 from structure import Structure,kmesh
 from physical_system import PhysicalSystem
 from developer import DevBase,log,warn,error
@@ -1422,7 +1423,7 @@ class PwscfInput(SimulationInput):
     #end def get_common_vars
 
 
-    def incorporate_system(self,system):
+    def incorporate_system(self,system,elem_order=None):
         system.check_folded_system()
         system.update_particles()
         system.change_units('B')
@@ -1469,12 +1470,22 @@ class PwscfInput(SimulationInput):
         #end if
 
         atoms = p.get_ions()
-        masses = obj()
+        if 'masses' not in self.atomic_species:
+            self.atomic_species.masses = obj()
+        #end if
         for name,a in atoms.iteritems():
-            masses[name] = convert(a.mass,'me','amu')
+            self.atomic_species.masses[name] = convert(a.mass,'me','amu')
         #end for
-        self.atomic_species.atoms  = list(sorted(atoms.keys()))
-        self.atomic_species.masses = masses
+        if elem_order is None:
+            self.atomic_species.atoms = list(sorted(atoms.keys()))
+        else:
+            if set(elem_order)!=set(atoms.keys()):
+                self.error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(atoms.keys()),elem_order))
+            elif len(elem_order)!=len(atoms):
+                self.error('elem_order has repeated elements\nelem_order: {0}'.format(elem_order))
+            #end if
+            self.atomic_species.atoms = list(elem_order)
+        #end if
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
@@ -1694,81 +1705,68 @@ def generate_pwscf_input(selector,**kwargs):
 #end def generate_pwscf_input
 
 
-
 generate_any_defaults = obj(
     standard = obj(
         prefix     = 'pwscf',
         outdir     = 'pwscf_output',
         pseudo_dir = './',
-        pseudos    = list,
         kgrid      = None,
         kshift     = (0,0,0),
-        system     = None,
         use_folded = True,
-        hubbard_u  = None,  # these are provisional and may be removed/changed at any time
-        start_mag  = None
         ),
     oldscf   = obj(
-        calculation  = 'scf',
-        prefix       = 'pwscf',
-        outdir       = 'pwscf_output',
-        pseudo_dir   = './',
-        ecutwfc      = 200.,
-        occupations  = 'smearing',
-        smearing     = 'fermi-dirac',
-        degauss      = 0.0001,
-        nosym        = False,
-        wf_collect   = True,
-        hubbard_u    = None,
-        start_mag    = None,
-        restart_mode = 'from_scratch',
-        tstress      = True,
-        tprnfor      = True,
-        disk_io      = 'low',
-        verbosity    = 'high',
-        ibrav        = 0,
-        conv_thr     = 1e-10,
+        calculation      = 'scf',
+        prefix           = 'pwscf',
+        outdir           = 'pwscf_output',
+        pseudo_dir       = './',
+        ecutwfc          = 200.,
+        occupations      = 'smearing',
+        smearing         = 'fermi-dirac',
+        degauss          = 0.0001,
+        nosym            = False,
+        wf_collect       = True,
+        restart_mode     = 'from_scratch',
+        tstress          = True,
+        tprnfor          = True,
+        disk_io          = 'low',
+        verbosity        = 'high',
+        ibrav            = 0,
+        conv_thr         = 1e-10,
         electron_maxstep = 1000,
-        mixing_mode  = 'plain',
-        mixing_beta  = .7,
-        diagonalization = 'david',
-        kgrid        = None,
-        kshift       = None,
-        pseudos      = None,
-        system       = None,
-        use_folded   = True,
+        mixing_mode      = 'plain',
+        mixing_beta      = .7,
+        diagonalization  = 'david',
+        kgrid            = None,
+        kshift           = None,
+        use_folded       = True,
         ),
     oldrelax = obj(
-        calculation  = 'relax',
-        prefix       = 'pwscf',
-        outdir       = 'pwscf_output',
-        pseudo_dir      = './',
-        ecutwfc      = 50.,
-        occupations  = 'smearing',
-        smearing     = 'fermi-dirac',
-        degauss      = 0.0001,
-        nosym        = True,
-        wf_collect   = False,
-        hubbard_u    = None,
-        start_mag    = None,
-        restart_mode = 'from_scratch',
-        disk_io      = 'low',
-        verbosity    = 'high',
-        ibrav        = 0,
-        conv_thr     = 1e-6,
-        electron_maxstep = 1000,
-        mixing_mode  = 'plain',
-        mixing_beta  = .7,
-        diagonalization = 'david',
-        ion_dynamics    = 'bfgs',
-        upscale      = 100,
+        calculation       = 'relax',
+        prefix            = 'pwscf',
+        outdir            = 'pwscf_output',
+        pseudo_dir        = './',
+        ecutwfc           = 50.,
+        occupations       = 'smearing',
+        smearing          = 'fermi-dirac',
+        degauss           = 0.0001,
+        nosym             = True,
+        wf_collect        = False,
+        restart_mode      = 'from_scratch',
+        disk_io           = 'low',
+        verbosity         = 'high',
+        ibrav             = 0,
+        conv_thr          = 1e-6,
+        electron_maxstep  = 1000,
+        mixing_mode       = 'plain',
+        mixing_beta       = .7,
+        diagonalization   = 'david',
+        ion_dynamics      = 'bfgs',
+        upscale           = 100,
         pot_extrapolation = 'second_order',
         wfc_extrapolation = 'second_order',
-        kgrid        = None,
-        kshift       = None,
-        pseudos      = None,
-        system       = None,
-        use_folded   = False,
+        kgrid             = None,
+        kshift            = None,
+        use_folded        = False,
         ),
     )
 
@@ -1844,33 +1842,78 @@ def generate_any_pwscf_input(**kwargs):
     #end for
 
     #process other keywords
-    pseudos    = kwargs.delete_required('pseudos')
-    system     = kwargs.delete_required('system')
-    use_folded = kwargs.delete_required('use_folded')
-    start_mag  = kwargs.delete_required('start_mag')
-    kgrid      = kwargs.delete_required('kgrid')
-    kshift     = kwargs.delete_required('kshift')
-    nogamma    = kwargs.delete_optional('nogamma',False)
-    totmag_sys = kwargs.delete_optional('totmag_sys',False)
-    bandfac    = kwargs.delete_optional('bandfac',None)
+    use_folded    = kwargs.delete_required('use_folded')
+    kgrid         = kwargs.delete_required('kgrid')
+    kshift        = kwargs.delete_required('kshift')
+    system        = kwargs.delete_optional('system',None)
+    pseudos       = kwargs.delete_optional('pseudos',[])
+    elem_order    = kwargs.delete_optional('elem_order',None)
+    mass          = kwargs.delete_optional('mass',None)
+    elem          = kwargs.delete_optional('elem',None)
+    pos           = kwargs.delete_optional('pos',None)
+    pos_specifier = kwargs.delete_optional('pos_specifier',None)
+    totmag_sys    = kwargs.delete_optional('totmag_sys',False)
+    start_mag     = kwargs.delete_optional('start_mag',None)
+    bandfac       = kwargs.delete_optional('bandfac',None)
+    nogamma       = kwargs.delete_optional('nogamma',False)
 
     #  pseudopotentials
     pseudopotentials = obj()
-    atoms = []
+    atom_species = []
     for ppname in pseudos:
         #element = ppname[0:2].strip('.')
         label,element = pp_elem_label(ppname,guard=True)
-        atoms.append(element)
+        atom_species.append(element)
         pseudopotentials[element] = ppname
     #end for
     pw.atomic_species.set(
-        atoms            = atoms,
-        pseudopotentials = pseudopotentials
+        atoms            = list(sorted(atom_species)),
+        pseudopotentials = pseudopotentials,
         )
 
     #  physical system information
     if system is None:
-        PwscfInput.class_error('system must be provided','generate_pwscf_input')
+        if elem is None:
+            PwscfInput.class_error('system must be provided','generate_pwscf_input')
+        else:
+            if mass is None:
+                PwscfInput.class_error('"mass" must be provided when "elem" is given','generate_pwscf_input')
+            #end if
+            if pos is None:
+                PwscfInput.class_error('"pos" must be provided when "elem" is given','generate_pwscf_input')
+            #end if
+            if pos_specifier is None:
+                PwscfInput.class_error('"pos_specifier" must be provided when "elem" is given','generate_pwscf_input')
+            #end if
+
+            # fill in atomic_species
+            species = set(elem)
+            if elem_order is not None:
+                if set(elem_order)!=species:
+                    PwscfInput.class_error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(species),elem_order),'generate_pwscf_input')
+                elif len(elem_order)!=len(species):
+                    PwscfInput.class_error('elem_order has repeated elements\nelem_order: {0}'.format(elem_order),'generate_pwscf_input')
+                #end if
+                pw.atomic_species.atoms = list(elem_order)
+            else:
+                pw.atomic_species.atoms = list(sorted(species))
+            #end if
+            pw.atomic_species.masses = obj(mass)
+            pp = pw.atomic_species.pseudopotentials
+            for atom in pw.atomic_species.atoms:
+                if not atom in pp:
+                    iselem,symbol = is_element(atom,symbol=True)
+                    if iselem and symbol in pp:
+                        pp[atom] = str(pp[symbol])
+                    #end if
+                #end if
+            #end for
+
+            # fill in atomic_positions
+            pw.atomic_positions.specifier = pos_specifier
+            pw.atomic_positions.positions = array(pos,dtype=float)
+            pw.atomic_positions.atoms     = list(elem)
+        #end if
     else:
         system.check_folded_system()
         system.change_units('B')
@@ -1884,7 +1927,7 @@ def generate_any_pwscf_input(**kwargs):
             axes.shape = fs.axes.shape
             axes = dot(s.tmatrix,axes)
             if abs(axes-s.axes).sum()>1e-5:
-                PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(s.axes)+'\n  folded axes tiled:\n'+str(axes),'generate_pwscf_input')
+                PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(s.axes)+'\nfolded axes tiled:\n'+str(axes),'generate_pwscf_input')
             #end if
         else:
             axes = array(array_to_string(s.axes).split(),dtype=float)
@@ -1894,7 +1937,7 @@ def generate_any_pwscf_input(**kwargs):
         if use_folded:
             system = system.get_primitive()
         #end if
-        pw.incorporate_system(system)
+        pw.incorporate_system(system,elem_order)
     #end if
 
     #  tot_magnetization from system
@@ -1942,12 +1985,12 @@ def generate_any_pwscf_input(**kwargs):
         zero_shift = tuple(kshift)==(0,0,0)
     #end if
 
-    single_point = kgrid != None and tuple(kgrid)==(1,1,1)
+    single_point = kgrid is not None and tuple(kgrid)==(1,1,1)
     no_info      = kgrid is None and system is None
     at_gamma  = zero_shift and (single_point or no_info)
     sys_gamma = 'specifier' in pw.k_points and pw.k_points.specifier=='gamma'
-    auto      = kgrid!=None and kshift!=None
-    shifted   = not zero_shift and kshift!=None
+    auto      = kgrid is not None and kshift is not None
+    shifted   = not zero_shift and kshift is not None
 
     if at_gamma and not nogamma:
         pw.k_points.clear()
