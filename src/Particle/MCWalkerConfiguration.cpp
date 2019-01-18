@@ -654,9 +654,10 @@ void MCWalkerConfiguration::copyWalkerGradToGPU()
 }
 
 void MCWalkerConfiguration::proposeMove_GPU
-(std::vector<PosType> &newPos, int iat, int nat)
+(std::vector<PosType> &newPos, int iat)
 {
   int nw=newPos.size();
+  int nat=getnat(iat);
   if (Rnew_host.size() < nw*kblocksize)
   {
     Rnew.resize(nw*kblocksize);
@@ -685,7 +686,7 @@ void MCWalkerConfiguration::proposeMove_GPU
     {
       Rnew_GPU.asyncCopy(&(Rnew_host[offset]),nw*kblocksize,offset,nw);
     } else
-      if(kcurr==0 || (kcurr+kblock*kblocksize>=nat/2)) // TODO: Make sure we do *not* divide by two if there is no spin up/down matrix savings
+      if(kcurr==0 || (kcurr+kblock*kblocksize>=nat))
         Rnew_GPU.asyncCopy(Rnew_host);
   } else
     Rnew_GPU.asyncCopy(Rnew_host);

@@ -172,8 +172,8 @@ bool DMCcuda::run()
 #endif
           R2prop[iw] += dot(delpos[iw], delpos[iw]);
         }
-        W.proposeMove_GPU(newpos, iat, nat);
-        update_now = W.update_now(nat);
+        W.proposeMove_GPU(newpos, iat);
+        update_now = W.update_now(iat);
         Psi.calcRatio(W,iat,ratios,newG, newL);
         accepted.clear();
         std::vector<bool> acc(nw, true);

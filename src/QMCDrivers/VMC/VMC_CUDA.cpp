@@ -106,13 +106,13 @@ void VMCcuda::advanceWalkers()
       // For each walker, do
       // 1. generate k proposed new positions   [delpos, newpos] -> Done (AT)
       // 2. generate the matrix Rnew (nxk) that contains k proposed new positions -> Done, extended Rnew vector to n vectors (AT)
-      W.proposeMove_GPU(newpos, iat, nat);
+      W.proposeMove_GPU(newpos, iat);
 
       // Store acceptance random numbers
       for(int iw=0; iw<nw; ++iw) acc_random_nrs[rcounter++]=Random();
 
       // check if we are ready to update and if not (k-delay) skip ahead in iat-loop
-      if(!W.update_now(nat)) continue;
+      if(!W.update_now(iat)) continue;
       kd=W.getkupdate();
       int curr_iat=iat-kd+1;
 
@@ -363,8 +363,8 @@ void VMCcuda::advanceWalkersWithDrift()
         ratios_real[iw] = 1.0;
 #endif
       }
-      W.proposeMove_GPU(newpos, iat, nat);
-      update_now = W.update_now(nat);
+      W.proposeMove_GPU(newpos, iat);
+      update_now = W.update_now(iat);
       Psi.calcRatio(W,iat,ratios,newG, newL);
       accepted.clear();
       if (W.UseBoundBox)

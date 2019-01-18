@@ -122,9 +122,7 @@ public:
   GPU_XRAY_TRACE void updateLists_GPU();
   int CurrentParticle;
   GPU_XRAY_TRACE void proposeMove_GPU
-  (std::vector<PosType> &newPos, int iat, int nat);
-  GPU_XRAY_TRACE void proposeMove_GPU
-  (std::vector<PosType> &newPos, int iat){ proposeMove_GPU(newPos, iat, 0); }
+  (std::vector<PosType> &newPos, int iat);
   GPU_XRAY_TRACE void acceptMove_GPU
   (std::vector<bool> &toAccept, int k);
   GPU_XRAY_TRACE void acceptMove_GPU
@@ -432,12 +430,6 @@ public:
     return kblocksize;
   }
 
-  // this function is a bit dangerous but needed to pass the current k of the determinant look-ahead to the Jastrow calculation
-  inline void setkcurr(int k)
-  {
-    kcurr=k;
-  }
-
   inline int getkcurr()
   {
     return kcurr;
@@ -453,11 +445,18 @@ public:
     return kupdate;
   }
 
-  inline bool update_now(int nat)
+  inline int getnat(int iat)
+  {
+    for(unsigned int gid=0; gid<groups(); gid++)
+      if(last(gid)>iat)
+        return last(gid)-first(gid);
+  }
+
+  inline bool update_now(int iat)
   {
     // in case that we finished the current k-block (kcurr=0) *or* (<- This case also takes care of no delayed updates as kcurr will always be zero then)
     // if we run out of electrons (nat) but still have some k's in the current k-block, an update needs to happen now
-    bool end_of_matrix = (kcurr+kblock*kblocksize>=nat/2); // TODO: Make sure we do *not* divide by two if there is no spin up/down matrix savings
+    bool end_of_matrix = (kcurr+kblock*kblocksize>=getnat(iat)); // TODO: Make sure we do *not* divide by two if there is no spin up/down matrix savings
     bool update=((!kcurr) || end_of_matrix);
     kupdate=kblocksize;
     if(update)
