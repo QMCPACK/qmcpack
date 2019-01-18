@@ -68,15 +68,23 @@ namespace afqmc
   using shared_allocator = boost::mpi3::intranode::allocator<T>;
 
 #if defined(QMC_CUDA)
-  template<class T>
-  using device_allocator = qmc_cuda::cuda_gpu_allocator<T>;
-  template<class T>
-  using device_ptr = qmc_cuda::cuda_gpu_ptr<T>;
+  template<class T>  using device_allocator = qmc_cuda::cuda_gpu_allocator<T>;
+  template<class T>  using device_ptr = qmc_cuda::cuda_gpu_ptr<T>;
+  template<class T>  using localTG_allocator = device_allocator<T>;
+  template<class T>  using node_allocator = device_allocator<T>;
+  template<class T, class TG> 
+  localTG_allocator<T> make_localTG_allocator(TG&) {return localTG_allocator<T>{};}
+  template<class T, class TG> 
+  node_allocator<T> make_node_allocator(TG&) {return node_allocator<T>{};}
 #else
-  template<class T>
-  using device_allocator = std::allocator<T>;
-  template<class T>
-  using device_ptr = T*;
+  template<class T>  using device_allocator = std::allocator<T>;
+  template<class T>  using device_ptr = T*;
+  template<class T>  using localTG_allocator = shared_allocator<T>; 
+  template<class T>  using node_allocator = shared_allocator<T>;
+  template<class T, class TG> 
+  localTG_allocator<T> make_localTG_allocator(TG& t_) {return localTG_allocator<T>{t_.TG_local()};}
+  template<class T, class TG> 
+  node_allocator<T> make_node_allocator(TG& t_) {return node_allocator<T>{t_.TG_local()};}
 #endif
 
   // new types
@@ -102,9 +110,14 @@ namespace afqmc
 #endif
 
 
+#if defined(QMC_CUDA)
   using P1Type = ma::sparse::csr_matrix<ComplexType,int,int,
-                                boost::mpi3::intranode::allocator<ComplexType>,
+                                node_allocator<ComplexType>>;
+#else
+  using P1Type = ma::sparse::csr_matrix<ComplexType,int,int,
+                                node_allocator<ComplexType>,
                                 ma::sparse::is_root>;
+#endif
 
   enum HamiltonianTypes {Factorized,THC,KPTHC,KPFactorized,UNKNOWN};
 

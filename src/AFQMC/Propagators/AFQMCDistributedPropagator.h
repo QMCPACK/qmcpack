@@ -32,7 +32,7 @@
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 
-#include "AFQMC/Propagators/AFQMCSharedPropagator.h"
+#include "AFQMC/Propagators/AFQMCBasePropagator.h"
 
 namespace qmcplusplus
 {
@@ -46,15 +46,15 @@ namespace afqmc
  *  - General case. Both vbias and vHS are assumed to need reduction over all nodes
  *    in TG.
  */
-class AFQMCDistributedPropagator: public AFQMCSharedPropagator
+class AFQMCDistributedPropagator: public AFQMCBasePropagator
 {
-  using base = AFQMCSharedPropagator;
+  using base = AFQMCBasePropagator;
   public:
 
     AFQMCDistributedPropagator(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
                           Wavefunction& wfn_, CMatrix&& h1_, CVector&& vmf_, 
                           RandomGenerator_t* r): 
-            AFQMCSharedPropagator(info,cur,tg_,wfn_,std::move(h1_),std::move(vmf_),r)
+            base(info,cur,tg_,wfn_,std::move(h1_),std::move(vmf_),r)
             ,core_comm(tg_.TG().split(tg_.getLocalTGRank(),tg_.TG().rank()))
 //            ,core_comm()
     {
@@ -68,7 +68,7 @@ class AFQMCDistributedPropagator: public AFQMCSharedPropagator
     AFQMCDistributedPropagator& operator=(AFQMCDistributedPropagator const& other) = delete;
     //AFQMCDistributedPropagator(AFQMCDistributedPropagator&& other) = default;
     AFQMCDistributedPropagator(AFQMCDistributedPropagator&& other):
-                AFQMCSharedPropagator(std::move(other)),
+                base(std::move(other)),
                 core_comm()
     {
       // move constructor for communicator seems broken

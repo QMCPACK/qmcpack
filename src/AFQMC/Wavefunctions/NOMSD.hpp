@@ -61,8 +61,8 @@ class NOMSD: public AFQMCInfo
           std::vector<ComplexType>&& ci_, std::vector<PsiT_Matrix>&& orbs_, 
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
-                //SDetOp( SlaterDetOperations_shared<ComplexType>(
-                SDetOp( 
+                SDetOp( SlaterDetOperations_shared<ComplexType>(
+                //SDetOp( 
                         ((wlk!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((wlk!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ),
                 HamOp(std::move(hop_)),ci(std::move(ci_)),OrbMats(std::move(orbs_)),
@@ -154,6 +154,8 @@ class NOMSD: public AFQMCInfo
 
     CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF)
     { return HamOp.getOneBodyPropagatorMatrix(TG,vMF); }
+
+    SlaterDetOperations& getSlaterDetOperations() const {return SDetOp;} 
 
     /*
      * local contribution to vbias for the Green functions in G 
@@ -339,8 +341,8 @@ class NOMSD: public AFQMCInfo
 
     TaskGroup_& TG;
  
-    SlaterDetOperations_shared<ComplexType> SDetOp;
-    //SlaterDetOperations SDetOp;
+    //SlaterDetOperations_shared<ComplexType> SDetOp;
+    SlaterDetOperations SDetOp;
   
     HamiltonianOperations HamOp;
 

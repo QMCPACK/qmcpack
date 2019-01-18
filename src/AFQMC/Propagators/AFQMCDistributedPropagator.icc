@@ -68,10 +68,15 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   bool new_shm_space=false;  
 
   // 0. Allocate memory and set shared memory structures
-  if(shmbuff.num_elements() < memory_needs ) {
-    shmbuff.reextent(extensions<1u>{memory_needs});
+  if(buffer.num_elements() < memory_needs ) {
+    buffer.reextent(extensions<1u>{memory_needs});
     new_shm_space=true;
   }  
+
+  // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
+  // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
+  auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+
   /* 
    * MAM: Careful here!!!
    * Order of allocation is important, since Gowrk and X (initialiex to RNG) are bcasted in the same 
@@ -79,26 +84,26 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
    */
   size_t displ=0;
   // Mixed Density Matrix for walkers at original configuration
-  CMatrix_ref G(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
+  CMatrix_ref G(mem_pool.origin()+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // Mixed Density Matrix used for computation/communication 
-  CMatrix_ref Gwork(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
+  CMatrix_ref Gwork(mem_pool.origin()+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // right hand side matrix in calculation of HS potential for all steps: ~ sigma + (vbias-vMF)
   // The same vbias is used in all steps
-  CMatrix_ref X(std::addressof(*shmbuff.origin())+displ, {long(nCV),long(nwalk*nsteps)}); 
+  CMatrix_ref X(mem_pool.origin()+displ, {long(nCV),long(nwalk*nsteps)}); 
     displ+=nCV*nwalk*nsteps;
   // Store RNGs  
-  CMatrix_ref RNG(std::addressof(*shmbuff.origin())+displ, {long(nCV),nwalk*nsteps}); 
+  CMatrix_ref RNG(mem_pool.origin()+displ, {long(nCV),nwalk*nsteps}); 
     displ+=nCV*nwalk*nsteps;
   // vias potential for walkers at original configuration
-  CMatrix_ref vbias(std::addressof(*shmbuff.origin())+displ, {long(nCV),nwalk}); 
+  CMatrix_ref vbias(mem_pool.origin()+displ, {long(nCV),nwalk}); 
     displ+=nCV*nwalk;
   // HS potential for all steps.
-  CMatrix_ref vHS(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
+  CMatrix_ref vHS(mem_pool.origin()+displ, {vhs_nr,vhs_nc}); 
     displ+=vhs_nr*vhs_nc;
   // HS potential for computation/communication 
-  CMatrix_ref vHSwork(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
+  CMatrix_ref vHSwork(mem_pool.origin()+displ, {vhs_nr,vhs_nc}); 
     displ+=vhs_nr*vhs_nc;
   // second view of vHS matrix for use in propagation step
   boost::multi::array_ref<ComplexType,3> vHS3D(vHS.origin(), 
@@ -164,9 +169,10 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
                                          TG.TG_local().size());
       std::tie(Gak0,GakN) = FairDivideBoundary(TG.TG_local().rank(),int(G.num_elements()),
                                          TG.TG_local().size());
-      std::copy_n(RNG.origin()+i0,iN-i0,X.origin()+i0);
+      using std::copy_n;
+      copy_n(RNG.origin()+i0,iN-i0,X.origin()+i0);
       // can I do this in a way I don't need the barrier???
-      std::copy_n(G.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
+      copy_n(G.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
       TG.local_barrier();
     }    
     core_comm.broadcast_n(Gwork.origin()+GpX0,GpXN-GpX0,k); 
@@ -246,24 +252,21 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     AFQMCTimers[pseudo_energy_timer]->stop();
 
     // 7. update weights/energy/etc, apply constrains/bounds/etc 
-    // simple round-robin
-    for(int iw=0; iw<nwalk; ++iw) { 
-      if(iw%TG.TG_local().size() == TG.TG_local().rank()) { 
-        if(free_projection) { 
-          free_projection_walker_update(wset[iw],dt,new_overlaps[iw],
-                           MFfactor[0][ni][iw],Eshift,hybrid_weight[0][ni][iw]);
-        } else if(hybrid) {
-          hybrid_walker_update(wset[iw],dt,apply_constrain,importance_sampling,
-                           Eshift,new_overlaps[iw],MFfactor[0][ni][iw],hybrid_weight[0][ni][iw]);
-        } else {
-          local_energy_walker_update(wset[iw],dt,apply_constrain,Eshift,
-                                     new_overlaps[iw],new_energies[iw],
-                                     MFfactor[0][ni][iw],hybrid_weight[0][ni][iw]);
-        }
+    if(TG.TG_local().root()) {                           
+      if(free_projection) { 
+        free_projection_walker_update(wset,dt,new_overlaps,
+                         MFfactor[ni],Eshift,hybrid_weight[ni],work);
+      } else if(hybrid) {
+        hybrid_walker_update(wset,dt,apply_constrain,importance_sampling,
+                         Eshift,new_overlaps,MFfactor[ni],hybrid_weight[ni],work);
+      } else {
+        local_energy_walker_update(wset,dt,apply_constrain,Eshift,
+                                   new_overlaps,new_energies,
+                                   MFfactor[ni],hybrid_weight[ni],work);
       }
     }
+    TG.local_barrier();
   }  
-  TG.local_barrier();
 }
 
 

@@ -48,13 +48,14 @@ namespace afqmc
     int NMO = H1.size(0);
     if(TG.TG_local().root()) {   
       boost::multi::array<ComplexType,2> v({NMO,NMO});
-      std::fill_n(v.origin(),v.num_elements(),ComplexType(0));  
+      fill_n(v.origin(),v.num_elements(),ComplexType(0));  
 
       for(int i=0; i<NMO; i++) 
         ma::axpy(-0.5*dt,H1[i],v[i]);
 
       boost::multi::array<ComplexType,2> P = ma::exp(v);
 
+// need a version of this that works with gpu_ptr!!!
       return csr::shm::construct_csr_matrix_single_input<P1Type>(P,cut,'N',TG.TG_local());
     } else {
       boost::multi::array<ComplexType,2> P({1,1});

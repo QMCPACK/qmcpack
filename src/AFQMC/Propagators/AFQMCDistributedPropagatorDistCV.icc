@@ -68,35 +68,40 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   bool new_shm_space=false;  
 
   // 0. Allocate memory and set shared memory structures
-  if(shmbuff.num_elements() < memory_needs ) {
-    shmbuff.reextent(extensions<1u>{memory_needs});
+  if(buffer.num_elements() < memory_needs ) {
+    buffer.reextent(extensions<1u>{memory_needs});
     new_shm_space=true;
   }  
+
+  // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
+  // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
+  auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+
   size_t displ=0;
   // Mixed Density Matrix for walkers at original configuration
-  CMatrix_ref Gwork(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
+  CMatrix_ref Gwork(mem_pool.origin()+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // Mixed Density Matrix used for communication 
-  CMatrix_ref Grecv(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
+  CMatrix_ref Grecv(mem_pool.origin()+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // vias potential for walkers at original configuration
-  CMatrix_ref vbias(std::addressof(*shmbuff.origin())+displ, {long(localnCV),nwalk}); 
+  CMatrix_ref vbias(mem_pool.origin()+displ, {long(localnCV),nwalk}); 
     displ+=localnCV*nwalk;
   // right hand side matrix in calculation of HS potential for all steps: ~ sigma + (vbias-vMF)
   // The same vbias is used in all steps
-  CMatrix_ref X(std::addressof(*shmbuff.origin())+displ, {long(localnCV),nwalk*nsteps}); 
+  CMatrix_ref X(mem_pool.origin()+displ, {long(localnCV),nwalk*nsteps}); 
     displ+=localnCV*nwalk*nsteps;
   // HS potential for all steps.
-  CMatrix_ref vHS(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
+  CMatrix_ref vHS(mem_pool.origin()+displ, {vhs_nr,vhs_nc}); 
     displ+=vhs_nr*vhs_nc;
   // HS potential for communication 
-  CMatrix_ref vsend(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
+  CMatrix_ref vsend(mem_pool.origin()+displ, {vhs_nr,vhs_nc}); 
     displ+=vhs_nr*vhs_nc;
   // HS potential for communication
-  CMatrix_ref vrecv(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
+  CMatrix_ref vrecv(mem_pool.origin()+displ, {vhs_nr,vhs_nc}); 
   // second view of vHS matrix for use in propagation step
   // notice that the final vHS matrix will be in vrecv, received in the last step
-  boost::multi::array_ref<ComplexType,3> vHS3D(std::addressof(*shmbuff.origin())+displ, 
+  boost::multi::array_ref<ComplexType,3> vHS3D(mem_pool.origin()+displ, 
                                               {vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
 
   // partition G and v for communications: all cores communicate a piece of the matrix
@@ -261,24 +266,21 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     AFQMCTimers[pseudo_energy_timer]->stop();
 
     // 7. update weights/energy/etc, apply constrains/bounds/etc 
-    // simple round-robin
-    for(int iw=0; iw<nwalk; ++iw) { 
-      if(iw%TG.TG_local().size() == TG.TG_local().rank()) { 
-        if(free_projection) { 
-          free_projection_walker_update(wset[iw],dt,new_overlaps[iw],
-                           MFfactor[n0+ni][iw],Eshift,hybrid_weight[n0+ni][iw]);
-        } else if(hybrid) {
-          hybrid_walker_update(wset[iw],dt,apply_constrain,importance_sampling,
-                           Eshift,new_overlaps[iw],MFfactor[n0+ni][iw],hybrid_weight[n0+ni][iw]);
-        } else {
-          local_energy_walker_update(wset[iw],dt,apply_constrain,Eshift,
-                                     new_overlaps[iw],new_energies[iw],
-                                     MFfactor[n0+ni][iw],hybrid_weight[n0+ni][iw]);
-        }
+    if(TG.TG_local().root()) {                           
+      if(free_projection) { 
+        free_projection_walker_update(wset,dt,new_overlaps,
+                         MFfactor[ni],Eshift,hybrid_weight[ni],work);
+      } else if(hybrid) {
+        hybrid_walker_update(wset,dt,apply_constrain,importance_sampling,
+                         Eshift,new_overlaps,MFfactor[ni],hybrid_weight[ni],work);
+      } else {
+        local_energy_walker_update(wset,dt,apply_constrain,Eshift,
+                                   new_overlaps,new_energies,
+                                   MFfactor[ni],hybrid_weight[ni],work);
       }
     }
+    TG.local_barrier();
   }  
-  TG.local_barrier();
 }
 
 }

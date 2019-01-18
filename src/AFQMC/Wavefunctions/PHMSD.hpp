@@ -82,8 +82,8 @@ class PHMSD: public AFQMCInfo
           std::vector<PsiT_Matrix>&& orbs_, 
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
-                //SDetOp( SlaterDetOperations_shared<ComplexType>(
-                SDetOp( 
+                SDetOp( SlaterDetOperations_shared<ComplexType>(
+                //SDetOp( 
                         ((wlk!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((wlk!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ),
                 HamOp(std::move(hop_)),
@@ -209,17 +209,13 @@ class PHMSD: public AFQMCInfo
     bool transposed_vHS() const { return transposed_vHS_; }
     WALKER_TYPES getWalkerType() const {return walker_type; }
 
-/*
-    const std::vector<PsiT_Matrix>& getOrbMat() { return OrbMats; }
-    int getOrbSize () { return 2*NMO; }
-    const std::vector<ComplexType>& getCiCoeff() { return ci; }
-*/
-
     template<class Vec>
     void vMF(Vec&& v);
 
     CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF)
     { return HamOp.getOneBodyPropagatorMatrix(TG,vMF); }
+
+    SlaterDetOperations& getSlaterDetOperations() const {return SDetOp;}
 
     /*
      * local contribution to vbias for the Green functions in G 
@@ -390,8 +386,8 @@ class PHMSD: public AFQMCInfo
 
     TaskGroup_& TG;
  
-    SlaterDetOperations_shared<ComplexType> SDetOp;
-    //SlaterDetOperations SDetOp;
+    //SlaterDetOperations_shared<ComplexType> SDetOp;
+    SlaterDetOperations SDetOp;
   
     HamiltonianOperations HamOp;
 

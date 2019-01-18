@@ -3,7 +3,7 @@
 #include <Utilities/FairDivide.h>
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/config.h" 
-#include "AFQMC/Propagators/AFQMCSerialPropagator.h"
+#include "AFQMC/Propagators/AFQMCBasePropagator.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
 namespace qmcplusplus 
@@ -12,12 +12,12 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-void AFQMCSerialPropagator::parse(xmlNodePtr cur)
+void AFQMCBasePropagator::parse(xmlNodePtr cur)
 {
   using qmcplusplus::app_log;
 
   if(cur == NULL)
-    APP_ABORT("Error in AFQMCSerialPropagator::parse(): Null xml ptr.\n");
+    APP_ABORT("Error in AFQMCBasePropagator::parse(): Null xml ptr.\n");
 
   // defaults
   vbias_bound=50.0;
@@ -25,7 +25,7 @@ void AFQMCSerialPropagator::parse(xmlNodePtr cur)
   hybrid=true;
   importance_sampling=true;
   apply_constrain=true;
-  nbatched_propagation=-1;
+  nbatched_propagation=0;
 
   xmlNodePtr curRoot=cur;
 
@@ -39,7 +39,8 @@ void AFQMCSerialPropagator::parse(xmlNodePtr cur)
   m_param.add(constrain,"apply_constrain","std::string");
   m_param.add(impsam,"importance_sampling","std::string");
   m_param.add(hyb,"hybrid","std::string");
-  m_param.add(nbatched_propagation,"batched","int");
+  if(TG.TG_local().size() > 1)
+    m_param.add(nbatched_propagation,"batched","int");
   m_param.add(freep,"free_projection","std::string");
 
   //m_param.add(sz_pin_field_file,"sz_pinning_field_file","std::string");
@@ -56,10 +57,10 @@ void AFQMCSerialPropagator::parse(xmlNodePtr cur)
   std::transform(freep.begin(),freep.end(),freep.begin(),(int (*)(int)) tolower);
   if(freep == "yes" || freep == "true") free_projection=true; 
 
-    app_log()<<"\n\n --------------- Parsing Propagator input ------------------ \n\n";
+  app_log()<<"\n\n --------------- Parsing Propagator input ------------------ \n\n";
 
-  if(nbatched_propagation > 0)
-    app_log()<<" Using batched propagation with a batch size: " <<nbatched_propagation <<"\n"; 
+  if(nbatched_propagation != 0)
+    app_log()<<" Using batched propagation with a batch size: " <<nbatched_propagation <<"\n";
   else
     app_log()<<" Using sequential propagation. \n";
 
@@ -108,7 +109,26 @@ void AFQMCSerialPropagator::parse(xmlNodePtr cur)
 
 }
 
-void AFQMCSerialPropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtdt, 
+void AFQMCBasePropagator::reset_nextra(int nextra) 
+{
+  if(nextra<=0) return;
+  if(last_nextra != nextra ) {
+    last_nextra = nextra;
+    for(int n=0; n<nextra; n++) {
+      int n0,n1;
+      std::tie(n0,n1) = FairDivideBoundary(n,TG.getNCoresPerTG(),nextra);
+      if(TG.getLocalTGRank()>=n0 && TG.getLocalTGRank()<n1) {
+        last_task_index = n;
+        break;
+      }
+    }
+    local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,TG.TG_local().rank())));
+  }
+  if(last_task_index < 0 || last_task_index >= nextra)
+    APP_ABORT("Error: Problems in AFQMCBasePropagator::reset_nextra()\n");
+}
+
+void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtdt, 
                           CMatrix_ref& X, CMatrix_ref & vbias, CMatrix_ref& MF, 
                           CMatrix_ref& HWs, bool addRAND) 
 {
@@ -125,12 +145,19 @@ void AFQMCSerialPropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqr
   int nCV = int(X.size(0));
   // generate random numbers
   if(addRAND)
-    sampleGaussianFields_n(X.origin(),X.num_elements(),*rng);
+  {
+    int i0,iN;
+    std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),int(X.num_elements()),
+                                         TG.TG_local().size());  
+    sampleGaussianFields_n(X.origin()+i0,iN-i0,*rng);
+  }
 
   // construct X
-  fill_n(HWs.origin(),HWs.num_elements(),ComplexType(0));  
-  fill_n(MF.origin(),MF.num_elements(),ComplexType(0));  
+  std::fill_n(HWs.origin(),HWs.num_elements(),ComplexType(0));  
+  std::fill_n(MF.origin(),MF.num_elements(),ComplexType(0));  
 
+// leaving compiler switch until I decide how to do this better
+// basically hide this decision somewhere based on the value of pointer!!!
 #ifdef QMC_CUDA
   kernels::construct_X(nCV,nsteps,nwalk,free_projection,sqrtdt,vbias_bound,
                        to_address(vMF.origin()),
@@ -140,9 +167,11 @@ void AFQMCSerialPropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqr
                        to_address(X.origin()),
                       );
 #else
-// dispatch this somwhow 
-  C3Tensor_ref X3D(X.origin(),{long(X.size(0)),long(nsteps),long(nwalk)});
-  for(int m=0; m<nCV; ++m) { 
+  boost::multi::array_ref<ComplexType,3> X3D(X.origin(),{long(X.size(0)),long(nsteps),long(nwalk)});
+  int m0,mN;
+  std::tie(m0,mN) = FairDivideBoundary(TG.TG_local().rank(),nCV,TG.TG_local().size());   
+  TG.local_barrier();
+  for(int m=m0; m<mN; ++m) { 
     auto X_m = X3D[m];
     auto vb_ = vbias[m].origin();
     auto vmf_t = sqrtdt*apply_bound_vbias(vMF[m],1.0);
@@ -163,6 +192,7 @@ void AFQMCSerialPropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqr
       }
     }
   }
+  TG.local_barrier();
 #endif
 }
 

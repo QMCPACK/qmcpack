@@ -13,8 +13,8 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_AFQMC_SERIALPROPAGATOR_H
-#define QMCPLUSPLUS_AFQMC_SERIALPROPAGATOR_H
+#ifndef QMCPLUSPLUS_AFQMC_BASEPROPAGATOR_H
+#define QMCPLUSPLUS_AFQMC_BASEPROPAGATOR_H
 
 #include <vector>
 #include <map>
@@ -30,7 +30,7 @@
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
-#include "AFQMC/Wavefunctions/Wavefunction_serial.hpp"
+#include "AFQMC/Wavefunctions/Wavefunction.hpp"
 
 namespace qmcplusplus
 {
@@ -39,49 +39,49 @@ namespace afqmc
 {
 
 /*
- * AFQMC propagator using shared memory. Data structures are in shared memory, 
- * but not distributed over multiple nodes. 
+ * Base class for AFQMC propagators.
  */
-template<class Alloc>
-class AFQMCSerialPropagator: public AFQMCInfo
+class AFQMCBasePropagator: public AFQMCInfo
 {
   protected:
 
-  using Allocator = Alloc; 
-  using T = typename Allocator::value_type;
-  using pointer = typename Allocator::pointer;
-  using const_pointer = typename Allocator::const_pointer;
+  // allocator for local memory
+  using allocator = device_allocator<ComplexType>;
+  using pointer = device_ptr<ComplexType>;
+  // allocator for memory shared by all cores in working local group 
+  using aux_allocator = localTG_allocator<ComplexType>;
 
-  using CVector = boost::multi::array<ComplexType,1,Allocator>;  
+  using CVector = boost::multi::array<ComplexType,1,allocator>;  
   using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;  
-  using CMatrix = boost::multi::array<ComplexType,2,Allocator>;  
+  using CMatrix = boost::multi::array<ComplexType,2,allocator>;  
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;  
-  using C3Tensor = boost::multi::array<ComplexType,3,Allocator>;  
+  using C3Tensor = boost::multi::array<ComplexType,3,allocator>;  
   using C3Tensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;  
+  using sharedCVector = ComplexVector<aux_allocator>; 
 
   public:
 
-    AFQMCSerialPropagator(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
-                          Wavefunction_serial& wfn_, CMatrix&& h1_, CVector&& vmf_, 
-                          RandomGenerator_t* r, Allocator alloc_={}):
-            AFQMCInfo(info),allocator_(alloc_),TG(tg_),wfn(wfn_),
+    AFQMCBasePropagator(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
+                          Wavefunction& wfn_, 
+                          CMatrix&& h1_, CVector&& vmf_, 
+                          RandomGenerator_t* r):
+            AFQMCInfo(info),TG(tg_),
+            alloc_(),aux_alloc_(make_localTG_allocator<ComplexType>(TG)),wfn(wfn_),
             H1(std::move(h1_)),
-            //P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,boost::mpi3::intranode::allocator<ComplexType>(tg_.TG_local()))),
-            P1({NMO,NMO},allocator_),
-            rng(r),
-            //SDetOp(2*NMO,NAEA+NAEB),
-            SDetOp(SlaterDetOperations_serial<Allocator>(2*NMO,NAEA+NAEB,allocator_)),
-            buff(extensions<1u>{1},allocator_),
-            local_vHS({0,0},allocator_),
-            new_overlaps(extensions<1u>{0},allocator_), 
-            new_energies({0,0},allocator_), 
-            MFfactor({0,0},allocator_), 
-            hybrid_weight({0,0},allocator_), 
+            P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,aux_alloc_)),
             vMF(std::move(vmf_)),
-            TSM({2*NMO,NAEA+NAEB},allocator_), 
+            rng(r),
+            SDetOp(wfn.getSlaterDetOperations()),
+            //SDetOp(2*NMO,NAEA+NAEB),
+            //SDetOp(SlaterDetOperations_shared<ComplexType>(2*NMO,NAEA+NAEB)),
+            TSM({2*NMO,NAEA+NAEB},alloc_), // safe for now, since I don't know walker_type
+            buffer(extensions<1u>{1},aux_alloc_),
+            local_group_comm(),
+            last_nextra(-1),
+            last_task_index(-1),
             old_dt(-123456.789),
             order(6),
-            nbatched_propagation(-1)
+            nbatched_propagation(0)
     {
       transposed_vHS_ = wfn.transposed_vHS();
       transposed_G_ = wfn.transposed_G_for_vbias();
@@ -89,12 +89,12 @@ class AFQMCSerialPropagator: public AFQMCInfo
       parse(cur);  
     }
 
-    ~AFQMCSerialPropagator() {}
+    ~AFQMCBasePropagator() {}
 
-    AFQMCSerialPropagator(AFQMCSerialPropagator const& other) = delete;
-    AFQMCSerialPropagator& operator=(AFQMCSerialPropagator const& other) = delete;
-    AFQMCSerialPropagator(AFQMCSerialPropagator&& other) = default;
-    AFQMCSerialPropagator& operator=(AFQMCSerialPropagator&& other) = default;
+    AFQMCBasePropagator(AFQMCBasePropagator const& other) = delete;
+    AFQMCBasePropagator& operator=(AFQMCBasePropagator const& other) = delete;
+    AFQMCBasePropagator(AFQMCBasePropagator&& other) = default;
+    AFQMCBasePropagator& operator=(AFQMCBasePropagator&& other) = default;
 
     template<class WlkSet>
     void Propagate(int steps, WlkSet& wset, RealType E1,
@@ -111,7 +111,7 @@ class AFQMCSerialPropagator: public AFQMCInfo
 
     // reset shared memory buffers
     // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
-    void reset() { shmbuff.reextent(extensions<1u>{0}); }
+    void reset() { buffer.reextent(extensions<1u>{0}); }
 
     bool hybrid_propagation() { return hybrid; }
 
@@ -119,11 +119,13 @@ class AFQMCSerialPropagator: public AFQMCInfo
 
   protected: 
 
-    Allocator allocator_;
-
     TaskGroup_& TG;
 
-    Wavefunction_serial& wfn;
+    allocator alloc_;
+ 
+    aux_allocator aux_alloc_;
+
+    Wavefunction& wfn;
 
     // P1 = exp(-0.5*dt*H1), so H1 includes terms from MF substraction 
     //                       and the exchange term from the cholesky decomposition (e.g. vn0) 
@@ -133,18 +135,22 @@ class AFQMCSerialPropagator: public AFQMCInfo
 
     RandomGenerator_t* rng;
 
-    SlaterDetOperations_shared<ComplexType> SDetOp;
-    //SlaterDetOperations SDetOp;
+    //SlaterDetOperations_shared<ComplexType> SDetOp;
+    SlaterDetOperations& SDetOp;
 
-    CVector buff;    
+    sharedCVector buffer;    
+
+    shared_communicator local_group_comm;
 
     RealType old_dt;
+    int last_nextra;
+    int last_task_index;
     int order;
+    int nbatched_propagation;
 
     RealType vbias_bound;
 
     // type of propagation
-    int nbatched_propagation;
     bool free_projection;
     bool hybrid;
     bool importance_sampling;
@@ -165,6 +171,8 @@ class AFQMCSerialPropagator: public AFQMCInfo
     CVector vMF;  
     // Temporary for propagating with constructed B matrix.
     CMatrix TSM;
+
+    boost::multi::array<ComplexType,2> work; 
  
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);
@@ -173,17 +181,20 @@ class AFQMCSerialPropagator: public AFQMCInfo
                     CMatrix_ref& X, CMatrix_ref & vbias,
                     CMatrix_ref& MF, CMatrix_ref& HW, bool addRAND=true);
 
+    void reset_nextra(int nextra); 
+
     void parse(xmlNodePtr cur);
 
     template<class WSet>
-    void apply_propagators(WSet& wset, int ni, C3Tensor_ref& vHS3D); 
+    void apply_propagators(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
+                           C3Tensor_ref& vHS3D);
 
     template<class WSet>
-    void apply_propagators_construct_propagator(WSet& wset, int ni, C3Tensor_ref& vHS3D); 
+    void apply_propagators_construct_propagator(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
+                                                C3Tensor_ref& vHS3D);
 
     ComplexType apply_bound_vbias(ComplexType v, RealType sqrtdt)
     {
-// Needs kernel!!!
       return (std::abs(v)>vbias_bound*sqrtdt)?
                 (v/(std::abs(v)/static_cast<ValueType>(vbias_bound*sqrtdt))):(v);
     }
@@ -194,7 +205,7 @@ class AFQMCSerialPropagator: public AFQMCInfo
 
 }
 
-#include "AFQMCSerialPropagator.icc"
+#include "AFQMCBasePropagator.icc"
 
 #endif
 

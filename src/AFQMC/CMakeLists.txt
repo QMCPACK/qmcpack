@@ -9,7 +9,7 @@ SET (AFQMC_SRCS
   Drivers/DriverFactory.cpp
   Drivers/AFQMCDriver.cpp
 #  Drivers/BenchmarkDriver.cpp
-  Propagators/AFQMCSharedPropagator.cpp
+  Propagators/AFQMCBasePropagator.cpp
   Propagators/PropagatorFactory.cpp
   Wavefunctions/WavefunctionFactory.cpp
   Utilities/readWfn.cpp

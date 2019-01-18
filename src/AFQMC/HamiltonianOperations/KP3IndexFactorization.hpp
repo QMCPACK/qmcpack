@@ -140,6 +140,7 @@ class KP3IndexFactorization
     KP3IndexFactorization(KP3IndexFactorization&& other) = default;
     KP3IndexFactorization& operator=(KP3IndexFactorization&& other) = default;
 
+// this needs to return boost::multi::array<ComplexType,2,device_ptr<ComplexType>>
     boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi::array<ComplexType,1> const& vMF) {
 
       int nkpts = nopk.size();
