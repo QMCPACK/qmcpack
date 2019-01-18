@@ -409,12 +409,12 @@ public:
     kblock=0;
     kcurr=0;
     kstart=0;
-    kupdate=1;
     if(kDelay)
     {
       app_log() << "  Using delayed updates (k = " << kDelay << ") for all walkers" << std::endl;
       kblocksize=kDelay;
     }
+    kupdate=kblocksize;
   }
 
   inline int getkDelay()
@@ -457,28 +457,27 @@ public:
   {
     // in case that we finished the current k-block (kcurr=0) *or* (<- This case also takes care of no delayed updates as kcurr will always be zero then)
     // if we run out of electrons (nat) but still have some k's in the current k-block, an update needs to happen now
-    bool update=((!kcurr) || (kcurr+kblock*kblocksize>=nat/2));
+    bool end_of_matrix = (kcurr+kblock*kblocksize>=nat/2); // TODO: Make sure we do *not* divide by two if there is no spin up/down matrix savings
+    bool update=((!kcurr) || end_of_matrix);
+    kupdate=kblocksize;
     if(update)
     {
       if(kblock>0)
       {
          kstart=kblock*kblocksize;
-         if(kcurr==0) kstart-=kblocksize;
+         if(kcurr==0) kstart-=kblocksize; // means we looped cleanly within kblocksize matrix (and kblock is too large by 1), hence start is at (kblock-1)*kblocksize
          kupdate=kcurr+kblock*kblocksize-kstart;
          kcurr=0;
-#ifdef QMC_CUDA
+#ifdef QMC_CUDA // CurrrentParticle isn't defined otherwise
          if(!klinear) CurrentParticle-=kupdate-1;
 #endif
       }
     }
     // reset kblock if we're out of matrix blocks
-    if(kblock*kblocksize>=nat/2) // TODO: Make sure we do *not* divide by two if there is no spin up/down matrix savings
+    if(end_of_matrix)
       kblock=0;
     return update;
   }
-
-  ///overwrite make_clones function
-  void make_clones(int n);
 
 protected:
 

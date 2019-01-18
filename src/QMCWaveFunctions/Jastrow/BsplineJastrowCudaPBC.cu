@@ -2495,6 +2495,7 @@ one_body_ratio_grad_PBC (float C[], float *R[], int first, int last,
     cuda_spline_init_PBC();
   const int BS = 128;
   CMC_PROFILING_BEGIN();
+//  COPY_LATTICE_DP_TO_SP(); // Either CMC_PROFILING_BEGIN or COPY_LATTICE_DP_TO_SP are needed to avoid NaNs here
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   // if (use_fast_image)
@@ -3322,7 +3323,7 @@ one_body_gradient_PBC (float *Rlist[], int iat, float C[], int first, int last,
   const int BS=128;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-//  CMC_PROFILING_BEGIN();
+  CMC_PROFILING_BEGIN();
   // if (sim_cell_radius >= rMax)
   //   one_body_grad_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
   //     (Rlist, iat, C, first, last, spline_coefs, num_coefs, rMax,
@@ -3331,7 +3332,7 @@ one_body_gradient_PBC (float *Rlist[], int iat, float C[], int first, int last,
   one_body_grad_PBC_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (Rlist, iat, C, first, last, spline_coefs, num_coefs, rMax,
    lattice, latticeInv, zeroSum, grad);
-//  CMC_PROFILING_END(__LINE__);
+  CMC_PROFILING_END(__LINE__);
 }
 
 

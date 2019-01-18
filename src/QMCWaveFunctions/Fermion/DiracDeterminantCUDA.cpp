@@ -167,6 +167,7 @@ DiracDeterminantCUDA::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &
     std::vector<Walker_t*> &allwalkers = W->WalkerList;
     int nw=acc->size();
     int kstart=W->getkstart();
+    int kupdate=W->getkupdate();
 
     if (UpdateList.size() < nw)
       UpdateList.resize(nw);
@@ -187,18 +188,18 @@ DiracDeterminantCUDA::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &
         if ((*acc)[iw] == false)
           UpdateList[ws++] = allwalkers[iw]->cuda_DataSet.data();
     }
-    UpdateList_d.asyncCopy(UpdateList);
+    UpdateList_d = UpdateList;
     // kernel containing behavior for acceptance and rejection, side benefit: no memory copying needed anymore
     // -> also updates A^-1*dU * lemma^-1 for next round's gradient in "linear" (aka w/ drift) case
     update_onemove (UpdateList_d.data(),
                     newRowOffset+k*RowStride, AOffset+(kstart+k)*RowStride,
                     newGradLaplOffset+4*k*RowStride, gradLaplOffset+4*(kstart+k)*RowStride,
-                    AinvUOffset, LemmaOffset+k*kdelay, LemmaInvOffset, (W->getklinear() && (k<kdelay))*AWorkOffset,
+                    AinvUOffset, LemmaOffset+k*kdelay, LemmaInvOffset, (W->getklinear() && (k<kupdate))*AWorkOffset,
                     accepted, k, kstart, kdelay, RowStride, ws);
-    if (k+1 == kdelay) // time to update the inverse
+    if (k+1 == kupdate) // time to update the inverse
     {
 #ifndef USE_TRSM
-      multi_copy(LemmaLUList_d.data(), LemmaList_d.data(), kdelay*kdelay, nw);
+      multi_copy(LemmaLUList_d.data(), LemmaList_d.data(), kupdate*kdelay, nw);
 #else // using the triangular solver should be the default
       copy_update_block (LemmaLUList_d.data(), LemmaList_d.data(),
                          AWorkList_d.data(), AinvDeltaList_d.data(),
@@ -209,7 +210,7 @@ DiracDeterminantCUDA::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &
                          AinvUList_d.data(), AWorkList_d.data(),
                          LemmaInvList_d.data(), LemmaLUList_d.data(),
                          infoArray_d.data(),
-                         kdelay, kdelay, NumPtcls, NumPtcls, nw, RowStride);
+                         kupdate, kdelay, NumPtcls, NumPtcls, nw, RowStride);
     }
   } else
   {
@@ -712,7 +713,7 @@ DiracDeterminantCUDA::calcGradient(MCWalkerConfiguration &W, int iat, int k,
   {
     if(k==0)
     {
-      AinvColkList_d.asyncCopy(AinvColkList);
+      AinvColkList_d = AinvColkList;
       W.setklinear();
       // just copy the k-th row of the (just updated) A inverse matrix into Ainvcolk (apart from the name that's the place to put it)
       multi_row_copy (AinvColkList_d.data(), AinvList_d.data(), RowStride, kstk, 1, RowStride, nw);
@@ -966,7 +967,7 @@ void DiracDeterminantCUDA::calcRatio (MCWalkerConfiguration &W, int iat,
   int kstart = W.getkstart();
   int k = W.getkcurr()-(kd>1);
   if(k<0)
-    k += W.getkblocksize();
+    k += W.getkupdate();
 #ifdef DEBUG_DELAYED
   fprintf(stderr,"k: %i, kcurr: %i, kstart: %i, nw: %i, Rnew size: %lu\n",k,W.getkcurr(),kstart,nw,W.Rnew.size());
 #endif

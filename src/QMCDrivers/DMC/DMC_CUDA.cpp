@@ -153,7 +153,6 @@ bool DMCcuda::run()
       for (int iw=0; iw<nw; iw++)
         W[iw]->Age++;
       int k=0;
-      int kd=0;
       DriftDiffuseTimer.start();
       for(int iat=0; iat<nat; iat++)
       {
@@ -175,17 +174,13 @@ bool DMCcuda::run()
         }
         W.proposeMove_GPU(newpos, iat, nat);
         update_now = W.update_now(nat);
-        if(update_now)
-        {
-          kd=W.getkupdate();
-        } else kd=W.getkblocksize();
         Psi.calcRatio(W,iat,ratios,newG, newL);
         accepted.clear();
         std::vector<bool> acc(nw, true);
         if (W.UseBoundBox)
           checkBounds (newpos, acc);
         if (kDelay)
-          Psi.det_lookahead (W, ratios, newG, newL, iat, k, kd, nw);
+          Psi.det_lookahead (W, ratios, newG, newL, iat, k, W.getkblocksize(), nw);
         std::vector<RealType> logGf_v(nw);
         std::vector<RealType> rand_v(nw);
         for(int iw=0; iw<nw; ++iw)

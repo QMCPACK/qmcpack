@@ -574,7 +574,6 @@ void MCWalkerConfiguration::updateLists_GPU()
   hostlist_valueType.resize(nw);
   hostlist_AA.resize(nw);
 
-// TODO: May need to think about R_GPU now potentially being a block... (AT)
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->R_GPU.size() != R.size())
@@ -675,7 +674,8 @@ void MCWalkerConfiguration::proposeMove_GPU
       Rnew_host[i+offset][dim] = newPos[i][dim];
     }
   }
-  if(kDelay){
+  if(kDelay)
+  {
     kcurr=(kcurr+1)%kblocksize; // loop kcurr around every k blocks
     kstart=kblock*kblocksize;
     if(kcurr==0)

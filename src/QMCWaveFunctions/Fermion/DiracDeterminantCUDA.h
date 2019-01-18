@@ -24,7 +24,6 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
-#include "QMCWaveFunctions/Fermion/delayed_update.h"
 #include "Numerics/CUDA/cuda_inverse.h"
 #include "Utilities/NewTimer.h"
 

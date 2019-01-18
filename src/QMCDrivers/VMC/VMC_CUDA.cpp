@@ -134,7 +134,7 @@ void VMCcuda::advanceWalkers()
           std::cerr << "iat = " << iat << "\n";
 #endif
         if (kDelay)
-          Psi.det_lookahead (W, ratios, newG, newL, curr_iat, k, kd, nw);
+          Psi.det_lookahead (W, ratios, newG, newL, curr_iat, k, W.getkblocksize(), nw);
 #ifdef QMC_COMPLEX
         Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
 #endif
@@ -331,7 +331,6 @@ void VMCcuda::advanceWalkersWithDrift()
   bool update_now=false;
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  std::vector<RealType>  oldScale(nw), newScale(nw);
   std::vector<PosType>   delpos(nw);
   std::vector<PosType>   newpos(nw);
   std::vector<ValueType> ratios(nw);
@@ -346,7 +345,6 @@ void VMCcuda::advanceWalkersWithDrift()
   for (int isub=0; isub<nSubSteps; isub++)
   {
     int k=0;
-    int kd=0;
     for(int iat=0; iat<nat; iat++)
     {
       Psi.calcGradient (W, iat, k, oldG);
@@ -358,7 +356,7 @@ void VMCcuda::advanceWalkersWithDrift()
         PosType dr;
         delpos[iw] *= m_sqrttau;
         getScaledDrift(m_tauovermass,oldG[iw],dr);
-        newpos[iw]=W[iw]->R[iat] + delpos[iw] + dr;
+        newpos[iw] = W[iw]->R[iat] + delpos[iw] + dr;
         ratios[iw] = 1.0;
         acc[iw] = true;
 #ifdef QMC_COMPLEX
@@ -367,16 +365,12 @@ void VMCcuda::advanceWalkersWithDrift()
       }
       W.proposeMove_GPU(newpos, iat, nat);
       update_now = W.update_now(nat);
-      if(update_now)
-      {
-        kd=W.getkupdate();
-      } else kd=W.getkblocksize();
       Psi.calcRatio(W,iat,ratios,newG, newL);
       accepted.clear();
       if (W.UseBoundBox)
         checkBounds (newpos, acc);
       if (kDelay)
-        Psi.det_lookahead (W, ratios, newG, newL, iat, k, kd, nw);
+        Psi.det_lookahead (W, ratios, newG, newL, iat, k, W.getkblocksize(), nw);
       std::vector<RealType> logGf_v(nw);
       std::vector<RealType> rand_v(nw);
       for(int iw=0; iw<nw; ++iw)
@@ -403,7 +397,7 @@ void VMCcuda::advanceWalkersWithDrift()
         RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
 #endif
 #ifdef DEBUG_DELAYED
-          fprintf(stderr,"Walker #%i (ratio = %f) move ",iw,ratios[iw]);
+        fprintf(stderr," Walker #%i (ratio = %f) move ",iw,ratios[iw]);
 #endif
         if(acc[iw] && rand_v[iw] < prob)
         {

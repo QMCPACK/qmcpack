@@ -281,10 +281,10 @@ TwoBodyJastrowOrbitalBspline<FT>::calcRatio
   std::vector<Walker_t*> &walkers = W.WalkerList;
   int N = W.Rnew_GPU.size();
   int nw = walkers.size();
-  int kd=W.getkDelay();
+  int kd = W.getkDelay();
   int k = W.getkcurr()-(kd>1);
   if(k<0)
-    k += W.getkblocksize();
+    k += W.getkupdate();
   int offset=0;
   if(W.getklinear())
     offset=k*nw;

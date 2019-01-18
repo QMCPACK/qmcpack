@@ -267,10 +267,10 @@ TwoBodyJastrowOrbitalBsplineAoS::calcRatio
   std::vector<Walker_t*> &walkers = W.WalkerList;
   int N = W.Rnew_GPU.size();
   int nw = walkers.size();
-  int kd=W.getkDelay();
+  int kd = W.getkDelay();
   int k = W.getkcurr()-(kd>1);
   if(k<0)
-    k += W.getkblocksize();
+    k += W.getkupdate();
   int offset=0;
   if(W.getklinear())
     offset=k*nw;
@@ -464,14 +464,30 @@ void TwoBodyJastrowOrbitalBsplineAoS::calcGradient(MCWalkerConfiguration &W, int
   cudaEventRecord(gpu::gradientSyncTwoBodyEvent, gpu::memoryStream);
 }
 
+// #define DEBUG_DELAYED
+
 void TwoBodyJastrowOrbitalBsplineAoS::addGradient(MCWalkerConfiguration &W, int iat,
     std::vector<GradType> &grad)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   cudaEventSynchronize(gpu::gradientSyncTwoBodyEvent);
   for (int iw=0; iw<walkers.size(); iw++)
+  {
+#ifdef DEBUG_DELAYED
+    fprintf(stderr,"2B Jastrow grad walker %i: (",iw);
+#endif
     for (int dim=0; dim<OHMMS_DIM; dim++)
-      grad[iw][dim] -= OneGradHost[OHMMS_DIM*iw+dim];
+      {
+#ifdef DEBUG_DELAYED
+        if(dim>0) fprintf(stderr,", ");
+        fprintf(stderr,"%f (before: %f)",OneGradHost[OHMMS_DIM*iw+dim],grad[iw][dim]);
+#endif
+        grad[iw][dim] -= OneGradHost[OHMMS_DIM*iw+dim];
+      }
+#ifdef DEBUG_DELAYED
+    fprintf(stderr,")\n");
+#endif
+  }
 }
 
 void
