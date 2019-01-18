@@ -392,40 +392,7 @@ namespace qmcplusplus
 
       if(Optimizable)
       {
-        Table.resize(nel,nmo);
-
-         Bbar.resize(nel,nmo);
-        
-         Y1.resize(nel,nel);
-         Y2.resize(nel,nmo);
-         Y3.resize(nel,nmo);
-         Y4.resize(nel,nmo);
-        
-         pK1.resize(nmo,nel);
-         K1T.resize(nmo,nmo);
-         TK1T.resize(nel,nmo);
-        
-         pK2.resize(nmo,nel);
-         K2AiB.resize(nmo,nmo);
-         TK2AiB.resize(nel,nmo);
-         K2XA.resize(nmo,nmo);
-         TK2XA.resize(nel,nmo);
-         K2T.resize(nmo,nmo);
-         TK2T.resize(nel,nmo);
-         MK2T.resize(nel,nmo);
-        
-         pK3.resize(nmo,nel);
-         K3T.resize(nmo,nmo);
-         TK3T.resize(nel,nmo);
-        
-         pK4.resize(nmo,nel);
-         K4T.resize(nmo,nmo);
-         TK4T.resize(nel,nmo);
-        
-         pK5.resize(nmo,nel);
-         K5T.resize(nmo,nmo);
-         TK5T.resize(nel,nmo);
-
+        //empty intentionally
       }
       else
       {
@@ -777,6 +744,46 @@ $
 $
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 {
+
+  ValueMatrix_t Table;
+  ValueMatrix_t Bbar;
+  ValueMatrix_t Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y11,Y23,Y24,Y25,Y26;
+  ValueMatrix_t pK1,K1T,TK1T, pK2,K2AiB,TK2AiB,K2XA,TK2XA,K2T,TK2T,MK2T, pK3,K3T,TK3T, pK4,K4T,TK4T, pK5,K5T,TK5T;
+
+  Table.resize(nel,nmo);
+
+  Bbar.resize(nel,nmo);
+  
+  Y1.resize(nel,nel);
+  Y2.resize(nel,nmo);
+  Y3.resize(nel,nmo);
+  Y4.resize(nel,nmo);
+  
+  pK1.resize(nmo,nel);
+  K1T.resize(nmo,nmo);
+  TK1T.resize(nel,nmo);
+  
+  pK2.resize(nmo,nel);
+  K2AiB.resize(nmo,nmo);
+  TK2AiB.resize(nel,nmo);
+  K2XA.resize(nmo,nmo);
+  TK2XA.resize(nel,nmo);
+  K2T.resize(nmo,nmo);
+  TK2T.resize(nel,nmo);
+  MK2T.resize(nel,nmo);
+  
+  pK3.resize(nmo,nel);
+  K3T.resize(nmo,nmo);
+  TK3T.resize(nel,nmo);
+  
+  pK4.resize(nmo,nel);
+  K4T.resize(nmo,nmo);
+  TK4T.resize(nel,nmo);
+  
+  pK5.resize(nmo,nel);
+  K5T.resize(nmo,nmo);
+  TK5T.resize(nel,nmo);
+
   const int parameters_size(m_act_rot_inds.size());
   const int parameter_start_index(0);  
  
@@ -797,19 +804,26 @@ $
 
   double* T(Table.data());
 
-  construct_tables(
-                   myL_J,
-                   myG_J,
-                   B_grad,
-                   B_lapl,
-                   M_up,
-                   Minv_up,
-                   nel,
-                   nmo,
-                   offset1,
-                   T
-                  );
+	//possibly replace wit BLAS calls 
+  for(int i=0; i<nel; i++)
+    for(int j=0; j<nmo; j++)
+      Bbar(i,j) = B_lapl(i,j) + 2*dot(myG_J[i+offset1], B_grad(i,j)) + myL_J[i+offset1]*M_up(i,j);
 
+  const double* restrict B(Bbar.data());
+  const double* restrict A(M_up.data());
+  const double* restrict Ainv(Minv_up.data());
+  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
+  // The T matrix should be calculated and stored for use      
+  // T = A^{-1} \widetilde A
+  //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
+  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    A, nmo,       Ainv, nel, RealType(0.0),          T, nmo);
+
+  BLAS::gemm('N','N', nel, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y1.data(), nel);
+  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    T, nmo,  Y1.data(), nel, RealType(0.0),  Y2.data(), nmo);
+  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y3.data(), nmo);
+
+  //possibly replace with BLAS call
+  Y4 = Y3 - Y2;
 
   //Need to create the constants: (Oi, const0, const1, const2)to take advantage of minimal BLAS commands; 
   //Oi is the special operator applied to the slater matrix "A subscript i" from the total CI expansion
@@ -1044,43 +1058,6 @@ $
 
       }
   }
-
-}
-
-
-void LCAOrbitalSet::construct_tables(
-                                     const ParticleSet::ParticleLaplacian_t& myL_J,
-                                     const ParticleSet::ParticleGradient_t& myG_J,
-                                     const GradMatrix_t& B_grad,
-                                     const ValueMatrix_t& B_lapl,
-                                     const ValueMatrix_t& M_up,
-                                     const ValueMatrix_t& Minv_up,
-                                     const size_t nel,
-                                     const size_t nmo,
-                                     const int offset1,
-                                     double* T
-)
-{
-	//possibly replace wit BLAS calls 
-  for(int i=0; i<nel; i++)
-    for(int j=0; j<nmo; j++)
-      Bbar(i,j) = B_lapl(i,j) + 2*dot(myG_J[i+offset1], B_grad(i,j)) + myL_J[i+offset1]*M_up(i,j);
-
-  const double* restrict B(Bbar.data());
-  const double* restrict A(M_up.data());
-  const double* restrict Ainv(Minv_up.data());
-  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
-  // The T matrix should be calculated and stored for use      
-  // T = A^{-1} \widetilde A
-  //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
-  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    A, nmo,       Ainv, nel, RealType(0.0),          T, nmo);
-
-  BLAS::gemm('N','N', nel, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y1.data(), nel);
-  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    T, nmo,  Y1.data(), nel, RealType(0.0),  Y2.data(), nmo);
-  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y3.data(), nmo);
-
-  //possibly replace with BLAS call
-  Y4 = Y3 - Y2;
 
 }
 
