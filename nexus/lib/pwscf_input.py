@@ -111,6 +111,22 @@ readval={str:read_str,int:read_int,float:read_float,bool:read_bool}
 writeval={str:write_str,int:write_int,float:write_float,bool:write_bool}
 
 
+def write_scalar(var,val):
+    if isinstance(val,str):
+        vtype = str
+    elif isinstance(val,float):
+        vtype = float
+    elif var in PwscfInputBase.bools:
+        vtype = bool
+    elif isinstance(val,int):
+        vtype = int
+    else:
+        error('cannot write pwscf input file\nattempted to write variable with unknown scalar type\nvariable: {0}\ndata type: {1}'.format(var,val.__class__.__name__))
+    #end if
+    return writeval[vtype](val)
+#end def write_scalar
+
+
 def noconv(v):
     return v
 #end def noconv
@@ -219,15 +235,22 @@ class PwscfInputBase(DevBase):
         'gate','block','relaxz','dftd3_threebody','ts_vdw_isolated','lforcet',
         ]
 
-    # real arrays: celldm,starting_magnetization, hubbard_alpha, hubbard_u,
-    #              hubbard_j0, hubbard_beta, hubbard_j,
-    #              starting_ns_eigenvalue, angle1, angle2, fixed_magnetization
-    #              fe_step,efield_cart
-    #              london_c6 london_rvdw
+    real_arrays = [
+        'celldm', 'starting_magnetization', 'hubbard_alpha', 'hubbard_u',
+        'hubbard_j0', 'hubbard_beta', 'hubbard_j',
+        'starting_ns_eigenvalue', 'angle1', 'angle2', 'fixed_magnetization',
+        'fe_step', 'efield_cart', 'london_c6', 'london_rvdw',
+        ]
 
-    # species arrays: starting_magnetization, hubbard_alpha, hubbard_u, hubbard_j0, hubbard_beta, hubbard_j, angle1, angle2, london_c6, london_rvdw
-    # multidimensional arrays: starting_ns_eigenvalue(3), hubbard_j(2)
-    #   
+    species_arrays = [
+        'starting_magnetization', 'hubbard_alpha', 'hubbard_u', 'hubbard_j0', 
+        'hubbard_beta', 'hubbard_j', 'angle1', 'angle2', 
+        'london_c6', 'london_rvdw',
+        ]
+
+    species_array_indices = obj(hubbard_j=1)
+
+    multidimensional_arrays = ['starting_ns_eigenvalue', 'hubbard_j']
 
     ints   = [v.lower() for v in ints  ]
     floats = [v.lower() for v in floats]
@@ -293,6 +316,7 @@ class Section(Element):
         self.transfer_from(variables)
     #end def assign
 
+
     def read(self,lines):
         for l in lines:
             # exclude comments
@@ -333,9 +357,16 @@ class Section(Element):
                     val     = val.strip()
                     if '(' not in var:
                         varname = var
+                        index   = None
                     else:
                         var = var.replace('|',',')
                         varname = var.split('(')[0]
+                        index   = var.replace(varname,'').strip('()')
+                        if ',' not in index:
+                            index = int(index)
+                        else:
+                            index = tuple(array(index.split(','),dtype=int))
+                        #end if
                     #end if
                     if not varname in self.variables:
                         self.error('pwscf input section {0} does not have a variable named "{1}", please check your input\nif correct, please add a new variable ({1}) to the {0} PwscfInput class'.format(self.__class__.__name__,varname),trace=False)
@@ -345,51 +376,102 @@ class Section(Element):
                     #end if
                     vtype = self.var_types[varname]
                     val = readval[vtype](val)
-                    self[var] = val
+                    if varname not in self.real_arrays:
+                        self[var] = val
+                    else:
+                        if index is None and '(' not in var:
+                            index = 1
+                        #end if
+                        if varname not in self:
+                            self[varname] = obj()
+                        #end if
+                        self[varname][index] = val
+                    #end if
                 #end for
             #end for
         #end for
     #end def read
 
+
     def write(self,parent):
+        atom_index = obj()
+        if 'atomic_species' in parent and 'atoms' in parent.atomic_species:
+            for i,a in enumerate(parent.atomic_species.atoms):
+                atom_index[a] = i+1
+            #end for
+        #end if
         cls = self.__class__
         c='&'+self.name.upper()+'\n'
         vars = list(self.keys())
         vars.sort()
         for var in vars:
             val = self[var]
-            #vtype = type(val)
-            #sval = writeval[vtype](val)
-            
-            vtype = None
-            if isinstance(val,str):
-                vtype = str
-            elif isinstance(val,float):
-                vtype = float
-            #elif isinstance(val,bool):
-            #    vtype = bool
-            elif var in self.bools:
-                vtype = bool
-            elif isinstance(val,int):
-                vtype = int
+            vname = var
+            if var in cls.case_map:
+                vname = cls.case_map[var]
             #end if
-
-            sval = writeval[vtype](val)
-
-            if var in self.section_aliases.keys():
-                vname = self.section_aliases[var]
+            if var not in self.real_arrays:
+                # write scalar values
+                sval = write_scalar(var,val)
+                c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
             else:
-                vname = var
+                # write array values
+                allow_spec = var in self.species_arrays
+                index_map = obj()
+                for index in val.keys():
+                    index_map[index] = index
+                #end for
+                index_map_inv = index_map
+                if var in self.species_arrays:
+                    for index in val.keys():
+                        if isinstance(index,str):
+                            if index in atom_index:
+                                index_map[index] = atom_index[index]
+                            else:
+                                self.error('cannot write pwscf input\ninvalid array species index encountered\nspecies index provided is not in the set of species present\nspecies present: {0}\nspecies used as index: {1}\narray variable: {2}'.format(sorted(atom_index.keys()),index),var)
+                            #end if
+                        elif isinstance(index,tuple):
+                            if var not in self.species_array_index:
+                                self.error('cannot write pwscf input\ninvalid multidimensional array species index encountered\narray variable "{0}" does not support multidimensional species indices\nindex received: {1}'.format(var,index))
+                            #end if
+                            indloc = self.species_array_index[var]
+                            atom = index[indloc]
+                            if not isinstance(atom,str):
+                                continue
+                            #end if
+                            if atom not in atom_index:
+                                self.error('cannot write pwscf input\ninvalid array species index encountered\nspecies index provided is not in the set of species present\nspecies present: {0}\nspecies used as index: {1}\nfull index provided: {2}\narray variable: {3}'.format(sorted(atom_index.keys()),atom,index),var)
+                            #end if
+                            indlist = list(index)
+                            indlist[indloc] = atom_index[atom]
+                            index_map[index] = tuple(indlist)
+                        #end if
+                    #end for
+                    index_map_inv = index_map.inverse()
+                #end if
+
+                for index in sorted(index_map_inv.keys()):
+                    value = val[index_map_inv[index]]
+                    if isinstance(index,int):
+                        sind = '({0})'.format(index)
+                    elif isinstance(index,tuple):
+                        if not allow_spec:
+                            None
+                        #end if
+                        sind = str(index).replace(' ','')
+                    else:
+                        self.error('cannot write pwscf input\ninvalid array index encountered\nmust be an integer or tuple of integers\nindex received: {0}\narray variable: {1}'.format(str(index)),var)
+                    #end if
+                    svar = vname+sind
+                    sval = write_scalar(var,value)
+                    c+='   '+'{0:<15} = {1}\n'.format(svar,sval)
+                #end for
             #end if
-            if vname in cls.case_map:
-                vname = cls.case_map[vname]
-            #end if
-            #c+='   '+vname+' = '+sval+'\n'
-            c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
         #end for
         c+='/'+'\n\n'
         return c
     #end def write
+
 #end class Section
 
 
@@ -607,7 +689,7 @@ class system(Section):
 
 
     # specialized write for odd handling of hubbard U
-    def write(self,parent):
+    def write_old(self,parent):
         cls = self.__class__
         c='&'+self.name.upper()+'\n'
         vars = list(self.keys())
@@ -1358,9 +1440,9 @@ class PwscfInput(SimulationInput):
             self[elem_name].read(c)
         #end if
         #post-process hubbard u and related variables
-        for element in self:
-            element.post_process_read(self)
-        #end for
+        #for element in self:
+        #    element.post_process_read(self)
+        ##end for
     #end def read_text
 
 
@@ -1678,6 +1760,39 @@ class PwscfInput(SimulationInput):
         return system
     #end def return_system
 
+
+    def standardize_types(self):
+        for s in self:
+            if isinstance(s,Section):
+                array_keys = []
+                for k in s.keys():
+                    if '(' in k:
+                        array_keys.append(k)
+                    #end if
+                #end for
+                for k in array_keys:
+                    name  = k.split('(',1)[0]
+                    index = k.replace(name,'').strip('()')
+                    if ',' not in index:
+                        index = int(index)
+                    else:
+                        index = tuple(array(index.split(','),dtype=int))
+                    #end if
+                    if name not in s:
+                        s[name] = obj()
+                    #end if
+                    s[name][index] = s[k]
+                    del s[k]
+                #end for
+                for k in PwscfInputBase.real_arrays:
+                    if k in s and not isinstance(s[k],obj):
+                        s[k] = obj(s[k])
+                    #end if
+                #end for
+            #end if
+        #end for
+    #end def standardize_types
+
 #end class PwscfInput
 
 
@@ -1962,7 +2077,7 @@ def generate_any_pwscf_input(**kwargs):
     #end if
 
     #  Hubbard U
-    if hubbard_u!=None:
+    if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
             PwscfInput.class_error('input hubbard_u must be of type dict or obj','generate_pwscf_input')
         #end if
@@ -1971,11 +2086,11 @@ def generate_any_pwscf_input(**kwargs):
     #end if
 
     #  starting magnetization
-    if start_mag!=None:
+    if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
             PwscfInput.class_error('input start_mag must be of type dict or obj','generate_pwscf_input')
         #end if
-        pw.system.start_mag = deepcopy(start_mag)
+        pw.system.starting_magnetization = deepcopy(start_mag)
     #end if
 
     #  kpoints
