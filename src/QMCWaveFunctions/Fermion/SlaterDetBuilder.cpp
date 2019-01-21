@@ -305,8 +305,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         app_log() <<"Creating base determinant (down) for MSD expansion. \n";
         dn_det = new MultiDiracDeterminant((SPOSetPtr) spomap.find(spo_beta)->second,1);
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
-        (orbopt=="yes") ? (up_det->Optimizable=true,dn_det->Optimizable=true): (up_det->Optimizable=false,dn_det->Optimizable=false);
-        (orbopt=="yes") ? (up_det->Phi->Optimizable=true,dn_det->Phi->Optimizable=true): (up_det->Phi->Optimizable=false,dn_det->Phi->Optimizable=false);
+        (up_det->Phi->Optimizable==true && dn_det->Phi->Optimizable==true) ? (up_det->Optimizable=true,dn_det->Optimizable=true): (up_det->Optimizable=false,dn_det->Optimizable=false);
         success = createMSDFast(multislaterdetfast_0,cur);
       // read in orbital rotation coefficients to apply a unitary roation before beginning calculation...
       std::vector<RealType> params_0, params_1;
@@ -729,19 +728,19 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
 //safety checks for orbital optimization
   if(multiSD->Dets[0]->Optimizable == true || multiSD->Dets[1]->Optimizable == true)
   { 
+
+    if(multiSD->Dets[0]->Optimizable != multiSD->Dets[1]->Optimizable )
+      APP_ABORT("Only one SPOSet is set to be optimizable\n");
+      
+
     if (multiSD->usingCSF)
       APP_ABORT("Currently, Using CSF is not available with MSJ Orbital Optimization \n");
 
     //checks that the hartree fock determinant is the first in the multislater expansion
     for (int i=0; i < nels_up; i++)
     {
-      if (uniqueConfg_up[0].occup[i] != true)
-        APP_ABORT("The Hartree Fock alpha Determinant must be first in the Multi-Slater expansion \n");
-    }
-    for (int i=0; i < nels_dn; i++)
-    {
-      if (uniqueConfg_dn[0].occup[i] != true)
-        APP_ABORT("The Hartree Fock beta Determinant must be first in the Multi-Slater expansion \n");
+      if ( (uniqueConfg_up[0].occup[i] != true) || (uniqueConfg_dn[0].occup[i] != true) )
+        APP_ABORT("The Hartree Fock Reference Determinant must be first in the Multi-Slater expansion for the input\n");
     }
     app_log() << "WARNING: Unrestricted Orbital Optimization will be performed. Spin symmetry is not guaranteed to be preserved \n";
   }

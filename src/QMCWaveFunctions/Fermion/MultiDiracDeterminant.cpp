@@ -366,7 +366,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(SPOSetPtr const &spos, int first):
   buildTableGradTimer("MultiDiracDeterminant::buildTableGrad"),
   ExtraStuffTimer("MultiDiracDeterminant::ExtraStuff")
 {
-  Optimizable=true;
+  (spos->Optimizable==true) ? Optimizable=true : Optimizable=false;
   ClassName="MultiDiracDeterminant";
 
   IsCloned=false;

@@ -658,7 +658,6 @@ namespace qmcplusplus
     spoAttrib.add (optimize, "optimize");
     spoAttrib.put(cur);
 
-    if(optimize=="yes") PRE.error("Optimizable SPO has not been supported by SoA LCAO yet!.",true);
     if(myBasisSet==nullptr) PRE.error("Missing basisset.",true);
     LCAOrbitalSet *lcos = nullptr;
     LCAOrbitalSetWithCorrection *lcwc = nullptr;
@@ -687,6 +686,10 @@ namespace qmcplusplus
       applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
     }
 
+    if(optimize=="yes"){
+      lcos->Optimizable = true; 
+      app_log() << "  SPOSet is optimizable\n";
+    }
 
     return lcos;
   }
