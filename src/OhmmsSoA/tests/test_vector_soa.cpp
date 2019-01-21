@@ -39,6 +39,12 @@ TEST_CASE("vector", "[OhmmsSoA]")
 
   RSoA.copyIn(R);
 
+  //check in value
+  REQUIRE(R[1][0] == Approx(1.68658058));
+  REQUIRE(R[1][1] == Approx(1.68658058));
+  REQUIRE(R[1][2] == Approx(1.68658058));
+
+  //check out value
   REQUIRE(RSoA[1][0] == Approx(1.68658058));
   REQUIRE(RSoA[1][1] == Approx(1.68658058));
   REQUIRE(RSoA[1][2] == Approx(1.68658058));
