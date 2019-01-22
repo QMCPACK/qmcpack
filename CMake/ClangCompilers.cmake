@@ -33,6 +33,10 @@ SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math" )
 SET( CMAKE_C_FLAGS_RELWITHDEBINFO     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ffast-math" )
 SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ffast-math" )
 
+# Set extra debug flags
+SET( CMAKE_C_FLAGS_DEBUG     "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer -fstandalone-debug" )
+SET( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fstandalone-debug" )
+
 #--------------------------------------
 # Neither on Cray's machine nor PowerPC
 #--------------------------------------
@@ -80,3 +84,23 @@ IF(XRAY_PROFILE)
     set_property(DIRECTORY ${CMAKE_SOURCE_DIR} APPEND PROPERTY COMPILE_DEFINITIONS GPU_XRAY_TRACE_ON)
   endif(XRAY_GPU_MOST)
 ENDIF(XRAY_PROFILE)
+
+SET(LLVM_SANITIZE_ADDRESS FALSE CACHE BOOL "Use llvm address sanitizer library")
+MARK_AS_ADVANCED(LLVM_SANITIZE_ADDRESS)
+IF(LLVM_SANITIZE_ADDRESS)
+  SET(CMAKE_C_FLAGS_DEBUG "-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope ${CMAKE_C_FLAGS_DEBUG}")
+  SET(CMAKE_CXX_FLAGS_DEBUG "-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope ${CMAKE_CXX_FLAGS_DEBUG}")
+  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope")
+  SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope")
+ENDIF(LLVM_SANITIZE_ADDRESS)
+
+# Don't expect this to be useful unless you have msan instrumented all libraries
+SET(LLVM_SANITIZE_MEMORY FALSE CACHE BOOL "Use llvm memory sanitizer library")
+MARK_AS_ADVANCED(LLVM_SANITIZE_MEMORY)
+IF(LLVM_SANITIZE_MEMORY)
+  SET(LLVM_BLACKLIST_SANITIZE_MEMORY "-fsanitize-blacklist=${PROJECT_SOURCE_DIR}/llvm_misc/memory_sanitizer_blacklist.txt")
+  SET(CMAKE_C_FLAGS_DEBUG "-fsanitize=memory ${LLVM_BLACKLIST_SANITIZE_MEMORY} ${CMAKE_C_FLAGS_DEBUG}")
+  SET(CMAKE_CXX_FLAGS_DEBUG "-fsanitize=memory ${LLVM_BLACKLIST_SANITIZE_MEMORY} ${CMAKE_CXX_FLAGS_DEBUG}")
+  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=memory ${LLVM_BLACKLIST_SANITIZE_MEMORY}")
+  SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=memory ${LLVM_BLACKLIST_SANITIZE_MEMORY}")
+ENDIF(LLVM_SANITIZE_MEMORY)
