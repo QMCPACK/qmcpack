@@ -94,11 +94,11 @@ struct MyDeterminant
   template<typename ITER>
   inline T evaluate(Matrix<T>& dots, ITER it, int n)
   {
-    T* restrict d = M.data();
+    T* d = M.data();
     for(int i=0; i<n; i++)
       for(int j=0; j<n; j++)
         *(d++)= dots(*(it+i),*(it+n+j));
-    return Determinant(d,n,n,Pivot.data());
+    return Determinant(M.data(),n,n,Pivot.data());
   }
 
 };
