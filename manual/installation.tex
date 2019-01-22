@@ -332,7 +332,7 @@ MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
 \verb|LLVM_SANITIZE_MEMORY    |  link with the \href{https://clang.llvm.org/docs/MemorySanitizer.html}{Clang memory sanitizer library}\\
 \end{minipage}
 
-These set the basic flags for using the clang sanitizer libraries with or without lldb. You can use one at a time. They require a build of clang with dynamic libraries somehow visible, i.e. through \inlinecode{LD_FLAGS=-L/your/path/to/llvm/lib}. You must link through clang, which is generally the default when building with it. Depending on your system and linker this may be incompatible with the Release build so set \inlinecode{-DCMAKE_BUILD_TYPE=Debug}
+See docs in section \ref{tool:LLVM-Sanitizer-Libraries} for more information.
 \end{itemize}
 
 \subsection{Installation from CMake}
