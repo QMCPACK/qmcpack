@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-  template<typename T, size_t Align>
+  template<typename T, size_t ALIGN>
   struct Mallocator
   {
     typedef T         value_type;
@@ -27,26 +27,36 @@ namespace qmcplusplus
     typedef const T*  const_pointer;
 
     Mallocator() = default;
-    template <class U> Mallocator(const Mallocator<U,Align>&) {}
+    template <class U> Mallocator(const Mallocator<U,ALIGN>&) {}
 
-    template <class U> struct rebind { typedef Mallocator<U, Align> other; };
+    template <class U> struct rebind { typedef Mallocator<U, ALIGN> other; };
 
     T* allocate(std::size_t n) {
 #if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 16
-      return static_cast<T*>(aligned_alloc(Align,n*sizeof(T)));
+      std::size_t asize = n * sizeof(T);
+      std::size_t amod = asize % ALIGN;
+      if (amod != 0)
+	asize = (asize/ALIGN) * ALIGN + ALIGN;
+      // as per C++11 standard asize must be an integral multiple of ALIGN
+      // or behavior is undefined.  Some implementation support all positive
+      // values of asize but the standard has not been amended
+      // This is also not guaranteed threadsafe until C++17
+      return static_cast<T*>(aligned_alloc(ALIGN,asize));
 #else
       void* pt;
-      posix_memalign(&pt, Align, n*sizeof(T));
+      posix_memalign(&pt, ALIGN, n*sizeof(T));
       return static_cast<T*>(pt);
 #endif
     }
-    void deallocate(T* p, std::size_t) { free(p); }
+    void deallocate(T* p, std::size_t) {
+      free(p);
+    }
   };
 
-  template <class T1, size_t Align1, class T2, size_t Align2>
-  bool operator==(const Mallocator<T1,Align1>&, const Mallocator<T2,Align2>&) { return Align1==Align2; }
-  template <class T1, size_t Align1, class T2, size_t Align2>
-  bool operator!=(const Mallocator<T1,Align1>&, const Mallocator<T2,Align2>&) { return Align1!=Align2; }
+  template <class T1, size_t ALIGN1, class T2, size_t ALIGN2>
+  bool operator==(const Mallocator<T1,ALIGN1>&, const Mallocator<T2,ALIGN2>&) { return ALIGN1==ALIGN2; }
+  template <class T1, size_t ALIGN1, class T2, size_t ALIGN2>
+  bool operator!=(const Mallocator<T1,ALIGN1>&, const Mallocator<T2,ALIGN2>&) { return ALIGN1!=ALIGN2; }
 }
 
 #endif
