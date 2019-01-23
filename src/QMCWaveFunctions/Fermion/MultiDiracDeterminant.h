@@ -381,7 +381,7 @@ public:
   std::vector<int>* detData;
   std::vector<std::pair<int,int> >* uniquePairs;
   std::vector<RealType>* DetSigns;
-  MyDeterminant<ValueType> DetCalculator;
+  MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 
 };
 
