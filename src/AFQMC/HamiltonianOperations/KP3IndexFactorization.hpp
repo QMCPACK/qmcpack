@@ -151,9 +151,9 @@ class KP3IndexFactorization
 
       // making a copy of vMF since it will be modified
       set_shm_buffer(vMF.size(0));
-      boost::multi::array_ref<ComplexType,1> vMF_(std::addressof(*SM_TMats.origin()),{vMF.size(0)});
+      boost::multi::array_ref<ComplexType,1> vMF_(to_address(SM_TMats.origin()),{vMF.size(0)});
 
-      boost::multi::array_ref<ComplexType,1> P1D(std::addressof(*P1.origin()),{NMO*NMO});
+      boost::multi::array_ref<ComplexType,1> P1D(to_address(P1.origin()),{NMO*NMO});
       std::fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));
       vHS(vMF_, P1D);
       TG.TG().all_reduce_in_place_n(P1D.origin(),P1D.num_elements(),std::plus<>());
@@ -241,17 +241,17 @@ class KP3IndexFactorization
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
-          Krptr = std::addressof(*KEright->origin());
+          Krptr = to_address(KEright->origin());
         } else {
-          Krptr = std::addressof(*SM_TMats.origin());
+          Krptr = to_address(SM_TMats.origin());
           cnt += nwalk*local_nCV;
         }
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
-          Klptr = std::addressof(*KEleft->origin());
+          Klptr = to_address(KEleft->origin());
         } else {
-          Klptr = std::addressof(*SM_TMats.origin())+cnt;
+          Klptr = to_address(SM_TMats.origin())+cnt;
           cnt += nwalk*local_nCV;
         }
         if(comm->root()) std::fill_n(Krptr,Knr*Knc,SPComplexType(0.0));
@@ -266,13 +266,13 @@ class KP3IndexFactorization
         std::fill_n(E[n].origin(),3,ComplexType(0.));
 
       assert(Gc.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-      boost::multi::array_cref<ComplexType,3> G3Da(std::addressof(*Gc.origin()),
+      boost::multi::array_cref<ComplexType,3> G3Da(to_address(Gc.origin()),
                                                         {nocca_tot,nmo_tot,nwalk} );
-      boost::multi::array_cref<ComplexType,3> G3Db(std::addressof(*Gc.origin())+
+      boost::multi::array_cref<ComplexType,3> G3Db(to_address(Gc.origin())+
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
 
-      Sp4Tensor_ref GKK(std::addressof(*SM_TMats.origin())+cnt,
+      Sp4Tensor_ref GKK(to_address(SM_TMats.origin())+cnt,
                         {nspin,nkpts,nkpts,nwalk*nmo_max*nocca_max});
       GKaKjw_to_GKKwaj(nd,Gc,GKK,nocca_tot,noccb_tot,nmo_tot,nmo_max*nocca_max);
       comm->barrier();
@@ -287,7 +287,7 @@ class KP3IndexFactorization
           E[n][0] = E0;
         for(int K=0; K<nkpts; ++K) {
 #ifdef AFQMC_SP
-          boost::multi::array_ref<ComplexType,2> haj_K(std::addressof(*haj[nd*nkpts+K].origin()),
+          boost::multi::array_ref<ComplexType,2> haj_K(to_address(haj[nd*nkpts+K].origin()),
                                                       {nelpk[nd][K],nopk[K]});
           for(int a=0; a<nelpk[nd][K]; ++a)
             ma::product(ComplexType(1.),ma::T(G3Da[na+a].sliced(nk,nk+nopk[K])),haj_K[a],
@@ -306,16 +306,16 @@ class KP3IndexFactorization
           nk = nopk[K];
           {
             na = nelpk[nd][K];
-            CVector_ref haj_K(std::addressof(*haj[nd*nkpts+K].origin()),
+            CVector_ref haj_K(to_address(haj[nd*nkpts+K].origin()),
                               {na*nk});
-            SpMatrix_ref Gaj(std::addressof(*GKK[0][K][K].origin()),{nwalk,na*nk});
+            SpMatrix_ref Gaj(to_address(GKK[0][K][K].origin()),{nwalk,na*nk});
             ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E(E.extension(0),0));
           }
           if(walker_type==COLLINEAR) {
             na = nelpk[nd][nkpts+K];
-            CVector_ref haj_K(std::addressof(*haj[nd*nkpts+K].origin())+nelpk[nd][K]*nk,
+            CVector_ref haj_K(to_address(haj[nd*nkpts+K].origin())+nelpk[nd][K]*nk,
                               {na*nk});
-            SpMatrix_ref Gaj(std::addressof(*GKK[1][K][K].origin()),{nwalk,na*nk});
+            SpMatrix_ref Gaj(to_address(GKK[1][K][K].origin()),{nwalk,na*nk});
             ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E(E.extension(0),0));
           }
 #endif
@@ -355,9 +355,9 @@ class KP3IndexFactorization
 
                 SpMatrix_ref Gwal(GKK[0][Ka][Kl].origin(),{nwalk*na,nl});
                 SpMatrix_ref Gwbk(GKK[0][Kb][Kk].origin(),{nwalk*nb,nk});
-                SpMatrix_ref Lank(std::addressof(*LQKank[nd*nspin*(nkpts+1)+Q][Ka].origin()),
+                SpMatrix_ref Lank(to_address(LQKank[nd*nspin*(nkpts+1)+Q][Ka].origin()),
                                                  {na*nchol,nk});
-                SpMatrix_ref Lbnl(std::addressof(*LQKank[nd*nspin*(nkpts+1)+Qm_][Kb].origin()),
+                SpMatrix_ref Lbnl(to_address(LQKank[nd*nspin*(nkpts+1)+Qm_][Kb].origin()),
                                                  {nb*nchol,nl});
 
                 SpMatrix_ref Twban(TMats.origin()+cnt,{nwalk*nb,na*nchol});
@@ -405,9 +405,9 @@ class KP3IndexFactorization
 
                   SpMatrix_ref Gwal(GKK[1][Ka][Kl].origin(),{nwalk*na,nl});
                   SpMatrix_ref Gwbk(GKK[1][Kb][Kk].origin(),{nwalk*nb,nk});
-                  SpMatrix_ref Lank(std::addressof(*LQKank[nd*nspin*(nkpts+1)+nkpts+1+Q][Ka].origin()),
+                  SpMatrix_ref Lank(to_address(LQKank[nd*nspin*(nkpts+1)+nkpts+1+Q][Ka].origin()),
                                                  {na*nchol,nk});
-                  SpMatrix_ref Lbnl(std::addressof(*LQKank[nd*nspin*(nkpts+1)+nkpts+1+Qm_][Kb].origin()),
+                  SpMatrix_ref Lbnl(to_address(LQKank[nd*nspin*(nkpts+1)+nkpts+1+Qm_][Kb].origin()),
                                                  {nb*nchol,nl});
 
                   SpMatrix_ref Twban(TMats.origin()+cnt,{nwalk*nb,na*nchol});
@@ -520,17 +520,17 @@ class KP3IndexFactorization
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
-          Krptr = std::addressof(*KEright->origin());
+          Krptr = to_address(KEright->origin());
         } else {
-          Krptr = std::addressof(*SM_TMats.origin());
+          Krptr = to_address(SM_TMats.origin());
           cnt += nwalk*local_nCV;
         }
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
-          Klptr = std::addressof(*KEleft->origin());
+          Klptr = to_address(KEleft->origin());
         } else {
-          Klptr = std::addressof(*SM_TMats.origin())+cnt;
+          Klptr = to_address(SM_TMats.origin())+cnt;
           cnt += nwalk*local_nCV;
         }
         if(comm->root()) std::fill_n(Krptr,Knr*Knc,SPComplexType(0.0));
@@ -545,13 +545,13 @@ class KP3IndexFactorization
         std::fill_n(E[n].origin(),3,ComplexType(0.));
 
       assert(Gc.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-      boost::multi::array_cref<ComplexType,3> G3Da(std::addressof(*Gc.origin()),
+      boost::multi::array_cref<ComplexType,3> G3Da(to_address(Gc.origin()),
                                                         {nocca_tot,nmo_tot,nwalk} );
-      boost::multi::array_cref<ComplexType,3> G3Db(std::addressof(*Gc.origin())+
+      boost::multi::array_cref<ComplexType,3> G3Db(to_address(Gc.origin())+
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
 
-      Sp4Tensor_ref GKK(std::addressof(*SM_TMats.origin())+cnt,
+      Sp4Tensor_ref GKK(to_address(SM_TMats.origin())+cnt,
                         {nspin,nkpts,nkpts,nwalk*nmo_max*nocca_max});
       cnt+=GKK.num_elements();
       GKaKjw_to_GKKwaj(nd,Gc,GKK,nocca_tot,noccb_tot,nmo_tot,nmo_max*nocca_max);
@@ -567,7 +567,7 @@ class KP3IndexFactorization
           E[n][0] = E0;
         for(int K=0; K<nkpts; ++K) {
 #ifdef AFQMC_SP
-          boost::multi::array_ref<ComplexType,2> haj_K(std::addressof(*haj[nd*nkpts+K].origin()),
+          boost::multi::array_ref<ComplexType,2> haj_K(to_address(haj[nd*nkpts+K].origin()),
                                                       {nelpk[nd][K],nopk[K]});
           for(int a=0; a<nelpk[nd][K]; ++a)
             ma::product(ComplexType(1.),ma::T(G3Da[na+a].sliced(nk,nk+nopk[K])),haj_K[a],
@@ -586,16 +586,16 @@ class KP3IndexFactorization
           nk = nopk[K];
           {
             na = nelpk[nd][K];
-            CVector_ref haj_K(std::addressof(*haj[nd*nkpts+K].origin()),
+            CVector_ref haj_K(to_address(haj[nd*nkpts+K].origin()),
                               {na*nk});
-            SpMatrix_ref Gaj(std::addressof(*GKK[0][K][K].origin()),{nwalk,na*nk});
+            SpMatrix_ref Gaj(to_address(GKK[0][K][K].origin()),{nwalk,na*nk});
             ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E(E.extension(0),0));
           }
           if(walker_type==COLLINEAR) {
             na = nelpk[nd][nkpts+K];
-            CVector_ref haj_K(std::addressof(*haj[nd*nkpts+K].origin())+nelpk[nd][K]*nk,
+            CVector_ref haj_K(to_address(haj[nd*nkpts+K].origin())+nelpk[nd][K]*nk,
                               {na*nk});
-            SpMatrix_ref Gaj(std::addressof(*GKK[1][K][K].origin()),{nwalk,na*nk});
+            SpMatrix_ref Gaj(to_address(GKK[1][K][K].origin()),{nwalk,na*nk});
             ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E(E.extension(0),0));
           }
 #endif
@@ -656,9 +656,9 @@ class KP3IndexFactorization
 
                   SpMatrix_ref Gal(GKK[0][Ka][Kl].origin()+n*na*nl,{na,nl});
                   SpMatrix_ref Gbk(GKK[0][Kb][Kk].origin()+n*nb*nk,{nb,nk});
-                  SpMatrix_ref Lank(std::addressof(*LQKank[nd*nspin*(nkpts+1)+Q][Ka].origin()),
+                  SpMatrix_ref Lank(to_address(LQKank[nd*nspin*(nkpts+1)+Q][Ka].origin()),
                                                  {na*nchol,nk});
-                  SpMatrix_ref Lbnl(std::addressof(*LQKank[nd*nspin*(nkpts+1)+Qm_][Kb].origin()),
+                  SpMatrix_ref Lbnl(to_address(LQKank[nd*nspin*(nkpts+1)+Qm_][Kb].origin()),
                                                  {nb*nchol,nl});
 
                   SpMatrix_ref Tban(TMats.origin()+local_cnt,{nb,na*nchol});
@@ -692,9 +692,9 @@ class KP3IndexFactorization
 
                     SpMatrix_ref Gal(GKK[1][Ka][Kl].origin()+n*na*nl,{na,nl});
                     SpMatrix_ref Gbk(GKK[1][Kb][Kk].origin()+n*nb*nk,{nb,nk});
-                    SpMatrix_ref Lank(std::addressof(*LQKank[nd*nspin*(nkpts+1)+nkpts+1+Q][Ka].origin()),
+                    SpMatrix_ref Lank(to_address(LQKank[nd*nspin*(nkpts+1)+nkpts+1+Q][Ka].origin()),
                                                  {na*nchol,nk});
-                    SpMatrix_ref Lbnl(std::addressof(*LQKank[nd*nspin*(nkpts+1)+nkpts+1+Qm_][Kb].origin()),
+                    SpMatrix_ref Lbnl(to_address(LQKank[nd*nspin*(nkpts+1)+nkpts+1+Qm_][Kb].origin()),
                                                  {nb*nchol,nl});
 
                     SpMatrix_ref Tban(TMats.origin()+local_cnt,{nb,na*nchol});
@@ -746,9 +746,9 @@ class KP3IndexFactorization
 
               Sp3Tensor_ref Gwal(GKK[0][Ka][Kl].origin(),{nwalk,na,nl});
               Sp3Tensor_ref Gwbk(GKK[0][Ka][Kk].origin(),{nwalk,na,nk});
-              Sp3Tensor_ref Lank(std::addressof(*LQKank[nd*nspin*(nkpts+1)+Q][Ka].origin()),
+              Sp3Tensor_ref Lank(to_address(LQKank[nd*nspin*(nkpts+1)+Q][Ka].origin()),
                                                  {na,nchol,nk});
-              Sp3Tensor_ref Lbnl(std::addressof(*LQKank[nd*nspin*(nkpts+1)+Qm_][Ka].origin()),
+              Sp3Tensor_ref Lbnl(to_address(LQKank[nd*nspin*(nkpts+1)+Qm_][Ka].origin()),
                                                  {na,nchol,nl});
 
               // Twan = sum_l G[w][a][l] L[a][n][l]
@@ -777,9 +777,9 @@ class KP3IndexFactorization
 
                 Sp3Tensor_ref Gwal(GKK[1][Ka][Kl].origin(),{nwalk,na,nl});
                 Sp3Tensor_ref Gwbk(GKK[1][Ka][Kk].origin(),{nwalk,na,nk});
-                Sp3Tensor_ref Lank(std::addressof(*LQKank[nd*nspin*(nkpts+1)+nkpts+1+Q][Ka].origin()),
+                Sp3Tensor_ref Lank(to_address(LQKank[nd*nspin*(nkpts+1)+nkpts+1+Q][Ka].origin()),
                                                  {na,nchol,nk});
-                Sp3Tensor_ref Lbnl(std::addressof(*LQKank[nd*nspin*(nkpts+1)+nkpts+1+Qm_][Ka].origin()),
+                Sp3Tensor_ref Lbnl(to_address(LQKank[nd*nspin*(nkpts+1)+nkpts+1+Qm_][Ka].origin()),
                                                  {na,nchol,nl});
 
                 // Twan = sum_l G[w][a][l] L[a][n][l]
@@ -839,9 +839,9 @@ class KP3IndexFactorization
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
       using BType = typename std::decay<MatB>::type::element ;
       using AType = typename std::decay<MatA>::type::element ;
-      boost::multi::array_ref<BType,2> v_(std::addressof(*v.origin()),
+      boost::multi::array_ref<BType,2> v_(to_address(v.origin()),
                                         {v.size(0),1});
-      boost::multi::array_ref<AType,2> X_(std::addressof(*X.origin()),
+      boost::multi::array_ref<AType,2> X_(to_address(X.origin()),
                                         {X.size(0),1});
       return vHS(X_,v_,a,c);
     }
@@ -865,15 +865,15 @@ class KP3IndexFactorization
       size_t local_memory_needs = nmo_max*nmo_max*nwalk;
       if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
 
-      Sp3Tensor_ref v3D(std::addressof(*v.origin()),{nwalk,nmo_tot,nmo_tot});
+      Sp3Tensor_ref v3D(to_address(v.origin()),{nwalk,nmo_tot,nmo_tot});
 
       // "rotate" X
       //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
       for(int Q=0, nq=0; Q<nkpts; ++Q) {
         int nc0, ncN;
         std::tie(nc0,ncN) = FairDivideBoundary(comm->rank(),ncholpQ[Q],comm->size());
-        auto Xnp = std::addressof(*X[nq+nc0].origin());
-        auto Xnm = std::addressof(*X[nq+ncholpQ[Q]+nc0].origin());
+        auto Xnp = to_address(X[nq+nc0].origin());
+        auto Xnm = to_address(X[nq+ncholpQ[Q]+nc0].origin());
         for(int n=nc0; n<ncN; ++n) {
           if(Q != kminus[Q] || Q==Q0) {
             for(int nw=0; nw<nwalk; ++nw, ++Xnp, ++Xnm) {
@@ -899,8 +899,8 @@ class KP3IndexFactorization
           int nqm0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Qm,0);
           int nc0, ncN;
           std::tie(nc0,ncN) = FairDivideBoundary(comm->rank(),ncholpQ[Q],comm->size());
-          auto Xnp = std::addressof(*X[nq+nc0].origin());
-          auto Xnm = std::addressof(*X[nqm0+ncholpQ[Q]+nc0].origin());
+          auto Xnp = to_address(X[nq+nc0].origin());
+          auto Xnm = to_address(X[nqm0+ncholpQ[Q]+nc0].origin());
           for(int n=nc0; n<ncN; ++n)
             for(int nw=0; nw<nwalk; ++nw, ++Xnp, ++Xnm)
               *Xnp =  ((*Xnp) + (*Xnm));
@@ -911,7 +911,7 @@ class KP3IndexFactorization
       {
         size_t i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(v.num_elements()),size_t(comm->size()));
-        auto v_ = std::addressof(*v.origin())+i0;
+        auto v_ = to_address(v.origin())+i0;
         for(size_t i=i0; i<iN; ++i, ++v_)
           *v_ *= c;
       }
@@ -935,7 +935,7 @@ class KP3IndexFactorization
             if(Q < kminus[Q] || Q==Q0) {
               SpMatrix_ref vik(TMats.origin(),{nwalk,ni*nk});
               Sp3Tensor_ref vik3D(TMats.origin(),{nwalk,ni,nk});
-              SpMatrix_ref Likn(std::addressof(*LQKikn[Q][K].origin()),
+              SpMatrix_ref Likn(to_address(LQKikn[Q][K].origin()),
                               {ni*nk,nchol});
               ma::product(T(X.sliced(nc0,nc0+nchol)),
                         T(Likn),vik);
@@ -945,14 +945,14 @@ class KP3IndexFactorization
             } else if(Q > kminus[Q]) { // use L(-Q)(ki)*
               SpMatrix_ref vki(TMats.origin(),{nwalk,nk*ni});
               Sp3Tensor_ref vki3D(TMats.origin(),{nwalk,nk,ni});
-              SpMatrix_ref Likn(std::addressof(*LQKikn[kminus[Q]][QK].origin()),
+              SpMatrix_ref Likn(to_address(LQKikn[kminus[Q]][QK].origin()),
                               {nk*ni,nchol});
               ma::product(T(X.sliced(nc0,nc0+nchol)),
                         H(Likn),vki);
               for(int nw=0; nw<nwalk; nw++) {
                 const auto&& vki_n(vki3D[nw]);
                 for(int i=0; i<ni; i++) {
-                  auto v3D_ni(std::addressof(*v3D[nw][ni0+i].origin()) + nk0);
+                  auto v3D_ni(to_address(v3D[nw][ni0+i].origin()) + nk0);
                   for(int k=0; k<nk; k++, ++v3D_ni)
                     *v3D_ni += vki_n[k][i];
                 }
@@ -967,7 +967,7 @@ class KP3IndexFactorization
               if(K < QK) {
                 SpMatrix_ref vik(TMats.origin(),{nwalk,ni*nk});
                 Sp3Tensor_ref vik3D(TMats.origin(),{nwalk,ni,nk});
-                SpMatrix_ref Likn(std::addressof(*LQKikn[Q][kpos].origin()),
+                SpMatrix_ref Likn(to_address(LQKikn[Q][kpos].origin()),
                               {ni*nk,nchol});
                 ma::product(T(X.sliced(nc0,nc0+nchol)),
                           T(Likn),vik);
@@ -977,14 +977,14 @@ class KP3IndexFactorization
               } else {
                 SpMatrix_ref vki(TMats.origin(),{nwalk,nk*ni});
                 Sp3Tensor_ref vki3D(TMats.origin(),{nwalk,nk,ni});
-                SpMatrix_ref Likn(std::addressof(*LQKikn[Q][kpos].origin()),
+                SpMatrix_ref Likn(to_address(LQKikn[Q][kpos].origin()),
                                 {nk*ni,nchol});
                 ma::product(T(X.sliced(nc0,nc0+nchol)),
                           H(Likn),vki);
                 for(int nw=0; nw<nwalk; nw++) {
                   const auto&& vki_n(vki3D[nw]);
                   for(int i=0; i<ni; i++) {
-                    auto v3D_ni(std::addressof(*v3D[nw][ni0+i].origin()) + nk0);
+                    auto v3D_ni(to_address(v3D[nw][ni0+i].origin()) + nk0);
                     for(int k=0; k<nk; k++, ++v3D_ni)
                       *v3D_ni += vki_n[k][i];
                   }
@@ -1007,7 +1007,7 @@ class KP3IndexFactorization
             int ni0 = std::accumulate(nopk.begin(),nopk.begin()+K,0);
             int nk = nopk[QKToK2[Q0][K]];
             int nk0 = std::accumulate(nopk.begin(),nopk.begin()+QKToK2[Q0][K],0);
-            SpMatrix_ref Likn(std::addressof(*LQKikn[Q0][K].origin()),
+            SpMatrix_ref Likn(to_address(LQKikn[Q0][K].origin()),
                               {ni*nk,nchol});
             SpMatrix_ref vik(TMats.origin(),{nwalk,ni*nk});
             Sp3Tensor_ref vik3D(TMats.origin(),{nwalk,ni,nk});
@@ -1017,7 +1017,7 @@ class KP3IndexFactorization
             for(int nw=0; nw<nwalk; nw++) {
               const auto&& vik3D_n = vik3D[nw];
               for(int k=0; k<nk; k++) {
-                ComplexType* v3D_nk = std::addressof(*v3D[nw][nk0+k].origin()) + ni0;
+                ComplexType* v3D_nk = to_address(v3D[nw][nk0+k].origin()) + ni0;
                 for(int i=0; i<ni; i++, ++v3D_nk)
                   *v3D_nk += vik3D_n[i][k];
               }
@@ -1037,9 +1037,9 @@ class KP3IndexFactorization
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
       using BType = typename std::decay<MatB>::type::element ;
       using AType = typename std::decay<MatA>::type::element ;
-      boost::multi::array_ref<BType,2> v_(std::addressof(*v.origin()),
+      boost::multi::array_ref<BType,2> v_(to_address(v.origin()),
                                         {v.size(0),1});
-      boost::multi::array_cref<AType,2> G_(std::addressof(*G.origin()),
+      boost::multi::array_cref<AType,2> G_(to_address(G.origin()),
                                         {G.size(0),1});
       return vbias(G_,v_,a,c,k);
     }
@@ -1080,9 +1080,9 @@ class KP3IndexFactorization
       SpMatrix_ref Gl(TMats.origin()+vlocal.num_elements(),{std::max(nocca_max,noccb_max),nwalk});
 
       assert(G.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-      boost::multi::array_cref<ComplexType,3> G3Da(std::addressof(*G.origin()),
+      boost::multi::array_cref<ComplexType,3> G3Da(to_address(G.origin()),
                                                         {nocca_tot,nmo_tot,nwalk} );
-      boost::multi::array_cref<ComplexType,3> G3Db(std::addressof(*G.origin())+
+      boost::multi::array_cref<ComplexType,3> G3Db(to_address(G.origin())+
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
 
@@ -1108,7 +1108,7 @@ class KP3IndexFactorization
             int nk0 = std::accumulate(nopk.begin(),nopk.begin()+QKToK2[Q][K],0);
             auto&& v1 = vlocal({0,nchol},{0,nwalk});
 
-            Sp3Tensor_ref Lank(std::addressof(*LQKank[nd*nspin*(nkpts+1)+Q][K].origin()),
+            Sp3Tensor_ref Lank(to_address(LQKank[nd*nspin*(nkpts+1)+Q][K].origin()),
                                                  {na,nchol,nk});
 
             // v1[Q][n][nw] += sum_K sum_a_k LQK[a][n][k] G[a][k][nw]
@@ -1157,7 +1157,7 @@ class KP3IndexFactorization
             int nk0 = std::accumulate(nopk.begin(),nopk.begin()+QKToK2[Q0][K],0);
             auto&& v1 = vlocal({0,nchol},{0,nwalk});
 
-            Sp3Tensor_ref Lank(std::addressof(*LQKank[nd*nspin*(nkpts+1)+nkpts][K].origin()),
+            Sp3Tensor_ref Lank(to_address(LQKank[nd*nspin*(nkpts+1)+nkpts][K].origin()),
                                                  {na,nchol,nk});
 
             // v1[Q][n][nw] += sum_K sum_a_k LQK[a][n][k] G[a][k][nw]
@@ -1280,12 +1280,12 @@ class KP3IndexFactorization
       int nkpts = nopk.size();
       assert(GKaKj.num_elements() == nocca_tot*nmo_tot*nwalk);
       assert(GKKaj.num_elements() == nkpts*nkpts*akmax*nwalk);
-      boost::multi::array_cref<ComplexType,3> Gca(std::addressof(*GKaKj.origin()),
+      boost::multi::array_cref<ComplexType,3> Gca(to_address(GKaKj.origin()),
                                                        {nocca_tot,nmo_tot,nwalk} );
-      boost::multi::array_cref<ComplexType,3> Gcb(std::addressof(*GKaKj.origin())+
+      boost::multi::array_cref<ComplexType,3> Gcb(to_address(GKaKj.origin())+
                                                        Gca.num_elements(),
                                                        {noccb_tot,nmo_tot,nwalk} );
-      boost::multi::array_ref<SPComplexType,4> GKK(std::addressof(*GKKaj.origin()),
+      boost::multi::array_ref<SPComplexType,4> GKK(to_address(GKKaj.origin()),
                                                    {nspin,nkpts,nkpts,nwalk*akmax} );
       int na0 = 0;
       for(int Ka=0, Kaj=0; Ka<nkpts; Ka++) {
@@ -1297,10 +1297,10 @@ class KP3IndexFactorization
             nj0 += nj;
             continue;
           }
-          auto G_(std::addressof(*GKK[0][Ka][Kj].origin()));
+          auto G_(to_address(GKK[0][Ka][Kj].origin()));
           int naj=na*nj;
           for(int a=0, aj=0; a<na; a++) {
-            auto Gc_( std::addressof(*Gca[na0+a][nj0].origin()) );
+            auto Gc_( to_address(Gca[na0+a][nj0].origin()) );
             for(int j=0; j<nj; j++, aj++) {
               for(int w=0, waj=0; w<nwalk; w++, ++Gc_, waj+=naj)
 #ifdef AFQMC_SP
@@ -1325,10 +1325,10 @@ class KP3IndexFactorization
               nj0 += nj;
               continue;
             }
-            auto G_(std::addressof(*GKK[1][Ka][Kj].origin()));
+            auto G_(to_address(GKK[1][Ka][Kj].origin()));
             int naj=na*nj;
             for(int a=0, aj=0; a<na; a++) {
-              auto Gc_( std::addressof(*Gcb[na0+a][nj0].origin()) );
+              auto Gc_( to_address(Gcb[na0+a][nj0].origin()) );
               for(int j=0; j<nj; j++, aj++) {
                 for(int w=0, waj=0; w<nwalk; w++, ++Gc_, waj+=naj)
 #ifdef AFQMC_SP

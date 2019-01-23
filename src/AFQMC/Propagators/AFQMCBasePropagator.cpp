@@ -6,6 +6,8 @@
 #include "AFQMC/Propagators/AFQMCBasePropagator.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
+#include "AFQMC/Kernels/construct_X.cuh"
+
 namespace qmcplusplus 
 {
 
@@ -164,7 +166,7 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
                        to_address(vbias.origin()),
                        to_address(HWs.origin()),
                        to_address(MF.origin()),
-                       to_address(X.origin()),
+                       to_address(X.origin())
                       );
 #else
   boost::multi::array_ref<ComplexType,3> X3D(X.origin(),{long(X.size(0)),long(nsteps),long(nwalk)});

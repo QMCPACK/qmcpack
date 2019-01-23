@@ -71,7 +71,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
     if(not wfn.distribution_over_cholesky_vectors()) {
       if(not TG.TG_local().root()) 
         fill_n(vMF.origin(),vMF.num_elements(),ComplexType(0));
-      TG.TG().all_reduce_in_place_n(vMF.origin(),vMF.num_elements(),std::plus<>());  
+      TG.TG().all_reduce_in_place_n(to_address(vMF.origin()),vMF.num_elements(),std::plus<>());  
     }
   }
 

@@ -85,7 +85,7 @@ class PHMSD: public AFQMCInfo
                 SDetOp( SlaterDetOperations_shared<ComplexType>(
                 //SDetOp( 
                         ((wlk!=NONCOLLINEAR)?(NMO):(2*NMO)),
-                        ((wlk!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ),
+                        ((wlk!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) )),
                 HamOp(std::move(hop_)),
                 acta2mo(std::move(acta2mo_)),
                 actb2mo(std::move(actb2mo_)),
@@ -215,7 +215,7 @@ class PHMSD: public AFQMCInfo
     CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF)
     { return HamOp.getOneBodyPropagatorMatrix(TG,vMF); }
 
-    SlaterDetOperations& getSlaterDetOperations() const {return SDetOp;}
+    SlaterDetOperations* getSlaterDetOperations() {return std::addressof(SDetOp);} 
 
     /*
      * local contribution to vbias for the Green functions in G 

@@ -20,8 +20,9 @@
 #include <tuple>
 
 #include "AFQMC/config.h"
+#include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Propagators/generate1BodyPropagator.hpp"
-#include "AFQMC/Propagators/WalkerUpdate.hpp"
+#include "AFQMC/Propagators/WalkerSetUpdate.hpp"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
 namespace qmcplusplus
@@ -101,8 +102,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   CMatrix_ref vrecv(mem_pool.origin()+displ, {vhs_nr,vhs_nc}); 
   // second view of vHS matrix for use in propagation step
   // notice that the final vHS matrix will be in vrecv, received in the last step
-  boost::multi::array_ref<ComplexType,3> vHS3D(mem_pool.origin()+displ, 
-                                              {vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
+  C3Tensor_ref vHS3D(mem_pool.origin()+displ,{vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
 
   // partition G and v for communications: all cores communicate a piece of the matrix
   int vak0,vakN;
@@ -119,13 +119,13 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
         MPI_Request_free(&req_vrecv);
     if(req_vsend!=MPI_REQUEST_NULL)
         MPI_Request_free(&req_vsend);
-    MPI_Send_init(Gwork.origin()+Gak0,(GakN-Gak0)*sizeof(ComplexType),MPI_CHAR,
+    MPI_Send_init(to_address(Gwork.origin())+Gak0,(GakN-Gak0)*sizeof(ComplexType),MPI_CHAR,
                   TG.prev_core(),3456,&TG.TG(),&req_Gsend);
-    MPI_Recv_init(Grecv.origin()+Gak0,(GakN-Gak0)*sizeof(ComplexType),MPI_CHAR,
+    MPI_Recv_init(to_address(Grecv.origin())+Gak0,(GakN-Gak0)*sizeof(ComplexType),MPI_CHAR,
                   TG.next_core(),3456,&TG.TG(),&req_Grecv);
-    MPI_Send_init(vsend.origin()+vak0,(vakN-vak0)*sizeof(ComplexType),MPI_CHAR,
+    MPI_Send_init(to_address(vsend.origin())+vak0,(vakN-vak0)*sizeof(ComplexType),MPI_CHAR,
                   TG.prev_core(),5678,&TG.TG(),&req_vsend);
-    MPI_Recv_init(vrecv.origin()+vak0,(vakN-vak0)*sizeof(ComplexType),MPI_CHAR,
+    MPI_Recv_init(to_address(vrecv.origin())+vak0,(vakN-vak0)*sizeof(ComplexType),MPI_CHAR,
                   TG.next_core(),5678,&TG.TG(),&req_vrecv);
   }
 
@@ -207,7 +207,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     }
 
     // 6. add local contribution to vsend
-    ma::axpy(vakN-vak0,one,vHS.origin()+vak0,1,vsend.origin()+vak0,1);
+    axpy(vakN-vak0,one,vHS.origin()+vak0,1,vsend.origin()+vak0,1);
 
     // 7. start v communication
     MPI_Start(&req_vsend);
@@ -222,8 +222,12 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   MPI_Wait(&req_vsend,&st);
 
   // reduce MF and HWs
-  TG.TG().all_reduce_in_place_n(MFfactor.origin(),MFfactor.num_elements(),std::plus<>());
-  TG.TG().all_reduce_in_place_n(hybrid_weight.origin(),hybrid_weight.num_elements(),std::plus<>());
+  if(TG.TG().size() > 1) {
+    TG.TG().all_reduce_in_place_n(to_address(MFfactor.origin()),MFfactor.num_elements(),
+                                  std::plus<>());
+    TG.TG().all_reduce_in_place_n(to_address(hybrid_weight.origin()),
+                                  hybrid_weight.num_elements(),std::plus<>());
+  }  
   TG.local_barrier();
   AFQMCTimers[vHS_comm_overhead_timer]->stop();
 

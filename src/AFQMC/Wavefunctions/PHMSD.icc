@@ -180,7 +180,7 @@ namespace afqmc
             auto KEr = KEright[nd];
             HamOp.energy(eloc2,G,orb_spin_indx,dummyMatPtr,std::addressof(KEr),TG.TG_local().root(),true,true);
             // reduce_n since Emsd is in shared memory (doing this instead of copy with mutex)
-            TG.TG_local().reduce_n(eloc2.origin(),3*nwalk,
+            TG.TG_local().reduce_n(to_address(eloc2.origin()),3*nwalk,
                                    std::addressof(*Emsd[spin][nd].origin()),std::plus<>(),0);
 //std::cout<<" E: " <<spin <<" " <<nd <<" " <<Ovmsd[spin][nd][0] <<" " 
 //<<eloc2[0][0] <<" " 
@@ -194,7 +194,7 @@ namespace afqmc
 //<<eloc2[0][1] <<" " 
 //<<eloc2[0][2] <<std::endl;
             // reduce_n since Emsd is in shared memory (doing this instead of copy with mutex)
-            TG.TG_local().reduce_n(eloc2.origin(),3*nwalk,
+            TG.TG_local().reduce_n(to_address(eloc2.origin()),3*nwalk,
                                    std::addressof(*Emsd[spin][nd].origin()),std::plus<>(),0);
             TG.local_barrier();
             // round-robin KE contributions
@@ -261,9 +261,9 @@ namespace afqmc
     }  // spin
 
     // 3. reduce over TG_local 
-    TG.TG_local().all_reduce_in_place_n(opSpinEJ.origin(),nwalk,std::plus<>());
-    TG.TG_local().all_reduce_in_place_n(Ov.origin(),nwalk,std::plus<>());
-    TG.TG_local().all_reduce_in_place_n(E.origin(),3*nwalk,std::plus<>());
+    TG.TG_local().all_reduce_in_place_n(to_address(opSpinEJ.origin()),nwalk,std::plus<>());
+    TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nwalk,std::plus<>());
+    TG.TG_local().all_reduce_in_place_n(to_address(E.origin()),3*nwalk,std::plus<>());
     for(int i=0; i<nwalk; ++i) { 
       E[i][0] /= Ov[i];   
       E[i][1] /= Ov[i];  
@@ -712,7 +712,7 @@ namespace afqmc
       }
     }
     // normalize G
-    TG.TG_local().all_reduce_in_place_n(Ov.origin(),nw,std::plus<>());
+    TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
     if(transpose) {
       for(size_t iw=0; iw<G.size(0); ++iw) 
         if( iw%TG.TG_local().size() == TG.TG_local().rank() ) {
@@ -927,7 +927,7 @@ namespace afqmc
       }
 
     }
-    TG.TG_local().all_reduce_in_place_n(Ov.origin(),nw,std::plus<>());
+    TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
   }
 
   /*
@@ -1172,19 +1172,20 @@ namespace afqmc
         }
       }
       boost::multi::array_ref<ComplexType,1> G1D(G.origin(),extensions<1u>{G.num_elements()});
-      TG.Global().all_reduce_in_place_n(G1D.origin(),G1D.num_elements(),std::plus<>());
+      TG.Global().all_reduce_in_place_n(to_address(G1D.origin()),G1D.num_elements(),std::plus<>());
       ma::scal(ComplexType(1.0/ov),G1D);
       HamOp.vbias(G1D,std::forward<Vec>(v),0.5,1.0);
     }
     TG.Node().barrier();
 
     // since v is not in shared memory, we need to reduce
-    TG.TG_local().all_reduce_in_place_n(std::addressof(*v.origin()),v.num_elements(),std::plus<>());
+    TG.TG_local().all_reduce_in_place_n(to_address(v.origin()),v.num_elements(),std::plus<>());
     // NOTE: since SpvnT is a truncated structure the complex part of vMF, 
     //       which should be exactly zero, suffers from truncation errors.
     //       Set it to zero.
-    for(int i=0; i<v.num_elements(); i++)
-      v[i] = ComplexType(real(v[i]),0.0); 
+    ma::zero_complex_part(v);
+//    for(int i=0; i<v.num_elements(); i++)
+//      v[i] = ComplexType(real(v[i]),0.0); 
 
 }
 

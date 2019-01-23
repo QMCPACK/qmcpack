@@ -658,6 +658,17 @@ namespace ma
   }
 
   template<typename T>
+  inline static void zero_complex_part(int n, T* x)
+  { }
+
+  template<typename T>
+  inline static void zero_complex_part(int n, std::complex<T>* x)
+  {
+    for(int i=0; i<n; ++i, ++x)
+      *x = std::complex<T>(real(*x),0.0);
+  }
+
+  template<typename T>
   inline static void set1D(int n, T const alpha, T* x, int incx)
   {
     for(int i=0; i<n; i++, x+=incx)

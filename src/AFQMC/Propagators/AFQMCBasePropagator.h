@@ -68,7 +68,11 @@ class AFQMCBasePropagator: public AFQMCInfo
             AFQMCInfo(info),TG(tg_),
             alloc_(),aux_alloc_(make_localTG_allocator<ComplexType>(TG)),wfn(wfn_),
             H1(std::move(h1_)),
+#ifdef QMC_CUDA
+            P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,shared_allocator<ComplexType>{TG.TG_local()})),
+#else
             P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,aux_alloc_)),
+#endif
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(wfn.getSlaterDetOperations()),
@@ -136,7 +140,7 @@ class AFQMCBasePropagator: public AFQMCInfo
     RandomGenerator_t* rng;
 
     //SlaterDetOperations_shared<ComplexType> SDetOp;
-    SlaterDetOperations& SDetOp;
+    SlaterDetOperations* SDetOp;
 
     sharedCVector buffer;    
 

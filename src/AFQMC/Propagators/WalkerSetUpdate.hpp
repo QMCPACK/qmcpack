@@ -43,10 +43,10 @@ void free_projection_walker_update(Wlk&& w, RealType dt, OMat&& overlap, Mat&& M
   w.getProperty(PHASE,work[1]);
   w.getProperty(PSEUDO_ELOC_,work[2]);
   w.getProperty(OVLP,work[3]);
-  using std::copy;
-  copy(overlap.origin(),nwalk,work[4].origin());
-  copy(MFfactor.origin(),nwalk,work[5].origin());
-  copy(hybrid_weight.origin(),nwalk,work[6].origin());
+  using std::copy_n;
+  copy_n(overlap.origin(),nwalk,work[4].origin());
+  copy_n(MFfactor.origin(),nwalk,work[5].origin());
+  copy_n(hybrid_weight.origin(),nwalk,work[6].origin());
 
   for(int i=0; i<nwalk; i++) {
     ComplexType old_ovlp = work[3][i];
@@ -79,17 +79,17 @@ void hybrid_walker_update(Wlk&& w, RealType dt, bool apply_constrain, bool imp_s
   if(work.size(0) < 7 || work.size(1) < nwalk)
     work.reextent({7,nwalk});
   
-  bool BackProp = (w.NumBackProp()>0);
+  bool BackProp = (w.getNBackProp()>0);
 
   w.getProperty(WEIGHT,work[0]);
   w.getProperty(PSEUDO_ELOC_,work[1]);
   w.getProperty(OVLP,work[2]);
   if(BackProp) 
     w.getProperty(WEIGHT_FAC,work[3]);
-  using std::copy;
-  copy(overlap.origin(),nwalk,work[4].origin());
-  copy(MFfactor.origin(),nwalk,work[5].origin());
-  copy(hybrid_weight.origin(),nwalk,work[6].origin());
+  using std::copy_n;
+  copy_n(overlap.origin(),nwalk,work[4].origin());
+  copy_n(MFfactor.origin(),nwalk,work[5].origin());
+  copy_n(hybrid_weight.origin(),nwalk,work[6].origin());
 
   for(int i=0; i<nwalk; i++) {
 
@@ -162,7 +162,7 @@ void local_energy_walker_update(Wlk&& w, RealType dt, bool apply_constrain, Real
   if(work.size(0) < 12 || work.size(1) < nwalk)
     work.reextent({12,nwalk});
 
-  bool BackProp = (w.NumBackProp()>0);
+  bool BackProp = (w.getNBackProp()>0);
 
   w.getProperty(WEIGHT,work[0]);
   w.getProperty(PSEUDO_ELOC_,work[1]);
@@ -172,9 +172,9 @@ void local_energy_walker_update(Wlk&& w, RealType dt, bool apply_constrain, Real
   w.getProperty(EJ_,work[5]);
   if(BackProp)
     w.getProperty(WEIGHT_FAC,work[6]);
-  using std::copy;
-  copy(overlap.origin(),nwalk,work[7].origin());
-  copy(MFfactor.origin(),nwalk,work[8].origin());
+  using std::copy_n;
+  copy_n(overlap.origin(),nwalk,work[7].origin());
+  copy_n(MFfactor.origin(),nwalk,work[8].origin());
   ma::copy(energies({0,nwalk},0),work[9]);
   ma::copy(energies({0,nwalk},1),work[10]);
   ma::copy(energies({0,nwalk},2),work[11]);
@@ -206,7 +206,7 @@ void local_energy_walker_update(Wlk&& w, RealType dt, bool apply_constrain, Real
 
     work[0][i] *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + old_eloc.real() ) - 
                             Eshift )),0.0);
-    if(w.NumBackProp() > 0 && std::abs(scale) > 1e-16) 
+    if(BackProp && std::abs(scale) > 1e-16) 
       work[6][i] *= std::exp( -ComplexType(0.0,dt) * ( 0.5*( eloc.imag() + old_eloc.imag()) ) ) / scale;
     work[1][i] = eloc;
     work[2][i] = work[7][i];

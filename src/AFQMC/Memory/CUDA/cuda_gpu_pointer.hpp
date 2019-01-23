@@ -15,6 +15,7 @@
 #ifndef AFQMC_CUDA_GPU_POINTERS_HPP
 #define AFQMC_CUDA_GPU_POINTERS_HPP
 
+#include <functional>
 #include "Configuration.h"
 #include<cassert>
 #include <cuda_runtime.h>
@@ -26,12 +27,147 @@
 #include "AFQMC/Kernels/uninitialized_copy_n.cuh"
 #include "AFQMC/Kernels/copy_n_cast.cuh"
 #include "AFQMC/Kernels/print.cuh"
+#include "AFQMC/Kernels/reference_operations.cuh"
 
 #include "multi/array_ref.hpp"
 
 namespace qmc_cuda {
 
 template<class T> struct cuda_gpu_allocator;
+template<class T> struct cuda_gpu_ptr;
+
+template<class T>
+struct cuda_gpu_reference {
+
+  public:
+
+  using value_type = T;
+  using pointer = cuda_gpu_ptr<T>;
+
+  // must construct through a gpu_ptr for now, to keep some sort of control/safety 
+  cuda_gpu_reference(pointer const& gpu_ptr) : impl_(gpu_ptr.impl_) {}
+  cuda_gpu_reference(cuda_gpu_reference<T> const& gpu_ref) = default; 
+ 
+  // assignment
+  cuda_gpu_reference& operator=(cuda_gpu_reference const& x) {
+    if(cudaSuccess != cudaMemcpy(impl_,x.impl_,sizeof(T),cudaMemcpyDefault))
+     throw std::runtime_error("Error: cudaMemcpy returned error code.");
+    return *this;
+  } 
+
+  cuda_gpu_reference& operator=(value_type const& x) {
+    if(cudaSuccess != cudaMemcpy(impl_,std::addressof(x),sizeof(T),cudaMemcpyDefault))
+     throw std::runtime_error("Error: cudaMemcpy returned error code.");
+    return *this;
+  }
+
+  operator value_type() const { return this->val(); }
+
+  operator value_type&() {
+    if(cudaSuccess != cudaMemcpy(std::addressof(host_impl_),impl_,sizeof(T),cudaMemcpyDefault))
+     throw std::runtime_error("Error: cudaMemcpy returned error code.");
+    return host_impl_;
+  }
+
+  pointer operator& () const { return pointer{impl_}; }
+
+  void swap(cuda_gpu_reference& other) { std::swap(impl_,other.impl_); }
+
+  cuda_gpu_reference&  operator++ (void) { kernels::op_plus(impl_,T(1)); return *this; }
+ 
+  value_type  operator++ (int) {
+    value_type res;
+    if(cudaSuccess != cudaMemcpy(std::addressof(res),impl_,sizeof(T),cudaMemcpyDefault))
+     throw std::runtime_error("Error: cudaMemcpy returned error code.");
+    return res++;
+  }
+ 
+  cuda_gpu_reference&  operator+= (const value_type &rhs) { kernels::op_plus(impl_,rhs); return *this; }
+ 
+  cuda_gpu_reference&  operator-- (void) { kernels::op_minus(impl_,T(1)); return *this; }
+ 
+  value_type  operator-- (int) {
+    value_type res;
+    if(cudaSuccess != cudaMemcpy(std::addressof(res),impl_,sizeof(T),cudaMemcpyDefault))
+     throw std::runtime_error("Error: cudaMemcpy returned error code.");
+    return res--;
+  }
+ 
+  cuda_gpu_reference&  operator-= (const value_type &rhs) { kernels::op_minus(impl_,rhs); return *this; }
+ 
+  cuda_gpu_reference&  operator*= (const value_type &rhs) { kernels::op_times(impl_,rhs); return *this; }
+ 
+  cuda_gpu_reference&  operator/= (const value_type &rhs) { kernels::op_div(impl_,rhs); return *this; } 
+
+  value_type  operator+ (value_type const& rhs) const { return this->val()+rhs; }
+  value_type  operator- (value_type const& rhs) const { return this->val()-rhs; }
+  value_type  operator/ (value_type const& rhs) const { return this->val()/rhs; }
+  value_type  operator* (value_type const& rhs) const { return this->val()*rhs; }
+
+/*
+  friend value_type  operator* (cuda_gpu_reference const& lhs, value_type const& rhs) { 
+    return lhs.val()*rhs; 
+  }
+  friend value_type  operator* (cuda_gpu_reference const& lhs, cuda_gpu_reference const& rhs) { return value_type(lhs)*value_type(rhs); }
+*/
+
+  value_type  operator+ (cuda_gpu_reference const& rhs) const 
+    { return this->val()+rhs.val(); }
+  value_type  operator- (cuda_gpu_reference const& rhs) const 
+    { return this->val()-rhs.val(); }
+  value_type  operator* (cuda_gpu_reference const& rhs) const 
+    { return this->val()*rhs.val(); }
+  value_type  operator/ (cuda_gpu_reference const& rhs) const 
+    { return this->val()/rhs.val(); }
+
+  friend value_type operator+(value_type lhs, cuda_gpu_reference const& rhs) 
+  { return lhs + rhs.val(); }
+  friend value_type operator-(value_type lhs, cuda_gpu_reference const& rhs) 
+  { return lhs - rhs.val(); }
+  friend value_type operator*(value_type lhs, cuda_gpu_reference const& rhs) 
+  { return lhs * rhs.val(); }
+  friend value_type operator/(value_type lhs, cuda_gpu_reference const& rhs) 
+  { return lhs / rhs.val(); }
+
+  friend std::ostream& operator<<(std::ostream& os, cuda_gpu_reference const& obj)
+  {
+    os<<obj.val();
+    return os;
+  }
+
+  friend std::istream& operator<<(std::istream& is, cuda_gpu_reference & obj)
+  {
+    value_type val;
+    is>>val;
+    obj = val;
+    return is;
+  }
+
+/*
+  cuda_gpu_reference&  operator<<= (const T &rhs)
+ 
+  cuda_gpu_reference&  operator>>= (const T &rhs)
+ 
+  cuda_gpu_reference&  operator&= (const T &rhs)
+ 
+  cuda_gpu_reference&  operator|= (const T &rhs)
+ 
+  cuda_gpu_reference&  operator^= (const T &rhs)
+*/
+
+  private:
+  T* impl_;
+  T host_impl_;
+
+  value_type val() const {
+    value_type res;
+    if(cudaSuccess != cudaMemcpy(std::addressof(res),impl_,sizeof(T),cudaMemcpyDefault))
+     throw std::runtime_error("Error: cudaMemcpy returned error code.");
+    return res;
+  }
+
+};
+
 
 struct base_cuda_gpu_ptr
 {
@@ -47,8 +183,8 @@ struct cuda_gpu_ptr: base_cuda_gpu_ptr{
   using pointer = T*;
   using const_pointer = T const*;
 // this is wrong!!! but no synthetic references yet!!!
-  using reference = T&;
-  using const_reference = T const&;
+  using reference = cuda_gpu_reference<T>;
+  using const_reference = cuda_gpu_reference<T> const;
   using iterator_category = std::random_access_iterator_tag; 
   static const int memory_type = GPU_MEMORY_POINTER_TYPE; 
   using default_allocator_type = cuda_gpu_allocator<T>;
@@ -62,8 +198,11 @@ struct cuda_gpu_ptr: base_cuda_gpu_ptr{
            typename = typename std::enable_if_t<cuda_gpu_ptr<Q>::memory_type == memory_type>
               >
   cuda_gpu_ptr(cuda_gpu_ptr<Q> const& ptr):impl_(ptr.impl_) {}
-  T& operator*() const{return *impl_;}
-  T& operator[](std::ptrdiff_t n) const{return impl_[n];}
+// testing some ideas!!!
+//  reference operator*() const{return *impl_;}
+//  reference operator[](std::ptrdiff_t n) const{return impl_[n];}
+  reference operator*() const{ return reference(cuda_gpu_ptr{impl_}); }
+  reference operator[](std::ptrdiff_t n) const { return reference(cuda_gpu_ptr{impl_ + n}); }
   T* operator->() const{return impl_;}
   explicit operator bool() const{return (impl_!=nullptr);}
   operator cuda_gpu_ptr<T const>() const{return cuda_gpu_ptr<T const>{impl_}; }
@@ -284,6 +423,7 @@ namespace boost::multi{
 
 /**************** copy *****************/
 // Can always call cudaMemcopy2D like you do in the blas backend
+
 template<class T>
 multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy( 
            multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,
@@ -332,6 +472,24 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n(
 
 }
 
+// 
+/*
+namespace boost{
+namespace mpi3{
+namespace detail{
+
+template<class qmc_cuda::cuda_gpu_ptr<int>> struct iterator_category{ using type = contiguous_iterator_tag; };
+template<class qmc_cuda::cuda_gpu_ptr<long>> struct iterator_category{ using type = contiguous_iterator_tag; };
+template<class qmc_cuda::cuda_gpu_ptr<size_t>> struct iterator_category{ using type = contiguous_iterator_tag; };
+template<class qmc_cuda::cuda_gpu_ptr<float>> struct iterator_category{ using type = contiguous_iterator_tag; };
+template<class qmc_cuda::cuda_gpu_ptr<double>> struct iterator_category{ using type = contiguous_iterator_tag; };
+template<class qmc_cuda::cuda_gpu_ptr<std::complex<float>>> struct iterator_category{ using type = contiguous_iterator_tag; };
+template<class qmc_cuda::cuda_gpu_ptr<std::complex<double>>> struct iterator_category{ using type = contiguous_iterator_tag; };
+
+}
+}
+}
+*/
 /*
 namespace boost
 {

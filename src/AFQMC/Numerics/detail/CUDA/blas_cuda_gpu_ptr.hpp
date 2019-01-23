@@ -26,6 +26,7 @@
 #include "AFQMC/Kernels/sum.cuh"
 #include "AFQMC/Kernels/adiagApy.cuh"
 #include "AFQMC/Kernels/acAxpbB.cuh"
+#include "AFQMC/Kernels/zero_complex_part.cuh"
 
 // Currently available:
 // Lvl-1: dot, axpy, scal
@@ -63,10 +64,10 @@ namespace qmc_cuda
   }
 
   // scal Specializations
-  template<typename T>
-  inline static void scal(int n, T alpha, cuda_gpu_ptr<T> && x, int incx)
+  template<typename T, typename Q>
+  inline static void scal(int n, Q alpha, cuda_gpu_ptr<T> && x, int incx=1)
   {
-    if(CUBLAS_STATUS_SUCCESS != cublas::cublas_scal(*x.handles.cublas_handle,n,alpha,to_address(x),incx))
+    if(CUBLAS_STATUS_SUCCESS != cublas::cublas_scal(*x.handles.cublas_handle,n,T(alpha),to_address(x),incx))
       throw std::runtime_error("Error: cublas_scal returned error code.");
   }
 
@@ -187,6 +188,12 @@ namespace qmc_cuda
                          cuda_gpu_ptr<T> && y, int incy)
   {
     kernels::adiagApy(n,alpha,to_address(A),lda,to_address(y),incy);
+  }
+
+  template<typename T>
+  inline static void zero_complex_part(int n, cuda_gpu_ptr<T> x)
+  {
+    kernels::zero_complex_part(n,to_address(x));
   }
 
   template<typename T>

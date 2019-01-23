@@ -333,7 +333,7 @@ void sampleGaussianFields_n(T* V, int n, RandomNumberGenerator_& rng)
 #ifdef QMC_CUDA
 template<class T,
         class Dummy>
-void sampleGaussianFields_n(qmc_cuda::cuda_gpu_ptr<T>& V, int n, Dummy &r) 
+void sampleGaussianFields_n(qmc_cuda::cuda_gpu_ptr<T> V, int n, Dummy &r) 
 {
   kernels::sampleGaussianRNG(to_address(V),n,qmc_cuda::afqmc_curand_generator);
 }

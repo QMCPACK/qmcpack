@@ -112,7 +112,9 @@ namespace afqmc
 
 #if defined(QMC_CUDA)
   using P1Type = ma::sparse::csr_matrix<ComplexType,int,int,
-                                node_allocator<ComplexType>>;
+                                shared_allocator<ComplexType>,
+                                ma::sparse::is_root>; 
+                                // node_allocator<ComplexType>>;
 #else
   using P1Type = ma::sparse::csr_matrix<ComplexType,int,int,
                                 node_allocator<ComplexType>,

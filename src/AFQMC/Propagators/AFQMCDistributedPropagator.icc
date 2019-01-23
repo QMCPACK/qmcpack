@@ -20,8 +20,9 @@
 #include <tuple>
 
 #include "AFQMC/config.h"
+#include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Propagators/generate1BodyPropagator.hpp"
-#include "AFQMC/Propagators/WalkerUpdate.hpp"
+#include "AFQMC/Propagators/WalkerSetUpdate.hpp"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
 namespace qmcplusplus
@@ -106,8 +107,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   CMatrix_ref vHSwork(mem_pool.origin()+displ, {vhs_nr,vhs_nc}); 
     displ+=vhs_nr*vhs_nc;
   // second view of vHS matrix for use in propagation step
-  boost::multi::array_ref<ComplexType,3> vHS3D(vHS.origin(), 
-                                              {vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
+  C3Tensor_ref vHS3D(vHS.origin(),{vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
 
   // partition G and v for communications: all cores communicate a piece of the matrix
   long vak0,vakN;
@@ -175,7 +175,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
       copy_n(G.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
       TG.local_barrier();
     }    
-    core_comm.broadcast_n(Gwork.origin()+GpX0,GpXN-GpX0,k); 
+    core_comm.broadcast_n(to_address(Gwork.origin())+GpX0,GpXN-GpX0,k); 
     TG.local_barrier();
     AFQMCTimers[vHS_comm_overhead_timer]->stop();
 
@@ -187,7 +187,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
 
     // all_reduce vbias
     AFQMCTimers[vHS_comm_overhead_timer]->start();
-    core_comm.all_reduce_in_place_n(vbias.origin()+vb0,vbN-vb0,std::plus<>());
+    core_comm.all_reduce_in_place_n(to_address(vbias.origin())+vb0,vbN-vb0,std::plus<>());
     TG.local_barrier();
     AFQMCTimers[vHS_comm_overhead_timer]->stop();
 
@@ -196,9 +196,9 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     CMatrix_ref hw_(hybrid_weight[1].origin(), {long(nsteps),long(nwalk)});
     assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_,false);
     if(k == node_number) {
-      TG.TG_local().all_reduce_n(MFfactor[1].origin(),MFfactor[1].num_elements(),
+      TG.TG_local().all_reduce_n(to_address(MFfactor[1].origin()),MFfactor[1].num_elements(),
                            MFfactor[0].origin(),std::plus<>());
-      TG.TG_local().all_reduce_n(hybrid_weight[1].origin(),hybrid_weight[1].num_elements(),
+      TG.TG_local().all_reduce_n(to_address(hybrid_weight[1].origin()),hybrid_weight[1].num_elements(),
                            hybrid_weight[0].origin(),std::plus<>());
     }
 
@@ -209,7 +209,8 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     AFQMCTimers[vHS_timer]->stop();
 
     AFQMCTimers[vHS_comm_overhead_timer]->start();
-    core_comm.reduce_n(vHSwork.origin()+vak0,vakN-vak0,vHS.origin()+vak0,std::plus<>(),k);
+    core_comm.reduce_n(to_address(vHSwork.origin())+vak0,vakN-vak0,
+                       to_address(vHS.origin())+vak0,std::plus<>(),k);
     TG.local_barrier();
     AFQMCTimers[vHS_comm_overhead_timer]->stop();
   }

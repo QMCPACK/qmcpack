@@ -152,7 +152,7 @@ class dummy_wavefunction
   }
 
   SlaterDetOperations SDet;
-  SlaterDetOperations& getSlaterDetOperations() const {return SDet;}
+  SlaterDetOperations* getSlaterDetOperations() {return std::addressof(SDet);}
 
 };
 }
@@ -320,7 +320,7 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
         );
     }
 
-    SlaterDetOperations& getSlaterDetOperations() const {
+    SlaterDetOperations* getSlaterDetOperations() {
         return boost::apply_visitor(
               [&](auto&& a){return a.getSlaterDetOperations();},
               *this

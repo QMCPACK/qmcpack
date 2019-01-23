@@ -50,8 +50,11 @@ namespace afqmc
       boost::multi::array<ComplexType,2> v({NMO,NMO});
       fill_n(v.origin(),v.num_elements(),ComplexType(0));  
 
+      // running on host regardless
+      boost::multi::array<ComplexType,2> h1_(H1);
+
       for(int i=0; i<NMO; i++) 
-        ma::axpy(-0.5*dt,H1[i],v[i]);
+        ma::axpy(-0.5*dt,h1_[i],v[i]);
 
       boost::multi::array<ComplexType,2> P = ma::exp(v);
 

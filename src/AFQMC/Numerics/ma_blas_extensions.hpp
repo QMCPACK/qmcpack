@@ -134,6 +134,13 @@ MultiArray1D setVector(T alpha, MultiArray1D&& a){
         return std::forward<MultiArray1D>(a);
 }
 
+template<class MultiArray1D,
+        typename = typename std::enable_if< std::decay<MultiArray1D>::type::dimensionality == 1 >
+>
+void zero_complex_part(MultiArray1D&& a){
+        zero_complex_part(a.num_elements(),a.origin());
+}
+
 }
 
 #endif

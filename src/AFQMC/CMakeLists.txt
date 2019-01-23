@@ -49,6 +49,7 @@ IF(QMC_CUDA)
     Kernels/batched_Tab_to_Klr.cu
     Kernels/sampleGaussianRNG.cu
     Kernels/construct_X.cu
+    Kernels/reference_operations.cu
 #    Kernels/myAtomicAdd.cu
   )
 ENDIF(QMC_CUDA)

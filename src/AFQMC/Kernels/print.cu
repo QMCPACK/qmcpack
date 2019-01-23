@@ -37,6 +37,22 @@ __global__ void kernel_print( int const* p, int n)
     printf("%d ",*(p+i));
 }
 
+template<>
+__global__ void kernel_print( long const* p, int n)
+{
+  printf("long: %d ",n);
+  for(int i=0; i<n; i++)
+    printf("%ld ",*(p+i));
+}
+
+template<>
+__global__ void kernel_print( size_t const* p, int n)
+{
+  printf("ulong: %d ",n);
+  for(int i=0; i<n; i++)
+    printf("%lu ",*(p+i));
+}
+
 template<typename T>
 __global__ void kernel_print( thrust::complex<T> const* p, int n) 
 {
@@ -56,6 +72,22 @@ void print(std::string str, double const* p, int n)
 void print(std::string str, int const* p, int n)
 {
   std::cout<<str <<"I n: " <<n <<" "; 
+  kernel_print<<<1,1>>>(p, n);
+  cudaDeviceSynchronize ();
+  std::cout<<std::endl;
+}
+
+void print(std::string str, size_t const* p, int n)
+{
+  std::cout<<str <<"UL n: " <<n <<" ";
+  kernel_print<<<1,1>>>(p, n);
+  cudaDeviceSynchronize ();
+  std::cout<<std::endl;
+}
+
+void print(std::string str, long const* p, int n)
+{
+  std::cout<<str <<"L n: " <<n <<" ";
   kernel_print<<<1,1>>>(p, n);
   cudaDeviceSynchronize ();
   std::cout<<std::endl;

@@ -24,6 +24,8 @@ namespace kernels
 void print(std::string str, std::complex<double> const* p, int n); 
 void print(std::string str, double const* p, int n); 
 void print(std::string str, int const* p, int n); 
+void print(std::string str, size_t const* p, int n); 
+void print(std::string str, long const* p, int n); 
 
 
 }
