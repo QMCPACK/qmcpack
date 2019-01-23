@@ -2,6 +2,19 @@
 \label{chap:external_tools}
 This chapter provides some information on using QMCPACK with external tools.
 
+\section{LLVM Sanitizer Libraries}\label{tool:LLVM-Sanitizer-Libraries}
+
+Using cmake set one of these flags for using the clang sanitizer libraries with or without lldb.
+
+\begin{shade}
+-DLLVM_SANITIZE_ADDRESS    link with the %*\href{https://clang.llvm.org/docs/AddressSanitizer.html}{Clang address sanitizer library}*
+-DLLVM_SANITIZE_MEMORY     link with the %*\href{https://clang.llvm.org/docs/MemorySanitizer.html}{Clang memory sanitizer library}*
+\end{shade}
+
+These set the basic flags required to build with either of these sanitizer libraries. They require a build of clang with dynamic libraries somehow visible, i.e. through \inlinecode{LD_FLAGS=-L/your/path/to/llvm/lib}. You must link through clang, which is generally the default when building with it. Depending on your system and linker this may be incompatible with the ``Release'' build so set \inlinecode{-DCMAKE_BUILD_TYPE=Debug}. They have been tested with the default spack install of llvm@7.0.0 and manually built llvm 7.0.1. See the above links for additional information on use, runtime and build options of the sanitizers.
+
+In general the address sanitizer libraries will catch most pointer based errors. ASAN can also catch memory links but requires additional options be set. MSAN will catch more subtle memory management errors but is difficult to use without a full set of MSAN instrumented libraries.
+
 \section{Intel VTune}
 
 Intel's VTune profiler has an API that allows program control over collection (pause/resume) and can add information to the profile data (e.g. delineating tasks).

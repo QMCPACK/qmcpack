@@ -1,0 +1,51 @@
+&CONTROL
+restart_mode='from_scratch',
+calculation=scf,
+etot_conv_thr=1.0E-7,
+forc_conv_thr=1.0D-6,
+nstep=200,
+prefix="c7700ccaacf",
+pseudo_dir="/gpfs/bb/bxp912/pseudopotentials/",
+outdir="/gpfs/bb/bxp912/scratch/",
+/
+&SYSTEM
+ibrav=14,
+celldm(1)=5.4753116928,
+celldm(2)=1,
+celldm(3)=1,
+celldm(4)=0,
+celldm(5)=0,
+celldm(6)=0,
+nat=2,
+ntyp=1,
+ecutwfc=400,
+ecutrho=1200,
+occupations='smearing',
+smearing='mv',
+degauss=0.1,
+noncolin=.true.,
+lspinorb=.true.,
+starting_magnetization(1)=0.7,
+starting_magnetization(2)=-0.4,
+/
+&ELECTRONS
+diagonalization='david',
+mixing_mode='plain',
+mixing_beta=0.7,
+conv_thr=1.0D-7,
+/
+&IONS
+ion_dynamics='bfgs',
+/
+&CELL
+cell_dynamics='bfgs',
+press=0.0,
+cell_factor=2.0,
+/
+ATOMIC_SPECIES
+Cr 51.9961 Cr.pbe-us_norel_cyrille.UPF
+ATOMIC_POSITIONS crystal
+Cr 0.0000000000 0.0000000000 0.0000000000
+Cr 0.5000000000 0.5000000000 0.5000000000
+K_POINTS automatic
+8 8 8 1 1 1
