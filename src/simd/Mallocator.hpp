@@ -15,6 +15,7 @@
 #define QMCPLUSPLUS_ALIGNED_ALLOCATOR_H
 
 #include <cstdlib>
+#include <string>
 #include <stdexcept>
 
 namespace qmcplusplus
