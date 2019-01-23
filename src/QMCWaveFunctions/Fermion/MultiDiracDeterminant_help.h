@@ -132,17 +132,6 @@ struct MultiDiracDeterminantCalculator
   template<typename ITER>
   inline T evaluate(Matrix<T>& dots, ITER it, int n)
   {
-#ifndef NDEBUG
-    //Do bounds checking
-    if (static_cast<size_t>(n ^ 2) > M.size())
-    {
-      std::string abort_message("MultiDiracDeterminantCalculator::evaluate(Matrix<T>& dots, ITER it, int n)");
-      abort_message += " failed, n^2 (" + std::to_string(n ^ 2) + ") greater than M.size() (";
-      abort_message += std::to_string(M.size()) + "\n";
-      APP_ABORT(abort_message);
-    }
-#endif
-
     typename std::vector<T>::iterator d = M.begin();
     for (int i = 0; i < n; i++)
       for (int j = 0; j < n; j++)
