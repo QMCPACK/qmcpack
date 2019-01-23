@@ -142,6 +142,7 @@ public:
 
   void testMSD(ParticleSet& P, int iat);
 
+  bool CI_Optimizable;
   size_t NP;
   size_t nels_up,nels_dn;
   size_t FirstIndex_up;

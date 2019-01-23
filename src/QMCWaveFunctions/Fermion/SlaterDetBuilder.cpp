@@ -267,9 +267,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       std::string spo_alpha;
       std::string spo_beta;
       std::string fastAlg("yes");
-      std::string orbopt("no");
       OhmmsAttributeSet spoAttrib;
-      spoAttrib.add (orbopt,"OrbOpt");
       spoAttrib.add (spo_alpha, "spo_up");
       spoAttrib.add (spo_beta, "spo_dn");
       spoAttrib.add (fastAlg, "Fast");
@@ -299,14 +297,15 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         app_log() <<"Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
         MultiDiracDeterminant* up_det=0;
         MultiDiracDeterminant* dn_det=0;
-        app_log() <<"Multi-Slater Jastrow Orbital Optimization is set to "<< (orbopt=="yes" ? "True" : "False") <<"\n";
         app_log() <<"Creating base determinant (up) for MSD expansion. \n";
         up_det = new MultiDiracDeterminant((SPOSetPtr) spomap.find(spo_alpha)->second,0);
         app_log() <<"Creating base determinant (down) for MSD expansion. \n";
         dn_det = new MultiDiracDeterminant((SPOSetPtr) spomap.find(spo_beta)->second,1);
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
-        (up_det->Phi->Optimizable==true && dn_det->Phi->Optimizable==true) ? (up_det->Optimizable=true,dn_det->Optimizable=true): (up_det->Optimizable=false,dn_det->Optimizable=false);
         success = createMSDFast(multislaterdetfast_0,cur);
+        const bool OrbOpt = (up_det->Phi->Optimizable==true && dn_det->Phi->Optimizable==true);
+        const bool CI_Opt = multislaterdetfast_0->CI_Optimizable;
+        if (CI_Opt || OrbOpt) multislaterdetfast_0->Optimizable = true; 
       // read in orbital rotation coefficients to apply a unitary roation before beginning calculation...
       std::vector<RealType> params_0, params_1;
       std::string subdet_name;
@@ -697,7 +696,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
           (*(multiSD->C))[i]=0;
       app_log() <<"CI coefficients are reset. \n";
     }
-    multiSD->Optimizable=true;
+    multiSD->CI_Optimizable=true;
     if(multiSD->usingCSF)
     {
 //          multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
@@ -722,7 +721,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   else
   {
     app_log() <<"CI coefficients are not optimizable. \n";
-    multiSD->Optimizable=false;
+    multiSD->CI_Optimizable=false;
   }
 
 //safety checks for orbital optimization
