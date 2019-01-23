@@ -147,9 +147,8 @@ struct MultiDiracDeterminantCalculator
     for (int i = 0; i < n; i++)
       for (int j = 0; j < n; j++)
       {
-        //access through proper iterator indistiquishable from data pointer
-        *(d) = dots(*(it + i), *(it + n + j));
-        ++d;
+        //performance through proper iterator indistiquishable from data pointer
+        *(d++) = dots(*(it + i), *(it + n + j));
       }
     return Determinant(M.data(), n, n, Pivot.data());
   }
