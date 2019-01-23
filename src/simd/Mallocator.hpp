@@ -15,6 +15,7 @@
 #define QMCPLUSPLUS_ALIGNED_ALLOCATOR_H
 
 #include <cstdlib>
+#include <stdexcept>
 
 namespace qmcplusplus
 {
@@ -31,23 +32,26 @@ namespace qmcplusplus
 
     template <class U> struct rebind { typedef Mallocator<U, ALIGN> other; };
 
-    T* allocate(std::size_t n) {
+    T* allocate(std::size_t n)
+    {
+      void* pt(nullptr);
 #if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 16
       std::size_t asize = n * sizeof(T);
       std::size_t amod = asize % ALIGN;
-      if (amod != 0)
-	asize = (asize/ALIGN) * ALIGN + ALIGN;
+      if (amod != 0) asize += ALIGN - amod;
       // as per C++11 standard asize must be an integral multiple of ALIGN
       // or behavior is undefined.  Some implementation support all positive
       // values of asize but the standard has not been amended
       // This is also not guaranteed threadsafe until C++17
-      return static_cast<T*>(aligned_alloc(ALIGN,asize));
+      pt = aligned_alloc(ALIGN,asize);
 #else
-      void* pt;
       posix_memalign(&pt, ALIGN, n*sizeof(T));
-      return static_cast<T*>(pt);
 #endif
+      if ( pt == nullptr )
+        throw std::runtime_error("Allocation failed in Mallocator, requested size in bytes = " + std::to_string(n*sizeof(T)));
+      return static_cast<T*>(pt);
     }
+
     void deallocate(T* p, std::size_t) {
       free(p);
     }
