@@ -62,29 +62,6 @@ public:
  */
 TEST_CASE("MultiDiracDeterminantCalculator::evaluate-Small","[wavefunction][fermion][multidet]")
 {
-  // MultiDiracDeterminantCalculator<double> MDDC;
-  // MDDC.resize(8);
-  // Matrix<double> dots(16); //This is an 2n by 2n matrix if you don't reduce pairs
-  // double n = 0.0;
-  // int i = 0;
-  // //Just making some non trivial data
-  // for(auto& m : dots)
-  // {
-  //   if(++i % 2 !=0)
-  //     m = -n;
-  //   else
-  //     m = n;
-  //   if(n > 7.5)
-  //     n = 0.0;
-  //   else
-  //     n += 1.0;
-  // }
-  // std::vector<int> it_things(64);
-  // i = 0;
-  // for(auto& itt : it_things)
-  //   itt = i++;
-  // std::vector<int>::const_iterator it = it_things.begin();
-  // double det_value = MDDC.evaluate(dots, it, 8);
   TestMultiDiracDeterminantCalculator<double> double_test;
   double det_value_expect = -1.1086723208;
   REQUIRE(double_test.default_evaluate(3) == ValueApprox(det_value_expect));
@@ -93,64 +70,5 @@ TEST_CASE("MultiDiracDeterminantCalculator::evaluate-Small","[wavefunction][ferm
   det_value_expect = -1.3586431786;
   REQUIRE(double_test.default_evaluate(12) == ValueApprox(det_value_expect));
 }
-
-// TEST_CASE("MultiDiracDeterminantCalculator::evaluate-Giant","[wavefunction][fermion][multidet]")
-// {
-//   MultiDiracDeterminantCalculator<double> MDDC;
-//   MDDC.resize(128);
-//   Matrix<double> dots(256); //This is an 2n by 2n matrix if you don't reduce pairs
-//   double n = 0.0;
-//   int i = 0;
-//   //Just making some non trivial data
-//   for(auto& m : dots)
-//   {
-//     if(++i % 7 !=0)
-//       m = -n;
-//     else
-//       m = n;
-//     if(n > 127.5)
-//       n = 0.0;
-//     else
-//       n += 1.0;
-//   }
-//   std::vector<int> it_things(256^2);
-//   i = 0;
-//   for(auto& itt : it_things)
-//     itt = i++;
-//   std::vector<int>::const_iterator it = it_things.begin();
-//   double det_value = MDDC.evaluate(dots, it, 128);
-//   double det_value_expect = -5.167785938880921E+293;
-//   REQUIRE(det_value == ValueApprox(det_value_expect));
-// }
-
-// TEST_CASE("MultiDiracDeterminantCalculator::evaluate-Limit","[wavefunction][fermion][multidet][perf]")
-// {
-//   MultiDiracDeterminantCalculator<double> MDDC;
-//   int power2 = std::pow(2,12);
-//   MDDC.resize(power2);
-//   Matrix<double> dots(2*power2); //This is an 2n by 2n matrix if you don't reduce pairs
-//   double n = 0.0;
-//   int i = 0;
-//   //Just making some non trivial data
-//   for(auto& m : dots)
-//   {
-//     if(++i % 2 !=0)
-//       m = -n;
-//     else
-//       m = n;
-//     if(n > 127.5)
-//       n = 0.0;
-//     else
-//       n += 1.0;
-//   }
-//   std::vector<int> it_things(power2*power2);
-//   i = 0;
-//   for(auto& itt : it_things)
-//     itt = i++;
-//   std::vector<int>::const_iterator it = it_things.begin();
-//   double det_value = MDDC.evaluate(dots, it, power2);
-//   double det_value_expect = 0.0;
-//   REQUIRE(det_value == ValueApprox(det_value_expect));
-// }
 
 }
