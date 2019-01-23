@@ -12,8 +12,8 @@
 //
 // File created by: ChangMo Yang, nichthierwohne@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file
  */
 #ifndef QMCPLUSPLUS_MULTIDIRACDETERMINANT_HELP_H
@@ -23,52 +23,104 @@
 
 namespace qmcplusplus
 {
-
 /** Function class calculates multi determinant ratio from matrix elements
  *  needs to be the size of your result matrix or larger
  *  includes manual expansions for smaller evaluations
  */
-template <typename T>
+template<typename T>
 struct MultiDiracDeterminantCalculator
 {
-
   std::vector<T> M;
   std::vector<int> Pivot;
 
   void resize(int n)
   {
-    M.resize(n*n);
+    M.resize(n * n);
     Pivot.resize(n);
   }
 
-  inline T evaluate(T a11, T a12,
-                    T a21, T a22)
+  inline T evaluate(T a11, T a12, T a21, T a22) { return a11 * a22 - a21 * a12; }
+
+  inline T evaluate(T a11, T a12, T a13, T a21, T a22, T a23, T a31, T a32, T a33)
   {
-    return a11*a22-a21*a12;
+    return (a11 * (a22 * a33 - a32 * a23) - a21 * (a12 * a33 - a32 * a13) + a31 * (a12 * a23 - a22 * a13));
   }
 
-  inline T evaluate(T a11, T a12, T a13,
-                    T a21, T a22, T a23,
-                    T a31, T a32, T a33)
+  inline T evaluate(T a11,
+                    T a12,
+                    T a13,
+                    T a14,
+                    T a21,
+                    T a22,
+                    T a23,
+                    T a24,
+                    T a31,
+                    T a32,
+                    T a33,
+                    T a34,
+                    T a41,
+                    T a42,
+                    T a43,
+                    T a44)
   {
-    return (a11*(a22*a33-a32*a23)-a21*(a12*a33-a32*a13)+a31*(a12*a23-a22*a13));
+    return (a11 * (a22 * (a33 * a44 - a43 * a34) - a32 * (a23 * a44 - a43 * a24) + a42 * (a23 * a34 - a33 * a24)) -
+            a21 * (a12 * (a33 * a44 - a43 * a34) - a32 * (a13 * a44 - a43 * a14) + a42 * (a13 * a34 - a33 * a14)) +
+            a31 * (a12 * (a23 * a44 - a43 * a24) - a22 * (a13 * a44 - a43 * a14) + a42 * (a13 * a24 - a23 * a14)) -
+            a41 * (a12 * (a23 * a34 - a33 * a24) - a22 * (a13 * a34 - a33 * a14) + a32 * (a13 * a24 - a23 * a14)));
   }
 
-  inline T evaluate(T a11, T a12, T a13, T a14,
-                    T a21, T a22, T a23, T a24,
-                    T a31, T a32, T a33, T a34,
-                    T a41, T a42, T a43, T a44)
+  inline T evaluate(T a11,
+                    T a12,
+                    T a13,
+                    T a14,
+                    T a15,
+                    T a21,
+                    T a22,
+                    T a23,
+                    T a24,
+                    T a25,
+                    T a31,
+                    T a32,
+                    T a33,
+                    T a34,
+                    T a35,
+                    T a41,
+                    T a42,
+                    T a43,
+                    T a44,
+                    T a45,
+                    T a51,
+                    T a52,
+                    T a53,
+                    T a54,
+                    T a55)
   {
-    return (a11*(a22*(a33*a44-a43*a34)-a32*(a23*a44-a43*a24)+a42*(a23*a34-a33*a24))-a21*(a12*(a33*a44-a43*a34)-a32*(a13*a44-a43*a14)+a42*(a13*a34-a33*a14))+a31*(a12*(a23*a44-a43*a24)-a22*(a13*a44-a43*a14)+a42*(a13*a24-a23*a14))-a41*(a12*(a23*a34-a33*a24)-a22*(a13*a34-a33*a14)+a32*(a13*a24-a23*a14)));
-  }
-
-  inline T evaluate(T a11, T a12, T a13, T a14, T a15,
-                    T a21, T a22, T a23, T a24, T a25,
-                    T a31, T a32, T a33, T a34, T a35,
-                    T a41, T a42, T a43, T a44, T a45,
-                    T a51, T a52, T a53, T a54, T a55)
-  {
-    return (a11*(a22*(a33*(a44*a55-a54*a45)-a43*(a34*a55-a54*a35)+a53*(a34*a45-a44*a35))-a32*(a23*(a44*a55-a54*a45)-a43*(a24*a55-a54*a25)+a53*(a24*a45-a44*a25))+a42*(a23*(a34*a55-a54*a35)-a33*(a24*a55-a54*a25)+a53*(a24*a35-a34*a25))-a52*(a23*(a34*a45-a44*a35)-a33*(a24*a45-a44*a25)+a43*(a24*a35-a34*a25)))-a21*(a12*(a33*(a44*a55-a54*a45)-a43*(a34*a55-a54*a35)+a53*(a34*a45-a44*a35))-a32*(a13*(a44*a55-a54*a45)-a43*(a14*a55-a54*a15)+a53*(a14*a45-a44*a15))+a42*(a13*(a34*a55-a54*a35)-a33*(a14*a55-a54*a15)+a53*(a14*a35-a34*a15))-a52*(a13*(a34*a45-a44*a35)-a33*(a14*a45-a44*a15)+a43*(a14*a35-a34*a15)))+a31*(a12*(a23*(a44*a55-a54*a45)-a43*(a24*a55-a54*a25)+a53*(a24*a45-a44*a25))-a22*(a13*(a44*a55-a54*a45)-a43*(a14*a55-a54*a15)+a53*(a14*a45-a44*a15))+a42*(a13*(a24*a55-a54*a25)-a23*(a14*a55-a54*a15)+a53*(a14*a25-a24*a15))-a52*(a13*(a24*a45-a44*a25)-a23*(a14*a45-a44*a15)+a43*(a14*a25-a24*a15)))-a41*(a12*(a23*(a34*a55-a54*a35)-a33*(a24*a55-a54*a25)+a53*(a24*a35-a34*a25))-a22*(a13*(a34*a55-a54*a35)-a33*(a14*a55-a54*a15)+a53*(a14*a35-a34*a15))+a32*(a13*(a24*a55-a54*a25)-a23*(a14*a55-a54*a15)+a53*(a14*a25-a24*a15))-a52*(a13*(a24*a35-a34*a25)-a23*(a14*a35-a34*a15)+a33*(a14*a25-a24*a15)))+a51*(a12*(a23*(a34*a45-a44*a35)-a33*(a24*a45-a44*a25)+a43*(a24*a35-a34*a25))-a22*(a13*(a34*a45-a44*a35)-a33*(a14*a45-a44*a15)+a43*(a14*a35-a34*a15))+a32*(a13*(a24*a45-a44*a25)-a23*(a14*a45-a44*a15)+a43*(a14*a25-a24*a15))-a42*(a13*(a24*a35-a34*a25)-a23*(a14*a35-a34*a15)+a33*(a14*a25-a24*a15))));
+    return (
+        a11 *
+            (a22 * (a33 * (a44 * a55 - a54 * a45) - a43 * (a34 * a55 - a54 * a35) + a53 * (a34 * a45 - a44 * a35)) -
+             a32 * (a23 * (a44 * a55 - a54 * a45) - a43 * (a24 * a55 - a54 * a25) + a53 * (a24 * a45 - a44 * a25)) +
+             a42 * (a23 * (a34 * a55 - a54 * a35) - a33 * (a24 * a55 - a54 * a25) + a53 * (a24 * a35 - a34 * a25)) -
+             a52 * (a23 * (a34 * a45 - a44 * a35) - a33 * (a24 * a45 - a44 * a25) + a43 * (a24 * a35 - a34 * a25))) -
+        a21 *
+            (a12 * (a33 * (a44 * a55 - a54 * a45) - a43 * (a34 * a55 - a54 * a35) + a53 * (a34 * a45 - a44 * a35)) -
+             a32 * (a13 * (a44 * a55 - a54 * a45) - a43 * (a14 * a55 - a54 * a15) + a53 * (a14 * a45 - a44 * a15)) +
+             a42 * (a13 * (a34 * a55 - a54 * a35) - a33 * (a14 * a55 - a54 * a15) + a53 * (a14 * a35 - a34 * a15)) -
+             a52 * (a13 * (a34 * a45 - a44 * a35) - a33 * (a14 * a45 - a44 * a15) + a43 * (a14 * a35 - a34 * a15))) +
+        a31 *
+            (a12 * (a23 * (a44 * a55 - a54 * a45) - a43 * (a24 * a55 - a54 * a25) + a53 * (a24 * a45 - a44 * a25)) -
+             a22 * (a13 * (a44 * a55 - a54 * a45) - a43 * (a14 * a55 - a54 * a15) + a53 * (a14 * a45 - a44 * a15)) +
+             a42 * (a13 * (a24 * a55 - a54 * a25) - a23 * (a14 * a55 - a54 * a15) + a53 * (a14 * a25 - a24 * a15)) -
+             a52 * (a13 * (a24 * a45 - a44 * a25) - a23 * (a14 * a45 - a44 * a15) + a43 * (a14 * a25 - a24 * a15))) -
+        a41 *
+            (a12 * (a23 * (a34 * a55 - a54 * a35) - a33 * (a24 * a55 - a54 * a25) + a53 * (a24 * a35 - a34 * a25)) -
+             a22 * (a13 * (a34 * a55 - a54 * a35) - a33 * (a14 * a55 - a54 * a15) + a53 * (a14 * a35 - a34 * a15)) +
+             a32 * (a13 * (a24 * a55 - a54 * a25) - a23 * (a14 * a55 - a54 * a15) + a53 * (a14 * a25 - a24 * a15)) -
+             a52 * (a13 * (a24 * a35 - a34 * a25) - a23 * (a14 * a35 - a34 * a15) + a33 * (a14 * a25 - a24 * a15))) +
+        a51 *
+            (a12 * (a23 * (a34 * a45 - a44 * a35) - a33 * (a24 * a45 - a44 * a25) + a43 * (a24 * a35 - a34 * a25)) -
+             a22 * (a13 * (a34 * a45 - a44 * a35) - a33 * (a14 * a45 - a44 * a15) + a43 * (a14 * a35 - a34 * a15)) +
+             a32 * (a13 * (a24 * a45 - a44 * a25) - a23 * (a14 * a45 - a44 * a15) + a43 * (a14 * a25 - a24 * a15)) -
+             a42 * (a13 * (a24 * a35 - a34 * a25) - a23 * (a14 * a35 - a34 * a15) + a33 * (a14 * a25 - a24 * a15))));
   }
 
   /** default implementation of MultiDiracDeterminant::CalculateRatioFromMatrixElements
@@ -80,29 +132,28 @@ struct MultiDiracDeterminantCalculator
   template<typename ITER>
   inline T evaluate(Matrix<T>& dots, ITER it, int n)
   {
-    #ifndef NDEBUG
+#ifndef NDEBUG
     //Do bounds checking
-    if (static_cast<size_t>(n^2) > M.size())
+    if (static_cast<size_t>(n ^ 2) > M.size())
     {
       std::string abort_message("MultiDiracDeterminantCalculator::evaluate(Matrix<T>& dots, ITER it, int n)");
-      abort_message += " failed, n^2 (" + std::to_string(n^2) + ") greater than M.size() (";
+      abort_message += " failed, n^2 (" + std::to_string(n ^ 2) + ") greater than M.size() (";
       abort_message += std::to_string(M.size()) + "\n";
       APP_ABORT(abort_message);
     }
-    #endif
+#endif
 
     typename std::vector<T>::iterator d = M.begin();
-    for(int i=0; i<n; i++)
-      for(int j=0; j<n; j++)
-	{
-	//access through proper iterator indistiquishable from data pointer
-	*(d) = dots(*(it+i),*(it+n+j));
-	++d;
-	}
-    return Determinant(M.data(),n,n,Pivot.data());
+    for (int i = 0; i < n; i++)
+      for (int j = 0; j < n; j++)
+      {
+        //access through proper iterator indistiquishable from data pointer
+        *(d) = dots(*(it + i), *(it + n + j));
+        ++d;
+      }
+    return Determinant(M.data(), n, n, Pivot.data());
   }
-
 };
 
-}
+} // namespace qmcplusplus
 #endif
