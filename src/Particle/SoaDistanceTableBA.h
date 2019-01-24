@@ -48,7 +48,7 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
     for(int i=0; i<Ntargets; ++i)
       Displacements[i].attachReference(Nsources,Nsources_padded,memoryPool.data()+i*BlockSize);
 
-    // The padding of Temp_r and Temp_dr is necessary
+    // The padding of Temp_r and Temp_dr is necessary for the memory copy in the update function
     // Temp_r is padded explicitly while Temp_dr is padded internally
     Temp_r.resize(Nsources_padded);
     Temp_dr.resize(Nsources);
