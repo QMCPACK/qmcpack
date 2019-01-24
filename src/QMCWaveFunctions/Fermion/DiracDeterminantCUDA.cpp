@@ -107,11 +107,7 @@ DiracDeterminantCUDA::det_lookahead (MCWalkerConfiguration &W,
 #ifdef USE_TRSM
     multi_row_copy(AWorkList_d.data(),AinvUList_d.data(),k+1,W.getkstart()+k,1,RowStride,nw);
 #else
-#ifndef AINVU_TRANSPOSE
     int curr_ainvu_row=AinvUOffset + W.getkstart() + k; // points to the current row in AinvU
-#else
-    int curr_ainvu_row=AinvUOffset + k*kd; // points to the current row in AinvU
-#endif // ainvu_transpose
     for (int iw=0; iw<nw; iw++)
       AinvWorkList[iw]    =  &(walkers[iw]->cuda_DataSet.data()[curr_ainvu_row]); // don't want to overwrite AinvU list
     AinvWorkList_d.asyncCopy(AinvWorkList);
@@ -171,7 +167,6 @@ DiracDeterminantCUDA::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &
 
     if (UpdateList.size() < nw)
       UpdateList.resize(nw);
-
     // Since we need to do some work in case of both accepted and rejected moves
     // the idea is to put them in UpdateList sequentially so a single kernel launch
     // can take care of both scenarios

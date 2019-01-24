@@ -382,6 +382,7 @@ public:
     }
   }
 
+#ifdef QMC_CUDA
   inline void setklinear()
   {
     klinear=true;
@@ -467,9 +468,7 @@ public:
          if(kcurr==0) kstart-=kblocksize; // means we looped cleanly within kblocksize matrix (and kblock is too large by 1), hence start is at (kblock-1)*kblocksize
          kupdate=kcurr+kblock*kblocksize-kstart;
          kcurr=0;
-#ifdef QMC_CUDA // CurrrentParticle isn't defined otherwise
          if(!klinear) CurrentParticle-=kupdate-1;
-#endif
       }
     }
     // reset kblock if we're out of matrix blocks
@@ -477,6 +476,7 @@ public:
       kblock=0;
     return update;
   }
+#endif
 
 protected:
 
@@ -490,6 +490,7 @@ protected:
   int GlobalNumWalkers;
   ///update-mode index
   int UpdateMode;
+#ifdef QMC_CUDA
   ///delayed update streak parameter k
   int kDelay;
   ///block dimension (usually k) in case delayed updates are used (there are nat/kblocksize blocks available)
@@ -504,6 +505,7 @@ protected:
   int kupdate;
   ///klinear switch to indicate if values are calculated sequentially for algorithms using drift
   bool klinear;
+#endif
 
   RealType LocalEnergy;
 

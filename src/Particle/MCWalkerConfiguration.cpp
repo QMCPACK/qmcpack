@@ -657,7 +657,6 @@ void MCWalkerConfiguration::proposeMove_GPU
 (std::vector<PosType> &newPos, int iat)
 {
   int nw=newPos.size();
-  int nat=getnat(iat);
   if (Rnew_host.size() < nw*kblocksize)
   {
     Rnew.resize(nw*kblocksize);
@@ -686,7 +685,7 @@ void MCWalkerConfiguration::proposeMove_GPU
     {
       Rnew_GPU.asyncCopy(&(Rnew_host[offset]),nw*kblocksize,offset,nw);
     } else
-      if(kcurr==0 || (kcurr+kblock*kblocksize>=nat))
+      if(kcurr==0 || (kcurr+kblock*kblocksize>=getnat(iat)))
         Rnew_GPU.asyncCopy(Rnew_host);
   } else
     Rnew_GPU.asyncCopy(Rnew_host);

@@ -58,24 +58,12 @@ cublas_lemma_mats (cublasHandle_t handle,
   subtract <<< dimGridConvert, dimBlockConvert >>> (AWorkList_d, AList_d, U_d, k*RowStride);
   // -A^(-1) * dU
   // per walker: [N x N] * [N x k] = [N x k]
-#ifndef AINVU_TRANSPOSE
   cublasSgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, N, k, N,
                                          &one,
                                          (const float**)AinvList_d, RowStride,
                                          (const float**)AWorkList_d, RowStride, &zero,
                                          AinvUList_d, RowStride,
                                          nw);
-#else
-  // calculate AinvU as row major
-  // per walker: [N x k]^T * [N x N]^T = [k x N] * [N x N] = [k x N]
-  cublasSgemmBatched( handle, CUBLAS_OP_T, CUBLAS_OP_T, k, N, N,
-                                         &one,
-                                         (const float**)AWorkList_d, RowStride,
-                                         (const float**)AinvList_d, RowStride, &zero,
-                                         AinvUList_d, k,
-                                         nw);
-#endif
-//  cudaDeviceSynchronize();
 }
 
 void
@@ -395,24 +383,12 @@ cublas_lemma_mats (cublasHandle_t handle,
   subtract <<< dimGridConvert, dimBlockConvert >>> ((thrust::complex<float>**)AWorkList_d, (thrust::complex<float>**)AList_d, (thrust::complex<float>**)U_d, k*RowStride);
   // -A^(-1) * dU
   // per walker: [N x N] * [N x k] = [N x k]
-#ifndef AINVU_TRANSPOSE
   cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, N, k, N,
                                          &one,
                                          (const cuComplex**)AinvList_d, RowStride,
                                          (const cuComplex**)AWorkList_d, RowStride, &zero,
                                          (cuComplex**)AinvUList_d, RowStride,
                                          nw);
-#else
-  // calculate AinvU as row major
-  // per walker: [N x k]^T * [N x N]^T = [k x N] * [N x N] = [k x N]
-  cublasCgemmBatched( handle, CUBLAS_OP_T, CUBLAS_OP_T, k, N, N,
-                                         &one,
-                                         (const cuComplex**)AWorkList_d, RowStride,
-                                         (const cuComplex**)AinvList_d, RowStride, &zero,
-                                         (cuComplex**)AinvUList_d, k,
-                                         nw);
-#endif
-//  cudaDeviceSynchronize();
 }
 
 void
@@ -568,24 +544,12 @@ cublas_lemma_mats (cublasHandle_t handle,
   subtract <<< dimGridConvert, dimBlockConvert >>> ((thrust::complex<double>**)AWorkList_d, (thrust::complex<double>**)AList_d, (thrust::complex<double>**)U_d, k*RowStride);
   // -A^(-1) * dU
   // per walker: [N x N] * [N x k] = [N x k]
-#ifndef AINVU_TRANSPOSE
   cublasZgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, N, k, N,
                                          &one,
                                          (const cuDoubleComplex**)AinvList_d, RowStride,
                                          (const cuDoubleComplex**)AWorkList_d, RowStride, &zero,
                                          (cuDoubleComplex**)AinvUList_d, RowStride,
                                          nw);
-#else
-  // calculate AinvU as row major
-  // per walker: [N x k]^T * [N x N]^T = [k x N] * [N x N] = [k x N]
-  cublasZgemmBatched( handle, CUBLAS_OP_T, CUBLAS_OP_T, k, N, N,
-                                         &one,
-                                         (const cuDoubleComplex**)AWorkList_d, RowStride,
-                                         (const cuDoubleComplex**)AinvList_d, RowStride, &zero,
-                                         (cuDoubleComplex**)AinvUList_d, k,
-                                         nw);
-#endif
-//  cudaDeviceSynchronize();
 }
 
 void
@@ -741,32 +705,28 @@ update_onemove (T **buff,
   // update A^-1*dU*Lemma^-1 for drift calculations (if needed)
   if (awork_off && (i <= k))
   {
-    T value=0.0;
-    T rejval=0.0;
     int k1=k+1;
     int ik1=i*k1;
     int kk1=k*k1;
-#ifdef AINVU_TRANSPOSE
-    int ainv_off=(kstart+k1)*kdelay;
-#else
     int ainv_off=kstart+k1;
-#endif
+    T value=0.0;
+    T rejval=0.0;
+    // need to setup lemmainv when it's not
+    if(k==0) // in other words, k=0 => i=0, k1=1, ik1=0, kk1=0
+      my_lemmainv[0] = 1.0/my_lemma[0];
 #pragma unroll
     for (int j=0; j<=k; j++)
     {
-      T ainvu_val=my_ainvu[ainv_off+j];
-      value += my_lemmainv[ik1+j] * ainvu_val;
-#ifdef AINVU_TRANSPOSE
-      // ainvu matrix is kxN
-      rejval += my_lemmainv[kk1+j] * ainvu_val;
-#else
       // ainvu matrix is Nxk
-      rejval += my_lemmainv[kk1+j] * ainvu_val;
-#endif
+      T ainvu_val=my_ainvu[ainv_off+j*rowstride];
+      T linv_ji = my_lemmainv[ik1+j];
+      T linv_jk = my_lemmainv[kk1+j];
+      value += linv_ji * ainvu_val;
+      rejval += linv_jk * ainvu_val;
     }
     my_awork[i] = value;
     if(blockIdx.y >= accepted)
-      my_awork[i] -= rejval*my_lemmainv[ik1+k]/my_lemmainv[k*(k+2)]; // scale factor lemmainv_ki/lemmainv_kk (remember that lemmainv pitch is k+1, not kdelay)
+      my_awork[i] -= rejval*my_lemmainv[ik1+k]/my_lemmainv[kk1+k]; // scale factor lemmainv_ki/lemmainv_kk (remember that lemmainv pitch is k+1, not kdelay
   }
   if (i < rowstride)
   {
@@ -781,11 +741,7 @@ update_onemove (T **buff,
     {
       my_newrow[i]   = my_row[i];
       // kth column needs to be set to zero
-#ifdef AINVU_TRANSPOSE
-      my_ainvu[k+i*kdelay]    = 0.0;
-#else
       my_ainvu[k*rowstride+i]    = 0.0;
-#endif
       my_newgl[i4]   = my_gl[i4];
       my_newgl[i4+1] = my_gl[i4+1];
       my_newgl[i4+2] = my_gl[i4+2];
