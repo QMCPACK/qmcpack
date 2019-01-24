@@ -12,7 +12,7 @@ use POSIX qw/floor fmod ceil pow/;
 # will allow only the use of ibrav=4 (hcp), ibrav=3 (bcc), ibrav=2 (fcc), ibrav=1 (simple cubic) and ibrav=0 (arbitrary)
 #print "$0 @ARGV\n";
 
-my %config = do "/autofs/nccs-svm1_home1/andreas/active_development/qmcpack/utils/setup-qmc-conf.pl";
+my %config = do "/gpfs/mira-home/projects/qmcpack/qmcpack/utils/setup-qmc-conf.pl";
 
 #print "The location of ppconvert is: $config{ppconvert}\n";
 

@@ -4,7 +4,7 @@ use strict;
 use FileHandle;
 use Getopt::Long;
 
-my %config = do "/autofs/nccs-svm1_home1/andreas/active_development/qmcpack/utils/setup-qmc-conf.pl";
+my %config = do "/gprojects/qmcpack/qmcpack/utils/setup-qmc-conf.pl";
 my $gnuplot = $config{gnuplot};
                                                                                 
 my $epsfile;                                                                    
