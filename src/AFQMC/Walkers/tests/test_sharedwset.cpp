@@ -433,7 +433,7 @@ const char *xml_block =
     }
 
     SharedWalkerSet wset2(TG,doc.getRoot(),info,&rng);
-    restartFromHDF5(wset2,nwalkers,read,true);
+    restartFromHDF5(wset2,nwalkers,"dummy_walkers.h5",read,true);
     read.close();
 
   }
