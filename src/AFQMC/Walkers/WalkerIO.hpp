@@ -427,11 +427,7 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
         }
       }
 
-      // assumes current storage structure
-// MOVE TO mpi3 !!!!
-      MPI_Gatherv(SendBuff.data(), SendBuff.size()*wlk_nterms, MPI_DOUBLE_COMPLEX,
-                  RecvBuff.data(), counts.data(), displ.data(), MPI_DOUBLE_COMPLEX,
-                  0,&(TG.TG_heads()));
+      TG.Global().gatherv_n(SendBuff.origin(), SendBuff.num_elements(), RecvBuff.origin(), counts.data(), displ.data(), 0);
       nsent += nw_to_send;
 
       if(TG.TG_heads().root()) {
