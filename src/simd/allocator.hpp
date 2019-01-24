@@ -37,11 +37,13 @@ namespace qmcplusplus
 template<typename T, size_t ALIGN = QMC_CLINE> inline size_t getAlignedSize(size_t n)
 {
   constexpr size_t ND=ALIGN/sizeof(T);
+  static_assert(ALIGN % sizeof(T) == 0, "getAlignedSize ALIGN must be a multiple of sizeof(T)");
   return ((n+ND-1)/ND)*ND;
 }
 
 template<typename T, size_t ALIGN = QMC_CLINE> inline size_t getAlignment()
 {
+  static_assert(ALIGN % sizeof(T) == 0, "getAlignedSize ALIGN must be a multiple of sizeof(T)");
   return ALIGN/sizeof(T);
 }
 
