@@ -32,15 +32,17 @@ namespace qmcplusplus
 
 }
 
-template<typename T> inline size_t getAlignedSize(size_t n)
+/** return size in T's of allocated aligned memory
+ */
+template<typename T, size_t ALIGN = QMC_CLINE> inline size_t getAlignedSize(size_t n)
 {
-  constexpr size_t ND=QMC_CLINE/sizeof(T);
+  constexpr size_t ND=ALIGN/sizeof(T);
   return ((n+ND-1)/ND)*ND;
 }
 
-template<typename T> inline size_t getAlignment()
+template<typename T, size_t ALIGN = QMC_CLINE> inline size_t getAlignment()
 {
-  return QMC_CLINE/sizeof(T);
+  return ALIGN/sizeof(T);
 }
 
 #endif

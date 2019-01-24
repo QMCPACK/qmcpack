@@ -25,13 +25,20 @@ namespace qmcplusplus {
      * @param first starting address of the input
      * @param count number of elements to copy
      * @param result starting address of the output
+     * One hopes this optimization is worth it, caller is responsible for safety
+     * first must of been aligned_alloc and this is still
+     * technically a heap buffer read violation if first did not use all of the aligned block.
+     * What is in those bytes is undefined.  So if your result isn't aligned_alloc and 
+     * doesn't get a matching element count from somewhere you are going to have garbage in result.
      */
     template<typename T1, typename T2>
-      inline void copy_n(const T1* restrict first, size_t count, T2* restrict result)
+    __attribute__((no_sanitize_address)) inline void copy_n(const T1* restrict first, size_t count, T2* restrict result) 
       {
-//#pragma omp simd 
-        for(size_t i=0; i<count; ++i)
-          result[i]=static_cast<T2>(first[i]);
+//#pragma omp simd
+
+	//If anything is going to emit SIMD instructions
+	//std::memcpy should
+	std::memcpy(result, first, count * sizeof(T1));
       }
 
     template<typename T1, typename T2>

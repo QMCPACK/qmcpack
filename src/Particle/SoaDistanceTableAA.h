@@ -118,15 +118,22 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
     return index;
   }
 
-  ///update the iat-th row for iat=[0,iat-1)
+  /** update the iat-th row for iat=[0,iat-1)
+   * into element iat of Distances and Displacements skiping element iat - 0
+   * doesn't really seem correct
+   * unless Distances[0] is original and Distances[1] is the proposed.
+   * in which case the brief above is just misinformation
+   * copying to Distances, Displacements iat or iat-1 both pass test_particles
+   * test_wavefunctions
+   */
   inline void update(IndexType iat)
   {
     if(iat==0) return;
     //update by a cache line
     const int nupdate=getAlignedSize<T>(iat);
-    simd::copy_n(Temp_r.data(),nupdate,Distances[iat]);
+    simd::copy_n(Temp_r.data(),nupdate,Distances[iat]); // [iat - 1] also passes tests
     for(int idim=0;idim<D; ++idim)
-      simd::copy_n(Temp_dr.data(idim),nupdate,Displacements[iat].data(idim));
+      simd::copy_n(Temp_dr.data(idim),nupdate,Displacements[iat].data(idim)); // [iat - 1] also passes tests
   }
 
 };
