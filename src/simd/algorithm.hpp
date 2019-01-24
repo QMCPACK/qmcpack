@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by:
 //
@@ -20,32 +20,6 @@ namespace qmcplusplus
 {
 namespace simd
 {
-/** simd version of copy_n( InputIt first, Size count, OutputIt result)
-     * @param first starting address of the input
-     * @param count number of elements to copy
-     * @param result starting address of the output
-     * One hopes this optimization is worth it, caller is responsible for safety
-     * first must of been aligned_alloc and this is still
-     * technically a heap buffer read violation if first did not use all of the aligned block.
-     * What is in those bytes is undefined.  So if your result isn't aligned_alloc and 
-     * doesn't get a matching element count from somewhere you are going to have garbage in result.
-     */
-template<typename T1, typename T2, typename std::enable_if<std::is_same<T1, T2>::value>::type* = nullptr>
-void copy_n(const T1* restrict first, size_t count, T2* restrict result)
-{
-  //If anything is going to emit SIMD instructions
-  //std::memcpy should
-  std::memcpy(result, first, count * sizeof(T1));
-}
-
-/** specialization for when simd::copy_n gets called with mixed types
- */
-template<typename T1, typename T2, typename std::enable_if<!std::is_same<T1, T2>::value>::type* = nullptr>
-void copy_n(const T1* restrict first, size_t count, T2* restrict result)
-{
-  std::copy_n(first, count, result);
-}
-
 
 template<typename T1, typename T2>
 inline T2 accumulate_n(const T1* restrict in, size_t n, T2 res)

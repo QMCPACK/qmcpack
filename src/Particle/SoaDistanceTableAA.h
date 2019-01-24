@@ -131,9 +131,9 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
     if(iat==0) return;
     //update by a cache line
     const int nupdate=getAlignedSize<T>(iat);
-    simd::copy_n(Temp_r.data(),nupdate,Distances[iat]); // [iat - 1] also passes tests
+    std::copy_n(Temp_r.data(),nupdate,Distances[iat]); // [iat - 1] also passes tests
     for(int idim=0;idim<D; ++idim)
-      simd::copy_n(Temp_dr.data(idim),nupdate,Displacements[iat].data(idim)); // [iat - 1] also passes tests
+      std::copy_n(Temp_dr.data(idim),nupdate,Displacements[iat].data(idim)); // [iat - 1] also passes tests
   }
 
 };

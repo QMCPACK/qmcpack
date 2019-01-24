@@ -98,9 +98,9 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
   ///update the stripe for jat-th particle
   inline void update(IndexType iat)
   {
-    simd::copy_n(Temp_r.data(),Nsources,Distances[iat]);
+    std::copy_n(Temp_r.data(),Nsources,Distances[iat]);
     for(int idim=0;idim<D; ++idim)
-      simd::copy_n(Temp_dr.data(idim),Nsources,Displacements[iat].data(idim));
+      std::copy_n(Temp_dr.data(idim),Nsources,Displacements[iat].data(idim));
   }
 
   size_t get_neighbors(int iat, RealType rcut, int* restrict jid, RealType* restrict dist, PosType* restrict displ) const

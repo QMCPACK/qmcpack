@@ -64,7 +64,7 @@ namespace qmcplusplus
       {
         setDefaults();
         resize(in.nLocal);
-        simd::copy_n(in.myData,nGhosts*D,myData);
+        std::copy_n(in.myData,nGhosts*D,myData);
       }
 
       ///default copy operator
@@ -73,7 +73,7 @@ namespace qmcplusplus
         if(myData!=in.myData) 
         {
           resize(in.nLocal);
-          simd::copy_n(in.myData,nGhosts*D,myData);
+          std::copy_n(in.myData,nGhosts*D,myData);
         }
         return *this;
       }
