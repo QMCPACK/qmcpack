@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
@@ -12,8 +13,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-
-
+/** @file
+ *  All through this file the assumption that Coeffs.D1 and the LogLightGrid
+ *   r_values.size() are equal must be maintained.
+ */
 
 #ifndef QMCPLUSPLUS_MULTI_FUNCTOR_QUINTIC_SPLINE_SET_H
 #define QMCPLUSPLUS_MULTI_FUNCTOR_QUINTIC_SPLINE_SET_H
@@ -52,9 +55,13 @@ namespace qmcplusplus
         }
       }
 
+      // Consider a way to get this without branch via math operations
       inline int locate(T r) const
       {
-        return static_cast<int>(std::log(r/lower_bound)*OneOverLogDelta);
+        int loc=static_cast<int>(std::log(r/lower_bound)*OneOverLogDelta);
+	if(loc == r_values.size())
+	  loc = rvalues.size() - 1
+        return loc;
       }
 
       inline T operator()(int i)
@@ -66,8 +73,8 @@ namespace qmcplusplus
       //CHECK MIXED PRECISION SENSITIVITY
       inline T getCLForQuintic(T r, int& loc) const
       {
-        loc=static_cast<int>(std::log(r/lower_bound)*OneOverLogDelta);
-        //return r-static_cast<T>(lower_bound*std::exp(loc*LogDelta));
+        loc=locate(r);
+	//return r-static_cast<T>(lower_bound*std::exp(loc*LogDelta));
         //return r-lower_bound*std::exp(loc*LogDelta);
         return r-r_values[loc];
       }
@@ -139,6 +146,8 @@ struct MultiQuinticSpline1D
       int loc;
       const auto cL=myGrid.getCLForQuintic(r,loc);
       const size_t offset=loc*6;
+      //Coeffs is an OhmmsMatrix and [] is a row access operator
+      //returning a pointer to 'row' which is normal type pointer []
       const value_type* restrict a=(*Coeffs)[offset+0];
       const value_type* restrict b=(*Coeffs)[offset+1];
       const value_type* restrict c=(*Coeffs)[offset+2];
