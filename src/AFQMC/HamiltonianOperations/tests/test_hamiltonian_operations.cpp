@@ -132,7 +132,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
     boost::multi::array<ComplexType,2> Eloc({1,3});
-    boost::multi::array_ref<ComplexType,2> Gw(std::addressof(*G.origin()),{NEL*NMO,1});
+    boost::multi::array_ref<ComplexType,2> Gw(to_address(G.origin()),{NEL*NMO,1});
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
     Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
@@ -264,7 +264,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
     boost::multi::array<ComplexType,2> Eloc({1,3});
-    boost::multi::array_ref<ComplexType,2> Gw(std::addressof(*G.origin()),{NEL*NMO,1});
+    boost::multi::array_ref<ComplexType,2> Gw(to_address(G.origin()),{NEL*NMO,1});
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
     Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
@@ -384,13 +384,13 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     int nw=1;
 
     shmCMatrix Gbuff({nw,NEL*NMO},shared_allocator<ComplexType>{TG.TG_local()});
-    boost::multi::array_ref<ComplexType,2> G(std::addressof(*Gbuff.origin()),{NEL,NMO});
+    boost::multi::array_ref<ComplexType,2> G(to_address(Gbuff.origin()),{NEL,NMO});
     ComplexType Ovlp;
     SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,std::addressof(Ovlp),true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-    boost::multi::array_ref<ComplexType,2> Gw(std::addressof(*Gbuff.origin()),{nw,NEL*NMO});
+    boost::multi::array_ref<ComplexType,2> Gw(to_address(Gbuff.origin()),{nw,NEL*NMO});
     boost::multi::array<ComplexType,2> Eloc({nw,3});
 
     if(TG.Node().root())
@@ -536,7 +536,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-    boost::multi::array_ref<ComplexType,2> Gw(std::addressof(*G.origin()),{1,NEL*NMO});
+    boost::multi::array_ref<ComplexType,2> Gw(to_address(G.origin()),{1,NEL*NMO});
     boost::multi::array<ComplexType,2> Eloc({1,3});
     Timer.reset("Generic");
     Timer.start("Generic");
@@ -686,7 +686,7 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-    boost::multi::array_ref<ComplexType,2> Gw(std::addressof(*G.origin()),{1,NEL*NMO});
+    boost::multi::array_ref<ComplexType,2> Gw(to_address(G.origin()),{1,NEL*NMO});
     boost::multi::array<ComplexType,2> Eloc({1,3});
     Timer.reset("Generic");
     Timer.start("Generic");

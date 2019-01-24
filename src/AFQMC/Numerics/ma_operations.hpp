@@ -32,6 +32,8 @@
 
 namespace ma{
 
+using qmcplusplus::afqmc::to_address;
+
 template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::dimensionality > 1)>::type>
 bool is_hermitian(MultiArray2D const& A){
 	using std::conj;
@@ -163,12 +165,12 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
         SPBLAS::csrmv( op_tag<SparseMatrixA>::value,
             arg(A).size(0), arg(A).size(1),
             alpha, "GxxCxx",
-            std::addressof(*arg(A).non_zero_values_data()),
-            std::addressof(*arg(A).non_zero_indices2_data()),
-            std::addressof(*arg(A).pointers_begin()),  
-            std::addressof(*arg(A).pointers_end()),
-            std::addressof(*arg(B).origin()), beta, 
-            std::addressof(*std::forward<MultiArray1DC>(C).origin()));
+            to_address(arg(A).non_zero_values_data()),
+            to_address(arg(A).non_zero_indices2_data()),
+            to_address(arg(A).pointers_begin()),  
+            to_address(arg(A).pointers_end()),
+            to_address(arg(B).origin()), beta, 
+            to_address(std::forward<MultiArray1DC>(C).origin()));
 
         return std::forward<MultiArray1DC>(C);
 }
@@ -231,13 +233,13 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
         SPBLAS::csrmm( op_tag<SparseMatrixA>::value, 
             arg(A).size(0), arg(B).size(1), arg(A).size(1), 
             alpha, "GxxCxx", 
-            std::addressof(*(arg(A).non_zero_values_data())) , 
-            std::addressof(*(arg(A).non_zero_indices2_data())),
-            std::addressof(*(arg(A).pointers_begin())),  
-            std::addressof(*(arg(A).pointers_end())),
-            std::addressof(*arg(B).origin()), arg(B).stride(0), 
+            to_address((arg(A).non_zero_values_data())) , 
+            to_address((arg(A).non_zero_indices2_data())),
+            to_address((arg(A).pointers_begin())),  
+            to_address((arg(A).pointers_end())),
+            to_address(arg(B).origin()), arg(B).stride(0), 
             beta, 
-            std::addressof(*std::forward<MultiArray2DC>(C).origin()), 
+            to_address(std::forward<MultiArray2DC>(C).origin()), 
             std::forward<MultiArray2DC>(C).stride(0));
 
         return std::forward<MultiArray2DC>(C);
@@ -414,7 +416,7 @@ MultiArray2D exp(MultiArray2D const& A) {
         size_t N = A.size(0);
 
         MultiArray2D ExpA({N,N});
-        std::fill_n(std::addressof(*ExpA.origin()),N*N,Type(0));
+        std::fill_n(to_address(ExpA.origin()),N*N,Type(0));
 
         if(is_hermitian(A)) { 
         

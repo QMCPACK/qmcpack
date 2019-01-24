@@ -319,7 +319,7 @@ namespace afqmc
     public:
     template<class WBuff>
     const_walker_iterator(int k, WBuff&& w_, const wlk_indices& i_, const wlk_descriptor& d_):
-        pos(k),W(std::addressof(*w_.origin()),w_.extensions()),indx(&i_),desc(&d_)  {}
+        pos(k),W(to_address(w_.origin()),w_.extensions()),indx(&i_),desc(&d_)  {}
 
     using pointer = const Ptr;
     using element = typename std::pointer_traits<pointer>::element_type;

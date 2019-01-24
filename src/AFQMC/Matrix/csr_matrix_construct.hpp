@@ -210,8 +210,8 @@ CSR construct_csr_matrix_from_distributed_ucsr(typename CSR::base && ucsr, task_
       auto c0 = cols.begin();
       std::copy(counts_local.begin(),counts_local.end(),counts.begin());
       for(std::size_t r=ak0, r0=0; r<ak1; ++r,++r0) {
-        v0 = std::copy_n( std::addressof(*ucsr.non_zero_values_data(r)), counts[r0], v0); 
-        c0 = std::copy_n( std::addressof(*ucsr.non_zero_indices2_data(r)), counts[r0], c0); 
+        v0 = std::copy_n( to_address(ucsr.non_zero_values_data(r)), counts[r0], v0); 
+        c0 = std::copy_n( to_address(ucsr.non_zero_indices2_data(r)), counts[r0], c0); 
       }
     }
     TG.Cores().broadcast_n(vals.begin(),sz_per_node[ni],ni);

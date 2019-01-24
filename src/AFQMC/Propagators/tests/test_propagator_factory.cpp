@@ -153,7 +153,7 @@ const char *propg_xml_block =
     }
     double tot_time=0;
     RealType dt=0.01;
-    RealType Eshift=std::abs(*wset[0].overlap());
+    RealType Eshift=std::abs(ComplexType(*wset[0].overlap()));
     for(int i=0; i<4; i++) {
       prop.Propagate(2,wset,Eshift,dt,1);
       wfn.Energy(wset);
@@ -308,7 +308,7 @@ const char *propg_xml_block1 =
     }
     double tot_time=0;
     RealType dt=0.01;
-    RealType Eshift=std::abs(*wset[0].overlap());
+    RealType Eshift=std::abs(ComplexType(*wset[0].overlap()));
     for(int i=0; i<4; i++) {
       prop.Propagate(2,wset,Eshift,dt,1);
       wfn.Energy(wset);

@@ -59,8 +59,8 @@ namespace afqmc
     auto nwalk = wset.size();
     int nr=Gsize,nc=nwalk;
     if(transposed_G_for_E_) std::swap(nr,nc);
-    boost::multi::array_ref<ComplexType,2> G(std::addressof(*shmbuff_for_E->origin()),{nr,nc});
-    boost::multi::array_ref<ComplexType,1> ov_(std::addressof(*shmbuff_for_E->origin())+Gsize*nwalk,
+    boost::multi::array_ref<ComplexType,2> G(to_address(shmbuff_for_E->origin()),{nr,nc});
+    boost::multi::array_ref<ComplexType,1> ov_(to_address(shmbuff_for_E->origin())+Gsize*nwalk,
                                               extensions<1u>{nwalk});
     if(eloc2.size(0) != nwalk || eloc2.size(1) != 3) eloc2.reextent({nwalk,3}); 
 
@@ -136,13 +136,13 @@ std::cout<<" E nomsd: " <<nd <<" "
     int nr=Gsize,nc=nwalk;
     if(transposed_G_for_E_) std::swap(nr,nc);
     int displ=0;
-    boost::multi::array_ref<ComplexType,2> Gwork(std::addressof(*shmbuff_for_E->origin()),
+    boost::multi::array_ref<ComplexType,2> Gwork(to_address(shmbuff_for_E->origin()),
                                                 {nr,nc});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,2> Grecv(std::addressof(*shmbuff_for_E->origin())+displ,
+    boost::multi::array_ref<ComplexType,2> Grecv(to_address(shmbuff_for_E->origin())+displ,
                                                 {nr,nc});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,1> overlaps(std::addressof(*shmbuff_for_E->origin())+displ,
+    boost::multi::array_ref<ComplexType,1> overlaps(to_address(shmbuff_for_E->origin())+displ,
                                                    extensions<1u>{nwalk});
     if(eloc2.size(0) != nnodes*nwalk || eloc2.size(1) != 3) 
         eloc2.reextent({nnodes*nwalk,3});
@@ -250,16 +250,16 @@ std::cout<<" E nomsd: " <<nd <<" "
     int nr=Gsize,nc=nwalk;
     if(transposed_G_for_E_) std::swap(nr,nc);
     int displ=0;
-    boost::multi::array_ref<ComplexType,2> SMwork(std::addressof(*shmbuff_for_E->origin()),
+    boost::multi::array_ref<ComplexType,2> SMwork(to_address(shmbuff_for_E->origin()),
                                                 {nwalk,Gsize});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,2> SMrecv(std::addressof(*shmbuff_for_E->origin())+displ,
+    boost::multi::array_ref<ComplexType,2> SMrecv(to_address(shmbuff_for_E->origin())+displ,
                                                 {nwalk,Gsize});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,2> Gwork(std::addressof(*shmbuff_for_E->origin())+displ,
+    boost::multi::array_ref<ComplexType,2> Gwork(to_address(shmbuff_for_E->origin())+displ,
                                                 {nr,nc});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,1> overlaps(std::addressof(*shmbuff_for_E->origin())+displ,
+    boost::multi::array_ref<ComplexType,1> overlaps(to_address(shmbuff_for_E->origin())+displ,
                                                    extensions<1u>{nwalk});
     // used for temporary storage in ndet loop for local calculation
     if(eloc3.size(0) != nwalk || eloc3.size(1) != 3) 
@@ -620,9 +620,9 @@ std::cout<<" E nomsd: " <<nd <<" "
         if(last_task_index < 0 || last_task_index > nextra) 
           APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");
         {
-          boost::multi::array_ref<ComplexType,2> G2D_2(std::addressof(*shmbuff_for_G->origin()),
+          boost::multi::array_ref<ComplexType,2> G2D_2(to_address(shmbuff_for_G->origin()),
                                                  {Gdims.first,Gdims.second});
-          boost::multi::array_ref<ComplexType,1> G1D_2(std::addressof(*shmbuff_for_G->origin()),extensions<1u>{Gsize});
+          boost::multi::array_ref<ComplexType,1> G1D_2(to_address(shmbuff_for_G->origin()),extensions<1u>{Gsize});
           int iw = (last_task_index+ntasks_total_serial)/ndet;
           int nd = (last_task_index+ntasks_total_serial)%ndet;
           ComplexType ov;
@@ -711,13 +711,13 @@ std::cout<<" E nomsd: " <<nd <<" "
         if(last_task_index < 0 || last_task_index > nextra)
           APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");
         {
-          boost::multi::array_ref<ComplexType,2> GA2D_2(std::addressof(*shmbuff_for_G->origin()),
+          boost::multi::array_ref<ComplexType,2> GA2D_2(to_address(shmbuff_for_G->origin()),
                                {GAdims.first,GAdims.second});
-          boost::multi::array_ref<ComplexType,2> GB2D_2(std::addressof(*shmbuff_for_G->origin())+
+          boost::multi::array_ref<ComplexType,2> GB2D_2(to_address(shmbuff_for_G->origin())+
                                GAdims.first*GAdims.second,{GBdims.first,GBdims.second});
-          boost::multi::array_ref<ComplexType,1> GA1D_2(std::addressof(*shmbuff_for_G->origin()),
+          boost::multi::array_ref<ComplexType,1> GA1D_2(to_address(shmbuff_for_G->origin()),
                                extensions<1u>{GAdims.first*GAdims.second});
-          boost::multi::array_ref<ComplexType,1> GB1D_2(std::addressof(*shmbuff_for_G->origin())+
+          boost::multi::array_ref<ComplexType,1> GB1D_2(to_address(shmbuff_for_G->origin())+
                                GAdims.first*GAdims.second,extensions<1u>{GBdims.first*GBdims.second});
           int task = (last_task_index+ntasks_total_serial);
           int iw = task/ndet;
@@ -915,7 +915,7 @@ std::cout<<" E nomsd: " <<nd <<" "
       CVector_ref G1D(G.origin(),extensions<1u>{Gsize});
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
-        if( std::abs(*wset[iw].weight()) < 1e-10 ) continue;
+        if( std::abs(ComplexType(*wset[iw].weight())) < 1e-10 ) continue;
         std::fill(G21D_.begin(), G21D_.end(), ComplexType(0.0));
         ComplexType overlap = ComplexType(0.0,0.0);
         ComplexType factor;
@@ -983,7 +983,7 @@ std::cout<<" E nomsd: " <<nd <<" "
                        extensions<1u>{GBdims.first*GBdims.second});
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
-        if( std::abs(*wset[iw].weight()) < 1e-10 ) continue;
+        if( std::abs(ComplexType(*wset[iw].weight())) < 1e-10 ) continue;
         ComplexType factor;
         if(path_restoration) {
           factor = *wset[iw].BPWeightFactor();

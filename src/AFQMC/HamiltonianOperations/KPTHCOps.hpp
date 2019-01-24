@@ -139,8 +139,8 @@ class KPTHCOps
         for(int Q=0; Q<nkpts; Q++) {
           int nG = nGpk[Q];
           boost::multi::array<SPComplexType,2> T({nG*rotnu,nG*rotnu});
-          std::copy_n(std::addressof(*rotMuv[Q].origin()),rotMuv[Q].num_elements(),T.origin());
-          boost::multi::array_ref<SPComplexType,4> Muv(std::addressof(*rotMuv[Q].origin()),
+          std::copy_n(to_address(rotMuv[Q].origin()),rotMuv[Q].num_elements(),T.origin());
+          boost::multi::array_ref<SPComplexType,4> Muv(to_address(rotMuv[Q].origin()),
                                                        {nG,nG,rotnu,rotnu});
           boost::multi::array_ref<SPComplexType,4> T_(T.origin(),
                                                       {nG,rotnu,nG,rotnu});
@@ -201,9 +201,9 @@ class KPTHCOps
 
       // making a copy of vMF since it will be modified
       set_shm_buffer(vMF.size(0));
-      boost::multi::array_ref<ComplexType,1> vMF_(std::addressof(*SM_TMats.origin()),{vMF.size(0)});
+      boost::multi::array_ref<ComplexType,1> vMF_(to_address(SM_TMats.origin()),{vMF.size(0)});
 
-      boost::multi::array_ref<ComplexType,1> P1D(std::addressof(*P1.origin()),{NMO*NMO});
+      boost::multi::array_ref<ComplexType,1> P1D(to_address(P1.origin()),{NMO*NMO});
       std::fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));
       vHS(vMF_, P1D);
       TG.TG().all_reduce_in_place_n(P1D.origin(),P1D.num_elements(),std::plus<>());
@@ -273,9 +273,9 @@ class KPTHCOps
         std::fill_n(E[n].origin(),3,ComplexType(0.));
 
       assert(Gc.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-      boost::multi::array_cref<ComplexType,3> G3Da(std::addressof(*Gc.origin()),
+      boost::multi::array_cref<ComplexType,3> G3Da(to_address(Gc.origin()),
                                                         {nwalk,nocca_tot,nmo_tot} );
-      boost::multi::array_cref<ComplexType,3> G3Db(std::addressof(*Gc.origin())+
+      boost::multi::array_cref<ComplexType,3> G3Db(to_address(Gc.origin())+
                                                         G3Da.num_elements()*(nspin-1),
                                                         {nwalk,noccb_tot,nmo_tot} );
 
@@ -284,7 +284,7 @@ class KPTHCOps
         for(int n=0; n<nwalk; n++)
           E[n][0] = E0;
         for(int K=0; K<nkpts; ++K) {
-          boost::multi::array_ref<ComplexType,2> haj_K(std::addressof(*haj[nd*nkpts+K].origin()),
+          boost::multi::array_ref<ComplexType,2> haj_K(to_address(haj[nd*nkpts+K].origin()),
                                                       {nelpk[nd][K],nopk[K]});
           for(int n=0; n<nwalk; ++n) {
             ComplexType E_(0.0);
@@ -334,17 +334,17 @@ class KPTHCOps
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == nGu);
           assert(KEright->stride(0) == KEright->size(1));
-          Krptr = std::addressof(*KEright->origin());
+          Krptr = to_address(KEright->origin());
         } else {
-          Krptr = std::addressof(*SM_TMats.origin())+cnt;
+          Krptr = to_address(SM_TMats.origin())+cnt;
           cnt += nwalk*nGu;
         }
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == nGu);
           assert(KEleft->stride(0) == KEleft->size(1));
-          Klptr = std::addressof(*KEleft->origin());
+          Klptr = to_address(KEleft->origin());
         } else {
-          Klptr = std::addressof(*SM_TMats.origin())+cnt;
+          Klptr = to_address(SM_TMats.origin())+cnt;
           cnt += nwalk*nGu;
         }
         if(comm->root()) std::fill_n(Krptr,Knr*Knc,SPComplexType(0.0));
@@ -365,7 +365,7 @@ Timer.reset("T3");
         if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
 
         // Fuv[k1][k2][u][v] = sum_a_l rotcPua[u][k1][a] * G[k1][a][k2][l] rotPiu[k2][l][v]
-        boost::multi::array_ref<SPComplexType,4> Fuv(std::addressof(*SM_TMats.origin())+cnt,{nkpts,nkpts,rotnu,rotnu});
+        boost::multi::array_ref<SPComplexType,4> Fuv(to_address(SM_TMats.origin())+cnt,{nkpts,nkpts,rotnu,rotnu});
         cnt+=Fuv.num_elements();
 
         size_t cnt_local=0;
@@ -403,7 +403,7 @@ Timer.start("T2");
               int nG = nGpk[Q];
               for(int Ga=0; Ga<nG; ++Ga, nqGa+=rotnu) {
                 if((nqk++)%comm->size() == comm->rank()) {
-                  boost::multi::array_ref<SPComplexType,4> Muv(std::addressof(*rotMuv[Q].origin()),
+                  boost::multi::array_ref<SPComplexType,4> Muv(to_address(rotMuv[Q].origin()),
                                                          {nG,nG,rotnu,rotnu});
                   auto&& KlQa(Kl[n].sliced(nqGa,nqGa+rotnu));
                   auto&& KrQa(Kr[n].sliced(nqGa,nqGa+rotnu));
@@ -457,7 +457,7 @@ Timer.start("T1");
           nqk=0;
           for(int Q=0; Q<nkpts; ++Q) {            // momentum conservation index
             int nG = nGpk[Q];
-            boost::multi::array_ref<SPComplexType,4> Muv(std::addressof(*rotMuv[Q].origin()),
+            boost::multi::array_ref<SPComplexType,4> Muv(to_address(rotMuv[Q].origin()),
                                                          {nG,nG,rotnu,rotnu});
             for(int K1=0; K1<nkpts; ++K1) {
               for(int K2=0; K2<nkpts; ++K2) {
@@ -467,9 +467,9 @@ Timer.start("T1");
                   // EXX += sum_u_v Muv[u][v] * Fuv[K1][K2][u][v] * Fuv[QK2][QK1][v][u]
                   ComplexType E_(0.0);
 //                  int nq = nG2pk[Q] + QKToG[Q][K1]*nG + QKToG[Q][K2];
-                  auto F1_(std::addressof(*Fuv[K1][K2].origin()));
+                  auto F1_(to_address(Fuv[K1][K2].origin()));
                   auto muv_(Muv[QKToG[Q][K1]][QKToG[Q][K1]].origin());
-                  auto F2_(std::addressof(*Fuv[QK2][QK1].origin()));
+                  auto F2_(to_address(Fuv[QK2][QK1].origin()));
                   for(int u=0; u<rotnu; ++u, ++F2_) {
                     auto Fv_(F2_);
                     for(int v=0; v<rotnu; ++v,  ++muv_, ++F1_, Fv_ += rotnu)
@@ -558,15 +558,15 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
       auto Qniu_ptr(TMats.origin()+cnt);
       cnt+=nwalk*nu*nmo_max;
 
-      Sp3Tensor_ref v3D(std::addressof(*v.origin()),{nwalk,nmo_tot,nmo_tot});
+      Sp3Tensor_ref v3D(to_address(v.origin()),{nwalk,nmo_tot,nmo_tot});
 
       // "rotate" X
       //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
       for(int Q=0, nq=0; Q<nkpts; ++Q) {
         int nc0, ncN;
         std::tie(nc0,ncN) = FairDivideBoundary(comm->rank(),ncholpQ[Q],comm->size());
-        auto Xnp = std::addressof(*X[nq+nc0].origin());
-        auto Xnm = std::addressof(*X[nq+ncholpQ[Q]+nc0].origin());
+        auto Xnp = to_address(X[nq+nc0].origin());
+        auto Xnm = to_address(X[nq+ncholpQ[Q]+nc0].origin());
         for(int n=nc0; n<ncN; ++n) {
           for(int nw=0; nw<nwalk; ++nw, ++Xnp, ++Xnm) {
             ComplexType Xnp_ = 0.5*a*((*Xnp) -im*(*Xnm));
@@ -580,7 +580,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
       {
         size_t i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(v.num_elements()),size_t(comm->size()));
-        auto v_ = std::addressof(*v.origin())+i0;
+        auto v_ = to_address(v.origin())+i0;
         for(size_t i=i0; i<iN; ++i, ++v_)
           *v_ *= c;
       }
@@ -609,7 +609,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
 
               auto Qniu_(Qniu_ptr);
               for(int n=0; n<nwalk; ++n) {
-                auto p_(std::addressof(*Piu[ni0].origin()));
+                auto p_(to_address(Piu[ni0].origin()));
                 for(int i=0; i<ni; ++i) {
                   auto Tu(Twu[n].origin());
                   for(int u=0; u<nu; ++u, ++p_, ++Qniu_, ++Tu)
@@ -655,7 +655,7 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
 
               auto Qnku_(Qniu_ptr);
               for(int n=0; n<nwalk; ++n) {
-                auto p_(std::addressof(*Piu[nk0].origin()));
+                auto p_(to_address(Piu[nk0].origin()));
                 for(int k=0; k<nk; ++k) {
                   auto Tu(Twu[n].origin());
                   for(int u=0; u<nu; ++u, ++p_, ++Qnku_, ++Tu)
@@ -750,9 +750,9 @@ app_log()<<" E time: " <<Timer.total("T0") <<" " <<Timer.total("T1") <<" " <<Tim
       std::fill_n(vlocal.origin(),vlocal.num_elements(),SPComplexType(0.0));
       SpMatrix_ref Fwu(TMats.origin()+cnt,{2*nwalk,nu});
       cnt+=Fwu.num_elements();
-      boost::multi::array_cref<ComplexType,3> G3Da(std::addressof(*G.origin()),
+      boost::multi::array_cref<ComplexType,3> G3Da(to_address(G.origin()),
                                                         {nwalk,nocca_tot,nmo_tot} );
-      boost::multi::array_cref<ComplexType,3> G3Db(std::addressof(*G.origin())+
+      boost::multi::array_cref<ComplexType,3> G3Db(to_address(G.origin())+
                                                         G3Da.num_elements()*(nspin-1),
                                                         {nwalk,noccb_tot,nmo_tot} );
 /*

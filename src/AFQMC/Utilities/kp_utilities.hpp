@@ -27,7 +27,7 @@ bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per
   int M = PsiT.size(1);
   assert(nocc_per_kp.size() == nkpts);  
 
-  std::fill_n(std::addressof(*nocc_per_kp.origin()), nkpts, 0);
+  std::fill_n(to_address(nocc_per_kp.origin()), nkpts, 0);
   std::vector<int> bounds(nkpts+1);
   bounds[0]=0;
   for(int k=0; k<nkpts; k++) 
@@ -36,7 +36,7 @@ bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per
   for(int i=0; i<N; i++) {
     auto nt = PsiT.num_non_zero_elements(i);
     if(nt == 0) {
-      std::fill_n(std::addressof(*nocc_per_kp.origin()), nkpts, 0);
+      std::fill_n(to_address(nocc_per_kp.origin()), nkpts, 0);
       return false;
     }
     auto col = PsiT.non_zero_indices2_data(i); 
@@ -46,13 +46,13 @@ bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per
     int Q_ = std::distance(bounds.begin(),it);
     assert(Q_ >= 0 && Q_ < nkpts);
     if(Q_ < Q) {
-      std::fill_n(std::addressof(*nocc_per_kp.origin()), nkpts, 0);
+      std::fill_n(to_address(nocc_per_kp.origin()), nkpts, 0);
       return false;
     }
     Q = Q_;
     for(int ni=0; ni<nt; ++ni, ++col) {
       if(*col < bounds[Q] || *col >= bounds[Q+1] ) {
-        std::fill_n(std::addressof(*nocc_per_kp.origin()), nkpts, 0);
+        std::fill_n(to_address(nocc_per_kp.origin()), nkpts, 0);
         return false;
       }
     } 

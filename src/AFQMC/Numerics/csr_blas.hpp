@@ -267,11 +267,11 @@ auto transpose(csr_matrix&& A)
   for(integer i=0; i<integer(A.size(0)); i++) {
     auto pbi = *(A.pointers_begin(i));
     auto pei = *(A.pointers_end(i)); 
-    auto c0 = std::lower_bound( std::addressof(*(A.non_zero_indices2_data()+(pbi-pb0))),
-                                std::addressof(*(A.non_zero_indices2_data()+(pei-pb0))),
+    auto c0 = std::lower_bound( to_address((A.non_zero_indices2_data()+(pbi-pb0))),
+                                to_address((A.non_zero_indices2_data()+(pei-pb0))),
                                 r0);  
-    auto cN = std::lower_bound( std::addressof(*(A.non_zero_indices2_data()+(pbi-pb0))),
-                                std::addressof(*(A.non_zero_indices2_data()+(pei-pb0))),
+    auto cN = std::lower_bound( to_address((A.non_zero_indices2_data()+(pbi-pb0))),
+                                to_address((A.non_zero_indices2_data()+(pei-pb0))),
                                 rN);  
     for(; c0!=cN; ++c0)
       ++sz_per_row[*c0];
@@ -281,13 +281,13 @@ auto transpose(csr_matrix&& A)
     for(integer i=0; i<integer(A.size(0)); i++) {
     auto pbi = *(A.pointers_begin(i));
     auto pei = *(A.pointers_end(i));
-    auto c0 = std::lower_bound( std::addressof(*(A.non_zero_indices2_data()+(pbi-pb0))),
-                                std::addressof(*(A.non_zero_indices2_data()+(pei-pb0))),
+    auto c0 = std::lower_bound( to_address((A.non_zero_indices2_data()+(pbi-pb0))),
+                                to_address((A.non_zero_indices2_data()+(pei-pb0))),
                                 r0);
-    auto cN = std::lower_bound( std::addressof(*(A.non_zero_indices2_data()+(pbi-pb0))),
-                                std::addressof(*(A.non_zero_indices2_data()+(pei-pb0))),
+    auto cN = std::lower_bound( to_address((A.non_zero_indices2_data()+(pbi-pb0))),
+                                to_address((A.non_zero_indices2_data()+(pei-pb0))),
                                 rN);
-    auto dn = std::distance(std::addressof(*A.non_zero_indices2_data()),
+    auto dn = std::distance(to_address(A.non_zero_indices2_data()),
                             c0);
     auto v0 = A.non_zero_values_data() + dn;
     for(; c0!=cN; ++c0,++v0)

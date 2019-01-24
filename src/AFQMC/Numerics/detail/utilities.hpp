@@ -16,8 +16,11 @@
 #define AFQMC_MA_UTILITIES_HPP
 
 #include<complex>
+#include "AFQMC/Memory/raw_pointers.hpp"
 
 namespace ma {
+
+using qmcplusplus::afqmc::to_address;
 
 inline double const& real(double const& d){return d;}
 inline float const& real(float const& f){return f;}

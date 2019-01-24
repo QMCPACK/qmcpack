@@ -53,10 +53,10 @@ class mpi3_shared_ma_proxy
     mpi3_shared_ma_proxy(mpi3_shared_ma_proxy && other) = default;
     mpi3_shared_ma_proxy& operator=(mpi3_shared_ma_proxy && other) = default;
 
-    T* origin() {return std::addressof(*M.origin());} 
-    T const* origin() const{return std::addressof(*M.origin());} 
-    T* data() {return std::addressof(*M.data());} 
-    T const* data() const{return std::addressof(*M.data());} 
+    T* origin() {return to_address(M.origin());} 
+    T const* origin() const{return to_address(M.origin());} 
+    T* data() {return to_address(M.data());} 
+    T const* data() const{return to_address(M.data());} 
     size_type num_elements() const{return M.num_elements(); } 
     std::array<size_type, 2> shape() const{
         auto s(M.shape());

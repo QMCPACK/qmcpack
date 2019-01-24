@@ -48,7 +48,7 @@ namespace qmc_cuda
   {
     if(cudaSuccess != cudaMemcpy2D(to_address(y),sizeof(T)*incy,
                                    x,sizeof(T)*incx,
-                                   sizeof(T),n,cudaMemcpyDeviceToHost))
+                                   sizeof(T),n,cudaMemcpyHostToDevice))
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   }
 
@@ -59,7 +59,7 @@ namespace qmc_cuda
     assert(sizeof(Q)==sizeof(T));
     if(cudaSuccess != cudaMemcpy2D(y,sizeof(T)*incy,
                                    to_address(x),sizeof(Q)*incx,
-                                   sizeof(T),n,cudaMemcpyHostToDevice))
+                                   sizeof(T),n,cudaMemcpyDeviceToHost))
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   }
 

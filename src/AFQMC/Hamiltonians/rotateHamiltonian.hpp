@@ -417,7 +417,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
         int NEL0 = (k0<NMO)?NAEA:NAEB;   // number of electrons in this spin block
         assert(nk > 0 && nk <= maxnk );  // just checking
 
-        boost::multi::array_ref<SPComplexType,2> tQk(std::addressof(*tQk_shmbuff.origin()),
+        boost::multi::array_ref<SPComplexType,2> tQk(to_address(tQk_shmbuff.origin()),
                                                      {nk*NEL0,nvec});
 
         Timer_.reset("T0");
@@ -432,25 +432,25 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
               int nt_ = static_cast<int>(n1-n0);
               assert(ntermscum==n0);
               assert(nt_==nterms);
-              std::copy(std::addressof(*SpQk.non_zero_values_data(ka0)),
-                        std::addressof(*SpQk.non_zero_values_data(kaN)),
-                        std::addressof(*SptQk.non_zero_values_data()));
-              std::copy(std::addressof(*SpQk.non_zero_indices2_data(ka0)),
-                        std::addressof(*SpQk.non_zero_indices2_data(kaN)),
-                        std::addressof(*SptQk.non_zero_indices2_data()));
+              std::copy(to_address(SpQk.non_zero_values_data(ka0)),
+                        to_address(SpQk.non_zero_values_data(kaN)),
+                        to_address(SptQk.non_zero_values_data()));
+              std::copy(to_address(SpQk.non_zero_indices2_data(ka0)),
+                        to_address(SpQk.non_zero_indices2_data(kaN)),
+                        to_address(SptQk.non_zero_indices2_data()));
               for(int i=0, j=ka0; i<=nk*NEL0; i++, j++) {
                 SptQk.pointers_begin()[i] = SpQk.pointers_begin()[j]-n0;
                 SptQk.pointers_end()[i] = SpQk.pointers_end()[j]-n0;
               }
             }
             comm.broadcast_value(nterms,nn);
-            comm.broadcast_n(std::addressof(*SptQk.pointers_begin()),
+            comm.broadcast_n(to_address(SptQk.pointers_begin()),
                                   SptQk.size(0),nn);
-            comm.broadcast_n(std::addressof(*SptQk.pointers_end()),
+            comm.broadcast_n(to_address(SptQk.pointers_end()),
                                   SptQk.size(0),nn);
-            comm.broadcast_n(std::addressof(*SptQk.non_zero_values_data()),
+            comm.broadcast_n(to_address(SptQk.non_zero_values_data()),
                                   nterms,nn);
-            comm.broadcast_n(std::addressof(*SptQk.non_zero_indices2_data()),
+            comm.broadcast_n(to_address(SptQk.non_zero_indices2_data()),
                                   nterms,nn);
           }
           TG.node_barrier();
@@ -468,7 +468,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
         app_log()<<" Loop: " <<nn <<"/" <<comm.size() <<" " <<bi <<"/" <<nblk
                  <<" communication: " <<Timer_.total("T0") <<" ";
 
-        boost::multi::array_ref<ComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+        boost::multi::array_ref<ComplexType,2> Ta(to_address(Ta_shmbuff.origin()),
                                                   {nk*NEL0,nrow});
 
         Timer_.reset("T0");
@@ -539,7 +539,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
       int NEL0 = (k0<NMO)?NAEA:NAEB;   // number of electrons in this spin block
       assert(nk > 0 && nk <= maxnk );  // just checking
 
-      boost::multi::array_ref<SPComplexType,2> tQk(std::addressof(*tQk_shmbuff.origin()),
+      boost::multi::array_ref<SPComplexType,2> tQk(to_address(tQk_shmbuff.origin()),
                                                    {nk*NEL0,nvec});
 
       Timer_.reset("T0");
@@ -554,25 +554,25 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
             int nt_ = static_cast<int>(n1-n0);
             assert(ntermscum==n0);
             assert(nt_==nterms);
-            std::copy(std::addressof(*SpQk.non_zero_values_data(ka0)),
-                        std::addressof(*SpQk.non_zero_values_data(kaN)),
-                        std::addressof(*SptQk.non_zero_values_data()));
-            std::copy(std::addressof(*SpQk.non_zero_indices2_data(ka0)),
-                        std::addressof(*SpQk.non_zero_indices2_data(kaN)),
-                        std::addressof(*SptQk.non_zero_indices2_data()));
+            std::copy(to_address(SpQk.non_zero_values_data(ka0)),
+                        to_address(SpQk.non_zero_values_data(kaN)),
+                        to_address(SptQk.non_zero_values_data()));
+            std::copy(to_address(SpQk.non_zero_indices2_data(ka0)),
+                        to_address(SpQk.non_zero_indices2_data(kaN)),
+                        to_address(SptQk.non_zero_indices2_data()));
             for(int i=0, j=ka0; i<=nk*NEL0; i++, j++) {
               SptQk.pointers_begin()[i] = SpQk.pointers_begin()[j]-n0;
               SptQk.pointers_end()[i] = SpQk.pointers_end()[j]-n0;
             }
           }
           comm.broadcast_value(nterms,nn);
-          comm.broadcast_n(std::addressof(*SptQk.pointers_begin()),
+          comm.broadcast_n(to_address(SptQk.pointers_begin()),
                                   SptQk.size(0),nn);
-          comm.broadcast_n(std::addressof(*SptQk.pointers_end()),
+          comm.broadcast_n(to_address(SptQk.pointers_end()),
                                   SptQk.size(0),nn);
-          comm.broadcast_n(std::addressof(*SptQk.non_zero_values_data()),
+          comm.broadcast_n(to_address(SptQk.non_zero_values_data()),
                                   nterms,nn);
-          comm.broadcast_n(std::addressof(*SptQk.non_zero_indices2_data()),
+          comm.broadcast_n(to_address(SptQk.non_zero_indices2_data()),
                                   nterms,nn);
         }
         TG.node_barrier();
@@ -589,7 +589,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
       app_log()<<" Loop: " <<nn <<"/" <<comm.size() <<" " <<bi <<"/" <<nblk
                  <<" communication: " <<Timer_.total("T0") <<" ";
 
-      boost::multi::array_ref<ComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+      boost::multi::array_ref<ComplexType,2> Ta(to_address(Ta_shmbuff.origin()),
                                                 {nk*NEL0,nrow});
 
       Timer_.reset("T0");
@@ -738,7 +738,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
       int kN = std::min(k0+maxnk,NMO);
       int nk = kN-k0;
       { // alpha-alpha
-        boost::multi::array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+        boost::multi::array_ref<SPComplexType,2> Ta(to_address(Ta_shmbuff.origin()),
 					 {nk*NAEA,NAEA*NMO});
         if(type == "SD")
           count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0,kN,0,NMO,NMO,NAEA,NAEB,
@@ -753,7 +753,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
       TG.Node().barrier();
       if(walker_type==COLLINEAR)
       { // beta-beta
-        boost::multi::array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+        boost::multi::array_ref<SPComplexType,2> Ta(to_address(Ta_shmbuff.origin()),
                                          {nk*NAEB,NAEB*NMO});
         if(type == "SD")
           count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
@@ -772,7 +772,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
                         SpQk[{size_t(k0*NAEA),std::size_t(kN*NAEA)}],
 			Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,cut);
           else if(type == "DD") {
-            boost::multi::array_ref<SPComplexType,2> Ta_(std::addressof(*Ta_shmbuff.origin()),
+            boost::multi::array_ref<SPComplexType,2> Ta_(to_address(Ta_shmbuff.origin()),
                                         {nk*NAEA,NAEB*NMO});
             count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,
                         Qk.sliced(k0*NAEA,kN*NAEA),
@@ -824,7 +824,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
     int kN = std::min(k0+maxnk,NMO);
     int nk = kN-k0;
     { // alpha-alpha
-      boost::multi::array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+      boost::multi::array_ref<SPComplexType,2> Ta(to_address(Ta_shmbuff.origin()),
                                        {nk*NAEA,NAEA*NMO});
       if(type == "SD")
         Qk_x_Rl(walker_type,EJX,TG,k0,kN,0,NMO,NMO,NAEA,NAEB,
@@ -839,7 +839,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
     TG.Node().barrier();
     if(walker_type==COLLINEAR)
     { // beta-beta
-      boost::multi::array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
+      boost::multi::array_ref<SPComplexType,2> Ta(to_address(Ta_shmbuff.origin()),
                                        {nk*NAEB,NAEB*NMO});
       if(type == "SD")
         Qk_x_Rl(walker_type,EJX,TG,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
@@ -853,7 +853,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
       TG.Node().barrier();
       if(addCoulomb)
       { // alpha-beta
-        boost::multi::array_ref<SPComplexType,2> Ta_(std::addressof(*Ta_shmbuff.origin()),
+        boost::multi::array_ref<SPComplexType,2> Ta_(to_address(Ta_shmbuff.origin()),
                                        {nk*NAEA,NAEB*NMO});
         if(type == "SD")
           Qk_x_Rl(walker_type,EJX,TG,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,

@@ -70,21 +70,21 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
   size_t displ=0;
   // Mixed Density Matrix for walkers at original configuration
   // Actual dimensions depend on transposed_G_, see above
-  CMatrix_ref G(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
+  CMatrix_ref G(to_address(shmbuff.origin())+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // vias potential for walkers at original configuration
-  CMatrix_ref vbias(std::addressof(*shmbuff.origin())+displ, {long(localnCV),long(nwalk)}); 
+  CMatrix_ref vbias(to_address(shmbuff.origin())+displ, {long(localnCV),long(nwalk)}); 
     displ+=localnCV*nwalk;
   // right hand side matrix in calculation of HS potential for all steps: ~ sigma + (vbias-vMF)
   // The same vbias is used in all steps
-  CMatrix_ref X(std::addressof(*shmbuff.origin())+displ, {long(localnCV),long(nwalk*nsteps)}); 
+  CMatrix_ref X(to_address(shmbuff.origin())+displ, {long(localnCV),long(nwalk*nsteps)}); 
     displ+=localnCV*nwalk*nsteps;
   // HS potential for all steps.
   // Actual dimensions depend on transposed_vHS_, see above
-  CMatrix_ref vHS(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
+  CMatrix_ref vHS(to_address(shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
   // second view of vHS matrix for use in propagation step
   // Actual dimensions depend on transposed_vHS_, see above
-  boost::multi::array_ref<ComplexType,3> vHS3D(std::addressof(*shmbuff.origin())+displ, 
+  boost::multi::array_ref<ComplexType,3> vHS3D(to_address(shmbuff.origin())+displ, 
                                               {vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
 
   // local matrices for temporary accumulation

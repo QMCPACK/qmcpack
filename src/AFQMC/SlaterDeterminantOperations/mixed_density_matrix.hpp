@@ -144,7 +144,7 @@ inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC
 
   // TNN = TAB[ref,:] 
   for(int i=0; i<NEL; i++)
-    std::copy_n(std::addressof(*TAB[*(ref+i)].origin()),NEL,std::addressof(*TNN[i].origin()));
+    std::copy_n(to_address(TAB[*(ref+i)].origin()),NEL,to_address(TNN[i].origin()));
 
   // TNN = TNN^(-1)
   ma::invert(std::forward<Mat1>(TNN),IWORK,WORK,ovlp);
@@ -205,7 +205,7 @@ inline void MixedDensityMatrixFromConfiguration(const MatA& hermA, const MatB& B
 
   // TNN = TAB[ref,:] 
   for(int i=0; i<NEL; i++)
-    std::copy_n(std::addressof(*TAB[*(ref+i)].origin()),NEL,std::addressof(*TNN[i].origin()));
+    std::copy_n(to_address(TAB[*(ref+i)].origin()),NEL,to_address(TNN[i].origin()));
 
   // TNN = TNN^(-1)
   ma::invert(std::forward<Mat1>(TNN),IWORK,WORK,ovlp);
@@ -361,7 +361,7 @@ inline void OverlapForWoodbury(const MatA& hermA, const MatB& B, Tp* ovlp, MatC&
 
   // TNN = TMN[ref,:]
   for(int i=0; i<NEL; i++)
-    std::copy_n(std::addressof(*TMN[*(ref+i)].origin()),NEL,std::addressof(*TNN[i].origin())); 
+    std::copy_n(to_address(TMN[*(ref+i)].origin()),NEL,to_address(TNN[i].origin())); 
  
   // TNN -> inv(TNN)
   ma::invert(std::forward<MatD>(TNN),IWORK,WORK,ovlp);
@@ -593,7 +593,7 @@ inline void OverlapForWoodbury(const MatA& hermA, const MatB& B, Tp* ovlp, MatC&
   comm.barrier();
   if(comm.rank()==0) {
     for(int i=0; i<NEL; i++)
-      std::copy_n(std::addressof(*TMN[*(ref+i)].origin()),NEL,std::addressof(*TNN[i].origin()));
+      std::copy_n(to_address(TMN[*(ref+i)].origin()),NEL,to_address(TNN[i].origin()));
     ma::invert(std::forward<MatD>(TNN),IWORK,WORK,ovlp);
   }
   comm.broadcast_n(ovlp,1,0);
@@ -656,7 +656,7 @@ inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC
 
     // TNN = TAB[ref,:] 
     for(int i=0; i<NEL; i++)
-      std::copy_n(std::addressof(*TAB[*(ref+i)].origin())+N0,Nn-N0,std::addressof(*TNN[i].origin())+N0);
+      std::copy_n(to_address(TAB[*(ref+i)].origin())+N0,Nn-N0,to_address(TNN[i].origin())+N0);
   }
 
   comm.barrier();

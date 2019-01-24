@@ -483,16 +483,16 @@ void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn,
   assert(buff.size(1) >= nchol);
 
   using element = typename std::decay<MultiArray3DC>::type::element;
-  boost::multi::array_ref<element,2> Li_kn(std::addressof(*Likn.origin()),
+  boost::multi::array_ref<element,2> Li_kn(to_address(Likn.origin()),
                                            {ni,nk*nchol});      
-  boost::multi::array_ref<element,2> La_kn(std::addressof(*Lank.origin()),
+  boost::multi::array_ref<element,2> La_kn(to_address(Lank.origin()),
                                            {na,nk*nchol});      
 
   ma::product(Aai,Li_kn,La_kn);
   for(int a=0; a<na; a++) {
-    boost::multi::array_ref<element,2> Lkn(std::addressof(*Lank[a].origin()),
+    boost::multi::array_ref<element,2> Lkn(to_address(Lank[a].origin()),
                                            {nk,nchol});
-    boost::multi::array_ref<element,2> Lnk(std::addressof(*Lank[a].origin()),
+    boost::multi::array_ref<element,2> Lnk(to_address(Lank[a].origin()),
                                            {nchol,nk});
     buff({0,nk},{0,nchol}) = Lkn;
     ma::transpose(buff({0,nk},{0,nchol}),Lnk);
@@ -514,7 +514,7 @@ void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
   assert(buff.num_elements() >= na*nchol);
 
   using Type = typename std::decay<MultiArray3DC>::type::element;
-  boost::multi::array_ref<Type,2> bna(std::addressof(*buff.origin()),
+  boost::multi::array_ref<Type,2> bna(to_address(buff.origin()),
                                       {nchol,na});      
   // Lank[a][n][k] = sum_i Aai[a][i] conj(Lkin[k][i][n])
   for(int k=0; k<nk; k++) {

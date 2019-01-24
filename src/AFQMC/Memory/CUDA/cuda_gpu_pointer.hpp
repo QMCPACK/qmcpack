@@ -30,8 +30,11 @@
 #include "AFQMC/Kernels/reference_operations.cuh"
 
 #include "multi/array_ref.hpp"
+#include "AFQMC/Memory/raw_pointers.hpp"
 
 namespace qmc_cuda {
+
+using qmcplusplus::afqmc::to_address;
 
 template<class T> struct cuda_gpu_allocator;
 template<class T> struct cuda_gpu_ptr;
@@ -74,6 +77,7 @@ struct cuda_gpu_reference {
   void swap(cuda_gpu_reference& other) { std::swap(impl_,other.impl_); }
 
   cuda_gpu_reference&  operator++ (void) { kernels::op_plus(impl_,T(1)); return *this; }
+  cuda_gpu_reference&  operator-- (void) { kernels::op_minus(impl_,T(1)); return *this; }
  
   value_type  operator++ (int) {
     value_type res;
@@ -81,35 +85,44 @@ struct cuda_gpu_reference {
      throw std::runtime_error("Error: cudaMemcpy returned error code.");
     return res++;
   }
- 
-  cuda_gpu_reference&  operator+= (const value_type &rhs) { kernels::op_plus(impl_,rhs); return *this; }
- 
-  cuda_gpu_reference&  operator-- (void) { kernels::op_minus(impl_,T(1)); return *this; }
- 
   value_type  operator-- (int) {
     value_type res;
     if(cudaSuccess != cudaMemcpy(std::addressof(res),impl_,sizeof(T),cudaMemcpyDefault))
      throw std::runtime_error("Error: cudaMemcpy returned error code.");
     return res--;
   }
- 
-  cuda_gpu_reference&  operator-= (const value_type &rhs) { kernels::op_minus(impl_,rhs); return *this; }
- 
-  cuda_gpu_reference&  operator*= (const value_type &rhs) { kernels::op_times(impl_,rhs); return *this; }
- 
-  cuda_gpu_reference&  operator/= (const value_type &rhs) { kernels::op_div(impl_,rhs); return *this; } 
+
+  cuda_gpu_reference&  operator+= (const value_type &rhs) 
+    { kernels::op_plus(impl_,rhs); return *this; }
+  cuda_gpu_reference&  operator-= (const value_type &rhs) 
+    { kernels::op_minus(impl_,rhs); return *this; }
+  cuda_gpu_reference&  operator*= (const value_type &rhs) 
+    { kernels::op_times(impl_,rhs); return *this; }
+  cuda_gpu_reference&  operator/= (const value_type &rhs) 
+    { kernels::op_div(impl_,rhs); return *this; } 
+
+  cuda_gpu_reference&  operator+= (cuda_gpu_reference const& rhs) 
+    { kernels::op_plus(impl_,rhs.val()); return *this; }
+  cuda_gpu_reference&  operator-= (cuda_gpu_reference const& rhs) 
+    { kernels::op_minus(impl_,rhs.val()); return *this; }
+  cuda_gpu_reference&  operator*= (cuda_gpu_reference const& rhs) 
+    { kernels::op_times(impl_,rhs.val()); return *this; }
+  cuda_gpu_reference&  operator/= (cuda_gpu_reference const& rhs) 
+    { kernels::op_div(impl_,rhs.val()); return *this; }
+
+  friend value_type& operator+=(value_type& lhs, cuda_gpu_reference const& rhs)
+  { lhs += rhs.val(); return lhs; }
+  friend value_type& operator-=(value_type& lhs, cuda_gpu_reference const& rhs)
+  { lhs -= rhs.val(); return lhs; }
+  friend value_type& operator*=(value_type& lhs, cuda_gpu_reference const& rhs)
+  { lhs *= rhs.val(); return lhs; }
+  friend value_type& operator/=(value_type& lhs, cuda_gpu_reference const& rhs)
+  { lhs /= rhs.val(); return lhs; }
 
   value_type  operator+ (value_type const& rhs) const { return this->val()+rhs; }
   value_type  operator- (value_type const& rhs) const { return this->val()-rhs; }
   value_type  operator/ (value_type const& rhs) const { return this->val()/rhs; }
   value_type  operator* (value_type const& rhs) const { return this->val()*rhs; }
-
-/*
-  friend value_type  operator* (cuda_gpu_reference const& lhs, value_type const& rhs) { 
-    return lhs.val()*rhs; 
-  }
-  friend value_type  operator* (cuda_gpu_reference const& lhs, cuda_gpu_reference const& rhs) { return value_type(lhs)*value_type(rhs); }
-*/
 
   value_type  operator+ (cuda_gpu_reference const& rhs) const 
     { return this->val()+rhs.val(); }
@@ -128,6 +141,33 @@ struct cuda_gpu_reference {
   { return lhs * rhs.val(); }
   friend value_type operator/(value_type lhs, cuda_gpu_reference const& rhs) 
   { return lhs / rhs.val(); }
+
+  bool operator==(value_type const& rhs) const { return this->val()==rhs; } 
+  bool operator!=(value_type const& rhs) const { return this->val()!=rhs; } 
+  bool operator>(value_type const& rhs) const { return this->val()>rhs; } 
+  bool operator<(value_type const& rhs) const { return this->val()<rhs; } 
+  bool operator>=(value_type const& rhs) const { return this->val()>=rhs; } 
+  bool operator<=(value_type const& rhs) const { return this->val()<=rhs; } 
+
+  bool operator==(cuda_gpu_reference const& rhs) const { return this->val()==rhs.val(); } 
+  bool operator!=(cuda_gpu_reference const& rhs) const { return this->val()!=rhs.val(); } 
+  bool operator>(cuda_gpu_reference const& rhs) const { return this->val()>rhs.val(); } 
+  bool operator<(cuda_gpu_reference const& rhs) const { return this->val()<rhs.val(); } 
+  bool operator>=(cuda_gpu_reference const& rhs) const { return this->val()>=rhs.val(); } 
+  bool operator<=(cuda_gpu_reference const& rhs) const { return this->val()<=rhs.val(); } 
+
+  friend bool operator==(value_type const& lhs, cuda_gpu_reference const& rhs)
+    { return lhs==rhs.val(); }
+  friend bool operator!=(value_type const& lhs, cuda_gpu_reference const& rhs)
+    { return lhs!=rhs.val(); }
+  friend bool operator>(value_type const& lhs, cuda_gpu_reference const& rhs)
+    { return lhs>rhs.val(); }
+  friend bool operator<(value_type const& lhs, cuda_gpu_reference const& rhs)
+    { return lhs<rhs.val(); }
+  friend bool operator>=(value_type const& lhs, cuda_gpu_reference const& rhs)
+    { return lhs>=rhs.val(); }
+  friend bool operator<=(value_type const& lhs, cuda_gpu_reference const& rhs)
+    { return lhs<=rhs.val(); }
 
   friend std::ostream& operator<<(std::ostream& os, cuda_gpu_reference const& obj)
   {
@@ -421,6 +461,8 @@ void print(std::string str, cuda_gpu_ptr<T> p, int n) {
 
 namespace boost::multi{
 
+using qmcplusplus::afqmc::to_address;
+
 /**************** copy *****************/
 // Can always call cudaMemcopy2D like you do in the blas backend
 
@@ -431,8 +473,12 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy(
            multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
   assert( stride(first) == stride(last) );
   if(std::distance(first,last) == 0 ) return dest;
-  kernels::uninitialized_copy_n(std::distance(first,last),to_address(base(first)),stride(first),
-                                                          to_address(base(dest)),stride(dest));
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
+                                 to_address(base(first)),sizeof(T)*stride(first),
+                                 sizeof(T),std::distance(first,last),cudaMemcpyDeviceToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+//  kernels::uninitialized_copy_n(std::distance(first,last),to_address(base(first)),stride(first),
+//                                                          to_address(base(dest)),stride(dest));
   return dest+std::distance(first,last);
 }
 
@@ -442,8 +488,12 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy_n(
              Size N,
              multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
   if(N==0) return dest;  
-  kernels::uninitialized_copy_n(N,to_address(base(first)),stride(first),
-                                  to_address(base(dest)),stride(dest));
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
+                                 to_address(base(first)),sizeof(T)*stride(first),
+                                 sizeof(T),N,cudaMemcpyDeviceToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+//  kernels::uninitialized_copy_n(N,to_address(base(first)),stride(first),
+//                                  to_address(base(dest)),stride(dest));
   return dest+N;
 }
 
@@ -454,9 +504,41 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
                          multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
   assert( stride(first) == stride(last) );
   if(std::distance(first,last) == 0 ) return dest;
-  kernels::uninitialized_copy_n(std::distance(first,last),to_address(base(first)),stride(first),
-                                                          to_address(base(dest)),stride(dest));
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
+                                 to_address(base(first)),sizeof(T)*stride(first),
+                                 sizeof(T),std::distance(first,last),cudaMemcpyDeviceToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+//  kernels::uninitialized_copy_n(std::distance(first,last),to_address(base(first)),stride(first),
+//                                                          to_address(base(dest)),stride(dest));
   return dest+std::distance(first,last); 
+}
+
+template<class T>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
+                         multi::array_iterator<T, 1, T*> first,
+                         multi::array_iterator<T, 1, T*> last,
+                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+  assert( stride(first) == stride(last) );
+  if(std::distance(first,last) == 0 ) return dest;
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
+                                 to_address(base(first)),sizeof(T)*stride(first),
+                                 sizeof(T),std::distance(first,last),cudaMemcpyHostToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+  return dest+std::distance(first,last);
+}
+
+template<class T>
+multi::array_iterator<T, 1, T*> uninitialized_copy(
+                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,
+                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> last,
+                         multi::array_iterator<T, 1, T*> dest ){
+  assert( stride(first) == stride(last) );
+  if(std::distance(first,last) == 0 ) return dest;
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
+                                 to_address(base(first)),sizeof(T)*stride(first),
+                                 sizeof(T),std::distance(first,last),cudaMemcpyDeviceToHost))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+  return dest+std::distance(first,last);
 }
 
 template<class T, typename Size>
@@ -465,8 +547,12 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n(
                            Size N,
                            multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
   if(N==0) return dest;
-  kernels::uninitialized_copy_n(N,to_address(base(first)),stride(first),
-                                  to_address(base(dest)),stride(dest));
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
+                                 to_address(base(first)),sizeof(T)*stride(first),
+                                 sizeof(T),N,cudaMemcpyDeviceToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+//  kernels::uninitialized_copy_n(N,to_address(base(first)),stride(first),
+//                                  to_address(base(dest)),stride(dest));
   return dest+N;
 }
 

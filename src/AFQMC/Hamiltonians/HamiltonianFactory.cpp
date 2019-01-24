@@ -234,7 +234,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
         }
       }
     }
-    TG.Global().broadcast_n(std::addressof(*H1.origin()),H1.num_elements(),0);
+    TG.Global().broadcast_n(to_address(H1.origin()),H1.num_elements(),0);
 
     // now read the integrals
     if(htype == KPTHC) {

@@ -43,27 +43,27 @@ void count_over_cholvec(double cut, std::vector<std::size_t>& count, int c0, int
 {
   assert(c1>=c0);
   if(c0==c1) return;
-  auto cik = std::lower_bound( std::addressof(*Lik.non_zero_indices2_data()),
-                               std::addressof(*(Lik.non_zero_indices2_data()
+  auto cik = std::lower_bound( to_address(Lik.non_zero_indices2_data()),
+                               to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                c0);
   auto cik_end = std::lower_bound( cik,
-                                   std::addressof(*(Lik.non_zero_indices2_data()
+                                   to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                    c1);
-  auto vik = std::addressof(*Lik.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lik.non_zero_indices2_data()),cik);
+  auto vik = to_address(Lik.non_zero_values_data()) +
+                    std::distance(to_address(Lik.non_zero_indices2_data()),cik);
 
-  auto cki = std::lower_bound( std::addressof(*Lki.non_zero_indices2_data()),
-                               std::addressof(*(Lki.non_zero_indices2_data()
+  auto cki = std::lower_bound( to_address(Lki.non_zero_indices2_data()),
+                               to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                c0);
   auto cki_end = std::lower_bound( cki,
-                                   std::addressof(*(Lki.non_zero_indices2_data()
+                                   to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                    c1);
-  auto vki = std::addressof(*Lki.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lki.non_zero_indices2_data()),cki);
+  auto vki = to_address(Lki.non_zero_values_data()) +
+                    std::distance(to_address(Lki.non_zero_indices2_data()),cki);
 
   // ignoring factor of 0.5 to keep it consistent with the old code for now
   using std::conj;
@@ -124,16 +124,16 @@ void count_over_cholvec(double cut, std::vector<std::size_t>& count, int c0, int
 {
   assert(c1>=c0);
   if(c0==c1) return;
-  auto ci = std::lower_bound( std::addressof(*Lii.non_zero_indices2_data()),
-                              std::addressof(*(Lii.non_zero_indices2_data()
+  auto ci = std::lower_bound( to_address(Lii.non_zero_indices2_data()),
+                              to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                               c0);
   auto ci_end = std::lower_bound( ci,
-                                  std::addressof(*(Lii.non_zero_indices2_data()
+                                  to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                                   c1);
-  auto vi = std::addressof(*Lii.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lii.non_zero_indices2_data()),ci);
+  auto vi = to_address(Lii.non_zero_values_data()) +
+                    std::distance(to_address(Lii.non_zero_indices2_data()),ci);
 
   // ignoring factor of 0.5 to keep it consistent with the old code for now
   using std::conj;
@@ -158,27 +158,27 @@ void count_nnz(double cut, std::size_t& nik, std::size_t& nki, int c0, int c1, S
   assert(c1>=c0);
   nik = nki = size_t(0);
   if(c0==c1) return;
-  auto cik = std::lower_bound( std::addressof(*Lik.non_zero_indices2_data()),
-                               std::addressof(*(Lik.non_zero_indices2_data()
+  auto cik = std::lower_bound( to_address(Lik.non_zero_indices2_data()),
+                               to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                c0/2);
   auto cik_end = std::lower_bound( cik,
-                                   std::addressof(*(Lik.non_zero_indices2_data()
+                                   to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                    (c1+1)/2);
-  auto vik = std::addressof(*Lik.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lik.non_zero_indices2_data()),cik);
+  auto vik = to_address(Lik.non_zero_values_data()) +
+                    std::distance(to_address(Lik.non_zero_indices2_data()),cik);
 
-  auto cki = std::lower_bound( std::addressof(*Lki.non_zero_indices2_data()),
-                               std::addressof(*(Lki.non_zero_indices2_data()
+  auto cki = std::lower_bound( to_address(Lki.non_zero_indices2_data()),
+                               to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                c0/2);
   auto cki_end = std::lower_bound( cki,
-                                   std::addressof(*(Lki.non_zero_indices2_data()
+                                   to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                    (c1+1)/2);
-  auto vki = std::addressof(*Lki.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lki.non_zero_indices2_data()),cki);
+  auto vki = to_address(Lki.non_zero_values_data()) +
+                    std::distance(to_address(Lki.non_zero_indices2_data()),cki);
 
   // ignoring factor of 0.5 to keep it consistent with the old code for now
   while( cik!=cik_end && cki!=cki_end ) {
@@ -251,16 +251,16 @@ void count_nnz(double cut, size_t& ni, int c0, int c1, SpVType_shm_csr_matrix::r
   assert(c1>=c0);
   ni=size_t(0);
   if(c0==c1) return;
-  auto ci = std::lower_bound( std::addressof(*Lii.non_zero_indices2_data()),
-                              std::addressof(*(Lii.non_zero_indices2_data()
+  auto ci = std::lower_bound( to_address(Lii.non_zero_indices2_data()),
+                              to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                               c0/2);
   auto ci_end = std::lower_bound( ci,
-                                  std::addressof(*(Lii.non_zero_indices2_data()
+                                  to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                                   (c1+1)/2);
-  auto vi = std::addressof(*Lii.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lii.non_zero_indices2_data()),ci);
+  auto vi = to_address(Lii.non_zero_values_data()) +
+                    std::distance(to_address(Lii.non_zero_indices2_data()),ci);
 
   // ignoring factor of 0.5 to keep it consistent with the old code for now
   while( ci!=ci_end ) {
@@ -280,16 +280,16 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
   using std::size_t;
   assert(c1>=c0);
   if(c0==c1) return;
-  auto ci = std::lower_bound( std::addressof(*Lii.non_zero_indices2_data()),
-                              std::addressof(*(Lii.non_zero_indices2_data()
+  auto ci = std::lower_bound( to_address(Lii.non_zero_indices2_data()),
+                              to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                               c0/2);
   auto ci_end = std::lower_bound( ci,
-                                  std::addressof(*(Lii.non_zero_indices2_data()
+                                  to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                                   (c1+1)/2);
-  auto vi = std::addressof(*Lii.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lii.non_zero_indices2_data()),ci);
+  auto vi = to_address(Lii.non_zero_values_data()) +
+                    std::distance(to_address(Lii.non_zero_indices2_data()),ci);
 
   int c_origin = vn.global_origin()[1];
   ComplexType im(0.0,1.0);
@@ -320,27 +320,27 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
   using std::size_t;
   assert(c1>=c0);
   if(c0==c1) return;
-  auto cik = std::lower_bound( std::addressof(*Lik.non_zero_indices2_data()),
-                               std::addressof(*(Lik.non_zero_indices2_data()
+  auto cik = std::lower_bound( to_address(Lik.non_zero_indices2_data()),
+                               to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                c0/2);
   auto cik_end = std::lower_bound( cik,
-                                   std::addressof(*(Lik.non_zero_indices2_data()
+                                   to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                    (c1+1)/2);
-  auto vik = std::addressof(*Lik.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lik.non_zero_indices2_data()),cik);
+  auto vik = to_address(Lik.non_zero_values_data()) +
+                    std::distance(to_address(Lik.non_zero_indices2_data()),cik);
 
-  auto cki = std::lower_bound( std::addressof(*Lki.non_zero_indices2_data()),
-                               std::addressof(*(Lki.non_zero_indices2_data()
+  auto cki = std::lower_bound( to_address(Lki.non_zero_indices2_data()),
+                               to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                c0/2);
   auto cki_end = std::lower_bound( cki,
-                                   std::addressof(*(Lki.non_zero_indices2_data()
+                                   to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                    (c1+1)/2);
-  auto vki = std::addressof(*Lki.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lki.non_zero_indices2_data()),cki);
+  auto vki = to_address(Lki.non_zero_values_data()) +
+                    std::distance(to_address(Lki.non_zero_indices2_data()),cki);
 
   ComplexType im(0.0,1.0);
   int c_origin = vn.global_origin()[1];

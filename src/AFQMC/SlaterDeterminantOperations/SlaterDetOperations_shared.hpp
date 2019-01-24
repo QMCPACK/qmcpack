@@ -92,8 +92,8 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       int NAEA = hermA.size(0);
       set_shm_buffer(comm,NAEA*(NAEA+NMO));
       assert(SM_TMats->num_elements() >= NAEA*(NAEA+NMO));
-      boost::multi::array_ref<T,2> TNN(std::addressof(*SM_TMats->origin()), {NAEA,NAEA});
-      boost::multi::array_ref<T,2> TNM(std::addressof(*SM_TMats->origin())+NAEA*NAEA, {NAEA,NMO});  
+      boost::multi::array_ref<T,2> TNN(to_address(SM_TMats->origin()), {NAEA,NAEA});
+      boost::multi::array_ref<T,2> TNM(to_address(SM_TMats->origin())+NAEA*NAEA, {NAEA,NMO});  
       SlaterDeterminantOperations::shm::MixedDensityMatrix<T>(hermA,B,std::forward<MatC>(C),res,TNN,TNM,IWORK,WORK,comm,compact);
     }
 
@@ -110,11 +110,11 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       set_shm_buffer(comm,NEL*(NEL+Nact+NMO));
       assert(SM_TMats->num_elements() >= NEL*(NEL+Nact+NMO));
       size_t cnt=0;
-      boost::multi::array_ref<T,2> TNN(std::addressof(*SM_TMats->origin()), {NEL,NEL});
+      boost::multi::array_ref<T,2> TNN(to_address(SM_TMats->origin()), {NEL,NEL});
       cnt+=TNN.num_elements();
-      boost::multi::array_ref<T,2> TAB(std::addressof(*SM_TMats->origin())+cnt, {Nact,NEL});
+      boost::multi::array_ref<T,2> TAB(to_address(SM_TMats->origin())+cnt, {Nact,NEL});
       cnt+=TAB.num_elements();
-      boost::multi::array_ref<T,2> TNM(std::addressof(*SM_TMats->origin())+cnt, {NEL,NMO});
+      boost::multi::array_ref<T,2> TNM(to_address(SM_TMats->origin())+cnt, {NEL,NMO});
       SlaterDeterminantOperations::shm::MixedDensityMatrixForWoodbury<T>(hermA,B,std::forward<MatC>(C),res,std::forward<MatQ>(QQ0),ref,TNN,TAB,TNM,IWORK,WORK,comm,compact);
     }
 
@@ -123,8 +123,8 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       int NAEA = hermA.size(0);
       set_shm_buffer(comm,2*NAEA*NAEA);
       assert(SM_TMats->num_elements() >= 2*NAEA*NAEA);
-      boost::multi::array_ref<T,2> TNN(std::addressof(*SM_TMats->origin()), {NAEA,NAEA});
-      boost::multi::array_ref<T,2> TNN2(std::addressof(*SM_TMats->origin())+NAEA*NAEA, {NAEA,NAEA});
+      boost::multi::array_ref<T,2> TNN(to_address(SM_TMats->origin()), {NAEA,NAEA});
+      boost::multi::array_ref<T,2> TNN2(to_address(SM_TMats->origin())+NAEA*NAEA, {NAEA,NAEA});
       SlaterDeterminantOperations::shm::Overlap<T>(hermA,B,res,TNN,IWORK,TNN2,comm);
     }
 
@@ -139,8 +139,8 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       assert(TMat_MM.num_elements() >= Nact*NEL);
       set_shm_buffer(comm,NEL*(Nact+NEL));
       assert(SM_TMats->num_elements() >= NEL*(Nact+NEL));
-      boost::multi::array_ref<T,2> TNN(std::addressof(*std::addressof(*SM_TMats->origin())), {NEL,NEL});
-      boost::multi::array_ref<T,2> TMN(std::addressof(*(std::addressof(*SM_TMats->origin())+NEL*NEL)), {Nact,NEL});
+      boost::multi::array_ref<T,2> TNN(to_address(to_address(SM_TMats->origin())), {NEL,NEL});
+      boost::multi::array_ref<T,2> TMN(to_address((to_address(SM_TMats->origin())+NEL*NEL)), {Nact,NEL});
       SlaterDeterminantOperations::shm::OverlapForWoodbury<T>(hermA,B,res,std::forward<MatC>(QQ0),ref,TNN,TMN,IWORK,WORK,comm);
     }
 
@@ -150,9 +150,9 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       int NAEA = A.size(1);
       set_shm_buffer(comm,3*NAEA*NMO);
       assert(SM_TMats->num_elements() >= 3*NAEA*NAEA);
-      boost::multi::array_ref<T,2> T0(std::addressof(*SM_TMats->origin()), {NMO,NAEA});
-      boost::multi::array_ref<T,2> T1(std::addressof(*SM_TMats->origin())+NMO*NAEA, {NMO,NAEA});
-      boost::multi::array_ref<T,2> T2(std::addressof(*SM_TMats->origin())+2*NMO*NAEA, {NMO,NAEA});
+      boost::multi::array_ref<T,2> T0(to_address(SM_TMats->origin()), {NMO,NAEA});
+      boost::multi::array_ref<T,2> T1(to_address(SM_TMats->origin())+NMO*NAEA, {NMO,NAEA});
+      boost::multi::array_ref<T,2> T2(to_address(SM_TMats->origin())+2*NMO*NAEA, {NMO,NAEA});
       if(comm.root()) 
         ma::product(P1,std::forward<Mat>(A),T0);
       comm.barrier();

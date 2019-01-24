@@ -498,7 +498,7 @@ const char *wlk_xml_block_noncol =
         std::copy_n(X.origin(),X.num_elements(),T.origin());
       else
         std::fill_n(T.origin(),T.num_elements(),ComplexType(0.0,0.0));
-      TGwfn.TG().all_reduce_in_place_n(std::addressof(*T.origin()),T.num_elements(),std::plus<>());
+      TGwfn.TG().all_reduce_in_place_n(to_address(T.origin()),T.num_elements(),std::plus<>());
       if(TGwfn.TG_local().root())
         std::copy_n(T.origin(),T.num_elements(),X.origin());
       TGwfn.TG_local().barrier();
@@ -581,7 +581,7 @@ const char *wlk_xml_block_noncol =
     wfn2.MixedDensityMatrix_for_vbias(wset2,G);
 
     nCV = wfn2.local_number_of_cholesky_vectors();
-    boost::multi::array_ref<ComplexType,2> X2(std::addressof(*X.origin()),{nCV,nwalk});
+    boost::multi::array_ref<ComplexType,2> X2(to_address(X.origin()),{nCV,nwalk});
     wfn2.vbias(G,X2,sqrtdt);
     Xsum=0;
     if(std::abs(file_data.Xsum)>1e-8) {
@@ -610,7 +610,7 @@ const char *wlk_xml_block_noncol =
         std::copy_n(X2.origin(),X2.num_elements(),T.origin());
       else
         std::fill_n(T.origin(),T.num_elements(),ComplexType(0.0,0.0));
-      TGwfn.TG().all_reduce_in_place_n(std::addressof(*T.origin()),T.num_elements(),std::plus<>());
+      TGwfn.TG().all_reduce_in_place_n(to_address(T.origin()),T.num_elements(),std::plus<>());
       if(TGwfn.TG_local().root())
         std::copy_n(T.origin(),T.num_elements(),X.origin());
       TGwfn.TG_local().barrier();
@@ -1196,7 +1196,7 @@ else
                    <<std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;
        }
 */
-      boost::multi::array_ref<ComplexType,2> X2(std::addressof(*X.origin())+nCV*nwalk,{nCV,nwalk});
+      boost::multi::array_ref<ComplexType,2> X2(to_address(X.origin())+nCV*nwalk,{nCV,nwalk});
       nomsd.vbias(G_,X2,sqrtdt);
       Xsum=0;
       ComplexType Xsum2(0.0);

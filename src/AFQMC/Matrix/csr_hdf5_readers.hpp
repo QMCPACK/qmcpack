@@ -162,7 +162,7 @@ inline void CSR2HDF(hdf_archive& dump, SparseArray2D const& SpM)
     size_type cnt=0;
     for(size_type i = 0; i<nrows; i++) {
         size_type nt = SpM.num_non_zero_elements(i); 
-        std::copy_n( std::addressof(*SpM.non_zero_values_data(i)), nt, data.data() + cnt ); 
+        std::copy_n( to_address(SpM.non_zero_values_data(i)), nt, data.data() + cnt ); 
         cnt+=nt;
     }    
     dump.write(data,"data_"); 
@@ -172,7 +172,7 @@ inline void CSR2HDF(hdf_archive& dump, SparseArray2D const& SpM)
     size_type cnt=0;
     for(size_type i = 0; i<nrows; i++) {
         size_type nt = SpM.num_non_zero_elements(i); 
-        std::copy_n( std::addressof(*SpM.non_zero_indices2_data(i)), nt, jdata.data() + cnt ); 
+        std::copy_n( to_address(SpM.non_zero_indices2_data(i)), nt, jdata.data() + cnt ); 
         cnt+=nt;
     }
     dump.write(jdata,"jdata_");

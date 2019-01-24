@@ -123,8 +123,8 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
   // add reference contribution!!!
   if(rank==0){
     ComplexType w(0.0);
-    auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(0));
-    auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(0));
+    auto it = to_address(couplings.values()) + (*couplings.pointers_begin(0));
+    auto ite = to_address(couplings.values()) + (*couplings.pointers_end(0));
     if(spin==0)
       for(; it<ite; ++it)
         w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
@@ -160,8 +160,8 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
           ov_a = ma::invert(Q,IWORK,WORK);
         }
         ComplexType w(0.0);
-        auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(nd));  
-        auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(nd));  
+        auto it = to_address(couplings.values()) + (*couplings.pointers_begin(nd));  
+        auto ite = to_address(couplings.values()) + (*couplings.pointers_end(nd));  
         if(spin==0) 
           for(; it<ite; ++it) 
             w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
@@ -217,8 +217,8 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
   // add reference contribution!!!
   if(rank==0){
     ComplexType w(0.0);
-    auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(0));
-    auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(0));
+    auto it = to_address(couplings.values()) + (*couplings.pointers_begin(0));
+    auto ite = to_address(couplings.values()) + (*couplings.pointers_end(0));
     if(spin==0)
       for(; it<ite; ++it)
         w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
@@ -254,8 +254,8 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
           ov_a = ma::invert(Q,IWORK,WORK);
         }
         ComplexType w(0.0);
-        auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(nd));
-        auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(nd));
+        auto it = to_address(couplings.values()) + (*couplings.pointers_begin(nd));
+        auto ite = to_address(couplings.values()) + (*couplings.pointers_end(nd));
         if(spin==0)
           for(; it<ite; ++it)
             w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];

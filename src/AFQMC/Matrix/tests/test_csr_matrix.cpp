@@ -267,42 +267,34 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 {
                   using dev_csr_matrix = ma::sparse::csr_matrix<Type,IndxType,IntType,
                                                               qmc_cuda::cuda_gpu_allocator<Type>>;
-std::cout<<" test 0 " <<std::endl; std::cout.flush();
                   dev_csr_matrix small11(small4);
-std::cout<<" test 1 " <<std::endl; std::cout.flush();
                   REQUIRE(small11.num_non_zero_elements() == 4);
-std::cout<<" test 2 " <<std::endl; std::cout.flush();
-/*
-                  val = small11.non_zero_values_data();
-                  col = small11.non_zero_indices2_data();
+                  auto val_ = small11.non_zero_values_data();
+                  auto col_ = small11.non_zero_indices2_data();
                   itv = v_.begin();
                   itc = c_.begin();
                   for(std::size_t i=0; i<small11.size(0); i++) {
-                    for(auto it=small11.pointers_begin()[i]; it!=small11.pointers_end()[i]; it++) {
-                      REQUIRE(val[it] == *(itv++));
-                      REQUIRE(col[it] == *(itc++));
+                    for(IntType it=small11.pointers_begin()[i]; it!=small11.pointers_end()[i]; it++) {
+                      REQUIRE(Type(val_[it]) == *(itv++));
+                      REQUIRE(col_[it] == *(itc++));
                     }
                   }
-*/
 
                 // this is not a move! just making sure it makes a copy, otherwise 
                 // it will fail below
                   dev_csr_matrix small12(std::move(small4));
                   REQUIRE(small12.num_non_zero_elements() == 4);
-/*
-                  val = small12.non_zero_values_data();
-                  col = small12.non_zero_indices2_data();
+                  val_ = small12.non_zero_values_data();
+                  col_ = small12.non_zero_indices2_data();
                   itv = v_.begin();
                   itc = c_.begin();
                   for(std::size_t i=0; i<small12.size(0); i++) {
-                    for(auto it=small12.pointers_begin()[i]; it!=small12.pointers_end()[i]; it++) {
-                      REQUIRE(val[it] == *(itv++));
-                      REQUIRE(col[it] == *(itc++));
+                    for(IntType it=small12.pointers_begin()[i]; it!=small12.pointers_end()[i]; it++) {
+                      REQUIRE(val_[it] == *(itv++));
+                      REQUIRE(col_[it] == *(itc++));
                     }
                   }
-*/
                 }
-std::cout<<" test 3 " <<std::endl; std::cout.flush();
 #endif
 
                 ucsr_matrix small5(tp_ul_ul{4,4}, tp_ul_ul{0,0}, non_zero_per_row, A);
