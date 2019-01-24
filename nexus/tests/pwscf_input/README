@@ -1,0 +1,14 @@
+
+summary of sample_inputs
+  Fe_start_ns_eig.in      https://lists.quantum-espresso.org/pipermail/users/2011-March/019627.html
+  Ni_surface.in           https://lists.quantum-espresso.org/pipermail/users/2015-March/031924.html
+  LiI_vc_relax.in         https://lists.quantum-espresso.org/pipermail/users/2017-October/039428.html
+  Cr_noncolin.in          https://lists.quantum-espresso.org/pipermail/users/2013-June/027459.html
+  TiO2_relax_freeze.in    http://lists.quantum-espresso.org/pipermail/users/2018-February/040428.html
+  WSe2_band_structure.in  http://lists.quantum-espresso.org/pipermail/users/2017-March/037611.html
+  TiO2_band_structure.in  https://lists.quantum-espresso.org/pipermail/users/2011-February/019373.html
+  VO2_M1_afm.in           https://doi.org/10.1103/PhysRevMaterials.1.065408
+
+summary of sample_structures
+  VO2_M1_afm.xsf  https://doi.org/10.1103/PhysRevMaterials.1.065408
+

@@ -324,6 +324,15 @@ MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
                        e.g. "-n", "-np", etc.
 \end{verbatim}
 
+\item LLVM/Clang Developer Options\\
+  \verbatimfont{\footnotesize}%
+
+\begin{minipage}{\textwidth}
+\verb|LLVM_SANITIZE_ADDRESS   |  link with the \href{https://clang.llvm.org/docs/AddressSanitizer.html}{Clang address sanitizer library}\\
+\verb|LLVM_SANITIZE_MEMORY    |  link with the \href{https://clang.llvm.org/docs/MemorySanitizer.html}{Clang memory sanitizer library}\\
+\end{minipage}
+
+See docs in section \ref{tool:LLVM-Sanitizer-Libraries} for more information.
 \end{itemize}
 
 \subsection{Installation from CMake}
