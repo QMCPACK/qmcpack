@@ -84,6 +84,7 @@
 #define zheevr zheevr_
 #define ssyevr ssyevr_
 #define cheevr cheevr_
+#define cheev cheev_
 #define zhegvx zhegvx_
 #define zgeqrf zgeqrf_
 #define zungqr zungqr_

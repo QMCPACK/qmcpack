@@ -549,12 +549,12 @@ namespace qmcplusplus
   // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
   void LCAOrbitalSet::exponentiate_antisym_matrix(const int n, RealType * const mat)
   {
-    std::vector<std::complex<double> > mat_h(n*n, 0);
-    std::vector<double> eval(n, 0);
-    std::vector<std::complex<double> > work(2*n, 0);
-    std::vector<double> rwork(3*n, 0);
-    std::vector<std::complex<double> > mat_d(n*n, 0);
-    std::vector<std::complex<double> > mat_t(n*n, 0);
+    std::vector<std::complex<RealType> > mat_h(n*n, 0);
+    std::vector<RealType> eval(n, 0);
+    std::vector<std::complex<RealType> > work(2*n, 0);
+    std::vector<RealType> rwork(3*n, 0);
+    std::vector<std::complex<RealType> > mat_d(n*n, 0);
+    std::vector<std::complex<RealType> > mat_t(n*n, 0);
     // exponentiating e^X = e^iY (Y hermitian)
     // i(-iX) = X, so -iX is hermitian
     // diagonalize -iX = UDU^T, exponentiate e^iD, and return U e^iD U^T
@@ -563,8 +563,8 @@ namespace qmcplusplus
     {
       for(int j = i; j < n; ++j)
       {
-        mat_h[i+n*j] = std::complex<double>(0,-1.0*mat[i+n*j]);
-        mat_h[j+n*i] = std::complex<double>(0,1.0*mat[i+n*j]);
+        mat_h[i+n*j] = std::complex<RealType>(0,-1.0*mat[i+n*j]);
+        mat_h[j+n*i] = std::complex<RealType>(0,1.0*mat[i+n*j]);
       }
     }
     // diagonalize the matrix 
@@ -587,13 +587,13 @@ namespace qmcplusplus
     {
       for(int j = 0; j < n; ++j)
       {
-        mat_d[i + j*n] = (i==j) ? std::exp( std::complex<double>(0.0,eval[i])) : std::complex<double>(0.0,0.0);
+        mat_d[i + j*n] = (i==j) ? std::exp( std::complex<RealType>(0.0,eval[i])) : std::complex<RealType>(0.0,0.0);
       }
     }
     // perform matrix multiplication 
     // assume row major
-    BLAS::gemm('N','C', n, n, n, std::complex<double>(1.0,0), &mat_d.at(0), n, &mat_h.at(0), n, std::complex<double>(0.0, 0.0), &mat_t.at(0), n);
-    BLAS::gemm('N','N', n, n, n, std::complex<double>(1.0,0), &mat_h.at(0), n, &mat_t.at(0), n, std::complex<double>(0.0, 0.0), &mat_d.at(0), n);
+    BLAS::gemm('N','C', n, n, n, std::complex<RealType>(1.0,0), &mat_d.at(0), n, &mat_h.at(0), n, std::complex<RealType>(0.0, 0.0), &mat_t.at(0), n);
+    BLAS::gemm('N','N', n, n, n, std::complex<RealType>(1.0,0), &mat_h.at(0), n, &mat_t.at(0), n, std::complex<RealType>(0.0, 0.0), &mat_d.at(0), n);
     for(int i = 0; i < n; ++i)
       for(int j = 0; j < n; ++j)
       {
@@ -802,16 +802,16 @@ $
   const int offset2  (N2);   
   const int NPother  (NP2);
 
-  double* T(Table.data());
+  RealType* T(Table.data());
 
 	//possibly replace wit BLAS calls 
   for(int i=0; i<nel; i++)
     for(int j=0; j<nmo; j++)
       Bbar(i,j) = B_lapl(i,j) + 2*dot(myG_J[i+offset1], B_grad(i,j)) + myL_J[i+offset1]*M_up(i,j);
 
-  const double* restrict B(Bbar.data());
-  const double* restrict A(M_up.data());
-  const double* restrict Ainv(Minv_up.data());
+  const RealType* restrict B(Bbar.data());
+  const RealType* restrict A(M_up.data());
+  const RealType* restrict Ainv(Minv_up.data());
   //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
   // The T matrix should be calculated and stored for use      
   // T = A^{-1} \widetilde A
