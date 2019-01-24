@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -16,12 +16,11 @@
 #ifndef QMCPLUSPLUS_SIMD_ALGORITHM_HPP
 #define QMCPLUSPLUS_SIMD_ALGORITHM_HPP
 
-namespace qmcplusplus {
-
-  namespace simd 
-  {
-
-    /** simd version of copy_n( InputIt first, Size count, OutputIt result)
+namespace qmcplusplus
+{
+namespace simd
+{
+/** simd version of copy_n( InputIt first, Size count, OutputIt result)
      * @param first starting address of the input
      * @param count number of elements to copy
      * @param result starting address of the output
@@ -31,33 +30,41 @@ namespace qmcplusplus {
      * What is in those bytes is undefined.  So if your result isn't aligned_alloc and 
      * doesn't get a matching element count from somewhere you are going to have garbage in result.
      */
-    template<typename T1, typename T2>
-    inline void copy_n(const T1* restrict first, size_t count, T2* restrict result) 
-      {
-//#pragma omp simd
-
-	//If anything is going to emit SIMD instructions
-	//std::memcpy should
-	std::memcpy(result, first, count * sizeof(T1));
-      }
-
-    template<typename T1, typename T2>
-    inline T2 accumulate_n(const T1* restrict in, size_t n, T2 res)
-      {
-#pragma omp simd reduction(+:res)
-        for(int i=0; i<n; ++i)
-          res += in[i];
-        return res;
-      }
-
-    ///inner product
-    template<typename T1, typename T2, typename T3>
-      inline T3 inner_product_n(const T1* restrict a, const T2* restrict b, int n, T3 res)
-      {
-        for(int i=0; i<n; ++i) res += a[i]*b[i];
-        return res;
-      }
-
-  } //simd namepsace
+template<typename T1, typename T2, typename std::enable_if<std::is_same<T1, T2>::value>::type* = nullptr>
+void copy_n(const T1* restrict first, size_t count, T2* restrict result)
+{
+  //If anything is going to emit SIMD instructions
+  //std::memcpy should
+  std::memcpy(result, first, count * sizeof(T1));
 }
+
+/** specialization for when simd::copy_n gets called with mixed types
+ */
+template<typename T1, typename T2, typename std::enable_if<!std::is_same<T1, T2>::value>::type* = nullptr>
+void copy_n(const T1* restrict first, size_t count, T2* restrict result)
+{
+  std::copy_n(first, count, result);
+}
+
+
+template<typename T1, typename T2>
+inline T2 accumulate_n(const T1* restrict in, size_t n, T2 res)
+{
+#pragma omp simd reduction(+ : res)
+  for (int i = 0; i < n; ++i)
+    res += in[i];
+  return res;
+}
+
+///inner product
+template<typename T1, typename T2, typename T3>
+inline T3 inner_product_n(const T1* restrict a, const T2* restrict b, int n, T3 res)
+{
+  for (int i = 0; i < n; ++i)
+    res += a[i] * b[i];
+  return res;
+}
+
+} // namespace simd
+} // namespace qmcplusplus
 #endif
