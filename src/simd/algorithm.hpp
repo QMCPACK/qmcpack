@@ -32,7 +32,7 @@ namespace qmcplusplus {
      * doesn't get a matching element count from somewhere you are going to have garbage in result.
      */
     template<typename T1, typename T2>
-    __attribute__((no_sanitize_address)) inline void copy_n(const T1* restrict first, size_t count, T2* restrict result) 
+    inline void copy_n(const T1* restrict first, size_t count, T2* restrict result) 
       {
 //#pragma omp simd
 
