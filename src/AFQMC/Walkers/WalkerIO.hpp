@@ -263,6 +263,7 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, std::string hdf_read_restar
   }
   TG.global_barrier();
 
+  read.close();
   return true;
 
 }
