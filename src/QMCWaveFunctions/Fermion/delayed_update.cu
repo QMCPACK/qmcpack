@@ -713,7 +713,7 @@ update_onemove (T **buff,
     T rejval=0.0;
     // need to setup lemmainv when it's not
     if(k==0) // in other words, k=0 => i=0, k1=1, ik1=0, kk1=0
-      my_lemmainv[0] = 1.0/my_lemma[0];
+      my_lemmainv[0] = ((T)(1.0))/my_lemma[0];
 #pragma unroll
     for (int j=0; j<=k; j++)
     {
