@@ -47,7 +47,7 @@ namespace qmcplusplus
 
     inline void evaluate(const T r, T* restrict vals)
     {
-      size_t nr=AOs.num_splines;
+      size_t nr=AOs.getNumSplines();
       T phi[nr];
       AOs.evaluate(r,phi);
       for(size_t i=0; i<nr; ++i)
@@ -57,7 +57,7 @@ namespace qmcplusplus
     inline void evaluate_vgl(const T r, const PosType& dr, T* restrict u, T* restrict du_x,
                              T* restrict du_y, T* restrict du_z, T* restrict d2u)
     {
-      size_t nr=AOs.num_splines;
+      size_t nr=AOs.getNumSplines();
       T phi[nr];
       T dphi[nr];
       T d2phi[nr];

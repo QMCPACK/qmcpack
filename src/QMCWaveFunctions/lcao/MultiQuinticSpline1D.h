@@ -21,6 +21,8 @@
 #ifndef QMCPLUSPLUS_MULTI_FUNCTOR_QUINTIC_SPLINE_SET_H
 #define QMCPLUSPLUS_MULTI_FUNCTOR_QUINTIC_SPLINE_SET_H
 
+#include <algorithm>
+
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/NRSplineFunctions.h"
@@ -59,9 +61,10 @@ namespace qmcplusplus
       inline int locate(T r) const
       {
         int loc=static_cast<int>(std::log(r/lower_bound)*OneOverLogDelta);
-	if(loc == r_values.size())
-	  loc = rvalues.size() - 1
-        return loc;
+	// if(loc >= r_values.size())
+	//   loc = r_values.size() - 1;
+	return std::min(static_cast<unsigned long>(loc), r_values.size() - 1);
+	//return loc;
       }
 
       inline T operator()(int i)
@@ -74,23 +77,25 @@ namespace qmcplusplus
       inline T getCLForQuintic(T r, int& loc) const
       {
         loc=locate(r);
-	//return r-static_cast<T>(lower_bound*std::exp(loc*LogDelta));
-        //return r-lower_bound*std::exp(loc*LogDelta);
         return r-r_values[loc];
       }
+
+      inline int size() { return r_values.size(); }
     };
 
   /** multivalue implementation for OneDimQuintic
    */
 template<typename T>
-struct MultiQuinticSpline1D
+class MultiQuinticSpline1D
 {
+public:
   typedef T value_type;
   typedef OneDimGridBase<T> grid_type;
   typedef Matrix<value_type, aligned_allocator<value_type> > coeff_type;
 
+private:
   ///number of splines
-  size_t num_splines;
+  size_t num_splines_;
   ///order of spline
   size_t spline_order;
   ///default is false
@@ -108,6 +113,7 @@ struct MultiQuinticSpline1D
   coeff_type* Coeffs;
   aligned_vector<value_type> first_deriv;
 
+public:
   MultiQuinticSpline1D():own_spline(false),Coeffs(nullptr){}
 
   MultiQuinticSpline1D(const MultiQuinticSpline1D& in)=default;
@@ -130,17 +136,15 @@ struct MultiQuinticSpline1D
     {
       const value_type dr=r-myGrid.lower_bound;
       const value_type* restrict a=(*Coeffs)[0];
-      for(size_t i=0; i<num_splines; ++i)
+      for(size_t i=0; i<num_splines_; ++i)
         u[i]=a[i]+first_deriv[i]*dr;
     }
-#if 0
     else if(r>=r_max)
     {
-      constexpr T czero(0);
-      for(size_t i=0; i<num_splines; ++i)
-        u[i]=czero;
+      // std::cout << "MultiQuinticSpline1D r>=r_max " << r << " >= "
+      // 		<< r_max << '\n';
+      assignLimitValues(u);
     }
-#endif
     else
     {
       int loc;
@@ -154,12 +158,23 @@ struct MultiQuinticSpline1D
       const value_type* restrict d=(*Coeffs)[offset+3];
       const value_type* restrict e=(*Coeffs)[offset+4];
       const value_type* restrict f=(*Coeffs)[offset+5];
-      for(size_t i=0; i<num_splines; ++i)
+      for(size_t i=0; i<num_splines_; ++i)
         u[i]=a[i]+cL*(b[i]+cL*(c[i]+cL*(d[i]+cL*(e[i]+cL*f[i]))));
     }
   }
 
-  inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u) 
+  /** Approximation of getting the asymtotic constant spline values
+   */ 
+  inline void assignLimitValues(T* u)
+  {
+    int loc = myGrid.size() - 1;
+    const size_t offset=loc*6;
+    const value_type* restrict a=(*Coeffs)[offset+0];
+    for(size_t i=0; i<num_splines_; ++i)
+      u[i]=a[i];
+  }
+
+  inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u)
   {
     constexpr value_type czero(0);
 
@@ -167,25 +182,27 @@ struct MultiQuinticSpline1D
     {
       const value_type dr=r-myGrid.lower_bound;
       const value_type* restrict a=(*Coeffs)[0];
-      for(size_t i=0; i<num_splines; ++i)
+      for(size_t i=0; i<num_splines_; ++i)
       {
         u[i]=a[i]+first_deriv[i]*dr;
         du[i]=first_deriv[i];
         d2u[i]=czero;
       }
     }
-#if 0
     //should never come to this
+    //be that as it may frequently it does by 10^[-2,-4]
+    //For lcao cases r_max 
     else if(r>=r_max)
     {
-      for(size_t i=0; i<num_splines; ++i)
+      // std::cout << "MultiQuinticSpline1D r>=r_max " << r << " >= "
+      // 		<< r_max << '\n';
+      assignLimitValues(u);
+      for(size_t i=0; i<num_splines_; ++i)
       {
-        u[i]=czero;
         du[i]=czero;
-        du[i]=czero;
+        d2u[i]=czero;
       }
     }
-#endif
     else
     {
       int loc;
@@ -207,7 +224,7 @@ struct MultiQuinticSpline1D
       const value_type* restrict e=(*Coeffs)[offset+4];
       const value_type* restrict f=(*Coeffs)[offset+5];
 
-      for(size_t i=0; i<num_splines; ++i)
+      for(size_t i=0; i<num_splines_; ++i)
       {
         u[i]  = a[i]+cL*(b[i]+cL*(c[i]+cL*(d[i]+cL*(e[i]+cL*f[i]))));
         du[i] = b[i]+cL*(ctwo*c[i]+cL*(cthree*d[i]+cL*(cfour*e[i]+cL*f[i]*cfive)));
@@ -225,12 +242,24 @@ struct MultiQuinticSpline1D
     {
       const value_type dr=r-myGrid.lower_bound;
       const value_type* restrict a=(*Coeffs)[0];
-      for(size_t i=0; i<num_splines; ++i)
+      for(size_t i=0; i<num_splines_; ++i)
       {
         u[i]=a[i]+first_deriv[i]*dr;
         du[i]=first_deriv[i];
         d2u[i]=czero;
         d3u[i]=czero;
+      }
+    }
+    else if (r>=r_max)
+    {
+      // std::cout << "MultiQuinticSpline1D r>=r_max " << r << " >= "
+      // 		<< r_max << '\n';
+      assignLimitValues(u);
+      for(size_t i=0; i<num_splines_; ++i)
+      {
+	du[i]=czero;
+	d2u[i]=czero;
+	d3u[i]=czero;
       }
     }
     else
@@ -256,7 +285,7 @@ struct MultiQuinticSpline1D
       const value_type* restrict e=(*Coeffs)[offset+4];
       const value_type* restrict f=(*Coeffs)[offset+5];
 
-      for(size_t i=0; i<num_splines; ++i)
+      for(size_t i=0; i<num_splines_; ++i)
       {
         u[i]  = a[i]+cL*(b[i]+cL*(c[i]+cL*(d[i]+cL*(e[i]+cL*f[i]))));
         du[i] = b[i]+cL*(ctwo*c[i]+cL*(cthree*d[i]+cL*(cfour*e[i]+cL*f[i]*cfive)));
@@ -281,9 +310,9 @@ struct MultiQuinticSpline1D
     if(Coeffs==nullptr && !own_spline)
     {
       spline_order=order;
-      num_splines=norbs;
+      num_splines_=norbs;
       Coeffs=new coeff_type((order+1)*agrid->size(),getAlignedSize<T>(norbs));
-      first_deriv.resize(num_splines);
+      first_deriv.resize(num_splines_);
       own_spline=true;
     }
   }
@@ -314,6 +343,9 @@ struct MultiQuinticSpline1D
       }
     }
   }
+
+  int getNumSplines() const { return num_splines_; }
+  void setNumSplines(int num_splines) { num_splines_ = num_splines; }
 };
 
 
