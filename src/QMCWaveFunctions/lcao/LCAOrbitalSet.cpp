@@ -93,7 +93,7 @@ namespace qmcplusplus
   inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
       ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) const
   {
-    simd::copy_n(temp.data(0),OrbitalSetSize,psi.data());
+    std::copy_n(temp.data(0),OrbitalSetSize,psi.data());
     const ValueType* restrict gx=temp.data(1);
     const ValueType* restrict gy=temp.data(2);
     const ValueType* restrict gz=temp.data(3);
@@ -103,7 +103,7 @@ namespace qmcplusplus
       dpsi[j][1]=gy[j];
       dpsi[j][2]=gz[j];
     }
-    simd::copy_n(temp.data(4),OrbitalSetSize,d2psi.data());
+    std::copy_n(temp.data(4),OrbitalSetSize,d2psi.data());
   }
 
   void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat,
@@ -150,7 +150,7 @@ namespace qmcplusplus
   inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp, int i,
       ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) const
   {
-    simd::copy_n(temp.data(0),OrbitalSetSize,logdet[i]);
+    std::copy_n(temp.data(0),OrbitalSetSize,logdet[i]);
     const ValueType* restrict gx=temp.data(1);
     const ValueType* restrict gy=temp.data(2);
     const ValueType* restrict gz=temp.data(3);
@@ -160,7 +160,7 @@ namespace qmcplusplus
       dlogdet[i][j][1]=gy[j];
       dlogdet[i][j][2]=gz[j];
     }
-    simd::copy_n(temp.data(4),OrbitalSetSize,d2logdet[i]);
+    std::copy_n(temp.data(4),OrbitalSetSize,d2logdet[i]);
   }
 
   void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
