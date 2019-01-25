@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant_help.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantCalculator.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
 //#include "Numerics/OhmmsBlas.h"
@@ -430,11 +430,11 @@ public:
   std::vector<int>* detData;
   std::vector<std::pair<int,int> >* uniquePairs;
   std::vector<RealType>* DetSigns;
-  MyDeterminant<ValueType> DetCalculator;
+  MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 
 };
 
-//  #include "MultiDiracDeterminant_help.h"
+
 
 }
 #endif

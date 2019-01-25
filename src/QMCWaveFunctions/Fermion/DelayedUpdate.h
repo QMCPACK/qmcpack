@@ -89,7 +89,7 @@ namespace qmcplusplus {
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
         // save AinvRow to new_AinvRow
-        simd::copy_n(AinvRow, norb, V[delay_count]);
+        std::copy_n(AinvRow, norb, V[delay_count]);
         // multiply V (NxK) Binv(KxK) U(KxN) AinvRow right to the left
         BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, AinvRow, 1, czero, p.data(), 1);
         BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
@@ -159,8 +159,8 @@ namespace qmcplusplus {
         const T czero(0);
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
-        simd::copy_n(Ainv[rowchanged], norb, V[delay_count]);
-        simd::copy_n(psiV.data(), norb, U[delay_count]);
+        std::copy_n(Ainv[rowchanged], norb, V[delay_count]);
+        std::copy_n(psiV.data(), norb, U[delay_count]);
         delay_list[delay_count] = rowchanged;
         // the new Binv is [[X Y] [Z x]]
         BLAS::gemv('T', norb, delay_count+1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);

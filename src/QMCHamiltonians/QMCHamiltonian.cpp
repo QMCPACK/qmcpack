@@ -466,7 +466,10 @@ QMCHamiltonian::evaluate(ParticleSet& P)
   for(int i=0; i<H.size(); ++i)
   {
     myTimers[i]->start();
-    LocalEnergy += H[i]->evaluate(P);
+    const auto LocalEnergyComponent = H[i]->evaluate(P);
+    if(std::isnan(LocalEnergyComponent))
+      APP_ABORT("QMCHamiltonian::evaluate component " + H[i]->myName + " returns NaN\n");
+    LocalEnergy += LocalEnergyComponent;
     H[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
     H[i]->collect_scalar_traces();
