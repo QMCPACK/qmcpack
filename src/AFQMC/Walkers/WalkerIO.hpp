@@ -428,7 +428,7 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
         }
       }
 
-      TG.Global().gatherv_n(SendBuff.origin(), SendBuff.num_elements(), RecvBuff.origin(), counts.data(), displ.data(), 0);
+      TG.TG_heads().gatherv_n(SendBuff.origin(), SendBuff.num_elements(), RecvBuff.origin(), counts.data(), displ.data(), 0);
       nsent += nw_to_send;
 
       if(TG.TG_heads().root()) {
