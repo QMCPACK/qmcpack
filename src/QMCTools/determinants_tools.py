@@ -1,0 +1,171 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+from functools import partial
+
+# A detspin is a list of integer who represent the alpha or beta part of determinat
+# A determinant is a pair of detspin alpha and detspin beta
+# A CSF is represented as a pair of list of integer codding respectively for the double and single occupied state.
+
+# A bitmasks is a `n_state` length binary representation of a list of integers encoded in `bit_kind_size` bits.
+#   Note that this representation is 'reversed'. This allow the first bit to represent the first orbital, and so on.
+#   For performance raison and conveniance, if `n_state` < `bit_kind_size` * `n_integer`,
+#      we assume that the bits coding for excessive state of the last integer are set to 0.
+#      To be clearer, if we have `n_state` = 1 with one alpha electron and `bit_kind_size` = 64
+#      the only valid integer representation of this determinants is ( (1,), (0,) )
+
+# Assume that each interger are unsigned. is not they should be converte before using the sanitize function.
+
+from collections import namedtuple
+Determinants = namedtuple('Determinants', ['alpha', 'beta'])
+CSF = namedtuple('CSF', ['double', 'single'])
+
+def sanitize(det_spin, bit_kind_size):
+     return [s + (1 << bit_kind_size) if s < 0  else s for s in det_spin]
+
+def int_to_bitmask(s, bit_kind_size):
+    '''
+    >>> int_to_bitmask(1, 3)
+    '100'
+    >>> int_to_bitmask(2, 3)
+    '010'
+    >>> int_to_bitmask(3, 3)
+    '110'
+    >>> int_to_bitmask(7, 3)
+    '111'
+    '''
+    return '{s:0{width}b}'.format(s=s, width=bit_kind_size)[::-1]
+
+
+def detspin_to_bitmask(detspin, bit_kind_size, size=None):
+    '''
+    >>> detspin_to_bitmask([1,7], 3,6)
+    '100111'
+    >>> detspin_to_bitmask([1,2], 3,6)
+    '100010'
+    >>> detspin_to_bitmask([1,2], 3,5)
+    '10001'
+    '''
+    return ''.join(int_to_bitmask(i, bit_kind_size) for i in detspin)[:size]
+
+def det_excitation_degree(det_a, det_b):
+    '''
+    >>> det_excitation_degree( Determinants(alpha=[1],beta=[0] ),  
+    ...                        Determinants(alpha=[1],beta=[0] ) )
+    0
+    >>> det_excitation_degree( Determinants(alpha=[1],beta=[0] ),  
+    ...                        Determinants(alpha=[2],beta=[0] ) )
+    1
+    >>> det_excitation_degree( Determinants(alpha=[1,2],beta=[0] ),  
+    ...                        Determinants(alpha=[2,1],beta=[0] ) )
+    2
+    >>> det_excitation_degree( Determinants(alpha=[7,0],beta=[0] ),  
+    ...                        Determinants(alpha=[0,7],beta=[0] ))
+    3
+    '''
+    or_and_popcount = lambda det : sum(bin(i ^ j).count("1") for i, j in zip(*det))
+    return sum(map(or_and_popcount,zip(det_a, det_b))) // 2
+
+def det_to_csf(det):
+    '''
+    >>> det_to_csf( ( ([1,0]),([2,0]) ) )
+    CSF(double=(0, 0), single=(3, 0))
+    '''
+    # This function assume that determinant are zero-padded.
+    d = tuple(a & b for a, b in zip(*det))
+    s = tuple(a ^ b for a, b in zip(*det))
+    return CSF(d, s)
+
+
+def csf_to_string(csf, bit_kind_size, size):
+    '''
+    >>> csf_to_string( CSF(double=[1], single=[0]), 3, 3)
+    '200'
+    >>> csf_to_string( CSF(double=[0], single=[1]),  3, 3)
+    '100'
+    >>> csf_to_string( CSF(double=[1], single=[2]),  3, 3)
+    '210'
+    '''
+    f = partial(detspin_to_bitmask, bit_kind_size=bit_kind_size, size=size)
+    d_str, s_str = map(f, csf)
+
+    r = ''
+    for d, s in zip(d_str, s_str):
+        if d != '0':
+            r += '2'
+        elif s != '0':
+            r += '1'
+        else:
+            r += '0'
+    return r
+
+if __name__ == '__main__':
+    import h5py
+    import argparse
+
+    from collections import Counter
+    from itertools import chain
+
+    parser = argparse.ArgumentParser(description='Print information about determinants')
+
+    parser.add_argument("h5path", type=str, 
+        help="Path to a h5file")
+
+    parser.add_argument("-v", "--verbose",
+        help="For each determinant, print its bitmask representation, associated CSF and exitation degree",
+        action="store_true")
+
+    parser.add_argument("-s", "--silent", 
+        help="Diseable check", action="store_true")
+
+    args = parser.parse_args()
+
+    if not args.silent:
+        import doctest
+        r = doctest.testmod(verbose=False)
+        if r.failed:
+            import sys
+            sys.exit(1)
+
+    with h5py.File(args.h5path, 'r') as f:
+
+        bit_kind_size = f['MultiDet/CI_Alpha'].dtype.itemsize * 8
+
+        # We sanitize the determinants. Aka we transform any negative integers, into the proper unsigned one.
+        i_alpha= (sanitize(d,bit_kind_size) for d in f['MultiDet/CI_Alpha'])
+        i_beta= (sanitize(d,bit_kind_size) for d in f['MultiDet/CI_Beta'])
+        i_det = zip(i_alpha, i_beta)
+
+        # Getting the reference determinant to compute the excitation degree.
+        hf_det = next(i_det)
+        i_det = chain([hf_det], i_det) # Put back the original
+
+        # Run the unit test if needed
+        if args.verbose:
+            nstate = f['MultiDet/nstate'][0]
+            to_string = partial(detspin_to_bitmask, bit_kind_size=bit_kind_size, size=nstate)
+
+        # Agreage the result and display curent information about the determinant
+        c_e = Counter(); c_csf = Counter()
+        for i, det in enumerate(i_det, 1):
+            e = det_excitation_degree(det, hf_det); c_e[e] += 1
+            c = det_to_csf(det); c_csf[c] += 1
+
+            if args.verbose:
+                str_alpha, str_beta = map(to_string, det)
+                print(i)
+                print('alpha ', str_alpha)
+                print('beta  ', str_beta)
+                print('scf   ', csf_to_string(c, bit_kind_size, nstate))
+                print('excitation degree ', e)
+                print('')
+
+        n_det = sum(c_e.values()); n_csf = len(c_csf)
+
+        print('Summary:')
+        for e, i in sorted(c_e.items()):
+            print('excitation degree', e, 'count:', i)
+
+        print('')
+        print('n_det', n_det)
+        print('n_csf', n_csf)
