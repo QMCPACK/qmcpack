@@ -1,20 +1,21 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from builtins import zip
 
 from functools import partial
 
-# A detspin is a list of integer who represent the alpha or beta part of determinat
+# A detspin is a list of integers that represent the alpha or beta part of determinant
 # A determinant is a pair of detspin alpha and detspin beta
-# A CSF is represented as a pair of list of integer codding respectively for the double and single occupied state.
+# A CSF is represented as a pair of list of integers coding respectively for the double and single occupied state.
 
-# A bitmasks is a `n_state` length binary representation of a list of integers encoded in `bit_kind_size` bits.
-#   Note that this representation is 'reversed'. This allow the first bit to represent the first orbital, and so on.
-#   For performance raison and conveniance, if `n_state` < `bit_kind_size` * `n_integer`,
+# A bitmask is a `n_state` length binary representation of a list of integers encoded in `bit_kind_size` bits.
+#   Note that this representation is 'reversed'. This allows the first bit to represent the first orbital, and so on.
+#   For performance and convenience, if `n_state` < `bit_kind_size` * `n_integer`,
 #      we assume that the bits coding for excessive state of the last integer are set to 0.
 #      To be clearer, if we have `n_state` = 1 with one alpha electron and `bit_kind_size` = 64
 #      the only valid integer representation of this determinants is ( (1,), (0,) )
 
-# Assume that each interger are unsigned. is not they should be converte before using the sanitize function.
+# Assume that each integer is unsigned. If not they should be converted before using the sanitize function.
 
 from collections import namedtuple
 Determinants = namedtuple('Determinants', ['alpha', 'beta'])
@@ -112,11 +113,11 @@ if __name__ == '__main__':
         help="Path to a h5file")
 
     parser.add_argument("-v", "--verbose",
-        help="For each determinant, print its bitmask representation, associated CSF and exitation degree",
+        help="For each determinant, print its bitmask representation, associated CSF and excitation degree",
         action="store_true")
 
     parser.add_argument("-s", "--silent", 
-        help="Diseable check", action="store_true")
+        help="Disable check", action="store_true")
 
     args = parser.parse_args()
 
@@ -145,7 +146,7 @@ if __name__ == '__main__':
             nstate = f['MultiDet/nstate'][0]
             to_string = partial(detspin_to_bitmask, bit_kind_size=bit_kind_size, size=nstate)
 
-        # Agreage the result and display curent information about the determinant
+        # Aggregate the result and display curent information about the determinant
         c_e = Counter(); c_csf = Counter()
         for i, det in enumerate(i_det, 1):
             e = det_excitation_degree(det, hf_det); c_e[e] += 1
