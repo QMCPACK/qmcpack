@@ -26,6 +26,7 @@
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
 #include "cublasXt.h"
+#include "cusparse.h"
 #include "cusolverDn.h"
 #include "curand.h"
 #include "mpi3/communicator.hpp"
@@ -40,23 +41,28 @@ namespace qmc_cuda {
   extern cusolverDnHandle_t afqmc_cusolverDn_handle;
 */
   extern curandGenerator_t afqmc_curand_generator;
+  extern cusparseMatDescr_t afqmc_cusparse_matrix_descr;
 
   void cuda_check(cudaError_t sucess, std::string message="");
   void cublas_check(cublasStatus_t sucess, std::string message="");
+  void cusparse_check(cusparseStatus_t sucess, std::string message="");
   void curand_check(curandStatus_t sucess, std::string message="");
   void cusolver_check(cusolverStatus_t sucess, std::string message="");
   cublasOperation_t cublasOperation(char A); 
+  cusparseOperation_t cusparseOperation(char A); 
 
   void CUDA_INIT(boost::mpi3::shared_communicator& node);
 
   struct gpu_handles {
     cublasHandle_t* cublas_handle;
     cublasXtHandle_t* cublasXt_handle;
+    cusparseHandle_t* cusparse_handle;
     cusolverDnHandle_t* cusolverDn_handle; 
     curandGenerator_t* curand_generator;
     bool operator==(gpu_handles const& other) const {
       return (cublas_handle==other.cublas_handle &&
               cublasXt_handle==other.cublasXt_handle &&
+              cusparse_handle==other.cusparse_handle &&  
               cusolverDn_handle==other.cusolverDn_handle &&
               curand_generator==other.curand_generator);
     }

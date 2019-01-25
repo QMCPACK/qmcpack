@@ -17,6 +17,7 @@
 //#endif
 
 #include<cassert>
+#include<complex>
 #include<cstdlib>
 #include<stdexcept>
 #include "Utilities/OutputManager.h"
@@ -25,26 +26,43 @@
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
 #include "cublasXt.h"
+#include "cusparse.h"
 #include "cusolverDn.h"
 #include "curand.h"
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
+
 namespace qmc_cuda {
+
+  // work around for problem with csrmm 
+  boost::multi::array<std::complex<double>,1,qmc_cuda::cuda_gpu_allocator<std::complex<double>>> 
+                            cusparse_buffer(typename boost::multi::layout_t<1u>::extensions_type{1},
+                                            qmc_cuda::cuda_gpu_allocator<std::complex<double>>{});
 
   cublasHandle_t afqmc_cublas_handle;
   cublasXtHandle_t afqmc_cublasXt_handle;
+  cusparseHandle_t afqmc_cusparse_handle;
   cusolverDnHandle_t afqmc_cusolverDn_handle;
   curandGenerator_t afqmc_curand_generator;
+  bool afqmc_cuda_handles_init = false;
+  cusparseMatDescr_t afqmc_cusparse_matrix_descr;
+
 
   gpu_handles base_cuda_gpu_ptr::handles{&afqmc_cublas_handle,
                                          &afqmc_cublasXt_handle,
+                                         &afqmc_cusparse_handle,
                                          &afqmc_cusolverDn_handle,
                                          &afqmc_curand_generator  
                                         };
 
   void CUDA_INIT(boost::mpi3::shared_communicator& node)
   {
+
+    if(afqmc_cuda_handles_init) return;
+    afqmc_cuda_handles_init=true;
 
     int num_devices=0;
     cudaGetDeviceCount(&num_devices);
@@ -71,6 +89,12 @@ namespace qmc_cuda {
     curand_check(curandSetPseudoRandomGeneratorSeed(afqmc_curand_generator,1234ULL),
                                             "curandSetPseudoRandomGeneratorSeed");
 
+    cusparse_check(cusparseCreate (& afqmc_cusparse_handle ), "cusparseCreate");
+    cusparse_check(cusparseCreateMatDescr(&afqmc_cusparse_matrix_descr), 
+            "cusparseCreateMatDescr: Matrix descriptor initialization failed"); 
+    cusparseSetMatType(afqmc_cusparse_matrix_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(afqmc_cusparse_matrix_descr,CUSPARSE_INDEX_BASE_ZERO); 
+
   }
 
   void cuda_check(cudaError_t sucess, std::string message)
@@ -88,6 +112,15 @@ namespace qmc_cuda {
       std::cerr<<message <<std::endl;
       std::cerr.flush();
       throw std::runtime_error(" Error code returned by cublas. \n");
+    }
+  }
+
+  void cusparse_check(cusparseStatus_t sucess, std::string message)
+  {
+    if(CUSPARSE_STATUS_SUCCESS != sucess) {
+      std::cerr<<message <<std::endl;
+      std::cerr.flush();
+      throw std::runtime_error(" Error code returned by cusparse. \n");
     }
   }
 
@@ -118,7 +151,18 @@ namespace qmc_cuda {
       return CUBLAS_OP_C;
     else {
       throw std::runtime_error("unknown cublasOperation option"); 
-      //return CUBLAS_OP_N;
+    }
+  }
+
+  cusparseOperation_t cusparseOperation(char A) {
+    if(A=='N' or A=='n')
+      return CUSPARSE_OPERATION_NON_TRANSPOSE;
+    else if(A=='T' or A=='t')
+      return CUSPARSE_OPERATION_TRANSPOSE;
+    else if(A=='C' or A=='c')
+      return CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
+    else {
+      throw std::runtime_error("unknown cusparseOperation option"); 
     }
   }
 

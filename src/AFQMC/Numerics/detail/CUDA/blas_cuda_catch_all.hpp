@@ -16,7 +16,13 @@
 #define AFQMC_BLAS_CUDA_CATCH_ALL_HPP
 
 // guard with directive that checks if boost version is >=1.65
+#define WITH_BOOST_BACKTRACE
+#ifdef WITH_BOOST_BACKTRACE
 #include <boost/stacktrace.hpp>
+#define print_stacktrace std::cout << boost::stacktrace::stacktrace();
+#else
+#define print_stacktrace std::cout << "stacktrace not enabled.\n"; 
+#endif
 
 #include<cassert>
 
@@ -28,13 +34,15 @@
 namespace qmc_cuda 
 {
 
+/*
   template<class ptrA, class ptrB>
   inline static void copy(int n, ptrA x, int incx, ptrB y, int incy)
   {
-    std::cout << boost::stacktrace::stacktrace();
+    //std::cout << boost::stacktrace::stacktrace();
+    print_stacktrace
     throw std::runtime_error("Error: Calling qmc_cuda::copy catch all."); 
   }
-
+*/
   // dot Specializations
   template<class ptrA, class ptrB>
   inline static auto dot(int const n, ptrA const& x, int const incx, ptrB const& y, int const incy)

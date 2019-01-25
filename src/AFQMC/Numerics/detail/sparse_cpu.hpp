@@ -15,18 +15,22 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_SPARSE_HPP
-#define AFQMC_SPARSE_HPP
+#ifndef AFQMC_SPARSE_CPU_HPP
+#define AFQMC_SPARSE_CPU_HPP
 
-#include "AFQMC/Numerics/spblas.h"
+#if defined(HAVE_MKL)
+#include "AFQMC/Numerics/detail/mkl_spblas.h"
+#endif
 #include<cassert>
 #include<complex>
 
-struct mySPBLAS
+namespace ma
 {
  
+namespace backup_impl
+{
+
   template<typename T>
-  inline static
   void csrmv(const char transa, const int M, const int K, const T alpha, const char *matdescra, const T* A, const int* indx, const int *pntrb, const int *pntre, const T* x, const T beta, T *y  )
   {
     assert(matdescra[0]=='G' && (matdescra[3]=='C' || matdescra[3]=='F'));
@@ -62,7 +66,6 @@ struct mySPBLAS
   }
 
   template<typename T>
-  inline static
   void csrmv(const char transa, const int M, const int K, const std::complex<T> alpha, const char *matdescra, const std::complex<T>* A, const int* indx, const int *pntrb, const int *pntre, const std::complex<T>* x, const std::complex<T> beta, std::complex<T> *y  )
   {
     assert(matdescra[0]=='G' && (matdescra[3]=='C')); // || matdescra[3]=='F'));
@@ -98,7 +101,6 @@ struct mySPBLAS
   }
 
   template<typename T>
-  inline static
   void csrmm(const char transa, const int M, const int N, const int K, const T alpha, const char *matdescra, const T *A, const int *indx, const int *pntrb, const int *pntre, const T *B, const int ldb, const T beta, T *C, const int ldc)
   {
     assert(matdescra[0]=='G' && (matdescra[3]=='C')); // || matdescra[3]=='F'));
@@ -157,7 +159,6 @@ struct mySPBLAS
   }
 
   template<typename T>
-  inline static
   void csrmm(const char transa, const int M, const int N, const int K, const std::complex<T> alpha, const char *matdescra, const std::complex<T> *A, const int *indx, const int *pntrb, const int *pntre, const std::complex<T> *B, const int ldb, const std::complex<T> beta, std::complex<T> *C, const int ldc)
   {
     assert(matdescra[0]=='G' && (matdescra[3]=='C')); // || matdescra[3]=='F'));
@@ -215,13 +216,7 @@ struct mySPBLAS
     }
   }
 
-};
-
-struct SPBLAS
-{
-
-  static const char TRANS = 'N';
-  static const char NOTRANS = 'N';
+} // backup_impl
 
   inline static
   void csrmv(const char transa, const int M, const int K, const float alpha, const char *matdescra, const float *A, const int* indx, const int *pntrb, const int *pntre, const float *x, const float beta, float *y  )
@@ -229,7 +224,7 @@ struct SPBLAS
 #if defined(HAVE_MKL)
     mkl_scsrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
 #else
-    mySPBLAS::csrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
+    backup_impl::csrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
 #endif
   }
 
@@ -239,7 +234,7 @@ struct SPBLAS
 #if defined(HAVE_MKL)
     mkl_dcsrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
 #else
-    mySPBLAS::csrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
+    backup_impl::csrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
 #endif
   }
 
@@ -249,7 +244,7 @@ struct SPBLAS
 #if defined(HAVE_MKL)
     mkl_ccsrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
 #else
-    mySPBLAS::csrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
+    backup_impl::csrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
 #endif
   }
 
@@ -259,7 +254,7 @@ struct SPBLAS
 #if defined(HAVE_MKL)
     mkl_zcsrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
 #else
-    mySPBLAS::csrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
+    backup_impl::csrmv(transa,M,K,alpha,matdescra,A,indx,pntrb,pntre,x,beta,y);
 #endif
   }
 
@@ -269,7 +264,7 @@ struct SPBLAS
 #if defined(HAVE_MKL)
     mkl_scsrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
 #else
-    mySPBLAS::csrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
+    backup_impl::csrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
 #endif
   }
 
@@ -279,7 +274,7 @@ struct SPBLAS
 #if defined(HAVE_MKL)
     mkl_ccsrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
 #else
-    mySPBLAS::csrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
+    backup_impl::csrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
 #endif
   }
 
@@ -289,7 +284,7 @@ struct SPBLAS
 #if defined(HAVE_MKL)
     mkl_dcsrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
 #else
-    mySPBLAS::csrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
+    backup_impl::csrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
 #endif
   }
 
@@ -299,12 +294,10 @@ struct SPBLAS
 #if defined(HAVE_MKL)
     mkl_zcsrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
 #else
-    mySPBLAS::csrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
+    backup_impl::csrmm(transa,M,N,K,alpha,matdescra,A,indx,pntrb,pntre,B,ldb,beta,C,ldc);
 #endif
   }
 
-};
-
-
+}
 
 #endif

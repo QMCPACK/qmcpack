@@ -1,8 +1,6 @@
 
-#ifndef AFQMC_SPBLAS_H
-#define AFQMC_SPBLAS_H
-
-#if defined(HAVE_MKL)
+#ifndef AFQMC_MKL_SPBLAS_H
+#define AFQMC_MKL_SPBLAS_H
 
 extern "C" {
 
@@ -28,10 +26,5 @@ void mkl_zcsrmultd (const char *trans , const MKL_INT *m , const MKL_INT *n , co
 
 
 }
-
-
-#endif
-
-
 
 #endif

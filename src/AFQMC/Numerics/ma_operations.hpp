@@ -20,7 +20,7 @@
 
 #include "ma_blas.hpp"
 #include "ma_lapack.hpp"
-#include "sparse.hpp"
+#include "AFQMC/Numerics/detail/sparse.hpp"
 #include "AFQMC/Numerics/helpers/determinant.hpp"
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
@@ -151,6 +151,12 @@ template<class T, class SparseMatrixA, class MultiArray1DB, class MultiArray1DC,
         typename = void // TODO change to use dispatch 
 >
 MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T beta, MultiArray1DC&& C){
+        using elementA = typename SparseMatrixA::element; 
+        using elementB = typename MultiArray1DB::element; 
+        using elementC = typename std::decay<MultiArray1DC>::type::element;
+        static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
+        static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");
+        static_assert(std::is_convertible<T,elementC>::value,"Problems with sparse dispatch");
         assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T');
         assert(op_tag<MultiArray1DB>::value == 'N');
         if(op_tag<SparseMatrixA>::value == 'N') {
@@ -161,16 +167,26 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
             assert(arg(A).size(1) == std::forward<MultiArray1DC>(C).size(0));
         }
 
-// need backend for sparse
-        SPBLAS::csrmv( op_tag<SparseMatrixA>::value,
+/*
+        csrmv( op_tag<SparseMatrixA>::value,
             arg(A).size(0), arg(A).size(1),
-            alpha, "GxxCxx",
+            elementC(alpha), "GxxCxx",
             to_address(arg(A).non_zero_values_data()),
             to_address(arg(A).non_zero_indices2_data()),
-            to_address(arg(A).pointers_begin()),  
+            to_address(arg(A).pointers_begin()),
             to_address(arg(A).pointers_end()),
-            to_address(arg(B).origin()), beta, 
+            to_address(arg(B).origin()), elementC(beta),
             to_address(std::forward<MultiArray1DC>(C).origin()));
+*/
+        csrmv( op_tag<SparseMatrixA>::value,
+            arg(A).size(0), arg(A).size(1),
+            elementC(alpha), "GxxCxx",
+            arg(A).non_zero_values_data(),
+            arg(A).non_zero_indices2_data(),
+            arg(A).pointers_begin(), 
+            arg(A).pointers_end(),
+            arg(B).origin(), elementC(beta), 
+            C.origin());
 
         return std::forward<MultiArray1DC>(C);
 }
@@ -216,6 +232,12 @@ template<class T, class SparseMatrixA, class MultiArray2DB, class MultiArray2DC,
         typename = void // TODO change to use dispatch 
 >
 MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C){
+        using elementA = typename SparseMatrixA::element; 
+        using elementB = typename MultiArray2DB::element; 
+        using elementC = typename std::decay<MultiArray2DC>::type::element;
+        static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
+        static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");
+        static_assert(std::is_convertible<T,elementC>::value,"Problems with sparse dispatch");
         assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T'); 
         assert(op_tag<MultiArray2DB>::value == 'N');
         assert( arg(B).stride(1) == 1 );
@@ -230,17 +252,30 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
             assert(arg(B).size(1) == std::forward<MultiArray2DC>(C).size(1));
         }        
 
-        SPBLAS::csrmm( op_tag<SparseMatrixA>::value, 
-            arg(A).size(0), arg(B).size(1), arg(A).size(1), 
-            alpha, "GxxCxx", 
-            to_address((arg(A).non_zero_values_data())) , 
+/*
+        csrmm( op_tag<SparseMatrixA>::value,
+            arg(A).size(0), arg(B).size(1), arg(A).size(1),
+            alpha, "GxxCxx",
+            to_address((arg(A).non_zero_values_data())) ,
             to_address((arg(A).non_zero_indices2_data())),
-            to_address((arg(A).pointers_begin())),  
+            to_address((arg(A).pointers_begin())),
             to_address((arg(A).pointers_end())),
-            to_address(arg(B).origin()), arg(B).stride(0), 
-            beta, 
-            to_address(std::forward<MultiArray2DC>(C).origin()), 
+            to_address(arg(B).origin()), arg(B).stride(0),
+            beta,
+            to_address(std::forward<MultiArray2DC>(C).origin()),
             std::forward<MultiArray2DC>(C).stride(0));
+*/
+        csrmm( op_tag<SparseMatrixA>::value, 
+            arg(A).size(0), arg(B).size(1), arg(A).size(1), 
+            elementC(alpha), "GxxCxx", 
+            arg(A).non_zero_values_data() , 
+            arg(A).non_zero_indices2_data(),
+            arg(A).pointers_begin(),  
+            arg(A).pointers_end(),
+            arg(B).origin(), arg(B).stride(0), 
+            elementC(beta), 
+            C.origin(), 
+            C.stride(0));
 
         return std::forward<MultiArray2DC>(C);
 }
@@ -261,6 +296,7 @@ template<class MultiArray2D>
 struct normal_tag{
 	MultiArray2D arg1;
 	static auto const dimensionality = std::decay<MultiArray2D>::type::dimensionality;
+	using element = typename std::decay<MultiArray2D>::type::element;
 	normal_tag(normal_tag const&) = delete;
 	normal_tag(normal_tag&&) = default;
 	static const char tag = 'N';
@@ -279,6 +315,7 @@ template<class MultiArray2D>
 struct transpose_tag{
 	MultiArray2D arg1; 
 	static auto const dimensionality = std::decay<MultiArray2D>::type::dimensionality;
+	using element = typename std::decay<MultiArray2D>::type::element;
 	transpose_tag(transpose_tag const&) = delete;
 	transpose_tag(transpose_tag&&) = default;
 	static const char tag = 'T';
@@ -297,6 +334,7 @@ template<class MultiArray2D>
 struct hermitian_tag{
 	MultiArray2D arg1; 
 	static auto const dimensionality = std::decay<MultiArray2D>::type::dimensionality;
+	using element = typename std::decay<MultiArray2D>::type::element;
 	hermitian_tag(hermitian_tag const&) = delete;
 	hermitian_tag(hermitian_tag&&) = default;
 	static const char tag = 'C';
@@ -342,8 +380,8 @@ template<class MA2D> auto herm(MA2D&& arg)
 //}
 
 template<class MultiArray2D>
-int invert_optimal_workspace_size(MultiArray2D const& m){
-	return getri_optimal_workspace_size(m);
+int invert_optimal_workspace_size(MultiArray2D & m){
+	return std::max(getri_optimal_workspace_size(m),getrf_optimal_workspace_size(m));
 }
 
 template<class MultiArray2D, class T = typename std::decay<MultiArray2D>::type::element>
@@ -360,6 +398,7 @@ T invert(MultiArray2D&& m){
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         T detvalue = determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data());
+std::cout<<" det: " <<detvalue <<std::endl;
         getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
 }

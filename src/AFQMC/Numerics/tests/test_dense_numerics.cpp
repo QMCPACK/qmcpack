@@ -514,6 +514,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
     verify_approx( Z, Y2 );
   }
 
+std::cout<<"here 0 " <<std::endl;
   {
     vector<T> m = {
 	1.,2.,1.,
@@ -540,6 +541,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
 // not yet implemented in GPU
 //    REQUIRE( ma::is_hermitian(Mref) );
   }
+std::cout<<"here 1 " <<std::endl;
   {
     vector<T> a = {
 	1.,0.,1.,
@@ -609,6 +611,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
     verify_approx(C, ABh);
 
   }
+std::cout<<"here 2 " <<std::endl;
 
   {
     vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
@@ -624,16 +627,31 @@ void test_dense_matrix_mult_device(Allocator alloc)
 
     array<T,2,Allocator> I({3,3},alloc);
 
+std::cout<<"here 2.1 " <<std::endl;
     ma::invert(B);
+std::cout<<"here 2.2 " <<std::endl;
+
+for(int i=0; i<3; i++) {
+  for(int j=0; j<3; j++) 
+    std::cout<<T(B[i][j]) <<" ";
+  std::cout<<"\n";
+}
+array<T,2> B_({3,3});
+copy_n(a.data(),a.size(),B_.origin());
+ma::invert(B_);
 
     ma::product(A, B, I);
+std::cout<<"here 2.3 " <<std::endl;
 
     array<T, 2> Id({3,3});
     copy_n(I.origin(),I.num_elements(),Id.origin());
+std::cout<<"here 2.4 " <<std::endl;
 
     array_ref<T, 2> Id2(id.data(),{3,3});
     verify_approx(Id, Id2);
+std::cout<<"here 2.5 " <<std::endl;
   }
+std::cout<<"here 3 " <<std::endl;
 /* 
  * No gelqf or glq on cusolver/cublas
   {

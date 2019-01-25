@@ -34,6 +34,7 @@
 namespace ma 
 {
 
+/*
   static const int INCX     = 1;
   static const int INCY     = 1;
   static const char UPLO    = 'L';
@@ -47,6 +48,7 @@ namespace ma
   static const std::complex<float> czero = std::complex<float>(0.0,0.0);
   static const std::complex<double> zone = std::complex<double>(1.0,0.0);
   static const std::complex<double> zzero = std::complex<double>(0.0,0.0);
+*/
 
   inline static void axpy(int n, double x, const double *a, double *b)
   {

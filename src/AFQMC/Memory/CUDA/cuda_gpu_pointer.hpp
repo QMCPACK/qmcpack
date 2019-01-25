@@ -39,12 +39,14 @@ using qmcplusplus::afqmc::to_address;
 template<class T> struct cuda_gpu_allocator;
 template<class T> struct cuda_gpu_ptr;
 
+// no const for now
 template<class T>
 struct cuda_gpu_reference {
 
   public:
 
-  using value_type = T;
+  using value_type = T; 
+  using decay_value_type = typename std::decay<T>::type;
   using pointer = cuda_gpu_ptr<T>;
 
   // must construct through a gpu_ptr for now, to keep some sort of control/safety 
@@ -196,14 +198,15 @@ struct cuda_gpu_reference {
 */
 
   private:
-  T* impl_;
-  T host_impl_;
+  value_type* impl_;
+  //value_type host_impl_;
+  decay_value_type host_impl_;
 
   value_type val() const {
-    value_type res;
-    if(cudaSuccess != cudaMemcpy(std::addressof(res),impl_,sizeof(T),cudaMemcpyDefault))
+    decay_value_type res;
+    if(cudaSuccess != cudaMemcpy(std::addressof(res),impl_,sizeof(value_type),cudaMemcpyDefault))
      throw std::runtime_error("Error: cudaMemcpy returned error code.");
-    return res;
+    return value_type(res);
   }
 
 };

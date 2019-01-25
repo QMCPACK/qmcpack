@@ -37,7 +37,7 @@
 //#include "mpi3/environment.hpp"
 
 //#include "AFQMC/Walkers WalkerSetFactory.hpp"
-#include "AFQMC/Walkers/SharedWalkerSet.hpp"
+#include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Walkers/WalkerIO.hpp"
 
 using std::string;
@@ -69,11 +69,13 @@ void myREQUIRE(const std::complex<double>& a, const std::complex<double>& b)
 template<class M1, class M2>
 void check(M1&& A, M2& B)
 {
+  using element1 = typename std::decay<M1>::type::element;
+  using element2 = typename std::decay<M2>::type::element;
   REQUIRE(A.size(0) == B.size(0));
   REQUIRE(A.size(1) == B.size(1));
   for(int i=0; i<A.size(0); i++)
     for(int j=0; j<A.size(1); j++)
-      myREQUIRE(A[i][j],B[i][j]);
+      myREQUIRE(element1(A[i][j]),element2(B[i][j]));
 }
 
 using namespace afqmc;
@@ -83,6 +85,11 @@ void test_basic_walker_features(bool serial)
 {
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
+
+#ifdef QMC_CUDA
+  qmc_cuda::CUDA_INIT(node);
+#endif
 
   using Type = std::complex<double>;
 
@@ -119,13 +126,13 @@ const char *xml_block =
   bool okay = doc.parseFromString(xml_block);
   REQUIRE(okay);
 
-  SharedWalkerSet wset(TG,doc.getRoot(),info,&rng);
+  WalkerSet wset(TG,doc.getRoot(),info,&rng);
   wset.resize(nwalkers,initA,initB);
 
   REQUIRE( wset.size() == nwalkers );
   int cnt=0;
   double tot_weight=0.0;
-  for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
+  for(WalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     auto sm = it->SlaterMatrix(Alpha);
     REQUIRE( it->SlaterMatrix(Alpha) == initA );
     *it->weight() = cnt*1.0+0.5;
@@ -138,7 +145,7 @@ const char *xml_block =
   }
   REQUIRE(cnt==nwalkers);
   cnt=0;
-  for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
+  for(WalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     Type d_(cnt*1.0+0.5);
     REQUIRE( *it->weight() == d_ );
     REQUIRE( *it->overlap() == cnt*1.0+0.5 );
@@ -151,7 +158,7 @@ const char *xml_block =
   wset.reserve(20);
   REQUIRE(wset.capacity() == 20);
   cnt=0;
-  for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
+  for(WalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     REQUIRE( *it->weight() == cnt*1.0+0.5 );
     REQUIRE( *it->overlap() == cnt*1.0+0.5 );
     REQUIRE( *it->E1() == cnt*1.0+0.5 );
@@ -186,11 +193,8 @@ const char *xml_block =
   REQUIRE(wset.GlobalWeight() == tot_weight*TG.getNumberOfTGs());
 
   std::vector<ComplexType> Wdata;
-std::cout<<" before wset.popControl " <<std::endl;
   wset.popControl(Wdata);
-std::cout<<" after wset.popControl " <<std::endl;
   REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
-std::cout<<" after wset.GlobalWeight " <<std::endl;
   REQUIRE(wset.get_TG_target_population() == nwalkers);
   REQUIRE(wset.get_global_target_population() == nwalkers*TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == nwalkers*TG.getNumberOfTGs());
@@ -213,6 +217,11 @@ void test_hyperslab()
 {
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
+
+#ifdef QMC_CUDA
+  qmc_cuda::CUDA_INIT(node);
+#endif
 
   using Type = std::complex<double>;
   using Matrix = boost::multi::array<Type,2>;
@@ -354,8 +363,13 @@ void test_walker_io()
 {
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
 
   using Type = std::complex<double>;
+
+#ifdef QMC_CUDA
+  qmc_cuda::CUDA_INIT(node);
+#endif
 
   //assert(world.size()%2 == 0);
 
@@ -386,13 +400,13 @@ const char *xml_block =
   bool okay = doc.parseFromString(xml_block);
   REQUIRE(okay);
 
-  SharedWalkerSet wset(TG,doc.getRoot(),info,&rng);
+  WalkerSet wset(TG,doc.getRoot(),info,&rng);
   wset.resize(nwalkers,initA,initB);
 
   REQUIRE( wset.size() == nwalkers );
   int cnt=0;
   double tot_weight=0.0;
-  for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
+  for(WalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     auto sm = it->SlaterMatrix(Alpha);
     REQUIRE( it->SlaterMatrix(Alpha) == initA );
     *it->weight() = cnt*1.0+0.5;
@@ -436,7 +450,7 @@ const char *xml_block =
       }
     }
 
-    SharedWalkerSet wset2(TG,doc.getRoot(),info,&rng);
+    WalkerSet wset2(TG,doc.getRoot(),info,&rng);
     restartFromHDF5(wset2,nwalkers,read,true);
     read.close();
 

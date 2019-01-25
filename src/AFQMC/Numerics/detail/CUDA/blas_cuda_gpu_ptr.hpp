@@ -15,6 +15,7 @@
 #ifndef AFQMC_BLAS_CUDA_GPU_PTR_HPP
 #define AFQMC_BLAS_CUDA_GPU_PTR_HPP
 
+#include<type_traits>
 #include<cassert>
 #include<vector>
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
@@ -39,14 +40,16 @@ namespace qmc_cuda
   template<typename T, typename Q>
   inline static void copy(int n, cuda_gpu_ptr<Q> x, int incx, cuda_gpu_ptr<T> && y, int incy)
   {
+    static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
     if(CUBLAS_STATUS_SUCCESS != cublas::cublas_copy(*x.handles.cublas_handle,n,to_address(x),incx,to_address(y),incy))
       throw std::runtime_error("Error: cublas_copy returned error code.");
   }
 
-  template<typename T>
-  inline static void copy(int n, T const* x, int incx, cuda_gpu_ptr<T> && y, int incy)
+  template<typename T, typename Q>
+  inline static void copy(int n, T const* x, int incx, cuda_gpu_ptr<Q> && y, int incy)
   {
-    if(cudaSuccess != cudaMemcpy2D(to_address(y),sizeof(T)*incy,
+    static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
+    if(cudaSuccess != cudaMemcpy2D(to_address(y),sizeof(Q)*incy,
                                    x,sizeof(T)*incx,
                                    sizeof(T),n,cudaMemcpyHostToDevice))
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
@@ -67,6 +70,7 @@ namespace qmc_cuda
   template<typename T, typename Q>
   inline static void scal(int n, Q alpha, cuda_gpu_ptr<T> && x, int incx=1)
   {
+    static_assert(std::is_convertible<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
     if(CUBLAS_STATUS_SUCCESS != cublas::cublas_scal(*x.handles.cublas_handle,n,T(alpha),to_address(x),incx))
       throw std::runtime_error("Error: cublas_scal returned error code.");
   }
