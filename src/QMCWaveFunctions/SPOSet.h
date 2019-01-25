@@ -68,6 +68,10 @@ public:
   int builder_index;
   ///true if SPO is optimizable
   bool Optimizable;
+  ///true if SPO parameters (orbital rotation parameters) have been supplied by input
+  bool params_supplied = false;
+  ///list of supplied orbital rotation parameters
+  std::vector<RealType> params;
   ///flag to calculate ionic derivatives
   bool ionDerivs;
   ///number of Single-particle orbitals
@@ -153,7 +157,7 @@ public:
 #endif
 
   /// create optimizable orbital rotation parameters
-  virtual void buildOptVariables(std::vector<RealType>& input_params, bool params_supplied, std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin) {}
+  virtual void buildOptVariables(std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin) {}
   ///reset
   virtual void resetParameters(const opt_variables_type& optVariables)=0;
 

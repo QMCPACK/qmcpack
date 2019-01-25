@@ -276,7 +276,7 @@ namespace qmcplusplus
 #endif
   }
 
-  void LCAOrbitalSet::buildOptVariables(std::vector<RealType>& input_params, bool params_supplied, std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin)
+  void LCAOrbitalSet::buildOptVariables(std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin)
   {
     const size_t& nmo = OrbitalSetSize;
     const size_t& nb = BasisSetSize;
@@ -343,7 +343,7 @@ namespace qmcplusplus
 
         // If the user input parameteres, use those. Otherwise, initialize the parameters to zero
         if (params_supplied) {
-          myVars.insert(sstr.str(), input_params[i]);
+          myVars.insert(sstr.str(), params[i]);
         } else {
           myVars.insert(sstr.str(), 0.0);
         }

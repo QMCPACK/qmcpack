@@ -306,33 +306,11 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         const bool OrbOpt = (up_det->Phi->Optimizable==true && dn_det->Phi->Optimizable==true);
         const bool CI_Opt = multislaterdetfast_0->CI_Optimizable;
         if (CI_Opt || OrbOpt) multislaterdetfast_0->Optimizable = true; 
-      // read in orbital rotation coefficients to apply a unitary roation before beginning calculation...
-      std::vector<RealType> params_0, params_1;
-      std::string subdet_name;
-      bool params_supplied_0 = false;
-      bool params_supplied_1 = false;
-
-      for (xmlNodePtr subcur = cur->children; subcur != NULL; subcur = subcur->next) 
-      {
-        std::string opt_vars;
-        getNodeName(subdet_name,subcur);
-        if (subdet_name == "opt_vars_up")
-        {
-          params_supplied_0 = true;
-          putContent(params_0, subcur);
-        }
-        if (subdet_name == "opt_vars_dn")
-        {
-          params_supplied_1 = true;
-          putContent(params_1, subcur);
-        }
-      }
-
-        // The primary purupose of this function is to create all the optimizable orbital rotation parameters.
-        // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
-        //and then remove the orbital rotation parameters
-      up_det->buildOptVariables(params_0,params_supplied_0,*(multislaterdetfast_0->C2node_up),0);
-      dn_det->buildOptVariables(params_1,params_supplied_1,*(multislaterdetfast_0->C2node_dn),1);
+      // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
+      // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
+      //and then remove the orbital rotation parameters
+      up_det->buildOptVariables(*(multislaterdetfast_0->C2node_up),0);
+      dn_det->buildOptVariables(*(multislaterdetfast_0->C2node_dn),1);
       }
       else
       {

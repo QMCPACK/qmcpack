@@ -111,7 +111,7 @@ public:
   }
 
   /// create optimizable orbital rotation parameters
-  void buildOptVariables(std::vector<RealType>& input_params, bool params_supplied, std::vector<size_t>& C2node, const int& spin);
+  void buildOptVariables(std::vector<size_t>& C2node, const int& spin);
 
 
   void resetParameters(const opt_variables_type& active)

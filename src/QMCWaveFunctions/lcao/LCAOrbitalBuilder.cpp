@@ -731,6 +731,11 @@ namespace qmcplusplus
       {
         coeff_ptr=cur;
       }
+      else if(cname == "opt_vars")
+      {
+        spo.params_supplied = true;
+        putContent(spo.params, cur);
+      }
       cur=cur->next;
     }
     if(coeff_ptr == NULL)

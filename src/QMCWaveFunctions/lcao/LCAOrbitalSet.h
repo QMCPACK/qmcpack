@@ -71,7 +71,7 @@ namespace qmcplusplus
     SPOSet* makeClone() const;
 
     /// create optimizable orbital rotation parameters
-    void buildOptVariables(std::vector<RealType>& input_params, bool params_supplied, std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin);
+    void buildOptVariables(std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin);
 
     ///helper function to buildOptVariables
     int build_occ_vec(std::vector<int> * data, const size_t& nel, const size_t& nmo, std::vector<int>* occ_vec);
