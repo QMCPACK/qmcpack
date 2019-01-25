@@ -323,6 +323,9 @@ namespace qmcplusplus
       // and will also read in initial parameter values supplied in input file     
       int p, q; 
       int nparams_active = m_act_rot_inds.size();
+      if (params_supplied)
+        if(nparams_active != params.size())
+          APP_ABORT("The number of supplied orbital rotation parameters does not match number prdouced by the slater expansion. \n");
 
       for (int i=0; i< nparams_active; i++)
       {
