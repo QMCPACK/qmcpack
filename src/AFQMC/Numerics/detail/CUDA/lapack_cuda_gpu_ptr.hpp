@@ -49,15 +49,12 @@ namespace qmc_cuda
                             cuda_gpu_ptr<I> && piv, int &st, cuda_gpu_ptr<R> work) 
   {
     cusolverStatus_t status = cusolver::cusolver_getrf(*a.handles.cusolverDn_handle, n, m,
-                                       to_address(a), lda, to_address(work), to_address(piv), to_address(piv)+n);
+                     to_address(a), lda, to_address(work), to_address(piv), to_address(piv)+n);
+    cudaMemcpy(&st,to_address(piv)+n,sizeof(int),cudaMemcpyDeviceToHost);
     if(CUSOLVER_STATUS_SUCCESS != status) { 
-      int st;
-      cudaMemcpy(&st,to_address(piv)+n,sizeof(int),cudaMemcpyDeviceToHost);
       std::cerr<<" cublas_getrf status, info: " <<status <<" " <<st <<std::endl; std::cerr.flush();
       throw std::runtime_error("Error: cublas_getrf returned error code."); 
     }
-    cudaMemcpy(&st,to_address(piv)+n,sizeof(int),cudaMemcpyDeviceToHost);
-
   }
 
   // getrfBatched
@@ -167,7 +164,7 @@ namespace qmc_cuda
     cudaMemcpy(&INFO,piv,sizeof(int),cudaMemcpyDeviceToHost);
     if(CUSOLVER_STATUS_SUCCESS != status) {
       int st;
-      std::cerr<<" cublas_getrf status, info: " <<status <<" " <<INFO <<std::endl; std::cerr.flush();
+      std::cerr<<" cublas_geqrf status, info: " <<status <<" " <<INFO <<std::endl; std::cerr.flush();
       throw std::runtime_error("Error: cublas_geqrf returned error code.");
     }
     cudaFree(piv);
@@ -210,7 +207,7 @@ namespace qmc_cuda
     cudaMemcpy(&INFO,piv,sizeof(int),cudaMemcpyDeviceToHost);
     if(CUSOLVER_STATUS_SUCCESS != status) {
       int st;
-      std::cerr<<" cublas_getrf status, info: " <<status <<" " <<INFO <<std::endl; std::cerr.flush();
+      std::cerr<<" cublas_gqr status, info: " <<status <<" " <<INFO <<std::endl; std::cerr.flush();
       throw std::runtime_error("Error: cublas_gqr returned error code.");
     }
     cudaFree(piv);

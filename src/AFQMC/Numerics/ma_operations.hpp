@@ -398,7 +398,6 @@ T invert(MultiArray2D&& m){
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         T detvalue = determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data());
-std::cout<<" det: " <<detvalue <<std::endl;
         getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
 }
