@@ -121,6 +121,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # Run the unit test if needed
     if not args.silent:
         import doctest
         r = doctest.testmod(verbose=False)
@@ -141,7 +142,7 @@ if __name__ == '__main__':
         hf_det = next(i_det)
         i_det = chain([hf_det], i_det) # Put back the original
 
-        # Run the unit test if needed
+        # Gathering information only needed in verbose mode
         if args.verbose:
             nstate = f['MultiDet/nstate'][0]
             to_string = partial(detspin_to_bitmask, bit_kind_size=bit_kind_size, size=nstate)
@@ -161,6 +162,7 @@ if __name__ == '__main__':
                 print('excitation degree ', e)
                 print('')
 
+        # Display computed data
         n_det = sum(c_e.values()); n_csf = len(c_csf)
 
         print('Summary:')
