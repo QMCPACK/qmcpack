@@ -23,9 +23,11 @@
 
 #include <algorithm>
 
+#include "Numerics/BaseTypes.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/NRSplineFunctions.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 #include <simd/allocator.hpp>
 
 namespace qmcplusplus
@@ -89,9 +91,9 @@ template<typename T>
 class MultiQuinticSpline1D
 {
 public:
-  typedef T value_type;
+  using value_type = T; 
   typedef OneDimGridBase<T> grid_type;
-  typedef Matrix<value_type, aligned_allocator<value_type> > coeff_type;
+  typedef Matrix<T, aligned_allocator<T> > coeff_type;
 
 private:
   ///number of splines
@@ -111,7 +113,7 @@ private:
    * Coeffs[6*spline_points][num_splines+padding]
    */
   coeff_type* Coeffs;
-  aligned_vector<value_type> first_deriv;
+  aligned_vector<T> first_deriv;
 
 public:
   MultiQuinticSpline1D():own_spline(false),Coeffs(nullptr){}
@@ -130,16 +132,29 @@ public:
     return myGrid.upper_bound;
   }
 
+  /** Approximation of getting the asymtotic constant spline values
+   *  Since this is getting used only for AO's should be 0
+   */ 
+  inline void assignLimitValues(T* u)
+  {
+    std::fill_n(u, num_splines_, czero<T>);
+  }
+
   inline void evaluate(T r, T* restrict u) 
   {
+    // if(r>=r_max)
+    //   throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
+    // 			      + '\n');
+    // you get calls from SoaCuspCorrectionBasisSet.h with r>r_max
+
     if(r<myGrid.lower_bound)
     {
-      const value_type dr=r-myGrid.lower_bound;
-      const value_type* restrict a=(*Coeffs)[0];
+      const T dr=r-myGrid.lower_bound;
+      const T* restrict a=(*Coeffs)[0];
       for(size_t i=0; i<num_splines_; ++i)
         u[i]=a[i]+first_deriv[i]*dr;
     }
-    else if(r>=r_max)
+    else if(r >= r_max)
     {
       // std::cout << "MultiQuinticSpline1D r>=r_max " << r << " >= "
       // 		<< r_max << '\n';
@@ -152,41 +167,33 @@ public:
       const size_t offset=loc*6;
       //Coeffs is an OhmmsMatrix and [] is a row access operator
       //returning a pointer to 'row' which is normal type pointer []
-      const value_type* restrict a=(*Coeffs)[offset+0];
-      const value_type* restrict b=(*Coeffs)[offset+1];
-      const value_type* restrict c=(*Coeffs)[offset+2];
-      const value_type* restrict d=(*Coeffs)[offset+3];
-      const value_type* restrict e=(*Coeffs)[offset+4];
-      const value_type* restrict f=(*Coeffs)[offset+5];
+      const T* restrict a=(*Coeffs)[offset+0];
+      const T* restrict b=(*Coeffs)[offset+1];
+      const T* restrict c=(*Coeffs)[offset+2];
+      const T* restrict d=(*Coeffs)[offset+3];
+      const T* restrict e=(*Coeffs)[offset+4];
+      const T* restrict f=(*Coeffs)[offset+5];
       for(size_t i=0; i<num_splines_; ++i)
         u[i]=a[i]+cL*(b[i]+cL*(c[i]+cL*(d[i]+cL*(e[i]+cL*f[i]))));
     }
   }
 
-  /** Approximation of getting the asymtotic constant spline values
-   */ 
-  inline void assignLimitValues(T* u)
-  {
-    int loc = myGrid.size() - 1;
-    const size_t offset=loc*6;
-    const value_type* restrict a=(*Coeffs)[offset+0];
-    for(size_t i=0; i<num_splines_; ++i)
-      u[i]=a[i];
-  }
-
   inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u)
   {
-    constexpr value_type czero(0);
+    // if(r>=r_max)
+    //   throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
+    // 			      + '\n');
+    // you get calls from SoaCuspCorrectionBasisSet.h with r>r_max
 
     if(r<myGrid.lower_bound)
     {
-      const value_type dr=r-myGrid.lower_bound;
-      const value_type* restrict a=(*Coeffs)[0];
+      const T dr=r-myGrid.lower_bound;
+      const T* restrict a=(*Coeffs)[0];
       for(size_t i=0; i<num_splines_; ++i)
       {
         u[i]=a[i]+first_deriv[i]*dr;
         du[i]=first_deriv[i];
-        d2u[i]=czero;
+        d2u[i]= czero<T>;
       }
     }
     //should never come to this
@@ -197,11 +204,8 @@ public:
       // std::cout << "MultiQuinticSpline1D r>=r_max " << r << " >= "
       // 		<< r_max << '\n';
       assignLimitValues(u);
-      for(size_t i=0; i<num_splines_; ++i)
-      {
-        du[i]=czero;
-        d2u[i]=czero;
-      }
+      assignLimitValues(du);
+      assignLimitValues(d2u);
     }
     else
     {
@@ -209,20 +213,20 @@ public:
       const auto cL=myGrid.getCLForQuintic(r,loc);
       const size_t offset=loc*6;
 
-      constexpr value_type ctwo(2);
-      constexpr value_type cthree(3);
-      constexpr value_type cfour(4);
-      constexpr value_type cfive(5);
-      constexpr value_type csix(6);
-      constexpr value_type c12(12);
-      constexpr value_type c20(20);
+      constexpr T ctwo(2);
+      constexpr T cthree(3);
+      constexpr T cfour(4);
+      constexpr T cfive(5);
+      constexpr T csix(6);
+      constexpr T c12(12);
+      constexpr T c20(20);
 
-      const value_type* restrict a=(*Coeffs)[offset+0];
-      const value_type* restrict b=(*Coeffs)[offset+1];
-      const value_type* restrict c=(*Coeffs)[offset+2];
-      const value_type* restrict d=(*Coeffs)[offset+3];
-      const value_type* restrict e=(*Coeffs)[offset+4];
-      const value_type* restrict f=(*Coeffs)[offset+5];
+      const T* restrict a=(*Coeffs)[offset+0];
+      const T* restrict b=(*Coeffs)[offset+1];
+      const T* restrict c=(*Coeffs)[offset+2];
+      const T* restrict d=(*Coeffs)[offset+3];
+      const T* restrict e=(*Coeffs)[offset+4];
+      const T* restrict f=(*Coeffs)[offset+5];
 
       for(size_t i=0; i<num_splines_; ++i)
       {
@@ -236,18 +240,20 @@ public:
   /** compute upto 3rd derivatives */
   inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u, T* restrict d3u) 
   {
-    constexpr value_type czero(0);
-
+    // if(r>=r_max)
+    //   throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
+    // 			      + '\n');
+    // you get calls from SoaCuspCorrectionBasisSet.h with r>r_max
     if(r<myGrid.lower_bound)
     {
-      const value_type dr=r-myGrid.lower_bound;
-      const value_type* restrict a=(*Coeffs)[0];
+      const T dr=r-myGrid.lower_bound;
+      const T* restrict a=(*Coeffs)[0];
       for(size_t i=0; i<num_splines_; ++i)
       {
         u[i]=a[i]+first_deriv[i]*dr;
         du[i]=first_deriv[i];
-        d2u[i]=czero;
-        d3u[i]=czero;
+        d2u[i]= czero<T>;
+        d3u[i]= czero<T>;
       }
     }
     else if (r>=r_max)
@@ -255,12 +261,9 @@ public:
       // std::cout << "MultiQuinticSpline1D r>=r_max " << r << " >= "
       // 		<< r_max << '\n';
       assignLimitValues(u);
-      for(size_t i=0; i<num_splines_; ++i)
-      {
-	du[i]=czero;
-	d2u[i]=czero;
-	d3u[i]=czero;
-      }
+      assignLimitValues(du);
+      assignLimitValues(d2u);
+      assignLimitValues(d3u);
     }
     else
     {
@@ -268,22 +271,22 @@ public:
       const auto cL=myGrid.getCLForQuintic(r,loc);
       const size_t offset=loc*6;
 
-      constexpr value_type ctwo(2);
-      constexpr value_type cthree(3);
-      constexpr value_type cfour(4);
-      constexpr value_type cfive(5);
-      constexpr value_type csix(6);
-      constexpr value_type c12(12);
-      constexpr value_type c20(20);
-      constexpr value_type c24(24);
-      constexpr value_type c60(60);
+      constexpr T ctwo(2);
+      constexpr T cthree(3);
+      constexpr T cfour(4);
+      constexpr T cfive(5);
+      constexpr T csix(6);
+      constexpr T c12(12);
+      constexpr T c20(20);
+      constexpr T c24(24);
+      constexpr T c60(60);
 
-      const value_type* restrict a=(*Coeffs)[offset+0];
-      const value_type* restrict b=(*Coeffs)[offset+1];
-      const value_type* restrict c=(*Coeffs)[offset+2];
-      const value_type* restrict d=(*Coeffs)[offset+3];
-      const value_type* restrict e=(*Coeffs)[offset+4];
-      const value_type* restrict f=(*Coeffs)[offset+5];
+      const T* restrict a=(*Coeffs)[offset+0];
+      const T* restrict b=(*Coeffs)[offset+1];
+      const T* restrict c=(*Coeffs)[offset+2];
+      const T* restrict d=(*Coeffs)[offset+3];
+      const T* restrict e=(*Coeffs)[offset+4];
+      const T* restrict f=(*Coeffs)[offset+5];
 
       for(size_t i=0; i<num_splines_; ++i)
       {
@@ -329,7 +332,7 @@ public:
       const T1* restrict D=in.D.data();
       const T1* restrict E=in.E.data();
       const T1* restrict F=in.F.data();
-      value_type* restrict out=Coeffs->data();
+      T* restrict out=Coeffs->data();
       const size_t ncols=Coeffs->cols();
       const size_t num_points=in.size();
       for(size_t i=0; i<num_points; ++i)
@@ -343,11 +346,13 @@ public:
       }
     }
   }
-
+  
   int getNumSplines() const { return num_splines_; }
   void setNumSplines(int num_splines) { num_splines_ = num_splines; }
 };
 
-
+extern template class MultiQuinticSpline1D<float>;
+extern template class MultiQuinticSpline1D<double>;
 }
 #endif
+
