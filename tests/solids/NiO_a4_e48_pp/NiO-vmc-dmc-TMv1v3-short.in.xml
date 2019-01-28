@@ -49,7 +49,7 @@
   </particleset>
   <wavefunction name="psi0" target="e">
     <determinantset type="einspline" href="NiO-fcc-supertwist111-supershift000-S1.h5" source="i" tilematrix="1 0 0 1 0 1 1 1 0" twistnum="-1" gpu="yes" meshfactor="0.9" precision="single" twist="0  0  0">
-      <slaterdeterminant delay_rank="7">
+      <slaterdeterminant>
         <determinant id="updet" size="24" ref="updet">
           <occupation mode="ground" spindataset="0">
           </occupation>
@@ -106,7 +106,7 @@
     <parameter name="blocks">               100 </parameter>
     <parameter name="timestep">            0.01 </parameter>
     <parameter name="reconfiguration">       no </parameter>
-    <parameter name="nonlocalmoves">         no </parameter>
+    <parameter name="nonlocalmoves">         v1 </parameter>
   </qmc>
   <qmc method="dmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no" />
@@ -116,6 +116,6 @@
     <parameter name="blocks">               100 </parameter>
     <parameter name="timestep">            0.01 </parameter>
     <parameter name="reconfiguration">       no </parameter>
-    <parameter name="nonlocalmoves">         v0 </parameter>
+    <parameter name="nonlocalmoves">         v3 </parameter>
   </qmc>
 </simulation>
