@@ -125,7 +125,7 @@ class BackPropagatedEstimator: public EstimatorBase
     }
   }
 
-  void print(std::ofstream& out, WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
   {
     if(writer) {
       if(importanceSampling) {
