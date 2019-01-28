@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+
+'''
+Provide information about a multideterminant wavefunction stored in HDF5 format.
+Can be used as a library or as CLI tool
+
+determinants_tools.py ./tests/molecules/C2_pp/C2.h5    # Summary excitation info only
+determinants_tools.py -v ./tests/molecules/C2_pp/C2.h5 # Verbose. Gives details of each determinant
+'''
+
 from __future__ import print_function
 from builtins import zip
 
@@ -106,8 +115,9 @@ if __name__ == '__main__':
 
     from collections import Counter
     from itertools import chain
-
-    parser = argparse.ArgumentParser(description='Print information about determinants')
+    
+    parser = argparse.ArgumentParser(
+        description='Provide information about a multideterminant wavefunction stored in HDF5 format.')
 
     parser.add_argument("h5path", type=str, 
         help="Path to a h5file")
