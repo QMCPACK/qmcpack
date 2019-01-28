@@ -17,6 +17,8 @@
 #ifndef QMCPLUSPLUS_SOA_CUSPCORRECTION_BASISSET_H
 #define QMCPLUSPLUS_SOA_CUSPCORRECTION_BASISSET_H
 
+#include "Configuration.h"
+#include "Numerics/BaseTypes.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
@@ -25,38 +27,57 @@
 namespace qmcplusplus
 {
 
-  /** Handles a set of correction orbitals per atom
-   *
-   * Reduction over the orbitals - beware of the reduction problem
-   */
+  // /** Handles a set of correction orbitals per atom
+  //  *
+  //  * Reduction over the orbitals - beware of the reduction problem
+  //  */
   template<typename T>
   class CuspCorrectionAtomicBasis
   {
+    using QMCT = QMCTraits;
     typedef MultiQuinticSpline1D<T> RadialSetType;
     typedef ParticleSet::PosType PosType;
 
-
-  public:
+    QMCT::RealType r_max_ = 100;
     RadialSetType AOs;
     aligned_vector<size_t> ID;
 
+  public:
     CuspCorrectionAtomicBasis() {};
 
     /** copy constructor */
     CuspCorrectionAtomicBasis(const CuspCorrectionAtomicBasis& a)=default;
 
+    inline void initializeRadialSet(LogGrid<T>& radial_grid,
+				    QMCT::IndexType orbital_set_size)
+    {
+      r_max_ = radial_grid.rmax();
+      AOs.initialize(radial_grid, orbital_set_size);
+    }
+
+    template<class T1>
+    inline void addSpline(int mo_idx, OneDimQuinticSpline<T1>& radial_spline)
+    {
+      AOs.add_spline(mo_idx, radial_spline);
+    }
+    
     inline void evaluate(const T r, T* restrict vals)
     {
+      //assume output vars are zero'd
+      if (r >= r_max_) return;
       size_t nr=AOs.getNumSplines();
       T phi[nr];
       AOs.evaluate(r,phi);
       for(size_t i=0; i<nr; ++i)
-        vals[ID[i]]+=phi[i];
+        //vals[ID[i]]+=phi[i];
+        vals[i]+=phi[i];
     }
 
     inline void evaluate_vgl(const T r, const PosType& dr, T* restrict u, T* restrict du_x,
                              T* restrict du_y, T* restrict du_z, T* restrict d2u)
     {
+      //assume output vars are zero'd
+      if (r >= r_max_) return;
       size_t nr=AOs.getNumSplines();
       T phi[nr];
       T dphi[nr];
@@ -64,7 +85,7 @@ namespace qmcplusplus
       AOs.evaluate(r,phi,dphi,d2phi);
       for(size_t i=0; i<nr; ++i)
       {
-        const size_t j=ID[i];
+        const size_t j=i;  //ID[i];
         u[j]  += phi[i];
         du_x[j] -= dphi[i]*dr[0]/r; // Displacements have opposite sign (relative to AOS)
         du_y[j] -= dphi[i]*dr[1]/r;
@@ -104,6 +125,7 @@ struct SoaCuspCorrection
   ///COMPLEX WON'T WORK
   typedef CuspCorrectionAtomicBasis<RealType> COT;
 
+  int unused = 1;
   /** container of the unique pointers to the Atomic Orbitals
    *
    * size of LOBasisSet = number of centers (atoms)
@@ -145,10 +167,7 @@ struct SoaCuspCorrection
    */
   inline void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
   {
-
-    constexpr RealType czero(0);
-
-    myVGL=czero;
+    myVGL=czero<RealType>;
 
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const auto dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
@@ -185,9 +204,7 @@ struct SoaCuspCorrection
   inline void evaluate_vgl(const ParticleSet& P, int iat, ValueVector_t &psi, GradVector_t &dpsi, ValueVector_t &d2psi)
   {
 
-    constexpr RealType czero(0);
-
-    myVGL=czero;
+    myVGL=czero<RealType>;
 
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const auto dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
@@ -217,9 +234,7 @@ struct SoaCuspCorrection
   inline void evaluate_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix_t &psi, GradMatrix_t &dpsi, ValueMatrix_t &d2psi)
   {
 
-    constexpr RealType czero(0);
-
-    myVGL=czero;
+    myVGL=czero<RealType>;
 
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const auto dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
@@ -252,10 +267,9 @@ struct SoaCuspCorrection
    */
   inline void evaluateV(const ParticleSet& P, int iat, ValueType* restrict vals)
   {
-    constexpr RealType czero(0);
     ValueType* tmp_vals=myVGL[0];
 
-    std::fill_n(tmp_vals, myVGL.size(), czero);
+    std::fill_n(tmp_vals, myVGL.size(), czero<RealType>);
 
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const auto dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];

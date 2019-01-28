@@ -184,20 +184,15 @@ namespace qmcplusplus
                     dr_new[2]=dr[2]+TransX*lattice.R(0,2)+TransY*lattice.R(1,2)+TransZ*lattice.R(2,2);
                     r_new=std::sqrt(dot(dr_new,dr_new));
          
-
-
                     //const size_t ib_max=NL.size();
                     if(r_new >= Rmax) continue; 
-  
+
                     //SIGN Change!!
                     const T x=-dr_new[0], y=-dr_new[1], z=-dr_new[2];
                     Ylm.evaluateVGL(x,y,z);
-  
-  
-  
+    
                     MultiRnl->evaluate(r_new,phi,dphi,d2phi);
-  
-  
+    
                     const T rinv=cone/r_new;
   
                     for(size_t ib=0; ib<BasisSetSize; ++ib)
@@ -257,7 +252,7 @@ namespace qmcplusplus
 
                     r_new=std::sqrt(dot(dr_new,dr_new));
               
-                    if(r_new >= Rmax) continue;
+		    if(r_new >= Rmax) continue;
 
                     Ylm.evaluateV(-dr_new[0],-dr_new[1],-dr_new[2],ylm_v);
                     MultiRnl->evaluate(r_new,phi_r);

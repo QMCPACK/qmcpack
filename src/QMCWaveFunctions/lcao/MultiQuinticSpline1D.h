@@ -142,9 +142,9 @@ public:
 
   inline void evaluate(T r, T* restrict u) 
   {
-    // if(r>=r_max)
-    //   throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
-    // 			      + '\n');
+    if(r>=r_max)
+      throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
+    			      + '\n');
     // you get calls from SoaCuspCorrectionBasisSet.h with r>r_max
 
     if(r<myGrid.lower_bound)
@@ -180,9 +180,9 @@ public:
 
   inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u)
   {
-    // if(r>=r_max)
-    //   throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
-    // 			      + '\n');
+    if(r>=r_max)
+      throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
+    			      + '\n');
     // you get calls from SoaCuspCorrectionBasisSet.h with r>r_max
 
     if(r<myGrid.lower_bound)
@@ -240,9 +240,9 @@ public:
   /** compute upto 3rd derivatives */
   inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u, T* restrict d3u) 
   {
-    // if(r>=r_max)
-    //   throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
-    // 			      + '\n');
+    if(r>=r_max)
+      throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
+    			      + '\n');
     // you get calls from SoaCuspCorrectionBasisSet.h with r>r_max
     if(r<myGrid.lower_bound)
     {
@@ -306,15 +306,15 @@ public:
    * @param oreder 5=quintic and 3=cubic
    */
   template<typename GT>
-  void initialize(GT* agrid, int norbs,int order=5)
+  void initialize(GT& agrid, int norbs,int order=5)
   {
-    myGrid.set(agrid->rmin(),agrid->rmax(),agrid->size());
+    myGrid.set(agrid.rmin(),agrid.rmax(),agrid.size());
     r_max=myGrid.upper_bound;
     if(Coeffs==nullptr && !own_spline)
     {
       spline_order=order;
       num_splines_=norbs;
-      Coeffs=new coeff_type((order+1)*agrid->size(),getAlignedSize<T>(norbs));
+      Coeffs=new coeff_type(((order+1) * agrid.size()),getAlignedSize<T>(norbs));
       first_deriv.resize(num_splines_);
       own_spline=true;
     }

@@ -447,7 +447,7 @@ private:
       grid_prec=new LogGrid<double>;
       grid_prec->set(1.e-6,m_rcut_safe,1001);
     }
-    multiset->initialize(grid_prec,norbs);
+    multiset->initialize(*grid_prec,norbs);
     
     for(int ib=0; ib<norbs; ++ib)
       radTemp[ib]->convert(grid_prec,multiset,ib,5);
