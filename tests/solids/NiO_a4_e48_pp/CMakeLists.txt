@@ -49,9 +49,17 @@ IF (EXISTS ${H5_FULL_PATH})
                     1 16
                     TRUE
                     2 NIO_A4_E48_DMC_SCALARS # DMC no Tmove
-                    3 NIO_A4_E48_DMC_V0_SCALARS # DMC no Tmove
-                    4 NIO_A4_E48_DMC_V1_SCALARS # DMC no Tmove
-                    5 NIO_A4_E48_DMC_V3_SCALARS # DMC no Tmove
+                    3 NIO_A4_E48_DMC_V0_SCALARS # DMC Tmove v0
+                    )
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-dmc-TMv1v3_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc-dmc
+                    NiO-vmc-dmc-TMv1v3-short.in.xml
+                    1 16
+                    TRUE
+                    2 NIO_A4_E48_DMC_V1_SCALARS # DMC Tmove v1
+                    3 NIO_A4_E48_DMC_V3_SCALARS # DMC Tmove v3
                     )
 
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-delayed_update-dmc_sdj
@@ -61,9 +69,17 @@ IF (EXISTS ${H5_FULL_PATH})
                     1 16
                     TRUE
                     2 NIO_A4_E48_DMC_SCALARS # DMC no Tmove
-                    3 NIO_A4_E48_DMC_V0_SCALARS # DMC no Tmove
-                    4 NIO_A4_E48_DMC_V1_SCALARS # DMC no Tmove
-                    5 NIO_A4_E48_DMC_V3_SCALARS # DMC no Tmove
+                    3 NIO_A4_E48_DMC_V0_SCALARS # DMC Tmove v0
+                    )
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-delayed_update-dmc-TMv1v3_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc-dmc
+                    NiO-delayedupdate-vmc-dmc-TMv1v3-short.in.xml
+                    1 16
+                    TRUE
+                    2 NIO_A4_E48_DMC_V1_SCALARS # DMC Tmove v1
+                    3 NIO_A4_E48_DMC_V3_SCALARS # DMC Tmove v3
                     )
 
 #  LocalEnergy           =        -370.88498 +/-          0.00088
