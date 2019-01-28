@@ -936,21 +936,18 @@ std::cout<<" E nomsd: " <<nd <<" "
           for(int i = 0; i < G2D_.shape()[0]; i++) trace += G2D_[i][i];
           // By construction detR is real (so no complex conjugation needed).
           ov *= detR * std::conj(ci[id]);
-          //std::cout << G2D_[0][0] << " " << ov << " " << wfac << std::endl;
           overlap += ov;
           ma::axpy(ov,G1D_,G21D_);
         }
-        //std::cout << "TRACE: " << trace << " " << std::endl;
         ComplexType ov_denom;
         if(free_projection) {
           ov_denom = wfac;
           denom[0] += wfac*overlap;
-        } else { 
+        } else {
           ov_denom = wfac/overlap;
           denom[0] += wfac;
         }
         ma::axpy(ov_denom, G21D_, G1D);
-        //std::cout << G1D[0] << " " << denom[0] << std::endl;
       }
     } else {
       auto GAdims = dm_dims(not compact,Alpha);
