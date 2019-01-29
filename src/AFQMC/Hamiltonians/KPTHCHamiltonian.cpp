@@ -87,9 +87,9 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
 
   nQ = QN-Qbeg;
 
-  std::vector<int> nmo_per_kp(nkpts);
-  std::vector<int> nchol_per_kp(nkpts);
-  std::vector<int> kminus(nkpts);
+  IntegerVector<std::allocator<int>> nmo_per_kp(extensions<1u>{nkpts});
+  IntegerVector<std::allocator<int>> nchol_per_kp(extensions<1u>{nkpts});
+  IntegerVector<std::allocator<int>> kminus(extensions<1u>{nkpts});
   shmIMatrix QKtok2({nkpts,nkpts},shared_allocator<int>{TG.Node()});
   shmIMatrix QKtoG({nkpts,nkpts},shared_allocator<int>{TG.Node()});
   ValueType E0;
@@ -181,9 +181,9 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
     }
   }
   TG.Global().broadcast_n(&E0,1,0);
-  TG.Global().broadcast_n(nmo_per_kp.begin(),nmo_per_kp.size(),0);
-  TG.Global().broadcast_n(nchol_per_kp.begin(),nchol_per_kp.size(),0);
-  TG.Global().broadcast_n(kminus.begin(),kminus.size(),0);
+  TG.Global().broadcast_n(nmo_per_kp.origin(),nmo_per_kp.size(),0);
+  TG.Global().broadcast_n(nchol_per_kp.origin(),nchol_per_kp.size(),0);
+  TG.Global().broadcast_n(kminus.origin(),kminus.size(),0);
   if(TG.Node().root()) {
     TG.Cores().broadcast_n(to_address(QKtok2.origin()),QKtok2.num_elements(),0);
     TG.Cores().broadcast_n(to_address(QKtoG.origin()),QKtoG.num_elements(),0);
@@ -957,7 +957,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   int nsampleQ=-1;
 
 
-  std::vector<int> nchol_per_kp_(nkpts);
+  IntegerVector<std::allocator<int>> nchol_per_kp_(extensions<1u>{nkpts});
 
   hdf_archive dump_(TGwfn.Global());
   // right now only Node.root() reads

@@ -33,12 +33,10 @@ template<class T,
          typename = typename std::enable_if<std::decay<MultiArray1Dx>::type::dimensionality == 1>::type,
          typename = typename std::enable_if<std::decay<MultiArray1Dy>::type::dimensionality == 1>::type
 >
-MultiArray1Dy
-adotpby(T const alpha, MultiArray1Dx const& x, MultiArray1Dy const& y, Q const beta, ptr res){
+void adotpby(T const alpha, MultiArray1Dx const& x, MultiArray1Dy const& y, Q const beta, ptr res){
         assert(x.size() == y.size());
         adotpby(x.size(), alpha, x.origin(), x.stride(0),
                                         y.origin(), y.stride(0), beta, res);
-        return y;
 }
 
 template<class T,

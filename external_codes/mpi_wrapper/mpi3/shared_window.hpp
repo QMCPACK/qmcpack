@@ -116,7 +116,6 @@ struct array_ptr{
 	T* operator->() const{return (T*)(wSP_->base(0)) + offset;}
 	T* get() const{return wSP_->base(0) + offset;}
 	operator T*() { 
-// do I need to guard against nullptr state?
             if( not (bool)wSP_ ) return nullptr;
             return wSP_->base(0) + offset;
         }

@@ -92,8 +92,10 @@ Array get_PsiK(Vector const& nmo_per_kp, CSR const& PsiT, int K)
         APP_ABORT("Error: PsiT not in block-diagonal form in get_PsiK.\n");
     if(Q==K) nel++;
   }
+  using element = typename std::decay<Array>::type::element;  
   Array A({nel,nmo_per_kp[K]});
-  std::fill_n(A.origin(),A.num_elements(),0);
+  using std::fill_n;
+  fill_n(A.origin(),A.num_elements(),element(0));
   nel=0;
   for(int i=0; i<N; i++) {
     auto nt = PsiT.num_non_zero_elements(i);
@@ -104,7 +106,7 @@ Array get_PsiK(Vector const& nmo_per_kp, CSR const& PsiT, int K)
     int Q = std::distance(bounds.begin(),it);
     if(Q==K) {
       for(int ni=0; ni<nt; ++ni, ++col, ++val)
-        A[nel][*col-bounds[K]] = *val;
+        A[nel][*col-bounds[K]] = static_cast<element>(*val);
       nel++;
     }
     if(Q > K) break;

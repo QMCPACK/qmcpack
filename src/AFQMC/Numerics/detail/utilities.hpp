@@ -36,6 +36,13 @@ using qmcplusplus::afqmc::to_address;
   static const std::complex<double> zone = std::complex<double>(1.0,0.0);
   static const std::complex<double> zzero = std::complex<double>(0.0,0.0);
 
+/*
+#if defined(HAVE_MKL)
+typedef enum {CblasRowMajor=101, CblasColMajor=102} CBLAS_LAYOUT;
+typedef enum {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113} CBLAS_TRANSPOSE;
+#endif
+*/
+
 inline double const& real(double const& d){return d;}
 inline float const& real(float const& f){return f;}
 

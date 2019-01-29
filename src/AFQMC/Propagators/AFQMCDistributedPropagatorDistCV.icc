@@ -24,6 +24,7 @@
 #include "AFQMC/Propagators/generate1BodyPropagator.hpp"
 #include "AFQMC/Propagators/WalkerSetUpdate.hpp"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
+#include "AFQMC/Numerics/ma_blas.hpp"
 
 namespace qmcplusplus
 {
@@ -207,6 +208,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     }
 
     // 6. add local contribution to vsend
+    using ma::axpy;
     axpy(vakN-vak0,one,vHS.origin()+vak0,1,vsend.origin()+vak0,1);
 
     // 7. start v communication

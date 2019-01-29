@@ -31,6 +31,19 @@
 // generic header for blas routines
 #include "AFQMC/Numerics/detail/Blasf.h"
 
+#if defined(HAVE_MKL)
+inline CBLAS_TRANSPOSE cblas_operation(char Op) {
+  if(Op=='N')
+    return CblasNoTrans;
+  else if(Op=='T')
+    return CblasTrans;
+  else if(Op=='H' || Op=='C')
+    return CblasConjTrans;
+  else
+    throw std::runtime_error("unknown cblas_peration option");
+}
+#endif
+
 namespace ma 
 {
 
@@ -870,14 +883,16 @@ namespace ma
 
   template<typename T>
   inline static void gemmBatched(char Atrans, char Btrans, int M, int N, int K,
-                          T alpha, T const** A, int lda, 
-                          T const** B, int ldb, T beta,
+                          T alpha, T ** A, int lda, 
+                          T ** B, int ldb, T beta,
                           T ** C, int ldc, int batchSize)
   {
 #ifdef HAVE_MKL
-    gemm_batch(CblasColMajor,&Atrans,&Btrans,&M,&N,&K,
-               &alpha,A,&lda,B,&ldb,
-               &beta,C,&ldc,1,&batchSize);
+    CBLAS_TRANSPOSE opA(cblas_operation(Atrans));
+    CBLAS_TRANSPOSE opB(cblas_operation(Btrans));
+    gemm_batch(CblasColMajor,&opA,&opB,&M,&N,&K,
+               &alpha,(const void**)A,&lda,(const void**)B,&ldb,
+               &beta,(void**)C,&ldc,1,&batchSize);
 #else
     // No batched gemm, :-( gemm loop
     for(int i=0; i<batchSize; i++)

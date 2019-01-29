@@ -111,10 +111,25 @@
 #define scgemv  scgemv_
 #define dzgemm  dzgemm_
 #define scgemm  scgemm_
-typedef enum {CblasRowMajor=101, CblasColMajor=102} CBLAS_LAYOUT;
-typedef enum {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113} CBLAS_TRANSPOSE;
 #endif
 
+#endif
+
+#if defined(HAVE_MKL)
+typedef enum {CblasRowMajor=101, CblasColMajor=102} CBLAS_LAYOUT;
+typedef enum {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113} CBLAS_TRANSPOSE;
+/*
+inline CBLAS_TRANSPOSE cblas_operation(char Op) {
+  if(Op=='N')
+    return CblasNoTrans;
+  else if(Op=='T')
+    return CblasTrans;
+  else if(Op=='H' || Op=='C')
+    return CblasConjTrans;
+  else
+    throw std::runtime_error("unknown cblas_peration option");
+}
+*/
 #endif
 
 // declaring Fortran interfaces

@@ -467,6 +467,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   TG.Node().barrier();
 }
 
+// design for compact arrays
 template< class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
 void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, 
                                 MultiArray3DC&& Lank, MultiArray2D && buff)  
@@ -526,6 +527,78 @@ void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
 }
 
 }
+
+namespace ma_rotate_padded
+{
+
+// designed for padded arrays
+template< class MultiArray2DA, class MultiArray3DB, class MultiArray3DC>
+void getLakn_Lank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, 
+                  MultiArray3DC&& Lakn, MultiArray3DC&& Lank)
+{
+  int na = Aai.size(0);
+  int ni = Aai.size(1);
+
+  int nmo = Likn.size(0);
+  int nchol = Likn.size(2);
+  assert(Likn.size(1)==nmo);
+
+  assert(Lakn.size(1)==nmo);
+  assert(Lakn.size(2)==nchol);
+
+  assert(Lakn.size(0)==Lank.size(0));
+  assert(Lank.size(1)==nchol);
+  assert(Lank.size(2)==nmo);
+
+  using elmB = typename std::decay<MultiArray3DB>::type::element;
+  using elmC = typename std::decay<MultiArray3DC>::type::element;
+
+  boost::multi::array_ref<elmB,2,decltype(Likn.origin())> Li_kn(Likn.origin(),{ni,nmo*nchol});
+  boost::multi::array_ref<elmC,2,decltype(Lakn.origin())> La_kn(Lakn.origin(),{na,nmo*nchol});
+
+  ma::product(Aai,Li_kn,La_kn);
+  for(int a=0; a<na; a++) 
+    ma::transpose(Lakn[a],Lank[a]);
+}
+
+template< class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
+void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
+                                MultiArray3DC&& Lakn,  MultiArray3DC&& Lank, MultiArray2D && buff)
+{
+  int na = Aai.size(0);
+  int ni = Aai.size(1);
+
+  int nmo =  Lkin.size(0);
+  int nchol =  Lkin.size(2);
+  assert(Lkin.size(1)==nmo);
+
+  assert(Lakn.size(1)==nmo);
+  assert(Lakn.size(2)==nchol);
+
+  assert(Lakn.size(0)==Lank.size(0));
+  assert(Lank.size(1)==nchol);
+  assert(Lank.size(2)==nmo);
+
+  assert(buff.num_elements() >= na*nchol);
+
+  using ptr2 = typename std::decay<MultiArray2D>::type::element_ptr;
+  using elm2 = typename std::decay<MultiArray2D>::type::element;
+
+  boost::multi::array_ref<elm2,2,ptr2> bna(buff.origin(),{nchol,na});
+  // Lakn[a][k][n] = sum_i Aai[a][i] conj(Lkin[k][i][n])
+  for(int k=0; k<nmo; k++) {
+    ma::product(ma::H(Lkin[k].sliced(0,ni)),ma::T(Aai),bna);
+    for(int a=0; a<na; a++) 
+      Lakn[a][k] = bna({0,nchol},a);
+  }
+  for(int a=0; a<na; a++) 
+    ma::transpose(Lakn[a],Lank[a]);
+}
+
+
+}
+
+
 
 }
 

@@ -77,9 +77,8 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
     HamiltonianFactory HamFac(InfoMap);
     const char *xml_block =
-"<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
+"<Hamiltonian name=\"ham0\" info=\"info0\"> \
     <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"version\">new</parameter> \
     <parameter name=\"filename\">./afqmc.h5</parameter> \
     <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
   </Hamiltonian> \
@@ -167,7 +166,9 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
     }
 
-    shmCMatrix vHS({NMO*NMO,1},shared_allocator<ComplexType>{TG.TG_local()});
+    int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
+    int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
+    shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
     TG.local_barrier();
     Timer.reset("Generic");
     Timer.start("Generic");
@@ -176,8 +177,13 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     Timer.stop("Generic");
     app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
-    for(int i=0; i<vHS.size(); i++)
+    if(HOps.transposed_vHS()) {
+      for(int i=0; i<vHS.size(1); i++)
+        Vsum += vHS[0][i];
+    } else {
+      for(int i=0; i<vHS.size(0); i++)
         Vsum += vHS[i][0];
+    }
     if(std::abs(file_data.Vsum)>1e-8) {
       REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
       REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
@@ -209,9 +215,8 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
     HamiltonianFactory HamFac(InfoMap);
     const char *xml_block =
-"<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
+"<Hamiltonian name=\"ham0\" info=\"info0\"> \
     <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"version\">new</parameter> \
     <parameter name=\"filename\">./afqmc.h5</parameter> \
     <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
   </Hamiltonian> \
@@ -299,7 +304,9 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
     }
 
-    shmCMatrix vHS({NMO*NMO,1},shared_allocator<ComplexType>{TG.TG_local()});
+    int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
+    int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
+    shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
     TG.local_barrier();
     Timer.reset("Generic");
     Timer.start("Generic");
@@ -308,8 +315,13 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     Timer.stop("Generic");
     app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
-    for(int i=0; i<vHS.size(); i++)
+    if(HOps.transposed_vHS()) {
+      for(int i=0; i<vHS.size(1); i++)
+        Vsum += vHS[0][i];
+    } else {
+      for(int i=0; i<vHS.size(0); i++)
         Vsum += vHS[i][0];
+    }
     if(std::abs(file_data.Vsum)>1e-8) {
       REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
       REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );

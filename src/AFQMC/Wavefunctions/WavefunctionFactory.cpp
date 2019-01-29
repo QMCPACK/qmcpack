@@ -287,7 +287,12 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n"); 
 
-    //return Wavefunction{}; 
+//    if(TG.TG_local().size()==1)
+//      return Wavefunction(NOMSD_serial(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
+//                        walker_type,NCE,targetNW)); 
+//    else
+//      return Wavefunction(NOMSD_shared(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
+//                        walker_type,NCE,targetNW)); 
     return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW)); 
   } else if(type == "phmsd") {

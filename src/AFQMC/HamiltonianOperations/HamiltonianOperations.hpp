@@ -25,6 +25,7 @@
 #include "AFQMC/HamiltonianOperations/THCOps.hpp"
 #ifdef QMC_COMPLEX
 #include "AFQMC/HamiltonianOperations/KP3IndexFactorization.hpp"
+#include "AFQMC/HamiltonianOperations/KP3IndexFactorization_batched.hpp"
 #include "AFQMC/HamiltonianOperations/KPTHCOps.hpp"
 #endif
 
@@ -137,7 +138,11 @@ class dummy_HOps
 
 #ifdef QMC_COMPLEX
 class HamiltonianOperations:
-        public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,SparseTensor<ComplexType,ComplexType>,KP3IndexFactorization,KPTHCOps>
+        public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,
+                                SparseTensor<ComplexType,ComplexType>,
+                                KP3IndexFactorization,
+                                KP3IndexFactorization_batched,
+                                KPTHCOps>
 #else
 class HamiltonianOperations:
         public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,
@@ -164,6 +169,7 @@ class HamiltonianOperations:
     explicit HamiltonianOperations(STCR&& other) : variant(std::move(other)) {}
 #else
     explicit HamiltonianOperations(KP3IndexFactorization&& other) : variant(std::move(other)) {}
+    explicit HamiltonianOperations(KP3IndexFactorization_batched&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(KPTHCOps&& other) : variant(std::move(other)) {}
 #endif
     explicit HamiltonianOperations(STCC&& other) : variant(std::move(other)) {}
@@ -175,6 +181,7 @@ class HamiltonianOperations:
     explicit HamiltonianOperations(STCR const& other) = delete;
 #else
     explicit HamiltonianOperations(KP3IndexFactorization const& other) = delete;
+    explicit HamiltonianOperations(KP3IndexFactorization_batched const& other) = delete;
     explicit HamiltonianOperations(KPTHCOps const& other) = delete;
 #endif
     explicit HamiltonianOperations(STCC const& other) = delete;

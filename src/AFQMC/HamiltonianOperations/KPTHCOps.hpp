@@ -44,6 +44,7 @@ class KPTHCOps
   using SpC = ComplexType;
 #endif
 
+  using IVector = boost::multi::array<int,1>;
   using CMatrix = boost::multi::array<ComplexType,2>;
   using CMatrix_cref = boost::multi::array_cref<ComplexType,2>;
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;
@@ -72,9 +73,9 @@ class KPTHCOps
      */
     KPTHCOps(communicator& c_,
                  WALKER_TYPES type,
-                 std::vector<int>&& nopk_,
-                 std::vector<int>&& ncholpQ_,
-                 std::vector<int>&& kminus_,
+                 IVector&& nopk_,
+                 IVector&& ncholpQ_,
+                 IVector&& kminus_,
                  shmIMatrix&& nelpk_,
                  shmIMatrix&& QKToK2_,
                  shmIMatrix&& QKToG_,
@@ -898,13 +899,13 @@ app_log()<<" E time: "
     shmCMatrix haj;
 
     // number of orbitals per k-point
-    std::vector<int> nopk;
+    IVector nopk;
 
     // number of cholesky vectors per Q-point
-    std::vector<int> ncholpQ;
+    IVector ncholpQ;
 
     // position of (-K) in kp-list for every K
-    std::vector<int> kminus;
+    IVector kminus;
 
     // number of G per Q-point
     std::vector<int> nGpk;

@@ -41,6 +41,7 @@ namespace afqmc
 class KP3IndexFactorization
 {
 
+  using IVector = boost::multi::array<int,1>;
   using CVector = boost::multi::array<ComplexType,1>;
   using SpVector = boost::multi::array<SPComplexType,1>;
   using CMatrix = boost::multi::array<ComplexType,2>;
@@ -70,9 +71,9 @@ class KP3IndexFactorization
 
     KP3IndexFactorization(communicator& c_,
                  WALKER_TYPES type,
-                 std::vector<int>&& nopk_,
-                 std::vector<int>&& ncholpQ_,
-                 std::vector<int>&& kminus_,
+                 IVector&& nopk_,
+                 IVector&& ncholpQ_,
+                 IVector&& kminus_,
                  shmIMatrix&& nelpk_,
                  shmIMatrix&& QKToK2_,
                  shmC3Tensor&& hij_,
@@ -140,7 +141,6 @@ class KP3IndexFactorization
     KP3IndexFactorization(KP3IndexFactorization&& other) = default;
     KP3IndexFactorization& operator=(KP3IndexFactorization&& other) = default;
 
-// this needs to return boost::multi::array<ComplexType,2,device_ptr<ComplexType>>
     boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi::array<ComplexType,1> const& vMF) {
 
       int nkpts = nopk.size();
@@ -342,6 +342,7 @@ class KP3IndexFactorization
           for(int Ka=0; Ka<nkpts; ++Ka) {
             int K0 = ((Q==Q0)?0:Ka);
             for(int Kb=K0; Kb<nkpts; ++Kb) {
+
               if((nqk++)%comm->size() == comm->rank()) {
                 int nchol = ncholpQ[Q];
                 int Qm = kminus[Q];
@@ -383,8 +384,8 @@ class KP3IndexFactorization
                   haveKE=true;
                   for(int n=0; n<nwalk; ++n)
                     for(int a=0; a<na; ++a) {
-                      ma::axpy(SPComplexType(1.0),T4Dwban[n][a][a],Kl_local[n]);
-                      ma::axpy(SPComplexType(1.0),T4Dwabn[n][a][a],Kr_local[n]);
+                      ma::axpy(SPComplexType(1.0),T4Dwban[n][a][a],Kl_local[n].sliced(0,nchol));
+                      ma::axpy(SPComplexType(1.0),T4Dwabn[n][a][a],Kr_local[n].sliced(0,nchol));
                     }
                 }
 
@@ -433,8 +434,8 @@ class KP3IndexFactorization
                     haveKE=true;
                     for(int n=0; n<nwalk; ++n)
                       for(int a=0; a<na; ++a) {
-                        ma::axpy(SPComplexType(1.0),T4Dwban[n][a][a],Kl_local[n]);
-                        ma::axpy(SPComplexType(1.0),T4Dwabn[n][a][a],Kr_local[n]);
+                        ma::axpy(SPComplexType(1.0),T4Dwban[n][a][a],Kl_local[n].sliced(0,nchol));
+                        ma::axpy(SPComplexType(1.0),T4Dwabn[n][a][a],Kr_local[n].sliced(0,nchol));
                       }
                   }
 
@@ -1218,16 +1219,15 @@ class KP3IndexFactorization
 
     // (potentially half rotated) one body hamiltonian
     shmCMatrix haj;
-    //std::vector<shmCVector> haj;
 
     // number of orbitals per k-point
-    std::vector<int> nopk;
+    IVector nopk;
 
     // number of cholesky vectors per Q-point
-    std::vector<int> ncholpQ;
+    IVector ncholpQ;
 
     // position of (-K) in kp-list for every K
-    std::vector<int> kminus;
+    IVector kminus;
 
     // number of electrons per k-point
     // nelpk[ndet][nspin*nkpts]

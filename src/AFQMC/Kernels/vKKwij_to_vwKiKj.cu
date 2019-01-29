@@ -32,10 +32,11 @@ __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int 
   int Ki = blockIdx.x;  
   int Kj = blockIdx.y;  
   int nw = blockIdx.z;
-  if(Ki >= nkpts || Kj >= nkpts || nw >= nwalk) return;  
-  int ni0 = nmo0[Ki]; 
+  if(Ki > nkpts || Kj >= nkpts || nw >= nwalk) return;  
+  int Ki_ = (Ki==nkpts?Kj:Ki);
+  int ni0 = nmo0[Ki_]; 
   int nj0 = nmo0[Kj]; 
-  int ni = nmo[Ki]; 
+  int ni = nmo[Ki_]; 
   int nj = nmo[Kj];
   
   T2* B_(B + nw*nmo_tot*nmo_tot + ni0*nmo_tot + nj0); 
@@ -47,13 +48,13 @@ __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int 
   if(kk[Ki*nkpts+Kj]) { // transpose
     for(int i=threadIdx.x; i<ni; i+=blockDim.x) { 
       for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
-        B_[ i*nmo_tot+j ] = static_cast<T2>(A_[ j*nmo_max+i ]);
+        B_[ i*nmo_tot+j ] += static_cast<T2>(A_[ j*nmo_max+i ]);
       }
     }
   } else { // copy
     for(int i=threadIdx.x; i<ni; i+=blockDim.x) { 
       for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
-        B_[ i*nmo_tot+j ] = static_cast<T2>(A_[ i*nmo_max+j ]);
+        B_[ i*nmo_tot+j ] += static_cast<T2>(A_[ i*nmo_max+j ]);
       }
     }
   }  
@@ -68,10 +69,11 @@ __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int 
   int Ki = blockIdx.x;
   int Kj = blockIdx.y;
   int nw = blockIdx.z;
-  if(Ki >= nkpts || Kj >= nkpts || nw >= nwalk) return;
-  int ni0 = nmo0[Ki];
+  if(Ki > nkpts || Kj >= nkpts || nw >= nwalk) return;
+  int Ki_ = (Ki==nkpts?Kj:Ki);
+  int ni0 = nmo0[Ki_];
   int nj0 = nmo0[Kj];
-  int ni = nmo[Ki];  
+  int ni = nmo[Ki_];  
   int nj = nmo[Kj];  
             
   thrust::complex<T2>* B_(B + nw*nmo_tot*nmo_tot + ni0*nmo_tot + nj0);  
@@ -83,13 +85,13 @@ __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int 
   if(kk[Ki*nkpts+Kj]) { // transpose
     for(int i=threadIdx.x; i<ni; i+=blockDim.x) { 
       for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
-        B_[ i*nmo_tot+j ] = static_cast<thrust::complex<T2>>(A_[ j*nmo_max+i ]);
+        B_[ i*nmo_tot+j ] += static_cast<thrust::complex<T2>>(A_[ j*nmo_max+i ]);
       }
     }
   } else {  // copy
     for(int i=threadIdx.x; i<ni; i+=blockDim.x) { 
       for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
-        B_[ i*nmo_tot+j ] = static_cast<thrust::complex<T2>>(A_[ i*nmo_max+j ]);
+        B_[ i*nmo_tot+j ] += static_cast<thrust::complex<T2>>(A_[ i*nmo_max+j ]);
       }
     }
   }
