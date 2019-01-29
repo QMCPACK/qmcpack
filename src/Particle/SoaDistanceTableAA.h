@@ -57,7 +57,9 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
     for(int i=0; i<Ntargets; ++i)
       Displacements[i].attachReference(i,total_size,memoryPool.data()+compute_size(i));
 
-    Temp_r.resize(Ntargets);
+    // The padding of Temp_r and Temp_dr is necessary for the memory copy in the update function
+    // Temp_r is padded explicitly while Temp_dr is padded internally
+    Temp_r.resize(Ntargets_padded);
     Temp_dr.resize(Ntargets);
   }
 
@@ -118,15 +120,19 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
     return index;
   }
 
-  ///update the iat-th row for iat=[0,iat-1)
+  /** After accepting the iat-th particle, update the iat-th row of Distances and Displacements.
+   * Since the upper triangle is not needed in the later computation,
+   * only the [0,iat-1) columns need to save the new values.
+   * The memory copy goes up to the padded size only for better performance.
+   */
   inline void update(IndexType iat)
   {
     if(iat==0) return;
     //update by a cache line
     const int nupdate=getAlignedSize<T>(iat);
-    simd::copy_n(Temp_r.data(),nupdate,Distances[iat]);
+    std::copy_n(Temp_r.data(),nupdate,Distances[iat]);
     for(int idim=0;idim<D; ++idim)
-      simd::copy_n(Temp_dr.data(idim),nupdate,Displacements[iat].data(idim));
+      std::copy_n(Temp_dr.data(idim),nupdate,Displacements[iat].data(idim));
   }
 
 };

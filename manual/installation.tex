@@ -324,6 +324,15 @@ MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
                        e.g. "-n", "-np", etc.
 \end{verbatim}
 
+\item LLVM/Clang Developer Options\\
+  \verbatimfont{\footnotesize}%
+
+\begin{minipage}{\textwidth}
+\verb|LLVM_SANITIZE_ADDRESS   |  link with the \href{https://clang.llvm.org/docs/AddressSanitizer.html}{Clang address sanitizer library}\\
+\verb|LLVM_SANITIZE_MEMORY    |  link with the \href{https://clang.llvm.org/docs/MemorySanitizer.html}{Clang memory sanitizer library}\\
+\end{minipage}
+
+See docs in section \ref{tool:LLVM-Sanitizer-Libraries} for more information.
 \end{itemize}
 
 \subsection{Installation from CMake}
@@ -1032,8 +1041,8 @@ Install the Windows Subsystem for Linux and Bash on Windows.
 Open a bash shell and follow the install directions for Ubuntu in Section \ref{sec:buildubuntu}.
 
 \section{Installing via Spack (Beta)}
-Spack is a relatively new package manager for scientific software.
-One of goals of Spack is to reduce the barrier for the user to install scientific
+Spack is a package manager for scientific software.
+One of the primary goals of Spack is to reduce the barrier for the users to install scientific
 software. Spack is intended to work on everything from laptop
 computers to high-end supercomputers. More information about Spack can
 be found here \url{https://spack.readthedocs.io/en/latest}. The major
@@ -1042,8 +1051,33 @@ automatically built, potentially including all the compilers and libraries, and
 different versions of QMCPACK can easily co-exist with each other.
 The QMCPACK Spack package also knows how to build
 and patch Quantum Espresso automatically. In principle QMCPACK may be installed with
-a single Spack command, but to use vendor optimized compilers and libraries requires
-additional configuration.
+a single Spack command.
+
+\subsection{Known Limitations}
+
+The QMCPACK Spack package inherits the limitations of the underlying
+Spack infrastructure and its dependencies. The main limitation to be
+aware of is that installation typically fails when building a
+dependency such as HDF5, MPICH, etc. In order for
+\verb|spack install qmcpack| to succeed, it is very important to
+leverge pre-installed packages on your computer or supercomputer. The
+other challenge frequently encountered is that compiler configuration
+is non-intuitive.  This is especially the case with with the Intel
+compiler.
+
+Here are some additional limitations of the QMCPACK Spack package that
+will get resolved in future releases:
+\begin{itemize}
+\item Due to a conflict in QE 6.3 package, the QE variant cannot build
+  in serial. In other words, \verb|qmcpack install qmcpack~mpi| will issue
+  a conflict.  This will not be a problem with the next release of QE.
+\item CUDA support is not leveraging the Spack CUDA infrastructure,
+  thus compiler conflicts will not be caught until a build is attempt.
+\item AFQMC is not part of the Spack package at this time.
+\item The Spack package will install Nexus as part of the
+  installation, but actual use of Nexus from within the Spack
+  environment is untested.
+\end{itemize}
 
 \subsection{Setting up the Spack Environment}
 Begin by cloning Spack from GitHub and configuring your shell as described
@@ -1115,15 +1149,17 @@ Tags:
     None
 
 Preferred version:
-    3.4.0      [git] https://github.com/QMCPACK/qmcpack.git
+    3.6.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.6.0
 
 Safe versions:
     develop    [git] https://github.com/QMCPACK/qmcpack.git
-    3.4.0      [git] https://github.com/QMCPACK/qmcpack.git
-    3.3.0      [git] https://github.com/QMCPACK/qmcpack.git
-    3.2.0      [git] https://github.com/QMCPACK/qmcpack.git
-    3.1.1      [git] https://github.com/QMCPACK/qmcpack.git
-    3.1.0      [git] https://github.com/QMCPACK/qmcpack.git
+    3.6.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.6.0
+    3.5.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.5.0
+    3.4.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.4.0
+    3.3.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.3.0
+    3.2.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.2.0
+    3.1.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.1.1
+    3.1.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.1.0
 
 Variants:
     Name [Default]                 Allowed values          Description
@@ -1146,8 +1182,10 @@ Variants:
                                                            precision) version for gpu and
                                                            cpu
     mpi [on]                       True, False             Build with MPI support
+    phdf5 [on]                     True, False             Build with parallel collective
+                                                           I/O
     qe [on]                        True, False             Install with patched Quantum
-                                                           Espresso 5.3.0
+                                                           Espresso 6.3.0
     soa [off]                      True, False             Build with Structure-of-Array
                                                            instead of Array-of-Structure
                                                            code. Only for CPU codeand
@@ -1158,7 +1196,7 @@ Installation Phases:
     cmake    build    install
 
 Build Dependencies:
-    blas  boost  cmake  cuda  espresso  fftw  hdf5  lapack  libxml2  mpi
+    blas  boost  cmake  cuda  espresso  fftw-api  hdf5  lapack  libxml2  mpi
 
 Link Dependencies:
     blas  boost  cuda  espresso  fftw  hdf5  lapack  libxml2  mpi
