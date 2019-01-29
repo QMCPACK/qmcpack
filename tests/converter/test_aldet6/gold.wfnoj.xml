@@ -2232,28 +2232,28 @@
 </coefficient>
       </sposet>
       <multideterminant optimize="yes" spo_up="spo-up" spo_dn="spo-dn">
-        <detlist size="21" type="DETS" nca="0" ncb="0" nea="21" neb="21" nstates="24" cutoff="1e-20">
-          <ci id="CIcoeff_0" coeff="0.806053" qc_coeff="0.806053" alpha="111111111111111111111000" beta="111111111111111111111000"/>
-          <ci id="CIcoeff_1" coeff="-0.245232" qc_coeff="-0.245232" alpha="111111111111111111110100" beta="111111111111111111110100"/>
-          <ci id="CIcoeff_2" coeff="-0.245049" qc_coeff="-0.245049" alpha="111111111111111111101010" beta="111111111111111111101010"/>
-          <ci id="CIcoeff_3" coeff="-0.171988" qc_coeff="-0.171988" alpha="111111111111111111101100" beta="111111111111111111110010"/>
-          <ci id="CIcoeff_4" coeff="-0.171988" qc_coeff="-0.171988" alpha="111111111111111111110010" beta="111111111111111111101100"/>
-          <ci id="CIcoeff_5" coeff="0.116527" qc_coeff="0.116527" alpha="111111111111111111110001" beta="111111111111111111011100"/>
-          <ci id="CIcoeff_6" coeff="0.116527" qc_coeff="0.116527" alpha="111111111111111111011100" beta="111111111111111111110001"/>
-          <ci id="CIcoeff_7" coeff="0.116497" qc_coeff="0.116497" alpha="111111111111111111101001" beta="111111111111111111011010"/>
-          <ci id="CIcoeff_8" coeff="0.116497" qc_coeff="0.116497" alpha="111111111111111111011010" beta="111111111111111111101001"/>
-          <ci id="CIcoeff_9" coeff="0.106351" qc_coeff="0.106351" alpha="111111111111111111100110" beta="111111111111111111111000"/>
-          <ci id="CIcoeff_10" coeff="0.106351" qc_coeff="0.106351" alpha="111111111111111111111000" beta="111111111111111111100110"/>
-          <ci id="CIcoeff_11" coeff="0.0818883" qc_coeff="0.0818883" alpha="111111111111111111011001" beta="111111111111111111101010"/>
-          <ci id="CIcoeff_12" coeff="0.0818883" qc_coeff="0.0818883" alpha="111111111111111111101010" beta="111111111111111111011001"/>
-          <ci id="CIcoeff_13" coeff="0.0818831" qc_coeff="0.0818831" alpha="111111111111111111011001" beta="111111111111111111110100"/>
-          <ci id="CIcoeff_14" coeff="0.0818831" qc_coeff="0.0818831" alpha="111111111111111111110100" beta="111111111111111111011001"/>
-          <ci id="CIcoeff_15" coeff="-0.080546" qc_coeff="-0.080546" alpha="111111111111111111011001" beta="111111111111111111011001"/>
-          <ci id="CIcoeff_16" coeff="0.0759908" qc_coeff="0.0759908" alpha="111111111111111111100110" beta="111111111111111111100110"/>
-          <ci id="CIcoeff_17" coeff="-0.0656377" qc_coeff="-0.0656377" alpha="111111111111111111101010" beta="111111111111111111110100"/>
-          <ci id="CIcoeff_18" coeff="-0.0656377" qc_coeff="-0.0656377" alpha="111111111111111111110100" beta="111111111111111111101010"/>
-          <ci id="CIcoeff_19" coeff="-0.0542845" qc_coeff="-0.0542845" alpha="111111111111111111011010" beta="111111111111111111011010"/>
-          <ci id="CIcoeff_20" coeff="-0.0542448" qc_coeff="-0.0542448" alpha="111111111111111111011100" beta="111111111111111111011100"/>
+        <detlist size="21" type="DETS" nca="18" ncb="18" nea="3" neb="3" nstates="6" cutoff="1e-20">
+          <ci id="CIcoeff_0" coeff="0.806053" qc_coeff="0.806053" alpha="111000" beta="111000"/>
+          <ci id="CIcoeff_1" coeff="-0.245232" qc_coeff="-0.245232" alpha="110100" beta="110100"/>
+          <ci id="CIcoeff_2" coeff="-0.245049" qc_coeff="-0.245049" alpha="101010" beta="101010"/>
+          <ci id="CIcoeff_3" coeff="-0.171988" qc_coeff="-0.171988" alpha="101100" beta="110010"/>
+          <ci id="CIcoeff_4" coeff="-0.171988" qc_coeff="-0.171988" alpha="110010" beta="101100"/>
+          <ci id="CIcoeff_5" coeff="0.116527" qc_coeff="0.116527" alpha="110001" beta="011100"/>
+          <ci id="CIcoeff_6" coeff="0.116527" qc_coeff="0.116527" alpha="011100" beta="110001"/>
+          <ci id="CIcoeff_7" coeff="0.116497" qc_coeff="0.116497" alpha="101001" beta="011010"/>
+          <ci id="CIcoeff_8" coeff="0.116497" qc_coeff="0.116497" alpha="011010" beta="101001"/>
+          <ci id="CIcoeff_9" coeff="0.106351" qc_coeff="0.106351" alpha="100110" beta="111000"/>
+          <ci id="CIcoeff_10" coeff="0.106351" qc_coeff="0.106351" alpha="111000" beta="100110"/>
+          <ci id="CIcoeff_11" coeff="0.0818883" qc_coeff="0.0818883" alpha="011001" beta="101010"/>
+          <ci id="CIcoeff_12" coeff="0.0818883" qc_coeff="0.0818883" alpha="101010" beta="011001"/>
+          <ci id="CIcoeff_13" coeff="0.0818831" qc_coeff="0.0818831" alpha="011001" beta="110100"/>
+          <ci id="CIcoeff_14" coeff="0.0818831" qc_coeff="0.0818831" alpha="110100" beta="011001"/>
+          <ci id="CIcoeff_15" coeff="-0.080546" qc_coeff="-0.080546" alpha="011001" beta="011001"/>
+          <ci id="CIcoeff_16" coeff="0.0759908" qc_coeff="0.0759908" alpha="100110" beta="100110"/>
+          <ci id="CIcoeff_17" coeff="-0.0656377" qc_coeff="-0.0656377" alpha="101010" beta="110100"/>
+          <ci id="CIcoeff_18" coeff="-0.0656377" qc_coeff="-0.0656377" alpha="110100" beta="101010"/>
+          <ci id="CIcoeff_19" coeff="-0.0542845" qc_coeff="-0.0542845" alpha="011010" beta="011010"/>
+          <ci id="CIcoeff_20" coeff="-0.0542448" qc_coeff="-0.0542448" alpha="011100" beta="011100"/>
         </detlist>
       </multideterminant>
     </determinantset>
