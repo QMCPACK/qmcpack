@@ -18,7 +18,6 @@
 #define QMCPLUSPLUS_SOA_CUSPCORRECTION_BASISSET_H
 
 #include "Configuration.h"
-#include "Numerics/BaseTypes.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"

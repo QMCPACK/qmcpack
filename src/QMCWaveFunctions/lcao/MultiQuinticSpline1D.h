@@ -14,8 +14,9 @@
     
     
 /** @file
- *  All through this file the assumption that Coeffs.D1 and the LogLightGrid
- *   r_values.size() are equal must be maintained.
+ *  Assume that Coeffs.D1 and the LogLightGrid
+ *   r_values.size() are equal
+ *  Therefore r must be < r_max
  */
 
 #ifndef QMCPLUSPLUS_MULTI_FUNCTOR_QUINTIC_SPLINE_SET_H
@@ -23,7 +24,6 @@
 
 #include <algorithm>
 
-#include "Numerics/BaseTypes.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/NRSplineFunctions.h"
@@ -145,7 +145,6 @@ public:
     if(r>=r_max)
       throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
     			      + '\n');
-    // you get calls from SoaCuspCorrectionBasisSet.h with r>r_max
 
     if(r<myGrid.lower_bound)
     {
@@ -156,8 +155,6 @@ public:
     }
     else if(r >= r_max)
     {
-      // std::cout << "MultiQuinticSpline1D r>=r_max " << r << " >= "
-      // 		<< r_max << '\n';
       assignLimitValues(u);
     }
     else
@@ -183,8 +180,6 @@ public:
     if(r>=r_max)
       throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
     			      + '\n');
-    // you get calls from SoaCuspCorrectionBasisSet.h with r>r_max
-
     if(r<myGrid.lower_bound)
     {
       const T dr=r-myGrid.lower_bound;
@@ -197,12 +192,8 @@ public:
       }
     }
     //should never come to this
-    //be that as it may frequently it does by 10^[-2,-4]
-    //For lcao cases r_max 
     else if(r>=r_max)
     {
-      // std::cout << "MultiQuinticSpline1D r>=r_max " << r << " >= "
-      // 		<< r_max << '\n';
       assignLimitValues(u);
       assignLimitValues(du);
       assignLimitValues(d2u);
@@ -243,7 +234,6 @@ public:
     if(r>=r_max)
       throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
     			      + '\n');
-    // you get calls from SoaCuspCorrectionBasisSet.h with r>r_max
     if(r<myGrid.lower_bound)
     {
       const T dr=r-myGrid.lower_bound;
@@ -258,8 +248,6 @@ public:
     }
     else if (r>=r_max)
     {
-      // std::cout << "MultiQuinticSpline1D r>=r_max " << r << " >= "
-      // 		<< r_max << '\n';
       assignLimitValues(u);
       assignLimitValues(du);
       assignLimitValues(d2u);
