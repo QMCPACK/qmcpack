@@ -104,6 +104,7 @@ namespace qmcplusplus
  *   - any number of radial orbitals
  *   - using MultiQuinticSpline1D
  *   - Gaussian and Slater mixing allowed
+ *   - Slater's are assumed to fit in a 100 rmax grid
  */
 template<typename COT>
 class RadialOrbitalSetBuilder: public MPIObjectBase
@@ -428,11 +429,13 @@ private:
 
 /* Finalize this set using the common grid
  *
- * This function puts the STO on a logarithmic grid and calculates the boundary
- * conditions for the 1D quintic spline.  The derivatives at the endpoint
+ * This function puts the All RadialOrbitals 
+ * on a logarithmic grid with r_max of matching the largest r_max found
+ * filling radTemp. The derivatives at the endpoint
  * are assumed to be all zero.  Note: for the radial orbital we use
  * \f[ f(r) = \frac{R(r)}{r^l}, \f] where \f$ R(r) \f$ is the usual
  * radial orbital and \f$ l \f$ is the angular momentum.
+ *
  */
   template<typename COT>
   void RadialOrbitalSetBuilder<COT>::finalize()
@@ -441,22 +444,19 @@ private:
     int norbs=radTemp.size();
 
     OneDimGridBase<double>* grid_prec;
-    m_rcut_safe=100.;  //this can be estimated
-    //if(agrid->GridTag == LOG_1DGRID)
-    {
-      grid_prec=new LogGrid<double>;
-      grid_prec->set(1.e-6,m_rcut_safe,1001);
-    }
+
+    grid_prec=new LogGrid<double>;
+    grid_prec->set(1.e-6,m_rcut_safe,1001);
     multiset->initialize(*grid_prec,norbs);
-    
+
     for(int ib=0; ib<norbs; ++ib)
       radTemp[ib]->convert(grid_prec,multiset,ib,5);
 
     m_orbitals->MultiRnl=multiset;
 
-    //app_log() << "  Setting cutoff radius " << m_rcut_safe << std::endl << std::endl;
+    app_log() << "  Setting cutoff radius " << m_rcut_safe << std::endl << std::endl;
     m_orbitals->setRmax(static_cast<RealType>(m_rcut_safe));
-
+    
     delete grid_prec;
   }
 
@@ -468,6 +468,8 @@ private:
 
     gset->putBasisGroup(cur);
 
+    //need a find_cutoff for STO's, but this was previously in finalize and wiping out GTO's m_rcut_safe
+    m_rcut_safe = std::max(m_rcut_safe, static_cast<typename COT::ValueType>(100));
     radTemp.push_back(new A2NTransformer<RealType,sto_type>(gset));
     m_orbitals->RnlID.push_back(m_nlms);
   }

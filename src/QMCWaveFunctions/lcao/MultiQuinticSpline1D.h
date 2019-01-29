@@ -137,7 +137,7 @@ public:
    */ 
   inline void assignLimitValues(T* u)
   {
-    std::fill_n(u, num_splines_, czero<T>);
+    std::fill_n(u, num_splines_, T(0));
   }
 
   inline void evaluate(T r, T* restrict u) 
@@ -193,7 +193,7 @@ public:
       {
         u[i]=a[i]+first_deriv[i]*dr;
         du[i]=first_deriv[i];
-        d2u[i]= czero<T>;
+        d2u[i]= T(0);
       }
     }
     //should never come to this
@@ -252,8 +252,8 @@ public:
       {
         u[i]=a[i]+first_deriv[i]*dr;
         du[i]=first_deriv[i];
-        d2u[i]= czero<T>;
-        d3u[i]= czero<T>;
+        d2u[i]= T(0);
+        d3u[i]= T(0);
       }
     }
     else if (r>=r_max)

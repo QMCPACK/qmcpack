@@ -167,7 +167,7 @@ struct SoaCuspCorrection
    */
   inline void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
   {
-    myVGL=czero<RealType>;
+    myVGL=0.0;
 
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const auto dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
@@ -204,7 +204,7 @@ struct SoaCuspCorrection
   inline void evaluate_vgl(const ParticleSet& P, int iat, ValueVector_t &psi, GradVector_t &dpsi, ValueVector_t &d2psi)
   {
 
-    myVGL=czero<RealType>;
+    myVGL=0.0;
 
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const auto dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
@@ -234,7 +234,7 @@ struct SoaCuspCorrection
   inline void evaluate_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix_t &psi, GradMatrix_t &dpsi, ValueMatrix_t &d2psi)
   {
 
-    myVGL=czero<RealType>;
+    myVGL=0.0;
 
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const auto dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
@@ -269,7 +269,7 @@ struct SoaCuspCorrection
   {
     ValueType* tmp_vals=myVGL[0];
 
-    std::fill_n(tmp_vals, myVGL.size(), czero<RealType>);
+    std::fill_n(tmp_vals, myVGL.size(), 0.0);
 
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const auto dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
