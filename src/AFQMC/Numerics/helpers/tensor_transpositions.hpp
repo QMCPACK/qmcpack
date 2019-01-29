@@ -80,8 +80,9 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
         //auto Gc_( to_address(Gca[na0+a][nj0].origin()) );
         auto Gc_( A + (na0+a)*nmo_tot*nwalk + nj0*nwalk);
         for(int j=0, aj=a0; j<nj; j++, aj+=nwalk) {
-          for(int w=0; w<nwalk; w++, ++Gc_)
+          for(int w=0; w<nwalk; w++, ++Gc_) { 
             G_[aj + w] = static_cast<T>(*Gc_);
+          }
         }
       }
     }

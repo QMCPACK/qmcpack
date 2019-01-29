@@ -30,16 +30,7 @@
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Numerics/helpers/batched_operations.hpp"
 #include "AFQMC/Numerics/helpers/tensor_transpositions.hpp"
-/*
-#include "AFQMC/Kernels/ajw_to_waj.cuh"
-#include "AFQMC/Kernels/dot_wabn_wban.cuh"
-#include "AFQMC/Kernels/vKKwij_to_vwKiKj.cuh"
-#include "AFQMC/Kernels/KaKjw_to_QKajw.cuh"
-#include "AFQMC/Kernels/vbias_from_v1.cuh"
-#include "AFQMC/Kernels/KaKjw_to_KKwaj.cuh"
-#include "AFQMC/Kernels/batched_dot_wabn_wban.cuh"
-#include "AFQMC/Kernels/batched_Tab_to_Klr.cuh"
-*/
+
 namespace qmcplusplus
 {
 
@@ -157,7 +148,7 @@ class KP3IndexFactorization_batched
         SM_TMats({1,1},sp_allocator_shared_),
         TMats({1,1},sp_allocator_),
         IMats({1,1},IAllocator{allocator_}),
-        KKTransID( {nopk.size(),nopk.size()}, BAllocator{allocator_}),
+        KKTransID( {nopk.size()+1,nopk.size()}, BAllocator{allocator_}),
         dev_nopk(nopk),
         dev_i0pk( typename IVector::extensions_type{nopk.size()}, IAllocator{allocator_}),
         dev_kminus(kminus),
