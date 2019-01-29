@@ -41,7 +41,6 @@ namespace qmcplusplus
     inline double find_cutoff(Fin& in, T rmax)
     {
       LogGridLight<double> agrid;
-      agrid.set(1.e-6,100.,1001);
       const double eps=1e-6;
       bool too_small=true;
       agrid.set(eps,rmax,1001);
@@ -404,7 +403,7 @@ private:
     using gto_type=GaussianCombo<double>;
     gto_type* gset=new gto_type(L,Normalized);
     gset->putBasisGroup(cur);
-
+    //Warning::Magic Number for max rmax of gaussians
     double r0=find_cutoff(*gset,100.);
     m_rcut_safe=std::max(m_rcut_safe,r0);
     radTemp.push_back(new A2NTransformer<RealType,gto_type>(gset));
