@@ -521,7 +521,7 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node, const
   std::vector<int> occupancy_vector (nmo,0);
 
   // Function to fill occupancy_vectors and also return number of unique determinants 
-  const size_t unique_dets =  this->build_occ_vec(detData, nel, nmo, &occupancy_vector);
+  const size_t unique_dets = build_occ_vec(detData, nel, nmo, &occupancy_vector);
 
   // When calculating the parameter derivative of the Multi-Slater component of the wavefunction, each unique deterimant can contribute multiple times. 
   // The lookup_tbls are used so that a parameter derivative of a unique determinant is only done once and then scaled according to how many times it appears in the Multi-Slater expansion 
@@ -557,8 +557,8 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node, const
 }
 
   int MultiDiracDeterminant::build_occ_vec(std::vector<int> * data,
-                                                const size_t& nel,
-                                                const size_t& nmo,
+                                                const size_t nel,
+                                                const size_t nmo,
                                                 std::vector<int>* occ_vec)
   {                                                                                                         
     std::vector<int>::iterator it = (*data).begin();

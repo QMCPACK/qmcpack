@@ -116,7 +116,7 @@ public:
   /// create optimizable orbital rotation parameters
   void buildOptVariables(std::vector<size_t>& C2node, const int& spin);
   ///helper function to buildOptVariables
-  int build_occ_vec(std::vector<int> * data, const size_t& nel, const size_t& nmo, std::vector<int>* occ_vec);
+  int build_occ_vec(std::vector<int> * data, const size_t nel, const size_t nmo, std::vector<int>* occ_vec);
 
   void resetParameters(const opt_variables_type& active)
   {

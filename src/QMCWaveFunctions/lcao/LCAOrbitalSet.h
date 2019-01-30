@@ -71,9 +71,6 @@ namespace qmcplusplus
     /// create optimizable orbital rotation parameters
     void buildOptVariables(const int& spin, const std::vector<std::pair<int,int>>& rotations);
 
-    ///helper function to buildOptVariables
-    int build_occ_vec(std::vector<int> * data, const size_t& nel, const size_t& nmo, std::vector<int>* occ_vec);
-  
     void evaluateDerivatives (ParticleSet& P,
                              const opt_variables_type& optvars,
                              std::vector<RealType>& dlogpsi, 

@@ -278,8 +278,8 @@ namespace qmcplusplus
 
   void LCAOrbitalSet::buildOptVariables(const int& spin, const std::vector<std::pair<int,int>>& rotations)
   {
-    const size_t& nmo = OrbitalSetSize;
-    const size_t& nb = BasisSetSize;
+    const size_t nmo = OrbitalSetSize;
+    const size_t nb = BasisSetSize;
     m_init_B = new ValueMatrix_t(*C);
 
     // create active rotations
@@ -324,12 +324,12 @@ namespace qmcplusplus
         myVars.print(app_log());
       }
    
-        std::vector<RealType> param( m_act_rot_inds.size() );
-        for (int i=0; i < m_act_rot_inds.size(); i++)
-        {
-          param[i] = myVars[i];
-        }
-        apply_rotation(&param);
+      std::vector<RealType> param( m_act_rot_inds.size() );
+      for (int i=0; i < m_act_rot_inds.size(); i++)
+      {
+        param[i] = myVars[i];
+      }
+      apply_rotation(&param);
   
       if (params_supplied)
       {
@@ -470,42 +470,12 @@ namespace qmcplusplus
     }
   }
 
-  int LCAOrbitalSet::build_occ_vec(std::vector<int> * data,
-                                                const size_t& nel,                                          
-                                                const size_t& nmo,                                          
-                                                std::vector<int>* occ_vec)                                  
-  {                                                                                                         
-    std::vector<int>::iterator it = (*data).begin();                                                        
-    int count = 0; //number of determinants                                                                 
-    while(it != (*data).end())                                                                              
-    {                                                                                                       
-      int k = *it; // number of excitations with respect to the reference matrix                            
-      if(count == 0)                                                                                        
-      {                                                                                                     
-        it += 3*k+1;                                                                                        
-        count ++;                                                                                           
-      }                                                                                                     
-      else                                                                                                  
-      {                                                                                                     
-        for (int i = 0; i<k; i++)
-        {
-        //for determining active orbitals
-          (*occ_vec)[*(it+1+i)]++;
-          (*occ_vec)[*(it+1+k+i)]++;
-        }
-        it += 3*k+1;
-        count ++;
-      }
-    }
-    return count;
-  }
-
   void LCAOrbitalSet::apply_rotation(std::vector<RealType> const * const param)
   {
     assert( param->size() == m_act_rot_inds.size() );
 
-    const size_t& nmo = OrbitalSetSize;
-    const size_t& nb = BasisSetSize;
+    const size_t nmo = OrbitalSetSize;
+    const size_t nb = BasisSetSize;
     // read out the parameters that define the rotation into an antisymmetric matrix
     std::vector<RealType> rot_mat(nmo*nmo, 0.0);
     for (int i=0; i < m_act_rot_inds.size(); i++)
