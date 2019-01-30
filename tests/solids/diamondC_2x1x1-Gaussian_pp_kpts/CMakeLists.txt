@@ -53,7 +53,7 @@ LIST(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-21.84416881 0.00083760")
                     qmc_long_vmc_dmc.in.xml
                     1 16
                     TRUE
-                    1 LONG_DIAMOND_DMC_SCALARS # DMC
+                    0 LONG_DIAMOND_DMC_SCALARS # DMC
                     )
 
 ELSE()
