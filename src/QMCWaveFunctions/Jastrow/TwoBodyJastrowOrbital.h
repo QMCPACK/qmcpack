@@ -546,7 +546,7 @@ public:
 
   RealType ChiesaKEcorrection()
   {
-#if QMC_BUILD_LEVEL<5
+#if !QMC_BUILD_SANDBOX_ONLY
     if ((!PtclRef->Lattice.SuperCellEnum))
       return 0.0;
     const int numPoints = 1000;

@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_EEIJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_EEIJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
-#if QMC_BUILD_LEVEL<5
+#if !QMC_BUILD_SANDBOX_ONLY
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #endif
 #include "Particle/DistanceTableData.h"
