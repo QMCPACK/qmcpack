@@ -43,8 +43,12 @@ namespace qmcplusplus
      * makeClone makes a shallow copy
      */
     ValueMatrix_t* C;
-    // Scratch space for the initial coefficents before the rotation is applied
+    /// Scratch space for the initial coefficents before the rotation is applied
     ValueMatrix_t m_init_B;
+    /// true if SPO parameters (orbital rotation parameters) have been supplied by input
+    bool params_supplied;
+    /// list of supplied orbital rotation parameters
+    std::vector<RealType> params;
 
     ///true if C is an identity matrix
     bool Identity;

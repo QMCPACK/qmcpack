@@ -68,10 +68,6 @@ public:
   int builder_index;
   ///true if SPO is optimizable
   bool Optimizable;
-  ///true if SPO parameters (orbital rotation parameters) have been supplied by input
-  bool params_supplied = false;
-  ///list of supplied orbital rotation parameters
-  std::vector<RealType> params;
   ///flag to calculate ionic derivatives
   bool ionDerivs;
   ///number of Single-particle orbitals

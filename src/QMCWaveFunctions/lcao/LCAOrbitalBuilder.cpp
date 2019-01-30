@@ -686,9 +686,10 @@ namespace qmcplusplus
       applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
     }
 
-    if(optimize=="yes"){
+    if(optimize=="yes")
+    {
       lcos->Optimizable = true; 
-      app_log() << "  SPOSet is optimizable\n";
+      app_log() << "  SPOSet " << spo_name << " is optimizable\n";
     }
 
     return lcos;
