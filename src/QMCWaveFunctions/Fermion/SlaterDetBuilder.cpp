@@ -309,8 +309,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
       // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
       //and then remove the orbital rotation parameters
-      up_det->buildOptVariables(*(multislaterdetfast_0->C2node_up),0);
-      dn_det->buildOptVariables(*(multislaterdetfast_0->C2node_dn),1);
+        multislaterdetfast_0->buildOptVariables();
       }
       else
       {

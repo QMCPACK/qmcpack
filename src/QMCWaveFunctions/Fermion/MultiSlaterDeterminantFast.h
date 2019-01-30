@@ -87,6 +87,8 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P);
 
+  void buildOptVariables();
+
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
   {

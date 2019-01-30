@@ -157,7 +157,7 @@ public:
 #endif
 
   /// create optimizable orbital rotation parameters
-  virtual void buildOptVariables(std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin) {}
+  virtual void buildOptVariables(const int& spin, const std::vector<std::pair<int,int>>& rotations) {}
   ///reset
   virtual void resetParameters(const opt_variables_type& optVariables)=0;
 
@@ -190,7 +190,8 @@ public:
                                    const size_t N1,
                                    const size_t N2,
                                    const size_t NP1,
-                                   const size_t NP2){}
+                                   const size_t NP2,
+                                   const std::vector< std::vector<int> > & lookup_tbl){}
 
 
   ///reset the target particleset

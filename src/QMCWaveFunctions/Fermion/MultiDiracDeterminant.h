@@ -50,6 +50,9 @@ public:
   typedef SPOSet::HessMatrix_t  HessMatrix_t;
   typedef SPOSet::HessType      HessType;
 
+  //lookup table mapping the unique determinants to their element position in C2_node vector
+  std::vector< std::vector<int> > lookup_tbl;
+
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
@@ -112,7 +115,8 @@ public:
 
   /// create optimizable orbital rotation parameters
   void buildOptVariables(std::vector<size_t>& C2node, const int& spin);
-
+  ///helper function to buildOptVariables
+  int build_occ_vec(std::vector<int> * data, const size_t& nel, const size_t& nmo, std::vector<int>* occ_vec);
 
   void resetParameters(const opt_variables_type& active)
   {
@@ -160,7 +164,8 @@ public:
                                                                 B_grad, B_lapl,
                                                                 detData_up,
                                                                 N1, N2,
-                                                                NP1, NP2); 
+                                                                NP1, NP2,
+                                                                lookup_tbl); 
   }
 
 
@@ -386,6 +391,8 @@ public:
 // if its value is zero, then use a data from backup, but always use this one
 // by default
   int ReferenceDeterminant;
+  //vector that contains active orbital rotation parameter indices 
+  std::vector<std::pair<int,int> > m_act_rot_inds;
 
   /// store determinants (old and new)
   ValueVector_t detValues, new_detValues;

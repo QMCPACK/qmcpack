@@ -54,8 +54,6 @@ namespace qmcplusplus
     vgl_type Temp; 
     ///Tempv(OrbitalSetSize) Tempv=C*Temp
     vgl_type Tempv; 
-    //lookup table mapping the unique determinants to their element position in C2_node vector
-    std::vector< std::vector<int> > lookup_tbl;
     //vector that contains active orbital rotation parameter indices 
     std::vector<std::pair<int,int> > m_act_rot_inds;
     /** constructor
@@ -71,7 +69,7 @@ namespace qmcplusplus
     SPOSet* makeClone() const;
 
     /// create optimizable orbital rotation parameters
-    void buildOptVariables(std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin);
+    void buildOptVariables(const int& spin, const std::vector<std::pair<int,int>>& rotations);
 
     ///helper function to buildOptVariables
     int build_occ_vec(std::vector<int> * data, const size_t& nel, const size_t& nmo, std::vector<int>* occ_vec);
@@ -100,7 +98,8 @@ namespace qmcplusplus
                              const size_t N1,
                              const size_t N2,
                              const size_t NP1,
-                             const size_t NP2);
+                             const size_t NP2,
+                             const std::vector< std::vector<int> > & lookup_tbl);
 
     
     void checkInVariables(opt_variables_type& active)
@@ -233,7 +232,8 @@ namespace qmcplusplus
                            const size_t N1,
                            const size_t N2,
                            const size_t NP1,
-                           const size_t NP2); 
+                           const size_t NP2,
+                           const std::vector< std::vector<int> > & lookup_tbl);
 
   };
 }

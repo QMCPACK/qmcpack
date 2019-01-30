@@ -276,56 +276,22 @@ namespace qmcplusplus
 #endif
   }
 
-  void LCAOrbitalSet::buildOptVariables(std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin)
+  void LCAOrbitalSet::buildOptVariables(const int& spin, const std::vector<std::pair<int,int>>& rotations)
   {
     const size_t& nmo = OrbitalSetSize;
     const size_t& nb = BasisSetSize;
     m_init_B = new ValueMatrix_t(*C);
-    //a vector in which the element's index value correspond to Molecular Orbitals.
-    //The element value at an index indicates how many times an electron is excited from or to that orbital in the Multi-Slater expansion i.e the indices with non-zero elements are active space orbitals
-    std::vector<int> occupancy_vector (nmo,0);
-
-    // Function to fill occupancy_vectors and also return number of unique determinants 
-    const size_t unique_dets =  this->build_occ_vec(data, nel, nmo, &occupancy_vector);
-
-    // When calculating the parameter derivative of the Multi-Slater component of the wavefunction, each unique deterimant can contribute multiple times. 
-    // The lookup_tbls are used so that a parameter derivative of a unique determinant is only done once and then scaled according to how many times it appears in the Multi-Slater expansion 
-    lookup_tbl.resize(unique_dets);
-    //construct lookup table 
-    for (int i(0); i < C2node.size(); i++)
-    {
-      lookup_tbl[C2node[i]].push_back(i);
-    } 
 
     // create active rotations
-    m_act_rot_inds.clear(); 
-
-
-  for(int i=0;i<nmo;i++)
-    for(int j=i+1;j<nmo;j++)
-     { 
-      bool core_i(!occupancy_vector[i] and i <= nel-1); // true if orbital i is a 'core' orbital
-      bool core_j(!occupancy_vector[j] and j <= nel-1); // true if orbital j is a 'core' orbital
-      bool virt_i(!occupancy_vector[i] and i >  nel-1); // true if orbital i is a 'virtual' orbital
-      bool virt_j(!occupancy_vector[j] and j >  nel-1); // true if orbital j is a 'virtual' orbital
-        if( !( 
-              ( core_i and core_j  ) 
-                        or
-              ( virt_i and virt_j ) 
-             )    
-          )
-        {
-          m_act_rot_inds.push_back(std::pair<int,int>(i,j)); // orbital rotation parameter accepted as long as rotation isn't core-core or virtual-virtual
-        }
-     }
+    m_act_rot_inds = rotations; 
    
-      // This will add the orbital rotation parameters to myVars 
-      // and will also read in initial parameter values supplied in input file     
-      int p, q; 
-      int nparams_active = m_act_rot_inds.size();
-      if (params_supplied)
-        if(nparams_active != params.size())
-          APP_ABORT("The number of supplied orbital rotation parameters does not match number prdouced by the slater expansion. \n");
+    // This will add the orbital rotation parameters to myVars 
+    // and will also read in initial parameter values supplied in input file     
+    int p, q; 
+    int nparams_active = m_act_rot_inds.size();
+    if (params_supplied)
+      if(nparams_active != params.size())
+        APP_ABORT("The number of supplied orbital rotation parameters does not match number prdouced by the slater expansion. \n");
 
       for (int i=0; i< nparams_active; i++)
       {
@@ -416,7 +382,8 @@ namespace qmcplusplus
                              const size_t N1,
                              const size_t N2,
                              const size_t NP1,
-                             const size_t NP2) 
+                             const size_t NP2,
+                             const std::vector< std::vector<int> > & lookup_tbl)
   {
     bool recalculate(false);
     for (int k=0; k<myVars.size(); ++k)
@@ -498,7 +465,8 @@ namespace qmcplusplus
                         N1,
                         N2,
                         NP1,
-                        NP2);
+                        NP2,
+                        lookup_tbl);
     }
   }
 
@@ -641,7 +609,8 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
                                       const size_t N1,
                                       const size_t N2,
                                       const size_t NP1,
-                                      const size_t NP2)
+                                      const size_t NP2,
+                                      const std::vector< std::vector<int> > & lookup_tbl)
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 GUIDE TO THE MATICES BEING BUILT
 ----------------------------------------------

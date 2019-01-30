@@ -756,6 +756,12 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
   }  
 }
 
+void MultiSlaterDeterminantFast::buildOptVariables()
+{
+  Dets[0]->buildOptVariables(*C2node_up,0);
+  Dets[1]->buildOptVariables(*C2node_dn,1);
+}
+
 void MultiSlaterDeterminantFast::registerTimers()
 {
   RatioTimer.reset();
@@ -777,6 +783,8 @@ void MultiSlaterDeterminantFast::registerTimers()
   TimerManager.addTimer (&EvaluateTimer);
   TimerManager.addTimer (&AccRejTimer);
 }
+
+
 
 
 }
