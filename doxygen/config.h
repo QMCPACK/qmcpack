@@ -29,9 +29,6 @@
 /* define the subversion last changed date */
 #define QMCPLUSPLUS_LAST_CHANGED_DATE  "2012-04-22 10:24:14 -0400 (Sun, 22 Apr 2012)"
 
-/* define QMC_BUILD_LEVEL */
-#define QMC_BUILD_LEVEL 3
-
 /* define PRINT_DEBUG */
 /* #undef PRINT_DEBUG */
 
