@@ -54,7 +54,7 @@ LIST(APPEND LONG_DIAMOND_DMC_SCALARS "ionion" "-25.551326757000 0.000100000000")
                     qmc_long_vmc_dmc.in.xml
                     1 16
                     TRUE
-                    1 LONG_DIAMOND_DMC_SCALARS # DMC
+                    2 LONG_DIAMOND_DMC_SCALARS # DMC
                     )
 
 ELSE()
