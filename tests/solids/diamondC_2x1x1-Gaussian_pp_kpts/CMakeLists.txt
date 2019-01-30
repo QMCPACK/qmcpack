@@ -22,7 +22,7 @@ IF(ENABLE_SOA)
 # Long tests
 #
 
-# Reference VMC run in qmc_ref_long_vmc_dmc.s001.scalar.dat"
+# ../../../../../utils/make_ref_data.sh LONG_DIAMOND qmc_long.s000.scalar.dat qmc-ref/qmc_ref_long_vmc_dmc.s000.scalar.dat
 LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-21.710207226000 0.006931462353")
 LIST(APPEND LONG_DIAMOND_SCALARS "kinetic" "20.499369979000 0.063213462871")
 LIST(APPEND LONG_DIAMOND_SCALARS "potential" "-42.209577205000 0.059854365950")
@@ -40,6 +40,7 @@ LIST(APPEND LONG_DIAMOND_SCALARS "ionion" "-25.551326757000 0.000100000000")
                     )
 # generated scalars by
 #../../../../../utils/make_ref_data.sh LONG_DIAMOND_DMC qmc_long_vmc_dmc.s001.scalar.dat qmc-ref/qmc_ref_long_vmc_dmc.s001.scalar.dat
+
 LIST(APPEND LONG_DIAMOND_DMC_SCALARS "kinetic" "20.538888744528 0.083505174054")
 LIST(APPEND LONG_DIAMOND_DMC_SCALARS "potential" "-42.383282722862 0.082006395952")
 LIST(APPEND LONG_DIAMOND_DMC_SCALARS "eeenergy" "-5.452768166889 0.049835970216")
