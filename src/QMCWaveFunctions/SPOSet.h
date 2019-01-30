@@ -157,7 +157,7 @@ public:
 #endif
 
   /// create optimizable orbital rotation parameters
-  virtual void buildOptVariables(const int& spin, const std::vector<std::pair<int,int>>& rotations) {}
+  virtual void buildOptVariables(const std::vector<std::pair<int,int>>& rotations) {}
   ///reset
   virtual void resetParameters(const opt_variables_type& optVariables)=0;
 

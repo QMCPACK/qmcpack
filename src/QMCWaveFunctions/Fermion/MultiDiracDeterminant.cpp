@@ -512,7 +512,7 @@ void MultiDiracDeterminant::registerTimers()
 
 }
 
-void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node, const int& spin)
+void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
 {
   const size_t nel = NumPtcls;
   const size_t nmo = NumOrbitals;
@@ -553,7 +553,7 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node, const
         }
      }   
 
-  Phi->buildOptVariables(spin, m_act_rot_inds);
+  Phi->buildOptVariables(m_act_rot_inds);
 }
 
   int MultiDiracDeterminant::build_occ_vec(std::vector<int> * data,

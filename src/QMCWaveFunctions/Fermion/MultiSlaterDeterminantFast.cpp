@@ -760,8 +760,8 @@ void MultiSlaterDeterminantFast::buildOptVariables()
 {
   if(Dets[0]->Optimizable && Dets[1]->Optimizable)
   {
-    Dets[0]->buildOptVariables(*C2node_up,0);
-    Dets[1]->buildOptVariables(*C2node_dn,1);
+    Dets[0]->buildOptVariables(*C2node_up);
+    Dets[1]->buildOptVariables(*C2node_dn);
   }
 }
 

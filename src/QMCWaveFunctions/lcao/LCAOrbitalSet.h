@@ -69,7 +69,7 @@ namespace qmcplusplus
     SPOSet* makeClone() const;
 
     /// create optimizable orbital rotation parameters
-    void buildOptVariables(const int& spin, const std::vector<std::pair<int,int>>& rotations);
+    void buildOptVariables(const std::vector<std::pair<int,int>>& rotations);
 
     void evaluateDerivatives (ParticleSet& P,
                              const opt_variables_type& optvars,

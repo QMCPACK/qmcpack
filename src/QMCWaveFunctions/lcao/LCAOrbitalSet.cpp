@@ -276,7 +276,7 @@ namespace qmcplusplus
 #endif
   }
 
-  void LCAOrbitalSet::buildOptVariables(const int& spin, const std::vector<std::pair<int,int>>& rotations)
+  void LCAOrbitalSet::buildOptVariables(const std::vector<std::pair<int,int>>& rotations)
   {
     const size_t nmo = OrbitalSetSize;
     const size_t nb = BasisSetSize;
@@ -298,7 +298,7 @@ namespace qmcplusplus
         p = m_act_rot_inds[i].first;
         q = m_act_rot_inds[i].second;
         std::stringstream sstr;
-        sstr << "SPO_" << (spin==0 ? "UP":"DN") 
+        sstr << objectName
                 << "_orb_rot_"
                 << ( p <   10 ? "0": "")
                 << ( p <  100 ? "0": "")
