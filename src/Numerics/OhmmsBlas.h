@@ -316,7 +316,7 @@ struct BLAS
     // MKL has batched gemm, but with pointer interface. Translate here
     std::vector<const void*> Aptrs(batchSize);
     std::vector<const void*> Bptrs(batchSize);
-    std::vector<void*> Cptrs(batchSize);
+    std::vector<const void*> Cptrs(batchSize);
 
     for(int i=0; i<batchSize; i++) {
         Aptrs[i] = static_cast<const void*>(A+i*strideA);

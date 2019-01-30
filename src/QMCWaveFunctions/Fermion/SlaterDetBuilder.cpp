@@ -261,9 +261,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       {
         APP_ABORT("multideterminant is already instantiated.");
       }
-#ifdef MIXED_PRECISION
-      APP_ABORT("multideterminant is not safe with mixed precision. Please use full precision build instead.");
-#endif
       std::string spo_alpha;
       std::string spo_beta;
       std::string fastAlg("yes");

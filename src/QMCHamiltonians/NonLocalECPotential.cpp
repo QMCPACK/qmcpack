@@ -386,7 +386,7 @@ NonLocalECPotential::markAffectedElecs(const DistanceTableData* myTable, int iel
       NeighborIons.push_back(iat);
     }
     // move around
-    if(moved || old_distance < PP[iat]->Rmax && new_distance < PP[iat]->Rmax)
+    if(moved || (old_distance < PP[iat]->Rmax && new_distance < PP[iat]->Rmax))
     {
       std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
       for(int jel=0; jel<NeighborElecs.size(); ++jel)
