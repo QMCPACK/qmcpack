@@ -34,6 +34,7 @@ DiracDeterminant::DiracDeterminant(SPOSetPtr const spos, int first):
   DiracDeterminantBase(spos,first), ndelay(1)
 {
   ClassName = "DiracDeterminant";
+  ionDerivs = true;
 }
 
 ///default destructor
@@ -95,20 +96,17 @@ void DiracDeterminant::resize(int nel, int morb)
   d2psiV.resize(NumOrbitals);
   FirstAddressOfdV = &(dpsiM(0,0)[0]); //(*dpsiM.begin())[0]);
   LastAddressOfdV = FirstAddressOfdV + NumPtcls*NumOrbitals*DIM;
-  // For forces
-  /* Ye Luo, Apr 18th 2015
-   * To save the memory used by every walker, the resizing the following giant matrices are commented.
-   * When ZVZB forces and stresses are ready for deployment, R. Clay will take care of those matrices.
-   */
-  /*
-  grad_source_psiM.resize(nel,norb);
-  grad_lapl_source_psiM.resize(nel,norb);
-  grad_grad_source_psiM.resize(nel,norb);
-  phi_alpha_Minv.resize(nel,norb);
-  grad_phi_Minv.resize(nel,norb);
-  lapl_phi_Minv.resize(nel,norb);
-  grad_phi_alpha_Minv.resize(nel,norb);
-  */
+  
+  if(ionDerivs)
+  {
+    grad_source_psiM.resize(nel,norb);
+    grad_lapl_source_psiM.resize(nel,norb);
+    grad_grad_source_psiM.resize(nel,norb);
+    phi_alpha_Minv.resize(nel,norb);
+    grad_phi_Minv.resize(nel,norb);
+    lapl_phi_Minv.resize(nel,norb);
+    grad_phi_alpha_Minv.resize(nel,norb);
+  }
 }
 
 DiracDeterminant::GradType
@@ -317,6 +315,7 @@ DiracDeterminant::GradType
 DiracDeterminant::evalGradSource(ParticleSet& P, ParticleSet& source,
                                      int iat)
 {
+  if(!ionDerivs) APP_ABORT("DiracDeterminant::evalGradSource.  Determinant not initialized for force computations.");
   Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
   return simd::dot(psiM.data(),grad_source_psiM.data(),psiM.size());
 }
@@ -327,6 +326,7 @@ DiracDeterminant::evalGradSourcep
  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
 {
+  if(!ionDerivs) APP_ABORT("DiracDeterminant::evalGradSourcep.  Determinant not initialized for force computations.");
   Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat,
                            grad_source_psiM, grad_grad_source_psiM,
                            grad_lapl_source_psiM);
@@ -447,6 +447,7 @@ DiracDeterminant::evalGradSource
  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
 {
+  if(!ionDerivs) APP_ABORT("DiracDeterminant::evalGradSource.  Determinant not initialized for force computations.");
   Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat,
                            grad_source_psiM, grad_grad_source_psiM,
                            grad_lapl_source_psiM);
