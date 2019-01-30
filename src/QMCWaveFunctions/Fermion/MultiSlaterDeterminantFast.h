@@ -145,6 +145,7 @@ public:
 
   void testMSD(ParticleSet& P, int iat);
 
+  /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
   size_t NP;
   size_t nels_up,nels_dn;
