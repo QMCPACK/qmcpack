@@ -367,7 +367,7 @@ void SPOSet::evaluateGradSource (const ParticleSet &P
                                      , int first, int last, const ParticleSet &source
                                      , int iat_src, GradMatrix_t &gradphi)
 {
-  APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
+  APP_ABORT("SPOSetBase::evalGradSource is not implemented");
 }
 
 void SPOSet::evaluateGradSource (const ParticleSet &P, int first, int last,
@@ -376,7 +376,7 @@ void SPOSet::evaluateGradSource (const ParticleSet &P, int first, int last,
                                      HessMatrix_t &grad_grad_phi,
                                      GradMatrix_t &grad_lapl_phi)
 {
-  APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
+  APP_ABORT("SPOSetBase::evalGradSource is not implemented");
 }
 
 #ifdef QMC_CUDA
