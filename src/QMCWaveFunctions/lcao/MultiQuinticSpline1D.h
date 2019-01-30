@@ -86,6 +86,8 @@ namespace qmcplusplus
     };
 
   /** multivalue implementation for OneDimQuintic
+   *  While its implied this spline could have complex values
+   *  The fact that it takes r in T is a problem
    */
 template<typename T>
 class MultiQuinticSpline1D

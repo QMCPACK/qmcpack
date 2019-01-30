@@ -90,7 +90,14 @@ class RadialOrbitalSetBuilder: public MPIObjectBase
 {
 
 public:
-  typedef QMCTraits::RealType RealType;
+  //Now we count on COT::ValueType being real
+  //since COT::ValueType == ROT::ValueType && ROT==MultiQuiniticSpline1D
+  //And MultiQuiniticSpline1D does not distringuish between real_type of r
+  //And the value_type of 'Psi(r)' this is safe for now
+  //I think COT::gridtype needs to go to a template<typename RT, typename VT>
+  //For this all to become 'correct'.
+  using RealType = typename COT::ValueType;
+  using ValueType = typename COT::ValueType;
   typedef typename COT::RadialOrbital_t RadialOrbitalType;
   typedef typename COT::grid_type  GridType;
 
@@ -152,7 +159,7 @@ private:
   RealType m_rcut;
 
   ///safe common cutoff radius
-  double m_rcut_safe;
+  RealType m_rcut_safe;
 
   /** radial functors to be finalized
    */
@@ -390,11 +397,11 @@ private:
   void RadialOrbitalSetBuilder<COT>::addGaussian(xmlNodePtr cur)
   {
     int L= m_nlms[1];
-    using gto_type=GaussianCombo<double>;
+    using gto_type=GaussianCombo<ValueType>;
     gto_type* gset=new gto_type(L,Normalized);
     gset->putBasisGroup(cur);
     //Warning::Magic Number for max rmax of gaussians
-    double r0=find_cutoff(*gset,100.);
+    RealType r0=find_cutoff(*gset,100.);
     m_rcut_safe=std::max(m_rcut_safe,r0);
     radTemp.push_back(new A2NTransformer<RealType,gto_type>(gset));
     m_orbitals->RnlID.push_back(m_nlms);
@@ -405,11 +412,15 @@ private:
   void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive &hin)
   {
     int L= m_nlms[1];
-    using gto_type=GaussianCombo<double>;
+    using gto_type=GaussianCombo<ValueType>;
     gto_type* gset=new gto_type(L,Normalized);
     gset->putBasisGroupH5(hin);
-
-    double r0=find_cutoff(*gset,100.);
+    //at least gamess derived xml seems to provide the max its grid goes to
+    //So in priniciple this 100 should be coming in from input
+    //m_rcut seems like it once served this purpose but is somehow
+    //a class global variable even though it should apply here and
+    //similar locations on a function by function basis.
+    RealType r0=find_cutoff(*gset,100.);
     m_rcut_safe=std::max(m_rcut_safe,r0);
     radTemp.push_back(new A2NTransformer<RealType,gto_type>(gset));
     m_orbitals->RnlID.push_back(m_nlms);
@@ -432,6 +443,10 @@ private:
     MultiQuinticSpline1D<RealType>* multiset=new MultiQuinticSpline1D<RealType>;
     int norbs=radTemp.size();
 
+    //This is a temporary grid used in conversion, it shouldn't be
+    //created on the heap or here in my opinion
+    //It must be double regardless of the precision of anything else
+    //that is probably a sound idea
     OneDimGridBase<double>* grid_prec;
 
     grid_prec=new LogGrid<double>;
