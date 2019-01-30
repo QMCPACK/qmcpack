@@ -1461,8 +1461,15 @@ void GamesAsciiParser::getCI(std::istream& is)
   int ds=SpinMultiplicity-1;
   int neb= (NumberOfEls-ds)/2;
   int nea= NumberOfEls-NumberOfBeta;
-  ci_nca = nea-ci_nea;
-  ci_ncb = neb-ci_neb;
+
+  for(int i=0; i<CIalpha.size(); i++)
+    CIalpha[i].insert(0,std::string(nea-ci_nea,'1'));
+  for(int i=0; i<CIbeta.size(); i++)
+    CIbeta[i].insert(0,std::string(neb-ci_neb,'1'));
+
+  ci_nea=nea;
+  ci_neb=neb;
+  
   ci_nstates = CIalpha[0].size();
 }
 
