@@ -14,7 +14,7 @@
 #ifndef QMCPLUSPLUS_TWOBODYJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_TWOBODYJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
-#if QMC_BUILD_LEVEL<5
+#if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include <qmc_common.h>

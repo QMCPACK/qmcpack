@@ -84,11 +84,9 @@ IF(BUILD_LMYENGINE_INTERFACE)
      )
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
-IF(QMC_BUILD_LEVEL GREATER 1)
-  SET(QMCDRIVERS ${QMCDRIVERS}
-    ../Estimators/CSEnergyEstimator.cpp
-  )
-ENDIF(QMC_BUILD_LEVEL GREATER 1)
+SET(QMCDRIVERS ${QMCDRIVERS}
+  ../Estimators/CSEnergyEstimator.cpp
+)
 
 
 ####################################
