@@ -758,8 +758,11 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
 
 void MultiSlaterDeterminantFast::buildOptVariables()
 {
-  Dets[0]->buildOptVariables(*C2node_up,0);
-  Dets[1]->buildOptVariables(*C2node_dn,1);
+  if(Dets[0]->Optimizable && Dets[1]->Optimizable)
+  {
+    Dets[0]->buildOptVariables(*C2node_up,0);
+    Dets[1]->buildOptVariables(*C2node_dn,1);
+  }
 }
 
 void MultiSlaterDeterminantFast::registerTimers()

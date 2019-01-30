@@ -87,6 +87,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P);
 
+  //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
 
   ///set BF pointers
