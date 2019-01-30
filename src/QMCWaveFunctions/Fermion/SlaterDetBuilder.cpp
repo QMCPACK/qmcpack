@@ -300,13 +300,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         dn_det = new MultiDiracDeterminant((SPOSetPtr) spomap.find(spo_beta)->second,1);
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
         success = createMSDFast(multislaterdetfast_0,cur);
-        const bool OrbOpt = (up_det->Phi->Optimizable==true && dn_det->Phi->Optimizable==true);
-        const bool CI_Opt = multislaterdetfast_0->CI_Optimizable;
-        if (CI_Opt || OrbOpt) multislaterdetfast_0->Optimizable = true; 
-      // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
-      // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
-      //and then remove the orbital rotation parameters
-        multislaterdetfast_0->buildOptVariables();
       }
       else
       {
@@ -670,7 +663,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
           (*(multiSD->C))[i]=0;
       app_log() <<"CI coefficients are reset. \n";
     }
-    multiSD->CI_Optimizable=true;
+    multiSD->Optimizable = multiSD->CI_Optimizable = true;
     if(multiSD->usingCSF)
     {
 //          multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
@@ -698,25 +691,32 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
     multiSD->CI_Optimizable=false;
   }
 
-//safety checks for orbital optimization
   if(multiSD->Dets[0]->Optimizable == true || multiSD->Dets[1]->Optimizable == true)
   { 
-
+    //safety checks for orbital optimization
     if(multiSD->Dets[0]->Optimizable != multiSD->Dets[1]->Optimizable )
-      APP_ABORT("Only one SPOSet is set to be optimizable\n");
-      
-
+      APP_ABORT("Optimizing the SPOSet of only one spin is not supported!\n");
     if (multiSD->usingCSF)
-      APP_ABORT("Currently, Using CSF is not available with MSJ Orbital Optimization \n");
+      APP_ABORT("Currently, Using CSF is not available with MSJ Orbital Optimization!\n");
 
     //checks that the hartree fock determinant is the first in the multislater expansion
     for (int i=0; i < nels_up; i++)
     {
       if ( (uniqueConfg_up[0].occup[i] != true) || (uniqueConfg_dn[0].occup[i] != true) )
-        APP_ABORT("The Hartree Fock Reference Determinant must be first in the Multi-Slater expansion for the input\n");
+        APP_ABORT("The Hartree Fock Reference Determinant must be first in the Multi-Slater expansion for the input!\n");
     }
-    app_log() << "WARNING: Unrestricted Orbital Optimization will be performed. Spin symmetry is not guaranteed to be preserved \n";
+
+    app_log() << "WARNING: Unrestricted Orbital Optimization will be performed. Spin symmetry is not guaranteed to be preserved!\n";
+
+    // mark the overall optimization flag
+    multiSD->Optimizable = true;
+
+    // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
+    // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
+    // and then remove the orbital rotation parameters
+    multiSD->buildOptVariables();
   }
+
   return success;
 }
 /*

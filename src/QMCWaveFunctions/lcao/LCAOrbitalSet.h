@@ -195,7 +195,7 @@ namespace qmcplusplus
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) const;
 
   private:
-    //fucntion to perform orbital rotations
+    //function to perform orbital rotations
     void apply_rotation(const std::vector<RealType>& param);
 
     //helper function to apply_rotation 
