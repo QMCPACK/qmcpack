@@ -127,9 +127,9 @@ Additional information:
   \item{\textbf{source/target:}  These specify the particles involved in a pair interaction.  If an interaction is between classical (e.g. ions) and quantum (e.g. electrons), \texttt{source}/\texttt{target} should be the name of the classical/quantum particleset.}
   \item{Only \texttt{coulomb, pseudo, mpc} are described in detail below.  The older or less used types (\texttt{cpp, skpot}) are not covered.}
   \dev{
-  \item{Available only if \texttt{QMC\_BUILD\_LEVEL>2} and \texttt{QMC\_CUDA} is not defined: \texttt{skpot}.}
+  \item{Available only if \texttt{QMC\_CUDA} is not defined: \texttt{skpot}.}
   \item{Available only if \texttt{OHMMS\_DIM==3}: \texttt{mpc, vhxc, pseudo}.}
-  \item{Available only if \texttt{OHMMS\_DIM==3} and \texttt{QMC\_BUILD\_LEVEL>2} and \texttt{QMC\_CUDA} is not defined: \texttt{cpp}.}
+  \item{Available only if \texttt{OHMMS\_DIM==3} and \texttt{QMC\_CUDA} is not defined: \texttt{cpp}.}
   }
 \end{itemize}
 
