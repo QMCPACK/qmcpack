@@ -341,8 +341,6 @@ public:
   void setNumSplines(int num_splines) { num_splines_ = num_splines; }
 };
 
-extern template class MultiQuinticSpline1D<float>;
-extern template class MultiQuinticSpline1D<double>;
 }
 #endif
 
