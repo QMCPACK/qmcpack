@@ -280,7 +280,7 @@ namespace qmcplusplus
   {
     const size_t nmo = OrbitalSetSize;
     const size_t nb = BasisSetSize;
-    m_init_B = new ValueMatrix_t(*C);
+    m_init_B = *C;
 
     // create active rotations
     m_act_rot_inds = rotations; 
@@ -329,7 +329,7 @@ namespace qmcplusplus
       {
         param[i] = myVars[i];
       }
-      apply_rotation(&param);
+      apply_rotation(param);
   
       if (params_supplied)
       {
@@ -470,33 +470,36 @@ namespace qmcplusplus
     }
   }
 
-  void LCAOrbitalSet::apply_rotation(std::vector<RealType> const * const param)
+  void LCAOrbitalSet::apply_rotation(const std::vector<RealType>& param)
   {
     assert( param->size() == m_act_rot_inds.size() );
 
     const size_t nmo = OrbitalSetSize;
     const size_t nb = BasisSetSize;
+    ValueMatrix_t rot_mat(nmo,nmo);
+    rot_mat = ValueType(0);
+
     // read out the parameters that define the rotation into an antisymmetric matrix
-    std::vector<RealType> rot_mat(nmo*nmo, 0.0);
     for (int i=0; i < m_act_rot_inds.size(); i++)
     {
       const int p = m_act_rot_inds[i].first;
       const int q = m_act_rot_inds[i].second;
-      const RealType x = (*param)[i];
+      const RealType x = param[i];
 
-      rot_mat[p+q*nmo] =  x;
-      rot_mat[q+p*nmo] = -x;
+      rot_mat[q][p] =  x;
+      rot_mat[p][q] = -x;
     }
 
-    exponentiate_antisym_matrix(nmo, &rot_mat[0]);
+    exponentiate_antisym_matrix(rot_mat);
 
-    BLAS::gemm('N','T', nb, nmo, nmo, RealType(1.0), m_init_B->data(), nb, &rot_mat[0], nmo, RealType(0.0), C->data(), nb);
+    BLAS::gemm('N','T', nb, nmo, nmo, RealType(1.0), m_init_B.data(), nb, rot_mat.data(), nmo, RealType(0.0), C->data(), nb);
   }
 
 
   // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
-  void LCAOrbitalSet::exponentiate_antisym_matrix(const int n, RealType * const mat)
+  void LCAOrbitalSet::exponentiate_antisym_matrix(ValueMatrix_t& mat)
   {
+    const int n = mat.rows();
     std::vector<std::complex<RealType> > mat_h(n*n, 0);
     std::vector<RealType> eval(n, 0);
     std::vector<std::complex<RealType> > work(2*n, 0);
@@ -511,8 +514,8 @@ namespace qmcplusplus
     {
       for(int j = i; j < n; ++j)
       {
-        mat_h[i+n*j] = std::complex<RealType>(0,-1.0*mat[i+n*j]);
-        mat_h[j+n*i] = std::complex<RealType>(0,1.0*mat[i+n*j]);
+        mat_h[i+n*j] = std::complex<RealType>(0,-1.0*mat[j][i]);
+        mat_h[j+n*i] = std::complex<RealType>(0,1.0*mat[j][i]);
       }
     }
     // diagonalize the matrix 
@@ -549,7 +552,7 @@ namespace qmcplusplus
         {
           app_log() << "warning: large imaginary value in orbital rotation matrix: (i,j) = (" << i << "," << j << "), im = " << mat_d[i+n*j].imag() << std::endl;
         }
-        mat[i+n*j] = mat_d[i+n*j].real();
+        mat[j][i] = mat_d[i+n*j].real();
       }
   }
 

@@ -43,8 +43,8 @@ namespace qmcplusplus
      * makeClone makes a shallow copy
      */
     ValueMatrix_t* C;
-    // The initial coefficents at the start of the simulation
-    ValueMatrix_t* m_init_B;
+    // Scratch space for the initial coefficents before the rotation is applied
+    ValueMatrix_t m_init_B;
 
     ///true if C is an identity matrix
     bool Identity;
@@ -128,7 +128,7 @@ namespace qmcplusplus
           int loc=myVars.where(i);
           param[i] = myVars[i] = active[loc];
         }
-        apply_rotation(&param);
+        apply_rotation(param);
 
       }
 
@@ -196,10 +196,10 @@ namespace qmcplusplus
 
   private:
     //fucntion to perform orbital rotations
-    void apply_rotation(std::vector<RealType> const * const param);
+    void apply_rotation(const std::vector<RealType>& param);
 
     //helper function to apply_rotation 
-    void exponentiate_antisym_matrix(const int n, RealType* const mat);
+    void exponentiate_antisym_matrix(ValueMatrix_t& mat);
     
 
     //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
