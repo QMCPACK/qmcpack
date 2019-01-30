@@ -29,7 +29,7 @@
      <parameter name="warmupSteps">  40 </parameter>
      <parameter name="timestep">  0.03 </parameter>
      <parameter name="steps">   20 </parameter>
-     <parameter name="blocks">  20 </parameter>
+     <parameter name="blocks">  10 </parameter>
      <parameter name="nonlocalmoves">  no </parameter>
    </qmc>
    <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
@@ -39,7 +39,7 @@
      <parameter name="warmupSteps">  80 </parameter>
      <parameter name="timestep">  0.005 </parameter>
      <parameter name="steps">   20 </parameter>
-     <parameter name="blocks">  80 </parameter>
+     <parameter name="blocks">  60 </parameter>
      <parameter name="nonlocalmoves">  no </parameter>
    </qmc>
 </simulation>
