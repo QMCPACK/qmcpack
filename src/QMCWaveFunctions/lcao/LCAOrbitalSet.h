@@ -124,29 +124,15 @@ namespace qmcplusplus
     ///reset
     void resetParameters(const opt_variables_type& active)
     {
-      //myBasisSet->resetParameters(active);
       if (Optimizable)
       {
-        const size_t& nmo = OrbitalSetSize;
-        const size_t& nb = BasisSetSize;
-        // read out the parameters for spin up electrons that define the rotation into an antisymmetric matrix
-        std::vector<RealType> rot_mat(nmo*nmo, 0.0);
+        std::vector<RealType> param( m_act_rot_inds.size() );
         for (int i=0; i < m_act_rot_inds.size(); i++)
         {
           int loc=myVars.where(i);
-
-          const int p = m_act_rot_inds[i].first;
-          const int q = m_act_rot_inds[i].second;
-          // m_first_var_pos is the index to the first parameter of the spin up electrons...
-          const RealType x = myVars[i] = active[loc];
-          //app_log() <<"active ["<< loc << "] = "<< x<< "\n";
-          rot_mat[p+q*nmo] =  x;
-          rot_mat[q+p*nmo] = -x;
+          param[i] = myVars[i] = active[loc];
         }
-
-        exponentiate_antisym_matrix(nmo, &rot_mat[0]);
-
-        BLAS::gemm('N','T', nb, nmo, nmo, RealType(1.0), m_init_B->data(), nb, &rot_mat[0], nmo, RealType(0.0), C->data(), nb);
+        apply_rotation(&param);
 
       }
 
@@ -213,8 +199,12 @@ namespace qmcplusplus
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) const;
 
   private:
-    //helper function to resetParameters
+    //fucntion to perform orbital rotations
+    void apply_rotation(std::vector<RealType> const * const param);
+
+    //helper function to apply_rotation 
     void exponentiate_antisym_matrix(const int n, RealType* const mat);
+    
 
     //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
     void table_method_eval(std::vector<RealType>& dlogpsi,

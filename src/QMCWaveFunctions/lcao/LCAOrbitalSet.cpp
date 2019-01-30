@@ -358,25 +358,13 @@ namespace qmcplusplus
         myVars.print(app_log());
       }
    
-      //the below code is very similar to  "Reset parameters function"
-      // reading out the parameters that define the rotation into an antisymmetric matrix
-      std::vector<RealType> rot_mat(nmo*nmo, 0.0);
-      for (int i = 0; i < m_act_rot_inds.size(); i++) 
-      {
-        const int p = m_act_rot_inds[i].first;
-        const int q = m_act_rot_inds[i].second;
-
-        rot_mat[p+q*nmo] =  myVars[i]; 
-        rot_mat[q+p*nmo] = -myVars[i]; 
-
-      }
-      //exponentiate matrices and do BLAS command to perform rotation on m_b
-
-      // exponentiate antisymmetric matrix to get the unitary rotation
-      exponentiate_antisym_matrix(nmo, &rot_mat[0]);
-
-      BLAS::gemm('N','T', nb, nmo, nmo, RealType(1.0), m_init_B->data(), nb, &rot_mat[0], nmo, RealType(0.0), C->data(), nb);
-
+        std::vector<RealType> param( m_act_rot_inds.size() );
+        for (int i=0; i < m_act_rot_inds.size(); i++)
+        {
+          param[i] = myVars[i];
+        }
+        apply_rotation(&param);
+  
       if (params_supplied)
       {
         app_log()<< "PRINTING MO COEFFICIENTS CREATED BY SUPPLIED PARAMS\n";
@@ -393,11 +381,7 @@ namespace qmcplusplus
         app_log() << std::endl;
       }
 
-      if(Optimizable)
-      {
-        //empty intentionally
-      }
-      else
+      if(!Optimizable)
       {
         //THIS ALLOWS FOR ORBITAL PARAMETERS TO BE READ IN EVEN WHEN THOSE PARAMETERS ARE NOT BEING OPTIMIZED
         //this assumes there are only CI coefficients ahead of the M_orb_coefficients 
@@ -546,6 +530,29 @@ namespace qmcplusplus
       }
     }
     return count;
+  }
+
+  void LCAOrbitalSet::apply_rotation(std::vector<RealType> const * const param)
+  {
+    assert( param->size() == m_act_rot_inds.size() );
+
+    const size_t& nmo = OrbitalSetSize;
+    const size_t& nb = BasisSetSize;
+    // read out the parameters that define the rotation into an antisymmetric matrix
+    std::vector<RealType> rot_mat(nmo*nmo, 0.0);
+    for (int i=0; i < m_act_rot_inds.size(); i++)
+    {
+      const int p = m_act_rot_inds[i].first;
+      const int q = m_act_rot_inds[i].second;
+      const RealType x = (*param)[i];
+
+      rot_mat[p+q*nmo] =  x;
+      rot_mat[q+p*nmo] = -x;
+    }
+
+    exponentiate_antisym_matrix(nmo, &rot_mat[0]);
+
+    BLAS::gemm('N','T', nb, nmo, nmo, RealType(1.0), m_init_B->data(), nb, &rot_mat[0], nmo, RealType(0.0), C->data(), nb);
   }
 
 
