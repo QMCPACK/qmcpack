@@ -391,8 +391,6 @@ public:
 // if its value is zero, then use a data from backup, but always use this one
 // by default
   int ReferenceDeterminant;
-  //vector that contains active orbital rotation parameter indices 
-  std::vector<std::pair<int,int> > m_act_rot_inds;
 
   /// store determinants (old and new)
   ValueVector_t detValues, new_detValues;

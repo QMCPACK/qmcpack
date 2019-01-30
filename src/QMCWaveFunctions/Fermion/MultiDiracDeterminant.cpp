@@ -532,8 +532,8 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
     lookup_tbl[C2node[i]].push_back(i);
   }    
 
-  // create active rotations
-  m_act_rot_inds.clear(); 
+  // create active rotation parameter indices
+  std::vector<std::pair<int,int> > m_act_rot_inds;
 
   for(int i=0;i<nmo;i++)
     for(int j=i+1;j<nmo;j++)
