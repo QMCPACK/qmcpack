@@ -546,7 +546,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
     app_log() << "New parameters are:\n";
     for (int i=0; i < Parameters.size(); i++)
       app_log() << "   " << Parameters[i] << std::endl;
-#if !QMC_BUILD_SANDBOX_ONLY
+#if !defined(QMC_BUILD_SANDBOX_ONLY)
     if(optimize == "yes")
     {
       // Setup parameter names
