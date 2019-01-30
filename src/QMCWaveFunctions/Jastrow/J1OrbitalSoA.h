@@ -399,6 +399,22 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
   }
   /**@} */
 
+  inline GradType evalGradSource(ParticleSet& P,
+                                 ParticleSet& source, int isrc)
+  {
+    APP_ABORT("J1OrbitalSoa::evaluateGradSource not implemented.\n");
+    return GradType();
+  }
+
+  inline GradType
+  evalGradSource(ParticleSet& P, ParticleSet& source, int isrc,
+                 TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+                 TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
+  {
+    APP_ABORT("J1OrbitalSoa::evaluateGradSource not implemented.\n");
+    return GradType();
+  }
+  
 };
 
 
