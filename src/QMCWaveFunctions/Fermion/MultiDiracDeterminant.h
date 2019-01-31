@@ -133,6 +133,8 @@ public:
                            std::vector<size_t> const * const C2node_up,
                            std::vector<size_t> const * const C2node_dn)
   {
+    if(!Optimizable) return;
+
     const ValueVector_t&  detValues_up = detValues;
     const ValueVector_t&  detValues_dn = pseudo_dn->detValues;
     const GradMatrix_t&   grads_up     = grads;

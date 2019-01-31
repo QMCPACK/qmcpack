@@ -514,6 +514,8 @@ void MultiDiracDeterminant::registerTimers()
 
 void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
 {
+  if(!Optimizable) return;
+
   const size_t nel = NumPtcls;
   const size_t nmo = NumOrbitals;
   //a vector in which the element's index value correspond to Molecular Orbitals.
