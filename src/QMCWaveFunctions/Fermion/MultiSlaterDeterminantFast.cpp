@@ -750,8 +750,8 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
     }
   }
 
-  Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, Dets[1], psiCurrent, C, C2node_up, C2node_dn);
-  Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, Dets[0], psiCurrent, C, C2node_dn, C2node_up);
+  Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], psiCurrent, *C, *C2node_up, *C2node_dn);
+  Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], psiCurrent, *C, *C2node_dn, *C2node_up);
 }
 
 void MultiSlaterDeterminantFast::buildOptVariables()

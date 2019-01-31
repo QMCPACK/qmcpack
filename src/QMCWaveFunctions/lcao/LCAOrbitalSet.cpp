@@ -363,9 +363,9 @@ namespace qmcplusplus
                              std::vector<RealType>& dlogpsi, 
                              std::vector<RealType>& dhpsioverpsi,
                              const ValueType& psiCurrent,
-                             std::vector<RealType> const * const Coeff,
-                             std::vector<size_t> const * const C2node_up,
-                             std::vector<size_t> const * const C2node_dn,
+                             const std::vector<RealType>& Coeff,
+                             const std::vector<size_t>& C2node_up,
+                             const std::vector<size_t>& C2node_dn,
                              const ValueVector_t& detValues_up, 
                              const ValueVector_t& detValues_dn, 
                              const GradMatrix_t& grads_up, 
@@ -378,7 +378,7 @@ namespace qmcplusplus
                              const ValueMatrix_t& Minv_dn,
                              const GradMatrix_t& B_grad,
                              const ValueMatrix_t& B_lapl,
-                             std::vector<int> const * const detData_up,
+                             const std::vector<int>& detData_up,
                              const size_t N1,
                              const size_t N2,
                              const size_t NP1,
@@ -407,11 +407,11 @@ namespace qmcplusplus
       const size_t nb = BasisSetSize;
       const size_t nel = P.last(0)-P.first(0); 
 
-      const RealType *restrict C_p=Coeff->data();
-      for(int i=0; i<Coeff->size(); i++)
+      const RealType *restrict C_p=Coeff.data();
+      for(int i=0; i<Coeff.size(); i++)
       {
-          const size_t upC = (*C2node_up)[i];
-          const size_t dnC = (*C2node_dn)[i];
+          const size_t upC = C2node_up[i];
+          const size_t dnC = C2node_dn[i];
           const ValueType tmp1 = C_p[i]*detValues_dn[dnC];
           const ValueType tmp2 = C_p[i]*detValues_up[upC];
           for(size_t k=0,j=N1; k<NP1; k++,j++)
@@ -563,9 +563,9 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
                                       const size_t nel,
                                       const size_t nmo,
                                       const ValueType& psiCurrent,
-                                      std::vector<RealType> const * const Coeff,
-                                      std::vector<size_t> const * const C2node_up,
-                                      std::vector<size_t> const * const C2node_dn,
+                                      const std::vector<RealType>& Coeff,
+                                      const std::vector<size_t>& C2node_up,
+                                      const std::vector<size_t>& C2node_dn,
                                       const ValueVector_t& detValues_up, 
                                       const ValueVector_t& detValues_dn, 
                                       const GradMatrix_t& grads_up, 
@@ -578,7 +578,7 @@ void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
                                       const ValueMatrix_t& Minv_dn,
                                       const GradMatrix_t& B_grad,
                                       const ValueMatrix_t& B_lapl,
-                                      std::vector<int> const * const detData_up,
+                                      const std::vector<int>& detData_up,
                                       const size_t N1,
                                       const size_t N2,
                                       const size_t NP1,
@@ -742,10 +742,10 @@ $
   const size_t num_unique_up_dets (detValues_up.size()); 
   const size_t num_unique_dn_dets (detValues_dn.size()); 
 
-  const RealType* restrict cptr = Coeff->data();
-  const size_t nc = Coeff->size();
-  const size_t* restrict upC (C2node_up->data());
-  const size_t* restrict dnC (C2node_dn->data());
+  const RealType* restrict cptr = Coeff.data();
+  const size_t nc = Coeff.size();
+  const size_t* restrict upC (C2node_up.data());
+  const size_t* restrict dnC (C2node_dn.data());
   //B_grad holds the gardient operator
   //B_lapl holds the laplacian operator
   //B_bar will hold our special O operator
@@ -810,7 +810,7 @@ $
   //The few lines above are for the reference matrix contribution.
   //Although I start the loop below from index 0, the loop only performs actions when the index is >= 1
   //the detData object contains all the information about the P^T and Q matrices (projection matrices) needed in the table method
-  const int* restrict data_it = detData_up->data();
+  const int* restrict data_it = detData_up.data();
   for(int index=0, datum=0; index < num_unique_up_dets; index++)
   {
     const int  k = data_it[datum];

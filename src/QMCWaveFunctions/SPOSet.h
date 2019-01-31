@@ -167,9 +167,9 @@ public:
                                    std::vector<RealType>& dlogpsi, 
                                    std::vector<RealType>& dhpsioverpsi,
                                    const ValueType& psiCurrent,
-                                   std::vector<RealType> const * const Coeff,
-                                   std::vector<size_t> const * const C2node_up,
-                                   std::vector<size_t> const * const C2node_dn,
+                                   const std::vector<RealType>& Coeff,
+                                   const std::vector<size_t>& C2node_up,
+                                   const std::vector<size_t>& C2node_dn,
                                    const ValueVector_t& detValues_up, 
                                    const ValueVector_t& detValues_dn, 
                                    const GradMatrix_t& grads_up, 
@@ -182,12 +182,12 @@ public:
                                    const ValueMatrix_t& Minv_dn, 
                                    const GradMatrix_t& B_grad,
                                    const ValueMatrix_t& B_lapl,
-                                   std::vector<int> const * const detData_up,
+                                   const std::vector<int>& detData_up,
                                    const size_t N1,
                                    const size_t N2,
                                    const size_t NP1,
                                    const size_t NP2,
-                                   const std::vector< std::vector<int> > & lookup_tbl){}
+                                   const std::vector< std::vector<int> >& lookup_tbl){}
 
 
   ///reset the target particleset
