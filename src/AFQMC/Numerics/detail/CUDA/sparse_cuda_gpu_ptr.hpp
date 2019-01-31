@@ -74,7 +74,9 @@ namespace qmc_cuda
       // setup work space for column major matrix C
       if(cusparse_buffer.num_elements() < M*N) 
         cusparse_buffer.reextent(typename boost::multi::layout_t<1u>::extensions_type{M*N});
-      cuda_gpu_ptr<T> C_(reinterpret_cast<T*>(to_address(cusparse_buffer.origin())));  
+      //cuda_gpu_ptr<T> C_(reinterpret_cast<T*>(to_address(cusparse_buffer.origin())));  
+      //cuda_gpu_ptr<T> C_(pointer_cast<T>(cusparse_buffer.origin()));  
+      cuda_gpu_ptr<T> C_(cusparse_buffer.origin().pointer_cast<T>());  
 
       // if beta != 0, transpose C into C_
       if( std::abs(beta) > 1e-12 )
@@ -105,9 +107,11 @@ namespace qmc_cuda
         cusparse_buffer.reextent(typename boost::multi::layout_t<1u>::extensions_type{(M+K)*N});
       // A is MxK 
       // B should be MxN
-      cuda_gpu_ptr<T> B_(reinterpret_cast<T*>(to_address(cusparse_buffer.origin())));
+      //cuda_gpu_ptr<T> B_(reinterpret_cast<T*>(to_address(cusparse_buffer.origin())));
+      cuda_gpu_ptr<T> B_(cusparse_buffer.origin().pointer_cast<T>());  
       // C should be KxN
-      cuda_gpu_ptr<T> C_(reinterpret_cast<T*>(to_address(cusparse_buffer.origin()+M*N)));
+      //cuda_gpu_ptr<T> C_(reinterpret_cast<T*>(to_address(cusparse_buffer.origin()+M*N)));
+      cuda_gpu_ptr<T> C_(B_+M*N);
 
       // if beta != 0, transpose C into C_
       if( std::abs(beta) > 1e-12 )

@@ -480,10 +480,10 @@ void SDetOps_complex_serial(Allocator alloc)
   -0.455373025165330 - 0.129360996228044i
   };
 
-  array_ref g_ref(v_ref.data(),{NMO,NMO});
-  array_ref gc_ref(vc_ref.data(),{NEL,NMO});
-  array_ref g_ref_2(v_ref_2.data(),{3,3});
-  array_ref gc_ref_2(vc_ref_2.data(),{2,3});
+  boost::multi::array_ref<Type,2> g_ref(v_ref.data(),{NMO,NMO});
+  boost::multi::array_ref<Type,2> gc_ref(vc_ref.data(),{NEL,NMO});
+  boost::multi::array_ref<Type,2> g_ref_2(v_ref_2.data(),{3,3});
+  boost::multi::array_ref<Type,2> gc_ref_2(vc_ref_2.data(),{2,3});
 
   array G({NMO,NMO},alloc);
   array Gc({NEL,NMO},alloc);
@@ -653,10 +653,10 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   -0.455373025165330 - 0.129360996228044i
   };
 
-  array_ref g_ref(v_ref.data(),{NMO,NMO});
-  array_ref gc_ref(vc_ref.data(),{NEL,NMO});
-  array_ref g_ref_2(v_ref_2.data(),{3,3});
-  array_ref gc_ref_2(vc_ref_2.data(),{2,3});
+  boost::multi::array_ref<Type,2> g_ref(v_ref.data(),{NMO,NMO});
+  boost::multi::array_ref<Type,2> gc_ref(vc_ref.data(),{NEL,NMO});
+  boost::multi::array_ref<Type,2> g_ref_2(v_ref_2.data(),{3,3});
+  boost::multi::array_ref<Type,2> gc_ref_2(vc_ref_2.data(),{2,3});
 
   boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node});
@@ -770,7 +770,7 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
     for(int j=0; j<B.size(1); j++,k++)
        B[i][j] = m_b[k];
 
-  array_ref Bref(m_b.data(),{NMO,NEL});
+  boost::multi::array_ref<Type,2> Bref(m_b.data(),{NMO,NEL});
 
   csr_matrix Acsr(csr::shm::construct_csr_matrix_single_input<csr_matrix>(A,0.0,'T',node));
 
@@ -837,10 +837,10 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   -0.455373025165330 - 0.129360996228044i
   };
 
-  array_ref g_ref(v_ref.data(),{NMO,NMO});
-  array_ref gc_ref(vc_ref.data(),{NEL,NMO});
-  array_ref g_ref_2(v_ref_2.data(),{3,3});
-  array_ref gc_ref_2(vc_ref_2.data(),{2,3});
+  boost::multi::array_ref<Type,2> g_ref(v_ref.data(),{NMO,NMO});
+  boost::multi::array_ref<Type,2> gc_ref(vc_ref.data(),{NEL,NMO});
+  boost::multi::array_ref<Type,2> g_ref_2(v_ref_2.data(),{3,3});
+  boost::multi::array_ref<Type,2> gc_ref_2(vc_ref_2.data(),{2,3});
 
   boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node});

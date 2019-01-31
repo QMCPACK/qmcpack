@@ -121,7 +121,10 @@ void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
   }
 }
 
+} //namespace ma
+
 #ifdef QMC_CUDA
+namespace qmc_cuda{
 
 template<typename T, typename Q>
 void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -149,9 +152,7 @@ void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                             to_address(nmo0),to_address(A),to_address(B));
 }
 
-#endif
-
 }
-
+#endif
 
 #endif

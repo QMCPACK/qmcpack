@@ -15,19 +15,9 @@
 #ifndef AFQMC_SPARSE_CUDA_CATCH_ALL_HPP
 #define AFQMC_SPARSE_CUDA_CATCH_ALL_HPP
 
-// guard with directive that checks if boost version is >=1.65
-#ifndef WITH_BOOST_BACKTRACE
-#define WITH_BOOST_BACKTRACE
-#endif
-#ifdef WITH_BOOST_BACKTRACE
-#include <boost/stacktrace.hpp>
-#define sprint_stacktrace std::cout << boost::stacktrace::stacktrace();
-#else
-#define sprint_stacktrace std::cout << "stacktrace not enabled.\n"; 
-#endif
-
 #include<cassert>
 #include <typeinfo>
+#include "AFQMC/config.0.h"
 
 namespace qmc_cuda
 {
@@ -47,7 +37,7 @@ namespace qmc_cuda
              <<"  ptrI2: " <<typeid(pntrb).name() <<"\n"
              <<"  ptrB: " <<typeid(B).name() <<"\n"
              <<"  ptrC: " <<typeid(C).name() <<std::endl;
-    sprint_stacktrace
+    print_stacktrace
     throw std::runtime_error("Error: Calling qmc_cuda::csrmm catch all.");
   }
 

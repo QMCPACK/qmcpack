@@ -32,20 +32,18 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
 	     bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
 	     double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
 	     hdf_archive& hdf_restart) {
-// hack
-std::ifstream in("batch.dat");
-int nb;
-in>>nb;
-in.close();
-  
-  if(TG.TG_local().size() == 1 && nb==0) //( batched=="yes" || batched == "true" ))
-    return getHamiltonianOperations_batched(pureSD,addCoulomb,type,PsiT,cutvn,cutv2,
+
+#ifndef QMC_CUDA
+  if(TG.TG_local().size() > 1 && not (batched=="yes" || batched == "true" ))
+    return getHamiltonianOperations_shared(pureSD,addCoulomb,type,PsiT,cutvn,cutv2,
                                             TGprop,TGwfn,hdf_restart);
   else
-    return getHamiltonianOperations_shared(pureSD,addCoulomb,type,PsiT,cutvn,cutv2,
+#endif
+    return getHamiltonianOperations_batched(pureSD,addCoulomb,type,PsiT,cutvn,cutv2,
                                             TGprop,TGwfn,hdf_restart);
 }
 
+#ifndef QMC_CUDA
 HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(bool pureSD,
 	     bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
 	     double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
@@ -597,6 +595,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
             std::move(LQKank),std::move(vn0),std::move(gQ),nsampleQ,E0,global_ncvecs));
 
 }
+#endif
 
 HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(bool pureSD,
 	     bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
@@ -837,7 +836,6 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
 
   // calculate vn0
   shmCTensor vn0({nkpts,nmo_max,nmo_max},shared_allocator<ComplexType>{TG.Node()});
-
 
   // generate nocc_per_kp using PsiT and nmo_per_kp
   shmIMatrix nocc_per_kp({ndet,nspins*nkpts},shared_allocator<int>{TG.Node()});

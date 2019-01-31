@@ -30,6 +30,7 @@
 #include "AFQMC/Kernels/reference_operations.cuh"
 
 #include "multi/array_ref.hpp"
+#include "mpi3/shared_window.hpp"
 #include "AFQMC/Memory/raw_pointers.hpp"
 
 namespace qmc_cuda {
@@ -50,7 +51,7 @@ struct cuda_gpu_reference {
   using pointer = cuda_gpu_ptr<T>;
 
   // must construct through a gpu_ptr for now, to keep some sort of control/safety 
-  cuda_gpu_reference(pointer const& gpu_ptr) : impl_(gpu_ptr.impl_) {}
+  cuda_gpu_reference(pointer const& gpu_ptr) : impl_(to_address(gpu_ptr)) {}
   cuda_gpu_reference(cuda_gpu_reference<T> const& gpu_ref) = default; 
  
   // assignment
@@ -217,6 +218,8 @@ struct base_cuda_gpu_ptr
   static gpu_handles handles;
 };
 
+// this class is not safe, since it allows construction of a gpu_ptr from a raw ptr
+// which might not be in gpu memory. Fix this!!!
 template<class T>
 struct cuda_gpu_ptr: base_cuda_gpu_ptr{
   using difference_type = std::ptrdiff_t;
@@ -231,19 +234,14 @@ struct cuda_gpu_ptr: base_cuda_gpu_ptr{
   using iterator_category = std::random_access_iterator_tag; 
   static const int memory_type = GPU_MEMORY_POINTER_TYPE; 
   using default_allocator_type = cuda_gpu_allocator<T>;
+  friend class cuda_gpu_allocator<T>;
+  friend class cuda_gpu_ptr<typename std::decay<T>::type>;
   default_allocator_type default_allocator() const{ return cuda_gpu_allocator<T>{}; };
-  T* impl_;
   cuda_gpu_ptr() = default;
-  cuda_gpu_ptr(T* impl__):
-                         impl_(impl__) {}
+  cuda_gpu_ptr(std::nullptr_t): impl_(nullptr){}  
 // eventually check if memory types and blas types are convertible, e.g. CPU_MEMORY to CPU_OUTOFCARD
-  template<typename Q,
-           typename = typename std::enable_if_t<cuda_gpu_ptr<Q>::memory_type == memory_type>
-              >
+  template<typename Q>
   cuda_gpu_ptr(cuda_gpu_ptr<Q> const& ptr):impl_(ptr.impl_) {}
-// testing some ideas!!!
-//  reference operator*() const{return *impl_;}
-//  reference operator[](std::ptrdiff_t n) const{return impl_[n];}
   reference operator*() const{ return reference(cuda_gpu_ptr{impl_}); }
   reference operator[](std::ptrdiff_t n) const { return reference(cuda_gpu_ptr{impl_ + n}); }
   T* operator->() const{return impl_;}
@@ -263,9 +261,19 @@ struct cuda_gpu_ptr: base_cuda_gpu_ptr{
   T* to_address() const {return impl_;}
   friend decltype(auto) to_address(cuda_gpu_ptr const& self){return self.to_address();}
   template<class Q>
+  cuda_gpu_ptr<Q> pointer_cast(){
+    cuda_gpu_ptr<Q> res;
+    res.impl_ = reinterpret_cast<Q*>(impl_);
+    return res;
+  }
+  template<class Q>
   friend cuda_gpu_ptr<Q> pointer_cast(cuda_gpu_ptr const& self){
     return cuda_gpu_ptr<Q>{reinterpret_cast<Q*>(self.impl_)};
   }
+  T* impl_;
+  protected:
+  cuda_gpu_ptr(T* impl__):
+                         impl_(impl__) {}
 };
 
 //static size_t TotalGPUAlloc=0;
@@ -298,7 +306,10 @@ template<class T> struct cuda_gpu_allocator{
       std::cerr<<" Error allocating " <<n*sizeof(T)/1024.0/1024.0 <<" MBs on GPU." <<std::endl;
       throw std::runtime_error("Error: cudaMalloc returned error code."); 
     }
-    return cuda_gpu_ptr<T>{p};
+    cuda_gpu_ptr<T> res;
+    res.impl_=p;
+    return res;
+//    return cuda_gpu_ptr<T>{p};
   }
   void deallocate(cuda_gpu_ptr<T> ptr, size_type){
     cudaFree(ptr.impl_); 
@@ -511,9 +522,21 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
                                  to_address(base(first)),sizeof(T)*stride(first),
                                  sizeof(T),std::distance(first,last),cudaMemcpyDeviceToDevice))
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-//  kernels::uninitialized_copy_n(std::distance(first,last),to_address(base(first)),stride(first),
-//                                                          to_address(base(dest)),stride(dest));
   return dest+std::distance(first,last); 
+}
+
+template<class T>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
+                         multi::array_iterator<T, 1, boost::mpi3::intranode::array_ptr<T>> first,
+                         multi::array_iterator<T, 1, boost::mpi3::intranode::array_ptr<T>> last,
+                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+  assert( stride(first) == stride(last) );
+  if(std::distance(first,last) == 0 ) return dest;
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
+                                 to_address(base(first)),sizeof(T)*stride(first),
+                                 sizeof(T),std::distance(first,last),cudaMemcpyHostToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+  return dest+std::distance(first,last);
 }
 
 template<class T>
@@ -529,7 +552,24 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   return dest+std::distance(first,last);
 }
-
+/*
+template<class T, class ptr, 
+         typename = std::enable_if_t<not(std::is_base_of<ptr,qmc_cuda::cuda_gpu_ptr<T>>)>>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
+                         multi::array_iterator<T, 1, ptr> first,
+                         multi::array_iterator<T, 1, ptr> last,
+                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+  using Q = typename std::pointer_traits<ptr>::element_type;
+  static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
+  assert( stride(first) == stride(last) );
+  if(std::distance(first,last) == 0 ) return dest;
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
+                                 to_address(base(first)),sizeof(T)*stride(first),
+                                 sizeof(T),std::distance(first,last),cudaMemcpyHostToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+  return dest+std::distance(first,last);
+}
+*/
 template<class T>
 multi::array_iterator<T, 1, T*> uninitialized_copy(
                          multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,

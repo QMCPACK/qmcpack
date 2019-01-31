@@ -114,7 +114,10 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
   }
 }
 
+} // namespace ma
+
 #ifdef QMC_CUDA
+namespace qmc_cuda{
 
 template<typename T, typename Q>
 void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
@@ -130,25 +133,25 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
 template<typename T, typename Q, typename R>
 void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                     cuda_gpu_ptr<R> alpha, cuda_gpu_ptr<Q> Tab,
-                    cuda_gpu_ptr<T> y , int incy)
+                    T* y , int incy)
 {
   kernels::batched_dot_wabn_wban(nbatch,nwalk,nocc,nchol,to_address(alpha),to_address(Tab),
-                                 to_address(y),incy);
+                                 y,incy);
 
 }
 
 template<typename T, typename Q, typename R>
 void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, cuda_gpu_ptr<int> kminus,
                     cuda_gpu_ptr<int> ncholpQ, cuda_gpu_ptr<int> ncholpQ0, R alpha,
-                    cuda_gpu_ptr<Q> v1, cuda_gpu_ptr<T> vb)
+                    cuda_gpu_ptr<Q> v1, T* vb)
 {
   kernels::vbias_from_v1(nwalk,nkpts,nchol_max,Q0,to_address(kminus),to_address(ncholpQ),
-            to_address(ncholpQ0),alpha,to_address(v1),to_address(vb));
+            to_address(ncholpQ0),alpha,to_address(v1),vb);
 }
 
+}
 #endif
 
-}
 
 
 #endif

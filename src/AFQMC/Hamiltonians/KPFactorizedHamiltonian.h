@@ -89,9 +89,11 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
 
   std::string batched;
 
+#ifndef QMC_CUDA
   HamiltonianOperations getHamiltonianOperations_shared(bool pureSD, bool addCoulomb, WALKER_TYPES type,
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
             TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump);
+#endif
 
   HamiltonianOperations getHamiltonianOperations_batched(bool pureSD, bool addCoulomb, WALKER_TYPES type,
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,

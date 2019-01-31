@@ -98,8 +98,8 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);
 
     // additional dimension for temporary computation
-    boost::multi::array<ComplexType,3> MFfactor;
-    boost::multi::array<ComplexType,3> hybrid_weight;
+    boost::multi::array<ComplexType,3,allocator> MFfactor;
+    boost::multi::array<ComplexType,3,allocator> hybrid_weight;
 
 };
 

@@ -359,10 +359,10 @@ protected:
 protected:
 	template<class TT, dimensionality_type DD, typename EP, class LLayout> friend struct basic_array;
 	template<class TT, dimensionality_type DD, class Alloc> friend struct array;
+public:
 	basic_array(basic_array const&) = default;
 	template<class T2, class P2 = T2*>
 	friend basic_array<T2, 1, P2, Layout> static_array_cast(basic_array const& o){return basic_array<T2, 1, P2, Layout>(o);}
-public:
 	template<class BasicArray, typename = decltype(types(std::declval<BasicArray&&>()))> 
 	basic_array(BasicArray&& other) : types{std::forward<BasicArray>(other)}{}
 

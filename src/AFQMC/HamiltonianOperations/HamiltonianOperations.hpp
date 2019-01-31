@@ -241,6 +241,21 @@ class HamiltonianOperations:
         );
     }
 
+/*
+    template<class MatA, class MatB>
+    void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int nd=0) {
+        boost::apply_visitor(
+            [&](auto&& s){
+                if constexpr(typename std::is_convertible<std::>::value)
+                    s.vbias(G,std::forward<MatB>(v),a,c,nd);
+                else
+                    throw 0;
+            },
+            *this
+        );
+    }
+*/
+
     int local_number_of_cholesky_vectors() const{
         return boost::apply_visitor(
             [&](auto&& a){return a.local_number_of_cholesky_vectors();},

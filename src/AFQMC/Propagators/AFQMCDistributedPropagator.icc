@@ -197,9 +197,9 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_,false);
     if(k == node_number) {
       TG.TG_local().all_reduce_n(to_address(MFfactor[1].origin()),MFfactor[1].num_elements(),
-                           MFfactor[0].origin(),std::plus<>());
+                           to_address(MFfactor[0].origin()),std::plus<>());
       TG.TG_local().all_reduce_n(to_address(hybrid_weight[1].origin()),hybrid_weight[1].num_elements(),
-                           hybrid_weight[0].origin(),std::plus<>());
+                           to_address(hybrid_weight[0].origin()),std::plus<>());
     }
 
     // 4c. Calculate vHS(M*M,nsteps,nwalk)

@@ -40,6 +40,7 @@ namespace afqmc
 class KP3IndexFactorization_batched
 {
 
+
   // allocators
   using Allocator = device_allocator<ComplexType>;
   using SpAllocator = device_allocator<SPComplexType>; 
@@ -98,10 +99,9 @@ class KP3IndexFactorization_batched
   public:
 
 // NOTE: careful with nocc_max, not consistently defined!!!
-// NOTE: In QMCPACK, have a specific routine for serial execution, 
-//       which does not need locks or shared memory. This would be used 
-//       whenever TG_local.size()==1, which is the case for GPUs and with OMP_THREADING
 
+    // since arrays can be in host, can't assume that types are consistent
+    template<class shmCMatrix_, class shmSpMatrix_>
     KP3IndexFactorization_batched(
                  WALKER_TYPES type,
                  stdIVector&& nopk_,
@@ -110,10 +110,10 @@ class KP3IndexFactorization_batched
                  boost::multi::array<int,2>&& nelpk_,
                  boost::multi::array<int,2>&& QKToK2_,   
                  mpi3C3Tensor&& hij_,       
-                 shmCMatrix&& h1, 
-                 std::vector<shmSpMatrix>&& vik, 
-                 std::vector<shmSpMatrix>&& vak, 
-                 std::vector<shmSpMatrix>&& vakn, 
+                 shmCMatrix_&& h1, 
+                 std::vector<shmSpMatrix_>&& vik, 
+                 std::vector<shmSpMatrix_>&& vak, 
+                 std::vector<shmSpMatrix_>&& vakn, 
                  mpi3C3Tensor&& vn0_, 
                  std::vector<RealType>&& gQ_,
                  int nsampleQ_,
@@ -136,9 +136,9 @@ class KP3IndexFactorization_batched
         kminus(std::move(kminus_)),
         nelpk(std::move(nelpk_)),
         QKToK2(std::move(QKToK2_)),
-        LQKikn(std::move(vik)),
-        LQKank(std::move(vak)),
-        LQKakn(std::move(vakn)),
+        LQKikn(std::move(move_vector<shmSpMatrix>(std::move(vik)))),
+        LQKank(std::move(move_vector<shmSpMatrix>(std::move(vak)))),
+        LQKakn(std::move(move_vector<shmSpMatrix>(std::move(vakn)))),
         vn0(std::move(vn0_)),
         gQ(std::move(gQ_)),
         Qwn({1,1}),
@@ -289,12 +289,27 @@ class KP3IndexFactorization_batched
     }
 
     // KEleft and KEright must be in shared memory for this to work correctly  
-    template<class Mat, class MatB, class MatC, class MatD>
+    template<class Mat, class MatB, class MatC, class MatD
+//             typename = decltype(boost::multi::static_array_cast<ComplexType, pointer>(std::declval<Mat>())),
+//             typename = decltype(boost::multi::static_array_cast<ComplexType, pointer>(std::declval<MatB>())),
+//             typename = decltype(boost::multi::static_array_cast<ComplexType, pointer>(std::declval<MatC>())),
+//             typename = decltype(boost::multi::static_array_cast<ComplexType, pointer>(std::declval<MatD>()))
+            >
     void energy(Mat&& E, MatB const& Gc, int nd, MatC* KEleft, MatD* KEright, bool addH1=true, bool addEJ=true, bool addEXX=true) {
       if(nsampleQ > 0)
         energy_sampleQ(E,Gc,nd,KEleft,KEright,addH1,addEJ,addEXX);
       else
         energy_exact(E,Gc,nd,KEleft,KEright,addH1,addEJ,addEXX);
+    }
+
+    // Catch-all routines for incompatible pointer types!
+    void energy(...) {
+      print_stacktrace  
+      throw std::runtime_error("Error: Calling KP3IndexFactorization_batched::energy catch all.");
+    }
+    void vHS(...) {
+      print_stacktrace  
+      throw std::runtime_error("Error: Calling KP3IndexFactorization_batched::energy catch all.");
     }
 
     // KEleft and KEright must be in shared memory for this to work correctly  
@@ -332,7 +347,7 @@ class KP3IndexFactorization_batched
       set_shm_buffer(mem_needs);
 
       // messy
-      sp_pointer Krptr, Klptr; 
+      sp_pointer_shared Krptr, Klptr; 
       size_t Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
@@ -341,7 +356,7 @@ class KP3IndexFactorization_batched
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV); 
           assert(KEright->stride() == KEright->size(1));
-          Krptr = KEright->origin(); 
+          Krptr = make_device_ptr(KEright->origin()); 
         } else {
           Krptr = SM_TMats.origin(); 
           cnt += nwalk*local_nCV;
@@ -349,7 +364,7 @@ class KP3IndexFactorization_batched
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV); 
           assert(KEleft->stride(0) == KEleft->size(1));
-          Klptr = KEleft->origin();
+          Klptr = make_device_ptr(KEleft->origin());
         } else {
           Klptr = SM_TMats.origin()+cnt; 
           cnt += nwalk*local_nCV;
@@ -366,9 +381,9 @@ class KP3IndexFactorization_batched
         fill_n(E[n].origin(),3,ComplexType(0.));
 
       assert(Gc.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-      C3Tensor_cref G3Da(Gc.origin(),{nocca_tot,nmo_tot,nwalk} );
-      C3Tensor_cref G3Db(Gc.origin()+G3Da.num_elements()*(nspin-1),{noccb_tot,nmo_tot,nwalk} );
-
+      C3Tensor_cref G3Da(make_device_ptr(Gc.origin()),{nocca_tot,nmo_tot,nwalk} );
+      C3Tensor_cref G3Db(make_device_ptr(Gc.origin())+G3Da.num_elements()*(nspin-1),
+                                    {noccb_tot,nmo_tot,nwalk} );
 
       // later on, rewrite routine to loop over spins, to avoid storage of both spin
       // components simultaneously
@@ -508,17 +523,19 @@ class KP3IndexFactorization_batched
 
                 Timers[Timer_E4]->start();
                 copy_n(scl_factors.data(),scl_factors.size(),dev_scl_factors.origin());
-                ma::batched_dot_wabn_wban(scl_factors.size(),nwalk,nocc_max,nchol_max,
+                using ma::batched_dot_wabn_wban; 
+                batched_dot_wabn_wban(scl_factors.size(),nwalk,nocc_max,nchol_max,
                                          dev_scl_factors.origin(),   
                                          T1.origin(),   
-                                         E[0].origin()+1,E.stride(0));
+                                         to_address(E[0].origin())+1,E.stride(0));
                 Timers[Timer_E4]->stop();
 
                 Timers[Timer_E5]->start();
                 if(addEJ) {
                     int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
                     copy_n(kdiag.data(),kdiag.size(),IMats.origin());
-                    ma::batched_Tab_to_Klr(kdiag.size(),nwalk,nocc_max,nchol_max,nchol_tot,
+                    using ma::batched_Tab_to_Klr;
+                    batched_Tab_to_Klr(kdiag.size(),nwalk,nocc_max,nchol_max,nchol_tot,
                                         ncholpQ[Q],nc0,
                                         IMats.origin(),
                                         T1.origin(),
@@ -549,17 +566,19 @@ class KP3IndexFactorization_batched
 
             Timers[Timer_E4]->start();
             copy_n(scl_factors.data(),scl_factors.size(),dev_scl_factors.origin());
-            ma::batched_dot_wabn_wban(scl_factors.size(),nwalk,nocc_max,nchol_max,
+            using ma::batched_dot_wabn_wban;
+            batched_dot_wabn_wban(scl_factors.size(),nwalk,nocc_max,nchol_max,
                                          dev_scl_factors.origin(),
                                          T1.origin(),
-                                         E[0].origin()+1,E.stride(0));
+                                         to_address(E[0].origin())+1,E.stride(0));
             Timers[Timer_E4]->stop();
 
             Timers[Timer_E5]->start();
             if(addEJ) {
                 int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
                 copy_n(kdiag.data(),kdiag.size(),IMats.origin());
-                ma::batched_Tab_to_Klr(kdiag.size(),nwalk,nocc_max,nchol_max,nchol_tot,
+                using ma::batched_Tab_to_Klr;
+                batched_Tab_to_Klr(kdiag.size(),nwalk,nocc_max,nchol_max,nchol_tot,
                                         ncholpQ[Q],nc0,
                                         IMats.origin(),
                                         T1.origin(),
@@ -581,8 +600,9 @@ class KP3IndexFactorization_batched
         Timers[Timer_E6]->start();
         size_t nqk=0;  
         RealType scl = (walker_type==CLOSED?2.0:1.0);
+        using ma::adotpby;
         for(int n=0; n<nwalk; ++n) {
-          ma::adotpby(SPComplexType(0.5*scl*scl),Kl[n],Kr[n],
+          adotpby(SPComplexType(0.5*scl*scl),Kl[n],Kr[n],
                       ComplexType(0.0),E[n].origin()+2);
         }
         Timers[Timer_E6]->stop();
@@ -623,7 +643,7 @@ class KP3IndexFactorization_batched
       set_shm_buffer(mem_needs);
 
       // messy
-      sp_pointer Krptr, Klptr;
+      sp_pointer_shared Krptr, Klptr;
       size_t Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
@@ -632,7 +652,7 @@ class KP3IndexFactorization_batched
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride() == KEright->size(1));
-          Krptr = KEright->origin();
+          Krptr = make_device_ptr(KEright->origin());
         } else {
           Krptr = SM_TMats.origin();
           cnt += nwalk*local_nCV;
@@ -640,7 +660,7 @@ class KP3IndexFactorization_batched
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
-          Klptr = KEleft->origin();
+          Klptr = make_device_ptr(KEleft->origin());
         } else {
           Klptr = SM_TMats.origin()+cnt;
           cnt += nwalk*local_nCV;
@@ -657,8 +677,9 @@ class KP3IndexFactorization_batched
         fill_n(E[n].origin(),3,ComplexType(0.));
 
       assert(Gc.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-      C3Tensor_cref G3Da(Gc.origin(),{nocca_tot,nmo_tot,nwalk} );
-      C3Tensor_cref G3Db(Gc.origin()+G3Da.num_elements()*(nspin-1),{noccb_tot,nmo_tot,nwalk} );
+      C3Tensor_cref G3Da(make_device_ptr(Gc.origin()),{nocca_tot,nmo_tot,nwalk} );
+      C3Tensor_cref G3Db(make_device_ptr(Gc.origin())+G3Da.num_elements()*(nspin-1),
+                            {noccb_tot,nmo_tot,nwalk} );
 
       Sp4Tensor_ref GKK(SM_TMats.origin()+cnt,
                         {nspin,nkpts,nkpts,nwalk*nmo_max*nocca_max});
@@ -906,10 +927,11 @@ class KP3IndexFactorization_batched
           } // Ka
           if(haveKE) {
             int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);  
+            using ma::axpy;
             for(int n=0; n<nwalk; n++) {
-              ma::axpy(SPComplexType(1.0),Kr_local[n].sliced(0,ncholpQ[Q]),
+              axpy(SPComplexType(1.0),Kr_local[n].sliced(0,ncholpQ[Q]),
                                         Kr[n].sliced(nc0,nc0+ncholpQ[Q])); 
-              ma::axpy(SPComplexType(1.0),Kl_local[n].sliced(0,ncholpQ[Q]),
+              axpy(SPComplexType(1.0),Kl_local[n].sliced(0,ncholpQ[Q]),
                                         Kl[n].sliced(nc0,nc0+ncholpQ[Q])); 
             }
           } // to release the lock
@@ -941,6 +963,8 @@ class KP3IndexFactorization_batched
     template<class MatA, class MatB,
              typename = typename std::enable_if_t<(std::decay<MatA>::type::dimensionality==1)>,
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==1)>,
+//             typename = decltype(boost::multi::static_array_cast<ComplexType, pointer>(std::declval<MatA>())),
+//             typename = decltype(boost::multi::static_array_cast<ComplexType, pointer>(std::declval<MatB>())),
              typename = void
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
@@ -954,8 +978,11 @@ class KP3IndexFactorization_batched
     template<class MatA, class MatB,
              typename = typename std::enable_if_t<(std::decay<MatA>::type::dimensionality==2)>,
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
+//             typename = decltype(boost::multi::static_array_cast<ComplexType, pointer>(std::declval<MatA>())),
+//             typename = decltype(boost::multi::static_array_cast<ComplexType, pointer>(std::declval<MatB>()))
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
+
       int nkpts = nopk.size();
       int nwalk = X.size(1);
       assert(v.size(0)==nwalk);
@@ -970,7 +997,6 @@ class KP3IndexFactorization_batched
       size_t mem_needs((nkpts+1)*nkpts*nwalk*nmo_max*nmo_max + nwalk*2*nkpts*nchol_max);
       if(SM_TMats.num_elements() < mem_needs) SM_TMats.reextent({mem_needs,1});
 
-      auto Xdev(boost::multi::static_array_cast<ComplexType, pointer>(X));
       Sp3Tensor_ref vKK(SM_TMats.origin(),{nkpts+1,nkpts,nwalk*nmo_max*nmo_max} );
       Sp4Tensor_ref XQnw(SM_TMats.origin()+vKK.num_elements(),{nkpts,2,nchol_max,nwalk} );
       fill_n(XQnw.origin(),XQnw.num_elements(),SPComplexType(0.0));
@@ -979,6 +1005,7 @@ class KP3IndexFactorization_batched
       // "rotate" X  
       //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)  
 // transform to single precision
+      SpMatrix_ref Xdev(make_device_ptr(X.origin()),X.extensions());
       for(int Q=0, nq=0; Q<nkpts; ++Q) { 
         if(Q != kminus[Q] || Q==Q0) { 
           auto&& Xp(Xdev.sliced(nq,nq+ncholpQ[Q]));
@@ -1083,7 +1110,7 @@ class KP3IndexFactorization_batched
 
       Timers[Timer_vHS3]->stop();
       Timers[Timer_vHS4]->start();
-      Sp3Tensor_ref v3D(v.origin(),{nwalk,nmo_tot,nmo_tot});
+      Sp3Tensor_ref v3D(make_device_ptr(v.origin()),{nwalk,nmo_tot,nmo_tot});
       vKKwij_to_vwKiKj(vKK,v3D);
       Timers[Timer_vHS4]->stop();
       // do I need to "rotate" back, can be done if necessary
@@ -1092,6 +1119,8 @@ class KP3IndexFactorization_batched
     template<class MatA, class MatB,
              typename = typename std::enable_if_t<(std::decay<MatA>::type::dimensionality==1)>,
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==1)>,
+//             typename = decltype(boost::multi::static_array_cast<ComplexType, pointer>(std::declval<MatA&>())),
+//             typename = decltype(boost::multi::static_array_cast<ComplexType, pointer>(std::declval<MatB>())),
              typename = void
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
@@ -1104,9 +1133,27 @@ class KP3IndexFactorization_batched
       return vbias(G_,v_,a,c,k);  
     }
 
+/*
     template<class MatA, class MatB,
              typename = typename std::enable_if_t<(std::decay<MatA>::type::dimensionality==2)>,
-             typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
+             typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==1)>,
+//             typename = typename std::enable_if_t<(std::is_convertible<typename std::decay<MatA>::type::pointer,pointer>::value)>,  
+//             typename = typename std::enable_if_t<(not std::is_convertible<typename std::decay<MatB>::type::pointer,pointer>::value)>,  
+              typename = void,  
+              typename = void,  
+              typename = void,  
+              typename = void,  
+              typename = void  
+            >
+    void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int nd=0) {
+    }
+*/
+
+    template<class MatA, class MatB,
+             typename = std::enable_if_t<(std::decay<MatA>::type::dimensionality==2)>,
+             typename = std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
+//             typename = std::enable_if_t<(std::is_convertible<typename std::decay<MatA>::type::element_ptr,pointer>::value)>, 
+//             typename = std::enable_if_t<(std::is_convertible<typename std::decay<MatB>::type::element_ptr,pointer>::value)> 
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int nd=0) {
 
@@ -1142,8 +1189,9 @@ class KP3IndexFactorization_batched
       if(SM_TMats.num_elements() < mem_needs) SM_TMats.reextent({mem_needs,1});
 
       assert(G.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-      C3Tensor_cref G3Da(G.origin(),{nocca_tot,nmo_tot,nwalk} );
-      C3Tensor_cref G3Db(G.origin()+G3Da.num_elements()*(nspin-1),{noccb_tot,nmo_tot,nwalk} );
+      C3Tensor_cref G3Da(make_device_ptr(G.origin()),{nocca_tot,nmo_tot,nwalk} );
+      C3Tensor_cref G3Db(make_device_ptr(G.origin())+G3Da.num_elements()*(nspin-1),
+                                                     {noccb_tot,nmo_tot,nwalk} );
       {  
         // assuming contiguous
         ma::scal(c,v);
@@ -1192,7 +1240,7 @@ class KP3IndexFactorization_batched
 
 
         Timers[Timer_vbias3]->start();
-        vbias_from_v1(halfa,v1,boost::multi::static_array_cast<ComplexType, pointer>(v));
+        vbias_from_v1(halfa,v1,v);
         Timers[Timer_vbias3]->stop();
       }
     }
@@ -1312,7 +1360,8 @@ class KP3IndexFactorization_batched
       int nkpts = nopk.size();
       assert(GKKaj.num_elements() >= nkpts*nkpts*nwalk*nocc_max*nmo_max);
 
-      ma::KaKjw_to_KKwaj(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
+      using ma::KaKjw_to_KKwaj;  
+      KaKjw_to_KKwaj(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                 dev_nopk.origin(),dev_i0pk.origin(),
                                 dev_no.origin(),dev_a0.origin(),
                                 GKaKj.origin(),GKKaj.origin());
@@ -1328,7 +1377,8 @@ class KP3IndexFactorization_batched
       int nkpts = nopk.size();
       assert(GQKaj.num_elements() >= nkpts*nkpts*nwalk*nocc_max*nmo_max);
 
-      ma::KaKjw_to_QKajw(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
+      using ma::KaKjw_to_QKajw;
+      KaKjw_to_QKajw(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                 dev_nopk.origin(),dev_i0pk.origin(),
                                 dev_no.origin(),dev_a0.origin(),
                                 dev_QKToK2.origin(),
@@ -1348,7 +1398,8 @@ class KP3IndexFactorization_batched
       int nmo_tot = vKiKj.size(1);
       int nkpts = nopk.size();
 
-      ma::vKKwij_to_vwKiKj(nwalk,nkpts,nmo_max,nmo_tot,KKTransID.origin(),
+      using ma::vKKwij_to_vwKiKj;
+      vKKwij_to_vwKiKj(nwalk,nkpts,nmo_max,nmo_tot,KKTransID.origin(),
                                 dev_nopk.origin(),dev_i0pk.origin(),
                                 vKK.origin(),vKiKj.origin());  
     }
@@ -1360,9 +1411,11 @@ class KP3IndexFactorization_batched
       int nkpts = nopk.size();
       int nchol_max = *std::max_element(ncholpQ.begin(),ncholpQ.end());
 
-      ma::vbias_from_v1(nwalk,nkpts,nchol_max,Q0,dev_kminus.origin(),
+      using ma::vbias_from_v1;
+// using make_device_ptr(vbias.origin()) to catch errors here
+      vbias_from_v1(nwalk,nkpts,nchol_max,Q0,dev_kminus.origin(),
                              dev_ncholpQ.origin(),dev_ncholpQ0.origin(),
-                             a,v1.origin(),vbias.origin());
+                             a,v1.origin(),to_address(make_device_ptr(vbias.origin())));
     }
 
     enum THCTimers

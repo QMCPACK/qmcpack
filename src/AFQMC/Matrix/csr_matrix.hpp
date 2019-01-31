@@ -806,7 +806,8 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                 r.barrier();
                 return *this;
         }
-	csr_matrix(this_t&& other):csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,other.Valloc_) { *this = std::move(other); }
+	csr_matrix(this_t&& other):csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,other.Valloc_) { 
+            *this = std::move(other); }
 	csr_matrix(ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRoot> const& ucsr):
 		csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,ucsr.getAlloc()) {
 		*this = ucsr;

@@ -75,6 +75,28 @@ inline std::string type_to_string<int>() { return std::string("int"); }
 template<>
 inline std::string type_to_string<std::string>() { return std::string("std::string"); }
 
+// create std::vector<T> from std::vector<Q>
+template<class Q, class T>
+std::vector<Q> make_vector(std::vector<T> const& other)
+{
+  std::vector<Q> res;
+  res.reserve(other.size());
+  for(auto& v:other) res.emplace_back(v);
+  return res;
+}
+
+//   can use: return std::vector<Q>{std::make_move_iterator(other.begin()),
+//                                  std::make_move_iterator(other.end()));
+// and can replace move_vector with this outside
+template<class Q, class T>
+std::vector<Q> move_vector(std::vector<T> && other)
+{
+  std::vector<Q> res;
+  res.reserve(other.size());
+  for(auto& v:other) res.emplace_back(std::move(v));
+  return res;
+}
+
 }
 
 }
