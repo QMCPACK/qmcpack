@@ -60,8 +60,8 @@ MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_M
 ######################################################################
 # Build level
 ######################################################################
-SET(QMC_BUILD_LEVEL 3 CACHE INTEGER
-  "QMC Build Level: 1=bare, 2=developer, 3=experimental, 4=minimal")
+
+SET(QMC_BUILD_SANDBOX_ONLY OFF CACHE BOOLEAN "Build only applications in Sandbox directory")
 IF ( NOT CMAKE_BUILD_TYPE AND NOT CMAKE_TOOLCHAIN_FILE)
   SET( CMAKE_BUILD_TYPE Release )
 ENDIF()
@@ -180,12 +180,10 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # Build options
 # QMC_BUILD_STATIC build static/dynamic  libraries
 # BUILD_QMCTOOLS   build utility programs
-# BUILD_SANDBOX    build test programs and miniapps
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
 SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
-SET(BUILD_SANDBOX 1 CACHE BOOL "Build sandbox tests and miniapps")
 SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
 IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
   MESSAGE(STATUS "LMY engine is not compatible with CUDA build! Disabling LMY engine")
@@ -876,7 +874,7 @@ ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)
 
-IF(NOT(QMC_BUILD_LEVEL GREATER 4))
+IF(NOT QMC_BUILD_SANDBOX_ONLY)
   SUBDIRS(tests)
   SUBDIRS(examples)
   IF(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus")

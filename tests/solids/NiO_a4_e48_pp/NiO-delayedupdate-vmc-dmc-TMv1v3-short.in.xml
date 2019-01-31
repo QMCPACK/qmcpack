@@ -106,7 +106,7 @@
     <parameter name="blocks">               100 </parameter>
     <parameter name="timestep">            0.01 </parameter>
     <parameter name="reconfiguration">       no </parameter>
-    <parameter name="nonlocalmoves">         no </parameter>
+    <parameter name="nonlocalmoves">         v1 </parameter>
   </qmc>
   <qmc method="dmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no" />
@@ -116,6 +116,6 @@
     <parameter name="blocks">               100 </parameter>
     <parameter name="timestep">            0.01 </parameter>
     <parameter name="reconfiguration">       no </parameter>
-    <parameter name="nonlocalmoves">         v0 </parameter>
+    <parameter name="nonlocalmoves">         v3 </parameter>
   </qmc>
 </simulation>

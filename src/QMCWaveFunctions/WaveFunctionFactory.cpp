@@ -35,7 +35,7 @@
 #endif
 
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
-#if OHMMS_DIM==3 && QMC_BUILD_LEVEL>1 && !defined(QMC_COMPLEX)
+#if OHMMS_DIM==3 && !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
 
@@ -147,7 +147,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     {
       APP_ABORT("  Removed Helium Molecular terms from qmcpack ");
     }
-#if QMC_BUILD_LEVEL>2 && !defined(QMC_COMPLEX) && OHMMS_DIM==3
+#if !defined(QMC_COMPLEX) && OHMMS_DIM==3
     else if(cname == "agp")
     {
       AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,ptclPool);
@@ -191,12 +191,10 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
     detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
 #endif
   }
-//#if OHMMS_DIM == 3 && QMC_BUILD_LEVEL>1
     else if(orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw")
     {
       detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi,ptclPool);
     }
-//#endif /* QMC_BUILD_LEVEL>1 */
   else
     detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
   detbuilder->put(cur);
