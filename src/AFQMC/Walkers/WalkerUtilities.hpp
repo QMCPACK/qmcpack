@@ -110,7 +110,7 @@ inline void getGlobalListOfWalkerWeights(WlkBucket& wlk, std::vector<std::pair<d
     APP_ABORT(" Error in getGlobalListOfWalkerWeights(): size > target.\n"); 
   std::vector<Type> blocal(target);
   std::vector<Type>::iterator itv = blocal.begin();
-  boost::multi::array<ComplexType,1> w_data(extensions<1u>{nW});
+  boost::multi::array<ComplexType,1> w_data(iextensions<1u>{nW});
   wlk.getProperty(WEIGHT,w_data);
 //  for(typename WlkBucket::iterator it=wlk.begin(); it!=wlk.end(); ++it, ++itv) 
 //    *itv = {std::abs(*it->weight()),1};

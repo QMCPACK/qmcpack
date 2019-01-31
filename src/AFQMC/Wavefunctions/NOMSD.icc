@@ -41,11 +41,11 @@ namespace afqmc
     size_t nt = wset.size()*(1+dm_size(false));
     // allocte space in shared memory for temporary G (always compact) and ov
     if(not shmbuff_for_E) 
-      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(iextensions<1u>{nt},
                                                 shared_allocator<ComplexType>{TG.TG_local()}));
     // in case the number of walkers changes
     if(shmbuff_for_E->num_elements() < nt)
-      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(iextensions<1u>{nt},
                                                 shared_allocator<ComplexType>{TG.TG_local()}));
     assert(shmbuff_for_E->num_elements() >= nt);
     assert(E.dimensionality==2);
@@ -61,7 +61,7 @@ namespace afqmc
     if(transposed_G_for_E_) std::swap(nr,nc);
     boost::multi::array_ref<ComplexType,2> G(to_address(shmbuff_for_E->origin()),{nr,nc});
     boost::multi::array_ref<ComplexType,1> ov_(to_address(shmbuff_for_E->origin())+Gsize*nwalk,
-                                              extensions<1u>{nwalk});
+                                              iextensions<1u>{nwalk});
     if(eloc2.size(0) != nwalk || eloc2.size(1) != 3) eloc2.reextent({nwalk,3}); 
 
     std::fill_n(Ov.origin(),nwalk,zero);
@@ -116,13 +116,13 @@ std::cout<<" E nomsd: " <<nd <<" "
     //  iii. energies[3] for all walkers on all nodes of TG (assume all nodes have same # of walkers)
     int nt = nwalk*(2*Gsize+1);
     if(not shmbuff_for_E) { 
-      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(iextensions<1u>{nt},
                                                 shared_allocator<ComplexType>{TG.TG_local()}));
       new_shm_space=true;
     }
     // in case the number of walkers changes
     if(shmbuff_for_E->num_elements() < nt) {
-      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(iextensions<1u>{nt},
                                                 shared_allocator<ComplexType>{TG.TG_local()}));
       new_shm_space=true;
     }
@@ -143,7 +143,7 @@ std::cout<<" E nomsd: " <<nd <<" "
                                                 {nr,nc});
       displ += Gsize*nwalk;
     boost::multi::array_ref<ComplexType,1> overlaps(to_address(shmbuff_for_E->origin())+displ,
-                                                   extensions<1u>{nwalk});
+                                                   iextensions<1u>{nwalk});
     if(eloc2.size(0) != nnodes*nwalk || eloc2.size(1) != 3) 
         eloc2.reextent({nnodes*nwalk,3});
     auto elocal = eloc2[node_number*nwalk];
@@ -230,13 +230,13 @@ std::cout<<" E nomsd: " <<nd <<" "
     //  iii. ovlps for local walkers
     int nt = nwalk*(3*Gsize+1);
     if(not shmbuff_for_E) { 
-      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(iextensions<1u>{nt},
                                                 shared_allocator<ComplexType>{TG.TG_local()}));
       new_shm_space=true;
     }
     // in case the number of walkers changes
     if(shmbuff_for_E->num_elements() < nt) {
-      shmbuff_for_E = std::move(std::make_unique<shmCVector>(extensions<1u>{nt},
+      shmbuff_for_E = std::move(std::make_unique<shmCVector>(iextensions<1u>{nt},
                                                 shared_allocator<ComplexType>{TG.TG_local()}));
       new_shm_space=true;
     }
@@ -260,7 +260,7 @@ std::cout<<" E nomsd: " <<nd <<" "
                                                 {nr,nc});
       displ += Gsize*nwalk;
     boost::multi::array_ref<ComplexType,1> overlaps(to_address(shmbuff_for_E->origin())+displ,
-                                                   extensions<1u>{nwalk});
+                                                   iextensions<1u>{nwalk});
     // used for temporary storage in ndet loop for local calculation
     if(eloc3.size(0) != nwalk || eloc3.size(1) != 3) 
         eloc3.reextent({nwalk,3});
@@ -367,13 +367,13 @@ std::cout<<" E nomsd: " <<nd <<" "
         std::fill_n(G[i].origin(),G.size(1),ComplexType(0.0));
     TG.local_barrier();
     if(localGbuff.size() < Gsize)
-      localGbuff.reextent(extensions<1u>{Gsize});
+      localGbuff.reextent(iextensions<1u>{Gsize});
     if(walker_type != COLLINEAR) {
 
       auto Gdims = dm_dims(false,Alpha);
       boost::multi::array_ref<ComplexType,2> G2D_(localGbuff.origin(),
                                                  {Gdims.first,Gdims.second});
-      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),extensions<1u>{Gsize});
+      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),iextensions<1u>{Gsize});
       // notice interchange of dimensions
       boost::multi::array_cref<ComplexType,3> A(SM.origin(),{nw,Gdims.second,Gdims.first});
 
@@ -392,7 +392,7 @@ std::cout<<" E nomsd: " <<nd <<" "
     } else {
 
       // store overlaps locally to be able to split alpha/beta pairs
-      if(ovlp2.size(0) < 2*nw) ovlp2.reextent(extensions<1u>{2*nw});
+      if(ovlp2.size(0) < 2*nw) ovlp2.reextent(iextensions<1u>{2*nw});
       std::fill_n(ovlp2.origin(),2*nw,ComplexType(0.0));
       auto GAdims = dm_dims(false,Alpha);
       auto GBdims = dm_dims(false,Beta);
@@ -401,9 +401,9 @@ std::cout<<" E nomsd: " <<nd <<" "
       boost::multi::array_ref<ComplexType,2> GB2D_(localGbuff.origin()+GAdims.first*GAdims.second,
                                    {GBdims.first,GBdims.second});
       boost::multi::array_ref<ComplexType,1> GA1D_(localGbuff.origin(),
-                                   extensions<1u>{GAdims.first*GAdims.second});
+                                   iextensions<1u>{GAdims.first*GAdims.second});
       boost::multi::array_ref<ComplexType,1> GB1D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extensions<1u>{GBdims.first*GBdims.second});
+                                   iextensions<1u>{GBdims.first*GBdims.second});
 
       for(int iw=0; iw<2*nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
@@ -465,13 +465,13 @@ std::cout<<" E nomsd: " <<nd <<" "
     TG.local_barrier();
     auto Gsize = size_t(dm_size(false));
     if(localGbuff.size() < Gsize)
-      localGbuff.reextent(extensions<1u>{Gsize});
+      localGbuff.reextent(iextensions<1u>{Gsize});
     if(walker_type != COLLINEAR) {
 
       auto Gdims = dm_dims(false,Alpha);
       boost::multi::array_ref<ComplexType,2> G2D_(localGbuff.origin(),
                                                  {Gdims.first,Gdims.second});
-      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),extensions<1u>{Gsize});
+      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),iextensions<1u>{Gsize});
 
       for(int iw=0; iw<nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
@@ -489,7 +489,7 @@ std::cout<<" E nomsd: " <<nd <<" "
     } else {
 
       // store overlaps locally to be able to split alpha/beta pairs
-      if(ovlp2.size(0) < 2*nw) ovlp2.reextent(extensions<1u>{2*nw});
+      if(ovlp2.size(0) < 2*nw) ovlp2.reextent(iextensions<1u>{2*nw});
       std::fill_n(ovlp2.origin(),2*nw,ComplexType(0.0));
       auto GAdims = dm_dims(false,Alpha);
       auto GBdims = dm_dims(false,Beta);
@@ -498,9 +498,9 @@ std::cout<<" E nomsd: " <<nd <<" "
       boost::multi::array_ref<ComplexType,2> GB2D_(localGbuff.origin()+GAdims.first*GAdims.second,
                                    {GBdims.first,GBdims.second});
       boost::multi::array_ref<ComplexType,1> GA1D_(localGbuff.origin(),
-                                   extensions<1u>{GAdims.first*GAdims.second});
+                                   iextensions<1u>{GAdims.first*GAdims.second});
       boost::multi::array_ref<ComplexType,1> GB1D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extensions<1u>{GBdims.first*GBdims.second});
+                                   iextensions<1u>{GBdims.first*GBdims.second});
 
       for(int iw=0; iw<2*nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
@@ -559,14 +559,14 @@ std::cout<<" E nomsd: " <<nd <<" "
     TG.local_barrier();
     auto Gsize = size_t(dm_size(not compact));
     if(localGbuff.size() < Gsize)
-      localGbuff.reextent(extensions<1u>{Gsize});
+      localGbuff.reextent(iextensions<1u>{Gsize});
     auto wlk_dims = wset.walker_dims();
     if(walker_type != COLLINEAR) {
 
       auto Gdims = dm_dims(not compact,Alpha);
       boost::multi::array_ref<ComplexType,2> G2D_(localGbuff.origin(),
                                                  {Gdims.first,Gdims.second});
-      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),extensions<1u>{Gsize});
+      boost::multi::array_ref<ComplexType,1> G1D_(localGbuff.origin(),iextensions<1u>{Gsize});
 
       const int ntasks_percore = (nw*ndet)/TG.getNCoresPerTG();
       const int ntasks_total_serial = ntasks_percore*TG.getNCoresPerTG();
@@ -614,7 +614,7 @@ std::cout<<" E nomsd: " <<nd <<" "
           }   
           // first setup
           local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,TG.TG_local().rank()))); 
-          shmbuff_for_G = std::move(std::make_unique<shmCVector>(extensions<1u>{dm_size(true)},
+          shmbuff_for_G = std::move(std::make_unique<shmCVector>(iextensions<1u>{dm_size(true)},
                                                 shared_allocator<ComplexType>{local_group_comm}));
         } 
         if(last_task_index < 0 || last_task_index > nextra) 
@@ -622,7 +622,7 @@ std::cout<<" E nomsd: " <<nd <<" "
         {
           boost::multi::array_ref<ComplexType,2> G2D_2(to_address(shmbuff_for_G->origin()),
                                                  {Gdims.first,Gdims.second});
-          boost::multi::array_ref<ComplexType,1> G1D_2(to_address(shmbuff_for_G->origin()),extensions<1u>{Gsize});
+          boost::multi::array_ref<ComplexType,1> G1D_2(to_address(shmbuff_for_G->origin()),iextensions<1u>{Gsize});
           int iw = (last_task_index+ntasks_total_serial)/ndet;
           int nd = (last_task_index+ntasks_total_serial)%ndet;
           ComplexType ov;
@@ -653,9 +653,9 @@ std::cout<<" E nomsd: " <<nd <<" "
       boost::multi::array_ref<ComplexType,2> GB2D_(localGbuff.origin()+GAdims.first*GAdims.second,
                                    {GBdims.first,GBdims.second});
       boost::multi::array_ref<ComplexType,1> GA1D_(localGbuff.origin(),
-                                   extensions<1u>{GAdims.first*GAdims.second});
+                                   iextensions<1u>{GAdims.first*GAdims.second});
       boost::multi::array_ref<ComplexType,1> GB1D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extensions<1u>{GBdims.first*GBdims.second});
+                                   iextensions<1u>{GBdims.first*GBdims.second});
 
       const int ntasks_percore = (nw*ndet)/TG.getNCoresPerTG();
       const int ntasks_total_serial = ntasks_percore*TG.getNCoresPerTG();
@@ -705,7 +705,7 @@ std::cout<<" E nomsd: " <<nd <<" "
           // first setup
           //local_group_comm = std::move(std::make_unique<shared_communicator>(TG.TG_local().split(last_task_index))); 
           local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,TG.TG_local().rank()))); 
-          shmbuff_for_G = std::move(std::make_unique<shmCVector>(extensions<1u>{dm_size(true)},
+          shmbuff_for_G = std::move(std::make_unique<shmCVector>(iextensions<1u>{dm_size(true)},
                                                 shared_allocator<ComplexType>{local_group_comm}));
         }
         if(last_task_index < 0 || last_task_index > nextra)
@@ -716,9 +716,9 @@ std::cout<<" E nomsd: " <<nd <<" "
           boost::multi::array_ref<ComplexType,2> GB2D_2(to_address(shmbuff_for_G->origin())+
                                GAdims.first*GAdims.second,{GBdims.first,GBdims.second});
           boost::multi::array_ref<ComplexType,1> GA1D_2(to_address(shmbuff_for_G->origin()),
-                               extensions<1u>{GAdims.first*GAdims.second});
+                               iextensions<1u>{GAdims.first*GAdims.second});
           boost::multi::array_ref<ComplexType,1> GB1D_2(to_address(shmbuff_for_G->origin())+
-                               GAdims.first*GAdims.second,extensions<1u>{GBdims.first*GBdims.second});
+                               GAdims.first*GAdims.second,iextensions<1u>{GBdims.first*GBdims.second});
           int task = (last_task_index+ntasks_total_serial);
           int iw = task/ndet;
           int nd = task%ndet;
@@ -811,7 +811,7 @@ std::cout<<" E nomsd: " <<nd <<" "
           }   
           // first setup
           local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,TG.TG_local().rank()))); 
-          shmbuff_for_G = std::move(std::make_unique<shmCVector>(extensions<1u>{dm_size(true)},
+          shmbuff_for_G = std::move(std::make_unique<shmCVector>(iextensions<1u>{dm_size(true)},
                                                 shared_allocator<ComplexType>{local_group_comm}));
         } 
         if(last_task_index < 0 || last_task_index > nextra) 
@@ -863,7 +863,7 @@ std::cout<<" E nomsd: " <<nd <<" "
           }
           // first setup
           local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,TG.TG_local().rank()))); 
-          shmbuff_for_G = std::move(std::make_unique<shmCVector>(extensions<1u>{dm_size(true)},
+          shmbuff_for_G = std::move(std::make_unique<shmCVector>(iextensions<1u>{dm_size(true)},
                                                 shared_allocator<ComplexType>{local_group_comm}));
         }
         if(last_task_index < 0 || last_task_index > nextra)
@@ -897,7 +897,7 @@ std::cout<<" E nomsd: " <<nd <<" "
     bool compact = false;
     auto Gsize = size_t(dm_size(not compact));
     if(localGbuff.size() < Gsize)
-      localGbuff.reextent(extensions<1u>{2*Gsize});
+      localGbuff.reextent(iextensions<1u>{2*Gsize});
     auto wlk_dims = wset.walker_dims();
     if((T2ForBP.size(0) != wlk_dims.first || T2ForBP.size(1) != wlk_dims.second)) {
       T2ForBP.reextent({wlk_dims.second,wlk_dims.first});
@@ -908,11 +908,11 @@ std::cout<<" E nomsd: " <<nd <<" "
       auto Gdims = dm_dims(not compact,Alpha);
       // Temporaries for determinant component of walker rdm function.
       CMatrix_ref G2D_(localGbuff.origin(), {Gdims.first,Gdims.second});
-      CVector_ref G1D_(localGbuff.origin(), extensions<1u>{Gsize});
+      CVector_ref G1D_(localGbuff.origin(), iextensions<1u>{Gsize});
       // Accumulator for trial wavefunction sum.
-      CVector_ref G21D_(localGbuff.origin()+Gsize,extensions<1u>{Gsize});
+      CVector_ref G21D_(localGbuff.origin()+Gsize,iextensions<1u>{Gsize});
       // 1D view of walker averaged RDM
-      CVector_ref G1D(G.origin(),extensions<1u>{Gsize});
+      CVector_ref G1D(G.origin(),iextensions<1u>{Gsize});
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         if( std::abs(ComplexType(*wset[iw].weight())) < 1e-10 ) continue;
@@ -971,16 +971,16 @@ std::cout<<" E nomsd: " <<nd <<" "
       CMatrix_ref GB2D_(localGbuff.origin()+GAdims.first*GAdims.second,
                                    {GBdims.first,GBdims.second});
       CVector_ref GA1D_(localGbuff.origin(),
-                                   extensions<1u>{GAdims.first*GAdims.second});
+                                   iextensions<1u>{GAdims.first*GAdims.second});
       CVector_ref GB1D_(localGbuff.origin()+GAdims.first*GAdims.second,
-                                   extensions<1u>{GBdims.first*GBdims.second});
+                                   iextensions<1u>{GBdims.first*GBdims.second});
       CVector_ref GA21D_(localGbuff.origin()+Gsize,
-                                   extensions<1u>{GAdims.first*GAdims.second});
+                                   iextensions<1u>{GAdims.first*GAdims.second});
       CVector_ref GB21D_(localGbuff.origin()+Gsize+GAdims.first*GAdims.second,
-                                   extensions<1u>{GBdims.first*GBdims.second});
-      CVector_ref GA1D(G.origin(), extensions<1u>{GAdims.first*GAdims.second});
+                                   iextensions<1u>{GBdims.first*GBdims.second});
+      CVector_ref GA1D(G.origin(), iextensions<1u>{GAdims.first*GAdims.second});
       CVector_ref GB1D(G.origin()+GAdims.first*GAdims.second,
-                       extensions<1u>{GBdims.first*GBdims.second});
+                       iextensions<1u>{GBdims.first*GBdims.second});
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         if( std::abs(ComplexType(*wset[iw].weight())) < 1e-10 ) continue;
@@ -1024,7 +1024,7 @@ std::cout<<" E nomsd: " <<nd <<" "
     TG.Global().all_reduce_in_place_n(to_address(denom.origin()),1,std::plus<>());
     TG.Global().all_reduce_in_place_n(to_address(G.origin()),Gsize,std::plus<>());
     auto denominator= ComplexType(1.0,0.0)/denom[0];
-    boost::multi::array_ref<ComplexType,1> GFull(G.origin(), extensions<1u>{Gsize});
+    boost::multi::array_ref<ComplexType,1> GFull(G.origin(), iextensions<1u>{Gsize});
     if(!free_projection) {
       ma::scal(denominator,GFull);
     }
@@ -1168,17 +1168,17 @@ std::cout<<" E nomsd: " <<nd <<" "
                                        G.sliced(NAEA,NAEA+NAEB),std::addressof(ov2),true);
         ov *= ov2;
       }    
-      boost::multi::array_ref<ComplexType,1> G1D(G.origin(),extensions<1u>{G.num_elements()});
+      boost::multi::array_ref<ComplexType,1> G1D(G.origin(),iextensions<1u>{G.num_elements()});
       HamOp.vbias(G1D,std::forward<Vec>(v));
     } else {
       size_t Gsize = dm_size(true);
       auto Gdims = dm_dims(true,Alpha);
-      boost::multi::array<ComplexType,1> G1D(extensions<1u>{Gsize});
+      boost::multi::array<ComplexType,1> G1D(iextensions<1u>{Gsize});
       std::fill_n(G1D.origin(),G1D.num_elements(),ComplexType(0));
       ComplexType ov(0);  
       if(walker_type != COLLINEAR) {
         boost::multi::array<ComplexType,2> G_({Gdims.first,Gdims.second});
-        boost::multi::array_ref<ComplexType,1> G1D_(G_.origin(),extensions<1u>{Gdims.first*Gdims.second});
+        boost::multi::array_ref<ComplexType,1> G1D_(G_.origin(),iextensions<1u>{Gdims.first*Gdims.second});
         int n0,n1;
         std::tie(n0,n1) = FairDivideBoundary(TG.getGlobalRank(),ndets*(ndets+1)/2,
                                              TG.getGlobalSize());
@@ -1201,7 +1201,7 @@ std::cout<<" E nomsd: " <<nd <<" "
         }
       } else {
         boost::multi::array<ComplexType,2> G_({2*NMO,NMO});
-        boost::multi::array_ref<ComplexType,1> G1D_(G_.origin(),extensions<1u>{2*NMO*NMO});
+        boost::multi::array_ref<ComplexType,1> G1D_(G_.origin(),iextensions<1u>{2*NMO*NMO});
         int n0,n1;
         std::tie(n0,n1) = FairDivideBoundary(TG.getGlobalRank(),ndets*(ndets+1)/2,
                                              TG.getGlobalSize());

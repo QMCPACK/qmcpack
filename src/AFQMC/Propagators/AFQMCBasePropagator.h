@@ -79,7 +79,7 @@ class AFQMCBasePropagator: public AFQMCInfo
             //SDetOp(2*NMO,NAEA+NAEB),
             //SDetOp(SlaterDetOperations_shared<ComplexType>(2*NMO,NAEA+NAEB)),
             TSM({2*NMO,NAEA+NAEB},alloc_), // safe for now, since I don't know walker_type
-            buffer(extensions<1u>{1},aux_alloc_),
+            buffer(iextensions<1u>{1},aux_alloc_),
             local_group_comm(),
             last_nextra(-1),
             last_task_index(-1),
@@ -115,7 +115,7 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     // reset shared memory buffers
     // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
-    void reset() { buffer.reextent(extensions<1u>{0}); }
+    void reset() { buffer.reextent(iextensions<1u>{0}); }
 
     bool hybrid_propagation() { return hybrid; }
 

@@ -71,7 +71,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
   // 0. Allocate memory and set shared memory structures
   if(buffer.num_elements() < memory_needs ) {
-    buffer.reextent(extensions<1u>{memory_needs});
+    buffer.reextent(iextensions<1u>{memory_needs});
     new_shm_space=true;
   }  
 
@@ -135,7 +135,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     MFfactor.reextent({nnodes*nsteps,nwalk});
   if(hybrid_weight.size(0) != nnodes*nsteps || hybrid_weight.size(1) != nwalk)
     hybrid_weight.reextent({nnodes*nsteps,nwalk});
-  if(new_overlaps.size(0) != nwalk) new_overlaps.reextent(extensions<1u>{nwalk});
+  if(new_overlaps.size(0) != nwalk) new_overlaps.reextent(iextensions<1u>{nwalk});
   if(new_energies.size(0) != nwalk || new_energies.size(1) != 3) 
     new_energies.reextent({nwalk,3});
   if(not transposed_vHS_) {  

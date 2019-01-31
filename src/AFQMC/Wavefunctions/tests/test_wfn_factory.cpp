@@ -1166,7 +1166,7 @@ else
       }
     }
 
-    boost::multi::array<ComplexType,1> vMF(extensions<1u>{nCV});
+    boost::multi::array<ComplexType,1> vMF(iextensions<1u>{nCV});
     wfn.vMF(vMF);
     ComplexType vMFsum=0;
     {
@@ -1236,7 +1236,7 @@ else
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
 
-    boost::multi::array<ComplexType,1> vMF2(extensions<1u>{nCV});
+    boost::multi::array<ComplexType,1> vMF2(iextensions<1u>{nCV});
     nomsd.vMF(vMF2);
     vMFsum=0;
     {

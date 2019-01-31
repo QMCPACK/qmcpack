@@ -247,7 +247,7 @@ class KP3IndexFactorization_batched
       // for now, stay collinear
 
       CVector vMF_(vMF);
-      CVector P1D(extensions<1u>{NMO*NMO});
+      CVector P1D(iextensions<1u>{NMO*NMO});
       fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));
       vHS(vMF_, P1D);
       TG.TG().all_reduce_in_place_n(to_address(P1D.origin()),P1D.num_elements(),std::plus<>());

@@ -199,7 +199,7 @@ class WalkerSetBase: public AFQMCInfo
           pos++;
         }
 // use operator= or assign when ready!!!
-        boost::multi::array<ComplexType,1> buff(extensions<1u>{n-tot_num_walkers},ComplexType(1.0));
+        boost::multi::array<ComplexType,1> buff(iextensions<1u>{n-tot_num_walkers},ComplexType(1.0));
         ma::copy(buff, W({tot_num_walkers,n},data_displ[WEIGHT]));
         ma::copy(buff, W({tot_num_walkers,n},data_displ[OVLP]));
         ma::copy(buff, W({tot_num_walkers,n},data_displ[PHASE]));
@@ -240,7 +240,7 @@ class WalkerSetBase: public AFQMCInfo
     RealType res=0;
     assert(walker_buffer.size(1) == walker_size);
     if(TG.TG_local().root()) {
-      boost::multi::array<ComplexType,1> buff(extensions<1u>{tot_num_walkers});
+      boost::multi::array<ComplexType,1> buff(iextensions<1u>{tot_num_walkers});
       getProperty(WEIGHT,buff);
       for(int i=0; i<tot_num_walkers; i++) 
         res += std::abs(buff[i]);
@@ -398,8 +398,8 @@ class WalkerSetBase: public AFQMCInfo
     if(!TG.TG_local().root()) return;
     assert(walker_buffer.size(1) == walker_size);
     auto W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
-    boost::multi::array<ComplexType,1> ov(extensions<1u>{tot_num_walkers});
-    boost::multi::array<ComplexType,1> buff(extensions<1u>{tot_num_walkers});
+    boost::multi::array<ComplexType,1> ov(iextensions<1u>{tot_num_walkers});
+    boost::multi::array<ComplexType,1> buff(iextensions<1u>{tot_num_walkers});
     getProperty(OVLP,ov);
     for(int i=0; i<tot_num_walkers; i++) 
       buff[i] = ComplexType(1.0/std::abs(ov[i]),0.0);

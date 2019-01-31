@@ -40,7 +40,7 @@ namespace afqmc
     
       template<class ma>
       const_walker(ma const& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi::array_ref<element,1,pointer>(a.origin(),extensions<1u>{a.size()})),indx(i_),desc(d_) 
+        w_(boost::multi::array_ref<element,1,pointer>(a.origin(),iextensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
 	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
 	assert(stride(w_)==1);
@@ -129,7 +129,7 @@ namespace afqmc
     
       template<class ma>
       walker(ma&& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi::array_ref<element,1,Ptr>(a.origin(),extensions<1u>{a.size()})),indx(i_),desc(d_) 
+        w_(boost::multi::array_ref<element,1,Ptr>(a.origin(),iextensions<1u>{a.size()})),indx(i_),desc(d_) 
       {
 	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
 	assert(stride(w_)==1);

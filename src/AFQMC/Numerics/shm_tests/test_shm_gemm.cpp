@@ -50,7 +50,7 @@ void timing_shm_blas(int c)
   auto node = world.split_shared();
 
   int memory_needs = nmax*(c*c*nmax + 2*c*nmax);
-  boost::multi::array<Type,1,shared_allocator<Type>> buff(extensions<1u>{memory_needs},
+  boost::multi::array<Type,1,shared_allocator<Type>> buff(iextensions<1u>{memory_needs},
                                     shared_allocator<Type>{node});
 
   std::vector<std::pair<int,int>> pairs;

@@ -145,7 +145,7 @@ std::cout<<"\n";
       CMatrix H1({NMO,NMO});
 
       // add sum_n vMF*Spvn, vMF has local contribution only!
-      boost::multi::array_ref<ComplexType,1> H1D(H1.origin(),extensions<1u>{NMO*NMO});
+      boost::multi::array_ref<ComplexType,1> H1D(H1.origin(),iextensions<1u>{NMO*NMO});
       std::fill_n(H1D.origin(),H1D.num_elements(),ComplexType(0));
       vHS(vMF, H1D);
       TG.TG().all_reduce_in_place_n(H1D.origin(),H1D.num_elements(),std::plus<>());
@@ -228,12 +228,12 @@ std::cout<<"\n";
       boost::multi::array_ref<ComplexType,3> Guv(to_address(SM_TMats.origin()),{nspin,nu,nv});
       cnt+=Guv.num_elements();
       // Guu[u]: summed over spin
-      boost::multi::array_ref<ComplexType,1> Guu(to_address(SM_TMats.origin())+cnt,extensions<1u>{nv});
+      boost::multi::array_ref<ComplexType,1> Guu(to_address(SM_TMats.origin())+cnt,iextensions<1u>{nv});
       cnt+=Guu.num_elements();
       // T1[nel_][nv]
       boost::multi::array_ref<ComplexType,2> T1(to_address(SM_TMats.origin())+cnt,{nel_,nv});
       cnt+=T1.num_elements();
-      boost::multi::array_ref<ComplexType,1> Tuu(to_address(SM_TMats.origin())+cnt,extensions<1u>{nu});
+      boost::multi::array_ref<ComplexType,1> Tuu(to_address(SM_TMats.origin())+cnt,iextensions<1u>{nu});
       cnt+=Tuu.num_elements();
 
       auto&& M_(rotMuv.get());
@@ -245,7 +245,7 @@ std::cout<<"\n";
         RealType scl = (walker_type==CLOSED?2.0:1.0);
         for(int wi=0; wi<nwalk; wi++) {
           boost::multi::array_cref<ComplexType,2> Gw(to_address(G[wi].origin()),{nel_,nmo_});
-          boost::multi::array_cref<ComplexType,1> G1D(to_address(G[wi].origin()),extensions<1u>{nel_*nmo_});
+          boost::multi::array_cref<ComplexType,1> G1D(to_address(G[wi].origin()),iextensions<1u>{nel_*nmo_});
           // need a new routine if addEXX is false,
           // otherwise it is quite inefficient to get Ej only
           Guv_Guu(Gw,Guv,Guu,T1,k);
@@ -280,8 +280,8 @@ std::cout<<"\n";
       } else {
         for(int wi=0; wi<nwalk; wi++) {
           boost::multi::array_cref<ComplexType,2> Gw(to_address(G[wi].origin()),{nel_,nmo_});
-          boost::multi::array_cref<ComplexType,1> G1DA(to_address(G[wi].origin()),extensions<1u>{NAOA*nmo_});
-          boost::multi::array_cref<ComplexType,1> G1DB(to_address(G[wi].origin())+NAOA*nmo_,extensions<1u>{NAOB*nmo_});
+          boost::multi::array_cref<ComplexType,1> G1DA(to_address(G[wi].origin()),iextensions<1u>{NAOA*nmo_});
+          boost::multi::array_cref<ComplexType,1> G1DB(to_address(G[wi].origin())+NAOA*nmo_,iextensions<1u>{NAOB*nmo_});
           Guv_Guu(Gw,Guv,Guu,T1,k);
           // move calculation of Guv/Guu here to avoid storing 2 copies of Guv for alpha/beta
           if(addEJ) {
@@ -399,7 +399,7 @@ std::cout<<"\n";
       boost::multi::array_ref<ComplexType,2> Guv(to_address(SM_TMats.origin()),{nu,nv});
       cnt+=Guv.num_elements();
       // Gvv[v]: summed over spin
-      boost::multi::array_ref<ComplexType,1> Gvv(to_address(SM_TMats.origin())+cnt,extensions<1u>{nv});
+      boost::multi::array_ref<ComplexType,1> Gvv(to_address(SM_TMats.origin())+cnt,iextensions<1u>{nv});
       cnt+=Gvv.num_elements();
       // S[nel_][nv]
       boost::multi::array_ref<ComplexType,2> Scu(to_address(SM_TMats.origin())+cnt,{nel_,nv});
@@ -407,7 +407,7 @@ std::cout<<"\n";
       // Qub[nu][nel_]:
       boost::multi::array_ref<ComplexType,2> Qub(to_address(SM_TMats.origin())+cnt,{nu,nel_});
       cnt+=Qub.num_elements();
-      boost::multi::array_ref<ComplexType,1> Tuu(to_address(SM_TMats.origin())+cnt,extensions<1u>{nu});
+      boost::multi::array_ref<ComplexType,1> Tuu(to_address(SM_TMats.origin())+cnt,iextensions<1u>{nu});
       cnt+=Tuu.num_elements();
       boost::multi::array_ref<ComplexType,2> Jcb(to_address(SM_TMats.origin())+cnt,{nel_,nel_});
       cnt+=Jcb.num_elements();
@@ -445,7 +445,7 @@ std::cout<<"\n";
         { // Alpha
           auto Gw = GrefA[wi];
           boost::multi::array_cref<ComplexType,1> G1D(to_address(Gw.origin()),
-                                                        extensions<1u>{Gw.num_elements()});
+                                                        iextensions<1u>{Gw.num_elements()});
           Guv_Guu2(Gw,Guv,Gvv,Scu,0);
           if(u0!=uN)
             ma::product(rotMuv.get().sliced(u0,uN),Gvv,
@@ -488,7 +488,7 @@ std::cout<<"\n";
         { // Beta: Unnecessary in CLOSED walker type (on Walker)
           auto Gw = GrefB[wi];
           boost::multi::array_cref<ComplexType,1> G1D(to_address(Gw.origin()),
-                                                        extensions<1u>{Gw.num_elements()});
+                                                        iextensions<1u>{Gw.num_elements()});
           Guv_Guu2(Gw,Guv,Gvv,Scu,0);
           if(u0!=uN)
             ma::product(rotMuv.get().sliced(u0,uN),Gvv,

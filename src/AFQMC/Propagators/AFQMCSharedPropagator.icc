@@ -66,7 +66,7 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
 
   // 0. Allocate memory and set shared memory structures
   if(shmbuff.num_elements() < memory_needs ) 
-    shmbuff.reextent(extensions<1u>{memory_needs});
+    shmbuff.reextent(iextensions<1u>{memory_needs});
   size_t displ=0;
   // Mixed Density Matrix for walkers at original configuration
   // Actual dimensions depend on transposed_G_, see above
@@ -92,7 +92,7 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
     MFfactor.reextent({long(nsteps),long(nwalk)});
   if(hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk) 
     hybrid_weight.reextent({long(nsteps),long(nwalk)});
-  if(new_overlaps.size(0) != nwalk) new_overlaps.reextent(extensions<1u>{nwalk});
+  if(new_overlaps.size(0) != nwalk) new_overlaps.reextent(iextensions<1u>{nwalk});
   if(new_energies.size(0) != nwalk || new_energies.size(1) != 3) 
     new_energies.reextent({long(nwalk),3});
   // these is only needed if vHS matrix has strides != 1, e.g. when transposed_vHS_ == false  

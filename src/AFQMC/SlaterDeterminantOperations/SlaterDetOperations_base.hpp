@@ -48,30 +48,30 @@ class SlaterDetOperations_base
     SlaterDetOperations_base(Alloc alloc_={}):
       allocator_(alloc_),
       iallocator_(alloc_),
-      WORK(extensions<1u>{0},allocator_),
-      IWORK(extensions<1u>{0},iallocator_),
-      TAU(extensions<1u>{0},allocator_),
-      TMat_NN(extensions<2u>{0,0},allocator_),
-      TMat_NM(extensions<2u>{0,0},allocator_),
-      TMat_MN(extensions<2u>{0,0},allocator_),
-      TMat_MM(extensions<2u>{0,0},allocator_),
-      TMat_MM2(extensions<2u>{0,0},allocator_),
-      TMat_MM3(extensions<2u>{0,0},allocator_)
+      WORK(iextensions<1u>{0},allocator_),
+      IWORK(iextensions<1u>{0},iallocator_),
+      TAU(iextensions<1u>{0},allocator_),
+      TMat_NN(iextensions<2u>{0,0},allocator_),
+      TMat_NM(iextensions<2u>{0,0},allocator_),
+      TMat_MN(iextensions<2u>{0,0},allocator_),
+      TMat_MM(iextensions<2u>{0,0},allocator_),
+      TMat_MM2(iextensions<2u>{0,0},allocator_),
+      TMat_MM3(iextensions<2u>{0,0},allocator_)
     {
     }
 
     SlaterDetOperations_base(int NMO, int NAEA, Alloc alloc_={}):
       allocator_(alloc_),
       iallocator_(alloc_),
-      WORK(extensions<1u>{0},allocator_),  
-      IWORK(extensions<1u>{NMO+1},iallocator_),  
-      TAU(extensions<1u>{NMO},allocator_),  
-      TMat_NN(extensions<2u>{NAEA,NAEA},allocator_),
-      TMat_NM(extensions<2u>{NAEA,NMO},allocator_),
-      TMat_MN(extensions<2u>{NMO,NAEA},allocator_),
-      TMat_MM(extensions<2u>{NMO,NMO},allocator_),
-      TMat_MM2(extensions<2u>{NMO,NMO},allocator_),
-      TMat_MM3(extensions<2u>{NMO,NMO},allocator_)
+      WORK(iextensions<1u>{0},allocator_),  
+      IWORK(iextensions<1u>{NMO+1},iallocator_),  
+      TAU(iextensions<1u>{NMO},allocator_),  
+      TMat_NN(iextensions<2u>{NAEA,NAEA},allocator_),
+      TMat_NM(iextensions<2u>{NAEA,NMO},allocator_),
+      TMat_MN(iextensions<2u>{NMO,NAEA},allocator_),
+      TMat_MM(iextensions<2u>{NMO,NMO},allocator_),
+      TMat_MM2(iextensions<2u>{NMO,NMO},allocator_),
+      TMat_MM3(iextensions<2u>{NMO,NMO},allocator_)
     {
       // reserve enough space in lapack's work array
       // Make sure it is large enough for:
@@ -85,7 +85,7 @@ class SlaterDetOperations_base
       mem_needs = std::max(mem_needs, ma::gelqf_optimal_workspace_size(TMat_MN) ); 
       //  5. glq( TMat_MN )
       mem_needs = std::max(mem_needs, ma::glq_optimal_workspace_size(TMat_MN) ); 
-      WORK.reextent( extensions<1u>{mem_needs} );   
+      WORK.reextent( iextensions<1u>{mem_needs} );   
     }
 
     ~SlaterDetOperations_base() {}

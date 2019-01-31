@@ -105,9 +105,9 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
 
   nQ = Qend-Qbeg;
 
-  IVector nmo_per_kp(extensions<1u>{nkpts});
-  IVector nchol_per_kp(extensions<1u>{nkpts});
-  IVector kminus(extensions<1u>{nkpts});
+  IVector nmo_per_kp(iextensions<1u>{nkpts});
+  IVector nchol_per_kp(iextensions<1u>{nkpts});
+  IVector kminus(iextensions<1u>{nkpts});
   shmIMatrix QKtok2({nkpts,nkpts},shared_allocator<int>{TG.Node()});
   ValueType E0;
   if( TG.Global().root() ) {
@@ -663,9 +663,9 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
 
   nQ = Qend-Qbeg;
 
-  IVector nmo_per_kp(extensions<1u>{nkpts});
-  IVector nchol_per_kp(extensions<1u>{nkpts});
-  IVector kminus(extensions<1u>{nkpts});
+  IVector nmo_per_kp(iextensions<1u>{nkpts});
+  IVector nchol_per_kp(iextensions<1u>{nkpts});
+  IVector kminus(iextensions<1u>{nkpts});
   shmIMatrix QKtok2({nkpts,nkpts},shared_allocator<int>{TG.Node()});
   ValueType E0;
   if( TG.Global().root() ) {

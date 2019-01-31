@@ -172,9 +172,9 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
     void set_shm_buffer(communicator& comm, size_t N) {
       // since there is no way to extract the communicator from SM_TMats  
       if( SM_TMats == nullptr || SM_TMats->get_allocator() != shared_allocator<T>{comm} ) { 
-        SM_TMats = std::move(std::make_unique<shmTVector>(extensions<1u>{N},shared_allocator<T>{comm}));
+        SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>{N},shared_allocator<T>{comm}));
       } else if(SM_TMats->num_elements() < N) 
-        SM_TMats->reextent(extensions<1u>{N});
+        SM_TMats->reextent(iextensions<1u>{N});
     }
 };
 

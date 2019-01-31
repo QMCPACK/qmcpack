@@ -317,7 +317,7 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   array_ref g_ref_2(v_ref_2.data(),{3,3});
   array_ref gc_ref_2(vc_ref_2.data(),{2,3});
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extensions<1u>{NMO*(NMO+NEL)},
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(iextensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node});  
 
   array_ref G(to_address(SMbuff.origin()),{NMO,NMO});
@@ -359,7 +359,7 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
                           Gc({0,2},{0,3}),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(extensions<1u>{NMO*(NMO+NEL)},
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node_});
 
   array_ref G2(to_address(SMbuff2.origin()),{NMO,NMO});
@@ -658,7 +658,7 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   boost::multi::array_ref<Type,2> g_ref_2(v_ref_2.data(),{3,3});
   boost::multi::array_ref<Type,2> gc_ref_2(vc_ref_2.data(),{2,3});
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extensions<1u>{NMO*(NMO+NEL)},
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(iextensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node});
 
   array_ref G(to_address(SMbuff.origin()),{NMO,NMO});
@@ -700,7 +700,7 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
                           Gc({0,2},{0,3}),std::addressof(ov_),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(extensions<1u>{NMO*(NMO+NEL)},
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node_});
 
   array_ref G2(to_address(SMbuff2.origin()),{NMO,NMO});
@@ -842,7 +842,7 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   boost::multi::array_ref<Type,2> g_ref_2(v_ref_2.data(),{3,3});
   boost::multi::array_ref<Type,2> gc_ref_2(vc_ref_2.data(),{2,3});
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extensions<1u>{NMO*(NMO+NEL)},
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(iextensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node});
 
   array_ref G(to_address(SMbuff.origin()),{NMO,NMO});
@@ -872,7 +872,7 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
                           Gc({0,2},{0,3}),std::addressof(ov_),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(extensions<1u>{NMO*(NMO+NEL)},
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node_});
 
   array_ref G2(to_address(SMbuff2.origin()),{NMO,NMO});

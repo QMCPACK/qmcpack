@@ -151,7 +151,7 @@ namespace afqmc
   enum HamiltonianTypes {Factorized,THC,KPTHC,KPFactorized,UNKNOWN};
 
   template<std::ptrdiff_t D> 
-  using extensions = typename boost::multi::iextensions<D>;
+  using iextensions = typename boost::multi::iextensions<D>;
   //using extensions = typename boost::multi::layout_t<D>::extensions_type;  
 
   // general matrix definitions

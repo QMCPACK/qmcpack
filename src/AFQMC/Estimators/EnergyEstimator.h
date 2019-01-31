@@ -45,7 +45,7 @@ class EnergyEstimator: public EstimatorBase
     if(eloc.size(0) != nwalk || eloc.size(1) != 3)
       eloc.reextent({nwalk,3});
     if(ovlp.size(0) != nwalk)
-      ovlp.reextent(extensions<1u>{nwalk});
+      ovlp.reextent(iextensions<1u>{nwalk});
 
     ComplexType dum, et;
     wfn0.Energy(wset,eloc,ovlp);

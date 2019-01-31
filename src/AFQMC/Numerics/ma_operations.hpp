@@ -530,15 +530,15 @@ int main(){
 		boost::multi::array_ref<double, 2> M(m.data(), {3,3});
 		assert(M.num_elements() == m.size());
 		std::vector<double> x = {1.,2.,3.};
-		boost::multi::array_ref<double, 1> X(x.data(), boost::extensions<1u>{x.size()});
+		boost::multi::array_ref<double, 1> X(x.data(), boost::iextensions<1u>{x.size()});
 		std::vector<double> y(3);
-		boost::multi::array_ref<double, 1> Y(y.data(), boost::extensions<1u>{y.size()});
+		boost::multi::array_ref<double, 1> Y(y.data(), boost::iextensions<1u>{y.size()});
 
 		using ma::T;
 		ma::product(M, X, Y); // Y := M X
 		
 		std::vector<double> mx = {147., 60.,154.};
-		boost::multi::array_ref<double, 1> MX(mx.data(), boost::extensions<1u>{mx.size()});
+		boost::multi::array_ref<double, 1> MX(mx.data(), boost::iextensions<1u>{mx.size()});
 		assert( MX == Y );
 	}
 	{
@@ -550,15 +550,15 @@ int main(){
 		boost::multi::array_ref<double, 2> M(m.data(), {3,4});
 		assert(M.num_elements() == m.size());
 		std::vector<double> x = {1.,2.,3., 4.};
-		boost::multi::array_ref<double, 1> X(x.data(), boost::extensions<1u>{x.size()});
+		boost::multi::array_ref<double, 1> X(x.data(), boost::iextensions<1u>{x.size()});
 		std::vector<double> y(3);
-		boost::multi::array_ref<double, 1> Y(y.data(), boost::extensions<1u>{y.size()});
+		boost::multi::array_ref<double, 1> Y(y.data(), boost::iextensions<1u>{y.size()});
 
 		using ma::T;
 		ma::product(M, X, Y); // Y := M X
 
 		std::vector<double> mx = {155., 64.,234.};
-		boost::multi::array_ref<double, 1> MX(mx.data(), boost::extensions<1u>{mx.size()});
+		boost::multi::array_ref<double, 1> MX(mx.data(), boost::iextensions<1u>{mx.size()});
 		assert( MX == Y );
 	}
 	{
@@ -570,15 +570,15 @@ int main(){
 		boost::multi::array_ref<double, 2> M(m.data(), {3,4});
 		assert(M.num_elements() == m.size());
 		std::vector<double> x = {1.,2.,3.};
-		boost::multi::array_ref<double, 1> X(x.data(), boost::extensions<1u>{x.size()});
+		boost::multi::array_ref<double, 1> X(x.data(), boost::iextensions<1u>{x.size()});
 		std::vector<double> y(4);
-		boost::multi::array_ref<double, 1> Y(y.data(), boost::extensions<1u>{y.size()});
+		boost::multi::array_ref<double, 1> Y(y.data(), boost::iextensions<1u>{y.size()});
 
 		using ma::T;
 		ma::product(T(M), X, Y); // Y := T(M) X
 		
 		std::vector<double> mx = {59., 92., 162., 64.};
-		boost::multi::array_ref<double, 1> MX(mx.data(), boost::extensions<1u>{mx.size()});
+		boost::multi::array_ref<double, 1> MX(mx.data(), boost::iextensions<1u>{mx.size()});
 		assert( MX == Y );
 	}
 	{
@@ -589,13 +589,13 @@ int main(){
 		};
 		boost::multi::array_ref<double, 2> M(m.data(), {3,4});
 		std::vector<double> x = {1.,2.,3., 4.};
-		boost::multi::array_ref<double, 1> X(x.data(), boost::extensions<1u>{x.size()});
+		boost::multi::array_ref<double, 1> X(x.data(), boost::iextensions<1u>{x.size()});
 		std::vector<double> y = {4.,5.,6.};
-		boost::multi::array_ref<double, 1> Y(y.data(), boost::extensions<1u>{y.size()});
+		boost::multi::array_ref<double, 1> Y(y.data(), boost::iextensions<1u>{y.size()});
 		ma::product(M, X, Y); // y := M x
 		
 		std::vector<double> y2 = {183., 88.,158.};
-		boost::multi::array_ref<double, 1> Y2(y2.data(), boost::extensions<1u>{y2.size()});
+		boost::multi::array_ref<double, 1> Y2(y2.data(), boost::iextensions<1u>{y2.size()});
 		assert( Y == Y2 );
 	}
 

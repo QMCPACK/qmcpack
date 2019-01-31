@@ -184,7 +184,7 @@ std::cout<<"\n";
       assert(k >= 0 && k < haj.size());
       assert(k >= 0 && k < Vakbl_view.size());
       if(Gcloc.num_elements() < Gc.size(1) * Vakbl_view[k].size(0))
-        Gcloc.reextent(extensions<1u>{Vakbl_view[k].size(0)*Gc.size(1)});
+        Gcloc.reextent(iextensions<1u>{Vakbl_view[k].size(0)*Gc.size(1)});
       boost::multi::array_ref<SPComplexType,2> buff(Gcloc.data(),
                         {long(Vakbl_view[k].size(0)),long(Gc.size(1))});
 
@@ -204,7 +204,7 @@ std::cout<<"\n";
 
       // one-body contribution
       if(addH1) {
-        boost::multi::array_cref<ComplexType,1> haj_ref(to_address(haj[k].origin()), extensions<1u>{haj[k].num_elements()});
+        boost::multi::array_cref<ComplexType,1> haj_ref(to_address(haj[k].origin()), iextensions<1u>{haj[k].num_elements()});
         ma::product(ComplexType(1.),ma::T(Gc),haj_ref,ComplexType(1.),E(E.extension(0),0));
         for(int i=0; i<nwalk; i++)
           E[i][0] += E0;
@@ -218,7 +218,7 @@ std::cout<<"\n";
       if(separateEJ && addEJ) {
         using ma::T;
         if(Gcloc.num_elements() < SpvnT[k].size(0) * Gc.size(1))
-          Gcloc.reextent(extensions<1u>{SpvnT[k].size(0)*Gc.size(1)});
+          Gcloc.reextent(iextensions<1u>{SpvnT[k].size(0)*Gc.size(1)});
         assert(SpvnT_view[k].size(1) == Gc.size(0));
         RealType scl = (walker_type==CLOSED?4.0:1.0);
         // SpvnT*G
@@ -265,7 +265,7 @@ std::cout<<"\n";
 
       // Spvn*X
       boost::multi::array_ref<Type,1> v_(to_address(v.origin()) + Spvn_view.local_origin()[0],
-                                        extensions<1u>{Spvn_view.size(0)});
+                                        iextensions<1u>{Spvn_view.size(0)});
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
     }
 
@@ -298,7 +298,7 @@ std::cout<<"\n";
 
       // SpvnT*G
       boost::multi::array_ref<Type,1> v_(to_address(v.origin()) + SpvnT_view[k].local_origin()[0],
-                                        extensions<1u>{SpvnT_view[k].size(0)});
+                                        iextensions<1u>{SpvnT_view[k].size(0)});
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
     }

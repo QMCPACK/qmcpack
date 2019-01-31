@@ -87,9 +87,9 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
 
   nQ = QN-Qbeg;
 
-  IntegerVector<std::allocator<int>> nmo_per_kp(extensions<1u>{nkpts});
-  IntegerVector<std::allocator<int>> nchol_per_kp(extensions<1u>{nkpts});
-  IntegerVector<std::allocator<int>> kminus(extensions<1u>{nkpts});
+  IntegerVector<std::allocator<int>> nmo_per_kp(iextensions<1u>{nkpts});
+  IntegerVector<std::allocator<int>> nchol_per_kp(iextensions<1u>{nkpts});
+  IntegerVector<std::allocator<int>> kminus(iextensions<1u>{nkpts});
   shmIMatrix QKtok2({nkpts,nkpts},shared_allocator<int>{TG.Node()});
   shmIMatrix QKtoG({nkpts,nkpts},shared_allocator<int>{TG.Node()});
   ValueType E0;
@@ -957,7 +957,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   int nsampleQ=-1;
 
 
-  IntegerVector<std::allocator<int>> nchol_per_kp_(extensions<1u>{nkpts});
+  IntegerVector<std::allocator<int>> nchol_per_kp_(iextensions<1u>{nkpts});
 
   hdf_archive dump_(TGwfn.Global());
   // right now only Node.root() reads

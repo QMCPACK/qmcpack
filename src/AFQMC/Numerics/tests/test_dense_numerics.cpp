@@ -61,7 +61,7 @@ using std::vector;
 using boost::multi::array;
 using boost::multi::array_ref;
 template<std::ptrdiff_t D>
-using extensions = typename boost::multi::layout_t<D>::extensions_type;
+using iextensions = typename boost::multi::iextensions<D>;
 
 namespace qmcplusplus
 {
@@ -79,15 +79,15 @@ void test_dense_matrix_mult()
 		array_ref<double, 2> M(m.data(), {3,3});
 		REQUIRE(M.num_elements() == m.size());
 		vector<double> x = {1.,2.,3.};
-		array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
+		array_ref<double, 1> X(x.data(), iextensions<1u>{x.size()});
 		vector<double> y(3);
-		array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
+		array_ref<double, 1> Y(y.data(), iextensions<1u>{y.size()});
 
 		using ma::T;
 		ma::product(M, X, Y); // Y := M X
 
 		vector<double> mx = {147., 60.,154.};
-		array_ref<double, 1> MX(mx.data(), extensions<1u>{mx.size()});
+		array_ref<double, 1> MX(mx.data(), iextensions<1u>{mx.size()});
                 verify_approx(MX, Y);
 	}
 	{
@@ -99,15 +99,15 @@ void test_dense_matrix_mult()
 		array_ref<double, 2> M(m.data(), {3,4});
 		REQUIRE(M.num_elements() == m.size());
 		vector<double> x = {1.,2.,3., 4.};
-		array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
+		array_ref<double, 1> X(x.data(), iextensions<1u>{x.size()});
 		vector<double> y(3);
-		array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
+		array_ref<double, 1> Y(y.data(), iextensions<1u>{y.size()});
 
 		using ma::T;
 		ma::product(M, X, Y); // Y := M X
 
 		vector<double> mx = {155., 64.,234.};
-		array_ref<double, 1> MX(mx.data(), extensions<1u>{mx.size()});
+		array_ref<double, 1> MX(mx.data(), iextensions<1u>{mx.size()});
 		verify_approx( MX, Y );
 	}
 	{
@@ -119,15 +119,15 @@ void test_dense_matrix_mult()
 		array_ref<double, 2> M(m.data(), {3,4});
 		REQUIRE(M.num_elements() == m.size());
 		vector<double> x = {1.,2.,3.};
-		array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
+		array_ref<double, 1> X(x.data(), iextensions<1u>{x.size()});
 		vector<double> y(4);
-		array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
+		array_ref<double, 1> Y(y.data(), iextensions<1u>{y.size()});
 
 		using ma::T;
 		ma::product(T(M), X, Y); // Y := T(M) X
 
 		vector<double> mx = {59., 92., 162., 64.};
-		array_ref<double, 1> MX(mx.data(), extensions<1u>{mx.size()});
+		array_ref<double, 1> MX(mx.data(), iextensions<1u>{mx.size()});
 		verify_approx( MX, Y );
 	}
 	{
@@ -138,13 +138,13 @@ void test_dense_matrix_mult()
 		};
 		array_ref<double, 2> M(m.data(), {3,4});
 		vector<double> x = {1.,2.,3., 4.};
-		array_ref<double, 1> X(x.data(), extensions<1u>{x.size()});
+		array_ref<double, 1> X(x.data(), iextensions<1u>{x.size()});
 		vector<double> y = {4.,5.,6.};
-		array_ref<double, 1> Y(y.data(), extensions<1u>{y.size()});
+		array_ref<double, 1> Y(y.data(), iextensions<1u>{y.size()});
 		ma::product(M, X, Y); // y := M x
 
 		vector<double> y2 = {183., 88.,158.};
-		array_ref<double, 1> Y2(y2.data(), extensions<1u>{y2.size()});
+		array_ref<double, 1> Y2(y2.data(), iextensions<1u>{y2.size()});
 		verify_approx( Y, Y2 );
 	}
 
@@ -256,7 +256,7 @@ void test_dense_matrix_mult()
 	}
         {
                 std::vector<double> WORK;
-                array<double,1> TAU(extensions<1u>{3});
+                array<double,1> TAU(iextensions<1u>{3});
 
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
                 array_ref<double, 2> A(a.data(), {3,3});
@@ -277,7 +277,7 @@ void test_dense_matrix_mult()
         }
         {
                 std::vector<double> WORK;
-                array<double,1> TAU(extensions<1u>{4});
+                array<double,1> TAU(iextensions<1u>{4});
 
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
                 array_ref<double, 2> A(a.data(), {4,3});
@@ -298,7 +298,7 @@ void test_dense_matrix_mult()
         }
         {
                 std::vector<double> WORK;
-                array<double,1> TAU(extensions<1u>{3});
+                array<double,1> TAU(iextensions<1u>{3});
 
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
                 array_ref<double, 2> A(a.data(), {3,3});
@@ -319,7 +319,7 @@ void test_dense_matrix_mult()
         }
         {
                 std::vector<double> WORK;
-                array<double,1> TAU(extensions<1u>{4});
+                array<double,1> TAU(iextensions<1u>{4});
 
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
                 array_ref<double, 2> A(a.data(), {3,4});
@@ -407,8 +407,8 @@ void test_dense_matrix_mult_device(Allocator alloc)
     vector<T> y(3);
 
     array<T,2,Allocator> M({3,3},alloc);
-    array<T,1,Allocator> X(extensions<1u>{x.size()},alloc);
-    array<T,1,Allocator> Y(extensions<1u>{y.size()},alloc);
+    array<T,1,Allocator> X(iextensions<1u>{x.size()},alloc);
+    array<T,1,Allocator> Y(iextensions<1u>{y.size()},alloc);
 
     copy_n(m.data(),m.size(),M.origin());
     REQUIRE(M.num_elements() == m.size());
@@ -419,7 +419,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
     ma::product(M, X, Y); // Y := M X
 
     vector<T> mx = {147., 60.,154.};
-    array_ref<T, 1> MX(mx.data(), extensions<1u>{mx.size()});
+    array_ref<T, 1> MX(mx.data(), iextensions<1u>{mx.size()});
     verify_approx(MX, Y);
   } 
 
@@ -433,8 +433,8 @@ void test_dense_matrix_mult_device(Allocator alloc)
     vector<T> y(3);
 
     array<T,2,Allocator> M({3,4},alloc);
-    array<T,1,Allocator> X(extensions<1u>{x.size()},alloc);
-    array<T,1,Allocator> Y(extensions<1u>{y.size()},alloc);
+    array<T,1,Allocator> X(iextensions<1u>{x.size()},alloc);
+    array<T,1,Allocator> Y(iextensions<1u>{y.size()},alloc);
 
     copy_n(m.data(),m.size(),M.origin());
     REQUIRE(M.num_elements() == m.size());
@@ -445,7 +445,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
     ma::product(M, X, Y); // Y := M X
 
     vector<T> mx = {155., 64.,234.};
-    array_ref<T, 1> MX(mx.data(), extensions<1u>{mx.size()});
+    array_ref<T, 1> MX(mx.data(), iextensions<1u>{mx.size()});
     verify_approx( MX, Y );
   }
   {
@@ -458,8 +458,8 @@ void test_dense_matrix_mult_device(Allocator alloc)
     vector<T> y(4);
 
     array<T,2,Allocator> M({3,4},alloc);
-    array<T,1,Allocator> X(extensions<1u>{x.size()},alloc);
-    array<T,1,Allocator> Y(extensions<1u>{y.size()},alloc);
+    array<T,1,Allocator> X(iextensions<1u>{x.size()},alloc);
+    array<T,1,Allocator> Y(iextensions<1u>{y.size()},alloc);
 
     copy_n(m.data(),m.size(),M.origin());
     REQUIRE(M.num_elements() == m.size());
@@ -470,7 +470,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
     ma::product(ma::T(M), X, Y); // Y := M X
 
     vector<T> mx = {59., 92., 162., 64.};
-    array_ref<T, 1> MX(mx.data(), extensions<1u>{mx.size()});
+    array_ref<T, 1> MX(mx.data(), iextensions<1u>{mx.size()});
     verify_approx( MX, Y );
   }
 
@@ -488,17 +488,17 @@ void test_dense_matrix_mult_device(Allocator alloc)
     copy_n(m.data(),m.size(),M.origin());
     REQUIRE(M.num_elements() == m.size());
 
-    array<T,1,Allocator> X(extensions<1u>{x.size()},alloc);
+    array<T,1,Allocator> X(iextensions<1u>{x.size()},alloc);
     copy_n(x.data(),x.size(),X.origin()); 
     REQUIRE(X.num_elements() == x.size());
 
-    array<T,1,Allocator> Y(extensions<1u>{y.size()},alloc);
+    array<T,1,Allocator> Y(iextensions<1u>{y.size()},alloc);
     REQUIRE(Y.num_elements() == y.size());
 
     ma::product(M, X, Y); // Y := M X
 
     vector<T> y2 = {183., 88.,158.};
-    array_ref<T, 1> Y2(y2.data(), extensions<1u>{y2.size()});
+    array_ref<T, 1> Y2(y2.data(), iextensions<1u>{y2.size()});
     verify_approx( Y, Y2 );
   }
 
@@ -623,8 +623,8 @@ void test_dense_matrix_mult_device(Allocator alloc)
 
      size_t sz =  std::max(ma::geqrf_optimal_workspace_size(A),
                           ma::gqr_optimal_workspace_size(A));
-     array<T,1,Allocator> WORK(extensions<1u>{sz},alloc);
-     array<T,1,Allocator> TAU(extensions<1u>{3},alloc);
+     array<T,1,Allocator> WORK(iextensions<1u>{sz},alloc);
+     array<T,1,Allocator> TAU(iextensions<1u>{3},alloc);
 
      ma::geqrf(A,TAU,WORK);
      ma::gqr(A,TAU,WORK);
@@ -646,8 +646,8 @@ void test_dense_matrix_mult_device(Allocator alloc)
 
      size_t sz =  std::max(ma::geqrf_optimal_workspace_size(A),
                           ma::gqr_optimal_workspace_size(A));
-     array<T,1,Allocator> WORK(extensions<1u>{sz},alloc);
-     array<T,1,Allocator> TAU(extensions<1u>{3},alloc);
+     array<T,1,Allocator> WORK(iextensions<1u>{sz},alloc);
+     array<T,1,Allocator> TAU(iextensions<1u>{3},alloc);
 
      ma::geqrf(A,TAU,WORK);
      ma::gqr(A,TAU,WORK);

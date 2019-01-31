@@ -215,7 +215,7 @@ class NOMSD: public AFQMCInfo
     void Energy(WlkSet& wset) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.reextent(extensions<1u>{nw});
+        ovlp.reextent(iextensions<1u>{nw});
       if(eloc.size(0) != nw || eloc.size(1) != 3)
         eloc.reextent({nw,3});
       Energy(wset,eloc,ovlp);
@@ -256,7 +256,7 @@ class NOMSD: public AFQMCInfo
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.reextent(extensions<1u>{nw});
+        ovlp.reextent(iextensions<1u>{nw});
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact,transpose);
     }
 
@@ -285,7 +285,7 @@ class NOMSD: public AFQMCInfo
     void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.reextent(extensions<1u>{nw});	
+        ovlp.reextent(iextensions<1u>{nw});	
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact_G_for_vbias,transposed_G_for_vbias_);
     }
 
@@ -303,7 +303,7 @@ class NOMSD: public AFQMCInfo
     {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
-        ovlp.reextent(extensions<1u>{nw});
+        ovlp.reextent(iextensions<1u>{nw});
       Overlap(wset,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {

@@ -65,7 +65,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
             SDetOp(2*NMO,NAEA+NAEB),
             //SDetOp(SlaterDetOperations_shared<ComplexType>(2*NMO,NAEA+NAEB)),
             TSM({2*NMO,NAEA+NAEB}), // safe for now, since I don't know walker_type
-            shmbuff(extensions<1u>{1},shared_allocator<ComplexType>{TG.TG_local()}),
+            shmbuff(iextensions<1u>{1},shared_allocator<ComplexType>{TG.TG_local()}),
             local_group_comm(),
             last_nextra(-1),
             last_task_index(-1),
@@ -100,7 +100,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     // reset shared memory buffers
     // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
-    void reset() { shmbuff.reextent(extensions<1u>{0}); }
+    void reset() { shmbuff.reextent(iextensions<1u>{0}); }
 
     bool hybrid_propagation() { return hybrid; }
 

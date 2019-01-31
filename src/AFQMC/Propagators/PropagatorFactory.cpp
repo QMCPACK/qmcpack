@@ -62,7 +62,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
     app_log()<<" Using mean-field substraction in propagator: " <<name <<"\n";
 
   // buld mean field expectation value of the Cholesky matrix
-  CVector vMF(extensions<1u>{wfn.local_number_of_cholesky_vectors()},allocator{});
+  CVector vMF(iextensions<1u>{wfn.local_number_of_cholesky_vectors()},allocator{});
   using std::fill_n;  
   fill_n(vMF.origin(),vMF.num_elements(),ComplexType(0));
   if(substractMF) { 
