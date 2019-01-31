@@ -111,7 +111,7 @@ WaveFunctionTester::run()
   else if (sourceName.size() != 0)
   {
     runGradSourceTest();
-    runZeroVarianceTest();
+   // runZeroVarianceTest();
   }
   else if (checkRatio =="deriv")
   {
@@ -1437,11 +1437,14 @@ void WaveFunctionTester::runGradSourceTest()
     for (int iondim=0; iondim<3; iondim++)
     {
       source.R[iat][iondim] = rI[iondim]+delta;
-      W.update(false);
+      source.update();
+      W.update();
+      
       ValueType log_p = Psi.evaluateLog(W);
       
       source.R[iat][iondim] = rI[iondim]-delta;
-      W.update(false);
+      source.update();
+      W.update();
       ValueType log_m = Psi.evaluateLog(W);
     
       //symmetric finite difference formula for gradient. 
@@ -1449,9 +1452,10 @@ void WaveFunctionTester::runGradSourceTest()
    
       //reset everything to how it was.
       source.R[iat][iondim] = rI[iondim];
+      source.update();
+      W.update();
     }
     //this lastone makes sure the distance tables correspond to unperturbed source.
-    W.update(false);
   }
   //END GRAD TEST COMPUTATION
 
