@@ -117,7 +117,7 @@ DiracDeterminantCUDA::det_lookahead (MCWalkerConfiguration &W,
                        AinvDeltaList_d.data(), AinvColkList_d.data(),
                        AinvWorkList_d.data(), AWorkList_d.data(), // <- AinvWork takes the place of A^-1*dU (in the USE_TRSM case it's unused)
                        LemmaInvList_d.data(), LemmaLUList_d.data(), // <- LemmaInv is not needed for USE_TRSM
-                       infoArray_d.data(),
+                       PivotArray_d.data(), infoArray_d.data(),
                        k+1, kd, 1, NumPtcls, nw, RowStride);
   }
   // calculate and collect ratios, gradients, and laplacians
@@ -204,7 +204,7 @@ DiracDeterminantCUDA::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &
                          AinvDeltaList_d.data(), AinvList_d.data(),
                          AinvUList_d.data(), AWorkList_d.data(),
                          LemmaInvList_d.data(), LemmaLUList_d.data(),
-                         infoArray_d.data(),
+                         PivotArray_d.data(), infoArray_d.data(),
                          kupdate, kdelay, NumPtcls, NumPtcls, nw, RowStride);
     }
   } else

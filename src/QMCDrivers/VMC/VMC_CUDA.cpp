@@ -121,6 +121,8 @@ void VMCcuda::advanceWalkers()
       for(int k=0; k<kd; ++k)
       {
 #ifdef DEBUG_DELAYED
+        if(k>0)
+          fprintf(stderr,"*** Delayed Update Path ***\n");
         fprintf(stderr,"k = %i:\n",k);
 #endif
         accepted.clear();

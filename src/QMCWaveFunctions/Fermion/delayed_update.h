@@ -27,7 +27,7 @@ cublas_smw_update (cublasHandle_t handle,
                    float *AinvkList_d[], float *AinvList_d[], 
                    float *AinvUList_d[], float *AWorkList_d[],
                    float *lemma_inv[], float *lemma_lu[],
-                   int *info_array,
+                   int *PivotArray, int *infoArray,
                    int k, int kd, int M, int N, int nw, int RowStride);
 
 void
@@ -72,7 +72,7 @@ cublas_smw_update (cublasHandle_t handle,
                    double *AinvkList_d[], double *AinvList_d[], 
                    double *AinvUList_d[], double *AWorkList_d[],
                    double *lemma_inv[], double *lemma_lu[],
-                   int *info_array,
+                   int *PivotArray, int *infoArray,
                    int k, int kd, int M, int N, int nw, int RowStride);
 
 void
@@ -120,7 +120,7 @@ cublas_smw_update (cublasHandle_t handle,
                    std::complex<float> *AinvkList_d[], std::complex<float> *AinvList_d[], 
                    std::complex<float> *AinvUList_d[], std::complex<float> *AWorkList_d[],
                    std::complex<float> *lemma_inv[], std::complex<float> *lemma_lu[],
-                   int *info_array,
+                   int *PivotArray, int *infoArray,
                    int k, int kd, int M, int N, int nw, int RowStride);
 
 void
@@ -165,7 +165,7 @@ cublas_smw_update (cublasHandle_t handle,
                    std::complex<double> *AinvkList_d[], std::complex<double> *AinvList_d[], 
                    std::complex<double> *AinvUList_d[], std::complex<double> *AWorkList_d[],
                    std::complex<double> *lemma_inv[], std::complex<double> *lemma_lu[],
-                   int *info_array,
+                   int *PivotArray, int *infoArray,
                    int k, int kd, int M, int N, int nw, int RowStride);
 
 void

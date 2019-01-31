@@ -107,7 +107,7 @@ cublas_smw_update (cublasHandle_t handle,
                    float *AinvkList_d[], float *AinvList_d[],
                    float *AinvUList_d[], float *AWorkList_d[],
                    float *lemma_inv[], float *lemma_lu[],
-                   int *infoArray,
+                   int *PivotArray, int *infoArray,
                    int k, int kd, int M, int N, int nw, int RowStride)
 {
 #ifdef DEBUG_DELAYED
@@ -118,7 +118,7 @@ cublas_smw_update (cublasHandle_t handle,
   float one=1.0;
 
   // LU decomposition needs to be updated
-  cublasSgetrfBatched( handle, k, lemma_lu, kd, NULL,
+  cublasSgetrfBatched( handle, k, lemma_lu, kd, PivotArray,
                                           infoArray, nw);
 
 #ifdef USE_TRSM
@@ -165,7 +165,7 @@ cublas_smw_update (cublasHandle_t handle,
   float zero=0.0;
   // Calculate Lemma Inverse and store it in lemma_d
   // per walker: [k x k]^-1 = [k x k]
-  cublasSgetriBatched( handle, k, (const float**) lemma_lu, kd, NULL,
+  cublasSgetriBatched( handle, k, (const float**) lemma_lu, kd, PivotArray,
                                           lemma_inv, k, infoArray, nw);
   // Calculate new A inverse using Sherman-Morrison-Woodbury formula
   if(M==1) // row update can use different order to save flops
@@ -252,7 +252,7 @@ cublas_smw_update (cublasHandle_t handle,
                    double *AinvkList_d[], double *AinvList_d[], 
                    double *AinvUList_d[], double *AWorkList_d[],
                    double *lemma_inv[], double *lemma_lu[],
-                   int *infoArray,
+                   int *PivotArray, int *infoArray,
                    int k, int kd, int M, int N, int nw, int RowStride)
 {
 #ifdef DEBUG_DELAYED
@@ -263,7 +263,7 @@ cublas_smw_update (cublasHandle_t handle,
   double one=1.0;
 
   // LU decomposition needs to be updated
-  cublasDgetrfBatched( handle, k, lemma_lu, kd, NULL,
+  cublasDgetrfBatched( handle, k, lemma_lu, kd, PivotArray,
                                           infoArray, nw);
 
 #ifdef USE_TRSM
@@ -310,7 +310,7 @@ cublas_smw_update (cublasHandle_t handle,
   double zero=0.0;
   // Calculate Lemma Inverse and store it in lemma_d
   // per walker: [k x k]^-1 = [k x k]
-  cublasDgetriBatched( handle, k, (const double**) lemma_lu, kd, NULL,
+  cublasDgetriBatched( handle, k, (const double**) lemma_lu, kd, PivotArray,
                                           lemma_inv, k, infoArray, nw);
   // Calculate new A inverse using Sherman-Morrison-Woodbury formula
   if(M==1) // row update can use different order to save flops
@@ -412,7 +412,7 @@ cublas_smw_update (cublasHandle_t handle,
                    std::complex<float> *AinvkList_d[], std::complex<float> *AinvList_d[],
                    std::complex<float> *AinvUList_d[], std::complex<float> *AWorkList_d[],
                    std::complex<float> *lemma_inv[], std::complex<float> *lemma_lu[],
-                   int *infoArray,
+                   int *PivotArray, int *infoArray,
                    int k, int kd, int M, int N, int nw, int RowStride)
 {
 #ifdef DEBUG_DELAYED
@@ -423,7 +423,7 @@ cublas_smw_update (cublasHandle_t handle,
   cuComplex one = make_cuComplex(1.0f,0.0f);
 
   // LU decomposition needs to be updated
-  cublasCgetrfBatched( handle, k, (cuComplex**)lemma_lu, kd, NULL,
+  cublasCgetrfBatched( handle, k, (cuComplex**)lemma_lu, kd, PivotArray,
                                           infoArray, nw);
 
 #ifdef USE_TRSM
@@ -470,7 +470,7 @@ cublas_smw_update (cublasHandle_t handle,
   cuComplex zero = make_cuComplex(0.0f,0.0f);
   // Calculate Lemma Inverse and store it in lemma_d
   // per walker: [k x k]^-1 = [k x k]
-  cublasCgetriBatched( handle, k, (const cuComplex**) lemma_lu, kd, NULL,
+  cublasCgetriBatched( handle, k, (const cuComplex**) lemma_lu, kd, PivotArray,
                                           (cuComplex**)lemma_inv, k, infoArray, nw);
   // Calculate new A inverse using Sherman-Morrison-Woodbury formula
   if(M==1) // row update can use different order to save flops
@@ -573,7 +573,7 @@ cublas_smw_update (cublasHandle_t handle,
                    std::complex<double> *AinvkList_d[], std::complex<double> *AinvList_d[],
                    std::complex<double> *AinvUList_d[], std::complex<double> *AWorkList_d[],
                    std::complex<double> *lemma_inv[], std::complex<double> *lemma_lu[],
-                   int *infoArray,
+                   int *PivotArray, int *infoArray,
                    int k, int kd, int M, int N, int nw, int RowStride)
 {
 #ifdef DEBUG_DELAYED
@@ -584,7 +584,7 @@ cublas_smw_update (cublasHandle_t handle,
   cuDoubleComplex one = make_cuDoubleComplex(1.0f,0.0f);
 
   // LU decomposition needs to be updated
-  cublasZgetrfBatched( handle, k, (cuDoubleComplex**)lemma_lu, kd, NULL,
+  cublasZgetrfBatched( handle, k, (cuDoubleComplex**)lemma_lu, kd, PivotArray,
                                           infoArray, nw);
 
 #ifdef USE_TRSM
@@ -631,7 +631,7 @@ cublas_smw_update (cublasHandle_t handle,
   cuDoubleComplex zero = make_cuDoubleComplex(0.0f,0.0f);
   // Calculate Lemma Inverse and store it in lemma_d
   // per walker: [k x k]^-1 = [k x k]
-  cublasZgetriBatched( handle, k, (const cuDoubleComplex**) lemma_lu, kd, NULL,
+  cublasZgetriBatched( handle, k, (const cuDoubleComplex**) lemma_lu, kd, PivotArray,
                                           (cuDoubleComplex**)lemma_inv, k, infoArray, nw);
   // Calculate new A inverse using Sherman-Morrison-Woodbury formula
   if(M==1) // row update can use different order to save flops
@@ -1125,6 +1125,7 @@ calc_gradlapl_and_collect (std::complex<float> *lemma_lu[], std::complex<float> 
   dim3 dimBlock(4);
   dim3 dimGrid (num);
   calc_gradlapl_and_collect< thrust::complex<float> ><<<dimGrid,dimBlock>>>((thrust::complex<float>**)lemma_lu, (thrust::complex<float>**)Ainv_row, (thrust::complex<float>**)GL_col, (thrust::complex<float>*)ratios, k, kdelay, N, rowstride);
+  cudaDeviceSynchronize();
 }
 
 void
@@ -1133,6 +1134,7 @@ calc_gradlapl_and_collect (std::complex<double> *lemma_lu[], std::complex<double
   dim3 dimBlock(4);
   dim3 dimGrid (num);
   calc_gradlapl_and_collect< thrust::complex<double> ><<<dimGrid,dimBlock>>>((thrust::complex<double>**)lemma_lu, (thrust::complex<double>**)Ainv_row, (thrust::complex<double>**)GL_col, (thrust::complex<double>*)ratios, k, kdelay, N, rowstride);
+  cudaDeviceSynchronize();
 }
 
 void
