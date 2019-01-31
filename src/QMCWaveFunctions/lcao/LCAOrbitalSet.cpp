@@ -16,8 +16,8 @@
 
 namespace qmcplusplus
 {
-  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs,int rl):
-    myBasisSet(nullptr), C(nullptr), ReportLevel(rl), params_supplied(false),
+  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs):
+    myBasisSet(nullptr), C(nullptr), params_supplied(false),
     BasisSetSize(0), Identity(true), IsCloned(false)
   {
     if(bs != nullptr) setBasisSet(bs);
