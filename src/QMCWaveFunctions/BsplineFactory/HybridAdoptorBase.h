@@ -82,7 +82,6 @@ struct AtomicOrbitalSoA
     localG.resize(Npad*lm_tot);
     localL.resize(Npad*lm_tot);
     create_spline();
-    qmc_common.memory_allocated += SplineInst->sizeInByte();
   }
 
   void bcast_tables(Communicate* comm)
@@ -434,8 +433,17 @@ struct HybridAdoptorBase
 
   inline void resizeStorage(size_t Nb)
   {
+    size_t SplineCoefsBytes = 0;
+
     for(int ic=0; ic<AtomicCenters.size(); ic++)
+    {
       AtomicCenters[ic].resizeStorage(Nb);
+      SplineCoefsBytes += AtomicCenters[ic].SplineInst->sizeInByte();
+    }
+
+    app_log() << "MEMORY " << SplineCoefsBytes/(1<<20) << " MB allocated "
+              << "for the atomic radial splines in hybrid orbital representation"
+              << std::endl;
   }
 
   void bcast_tables(Communicate* comm)

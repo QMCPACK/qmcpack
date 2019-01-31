@@ -230,7 +230,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       }
       else//why, don't know
         initialize_spline_psi_r(spin,bandgroup);
-      if(qmc_common.save_wfs && root)
+      if(saveSplineCoefs && root)
       {
         now.restart();
         hdf_archive h5f;

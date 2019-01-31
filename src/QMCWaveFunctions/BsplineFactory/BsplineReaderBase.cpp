@@ -11,8 +11,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file BsplineReaderBase.cpp
  *
  * Implement super function
@@ -22,10 +22,11 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "qmc_common.h"
+
 namespace qmcplusplus
 {
   BsplineReaderBase::BsplineReaderBase(EinsplineSetBuilder* e)
-    : mybuilder(e), MeshSize(0), myFirstSPO(0), myNumOrbs(0), checkNorm(true)
+    : mybuilder(e), MeshSize(0), checkNorm(true), saveSplineCoefs(false)
   {
     myComm=mybuilder->getCommunicator();
   }
@@ -83,17 +84,20 @@ namespace qmcplusplus
   void BsplineReaderBase::setCommon(xmlNodePtr cur)
   {
     // check orbital normalization by default
-    std::string check_orb_norm("yes");
+    std::string checkOrbNorm("yes");
+    std::string saveCoefs("no");
     OhmmsAttributeSet a;
-    a.add(check_orb_norm,"check_orb_norm");
+    a.add(checkOrbNorm,"check_orb_norm");
+    a.add(saveCoefs,"save_coefs");
     a.put(cur);
 
     // allow user to turn off norm check with a warning
-    if (check_orb_norm == "no")
+    if (checkOrbNorm == "no")
     {
       app_log() << "WARNING: disable orbital normalization check!" << std::endl;
       checkNorm = false;
     }
+    saveSplineCoefs = (saveCoefs == "yes" || qmc_common.save_wfs);
   }
 
   SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
@@ -125,32 +129,7 @@ namespace qmcplusplus
     vals.myName=make_bandgroup_name(mybuilder->getName(),spin,mybuilder->TwistNum,mybuilder->TileMatrix,0,ns);
     vals.selectBands(fullband,0, ns, false);
 
-    size_t mem_now=qmc_common.memory_allocated;
-    SPOSet* newspo=create_spline_set(spin,vals);       
-    qmc_common.print_memory_change("BsplineSetReader", mem_now);
-    return newspo;
-
-    //Test SPOSetComboNoCopy that can have multiple SPOSets
-    //SPOSetComboNoCopy* bb=new SPOSetComboNoCopy;
-    ////create SPOSet for the semi core states e=(-1000,-3.0)
-    //BandInfoGroup cores0;
-    //cores0.selectBands(mybuilder->SortBands,-1000.0,-3.0);
-    //cores0.GroupID=0;
-    //SPOSet* bandone=create_spline_set(spin,orbitalset,cores0);
-    //
-    ////create SPOSet for the rest with a coarse grid
-    //TinyVector<int,3> mesh_saved=MeshSize;
-    //for(int i=0; i<3; ++i) MeshSize[i] -= mesh_saved[i]/4;
-    //BandInfoGroup cores1;
-    //cores1.selectBands(mybuilder->SortBands,cores0.getNumDistinctOrbitals(),mybuilder->NumDistinctOrbitals);
-    //cores1.GroupID=1;
-    //SPOSet* bandtwo=create_spline_set(spin,orbitalset,cores1);
-    //
-    ////add them to bb
-    //bb->add(bandone);
-    //bb->add(bandtwo);
-    //bb->setOrbitalSetSize(orbitalset->getOrbitalSetSize());
-    //return bb;
+    return create_spline_set(spin,vals);
   }
 
   SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
@@ -176,12 +155,8 @@ namespace qmcplusplus
     vals.selectBands(fullband,
         spo2band[spin][input_info.min_index()], 
         input_info.max_index()-input_info.min_index(),false);
-    //vals.FirstSPO=0;
-    //vals.NumSPOs=input_info.max_index()-input_info.min_index();
-    size_t mem_now=qmc_common.memory_allocated;
-    SPOSet* newspo=create_spline_set(spin,vals);       
-    qmc_common.print_memory_change("BsplineSetReader", mem_now);
-    return newspo;
+
+    return create_spline_set(spin,vals);
   }
 
   /** build index tables to map a state to band with k-point folidng
