@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" transform="yes" source="ion0">
+      <basisset name="LCAOBSet">
+        <atomicBasisSet name="Gaussian-G2" angular="cartesian" type="Gaussian" elementType="H" normalized="no">
+          <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+          <!-- Possible substitution H00 by a Slater-type orbital
+  <basisGroup rid="H00" n="0" l="0" type="Slater">
+    <radfunc exponent="1.31826" contraction="1.0"/>
+  </basisGroup>
+-->
+          <basisGroup rid="H00" n="0" l="0" type="Gaussian">
+            <radfunc exponent="3.425250900000e+00" contraction="1.543289672950e-01"/>
+            <radfunc exponent="6.239137000000e-01" contraction="5.353281422820e-01"/>
+            <radfunc exponent="1.688554000000e-01" contraction="4.446345421850e-01"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <sposet basisset="LCAOBSet" name="spo-up" size="4" optimize="yes">
+        <occupation mode="ground"/>
+        <coefficient size="4" id="updetC">
+  5.04668000000000e-01  4.50114000000000e-01  3.58423000000000e-01  1.26449000000000e-01
+ -2.40452000000000e-01 -3.20413000000000e-01  4.66777000000000e-01  7.03549000000000e-01
+  8.80080000000000e-02 -5.04842000000000e-01  8.07522000000000e-01 -7.19301000000000e-01
+  1.03323500000000e+00 -8.77213000000000e-01 -3.90492000000000e-01  2.12318000000000e-01
+        </coefficient>
+        <opt_vars>
+  0.0 0.0 0.0 0.0 0.0 0.0 
+        </opt_vars>
+      </sposet>
+      <sposet basisset="LCAOBSet" name="spo-dn" size="4" optimize="yes">
+        <occupation mode="ground"/>
+        <coefficient size="4" id="downdetC">
+  5.04668000000000e-01  4.50114000000000e-01  3.58423000000000e-01  1.26449000000000e-01
+ -2.40452000000000e-01 -3.20413000000000e-01  4.66777000000000e-01  7.03549000000000e-01
+  8.80080000000000e-02 -5.04842000000000e-01  8.07522000000000e-01 -7.19301000000000e-01
+  1.03323500000000e+00 -8.77213000000000e-01 -3.90492000000000e-01  2.12318000000000e-01
+        </coefficient>
+        <opt_vars>
+  0.0 0.0 0.0 0.0 0.0 0.0
+        </opt_vars>
+      </sposet>
+      <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
+        <detlist size="2" type="DETS" nca="0" ncb="0" nea="2" neb="2" nstates="4" cutoff="0">
+          <ci id="CSFcoeff_0" coeff="0.605818000000000000000" qchem_coeff="0.0" alpha="1100" beta="1100"/>
+          <ci id="CSFcoeff_1" coeff="-1.1993657413709108e-01" qchem_coeff="0.0" alpha="1010" beta="1010"/>
+          </detlist>
+      </multideterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation rcut="10" size="10" speciesA="u" speciesB="u">
+        <coefficients id="uu" optimize="no" type="Array"> 0.4073212733 0.1356479817 0.005026840664 -0.1004131337 -0.158654522 -0.1727586666 -0.1494164713 -0.09075876435 -0.02519546705 0.01112202643</coefficients>
+      </correlation>
+      <correlation rcut="10" size="10" speciesA="u" speciesB="d">
+        <coefficients id="ud" optimize="no" type="Array"> 1.069293404 0.7297573441 0.5035742269 0.3522611751 0.2464371007 0.1736193581 0.1321449669 0.1260292532 0.1222027831 0.09120994971</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+      <correlation rcut="5" size="10" cusp="1" elementType="H">
+        <coefficients id="eH" optimize="no" type="Array"> 0.08455836318 0.08266626098 -0.0498122806 -0.02926081914 -0.0439642018 -0.008986421322 0.03291154683 0.05953223719 0.06419018279 0.04666049606</coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+</qmcsystem>

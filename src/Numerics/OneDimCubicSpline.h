@@ -204,27 +204,6 @@ public:
 
   inline value_type splint(point_type r)
   {
-    //if(r<r_min) {
-    //  return m_Y[0]+first_deriv*(r-r_min);
-    //}  else if(r>=r_max) {
-    //  return 1e-20;
-    //}
-    //const Td onesixth = 1.0/6.0;
-    ////first set Loc for the grid
-    //m_grid->locate(r);
-    //int klo = m_grid->Loc;
-    //int khi = klo+1;
-    //point_type h = m_grid->dr(klo);
-    //point_type hinv = 1.0/h;
-    ////point_type h6 = h*onesixth;
-    //point_type hh6 = h*h*onesixth;
-    //point_type A = (m_grid->r(khi)-r)*hinv;
-    //point_type B = (r-m_grid->r(klo))*hinv;
-    ////point_type C = A*(A*A-1.0)*hh6;
-    ////point_type D = B*(B*B-1.0)*hh6;
-    ////return A*m_Y[klo]+B*m_Y[khi]+C*m_Y2[klo]+D*m_Y2[khi];
-    //return A*m_Y[klo]+B*m_Y[khi]+
-    //  hh6*(A*(A*A-1.0)*m_Y2[klo]+B*(B*B-1.0)*m_Y2[khi]);
     if(r<r_min)
     {
       return m_Y[0]+first_deriv*(r-r_min);
@@ -272,25 +251,6 @@ public:
     int Loc(m_grid->currentIndex());
     return
       m_grid->cubicInterpolateSecond(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
-    //const Td onesixth = 1.0/6.0;
-    ////first set Loc for the grid
-    //int klo = m_grid->Loc;
-    //int khi = klo+1;
-    //point_type h = m_grid->dr(klo);
-    //point_type hinv = 1.0/h;
-    //point_type h6 = h*onesixth;
-    //point_type hh6 = h6*h;
-    //point_type A = (m_grid->r(khi)-r)*hinv;
-    //point_type B = (r-m_grid->r(klo))*hinv;
-    //point_type dA = -hinv;
-    //point_type dB = hinv;
-    //point_type C = A*(A*A-1.0)*hh6;
-    //point_type D = B*(B*B-1.0)*hh6;
-    //point_type dC = -h6*(3*A*A-1.0);
-    //point_type dD = h6*(3*B*B-1.0);
-    //du = dA*m_Y[klo]+dB*m_Y[khi]+ dC*m_Y2[klo] + dD*m_Y2[khi];
-    //d2u = A*m_Y2[klo] + B*m_Y2[khi];
-    //return A*m_Y[klo]+B*m_Y[khi]+C*m_Y2[klo]+D*m_Y2[khi];
   }
 
   /** Interpolation to evaluate the function and itsderivatives.
