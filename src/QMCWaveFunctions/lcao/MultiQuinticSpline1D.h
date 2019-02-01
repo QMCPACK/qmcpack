@@ -170,7 +170,7 @@ public:
       {
         u[i]=a[i]+first_deriv[i]*dr;
         du[i]=first_deriv[i];
-        d2u[i]= T(0);
+        d2u[i]= 0.0;
       }
     }
     else
@@ -214,8 +214,8 @@ public:
       {
         u[i]=a[i]+first_deriv[i]*dr;
         du[i]=first_deriv[i];
-        d2u[i]= T(0);
-        d3u[i]= T(0);
+        d2u[i]= 0.0;
+        d3u[i]= 0.0;
       }
     }
     else

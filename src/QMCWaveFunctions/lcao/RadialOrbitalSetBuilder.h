@@ -67,7 +67,7 @@ namespace qmcplusplus
 
     void convert(grid_type* agrid, FnOut* multiset, int ispline, int order)
     {
-      typedef OneDimQuinticSpline<double> spline_type;
+      typedef OneDimQuinticSpline<OHMMS_PRECISION_FULL> spline_type;
       spline_type radorb(agrid);
       Transform2GridFunctor<FnIn,spline_type> transform(*m_ref,radorb);
       transform.generate(agrid->rmin(),agrid->rmax(),agrid->size());
@@ -442,13 +442,11 @@ private:
     MultiQuinticSpline1D<RealType>* multiset=new MultiQuinticSpline1D<RealType>;
     int norbs=radTemp.size();
 
-    //This is a temporary grid used in conversion, it shouldn't be
-    //created on the heap or here in my opinion
-    //It must be double regardless of the precision of anything else
-    //that is probably a sound idea
+    // This is a temporary grid used in conversion, at the full precision of the calculation
+    // to reduce error. It doesn't need to be on the heap but this is the result of a
+    // series of design decisions requiring a base class pointer here.
     OneDimGridBase<OHMMS_PRECISION_FULL>* grid_prec;
-
-    grid_prec=new LogGrid<OHMMS_PRECISION_FULL>;
+    grid_prec = new LogGrid<OHMMS_PRECISION_FULL>;
     grid_prec->set(1.e-6,m_rcut_safe,1001);
     multiset->initialize(*grid_prec,norbs);
 
