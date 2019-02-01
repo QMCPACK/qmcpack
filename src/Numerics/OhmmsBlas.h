@@ -640,6 +640,20 @@ struct BLAS
 struct LAPACK
 {
 
+	inline static
+	void heev(char &jobz, char &uplo, int &n, std::complex<float> *a, int &lda,
+	          float *w, std::complex<float> *work, int &lwork, float *rwork, int &info)
+	{
+		cheev(jobz, uplo, n, a, lda, w, work, lwork, rwork, info);
+	}
+
+	inline static
+	void heev(char &jobz, char &uplo, int &n, std::complex<double> *a, int &lda,
+	          double *w, std::complex<double> *work, int &lwork, double *rwork, int &info)
+	{
+		zheev(jobz, uplo, n, a, lda, w, work, lwork, rwork, info);
+	}
+
   inline static
   void gesvd(char *jobu, char* jobvt, int *m, int *n,
               float *a, int *lda, float *s, float *u,

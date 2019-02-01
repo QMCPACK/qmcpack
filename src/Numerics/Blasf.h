@@ -80,9 +80,11 @@
 #define dtgevc dtgevc_
 
 #define dsyevr dsyevr_
+#define zheev  zheev_
 #define zheevr zheevr_
 #define ssyevr ssyevr_
 #define cheevr cheevr_
+#define cheev cheev_
 #define zhegvx zhegvx_
 #define zgeqrf zgeqrf_
 #define zungqr zungqr_
@@ -334,8 +336,14 @@ void cblas_zgemm_batch (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE* transa
              int &IU, double &ABSTOL, int &M, double *W, double* Z, int &LDZ, int* ISUPPZ, double *WORK,
              int &LWORK, int* IWORK, int &LIWORK, int &INFO);
 
-  void zheevr (char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA, double &VL, double &VU,
-             int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z, int &LDZ, int* ISUPPZ,
+  void cheev  (char &JOBZ, char &UPLO, int &N, std::complex<float> *A, int &LDA,
+               float *W, std::complex<float> *WORK, int &LWORK, float *RWORK, int &INFO);
+
+  void zheev  (char &JOBZ, char &UPLO, int &N, std::complex<double> *A, int &LDA,
+               double *W, std::complex<double> *WORK, int &LWORK, double *RWORK, int &INFO);
+
+  void zheevr (char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA, double &VL, double &VU, 
+             int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z, int &LDZ, int* ISUPPZ, 
              std::complex<double> *WORK, int &LWORK, double* RWORK, int &LRWORK, int* IWORK, int &LIWORK, int &INFO);
 
   void zhegvx (int&, char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA, std::complex<double> *B,
