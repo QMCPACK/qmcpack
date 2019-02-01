@@ -662,15 +662,14 @@ namespace qmcplusplus
     spoAttrib.add (optimize, "optimize");
     spoAttrib.put(cur);
 
-    if(optimize=="yes") PRE.error("Optimizable SPO has not been supported by SoA LCAO yet!.",true);
     if(myBasisSet==nullptr) PRE.error("Missing basisset.",true);
     LCAOrbitalSet *lcos = nullptr;
     LCAOrbitalSetWithCorrection *lcwc = nullptr;
     if (doCuspCorrection) {
-      lcwc =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, rank()==0);
+      lcwc =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet);
       lcos = lcwc;
     } else {
-      lcos=new LCAOrbitalSet(myBasisSet,rank()==0);
+      lcos=new LCAOrbitalSet(myBasisSet);
     }
     loadMO(*lcos, cur);
 
@@ -691,6 +690,11 @@ namespace qmcplusplus
       applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
     }
 
+    if(optimize=="yes")
+    {
+      lcos->Optimizable = true; 
+      app_log() << "  SPOSet " << spo_name << " is optimizable\n";
+    }
 
     return lcos;
   }
@@ -731,6 +735,11 @@ namespace qmcplusplus
       else if(cname.find("coeff") < cname.size() || cname == "parameter" || cname == "Var")
       {
         coeff_ptr=cur;
+      }
+      else if(cname == "opt_vars")
+      {
+        spo.params_supplied = true;
+        putContent(spo.params, cur);
       }
       cur=cur->next;
     }
