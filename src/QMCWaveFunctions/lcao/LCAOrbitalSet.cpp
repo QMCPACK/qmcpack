@@ -472,7 +472,7 @@ namespace qmcplusplus
 
   void LCAOrbitalSet::apply_rotation(const std::vector<RealType>& param)
   {
-    assert( param->size() == m_act_rot_inds.size() );
+    assert( param.size() == m_act_rot_inds.size() );
 
     const size_t nmo = OrbitalSetSize;
     const size_t nb = BasisSetSize;
