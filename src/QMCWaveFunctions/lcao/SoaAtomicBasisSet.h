@@ -27,15 +27,15 @@ namespace qmcplusplus
     struct SoaAtomicBasisSet
     {
       typedef ROT RadialOrbital_t;
-      using ValueType = typename ROT::value_type;
-      typedef typename ROT::grid_type  grid_type;
+      using RealType = typename ROT::RealType;
+      using GridType = typename ROT::GridType;
 
       ///size of the basis set
       int BasisSetSize;
       ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
       TinyVector<int,3>  PBCImages; 
       ///maximum radius of this center
-      ValueType Rmax;
+      RealType Rmax;
       ///spherical harmonics
       SH Ylm;
       ///radial orbitals
@@ -47,10 +47,10 @@ namespace qmcplusplus
       ///container for the quantum-numbers
       std::vector<QuantumNumberType> RnlID;
       ///temporary storage 
-      VectorSoaContainer<ValueType,4> tempS;
+      VectorSoaContainer<RealType,4> tempS;
 
       ///set of grids : keep this until completion
-      std::vector<grid_type*> Grids;
+      std::vector<GridType*> Grids;
       ///the constructor
       explicit SoaAtomicBasisSet(int lmax, bool addsignforM=false)
         :Ylm(lmax,addsignforM){}
@@ -147,9 +147,9 @@ namespace qmcplusplus
           constexpr T ctwo(2);
 
           //one can assert the alignment
-          ValueType* restrict phi=tempS.data(0);
-          ValueType* restrict dphi=tempS.data(1);
-          ValueType* restrict d2phi=tempS.data(2);
+          RealType* restrict phi=tempS.data(0);
+          RealType* restrict dphi=tempS.data(1);
+          RealType* restrict d2phi=tempS.data(2);
 
           //V,Gx,Gy,Gz,L
           T* restrict psi   =vgl.data(0)+offset; const T* restrict ylm_v=Ylm[0]; //value
@@ -230,8 +230,8 @@ namespace qmcplusplus
           PosType dr_new;
           T r_new;
           T psi_new;
-          ValueType* restrict ylm_v=tempS.data(0);
-          ValueType* restrict phi_r=tempS.data(1);
+          RealType* restrict ylm_v=tempS.data(0);
+          RealType* restrict phi_r=tempS.data(1);
           for(size_t ib=0; ib<BasisSetSize; ++ib)
               psi[ib]=0;
           for (int i=0; i<=PBCImages[0]; i++ ) //loop Translation over X 

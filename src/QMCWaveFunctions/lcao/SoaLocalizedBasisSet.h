@@ -34,12 +34,12 @@ namespace qmcplusplus
  * a set of localized orbitals associated with a center.
  */
 template<class COT>
-struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::ValueType>
+struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::RealType>
 {
-  typedef typename COT::ValueType ValueType;
-  typedef typename RealBasisSetBase<ValueType>::vgl_type vgl_type;
+  typedef typename COT::RealType RealType;
+  typedef typename RealBasisSetBase<RealType>::vgl_type vgl_type;
 
-  using RealBasisSetBase<ValueType>::BasisSetSize;
+  using RealBasisSetBase<RealType>::BasisSetSize;
 
   ///number of centers, e.g., ions
   size_t NumCenters;
@@ -81,7 +81,7 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::ValueType>
 
   /** makeClone */
   //SoaLocalizedBasisSet<COT>* makeClone() const
-  RealBasisSetBase<ValueType>* makeClone() const
+  RealBasisSetBase<RealType>* makeClone() const
   {
     SoaLocalizedBasisSet<COT>* myclone=new SoaLocalizedBasisSet<COT>(*this);
     for(int i=0; i<LOBasisSet.size(); ++i)
@@ -158,7 +158,7 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::ValueType>
   inline void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    const ValueType* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
+    const RealType* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
     const auto& displ= (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
     {
@@ -170,10 +170,10 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::ValueType>
    *
    * Always uses Temp_r and Temp_dr
    */
-  inline void evaluateV(const ParticleSet& P, int iat, ValueType* restrict vals)
+  inline void evaluateV(const ParticleSet& P, int iat, RealType* restrict vals)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    const ValueType* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
+    const RealType* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
     const auto& displ= (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
     {

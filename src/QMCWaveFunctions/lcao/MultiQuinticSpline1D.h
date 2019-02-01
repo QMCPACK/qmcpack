@@ -93,8 +93,8 @@ template<typename T>
 class MultiQuinticSpline1D
 {
 public:
-  using value_type = T; 
-  typedef OneDimGridBase<T> grid_type;
+  using RealType = T;
+  using GridType = OneDimGridBase<T>;
   typedef Matrix<T, aligned_allocator<T> > coeff_type;
 
 private:

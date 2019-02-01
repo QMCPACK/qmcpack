@@ -29,7 +29,7 @@
 //#include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
-#include "QMCWaveFunctions/lcao/MultiFunctorBuilder.h"
+#include "QMCWaveFunctions/lcao/MultiFunctorAdapter.h"
 #include "QMCWaveFunctions/lcao/CuspCorrection.h"
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"

@@ -29,8 +29,8 @@ namespace qmcplusplus
   template<typename FN>
     struct MultiFunctorAdapter
     {
-      typedef typename FN::real_type value_type;
-      typedef LogGridLight<value_type> grid_type;
+      using RealType = typename FN::value_type; //Trust this is a real type
+      using GridType = LogGridLight<RealType>;
       typedef FN single_type;
       aligned_vector<single_type*> Rnl;
 
@@ -47,21 +47,22 @@ namespace qmcplusplus
         for(size_t i=0; i<Rnl.size(); ++i) delete Rnl[i];
       }
 
-      inline value_type rmax() const
+      inline RealType rmax() const
       {
-        constexpr value_type r0(100);
+	//Another magic r_max
+        constexpr RealType r0(100);
         return r0;
       }
 
-      inline void evaluate(value_type r, value_type* restrict u) 
+      inline void evaluate(RealType r, RealType* restrict u) 
       {
         for(size_t i=0, n=Rnl.size(); i<n; ++i)
           u[i]=Rnl[i]->f(r);
       }
 
-      inline void evaluate(value_type r, value_type* restrict u, value_type* restrict du, value_type* restrict d2u) 
+      inline void evaluate(RealType r, RealType* restrict u, RealType* restrict du, RealType* restrict d2u) 
       {
-        const value_type rinv=value_type(1)/r;
+        const RealType rinv=RealType(1)/r;
         for(size_t i=0, n=Rnl.size(); i<n; ++i)
         {
           Rnl[i]->evaluateAll(r,rinv);
