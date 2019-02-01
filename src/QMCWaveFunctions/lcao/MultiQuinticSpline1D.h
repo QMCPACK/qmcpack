@@ -39,33 +39,28 @@ namespace qmcplusplus
       T lower_bound;
       T upper_bound;
       T OneOverLogDelta;
-      double LogDelta;
-      aligned_vector<T> r_values;
+      std::vector<T> r_values;
 
       inline void set(T ri, T rf, int n)
       {
         lower_bound=ri;
         upper_bound=rf;
-        //num_points=n;
         double ratio = rf/ri;
         double log_ratio = std::log(ratio);
         double dlog_ratio = log_ratio/static_cast<double>(n-1);
-        LogDelta = dlog_ratio;
         OneOverLogDelta = 1.0/dlog_ratio;
         r_values.resize(n);
         for (int i=0; i<n; i++)
-        {
           r_values[i] = ri*std::exp(i*dlog_ratio);
-        }
       }
 
       inline int locate(T r) const
       {
         int loc=static_cast<int>(std::log(r/lower_bound)*OneOverLogDelta);
-	if(loc >= r_values.size())
-	  throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_values.back())
-    			      + '\n');
-	return loc;
+        if(loc >= r_values.size())
+          throw std::domain_error("r value " + std::to_string(r) + ">="
+                                  + std::to_string(upper_bound) +"\n");
+        return loc;
       }
 
       inline T operator()(int i)
