@@ -1,3 +1,4 @@
+Just a bogus change
 # Getting and building QMCPACK
 
  Obtain the latest release or development copy from http://www.qmcpack.org
