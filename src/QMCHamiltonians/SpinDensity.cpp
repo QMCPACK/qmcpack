@@ -261,7 +261,6 @@ namespace qmcplusplus
 
   SpinDensity::Return_t SpinDensity::test_evaluate(ParticleSet& P,int& pmin,int&pmax)
   {
-    RealType w=1.0;
     int p=0;
     int offset = 0;
     for(int s=0;s<nspecies;++s,offset+=npoints)

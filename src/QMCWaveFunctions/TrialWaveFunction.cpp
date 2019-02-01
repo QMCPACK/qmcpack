@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 
-typedef enum { V_TIMER, VGL_TIMER, ACCEPT_REJECT_TIMER, NL_TIMER,
+typedef enum { V_TIMER, VGL_TIMER, ACCEPT_TIMER, NL_TIMER,
                RECOMPUTE_TIMER, BUFFER_TIMER, DERIVS_TIMER, TIMER_SKIP
              } TimerEnum;
 
@@ -87,7 +87,7 @@ TrialWaveFunction::addOrbital(WaveFunctionComponent* aterm, const std::string& a
   std::vector<std::string> suffixes(7);
   suffixes[0] = "_V";
   suffixes[1] = "_VGL";
-  suffixes[2] = "_accept_reject";
+  suffixes[2] = "_accept";
   suffixes[3] = "_NLratio";
   suffixes[4] = "_recompute";
   suffixes[5] = "_buffer";
@@ -107,7 +107,6 @@ TrialWaveFunction::addOrbital(WaveFunctionComponent* aterm, const std::string& a
 TrialWaveFunction::RealType
 TrialWaveFunction::evaluateLog(ParticleSet& P)
 {
-  //TAU_PROFILE("TrialWaveFunction::evaluateLog","ParticleSet& P", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
   ValueType logpsi(0.0);
@@ -144,7 +143,6 @@ void TrialWaveFunction::recompute(ParticleSet& P)
 TrialWaveFunction::RealType
 TrialWaveFunction::evaluateLogOnly(ParticleSet& P)
 {
-  //TAU_PROFILE("TrialWaveFunction::evaluateLogOnly","ParticleSet& P", TAU_USER);
   tempP->R=P.R;
   tempP->L=0.0;
   tempP->G=0.0;
@@ -240,7 +238,6 @@ TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
                                     , RealType& logpsi_fixed_r, RealType& logpsi_opt_r
                                     , ParticleSet::ParticleGradient_t& fixedG, ParticleSet::ParticleLaplacian_t& fixedL)
 {
-  //TAU_PROFILE("TrialWaveFunction::evaluateDeltaLog","ParticleSet& P", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
   fixedL = 0.0;
@@ -303,7 +300,6 @@ void TrialWaveFunction::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad
 
 TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
 {
-  //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
   ValueType r(1.0);
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
@@ -335,7 +331,6 @@ TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P,int ia
 
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat)
 {
-  //TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
   GradType grad_iat;
   for (int i=0, ii=VGL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
@@ -419,12 +414,8 @@ void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G, ParticleSet:
  */
 void TrialWaveFunction::rejectMove(int iat)
 {
-  for (int i=0, ii=ACCEPT_REJECT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
-  {
-    myTimers[ii]->start();
+  for (int i=0; i<Z.size(); i++)
     Z[i]->restore(iat);
-    myTimers[ii]->stop();
-  }
   PhaseDiff=0;
 }
 
@@ -435,12 +426,12 @@ void TrialWaveFunction::rejectMove(int iat)
  * The proposed move of the iath particle is accepted.
  * All the temporary data should be incorporated so that the next move is valid.
  */
-void   TrialWaveFunction::acceptMove(ParticleSet& P,int iat)
+void TrialWaveFunction::acceptMove(ParticleSet& P, int iat)
 {
-  for (int i=0, ii=ACCEPT_REJECT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
+  for (int i=0, ii=ACCEPT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
-    Z[i]->acceptMove(P,iat);
+    Z[i]->acceptMove(P, iat);
     myTimers[ii]->stop();
   }
   PhaseValue += PhaseDiff;
@@ -450,9 +441,15 @@ void   TrialWaveFunction::acceptMove(ParticleSet& P,int iat)
     LogValue+= Z[i]->LogValue;
 }
 
-//void TrialWaveFunction::resizeByWalkers(int nwalkers){
-//  for(int i=0; i<Z.size(); i++) Z[i]->resizeByWalkers(nwalkers);
-//}
+void TrialWaveFunction::completeUpdates()
+{
+  for (int i=0, ii=ACCEPT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    Z[i]->completeUpdates();
+    myTimers[ii]->stop();
+  }
+}
 
 void TrialWaveFunction::checkInVariables(opt_variables_type& active)
 {
@@ -515,7 +512,6 @@ void TrialWaveFunction::registerData(ParticleSet& P, WFBufferType& buf)
 TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
     , WFBufferType& buf, bool fromscratch)
 {
-  //TAU_PROFILE("TrialWaveFunction::updateBuffer","(P,..)", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
   buf.rewind(BufferCursor,BufferCursor_scalar);
@@ -541,7 +537,6 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
 void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.rewind(BufferCursor,BufferCursor_scalar);
-  //TAU_PROFILE("TrialWaveFunction::copyFromBuffer","(P,..)", TAU_USER);
   for (int i=0, ii=BUFFER_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();

@@ -16,9 +16,8 @@
     
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#if QMC_BUILD_LEVEL>2
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#endif
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
@@ -64,7 +63,7 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   aAttrib.put(cur);
   //typedef DiracDeterminant<EGOSet>  Det_t;
   //typedef SlaterDeterminant<EGOSet> SlaterDeterminant_t;
-  typedef DiracDeterminantBase  Det_t;
+  typedef DiracDeterminant  Det_t;
   typedef SlaterDet SlaterDeterminant_t;
   int nat=targetPtcl.getTotalNum();
   int nup=nat/2;

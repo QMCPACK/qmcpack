@@ -1,0 +1,112 @@
+  Input file(s): qmc_ref.in.xml 
+
+=====================================================
+                    QMCPACK 3.6.0 
+
+       (c) Copyright 2003-  QMCPACK developers
+
+                    Please cite:
+ J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)
+      https://doi.org/10.1088/1361-648X/aab9c3
+
+  Git branch: develop
+  Last git commit: 4d91cf2bf1176c52a59a25721317cb73cd6a6762
+  Last git commit date: Sat Dec 29 13:32:07 2018 +0800
+  Last git commit subject: Merge pull request #1274 from jtkrogel/qtest_dev2
+=====================================================
+  Global options 
+
+  MPI Nodes             = 16
+  MPI Nodes per group   = 16
+  MPI Group ID          = 0
+  OMP 1st level threads = 2
+  OMP nested threading disabled or only 1 thread on the 2nd level
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  Input XML = qmc_ref_thc.in.xml
+
+/*************************************************
+ ********  This is an AFQMC calculation   ********
+ *************************************************
+ Random Number
+ -------------
+  Offset for the random number seeds based on time: 288
+
+  Range of prime numbers to use as seeds over processors and threads = 1889-2137
+
+
+
+****************************************************
+****************************************************
+****************************************************
+          Beginning Driver initialization.
+****************************************************
+****************************************************
+****************************************************
+
+ Using 1 cores per node in all TaskGroups. 
+
+****************************************************
+           Initializating Shared Walker Set 
+****************************************************
+ Using a closed-shell (closed-shell RHF) walker. 
+ Using asynchronous non-blocking swap load balancing algorithm. 
+ Using population control algorithm based on paired walker branching ( a la QWalk). 
+
+
+****************************************************
+               Initializating Hamiltonian 
+****************************************************
+
+ Initializing Hamiltonian from file: thc.h5
+
+****************************************************
+               Initializating Wavefunction 
+****************************************************
+
+Reading a RHF-type trial wave-function. 
+ Wavefunction type: NOMSD
+Reading a RHF-type trial wave-function. 
+
+****************************************************
+               Initializating Propagator 
+****************************************************
+
+ Using mean-field substraction in propagator: prop0
+ Largest component of Mean-field substraction potential: 0.844658
+
+
+ --------------- Parsing Propagator input ------------------ 
+
+ Using hybrid method to calculate the weights during the propagation.
+
+ Energy of starting determinant - E1, EJ, EXX: (-10.7779370917,0) (1.53127649406,0) (-0.911842098707,5.54667823984e-32)
+  BasicEstimator: Number of products in weight history: 0
+
+****************************************************
+****************************************************
+****************************************************
+          Finished Driver initialization.
+****************************************************
+****************************************************
+****************************************************
+
+Initial weight and number of walkers: 320 320
+Initial Eshift: 0
+----------------------------------------------------------------
+ Timer: 
+ Average time in Generic: 0
+----------------------------------------------------------------
+Stack timer profile
+Timer             Inclusive_time  Exclusive_time  Calls       Time_per_call
+Total              604.3735     0.3198              1     604.373462809
+  Block            604.0537   333.1627          10000       0.060405370
+    Energy           3.2045     3.2045          10000       0.000320454
+    G_for_vbias     38.9518    38.9518        1000000       0.000038952
+    Propagate       94.3164    94.3164        1000000       0.000094316
+    PseudoEnergy    14.1291    14.1291        1000000       0.000014129
+    vHS             63.4925    63.4925        1000000       0.000063492
+    vbias           56.7967    56.7967        1000000       0.000056797

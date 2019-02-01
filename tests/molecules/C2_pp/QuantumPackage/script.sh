@@ -9,9 +9,6 @@ qp_create_ezfio_from_xyz C2.xyz -b vtz-bfd -p bfd
 #Forcing Quantum Package to create every variable in the Input. (Avoid using VIM to edit input)
 qp_edit -c C2.ezfio
 
-#Sets QP reader to use the C2.ezfio directory as input
-ezfio set_file C2.ezfio
-
 # Save the AO orbitals (save time for restart)
 sed -i s/"None"/"Write"/ C2.ezfio/integrals_bielec/disk_access_ao_integrals
 
@@ -19,7 +16,7 @@ sed -i s/"None"/"Write"/ C2.ezfio/integrals_bielec/disk_access_ao_integrals
 sed -i s/"None"/"Write"/ C2.ezfio/integrals_bielec/disk_access_mo_integrals
 
 # Set the max determinants to 6M instead of 1M
-sed -i s/"             1000000"/"             6000000"/ C2.ezfio/determinants/n_det_max
+echo "             1000000" > C2.ezfio/determinants/n_det_max
 
 ###Run Hartree Fock in parallel with 10 nodes (1 Master + 9 slaves)
 #Master needs one node only While the slave nodes will attach to this job
@@ -40,7 +37,7 @@ mpirun -n 9 qp_run -slave selection_davidson_slave C2.ezfio &> C2.FCI-slave.out
 wait
 
 #Truncate the determinants to keep only weights of 10^-3 and higher. 
-ezfio set QMC ci_threshold 1e-3 
+echo "1e-3" >  C2.ezfio/qmc/ci_threshold 
 mpirun -n 1 qp_run truncate_wf_spin C2.ezfio &> C2.Trunc-1e-3.out
 
 

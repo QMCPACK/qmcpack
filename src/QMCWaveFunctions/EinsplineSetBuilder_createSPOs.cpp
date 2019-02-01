@@ -137,6 +137,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #else
   std::string useGPU="no";
 #endif
+  std::string GPUsharing="no";
   NewTimer* spo_timer = new NewTimer("einspline::CreateSPOSetFromXML", timer_level_medium);
   TimerManager.addTimer(spo_timer);
   spo_timer->start();
@@ -153,6 +154,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (MeshFactor, "meshfactor");
     a.add (hybrid_rep, "hybridrep");
     a.add (useGPU,     "gpu");
+    a.add (GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
     a.add (spo_prec,   "precision");
     a.add (truncate,   "truncate");
     a.add (use_einspline_set_extended,"use_old_spline");
@@ -333,15 +335,12 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 
   MixedSplineReader->setCommon(XMLRoot);
-  size_t delta_mem=qmc_common.memory_allocated;
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
   HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
   SPOSet* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
   if(!bspline_zd)
     APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSet*");
-  delta_mem=qmc_common.memory_allocated-delta_mem;
-  app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << std::endl;
   OrbitalSet = bspline_zd;
 #if defined(MIXED_PRECISION)
   if(use_einspline_set_extended=="yes")
@@ -460,6 +459,23 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (useGPU == "yes" || useGPU == "1")
   {
     app_log() << "Initializing GPU data structures.\n";
+    if ((GPUsharing == "yes" || GPUsharing == "1"))
+    {
+      if (!gpu::cudamps)
+      {
+        app_log() << "Warning: GPU spline sharing cannot be enabled due to missing Cuda MPS service.\n";
+        gpu::device_group_size=1;
+      }
+      if (gpu::device_group_size>1)
+        app_log() << "1/" << gpu::device_group_size << " of GPU spline data stored per rank.\n";
+      else
+        app_log() << "Full GPU spline data stored per rank.\n";
+    } else
+    {
+      if (gpu::device_group_size>1)
+        app_log() << "Full GPU spline data stored per rank.\n";
+      gpu::device_group_size=1;
+    }
     OrbitalSet->initGPU();
   }
 #endif

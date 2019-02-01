@@ -224,18 +224,12 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     if(transformOpt == "yes")
     {
       app_log() << "Using MolecularSPOBuilder<NGOBuilder>" << std::endl;
-#if QMC_BUILD_LEVEL>2
       bb = new MolecularSPOBuilder<NGOBuilder>(targetPtcl,*ions,myComm,cuspC=="yes",cuspInfo,MOH5Ref);
-#else
-      bb = new MolecularSPOBuilder<NGOBuilder>(targetPtcl,*ions,myComm,false);
-#endif
     }
     else
     {
-#if QMC_BUILD_LEVEL>2
       if(cuspC == "yes")
         app_log() <<" ****** Cusp Correction algorithm is only implemented in combination with numerical radial orbitals. Use transform=yes to enable this option. \n";
-#endif
       if(keyOpt == "GTO")
         bb = new MolecularSPOBuilder<GTOBuilder>(targetPtcl,*ions,myComm);
       else if(keyOpt == "STO")

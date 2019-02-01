@@ -476,13 +476,13 @@ EinsplineSetBuilder::AnalyzeTwists2()
     int n_tot_irred(0);
     for (int si=0; si<numSuperTwists; si++)
     {
-      bool irreducible(false);
+//      bool irreducible(false);
       int irrep_wgt(0);
 // 	 for (int i=0; i<superSets[si].size(); i++)
       if(TwistSymmetry[superSets[si][0]]==1)
       {
         irrep_wgt=TwistWeight[superSets[si][0]];
-        irreducible=true;
+//        irreducible=true;
         n_tot_irred++;
       }
 //	if((irreducible) and ((Version[0] >= 2) and (Version[1] >= 0)))

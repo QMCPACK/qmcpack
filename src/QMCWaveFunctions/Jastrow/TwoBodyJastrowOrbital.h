@@ -384,7 +384,7 @@ public:
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     const DistanceTableData* d_table=P.DistTables[0];
-    RealType dudr, d2udr2,u;
+    RealType dudr, d2udr2;
     PosType gr;
     const int* pairid = PairID[iat];
     DiffVal = 0.0;
@@ -546,12 +546,11 @@ public:
 
   RealType ChiesaKEcorrection()
   {
-#if QMC_BUILD_LEVEL<5
+#if !defined(QMC_BUILD_SANDBOX_ONLY)
     if ((!PtclRef->Lattice.SuperCellEnum))
       return 0.0;
     const int numPoints = 1000;
     RealType vol = PtclRef->Lattice.Volume;
-    RealType aparam = 0.0;
     int nsp = PtclRef->groups();
     //FILE *fout=(Write_Chiesa_Correction)?fopen ("uk.dat", "w"):0;
     FILE *fout=0;

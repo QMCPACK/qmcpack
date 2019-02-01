@@ -82,7 +82,6 @@ struct AtomicOrbitalSoA
     localG.resize(Npad*lm_tot);
     localL.resize(Npad*lm_tot);
     create_spline();
-    qmc_common.memory_allocated += SplineInst->sizeInByte();
   }
 
   void bcast_tables(Communicate* comm)
@@ -90,10 +89,9 @@ struct AtomicOrbitalSoA
     chunked_bcast(comm, MultiSpline);
   }
 
-  void gather_tables(Communicate* comm, std::vector<int> &offset_cplx, std::vector<int> &offset_real)
+  void gather_tables(Communicate* comm, std::vector<int> &offset)
   {
-    if(offset_cplx.size()) gatherv(comm, MultiSpline, Npad, offset_cplx);
-    if(offset_real.size()) gatherv(comm, MultiSpline, Npad, offset_real);
+    gatherv(comm, MultiSpline, Npad, offset);
   }
 
   template<typename PT, typename VT>
@@ -173,7 +171,7 @@ struct AtomicOrbitalSoA
       Ylm.evaluateV(0,0,1);
     const ST* restrict Ylm_v=Ylm[0];
 
-    CONSTEXPR ST czero(0);
+    constexpr ST czero(0);
     ST* restrict val=myV.data();
     ST* restrict local_val=localV.data();
     std::fill(myV.begin(),myV.end(),czero);
@@ -197,7 +195,7 @@ struct AtomicOrbitalSoA
     const ST* restrict Ylm_v=Ylm[0];
 
     const size_t m=multi_myV.cols();
-    CONSTEXPR ST czero(0);
+    constexpr ST czero(0);
     std::fill(multi_myV.begin(),multi_myV.end(),czero);
     SplineInst->evaluate(r,localV);
 
@@ -251,7 +249,7 @@ struct AtomicOrbitalSoA
     ST* restrict g0=myG.data(0);
     ST* restrict g1=myG.data(1);
     ST* restrict g2=myG.data(2);
-    CONSTEXPR ST czero(0), cone(1), chalf(0.5);
+    constexpr ST czero(0), cone(1), chalf(0.5);
     std::fill(myV.begin(),myV.end(),czero);
     std::fill(g0,g0+Npad,czero);
     std::fill(g1,g1+Npad,czero);
@@ -435,8 +433,17 @@ struct HybridAdoptorBase
 
   inline void resizeStorage(size_t Nb)
   {
+    size_t SplineCoefsBytes = 0;
+
     for(int ic=0; ic<AtomicCenters.size(); ic++)
+    {
       AtomicCenters[ic].resizeStorage(Nb);
+      SplineCoefsBytes += AtomicCenters[ic].SplineInst->sizeInByte();
+    }
+
+    app_log() << "MEMORY " << SplineCoefsBytes/(1<<20) << " MB allocated "
+              << "for the atomic radial splines in hybrid orbital representation"
+              << std::endl;
   }
 
   void bcast_tables(Communicate* comm)
@@ -445,10 +452,11 @@ struct HybridAdoptorBase
       AtomicCenters[ic].bcast_tables(comm);
   }
 
-  void gather_atomic_tables(Communicate* comm, std::vector<int> &offset_cplx, std::vector<int> &offset_real)
+  void gather_atomic_tables(Communicate* comm, std::vector<int> &offset)
   {
+    if(comm->size()==1) return;
     for(int ic=0; ic<AtomicCenters.size(); ic++)
-      AtomicCenters[ic].gather_tables(comm, offset_cplx, offset_real);
+      AtomicCenters[ic].gather_tables(comm, offset);
   }
 
   inline void flush_zero()

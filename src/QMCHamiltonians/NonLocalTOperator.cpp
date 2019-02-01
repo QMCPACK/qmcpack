@@ -78,46 +78,13 @@ int NonLocalTOperator::put(xmlNodePtr cur)
 
 void NonLocalTOperator::reset()
 {
-  Txy.erase(Txy.begin(),Txy.end());
-  Txy.push_back(NonLocalData());
+  Txy.clear();
 }
 
-void NonLocalTOperator::reserve(int n)
-{
-  Txy.reserve(n);
-  Txy.push_back(NonLocalData());
-}
-
-int NonLocalTOperator::selectMove(RealType prob)
+const NonLocalData* NonLocalTOperator::selectMove(RealType prob, std::vector<NonLocalData> &txy) const
 {
   RealType wgt_t=1.0;
-  for(int i=1; i<Txy.size(); i++)
-  {
-    if(Txy[i].Weight>0)
-    {
-      wgt_t += Txy[i].Weight *=plusFactor;
-    }
-    else
-    {
-      wgt_t += Txy[i].Weight *=minusFactor;
-    }
-  }
-  prob *= wgt_t;
-  RealType wsum=Txy[0].Weight;
-  int ibar=0;
-  while(wsum<prob)
-  {
-    ibar++;
-    wsum += Txy[ibar].Weight;
-  }
-  return ibar;
-}
-
-int NonLocalTOperator::selectMove(RealType prob,
-                                  std::vector<NonLocalData> &txy)
-{
-  RealType wgt_t=1.0;
-  for(int i=1; i<txy.size(); i++)
+  for(int i=0; i<txy.size(); i++)
   {
     if(txy[i].Weight>0)
     {
@@ -129,14 +96,14 @@ int NonLocalTOperator::selectMove(RealType prob,
     }
   }
   prob *= wgt_t;
-  RealType wsum=txy[0].Weight;
+  RealType wsum=1.0;
   int ibar=0;
   while(wsum<prob)
   {
-    ibar++;
     wsum += txy[ibar].Weight;
+    ibar++;
   }
-  return ibar;
+  return ibar>0 ? &(txy[ibar-1]) : nullptr;
 }
 
 void NonLocalTOperator::group_by_elec()
@@ -147,38 +114,10 @@ void NonLocalTOperator::group_by_elec()
     Txy_by_elec[i].clear();
   }
 
-  for(int i=1; i<Txy.size(); i++)
+  for(int i=0; i<Txy.size(); i++)
   {
-    Txy_by_elec[Txy[i].PID].push_back(&Txy[i]);
+    Txy_by_elec[Txy[i].PID].push_back(Txy[i]);
   }
 }
 
-const NonLocalData* NonLocalTOperator::selectMove(RealType prob, int iel)
-{
-  if(Txy_by_elec[iel].size()==1) return nullptr;
-  RealType wgt_t=1.0;
-  for(int i=0; i<Txy_by_elec[iel].size(); i++)
-  {
-    if(Txy_by_elec[iel][i]->Weight>0)
-    {
-      wgt_t += Txy_by_elec[iel][i]->Weight *=plusFactor;
-    }
-    else
-    {
-      wgt_t += Txy_by_elec[iel][i]->Weight *=minusFactor;
-    }
-  }
-  prob *= wgt_t;
-  RealType wsum=1.0;
-  int ibar=0;
-  while(wsum<prob)
-  {
-    wsum += Txy_by_elec[iel][ibar]->Weight;
-    ibar++;
-  }
-  return ibar>0?Txy_by_elec[iel][ibar-1]:nullptr;
 }
-
-}
-
-

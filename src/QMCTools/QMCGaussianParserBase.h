@@ -56,6 +56,7 @@ struct QMCGaussianParserBase
   bool ECP;
   bool debug;
   bool Structure;
+  bool multidetH5;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
@@ -92,6 +93,7 @@ struct QMCGaussianParserBase
   std::string outputFile;
   std::string angular_type;
   std::string h5file;
+  std::string multih5file;
   std::string WFS_name;
   std::string CodeName;
   ParticleSet IonSystem;
@@ -122,7 +124,6 @@ struct QMCGaussianParserBase
   double ci_threshold;
   bool optDetCoeffs;
   bool usingCSF;
-  bool VSVB;
 
   std::vector<std::pair<int,double> > coeff2csf;
 
@@ -148,7 +149,6 @@ struct QMCGaussianParserBase
   void createShellH5(int n, int ig, int off_,int numelem);
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
-  xmlNodePtr createMultiDeterminantSetVSVB();
   xmlNodePtr createMultiDeterminantSetQP();
   xmlNodePtr createMultiDeterminantSetQPHDF5();
   xmlNodePtr createDeterminantSetWithHDF5();

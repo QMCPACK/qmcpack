@@ -103,7 +103,6 @@ public:
     mRealType ra = delta*(i-1);
     mRealType rb = delta*i;
     mRealType rc = delta*(i+1);
-    mRealType rinv = 1.0/r;
     rc = std::min(m_rc, rc);
     const mRealType* restrict Sa(S[alpha]);
     if(r<ra || r>rc)

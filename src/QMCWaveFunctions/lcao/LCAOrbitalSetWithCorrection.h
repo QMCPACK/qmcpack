@@ -34,7 +34,7 @@ struct LCAOrbitalSetWithCorrection : public LCAOrbitalSet
      * @param bs pointer to the BasisSet
      * @param rl report level
      */
-  LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs = nullptr, int rl = 0);
+  LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs = nullptr);
 
   LCAOrbitalSetWithCorrection(const LCAOrbitalSetWithCorrection& in) = default;
 

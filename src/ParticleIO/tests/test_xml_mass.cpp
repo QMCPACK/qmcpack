@@ -31,7 +31,6 @@ TEST_CASE("read_particle_mass_same_xml", "[particle_io][xml]")
   // test that particle masses are properly read in
 
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
 
 const char *particles =
 "<tmp> \

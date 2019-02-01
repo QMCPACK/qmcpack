@@ -157,7 +157,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       APP_ABORT("EinsplineAdoptorReader needs psi_g. Set precision=\"double\".");
     }
     bspline->create_spline(xyz_grid,xyz_bc);
-    int TwistNum = mybuilder->TwistNum;
+    //    int TwistNum = mybuilder->TwistNum;
     std::ostringstream oo;
     oo<<bandgroup.myName << ".g"<<MeshSize[0]<<"x"<<MeshSize[1]<<"x"<<MeshSize[2]<<".h5";
     std::string splinefile= oo.str(); //bandgroup.myName+".h5";
@@ -185,17 +185,19 @@ struct SplineAdoptorReader: public BsplineReaderBase
       if(foundspline)
       {
         foundspline=bspline->read_splines(h5f);
-        if(foundspline) app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;
+        if(foundspline)
+          app_log() << "  Successfully restored coefficients from " << splinefile
+                    << ". The reading time is " << now.elapsed()
+                    << " sec." << std::endl;
       }
       h5f.close();
     }
     myComm->bcast(foundspline);
     if(foundspline)
     {
-      app_log() << "Use existing bspline tables in " << splinefile << std::endl;
       now.restart();
       bspline->bcast_tables(myComm);
-      app_log() << "  SplineAdoptorReader bcast the full table " << now.elapsed() << " sec" << std::endl;
+      app_log() << "  SplineAdoptorReader bcast the full table " << now.elapsed() << " sec." << std::endl;
       app_log().flush();
     }
     else
@@ -230,7 +232,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       }
       else//why, don't know
         initialize_spline_psi_r(spin,bandgroup);
-      if(qmc_common.save_wfs && root)
+      if(saveSplineCoefs && root)
       {
         now.restart();
         hdf_archive h5f;
@@ -240,7 +242,9 @@ struct SplineAdoptorReader: public BsplineReaderBase
         h5f.write(sizeD,"sizeof");
         bspline->write_splines(h5f);
         h5f.close();
-        app_log() << "  SplineAdoptorReader dump " << now.elapsed() << " sec" << std::endl;
+        app_log() << "  Stored spline coefficients in " << splinefile
+                  << " for potential reuse. The writing time is " << now.elapsed()
+                  << " sec." << std::endl;
       }
     }
 
@@ -297,20 +301,21 @@ struct SplineAdoptorReader: public BsplineReaderBase
     {
       if(band_group_comm.isGroupLeader())
       {
-        int ti=cur_bands[iorb].TwistIndex;
-        std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
+        int iorb_h5=bspline->BandIndexMap[iorb];
+        int ti=cur_bands[iorb_h5].TwistIndex;
+        std::string s=psi_g_path(ti,spin,cur_bands[iorb_h5].BandIndex);
         if(!h5f.read(cG,s)) APP_ABORT("SplineAdoptorReader Failed to read band(s) from h5!\n");
         double total_norm = compute_norm(cG);
         if((checkNorm)&&(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE))
         {
-          std::cerr << "The orbital " << iorb << " has a wrong norm " << total_norm
+          std::cerr << "The orbital " << iorb_h5 << " has a wrong norm " << total_norm
                     << ", computed from plane wave coefficients!" << std::endl
                     << "This may indicate a problem with the HDF5 library versions used "
                     << "during wavefunction conversion or read." << std::endl;
           APP_ABORT("SplineAdoptorReader Wrong orbital norm!");
         }
         fft_spline(cG,ti);
-        bspline->set_spline(spline_r,spline_i,cur_bands[iorb].TwistIndex,iorb,0);
+        bspline->set_spline(spline_r,spline_i,cur_bands[iorb_h5].TwistIndex,iorb,0);
       }
       this->create_atomic_centers_Gspace(cG, band_group_comm, iorb);
     }

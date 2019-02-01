@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
 #include <Configuration.h>
 #include <QMCWaveFunctions/WaveFunctionComponent.h>
-#include <QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h>
+#include <QMCWaveFunctions/Fermion/MultiDiracDeterminant.h>
 #include <QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "Utilities/NewTimer.h"
@@ -59,7 +59,7 @@ public:
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer, AccRejTimer;
 
-  typedef MultiDiracDeterminantBase*    DiracDeterminantPtr;
+  typedef MultiDiracDeterminant*    DiracDeterminantPtr;
   typedef SPOSet*                   SPOSetPtr;
   typedef SPOSetProxyForMSD*            SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
@@ -75,7 +75,7 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,MultiDiracDeterminantBase* up, MultiDiracDeterminantBase* dn);
+  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,MultiDiracDeterminant* up, MultiDiracDeterminant* dn);
 
   ///destructor
   ~MultiSlaterDeterminantFast();
@@ -86,6 +86,9 @@ public:
   void reportStatus(std::ostream& os);
 
   void resetTargetParticleSet(ParticleSet& P);
+
+  //builds orbital rotation parameters using MultiSlater member variables
+  void buildOptVariables();
 
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
@@ -142,6 +145,8 @@ public:
 
   void testMSD(ParticleSet& P, int iat);
 
+  /// if true, the CI coefficients are optimized
+  bool CI_Optimizable;
   size_t NP;
   size_t nels_up,nels_dn;
   size_t FirstIndex_up;
@@ -153,7 +158,7 @@ public:
   ValueType psiCurrent;
 
   // assume Dets[0]: up, Dets[1]:down
-  std::vector<MultiDiracDeterminantBase*> Dets;
+  std::vector<MultiDiracDeterminant*> Dets;
   std::map<std::string,size_t> SPOSetID;
 
   // map determinant in linear combination to unique det list

@@ -163,9 +163,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     void resetParameters(const opt_variables_type& active);
 
-    void reportStatus(std::ostream& os);
-
-    void resetTargetParticleSet(ParticleSet& P);
+    void resize(int m_nel, int m_nmo);
 
     RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
@@ -185,9 +183,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-    WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
-
-    DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+    SlaterDetOpt* makeCopy(SPOSet* spo) const;
 
     void add_derivatives(const int nl,
                          const int np,

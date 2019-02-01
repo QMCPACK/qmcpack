@@ -60,6 +60,8 @@ private:
   bool add_eeI (xmlNodePtr cur);
   ///add k-Space term
   bool addkSpace(xmlNodePtr cur);
+  // add number-counting term
+  bool addCounting(xmlNodePtr cur);
 };
 
 }

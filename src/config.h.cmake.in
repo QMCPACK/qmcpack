@@ -26,8 +26,8 @@
 /* building from Git repository or not */
 #cmakedefine IS_GIT_PROJECT  @IS_GIT_PROJECT@
 
-/* define QMC_BUILD_LEVEL */
-#cmakedefine QMC_BUILD_LEVEL @QMC_BUILD_LEVEL@
+/* define QMC_BUILD_SANDBOX_ONLY */
+#cmakedefine QMC_BUILD_SANDBOX_ONLY @QMC_BUILD_SANDBOX_ONLY@
 
 /* define PRINT_DEBUG */
 #cmakedefine PRINT_DEBUG @PRINT_DEBUG@
@@ -215,7 +215,6 @@
    #define ASSUME_ALIGNED(x)
   #endif
 
-  #define CONSTEXPR constexpr
 #else //capture both C or non-c++11
   #if defined(__KNC__) || defined(__AVX512F__)
     #define QMC_CLINE 64
@@ -224,7 +223,6 @@
   #endif
   #define QMC_ALIGNAS
   #define ASSUME_ALIGNED(x)
-  #define CONSTEXPR const
   #ifndef nullptr
   #define nullptr NULL
   #endif

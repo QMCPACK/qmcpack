@@ -153,8 +153,6 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   bool io_node=qmc_common.io_node;
   qmc_common.io_node=false;
 
-  char pname[16];
- 
   for(int ip=1; ip<NumThreads; ++ip)
   {
 	
@@ -196,7 +194,6 @@ void CloneManager::makeClones(TrialWaveFunction& guide)
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
   outputManager.pause();
-  char pname[16];
   for(int ip=1; ip<NumThreads; ++ip)
   {
     guideClones[ip]=guide.makeClone(*wClones[ip]);
@@ -224,7 +221,6 @@ void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guid
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
   outputManager.pause();
-  char pname[16];
   for(int ip=1; ip<NumThreads; ++ip)
   {
     wgClones[ip]=new MCWalkerConfiguration(wg);

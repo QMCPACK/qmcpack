@@ -48,7 +48,9 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
     for(int i=0; i<Ntargets; ++i)
       Displacements[i].attachReference(Nsources,Nsources_padded,memoryPool.data()+i*BlockSize);
 
-    Temp_r.resize(Nsources);
+    // The padding of Temp_r and Temp_dr is necessary for the memory copy in the update function
+    // Temp_r is padded explicitly while Temp_dr is padded internally
+    Temp_r.resize(Nsources_padded);
     Temp_dr.resize(Nsources);
   }
 
@@ -98,14 +100,14 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
   ///update the stripe for jat-th particle
   inline void update(IndexType iat)
   {
-    simd::copy_n(Temp_r.data(),Nsources,Distances[iat]);
+    std::copy_n(Temp_r.data(),Nsources,Distances[iat]);
     for(int idim=0;idim<D; ++idim)
-      simd::copy_n(Temp_dr.data(idim),Nsources,Displacements[iat].data(idim));
+      std::copy_n(Temp_dr.data(idim),Nsources,Displacements[iat].data(idim));
   }
 
   size_t get_neighbors(int iat, RealType rcut, int* restrict jid, RealType* restrict dist, PosType* restrict displ) const
   {
-    CONSTEXPR T cminus(-1);
+    constexpr T cminus(-1);
     size_t nn=0;
     for(int jat=0; jat<Ntargets; ++jat)
     {

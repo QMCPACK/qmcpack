@@ -24,7 +24,7 @@ namespace qmcplusplus
 /** proxy SPOSet
  *
  * This class owns a SPOSet for all the states to be evaluated
- * and will be owned by a DiracDeterminantBase object.
+ * and will be owned by a DiracDeterminant object.
  */
 struct SPOSetProxy: public SPOSet
 {

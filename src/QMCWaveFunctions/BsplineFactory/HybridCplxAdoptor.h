@@ -68,7 +68,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   void gather_tables(Communicate* comm)
   {
     BaseAdoptor::gather_tables(comm);
-    HybridBase::gather_atomic_tables(comm, this->offset_cplx, this->offset_real);
+    HybridBase::gather_atomic_tables(comm, BaseAdoptor::offset);
   }
 
   bool read_splines(hdf_archive& h5f)
@@ -217,6 +217,12 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     }
     else
       BaseAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
+  }
+  
+  template<typename VV, typename GV, typename GGV, typename GGGV>
+  inline void evaluate_vghgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi, GGGV& grad_grad_grad_psi)
+  {
+    APP_ABORT("HybridCplxSoA::evaluate_vghgh not implemented!");
   }
 };
 

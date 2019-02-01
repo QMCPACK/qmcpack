@@ -41,7 +41,7 @@ namespace qmcplusplus
 
 /** base class for Single-particle orbital sets
  *
- * SPOSet stands for S(ingle)P(article)O(rbital)SetBase which contains
+ * SPOSet stands for S(ingle)P(article)O(rbital)Set which contains
  * a number of single-particle orbitals with capabilities of evaluating \f$ \psi_j({\bf r}_i)\f$
  */
 class SPOSet: public QMCTraits
@@ -152,6 +152,8 @@ public:
   virtual void checkObject() const {}
 #endif
 
+  /// create optimizable orbital rotation parameters
+  virtual void buildOptVariables(const std::vector<std::pair<int,int>>& rotations) {}
   ///reset
   virtual void resetParameters(const opt_variables_type& optVariables)=0;
 
@@ -160,9 +162,32 @@ public:
 
   // Evaluate the derivative of the optimized orbitals with
   // respect to the parameters
-  virtual void evaluateDerivatives
-  (ParticleSet& P, int iat, const opt_variables_type& active,
-   ValueMatrix_t& d_phi, ValueMatrix_t& d_lapl_phi) {}
+  virtual void evaluateDerivatives (ParticleSet& P, 
+                                   const opt_variables_type& optvars,
+                                   std::vector<RealType>& dlogpsi, 
+                                   std::vector<RealType>& dhpsioverpsi,
+                                   const ValueType& psiCurrent,
+                                   const std::vector<RealType>& Coeff,
+                                   const std::vector<size_t>& C2node_up,
+                                   const std::vector<size_t>& C2node_dn,
+                                   const ValueVector_t& detValues_up, 
+                                   const ValueVector_t& detValues_dn, 
+                                   const GradMatrix_t& grads_up, 
+                                   const GradMatrix_t& grads_dn, 
+                                   const ValueMatrix_t& lapls_up, 
+                                   const ValueMatrix_t& lapls_dn,
+                                   const ValueMatrix_t& M_up,
+                                   const ValueMatrix_t& M_dn,
+                                   const ValueMatrix_t& Minv_up,
+                                   const ValueMatrix_t& Minv_dn, 
+                                   const GradMatrix_t& B_grad,
+                                   const ValueMatrix_t& B_lapl,
+                                   const std::vector<int>& detData_up,
+                                   const size_t N1,
+                                   const size_t N2,
+                                   const size_t NP1,
+                                   const size_t NP2,
+                                   const std::vector< std::vector<int> >& lookup_tbl){}
 
 
   ///reset the target particleset

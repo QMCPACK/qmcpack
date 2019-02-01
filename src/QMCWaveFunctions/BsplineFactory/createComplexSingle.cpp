@@ -9,9 +9,9 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 
+
 #include "Numerics/e2iphi.h"
 #include "simd/vmath.hpp"
-#include "qmc_common.h"
 #include <Utilities/ProgressReportEngine.h>
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"

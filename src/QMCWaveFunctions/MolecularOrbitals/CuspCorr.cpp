@@ -164,8 +164,9 @@ RealType execute(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,fal
   TinyVector<RealType,3> ddr=0;
   //Rc=Rc_init;
   Rc=cutoff;
-  RealType chi2,chi2Min,phi0,phiMin;
-  RealType tmpo;
+  RealType chi2;
+  //  RealType chi2Min,phi0,phiMin;
+  //  RealType tmpo;
   evaluate(Psi2,ddr,val2,grad2,lapl2);  // eta(0)
   eta0=val2[curOrb];
   ddr=0;

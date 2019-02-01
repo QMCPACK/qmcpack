@@ -1,14 +1,11 @@
 
 // -*- C++ -*-
 /**@file AFQMCFactory.h
- * @brief Top level class for AFQMC. Parses input and performs setup of classes. 
+ * @brief Top level class for AFQMC. Parses input and performs setup of classes.
  */
 
 #ifndef QMCPLUSPLUS_AFQMCFACTORY_H
 #define QMCPLUSPLUS_AFQMCFACTORY_H
-
-//#ifdef AFQMC
-#if 1>0
 
 #include<string>
 #include<vector>
@@ -18,41 +15,60 @@
 #include<Message/MPIObjectBase.h>
 #include "OhmmsApp/RandomNumberControl.h"
 
+#include"mpi3/communicator.hpp"
+
 #include "config.h"
-#include<AFQMC/Drivers/Driver.h>
-#include<AFQMC/Walkers/WalkerHandlerBase.h>
-#include<AFQMC/Hamiltonians/HamiltonianBase.h>
-#include<AFQMC/Estimators/EstimatorHandler.h>
-#include<AFQMC/Propagators/PropagatorBase.h>
-#include<AFQMC/Wavefunctions/WavefunctionHandler.h>
+
+#include "AFQMC/Utilities/taskgroup.h"
+#include<AFQMC/Walkers/WalkerSetFactory.hpp>
+#include<AFQMC/Hamiltonians/HamiltonianFactory.h>
+#include<AFQMC/Wavefunctions/WavefunctionFactory.h>
+#include<AFQMC/Propagators/PropagatorFactory.h>
+#include<AFQMC/Drivers/DriverFactory.h>
 
 #include "OhmmsData/libxmldefs.h"
 
 namespace qmcplusplus
 {
 
-class AFQMCFactory: public MPIObjectBase 
+namespace afqmc
+{
+
+class AFQMCFactory
 {
 
   public:
 
     ///constructor
-    AFQMCFactory(Communicate* c, RandomNumberControl&); 
+    AFQMCFactory(boost::mpi3::communicator& comm_):
+        m_series(0),project_title("afqmc"),
+        gTG(comm_),
+        TGHandler(gTG,-10),
+        InfoMap(),
+        HamFac(InfoMap),
+        WSetFac(InfoMap),
+        WfnFac(InfoMap),
+        PropFac(InfoMap),
+        DriverFac(gTG,TGHandler,InfoMap,WSetFac,PropFac,WfnFac,HamFac)
+    {
+      TimerManager.set_timer_threshold(timer_level_coarse);
+      setup_timers(AFQMCTimers, AFQMCTimerNames,timer_level_coarse);
+    }
 
     ///destructor
     ~AFQMCFactory() {}
 
-    /* 
-     *  Parses xml input and creates all non-executable objects. 
+    /*
+     *  Parses xml input and creates all non-executable objects.
      *  Created objects (pointers actually) are stored in maps based on name in xml block.
      *  Executable sections (drivers) are created with objects already exiting
-     *  in the maps. 
-     */  
+     *  in the maps.
+     */
     bool parse(xmlNodePtr cur);
 
     /*
-     *  Parses xml input and creates executable sections, using objects created during parsing. 
-     */   
+     *  Parses xml input and creates executable sections, using objects created during parsing.
+     */
     bool execute(xmlNodePtr cur);
 
   private:
@@ -60,62 +76,33 @@ class AFQMCFactory: public MPIObjectBase
     int m_series;
     std::string project_title;
 
-    // container of AFQMCInfo objects 
-    std::map<std::string,AFQMCInfo*> InfoMap; 
+    // global TG from which all TGs are constructed
+    GlobalTaskGroup gTG;
 
-    // container of walker handlers
-    std::map<std::string,WalkerHandlerBase*> WalkerMap; 
+    // object that manages the TGs. Must be placed here,
+    // since it must be destroyed last
+    TaskGroupHandler TGHandler;
 
-    // container of hamiltonians 
-    std::map<std::string,HamiltonianBase*> HamMap; 
+    // container of AFQMCInfo objects
+    std::map<std::string,AFQMCInfo> InfoMap;
 
-    // container of estimators 
-    std::map<std::string,EstimatorHandler*> EstimatorMap; 
+    // Hamiltonian factory
+    HamiltonianFactory HamFac;
 
-    // container of propagators 
-    std::map<std::string,PropagatorBase*> PropMap; 
+    // WalkerHandler factory
+    WalkerSetFactory WSetFac;
 
-    // container of wavefunctions
-    std::map<std::string,WavefunctionHandler*> WfnMap; 
+    // Wavefunction factoru
+    WavefunctionFactory WfnFac;
 
-    ///random number controller
-    RandomNumberControl& myRandomControl;     
+    // Propagator factoru
+    PropagatorFactory PropFac;
 
-};
-}
-
-#else
-
-namespace qmcplusplus
-{
-
-class AFQMCFactory: public MPIObjectBase
-{
-
-  public:
-
-    ///constructor
-    AFQMCFactory(Communicate* c); 
-
-    ///destructor
-    ~AFQMCFactory() {} 
-
-    /* 
-     *  Parses xml input and creates all non-executable objects. 
-     *  Created objects (pointers actually) are stored in maps based on name in xml block.
-     *  Executable sections (drivers) are created with objects already exiting
-     *  in the maps. 
-     */  
-    bool parse(xmlNodePtr cur);
-
-    /*
-     *  Parses xml input and creates executable sections, using objects created during parsing. 
-     */   
-    bool execute(xmlNodePtr cur);
+    // driver factory
+    DriverFactory DriverFac;
 
 };
 }
-
-#endif
+}
 
 #endif

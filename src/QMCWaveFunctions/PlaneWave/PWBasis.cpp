@@ -97,7 +97,7 @@ void PWBasis::trimforecut()
   gvecs.clear();
   kplusgvecs_cart.clear();
   minusModKplusG2.reserve(NumPlaneWaves);
-  RealType kcutoff2 = 2.0*ecut; //std::sqrt(2.0*ecut);
+  //  RealType kcutoff2 = 2.0*ecut; //std::sqrt(2.0*ecut);
   int ngIn=NumPlaneWaves;
   for(int ig=0, newig=0; ig<ngIn; ig++)
   {
