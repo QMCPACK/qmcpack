@@ -662,10 +662,10 @@ namespace qmcplusplus
     LCAOrbitalSet *lcos = nullptr;
     LCAOrbitalSetWithCorrection *lcwc = nullptr;
     if (doCuspCorrection) {
-      lcwc =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, rank()==0);
+      lcwc =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet);
       lcos = lcwc;
     } else {
-      lcos=new LCAOrbitalSet(myBasisSet,rank()==0);
+      lcos=new LCAOrbitalSet(myBasisSet);
     }
     loadMO(*lcos, cur);
 

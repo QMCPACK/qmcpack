@@ -15,8 +15,8 @@
 
 namespace qmcplusplus
 {
-LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs, int rl)
-    : LCAOrbitalSet(bs, rl), cusp(ions, els)
+LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs)
+    : LCAOrbitalSet(bs), cusp(ions, els)
 {
 }
 
