@@ -59,14 +59,13 @@ namespace qmcplusplus
         }
       }
 
-      // Consider a way to get this without branch via math operations
       inline int locate(T r) const
       {
         int loc=static_cast<int>(std::log(r/lower_bound)*OneOverLogDelta);
-	// if(loc >= r_values.size())
-	//   loc = r_values.size() - 1;
-	return std::min(static_cast<unsigned long>(loc), r_values.size() - 1);
-	//return loc;
+	if(loc >= r_values.size())
+	  throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_values.back())
+    			      + '\n');
+	return loc;
       }
 
       inline T operator()(int i)
@@ -86,8 +85,8 @@ namespace qmcplusplus
     };
 
   /** multivalue implementation for OneDimQuintic
-   *  While its implied this spline could have complex values
-   *  The fact that it takes r in T is a problem
+   *  Real valued only
+   *  calling any eval method with r >= r_max will throw an exception
    */
 template<typename T>
 class MultiQuinticSpline1D
@@ -134,30 +133,14 @@ public:
     return myGrid.upper_bound;
   }
 
-  /** Approximation of getting the asymtotic constant spline values
-   *  Since this is getting used only for AO's should be 0
-   */ 
-  inline void assignLimitValues(T* u)
-  {
-    std::fill_n(u, num_splines_, T(0));
-  }
-
   inline void evaluate(T r, T* restrict u) 
   {
-    if(r>=r_max)
-      throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
-    			      + '\n');
-
     if(r<myGrid.lower_bound)
     {
       const T dr=r-myGrid.lower_bound;
       const T* restrict a=(*Coeffs)[0];
       for(size_t i=0; i<num_splines_; ++i)
         u[i]=a[i]+first_deriv[i]*dr;
-    }
-    else if(r >= r_max)
-    {
-      assignLimitValues(u);
     }
     else
     {
@@ -179,9 +162,6 @@ public:
 
   inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u)
   {
-    if(r>=r_max)
-      throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
-    			      + '\n');
     if(r<myGrid.lower_bound)
     {
       const T dr=r-myGrid.lower_bound;
@@ -192,13 +172,6 @@ public:
         du[i]=first_deriv[i];
         d2u[i]= T(0);
       }
-    }
-    //should never come to this
-    else if(r>=r_max)
-    {
-      assignLimitValues(u);
-      assignLimitValues(du);
-      assignLimitValues(d2u);
     }
     else
     {
@@ -233,9 +206,6 @@ public:
   /** compute upto 3rd derivatives */
   inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u, T* restrict d3u) 
   {
-    if(r>=r_max)
-      throw std::domain_error("r" + std::to_string(r) + ">=" + std::to_string(r_max)
-    			      + '\n');
     if(r<myGrid.lower_bound)
     {
       const T dr=r-myGrid.lower_bound;
@@ -247,13 +217,6 @@ public:
         d2u[i]= T(0);
         d3u[i]= T(0);
       }
-    }
-    else if (r>=r_max)
-    {
-      assignLimitValues(u);
-      assignLimitValues(du);
-      assignLimitValues(d2u);
-      assignLimitValues(d3u);
     }
     else
     {
