@@ -1251,10 +1251,10 @@ class ChgcarFile(StandardFile):
     def incorporate_xsf(self,xsf):
         poscar = PoscarFile()
         poscar.incorporate_xsf(xsf)
-        density = xsf.remove_ghost()
+        density = xsf.remove_ghost().copy()
         self.poscar         = poscar
         self.grid           = array(density.shape,dtype=int)
-        self.charge_density = density.ravel()
+        self.charge_density = density.ravel(order='F')
         self.check_valid()
     #end def incorporate_xsf
 #end class ChgcarFile
