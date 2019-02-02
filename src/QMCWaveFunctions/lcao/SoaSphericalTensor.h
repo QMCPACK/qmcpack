@@ -51,9 +51,7 @@ struct SoaSphericalTensor
 
   explicit SoaSphericalTensor(const int l_max, bool addsign=false);
 
-#if (__cplusplus >= 201103L)
   SoaSphericalTensor(const SoaSphericalTensor& rhs)=default;
-#endif
 
   ///compute Ylm
   void evaluate_bare(T x, T y, T z, T* Ylm) const;
