@@ -161,33 +161,40 @@ template<class CSR,
 void CSR2MA(char TA, CSR const& A, MultiArray2D& M)
 {
   using Type = typename MultiArray2D::element;
+  using int_type = typename CSR::int_type;
   assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
   if(TA=='N' || TA=='Z')
     M.reextent({A.size(0),A.size(1)});
   else if(TA=='T' || TA=='H')
     M.reextent({A.size(1),A.size(0)});
-  std::fill_n(M.origin(),M.num_elements(),Type(0));
+  using std::fill_n;
+  fill_n(M.origin(),M.num_elements(),Type(0));
   auto pbegin = A.pointers_begin();
   auto pend = A.pointers_end();
-  auto p0 = pbegin[0];
+  int_type p0(pbegin[0]);
   auto v0 = A.non_zero_values_data();
   auto c0 = A.non_zero_indices2_data();
+#ifdef QMC_CUDA
+qmcplusplus::app_log()<<" /**********************************\n";
+qmcplusplus::app_log()<<" Warning: write kernel in CSR2MA. \n";
+qmcplusplus::app_log()<<" /**********************************\n";
+#endif
   if(TA=='N') {
     for(int i=0; i<A.size(0); i++)
-      for(int ip=pbegin[i]; ip<pend[i]; ip++)
-        M[i][c0[ip-p0]] = static_cast<Type>(v0[ip-p0]);
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[i][c0[ip-p0]] = Type(v0[ip-p0]);
   } else if(TA=='Z') {
     for(int i=0; i<A.size(0); i++)
-      for(int ip=pbegin[i]; ip<pend[i]; ip++)
-        M[i][c0[ip-p0]] = static_cast<Type>(conj(v0[ip-p0]));
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[i][c0[ip-p0]] = conj(Type(v0[ip-p0]));
   } else if(TA=='T') {
     for(int i=0; i<A.size(0); i++)
-      for(int ip=pbegin[i]; ip<pend[i]; ip++)
-        M[c0[ip-p0]][i] = static_cast<Type>(v0[ip-p0]);
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[c0[ip-p0]][i] = Type(v0[ip-p0]);
   } else if(TA=='H') {
     for(int i=0; i<A.size(0); i++)
-      for(int ip=pbegin[i]; ip<pend[i]; ip++)
-        M[c0[ip-p0]][i] = static_cast<Type>(conj(v0[ip-p0]));
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[c0[ip-p0]][i] = conj(Type(v0[ip-p0]));
   }
 }
 

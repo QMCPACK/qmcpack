@@ -1175,7 +1175,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             std::move(nocc_per_kp),std::move(QKtok2),std::move(H1),std::move(haj),
             std::move(LQKikn),std::move(LQKank),std::move(LQKakn),std::move(vn0),
             std::move(gQ),nsampleQ,E0,device_allocator<ComplexType>{},
-            make_node_allocator<ComplexType>(TG),global_ncvecs));
+            global_ncvecs));
 
 }
 

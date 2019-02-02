@@ -232,8 +232,8 @@ template<class T, class SparseMatrixA, class MultiArray2DB, class MultiArray2DC,
         typename = void // TODO change to use dispatch 
 >
 MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C){
-        using elementA = typename SparseMatrixA::element; 
-        using elementB = typename MultiArray2DB::element; 
+        using elementA = std::remove_cv_t<typename SparseMatrixA::element>; 
+        using elementB = std::remove_cv_t<typename MultiArray2DB::element>; 
         using elementC = typename std::decay<MultiArray2DC>::type::element;
         static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
         static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");

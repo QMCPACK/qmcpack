@@ -20,6 +20,7 @@
 #include "AFQMC/Matrix/csr_hdf5_readers.hpp"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
+#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Wavefunctions/NOMSD.hpp"
 #include "AFQMC/Wavefunctions/PHMSD.hpp"
 #include "AFQMC/HamiltonianOperations/HamOpsIO.hpp"
@@ -287,13 +288,18 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n"); 
 
-//    if(TG.TG_local().size()==1)
-//      return Wavefunction(NOMSD_serial(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
-//                        walker_type,NCE,targetNW)); 
-//    else
-//      return Wavefunction(NOMSD_shared(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
-//                        walker_type,NCE,targetNW)); 
-    return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
+// make factory function!!!
+#ifdef QMC_CUDA
+      SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
+                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+#else
+      SlaterDetOperations SDetOp( SlaterDetOperations_shared<ComplexType>(
+                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+#endif
+
+    return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW)); 
   } else if(type == "phmsd") {
 
@@ -738,7 +744,18 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
     HamiltonianOperations HOps(loadHamOps(dump,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
 
-    return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
+// make factory function!!!
+#ifdef QMC_CUDA
+      SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
+                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+#else
+      SlaterDetOperations SDetOp( SlaterDetOperations_shared<ComplexType>(
+                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+#endif
+
+    return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW));
   } else if(type == "phmsd") {
 /*

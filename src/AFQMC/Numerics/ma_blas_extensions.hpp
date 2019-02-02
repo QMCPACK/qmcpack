@@ -36,7 +36,7 @@ template<class T,
 void adotpby(T const alpha, MultiArray1Dx const& x, MultiArray1Dy const& y, Q const beta, ptr res){
         assert(x.size() == y.size());
         adotpby(x.size(), alpha, x.origin(), x.stride(0),
-                                        y.origin(), y.stride(0), beta, res);
+                                        y.origin(), y.stride(0), beta, to_address(res));
 }
 
 template<class T,

@@ -88,9 +88,8 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
              <<"          Consider increasing vbias_bound. max(vMF[n]), vbias_bound: " 
              <<vmax <<" " <<vbias_bound <<std::endl;
 
-  // assemble H1(i,j) = h(i,j) + vn0(i,j) + sum_n vMF[n]*Spvn(i,j,n)
-  //boost::multi::array<ComplexType,2> H1_(wfn.getOneBodyPropagatorMatrix(TG,vMF_));
-  //CMatrix H1(H1_);
+  // assemble H1(i,j) = h(i,j) + vn0(i,j) + sum_n vMF[n]*Spvn(i,j,n) 
+  // Note: H1 matrix is being copied to the device if necessary
   CMatrix H1(wfn.getOneBodyPropagatorMatrix(TG,vMF_));
 
   if(TG.getNNodesPerTG() == 1) 

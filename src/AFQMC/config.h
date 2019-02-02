@@ -67,7 +67,7 @@ namespace afqmc
   template<class T>
   using shared_allocator = boost::mpi3::intranode::allocator<T>;
   template<class T>
-  using shared_ptr = typename shared_allocator<T>::pointer; 
+  using shm_pointer = typename shared_allocator<T>::pointer; 
 
 #if defined(QMC_CUDA)
   template<class T>  using device_allocator = qmc_cuda::cuda_gpu_allocator<T>;
@@ -101,7 +101,7 @@ namespace afqmc
   node_allocator<T> make_node_allocator(TG& t_) {return node_allocator<T>{t_.Node()};}
 /*   Temporary fix for the conflict problem between cpu and gpu pointers. Find proper fix */
   template<class T> device_ptr<T> make_device_ptr(T* p) { return p; }
-  template<class T> device_ptr<T> make_device_ptr(shared_ptr<T> p) 
+  template<class T> device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p) 
     { return device_ptr<T>{to_address(p)}; }
 #endif
 

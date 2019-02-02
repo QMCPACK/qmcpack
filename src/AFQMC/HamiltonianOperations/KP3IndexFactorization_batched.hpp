@@ -119,13 +119,9 @@ class KP3IndexFactorization_batched
                  int nsampleQ_,
                  ValueType e0_,
                  Allocator const& alloc_,
-                 Allocator_shared const& alloc_shared_,
                  int gncv): 
         allocator_(alloc_),
         sp_allocator_(alloc_),
-        allocator_shared_(alloc_shared_),
-        sp_allocator_shared_(alloc_shared_),
-        iallocator_shared_(alloc_shared_),
         walker_type(type),
         global_nCV(gncv),
         E0(e0_),
@@ -145,7 +141,7 @@ class KP3IndexFactorization_batched
         generator(),
         distribution(gQ.begin(),gQ.end()), 
         nsampleQ(nsampleQ_),
-        SM_TMats({1,1},sp_allocator_shared_),
+        BTMats({1,1},sp_allocator_),
         TMats({1,1},sp_allocator_),
         IMats({1,1},IAllocator{allocator_}),
         KKTransID( {nopk.size()+1,nopk.size()}, BAllocator{allocator_}),
@@ -344,10 +340,10 @@ class KP3IndexFactorization_batched
         if(not getKr) mem_needs += nwalk*local_nCV;
         if(not getKl) mem_needs += nwalk*local_nCV;
       }
-      set_shm_buffer(mem_needs);
+      set_buffer(mem_needs);
 
       // messy
-      sp_pointer_shared Krptr, Klptr; 
+      sp_pointer Krptr, Klptr; 
       size_t Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
@@ -358,7 +354,7 @@ class KP3IndexFactorization_batched
           assert(KEright->stride() == KEright->size(1));
           Krptr = make_device_ptr(KEright->origin()); 
         } else {
-          Krptr = SM_TMats.origin(); 
+          Krptr = BTMats.origin(); 
           cnt += nwalk*local_nCV;
         }
         if(getKl) {
@@ -366,7 +362,7 @@ class KP3IndexFactorization_batched
           assert(KEleft->stride(0) == KEleft->size(1));
           Klptr = make_device_ptr(KEleft->origin());
         } else {
-          Klptr = SM_TMats.origin()+cnt; 
+          Klptr = BTMats.origin()+cnt; 
           cnt += nwalk*local_nCV;
         }
         fill_n(Krptr,Knr*Knc,SPComplexType(0.0));
@@ -388,7 +384,7 @@ class KP3IndexFactorization_batched
       // later on, rewrite routine to loop over spins, to avoid storage of both spin
       // components simultaneously
       Timers[Timer_E1]->start();
-      Sp4Tensor_ref GKK(SM_TMats.origin()+cnt,
+      Sp4Tensor_ref GKK(BTMats.origin()+cnt,
                         {nspin,nkpts,nkpts,nwalk*nmo_max*nocc_max});
       GKaKjw_to_GKKwaj(G3Da,GKK[0],nelpk[nd].sliced(0,nkpts),dev_nelpk[nd],dev_a0pk[nd]);
       if(walker_type==COLLINEAR)  
@@ -640,10 +636,10 @@ class KP3IndexFactorization_batched
         if(not getKr) mem_needs += nwalk*local_nCV;
         if(not getKl) mem_needs += nwalk*local_nCV;
       }
-      set_shm_buffer(mem_needs);
+      set_buffer(mem_needs);
 
       // messy
-      sp_pointer_shared Krptr, Klptr;
+      sp_pointer Krptr, Klptr;
       size_t Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
@@ -654,7 +650,7 @@ class KP3IndexFactorization_batched
           assert(KEright->stride() == KEright->size(1));
           Krptr = make_device_ptr(KEright->origin());
         } else {
-          Krptr = SM_TMats.origin();
+          Krptr = BTMats.origin();
           cnt += nwalk*local_nCV;
         }
         if(getKl) {
@@ -662,7 +658,7 @@ class KP3IndexFactorization_batched
           assert(KEleft->stride(0) == KEleft->size(1));
           Klptr = make_device_ptr(KEleft->origin());
         } else {
-          Klptr = SM_TMats.origin()+cnt;
+          Klptr = BTMats.origin()+cnt;
           cnt += nwalk*local_nCV;
         }
         fill_n(Krptr,Knr*Knc,SPComplexType(0.0));
@@ -681,7 +677,7 @@ class KP3IndexFactorization_batched
       C3Tensor_cref G3Db(make_device_ptr(Gc.origin())+G3Da.num_elements()*(nspin-1),
                             {noccb_tot,nmo_tot,nwalk} );
 
-      Sp4Tensor_ref GKK(SM_TMats.origin()+cnt,
+      Sp4Tensor_ref GKK(BTMats.origin()+cnt,
                         {nspin,nkpts,nkpts,nwalk*nmo_max*nocca_max});
       cnt+=GKK.num_elements();
       GKaKjw_to_GKKwaj(G3Da,GKK[0],nelpk[nd].sliced(0,nkpts),dev_nelpk[nd],dev_a0pk[nd]);
@@ -995,10 +991,10 @@ class KP3IndexFactorization_batched
       SPComplexType one(1.0,0.0);
       SPComplexType im(0.0,1.0);
       size_t mem_needs((nkpts+1)*nkpts*nwalk*nmo_max*nmo_max + nwalk*2*nkpts*nchol_max);
-      if(SM_TMats.num_elements() < mem_needs) SM_TMats.reextent({mem_needs,1});
+      if(BTMats.num_elements() < mem_needs) BTMats.reextent({mem_needs,1});
 
-      Sp3Tensor_ref vKK(SM_TMats.origin(),{nkpts+1,nkpts,nwalk*nmo_max*nmo_max} );
-      Sp4Tensor_ref XQnw(SM_TMats.origin()+vKK.num_elements(),{nkpts,2,nchol_max,nwalk} );
+      Sp3Tensor_ref vKK(BTMats.origin(),{nkpts+1,nkpts,nwalk*nmo_max*nmo_max} );
+      Sp4Tensor_ref XQnw(BTMats.origin()+vKK.num_elements(),{nkpts,2,nchol_max,nwalk} );
       fill_n(XQnw.origin(),XQnw.num_elements(),SPComplexType(0.0));
 
       Timers[Timer_vHS1]->start();
@@ -1186,7 +1182,7 @@ class KP3IndexFactorization_batched
 
       // space for GQK and for v1
       size_t mem_needs(nkpts*nkpts*nwalk*nocca_max*nmo_max + (nkpts+1)*nchol_max*nwalk); 
-      if(SM_TMats.num_elements() < mem_needs) SM_TMats.reextent({mem_needs,1});
+      if(BTMats.num_elements() < mem_needs) BTMats.reextent({mem_needs,1});
 
       assert(G.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
       C3Tensor_cref G3Da(make_device_ptr(G.origin()),{nocca_tot,nmo_tot,nwalk} );
@@ -1198,7 +1194,7 @@ class KP3IndexFactorization_batched
       }
 
       for(int spin=0; spin<nspin; spin++) {
-        Sp3Tensor_ref v1(SM_TMats.origin(),{nkpts+1,nchol_max,nwalk});
+        Sp3Tensor_ref v1(BTMats.origin(),{nkpts+1,nchol_max,nwalk});
         Sp3Tensor_ref GQ(v1.origin()+v1.num_elements(),{nkpts,nkpts*nocc_max*nmo_max,nwalk} );
         fill_n(GQ.origin(),GQ.num_elements(),SPComplexType(0.0));
 
@@ -1238,7 +1234,6 @@ class KP3IndexFactorization_batched
                                                 Aarray.size());
         Timers[Timer_vbias2]->stop();
 
-
         Timers[Timer_vbias3]->start();
         vbias_from_v1(halfa,v1,v);
         Timers[Timer_vbias3]->stop();
@@ -1267,9 +1262,6 @@ class KP3IndexFactorization_batched
 
     Allocator allocator_;
     SpAllocator sp_allocator_;
-    Allocator_shared allocator_shared_;
-    SpAllocator_shared sp_allocator_shared_;
-    IAllocator_shared iallocator_shared_;
 
     WALKER_TYPES walker_type;
 
@@ -1323,7 +1315,7 @@ class KP3IndexFactorization_batched
 
     // shared buffer space
     // using matrix since there are issues with vectors
-    shmSpMatrix SM_TMats;
+    SpMatrix BTMats;
     SpMatrix TMats;
     IMatrix IMats;
 
@@ -1345,9 +1337,9 @@ class KP3IndexFactorization_batched
 //    std::default_random_engine generator;
 //    std::uniform_real_distribution<RealType> distribution(RealType(0.0),Realtype(1.0));
 
-    void set_shm_buffer(size_t N) {
-      if(SM_TMats.num_elements() < N) 
-        SM_TMats.reextent({N,1});
+    void set_buffer(size_t N) {
+      if(BTMats.num_elements() < N) 
+        BTMats.reextent({N,1});
     }
 
     template<class MatA, class MatB, class IVec, class IVec2>
@@ -1416,6 +1408,7 @@ class KP3IndexFactorization_batched
       vbias_from_v1(nwalk,nkpts,nchol_max,Q0,dev_kminus.origin(),
                              dev_ncholpQ.origin(),dev_ncholpQ0.origin(),
                              a,v1.origin(),to_address(make_device_ptr(vbias.origin())));
+
     }
 
     enum THCTimers

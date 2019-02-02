@@ -88,6 +88,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
     int nc = ncholpQ[Q];
     int ncm = ncholpQ[Qm];
     int Qm_ = Qm;
+    int ntot = nc*nwalk;
     if(Q==Q0) Qm_=nkpts;
 
     // v+
@@ -95,22 +96,18 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
     auto v1_(v1 + Q*nchol_max*nwalk );
     auto v2_(v1 + Qm_*nchol_max*nwalk );
     // v+ = a*(v[Q]+v[-Q]) 
-    for(int n=0, nw=0; n<nc; ++n)
-      for(int w=0; w<nwalk; ++w, nw+=nwalk)
-        vb_[ nw+w ] += alpha*static_cast<std::complex<T>>(v1_[ nw+w ]);
-    for(int n=0, nw=0; n<ncm; ++n, nw+=nwalk)
-      for(int w=0; w<nwalk; ++w)
-        vb_[ nw+w ] += alpha*static_cast<std::complex<T>>(v2_[ nw+w ]);
+    for(int n=0; n<ntot; ++n)
+      vb_[ n ] += alpha*static_cast<std::complex<T>>(v1_[ n ]);
+    for(int n=0; n<ntot; ++n)
+      vb_[ n ] += alpha*static_cast<std::complex<T>>(v2_[ n ]);
     // v-
     vb_ = (vb + (nc0+nc)*nwalk);
     // v- = -a*i*(v[Q]-v[-Q]) 
     auto ialpha(alpha*std::complex<double>(0.0,1.0));
-    for(int n=0, nw=0; n<nc; n++)
-      for(int w=0; w<nwalk; w++, nw+=nwalk)
-        vb_[ nw+w ] -= ialpha*static_cast<std::complex<T>>(v1_[ nw+w ]);
-    for(int n=0, nw=0; n<ncm; n++)
-      for(int w=0; w<nwalk; w++, nw+=nwalk)
-        vb_[ nw+w ] += ialpha*static_cast<std::complex<T>>(v2_[ nw+w ]);
+    for(int n=0; n<ntot; ++n)
+      vb_[ n ] -= ialpha*static_cast<std::complex<T>>(v1_[ n ]);
+    for(int n=0; n<ntot; ++n)
+      vb_[ n ] += ialpha*static_cast<std::complex<T>>(v2_[ n ]);
   }
 }
 

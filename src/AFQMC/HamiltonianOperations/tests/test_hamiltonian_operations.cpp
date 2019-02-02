@@ -59,7 +59,7 @@ template<class Alloc>
 void ham_ops_basic_serial(boost::mpi3::communicator & world)
 {
 
-  using pointer = typename Alloc::pointer;
+  using pointer = device_ptr<ComplexType>; 
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -123,21 +123,19 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
 #endif
 
     Alloc alloc_(make_localTG_allocator<ComplexType>(TG));
-    boost::multi::array<ComplexType,3,Alloc> devOrbMat(OrbMat);
+    boost::multi::array<ComplexType,3,Alloc> devOrbMat(OrbMat, alloc_);
     std::vector<devPsiT_Matrix> devPsiT(move_vector<devPsiT_Matrix>(std::move(PsiT)));
-std::cout<<"here 0 " <<std::endl;
 
     CMatrix G({NEL,NMO},alloc_);
-std::cout<<"here 1 " <<std::endl;
-    pointer Ovlp = alloc_.allocate(1);
+    typename Alloc::pointer Ovlp = alloc_.allocate(1);
     SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0],
         G.sliced(0,NAEA),to_address(Ovlp),true);
-std::cout<<"here 2 " <<std::endl;
     if(WTYPE==COLLINEAR) {
-      pointer Ovlp_;
+      typename Alloc::pointer Ovlp_ = alloc_.allocate(1);
       SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}),
         G.sliced(NAEA,NAEA+NAEB),to_address(Ovlp_),true);
       (*Ovlp) *= (*Ovlp_); 
+      alloc_.deallocate(Ovlp_,1);
     }
     REQUIRE( real(*Ovlp) == Approx(1.0) );
     REQUIRE( imag(*Ovlp) == Approx(0.0) );

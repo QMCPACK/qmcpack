@@ -59,10 +59,11 @@ namespace qmcplusplus
 
 using namespace afqmc;
 
-TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
+template<class Allocator>
+void wfn_fac_sdet(boost::mpi3::communicator & world)
 {
-  OHMMS::Controller->initialize(0, NULL);
-  auto world = boost::mpi3::environment::get_world_instance();
+
+  using pointer = device_ptr<ComplexType>;
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -100,6 +101,8 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
+
+    Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
 const char *wlk_xml_block_closed =
 "<WalkerSet name=\"wset0\">  \
@@ -158,14 +161,11 @@ const char *wlk_xml_block_noncol =
 
       wfn.Overlap(wset);
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
-std::cout<<" here 0 " <<std::endl;
         REQUIRE(real(*it->overlap()) == Approx(1.0));
-std::cout<<" here 1 " <<std::endl;
         REQUIRE(imag(*it->overlap()) == Approx(0.0));
-std::cout<<" here 2 " <<std::endl;
       }
 
-      using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+      using CMatrix = ComplexMatrix<Allocator>;
 
       qmcplusplus::Timer Time;
       double t1;
@@ -189,12 +189,12 @@ std::cout<<" here 2 " <<std::endl;
       auto size_of_G = wfn.size_of_G_for_vbias();
       int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
       int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
-      shmCMatrix G({Gdim1,Gdim2},shared_allocator<ComplexType>{TG.TG_local()});
+      CMatrix G({Gdim1,Gdim2},alloc_);
       wfn.MixedDensityMatrix_for_vbias(wset,G);
 
       double sqrtdt = std::sqrt(0.01);
       auto nCV = wfn.local_number_of_cholesky_vectors();
-      shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
+      CMatrix X({nCV,nwalk},alloc_);
       Time.restart();
       wfn.vbias(G,X,sqrtdt);
       TG.local_barrier();
@@ -221,7 +221,7 @@ std::cout<<" here 2 " <<std::endl;
 
       int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
       int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
-      shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
+      CMatrix vHS({vdim1,vdim2},alloc_);
       Time.restart();
       wfn.vHS(X,vHS,sqrtdt);
       TG.local_barrier();
@@ -1252,6 +1252,24 @@ else
 
 #endif
   }
+}
+
+TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+
+#ifdef QMC_CUDA
+  auto node = world.split_shared(world.rank());
+
+  qmc_cuda::CUDA_INIT(node);
+  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+#else
+  using Alloc = shared_allocator<ComplexType>;
+#endif
+
+  wfn_fac_sdet<Alloc>(world);
+
 }
 
 }

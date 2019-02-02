@@ -41,6 +41,24 @@ namespace qmc_cuda
     throw std::runtime_error("Error: Calling qmc_cuda::csrmm catch all.");
   }
 
+  template<typename T, typename Q, class ptrA, class ptrI, class ptrI2, class ptrB, class ptrC>
+  void csrmv(const char transa, const int M, const int K, T alpha, const char *matdescra,
+        ptrA A, ptrI indx, ptrI2 pntrb,
+        ptrI2 pntre, ptrB x, Q beta,
+        ptrC y  )
+  {
+    std::cout<<" types: "
+             <<"  T: " <<typeid(alpha).name() <<"\n"
+             <<"  Q: " <<typeid(beta).name() <<"\n"
+             <<"  ptrA: " <<typeid(A).name() <<"\n"
+             <<"  ptrI: " <<typeid(indx).name() <<"\n"
+             <<"  ptrI2: " <<typeid(pntrb).name() <<"\n"
+             <<"  ptrB: " <<typeid(x).name() <<"\n"
+             <<"  ptrC: " <<typeid(y).name() <<std::endl;
+    print_stacktrace
+    throw std::runtime_error("Error: Calling qmc_cuda::csrmv catch all.");
+  }
+
 
 }
 

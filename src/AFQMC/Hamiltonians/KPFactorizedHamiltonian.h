@@ -10,6 +10,7 @@
 #include "io/hdf_archive.h"
 
 #include "AFQMC/config.h"
+#include "AFQMC/Memory/utilities.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
 
@@ -49,6 +50,14 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
     m_param.add(nsampleQ,"nsampleQ","int");
     m_param.put(cur);
 
+    if(number_of_devices() > 0) {
+      app_log()<<" Computing devices found, setting batched to yes.\n";
+      batched = "yes"; 
+    }
+    if(omp_get_num_threads() > 0 && (batched != "yes" && batched != "true")) {
+      app_log()<<" WARNING!!!: Found OMP_NUM_THREADS > 1 with batched=no.\n"
+               <<"             This will lead to low performance. Set batched=yes. \n"; 
+    }
   }
 
   ~KPFactorizedHamiltonian() {}

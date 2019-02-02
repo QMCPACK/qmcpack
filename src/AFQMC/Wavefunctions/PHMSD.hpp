@@ -254,7 +254,7 @@ class PHMSD: public AFQMCInfo
     template<class MatX, class MatA>
     void vHS(MatX&& X, MatA&& v, double a=1.0) {
       assert( X.size(0) == HamOp.local_number_of_cholesky_vectors() );
-      if(transposed_G_for_vbias_)
+      if(transposed_vHS_)
         assert( X.size(1) == v.size(0) );
       else    
         assert( X.size(1) == v.size(1) );
@@ -318,8 +318,8 @@ class PHMSD: public AFQMCInfo
     template<class WlkSet, class MatG, class TVec>
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
-    template<class WlkSet, class MatG>
-    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVector& denom, bool path_restoration=false, bool free_projection=false);
+    template<class WlkSet, class MatG, class CVec>
+    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false);
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
      *   with a format consistent with (and expected by) the vbias routine.

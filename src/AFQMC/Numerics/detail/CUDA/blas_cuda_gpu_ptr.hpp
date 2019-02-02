@@ -164,12 +164,12 @@ namespace qmc_cuda
   template<typename T, typename T1, typename T2, typename Q1, typename Q2>
   inline static void adotpby(int const n, T1 const alpha, cuda_gpu_ptr<Q1> x, int const incx, 
                                 cuda_gpu_ptr<Q2> y, int const incy, 
-                                T2 const beta, cuda_gpu_ptr<T> result)
+                                T2 const beta, T* result)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T1>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T1>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<T2>::type,T>::value,"Wrong dispatch.\n");
-    kernels::adotpby(n,alpha,to_address(x),incx,to_address(y),incy,beta,to_address(result));
+    kernels::adotpby(n,alpha,to_address(x),incx,to_address(y),incy,beta,result);
   }
 
   // axty

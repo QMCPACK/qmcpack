@@ -246,7 +246,7 @@ struct cuda_gpu_ptr: base_cuda_gpu_ptr{
   reference operator[](std::ptrdiff_t n) const { return reference(cuda_gpu_ptr{impl_ + n}); }
   T* operator->() const{return impl_;}
   explicit operator bool() const{return (impl_!=nullptr);}
-  operator cuda_gpu_ptr<T const>() const{return cuda_gpu_ptr<T const>{impl_}; }
+//  operator cuda_gpu_ptr<T const>() const{return cuda_gpu_ptr<T const>{impl_}; }
   auto operator+(std::ptrdiff_t n) const{return cuda_gpu_ptr{impl_ + n};} 
   std::ptrdiff_t operator-(cuda_gpu_ptr other) const{return std::ptrdiff_t(impl_-other.impl_);}
   cuda_gpu_ptr& operator++() {++impl_; return *this;} 
