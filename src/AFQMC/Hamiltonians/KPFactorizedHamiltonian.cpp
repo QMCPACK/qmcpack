@@ -33,17 +33,14 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
 	     double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
 	     hdf_archive& hdf_restart) {
 
-#ifndef QMC_CUDA
-  if(TG.TG_local().size() > 1 && not (batched=="yes" || batched == "true" ))
+  if(TG.TG_local().size() > 1 || not (batched=="yes" || batched == "true" ))
     return getHamiltonianOperations_shared(pureSD,addCoulomb,type,PsiT,cutvn,cutv2,
                                             TGprop,TGwfn,hdf_restart);
   else
-#endif
     return getHamiltonianOperations_batched(pureSD,addCoulomb,type,PsiT,cutvn,cutv2,
                                             TGprop,TGwfn,hdf_restart);
 }
 
-#ifndef QMC_CUDA
 HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(bool pureSD,
 	     bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
 	     double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
@@ -595,7 +592,6 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
             std::move(LQKank),std::move(vn0),std::move(gQ),nsampleQ,E0,global_ncvecs));
 
 }
-#endif
 
 HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(bool pureSD,
 	     bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,

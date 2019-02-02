@@ -21,6 +21,7 @@
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/SimpleRandom.h"
 #include "Utilities/Timer.h"
+#include "Utilities/OutputManager.h"
 
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
@@ -1258,6 +1259,7 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
+  if(not world.root()) infoLog.pause();
 
 #ifdef QMC_CUDA
   auto node = world.split_shared(world.rank());
