@@ -2,6 +2,14 @@ from __future__ import print_function
 
 from sympy import Eq
 
+# Perform equation manipulations as one might use when working by hand to put
+# equations into a particular form - e.g. moving all the terms of one type to
+# one side.
+# There is also a function to extract coefficients for a particular symbol,
+# used for creating the matrix of coefficients from a set of equations.
+
+# Used by scripts that symbolically derive equations (cubic splines, etc)
+
 # Move symbols in sym_list from left hand side of equation to right hand side
 def move_terms(eqn, sym_list):
     new_lhs = eqn.lhs
@@ -22,6 +30,7 @@ def move_terms_left(eqn, sym_list):
         new_rhs = new_rhs - c*sym
     return Eq(new_lhs, new_rhs)
 
+# Move all there terms in the symbol lists to the respective side of the equation
 def divide_terms(eqn, sym_list_left, sym_list_right):
     #print 'start',eqn
     eqn1 = move_terms(eqn, sym_list_right)
@@ -33,7 +42,8 @@ def divide_terms(eqn, sym_list_left, sym_list_right):
 def mult_eqn(eqn, e):
     return Eq(eqn.lhs*e, eqn.rhs*e)
 
-# for all values other than the target, set to zero
+# Extract coefficient from an expression for the symbol 'sym'.
+# Works by setting all values in symlist to zero, except the target in 'sym'.
 def get_coeff_for(expr, sym, symlist):
     # expression
     # symbol to get coefficient for

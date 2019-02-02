@@ -3,8 +3,22 @@ from __future__ import print_function
 from sympy import *
 from eqn_manip import *
 
-# See for more explanation, see
+# Solve for cubic spline coefficients using a straightforward (but inefficient) derivation
+#  from the defining equations.
+
+# Generates unit tests for the spline coefficient solver (NRCubicSpline in NRSplineFunctions.h)
+# and the evaluation routines (OneDimCubicSpline in OneDimCubicSpline.h)
+# Run this script when these unit tests need updating or expanding.
+#   (The computation for the 4-knot case may take a few minutes)
+# Put the output of this script into test_one_dim_cubic_spline.cpp, and then run through
+# clang-format to clean it up.
+
+# See for more explanation of the derivation, see
 # https://github.com/QMCPACK/qmc_algorithms/blob/master/Wavefunctions/Cubic%20Splines%20Basic.ipynb
+
+
+
+# Symbols useful enough to be global
 
 # Distance to knot, for non-uniform knots
 t = IndexedBase('t')
