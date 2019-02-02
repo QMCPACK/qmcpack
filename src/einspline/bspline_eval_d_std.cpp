@@ -32,39 +32,56 @@ extern const double* restrict d2Ad;
 /* 1D double-precision, real evaluation functions           */
 /************************************************************/
 
-/* Value only */
+/** Offset is i remainder is t
+ */
+void get_coeff_offset_remainder_UBspline_1d_d(const UBspline_1d_d * const restrict spline,
+					     double x,
+					     int& i,
+					     double& t)
+{
+  x -= spline->x_grid.start;
+  double u = x*spline->x_grid.delta_inv;
+  double ipart;
+  t = modf (u, &ipart);
+  //This is necessary to prevent overflow reads
+  i = std::max(0, (int) ipart);
+  if (spline->xBC.lCode == NATURAL && i >= spline->x_grid.num-1)
+  {
+    i = spline->x_grid.num-2;
+    t = 0.99999999999; //Should be double closest to but less than one
+  }
+  else
+    i = std::min(i,spline->x_grid.num-1);
+}
+
+/** Value only */
 void
 eval_UBspline_1d_d (UBspline_1d_d * restrict spline,
                     double x, double* restrict val)
 {
-  x -= spline->x_grid.start;
-  double u = x*spline->x_grid.delta_inv;
-  double ipart, t;
-  t = modf (u, &ipart);
-  int i = (int) ipart;
+  int i;
+  double t;
+  get_coeff_offset_remainder_UBspline_1d_d(spline, x, i, t);
   double tp[4];
   tp[0] = t*t*t;
   tp[1] = t*t;
   tp[2] = t;
   tp[3] = 1.0;
   double* restrict coefs = spline->coefs;
-  *val =
-    (coefs[i+0]*(Ad[ 0]*tp[0] + Ad[ 1]*tp[1] + Ad[ 2]*tp[2] + Ad[ 3]*tp[3])+
-     coefs[i+1]*(Ad[ 4]*tp[0] + Ad[ 5]*tp[1] + Ad[ 6]*tp[2] + Ad[ 7]*tp[3])+
-     coefs[i+2]*(Ad[ 8]*tp[0] + Ad[ 9]*tp[1] + Ad[10]*tp[2] + Ad[11]*tp[3])+
-     coefs[i+3]*(Ad[12]*tp[0] + Ad[13]*tp[1] + Ad[14]*tp[2] + Ad[15]*tp[3]));
+  *val = coefs[i+0]*(Ad[ 0]*tp[0] + Ad[ 1]*tp[1] + Ad[ 2]*tp[2] + Ad[ 3]*tp[3]);
+  *val += coefs[i+1]*(Ad[ 4]*tp[0] + Ad[ 5]*tp[1] + Ad[ 6]*tp[2] + Ad[ 7]*tp[3]);
+  *val += coefs[i+2]*(Ad[ 8]*tp[0] + Ad[ 9]*tp[1] + Ad[10]*tp[2] + Ad[11]*tp[3]);
+  *val += coefs[i+3]*(Ad[12]*tp[0] + Ad[13]*tp[1] + Ad[14]*tp[2] + Ad[15]*tp[3]);
 }
 
-/* Value and first derivative */
+/** Value and first derivative */
 void
 eval_UBspline_1d_d_vg (UBspline_1d_d * restrict spline, double x,
                        double* restrict val, double* restrict grad)
 {
-  x -= spline->x_grid.start;
-  double u = x*spline->x_grid.delta_inv;
-  double ipart, t;
-  t = modf (u, &ipart);
-  int i = (int) ipart;
+  int i;
+  double t;
+  get_coeff_offset_remainder_UBspline_1d_d(spline, x, i, t);
   double tp[4];
   tp[0] = t*t*t;
   tp[1] = t*t;
@@ -88,11 +105,9 @@ eval_UBspline_1d_d_vgl (UBspline_1d_d * restrict spline, double x,
                         double* restrict val, double* restrict grad,
                         double* restrict lapl)
 {
-  x -= spline->x_grid.start;
-  double u = x*spline->x_grid.delta_inv;
-  double ipart, t;
-  t = modf (u, &ipart);
-  int i = (int) ipart;
+  int i;
+  double t;
+  get_coeff_offset_remainder_UBspline_1d_d(spline, x, i, t);
   double tp[4];
   tp[0] = t*t*t;
   tp[1] = t*t;

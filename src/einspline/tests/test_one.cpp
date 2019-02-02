@@ -28,12 +28,13 @@ using std::string;
 
 TEST_CASE("double_1d_natural", "[einspline]")
 {
+  // two point case
   Ugrid x_grid;
   x_grid.start = 1.0;
   x_grid.end = 10.0;
   x_grid.num = 2;
 
-  double data[2];
+  double data[3];
   data[0] = 2.0; data[1] = 3.0;
 
   BCtype_d xBC;
@@ -47,6 +48,11 @@ TEST_CASE("double_1d_natural", "[einspline]")
   eval_UBspline_1d_d(s, 1.0, &val);
   REQUIRE(val == Approx(2.0));
 
+  eval_UBspline_1d_d(s, 9.9999999, &val);
+  REQUIRE(val == Approx(3.0));
+
+  // NO! this results in ipart = 1 reads outside of the coefs allocation
+  // No code that ever calls this function with xBC.lCode = NATURAL may have x >= xgrid.end
   eval_UBspline_1d_d(s, 10.0, &val);
   REQUIRE(val == Approx(3.0));
 
@@ -54,6 +60,36 @@ TEST_CASE("double_1d_natural", "[einspline]")
   REQUIRE(val == Approx(2.5));
 
   destroy_Bspline(s);
+
+  // three point case
+  x_grid.start = 1.0;
+  x_grid.end = 10.0;
+  x_grid.num = 3;
+
+  data[0] = 2.0; data[1] = 2.7; data[2] = 3.0;
+
+  xBC.lCode = NATURAL;
+  xBC.rCode = NATURAL;
+  s = create_UBspline_1d_d(x_grid, xBC, data);
+
+  REQUIRE(s);
+
+  eval_UBspline_1d_d(s, 1.0, &val);
+  REQUIRE(val == Approx(2.0));
+
+  eval_UBspline_1d_d(s, 9.9999999, &val);
+  REQUIRE(val == Approx(3.0));
+
+  // NO! this results in ipart = 1 reads outside of the coefs allocation
+  // No code that ever calls this function with xBC.lCode = NATURAL may have x >= xgrid.end
+  eval_UBspline_1d_d(s, 10.0, &val);
+  REQUIRE(val == Approx(3.0));
+
+  eval_UBspline_1d_d(s, 5.5, &val);
+  REQUIRE(val == Approx(2.7));
+
+  destroy_Bspline(s);
+
 }
 
 TEST_CASE("double_1d_multi", "[einspline]")
@@ -109,6 +145,11 @@ TEST_CASE("multi_cuda_wrapper", "[einspline]")
   float cpu_val[1];
   eval_multi_UBspline_1d_s(s, pos[0], cpu_val);
   REQUIRE(cpu_val[0] == 2.0);
+
+  pos[0] = 11.0;
+  // Check the CPU value
+  eval_multi_UBspline_1d_s(s, pos[0], cpu_val);
+  REQUIRE(cpu_val[0] == 3.0);
 
   // Check the GPU value
   float vals_output[1];
