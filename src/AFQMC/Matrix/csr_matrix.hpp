@@ -711,7 +711,8 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                  class IntType_alloc_,
                  typename = std::enable_if_t<not std::is_same<ValType_alloc_,ValType_alloc>::value>
                 >
-        csr_matrix(csr_matrix<ValType,IndxType,IntType,ValType_alloc_,IsRoot_,IndxType_alloc_,IntType_alloc_> const& csr, ValType_alloc const& alloc = {}): 
+        csr_matrix(csr_matrix<ValType,IndxType,IntType,ValType_alloc_,IsRoot_,IndxType_alloc_,
+                              IntType_alloc_> const& csr, ValType_alloc const& alloc = {}): 
                    base(std::tuple<size_type, size_type>{0,0},
                         std::tuple<size_type, size_type>{0,0},
                                             0,alloc)
@@ -765,6 +766,40 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                 }
                 r.barrier();
         }
+        template<class ValType_alloc_,
+                 class IsRoot_,
+                 class IndxType_alloc_,
+                 class IntType_alloc_,
+                 typename = std::enable_if_t<not std::is_same<ValType_alloc_,ValType_alloc>::value>
+                >
+        csr_matrix& operator=(csr_matrix<ValType,IndxType,IntType,ValType_alloc_,
+                                         IsRoot_,IndxType_alloc_,IntType_alloc_> const& csr) {  
+                base::reset();
+                auto shape_ = csr.shape();
+                base::size1_ = shape_[0];
+                base::size2_ = shape_[1];
+                auto local_ = csr.local_origin();
+                base::local_origin1_ = local_[0];
+                base::local_origin2_ = local_[1];
+                auto global_ = csr.global_origin();
+                base::global_origin1_ = global_[0];
+                base::global_origin2_ = global_[1];
+                base::capacity_ = csr.capacity();
+                base::data_ = base::Valloc_.allocate(base::capacity_);
+                base::jdata_ = base::Ialloc_.allocate(base::capacity_);
+                base::pointers_begin_ = base::Palloc_.allocate(base::size1_+1);
+                base::pointers_end_ = base::Palloc_.allocate(base::size1_);
+                IsRoot r(base::Valloc_);
+                if(r.root()){
+                        using std::copy_n;
+                        copy_n(to_address(csr.non_zero_values_data()),base::capacity_,base::data_);
+                        copy_n(to_address(csr.non_zero_indices2_data()),base::capacity_,base::jdata_);
+                        copy_n(to_address(csr.pointers_begin()),base::size1_+1,base::pointers_begin_);
+                        copy_n(to_address(csr.pointers_end()),base::size1_,base::pointers_end_);
+                }
+                r.barrier();
+        }
+
         csr_matrix& operator=(ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRoot> const& other) {
                 base::reset();
                 auto shape_ = other.shape();

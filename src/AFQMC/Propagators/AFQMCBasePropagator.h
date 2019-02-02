@@ -52,10 +52,10 @@ class AFQMCBasePropagator: public AFQMCInfo
   using aux_allocator = localTG_allocator<ComplexType>;
 
   using CVector = boost::multi::array<ComplexType,1,allocator>;  
-  using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;  
   using CMatrix = boost::multi::array<ComplexType,2,allocator>;  
-  using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;  
   using C3Tensor = boost::multi::array<ComplexType,3,allocator>;  
+  using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;  
+  using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;  
   using C3Tensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;  
   using sharedCVector = ComplexVector<aux_allocator>; 
 
@@ -68,11 +68,7 @@ class AFQMCBasePropagator: public AFQMCInfo
             AFQMCInfo(info),TG(tg_),
             alloc_(),aux_alloc_(make_localTG_allocator<ComplexType>(TG)),wfn(wfn_),
             H1(std::move(h1_)),
-#ifdef QMC_CUDA
-            P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,shared_allocator<ComplexType>{TG.TG_local()})),
-#else
             P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,aux_alloc_)),
-#endif
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(wfn.getSlaterDetOperations()),

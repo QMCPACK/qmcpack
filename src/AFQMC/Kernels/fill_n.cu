@@ -25,76 +25,68 @@
 namespace kernels 
 {
 
+template<typename T, typename Size>
+__global__ void kernel_fill_n(Size N, T* x, int incx, T const a)
+{
+ for(Size ip=Size(threadIdx.x); ip<N; ip+=Size(blockDim.x))
+  {
+    x[ip*incx] = a;
+  }
+}
+
+
 void fill_n(int * first, int N, int incx, int const value)
-{ thrust::fill_n(thrust::device_ptr<int>(first),N,value); }
-/*
 { 
- thrust::device_ptr<int> x(first);
- strided_range<thrust::device_ptr<int> > strided(x, x+N, incx);
- thrust::fill(strided.begin(),strided.end(),value); 
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-*/
-
 void fill_n(float * first, int N, int incx, float const value)
-{ thrust::fill_n(thrust::device_ptr<float>(first),N,value); }
-/*
 { 
- thrust::device_ptr<float> x(first);
- strided_range<thrust::device_ptr<float> > strided(x, x+N, incx);
- thrust::fill(strided.begin(),strided.end(),value); 
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-*/
-
 void fill_n(double * first, int N, int incx, double const value)
-{ thrust::fill_n(thrust::device_ptr<double>(first),N,value); }
-/*
 { 
- thrust::device_ptr<double> x(first);
- strided_range<thrust::device_ptr<double> > strided(x, x+N, incx);
- thrust::fill(strided.begin(),strided.end(),value); 
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-*/
-
 void fill_n(std::complex<float> * first, int N, int incx, std::complex<float> const value)
-/*
 { 
- thrust::device_ptr<thrust::complex<float> > x(reinterpret_cast<thrust::complex<float> *>(first));
- strided_range<thrust::device_ptr<thrust::complex<float> > > strided(x, x+N, incx);
- thrust::fill(strided.begin(),strided.end(),static_cast<thrust::complex<float> const>(value));
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-*/
-{ thrust::fill_n(thrust::device_ptr<thrust::complex<float> >(
-                    reinterpret_cast<thrust::complex<float> *>(first)),N,
-                    static_cast<thrust::complex<float> const >(value)); }
-
-
 void fill_n(std::complex<double> * first, int N, int stride, std::complex<double> const value)
-/*
 { 
- thrust::device_ptr<thrust::complex<double> > x(reinterpret_cast<thrust::complex<double> *>(first));
- strided_range<thrust::device_ptr<thrust::complex<double> > > strided(x, x+N, incx);
- thrust::fill(strided.begin(),strided.end(),static_cast<thrust::complex<double> const>(value));
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-*/
-{ thrust::fill_n(thrust::device_ptr<thrust::complex<double> >(
-                    reinterpret_cast<thrust::complex<double> *>(first)),N,
-                    static_cast<thrust::complex<double> const >(value)); }
 
 
 void fill_n(int * first, int N, int const value)
-{ thrust::fill_n(thrust::device_ptr<int>(first),N,value); }
+{ 
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
 void fill_n(float * first, int N, float const value)
-{ thrust::fill_n(thrust::device_ptr<float>(first),N,value); }
+{ 
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
 void fill_n(double * first, int N, double const value)
-{ thrust::fill_n(thrust::device_ptr<double>(first),N,value); }
+{ 
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
 void fill_n(std::complex<float> * first, int N, std::complex<float> const value)
-{ thrust::fill_n(thrust::device_ptr<thrust::complex<float> >(
-                    reinterpret_cast<thrust::complex<float> *>(first)),N,
-                    static_cast<thrust::complex<float> const >(value)); }
+{ 
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
 void fill_n(std::complex<double> * first, int N, std::complex<double> const value)
-{ thrust::fill_n(thrust::device_ptr<thrust::complex<double> >(
-                    reinterpret_cast<thrust::complex<double> *>(first)),N,
-                    static_cast<thrust::complex<double> const >(value)); }
+{ 
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
 
 
 }

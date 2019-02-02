@@ -298,16 +298,6 @@ class KP3IndexFactorization_batched
         energy_exact(E,Gc,nd,KEleft,KEright,addH1,addEJ,addEXX);
     }
 
-    // Catch-all routines for incompatible pointer types!
-    void energy(...) {
-      print_stacktrace  
-      throw std::runtime_error("Error: Calling KP3IndexFactorization_batched::energy catch all.");
-    }
-    void vHS(...) {
-      print_stacktrace  
-      throw std::runtime_error("Error: Calling KP3IndexFactorization_batched::energy catch all.");
-    }
-
     // KEleft and KEright must be in shared memory for this to work correctly  
     template<class Mat, class MatB, class MatC, class MatD>
     void energy_exact(Mat&& E, MatB const& Gc, int nd, MatC* KEleft, MatD* KEright, bool addH1=true, bool addEJ=true, bool addEXX=true) {
@@ -966,8 +956,8 @@ class KP3IndexFactorization_batched
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
       using BType = typename std::decay<MatB>::type::element ;
       using AType = typename std::decay<MatA>::type::element ;
-      boost::multi::array_ref<BType,2,decltype(v.origin())> v_(v.origin(),{v.size(0),1});
       boost::multi::array_ref<AType,2,decltype(X.origin())> X_(X.origin(),{X.size(0),1});
+      boost::multi::array_ref<BType,2,decltype(v.origin())> v_(v.origin(),{1,v.size(0)});
       return vHS(X_,v_,a,c);
     }
 

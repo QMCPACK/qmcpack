@@ -56,6 +56,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
   int G_nr = Gsize, G_nc = nwalk;
   if(transposed_G_) std::swap(G_nr,G_nc);
 
+
   //  shared buffer used for:
   //  G_for_vbias:     [ Gsize * nwalk ]
   //  vbias:           [ localnCV * nwalk ]
@@ -112,8 +113,13 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
   // if timestep changed, recalculate one body propagator
   if( std::abs(dt-old_dt) > 1e-6 ) {
     old_dt = dt;
-    P1 = std::move(generate1BodyPropagator(TG,1e-8,dt,H1)); 
+    // generate1BodyPropagator currently expects a shared_allocator, fix later
+    using P1shm = ma::sparse::csr_matrix<ComplexType,int,int,
+                                shared_allocator<ComplexType>,
+                                ma::sparse::is_root>;
+    P1 = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1)); 
   }
+
   // 1. Calculate Green function for all walkers
   AFQMCTimers[G_for_vbias_timer]->start();
   wfn.MixedDensityMatrix_for_vbias(wset,G);
