@@ -391,7 +391,6 @@ TEST_CASE("test max exceeded message")
 }
 #endif
 
-#if __cplusplus >=201103l
 // Define a list of timers indexed by an enum
 // First, define an enum with the timers
 enum TestTimer
@@ -423,6 +422,5 @@ TEST_CASE("test setup timers","[utilities]")
   REQUIRE(Timers[MyTimer1]->get_num_calls() == 1);
 #endif
 }
-#endif
 
 }

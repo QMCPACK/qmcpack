@@ -640,9 +640,7 @@ IF(HDF5_FOUND)
     ENDIF(ENABLE_PHDF5)
   ENDIF(HDF5_IS_PARALLEL)
 ELSE(HDF5_FOUND)
-  if(NOT QMC_PHI)
-    MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_ROOT")
-  endif()
+  MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr

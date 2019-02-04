@@ -54,10 +54,8 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
     Temp_dr.resize(Nsources);
   }
 
-#if (__cplusplus >= 201103L)
   SoaDistanceTableBA()=delete;
   SoaDistanceTableBA(const SoaDistanceTableBA&)=delete;
-#endif
   ~SoaDistanceTableBA() {}
 
   /** evaluate the full table */

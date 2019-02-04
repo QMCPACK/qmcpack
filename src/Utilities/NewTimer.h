@@ -458,8 +458,6 @@ template <class T> struct TimerIDName_t
   const std::string name;
 };
 
-// C++ 11 type aliasing
-#if __cplusplus >= 201103L
 template <class T> using TimerNameList_t = std::vector<TimerIDName_t<T>>;
 
 template <class T> void setup_timers(TimerList_t &timers, TimerNameList_t<T> timer_list,
@@ -471,7 +469,6 @@ template <class T> void setup_timers(TimerList_t &timers, TimerNameList_t<T> tim
     timers[timer_list[i].id] = TimerManager.createTimer(timer_list[i].name, timer_level);
   }
 }
-#endif
 
 
 struct TimerComparator
