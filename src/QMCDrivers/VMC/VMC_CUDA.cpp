@@ -123,7 +123,7 @@ void VMCcuda::advanceWalkers()
 #ifdef DEBUG_DELAYED
         if(k>0)
           fprintf(stderr,"*** Delayed Update Path ***\n");
-        fprintf(stderr,"k = %i:\n",k);
+        fprintf(stderr,"iat = %i, k = %i:\n",curr_iat+k,k);
 #endif
         accepted.clear();
         for(int iw=0; iw<nw; ++iw)
@@ -147,7 +147,9 @@ void VMCcuda::advanceWalkers()
         for(int iw=0; iw<nw; ++iw)
         {
 #if defined(DEBUG_DELAYED) || defined(SPLIT_SPLINE_DEBUG)
+#ifdef SPLIT_SPLINE_DEBUG
           if(gpu::rank==1)
+#endif
             fprintf(stderr,"Walker #%i (ratio = %f) move ",iw,ratios[iw+k*nw]);
 #endif
 #ifdef QMC_COMPLEX

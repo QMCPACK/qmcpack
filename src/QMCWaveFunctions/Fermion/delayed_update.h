@@ -12,10 +12,9 @@
 
 void
 cublas_lemma_mats (cublasHandle_t handle,
-                   float *AList_d[], float *AWorkList_d[],
-                   float *AinvList_d[], float *AinvkList_d[], float *U_d[],
+                   float *AinvList_d[], float *U_d[],
                    float *lemma_d[], float *AinvUList_d[],
-                   int k, int N, int nw, int RowStride);
+                   int k, int kstart, int N, int nw, int RowStride);
 
 void
 cublas_ainv_row (cublasHandle_t handle,
@@ -57,10 +56,9 @@ calc_gradient_delayed (float *Ainv_row[], float *GL_col[], float ratios[], int N
 
 void
 cublas_lemma_mats (cublasHandle_t handle,
-                   double *AList_d[], double *AWorkList_d[],
-                   double *AinvList_d[], double *AinvkList_d[], double *U_d[],
+                   double *AinvList_d[], double *U_d[],
                    double *lemma_d[], double *AinvUList_d[],
-                   int k, int N, int nw, int RowStride);
+                   int k, int kstart, int N, int nw, int RowStride);
 
 void
 cublas_ainv_row (cublasHandle_t handle,
@@ -105,10 +103,9 @@ calc_gradient_delayed (double *Ainv_row[], double *GL_col[], double ratios[], in
 
 void
 cublas_lemma_mats (cublasHandle_t handle,
-                   std::complex<float> *AList_d[], std::complex<float> *AWorkList_d[],
-                   std::complex<float> *AinvList_d[], std::complex<float> *AinvkList_d[], std::complex<float> *U_d[],
+                   std::complex<float> *AinvList_d[], std::complex<float> *U_d[],
                    std::complex<float> *lemma_d[], std::complex<float> *AinvUList_d[],
-                   int k, int N, int nw, int RowStride);
+                   int k, int kstart, int N, int nw, int RowStride);
 
 void
 cublas_ainv_row (cublasHandle_t handle,
@@ -150,10 +147,9 @@ calc_gradient_delayed (std::complex<float> *Ainv_row[], std::complex<float> *GL_
 
 void
 cublas_lemma_mats (cublasHandle_t handle,
-                   std::complex<double> *AList_d[], std::complex<double> *AWorkList_d[],
-                   std::complex<double> *AinvList_d[], std::complex<double> *AinvkList_d[], std::complex<double> *U_d[],
+                   std::complex<double> *AinvList_d[], std::complex<double> *U_d[],
                    std::complex<double> *lemma_d[], std::complex<double> *AinvUList_d[],
-                   int k, int N, int nw, int RowStride);
+                   int k, int kstart, int N, int nw, int RowStride);
 
 void
 cublas_ainv_row (cublasHandle_t handle,

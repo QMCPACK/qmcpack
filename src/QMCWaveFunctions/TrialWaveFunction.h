@@ -357,7 +357,6 @@ private:
   gpu::device_host_vector<CTS::GradType>    GPUgrads;
   gpu::device_host_vector<CTS::ValueType>   GPUlapls;
   int ndelay; // delay rank
-  int delaynel; // number of electrons per delayed update matrix
 
 public:
   void freeGPUmem GPU_XRAY_TRACE ();

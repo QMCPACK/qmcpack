@@ -11,22 +11,28 @@
 
 #define BLOCKSIZE 256
 
-// C = A - B
+// #define DEBUG_DELAYED
+// #define USE_TRSM
+
 template <typename T>
 __global__ void
-subtract (T **C, T **A, T **B, int len)
+finish_lemma_calc (T **ainvu, T **lemma, int k, int kstart, int N, int rowstride)
 {
-  __shared__ T *myA, *myB, *myC;
+  __shared__ T *my_ainvu, *my_lemma;
   if (threadIdx.x == 0)
   {
-    myA = A[blockIdx.y];
-    myB = B[blockIdx.y];
-    myC = C[blockIdx.y];
+    my_lemma = lemma[blockIdx.y];
+    my_ainvu = ainvu[blockIdx.y]+kstart;
   }
   __syncthreads();
   int i = blockIdx.x * BLOCKSIZE + threadIdx.x;
-  if (i < len)
-    myC[i] = myA[i] - myB[i];
+  int r = i / k;
+  int s = i % k;
+  if (i < k*k)
+    my_lemma[r*k+s] = -my_ainvu[r*rowstride+s];
+  // A^-1*A_k is only 1.0 for i = k+kstart per column
+  if (i < k)
+    my_ainvu[s*rowstride+s] += 1.0;
 }
 
 /** Calculate Lemma Matrix: I_k + V' * ( A^(-1) * U )
@@ -35,35 +41,24 @@ subtract (T **C, T **A, T **B, int len)
   */
 void
 cublas_lemma_mats (cublasHandle_t handle,
-                   float *AList_d[], float *AWorkList_d[],
-                   float *AinvList_d[], float *AinvkList_d[], float *U_d[],
+                   float *AinvList_d[], float *U_d[],
                    float *lemma_d[], float *AinvUList_d[],
-                   int k, int N, int nw, int RowStride)
+                   int k, int kstart, int N, int nw, int RowStride)
 {
-  float one=1.0;
+  float mone=-1.0;
   float zero=0.0;
-  // Calculate Lemma Matrix
-  // V^-1 * A^(-1) * U
-  // per walker: [k x N] * [N x k] = [k x k]
-  cublasSgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, k, k, N,
-                                         &one,
-                                         (const float**)AinvkList_d, RowStride,
-                                         (const float**)U_d, RowStride, &zero,
-                                         lemma_d, k,
-                                         nw);
-  // Calculate - A^-1*dU
-  dim3 dimBlockConvert (BLOCKSIZE);
-  dim3 dimGridConvert ((k*RowStride + (BLOCKSIZE-1)) / BLOCKSIZE, nw);
-  // Calculate -dU=U(old)-U(new)
-  subtract <<< dimGridConvert, dimBlockConvert >>> (AWorkList_d, AList_d, U_d, k*RowStride);
-  // -A^(-1) * dU
+  // -A^(-1) * U
   // per walker: [N x N] * [N x k] = [N x k]
   cublasSgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, N, k, N,
-                                         &one,
+                                         &mone,
                                          (const float**)AinvList_d, RowStride,
-                                         (const float**)AWorkList_d, RowStride, &zero,
+                                         (const float**)U_d, RowStride, &zero,
                                          AinvUList_d, RowStride,
                                          nw);
+  // Calculate Lemma Matrix using above calculations and calculate -A^-1*dU
+  dim3 dimBlockConvert (BLOCKSIZE);
+  dim3 dimGridConvert ((k*k + (BLOCKSIZE-1)) / BLOCKSIZE, nw);
+  finish_lemma_calc <<< dimGridConvert, dimBlockConvert >>> (AinvUList_d, lemma_d, k, kstart, N, RowStride);
 }
 
 void
@@ -98,9 +93,6 @@ cublas_ainv_row (cublasHandle_t handle,
                                          nw);
 }
 
-
-// #define DEBUG_DELAYED
-// #define USE_TRSM
 
 void
 cublas_smw_update (cublasHandle_t handle,
@@ -215,36 +207,24 @@ cublas_smw_update (cublasHandle_t handle,
   */
 void
 cublas_lemma_mats (cublasHandle_t handle,
-                   double *AList_d[], double *AWorkList_d[],
-                   double *AinvList_d[], double *AinvkList_d[], double *U_d[],
+                   double *AinvList_d[], double *U_d[],
                    double *lemma_d[], double *AinvUList_d[],
-                   int k, int N, int nw, int RowStride)
+                   int k, int kstart, int N, int nw, int RowStride)
 {
-  double one=1.0;
+  double mone=-1.0;
   double zero=0.0;
-  // Calculate Lemma Matrix
-  // V^-1 * A^(-1) * U
-  // per walker: [k x N] * [N x k] = [k x k]
-  cublasDgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, k, k, N,
-                                         &one,
-                                         (const double**)AinvkList_d, RowStride,
-                                         (const double**)U_d, RowStride, &zero,
-                                         lemma_d, k,
-                                         nw);
-  // Calculate - A^-1*dU
-  dim3 dimBlockConvert (BLOCKSIZE);
-  dim3 dimGridConvert ((k*RowStride + (BLOCKSIZE-1)) / BLOCKSIZE, nw);
-  // Calculate -dU=U(old)-U(new)
-  subtract <<< dimGridConvert, dimBlockConvert >>> (AWorkList_d, AList_d, U_d, k*RowStride);
-  // -A^(-1) * dU
+  // -A^(-1) * U
   // per walker: [N x N] * [N x k] = [N x k]
   cublasDgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, N, k, N,
-                                         &one,
+                                         &mone,
                                          (const double**)AinvList_d, RowStride,
-                                         (const double**)AWorkList_d, RowStride, &zero,
+                                         (const double**)U_d, RowStride, &zero,
                                          AinvUList_d, RowStride,
                                          nw);
-  // no synchronization needed here as this function call will always be followed by lemma lu calculation
+  // Calculate Lemma Matrix using above calculations and calculate -A^-1*dU
+  dim3 dimBlockConvert (BLOCKSIZE);
+  dim3 dimGridConvert ((k*k + (BLOCKSIZE-1)) / BLOCKSIZE, nw);
+  finish_lemma_calc <<< dimGridConvert, dimBlockConvert >>> (AinvUList_d, lemma_d, k, kstart, N, RowStride);
 }
 
 void
@@ -360,35 +340,24 @@ cublas_smw_update (cublasHandle_t handle,
   */
 void
 cublas_lemma_mats (cublasHandle_t handle,
-                   std::complex<float> *AList_d[], std::complex<float> *AWorkList_d[],
-                   std::complex<float> *AinvList_d[], std::complex<float> *AinvkList_d[], std::complex<float> *U_d[],
+                   std::complex<float> *AinvList_d[], std::complex<float> *U_d[],
                    std::complex<float> *lemma_d[], std::complex<float> *AinvUList_d[],
-                   int k, int N, int nw, int RowStride)
+                   int k, int kstart, int N, int nw, int RowStride)
 {
-  cuComplex one = make_cuComplex(1.0f,0.0f);
-  cuComplex zero = make_cuComplex(0.0f,0.0f);
-  // Calculate Lemma Matrix
-  // V^-1 * A^(-1) * U
-  // per walker: [k x N] * [N x k] = [k x k]
-  cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, k, k, N,
-                                         &one,
-                                         (const cuComplex**)AinvkList_d, RowStride,
-                                         (const cuComplex**)U_d, RowStride, &zero,
-                                         (cuComplex**)lemma_d, k,
-                                         nw);
-  // Calculate - A^-1*dU
-  dim3 dimBlockConvert (BLOCKSIZE);
-  dim3 dimGridConvert ((k*RowStride + (BLOCKSIZE-1)) / BLOCKSIZE, nw);
-  // Calculate -dU=U(old)-U(new)
-  subtract <<< dimGridConvert, dimBlockConvert >>> ((thrust::complex<float>**)AWorkList_d, (thrust::complex<float>**)AList_d, (thrust::complex<float>**)U_d, k*RowStride);
-  // -A^(-1) * dU
+  cuComplex mone=make_cuComplex(-1.0f,0.0f);
+  cuComplex zero=make_cuComplex(0.0f,0.0f);
+  // -A^(-1) * U
   // per walker: [N x N] * [N x k] = [N x k]
   cublasCgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, N, k, N,
-                                         &one,
+                                         &mone,
                                          (const cuComplex**)AinvList_d, RowStride,
-                                         (const cuComplex**)AWorkList_d, RowStride, &zero,
+                                         (const cuComplex**)U_d, RowStride, &zero,
                                          (cuComplex**)AinvUList_d, RowStride,
                                          nw);
+  // Calculate Lemma Matrix using above calculations and calculate -A^-1*dU
+  dim3 dimBlockConvert (BLOCKSIZE);
+  dim3 dimGridConvert ((k*k + (BLOCKSIZE-1)) / BLOCKSIZE, nw);
+  finish_lemma_calc <<< dimGridConvert, dimBlockConvert >>> ((thrust::complex<float>**)AinvUList_d, (thrust::complex<float>**)lemma_d, k, kstart, N, RowStride);
 }
 
 void
@@ -521,35 +490,24 @@ cublas_smw_update (cublasHandle_t handle,
   */
 void
 cublas_lemma_mats (cublasHandle_t handle,
-                   std::complex<double> *AList_d[], std::complex<double> *AWorkList_d[],
-                   std::complex<double> *AinvList_d[], std::complex<double> *AinvkList_d[], std::complex<double> *U_d[],
+                   std::complex<double> *AinvList_d[], std::complex<double> *U_d[],
                    std::complex<double> *lemma_d[], std::complex<double> *AinvUList_d[],
-                   int k, int N, int nw, int RowStride)
+                   int k, int kstart, int N, int nw, int RowStride)
 {
-  cuDoubleComplex one = make_cuDoubleComplex(1.0f,0.0f);
-  cuDoubleComplex zero = make_cuDoubleComplex(0.0f,0.0f);
-  // Calculate Lemma Matrix
-  // V^-1 * A^(-1) * U
-  // per walker: [k x N] * [N x k] = [k x k]
-  cublasZgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, k, k, N,
-                                         &one,
-                                         (const cuDoubleComplex**)AinvkList_d, RowStride,
-                                         (const cuDoubleComplex**)U_d, RowStride, &zero,
-                                         (cuDoubleComplex**)lemma_d, k,
-                                         nw);
-  // Calculate - A^-1*dU
-  dim3 dimBlockConvert (BLOCKSIZE);
-  dim3 dimGridConvert ((k*RowStride + (BLOCKSIZE-1)) / BLOCKSIZE, nw);
-  // Calculate -dU=U(old)-U(new)
-  subtract <<< dimGridConvert, dimBlockConvert >>> ((thrust::complex<double>**)AWorkList_d, (thrust::complex<double>**)AList_d, (thrust::complex<double>**)U_d, k*RowStride);
-  // -A^(-1) * dU
+  cuDoubleComplex mone=make_cuDoubleComplex(-1.0f,0.0f);
+  cuDoubleComplex zero=make_cuDoubleComplex(0.0f,0.0f);
+  // -A^(-1) * U
   // per walker: [N x N] * [N x k] = [N x k]
   cublasZgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, N, k, N,
-                                         &one,
+                                         &mone,
                                          (const cuDoubleComplex**)AinvList_d, RowStride,
-                                         (const cuDoubleComplex**)AWorkList_d, RowStride, &zero,
+                                         (const cuDoubleComplex**)U_d, RowStride, &zero,
                                          (cuDoubleComplex**)AinvUList_d, RowStride,
                                          nw);
+  // Calculate Lemma Matrix using above calculations and calculate -A^-1*dU
+  dim3 dimBlockConvert (BLOCKSIZE);
+  dim3 dimGridConvert ((k*k + (BLOCKSIZE-1)) / BLOCKSIZE, nw);
+  finish_lemma_calc <<< dimGridConvert, dimBlockConvert >>> ((thrust::complex<double>**)AinvUList_d, (thrust::complex<double>**)lemma_d, k, kstart, N, RowStride);
 }
 
 void
@@ -808,7 +766,6 @@ multi_row_copy (double *dest[], double *src[], int len, int offset, int rows, in
     dimGrid.x++;
   multi_row_copy<double><<<dimGrid,dimBlock>>>(dest, src, len, offset, rows, stride);
 }
-
 
 template<typename T>
 __global__ void

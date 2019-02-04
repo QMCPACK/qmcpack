@@ -26,6 +26,9 @@
 #include "Numerics/DeterminantOperators.h"
 #include <unistd.h>
 
+// #define DEBUG_DELAYED
+// #define USE_TRSM
+
 namespace qmcplusplus
 {
 DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetPtr const spos, int first) :
@@ -76,9 +79,6 @@ void CheckAlign (void *p, std::string var)
     app_error() << "CUDA alignment error for variable " << var << "!\n";
 }
 
-// #define DEBUG_DELAYED
-// #define USE_TRSM
-
 void
 DiracDeterminantCUDA::det_lookahead (MCWalkerConfiguration &W,
                                      std::vector<ValueType> &psi_ratios,
@@ -88,12 +88,15 @@ DiracDeterminantCUDA::det_lookahead (MCWalkerConfiguration &W,
 {
   bool klinear=W.getklinear();
   if((!klinear) && (k==0)) // this only needs to be calculated once and then the columns can be manually updated upon rejection (update function below does this in the update_onemove kernel)
+//  if(!klinear)
   {
     cublas_lemma_mats (gpu::cublasHandle,
-                       AList_d.data(), AWorkList_d.data(),
-                       AinvList_d.data(), AinvDeltaList_d.data(), newRowList_d.data(),
+                       AinvList_d.data(), newRowList_d.data(),
                        LemmaList_d.data(), AinvUList_d.data(),
-                       kd, NumPtcls, nw, RowStride);
+                       kd, W.getkstart(), NumPtcls, nw, RowStride);
+/*    calc_lemma_column (AinvList_d.data(), newRowList_d.data(),
+                       LemmaList_d.data(), AinvUList_d.data(),
+                       k, kd, W.getkstart(), NumPtcls, RowStride, nw);*/
   }
   std::vector<Walker_t*> &walkers = W.WalkerList;
   // copy lemma (since it's only calculated once every k blocks) to lemma_lu (for an updated LU decomposition)
@@ -117,7 +120,7 @@ DiracDeterminantCUDA::det_lookahead (MCWalkerConfiguration &W,
                        AinvDeltaList_d.data(), AinvColkList_d.data(),
                        AinvWorkList_d.data(), AWorkList_d.data(), // <- AinvWork takes the place of A^-1*dU (in the USE_TRSM case it's unused)
                        LemmaInvList_d.data(), LemmaLUList_d.data(), // <- LemmaInv is not needed for USE_TRSM
-                       PivotArray_d.data(), infoArray_d.data(),
+                       NULL, infoArray_d.data(), // <- important not to use pivoting here
                        k+1, kd, 1, NumPtcls, nw, RowStride);
   }
   // calculate and collect ratios, gradients, and laplacians

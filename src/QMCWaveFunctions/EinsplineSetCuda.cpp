@@ -680,7 +680,7 @@ EinsplineSetExtended<double>::evaluate
   }
   cudapos = hostPos;
   cudaSign = hostSign;
-  if (split_splines)\
+  if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
     (CudaMultiSpline, (CTS::RealType*)(cudapos.data()), cudaSign.data(), phi.data(), N,
