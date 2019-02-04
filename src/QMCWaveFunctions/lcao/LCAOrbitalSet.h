@@ -32,8 +32,6 @@ namespace qmcplusplus
     typedef RealBasisSetBase<RealType> basis_type;
     typedef basis_type::vgl_type vgl_type;
 
-    ///level of printing
-    int ReportLevel;
     ///pointer to the basis set
     basis_type* myBasisSet;
     ///number of Single-particle orbitals
@@ -62,9 +60,8 @@ namespace qmcplusplus
     std::vector<std::pair<int,int> > m_act_rot_inds;
     /** constructor
      * @param bs pointer to the BasisSet
-     * @param rl report level
      */
-    LCAOrbitalSet(basis_type* bs=nullptr,int rl=0);
+    LCAOrbitalSet(basis_type* bs=nullptr);
 
     LCAOrbitalSet(const LCAOrbitalSet& in)=default;
 

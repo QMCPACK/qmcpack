@@ -16,8 +16,8 @@
 
 namespace qmcplusplus
 {
-  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs,int rl):
-    myBasisSet(nullptr), C(nullptr), ReportLevel(rl), params_supplied(false),
+  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs):
+    myBasisSet(nullptr), C(nullptr), params_supplied(false),
     BasisSetSize(0), Identity(true), IsCloned(false)
   {
     if(bs != nullptr) setBasisSet(bs);
@@ -472,7 +472,7 @@ namespace qmcplusplus
 
   void LCAOrbitalSet::apply_rotation(const std::vector<RealType>& param)
   {
-    assert( param->size() == m_act_rot_inds.size() );
+    assert( param.size() == m_act_rot_inds.size() );
 
     const size_t nmo = OrbitalSetSize;
     const size_t nb = BasisSetSize;

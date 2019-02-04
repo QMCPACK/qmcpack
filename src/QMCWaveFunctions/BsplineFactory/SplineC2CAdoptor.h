@@ -139,7 +139,10 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       BaseOffset[i]=0;
       BaseN[i]=xyz_g[i].num+3;
     }
-    qmc_common.memory_allocated += SplineInst->sizeInByte();
+
+    app_log() << "MEMORY " << SplineInst->sizeInByte()/(1<<20) << " MB allocated "
+              << "for the coefficients in 3D spline orbital representation"
+              << std::endl;
   }
 
   inline void flush_zero()
