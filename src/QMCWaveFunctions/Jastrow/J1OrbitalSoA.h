@@ -54,7 +54,7 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
 
   ///\f$Vat[i] = sum_(j) u_{i,j}\f$
   Vector<valT> Vat;
-  aligned_vector<valT> U, dU, d2U;
+  aligned_vector<valT> U, dU, d2U, d3U;
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
   Vector<posT> Grad;
@@ -95,6 +95,7 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
     U.resize(Nions);
     dU.resize(Nions);
     d2U.resize(Nions);
+    d3U.resize(Nions);
     DistCompressed.resize(Nions);
     DistIndice.resize(Nions);
   }
@@ -219,6 +220,28 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
     return lap;
   }
 
+  /** compute gradient and lap
+   * @return lap
+   */
+  inline valT accumulateGradSourceGL(const valT* restrict du, const valT* restrict d2u, 
+      const valT* restrict d3u, const RowContainer& displ, posT& grad) const
+  {
+    valT lap(0);
+    constexpr valT lapfac=OHMMS_DIM-RealType(1);
+//#pragma omp simd reduction(+:lap)
+    for(int jat=0; jat<Nions; ++jat)
+      lap+=d2u[jat]+lapfac*du[jat];
+    for(int idim=0; idim<OHMMS_DIM; ++idim)
+    {
+      const valT* restrict dX=displ.data(idim);
+      valT s=valT();
+//#pragma omp simd reduction(+:s)
+      for(int jat=0; jat<Nions; ++jat) s+=du[jat]*dX[jat];
+      grad[idim]=s;
+    }
+    return lap;
+  }
+
   /** compute U, dU and d2U 
    * @param P quantum particleset
    * @param iat the moving particle
@@ -254,6 +277,41 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
     }
   }
 
+  /** compute U, dU, d2U, and d3U 
+   * @param P quantum particleset
+   * @param iat the moving particle
+   * @param dist starting address of the distances of the ions wrt the iat-th particle
+   */
+  inline void computeU4(ParticleSet& P, int iat, const valT* dist)
+  {
+/*    if(NumGroups>0)
+    {//ions are grouped
+      constexpr valT czero(0);
+      std::fill_n(U.data(),Nions,czero);
+      std::fill_n(dU.data(),Nions,czero);
+      std::fill_n(d2U.data(),Nions,czero);
+      std::fill_n(d3U.data(),Nions,czero);
+
+      for(int jg=0; jg<NumGroups; ++jg)
+      {
+        if(F[jg]==nullptr) continue;
+        F[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist,
+            U.data(), dU.data(), d2U.data(), d3U.data(), DistCompressed.data(), DistIndice.data());
+      }
+    }*/
+//    else
+//    {
+      for(int c=0; c<Nions; ++c)
+      {
+        int gid=Ions.GroupID[c];
+        if(F[gid]!=nullptr)
+        {
+          U[c]= F[gid]->evaluate(dist[c],dU[c],d2U[c],d3U[c]);
+          dU[c]/=dist[c];
+        }
+      }
+ //   }
+  }
   /** compute the gradient during particle-by-particle update
    * @param P quantum particleset
    * @param iat particle index
@@ -402,7 +460,11 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
   inline GradType evalGradSource(ParticleSet& P,
                                  ParticleSet& source, int isrc)
   {
-    APP_ABORT("J1OrbitalSoa::evaluateGradSource not implemented.\n");
+    const DistanceTableData& d_ie(*(P.DistTables[myTableID]));
+    for(int iat=0; iat<Nelec; ++iat)
+    {
+      computeU4(P,iat,d_ie.Distances[iat]);
+    }
     return GradType();
   }
 
@@ -411,8 +473,16 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
                  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
                  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
   {
-    APP_ABORT("J1OrbitalSoa::evaluateGradSource not implemented.\n");
+    const DistanceTableData& d_ie(*(P.DistTables[myTableID]));
+    for(int iat=0; iat<Nelec; ++iat)
+    {
+      computeU4(P,iat,d_ie.Distances[iat]);
+      //Vat[iat]=simd::accumulate_n(U.data(),Nions,valT());
+      //Lap[iat]=accumulateGL(dU.data(),d2U.data(),d_ie.Displacements[iat],Grad[iat]);
+    }
+   // APP_ABORT("J1OrbitalSoa::evaluateGradSource not implemented.\n");
     return GradType();
+    
   }
   
 };
