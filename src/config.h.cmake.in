@@ -210,9 +210,9 @@
       #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,32)
     #endif
   #else
-   #define QMC_CLINE 32
-   #define QMC_ALIGNAS
-   #define ASSUME_ALIGNED(x)
+    #define QMC_CLINE 32
+    #define QMC_ALIGNAS alignas(32)
+    #define ASSUME_ALIGNED(x)
   #endif
 
 #else //capture C
