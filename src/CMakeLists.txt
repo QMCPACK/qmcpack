@@ -347,12 +347,12 @@ ENDIF()
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
     SUBDIRS(type_traits/tests)
-  
     SUBDIRS(ParticleBase/tests)
     SUBDIRS(Estimators/tests)
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
+    SUBDIRS(OpenMP/tests)
   endif() #}
 
 endif() #}}}
