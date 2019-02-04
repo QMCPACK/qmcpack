@@ -10,7 +10,7 @@ export N_PROCS_BUILD=24
 export N_PROCS=32
 export CC=mpicc
 export CXX=mpicxx
-export BOOST_ROOT=/sandbox/opt/qmcdev/trunk/external_codes/boost_1_55_0
+export BOOST_ROOT=/sandbox/opt/boost_1_61_0
 
 QE_BIN=/sandbox/opt/qe-stable/qe-6.3/bin
 QMC_DATA=/sandbox/opt/h5data
@@ -19,7 +19,7 @@ QMC_DATA=/sandbox/opt/h5data
 place=/sandbox/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
 #define and load compiler
-compiler=Intel2018
+compiler=Intel2019
 
 if [ ! -e $place ]; then
 mkdir $place
