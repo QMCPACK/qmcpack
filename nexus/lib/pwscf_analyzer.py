@@ -157,8 +157,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             nfound = 0
             index = -1
             bands = obj()
-            bands.up = []
-            bands.down = []
+            bands.up = obj()
+            bands.down = obj()
             polarized = False
             if self.input.system.nspin > 1:
                 polarized = True
@@ -245,33 +245,35 @@ class PwscfAnalyzer(SimulationAnalyzer):
             vbm        = obj(energy=-1.0e6)
             cbm        = obj(energy=1.0e6)
             direct_gap = obj(energy=1.0e6)
-            for b in bands.up + bands.down:
-                e_val  = max(b.eigs[b.occs > 0.5])
-                e_cond = min(b.eigs[b.occs < 0.5])
-                                              
-                if e_val > vbm.energy:
-                    vbm.energy          = e_val
-                    vbm.kpoint_rel      = b.kpoint_rel
-                    vbm.kpoint_2pi_alat = b.kpoint_2pi_alat
-                    vbm.index           = b.index
-                    vbm.pol             = b.pol
-                    vbm.band_number     = max(where(b.occs > 0.5))
-                #end if
-                if e_cond < cbm.energy:
-                    cbm.energy          = e_cond
-                    cbm.kpoint_rel      = b.kpoint_rel
-                    cbm.kpoint_2pi_alat = b.kpoint_2pi_alat
-                    cbm.index           = b.index
-                    cbm.pol             = b.pol
-                    cbm.band_number     = min(where(b.occs < 0.5))
-                #end if
-                if (e_cond - e_val) < direct_gap.energy:
-                    direct_gap.energy          = e_cond - e_val
-                    direct_gap.kpoint_rel      = b.kpoint_rel
-                    direct_gap.kpoint_2pi_alat = b.kpoint_2pi_alat
-                    direct_gap.index           = b.index
-                    direct_gap.pol             = [vbm.pol, cbm.pol]
-                #end if
+            for band_channel in bands:
+                for b in band_channel:
+                    e_val  = max(b.eigs[b.occs > 0.5])
+                    e_cond = min(b.eigs[b.occs < 0.5])
+
+                    if e_val > vbm.energy:
+                        vbm.energy          = e_val
+                        vbm.kpoint_rel      = b.kpoint_rel
+                        vbm.kpoint_2pi_alat = b.kpoint_2pi_alat
+                        vbm.index           = b.index
+                        vbm.pol             = b.pol
+                        vbm.band_number     = max(where(b.occs > 0.5))
+                    #end if
+                    if e_cond < cbm.energy:
+                        cbm.energy          = e_cond
+                        cbm.kpoint_rel      = b.kpoint_rel
+                        cbm.kpoint_2pi_alat = b.kpoint_2pi_alat
+                        cbm.index           = b.index
+                        cbm.pol             = b.pol
+                        cbm.band_number     = min(where(b.occs < 0.5))
+                    #end if
+                    if (e_cond - e_val) < direct_gap.energy:
+                        direct_gap.energy          = e_cond - e_val
+                        direct_gap.kpoint_rel      = b.kpoint_rel
+                        direct_gap.kpoint_2pi_alat = b.kpoint_2pi_alat
+                        direct_gap.index           = b.index
+                        direct_gap.pol             = [vbm.pol, cbm.pol]
+                    #end if
+                #end for
             #end for
             electronic_structure = ''
             if (vbm.energy +0.025) >= cbm.energy:
