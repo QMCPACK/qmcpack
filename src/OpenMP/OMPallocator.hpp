@@ -27,8 +27,8 @@ namespace qmcplusplus
     using const_pointer = typename HostAllocator::const_pointer;
 
     OMPallocator() = default;
-    template <class U> OMPallocator(const OMPallocator<U>&) {}
-    template <class U> struct rebind { typedef OMPallocator<U> other; };
+    template <class U, class V> OMPallocator(const OMPallocator<U, V>&) {}
+    template <class U, class V> struct rebind { typedef OMPallocator<U, V> other; };
 
     value_type* allocate(std::size_t n, int device_id = 0)
     {
