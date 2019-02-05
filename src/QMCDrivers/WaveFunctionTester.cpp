@@ -1448,7 +1448,7 @@ void WaveFunctionTester::runGradSourceTest()
       ValueType log_m = Psi.evaluateLog(W);
     
       //symmetric finite difference formula for gradient. 
-      grad_ion_FD[iat][iondim]=(log_p-log_m)/(2.0*delta);
+      grad_ion_FD[iat][iondim]=c1*(log_p-log_m);
    
       //reset everything to how it was.
       source.R[iat][iondim] = rI[iondim];
