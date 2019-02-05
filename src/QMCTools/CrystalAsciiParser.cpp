@@ -809,7 +809,7 @@ void CrystalAsciiParser::getMO(std::istream& is)
 void CrystalAsciiParser::dumpHDF5(const std::string & fname) 
 {
     h5file = fname+".h5";
-    hdf_archive hout(0);
+    hdf_archive hout;
     hout.create(h5file.c_str(),H5F_ACC_TRUNC);
 
     std::string str;
