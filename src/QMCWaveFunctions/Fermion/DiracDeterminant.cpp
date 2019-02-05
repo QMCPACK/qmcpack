@@ -34,7 +34,6 @@ DiracDeterminant::DiracDeterminant(SPOSetPtr const spos, int first):
   DiracDeterminantBase(spos,first), ndelay(1)
 {
   ClassName = "DiracDeterminant";
-  ionDerivs = true;
 }
 
 ///default destructor
