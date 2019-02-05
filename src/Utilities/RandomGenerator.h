@@ -88,9 +88,7 @@ extern RandomGenerator_t Random;
 #include "Utilities/BoostRandom.h"
 namespace qmcplusplus
 {
-#if (__cplusplus>=201103L)
 template<class T> using RandomGenerator=BoostRandom<T>;
-#endif
 typedef BoostRandom<OHMMS_PRECISION_FULL> RandomGenerator_t;
 extern RandomGenerator_t Random;
 }
