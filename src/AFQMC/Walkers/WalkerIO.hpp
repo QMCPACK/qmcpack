@@ -294,6 +294,7 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
 #if defined(__ENABLE_PHDF5__)
 
     // parallel I/O
+    APP_ABORT("Restarting with parallel HDF5 not implemented yet.\n");
     int nwlk_per_block = std::min(std::max(1,WALKER_HDF_BLOCK_SIZE/wlk_sz),nW);
     int nblks = (nW-1)/nwlk_per_block + 1;
     auto nblks_per_tg = TG.TG_heads().all_gather_value(nblks);
