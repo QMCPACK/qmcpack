@@ -101,7 +101,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND DET_LIH_PP_SCALARS "potential" "-1.87951927 0.000001")
   LIST(APPEND DET_LIH_PP_SCALARS "samples" "9.00000000 0.0")
 
-  QMC_RUN_AND_CHECK(deterministic-LiH_dimer_pp-det_vmc_hf_noj
+  QMC_RUN_AND_CHECK(deterministic-LiH_dimer_pp-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp"
                     det_vmc_hf_noj
                     det_vmc_hf_noj.in.xml
@@ -117,7 +117,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND DET_LIH_PP_XML_SCALARS "potential" "-1.67764223 0.000001")
   LIST(APPEND DET_LIH_PP_XML_SCALARS "samples" "9.00000000 0.0")
 
-  QMC_RUN_AND_CHECK(deterministic-LiH_dimer_pp-det_vmc_hf_sdj_xml
+  QMC_RUN_AND_CHECK(deterministic-LiH_dimer_pp-vmc_hf_sdj_xml
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp"
                     det_vmc_hf_sdj_xml
                     det_vmc_hf_sdj_xml.xml
@@ -133,7 +133,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND DET_LIH_PP_HDF5_SCALARS "potential" "-1.36778925 0.000001")
   LIST(APPEND DET_LIH_PP_HDF5_SCALARS "samples" "9.00000000 0.0")
 
-  QMC_RUN_AND_CHECK(deterministic-LiH_dimer_pp-det_vmc_hf_sdj_hdf5
+  QMC_RUN_AND_CHECK(deterministic-LiH_dimer_pp-vmc_hf_sdj_hdf5
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp"
                     det_vmc_hf_sdj_hdf5
                     det_vmc_hf_sdj_hdf5.xml
