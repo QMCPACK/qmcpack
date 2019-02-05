@@ -88,15 +88,12 @@ DiracDeterminantCUDA::det_lookahead (MCWalkerConfiguration &W,
 {
   bool klinear=W.getklinear();
   if((!klinear) && (k==0)) // this only needs to be calculated once and then the columns can be manually updated upon rejection (update function below does this in the update_onemove kernel)
-//  if(!klinear)
   {
+    gpu::streamsSynchronize();
     cublas_lemma_mats (gpu::cublasHandle,
                        AinvList_d.data(), newRowList_d.data(),
                        LemmaList_d.data(), AinvUList_d.data(),
                        kd, W.getkstart(), NumPtcls, nw, RowStride);
-/*    calc_lemma_column (AinvList_d.data(), newRowList_d.data(),
-                       LemmaList_d.data(), AinvUList_d.data(),
-                       k, kd, W.getkstart(), NumPtcls, RowStride, nw);*/
   }
   std::vector<Walker_t*> &walkers = W.WalkerList;
   // copy lemma (since it's only calculated once every k blocks) to lemma_lu (for an updated LU decomposition)
