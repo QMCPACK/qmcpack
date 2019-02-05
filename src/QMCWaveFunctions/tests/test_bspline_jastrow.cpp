@@ -347,6 +347,56 @@ const char *particles = \
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(0.3160552244)); // note: number not validated
 
+  //Ionic Derivative Test.
+  QMCTraits::GradType gsource(0.0);
+  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_source;
+  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad_source;
+  int nions=ions_.getTotalNum();
+  int nelecs=elec_.getTotalNum();
+
+  for(int dim=0; dim<OHMMS_DIM; dim++)
+  {
+    grad_grad_source[dim].resize(nelecs);
+    lapl_grad_source[dim].resize(nelecs);
+  }
+
+  /////////////////////////////////////////
+  //Testing the ion gradient w.r.t. ion # 0
+  /////////////////////////////////////////
+  
+  //First we test evalGradSource(P,ions,ionid);
+
+  gsource=j1->evalGradSource(elec_, ions_, 0);
+  
+  //Gradient comparison
+  REQUIRE(gsource[0] == ComplexApprox(-0.04695203659).compare_real_only());
+  REQUIRE(gsource[1] == ComplexApprox( 0.00000000000).compare_real_only());
+  REQUIRE(gsource[2] == ComplexApprox( 0.00000000000).compare_real_only());
+
+  //Now we test evalGradSource that returns higher order derivatives.   
+  gsource=j1->evalGradSource(elec_, ions_, 0, grad_grad_source, lapl_grad_source);
+
+  //Gradient comparison
+  REQUIRE(gsource[0] == ComplexApprox(-0.04695203659).compare_real_only());
+  REQUIRE(gsource[1] == ComplexApprox( 0.00000000000).compare_real_only());
+  REQUIRE(gsource[2] == ComplexApprox( 0.00000000000).compare_real_only());
+
+  //Ion gradient of electron gradient comparison.
+  REQUIRE(grad_grad_source[0][0][0] == ComplexApprox(-0.008883672).compare_real_only());
+  REQUIRE(grad_grad_source[0][1][0] == ComplexApprox(-0.002111879).compare_real_only());
+  REQUIRE(grad_grad_source[1][0][1] == ComplexApprox( 0.028489287).compare_real_only());
+  REQUIRE(grad_grad_source[1][1][1] == ComplexApprox( 0.009231375).compare_real_only());
+  REQUIRE(grad_grad_source[2][0][2] == ComplexApprox( 0.028489287).compare_real_only());
+  REQUIRE(grad_grad_source[2][1][2] == ComplexApprox( 0.009231375).compare_real_only());
+  
+  //Ion gradient of electron laplacians.
+  REQUIRE(lapl_grad_source[0][0] == ComplexApprox( 0.1494918378).compare_real_only());
+  REQUIRE(lapl_grad_source[0][1] == ComplexApprox(-0.0056182539).compare_real_only());
+  REQUIRE(lapl_grad_source[1][0] == ComplexApprox( 0.0000000000).compare_real_only());
+  REQUIRE(lapl_grad_source[1][1] == ComplexApprox( 0.0000000000).compare_real_only());
+  REQUIRE(lapl_grad_source[2][0] == ComplexApprox( 0.0000000000).compare_real_only());
+  REQUIRE(lapl_grad_source[2][1] == ComplexApprox( 0.0000000000).compare_real_only());
+
   struct JValues
   {
    double r;
