@@ -32,8 +32,8 @@ namespace qmcplusplus
 
     value_type* allocate(std::size_t n, int device_id = 0)
     {
-      #pragma omp target enter data map(alloc:pt[0:n]) device(device_id)
       value_type* pt = HostAllocator::allocate(n);
+      #pragma omp target enter data map(alloc:pt[0:n]) device(device_id)
       return pt;
     }
 
@@ -42,11 +42,6 @@ namespace qmcplusplus
       free(pt);
     }
   };
-
-  template <class HOST1, class HOST2>
-  bool operator==(const OMPallocator<HOST1>&, const OMPallocator<HOST2>&) { return HOST1==HOST2; }
-  template <class HOST1, class HOST2>
-  bool operator!=(const OMPallocator<HOST1>&, const OMPallocator<HOST2>&) { return HOST1!=HOST2; }
 }
 
 #endif

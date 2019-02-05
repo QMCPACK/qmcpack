@@ -14,35 +14,26 @@
 #include "catch.hpp"
 
 #include <memory>
+#include <vector>
+#include <iostream>
 #include "OpenMP/OMPallocator.hpp"
-#include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus
 {
 
 TEST_CASE("OMPvector", "[OMP]")
 {
-  typedef Vector<double, OMPallocator<double>> vec_t;
-  vec_t A(3);
-  vec_t B(3);
+  typedef std::vector<double, OMPallocator<double>> vec_t;
+  vec_t A(2);
 
   // iterator
   vec_t::iterator ia = A.begin();
   for (; ia != A.end(); ia++) {
-    *ia = 1.0;
+    *ia = 3.1;
   }
 
-  // Assignment.   This eventually generates a call to 'evaluate' in OhmmsVector.h
-  //  To do: pointer to tutorial on expression template techniques
-  B = A;
-
-  // *= operator in OhmmVectorOperators.h
-  B *= 3.1;
-
-  REQUIRE(B[0] == Approx(3.1));
-  REQUIRE(B[1] == Approx(3.1));
-  REQUIRE(B[2] == Approx(3.1));
-
+  REQUIRE(A[0] == Approx(3.1));
+  REQUIRE(A[1] == Approx(3.1));
 }
 
 }
