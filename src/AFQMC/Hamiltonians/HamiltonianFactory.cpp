@@ -21,6 +21,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "Utilities/SimpleParser.h"
 #include "Configuration.h"
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
 
