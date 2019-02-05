@@ -95,46 +95,51 @@ IF (NOT QMC_CUDA)
 #
 
 # LiH molecular dimer pseudopotential tests
-  LIST(APPEND DET_LIH_PP_SCALARS "kinetic" "0.63652296 0.000001")
-  LIST(APPEND DET_LIH_PP_SCALARS "totenergy" "-0.75148455 0.000001")
-  LIST(APPEND DET_LIH_PP_SCALARS "eeenergy" "0.48090104 0.000001")
-  LIST(APPEND DET_LIH_PP_SCALARS "potential" "-1.38800751 0.000001")
-  LIST(APPEND DET_LIH_PP_SCALARS "samples" "1600000 0.0")
+  LIST(APPEND DET_LIH_PP_SCALARS "kinetic" "0.96821731 0.000001")
+  LIST(APPEND DET_LIH_PP_SCALARS "totenergy" "-0.91130196 0.000001")
+  LIST(APPEND DET_LIH_PP_SCALARS "eeenergy" "0.63909115 0.000001")
+  LIST(APPEND DET_LIH_PP_SCALARS "potential" "-1.87951927 0.000001")
+  LIST(APPEND DET_LIH_PP_SCALARS "samples" "9.00000000 0.0")
 
   QMC_RUN_AND_CHECK(deterministic-LiH_dimer_pp-det_vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp"
                     det_vmc_hf_noj
                     det_vmc_hf_noj.in.xml
-                    1 16
+                    1 1
                     TRUE
                     0 DET_LIH_PP_SCALARS # VMC
                     )
 
 #  LiH molecular dimer pseudopotential tests with Jastrow from XML
-  LIST(APPEND DET_LIH_PP_XML_SCALARS "kinetic" "0.63066988 0.000001")
-  LIST(APPEND DET_LIH_PP_XML_SCALARS "totenergy" "-0.78108959 0.000001")
-  LIST(APPEND DET_LIH_PP_XML_SCALARS "eeenergy" "0.43003899 0.000001")
-  LIST(APPEND DET_LIH_PP_XML_SCALARS "potential" "-1.41175947 0.000001")
-  LIST(APPEND DET_LIH_PP_XML_SCALARS "samples" "4032 0.0")
+  LIST(APPEND DET_LIH_PP_XML_SCALARS "kinetic" "0.88959945 0.000001")
+  LIST(APPEND DET_LIH_PP_XML_SCALARS "totenergy" "-0.78804278 0.000001")
+  LIST(APPEND DET_LIH_PP_XML_SCALARS "eeenergy" "0.33132357 0.000001")
+  LIST(APPEND DET_LIH_PP_XML_SCALARS "potential" "-1.67764223 0.000001")
+  LIST(APPEND DET_LIH_PP_XML_SCALARS "samples" "9.00000000 0.0")
 
   QMC_RUN_AND_CHECK(deterministic-LiH_dimer_pp-det_vmc_hf_sdj_xml
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp"
                     det_vmc_hf_sdj_xml
                     det_vmc_hf_sdj_xml.xml
-                    1 16
+                    1 1
                     TRUE
                     0 DET_LIH_PP_XML_SCALARS # VMC
                     ) 
 
 # LiH molecular dimer pseudopotential tests with Jastrow from HDF5
+  LIST(APPEND DET_LIH_PP_HDF5_SCALARS "kinetic" "0.59771340 0.000001")
+  LIST(APPEND DET_LIH_PP_HDF5_SCALARS "totenergy" "-0.77007585 0.000001")
+  LIST(APPEND DET_LIH_PP_HDF5_SCALARS "eeenergy" "0.33166733 0.000001")
+  LIST(APPEND DET_LIH_PP_HDF5_SCALARS "potential" "-1.36778925 0.000001")
+  LIST(APPEND DET_LIH_PP_HDF5_SCALARS "samples" "9.00000000 0.0")
 
   QMC_RUN_AND_CHECK(deterministic-LiH_dimer_pp-det_vmc_hf_sdj_hdf5
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp"
                     det_vmc_hf_sdj_hdf5
                     det_vmc_hf_sdj_hdf5.xml
-                    1 16
+                    1 1
                     TRUE
-                    0 DET_LIH_PP_XML_SCALARS # VMC
+                    0 DET_LIH_PP_HDF5_SCALARS # VMC
                     )
 
 

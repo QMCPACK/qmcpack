@@ -28,7 +28,7 @@ GAMESS numerical results:
    <project id="det_vmc_hf_noj" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
-   <random seed="8816"/>
+   <random seed="624"/>
    <qmcsystem>
       <simulationcell>
          <parameter name="bconds">
@@ -2441,11 +2441,10 @@ GAMESS numerical results:
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
       <parameter name="walkers"             >    1               </parameter>
-      <parameter name="blocks"              >    4             </parameter>
-      <parameter name="steps"               >    5            </parameter>
-      <parameter name="subSteps"            >    3               </parameter>
+      <parameter name="blocks"              >    3             </parameter>
+      <parameter name="steps"               >    3            </parameter>
+      <parameter name="subSteps"            >    1               </parameter>
       <parameter name="timestep"            >    0.4             </parameter>
-      <parameter name="warmupSteps"         >    50              </parameter>
-      <parameter name="samples"             >    1600000         </parameter>
+      <parameter name="warmupSteps"         >    3              </parameter>
    </qmc>
 </simulation>
