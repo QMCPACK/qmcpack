@@ -54,6 +54,18 @@
   showstringspaces=false, % avoid showing underbrackets in quoted text
 }
 
+% For espresso input listings
+\lstdefinestyle{espresso}{language=bash, 
+  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
+  frame=tlrb,
+  frameround=ftft,
+  breaklines=true,
+  escapeinside={<:}{:>},
+  columns=fullflexible,   % copy/paste from pdf w/o added spaces
+  keepspaces=true,        % but do keep the spaces that are already there
+  showstringspaces=false, % avoid showing underbrackets in quoted text
+}
+
 \lstdefinestyle{SHELL}{language=bash, 
   basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
   keywordstyle=\color{blue}\bfseries,

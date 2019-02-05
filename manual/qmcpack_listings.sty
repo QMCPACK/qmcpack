@@ -1,0 +1,104 @@
+\NeedsTeXFormat{LaTeX2e}
+\RequirePackage{xcolor}
+\RequirePackage{listings}
+\ProvidesPackage{qmcpack_listings}
+
+\lstloadlanguages{C++,XML,Python,bash}
+
+\lstdefinestyle{C++}{language=C++,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  commentstyle=\color{gray}\ttfamily,
+  morecomment=[l][\color{magenta}]{\#},
+  frame=tlrb
+  frameround=ftft
+}
+
+\lstdefinestyle{Python}{language=Python,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  commentstyle=\color{gray}\ttfamily,
+  morecomment=[l][\color{magenta}]{\#},
+  frame=tlrb
+  frameround=ftft
+}
+
+\lstdefinestyle{XML}{language=xml, 
+  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
+  keywordstyle=\color{blue}\bfseries,
+  backgroundcolor=\color{verbgray},
+  frame=tlrb,
+  frameround=ftft,
+  breaklines=true,
+  escapeinside={<:}{:>},
+  columns=fullflexible,   % copy/paste from pdf w/o added spaces
+  keepspaces=true,        % but do keep the spaces that are already there
+  showstringspaces=false, % avoid showing underbrackets in quoted text
+}
+
+\lstdefinestyle{SHELL}{language=bash, 
+  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
+  backgroundcolor=\color{verbgray},
+  breaklines=true,
+  columns=fullflexible,   % copy/paste from pdf w/o added spaces
+  keepspaces=true,        % but do keep the spaces that are already there
+  showstringspaces=false, % avoid showing underbrackets in quoted text
+}
+
+\definecolor{verbgray}{gray}{0.9}
+
+\lstnewenvironment{shade}{%
+  \lstset{backgroundcolor=\color{verbgray},
+  frame=single,
+  framerule=0pt,
+  basicstyle=\footnotesize\ttfamily,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  escapeinside={\%*}{*}}}{}
+
+\definecolor{espred}{rgb}{1,0,0}
+\definecolor{espblue}{rgb}{0,0,1}
+\lstdefinelanguage{espresso}
+{ keywords={SYSTEM,ELECTRONS,ATOMIC_SPECIES,ATOMIC_POSITIONS,K_POINTS,CONTROL,CELL_PARAMETERS,},
+  keywordstyle=\color{espred},
+  keywords=[3]{calculation,restart_mode,prefix,outdir,pseudo_dir,disk_io,wf_collect,},
+  keywordstyle=[3]\color{espblue},
+  sensitive=false,
+}
+
+% For espresso input listings
+\lstdefinestyle{ESPRESSO}{language=espresso, 
+  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
+  frame=tlrb,
+  frameround=ftft,
+  breaklines=true,
+  columns=fullflexible,   % copy/paste from pdf w/o added spaces
+  keepspaces=true,        % but do keep the spaces that are already there
+  showstringspaces=false, % avoid showing underbrackets in quoted text
+}
+
+\lstdefinelanguage{gamess}
+{classoffset=1
+  mathescape=false,
+  keywords={CITYP,SCFTYP,CISTEP,FULLNR,GROUP,NMCC,NDOC,NALP,NVAL,ISTSYM,MXNINT,FORS,PRTTOL,CVGTOL,ITERMX,NFZC,SOCI,NEXT,ACURCY,RUNTYP,MULT,ISPHER,EXETYP,COORD,MAXIT,MEMORY,DIRSCF,GUESS,},
+  keywordstyle=\color{espblue},
+  keywords=[3]{\$ECP,\$DRT,\$CIDRT,\$GUGDIA,\$MCSCF,\$CONTRL,\$END,\$SYSTEM,\$DATA,\$SCF,\$GUESS,},
+  keywordstyle=[3]\color{espred},
+  sensitive=true,
+}
+
+\lstdefinestyle{GAMESS}{language=gamess,
+  basicstyle=\footnotesize\ttfamily,
+  commentstyle=\color{gray}\ttfamily,
+  frame=tlrb,
+  breaklines=true,
+  keepspaces=true,
+}
+
+\newcommand{\igamess}[1]{\lstinline[style=GAMESS]{#1}}
+\newcommand{\ishell}[1]{\lstinline[style=SHELL]{#1}}
+\newcommand{\ixml}[1]{\lstinline[style=XML]{#1}}
+\newcommand{\inlinecode}[1]{\lstinline|#1|}
