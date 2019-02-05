@@ -16,6 +16,7 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2RAdoptor.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineC2ROMP.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2CAdoptor.h"
 #include "QMCWaveFunctions/BsplineFactory/HybridCplxAdoptor.h"
 #include <fftw3.h>
@@ -41,7 +42,8 @@ namespace qmcplusplus
     if(hybrid_rep)
       aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<float,RealType> > >(e);
     else
-      aReader= new SplineAdoptorReader<SplineC2RSoA<float,RealType> >(e);
+      aReader= new SplineAdoptorReader<SplineC2ROMP<float,RealType> >(e);
+      //aReader= new SplineAdoptorReader<SplineC2RSoA<float,RealType> >(e);
 #endif
 
     return aReader;
