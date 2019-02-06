@@ -499,7 +499,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],cas_idx=None):
     GroupNbkpts.create_dataset("Nbkpts",(1,),dtype="i4",data=Nbkpts)
     
     GroupDet=H5_qmcpack.create_group("KPTS_0")
-    if Restricted=True:
+    if Restricted==True:
       NbMO=len(mo_coeff)
       NbAO=len(mo_coeff[0])
       if loc_cell.cart==True:
