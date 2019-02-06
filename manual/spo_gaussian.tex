@@ -215,7 +215,12 @@ Name of the species where basis functions are centered. Only one atomicBasisSet 
 \item \ixml{type}\\
   Type of input basis radial function. Notice that this refers to the type of radial function in the input xml-block, which might not match the radial function generated internally and used in the calculation (if \ixml{transform} is set to "yes"). Also notice that different \ixml{basisGroup} blocks within a given \ixml{atomicBasisSet} can have different \ixml{type}.
 \item \ixml{n/l/m/s}\\
-  Quantum numbers of the basis function. Notice that if \ixml{expandYlm} is set to \textit{"yes"} in \ixml{atomicBasisSet}, a full shell of basis functions with the appropriate values of \textit{"m"} will be defined for the corresponding value of \textit{"l"}. Otherwise a single basis function will be given for the specific combination of \textit{"(l,m)"}. 
+  Quantum numbers of the basis function. Notice that if
+\ixml{expandYlm} is set to \textit{"yes"} in \ixml{atomicBasisSet}, a
+full shell of basis functions with the appropriate values of
+\textit{"m"} will be defined for the corresponding value of
+\textit{"l"}. Otherwise a single basis function will be given for the
+specific combination of \textit{"(l,m)"}.
 \end{itemize}
 
 \ixml{radfunc} attributes for \ixml{type}=\textit{"Gaussian"}:

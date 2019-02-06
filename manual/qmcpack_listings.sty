@@ -11,6 +11,8 @@
   stringstyle=\color{red}\ttfamily,
   commentstyle=\color{gray}\ttfamily,
   morecomment=[l][\color{magenta}]{\#},
+  breaklines=true,
+  breakatwhitespace=true,
   frame=tlrb
   frameround=ftft
 }
@@ -124,7 +126,7 @@
 \newcommand{\ishell}[1]{\lstinline[style=SHELL]{#1}}
 \newcommand{\ixml}[1]{\lstinline[style=QMCPXML]{#1}}
 \newcommand\txml[1][]{\begin{lstlisting}[style=QMCPXML]^^J{#1}\end{lstlisting}}
-\newcommand{\icode}[1]{\lstinline|#1|}
+\newcommand{\icode}[1]{\lstinline[style=C++]|#1|}
 \newcommand{\ilatex}[1]{\lstinline[style=LATEX]{#1}}
 % deprecated
 \newcommand{\inlinecode}[1]{\lstinline|#1|}

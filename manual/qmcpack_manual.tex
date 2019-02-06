@@ -1,4 +1,4 @@
-\documentclass[11pt,usletter]{report}
+\documentclass[11pt,letterpaper]{report}
 \usepackage{qmcpack_manual}
 \usepackage{bibtopic}
 \bibliographystyle{ieeetr}
@@ -9,11 +9,9 @@
 \usepackage{algorithm}
 \usepackage{makeidx}
 \usepackage{fancyhdr}
-\usepackage{hyperref} %for urls
+\usepackage[colorlinks=true]{hyperref} %for urls
 \usepackage{tabularx}
 \usepackage{placeins}
-% environment for shaded verbatim
-%\usepackage{verbatim}
 \usepackage{caption}
 \usepackage{graphicx}
 
@@ -87,15 +85,22 @@
 \newcommand{\tr}{\text{tr}} % trace
 
 % urls are were too large
+% hyperref gives us an easy way to control that
 \renewcommand{\UrlFont}{\ttfamily\small}
 
+% latex itself doesn't give us an easy way to deal with \texttt's font size
+% so we need to define this command
 \usepackage{letltxmacro}
 % https://tex.stackexchange.com/q/88001/5764
 \LetLtxMacro\oldttfamily\ttfamily
 \DeclareRobustCommand{\ttfamily}{\oldttfamily\csname ttsize\endcsname}
 \newcommand{\setttsize}[1]{\def\ttsize{#1}}%
 
+% while \texttt use should be sparing (see contributing.tex) its necessary for the
+% QMCPACK input XML spec tables, but those are also nearly too big for the page
 \setttsize{\footnotesize}
+
+
 
 \begin{document}
 
