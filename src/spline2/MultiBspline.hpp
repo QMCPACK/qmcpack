@@ -96,15 +96,6 @@ namespace qmcplusplus
           myAllocator.destroy(spline_m);
       }
 
-      template<typename RV, typename IV>
-      void create(RV& start, RV& end, IV& ng, bc_code bc, int num_splines)
-      {
-        if(getAlignedSize<T>(num_splines)!=num_splines)
-          throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!");
-        if(spline_m==nullptr)
-          spline_m=myAllocator.createMultiBspline(T(0),start,end,ng,bc,num_splines);
-      }
-
       /** create the einspline as used in the builder
        */
       template<typename GT, typename BCT>

@@ -59,24 +59,6 @@ namespace qmcplusplus { namespace einspline {
     UBspline_3d_d* allocateUBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid, 
         BCtype_d xBC, BCtype_d yBC, BCtype_d zBC, double* data=nullptr);
 
-    /** allocate a multi_UBspline_3d_(s,d)
-     * @tparam T datatype
-     * @tparam ValT 3D container for start and end
-     * @tparam IntT 3D container for ng
-     */
-    template<typename T, typename ValT, typename IntT>
-      typename bspline_traits<T,3>::SplineType*
-      createMultiBspline(T dummy, ValT& start , ValT& end, IntT& ng, bc_code bc, int num_splines);
-
-    /** allocate a UBspline_3d_(s,d)
-     * @tparam T datatype
-     * @tparam ValT 3D container for start and end
-     * @tparam IntT 3D container for ng
-     */
-    template< typename ValT, typename IntT, typename T>
-      typename bspline_traits<T,3>::SingleSplineType*
-      createUBspline(ValT& start , ValT& end, IntT& ng , bc_code bc,T* data=nullptr);
-
     /** set the data to a spline, interpolation is done
      * @param indata starting address of the input data
      * @param spline target MultiBsplineType
@@ -100,36 +82,6 @@ namespace qmcplusplus { namespace einspline {
     /** copy double to single: only for testing */
     void copy(multi_UBspline_3d_d* in, multi_UBspline_3d_s* out);
   };
-
-  template<typename T, typename ValT, typename IntT>
-    typename bspline_traits<T,3>::SplineType*
-    Allocator::createMultiBspline(T dummy, ValT& start , ValT& end, IntT& ng , bc_code bc, int num_splines)
-    { 
-      Ugrid x_grid, y_grid, z_grid;
-      typename bspline_traits<T,3>::BCType xBC,yBC,zBC;
-      x_grid.start=start[0]; x_grid.end=end[0]; x_grid.num=ng[0];
-      y_grid.start=start[1]; y_grid.end=end[1]; y_grid.num=ng[1];
-      z_grid.start=start[2]; z_grid.end=end[2]; z_grid.num=ng[2];
-      xBC.lCode=xBC.rCode=bc;
-      yBC.lCode=yBC.rCode=bc;
-      zBC.lCode=zBC.rCode=bc;
-      return allocateMultiBspline(x_grid,y_grid,z_grid, xBC, yBC, zBC, num_splines);
-    }
-
-  template< typename ValT, typename IntT, typename T>
-    typename bspline_traits<T,3>::SingleSplineType*
-    Allocator::createUBspline(ValT& start , ValT& end, IntT& ng , bc_code bc, T* data)
-    { 
-      Ugrid x_grid, y_grid, z_grid;
-      typename bspline_traits<T,3>::BCType xBC,yBC,zBC;
-      x_grid.start=start[0]; x_grid.end=end[0]; x_grid.num=ng[0];
-      y_grid.start=start[1]; y_grid.end=end[1]; y_grid.num=ng[1];
-      z_grid.start=start[2]; z_grid.end=end[2]; z_grid.num=ng[2];
-      xBC.lCode=xBC.rCode=bc;
-      yBC.lCode=yBC.rCode=bc;
-      zBC.lCode=zBC.rCode=bc;
-      return allocateUBspline(x_grid,y_grid,z_grid, xBC, yBC, zBC,data);
-    }
 
   template<typename UBT, typename MBT>
     void Allocator::copy(UBT* single, MBT* multi, int i,  const int* offset, const int* N)
