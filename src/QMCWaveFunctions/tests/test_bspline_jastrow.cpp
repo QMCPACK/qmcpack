@@ -363,7 +363,9 @@ const char *particles = \
   /////////////////////////////////////////
   //Testing the ion gradient w.r.t. ion # 0
   /////////////////////////////////////////
-  
+  //NOTE:  All test values in this section are validated against finite differences
+  //       for this configuration.
+
   //First we test evalGradSource(P,ions,ionid);
 
   gsource=j1->evalGradSource(elec_, ions_, 0);
