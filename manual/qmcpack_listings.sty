@@ -25,10 +25,12 @@
   frameround=ftft
 }
 
-\lstdefinestyle{XML}{language=xml, 
+\lstdefinestyle{QMCPXML}{language=XML, 
   basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
-  keywordstyle=\color{blue}\bfseries,
+  keywordstyle=\color{espblue}\bfseries,
   backgroundcolor=\color{verbgray},
+  markfirstintag=true,
+  stringstyle=\color{espred},
   frame=tlrb,
   frameround=ftft,
   breaklines=true,
@@ -38,8 +40,10 @@
   showstringspaces=false, % avoid showing underbrackets in quoted text
 }
 
-\lstdefinestyle{SHELL}{language=bash, 
-  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
+\definecolor{verbgray}{gray}{0.9}
+
+\lstdefinestyle{SHELL}{language=bash,
+  basicstyle=\ttfamily\footnotesize,
   backgroundcolor=\color{verbgray},
   breaklines=true,
   columns=fullflexible,   % copy/paste from pdf w/o added spaces
@@ -47,17 +51,18 @@
   showstringspaces=false, % avoid showing underbrackets in quoted text
 }
 
-\definecolor{verbgray}{gray}{0.9}
-
-\lstnewenvironment{shade}{%
-  \lstset{backgroundcolor=\color{verbgray},
-  frame=single,
-  framerule=0pt,
-  basicstyle=\footnotesize\ttfamily,
-  breaklines=true,
-  columns=fullflexible,
-  keepspaces=true,
-  escapeinside={\%*}{*}}}{}
+\lstnewenvironment{shade}{
+  \lstset{backgroundcolor=\color{verbgray},%
+    language=csh,%
+    extendedchars=true,%
+    frame=single,%
+    framerule=0pt,%
+    basicstyle=\ttfamily\footnotesize,%
+    breaklines=true,%
+    columns=fullflexible,%
+    keepspaces=true,%
+    escapeinside={\%*}{*},}}
+    {}
 
 \definecolor{espred}{rgb}{1,0,0}
 \definecolor{espblue}{rgb}{0,0,1}
@@ -98,7 +103,20 @@
   keepspaces=true,
 }
 
+\lstdefinestyle{LATEX}{language=[LaTeX]TeX,
+  basicstyle=\footnotesize\ttfamily,
+  commentstyle=\color{gray}\ttfamily,
+  breaklines=true,
+  keepspaces=true,
+}
+
+
+
 \newcommand{\igamess}[1]{\lstinline[style=GAMESS]{#1}}
 \newcommand{\ishell}[1]{\lstinline[style=SHELL]{#1}}
-\newcommand{\ixml}[1]{\lstinline[style=XML]{#1}}
+\newcommand{\ixml}[1]{\lstinline[style=QMCPXML]{#1}}
+\newcommand\txml[1][]{\begin{lstlisting}[style=QMCPXML]^^J{#1}\end{lstlisting}}
+\newcommand{\icode}[1]{\lstinline|#1|}
+\newcommand{\ilatex}[1]{\lstinline[style=LATEX]{#1}}
+% deprecated
 \newcommand{\inlinecode}[1]{\lstinline|#1|}

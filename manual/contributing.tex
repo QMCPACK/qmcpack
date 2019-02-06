@@ -2,13 +2,27 @@
 \chapter{Contributing to the Manual}
 \label{chap:contrib}
 
-This section briefly describes how to contribute to the manual.  It is primarily ``by developers, for developers''.   This section should iterate until a consistent view on style/contents is reached.
+This section briefly describes how to contribute to the manual.  This is primarily ``by developers, for developers''.   This section should iterate until a consistent view on style/contents is reached.
 
 \textbf{\underline{Desirable:}}
 \begin{itemize}
-  \item{Use the table templates below when describing XML input.}
-  \item{Place unformatted text targeted at developers in comments.  Include generously.}  
-  \item{Encapsulate formatted text aimed at developers (like this entire chapter), in $\backslash$\texttt{dev\{\}}.  Text encapsulated in this way will be removed from the user version of the manual by editing the definition of $\backslash$\texttt{dev} in \texttt{qmcpack\_manual.tex}.  Existing but deprecated or partially functioning features fall in this category.}
+\item{Use the table templates below when describing XML input.}
+\item{\bf{Except} within tabularx environments}\\Instead of \ilatex{\\texttt} or \ilatex{\\verb} use
+    \begin{itemize}
+      \item{\ilatex{\\ishell} for shell text}
+      \item{\ilatex{\\ixml} for xml text}
+      \item{\ilatex{\\icode} for C++ text}
+      \end{itemize}
+     
+    \item{Instead of \ilatex{\\begin{verbatim}} environments use the appropriate \ilatex{\\begin\{lstlisting\}[style=<see qmcpack_listings.sty>]}}
+\item{\ilatex{\\begin\{shade\}} can be used in place of \ilatex{\\begin\{lstlisting\}[style=SHELL]}}
+\item{Place unformatted text targeted at developers working on the latex in comments.  Include generously.}  
+\item{Encapsulate formatted text aimed at developers (like this entire chapter), in $\backslash$\texttt{dev\{\}}.  Text encapsulated in this way will be removed from the user version of the manual by editing the definition of $\backslash$\texttt{dev} in \ishell{qmcpack\_manual.tex}.  Existing but deprecated or partially functioning features fall in this category.}
+\end{itemize}
+
+\textbf{\underline{Forbidden:}}
+\begin{itemize}
+\item Including images instead of using lstlisting sections for text.
 \end{itemize}
 
 
@@ -25,7 +39,7 @@ This section briefly describes how to contribute to the manual.  It is primarily
 \end{itemize}
 
 
-Below are template tables for describing XML elements in reference fashion.  A number of examples can be found in \textit{e.g.} Chapter \ref{chap:hamiltobs}.  Preliminary style is (please weigh in with opinions): typewriter text ($\backslash$\texttt{texttt\{\}}) for XML element, attribute, and parameter names, normal text for literal information in datatype/values/default columns, bold ($\backslash$\texttt{textbf\{\}}) text if an attribute/parameter must take on a particular value (values column), italics ($\backslash$\texttt{textit\{\}}) for descriptive (non-literal) information in the values column (e.g. \textit{anything}, \textit{non-zero}, etc.), required/optional attributes/parameters noted by \texttt{some\_attr$^r$}/\texttt{some\_attr$^o$} superscripts.  Valid datatypes are text, integer, real, boolean, and arrays of each.  Fixed lengh arrays can be noted, \textit{e.g.} by ``real array(3)''.
+Below are template tables for describing XML elements in reference fashion.  A number of examples can be found in \textit{e.g.} Chapter \ref{chap:hamiltobs}.  Preliminary style is (please weigh in with opinions): typewriter text (\ilatex{\\texttt\{\}}) for XML element, attribute, and parameter names, normal text for literal information in datatype/values/default columns, bold (\ilatex{\\textbf\{\}}) text if an attribute/parameter must take on a particular value (values column), italics (\ilatex{\\textit\{\}}) for descriptive (non-literal) information in the values column (e.g. \textit{anything}, \textit{non-zero}, etc.), required/optional attributes/parameters noted by \texttt{some\_attr$^r$}/\texttt{some\_attr$^o$} superscripts.  Valid datatypes are text, integer, real, boolean, and arrays of each.  Fixed lengh arrays can be noted, \textit{e.g.} by ``real array(3)''.
 
 
 Template for a generic XML element:
@@ -68,9 +82,9 @@ Template for a generic XML element:
 
 
 
-``Factory'' elements are XML elements that share a tag, but whose contents change based on the value an attribute (or sometimes multiple attributes take).  The attribute(s) that determine the allowed contents is referred to below as the ``type selector''  (\textit{e.g.} for \texttt{<estimator/>} elements, the type selector is usually the \texttt{type} attribute).  These types of elements are frequently encountered as they correspond (sometimes loosely, sometimes literally) to polymorphic classes in \qmcpack that are built in ``factories''.  This name is true to the underlying code, but may be obscure to the general user (is there a better name to retain the general meaning?).   
+``Factory'' elements are XML elements that share a tag, but whose contents change based on the value an attribute (or sometimes multiple attributes take).  The attribute(s) that determine the allowed contents is referred to below as the ``type selector''  (\textit{e.g.} for \ixml{<estimator/>} elements, the type selector is usually the \ixml{type} attribute).  These types of elements are frequently encountered as they correspond (sometimes loosely, sometimes literally) to polymorphic classes in \qmcpack that are built in ``factories''.  This name is true to the underlying code, but may be obscure to the general user (is there a better name to retain the general meaning?).   
 
-The template below should be provided each time a new ``factory'' type is encountered (like \texttt{<estimator/>}).  The table lists all types of possible elements (see ``type options'' below) and any attributes that are common to all possible related elements.  Specific ``derived'' elements are then described one at a time with the template above, noting the type selector in addition to the XML tag (\textit{e.g.} ``\texttt{estimator type=density} element'').
+The template below should be provided each time a new ``factory'' type is encountered (like \ixml{<estimator/>}).  The table lists all types of possible elements (see ``type options'' below) and any attributes that are common to all possible related elements.  Specific ``derived'' elements are then described one at a time with the template above, noting the type selector in addition to the XML tag (\textit{e.g.} ``\ixml{estimator type=density} element'').
 
 Template for shared information about ``factory'' elements.
 \FloatBarrier

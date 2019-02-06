@@ -12,7 +12,7 @@ Due to the large variation of wavefunction types carrying distinct characteristi
 It is highly suggested to read the recommendation from the experts maintaining these optimizers.
 
 A typical optimization block looks like the following. It starts with method=``linear" and contains three blocks of parameters.
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
  <loop max="10">
   <qmc method="linear" move="pbyp" gpu="yes">
     <!-- Specify the VMC options -->
@@ -95,7 +95,7 @@ the proposed set of parameters is invalid. % The last set of acceptable paramete
 \end{itemize}
 
 The cost function consists of three components: energy, unreweighted variance and reweighted variance.
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
      <cost name="energy">                   0.95 </cost>
      <cost name="unreweightedvariance">     0.00 </cost>
      <cost name="reweightedvariance">       0.05 </cost>
@@ -152,7 +152,7 @@ It is recommended to use this optimizer in two sections with a very small \textt
 In the very beginning, parameters are far away form optimal values and large changes are proposed by the optimizer.
 Having a small \texttt{minwalkers} allows accepting these changes much easier.
 When the energy gradually converges, we can have a large \texttt{minwalkers} to avoid risky parameter sets.
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
  <loop max="6">
   <qmc method="linear" move="pbyp" gpu="yes">
     <!-- Specify the VMC options -->
@@ -268,7 +268,7 @@ Recommendations:
         often provide a good balance between memory use and accuracy.  In general, using fewer blocks should be more accurate but will require more memory.
 \end{itemize}
 
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
  <loop max="15">
   <qmc method="linear" move="pbyp">
     <!-- Specify the VMC options -->
@@ -378,7 +378,7 @@ Recommendations:
 to 0 and do a single inner iteration (max its=1) per sample of configurations.}
 \end{itemize}
 
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
     <!-- Specify the optimizer options -->
     <parameter name="MinMethod">quartic</parameter>
     <parameter name="exp0">-6</parameter>

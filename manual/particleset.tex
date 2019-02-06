@@ -2,7 +2,7 @@
 \label{sec:particleset}
 
 
-The \texttt{particleset} blocks specify the particles in the QMC simulations: their types, attributes (mass, charge, valence), and positions.   
+The \ixml{particleset} blocks specify the particles in the QMC simulations: their types, attributes (mass, charge, valence), and positions.   
 
 \subsection{Input specification}
 \begin{table}[h]
@@ -75,7 +75,7 @@ The \texttt{particleset} blocks specify the particles in the QMC simulations: th
 \subsubsection{particleset required attributes}
 
 \begin{itemize}
-\item \texttt{name}/\texttt{id} \\
+\item \ixml{name}/\ixml{id} \\
 Unique name for the particle set. Default is ``e" for electrons. ``i" or ``ion0" is typically used for ions. 
 \end{itemize}
 % Line 192 in ParticleIO/XMLParticleIO.cpp
@@ -84,26 +84,26 @@ Unique name for the particle set. Default is ``e" for electrons. ``i" or ``ion0"
 \subsubsection{particleset optional attributes}
 
 \begin{itemize}
-\item \texttt{size} \\
+\item \ixml{size} \\
 Number of particles in set
 \end{itemize}
 % Line 191 in ParticleIO/XMLParticleIO.cpp
 
 %\begin{itemize}
-%\item \texttt{role} \\
+%\item \ixml{role} \\
 %What the particles do in the simulation
 %\end{itemize}
 % Line 146 in QMCApp/ParticleSetPool.cpp
 
 \begin{itemize}
-\item \texttt{random} \\
+\item \ixml{random} \\
 Randomize starting positions of particles. Each component of each particle's position is randomized independently in the range of the simulation cell in that component's direction. 
 \end{itemize}
 % Line 190 in ParticleIO/XMLParticleIO.cpp
 % Line 147 in QMCApp/ParticleSetPool.cpp
 
 \begin{itemize}
-\item \texttt{randomsrc}/\texttt{random\_source} \\
+\item \ixml{randomsrc}/\ixml{random\_source} \\
 Specify source particle set around which to randomize the initial positions of this particle set.
 \end{itemize}
 % Lines 148-149 in QMCApp/ParticleSetPool.cpp
@@ -111,7 +111,7 @@ Specify source particle set around which to randomize the initial positions of t
 \subsubsection{name required attributes}
 
 \begin{itemize}
-\item \texttt{name}/\texttt{id} \\
+\item \ixml{name}/\ixml{id} \\
 Unique name for the particle set group. Typically, element symbols are used for ions and ``u" or ``d" for spin-up and spin-down electron groups, respectively. 
 \end{itemize}
 % Line 192 in ParticleIO/XMLParticleIO.cpp
@@ -120,13 +120,13 @@ Unique name for the particle set group. Typically, element symbols are used for 
 \subsubsection{group optional attributes}
 
 \begin{itemize}
-\item \texttt{mass} \\
+\item \ixml{mass} \\
 Mass of particles in set.
 \end{itemize}
 % Line 190 in Particle/ParticleSet.cpp
 
 \begin{itemize}
-\item \texttt{unit} \\
+\item \ixml{unit} \\
 Units for mass of particles in set (au[$m_e$ = 1] or amu[$\frac{1}{12}m_{\rm ^{12}C}$ = 1]).
 \end{itemize}
 % Line 66 in ParticleIO/XMLParticleIO.cpp
@@ -139,7 +139,7 @@ Units for mass of particles in set (au[$m_e$ = 1] or amu[$\frac{1}{12}m_{\rm ^{1
 
 \subsection{Example use cases}
 \begin{minipage}{\linewidth}
-\begin{lstlisting}[style=XML,caption=particleset elements for ions and electrons randomizing electron start positions.]
+\begin{lstlisting}[style=QMCPXML,caption=particleset elements for ions and electrons randomizing electron start positions.]
   <particleset name="i" size="2">
     <group name="Li">
       <parameter name="charge">3.000000</parameter>
@@ -171,7 +171,7 @@ Units for mass of particles in set (au[$m_e$ = 1] or amu[$\frac{1}{12}m_{\rm ^{1
 \end{minipage}
 
 \begin{minipage}{\linewidth}
-\begin{lstlisting}[style=XML,caption=particleset elements for ions and electrons specifying electron start positions]
+\begin{lstlisting}[style=QMCPXML,caption=particleset elements for ions and electrons specifying electron start positions]
   <particleset name="e">
     <group name="u" size="4">
       <parameter name="charge">-1</parameter>
@@ -216,7 +216,7 @@ Units for mass of particles in set (au[$m_e$ = 1] or amu[$\frac{1}{12}m_{\rm ^{1
 \end{minipage}
 
 \begin{minipage}{\linewidth}
-\begin{lstlisting}[style=XML,caption=particleset elements for ions specifying positions by ion type]
+\begin{lstlisting}[style=QMCPXML,caption=particleset elements for ions specifying positions by ion type]
   <particleset name="ion0">
     <group name="O" size="1">
       <parameter name="charge">6</parameter>

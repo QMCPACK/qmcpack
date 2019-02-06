@@ -319,7 +319,7 @@ Iterative varational Monte Carlo methods have been developed to handle the non-l
 }
 
 First, we need to update the template particle and wavefunction information in \ishell{O.q0.ptcl.xml} and \ishell{O.q0.wfs.xml}.  We want to simulate the O atom in open boundary conditions (the default is periodic).  To do this open \ishell{O.q0.ptcl.xml} with your favorite text editor (e.g. \ishell{emacs} or \ishell{vi}) and replace
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 <parameter name="bconds">
    p p p
 </parameter>
@@ -328,14 +328,14 @@ First, we need to update the template particle and wavefunction information in \
 </parameter>
 \end{lstlisting}
 with
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 <parameter name="bconds">
    n n n 
 </parameter>
 \end{lstlisting}
 
 Next we will select Jastrow factors appropriate for an atom.  In open boundary conditions, the B-spline Jastrow correlation functions should cut off to zero at some distance away from the atom.  Open \ishell{O.q0.wfs.xml} and add the following cutoffs (\ishell{rcut} in Bohr radii) to the correlation factors:
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 ...
 <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
 ...
@@ -346,7 +346,7 @@ Next we will select Jastrow factors appropriate for an atom.  In open boundary c
 \end{lstlisting}
 \noindent
 These terms correspond to $u_2^{\uparrow\uparrow}/u_2^{\downarrow\downarrow}$, $u_2^{\uparrow\downarrow}$, and $u_1^{\uparrow O}/u_1^{\downarrow O}$, respectively.  In each case, the correlation function ($u_*$) is represented by piecewise continuous cubic B-splines.  Each correlation function has eight parameters which are just the values of $u$ on a uniformly spaced grid up to \ishell{rcut}.  Initially the parameters (\ishell{coefficients}) are set to zero:
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
   <coefficients id="uu" type="Array">
      0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
@@ -355,7 +355,7 @@ These terms correspond to $u_2^{\uparrow\uparrow}/u_2^{\downarrow\downarrow}$, $
 \end{lstlisting}
 
 Finally, we need to assemble particle, wavefunction, and pseudopotential information into the main QMCPACK input file (\ishell{O.q0.opt.in.xml}) and specify inputs for the Jastrow optimization process.  Open \ishell{O.q0.opt.in.xml} and write in the location of the particle, wavefunction, and pseudopotential files (``\ishell{<!-- ... -->}'' are comments):
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 ...
 <!-- include simulationcell and particle information from pw2qmcpqack -->
 <include href="O.q0.ptcl.xml"/>
@@ -369,7 +369,7 @@ Finally, we need to assemble particle, wavefunction, and pseudopotential informa
 \end{lstlisting}
 \noindent
 The relevant portion of the input describing the linear optimization process is
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 <loop max="MAX">  
   <qmc method="linear" move="pbyp" checkpoint="-1">
     <cost name="energy"              >  ECOST    </cost>
@@ -541,7 +541,7 @@ The drift term can be sampled with standard Monte Carlo methods, while the branc
 
 
 In the same directory you used to perform wavefunction optimization (\ishell{oxygen\_atom}) you will find a sample DMC input file for the neutral oxygen atom named \ishell{O.q0.dmc.in.xml}.  Open this file in a text editor and note the differences from the optimization case.  Wavefunction information is no longer included from \ishell{pw2qmcpack}, but instead should come from the optimization run:
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 <!-- OPT_XML is from optimization, e.g. O.q0.opt.s008.opt.xml -->
 <include href="OPT_XML"/>
 \end{lstlisting}
@@ -575,7 +575,7 @@ To study timestep bias, we will perform a sequence of DMC runs over a range of t
 Each DMC run will require about twice as much computer time as the one preceding it.  Note that the number of blocks is kept fixed for uniform statistical analysis.  $\ishell{blocks}\times\ishell{steps}\times\ishell{timestep}\sim 60~\mathrm{Ha}^{-1}$ is sufficient for this system.
 
 Choose an initial DMC timestep and create a sequence of $N$ timesteps according to \ref{eq:timestep_iter}.  Make $N$ copies of the DMC XML block in the input file
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
    <qmc method="dmc" move="pbyp">
       <parameter name="warmupSteps"         >    DWARMUP         </parameter>
       <parameter name="blocks"              >    DBLOCKS         </parameter>
@@ -675,7 +675,7 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
   \begin{enumerate}
     \item{Copy the optimization input (\ishell{O.q0.opt.in.xml}) to \ishell{O.q1.opt.in.xml}}
     \item{Edit \ishell{O.q1.opt.in.xml} to match the file prefix used in DFT}
-    \begin{lstlisting}[style=XML]
+    \begin{lstlisting}[style=QMCPXML]
      ...
      <project id="O.q1.opt" series="0">
      ...
@@ -685,13 +685,13 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
      ...
     \end{lstlisting}
     \item{Edit the particle XML file (O.q1.ptcl.xml) to have open boundary conditions}
-    \begin{lstlisting}[style=XML]
+    \begin{lstlisting}[style=QMCPXML]
       <parameter name="bconds">
         n n n 
       </parameter>
     \end{lstlisting}
     \item{Add cutoffs to the Jastrow factors in the wavefunction XML file (O.q1.wfs.xml)}
-    \begin{lstlisting}[style=XML]
+    \begin{lstlisting}[style=QMCPXML]
       ...
       <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
       ...
@@ -708,7 +708,7 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
   \begin{enumerate}
     \item{Copy the DMC input (\ishell{O.q0.dmc.in.xml}) to \ishell{O.q1.dmc.in.xml}}
     \item{Edit \ishell{O.q1.dmc.in.xml} to use the DFT prefix and the optimal Jastrow}
-    \begin{lstlisting}[style=XML]
+    \begin{lstlisting}[style=QMCPXML]
      ...
      <project id="O.q1.dmc" series="0">
      ...

@@ -32,7 +32,7 @@ Other options inside the \texttt{<include>} tag are \texttt{opt\_x} and \texttt{
 
 \subsection{Example Use Case}
 
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 <fdlrwfn name="FDLR">
   <include wfn_x_href="h2.wfn_x.xml" wfn_d_href="h2.wfn_d.xml" opt_x="yes" opt_d="yes"/>
 </fdlrwfn>
@@ -40,7 +40,7 @@ Other options inside the \texttt{<include>} tag are \texttt{opt\_x} and \texttt{
 
 with the \texttt{h2.wfn\_x.xml} file containing one of the wave functions and corresponding set of $\mathbf{X}$ parameters, such as:
 
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 <?xml version="1.0"?>
 <wfn_x>
     <determinantset name="LCAOBSet" type="MolecularOrbital" transform="yes" source="ion0">

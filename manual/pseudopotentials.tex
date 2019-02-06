@@ -13,11 +13,11 @@ application.
 \subsection{Opium}
 \label{subsec:opium}
 
-Opium is a pseudopotential generation code available from the website \url{http://opium.sourceforge.net/}.  Opium can generate pseudopotentials with either Hartree-Fock or DFT methods.  Once you have a useable pseudopotential param file (for example, \texttt{Li.param}), generate pseudopotentials for use in Quantum ESPRESSO with the \texttt{upf} format as follows:
+Opium is a pseudopotential generation code available from the website \url{http://opium.sourceforge.net/}.  Opium can generate pseudopotentials with either Hartree-Fock or DFT methods.  Once you have a useable pseudopotential param file (for example, \ishell{Li.param}), generate pseudopotentials for use in Quantum ESPRESSO with the \ishell{upf} format as follows:
 \begin{lstlisting}[caption=Generate UPF-formatted pseudopotential with Opium]
 opium Li.param Li.log all upf
 \end{lstlisting}
-This generates a UPF-formatted pseudopotential (\texttt{Li.upf}, in this case) for use in Quantum ESPRESSO.  The pseudopotential conversion tool \texttt{ppconvert} can then convert UPF to FSAtom xml format for use in QMCPACK:
+This generates a UPF-formatted pseudopotential (\ishell{Li.upf}, in this case) for use in Quantum ESPRESSO.  The pseudopotential conversion tool \ishell{ppconvert} can then convert UPF to FSAtom xml format for use in QMCPACK:
 \begin{lstlisting}[caption=Convert UPF-formatted pseudopotential to FSAtom xml format]
 ppconvert --upf_pot Li.upf --xml Li.xml
 \end{lstlisting}
@@ -36,7 +36,7 @@ Li-QMC GEN 2 1
 1
 7.09172172 2 1.34319829
 \end{lstlisting}
-Save these lines to a file (here, named \texttt{Li.BFD.gamess}; the exact name may be anything as long as it is passed to \texttt{ppconvert} after --gamess\_pot).  Then, convert using \texttt{ppconvert} with the following:
+Save these lines to a file (here, named \ishell{Li.BFD.gamess}; the exact name may be anything as long as it is passed to \ishell{ppconvert} after --gamess\_pot).  Then, convert using \ishell{ppconvert} with the following:
 \begin{lstlisting}[caption=Convert GAMESS-formatted pseudopotential to FSAtom xml format]
   ppconvert --gamess_pot Li.BFD.gamess --s_ref "2s(1)" --p_ref "2p(0)" --xml Li.BFD.xml
 \end{lstlisting}
@@ -46,12 +46,12 @@ Save these lines to a file (here, named \texttt{Li.BFD.gamess}; the exact name m
 
 \subsection{CASINO}
 \label{subsec:CASINO}
-The QMC code CASINO also makes available its pseudopotentials available at the website \url{https://vallico.net/casinoqmc/pplib/}. To use one in QMCPACK, select a pseudopotential and download its summary file (\texttt{summary.txt}), its tabulated form (\texttt{pp.data}), and (for ppconvert to construct the projectors to convert to Quantum ESPRESSO's UPF format) a CASINO atomic wavefunction for each angular momentum channel (\texttt{awfn.data\_*}).  Then, to convert using ppconvert, issue the following command:
+The QMC code CASINO also makes available its pseudopotentials available at the website \url{https://vallico.net/casinoqmc/pplib/}. To use one in QMCPACK, select a pseudopotential and download its summary file (\ishell{summary.txt}), its tabulated form (\ishell{pp.data}), and (for ppconvert to construct the projectors to convert to Quantum ESPRESSO's UPF format) a CASINO atomic wavefunction for each angular momentum channel (\ishell{awfn.data\_*}).  Then, to convert using ppconvert, issue the following command:
 \begin{lstlisting}[caption=Convert CASINO-formatted pseudopotential to Quantum ESPRESSO UPF format]
 ppconvert --casino_pot pp.data --casino_us awfn.data_s1_2S --casino_up awfn.data_p1_2P --casino_ud awfn.data_d1_2D --upf Li.TN-DF.upf
 \end{lstlisting}
-QMCPACK can directly read in the CASINO-formated pseudopotential (\texttt{pp.data}), but four parameters found in the pseudopotential summary file must be specified in the pseudo element (\texttt{l-local}, \texttt{lmax}, \texttt{nrule}, \texttt{cutoff})[see Section~\ref{sec:nlpp} for details]:
-\begin{lstlisting}[style=XML,caption=XML syntax to use CASINO-formatted pseudopotentials in QMCPACK]
+QMCPACK can directly read in the CASINO-formated pseudopotential (\ishell{pp.data}), but four parameters found in the pseudopotential summary file must be specified in the pseudo element (\ishell{l-local}, \ishell{lmax}, \ishell{nrule}, \ishell{cutoff})[see Section~\ref{sec:nlpp} for details]:
+\begin{lstlisting}[style=QMCPXML,caption=QMCPXML syntax to use CASINO-formatted pseudopotentials in QMCPACK]
 <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
    <pseudo elementType="Li" href="Li.pp.data" format="casino" l-local="s" lmax="2" nrule="2" cutoff="2.19"/>
    <pseudo elementType="H" href="H.pp.data" format="casino" l-local="s" lmax="2" nrule="2" cutoff="0.5"/>
