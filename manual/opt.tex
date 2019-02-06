@@ -47,7 +47,7 @@ A typical optimization block looks like the following. It starts with method=``l
 
 \subsection{VMC run for the optimization}
 The VMC calculation for the wavefunction optimization has a strict requirement 
-that \texttt{samples} or \texttt{samplesperthread} must be specified because of the optimizer needs for the stored samples.
+that \ixml{samples} or \ixml{samplesperthread} must be specified because of the optimizer needs for the stored samples.
 The input parameters of this part are identical to the VMC method.
 
 Recommendations:
@@ -84,13 +84,13 @@ The input parameters are listed in the following table.
 
 Additional information:
 \begin{itemize}
-\item \texttt{maxWeight}. The default should be good.
-\item \texttt{nonlocalpp}. Non-local PP contribution to the local energy depends on the wavefunction.
+\item \ixml{maxWeight}. The default should be good.
+\item \ixml{nonlocalpp}. Non-local PP contribution to the local energy depends on the wavefunction.
 When a new set of parameter is proposed, this contribution needs to be updated if the cost function consists of local energy.
 Fortunately, non-local contribution is chosen small when making a PP for small locality error.
 We can ignore its change and avoid the expensive computational cost.
 GPU code has a implementation issue that large amount of memory is consumed with this option.
-\item \texttt{minwalkers}. A CRITICAL parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than \texttt{minwalkers},
+\item \ixml{minwalkers}. A CRITICAL parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than \ixml{minwalkers},
 the proposed set of parameters is invalid. % The last set of acceptable parameters is kept.
 \end{itemize}
 
@@ -111,9 +111,9 @@ They can be switched among  `OneShiftOnly' (default), `adaptive' and `quartic' (
 \subsubsection{OneShiftOnly}
 The OneShiftOnly optimizer targets a fast optimization by moving parameters more aggressively. It works with OpenMP and GPU and can be considered for large systems.
 This method relies on the effective weight of correlated sampling rather than the cost function value to justify a new set of parameters.
-If effective weight is larger than \texttt{minwalkers}, the new set is taken no matter the cost function value decreases or not.
+If effective weight is larger than \ixml{minwalkers}, the new set is taken no matter the cost function value decreases or not.
 If a proposed set is rejected, the standard output prints the measured ratio of effective samples to the total number of samples
-and adjustment on \texttt{minwalkers} can be made if needed.
+and adjustment on \ixml{minwalkers} can be made if needed.
 
 \begin{table}[h]
 \begin{center}
@@ -132,26 +132,26 @@ and adjustment on \texttt{minwalkers} can be made if needed.
 
 Additional information:
 \begin{itemize}
-\item \texttt{shift\_i}. This is the direct term added to the diagonal of the Hamiltonian matrix.
+\item \ixml{shift_i}. This is the direct term added to the diagonal of the Hamiltonian matrix.
                          More stable but slower optimization with a large value.
-\item \texttt{shift\_s}. This is the initial value of the stabilizer based on the overlap matrix added to the Hamiltonian matrix.
+\item \ixml{shift_s}. This is the initial value of the stabilizer based on the overlap matrix added to the Hamiltonian matrix.
                          More stable but slower optimization with a large value. The used value is auto-adjusted by the optimizer.
 \end{itemize}
 
 
 Recommendations:
 \begin{itemize}
-  \item Default \texttt{shift\_i}, \texttt{shift\_s} should be fine.
-  \item For hard cases, increasing \texttt{shift\_i} (factor of 5 or 10) can significantly stabilize the optimization by reducing the pace towards the optimal parameter set.
-  \item If the VMC energy of the last optimization iterations grows significantly, increase \texttt{minwalkers} closer to 1 and make the optimization stable.
+  \item Default \ixml{shift_i}, \ixml{shift_s} should be fine.
+  \item For hard cases, increasing \ixml{shift_i} (factor of 5 or 10) can significantly stabilize the optimization by reducing the pace towards the optimal parameter set.
+  \item If the VMC energy of the last optimization iterations grows significantly, increase \ixml{minwalkers} closer to 1 and make the optimization stable.
   \item If the first iterations of optimization are rejected on a reasonable initial wavefunction, 
-        lower the \texttt{minwalkers} value based on the measured value printed in the standard output to accept the move.
+        lower the \ixml{minwalkers} value based on the measured value printed in the standard output to accept the move.
 \end{itemize}
 
-It is recommended to use this optimizer in two sections with a very small \texttt{minwalkers} in the first and a large value in the second like the following.
+It is recommended to use this optimizer in two sections with a very small \ixml{minwalkers} in the first and a large value in the second like the following.
 In the very beginning, parameters are far away form optimal values and large changes are proposed by the optimizer.
-Having a small \texttt{minwalkers} allows accepting these changes much easier.
-When the energy gradually converges, we can have a large \texttt{minwalkers} to avoid risky parameter sets.
+Having a small \ixml{minwalkers} allows accepting these changes much easier.
+When the energy gradually converges, we can have a large \ixml{minwalkers} to avoid risky parameter sets.
 \begin{lstlisting}[style=QMCPXML]
  <loop max="6">
   <qmc method="linear" move="pbyp" gpu="yes">
@@ -245,26 +245,26 @@ eigenproblem in the basis of these supposedly important block-wise directions.
 
 Additional information:
 \begin{itemize}
-  \item \texttt{shift\_i}.  This is the initial coefficient used to scale the diagonal stabilizer.
+  \item \ixml{shift_i}.  This is the initial coefficient used to scale the diagonal stabilizer.
                             More stable but slower optimization is expected with a large value.
                             The adaptive method will automatically adjust this value after each linear method iteration.
-  \item \texttt{shift\_s}.  This is the initial coefficient used to scale the overlap-based stabilizer.
+  \item \ixml{shift_s}.  This is the initial coefficient used to scale the overlap-based stabilizer.
                             More stable but slower optimization is expected with a large value.
                             The adaptive method will automatically adjust this value after each linear method iteration.
-  \item \texttt{nblocks}.   This is the number of blocks used in block LM. The amount of memory required to store LM matrices decreases
+  \item \ixml{nblocks}.   This is the number of blocks used in block LM. The amount of memory required to store LM matrices decreases
                             with increased number of blocks. But the error introduced by BLM would increase with number of blocks.  
-  \item \texttt{nolds}.     In BLM, the inter-block correlation is accounted for by including a small number of wave function update vectors
-                            outside the block. Larger \texttt{nolds} would include more inter-block correlation and more accurate results, but 
+  \item \ixml{nolds}.     In BLM, the inter-block correlation is accounted for by including a small number of wave function update vectors
+                            outside the block. Larger \ixml{nolds} would include more inter-block correlation and more accurate results, but 
                             also higher memory requirements. 
-  \item \texttt{nkept}.     This is the number of update directions retained from each block in the BLM. If all directions are retained in each block, 
+  \item \ixml{nkept}.     This is the number of update directions retained from each block in the BLM. If all directions are retained in each block, 
                             then the BLM becomes equivalent to the standard LM.  Retaining 5 or fewer directions per block is often sufficient.
 \end{itemize}
 
 Recommendations:
 \begin{itemize}
-  \item Default shift\_i, shift\_s should be fine. 
+  \item Default \ixml{shift_i}, \ixml{shift_s} should be fine. 
   \item When there are fewer than about 5,000 variables being optimized, the traditional LM is preferred as it has a lower overhead than the BLM when the number of variables is small.
-  \item Initial experience with the BLM suggests that a few hundred blocks and a handful of \texttt{nolds} and \texttt{nkept}
+  \item Initial experience with the BLM suggests that a few hundred blocks and a handful of \ixml{nolds} and \ixml{nkept}
         often provide a good balance between memory use and accuracy.  In general, using fewer blocks should be more accurate but will require more memory.
 \end{itemize}
 
@@ -339,7 +339,7 @@ Excited state recommendations:
   \item Due to the finite variance in any approximate wave function, it is recommended to set $\omega=\omega_0-\sigma$, where $\omega_0$ is placed just
         below the energy of the targeted state and $\sigma^2$ is the energy variance.
   \item In order to obtain an unbiased excitation energy, one should optimize the ground state with the excited state variational principle as well by setting
-        \texttt{omega} below the ground state energy.  Note that using the ground state variational principle for the ground state and the excited state variational
+        \ixml{omega} below the ground state energy.  Note that using the ground state variational principle for the ground state and the excited state variational
         principle for the excited state creates a bias in favor of the ground state. 
 \end{itemize}
 
@@ -369,7 +369,7 @@ This optimizer is very robust but a bit conservative to accept new steps especia
 
 Additional information:
 \begin{itemize}
-\item \texttt{exp0}. It is the initial value for stabilizer (shift to diagonal of H). The actual value of stabilizer is $10^{\textrm{exp0}}$.
+\item \ixml{exp0}. It is the initial value for stabilizer (shift to diagonal of H). The actual value of stabilizer is $10^{\textrm{exp0}}$.
 \end{itemize}
 
 Recommendations:

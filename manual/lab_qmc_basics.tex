@@ -64,12 +64,12 @@ labs/lab2_qmc_basics/
 
 \section{Obtaining and converting a pseudopotential for oxygen}
 \label{sec:lqb_pseudo}
-First enter the \ishell{oxygen\_atom} directory:
+First enter the \ishell{oxygen_atom} directory:
 \begin{shade}
 cd labs/lab2_qmc_basics/oxygen_atom/
 \end{shade}
 \noindent
-Throughout the rest of the lab, locations will be specified with respect to \ishell{labs/lab2\_qmc\_basics} (e.g. \ishell{oxygen\_atom}).
+Throughout the rest of the lab, locations will be specified with respect to \ishell{labs/lab2_qmc_basics} (e.g. \ishell{oxygen_atom}).
 
 We will use a potential from the Burkatzki-Filippi-Dolg pseudopotential database.  
 Although the full database is available in QMCPACK distribution (\ishell{trunk/pseudopotentials/BFD/}), 
@@ -101,7 +101,7 @@ jobrun_vesta ppconvert --gamess_pot O.BFD.gamess --s_ref "1s(2)2p(4)" \
 \fi
 
 \noindent
-Observe the notation used to describe the reference valence configuration for this helium-core PP: \ishell{1s(2)2p(4)}.  The \ishell{ppconvert} tool uses the following convention for the valence states: the first $s$ state is labeled \ishell{1s} (\ishell{1s}, \ishell{2s}, \ishell{3s}, \ldots), the first $p$ state is labeled \ishell{2p} (\ishell{2p}, \ishell{3p}, \ldots), the first $d$ state is labeled \ishell{3d} (\ishell{3d}, \ishell{4d}, \ldots). Copy the resulting xml file into the \ishell{oxygen\_atom} directory.
+Observe the notation used to describe the reference valence configuration for this helium-core PP: \ishell{1s(2)2p(4)}.  The \ishell{ppconvert} tool uses the following convention for the valence states: the first $s$ state is labeled \ishell{1s} (\ishell{1s}, \ishell{2s}, \ishell{3s}, \ldots), the first $p$ state is labeled \ishell{2p} (\ishell{2p}, \ishell{3p}, \ldots), the first $d$ state is labeled \ishell{3d} (\ishell{3d}, \ishell{4d}, \ldots). Copy the resulting xml file into the \ishell{oxygen_atom} directory.
 
 Note: the command to convert the PP into QM Espresso's UPF format is similar (both formats are required):
 
@@ -131,14 +131,14 @@ O-QMC GEN 2 1
 
 \end{lstlisting}
 \noindent
-The full QMCPACK pseudopotential is also included in \ishell{oxygen\_atom/reference/O.BFD.*}.
+The full QMCPACK pseudopotential is also included in \ishell{oxygen_atom/reference/O.BFD.*}.
 
 
 \section{DFT with Quantum ESPRESSO to obtain the orbital part of the wavefunction}
 \label{sec:lqb_dft}
-With the pseudopotential in hand, the next step toward a QMC calculation is to obtain the Fermionic part of the wavefunction, in this case a single Slater determinant constructed from DFT-LDA orbitals for a neutral oxygen atom.  If you had trouble with the pseudopotential conversion step, pre-converted pseudopotential files are located in the \ishell{oxygen\_atom/reference} directory.  
+With the pseudopotential in hand, the next step toward a QMC calculation is to obtain the Fermionic part of the wavefunction, in this case a single Slater determinant constructed from DFT-LDA orbitals for a neutral oxygen atom.  If you had trouble with the pseudopotential conversion step, pre-converted pseudopotential files are located in the \ishell{oxygen_atom/reference} directory.  
 
-Quantum ESPRESSO input for the DFT-LDA ground state of the neutral oxygen atom can be found in \ishell{O.q0.dft.in} and also listing \ref{lst:O_q0_dft} below.  Setting \ishell{wf\_collect=.true.} instructs Quantum Espresso to write the orbitals to disk at the end of the run. Option \ishell{wf\_collect=.true.} may be a potential problem in large simulations, it is recommended to avoid it and use the converter pw2qmcpack in parallel, see details in Sec.~\ref{sec:pw2qmcpack}. Note that the plane-wave energy cutoff has been set to a reasonable value of 300 Ry here (\ishell{ecutwfc=300}).  This value depends on the pseudopotentials used, and in general should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
+Quantum ESPRESSO input for the DFT-LDA ground state of the neutral oxygen atom can be found in \ishell{O.q0.dft.in} and also listing \ref{lst:O_q0_dft} below.  Setting \ishell{wf_collect=.true.} instructs Quantum Espresso to write the orbitals to disk at the end of the run. Option \ishell{wf_collect=.true.} may be a potential problem in large simulations, it is recommended to avoid it and use the converter pw2qmcpack in parallel, see details in Sec.~\ref{sec:pw2qmcpack}. Note that the plane-wave energy cutoff has been set to a reasonable value of 300 Ry here (\ishell{ecutwfc=300}).  This value depends on the pseudopotentials used, and in general should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
 
 \begin{lstlisting}[style=ESPRESSO, language=espresso, caption={Quantum ESPRESSO input file for the neutral oxygen atom (\ishell{O.q0.dft.in})\label{lst:O_q0_dft}}]
 &CONTROL
@@ -540,13 +540,13 @@ The drift term can be sampled with standard Monte Carlo methods, while the branc
 }
 
 
-In the same directory you used to perform wavefunction optimization (\ishell{oxygen\_atom}) you will find a sample DMC input file for the neutral oxygen atom named \ishell{O.q0.dmc.in.xml}.  Open this file in a text editor and note the differences from the optimization case.  Wavefunction information is no longer included from \ishell{pw2qmcpack}, but instead should come from the optimization run:
+In the same directory you used to perform wavefunction optimization (\ishell{oxygen_atom}) you will find a sample DMC input file for the neutral oxygen atom named \ishell{O.q0.dmc.in.xml}.  Open this file in a text editor and note the differences from the optimization case.  Wavefunction information is no longer included from \ishell{pw2qmcpack}, but instead should come from the optimization run:
 \begin{lstlisting}[style=QMCPXML]
 <!-- OPT_XML is from optimization, e.g. O.q0.opt.s008.opt.xml -->
 <include href="OPT_XML"/>
 \end{lstlisting}
 \noindent
-Replace ``\ishell{OPT\_XML}'' with the \ishell{opt.xml} file corresponding to the best Jastrow parameters you found in the last section (this is a file name similar to \ishell{O.q0.opt.s008.opt.xml}).  
+Replace ``\ishell{OPT_XML}'' with the \ishell{opt.xml} file corresponding to the best Jastrow parameters you found in the last section (this is a file name similar to \ishell{O.q0.opt.s008.opt.xml}).  
 
 The QMC calculation section at the bottom is also different.  The linear optimization blocks have been replaced with XML describing a VMC run followed by DMC.  The input keywords are described below.
 
@@ -757,7 +757,7 @@ Nexus is driven by simple user-defined scripts that resemble keyword-driven inpu
 
 %For more information about the functionality and effective use of Nexus, consult \ishell{docs/Nexus.pdf}.  
 
-%More information can be found in the user guide distributed with QMCPACK, although examples in this lab series and \ishell{Nexus.pdf} are more up to date (if \ishell{qmcpack} is the location of your QMCPACK distribution, the user guide can be found at \ishell{qmcpack/nexus/documentation/nexus\_user\_guide.pdf}).
+%More information can be found in the user guide distributed with QMCPACK, although examples in this lab series and \ishell{Nexus.pdf} are more up to date (if \ishell{qmcpack} is the location of your QMCPACK distribution, the user guide can be found at \ishell{qmcpack/nexus/documentation/nexus_user_guide.pdf}).
 
 \ifws
 \begin{lstlisting}[style=Python]
@@ -895,7 +895,7 @@ run_project(qmc)                       # write input file and submit job
 \label{sec:dimer_automation}
 In this section we will use Nexus to calculate the DMC total energy of the oxygen dimer over a series of bond lengths.  The equilibrium bond length and binding energy of the dimer will be determined by performing a polynomial fit to the data (Morse potential fits should be preferred in production tests).  Comparing these values with corresponding experimental data provides a second test of the BFD pseudopotential for oxygen.
 
-Enter the \ishell{oxygen\_dimer} directory.  Copy your BFD pseudopotential from the atom runs into \ishell{oxygen\_dimer/pseudopotentials} (be sure to move both files: \ishell{.upf} and \ishell{.xml}).  Open \ishell{O\_dimer.py} with a text editor.  The overall format is similar to the example file shown in the last section.  
+Enter the \ishell{oxygen_dimer} directory.  Copy your BFD pseudopotential from the atom runs into \ishell{oxygen_dimer/pseudopotentials} (be sure to move both files: \ishell{.upf} and \ishell{.xml}).  Open \ishell{O_dimer.py} with a text editor.  The overall format is similar to the example file shown in the last section.  
 %The header material, including Nexus imports, settings, and the job parameters for QMC are identical.  
 The main difference is that a full workflow of runs (DFT orbital generation, orbital conversion, optimization and DMC) are being performed rather than a single VMC run.  
 
@@ -966,7 +966,7 @@ The main difference is that a full workflow of runs (DFT orbital generation, orb
 %\end{lstlisting}
 
 
-As in the example in the last section, the oxygen dimer is generated with the \ishell{generate\_physical\_system} function:
+As in the example in the last section, the oxygen dimer is generated with the \ishell{generate_physical_system} function:
 \begin{lstlisting}[style=Python]
 dimer = generate_physical_system(
     type       = 'dimer',
@@ -981,7 +981,7 @@ dimer = generate_physical_system(
 \noindent
 Similar syntax can be used to generate crystal structures or to specify systems with arbitrary atomic configurations and simulation cells.  Notice that a ``\ishell{scale}'' variable has been introduced to stretch or compress the dimer.  
 
-Next, objects representing a Quantum ESPRESSO (PWSCF) run and subsequent orbital conversion step are constructed with respective \ishell{generate\_*} functions:
+Next, objects representing a Quantum ESPRESSO (PWSCF) run and subsequent orbital conversion step are constructed with respective \ishell{generate_*} functions:
 \begin{lstlisting}[style=Python]
 dft = generate_pwscf(
     identifier   = 'dft',
@@ -1001,7 +1001,7 @@ sims.append(p2q)
 \end{lstlisting}
 Note the \ishell{dependencies} keyword.  This keyword is used to construct workflows out of otherwise separate runs.  In this case, the dependency indicates that the orbital conversion run must wait for the DFT to finish prior to starting.
 
-Objects representing QMCPACK simulations are then constructed with the \ishell{generate\_qmcpack} function:
+Objects representing QMCPACK simulations are then constructed with the \ishell{generate_qmcpack} function:
 \begin{lstlisting}[style=Python]
 opt = generate_qmcpack(
     identifier   = 'opt',
@@ -1067,21 +1067,21 @@ qmc = generate_qmcpack(
 sims.append(qmc)
 \end{lstlisting}
 \noindent
-Shared details such as the run directory, job, pseudopotentials, and orbital file have been omitted (\ishell{...}).  The ``\ishell{opt}'' run will optimize a 1-body B-spline Jastrow with 8 knots having a cutoff of 5.0 Bohr and a B-spline Jastrow (for up-up and up-down correlations) with 8 knots and cutoffs of 10.0 Bohr.  The Jastrow list for the DMC run is empty and the usage of \ishell{dependencies} above indicates that the DMC run depends on the optimization run for the Jastrow factor.  Nexus will submit the ``\ishell{opt}'' run first and upon completion it will scan the output, select the optimal set of parameters, pass the Jastrow information to the ``\ishell{qmc}'' run and then submit the DMC job.  Independent job workflows are submitted in parallel when permitted \labsw{}{(we have explicitly limited this for this lab by setting \ishell{queue\_size=2} for Vesta)}.  No input files are written or job submissions made until the ``\ishell{run\_project}'' function is reached:
+Shared details such as the run directory, job, pseudopotentials, and orbital file have been omitted (\ishell{...}).  The ``\ishell{opt}'' run will optimize a 1-body B-spline Jastrow with 8 knots having a cutoff of 5.0 Bohr and a B-spline Jastrow (for up-up and up-down correlations) with 8 knots and cutoffs of 10.0 Bohr.  The Jastrow list for the DMC run is empty and the usage of \ishell{dependencies} above indicates that the DMC run depends on the optimization run for the Jastrow factor.  Nexus will submit the ``\ishell{opt}'' run first and upon completion it will scan the output, select the optimal set of parameters, pass the Jastrow information to the ``\ishell{qmc}'' run and then submit the DMC job.  Independent job workflows are submitted in parallel when permitted \labsw{}{(we have explicitly limited this for this lab by setting \ishell{queue_size=2} for Vesta)}.  No input files are written or job submissions made until the ``\ishell{run_project}'' function is reached:
 \begin{lstlisting}[style=Python]
 run_project(sims)
 \end{lstlisting}
 \noindent
 All of the simulations objects have been collected into a list (\ishell{sims}) for submission.
 
-As written, \ishell{O\_dimer.py} will only perform calculations at the equilibrium separation distance of 1.2074 Angstrom, since the list of scaling factors (representing stretching or compressing the dimer) only contains one value (\ishell{scales = [1.00]}).  Modify the file now to perform DMC calculations across a range of separation distances with each DMC run using the Jastrow factor optimized at the equilibrium separation distance.  Specifically, you will want to change the list of scaling factors to include both compression (\ishell{scale<1.0}) and stretch (\ishell{scale>1.0}): 
+As written, \ishell{O_dimer.py} will only perform calculations at the equilibrium separation distance of 1.2074 Angstrom, since the list of scaling factors (representing stretching or compressing the dimer) only contains one value (\ishell{scales = [1.00]}).  Modify the file now to perform DMC calculations across a range of separation distances with each DMC run using the Jastrow factor optimized at the equilibrium separation distance.  Specifically, you will want to change the list of scaling factors to include both compression (\ishell{scale<1.0}) and stretch (\ishell{scale>1.0}): 
 \begin{lstlisting}[style=Python]
 scales = [1.00,0.90,0.95,1.05,1.10]
 \end{lstlisting}
 \noindent
 Note that ``\ishell{1.00}'' is left in front because we are going to optimize the Jastrow factor first at the equilibrium separation and reuse this Jastrow factor for all other separation distances.  This procedure is used because it can reduce variations in localization errors (due to pseudopotentials in DMC) along the binding curve. 
 
-Change the ``\ishell{status\_only}'' parameter in the ``\ishell{settings}'' function to \ishell{1} and type ``./O\_dimer.py'' at the command line.  This will print the status of all simulations:
+Change the ``\ishell{status_only}'' parameter in the ``\ishell{settings}'' function to \ishell{1} and type ``\ishell{./O_dimer.py}'' at the command line.  This will print the status of all simulations:
 \begin{shade}
 Project starting 
   checking for file collisions 
@@ -1115,9 +1115,9 @@ Project starting
     setup, sent_files, submitted, finished, got_output, analyzed 
 \end{shade}
 \noindent
-In this case, five simulation ``cascades'' (workflows) have been identified, each one starting and ending with ``\ishell{dft}'' and ``\ishell{qmc}'' runs, respectively.  The six status flags (\ishell{setup}, \ishell{sent\_files}, \ishell{submitted}, \ishell{finished}, \ishell{got\_output}, \ishell{analyzed}) each show \ishell{0}, indicating that no work has been done yet.  
+In this case, five simulation ``cascades'' (workflows) have been identified, each one starting and ending with ``\ishell{dft}'' and ``\ishell{qmc}'' runs, respectively.  The six status flags (\ishell{setup}, \ishell{sent_files}, \ishell{submitted}, \ishell{finished}, \ishell{got_output}, \ishell{analyzed}) each show \ishell{0}, indicating that no work has been done yet.  
 
-Now change ``\ishell{status\_only}'' back to \ishell{0}, set ``\ishell{generate\_only}'' to \ishell{1}, and run \ishell{O\_dimer.py} again.  This will perform a dry-run of all simulations.  The dry-run should finish in about 20 seconds:
+Now change ``\ishell{status_only}'' back to \ishell{0}, set ``\ishell{generate_only}'' to \ishell{1}, and run \ishell{O_dimer.py} again.  This will perform a dry-run of all simulations.  The dry-run should finish in about 20 seconds:
 \ifws
 \begin{shade}
 Project starting 
@@ -1348,7 +1348,7 @@ scale_1.0
 \end{shade}
 \fi
 \noindent
-Take a minute to inspect the generated input (\ishell{dft.in}, \ishell{p2q.in}, \ishell{opt.in.xml}, \ishell{qmc.in.xml}) \labsw{}{and submission (\ishell{dft.qsub.in}, \ishell{p2q.qsub.in}, \ishell{opt.qsub.in}, \ishell{qmc.qsub.in})} files.  The pseudopotential files (\ishell{O.BFD.upf} and \ishell{O.BFD.xml}) have been copied into each local directory. Four additional directories have been created: \ishell{sim\_dft},  \ishell{sim\_p2q}, \ishell{sim\_opt} and \ishell{sim\_qmc}.  The \ishell{sim.p} files in each directory contain the current status of each simulation.  If you run \ishell{O\_dimer.py} again, it should not attempt to rerun any of the simulations:   
+Take a minute to inspect the generated input (\ishell{dft.in}, \ishell{p2q.in}, \ishell{opt.in.xml}, \ishell{qmc.in.xml}) \labsw{}{and submission (\ishell{dft.qsub.in}, \ishell{p2q.qsub.in}, \ishell{opt.qsub.in}, \ishell{qmc.qsub.in})} files.  The pseudopotential files (\ishell{O.BFD.upf} and \ishell{O.BFD.xml}) have been copied into each local directory. Four additional directories have been created: \ishell{sim_dft},  \ishell{sim_p2q}, \ishell{sim_opt} and \ishell{sim_qmc}.  The \ishell{sim.p} files in each directory contain the current status of each simulation.  If you run \ishell{O_dimer.py} again, it should not attempt to rerun any of the simulations:   
 \begin{shade}
 Project starting 
   checking for file collisions 
@@ -1367,9 +1367,9 @@ Project starting
 Project finished
 \end{shade}
 \noindent
-This way one can continue to add to the \ishell{O\_dimer.py} file (\emph{e.g.} adding more separation distances) without worrying about duplicate job submissions.
+This way one can continue to add to the \ishell{O_dimer.py} file (\emph{e.g.} adding more separation distances) without worrying about duplicate job submissions.
 
-Let's actually submit the jobs in the dimer workflow now.  Reset the state of the simulations by removing the \ishell{sim.p} files (``\ishell{rm ./scale*/sim*/sim.p}''), set ``\ishell{generate\_only}'' to \ishell{0}, and rerun \ishell{O\_dimer.py}.  It should take about 20 minutes for all the jobs to complete.  You may wish to open another terminal to monitor the progress of the individual jobs while the current terminal runs \ishell{O\_dimer.py} in the foreground.  You can begin the first exercise below once the optimization job completes.
+Let's actually submit the jobs in the dimer workflow now.  Reset the state of the simulations by removing the \ishell{sim.p} files (``\ishell{rm ./scale*/sim*/sim.p}''), set ``\ishell{generate_only}'' to \ishell{0}, and rerun \ishell{O_dimer.py}.  It should take about 20 minutes for all the jobs to complete.  You may wish to open another terminal to monitor the progress of the individual jobs while the current terminal runs \ishell{O_dimer.py} in the foreground.  You can begin the first exercise below once the optimization job completes.
 
 \vspace{3cm}
 \begin{flushleft}
@@ -1380,11 +1380,11 @@ Let's actually submit the jobs in the dimer workflow now.  Reset the state of th
 
   \item{Evaluate the traces of the local energy and the DMC walker population for each separation distance with the \ishell{qmca} tool.  Are there any anomalies in the runs?  Is the acceptance ratio reasonable?  Is the wavefunction of similar quality across all separation distances?}
 
-  \item{Use the \ishell{dimer\_fit.py} tool located in \ishell{oxygen\_dimer} to fit the oxygen dimer binding curve.   To get the binding energy of the dimer, we will need the DMC energy of the atom.  Before performing the fit, answer: What DMC timestep should be used for the oxygen atom results?  The tool accepts three arguments (``\ishell{./dimer_fit.py P N E Eerr}''}), \ishell{P} is the prefix of the DMC input files (should be ``\ishell{qmc}'' at this point), \ishell{N} is the order of the fit (use 2 to start), \ishell{E} and \ishell{Eerr} are your DMC total energy and error bar, respectively for the oxygen atom (in eV).  A plot of the dimer data will be displayed and text output will show the DMC equilibrium bond length and binding energy as well as experimental values.  How accurately does your fit to the DMC data reproduce the experimental values?  What factors affect the accuracy of your results? 
+  \item{Use the \ishell{dimer_fit.py} tool located in \ishell{oxygen_dimer} to fit the oxygen dimer binding curve.   To get the binding energy of the dimer, we will need the DMC energy of the atom.  Before performing the fit, answer: What DMC timestep should be used for the oxygen atom results?  The tool accepts three arguments (``\ishell{./dimer_fit.py P N E Eerr}''}), \ishell{P} is the prefix of the DMC input files (should be ``\ishell{qmc}'' at this point), \ishell{N} is the order of the fit (use 2 to start), \ishell{E} and \ishell{Eerr} are your DMC total energy and error bar, respectively for the oxygen atom (in eV).  A plot of the dimer data will be displayed and text output will show the DMC equilibrium bond length and binding energy as well as experimental values.  How accurately does your fit to the DMC data reproduce the experimental values?  What factors affect the accuracy of your results? 
 
   \item{Refit your data with a fourth-order polynomial.  How do your predictions change with a fourth-order fit?  Is a fourth-order fit appropriate for the available data?}
  
-  \item{Add new ``\ishell{scale}'' values to the list in \ishell{O\_dimer.py} that interpolate between the original set (e.g. expand to \ishell{[1.00,0.90,0.925,0.95,0.975,1.025,1.05,1.075,1.10]}).  Perform the DMC calculations and redo the fits.  How accurately does your fit to the DMC data reproduce the experimental values?  Should this pseudopotential be used in production calculations?}
+  \item{Add new ``\ishell{scale}'' values to the list in \ishell{O_dimer.py} that interpolate between the original set (e.g. expand to \ishell{[1.00,0.90,0.925,0.95,0.975,1.025,1.05,1.075,1.10]}).  Perform the DMC calculations and redo the fits.  How accurately does your fit to the DMC data reproduce the experimental values?  Should this pseudopotential be used in production calculations?}
 
   \item{(Optional) Perform optimization runs at the extremal separation distances corresponding to \ishell{scale=[0.90,1.10]}}.  Are the individually optimized wavefunctions of significantly better quality than the one imported from \ishell{scale=1.00}?  Why?  What form of Jastrow factor might give an even better improvement? 
 \end{enumerate}
@@ -1395,7 +1395,7 @@ Let's actually submit the jobs in the dimer workflow now.  Reset the state of th
 \section{(Optional) Running your system with QMCPACK}\label{sec:your_system}
 This section covers a fairly simple route to get started on QMC calculations of an arbitrary system of interest using the Nexus workflow management system to setup input files and optionally perform the runs.  The example provided in this section uses QM Espresso (PWSCF) to generate the orbitals forming the Slater determinant part of the trial wavefunction.  PWSCF is a natural choice for solid state systems and it can be used for surface/slab and molecular systems as well, albeit at the price of describing additional vacuum space with plane waves.
 
-To start out with, you will need pseudopotentials (PP's) for each element in your system in both the UPF (PWSCF) and FSATOM/XML (QMCPACK) formats.  A good place to start is the Burkatzki-Filippi-Dolg (BFD) pseudopotential database \newline (\href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}), which we have already used in our study of the oxygen atom.  The database does not contain PP's for the 4th and 5th row transition metals or any of the lanthanides or actinides.  If you need a PP that is not in the BFD database, you may need to generate and test one manually (\emph{e.g.} with OPIUM, \href{http://opium.sourceforge.net/}{http://opium.sourceforge.net/}).  Otherwise, use \ishell{ppconvert} as outlined in section \ref{sec:lqb_pseudo} to obtain PP's in the formats used by PWSCF and QMCPACK.  Enter the \ishell{your\_system} lab directory and place the converted PP's in \ishell{your\_system/pseudopotentials}.
+To start out with, you will need pseudopotentials (PP's) for each element in your system in both the UPF (PWSCF) and FSATOM/XML (QMCPACK) formats.  A good place to start is the Burkatzki-Filippi-Dolg (BFD) pseudopotential database \newline (\href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}), which we have already used in our study of the oxygen atom.  The database does not contain PP's for the 4th and 5th row transition metals or any of the lanthanides or actinides.  If you need a PP that is not in the BFD database, you may need to generate and test one manually (\emph{e.g.} with OPIUM, \href{http://opium.sourceforge.net/}{http://opium.sourceforge.net/}).  Otherwise, use \ishell{ppconvert} as outlined in section \ref{sec:lqb_pseudo} to obtain PP's in the formats used by PWSCF and QMCPACK.  Enter the \ishell{your_system} lab directory and place the converted PP's in \ishell{your_system/pseudopotentials}.
 
 Before performing production calculations (more than just the initial setup in this section) be sure to converge the plane wave energy cutoff in PWSCF as these PP's can be rather hard, sometimes requiring cutoffs in excess of 300 Ry.  Depending on the system under study, the amount of memory required to represent the orbitals (QMCPACK uses 3D B-splines) becomes prohibitive and one may be forced to search for softer PP's.
 
@@ -1473,9 +1473,9 @@ If you have a system you would like to try with QMC, make a copy of \ishell{exam
 %    )
 %\end{lstlisting}
 
-Set ``\ishell{generate\_only}'' to \ishell{1} and type ``\ishell{./example.py}'' or similar to generate the input files.  All files will be written to ``\ishell{./diamond\_vmc}'' (``\ishell{./[my\_project\_name]}'' if you have changed ``\ishell{my\_project\_name}'' in the file).  The input files for PWSCF, pw2qmcpack, and QMCPACK are \ishell{scf.in}, \ishell{pw2qmcpack.in}, and \ishell{vmc.in.xml}, respectively.  Take some time to inspect the generated input files.  If you have questions about the file contents, or run into issues with the generation process, feel free to consult with a lab instructor.  
+Set ``\ishell{generate_only}'' to \ishell{1} and type ``\ishell{./example.py}'' or similar to generate the input files.  All files will be written to ``\ishell{./diamond_vmc}'' (``\ishell{./[my_project_name]}'' if you have changed ``\ishell{my_project_name}'' in the file).  The input files for PWSCF, pw2qmcpack, and QMCPACK are \ishell{scf.in}, \ishell{pw2qmcpack.in}, and \ishell{vmc.in.xml}, respectively.  Take some time to inspect the generated input files.  If you have questions about the file contents, or run into issues with the generation process, feel free to consult with a lab instructor.  
 
-If desired, you can submit the runs directly with \ishell{example.py}.  To do this, first reset the Nexus simulation record by typing ``\ishell{rm ./diamond\_vmc/sim*/sim.p}'' or similar and set ``\ishell{generate\_only}'' back to \ishell{0}.  Next rerun \ishell{example.py}  (you may want to redirect the text output).  
+If desired, you can submit the runs directly with \ishell{example.py}.  To do this, first reset the Nexus simulation record by typing ``\ishell{rm ./diamond_vmc/sim*/sim.p}'' or similar and set ``\ishell{generate_only}'' back to \ishell{0}.  Next rerun \ishell{example.py}  (you may want to redirect the text output).  
 
 Alternatively the runs can be submitted by hand:
 \ifws
@@ -1495,7 +1495,7 @@ qsub --mode script --env BG_SHAREDMEMSIZE=32 scf.qsub.in
 qsub --mode script --env BG_SHAREDMEMSIZE=32 p2q.qsub.in
 \end{shade}
 \fi
-Once the conversion process has finished the orbitals should be located in the file \newline \ishell{diamond\_vmc/pwscf\_output/pwscf.pwscf.h5}.  Open \ishell{diamond\_vmc/vmc.in.xml} and replace ``\ishell{MISSING.h5}'' with ``\ishell{./pwscf\_output/pwscf.pwscf.h5}''.  Next submit the VMC run:
+Once the conversion process has finished the orbitals should be located in the file \newline \ishell{diamond_vmc/pwscf_output/pwscf.pwscf.h5}.  Open \ishell{diamond_vmc/vmc.in.xml} and replace ``\ishell{MISSING.h5}'' with ``\ishell{./pwscf_output/pwscf.pwscf.h5}''.  Next submit the VMC run:
 \ifws
 \begin{shade}
 mpirun -np 4 qmcpack vmc.in.xml>&vmc.out&
