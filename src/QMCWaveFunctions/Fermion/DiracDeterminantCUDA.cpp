@@ -89,7 +89,10 @@ DiracDeterminantCUDA::det_lookahead (MCWalkerConfiguration &W,
   bool klinear=W.getklinear();
   if((!klinear) && (k==0)) // this only needs to be calculated once and then the columns can be manually updated upon rejection (update function below does this in the update_onemove kernel)
   {
-    gpu::streamsSynchronize();
+    // make sure the evaluate function kernels are finished
+    cudaEventRecord(gpu::syncEvent, gpu::kernelStream);
+    cudaEventSynchronize(gpu::syncEvent);
+    // calculate new lemma matrix
     cublas_lemma_mats (gpu::cublasHandle,
                        AinvList_d.data(), newRowList_d.data(),
                        LemmaList_d.data(), AinvUList_d.data(),
@@ -112,7 +115,6 @@ DiracDeterminantCUDA::det_lookahead (MCWalkerConfiguration &W,
       AinvWorkList[iw]    =  &(walkers[iw]->cuda_DataSet.data()[curr_ainvu_row]); // don't want to overwrite AinvU list
     AinvWorkList_d.asyncCopy(AinvWorkList);
 #endif // use_trsm
-    gpu::streamsSynchronize();
     cublas_smw_update (gpu::cublasHandle,
                        AinvDeltaList_d.data(), AinvColkList_d.data(),
                        AinvWorkList_d.data(), AWorkList_d.data(), // <- AinvWork takes the place of A^-1*dU (in the USE_TRSM case it's unused)

@@ -29,10 +29,12 @@ finish_lemma_calc (T **ainvu, T **lemma, int k, int kstart, int N, int rowstride
   int r = i / k;
   int s = i % k;
   if (i < k*k)
+  {
     my_lemma[r*k+s] = -my_ainvu[r*rowstride+s];
-  // A^-1*A_k is only 1.0 for i = k+kstart per column
-  if (i < k)
-    my_ainvu[s*rowstride+s] += 1.0;
+    // A^-1*A_k is only 1.0 for index i*rowstride+i+kstart per column and can be added now that the value has been read
+    if(r==s)
+      my_ainvu[r*rowstride+r] += 1.0;
+  }
 }
 
 /** Calculate Lemma Matrix: I_k + V' * ( A^(-1) * U )

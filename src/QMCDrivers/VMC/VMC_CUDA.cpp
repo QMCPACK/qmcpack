@@ -190,13 +190,6 @@ bool VMCcuda::run()
 #ifdef USE_NVTX_API
   nvtxRangePushA("VMC:run");
 #endif
-  // For now, add warning and cap GPU delayed update runs at k = 64 w/o drift.
-  if (W.getkDelay() > 64)
-  {
-    app_log() << "WARNING: Currently k > 64 is not supported for VMC w/o drift. Adjusting to k = 64.\n";
-    W.setkDelay(64);
-  }
-  
   resetRun();
   IndexType block = 0;
   IndexType nAcceptTot = 0;
