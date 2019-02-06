@@ -81,7 +81,7 @@ void LCAOParser::parse(const std::string& fname)
   std::cout <<"Multideterminants: " <<(multideterminant?("yes"):("no")) << std::endl;
   std::cout.flush();
 
-  hin.read(SpinRestricted,"SpinResticted");
+  hin.read(SpinRestricted,"SpinRestricted");
   if(SpinRestricted)
   { 
      hin.read(numAO,"numAO");

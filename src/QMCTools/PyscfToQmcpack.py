@@ -24,7 +24,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],cas_idx=None):
 
   PBC=False
   Gamma=False
-  UnRestricted=False
+  Restricted=True
   Complex=False
   Python3=False
   Python2=False
@@ -45,7 +45,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],cas_idx=None):
   SizeMode=len(ComputeMode)
   for i in range(SizeMode):
      if ComputeMode[i] in ("UHF","KUHF","UKS"):
-           UnRestricted=True
+           Restricted=False
            sys.exit("Unrestricted calculations not supported")
 
      if ComputeMode[i]=="pbc":
@@ -492,14 +492,14 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],cas_idx=None):
   GroupParameter.create_dataset("IsComplex",(1,),dtype="b1",data=Complex)
 
  
-  GroupParameter.create_dataset("SpinUnResticted",(1,),dtype="b1",data=UnRestricted)
+  GroupParameter.create_dataset("SpinRestricted",(1,),dtype="b1",data=Restricted)
   GroupNbkpts=H5_qmcpack.create_group("Nb_KPTS")
   if not PBC:
     Nbkpts=1
     GroupNbkpts.create_dataset("Nbkpts",(1,),dtype="i4",data=Nbkpts)
     
     GroupDet=H5_qmcpack.create_group("KPTS_0")
-    if UnRestricted==False:
+    if Restricted=True:
       NbMO=len(mo_coeff)
       NbAO=len(mo_coeff[0])
       if loc_cell.cart==True:
