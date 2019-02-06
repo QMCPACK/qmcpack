@@ -78,38 +78,6 @@ namespace qmcplusplus { namespace einspline {
     return einspline_create_UBspline_3d_s(x_grid,y_grid,z_grid,xBC,yBC,zBC,data);
   }
 
-  /** set spline using data in double
-   * @param indata raw data
-   * @param spline multi spline container 
-   * @param i ortbial index
-   * 
-   * Utility function to use double precision in interpolation and cast to the single-precision spline.
-   * This is incomplete and should be integrated with the initialization
-   */
-  void Allocator::set(double* indata, multi_UBspline_3d_s* spline, int i)
-  {
-    int BaseOffset[]={0,0,0};
-    int BaseN[]={spline->x_grid.num+3, spline->y_grid.num+3, spline->z_grid.num+3};
-    BCtype_d xBC_d, yBC_d, zBC_d;
-    xBC_d.lCode=spline->xBC.lCode;xBC_d.rCode=spline->xBC.rCode;
-    yBC_d.lCode=spline->yBC.lCode;yBC_d.rCode=spline->yBC.rCode;
-    zBC_d.lCode=spline->zBC.lCode;zBC_d.rCode=spline->zBC.rCode;
-    UBspline_3d_d *singleS=einspline_create_UBspline_3d_d(spline->x_grid,spline->y_grid,spline->z_grid, xBC_d,yBC_d,zBC_d,indata);
-    copy(singleS, spline,i,BaseOffset,BaseN);
-    einspline_free(singleS->coefs);
-    free(singleS);
-  }
-
-  void Allocator::set(double* indata, multi_UBspline_3d_d* spline, int i)
-  {
-    set_multi_UBspline_3d_d(spline, i, indata); 
-  }
-
-  void Allocator::set(float* indata, multi_UBspline_3d_s* spline, int i)
-  {
-    set_multi_UBspline_3d_s(spline, i, indata); 
-  }
-
   // 1D spline interface to einspline routines.
   void set(multi_UBspline_1d_d* spline, int i, UBspline_1d_d* spline_in,
        const int offset, const int N)

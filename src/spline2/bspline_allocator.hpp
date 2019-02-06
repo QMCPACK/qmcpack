@@ -59,16 +59,6 @@ namespace qmcplusplus { namespace einspline {
     UBspline_3d_d* allocateUBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid, 
         BCtype_d xBC, BCtype_d yBC, BCtype_d zBC, double* data=nullptr);
 
-    /** set the data to a spline, interpolation is done
-     * @param indata starting address of the input data
-     * @param spline target MultiBsplineType
-     * @param i the band index to copy to
-     */
-    void set(float* indata, multi_UBspline_3d_s* spline, int i);
-    void set(double* indata, multi_UBspline_3d_d* spline, int i);
-    /** set the data in double to multi_UBspline_3d_s */
-    void set(double* indata, multi_UBspline_3d_s* spline, int i);
-
     /** copy a UBSpline_3d_X to multi_UBspline_3d_X at i-th band
      * @param single  UBspline_3d_X
      * @param multi target multi_UBspline_3d_X
