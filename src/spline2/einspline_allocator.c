@@ -33,12 +33,6 @@
 void find_coefs_1d_d (Ugrid grid, BCtype_d bc, double *data,  intptr_t dstride,
     double *coefs, intptr_t cstride);
 
-void solve_deriv_interp_1d_s (float bands[], float coefs[], int M, int
-    cstride);
-
-void solve_antiperiodic_interp_1d_s (float bands[], float coefs[], int M, int
-    cstride);
-
 void find_coefs_1d_s (Ugrid grid, BCtype_s bc, float *data,  intptr_t dstride,
     float *coefs, intptr_t cstride);
 

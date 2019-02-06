@@ -18,6 +18,7 @@
 #include "spline2/bspline_allocator.hpp"
 #include "spline2/einspline_allocator.h"
 #include "einspline/multi_bspline_copy.h"
+#include "einspline/multi_bspline_create.h"
 
 extern "C" {
 
