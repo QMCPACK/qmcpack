@@ -40,7 +40,7 @@ Reference information and examples for the \texttt{<hamiltonian/>} XML element i
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{hamiltonian} element} \\
 \hline
@@ -96,7 +96,7 @@ Many pair potentials are supported.  Though only the most commonly used pair pot
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{pairpot} factory element} \\
 \hline
@@ -162,7 +162,7 @@ For information on how to set the boundary conditions, consult Sec. \ref{chap:si
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{pairpot type=coulomb} element} \\
 \hline
@@ -243,7 +243,7 @@ Evaluation of the localized pseudopotential energy $\Psi_T^{-1}V^{PP}\Psi_T$ req
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{pairpot type=pseudo} element} \\
 \hline
@@ -321,7 +321,7 @@ Details of \texttt{<pseudo/>} input elements are given below.  It is possible to
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{pseudo} element} \\
 \hline
@@ -367,7 +367,7 @@ The modified periodic Coulomb (MPC) interaction is an alternative to direct Ewal
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{pairpot type=mpc} element} \\
 \hline
@@ -410,7 +410,7 @@ When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is 
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator} factory element} \\
 \hline
@@ -457,7 +457,7 @@ When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is 
 %\FloatBarrier
 %\begin{table}[h]
 %\begin{center}
-%\begin{tabularx}{\textwidth}{l l l l l l }
+%\begin{tabularx}{\textwidth}{l l l l l X }
 %\hline
 %\multicolumn{6}{l}{\texttt{estimator type=X} element} \\
 %\hline
@@ -484,7 +484,7 @@ This estimator calculates a finite size correction to the kinetic energy followi
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=chiesa} element} \\
 \hline
@@ -524,7 +524,7 @@ The \texttt{density} estimator accumulates the number density on a uniform histo
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=density} element} \\
 \hline
@@ -571,7 +571,7 @@ The spin density is similar to the total density described above.  In this case,
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=spindensity} element} \\
 \hline
@@ -649,7 +649,7 @@ where the radial coordinate $r$ is restricted to reside at the bin centers, $\de
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=gofr} element} \\
 \hline
@@ -702,7 +702,7 @@ S(\mathbf{k}) = \frac{1}{N^e}\langle \rho^e_{-\mathbf{k}} \rho^e_{\mathbf{k}} \r
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=sk} element} \\
 \hline
@@ -739,7 +739,7 @@ Record species-resolved kinetic energy instead of the total kinetic energy in th
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=specieskinetic} element} \\
 \hline
@@ -769,7 +769,7 @@ Record deviation of a group of particles in one particle set (target) from a gro
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=latticedeviation} element} \\
 \hline
@@ -852,7 +852,7 @@ In \qmcpack, the energy density can be accumulated on piecewise uniform three di
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=EnergyDensity} element} \\
 \hline
@@ -925,7 +925,7 @@ The \texttt{<reference\_points/>} element provides a set of points for later use
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{reference\_points} element} \\
 \hline
@@ -990,7 +990,7 @@ The \texttt{<spacegrid/>} element is used to specify a spatial histogramming gri
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{spacegrid} element} \\
 \hline
@@ -1014,7 +1014,7 @@ The \texttt{<origin/>} element gives the location of the origin for a non-Vorono
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{origin} element} \\
 \hline
@@ -1041,7 +1041,7 @@ The \texttt{<axis/>} element represents a coordinate axis used to construct the,
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{axis} element} \\
 \hline
@@ -1102,7 +1102,7 @@ For VMC, FN-DMC, FP-DMC, and RN-DMC the formula above represents an exact sampli
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=dm1b} element} \\
 \hline
@@ -1299,7 +1299,7 @@ To forward walk on an observable, one declares a generic forward walking estimat
 
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=ForwardWalking} element} \\
 \hline
@@ -1316,7 +1316,7 @@ To forward walk on an observable, one declares a generic forward walking estimat
 
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{Observable} element} \\
 \hline
@@ -1372,7 +1372,7 @@ Here, $m$ is the weighting exponent, $f_z(r)$ is the unfiltered radial force den
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=Force} element} \\
 \hline

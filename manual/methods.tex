@@ -3,7 +3,7 @@
 
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\linewidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{qmc} factory element} \\
 \hline
@@ -70,7 +70,7 @@ The particle configurations will be written to a \texttt{.config.h5} file.
 %All the dumped data will be written in a \texttt{*.config.h5} file. The \texttt{config.h5} file will contain the state of a population to continue a run. The list of what is included in the .config.h5 is: number of walkers, status of the run, branch mode, energy dataset, ratio to accepted moves, ratio to proposed moves, variance dataset, vParam\{tau, taueff. E\_trial, E\_ref, Branch\_Max, BranchCutOff, BranchFilter, Sigma, Accepted\_Energy, Accepted\_Samples\}, IParam{warmumSteps, Energy\_Update\_Interval, Counter, targetwalkers, Maxwalkers, MinWalkers, Branching Interval}, Walker coordinates, Random number size, Random number sequence, version of the code.
 
 \begin{lstlisting}[style=QMCPXML,caption=The following is an example of running a simulation that can be restarted . ]
-  <qmc method="dmc" move="pbyp"  checkpoint="0"">
+  <qmc method="dmc" move="pbyp"  checkpoint="0">
     <parameter name="timestep">         0.004  </parameter>
     <parameter name="blocks">           100   </parameter>
     <parameter name="steps">            400    </parameter>

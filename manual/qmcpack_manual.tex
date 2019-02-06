@@ -89,6 +89,14 @@
 % urls are were too large
 \renewcommand{\UrlFont}{\ttfamily\small}
 
+\usepackage{letltxmacro}
+% https://tex.stackexchange.com/q/88001/5764
+\LetLtxMacro\oldttfamily\ttfamily
+\DeclareRobustCommand{\ttfamily}{\oldttfamily\csname ttsize\endcsname}
+\newcommand{\setttsize}[1]{\def\ttsize{#1}}%
+
+\setttsize{\footnotesize}
+
 \begin{document}
 
 \input{title.tex}
