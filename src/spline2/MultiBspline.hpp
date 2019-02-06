@@ -129,12 +129,6 @@ namespace qmcplusplus
         return (spline_m==nullptr)?0:spline_m->coefs_size*sizeof(T);
       }
 
-      template<typename CT>
-      inline void set(int i, CT& data)
-      {
-        myAllocator.set(data.data(),spline_m,i);
-      }
-
       /** copy a single spline to the big table
        * @param aSpline UBspline_3d_(d,s)
        * @param int index of aSpline

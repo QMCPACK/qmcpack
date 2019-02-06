@@ -148,17 +148,6 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     SplineInst->copy_spline(spline_r, ispline, BaseOffset, BaseN);
   }
 
-  void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
-  {
-    Vector<ST> v_r(psi_r,0);
-    SplineInst->set(ispline, v_r);
-  }
-
-  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
-      int twist, int ispline, const int* offset_l, const int* mesh_l)
-  {
-  }
-
   bool read_splines(hdf_archive& h5f)
   {
     std::ostringstream o;

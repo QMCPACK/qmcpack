@@ -78,9 +78,6 @@ namespace qmcplusplus { namespace einspline {
      */
     template<typename UBT, typename MBT>
       void copy(UBT* single, MBT* multi, int i,  const int* offset, const int* N);
-
-    /** copy double to single: only for testing */
-    void copy(multi_UBspline_3d_d* in, multi_UBspline_3d_s* out);
   };
 
   template<typename UBT, typename MBT>

@@ -52,21 +52,6 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     return new BsplineSet<SplineAdoptor>(*this);
   }
 
-  /** set_spline to the big table
-   * @param psi_r starting address of real part of psi(ispline)
-   * @param psi_i starting address of imaginary part of psi(ispline)
-   * @param twist twist id, reserved to sorted adoptor, ignored
-   * @param ispline index of this spline function
-   * @param level refinement level
-   *
-   * Each adoptor handles the map with respect to the twist, state index and refinement level
-   */
-  template<typename CT>
-  void set_spline(CT* spline_r, CT* spline_i, int twist, int ispline, int level)
-  {
-    SplineAdoptor::set_spline(spline_r,spline_i,twist,ispline,level);
-  }
-
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     SplineAdoptor::evaluate_v(P,iat,psi);

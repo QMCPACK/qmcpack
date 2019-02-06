@@ -110,12 +110,6 @@ namespace qmcplusplus { namespace einspline {
     set_multi_UBspline_3d_s(spline, i, indata); 
   }
 
-  void Allocator::copy(multi_UBspline_3d_d* in, multi_UBspline_3d_s* out)
-  {
-    //Do we ever need this????
-    //APP_ABORT("Not done yet with Allocator::copy(in,out)");
-  }
-
   // 1D spline interface to einspline routines.
   void set(multi_UBspline_1d_d* spline, int i, UBspline_1d_d* spline_in,
        const int offset, const int N)
