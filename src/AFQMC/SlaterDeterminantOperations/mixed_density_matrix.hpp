@@ -707,6 +707,187 @@ inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC
 
 } // namespace shm 
 
+namespace batched
+{
+
+template< class WlkIt,
+          class MatA,
+          class MatC,
+          class Mat,
+          class TVec,
+          class IBuffer,
+          class TBuffer
+        >
+inline void MixedDensityMatrix(int nbatch, WlkIt wit, SpinTypes spin, const MatA& hermA, MatC&& C, TVec&& ovlp, Mat&& TNN3D, Mat&& TNM3D, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
+{
+  static_assert( std::decay<TVec>::type::dimensionality == 1, " TVec::dimensionality == 1" );
+  static_assert( std::decay<MatC>::type::dimensionality == 3, " MatC::dimensionality == 3" );
+  static_assert( std::decay<Mat>::type::dimensionality == 3, "std::decay<Mat>::type::dimensionality == 3" );
+
+  using ma::T;
+  using ma::gemmBatched;
+  using ma::getrfBatched;
+  using ma::getriBatched;
+
+  int NEL = hermA.size(0);
+  int NMO = hermA.size(1);
+  int wsz = ma::invert_optimal_workspace_size(TNN3D[0]);
+
+  assert( wit->SlaterMatrix(spin).size(0) == NMO );  
+  assert( wit->SlaterMatrix(spin).size(1) == NEL );  
+  assert( C.size(0) == nbatch );
+  assert( C.size(2) == NMO );
+  if(compact)
+    assert( C.size(1) == NEL );
+  else
+    assert( C.size(1) == NMO );
+  assert( ovlp.size() == nbatch ); 
+  assert( TNN3D.size(1) == NEL );
+  assert( TNN3D.size(2) == NEL );
+  if( not compact) {
+    assert( TNM3D.size(0) == nbatch );
+    assert( TNM3D.size(1) == NEL );
+    assert( TNM3D.size(2) == NMO );
+  }
+  assert( WORK.num_elements() >= nbatch*wsz );
+  assert( IWORK.num_elements() >= nbatch*(NEL+1) );
+
+  using pointer = typename std::decay<MatC>::type::element_ptr;
+
+  int ldw = wit->SlaterMatrix(spin).stride(0);
+  int ldN = TNN3D.stride(1);
+  int ldC = C.stride(1);
+  std::vector<pointer> Carray;
+  std::vector<pointer> Warray;
+  std::vector<pointer> workArray;
+  std::vector<pointer> NNarray;
+  Carray.reserve(nbatch);
+  Warray.reserve(nbatch);
+  workArray.reserve(nbatch);
+  NNarray.reserve(nbatch);
+  for(int i=0; i<nbatch; i++) {
+    NNarray.emplace_back(TNN3D[i].origin());
+    workArray.emplace_back(WORK.origin()+i*wsz);
+    Carray.emplace_back(C[i].origin());
+    Warray.emplace_back((wit+i)->SlaterMatrix(spin).origin());
+  }
+
+    // T(conj(A))*B 
+    for(int b=0; b<nbatch; ++b)
+      ma::product(hermA,(wit+b)->SlaterMatrix(spin),TNN3D[b]);
+  
+
+    // T1 = T1^(-1)
+//    for(int b=0; b<nbatch; ++b) 
+//      ma::invert(TNN3D[b],IWORK,WORK,to_address(ovlp.origin())+b);
+    // Invert
+    getrfBatched(NEL,NNarray.data(),ldN, IWORK.origin(), IWORK.origin()+nbatch*NEL, nbatch);
+
+    for(int i=0; i<nbatch; i++) {
+
+      using ma::determinant_from_getrf;
+      determinant_from_getrf(NEL, NNarray[i], ldN, IWORK.origin()+i*NEL,
+                             to_address(ovlp.origin())+i); 
+
+    }
+
+    getriBatched(NEL,NNarray.data(),ldN, IWORK.origin(), workArray.data(), wsz, 
+                 IWORK.origin()+nbatch*NEL, nbatch);
+
+    if(compact) {
+
+      // C = T(T1) * T(B)
+//      for(int b=0; b<nbatch; ++b)
+//        ma::product(T(TNN3D[b]),T((wit+b)->SlaterMatrix(spin)),C[b]);
+      // careful with fortan ordering
+      gemmBatched('T','T',NMO,NEL,NEL,ComplexType(1.0),Warray.data(),ldw,NNarray.data(),ldN,
+                  ComplexType(0.0),Carray.data(),ldC,nbatch);
+
+    } else {
+
+      int ldM = TNM3D.stride(1);
+      std::vector<pointer> NMarray;
+      NMarray.reserve(nbatch);
+      for(int i=0; i<nbatch; i++) 
+        NMarray.emplace_back(TNM3D[i].origin());
+
+      // T2 = T(T1) * T(B)
+      //for(int b=0; b<nbatch; ++b)
+      //  ma::product(T(TNN3D[b]),T((wit+b)->SlaterMatrix(spin)),TNM3D[b]);
+      gemmBatched('T','T',NMO,NEL,NEL,ComplexType(1.0),Warray.data(),ldw,NNarray.data(),ldN,
+                  ComplexType(0.0),NMarray.data(),ldM,nbatch);
+
+      // C = conj(A) * T2
+      for(int b=0; b<nbatch; ++b)
+        ma::product(T(hermA),TNM3D[b],C[b]);
+
+    }
+
+
+}
+
+template< class WlkIt,
+          class MatA,
+          class Mat,
+          class TVec,
+          class IBuffer
+        >
+inline void Overlap(int nbatch, WlkIt wit, SpinTypes spin, const MatA& hermA, TVec&& ovlp, Mat&& TNN3D, IBuffer& IWORK)
+{
+  static_assert( std::decay<TVec>::type::dimensionality == 1, " TVec::dimensionality == 1" );
+  static_assert( std::decay<Mat>::type::dimensionality == 3, "std::decay<Mat>::type::dimensionality == 3" );
+
+  using ma::T;
+  using ma::gemmBatched;
+  using ma::getrfBatched;
+
+  int NEL = hermA.size(0);
+  int NMO = hermA.size(1);
+
+  assert( wit->SlaterMatrix(spin).size(0) == NMO );  
+  assert( wit->SlaterMatrix(spin).size(1) == NEL );  
+  assert( ovlp.size() == nbatch ); 
+  assert( TNN3D.size(1) == NEL );
+  assert( TNN3D.size(2) == NEL );
+  assert( IWORK.num_elements() >= nbatch*(NEL+1) );
+
+  using pointer = typename std::decay<Mat>::type::element_ptr;
+
+  int ldw = wit->SlaterMatrix(spin).stride(0);
+  int ldN = TNN3D.stride(1);
+  std::vector<pointer> Warray;
+  std::vector<pointer> NNarray;
+  Warray.reserve(nbatch);
+  NNarray.reserve(nbatch);
+  for(int i=0; i<nbatch; i++) {
+    NNarray.emplace_back(TNN3D[i].origin());
+    Warray.emplace_back((wit+i)->SlaterMatrix(spin).origin());
+  }
+
+    // T(conj(A))*B 
+    for(int b=0; b<nbatch; ++b)
+      ma::product(hermA,(wit+b)->SlaterMatrix(spin),TNN3D[b]);
+  
+
+    // T1 = T1^(-1)
+//    for(int b=0; b<nbatch; ++b) 
+//      ma::invert(TNN3D[b],IWORK,WORK,to_address(ovlp.origin())+b);
+    // Invert
+    getrfBatched(NEL,NNarray.data(),ldN, IWORK.origin(), IWORK.origin()+nbatch*NEL, nbatch);
+
+    for(int i=0; i<nbatch; i++) {
+
+      using ma::determinant_from_getrf;
+      determinant_from_getrf(NEL, NNarray[i], ldN, IWORK.origin()+i*NEL,
+                             to_address(ovlp.origin())+i); 
+
+    }
+
+}
+
+
+} // namespace batched
+
 } // namespace SlaterDeterminantOperations
 
 } // namespace afqmc

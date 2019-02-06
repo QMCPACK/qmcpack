@@ -76,8 +76,8 @@ __global__ void kernel_construct_X( int nCV, int nsteps, int nwalk,
   int i = REDUCE_BLOCK_SIZE / 2;
   while( i > 0 ) {
       if( threadIdx.x < i ) {
-        cache[ 2*threadIdx.x ] += cache[ 2*threadIdx.x + 2*i ];
-        cache[ 2*threadIdx.x+1 ] += cache[ 2*threadIdx.x+1 + 2*i+1 ];
+        cache[ 2*threadIdx.x ] += cache[ 2*(threadIdx.x+i) ];
+        cache[ 2*threadIdx.x+1 ] += cache[ 2*(threadIdx.x+i)+1 ];
       }
       __syncthreads();
       i /= 2; //not sure bitwise operations are actually faster
@@ -86,23 +86,6 @@ __global__ void kernel_construct_X( int nCV, int nsteps, int nwalk,
     HW[ni*nwalk + iw] = cache[0]; 
     MF[ni*nwalk + iw] = cache[1]; 
   }
-/*
-#if __CUDA_ARCH__ < 600
-  if( threadIdx.x == 0 ) {
-    T * mf_(MF + ni*nwalk + iw); 
-    T * hw_(HW + ni*nwalk + iw); 
-    myAtomicAdd(hw_,cache[ 0 ]);
-    myAtomicAdd(mf_,cache[ 1 ]);
-  }  
-#else
-  if( threadIdx.x == 0 ) {
-    T * mf_(MF + ni*nwalk + iw); 
-    T * hw_(HW + ni*nwalk + iw); 
-    atomicAdd(hw_,cache[ 0 ]);
-    atomicAdd(mf_,cache[ 1 ]);
-  }
-#endif
-*/
 }
 
 template<typename T>
@@ -138,19 +121,6 @@ __global__ void kernel_construct_X_free_projection( int nCV, int nsteps, int nwa
   if( threadIdx.x == 0 ) {
     MF[ni*nwalk + iw] = cache[0]; 
   }
-/*
-#if __CUDA_ARCH__ < 600
-  if( threadIdx.x == 0 ) {
-    T * mf_(MF + ni*nwalk + iw); 
-    myAtomicAdd(mf_,cache[ 0 ]);
-  }  
-#else
-  if( threadIdx.x == 0 ) {
-    T * mf_(MF + ni*nwalk + iw); 
-    atomicAdd(mf_,cache[ 0 ]);
-  }
-#endif
-*/
 }
 
 

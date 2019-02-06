@@ -44,6 +44,7 @@ class SlaterDetOperations_base
     using TVector_ref = boost::multi::array_ref<T,1,pointer>;  
     using TMatrix = boost::multi::array<T,2,Alloc>;  
     using TMatrix_ref = boost::multi::array_ref<T,2,pointer>;  
+    using TTensor_ref = boost::multi::array_ref<T,3,pointer>;  
 
     SlaterDetOperations_base(Alloc alloc_={}):
       allocator_(alloc_),
@@ -85,6 +86,8 @@ class SlaterDetOperations_base
       mem_needs = std::max(mem_needs, ma::gelqf_optimal_workspace_size(TMat_MN) ); 
       //  5. glq( TMat_MN )
       mem_needs = std::max(mem_needs, ma::glq_optimal_workspace_size(TMat_MN) ); 
+      //  6. trf( TMat_NN )
+      mem_needs = std::max(mem_needs, ma::getrf_optimal_workspace_size(TMat_NN) ); 
       WORK.reextent( iextensions<1u>{mem_needs} );   
     }
 
@@ -222,6 +225,9 @@ class SlaterDetOperations_base
       SlaterDeterminantOperations::base::apply_expM(V,TMN,T1,T2,order);
       ma::product(P1,TMN,std::forward<Mat>(A));
     }
+
+// NOTE: Move to a single buffer for all TNXs, to be able to reuse buffers 
+//       more efficiently and to eventually share them with HamOps  
 
     // need to check if this is equivalent to QR!!!
     template<class Mat>

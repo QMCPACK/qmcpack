@@ -26,7 +26,7 @@ namespace afqmc
 
 class SlaterDetOperations:
 #ifdef QMC_CUDA
-        public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<device_allocator<ComplexType>>,SlaterDetOperations_serial<std::allocator<ComplexType>>>
+        public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<device_allocator<ComplexType>>>
 #else
         public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<std::allocator<ComplexType>>>
 #endif
@@ -39,14 +39,15 @@ class SlaterDetOperations:
     }
 
     explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType>&& other) : variant(std::move(other)) {}
-    explicit SlaterDetOperations(SlaterDetOperations_serial<std::allocator<ComplexType>>&& other) : variant(std::move(other)) {}
 
     explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType> const& other) = delete;
-    explicit SlaterDetOperations(SlaterDetOperations_serial<std::allocator<ComplexType>> const& other) = delete;
 
 #ifdef QMC_CUDA
     explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>> const& other) = delete;
     explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>>&& other) : variant(std::move(other)) {}
+#else
+    explicit SlaterDetOperations(SlaterDetOperations_serial<std::allocator<ComplexType>>&& other) : variant(std::move(other)) {}
+    explicit SlaterDetOperations(SlaterDetOperations_serial<std::allocator<ComplexType>> const& other) = delete;
 #endif
 
     SlaterDetOperations(SlaterDetOperations const& other) = delete;
@@ -60,6 +61,22 @@ class SlaterDetOperations:
     void MixedDensityMatrix(Args&&... args) {
         boost::apply_visitor(
             [&](auto&& a){a.MixedDensityMatrix(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
+    void BatchedMixedDensityMatrix(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.BatchedMixedDensityMatrix(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
+    void BatchedOverlap(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.BatchedOverlap(std::forward<Args>(args)...);},
             *this
         );
     }

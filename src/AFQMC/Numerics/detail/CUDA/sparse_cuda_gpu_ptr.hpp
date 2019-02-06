@@ -70,6 +70,16 @@ namespace qmc_cuda
     int nnz = pe-pb;
     if(transa == 'N') { 
 
+// /*
+      // CSR_A * B = C  -->  (Fortran)  B^T * CSC_(CSR_A) = C^T
+      if(CUSPARSE_STATUS_SUCCESS != cusparse::cusparse_gemmi(*A.handles.cusparse_handle,
+            N,M,K,nnz,alpha,to_address(B),ldb,
+            to_address(A),to_address(pntrb),to_address(indx),
+            beta,to_address(C),ldc))
+        throw std::runtime_error("Error: cusparse_csrmm(gemmi) returned error code.");
+// */
+// replace this with call to gemmi!!!
+ /*
       char transb('T');
       // setup work space for column major matrix C
       if(cusparse_buffer.num_elements() < M*N) 
@@ -97,6 +107,7 @@ namespace qmc_cuda
                 transb,transa,N,M,T(1),to_address(C_),
                 M,T(0),to_address(C),ldc,to_address(C),ldc))
         throw std::runtime_error("Error: cublas_geam returned error code.");
+// */
       
     } else {
 

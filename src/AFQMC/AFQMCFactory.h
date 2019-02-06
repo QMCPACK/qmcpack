@@ -51,6 +51,9 @@ class AFQMCFactory
         PropFac(InfoMap),
         DriverFac(gTG,TGHandler,InfoMap,WSetFac,PropFac,WfnFac,HamFac)
     {
+#ifdef QMC_CUDA
+      qmc_cuda::CUDA_INIT(gTG.Node());
+#endif
       TimerManager.set_timer_threshold(timer_level_coarse);
       setup_timers(AFQMCTimers, AFQMCTimerNames,timer_level_coarse);
     }

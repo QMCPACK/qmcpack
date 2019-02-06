@@ -20,8 +20,10 @@
 #include <tuple>
 #include<mutex>
 
+#include "Utilities/FairDivide.h" 
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/csr_blas.hpp"
+#include "AFQMC/Numerics/tensor_operations.hpp"
 
 //#include "AFQMC/Wavefunctions/NOMSD.h"
 
@@ -66,18 +68,28 @@ namespace afqmc
     using std::fill_n;
     fill_n(Ov.origin(),nwalk,zero);
     fill_n(E.origin(),3*nwalk,zero);
-            
+
+    Timers[Timer_E1]->start();
     for(int nd=0; nd<ci.size(); nd++) {
+      Timers[Timer_E2]->start();
       MixedDensityMatrix_for_E(wset,G,ov_,nd);
+      Timers[Timer_E2]->stop();
       ma::axpy(std::conj(ci[nd]),ov_,Ov);
+      Timers[Timer_E4]->start();
       HamOp.energy(eloc2,G,nd,TG.TG_local().root());  
+      Timers[Timer_E4]->stop();
       //TG.TG_local().all_reduce_in_place_n(eloc2.origin(),3*nwalk,std::plus<>());
+      Timers[Timer_E5]->start();
       for(int i=0; i<nwalk; ++i) 
         for(int k=0; k<3; ++k) 
 // TO GPU
           E[i][k] += std::conj(ci[nd])*ov_[i]*eloc2[i][k];  
+      Timers[Timer_E5]->stop();
     }     
-    TG.TG_local().all_reduce_in_place_n(to_address(E.origin()),3*nwalk,std::plus<>());
+    Timers[Timer_E1]->stop();
+
+    if(TG.TG_local().size() > 1) 
+      TG.TG_local().all_reduce_in_place_n(to_address(E.origin()),3*nwalk,std::plus<>());
     for(int i=0; i<nwalk; ++i) 
       for(int k=0; k<3; k++) 
 // TO GPU
@@ -346,11 +358,10 @@ namespace afqmc
     assert(SM.size(1) == Gsize);
     // to force synchronization before modifying structures in SHM
     TG.local_barrier();
-    if(TG.TG_local().root())
-      std::fill_n(Ov.origin(),nw,0);
-    for(int i=0; i<G.size(0); i++)
-      if( i%TG.TG_local().size() == TG.TG_local().rank() )
-        std::fill_n(G[i].origin(),G.size(1),ComplexType(0.0));
+    if(TG.TG_local().root()) {
+      fill_n(Ov.origin(),nw,0);
+      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+    }
     TG.local_barrier();
     if(localGbuff.size() < Gsize)
       localGbuff.reextent(iextensions<1u>{Gsize});
@@ -437,11 +448,10 @@ namespace afqmc
     assert(Ov.size() >= nw);  
     // to force synchronization before modifying structures in SHM
     TG.local_barrier();
-    if(TG.TG_local().root())
+    if(TG.TG_local().root()) {
       fill_n(Ov.origin(),nw,0);
-    for(int i=0; i<G.size(0); i++)
-      if( i%TG.TG_local().size() == TG.TG_local().rank() )
-        fill_n(G[i].origin(),G.size(1),ComplexType(0.0));
+      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+    }
     TG.local_barrier();
     auto Gsize = size_t(dm_size(false));
     if(localGbuff.size() < Gsize)
@@ -497,7 +507,8 @@ namespace afqmc
       }
       // CHECK: I don't need all_reduce here, but the current version of mpi3 
       //        fails if I use reduce_in_place_n  
-      TG.TG_local().all_reduce_in_place_n(to_address(ovlp2.origin()),2*nw,std::plus<>());  
+      if(TG.TG_local().size() > 1) 
+        TG.TG_local().all_reduce_in_place_n(to_address(ovlp2.origin()),2*nw,std::plus<>());  
       if(TG.TG_local().root())
         for(int iw=0; iw<nw; ++iw)
 // to GPU
@@ -516,7 +527,7 @@ namespace afqmc
    * Ov is assumed to be local to the core
    */ 
   template<class WlkSet, class MatG, class TVec>
-  void NOMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose)
+  void NOMSD::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose)
   {
     using std::fill_n;
     using std::copy_n;
@@ -526,6 +537,7 @@ namespace afqmc
       auto dev_ptr(make_device_ptr(G.origin()));
     }
 
+    Timers[Timer_G1]->start();
     assert(G.stride(1)==1);
     assert(Ov.stride(0)==1);
     if(transpose)
@@ -536,15 +548,19 @@ namespace afqmc
     const int ndet = ci.size();
     assert(Ov.size() >= nw);  
     fill_n(Ov.origin(),nw,0);
-    for(int i=0; i<G.size(0); i++) 
-      if( i%TG.TG_local().size() == TG.TG_local().rank() ) 
-        fill_n(G[i].origin(),G.size(1),ComplexType(0.0));
+    if(TG.TG_local().root() ) {
+      // need strided fill_n????
+      if(G.size(1) != G.stride(0))
+        APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n"); 
+      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+    }
     TG.local_barrier();
     auto Gsize = size_t(dm_size(not compact));
     if(localGbuff.size() < Gsize+1)
       localGbuff.reextent(iextensions<1u>{Gsize+1});
     pointer ov_(localGbuff.origin()+Gsize);  
     auto wlk_dims = wset.walker_dims();
+    Timers[Timer_G1]->stop();
     if(walker_type != COLLINEAR) {
 
       auto Gdims = dm_dims(not compact,Alpha);
@@ -563,8 +579,11 @@ namespace afqmc
       for(int tk=tk0; tk<tkN; ++tk) {
         int iw = tk/ndet;
         int nd = tk%ndet;
+Timers[Timer_G2]->start();
         SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
                                                    G2D_,to_address(ov_),compact);
+Timers[Timer_G2]->stop();
+Timers[Timer_G3]->start();
 // to GPU???
         ComplexType ov(*ov_);
         if(walker_type==CLOSED) ov *= ov;
@@ -578,7 +597,10 @@ namespace afqmc
           std::lock_guard<shared_mutex> guard(*mutex);
           ma::axpy(ov,G1D_,G(G.extension(0),iw));   
         }
+Timers[Timer_G3]->stop();
+Timers[Timer_G4]->start();
         Ov[iw] += ov; 
+Timers[Timer_G4]->stop();
       }
 
       // all remaining overlaps are performed in parallel with blocks of cores
@@ -726,7 +748,10 @@ namespace afqmc
       }
     }
     // normalize G
+Timers[Timer_G5]->start();
     TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
+Timers[Timer_G5]->stop();
+Timers[Timer_G6]->start();
     if(transpose) {
       for(size_t iw=0; iw<G.size(0); ++iw) 
         if( iw%TG.TG_local().size() == TG.TG_local().rank() ) {
@@ -736,6 +761,13 @@ namespace afqmc
           ma::scal(ov,G[iw]);
         }
     } else {
+      int ik0, ikN;
+      std::tie(ik0,ikN) = FairDivideBoundary(TG.TG_local().rank(),int(G.size(0)),TG.TG_local().size());
+      using ma::term_by_term_matrix_vector;
+      term_by_term_matrix_vector(ma::TOp_DIV,1,ikN-ik0,G.size(1),
+                                 make_device_ptr(G[ik0].origin()),G.stride(0),
+                                 make_device_ptr(Ov.origin()),Ov.stride(0));
+/*
       auto Ov_ = Ov.origin();  
       const size_t nw_ = G.size(1);  
       for(int ik=0; ik<G.size(0); ++ik)
@@ -744,17 +776,187 @@ namespace afqmc
           for(size_t iw=0; iw<nw_; ++iw)
             Gik[iw] /= Ov_[iw];
         }
+*/
+    }
+    TG.local_barrier();
+Timers[Timer_G6]->stop();
+  } 
+
+  // Batched version of MixedDensityMatrix
+  template<class WlkSet, class MatG, class TVec>
+  void NOMSD::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose)
+  {
+    if(TG.TG_local().size() > 1) 
+      APP_ABORT(" Error: Batched routine called with TG.TG_local().size() > 1 \n");
+    using std::fill_n;
+    using std::copy_n;
+    // temporary runtime check for incompatible memory spaces
+    {
+      auto dev_ptr_(make_device_ptr(Ov.origin()));
+      auto dev_ptr(make_device_ptr(G.origin()));
+    }
+
+    assert(G.stride(1)==1);
+    assert(Ov.stride(0)==1);
+    if(transpose)
+      assert(G.size(0) == wset.size() && G.size(1) == size_t(dm_size(not compact)));
+    else
+      assert(G.size(1) == wset.size() && G.size(0) == size_t(dm_size(not compact)));
+    const int nw = wset.size(); 
+    int nbatch__ = (nbatch>1?nbatch:nw);
+    const int ndet = ci.size();
+    assert(Ov.size() >= nw);  
+    fill_n(Ov.origin(),nw,0);
+    if(ovlp2.size(0) < 2*nbatch__) ovlp2.reextent(iextensions<1u>{2*nbatch__});
+    {
+      fill_n(ovlp2.origin(),ovlp2.num_elements(),ComplexType(0.0));
+      // need strided fill_n????
+      if(G.size(1) != G.stride(0))
+        APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n"); 
+      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+    }
+    stdCVector hvec(iextensions<1u>{2*nbatch__});
+    TG.local_barrier();
+    auto Gsize = size_t(dm_size(not compact));
+    if(localGbuff.size() < nbatch__*Gsize+1)
+      localGbuff.reextent(iextensions<1u>{nbatch__*Gsize+1});
+    pointer ov_(localGbuff.origin()+nbatch__*Gsize);  
+    auto wlk_dims = wset.walker_dims();
+
+    if(walker_type != COLLINEAR) {
+
+      auto GAdims = dm_dims(not compact,Alpha); 
+      CTensor_ref G3D_(localGbuff.origin(),{nbatch__,GAdims.first,GAdims.second});
+      CMatrix_ref G2D_(G3D_.origin(),iextensions<2u>{nbatch__,GAdims.first*GAdims.second});
+
+      for(int idet=0; idet<ndet; ++idet) {
+        auto wlk(wset.begin());
+        for(int iw=0; iw<nw; iw+=nbatch__) {
+          int nb = std::min(nbatch__,nw-iw);
+          SDetOp.BatchedMixedDensityMatrix(nb,wlk,Alpha,OrbMats[idet],
+                                G3D_.sliced(0,nb),ovlp2.sliced(0,nb),compact);
+          copy_n(ovlp2.origin(),nb,hvec.origin());
+// this could be batched, which would be faster and would avoid data movement to cpu
+          for(int ib=0; ib<nb; ++ib) {
+            ++wlk;  
+            ComplexType ov(hvec[ib]);
+            if(walker_type==CLOSED) ov *= ov;
+            ov *= std::conj(ci[idet]);
+            if(transpose) {
+              ma::axpy(ov,G2D_[ib],G[iw+ib]);   
+            } else {
+              ma::axpy(ov,G2D_[ib],G(G.extension(0),iw+ib));   
+            } 
+            Ov[iw+ib] += ov;
+          }
+        }
+      }
+
+    } else {
+
+      auto GAdims = dm_dims(not compact,Alpha); 
+      auto GBdims = dm_dims(not compact,Beta);
+      CTensor_ref GA3D_(localGbuff.origin(),{nbatch__,GAdims.first,GAdims.second});
+      CMatrix_ref GA2D_(GA3D_.origin(),iextensions<2u>{nbatch__,GAdims.first*GAdims.second});
+      CTensor_ref GB3D_(GA3D_.origin()+GA3D_.num_elements(),{nbatch__,GBdims.first,GBdims.second});
+      CMatrix_ref GB2D_(GB3D_.origin(),iextensions<2u>{nbatch__,GBdims.first*GBdims.second});
+
+      for(int idet=0; idet<ndet; ++idet) {
+        auto wlk(wset.begin());
+        for(int iw=0; iw<nw; iw+=nbatch__) {
+          int nb = std::min(nbatch__,nw-iw);
+          SDetOp.BatchedMixedDensityMatrix(nb,wlk,Alpha,OrbMats[2*idet],
+                                GA3D_.sliced(0,nb),ovlp2.sliced(0,nb),compact);
+          SDetOp.BatchedMixedDensityMatrix(nb,wlk,Beta,OrbMats[2*idet+1],
+                                GB3D_.sliced(0,nb),ovlp2.sliced(nb,2*nb),compact);
+// this could be batched, which would be faster and would avoid data movement to cpu
+          copy_n(ovlp2.origin(),2*nb,hvec.origin());
+          for(int ib=0; ib<nb; ++ib) {
+            ++wlk;    
+            ComplexType ov = hvec[ib]*hvec[nb+ib]*std::conj(ci[idet]);
+            if(transpose) {
+              ma::axpy(ov,GA2D_[ib],G[iw+ib].sliced(0,GAdims.first*GAdims.second));
+              ma::axpy(ov,GB2D_[ib],G[iw+ib].sliced(GAdims.first*GAdims.second,G.size(1)));
+            } else {
+              ma::axpy(ov,GA2D_[ib],G({0,GAdims.first*GAdims.second},iw+ib));
+              ma::axpy(ov,GB2D_[ib],G({GAdims.first*GAdims.second,G.size(0)},iw+ib));
+            }
+            Ov[iw+ib] += ov;
+          }
+        }
+      }
+    }
+    // normalize G
+    if(transpose) {
+      for(size_t iw=0; iw<G.size(0); ++iw) { 
+        auto ov = ComplexType(1.0,0.0)/Ov[iw];
+        ma::scal(ov,G[iw]);
+      }
+    } else {
+      using ma::term_by_term_matrix_vector;
+      term_by_term_matrix_vector(ma::TOp_DIV,1,G.size(0),G.size(1),
+                                 make_device_ptr(G.origin()),G.stride(0),
+                                 make_device_ptr(Ov.origin()),Ov.stride(0));
     }
     TG.local_barrier();
   } 
 
+  // Batched version of Overlap
+  template<class WlkSet, class TVec>
+  void NOMSD::Overlap_batched(const WlkSet& wset, TVec&& Ov)
+  {
+    if(TG.TG_local().size() > 1) 
+      APP_ABORT(" Error: Batched routine called with TG.TG_local().size() > 1 \n");
+    using std::fill_n;
+    using std::copy_n;
+    // temporary runtime check for incompatible memory spaces
+    {
+      auto dev_ptr_(make_device_ptr(Ov.origin()));
+    }
+
+    // since the memory usage is low, all walkers are always done together
+    assert(Ov.stride(0)==1);
+    const int nw = wset.size(); 
+    const int ndet = ci.size();
+    assert(Ov.size() >= nw);  
+    fill_n(Ov.origin(),nw,0);
+    if(ovlp2.size(0) < 3*nw) ovlp2.reextent(iextensions<1u>{3*nw});
+    fill_n(ovlp2.origin(),ovlp2.num_elements(),ComplexType(0.0));
+    stdCVector hvec(iextensions<1u>{2*nw});
+    fill_n(hvec.origin(),hvec.num_elements(),ComplexType(0.0));
+    TG.local_barrier();
+
+    if(walker_type != COLLINEAR) {
+      for(int idet=0; idet<ndet; ++idet) {
+        auto wlk(wset.begin());
+        SDetOp.BatchedOverlap(nw,wlk,Alpha,OrbMats[idet],ovlp2.sliced(0,nw));
+        copy_n(ovlp2.origin(),nw,hvec.origin());
+// this could be batched, which would be faster and would avoid data movement to cpu
+        for(int ib=0; ib<nw; ++ib) 
+            hvec[nw+ib] += std::conj(ci[idet])*hvec[ib]*
+                             ((walker_type==CLOSED)?(hvec[ib]):(ComplexType(1.0,0.0)));
+      }
+      copy_n(hvec.origin()+nw,nw,Ov.origin());
+    } else {
+      for(int idet=0; idet<ndet; ++idet) {
+        auto wlk(wset.begin());
+        SDetOp.BatchedOverlap(nw,wlk,Alpha,OrbMats[2*idet],ovlp2.sliced(0,nw));
+        SDetOp.BatchedOverlap(nw,wlk,Beta,OrbMats[2*idet+1],ovlp2.sliced(nw,2*nw));
+// this could be batched, which would be faster and would avoid data movement to cpu
+        copy_n(ovlp2.origin(),2*nw,hvec.origin());
+        for(int ib=0; ib<nw; ++ib) 
+            hvec[2*nw+ib] += std::conj(ci[idet])*hvec[ib]*hvec[nw+ib];
+      }
+      copy_n(hvec.origin()+2*nw,nw,Ov.origin());
+    }
+  } 
 
   /*
    * Calculates the overlaps of all walkers in the set. Returns values in arrays. 
    * Ov is assumed to be local to the core
    */
   template<class WlkSet, class TVec>
-  void NOMSD::Overlap(const WlkSet& wset, TVec&& Ov)
+  void NOMSD::Overlap_shared(const WlkSet& wset, TVec&& Ov)
   {
     using std::fill_n;
     using std::copy_n;
@@ -875,7 +1077,6 @@ namespace afqmc
             Ov[iw] += std::conj(ci[nd])*ov_; 
         }
       }
-
     }
     TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
   }
@@ -1261,7 +1462,8 @@ namespace afqmc
                   std::forward<Vec>(v),1.0,1.0);
     }
     // since v is not in shared memory, we need to reduce
-    TG.TG_local().all_reduce_in_place_n(to_address(v.origin()),v.num_elements(),std::plus<>());
+    if(TG.TG_local().size() > 1) 
+      TG.TG_local().all_reduce_in_place_n(to_address(v.origin()),v.num_elements(),std::plus<>());
     // NOTE: since SpvnT is a truncated structure the complex part of vMF, 
     //       which should be exactly zero, suffers from truncation errors.
     //       Set it to zero.

@@ -115,6 +115,15 @@ class WalkerSetBase: public AFQMCInfo
   }
 
   /*
+   * Returns iterator to the first walker in the set
+   */
+  const_iterator begin() const{
+    assert(walker_buffer.size(1) == walker_size);
+    return const_iterator(0,boost::multi::static_array_cast<element, pointer>(walker_buffer),data_displ,wlk_desc);
+  }
+
+
+  /*
    * Returns iterator to the past-the-end walker in the set
    */
   iterator end() {

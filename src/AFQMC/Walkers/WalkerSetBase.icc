@@ -275,6 +275,7 @@ void WalkerSetBase<Alloc,Ptr>::popControl(std::vector<ComplexType>& curData)
     scaleWeight(scl);
   }
   TG.TG_local().broadcast_n(curData.data(),curData.size());
+return;
 
   // matrix to hold walkers beyond targetN_per_TG
   // doing this to avoid resizing SHMBuffer, instead use local memory

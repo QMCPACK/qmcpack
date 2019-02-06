@@ -198,7 +198,7 @@ class AFQMCBasePropagator: public AFQMCInfo
       return (std::abs(v)>vbias_bound*sqrtdt)?
                 (v/(std::abs(v)/static_cast<ValueType>(vbias_bound*sqrtdt))):(v);
     }
-  
+
 };
 
 }

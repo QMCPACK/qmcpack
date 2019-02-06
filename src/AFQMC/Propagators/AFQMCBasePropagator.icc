@@ -36,8 +36,7 @@ namespace afqmc
  */
 template<class WlkSet>
 void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt) 
-{
-
+{ 
   auto walker_type = wset.getWalkerType();
   int nsteps= nsteps_;
   int nwalk = wset.size();
@@ -135,6 +134,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
   AFQMCTimers[vbias_timer]->stop();
 
   // 3. Assemble X(nCV,nsteps,nwalk)
+  AFQMCTimers[assemble_X_timer]->start();
   assemble_X(nsteps,nwalk,sqrtdt,X,vbias,MFfactor,hybrid_weight);
   if(TG.TG_local().size() > 1) {
     TG.TG_local().all_reduce_in_place_n(to_address(MFfactor.origin()),MFfactor.num_elements(),
@@ -142,6 +142,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     TG.TG_local().all_reduce_in_place_n(to_address(hybrid_weight.origin()),
                                         hybrid_weight.num_elements(),std::plus<>());  
   }  
+  AFQMCTimers[assemble_X_timer]->stop();
 
   // 4. Calculate vHS(M*M,nsteps,nwalk)/vHS(nsteps,nwalk,M*M)
   AFQMCTimers[vHS_timer]->start();

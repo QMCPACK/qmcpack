@@ -38,6 +38,7 @@ namespace qmcplusplus
     pseudo_energy_timer,
     energy_timer,
     vHS_timer,
+    assemble_X_timer,
     vbias_timer,
     G_for_vbias_timer,
     propagate_timer,

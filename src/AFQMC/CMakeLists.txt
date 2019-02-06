@@ -50,6 +50,7 @@ IF(QMC_CUDA)
     Kernels/sampleGaussianRNG.cu
     Kernels/construct_X.cu
     Kernels/reference_operations.cu
+    Kernels/term_by_term_matrix_vec.cu
 #    Kernels/myAtomicAdd.cu
   )
 ENDIF(QMC_CUDA)

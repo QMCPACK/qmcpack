@@ -206,6 +206,8 @@ const char *propg_xml_block =
       wfn.Orthogonalize(wset,true);
     }
 
+    TimerManager.print(nullptr);
+
   }
 }
 

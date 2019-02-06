@@ -63,6 +63,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   int ndets_to_read(-1); // if not set, read the entire file
   int initial_configuration=0;  
   double randomize_guess(0.0);
+  int nbatch=-1;
   std::string starting_det("");
   std::string str("false");
   std::string filename("");
@@ -76,6 +77,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   m_param.add(initialDet,"initialDetType","int");
   m_param.add(starting_det,"starting_det","std:string");
   m_param.add(ndets_to_read,"ndet","int");
+  m_param.add(nbatch,"nbatch","int");
   m_param.add(initial_configuration,"initial_configuration","int");
   m_param.add(randomize_guess,"randomize_guess","double");
   m_param.put(cur);
@@ -94,6 +96,12 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
      APP_ABORT("Problems opening file. \n");
   }
   std::string wfn_type = getWfnType(in);
+
+  if(TGwfn.TG_local().size() > 1 && nbatch!=0) {
+    app_log()<<" WARNING: ncores>1 is incompatible with nbatch>1. \n"
+             <<"          Setting nbatch=1.\n";
+    nbatch=1;
+  }
 
   using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
   if(type=="msd" || type=="nomsd") {
@@ -300,7 +308,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
 #endif
 
     return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),std::move(ci),std::move(PsiT),
-                        walker_type,NCE,targetNW)); 
+                        walker_type,nbatch,NCE,targetNW)); 
   } else if(type == "phmsd") {
 
     app_log()<<" Wavefunction type: PHMSD\n";
@@ -609,6 +617,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   RealType cutv2(0.);
   int initialDet(1);
   int ndets_to_read(-1); // if not set, read the entire file
+  int nbatch=-1;
   std::string starting_det("");
   std::string str("false");
   std::string filename("");
@@ -621,7 +630,14 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   m_param.add(initialDet,"initialDetType","int");
   m_param.add(starting_det,"starting_det","std:string");
   m_param.add(ndets_to_read,"ndet","int");
+  m_param.add(nbatch,"nbatch","int");
   m_param.put(cur);
+
+  if(TGwfn.TG_local().size() > 1 && nbatch!=0) {
+    app_log()<<" WARNING: ncores>1 is incompatible with nbatch>1. \n"
+             <<"          Setting nbatch=1.\n";
+    nbatch=1;
+  }
 
   AFQMCInfo& AFinfo = InfoMap[info];
   ValueType NCE;
@@ -756,7 +772,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 #endif
 
     return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),std::move(ci),std::move(PsiT),
-                        walker_type,NCE,targetNW));
+                        walker_type,nbatch,NCE,targetNW));
   } else if(type == "phmsd") {
 /*
     int nd = (walker_type==COLLINEAR?2*ndets_to_read:ndets_to_read);

@@ -906,14 +906,14 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
-  using stdAlloc = std::allocator<ComplexType>;
-  SDetOps_complex_serial<stdAlloc,SlaterDetOperations_serial<stdAlloc>>(stdAlloc{});
 
 #ifdef QMC_CUDA
   qmc_cuda::CUDA_INIT(node);
-  using devAlloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
-  SDetOps_complex_serial<devAlloc,SlaterDetOperations_serial<devAlloc>>(devAlloc{});
+  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+#else
+  using Alloc = std::allocator<ComplexType>;
 #endif
+  SDetOps_complex_serial<Alloc,SlaterDetOperations_serial<Alloc>>(Alloc{});
 
 }
 

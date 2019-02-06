@@ -16,11 +16,13 @@
 #define AFQMC_NUMERICS_HELPERS_TENSOR_TRANSPOSITION_HPP
 
 #include<cassert>
+#include "AFQMC/Numerics/detail/utilities.hpp"
 #if defined(QMC_CUDA)
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #include "AFQMC/Kernels/KaKjw_to_KKwaj.cuh"
 #include "AFQMC/Kernels/KaKjw_to_QKajw.cuh"
 #include "AFQMC/Kernels/vKKwij_to_vwKiKj.cuh"
+#include "AFQMC/Kernels/term_by_term_matrix_vec.cuh"
 #endif
 
 namespace ma
@@ -121,6 +123,69 @@ void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
   }
 }
 
+/*
+ * Performs the generic operation: (limited to matrices for now)
+ * A[i,j] = A[i,j] op x[...], 
+ *   where op is {+,-,*,/} and x[...] depends on dim (0:i, 1:j, ...}
+ */
+template<typename T>
+void term_by_term_matrix_vector(TENSOR_OPERATIONS op, int dim, int nrow, int ncol, T* A, int lda, 
+                                  T const* x, int incx)
+{
+  assert(dim==0 || dim==1);  
+  if(op==TOp_PLUS) {
+    if(dim==0) {
+      // A[i,j] += x[i]
+      for(int i=0; i<nrow; i++, A+=lda, x+=incx)
+        for(int j=0; j<ncol; j++)
+          A[j] += *x;
+    } else if(dim==1) {
+      // A[i,j] += x[j]
+      for(int i=0; i<nrow; i++, A+=lda)
+        for(int j=0; j<ncol; j++)
+          A[j] += x[j*incx];
+    } 
+  } else if(op==TOp_MINUS) {
+    if(dim==0) {
+      // A[i,j] += x[i]
+      for(int i=0; i<nrow; i++, A+=lda, x+=incx)
+        for(int j=0; j<ncol; j++)
+          A[j] -= *x;
+    } else if(dim==1) {
+      // A[i,j] += x[j]
+      for(int i=0; i<nrow; i++, A+=lda)
+        for(int j=0; j<ncol; j++)
+          A[j] -= x[j*incx];
+    } 
+  } else if(op==TOp_MUL) {
+    if(dim==0) {
+      // A[i,j] += x[i]
+      for(int i=0; i<nrow; i++, A+=lda, x+=incx)
+        for(int j=0; j<ncol; j++)
+          A[j] *= *x;
+    } else if(dim==1) {
+      // A[i,j] += x[j]
+      for(int i=0; i<nrow; i++, A+=lda)
+        for(int j=0; j<ncol; j++)
+          A[j] *= x[j*incx];
+    } 
+  } else if(op==TOp_DIV) {
+    if(dim==0) {
+      // A[i,j] += x[i]
+      for(int i=0; i<nrow; i++, A+=lda, x+=incx)
+        for(int j=0; j<ncol; j++)
+          A[j] /= *x;
+    } else if(dim==1) {
+      // A[i,j] += x[j]
+      for(int i=0; i<nrow; i++, A+=lda)
+        for(int j=0; j<ncol; j++)
+          A[j] /= x[j*incx];
+    } 
+  } else {
+    APP_ABORT(" Error: Unknown operation in term_by_term_matrix_vector. \n");
+  }
+} 
+
 } //namespace ma
 
 #ifdef QMC_CUDA
@@ -150,6 +215,29 @@ void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                      cuda_gpu_ptr<Q> A, cuda_gpu_ptr<T>  B) {
   kernels::vKKwij_to_vwKiKj(nwalk,nkpts,nmo_max,nmo_tot,to_address(kk),to_address(nmo),
                             to_address(nmo0),to_address(A),to_address(B));
+}
+
+/*
+ * Performs the generic operation: (limited to matrices for now)
+ * A[i,j] = A[i,j] op x[...], 
+ *   where op is {+,-,*,/} and x[...] depends on dim (0:i, 1:j, ...}
+ */
+template<typename T>
+void term_by_term_matrix_vector(ma::TENSOR_OPERATIONS op, int dim, int nrow, int ncol, 
+                                  cuda_gpu_ptr<T> A, int lda,
+                                  cuda_gpu_ptr<T> x, int incx)
+{
+  assert(dim==0 || dim==1);
+  if(op==ma::TOp_PLUS) 
+    kernels::term_by_term_mat_vec_plus(dim,nrow,ncol,to_address(A),lda,to_address(x),incx);
+  else if(op==ma::TOp_MINUS) 
+    kernels::term_by_term_mat_vec_minus(dim,nrow,ncol,to_address(A),lda,to_address(x),incx);
+  else if(op==ma::TOp_MUL) 
+    kernels::term_by_term_mat_vec_mult(dim,nrow,ncol,to_address(A),lda,to_address(x),incx);
+  else if(op==ma::TOp_DIV) 
+    kernels::term_by_term_mat_vec_div(dim,nrow,ncol,to_address(A),lda,to_address(x),incx);
+  else
+    APP_ABORT(" Error: Unknown operation in term_by_term_matrix_vector. \n");
 }
 
 }

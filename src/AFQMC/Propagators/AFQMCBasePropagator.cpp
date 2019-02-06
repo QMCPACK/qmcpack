@@ -155,8 +155,8 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
   }
 
   // construct X
-  std::fill_n(HWs.origin(),HWs.num_elements(),ComplexType(0));  
-  std::fill_n(MF.origin(),MF.num_elements(),ComplexType(0));  
+  fill_n(HWs.origin(),HWs.num_elements(),ComplexType(0));  
+  fill_n(MF.origin(),MF.num_elements(),ComplexType(0));  
 
 // leaving compiler switch until I decide how to do this better
 // basically hide this decision somewhere based on the value of pointer!!!

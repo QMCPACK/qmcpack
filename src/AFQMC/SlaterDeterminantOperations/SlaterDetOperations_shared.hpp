@@ -163,6 +163,17 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       comm.barrier();
     }
 
+    // C[nwalk, M, N]
+    template<class WlkIt, class MatA, class MatC, class TVec>
+    void BatchedMixedDensityMatrix(int nbatch, WlkIt wit, SpinTypes spin, const MatA& hermA, MatC&& C, TVec&& ovlp, bool compact=false) {
+      APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared \n");
+    }
+
+    template<class WlkIt, class MatA, class TVec>
+    void BatchedOverlap(int nbatch, WlkIt wit, SpinTypes spin, const MatA& hermA, TVec&& ovlp) {
+      APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared \n");
+    }
+
   private:
 
     // shm temporary matrices

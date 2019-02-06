@@ -39,7 +39,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
                                     TG(tg_),fileName(""),batched("yes")
   {
 
-    if( TG.getNumberOfTGs() > 1 )
+    if( TG.getNNodesPerTG() > 1 )
         APP_ABORT(" Error: Distributed KPFactorizedHamiltonian not yet implemented.\n");
 
     std::string str("yes");

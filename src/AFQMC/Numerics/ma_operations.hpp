@@ -380,7 +380,7 @@ template<class MA2D> auto herm(MA2D&& arg)
 //}
 
 template<class MultiArray2D>
-int invert_optimal_workspace_size(MultiArray2D & m){
+int invert_optimal_workspace_size(MultiArray2D && m){
 	return std::max(getri_optimal_workspace_size(m),getrf_optimal_workspace_size(m));
 }
 

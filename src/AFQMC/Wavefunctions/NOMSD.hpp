@@ -22,6 +22,7 @@
 #include <iostream>
 #include <tuple>
 
+#include <Utilities/NewTimer.h>
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/config.h"
 #include "mpi3/shm/mutex.hpp"
@@ -86,14 +87,14 @@ class NOMSD: public AFQMCInfo
           SlaterDetOperations&& sdet_,  
           HamiltonianOperations&& hop_, 
           std::vector<ComplexType>&& ci_, std::vector<PsiT_Matrix>&& orbs_, 
-          WALKER_TYPES wlk, ValueType nce, int targetNW=1):
+          WALKER_TYPES wlk, int nbatch_, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
                 alloc_(),  // right now device_allocator is default constructible 
                 alloc_shared_(make_localTG_allocator<ComplexType>(TG)),
                 SDetOp( std::move(sdet_) ), 
                 HamOp(std::move(hop_)),ci(std::move(ci_)),
                 OrbMats(move_vector<devPsiT_Matrix>(std::move(orbs_))),
-                walker_type(wlk),NuclearCoulombEnergy(nce),
+                walker_type(wlk),nbatch(nbatch_),NuclearCoulombEnergy(nce),
                 shmbuff_for_E(iextensions<1u>{1},alloc_shared_),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
                 last_number_extra_tasks(-1),last_task_index(-1),
@@ -104,6 +105,8 @@ class NOMSD: public AFQMCInfo
                 req_SMsend(MPI_REQUEST_NULL),
                 req_SMrecv(MPI_REQUEST_NULL)
     {
+      setup_timers(Timers, NOMSDTimerNames, timer_level_coarse);
+
       compact_G_for_vbias = (ci.size()==1); // this should be input, since it is determined by HOps 
       transposed_G_for_vbias_ = HamOp.transposed_G_for_vbias();  
       transposed_G_for_E_ = HamOp.transposed_G_for_E();  
@@ -285,7 +288,12 @@ class NOMSD: public AFQMCInfo
     }
 
     template<class WlkSet, class MatG, class TVec>
-    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
+    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false) {
+      if(nbatch < 0 || nbatch > 1)
+        MixedDensityMatrix_batched(wset,std::forward<MatG>(G),std::forward<TVec>(Ov),compact,transpose);
+      else
+        MixedDensityMatrix_shared(wset,std::forward<MatG>(G),std::forward<TVec>(Ov),compact,transpose);
+    }
 
     /*
      * Calculates the back propagated density matrix for all walkers in the walker set.
@@ -317,7 +325,12 @@ class NOMSD: public AFQMCInfo
      * Calculates the overlaps of all walkers in the set. Returns values in arrays. 
      */
     template<class WlkSet, class TVec>
-    void Overlap(const WlkSet& wset, TVec&& Ov);
+    void Overlap(const WlkSet& wset, TVec&& Ov) {
+      if(nbatch < 0 || nbatch > 1)
+        Overlap_batched(wset,std::forward<TVec>(Ov));
+      else
+        Overlap_shared(wset,std::forward<TVec>(Ov));
+    }
 
     /*
      * Calculates the overlaps of all walkers in the set. Updates values in wset. 
@@ -385,6 +398,8 @@ class NOMSD: public AFQMCInfo
     // in both cases below: closed_shell=0, UHF/ROHF=1, GHF=2
     WALKER_TYPES walker_type;
 
+    int nbatch;
+
     bool compact_G_for_vbias;
 
     // in the 3 cases, true means [nwalk][...], false means [...][nwalk]
@@ -436,6 +451,18 @@ class NOMSD: public AFQMCInfo
      */
     template<class WlkSet, class Mat, class TVec>
     void Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov);
+
+    template<class WlkSet, class MatG, class TVec>
+    void MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
+
+    template<class WlkSet, class MatG, class TVec>
+    void MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
+
+    template<class WlkSet, class TVec>
+    void Overlap_shared(const WlkSet& wset, TVec&& Ov);
+
+    template<class WlkSet, class TVec>
+    void Overlap_batched(const WlkSet& wset, TVec&& Ov);
 
     /*
      * Calculates the local energy and overlaps of all the walkers in the set and 
@@ -489,6 +516,46 @@ class NOMSD: public AFQMCInfo
           return arr{-1,-1};
       }
     }
+
+    enum NOMSDTimers
+    {
+      Timer_E1,
+      Timer_E2,
+      Timer_E3,
+      Timer_E4,
+      Timer_E5,
+      Timer_E6,
+      Timer_O1,
+      Timer_O2,
+      Timer_O3,
+      Timer_O4,
+      Timer_G1,
+      Timer_G2,
+      Timer_G3,
+      Timer_G4,
+      Timer_G5,
+      Timer_G6
+    };
+
+    TimerNameList_t<NOMSDTimers> NOMSDTimerNames = {
+      {Timer_E1, "E1"},
+      {Timer_E2, "E2"},
+      {Timer_E3, "E3"},
+      {Timer_E4, "E4"},
+      {Timer_E5, "E5"},
+      {Timer_E6, "E6"},
+      {Timer_O1, "O1"},
+      {Timer_O2, "O2"},
+      {Timer_O3, "O3"},
+      {Timer_O4, "O4"},
+      {Timer_G1, "Galloc"},
+      {Timer_G2, "G2"},
+      {Timer_G3, "G3"},
+      {Timer_G4, "G4"},
+      {Timer_G5, "G5"},
+      {Timer_G6, "G6"}
+    };
+    TimerList_t Timers;
 
 
 

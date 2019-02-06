@@ -62,9 +62,12 @@ inline void apply_expM( const MatA& V, MatB& S, MatC& T1, MatC& T2, int order=6)
     ComplexType fact = ComplexType(0.0,1.0)*static_cast<ComplexType>(1.0/static_cast<double>(n));
     ma::product(fact,V,*pT1,zero,*pT2);
     // overload += ???
+/*
     for(int i=0, ie=S.size(0); i<ie; i++)
      for(int j=0, je=S.size(1); j<je; j++)
       S[i][j] += (*pT2)[i][j];
+*/
+    ma::add(ComplexType(1.0),*pT2,ComplexType(1.0),S,S);
     std::swap(pT1,pT2);
   }
 

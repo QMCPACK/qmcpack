@@ -49,6 +49,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     using IVector = typename Base::IVector;
     using TVector = typename Base::TVector;
     using TMatrix = typename Base::TMatrix;
+    using TTensor_ref = typename Base::TTensor_ref;
 
     using Base::MixedDensityMatrix;
     using Base::MixedDensityMatrixForWoodbury;
@@ -88,29 +89,93 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     // C must live in shared memory for this routine to work as expected
     template<class MatA, class MatB, class MatC>
     void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T* res, communicator& comm, bool compact=false) {
+#ifdef QMC_CUDA
+      APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
+#endif
       Base::MixedDensityMatrix(hermA,B,C,res,compact);
     }
 
     template<class integer, class MatA, class MatB, class MatC, class MatQ>
     void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, T* res,
                                     integer* ref, MatQ&& QQ0, communicator& comm, bool compact=false) {
+#ifdef QMC_CUDA
+      APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
+#endif
       Base::MixedDensityMatrixForWoodbury(hermA,B,std::forward<MatC>(C),res,ref,std::forward<MatQ>(QQ0),
                                     compact);
     }
 
     template<class MatA, class MatB>
     void Overlap(const MatA& hermA, const MatB& B, T* res, communicator& comm) { 
+#ifdef QMC_CUDA
+      APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
+#endif
       Base::Overlap(hermA,B,res);
     }
 
     template<typename integer, class MatA, class MatB, class MatC>
     void OverlapForWoodbury(const MatA& hermA, const MatB& B, T* res, integer* ref, MatC&& QQ0, communicator& comm) {
+#ifdef QMC_CUDA
+      APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
+#endif
       Base::OverlapForWoodbury(hermA,B,res,ref,std::forward<MatC>(QQ0));
     }
 
     template<class Mat, class MatP1, class MatV>
     void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order=6) {
+#ifdef QMC_CUDA
+      APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
+#endif
       Base::Propagate(std::forward<Mat>(A),P1,V,order);
+    }
+
+    // C[nwalk, M, N]
+    template<class WlkIt, class MatA, class MatC, class TVec>
+    void BatchedMixedDensityMatrix(int nbatch, WlkIt wit, SpinTypes spin, const MatA& hermA, MatC&& C, TVec&& ovlp, bool compact=false) {
+      static_assert(std::decay<MatC>::type::dimensionality == 3, "Wrong dimensionality");
+      static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
+      int NMO = hermA.size(1);
+      int NAEA = hermA.size(0);
+      assert(C.size(0) == nbatch);
+      assert(ovlp.size() == nbatch);
+
+      if(TMat_NN.num_elements() < nbatch*NAEA*NAEA)
+        TMat_NN.reextent(iextensions<2u>{nbatch*NAEA,NAEA});
+      assert(TMat_NN.num_elements() >= nbatch*NAEA*NAEA);
+      TTensor_ref TNN3D(TMat_NN.data(), {nbatch,NAEA,NAEA});
+      int n1=nbatch, n2=NAEA, n3=NMO;
+      if(not compact) {
+        if(TMat_NM.num_elements() < n1*n2*n3)
+          TMat_NM.reextent(iextensions<2u>{n1*n2,n3});
+        assert(TMat_NM.num_elements() >= n1*n2*n3);
+      } else {
+        n1=n2=n3=1;
+      }
+      TTensor_ref TNM3D(TMat_NM.data(), {n1,n2,n3});
+      int sz = ma::invert_optimal_workspace_size(TNN3D[0]);
+      if(WORK.num_elements() < nbatch*sz)
+        WORK.reextent(iextensions<1u>{nbatch*sz});
+      if(IWORK.num_elements() < nbatch*(NMO+1))
+        IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
+      SlaterDeterminantOperations::batched::MixedDensityMatrix(nbatch,wit,spin,hermA,
+                std::forward<MatC>(C),std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,WORK,compact);
+    }
+
+    template<class WlkIt, class MatA, class TVec>
+    void BatchedOverlap(int nbatch, WlkIt wit, SpinTypes spin, const MatA& hermA, TVec&& ovlp) {
+      static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
+      int NMO = hermA.size(1);
+      int NAEA = hermA.size(0);
+      assert(ovlp.size() == nbatch);
+
+      if(TMat_NN.num_elements() < nbatch*NAEA*NAEA)
+        TMat_NN.reextent(iextensions<2u>{nbatch*NAEA,NAEA});
+      assert(TMat_NN.num_elements() >= nbatch*NAEA*NAEA);
+      TTensor_ref TNN3D(TMat_NN.data(), {nbatch,NAEA,NAEA});
+      if(IWORK.num_elements() < nbatch*(NMO+1))
+        IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
+      SlaterDeterminantOperations::batched::Overlap(nbatch,wit,spin,hermA,
+                std::forward<TVec>(ovlp),TNN3D,IWORK);
     }
 
 };

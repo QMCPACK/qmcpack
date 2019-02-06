@@ -29,7 +29,7 @@
 
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Numerics/helpers/batched_operations.hpp"
-#include "AFQMC/Numerics/helpers/tensor_transpositions.hpp"
+#include "AFQMC/Numerics/tensor_operations.hpp"
 
 namespace qmcplusplus
 {
@@ -246,7 +246,8 @@ class KP3IndexFactorization_batched
       CVector P1D(iextensions<1u>{NMO*NMO});
       fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));
       vHS(vMF_, P1D);
-      TG.TG().all_reduce_in_place_n(to_address(P1D.origin()),P1D.num_elements(),std::plus<>());
+      if(TG.TG().size() > 1)
+        TG.TG().all_reduce_in_place_n(to_address(P1D.origin()),P1D.num_elements(),std::plus<>());
 
       boost::multi::array<ComplexType,2> P1({NMO,NMO});
       copy_n(P1D.origin(),NMO*NMO,P1.origin());
@@ -302,6 +303,7 @@ class KP3IndexFactorization_batched
     template<class Mat, class MatB, class MatC, class MatD>
     void energy_exact(Mat&& E, MatB const& Gc, int nd, MatC* KEleft, MatD* KEright, bool addH1=true, bool addEJ=true, bool addEXX=true) {
 
+      Timers[Timer_E7]->start();
       using std::fill_n;
       using std::copy_n;
       int nkpts = nopk.size(); 
@@ -330,7 +332,11 @@ class KP3IndexFactorization_batched
         if(not getKr) mem_needs += nwalk*local_nCV;
         if(not getKl) mem_needs += nwalk*local_nCV;
       }
+      Timers[Timer_E7]->stop();
+      Timers[Timer_Ealloc]->start();
       set_buffer(mem_needs);
+      Timers[Timer_Ealloc]->stop();
+      Timers[Timer_E8]->start();
 
       // messy
       sp_pointer Krptr, Klptr; 
@@ -370,6 +376,7 @@ class KP3IndexFactorization_batched
       C3Tensor_cref G3Da(make_device_ptr(Gc.origin()),{nocca_tot,nmo_tot,nwalk} );
       C3Tensor_cref G3Db(make_device_ptr(Gc.origin())+G3Da.num_elements()*(nspin-1),
                                     {noccb_tot,nmo_tot,nwalk} );
+      Timers[Timer_E8]->stop();
 
       // later on, rewrite routine to loop over spins, to avoid storage of both spin
       // components simultaneously
@@ -440,7 +447,7 @@ class KP3IndexFactorization_batched
         size_t Bytes = size_t(4*1024)*size_t(1024*1024);
         Bytes /= size_t(2*nwalk*nocc_max*nocc_max*nchol_max); 
         size_t bz0 = std::max(size_t(1), size_t(std::floor(Bytes)));
-        batch_size = std::min(bz0,size_t(nkpts*nkpts));
+        batch_size = std::min(bz0,size_t(2*nkpts*nkpts));
         int batch_cnt(0);
         using ma::gemmBatched;
         std::vector<sp_pointer> Aarray;
@@ -456,8 +463,10 @@ class KP3IndexFactorization_batched
 
         size_t local_memory_needs = batch_size*size_t(2*nwalk*nocc_max*nocc_max*nchol_max) + 
                                     batch_size; 
+        Timers[Timer_Ealloc]->start();
         if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
         if(IMats.num_elements() < batch_size) IMats.reextent({batch_size,1});
+        Timers[Timer_Ealloc]->stop();
         cnt=0; 
         SpVector_ref dev_scl_factors(TMats.origin()+cnt,{batch_size}); 
         cnt+=dev_scl_factors.num_elements();
@@ -498,7 +507,7 @@ class KP3IndexFactorization_batched
               else
                 scl_factors.push_back(SPComplexType(-scl));
 
-              if( 2*batch_cnt >= batch_size ) {
+              if( batch_cnt >= batch_size ) {
                 Timers[Timer_E3]->start();
                 gemmBatched('T','N',nocc_max*nchol_max,nwalk*nocc_max,nmo_max,
                                             SPComplexType(1.0),Aarray.data(),nmo_max,
@@ -626,7 +635,9 @@ class KP3IndexFactorization_batched
         if(not getKr) mem_needs += nwalk*local_nCV;
         if(not getKl) mem_needs += nwalk*local_nCV;
       }
+      Timers[Timer_Ealloc]->start();
       set_buffer(mem_needs);
+      Timers[Timer_Ealloc]->stop();
 
       // messy
       sp_pointer Krptr, Klptr;
@@ -725,8 +736,10 @@ class KP3IndexFactorization_batched
       //       Not sure how to do it for COLLINEAR.
       if(addEXX) {  
 
+        Timers[Timer_Ealloc]->start();
         if(Qwn.size(0) != nwalk || Qwn.size(1) != nsampleQ)
           Qwn.reextent({nwalk,nsampleQ});
+        Timers[Timer_Ealloc]->stop();
         {
           for(int n=0; n<nwalk; ++n) 
             for(int nQ=0; nQ<nsampleQ; ++nQ) {
@@ -750,7 +763,9 @@ class KP3IndexFactorization_batched
         }
 
         size_t local_memory_needs = 2*nocca_max*nocca_max*nchol_max; 
+        Timers[Timer_Ealloc]->start();
         if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
+        Timers[Timer_Ealloc]->stop();
         size_t local_cnt=0; 
         RealType scl = (walker_type==CLOSED?2.0:1.0);
         size_t nqk=1;  
@@ -837,7 +852,9 @@ class KP3IndexFactorization_batched
 
       if(addEJ) {
         size_t local_memory_needs = 2*nchol_max*nwalk; 
+        Timers[Timer_Ealloc]->start();
         if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
+        Timers[Timer_Ealloc]->stop();
         cnt=0; 
         SpMatrix_ref Kr_local(TMats.origin(),{nwalk,nchol_max}); 
         cnt+=Kr_local.num_elements();
@@ -969,6 +986,7 @@ class KP3IndexFactorization_batched
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
 
+      Timers[Timer_vHS5]->start();
       int nkpts = nopk.size();
       int nwalk = X.size(1);
       assert(v.size(0)==nwalk);
@@ -980,12 +998,19 @@ class KP3IndexFactorization_batched
       assert(v.num_elements() == nwalk*nmo_tot*nmo_tot);
       SPComplexType one(1.0,0.0);
       SPComplexType im(0.0,1.0);
+      Timers[Timer_vHS5]->stop();
+      Timers[Timer_vHS6]->start();
       size_t mem_needs((nkpts+1)*nkpts*nwalk*nmo_max*nmo_max + nwalk*2*nkpts*nchol_max);
+      Timers[Timer_vHSalloc]->start();
       if(BTMats.num_elements() < mem_needs) BTMats.reextent({mem_needs,1});
+      Timers[Timer_vHSalloc]->stop();
+      Timers[Timer_vHS6]->stop();
 
+      Timers[Timer_vHS7]->start();
       Sp3Tensor_ref vKK(BTMats.origin(),{nkpts+1,nkpts,nwalk*nmo_max*nmo_max} );
       Sp4Tensor_ref XQnw(BTMats.origin()+vKK.num_elements(),{nkpts,2,nchol_max,nwalk} );
       fill_n(XQnw.origin(),XQnw.num_elements(),SPComplexType(0.0));
+      Timers[Timer_vHS7]->stop();
 
       Timers[Timer_vHS1]->start();
       // "rotate" X  
@@ -1172,7 +1197,9 @@ class KP3IndexFactorization_batched
 
       // space for GQK and for v1
       size_t mem_needs(nkpts*nkpts*nwalk*nocca_max*nmo_max + (nkpts+1)*nchol_max*nwalk); 
+      Timers[Timer_vballoc]->start();
       if(BTMats.num_elements() < mem_needs) BTMats.reextent({mem_needs,1});
+      Timers[Timer_vballoc]->stop();
 
       assert(G.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
       C3Tensor_cref G3Da(make_device_ptr(G.origin()),{nocca_tot,nmo_tot,nwalk} );
@@ -1406,32 +1433,52 @@ class KP3IndexFactorization_batched
       Timer_vbias1,
       Timer_vbias2,
       Timer_vbias3,
+      Timer_vballoc,
       Timer_vHS1,
       Timer_vHS2,
       Timer_vHS3,
       Timer_vHS4,
+      Timer_vHSalloc,
+      Timer_vHS5,
+      Timer_vHS6,
+      Timer_vHS7,
+      Timer_vHS8,
       Timer_E1,
       Timer_E2,
       Timer_E3,
       Timer_E4,
       Timer_E5,
-      Timer_E6
+      Timer_E6,
+      Timer_E7,
+      Timer_E8,
+      Timer_E9,
+      Timer_Ealloc
     };
 
     TimerNameList_t<THCTimers> THCTimerNames = {
       {Timer_vbias1, "vbias_1"},
       {Timer_vbias2, "vbias_2"},
       {Timer_vbias3, "vbias_3"},
+      {Timer_vballoc, "vbias_alloc"},
       {Timer_vHS1, "vHS_rotateX"},
       {Timer_vHS2, "vHS_combineX"},
       {Timer_vHS3, "vHS_LX"},
       {Timer_vHS4, "vHS_trans"},
+      {Timer_vHSalloc, "vHS_alloc"},
+      {Timer_vHS5, "vHS5"},
+      {Timer_vHS6, "vHS6"},
+      {Timer_vHS7, "vHS7"},
+      {Timer_vHS8, "vHS8"},
       {Timer_E1, "E_trans"},
       {Timer_E2, "E_H1"},
       {Timer_E3, "E_LG"},
       {Timer_E4, "E_dot"},
       {Timer_E5, "E_Klr"},
       {Timer_E6, "E_EJ"},
+      {Timer_E7, "E_E7"},
+      {Timer_E8, "E_E8"},
+      {Timer_E9, "E_E9"},
+      {Timer_Ealloc, "E_alloc"},
     };
     TimerList_t Timers;
 

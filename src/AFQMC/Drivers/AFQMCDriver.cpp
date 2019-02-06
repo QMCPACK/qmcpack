@@ -111,11 +111,6 @@ bool AFQMCDriver::run(WalkerSet& wset)
     checkpoint(wset,iBlock,step_tot);
   }
 
-  app_log()<<"----------------------------------------------------------------\n";
-  app_log()<<" Timer: \n";
-  Timer.print_average_all(app_log());
-  app_log()<<"----------------------------------------------------------------\n";
-
   return true;
 }
 

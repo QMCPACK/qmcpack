@@ -20,6 +20,7 @@
 #include "io/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/SimpleRandom.h"
+#include <Utilities/NewTimer.h>
 #include "Utilities/Timer.h"
 #include "Utilities/OutputManager.h"
 
@@ -39,7 +40,6 @@
 
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
-#include "AFQMC/Utilities/myTimer.h"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 
@@ -247,6 +247,7 @@ const char *wlk_xml_block_noncol =
         }
         app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<" Time: " <<t1 <<std::endl;
       }
+return;
 
       // Restarting Wavefunction from file
       const char *wfn_xml_block_restart =

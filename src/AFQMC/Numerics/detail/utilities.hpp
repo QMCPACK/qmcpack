@@ -22,6 +22,8 @@ namespace ma {
 
 using qmcplusplus::afqmc::to_address;
 
+  enum TENSOR_OPERATIONS {TOp_PLUS,TOp_MINUS,TOp_MUL,TOp_DIV};
+
   static const int INCX     = 1;
   static const int INCY     = 1;
   static const char UPLO    = 'L';

@@ -15,6 +15,7 @@
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
+#include "AFQMC/Walkers/WalkerConfig.hpp"
 
 namespace qmcplusplus
 {
@@ -46,20 +47,27 @@ class EnergyEstimator: public EstimatorBase
       eloc.reextent({nwalk,3});
     if(ovlp.size(0) != nwalk)
       ovlp.reextent(iextensions<1u>{nwalk});
+    if(wprop.size(0) != 4 || wprop.size(1) != nwalk)
+      wprop.reextent({4,nwalk});
 
     ComplexType dum, et;
     wfn0.Energy(wset,eloc,ovlp);
+    // in case GPU 
+    ComplexMatrix<std::allocator<ComplexType>> eloc_(eloc);
+    ComplexVector<std::allocator<ComplexType>> ovlp_(ovlp);
     if(TG.TG_local().root()) {
+      wset.getProperty(WEIGHT,wprop[0]);  
+      wset.getProperty(OVLP,wprop[1]);  
+      wset.getProperty(PHASE,wprop[2]);  
       data[0] = data[1] = std::complex<double>(0,0);
       for(int i=0; i<nwalk; i++) {
-        auto wi = wset[i];
-        if(std::isnan(real(*wi.weight()))) continue;
+        if(std::isnan(real(wprop[0][i]))) continue;
         if(importanceSampling) {
-          dum = (*wi.weight())*ovlp[i]/(*wi.overlap());
+          dum = (wprop[0][i])*ovlp_[i]/(wprop[1][i]);
         } else {
-          dum = (*wi.weight())*ovlp[i]*(*wi.phase());
+          dum = (wprop[0][i])*ovlp_[i]*(wprop[2][i]);
         }
-        et = eloc[i][0]+eloc[i][1]+eloc[i][2];
+        et = eloc_[i][0]+eloc_[i][1]+eloc_[i][2];
         if( (!std::isfinite(real(dum))) || (!std::isfinite(real(et*dum))) ) continue;
         data[1] += dum;
         data[0] += et*dum;
@@ -98,8 +106,9 @@ class EnergyEstimator: public EstimatorBase
 
   Wavefunction& wfn0;
 
-  ComplexMatrix<std::allocator<ComplexType>> eloc;
-  ComplexVector<std::allocator<ComplexType>> ovlp;
+  ComplexMatrix<device_allocator<ComplexType>> eloc;
+  ComplexVector<device_allocator<ComplexType>> ovlp;
+  ComplexMatrix<std::allocator<ComplexType>> wprop;
 
   std::vector<std::complex<double> > data;
 

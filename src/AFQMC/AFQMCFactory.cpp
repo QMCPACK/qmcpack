@@ -43,6 +43,7 @@ TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames =
   {pseudo_energy_timer, "PseudoEnergy"},
   {energy_timer, "Energy"},
   {vHS_timer, "vHS"},
+  {assemble_X_timer, "X"},
   {vbias_timer, "vbias"},
   {G_for_vbias_timer,"G_for_vbias"},
   {propagate_timer, "Propagate"},
