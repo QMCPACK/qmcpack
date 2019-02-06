@@ -21,6 +21,10 @@
   stringstyle=\color{red}\ttfamily,
   commentstyle=\color{gray}\ttfamily,
   morecomment=[l][\color{magenta}]{\#},
+  breaklines=true,
+  breakatwhitespace=true,
+  showstringspaces=false,
+  keepspaces=true,
   frame=tlrb
   frameround=ftft
 }
@@ -34,6 +38,7 @@
   frame=tlrb,
   frameround=ftft,
   breaklines=true,
+  breakatwhitespace=true,
   escapeinside={<:}{:>},
   columns=fullflexible,   % copy/paste from pdf w/o added spaces
   keepspaces=true,        % but do keep the spaces that are already there
@@ -46,21 +51,24 @@
   basicstyle=\ttfamily\footnotesize,
   backgroundcolor=\color{verbgray},
   breaklines=true,
+  breakatwhitespace=true,
   columns=fullflexible,   % copy/paste from pdf w/o added spaces
   keepspaces=true,        % but do keep the spaces that are already there
   showstringspaces=false, % avoid showing underbrackets in quoted text
 }
 
 \lstnewenvironment{shade}{
-  \lstset{backgroundcolor=\color{verbgray},%
-    language=csh,%
-    extendedchars=true,%
-    frame=single,%
-    framerule=0pt,%
-    basicstyle=\ttfamily\footnotesize,%
-    breaklines=true,%
-    columns=fullflexible,%
-    keepspaces=true,%
+  \lstset{backgroundcolor=\color{verbgray},
+    language=csh,
+    extendedchars=true,
+    frame=single,
+    framerule=0pt,
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    breakatwhitespace=true,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false,
     escapeinside={\%*}{*},}}
     {}
 

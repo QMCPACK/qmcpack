@@ -48,7 +48,7 @@ corresponding to the release.
 
 \begin{itemize}
 \item Download the latest QMCPACK distribution from \url{http://www.qmcpack.org}.
-\item Untar the archive, e.g., \ishell{tar xvf qmcpack\_v1.3.tar.gz}
+\item Untar the archive, e.g., \ishell{tar xvf qmcpack_v1.3.tar.gz}
 \end{itemize}
 
 Releases can also be obtained from the 'master' branch of the QMCPACK
@@ -337,7 +337,7 @@ Installation is optional. The QMCPACK executable can be run from the \ishell{bin
 If the install step is desired, run \ishell{make install} command to install the QMCPACK executable, the converter,
 and some additional executables.
 Also installed is the \ishell{qmcpack.settings} file that records options used to compile QMCPACK.
-Specify the \ishell{CMAKE\_INSTALL\_PREFIX} CMake variable during configuration to set the install location.
+Specify the \ishell{CMAKE_INSTALL_PREFIX} CMake variable during configuration to set the install location.
 
 
 \subsection{Role of QMC\_DATA}
@@ -1317,7 +1317,7 @@ The tests include:
 
 
 The test types are differentiated by prefixes in their names,
-e.g. \ishell{short-LiH\_dimer\_ae\_vmc\_hf\_noj\_16-1} indicates a short VMC test
+e.g. \ishell{short-LiH_dimer_ae_vmc_hf_noj_16-1} indicates a short VMC test
 for the LiH dime. 
 
 QMCPACK also includes tests for developmental features and feature
@@ -1392,7 +1392,7 @@ ctest -V -R short   # Verbose short tests
 The test system includes specific tests for the complex version of the code.
 
 The input data files for the tests are located in the \ishell{tests} directory.
-The system-level test directories are grouped into \ishell{heg}, \ishell{molecules}, and \ishell{solids}, with particular physical systems under each (for example \ishell{molecules/H4\_ae}
+The system-level test directories are grouped into \ishell{heg}, \ishell{molecules}, and \ishell{solids}, with particular physical systems under each (for example \ishell{molecules/H4_ae}
 \footnote{The suffix `ae' is short for `all-electron' and `pp' is short for `pseudopotential'}).
 Under each physical system directory there may be tests for multiple QMC methods or parameter variations.
 The numerical comparisons and test definitions are in the \ishell{CMakeLists.txt} file in each physical system directory.
@@ -1403,7 +1403,7 @@ called or found. If the QMC runs appear to work but all the other
 tests fail it is possible that python is not working on your system -
 we suggest checking some of the test console output in \ishell{build/Testing/Temporary/LastTest.log}
 or the output files under \ishell{build/tests/}.
-%The runs occur in \ishell{build/tests/test\_dir/test\_name}.
+%The runs occur in \ishell{build/tests/test_dir/test_name}.
 
 
 Note that because most of the tests are very small, consisting of only a few
@@ -1494,7 +1494,7 @@ For the largest problem sizes, the initialization of spline orbitals may
 take a large portion of overall runtime. When QMCPACK is run at scale
 the initialization is fast because it is fully
 parallelized. However, the performance runs are most usually run on a single node.
-Consider running QMCPACK once with \ishell{--save\_wfs=1} to save the
+Consider running QMCPACK once with \ishell{--save_wfs=1} to save the
 converted spline coefficients to the disk and load them for later runs in the same folder..
 
 The delayed update algorithm in section~\ref{sec:singledeterminant}
@@ -1512,7 +1512,7 @@ The NiO tests are for bulk supercells of varying size. The QMC runs consist of s
 without drift (ii) VMC with drift term included (iii) DMC with
 constant population. The tests use spline wavefunctions that must be
 downloaded as described in the README due to their large size. You
-will need to set ``-DQMC\_DATA=YOUR\_DATA\_FOLDER -DENABLE\_TIMERS=1''
+will need to set ``\ishell{-DQMC_DATA=YOUR_DATA_FOLDER -DENABLE_TIMERS=1}''
 when running cmake as
 described in the README.
 
@@ -1609,7 +1609,7 @@ calculation if they need to be reconstructed for use in an
 electronic structure calculation.
 
 It is a stand alone C++ executable that is not built by default but accessible via adding
-\ishell{-DBUILD\_PPCONVERT=1} to cmake and then typing \ishell{make ppconvert}.
+\ishell{-DBUILD_PPCONVERT=1} to cmake and then typing \ishell{make ppconvert}.
 Userguide is provided in section~\ref{sec:ppconvert}.
 
 \section{Installing and patching Quantum ESPRESSO}
@@ -1646,15 +1646,15 @@ cd qe-6.3
    the same MPI with QE as used to build the parallel HDF5 library.
 
    Currently HDF5 support in QE itself is preliminary. To enable use of pw2qmcpack
-   but use the old non-HDF5 I/O within QE, replace \ishell{-D\_\_HDF5} with \ishell{-D\_\_HDF5\_C} in make.inc.
-\item if your system has HDF5 with C only, manually edit make.inc by adding \ishell{-D\_\_HDF5\_C} and \ishell{-DH5\_USE\_16\_API}
-   in \ishell{DFLAGS} and provide include and library path in \ishell{IFLAGS} and \ishell{HDF5\_LIB}
+   but use the old non-HDF5 I/O within QE, replace \ishell{-D__HDF5} with \ishell{-D__HDF5_C} in make.inc.
+\item if your system has HDF5 with C only, manually edit make.inc by adding \ishell{-D__HDF5_C} and \ishell{-DH5_USE_16_API}
+   in \ishell{DFLAGS} and provide include and library path in \ishell{IFLAGS} and \ishell{HDF5_LIB}
 \end{itemize}
 
 The complete process is described in external\_codes/quantum\_espresso/README.
 
 The tests involving pw.x and pw2qmcpack.x have been integrated in the test suite of QMCPACK.
-By adding \ishell{-D QE\_BIN=your\_QE\_binary\_path} in the cmake command line when building your QMCPACK,
+By adding \ishell{-D QE_BIN=your_QE_binary_path} in the cmake command line when building your QMCPACK,
 tests named with ``qe-'' prefix will be included in the test set of your build.
 You can test the whole pw$\to$pw2qmcpack$\to$qmcpack workflow by
 
@@ -1704,7 +1704,7 @@ Some tips to help troubleshoot installations of QMCPACK:
   directories and files directly (Section
   \ref{sec:cmakeoptions}). e.g.
   \begin{shade}
-  cmake -DCMAKE\_C\_COMPILER=/full/path/to/mpicc -DCMAKE\_CXX\_COMPILER=/full/path/to/mpicxx ..
+  cmake -DCMAKE_C_COMPILER=/full/path/to/mpicc -DCMAKE_CXX_COMPILER=/full/path/to/mpicxx ..
   \end{shade}
 \item To monitor the compiler and linker settings, use a verbose build, \ishell{make
   VERBOSE=1}. If an individual source file fails to compile you
