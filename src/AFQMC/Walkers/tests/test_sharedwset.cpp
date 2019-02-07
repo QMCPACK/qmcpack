@@ -25,6 +25,7 @@
 #include "Utilities/SimpleRandom.h"
 #include "OhmmsApp/ProjectData.h"
 
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 
 #include <stdio.h>
