@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /** @file bspline_allocator.hpp
- * @brief Allocator and management classes
+ * @brief BsplineAllocator and management classes
  */
 #ifndef QMCPLUSPLUS_EINSPLINE_BSPLINE_ALLOCATOR_H
 #define QMCPLUSPLUS_EINSPLINE_BSPLINE_ALLOCATOR_H
@@ -22,19 +22,19 @@
 
 namespace qmcplusplus { namespace einspline {
 
-  class Allocator
+  class BsplineAllocator
   {
     ///Setting the allocation policy: default is using aligned allocator
     int Policy;
     public:
     ///constructor
-    Allocator();
+    BsplineAllocator();
     ///disable copy constructor
-    Allocator(const Allocator&)=delete;
+    BsplineAllocator(const BsplineAllocator&)=delete;
     ///disable assignement
-    Allocator& operator=(const Allocator&)=delete;
+    BsplineAllocator& operator=(const BsplineAllocator&)=delete;
     ///destructor
-    ~Allocator();
+    ~BsplineAllocator();
 
     template<typename SplineType>
     void destroy(SplineType* spline)
@@ -71,7 +71,7 @@ namespace qmcplusplus { namespace einspline {
   };
 
   template<typename UBT, typename MBT>
-    void Allocator::copy(UBT* single, MBT* multi, int i,  const int* offset, const int* N)
+    void BsplineAllocator::copy(UBT* single, MBT* multi, int i,  const int* offset, const int* N)
     {
       typedef typename bspline_type<MBT>::value_type out_type;
       typedef typename bspline_type<UBT>::value_type in_type;

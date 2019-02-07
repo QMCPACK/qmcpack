@@ -20,7 +20,7 @@
 #define QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
 #include "config.h"
 #include <iostream>
-#include <spline2/bspline_allocator.hpp>
+#include <spline2/BsplineAllocator.hpp>
 #include <spline2/MultiBsplineData.hpp>
 #include <stdlib.h>
 
@@ -84,7 +84,7 @@ namespace qmcplusplus
       ///actual einspline multi-bspline object
       spliner_type* spline_m;
       ///use allocator
-      einspline::Allocator myAllocator;
+      einspline::BsplineAllocator myAllocator;
 
       MultiBspline():spline_m(nullptr) {}
       MultiBspline(const MultiBspline& in)=delete;
@@ -161,7 +161,7 @@ namespace qmcplusplus
       ///actual einspline multi-bspline object
       spliner_type spline_m;
       ///use allocator
-      //einspline::Allocator myAllocator;
+      //einspline::BsplineAllocator myAllocator;
 
       MultiBspline1D()
       {
