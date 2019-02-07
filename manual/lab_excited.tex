@@ -119,7 +119,13 @@ For example, one can use pymatgen, \cite{Ong2013} XCRYSDEN \cite{Kokalj1999} or 
 Figure \ref{fig:lab_ex_xcrysden} shows the procedure for visualizing the Brillouin Zone using XCRYSDEN after the structure file is loaded. 
 However, the primitive cell is not unique, and the actual shape of the BZ can depend on the structure used. 
 In our example, we use the python libraries of SeeK-path, using a wrapper written in Nexus. 
-SeeK-path includes routines to standardize primitive cells, which will be useful for our work. 
+SeeK-path includes routines to standardize primitive cells, which will be useful for our work.
+
+SeeK-path can be installed easily using \texttt{pip}:
+\begin{shade}
+>pip install --user seekpath
+\end{shade}
+ 
 In the \texttt{band.py} script, identification of high symmetry k-points and band structure calculations are done within the workflow. 
 In the script, where the \texttt{dia} PhysicalSystem object is used as the input structure, \texttt{dia2\_structure} is the standardized primitive cell and \texttt{dia2\_kpath} is the respective k-path around the iBZ. 
 \texttt{dia2\_kpath} has a dictionary of the k-path in various coordinate systems, please make sure you are using the right one. 
@@ -153,28 +159,28 @@ VBM is located at $\Gamma$. CBM is not located on a high symmetry k-point in thi
 Therefore, we can use the symbol $\Delta$ to denote the CBM wavevector in the rest of this document. 
 In \texttt{band.py} script, once the band structure calculation is finished, you can use the following lines to get the exact location of VBM and CBM using:
 \begin{lstlisting}
-from pwscf_analyzer import PwscfAnalyzer
-p = PwscfAnalyzer(band)
-p.analyze()
-print "VBM: {0}".format(p.bands.vbm)
-print "CBM: {0}".format(p.bands.cbm)
+p = band.load_analyzer_image()
+print "VBM:\n{0}".format(p.bands.vbm)
+print "CBM:\n{0}".format(p.bands.cbm)
 \end{lstlisting}
 Output must be the following:
-\begin{lstlisting}
-VBM:   band_number     = 3
-  energy          = 13.6851
+\begin{shade}
+VBM:
+  band_number     = 3
+  energy          = 13.2874
   index           = 0
   kpoint_2pi_alat = [0. 0. 0.]
   kpoint_rel      = [0. 0. 0.]
   pol             = up
 
-CBM:   band_number     = 4
-  energy          = 17.2861
-  index           = 52
-  kpoint_2pi_alat = [0.        0.1117088 0.       ]
-  kpoint_rel      = [0.3768116 0.        0.3768116]
+CBM:
+  band_number     = 4
+  energy          = 17.1545
+  index           = 51
+  kpoint_2pi_alat = [0.        0.1095605 0.       ]
+  kpoint_rel      = [0.3695652 0.        0.3695652]
   pol             = up
-\end{lstlisting}
+\end{shade}
 \subsection{Finding a supertwist which includes all the k-points of interest}
 Using the VBM and CBM wavevectors defined in the previous section, we now construct the supertwist which will hopefully contain both VBM and CBM. In Fig. \ref{fig:lab_ex_twists}, we provide a simple example using 2D rectangular lattice. 
 Let us assume that we are interested in the indirect transition, $\Gamma \rightarrow X_1$. 
@@ -200,12 +206,20 @@ Closest simple fraction to this number with the smallest denominator is 1/3. If 
 Near  $\Delta$, the LDA band curvature is very low and using  $\Delta'$ can indeed be a good approximation. 
 We can compare the eigenvalues using their index numbers:
 \begin{lstlisting}[mathescape=true]
->>> p.bands.up[51] ## CBM, $\Delta$ ##
-{'eigs': array([-3.2076,  4.9221,  7.5433,  7.5433, 17.1545, 19.7598, 28.3242,
-28.3242]), 'index': 51, 'occs': array([1., 1., 1., 1., 0., 0., 0., 0.]), 'kpoint_rel': array([0.3695653, 0.       , 0.3695653]), 'kpoint_2pi_alat': array([0.       , 0.1095605, 0.       ])}
->>> p.bands.up[46] ## $\Delta'$ ##
-{'eigs': array([-4.0953,  6.1376,  7.9247,  7.9247, 17.1972, 20.6393, 27.3653,
-27.3653]), 'index': 46, 'occs': array([1., 1., 1., 1., 0., 0., 0., 0.]), 'kpoint_rel': array([0.3333334, 0.       , 0.3333334]), 'kpoint_2pi_alat': array([0.       , 0.0988193, 0.       ])}
+>>> print p.bands.up[51] ## CBM, $\Delta$ ##
+  eigs            = [-3.2076  4.9221  7.5433  7.5433 17.1545 19.7598 28.3242 28.3242]
+  index           = 51
+  kpoint_2pi_alat = [0.        0.1095605 0.       ]
+  kpoint_rel      = [0.3695652 0.        0.3695652]
+  occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
+  pol             = up
+>>> print p.bands.up[46] ## $\Delta'$ ##
+  eigs            = [-4.0953  6.1376  7.9247  7.9247 17.1972 20.6393 27.3653 27.3653]
+  index           = 46
+  kpoint_2pi_alat = [0.        0.0988193 0.       ]
+  kpoint_rel      = [0.3333333 0.        0.3333333]
+  occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
+  pol             = up
 \end{lstlisting}
 This shows that the eigenvalues of the first unoccupied bands in $\Delta$ and $\Delta'$ are 17.1545 and 17.1972 eV respectively, meaning that according to LDA, a correction of nearly -40 meV is obtained. 
 After electronic transitions between $\Gamma$ and $\Delta'$ are studied using DMC, one can apply the LDA correction to extrapolate the results to $\Gamma$ and $\Delta$ transitions.
@@ -221,7 +235,7 @@ Spin\_0 in the file name suggests that we are reading the spin up eigenstates. B
 Since state number starts from 0, state number 35 must be occupied while state 36 should be unoccupied. 
 States 35 and 36 have the same reciprocal crystal coordinates (K1,K2,K3) as $\Gamma$ and $\Delta'$, respectively. 
 Therefore, one should promote an electron from state number 35 to 36 to study the indirect band gap here. 
-\begin{lstlisting}
+\begin{shade}
 #  Band State TwistIndex BandIndex Energy Kx Ky Kz K1 K2 K3 KmK
 33 33 0  1     0.488302  0.0000  0.0000  0.0000 -0.0000 -0.0000 -0.0000      1
 34 34 0  2     0.488302  0.0000  0.0000  0.0000 -0.0000 -0.0000 -0.0000      1
@@ -229,7 +243,7 @@ Therefore, one should promote an electron from state number 35 to 36 to study th
 36 36 4  4     0.631985  0.0000 -0.6209  0.0000 -0.3333 -0.0000 -0.3333      1
 37 37 8  4     0.631985  0.0000 -1.2418  0.0000 -0.6667 -0.0000 -0.6667      1
 38 38 0  4     0.691907  0.0000  0.0000  0.0000 -0.0000 -0.0000 -0.0000      1
-\end{lstlisting}
+\end{shade}
 However, one should always check whether this is really what we want. 
 It can be seen  that band \# 33, 34 and 35 are degenerate (energy eigenvalues are listed in the 5th column), but also they have the same reciprocal coordinates in (K1,K2,K3). 
 This is actually expected as one can see from Fig. \ref{fig:lab_ex_bands}, in the band diagram the band structure is threefold degenerate at $\Gamma$.  
@@ -238,20 +252,85 @@ Following the (twistindex, bandindex) notation, we can say that $\Gamma$ to $\De
 
 Alternatively, one can also read the band and twist indexes using PwscfAnalyzer and determine the band/twist indexes on the go:
 \begin{lstlisting}
-from pwscf_analyzer import PwscfAnalyzer
-p = PwscfAnalyzer(nscf)
->>> p.bands.up
-[{'eigs': array([-8.0883, 13.2874, 13.2874, 13.2874, 18.8277, 18.8277, 18.8277,
-	25.9151]), 'index': 0, 'occs': array([1., 1., 1., 1., 0., 0., 0., 0.]), 'kpoint_rel': array([0., 0., 0.]), 'kpoint_2pi_alat': array([0., 0., 0.])}, {'eigs': array([-5.0893,  3.8761, 10.9518, 10.9518, 21.5031, 21.5031, 21.5361,
-	28.2574]), 'index': 1, 'occs': array([1., 1., 1., 1., 0., 0., 0., 0.]), 'kpoint_rel': array([0.3333333, 0.       , 0.       ]), 'kpoint_2pi_alat': array([-0.0494096,  0.0494096,  0.0494096])}, {'eigs': array([-5.0893,  3.8761, 10.9518, 10.9518, 21.5031, 21.5031, 21.5361,
-	28.2574]), 'index': 2, 'occs': array([1., 1., 1., 1., 0., 0., 0., 0.]), 'kpoint_rel': array([0.6666667, 0.       , 0.       ]), 'kpoint_2pi_alat': array([-0.0988193,  0.0988193,  0.0988193])}, {'eigs': array([-5.0893,  3.8761, 10.9518, 10.9518, 21.5031, 21.5031, 21.5361,
-	28.2574]), 'index': 3, 'occs': array([1., 1., 1., 1., 0., 0., 0., 0.]), 'kpoint_rel': array([0.       , 0.       , 0.3333333]), 'kpoint_2pi_alat': array([ 0.0494096,  0.0494096, -0.0494096])}, {'eigs': array([-4.0953,  6.1376,  7.9247,  7.9247, 17.1972, 20.6393, 27.3652,
-	27.3652]), 'index': 4, 'occs': array([1., 1., 1., 1., 0., 0., 0., 0.]), 'kpoint_rel': array([0.3333333, 0.       , 0.3333333]), 'kpoint_2pi_alat': array([0.       , 0.0988193, 0.       ])}, {'eigs': array([-0.6681,  2.3792,  3.7836,  8.5596, 19.3423, 26.2181, 26.6666,
-	28.0506]), 'index': 5, 'occs': array([1., 1., 1., 1., 0., 0., 0., 0.]), 'kpoint_rel': array([0.6666667, 0.       , 0.3333333]), 'kpoint_2pi_alat': array([-0.0494096,  0.1482289,  0.0494096])}, {'eigs': array([-5.0893,  3.8761, 10.9518, 10.9518, 21.5031, 21.5031, 21.5361,
-	28.2574]), 'index': 6, 'occs': array([1., 1., 1., 1., 0., 0., 0., 0.]), 'kpoint_rel': array([0.       , 0.       , 0.6666667]), 'kpoint_2pi_alat': array([ 0.0988193,  0.0988193, -0.0988193])}, {'eigs': array([-0.6681,  2.3792,  3.7836,  8.5596, 19.3423, 26.2181, 26.6666,
-	28.0506]), 'index': 7, 'occs': array([1., 1., 1., 1., 0., 0., 0., 0.]), 'kpoint_rel': array([0.3333333, 0.       , 0.6666667]), 'kpoint_2pi_alat': array([ 0.0494096,  0.1482289, -0.0494096])}, {'eigs': array([-4.0953,  6.1376,  7.9247,  7.9247, 17.1972, 20.6393, 27.3652,
-	27.3652]), 'index': 8, 'occs': array([1., 1., 1., 1., 0., 0., 0., 0.]), 'kpoint_rel': array([0.6666667, 0.       , 0.6666667]), 'kpoint_2pi_alat': array([0.       , 0.1976385, 0.       ])}]
+p = nscf.load_analyzer_image()
+print 'band information'
+print p.bands.up
+print 'twist 0 k-point:',p.bands.up[0].kpoint_rel
+print 'twist 4 k-point:',p.bands.up[4].kpoint_rel
+print 'twist 0 band 3 eigenvalue:',p.bands.up[0].eigs[3]
+print 'twist 4 band 4 eigenvalue:',p.bands.up[4].eigs[4]
 \end{lstlisting}
+Giving output:
+\begin{shade}
+  0
+    eigs            = [-8.0883 13.2874 13.2874 13.2874 18.8277 18.8277 18.8277 25.9151]
+    index           = 0
+    kpoint_2pi_alat = [0. 0. 0.]
+    kpoint_rel      = [0. 0. 0.]
+    occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
+    pol             = up
+  1
+    eigs            = [-5.0893  3.8761 10.9518 10.9518 21.5031 21.5031 21.5361 28.2574]
+    index           = 1
+    kpoint_2pi_alat = [-0.0494096  0.0494096  0.0494096]
+    kpoint_rel      = [0.3333333 0.        0.       ]
+    occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
+    pol             = up
+  2
+    eigs            = [-5.0893  3.8761 10.9518 10.9518 21.5031 21.5031 21.5361 28.2574]
+    index           = 2
+    kpoint_2pi_alat = [-0.0988193  0.0988193  0.0988193]
+    kpoint_rel      = [0.6666667 0.        0.       ]
+    occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
+    pol             = up
+  3
+    eigs            = [-5.0893  3.8761 10.9518 10.9518 21.5031 21.5031 21.5361 28.2574]
+    index           = 3
+    kpoint_2pi_alat = [ 0.0494096  0.0494096 -0.0494096]
+    kpoint_rel      = [0.        0.        0.3333333]
+    occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
+    pol             = up
+  4
+    eigs            = [-4.0954  6.1375  7.9247  7.9247 17.1972 20.6393 27.3652 27.3652]
+    index           = 4
+    kpoint_2pi_alat = [0.        0.0988193 0.       ]
+    kpoint_rel      = [0.3333333 0.        0.3333333]
+    occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
+    pol             = up
+  5
+    eigs            = [-0.6681  2.3791  3.7836  8.5596 19.3423 26.2181 26.6666 28.0506]
+    index           = 5
+    kpoint_2pi_alat = [-0.0494096  0.1482289  0.0494096]
+    kpoint_rel      = [0.6666667 0.        0.3333333]
+    occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
+    pol             = up
+  6
+    eigs            = [-5.0893  3.8761 10.9518 10.9518 21.5031 21.5031 21.5361 28.2574]
+    index           = 6
+    kpoint_2pi_alat = [ 0.0988193  0.0988193 -0.0988193]
+    kpoint_rel      = [0.        0.        0.6666667]
+    occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
+    pol             = up
+  7
+    eigs            = [-0.6681  2.3791  3.7836  8.5596 19.3423 26.2181 26.6666 28.0506]
+    index           = 7
+    kpoint_2pi_alat = [ 0.0494096  0.1482289 -0.0494096]
+    kpoint_rel      = [0.3333333 0.        0.6666667]
+    occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
+    pol             = up
+  8
+    eigs            = [-4.0954  6.1375  7.9247  7.9247 17.1972 20.6393 27.3652 27.3652]
+    index           = 8
+    kpoint_2pi_alat = [0.        0.1976385 0.       ]
+    kpoint_rel      = [0.6666667 0.        0.6666667]
+    occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
+    pol             = up
+
+twist 0 k-point: [0. 0. 0.]
+twist 4 k-point: [0.3333333 0.        0.3333333]
+twist 0 band 3 eigenvalue: 13.2874
+twist 4 band 4 eigenvalue: 17.1972
+\end{shade}
 
 \section{Quasiparticle (electronic) gap calculations}\label{sec:lab_ex_qp}
 In quasiparticle calculations, it is essential to work with reasonably large sized supercells in order to avoid spurious "1/N effects". 
@@ -266,21 +345,21 @@ A typical workflow for a quasiparticle calculation includes:
 \end{enumerate}
 \begin{lstlisting}
 <particleset name="e" random="yes">
-	<group name="u" size="36" mass="1.0"> ##Change size to 35
-		<parameter name="charge"              >    -1                    </parameter>
-		<parameter name="mass"                >    1.0                   </parameter>
-</group>
+  <group name="u" size="36" mass="1.0"> ##Change size to 35
+    <parameter name="charge"              >    -1                    </parameter>
+    <parameter name="mass"                >    1.0                   </parameter>
+  </group>
 ...
 ...
 <determinantset>
-	<slaterdeterminant>
-		<determinant id="updet" group="u" sposet="spo_u" size="36"> ##Change size to 35
-		    <occupation mode="ground" spindataset="0"/>	
-		</determinant>
-		<determinant id="downdet" group="d" sposet="spo_d" size="36">
-		    <occupation mode="ground" spindataset="1"/>	
-		</determinant>
-	</slaterdeterminant>
+  <slaterdeterminant>
+    <determinant id="updet" group="u" sposet="spo_u" size="36"> ##Change size to 35
+      <occupation mode="ground" spindataset="0"/>	
+    </determinant>
+    <determinant id="downdet" group="d" sposet="spo_d" size="36">
+      <occupation mode="ground" spindataset="1"/>	
+    </determinant>
+  </slaterdeterminant>
 </determinantset>
 \end{lstlisting}
 Going back to equation \ref{eq:qp}, one can see that it is essential to include VBM and CBM wavevectors in the same twist for quasiparticle calculations as well. 
@@ -305,16 +384,16 @@ Therefore, compared to the quasiparticle calculations, only the item number 4 is
 Here, the modified input file is given for the $\Gamma\rightarrow\Delta'$ transition, which can be compared to the ground state input file in the previous section. 
 \begin{lstlisting}
 <determinantset>
-	<slaterdeterminant>
-		<determinant id="updet" group="u" sposet="spo_u" size="36">
-		    <occupation mode="excited" spindataset="0" format="band" pairs="1" >
-					0 3 4 4
-		    </occupation>
-		</determinant>
-		<determinant id="downdet" group="d" sposet="spo_d" size="36">
-		    <occupation mode="ground" spindataset="1"/>	
-		</determinant>
-	</slaterdeterminant>
+  <slaterdeterminant>
+    <determinant id="updet" group="u" sposet="spo_u" size="36">
+      <occupation mode="excited" spindataset="0" format="band" pairs="1" >
+        0 3 4 4
+      </occupation>
+    </determinant>
+    <determinant id="downdet" group="d" sposet="spo_d" size="36">
+      <occupation mode="ground" spindataset="1"/>	
+    </determinant>
+  </slaterdeterminant>
 </determinantset>
 \end{lstlisting}
 We have used the (twistindex, bandindex) notation in the annihilaion/creation order for the up spin electrons.
@@ -341,8 +420,8 @@ Alternatively, one can define the excitations within Nexus as shown in \texttt{o
 \begin{lstlisting}
 qmc = generate_qmcpack(
     ...
-    excitation     = ['up', '0 3 4 4'], # (ti, bi) notation
-    #excitation     = ['up', '-35 + 36'], # Orbital (state) index notation
+    excitation = ['up', '0 3 4 4'], # (ti, bi) notation
+    #excitation = ['up', '-35 + 36'], # Orbital (state) index notation
     ...
     )
 \end{lstlisting}
