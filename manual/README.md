@@ -20,15 +20,7 @@ build_pdflatex_manual_legacy.sh
 ```
 ---
 # Contributing:
-- Do not use packages, features, or fonts not included in texlive 2017 unless you insure they degrade reasonably for 2017.
-- Don't use deprecated packages.
-- In fact don't add packages unless they are bringing great value and are supported by tex4ht.
-- Tex files and Bib files are UTF8 encoded, do not save them in other encodings. Some may report being ASCII encoded since they contain no unicode characters.
-- Unicode rules:
-    - Do not use characters for which well established latex idiom exists, especially dashes, quotes, and apostrophes.
-    - Use math mode markup instead of unicode characters for equations.
-    - Be cautious of WYSIWYG word processors, cutting and pasting can pickup characters promoted to unicode by the program.
-    - Take a look at your text multibyte expanded i.e. open in (emacs and `esc-x toggle-enable-multibyte-characters`), see any unicode you didn't intend?
+See contributing.tex
 --
 
 ## OS X

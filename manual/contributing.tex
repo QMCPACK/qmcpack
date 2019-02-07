@@ -7,22 +7,33 @@ This section briefly describes how to contribute to the manual.  This is primari
 \textbf{\underline{Desirable:}}
 \begin{itemize}
 \item{Use the table templates below when describing XML input.}
-\item{\bf{Except} within tabularx environments}\\Instead of \ilatex{\\texttt} or \ilatex{\\verb} use
+\item{Instead of \ilatex{\\texttt} or \ilatex{\\verb} use
     \begin{itemize}
       \item{\ilatex{\\ishell} for shell text}
       \item{\ilatex{\\ixml} for xml text}
       \item{\ilatex{\\icode} for C++ text}
       \end{itemize}
-     
-    \item{Instead of \ilatex{\\begin{verbatim}} environments use the appropriate \ilatex{\\begin\{lstlisting\}[style=<see qmcpack_listings.sty>]}}
+     \bf{Except} within tabularx or math environments}
+    \item{Instead of \ilatex{\\begin\{verbatim\}} environments use the appropriate \ilatex{\\begin\{lstlisting\}[style=<see qmcpack_listings.sty>]}}
 \item{\ilatex{\\begin\{shade\}} can be used in place of \ilatex{\\begin\{lstlisting\}[style=SHELL]}}
-\item{Place unformatted text targeted at developers working on the latex in comments.  Include generously.}  
-\item{Encapsulate formatted text aimed at developers (like this entire chapter), in $\backslash$\texttt{dev\{\}}.  Text encapsulated in this way will be removed from the user version of the manual by editing the definition of $\backslash$\texttt{dev} in \ishell{qmcpack\_manual.tex}.  Existing but deprecated or partially functioning features fall in this category.}
+\item{Unicode rules}
+\begin{itemize}
+\item Do not use characters for which well established latex idiom exists, especially dashes, quotes, and apostrophes.
+\item Use math mode markup instead of unicode characters for equations.
+\item Be cautious of WYSIWYG word processors, cutting and pasting can pickup characters promoted to unicode by the program.
+\item Take a look at your text multibyte expanded i.e. open in (emacs and `esc-x toggle-enable-multibyte-characters`), see any unicode you didn't intend?
+\end{itemize}
+\item{Place unformatted text targeted at developers working on the latex in comments.  Include generously.}
+\item{Encapsulate formatted text aimed at developers (like this entire chapter), in \ilatex{\\dev\{\}}.  Text encapsulated in this way will be removed from the user version of the manual by editing the definition of \ilatex{\\dev\{\}} in \ishell{qmcpack_manual.tex}.  Existing but deprecated or partially functioning features fall in this category.}
 \end{itemize}
 
 \textbf{\underline{Forbidden:}}
 \begin{itemize}
 \item Including images instead of using lstlisting sections for text.
+\item Packages the LaTeX community considers \href{https://latex.org/forum/viewtopic.php?f=37&t=6637}{deprecated}.
+\item Do not use packages, features, or fonts not included in texlive 2017 unless you insure they degrade reasonably for 2017.
+\item Don't add packages unless they are bringing great value and are supported by tex4ht (unless you are willing to add the support).
+\item Tex files and Bib files are UTF8 encoded, do not save them in other encodings. Some may report being ASCII encoded since they contain no unicode characters.
 \end{itemize}
 
 
