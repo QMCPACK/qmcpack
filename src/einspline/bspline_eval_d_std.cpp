@@ -51,7 +51,96 @@ void get_coeff_offset_remainder_UBspline_1d_d(const UBspline_1d_d * const restri
     t = 0.99999999999; //Should be double closest to but less than one
   }
   else
-    i = std::min(i,spline->x_grid.num-1);
+  {
+    //This is what multi_UBspline_3d_d does but this isn't periodic behavior
+    //i = std::min(i,spline->x_grid.num-1);
+    //perhaps this is correct
+    if (i >= spline->x_grid.num)
+      i = i - spline->x_grid.num;
+  }
+}
+
+void get_coeff_offset_remainder_UBspline_2d_d(const UBspline_2d_d * const restrict spline,
+					     double x,
+					      double y,
+					      int& ix,
+					      int& iy,
+					      double& tx,
+					      double& ty)
+{
+  x -= spline->x_grid.start;
+  y -= spline->y_grid.start;
+  double ux = x*spline->x_grid.delta_inv;
+  double uy = y*spline->y_grid.delta_inv;
+  double ipartx;
+  double iparty;
+  tx = modf (ux, &ipartx);
+  ty = modf (uy, &iparty);
+  ix = std::max(0, (int) ipartx);
+  iy = std::max(0, (int) iparty);
+  if (spline->xBC.lCode == NATURAL && ix >= spline->x_grid.num-1)
+  {
+    ix = spline->x_grid.num-2;
+    tx = 0.99999999999; //Should be double closest to but less than one
+  }
+  else
+    ix = std::min(ix,spline->x_grid.num-1);
+  if (spline->yBC.lCode == NATURAL && iy >= spline->y_grid.num-1)
+  {
+    iy = spline->y_grid.num-2;
+    ty = 0.99999999999; //Should be double closest to but less than one
+  }
+  else
+    iy = std::min(iy,spline->y_grid.num-1);
+}
+
+void get_coeff_offset_remainder_UBspline_3d_d(const UBspline_3d_d * const restrict spline,
+					     double x,
+					      double y,
+					      double z,
+					      int& ix,
+					      int& iy,
+					      int& iz,
+					      double& tx,
+					      double& ty,
+					      double& tz)
+{
+  x -= spline->x_grid.start;
+  y -= spline->y_grid.start;
+  z -= spline->z_grid.start;
+  double ux = x*spline->x_grid.delta_inv;
+  double uy = y*spline->y_grid.delta_inv;
+  double uz = z*spline->z_grid.delta_inv;
+  double ipartx;
+  double iparty;
+  double ipartz;
+  tx = modf (ux, &ipartx);
+  ty = modf (uy, &iparty);
+  tz = modf (uz, &ipartz);
+  ix = std::max(0, (int) ipartx);
+  iy = std::max(0, (int) iparty);
+  iz = std::max(0, (int) ipartz);
+  if (spline->xBC.lCode == NATURAL && ix >= spline->x_grid.num-1)
+  {
+    ix = spline->x_grid.num-2;
+    tx = 0.99999999999; //Should be double closest to but less than one
+  }
+  else
+    ix = std::min(ix,spline->x_grid.num-1);
+  if (spline->yBC.lCode == NATURAL && iy >= spline->y_grid.num-1)
+  {
+    iy = spline->y_grid.num-2;
+    ty = 0.99999999999; //Should be double closest to but less than one
+  }
+  else
+    iy = std::min(iy,spline->y_grid.num-1);
+  if (spline->zBC.lCode == NATURAL && iz >= spline->z_grid.num-1)
+  {
+    iz = spline->z_grid.num-2;
+    tz = 0.99999999999; //Should be double closest to but less than one
+  }
+  else
+    iz = std::min(iz,spline->z_grid.num-1);
 }
 
 /** Value only */
@@ -149,15 +238,11 @@ void
 eval_UBspline_2d_d (UBspline_2d_d * restrict spline,
                     double x, double y, double* restrict val)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);
-  ty = modf (uy, &iparty);
-  int ix = (int) ipartx;
-  int iy = (int) iparty;
+  int ix;
+  int iy;
+  double tx;
+  double ty;
+  get_coeff_offset_remainder_UBspline_2d_d(spline, x, y, ix, iy, tx, ty);
   double tpx[4], tpy[4], a[4], b[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -192,15 +277,11 @@ eval_UBspline_2d_d_vg (UBspline_2d_d * restrict spline,
                        double x, double y,
                        double* restrict val, double* restrict grad)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);
-  ty = modf (uy, &iparty);
-  int ix = (int) ipartx;
-  int iy = (int) iparty;
+  int ix;
+  int iy;
+  double tx;
+  double ty;
+  get_coeff_offset_remainder_UBspline_2d_d(spline, x, y, ix, iy, tx, ty);
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -253,15 +334,11 @@ eval_UBspline_2d_d_vgl (UBspline_2d_d * restrict spline,
                         double x, double y, double* restrict val,
                         double* restrict grad, double* restrict lapl)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);
-  ty = modf (uy, &iparty);
-  int ix = (int) ipartx;
-  int iy = (int) iparty;
+  int ix;
+  int iy;
+  double tx;
+  double ty;
+  get_coeff_offset_remainder_UBspline_2d_d(spline, x, y, ix, iy, tx, ty);
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4], d2a[4], d2b[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -333,15 +410,11 @@ eval_UBspline_2d_d_vgh (UBspline_2d_d * restrict spline,
                         double x, double y, double* restrict val,
                         double* restrict grad, double* restrict hess)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);
-  ty = modf (uy, &iparty);
-  int ix = (int) ipartx;
-  int iy = (int) iparty;
+  int ix;
+  int iy;
+  double tx;
+  double ty;
+  get_coeff_offset_remainder_UBspline_2d_d(spline, x, y, ix, iy, tx, ty);
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4], d2a[4], d2b[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -423,19 +496,13 @@ eval_UBspline_3d_d (UBspline_3d_d * restrict spline,
                     double x, double y, double z,
                     double* restrict val)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  z -= spline->z_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double uz = z*spline->z_grid.delta_inv;
-  double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);
-  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);
-  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);
-  int iz = (int) ipartz;
+  int ix;
+  int iy;
+  int iz;
+  double tx;
+  double ty;
+  double tz;
+  get_coeff_offset_remainder_UBspline_3d_d(spline, x, y, z, ix, iy, iz, tx, ty, tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -490,19 +557,13 @@ eval_UBspline_3d_d_vg (UBspline_3d_d * restrict spline,
                        double x, double y, double z,
                        double* restrict val, double* restrict grad)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  z -= spline->z_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double uz = z*spline->z_grid.delta_inv;
-  double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);
-  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);
-  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);
-  int iz = (int) ipartz;
+  int ix;
+  int iy;
+  int iz;
+  double tx;
+  double ty;
+  double tz;
+  get_coeff_offset_remainder_UBspline_3d_d(spline, x, y, z, ix, iy, iz, tx, ty, tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], da[4], db[4], dc[4],
          cP[16], bcP[4], dbcP[4];
   tpx[0] = tx*tx*tx;
@@ -602,19 +663,13 @@ eval_UBspline_3d_d_vgl (UBspline_3d_d * restrict spline,
                         double x, double y, double z,
                         double* restrict val, double* restrict grad, double* restrict lapl)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  z -= spline->z_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double uz = z*spline->z_grid.delta_inv;
-  double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);
-  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);
-  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);
-  int iz = (int) ipartz;
+  int ix;
+  int iy;
+  int iz;
+  double tx;
+  double ty;
+  double tz;
+  get_coeff_offset_remainder_UBspline_3d_d(spline, x, y, z, ix, iy, iz, tx, ty, tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], da[4], db[4], dc[4],
          d2a[4], d2b[4], d2c[4], cP[16], dcP[16], bcP[4], dbcP[4], d2bcP[4], bdcP[4];
   tpx[0] = tx*tx*tx;
@@ -760,28 +815,13 @@ eval_UBspline_3d_d_vgh (UBspline_3d_d * restrict spline,
                         double x, double y, double z,
                         double* restrict val, double* restrict grad, double* restrict hess)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  z -= spline->z_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double uz = z*spline->z_grid.delta_inv;
-  ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
-  uy = fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
-  uz = fmin (uz, (double)(spline->z_grid.num)-1.0e-5);
-  double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);
-  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);
-  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);
-  int iz = (int) ipartz;
-//   if ((ix >= spline->x_grid.num))    x = spline->x_grid.num;
-//   if ((ix < 0))                      x = 0;
-//   if ((iy >= spline->y_grid.num))    y = spline->y_grid.num;
-//   if ((iy < 0))                      y = 0;
-//   if ((iz >= spline->z_grid.num))    z = spline->z_grid.num;
-//   if ((iz < 0))                      z = 0;
+  int ix;
+  int iy;
+  int iz;
+  double tx;
+  double ty;
+  double tz;
+  get_coeff_offset_remainder_UBspline_3d_d(spline, x, y, z, ix, iy, iz, tx, ty, tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], da[4], db[4], dc[4],
          d2a[4], d2b[4], d2c[4], cP[16], dcP[16], d2cP[16], bcP[4], dbcP[4],
          d2bcP[4], dbdcP[4], bd2cP[4], bdcP[4];

@@ -25,7 +25,6 @@
 
 using std::string;
 
-
 TEST_CASE("double_1d_natural", "[einspline]")
 {
   // two point case
@@ -51,8 +50,6 @@ TEST_CASE("double_1d_natural", "[einspline]")
   eval_UBspline_1d_d(s, 9.9999999, &val);
   REQUIRE(val == Approx(3.0));
 
-  // NO! this results in ipart = 1 reads outside of the coefs allocation
-  // No code that ever calls this function with xBC.lCode = NATURAL may have x >= xgrid.end
   eval_UBspline_1d_d(s, 10.0, &val);
   REQUIRE(val == Approx(3.0));
 
@@ -90,6 +87,70 @@ TEST_CASE("double_1d_natural", "[einspline]")
 
   destroy_Bspline(s);
 
+}
+
+TEST_CASE("double_1d_periodic", "[einspline]")
+{
+  Ugrid x_grid;
+  x_grid.start = 0.0;
+  x_grid.end = 1.0;
+  //Enough grid points are required to do the micro evaluation test.
+  int N = 12;
+  x_grid.num = N;
+  double delta = (x_grid.end - x_grid.start)/x_grid.num;
+
+  double tpi = 2*M_PI;
+  double data[N];
+  for (int i = 0; i < N; i++)
+  {
+    double x = delta*i;
+    data[i] = sin(tpi*x);
+  }
+
+  BCtype_d bc;
+  bc.lCode = PERIODIC;
+  bc.rCode = PERIODIC;
+
+  UBspline_1d_d* s = create_UBspline_1d_d(x_grid, bc, data);
+
+  REQUIRE(s);
+
+  double val;
+  eval_UBspline_1d_d(s, 0.0, &val);
+  REQUIRE(val == Approx(0.0));
+
+  eval_UBspline_1d_d(s, delta, &val);
+  REQUIRE(val == Approx(data[1]));
+
+  // This is how I think a period UBspline should work.
+  // I have left the 2d and 3d evals matching multi_UBspline_3d_d's treatment of PERIODIC
+  // boundary conditions.  That behavior is to pin a the last grid point value.
+  eval_UBspline_1d_d(s, delta+1.0 , &val);
+  REQUIRE(val == Approx(data[1]));
+  
+  eval_UBspline_1d_d(s, 1.0 , &val);
+  REQUIRE(val == Approx(data[0]));
+
+  double micro_delta = delta / 4.0;
+  int micro_N = N * 4;
+  double micro_data[N*4];
+  for (int i = 0 ; i < micro_N; i++)
+  {
+    double x = micro_delta * i;
+    micro_data[i] = sin(tpi*x);
+    eval_UBspline_1d_d(s, x, &val);
+    //std::cout << x << ' ' << micro_data[i] << ' ' << val << '\n';
+  }
+  eval_UBspline_1d_d(s, micro_delta * 3, &val);
+  REQUIRE(val == Approx(micro_data[3]).epsilon(0.001));
+
+  eval_UBspline_1d_d(s, micro_delta * 17, &val);
+  REQUIRE(val == Approx(micro_data[17]).epsilon(0.001));
+
+  eval_UBspline_1d_d(s, micro_delta * 31, &val);
+  REQUIRE(val == Approx(micro_data[31]).epsilon(0.001));
+
+  destroy_Bspline(s);
 }
 
 TEST_CASE("double_1d_multi", "[einspline]")

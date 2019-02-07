@@ -53,7 +53,13 @@ TEST_CASE("double_3d_natural","[einspline]")
   eval_UBspline_3d_d(s, 1.0, 1.0, 1.0, &val);
   REQUIRE(val == Approx(2.0));
 
-  double pos=10.0-5*std::numeric_limits<double>::epsilon();
+  //This puts the value on the limit which exercises the bounds check
+  double pos=10.0;
+  eval_UBspline_3d_d(s, pos, pos, pos, &val);
+  REQUIRE(val == Approx(9.0));
+  
+  //This puts the value right below the limit
+  pos=10.0-5*std::numeric_limits<double>::epsilon();
   eval_UBspline_3d_d(s, pos, pos, pos, &val);
   REQUIRE(val == Approx(9.0));
 
@@ -93,8 +99,17 @@ TEST_CASE("double_3d_periodic","[einspline]")
   eval_UBspline_3d_d(s, 0.0, 0.0, 0.0, &val);
   REQUIRE(val == Approx(0.0));
 
+  // You might think a periodic UBspline would somehow be periodic but it isn't
+  // For all values grid.end and above it returns the last grid point value.
+  eval_UBspline_3d_d(s, 1.0,1.0,1.0, &val);
+  REQUIRE(val == Approx(data[N*N*N-1]));
+
   eval_UBspline_3d_d(s, delta, delta, delta, &val);
   REQUIRE(val == Approx(data[N*N + N + 1]));
+
+  double offset_delta = delta + 1.0;
+  eval_UBspline_3d_d(s, offset_delta, offset_delta, offset_delta, &val);
+  REQUIRE(val == Approx(data[N*N*N-1]));
 
   multi_UBspline_3d_d* m = create_multi_UBspline_3d_d(grid, grid, grid, bc, bc, bc, 1);
   REQUIRE(m);

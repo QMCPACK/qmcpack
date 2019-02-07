@@ -41,7 +41,8 @@ eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
   double ux = x*spline->x_grid.delta_inv;
   double ipartx, tx;
   tx = modf (ux, &ipartx);
-  //This protects from overflow reads of coefs
+  // This protects from overflow reads of coefs but seems wrong for PERIODIC boundary
+  // conditions
   int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   
   double tpx[4], a[4];
