@@ -18,6 +18,8 @@
 
 #include<fstream>
 
+#include "type_traits/container_proxy_multi.h"
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 
 #include "AFQMC/config.h"

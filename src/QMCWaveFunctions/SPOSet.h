@@ -326,6 +326,13 @@ public:
             int row_stride);
 
   virtual void
+  evaluate (std::vector<Walker_t*> &walkers,
+            std::vector<PosType> &new_pos,
+            gpu::device_vector<CTS::ValueType*> &phi,
+            gpu::device_vector<CTS::ValueType*> &grad_lapl_list,
+            int row_stride, int k, bool klinear);
+
+  virtual void
   evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);
   virtual void
   evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi);

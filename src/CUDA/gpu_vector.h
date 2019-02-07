@@ -361,6 +361,45 @@ public:
   }
 
   void
+  asyncCopy(const T* vec_ptr, size_t len, size_t offset, size_t datalen)
+  {
+    if ((this->size() != len) || (this->size() < offset+datalen))
+    {
+      if (!own_data)
+      {
+        fprintf (stderr, "Assigning referenced GPU vector, but it has the "
+                 "wrong size.\n");
+        fprintf (stderr, "Name = %s.  This size = %ld, vec size = %ld\n",
+                 name.c_str(), size(), len);
+        abort();
+      }
+      if (len<offset+datalen)
+      {
+        fprintf(stderr, "Trying to write more than the length of the vector.\n");
+        fprintf (stderr, "Name = %s.  This size = %ld, vec size = %ld, needed length = %ld\n",
+                 name.c_str(), size(), len, offset+datalen);
+        abort();
+      }
+      resize(len);
+    }
+#ifdef QMC_CUDA
+    cudaMemcpyAsync (&((*this)[offset]), vec_ptr, datalen*sizeof(T),
+                     cudaMemcpyHostToDevice, kernelStream);
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess)
+    {
+      fprintf (stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n",
+               name.c_str(), size(), len);
+      fprintf (stderr, "this pointer = %p  vec pointer=%p\n",
+               data_pointer, vec_ptr);
+      fprintf (stderr, "CUDA error in device_vector::asyncCopy(const T* vec_ptr, len, offset, datalen) for %s:\n  %s\n",
+               name.c_str(), cudaGetErrorString(err));
+      abort();
+    }
+#endif
+  }
+
+  void
   asyncCopy(const std::vector<T, std::allocator<T> > &vec)
   {
     if (this->size() != vec.size())
