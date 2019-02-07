@@ -408,6 +408,17 @@ void SPOSet::evaluate (std::vector<Walker_t*> &walkers,
   abort();
 }
 
+void SPOSet::evaluate (std::vector<Walker_t*> &walkers,
+                           std::vector<PosType> &new_pos,
+                           gpu::device_vector<CTS::ValueType*> &phi,
+                           gpu::device_vector<CTS::ValueType*> &grad_lapl_list,
+                           int row_stride, int k, bool klinear)
+{
+  app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSet.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
+  abort();
+}
+
 void SPOSet::evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate "

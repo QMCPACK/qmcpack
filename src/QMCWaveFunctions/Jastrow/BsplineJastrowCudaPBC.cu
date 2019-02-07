@@ -636,7 +636,7 @@ two_body_sum_PBC (double *R[], int e1_first, int e1_last, int e2_first, int e2_l
 template<typename T, int BS>
 __global__ void
 two_body_ratio_PBC_kernel(T **R, int first, int last,
-                          T *Rnew, int inew,
+                          T *Rnew, int inew, int offset,
                           T *spline_coefs, int numCoefs, T rMax,
                           T *lattice, T* latticeInv, T* sum)
 {
@@ -653,7 +653,7 @@ two_body_ratio_PBC_kernel(T **R, int first, int last,
   __syncthreads();
   if (tid < 3 )
   {
-    myRnew[tid] = Rnew[3*blockIdx.x+tid];
+    myRnew[tid] = Rnew[3*(blockIdx.x+offset)+tid];
     myRold[tid] = myR[3*inew+tid];
   }
   __syncthreads();
@@ -717,7 +717,7 @@ two_body_ratio_PBC_kernel(T **R, int first, int last,
 
 void
 two_body_ratio_PBC (float *R[], int first, int last,
-                    float Rnew[], int inew,
+                    float Rnew[], int inew, int offset,
                     float spline_coefs[], int numCoefs, float rMax,
                     float lattice[], float latticeInv[], float sum[], int numWalkers)
 {
@@ -727,7 +727,7 @@ two_body_ratio_PBC (float *R[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   two_body_ratio_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
-  (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+  (R, first, last, Rnew, inew, offset, spline_coefs, numCoefs, rMax,
    lattice, latticeInv, sum);
 }
 
@@ -735,7 +735,7 @@ two_body_ratio_PBC (float *R[], int first, int last,
 
 void
 two_body_ratio_PBC (double *R[], int first, int last,
-                    double Rnew[], int inew,
+                    double Rnew[], int inew, int offset,
                     double spline_coefs[], int numCoefs, double rMax,
                     double lattice[], double latticeInv[], double sum[], int numWalkers)
 {
@@ -744,7 +744,7 @@ two_body_ratio_PBC (double *R[], int first, int last,
   dim3 dimBlock(128);
   dim3 dimGrid(numWalkers);
   two_body_ratio_PBC_kernel<double,128><<<dimGrid,dimBlock>>>
-  (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+  (R, first, last, Rnew, inew, offset, spline_coefs, numCoefs, rMax,
    lattice, latticeInv, sum);
 }
 
@@ -752,7 +752,7 @@ template<typename T, int BS>
 __global__ void
 two_body_ratio_grad_PBC_kernel(T const * const * __restrict__ R,
                                int first, int last,
-                               T const * __restrict__ Rnew, int inew,
+                               T const * __restrict__ Rnew, int inew, int offset,
                                T const * __restrict__ spline_coefs,
                                int numCoefs, T rMax,
                                T const * __restrict__ lattice,
@@ -776,9 +776,9 @@ two_body_ratio_grad_PBC_kernel(T const * const * __restrict__ R,
   shared_grad[tid][3] = (T)0;
   __syncthreads();
   T const * __restrict__ myR = R[blockIdx.x];
-  T rnew_x = Rnew[3*blockIdx.x+0];
-  T rnew_y = Rnew[3*blockIdx.x+1];
-  T rnew_z = Rnew[3*blockIdx.x+2];
+  T rnew_x = Rnew[3*(blockIdx.x+offset)+0];
+  T rnew_y = Rnew[3*(blockIdx.x+offset)+1];
+  T rnew_z = Rnew[3*(blockIdx.x+offset)+2];
   T rold_x = myR[3*inew+0];
   T rold_y = myR[3*inew+1];
   T rold_z = myR[3*inew+2];
@@ -844,7 +844,7 @@ two_body_ratio_grad_PBC_kernel(T const * const * __restrict__ R,
 template<typename T, int BS>
 __global__ void
 two_body_ratio_grad_PBC_kernel_fast (T **R, int first, int last,
-                                     T *Rnew, int inew,
+                                     T *Rnew, int inew, int offset,
                                      T *spline_coefs, int numCoefs, T rMax,
                                      T *lattice, T* latticeInv,
                                      bool zero, T* ratio_grad)
@@ -862,7 +862,7 @@ two_body_ratio_grad_PBC_kernel_fast (T **R, int first, int last,
   __syncthreads();
   if (tid < 3 )
   {
-    myRnew[tid] = Rnew[3*blockIdx.x+tid];
+    myRnew[tid] = Rnew[3*(blockIdx.x+offset)+tid];
     myRold[tid] = myR[3*inew+tid];
   }
   __syncthreads();
@@ -965,7 +965,7 @@ two_body_ratio_grad_PBC_kernel_fast (T **R, int first, int last,
 // this case, we don't have to search over 27 images.
 void
 two_body_ratio_grad_PBC(float *R[], int first, int last,
-                        float  Rnew[], int inew,
+                        float  Rnew[], int inew, int offset,
                         float spline_coefs[], int numCoefs, float rMax,
                         float lattice[], float latticeInv[], bool zero,
                         float ratio_grad[], int numWalkers,
@@ -984,13 +984,13 @@ two_body_ratio_grad_PBC(float *R[], int first, int last,
   if (use_fast_image)
   {
     two_body_ratio_grad_PBC_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
-    (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+    (R, first, last, Rnew, inew, offset, spline_coefs, numCoefs, rMax,
      lattice, latticeInv, zero, ratio_grad);
   }
   else
   {
     two_body_ratio_grad_PBC_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-    (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+    (R, first, last, Rnew, inew, offset, spline_coefs, numCoefs, rMax,
      lattice, latticeInv, zero, ratio_grad);
   }
   CMC_PROFILING_END(__LINE__);
@@ -999,7 +999,7 @@ two_body_ratio_grad_PBC(float *R[], int first, int last,
 
 void
 two_body_ratio_grad_PBC(double *R[], int first, int last,
-                        double  Rnew[], int inew,
+                        double  Rnew[], int inew, int offset,
                         double spline_coefs[], int numCoefs, double rMax,
                         double lattice[], double latticeInv[], bool zero,
                         double ratio_grad[], int numWalkers,
@@ -1015,13 +1015,13 @@ two_body_ratio_grad_PBC(double *R[], int first, int last,
   if (use_fast_image)
   {
     two_body_ratio_grad_PBC_kernel_fast<double,BS><<<dimGrid,dimBlock>>>
-    (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+    (R, first, last, Rnew, inew, offset, spline_coefs, numCoefs, rMax,
      lattice, latticeInv, zero, ratio_grad);
   }
   else
   {
     two_body_ratio_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-    (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+    (R, first, last, Rnew, inew, offset, spline_coefs, numCoefs, rMax,
      lattice, latticeInv, zero, ratio_grad);
   }
   //CMC_PROFILING_END(__LINE__);
@@ -2138,7 +2138,7 @@ template<typename T, int BS>
 __global__ void
 one_body_ratio_PBC_kernel(T *C, T **R, int cfirst, int clast,
                           T *Rnew, int inew,
-                          T *spline_coefs, int numCoefs, T rMax,
+                          T *spline_coefs, int numCoefs, int nw, T rMax,
                           T *lattice, T *latticeInv, T *sum)
 {
   T dr = rMax/(T)(numCoefs-3);
@@ -2150,12 +2150,12 @@ one_body_ratio_PBC_kernel(T *C, T **R, int cfirst, int clast,
   __shared__ T *myR;
   __shared__ T myRnew[3], myRold[3];
   if (tid == 0)
-    myR = R[blockIdx.x];
+    myR = R[blockIdx.x%nw];
   __syncthreads();
   if (tid < 3 )
   {
     myRnew[tid] = Rnew[3*blockIdx.x+tid];
-    myRold[tid] = myR[3*inew+tid];
+    myRold[tid] = myR[3*(inew+blockIdx.x/nw)+tid];
   }
   __syncthreads();
   __shared__ T coefs[MAX_COEFS];
@@ -2218,7 +2218,7 @@ one_body_ratio_PBC_kernel(T *C, T **R, int cfirst, int clast,
 void
 one_body_ratio_PBC (float C[], float *R[], int first, int last,
                     float Rnew[], int inew,
-                    float spline_coefs[], int numCoefs, float rMax,
+                    float spline_coefs[], int numCoefs, int nw, float rMax,
                     float lattice[], float latticeInv[], float sum[], int numWalkers)
 {
   if (!AisInitializedPBC)
@@ -2227,7 +2227,7 @@ one_body_ratio_PBC (float C[], float *R[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   one_body_ratio_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
-  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, nw, rMax,
    lattice, latticeInv, sum);
 }
 
@@ -2236,7 +2236,7 @@ one_body_ratio_PBC (float C[], float *R[], int first, int last,
 void
 one_body_ratio_PBC (double C[], double *R[], int first, int last,
                     double Rnew[], int inew,
-                    double spline_coefs[], int numCoefs, double rMax,
+                    double spline_coefs[], int numCoefs, int nw, double rMax,
                     double lattice[], double latticeInv[], double sum[], int numWalkers)
 {
   if (!AisInitializedPBC)
@@ -2244,7 +2244,7 @@ one_body_ratio_PBC (double C[], double *R[], int first, int last,
   dim3 dimBlock(128);
   dim3 dimGrid(numWalkers);
   one_body_ratio_PBC_kernel<double,128><<<dimGrid,dimBlock>>>
-  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, nw, rMax,
    lattice, latticeInv, sum);
 }
 
@@ -2256,7 +2256,7 @@ one_body_ratio_grad_PBC_kernel(T const * __restrict__ C,
                                int cfirst, int clast,
                                T const * __restrict__ Rnew, int inew,
                                T const * __restrict__ spline_coefs,
-                               int numCoefs, T rMax,
+                               int numCoefs, int nw, T rMax,
                                T const * __restrict__ lattice,
                                T const * __restrict__ latticeInv,
                                bool zero, T * __restrict__ ratio_grad)
@@ -2266,14 +2266,14 @@ one_body_ratio_grad_PBC_kernel(T const * __restrict__ C,
   // Safety for rounding error
   rMax *= (T)0.999999;
   int tid = threadIdx.x;
-  T const * __restrict__ myR = R[blockIdx.x];
+  T const * __restrict__ myR = R[blockIdx.x%nw];
   T myRnew[3], myRold[3];
   myRnew[0] = Rnew[3*blockIdx.x  ];
   myRnew[1] = Rnew[3*blockIdx.x+1];
   myRnew[2] = Rnew[3*blockIdx.x+2];
-  myRold[0] = myR[3*inew  ];
-  myRold[1] = myR[3*inew+1];
-  myRold[2] = myR[3*inew+2];
+  myRold[0] = myR[3*(inew+blockIdx.x/nw)  ];
+  myRold[1] = myR[3*(inew+blockIdx.x/nw)+1];
+  myRold[2] = myR[3*(inew+blockIdx.x/nw)+2];
   __shared__ T coefs[MAX_COEFS];
   /*
   __shared__ T L[3][3], Linv[3][3];
@@ -2372,7 +2372,7 @@ template<typename T, int BS>
 __global__ void
 one_body_ratio_grad_PBC_kernel_fast(T *C, T **R, int cfirst, int clast,
                                     T *Rnew, int inew,
-                                    T *spline_coefs, int numCoefs, T rMax,
+                                    T *spline_coefs, int numCoefs, int nw, T rMax,
                                     T *lattice, T *latticeInv, bool zero,
                                     T *ratio_grad)
 {
@@ -2385,12 +2385,12 @@ one_body_ratio_grad_PBC_kernel_fast(T *C, T **R, int cfirst, int clast,
   __shared__ T *myR;
   __shared__ T myRnew[3], myRold[3];
   if (tid == 0)
-    myR = R[blockIdx.x];
+    myR = R[blockIdx.x%nw];
   __syncthreads();
   if (tid < 3 )
   {
     myRnew[tid] = Rnew[3*blockIdx.x+tid];
-    myRold[tid] = myR[3*inew+tid];
+    myRold[tid] = myR[3*(inew+blockIdx.x/nw)+tid];
   }
   __syncthreads();
   __shared__ T coefs[MAX_COEFS];
@@ -2486,7 +2486,7 @@ one_body_ratio_grad_PBC_kernel_fast(T *C, T **R, int cfirst, int clast,
 void
 one_body_ratio_grad_PBC (float C[], float *R[], int first, int last,
                          float Rnew[], int inew,
-                         float spline_coefs[], int numCoefs, float rMax,
+                         float spline_coefs[], int numCoefs, int nw, float rMax,
                          float lattice[], float latticeInv[], bool zero,
                          float ratio_grad[], int numWalkers,
                          bool use_fast_image)
@@ -2495,15 +2495,16 @@ one_body_ratio_grad_PBC (float C[], float *R[], int first, int last,
     cuda_spline_init_PBC();
   const int BS = 128;
   CMC_PROFILING_BEGIN();
+//  COPY_LATTICE_DP_TO_SP(); // Either CMC_PROFILING_BEGIN or COPY_LATTICE_DP_TO_SP are needed to avoid NaNs here
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   // if (use_fast_image)
   //   one_body_ratio_grad_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
-  //     (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+  //     (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, nw, rMax,
   //      lattice, latticeInv, zero, ratio_grad);
   // else
   one_body_ratio_grad_PBC_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, nw, rMax,
    lattice, latticeInv, zero, ratio_grad);
   CMC_PROFILING_END(__LINE__);
 }
@@ -2512,7 +2513,7 @@ one_body_ratio_grad_PBC (float C[], float *R[], int first, int last,
 void
 one_body_ratio_grad_PBC (double C[], double *R[], int first, int last,
                          double Rnew[], int inew,
-                         double spline_coefs[], int numCoefs, double rMax,
+                         double spline_coefs[], int numCoefs, int nw, double rMax,
                          double lattice[], double latticeInv[], bool zero,
                          double ratio_grad[], int numWalkers, bool use_fast_image)
 {
@@ -2529,7 +2530,7 @@ one_body_ratio_grad_PBC (double C[], double *R[], int first, int last,
   //      lattice, latticeInv, zero, ratio_grad);
   // else
   one_body_ratio_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, nw, rMax,
    lattice, latticeInv, zero, ratio_grad);
   //CMC_PROFILING_END(__LINE__);
 }

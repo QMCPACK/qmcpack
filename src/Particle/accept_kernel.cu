@@ -17,7 +17,7 @@
 
 template<typename T, int BS>
 __global__ void accept_kernel (T** Rlist, T* Rnew,
-                               int* toAccept, int iat, int N)
+                               int* toAccept, int iat, int N, int k)
 {
   int tid = threadIdx.x;
   __shared__ T* myR[BS];
@@ -26,7 +26,7 @@ __global__ void accept_kernel (T** Rlist, T* Rnew,
   int block = blockIdx.x;
   for (int i=0; i<3; i++)
     if ((3*block+i)*BS + tid < 3*N)
-      Rnew_shared[i*BS + tid] = Rnew[(3*block+i)*BS + tid];
+      Rnew_shared[i*BS + tid] = Rnew[(3*block+i)*BS + tid + 3*k*N];
   __syncthreads();
   if (block*BS + tid < N)
   {
@@ -55,27 +55,27 @@ __global__ void accept_kernel (T** Rlist, T* Rnew,
 
 void
 accept_move_GPU_cuda (float** Rlist, float new_pos[],
-                      int toAccept[], int iat, int N)
+                      int toAccept[], int iat, int N, int k)
 {
   const int BS=32;
   int NB = N / BS + ((N % BS) ? 1 : 0);
   dim3 dimBlock(BS);
   dim3 dimGrid(NB);
   accept_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (Rlist, new_pos, toAccept, iat, N);
+  (Rlist, new_pos, toAccept, iat, N, k);
 }
 
 
 void
 accept_move_GPU_cuda (double** Rlist, double* new_pos,
-                      int* toAccept, int iat, int N)
+                      int* toAccept, int iat, int N, int k)
 {
   const int BS=32;
   int NB = N / BS + ((N % BS) ? 1 : 0);
   dim3 dimBlock(BS);
   dim3 dimGrid(NB);
   accept_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (Rlist, new_pos, toAccept, iat, N);
+  (Rlist, new_pos, toAccept, iat, N, k);
 }
 
 

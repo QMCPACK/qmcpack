@@ -22,8 +22,6 @@ struct updateJob
   int iat;
 };
 
-
-
 void
 update_inverse_cuda(float *A_g[], float *Ainv_g[], float *u_g[],
                     float *Ainv_delta_g[], float *Ainv_colk_g[],
@@ -175,7 +173,6 @@ void
 calc_grad_lapl (std::complex<double> *Ainv_list[], std::complex<double> *grad_lapl_list[],
                 std::complex<double> *out_list[], int N, int row_stride, int num_mats);
 #endif
-
 
 void
 multi_copy (float *dest[], float *src[], int len, int num);

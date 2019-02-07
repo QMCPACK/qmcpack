@@ -11,8 +11,8 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
@@ -48,11 +48,11 @@ TrialWaveFunction::recompute
 void
 TrialWaveFunction::reserve
 (PointerPool<gpu::device_vector<CTS::ValueType> > &pool,
- bool onlyOptimizable)
+ bool onlyOptimizable, int kblocksize)
 {
   for(int i=0; i<Z.size(); i++)
     if (!onlyOptimizable || Z[i]->Optimizable)
-      Z[i]->reserve(pool);
+      Z[i]->reserve(pool,kblocksize);
 }
 
 void
@@ -66,13 +66,13 @@ TrialWaveFunction::evaluateLog (MCWalkerConfiguration &W,
 }
 
 void
-TrialWaveFunction::calcGradient (MCWalkerConfiguration &W, int iat,
+TrialWaveFunction::calcGradient (MCWalkerConfiguration &W, int iat, int k,
                                  std::vector<GradType> &grad)
 {
   for (int iw=0; iw<grad.size(); iw++)
     grad[iw] = GradType();
   for(int i=0; i<Z.size(); i++)
-    Z[i]->calcGradient(W, iat, grad);
+    Z[i]->calcGradient(W, iat, k, grad);
 }
 
 void
@@ -99,7 +99,7 @@ TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
                           std::vector<ValueType> &psi_ratios,
                           std::vector<GradType> &newG)
 {
-  for (int iw=0; iw<W.WalkerList.size(); iw++)
+  for (int iw=0; iw<W.WalkerList.size()*W.getkblocksize(); iw++)
   {
     psi_ratios[iw] = 1.0;
     newG[iw] = GradType();
@@ -118,7 +118,7 @@ TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
                           std::vector<ValueType> &psi_ratios,
                           std::vector<GradType> &newG, std::vector<ValueType> &newL)
 {
-  for (int iw=0; iw<W.WalkerList.size(); iw++)
+  for (int iw=0; iw<W.WalkerList.size()*W.getkblocksize(); iw++)
   {
     psi_ratios[iw] = 1.0;
     newG[iw] = GradType();
@@ -154,21 +154,35 @@ TrialWaveFunction::calcRatio (MCWalkerConfiguration &W, int iat,
 
 
 void
-TrialWaveFunction::addRatio (MCWalkerConfiguration &W, int iat,
+TrialWaveFunction::addRatio (MCWalkerConfiguration &W, int iat, int k,
                              std::vector<ValueType> &psi_ratios,
                              std::vector<GradType> &newG, std::vector<ValueType> &newL)
 {
   for (int i=0,ii=1; i<Z.size()-1; i++,ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
-    Z[i]->addRatio (W, iat, psi_ratios, newG, newL);
+    Z[i]->addRatio (W, iat, k, psi_ratios, newG, newL);
     myTimers[ii]->stop();
   }
   gpu::synchronize();
   myTimers[1+TIMER_SKIP*(Z.size()-1)]->start();
-  Z[Z.size()-1]->addRatio (W, iat, psi_ratios, newG, newL);
+  Z[Z.size()-1]->addRatio (W, iat, k, psi_ratios, newG, newL);
   myTimers[1+TIMER_SKIP*(Z.size()-1)]->stop();
 }
+
+void TrialWaveFunction::det_lookahead (MCWalkerConfiguration &W,
+                                       std::vector<ValueType> &psi_ratios,
+                                       std::vector<GradType>  &grad, std::vector<ValueType> &lapl,
+                                       int iat, int k, int kd, int nw)
+{
+  for (int i=0,ii=1; i<Z.size(); i++,ii+=TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    Z[i]->det_lookahead (W, psi_ratios, grad, lapl, iat, k, kd, nw);
+    myTimers[ii]->stop();
+  }
+}
+
 
 #if defined (QMC_COMPLEX)
 void
@@ -225,12 +239,12 @@ TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
 }
 
 void
-TrialWaveFunction::update (std::vector<Walker_t*> &walkers, int iat)
+TrialWaveFunction::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k)
 {
   for (int i=0,ii=ACCEPT_TIMER; i<Z.size(); i++,ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
-    Z[i]->update(walkers, iat);
+    Z[i]->update(W, walkers, iat, acc, k);
     myTimers[ii]->stop();
   }
 }
