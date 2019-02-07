@@ -143,6 +143,11 @@ class EstimatorHandler: public AFQMCInfo
     if(TGgen.getTG(1).getGlobalRank() == 0) {
       //out.open(filename.c_str(),std::ios_base::app | std::ios_base::out);
       std::string filename = project_title+".scalar.dat";
+      hdf_file = project_title+".scalar.h5";
+      if(!dump.create(hdf_file)) {
+        app_log()<<"Problems opening estimator hdf5 output file: " << hdf_file <<std::endl;
+        APP_ABORT("Problems opening estimator hdf5 output file.\n");
+      }
       out.open(filename.c_str());
       if(out.fail()) {
         app_log()<<"Problems opening estimator output file: " <<filename <<std::endl;
@@ -174,11 +179,13 @@ class EstimatorHandler: public AFQMCInfo
   void print(int block, double time, double Es, WalkerSet& wlks)
   {
     out<<block <<" " <<time <<" ";
+    dump.open(hdf_file);
     for(std::vector<EstimPtr>::iterator it=estimators.begin(); it!=estimators.end(); it++)
-      (*it)->print(out,wlks);
+      (*it)->print(out,dump,wlks);
     out<<std::setprecision(12) <<Es <<"  " <<freemem() <<" ";
     estimators[0]->print_timers(out);
     out<<std::endl;
+    dump.close();
     if( (block+1)%10==0 ) out.flush();
   }
 
@@ -204,6 +211,8 @@ class EstimatorHandler: public AFQMCInfo
   std::vector<std::string> tags;
 
   std::ofstream out;
+  hdf_archive dump;
+  std::string hdf_file;
 
 };
 }
