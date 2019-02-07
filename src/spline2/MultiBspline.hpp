@@ -32,11 +32,11 @@ namespace qmcplusplus
     {
 
       ///define the einsplie object type
-      using spliner_type=typename bspline_traits<T,3>::SplineType;
+      using SplineType=typename bspline_traits<T,3>::SplineType;
       ///define the real type
       using real_type=typename bspline_traits<T,3>::real_type;
       ///actual einspline multi-bspline object
-      spliner_type* spline_m;
+      SplineType* spline_m;
       ///use allocator
       einspline::BsplineAllocator myAllocator;
 

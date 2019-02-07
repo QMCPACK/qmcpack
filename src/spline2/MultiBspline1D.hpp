@@ -30,11 +30,11 @@ namespace qmcplusplus
     {
 
       ///define the einsplie object type
-      using spliner_type=typename bspline_traits<T,1>::SplineType;
+      using SplineType=typename bspline_traits<T,1>::SplineType;
       ///define the real type
       using real_type=typename bspline_traits<T,1>::real_type;
       ///actual einspline multi-bspline object
-      spliner_type spline_m;
+      SplineType spline_m;
       ///use allocator
       //einspline::BsplineAllocator myAllocator;
 
@@ -52,7 +52,7 @@ namespace qmcplusplus
       {
         if(getAlignedSize<T>(num_splines)!=num_splines)
           throw std::runtime_error("When creating the data space of MultiBspline1D, num_splines must be padded!\n");
-        spliner_type* temp_spline;
+        SplineType* temp_spline;
         temp_spline=einspline::create(temp_spline, grid, bc, num_splines);
         spline_m=*temp_spline;
         free(temp_spline);
