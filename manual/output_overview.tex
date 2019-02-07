@@ -8,9 +8,9 @@ The types of output files generated depend on the details of a calculation. The 
 
 \section{The .scalar.dat file}
 \label{sec:scalardat_file}
-The most important output file is the \texttt{.scalar.dat} file. This file contains the output of block averaged properties of the system such as the local energy and other estimators.
+The most important output file is the \ishell{.scalar.dat} file. This file contains the output of block averaged properties of the system such as the local energy and other estimators.
 Each line corresponds to an average over $N_{walkers}*N_{steps}$ samples.
-By default, the quantities reported in the \texttt{.scalar.dat} file include:
+By default, the quantities reported in the \ishell{.scalar.dat} file include:
 
 \begin{description}
 \item[LocalEnergy] The local energy.
@@ -27,7 +27,7 @@ By default, the quantities reported in the \texttt{.scalar.dat} file include:
 \item[AcceptRatio] The acceptance ratio.
 \end{description}
 
-QMCPACK includes a python utility, \texttt{qmca}, which can be used to process these files. Details and examples are given in chapter~\ref{chap:analyzing}.
+QMCPACK includes a python utility, \ishell{qmca}, which can be used to process these files. Details and examples are given in chapter~\ref{chap:analyzing}.
 \section{The .opt.xml file}
 \label{sec:optxml_file}
 This file is generated after a VMC wave function optimization, and contains the part of the input file which lists the optimized optimized jastrow factors.
@@ -39,7 +39,7 @@ This file contains information about the computational aspects of the simulation
 
 \section{The .dmc.dat file}
 \label{sec:dmc_file}
-This file contains information similar to the \texttt{.scalar.dat} file, but also includes extra information about the details of a DMC calculation. For example, information about the walker population.
+This file contains information similar to the \ishell{.scalar.dat} file, but also includes extra information about the details of a DMC calculation. For example, information about the walker population.
 
 \begin{description}
 \item[Index] The block number.
@@ -64,12 +64,12 @@ be helpful in constructing trial wavefunctions.
 \section{Checkpoint and restart files}
 \label{sec:checkpoint_files}
 \subsection{The .cont.xml file}
-This file enables continuation of the run.  It is mostly a copy of the input XML file with the series number incremented, and the \texttt{mcwalkerset} element added to read the walkers from a config file.   The \texttt{.cont.xml} file is always created, but other files it depends on are only present if checkpointing is enabled.
+This file enables continuation of the run.  It is mostly a copy of the input XML file with the series number incremented, and the \ishell{mcwalkerset} element added to read the walkers from a config file.   The \ishell{.cont.xml} file is always created, but other files it depends on are only present if checkpointing is enabled.
 
 \subsection{The .config.h5 file}
 This file contains stored walker configurations.
 
 \subsection{The .random.h5 file}
 This file contains the state of the random number generator to allow restarts.
-(Older versions used an XML file with a suffix of \texttt{.random.xml}).
+(Older versions used an XML file with a suffix of \ishell{.random.xml}).
 

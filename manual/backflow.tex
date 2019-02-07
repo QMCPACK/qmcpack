@@ -12,7 +12,7 @@ Here, $\eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)$ is a ra
 
 In the following, we explain how to describe general terms like Eq. \ref{backflowdef} in a QMCPACK XML file.  For specificity, we will consider a particle set consisting of H and He (in that order).  This ordering will be important when we build the XML file, so you can find this out either through your specific declaration of <particleset>, by looking at the hdf5 file in the case of plane waves, or by looking at the qmcpack output file in the section labelled ``Summary of QMC systems".  
 \subsection{Input Specifications}
-All backflow declarations occur within a single \texttt{<backflow> ... </backflow>} block.  Backflow transformations occur in \texttt{<transformation>} blocks, and have the following input parameters
+All backflow declarations occur within a single \ixml{<backflow> ... </backflow>} block.  Backflow transformations occur in \ixml{<transformation>} blocks, and have the following input parameters
 
 \begin{table}[h]
 \begin{center}
@@ -33,12 +33,12 @@ source & text &  &  & ``e" if two-body, ion particle set if one-body.\\
 \end{center}
 \end{table}
 
-Just like one and two-body jastrows, parameterization of the backflow transformations are specified within the \texttt{<transformation> } blocks by  \texttt{<correlation>} blocks.  Please refer to \ref{sec:onebodyjastrowspline} for more information.
+Just like one and two-body jastrows, parameterization of the backflow transformations are specified within the \ixml{<transformation>} blocks by  \ixml{<correlation>} blocks.  Please refer to \ref{sec:onebodyjastrowspline} for more information.
 
 \subsection{Example Use Case}
 Having specified the general form, we present a general example of one-body and two-body backflow transformations in a hydrogen-helium mixture.  The H and He ions have independent backflow transformations, as do the like and unlike-spin two-body terms.  One caveat is in order:  ionic backflow transformations must be listed in the order that they appear in the particle set.  If in our example, He is listed first, and H is listed second, the following example would be correct.  However, switching backflow declaration to H first, then He, will result in an error.  Outside of this, declaration of one-body blocks and two-body blocks aren't sensitive to ordering.  
 
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 <backflow>
 <!--The One-Body term with independent e-He and e-H terms. IN THAT ORDER -->
 <transformation name="eIonB" type="e-I" function="Bspline" source="ion0">
@@ -70,9 +70,9 @@ Having specified the general form, we present a general example of one-body and 
 </backflow>
 \end{lstlisting}  
 
-Currently, backflow only works with single-slater determinant wavefunctions.  When a backflow transformation has been declared, it should be placed within the \texttt{<determinantset>} block, but outside of the \texttt{<slaterdeterminant>} blocks, like so:
+Currently, backflow only works with single-slater determinant wavefunctions.  When a backflow transformation has been declared, it should be placed within the \ixml{<determinantset>} block, but outside of the \ixml{<slaterdeterminant>} blocks, like so:
 
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 <determinantset ... >
     <!--basis set declarations go here, if there are any -->
     
