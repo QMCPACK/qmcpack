@@ -123,10 +123,13 @@ public:
   int CurrentParticle;
   GPU_XRAY_TRACE void proposeMove_GPU
   (std::vector<PosType> &newPos, int iat);
-  GPU_XRAY_TRACE void acceptMove_GPU(std::vector<bool> &toAccept);
+  GPU_XRAY_TRACE void acceptMove_GPU
+  (std::vector<bool> &toAccept, int k);
+  GPU_XRAY_TRACE void acceptMove_GPU
+  (std::vector<bool> &toAccept){ acceptMove_GPU(toAccept,0); }
   GPU_XRAY_TRACE void NLMove_GPU (std::vector<Walker_t*> &walkers,
-				  std::vector<PosType> &Rnew,
-				  std::vector<int> &iat);
+                                  std::vector<PosType> &Rnew,
+                                  std::vector<int> &iat);
 #endif
 
   ///default constructor
@@ -379,6 +382,102 @@ public:
     }
   }
 
+#ifdef QMC_CUDA
+  inline void setklinear()
+  {
+    klinear=true;
+  }
+
+  inline bool getklinear()
+  {
+    return klinear;
+  }
+
+  inline void setkDelay(int k)
+  {
+    klinear=false;
+    kDelay=k;
+    if (kDelay<0)
+    {
+      app_log() << "  Warning: Specified negative delayed updates k = " << k << ", setting to zero (no delay)." << std::endl;
+      kDelay=0;
+    }
+    if (kDelay==1)
+      kDelay=0; // use old algorithm as additional overhead for k=1 is not doing anything useful outside of code development
+    kblocksize=1;
+    kblock=0;
+    kcurr=0;
+    kstart=0;
+    if(kDelay)
+    {
+      app_log() << "  Using delayed updates (k = " << kDelay << ") for all walkers" << std::endl;
+      kblocksize=kDelay;
+    }
+    kupdate=kblocksize;
+  }
+
+  inline int getkDelay()
+  {
+    return kDelay;
+  }
+
+  inline int getkblock()
+  {
+    return kblock;
+  }
+
+  inline int getkblocksize()
+  {
+    return kblocksize;
+  }
+
+  inline int getkcurr()
+  {
+    return kcurr;
+  }
+
+  inline int getkstart()
+  {
+    return kstart;
+  }
+
+  inline int getkupdate()
+  {
+    return kupdate;
+  }
+
+  inline int getnat(int iat)
+  {
+    for(unsigned int gid=0; gid<groups(); gid++)
+      if(last(gid)>iat)
+        return last(gid)-first(gid);
+  }
+
+  inline bool update_now(int iat)
+  {
+    // in case that we finished the current k-block (kcurr=0) *or* (<- This case also takes care of no delayed updates as kcurr will always be zero then)
+    // if we run out of electrons (nat) but still have some k's in the current k-block, an update needs to happen now
+    bool end_of_matrix = (kcurr+kblock*kblocksize>=getnat(iat));
+    bool update=((!kcurr) || end_of_matrix);
+    kupdate=kblocksize;
+    if(update)
+    {
+      if(kblock>0)
+      {
+         kstart=kblock*kblocksize;
+         if(kcurr==0) kstart-=kblocksize; // means we looped cleanly within kblocksize matrix (and kblock is too large by 1), hence start is at (kblock-1)*kblocksize
+         kupdate=kcurr+kblock*kblocksize-kstart;
+         kcurr=0;
+         if(!klinear) CurrentParticle-=kupdate-1;
+      }
+    }
+    // reset kblock if we're out of matrix blocks
+    if(end_of_matrix)
+      kblock=0;
+    return update;
+  }
+#endif
+
 protected:
 
   ///boolean for cleanup
@@ -391,6 +490,22 @@ protected:
   int GlobalNumWalkers;
   ///update-mode index
   int UpdateMode;
+#ifdef QMC_CUDA
+  ///delayed update streak parameter k
+  int kDelay;
+  ///block dimension (usually k) in case delayed updates are used (there are nat/kblocksize blocks available)
+  int kblocksize=1;
+  ///current block
+  int kblock;
+  ///current k within current block
+  int kcurr;
+  ///current k to start from update
+  int kstart;
+  ///number of columns to update
+  int kupdate;
+  ///klinear switch to indicate if values are calculated sequentially for algorithms using drift
+  bool klinear;
+#endif
 
   RealType LocalEnergy;
 

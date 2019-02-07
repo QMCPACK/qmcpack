@@ -542,6 +542,7 @@ void QMCDriver::setWalkerOffsets()
  *   -- 1 = do not write anything
  *   -- 0 = dump after the completion of a qmc section
  *   -- n = dump after n blocks
+ * - kdelay = "0|1|n" default=0
  */
 bool QMCDriver::putQMCInfo(xmlNodePtr cur)
 {
@@ -557,10 +558,20 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
 
   //set the default walker to the number of threads times 10
   Period4CheckPoint=-1;
+  // set default for delayed update streak k to zero, meaning use the original Sherman-Morrison rank-1 update
+  // if kdelay is set to k (k>1), then the new rank-k scheme is used
+#ifdef QMC_CUDA
+  kDelay=Psi.getndelay();
+#endif
   int defaultw = omp_get_max_threads();
   OhmmsAttributeSet aAttrib;
   aAttrib.add(Period4CheckPoint,"checkpoint");
+  aAttrib.add(kDelay,"kdelay");
   aAttrib.put(cur);
+#ifdef QMC_CUDA
+  W.setkDelay(kDelay);
+  kDelay=W.getkDelay(); // in case number is sanitized
+#endif
   if(cur != NULL)
   {
     //initialize the parameter set
