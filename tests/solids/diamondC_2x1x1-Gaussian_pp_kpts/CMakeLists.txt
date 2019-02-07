@@ -1,17 +1,15 @@
 
-# Reference VMC run in qmc-ref "-21.71006 +/- 0.00057"
+# Reference VMC run in qmc_ref_long.s000.scalar.dat
 IF(ENABLE_SOA)
-  LIST(APPEND DIAMOND_SCALARS "totenergy" "-21.71006 0.018")
-  LIST(APPEND DIAMOND_SCALARS "kinetic" "20.4859  0.089")
-  LIST(APPEND DIAMOND_SCALARS "potential" "-42.1959  0.088")
-  LIST(APPEND DIAMOND_SCALARS "eeenergy" "-5.3556 0.020")
-  LIST(APPEND DIAMOND_SCALARS "ionion" "-25.55 0.0001")
-  LIST(APPEND DIAMOND_SCALARS "localecp" "-13.1306 0.13")
-  LIST(APPEND DIAMOND_SCALARS "nonlocalecp" "1.8417 0.041")
-  LIST(APPEND DIAMOND_SCALARS "samples" "8000 0.0")
-#  LIST(APPEND DIAMOND_SCALARS "flux" "0.0 0.4")
+  LIST(APPEND DIAMOND_SCALARS "totenergy" "-21.710528403484 0.014941420854")
+  LIST(APPEND DIAMOND_SCALARS "kinetic" "20.482953080839 0.115723306504")
+  LIST(APPEND DIAMOND_SCALARS "potential" "-42.193481484258 0.123056258811")
+  LIST(APPEND DIAMOND_SCALARS "eeenergy" "-5.356726989742 0.031142760274")
+  LIST(APPEND DIAMOND_SCALARS "localecp" "-13.125425643581 0.116081264579")
+  LIST(APPEND DIAMOND_SCALARS "nonlocalecp" "1.839997905661 0.042100003374")
+  LIST(APPEND DIAMOND_SCALARS "ionion" "-25.551326757000 0.000100000000")
 
-  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmc_gaussian_sdj
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp_kpts-vmc_gaussian_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_kpts"
                     qmc_short
                     qmc_short.in.xml
@@ -24,11 +22,15 @@ IF(ENABLE_SOA)
 # Long tests
 #
 
-# Reference VMC run in qmc-ref "-21.70152 +/- 0.00042"
-  LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-21.70152   0.008351")
-  LIST(APPEND LONG_DIAMOND_SCALARS "samples" "32000 0.0")
-
-  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-vmc_gaussian_sdj
+# ../../../../../utils/make_ref_data.sh LONG_DIAMOND qmc_long.s000.scalar.dat qmc-ref/qmc_ref_long.s000.scalar.dat
+LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-21.710283757096 0.007003082789")
+LIST(APPEND LONG_DIAMOND_SCALARS "kinetic" "20.484766989575 0.040286069522")
+LIST(APPEND LONG_DIAMOND_SCALARS "potential" "-42.195050746630 0.040257715256")
+LIST(APPEND LONG_DIAMOND_SCALARS "eeenergy" "-5.355965775116 0.011238545502")
+LIST(APPEND LONG_DIAMOND_SCALARS "localecp" "-13.128878317685 0.043236660046")
+LIST(APPEND LONG_DIAMOND_SCALARS "nonlocalecp" "1.841120102814 0.021549673940")
+LIST(APPEND LONG_DIAMOND_SCALARS "ionion" "-25.551326757000 0.000100000000")
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp_kpts-vmc_gaussian_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_kpts"
                     qmc_long
                     qmc_long.in.xml
@@ -36,17 +38,23 @@ IF(ENABLE_SOA)
                     TRUE
                     0 LONG_DIAMOND_SCALARS # VMC
                     )
+# generated scalars by
+#../../../../../utils/make_ref_data.sh LONG_DIAMOND_DMC qmc_long_vmc_dmc.s001.scalar.dat qmc-ref/qmc_ref_long_vmc_dmc.s001.scalar.dat
 
-
-# Reference DMC run in qmc-ref "-21.84425 +/-  0.00083"
-  LIST(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-21.84425 0.009024")
-  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc_gaussian_sdj
+LIST(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-21.843822425319 0.009374791784")
+LIST(APPEND LONG_DIAMOND_DMC_SCALARS "kinetic" "20.537891833946 0.098356837987")
+LIST(APPEND LONG_DIAMOND_DMC_SCALARS "potential" "-42.381714259230 0.106913681278")
+LIST(APPEND LONG_DIAMOND_DMC_SCALARS "eeenergy" "-5.452447931892 0.033300635140")
+LIST(APPEND LONG_DIAMOND_DMC_SCALARS "localecp" "-13.208515857275 0.125259289002")
+LIST(APPEND LONG_DIAMOND_DMC_SCALARS "nonlocalecp" "1.830576286588 0.046816174126")
+LIST(APPEND LONG_DIAMOND_DMC_SCALARS "ionion" "-25.551326757000 0.000100000000")
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp_kpts-dmc_gaussian_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_kpts"
                     qmc_long_vmc_dmc
                     qmc_long_vmc_dmc.in.xml
                     1 16
                     TRUE
-                    1 LONG_DIAMOND_DMC_SCALARS # DMC
+                    2 LONG_DIAMOND_DMC_SCALARS # DMC
                     )
 
 ELSE()

@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_COUNTING_FUNCTOR_H
 
 #include "OhmmsData/AttributeSet.h"
+#include <array>
 
 namespace qmcplusplus
 {

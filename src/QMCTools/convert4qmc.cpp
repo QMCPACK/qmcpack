@@ -291,7 +291,6 @@ int main(int argc, char **argv)
     parser->Title=prefix;
     parser->debug=debug;
     parser->DoCusp=addCusp;
-    parser->ECP=!addCusp;
     parser->UseHDF5=usehdf5;
     if (usehdf5)
       parser->h5file=parser->Title+".orbs.h5";

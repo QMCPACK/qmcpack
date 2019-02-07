@@ -159,62 +159,6 @@ struct OneDimGridBase
     return upper_bound;
   }
 
-  ///update the variables for interpolations
-  inline void updateFirstOrder(T r, bool all)
-  {
-    //int khi(Loc+1);
-    //h=X[khi]-X[Loc];
-    ////hinv=1.0/h;
-    //value_type hinv(1.0e0/h);
-    //value_type t((r-X[Loc])*hinv);
-    //value_type tm(t-1.0);
-    //replcate t -> cL tm ->cR
-    //p1=tm*tm*(1.0+2.0*t);
-    //p2=t*t*(3.0-2.0*t);
-    //q1=t*tm*tm;
-    //q2=t*t*tm;
-    //
-    //dp1=6.0*t*tm*hinv;
-    //dq1=(1.0-4.0*t+3.0*t*t);
-    //dq2=t*(3.0*t-2.0);
-    //
-    //d2p1=(12.0*t-6.0)*hinv*hinv;
-    //d2q1=(6.0*t-4.0)*hinv;
-    //d2q2=(6.0*t-2.0)*hinv;
-    //locate is called separately (PBC)
-    //locate(r);
-    dL = X[Loc+1]-X[Loc];
-    dLinv = 1.0e0/dL;
-    cL = (r-X[Loc])*dLinv;
-    cR = cL-1.0;
-    p1=cR*cR*(1.0+2.0*cL);
-    p2=cL*cL*(3.0-2.0*cL);
-    q1=cL*cR*cR;
-    q2=cL*cL*cR;
-    if(all)
-    {
-      dp1=6.0*cL*cR*dLinv;
-      dq1=1.0-4.0*cL+3.0*cL*cL;
-      dq2=cL*(3.0*cL-2.0);
-      d2p1=(12.0*cL-6.0)*dLinv*dLinv;
-      d2q1=(6.0*cL-4.0)*dLinv;
-      d2q2=(6.0*cL-2.0)*dLinv;
-    }
-  }
-
-  template <typename T1>
-  inline T1 cubicInterpolateFirst(T1 a, T1 b, T1 a1, T1 b1)
-  {
-    return p1*a+p2*b+dL*(q1*a1+q2*b1);
-  }
-
-  template <typename T1>
-  inline T1 cubicInterpolateFirst(T1 a, T1 b, T1 a1, T1 b1, T1& du, T1& d2u)
-  {
-    du = dp1*(a-b)+dq1*a1+dq2*b1;
-    d2u = d2p1*(a-b)+d2q1*a1+d2q2*b1;
-    return p1*a+p2*b+dL*(q1*a1+q2*b1);
-  }
 
   inline void updateSecondOrder(T r, bool all)
   {

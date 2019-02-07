@@ -61,7 +61,6 @@ IF (NOT QMC_CUDA)
                     7 H4_OPT_SCALARS # OPT step 7
                     )
 
-
   IF(BUILD_LMYENGINE_INTERFACE)
     QMC_RUN_AND_CHECK(short-H4-opt-adaptive
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"

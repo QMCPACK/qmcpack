@@ -27,15 +27,15 @@ namespace qmcplusplus
     struct SoaAtomicBasisSet
     {
       typedef ROT RadialOrbital_t;
-      typedef typename ROT::value_type value_type;
-      typedef typename ROT::grid_type  grid_type;
+      using RealType = typename ROT::RealType;
+      using GridType = typename ROT::GridType;
 
       ///size of the basis set
       int BasisSetSize;
       ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
       TinyVector<int,3>  PBCImages; 
       ///maximum radius of this center
-      value_type Rmax;
+      RealType Rmax;
       ///spherical harmonics
       SH Ylm;
       ///radial orbitals
@@ -47,10 +47,10 @@ namespace qmcplusplus
       ///container for the quantum-numbers
       std::vector<QuantumNumberType> RnlID;
       ///temporary storage 
-      VectorSoaContainer<value_type,4> tempS;
+      VectorSoaContainer<RealType,4> tempS;
 
       ///set of grids : keep this until completion
-      std::vector<grid_type*> Grids;
+      std::vector<GridType*> Grids;
       ///the constructor
       explicit SoaAtomicBasisSet(int lmax, bool addsignforM=false)
         :Ylm(lmax,addsignforM){}
@@ -147,9 +147,9 @@ namespace qmcplusplus
           constexpr T ctwo(2);
 
           //one can assert the alignment
-          value_type* restrict phi=tempS.data(0);
-          value_type* restrict dphi=tempS.data(1);
-          value_type* restrict d2phi=tempS.data(2);
+          RealType* restrict phi=tempS.data(0);
+          RealType* restrict dphi=tempS.data(1);
+          RealType* restrict d2phi=tempS.data(2);
 
           //V,Gx,Gy,Gz,L
           T* restrict psi   =vgl.data(0)+offset; const T* restrict ylm_v=Ylm[0]; //value
@@ -184,20 +184,15 @@ namespace qmcplusplus
                     dr_new[2]=dr[2]+TransX*lattice.R(0,2)+TransY*lattice.R(1,2)+TransZ*lattice.R(2,2);
                     r_new=std::sqrt(dot(dr_new,dr_new));
          
-
-
                     //const size_t ib_max=NL.size();
-                    if(r_new>Rmax) continue; 
-  
+                    if(r_new >= Rmax) continue; 
+
                     //SIGN Change!!
                     const T x=-dr_new[0], y=-dr_new[1], z=-dr_new[2];
                     Ylm.evaluateVGL(x,y,z);
-  
-  
-  
+    
                     MultiRnl->evaluate(r_new,phi,dphi,d2phi);
-  
-  
+    
                     const T rinv=cone/r_new;
   
                     for(size_t ib=0; ib<BasisSetSize; ++ib)
@@ -235,8 +230,8 @@ namespace qmcplusplus
           PosType dr_new;
           T r_new;
           T psi_new;
-          value_type* restrict ylm_v=tempS.data(0);
-          value_type* restrict phi_r=tempS.data(1);
+          RealType* restrict ylm_v=tempS.data(0);
+          RealType* restrict phi_r=tempS.data(1);
           for(size_t ib=0; ib<BasisSetSize; ++ib)
               psi[ib]=0;
           for (int i=0; i<=PBCImages[0]; i++ ) //loop Translation over X 
@@ -257,7 +252,7 @@ namespace qmcplusplus
 
                     r_new=std::sqrt(dot(dr_new,dr_new));
               
-                    if(r_new>Rmax)   continue;
+		    if(r_new >= Rmax) continue;
 
                     Ylm.evaluateV(-dr_new[0],-dr_new[1],-dr_new[2],ylm_v);
                     MultiRnl->evaluate(r_new,phi_r);

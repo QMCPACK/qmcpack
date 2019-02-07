@@ -169,14 +169,11 @@ IF(OHMMS_DIM MATCHES 3)
     )
   ENDIF(QMC_COMPLEX)
 
-  #only experimental version
-  IF(QMC_BUILD_LEVEL GREATER 2)
-    IF(NOT QMC_COMPLEX)
-    SET(FERMION_SRCS ${FERMION_SRCS}
-      AGPDeterminant.cpp AGPDeterminantBuilder.cpp
-      )
-    ENDIF(NOT QMC_COMPLEX)
-  ENDIF(QMC_BUILD_LEVEL GREATER 2)
+  IF(NOT QMC_COMPLEX)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    AGPDeterminant.cpp AGPDeterminantBuilder.cpp
+    )
+  ENDIF(NOT QMC_COMPLEX)
 
 ENDIF(OHMMS_DIM MATCHES 3)
 

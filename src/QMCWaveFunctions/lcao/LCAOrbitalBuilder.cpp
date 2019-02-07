@@ -26,10 +26,10 @@
 #include "QMCWaveFunctions/lcao/SoaCuspCorrectionBasisSet.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalSetWithCorrection.h"
-#include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
+//#include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
-#include "QMCWaveFunctions/lcao/MultiFunctorBuilder.h"
+#include "QMCWaveFunctions/lcao/MultiFunctorAdapter.h"
 #include "QMCWaveFunctions/lcao/CuspCorrection.h"
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
@@ -435,9 +435,12 @@ namespace qmcplusplus
 
     std::vector<bool> corrCenter(num_centers, "true");
 
+    //What's this grid's lifespan?  Why on the heap?
     LogGrid<RealType>* radial_grid = new LogGrid<RealType>;
     radial_grid->set(0.000001, 100.0, 1001);
 
+    
+    
     Vector<RealType> xgrid;
     Vector<RealType> rad_orb;
     xgrid.resize(radial_grid->size());
@@ -456,18 +459,19 @@ namespace qmcplusplus
       // loop over MO index - cot must be an array (of len MO size)
       //   the loop is inside cot - in the multiqunitic
       SoaCuspCorrection::COT *cot = new CuspCorrectionAtomicBasis<RealType>();
-      cot->AOs.initialize(radial_grid, orbital_set_size);
-      cot->ID.resize(orbital_set_size);
-      for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
-        cot->ID[mo_idx] = mo_idx;
-      }
+      cot->initializeRadialSet(*radial_grid, orbital_set_size);
+      //How is this useful? 
+      // cot->ID.resize(orbital_set_size);
+      // for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
+      //   cot->ID[mo_idx] = mo_idx;
+      // }
 
       for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
         computeRadialPhiBar(&targetPtcl, &sourcePtcl, mo_idx, ic, &phi, xgrid, rad_orb, info(ic, mo_idx));
         OneDimQuinticSpline<RealType> radial_spline(radial_grid, rad_orb);
         RealType yprime_i = (rad_orb[1] - rad_orb[0])/(radial_grid->r(1) - radial_grid->r(0));
         radial_spline.spline(0, yprime_i, rad_orb.size()-1, 0.0);
-        cot->AOs.add_spline(mo_idx, radial_spline);
+        cot->addSpline(mo_idx, radial_spline);
 
         if (outputManager.isDebugActive()) {
           // For testing against AoS output
@@ -658,15 +662,14 @@ namespace qmcplusplus
     spoAttrib.add (optimize, "optimize");
     spoAttrib.put(cur);
 
-    if(optimize=="yes") PRE.error("Optimizable SPO has not been supported by SoA LCAO yet!.",true);
     if(myBasisSet==nullptr) PRE.error("Missing basisset.",true);
     LCAOrbitalSet *lcos = nullptr;
     LCAOrbitalSetWithCorrection *lcwc = nullptr;
     if (doCuspCorrection) {
-      lcwc =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, rank()==0);
+      lcwc =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet);
       lcos = lcwc;
     } else {
-      lcos=new LCAOrbitalSet(myBasisSet,rank()==0);
+      lcos=new LCAOrbitalSet(myBasisSet);
     }
     loadMO(*lcos, cur);
 
@@ -687,6 +690,11 @@ namespace qmcplusplus
       applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
     }
 
+    if(optimize=="yes")
+    {
+      lcos->Optimizable = true; 
+      app_log() << "  SPOSet " << spo_name << " is optimizable\n";
+    }
 
     return lcos;
   }
@@ -727,6 +735,11 @@ namespace qmcplusplus
       else if(cname.find("coeff") < cname.size() || cname == "parameter" || cname == "Var")
       {
         coeff_ptr=cur;
+      }
+      else if(cname == "opt_vars")
+      {
+        spo.params_supplied = true;
+        putContent(spo.params, cur);
       }
       cur=cur->next;
     }

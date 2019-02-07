@@ -12,11 +12,10 @@
 //
 // File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
-//#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant_help.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
@@ -366,7 +365,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(SPOSetPtr const &spos, int first):
   buildTableGradTimer("MultiDiracDeterminant::buildTableGrad"),
   ExtraStuffTimer("MultiDiracDeterminant::ExtraStuff")
 {
-  Optimizable=true;
+  (spos->Optimizable==true) ? Optimizable=true : Optimizable=false;
   ClassName="MultiDiracDeterminant";
 
   IsCloned=false;
@@ -466,7 +465,7 @@ void MultiDiracDeterminant::resize(int nel, int morb)
   dpsiMinv.resize(nel,nel);
   psiMinv_temp.resize(nel,nel);
   //scratch spaces: stateless
-  WorkSpace.resize(std::max(nel,NumDets)); 
+  WorkSpace.resize(std::max(nel,NumDets));
   Pivot.resize(nel);
   workV1.resize(nel);
   workV2.resize(nel);
@@ -513,7 +512,81 @@ void MultiDiracDeterminant::registerTimers()
 
 }
 
+void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
+{
+  if(!Optimizable) return;
 
+  const size_t nel = NumPtcls;
+  const size_t nmo = NumOrbitals;
+  //a vector in which the element's index value correspond to Molecular Orbitals.
+  //The element value at an index indicates how many times an electron is excited from or to that orbital in the Multi-Slater expansion i.e the indices with non-zero elements are active space orbitals
+  std::vector<int> occupancy_vector(nmo,0);
+
+  // Function to fill occupancy_vectors and also return number of unique determinants
+  const size_t unique_dets = build_occ_vec(*detData, nel, nmo, occupancy_vector);
+
+  // When calculating the parameter derivative of the Multi-Slater component of the wavefunction, each unique deterimant can contribute multiple times.
+  // The lookup_tbls are used so that a parameter derivative of a unique determinant is only done once and then scaled according to how many times it appears in the Multi-Slater expansion
+  lookup_tbl.resize(unique_dets);
+  //construct lookup table
+  for (int i(0); i < C2node.size(); i++)
+  {
+    lookup_tbl[C2node[i]].push_back(i);
+  }
+
+  // create active rotation parameter indices
+  std::vector<std::pair<int,int> > m_act_rot_inds;
+
+  for(int i=0;i<nmo;i++)
+    for(int j=i+1;j<nmo;j++)
+     {
+      bool core_i(!occupancy_vector[i] and i <= nel-1); // true if orbital i is a 'core' orbital
+      bool core_j(!occupancy_vector[j] and j <= nel-1); // true if orbital j is a 'core' orbital
+      bool virt_i(!occupancy_vector[i] and i >  nel-1); // true if orbital i is a 'virtual' orbital
+      bool virt_j(!occupancy_vector[j] and j >  nel-1); // true if orbital j is a 'virtual' orbital
+        if( !(
+              ( core_i and core_j  )
+                        or
+              ( virt_i and virt_j )
+             )
+          )
+        {
+          m_act_rot_inds.push_back(std::pair<int,int>(i,j)); // orbital rotation parameter accepted as long as rotation isn't core-core or virtual-virtual
+        }
+     }
+
+  Phi->buildOptVariables(m_act_rot_inds);
+}
+
+  int MultiDiracDeterminant::build_occ_vec(const std::vector<int>& data,
+                                           const size_t nel,
+                                           const size_t nmo,
+                                           std::vector<int>& occ_vec)
+  {
+    auto it = data.begin();
+    int count = 0; //number of determinants
+    while(it != data.end())
+    {
+      int k = *it; // number of excitations with respect to the reference matrix
+      if(count == 0)
+      {
+        it += 3*k+1;
+        count ++;
+      }
+      else
+      {
+        for (int i = 0; i<k; i++)
+        {
+        //for determining active orbitals
+          occ_vec[*(it+1+i)]++;
+          occ_vec[*(it+1+k+i)]++;
+        }
+        it += 3*k+1;
+        count ++;
+      }
+    }
+    return count;
+  }
 
 
 }
