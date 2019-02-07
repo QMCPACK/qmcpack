@@ -559,6 +559,9 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   else
     app_log() << "Using rank-1 Sherman-Morrison Fahy update" << std::endl;
   adet->set(firstIndex,lastIndex-firstIndex, delay_rank);
+#ifdef QMC_CUDA
+  targetPsi.setndelay(delay_rank);
+#endif
   slaterdet_0->add(adet,spin_group);
   if (psi->Optimizable)
     slaterdet_0->Optimizable = true;

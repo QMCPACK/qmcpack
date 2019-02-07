@@ -40,7 +40,6 @@ cublas_inverse (cublasHandle_t handle,
                 int N, int rowStride, int numMats, 
                 bool useHigherPrecision = true);
 
-
 //////////////////////////////////////
 // Complex single / mixed precision //
 //////////////////////////////////////

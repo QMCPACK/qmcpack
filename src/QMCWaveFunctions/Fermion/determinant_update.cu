@@ -1344,6 +1344,7 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
   // ratio to make it w.r.t. new position
   if (tid < 4)
     ratio_prod[BS1*(tid+1)] /= ratio_prod[0];
+  // Copy data back for every walker
   if (tid < 5)
     ratio_grad_lapl[5*blockIdx.x+tid] = ratio_prod[tid*BS1];
 }
@@ -2024,7 +2025,6 @@ calc_grad_lapl (std::complex<double> *Ainv_list[], std::complex<double> *grad_la
 }
 #endif
 
-
 #define COPY_BS 256
 
 template<typename T>
@@ -2062,7 +2062,6 @@ multi_copy (T **buff, int dest_off, int src_off, int len)
 }
 
 
-
 void
 multi_copy (float *dest[], float *src[], int len, int num)
 {
@@ -2080,7 +2079,6 @@ multi_copy (double *dest[], double *src[], int len, int num)
     dimGrid.x++;
   multi_copy<double><<<dimGrid,dimBlock>>>(dest, src, len);
 }
-
 
 
 #ifdef QMC_COMPLEX
@@ -2102,7 +2100,6 @@ multi_copy (std::complex<double> *dest[], std::complex<double> *src[], int len, 
   multi_copy<thrust::complex<double> ><<<dimGrid,dimBlock>>>((thrust::complex<double>**)dest, (thrust::complex<double>**)src, len);
 }
 #endif
-
 
 
 void

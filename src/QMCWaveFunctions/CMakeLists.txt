@@ -95,7 +95,8 @@ IF(OHMMS_DIM MATCHES 3)
 
   IF(QMC_CUDA)
     SET(FERMION_SRCS ${FERMION_SRCS}
-      Fermion/determinant_update.cu 
+      Fermion/determinant_update.cu
+      Fermion/delayed_update.cu
       Fermion/DiracDeterminantCUDA.cpp
       Fermion/SlaterDetCUDA.cpp
       TrialWaveFunction_CUDA.cpp
