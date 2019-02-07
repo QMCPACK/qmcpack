@@ -19,6 +19,7 @@
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+#include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 
 namespace qmcplusplus
 {

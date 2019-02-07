@@ -25,7 +25,8 @@
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
-#include <Utilities/FairDivide.h>
+#include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {

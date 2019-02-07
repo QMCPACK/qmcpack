@@ -16,6 +16,7 @@
 #include <OhmmsSoA/Container.h>
 #include "spline2/MultiBspline.hpp"
 #include "spline2/MultiBsplineEval.hpp"
+#include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 
 extern "C" {
 
