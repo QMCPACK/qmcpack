@@ -559,20 +559,20 @@ The QMC calculation section at the bottom is also different.  The linear optimiz
   \item[nonlocalmoves] DMC only.  If yes/no, use the locality approximation/T-moves for non-local pseudopotentials.  T-moves generally improve the stability of the algorithm and restore the variational principle for small systems (T-moves version 1).
 \end{description}
 
-The purpose of the VMC run is to provide initial electron positions for each DMC walker.  Setting $\ishell{walkers}=1$ in the VMC block ensures there will be only one VMC walker per execution thread.  There will be a total of \labsw{4}{512} VMC walkers in this case (see \ishell{O.q0.dmc.qsub.in}).  We want the electron positions used to initialize the DMC walkers to be decorrelated from one another.  A VMC walker will often decorrelate from its current position after propagating for a few Ha$^{-1}$ in imaginary time (in general this is system dependent).  This leads to a rough rule of thumb for choosing \ishell{blocks} and \ishell{steps} for the VMC run (\labsw{$\ishell{VWALKERS}=4$}{$\ishell{VWALKERS}=512$} here):
+The purpose of the VMC run is to provide initial electron positions for each DMC walker.  Setting $texttt{walkers}]=1$ in the VMC block ensures there will be only one VMC walker per execution thread.  There will be a total of \labsw{4}{512} VMC walkers in this case (see \ishell{O.q0.dmc.qsub.in}).  We want the electron positions used to initialize the DMC walkers to be decorrelated from one another.  A VMC walker will often decorrelate from its current position after propagating for a few Ha$^{-1}$ in imaginary time (in general this is system dependent).  This leads to a rough rule of thumb for choosing \ishell{blocks} and \ishell{steps} for the VMC run (\labsw{$\texttt{VWALKERS}=4$}{$\texttt{VWALKERS}=512$} here):
 \begin{align}
-  \ishell{VBLOCKS}\times\ishell{VSTEPS} \ge \frac{\ishell{DWALKERS}}{\ishell{VWALKERS}} \frac{5~\textrm{Ha}^{-1}}{\ishell{VTIMESTEP}}
+  \texttt{VBLOCKS}\times\texttt{VSTEPS} \ge \frac{\texttt{DWALKERS}}{\texttt{VWALKERS}} \frac{5~\textrm{Ha}^{-1}}{\texttt{VTIMESTEP}}
 \end{align}
 Fill in the VMC XML block with appropriate values for these parameters.  There should be more than one DMC walker per thread and enough walkers in total to avoid population control bias.  The general rule of thumb is to have more than $\sim 2000$ walkers, although the dependence of the total energy on population size should be explicitly checked from time to time.
 
 To study timestep bias, we will perform a sequence of DMC runs over a range of timesteps ($0.1$ Ha$^{-1}$ is too large and timesteps below $0.002$ Ha$^{-1}$ are probably too small).  A common approach is to select a fairly large timestep to begin with and then decrease the timestep by a factor of two in each subsequent DMC run.  The total amount of imaginary time the walker population propagates should be the same for each run.  A simple way to accomplish this is to choose input parameters in the following way
 \begin{align}\label{eq:timestep_iter}
-  \ishell{timestep}_{n}    &= \ishell{timestep}_{n-1}/2\nonumber\\
-  \ishell{warmupSteps}_{n} &= \ishell{warmupSteps}_{n-1}\times 2\nonumber\\
-  \ishell{blocks}_{n}      &= \ishell{blocks}_{n-1}\nonumber\\
-  \ishell{steps}_{n}       &= \ishell{steps}_{n-1}\times 2
+  \texttt{timestep}_{n}    &= \texttt{timestep}_{n-1}/2\nonumber\\
+  \texttt{warmupSteps}_{n} &= \texttt{warmupSteps}_{n-1}\times 2\nonumber\\
+  \texttt{blocks}_{n}      &= \texttt{blocks}_{n-1}\nonumber\\
+  \texttt{steps}_{n}       &= \texttt{steps}_{n-1}\times 2
 \end{align}
-Each DMC run will require about twice as much computer time as the one preceding it.  Note that the number of blocks is kept fixed for uniform statistical analysis.  $\ishell{blocks}\times\ishell{steps}\times\ishell{timestep}\sim 60~\mathrm{Ha}^{-1}$ is sufficient for this system.
+Each DMC run will require about twice as much computer time as the one preceding it.  Note that the number of blocks is kept fixed for uniform statistical analysis.  $\texttt{blocks}\times\texttt{steps}\times\texttt{timestep}\sim 60~\mathrm{Ha}^{-1}$ is sufficient for this system.
 
 Choose an initial DMC timestep and create a sequence of $N$ timesteps according to \ref{eq:timestep_iter}.  Make $N$ copies of the DMC XML block in the input file
 \begin{lstlisting}[style=QMCPXML]

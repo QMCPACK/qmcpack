@@ -13,10 +13,12 @@ Catch consists solely of header files. It is distributed as a single include fil
 
 \section{Unit test organization}
 
+\begin{sloppypar}
 The source for the unit tests is located in the \ishell{tests} directory under each directory in \ishell{src} (e.g. \ishell{src/QMCWavefunctions/tests}).
 All of the tests in each \ishell{tests} directory get compiled into an executable.
 After building the project, the individual unit test executables can be found in \ishell{build/tests/bin}.
 For example, the tests in \ishell{src/QMCWavefunctions/tests} are compiled into \ishell{build/tests/bin/test\_wavefunction}.
+\end{sloppypar}
 
 All the unit test executables are collected under ctest with the \ishell{unit} label.
 When checking the whole code, it's useful to run through cmake (\ishell{cmake -L unit}).

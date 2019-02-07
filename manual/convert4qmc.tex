@@ -9,18 +9,13 @@ To date, convert4qmc supports the following codes:
 GAMESS\cite{schmidt93}, PySCF\cite{Sun2018}, Quantum Package\cite{QP}
 and GAMESS-FMO\cite{Fedorov2004,schmidt93}
 
-
 \subsubsection{General use}
 General usage of convert4qmc can be prompted by running with no options:
 
 \begin{lstlisting}[style=SHELL]
 >convert4qmc
 
-
-
-
 Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample
-
 
  convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-QP|-pyscf|-orbitals] 
  filename                                                          
@@ -35,7 +30,6 @@ the format
  *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.xml -> gamesxml
 \end{lstlisting}
 
-
 As an example, to convert a GAMESS calculation using a single determinant, the following usage is sufficient:\\
 \begin{lstlisting}[style=SHELL]
 convert4qmc -gamess MyGamessOutput.out
@@ -44,7 +38,7 @@ convert4qmc -gamess MyGamessOutput.out
 By default, the converter will generate multiple files:\\
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l }
+\begin{tabularx}{\textwidth}{l l l l X }
 \hline
 \multicolumn{5}{l}{\texttt{convert4qmc} output} \\
 \hline
@@ -496,10 +490,13 @@ This example shows how to run a Hartree-Fock calculation for the $LiH$
 dimer molecule from PySCF and convert the wavefunction for \qmcpack.\\
 
 \begin{itemize}
- \item \textbf{Python path}\\
-PySCF is a Python based code. A python module named \textbf{PyscfToQmcpack} containing the function \textbf{savetoqmcpack} is provided by \qmcpack and is located at \ishell{qmcpack/src/QMCTools/PyscfToQmcpack.py}.
+\item \textbf{Python path}\\
+  \begin{sloppypar}
+    PySCF is a Python based code. A python module named \textbf{PyscfToQmcpack} containing the function \textbf{savetoqmcpack} is provided by \qmcpack and is located at\linebreak
+    \ishell{qmcpack/src/QMCTools/PyscfToQmcpack.py}.
 To be accessible to the PySCF script, this path must be added to the PYTHONPATH environment variable.
 For the bash shell, this can be done as follows:\\
+\end{sloppypar}
 \begin{shade}
  export PYTHONPATH=/PATH_TO_QMCPACK/qmcpack/src/QMCTools:\$PYTHONPATH
 \end{shade}

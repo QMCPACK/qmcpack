@@ -307,4 +307,6 @@ Data are outputted to scalar.dat in 4 stages: evaluate, load, unload, and collec
 
 \subsection{Appendix: dmc.dat}
 
+\begin{sloppypar}
 There is an additional data structure \icode{ParticleSet::EnsembleProperty}, which is managed by \icode{WalkerControlBase::EnsembleProperty} and directly dumped to dmc.dat via its own averaging procedure. dmc.dat is written by \icode{WalkerControlBase::measureProperties}, which is called by \icode{WalkerControlBase::branch}, which is called by \icode{SimpleFixedNodeBranch}\\ \icode{::branch} for example.
+\end{sloppypar}

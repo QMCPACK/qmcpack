@@ -288,7 +288,8 @@ Therefore, the added electron will sit at CBM while the subtracted electron will
 However, for the charged cell calculations, one may need to make changes in the input files for the fourth step.  Alternatively, in \ishell{quasiparticle.py} file the changes in the qmc input are shown for negatively charged system:
 \begin{lstlisting}[style=Python]
 qmc.input.simulation.qmcsystem.particlesets.e.groups.u.size +=1
-qmc.input.simulation.qmcsystem.wavefunction.determinantset.slaterdeterminant.determinants.updet.size += 1
+(qmc.input.simulation.qmcsystem.wavefunction.determinantset
+ .slaterdeterminant.determinants.updet.size += 1)
 \end{lstlisting}
 Here, the number of up electrons are increased by one (negatively charged system), and QMCPACK is instructed to read more one orbital in the up channel from the .h5 file. 
 
