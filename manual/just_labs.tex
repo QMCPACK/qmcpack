@@ -1,4 +1,4 @@
-\documentclass[11pt,letterpaper]{report}
+\documentclass[11pt,usletter]{report}
 \usepackage{qmcpack_manual}
 \usepackage{bibtopic}
 \bibliographystyle{ieeetr}
@@ -9,10 +9,11 @@
 \usepackage{algorithm}
 \usepackage{makeidx}
 \usepackage{fancyhdr}
-\usepackage{xcolor}
-\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref} %for urls
+\usepackage{hyperref} %for urls
 \usepackage{tabularx}
 \usepackage{placeins}
+% environment for shaded verbatim
+%\usepackage{verbatim}
 \usepackage{caption}
 \usepackage{graphicx}
 
@@ -29,9 +30,6 @@
 
 % set margins for whole document, lots of wasted space at top and bottom originally
 \usepackage[left=1.0in,right=1.0in,top=1.0in,bottom=1.0in]{geometry}
-
-
-
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 %% \newcommand{\courier}[1]{{\fontfamily{pcr}\selectfont #1}}
@@ -85,93 +83,15 @@
 \newcommand{\bs}{\boldsymbol}
 \newcommand{\tr}{\text{tr}} % trace
 
-% urls are were too large
-% hyperref gives us an easy way to control that
-\renewcommand{\UrlFont}{\ttfamily\small}
-
-% latex itself doesn't give us an easy way to deal with \texttt's font size
-% so we need to define this command
-\usepackage{letltxmacro}
-% https://tex.stackexchange.com/q/88001/5764
-\LetLtxMacro\oldttfamily\ttfamily
-\DeclareRobustCommand{\ttfamily}{\oldttfamily\csname ttsize\endcsname}
-\newcommand{\setttsize}[1]{\def\ttsize{#1}}%
-
-% while \texttt use should be sparing (see contributing.tex) its necessary for the
-% QMCPACK input XML spec tables, but those are also nearly too big for the page
-\setttsize{\footnotesize}
-
-% We have a huge number of overfull boxes, this adds another pass to
-% typesetting a paragraph properly
-\setlength{\emergencystretch}{3em}
-
 
 \begin{document}
 
-\input{title.tex}
-\newpage
-\tableofcontents
-\newpage
-
 \begin{btUnit}
-
-\input{introduction}
-\input{features}
-\input{installation}
-\input{running}
-
-\input{units}
-
-\input{input_overview}
-
-\chapter{Specifying the system to be simulated}
-\input{simulationcell}
-\input{particleset}
-
-\chapter{Trial wavefunction specification}
-\input{intro_wavefunction}
-\input{singledeterminant}
-\input{spo}
-\input{jastrow}
-\input{multideterminants}
-\input{backflow}
-\input{fdlr}
-\input{ionwf}
-
-\input{hamiltonianobservable}
-
-\input{methods}
-\input{vmc}
-\input{opt}
-\input{dmc}
-\input{reptation}
-
-\input{output_overview}
-\input{analysis}
-\input{gaussian_orbitals_solids}
-\input{selected_ci}
-
-\input{afqmc}
-\input{integrals_for_afqmc}
-
-
-
-\input{examples}
-
-% labs: import each as a separate chapter for now
 \input{lab_qmc_statistics}
 \input{lab_qmc_basics}
 \input{lab_advanced_molecules}
 \input{lab_condensed_matter}
 \input{lab_excited}
-
-\input{additional_tools}
-\input{external_tools}
-\input{contributing}
-\input{unit_testing}
-
-\input{design_features}
-\input{developing}
 
 %% \renewcommand{\chaptername}{}
 %% \renewcommand{\thechapter}{}
@@ -181,10 +101,9 @@
 \btPrintCited
 \end{btSect}
 \end{btUnit}
-
-\appendix
-\input{appendices}
-\begin{btUnit}
-\input{qmcpack_papers}
-\end{btUnit}
 \end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
