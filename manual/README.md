@@ -9,18 +9,22 @@ additional tools.
 - A TeX Live installation of 2017-01-20 or later including the xetex-collection is suggested to build the PDF manual.
 - An up to date TeX Live installation is suggested to build the HTML version of the manual.
 
+``` shell
+build_manual.sh
+```
+
 ---
 # ATTENTION:
 
 If you have a TeX Live installation predating the 2017-01-20 release or not including the xetex collection
-use the build for legacy tex installs. The content is the same but various formatting issues exist. The manual can be built with only the files in the manual directory, consider building it somewhere with a current tex distribution.
+use the build for legacy tex installs. The content is the same but various formatting issues exist. Since the manual can be built with only the files in the manual directory, consider building it somewhere with an up to date tex distribution.
 
 ``` shell
 build_pdflatex_manual_legacy.sh
 ```
 ---
 # Contributing:
-See contributing.tex
+See the chapter "Contributing to the Manual" in contributing.tex
 --
 
 ## OS X
