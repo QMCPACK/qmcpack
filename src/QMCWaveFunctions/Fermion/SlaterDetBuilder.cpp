@@ -261,9 +261,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       {
         APP_ABORT("multideterminant is already instantiated.");
       }
-#ifdef MIXED_PRECISION
-      APP_ABORT("multideterminant is not safe with mixed precision. Please use full precision build instead.");
-#endif
       std::string spo_alpha;
       std::string spo_beta;
       std::string fastAlg("yes");
@@ -302,18 +299,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         app_log() <<"Creating base determinant (down) for MSD expansion. \n";
         dn_det = new MultiDiracDeterminant((SPOSetPtr) spomap.find(spo_beta)->second,1);
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
-        //          up_det->usingBF = UseBackflow;
-        //          dn_det->usingBF = UseBackflow;
-        //          multislaterdetfast_0->usingBF = UseBackflow;
         success = createMSDFast(multislaterdetfast_0,cur);
-        // debug, erase later
-        //          SPOSetProxyForMSD* spo_up;
-        //          SPOSetProxyForMSD* spo_dn;
-        //          spo_up=new SPOSetProxyForMSD(spomap.find(spo_alpha)->second,targetPtcl.first(0),targetPtcl.last(0));
-        //          spo_dn=new SPOSetProxyForMSD(spomap.find(spo_beta)->second,targetPtcl.first(1),targetPtcl.last(1));
-        //
-        //          multislaterdetfast_0->msd = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
-        //          success = createMSD(multislaterdetfast_0->msd,cur);
       }
       else
       {
@@ -573,6 +559,9 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   else
     app_log() << "Using rank-1 Sherman-Morrison Fahy update" << std::endl;
   adet->set(firstIndex,lastIndex-firstIndex, delay_rank);
+#ifdef QMC_CUDA
+  targetPsi.setndelay(delay_rank);
+#endif
   slaterdet_0->add(adet,spin_group);
   if (psi->Optimizable)
     slaterdet_0->Optimizable = true;
@@ -677,7 +666,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
           (*(multiSD->C))[i]=0;
       app_log() <<"CI coefficients are reset. \n";
     }
-    multiSD->Optimizable=true;
+    multiSD->Optimizable = multiSD->CI_Optimizable = true;
     if(multiSD->usingCSF)
     {
 //          multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
@@ -702,8 +691,35 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   else
   {
     app_log() <<"CI coefficients are not optimizable. \n";
-    multiSD->Optimizable=false;
+    multiSD->CI_Optimizable=false;
   }
+
+  if(multiSD->Dets[0]->Optimizable == true || multiSD->Dets[1]->Optimizable == true)
+  { 
+    //safety checks for orbital optimization
+    if(multiSD->Dets[0]->Optimizable != multiSD->Dets[1]->Optimizable )
+      APP_ABORT("Optimizing the SPOSet of only one spin is not supported!\n");
+    if (multiSD->usingCSF)
+      APP_ABORT("Currently, Using CSF is not available with MSJ Orbital Optimization!\n");
+
+    //checks that the hartree fock determinant is the first in the multislater expansion
+    for (int i=0; i < nels_up; i++)
+    {
+      if ( (uniqueConfg_up[0].occup[i] != true) || (uniqueConfg_dn[0].occup[i] != true) )
+        APP_ABORT("The Hartree Fock Reference Determinant must be first in the Multi-Slater expansion for the input!\n");
+    }
+
+    app_log() << "WARNING: Unrestricted Orbital Optimization will be performed. Spin symmetry is not guaranteed to be preserved!\n";
+
+    // mark the overall optimization flag
+    multiSD->Optimizable = true;
+
+    // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
+    // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
+    // and then remove the orbital rotation parameters
+    multiSD->buildOptVariables();
+  }
+
   return success;
 }
 /*

@@ -359,7 +359,7 @@ public:
   void evaluateTempDerivatives(ParticleSet& P,
                                const int I, // index of the counting function parameter derivatives are associated with
                                int iat,
-                               std::function<RealType&(int,int)> dNdiff)
+                               Matrix<RealType>& dNdiff)
   {
     // may assume evaluate and evaluateTemp has already been called
     int num_derivs = getVars(I).size();
@@ -382,10 +382,10 @@ public:
 
   void evaluateDerivatives(ParticleSet& P, 
                           int I, 
-                          std::function<const PosType&(int,int)> FCgrad,
-                          std::function<RealType&(int,int)> dNsum,
-                          std::function<ValueType&(int,int)> dNggsum,
-                          std::function<RealType&(int,int)> dNlapsum,
+                          Matrix<PosType>& FCgrad,
+                          Matrix<RealType>& dNsum,
+                          Matrix<ValueType>& dNggsum,
+                          Matrix<RealType>& dNlapsum,
                           std::vector<RealType>& dNFNggsum)
   {
     evaluate(P);

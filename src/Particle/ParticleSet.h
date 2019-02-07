@@ -624,6 +624,11 @@ public:
   {
     return SubPtcl[igroup+1];
   }
+  
+  inline int groupsize(int igroup) const
+  {
+    return SubPtcl[igroup+1]-SubPtcl[igroup];
+  }
 
   ///add attributes to list for IO
   template<typename ATList>

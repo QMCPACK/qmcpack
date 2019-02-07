@@ -48,7 +48,7 @@
 #include "QMCHamiltonians/SkAllEstimator.h"
 #endif
 // #include "QMCHamiltonians/ZeroVarObs.h"
-#if !defined(QMC_CUDA) && QMC_BUILD_LEVEL>2
+#if !defined(QMC_CUDA)
 #include "QMCHamiltonians/SkPot.h"
 #endif
 #include "OhmmsData/AttributeSet.h"
@@ -155,7 +155,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         addCoulombPotential(cur);
       }
-#if !defined(QMC_CUDA) && QMC_BUILD_LEVEL>2
+#if !defined(QMC_CUDA)
       else if (potType == "skpot")
       {
         SkPot* hs = new SkPot(*targetPtcl);
@@ -168,7 +168,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         addMPCPotential(cur);
       else if(potType == "pseudo")
         addPseudoPotential(cur);
-#if !defined(QMC_CUDA) && QMC_BUILD_LEVEL>2
+#if !defined(QMC_CUDA)
       else if(potType == "cpp")
       {
         addCorePolPotential(cur);

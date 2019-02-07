@@ -26,8 +26,8 @@
 /* building from Git repository or not */
 #cmakedefine IS_GIT_PROJECT  @IS_GIT_PROJECT@
 
-/* define QMC_BUILD_LEVEL */
-#cmakedefine QMC_BUILD_LEVEL @QMC_BUILD_LEVEL@
+/* define QMC_BUILD_SANDBOX_ONLY */
+#cmakedefine QMC_BUILD_SANDBOX_ONLY @QMC_BUILD_SANDBOX_ONLY@
 
 /* define PRINT_DEBUG */
 #cmakedefine PRINT_DEBUG @PRINT_DEBUG@
@@ -188,9 +188,9 @@
 /* Use SOA version of AA distance table */
 #cmakedefine ENABLE_SOA  @ENABLE_SOA@
 
-#if (__cplusplus >= 201103L)
+#if defined(__cplusplus)
   #if defined(__INTEL_COMPILER)
-    #if defined(__KNC__) || defined(__AVX512F__)
+    #if defined(__AVX512F__)
       #define QMC_CLINE 64
       #define QMC_ALIGNAS alignas(64)
       #define ASSUME_ALIGNED(x) __assume_aligned(x,64)
@@ -210,13 +210,13 @@
       #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,32)
     #endif
   #else
-   #define QMC_CLINE 32
-   #define QMC_ALIGNAS
-   #define ASSUME_ALIGNED(x)
+    #define QMC_CLINE 32
+    #define QMC_ALIGNAS alignas(32)
+    #define ASSUME_ALIGNED(x)
   #endif
 
-#else //capture both C or non-c++11
-  #if defined(__KNC__) || defined(__AVX512F__)
+#else //capture C
+  #if defined(__AVX512F__)
     #define QMC_CLINE 64
   #else
     #define QMC_CLINE 32

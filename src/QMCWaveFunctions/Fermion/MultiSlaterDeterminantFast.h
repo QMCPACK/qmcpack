@@ -87,6 +87,9 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P);
 
+  //builds orbital rotation parameters using MultiSlater member variables
+  void buildOptVariables();
+
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
   {
@@ -142,6 +145,8 @@ public:
 
   void testMSD(ParticleSet& P, int iat);
 
+  /// if true, the CI coefficients are optimized
+  bool CI_Optimizable;
   size_t NP;
   size_t nels_up,nels_dn;
   size_t FirstIndex_up;

@@ -41,12 +41,10 @@ struct BsplineReaderBase
   Communicate* myComm;
   ///mesh size
   TinyVector<int,3> MeshSize;
-  ///first index of the SPO set
-  int myFirstSPO;
-  ///number of orbitals to be created
-  int myNumOrbs;
   ///check the norm of orbitals
   bool checkNorm;
+  ///save spline coefficients to storage
+  bool saveSplineCoefs;
   ///map from spo index to band index
   std::vector<std::vector<int> > spo2band;
 

@@ -185,17 +185,19 @@ struct SplineAdoptorReader: public BsplineReaderBase
       if(foundspline)
       {
         foundspline=bspline->read_splines(h5f);
-        if(foundspline) app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;
+        if(foundspline)
+          app_log() << "  Successfully restored coefficients from " << splinefile
+                    << ". The reading time is " << now.elapsed()
+                    << " sec." << std::endl;
       }
       h5f.close();
     }
     myComm->bcast(foundspline);
     if(foundspline)
     {
-      app_log() << "Use existing bspline tables in " << splinefile << std::endl;
       now.restart();
       bspline->bcast_tables(myComm);
-      app_log() << "  SplineAdoptorReader bcast the full table " << now.elapsed() << " sec" << std::endl;
+      app_log() << "  SplineAdoptorReader bcast the full table " << now.elapsed() << " sec." << std::endl;
       app_log().flush();
     }
     else
@@ -230,7 +232,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       }
       else//why, don't know
         initialize_spline_psi_r(spin,bandgroup);
-      if(qmc_common.save_wfs && root)
+      if(saveSplineCoefs && root)
       {
         now.restart();
         hdf_archive h5f;
@@ -240,7 +242,9 @@ struct SplineAdoptorReader: public BsplineReaderBase
         h5f.write(sizeD,"sizeof");
         bspline->write_splines(h5f);
         h5f.close();
-        app_log() << "  SplineAdoptorReader dump " << now.elapsed() << " sec" << std::endl;
+        app_log() << "  Stored spline coefficients in " << splinefile
+                  << " for potential reuse. The writing time is " << now.elapsed()
+                  << " sec." << std::endl;
       }
     }
 
