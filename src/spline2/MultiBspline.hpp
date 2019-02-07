@@ -102,7 +102,7 @@ namespace qmcplusplus
       void create(GT& grid, BCT& bc, int num_splines)
       {
         if(getAlignedSize<T>(num_splines)!=num_splines)
-          throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!");
+          throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!\n");
         if(spline_m==nullptr)
         {
           typename bspline_traits<T,3>::BCType xBC, yBC, zBC;
@@ -136,9 +136,16 @@ namespace qmcplusplus
        * @param base_ number of bases
        */
       template<typename SingleSpline>
-      void copy_spline(SingleSpline* aSpline,int i, const int* offset_, const int* base_)
+      void copy_spline(SingleSpline* aSpline,int i)
       {
-        myAllocator.copy(aSpline,spline_m,i,offset_,base_);
+        if( aSpline->x_grid.num != spline_m->x_grid.num ||
+            aSpline->y_grid.num != spline_m->y_grid.num ||
+            aSpline->z_grid.num != spline_m->z_grid.num)
+          throw std::runtime_error("Cannot copy a single spline to MultiSpline with a different grid!\n");
+
+        const int BaseOffset[3] = {0, 0, 0};
+        const int BaseN[3] = {spline_m->x_grid.num+3, spline_m->y_grid.num+3, spline_m->z_grid.num+3};
+        myAllocator.copy(aSpline,spline_m,i,BaseOffset,BaseN);
       }
 
     };
@@ -169,7 +176,7 @@ namespace qmcplusplus
       void create(GT& grid, BCT& bc, int num_splines)
       {
         if(getAlignedSize<T>(num_splines)!=num_splines)
-          throw std::runtime_error("When creating the data space of MultiBspline1D, num_splines must be padded!");
+          throw std::runtime_error("When creating the data space of MultiBspline1D, num_splines must be padded!\n");
         spliner_type* temp_spline;
         temp_spline=einspline::create(temp_spline, grid, bc, num_splines);
         spline_m=*temp_spline;

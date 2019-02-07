@@ -59,10 +59,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   using BaseType::MakeTwoCopies;
   using BaseType::offset;
 
-  ///number of points of the original grid
-  int BaseN[3];
-  ///offset of the original grid, always 0
-  int BaseOffset[3];
   ///multi bspline set
   MultiBspline<ST>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
@@ -134,12 +130,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     SplineInst=new MultiBspline<ST>();
     SplineInst->create(xyz_g,xyz_bc,myV.size());
     MultiSpline=SplineInst->spline_m;
-    for(size_t i=0; i<D; ++i)
-    {
-      BaseOffset[i]=0;
-      BaseN[i]=xyz_g[i].num+3;
-    }
-
     app_log() << "MEMORY " << SplineInst->sizeInByte()/(1<<20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation"
               << std::endl;
@@ -165,8 +155,8 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
-    SplineInst->copy_spline(spline_r,2*ispline  ,BaseOffset, BaseN);
-    SplineInst->copy_spline(spline_i,2*ispline+1,BaseOffset, BaseN);
+    SplineInst->copy_spline(spline_r,2*ispline  );
+    SplineInst->copy_spline(spline_i,2*ispline+1);
   }
 
   bool read_splines(hdf_archive& h5f)

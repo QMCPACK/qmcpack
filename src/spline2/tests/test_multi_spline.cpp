@@ -189,11 +189,8 @@ void test_splines()
 
   UBspline_3d_d* aspline = einspline_create_UBspline_3d_d(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 
-  int BaseOffset[3] = {0, 0, 0};
-  int BaseN[3] = {N+3, N+3, N+3};
-
   for (int i = 0; i < num_splines; i++)
-    bs.copy_spline(aspline, i, BaseOffset, BaseN);
+    bs.copy_spline(aspline, i);
 
   einspline_free(aspline->coefs);
   free(aspline);
