@@ -35,6 +35,9 @@ namespace qmcplusplus
       typedef BCtype_s            BCType;
       typedef float real_type;
       typedef float value_type;
+      static const spline_code spcode = MULTI_U3D;
+      static const spline_code single_spcode = U3D;
+      static const type_code tcode = SINGLE_REAL;
     };
 
   template<>
@@ -45,6 +48,9 @@ namespace qmcplusplus
       typedef BCtype_d            BCType;
       typedef double real_type;
       typedef double value_type;
+      static const spline_code spcode = MULTI_U3D;
+      static const spline_code single_spcode = U3D;
+      static const type_code tcode = DOUBLE_REAL;
     };
 
   /** specialization for 1D float */

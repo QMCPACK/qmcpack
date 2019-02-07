@@ -64,7 +64,7 @@ namespace qmcplusplus
           xBC.rCode=bc[0].rCode; yBC.rCode=bc[1].rCode; zBC.rCode=bc[2].rCode;
           xBC.lVal=static_cast<T>(bc[0].lVal); yBC.lVal=static_cast<T>(bc[1].lVal); zBC.lVal=static_cast<T>(bc[2].lVal);
           xBC.rVal=static_cast<T>(bc[0].rVal); yBC.rVal=static_cast<T>(bc[1].rVal); zBC.rVal=static_cast<T>(bc[2].rVal);
-          spline_m=myAllocator.allocateMultiBspline(grid[0],grid[1],grid[2],xBC,yBC,zBC,num_splines);
+          spline_m=myAllocator.allocateMultiBspline<T>(grid[0],grid[1],grid[2],xBC,yBC,zBC,num_splines);
         }
       }
 

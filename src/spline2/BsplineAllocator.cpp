@@ -52,6 +52,7 @@ namespace qmcplusplus { namespace einspline {
   {
   }
 
+#if 0
   multi_UBspline_3d_s*
     BsplineAllocator::allocateMultiBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
         BCtype_s xBC, BCtype_s yBC, BCtype_s zBC, int num_splines)
@@ -65,7 +66,7 @@ namespace qmcplusplus { namespace einspline {
   {
     return einspline_create_multi_UBspline_3d_d(x_grid,y_grid,z_grid,xBC,yBC,zBC,num_splines);
   }
-
+#endif
   UBspline_3d_d* BsplineAllocator::allocateUBspline(Ugrid x_grid, Ugrid y_grid, Ugrid
       z_grid, BCtype_d xBC, BCtype_d yBC, BCtype_d zBC, double* data)
   {

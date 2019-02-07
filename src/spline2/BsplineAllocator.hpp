@@ -19,6 +19,7 @@
 #include <simd/simd.hpp>
 #include <spline2/bspline_traits.hpp>
 #include "spline2/einspline_allocator.h"
+#include "simd/allocator.hpp"
 
 namespace qmcplusplus { namespace einspline {
 
@@ -43,13 +44,23 @@ namespace qmcplusplus { namespace einspline {
       free(spline);
     }
 
-    ///allocate a single multi-bspline
-    multi_UBspline_3d_s* allocateMultiBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid, 
-        BCtype_s xBC, BCtype_s yBC, BCtype_s zBC, int num_splines);
+    ///allocate a multi-bspline structure
+    template<typename PRECISION, size_t ALIGN = QMC_CLINE>
+    typename bspline_traits<PRECISION,3>::SplineType*
+    allocateMultiBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
+                         typename bspline_traits<PRECISION,3>::BCType xBC,
+                         typename bspline_traits<PRECISION,3>::BCType yBC,
+                         typename bspline_traits<PRECISION,3>::BCType zBC,
+                         int num_splines);
 
-    ///allocate a double multi-bspline
-    multi_UBspline_3d_d* allocateMultiBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid, 
-        BCtype_d xBC, BCtype_d yBC, BCtype_d zBC, int num_splines);
+//    ///allocate a single-bspline structure
+//    template<typename PRECISION>
+//    bspline_traits<PRECISION,3>::SplineType
+//    UBspline_3d_s* allocateUBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
+//        bspline_traits<PRECISION,3>::BCType xBC,
+//        bspline_traits<PRECISION,3>::BCType yBC,
+//        bspline_traits<PRECISION,3>::BCType zBC,
+//        PRECISION* data=nullptr);
 
     ///allocate a single bspline
     UBspline_3d_s* allocateUBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid, 
@@ -69,6 +80,65 @@ namespace qmcplusplus { namespace einspline {
     template<typename UBT, typename MBT>
       void copy(UBT* single, MBT* multi, int i,  const int* offset, const int* N);
   };
+
+  template<typename PRECISION, size_t ALIGN>
+    typename bspline_traits<PRECISION,3>::SplineType*
+    BsplineAllocator::allocateMultiBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
+                         typename bspline_traits<PRECISION,3>::BCType xBC,
+                         typename bspline_traits<PRECISION,3>::BCType yBC,
+                         typename bspline_traits<PRECISION,3>::BCType zBC,
+                         int num_splines)
+    {
+      using real_type = typename bspline_traits<PRECISION,3>::real_type;
+      using SplineType = typename bspline_traits<PRECISION,3>::SplineType;
+      // Create new spline
+      SplineType* restrict spline = (SplineType*) malloc (sizeof(SplineType));
+      spline->spcode = bspline_traits<PRECISION,3>::spcode;
+      spline->tcode  = bspline_traits<PRECISION,3>::tcode;
+      spline->xBC = xBC;
+      spline->yBC = yBC;
+      spline->zBC = zBC;
+      spline->num_splines = num_splines;
+
+      // Setup internal variables
+      int Mx = x_grid.num;  int My = y_grid.num; int Mz = z_grid.num;
+      int Nx, Ny, Nz;
+
+      if (xBC.lCode == PERIODIC || xBC.lCode == ANTIPERIODIC)
+        Nx = Mx+3;
+      else
+        Nx = Mx+2;
+      x_grid.delta = (x_grid.end - x_grid.start)/(double)(Nx-3);
+      x_grid.delta_inv = 1.0/x_grid.delta;
+      spline->x_grid   = x_grid;
+
+      if (yBC.lCode == PERIODIC || yBC.lCode == ANTIPERIODIC)
+        Ny = My+3;
+      else
+        Ny = My+2;
+      y_grid.delta = (y_grid.end - y_grid.start)/(double)(Ny-3);
+      y_grid.delta_inv = 1.0/y_grid.delta;
+      spline->y_grid   = y_grid;
+
+      if (zBC.lCode == PERIODIC || zBC.lCode == ANTIPERIODIC)
+        Nz = Mz+3;
+      else
+        Nz = Mz+2;
+      z_grid.delta = (z_grid.end - z_grid.start)/(double)(Nz-3);
+      z_grid.delta_inv = 1.0/z_grid.delta;
+      spline->z_grid   = z_grid;
+
+      const int N = getAlignedSize<real_type, ALIGN>(num_splines);
+
+      spline->x_stride = (size_t)Ny*(size_t)Nz*(size_t)N;
+      spline->y_stride = Nz*N;
+      spline->z_stride = N;
+
+      spline->coefs_size=(size_t)Nx*spline->x_stride;
+      spline->coefs=(real_type*)einspline_alloc(sizeof(real_type)*spline->coefs_size,ALIGN);
+
+      return spline;
+    }
 
   template<typename UBT, typename MBT>
     void BsplineAllocator::copy(UBT* single, MBT* multi, int i,  const int* offset, const int* N)
