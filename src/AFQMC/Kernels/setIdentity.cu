@@ -58,6 +58,7 @@ void setIdentity(int n, double * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,xgrid_dim); 
   kernel_setIdentity<<<grid_dim, block_dim>>>(n,A,lda);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -68,6 +69,7 @@ void setIdentity(int n, float * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,xgrid_dim);
   kernel_setIdentity<<<grid_dim, block_dim>>>(n,A,lda);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -78,6 +80,7 @@ void setIdentity(int n, std::complex<double> * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,xgrid_dim);
   kernel_setIdentity<<<grid_dim, block_dim>>>(n,reinterpret_cast<thrust::complex<double> *>(A),lda);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -88,6 +91,7 @@ void setIdentity(int n, std::complex<float> * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,xgrid_dim);
   kernel_setIdentity<<<grid_dim, block_dim>>>(n,reinterpret_cast<thrust::complex<float> *>(A),lda);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 

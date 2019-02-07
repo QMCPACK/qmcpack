@@ -102,6 +102,7 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA,
             csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(conj(M[j][i])));
     }
   }
+  csr_mat.remove_empty_spaces();
   comm.barrier();
 
   return csr_mat;

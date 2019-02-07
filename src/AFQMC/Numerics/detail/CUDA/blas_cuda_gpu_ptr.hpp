@@ -217,13 +217,13 @@ namespace qmc_cuda
   }
 
   template<typename T>
-  inline static auto sum(int n, cuda_gpu_ptr<T const> x, int incx) 
+  inline static auto sum(int n, cuda_gpu_ptr<T> x, int incx) 
   {
     return kernels::sum(n,to_address(x),incx);
   }
 
   template<typename T>
-  inline static auto sum(int m, int n, cuda_gpu_ptr<T const> A, int lda)
+  inline static auto sum(int m, int n, cuda_gpu_ptr<T> A, int lda)
   {
     return kernels::sum(m,n,to_address(A),lda);
   }

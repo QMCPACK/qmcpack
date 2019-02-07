@@ -767,16 +767,6 @@ Timers[Timer_G6]->start();
       term_by_term_matrix_vector(ma::TOp_DIV,1,ikN-ik0,G.size(1),
                                  make_device_ptr(G[ik0].origin()),G.stride(0),
                                  make_device_ptr(Ov.origin()),Ov.stride(0));
-/*
-      auto Ov_ = Ov.origin();  
-      const size_t nw_ = G.size(1);  
-      for(int ik=0; ik<G.size(0); ++ik)
-        if( ik%TG.TG_local().size() == TG.TG_local().rank() ) {
-          auto Gik = G[ik].origin();  
-          for(size_t iw=0; iw<nw_; ++iw)
-            Gik[iw] /= Ov_[iw];
-        }
-*/
     }
     TG.local_barrier();
 Timers[Timer_G6]->stop();
@@ -808,13 +798,11 @@ Timers[Timer_G6]->stop();
     assert(Ov.size() >= nw);  
     fill_n(Ov.origin(),nw,0);
     if(ovlp2.size(0) < 2*nbatch__) ovlp2.reextent(iextensions<1u>{2*nbatch__});
-    {
-      fill_n(ovlp2.origin(),ovlp2.num_elements(),ComplexType(0.0));
-      // need strided fill_n????
-      if(G.size(1) != G.stride(0))
-        APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n"); 
-      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
-    }
+    fill_n(ovlp2.origin(),ovlp2.num_elements(),ComplexType(0.0));
+    // need strided fill_n????
+    if(G.size(1) != G.stride(0))
+      APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n"); 
+    fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     stdCVector hvec(iextensions<1u>{2*nbatch__});
     TG.local_barrier();
     auto Gsize = size_t(dm_size(not compact));

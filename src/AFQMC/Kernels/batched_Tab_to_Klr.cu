@@ -82,7 +82,8 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(Kl),
                                    reinterpret_cast<thrust::complex<double> *>(Kr));
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"batched_Tab_to_Klr");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"batched_Tab_to_Klr");
 }
 
 

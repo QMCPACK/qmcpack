@@ -146,7 +146,8 @@ void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
                         reinterpret_cast<thrust::complex<double> *>(HW),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<double> *>(X));
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"construct_X");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"construct_X");
 }
 
 }

@@ -110,6 +110,30 @@ __global__ void kernel_determinant_from_geqrf(int N, thrust::complex<T> *m, int 
 }
 
 template<typename T>
+__global__ void kernel_determinant_from_geqrf(int N, T *m, int lda, T* buff) 
+{
+   for(int ip=threadIdx.x; ip<N; ip+=blockDim.x)
+   {
+     if (m[ip*lda+ip] < 0)
+       buff[ip]=T(-1.0);
+     else
+       buff[ip]=T(1.0);
+   }
+}
+
+template<typename T>
+__global__ void kernel_determinant_from_geqrf(int N, thrust::complex<T> *m, int lda, thrust::complex<T>* buff) 
+{
+   for(int ip=threadIdx.x; ip<N; ip+=blockDim.x)
+   {
+     if (m[ip*lda+ip].real() < 0)
+       buff[ip]=thrust::complex<T>(-1.0);
+     else
+       buff[ip]=thrust::complex<T>(1.0);
+   }
+}
+
+template<typename T>
 __global__ void kernel_scale_columns(int n, int m, T* A, int lda, T* scl) {
 
    for(int ip=threadIdx.x; ip<n; ip+=blockDim.x)
@@ -120,6 +144,7 @@ __global__ void kernel_scale_columns(int n, int m, T* A, int lda, T* scl) {
 void determinant_from_getrf_gpu(int N, double *m, int lda, int *piv, double* res)
 {
   kernel_determinant_from_getrf<<<1,256>>>(N,m,lda,piv,res);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -128,12 +153,14 @@ void determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *pi
   kernel_determinant_from_getrf<<<1,256>>>(N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,piv,
                                     reinterpret_cast<thrust::complex<double> *>(res) );
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void determinant_from_geqrf_gpu(int N, double *m, int lda, double *buff, double* res)
 {
   kernel_determinant_from_geqrf<<<1,256>>>(N,m,lda,buff,res);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -143,13 +170,32 @@ void determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::co
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,
                                     reinterpret_cast<thrust::complex<double> *>(buff), 
                                     reinterpret_cast<thrust::complex<double> *>(res) );
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
+
+void determinant_from_geqrf_gpu(int N, double *m, int lda, double *buff)
+{
+  kernel_determinant_from_geqrf<<<1,256>>>(N,m,lda,buff);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::complex<double> *buff)
+{
+  kernel_determinant_from_geqrf<<<1,256>>>(N,
+                                    reinterpret_cast<thrust::complex<double> *>(m),lda,
+                                    reinterpret_cast<thrust::complex<double> *>(buff));
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
 
 double determinant_from_getrf_gpu(int N, double *m, int lda, int *piv)
 {
   thrust::device_ptr<double> d_ptr = thrust::device_malloc<double>(1);
   kernel_determinant_from_getrf<<<1,256>>>(N,m,lda,piv,thrust::raw_pointer_cast(d_ptr));
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
   double res = *d_ptr;
   thrust::device_free(d_ptr);
@@ -162,23 +208,30 @@ std::complex<double> determinant_from_getrf_gpu(int N, std::complex<double> *m, 
   kernel_determinant_from_getrf<<<1,256>>>(N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,piv,
                                     thrust::raw_pointer_cast(d_ptr) );
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
   std::complex<double> res;
-  cudaMemcpy(std::addressof(res),thrust::raw_pointer_cast(d_ptr),
-                sizeof(std::complex<double>),cudaMemcpyDeviceToHost);
+  qmc_cuda::cuda_check(cudaMemcpy(std::addressof(res),thrust::raw_pointer_cast(d_ptr),
+                sizeof(std::complex<double>),cudaMemcpyDeviceToHost));
   thrust::device_free(d_ptr);
   return res;
 }
 
 void scale_columns(int n, int m, double* A, int lda, double* scl)
 {
-  kernel_scale_columns<<<32,32>>>(n,m,A,lda,scl);
+  int xblock_dim = 32;
+  dim3 block_dim(xblock_dim,xblock_dim,1);
+  kernel_scale_columns<<<1,block_dim>>>(n,m,A,lda,scl);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void scale_columns(int n, int m, std::complex<double>* A, int lda, std::complex<double>* scl)
 {
-  kernel_scale_columns<<<32,32>>>(n,m,reinterpret_cast<thrust::complex<double> *>(A),lda,
+  int xblock_dim = 32;
+  dim3 block_dim(xblock_dim,xblock_dim,1);
+  kernel_scale_columns<<<1,block_dim>>>(n,m,reinterpret_cast<thrust::complex<double> *>(A),lda,
                                     reinterpret_cast<thrust::complex<double> *>(scl) );
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 

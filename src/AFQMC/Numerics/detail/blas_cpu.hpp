@@ -44,6 +44,7 @@ inline CBLAS_TRANSPOSE cblas_operation(char Op) {
 }
 #endif
 
+
 namespace ma 
 {
 
@@ -527,7 +528,7 @@ namespace ma
     // Check for in-place modes
     // I1. A==C, lda==ldc, Atrans=='N'
     if( std::distance<T const*>(A,C) == 0 ) {
-      if( (lda != ldc) || (Atrans != 'N') || (Atrans != 'n') ) 
+      if( (lda != ldc) || ((Atrans != 'N') && (Atrans != 'n')) ) 
         throw std::runtime_error("Error: In-place mode requires Op(A)='N' and lda=ldc.");
       if( std::distance<T const*>(B,C) > 0 ) {
         if(Btrans == 'N' || Btrans == 'n')
@@ -559,7 +560,7 @@ namespace ma
     }
     // I2.  B==C, ldb==ldc, Btrans=='N'
     if( std::distance<T const*>(B,C) == 0 ) {
-      if( (ldb != ldc) || (Btrans != 'N') || (Btrans != 'n') )
+      if( (ldb != ldc) || ((Btrans != 'N') && (Btrans != 'n')) )
         throw std::runtime_error("Error: In-place mode requires Op(B)='N' and ldb=ldc.");
       if( std::distance<T const*>(A,C) > 0 ) {
         if(Atrans == 'N' || Atrans == 'n')
@@ -901,5 +902,20 @@ namespace ma
   }
 
 }
+
+#include "mpi3/shared_window.hpp"
+// temporary
+namespace boost {
+namespace mpi3 {
+namespace intranode {
+template<typename T, typename Q>
+auto dot(int const n, array_ptr<T> x, int const incx, array_ptr<Q> y, int const incy)
+{
+  using ma::dot;
+  return dot(n,to_address(x),incx,to_address(y),incy);
+}
+} // intranode
+} // mpi3
+} // boost
 
 #endif

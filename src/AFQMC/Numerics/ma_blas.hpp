@@ -59,8 +59,7 @@ template<class MultiArray1Dx,
 typename std::decay<MultiArray1Dx>::type::element
 dot(MultiArray1Dx&& x, MultiArray1Dy&& y){
         assert(x.size() == y.size());
-// FIX FIX FIX
-        return dot(x.size(), to_address(x.origin()), x.stride(0), to_address(y.origin()), y.stride(0));
+        return dot(x.size(), x.origin(), x.stride(0), y.origin(), y.stride(0));
 }
 
 template<class T, class MultiArray1D, typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type >

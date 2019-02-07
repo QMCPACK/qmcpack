@@ -65,6 +65,17 @@ namespace ma
   }
 
   template<class T>
+  inline void determinant_from_geqrf(int n, T* M, int lda, T* buff)
+  {
+    for (int i = 0; i < n; i++) {
+      if (real(M[i*lda+i]) < 0)
+        buff[i]=T(-1.0);
+      else
+        buff[i]=T(1.0);
+    }
+  }
+
+  template<class T>
   inline void scale_columns(int n, int m, T* A, int lda, T* scl)
   {
     for (int i = 0; i < n; i++) 
@@ -93,6 +104,12 @@ namespace qmc_cuda{
   inline void determinant_from_geqrf(int n, cuda_gpu_ptr<T> M, int lda, cuda_gpu_ptr<T> buff, T* res)
   {
     return kernels::determinant_from_geqrf_gpu(n,to_address(M),lda,to_address(buff),res);
+  }
+
+  template<class T>
+  inline void determinant_from_geqrf(int n, cuda_gpu_ptr<T> M, int lda, cuda_gpu_ptr<T> buff)
+  {
+    return kernels::determinant_from_geqrf_gpu(n,to_address(M),lda,to_address(buff));
   }
 
   template<class T>

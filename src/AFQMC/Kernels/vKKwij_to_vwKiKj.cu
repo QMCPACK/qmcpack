@@ -135,7 +135,8 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
   dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,nkpts,nwalk);
   kernel_vKKwij_to_vwKiKj<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,kk,nmo,nmo0,A,B);
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"vKKwij_to_vwKiKj");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"vKKwij_to_vwKiKj");
 }
 
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -146,7 +147,8 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
   dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,nkpts,nwalk);
   kernel_vKKwij_to_vwKiKj<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,kk,nmo,nmo0,A,B);
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"vKKwij_to_vwKiKj");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"vKKwij_to_vwKiKj");
 }
 
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -157,7 +159,8 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
   dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,nkpts,nwalk);
   kernel_vKKwij_to_vwKiKj<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,kk,nmo,nmo0,A,B);
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"vKKwij_to_vwKiKj");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"vKKwij_to_vwKiKj");
 }
 
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -170,7 +173,8 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
   kernel_vKKwij_to_vwKiKj<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,kk,nmo,nmo0,
                 reinterpret_cast<thrust::complex<double> const*>(A),
                 reinterpret_cast<thrust::complex<double> *>(B));
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"vKKwij_to_vwKiKj");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"vKKwij_to_vwKiKj");
 }
 
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -183,7 +187,8 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
   kernel_vKKwij_to_vwKiKj<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,kk,nmo,nmo0,
                 reinterpret_cast<thrust::complex<float> const*>(A),
                 reinterpret_cast<thrust::complex<float> *>(B));
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"vKKwij_to_vwKiKj");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"vKKwij_to_vwKiKj");
 }
 
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -196,7 +201,8 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
   kernel_vKKwij_to_vwKiKj<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,kk,nmo,nmo0,
                 reinterpret_cast<thrust::complex<float> const*>(A),
                 reinterpret_cast<thrust::complex<double> *>(B));
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"vKKwij_to_vwKiKj");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"vKKwij_to_vwKiKj");
 }
 
 

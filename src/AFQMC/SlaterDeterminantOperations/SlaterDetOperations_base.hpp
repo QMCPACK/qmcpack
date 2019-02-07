@@ -233,19 +233,16 @@ class SlaterDetOperations_base
     template<class Mat>
     void Orthogonalize(Mat&& A, T* res=nullptr) {
 #ifdef QMC_CUDA
-// doing this explicitly for now, since there is no lgf or glq in cuSOlverDn anyway
       // QR on the transpose
       TMatrix_ref AT(TMat_MM.data(), {A.size(1),A.size(0)});
       ma::transpose(A,AT);   
       ma::geqrf(AT,TAU,WORK);
-// check if determinant_from_geqrf is correct!!! May need conjugation!!!
       using ma::determinant_from_geqrf;
       using ma::scale_columns;  
       if(res != nullptr)
-        determinant_from_geqrf(AT.size(1),AT.origin(),AT.stride(0),TMat_NM.origin(),res);
+        determinant_from_geqrf(AT.size(0),AT.origin(),AT.stride(0),TMat_NM.origin(),res);
       else {
-        T res_;
-        determinant_from_geqrf(AT.size(1),AT.origin(),AT.stride(0),TMat_NM.origin(),&res_);
+        determinant_from_geqrf(AT.size(0),AT.origin(),AT.stride(0),TMat_NM.origin());
       }
       ma::gqr(AT,TAU,WORK);
       ma::transpose(AT,A);   
@@ -260,6 +257,13 @@ class SlaterDetOperations_base
           else 
             IWORK[i]=1; 
           *res *= T(IWORK[i])*A[i][i];
+        }
+      } else {
+        for (int i = 0; i < A.size(1); i++) { 
+          if (real(A[i][i]) < 0) 
+            IWORK[i]=-1; 
+          else 
+            IWORK[i]=1; 
         }
       }
       ma::glq(std::forward<Mat>(A),TAU,WORK);

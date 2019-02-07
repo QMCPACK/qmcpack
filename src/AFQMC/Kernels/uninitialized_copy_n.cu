@@ -36,18 +36,21 @@ __global__ void kernel_uninitialized_copy_n(Size N, T const* x, Size incx, T * a
 void uninitialized_copy_n(int N, double const* first, int incx, double * array, int incy)
 {
   kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void uninitialized_copy_n(int N, std::complex<double> const* first, int incx, std::complex<double> * array, int incy)
 {
   kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void uninitialized_copy_n(int N, int const* first, int incx, int * array, int incy)
 {
   kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -55,18 +58,21 @@ void uninitialized_copy_n(int N, int const* first, int incx, int * array, int in
 void uninitialized_copy_n(long N, double const* first, long incx, double * array, long incy)
 {
   kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void uninitialized_copy_n(long N, std::complex<double> const* first, long incx, std::complex<double> * array, long incy)
 {
   kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void uninitialized_copy_n(long N, int const* first, long incx, int * array, long incy)
 {
   kernel_uninitialized_copy_n<<<1,256>>>(N,first,incx,array,incy);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 

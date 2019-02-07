@@ -79,6 +79,7 @@ void batchedDot(int m, int n, double const alpha, double const* A, int lda,
                               double const beta, double *y, int incy) 
 {
   kernel_dot<<<m,DOT_BLOCK_SIZE>>>(n,alpha,A,lda,B,ldb,beta,y,incy);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -87,6 +88,7 @@ void batchedDot(int m, int n, float const alpha, float const* A, int lda,
                               float const beta, float *y, int incy)
 {
   kernel_dot<<<m,DOT_BLOCK_SIZE>>>(n,alpha,A,lda,B,ldb,beta,y,incy);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -100,6 +102,7 @@ void batchedDot(int m, int n, std::complex<double> const alpha, std::complex<dou
                                    reinterpret_cast<thrust::complex<double> const*>(B),ldb,
                                    static_cast<thrust::complex<double> const>(beta),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -113,6 +116,7 @@ void batchedDot(int m, int n, std::complex<float> const alpha, std::complex<floa
                                    reinterpret_cast<thrust::complex<float> const*>(B),ldb,
                                    static_cast<thrust::complex<float> const>(beta),
                                    reinterpret_cast<thrust::complex<float> *>(y),incy);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 

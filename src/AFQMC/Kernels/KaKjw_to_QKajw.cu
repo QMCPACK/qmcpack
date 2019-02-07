@@ -88,11 +88,13 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                      double const* A, double * B)
 {
   int xblock_dim = 16;
-  dim3 block_dim(xblock_dim,nwalk,1);
+  int yblock_dim = std::min(nwalk,32);
+  dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,nkpts,1);
   kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,A,B);
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"KaKjw_to_QKajw");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -101,11 +103,13 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                      float const* A, float * B)
 {
   int xblock_dim = 16;
-  dim3 block_dim(xblock_dim,nwalk,1);
+  int yblock_dim = std::min(nwalk,32);
+  dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,nkpts,1);
   kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,A,B);
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"KaKjw_to_QKajw");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -114,11 +118,13 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                      double const* A, float * B)
 {
   int xblock_dim = 16;
-  dim3 block_dim(xblock_dim,nwalk,1);
+  int yblock_dim = std::min(nwalk,32);
+  dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,nkpts,1);
   kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,A,B);
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"KaKjw_to_QKajw");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -127,13 +133,15 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                      std::complex<float> const* A, std::complex<float> * B)
 {
   int xblock_dim = 16;
-  dim3 block_dim(xblock_dim,nwalk,1);
+  int yblock_dim = std::min(nwalk,32);
+  dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,nkpts,1);
   kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,
                 reinterpret_cast<thrust::complex<float> const*>(A),
                 reinterpret_cast<thrust::complex<float> *>(B));
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"KaKjw_to_QKajw");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -142,13 +150,15 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                      std::complex<double> const* A, std::complex<double> * B)
 {
   int xblock_dim = 16;
-  dim3 block_dim(xblock_dim,nwalk,1);
+  int yblock_dim = std::min(nwalk,32);
+  dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,nkpts,1);
   kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,
                 reinterpret_cast<thrust::complex<double> const*>(A),
                 reinterpret_cast<thrust::complex<double> *>(B));
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"KaKjw_to_QKajw");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -157,13 +167,15 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                      std::complex<double> const* A, std::complex<float> * B)
 {
   int xblock_dim = 16;
-  dim3 block_dim(xblock_dim,nwalk,1);
+  int yblock_dim = std::min(nwalk,32);
+  dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,nkpts,1);
   kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,
                 reinterpret_cast<thrust::complex<double> const*>(A),
                 reinterpret_cast<thrust::complex<float> *>(B));
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"KaKjw_to_QKajw");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 }

@@ -89,6 +89,7 @@ void adotpby(int N, double const alpha, double const* x, int const incx,
                     double const beta, double* res) 
 {
   kernel_adotpby<<<1,256>>>(N,alpha,x,incx,y,incy,beta,res);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -103,6 +104,7 @@ void adotpby(int N, std::complex<double> const alpha,
                             reinterpret_cast<thrust::complex<double> const*>(y),incy,
                             static_cast<thrust::complex<double> const>(beta),
                             reinterpret_cast<thrust::complex<double> *>(res));
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -111,6 +113,7 @@ void adotpby(int N, float const alpha, float const* x, int const incx,
                     float const beta, float* res)
 {
   kernel_adotpby<<<1,256>>>(N,alpha,x,incx,y,incy,beta,res);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -125,6 +128,7 @@ void adotpby(int N, std::complex<float> const alpha,
                             reinterpret_cast<thrust::complex<float> const*>(y),incy,
                             static_cast<thrust::complex<float> const>(beta),
                             reinterpret_cast<thrust::complex<float> *>(res));
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -133,6 +137,7 @@ void adotpby(int N, float const alpha, float const* x, int const incx,
                     double const beta, double* res)
 {
   kernel_adotpby<<<1,256>>>(N,alpha,x,incx,y,incy,beta,res);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -147,6 +152,7 @@ void adotpby(int N, std::complex<float> const alpha,
                             reinterpret_cast<thrust::complex<float> const*>(y),incy,
                             static_cast<thrust::complex<double> const>(beta),
                             reinterpret_cast<thrust::complex<double> *>(res));
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 

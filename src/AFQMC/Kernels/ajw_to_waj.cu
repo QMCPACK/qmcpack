@@ -64,6 +64,7 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
                 double * B) 
 {
   kernel_ajw_to_waj<<<na,128>>>(na,nj,nw,inca,A,B);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -72,6 +73,7 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
                 float * B)
 {
   kernel_ajw_to_waj<<<na,128>>>(na,nj,nw,inca,A,B);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -82,6 +84,7 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
   kernel_ajw_to_waj<<<na,128>>>(na,nj,nw,inca,
                 reinterpret_cast<thrust::complex<double> const*>(A),
                 reinterpret_cast<thrust::complex<double> *>(B));
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -92,6 +95,7 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
   kernel_ajw_to_waj<<<na,128>>>(na,nj,nw,inca,
                 reinterpret_cast<thrust::complex<float> const*>(A),
                 reinterpret_cast<thrust::complex<float> *>(B));
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 

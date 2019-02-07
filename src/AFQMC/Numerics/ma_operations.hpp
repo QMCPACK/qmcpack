@@ -167,17 +167,6 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
             assert(arg(A).size(1) == std::forward<MultiArray1DC>(C).size(0));
         }
 
-/*
-        csrmv( op_tag<SparseMatrixA>::value,
-            arg(A).size(0), arg(A).size(1),
-            elementC(alpha), "GxxCxx",
-            to_address(arg(A).non_zero_values_data()),
-            to_address(arg(A).non_zero_indices2_data()),
-            to_address(arg(A).pointers_begin()),
-            to_address(arg(A).pointers_end()),
-            to_address(arg(B).origin()), elementC(beta),
-            to_address(std::forward<MultiArray1DC>(C).origin()));
-*/
         csrmv( op_tag<SparseMatrixA>::value,
             arg(A).size(0), arg(A).size(1),
             elementC(alpha), "GxxCxx",
@@ -252,19 +241,6 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
             assert(arg(B).size(1) == std::forward<MultiArray2DC>(C).size(1));
         }        
 
-/*
-        csrmm( op_tag<SparseMatrixA>::value,
-            arg(A).size(0), arg(B).size(1), arg(A).size(1),
-            alpha, "GxxCxx",
-            to_address((arg(A).non_zero_values_data())) ,
-            to_address((arg(A).non_zero_indices2_data())),
-            to_address((arg(A).pointers_begin())),
-            to_address((arg(A).pointers_end())),
-            to_address(arg(B).origin()), arg(B).stride(0),
-            beta,
-            to_address(std::forward<MultiArray2DC>(C).origin()),
-            std::forward<MultiArray2DC>(C).stride(0));
-*/
         csrmm( op_tag<SparseMatrixA>::value, 
             arg(A).size(0), arg(B).size(1), arg(A).size(1), 
             elementC(alpha), "GxxCxx", 

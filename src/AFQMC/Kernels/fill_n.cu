@@ -38,26 +38,31 @@ __global__ void kernel_fill_n(Size N, T* x, int incx, T const a)
 void fill_n(int * first, int N, int incx, int const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(float * first, int N, int incx, float const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(double * first, int N, int incx, double const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(std::complex<float> * first, int N, int incx, std::complex<float> const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(std::complex<double> * first, int N, int stride, std::complex<double> const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -65,26 +70,31 @@ void fill_n(std::complex<double> * first, int N, int stride, std::complex<double
 void fill_n(int * first, int N, int const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(float * first, int N, float const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(double * first, int N, double const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(std::complex<float> * first, int N, std::complex<float> const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(std::complex<double> * first, int N, std::complex<double> const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 

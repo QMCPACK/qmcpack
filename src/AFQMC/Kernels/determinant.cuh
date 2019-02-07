@@ -30,6 +30,9 @@ void determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *pi
 void determinant_from_geqrf_gpu(int N, double *m, int lda, double *piv, std::complex<double>* res);
 void determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::complex<double> *piv, std::complex<double>* res);
 
+void determinant_from_geqrf_gpu(int N, double *m, int lda, double *piv);
+void determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::complex<double> *piv);
+
 void scale_columns(int n, int m, double* A, int lda, double* scl);
 void scale_columns(int n, int m, std::complex<double>* A, int lda, std::complex<double>* scl);
 

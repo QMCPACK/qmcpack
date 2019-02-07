@@ -104,6 +104,8 @@ namespace qmc_cuda {
   {
     if(cudaSuccess != sucess) {
       std::cerr<<message <<std::endl;
+      std::cerr<<" cudaGetErrorName: " <<cudaGetErrorName(sucess) <<std::endl;
+      std::cerr<<" cudaGetErrorString: " <<cudaGetErrorString(sucess) <<std::endl;
       std::cerr.flush();
       throw std::runtime_error(" Error code returned by cuda. \n");
     }

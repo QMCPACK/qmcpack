@@ -36,6 +36,7 @@ void zero_complex_part(int n, std::complex<double> * x)
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_zero_complex_part<<<grid_dim, block_dim>>>(n,reinterpret_cast<thrust::complex<double>*>(x));
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
@@ -44,6 +45,7 @@ void zero_complex_part(int n, std::complex<float> * x)
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_zero_complex_part<<<grid_dim, block_dim>>>(n,reinterpret_cast<thrust::complex<float>*>(x));
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 

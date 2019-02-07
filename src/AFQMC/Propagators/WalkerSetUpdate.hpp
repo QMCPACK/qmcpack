@@ -122,7 +122,7 @@ void hybrid_walker_update(Wlk&& w, RealType dt, bool apply_constrain, bool imp_s
                                  Eshift-std::sqrt(2.0/dt) ),
                        eloc.imag());
     }     
-
+//#define __AFQMC_DEBUG_VERBOSE__
 #if defined(__AFQMC_DEBUG_VERBOSE__)
 std::cout<<" update: " 
 <<"    eloc:          " <<eloc <<"\n" 

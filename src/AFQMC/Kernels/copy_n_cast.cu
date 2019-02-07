@@ -44,6 +44,7 @@ void copy_n_cast(double const* A, int n, float* B)
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_copy_n_cast<<<grid_dim, block_dim>>>(A,n,B);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void copy_n_cast(float const* A, int n, double* B)
@@ -51,6 +52,7 @@ void copy_n_cast(float const* A, int n, double* B)
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_copy_n_cast<<<grid_dim, block_dim>>>(A,n,B);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void copy_n_cast(std::complex<double> const* A, int n, std::complex<float>* B)
@@ -59,6 +61,7 @@ void copy_n_cast(std::complex<double> const* A, int n, std::complex<float>* B)
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_copy_n_cast<<<grid_dim, block_dim>>>(reinterpret_cast<thrust::complex<double> const*>(A),n,
                                               reinterpret_cast<thrust::complex<float> *>(B));
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void copy_n_cast(std::complex<float> const* A, int n, std::complex<double>* B)
@@ -67,6 +70,7 @@ void copy_n_cast(std::complex<float> const* A, int n, std::complex<double>* B)
   int grid_dim = (n + block_dim - 1)/block_dim;
   kernel_copy_n_cast<<<grid_dim, block_dim>>>(reinterpret_cast<thrust::complex<float> const*>(A),n,
                                               reinterpret_cast<thrust::complex<double> *>(B));
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 

@@ -123,6 +123,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
   AFQMCTimers[G_for_vbias_timer]->start();
   wfn.MixedDensityMatrix_for_vbias(wset,G);
   AFQMCTimers[G_for_vbias_timer]->stop();
+//std::cout<<" G: " <<ma::dot(G(G.extension(0),0),G(G.extension(0),0)) <<std::endl;
 
   // 2. Calculate vbias for initial configuration
   AFQMCTimers[vbias_timer]->start();
@@ -132,6 +133,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     wfn.vbias(G,vbias,sqrtdt);
   }
   AFQMCTimers[vbias_timer]->stop();
+//std::cout<<" vbias: " <<ma::dot(vbias(vbias.extension(0),0),vbias(vbias.extension(0),0)) <<std::endl;
 
   // 3. Assemble X(nCV,nsteps,nwalk)
   AFQMCTimers[assemble_X_timer]->start();
@@ -143,11 +145,13 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
                                         hybrid_weight.num_elements(),std::plus<>());  
   }  
   AFQMCTimers[assemble_X_timer]->stop();
+//std::cout<<" X: " <<ma::dot(X(X.extension(0),0),X(X.extension(0),0)) <<std::endl;
 
   // 4. Calculate vHS(M*M,nsteps,nwalk)/vHS(nsteps,nwalk,M*M)
   AFQMCTimers[vHS_timer]->start();
   wfn.vHS(X,vHS,sqrtdt);
   AFQMCTimers[vHS_timer]->stop();
+//std::cout<<" vHS: " <<ma::dot(vHS[0],vHS[0]) <<"\n\n" <<std::endl;
 
   int nx = 1;
   if(walker_type == COLLINEAR) nx=2;
@@ -218,6 +222,7 @@ void AFQMCBasePropagator::apply_propagators(WSet& wset, int ni, int tk0, int tkN
 {  
   int nwalk = wset.size();
   auto walker_type = wset.getWalkerType();
+
   if(transposed_vHS_) {
     // vHS3D[nstep*nwalk][M][M]
     if(walker_type == COLLINEAR) {

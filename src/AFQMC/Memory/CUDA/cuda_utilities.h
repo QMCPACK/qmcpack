@@ -43,6 +43,7 @@ namespace qmc_cuda {
   extern curandGenerator_t afqmc_curand_generator;
   extern cusparseMatDescr_t afqmc_cusparse_matrix_descr;
 
+  void cuda_check_error();
   void cuda_check(cudaError_t sucess, std::string message="");
   void cublas_check(cublasStatus_t sucess, std::string message="");
   void cusparse_check(cusparseStatus_t sucess, std::string message="");

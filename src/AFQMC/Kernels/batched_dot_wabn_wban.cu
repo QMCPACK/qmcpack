@@ -83,7 +83,8 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                                    reinterpret_cast<thrust::complex<double> const*>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"batched_dot_wabn_wban");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"batched_dot_wabn_wban");
 }
 
 void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol, 
@@ -96,7 +97,8 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                                    reinterpret_cast<thrust::complex<float> const*>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(y),incy);
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"batched_dot_wabn_wban");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"batched_dot_wabn_wban");
 }
 
 void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol, 
@@ -109,7 +111,8 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                                    reinterpret_cast<thrust::complex<float> const*>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"batched_dot_wabn_wban");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"batched_dot_wabn_wban");
 }
 
 

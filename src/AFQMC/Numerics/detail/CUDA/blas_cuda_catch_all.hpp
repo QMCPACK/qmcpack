@@ -40,6 +40,8 @@ namespace qmc_cuda
   {
     print_stacktrace
     throw std::runtime_error("Error: Calling qmc_cuda::dot catch all."); 
+    using element = typename std::decay<ptrA>::type::value_type;
+    return element(0);
   }
 
   // axpy Specializations

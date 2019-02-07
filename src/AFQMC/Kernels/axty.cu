@@ -58,14 +58,30 @@ inline static void kernel_axty(int n,
                     axty_functor<thrust::complex<T> >(static_cast<thrust::complex<T> >(alpha)));
 }
 
-void axty(int n, float alpha, float const* x, float *y) {  kernel_axty(n,alpha,x,y); }
-void axty(int n, double alpha, double const* x, double *y) {  kernel_axty(n,alpha,x,y); }
+void axty(int n, float alpha, float const* x, float *y) {  
+  kernel_axty(n,alpha,x,y); 
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+void axty(int n, double alpha, double const* x, double *y) {  
+  kernel_axty(n,alpha,x,y); 
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
 void axty(int n, std::complex<float> alpha, 
                  std::complex<float> const* x, std::complex<float> *y) 
-{  kernel_axty(n,alpha,x,y); }
+{  
+  kernel_axty(n,alpha,x,y); 
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
 void axty(int n, std::complex<double> alpha, 
                  std::complex<double> const* x, std::complex<double> *y) 
-{  kernel_axty(n,alpha,x,y); }
+{  
+  kernel_axty(n,alpha,x,y); 
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
 
 
 }

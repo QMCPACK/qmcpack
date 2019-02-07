@@ -296,19 +296,23 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n"); 
 
-// make factory function!!!
-#ifdef QMC_CUDA
-      SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
-                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
-                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
-#else
+    if(nbatch == 0 || nbatch == 1) {
       SlaterDetOperations SDetOp( SlaterDetOperations_shared<ComplexType>(
                         ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
-#endif
-
-    return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),std::move(ci),std::move(PsiT),
+      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+                        std::move(ci),std::move(PsiT),
                         walker_type,nbatch,NCE,targetNW)); 
+    } else 
+    {
+      SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
+                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+                        std::move(ci),std::move(PsiT),
+                        walker_type,nbatch,NCE,targetNW));
+    }
+
   } else if(type == "phmsd") {
 
     app_log()<<" Wavefunction type: PHMSD\n";

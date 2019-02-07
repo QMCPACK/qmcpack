@@ -104,56 +104,52 @@ __global__ void kernel_tbt_mv_div( int dim, int nrow, int ncol, T* A, int lda,
 void term_by_term_mat_vec_plus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
                     std::complex<double>* x, int incx) 
 {
-  int xblock_dim = (nrow>ncol?128:32);
-  int yblock_dim = (nrow>ncol?32:128);
-  xblock_dim = std::min(nrow,xblock_dim);  
-  yblock_dim = std::min(ncol,yblock_dim);  
+  int xblock_dim = std::min(nrow,32);
+  int yblock_dim = std::min(ncol,32);
   dim3 block_dim(xblock_dim,yblock_dim,1);
   kernel_tbt_mv_plus<<<1,block_dim>>>(dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       reinterpret_cast<thrust::complex<double> const*>(x),incx);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void term_by_term_mat_vec_minus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
                     std::complex<double>* x, int incx)
 {
-  int xblock_dim = (nrow>ncol?128:32);
-  int yblock_dim = (nrow>ncol?32:128);
-  xblock_dim = std::min(nrow,xblock_dim);
-  yblock_dim = std::min(ncol,yblock_dim);
+  int xblock_dim = std::min(nrow,32);
+  int yblock_dim = std::min(ncol,32);
   dim3 block_dim(xblock_dim,yblock_dim,1);
   kernel_tbt_mv_minus<<<1,block_dim>>>(dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       reinterpret_cast<thrust::complex<double> const*>(x),incx);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void term_by_term_mat_vec_mult( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
                     std::complex<double>* x, int incx)
 {
-  int xblock_dim = (nrow>ncol?128:32);
-  int yblock_dim = (nrow>ncol?32:128);
-  xblock_dim = std::min(nrow,xblock_dim);
-  yblock_dim = std::min(ncol,yblock_dim);
+  int xblock_dim = std::min(nrow,32);
+  int yblock_dim = std::min(ncol,32);
   dim3 block_dim(xblock_dim,yblock_dim,1);
   kernel_tbt_mv_mult<<<1,block_dim>>>(dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       reinterpret_cast<thrust::complex<double> const*>(x),incx);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void term_by_term_mat_vec_div( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
                     std::complex<double>* x, int incx)
 {
-  int xblock_dim = (nrow>ncol?128:32);
-  int yblock_dim = (nrow>ncol?32:128);
-  xblock_dim = std::min(nrow,xblock_dim);
-  yblock_dim = std::min(ncol,yblock_dim);
+  int xblock_dim = std::min(nrow,32);
+  int yblock_dim = std::min(ncol,32);
   dim3 block_dim(xblock_dim,yblock_dim,1);
   kernel_tbt_mv_div<<<1,block_dim>>>(dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       reinterpret_cast<thrust::complex<double> const*>(x),incx);
+  qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 

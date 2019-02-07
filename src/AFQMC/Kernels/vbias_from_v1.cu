@@ -82,42 +82,48 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
                     int* ncholpQ, int* ncholpQ0, std::complex<double> const alpha,
                     std::complex<double> const* v1, std::complex<double> * vb)
 {
-  int xblock_dim = 64;
-  dim3 block_dim(xblock_dim,nwalk,1);
+  int xblock_dim = 32;
+  int yblock_dim = std::min(nwalk,16);  
+  dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,2,1);
   kernel_vbias_from_v1<<<grid_dim, block_dim>>>(nwalk,nkpts,nchol_max,Q0,kminus,ncholpQ,ncholpQ0,
                 static_cast<thrust::complex<double> const >(alpha),
                 reinterpret_cast<thrust::complex<double> const*>(v1),
                 reinterpret_cast<thrust::complex<double> *>(vb));
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"vbias_from_v1");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"vbias_from_v1");
 }
 
 void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
                     int* ncholpQ, int* ncholpQ0, std::complex<float> const alpha,
                     std::complex<float> const* v1, std::complex<float> * vb)
 {
-  int xblock_dim = 64;
-  dim3 block_dim(xblock_dim,nwalk,1);
+  int xblock_dim = 32;
+  int yblock_dim = std::min(nwalk,16);
+  dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,2,1);
   kernel_vbias_from_v1<<<grid_dim, block_dim>>>(nwalk,nkpts,nchol_max,Q0,kminus,ncholpQ,ncholpQ0,
                 static_cast<thrust::complex<float> const >(alpha),
                 reinterpret_cast<thrust::complex<float> const*>(v1),
                 reinterpret_cast<thrust::complex<float> *>(vb));
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"vbias_from_v1");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"vbias_from_v1");
 }
 
 void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
                     int* ncholpQ, int* ncholpQ0, std::complex<double> const alpha,
                     std::complex<float> const* v1, std::complex<double> * vb)
 {
-  int xblock_dim = 64;
-  dim3 block_dim(xblock_dim,nwalk,1);
+  int xblock_dim = 32;
+  int yblock_dim = std::min(nwalk,16);
+  dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,2,1);
   kernel_vbias_from_v1<<<grid_dim, block_dim>>>(nwalk,nkpts,nchol_max,Q0,kminus,ncholpQ,ncholpQ0,
                 static_cast<thrust::complex<double> const >(alpha),
                 reinterpret_cast<thrust::complex<float> const*>(v1),
                 reinterpret_cast<thrust::complex<double> *>(vb));
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+  qmc_cuda::cuda_check(cudaGetLastError(),"vbias_from_v1");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"vbias_from_v1");
 }
 
 }
