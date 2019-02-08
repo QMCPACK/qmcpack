@@ -180,7 +180,7 @@ void test_splines()
         data[i*N*N+j*N+k] = std::sin(tpi*x) + std::sin(3*tpi*y) + std::sin(4*tpi*z);
       }
 
-  BsplineAllocator<double, QMC_CLINE> mAllocator;
+  BsplineAllocator<double> mAllocator;
   UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 
   for (int i = 0; i < num_splines; i++)

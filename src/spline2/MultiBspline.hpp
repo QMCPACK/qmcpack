@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 
-  template<typename T>
+  template<typename T, size_t ALIGN = QMC_CLINE, typename ALLOC=Mallocator<T, ALIGN>>
     struct MultiBspline
     {
 
@@ -38,7 +38,7 @@ namespace qmcplusplus
       ///actual einspline multi-bspline object
       SplineType* spline_m;
       ///use allocator
-      BsplineAllocator<T, QMC_CLINE> myAllocator;
+      BsplineAllocator<T, ALIGN, ALLOC> myAllocator;
 
       MultiBspline():spline_m(nullptr) {}
       MultiBspline(const MultiBspline& in)=delete;
@@ -55,7 +55,7 @@ namespace qmcplusplus
       template<typename GT, typename BCT>
       void create(GT& grid, BCT& bc, int num_splines)
       {
-        if(getAlignedSize<T>(num_splines)!=num_splines)
+        if(getAlignedSize<T, ALIGN>(num_splines)!=num_splines)
           throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!\n");
         if(spline_m==nullptr)
         {
