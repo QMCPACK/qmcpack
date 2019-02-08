@@ -809,7 +809,8 @@ Timers[Timer_G6]->stop();
     if(localGbuff.size() < nbatch__*Gsize+1)
       localGbuff.reextent(iextensions<1u>{nbatch__*Gsize+1});
     pointer ov_(localGbuff.origin()+nbatch__*Gsize);  
-    auto wlk_dims = wset.walker_dims();
+    std::vector<CMatrix_ref> Ai;
+    Ai.reserve(nbatch__);
 
     if(walker_type != COLLINEAR) {
 
@@ -818,15 +819,15 @@ Timers[Timer_G6]->stop();
       CMatrix_ref G2D_(G3D_.origin(),iextensions<2u>{nbatch__,GAdims.first*GAdims.second});
 
       for(int idet=0; idet<ndet; ++idet) {
-        auto wlk(wset.begin());
         for(int iw=0; iw<nw; iw+=nbatch__) {
           int nb = std::min(nbatch__,nw-iw);
-          SDetOp.BatchedMixedDensityMatrix(nb,wlk,Alpha,OrbMats[idet],
+          Ai.clear();
+          for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+          SDetOp.BatchedMixedDensityMatrix(OrbMats[idet],Ai,
                                 G3D_.sliced(0,nb),ovlp2.sliced(0,nb),compact);
           copy_n(ovlp2.origin(),nb,hvec.origin());
 // this could be batched, which would be faster and would avoid data movement to cpu
           for(int ib=0; ib<nb; ++ib) {
-            ++wlk;  
             ComplexType ov(hvec[ib]);
             if(walker_type==CLOSED) ov *= ov;
             ov *= std::conj(ci[idet]);
@@ -850,17 +851,19 @@ Timers[Timer_G6]->stop();
       CMatrix_ref GB2D_(GB3D_.origin(),iextensions<2u>{nbatch__,GBdims.first*GBdims.second});
 
       for(int idet=0; idet<ndet; ++idet) {
-        auto wlk(wset.begin());
         for(int iw=0; iw<nw; iw+=nbatch__) {
           int nb = std::min(nbatch__,nw-iw);
-          SDetOp.BatchedMixedDensityMatrix(nb,wlk,Alpha,OrbMats[2*idet],
+          Ai.clear();
+          for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+          SDetOp.BatchedMixedDensityMatrix(OrbMats[2*idet],Ai,
                                 GA3D_.sliced(0,nb),ovlp2.sliced(0,nb),compact);
-          SDetOp.BatchedMixedDensityMatrix(nb,wlk,Beta,OrbMats[2*idet+1],
+          Ai.clear();
+          for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
+          SDetOp.BatchedMixedDensityMatrix(OrbMats[2*idet+1],Ai,
                                 GB3D_.sliced(0,nb),ovlp2.sliced(nb,2*nb),compact);
 // this could be batched, which would be faster and would avoid data movement to cpu
           copy_n(ovlp2.origin(),2*nb,hvec.origin());
           for(int ib=0; ib<nb; ++ib) {
-            ++wlk;    
             ComplexType ov = hvec[ib]*hvec[nb+ib]*std::conj(ci[idet]);
             if(transpose) {
               ma::axpy(ov,GA2D_[ib],G[iw+ib].sliced(0,GAdims.first*GAdims.second));
@@ -913,11 +916,14 @@ Timers[Timer_G6]->stop();
     stdCVector hvec(iextensions<1u>{2*nw});
     fill_n(hvec.origin(),hvec.num_elements(),ComplexType(0.0));
     TG.local_barrier();
+    std::vector<CMatrix_ref> Ai;
+    Ai.reserve(nw);
 
     if(walker_type != COLLINEAR) {
       for(int idet=0; idet<ndet; ++idet) {
-        auto wlk(wset.begin());
-        SDetOp.BatchedOverlap(nw,wlk,Alpha,OrbMats[idet],ovlp2.sliced(0,nw));
+        Ai.clear();
+        for(int ni=0; ni<nw; ni++) Ai.emplace_back(wset[ni].SlaterMatrix(Alpha));
+        SDetOp.BatchedOverlap(OrbMats[idet],Ai,ovlp2.sliced(0,nw));
         copy_n(ovlp2.origin(),nw,hvec.origin());
 // this could be batched, which would be faster and would avoid data movement to cpu
         for(int ib=0; ib<nw; ++ib) 
@@ -927,9 +933,12 @@ Timers[Timer_G6]->stop();
       copy_n(hvec.origin()+nw,nw,Ov.origin());
     } else {
       for(int idet=0; idet<ndet; ++idet) {
-        auto wlk(wset.begin());
-        SDetOp.BatchedOverlap(nw,wlk,Alpha,OrbMats[2*idet],ovlp2.sliced(0,nw));
-        SDetOp.BatchedOverlap(nw,wlk,Beta,OrbMats[2*idet+1],ovlp2.sliced(nw,2*nw));
+        Ai.clear();
+        for(int ni=0; ni<nw; ni++) Ai.emplace_back(wset[ni].SlaterMatrix(Alpha));
+        SDetOp.BatchedOverlap(OrbMats[2*idet],Ai,ovlp2.sliced(0,nw));
+        Ai.clear();
+        for(int ni=0; ni<nw; ni++) Ai.emplace_back(wset[ni].SlaterMatrix(Beta));
+        SDetOp.BatchedOverlap(OrbMats[2*idet+1],Ai,ovlp2.sliced(nw,2*nw));
 // this could be batched, which would be faster and would avoid data movement to cpu
         copy_n(ovlp2.origin(),2*nw,hvec.origin());
         for(int ib=0; ib<nw; ++ib) 

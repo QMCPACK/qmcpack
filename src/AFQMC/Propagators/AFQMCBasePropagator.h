@@ -85,7 +85,6 @@ class AFQMCBasePropagator: public AFQMCInfo
     {
       transposed_vHS_ = wfn.transposed_vHS();
       transposed_G_ = wfn.transposed_G_for_vbias();
-      if(not transposed_vHS_) local_vHS.reextent({NMO,NMO});
       parse(cur);  
     }
 
@@ -160,6 +159,8 @@ class AFQMCBasePropagator: public AFQMCInfo
     bool transposed_G_;
 
     // used in propagator step 
+    // intead of doing this, should use TBuff to transpose vHS3D and only have propagation 
+    // with vHD3D[nwalk*nsteps,...]
     CMatrix local_vHS;  
 
     CVector new_overlaps;  
@@ -190,8 +191,14 @@ class AFQMCBasePropagator: public AFQMCInfo
                            C3Tensor_ref& vHS3D);
 
     template<class WSet>
+    void apply_propagators_batched(WSet& wset, int ni, C3Tensor_ref& vHS3D);
+
+    template<class WSet>
     void apply_propagators_construct_propagator(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
                                                 C3Tensor_ref& vHS3D);
+
+    template<class WSet>
+    void apply_propagators_construct_propagator_batched(WSet& wset, int ni, C3Tensor_ref& vHS3D);
 
     ComplexType apply_bound_vbias(ComplexType v, RealType sqrtdt)
     {

@@ -1,6 +1,7 @@
 
 #include "Configuration.h"
 #include <Utilities/FairDivide.h>
+#include "AFQMC/Memory/utilities.hpp"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/config.h" 
 #include "AFQMC/Propagators/AFQMCBasePropagator.h"
@@ -28,6 +29,7 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   importance_sampling=true;
   apply_constrain=true;
   nbatched_propagation=0;
+  if(number_of_devices() > 0 && TG.TG_local().size()==1) nbatched_propagation=-1;
 
   xmlNodePtr curRoot=cur;
 
@@ -153,7 +155,8 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
                                          TG.TG_local().size());  
 // NOTE: FIX FIX FIX: Note sure what is wrong with cuda's RNG but results are slightly different!
 #ifdef QMC_CUDA
-    if(Xhost.num_elements() < X.num_elements()) Xhost.reextent(iextensions<1u>(X.num_elements()));
+    if(Xhost.num_elements() < X.num_elements()) 
+      Xhost.reextent(iextensions<1u>{X.num_elements()});
     sampleGaussianFields_n(Xhost.origin(),Xhost.num_elements(),*rng);
     copy_n(Xhost.origin(),Xhost.num_elements(),X.origin());
 #else

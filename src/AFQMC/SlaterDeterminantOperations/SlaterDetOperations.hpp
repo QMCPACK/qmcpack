@@ -80,6 +80,14 @@ class SlaterDetOperations:
             *this
         );
     }
+     
+    template<class... Args>
+    void BatchedPropagate(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.BatchedPropagate(std::forward<Args>(args)...);},
+            *this
+        );
+    }
 
     template<class... Args>
     void MixedDensityMatrix_noHerm(Args&&... args) {

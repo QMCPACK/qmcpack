@@ -124,9 +124,66 @@ inline void apply_expM( const MatA& V, MatB& S, MatC& T1, MatC& T2, communicator
 }
 
 
-}
+} // namespace shm
+
+namespace batched 
+{
+
+/*
+ * Calculate S = exp(im*V)*S using a Taylor expansion of exp(V)
+ */
+template< class MatA,
+          class MatB,
+          class MatC
+        >
+inline void apply_expM( const MatA& V, MatB& S, MatC& T1, MatC& T2, int order=6)
+{
+  static_assert( std::decay<MatA>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3" );
+  static_assert( std::decay<MatB>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3" );
+  static_assert( std::decay<MatC>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3" );
+  assert( V.size(0) == S.size(0) );
+  assert( V.size(0) == T1.size(0) );
+  assert( V.size(0) == T2.size(0) );
+  assert( V.size(1) == V.size(2) );
+  assert( V.size(2) == S.size(1) );
+  assert( S.size(1) == T1.size(1) );
+  assert( S.size(2) == T1.size(2) );
+  assert( S.size(1) == T2.size(1) );
+  assert( S.size(2) == T2.size(2) );
+  // for now limit to continuous
+  assert( S.stride(0) == S.size(1)*S.size(2));
+  assert( T1.stride(0) == T1.size(1)*T1.size(2));
+  assert( T2.stride(0) == T2.size(1)*T2.size(2));
+  assert( S.stride(1) == S.size(2));
+  assert( T1.stride(1) == T1.size(2));
+  assert( T2.stride(1) == T2.size(2));
+  assert( S.stride(2) == 1 );
+  assert( T1.stride(2) == 1 );
+  assert( T2.stride(2) == 1 );
+
+  using ComplexType = typename std::decay<MatB>::type::element;
+  ComplexType zero(0.);
+  auto pT1(std::addressof(T1));
+  auto pT2(std::addressof(T2));
+
+  // getting around issue in multi, fix later  
+  //T1 = S;
+  using std::copy_n;
+  copy_n(S.origin(),S.num_elements(),T1.origin());
+  for(int n=1; n<=order; n++) {
+    ComplexType fact = ComplexType(0.0,1.0)*static_cast<ComplexType>(1.0/static_cast<double>(n));
+    ma::productStridedBatched(fact,V,*pT1,zero,*pT2);
+    //ma::add(ComplexType(1.0),*pT2,ComplexType(1.0),S,S);
+    using ma::axpy;
+    axpy(S.num_elements(), ComplexType(1.0), (*pT2).origin(), 1, S.origin(), 1);
+    std::swap(pT1,pT2);
+  }
 
 }
+
+} // namespace batched
+
+} // 
 
 }
 

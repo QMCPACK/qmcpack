@@ -71,7 +71,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
   // 0. Allocate memory and set shared memory structures
   if(buffer.num_elements() < memory_needs ) {
-    buffer.reextent(iextensions<1u>{memory_needs});
+    buffer = std::move(CVector(iextensions<1u>{memory_needs}));
     new_shm_space=true;
   }  
 
@@ -132,20 +132,12 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
   // local matrices for temporary accumulation
   if(MFfactor.size(0) != nnodes*nsteps || MFfactor.size(1) != nwalk)
-    MFfactor.reextent({nnodes*nsteps,nwalk});
+    MFfactor = std::move(CMatrix({nnodes*nsteps,nwalk}));
   if(hybrid_weight.size(0) != nnodes*nsteps || hybrid_weight.size(1) != nwalk)
-    hybrid_weight.reextent({nnodes*nsteps,nwalk});
-  if(new_overlaps.size(0) != nwalk) new_overlaps.reextent(iextensions<1u>{nwalk});
+    hybrid_weight = std::move(CMatrix({nnodes*nsteps,nwalk}));
+  if(new_overlaps.size(0) != nwalk) new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
   if(new_energies.size(0) != nwalk || new_energies.size(1) != 3) 
-    new_energies.reextent({nwalk,3});
-  if(not transposed_vHS_) {  
-    if(walker_type==NONCOLLINEAR)
-      if(local_vHS.size(0) != 2*NMO || local_vHS.size(1) != 2*NMO)
-        local_vHS.reextent({2*NMO,2*NMO});
-    else
-      if(local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
-        local_vHS.reextent({NMO,NMO});
-  }
+    new_energies = std::move(CMatrix({nwalk,3}));
 
   // if timestep changed, recalculate one body propagator
   if( std::abs(dt-old_dt) > 1e-6 ) {
@@ -258,10 +250,18 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
     // 5. Propagate walkers
     AFQMCTimers[propagate_timer]->start();
-    if (wset.getNBackProp() > 0) {
-      apply_propagators_construct_propagator(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+    if(nbatched_propagation != 0) {
+      if (wset.getNBackProp() > 0) {
+        apply_propagators_construct_propagator_batched(wset,ni,vHS3D);
+      } else {
+        apply_propagators_batched(wset,ni,vHS3D);
+      }
     } else {
-      apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+      if (wset.getNBackProp() > 0) {
+        apply_propagators_construct_propagator(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+      } else {
+        apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+      }
     }
     AFQMCTimers[propagate_timer]->stop();
 

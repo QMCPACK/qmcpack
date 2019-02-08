@@ -60,14 +60,6 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     using Base::OverlapForWoodbury;
     using Base::Propagate;
     using Base::Orthogonalize;
-    using Base::IWORK;
-    using Base::WORK;
-    using Base::TMat_NN;
-    using Base::TMat_NM;
-    using Base::TMat_MN;
-    using Base::TMat_MM;
-    using Base::TMat_MM2;
-    using Base::TMat_MM3;
 
     SlaterDetOperations_serial(AllocType alloc_={}):
       SlaterDetOperations_base<AllocType>(alloc_)
@@ -129,54 +121,78 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       Base::Propagate(std::forward<Mat>(A),P1,V,order);
     }
 
+    template<class MatA, class MatP1, class MatV>
+    void BatchedPropagate(std::vector<MatA> &Ai, const MatP1& P1, const MatV& V, int order=6) {
+      static_assert( std::decay<MatA>::type::dimensionality == 2, " dimenionality == 2" );
+      static_assert( std::decay<MatV>::type::dimensionality == 3, " dimenionality == 3" );
+      if(Ai.size() == 0) return;
+      assert(Ai.size() == V.size(0));
+      int nbatch = Ai.size();
+      int NMO = Ai[0].size(0);
+      int NAEA = Ai[0].size(1);
+//      for(int i=0; i<Ai.size(); ++i)
+//        Propagate(Ai[i],P1,V[i],order);
+      set_buffer(nbatch*3*NMO*NAEA);
+      TTensor_ref TMN(TBuff.data(), {nbatch,NMO,NAEA});
+      TTensor_ref T1(TMN.data()+TMN.num_elements(), {nbatch,NMO,NAEA});
+      TTensor_ref T2(T1.data()+T1.num_elements(), {nbatch,NMO,NAEA});
+      // could be batched when csrmm is batched  
+      for(int ib=0; ib<nbatch; ib++) 
+        ma::product(P1,Ai[ib],TMN[ib]);
+      SlaterDeterminantOperations::batched::apply_expM(V,TMN,T1,T2,order);
+      for(int ib=0; ib<nbatch; ib++) 
+        ma::product(P1,TMN[ib],Ai[ib]);
+    }
+
     // C[nwalk, M, N]
-    template<class WlkIt, class MatA, class MatC, class TVec>
-    void BatchedMixedDensityMatrix(int nbatch, WlkIt wit, SpinTypes spin, const MatA& hermA, MatC&& C, TVec&& ovlp, bool compact=false) {
+    template<class MatA, class MatB, class MatC, class TVec>
+    void BatchedMixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& C, TVec&& ovlp, bool compact=false) {
+      if(Bi.size()==0) return;
       static_assert(std::decay<MatC>::type::dimensionality == 3, "Wrong dimensionality");
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
       int NMO = hermA.size(1);
       int NAEA = hermA.size(0);
+      int nbatch = Bi.size();
       assert(C.size(0) == nbatch);
       assert(ovlp.size() == nbatch);
-
-      if(TMat_NN.num_elements() < nbatch*NAEA*NAEA)
-        TMat_NN.reextent(iextensions<2u>{nbatch*NAEA,NAEA});
-      assert(TMat_NN.num_elements() >= nbatch*NAEA*NAEA);
-      TTensor_ref TNN3D(TMat_NN.data(), {nbatch,NAEA,NAEA});
       int n1=nbatch, n2=NAEA, n3=NMO;
-      if(not compact) {
-        if(TMat_NM.num_elements() < n1*n2*n3)
-          TMat_NM.reextent(iextensions<2u>{n1*n2,n3});
-        assert(TMat_NM.num_elements() >= n1*n2*n3);
-      } else {
-        n1=n2=n3=1;
+      if(compact) {
+        n1=n2=n3=0;
       }
-      TTensor_ref TNM3D(TMat_NM.data(), {n1,n2,n3});
+      set_buffer(nbatch*NAEA*NAEA + n1*n2*n3);
+      TTensor_ref TNN3D(TBuff.origin(), {nbatch,NAEA,NAEA});
+      TTensor_ref TNM3D(TBuff.origin()+TNN3D.num_elements(), {n1,n2,n3});
       int sz = ma::invert_optimal_workspace_size(TNN3D[0]);
       if(WORK.num_elements() < nbatch*sz)
         WORK.reextent(iextensions<1u>{nbatch*sz});
       if(IWORK.num_elements() < nbatch*(NMO+1))
         IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
-      SlaterDeterminantOperations::batched::MixedDensityMatrix(nbatch,wit,spin,hermA,
+      SlaterDeterminantOperations::batched::MixedDensityMatrix(hermA,Bi,
                 std::forward<MatC>(C),std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,WORK,compact);
     }
 
-    template<class WlkIt, class MatA, class TVec>
-    void BatchedOverlap(int nbatch, WlkIt wit, SpinTypes spin, const MatA& hermA, TVec&& ovlp) {
+    template<class MatA, class MatB, class TVec>
+    void BatchedOverlap(const MatA& hermA, std::vector<MatB> &Bi, TVec&& ovlp) {
+      if(Bi.size()==0) return;
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
       int NMO = hermA.size(1);
       int NAEA = hermA.size(0);
+      int nbatch = Bi.size();
       assert(ovlp.size() == nbatch);
-
-      if(TMat_NN.num_elements() < nbatch*NAEA*NAEA)
-        TMat_NN.reextent(iextensions<2u>{nbatch*NAEA,NAEA});
-      assert(TMat_NN.num_elements() >= nbatch*NAEA*NAEA);
-      TTensor_ref TNN3D(TMat_NN.data(), {nbatch,NAEA,NAEA});
+      set_buffer(nbatch*NAEA*NAEA);
+      TTensor_ref TNN3D(TBuff.origin(), {nbatch,NAEA,NAEA});
       if(IWORK.num_elements() < nbatch*(NMO+1))
         IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
-      SlaterDeterminantOperations::batched::Overlap(nbatch,wit,spin,hermA,
+      SlaterDeterminantOperations::batched::Overlap(hermA,Bi,
                 std::forward<TVec>(ovlp),TNN3D,IWORK);
     }
+
+  protected:
+
+    using Base::IWORK;
+    using Base::WORK;
+    using Base::TBuff;
+    using Base::set_buffer;
 
 };
 

@@ -66,7 +66,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   // 0. Allocate memory and set shared memory structures
   if(buffer.num_elements() < memory_needs ) 
-    buffer.reextent(iextensions<1u>{memory_needs});
+    buffer = std::move(CVector(iextensions<1u>{memory_needs}));
 
   // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
   // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
@@ -93,21 +93,12 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   // local matrices for temporary accumulation
   if(MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk) 
-    MFfactor.reextent({long(nsteps),long(nwalk)});
+    MFfactor = std::move(CMatrix({long(nsteps),long(nwalk)}));
   if(hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk) 
-    hybrid_weight.reextent({long(nsteps),long(nwalk)});
-  if(new_overlaps.size(0) != nwalk) new_overlaps.reextent(iextensions<1u>{nwalk});
+    hybrid_weight = std::move(CMatrix({long(nsteps),long(nwalk)}));
+  if(new_overlaps.size(0) != nwalk) new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
   if(new_energies.size(0) != nwalk || new_energies.size(1) != 3) 
-    new_energies.reextent({long(nwalk),3});
-  // these is only needed if vHS matrix has strides != 1, e.g. when transposed_vHS_ == false  
-  if(not transposed_vHS_) {
-    if(walker_type==NONCOLLINEAR)
-      if(local_vHS.size(0) != 2*NMO || local_vHS.size(1) != 2*NMO)
-        local_vHS.reextent({2*NMO,2*NMO});
-    else
-      if(local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
-        local_vHS.reextent({NMO,NMO});
-  }  
+    new_energies = std::move(CMatrix({long(nwalk),3}));
 
   // if timestep changed, recalculate one body propagator
   if( std::abs(dt-old_dt) > 1e-6 ) {
@@ -173,9 +164,10 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     // 5. Propagate walkers
     AFQMCTimers[propagate_timer]->start();
     if(nbatched_propagation != 0) { 
-      APP_ABORT(" Error: batched propagation not yet implemented. ");
       if (wset.getNBackProp() > 0) {
+        apply_propagators_construct_propagator_batched(wset,ni,vHS3D);
       } else {
+        apply_propagators_batched(wset,ni,vHS3D);
       }
     } else {
       if (wset.getNBackProp() > 0) {
@@ -214,6 +206,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   }  
 }
+
 
 template<class WSet>
 void AFQMCBasePropagator::apply_propagators(WSet& wset, int ni, int tk0, int tkN, 
@@ -255,6 +248,12 @@ void AFQMCBasePropagator::apply_propagators(WSet& wset, int ni, int tk0, int tkN
       }
     }
   } else {  
+    if(walker_type==NONCOLLINEAR)
+      if(local_vHS.size(0) != 2*NMO || local_vHS.size(1) != 2*NMO)
+        local_vHS = std::move(CMatrix({2*NMO,2*NMO}));
+    else
+      if(local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
+        local_vHS = std::move(CMatrix({NMO,NMO}));
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
     if(walker_type == COLLINEAR) {
       int oldw=-1;
@@ -262,7 +261,6 @@ void AFQMCBasePropagator::apply_propagators(WSet& wset, int ni, int tk0, int tkN
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk/2;
         if(oldw != tk/2) { 
-// NOTE POSSIBLE BUG IN MULTI
           local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
           oldw=tk/2;
         }
@@ -296,6 +294,53 @@ void AFQMCBasePropagator::apply_propagators(WSet& wset, int ni, int tk0, int tkN
     }
   }
   TG.local_barrier();
+}
+
+template<class WSet>
+void AFQMCBasePropagator::apply_propagators_batched(WSet& wset, int ni, C3Tensor_ref& vHS3D)
+{  
+  int nwalk = wset.size();
+  auto walker_type = wset.getWalkerType();
+  int nbatch = (nbatched_propagation<0?nwalk:nbatched_propagation); 
+  std::vector<CMatrix_ref> Ai; 
+  Ai.reserve(nbatch);
+  if(transposed_vHS_) {
+    // vHS3D[nstep*nwalk][M][M]
+    // in this case, tk corresponds to 2x the walker number  
+    int nt = ni*nwalk;
+    for(int iw=0; iw<nwalk; iw+=nbatch, nt+=nbatch) { 
+      int nb = std::min(nbatch,nwalk-iw);
+      Ai.clear();
+      for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+      SDetOp->BatchedPropagate(Ai,P1,vHS3D.sliced(nt,nt+nb),order);
+      if(walker_type == COLLINEAR) { 
+        Ai.clear();
+        for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
+        SDetOp->BatchedPropagate(Ai,P1,vHS3D.sliced(nt,nt+nb),order);
+      }  
+    }
+  } else {  
+    int sz = (walker_type==NONCOLLINEAR?2*NMO:NMO);
+    if(local_vHS.size(0) != nbatch || local_vHS.size(1) != sz*sz)
+      local_vHS = std::move(CMatrix({nbatch,sz*sz}));
+    // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
+    int N2 = vHS3D.size(0)*vHS3D.size(1);
+    CMatrix_ref vHS2D(vHS3D.origin(),{N2,vHS3D.size(2)}); 
+    C3Tensor_ref local3D(local_vHS.origin(),{nbatch,sz,sz}); 
+    int nt = ni*nwalk;
+    for(int iw=0; iw<nwalk; iw+=nbatch, nt+=nbatch) {
+      int nb = std::min(nbatch,nwalk-iw);
+      ma::transpose(vHS2D(vHS2D.extension(0),{nt,nt+nb}),local_vHS.sliced(0,nb));  
+      Ai.clear();
+      for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+      SDetOp->BatchedPropagate(Ai,P1,local3D.sliced(0,nb),order);
+      if(walker_type == COLLINEAR) {
+        Ai.clear();
+        for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
+        SDetOp->BatchedPropagate(Ai,P1,local3D.sliced(0,nb),order);
+      }  
+    }
+  }
 }
 
 template<class WSet>
@@ -358,6 +403,12 @@ void AFQMCBasePropagator::apply_propagators_construct_propagator(WSet& wset,
       }
     }
   } else {
+    if(walker_type==NONCOLLINEAR)
+      if(local_vHS.size(0) != 2*NMO || local_vHS.size(1) != 2*NMO)
+        local_vHS = std::move(CMatrix({2*NMO,2*NMO}));
+    else
+      if(local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
+        local_vHS = std::move(CMatrix({NMO,NMO}));
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
     if(walker_type == COLLINEAR) {
       int oldw=-1;
@@ -418,6 +469,68 @@ void AFQMCBasePropagator::apply_propagators_construct_propagator(WSet& wset,
     }
   }
   TG.local_barrier();
+}
+
+template<class WSet>
+void AFQMCBasePropagator::apply_propagators_construct_propagator_batched(WSet& wset, 
+                        int ni, C3Tensor_ref& vHS3D)
+{
+  int nwalk = wset.size();
+  auto walker_type = wset.getWalkerType();
+  auto TAlpha(TSM({0,NMO},{0,NAEA}));
+  auto TBeta(TSM({0,NMO},{0,NAEB})); 
+  int nbatch = (nbatched_propagation<0?nwalk:nbatched_propagation);
+  std::vector<CMatrix_ref> Ai;
+  Ai.reserve(nbatch);
+  if(transposed_vHS_) {
+    // vHS3D[nstep*nwalk][M][M]
+    // in this case, tk corresponds to 2x the walker number  
+    int nt = ni*nwalk;
+    for(int iw=0; iw<nwalk; iw+=nbatch, nt+=nbatch) {
+      int nb = std::min(nbatch,nwalk-iw);
+      Ai.clear();
+      for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].BMatrix());
+      SDetOp->BatchedPropagate(Ai,P1,vHS3D.sliced(nt,nt+nb),order);
+      // this could be batched too!!!
+      for(int ni=0; ni<nb; ni++) {
+        auto B(wset[iw+ni].BMatrix());
+        TAlpha = wset[iw+ni].SlaterMatrix(Alpha);
+        ma::product(B, TAlpha, wset[iw+ni].SlaterMatrix(Alpha));
+        if(walker_type == COLLINEAR) {
+          TBeta = wset[iw+ni].SlaterMatrix(Beta);
+          ma::product(B, TBeta, wset[iw+ni].SlaterMatrix(Beta));
+        }
+        wset[iw+ni].incrementBMatrix();
+      }
+    }
+  } else {
+    int sz = (walker_type==NONCOLLINEAR?2*NMO:NMO);
+    if(local_vHS.size(0) != nbatch || local_vHS.size(1) != sz*sz)
+      local_vHS = std::move(CMatrix({nbatch,sz*sz}));
+    // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
+    int N2 = vHS3D.size(0)*vHS3D.size(1);
+    CMatrix_ref vHS2D(vHS3D.origin(),{N2,vHS3D.size(2)});
+    C3Tensor_ref local3D(local_vHS.origin(),{nbatch,sz,sz});
+    int nt = ni*nwalk;
+    for(int iw=0; iw<nwalk; iw+=nbatch, nt+=nbatch) {
+      int nb = std::min(nbatch,nwalk-iw);
+      ma::transpose(vHS2D(vHS2D.extension(0),{nt,nt+nb}),local_vHS.sliced(0,nb));
+      Ai.clear();
+      for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].BMatrix());
+      SDetOp->BatchedPropagate(Ai,P1,local3D.sliced(0,nb),order);
+      // this could be batched too!!!
+      for(int ni=0; ni<nb; ni++) {
+        auto B(wset[iw+ni].BMatrix());
+        TAlpha = wset[iw+ni].SlaterMatrix(Alpha);
+        ma::product(B, TAlpha, wset[iw+ni].SlaterMatrix(Alpha));
+        if(walker_type == COLLINEAR) {
+          TBeta = wset[iw+ni].SlaterMatrix(Beta);
+          ma::product(B, TBeta, wset[iw+ni].SlaterMatrix(Beta));
+        }
+        wset[iw+ni].incrementBMatrix();
+      }
+    }
+  }
 }
 
 }

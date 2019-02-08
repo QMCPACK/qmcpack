@@ -59,12 +59,6 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
     using Base::Orthogonalize;
     using Base::IWORK;
     using Base::WORK;
-    using Base::TMat_NN;
-    using Base::TMat_NM;
-    using Base::TMat_MN;
-    using Base::TMat_MM;
-    using Base::TMat_MM2;
-    using Base::TMat_MM3;
 
     SlaterDetOperations_shared():
       SlaterDetOperations_base<Alloc>(Alloc{}),
@@ -135,12 +129,10 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       assert(hermA.size(1)==B.size(0));
       assert(QQ0.size(0)==Nact);
       assert(QQ0.size(1)==NEL);
-      assert(TMat_NN.num_elements() >= NEL*NEL);
-      assert(TMat_MM.num_elements() >= Nact*NEL);
       set_shm_buffer(comm,NEL*(Nact+NEL));
       assert(SM_TMats->num_elements() >= NEL*(Nact+NEL));
-      boost::multi::array_ref<T,2> TNN(to_address(to_address(SM_TMats->origin())), {NEL,NEL});
-      boost::multi::array_ref<T,2> TMN(to_address((to_address(SM_TMats->origin())+NEL*NEL)), {Nact,NEL});
+      boost::multi::array_ref<T,2> TNN(to_address(SM_TMats->origin()), {NEL,NEL});
+      boost::multi::array_ref<T,2> TMN(to_address(SM_TMats->origin())+NEL*NEL, {Nact,NEL});
       SlaterDeterminantOperations::shm::OverlapForWoodbury<T>(hermA,B,res,std::forward<MatC>(QQ0),ref,TNN,TMN,IWORK,WORK,comm);
     }
 
@@ -164,29 +156,33 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
     }
 
     // C[nwalk, M, N]
-    template<class WlkIt, class MatA, class MatC, class TVec>
-    void BatchedMixedDensityMatrix(int nbatch, WlkIt wit, SpinTypes spin, const MatA& hermA, MatC&& C, TVec&& ovlp, bool compact=false) {
+    template<class MatA, class MatB, class MatC, class TVec>
+    void BatchedMixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& C, TVec&& ovlp, bool compact=false) {
       APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared \n");
     }
 
-    template<class WlkIt, class MatA, class TVec>
-    void BatchedOverlap(int nbatch, WlkIt wit, SpinTypes spin, const MatA& hermA, TVec&& ovlp) {
+    template<class MatA, class MatB, class TVec>
+    void BatchedOverlap(const MatA& hermA, std::vector<MatB> &Bi, TVec&& ovlp) {
       APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared \n");
     }
 
-  private:
+    template<class MatA, class MatP1, class MatV>
+    void BatchedPropagate(std::vector<MatA> &Ai, const MatP1& P1, const MatV& V, int order=6) {
+      APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared \n");
+    }
+
+  protected:
 
     // shm temporary matrices
     std::unique_ptr<shmTVector> SM_TMats;
 
-    // somewhat sensitive piece of code
     void set_shm_buffer(communicator& comm, size_t N) {
-      // since there is no way to extract the communicator from SM_TMats  
       if( SM_TMats == nullptr || SM_TMats->get_allocator() != shared_allocator<T>{comm} ) { 
         SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>{N},shared_allocator<T>{comm}));
       } else if(SM_TMats->num_elements() < N) 
-        SM_TMats->reextent(iextensions<1u>{N});
+        SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>{N},shared_allocator<T>{comm}));
     }
+
 };
 
 }

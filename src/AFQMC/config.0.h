@@ -1,6 +1,8 @@
 #ifndef AFQMC_CONFIG_0_H 
 #define AFQMC_CONFIG_0_H 
 
+#define BOOST_NO_AUTO_PTR
+
 #define ADD_TESTS_TIMERS
 
 #define AFQMC_DEBUG 3 
