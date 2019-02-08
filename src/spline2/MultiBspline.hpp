@@ -21,7 +21,6 @@
 #include "config.h"
 #include <iostream>
 #include <spline2/BsplineAllocator.hpp>
-#include <spline2/MultiBsplineData.hpp>
 #include <stdlib.h>
 
 namespace qmcplusplus

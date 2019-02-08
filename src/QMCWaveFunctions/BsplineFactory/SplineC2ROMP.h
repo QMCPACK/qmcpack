@@ -20,6 +20,7 @@
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
+#include <spline2/MultiBsplineEval_OMPoffload.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 #include "OpenMP/OMPallocator.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
@@ -50,10 +51,10 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   using PointType=typename BaseType::PointType;
   using SingleSplineType=typename BaseType::SingleSplineType;
 
-  using vContainer_type=Vector<ST,aligned_allocator<ST> >;
-  using gContainer_type=VectorSoaContainer<ST,3>;
-  using hContainer_type=VectorSoaContainer<ST,6>;
-  using ghContainer_type=VectorSoaContainer<ST,10>;
+  using vContainer_type=Vector<ST, OffloadAllocator>;
+  using gContainer_type=VectorSoaContainer<ST, 3, ALIGN, OffloadAllocator>;
+  using hContainer_type=VectorSoaContainer<ST, 6, ALIGN, OffloadAllocator>;
+  using ghContainer_type=VectorSoaContainer<ST, 10, ALIGN, OffloadAllocator>;
 
   using BaseType::first_spo;
   using BaseType::last_spo;
@@ -138,7 +139,10 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     SplineInst->create(xyz_g,xyz_bc,myV.size());
     MultiSpline=SplineInst->spline_m;
     PRAGMA_OMP("omp target enter data map(to:MultiSpline[0:1])")
-    PRAGMA_OMP("omp target update to(MultiSpline->coefs[0:MultiSpline->coefs_size])")
+    // Ye: the following line is to workaround Intel offload to host.
+    // Directly putting MultiSpline->coefs inside the to clause is not allowed.
+    auto coefs=MultiSpline->coefs;
+    PRAGMA_OMP("omp target update to(coefs[0:MultiSpline->coefs_size])")
 
     app_log() << "MEMORY " << SplineInst->sizeInByte()/(1<<20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation"
@@ -521,6 +525,30 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
 
+    const int ChunkSizePerTeam = 128;
+    const int NumTeams = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+
+    // Ye: need to extract sizes and pointers before entering target region
+    const auto* ru_ptr = ru.data();
+    const auto myV_size = myV.size();
+    auto* myV_ptr = myV.data();
+    auto* myG_ptr = myG.data();
+    auto* myH_ptr = myH.data();
+    PRAGMA_OMP("omp target teams num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
+                map(always,to:ru_ptr[0:3]) \
+                map(always,from:myV_ptr[0:myV_size], myG_ptr[0:myV_size*3], myH_ptr[0:myV_size*6])")
+    {
+      PRAGMA_OMP("omp distribute")
+      for(int team_id = 0; team_id < NumTeams; team_id++)
+      {
+        int first = ChunkSizePerTeam * team_id;
+        int last  = (first + ChunkSizePerTeam) > myV_size ? myV_size : first + ChunkSizePerTeam ;
+        PRAGMA_OMP("omp parallel")
+        spline2offload::evaluate_vgh_impl_v2(SplineInst->spline_m, ru_ptr[0], ru_ptr[1], ru_ptr[2],
+                                             myV_ptr, myG_ptr, myH_ptr, myV_size, first, last);
+      }
+    }
+
     #pragma omp parallel
     {
       int first, last;
@@ -529,7 +557,6 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
                         omp_get_thread_num(),
                         first, last);
 
-      spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH,first,last);
       assign_vgl(r,psi,dpsi,d2psi,first/2,last/2);
     }
   }
