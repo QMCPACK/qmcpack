@@ -81,7 +81,7 @@ void LCAOParser::parse(const std::string& fname)
   std::cout <<"Multideterminants: " <<(multideterminant?("yes"):("no")) << std::endl;
   std::cout.flush();
 
-  hin.read(SpinRestricted,"SpinResticted");
+  hin.read(SpinRestricted,"SpinRestricted");
   if(SpinRestricted)
   { 
      hin.read(numAO,"numAO");
@@ -131,7 +131,9 @@ void LCAOParser::parse(const std::string& fname)
   hin.read(NumberOfAlpha,"NbAlpha");
   hin.read(NumberOfBeta,"NbBeta");
   hin.read(NumberOfEls,"NbTotElec");
-  hin.read(SpinMultiplicity,"spin");
+  int ds;
+  hin.read(ds,"spin");
+  SpinMultiplicity = ds+1;
 
   std::cout <<"Number of alpha electrons: " <<NumberOfAlpha << std::endl;
   std::cout <<"Number of beta electrons: " <<NumberOfBeta << std::endl;
