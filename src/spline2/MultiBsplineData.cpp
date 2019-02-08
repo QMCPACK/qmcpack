@@ -19,6 +19,7 @@
 
 namespace spline2
 {
+PRAGMA_OMP("omp declare target")
   /** initialization of static data for MultiBsplineData<float> */
   template<>
   QMC_ALIGNAS const float MultiBsplineData<float>::A44[16] =
@@ -76,5 +77,6 @@ namespace spline2
      0.0, 0.0,  0.0,  3.0,
      0.0, 0.0,  0.0, -3.0,
      0.0, 0.0,  0.0,  1.0 };
+PRAGMA_OMP("omp end declare target")
 }
 
