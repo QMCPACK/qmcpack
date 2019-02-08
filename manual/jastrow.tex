@@ -150,7 +150,7 @@ Input for the k-space Jastrow follows the familar nesting of \texttt{jastrow-cor
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{jastrow type=kSpace} element} \\
 \hline
@@ -170,7 +170,7 @@ Input for the k-space Jastrow follows the familar nesting of \texttt{jastrow-cor
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{correlation} element} \\
 \hline
@@ -191,7 +191,7 @@ Input for the k-space Jastrow follows the familar nesting of \texttt{jastrow-cor
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{coefficients} element} \\
 \hline
@@ -223,7 +223,7 @@ Additional information:
 \end{itemize}
 
 
-\begin{lstlisting}[style=XML,caption=k-space Jastrow with one- and two-body terms.]
+\begin{lstlisting}[style=QMCPXML,caption=k-space Jastrow with one- and two-body terms.]
   <jastrow type="kSpace" name="Jk" source="ion0">
      <correlation kc="4.0" type="One-Body" symmetry="cystal">
         <coefficients id="cG1" type="Array">                  
@@ -236,7 +236,7 @@ Additional information:
   </jastrow>
 \end{lstlisting}
 
-\begin{lstlisting}[style=XML,caption=k-space Jastrow with one-body term only.]
+\begin{lstlisting}[style=QMCPXML,caption=k-space Jastrow with one-body term only.]
   <jastrow type="kSpace" name="Jk" source="ion0">
      <correlation kc="4.0" type="One-Body" symmetry="cystal">
         <coefficients id="cG1" type="Array">                  
@@ -245,7 +245,7 @@ Additional information:
   </jastrow>
 \end{lstlisting}
 
-\begin{lstlisting}[style=XML,caption=k-space Jastrow with two-body term only.]
+\begin{lstlisting}[style=QMCPXML,caption=k-space Jastrow with two-body term only.]
   <jastrow type="kSpace" name="Jk" source="ion0">
      <correlation kc="4.0" type="Two-Body" symmetry="crystal">
         <coefficients id="cG2" type="Array">                  
@@ -321,7 +321,7 @@ For both the Yukawa and Gaskell RPA Jastrows, the default value for $r_s$ is $r_
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{jastrow type=Two-Body function=rpa/yukawa} element} \\
 \hline
@@ -344,7 +344,7 @@ For both the Yukawa and Gaskell RPA Jastrows, the default value for $r_s$ is $r_
 \FloatBarrier
 
 
-\begin{lstlisting}[style=XML,caption=Two body RPA Jastrow with long- and short-ranged parts.]
+\begin{lstlisting}[style=QMCPXML,caption=Two body RPA Jastrow with long- and short-ranged parts.]
 <jastrow name=''Jee'' type=''Two-Body'' function=''rpa''>
 </jastrow>
 \end{lstlisting}
@@ -398,7 +398,7 @@ elements often also using the three-body term described above.
 \paragraph{Example use case}
 Here is an example of H2O molecule. After optimizing one and two body Jastrow factors, add the following block in the wavefunction.
 The coefficients will be filled zero automatically if not given.
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 <jastrow name="J3" type="eeI" function="polynomial" source="ion0" print="yes">
   <correlation ispecies="O" especies="u" isize="3" esize="3" rcut="10">
     <coefficients id="uuO" type="Array" optimize="yes"> </coefficients>

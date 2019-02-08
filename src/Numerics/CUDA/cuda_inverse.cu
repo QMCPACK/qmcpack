@@ -144,7 +144,6 @@ convert_complex (Tdest **dest_list, Tsrc **src_list, int len)
   }
 }
 
-
 // Four matrix inversion functions
 // 1. for float matrices
 //    useHigherPrecision = false --> single precision operations
@@ -245,7 +244,6 @@ cublas_inverse (cublasHandle_t handle,
 
   cudaDeviceSynchronize();
 }
-
 
 // 3. for complex float matrices
 //    useHigherPrecision = false --> single precision operations

@@ -80,7 +80,7 @@ class EnergyEstimator: public EstimatorBase
     }
   }
 
-  void print(std::ofstream& out,WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
   {
     if(TG.Global().root()) {
      int n = wset.get_global_target_population();
