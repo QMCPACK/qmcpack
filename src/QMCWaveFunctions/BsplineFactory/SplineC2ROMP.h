@@ -137,6 +137,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     SplineInst=new MultiBspline<ST, ALIGN, OffloadAllocator>();
     SplineInst->create(xyz_g,xyz_bc,myV.size());
     MultiSpline=SplineInst->spline_m;
+    PRAGMA_OMP("omp target enter data map(to:MultiSpline[0:1])")
 
     app_log() << "MEMORY " << SplineInst->sizeInByte()/(1<<20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation"
