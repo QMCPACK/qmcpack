@@ -13,7 +13,7 @@
 // -*- C++ -*-
 /**@file MultiBspline.hpp
  *
- * define classes MultiBspline and MultiBspline1D
+ * define classes MultiBspline
  * The evaluation functions are defined in MultiBsplineEval.hpp
  */
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
@@ -27,6 +27,11 @@
 namespace qmcplusplus
 {
 
+  /** container class to hold a 3D multi spline pointer and BsplineAllocator
+   * @tparam T the precision of splines
+   * @tparam ALIGN the alignment of the orbital dimention
+   * @tparam ALLOC memory allocator
+   */
   template<typename T, size_t ALIGN = QMC_CLINE, typename ALLOC=Mallocator<T, ALIGN>>
     struct MultiBspline
     {
@@ -86,15 +91,15 @@ namespace qmcplusplus
       /** copy a single spline to the big table
        * @param aSpline UBspline_3d_(d,s)
        * @param int index of aSpline
-       * @param offset_ starting index for the case of multiple domains
-       * @param base_ number of bases
        */
       template<typename SingleSpline>
       void copy_spline(SingleSpline* aSpline,int i)
       {
+        if(spline_m==nullptr)
+          throw std::runtime_error("The internal storage of MultiBspline must be created first!\n");
         if( aSpline->x_grid.num != spline_m->x_grid.num ||
             aSpline->y_grid.num != spline_m->y_grid.num ||
-            aSpline->z_grid.num != spline_m->z_grid.num)
+            aSpline->z_grid.num != spline_m->z_grid.num )
           throw std::runtime_error("Cannot copy a single spline to MultiSpline with a different grid!\n");
 
         const int BaseOffset[3] = {0, 0, 0};

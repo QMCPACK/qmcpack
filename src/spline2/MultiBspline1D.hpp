@@ -9,14 +9,9 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/**@file MultiBspline1D.hpp
+/**@file MultiBspline.hpp
  *
- * Literal port of einspline/multi_bspline_eval_d_std3.cpp by Ye at ANL
- * Modified to handle both float/double operations
- * - template parameter T for the precision
- * - MUB spline object created by einspline allocators.
- * Function signatures modified anticipating its use by a class that can perform data parallel execution
- * - evaluate(...., int first, int last)
+ * define classes MultiBspline1D
  */
 
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_1D_HPP
@@ -25,6 +20,9 @@
 namespace qmcplusplus
 {
 
+  /** container class to hold a 1D multi spline structure
+   * @tparam T the precision of splines
+   */
   template<typename T>
     struct MultiBspline1D
     {
