@@ -160,16 +160,16 @@ namespace spline2offload
       T* restrict hyz=hess+4*out_offset;
       T* restrict hzz=hess+5*out_offset;
 
-      OMPstd::fill(vals,vals+num_splines,T());
-      OMPstd::fill(gx,gx+num_splines,T());
-      OMPstd::fill(gy,gy+num_splines,T());
-      OMPstd::fill(gz,gz+num_splines,T());
-      OMPstd::fill(hxx,hxx+num_splines,T());
-      OMPstd::fill(hxy,hxy+num_splines,T());
-      OMPstd::fill(hxz,hxz+num_splines,T());
-      OMPstd::fill(hyy,hyy+num_splines,T());
-      OMPstd::fill(hyz,hyz+num_splines,T());
-      OMPstd::fill(hzz,hzz+num_splines,T());
+      OMPstd::fill_n(vals,vals+num_splines,T());
+      OMPstd::fill_n(gx,gx+num_splines,T());
+      OMPstd::fill_n(gy,gy+num_splines,T());
+      OMPstd::fill_n(gz,gz+num_splines,T());
+      OMPstd::fill_n(hxx,hxx+num_splines,T());
+      OMPstd::fill_n(hxy,hxy+num_splines,T());
+      OMPstd::fill_n(hxz,hxz+num_splines,T());
+      OMPstd::fill_n(hyy,hyy+num_splines,T());
+      OMPstd::fill_n(hyz,hyz+num_splines,T());
+      OMPstd::fill_n(hzz,hzz+num_splines,T());
 
       for (int i=0; i<4; i++)
         for (int j=0; j<4; j++)
