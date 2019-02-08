@@ -4,13 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@intel.com, University of Illinois at Urbana-Champaign
-//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
-//                    Anouar Benali, benali@anl.gov, Argonne National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -25,7 +21,9 @@
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
-#include <Utilities/FairDivide.h>
+#include "OpenMP/OMPallocator.hpp"
+#include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
@@ -41,6 +39,9 @@ namespace qmcplusplus
 template<typename ST, typename TT>
 struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
 {
+  static const int ALIGN=QMC_CLINE;
+  using OffloadAllocator=OMPallocator<ST, Mallocator<ST, QMC_CLINE>>;
+
   static const int D=3;
   using BaseType=SplineAdoptorBase<ST,3>;
   using SplineType=typename bspline_traits<ST,3>::SplineType;
@@ -64,12 +65,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
 
   ///number of complex bands
   int nComplexBands;
-  ///number of points of the original grid
-  int BaseN[3];
-  ///offset of the original grid, always 0
-  int BaseOffset[3];
   ///multi bspline set
-  MultiBspline<ST>* SplineInst;
+  MultiBspline<ST, ALIGN, OffloadAllocator>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
   ///also used as identifier of shallow copy
   SplineType* MultiSpline;
@@ -137,15 +134,9 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst=new MultiBspline<ST>();
+    SplineInst=new MultiBspline<ST, ALIGN, OffloadAllocator>();
     SplineInst->create(xyz_g,xyz_bc,myV.size());
     MultiSpline=SplineInst->spline_m;
-
-    for(size_t i=0; i<D; ++i)
-    {
-      BaseOffset[i]=0;
-      BaseN[i]=xyz_g[i].num+3;
-    }
 
     app_log() << "MEMORY " << SplineInst->sizeInByte()/(1<<20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation"
@@ -176,21 +167,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
-    SplineInst->copy_spline(spline_r,2*ispline  ,BaseOffset, BaseN);
-    SplineInst->copy_spline(spline_i,2*ispline+1,BaseOffset, BaseN);
-  }
-
-  void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
-  {
-    Vector<ST> v_r(psi_r,0), v_i(psi_i,0);
-    SplineInst->set(2*ispline  ,v_r);
-    SplineInst->set(2*ispline+1,v_i);
-  }
-
-
-  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
-      int twist, int ispline, const int* offset_l, const int* mesh_l)
-  {
+    SplineInst->copy_spline(spline_r,2*ispline  );
+    SplineInst->copy_spline(spline_i,2*ispline+1);
   }
 
   bool read_splines(hdf_archive& h5f)
