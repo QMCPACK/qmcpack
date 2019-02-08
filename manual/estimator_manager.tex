@@ -22,21 +22,21 @@ I will refer to the average in the $\{\}$ as \textit{ensemble average} and the r
 \subsection{Class Relations}
 A large number of classes are involved in the estimator collection process. They often have misleading class name or method name. Document gotchas in the following list:
 \begin{enumerate}
-\item \verb|EstimatorManager| is an unused copy of \verb|EstimatorManagerBase|. \verb|EstimatorManagerBase| is the class used in the QMC drivers. (PR \#371 explains this)
-\item \verb|EstimatorManagerBase::Estimators| is completely different from \verb|QMCDriver::Estimators|, which is subtly different from \verb|QMCHamiltonianBase::Estimators|. The first is a list of pointers to \verb|ScalarEstimatorBase|. The second is the master estimator (one per MPI group). The third is the slave estimator that exists one per OpenMP thread.
-\item \verb|QMCHamiltonian| is NOT a parent class of \verb|QMCHamiltonianBase|. Instead, \verb|QMCHamiltonian| owns two lists of \verb|QMCHamiltonianBase| named \verb|H| and \verb|auxH|.
-\item \verb|QMCDriver::H| is NOT the same as \verb|QMCHamiltonian::H|. The first is a pointer to a \verb|QMCHamiltonian|. \verb|QMCHamiltonian::H| is a list.
-\item \verb|EstimatorManager::stopBlock(std::vector)| is completely different from \verb|EstimatorManager::|
-\verb|stopBlock(RealType)|, which is the same as \verb|stopBlock(RealType, true)|, but is subtly different from \verb|stopBlock(RealType, false)|. The first three methods are intended to be called by the master estimator which exists one per MPI group. The last method is intended to be called by the slave estimator which exists one per OpenMP thread.
+\item \icode{EstimatorManager} is an unused copy of \icode{EstimatorManagerBase}. \icode{EstimatorManagerBase} is the class used in the QMC drivers. (PR \#371 explains this)
+\item \icode{EstimatorManagerBase::Estimators} is completely different from \icode{QMCDriver::Estimators}, which is subtly different from \icode{QMCHamiltonianBase::Estimators}. The first is a list of pointers to \icode{ScalarEstimatorBase}. The second is the master estimator (one per MPI group). The third is the slave estimator that exists one per OpenMP thread.
+\item \icode{QMCHamiltonian} is NOT a parent class of \icode{QMCHamiltonianBase}. Instead, \icode{QMCHamiltonian} owns two lists of \icode{QMCHamiltonianBase} named \icode{H} and \icode{auxH}.
+\item \icode{QMCDriver::H} is NOT the same as \icode{QMCHamiltonian::H}. The first is a pointer to a \icode{QMCHamiltonian}. \icode{QMCHamiltonian::H} is a list.
+\item \icode{EstimatorManager::stopBlock(std::vector)} is completely different from \icode{EstimatorManager::}
+\icode{stopBlock(RealType)}, which is the same as \icode{stopBlock(RealType, true)}, but is subtly different from \icode{stopBlock(RealType, false)}. The first three methods are intended to be called by the master estimator which exists one per MPI group. The last method is intended to be called by the slave estimator which exists one per OpenMP thread.
 \end{enumerate}
 
 \subsection{Estimator Output Stages}
-%In QMCPACK, evaluation is done by \verb|QMCHamiltonianBase|; ensemble average is done either by a ``CloneDriver'' (e.g. \verb|VMCSingleOMP|, \verb|DMCOMP|) or \verb|ScalarEstimatorBase|; block average is done by \verb|ScalarEstimatorBase| or \verb|EstimatorManagerBase|. Walkers can be accessed by ``CloneDriver'' and \verb|QMCHamiltonianBase| but not by \verb|EstimatorManagerBase| or \verb|ScalarEstimatorBase|. Output files can be accessed by the latter two classes but not the former two. Therefore, in order to output estimators to file, data must be transferred from \textit{evaluate} classes to \textit{average} classes.
+%In QMCPACK, evaluation is done by \icode{QMCHamiltonianBase}; ensemble average is done either by a ``CloneDriver'' (e.g. \icode{VMCSingleOMP}, \icode{DMCOMP}) or \icode{ScalarEstimatorBase}; block average is done by \icode{ScalarEstimatorBase} or \icode{EstimatorManagerBase}. Walkers can be accessed by ``CloneDriver'' and \icode{QMCHamiltonianBase} but not by \icode{EstimatorManagerBase} or \icode{ScalarEstimatorBase}. Output files can be accessed by the latter two classes but not the former two. Therefore, in order to output estimators to file, data must be transferred from \textit{evaluate} classes to \textit{average} classes.
 
 Estimators take four conceptual stages to propagate to the output files: evaluate, load ensemble, unload ensemble, and collect. They are easier to understand in reverse order.
 
 \subsubsection{Collect Stage}
-File output is performed by the master \verb|EstimatorManager| owned by \verb|QMCDriver|. The first 8+ entries in \verb|EstimatorManagerBase::AverageCache| will be written to scalar.dat. The remaining entries in \verb|AverageCache| will be written to stat.h5. File writing is triggered by \verb|EstimatorManagerBase|\\ \verb|::collectBlockAverages| inside \verb|EstimatorManagerBase::stopBlock|.
+File output is performed by the master \icode{EstimatorManager} owned by \icode{QMCDriver}. The first 8+ entries in \icode{EstimatorManagerBase::AverageCache} will be written to scalar.dat. The remaining entries in \icode{AverageCache} will be written to stat.h5. File writing is triggered by \icode{EstimatorManagerBase}\\ \icode{::collectBlockAverages} inside \icode{EstimatorManagerBase::stopBlock}.
 
 \begin{lstlisting}
 // In EstimatorManagerBase.cpp::collectBlockAverages
@@ -55,7 +55,7 @@ File output is performed by the master \verb|EstimatorManager| owned by \verb|QM
   }
 \end{lstlisting}
 
-\verb|EstimatorManagerBase::collectBlockAverages| is triggered from master-thread estimator via either \verb|stopBlock(std::vector)| or \verb|stopBlock(RealType, true)|. Notice, file writing is NOT triggered by the slave-thread estimator method \verb|stopBlock(RealType, false)|.
+\icode{EstimatorManagerBase::collectBlockAverages} is triggered from master-thread estimator via either \icode{stopBlock(std::vector)} or \icode{stopBlock(RealType, true)}. Notice, file writing is NOT triggered by the slave-thread estimator method \icode{stopBlock(RealType, false)}.
 
 \begin{lstlisting}
 // In EstimatorManagerBase.cpp
@@ -93,11 +93,23 @@ inline void takeBlockAverage(IT first, IT first_sq)
 }
 \end{lstlisting}
 
-At the collect stage, \verb|ScalarEstimatorBase::scalars| must be populated with ensemble-averaged data. Two derived classes of \verb|ScalarEstimatorBase| are crucial: \verb|LocalEnergyEstimator| will carry \verb|Properties|, where as \verb|CollectablesEstimator| will carry \verb|Collectables|.
+At the collect stage, \icode{ScalarEstimatorBase::scalars} must be populated with ensemble-averaged data. Two derived classes of \icode{ScalarEstimatorBase} are crucial: \icode{LocalEnergyEstimator} will carry \icode{Properties}, where as \icode{CollectablesEstimator} will carry \icode{Collectables}.
 
 \subsubsection{Unload Ensemble Stage}
-\verb|LocalEnergyEstimator::scalars| are populated by \verb|ScalarEstimatorBase::accumulate|, whereas \verb|CollectablesEstimator::scalars| are populated by \verb|CollectablesEstimator::|
-\verb|accumulate_all|. Both accumulate methods are triggered by \verb|EstimatorManagerBase::accumulate|. One confusing aspect about the unload stage is that \verb|EstimatorManagerBase::accumulate| has a master and a slave call signature. A slave estimator such as \verb|QMCUpdateBase::Estimators| should unload a subset of walkers. Thus, the slave estimator should call \verb|accumulate(W,it,it_end)|. However, the master estimator, such as \verb|SimpleFixedNodeBranch::myEstimator| should unload data from the entire walker ensemble. This is achieved by calling \verb|accumulate(W)|.
+\icode{LocalEnergyEstimator::scalars} are populated by
+\icode{ScalarEstimatorBase::accumulate}, whereas
+\icode{CollectablesEstimator::scalars} are populated by
+\icode{CollectablesEstimator::} \icode{accumulate_all}. Both
+accumulate methods are triggered by
+\icode{EstimatorManagerBase::accumulate}. One confusing aspect about
+the unload stage is that \icode{EstimatorManagerBase::accumulate} has
+a master and a slave call signature. A slave estimator such as
+\icode{QMCUpdateBase::Estimators} should unload a subset of
+walkers. Thus, the slave estimator should call
+\icode{accumulate(W,it,it_end)}. However, the master estimator, such
+as \icode{SimpleFixedNodeBranch::myEstimator} should unload data from
+the entire walker ensemble. This is achieved by calling
+\icode{accumulate(W)}.
 
 \begin{lstlisting}
 void EstimatorManagerBase::accumulate(MCWalkerConfiguration& W)
@@ -150,10 +162,10 @@ inline void accumulate_all(const MCWalkerConfiguration::Buffer_t& data, RealType
 }
 \end{lstlisting}
 
-At the unload ensemble stage, the data structures \verb|Properties| and \verb|Collectables| must be populated by appropriately normalized values so that the ensemble average can be correctly taken. \verb|QMCDriver| is responsible for the correct loading of data onto the walker ensemble.
+At the unload ensemble stage, the data structures \icode{Properties} and \icode{Collectables} must be populated by appropriately normalized values so that the ensemble average can be correctly taken. \icode{QMCDriver} is responsible for the correct loading of data onto the walker ensemble.
 
 \subsubsection{Load Ensemble Stage}
-\verb|Properties| in the Monte Carlo ensemble of walkers \verb|QMCDriver::W| is populated by \verb|QMCHamiltonian|\\ \verb|::saveProperties|. The master \verb|QMCHamiltonian::LocalEnergy|, \verb|::KineticEnergy|, and \verb|::Observables| must be properly populated at the end of the evaluate stage.
+\icode{Properties} in the Monte Carlo ensemble of walkers \icode{QMCDriver::W} is populated by \icode{QMCHamiltonian}\\ \icode{::saveProperties}. The master \icode{QMCHamiltonian::LocalEnergy}, \icode{::KineticEnergy}, and \icode{::Observables} must be properly populated at the end of the evaluate stage.
 \begin{lstlisting}
 // In QMCHamiltonian.h
   template<class IT>
@@ -165,13 +177,13 @@ At the unload ensemble stage, the data structures \verb|Properties| and \verb|Co
   }
 \end{lstlisting}
 
-\verb|Collectables|'s load stage is combined with its evaluate stage.
+\icode{Collectables}'s load stage is combined with its evaluate stage.
 
 \subsubsection{Evaluate Stage}
 
-The master \verb|QMCHamiltonian::Observables| is populated by slave \verb|QMCHamiltonianBase|
-\verb|::setObservables|. However, the call signature must be \verb|QMCHamiltonianBase::setObservables(|
-\verb|QMCHamiltonian::Observables)|. This call signature is enforced by \verb|QMCHamiltonian::evaluate| and \verb|QMCHamiltonian::auxHevaluate|.
+The master \icode{QMCHamiltonian::Observables} is populated by slave \icode{QMCHamiltonianBase}
+\icode{::setObservables}. However, the call signature must be \icode{QMCHamiltonianBase::setObservables(}
+\icode{QMCHamiltonian::Observables)}. This call signature is enforced by \icode{QMCHamiltonian::evaluate} and \icode{QMCHamiltonian::auxHevaluate}.
 
 \begin{lstlisting}
 // In QMCHamiltonian.cpp
@@ -289,10 +301,12 @@ bool DMCOMP::run()
 
 \subsection{Summary}
 
-Two ensemble-level data structures \verb|ParticleSet::Properties| and \verb|::Collectables| serve as intermediaries between evaluate classes and output classes to scalar.dat and stat.h5. \verb|Properties| appears in both scalar.dat and stat.h5, whereas \verb|Collectables| appears only in stat.h5. \verb|Properties| is overwritten by \verb|QMCHamiltonian::Observables| at the end of each step. \verb|QMCHamiltonian::Observables| is filled upon call to \verb|QMCHamiltonian::evaluate| and \verb|::auxHevaluate|. \verb|Collectables| is zeroed at the beginning of each step and accumulated upon call to \verb|::auxHevaluate|.
+Two ensemble-level data structures \icode{ParticleSet::Properties} and \icode{::Collectables} serve as intermediaries between evaluate classes and output classes to scalar.dat and stat.h5. \icode{Properties} appears in both scalar.dat and stat.h5, whereas \icode{Collectables} appears only in stat.h5. \icode{Properties} is overwritten by \icode{QMCHamiltonian::Observables} at the end of each step. \icode{QMCHamiltonian::Observables} is filled upon call to \icode{QMCHamiltonian::evaluate} and \icode{::auxHevaluate}. \icode{Collectables} is zeroed at the beginning of each step and accumulated upon call to \icode{::auxHevaluate}.
 
-Data are outputted to scalar.dat in 4 stages: evaluate, load, unload, and collect. In the evaluate stage, \verb|QMCHamiltonian::Observables| is populated by a list of \verb|QMCHamiltonianBase|. In the load stage, \verb|QMCHamiltonian::Observables| is transfered to \verb|Properties| by \verb|QMCDriver|. In the unload stage, \verb|Properties| is copied to \verb|LocalEnergyEstimator::scalars|. In the collect stage, \verb|LocalEnergyEstimator::scalars| is block-averaged to \verb|EstimatorManagerBase|\\ \verb|::AverageCache| and dumped to file. For \verb|Collectables|, the evaluate and load stages are combined in a call to \verb|QMCHamiltonian::auxHevaluate|. In the unload stage, \verb|Collectables| is copied to \verb|CollectablesEstimator::scalars|. In the collect stage, \verb|CollectablesEstimator|\\ \verb|::scalars| is block-averaged to \verb|EstimatorManagerBase::AverageCache| and dumped to file.
+Data are outputted to scalar.dat in 4 stages: evaluate, load, unload, and collect. In the evaluate stage, \icode{QMCHamiltonian::Observables} is populated by a list of \icode{QMCHamiltonianBase}. In the load stage, \icode{QMCHamiltonian::Observables} is transfered to \icode{Properties} by \icode{QMCDriver}. In the unload stage, \icode{Properties} is copied to \icode{LocalEnergyEstimator::scalars}. In the collect stage, \icode{LocalEnergyEstimator::scalars} is block-averaged to \icode{EstimatorManagerBase}\\ \icode{::AverageCache} and dumped to file. For \icode{Collectables}, the evaluate and load stages are combined in a call to \icode{QMCHamiltonian::auxHevaluate}. In the unload stage, \icode{Collectables} is copied to \icode{CollectablesEstimator::scalars}. In the collect stage, \icode{CollectablesEstimator}\\ \icode{::scalars} is block-averaged to \icode{EstimatorManagerBase::AverageCache} and dumped to file.
 
 \subsection{Appendix: dmc.dat}
 
-There is an additional data structure \verb|ParticleSet::EnsembleProperty|, which is managed by \verb|WalkerControlBase::EnsembleProperty| and directly dumped to dmc.dat via its own averaging procedure. dmc.dat is written by \verb|WalkerControlBase::measureProperties|, which is called by \verb|WalkerControlBase::branch|, which is called by \verb|SimpleFixedNodeBranch|\\ \verb|::branch| for example.
+\begin{sloppypar}
+There is an additional data structure \icode{ParticleSet::EnsembleProperty}, which is managed by \icode{WalkerControlBase::EnsembleProperty} and directly dumped to dmc.dat via its own averaging procedure. dmc.dat is written by \icode{WalkerControlBase::measureProperties}, which is called by \icode{WalkerControlBase::branch}, which is called by \icode{SimpleFixedNodeBranch}\\ \icode{::branch} for example.
+\end{sloppypar}

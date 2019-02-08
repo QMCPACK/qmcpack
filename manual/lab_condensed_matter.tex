@@ -112,7 +112,7 @@ We will now use Nexus to generate the trial wavefunction for this BCC beryllium.
 
 Fortunately, the Nexus will handle determination of the proper k-vectors given the tiling matrix.  All that is needed is to place the tiling matrix in the Be-2at-setup.py file.   Now the definition of the physical system is:
 
-\begin{lstlisting}
+\begin{lstlisting}[style=Python]
     bcc_Be = generate_physical_system(
         lattice    = 'cubic',
         cell       = 'primitive',
@@ -135,11 +135,11 @@ Run these calculations by executing the script Be-2at-setup.py.  You will notice
 In this case, the wavefunction is generated in the directory bcc-beryllium/nscf-2at\_222/pwscf\_output in a file called pwscf.pwscf.h5.  It can be useful for debugging purposes to be able to verify the contents of this file are what you expect.  For instance, you can use the tool h5ls to check the geometry of the cell where the dft calculations were performed, or number of k-points or electrons in the calculation.  This is done with the command: h5ls -d pwscf.pwscf.h5/supercell or h5ls -d pwscf.pwscf.h5/electrons.
 
 In the course of running Be-2at-setup.py, you will get an error when attempting to perform the vmc and wavefunction optimization calculations.  This is due to the fact that the wavefunction has been generated supercell twists of the form (+/- 1/4, +/- 1/4, +/- 1/4).  In the case that the supercell twist contains only 0 or 1/2, it is possible to operate entirely with real arithmetic.  The executable that has been indicated in Be-2at-setup.py has been compiled for this case.  Note that where this is possible, the memory usage is a factor of two less than the general case and the calculations are somewhat faster.  However, it is often necessary to perform calculations away from these special twist angles in order to reduce finite size effects.  To fix this, delete the directory bcc-beryllium/opt-2at, change the line in near the top of Be-2at-setup.py from 
-\begin{lstlisting}
+\begin{lstlisting}[style=Python]
 qmcpack    = '/soft/applications/qmcpack/Binaries/qmcpack'
 \end{lstlisting}
 to
-\begin{lstlisting}
+\begin{lstlisting}[style=Python]
 qmcpack    = '/soft/applications/qmcpack/Binaries/qmcpack_comp'
 \end{lstlisting}
 and rerun the script.
@@ -184,7 +184,7 @@ In this section we will examine a calculation of an isolated sheet of graphene. 
 Aside from the change in boundary conditions, the main thing that distinguished this kind of calculation from the beryllium example above is the large amount of vacuum in the cell.  While this is a very small calculation designed to run quickly in the tutorial, in general a more converged calculation would quickly become memory limited on an architecture like BG/Q.  When the initial wavefunciton optimizaiton has completed to your satisfaction, run the script graphene-loop-mesh.py.  This examines within variational Monte Carlo an approache to reducing the memory required to store the wavefunction.  In graphene-loop-mesh.py, the spacing between the b-spline points is varied uniformly.  The mesh spacing is a prefactor to the linear spacing between the spline points, so the memory usage goes as the cube of the meshfactor.  When you run the calculations, examine the .s000.scalar.dat files with qmca to determine the lowest possible mesh spacing that preserves both the vmc energy and the variance.  
 
 Finally, edit the file graphene-final.py which will perform two DMC calculations.  In the first, (qmc1) replace the following lines:
-\begin{lstlisting}
+\begin{lstlisting}[style=Python]
     meshfactor   = xxx,
     precision    = '---',
 \end{lstlisting}

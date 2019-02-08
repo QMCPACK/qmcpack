@@ -115,7 +115,7 @@ used.  This allows calculation at $\Gamma$) and, e.g., some high
 symmetry k-points at the Brillouin zone edges.  More general k-points
 requiring complex coefficients will be supported in future releases.
 
-\begin{lstlisting}[caption=Example PySCF input for single k-point calculation for a 2x1x1 Carbon supercell.]
+\begin{lstlisting}[style=Python,caption=Example PySCF input for single k-point calculation for a 2x1x1 Carbon supercell.]
 #!/usr/bin/env python
 
 import numpy
@@ -168,7 +168,7 @@ savetoqmcpack(supcell,mf,title=title,kpts=kpts)
 \end{lstlisting}
 
 Note that the last 4 lines of the file
-\begin{lstlisting}
+\begin{lstlisting}[style=Python]
 kpts=[]
 title="C_Diamond"
 from PyscfToQmcpack import savetoqmcpack
@@ -186,7 +186,7 @@ qmcpack/src/QMCTools directory under the name
 \textit{PyscfToQmcpack.py}. In order for the script to work, you need
 to specify the path to the file in your PYTHONPATH such as
 
-\begin{lstlisting}
+\begin{lstlisting}[style=SHELL]
 export PYTHONPATH=QMCPACK_PATH/src/QMCTools:$PYTHONPATH
 \end{lstlisting}
 
@@ -194,7 +194,7 @@ When using multiple k-points, it is necessary to expand the kpoints into the equ
 
 The following example corresponds to the same carbon system (2x1x1) however, in this case, we use a primitive simulation cell and a 2x1x1 kpoint mesh.   
 
-\begin{lstlisting}[caption=Example PySCF input for single k-point calculation for a 2x1x1 Carbon supercell.]
+\begin{lstlisting}[style=Python,caption=Example PySCF input for single k-point calculation for a 2x1x1 Carbon supercell.]
 #!/usr/bin/env python
 
 import numpy
@@ -252,13 +252,13 @@ kpts -= kpts[0]
 \end{lstlisting}
 Will generate k-points centered around the $\Gamma$-point and will insure the molecular coefficients are real.\\
 
-\begin{lstlisting}
+\begin{lstlisting}[style=Python]
 mf = scf.KRHF(supcell,kpts).density_fit()
 \end{lstlisting}
 The Computational algorithm chosen in PySCF is \textit{KRHF} instead of \textit{RHF}.
 
 Finally, to generate the HDF5 file needed by \qmcpack we call the \textit{savetoqmcpack} function\\
-\begin{lstlisting}
+\begin{lstlisting}[style=Python]
 from PyscfToQmcpack import savetoqmcpack
 savetoqmcpack(supcell,mf,title=title,kpts=kpts,kmesh=kmesh)
 \end{lstlisting}
@@ -267,7 +267,7 @@ In this call, we simply specify the k-point mesh used in order to force the conv
 
 
 In order to generate QMCPACK input files, you will need to run for both cases \textit{convert4qmc} exactly as specified in section ~\ref{sec:convert4qmc};
-\begin{lstlisting}
+\begin{lstlisting}[style=SHELL]
 convert4qmc -pyscf C_Diamond.h5
 \end{lstlisting}
 
@@ -278,7 +278,7 @@ $\Gamma$-point or using multiple k-points will work without further
 modification..
 
 Running convert4qmv will generate 3 input files;\\
-\begin{lstlisting}[style=XML,caption=CDiamond.structure.xml. This file contains the geometry of the system.]
+\begin{lstlisting}[style=QMCPXML,caption=CDiamond.structure.xml. This file contains the geometry of the system.]
 <?xml version="1.0"?>
 <qmcsystem>
   <simulationcell>
@@ -318,7 +318,7 @@ Running convert4qmv will generate 3 input files;\\
   \end{lstlisting}
 
   As one can see, that for both examples the 2 atom primitive cell has been expanded to contain 4 atoms in a 2x1x1 carbon cell.
-\begin{lstlisting}[style=XML,caption=CDiamond.wfj-Twist0.xml. This file contains the trial wavefunction.]
+\begin{lstlisting}[style=QMCPXML,caption=CDiamond.wfj-Twist0.xml. This file contains the trial wavefunction.]
 <?xml version="1.0"?>
 <qmcsystem>
   <wavefunction name="psi0" target="e">

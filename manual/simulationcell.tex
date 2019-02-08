@@ -1,11 +1,11 @@
 \section{Specifying the simulation cell}
 \label{chap:simulationcell}
 
-The \texttt{simulationcell} block specifies the geometry of the cell, how the boundary conditions should be handled, and how ewald summation should be broken up.
+The \ixml{simulationcell} block specifies the geometry of the cell, how the boundary conditions should be handled, and how ewald summation should be broken up.
 
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{simulationcell} element} \\
 \hline
@@ -25,8 +25,8 @@ The \texttt{simulationcell} block specifies the geometry of the cell, how the bo
 \end{center}
 \end{table}
 
-An example of a \texttt{simulationcell} block is given below:
-\begin{lstlisting}[style=XML]
+An example of a \ixml{simulationcell} block is given below:
+\begin{lstlisting}[style=QMCPXML]
   <simulationcell>
     <parameter name="lattice">
       3.8       0.0       0.0
@@ -51,10 +51,10 @@ The cell is specified using 3 lattice vectors.
 
 \subsection{Boundary conditions}
 QMCPACK offers the capability to use a mixture of open and periodic boundary conditions.
-The \texttt{bconds} parameter expects a single string of three characters separated by
+The \ixml{bconds} parameter expects a single string of three characters separated by
 spaces, \textit{e.g.} ``p p p'' for purely periodic boundary conditions. These characters control
 the behavior of the $x$, $y$, and $z$, axes, respectively. Non periodic directions must be placed after the periodic ones.
-Examples of valid \texttt{bconds} include:
+Examples of valid \ixml{bconds} include:
 
 \begin{description}
 \item[``p p p''] Periodic boundary conditions. Corresponds to a 3D crystal.
@@ -65,7 +65,7 @@ Examples of valid \texttt{bconds} include:
 
 \subsection{Vacuum}
 The vacuum option allows adding a vacuum region in slab or wire boundary conditions
-(\texttt{bconds= p p n} or \texttt{bconds= p n n}, respectively). The main use is
+(\ixml{bconds= p p n} or \ixml{bconds= p n n}, respectively). The main use is
 to save memory with spline or plane-wave basis trial wavefunctions, because no basis
 functions are required inside the vacuum region. For example, a large vacuum region
 can be added above and below a graphene sheet without having to generate the trial
@@ -74,13 +74,13 @@ be required. Note that the trial wavefunction must still be generated in a
 large enough box to sufficiently reduce periodic interactions in the underlying
 electronic structure calculation.
 
-With the vacuum option, the box used for Ewald summation increases along the axis labeled \texttt{n} by a factor of \texttt{vacuum}.
+With the vacuum option, the box used for Ewald summation increases along the axis labeled \ixml{n} by a factor of \ixml{vacuum}.
 Note that all the particles remain in the original box without altering their positions. i.e. Bond lengths are not changed by this option.
 The default value is 1, no change to the specified axes.
 
-An example of a \texttt{simulationcell} block using \texttt{vacuum} is given below.
+An example of a \ixml{simulationcell} block using \ixml{vacuum} is given below.
 The size of the box along the z-axis increases from 12 to 18 by the vacuum scale of 1.5.
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
   <simulationcell>
     <parameter name="lattice">
       3.8       0.0       0.0
@@ -95,16 +95,16 @@ The size of the box along the z-axis increases from 12 to 18 by the vacuum scale
   </simulationcell>
 \end{lstlisting}
 
-\subsection{\texttt{LR\_dim\_cutoff}}
+\subsection{LR\_dim\_cutoff}
 When using periodic boundary conditions direct calculation of the Coulomb energy is
 not well behaved. As a result, QMCPACK uses an optimized Ewald summation technique
 to compute the Coulomb interaction.\cite{Natoli1995}
 
 In the Ewald summation, the energy is broken into short- and long-ranged terms.
 The short-ranged term is computed directly in real space, while the long-ranged term is computed in reciprocal space.
-\texttt{LR\_dim\_cutoff} controls where the short-ranged term ends and the long-ranged term begins.
-The real-space cutoff, reciprocal-space cutoff, and \texttt{LR\_dim\_cutoff} are related via:
+\ixml{LR_dim_cutoff} controls where the short-ranged term ends and the long-ranged term begins.
+The real-space cutoff, reciprocal-space cutoff, and \ixml{LR_dim_cutoff} are related via:
 \[
-\texttt{LR\_dim\_cutoff} = r_{c} \times k_{c}
+texttt{LR_dim_cutoff} = r_{c} \times k_{c}
 \]
 where $r_{c}$ is the Wigner-Seitz radius, and $k_{c}$ is the length of the maximum $k$-vector used in the long-ranged term.

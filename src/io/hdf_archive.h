@@ -22,7 +22,6 @@
 #include <io/hdf_stl.h>
 #include <io/hdf_hyperslab.h>
 #include <io/hdf_double_hyperslab.h>
-#include <io/hdf_multi.h>
 #if defined(HAVE_LIBBOOST)
 #include <io/hdf_ma.h>
 #if !defined(__bgq__)

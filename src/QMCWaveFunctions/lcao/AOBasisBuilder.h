@@ -32,10 +32,13 @@ namespace qmcplusplus
    * Reimplement AtomiSPOSetBuilder.h
    */
 template<typename COT>
-struct AOBasisBuilder: public MPIObjectBase
+class AOBasisBuilder: public MPIObjectBase
 {
+public:
   enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND, CARTESIAN_EXPAND, MOD_NATURAL_EXPAND};
 
+private:
+  
   //builder for a set of radial functors for this atom
   RadialOrbitalSetBuilder<COT> radFuncBuilder;
 
@@ -51,7 +54,7 @@ struct AOBasisBuilder: public MPIObjectBase
 
   ///map for (n,l,m,s) to its quantum number index
   std::map<std::string,int> nlms_id;
-
+public:
   AOBasisBuilder(const std::string& eName, Communicate* comm);
 
   bool put(xmlNodePtr cur);

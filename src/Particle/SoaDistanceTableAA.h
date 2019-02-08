@@ -33,10 +33,8 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
     resize(target.getTotalNum());
   }
 
-#if (__cplusplus >= 201103L)
   SoaDistanceTableAA()=delete;
   SoaDistanceTableAA(const SoaDistanceTableAA&)=delete;
-#endif
   ~SoaDistanceTableAA() {}
 
   size_t compute_size(int N)

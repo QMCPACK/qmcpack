@@ -1,8 +1,16 @@
 \section{QMCPACK Coding Standards}
 
-The following document presents best practices for the code at the current time. New development should follow these guidelines and contributors are expected to adhere to them for the sake of consistency in the code base. A well prepared PR should follow these standards before inclusion in the mainline. A Clang format file can be found in ? that should be run to fix and check the code style whenever possible.
+The following document presents what we collectively have agreed are best practices for the code. This includes both a formatting style, naming conventions, documentation conventions, and certain prescriptions for C++ languague use. At the moment only the formatting can be enforced in an objective fashion.
 
-Keep reformatting, feature, and bug commits separate whenever possible.  
+New development should follow these guidelines and contributors are expected to adhere to them as they represent an integral part of our effort to continue \qmcpack as a worldclass and sustainable quantum Monte Carlo code. While some of the source code has a ways to go to live up to these ideas, new code even in old files should follow the new conventions not the local conventions of the file whenever possible. Work on the code with continuous improvement in mind and not a commitment to stasis.
+
+At anytime the \href{https://github.com/QMCPACK/qmcpack/wiki/Development-workflow}{current workflow conventions} for the project are described in the wiki on the github repository. It will save you and all the maintainers considerable time if you read these and ask questions up front.
+
+A PR should follow these standards before inclusion in the mainline. You can be sure of properly following the formatting conventions if you use clang-format.  The mechanics of clang-format setup and use are can be found at \url{https://github.com/QMCPACK/qmcpack/wiki/Source-formatting}.
+
+The clang-format file found at \ishell{qmcpack/src/.clang-format} that should be run over all code touched in a PR before a pull request is prepared. We also encourage developers to run clang-tidy with the \ishell{qmcpack/src/.clang-tidy} configuration over all new code.
+
+As much as possible try to break up refactoring, reformatting, feature, and bugs into separate small PR's. Aim for something that would take a reviewer no more than an hour. In this way we can maintain a good collective development velocity.
 
 \section{Files}
 Each file should start with the header

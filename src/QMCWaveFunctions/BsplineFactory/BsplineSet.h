@@ -152,7 +152,21 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
       SplineAdoptor::evaluate_vghgh(P,iat,v,g,h,gh);
     }
   }
+  virtual void evaluateGradSource (const ParticleSet &P
+                                     , int first, int last, const ParticleSet &source
+                                     , int iat_src, GradMatrix_t &gradphi)
+  {
+    //Do nothing, since Einsplines don't explicitly depend on ion positions.
+  }
 
+  virtual void evaluateGradSource (const ParticleSet &P, int first, int last,
+                                     const ParticleSet &source, int iat_src,
+                                     GradMatrix_t &grad_phi,
+                                     HessMatrix_t &grad_grad_phi,
+                                     GradMatrix_t &grad_lapl_phi)
+  {
+    //Do nothing, since Einsplines don't explicitly depend on ion positions.
+  }
 };
 
 }

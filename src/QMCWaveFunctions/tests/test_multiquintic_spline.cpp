@@ -60,7 +60,7 @@ TEST_CASE("MultiQuinticSpline", "[wavefunction][lcao]")
   data[3] = 2.0;
   data[4] = 0.1;
 
-  LogGrid<double> *agrid = new LogGrid<double>();
+  LogGrid<double>* agrid = new LogGrid<double>();
   agrid->set(.1, 1.0, 5);
 
   OneDimQuinticSpline<double> spline1(agrid);
@@ -74,7 +74,7 @@ TEST_CASE("MultiQuinticSpline", "[wavefunction][lcao]")
 
   MultiQuinticSpline1D<double> m_spline;
 
-  m_spline.initialize(agrid, 2);
+  m_spline.initialize(*agrid, 2);
   m_spline.add_spline(0, spline1);
   m_spline.add_spline(1, spline2);
 

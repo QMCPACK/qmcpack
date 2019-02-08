@@ -4,7 +4,7 @@
 PySCF (https://github.com/sunqm/pyscf) is a collection of electronic structure programs powered by Python. It is the recommended program for the generation of input for AFQMC calculations in QMCPACK. We refer the reader to the documentation of the code (http://sunqm.github.io/pyscf/) for a detailed description of the features and the functionality of the code. While the notes below are not meant to replace a detailed study of the PySCF documentation, these notes describe useful knowledge and tips in the use of pyscf for the generation of input for QMCPACK. 
 
 For molecular systems or periodic calculations at the Gamma point, PySCF provides a routine that generates the integral file in Molpro's FCIDUMP format, which contains all the information needed to run AFQMC with a single determinant trial wave-function. Below is an example using this routine to generate the FCIDUMP file for an 8-atom unit cell of carbon in the diamond structure with HF orbitals. For a detailed description, see PySCF's documentation.  
-\begin{lstlisting}[caption=Simple example showing how to generate FCIDUMP files with PySCF]
+\begin{lstlisting}[style=Python,caption=Simple example showing how to generate FCIDUMP files with PySCF]
 import numpy
 from pyscf.tools import fcidump
 from pyscf.pbc import gto, scf, tools
