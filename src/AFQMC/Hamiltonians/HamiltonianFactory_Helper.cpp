@@ -59,9 +59,6 @@ namespace afqmc
       bool distribute_Ham = (TG.getNNodesPerTG() < TG.getTotalNodes());
       std::vector<IndexType> row_counts(nrows);
 
-      Timer.reset("Generic1");
-      Timer.start("Generic1");
-
       // calculate column range that belong to this node
       if(distribute_Ham) {
         // count number of non-zero elements along each column (Chol Vec)
@@ -103,15 +100,8 @@ namespace afqmc
 
       }
 
-      Timer.stop("Generic1");
-      app_log()<<" -- Time to count elements in hdf5 read: "
-               <<Timer.average("Generic1") <<"\n";
-
       ucsr_matrix ucsr(tp_ul_ul{nrows,max_i-min_i},tp_ul_ul{0,min_i},row_counts,Alloc(TG.Node()));
       csr::matrix_emplace_wrapper<ucsr_matrix> csr_wrapper(ucsr,TG.Node());
-
-      Timer.reset("Generic1");
-      Timer.start("Generic1");
 
       using mat_map =  qmcplusplus::afqmc::matrix_map;
       csr_hdf5::multiple_reader_hdf5_csr<ValueType,int>(csr_wrapper,
@@ -119,14 +109,6 @@ namespace afqmc
                                   dump,TG,nread);
       csr_wrapper.push_buffer();
       TG.node_barrier();
-
-      Timer.stop("Generic1");
-      app_log()<<" -- Time to read into ucsr matrix: "
-               <<Timer.average("Generic1") <<"\n";
-
-      // careful here!!!
-      Timer.reset("Generic1");
-      Timer.start("Generic1");
 
       return FactorizedSparseHamiltonian::shm_csr_matrix(std::move(ucsr));
   }

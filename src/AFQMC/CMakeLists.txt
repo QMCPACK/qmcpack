@@ -40,7 +40,6 @@ IF(QMC_CUDA)
     Kernels/batchedDot.cu
     Kernels/copy_n_cast.cu
     Kernels/ajw_to_waj.cu 
-    Kernels/dot_wabn_wban.cu 
     Kernels/vKKwij_to_vwKiKj.cu 
     Kernels/KaKjw_to_QKajw.cu
     Kernels/vbias_from_v1.cu

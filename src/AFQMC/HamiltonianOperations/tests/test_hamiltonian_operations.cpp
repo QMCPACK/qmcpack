@@ -34,7 +34,6 @@
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
-#include "AFQMC/Utilities/myTimer.h"
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Utilities/test_utils.hpp"
@@ -180,12 +179,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
     CMatrix vHS({vdim1,vdim2},alloc_);
     TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
     if(HOps.transposed_vHS()) {
       for(int i=0; i<vHS.size(1); i++)
@@ -319,12 +314,8 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
     shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
     TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
     if(HOps.transposed_vHS()) {
       for(int i=0; i<vHS.size(1); i++)
@@ -420,12 +411,8 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
       for(int i=1; i<nw; i++)
         Gw[i] = Gw[0];
 
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.energy(Eloc,Gw,0,true);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
@@ -444,12 +431,8 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     shmCMatrix X({nCV,nw},shared_allocator<ComplexType>{TG.TG_local()});
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vbias: " <<Timer.total("Generic") <<std::endl;
     ComplexType Xsum=0;
     for(int i=0; i<X.size(); i++)
         Xsum += X[i][0];
@@ -464,12 +447,8 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     // doing twice to get reasonable timing estimate
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
     for(int i=0; i<vHS.size(1); i++)
         Vsum += vHS[0][i];
@@ -561,12 +540,8 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
 
     boost::multi::array_ref<ComplexType,2> Gw(to_address(G.origin()),{1,NEL*NMO});
     boost::multi::array<ComplexType,2> Eloc({1,3});
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
     Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
     Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
     Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
@@ -588,12 +563,8 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     shmCMatrix X({nCV,1},shared_allocator<ComplexType>{TG.TG_local()});
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vbias: " <<Timer.total("Generic") <<std::endl;
     ComplexType Xsum=0,X2sum=0;
     for(int i=0; i<X.size(); i++)
         Xsum += X[i][0];
@@ -610,12 +581,8 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     // doing twice to get reasonable timing estimate
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
     for(int i=0; i<vHS.size(1); i++)
         Vsum += vHS[0][i];
@@ -711,12 +678,8 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
 
     boost::multi::array_ref<ComplexType,2> Gw(to_address(G.origin()),{1,NEL*NMO});
     boost::multi::array<ComplexType,2> Eloc({1,3});
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
     Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
     Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
     Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
@@ -738,12 +701,8 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     shmCMatrix X({nCV,1},shared_allocator<ComplexType>{TG.TG_local()});
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vbias: " <<Timer.total("Generic") <<std::endl;
     ComplexType Xsum=0,X2sum=0;
     for(int i=0; i<X.size(); i++)
         Xsum += X[i][0];
@@ -760,12 +719,8 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     // doing twice to get reasonable timing estimate
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
     for(int i=0; i<vHS.size(1); i++)
         Vsum += vHS[0][i];

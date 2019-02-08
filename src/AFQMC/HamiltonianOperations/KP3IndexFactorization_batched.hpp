@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_AFQMC_HAMILTONIANOPERATIONS_KP3INDEXFACTORIZATION_BATCHED_HPP
 
 #include <Utilities/NewTimer.h>
+#include "Utilities/Timer.h"
 #include <vector>
 #include <type_traits>
 #include <random>
@@ -141,9 +142,9 @@ class KP3IndexFactorization_batched
         generator(),
         distribution(gQ.begin(),gQ.end()), 
         nsampleQ(nsampleQ_),
-        BTMats({1,1},sp_allocator_),
-        TMats({1,1},sp_allocator_),
-        IMats({1,1},IAllocator{allocator_}),
+        BTMats(iextensions<1u>{1},sp_allocator_),
+        TMats(iextensions<1u>{1},sp_allocator_),
+        IMats(iextensions<1u>{1},IAllocator{allocator_}),
         KKTransID( {nopk.size()+1,nopk.size()}, BAllocator{allocator_}),
         dev_nopk(nopk),
         dev_i0pk( typename IVector::extensions_type{nopk.size()}, IAllocator{allocator_}),
@@ -445,9 +446,13 @@ class KP3IndexFactorization_batched
         // simple implementation for now
         // taking 4Gbs for now, is this reasonable???
         size_t Bytes = size_t(4*1024)*size_t(1024*1024);
-        Bytes /= size_t(2*nwalk*nocc_max*nocc_max*nchol_max); 
-        size_t bz0 = std::max(size_t(1), size_t(std::floor(Bytes)));
-        batch_size = std::min(bz0,size_t(2*nkpts*nkpts));
+        Bytes /= size_t(nwalk*nocc_max*nocc_max*nchol_max*sizeof(ComplexType)); 
+        size_t bz0 = std::max(size_t(2), size_t(std::floor(Bytes)));
+        // batch_size includes the factor of 2 from Q/Qm pair
+        size_t batch_size = std::min(bz0,size_t(2*nkpts*nkpts));
+        // make sure batch_size is even
+        batch_size = batch_size - (batch_size%2);
+        assert(batch_size%2 == 0);
         int batch_cnt(0);
         using ma::gemmBatched;
         std::vector<sp_pointer> Aarray;
@@ -461,17 +466,17 @@ class KP3IndexFactorization_batched
         std::vector<int> kdiag;
         kdiag.reserve(batch_size);
 
-        size_t local_memory_needs = batch_size*size_t(2*nwalk*nocc_max*nocc_max*nchol_max) + 
+        size_t local_memory_needs = batch_size*size_t(nwalk*nocc_max*nocc_max*nchol_max) + 
                                     batch_size; 
         Timers[Timer_Ealloc]->start();
-        if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
-        if(IMats.num_elements() < batch_size) IMats.reextent({batch_size,1});
+        if(TMats.num_elements() < local_memory_needs) 
+          TMats = std::move(SpVector(iextensions<1u>{local_memory_needs}));
+        if(IMats.num_elements() < batch_size) IMats = std::move(IVector(iextensions<1u>{batch_size}));
         Timers[Timer_Ealloc]->stop();
-        cnt=0; 
-        SpVector_ref dev_scl_factors(TMats.origin()+cnt,{batch_size}); 
-        cnt+=dev_scl_factors.num_elements();
+        SpVector_ref dev_scl_factors(TMats.origin(),{batch_size}); 
         RealType scl = (walker_type==CLOSED?2.0:1.0);
         size_t nqk=1;  
+qmcplusplus::Timer Time;
         for(int Q=0; Q<nkpts; ++Q) {
           bool haveKE=false;
 
@@ -482,7 +487,8 @@ class KP3IndexFactorization_batched
           scl_factors.clear();  
           kdiag.clear();  
           batch_cnt=0;
-          Sp3Tensor_ref T1(TMats.origin()+cnt,{2*batch_size,nwalk*nocc_max,nocc_max*nchol_max});
+          Sp3Tensor_ref T1(dev_scl_factors.origin()+dev_scl_factors.num_elements(),
+                                {batch_size,nwalk*nocc_max,nocc_max*nchol_max});
 
           for(int Ka=0; Ka<nkpts; ++Ka) {
             int K0 = ((Q==Q0)?0:Ka);
@@ -738,7 +744,7 @@ class KP3IndexFactorization_batched
 
         Timers[Timer_Ealloc]->start();
         if(Qwn.size(0) != nwalk || Qwn.size(1) != nsampleQ)
-          Qwn.reextent({nwalk,nsampleQ});
+          Qwn = std::move(boost::multi::array<int,2>({nwalk,nsampleQ})); 
         Timers[Timer_Ealloc]->stop();
         {
           for(int n=0; n<nwalk; ++n) 
@@ -764,7 +770,8 @@ class KP3IndexFactorization_batched
 
         size_t local_memory_needs = 2*nocca_max*nocca_max*nchol_max; 
         Timers[Timer_Ealloc]->start();
-        if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
+        if(TMats.num_elements() < local_memory_needs) 
+          TMats = std::move(SpVector(iextensions<1u>{local_memory_needs})); 
         Timers[Timer_Ealloc]->stop();
         size_t local_cnt=0; 
         RealType scl = (walker_type==CLOSED?2.0:1.0);
@@ -853,7 +860,8 @@ class KP3IndexFactorization_batched
       if(addEJ) {
         size_t local_memory_needs = 2*nchol_max*nwalk; 
         Timers[Timer_Ealloc]->start();
-        if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
+        if(TMats.num_elements() < local_memory_needs) 
+          TMats = std::move(SpVector(iextensions<1u>{local_memory_needs}));
         Timers[Timer_Ealloc]->stop();
         cnt=0; 
         SpMatrix_ref Kr_local(TMats.origin(),{nwalk,nchol_max}); 
@@ -1002,7 +1010,8 @@ class KP3IndexFactorization_batched
       Timers[Timer_vHS6]->start();
       size_t mem_needs((nkpts+1)*nkpts*nwalk*nmo_max*nmo_max + nwalk*2*nkpts*nchol_max);
       Timers[Timer_vHSalloc]->start();
-      if(BTMats.num_elements() < mem_needs) BTMats.reextent({mem_needs,1});
+      if(BTMats.num_elements() < mem_needs) 
+        BTMats = std::move(SpVector(iextensions<1u>{mem_needs}));
       Timers[Timer_vHSalloc]->stop();
       Timers[Timer_vHS6]->stop();
 
@@ -1198,7 +1207,8 @@ class KP3IndexFactorization_batched
       // space for GQK and for v1
       size_t mem_needs(nkpts*nkpts*nwalk*nocca_max*nmo_max + (nkpts+1)*nchol_max*nwalk); 
       Timers[Timer_vballoc]->start();
-      if(BTMats.num_elements() < mem_needs) BTMats.reextent({mem_needs,1});
+      if(BTMats.num_elements() < mem_needs) 
+        BTMats = std::move(SpVector(iextensions<1u>{mem_needs})); 
       Timers[Timer_vballoc]->stop();
 
       assert(G.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
@@ -1275,7 +1285,7 @@ class KP3IndexFactorization_batched
     int Q0;
 
     int nocc_max;
-    size_t batch_size;
+//    size_t batch_size;
 
     Allocator allocator_;
     SpAllocator sp_allocator_;
@@ -1332,9 +1342,9 @@ class KP3IndexFactorization_batched
 
     // shared buffer space
     // using matrix since there are issues with vectors
-    SpMatrix BTMats;
-    SpMatrix TMats;
-    IMatrix IMats;
+    SpVector BTMats;
+    SpVector TMats;
+    IVector IMats;
 
     BoolMatrix KKTransID;
     IVector dev_nopk;
@@ -1356,7 +1366,7 @@ class KP3IndexFactorization_batched
 
     void set_buffer(size_t N) {
       if(BTMats.num_elements() < N) 
-        BTMats.reextent({N,1});
+        BTMats = std::move(SpVector(iextensions<1u>{N}));
     }
 
     template<class MatA, class MatB, class IVec, class IVec2>
