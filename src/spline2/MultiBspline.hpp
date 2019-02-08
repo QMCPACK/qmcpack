@@ -38,7 +38,7 @@ namespace qmcplusplus
       ///actual einspline multi-bspline object
       SplineType* spline_m;
       ///use allocator
-      einspline::BsplineAllocator<T, QMC_CLINE> myAllocator;
+      BsplineAllocator<T, QMC_CLINE> myAllocator;
 
       MultiBspline():spline_m(nullptr) {}
       MultiBspline(const MultiBspline& in)=delete;

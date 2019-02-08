@@ -18,7 +18,6 @@
 #include <simd/Mallocator.hpp>
 #include <simd/simd.hpp>
 #include <spline2/bspline_traits.hpp>
-#include "spline2/einspline_allocator.h"
 #include "simd/allocator.hpp"
 
 extern "C" {
@@ -30,8 +29,9 @@ void find_coefs_1d_s (Ugrid grid, BCtype_s bc, float *data,  intptr_t dstride,
     float *coefs, intptr_t cstride);
 }
 
-namespace qmcplusplus { namespace einspline {
+namespace qmcplusplus {
 
+namespace einspline {
   inline void find_coefs_1d(Ugrid grid, BCtype_d bc, double *data,  intptr_t dstride,
     double *coefs, intptr_t cstride)
   {
@@ -43,6 +43,7 @@ namespace qmcplusplus { namespace einspline {
   {
     find_coefs_1d_s(grid, bc, data, dstride, coefs, cstride);
   }
+}
 
   template<typename T, size_t ALIGN, typename ALLOC=Mallocator<T, ALIGN>>
   class BsplineAllocator
@@ -51,6 +52,9 @@ namespace qmcplusplus { namespace einspline {
     using SingleSplineType = typename bspline_traits<T,3>::SingleSplineType;
     using BCType = typename bspline_traits<T,3>::BCType;
     using real_type = typename bspline_traits<T,3>::real_type;
+
+    /// allocator
+    ALLOC mAllocator;
 
     public:
     ///default constructor
@@ -65,8 +69,8 @@ namespace qmcplusplus { namespace einspline {
     template<typename SplineType>
     void destroy(SplineType* spline)
     {
-      einspline_free(spline->coefs);
-      free(spline);
+      mAllocator.deallocate(spline->coefs, spline->coefs_size);
+      delete(spline);
     }
 
     ///allocate a multi-bspline structure
@@ -96,7 +100,7 @@ namespace qmcplusplus { namespace einspline {
                          BCType xBC, BCType yBC, BCType zBC, int num_splines)
     {
       // Create new spline
-      SplineType* restrict spline = (SplineType*) malloc (sizeof(SplineType));
+      SplineType* restrict spline = new SplineType;
       spline->spcode = bspline_traits<T,3>::spcode;
       spline->tcode  = bspline_traits<T,3>::tcode;
       spline->xBC = xBC;
@@ -139,7 +143,7 @@ namespace qmcplusplus { namespace einspline {
       spline->z_stride = N;
 
       spline->coefs_size=(size_t)Nx*spline->x_stride;
-      spline->coefs=(real_type*)einspline_alloc(sizeof(real_type)*spline->coefs_size,ALIGN);
+      spline->coefs = mAllocator.allocate(spline->coefs_size);
 
       return spline;
     }
@@ -150,7 +154,7 @@ namespace qmcplusplus { namespace einspline {
         BCType xBC, BCType yBC, BCType zBC, T* data)
     {
       // Create new spline
-      SingleSplineType* restrict spline = (SingleSplineType*) malloc (sizeof(SingleSplineType));
+      SingleSplineType* restrict spline = new SingleSplineType;
       spline->spcode = bspline_traits<T,3>::single_spcode;
       spline->tcode  = bspline_traits<T,3>::tcode;
       spline->xBC = xBC;
@@ -190,7 +194,7 @@ namespace qmcplusplus { namespace einspline {
 
       spline->coefs_size=(size_t)Nx*(size_t)Ny*(size_t)Nz;
 
-      spline->coefs= (real_type*)einspline_alloc (sizeof(real_type)*spline->coefs_size,ALIGN);
+      spline->coefs = mAllocator.allocate(spline->coefs_size);
 
       if(data != NULL) // only data is provided
       {
@@ -200,7 +204,7 @@ namespace qmcplusplus { namespace einspline {
           for (int iz=0; iz<Mz; iz++) {
             intptr_t doffset = iy*Mz+iz;
             intptr_t coffset = iy*Nz+iz;
-            find_coefs_1d(spline->x_grid, xBC, data+doffset, My*Mz,
+            einspline::find_coefs_1d(spline->x_grid, xBC, data+doffset, My*Mz,
                             spline->coefs+coffset, Ny*Nz);
           }
 
@@ -210,7 +214,7 @@ namespace qmcplusplus { namespace einspline {
           for (intptr_t iz=0; iz<Nz; iz++) {
             intptr_t doffset = ix*Ny*Nz + iz;
             intptr_t coffset = ix*Ny*Nz + iz;
-            find_coefs_1d(spline->y_grid, yBC, spline->coefs+doffset, Nz,
+            einspline::find_coefs_1d(spline->y_grid, yBC, spline->coefs+doffset, Nz,
                             spline->coefs+coffset, Nz);
           }
 
@@ -220,7 +224,7 @@ namespace qmcplusplus { namespace einspline {
           for (intptr_t iy=0; iy<Ny; iy++) {
             intptr_t doffset = (ix*Ny+iy)*Nz;
             intptr_t coffset = (ix*Ny+iy)*Nz;
-            find_coefs_1d(spline->z_grid, zBC, spline->coefs+doffset, 1,
+            einspline::find_coefs_1d(spline->z_grid, zBC, spline->coefs+doffset, 1,
                             spline->coefs+coffset, 1);
           }
       }
@@ -255,17 +259,5 @@ namespace qmcplusplus { namespace einspline {
         }
     }
 
-  void set(multi_UBspline_1d_d* spline, int i, UBspline_1d_d* spline_in,
-       const int offset, const int N);
-
-  void set(multi_UBspline_1d_s* spline, int i, UBspline_1d_d* spline_in,
-       const int offset, const int N);
-
-  /** create spline for double */
-  multi_UBspline_1d_d* create(multi_UBspline_1d_d* s, Ugrid& grid, BCtype_d& bc, int num_splines);
-
-  /** create spline for float */
-  multi_UBspline_1d_s* create(multi_UBspline_1d_s* s, Ugrid& grid, BCtype_s& bc, int num_splines);
-
-} }
+}
 #endif
