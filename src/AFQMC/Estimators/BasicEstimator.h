@@ -146,7 +146,7 @@ class BasicEstimator: public EstimatorBase
       if(timers) out<<"PseudoEnergy_t vHS_t vbias_t G_t Propagate_t Energy_comm_t vHS_comm_t Block_t ";
   }
 
-  void print(std::ofstream& out,WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
   {
     data[0] = enume.real()/ncalls;
     data[1] = edeno.real()/ncalls;

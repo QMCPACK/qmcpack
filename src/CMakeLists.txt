@@ -165,8 +165,6 @@ ENDIF(HAVE_OOMPI)
     Message/MPIObjectBase.cpp 
     Optimize/VariableSet.cpp
     io/hdf_archive.cpp
-    spline2/einspline_allocator.c
-    spline2/bspline_allocator.cpp
     spline2/MultiBsplineData.cpp
     )
 IF (IS_GIT_PROJECT)

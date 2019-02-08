@@ -169,7 +169,7 @@ ground state of an electron in the hydrogen atom, input (truncate at the
 thousandths place if you cannot copy and paste; script versions are also
 available in the \texttt{average} directory): 
 
-\texttt{
+\begin{lstlisting}[style=SHELL]
 (
 (-0.45298911858) + 
 (-0.45481953564) + 
@@ -177,7 +177,7 @@ available in the \texttt{average} directory):
 (-0.47316713469) + 
 (-0.46204733302)
 )/5.
-} 
+\end{lstlisting} 
 
 Then, press \textbf{[Enter]} to get:
 
@@ -197,7 +197,7 @@ around the mean of the data (also called the error bar), given by:
 To calculate the standard deviation around the mean (-0.464736835668) of these
 five data points, put in: 
 
-\texttt{
+\begin{lstlisting}[style=SHELL]
 ( (1./(5.*(5.-1.))) * ( 
 (-0.45298911858-(-0.464736835668))**2 + \\
 (-0.45481953564-(-0.464736835668))**2 + 
@@ -205,7 +205,7 @@ five data points, put in:
 (-0.47316713469-(-0.464736835668))**2 + 
 (-0.46204733302-(-0.464736835668))**2 ) 
 )**0.5
-} 
+\end{lstlisting} 
 
 Then, press \textbf{[Enter]} to get:
 
@@ -231,7 +231,7 @@ To calculate the standard deviation with this formula, input the following,
 which includes the square of the local energy calculated with each
 corresponding local energy:
 
-\texttt{
+\begin{lstlisting}[style=SHELL]
 ( (1./(5.-1.)) * ( 
 (0.60984565298-(-0.45298911858)**2) + \\
 (0.61641291630-(-0.45481953564)**2) + 
@@ -239,7 +239,7 @@ corresponding local energy:
 (0.78720769003-(-0.47316713469)**2) + 
 (0.56393677687-(-0.46204733302)**2) ) 
 )**0.5
-}
+\end{lstlisting}
 
 and press \textbf{[Enter]} to get:
 
@@ -578,7 +578,7 @@ proposed steps.  Stepping nearby in configuration space implies that the
 probability distribution is similar and thus more likely to result in an
 accepted move.  Keeping the acceptance ratio high means the algorithm is
 efficiently exploring configuration space and not sticking at particular
-configurations.  Return to the \texttt{autocorrelation} directory.  Refresh your
+configurations.  Return to the \ishell{autocorrelation} directory.  Refresh your
 memory on the time steps in this set of simulations by \textbf{grep timestep
 H.xml}. Then, type \textbf{qmca -q ar *scalar.dat} to see the acceptance ratio
 as it varies with decreasing time step:
@@ -652,7 +652,7 @@ parallel and increasing the number of blocks (with fixed number of steps per
 block, this increases the total number of MC steps).
 
 To see the effect of the running more samples in parallel, change to the
-directory \texttt{nodes}.  The series here increases the number of nodes by
+directory \ishell{nodes}.  The series here increases the number of nodes by
 factors of four from 32 to 128 to 512.  Type \textbf{qmca -q ev *scalar.dat}
 and note the change in the error bar on the local energy as the number of
 nodes.  Visualize this with \textbf{gnuplot H.plt}:
@@ -673,7 +673,7 @@ total CPU time of the simulation.
 Press \textbf{q [Enter]} to quit gnuplot.
 
 To see the effect of increasing the block number, change to the directory
-\texttt{blocks}. To see how we will vary the number of blocks, type
+\ishell{blocks}. To see how we will vary the number of blocks, type
 \textbf{grep -A1 blocks H.xml}.  The number of steps remains fixed, thus
 increasing the total number of samples.   Visualize the tradeoff by inputting
 \textbf{gnuplot H.plt}: 
@@ -702,7 +702,7 @@ the energy goes to -0.5 hartrees.  In nearly every other case, the exact
 function is unknown, and we add basis functions until the total energy does not
 change within some threshold.
 
-Change to the directory \texttt{basis} and look at the total energy and
+Change to the directory \ishell{basis} and look at the total energy and
 variance as we change the wave function by typing \textbf{qmca -q ev H\_*}:
 
 \begin{shade}
@@ -732,7 +732,7 @@ To do this, we will switch to the hydrogen dimer with the exact ground state
 wave function of the atom (STO basis)--this will not be exact for the dimer.
 The ground state energy of the hydrogen dimer is -1.174 hartrees.
 
-Change directories to \texttt{dimer} and put in \textbf{qmca -q ev *scalar.dat}
+Change directories to \ishell{dimer} and put in \textbf{qmca -q ev *scalar.dat}
 to see the result of adding a simple, one-parameter Jastrow to the STO basis
 for the hydrogen dimer at experimental bond length:
 
@@ -768,7 +768,7 @@ CPU time to verify this claim).
 \subsection{Scaling up}
 
 To see how MC scales with increasing particle number, change directories to
-\texttt{size}.  Here are the data from runs of increasing number of electrons
+\ishell{size}.  Here are the data from runs of increasing number of electrons
 for H, H$_2$, C, CH$_4$, C$_2$, C$_2$H$_4$, (CH$_4$)$_2$, and (C$_2$H$_4$)$_2$
 using the STO-6G basis set for the orbitals of the Slater determinant.  The file names begin with the number of electrons simulated for those data.
 

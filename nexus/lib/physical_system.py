@@ -563,17 +563,13 @@ class PhysicalSystem(Matter):
     #end def remove_folded
 
 
-    def get_primitive(self):
-        if self.folded_system is None:
-            fs = self
+    def get_smallest(self):
+        if self.has_folded():
+            return self.folded_system
         else:
-            fs = self.folded_system
-            while fs.folded_system!=None:
-                fs = fs.folded_system
-            #end while
+            return self
         #end if
-        return fs
-    #end def get_primitive
+    #end def get_smallest
 
 
     def folded_representation(self,arg0,arg1=None):

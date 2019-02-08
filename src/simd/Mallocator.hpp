@@ -30,7 +30,7 @@ namespace qmcplusplus
     typedef const T*  const_pointer;
 
     Mallocator() = default;
-    template <class U> Mallocator(const Mallocator<U,ALIGN>&) {}
+    template <class U> Mallocator(const Mallocator<U, ALIGN>&) {}
 
     template <class U> struct rebind { typedef Mallocator<U, ALIGN> other; };
 
