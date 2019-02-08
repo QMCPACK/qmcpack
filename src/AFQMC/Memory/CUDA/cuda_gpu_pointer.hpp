@@ -480,6 +480,23 @@ using qmcplusplus::afqmc::to_address;
 /**************** copy *****************/
 // Can always call cudaMemcopy2D like you do in the blas backend
 
+template<typename T, typename Size>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_fill_n(multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first, Size n, T const& val){
+  if(n == 0) return first;
+  kernels::fill_n(to_address(base(first)), n, stride(first), val);
+  return first + n;
+}
+
+template<typename T, typename Size>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_fill(      
+                    multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first, 
+                    multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> last, T const& val){
+  assert( stride(first) == stride(last) );
+  if(std::distance(first,last) == 0 ) return first;
+  kernels::fill_n(to_address(base(first)), std::distance(first,last), stride(first), val);
+  return first + std::distance(first,last);
+}
+
 template<class T>
 multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy( 
            multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,
@@ -491,8 +508,6 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy(
                                  to_address(base(first)),sizeof(T)*stride(first),
                                  sizeof(T),std::distance(first,last),cudaMemcpyDeviceToDevice))
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-//  kernels::uninitialized_copy_n(std::distance(first,last),to_address(base(first)),stride(first),
-//                                                          to_address(base(dest)),stride(dest));
   return dest+std::distance(first,last);
 }
 
@@ -506,8 +521,6 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy_n(
                                  to_address(base(first)),sizeof(T)*stride(first),
                                  sizeof(T),N,cudaMemcpyDeviceToDevice))
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-//  kernels::uninitialized_copy_n(N,to_address(base(first)),stride(first),
-//                                  to_address(base(dest)),stride(dest));
   return dest+N;
 }
 
@@ -552,24 +565,6 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   return dest+std::distance(first,last);
 }
-/*
-template<class T, class ptr, 
-         typename = std::enable_if_t<not(std::is_base_of<ptr,qmc_cuda::cuda_gpu_ptr<T>>)>>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
-                         multi::array_iterator<T, 1, ptr> first,
-                         multi::array_iterator<T, 1, ptr> last,
-                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
-  using Q = typename std::pointer_traits<ptr>::element_type;
-  static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
-  assert( stride(first) == stride(last) );
-  if(std::distance(first,last) == 0 ) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
-                                 sizeof(T),std::distance(first,last),cudaMemcpyHostToDevice))
-      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-  return dest+std::distance(first,last);
-}
-*/
 template<class T>
 multi::array_iterator<T, 1, T*> uninitialized_copy(
                          multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,
@@ -594,8 +589,6 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n(
                                  to_address(base(first)),sizeof(T)*stride(first),
                                  sizeof(T),N,cudaMemcpyDeviceToDevice))
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-//  kernels::uninitialized_copy_n(N,to_address(base(first)),stride(first),
-//                                  to_address(base(dest)),stride(dest));
   return dest+N;
 }
 

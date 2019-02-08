@@ -34,6 +34,16 @@ __global__ void kernel_fill_n(Size N, T* x, int incx, T const a)
   }
 }
 
+template<typename T, typename Size>
+__global__ void kernel_fill2D_n(Size N, Size M, T* y, int lda, T const a)
+{
+  for(Size ip=Size(threadIdx.x); ip<N; ip+=Size(blockDim.x))
+    for(Size jp=Size(threadIdx.y); jp<M; jp+=Size(blockDim.y))
+    {
+      y[ip*lda + jp] = a;
+    }
+}
+
 
 void fill_n(int * first, int N, int incx, int const value)
 { 
@@ -98,6 +108,36 @@ void fill_n(std::complex<double> * first, int N, std::complex<double> const valu
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
+void fill2D_n(int N, int M, int* A, int lda, int const value)
+{
+  kernel_fill_n<<<32,32>>>(N,M,first,lda,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+void fill2D_n(int N, int M, float* A, int lda, float const value)
+{
+  kernel_fill_n<<<32,32>>>(N,M,first,lda,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+void fill2D_n(int N, int M, double* A, int lda, double const value)
+{
+  kernel_fill_n<<<32,32>>>(N,M,first,lda,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+void fill2D_n(int N, int M, std::complex<double>* A, int lda, std::complex<double> const value)
+{
+  kernel_fill_n<<<32,32>>>(N,M,first,lda,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+void fill2D_n(int N, int M, std::complex<float>* A, int lda, std::complex<float> const value)
+{
+  kernel_fill_n<<<32,32>>>(N,M,first,lda,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
 
 }
 

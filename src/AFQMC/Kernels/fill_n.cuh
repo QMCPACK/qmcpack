@@ -33,6 +33,11 @@ void fill_n(double * first, int N, double const value);
 void fill_n(std::complex<float> * first, int N, std::complex<float> const value);
 void fill_n(std::complex<double> * first, int N, std::complex<double> const value);
 
+void fill2D_n(int N, int M, int* A, int lda, int const value);
+void fill2D_n(int N, int M, float* A, int lda, float const value);
+void fill2D_n(int N, int M, double* A, int lda, double const value);
+void fill2D_n(int N, int M, std::complex<double>* A, int lda, std::complex<double> const value);
+void fill2D_n(int N, int M, std::complex<float>* A, int lda, std::complex<float> const value);
 
 }
 
