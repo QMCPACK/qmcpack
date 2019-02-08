@@ -95,7 +95,7 @@ namespace einspline {
   };
 
   template<typename T, size_t ALIGN, typename ALLOC>
-    BsplineAllocator<T,ALIGN,ALLOC>::SplineType*
+    typename BsplineAllocator<T,ALIGN,ALLOC>::SplineType*
     BsplineAllocator<T,ALIGN,ALLOC>::allocateMultiBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
                          BCType xBC, BCType yBC, BCType zBC, int num_splines)
     {
@@ -149,7 +149,7 @@ namespace einspline {
     }
 
   template<typename T, size_t ALIGN, typename ALLOC>
-    BsplineAllocator<T,ALIGN,ALLOC>::SingleSplineType*
+    typename BsplineAllocator<T,ALIGN,ALLOC>::SingleSplineType*
     BsplineAllocator<T,ALIGN,ALLOC>::allocateUBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
         BCType xBC, BCType yBC, BCType zBC, T* data)
     {
