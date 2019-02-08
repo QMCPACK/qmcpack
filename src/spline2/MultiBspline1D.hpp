@@ -35,8 +35,6 @@ namespace qmcplusplus
       using real_type=typename bspline_traits<T,1>::real_type;
       ///actual einspline multi-bspline object
       SplineType spline_m;
-      ///use allocator
-      //einspline::BsplineAllocator myAllocator;
 
       MultiBspline1D()
       {
