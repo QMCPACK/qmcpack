@@ -138,11 +138,18 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     SplineInst=new MultiBspline<ST, ALIGN, OffloadAllocator>();
     SplineInst->create(xyz_g,xyz_bc,myV.size());
     MultiSpline=SplineInst->spline_m;
-    PRAGMA_OMP("omp target enter data map(to:MultiSpline[0:1])")
-    // Ye: the following line is to workaround Intel offload to host.
-    // Directly putting MultiSpline->coefs inside the to clause is not allowed.
+    // map the SplineInst->spline_m structure to GPU
+    PRAGMA_OMP("omp target enter data map(alloc:MultiSpline[0:1])")
+    PRAGMA_OMP("omp target update to(MultiSpline[0:1])")
     auto coefs=MultiSpline->coefs;
     PRAGMA_OMP("omp target update to(coefs[0:MultiSpline->coefs_size])")
+#ifdef ENABLE_OFFLOAD
+    // attach pointers on the device to achieve deep copy
+    PRAGMA_OMP("omp target")
+    {
+      MultiSpline->coefs = coefs;
+    }
+#endif
 
     app_log() << "MEMORY " << SplineInst->sizeInByte()/(1<<20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation"
