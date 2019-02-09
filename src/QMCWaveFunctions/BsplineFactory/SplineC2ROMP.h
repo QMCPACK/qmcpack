@@ -544,11 +544,11 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
 
     // Ye: need to extract sizes and pointers before entering target region
     const auto* spline_ptr = SplineInst->spline_m;
+    const ST x = ru[0], y = ru[1], z = ru[2];
     const auto* ru_ptr = ru.data();
     const auto padded_size = myVGHGH.capacity();
     auto* myVGHGH_ptr = myVGHGH.data();
     PRAGMA_OMP("omp target teams num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
-                map(to:ru_ptr[0:3]) \
                 map(always,from:myVGHGH_ptr[0:padded_size*10])")
     {
       PRAGMA_OMP("omp distribute")
@@ -557,7 +557,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
         int first = ChunkSizePerTeam * team_id;
         int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam ;
         PRAGMA_OMP("omp parallel")
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ru_ptr[0], ru_ptr[1], ru_ptr[2],
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, x, y, z,
                                              myVGHGH_ptr+first,
                                              myVGHGH_ptr+padded_size+first,
                                              myVGHGH_ptr+padded_size*4+first,
