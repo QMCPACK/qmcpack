@@ -51,10 +51,11 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   using PointType=typename BaseType::PointType;
   using SingleSplineType=typename BaseType::SingleSplineType;
 
-  using vContainer_type=Vector<ST, OffloadAllocator>;
-  using gContainer_type=VectorSoaContainer<ST, 3, ALIGN, OffloadAllocator>;
-  using hContainer_type=VectorSoaContainer<ST, 6, ALIGN, OffloadAllocator>;
-  using ghContainer_type=VectorSoaContainer<ST, 10, ALIGN, OffloadAllocator>;
+  using vContainer_type=Vector<ST,aligned_allocator<ST>>;
+  using gContainer_type=VectorSoaContainer<ST,3>;
+  using hContainer_type=VectorSoaContainer<ST,6>;
+  using ghContainer_type=VectorSoaContainer<ST,10>;
+  using vghghOffloadContainer_type=VectorSoaContainer<ST, 20, ALIGN, OffloadAllocator>;
 
   using BaseType::first_spo;
   using BaseType::last_spo;
@@ -80,6 +81,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   gContainer_type myG;
   hContainer_type myH;
   ghContainer_type mygH;
+  vghghOffloadContainer_type myVGHGH;
 
   SplineC2ROMP(): BaseType(), nComplexBands(0), SplineInst(nullptr), MultiSpline(nullptr)
   {
@@ -95,6 +97,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   {
     const size_t n=a.myL.size();
     myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n); mygH.resize(n);
+    myVGHGH.resize(n);
   }
 
   ~SplineC2ROMP()
@@ -111,6 +114,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     myL.resize(npad);
     myH.resize(npad);
     mygH.resize(npad);
+    myVGHGH.resize(npad);
   }
 
   void bcast_tables(Communicate* comm)
@@ -303,15 +307,16 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     const ST* restrict k1=myKcart.data(1); ASSUME_ALIGNED(k1);
     const ST* restrict k2=myKcart.data(2); ASSUME_ALIGNED(k2);
 
-    const ST* restrict g0=myG.data(0); ASSUME_ALIGNED(g0);
-    const ST* restrict g1=myG.data(1); ASSUME_ALIGNED(g1);
-    const ST* restrict g2=myG.data(2); ASSUME_ALIGNED(g2);
-    const ST* restrict h00=myH.data(0); ASSUME_ALIGNED(h00);
-    const ST* restrict h01=myH.data(1); ASSUME_ALIGNED(h01);
-    const ST* restrict h02=myH.data(2); ASSUME_ALIGNED(h02);
-    const ST* restrict h11=myH.data(3); ASSUME_ALIGNED(h11);
-    const ST* restrict h12=myH.data(4); ASSUME_ALIGNED(h12);
-    const ST* restrict h22=myH.data(5); ASSUME_ALIGNED(h22);
+    const ST* restrict val=myVGHGH.data(0); ASSUME_ALIGNED(val);
+    const ST* restrict g0 =myVGHGH.data(1); ASSUME_ALIGNED(g0);
+    const ST* restrict g1 =myVGHGH.data(2); ASSUME_ALIGNED(g1);
+    const ST* restrict g2 =myVGHGH.data(3); ASSUME_ALIGNED(g2);
+    const ST* restrict h00=myVGHGH.data(4); ASSUME_ALIGNED(h00);
+    const ST* restrict h01=myVGHGH.data(5); ASSUME_ALIGNED(h01);
+    const ST* restrict h02=myVGHGH.data(6); ASSUME_ALIGNED(h02);
+    const ST* restrict h11=myVGHGH.data(7); ASSUME_ALIGNED(h11);
+    const ST* restrict h12=myVGHGH.data(8); ASSUME_ALIGNED(h12);
+    const ST* restrict h22=myVGHGH.data(9); ASSUME_ALIGNED(h22);
 
     #pragma omp simd
     for (size_t j=first; j<std::min(nComplexBands,last); j++)
@@ -322,8 +327,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
       const ST kX=k0[j];
       const ST kY=k1[j];
       const ST kZ=k2[j];
-      const ST val_r=myV[jr];
-      const ST val_i=myV[ji];
+      const ST val_r=val[jr];
+      const ST val_i=val[ji];
 
       //phase
       ST s, c;
@@ -375,8 +380,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
       const ST kX=k0[j];
       const ST kY=k1[j];
       const ST kZ=k2[j];
-      const ST val_r=myV[jr];
-      const ST val_i=myV[ji];
+      const ST val_r=val[jr];
+      const ST val_i=val[ji];
 
       //phase
       ST s, c;
@@ -540,22 +545,23 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     // Ye: need to extract sizes and pointers before entering target region
     const auto* spline_ptr = SplineInst->spline_m;
     const auto* ru_ptr = ru.data();
-    const auto myV_size = myV.size();
-    auto* myV_ptr = myV.data();
-    auto* myG_ptr = myG.data();
-    auto* myH_ptr = myH.data();
+    const auto padded_size = myVGHGH.capacity();
+    auto* myVGHGH_ptr = myVGHGH.data();
     PRAGMA_OMP("omp target teams num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
                 map(to:ru_ptr[0:3]) \
-                map(always,from:myV_ptr[0:myV_size], myG_ptr[0:myV_size*3], myH_ptr[0:myV_size*6])")
+                map(always,from:myVGHGH_ptr[0:padded_size*10])")
     {
       PRAGMA_OMP("omp distribute")
       for(int team_id = 0; team_id < NumTeams; team_id++)
       {
         int first = ChunkSizePerTeam * team_id;
-        int last  = (first + ChunkSizePerTeam) > myV_size ? myV_size : first + ChunkSizePerTeam ;
+        int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam ;
         PRAGMA_OMP("omp parallel")
         spline2offload::evaluate_vgh_impl_v2(spline_ptr, ru_ptr[0], ru_ptr[1], ru_ptr[2],
-                                             myV_ptr+first, myG_ptr+first, myH_ptr+first, myV_size, first, last);
+                                             myVGHGH_ptr+first,
+                                             myVGHGH_ptr+padded_size+first,
+                                             myVGHGH_ptr+padded_size*4+first,
+                                             padded_size, first, last);
       }
     }
 
