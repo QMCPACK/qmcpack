@@ -70,6 +70,13 @@ TEST_CASE("OMPdeepcopy", "[OMP]")
   REQUIRE(check_data1 == 1.0);
   REQUIRE(check_size == MAX);
 
+  PRAGMA_OMP("omp target teams num_teams(1) map(always,from:data_ptr[0:foo->size])")
+  {
+     data_ptr[1] = 2;
+  }
+
+  REQUIRE(data_ptr[1] == 2.0);
+
   myAlloc.deallocate(foo->data,MAX);
   delete foo;
 }

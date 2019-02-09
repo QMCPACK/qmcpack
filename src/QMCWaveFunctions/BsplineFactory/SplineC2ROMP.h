@@ -138,22 +138,24 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     SplineInst=new MultiBspline<ST, ALIGN, OffloadAllocator>();
     SplineInst->create(xyz_g,xyz_bc,myV.size());
     MultiSpline=SplineInst->spline_m;
+
+    app_log() << "MEMORY " << SplineInst->sizeInByte()/(1<<20) << " MB allocated "
+              << "for the coefficients in 3D spline orbital representation"
+              << std::endl;
+  }
+
+  void finalizeConstruction()
+  {
     // map the SplineInst->spline_m structure to GPU
     PRAGMA_OMP("omp target enter data map(alloc:MultiSpline[0:1])")
     PRAGMA_OMP("omp target update to(MultiSpline[0:1])")
     auto coefs=MultiSpline->coefs;
     PRAGMA_OMP("omp target update to(coefs[0:MultiSpline->coefs_size])")
-#ifdef ENABLE_OFFLOAD
     // attach pointers on the device to achieve deep copy
     PRAGMA_OMP("omp target")
     {
       MultiSpline->coefs = coefs;
     }
-#endif
-
-    app_log() << "MEMORY " << SplineInst->sizeInByte()/(1<<20) << " MB allocated "
-              << "for the coefficients in 3D spline orbital representation"
-              << std::endl;
   }
 
   inline void flush_zero()
@@ -536,13 +538,14 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     const int NumTeams = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     // Ye: need to extract sizes and pointers before entering target region
+    const auto* spline_ptr = SplineInst->spline_m;
     const auto* ru_ptr = ru.data();
     const auto myV_size = myV.size();
     auto* myV_ptr = myV.data();
     auto* myG_ptr = myG.data();
     auto* myH_ptr = myH.data();
     PRAGMA_OMP("omp target teams num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
-                map(always,to:ru_ptr[0:3]) \
+                map(to:ru_ptr[0:3]) \
                 map(always,from:myV_ptr[0:myV_size], myG_ptr[0:myV_size*3], myH_ptr[0:myV_size*6])")
     {
       PRAGMA_OMP("omp distribute")
@@ -551,8 +554,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
         int first = ChunkSizePerTeam * team_id;
         int last  = (first + ChunkSizePerTeam) > myV_size ? myV_size : first + ChunkSizePerTeam ;
         PRAGMA_OMP("omp parallel")
-        spline2offload::evaluate_vgh_impl_v2(SplineInst->spline_m, ru_ptr[0], ru_ptr[1], ru_ptr[2],
-                                             myV_ptr, myG_ptr, myH_ptr, myV_size, first, last);
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ru_ptr[0], ru_ptr[1], ru_ptr[2],
+                                             myV_ptr+first, myG_ptr+first, myH_ptr+first, myV_size, first, last);
       }
     }
 
