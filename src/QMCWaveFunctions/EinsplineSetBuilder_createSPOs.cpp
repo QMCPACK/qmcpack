@@ -433,7 +433,8 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
 #endif
-  app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands " << mytimer.elapsed() << std::endl;
+  OrbitalSet->finalizeConstruction();
+  app_log() <<  "Time spent in creating B-spline SPOs " << mytimer.elapsed() << "sec" << std::endl;
   SPOSetMap[aset] = OrbitalSet;
   //if (sourceName.size() && (ParticleSets.find(sourceName) == ParticleSets.end()))
   //{
@@ -458,7 +459,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #ifdef QMC_CUDA
   if (useGPU == "yes" || useGPU == "1")
   {
-    app_log() << "Initializing GPU data structures.\n";
     if ((GPUsharing == "yes" || GPUsharing == "1"))
     {
       if (!gpu::cudamps)
@@ -476,7 +476,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         app_log() << "Full GPU spline data stored per rank.\n";
       gpu::device_group_size=1;
     }
-    OrbitalSet->initGPU();
   }
 #endif
   spo_timer->stop();

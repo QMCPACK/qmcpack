@@ -294,6 +294,13 @@ public:
     return true;
   }
 
+  /** finalize the construction of SPOSet
+   *
+   * for example, classes serving accelerators may need to transfer data from host to device
+   * after the host side objects are built.
+   */
+  virtual void finalizeConstruction() { }
+
   // Routine to set up data for the LCOrbitalSetOpt child class specifically
   // Should be left empty for other derived classes
   virtual void init_LCOrbitalSetOpt(const double mix_factor=0.0) { };
@@ -304,7 +311,6 @@ public:
 
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
-  virtual void initGPU() {  }
 
   //////////////////////////////////////////
   // Walker-parallel vectorized functions //
