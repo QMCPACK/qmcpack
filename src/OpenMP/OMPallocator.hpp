@@ -38,9 +38,9 @@ namespace qmcplusplus
       return pt;
     }
 
-    void deallocate(value_type* pt, std::size_t, int device_id = 0) {
+    void deallocate(value_type* pt, std::size_t n, int device_id = 0) {
       PRAGMA_OMP("omp target exit data map(delete:pt) device(device_id)")
-      free(pt);
+      HostAllocator::deallocate(pt,n);
     }
   };
 }

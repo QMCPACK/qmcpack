@@ -47,9 +47,9 @@ TEST_CASE("OMPdeepcopy", "[OMP]")
 
   int check_size(0);
   double check_data1(0);
-  void* check_address1;
-  void* check_address2;
-  void* check_address3;
+  void* check_address1(nullptr);
+  void* check_address2(nullptr);
+  void* check_address3(nullptr);
   PRAGMA_OMP("omp target teams num_teams(1) map(from: check_size, check_data1, check_address1, check_address2, check_address3)")
   {
      check_size = foo->size;
@@ -62,10 +62,8 @@ TEST_CASE("OMPdeepcopy", "[OMP]")
   std::cout << "foo->data value on the host " << foo->data << std::endl;
   std::cout << "foo->data value on the device " << check_address2 << std::endl;
   std::cout << "foo->data mapped address on the device " << check_address1 << std::endl;
-  std::cout << "mapped already? " << omp_target_is_present(foo->data,0) << std::endl;
   std::cout << "foo value on the host " << foo << std::endl;
   std::cout << "foo mapped address on the device " << check_address3 << std::endl;
-  std::cout << "mapped already? " << omp_target_is_present(foo,0) << std::endl;
 
   REQUIRE(check_data1 == 1.0);
   REQUIRE(check_size == MAX);
