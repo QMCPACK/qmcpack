@@ -122,6 +122,8 @@ struct SplineAdoptorBase
     }
     return nCB; //return the number of complex bands
   }
+
+  virtual void finalizeConstruction() { }
 };
 
 }
