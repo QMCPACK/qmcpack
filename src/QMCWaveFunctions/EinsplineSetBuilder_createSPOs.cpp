@@ -396,6 +396,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     OrbitalSet = new_OrbitalSet;
   }
 #endif
+  app_log() <<  "Time spent in creating B-spline SPOs " << mytimer.elapsed() << "sec" << std::endl;
 #ifdef Ye_debug
 #ifndef QMC_COMPLEX
   if (myComm->rank()==0 && OrbitalSet->MuffinTins.size() > 0)
@@ -433,9 +434,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
 #endif
-  OrbitalSet->finalizeConstruction();
-  app_log() <<  "Time spent in creating B-spline SPOs " << mytimer.elapsed() << "sec" << std::endl;
-  SPOSetMap[aset] = OrbitalSet;
   //if (sourceName.size() && (ParticleSets.find(sourceName) == ParticleSets.end()))
   //{
   //  app_log() << "  EinsplineSetBuilder creates a ParticleSet " << sourceName << std::endl;
@@ -478,6 +476,8 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     }
   }
 #endif
+  OrbitalSet->finalizeConstruction();
+  SPOSetMap[aset] = OrbitalSet;
   spo_timer->stop();
   return OrbitalSet;
 }
