@@ -37,6 +37,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
 
   typename OrbitalSetTraits<ValueType>::ValueVector_t psi_AO, d2psi_AO;
   typename OrbitalSetTraits<ValueType>::GradVector_t dpsi_AO;
+  Matrix<ST,aligned_allocator<ST> > multi_myV;
 
   using BaseAdoptor::myV;
   using BaseAdoptor::myG;
@@ -113,54 +114,44 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   }
 
 
-  template<typename VM, typename VAV>
-  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
+  template<typename VV, typename RT>
+  inline void evaluateValues(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
-    const size_t m=psiM.cols();
     if(VP.isOnSphere())
     {
-      Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)SPOMem.data(),VP.getTotalNum(),myV.size());
+      // resize scratch space
+      psi_AO.resize(psi.size());
+      if(multi_myV.rows()<VP.getTotalNum()) multi_myV.resize(VP.getTotalNum(), myV.size());
       const RealType smooth_factor=HybridBase::evaluateValuesC2X(VP,multi_myV);
       const RealType cone(1);
-      if(smooth_factor<0)
+      for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
-        for(int iat=0; iat<VP.getTotalNum(); ++iat)
-        {
-          Vector<SPOSet::ValueType> psi(psiM[iat],m);
+        if(smooth_factor<0)
           BaseAdoptor::evaluate_v(VP,iat,psi);
-        }
-      }
-      else if (smooth_factor==cone)
-      {
-        for(int iat=0; iat<VP.getTotalNum(); ++iat)
+        else if (smooth_factor==cone)
         {
           const PointType& r=VP.R[iat];
-          Vector<SPOSet::ValueType> psi(psiM[iat],m);
           Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
           BaseAdoptor::assign_v(r,myV_one,psi);
         }
-      }
-      else
-      {
-        psi_AO.resize(m);
-        for(int iat=0; iat<VP.getTotalNum(); ++iat)
+        else
         {
           const PointType& r=VP.R[iat];
-          Vector<SPOSet::ValueType> psi(psiM[iat],m);
           Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
           BaseAdoptor::assign_v(r,myV_one,psi_AO);
           BaseAdoptor::evaluate_v(VP,iat,psi);
           for(size_t i=0; i<psi.size(); i++)
             psi[i] = psi_AO[i]*smooth_factor + psi[i]*(cone-smooth_factor);
         }
+        ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
       }
     }
     else
     {
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
-        Vector<SPOSet::ValueType> psi(psiM[iat],m);
         evaluate_v(VP,iat,psi);
+        ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
       }
     }
   }

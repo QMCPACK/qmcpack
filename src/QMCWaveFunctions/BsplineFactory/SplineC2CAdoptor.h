@@ -238,8 +238,8 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     }
   }
 
-  template<typename VM, typename VAV>
-  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
+  template<typename VV, typename RT>
+  inline void evaluateValues(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
     #pragma omp parallel
     {
@@ -249,15 +249,17 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
                         omp_get_thread_num(),
                         first, last);
 
-      const size_t m=psiM.cols();
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
         const PointType& r=VP.activeR(iat);
         PointType ru(PrimLattice.toUnit_floor(r));
-        Vector<ComplexT> psi(psiM[iat],m);
 
         spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
-        assign_v(r,myV,psi,first/2,last/2);
+        first = first/2;
+        last = kPoints.size() < last/2 ? kPoints.size() : last/2;
+        assign_v(r,myV,psi,first,last);
+        /// YE needs to fix nested threading reduction
+        ratios[iat] = simd::dot(psi.data()+first,psiinv.data()+first, last-first);
       }
     }
   }
