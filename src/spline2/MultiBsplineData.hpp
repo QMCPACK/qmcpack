@@ -43,7 +43,7 @@ inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int ng)
     dx=std::modf(x,&ipart);
     ind = static_cast<int>(ipart);
     // upper bound
-    if (ind > ng)
+    if (ind >= ng)
     {
       ind = ng;
       dx = T(1) - std::numeric_limits<T>::epsilon();
