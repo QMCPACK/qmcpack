@@ -31,9 +31,24 @@ namespace spline2
 template<typename T, typename TRESIDUAL>
 inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int ng)
 {
-  T ipart;
-  dx=std::modf(x,&ipart);
-  ind = std::min(std::max(int(0),static_cast<int>(ipart)),ng);
+  // lower bound
+  if (x < 0)
+  {
+    ind = 0;
+    dx = T(0);
+  }
+  else
+  {
+    T ipart;
+    dx=std::modf(x,&ipart);
+    ind = static_cast<int>(ipart);
+    // upper bound
+    if (ind > ng)
+    {
+      ind = ng;
+      dx = T(1) - std::numeric_limits<T>::epsilon();
+    }
+  }
 }
 
 /** class for cublic spline parameters
