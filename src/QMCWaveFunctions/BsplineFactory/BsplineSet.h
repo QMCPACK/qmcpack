@@ -82,16 +82,9 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     return SplineAdoptor::estimateMemory(nP);
   }
 
-  inline void evaluate(const ParticleSet& P, int iat,
-                       ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  inline void finalizeConstruction()
   {
-    SplineAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
-  }
-
-  inline void evaluate(const ParticleSet& P, int iat,
-                       ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
-  {
-    SplineAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
+    return SplineAdoptor::finalizeConstruction();
   }
 
   void resetParameters(const opt_variables_type& active)
@@ -105,6 +98,18 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     OrbitalSetSize = norbs;
     //SplineAdoptor::first_spo=0;
     //SplineAdoptor::last_spo=norbs;
+  }
+
+  inline void evaluate(const ParticleSet& P, int iat,
+                       ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  {
+    SplineAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
+  }
+
+  inline void evaluate(const ParticleSet& P, int iat,
+                       ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
+  {
+    SplineAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
   }
 
   void evaluate_notranspose(const ParticleSet& P, int first, int last
