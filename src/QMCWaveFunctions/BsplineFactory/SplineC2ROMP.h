@@ -544,7 +544,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
 
     // Ye: need to extract sizes and pointers before entering target region
     const auto* spline_ptr = SplineInst->spline_m;
-    const ST x = ru[0], y = ru[1], z = ru[2];
+    const auto x = ru[0], y = ru[1], z = ru[2];
     const auto* ru_ptr = ru.data();
     const auto padded_size = myVGHGH.capacity();
     auto* myVGHGH_ptr = myVGHGH.data();

@@ -61,13 +61,13 @@ namespace spline2offload
       T* restrict ly=lapl+  out_offset;
       T* restrict lz=lapl+2*out_offset;
 
-      std::fill(vals,vals+num_splines,T());
-      std::fill(gx,gx+num_splines,T());
-      std::fill(gy,gy+num_splines,T());
-      std::fill(gz,gz+num_splines,T());
-      std::fill(lx,lx+num_splines,T());
-      std::fill(ly,ly+num_splines,T());
-      std::fill(lz,lz+num_splines,T());
+      OMPstd::fill_n(vals,num_splines,T());
+      OMPstd::fill_n(gx,num_splines,T());
+      OMPstd::fill_n(gy,num_splines,T());
+      OMPstd::fill_n(gz,num_splines,T());
+      OMPstd::fill_n(lx,num_splines,T());
+      OMPstd::fill_n(ly,num_splines,T());
+      OMPstd::fill_n(lz,num_splines,T());
 
       for (int i=0; i<4; i++)
         for (int j=0; j<4; j++){
@@ -84,7 +84,11 @@ namespace spline2offload
           const T* restrict coefs2zs = coefs+2*zs;
           const T* restrict coefs3zs = coefs+3*zs;
 
+#ifdef ENABLE_OFFLOAD
+          #pragma omp for nowait
+#else
           #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,gx,gy,gz,lx,ly,lz,vals)
+#endif
           for (int n=0; n<num_splines; n++)
           {
             const T coefsv = coefs[n];
@@ -113,7 +117,11 @@ namespace spline2offload
       const T dyInv2 = dyInv*dyInv;
       const T dzInv2 = dzInv*dzInv;
 
+#ifdef ENABLE_OFFLOAD
+      #pragma omp for nowait
+#else
       #pragma omp simd aligned(gx,gy,gz,lx)
+#endif
       for (int n=0; n<num_splines; n++) 
       {
         gx[n] *= dxInv;
@@ -160,16 +168,16 @@ namespace spline2offload
       T* restrict hyz=hess+4*out_offset;
       T* restrict hzz=hess+5*out_offset;
 
-      OMPstd::fill_n(vals,vals+num_splines,T());
-      OMPstd::fill_n(gx,gx+num_splines,T());
-      OMPstd::fill_n(gy,gy+num_splines,T());
-      OMPstd::fill_n(gz,gz+num_splines,T());
-      OMPstd::fill_n(hxx,hxx+num_splines,T());
-      OMPstd::fill_n(hxy,hxy+num_splines,T());
-      OMPstd::fill_n(hxz,hxz+num_splines,T());
-      OMPstd::fill_n(hyy,hyy+num_splines,T());
-      OMPstd::fill_n(hyz,hyz+num_splines,T());
-      OMPstd::fill_n(hzz,hzz+num_splines,T());
+      OMPstd::fill_n(vals,num_splines,T());
+      OMPstd::fill_n(gx,num_splines,T());
+      OMPstd::fill_n(gy,num_splines,T());
+      OMPstd::fill_n(gz,num_splines,T());
+      OMPstd::fill_n(hxx,num_splines,T());
+      OMPstd::fill_n(hxy,num_splines,T());
+      OMPstd::fill_n(hxz,num_splines,T());
+      OMPstd::fill_n(hyy,num_splines,T());
+      OMPstd::fill_n(hyz,num_splines,T());
+      OMPstd::fill_n(hzz,num_splines,T());
 
       for (int i=0; i<4; i++)
         for (int j=0; j<4; j++)
