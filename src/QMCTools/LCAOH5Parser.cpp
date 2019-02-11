@@ -405,7 +405,7 @@ void LCAOParser::getMO(const std::string & fname)
     char name[72];
     sprintf(name,"%s","/KPTS_0/eigenset_0");
     setname=name;
-    if(!hin.read(CartMat,setname))
+    if(!hin.readEntry(CartMat,setname))
     {
        setname="SPOSet::putFromH5 Missing "+setname+" from HDF5 File.";
        APP_ABORT(setname.c_str());

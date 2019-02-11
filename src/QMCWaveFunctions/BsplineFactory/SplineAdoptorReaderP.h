@@ -173,13 +173,13 @@ struct SplineAdoptorReader: public BsplineReaderBase
       if(foundspline)
       {
         std::string aname("none");
-        foundspline = h5f.read(aname,"adoptor_name");
+        foundspline = h5f.readEntry(aname,"adoptor_name");
         foundspline = (aname.find(bspline->KeyWord) != std::string::npos);
       }
       if(foundspline)
       {
         int sizeD=0;
-        foundspline=h5f.read(sizeD,"sizeof");
+        foundspline=h5f.readEntry(sizeD,"sizeof");
         foundspline = (sizeD == sizeof(typename adoptor_type::DataType));
       }
       if(foundspline)
@@ -304,7 +304,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
         int iorb_h5=bspline->BandIndexMap[iorb];
         int ti=cur_bands[iorb_h5].TwistIndex;
         std::string s=psi_g_path(ti,spin,cur_bands[iorb_h5].BandIndex);
-        if(!h5f.read(cG,s)) APP_ABORT("SplineAdoptorReader Failed to read band(s) from h5!\n");
+        if(!h5f.readEntry(cG,s)) APP_ABORT("SplineAdoptorReader Failed to read band(s) from h5!\n");
         double total_norm = compute_norm(cG);
         if((checkNorm)&&(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE))
         {
@@ -336,6 +336,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
   {
     //not used by may be enabled later
+    APP_ABORT("SplineAdoptorReaderP initialize_spline_psi_r implementation not finished.");
     int nx=MeshSize[0];
     int ny=MeshSize[1];
     int nz=MeshSize[2];

@@ -198,7 +198,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
-    return h5f.read(bigtable,o.str().c_str());//"spline_0");
+    return h5f.readEntry(bigtable,o.str().c_str());//"spline_0");
   }
 
   bool write_splines(hdf_archive& h5f)
@@ -206,7 +206,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
-    return h5f.write(bigtable,o.str().c_str());//"spline_0");
+    return h5f.writeEntry(bigtable,o.str().c_str());//"spline_0");
   }
 
   template<typename VV>
