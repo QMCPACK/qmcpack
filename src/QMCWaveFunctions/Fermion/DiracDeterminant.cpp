@@ -83,8 +83,7 @@ void DiracDeterminant::resize(int nel, int morb)
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
-  memoryPool.resize(nel*norb);
-  psiM_temp.attachReference(memoryPool.data(),nel,norb);
+  psiM_temp.resize(nel,norb);
   if( typeid(ValueType) != typeid(mValueType) )
     psiM_hp.resize(nel,norb);
   LastIndex = FirstIndex + nel;
@@ -269,37 +268,10 @@ DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
 
 void DiracDeterminant::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
-  const int nVP = VP.getTotalNum();
-  const size_t memory_needed = nVP*NumOrbitals+Phi->estimateMemory(nVP);
-  //std::cout << "debug " << memory_needed << " pool " << memoryPool.size() << std::endl;
-  if(memoryPool.size()<memory_needed)
-  {
-    // usually in small systems
-    for(int iat=0; iat<nVP; iat++)
-    {
-      SPOVTimer.start();
-      Phi->evaluate(VP, iat, psiV);
-      SPOVTimer.stop();
-      RatioTimer.start();
-      ratios[iat]=simd::dot(psiM[VP.refPtcl-FirstIndex],psiV.data(),NumOrbitals);
-      RatioTimer.stop();
-    }
-  }
-  else
-  {
-    const size_t offset = memory_needed-nVP*NumOrbitals;
-    // SPO value result matrix. Always use existing memory
-    Matrix<ValueType> psiT(memoryPool.data()+offset, nVP, NumOrbitals);
-    // SPO scratch memory. Always use existing memory
-    SPOSet::ValueAlignedVector_t SPOMem;
-    SPOMem.attachReference((ValueType*)memoryPool.data(),offset);
-    SPOVTimer.start();
-    Phi->evaluateValues(VP, psiT, SPOMem);
-    SPOVTimer.stop();
-    RatioTimer.start();
-    MatrixOperators::product(psiT, psiM[VP.refPtcl-FirstIndex], ratios.data());
-    RatioTimer.stop();
-  }
+  ValueVector_t psiM_row(psiM[VP.refPtcl-FirstIndex], psiM.cols());
+  SPOVTimer.start();
+  Phi->evaluateValues(VP, psiV, psiM_row, ratios);
+  SPOVTimer.stop();
 }
 
 void DiracDeterminant::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)

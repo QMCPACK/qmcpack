@@ -215,11 +215,12 @@ public:
 
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
-   * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
-   * @param SPOMem scratch space for SPO value evaluation, alignment is required.
+   * @param psi values of the SPO, used as a scratch space if needed
+   * @param psiinv the row of inverse slater matrix corresponding to the particle moved virtually
+   * @param ratios return determinant ratios
    */
   virtual void
-  evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem);
+  evaluateValues(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios);
 
   /** estimate the memory needs for evaluating SPOs of particles in the size of ValueType
    * @param nP, number of particles.
