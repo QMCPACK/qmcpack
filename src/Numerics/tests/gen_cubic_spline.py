@@ -6,7 +6,7 @@ from eqn_manip import *
 # Solve for cubic spline coefficients using a straightforward (but inefficient) derivation
 #  from the defining equations.
 
-# Generates unit tests for the spline coefficient solver (NRCubicSpline in NRSplineFunctions.h)
+# Generates unit tests for the spline coefficient solver (CubicSplineSolve in SplineSolvers.h)
 # and the evaluation routines (OneDimCubicSpline in OneDimCubicSpline.h)
 # Run this script when these unit tests need updating or expanding.
 #   (The computation for the 4-knot case may take a few minutes)
@@ -157,7 +157,7 @@ TEST_CASE("spline_function_{test_case}", "[numerics]")
   double y[n] = {yvals};
   double y2[n];
 
-  NRCubicSpline(x, y, n, {leftDeriv}, {rightDeriv}, y2);
+  CubicSplineSolve(x, y, n, {leftDeriv}, {rightDeriv}, y2);
 
 {y2_checks}
 

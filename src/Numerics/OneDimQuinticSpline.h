@@ -19,7 +19,7 @@
 #define QMCPLUSPLUS_GRID_FUNCTOR_QUINTIC_SPLINE_H
 
 #include "Numerics/OneDimGridFunctor.h"
-#include "Numerics/NRSplineFunctions.h"
+#include "Numerics/SplineSolvers.h"
 
 namespace qmcplusplus
 {
