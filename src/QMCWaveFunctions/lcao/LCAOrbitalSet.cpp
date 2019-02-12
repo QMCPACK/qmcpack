@@ -121,16 +121,18 @@ namespace qmcplusplus
       }
     }
 
-  void LCAOrbitalSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
+  void LCAOrbitalSet::evaluateValues(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
   {
-    const int nVP = VP.getTotalNum();
-    Matrix<ValueType> basisM(SPOMem.data(), nVP, BasisSetSize);
-    for(size_t j=0; j<nVP; j++)
+    Vector<ValueType> vTemp(Temp.data(0),BasisSetSize);
+    Vector<ValueType> invTemp(Temp.data(1),BasisSetSize);
+
+    MatrixOperators::product_Atx(*C, psiinv, invTemp.data());
+
+    for(size_t j=0; j<VP.getTotalNum(); j++)
     {
-      Vector<RealType> vTemp(basisM[j],BasisSetSize);
       myBasisSet->evaluateV(VP,j,vTemp.data());
+      ratios[j]=simd::dot(vTemp.data(), invTemp.data(), BasisSetSize);
     }
-    MatrixOperators::product_ABt(basisM,*C,psiM);
   }
 
   size_t LCAOrbitalSet::estimateMemory(const int nP) { return BasisSetSize*nP; }
