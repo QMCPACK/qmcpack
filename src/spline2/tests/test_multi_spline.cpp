@@ -33,15 +33,20 @@ void test_spline_bounds()
   REQUIRE(ind == 2);
 
   // check clamping to a maximum index value
-  x = 11.5;
+  x = 10.5;
   spline2::getSplineBound(x, dx, ind, ng);
   REQUIRE(dx == Approx(0.5));
+  REQUIRE(ind == 10);
+
+  x = 11.5;
+  spline2::getSplineBound(x, dx, ind, ng);
+  REQUIRE(dx == Approx(1.0));
   REQUIRE(ind == 10);
 
   // check clamping to a zero index value
   x = -1.3;
   spline2::getSplineBound(x, dx, ind, ng);
-  REQUIRE(dx == Approx(-0.3));
+  REQUIRE(dx == Approx(0.0));
   REQUIRE(ind == 0);
 
 }
