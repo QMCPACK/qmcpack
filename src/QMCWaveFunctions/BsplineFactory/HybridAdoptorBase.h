@@ -19,7 +19,7 @@
 
 #include <Particle/DistanceTableData.h>
 #include <QMCWaveFunctions/lcao/SoaSphericalTensor.h>
-#include <spline2/MultiBspline.hpp>
+#include <spline2/MultiBspline1D.hpp>
 
 namespace qmcplusplus
 {
