@@ -234,6 +234,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
                         omp_get_num_threads(),
                         omp_get_thread_num(),
                         first, last);
+      const int last_real = kPoints.size() < last ? kPoints.size() : last;
 
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
@@ -242,10 +243,9 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
         int bc_sign=convertPos(r,ru);
 
         spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
-        assign_v(bc_sign,myV,psi,first,last);
-        last = kPoints.size() < last ? kPoints.size() : last;
+        assign_v(bc_sign,myV,psi,first,last_real);
         /// YE needs to fix nested threading reduction
-        ratios[iat] = simd::dot(psi.data()+first,psiinv.data()+first, last-first);
+        ratios[iat] = simd::dot(psi.data()+first,psiinv.data()+first, last_real-first);
       }
     }
   }

@@ -275,18 +275,15 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
                         omp_get_num_threads(),
                         omp_get_thread_num(),
                         first, last);
-
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
         const PointType& r=VP.activeR(iat);
         PointType ru(PrimLattice.toUnit_floor(r));
 
         spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
-        first = first/2;
-        last = kPoints.size() < last/2 ? kPoints.size() : last/2;
-        assign_v(r,myV,psi,first,last);
+        assign_v(r,myV,psi,first/2,last/2);
         /// YE needs to fix nested threading reduction
-        ratios[iat] = simd::dot(psi.data()+first,psiinv.data()+first, last-first);
+        ratios[iat] = simd::dot(psi.data(),psiinv.data(), psi.size());
       }
     }
   }
