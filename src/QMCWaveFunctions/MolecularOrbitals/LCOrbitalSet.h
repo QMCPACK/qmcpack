@@ -451,19 +451,13 @@ public:
     }
   }
 
-  /** evaluate psiM for virtual moves
-   *
-   * For the i-th virtual move and the j-th orbital,
-   * \f$ psiM(i,j)= \sum_k phiM(i,k)*C(j,k) \f$
+  /** block the fallback implementation SPOSet::evaluateValues which is not correct for AoS LCAO.
+   *  AoS LCAO code path requires resetTargetParticleSet to change the pointer to ParticleSet inside myBasisSet.
+   *  This is one of the severe problems in the aging AoS LCAO.
    */
-  void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
+  void evaluateValues(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
   {
-    ValueMatrix_t phiM(SPOMem.data(), VP.getTotalNum(), BasisSetSize);
-    myBasisSet->evaluateValues(VP,phiM);
-    MatrixOperators::product_ABt(phiM,*C,psiM);
-    //for(int i=0; i<psiM.rows(); ++i)
-    //  for(int j=0; j<psiM.cols(); ++j)
-    //    psiM(i,j)=simd::dot(C[j],phiM[i],BasisSetSize);
+    throw std::runtime_error("LCOrbitalSet::evaluateValues() not implemented in AoS LCAO! Avoid using the batched algorithm or use SoA LCAO.");
   }
 
   size_t estimateMemory(const int nP) { return BasisSetSize*nP; }
