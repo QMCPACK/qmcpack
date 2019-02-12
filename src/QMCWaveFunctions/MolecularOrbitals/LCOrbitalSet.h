@@ -457,7 +457,7 @@ public:
    */
   void evaluateValues(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
   {
-    throw std::runtime_error("LCOrbitalSet::evaluateValues() not implemented in AoS LCAO! Avoid using the batched algorithm or use SoA LCAO.");
+    APP_ABORT("LCOrbitalSet::evaluateValues() not implemented in AoS LCAO! Avoid using the batched algorithm or use SoA LCAO.\n");
   }
 
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last
