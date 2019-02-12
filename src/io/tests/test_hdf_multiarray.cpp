@@ -33,7 +33,7 @@ TEST_CASE("hdf_multiarray_one_dim", "[hdf]")
   v[1] = -100.3;
   v[2] = 135.22;
 
-  bool okay = hd.write(v, "boost_multiarray_one_dim");
+  bool okay = hd.writeEntry(v, "boost_multiarray_one_dim");
   REQUIRE(okay);
 
   hd.close();
@@ -43,7 +43,7 @@ TEST_CASE("hdf_multiarray_one_dim", "[hdf]")
   REQUIRE(okay);
 
   boost::multi_array<double,1> v2(boost::extents[3]);
-  okay = hd2.read(v2, "boost_multiarray_one_dim");
+  okay = hd2.readEntry(v2, "boost_multiarray_one_dim");
   REQUIRE(v2.size() == 3);
   for (int i = 0; i < v.size(); i++)
   {
