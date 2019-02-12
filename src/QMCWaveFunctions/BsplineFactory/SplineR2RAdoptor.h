@@ -19,6 +19,7 @@
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+#include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 
 namespace qmcplusplus
 {
@@ -55,10 +56,6 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   using BaseType::kPoints;
   using BaseType::offset;
 
-  ///number of points of the original grid
-  int BaseN[3];
-  ///offset of the original grid, always 0
-  int BaseOffset[3];
   ///multi bspline set
   MultiBspline<ST>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
@@ -127,12 +124,6 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     SplineInst->create(xyz_g,xyz_bc,myV.size());
     MultiSpline=SplineInst->spline_m;
 
-    for(size_t i=0; i<D; ++i)
-    {
-      BaseOffset[i]=0;
-      BaseN[i]=xyz_g[i].num+3;
-    }
-
     app_log() << "MEMORY " << SplineInst->sizeInByte()/(1<<20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation"
               << std::endl;
@@ -145,18 +136,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
-    SplineInst->copy_spline(spline_r, ispline, BaseOffset, BaseN);
-  }
-
-  void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
-  {
-    Vector<ST> v_r(psi_r,0);
-    SplineInst->set(ispline, v_r);
-  }
-
-  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
-      int twist, int ispline, const int* offset_l, const int* mesh_l)
-  {
+    SplineInst->copy_spline(spline_r, ispline);
   }
 
   bool read_splines(hdf_archive& h5f)

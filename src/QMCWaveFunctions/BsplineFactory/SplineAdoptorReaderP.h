@@ -340,9 +340,18 @@ struct SplineAdoptorReader: public BsplineReaderBase
     int nx=MeshSize[0];
     int ny=MeshSize[1];
     int nz=MeshSize[2];
-    Array<DataType,3> splineData_r(nx,ny,nz),splineData_i(ny,ny,nz);
+    splineData_r.resize(nx,ny,nz);
+    splineData_i.resize(ny,ny,nz);
     Array<std::complex<double>,3> rawData(nx,ny,nz);
     const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
+
+    // create single splines as an intermediate storage
+    TinyVector<double,3> start(0.0);
+    TinyVector<double,3> end(1.0);
+    spline_r=einspline::create(spline_r,start,end,MeshSize,bspline->HalfG);
+    if(bspline->is_complex)
+      spline_i=einspline::create(spline_i,start,end,MeshSize,bspline->HalfG);
+
     //this will be parallelized with OpenMP
     int N=bandgroup.getNumDistinctOrbitals();
     for(int iorb=0; iorb<N; ++iorb)
@@ -356,9 +365,13 @@ struct SplineAdoptorReader: public BsplineReaderBase
         simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
       }
       mpi::bcast(*myComm,splineData_r);
+      einspline::set(spline_r,splineData_r.data());
       if(bspline->is_complex)
+      {
         mpi::bcast(*myComm,splineData_i);
-      bspline->set_spline(splineData_r.data(),splineData_i.data(),cur_bands[iorb].TwistIndex,iorb,0);
+        einspline::set(spline_i,splineData_i.data());
+      }
+      bspline->set_spline(spline_r,spline_i,cur_bands[iorb].TwistIndex,iorb,0);
     }
   }
 };
