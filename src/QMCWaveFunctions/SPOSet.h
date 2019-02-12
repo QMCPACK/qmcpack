@@ -49,7 +49,6 @@ class SPOSet: public QMCTraits
 public:
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  typedef OrbitalSetTraits<ValueType>::ValueAlignedVector_t ValueAlignedVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
   typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
@@ -221,12 +220,6 @@ public:
    */
   virtual void
   evaluateValues(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios);
-
-  /** estimate the memory needs for evaluating SPOs of particles in the size of ValueType
-   * @param nP, number of particles.
-   */
-  virtual size_t
-  estimateMemory(const int nP) { return 0; }
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet

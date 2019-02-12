@@ -288,8 +288,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     }
   }
 
-  inline size_t estimateMemory(const int nP) { return 0; }
-
   /** assign_vgl
    */
   template<typename VV, typename GV>

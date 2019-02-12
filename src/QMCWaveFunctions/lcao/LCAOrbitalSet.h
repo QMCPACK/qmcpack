@@ -174,8 +174,6 @@ namespace qmcplusplus
 
     void evaluateValues(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios);
 
-    size_t estimateMemory(const int nP);
-
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi);
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last,

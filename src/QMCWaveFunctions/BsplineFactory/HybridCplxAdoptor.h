@@ -156,11 +156,6 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     }
   }
 
-  inline size_t estimateMemory(const int nP)
-  {
-    return BaseAdoptor::estimateMemory(nP)+myV.size()*sizeof(ST)/sizeof(ValueType)*nP;
-  }
-
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {

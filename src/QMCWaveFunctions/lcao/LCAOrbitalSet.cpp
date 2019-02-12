@@ -135,8 +135,6 @@ namespace qmcplusplus
     }
   }
 
-  size_t LCAOrbitalSet::estimateMemory(const int nP) { return BasisSetSize*nP; }
-
   void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat,
         ValueVector_t& psi, GradVector_t& dpsi,
         HessVector_t& grad_grad_psi)

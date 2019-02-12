@@ -460,8 +460,6 @@ public:
     throw std::runtime_error("LCOrbitalSet::evaluateValues() not implemented in AoS LCAO! Avoid using the batched algorithm or use SoA LCAO.");
   }
 
-  size_t estimateMemory(const int nP) { return BasisSetSize*nP; }
-
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last
                           , GGGMatrix_t& grad_grad_grad_logdet)
   {
