@@ -78,6 +78,9 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   hContainer_type myH;
   ghContainer_type mygH;
 
+  ///thread private ratios for reduction when using nested threading, numVP x numThread
+  Matrix<ComplexT> ratios_private;
+
   SplineC2CSoA(): BaseType(), SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=true;
@@ -241,12 +244,22 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename RT>
   inline void evaluateValues(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
+    // initialize thread private ratios
+    if (ratios_private.rows()<VP.getTotalNum())
+    {
+      #pragma omp parallel
+      {
+        #pragma omp master
+        ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
+      }
+    }
+
     #pragma omp parallel
     {
       int first, last;
+      int tid = omp_get_thread_num();
       FairDivideAligned(myV.size(), getAlignment<ST>(),
-                        omp_get_num_threads(),
-                        omp_get_thread_num(),
+                        omp_get_num_threads(), tid,
                         first, last);
       const int first_cplx = first/2;
       const int last_cplx = kPoints.size() < last/2 ? kPoints.size() : last/2;
@@ -258,9 +271,16 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
 
         spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
         assign_v(r,myV,psi,first_cplx,last_cplx);
-        /// YE needs to fix nested threading reduction
-        ratios[iat] = simd::dot(psi.data()+first_cplx,psiinv.data()+first_cplx, last_cplx-first_cplx);
+        ratios_private[iat][tid] = simd::dot(psi.data()+first_cplx,psiinv.data()+first_cplx, last_cplx-first_cplx);
       }
+    }
+
+    // do the reduction by manually
+    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    {
+      ratios[iat] = ComplexT(0);
+      for(int tid = 0; tid < ratios_private.cols(); tid++)
+        ratios[iat] += ratios_private[iat][tid];
     }
   }
 

@@ -83,6 +83,9 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   hContainer_type myH;
   ghContainer_type mygH;
 
+  ///thread private ratios for reduction when using nested threading, numVP x numThread
+  Matrix<TT> ratios_private;
+
   SplineC2RSoA(): BaseType(), nComplexBands(0), SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=true;
@@ -268,23 +271,49 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename RT>
   inline void evaluateValues(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
+    // initialize thread private ratios
+    if (ratios_private.rows()<VP.getTotalNum())
+    {
+      #pragma omp parallel
+      {
+        #pragma omp master
+        ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
+      }
+    }
+
     #pragma omp parallel
     {
       int first, last;
+      int tid = omp_get_thread_num();
       FairDivideAligned(myV.size(), getAlignment<ST>(),
-                        omp_get_num_threads(),
-                        omp_get_thread_num(),
+                        omp_get_num_threads(), tid,
                         first, last);
+      const int first_cplx = first/2;
+      const int last_cplx = kPoints.size() < last/2 ? kPoints.size() : last/2;
+
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
         const PointType& r=VP.activeR(iat);
         PointType ru(PrimLattice.toUnit_floor(r));
 
         spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
-        assign_v(r,myV,psi,first/2,last/2);
-        /// YE needs to fix nested threading reduction
-        ratios[iat] = simd::dot(psi.data(),psiinv.data(), psi.size());
+        assign_v(r,myV,psi,first_cplx,last_cplx);
+
+        TT ratio(0);
+        for (size_t j=first_cplx*2; j<std::min(nComplexBands,last_cplx)*2; j++)
+          ratio += psi[j] * psiinv[j];
+        for (size_t j=std::max(nComplexBands,first_cplx)+nComplexBands; j<last_cplx+nComplexBands; j++)
+          ratio += psi[j] * psiinv[j];
+        ratios_private[iat][tid] = ratio;
       }
+    }
+
+    // do the reduction by manually
+    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    {
+      ratios[iat] = TT(0);
+      for(int tid = 0; tid < ratios_private.cols(); tid++)
+        ratios[iat] += ratios_private[iat][tid];
     }
   }
 
