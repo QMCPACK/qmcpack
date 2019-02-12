@@ -28,9 +28,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
-#if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetWithCorrection.h"
-#endif
 namespace qmcplusplus
 {
 
@@ -174,11 +172,11 @@ public:
              if(!hin.push(ElemType.c_str()))
                  PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file",true);
 
-             if(!hin.read(basiset_name,"name"))
+             if(!hin.readEntry(basiset_name,"name"))
                  PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
 
 
-             if(!hin.read(elementType,"elementType"))
+             if(!hin.readEntry(elementType,"elementType"))
                  PRE.error("Could not read elementType in H5; Probably Corrupt H5 file",true);
           }
           myComm->bcast(basiset_name);
@@ -238,7 +236,6 @@ public:
         OhmmsAttributeSet coeffAttrib;
         coeffAttrib.add (algorithm, "algorithm");
         coeffAttrib.put(cur);
-#if QMC_BUILD_LEVEL>2
         if(cuspCorr)
         {
           app_log() << "Creating LCOrbitalSetWithCorrection with the input coefficients" << std::endl;
@@ -255,7 +252,6 @@ public:
             lcos->objectName=id;
         }
         else
-#endif
         {
           if ( use_new_opt_class == "yes" ) {
 #ifndef ENABLE_SOA

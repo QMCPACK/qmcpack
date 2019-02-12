@@ -415,7 +415,7 @@ struct WaveFunctionComponent: public QMCTraits
   virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
   { }
 
-  virtual void reserve (PointerPool<gpu::device_vector<CTS::ValueType> > &pool)
+  virtual void reserve (PointerPool<gpu::device_vector<CTS::ValueType> > &pool, int kblocksize)
   { }
 
   /** Evaluate the log of the WF for all walkers
@@ -483,7 +483,7 @@ struct WaveFunctionComponent: public QMCTraits
   }
 
   virtual void
-  addRatio (MCWalkerConfiguration &W, int iat,
+  addRatio (MCWalkerConfiguration &W, int iat, int k,
             std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
             std::vector<ValueType> &lapl)
   {
@@ -516,7 +516,7 @@ struct WaveFunctionComponent: public QMCTraits
   }
 
   virtual void
-  calcGradient(MCWalkerConfiguration &W, int iat,
+  calcGradient(MCWalkerConfiguration &W, int iat, int k,
                std::vector<GradType> &grad)
   {
     app_error() << "Need specialization of WaveFunctionComponent::calcGradient for "
@@ -535,9 +535,21 @@ struct WaveFunctionComponent: public QMCTraits
     abort();
   }
 
+  virtual void
+  det_lookahead (MCWalkerConfiguration &W,
+                 std::vector<ValueType> &psi_ratios,
+                 std::vector<GradType>  &grad,
+                 std::vector<ValueType> &lapl,
+                 int iat, int k, int kd, int nw)
+  {
+    app_error() << "Need specialization of WaveFunctionComponent::det_lookahead for "
+                << ClassName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
+    abort();
+  }
 
   virtual void
-  update (std::vector<Walker_t*> &walkers, int iat)
+  update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k)
   {
     app_error() << "Need specialization of WaveFunctionComponent::update for "
                 << ClassName << ".\n";

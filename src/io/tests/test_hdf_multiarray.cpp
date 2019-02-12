@@ -36,7 +36,7 @@ TEST_CASE("hdf_multiarray_one_dim", "[hdf]")
   v[1] = -100.3;
   v[2] = 135.22;
 
-  bool okay = hd.write(v, "boost_multiarray_one_dim");
+  bool okay = hd.writeEntry(v, "boost_multiarray_one_dim");
   REQUIRE(okay);
 
   hd.close();

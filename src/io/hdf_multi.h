@@ -11,11 +11,7 @@
 
 #ifndef QMCPLUSPLUS_HDF_MULTI_INTERFACE_H
 #define QMCPLUSPLUS_HDF_MULTI_INTERFACE_H
-#include <vector>
-#include <sstream>
-#include <bitset>
-#include <deque>
-#include <type_traits>
+#include <io/hdf_dataproxy.h>
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
@@ -27,6 +23,7 @@
 
 namespace qmcplusplus
 {
+
 /** specialization for vector<T>
  *
  * Used with any T with a proper h5_space_type, e.g., intrinsic, TinyVector<T,D>, Tensor<T,D>

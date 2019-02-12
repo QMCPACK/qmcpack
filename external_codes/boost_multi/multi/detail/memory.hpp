@@ -8,16 +8,14 @@
 
 #include<memory>
 
-namespace boost{
-namespace multi{
-
 #if __cplusplus >= 201703L
-using std::uninitialized_default_construct_n;
-using std::uninitialized_value_construct_n;
-using std::destroy_at;
-using std::destroy;
-using std::destroy_n;
+//using std::uninitialized_default_construct_n;
+//using std::uninitialized_value_construct_n;
+//using std::destroy_at;
+//using std::destroy;
+//using std::destroy_n;
 #else
+namespace std{
 // https://en.cppreference.com/w/cpp/memory/destroy_at
 template<class T> void destroy_at(T* p){p->~T();}
 // https://en.cppreference.com/w/cpp/memory/destroy_n
@@ -30,6 +28,13 @@ ForwardIt destroy_n(ForwardIt first, Size n){
 template<class ForwardIt>
 void destroy(ForwardIt first, ForwardIt last){
 	for(; first != last; ++first) destroy_at(std::addressof(*first));
+}
+
+template<class Alloc, class ForwardIt, typename AT = typename std::allocator_traits<Alloc> >
+void destroy(Alloc& a, ForwardIt first, ForwardIt last){
+	for(; first != last; ++first) 
+		AT::destroy(a, std::addressof(*first));
+	//	destroy_at(std::addressof(*first));
 }
 
 template<class ForwardIt, class Size>
@@ -52,7 +57,24 @@ ForwardIt uninitialized_value_construct_n(ForwardIt first, Size n){
 		return current;
     }catch(...){destroy(first, current); throw;}
 }
+
+template<class Alloc, class ForwardIt, class Size, class AT = typename std::allocator_traits<Alloc>>
+ForwardIt uninitialized_value_construct_n(Alloc& a, ForwardIt first, Size n){
+	using T = typename std::iterator_traits<ForwardIt>::value_type;
+	ForwardIt current = first;
+	try{
+		for(; n > 0; (void) ++current, --n) 
+			AT::construct(a, std::addressof(*current), T());
+//			::new (static_cast<void*>(std::addressof(*current))) T();
+		return current;
+    }catch(...){destroy(a, first, current); throw;}
+}
+
+}
 #endif
+
+namespace boost{
+namespace multi{
 
 template<dimensionality_type N> struct uninitialized_copy_aux;
 

@@ -52,21 +52,6 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     return new BsplineSet<SplineAdoptor>(*this);
   }
 
-  /** set_spline to the big table
-   * @param psi_r starting address of real part of psi(ispline)
-   * @param psi_i starting address of imaginary part of psi(ispline)
-   * @param twist twist id, reserved to sorted adoptor, ignored
-   * @param ispline index of this spline function
-   * @param level refinement level
-   *
-   * Each adoptor handles the map with respect to the twist, state index and refinement level
-   */
-  template<typename CT>
-  void set_spline(CT* spline_r, CT* spline_i, int twist, int ispline, int level)
-  {
-    SplineAdoptor::set_spline(spline_r,spline_i,twist,ispline,level);
-  }
-
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     SplineAdoptor::evaluate_v(P,iat,psi);
@@ -82,16 +67,9 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     return SplineAdoptor::estimateMemory(nP);
   }
 
-  inline void evaluate(const ParticleSet& P, int iat,
-                       ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  inline void finalizeConstruction()
   {
-    SplineAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
-  }
-
-  inline void evaluate(const ParticleSet& P, int iat,
-                       ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
-  {
-    SplineAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
+    return SplineAdoptor::finalizeConstruction();
   }
 
   void resetParameters(const opt_variables_type& active)
@@ -105,6 +83,18 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     OrbitalSetSize = norbs;
     //SplineAdoptor::first_spo=0;
     //SplineAdoptor::last_spo=norbs;
+  }
+
+  inline void evaluate(const ParticleSet& P, int iat,
+                       ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  {
+    SplineAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
+  }
+
+  inline void evaluate(const ParticleSet& P, int iat,
+                       ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
+  {
+    SplineAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
   }
 
   void evaluate_notranspose(const ParticleSet& P, int first, int last
@@ -152,7 +142,21 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
       SplineAdoptor::evaluate_vghgh(P,iat,v,g,h,gh);
     }
   }
+  virtual void evaluateGradSource (const ParticleSet &P
+                                     , int first, int last, const ParticleSet &source
+                                     , int iat_src, GradMatrix_t &gradphi)
+  {
+    //Do nothing, since Einsplines don't explicitly depend on ion positions.
+  }
 
+  virtual void evaluateGradSource (const ParticleSet &P, int first, int last,
+                                     const ParticleSet &source, int iat_src,
+                                     GradMatrix_t &grad_phi,
+                                     HessMatrix_t &grad_grad_phi,
+                                     GradMatrix_t &grad_lapl_phi)
+  {
+    //Do nothing, since Einsplines don't explicitly depend on ion positions.
+  }
 };
 
 }

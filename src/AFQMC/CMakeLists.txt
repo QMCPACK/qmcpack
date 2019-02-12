@@ -73,5 +73,6 @@ IF (BUILD_UNIT_TESTS)
   SUBDIRS(HamiltonianOperations/tests)
   SUBDIRS(Wavefunctions/tests)
   SUBDIRS(Propagators/tests)
+  SUBDIRS(Estimators/tests)
 ENDIF()
 

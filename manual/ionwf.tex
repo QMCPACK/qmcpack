@@ -32,12 +32,12 @@ source & text & ion0 & (required) & Name of classical particle set.\\
 
 Additional information:
 \begin{itemize}
-\item \texttt{width} There must be one width provided for each quantum particle. If a negative width is given, then its corresponding Gaussian orbital is removed. Negative width is useful if one wants to use Gaussian wavefunction for a subset of the quantum particles.
-\item \texttt{source} The Gaussian centers must be specified in the form of a classical particle set. This classical particle set is likely the ion positions ``ion0'', hence the name ``ionwf''. However, one may define arbitrary centers using a different particle set. Please refer to examples in `tests/models/sho'.
+\item \texttt{width} There must be one width provided for each quantum particle. If a negative width is given, then its corresponding Gaussian orbital is removed. Negative width is useful if one wants to use Gaussian wavefunction for a subset of the quantum particles.
+\item \texttt{source} The Gaussian centers must be specified in the form of a classical particle set. This classical particle set is likely the ion positions ``ion0'', hence the name ``ionwf''. However, one may define arbitrary centers using a different particle set. Please refer to examples in `tests/models/sho'.
 \end{itemize}
 
 \subsection{Example Use Case}
-\begin{lstlisting}
+\begin{lstlisting}[style=QMCPXML]
   <qmcsystem>
     <simulationcell>
       <parameter name="bconds">

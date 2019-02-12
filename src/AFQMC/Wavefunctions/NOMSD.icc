@@ -1098,11 +1098,14 @@ Timers[Timer_G6]->stop();
       localGbuff.reextent(iextensions<1u>{2*Gsize+1});
     pointer ov_(localGbuff.origin()+2*Gsize);
     auto wlk_dims = wset.walker_dims();
-    if((T2ForBP.size(0) != wlk_dims.first || T2ForBP.size(1) != wlk_dims.second)) {
-      T2ForBP.reextent({wlk_dims.second,wlk_dims.first});
-      T1ForBP.reextent({NAEA,wlk_dims.first});
-      T3ForBP.reextent({wlk_dims.first,wlk_dims.second});
-    }
+    // Transposed temporaries for back propagation.
+    int max_nel = std::max(NAEA,NAEB);
+    if((T1ForBP.size(0) != max_nel || T1ForBP.size(1) != wlk_dims.first)) 
+      T1ForBP.reextent({max_nel,wlk_dims.first});
+    if((T2ForBP.size(0) != wlk_dims.first || T2ForBP.size(1) != max_nel)) 
+      T2ForBP.reextent({wlk_dims.first,max_nel});
+    if((T3ForBP.size(0) != max_nel || T3ForBP.size(1) != wlk_dims.first)) 
+      T3ForBP.reextent({max_nel,wlk_dims.first});
     if(walker_type != COLLINEAR) {
       auto Gdims = dm_dims(not compact,Alpha);
       // Temporaries for determinant component of walker rdm function.
@@ -1130,10 +1133,9 @@ Timers[Timer_G6]->stop();
           factor = ComplexType(1.0,0.0);
         }
         ComplexType wfac = (*wset[iw].weight()) * factor;
-        ComplexType trace = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
           // We construct PsiBP^{\dagger}
-          CMatrix_ref PsiBP = CMatrix_ref(T2ForBP.data(), {NAEA,NMO});
+          CMatrix_ref PsiBP = CMatrix_ref(T3ForBP.data(), {NAEA,NMO});
           ComplexType detR = BackPropagateOrbMat(OrbMats[id], wset[iw], PsiBP);
           // Construct RDM with Slater Matrix from beginning of path.
           SDetOp.MixedDensityMatrix(PsiBP,wset[iw].SlaterMatrixN(Alpha),
@@ -1143,24 +1145,20 @@ Timers[Timer_G6]->stop();
             ov *= ov;
             detR *= detR;
           }
-          for(int i = 0; i < G2D_.size(0); i++) trace += G2D_[i][i];
           // By construction detR is real (so no complex conjugation needed).
           ov *= detR * std::conj(ci[id]);
-          //std::cout << G2D_[0][0] << " " << ov << " " << wfac << std::endl;
           overlap += ov;
           ma::axpy(ov,G1D_,G21D_);
         }
-        //std::cout << "TRACE: " << trace << " " << std::endl;
         ComplexType ov_denom;
         if(free_projection) {
           ov_denom = wfac;
           denom[0] += wfac*overlap;
-        } else { 
+        } else {
           ov_denom = wfac/overlap;
           denom[0] += wfac;
         }
         ma::axpy(ov_denom, G21D_, G1D);
-        //std::cout << G1D[0] << " " << denom[0] << std::endl;
       }
     } else {
       auto GAdims = dm_dims(not compact,Alpha);
@@ -1183,6 +1181,9 @@ Timers[Timer_G6]->stop();
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         if( std::abs(ComplexType(*wset[iw].weight())) < 1e-10 ) continue;
+        using fill;
+        fill(GA21D_.begin(), GA21D_.end(), ComplexType(0.0));
+        fill(GB21D_.begin(), GB21D_.end(), ComplexType(0.0));
         ComplexType factor;
         if(path_restoration) {
           factor = *wset[iw].BPWeightFactor();
@@ -1194,13 +1195,13 @@ Timers[Timer_G6]->stop();
         ComplexType wfac = (*wset[iw].weight()) * factor;
         ComplexType overlap = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
-          CMatrix_ref PsiBPAlpha = CMatrix_ref(T2ForBP.data(), {NAEA,NMO});
+          CMatrix_ref PsiBPAlpha = CMatrix_ref(T3ForBP.data(), {NAEA,NMO});
           ComplexType detR = BackPropagateOrbMat(OrbMats[2*id], wset[iw], PsiBPAlpha);
           SDetOp.MixedDensityMatrix(PsiBPAlpha,wset[iw].SlaterMatrixN(Alpha),
                                                       GA2D_,to_address(ov_),compact);
          
           ComplexType ov(*ov_);
-          CMatrix_ref PsiBPBeta = CMatrix_ref(T2ForBP.data()+NMO*NAEA, {NAEB,NMO});
+          CMatrix_ref PsiBPBeta = CMatrix_ref(T3ForBP.data(), {NAEB,NMO});
           detR *= BackPropagateOrbMat(OrbMats[2*id+1], wset[iw], PsiBPBeta);
           SDetOp.MixedDensityMatrix(PsiBPBeta,wset[iw].SlaterMatrix(Beta),
                                            GB2D_,to_address(ov_),compact);
@@ -1214,7 +1215,7 @@ Timers[Timer_G6]->stop();
         if(free_projection) {
           ov_denom = wfac;
           denom[0] += wfac*overlap;
-        } else { 
+        } else {
           ov_denom = wfac/overlap;
           denom[0] += wfac;
         }
@@ -1227,9 +1228,8 @@ Timers[Timer_G6]->stop();
     TG.Global().all_reduce_in_place_n(to_address(G.origin()),Gsize,std::plus<>());
     auto denominator= ComplexType(1.0,0.0)/denom[0];
     CVector_ref GFull(make_device_ptr(G.origin()), iextensions<1u>{Gsize});
-    if(!free_projection) {
+    if(!free_projection) 
       ma::scal(denominator,GFull);
-    }
     TG.local_barrier();
   }
 
@@ -1476,24 +1476,27 @@ Timers[Timer_G6]->stop();
     {
       auto dev_ptr_(make_device_ptr(PsiBP.origin()));
     }
-    ComplexType detR = ComplexType(1.0, 0.0), detR_;
+    ComplexType detR = ComplexType(1.0, 0.0);
+    if(localGbuff.size() < 1)
+      localGbuff.reextent(iextensions<1u>{1});
+    pointer d_(localGbuff.origin());
     const int nbp = walker.NumBackProp();
     int ip = nbp - 1;
-    //boost::multi::array_ref<const ComplexType, 2> B = walker.BMatrix(ip);
-    auto B(walker.BMatrix(ip));
-    ma::product(OrbMat, B, T1ForBP);
+     B(walker.BMatrix(ip));
+    CMatrix_ref T1 = CMatrix_ref(T1ForBP.data(), {PsiBP.shape()[0],PsiBP.shape()[1]});
+    CMatrix_ref T2 = CMatrix_ref(T2ForBP.data(), {PsiBP.shape()[1],PsiBP.shape()[0]});
+    ma::product(OrbMat, B, T1);
     for (int i = 0; i < nbp-1; i++) {
       ip -= 1;
-      auto B(walker.BMatrix(ip));
-      //boost::multi::array_ref<const ComplexType, 2> B = walker.BMatrix(ip);
-      ma::product(T1ForBP, B, PsiBP);
+      auto B_(walker.BMatrix(ip));
+      ma::product(T1, B_, PsiBP);
       if ((i != 0) && (i%10 == 0)) {
-        ma::transpose(PsiBP, T3ForBP);
-        SDetOp.Orthogonalize(T3ForBP,std::addressof(detR_));
-        detR *= detR_;
-        ma::transpose(T3ForBP, PsiBP);
+        ma::transpose(PsiBP, T2);
+        SDetOp.Orthogonalize(T3ForBP,to_address(d_));
+        detR *= ComplexType(*d_);
+        ma::transpose(T2, PsiBP);
       }
-      T1ForBP = PsiBP;
+      T1 = PsiBP;
     }
     return detR/1e6;
   }

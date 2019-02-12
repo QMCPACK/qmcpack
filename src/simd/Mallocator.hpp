@@ -30,24 +30,29 @@ namespace qmcplusplus
     typedef const T*  const_pointer;
 
     Mallocator() = default;
-    template <class U> Mallocator(const Mallocator<U,ALIGN>&) {}
+    template <class U> Mallocator(const Mallocator<U, ALIGN>&) {}
 
     template <class U> struct rebind { typedef Mallocator<U, ALIGN> other; };
 
     T* allocate(std::size_t n)
     {
       void* pt(nullptr);
-#if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 16
       std::size_t asize = n * sizeof(T);
       std::size_t amod = asize % ALIGN;
       if (amod != 0) asize += ALIGN - amod;
-      // as per C++11 standard asize must be an integral multiple of ALIGN
-      // or behavior is undefined.  Some implementation support all positive
+
+#if __STDC_VERSION__ >= 201112L || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 16)
+      // as per C11 standard asize must be an integral multiple of ALIGN
+      // or behavior is undefined.  Some implementations support all positive
       // values of asize but the standard has not been amended
-      // This is also not guaranteed threadsafe until C++17
+      // This is also not guaranteed threadsafe until it appeared in
+      // the C++17 standard.
       pt = aligned_alloc(ALIGN,asize);
 #else
-      posix_memalign(&pt, ALIGN, n*sizeof(T));
+      // While posix memalign can deal with asize violating the C11 standard
+      // assumptions made later by our simd code namely copyn require allocation
+      // of the entire aligned block to avoid heap buffer read overflows later
+      posix_memalign(&pt, ALIGN, asize);
 #endif
       if ( pt == nullptr )
         throw std::runtime_error("Allocation failed in Mallocator, requested size in bytes = " + std::to_string(n*sizeof(T)));

@@ -3,7 +3,7 @@ $CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic $0 -o $0.x && $0.x $@ && rm -f $0.x
 #endif
 
 #include<iostream>
-#include "../../multi/array.hpp"
+#include "../array.hpp"
 
 namespace multi = boost::multi;
 using std::cout;

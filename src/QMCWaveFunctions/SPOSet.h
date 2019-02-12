@@ -152,6 +152,8 @@ public:
   virtual void checkObject() const {}
 #endif
 
+  /// create optimizable orbital rotation parameters
+  virtual void buildOptVariables(const std::vector<std::pair<int,int>>& rotations) {}
   ///reset
   virtual void resetParameters(const opt_variables_type& optVariables)=0;
 
@@ -160,9 +162,32 @@ public:
 
   // Evaluate the derivative of the optimized orbitals with
   // respect to the parameters
-  virtual void evaluateDerivatives
-  (ParticleSet& P, int iat, const opt_variables_type& active,
-   ValueMatrix_t& d_phi, ValueMatrix_t& d_lapl_phi) {}
+  virtual void evaluateDerivatives (ParticleSet& P, 
+                                   const opt_variables_type& optvars,
+                                   std::vector<RealType>& dlogpsi, 
+                                   std::vector<RealType>& dhpsioverpsi,
+                                   const ValueType& psiCurrent,
+                                   const std::vector<RealType>& Coeff,
+                                   const std::vector<size_t>& C2node_up,
+                                   const std::vector<size_t>& C2node_dn,
+                                   const ValueVector_t& detValues_up, 
+                                   const ValueVector_t& detValues_dn, 
+                                   const GradMatrix_t& grads_up, 
+                                   const GradMatrix_t& grads_dn, 
+                                   const ValueMatrix_t& lapls_up, 
+                                   const ValueMatrix_t& lapls_dn,
+                                   const ValueMatrix_t& M_up,
+                                   const ValueMatrix_t& M_dn,
+                                   const ValueMatrix_t& Minv_up,
+                                   const ValueMatrix_t& Minv_dn, 
+                                   const GradMatrix_t& B_grad,
+                                   const ValueMatrix_t& B_lapl,
+                                   const std::vector<int>& detData_up,
+                                   const size_t N1,
+                                   const size_t N2,
+                                   const size_t NP1,
+                                   const size_t NP2,
+                                   const std::vector< std::vector<int> >& lookup_tbl){}
 
 
   ///reset the target particleset
@@ -269,6 +294,13 @@ public:
     return true;
   }
 
+  /** finalize the construction of SPOSet
+   *
+   * for example, classes serving accelerators may need to transfer data from host to device
+   * after the host side objects are built.
+   */
+  virtual void finalizeConstruction() { }
+
   // Routine to set up data for the LCOrbitalSetOpt child class specifically
   // Should be left empty for other derived classes
   virtual void init_LCOrbitalSetOpt(const double mix_factor=0.0) { };
@@ -279,7 +311,6 @@ public:
 
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
-  virtual void initGPU() {  }
 
   //////////////////////////////////////////
   // Walker-parallel vectorized functions //
@@ -299,6 +330,13 @@ public:
             gpu::device_vector<CTS::ValueType*> &phi,
             gpu::device_vector<CTS::ValueType*> &grad_lapl_list,
             int row_stride);
+
+  virtual void
+  evaluate (std::vector<Walker_t*> &walkers,
+            std::vector<PosType> &new_pos,
+            gpu::device_vector<CTS::ValueType*> &phi,
+            gpu::device_vector<CTS::ValueType*> &grad_lapl_list,
+            int row_stride, int k, bool klinear);
 
   virtual void
   evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);

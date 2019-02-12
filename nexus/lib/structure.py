@@ -697,7 +697,9 @@ class Structure(Sobj):
                  frozen            = None,
                  bconds            = None,
                  posu              = None,
-                 kpath             = None):
+                 use_prim          = None,
+                 add_kpath         = False,
+                 ):
 
         if isinstance(axes,str):
             axes = array(axes.split(),dtype=float)
@@ -767,6 +769,9 @@ class Structure(Sobj):
             #end if
         #end if
         self.magnetize(magnetization)
+        if use_prim is not None and use_prim is not False:
+            self.become_primitive(source=use_prim,add_kpath=add_kpath)
+        #end if
         if tiling is not None:
             self.tile(tiling,
                       in_place = True,
@@ -1136,6 +1141,15 @@ class Structure(Sobj):
     #end def incorporate
 
 
+    def clone_from(self,other):
+        if not isinstance(other,Structure):
+            self.error('cloning failed\ncan only clone from other Structure objects\nreceived object of type: {0}'.format(other.__class__.__name__))
+        #end if
+        o = other.copy()
+        self.__dict__ = o.__dict__
+    #end def clone_from
+
+
     def add_atoms(self,elem,pos):
         self.set_elem(list(self.elem)+list(elem))
         self.pos=array(list(self.pos)+list(pos))
@@ -1264,6 +1278,7 @@ class Structure(Sobj):
         return self.rinscribe()
     #end def rcell
 
+
     # scale invariant measure of deviation from cube shape
     #   based on deviation of face diagonals from cube
     def cube_deviation(self):
@@ -1277,7 +1292,8 @@ class Structure(Sobj):
         d6 = abs(norm(a[2]-a[0])-dc)
         return (d1+d2+d3+d4+d5+d6)/(6*dc)
     #end def cube_deviation
-    
+
+
     # apply volume preserving shear-removing transformations to cell axes
     #   resulting unsheared cell has orthogonal axes
     #    while remaining periodically correct
@@ -3097,17 +3113,13 @@ class Structure(Sobj):
     #end def kfold
 
 
-    def get_primitive(self):
-        if self.folded_structure is None:
-            fs = self
+    def get_smallest(self):
+        if self.has_folded():
+            return self.folded_structure
         else:
-            fs = self.folded_structure
-            while fs.folded_structure!=None:
-                fs = fs.folded_structure
-            #end while
+            return self
         #end if
-        return fs
-    #end def get_primitive
+    #end def get_smallest
 
 
     def fold(self,small,*requests):
@@ -3222,6 +3234,40 @@ class Structure(Sobj):
             return tilemat
         #end if
     #end def tilematrix
+
+
+    def primitive(self,source=None,tmatrix=False,add_kpath=False,**kwargs):
+        res = None
+        allowed_sources = set(['seekpath'])
+        if source is None or isinstance(source,bool):
+            source = 'seekpath'
+        #end if
+        if source not in allowed_sources:
+            self.error('source used to obtain primitive cell is unrecognized\nsource requested: {0}\nallowed sources: {1}'.format(source,sorted(allowed_sources)))
+        #end if
+        if source=='seekpath':
+            res_skp = get_seekpath_full(structure=self,primitive=True,**kwargs)
+            prim = res_skp.primitive
+            T    = res_skp.prim_tmatrix
+            if add_kpath:
+                prim.add_kpoints(res_skp.explicit_kpoints_abs)
+            #end if
+            if tmatrix:
+                res = prim,T
+            else:
+                res = prim
+            #end if
+        else:
+            self.error('primitive source "{0}" is not implemented\nplease contact a developer'.format(source))
+        #end if
+        return res
+    #end def primitive
+
+
+    def become_primitive(self,source=None,add_kpath=False,**kwargs):
+        prim = self.primitive(source=source,add_kpath=add_kpath,**kwargs)
+        self.clone_from(prim)
+    #end def become_primitive
             
 
     def add_kpoints(self,kpoints,kweights=None,unique=False):
@@ -4398,7 +4444,9 @@ class Structure(Sobj):
 Structure.set_operations()
 
 
-## Kayahan edit
+#======================#
+#  SeeK-path functions #
+#======================#
 
 # installation instructions for seekpath interface
 #
@@ -4407,295 +4455,408 @@ Structure.set_operations()
 
 from periodic_table import pt as ptable
 try:
+    from numpy import array_equal
+except:
+    array_equal = unavailable('numpy','array_equal')
+#end try
+try:
     import seekpath
     from seekpath import get_explicit_k_path
-    from numpy import array_equal
     version = seekpath.__version__
 
     try:
         version = [int(i) for i in version.split('.')]
         if len(version) < 3:
             raise ValueError
+        #end if
     except ValueError:
         raise ValueError("Unable to parse version number")
-
+    #end try
     if tuple(version) < (1, 8, 3):
         raise ValueError("Invalid seekpath version, need >= 1.8.4")
-    
-    def _getseekpath(structure=None, with_time_reversal=False, recipe='hpkot', reference_distance=0.025, threshold=1E-7, symprec=1E-5, angle_tolerance=1.0):
-	if not isinstance(structure, Structure):
-            raise TypeError('structure is not of type Structure')
-        #end if
-        if structure.folded_structure is None:
-            structure = structure.copy()
-        else:
-            structure = structure.folded_structure.copy()
-        #end if
-        if structure.units is not 'A':
-            structure.change_units('A')
-        #end if
-        cell = (structure.axes, structure.get_scaled_positions(), structure.get_atomic_numbers())
-        return get_explicit_k_path(cell)
-        
-    #end def get_explicit_kpath
-    def get_conventional_cell(structure=None, symprec = 1E-5, angle_tolerance=1.0):
+    #end if
+    del version
+    del seekpath
+except:
+    get_explicit_k_path = unavailable('seekpath','get_explicit_k_path')
+#end try
+
+def _getseekpath(
+    structure          = None, 
+    with_time_reversal = False, 
+    recipe             = 'hpkot', 
+    reference_distance = 0.025, 
+    threshold          = 1E-7, 
+    symprec            = 1E-5, 
+    angle_tolerance    = 1.0,
+    ):
+    if not isinstance(structure, Structure):
+        raise TypeError('structure is not of type Structure\ntype received: {0}'.format(structure.__class__.__name__))
+    #end if
+    if structure.has_folded():
+        structure = structure.folded_structure
+    #end if
+    structure = structure.copy()
+    if structure.units is not 'A':
+        structure.change_units('A')
+    #end if
+    axes       = structure.axes
+    unit_pos   = structure.get_scaled_positions()
+    atomic_num = structure.get_atomic_numbers()
+    cell = (axes,unit_pos,atomic_num)
+    return get_explicit_k_path(cell)
+#end def _getseekpath
+
+def get_conventional_cell(
+    structure       = None, 
+    symprec         = 1E-5, 
+    angle_tolerance = 1.0,
+    seekpathout     = None,
+    ):
+    if seekpathout is None:
         seekpathout = _getseekpath(structure=structure, symprec = symprec, angle_tolerance=angle_tolerance)
-        axes        = seekpathout['conv_lattice']
-        enumbers    = seekpathout['conv_types']
-        posd        = seekpathout['conv_positions']
-        volfac      = seekpathout['volume_original_wrt_conv']
-        bcharge     = structure.background_charge*volfac
-        pos         = dot(posd,axes)
-        sout        = structure.copy()
-        elem        = empty(len(enumbers), dtype='str')
-        for el in ptable.elements.iteritems():
-            elem[enumbers==el[1].atomic_number]=el[0]
-        #end for
-        if abs(bcharge-int(bcharge)) > 1E-6:
-            raise ValueError("Invalid background charge for conventional structure")
-        #end if
-        return {'structure': Structure(axes=axes, elem=elem, pos=pos, background_charge = bcharge, units='A')}
-    #end def get_explicit_kpath
-    def get_primitive_cell(structure=None, symprec=1E-5, angle_tolerance=1.0):
+    #end if
+    axes        = seekpathout['conv_lattice']
+    enumbers    = seekpathout['conv_types']
+    posd        = seekpathout['conv_positions']
+    volfac      = seekpathout['volume_original_wrt_conv']
+    bcharge     = structure.background_charge*volfac
+    pos         = dot(posd,axes)
+    sout        = structure.copy()
+    elem        = empty(len(enumbers), dtype='str')
+    for el in ptable.elements.iteritems():
+        elem[enumbers==el[1].atomic_number]=el[0]
+    #end for
+    if abs(bcharge-int(bcharge)) > 1E-6:
+        raise ValueError("Invalid background charge for conventional structure")
+    #end if
+    return {'structure': Structure(axes=axes, elem=elem, pos=pos, background_charge = bcharge, units='A')}
+#end def get_conventional_cell
+
+def get_primitive_cell(
+    structure       = None, 
+    symprec         = 1E-5, 
+    angle_tolerance = 1.0,
+    seekpathout     = None,
+    ):
+    if seekpathout is None:
         seekpathout = _getseekpath(structure = structure, symprec = symprec, angle_tolerance=angle_tolerance)
-        axes        = seekpathout['primitive_lattice']
-        enumbers    = seekpathout['primitive_types']
-        posd        = seekpathout['primitive_positions']
-        volfac      = seekpathout['volume_original_wrt_prim']
-        bcharge     = structure.background_charge*volfac
-        pos         = dot(posd,axes)
-        sout        = structure.copy()
-        elem        = array(enumbers, dtype='str')
-        for el in ptable.elements.iteritems():
-            elem[enumbers==el[1].atomic_number]=el[0]
-        #end for
-        return {'structure' : Structure(axes=axes, elem=elem, pos=pos, background_charge=bcharge, units='A'),
-                'T'         : seekpathout['primitive_transformation_matrix']}
-    #end def get_primitive_cell
-    def get_kpath(structure=None, check_standard=True, with_time_reversal=False, recipe='hpkot',
-                  reference_distance=0.025, threshold=1E-7, symprec=1E-5, angle_tolerance=1.0):
+    #end if
+    axes        = seekpathout['primitive_lattice']
+    enumbers    = seekpathout['primitive_types']
+    posd        = seekpathout['primitive_positions']
+    volfac      = seekpathout['volume_original_wrt_prim']
+    bcharge     = structure.background_charge*volfac
+    pos         = dot(posd,axes)
+    sout        = structure.copy()
+    elem        = array(enumbers, dtype='str')
+    for el in ptable.elements.iteritems():
+        elem[enumbers==el[1].atomic_number]=el[0]
+    #end for
+    return {'structure' : Structure(axes=axes, elem=elem, pos=pos, background_charge=bcharge, units='A'),
+            'T'         : seekpathout['primitive_transformation_matrix']}
+#end def get_primitive_cell
+
+def get_kpath(
+    structure          = None, 
+    check_standard     = True, 
+    with_time_reversal = False, 
+    recipe             = 'hpkot',
+    reference_distance = 0.025, 
+    threshold          = 1E-7, 
+    symprec            = 1E-5, 
+    angle_tolerance    = 1.0,
+    seekpathout        = None,
+    ):
+    if seekpathout is None:
         seekpathout = _getseekpath(structure=structure, symprec = symprec, angle_tolerance=angle_tolerance,
                                    recipe=recipe, reference_distance=reference_distance, with_time_reversal=with_time_reversal)
-	if check_standard:
-            axes    = structure.axes
-            primlat = seekpathout['primitive_lattice']
-            if not isclose(primlat, axes).all():
-                print primlat, axes
-		Structure.class_error('Input lattice is not the conventional lattice. If you like otherwise, set check_standard=False.')
-            #end if
+    #end if
+    if check_standard:
+        axes    = structure.axes
+        primlat = seekpathout['primitive_lattice']
+        if not isclose(primlat, axes).all():
+            #print primlat, axes
+            Structure.class_error('Input lattice is not the conventional lattice. If you like otherwise, set check_standard=False.')
         #end if
-        inverse_A_to_inverse_B = 0.529177249
-        return {'explicit_kpoints_abs_inv_A'      : seekpathout['explicit_kpoints_abs'],
-                'explicit_kpoints_abs_inv_B'      : seekpathout['explicit_kpoints_abs']*inverse_A_to_inverse_B,
-                'explicit_kpoints_rel'      : seekpathout['explicit_kpoints_rel'],
-                'explicit_kpoints_labels'   : seekpathout['explicit_kpoints_labels'],
-                'path'                      : seekpathout['path'],
-                'explicit_path_linearcoords': seekpathout['explicit_kpoints_linearcoord'],
-                'point_coords'              : seekpathout['point_coords']}
-    #end def get_kpath
-    def get_symmetry(structure          = None, symprec = 1E-5, angle_tolerance=1.0):
-        seekpathout = _getseekpath(structure = structure, symprec = symprec, angle_tolerance=angle_tolerance)
-        sgint       = seekpathout['spacegroup_international']
-        bravais     = seekpathout['bravais_lattice']
-        invsym      = seekpathout['has_inversion_symmetry']
-        sgnum       = seekpathout['spacegroup_number']
+    #end if
+    inverse_A_to_inverse_B = convert(1.0,'A','B')
+    return {'explicit_kpoints_abs_inv_A'      : seekpathout['explicit_kpoints_abs'],
+            'explicit_kpoints_abs_inv_B'      : seekpathout['explicit_kpoints_abs']*inverse_A_to_inverse_B,
+            'explicit_kpoints_rel'      : seekpathout['explicit_kpoints_rel'],
+            'explicit_kpoints_labels'   : seekpathout['explicit_kpoints_labels'],
+            'path'                      : seekpathout['path'],
+            'explicit_path_linearcoords': seekpathout['explicit_kpoints_linearcoord'],
+            'point_coords'              : seekpathout['point_coords']}
+#end def get_kpath
 
-        return {'sgint': sgint, 'bravais': bravais, 'inv_sym_exists': invsym, 'sgnum': sgnum}
-    #end def get_symmetry
-    def get_structure_with_bands(cell=0, structure=None, with_time_reversal=False,reference_distance=0.025, threshold=1E-7, symprec=1E-5, angle_tolerance=1.0):
-        if cell == 0:
-            ''' Use input structure '''
-            struct_band = structure.copy()
-        elif cell == 1:
-            ''' Use conventional structure '''
-            struct_band = get_conventional_cell(structure=structure, symprec=symprec, angle_tolerance=angle_tolerance)['structure']
-        elif cell == 2:
-            ''' Use primitive structure '''
-            struct_band = get_primitive_cell(structure=structure, symprec=symprec, angle_tolerance=angle_tolerance)['structure']
+def get_symmetry(
+    structure       = None, 
+    symprec         = 1E-5, 
+    angle_tolerance = 1.0,
+    seekpathout     = None,
+    ):
+    if seekpathout is None:
+        seekpathout = _getseekpath(structure = structure, symprec = symprec, angle_tolerance=angle_tolerance)
+    #end if
+    sgint       = seekpathout['spacegroup_international']
+    bravais     = seekpathout['bravais_lattice']
+    invsym      = seekpathout['has_inversion_symmetry']
+    sgnum       = seekpathout['spacegroup_number']
+
+    return {'sgint': sgint, 'bravais': bravais, 'inv_sym_exists': invsym, 'sgnum': sgnum}
+#end def get_symmetry
+
+def get_structure_with_bands(
+    cell               = 0, 
+    structure          = None, 
+    with_time_reversal = False,
+    reference_distance = 0.025, 
+    threshold          = 1E-7, 
+    symprec            = 1E-5, 
+    angle_tolerance    = 1.0,
+    ):
+    if cell == 0:
+        ''' Use input structure '''
+        struct_band = structure.copy()
+    elif cell == 1:
+        ''' Use conventional structure '''
+        struct_band = get_conventional_cell(structure=structure, symprec=symprec, angle_tolerance=angle_tolerance)['structure']
+    elif cell == 2:
+        ''' Use primitive structure '''
+        struct_band = get_primitive_cell(structure=structure, symprec=symprec, angle_tolerance=angle_tolerance)['structure']
+    else:
+        Structure.class_error('Invalid cell type')
+    #end if
+    kpath = get_kpath(structure=struct_band, check_standard=False, with_time_reversal=with_time_reversal)
+    return Structure(axes              = struct_band.axes,
+                     elem              = struct_band.elem,
+                     pos               = struct_band.pos,
+                     background_charge = struct_band.background_charge,
+                     kpoints           = kpath['explicit_kpoints_rel'],
+                     units             = 'A')
+#end def get_structure_with_bands
+
+def get_band_tiling(
+    structure      = None, 
+    check_standard = True, 
+    use_ktol       = True, 
+    kpoints_label  = None, 
+    kpoints_rel    = None, 
+    max_volfac     = 20,
+    ):
+    import numpy as np
+    import itertools
+    import pdb
+    import time
+    def cube_deviation(axes):
+        a = axes
+        volume = np.abs(np.dot(np.cross(axes[0,:], axes[1,:]), axes[2,:]))
+        dc = volume**(1./3)*sqrt(2.)
+        d1 = abs(norm(a[0]+a[1])-dc)
+        d2 = abs(norm(a[1]+a[2])-dc)
+        d3 = abs(norm(a[2]+a[0])-dc)
+        d4 = abs(norm(a[0]-a[1])-dc)
+        d5 = abs(norm(a[1]-a[2])-dc)
+        d6 = abs(norm(a[2]-a[0])-dc)
+        return (d1+d2+d3+d4+d5+d6)/(6*dc)
+    #end def cube_deviation
+    def reduce_axes(axes):
+        newaxes   = [ axes[0,:] + axes[1,:] + axes[2,:],
+                     -axes[0,:] + axes[1,:] + axes[2,:],
+                      axes[0,:] - axes[1,:] + axes[2,:],
+                      axes[0,:] + axes[1,:] - axes[2,:],
+                     -axes[0,:] - axes[1,:] + axes[2,:],
+                     -axes[0,:] + axes[1,:] - axes[2,:],
+                      axes[0,:] - axes[1,:] - axes[2,:],
+                     -axes[0,:] - axes[1,:] - axes[2,:]]
+        found        = False
+        max_cubicity = cube_deviation(axes)
+        new_axes     = []
+        for na in newaxes:
+            for i in range(0,3):
+                tempaxes=axes.copy()
+                tempaxes[i,:] = na 
+                tempaxes_cubicity = cube_deviation(tempaxes)
+                if tempaxes_cubicity < max_cubicity:
+                    new_axes = tempaxes
+                    max_cubicity = tempaxes_cubicity
+                    found = True
+                #end if
+            #end for
+        #end for
+        if found:
+            return reduce_axes(new_axes)
         else:
-            Structure.class_error('Invalid cell type')
+            return axes
         #end if
-        kpath = get_kpath(structure=struct_band, check_standard=False, with_time_reversal=with_time_reversal)
-        return Structure(axes              = struct_band.axes,
-                         elem              = struct_band.elem,
-                         pos               = struct_band.pos,
-                         background_charge = struct_band.background_charge,
-                         kpoints           = kpath['explicit_kpoints_rel'],
-                         units             = 'A')
-    #end def band_physical_system
-    def get_band_tiling(structure = None, check_standard = True, use_ktol = True, kpoints_label = None, kpoints_rel = None, max_volfac = 20):
-        import numpy as np
-        import itertools
-        import pdb
-        import time
-        def cube_deviation(axes):
-            a = axes
-            volume = np.abs(np.dot(np.cross(axes[0,:], axes[1,:]), axes[2,:]))
-            dc = volume**(1./3)*sqrt(2.)
-            d1 = abs(norm(a[0]+a[1])-dc)
-            d2 = abs(norm(a[1]+a[2])-dc)
-            d3 = abs(norm(a[2]+a[0])-dc)
-            d4 = abs(norm(a[0]-a[1])-dc)
-            d5 = abs(norm(a[1]-a[2])-dc)
-            d6 = abs(norm(a[2]-a[0])-dc)
-            return (d1+d2+d3+d4+d5+d6)/(6*dc)
-        #end def cube_deviation
-        def reduce_axes(axes):
-            newaxes   = [ axes[0,:] + axes[1,:] + axes[2,:],
-                         -axes[0,:] + axes[1,:] + axes[2,:],
-                          axes[0,:] - axes[1,:] + axes[2,:],
-                          axes[0,:] + axes[1,:] - axes[2,:],
-                         -axes[0,:] - axes[1,:] + axes[2,:],
-                         -axes[0,:] + axes[1,:] - axes[2,:],
-                          axes[0,:] - axes[1,:] - axes[2,:],
-                         -axes[0,:] - axes[1,:] - axes[2,:]]
-            found        = False
-            max_cubicity = cube_deviation(axes)
-            new_axes     = []
-            for na in newaxes:
-                for i in range(0,3):
-                    tempaxes=axes.copy()
-                    tempaxes[i,:] = na 
-                    tempaxes_cubicity = cube_deviation(tempaxes)
-                    if tempaxes_cubicity < max_cubicity:
-                        new_axes = tempaxes
-                        max_cubicity = tempaxes_cubicity
-                        found = True
-                    #end if
-                #end for
-            #end for
-            if found:
-                return reduce_axes(new_axes)
-            else:
-                return axes
-            #end if
-        #end def reduce_axes    
-        kpath       = get_kpath(structure = structure, check_standard = check_standard)
-        kpath_label = array(kpath['explicit_kpoints_labels'])
-        kpath_rel   = kpath['explicit_kpoints_rel']
-        kpts        = dict()
-        ## Read input k-points
-        if kpoints_label is None:
-            kpoints_label = []
-            if kpoints_rel is None:
-                Structure.class_error('Please define symbolic or crystal coordinates for kpoints. e.g. [\'GAMMA\', \'K\']  or [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]')
-            else:
-                for k in kpoints_rel:
-                    kindex = np.isclose(kpath_rel,k, atol=1e-5).all(1)
-                    if any(kindex):
-                        kpts[kpath_label[kindex][0]] = array(k)
-                    else:
-                        Structure.class_error('{0} is not found in the kpath'.format(k))
-                    #end if
-                #end for
-            #end if
+    #end def reduce_axes    
+    kpath       = get_kpath(structure = structure, check_standard = check_standard)
+    kpath_label = array(kpath['explicit_kpoints_labels'])
+    kpath_rel   = kpath['explicit_kpoints_rel']
+    kpts        = dict()
+    ## Read input k-points
+    if kpoints_label is None:
+        kpoints_label = []
+        if kpoints_rel is None:
+            Structure.class_error('Please define symbolic or crystal coordinates for kpoints. e.g. [\'GAMMA\', \'K\']  or [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]')
         else:
-            if kpoints_rel is not None:
-                Structure.class_error('Both symbolic and crystal k-points are defined.')
-            else:
-                kpoints_rel = []
-                num_kpoints = 0
-                for k in kpoints_label:
-                    kindex = k == kpath_label
-                    if any(kindex):
-                        if k == '' or k == None:
-                            k = '{0}'.format(num_kpoints)
-                        #end if
-                        kpts[k] = array(kpath_rel[kindex][0])
-                    else:
-                        Structure.class_error('{0} is not found in the kpath'.format(k))
-                    #end if
-                #end for
-            #end if
+            for k in kpoints_rel:
+                kindex = np.isclose(kpath_rel,k, atol=1e-5).all(1)
+                if any(kindex):
+                    kpts[kpath_label[kindex][0]] = array(k)
+                else:
+                    Structure.class_error('{0} is not found in the kpath'.format(k))
+                #end if
+            #end for
         #end if
-        #Generate greatest common divisor grid for the given kpts        
-	alphas     = array([x[0] - x[1] for x in itertools.combinations(kpts.values(),2)])
-        abs_alphas = abs(alphas)
-        divs       = []
-        volfac     = 1e6
-        ktol       = 1.0/max_volfac
-        for i in range(max_volfac, 0, -1):
-            for j in range(max_volfac, 0, -1):
-                for k in range(max_volfac, 0, -1):
-                    rec_grid = array([1./i,1./j,1./k])
-                    rem = np.mod(abs_alphas, rec_grid)
-                    if np.all(np.any([rem<=ktol, rem>=(rec_grid-ktol)], axis=0)):
-                        n1     = i
-                        n2     = j
-                        n3     = k
-                        g12    = np.gcd.reduce([n1,n2])
-                        g13    = np.gcd.reduce([n1,n3])
-                        g23    = np.gcd.reduce([n2,n3])
-                        g123   = np.gcd.reduce([n1, n2, n3])
-                        temp_volfac = n1*n2*n3*g123/(g12*g13*g23)
-                        
-                        if temp_volfac <= volfac:
-                            divs = array([n1, n2, n3])
-                            volfac = temp_volfac
-                        #end if
+    else:
+        if kpoints_rel is not None:
+            Structure.class_error('Both symbolic and crystal k-points are defined.')
+        else:
+            kpoints_rel = []
+            num_kpoints = 0
+            for k in kpoints_label:
+                kindex = k == kpath_label
+                if any(kindex):
+                    if k == '' or k == None:
+                        k = '{0}'.format(num_kpoints)
                     #end if
-                #end for
+                    kpts[k] = array(kpath_rel[kindex][0])
+                else:
+                    Structure.class_error('{0} is not found in the kpath'.format(k))
+                #end if
+            #end for
+        #end if
+    #end if
+    #Generate greatest common divisor grid for the given kpts        
+    alphas     = array([x[0] - x[1] for x in itertools.combinations(kpts.values(),2)])
+    abs_alphas = abs(alphas)
+    divs       = []
+    volfac     = 1e6
+    ktol       = 1.0/max_volfac
+    for i in range(max_volfac, 0, -1):
+        for j in range(max_volfac, 0, -1):
+            for k in range(max_volfac, 0, -1):
+                rec_grid = array([1./i,1./j,1./k])
+                rem = np.mod(abs_alphas, rec_grid)
+                if np.all(np.any([rem<=ktol, rem>=(rec_grid-ktol)], axis=0)):
+                    n1     = i
+                    n2     = j
+                    n3     = k
+                    g12    = np.gcd.reduce([n1,n2])
+                    g13    = np.gcd.reduce([n1,n3])
+                    g23    = np.gcd.reduce([n2,n3])
+                    g123   = np.gcd.reduce([n1, n2, n3])
+                    temp_volfac = n1*n2*n3*g123/(g12*g13*g23)
+
+                    if temp_volfac <= volfac:
+                        divs = array([n1, n2, n3])
+                        volfac = temp_volfac
+                    #end if
+                #end if
             #end for
         #end for
-        quotients, rems = np.divmod(alphas,(1./divs))
-        quotients[rems>0.5/divs]+=1
-        n1, n2, n3 = divs
-        g12    = np.gcd.reduce([n1,n2])
-        g13    = np.gcd.reduce([n1,n3])
-        g23    = np.gcd.reduce([n2,n3])
-        g123   = np.gcd.reduce([n1, n2, n3])
-        #New alphas with the tolerance
-	alpha_abs   = abs(alphas)
-        alpha_signs = sign(alphas) 
-        alpha_signs[alpha_signs == 0.0] = 1.0 # 0/0 division
-	new_alphas  = np.round(alpha_abs*divs)*1./divs*alpha_signs
-        #new_rem    = np.divmod(alphas,1.0/divs)[1]
-        #Generate possible matrices in the Upper Triangular Hermite Normal Form, from PHYSICAL REVIEW B 92, 184301 (2015)
-        mats = []
-        for p in range(0, g23):
-            for q in range(0, g12/g123):
-                for r in range(g13*g23/g123):
-                    tmat = [[g123*n1/(g12*g13), q*g123*n2/(g12*g23), r*g123*n3/(g13*g23)], [0, n2/g23, p*n3/g23], [0,0,n3]]
-                    comm = []
-                    for ai in new_alphas:
-                        if (np.abs(np.mod(np.sum(tmat*ai+1e-6, axis=1), 1) <=  4e-6)).all():
-                            comm.append(True)
-                        else:
-                            comm.append(False)
-                        #end if
-                    #end for
-                    if all(comm):
-                        mats.append(tmat)
+    #end for
+    quotients, rems = np.divmod(alphas,(1./divs))
+    quotients[rems>0.5/divs]+=1
+    n1, n2, n3 = divs
+    g12    = np.gcd.reduce([n1,n2])
+    g13    = np.gcd.reduce([n1,n3])
+    g23    = np.gcd.reduce([n2,n3])
+    g123   = np.gcd.reduce([n1, n2, n3])
+    #New alphas with the tolerance
+    alpha_abs   = abs(alphas)
+    alpha_signs = sign(alphas) 
+    alpha_signs[alpha_signs == 0.0] = 1.0 # 0/0 division
+    new_alphas  = np.round(alpha_abs*divs)*1./divs*alpha_signs
+    #new_rem    = np.divmod(alphas,1.0/divs)[1]
+    #Generate possible matrices in the Upper Triangular Hermite Normal Form, from PHYSICAL REVIEW B 92, 184301 (2015)
+    mats = []
+    for p in range(0, g23):
+        for q in range(0, g12/g123):
+            for r in range(g13*g23/g123):
+                tmat = [[g123*n1/(g12*g13), q*g123*n2/(g12*g23), r*g123*n3/(g13*g23)], [0, n2/g23, p*n3/g23], [0,0,n3]]
+                comm = []
+                for ai in new_alphas:
+                    if (np.abs(np.mod(np.sum(tmat*ai+1e-6, axis=1), 1) <=  4e-6)).all():
+                        comm.append(True)
+                    else:
+                        comm.append(False)
                     #end if
                 #end for
+                if all(comm):
+                    mats.append(tmat)
+                #end if
             #end for
         #end for
-	axes             = structure.axes
-        final_mat        = []
-        final_s_cubicity = 1e6
-        mats             = array(mats)
-        for m in mats:
-            s_axes         = np.dot(m, axes)
-            new_s_axes     = reduce_axes(s_axes)
-            new_s_cubicity = cube_deviation(new_s_axes)
-            if new_s_cubicity < final_s_cubicity:
-                final_mat        = new_s_axes
-                final_s_cubicity = new_s_cubicity
-            #end if
-        #end for
-	t = array(np.dot(final_mat, np.linalg.inv(axes)))
-        t_float = t.copy()
-        tol = 10**-6
-        t[abs(t)< tol] = 0
-        t_int = around(t).astype(int)
-        if not (abs(t_int-t_float) < tol).any():
-            print "Tiling matrix has non-integer elements!"
-            exit()
-        return t_int.tolist()
-    #end def get_band_tiling
-except:
-     get_path = unavailable('seekpath','get_path')
-#end try
+    #end for
+    axes             = structure.axes
+    final_mat        = []
+    final_s_cubicity = 1e6
+    mats             = array(mats)
+    for m in mats:
+        s_axes         = np.dot(m, axes)
+        new_s_axes     = reduce_axes(s_axes)
+        new_s_cubicity = cube_deviation(new_s_axes)
+        if new_s_cubicity < final_s_cubicity:
+            final_mat        = new_s_axes
+            final_s_cubicity = new_s_cubicity
+        #end if
+    #end for
+    t = array(np.dot(final_mat, np.linalg.inv(axes)))
+    t_float = t.copy()
+    tol = 10**-6
+    t[abs(t)< tol] = 0
+    t_int = around(t).astype(int)
+    if not (abs(t_int-t_float) < tol).any():
+        print "Tiling matrix has non-integer elements!"
+        exit()
+    return t_int.tolist()
+#end def get_band_tiling
+
+def get_seekpath_full(
+        structure      = None,
+        seekpathout    = None,
+        conventional   = False,
+        primitive      = False,
+        **kwargs
+        ):
+    if seekpathout is None:
+        seekpathout = _getseekpath(structure,**kwargs)
+    #end if
+    res = obj(seekpathout)
+    for k,v in res.iteritems():
+        if isinstance(v,dict):
+            res[k] = obj(v)
+        #end if
+    #end for
+    if conventional:
+        conv = get_conventional_cell(structure,seekpathout=seekpathout)
+        res.conventional = conv['structure']
+    #end if
+    if primitive:
+        prim = get_primitive_cell(structure,seekpathout=seekpathout)
+        res.primitive    = prim['structure']
+        res.prim_tmatrix = prim['T']
+    #end if
+    return res
+#end def get_seekpath_full
+
+skp = obj(
+    _getseekpath             = _getseekpath,
+    get_conventional_cell    = get_conventional_cell,
+    get_primitive_cell       = get_primitive_cell,
+    get_kpath                = get_kpath,
+    get_symmetry             = get_symmetry,
+    get_structure_with_bands = get_structure_with_bands,
+    get_band_tiling          = get_band_tiling,
+    )
+
+#==========================#
+#  end SeeK-path functions #
+#==========================#
+
 
 
 def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recenter=True,match_com=False,repackage=False,chained=False):
@@ -5822,6 +5983,8 @@ def generate_crystal_structure(
     folded_elem    = None,
     folded_pos     = None,
     folded_units   = None,
+    use_prim       = None,
+    add_kpath      = False,
     #legacy inputs
     structure      = None,
     shape          = None,
@@ -5866,9 +6029,14 @@ def generate_crystal_structure(
             operations     = operations,
             posu           = posu,
             elem_pos       = elem_pos,
+            use_prim       = use_prim,
+            add_kpath      = add_kpath,
             )
     elif isinstance(structure,Structure):
         s = structure
+        if use_prim is not False:
+            s.become_primitive(source=use_prim,add_kpath=add_kpath)
+        #end if
         if tiling is not None:
             s = s.tile(tiling)
         #end if
@@ -5877,7 +6045,7 @@ def generate_crystal_structure(
         #end if
         if kgrid is not None:
             s.add_kmesh(kgrid,kshift)
-        #end if        
+        #end if
     #end if
     if s is not None:
         # add point group folded molecular system if present
@@ -5919,7 +6087,9 @@ def generate_crystal_structure(
         permute        = permute       ,
         operations     = operations    ,
         elem           = elem          ,
-        pos            = pos
+        pos            = pos           ,
+        use_prim       = use_prim      ,
+        add_kpath      = add_kpath     ,
         )
 
     if struct_type!=Crystal:

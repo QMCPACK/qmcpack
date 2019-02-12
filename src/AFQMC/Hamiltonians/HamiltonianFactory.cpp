@@ -21,6 +21,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "Utilities/SimpleParser.h"
 #include "Configuration.h"
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
 
@@ -148,7 +149,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     int int_blocks,nvecs,nkpts=-1;
     std::vector<int> Idata(8);
     if(head)
-      if(!dump.read(Idata,"dims")) {
+      if(!dump.readEntry(Idata,"dims")) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading dims. \n";
         APP_ABORT("");
       }
@@ -178,7 +179,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
     if(head) {
       std::vector<ValueType> Rdata(2);
-      if(!dump.read(Rdata,"Energies")) {
+      if(!dump.readEntry(Rdata,"Energies")) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading  dataset. \n";
         APP_ABORT(" ");
       }
@@ -198,7 +199,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       bool foundH1=false;
       if(nkpts > 0) {
         // nothing to do, H1 is read during construction of HamiltonianOperations object.
-      } else if(dump.read(H1,"hcore")) {
+      } else if(dump.readEntry(H1,"hcore")) {
         foundH1 = true;
       } else {
 
@@ -209,12 +210,12 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
         }
 
         std::vector<OrbitalType> ivec(2*Idata[0]);
-        if(!dump.read(ivec,"H1_indx")) {
+        if(!dump.readEntry(ivec,"H1_indx")) {
           app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1_indx. \n";
           APP_ABORT(" ");
         }
         std::vector<ValueType> vvec(Idata[0]);
-        if(!dump.read(vvec,"H1")) {
+        if(!dump.readEntry(vvec,"H1")) {
           app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1.  \n";
           APP_ABORT(" ");
         }

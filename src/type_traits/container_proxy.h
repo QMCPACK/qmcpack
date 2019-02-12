@@ -21,8 +21,14 @@
 #include <OhmmsPETE/Tensor.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/PooledData.h>
+<<<<<<< HEAD
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
+=======
+#if defined(HAVE_LIBBOOST)
+#include <boost/multi_array.hpp>
+#endif
+>>>>>>> f8378aee3c77fb3a26fd6be1738a27f00824db6f
 
 namespace qmcplusplus
 {
@@ -231,6 +237,7 @@ struct container_proxy<Array<T,D> >
   }
 };
 
+<<<<<<< HEAD
 template<typename T, class Alloc>
 struct container_proxy<boost::multi::array<T,2,Alloc> >
 {
@@ -238,12 +245,23 @@ struct container_proxy<boost::multi::array<T,2,Alloc> >
   typedef typename container_proxy<T>::pointer pointer;
   boost::multi::array<T,2,Alloc>& ref;
   inline container_proxy(boost::multi::array<T,2,Alloc>& a):ref(a) {}
+=======
+#if defined(HAVE_LIBBOOST)
+template<typename T>
+struct container_proxy<boost::multi_array<T,2> >
+{
+  enum {DIM=scalar_traits<T>::DIM};
+  typedef typename container_proxy<T>::pointer pointer;
+  boost::multi_array<T,2>& ref;
+  inline container_proxy(boost::multi_array<T,2>& a):ref(a) {}
+>>>>>>> f8378aee3c77fb3a26fd6be1738a27f00824db6f
   inline size_t size() const
   {
     return ref.num_elements()*DIM;
   }
   inline pointer data()
   {
+<<<<<<< HEAD
     //using detail::to_address;
     //return scalar_traits<T>::get_address(to_address(ref.origin()));
     return scalar_traits<T>::get_address(std::addressof(*ref.origin()));
@@ -251,29 +269,51 @@ struct container_proxy<boost::multi::array<T,2,Alloc> >
   inline void resize(size_t n)
   {
     APP_ABORT(" Error: Can not resize container_proxy<boost::multi::array<T,D,Alloc> >. \n");
+=======
+    return scalar_traits<T>::get_address(ref.origin());
+  }
+  inline void resize(size_t n)
+  {
+    APP_ABORT(" Error: Can not resize container_proxy<boost::multi_array_ref<T,D> >. \n");
+>>>>>>> f8378aee3c77fb3a26fd6be1738a27f00824db6f
   }
   template<typename I>
   inline void resize(I* n, int d)
   {
     if(d < 2)
+<<<<<<< HEAD
       APP_ABORT(" Error: Inconsistent dimension in container_proxy<boost::multi::array<T,D,Alloc> >::resize(I*,int). \n");
     ref.reextent({n[0],n[1]});
+=======
+      APP_ABORT(" Error: Inconsistent dimension in container_proxy<boost::multi_array_ref<T,D> >::resize(I*,int). \n");
+    ref.resize(boost::extents[n[0]][n[1]]);
+>>>>>>> f8378aee3c77fb3a26fd6be1738a27f00824db6f
   }
 };
 
 template<typename T>
+<<<<<<< HEAD
 struct container_proxy<boost::multi::array_ref<T,2> >
 {
   enum {DIM=scalar_traits<T>::DIM};
   typedef typename container_proxy<T>::pointer pointer;
   boost::multi::array_ref<T,2>& ref;
   inline container_proxy(boost::multi::array_ref<T,2>& a):ref(a) {}
+=======
+struct container_proxy<boost::multi_array_ref<T,2> >
+{
+  enum {DIM=scalar_traits<T>::DIM};
+  typedef typename container_proxy<T>::pointer pointer;
+  boost::multi_array_ref<T,2>& ref;
+  inline container_proxy(boost::multi_array_ref<T,2>& a):ref(a) {}
+>>>>>>> f8378aee3c77fb3a26fd6be1738a27f00824db6f
   inline size_t size() const
   {
     return ref.num_elements()*DIM;
   }
   inline pointer data()
   {
+<<<<<<< HEAD
     //using detail::to_address;
     //return scalar_traits<T>::get_address(to_address(ref.origin()));
     return scalar_traits<T>::get_address(std::addressof(*ref.origin()));
@@ -281,15 +321,31 @@ struct container_proxy<boost::multi::array_ref<T,2> >
   inline void resize(size_t n)
   {
     APP_ABORT(" Error: Can not resize container_proxy<boost::multi::array_ref<T,D> >. \n");
+=======
+    return scalar_traits<T>::get_address(ref.origin());
+  }
+  inline void resize(size_t n)
+  {
+    APP_ABORT(" Error: Can not resize container_proxy<boost::multi_array_ref<T,D> >. \n");
+>>>>>>> f8378aee3c77fb3a26fd6be1738a27f00824db6f
   }
 
   template<typename I>
   inline void resize(I* n, int d)
   {
+<<<<<<< HEAD
     APP_ABORT(" Error: Can not resize container_proxy<boost::multi::array_ref<T,D> >. \n");
   }
 
 };
+=======
+    APP_ABORT(" Error: Can not resize container_proxy<boost::multi_array_ref<T,D> >. \n");
+  }
+
+};
+#endif
+
+>>>>>>> f8378aee3c77fb3a26fd6be1738a27f00824db6f
 
 }
 #endif

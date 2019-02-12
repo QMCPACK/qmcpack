@@ -142,8 +142,8 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
         std::vector<IndexType> Idata(2);
         std::vector<RealType> Rdata(2);
 
-        if(!read.read(Idata,"DriverInts")) return false;
-        if(!read.read(Rdata,"DriverReals")) return false;
+        if(!read.readEntry(Idata,"DriverInts")) return false;
+        if(!read.readEntry(Rdata,"DriverReals")) return false;
 
         Eshift = Rdata[0];
 
@@ -152,10 +152,10 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
 
         read.pop();
         restarted = true;
+        read.close();
       }
 
       if(!restarted) {
-        read.close();
         app_log()<<" WARNING: Problems restarting simulation. Starting from default settings. \n";
       }
 
@@ -220,7 +220,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
 
   // resize walker set
   if(restarted) {
-    restartFromHDF5(wset,nWalkers,read,set_nWalker_target);
+    restartFromHDF5(wset,nWalkers,hdf_read_restart,read,set_nWalker_target);
     wfn0.Energy(wset);
   } else {
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);

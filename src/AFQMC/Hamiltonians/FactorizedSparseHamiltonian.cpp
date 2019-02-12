@@ -191,7 +191,8 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
 
     // hack until parallel hdf is in place
     bool write_hdf = false;
-    if(TGwfn.Global().root()) write_hdf = (dump.file_id != hdf_archive::is_closed);
+    if(TGwfn.Global().root()) write_hdf = !dump.closed();
+    //    if(TGwfn.Global().root()) write_hdf = (dump.file_id != hdf_archive::is_closed);
     TGwfn.Global().broadcast_value(write_hdf);
 
     boost::multi::array<ComplexType,2> vn0({NMO,NMO});

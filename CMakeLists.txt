@@ -60,8 +60,8 @@ MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_M
 ######################################################################
 # Build level
 ######################################################################
-SET(QMC_BUILD_LEVEL 3 CACHE INTEGER
-  "QMC Build Level: 1=bare, 2=developer, 3=experimental, 4=minimal")
+
+SET(QMC_BUILD_SANDBOX_ONLY OFF CACHE BOOLEAN "Build only applications in Sandbox directory")
 IF ( NOT CMAKE_BUILD_TYPE AND NOT CMAKE_TOOLCHAIN_FILE)
   SET( CMAKE_BUILD_TYPE Release )
 ENDIF()
@@ -180,12 +180,10 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # Build options
 # QMC_BUILD_STATIC build static/dynamic  libraries
 # BUILD_QMCTOOLS   build utility programs
-# BUILD_SANDBOX    build test programs and miniapps
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
 SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
-SET(BUILD_SANDBOX 1 CACHE BOOL "Build sandbox tests and miniapps")
 SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
 IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
   MESSAGE(STATUS "LMY engine is not compatible with CUDA build! Disabling LMY engine")
@@ -195,10 +193,16 @@ IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
   MESSAGE(STATUS "LMY engine is not compatible with CPU mixed precision build! Disabling LMY engine")
   SET(BUILD_LMYENGINE_INTERFACE 0)
 ENDIF()
-IF(QMC_MPI AND QMC_COMPLEX AND NOT MIXED_PRECISION AND NOT QMC_CUDA)
-  SET(BUILD_AFQMC 1 CACHE BOOL "Build with AFQMC")
-ELSE()
-  SET(BUILD_AFQMC 0 CACHE BOOL "Build with AFQMC")
+SET(BUILD_AFQMC 0 CACHE BOOL "Build with AFQMC")
+# AFQMC requires MPI. Works with neither real nor mixed precision builds.
+If (BUILD_AFQMC AND NOT QMC_MPI)
+  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
+ENDIF()
+If (BUILD_AFQMC AND NOT QMC_COMPLEX)
+  MESSAGE(FATAL_ERROR "AFQMC requires building with QMC_COMPLEX=1 for now.")
+ENDIF()
+If (BUILD_AFQMC AND MIXED_PRECISION)
+  MESSAGE(FATAL_ERROR "AFQMC requires building with QMC_MIXED_PRECISION=0 for now.")
 ENDIF()
 SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
@@ -517,21 +521,6 @@ IF (BUILD_AFQMC AND NOT MKL_FOUND)
   MESSAGE(WARNING "AFQMC - MKL not found, using simple sparse matrix routines.  Link with MKL sparse libraries for better performance.")
 ENDIF()
 
-# AFQMC requires MPI
-If (BUILD_AFQMC AND NOT QMC_MPI)
-  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
-ENDIF()
-
-# AFQMC does not work with real builds for now
-If (BUILD_AFQMC AND NOT QMC_COMPLEX)
-  MESSAGE(FATAL_ERROR "AFQMC requires building with QMC_COMPLEX=1 for now.")
-ENDIF()
-
-# AFQMC does not work with mixed precision builds for now
-If (BUILD_AFQMC AND MIXED_PRECISION)
-  MESSAGE(FATAL_ERROR "AFQMC requires building with QMC_MIXED_PRECISION=0 for now.")
-ENDIF()
-
 IF (BUILD_AFQMC AND NOT APPLE)
   LINK_LIBRARIES("rt")
 ENDIF()
@@ -642,9 +631,7 @@ IF(HDF5_FOUND)
     ENDIF(ENABLE_PHDF5)
   ENDIF(HDF5_IS_PARALLEL)
 ELSE(HDF5_FOUND)
-  if(NOT QMC_PHI)
-    MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_ROOT")
-  endif()
+  MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr
@@ -876,7 +863,7 @@ ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)
 
-IF(NOT(QMC_BUILD_LEVEL GREATER 4))
+IF(NOT QMC_BUILD_SANDBOX_ONLY)
   SUBDIRS(tests)
   SUBDIRS(examples)
   IF(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus")

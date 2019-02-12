@@ -82,7 +82,7 @@ inline SparseArray2D HDF2CSR(hdf_archive& dump, shared_communicator& node) //, A
   size_type nrows, ncols, nnz; 
   std::vector<size_type> dims(3);
   if(node.root()) {
-    if(!dump.read(dims,"dims")) 
+    if(!dump.readEntry(dims,"dims")) 
       APP_ABORT("Problems reading dims in csr_from_hdf5. \n");
     assert(dims.size()==3);
   }
@@ -95,9 +95,9 @@ inline SparseArray2D HDF2CSR(hdf_archive& dump, shared_communicator& node) //, A
   std::vector<int_type> ptrb;
   std::vector<int_type> ptre;
   if(node.root()) {
-    if(!dump.read(ptrb,"pointers_begin_")) 
+    if(!dump.readEntry(ptrb,"pointers_begin_")) 
       APP_ABORT("Problems reading pointers_begin_ in csr_from_hdf5. \n");
-    if(!dump.read(ptre,"pointers_end_")) 
+    if(!dump.readEntry(ptre,"pointers_end_")) 
       APP_ABORT("Problems reading pointers_end_ in csr_from_hdf5. \n");
     assert(ptrb.size()==nrows);
     assert(ptre.size()==nrows);
@@ -111,9 +111,9 @@ inline SparseArray2D HDF2CSR(hdf_archive& dump, shared_communicator& node) //, A
   if(node.root()) {
     std::vector<value_type> data;
     std::vector<index_type> jdata;
-    if(!dump.read(data,"data_"))
+    if(!dump.readEntry(data,"data_"))
       APP_ABORT("Problems reading data_ in csr_from_hdf5. \n");
-    if(!dump.read(jdata,"jdata_"))
+    if(!dump.readEntry(jdata,"jdata_"))
       APP_ABORT("Problems reading jdata_ in csr_from_hdf5. \n");
     if(data.size() != nnz)
       APP_ABORT("Problems with data_ array in csr_from_hdf5. \n");
@@ -206,7 +206,7 @@ inline void multiple_reader_hdf5_csr(container& Q, matrix_map_ const& map_, hdf_
   if( coreid < n_working_cores ) {
 
     std::vector<int> block_size;
-    if(!dump.read(block_size,std::string("block_sizes"))) {
+    if(!dump.readEntry(block_size,std::string("block_sizes"))) {
       app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading block_sizes dataset. \n";
       APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading block_sizes dataset. \n");
     }
@@ -236,11 +236,11 @@ inline void multiple_reader_hdf5_csr(container& Q, matrix_map_ const& map_, hdf_
       if(myblock_number < last_local_block) {
         ivec.resize(2*block_size[myblock_number]);
         vvec.resize(block_size[myblock_number]);
-        if(!dump.read(ivec,std::string("index_")+std::to_string(myblock_number))) {
+        if(!dump.readEntry(ivec,std::string("index_")+std::to_string(myblock_number))) {
           app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading index_" <<myblock_number <<" dataset. \n";
           APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading index_ dataset. \n");
         }
-        if(!dump.read(vvec,std::string("vals_")+std::to_string(myblock_number))) {
+        if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(myblock_number))) {
           app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading vals_" <<myblock_number <<" dataset. \n";
           APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading vals_ dataset. \n");
         }
@@ -285,7 +285,7 @@ inline void read_csr_matrix_from_hdf_into_distributed_container(container& Q, ma
   int size = TG.Global().size();
 
   std::vector<int> block_size;
-  if(!dump.read(block_size,std::string("block_sizes"))) {
+  if(!dump.readEntry(block_size,std::string("block_sizes"))) {
     app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading block_sizes dataset. \n";
     APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading block_sizes dataset. \n");
   }
@@ -305,11 +305,11 @@ inline void read_csr_matrix_from_hdf_into_distributed_container(container& Q, ma
   for(int k=first_block,ipr=0; k<last_block; k++,ipr++) {
     ivec.resize(2*block_size[k]);
     vvec.resize(block_size[k]);
-    if(!dump.read(ivec,std::string("index_")+std::to_string(k))) {
+    if(!dump.readEntry(ivec,std::string("index_")+std::to_string(k))) {
       app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading index_" <<k <<" dataset. \n";
       APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading index_ dataset. \n");
     }
-    if(!dump.read(vvec,std::string("vals_")+std::to_string(k))) {
+    if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(k))) {
       app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading vals_" <<k <<" dataset. \n";
       APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading vals_ dataset. \n");
     }
@@ -344,7 +344,7 @@ inline void multiple_reader_local_count(hdf_archive& dump, matrix_partition cons
   if( coreid < n_working_cores ) {
 
     std::vector<int> block_size;
-    if(!dump.read(block_size,std::string("block_sizes"))) {
+    if(!dump.readEntry(block_size,std::string("block_sizes"))) {
       app_error()<<" Error in multiple_reader_count_entries: Problems reading block_sizes dataset. \n";
       APP_ABORT(" Error in multiple_reader_count_entries: Problems reading block_sizes dataset. \n");
     }
@@ -374,11 +374,11 @@ inline void multiple_reader_local_count(hdf_archive& dump, matrix_partition cons
       if(myblock_number < last_local_block) {
         ivec.resize(2*block_size[myblock_number]);
         vvec.resize(block_size[myblock_number]);
-        if(!dump.read(ivec,std::string("index_")+std::to_string(myblock_number))) {
+        if(!dump.readEntry(ivec,std::string("index_")+std::to_string(myblock_number))) {
           app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading index_" <<myblock_number <<" dataset. \n";
           APP_ABORT(" Error in multiple_reader_hdf5_SpMat: Problems reading index dataset. \n");
         }
-        if(!dump.read(vvec,std::string("vals_")+std::to_string(myblock_number))) {
+        if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(myblock_number))) {
           app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading vals_" <<myblock_number <<" dataset. \n";
           APP_ABORT(" Error in multiple_reader_hdf5_SpMat: Problems reading vals_ dataset. \n");
         }
@@ -428,7 +428,7 @@ inline void multiple_reader_global_count(hdf_archive& dump, matrix_partition con
   if( coreid < n_working_cores ) {
 
     std::vector<int> block_size;
-    if(!dump.read(block_size,std::string("block_sizes"))) {
+    if(!dump.readEntry(block_size,std::string("block_sizes"))) {
       app_error()<<" Error in multiple_reader_count_entries: Problems reading ***_block_sizes dataset. \n";
       APP_ABORT(" Error in multiple_reader_count_entries: Problems reading ***_block_sizes dataset. \n");
     }
@@ -451,11 +451,11 @@ inline void multiple_reader_global_count(hdf_archive& dump, matrix_partition con
       if( ib%nnodes != nodeid ) continue;
       ivec.resize(2*block_size[ib]);
       vvec.resize(block_size[ib]);
-      if(!dump.read(ivec,std::string("index_")+std::to_string(ib))) {
+      if(!dump.readEntry(ivec,std::string("index_")+std::to_string(ib))) {
         app_error()<<" Error in multiple_reader_count_entries: Problems reading index_" <<ib <<" dataset. \n";
         APP_ABORT(" Error in multiple_reader_count_entries: Problems reading index_  dataset. \n");
       }
-      if(!dump.read(vvec,std::string("vals_")+std::to_string(ib))) {
+      if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(ib))) {
         app_error()<<" Error in multiple_reader_count_entries: Problems reading vals_" <<ib <<" dataset. \n";
         APP_ABORT(" Error in multiple_reader_count_entries: Problems reading vals_ dataset. \n");
       } 

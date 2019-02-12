@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-clang++ -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
+$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
 #endif
 
 #include "../array_ref.hpp"
@@ -20,8 +20,8 @@ int main(){
 
 	std::vector<std::complex<double>> d(100);
 	std::vector<std::complex<double>> const dc(100);
-	
-	multi::array_ref<std::complex<double>, 2> A2D(d.data(), {10, 10});
+
+	multi::array_ref<std::complex<double>, 2> A2D(d.data(), multi::iextensions<2>{10, 10});
 	multi::array_ref<std::complex<double>, 2, std::complex<double>*> B2D(d.data(), {10, 10});
 	
 	assert( &A2D[3][4] == &B2D[3][4] );
@@ -38,7 +38,7 @@ int main(){
 #if __cpp_deduction_guides
 	multi::array_ref G2D(dc.data(), {10, 10}); assert( G2D == D2D );
 #endif
-	auto&& H2D = multi::make_array_ref(dc.data(), {10, 10}); assert( H2D == D2D );
+	auto&& H2D = multi::make_array_ref<2>(dc.data(), {10, 10}); assert( H2D == D2D );
 
 }
 

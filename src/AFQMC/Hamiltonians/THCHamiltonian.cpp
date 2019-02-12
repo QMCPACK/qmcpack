@@ -32,7 +32,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
   // hack until parallel hdf is in place
   bool write_hdf = false;
-  if(TGwfn.Global().root()) write_hdf = (hdf_restart.file_id != hdf_archive::is_closed);
+  if(TGwfn.Global().root()) write_hdf = !hdf_restart.closed();
+  //  if(TGwfn.Global().root()) write_hdf = (hdf_restart.file_id != hdf_archive::is_closed);
   TGwfn.Global().broadcast_value(write_hdf);
 
   if(type==COLLINEAR)
@@ -66,7 +67,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   }
   if( TG.Global().root() ) {
     std::vector<int> Idata(3);
-    if(!dump.read(Idata,"dims")) {
+    if(!dump.readEntry(Idata,"dims")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading dims. \n";
       APP_ABORT("");
@@ -119,7 +120,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
       /***************************************/
       // read full matrix, not distributed for now
       auto piu_ = rotPiu.get();
-      if(!dump.read(piu_,"HalfTransformedFullOrbitals")) {
+      if(!dump.readEntry(piu_,"HalfTransformedFullOrbitals")) {
         app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading HalfTransformedFullOrbitals. \n";
         APP_ABORT("");
@@ -130,7 +131,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
                                                            rotMuv.global_size(),
                                                            rotMuv.shape(),
                                                            rotMuv.global_offset());
-      if(!dump.read(hslab,"HalfTransformedMuv")) {
+      if(!dump.readEntry(hslab,"HalfTransformedMuv")) {
         app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading HalfTransformedMuv. \n";
         APP_ABORT("");
@@ -147,7 +148,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
                                                          Piu.global_size(),
                                                          Piu.shape(),
                                                          Piu.global_offset());
-    if(!dump.read(hslab,"Orbitals")) {
+    if(!dump.readEntry(hslab,"Orbitals")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Orbitals. \n";
       APP_ABORT("");
@@ -158,7 +159,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
                                                          Luv.global_size(),
                                                          Luv.shape(),
                                                          Luv.global_offset());
-    if(!dump.read(hslab2,"Luv")) {
+    if(!dump.readEntry(hslab2,"Luv")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Luv. \n";
       APP_ABORT("");
@@ -176,13 +177,13 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     shm_Vmatrix Luv__(TG.Node(),{gnmu,gnmu});
     if(TG.Node().root()) {
       auto luv_ = Luv__.get();
-      if(!dump.read(luv_,"Luv")) {
+      if(!dump.readEntry(luv_,"Luv")) {
         app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading Orbitals. \n";
         APP_ABORT("");
       }
       auto piu_ = Piu__.get();
-      if(!dump.read(piu_,"Orbitals")) {
+      if(!dump.readEntry(piu_,"Orbitals")) {
         app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading Orbitals. \n";
         APP_ABORT("");

@@ -21,7 +21,8 @@
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
-#include <Utilities/FairDivide.h>
+#include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
@@ -59,10 +60,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   using BaseType::MakeTwoCopies;
   using BaseType::offset;
 
-  ///number of points of the original grid
-  int BaseN[3];
-  ///offset of the original grid, always 0
-  int BaseOffset[3];
   ///multi bspline set
   MultiBspline<ST>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
@@ -134,12 +131,9 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     SplineInst=new MultiBspline<ST>();
     SplineInst->create(xyz_g,xyz_bc,myV.size());
     MultiSpline=SplineInst->spline_m;
-    for(size_t i=0; i<D; ++i)
-    {
-      BaseOffset[i]=0;
-      BaseN[i]=xyz_g[i].num+3;
-    }
-    qmc_common.memory_allocated += SplineInst->sizeInByte();
+    app_log() << "MEMORY " << SplineInst->sizeInByte()/(1<<20) << " MB allocated "
+              << "for the coefficients in 3D spline orbital representation"
+              << std::endl;
   }
 
   inline void flush_zero()
@@ -162,21 +156,8 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
-    SplineInst->copy_spline(spline_r,2*ispline  ,BaseOffset, BaseN);
-    SplineInst->copy_spline(spline_i,2*ispline+1,BaseOffset, BaseN);
-  }
-
-  void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
-  {
-    Vector<ST> v_r(psi_r,0), v_i(psi_i,0);
-    SplineInst->set(2*ispline  ,v_r);
-    SplineInst->set(2*ispline+1,v_i);
-  }
-
-
-  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
-      int twist, int ispline, const int* offset_l, const int* mesh_l)
-  {
+    SplineInst->copy_spline(spline_r,2*ispline  );
+    SplineInst->copy_spline(spline_i,2*ispline+1);
   }
 
   bool read_splines(hdf_archive& h5f)
@@ -184,7 +165,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
-    return h5f.read(bigtable,o.str().c_str());//"spline_0");
+    return h5f.readEntry(bigtable,o.str().c_str());//"spline_0");
   }
 
   bool write_splines(hdf_archive& h5f)
@@ -192,7 +173,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
-    return h5f.write(bigtable,o.str().c_str());//"spline_0");
+    return h5f.writeEntry(bigtable,o.str().c_str());//"spline_0");
   }
 
   template<typename VV>

@@ -9,6 +9,7 @@
 #include<iostream>
 #include<fstream>
 
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/NewTimer.h"
@@ -87,7 +88,7 @@ class EnergyEstimator: public EstimatorBase
     }
   }
 
-  void print(std::ofstream& out,WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
   {
     if(TG.Global().root()) {
      int n = wset.get_global_target_population();

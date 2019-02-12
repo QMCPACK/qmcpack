@@ -673,7 +673,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     // check for consistency in parameters
   std::vector<int> dims(5); //{NMO,NAEA,NAEB,walker_type,ndets_to_read};
   if(TGwfn.Global().root()) {
-    if(!dump.read(dims,"dims")) {
+    if(!dump.readEntry(dims,"dims")) {
       app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading dims. \n";
       APP_ABORT("");
     }
@@ -698,13 +698,13 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
       app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  ndets_to_read. \n";
       APP_ABORT("");
     }
-    if(!dump.read(ci,"CICOEFFICIENTS")) {
+    if(!dump.readEntry(ci,"CICOEFFICIENTS")) {
       app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading CICOEFFICIENTS. \n";
       APP_ABORT("");
     }
     ci.resize(ndets_to_read);
     std::vector<ValueType> dum;  
-    if(!dump.read(dum,"NCE")) {
+    if(!dump.readEntry(dum,"NCE")) {
       app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading NCE. \n";
       APP_ABORT("");
     }
