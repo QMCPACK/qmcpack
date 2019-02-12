@@ -24,8 +24,9 @@ namespace qmcplusplus
 {
   /** SoA adaptor class for ParticleAttrib<TinyVector<T,D> >
    * @tparm T data type, float, double, complex<float>, complex<double>
+   * @tparm Alloc memory allocator
    */
-  template<typename T, unsigned D>
+  template<typename T, unsigned D, size_t ALIGN = QMC_CLINE, typename Alloc=Mallocator<T, ALIGN>>
     struct VectorSoaContainer
     {
       using Type_t   =TinyVector<T,D>;
@@ -41,7 +42,7 @@ namespace qmcplusplus
       ///pointer: what type????
       T* myData;
       ///allocator
-      aligned_allocator<T> myAlloc;
+      Alloc myAlloc;
       ///default constructor
       VectorSoaContainer() 
       {
@@ -129,7 +130,7 @@ namespace qmcplusplus
       {
         if(nAllocated) myAlloc.deallocate(myData,nAllocated);
         nLocal=n;
-        nGhosts=getAlignedSize<T>(n);
+        nGhosts=getAlignedSize<T, ALIGN>(n);
         nAllocated=nGhosts*D;
         myData=myAlloc.allocate(nAllocated);
       }
