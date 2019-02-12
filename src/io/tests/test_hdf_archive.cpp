@@ -104,6 +104,11 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
   REQUIRE(okay);
   REQUIRE(cf == cf2);
 
+  // check an error occurs for non-existant entry
+  int i666;
+  okay = hd2.readEntry(i666,"not an entry");
+  REQUIRE(!okay);
+
   hd2.close();
 
   // now read the file and ensure the values are the same
