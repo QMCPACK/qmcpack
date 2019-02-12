@@ -63,7 +63,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   int ndets_to_read(-1); // if not set, read the entire file
   int initial_configuration=0;  
   double randomize_guess(0.0);
-  int nbatch=-1;
+  int nbatch = ((number_of_devices()>0)?-1:0);
   std::string starting_det("");
   std::string str("false");
   std::string filename("");
@@ -77,7 +77,8 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   m_param.add(initialDet,"initialDetType","int");
   m_param.add(starting_det,"starting_det","std:string");
   m_param.add(ndets_to_read,"ndet","int");
-  m_param.add(nbatch,"nbatch","int");
+  if(TGwfn.TG_local().size() == 1)
+    m_param.add(nbatch,"nbatch","int");
   m_param.add(initial_configuration,"initial_configuration","int");
   m_param.add(randomize_guess,"randomize_guess","double");
   m_param.put(cur);
@@ -97,10 +98,9 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   }
   std::string wfn_type = getWfnType(in);
 
-  if(TGwfn.TG_local().size() > 1 && nbatch!=0) {
-    app_log()<<" WARNING: ncores>1 is incompatible with nbatch>1. \n"
-             <<"          Setting nbatch=1.\n";
-    nbatch=1;
+  if(omp_get_num_threads() > 1 && (nbatch == 0)) {
+    app_log()<<" WARNING!!!: Found OMP_NUM_THREADS > 1 with nbatch=0.\n"
+             <<"             This will lead to low performance. Set nbatch. \n";
   }
 
   using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
@@ -296,13 +296,13 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n"); 
 
-    if(nbatch == 0 || nbatch == 1) {
+    if(TGwfn.TG_local().size() > 1) {
       SlaterDetOperations SDetOp( SlaterDetOperations_shared<ComplexType>(
                         ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
       return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
                         std::move(ci),std::move(PsiT),
-                        walker_type,nbatch,NCE,targetNW)); 
+                        walker_type,0,NCE,targetNW)); 
     } else 
     {
       SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
@@ -621,7 +621,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   RealType cutv2(0.);
   int initialDet(1);
   int ndets_to_read(-1); // if not set, read the entire file
-  int nbatch=-1;
+  int nbatch = ((number_of_devices()>0)?-1:0);
   std::string starting_det("");
   std::string str("false");
   std::string filename("");
@@ -634,13 +634,13 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   m_param.add(initialDet,"initialDetType","int");
   m_param.add(starting_det,"starting_det","std:string");
   m_param.add(ndets_to_read,"ndet","int");
-  m_param.add(nbatch,"nbatch","int");
+  if(TGwfn.TG_local().size() == 1)
+    m_param.add(nbatch,"nbatch","int");
   m_param.put(cur);
 
-  if(TGwfn.TG_local().size() > 1 && nbatch!=0) {
-    app_log()<<" WARNING: ncores>1 is incompatible with nbatch>1. \n"
-             <<"          Setting nbatch=1.\n";
-    nbatch=1;
+  if(omp_get_num_threads() > 1 && (nbatch == 0)) {
+    app_log()<<" WARNING!!!: Found OMP_NUM_THREADS > 1 with nbatch=0.\n"
+             <<"             This will lead to low performance. Set nbatch. \n";
   }
 
   AFQMCInfo& AFinfo = InfoMap[info];
@@ -764,19 +764,24 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
     HamiltonianOperations HOps(loadHamOps(dump,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
 
-// make factory function!!!
-#ifdef QMC_CUDA
-      SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
-                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
-                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
-#else
+    if(TGwfn.TG_local().size() > 1) {
       SlaterDetOperations SDetOp( SlaterDetOperations_shared<ComplexType>(
                         ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
-#endif
-
-    return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),std::move(ci),std::move(PsiT),
+      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+                        std::move(ci),std::move(PsiT),
+                        walker_type,0,NCE,targetNW));
+    } else
+    {
+      SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
+                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+                        std::move(ci),std::move(PsiT),
                         walker_type,nbatch,NCE,targetNW));
+    }
+
+
   } else if(type == "phmsd") {
 /*
     int nd = (walker_type==COLLINEAR?2*ndets_to_read:ndets_to_read);

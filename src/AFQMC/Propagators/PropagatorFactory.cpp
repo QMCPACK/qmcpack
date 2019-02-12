@@ -75,6 +75,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
     }
   }
 
+
   boost::multi::array<ComplexType,1> vMF_(vMF.extensions()); 
   using std::copy_n;
   copy_n(vMF.origin(),vMF.num_elements(),vMF_.origin());

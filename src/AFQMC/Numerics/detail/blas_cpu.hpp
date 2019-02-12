@@ -867,12 +867,14 @@ namespace ma
     for(int i=0; i<batchSize; i++) {
         Aptrs[i] = static_cast<const void*>(A+i*strideA);
         Bptrs[i] = static_cast<const void*>(B+i*strideB);
-        Cptrs[i] = static_cast<const void*>(C+i*strideC);
+        Cptrs[i] = static_cast<void*>(C+i*strideC);
     }
+    CBLAS_TRANSPOSE opA(cblas_operation(Atrans));
+    CBLAS_TRANSPOSE opB(cblas_operation(Btrans));
 
     // Expect arrays of size group_count. 
     // This is 1 in strided case, so passing pointers to everything
-    gemm_batch(CblasColMajor,&Atrans,&Btrans,&M,&N,&K,
+    gemm_batch(CblasColMajor,&opA,&opB,&M,&N,&K,
                &alpha,Aptrs.data(),&lda,Bptrs.data(),&ldb,
                &beta,Cptrs.data(),&ldc,1,&batchSize);
 #else

@@ -248,12 +248,13 @@ void AFQMCBasePropagator::apply_propagators(WSet& wset, int ni, int tk0, int tkN
       }
     }
   } else {  
-    if(walker_type==NONCOLLINEAR)
+    if(walker_type==NONCOLLINEAR) {
       if(local_vHS.size(0) != 2*NMO || local_vHS.size(1) != 2*NMO)
         local_vHS = std::move(CMatrix({2*NMO,2*NMO}));
-    else
+    } else {
       if(local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
         local_vHS = std::move(CMatrix({NMO,NMO}));
+    }
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
     if(walker_type == COLLINEAR) {
       int oldw=-1;
@@ -403,12 +404,13 @@ void AFQMCBasePropagator::apply_propagators_construct_propagator(WSet& wset,
       }
     }
   } else {
-    if(walker_type==NONCOLLINEAR)
+    if(walker_type==NONCOLLINEAR) {
       if(local_vHS.size(0) != 2*NMO || local_vHS.size(1) != 2*NMO)
         local_vHS = std::move(CMatrix({2*NMO,2*NMO}));
-    else
+    } else {
       if(local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
         local_vHS = std::move(CMatrix({NMO,NMO}));
+    }
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
     if(walker_type == COLLINEAR) {
       int oldw=-1;

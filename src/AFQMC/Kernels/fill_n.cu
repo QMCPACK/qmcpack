@@ -110,31 +110,31 @@ void fill_n(std::complex<double> * first, int N, std::complex<double> const valu
 
 void fill2D_n(int N, int M, int* A, int lda, int const value)
 {
-  kernel_fill_n<<<32,32>>>(N,M,first,lda,value);
+  kernel_fill2D_n<<<32,32>>>(N,M,A,lda,value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill2D_n(int N, int M, float* A, int lda, float const value)
 {
-  kernel_fill_n<<<32,32>>>(N,M,first,lda,value);
+  kernel_fill2D_n<<<32,32>>>(N,M,A,lda,value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill2D_n(int N, int M, double* A, int lda, double const value)
 {
-  kernel_fill_n<<<32,32>>>(N,M,first,lda,value);
+  kernel_fill2D_n<<<32,32>>>(N,M,A,lda,value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill2D_n(int N, int M, std::complex<double>* A, int lda, std::complex<double> const value)
 {
-  kernel_fill_n<<<32,32>>>(N,M,first,lda,value);
+  kernel_fill2D_n<<<32,32>>>(N,M,A,lda,value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill2D_n(int N, int M, std::complex<float>* A, int lda, std::complex<float> const value)
 {
-  kernel_fill_n<<<32,32>>>(N,M,first,lda,value);
+  kernel_fill2D_n<<<32,32>>>(N,M,A,lda,value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }

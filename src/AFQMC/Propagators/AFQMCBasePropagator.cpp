@@ -28,8 +28,9 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   hybrid=true;
   importance_sampling=true;
   apply_constrain=true;
+// this is wrong!!! must get batched capability from SDet, not from input
   nbatched_propagation=0;
-  if(number_of_devices() > 0 && TG.TG_local().size()==1) nbatched_propagation=-1;
+  if(number_of_devices() > 0) nbatched_propagation=-1;
 
   xmlNodePtr curRoot=cur;
 
@@ -43,7 +44,7 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   m_param.add(constrain,"apply_constrain","std::string");
   m_param.add(impsam,"importance_sampling","std::string");
   m_param.add(hyb,"hybrid","std::string");
-  if(TG.TG_local().size() > 1)
+  if(TG.TG_local().size() == 1)
     m_param.add(nbatched_propagation,"batched","int");
   m_param.add(freep,"free_projection","std::string");
 

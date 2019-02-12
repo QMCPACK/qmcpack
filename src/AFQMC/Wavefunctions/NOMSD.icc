@@ -1367,8 +1367,10 @@ Timers[Timer_G6]->stop();
     fill_n(v.origin(),v.num_elements(),ComplexType(0));  
 
     int ndets = ci.size(); 
-    ComplexType ovlp=0.0;
     CMatrix PsiT,PsiTB;
+    if(localGbuff.size() < 1)
+      localGbuff.reextent(iextensions<1u>{1});
+    pointer ov_(localGbuff.origin());
  
     using std::conj;
     if(ndets == 1) {
@@ -1378,18 +1380,15 @@ Timers[Timer_G6]->stop();
         auto Gdims = dm_dims(false,Alpha);
         G.reextent({Gdims.first,Gdims.second});
         csr::CSR2MA('H',OrbMats[0],PsiT); 
-        ComplexType ov;
-        SDetOp.MixedDensityMatrix(OrbMats[0],PsiT,G,std::addressof(ov),true);
+        SDetOp.MixedDensityMatrix(OrbMats[0],PsiT,G,to_address(ov_),true);
       } else {
         G.reextent({NAEA+NAEB,NMO});
         csr::CSR2MA('H',OrbMats[0],PsiT);
-        ComplexType ov, ov2;
         SDetOp.MixedDensityMatrix(OrbMats[0],PsiT,
-                                       G.sliced(0,NAEA),std::addressof(ov),true);
+                                       G.sliced(0,NAEA),to_address(ov_),true);
         csr::CSR2MA('H',OrbMats[1],PsiT);
         SDetOp.MixedDensityMatrix(OrbMats[1],PsiT,
-                                       G.sliced(NAEA,NAEA+NAEB),std::addressof(ov2),true);
-        ov *= ov2;
+                                       G.sliced(NAEA,NAEA+NAEB),to_address(ov_),true);
       }    
       CVector_ref G1D(G.origin(),iextensions<1u>{G.num_elements()});
       HamOp.vbias(G1D,std::forward<Vec>(v));
@@ -1414,12 +1413,13 @@ Timers[Timer_G6]->stop();
               last_p=p;
               csr::CSR2MA('H',OrbMats[p],PsiT);
             }
-            ComplexType ov_;
-            SDetOp.MixedDensityMatrix(OrbMats[q],PsiT,G_,std::addressof(ov_),false);
-            if(walker_type==CLOSED) ov_ *= ov_;
-            ov += real(conj(ci[q])*ci[p]*ov_);
+            SDetOp.MixedDensityMatrix(OrbMats[q],PsiT,G_,to_address(ov_),false);
+            ComplexType ov1 = ComplexType(*ov_);
+            if(walker_type==CLOSED) ov1 *= ov1;
+            ov += real(conj(ci[q])*ci[p]*ov1);
+// !!! GPU !!!
             for(int i=0; i<G1D.num_elements(); i++)
-              G1D[i] += real(conj(ci[q])*ci[p]*ov_*G1D_[i]);
+              G1D[i] += real(conj(ci[q])*ci[p]*ov1*G1D_[i]);
           }
         }
       } else {
@@ -1438,20 +1438,21 @@ Timers[Timer_G6]->stop();
               csr::CSR2MA('H',OrbMats[2*p],PsiT);
               csr::CSR2MA('H',OrbMats[2*p+1],PsiTB);
             }
-            ComplexType ov_, ov2_;
             SDetOp.MixedDensityMatrix(OrbMats[2*q],PsiT,
-                                G_.sliced(0,NMO),std::addressof(ov_),false);
+                                G_.sliced(0,NMO),to_address(ov_),false);
+            ComplexType ov1 = ComplexType(*ov_);
             SDetOp.MixedDensityMatrix(OrbMats[2*q+1],PsiTB,
-                                G_.sliced(NMO,2*NMO),std::addressof(ov2_),false);
-            ov += real(conj(ci[q])*ci[p]*ov_*ov2_);
+                                G_.sliced(NMO,2*NMO),to_address(ov_),false);
+            ov += real(conj(ci[q])*ci[p]*ov1*ComplexType(*ov_));
+// !!! GPU !!!
             for(int i=0; i<G1D.num_elements(); i++)
-              G1D[i] += real(conj(ci[q])*ci[p]*ov_*G1D_[i]);
+              G1D[i] += real(conj(ci[q])*ci[p]*ov1*G1D_[i]);
           }
         }
       }  
       TG.Global().all_reduce_in_place_n(to_address(G1D.origin()),G1D.num_elements(),std::plus<>());  
-      ComplexType ov_ = ( TG.Global() += ov );
-      ma::scal(ComplexType(1.0,0.0)/ov_,G1D);
+      ComplexType ov1 = ( TG.Global() += ov );
+      ma::scal(ComplexType(1.0,0.0)/ov1,G1D);
       HamOp.vbias(G1D.sliced(0,Gdims.first*Gdims.second),
                   std::forward<Vec>(v));
       if(walker_type==COLLINEAR)

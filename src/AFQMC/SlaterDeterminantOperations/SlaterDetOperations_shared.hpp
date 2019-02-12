@@ -158,17 +158,17 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
     // C[nwalk, M, N]
     template<class MatA, class MatB, class MatC, class TVec>
     void BatchedMixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& C, TVec&& ovlp, bool compact=false) {
-      APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared \n");
+      APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedMixedDensityMatrix \n");
     }
 
     template<class MatA, class MatB, class TVec>
     void BatchedOverlap(const MatA& hermA, std::vector<MatB> &Bi, TVec&& ovlp) {
-      APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared \n");
+      APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedOverlap \n");
     }
 
     template<class MatA, class MatP1, class MatV>
     void BatchedPropagate(std::vector<MatA> &Ai, const MatP1& P1, const MatV& V, int order=6) {
-      APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared \n");
+      APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedPropagate \n");
     }
 
   protected:
