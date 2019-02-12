@@ -271,18 +271,16 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename RT>
   inline void evaluateValues(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
-    // initialize thread private ratios
-    if (ratios_private.rows()<VP.getTotalNum())
-    {
-      #pragma omp parallel
-      {
-        #pragma omp master
-        ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
-      }
-    }
+    const bool need_resize = ratios_private.rows()<VP.getTotalNum();
 
     #pragma omp parallel
     {
+      // initialize thread private ratios
+      if(need_resize)
+      {
+        #pragma omp single
+        ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
+      }
       int first, last;
       int tid = omp_get_thread_num();
       FairDivideAligned(myV.size(), getAlignment<ST>(),
