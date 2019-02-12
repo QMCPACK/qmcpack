@@ -52,7 +52,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     L2Pot.resize(ng,0);
   }
   std::string ecpFormat("table");
-  std::string NLPP_algo("batched");
+  std::string NLPP_algo("default");
   std::string pbc("yes");
   std::string forces("no");
   OhmmsAttributeSet pAttrib;
