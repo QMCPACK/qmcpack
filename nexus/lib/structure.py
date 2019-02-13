@@ -6034,7 +6034,7 @@ def generate_crystal_structure(
             )
     elif isinstance(structure,Structure):
         s = structure
-        if use_prim is not False:
+        if use_prim is not None and use_prim is not False:
             s.become_primitive(source=use_prim,add_kpath=add_kpath)
         #end if
         if tiling is not None:
