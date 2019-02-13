@@ -29,10 +29,10 @@ extern const double* restrict   Ad;
 extern const double* restrict  dAd;
 extern const double* restrict d2Ad;
 
-/************************************************************/
-/* 1D double-precision, real evaluation functions           */
-/************************************************************/
-
+/**
+ * As shipped einspline does no checking of bounds of indexes calculated from
+ *  the input.
+ */
 void check_ipart(const int ipart,
 		 const Ugrid* const restrict grid,
 		 const BCtype_d* const restrict BC)
@@ -49,7 +49,13 @@ void check_ipart(const int ipart,
   }
 #endif
 }
+
+/************************************************************/
+/* 1D double-precision, real evaluation functions           */
+/************************************************************/
+
 /** Offset is i remainder is t
+ *  einspline as shipped just repeats this code over and over and over
  */
 
 void check_coeff_offset_UBspline_1d_d(const UBspline_1d_d * const restrict spline,
