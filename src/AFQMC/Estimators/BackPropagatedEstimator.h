@@ -69,7 +69,7 @@ class BackPropagatedEstimator: public EstimatorBase
       DMBuffer.reextent(iextensions<1u>{dm_size});
     }
     if(DMAverage.size() < dm_size) {
-      DMAverage.reextent(extensions<1u>{dm_size});
+      DMAverage.reextent(iextensions<1u>{dm_size});
     }
     std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
     std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));

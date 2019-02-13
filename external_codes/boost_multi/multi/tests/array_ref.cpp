@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-clang++ -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
+${CXX} -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
 #endif
 
 #include "../array_ref.hpp"
@@ -19,6 +19,19 @@ namespace multi = boost::multi;
 double f(){return 5.;}
 
 int main(){
+
+	{
+		double a[4][5] {
+			{ 0,  1,  2,  3,  4}, 
+			{ 5,  6,  7,  8,  9}, 
+			{10, 11, 12, 13, 14}, 
+			{15, 16, 17, 18, 19}
+		};
+		double b[4][5];
+		multi::array_ref<double, 2, double*> A(&a[0][0], multi::iextensions<2>{4, 5});
+		multi::array_ref<double, 2, double*> B(&b[0][0], multi::iextensions<2>{4, 5});
+		rotated(A) = rotated(B);
+	}
 
 	double const d2D[4][5] {
 		{ 0,  1,  2,  3,  4}, 

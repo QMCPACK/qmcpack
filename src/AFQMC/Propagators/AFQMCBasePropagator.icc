@@ -70,7 +70,8 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
   // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
-  auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+  //auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+  auto mem_pool(array_cast<pointer>(buffer));
 
   size_t displ=0;
   // Mixed Density Matrix for walkers at original configuration

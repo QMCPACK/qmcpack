@@ -31,7 +31,7 @@ constexpr std::integral_constant<size_t, std::rank<T>{}> rank_aux(T const&);
 
 template<typename T> struct rank : decltype(rank_aux(std::declval<T>())){};
 
-#if __cplusplus < 201703L
+#if __cpp_lib_nonmember_container_access < 201411
 template<class Container>
 constexpr auto size(Container const& con)
 ->decltype(con.size()){

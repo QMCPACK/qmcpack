@@ -37,7 +37,8 @@ class OneBodyHamiltonian: public AFQMCInfo
 
   boost::multi::array<ComplexType,2> getH1() const
   {
-    return H1;
+    boost::multi::array<ComplexType,2> H_(H1);
+    return H_;
   }
 
   // this should never be used outside initialization routines.

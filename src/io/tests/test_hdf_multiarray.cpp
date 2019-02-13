@@ -14,6 +14,7 @@
 #include "catch.hpp"
 
 #include "io/hdf_archive.h"
+#include "io/hdf_multi.h"
 #include <vector>
 #include "multi/array.hpp"
 
@@ -46,7 +47,7 @@ TEST_CASE("hdf_multiarray_one_dim", "[hdf]")
   REQUIRE(okay);
 
   boost::multi::array<double,1> v2(extensions<1u>{3});
-  okay = hd2.read(v2, "boost_multiarray_one_dim");
+  hd2.read(v2, "boost_multiarray_one_dim");
   REQUIRE(v2.size() == 3);
   for (int i = 0; i < v.size(); i++)
   {

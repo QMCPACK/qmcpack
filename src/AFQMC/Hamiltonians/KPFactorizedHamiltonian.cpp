@@ -14,6 +14,7 @@
 #endif
 
 #include "Configuration.h"
+#include "io/hdf_multi.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
@@ -618,7 +619,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
 
   // hack until parallel hdf is in place
   bool write_hdf = false;
-  if(TGwfn.Global().root()) write_hdf = (hdf_restart.file_id != hdf_archive::is_closed);
+  if(TGwfn.Global().root()) write_hdf = (not hdf_restart.closed());
   TGwfn.Global().broadcast_value(write_hdf);
 
   if(type==COLLINEAR)
@@ -646,7 +647,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
 
   std::vector<int> Idata(8);
   if( TG.Global().root() ) {
-    if(!dump.read(Idata,"dims")) {
+    if(!dump.readEntry(Idata,"dims")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading dims. \n";
       APP_ABORT("");
@@ -666,17 +667,17 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   shmIMatrix QKtok2({nkpts,nkpts},shared_allocator<int>{TG.Node()});
   ValueType E0;
   if( TG.Global().root() ) {
-    if(!dump.read(nmo_per_kp,"NMOPerKP")) {
+    if(!dump.readEntry(nmo_per_kp,"NMOPerKP")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading NMOPerKP. \n";
       APP_ABORT("");
     }
-    if(!dump.read(nchol_per_kp,"NCholPerKP")) {
+    if(!dump.readEntry(nchol_per_kp,"NCholPerKP")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading NCholPerKP. \n";
       APP_ABORT("");
     }
-    if(!dump.read(kminus,"MinusK")) {
+    if(!dump.readEntry(kminus,"MinusK")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading MinusK. \n";
       APP_ABORT("");
@@ -684,13 +685,13 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     for(int k=0; k<nkpts; k++) {
       if(kminus[k] < k) nchol_per_kp[k] = nchol_per_kp[kminus[k]];
     }
-    if(!dump.read(QKtok2,"QKTok2")) {
+    if(!dump.readEntry(QKtok2,"QKTok2")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading QKTok2. \n";
       APP_ABORT("");
     }
     std::vector<ValueType> E_(2);
-    if(!dump.read(E_,"Energies")) {
+    if(!dump.readEntry(E_,"Energies")) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Energies. \n";
       APP_ABORT("");
@@ -768,7 +769,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     for(int Q=0; Q<nkpts; Q++) {
       // until double_hyperslabs work!
       boost::multi::array<ComplexType,2> h1({nmo_per_kp[Q],nmo_per_kp[Q]});
-      if(!dump.read(h1,std::string("H1_kp")+std::to_string(Q))) {
+      if(!dump.readEntry(h1,std::string("H1_kp")+std::to_string(Q))) {
         app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading /Hamiltonian/H1_kp" <<Q <<". \n";
         APP_ABORT("");
@@ -787,7 +788,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
       using std::conj;
       int nchol = nchol_per_kp[Q];
       if(Q==Q0 || Q < kminus[Q]) {
-        if(!dump.read(L_,std::string("L")+std::to_string(Q))) {
+        if(!dump.readEntry(L_,std::string("L")+std::to_string(Q))) {
           app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n";
           APP_ABORT("");
@@ -804,7 +805,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
               copy_n(L1[i][k].origin(),nchol,L2[K][i][k].origin());
         }
       } else if(kminus[Q]==Q) {
-        if(!dump.read(L_,std::string("L")+std::to_string(Q))) {
+        if(!dump.readEntry(L_,std::string("L")+std::to_string(Q))) {
           app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n";
           APP_ABORT("");

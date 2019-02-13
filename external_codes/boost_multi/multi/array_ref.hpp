@@ -57,7 +57,8 @@ protected:
 //	template<class ArrayTypes, typename = decltype(Layout{std::declval<ArrayTypes&&>().layout()}, element_ptr{std::declval<ArrayTypes&&>().base_})>
 //	array_types(ArrayTypes&& other) : Layout{other.layout()}, base_{other.base_}{}
 public://TODO find why this needs to be public and not protected or friend
-	template<class ArrayTypes> array_types(ArrayTypes&& a) : Layout{a}, base_{a.base_}{}
+	template<class ArrayTypes, typename = std::enable_if_t<not std::is_base_of<array_types, std::decay_t<ArrayTypes>>{}>> 
+	array_types(ArrayTypes const& a) : Layout{a}, base_{a.base_}{}
 	template<typename ElementPtr2>
 	array_types(array_types<T, D, ElementPtr2, Layout> const& other) : Layout{other.layout()}, base_{other.base_}{}
 	template<class T2, dimensionality_type D2, class E2, class L2> friend struct array_types;
@@ -72,50 +73,49 @@ struct basic_array_ptr :
 	>,
 	boost::totally_ordered<basic_array_ptr<Ref, Layout>>
 {
-
-	using difference_type = typename Layout::difference_type;
-	using value_type = typename Ref::decay_type;
 	using pointer = Ref const*;
-	using reference = Ref;//Ref const&;
-	using element_type = typename Ref::value_type;
+	using element_type = typename Ref::decay_type;
+	using difference_type = typename Layout::difference_type;
+
+	using value_type = element_type;
+	using reference = Ref;
 	using iterator_category = std::random_access_iterator_tag;
 
-	using element = typename Ref::element;
-	using element_ptr = typename Ref::element_ptr;
+//	using element = typename Ref::element;
+//	using element_ptr = typename Ref::element_ptr;
 	basic_array_ptr(std::nullptr_t p = nullptr) : Ref{p}{}
 	template<class, class> friend struct basic_array_ptr;
-	template<class Other, typename = decltype(typename Ref::types::element_ptr{typename Other::element_ptr{}})> 
-	basic_array_ptr(Other const& o) : Ref{o.layout(), o.base()}, stride_{o.stride_}{}
+	basic_array_ptr(typename Ref::element_ptr p, layout_t<Ref::dimensionality-1> l) : Ref{l, p}{}
+	template<class Other, typename = decltype(typename Ref::element_ptr{typename Other::element_ptr{}})> 
+	basic_array_ptr(Other const& o) : Ref{layout(o), base(o)}{}//, stride_{o.stride_}{}
 	basic_array_ptr& operator=(basic_array_ptr const& other){
 		this->base_ = other.base_;
 		static_cast<Layout&>(*this) = other;
-		this->stride_ = other.stride_;
 		return *this;
 	}
-//	explicit operator bool() const{return this->base_;}
-	Ref const& operator*() const{/*assert(*this);*/ return *this;}
-	Ref const* operator->() const{/*assert(*this);*/ return this;}
+	explicit operator bool() const{return this->base_;}
+	Ref const& operator*() const{return *this;}
+	Ref const* operator->() const{return this;}
 	Ref        operator[](difference_type n) const{return *(*this + n);}
 	template<class O> bool operator==(O const& o) const{return equal(o);}
 	bool operator<(basic_array_ptr const& o) const{return distance_to(o) > 0;}
-	basic_array_ptr(typename Ref::element_ptr p, Layout l, index stride) : Ref{l, p}, stride_{stride}{}
+	basic_array_ptr(typename Ref::element_ptr p, Layout l) : Ref{l, p}{}
 	template<typename T, dimensionality_type D, typename ElementPtr, class LLayout>
 	friend struct basic_array;
-	auto stride() const{return stride_;}
-	friend index stride(basic_array_ptr const& s){return s.stride();}
 	auto base() const{return this->base_;}
 	friend auto base(basic_array_ptr const& self){return self.base();}
-private:
-	index stride_ = {1}; // nice non-zero default
-	using Ref::layout;
 	using Ref::base_;
-	bool equal(basic_array_ptr const& o) const{return base_==o.base_ && stride_==o.stride_ && layout()==o.layout();}
-	void increment(){base_ += stride_;}
-	void decrement(){base_ -= stride_;}
-	void advance(difference_type n){base_ += stride_*n;}
+	using Ref::layout;
+protected:
+	bool equal(basic_array_ptr const& o) const{return base_==o.base_ and layout()==o.layout();}
+	void increment(){base_ += Ref::nelems();}
+	void decrement(){base_ -= Ref::nelems();}
+	void advance(difference_type n){base_ += Ref::nelems()*n;}
 	difference_type distance_to(basic_array_ptr const& other) const{
-		assert( stride_ == other.stride_ and stride_ != 0 and (other.base_ - base_)%stride_ == 0 and layout() == other.layout() );
-		return (other.base_ - base_)/stride_;
+		assert( Ref::nelems() == other.Ref::nelems() and Ref::nelems() != 0 );
+		assert( (other.base_ - base_)%Ref::nelems() == 0); 
+		assert( layout() == other.layout() );
+		return (other.base_ - base_)/Ref::nelems();
 	}
 	friend class boost::iterator_core_access;
 };
@@ -123,15 +123,26 @@ private:
 template<class Element, dimensionality_type D, typename Ptr, class Ref = 
 	typename std::conditional<
 			D != 1,
-			basic_array<Element, D-1, Ptr>,
-			typename std::iterator_traits<Ptr>::reference
+			basic_array<Element, D-1, 
+				typename std::conditional<
+					std::is_same<typename std::pointer_traits<Ptr>::element_type, void>{}, 
+					typename std::pointer_traits<Ptr>::template rebind<Element>,
+					Ptr
+				>::type
+			>,
+			typename std::iterator_traits<
+					typename std::conditional<
+						std::is_same<typename std::pointer_traits<Ptr>::element_type, void>{}, 
+						typename std::pointer_traits<Ptr>::template rebind<Element>,
+						Ptr
+					>::type
+			>::reference
 		>::type
 >
 struct array_iterator;
 
 template<class Element, dimensionality_type D, typename Ptr, class Ref>// = typename std::iterator_traits<Ptr>::reference>
 struct array_iterator : 
-	private Ref,
 	boost::iterator_facade<
 		array_iterator<Element, D, Ptr, Ref>, void, std::random_access_iterator_tag, 
 		Ref const&, typename layout_t<D-1>::difference_type
@@ -142,45 +153,49 @@ struct array_iterator :
 	using value_type = typename Ref::decay_type;
 	using pointer = Ref const*;
 	using reference = Ref;//Ref const&;
-	using element_type = typename Ref::value_type;
+//	using element_type = typename Ref::value_type;
 	using iterator_category = std::random_access_iterator_tag;
 
 	using element = typename Ref::element;
 	using element_ptr = typename Ref::element_ptr;
-	array_iterator(std::nullptr_t p = nullptr) : Ref{p}{}
+	array_iterator(std::nullptr_t p = nullptr) : ptr_{p}, stride_{1}{}//Ref{p}{}
 	template<class, dimensionality_type, class, class> friend struct array_iterator;
 	template<class Other, typename = decltype(typename Ref::types::element_ptr{typename Other::element_ptr{}})> 
-	array_iterator(Other const& o) : Ref{o.layout(), o.base()}, stride_{o.stride_}{}
+	array_iterator(Other const& o) : /*Ref{o.layout(), o.base()},*/ ptr_{o.ptr_.base_, o.ptr_.layout()}, stride_{o.stride_}{}
 	array_iterator& operator=(array_iterator const& other){
-		this->base_ = other.base_;
-		static_cast<layout_t<D-1>&>(*this) = other;
-		this->stride_ = other.stride_;
+//			this->base_ = other.base_;
+//			static_cast<layout_t<D-1>&>(*this) = other;
+		ptr_ = other.ptr_;
+		stride_ = other.stride_;
 		return *this;
 	}
 //	explicit operator bool() const{return this->base_;}
-	Ref const& operator*() const{/*assert(*this);*/ return *this;}
-	Ref const* operator->() const{/*assert(*this);*/ return this;}
+	Ref const& operator*() const{/*assert(*this);*/ return *ptr_;}//return *this;}
+//	Ref const* 
+	decltype(auto) operator->() const{/*assert(*this);*/ return ptr_;}//return this;}
 	Ref        operator[](difference_type n) const{return *(*this + n);}
 	template<class O> bool operator==(O const& o) const{return equal(o);}
 	bool operator<(array_iterator const& o) const{return distance_to(o) > 0;}
-	array_iterator(typename Ref::element_ptr p, layout_t<D-1> l, index stride) : Ref{l, p}, stride_{stride}{}
+	array_iterator(typename Ref::element_ptr p, layout_t<D-1> l, index stride) : /*Ref{l, p},*/ ptr_{p, l}, stride_{stride}{}
 	template<typename T, dimensionality_type DD, typename ElementPtr, class LLayout>
 	friend struct basic_array;
+	auto base() const{return ptr_.base_;}//this->base_;}
+	friend auto base(array_iterator const& self){return self.base();}
 	auto stride() const{return stride_;}
 	friend index stride(array_iterator const& s){return s.stride();}
-	auto base() const{return this->base_;}
-	friend auto base(array_iterator const& self){return self.base();}
 private:
+	basic_array_ptr<Ref, layout_t<D-1>> ptr_;
 	index stride_ = {1}; // nice non-zero default
-	using Ref::layout;
-	using Ref::base_;
-	bool equal(array_iterator const& o) const{return base_==o.base_ && stride_==o.stride_ && layout()==o.layout();}
-	void increment(){base_ += stride_;}
-	void decrement(){base_ -= stride_;}
-	void advance(difference_type n){base_ += stride_*n;}
+//	using Ref::layout;
+//	using Ref::base_;
+	bool equal(array_iterator const& o) const{return ptr_==o.ptr_ and stride_==o.stride_;}//base_==o.base_ && stride_==o.stride_ && ptr_.layout()==o.ptr_.layout();}
+	void increment(){ptr_.base_ += stride_;}
+	void decrement(){ptr_.base_ -= stride_;}
+	void advance(difference_type n){ptr_.base_ += stride_*n;}
 	difference_type distance_to(array_iterator const& other) const{
-		assert( stride_ == other.stride_ and stride_ != 0 and (other.base_ - base_)%stride_ == 0 and layout() == other.layout() );
-		return (other.base_ - base_)/stride_;
+		assert( stride_ == other.stride_ and stride_ != 0 and (other.ptr_.base_ - ptr_.base_)%stride_ == 0 and ptr_.layout() == other.ptr_.layout() );
+	//	assert( stride_ == other.stride_ and stride_ != 0 and (other.base_ - base_)%stride_ == 0 and layout() == other.layout() );
+		return (other.ptr_.base_ - ptr_.base_)/stride_;
 	}
 	friend class boost::iterator_core_access;
 };
@@ -200,6 +215,8 @@ protected:
 	using types::types;
 	template<typename, dimensionality_type, class Alloc> friend struct array;
 public:
+	basic_array(basic_array const&) = default;
+	basic_array(basic_array&&) = default;
 	using decay_type = array<typename types::element, D, typename pointer_traits<typename types::element_ptr>::default_allocator_type>;
 	decay_type decay() const{return *this;}
 	friend auto decay(basic_array const& self){return self.decay();}
@@ -230,7 +247,7 @@ public:
 		new_layout.rotate();
 		return basic_array<T, D, ElementPtr>{new_layout, types::base_};
 	}
-	friend auto rotated(basic_array const& self){return self.rotated();}
+	friend basic_array rotated(basic_array const& self){return self.rotated();}
 	auto unrotated() const{
 		typename types::layout_t new_layout = *this; 
 		new_layout.unrotate();
@@ -294,7 +311,7 @@ private:
 public:
 	using reverse_iterator = basic_reverse_iterator<iterator>;
 	using ptr = basic_array_ptr<basic_array, Layout>;
-	ptr operator&() const{return {this->base_, this->layout(), this->nelems_};}
+	ptr operator&() const{return {this->base_, this->layout()};}
 	iterator begin(index i) const{
 		Layout l = static_cast<Layout const&>(*this); l.rotate(i);
 		return {types::base_ + l(0       ), l.sub, l.stride_};
@@ -364,8 +381,9 @@ public:
 };
 
 template<class T2, class P2 = std::add_pointer_t<T2>, class T, dimensionality_type D, class P>
-auto static_array_cast(basic_array<T, D, P> const& o)
-->decltype(basic_array<T2, D, P2>(o)){
+decltype(auto) static_array_cast(basic_array<T, D, P> const& o)
+//->decltype(basic_array<T2, D, P2>(o))
+{
 	return basic_array<T2, D, P2>(o);}
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -430,20 +448,19 @@ protected:
 	template<class TT, dimensionality_type DD, typename EP, class LLayout> friend struct basic_array;
 	template<class TT, dimensionality_type DD, class Alloc> friend struct array;
 	basic_array(basic_array const&) = default;
-	template<class T2, class P2 = T2*>
-	friend auto static_array_cast(basic_array const& o)
-	->decltype(basic_array<T2, 1, P2, Layout>(o)){
-		return basic_array<T2, 1, P2, Layout>(o);}
+//	template<class T2, class P2 = T2*>
+//	friend auto static_array_cast(basic_array const& o)
+//	->decltype(basic_array<T2, 1, P2, Layout>(o)){
+//		return basic_array<T2, 1, P2, Layout>(o);}
 public:
 	template<class BasicArray, typename = std::enable_if_t<not std::is_base_of<basic_array, std::decay_t<BasicArray>>{}>, typename = decltype(types(std::declval<BasicArray&&>()))> 
 	basic_array(BasicArray&& other) : types{std::forward<BasicArray>(other)}{}
-
+	basic_array(basic_array&&) = default;
 	basic_array_ptr<basic_array, Layout> operator&() const{
-		return {this->base_, this->layout(), this->nelems_};
+		return {this->base_, this->layout()};//, this->nelems_};
 	}
 	template<class It> void assign(It first, It last) const{//using std::distance; assert(distance(first, last) == this->size());
-		using std::copy;
-		copy(first, last, this->begin());
+		using std::copy; copy(first, last, this->begin());
 	}
 	template<class A, typename = std::enable_if_t<not std::is_base_of<basic_array, std::decay_t<A>>{}> >
 	basic_array const& operator=(A&& o) const{
@@ -483,7 +500,10 @@ public:
 
 	decltype(auto)   rotated() const{return *this;}
 	decltype(auto) unrotated() const{return *this;}
-	decltype(auto) rotated(dimensionality_type) const{return *this;}
+	friend decltype(auto) rotated(basic_array const& self){return self;}
+	friend decltype(auto) unrotated(basic_array const& self){return self;}
+	decltype(auto)   rotated(dimensionality_type) const{return *this;}
+	decltype(auto) unrotated(dimensionality_type) const{return *this;}
 
 	using iterator = multi::array_iterator<typename types::element, 1, typename types::element_ptr, typename types::reference>;
 	using reverse_iterator = std::reverse_iterator<iterator>;

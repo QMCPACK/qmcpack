@@ -19,6 +19,7 @@ int main(){
 			{{ 1.2,  1.1}, { 2.4, 1.}}
 		};	
 	auto p = &A[1];
+#if 1
 	auto p2 = p + 1;
 	assert( &(*p )[0][0] == &A[1][0][0] );
 	assert( &(*p2)[0][0] == &A[2][0][0] ); // this is true only because A is contiguous
@@ -27,5 +28,6 @@ int main(){
 	auto p3 = &A[2][1];
 	assert( &(*p3)[1] == &A[2][1][1] );
 	assert( &p3->operator[](1) == &A[2][1][1] );
+#endif
 }
 

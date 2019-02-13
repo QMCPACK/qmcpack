@@ -218,7 +218,7 @@ struct layout_t
 	constexpr bool empty() const{return not nelems_;} friend
 	constexpr bool empty(layout_t const& s){return s.empty();}
 	constexpr size_type size() const {return nelems_/stride_;} 
-	friend constexpr size_type size(layout_t const& l){return l.size();}
+//	friend constexpr size_type size(layout_t const& l){return l.size();} // removed for gcc6, using boost::multi::size
 	size_type size(dimensionality_type d) const{return d?sub.size(d-1):size();}
 
 	constexpr index stride() const{return stride_;}

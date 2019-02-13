@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-g++ -O3 -std=c++17 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
+$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
 #endif
 
 #include<iostream>
@@ -7,10 +7,11 @@ g++ -O3 -std=c++17 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && time
 
 namespace fancy{
 
-template<class T> struct ptr{ // minimal fancy ptr
-	static T value;
+template<class T = void> struct ptr{ // minimal fancy ptr
+	static double value;
 	using difference_type = std::ptrdiff_t;
 	using value_type = T;
+	using element_type = T;
 	using pointer = T*;
 	using reference = T&;
 	using iterator_category = std::random_access_iterator_tag;
@@ -19,7 +20,25 @@ template<class T> struct ptr{ // minimal fancy ptr
 	ptr& operator+=(difference_type){return *this;}
 	friend difference_type operator-(ptr const&, ptr const&){return 0;}
 	bool operator==(ptr const&) const{return true;}
+	explicit operator T*() const{return &value;}
 };
+#if 1
+template<> struct ptr<void>{ // minimal fancy ptr
+	static double value;
+	using difference_type = std::ptrdiff_t;
+	using value_type = void;
+	using element_type = void;
+	using pointer = void*;
+	using reference = void;
+	using iterator_category = std::random_access_iterator_tag;
+	double& operator*() const{return value;}
+	ptr operator+(difference_type) const{return *this;}
+	ptr& operator+=(difference_type){return *this;}
+	friend difference_type operator-(ptr const&, ptr const&){return 0;}
+	bool operator==(ptr const&) const{return true;}
+};
+double ptr<void>::value = 42.;
+#endif
 template<> double ptr<double>::value = 42.;
 
 // all these are optional, depending on the level of specialization needed
@@ -47,21 +66,22 @@ ptr<T2> copy_n(ptr<T1>, Size, ptr<T2> d){ // custom copy_n, Boost.Multi uses cop
 
 #include "../array.hpp"
 
-namespace boost::multi{
+namespace boost{
+namespace multi{
 
 template<class It, class T>  // custom copy 1D (aka strided copy)
-void copy(It first, It last, multi::array_iterator<T, 1, fancy::ptr<T>> dest){
+void copy(It first, It last, multi::array_iterator<T, 1, fancy::ptr<T> > dest){
 	assert( stride(first) == stride(last) );
 	std::cerr << "1D copy(it1D, it1D, it1D) with strides " << stride(first) << " " << stride(dest) << std::endl;
 }
 
 template<class It, class T> // custom copy 2D (aka double strided copy)
-void copy(It first, It last, multi::array_iterator<T, 2, fancy::ptr<T>> dest){
+void copy(It first, It last, multi::array_iterator<T, 2, fancy::ptr<T> > dest){
 	assert( stride(first) == stride(last) );
 	std::cerr << "2D copy(It, It, it2D) with strides " << stride(first) << " " << stride(dest) << std::endl;
 }
 
-}
+}}
 
 ////////////////////////////////////////////////////////////////////////////////
 // user code
@@ -75,6 +95,11 @@ int main(){
 	using ptr = fancy::ptr<double>;
 	ptr p1;// = new double[25];
 	multi::array_ref<double, 2, ptr> A(p1, multi::iextensions<2>{5, 5});
+	
+	auto AA = multi::static_array_cast<double, double*>(A); (void)AA;
+	
+	multi::array_ref<double, 1, ptr> A1(p1, multi::iextensions<1>{25});
+	auto AA1 = multi::static_array_cast<double, double*>(A1); (void)AA1;
 
 	ptr p2;// = new double[25]; 
 	multi::array_ref<double, 2, ptr> B(p2, multi::iextensions<2>{5, 5});

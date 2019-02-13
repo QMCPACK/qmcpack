@@ -333,7 +333,7 @@ class KP3IndexFactorization_batched
 
       // messy
       sp_pointer Krptr, Klptr; 
-      size_t Knr=0, Knc=0;
+      long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
         Knc=local_nCV;
@@ -431,11 +431,11 @@ class KP3IndexFactorization_batched
         // create some convention for batch_size 
         // simple implementation for now
         // taking 4Gbs for now, is this reasonable???
-        size_t Bytes = size_t(4*1024)*size_t(1024*1024);
+        long Bytes = long(4*1024)*long(1024*1024);
         Bytes /= size_t(nwalk*nocc_max*nocc_max*nchol_max*sizeof(ComplexType)); 
-        size_t bz0 = std::max(size_t(2), size_t(std::floor(Bytes)));
+        long bz0 = std::max(long(2), long(std::floor(Bytes)));
         // batch_size includes the factor of 2 from Q/Qm pair
-        size_t batch_size = std::min(bz0,size_t(2*nkpts*nkpts));
+        long batch_size = std::min(bz0,long(2*nkpts*nkpts));
         // make sure batch_size is even
         batch_size = batch_size - (batch_size%2);
         assert(batch_size%2 == 0);
@@ -614,7 +614,7 @@ class KP3IndexFactorization_batched
 
       // messy
       sp_pointer Krptr, Klptr;
-      size_t Knr=0, Knc=0;
+      long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
         Knc=local_nCV;

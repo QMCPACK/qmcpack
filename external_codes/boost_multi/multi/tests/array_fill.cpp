@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic -I$HOME/include $0 -o $0.x && $0.x $@ && rm -f $0.x; exit
+$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors -I$HOME/include $0 -o $0.x && $0.x $@ && rm -f $0.x; exit
 #endif
 
 #include<iostream>
@@ -12,7 +12,6 @@ $CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic -I$HOME/include $0 -o $0.x && $0.x 
 
 #include<iostream>
 #include<vector>
-
 
 namespace multi = boost::multi;
 using std::cout; using std::cerr;

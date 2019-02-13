@@ -1135,7 +1135,7 @@ Timers[Timer_G6]->stop();
         ComplexType wfac = (*wset[iw].weight()) * factor;
         for(int id=0; id<ndet; id++) {
           // We construct PsiBP^{\dagger}
-          CMatrix_ref PsiBP = CMatrix_ref(T3ForBP.data(), {NAEA,NMO});
+          CMatrix_ref PsiBP = CMatrix_ref(T3ForBP.origin(), {NAEA,NMO});
           ComplexType detR = BackPropagateOrbMat(OrbMats[id], wset[iw], PsiBP);
           // Construct RDM with Slater Matrix from beginning of path.
           SDetOp.MixedDensityMatrix(PsiBP,wset[iw].SlaterMatrixN(Alpha),
@@ -1181,7 +1181,7 @@ Timers[Timer_G6]->stop();
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         if( std::abs(ComplexType(*wset[iw].weight())) < 1e-10 ) continue;
-        using fill;
+        using std::fill;
         fill(GA21D_.begin(), GA21D_.end(), ComplexType(0.0));
         fill(GB21D_.begin(), GB21D_.end(), ComplexType(0.0));
         ComplexType factor;
@@ -1195,13 +1195,13 @@ Timers[Timer_G6]->stop();
         ComplexType wfac = (*wset[iw].weight()) * factor;
         ComplexType overlap = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
-          CMatrix_ref PsiBPAlpha = CMatrix_ref(T3ForBP.data(), {NAEA,NMO});
+          CMatrix_ref PsiBPAlpha = CMatrix_ref(T3ForBP.origin(), {NAEA,NMO});
           ComplexType detR = BackPropagateOrbMat(OrbMats[2*id], wset[iw], PsiBPAlpha);
           SDetOp.MixedDensityMatrix(PsiBPAlpha,wset[iw].SlaterMatrixN(Alpha),
                                                       GA2D_,to_address(ov_),compact);
          
           ComplexType ov(*ov_);
-          CMatrix_ref PsiBPBeta = CMatrix_ref(T3ForBP.data(), {NAEB,NMO});
+          CMatrix_ref PsiBPBeta = CMatrix_ref(T3ForBP.origin(), {NAEB,NMO});
           detR *= BackPropagateOrbMat(OrbMats[2*id+1], wset[iw], PsiBPBeta);
           SDetOp.MixedDensityMatrix(PsiBPBeta,wset[iw].SlaterMatrix(Beta),
                                            GB2D_,to_address(ov_),compact);
@@ -1482,9 +1482,9 @@ Timers[Timer_G6]->stop();
     pointer d_(localGbuff.origin());
     const int nbp = walker.NumBackProp();
     int ip = nbp - 1;
-     B(walker.BMatrix(ip));
-    CMatrix_ref T1 = CMatrix_ref(T1ForBP.data(), {PsiBP.shape()[0],PsiBP.shape()[1]});
-    CMatrix_ref T2 = CMatrix_ref(T2ForBP.data(), {PsiBP.shape()[1],PsiBP.shape()[0]});
+    auto B(walker.BMatrix(ip));
+    CMatrix_ref T1 = CMatrix_ref(T1ForBP.origin(), {PsiBP.size(0),PsiBP.size(1)});
+    CMatrix_ref T2 = CMatrix_ref(T2ForBP.origin(), {PsiBP.size(1),PsiBP.size(0)});
     ma::product(OrbMat, B, T1);
     for (int i = 0; i < nbp-1; i++) {
       ip -= 1;
