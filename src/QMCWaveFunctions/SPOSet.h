@@ -212,7 +212,7 @@ public:
   virtual void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
 
-  /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
+  /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
    * @param psi values of the SPO, used as a scratch space if needed
    * @param psiinv the row of inverse slater matrix corresponding to the particle moved virtually

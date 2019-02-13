@@ -274,7 +274,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       }
     }
 
-    // do the reduction by manually
+    // do the reduction manually
     for(int iat=0; iat<VP.getTotalNum(); ++iat)
     {
       ratios[iat] = ComplexT(0);
