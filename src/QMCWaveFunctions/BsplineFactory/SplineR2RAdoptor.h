@@ -234,14 +234,15 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 
     #pragma omp parallel
     {
+      int tid = omp_get_thread_num();
       // initialize thread private ratios
       if(need_resize)
       {
-        #pragma omp single
-        ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
+        if (tid==0) // just like #pragma omp master, but one fewer call to the runtime
+          ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
+        #pragma omp barrier
       }
       int first, last;
-      int tid = omp_get_thread_num();
       FairDivideAligned(myV.size(), getAlignment<ST>(),
                         omp_get_num_threads(), tid,
                         first, last);

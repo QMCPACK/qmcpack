@@ -275,14 +275,15 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
     #pragma omp parallel
     {
+      int tid = omp_get_thread_num();
       // initialize thread private ratios
       if(need_resize)
       {
-        #pragma omp single
-        ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
+        if (tid==0) // just like #pragma omp master, but one fewer call to the runtime
+          ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
+        #pragma omp barrier
       }
       int first, last;
-      int tid = omp_get_thread_num();
       FairDivideAligned(myV.size(), getAlignment<ST>(),
                         omp_get_num_threads(), tid,
                         first, last);
@@ -297,12 +298,9 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
         spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
         assign_v(r,myV,psi,first_cplx,last_cplx);
 
-        TT ratio(0);
-        for (size_t j=first_cplx*2; j<std::min(nComplexBands,last_cplx)*2; j++)
-          ratio += psi[j] * psiinv[j];
-        for (size_t j=std::max(nComplexBands,first_cplx)+nComplexBands; j<last_cplx+nComplexBands; j++)
-          ratio += psi[j] * psiinv[j];
-        ratios_private[iat][tid] = ratio;
+        const int first_real = first_cplx+std::min(nComplexBands,first_cplx);
+        const int last_real  = last_cplx+std::min(nComplexBands,last_cplx);
+        ratios_private[iat][tid] = simd::dot(psi.data()+first_real, psiinv.data()+first_real, last_real-first_real);
       }
     }
 
