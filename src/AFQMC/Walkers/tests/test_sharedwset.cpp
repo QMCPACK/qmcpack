@@ -457,11 +457,11 @@ const char *xml_block =
     restartFromHDF5(wset2,nwalkers,"dummy_walkers.h5",read,true);
     for(int i=0; i < nwalkers; i++) {
       REQUIRE( wset[i].SlaterMatrix(Alpha) == wset2[i].SlaterMatrix(Alpha) );
-      REQUIRE( wset[i].weight() == wset2[i].weight() );
-      REQUIRE( wset[i].overlap() == wset2[i].overlap() );
-      REQUIRE( wset[i].E1() == wset2[i].E1() );
-      REQUIRE( wset[i].EXX() == wset2[i].EXX() );
-      REQUIRE( wset[i].EJ() == wset2[i].EJ() );
+      REQUIRE( *wset[i].weight() == *wset2[i].weight() );
+      REQUIRE( *wset[i].overlap() == *wset2[i].overlap() );
+      REQUIRE( *wset[i].E1() == *wset2[i].E1() );
+      REQUIRE( *wset[i].EXX() == *wset2[i].EXX() );
+      REQUIRE( *wset[i].EJ() == *wset2[i].EJ() );
     }
 
   }
