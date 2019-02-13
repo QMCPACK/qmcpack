@@ -89,6 +89,31 @@ TEST_CASE("double_1d_natural", "[einspline]")
 
 }
 
+
+TEST_CASE("double_1d_multi", "[einspline]")
+{
+  Ugrid x_grid;
+  x_grid.start = 1.0;
+  x_grid.end = 10.0;
+  x_grid.num = 2;
+
+  double data[2];
+  data[0] = 2.0;
+  data[1] = 3.0;
+
+  BCtype_d xBC;
+  xBC.lCode = NATURAL;
+  xBC.rCode = NATURAL;
+  multi_UBspline_1d_d* s = create_multi_UBspline_1d_d(x_grid, xBC, 1);
+  REQUIRE(s);
+
+  set_multi_UBspline_1d_d(s, 0, data);
+
+  double val;
+  eval_multi_UBspline_1d_d(s, 1.0, &val);
+  REQUIRE(val == Approx(2.0));
+}
+
 TEST_CASE("double_1d_periodic", "[einspline]")
 {
   Ugrid x_grid;
@@ -127,9 +152,18 @@ TEST_CASE("double_1d_periodic", "[einspline]")
   // boundary conditions.  That behavior is to pin a the last grid point value.
   eval_UBspline_1d_d(s, delta+1.0 , &val);
   REQUIRE(val == Approx(data[1]));
-  
+
+  eval_UBspline_1d_d(s, delta+2.0 , &val);
+  REQUIRE(val == Approx(data[1]));
+
   eval_UBspline_1d_d(s, 1.0 , &val);
   REQUIRE(val == Approx(data[0]));
+
+  eval_UBspline_1d_d(s, (N-1)*delta, &val);
+  REQUIRE(val == Approx(data[N-1]));
+
+  eval_UBspline_1d_d(s, (N-1)*delta+1.0, &val);
+  REQUIRE(val == Approx(data[N-1]));
 
   double micro_delta = delta / 4.0;
   int micro_N = N * 4;
@@ -153,28 +187,51 @@ TEST_CASE("double_1d_periodic", "[einspline]")
   destroy_Bspline(s);
 }
 
-TEST_CASE("double_1d_multi", "[einspline]")
+TEST_CASE("double_1d_antiperiodic", "[einspline]")
 {
   Ugrid x_grid;
-  x_grid.start = 1.0;
-  x_grid.end = 10.0;
-  x_grid.num = 2;
+  x_grid.start = 0.0;
+  x_grid.end = 1.0;
+  //Enough grid points are required to do the micro evaluation test.
+  int N = 12;
+  x_grid.num = N;
+  double delta = (x_grid.end - x_grid.start)/x_grid.num;
 
-  double data[2];
-  data[0] = 2.0;
-  data[1] = 3.0;
+  double tpi = M_PI;
+  double data[N];
+  for (int i = 0; i < N; i++)
+  {
+    double x = delta*i;
+    data[i] = sin(tpi*x);
+  }
 
-  BCtype_d xBC;
-  xBC.lCode = NATURAL;
-  xBC.rCode = NATURAL;
-  multi_UBspline_1d_d* s = create_multi_UBspline_1d_d(x_grid, xBC, 1);
+  BCtype_d bc;
+  bc.lCode = ANTIPERIODIC;
+  bc.rCode = ANTIPERIODIC;
+
+  UBspline_1d_d* s = create_UBspline_1d_d(x_grid, bc, data);
+
   REQUIRE(s);
 
-  set_multi_UBspline_1d_d(s, 0, data);
-
   double val;
-  eval_multi_UBspline_1d_d(s, 1.0, &val);
-  REQUIRE(val == Approx(2.0));
+  eval_UBspline_1d_d(s, 0.0, &val);
+  REQUIRE(val == Approx(0.0));
+
+  eval_UBspline_1d_d(s, delta, &val);
+  REQUIRE(val == Approx(data[1]));
+
+  // This is how I think a antiperiodic UBspline should work.
+  eval_UBspline_1d_d(s, delta+1.0 , &val);
+  val = val * -1.0;
+  REQUIRE(val == Approx(data[1]));
+
+  eval_UBspline_1d_d(s, delta+2.0 , &val);
+  REQUIRE(val == Approx(data[1]));
+
+  eval_UBspline_1d_d(s, 1.0 , &val);
+  REQUIRE(val == Approx(data[0]));
+
+  destroy_Bspline(s);
 }
 
 #ifdef QMC_CUDA
