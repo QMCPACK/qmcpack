@@ -73,7 +73,7 @@ public:
   IndexType OrbitalSetSize;
   /// Optimizable variables
   opt_variables_type myVars;
-  ///name of the basis set
+  ///name of the class
   std::string className;
   /** name of the object
    *
@@ -101,7 +101,10 @@ public:
   /** constructor */
   SPOSet();
 
-  /** destructor */
+  /** destructor
+   *
+   * Derived class destructor needs to pay extra attention to freeing memory shared among clones of SPOSet.
+   */
   virtual ~SPOSet()
   {
 #if !defined(ENABLE_SOA)
@@ -110,6 +113,7 @@ public:
   }
 
   /** return the size of the orbital set
+   * Ye: this needs to be replaced by getOrbitalSetSize();
    */
   inline int size() const
   {
@@ -128,7 +132,7 @@ public:
   }
 
 
-  /** return the size of the orbital set
+  /** return the size of the orbitals
    */
   inline int getOrbitalSetSize() const
   {
@@ -146,21 +150,26 @@ public:
   ///get C and Occ
   bool put(xmlNodePtr cur);
 #else
+  /// return the size of the basis set if there is any
   virtual int getBasisSetSize() const { return 0; }
 
+  /// check a few key parameters before putting the SPO into a determinant
   virtual void checkObject() const {}
 #endif
 
   /// create optimizable orbital rotation parameters
   virtual void buildOptVariables(const std::vector<std::pair<int,int>>& rotations) {}
-  ///reset
+
+  /// reset parameters to the values from optimizer
   virtual void resetParameters(const opt_variables_type& optVariables)=0;
 
+  /// check in/out parameters to the global list of parameters used by the optimizer
   virtual void checkInVariables(opt_variables_type& active) {}
   virtual void checkOutVariables(const opt_variables_type& active) {}
 
-  // Evaluate the derivative of the optimized orbitals with
-  // respect to the parameters
+  /** Evaluate the derivative of the optimized orbitals with respect to the parameters
+   *  this is used only for MSD, to be refined for better serving both single and multi SD
+   */
   virtual void evaluateDerivatives (ParticleSet& P, 
                                    const opt_variables_type& optvars,
                                    std::vector<RealType>& dlogpsi, 
@@ -189,13 +198,23 @@ public:
                                    const std::vector< std::vector<int> >& lookup_tbl){}
 
 
-  ///reset the target particleset
+  /** reset the target particleset
+   *  this is used to reset the pointer to ion-electron distance table needed by LCAO basis set.
+   *  Ye: Only AoS needs it, SoA LCAO doesn't need this. Reseting pointers is a very hard to maintain state machine.
+   *  This interface should be removed with AOS.
+   */
   virtual void resetTargetParticleSet(ParticleSet& P)=0;
+
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals
+   * Ye: I prefer to remove this interface in the future. SPOSet builders need to handle the size correctly.
+   * It doesn't make sense allowing to set the value at any place in the code.
    */
   virtual void setOrbitalSetSize(int norbs)=0;
 
+  /** Evaluate the SPO value at an explicit position.
+   * Ye: This is used only for debugging the CUDA code and should be removed.
+   */
   virtual void
   evaluate (const ParticleSet& P, PosType &r, ValueVector_t &psi)
   {
@@ -225,6 +244,8 @@ public:
    * @param P current ParticleSet
    * @param iat active particle
    * @param psi values of the SPO
+   * @param dpsi gradients of the SPO
+   * @param d2psi laplacians of the SPO
    */
   virtual void
   evaluate(const ParticleSet& P, int iat,
@@ -234,18 +255,26 @@ public:
    * @param P current ParticleSet
    * @param iat active particle
    * @param psi values of the SPO
+   * @param dpsi gradients of the SPO
+   * @param grad_grad_psi hessians of the SPO
    */
   virtual void
   evaluate(const ParticleSet& P, int iat,
            ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)=0;
 
+  /** evaluate the third derivatives of this single-particle orbital set
+   * @param P current ParticleSet
+   * @param first first particle
+   * @param last last particle
+   * @param grad_grad_grad_logdet third derivatives of the SPO
+   */
   virtual void
   evaluateThirdDeriv(const ParticleSet& P, int first, int last
                      , GGGMatrix_t& grad_grad_grad_logdet);
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  returns whether this is an LCOrbitalSetOpt object
-  ///
+  /// Ye: This should be removed as AoS. On the SoA side, LCAOrbitalSet replace LCOrbitalSet and LCOrbitalSetOpt
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   virtual bool is_of_type_LCOrbitalSetOpt() const { return false; }
 
@@ -261,28 +290,73 @@ public:
   virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
                                     , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
 
+  /** evaluate the values, gradients and hessians of this single-particle orbital for [first,last) particles
+   * @param P current ParticleSet
+   * @param first starting index of the particles
+   * @param last ending index of the particles
+   * @param logdet determinant matrix to be inverted
+   * @param dlogdet gradients
+   * @param grad_grad_logdet hessians
+   *
+   */
   virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
                                     , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
 
+  /** evaluate the values, gradients, hessians and third derivatives of this single-particle orbital for [first,last) particles
+   * @param P current ParticleSet
+   * @param first starting index of the particles
+   * @param last ending index of the particles
+   * @param logdet determinant matrix to be inverted
+   * @param dlogdet gradients
+   * @param grad_grad_logdet hessians
+   * @param grad_grad_grad_logdet third derivatives
+   *
+   */
   virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
                                     , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
 
+  /** evaluate the gradients of this single-particle orbital
+   *  for [first,last) target particles with respect to the given source particle
+   * @param P current ParticleSet
+   * @param first starting index of the particles
+   * @param last ending index of the particles
+   * @param iat_src source particle index
+   * @param gradphi gradients
+   *
+   */
   virtual void evaluateGradSource (const ParticleSet &P, int first, int last
                                    , const ParticleSet &source, int iat_src, GradMatrix_t &gradphi);
 
+  /** evaluate the gradients of values, gradients, laplacians of this single-particle orbital
+   *  for [first,last) target particles with respect to the given source particle
+   * @param P current ParticleSet
+   * @param first starting index of the particles
+   * @param last ending index of the particles
+   * @param iat_src source particle index
+   * @param gradphi gradients of values
+   * @param grad_grad_phi gradients of gradients
+   * @param grad_lapl_phi gradients of laplacians
+   *
+   */
   virtual void evaluateGradSource (const ParticleSet &P, int first, int last
                                    , const ParticleSet &source, int iat_src
                                    , GradMatrix_t &grad_phi, HessMatrix_t &grad_grad_phi, GradMatrix_t &grad_lapl_phi);
 
+  /** access the k point related to the given orbital */
   virtual PosType get_k(int orb)
   {
     return PosType();
   }
 
   /** make a clone of itself
+   * every derived class must implement this to have threading working correctly.
    */
   virtual SPOSet* makeClone() const;
 
+  /** Used only by cusp correction in AOS LCAO.
+   * Ye: the SoA LCAO moves all this responsibility to the builder.
+   * This interface should be removed with AoS.
+   */
   virtual bool transformSPOSet()
   {
     return true;
@@ -290,10 +364,12 @@ public:
 
   // Routine to set up data for the LCOrbitalSetOpt child class specifically
   // Should be left empty for other derived classes
+  // Ye: This interface should be removed with AoS.
   virtual void init_LCOrbitalSetOpt(const double mix_factor=0.0) { };
 
   // Routine to update internal data for the LCOrbitalSetOpt child class specifically
   // Should be left empty for other derived classes
+  // Ye: This interface should be removed with AoS.
   virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
 
 #ifdef QMC_CUDA
