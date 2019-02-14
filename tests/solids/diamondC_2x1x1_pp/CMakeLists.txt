@@ -100,4 +100,84 @@ ENDIF()
                     )
 
 
+#
+# Deterministic tests
+#
 
+# VMC RUN
+  LIST(APPEND DET_DIAMOND2_SCALARS "totenergy" "-22.29890271 0.000001")
+  LIST(APPEND DET_DIAMOND2_SCALARS "kinetic" "19.26597773 0.000001")
+  LIST(APPEND DET_DIAMOND2_SCALARS "potential" "-41.56488044 0.000001")
+  LIST(APPEND DET_DIAMOND2_SCALARS "eeenergy" "-7.25613869 0.000001")
+  LIST(APPEND DET_DIAMOND2_SCALARS "ionion" "-25.55132676 0.000001")
+  LIST(APPEND DET_DIAMOND2_SCALARS "localecp" "-10.85686146 0.000001")
+  LIST(APPEND DET_DIAMOND2_SCALARS "nonlocalecp" "2.09944647 0.000001")
+  LIST(APPEND DET_DIAMOND2_SCALARS "samples" "9.00000000 0.0")
+  LIST(APPEND DET_DIAMOND2_SCALARS "flux" "-5.36609515 0.000001")
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short
+                    det_qmc_short.in.xml
+                    1 1
+                    TRUE
+                    0 DET_DIAMOND2_SCALARS # VMC
+                    )
+
+# VMC DELAYED-UPDATE
+  LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "totenergy" "-20.94387935 0.000001")
+  LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "kinetic" "16.53547309 0.000001")
+  LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "potential" "-37.47935243 0.000001")
+  LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "eeenergy" "-4.25504502 0.000001")
+  LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "ionion" "-25.55132676 0.000001")
+  LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "localecp" "-9.39386209 0.000001")
+  LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "nonlocalecp" "1.72088142 0.000001")
+  LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "samples" "9.00000000 0.0")
+  LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "flux" "-12.48031692 0.000001")
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-delayed_update-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short
+                    det_qmc_short_delayedupdate.in.xml
+                    1 1
+                    TRUE
+                    0 DET_DIAMOND2_DELAY_SCALARS # VMC
+                    )
+
+# DMC RUN
+  LIST(APPEND DET_DIAMOND2_DMC_SCALARS "totenergy" "-21.05325436 0.000001")
+  LIST(APPEND DET_DIAMOND2_DMC_SCALARS "kinetic" "22.66901302 0.000001")
+  LIST(APPEND DET_DIAMOND2_DMC_SCALARS "potential" "-43.72226738 0.000001")
+  LIST(APPEND DET_DIAMOND2_DMC_SCALARS "eeenergy" "-6.17624150 0.000001")
+  LIST(APPEND DET_DIAMOND2_DMC_SCALARS "ionion" "-25.55132676 0.000001")
+  LIST(APPEND DET_DIAMOND2_DMC_SCALARS "localecp" "-9.10934270 0.000001")
+  LIST(APPEND DET_DIAMOND2_DMC_SCALARS "nonlocalecp" "-2.88535642 0.000001")
+  LIST(APPEND DET_DIAMOND2_DMC_SCALARS "samples" "9.00000000 0.0")
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_vmc_dmc
+                    det_qmc_short_vmc_dmc.in.xml
+                    1 1
+                    TRUE
+                    1 DET_DIAMOND2_DMC_SCALARS # DMC
+                    )
+
+  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "totenergy" "-19.89155517 0.000001")
+  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "kinetic" "20.60860539 0.000001")
+  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "potential" "-40.50016056 0.000001")
+  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "eeenergy" "-3.43523490 0.000001")
+  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "ionion" "-25.55132676 0.000001")
+  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "localecp" "-11.36788758 0.000001")
+  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "nonlocalecp" "-0.14571132 0.000001")
+  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "samples" "9.00000000 0.0")
+
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-dmc-reconf_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_vmc_dmc
+                    det_qmc_short_vmc_dmc_reconf.in.xml
+                    1 1
+                    TRUE
+                    1 DET_DIAMOND2_RECONF_SCALARS # DMC
+                    )
