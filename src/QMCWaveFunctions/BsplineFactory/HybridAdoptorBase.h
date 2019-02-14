@@ -188,7 +188,7 @@ struct AtomicOrbitalSoA
   }
 
   template<typename DISPL, typename VM>
-  inline void evaluateDetRatios(const DISPL& Displacements, const int center_idx, const ST& r, VM& multi_myV)
+  inline void evaluateValues(const DISPL& Displacements, const int center_idx, const ST& r, VM& multi_myV)
   {
     if(r<=std::numeric_limits<ST>::epsilon())
       Ylm.evaluateV(0,0,1);
@@ -555,14 +555,14 @@ struct HybridAdoptorBase
 
   // C2C, C2R cases
   template<typename VM>
-  inline RealType evaluateDetRatiosC2X(const VirtualParticleSet& VP, VM& multi_myV)
+  inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
   {
     const int center_idx=VP.refSourcePtcl;
     dist_r = VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
     if ( dist_r < myCenter.cutoff )
     {
-      myCenter.evaluateDetRatios(VP.DistTables[myTableID]->Displacements, center_idx, dist_r, multi_myV);
+      myCenter.evaluateValues(VP.DistTables[myTableID]->Displacements, center_idx, dist_r, multi_myV);
       return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
     return RealType(-1);
@@ -570,7 +570,7 @@ struct HybridAdoptorBase
 
   // R2R case
   template<typename VM, typename Cell, typename SV>
-  inline RealType evaluateDetRatiosR2R(const VirtualParticleSet& VP,
+  inline RealType evaluateValuesR2R(const VirtualParticleSet& VP,
                                     const Cell& PrimLattice, TinyVector<int,D>& HalfG,
                                     VM& multi_myV, SV& bc_signs)
   {
@@ -585,7 +585,7 @@ struct HybridAdoptorBase
         r_image=myCenter.pos-displ[ivp][center_idx];
         bc_signs[ivp]=get_bc_sign(VP.R[ivp], PrimLattice, HalfG);;
       }
-      myCenter.evaluateDetRatios(displ, center_idx, dist_r, multi_myV);
+      myCenter.evaluateValues(displ, center_idx, dist_r, multi_myV);
       return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
     return RealType(-1);

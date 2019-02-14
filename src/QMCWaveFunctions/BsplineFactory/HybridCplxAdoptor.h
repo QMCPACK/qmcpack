@@ -122,7 +122,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
       // resize scratch space
       psi_AO.resize(psi.size());
       if(multi_myV.rows()<VP.getTotalNum()) multi_myV.resize(VP.getTotalNum(), myV.size());
-      const RealType smooth_factor=HybridBase::evaluateDetRatiosC2X(VP,multi_myV);
+      const RealType smooth_factor=HybridBase::evaluateValuesC2X(VP,multi_myV);
       const RealType cone(1);
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
