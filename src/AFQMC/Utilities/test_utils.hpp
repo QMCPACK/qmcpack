@@ -43,7 +43,7 @@ inline std::tuple<int,int,int> read_info_from_hdf(std::string fileName)
     }
 
     std::vector<int> Idata(8);
-    if(!dump.read(Idata,"dims")) {
+    if(!dump.readEntry(Idata,"dims")) {
       std::cerr<<" Error in HamiltonianFactory::fromHDF5(): Problems reading dims. \n";
       APP_ABORT("");
     }
@@ -67,7 +67,7 @@ TEST_DATA<T>  read_test_results_from_hdf(std::string fileName)
     }
 
     std::vector<int> Idata(8);
-    if(!dump.read(Idata,"dims")) {
+    if(!dump.readEntry(Idata,"dims")) {
       std::cerr<<" Error in HamiltonianFactory::fromHDF5(): Problems reading dims. \n";
       APP_ABORT("");
     }

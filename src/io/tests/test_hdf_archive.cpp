@@ -52,49 +52,87 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
   hdf_archive hd;
   hd.create("test_simple_data.hdf");
   int i = 23;
-  bool okay = hd.write(i, "int");
+  bool okay = hd.writeEntry(i, "int");
   REQUIRE(okay);
 
   float f = -2.3;
-  okay = hd.write(f, "float");
+  okay = hd.writeEntry(f, "float");
   REQUIRE(okay);
 
   double d = 4.5;
-  okay = hd.write(d, "double");
+  okay = hd.writeEntry(d, "double");
   REQUIRE(okay);
 
   std::complex<float> cf(2.3,3.4);
-  okay = hd.write(cf, "complex float");
+  okay = hd.writeEntry(cf, "complex float");
   REQUIRE(okay);
 
   hd.close();
+
+  // Use the internally checked writes
+
+  hdf_archive hd3;
+  hd3.create("test_simple_data.hdf");
+  hd3.write(i, "int");
+  hd3.write(f, "float");
+  hd3.write(d, "double");
+  hd3.writeEntry(cf, "complex float");
+  hd3.close();
 
   // now read the file and ensure the values are the same
 
   hdf_archive hd2;
   hd2.open("test_simple_data.hdf");
   int i2;
-  okay = hd2.read(i2, "int");
+  okay = hd2.readEntry(i2, "int");
   REQUIRE(okay);
   REQUIRE(i == i2);
 
   // deliberately out of order
   double d2;
-  okay = hd2.read(d2, "double");
+  okay = hd2.readEntry(d2, "double");
   REQUIRE(okay);
   REQUIRE(d == d2);
 
   double f2;
-  okay = hd2.read(f2, "float");
+  okay = hd2.readEntry(f2, "float");
   REQUIRE(okay);
   REQUIRE(f == f2);
 
   std::complex<float> cf2;
-  okay = hd2.read(cf2, "complex float");
+  okay = hd2.readEntry(cf2, "complex float");
   REQUIRE(okay);
   REQUIRE(cf == cf2);
 
+  // check an error occurs for non-existant entry
+  int i666;
+  okay = hd2.readEntry(i666,"not an entry");
+  REQUIRE(!okay);
+
   hd2.close();
+
+  // now read the file and ensure the values are the same
+
+  hdf_archive hd4;
+  hd4.open("test_simple_data.hdf");
+  int i4;
+  hd4.read(i4, "int");
+  REQUIRE(i == i4);
+
+  // deliberately out of order
+  double d4;
+  hd4.read(d4, "double");
+  REQUIRE(d == d4);
+
+  float f4;
+  hd4.read(f4, "float");
+  REQUIRE(f == f4);
+
+  std::complex<float> cf4;
+  hd4.read(cf4, "complex float");
+  REQUIRE(cf == cf4);
+
+  hd4.close();
 }
 
 TEST_CASE("hdf_archive_vector", "[hdf]")
@@ -107,7 +145,7 @@ TEST_CASE("hdf_archive_vector", "[hdf]")
   v[1] = -100.3;
   v[2] = 135.22;
 
-  bool okay = hd.write(v, "vector_double");
+  bool okay = hd.writeEntry(v, "vector_double");
   REQUIRE(okay);
 
   hd.close();
@@ -117,7 +155,7 @@ TEST_CASE("hdf_archive_vector", "[hdf]")
   REQUIRE(okay);
 
   vector<double> v2;
-  okay = hd2.read(v2, "vector_double");
+  okay = hd2.readEntry(v2, "vector_double");
   REQUIRE(v2.size() == 3);
   for (int i = 0; i < v.size(); i++)
   {
@@ -131,13 +169,13 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   hd.create("test_group.hdf");
 
   int i = 3;
-  bool okay = hd.write(i, "int");
+  bool okay = hd.writeEntry(i, "int");
   REQUIRE(okay);
 
   hd.push("name1");
 
   int j = 3;
-  okay = hd.write(j, "int2");
+  okay = hd.writeEntry(j, "int2");
   REQUIRE(okay);
 
   hd.close();
@@ -151,13 +189,13 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   REQUIRE(name1_is_group);
 
   int j2 = 0;
-  okay = hd2.read(j2, "name1/int2");
+  okay = hd2.readEntry(j2, "name1/int2");
   REQUIRE(okay);
   REQUIRE(j2 == j);
 
   int j3 = 0;
   hd2.push("name1", false);
-  okay = hd2.read(j3, "int2");
+  okay = hd2.readEntry(j3, "int2");
   REQUIRE(okay);
   REQUIRE(j3 == j);
 
@@ -174,7 +212,7 @@ TEST_CASE("hdf_archive_tiny_vector", "[hdf]")
   v[0] = 1.2;
   v[1] = 1.3;
 
-  bool okay = hd.write(v, "tiny_vector_double");
+  bool okay = hd.writeEntry(v, "tiny_vector_double");
   REQUIRE(okay);
 
   hd.close();
@@ -183,7 +221,7 @@ TEST_CASE("hdf_archive_tiny_vector", "[hdf]")
   hd2.open("test_tiny_vector.hdf");
 
   TinyVector<double, 2> v2;
-  okay = hd2.read(v2, "tiny_vector_double");
+  okay = hd2.readEntry(v2, "tiny_vector_double");
   REQUIRE(okay);
   for (int i = 0; i < v.size(); i++)
   {
@@ -203,7 +241,7 @@ TEST_CASE("hdf_archive_tensor", "[hdf]")
   v(0,1) = -2.3f;
   v(1,1) = 10.0f;
 
-  bool okay = hd.write(v, "tiny_tensor_float");
+  bool okay = hd.writeEntry(v, "tiny_tensor_float");
   REQUIRE(okay);
 
   hd.close();
@@ -212,7 +250,7 @@ TEST_CASE("hdf_archive_tensor", "[hdf]")
   hd2.open("test_tensor.hdf");
 
   Tensor<float, 2> v2;
-  okay = hd2.read(v2, "tiny_tensor_float");
+  okay = hd2.readEntry(v2, "tiny_tensor_float");
   REQUIRE(okay);
   for (int i = 0; i < 2; i++)
   {
@@ -229,13 +267,13 @@ TEST_CASE("hdf_archive_string", "[hdf]")
   hd.create("test_string.hdf");
 
   string s("this is a test");
-  bool okay = hd.write(s, "string");
+  bool okay = hd.writeEntry(s, "string");
   REQUIRE(okay);
 
 
   std::ostringstream o;
   o << "Another test" << std::endl;
-  okay = hd.write(o, "ostringstream");
+  okay = hd.writeEntry(o, "ostringstream");
   REQUIRE(okay);
 
   hd.close();
@@ -244,12 +282,12 @@ TEST_CASE("hdf_archive_string", "[hdf]")
   okay = hd2.open("test_string.hdf");
   REQUIRE(okay);
   string s2;
-  okay = hd2.read(s2, "string");
+  okay = hd2.readEntry(s2, "string");
   REQUIRE(okay);
   REQUIRE(s == s2);
 
   string o2;
-  okay = hd2.read(o2, "ostringstream");
+  okay = hd2.readEntry(o2, "ostringstream");
   REQUIRE(okay);
   REQUIRE(o.str() == o2);
 }

@@ -194,7 +194,7 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, std::string hdf_read_restar
     if(!read.push("Walkers")) return false;
     if(!read.push("WalkerSet")) return false;
 
-    if(!read.read(Idata,"dims")) return false;
+    if(!read.readEntry(Idata,"dims")) return false;
   }
   TG.TG_local().broadcast_n(Idata.begin(),Idata.size());
 
