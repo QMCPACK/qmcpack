@@ -196,10 +196,10 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(int bc_sign, const vContainer_type& myV, VV& psi, int first = 0, int last = -1) const
+  inline void assign_v(int bc_sign, const vContainer_type& myV, VV& psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last>kPoints.size() ? kPoints.size() : last;
 
     const ST signed_one = (bc_sign &1)? -1:1;
     #pragma omp simd
@@ -270,10 +270,10 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV, typename GV>
-  inline void assign_vgl(int bc_sign, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1) const
+  inline void assign_vgl(int bc_sign, VV& psi, GV& dpsi, VV& d2psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last>kPoints.size() ? kPoints.size() : last;
 
     const ST signed_one = (bc_sign &1)? -1:1;
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
@@ -346,10 +346,10 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first = 0, int last = -1) const
+  void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last>kPoints.size() ? kPoints.size() : last;
 
     const ST signed_one = (bc_sign &1)? -1:1;
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),

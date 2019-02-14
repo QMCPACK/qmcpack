@@ -100,13 +100,13 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     else if (smooth_factor==cone)
     {
       const PointType& r=P.activeR(iat);
-      BaseAdoptor::assign_v(r,myV,psi);
+      BaseAdoptor::assign_v(r,myV,psi,0,myV.size()/2);
     }
     else
     {
       const PointType& r=P.activeR(iat);
       psi_AO.resize(psi.size());
-      BaseAdoptor::assign_v(r,myV,psi_AO);
+      BaseAdoptor::assign_v(r,myV,psi_AO,0,myV.size()/2);
       BaseAdoptor::evaluate_v(P,iat,psi);
       for(size_t i=0; i<psi.size(); i++)
         psi[i] = psi_AO[i]*smooth_factor + psi[i]*(cone-smooth_factor);
@@ -132,13 +132,13 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
         {
           const PointType& r=VP.R[iat];
           Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
-          BaseAdoptor::assign_v(r,myV_one,psi);
+          BaseAdoptor::assign_v(r,myV_one,psi,0,myV.size()/2);
         }
         else
         {
           const PointType& r=VP.R[iat];
           Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
-          BaseAdoptor::assign_v(r,myV_one,psi_AO);
+          BaseAdoptor::assign_v(r,myV_one,psi_AO,0,myV.size()/2);
           BaseAdoptor::evaluate_v(VP,iat,psi);
           for(size_t i=0; i<psi.size(); i++)
             psi[i] = psi_AO[i]*smooth_factor + psi[i]*(cone-smooth_factor);
@@ -199,7 +199,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
     {
       const PointType& r=P.activeR(iat);
-      BaseAdoptor::assign_vgh(r,psi,dpsi,grad_grad_psi);
+      BaseAdoptor::assign_vgh(r,psi,dpsi,grad_grad_psi,0,myV.size()/2);
     }
     else
       BaseAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);

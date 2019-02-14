@@ -202,10 +202,10 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first = 0, int last = -1) const
+  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last>kPoints.size() ? kPoints.size() : last;
 
     const ST x=r[0], y=r[1], z=r[2];
     const ST* restrict kx=myKcart.data(0);
@@ -286,10 +286,10 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   /** assign_vgl
    */
   template<typename VV, typename GV>
-  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1) const
+  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last > kPoints.size() ? kPoints.size() : last;
 
     constexpr ST zero(0);
     constexpr ST two(2);
@@ -441,10 +441,10 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first = 0, int last = -1) const
+  void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last>kPoints.size() ? kPoints.size() : last;
 
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
