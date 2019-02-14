@@ -451,13 +451,13 @@ public:
     }
   }
 
-  /** block the fallback implementation SPOSet::evaluateValues which is not correct for AoS LCAO.
+  /** block the fallback implementation SPOSet::evaluateDetRatios which is not correct for AoS LCAO.
    *  AoS LCAO code path requires resetTargetParticleSet to change the pointer to ParticleSet inside myBasisSet.
    *  This is one of the severe problems in the aging AoS LCAO.
    */
-  void evaluateValues(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
+  void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
   {
-    APP_ABORT("LCOrbitalSet::evaluateValues() not implemented in AoS LCAO! Avoid using the batched algorithm or use SoA LCAO.\n");
+    APP_ABORT("LCOrbitalSet::evaluateDetRatios() not implemented in AoS LCAO! Avoid using the batched algorithm or use SoA LCAO.\n");
   }
 
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last

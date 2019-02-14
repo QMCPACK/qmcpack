@@ -763,8 +763,8 @@ template<class BS> class LCOrbitalSetOpt : public SPOSet {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  An evaluate function that has not yet been implemented.
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    void evaluateValues(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios) {
-      throw std::runtime_error("LCOrbitalSetOpt::evaluateValues() not implemented in AoS LCAO! Avoid using the batched algorithm.");
+    void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios) {
+      throw std::runtime_error("LCOrbitalSetOpt::evaluateDetRatios() not implemented in AoS LCAO! Avoid using the batched algorithm.");
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////

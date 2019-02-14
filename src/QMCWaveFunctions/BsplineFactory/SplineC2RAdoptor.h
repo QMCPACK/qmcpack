@@ -269,7 +269,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV, typename RT>
-  inline void evaluateValues(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
+  inline void evaluateDetRatios(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
     const bool need_resize = ratios_private.rows()<VP.getTotalNum();
 

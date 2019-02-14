@@ -121,7 +121,7 @@ namespace qmcplusplus
       }
     }
 
-  void LCAOrbitalSet::evaluateValues(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
+  void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
   {
     Vector<ValueType> vTemp(Temp.data(0),BasisSetSize);
     Vector<ValueType> invTemp(Temp.data(1),BasisSetSize);

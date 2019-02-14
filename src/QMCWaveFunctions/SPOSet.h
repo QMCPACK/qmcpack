@@ -200,7 +200,7 @@ public:
 
   /** reset the target particleset
    *  this is used to reset the pointer to ion-electron distance table needed by LCAO basis set.
-   *  Ye: Only AoS needs it, SoA LCAO doesn't need this. Reseting pointers is a very hard to maintain state machine.
+   *  Ye: Only AoS needs it, SoA LCAO doesn't need this. Reseting pointers is a state machine very hard to maintain.
    *  This interface should be removed with AOS.
    */
   virtual void resetTargetParticleSet(ParticleSet& P)=0;
@@ -238,7 +238,7 @@ public:
    * @param ratios return determinant ratios
    */
   virtual void
-  evaluateValues(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios);
+  evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios);
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet

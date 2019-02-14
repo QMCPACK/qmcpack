@@ -40,7 +40,7 @@ SPOSet::SPOSet()
 #endif
 }
 
-void SPOSet::evaluateValues(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
+void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
 {
   assert(psi.size() == psiinv.size());
   for(int iat=0; iat<VP.getTotalNum(); ++iat)

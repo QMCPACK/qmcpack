@@ -270,7 +270,7 @@ void DiracDeterminant::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueT
 {
   ValueVector_t psiM_row(psiM[VP.refPtcl-FirstIndex], psiM.cols());
   SPOVTimer.start();
-  Phi->evaluateValues(VP, psiV, psiM_row, ratios);
+  Phi->evaluateDetRatios(VP, psiV, psiM_row, ratios);
   SPOVTimer.stop();
 }
 

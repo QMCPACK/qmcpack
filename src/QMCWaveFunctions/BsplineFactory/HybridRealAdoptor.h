@@ -118,7 +118,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   }
 
   template<typename VV, typename RT>
-  inline void evaluateValues(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
+  inline void evaluateDetRatios(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
     if(VP.isOnSphere() && HybridBase::is_batched_safe(VP))
     {
@@ -126,7 +126,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
       psi_AO.resize(psi.size());
       if(multi_myV.rows()<VP.getTotalNum()) multi_myV.resize(VP.getTotalNum(), myV.size());
       std::vector<int> bc_signs(VP.getTotalNum());
-      const RealType smooth_factor=HybridBase::evaluateValuesR2R(VP, PrimLattice, HalfG, multi_myV, bc_signs);
+      const RealType smooth_factor=HybridBase::evaluateDetRatiosR2R(VP, PrimLattice, HalfG, multi_myV, bc_signs);
       const RealType cone(1);
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
