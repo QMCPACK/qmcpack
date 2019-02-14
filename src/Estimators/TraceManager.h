@@ -1398,7 +1398,7 @@ struct TraceBuffer
       complex_samples->register_hdf_data(f);
     f.pop();
     f.pop();
-    if(!f.group_id.empty())
+    if(!f.open_groups())
       APP_ABORT("TraceBuffer<"+type+">::register_hdf_data() some hdf groups are still open at the end of registration");
     hdf_file_pointer = 0;
   }

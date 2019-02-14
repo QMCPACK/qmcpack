@@ -285,7 +285,7 @@ bool SPOSet::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
     char name[72];
     sprintf(name,"%s%d","/KPTS_0/eigenset_",setVal);
     setname=name;
-    if(!hin.read(Ctemp,setname))
+    if(!hin.readEntry(Ctemp,setname))
     {
        setname="SPOSet::putFromH5 Missing "+setname+" from HDF5 File.";
        APP_ABORT(setname.c_str());

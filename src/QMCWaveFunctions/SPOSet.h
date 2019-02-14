@@ -362,6 +362,13 @@ public:
     return true;
   }
 
+  /** finalize the construction of SPOSet
+   *
+   * for example, classes serving accelerators may need to transfer data from host to device
+   * after the host side objects are built.
+   */
+  virtual void finalizeConstruction() { }
+
   // Routine to set up data for the LCOrbitalSetOpt child class specifically
   // Should be left empty for other derived classes
   // Ye: This interface should be removed with AoS.
@@ -374,7 +381,6 @@ public:
 
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
-  virtual void initGPU() {  }
 
   //////////////////////////////////////////
   // Walker-parallel vectorized functions //

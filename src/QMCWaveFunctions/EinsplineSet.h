@@ -397,7 +397,7 @@ public:
                             ComplexHessMatrix_t& grad_grad_psi,
                             ComplexGGGMatrix_t& grad_grad_grad_logdet);
 #ifdef QMC_CUDA
-  GPU_XRAY_TRACE void  initGPU();
+  GPU_XRAY_TRACE void  finalizeConstruction();
 
   // Vectorized evaluation functions
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
@@ -573,7 +573,7 @@ protected:
   GPU_XRAY_TRACE void  sort_electrons(std::vector<PosType> &pos);
 
 public:
-  GPU_XRAY_TRACE void  initGPU();
+  GPU_XRAY_TRACE void  finalizeConstruction();
   //    void registerTimers();
 
   // Resize cuda objects
