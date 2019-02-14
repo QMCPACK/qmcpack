@@ -163,7 +163,7 @@ public:
     {
       m_grid->updateForQuintic(r,false);
     }
-    int Loc(m_grid->currentIndex());
+    int Loc = m_grid->locate(r);
     return m_grid->quinticInterpolate(m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc]);
   }
 
@@ -183,7 +183,7 @@ public:
     {
       m_grid->updateForQuintic(r,true);
     }
-    int Loc(m_grid->currentIndex());
+    int Loc = m_grid->locate(r);
     return m_grid->quinticInterpolate(m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc],du,d2u);
   }
 
@@ -203,7 +203,7 @@ public:
     {
       m_grid->updateForQuintic(r,true);
     }
-    int Loc(m_grid->currentIndex());
+    int Loc = m_grid->locate(r);
     return m_grid->quinticInterpolate(m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc],du,d2u,d3u);
   }
 

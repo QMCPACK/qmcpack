@@ -217,7 +217,7 @@ public:
     {
       m_grid->updateSecondOrder(r,false);
     }
-    int Loc(m_grid->currentIndex());
+    int Loc = m_grid->locate(r);
     return m_grid->cubicInterpolateSecond(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1]);
   }
 
@@ -248,7 +248,7 @@ public:
     {
       m_grid->updateSecondOrder(r,true);
     }
-    int Loc(m_grid->currentIndex());
+    int Loc = m_grid->locate(r);
     return
       m_grid->cubicInterpolateSecond(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
   }
@@ -281,7 +281,7 @@ public:
     {
       m_grid->updateSecondOrder(r,true);
     }
-    int Loc(m_grid->currentIndex());
+    int Loc = m_grid->locate(r);
     // no third derivatives yet, only for templating purposes
     d3u = 0.0;
     return
