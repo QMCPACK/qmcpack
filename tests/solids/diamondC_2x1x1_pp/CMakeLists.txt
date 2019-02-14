@@ -162,22 +162,3 @@ ENDIF()
                     TRUE
                     1 DET_DIAMOND2_DMC_SCALARS # DMC
                     )
-
-  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "totenergy" "-19.89155517 0.000001")
-  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "kinetic" "20.60860539 0.000001")
-  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "potential" "-40.50016056 0.000001")
-  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "eeenergy" "-3.43523490 0.000001")
-  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "ionion" "-25.55132676 0.000001")
-  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "localecp" "-11.36788758 0.000001")
-  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "nonlocalecp" "-0.14571132 0.000001")
-  LIST(APPEND DET_DIAMOND2_RECONF_SCALARS "samples" "9.00000000 0.0")
-
-
-  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-dmc-reconf_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-                    det_qmc_short_vmc_dmc
-                    det_qmc_short_vmc_dmc_reconf.in.xml
-                    1 1
-                    TRUE
-                    1 DET_DIAMOND2_RECONF_SCALARS # DMC
-                    )
