@@ -148,12 +148,29 @@ public:
     F           = a.F;
   }
 
-  inline Td quinticInterpolate(Td cL, Td a, Td b, Td c, Td d, Td e, Td f)
+private:
+  inline Td quinticInterpolate(Td cL, Td a, Td b, Td c, Td d, Td e, Td f) const
   {
     return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
   }
 
-  inline value_type splint(point_type r)
+  inline Td quinticInterpolateSecondDeriv(Td cL, Td a, Td b, Td c, Td d, Td e, Td f, Td &du, Td &d2u) const
+  {
+    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
+    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
+    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
+  }
+
+  inline Td quinticInterpolateThirdDeriv(Td cL, Td a, Td b, Td c, Td d, Td e, Td f, Td &du, Td &d2u, Td &d3u) const
+  {
+    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
+    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
+    d3u = 6.0*d+cL*(24.0*e+cL*f*60.0);
+    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
+  }
+
+public:
+  inline value_type splint(point_type r) const
   {
     if(r<r_min)
     {
@@ -169,16 +186,9 @@ public:
     return quinticInterpolate(cL, m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc]);
   }
 
-  inline Td quinticInterpolateSecondDeriv(Td cL, Td a, Td b, Td c, Td d, Td e, Td f, Td &du, Td &d2u)
-  {
-    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
-    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
-  }
-
 
   inline value_type
-  splint(point_type r, value_type& du, value_type& d2u)
+  splint(point_type r, value_type& du, value_type& d2u) const
   {
     if(r<r_min)
     {
@@ -194,17 +204,8 @@ public:
     return quinticInterpolateSecondDeriv(cL, m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc],du,d2u);
   }
 
-  inline Td quinticInterpolateThirdDeriv(Td cL, Td a, Td b, Td c, Td d, Td e, Td f, Td &du, Td &d2u, Td &d3u)
-  {
-    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
-    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
-    d3u = 6.0*d+cL*(24.0*e+cL*f*60.0);
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
-  }
-
-
   inline value_type
-  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u)
+  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u) const
   {
     if(r<r_min)
     {
