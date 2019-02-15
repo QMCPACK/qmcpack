@@ -156,9 +156,6 @@ public:
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   ValueMatrix_t psiM, psiM_temp;
 
-  /// memory pool for temporal data
-  aligned_vector<ValueType> memoryPool;
-
   /// temporary container for testing
   ValueMatrix_t psiMinv;
 

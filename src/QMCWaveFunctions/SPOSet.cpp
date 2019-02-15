@@ -40,12 +40,13 @@ SPOSet::SPOSet()
 #endif
 }
 
-void SPOSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOmem)
+void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
 {
+  assert(psi.size() == psiinv.size());
   for(int iat=0; iat<VP.getTotalNum(); ++iat)
   {
-    ValueVector_t psi(psiM[iat],OrbitalSetSize);
     evaluate(VP,iat,psi);
+    ratios[iat] = simd::dot(psi.data(),psiinv.data(), psi.size());
   }
 }
 
@@ -284,7 +285,7 @@ bool SPOSet::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
     char name[72];
     sprintf(name,"%s%d","/KPTS_0/eigenset_",setVal);
     setname=name;
-    if(!hin.read(Ctemp,setname))
+    if(!hin.readEntry(Ctemp,setname))
     {
        setname="SPOSet::putFromH5 Missing "+setname+" from HDF5 File.";
        APP_ABORT(setname.c_str());
