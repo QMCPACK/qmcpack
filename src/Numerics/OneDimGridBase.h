@@ -50,13 +50,6 @@ struct OneDimGridBase
   ///differential spacing of the grid
   value_type Delta;
   double     DeltaInv;
-  value_type dL;
-  value_type dLinv;
-  value_type cL;
-  value_type cR;
-  value_type p1,p2,q1,q2;
-  value_type dp1,dq1,dq2;
-  value_type d2p1,d2q1,d2q2;
 
   ///array to store the radial grid data
   Array_t X;
@@ -151,28 +144,8 @@ struct OneDimGridBase
     return upper_bound;
   }
 
-
-  inline void updateSecondOrder(T r, bool all)
-  {
-    //Find Loc
-    int Loc = locate(r);
-    dL = X[Loc+1]-X[Loc];
-    dLinv = 1.0e0/dL;
-    cL = (r-X[Loc])*dLinv; //B
-    cR = (X[Loc+1]-r)*dLinv;//A
-    const T onesixth = 1.0/6.0;
-    T h6(dL*onesixth);
-    q1 = cR*(cR*cR-1.0)*h6*dL; //C
-    q2 = cL*(cL*cL-1.0)*h6*dL; //D
-    if(all)
-    {
-      dq1 = h6*(1.0-3.0*cR*cR);
-      dq2 = h6*(3.0*cL*cL-1.0);
-    }
-  }
-
   template <typename T1>
-  inline int getIndexAndDistanceFromGridPoint(T r, T1 &dist)
+  inline int getIndexAndDistanceFromGridPoint(T r, T1 &dist) const
   {
      //Find Loc
     int Loc = locate(r);
@@ -180,19 +153,9 @@ struct OneDimGridBase
     return Loc;
   }
 
-  template <typename T1>
-  inline T1 cubicInterpolateSecond(T1 y1, T1 y2, T1 d2y1, T1 d2y2)
+  inline T getGridSpacing(int Loc) const
   {
-    return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
-  }
-
-  template <typename T1>
-  inline T1 cubicInterpolateSecond(T1 y1, T1 y2, T1 d2y1, T1 d2y2,
-                                   T& du, T& d2u)
-  {
-    du = dLinv*(y2-y1)+dq1*d2y1+dq2*d2y2;
-    d2u = cR*d2y1+cL*d2y2;
-    return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
+    return X[Loc+1] - X[Loc];
   }
 
   /** evaluate the index of r
@@ -200,7 +163,7 @@ struct OneDimGridBase
    *
    * The grid index satisfies \f$ X[Loc] \ge r < X[Loc+1]\f$.
    */
-  virtual int locate(T r)=0;
+  virtual int locate(T r) const = 0;
 
   /** Set the grid given the parameters.
    *@param ri initial grid point
@@ -235,7 +198,7 @@ struct LinearGrid: public OneDimGridBase<T,CT>
     return new LinearGrid<T,CT>(*this);
   }
 
-  inline int locate(T r)
+  inline int locate(T r) const
   {
     return static_cast<int>((static_cast<double>(r)-X[0])*DeltaInv);
   }
@@ -293,7 +256,7 @@ struct LogGrid: public OneDimGridBase<T,CT>
     return new LogGrid<T,CT>(*this);
   }
 
-  inline int locate(T r)
+  inline int locate(T r) const
   {
     return static_cast<int>(std::log(r/X[0])*OneOverLogDelta);
   }
@@ -346,7 +309,7 @@ struct LogGridZero: public OneDimGridBase<T,CT>
     return new LogGridZero<T,CT>(*this);
   }
 
-  inline int locate(T r)
+  inline int locate(T r) const
   {
     return static_cast<int>(std::log(r*OneOverB+1.0)*OneOverA);
   }
@@ -423,7 +386,7 @@ struct NumericalGrid: public OneDimGridBase<T,CT>
       X.resize(n);
   }
 
-  inline int locate(T r)
+  inline int locate(T r) const
   {
     int k;
     int klo=0;
