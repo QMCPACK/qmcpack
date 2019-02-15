@@ -171,11 +171,13 @@ struct OneDimGridBase
     }
   }
 
-  inline void updateForQuintic(T r, bool all)
+  template <typename T1>
+  inline int getIndexAndDistanceFromGridPoint(T r, T1 &dist)
   {
-    //Find Loc
+     //Find Loc
     int Loc = locate(r);
-    cL = (r-X[Loc]);
+    dist = (r-X[Loc]);
+    return Loc;
   }
 
   template <typename T1>
@@ -191,29 +193,6 @@ struct OneDimGridBase
     du = dLinv*(y2-y1)+dq1*d2y1+dq2*d2y2;
     d2u = cR*d2y1+cL*d2y2;
     return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
-  }
-
-  template <typename T1>
-  inline T1 quinticInterpolate(T1 a, T1 b, T1 c, T1 d, T1 e, T1 f)
-  {
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
-  }
-
-  template <typename T1>
-  inline T1 quinticInterpolate(T1 a, T1 b, T1 c, T1 d, T1 e, T1 f, T1 &du, T1 &d2u)
-  {
-    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
-    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
-  }
-
-  template <typename T1>
-  inline T1 quinticInterpolate(T1 a, T1 b, T1 c, T1 d, T1 e, T1 f, T1 &du, T1 &d2u, T1 &d3u)
-  {
-    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
-    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
-    d3u = 6.0*d+cL*(24.0*e+cL*f*60.0);
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
   }
 
   /** evaluate the index of r

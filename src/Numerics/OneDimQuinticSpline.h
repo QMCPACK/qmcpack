@@ -148,6 +148,11 @@ public:
     F           = a.F;
   }
 
+  inline Td quinticInterpolate(Td cL, Td a, Td b, Td c, Td d, Td e, Td f)
+  {
+    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
+  }
+
   inline value_type splint(point_type r)
   {
     if(r<r_min)
@@ -159,13 +164,18 @@ public:
       {
         return ConstValue;
       }
-    if(GridManager)
-    {
-      m_grid->updateForQuintic(r,false);
-    }
-    int Loc = m_grid->locate(r);
-    return m_grid->quinticInterpolate(m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc]);
+    Td cL;
+    int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, cL);
+    return quinticInterpolate(cL, m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc]);
   }
+
+  inline Td quinticInterpolateSecondDeriv(Td cL, Td a, Td b, Td c, Td d, Td e, Td f, Td &du, Td &d2u)
+  {
+    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
+    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
+    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
+  }
+
 
   inline value_type
   splint(point_type r, value_type& du, value_type& d2u)
@@ -179,13 +189,19 @@ public:
       {
         return ConstValue;
       }
-    if(GridManager)
-    {
-      m_grid->updateForQuintic(r,true);
-    }
-    int Loc = m_grid->locate(r);
-    return m_grid->quinticInterpolate(m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc],du,d2u);
+    Td cL;
+    int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, cL);
+    return quinticInterpolateSecondDeriv(cL, m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc],du,d2u);
   }
+
+  inline Td quinticInterpolateThirdDeriv(Td cL, Td a, Td b, Td c, Td d, Td e, Td f, Td &du, Td &d2u, Td &d3u)
+  {
+    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
+    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
+    d3u = 6.0*d+cL*(24.0*e+cL*f*60.0);
+    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
+  }
+
 
   inline value_type
   splint(point_type r, value_type& du, value_type& d2u, value_type& d3u)
@@ -199,12 +215,9 @@ public:
       {
         return ConstValue;
       }
-    if(GridManager)
-    {
-      m_grid->updateForQuintic(r,true);
-    }
-    int Loc = m_grid->locate(r);
-    return m_grid->quinticInterpolate(m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc],du,d2u,d3u);
+    Td cL;
+    int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, cL);
+    return quinticInterpolateThirdDeriv(cL, m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc],du,d2u,d3u);
   }
 
   inline
