@@ -43,8 +43,6 @@ struct OneDimGridBase
   typedef CT Array_t;
 
 
-  ///the current index of the grid
-  int Loc;
   int GridTag;
   int num_points;
   value_type lower_bound;
@@ -74,12 +72,6 @@ struct OneDimGridBase
   inline int getGridTag() const
   {
     return GridTag;
-  }
-
-  ///return the current index
-  inline int currentIndex() const
-  {
-    return Loc;
   }
 
   inline int getIndex(T r) const
@@ -163,7 +155,7 @@ struct OneDimGridBase
   inline void updateSecondOrder(T r, bool all)
   {
     //Find Loc
-    locate(r);
+    int Loc = locate(r);
     dL = X[Loc+1]-X[Loc];
     dLinv = 1.0e0/dL;
     cL = (r-X[Loc])*dLinv; //B
@@ -179,11 +171,13 @@ struct OneDimGridBase
     }
   }
 
-  inline void updateForQuintic(T r, bool all)
+  template <typename T1>
+  inline int getIndexAndDistanceFromGridPoint(T r, T1 &dist)
   {
-    //Find Loc
-    locate(r);
-    cL = (r-X[Loc]);
+     //Find Loc
+    int Loc = locate(r);
+    dist = (r-X[Loc]);
+    return Loc;
   }
 
   template <typename T1>
@@ -201,35 +195,12 @@ struct OneDimGridBase
     return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
   }
 
-  template <typename T1>
-  inline T1 quinticInterpolate(T1 a, T1 b, T1 c, T1 d, T1 e, T1 f)
-  {
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
-  }
-
-  template <typename T1>
-  inline T1 quinticInterpolate(T1 a, T1 b, T1 c, T1 d, T1 e, T1 f, T1 &du, T1 &d2u)
-  {
-    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
-    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
-  }
-
-  template <typename T1>
-  inline T1 quinticInterpolate(T1 a, T1 b, T1 c, T1 d, T1 e, T1 f, T1 &du, T1 &d2u, T1 &d3u)
-  {
-    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
-    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
-    d3u = 6.0*d+cL*(24.0*e+cL*f*60.0);
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
-  }
-
   /** evaluate the index of r
    * @param r current position
    *
    * The grid index satisfies \f$ X[Loc] \ge r < X[Loc+1]\f$.
    */
-  virtual void locate(T r)=0;
+  virtual int locate(T r)=0;
 
   /** Set the grid given the parameters.
    *@param ri initial grid point
@@ -251,7 +222,6 @@ template <class T, class CT=Vector<T> >
 struct LinearGrid: public OneDimGridBase<T,CT>
 {
 
-  using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::num_points;
   using OneDimGridBase<T,CT>::lower_bound;
@@ -265,9 +235,9 @@ struct LinearGrid: public OneDimGridBase<T,CT>
     return new LinearGrid<T,CT>(*this);
   }
 
-  inline void locate(T r)
+  inline int locate(T r)
   {
-    Loc = static_cast<int>((static_cast<double>(r)-X[0])*DeltaInv);
+    return static_cast<int>((static_cast<double>(r)-X[0])*DeltaInv);
   }
 
   inline void set(T ri, T rf, int n)
@@ -309,7 +279,6 @@ template <class T, class CT=Vector<T> >
 struct LogGrid: public OneDimGridBase<T,CT>
 {
 
-  using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::num_points;
   using OneDimGridBase<T,CT>::lower_bound;
@@ -324,9 +293,9 @@ struct LogGrid: public OneDimGridBase<T,CT>
     return new LogGrid<T,CT>(*this);
   }
 
-  inline void locate(T r)
+  inline int locate(T r)
   {
-    Loc = static_cast<int>(std::log(r/X[0])*OneOverLogDelta);
+    return static_cast<int>(std::log(r/X[0])*OneOverLogDelta);
   }
 
   inline void set(T ri, T rf, int n)
@@ -363,7 +332,6 @@ template <class T, class CT=Vector<T> >
 struct LogGridZero: public OneDimGridBase<T,CT>
 {
 
-  using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::num_points;
   using OneDimGridBase<T,CT>::lower_bound;
@@ -378,9 +346,9 @@ struct LogGridZero: public OneDimGridBase<T,CT>
     return new LogGridZero<T,CT>(*this);
   }
 
-  inline void locate(T r)
+  inline int locate(T r)
   {
-    Loc= static_cast<int>(std::log(r*OneOverB+1.0)*OneOverA);
+    return static_cast<int>(std::log(r*OneOverB+1.0)*OneOverA);
   }
 
   /** the meaing of ri/rf are different from the convetions of other classes
@@ -412,7 +380,6 @@ template <class T, class CT=Vector<T> >
 struct NumericalGrid: public OneDimGridBase<T,CT>
 {
 
-  using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::num_points;
   using OneDimGridBase<T,CT>::lower_bound;
@@ -456,7 +423,7 @@ struct NumericalGrid: public OneDimGridBase<T,CT>
       X.resize(n);
   }
 
-  inline void locate(T r)
+  inline int locate(T r)
   {
     int k;
     int klo=0;
@@ -470,7 +437,7 @@ struct NumericalGrid: public OneDimGridBase<T,CT>
       else
         klo=k;
     }
-    Loc= klo;
+    return klo;
   }
 
   inline void set(T ri, T rf, int n)
