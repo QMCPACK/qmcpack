@@ -55,7 +55,6 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   using gContainer_type=VectorSoaContainer<ST,3>;
   using hContainer_type=VectorSoaContainer<ST,6>;
   using ghContainer_type=VectorSoaContainer<ST,10>;
-  using vghghOffloadContainer_type=VectorSoaContainer<ST, 20, ALIGN, OffloadAllocator>;
 
   using BaseType::first_spo;
   using BaseType::last_spo;
@@ -81,10 +80,10 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   gContainer_type myG;
   hContainer_type myH;
   ghContainer_type mygH;
-  vghghOffloadContainer_type myVGHGH;
 
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT> ratios_private;
+  Vector<ST,OffloadAllocator> myVGHGH;
 
   SplineC2ROMP(): BaseType(), nComplexBands(0), SplineInst(nullptr), MultiSpline(nullptr)
   {
@@ -100,7 +99,6 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   {
     const size_t n=a.myL.size();
     myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n); mygH.resize(n);
-    myVGHGH.resize(n);
   }
 
   ~SplineC2ROMP()
@@ -117,7 +115,6 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     myL.resize(npad);
     myH.resize(npad);
     mygH.resize(npad);
-    myVGHGH.resize(npad);
   }
 
   void bcast_tables(Communicate* comm)
@@ -564,6 +561,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     const int ChunkSizePerTeam = 128;
     const int NumTeams = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
+    if(myVGHGH.size()<myV.size()*10)
+      myVGHGH.resize(myV.size()*10);
     // Ye: need to extract sizes and pointers before entering target region
     const auto* spline_ptr = SplineInst->spline_m;
     const auto x = ru[0], y = ru[1], z = ru[2];
