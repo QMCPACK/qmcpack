@@ -57,14 +57,10 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     SplineAdoptor::evaluate_v(P,iat,psi);
   }
 
-  inline void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
+  inline void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
   {
-    SplineAdoptor::evaluateValues(VP, psiM, SPOMem);
-  }
-
-  inline size_t estimateMemory(const int nP)
-  {
-    return SplineAdoptor::estimateMemory(nP);
+    assert(psi.size() == psiinv.size());
+    SplineAdoptor::evaluateDetRatios(VP, psi, psiinv, ratios);
   }
 
   inline void finalizeConstruction()

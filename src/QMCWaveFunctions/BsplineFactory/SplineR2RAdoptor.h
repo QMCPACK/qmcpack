@@ -68,6 +68,9 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   hContainer_type myH;
   ghContainer_type mygH;
 
+  ///thread private ratios for reduction when using nested threading, numVP x numThread
+  Matrix<TT> ratios_private;
+
   SplineR2RSoA(): BaseType(), SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=false;
@@ -173,10 +176,10 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(int bc_sign, const vContainer_type& myV, VV& psi, int first = 0, int last = -1) const
+  inline void assign_v(int bc_sign, const vContainer_type& myV, VV& psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last>kPoints.size() ? kPoints.size() : last;
 
     const ST signed_one = (bc_sign &1)? -1:1;
     #pragma omp simd
@@ -204,38 +207,53 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     }
   }
 
-  template<typename VM, typename VAV>
-  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
+  template<typename VV, typename RT>
+  inline void evaluateDetRatios(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
+    const bool need_resize = ratios_private.rows()<VP.getTotalNum();
+
     #pragma omp parallel
     {
+      int tid = omp_get_thread_num();
+      // initialize thread private ratios
+      if(need_resize)
+      {
+        if (tid==0) // just like #pragma omp master, but one fewer call to the runtime
+          ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
+        #pragma omp barrier
+      }
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(),
-                        omp_get_num_threads(),
-                        omp_get_thread_num(),
+                        omp_get_num_threads(), tid,
                         first, last);
+      const int last_real = kPoints.size() < last ? kPoints.size() : last;
 
-      const size_t m=psiM.cols();
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
         const PointType& r=VP.activeR(iat);
         PointType ru;
         int bc_sign=convertPos(r,ru);
-        Vector<TT> psi(psiM[iat],m);
 
         spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
-        assign_v(bc_sign,myV,psi,first,last);
+        assign_v(bc_sign,myV,psi,first,last_real);
+        ratios_private[iat][tid] = simd::dot(psi.data()+first,psiinv.data()+first, last_real-first);
       }
+    }
+
+    // do the reduction manually
+    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    {
+      ratios[iat] = TT(0);
+      for(int tid = 0; tid < ratios_private.cols(); tid++)
+        ratios[iat] += ratios_private[iat][tid];
     }
   }
 
-  inline size_t estimateMemory(const int nP) { return 0; }
-
   template<typename VV, typename GV>
-  inline void assign_vgl(int bc_sign, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1) const
+  inline void assign_vgl(int bc_sign, VV& psi, GV& dpsi, VV& d2psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last>kPoints.size() ? kPoints.size() : last;
 
     const ST signed_one = (bc_sign &1)? -1:1;
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
@@ -308,10 +326,10 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first = 0, int last = -1) const
+  void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last>kPoints.size() ? kPoints.size() : last;
 
     const ST signed_one = (bc_sign &1)? -1:1;
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
