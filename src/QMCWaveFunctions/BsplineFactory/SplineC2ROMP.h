@@ -186,8 +186,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
 
     // transfer static data to GPU
     mKK_ptr = mKK.data();
-    PRAGMA_OMP("omp target enter data map(alloc:mKK_ptr[0:mK.size()])")
-    PRAGMA_OMP("omp target update to(myKcart_ptr[0:mK.size()])")
+    PRAGMA_OMP("omp target enter data map(alloc:mKK_ptr[0:mKK.size()])")
+    PRAGMA_OMP("omp target update to(myKcart_ptr[0:mKK.size()])")
     myKcart_ptr = myKcart.data();
     PRAGMA_OMP("omp target enter data map(alloc:myKcart_ptr[0:myKcart.capacity()*3])")
     PRAGMA_OMP("omp target update to(myKcart_ptr[0:myKcart.capacity()*3])")
@@ -380,7 +380,11 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     const ST* restrict h12 = offload_scratch_ptr + spline_padded_size*8;
     const ST* restrict h22 = offload_scratch_ptr + spline_padded_size*9;
 
+#ifdef ENABLE_OFFLOAD
+    #pragma omp for nowait
+#else
     #pragma omp simd
+#endif
     for (size_t j=first; j<last; j++)
     {
       const size_t jr=j<<1;
@@ -569,10 +573,15 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     const auto* spline_ptr = SplineInst->spline_m;
     const auto* ru_ptr = ru.data();
     auto* offload_scratch_ptr = offload_scratch.data();
+    auto* psi_ptr = psi.data();
+    auto* dpsi_ptr = dpsi[0].data();
+    auto* d2psi_ptr = d2psi.data();
     const auto x = r[0], y = r[1], z = r[2];
     const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
+    const auto myKcart_padded_size = myKcart.capacity();
+    const auto orb_size = psi.size();
     PRAGMA_OMP("omp target teams num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
-                map(always,from:offload_scratch_ptr[0:padded_size*10])")
+                map(from:psi_ptr[0:orb_size],dpsi_ptr[0:orb_size*3],d2psi_ptr[0:orb_size])")
     {
       PRAGMA_OMP("omp distribute")
       for(int team_id = 0; team_id < NumTeams; team_id++)
@@ -580,13 +589,15 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
         int first = ChunkSizePerTeam * team_id;
         int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam ;
         PRAGMA_OMP("omp parallel")
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, rux, ruy, ruz,
-                                             offload_scratch_ptr+first,
-                                             offload_scratch_ptr+padded_size+first,
-                                             offload_scratch_ptr+padded_size*4+first,
-                                             padded_size, first, last);
-        assign_vgl(x, y, z, psi.data(), dpsi[0].data(), d2psi.data(), psi.size(),
-                   offload_scratch_ptr, padded_size, myKcart.capacity(), first/2, last/2);
+        {
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, rux, ruy, ruz,
+                                               offload_scratch_ptr+first,
+                                               offload_scratch_ptr+padded_size+first,
+                                               offload_scratch_ptr+padded_size*4+first,
+                                               padded_size, first, last);
+          assign_vgl(x, y, z, psi_ptr, dpsi_ptr, d2psi_ptr, orb_size,
+                     offload_scratch_ptr, padded_size, myKcart_padded_size, first/2, last/2);
+        }
       }
     }
   }
