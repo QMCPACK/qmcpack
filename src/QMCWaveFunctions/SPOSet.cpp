@@ -40,12 +40,13 @@ SPOSet::SPOSet()
 #endif
 }
 
-void SPOSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOmem)
+void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
 {
+  assert(psi.size() == psiinv.size());
   for(int iat=0; iat<VP.getTotalNum(); ++iat)
   {
-    ValueVector_t psi(psiM[iat],OrbitalSetSize);
     evaluate(VP,iat,psi);
+    ratios[iat] = simd::dot(psi.data(),psiinv.data(), psi.size());
   }
 }
 
