@@ -153,11 +153,6 @@ struct OneDimGridBase
     return Loc;
   }
 
-  inline T getGridSpacing(int Loc) const
-  {
-    return X[Loc+1] - X[Loc];
-  }
-
   /** evaluate the index of r
    * @param r current position
    *

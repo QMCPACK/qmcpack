@@ -259,7 +259,7 @@ public:
 
     value_type dist;
     int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
-    value_type dL = m_grid->getGridSpacing(Loc);
+    value_type dL = m_grid->dr(Loc);
     CubicSplineEvaluator<value_type> eval(dist, dL);
     return eval.cubicInterpolate(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1]);
   }
@@ -289,7 +289,7 @@ public:
       }
     value_type dist;
     int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
-    value_type dL = m_grid->getGridSpacing(Loc);
+    value_type dL = m_grid->dr(Loc);
     CubicSplineEvaluator<value_type> eval(dist, dL);
     return eval.cubicInterpolateSecondDeriv(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
   }
@@ -323,7 +323,7 @@ public:
 
     value_type dist;
     int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
-    value_type dL = m_grid->getGridSpacing(Loc);
+    value_type dL = m_grid->dr(Loc);
     CubicSplineEvaluator<value_type> eval(dist, dL);
     return eval.cubicInterpolateSecondDeriv(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
   }
