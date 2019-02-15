@@ -21,7 +21,7 @@
 #define QMCPLUSPLUS_GRID_FUNCTOR_CUBIC_SPLINE_H
 
 #include "Numerics/OneDimGridFunctor.h"
-#include "Numerics/NRSplineFunctions.h"
+#include "Numerics/SplineSolvers.h"
 
 namespace qmcplusplus
 {
@@ -307,7 +307,7 @@ public:
     int npts(this->size());
     m_Y2.resize(npts);
     m_Y2 = 0.0;
-    NRCubicSpline(m_grid->data()+imin, m_Y.data()+imin,
+    CubicSplineSolve(m_grid->data()+imin, m_Y.data()+imin,
                   npts-imin, yp1, ypn, m_Y2.data()+imin);
     ConstValue=m_Y[imax];
     //FirstAddress[0]=m_Y.data()+imin;

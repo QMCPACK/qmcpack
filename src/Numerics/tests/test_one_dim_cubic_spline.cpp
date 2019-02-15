@@ -28,7 +28,7 @@ TEST_CASE("spline_function_1", "[numerics]")
   double y[n] = {1.0, 2.0, 1.5};
   double y2[n];
 
-  NRCubicSpline(x, y, n, 1e+33, 1e+33, y2);
+  CubicSplineSolve(x, y, n, 1e+33, 1e+33, y2);
 
   REQUIRE(y2[0] == Approx(0));
   REQUIRE(y2[1] == Approx(-2.25));
@@ -44,7 +44,7 @@ TEST_CASE("spline_function_2", "[numerics]")
   double y[n] = {1.0, 2.0, 1.5};
   double y2[n];
 
-  NRCubicSpline(x, y, n, 1e+33, 1.0, y2);
+  CubicSplineSolve(x, y, n, 1e+33, 1.0, y2);
 
   REQUIRE(y2[0] == Approx(0));
   REQUIRE(y2[1] == Approx(-3.85714));
@@ -60,7 +60,7 @@ TEST_CASE("spline_function_3", "[numerics]")
   double y[n] = {1.0, 2.0, 1.5};
   double y2[n];
 
-  NRCubicSpline(x, y, n, 1.0, 2.0, y2);
+  CubicSplineSolve(x, y, n, 1.0, 2.0, y2);
 
   REQUIRE(y2[0] == Approx(2.75));
   REQUIRE(y2[1] == Approx(-5.5));
@@ -76,7 +76,7 @@ TEST_CASE("spline_function_4", "[numerics]")
   double y[n] = {1.0, 2.0, 1.5, 1.8};
   double y2[n];
 
-  NRCubicSpline(x, y, n, 1e+33, 1e+33, y2);
+  CubicSplineSolve(x, y, n, 1e+33, 1e+33, y2);
 
   REQUIRE(y2[0] == Approx(0));
   REQUIRE(y2[1] == Approx(-2.12121));
@@ -93,7 +93,7 @@ TEST_CASE("spline_function_5", "[numerics]")
   double y[n] = {1.0, 2.0, 1.5, 1.8};
   double y2[n];
 
-  NRCubicSpline(x, y, n, 0.0, 1.0, y2);
+  CubicSplineSolve(x, y, n, 0.0, 1.0, y2);
 
   REQUIRE(y2[0] == Approx(3.60507));
   REQUIRE(y2[1] == Approx(-3.04348));
