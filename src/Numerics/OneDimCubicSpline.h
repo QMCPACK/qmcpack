@@ -139,7 +139,7 @@ public:
   }
 
   template <typename T1>
-  inline T1 cubicInterpolate(T1 y1, T1 y2, T1 d2y1, T1 d2y2)
+  inline T1 cubicInterpolate(T1 y1, T1 y2, T1 d2y1, T1 d2y2) const
   {
     return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
   }
