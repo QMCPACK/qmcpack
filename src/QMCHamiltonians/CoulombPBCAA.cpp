@@ -406,8 +406,7 @@ CoulombPBCAA::evalSR(ParticleSet& P)
   mRealType SR=0.0;
   if(d_aa.DTType == DT_SOA)
   {
-    // Ye: the threading will be enabled when splint is thread safe.
-    //#pragma omp parallel for reduction(+:SR)
+    #pragma omp parallel for reduction(+:SR)
     for(size_t ipart=1; ipart<(NumCenters/2+1); ipart++)
     {
       mRealType esum = 0.0;
