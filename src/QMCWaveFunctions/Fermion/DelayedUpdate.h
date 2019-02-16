@@ -203,11 +203,32 @@ namespace qmcplusplus {
         }
         else
         {
+          const int block_size = 256;
+          const int num_block = (norb+block_size-1)/block_size;
           const int lda_Binv=Binv.cols();
-          BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
+
+          //BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
+          for(int ix=0; ix<num_block; ix++)
+          {
+            int x_offset = ix*block_size;
+            BLAS::gemm('T', 'N', delay_count, std::min(norb-x_offset,block_size), norb, cone, U.data(), norb, Ainv[x_offset], norb, czero, tempMat[x_offset], lda_Binv);
+          }
           for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
-          BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
-          BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
+          //BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
+          for(int iy=0; iy<num_block; iy++)
+          {
+            int y_offset = iy*block_size;
+            BLAS::gemm('N', 'N', std::min(norb-y_offset,block_size), delay_count, delay_count, cone, V.data()+y_offset, norb, Binv.data(), lda_Binv, czero, U.data()+y_offset, norb);
+          }
+          //BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
+          for(int iy=0; iy<num_block; iy++)
+            for(int ix=0; ix<num_block; ix++)
+            {
+              int x_offset = ix*block_size;
+              int y_offset = iy*block_size;
+              BLAS::gemm('N', 'N', std::min(norb-y_offset,block_size), std::min(norb-x_offset,block_size), delay_count,
+                         -cone, U.data()+y_offset, norb, tempMat[x_offset], lda_Binv, cone, Ainv[x_offset]+y_offset, norb);
+            }
         }
         delay_count = 0;
       }
