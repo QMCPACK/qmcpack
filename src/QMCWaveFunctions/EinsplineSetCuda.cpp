@@ -700,6 +700,7 @@ EinsplineSetExtended<T>::get_split_spline_pointers()
 {
   split_splines=(gpu::device_group_size>1);
   int size = OHMMS::Controller->size(); // how many MPI ranks
+#ifdef HAVE_MPI
   if ((size>1) && split_splines)
   {
     app_log() << "Gathering einspline GPU memory pointers from all ranks.\n";
@@ -753,6 +754,7 @@ EinsplineSetExtended<T>::get_split_spline_pointers()
     std::cerr << "\n";
 #endif
   }
+#endif
 }
 
 template<typename T> void
@@ -2468,7 +2470,7 @@ EinsplineSetHybrid<std::complex<double> >::evaluate
 }
 
 template<> void
-EinsplineSetExtended<double>::initGPU()
+EinsplineSetExtended<double>::finalizeConstruction()
 {
   app_log() << "Copying einspline orbitals to GPU.\n";
   create_multi_UBspline_3d_cuda
@@ -2504,7 +2506,7 @@ EinsplineSetExtended<double>::initGPU()
 }
 
 template<> void
-EinsplineSetExtended<std::complex<double> >::initGPU()
+EinsplineSetExtended<std::complex<double> >::finalizeConstruction()
 {
   app_log() << "Copying einspline orbitals to GPU.\n";
   create_multi_UBspline_3d_cuda
@@ -2542,9 +2544,9 @@ EinsplineSetExtended<std::complex<double> >::initGPU()
 
 
 template<> void
-EinsplineSetHybrid<double>::initGPU()
+EinsplineSetHybrid<double>::finalizeConstruction()
 {
-  EinsplineSetExtended<double>::initGPU();
+  EinsplineSetExtended<double>::finalizeConstruction();
   // Setup B-spline Acuda matrix in constant memory
   init_atomic_cuda();
   gpu::host_vector<AtomicOrbitalCuda<CTS::RealType> > AtomicOrbitals_CPU;
@@ -2619,9 +2621,9 @@ EinsplineSetHybrid<double>::initGPU()
 }
 
 template<> void
-EinsplineSetHybrid<std::complex<double> >::initGPU()
+EinsplineSetHybrid<std::complex<double> >::finalizeConstruction()
 {
-  EinsplineSetExtended<std::complex<double> >::initGPU();
+  EinsplineSetExtended<std::complex<double> >::finalizeConstruction();
   // Setup B-spline Acuda matrix in constant memory
   init_atomic_cuda();
   gpu::host_vector<AtomicOrbitalCuda<CTS::RealType> > AtomicOrbitals_CPU;

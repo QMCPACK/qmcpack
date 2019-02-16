@@ -16,7 +16,12 @@
  */
 #ifndef QMCPLUSPLUS_BSPLINE_SPLINE2_TRAITS_H
 #define QMCPLUSPLUS_BSPLINE_SPLINE2_TRAITS_H
-#include <einspline/multi_bspline.h>
+
+
+#include "einspline/bspline_base.h"
+#include "einspline/bspline_structs.h"
+#include "einspline/multi_bspline_structs.h"
+
 namespace qmcplusplus
 {
   /** trait class to map (datatype,D) to Einspline engine type */
@@ -30,6 +35,9 @@ namespace qmcplusplus
       typedef BCtype_s            BCType;
       typedef float real_type;
       typedef float value_type;
+      static const spline_code spcode = MULTI_U3D;
+      static const spline_code single_spcode = U3D;
+      static const type_code tcode = SINGLE_REAL;
     };
 
   template<>
@@ -40,6 +48,9 @@ namespace qmcplusplus
       typedef BCtype_d            BCType;
       typedef double real_type;
       typedef double value_type;
+      static const spline_code spcode = MULTI_U3D;
+      static const spline_code single_spcode = U3D;
+      static const type_code tcode = DOUBLE_REAL;
     };
 
   /** specialization for 1D float */

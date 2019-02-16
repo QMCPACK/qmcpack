@@ -206,12 +206,34 @@ namespace MatrixOperators
     BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
   }
 
+  /** static function to perform y = A^t x for generic matrix and vector
+   */
+  template<typename T>
+  inline void product_Atx(const Matrix<T>& A, const Vector<T>& x, T* restrict yptr)
+  {
+    const char transa = 'N';
+    const T one=1.0;
+    const T zero=0.0;
+    BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
+  }
+
   /** static function to perform y=Ax for generic matrix and vector
    */
   template<typename T>
   inline void product(const Matrix<T>& A, const T* restrict xptr, T* restrict yptr)
   {
     const char transa = 'T';
+    const T one=1.0;
+    const T zero=0.0;
+    BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), xptr, 1, zero, yptr, 1);
+  }
+
+  /** static function to perform y = A^t x for generic matrix and vector
+   */
+  template<typename T>
+  inline void product_Atx(const Matrix<T>& A, const T* restrict xptr, T* restrict yptr)
+  {
+    const char transa = 'N';
     const T one=1.0;
     const T zero=0.0;
     BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), xptr, 1, zero, yptr, 1);

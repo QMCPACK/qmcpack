@@ -19,7 +19,7 @@
 
 #include <Particle/DistanceTableData.h>
 #include <QMCWaveFunctions/lcao/SoaSphericalTensor.h>
-#include <spline2/MultiBspline.hpp>
+#include <spline2/MultiBspline1D.hpp>
 
 namespace qmcplusplus
 {
@@ -140,24 +140,24 @@ struct AtomicOrbitalSoA
     int lmax_in, spline_npoints_in;
     ST spline_radius_in;
     bool success=true;
-    success = success && h5f.read(lmax_in, "l_max");
-    success = success && h5f.read(spline_radius_in, "spline_radius");
-    success = success && h5f.read(spline_npoints_in, "spline_npoints");
+    success = success && h5f.readEntry(lmax_in, "l_max");
+    success = success && h5f.readEntry(spline_radius_in, "spline_radius");
+    success = success && h5f.readEntry(spline_npoints_in, "spline_npoints");
     if(lmax_in!=lmax) return false;
     if(spline_radius_in!=spline_radius) return false;
     if(spline_npoints_in!=spline_npoints) return false;
-    return success && h5f.read(bigtable,"radial_spline");
+    return success && h5f.readEntry(bigtable,"radial_spline");
   }
 
   bool write_splines(hdf_archive& h5f)
   {
     bool success=true;
-    success = success && h5f.write(spline_radius, "spline_radius");
-    success = success && h5f.write(spline_npoints, "spline_npoints");
-    success = success && h5f.write(lmax, "l_max");
-    success = success && h5f.write(pos, "position");
+    success = success && h5f.writeEntry(spline_radius, "spline_radius");
+    success = success && h5f.writeEntry(spline_npoints, "spline_npoints");
+    success = success && h5f.writeEntry(lmax, "l_max");
+    success = success && h5f.writeEntry(pos, "position");
     einspline_engine<AtomicSplineType> bigtable(MultiSpline);
-    success = success && h5f.write(bigtable,"radial_spline");
+    success = success && h5f.writeEntry(bigtable,"radial_spline");
     return success;
   }
 
@@ -471,7 +471,7 @@ struct HybridAdoptorBase
     size_t ncenter;
 
     success = success && h5f.push("atomic_centers",false);
-    success = success && h5f.read(ncenter,"number_of_centers");
+    success = success && h5f.readEntry(ncenter,"number_of_centers");
     if(!success) return success;
     if(ncenter!=AtomicCenters.size()) success=false;
     // read splines of each center
@@ -492,7 +492,7 @@ struct HybridAdoptorBase
     bool success=true;
     int ncenter=AtomicCenters.size();
     success = success && h5f.push("atomic_centers",true);
-    success = success && h5f.write(ncenter,"number_of_centers");
+    success = success && h5f.writeEntry(ncenter,"number_of_centers");
     // write splines of each center
     for(int ic=0; ic<AtomicCenters.size(); ic++)
     {
