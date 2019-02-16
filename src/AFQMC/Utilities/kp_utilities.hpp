@@ -14,6 +14,9 @@
 #define AFQMC_KP_UTILITIES_HPP
 
 #include<algorithm>
+#include "AFQMC/Numerics/ma_operations.hpp"
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
 
 /*
  * Return true if PsiT is in block diagonal form, otherwise return false;
@@ -114,6 +117,97 @@ Array get_PsiK(Vector const& nmo_per_kp, CSR const& PsiT, int K)
   return A;
 }
 
+/*
+ * Checks if the 2-electron integrals remain invariant under the symmetry assumption: L_IJ_n = conj(L_JI_n)
+ *  when Q==kminus[Q]
+ */
+template<class T1, class shmIMatrix, class IVector>
+bool check_cholesky_symmetry(T1 const& LQKikn, IVector const& nmo_per_kp, IVector const& nchol_per_kp,
+                             shmIMatrix const& QKtok2, IVector const& kminus)
+{
+  std::cout<<" Checking kpoint cholesky symmetry. \n";
+  using ComplexType = typename T1::value_type::element;
+  int nkpts = nmo_per_kp.size();
+  int nmo_max = *std::max_element(nmo_per_kp.begin(),nmo_per_kp.end());
+  int nchol_max = *std::max_element(nchol_per_kp.begin(),nchol_per_kp.end());
+  int Q0=-1;  // stores the index of the Q=(0,0,0) Q-point
+              // this must always exist
+  for(int Q=0; Q<nkpts; Q++) {
+    if(kminus[Q]==Q) {
+      bool found=true;
+      for(int KI=0; KI<nkpts; KI++)
+        if(KI != QKtok2[Q][KI]) {
+          found = false;
+          break;
+        }
+      if(found) {
+        if( Q0 > 0 )
+          APP_ABORT(" Error: @ Q-points satisfy Q=0 condition.\n");
+        Q0=Q;
+      } else {
+        if( nkpts%2 != 0)
+          APP_ABORT(" Error: Unexpected situation: Q==(-Q)!=Q0 and odd Nk. \n");
+      }
+    }
+  }
+  if(Q0<0)
+    APP_ABORT(" Error: Can not find Q=0 Q-point.\n");
 
+  boost::multi::array<int,2> KK2Q({nkpts,nkpts});
+  for(int KI=0; KI<nkpts; KI++)
+  for(int KK=0; KK<nkpts; KK++) {
+    KK2Q[KI][KK]=-1;
+    for(int Q=0; Q<nkpts; Q++) 
+      if(QKtok2[Q][KI]==KK) {
+        KK2Q[KI][KK]=Q;
+        break;
+      }  
+    assert(KK2Q[KI][KK]>=0);  
+  }
 
+  boost::multi::array<ComplexType,2> IJKL_({nmo_max*nmo_max,nmo_max*nmo_max});
+  boost::multi::array<ComplexType,2> IJKL2_({nmo_max*nmo_max,nmo_max*nmo_max});
+
+  double mxx(0.0);
+  bool res=true;
+  for(int Q=0; Q<nkpts; ++Q) {
+    if(Q != kminus[Q] || Q==Q0) continue;
+
+    for(int KI=0; KI<nkpts; KI++)
+      for(int KL=0; KL<nkpts; KL++) { 
+        int KK = QKtok2[Q][KI];
+        int KJ = QKtok2[Q][KL];
+        if(KI > KK || KL < KJ) continue; 
+        int ni = nmo_per_kp[KI];
+        int nj = nmo_per_kp[KJ];
+        int nk = nmo_per_kp[KK];
+        int nl = nmo_per_kp[KL];
+        boost::multi::array_ref<ComplexType,2,const ComplexType*> LKI(std::addressof(*LQKikn[Q][KI].origin()),{ni*nk,nchol_per_kp[Q]}); 
+        boost::multi::array_ref<ComplexType,2,const ComplexType*> LKL(std::addressof(*LQKikn[Q][KL].origin()),{nl*nj,nchol_per_kp[Q]}); 
+        boost::multi::array_ref<ComplexType,2> IJKL(std::addressof(*IJKL_.origin()),{ni*nk,nl*nj}); 
+        boost::multi::array_ref<ComplexType,4> IJKL_4D(std::addressof(*IJKL_.origin()),{ni,nk,nl,nj}); 
+        ma::product(LKI,ma::H(LKL),IJKL);
+
+        boost::multi::array_ref<ComplexType,2,const ComplexType*> LKJ(std::addressof(*LQKikn[Q][KJ].origin()),{nj*nl,nchol_per_kp[Q]}); 
+        boost::multi::array_ref<ComplexType,2> IJKL2(std::addressof(*IJKL2_.origin()),{ni*nk,nj*nl}); 
+        boost::multi::array_ref<ComplexType,4> IJKL2_4D(std::addressof(*IJKL2_.origin()),{ni,nk,nj,nl}); 
+        ma::product(LKI,ma::T(LKJ),IJKL2);
+        double mx(0.0);
+        for(int i=0; i<ni; i++)
+        for(int k=0; k<nk; k++)
+        for(int j=0; j<nj; j++) 
+        for(int l=0; l<nl; l++) 
+          mx = std::max(mx, std::abs(IJKL_4D[i][k][l][j] - IJKL2_4D[i][k][j][l]));
+        if(mx > 1e-12) { 
+          std::cout<<" WARNING: Matrix elements are not symmetric in check_cholesky_symmetry: "
+                   <<Q <<" " <<KI <<" " <<KK <<" " <<KJ <<" " <<KL <<" " <<mx <<std::endl;
+          res=false;
+        }
+        mxx = std::max(mx, mxx);
+      } 
+  }
+  std::cout<<" Largest ERI difference found: " <<mxx <<std::endl; 
+  return res;
+}
+                              
 #endif

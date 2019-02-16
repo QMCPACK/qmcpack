@@ -1125,11 +1125,13 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
   }
 */
 
+  APP_ABORT(" Error FINISH. \n\n\n");
+  return HamiltonianOperations();
+/*
   return HamiltonianOperations(KP3IndexFactorization(TGwfn.TG_local(), type,std::move(nmo_per_kp),
             std::move(nchol_per_kp),std::move(kminus),std::move(nocc_per_kp),
             std::move(QKtok2),std::move(H1),std::move(haj),std::move(LQKikn),
             std::move(LQKank),std::move(vn0),std::move(gQ),nsampleQ,E0,global_ncvecs));
-/*
   return HamiltonianOperations(KPTHCOps(TGwfn.TG_local(),type,
                             std::move(nmo_per_kp),std::move(nchol_per_kp),
                             std::move(kminus),std::move(nocc_per_kp),

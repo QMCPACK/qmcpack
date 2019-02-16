@@ -144,6 +144,7 @@ const char *propg_xml_block =
     PropgFac.push(prop_name,doc4.getRoot());
     Propagator& prop = PropgFac.getPropagator(TG,prop_name,wfn,&rng);
 
+std::cout<<setprecision(12);
     wfn.Energy(wset);
     {
       ComplexType eav=0,ov=0;
