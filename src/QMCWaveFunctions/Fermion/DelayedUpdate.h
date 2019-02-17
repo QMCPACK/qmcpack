@@ -209,13 +209,23 @@ namespace qmcplusplus {
           BlasService knob;
           // always use serial when norb is small or only one second level thread
           bool use_serial(norb<=256||knob.getNumThreads()==1);
-          if(!use_serial && !knob.NestedThreadingSupported())
+          if(use_serial || knob.NestedThreadingSupported())
           {
+            // threading depends on BLAS
+            if(!use_serial) knob.presetBLASNumThreads();
+            BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
+            for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
+            BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
+            BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
+            if(!use_serial) knob.unsetBLASNumThreads();
+          }
+          else
+          {
+            // manually threaded version of the above GEMM calls
             #pragma omp parallel
             {
               const int block_size = getAlignedSize<T>((norb+knob.getNumThreads()-1)/knob.getNumThreads());
               int num_block = (norb+block_size-1)/block_size;
-              // multi threaded version
               #pragma omp for
               for(int ix=0; ix<num_block; ix++)
               {
@@ -240,16 +250,6 @@ namespace qmcplusplus {
                              -cone, U.data()+y_offset, norb, tempMat[x_offset], lda_Binv, cone, Ainv[x_offset]+y_offset, norb);
                 }
             }
-          }
-          else
-          {
-            // threading depends on BLAS
-            if(!use_serial) knob.presetBLASNumThreads();
-            BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
-            for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
-            BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
-            BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
-            if(!use_serial) knob.unsetBLASNumThreads();
           }
         }
         delay_count = 0;
