@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
+#include "Numerics/BlasService.h"
 #include "Numerics/MatrixOperators.h"
 #include "simd/simd.hpp"
 
@@ -53,6 +54,8 @@ void DiracDeterminant::set(int first, int nel, int delay)
 void DiracDeterminant::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
+  BlasService knob;
+  knob.presetBLASNumThreads();
 #ifdef MIXED_PRECISION
   simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
                   psiM_hp.data(), NumOrbitals, psiM_hp.cols());
@@ -67,6 +70,7 @@ void DiracDeterminant::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& i
   LogValue = detEng.LogDet;
   PhaseValue = detEng.Phase;
 #endif
+  knob.unsetBLASNumThreads();
   InverseTimer.stop();
 }
 
