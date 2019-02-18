@@ -13,19 +13,22 @@
 #ifndef QMCPLUSPLUS_BLAS_SERVICE_H
 #define QMCPLUSPLUS_BLAS_SERVICE_H
 
-#include "config.h"
-
 namespace qmcplusplus
 {
 
-class BlasService
+/** service class for managing threaded BLAS/LAPACK calls from OpenMP parallel region
+ *
+ * intended to use only locally around heavy calls.
+ * omp_get_nested() protects every call.
+ */
+class BlasNestedThreadingService
 {
   int num_threads;
   int old_state;
 
   public:
   /// Constructor, obtains the number of threads at the next level
-  BlasService();
+  BlasNestedThreadingService();
 
   /// get num_threads
   int getNumThreads() { return num_threads; }

@@ -11,8 +11,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Numerics/BlasService.h"
+#include "Numerics/BlasNestedThreadingService.h"
 #include <omp.h>
+#include "config.h"
 #ifdef HAVE_MKL
 #include<mkl_service.h>
 #endif
@@ -20,7 +21,7 @@
 namespace qmcplusplus
 {
 
-BlasService::BlasService() : num_threads(1), old_state(0)
+BlasNestedThreadingService::BlasNestedThreadingService() : num_threads(1), old_state(0)
 {
   if(omp_get_nested())
   {
@@ -32,24 +33,27 @@ BlasService::BlasService() : num_threads(1), old_state(0)
   }
 }
 
-void BlasService::presetBLASNumThreads()
+void BlasNestedThreadingService::presetBLASNumThreads()
 {
-#ifdef HAVE_MKL
   if(omp_get_nested() && num_threads>1)
+  {
+#ifdef HAVE_MKL
     old_state = mkl_set_num_threads_local(num_threads);
 #endif
-
+  }
 }
 
-void BlasService::unsetBLASNumThreads()
+void BlasNestedThreadingService::unsetBLASNumThreads()
 {
-#ifdef HAVE_MKL
   if(omp_get_nested() && num_threads>1)
+  {
+#ifdef HAVE_MKL
     mkl_set_num_threads_local(old_state);
 #endif
+  }
 }
 
-bool BlasService::NestedThreadingSupported()
+bool BlasNestedThreadingService::NestedThreadingSupported()
 {
 #ifdef HAVE_MKL
   return true;

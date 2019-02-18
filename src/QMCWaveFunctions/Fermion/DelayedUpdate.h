@@ -16,7 +16,7 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <simd/simd.hpp>
 #include "Numerics/OhmmsBlas.h"
-#include "Numerics/BlasService.h"
+#include "Numerics/BlasNestedThreadingService.h"
 #include "config.h"
 
 namespace qmcplusplus {
@@ -206,7 +206,7 @@ namespace qmcplusplus {
         else
         {
           const int lda_Binv=Binv.cols();
-          BlasService knob;
+          BlasNestedThreadingService knob;
           // always use serial when norb is small or only one second level thread
           bool use_serial(norb<=256||knob.getNumThreads()==1);
           if(use_serial || knob.NestedThreadingSupported())
