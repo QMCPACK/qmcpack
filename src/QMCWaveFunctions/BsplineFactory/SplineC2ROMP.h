@@ -87,15 +87,15 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   Vector<ST,OffloadAllocator> offload_scratch;
   ///the following pointers are used for keep and access the data on device
   ///cloned objects copy the pointer by value without the need of mapping to the device
-  ///Thus PrimLattice_G_ptr is different from PrimLattice.G.data() in cloned objects
+  ///Thus master_PrimLattice_G_ptr is different from PrimLattice.G.data() in cloned objects
   ///mKK data pointer
-  const ST* mKK_ptr;
+  const ST* master_mKK_ptr;
   ///myKcart data pointer
-  const ST* myKcart_ptr;
+  const ST* master_myKcart_ptr;
   ///PrimLattice.G data pointer
-  const ST* PrimLattice_G_ptr;
+  const ST* master_PrimLattice_G_ptr;
   ///GGt data pointer
-  const ST* GGt_ptr;
+  const ST* master_GGt_ptr;
 
   SplineC2ROMP(): BaseType(), nComplexBands(0), SplineInst(nullptr), MultiSpline(nullptr)
   {
@@ -108,8 +108,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   SplineC2ROMP(const SplineC2ROMP& a):
     SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr),
     nComplexBands(a.nComplexBands), mKK(a.mKK), myKcart(a.myKcart),
-    mKK_ptr(a.mKK_ptr), myKcart_ptr(a.myKcart_ptr),
-    PrimLattice_G_ptr(a.PrimLattice_G_ptr), GGt_ptr(a.GGt_ptr)
+    master_mKK_ptr(a.master_mKK_ptr), master_myKcart_ptr(a.master_myKcart_ptr),
+    master_PrimLattice_G_ptr(a.master_PrimLattice_G_ptr), master_GGt_ptr(a.master_GGt_ptr)
   {
     const size_t n=a.myL.size();
     myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n); mygH.resize(n);
@@ -121,10 +121,10 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     {
       delete SplineInst;
       PRAGMA_OMP("omp target exit data map(delete:MultiSpline[0:1])")
-      PRAGMA_OMP("omp target exit data map(delete:myKcart_ptr[0:myKcart.capacity()*3])")
-      PRAGMA_OMP("omp target exit data map(delete:mKK_ptr[0:mKK.size()])")
-      PRAGMA_OMP("omp target exit data map(delete:PrimLattice_G_ptr[0:9])")
-      PRAGMA_OMP("omp target exit data map(delete:GGt_ptr[0:9])")
+      PRAGMA_OMP("omp target exit data map(delete:master_myKcart_ptr[0:myKcart.capacity()*3])")
+      PRAGMA_OMP("omp target exit data map(delete:master_mKK_ptr[0:mKK.size()])")
+      PRAGMA_OMP("omp target exit data map(delete:master_PrimLattice_G_ptr[0:9])")
+      PRAGMA_OMP("omp target exit data map(delete:master_GGt_ptr[0:9])")
     }
   }
 
@@ -173,6 +173,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   /// this routine can not be called from threaded region
   void finalizeConstruction()
   {
+    std::cout << "Ye debug mapping" << std::endl;
     // map the SplineInst->spline_m structure to GPU
     PRAGMA_OMP("omp target enter data map(alloc:MultiSpline[0:1])")
     PRAGMA_OMP("omp target update to(MultiSpline[0:1])")
@@ -185,18 +186,24 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     }
 
     // transfer static data to GPU
-    mKK_ptr = mKK.data();
-    PRAGMA_OMP("omp target enter data map(alloc:mKK_ptr[0:mKK.size()])")
-    PRAGMA_OMP("omp target update to(myKcart_ptr[0:mKK.size()])")
-    myKcart_ptr = myKcart.data();
-    PRAGMA_OMP("omp target enter data map(alloc:myKcart_ptr[0:myKcart.capacity()*3])")
-    PRAGMA_OMP("omp target update to(myKcart_ptr[0:myKcart.capacity()*3])")
-    PrimLattice_G_ptr = PrimLattice.G.data();
-    PRAGMA_OMP("omp target enter data map(alloc:PrimLattice_G_ptr[0:9])")
-    PRAGMA_OMP("omp target update to(PrimLattice_G_ptr[0:9])")
-    GGt_ptr = GGt.data();
-    PRAGMA_OMP("omp target enter data map(alloc:GGt_ptr[0:9])")
-    PRAGMA_OMP("omp target update to(GGt_ptr[0:9])")
+    master_mKK_ptr = mKK.data();
+    PRAGMA_OMP("omp target enter data map(alloc:master_mKK_ptr[0:mKK.size()])")
+    PRAGMA_OMP("omp target update to(master_myKcart_ptr[0:mKK.size()])")
+    master_myKcart_ptr = myKcart.data();
+    PRAGMA_OMP("omp target enter data map(alloc:master_myKcart_ptr[0:myKcart.capacity()*3])")
+    PRAGMA_OMP("omp target update to(master_myKcart_ptr[0:myKcart.capacity()*3])")
+    master_PrimLattice_G_ptr = PrimLattice.G.data();
+    PRAGMA_OMP("omp target enter data map(alloc:master_PrimLattice_G_ptr[0:9])")
+    PRAGMA_OMP("omp target update to(master_PrimLattice_G_ptr[0:9])")
+    master_GGt_ptr = GGt.data();
+    PRAGMA_OMP("omp target enter data map(alloc:master_GGt_ptr[0:9])")
+    PRAGMA_OMP("omp target update to(master_GGt_ptr[0:9])")
+    // debug
+    std::cout << "master_mKK_ptr = " << master_mKK_ptr << std::endl;
+    std::cout << "master_myKcart_ptr = " << master_myKcart_ptr << std::endl;
+    std::cout << "master_PrimLattice_G_ptr = " << master_PrimLattice_G_ptr << std::endl;
+    std::cout << "master_GGt_ptr = " << master_GGt_ptr << std::endl;
+    std::cout << "this = " << this << std::endl;
   }
 
   inline void flush_zero()
@@ -350,9 +357,13 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
                          TT* restrict psi,
                          TT* restrict dpsi,
                          TT* restrict d2psi,
+                         const ST* mKK_ptr,
                          size_t orb_size,
                          const ST* restrict offload_scratch_ptr,
                          size_t spline_padded_size,
+                         const ST* GGt_ptr,
+                         const ST* PrimLattice_G_ptr,
+                         const ST* myKcart_ptr,
                          size_t myKcart_padded_size,
                          int first, int last) const
   {
@@ -397,8 +408,10 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
       const ST val_i=val[ji];
 
       //phase
-      ST s, c;
-      sincos(-(x*kX+y*kY+z*kZ),&s,&c);
+      ST s, c, p = -(x*kX+y*kY+z*kZ);
+      //sincos(-(x*kX+y*kY+z*kZ),&s,&c);
+      s = std::sin(p);
+      c = std::cos(p);
 
       //dot(PrimLattice.G,myG[j])
       const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
@@ -581,7 +594,9 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     const auto myKcart_padded_size = myKcart.capacity();
     const auto orb_size = psi.size();
     PRAGMA_OMP("omp target teams num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
-                map(from:psi_ptr[0:orb_size],dpsi_ptr[0:orb_size*3],d2psi_ptr[0:orb_size])")
+                map(from:psi_ptr[0:orb_size],dpsi_ptr[0:orb_size*3],d2psi_ptr[0:orb_size]) \
+                map(to:master_mKK_ptr[0:orb_size],master_GGt_ptr[0:9],master_PrimLattice_G_ptr[0:9]) \
+                map(to:master_myKcart_ptr[0:myKcart_padded_size*3])")
     {
       PRAGMA_OMP("omp distribute")
       for(int team_id = 0; team_id < NumTeams; team_id++)
@@ -595,8 +610,9 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
                                                offload_scratch_ptr+padded_size+first,
                                                offload_scratch_ptr+padded_size*4+first,
                                                padded_size, first, last);
-          assign_vgl(x, y, z, psi_ptr, dpsi_ptr, d2psi_ptr, orb_size,
-                     offload_scratch_ptr, padded_size, myKcart_padded_size, first/2, last/2);
+          assign_vgl(x, y, z, psi_ptr, dpsi_ptr, d2psi_ptr, master_mKK_ptr, orb_size,
+                     offload_scratch_ptr, padded_size, master_GGt_ptr, master_PrimLattice_G_ptr,
+                     master_myKcart_ptr, myKcart_padded_size, first/2, last/2);
         }
       }
     }

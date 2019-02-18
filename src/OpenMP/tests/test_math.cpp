@@ -35,8 +35,10 @@ TEST_CASE("OMPmath", "[OMP]")
   PRAGMA_OMP("omp target teams distribute map(always, tofrom:A_ptr[0:2])")
   for(int i=0; i<2; i++)
   {
-    float s,c;
-    sincosf(i*1.2, &s, &c);
+    float s, c, v = 1.2;
+    s = std::sin(i*v);
+    c = std::cos(i*v);
+    //sincos(i*v, &s, &c);
     A_ptr[i]+= s+c;
   }
 
