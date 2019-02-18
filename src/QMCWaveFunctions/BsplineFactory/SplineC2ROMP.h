@@ -283,16 +283,16 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   /// this routine can not be called from threaded region
   void finalizeConstruction()
   {
-    std::cout << "Ye debug mapping" << std::endl;
     // map the SplineInst->spline_m structure to GPU
     PRAGMA_OMP("omp target enter data map(alloc:MultiSpline[0:1])")
     PRAGMA_OMP("omp target update to(MultiSpline[0:1])")
-    auto coefs=MultiSpline->coefs;
+    auto* restrict coefs=MultiSpline->coefs;
     PRAGMA_OMP("omp target update to(coefs[0:MultiSpline->coefs_size])")
     // attach pointers on the device to achieve deep copy
+    auto* restrict MultiSpline_tmp = MultiSpline;
     PRAGMA_OMP("omp target")
     {
-      MultiSpline->coefs = coefs;
+      MultiSpline_tmp->coefs = coefs;
     }
 
     // transfer static data to GPU
@@ -308,7 +308,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     master_GGt_ptr = GGt.data();
     PRAGMA_OMP("omp target enter data map(alloc:master_GGt_ptr[0:9])")
     PRAGMA_OMP("omp target update to(master_GGt_ptr[0:9])")
-    // debug
+    /* debug pointers
+    std::cout << "Ye debug mapping" << std::endl;
     std::cout << "SplineInst = " << SplineInst << std::endl;
     std::cout << "MultiSpline = " << MultiSpline << std::endl;
     std::cout << "master_mKK_ptr = " << master_mKK_ptr << std::endl;
@@ -316,6 +317,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     std::cout << "master_PrimLattice_G_ptr = " << master_PrimLattice_G_ptr << std::endl;
     std::cout << "master_GGt_ptr = " << master_GGt_ptr << std::endl;
     std::cout << "this = " << this << std::endl;
+    */
   }
 
   inline void flush_zero()
