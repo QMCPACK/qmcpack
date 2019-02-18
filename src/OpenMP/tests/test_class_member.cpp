@@ -27,12 +27,14 @@ struct maptest
   const static size_t size = 6;
   T data[size];
 
-  inline void set_value(const T* array)
+  PRAGMA_OMP("omp declare target")
+  inline void set_value(const T* restrict array, size_t size, T* restrict data)
   {
     PRAGMA_OMP("omp for")
     for(int i=0; i<size; i++)
       data[i] = array[i];
   }
+  PRAGMA_OMP("omp end declare target")
 
   void run()
   {
@@ -41,7 +43,7 @@ struct maptest
     PRAGMA_OMP("omp target map(to:newdata[0:6]) map(from:data[0:6])")
     {
       PRAGMA_OMP("omp parallel")
-      set_value(newdata);
+      set_value(newdata, size, data);
     }
     PRAGMA_OMP("omp target exit data map(delete:data[0:6])")
     std::cout << "data[5] = " << data[5] << std::endl;
