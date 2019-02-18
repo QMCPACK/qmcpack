@@ -29,6 +29,116 @@
 namespace qmcplusplus
 {
 
+namespace C2R
+{
+  /** assign_vgl
+   */
+template<typename ST, typename TT>
+  inline void assign_vgl(ST x, ST y, ST z,
+                         TT* restrict psi,
+                         TT* restrict dpsi,
+                         TT* restrict d2psi,
+                         const ST* mKK_ptr,
+                         size_t orb_size,
+                         const ST* restrict offload_scratch_ptr,
+                         size_t spline_padded_size,
+                         const ST* GGt_ptr,
+                         const ST* PrimLattice_G_ptr,
+                         const ST* myKcart_ptr,
+                         size_t myKcart_padded_size,
+                         size_t first_spo,
+                         int nComplexBands,
+                         int first, int last)
+  {
+    // protect last
+    if (last>orb_size) last = orb_size;
+
+    constexpr ST two(2);
+    const ST g00=PrimLattice_G_ptr[0], g01=PrimLattice_G_ptr[1], g02=PrimLattice_G_ptr[2],
+             g10=PrimLattice_G_ptr[3], g11=PrimLattice_G_ptr[4], g12=PrimLattice_G_ptr[5],
+             g20=PrimLattice_G_ptr[6], g21=PrimLattice_G_ptr[7], g22=PrimLattice_G_ptr[8];
+    const ST symGG[6]={GGt_ptr[0],GGt_ptr[1]+GGt_ptr[3],GGt_ptr[2]+GGt_ptr[6],GGt_ptr[4],GGt_ptr[5]+GGt_ptr[7],GGt_ptr[8]};
+
+    const ST* restrict k0=myKcart_ptr;
+    const ST* restrict k1=myKcart_ptr+myKcart_padded_size;
+    const ST* restrict k2=myKcart_ptr+myKcart_padded_size*2;
+
+    const ST* restrict val = offload_scratch_ptr;
+    const ST* restrict g0  = offload_scratch_ptr + spline_padded_size;
+    const ST* restrict g1  = offload_scratch_ptr + spline_padded_size*2;
+    const ST* restrict g2  = offload_scratch_ptr + spline_padded_size*3;
+    const ST* restrict h00 = offload_scratch_ptr + spline_padded_size*4;
+    const ST* restrict h01 = offload_scratch_ptr + spline_padded_size*5;
+    const ST* restrict h02 = offload_scratch_ptr + spline_padded_size*6;
+    const ST* restrict h11 = offload_scratch_ptr + spline_padded_size*7;
+    const ST* restrict h12 = offload_scratch_ptr + spline_padded_size*8;
+    const ST* restrict h22 = offload_scratch_ptr + spline_padded_size*9;
+
+#ifdef ENABLE_OFFLOAD
+    #pragma omp for nowait
+#else
+    #pragma omp simd
+#endif
+    for (size_t j=first; j<last; j++)
+    {
+      const size_t jr=j<<1;
+      const size_t ji=jr+1;
+
+      const ST kX=k0[j];
+      const ST kY=k1[j];
+      const ST kZ=k2[j];
+      const ST val_r=val[jr];
+      const ST val_i=val[ji];
+
+      //phase
+      ST s, c, p = -(x*kX+y*kY+z*kZ);
+      //sincos(-(x*kX+y*kY+z*kZ),&s,&c);
+      s = std::sin(p);
+      c = std::cos(p);
+
+      //dot(PrimLattice.G,myG[j])
+      const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
+      const ST dY_r = g10*g0[jr]+g11*g1[jr]+g12*g2[jr];
+      const ST dZ_r = g20*g0[jr]+g21*g1[jr]+g22*g2[jr];
+
+      const ST dX_i = g00*g0[ji]+g01*g1[ji]+g02*g2[ji];
+      const ST dY_i = g10*g0[ji]+g11*g1[ji]+g12*g2[ji];
+      const ST dZ_i = g20*g0[ji]+g21*g1[ji]+g22*g2[ji];
+
+      // \f$\nabla \psi_r + {\bf k}\psi_i\f$
+      const ST gX_r=dX_r+val_i*kX;
+      const ST gY_r=dY_r+val_i*kY;
+      const ST gZ_r=dZ_r+val_i*kZ;
+      const ST gX_i=dX_i-val_r*kX;
+      const ST gY_i=dY_i-val_r*kY;
+      const ST gZ_i=dZ_i-val_r*kZ;
+
+      const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
+      const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
+      const ST lap_r=lcart_r+mKK_ptr[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
+      const ST lap_i=lcart_i+mKK_ptr[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
+
+      const size_t psiIndex=first_spo+j+(j<nComplexBands?j:nComplexBands);
+      //this will be fixed later
+      psi[psiIndex]=c*val_r-s*val_i;
+      d2psi[psiIndex]=c*lap_r-s*lap_i;
+      //this will go way with Determinant
+      dpsi[psiIndex*3  ]=c*gX_r-s*gX_i;
+      dpsi[psiIndex*3+1]=c*gY_r-s*gY_i;
+      dpsi[psiIndex*3+2]=c*gZ_r-s*gZ_i;
+
+      if(j<nComplexBands)
+      {
+        psi[psiIndex+1]=c*val_i+s*val_r;
+        d2psi[psiIndex+1]=c*lap_i+s*lap_r;
+        dpsi[psiIndex*3+3]=c*gX_i+s*gX_r;
+        dpsi[psiIndex*3+4]=c*gY_i+s*gY_r;
+        dpsi[psiIndex*3+5]=c*gZ_i+s*gZ_r;
+      }
+    }
+  }
+}
+
 /** adoptor class to match std::complex<ST> spline with TT real SPOs
  * @tparam ST precision of spline
  * @tparam TT precision of SPOs
@@ -199,6 +309,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     PRAGMA_OMP("omp target enter data map(alloc:master_GGt_ptr[0:9])")
     PRAGMA_OMP("omp target update to(master_GGt_ptr[0:9])")
     // debug
+    std::cout << "SplineInst = " << SplineInst << std::endl;
+    std::cout << "MultiSpline = " << MultiSpline << std::endl;
     std::cout << "master_mKK_ptr = " << master_mKK_ptr << std::endl;
     std::cout << "master_myKcart_ptr = " << master_myKcart_ptr << std::endl;
     std::cout << "master_PrimLattice_G_ptr = " << master_PrimLattice_G_ptr << std::endl;
@@ -351,110 +463,6 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     }
   }
 
-  /** assign_vgl
-   */
-  inline void assign_vgl(ST x, ST y, ST z,
-                         TT* restrict psi,
-                         TT* restrict dpsi,
-                         TT* restrict d2psi,
-                         const ST* mKK_ptr,
-                         size_t orb_size,
-                         const ST* restrict offload_scratch_ptr,
-                         size_t spline_padded_size,
-                         const ST* GGt_ptr,
-                         const ST* PrimLattice_G_ptr,
-                         const ST* myKcart_ptr,
-                         size_t myKcart_padded_size,
-                         int first, int last) const
-  {
-    // protect last
-    if (last>orb_size) last = orb_size;
-
-    constexpr ST two(2);
-    const ST g00=PrimLattice_G_ptr[0], g01=PrimLattice_G_ptr[1], g02=PrimLattice_G_ptr[2],
-             g10=PrimLattice_G_ptr[3], g11=PrimLattice_G_ptr[4], g12=PrimLattice_G_ptr[5],
-             g20=PrimLattice_G_ptr[6], g21=PrimLattice_G_ptr[7], g22=PrimLattice_G_ptr[8];
-    const ST symGG[6]={GGt_ptr[0],GGt_ptr[1]+GGt_ptr[3],GGt_ptr[2]+GGt_ptr[6],GGt_ptr[4],GGt_ptr[5]+GGt_ptr[7],GGt_ptr[8]};
-
-    const ST* restrict k0=myKcart_ptr;
-    const ST* restrict k1=myKcart_ptr+myKcart_padded_size;
-    const ST* restrict k2=myKcart_ptr+myKcart_padded_size*2;
-
-    const ST* restrict val = offload_scratch_ptr;
-    const ST* restrict g0  = offload_scratch_ptr + spline_padded_size;
-    const ST* restrict g1  = offload_scratch_ptr + spline_padded_size*2;
-    const ST* restrict g2  = offload_scratch_ptr + spline_padded_size*3;
-    const ST* restrict h00 = offload_scratch_ptr + spline_padded_size*4;
-    const ST* restrict h01 = offload_scratch_ptr + spline_padded_size*5;
-    const ST* restrict h02 = offload_scratch_ptr + spline_padded_size*6;
-    const ST* restrict h11 = offload_scratch_ptr + spline_padded_size*7;
-    const ST* restrict h12 = offload_scratch_ptr + spline_padded_size*8;
-    const ST* restrict h22 = offload_scratch_ptr + spline_padded_size*9;
-
-#ifdef ENABLE_OFFLOAD
-    #pragma omp for nowait
-#else
-    #pragma omp simd
-#endif
-    for (size_t j=first; j<last; j++)
-    {
-      const size_t jr=j<<1;
-      const size_t ji=jr+1;
-
-      const ST kX=k0[j];
-      const ST kY=k1[j];
-      const ST kZ=k2[j];
-      const ST val_r=val[jr];
-      const ST val_i=val[ji];
-
-      //phase
-      ST s, c, p = -(x*kX+y*kY+z*kZ);
-      //sincos(-(x*kX+y*kY+z*kZ),&s,&c);
-      s = std::sin(p);
-      c = std::cos(p);
-
-      //dot(PrimLattice.G,myG[j])
-      const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
-      const ST dY_r = g10*g0[jr]+g11*g1[jr]+g12*g2[jr];
-      const ST dZ_r = g20*g0[jr]+g21*g1[jr]+g22*g2[jr];
-
-      const ST dX_i = g00*g0[ji]+g01*g1[ji]+g02*g2[ji];
-      const ST dY_i = g10*g0[ji]+g11*g1[ji]+g12*g2[ji];
-      const ST dZ_i = g20*g0[ji]+g21*g1[ji]+g22*g2[ji];
-
-      // \f$\nabla \psi_r + {\bf k}\psi_i\f$
-      const ST gX_r=dX_r+val_i*kX;
-      const ST gY_r=dY_r+val_i*kY;
-      const ST gZ_r=dZ_r+val_i*kZ;
-      const ST gX_i=dX_i-val_r*kX;
-      const ST gY_i=dY_i-val_r*kY;
-      const ST gZ_i=dZ_i-val_r*kZ;
-
-      const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
-      const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
-      const ST lap_r=lcart_r+mKK_ptr[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=lcart_i+mKK_ptr[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-
-      const size_t psiIndex=first_spo+j+(j<nComplexBands?j:nComplexBands);
-      //this will be fixed later
-      psi[psiIndex]=c*val_r-s*val_i;
-      d2psi[psiIndex]=c*lap_r-s*lap_i;
-      //this will go way with Determinant
-      dpsi[psiIndex*3  ]=c*gX_r-s*gX_i;
-      dpsi[psiIndex*3+1]=c*gY_r-s*gY_i;
-      dpsi[psiIndex*3+2]=c*gZ_r-s*gZ_i;
-
-      if(j<nComplexBands)
-      {
-        psi[psiIndex+1]=c*val_i+s*val_r;
-        d2psi[psiIndex+1]=c*lap_i+s*lap_r;
-        dpsi[psiIndex*3+3]=c*gX_i+s*gX_r;
-        dpsi[psiIndex*3+4]=c*gY_i+s*gY_r;
-        dpsi[psiIndex*3+5]=c*gZ_i+s*gZ_r;
-      }
-    }
-  }
-
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
   template<typename VV, typename GV>
@@ -593,27 +601,29 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
     const auto myKcart_padded_size = myKcart.capacity();
     const auto orb_size = psi.size();
-    PRAGMA_OMP("omp target teams num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
-                map(from:psi_ptr[0:orb_size],dpsi_ptr[0:orb_size*3],d2psi_ptr[0:orb_size]) \
-                map(to:master_mKK_ptr[0:orb_size],master_GGt_ptr[0:9],master_PrimLattice_G_ptr[0:9]) \
-                map(to:master_myKcart_ptr[0:myKcart_padded_size*3])")
+    auto* mKK_ptr = master_mKK_ptr;
+    auto* GGt_ptr = master_GGt_ptr;
+    auto* PrimLattice_G_ptr = master_PrimLattice_G_ptr;
+    auto* myKcart_ptr = master_myKcart_ptr;
+    size_t first_spo_local = first_spo;
+    int nComplexBands_local = nComplexBands;
+
+    PRAGMA_OMP("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
+                map(from:psi_ptr[0:orb_size],dpsi_ptr[0:orb_size*3],d2psi_ptr[0:orb_size])")
+    for(int team_id = 0; team_id < NumTeams; team_id++)
     {
-      PRAGMA_OMP("omp distribute")
-      for(int team_id = 0; team_id < NumTeams; team_id++)
+      int first = ChunkSizePerTeam * team_id;
+      int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam ;
+      PRAGMA_OMP("omp parallel")
       {
-        int first = ChunkSizePerTeam * team_id;
-        int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam ;
-        PRAGMA_OMP("omp parallel")
-        {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, rux, ruy, ruz,
-                                               offload_scratch_ptr+first,
-                                               offload_scratch_ptr+padded_size+first,
-                                               offload_scratch_ptr+padded_size*4+first,
-                                               padded_size, first, last);
-          assign_vgl(x, y, z, psi_ptr, dpsi_ptr, d2psi_ptr, master_mKK_ptr, orb_size,
-                     offload_scratch_ptr, padded_size, master_GGt_ptr, master_PrimLattice_G_ptr,
-                     master_myKcart_ptr, myKcart_padded_size, first/2, last/2);
-        }
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, rux, ruy, ruz,
+                                             offload_scratch_ptr+first,
+                                             offload_scratch_ptr+padded_size+first,
+                                             offload_scratch_ptr+padded_size*4+first,
+                                             padded_size, first, last);
+        C2R::assign_vgl(x, y, z, psi_ptr, dpsi_ptr, d2psi_ptr, mKK_ptr, orb_size,
+                   offload_scratch_ptr, padded_size, GGt_ptr, PrimLattice_G_ptr,
+                   myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local, first/2, last/2);
       }
     }
   }
