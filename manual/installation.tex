@@ -485,6 +485,19 @@ cmake \
 MKLROOT is the directory containing the MKL binary, examples, and lib
 directories (etc.) and is often /opt/intel/mkl
 
+\subsubsection{Serial or multi-threaded library}
+\label{sec:threadedlibrary}
+Vendors may provide both serial and multi-threaded versions of their libraries.
+Using the right version is critical to QMCPACK performance.
+QMCPACK makes calls from both inside and outside the threaded region.
+When being called from outside OpenMP parallel region, multi-threaded version is preferred for possibly using all the avaiable cores.
+When being called from by every thread inside OpenMP parallel region, serial version is preferred for not oversubscribing the cores.
+Fortunately nowadays the multi-threaded versions of many vendor libraries (MKL, ESSL) are OpenMP aware.
+They use only one thread when being called inside the OpenMP parallel region.
+This behavior meets exactly both QMCPACK needs and thus is preferred.
+If the multi-threaded version doesn't provide this feature of dynamically adjusting the number of threads,
+the serial version is preferred. In addtion, thread-safety is required no matter whichever version in use.
+
 \subsection{Cross compiling}
 Cross-compiling is often difficult but is required on supercomputers
 with distinct host and compute processor generations or architectures.
