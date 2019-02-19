@@ -420,6 +420,22 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, ParticleSet& ions, i
   // term coming from dependence of quadrature grid on ion position.
   PosType gradwfnterm_(0);
 
+  //Now for the Pulay specific stuff...
+  //Full (potentiall complex) $\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
+  std::vector<ValueType> psiratiofull_(nknot);
+  // $\nabla_I \Psi(...r...)/\Psi(...r...)$
+  ParticleSet::ParticlePos_t pulay_ref;
+  ParticleSet::ParticlePos_t pulaytmp_;
+  // $\nabla_I \Psi(...q...)/\Psi(...r...)$ for each quadrature point.
+  std::vector<ParticleSet::ParticlePos_t> pulay_quad(nknot);
+  
+  //A working array for pulay stuff.
+  GradType iongradtmp_(0);
+  //resize everything.
+  pulay_ref.resize(ions.getTotalNum());
+  pulaytmp_.resize(ions.getTotalNum()); 
+  for (unsigned int j=0; j<nknot; j++) pulay_quad[j].resize(ions.getTotalNum());
+
   if(VP)
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
@@ -451,7 +467,7 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, ParticleSet& ions, i
       RealType ratio_i=ratio_mag*std::sin(psi.getPhaseDiff());
 
       ratio=ValueType(ratio_r,ratio_i);
-     
+      psiratiofull_[j]=ratio;
       //Only need the real part.
       psiratio_[j]=ratio_r*sgridweight_m[j]; 
      
@@ -497,6 +513,30 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, ParticleSet& ions, i
     vgrad_[ip]=dvrad_[ip]*dr*wgt_angpp_m[ip]*rinv;
   }
 
+  //Now to construct the 3N dimensional ionic wfn derivatives for pulay terms.
+  //This is going to be slow an painful for now.  
+  for(unsigned int jat=0;jat<ions.getTotalNum(); jat++)
+  {
+    pulay_ref[jat] = psi.evalGradSource(W,ions,jat);
+    gradpotterm_  =0;
+    for(unsigned int j=0; j<nknot; j++)
+    {
+      deltaV[j]=r*rrotsgrid_m[j]-dr;
+      W.makeMoveOnSphere(iel,deltaV[j]);
+      //"Accepting" moves is necessary because evalGradSource needs full distance tables
+      //for now.  
+      W.acceptMove(iel);
+      iongradtmp_ = psi.evalGradSource(W,ions,jat);
+      iongradtmp_*=psiratiofull_[j]*sgridweight_m[j];
+      convert(iongradtmp_,pulay_quad[j][jat]);
+      
+      //And move the particle back.
+      deltaV[j]=dr-r*rrotsgrid_m[j];
+      W.makeMoveOnSphere(iel,deltaV[j]);
+      W.acceptMove(iel);
+    }
+  }
+
   RealType pairpot=0; 
   // Compute spherical harmonics on grid
   for (int j=0;  j<nknot ; j++)
@@ -537,19 +577,23 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, ParticleSet& ions, i
     gradpotterm_  =0;
     gradlpolyterm_=0;
     gradwfnterm_  =0;
-    
+    pulaytmp_ = 0;
+
     for(int l=0; l<nchannel; l++)
     {
+      //Note.  Because we are computing "forces", there's a -1 difference between this and
+      //direct finite difference calculations.
       lsum          += vrad_[l] * lpol_[ angpp_m[l] ] * psiratio_[j];
       gradpotterm_  += vgrad_[l] * lpol_[ angpp_m[l] ] * psiratio_[j];
       gradlpolyterm_ += vrad_[l] * dlpol_[ angpp_m[l] ] * cosgrad_[j] * psiratio_[j];
       gradwfnterm_  += vrad_[l] * lpol_[ angpp_m[l] ] * wfngrad_[j]; 
+      pulaytmp_     -=  vrad_[l] * lpol_[ angpp_m[l] ] * pulay_quad[j];
     }
-    
+    pulaytmp_ += lsum*pulay_ref;
     if(Tmove) Txy.push_back(NonLocalData(iel,lsum,deltaV[j]));
     pairpot+=lsum;
     force_iat+=  gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
-    
+    pulay_terms += pulaytmp_;
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
