@@ -830,7 +830,7 @@ def inv_norm_pos(mol_pos_norm,hyper_cube):
 ###############################################################################
 
 
-def gp_sdg_setup(GP_info):
+def gp_opt_setup(GP_info):
     """
     Setup parameters and variables for GP
     
@@ -874,7 +874,7 @@ def gp_sdg_setup(GP_info):
         )
 
     return E,dE,mol_pos,best_pos,best_E,GP_info
-#end def gp_sdg_setup
+#end def gp_opt_setup
 
 ###############################################################################
 
@@ -994,7 +994,7 @@ def gp_opt_example():
 
 
     ## Setup Gausian Process Structure ##
-    E,dE,mol_pos,best_pos,best_E,GP_info = gp_sdg_setup(GP_info)
+    E,dE,mol_pos,best_pos,best_E,GP_info = gp_opt_setup(GP_info)
 
     ## Do Gaussian Process Iteration ##
     for jits in range(GP_info.n_its):
