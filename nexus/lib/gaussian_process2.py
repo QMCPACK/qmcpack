@@ -250,6 +250,7 @@ def cmgp(S1,S2,ep):
     """
     
     n = S1.shape[0]
+    d = S1.shape[1]
     m = S2.shape[0]
     K = np.zeros([n,m])
     
@@ -907,51 +908,59 @@ def gp_sgd(E,dE,mol_pos,GP_info):
 ###############################################################################
     
 
-"""
-Example using Gaussian Process optimization for noisy data and multiple mins
+def gp_opt_example():
+    """
+    Example using Gaussian Process optimization for noisy data and multiple mins
 
-"""
+    """
 
-## Required to define is hypercube  ##
-d = 4                                       # Dimension of problem
-GP_info = GParmFlags()
-GP_info.hyper_cube = np.ones([d,2])/2       # Upper and lower bound for each dimension
-GP_info.hyper_cube[:,0] = -GP_info.hyper_cube[:,0]/2
-
-
-## Parameters Used for Optimization Function Defining Range of Errors in Energy##
-sigma_a = 1e-3;
-sigma_b = 1e-1;
+    ## Required to define is hypercube  ##
+    d = 4                                       # Dimension of problem
+    GP_info = GParmFlags()
+    GP_info.hyper_cube = np.ones([d,2])/2       # Upper and lower bound for each dimension
+    GP_info.hyper_cube[:,0] = -GP_info.hyper_cube[:,0]/2
 
 
-## Setup Gausian Process Structure ##
-try:
-    GP_info.hyper_cube
-    E,dE,mol_pos,best_pos,best_E,GP_info = gp_sdg_setup(GP_info)
-except:
-    print 'Please Define GP_info.hyper_cube'
-    exit()
-#end try
+    ## Parameters Used for Optimization Function Defining Range of Errors in Energy##
+    sigma_a = 1e-3;
+    sigma_b = 1e-1;
 
-## Do Gausian Process Iteration ##
-    
-for jits in range(GP_info.n_its):
-    GP_info.jits = jits
-    new_points,best_pos,best_E,GP_info = gp_sgd(E,dE,mol_pos,GP_info)
-    print jits,'best_P',best_pos
-    print jits,'best_E',best_E
-    if jits < GP_info.n_its-1:
-        ## Simulate random uncertainty in optimization function
-        new_dE = (sigma_b-sigma_a)*np.random.rand(GP_info.Nc0,1)+sigma_a
-        new_E = opt_surface_f(new_points)+new_dE*np.random.randn(GP_info.Nc0, 1)
-        if jits == 0:
-            mol_pos = np.copy(new_points)
-            E = np.copy(new_E)
-            dE = np.copy(new_dE)
-        else:
-            mol_pos = np.append(mol_pos,new_points,axis=0)
-            E = np.append(E,new_E,axis=0)
-            dE = np.append(dE,new_dE,axis=0)
+
+    ## Setup Gausian Process Structure ##
+    try:
+        GP_info.hyper_cube
+        E,dE,mol_pos,best_pos,best_E,GP_info = gp_sdg_setup(GP_info)
+    except:
+        print 'Please Define GP_info.hyper_cube'
+        exit()
+    #end try
+
+    ## Do Gausian Process Iteration ##
+
+    for jits in range(GP_info.n_its):
+        GP_info.jits = jits
+        new_points,best_pos,best_E,GP_info = gp_sgd(E,dE,mol_pos,GP_info)
+        print jits,'best_P',best_pos
+        print jits,'best_E',best_E
+        if jits < GP_info.n_its-1:
+            ## Simulate random uncertainty in optimization function
+            new_dE = (sigma_b-sigma_a)*np.random.rand(GP_info.Nc0,1)+sigma_a
+            new_E = opt_surface_f(new_points)+new_dE*np.random.randn(GP_info.Nc0, 1)
+            if jits == 0:
+                mol_pos = np.copy(new_points)
+                E = np.copy(new_E)
+                dE = np.copy(new_dE)
+            else:
+                mol_pos = np.append(mol_pos,new_points,axis=0)
+                E = np.append(E,new_E,axis=0)
+                dE = np.append(dE,new_dE,axis=0)
+            #end if
         #end if
-    #end if
-#end for
+    #end for
+#end def gp_opt_example
+
+
+
+if __name__=='__main__':
+    gp_opt_example()
+#end if
