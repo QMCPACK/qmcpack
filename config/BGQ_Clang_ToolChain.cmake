@@ -1,9 +1,6 @@
 set(CMAKE_C_COMPILER mpiclang) 
 set(CMAKE_CXX_COMPILER mpiclang++11)
 
-# set the linker if extra wrapper is needed for profiling tools like hpctoolkit.
-# set(CMAKE_CXX_LINKER "hpclink mpiclang++11")
-
 set(COMPILING_ON_BGQ TRUE)
 
 set(CMAKE_CXX_STANDARD 14)
