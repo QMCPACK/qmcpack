@@ -149,7 +149,7 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
-  ions.R[1][0] = 5.0;
+  ions.R[1][0] = 6.0;
   ions.R[1][1] = 0.0;
   ions.R[1][2] = 0.0;
 
@@ -278,11 +278,15 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
  #ifdef ENABLE_SOA
   //Forces are only implemented in SOA version, hence the guard.
   double Value2(0.0);
+  double Value3(0.0);
   ParticleSet::ParticlePos_t PulayTerm,HFTerm;
   HFTerm.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
   HFTerm=0;
   PulayTerm=0;
+
+  //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
+  double logpsi = psi.evaluateLog(elec);
   for(int jel=0; jel<elec.getTotalNum(); jel++)
   {
     const auto& dist  = myTable->Distances[jel];
@@ -298,8 +302,8 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
           #endif
       }
     }
-  //These numbers are validated against print statements in wavefunction tester.  
-  REQUIRE( Value1 == Approx(0.9498625845) );
+  //These numbers are validated against an alternate code path via wavefunction tester.  
+  REQUIRE( Value1 == Approx(6.9015710211e-02) );
 
   //These values are validated against print statements.
   //Two-body jastrow-only wave functions agree with finite difference of NLPP to machine precision.
@@ -307,13 +311,40 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
   //  when a one body term is added in.  
   
 #ifdef QMC_COMPLEX 
-  REQUIRE( Value2 == Approx(0.9498625845) );
-  REQUIRE( HFTerm[0][0] == Approx(-2.444602881) );
-  REQUIRE( HFTerm[0][1] == Approx( 0.0) );
-  REQUIRE( HFTerm[0][2] == Approx( 0.0) );
-  REQUIRE( HFTerm[1][0] == Approx(2.444602881) );
-  REQUIRE( HFTerm[1][1] == Approx( 0.0) );
-  REQUIRE( HFTerm[1][2] == Approx( 0.0) );
+  REQUIRE( Value2 == Approx(6.9015710211e-02) );
+  REQUIRE( Value3 == Approx(6.9015710211e-02) );
+ 
+  //The total force (HFTerm+PulayTerm) is validated against finite difference of nonlocal PP w.r.t 
+  //ion coordinates. delta=1e-6.  Should be good up to 7th or 8th sig fig. These are:
+  // F[0][0]= 0.3474359
+  // F[0][1]= 0
+  // F[0][2]= 0
+  // F[1][0]=-0.002734064
+  // F[1][1]= 0
+  // F[1][2]= 0
+
+  REQUIRE( HFTerm[0][0] == Approx( -0.3557369031 ) );
+  REQUIRE( HFTerm[0][1] == Approx(  0.0 ) );
+  REQUIRE( HFTerm[0][2] == Approx(  0.0 ) );
+  REQUIRE( HFTerm[1][0] == Approx(  0.001068673105 ) );
+  REQUIRE( HFTerm[1][1] == Approx(  0.0 ) );
+  REQUIRE( HFTerm[1][2] == Approx(  0.0 ) );
+  
+  REQUIRE( PulayTerm[0][0] == Approx(  0.008300993315 ) );
+  REQUIRE( PulayTerm[0][1] == Approx(  0.0 ) );
+  REQUIRE( PulayTerm[0][2] == Approx(  0.0 ) );
+  REQUIRE( PulayTerm[1][0] == Approx(  0.001665391103 ) );
+  REQUIRE( PulayTerm[1][1] == Approx(  0.0 ) );
+  REQUIRE( PulayTerm[1][2] == Approx(  0.0 ) );
+
+  //Comparing against finite difference results above, here's what we get.
+  //HFTerm[0][0]+PulayTerm[0][0] = −0.34743591  
+  //HFTerm[0][1]+PulayTerm[0][1] =  0.0
+  //HFTerm[0][2]+PulayTerm[0][2] =  0.0
+  //HFTerm[1][0]+PulayTerm[1][0] =  0.002734064  
+  //HFTerm[1][1]+PulayTerm[1][1] =  0.0
+  //HFTerm[1][2]+PulayTerm[1][2] =  0.0
+  
   #endif
 
  #else
