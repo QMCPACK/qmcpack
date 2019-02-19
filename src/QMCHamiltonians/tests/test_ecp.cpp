@@ -274,6 +274,9 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
 
   const auto myTable = elec.DistTables[myTableIndex];
   
+  //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
+  double logpsi = psi.evaluateLog(elec);
+  
   double Value1(0.0);
  #ifdef ENABLE_SOA
   //Forces are only implemented in SOA version, hence the guard.
@@ -287,8 +290,6 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
   HFTerm2=0;
   PulayTerm=0;
 
-  //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
-  double logpsi = psi.evaluateLog(elec);
   for(int jel=0; jel<elec.getTotalNum(); jel++)
   {
     const auto& dist  = myTable->Distances[jel];
@@ -369,7 +370,7 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
       Value1 += nlpp->evaluateOne(elec,iat,psi,iel,r,myTable->dr(nn),0,Txy);
     }
   }
-  REQUIRE( Value1 == Approx(0.9498625845) );
+  REQUIRE( Value1 == Approx(6.9015710211e-02) );
 
 #endif   
 }
