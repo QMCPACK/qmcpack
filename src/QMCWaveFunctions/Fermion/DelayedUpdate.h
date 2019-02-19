@@ -212,7 +212,7 @@ namespace qmcplusplus {
           if(use_serial || knob.NestedThreadingSupported())
           {
             // threading depends on BLAS
-            if(!use_serial) knob.presetBLASNumThreads();
+            if(!use_serial) knob.setBLASNumThreads();
             BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
             for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
             BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);

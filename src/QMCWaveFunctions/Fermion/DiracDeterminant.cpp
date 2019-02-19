@@ -55,7 +55,7 @@ void DiracDeterminant::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& i
 {
   InverseTimer.start();
   BlasNestedThreadingService knob;
-  knob.presetBLASNumThreads();
+  knob.setBLASNumThreads();
 #ifdef MIXED_PRECISION
   simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
                   psiM_hp.data(), NumOrbitals, psiM_hp.cols());

@@ -33,7 +33,7 @@ BlasNestedThreadingService::BlasNestedThreadingService() : num_threads(1), old_s
   }
 }
 
-void BlasNestedThreadingService::presetBLASNumThreads()
+void BlasNestedThreadingService::setBLASNumThreads()
 {
   if(omp_get_nested() && num_threads>1)
   {

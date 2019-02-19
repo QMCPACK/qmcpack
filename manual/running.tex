@@ -79,7 +79,6 @@ Nested threading is enabled by setting \ishell{OMP\_NUM\_THREADS=AA,BB}, \ishell
 For example, on Blue Gene/Q with Clang compiler, the best way to fully use the 16 cores each with 4 hardware threads is
 \begin{shade}
 OMP_NESTED=TRUE
-OMP_WAIT_POLICY=ACTIVE
 OMP_NUM_THREADS=16,4
 MAX_ACTIVE_LEVELS=2
 OMP_PLACES=threads

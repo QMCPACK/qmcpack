@@ -34,7 +34,7 @@ class BlasNestedThreadingService
   int getNumThreads() { return num_threads; }
 
   /// Detect the threading environment and preset BLAS libraray
-  void presetBLASNumThreads();
+  void setBLASNumThreads();
 
   /// Detect the threading environment and unset BLAS libraray
   void unsetBLASNumThreads();
