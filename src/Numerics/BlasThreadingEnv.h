@@ -10,10 +10,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef QMCPLUSPLUS_BLAS_THREADING_ENV_H
+#define QMCPLUSPLUS_BLAS_THREADING_ENV_H
 
-#include "Numerics/BlasNestedThreadingService.h"
-#include <omp.h>
 #include "config.h"
+#include "Message/OpenMP.h"
 #ifdef HAVE_MKL
 #include<mkl_service.h>
 #endif
@@ -21,45 +22,39 @@
 namespace qmcplusplus
 {
 
-BlasNestedThreadingService::BlasNestedThreadingService() : num_threads(1), old_state(0)
+/** service class for explicitly managing the threading of BLAS/LAPACK calls from OpenMP parallel region
+ *
+ * intended to use only locally around heavy calls.
+ */
+class BlasThreadingEnv
 {
-  if(omp_get_nested())
-  {
-    #pragma omp parallel
-    {
-      #pragma omp master
-      num_threads = omp_get_num_threads();
-    }
-  }
-}
+  int old_state;
 
-void BlasNestedThreadingService::setBLASNumThreads()
-{
-  if(omp_get_nested() && num_threads>1)
+  public:
+  /// Constructor, obtains the number of threads at the next level
+  BlasThreadingEnv(int num_threads)
   {
 #ifdef HAVE_MKL
     old_state = mkl_set_num_threads_local(num_threads);
 #endif
   }
-}
 
-void BlasNestedThreadingService::unsetBLASNumThreads()
-{
-  if(omp_get_nested() && num_threads>1)
+  ~BlasThreadingEnv()
   {
 #ifdef HAVE_MKL
     mkl_set_num_threads_local(old_state);
 #endif
   }
-}
 
-bool BlasNestedThreadingService::NestedThreadingSupported()
-{
+  static bool NestedThreadingSupported()
+  {
 #ifdef HAVE_MKL
-  return true;
+    return true;
 #else
-  return false;
+    return false;
 #endif
-}
+  }
+};
 
 }
+#endif

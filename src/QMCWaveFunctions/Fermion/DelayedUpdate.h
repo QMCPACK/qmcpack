@@ -16,7 +16,7 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <simd/simd.hpp>
 #include "Numerics/OhmmsBlas.h"
-#include "Numerics/BlasNestedThreadingService.h"
+#include "Numerics/BlasThreadingEnv.h"
 #include "config.h"
 
 namespace qmcplusplus {
@@ -206,25 +206,24 @@ namespace qmcplusplus {
         else
         {
           const int lda_Binv=Binv.cols();
-          BlasNestedThreadingService knob;
+          int num_threads_nested = getNumThreadsNested();
           // always use serial when norb is small or only one second level thread
-          bool use_serial(norb<=256||knob.getNumThreads()==1);
-          if(use_serial || knob.NestedThreadingSupported())
+          bool use_serial(norb<=256||num_threads_nested==1);
+          if(use_serial || BlasThreadingEnv::NestedThreadingSupported())
           {
             // threading depends on BLAS
-            if(!use_serial) knob.setBLASNumThreads();
+            BlasThreadingEnv knob(use_serial?1:num_threads_nested);
             BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
             for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
             BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
             BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
-            if(!use_serial) knob.unsetBLASNumThreads();
           }
           else
           {
             // manually threaded version of the above GEMM calls
             #pragma omp parallel
             {
-              const int block_size = getAlignedSize<T>((norb+knob.getNumThreads()-1)/knob.getNumThreads());
+              const int block_size = getAlignedSize<T>((norb+num_threads_nested-1)/num_threads_nested);
               int num_block = (norb+block_size-1)/block_size;
               #pragma omp for
               for(int ix=0; ix<num_block; ix++)
