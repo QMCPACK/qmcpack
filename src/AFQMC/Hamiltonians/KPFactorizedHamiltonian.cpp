@@ -492,17 +492,36 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   }
   TG.Node().barrier();
 
-  // calculate (only Q=0) vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] conj(L[0][K][l][j][n])
-  for(int K=0; K<nkpts; K++) {
-    if(K%TG.Node().size() == TG.Node().rank()) {
-      boost::multi::array_ref<SPComplexType,2> Likn(to_address(LQKikn[Q0][K].origin()),
-                                                   {nmo_per_kp[K],nmo_per_kp[K]*nchol_per_kp[0]});
-      using ma::H;
-      ma::product(-0.5,Likn,H(Likn),0.0,vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+  // calculate vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] conj(L[0][K][l][j][n])
+  for(int Q=0; Q<nkpts; Q++) {
+    for(int K=0; K<nkpts; K++) {
+      if(K%TG.Node().size() == TG.Node().rank()) {
+        int QK = QKtok2[Q][K];
+        int Qm = kminus[Q]; 
+        if(Q <= Qm) {
+          boost::multi::array_ref<SPComplexType,2> Likn(to_address(LQKikn[Q][K].origin()),
+                                                   {nmo_per_kp[K],nmo_per_kp[QK]*nchol_per_kp[Q]});
+          using ma::H;
+          ma::product(-0.5,Likn,H(Likn),1.0,vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+        } else {
+          int QmK = QKtok2[Qm][K];
+          boost::multi::array_ref<SPComplexType,3> Lkin(to_address(LQKikn[Qm][QK].origin()),
+                                                   {nmo_per_kp[QK],nmo_per_kp[K],nchol_per_kp[Qm]});
+          boost::multi::array<SPComplexType,3> buff({nmo_per_kp[K],nmo_per_kp[QK],nchol_per_kp[Qm]});
+          using std::conj;
+          for(int i=0; i<nmo_per_kp[K]; i++)
+          for(int k=0; k<nmo_per_kp[QK]; k++)
+          for(int n=0; n<nchol_per_kp[Qm]; n++)
+            buff[i][k][n] = conj(Lkin[k][i][n]);
+          boost::multi::array_ref<SPComplexType,2> L_(to_address(buff.origin()),
+                                                   {nmo_per_kp[K],nmo_per_kp[QK]*nchol_per_kp[Qm]});
+          using ma::H;
+          ma::product(-0.5,L_,H(L_),1.0,vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+        }
+      }
     }
   }
   TG.Node().barrier();
-  // in parallel, whoever has Q=0 calculates and bcasts
 
 //  TG.Node().barrier();
 //  if(TG.Node().root())

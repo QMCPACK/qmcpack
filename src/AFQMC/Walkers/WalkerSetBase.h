@@ -75,7 +75,7 @@ class WalkerSetBase: public AFQMCInfo
         RandomGenerator_t* r, Allocator alloc_ = {}):
                 TG(tg_),AFQMCInfo(info),rng(r),
                 walker_memory_usage(0),tot_num_walkers(0),
-		walker_buffer({1,1},alloc_),
+		walker_buffer({0,1},alloc_),
                 load_balance(UNDEFINED_LOAD_BALANCE),
                 pop_control(UNDEFINED_BRANCHING),min_weight(0.05),max_weight(4.0),
                 walkerType(UNDEFINED_WALKER_TYPE),nback_prop(0)

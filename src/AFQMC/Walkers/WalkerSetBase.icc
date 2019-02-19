@@ -207,7 +207,7 @@ bool WalkerSetBase<Alloc,Ptr>::clean()
 template<class Alloc, typename Ptr>
 void WalkerSetBase<Alloc,Ptr>::reserve(int n)
 {
-  if(capacity() < n)
+  if(walker_buffer.size(0) < n || walker_buffer.size(1) != walker_size)
     walker_buffer.reextent({n,walker_size});
 }
 

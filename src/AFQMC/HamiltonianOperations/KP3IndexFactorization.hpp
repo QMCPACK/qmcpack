@@ -153,6 +153,8 @@ app_log()<<" in shared KP3Index " <<std::endl;
       // making a copy of vMF since it will be modified
       set_shm_buffer(vMF.size(0));
       boost::multi::array_ref<ComplexType,1> vMF_(to_address(SM_TMats.origin()),{vMF.size(0)});
+      using std::copy_n;
+      copy_n(vMF.origin(),vMF.num_elements(),vMF_.origin());
 
       boost::multi::array_ref<ComplexType,1> P1D(to_address(P1.origin()),{NMO*NMO});
       std::fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));

@@ -77,6 +77,9 @@ struct cuda_gpu_reference {
 
   pointer operator& () const { return pointer{impl_}; }
 
+  value_type* addressof()  { return impl_; }
+  friend value_type* addressof(cuda_gpu_reference & rhs) { return rhs.addressof(); }
+
   void swap(cuda_gpu_reference& other) { std::swap(impl_,other.impl_); }
 
   cuda_gpu_reference&  operator++ (void) { kernels::op_plus(impl_,T(1)); return *this; }
