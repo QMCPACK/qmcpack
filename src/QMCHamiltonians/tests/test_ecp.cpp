@@ -279,10 +279,12 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
   //Forces are only implemented in SOA version, hence the guard.
   double Value2(0.0);
   double Value3(0.0);
-  ParticleSet::ParticlePos_t PulayTerm,HFTerm;
+  ParticleSet::ParticlePos_t PulayTerm,HFTerm,HFTerm2;
   HFTerm.resize(ions.getTotalNum());
+  HFTerm2.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
   HFTerm=0;
+  HFTerm2=0;
   PulayTerm=0;
 
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
@@ -299,6 +301,7 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
           //I know the real version doesn't work yet.  Only test if complex.
           #ifdef QMC_COMPLEX
           Value2 += nlpp->evaluateOneWithForces(elec,iat,psi,jel,dist[iat],RealType(-1)*displ[iat],HFTerm[iat],0,Txy);
+          Value3 += nlpp->evaluateOneWithForces(elec,ions,iat,psi,jel,dist[iat],RealType(-1)*displ[iat],HFTerm2[iat],PulayTerm,0,Txy);
           #endif
       }
     }
@@ -329,6 +332,13 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
   REQUIRE( HFTerm[1][0] == Approx(  0.001068673105 ) );
   REQUIRE( HFTerm[1][1] == Approx(  0.0 ) );
   REQUIRE( HFTerm[1][2] == Approx(  0.0 ) );
+  
+  REQUIRE( HFTerm2[0][0] == Approx( -0.3557369031 ) );
+  REQUIRE( HFTerm2[0][1] == Approx(  0.0 ) );
+  REQUIRE( HFTerm2[0][2] == Approx(  0.0 ) );
+  REQUIRE( HFTerm2[1][0] == Approx(  0.001068673105 ) );
+  REQUIRE( HFTerm2[1][1] == Approx(  0.0 ) );
+  REQUIRE( HFTerm2[1][2] == Approx(  0.0 ) );
   
   REQUIRE( PulayTerm[0][0] == Approx(  0.008300993315 ) );
   REQUIRE( PulayTerm[0][1] == Approx(  0.0 ) );

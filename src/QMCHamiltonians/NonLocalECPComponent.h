@@ -119,6 +119,12 @@ struct NonLocalECPComponent: public QMCTraits
   RealType evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
       int iel, RealType r, const PosType& dr, PosType &force_iat, bool Tmove, std::vector<NonLocalData>& Txy) const;
 
+  ///Computes the nonlocal PP energy and Hellman-Feynman and Pulay force contribution coming from
+  /// ion "iat" and electron "iel".  
+  RealType evaluateOneWithForces(ParticleSet& W, ParticleSet& ions, int iat, TrialWaveFunction& Psi, 
+      int iel, RealType r, const PosType& dr, PosType &force_iat, ParticleSet::ParticlePos_t& pulay_terms, 
+      bool Tmove, std::vector<NonLocalData>& Txy) const;
+
   RealType
   evaluateValueAndDerivatives(ParticleSet& P,
       int iat, TrialWaveFunction& psi,
