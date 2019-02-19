@@ -3078,6 +3078,7 @@ class Summit(Supercomputer):
         #end if
     #end def process_job_extra
 
+
     def write_job_header(self,job):
         c ='#!/bin/bash\n'
         c+='#BSUB -P {0}\n'.format(job.account)
@@ -3091,6 +3092,22 @@ class Summit(Supercomputer):
         #end if
         return c
     #end def write_job_header
+
+
+    def read_process_id(self,output):
+        pid = None
+        tokens = output.split()
+        for t in tokens:
+            if t.startswith('<'):
+                spid = t.strip('<>').strip()
+                if spid.isdigit():
+                    pid = int(spid)
+                    break
+                #end if
+            #end if
+        #end for
+        return pid
+    #end def read_process_id
 #end class Summit
 
 
