@@ -98,14 +98,14 @@ KMP_HOT_TEAMS_MAX_LEVEL=2
 \end{shade}
 
 Most multi-threaded BLAS/LAPACK libraries do not spawn threads by default
-when being called from an OpenMP parallel region. See explanation in \ref{sec:threadedlibrary}.
+when being called from an OpenMP parallel region. See the explanation in \ref{sec:threadedlibrary}.
 This results in the use of only a single thread in each second level thread team for BLAS/LAPACK operations.
 Some vendor libraries like MKL support using multiple threads when being called from an OpenMP parallel region.
 One way to enable this feature is using environment variables to override the default behavior.
-However, this forces all the calls to the library using the same amount of threads.
+However, this forces all the calls to the library to use the same number of threads.
 As a result, small function calls are penalized with heavy overhead and heavy function calls are slow for not being able to use more threads.
-Instead, QMCPACK use the library APIs to turn on the nested threading only at selected performance critical calls.
-In the case of using serial library, QMCPACK implements nested threading to distribute the workload wherever necessary.
+Instead, QMCPACK uses the library APIs to turn on nested threading only at selected performance critical calls.
+In the case of using a serial library, QMCPACK implements nested threading to distribute the workload wherever necessary.
 Users do not need to control the threading behaviour of the library.
 
 \subsubsection{Performance considerations}
