@@ -47,7 +47,9 @@ NonLocalECPComponent* NonLocalECPComponent::makeClone(const ParticleSet &qp)
 void NonLocalECPComponent::initVirtualParticle(const ParticleSet &qp)
 {
   assert(VP==0);
+  outputManager.pause();
   VP=new VirtualParticleSet(qp,nknot);
+  outputManager.resume();
 }
 
 void NonLocalECPComponent::add(int l, RadialPotentialType* pp)
