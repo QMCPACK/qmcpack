@@ -45,11 +45,22 @@ inline T laplacian(const TinyVector<std::complex<T>,D>& g, const std::complex<T>
   return  l.real()+OTCDot<T,T,D>::apply(g,g);
 }
 
+/** Convenience function to compute  \Re( \nabla^2_i \partial \Psi_T/\Psi_T)
+ * @param g OHMMS_DIM dimensional vector for \nabla_i \ln \Psi_T .  
+ * @param l A number, representing \nabla^2_i \ln \Psi_T .
+ * @param gg OHMMS_DIM dimensional vector containing \nabla_i \partial \ln \Psi_T . 
+ * @param gl A number, representing \nabla^2_i \partial \ln \Psi_T
+ * @param ideriv A number, representing \partial \ln \Psi_T
+ *
+ * @return A number corresponding to \Re( \nabla^2_i \partial \Psi_T/\Psi_T)
+ */
+
 template<typename T, unsigned D>
 inline T dlaplacian(const TinyVector<T,D>& g, const T l, const TinyVector<T,D>& gg, const T gl, const T ideriv)
 {
   return gl + l*ideriv + 2.0*dot(g,gg) + dot(g,g)*ideriv;
 }
+
 template<typename T, unsigned D>
 inline T dlaplacian(const TinyVector<std::complex<T>,D>& g, const std::complex<T> l, 
                     const TinyVector<std::complex<T>,D>& gg, const std::complex<T> gl, const std::complex<T> ideriv)
@@ -222,6 +233,23 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     return Value;
   }
 
+  /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
+ *  
+ *  This general function represents the QMCHamiltonianBase interface for computing.  For an operator \hat{O}, this
+ *  function will return \frac{\hat{O}\Psi_T}{\Psi_T},  \frac{\partial(\hat{O})\Psi_T}{\Psi_T}, and 
+ *  \frac{\hat{O}\partial\Psi_T}{\Psi_T} - \frac{\hat{O}\Psi_T}{\Psi_T}\frac{\partial \Psi_T}{\Psi_T}.  These are 
+ *  referred to as Value, HF term, and pulay term respectively.
+ *
+ * @param P electron particle set.
+ * @param ions ion particle set
+ * @param psi Trial wave function object.
+ * @param hf_terms 3Nion dimensional object. All direct force terms, or ionic gradient of operator itself.
+ *                 Contribution of this operator is ADDED onto hf_terms.
+ * @param pulay_terms The terms coming from ionic gradients of trial wavefunction.  Contribution of this operator is
+ *                 ADDED onto pulay_terms.
+ * @return Value of kinetic energy operator at electron/ion positions given by P and ions.  The force contributions from
+ *          this operator are added into hf_terms and pulay_terms.
+ */
   inline Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi, 
                                         ParticleSet::ParticlePos_t& hf_terms, ParticleSet::ParticlePos_t & pulay_terms)
   {
