@@ -1,5 +1,6 @@
 ##################################################################
 ##  (c) Copyright 2018-  by Richard K. Archibald                ##
+##                       and Jaron T. Krogel                    ##
 ##################################################################
 
 
@@ -80,8 +81,10 @@
 #                                                                    #
 #====================================================================#
 
-
-from developer import unavailable,available,DevBase,log,warn,error
+import os
+from numpy import array,zeros,append
+from generic import obj
+from developer import unavailable,available,DevBase,log,warn,error,ci
 
 import numpy as np
 try:
@@ -1019,8 +1022,1041 @@ def gp_opt_example():
     #end for
 #end def gp_opt_example
 
+###############################################################################
+
+
+
+
+class GPState(DevBase):
+    """
+    Represents internal state of a Gaussian Process iteration.
+
+    The GPState class is the primary interface to the procedural GP optimization
+    approach represented by the gp_opt function and sub-functions.  This class 
+    represents the state of the GP at each iteration and allows for the state 
+    to be stored and loaded from disk.  This allows for interruptible GP 
+    optimizations, which is useful when interfacing to target functions that 
+    are expensive to evaluate, such as a QMC energy surface that is evaluated 
+    on an HPC machine with Nexus driven workflows.
+
+    GPState is not intended for public instantiation. GaussianProcessOptimizer
+    class is the sole intended owner.  Read only access (intended) is granted 
+    by GaussianProcessOptimizer to the user when a GPState instance is passed in 
+    to the user-provided energy_function.  See GaussianProcessOptimizer.optimize.
+    """
+
+    def __init__(self,
+                 param_lower = None,
+                 param_upper = None,
+                 niterations = None,
+                 save_path   = './',
+                 ):
+        """
+        Setup initial GP data.
+
+        Parameters
+        ----------
+        param_lower : Lower bounds of the parameter search domain (list-like).
+        param_upper : Upper bounds of the parameter search domain (list-like).
+        niterations : Number of GP iterations to perform.
+        save_path   : (Optional) directory where state snapshots will be saved.
+        """
+        if isinstance(param_lower,GPState):
+            o = param_lower.copy()
+            self.__dict__ = o.__dict__
+            return
+        #end if
+        dim     = -1
+        Pdomain = None
+        E       = None
+        dE      = None
+        P       = None
+        Popt    = None
+        Eopt    = None
+        GP_info = None
+        if param_lower is not None:
+            dim = len(param_lower)
+            param_lower = array(param_lower)
+            param_upper = array(param_upper)
+            hyper_cube = zeros([dim,2],dtype=float)
+            hyper_cube[:,0] = param_lower
+            hyper_cube[:,1] = param_upper
+            Pdomain = hyper_cube.copy()
+            # Setup Gausian Process data structure 
+            GP_info = GParmFlags()
+            GP_info.n_its = niterations
+            GP_info.hyper_cube = hyper_cube
+            E,dE,P,Popt,Eopt,GP_info = gp_opt_setup(GP_info)
+        #end if
+        self.save_path = save_path
+        self.dim       = dim
+        self.Pdomain   = Pdomain
+        self.E         = E
+        self.dE        = dE
+        self.P         = P
+        self.Popt      = Popt
+        self.Eopt      = Eopt
+        self.GP_info   = GP_info
+        self.iteration = -1
+        self.Pnew      = None
+        self.Popt_hist = []
+        self.Eopt_hist = []
+    #end def __init__
+
+
+    def gp_inputs(self):
+        """
+        Returns inputs required by the gp_opt function.
+        """
+        return self.list('E dE P GP_info'.split())
+    #end def gp_inputs
+
+
+    def update_gp(self,gp_opt_outputs):
+        """
+        Stores outputs from the gp_opt_function.
+        """
+        self.Pnew    = gp_opt_outputs[0]
+        self.Popt    = gp_opt_outputs[1]
+        self.Eopt    = gp_opt_outputs[2]
+        self.GP_info = gp_opt_outputs[3]
+    #end def update_gp
+    
+
+    def parameters(self):
+        """
+        Returns parameters generated/sampled in the current iteration.
+        """
+        return self.Pnew.copy()
+    #end def parameters
+
+
+    def sample_parameters(self):
+        """
+        Calls the gp_opt function to obtain LHC parameter samples and predicted
+        optimal parameters and energies.
+        """
+        self.GP_info.jits = self.iteration
+        self.update_gp(gp_opt(*self.gp_inputs()))
+        return self.parameters()
+    #end def sample_parameters
+
+
+    def update_energies(self,energies,errors):
+        """
+        Appends parameter and energy+error data to internal state arrays.
+        """
+
+        if self.iteration==0:
+            self.P  = self.Pnew.copy()
+            self.E  = energies.copy()
+            self.dE = errors.copy()
+        else:
+            self.P  = append(self.P ,self.Pnew,axis=0)
+            self.E  = append(self.E ,energies ,axis=0)
+            self.dE = append(self.dE,errors   ,axis=0)
+        #end if
+    #end def update_energies
+
+
+    def optimal_parameters(self):
+        """
+        Returns predicted optimal parameters for the current iteration.
+        """
+        return self.Popt.copy()
+    #end def optimal_parameters
+
+
+    def optimal_energies(self):
+        """
+        Returns predicted optimal energies for the current iteration.
+        """
+        return self.Eopt.copy()
+    #end def optimal_energies
+
+
+    def update_optimal_trajectory(self):
+        """
+        Stores a history of predicted optimal parameters/energies across all 
+        iterations.
+        """
+        Popt = self.optimal_parameters()
+        Eopt = self.optimal_energies()
+        self.Popt_hist.append(Popt)
+        self.Eopt_hist.append(Eopt)
+        return Popt,Eopt
+    #end def update_optimal_trajectory
+
+
+    def optimal_trajectory(self):
+        """
+        Returns the predicted optimal parameters/energies across all iterations.
+        """
+        return self.Popt_hist,self.Eopt_hist
+    #end def optimal_trajectory
+
+
+    def state_filepath(self,label=None,path=None,prefix='gp_state',filepath=None):
+        """
+        Returns the filepath used to store the state of the current iteration.
+        """
+        if filepath is not None:
+            return filepath
+        #end if
+        if path is None:
+            path = self.save_path
+        #end if
+        filename = prefix+'_iteration_{0}'.format(self.iteration)
+        if label is not None:
+            filename += '_'+label
+        #end if
+        filename += '.p'
+        filepath = os.path.join(path,filename)
+        return filepath
+    #end def state_filepath
+
+
+    def save(self,*args,**kwargs):
+        """
+        Saves the state of the current iteration to disk.
+        """
+        filepath = self.state_filepath(*args,**kwargs)
+        path,file = os.path.split(filepath)
+        if not os.path.exists(path):
+            os.makedirs(path)
+        #end if
+        s = obj(self)
+        s.save(filepath)
+    #end def save
+
+
+    def load(self,*args,**kwargs):
+        """
+        Loads the state of the current iteration from disk.
+        """
+        filepath = self.state_filepath(*args,**kwargs)
+        s = obj()
+        s.load(filepath)
+        self.transfer_from(s)
+    #end def load
+
+
+    def attempt_load(self,*args,**kwargs):
+        """
+        Attempts to load current iteration state from disk.
+        """
+        loaded = False
+        filepath = self.state_filepath(*args,**kwargs)
+        if os.path.exists(filepath):
+            self.load(filepath=filepath)
+            loaded = True
+        #end if
+        return loaded
+    #end def attempt_load
+#end class GPState
+
+
+
+class GaussianProcessOptimizer(DevBase):
+    """
+    Offers the main user interface to Gaussian Process optimization.
+
+    Apart from instantiation, the user should only need to call the "optimize" 
+    member function.  
+
+    Examples
+    --------
+    # minimize a 2D parabola over the domain -1 < x,y < 1
+    def x2(x,s):
+        E = (x**2).sum(axis=1,keepdims=1)
+        dE = 0*E
+        return E,dE
+    #end def x2    
+    gpo = GaussianProcessOptimizer(5,[-1,-1],[1,1],x2)
+    P0,E0 = gpo.optimize()
+    print 'optimal parameters:',P0[-1]
+    print 'optimal energy    :',E0[-1]
+    """
+
+    allowed_modes = 'stateless stateful'.split()
+
+    def __init__(self,
+                 niterations     = None,
+                 param_lower     = None,
+                 param_upper     = None,
+                 energy_function = None,
+                 state_path      = './opt_gp_states',
+                 output_path     = './opt_gp_output',
+                 mode            = 'stateful',
+                 verbose         = True,
+                 exit_on_save    = False,
+                 ):
+        """
+        Parameters
+        ----------
+        niterations     : Number of GP iterations to perform.
+        param_lower     : Lower bounds of the parameter search domain (list-like).
+        param_upper     : Upper bounds of the parameter search domain (list-like).
+        energy_function : Target function for optimization.  Must accept parameters
+                          and a GPState instance as arguments and return energies 
+                          and errorbars for the energies (function-like).
+        state_path      : (Optional) directory where state snapshots will be saved.
+        output_path     : (Optional) directory where parameter/energy data will be 
+                          saved for each iteration.
+        mode            : (Optional) selects whether or not to save state during 
+                          the GP optimization.  Can be "stateless" or "stateful",
+                          default is "stateful".
+        verbose         : (Optional) selects whether detailed information is 
+                          printed (bool).
+        exit_on_save    : (Optional) testing parameter that selects whether to 
+                          exit each time state is saved to disk.  This enables 
+                          the user to check that the optimizer can suspend and 
+                          resume properly.
+        """
+        if niterations is None:
+            self.error('niterations is required')
+        #end if
+        if param_lower is None:
+            self.error('param_lower is required')
+        #end if
+        if param_upper is None:
+            self.error('param_upper is required')
+        #end if
+        if energy_function is None:
+            self.error('energy_function is required')
+        #end if
+        self.niterations     = niterations
+        self.state_path      = state_path
+        self.output_path     = output_path
+        self.state           = GPState(param_lower,param_upper,niterations,state_path)
+        self.energy_function = energy_function
+        self.mode            = mode
+        self.verbose         = verbose
+        self.exit_on_save    = exit_on_save
+        if self.mode not in self.allowed_modes:
+            self.error('mode {0} is not allowed\nallowed modes are: {1}'.format(self.mode,self.allowed_modes))
+        #end if
+    #end def __init__
+
+
+    def optimize(self):
+        """
+        Runs the main optimization cycle.
+        """
+        self.vlog('Beginning Gaussian Process optimization')
+        res = None
+        if self.mode=='stateless':
+            res = self.optimize_stateless()
+        elif self.mode=='stateful':
+            res = self.optimize_stateful()
+        else:
+            self.error('cannot optimize, mode "{0}" has not been implemented'.format(self.mode))
+        #end if
+        self.vlog('Gaussian Process optimization finished')
+        return res
+    #end def optimize
+
+
+    def optimize_stateless(self):
+        """
+        Optimizes energy_function without saving state.
+        """
+        state = self.state
+        for i in range(self.niterations+1):
+            state.iteration+=1
+            self.vlog('iteration {0}'.format(state.iteration),n=1)
+            self.vlog('sampling parameters',n=2)
+            params = state.sample_parameters()
+            if i>0:
+                self.vlog('updating predicted optimal params/energies',n=2)       
+                state.update_optimal_trajectory()
+            #end if
+            if i<self.niterations:
+                self.vlog('calculating new energies',n=2)
+                energies,errors = self.energy_function(params,state)
+                self.vlog('incorporating new energies',n=2)
+                state.update_energies(energies,errors)
+            #end if
+        #end for
+        return state.optimal_trajectory()
+    #end def optimize_stateless
+
+
+    def optimize_stateful(self):
+        """
+        Optimizes energy_function, saving state each iteration.
+
+        All load*/save*/write* functions are ultimately called by this function.
+        """
+        state = self.state
+        for i in range(self.niterations+1):
+            state.iteration+=1
+            self.vlog('iteration {0}'.format(state.iteration),n=1)
+            if not self.load_start():
+                self.save_start()
+            #end if
+            if not self.load_parameters():
+                params = state.sample_parameters()
+                if i>0:
+                    Popt,Eopt = state.update_optimal_trajectory()
+                    self.save_optimal(Popt,Eopt)
+                #end if
+                self.save_parameters(params)
+            else:
+                params = state.parameters()
+            #end if
+            if i<self.niterations:
+                if not self.load_energies():
+                    energies,errors = self.energy_function(params,state)
+                    state.update_energies(energies,errors)
+                    self.save_energies(energies,errors)
+                #end if
+            #end if
+        #end for
+        return state.optimal_trajectory()
+    #end def optimize_stateful
+
+
+    def vlog(self,msg,n=0,indent='  '):
+        """
+        Prints a message if verbose=True.
+        """
+        if self.verbose:
+            self.log(msg,indent=n*indent)
+        #end if
+    #end def vlog
+
+
+    def make_output_dir(self,iter='cur'):
+        """
+        Creates a directory for text file parameter/energy output for the 
+        current iteration.
+        """
+        i = self.state.iteration
+        if iter=='cur':
+            None
+        elif iter=='prev':
+            i-=1
+        else:
+            self.error('invalid iteration requested for save: {0}'.format(iter))
+        #end if
+        path = os.path.join(self.output_path,'iteration_{0}'.format(i))
+        if not os.path.exists(path):
+            os.makedirs(path)
+        #end if
+        return path
+    #end def make_output_dir
+
+
+    def write_param_file(self,param_file,Pset,iter='cur'):
+        """
+        Writes a parameter file to the current iteration's output directory.
+        """
+        path = self.make_output_dir(iter)
+        filepath = os.path.join(path,param_file)
+        self.vlog('writing parameters to {0}'.format(filepath),n=3)
+        nsamples,nparams = Pset.shape
+        s = ''
+        for i in xrange(nsamples):
+            for j in xrange(nparams):
+                s += ' {0: 16.12f}'.format(Pset[i,j])
+            #end for
+            s += '\n'
+        #end for
+        f = open(filepath,'w')
+        f.write(s)
+        f.close()
+    #end def write_param_file
+
+
+    def write_energy_file(self,energy_file,energies,errors=None,iter='cur'):
+        """
+        Writes an energy file to the current iteration's output directory.
+        """
+        path = self.make_output_dir(iter)
+        filepath = os.path.join(path,energy_file)
+        self.vlog('writing energies to {0}'.format(filepath),n=3)
+        energies = energies.ravel()
+        s = ''
+        if errors is None:
+            for e in energies:
+                s += '{0: 16.12f}\n'.format(e)
+            #end for
+        else:
+            errors = errors.ravel()
+            for e,ee in zip(energies,errors):
+                s += '{0: 16.12f}  {1: 16.12f}\n'.format(e,ee)
+            #end for
+        #end if
+        f = open(filepath,'w')
+        f.write(s)
+        f.close()
+    #end ef write_energy_file
+
+
+    def load_state(self,label):
+        """
+        Loads state information for the current iteration from a file matching 
+        "label".
+        """
+        savefile = self.state.state_filepath(label)
+        self.vlog('attempting to load state file {0}'.format(savefile),n=3)
+        loaded = self.state.attempt_load(label)
+        if loaded:
+            self.vlog('state file load successful',n=3)
+        else:
+            self.vlog('state file is not present',n=3)
+        #end if
+        return loaded
+    #end def load_state
+
+
+    def save_state(self,label):
+        """
+        Saves state information for the current iteration to a file matching 
+        "label".
+        """
+        savefile = self.state.state_filepath(label)
+        self.vlog('saving state file {0}'.format(savefile),n=3)
+        self.state.save(label)
+        if self.exit_on_save:
+            self.vlog('exiting',n=3)
+            exit()
+        #end if
+    #end def save_state
+
+
+    def load_start(self):
+        """
+        Attempt to load state for startup portion of current iteration.
+        """
+        self.vlog('startup',n=2)
+        return self.load_state('start')
+    #end def load_start
+
+
+    def save_start(self):
+        """
+        Save state for startup portion of current iteration.
+        """
+        self.save_state('start')
+    #end def save_start
+
+
+    def load_parameters(self):
+        """
+        Attempt to load state for parameter sampling portion of current iteration.
+        """
+        self.vlog('sampling parameters',n=2)
+        return self.load_state('sample_params')
+    #end def load_parameters
+
+
+    def save_parameters(self,params):
+        """
+        Save state for parameter sampling portion of current iteration.
+        Also write sampled parameters to a text file.
+        """
+        self.vlog('parameter sampling finished',n=3)
+        self.save_state('sample_params')
+        self.vlog('saving sampled parameters',n=3)
+        self.write_param_file('parameters.dat',params)
+    #end def save_parameters
+
+
+    def save_optimal(self,opt_params,opt_energies):
+        """
+        Write predicted optimal parameters and energies to a text file.
+        """
+        self.vlog('saving optimal parameters and energies',n=3)
+        self.write_param_file('optimal_parameters.dat',opt_params,iter='prev')
+        self.write_energy_file('optimal_energies.dat',opt_energies,iter='prev')
+    #end def save_optimal
+
+
+    def load_energies(self):
+        """
+        Attempt to load state for energy evaluation portion of current iteration.
+        """
+        self.vlog('calculating new energies',n=2)
+        return self.load_state('update_energies')
+    #end def load_energies
+
+
+    def save_energies(self,energies,errors):
+        """
+        Save state for energy evaluation portion of current iteration.
+        Also write calculated energies to a text file.
+        """
+        self.vlog('energy calculation finished',n=3)
+        self.save_state('update_energies')
+        self.vlog('saving calculated energies',n=3)
+        self.write_energy_file('energies.dat',energies,errors)
+    #end def save_energies
+
+#end class GaussianProcessOptimizer
+
+
+
+def rP(P):
+    """
+    Writes formatted parameter output for GPTestFunction.
+    """
+    P = P[0]
+    s = '('
+    for p in P:
+        s += '{0: 6.4f},'.format(p)
+    #end for
+    return s[:-1]+')'
+#end def rP
+
+
+def rE(E):
+    """
+    Writes formatted energy output for GPTestFunction.
+    """
+    return '{0: 6.4f}'.format(E[0,0])
+#end def rE
+
+
+class GPTestFunction(DevBase):
+    """
+    Allows convenient test-driving of GaussianProcessOptimizer on a variety 
+    of target functions.
+    """
+
+    def __init__(self,
+                 name,
+                 niterations,
+                 param_lower,
+                 param_upper,
+                 function,
+                 Pmin,
+                 deterministic = False,
+                 sigma         = 1e-6,
+                 plot          = False,
+                 mode          = 'stateless',
+                 verbose       = False,
+                 exit_on_save  = False
+                 ):
+        """
+        Parameters
+        ----------
+        name          : Name of the current test.
+        niterations   : Number of GP iterations to perform.
+        param_lower   : Lower bounds of the parameter search domain (list-like).
+        param_upper   : Upper bounds of the parameter search domain (list-like).
+        function      : Target function to optimize.  The simple target function 
+                        is wrapped by GPTestFunction.__call__.
+        Pmin          : Parameters for the known minimum.
+        deterministic : (Optional) flag to mark function as deterministic or not. 
+                        If not deterministic, then the target function is expected 
+                        to return statistical error bars (bool).
+        sigma         : (Optional) "errorbar" to apply to deterministic functions 
+                        (float).
+        plot          : (Optional) selects whether to plot the target function 
+                        along a straight line from the true minimum to the 
+                        predicted minimum.
+        mode          : (Optional) same as GaussianProcessOptimizer.mode.
+        verbose       : (Optional) same as GaussianProcessOptimizer.verbose.
+        exit_on_save  : (Optional) same as GaussianProcessOptimizer.exit_on_save.
+        """
+        Pmin = array(Pmin,dtype=float).ravel()
+        Pmin.shape = (1,len(Pmin))
+        self.name          = name
+        self.niterations   = niterations
+        self.param_lower   = param_lower
+        self.param_upper   = param_upper
+        self.function      = function
+        self.Pmin          = Pmin
+        self.deterministic = deterministic
+        self.sigma         = sigma
+        self.plot          = plot
+        self.mode          = mode
+        self.verbose       = verbose
+        self.exit_on_save  = exit_on_save
+    #end def __init__
+
+
+    def __call__(self,P,state=None):
+        """
+        Calls the simple target function and stores evaluations in arrays 
+        of the appropriate shape for gp_opt.  This enables GPTestFunction 
+        to act as a functor which is directly used as the energy_function
+        of GaussianProcessOptimizer.  Future integrations with Nexus workflows 
+        will take this same approach.
+        """
+        npoints = len(P)
+        E  = zeros([npoints,1],dtype=float)
+        dE = zeros([npoints,1],dtype=float)
+        if self.deterministic:
+            for i in range(npoints):
+                Pi = P[i].ravel()
+                Pi.shape = (1,len(Pi))
+                E[i,0]  = self.function(Pi)
+                dE[i,0] = self.sigma
+            #end for
+        else:
+            for i in range(npoints):
+                Pi = P[i].ravel()
+                Pi.shape = (1,len(Pi))
+                E[i,0],dE[i,0] = self.function(Pi)
+            #end for
+        #end if
+        return E,dE
+    #end def __call__
+
+
+    def test(self):
+        """
+        Perform optimization test and print the results of each iteration.
+        """
+        print
+        print 'testing:',self.name
+        GPO = GaussianProcessOptimizer(
+            niterations     = self.niterations,
+            param_lower     = self.param_lower,
+            param_upper     = self.param_upper,
+            energy_function = self,
+            mode            = self.mode,
+            verbose         = self.verbose,
+            exit_on_save    = self.exit_on_save,
+            )
+
+        self.gp = GPO
+
+        P0,E0 = GPO.optimize()
+        Eref = []
+        Eref_err = []
+        for P in P0:
+            E,Ee = self(P)
+            Eref.append(E)
+            Eref_err.append(Ee)
+        #end for
+        Emin,Emin_err = self(self.Pmin)
+
+        for i in range(len(P0)):
+            print rP(P0[i]),rE(E0[i]),rE(Eref[i]),rE(E0[i]-Eref[i]),rE(E0[i]-Emin)
+        #end for
+        print 20*'-'
+        print rP(self.Pmin),rE(Emin)
+
+        if self.plot:
+            n=200
+            fline = []
+            Eline = []
+            for i in range(n):
+                f = float(i)/(n-1)
+                Pf = (1-f)*self.Pmin+f*P0[-1]
+                Ef = self(Pf).ravel()[0]
+                fline.append(f)
+                Eline.append(Ef)
+                #print f,Ef
+            #end for
+            from plotting import figure,plot,show
+            figure()
+            plot(fline,Eline)
+            show()
+        #end if
+    #end def test
+#end class GPTestFunction
+
 
 
 if __name__=='__main__':
-    gp_opt_example()
+
+    #
+    # Test drive GaussianProcessOptimizer using various test functions
+    #
+    #   Most are well-known optimization test functions taken from:
+    #     https://en.wikipedia.org/wiki/Test_functions_for_optimization
+    #
+    #   A Lennard-Jones test function is also provided with known dumbell, 
+    #   triangle, and tetrahedra minima presented as 1, 3, and 6 dimensional
+    #   optimization problems.
+    #
+    #   The current algorithm is challenged by functions with large variations
+    #   in scale, such as those represented by the Rosenbrock, Beale, 
+    #   Goldstein-Price, and Lennard-Jones functions below.
+    #
+    
+    from numpy import abs,sin,cos,exp,sqrt,pi,log
+    from numpy.linalg import norm
+
+    def ackleyf(x):
+        """
+        Calculate the d-dimensional Ackley function on [-1,1]^d
+
+        see: Floudas, C. A., & Pardalos, P. M. (1990). A collection of test 
+        problems for constrained global optimization algorithms. In G. Goods & 
+        J. Hartmanis (Eds.) Lecture notes in computer science: Vol. 455. 
+        Berlin: Springer
+
+        Parameters
+        ----------
+        x : 1 x d-array, x \in [-1,1]^d
+
+        Returns
+        -------
+        y : value of Ackely function
+
+        """
+        d = x.shape[1]
+        x = 0.5*x
+        y = 20.0+exp(1.0)-20.0*exp(-0.2*sqrt((x**2).sum()/float(d)))- \
+            exp((cos(2.0*pi*x)).sum()/float(d))
+
+        return y
+    #end def ackleyf
+
+
+    def sphere(x):
+        x = x.ravel()
+        return (x**2).sum()
+    #end def sphere
+
+
+    def rosenbrock(x):
+        x = x.ravel()
+        return ( (1-x[0:-1])**2+100*(x[1:]-x[0:-1]**2)**2 ).sum()
+    #end def rosenbrock
+
+
+    def beale(x):
+        x,y = x.ravel()
+        return (1.5-x+x*y)**2+(2.25-x+x*y**2)**2+(2.625-x+x*y**3)**2
+    #end def beale
+
+
+    def goldstein_price(x):
+        x,y = x.ravel()
+        return (1.+(x+y+1.)**2*(19.-14*x+3*x**2-14*y+6*x*y+3*y**2))*(30+(2*x-3*y)**2*(18.-32*x+12*x**2+48*y-36*x*y+27*y**2))
+    #end def goldstein_price
+
+
+    def himmelblau(x):
+        x,y = x.ravel()
+        return (x**2+y-11)**2+(x+y**2-7)**2
+    #end def himmelblau
+
+
+    def holder_table(x):
+        x,y = x.ravel()
+        return -abs(sin(x)*cos(y)*exp(abs(1.0-sqrt(x**2+y**2)/pi)))
+    #end def holder_table
+
+    
+    def lennard_jones(x):
+        # parameters, 1+2+3*n
+        x = x.ravel()
+        nparams = len(x)
+        if nparams!=1 and nparams%3!=0 or nparams==0:
+            error('invalid number of parameters for lennard jones')
+        #end if
+        r = [[   0,0,0],
+             [x[0],0,0]]
+        if nparams>1:
+            r.append([x[1],x[2],0])
+        #end if
+        if nparams>3:
+            i=3
+            while i+2<nparams:
+                r.append([x[i],x[i+1],x[i+2]])
+                i+=3
+            #end while
+        #end if
+        r = array(r,dtype=float)
+        npoints = len(r)
+        E1 = 1.0
+        rm = 1.0
+        E = 0.0
+        for i in range(npoints):
+            for j in range(i+1,npoints):
+                d = norm(r[i]-r[j])
+                ELJ = E1*((rm/d)**12-2*(rm/d)**6)
+                E += ELJ
+            #end for
+        #end for
+        return E
+    #end def lennard_jones
+        
+
+    def trunc_lennard_jones(x):
+        E = lennard_jones(x)
+        E = min(E,10)
+        return E
+    #end def trunc_lennard_jones
+        
+
+    def trunc_log_lennard_jones(x):
+        E = lennard_jones(x)
+        if E>1:
+            E = log(E)+1
+        #end if
+        return E
+    #end def trunc_log_lennard_jones
+        
+
+    def trunc_lennard_jones(x):
+        E = lennard_jones(x)
+        E = min(E,10)
+        return E
+    #end def trunc_lennard_jones
+
+
+    sphere2 = GPTestFunction(
+        name          = 'sphere2',
+        niterations   = 6,
+        param_lower   = [-1,-1],
+        param_upper   = [ 1, 1],
+        function      = sphere,
+        Pmin          = [0,0],
+        deterministic = True,
+        sigma         = 1e-6,
+        )
+
+    ackley2 = GPTestFunction(
+        name          = 'ackley2',
+        niterations   = 5,
+        param_lower   = [-1,-1],
+        param_upper   = [ 1, 1],
+        function      = ackleyf,
+        Pmin          = [0,0],
+        deterministic = True,
+        sigma         = 1e-6,
+        )
+
+    ackley4 = GPTestFunction(
+        name          = 'ackley4',
+        niterations   = 10,
+        param_lower   = [-1,-1,-1,-1],
+        param_upper   = [ 1, 1, 1, 1],
+        function      = ackleyf,
+        Pmin          = [0,0,0,0],
+        deterministic = True,
+        sigma         = 1e-6,
+        )
+
+    rosenbrock2 = GPTestFunction(
+        name          = 'rosenbrock2',
+        niterations   = 8,
+        param_lower   = [-2,-2],
+        param_upper   = [ 2, 2],
+        function      = rosenbrock,
+        Pmin          = [1,1],
+        deterministic = True,
+        sigma         = 1e-6,
+        )
+
+    beale2 = GPTestFunction(
+        name          = 'beale2',
+        niterations   = 8,
+        param_lower   = [-4.5,-4.5],
+        param_upper   = [ 4.5, 4.5],
+        function      = beale,
+        Pmin          = [3,0.5],
+        deterministic = True,
+        sigma         = 1e-6,
+        )
+
+    goldstein_price2 = GPTestFunction(
+        name          = 'goldstein_price2',
+        niterations   = 8,
+        param_lower   = [-2,-2],
+        param_upper   = [ 2, 2],
+        function      = goldstein_price,
+        Pmin          = [0,-1],
+        deterministic = True,
+        sigma         = 1e-6,
+        )
+
+    himmelblau2 = GPTestFunction(
+        name          = 'himmelblau2',
+        niterations   = 10,
+        param_lower   = [-5,-5],
+        param_upper   = [ 5, 5],
+        function      = himmelblau,
+        Pmin          = [-3.779310,-3.283186],
+        deterministic = True,
+        sigma         = 1e-6,
+        )
+
+    holdertable2 = GPTestFunction(
+        name          = 'holdertable2',
+        niterations   = 10,
+        param_lower   = [-10,-10],
+        param_upper   = [ 10, 10],
+        function      = holder_table,
+        Pmin          = [8.05502,-9.66459],
+        deterministic = True,
+        sigma         = 1e-6,
+        )
+
+    lennardjones1 = GPTestFunction(
+        name          = 'lennardjones1',
+        niterations   = 10,
+        #param_lower   = [ 0 ],
+        param_lower   = [ 0.4 ],
+        param_upper   = [ 2 ],
+        function      = lennard_jones,
+        Pmin          = [1.0],
+        deterministic = True,
+        sigma         = 1e-6,
+        #plot          = True,
+        )
+
+    lennardjones2 = GPTestFunction(
+        name          = 'lennardjones2',
+        niterations   = 5,
+        #param_lower   = [ 0, 0, 0],
+        param_lower   = [ 0.4, 0.4, 0.4],
+        param_upper   = [ 2, 2, 2],
+        #function      = lennard_jones,
+        function      = trunc_log_lennard_jones,
+        Pmin          = [1.0,0.5,sqrt(3.)/2],
+        deterministic = True,
+        sigma         = 1e-6,
+        #plot          = True,
+        )
+
+    lennardjones6 = GPTestFunction(
+        name          = 'lennardjones6',
+        niterations   = 10,
+        param_lower   = [ 0, 0, 0, 0, 0, 0],
+        param_upper   = [ 2, 2, 2, 2, 2, 2],
+        function      = lennard_jones,
+        Pmin          = [1.0,0.5,sqrt(3.)/2,0.5,1./(2*sqrt(3.)),sqrt(2./3)],
+        deterministic = True,
+        sigma         = 1e-6,
+        )
+
+
+    sphere2_save_state = GPTestFunction(
+        name          = 'sphere2',
+        niterations   = 6,
+        param_lower   = [-1,-1],
+        param_upper   = [ 1, 1],
+        function      = sphere,
+        Pmin          = [0,0],
+        deterministic = True,
+        sigma         = 1e-6,
+        mode          = 'stateful',
+        verbose       = True,
+        exit_on_save  = False,
+        )
+
+    sphere2.test()
+    #ackley2.test()
+    #ackley4.test()
+    #rosenbrock2.test()
+    #beale2.test()
+    #goldstein_price2.test()
+    #himmelblau2.test()
+    #holdertable2.test()
+    #lennardjones1.test()
+    #lennardjones2.test()
+    #lennardjones6.test()
+
+    #sphere2_save_state.test()
+
 #end if
