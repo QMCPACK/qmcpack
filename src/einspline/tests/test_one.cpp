@@ -195,12 +195,16 @@ TEST_CASE("multi_cuda_wrapper", "[einspline]")
   eval_multi_UBspline_1d_s(s, pos[0], cpu_val);
   REQUIRE(cpu_val[0] == 2.0);
 
-  pos[0] = 11.0;
+  //this would assert in debug and is an illegal value for pos[0]
+  //pos[0] = 11.0;
+  pos[0] = 9.99999999;
   // Check the CPU value
   eval_multi_UBspline_1d_s(s, pos[0], cpu_val);
   REQUIRE(cpu_val[0] == 3.0);
 
-  // Check the GPU value
+  // Check the GPU value which is expected to behave periodically
+  // Which the CPU splines do not.
+  pos[0] = 11.0;
   float vals_output[1];
   test_multi(s, pos, vals_output);
   REQUIRE(vals_output[0] == 2.0);
