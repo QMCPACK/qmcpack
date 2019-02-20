@@ -20,6 +20,7 @@
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
@@ -203,6 +204,62 @@ struct BareKineticEnergy: public QMCHamiltonianBase
           Value += x*MinusOver2M[i];
         }
       }
+    return Value;
+  }
+
+  inline Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi, 
+                                        ParticleSet::ParticlePos_t& hf_terms, ParticleSet::ParticlePos_t & pulay_terms)
+  {
+    int Nions = ions.getTotalNum();
+    int Nelec = P.getTotalNum();
+    typedef ParticleSet::ParticlePos_t ParticlePos_t;
+    typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
+    typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
+
+    ParticleGradient_t iongradpsi_(Nions),pulaytmp_(Nions);
+
+    TinyVector<ParticleGradient_t,OHMMS_DIM> iongrad_grad;
+    TinyVector<ParticleLaplacian_t,OHMMS_DIM> iongrad_lapl;
+
+    for(int iondim=0; iondim<OHMMS_DIM; iondim++)
+    {
+      iongrad_grad[iondim].resize(Nelec);
+      iongrad_lapl[iondim].resize(Nelec);
+    }
+    
+    iongradpsi_=0;
+    pulaytmp_=0;
+    
+    RealType logpsi = psi.evaluateLog(P);
+    
+    for(int iat=0; iat<Nions; iat++)
+    {
+      //reset the iongrad_X containers.
+      for(int iondim=0; iondim<OHMMS_DIM; iondim++)
+      {
+        iongrad_grad[iondim]=0;
+        iongrad_lapl[iondim]=0;
+      }
+      iongradpsi_[iat] = psi.evalGradSource(P,ions,iat,iongrad_grad,iongrad_lapl);
+    }  
+
+    if(SameMass)
+    {
+      Value = Dot(P.G,P.G) + Sum(P.L);
+      Value*=-OneOver2M;
+    }
+    else
+    {
+      Value=0.0;
+      for(int i=0; i<MinusOver2M.size(); ++i)
+      {
+        T x=0.0;
+        for(int j=P.first(i); j<P.last(i); ++j)
+          x += laplacian(P.G[j],P.L[j]);
+        Value += x*MinusOver2M[i];
+      }
+    }
+    
     return Value;
   }
 

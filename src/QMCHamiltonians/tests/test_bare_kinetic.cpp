@@ -266,8 +266,13 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   REQUIRE( keval == Approx( -0.147507745 ) ); 
 
   #ifdef ENABLE_SOA
-  ParticleSet::ParticlePos_t PulayTerm;
+  ParticleSet::ParticlePos_t HFTerm, PulayTerm;
+  HFTerm.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
+ 
+  RealType keval2 = bare_ke.evaluateWithIonDerivs(elec,ions,psi,HFTerm,PulayTerm);
+  
+  REQUIRE( keval2 == Approx( -0.147507745 ) ); 
   //These are validated against finite differences (delta=1e-6).
   REQUIRE( PulayTerm[0][0] == Approx(-0.13166 ) );
   REQUIRE( PulayTerm[0][1] == Approx( 0.0) );
