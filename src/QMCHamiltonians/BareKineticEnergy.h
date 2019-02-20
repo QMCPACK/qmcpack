@@ -45,6 +45,21 @@ inline T laplacian(const TinyVector<std::complex<T>,D>& g, const std::complex<T>
   return  l.real()+OTCDot<T,T,D>::apply(g,g);
 }
 
+template<typename T, unsigned D>
+inline T dlaplacian(const TinyVector<T,D>& g, const T l, const TinyVector<T,D>& gg, const T gl, const T ideriv)
+{
+  return gl + l*ideriv + 2.0*dot(g,gg) + dot(g,g)*ideriv;
+}
+template<typename T, unsigned D>
+inline T dlaplacian(const TinyVector<std::complex<T>,D>& g, const std::complex<T> l, 
+                    const TinyVector<std::complex<T>,D>& gg, const std::complex<T> gl, const std::complex<T> ideriv)
+{
+  std::complex<T> l_times_ideriv = l*ideriv;
+  TinyVector<std::complex<T>,D> g_times_ideriv = g*ideriv;
+
+  return gl.real()+l_times_ideriv.real() + 2.0*OTCDot<T,T,D>::apply(g,gg) + OTCDot<T,T,D>::apply(g,g_times_ideriv);
+}
+
 
 /** @ingroup hamiltonian
   @brief Evaluate the kinetic energy with a single mass
@@ -210,37 +225,78 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   inline Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi, 
                                         ParticleSet::ParticlePos_t& hf_terms, ParticleSet::ParticlePos_t & pulay_terms)
   {
-    int Nions = ions.getTotalNum();
-    int Nelec = P.getTotalNum();
     typedef ParticleSet::ParticlePos_t ParticlePos_t;
     typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
     typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
 
-    ParticleGradient_t iongradpsi_(Nions),pulaytmp_(Nions);
+    int Nions = ions.getTotalNum();
+    int Nelec = P.getTotalNum();
 
-    TinyVector<ParticleGradient_t,OHMMS_DIM> iongrad_grad;
-    TinyVector<ParticleLaplacian_t,OHMMS_DIM> iongrad_lapl;
+    //These are intermediate arrays or potentially complex math.
+    ParticleLaplacian_t term2_(Nions);
+    ParticleGradient_t term4_(Nions);
+
+    //Potentially complex temporary array for \partial \psi/\psi and \nabla^2 \partial \psi / \psi 
+    ParticleGradient_t iongradpsi_(Nions),pulaytmp_(Nions);
+    //temporary arrays that will be explicitly real.
+    ParticlePos_t pulaytmpreal_(Nions),iongradpsireal_(Nions);
+
+    
+    TinyVector<ParticleGradient_t,OHMMS_DIM> iongrad_grad_;
+    TinyVector<ParticleLaplacian_t,OHMMS_DIM> iongrad_lapl_;
 
     for(int iondim=0; iondim<OHMMS_DIM; iondim++)
     {
-      iongrad_grad[iondim].resize(Nelec);
-      iongrad_lapl[iondim].resize(Nelec);
+      iongrad_grad_[iondim].resize(Nelec);
+      iongrad_lapl_[iondim].resize(Nelec);
     }
     
     iongradpsi_=0;
+    iongradpsireal_=0;
+    pulaytmpreal_=0;
     pulaytmp_=0;
     
-    RealType logpsi = psi.evaluateLog(P);
-    
+    RealType logpsi_ = psi.evaluateLog(P);
     for(int iat=0; iat<Nions; iat++)
     {
       //reset the iongrad_X containers.
       for(int iondim=0; iondim<OHMMS_DIM; iondim++)
       {
-        iongrad_grad[iondim]=0;
-        iongrad_lapl[iondim]=0;
+        iongrad_grad_[iondim]=0;
+        iongrad_lapl_[iondim]=0;
       }
-      iongradpsi_[iat] = psi.evalGradSource(P,ions,iat,iongrad_grad,iongrad_lapl);
+      iongradpsi_[iat] = psi.evalGradSource(P,ions,iat,iongrad_grad_,iongrad_lapl_);
+      //conversion from potentially complex to definitely real.
+      convert(iongradpsi_[iat],iongradpsireal_[iat]);
+      if(SameMass)
+      {
+        for(int iondim=0; iondim<OHMMS_DIM; iondim++)
+        {
+          //These term[24]_ variables exist because I want to do complex math first, and then take the real part at the
+          //end.  Sum() and Dot() perform the needed functions and spit out the real part at the end.
+          term2_ = P.L*iongradpsi_[iat][iondim];
+          term4_ = P.G*iongradpsi_[iat][iondim];
+          pulaytmp_[iat][iondim] = -OneOver2M*( Sum(iongrad_lapl_[iondim]) + Sum(term2_) + 2.0*Dot(iongrad_grad_[iondim],P.G) + Dot(P.G,term4_));
+        }
+        
+      }
+      else
+      {
+        for(int iondim=0; iondim<OHMMS_DIM; iondim++)
+        {
+          for(int g=0; g<MinusOver2M.size(); g++)
+          {
+            for(int iel=P.first(g); iel<P.last(g); iel++)
+            {
+              
+              pulaytmp_[iat][iondim] += MinusOver2M[g]*( dlaplacian(P.G[iel],P.L[iel], iongrad_grad_[iondim][iel], 
+                                                                        iongrad_lapl_[iondim][iel], iongradpsi_[iat][iondim])); 
+            }
+          }
+        }
+      }
+     //convert to real.
+     convert(pulaytmp_[iat],pulaytmpreal_[iat]);
     }  
 
     if(SameMass)
@@ -259,7 +315,10 @@ struct BareKineticEnergy: public QMCHamiltonianBase
         Value += x*MinusOver2M[i];
       }
     }
-    
+    pulaytmpreal_-=Value*iongradpsireal_;
+        
+
+    pulay_terms+=pulaytmpreal_;
     return Value;
   }
 
