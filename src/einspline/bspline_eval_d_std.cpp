@@ -29,15 +29,21 @@ extern const double* restrict   Ad;
 extern const double* restrict  dAd;
 extern const double* restrict d2Ad;
 
-/**
- * As shipped einspline does no checking of bounds of indexes calculated from
- *  the input.
+/** get the i offset and the t remainder
+ *  for particular grid and boundary condition
+ *  if debug check bounds
  */
-void check_ipart(const int ipart,
-		 const Ugrid* const restrict grid,
-		 const BCtype_d* const restrict BC)
+inline void coeff_offset_UBspline_d(const Ugrid * const restrict grid,const BCtype_d * const restrict BC,
+				   double x,
+				   int& i,
+				   double& t)
 {
-#ifndef NDEBUG
+  x -= grid->start;
+  double u = x * grid->delta_inv;
+  double ipart;
+  t = modf (u, &ipart);
+  i = ipart;
+  #ifndef NDEBUG
   assert( ipart >= 0 );
   if (BC->lCode == NATURAL)
   {
@@ -47,82 +53,14 @@ void check_ipart(const int ipart,
   {
     assert( ipart <= grid->num -1 );
   }
-#endif
+  #endif
 }
+
 
 /************************************************************/
 /* 1D double-precision, real evaluation functions           */
 /************************************************************/
 
-/** Offset is i remainder is t
- *  einspline as shipped just repeats this code over and over and over
- */
-
-void check_coeff_offset_UBspline_1d_d(const UBspline_1d_d * const restrict spline,
-					     double x,
-					     int& i,
-				      double& t)
-{
-  x -= spline->x_grid.start;
-  double u = x*spline->x_grid.delta_inv;
-  double ipart;
-  t = modf (u, &ipart);
-  i = ipart;
-  check_ipart(ipart, &(spline->x_grid), &(spline->xBC));
-}
-
-void check_coeff_offset_UBspline_2d_d(const UBspline_2d_d * const restrict spline,
-					     double x,
-					      double y,
-					      int& ix,
-					      int& iy,
-					      double& tx,
-					      double& ty)
-{
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double ipartx;
-  double iparty;
-  tx = modf (ux, &ipartx);
-  ty = modf (uy, &iparty);
-  ix = ipartx;
-  iy = iparty;
-  check_ipart(ix,&(spline->x_grid),&(spline->xBC));
-  check_ipart(iy,&(spline->y_grid),&(spline->yBC));
-}
-
-void check_coeff_offset_UBspline_3d_d(const UBspline_3d_d * const restrict spline,
-					     double x,
-					      double y,
-					      double z,
-					      int& ix,
-					      int& iy,
-					      int& iz,
-					      double& tx,
-					      double& ty,
-					      double& tz)
-{
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  z -= spline->z_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double uz = z*spline->z_grid.delta_inv;
-  double ipartx;
-  double iparty;
-  double ipartz;
-  tx = modf (ux, &ipartx);
-  ty = modf (uy, &iparty);
-  tz = modf (uz, &ipartz);
-  ix = ipartx;
-  iy = iparty;
-  iz = ipartz;
-  check_ipart(ix,&(spline->x_grid),&(spline->xBC));
-  check_ipart(iy,&(spline->y_grid),&(spline->yBC));
-  check_ipart(iz,&(spline->z_grid),&(spline->zBC));
-}
 
 /** Value only */
 void
@@ -131,7 +69,11 @@ eval_UBspline_1d_d (UBspline_1d_d * restrict spline,
 {
   int i;
   double t;
-  check_coeff_offset_UBspline_1d_d(spline, x, i, t);
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				i,
+				t);
   double tp[4];
   tp[0] = t*t*t;
   tp[1] = t*t;
@@ -151,7 +93,11 @@ eval_UBspline_1d_d_vg (UBspline_1d_d * restrict spline, double x,
 {
   int i;
   double t;
-  check_coeff_offset_UBspline_1d_d(spline, x, i, t);
+    coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				i,
+				t);
   double tp[4];
   tp[0] = t*t*t;
   tp[1] = t*t;
@@ -177,7 +123,11 @@ eval_UBspline_1d_d_vgl (UBspline_1d_d * restrict spline, double x,
 {
   int i;
   double t;
-  check_coeff_offset_UBspline_1d_d(spline, x, i, t);
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				i,
+				t);
   double tp[4];
   tp[0] = t*t*t;
   tp[1] = t*t;
@@ -223,7 +173,16 @@ eval_UBspline_2d_d (UBspline_2d_d * restrict spline,
   int iy;
   double tx;
   double ty;
-  check_coeff_offset_UBspline_2d_d(spline, x, y, ix, iy, tx, ty);
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
   double tpx[4], tpy[4], a[4], b[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -262,7 +221,16 @@ eval_UBspline_2d_d_vg (UBspline_2d_d * restrict spline,
   int iy;
   double tx;
   double ty;
-  check_coeff_offset_UBspline_2d_d(spline, x, y, ix, iy, tx, ty);
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -319,7 +287,16 @@ eval_UBspline_2d_d_vgl (UBspline_2d_d * restrict spline,
   int iy;
   double tx;
   double ty;
-  check_coeff_offset_UBspline_2d_d(spline, x, y, ix, iy, tx, ty);
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4], d2a[4], d2b[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -395,7 +372,16 @@ eval_UBspline_2d_d_vgh (UBspline_2d_d * restrict spline,
   int iy;
   double tx;
   double ty;
-  check_coeff_offset_UBspline_2d_d(spline, x, y, ix, iy, tx, ty);
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4], d2a[4], d2b[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -483,7 +469,21 @@ eval_UBspline_3d_d (UBspline_3d_d * restrict spline,
   double tx;
   double ty;
   double tz;
-  check_coeff_offset_UBspline_3d_d(spline, x, y, z, ix, iy, iz, tx, ty, tz);
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
+  coeff_offset_UBspline_d(&(spline->z_grid),
+				&(spline->zBC),
+				z,
+				iz,
+				tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -544,7 +544,21 @@ eval_UBspline_3d_d_vg (UBspline_3d_d * restrict spline,
   double tx;
   double ty;
   double tz;
-  check_coeff_offset_UBspline_3d_d(spline, x, y, z, ix, iy, iz, tx, ty, tz);
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
+  coeff_offset_UBspline_d(&(spline->z_grid),
+				&(spline->zBC),
+				z,
+				iz,
+				tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], da[4], db[4], dc[4],
          cP[16], bcP[4], dbcP[4];
   tpx[0] = tx*tx*tx;
@@ -650,7 +664,21 @@ eval_UBspline_3d_d_vgl (UBspline_3d_d * restrict spline,
   double tx;
   double ty;
   double tz;
-  check_coeff_offset_UBspline_3d_d(spline, x, y, z, ix, iy, iz, tx, ty, tz);
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
+  coeff_offset_UBspline_d(&(spline->z_grid),
+				&(spline->zBC),
+				z,
+				iz,
+				tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], da[4], db[4], dc[4],
          d2a[4], d2b[4], d2c[4], cP[16], dcP[16], bcP[4], dbcP[4], d2bcP[4], bdcP[4];
   tpx[0] = tx*tx*tx;
@@ -802,7 +830,21 @@ eval_UBspline_3d_d_vgh (UBspline_3d_d * restrict spline,
   double tx;
   double ty;
   double tz;
-  check_coeff_offset_UBspline_3d_d(spline, x, y, z, ix, iy, iz, tx, ty, tz);
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
+  coeff_offset_UBspline_d(&(spline->z_grid),
+				&(spline->zBC),
+				z,
+				iz,
+				tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], da[4], db[4], dc[4],
          d2a[4], d2b[4], d2c[4], cP[16], dcP[16], d2cP[16], bcP[4], dbcP[4],
          d2bcP[4], dbdcP[4], bd2cP[4], bdcP[4];
