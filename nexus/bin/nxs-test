@@ -2259,6 +2259,14 @@ def machines():
         ('stampede2'      , 'n2_t2'         ) : 'ibrun -n 68 -o 0 test.x',
         ('stampede2'      , 'n2_t2_e'       ) : 'ibrun -n 68 -o 0 test.x',
         ('stampede2'      , 'n2_t2_p2'      ) : 'ibrun -n 4 -o 0 test.x',
+        ('summit'         , 'n1'            ) : 'jsrun -a 21 -r 2 -b rs -c 21 -d packed -n 2 -g 0 test.x',
+        ('summit'         , 'n1_g6'         ) : 'jsrun -a 7 -r 6 -b rs -c 7 -d packed -n 6 -g 1 test.x',
+        ('summit'         , 'n2'            ) : 'jsrun -a 21 -r 2 -b rs -c 21 -d packed -n 4 -g 0 test.x',
+        ('summit'         , 'n2_g6'         ) : 'jsrun -a 7 -r 6 -b rs -c 7 -d packed -n 12 -g 1 test.x',
+        ('summit'         , 'n2_t2'         ) : 'jsrun -a 10 -r 2 -b rs -c 20 -d packed -n 4 -g 0 test.x',
+        ('summit'         , 'n2_t2_e'       ) : 'jsrun -a 10 -r 2 -b rs -c 20 -d packed -n 4 -g 0 test.x',
+        ('summit'         , 'n2_t2_e_g6'    ) : 'jsrun -a 3 -r 6 -b rs -c 6 -d packed -n 12 -g 1 test.x',
+        ('summit'         , 'n2_t2_g6'      ) : 'jsrun -a 3 -r 6 -b rs -c 6 -d packed -n 12 -g 1 test.x',
         ('supermuc'       , 'n1'            ) : 'mpiexec -n 40 test.x',
         ('supermuc'       , 'n1_p1'         ) : 'mpiexec -n 1 test.x',
         ('supermuc'       , 'n2'            ) : 'mpiexec -n 80 test.x',
@@ -2297,7 +2305,7 @@ def machines():
         ('vesta'          , 'n2_t2_p2'      ) : 'runjob --np 4 -p 2 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
         })
 
-    job_inputs = obj(
+    job_inputs_orig = obj(
         n1        = obj(nodes=1),
         n1_p1     = obj(nodes=1,processes_per_node=1),
         n2        = obj(nodes=2),
@@ -2311,6 +2319,22 @@ def machines():
             acc = 'ABC123'
         else:
             acc = None
+        #end if
+        job_inputs = job_inputs_orig
+        if name=='summit': # exceptional treatment for summit nodes
+            job_inputs = job_inputs_orig.copy()
+            jtypes = list(job_inputs.keys())
+            for jtype in jtypes:
+                if 'p' in jtype:
+                    del job_inputs[jtype]
+                else:
+                    jcpu = job_inputs[jtype]
+                    jcpu.gpus = 0
+                    jgpu = jcpu.copy()
+                    jgpu.gpus = 6
+                    job_inputs[jtype+'_g6'] = jgpu
+                #end if
+            #end for
         #end if
         for jtype in sorted(job_inputs.keys()):
             job = Job(app_command = 'test.x',
@@ -2337,6 +2361,9 @@ def machines():
     for name in sorted(supercomputers.keys()):
         m = supercomputers[name]
         if m.app_launcher=='srun': # no slurm support yet
+            continue
+        #end if
+        if name=='summit': # no summit support
             continue
         #end if
         if m.requires_account:

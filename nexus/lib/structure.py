@@ -1,4 +1,4 @@
- ##################################################################
+##################################################################
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
@@ -5374,7 +5374,10 @@ class Crystal(Structure):
                  permute        = None,
                  operations     = None,
                  elem           = None, 
-                 pos            = None):
+                 pos            = None,
+                 use_prim       = None,
+                 add_kpath      = False,
+                 ):
 
         if lattice is None and cell is None and atoms is None and units is None:
             return
@@ -5402,6 +5405,10 @@ class Crystal(Structure):
             kshift         = kshift        ,
             permute        = permute       ,
             operations     = operations    ,
+            elem           = elem          ,
+            pos            = pos           ,
+            use_prim       = use_prim      ,
+            add_kpath      = add_kpath     ,
             )
         generation_info = gi.copy()
 
@@ -5682,7 +5689,10 @@ class Crystal(Structure):
             kshift         = kshift,
             permute        = permute,
             rescale        = False,
-            operations     = operations)
+            operations     = operations,
+            use_prim       = use_prim,
+            add_kpath      = add_kpath,
+            )
 
     #end def __init__
 #end class Crystal
