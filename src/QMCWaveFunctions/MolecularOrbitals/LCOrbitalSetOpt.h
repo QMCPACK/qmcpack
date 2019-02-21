@@ -762,35 +762,9 @@ template<class BS> class LCOrbitalSetOpt : public SPOSet {
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  An evaluate function that has not yet been implemented.
-    ///
-    ///   ------------------------------------------------ Notes on old routine ------------------------------------------------
-    ///
-    ///      /** evaluate psiM for virtual moves
-    ///      *
-    ///      * For the i-th virtual move and the j-th orbital,
-    ///      * \f$ psiM(i,j)= \sum_k phiM(i,k)*C(j,k) \f$
-    ///      */
-    ///
-    ///      in this routine, the dgemm call multiplies a  (norbs) by (basis size)   by a   (basis size) by (nparticle)   matrix
-    ///
-    ///      this implies that the data inside C has all (basis size) orbital coefficients for each molecular orbital stored contiguously
-    ///      i.e. if the C->data() array is viewed as a column major matrix, the coefficients for one MO would all be in one column
-    ///
-    ///      thus in its own row major ordering, psiM is an  (nparticle) by (norbs)  matrix
-    ///
-    ///      thus the untransposed matrix you use above, in your column major ordering, also needs to be (nparticle) by (norbs)
-    ///
-    ///   ----------------------------------------------------------------------------------------------------------------------
-    ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem) {
-      throw std::runtime_error("LCOrbitalSetOpt::evaluateValues(VP, psiM, SPOMem) not yet implemented");
-      //ValueMatrix_t phiM(P.getTotalNum(),BasisSetSize);
-      //m_basis_set->evaluateValues(P,phiM);
-      //MatrixOperators::product_ABt(phiM,C,psiM);
-      ////for(int i=0; i<psiM.rows(); ++i)
-      ////  for(int j=0; j<psiM.cols(); ++j)
-      ////    psiM(i,j)=simd::dot(C[j],phiM[i],BasisSetSize);
+    void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios) {
+      throw std::runtime_error("LCOrbitalSetOpt::evaluateDetRatios() not implemented in AoS LCAO! Avoid using the batched algorithm.");
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////

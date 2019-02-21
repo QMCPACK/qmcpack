@@ -105,7 +105,7 @@ bool NGOBuilder::addGridH5(hdf_archive &hin)
   std::string gridtype;
 
   if(hin.myComm->rank()==0){
-     if(!hin.read(gridtype, "grid_type")){
+     if(!hin.readEntry(gridtype, "grid_type")){
          std::cerr<<"Could not read grid_type in H5; Probably Corrupt H5 file"<<std::endl;
          exit(0);
      }

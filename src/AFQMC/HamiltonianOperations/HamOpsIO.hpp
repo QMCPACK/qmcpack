@@ -47,7 +47,7 @@ HamiltonianOperations loadHamOps(hdf_archive& dump, WALKER_TYPES type, int NMO, 
     else if(dump.is_group( std::string("SparseTensor"))) {
       dump.push("SparseTensor",false);
       std::vector<int> type;
-      if(!dump.read(type,"type")) {
+      if(!dump.readEntry(type,"type")) {
         app_error()<<" Error in loadHamOps: Problems reading type dataset. \n";
         APP_ABORT("");
       }

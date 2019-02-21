@@ -142,8 +142,8 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
         std::vector<IndexType> Idata(2);
         std::vector<RealType> Rdata(2);
 
-        if(!read.read(Idata,"DriverInts")) return false;
-        if(!read.read(Rdata,"DriverReals")) return false;
+        if(!read.readEntry(Idata,"DriverInts")) return false;
+        if(!read.readEntry(Rdata,"DriverReals")) return false;
 
         Eshift = Rdata[0];
 

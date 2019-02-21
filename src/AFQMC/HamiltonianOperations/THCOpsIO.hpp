@@ -73,7 +73,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
     APP_ABORT("");
   }
   if(TGwfn.Global().root()) {
-    if(!dump.read(dims,"dims")) {
+    if(!dump.readEntry(dims,"dims")) {
       app_error()<<" Error in loadTHCOps: Problems reading dataset. \n";
       APP_ABORT("");
     }
@@ -107,7 +107,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
       APP_ABORT("");
     }
     std::vector<ValueType> et;
-    if(!dump.read(et,"E0")) {
+    if(!dump.readEntry(et,"E0")) {
       app_error()<<" Error in loadTHCOps: Problems reading dataset. \n";
       APP_ABORT("");
     }
@@ -135,11 +135,11 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   boost::multi::array<ComplexType,2> H1({NMO,NMO});
   boost::multi::array<ComplexType,2> v0({NMO,NMO});
   if(TGwfn.Global().root()) {
-    if(!dump.read(H1,"H1")) {
+    if(!dump.readEntry(H1,"H1")) {
       app_error()<<" Error in loadTHCOps: Problems reading dataset. \n";
       APP_ABORT("");
     }
-    if(!dump.read(v0,"v0")) {
+    if(!dump.readEntry(v0,"v0")) {
       app_error()<<" Error in loadTHCOps: Problems reading dataset. \n";
       APP_ABORT("");
     }
@@ -158,7 +158,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   if(TGwfn.Node().root()) {
     /***************************************/
     auto rpiu_ = rotPiu.get();
-    if(!dump.read(rpiu_,"HalfTransformedFullOrbitals")) {
+    if(!dump.readEntry(rpiu_,"HalfTransformedFullOrbitals")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading HalfTransformedFullOrbitals. \n";
       APP_ABORT("");
@@ -169,7 +169,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
                                                            rotMuv.global_shape(),
                                                            rotMuv.shape(),
                                                            rotMuv.global_offset());
-    if(!dump.read(hslab,"HalfTransformedMuv")) {
+    if(!dump.readEntry(hslab,"HalfTransformedMuv")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                 <<" Problems reading HalfTransformedMuv. \n";
       APP_ABORT("");
@@ -180,7 +180,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
                                                          Piu.global_shape(),
                                                          Piu.shape(),
                                                          Piu.global_offset());
-    if(!dump.read(hslab2,"Orbitals")) {
+    if(!dump.readEntry(hslab2,"Orbitals")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Orbitals. \n";
       APP_ABORT("");
@@ -191,7 +191,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
                                                          Luv.global_shape(),
                                                          Luv.shape(),
                                                          Luv.global_offset());
-    if(!dump.read(hslab3,"Luv")) {
+    if(!dump.readEntry(hslab3,"Luv")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Luv. \n";
       APP_ABORT("");
