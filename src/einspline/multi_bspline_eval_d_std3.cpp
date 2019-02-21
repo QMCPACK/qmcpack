@@ -41,8 +41,15 @@ eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
   double ux = x*spline->x_grid.delta_inv;
   double ipartx, tx;
   tx = modf (ux, &ipartx);
-  // This protects from overflow reads of coefs but seems wrong for PERIODIC boundary
-  // conditions
+  // This protects from overflow reads of coefs when x goes out of [start, end)
+  // in simulation systems with an open boundary condition.
+  // This protection has no effect on simulation systems with PBC and anti-PBC
+  // condition because x has been reduced to [start, end) before the call
+  // The protection is correct for PERIODIC/ANTIPERIODIC BC splines
+  // but not sufficient for NATURAL BC splines (need grid.num-2).
+  // With this protection ix is pulled to the boundary, tx is not modified.
+  // This is not correct but no more relavent to QMCPACK since
+  // we moved to C++ versions of this function already.
   int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   
   double tpx[4], a[4];

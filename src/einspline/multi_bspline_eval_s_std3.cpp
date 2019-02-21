@@ -43,7 +43,9 @@ eval_multi_UBspline_1d_s (const multi_UBspline_1d_s *spline,
   x -= spline->x_grid.start;
   float ux = x*spline->x_grid.delta_inv;
   float ipartx, tx;
-  tx = modff (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
+  tx = modff (ux, &ipartx);
+  // see comments in eval_multi_UBspline_1d_d
+  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   
   float tpx[4], a[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
