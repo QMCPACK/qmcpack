@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <vector>
 
 using std::string;
 
@@ -34,13 +35,13 @@ TEST_CASE("double_1d_natural", "[einspline]")
   x_grid.end = 10.0;
   x_grid.num = 2;
 
-  double data[3];
+  std::vector<double> data(2);
   data[0] = 2.0; data[1] = 3.0;
 
   BCtype_d xBC;
   xBC.lCode = NATURAL;
   xBC.rCode = NATURAL;
-  UBspline_1d_d* s = create_UBspline_1d_d(x_grid, xBC, data);
+  UBspline_1d_d* s = create_UBspline_1d_d(x_grid, xBC, data.data());
 
   REQUIRE(s);
 
@@ -66,11 +67,12 @@ TEST_CASE("double_1d_natural", "[einspline]")
   x_grid.end = 10.0;
   x_grid.num = 3;
 
+  data.resize(3);
   data[0] = 2.0; data[1] = 2.7; data[2] = 3.0;
 
   xBC.lCode = NATURAL;
   xBC.rCode = NATURAL;
-  s = create_UBspline_1d_d(x_grid, xBC, data);
+  s = create_UBspline_1d_d(x_grid, xBC, data.data());
 
   REQUIRE(s);
 
@@ -202,9 +204,8 @@ TEST_CASE("multi_cuda_wrapper", "[einspline]")
   eval_multi_UBspline_1d_s(s, pos[0], cpu_val);
   REQUIRE(cpu_val[0] == 3.0);
 
-  // Check the GPU value which is expected to behave periodically
-  // Which the CPU splines do not.
-  pos[0] = 11.0;
+  // Check the GPU value
+  pos[0] = 0.0;
   float vals_output[1];
   test_multi(s, pos, vals_output);
   REQUIRE(vals_output[0] == 2.0);
