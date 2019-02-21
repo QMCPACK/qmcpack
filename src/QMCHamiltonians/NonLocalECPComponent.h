@@ -111,13 +111,61 @@ struct NonLocalECPComponent: public QMCTraits
   void randomize_grid(RandomGenerator_t& myRNG);
   template<typename T> void randomize_grid(std::vector<T> &sphere, RandomGenerator_t& myRNG);
 
+/** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid 
+ *           to total energy from ion "iat" and electron "iel".  
+ *
+ *    @param W electron particle set.
+ *    @param iat index of ion.
+ *    @param Psi trial wave function object
+ *    @param iel index of electron
+ *    @param r the distance between ion iat and electron iel.
+ *    @param dr displacement from ion iat to electron iel.
+ *    @param Tmove flag to compute tmove contributions.
+ *    @param Txy nonlocal move data.
+ *
+ *    @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
+ */     
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
       int iel, RealType r, const PosType& dr, bool Tmove, std::vector<NonLocalData>& Txy) const;
 
-  ///Computes the nonlocal PP energy and Hellman-Feynman force contribution coming from
-  /// ion "iat" and electron "iel".  
+/** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid 
+ *           to total energy from ion "iat" and electron "iel". 
+ *
+ *    @param W electron particle set.
+ *    @param iat index of ion.
+ *    @param Psi trial wave function object
+ *    @param iel index of electron
+ *    @param r the distance between ion iat and electron iel.
+ *    @param dr displacement from ion iat to electron iel.
+ *    @param Tmove flag to compute tmove contributions.
+ *    @param force_iat 3d vector for Hellman-Feynman contribution.  This gets modified.
+ *    @param Txy nonlocal move data.
+ *
+ *    @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
+ */     
   RealType evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
       int iel, RealType r, const PosType& dr, PosType &force_iat, bool Tmove, std::vector<NonLocalData>& Txy) const;
+
+/** @brief Evaluate the nonlocal pp energy, Hellman-Feynman force, and "Pulay" force contribution 
+ *          via randomized quadrature grid from ion "iat" and electron "iel". 
+ *
+ *    @param W electron particle set.
+ *    @param ions ion particle set.
+ *    @param iat index of ion.
+ *    @param Psi trial wave function object
+ *    @param iel index of electron
+ *    @param r the distance between ion iat and electron iel.
+ *    @param dr displacement from ion iat to electron iel.
+ *    @param force_iat 3d vector for Hellman-Feynman contribution.  This gets modified.
+ *    @param pulay_terms Nion x 3 object, holding a contribution for each ionic gradient from \Psi_T. 
+ *    @param Tmove flag to compute tmove contributions.
+ *    @param Txy nonlocal move data.
+ *
+ *    @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
+ */     
+  RealType evaluateOneWithForces(ParticleSet& W, ParticleSet& ions, int iat, TrialWaveFunction& Psi, 
+      int iel, RealType r, const PosType& dr, PosType &force_iat, ParticleSet::ParticlePos_t& pulay_terms, 
+      bool Tmove, std::vector<NonLocalData>& Txy) const;
 
   RealType
   evaluateValueAndDerivatives(ParticleSet& P,

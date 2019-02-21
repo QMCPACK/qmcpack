@@ -88,6 +88,7 @@ OMP_PROC_BIND=spread,close
 On Intel Xeon Phi KNL with Intel compiler, to use 64 cores without using hardware threads
 \begin{shade}
 OMP_NESTED=TRUE
+OMP_WAIT_POLICY=ACTIVE
 OMP_NUM_THREADS=16,4
 MAX_ACTIVE_LEVELS=2
 OMP_PLACES=cores
@@ -96,15 +97,16 @@ KMP_HOT_TEAMS_MODE=1
 KMP_HOT_TEAMS_MAX_LEVEL=2
 \end{shade}
 
-Most BLAS libraries do not spawn threads by default when called from a threaded region.
-This results in the use of only a single thread in each second level thread team for BLAS operations. In order to fully use the second level threads,
-users should check if turning on the nested threading in BLAS is beneficial or not
-because it depends on the implementation of BLAS libraries.
-Intel MKL library supports nested threading by setting
-\begin{shade}
-MKL_DYNAMIC=FALSE
-MKL_NUM_THREADS=4
-\end{shade}
+Most multi-threaded BLAS/LAPACK libraries do not spawn threads by default
+when being called from an OpenMP parallel region. See the explanation in \ref{sec:threadedlibrary}.
+This results in the use of only a single thread in each second level thread team for BLAS/LAPACK operations.
+Some vendor libraries like MKL support using multiple threads when being called from an OpenMP parallel region.
+One way to enable this feature is using environment variables to override the default behavior.
+However, this forces all the calls to the library to use the same number of threads.
+As a result, small function calls are penalized with heavy overhead and heavy function calls are slow for not being able to use more threads.
+Instead, QMCPACK uses the library APIs to turn on nested threading only at selected performance critical calls.
+In the case of using a serial library, QMCPACK implements nested threading to distribute the workload wherever necessary.
+Users do not need to control the threading behaviour of the library.
 
 \subsubsection{Performance considerations}
 \label{sec:cpu:performance}
