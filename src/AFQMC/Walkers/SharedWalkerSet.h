@@ -553,14 +553,8 @@ class SharedWalkerSet: public AFQMCInfo
  
   WALKER_TYPES getWalkerType() { return walkerType; } 
 
-  int walkerSizeIO() { 
-    if(walkerType==CLOSED)
-      return wlk_desc[0]*wlk_desc[1]+7;
-    else if(walkerType==COLLINEAR)
-      return wlk_desc[0]*(wlk_desc[1]+wlk_desc[2])+7;
-    else if(walkerType==NONCOLLINEAR)
-      return 2*wlk_desc[0]*(wlk_desc[1]+wlk_desc[2])+7;
-    return 0; 
+  int walkerSizeIO() {
+    return wlk_desc[0]*(wlk_desc[1]+wlk_desc[2])+7;
   }
 
   template<class Vec>
@@ -570,22 +564,15 @@ class SharedWalkerSet: public AFQMCInfo
     assert(walker_buffer.shape()[1] == walker_size);
     auto ptr = walker_buffer[n].origin(); // pointer to walker data
     auto xd = std::addressof(x[0]);
-    xd[0] = ptr[WEIGHT];
-    xd[1] = ptr[PHASE];
-    xd[2] = ptr[PSEUDO_ELOC_];
-    xd[3] = ptr[E1_];
-    xd[4] = ptr[EXX_];
-    xd[5] = ptr[EJ_];
-    xd[6] = ptr[OVLP];
-    if(walkerType==CLOSED) {
-      std::copy_n(ptr+SM,wlk_desc[0]*wlk_desc[1],xd+7);
-    } else if(walkerType==COLLINEAR) {
-      std::copy_n(ptr+SM,wlk_desc[0]*(wlk_desc[1]+wlk_desc[2]),xd+7);
-    } else if(walkerType==NONCOLLINEAR) {
-      std::copy_n(ptr+SM,2*wlk_desc[0]*(wlk_desc[1]+wlk_desc[2]),xd+7);
-    } else {
-      APP_ABORT(" Error: Unknown walkerType.\n");
-    }
+    int sm_size = wlk_desc[0]*(wlk_desc[1]+wlk_desc[2]);
+    std::copy_n(ptr,sm_size,xd);
+    xd[data_displ[WEIGHT]] = ptr[data_displ[WEIGHT]];
+    xd[data_displ[PHASE]] = ptr[data_displ[PHASE]];
+    xd[data_displ[PSEUDO_ELOC_]] = ptr[data_displ[PSEUDO_ELOC_]];
+    xd[data_displ[E1_]] = ptr[data_displ[E1_]];
+    xd[data_displ[EXX_]] = ptr[data_displ[EXX_]];
+    xd[data_displ[EJ_]] = ptr[data_displ[EJ_]];
+    xd[data_displ[OVLP]] = ptr[data_displ[OVLP]];
   }
 
   template<class Vec>
@@ -595,22 +582,15 @@ class SharedWalkerSet: public AFQMCInfo
     assert(walker_buffer.shape()[1] == walker_size);
     auto ptr = walker_buffer[n].origin(); // pointer to walker data
     auto xd = std::addressof(x[0]);
-    ptr[WEIGHT] = xd[0];
-    ptr[PHASE] = xd[1];
-    ptr[PSEUDO_ELOC_] = xd[2];
-    ptr[E1_] = xd[3];
-    ptr[EXX_] = xd[4];
-    ptr[EJ_] = xd[5];
-    ptr[OVLP] = xd[6];
-    if(walkerType==CLOSED) {
-      std::copy_n(xd+7,wlk_desc[0]*wlk_desc[1],ptr+SM);
-    } else if(walkerType==COLLINEAR) {
-      std::copy_n(xd+7,wlk_desc[0]*(wlk_desc[1]+wlk_desc[2]),ptr+SM);
-    } else if(walkerType==NONCOLLINEAR) {
-      std::copy_n(xd+7,2*wlk_desc[0]*(wlk_desc[1]+wlk_desc[2]),ptr+SM);
-    } else {
-      APP_ABORT(" Error: Unknown walkerType.\n");
-    }
+    int sm_size = wlk_desc[0]*(wlk_desc[1]+wlk_desc[2]);
+    std::copy_n(xd,sm_size,ptr);
+    ptr[data_displ[WEIGHT]] = xd[data_displ[WEIGHT]];
+    ptr[data_displ[PHASE]] = xd[data_displ[PHASE]];
+    ptr[data_displ[PSEUDO_ELOC_]] = xd[data_displ[PSEUDO_ELOC_]];
+    ptr[data_displ[E1_]] = xd[data_displ[E1_]];
+    ptr[data_displ[EXX_]] = xd[data_displ[EXX_]];
+    ptr[data_displ[EJ_]] = xd[data_displ[EJ_]];
+    ptr[data_displ[OVLP]] = xd[data_displ[OVLP]];
   }
 
   private:

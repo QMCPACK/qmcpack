@@ -185,18 +185,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
           IndepVar[col] = true;
       }
       while (max_abs < 1.0e-6);
-#if ( ( __INTEL_COMPILER == 1700 ) && ( __cplusplus < 201103L ) )
-      // the swap_rows is sick with Intel compiler 17 update 1, c++11 off
-      // manually swap the rows
-      for(int ind_col=0; ind_col<ConstraintMatrix.size2(); ind_col++)
-      {
-        real_type temp = ConstraintMatrix(row,ind_col);
-        ConstraintMatrix(row,ind_col) = ConstraintMatrix(max_loc,ind_col);
-        ConstraintMatrix(max_loc,ind_col) = temp;
-      }
-#else
       ConstraintMatrix.swap_rows(row,max_loc);
-#endif
       real_type lead_inv = 1.0/ConstraintMatrix(row,col);
       for (int c=0; c<NumGamma; c++)
         ConstraintMatrix(row,c) *= lead_inv;

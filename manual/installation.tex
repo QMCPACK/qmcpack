@@ -48,7 +48,7 @@ corresponding to the release.
 
 \begin{itemize}
 \item Download the latest QMCPACK distribution from \url{http://www.qmcpack.org}.
-\item Untar the archive, e.g., \texttt{tar xvf qmcpack\_v1.3.tar.gz}
+\item Untar the archive, e.g., \ishell{tar xvf qmcpack_v1.3.tar.gz}
 \end{itemize}
 
 Releases can also be obtained from the 'master' branch of the QMCPACK
@@ -57,12 +57,11 @@ git repository, similar to obtaining the development version (Sec. \ref{sec:obde
 \section{Obtaining the latest development version}
 \label{sec:obdevelopment}
 The most recent development version of QMCPACK can be obtained anonymously via
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+\begin{shade}
 git clone https://github.com/QMCPACK/qmcpack.git
-\end{verbatim}
+\end{shade}
 Once checked-out,
-updates can be made via the standard \texttt{git pull}.
+updates can be made via the standard \ishell{git pull}.
 
 The 'develop' branch of the git repository contains the day-to-day development source
 with the latest updates, bugfixes etc. This may be useful
@@ -129,15 +128,15 @@ Look for the GCC library version, which should be present in the path to the inc
 To avoid these errors occurring at compile time, QMCPACK tests for a C++ 14 standard
 library during configuration, and will halt with an error if one is not found.
 
-At sites that use modules, running \texttt{module load gcc} is often sufficient to
+At sites that use modules, running \ishell{module load gcc} is often sufficient to
 load a newer GCC and that will resolve the issue.
 
 \subsection{Intel compiler}
 The Intel compiler version must be 18 or newer.
 The version 17 compiler cannot compile some of the C++ 14 constructs in the code.
 
-If a newer gcc is needed, the \texttt{-cxxlib} option can be used to point to a different gcc installation.
-(Alternately, the \texttt{-gcc-name} or \texttt{-gxx-name} options can be used.)
+If a newer gcc is needed, the \ishell{-cxxlib} option can be used to point to a different gcc installation.
+(Alternately, the \ishell{-gcc-name} or \ishell{-gxx-name} options can be used.)
 Be sure to pass this flag to the C compiler in addition to the C++ compiler.
 The reason is CMake extracts some library paths from the C compiler and those paths usually also contain to the C++ library.
 The symptom of this problem is C++ 14 standard library functions not found at link time.
@@ -154,8 +153,8 @@ the default.
 
 If no appropriate version CMake is available, building it from source is straightforward.
 Download a version from \url{https://cmake.org/download/} and unpack the files.
-Run \texttt{./boostrap} from the CMake directory, and then run \texttt{make}
-when that finishes.  The resulting CMake executable will be in the \texttt{bin/} directory.
+Run \ishell{./boostrap} from the CMake directory, and then run \ishell{make}
+when that finishes.  The resulting CMake executable will be in the \ishell{bin/} directory.
 The executable can be run directly from that location.
 
 Previously QMCPACK made extensive use of toolchains, but the build system
@@ -176,29 +175,29 @@ working QMCPACK:
 The safest quick build option is to specify the C and C++ compilers
 through their MPI wrappers. Here we use Intel MPI and Intel
 compilers. Move to the build directory, run cmake and make
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 cd build
 cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc ..
 make -j 8
-\end{verbatim}
+\end{shade}
 You can increase the ``8'' to the number of cores on your system for
 faster builds. Substitute mpicc and mpicxx or other wrapped compiler names to suit
   your system. e.g. With OpenMPI use
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 cd build
 cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx ..
 make -j 8
-\end{verbatim}
+\end{shade}
 
 If you are feeling particularly lucky, you can skip the compiler specification:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 cd build
 cmake ..
 make -j 8
-\end{verbatim}
+\end{shade}
 
 The complexities of modern computer hardware and software systems are
 such that you should check that the autoconfiguration system has made
@@ -211,8 +210,8 @@ give examples for a number of common systems in Section \ref{sec:installexamples
 A number of environment variables affect the build.  In particular
 they can control the default paths for libraries, the default
 compilers, etc.  The list of environment variables is given below:
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 CXX              C++ compiler
 CC               C Compiler
 MKL_ROOT         Path for MKL
@@ -220,7 +219,7 @@ LIBXML2_HOME     Path for libxml2
 HDF5_ROOT        Path for HDF5
 BOOST_ROOT       Path for Boost
 FFTW_HOME        Path for FFTW
-\end{verbatim}
+\end{shade}
 
 \subsection{Configuration options}
 \label{sec:cmakeoptions}
@@ -233,8 +232,8 @@ the path to the source directory.
 
 \begin{itemize}
 \item  Key QMCPACK build options
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 QMC_CUDA              Enable CUDA and GPU acceleration (1:yes, 0:no)
 QMC_COMPLEX           Build the complex (general twist/k-point) version (1:yes, 0:no)
 QMC_MIXED_PRECISION   Build the mixed precision (mixing double/float) version
@@ -249,11 +248,11 @@ ENABLE_TIMERS         Enable fine-grained timers (1:yes, 0:no (default)).
                       systems. For large systems (100+ electrons) there is no risk.
 ENABLE_SOA            (Experimental) Enable CPU optimization and GPU support using
                       Structure-of-Array (SoA) datatypes (1:yes, 0:no (default)).
-\end{verbatim}
+\end{shade}
 
 \item General build options
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 CMAKE_BUILD_TYPE     A variable which controls the type of build
                      (defaults to Release). Possible values are:
                      None (Do not set debug/optmize flags, use
@@ -274,73 +273,71 @@ CMAKE_CXX_FLAGS      Set the C++ flags.  Note: to prevent default
                      CMAKE_CXX_FLAGS_RELEASE, and CMAKE_CXX_FLAGS_RELWITHDEBINFO
 CMAKE_INSTALL_PREFIX Set the install location (if using the optional install step)
 INSTALL_NEXUS        Install Nexus alongside QMCPACK (if using the optional install step)
-\end{verbatim}
+\end{shade}
 
 \item Additional QMCPACK build options
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 QMC_INCLUDE         Add extra include paths
 QMC_EXTRA_LIBS      Add extra link libraries
 QMC_BUILD_STATIC    Add -static flags to build
 QMC_DATA            Specify data directory for QMCPACK performance and integration tests
 QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
-\end{verbatim}
+\end{shade}
 
 \item Intel MKL related
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 ENABLE_MKL          Enable Intel MKL libraries (1:yes (default for intel compiler),
                                                 0:no (default otherwise)).
 MKL_ROOT            Path to MKL libraries (only necessary for non intel compilers
                     or intel without standard environment variables.)
                     One of the above environment variables can be used.
-\end{verbatim}
+\end{shade}
 
 \item libxml2 related
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 Libxml2_INCLUDE_DIRS   Specify include directories for libxml2
 Libxml2_LIBRARY_DIRS   Specify library directories for libxml2
-\end{verbatim}
+\end{shade}
 
 \item HDF5 related
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 ENABLE_PHDF5    1(default)/0, enables/disable parallel collective IO.
-\end{verbatim}
+\end{shade}
 
 \item FFTW related
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 FFTW_INCLUDE_DIRS   Specify include directories for FFTW
 FFTW_LIBRARY_DIRS   Specify library directories for FFTW
-\end{verbatim}
+\end{shade}
 
 \item CTest related
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 MPIEXEC                Specify the mpi wrapper, e.g. srun, aprun, mpirun, etc.
 MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
                        e.g. "-n", "-np", etc.
-\end{verbatim}
+\end{shade}
 
 \item LLVM/Clang Developer Options\\
-  \verbatimfont{\footnotesize}%
-
-\begin{minipage}{\textwidth}
-\verb|LLVM_SANITIZE_ADDRESS   |  link with the \href{https://clang.llvm.org/docs/AddressSanitizer.html}{Clang address sanitizer library}\\
-\verb|LLVM_SANITIZE_MEMORY    |  link with the \href{https://clang.llvm.org/docs/MemorySanitizer.html}{Clang memory sanitizer library}\\
-\end{minipage}
+\begin{shade}
+LLVM_SANITIZE_ADDRESS     link with the %*\href{https://clang.llvm.org/docs/AddressSanitizer.html}{Clang address sanitizer library}*
+LLVM_SANITIZE_MEMORY      link with the %*\href{https://clang.llvm.org/docs/MemorySanitizer.html}{Clang memory sanitizer library}*
+\end{shade}
 
 See docs in section \ref{tool:LLVM-Sanitizer-Libraries} for more information.
 \end{itemize}
 
 \subsection{Installation from CMake}
-Installation is optional. The QMCPACK executable can be run from the \texttt{bin} directory in the build location.
-If the install step is desired, run \texttt{make install} command to install the QMCPACK executable, the converter,
+Installation is optional. The QMCPACK executable can be run from the \ishell{bin} directory in the build location.
+If the install step is desired, run \ishell{make install} command to install the QMCPACK executable, the converter,
 and some additional executables.
-Also installed is the \texttt{qmcpack.settings} file that records options used to compile QMCPACK.
-Specify the \texttt{CMAKE\_INSTALL\_PREFIX} CMake variable during configuration to set the install location.
+Also installed is the \ishell{qmcpack.settings} file that records options used to compile QMCPACK.
+Specify the \ishell{CMAKE_INSTALL_PREFIX} CMake variable during configuration to set the install location.
 
 
 \subsection{Role of QMC\_DATA}
@@ -360,8 +357,8 @@ Currently the files must be downloaded via\\
 \url{https://anl.box.com/s/j5d6jeazpgx5441s04ajtv77iogoyjsh}.
 
 A complete set of files is currently:
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 QMC_DATA/C-graphite/lda.pwscf.h5
 QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S1.h5
 QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S2.h5
@@ -375,17 +372,17 @@ QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S256.h5
 QMC_DATA/NiO/NiO_afm_fcidump.h5
 QMC_DATA/NiO/NiO_afm_wfn.dat
 QMC_DATA/NiO/NiO_nm_choldump.h5
-\end{verbatim}
+\end{shade}
 
 
 \subsection{Configure and build using cmake and make}
 To configure and build QMCPACK, move to build directory, run cmake and make
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 cd build
 cmake ..
 make -j 8
-\end{verbatim}
+\end{shade}
 
 As you will have gathered, cmake encourages ``out of source'' builds,
 where all the files for a specific build configuration reside in their
@@ -402,8 +399,8 @@ directory locations.
 \subsection{Example configure and build}
 \begin{itemize}
 \item Set the environments (the examples below assume bash, Intel compilers and MKL library)
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 export CXX=icpc
 export CC=icc
 export LIBXML2_HOME=/usr/local
@@ -411,15 +408,15 @@ export MKL_ROOT=/usr/local/intel/mkl/10.0.3.020
 export HDF5_ROOT=/usr/local
 export BOOST_ROOT=/usr/local/boost
 export FFTW_HOME=/usr/local/fftw
-\end{verbatim}
+\end{shade}
 
 \item Move to build directory, run cmake and make
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 cd build
 cmake -D CMAKE_BUILD_TYPE=Release ..
 make -j 8
-\end{verbatim}
+\end{shade}
 \end{itemize}
 
 \subsection{Build scripts}
@@ -442,8 +439,8 @@ environment, specific library versions etc.
 An example script build.sh is given below. It is much more complex
 than usually needed for comprehensiveness:
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 export CXX=mpic++
 export CC=mpicc
 export ACML_HOME=/opt/acml-5.3.1/gfortran64
@@ -461,7 +458,7 @@ cmake                                                \
   -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
   -D QMC_DATA=/projects/QMCPACK/qmc-data            \
   ..
-\end{verbatim}
+\end{shade}
 
 \subsection{Using vendor optimized numerical libraries, e.g. Intel MKL}
 
@@ -477,16 +474,29 @@ additional hints, as described below:
 \subsubsection{Using Intel MKL with non-Intel compilers}
 
 To use Intel MKL with, e.g. an MPICH wrapped gcc:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 cmake \
  -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
  -DENABLE_MKL=1 -DMKL_ROOT=$MKLROOT/lib \
  ..
-\end{verbatim}
+\end{shade}
 
 MKLROOT is the directory containing the MKL binary, examples, and lib
 directories (etc.) and is often /opt/intel/mkl
+
+\subsubsection{Serial or multi-threaded library}
+\label{sec:threadedlibrary}
+Vendors may provide both serial and multi-threaded versions of their libraries.
+Using the right version is critical to QMCPACK performance.
+QMCPACK makes calls from both inside and outside threaded regions.
+When being called from outside an OpenMP parallel region, the multi-threaded version is preferred for the possibility of using all the avaiable cores.
+When being called from every thread inside an OpenMP parallel region, the serial version is preferred for not oversubscribing the cores.
+Fortunately nowadays the multi-threaded versions of many vendor libraries (MKL, ESSL) are OpenMP aware.
+They use only one thread when being called inside an OpenMP parallel region.
+This behavior meets exactly both QMCPACK needs and thus is preferred.
+If the multi-threaded version doesn't provide this feature of dynamically adjusting the number of threads,
+the serial version is preferred. In addition, thread-safety is required no matter whichever version is in use.
 
 \subsection{Cross compiling}
 Cross-compiling is often difficult but is required on supercomputers
@@ -507,7 +517,7 @@ QMCPACK tried to do its best with CMake to facilitate cross-compiling.
 
 The general strategy for cross-compiling should therefore be to
 manually set CMAKE\_C\_FLAGS and CMAKE\_CXX\_FLAGS for the target
-architecture. Using \texttt{make VERBOSE=1} is a useful way to check the
+architecture. Using \ishell{make VERBOSE=1} is a useful way to check the
 final compilation options.  If on a Cray machine, selection of the
 appropriate programming environment should be sufficient.
 
@@ -535,8 +545,8 @@ are available in the default repositories making for a quick
 installation. Note that for convenience we use a generic BLAS. For
 production a platform optimized BLAS should be used.
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 apt-get cmake g++ openmpi-bin libopenmpi-dev libboost-dev
 apt-get libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
 export CXX=mpiCC
@@ -544,13 +554,13 @@ cd build
 cmake ..
 make -j 8
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 
 For qmca and other tools to function, we install some python libraries:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 sudo apt-get install python-numpy python-matplotlib
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing on CentOS Linux or other yum based distributions}
 
@@ -562,13 +572,13 @@ another repository to obtain HDF5 packages which are not available by
 default. Note that for convenience we use a generic BLAS. For
 production a platform optimized BLAS should be used.
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 sudo yum install make cmake gcc gcc-c++ openmpi openmpi-devel fftw fftw-devel \
                   boost boost-devel libxml2 libxml2-devel
 sudo yum install blas-devel lapack-devel atlas-devel
 module load mpi
-\end{verbatim}
+\end{shade}
 
 To setup repoforge as a source for the HDF5 package, go to
 \url{http://repoforge.org/use} . Install the appropriate up to date
@@ -577,14 +587,14 @@ to run the installer. The CentOS 6.5 settings were still usable for HDF5 on
 CentOS 7 in 2016, but use CentOS 7 versions when they become
 available.
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 sudo yum install hdf5 hdf5-devel
-\end{verbatim}
+\end{shade}
 
 To build QMCPACK
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 module load mpi/openmpi-x86_64
 which mpirun
 # Sanity check; should print something like   /usr/lib64/openmpi/bin/mpirun
@@ -593,7 +603,7 @@ cd build
 cmake ..
 make -j 8
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing on Mac OS X using Macports}
 These instructions assume a fresh installation of macports
@@ -614,8 +624,8 @@ Follow the Macports install instructions \url{https://www.macports.org/}
 
 Install the required tools:
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 sudo port install gcc6
 sudo port select gcc mp-gcc6
 sudo port install openmpi-devel-gcc6
@@ -630,16 +640,16 @@ sudo port install hdf5 +gcc6
 sudo port select --set python python27
 sudo port install py27-numpy +gcc6
 sudo port install py27-matplotlib  #For graphical plots with qmca
-\end{verbatim}
+\end{shade}
 
 QMCPACK build:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 cd build
 cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCXX ..
 make -j 6 # Adjust for available core count
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 
 Cmake should pickup the versions of HDF5, libxml (etc.) installed in
 /opt/local by macports. If you have other copies of these libraries
@@ -658,15 +668,15 @@ source to use the brew-provided gcc instead of Apple CLANG.
 
 \begin{enumerate}
 \item Install Homebrew from \url{http://brew.sh/}
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 /usr/bin/ruby -e "$(curl -fsSL
     https://raw.githubusercontent.com/Homebrew/install/master/install)"
-\end{verbatim}
-
+\end{shade}
+ 
 \item Install the prerequisites
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 brew install gcc # installs gcc 7.2.0 on 2017-12-19
 export HOMEBREW_CXX=g++-7
 export HOMEBREW_CC=gcc-7
@@ -678,20 +688,20 @@ brew install fftw
 brew install boost
 brew install homebrew/science/hdf5
 #Note: Libxml2 is not required via brew since OS X already includes it.
-\end{verbatim}
+\end{shade}
 \item Configure and build QMCPACK
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 cmake -DCMAKE_C_COMPILER=/usr/local/bin/mpicc \
       -DCMAKE_CXX_COMPILER=/usr/local/bin/mpicxx ..
 make -j 12
-\end{verbatim}
+\end{shade}
 \item Run the short tests. When MPICH is used for the first time, OS
   X will request approval of the network connection for each executable.
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 ctest -R short -LE unstable
-\end{verbatim}
+\end{shade}
 \end{enumerate}
 
 \subsection{Installing on ANL ALCF Mira/Cetus IBM Blue Gene/Q}
@@ -704,20 +714,20 @@ On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgcl
 In order to build QMCPACK, a toolchain file is provided for setting up CMake.
 \textbf{BGClang is required for C++ 14 support. IBM XL C/C++ compiler should not be used.}
 
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 cd build
 cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_Clang_ToolChain.cmake ..
 make -j 16
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing on ALCF Theta, Cray XC40}
 Theta is a 9.65 petaflops system manufactured by Cray with 3624 compute nodes.
 Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB DDR4 RAM.
 
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 export CRAYPE_LINK_TYPE=dynamic
 # Do not use cmake 3.9.1, it causes trouble with parallel HDF5.
 module load cmake/3.11.4
@@ -728,7 +738,7 @@ export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
 cmake ..
 make -j 24
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing on ORNL OLCF Titan Cray XK7 (NVIDIA GPU
   accelerated)}
@@ -745,8 +755,8 @@ Note that on Crays the compiler wrappers ``CC'' and ``cc'' are
 used. The build system checks for these and does not (should not) use
 the compilers directly.
 
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 export CRAYPE_LINK_TYPE=dynamic
 module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
 module load cudatoolkit           # CUDA for GPU build
@@ -762,14 +772,14 @@ export CXX=CC
 cmake -DQMC_CUDA=1 ..             # Must enable CUDA capabilities
 make -j 8
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing on ORNL OLCF Titan Cray XK7 (CPU version)}
 As noted in Section\ref{sec:titanbuildgpu} for the GPU, building on
 Crays requires only loading the appropriate library modules.
 
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
+%
+\begin{shade}
 export CRAYPE_LINK_TYPE=dynamic
 module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
 module unload cudatoolkit         # No CUDA for CPU build
@@ -785,15 +795,15 @@ export CXX=CC
 cmake ..
 make -j 8
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing on ORNL OLCF Eos Cray XC30}
 Eos is a Cray XC30 with 16 core Intel Xeon E5-2670 processors connected
 by the Aries interconnect. The build process is identical to Titan,
 except that we use the default Intel programming environment. This is
 usually preferred to GNU.
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 export CRAYPE_LINK_TYPE=dynamic
 module unload cray-libsci
 module load cray-hdf5
@@ -807,7 +817,7 @@ cd build_eos
 cmake ..
 make -j 8
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing on ORNL OLCF Summit}
 Summit is an IBM system at ORNL OLCF built with IBM Power System AC922
@@ -819,8 +829,8 @@ Please note that these build instructions are preliminary as the
 software environment is subject to change. As of December 2018, the
 IBM XL compiler does not support C++14, so we currently utilize the
 gnu compiler. 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 module load gcc
 module load essl
 module load netlib-lapack #because ESSL does not provided needed LAPACK functionality
@@ -841,7 +851,7 @@ cmake -DCMAKE_C_COMPILER="mpicc" \
       ..
 make -j 8
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 
 \subsubsection{Building Quantum Espresso}
 The v6.3 release of Quantum Espresso does not officially support the
@@ -854,8 +864,8 @@ not yet optimized although vendor libraries are
 utilized. Alternatively, the wavefunction files can be generated on
 another system and the converted HDF5 files copied over.
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 #!/usr/bin/bash
 module load gcc/6.4.0 #6.4.0 was default on 2019-01-03
 module load essl
@@ -880,15 +890,15 @@ sed -i 's/^LAPACK_LIBS .*=.*/LAPACK_LIBS = -lessl -llapack -lessl/g' make.inc
 echo --- Starting build `date`
 make all
 echo --- Finished build `date`
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing on NERSC Edison Cray XC30}
 
 Edison is a Cray XC30 with dual 12-core Intel "Ivy Bridge" nodes
 installed at NERSC. The build settings are identical to Eos.
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 export CRAYPE_LINK_TYPE=dynamic
 module unload cray-libsci
 module load boost
@@ -899,11 +909,11 @@ module load gcc   # Make C++ 14 standard library available to the Intel compiler
 cmake ..
 make -j 8
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 When the above was tested on 30 October 2018, the following module and
 software versions were present:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 build> module list
 Currently Loaded Modulefiles:
   1) modules/3.2.10.6                                 14) alps/6.6.43-6.0.7.0_26.4__ga796da3.ari
@@ -920,14 +930,14 @@ Currently Loaded Modulefiles:
  12) job/2.2.3-6.0.7.0_44.1__g6c4e934.ari             25) cray-hdf5-parallel/1.10.1.1
  13) dvs/2.7_2.2.112-6.0.7.1_6.4__ge96a422            26) gcc/7.3.0
 
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing on NERSC Cori, Haswell Partition, Cray XC40}
 Cori is a Cray XC40 with 16-core Intel "Haswell" nodes
 installed at NERSC.
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 export CRAYPE_LINK_TYPE=dynamic
 module unload cray-libsci
 module load boost
@@ -939,13 +949,13 @@ cd build_cori_hsw
 cmake ..
 make -j 16
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 
 When the above was tested on 30 October 2018, the following module and
 software versions were present:
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 build_cori_hsw> module list
 Currently Loaded Modulefiles:
   1) modules/3.2.10.6                                 14) alps/6.6.43-6.0.7.0_26.4__ga796da3.ari
@@ -962,15 +972,15 @@ Currently Loaded Modulefiles:
  12) job/2.2.3-6.0.7.0_44.1__g6c4e934.ari             25) gcc/7.3.0
  13) dvs/2.7_2.2.113-6.0.7.1_7.1__g1bbc03e
 
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing on NERSC Cori, Xeon Phi KNL partition, Cray XC40}
 The second phase of NERSC's Cori uses Intel
 Xeon Phi Knight's Landing (KNL) nodes. The following build recipe ensures that the code
 generation is appropriate for the KNL nodes:
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 export CRAYPE_LINK_TYPE=dynamic
 module swap craype-haswell craype-mic-knl
 module unload cray-libsci
@@ -983,13 +993,13 @@ cd build_cori_knl
 cmake ..
 make -j 16
 ls -l bin/qmcpack
-\end{verbatim}
+\end{shade}
 
 When the above was tested on 30 October 2018, the following module and
 software versions were present:
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 build_cori_knl> module list
 Currently Loaded Modulefiles:
   1) modules/3.2.10.6                                 14) alps/6.6.43-6.0.7.0_26.4__ga796da3.ari
@@ -1006,11 +1016,11 @@ Currently Loaded Modulefiles:
  12) job/2.2.3-6.0.7.0_44.1__g6c4e934.ari             25) gcc/7.3.0
  13) dvs/2.7_2.2.113-6.0.7.1_7.1__g1bbc03e
 
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing on systems with ARMv8 based processors}
 The following build recipe was verified using the `Arm Compiler for HPC' on the ANL JLSE Comanche system with Cavium ThunderX2 processors on 6 November 2018.
-\begin{verbatim}
+\begin{shade}
 # load armclang compiler
 module load Generic-AArch64/RHEL/7/arm-hpc-compiler/18.4
 # load Arm performance libraries
@@ -1018,9 +1028,9 @@ module load ThunderX2CN99/RHEL/7/arm-hpc-compiler-18.4/armpl/18.4.0
 # define path to pre-installed packages
 export HDF5_ROOT=</path/to/hdf5/install/>
 export BOOST_ROOT=</path/to/boost/install> # header-only, no need to build
-\end{verbatim}
+\end{shade}
 Then using the following command
-\begin{verbatim}
+\begin{shade}
 mkdir build_armclang
 cd build_armclang
 cmake -DCMAKE_C_COMPILER=armclang -DCMAKE_CXX_COMPILER=armclang++ -DQMC_MPI=0 \
@@ -1032,7 +1042,7 @@ cmake -DCMAKE_C_COMPILER=armclang -DCMAKE_CXX_COMPILER=armclang++ -DQMC_MPI=0 \
       -DFFTW_LIBRARIES="$ARMPL_DIR/lib/libarmpl_mp.a" \
       ..
 make -j 56
-\end{verbatim}
+\end{shade}
 Note that armclang is recognized as an `unknown' compiler by cmake (v3.12.4) and we need to force it as clang to apply necessary flags.
 This workaround will not be necessary in the near future.
 
@@ -1059,7 +1069,7 @@ The QMCPACK Spack package inherits the limitations of the underlying
 Spack infrastructure and its dependencies. The main limitation to be
 aware of is that installation typically fails when building a
 dependency such as HDF5, MPICH, etc. In order for
-\verb|spack install qmcpack| to succeed, it is very important to
+\ishell{spack install qmcpack} to succeed, it is very important to
 leverge pre-installed packages on your computer or supercomputer. The
 other challenge frequently encountered is that compiler configuration
 is non-intuitive.  This is especially the case with with the Intel
@@ -1081,50 +1091,49 @@ will get resolved in future releases:
 
 \subsection{Setting up the Spack Environment}
 Begin by cloning Spack from GitHub and configuring your shell as described
-here:
 \url{https://spack.readthedocs.io/en/latest/getting_started.html}.
 
 The goal of the next several steps is to set-up the Spack environment
 for building. Firstly, it is highly recommended to limit the number of build jobs to
 a reasonable value for your machine. This can be
-accomplished by modifying your \texttt{~/.spack/config.yaml} file as follows:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+accomplished by modifying your \ishell{\~/.spack/config.yaml} file as follows:
+
+\begin{lstlisting}[style=SHELL]
 config:
   build_jobs: 16
-\end{verbatim}
+\end{lstlisting}
 
 Next, make sure any existing compilers are properly detected. For many
 architectures, compilers are properly detected with no additional
 effort.
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 your-laptop> spack compilers
 ==> Available compilers
 -- gcc sierra-x86_64 --------------------------------------------
 gcc@7.2.0  gcc@6.4.0  gcc@5.5.0  gcc@4.9.4  gcc@4.8.5  gcc@4.7.4  gcc@4.6.4
-\end{verbatim}
+\end{shade}
 
 However, if your compiler is not automatically detected, it is straightforward
 to add one:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 your-laptop> spack compiler add <path-to-compiler>
-\end{verbatim}
+\end{shade}
 
 This last step is the most troublesome. Pre-installed packages are not
 automatically detected. If vendor optimized libraries and already installed,
 you will need to manually add them to your
-\texttt{~/.spack/packages.yaml}. For example, this works on Mac OS X for the Intel MKL package.
-\verbatimfont{\footnotesize}
-\begin{verbatim}
-your-laptop> cat ~/.spack/packages.yaml
+\ishell{\~/.spack/packages.yaml}. For example, this works on Mac OS X for the Intel MKL package.
+
+\begin{shade}
+your-laptop> cat \~/.spack/packages.yaml
 packages:
     intel-mkl:
         paths:
             intel-mkl@2018.0.128: /opt/intel/compilers_and_libraries_2018.0.104/mac
         buildable: False
-\end{verbatim}
+\end{shade}
 
 Some trial-and-error may be involved to get the directory correct. If
 you do not include enough of the tree path, Spack will not be able to
@@ -1136,8 +1145,8 @@ packages can be found here
 \subsection{Building QMCPACK}
 The QMCPACK Spack package has a number of variants to support different compile time
 options and different versions of the application. A full list can be displayed by typing:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{lstlisting}[style=SHELL]
 your laptop> spack info qmcpack
 Description:
     QMCPACK, is a modern high-performance open-source Quantum Monte Carlo
@@ -1206,31 +1215,31 @@ Run Dependencies:
 
 Virtual Packages:
     None
-\end{verbatim}
+\end{lstlisting}
 
 For example, to install the complex version of QMCPACK in mixed-precision use:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 your-laptop> spack install qmcpack+mixed+complex%gcc@7.2.0 ^intel-mkl
-\end{verbatim}
+\end{shade}
 where
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 %gcc@7.2.0
-\end{verbatim}
+\end{shade}
 specifies the compiler version to be used and
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 ^intel-mkl
-\end{verbatim}
+\end{shade}
 specifies the Intel MKL should be used as the BLAS and LAPACK provider.
 
 It is also possible to run the QMCPACK regression tests as part of the
 installation process, for example:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 your-laptop> spack install --test=root qmcpack+mixed+complex%gcc@7.2.0 ^intel-mkl
-\end{verbatim}
+\end{shade}
 will run the unit and short tests. The current behavior of the QMCPACK
 Spack package is to completed the install as long as all the unit tests
 pass. If the short tests fail, a warning is issued at the command prompt.
@@ -1239,30 +1248,30 @@ pass. If the short tests fail, a warning is issued at the command prompt.
 Spack does not set-up an environment to find its packages
 automatically. A few additional steps are needed. First, install the
 modules package by executing:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
-your-laptop> spack install environment-modules
-\end{verbatim}
 
-Then modify your\texttt{ ~/.cshrc} file with something like
-\verbatimfont{\footnotesize}
-\begin{verbatim}
-source ${HOME}/spack/opt/spack/darwin-sierra-x86_64/\
+\begin{shade}
+your-laptop> spack install environment-modules
+\end{shade}
+
+Then modify your \ishell{\~/.cshrc} file with something like
+
+\begin{shade}
+source ${HOME}/spack/opt/spack/darwin-sierra-x86_64/\\
           clang-7.3.0-apple/environment-modules-3.2.10-kenvhysdws4zw26tvbrjl37fdyn7inhb/\
           Modules/init/csh
-\end{verbatim}
+\end{shade}
 
 You should then be able to load the qmcpack binary into your path by
 invoking
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 your-laptop> spack load qmcpack+mixed+complex%gcc@7.2.0
-\end{verbatim}
+\end{shade}
 or more generally
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 your-laptop> spack load qmcpack+<spec>
-\end{verbatim}
+\end{shade}
 
 \subsection{Installing QMCPACK with Spack on Linux}
 Spack works robustly on the standard flavors of Linux (Ubuntu, CentOS,
@@ -1278,10 +1287,10 @@ time failure in one of QMCPACK's dependencies.
 \subsection{Installing QMCPACK with Spack on IBM Blue Gene}
 Untested at this time. In principle, it should work as long as each of
 package found in
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 Blue Gene prompt> spack spec qmcpack
-\end{verbatim}
+\end{shade}
 can be compiled for the compute nodes.
 
 \subsection{Installing QMCPACK with Spack on Cray Supercomputers}
@@ -1321,7 +1330,7 @@ The tests include:
 
 
 The test types are differentiated by prefixes in their names,
-e.g. ``short-LiH\_dimer\_ae\_vmc\_hf\_noj\_16-1'' indicates a short VMC test
+e.g. \ishell{short-LiH_dimer_ae_vmc_hf_noj_16-1} indicates a short VMC test
 for the LiH dime. 
 
 QMCPACK also includes tests for developmental features and feature
@@ -1332,9 +1341,14 @@ due to partial implementation or bugs.
 
 When installing QMCPACK you should run at least the deterministic
 tests
-\begin{verbatim}
-ctest -R deterministic -LE unstable
-\end{verbatim}
+
+\begin{shade}
+checkit
+\end{shade}
+% \begin{shade}
+% ctest -R deterministic -LE unstable
+% \end{shade}
+
 These currently take only a few seconds to run. All should pass. A
 failure here may indicate a major problem with the installation.
 
@@ -1343,14 +1357,14 @@ The ``short'' tests each take a few minutes each on a 16
 core machine, totally around 1 hour depending on the platform. You can run these tests using the command below in the
 build directory:
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 ctest -R short -LE unstable  # Run the tests with "short" in their name.
                              # Exclude any known unstable tests.
-\end{verbatim}
+\end{shade}
 The output should be similar to the following:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 Test project build_gcc
       Start  1: short-LiH_dimer_ae-vmc_hf_noj-16-1
  1/44 Test  #1: short-LiH_dimer_ae-vmc_hf_noj-16-1 ..............  Passed   11.20 sec
@@ -1366,7 +1380,7 @@ Test project build_gcc
 100% tests passed, 0 tests failed out of 44
 
 Total Test time (real) = 167.14 sec
-\end{verbatim}
+\end{shade}
 
 Note that the number of tests that are run varies between the
 standard, complex, and GPU compilations. These tests should pass with three sigma reliability. i.e. They should nearly always pass, and when rerunning a failed test it should usually pass. Overly frequent failures suggest a problem that should be addressed before any scientific production.
@@ -1377,33 +1391,32 @@ several hours each for improved statistics and a much more
 stringent test of the code. To run all the tests simply run ctest in the build
 directory:
 
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+\begin{shade}
 ctest -LE unstable           # Run all the stable tests. This will take several hours.
-\end{verbatim}
+\end{shade}
 
 You can also run verbose tests which direct the QMCPACK
 output to the standard output:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 ctest -V -R short   # Verbose short tests
-\end{verbatim}
+\end{shade}
 
 The test system includes specific tests for the complex version of the code.
 
-The input data files for the tests are located in the \texttt{tests} directory.
-The system-level test directories are grouped into \texttt{heg}, \texttt{molecules}, and \texttt{solids}, with particular physical systems under each (for example \texttt{molecules/H4\_ae}
+The input data files for the tests are located in the \ishell{tests} directory.
+The system-level test directories are grouped into \ishell{heg}, \ishell{molecules}, and \ishell{solids}, with particular physical systems under each (for example \ishell{molecules/H4_ae}
 \footnote{The suffix `ae' is short for `all-electron' and `pp' is short for `pseudopotential'}).
 Under each physical system directory there may be tests for multiple QMC methods or parameter variations.
-The numerical comparisons and test definitions are in the \texttt{CMakeLists.txt} file in each physical system directory.
+The numerical comparisons and test definitions are in the \ishell{CMakeLists.txt} file in each physical system directory.
 
 If \textit{all} the QMC tests fail it is likely
 that the appropriate mpiexec (or mpirun, aprun, srun, jsrun) is not being
 called or found. If the QMC runs appear to work but all the other
 tests fail it is possible that python is not working on your system -
-we suggest checking some of the test console output in \texttt{build/Testing/Temporary/LastTest.log}
-or the output files under \texttt{build/tests/}.
-%The runs occur in \texttt{build/tests/test\_dir/test\_name}.
+we suggest checking some of the test console output in \ishell{build/Testing/Temporary/LastTest.log}
+or the output files under \ishell{build/tests/}.
+%The runs occur in \ishell{build/tests/test_dir/test_name}.
 
 
 Note that because most of the tests are very small, consisting of only a few
@@ -1418,18 +1431,18 @@ Sec. \ref{sec:perftests}
 
 QMCPACK has a set of deterministic tests, predominantly unit tests.
 All of these tests can be run with the following command (in the build directory):
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 ctest -R deterministic -LE unstable
-\end{verbatim}
+\end{shade}
 
 These tests should always pass. Failure could indicate a major problem
 with the compiler, compiler settings, or a linked library that would
 give incorrect results.
 
 The output should look similar to the following:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 Test project qmcpack/build
       Start  1: unit_test_numerics
  1/11 Test  #1: unit_test_numerics ...............   Passed    0.06 sec
@@ -1447,10 +1460,10 @@ Label Time Summary:
 unit    =   2.20 sec
 
 Total Test time (real) =   2.31 sec
-\end{verbatim}
+\end{shade}
 
-Individual unit test executables can be found in \texttt{build/tests/bin}.
-The source for the unit tests is located in the \texttt{tests} directory under each directory in \texttt{src} (e.g. \texttt{src/QMCWavefunctions/tests}).
+Individual unit test executables can be found in \ishell{build/tests/bin}.
+The source for the unit tests is located in the \ishell{tests} directory under each directory in \ishell{src} (e.g. \ishell{src/QMCWavefunctions/tests}).
 
 See Chapter \ref{chap:unit_testing} for more details about unit tests.
 
@@ -1461,13 +1474,13 @@ workflows of trial wavefunction generation, conversion, and eventual
 QMC calculation. A patched QE must be installed so that the
 pw2qmcpack converter is available.
 
-By adding \texttt{-D QE\_BIN=your\_QE\_binary\_path} in the cmake command line when building your QMCPACK,
+By adding \ishell{-D QE_BIN=your_QE_binary_path} in the cmake command line when building your QMCPACK,
 tests named with ``qe-'' prefix will be included in the test set of your build.
 You can test the whole pw$\to$pw2qmcpack$\to$qmcpack workflow by
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 ctest -R qe
-\end{verbatim}
+\end{shade}
 This provides a very solid test of the entire QMC
 toolchain for plane wave generated wavefunctions.
 
@@ -1494,7 +1507,7 @@ For the largest problem sizes, the initialization of spline orbitals may
 take a large portion of overall runtime. When QMCPACK is run at scale
 the initialization is fast because it is fully
 parallelized. However, the performance runs are most usually run on a single node.
-Consider running QMCPACK once with \texttt{--save\_wfs=1} to save the
+Consider running QMCPACK once with \ishell{--save_wfs=1} to save the
 converted spline coefficients to the disk and load them for later runs in the same folder..
 
 The delayed update algorithm in section~\ref{sec:singledeterminant}
@@ -1512,7 +1525,7 @@ The NiO tests are for bulk supercells of varying size. The QMC runs consist of s
 without drift (ii) VMC with drift term included (iii) DMC with
 constant population. The tests use spline wavefunctions that must be
 downloaded as described in the README due to their large size. You
-will need to set ``-DQMC\_DATA=YOUR\_DATA\_FOLDER -DENABLE\_TIMERS=1''
+will need to set ``\ishell{-DQMC_DATA=YOUR_DATA_FOLDER -DENABLE_TIMERS=1}''
 when running cmake as
 described in the README.
 
@@ -1546,8 +1559,8 @@ performance-NiO-cpu-a1024-e12288& S256 & 1024 & 12288 & 6144 \\
 
 \subsection{Troubleshooting tests}
 ctest reports briefly pass or fail of tests in printout and also collects all the standard outputs to help investigating how tests fail.
-If the ctest execution is completed, look at \texttt{Testing/Temporary/LastTest.log}.
-If you manually stop the testing (ctrl+c), look at \texttt{Testing/Temporary/LastTest.log.tmp}.
+If the ctest execution is completed, look at \ishell{Testing/Temporary/LastTest.log}.
+If you manually stop the testing (ctrl+c), look at \ishell{Testing/Temporary/LastTest.log.tmp}.
 You can locate the failing tests by searching for the key word `Fail'.
 
 \subsection{Slow testing with OpenMPI}
@@ -1609,7 +1622,7 @@ calculation if they need to be reconstructed for use in an
 electronic structure calculation.
 
 It is a stand alone C++ executable that is not built by default but accessible via adding
-\texttt{-DBUILD\_PPCONVERT=1} to cmake and then typing \texttt{make ppconvert}.
+\ishell{-DBUILD_PPCONVERT=1} to cmake and then typing \ishell{make ppconvert}.
 Userguide is provided in section~\ref{sec:ppconvert}.
 
 \section{Installing and patching Quantum ESPRESSO}
@@ -1627,40 +1640,40 @@ To simplify the process of patching Quantum ESPRESSO we have developed
 a script that will automatically download and patch the source
 code. The patches are specific to each version. e.g. To download and
 patch QE v6.3:
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 cd external_codes/quantum_espresso
 ./download_and_patch_qe6.3.sh
-\end{verbatim}
+\end{shade}
 After running the patch, you must configure Quantum ESPRESSO with
 the HDF5 capability enabled in either way:
 \begin{itemize}
 \item if your system already has HDF5 installed with Fortran, use the -{}-with-hdf5 configuration option.
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 cd qe-6.3
 ./configure --with-hdf5=/opt/local   # Specify HDF5 base directory
-\end{verbatim}
+\end{shade}
    {\bf check} the end of configure output if HDF5 libraries are found properly.
    If not, either install a complete library or use the other scheme. If using a parallel HDF5 library, be sure to use
    the same MPI with QE as used to build the parallel HDF5 library.
 
    Currently HDF5 support in QE itself is preliminary. To enable use of pw2qmcpack
-   but use the old non-HDF5 I/O within QE, replace \texttt{-D\_\_HDF5} with \texttt{-D\_\_HDF5\_C} in make.inc.
-\item if your system has HDF5 with C only, manually edit make.inc by adding \texttt{-D\_\_HDF5\_C} and \texttt{-DH5\_USE\_16\_API}
-   in \texttt{DFLAGS} and provide include and library path in \texttt{IFLAGS} and \texttt{HDF5\_LIB}
+   but use the old non-HDF5 I/O within QE, replace \ishell{-D__HDF5} with \ishell{-D__HDF5_C} in make.inc.
+\item if your system has HDF5 with C only, manually edit make.inc by adding \ishell{-D__HDF5_C} and \ishell{-DH5_USE_16_API}
+   in \ishell{DFLAGS} and provide include and library path in \ishell{IFLAGS} and \ishell{HDF5_LIB}
 \end{itemize}
 
 The complete process is described in external\_codes/quantum\_espresso/README.
 
 The tests involving pw.x and pw2qmcpack.x have been integrated in the test suite of QMCPACK.
-By adding \texttt{-D QE\_BIN=your\_QE\_binary\_path} in the cmake command line when building your QMCPACK,
+By adding \ishell{-D QE_BIN=your_QE_binary_path} in the cmake command line when building your QMCPACK,
 tests named with ``qe-'' prefix will be included in the test set of your build.
 You can test the whole pw$\to$pw2qmcpack$\to$qmcpack workflow by
-\verbatimfont{\footnotesize}
-\begin{verbatim}
+
+\begin{shade}
 ctest -R qe
-\end{verbatim}
+\end{shade}
 See Sec.\ref{sec:integtestqe} and the testing section for more details.
 
 \section{How to build the fastest executable version of QMCPACK}
@@ -1702,9 +1715,12 @@ Some tips to help troubleshoot installations of QMCPACK:
   installed. The configure system will stop at the first version it
   finds which might not be the most recent. If this occurs, specify the appropriate
   directories and files directly (Section
-  \ref{sec:cmakeoptions}). e.g. cmake -DCMAKE\_C\_COMPILER=/full/path/to/mpicc -DCMAKE\_CXX\_COMPILER=/full/path/to/mpicxx ..
-\item To monitor the compiler and linker settings, use a verbose build, ``make
-  VERBOSE=1''. If an individual source file fails to compile you
+  \ref{sec:cmakeoptions}). e.g.
+  \begin{shade}
+  cmake -DCMAKE_C_COMPILER=/full/path/to/mpicc -DCMAKE_CXX_COMPILER=/full/path/to/mpicxx ..
+  \end{shade}
+\item To monitor the compiler and linker settings, use a verbose build, \ishell{make
+  VERBOSE=1}. If an individual source file fails to compile you
   can experiment by hand using the output of the verbose build to
   reconstruct the full compilation line.
 \end{itemize}

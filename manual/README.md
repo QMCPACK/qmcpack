@@ -9,26 +9,22 @@ additional tools.
 - A TeX Live installation of 2017-01-20 or later including the xetex-collection is suggested to build the PDF manual.
 - An up to date TeX Live installation is suggested to build the HTML version of the manual.
 
+``` shell
+build_manual.sh
+```
+
 ---
 # ATTENTION:
 
 If you have a TeX Live installation predating the 2017-01-20 release or not including the xetex collection
-use the build for legacy tex installs. The content is the same but various formatting issues exist. The manual can be built with only the files in the manual directory, consider building it somewhere with a current tex distribution.
+use the build for legacy tex installs. The content is the same but various formatting issues exist. Since the manual can be built with only the files in the manual directory, consider building it somewhere with an up to date tex distribution.
 
 ``` shell
 build_pdflatex_manual_legacy.sh
 ```
 ---
 # Contributing:
-- Do not use packages, features, or fonts not included in texlive 2017 unless you insure they degrade reasonably for 2017.
-- Don't use deprecated packages.
-- In fact don't add packages unless they are bringing great value and are supported by tex4ht.
-- Tex files and Bib files are UTF8 encoded, do not save them in other encodings. Some may report being ASCII encoded since they contain no unicode characters.
-- Unicode rules:
-    - Do not use characters for which well established latex idiom exists, especially dashes, quotes, and apostrophes.
-    - Use math mode markup instead of unicode characters for equations.
-    - Be cautious of WYSIWYG word processors, cutting and pasting can pickup characters promoted to unicode by the program.
-    - Take a look at your text multibyte expanded i.e. open in (emacs and `esc-x toggle-enable-multibyte-characters`), see any unicode you didn't intend?
+See the chapter "Contributing to the Manual" in contributing.tex
 --
 
 ## OS X

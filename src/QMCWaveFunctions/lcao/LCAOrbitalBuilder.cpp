@@ -236,7 +236,7 @@ namespace qmcplusplus
       std::string ElemID0="atomicBasisSet0";
       if(!hin.push(ElemID0.c_str()))
         PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file",true);
-      if(!hin.read(sph,"angular"))
+      if(!hin.readEntry(sph,"angular"))
         PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
       ylm=(sph=="cartesian")?0:1;
       hin.close();
@@ -377,9 +377,9 @@ namespace qmcplusplus
       {
         if(!hin.push(ElemType.c_str()))
           PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file",true);
-        if(!hin.read(basiset_name,"name"))
+        if(!hin.readEntry(basiset_name,"name"))
           PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
-        if(!hin.read(elementType,"elementType"))
+        if(!hin.readEntry(elementType,"elementType"))
           PRE.error("Could not read elementType in H5; Probably Corrupt H5 file",true);
       }
       myComm->bcast(basiset_name);
@@ -763,7 +763,7 @@ namespace qmcplusplus
          if(!hin.push("PBC")
              PBC=false;
          else
-            if (!hin.read(PBC,"PBC"))
+            if (!hin.readEntry(PBC,"PBC"))
                 APP_ABORT("Could not read PBC dataset in H5 file. Probably corrupt file!!!.");
         // However, it always succeeds to enter the if condition even if the group does not exists...
         */
@@ -857,7 +857,7 @@ namespace qmcplusplus
       char name[72];
       sprintf(name,"%s%d","/KPTS_0/eigenset_",setVal);
       setname=name;
-      if(!hin.read(Ctemp,setname))
+      if(!hin.readEntry(Ctemp,setname))
       {
          setname="LCAOrbitalBuilder::putFromH5 Missing "+setname+" from HDF5 File.";
          APP_ABORT(setname.c_str());
@@ -944,7 +944,7 @@ namespace qmcplusplus
 
 
       setname=name;
-      if(!hin.read(Ctemp,setname))
+      if(!hin.readEntry(Ctemp,setname))
       {
          setname="LCAOrbitalBuilder::putFromH5 Missing "+setname+" from HDF5 File.";
          APP_ABORT(setname.c_str());

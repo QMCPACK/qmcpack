@@ -172,11 +172,11 @@ public:
              if(!hin.push(ElemType.c_str()))
                  PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file",true);
 
-             if(!hin.read(basiset_name,"name"))
+             if(!hin.readEntry(basiset_name,"name"))
                  PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
 
 
-             if(!hin.read(elementType,"elementType"))
+             if(!hin.readEntry(elementType,"elementType"))
                  PRE.error("Could not read elementType in H5; Probably Corrupt H5 file",true);
           }
           myComm->bcast(basiset_name);

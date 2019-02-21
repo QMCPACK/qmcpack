@@ -25,7 +25,8 @@
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
-#include <Utilities/FairDivide.h>
+#include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
@@ -64,10 +65,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
   ///number of complex bands
   int nComplexBands;
-  ///number of points of the original grid
-  int BaseN[3];
-  ///offset of the original grid, always 0
-  int BaseOffset[3];
   ///multi bspline set
   MultiBspline<ST>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
@@ -82,6 +79,9 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   gContainer_type myG;
   hContainer_type myH;
   ghContainer_type mygH;
+
+  ///thread private ratios for reduction when using nested threading, numVP x numThread
+  Matrix<TT> ratios_private;
 
   SplineC2RSoA(): BaseType(), nComplexBands(0), SplineInst(nullptr), MultiSpline(nullptr)
   {
@@ -141,12 +141,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     SplineInst->create(xyz_g,xyz_bc,myV.size());
     MultiSpline=SplineInst->spline_m;
 
-    for(size_t i=0; i<D; ++i)
-    {
-      BaseOffset[i]=0;
-      BaseN[i]=xyz_g[i].num+3;
-    }
-
     app_log() << "MEMORY " << SplineInst->sizeInByte()/(1<<20) << " MB allocated "
               << "for the coefficients in 3D spline orbital representation"
               << std::endl;
@@ -176,21 +170,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
-    SplineInst->copy_spline(spline_r,2*ispline  ,BaseOffset, BaseN);
-    SplineInst->copy_spline(spline_i,2*ispline+1,BaseOffset, BaseN);
-  }
-
-  void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
-  {
-    Vector<ST> v_r(psi_r,0), v_i(psi_i,0);
-    SplineInst->set(2*ispline  ,v_r);
-    SplineInst->set(2*ispline+1,v_i);
-  }
-
-
-  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
-      int twist, int ispline, const int* offset_l, const int* mesh_l)
-  {
+    SplineInst->copy_spline(spline_r,2*ispline  );
+    SplineInst->copy_spline(spline_i,2*ispline+1);
   }
 
   bool read_splines(hdf_archive& h5f)
@@ -198,7 +179,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
-    return h5f.read(bigtable,o.str().c_str());//"spline_0");
+    return h5f.readEntry(bigtable,o.str().c_str());//"spline_0");
   }
 
   bool write_splines(hdf_archive& h5f)
@@ -206,14 +187,14 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
-    return h5f.write(bigtable,o.str().c_str());//"spline_0");
+    return h5f.writeEntry(bigtable,o.str().c_str());//"spline_0");
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first = 0, int last = -1) const
+  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last>kPoints.size() ? kPoints.size() : last;
 
     const ST x=r[0], y=r[1], z=r[2];
     const ST* restrict kx=myKcart.data(0);
@@ -265,39 +246,58 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     }
   }
 
-  template<typename VM, typename VAV>
-  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
+  template<typename VV, typename RT>
+  inline void evaluateDetRatios(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
+    const bool need_resize = ratios_private.rows()<VP.getTotalNum();
+
     #pragma omp parallel
     {
+      int tid = omp_get_thread_num();
+      // initialize thread private ratios
+      if(need_resize)
+      {
+        if (tid==0) // just like #pragma omp master, but one fewer call to the runtime
+          ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
+        #pragma omp barrier
+      }
       int first, last;
       FairDivideAligned(myV.size(), getAlignment<ST>(),
-                        omp_get_num_threads(),
-                        omp_get_thread_num(),
+                        omp_get_num_threads(), tid,
                         first, last);
+      const int first_cplx = first/2;
+      const int last_cplx = kPoints.size() < last/2 ? kPoints.size() : last/2;
 
-      const size_t m=psiM.cols();
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
         const PointType& r=VP.activeR(iat);
         PointType ru(PrimLattice.toUnit_floor(r));
-        Vector<TT> psi(psiM[iat],m);
 
         spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
-        assign_v(r,myV,psi,first/2,last/2);
+        assign_v(r,myV,psi,first_cplx,last_cplx);
+
+        const int first_real = first_cplx+std::min(nComplexBands,first_cplx);
+        const int last_real  = last_cplx+std::min(nComplexBands,last_cplx);
+        ratios_private[iat][tid] = simd::dot(psi.data()+first_real, psiinv.data()+first_real, last_real-first_real);
       }
     }
-  }
 
-  inline size_t estimateMemory(const int nP) { return 0; }
+    // do the reduction manually
+    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    {
+      ratios[iat] = TT(0);
+      for(int tid = 0; tid < ratios_private.cols(); tid++)
+        ratios[iat] += ratios_private[iat][tid];
+    }
+  }
 
   /** assign_vgl
    */
   template<typename VV, typename GV>
-  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1) const
+  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last>kPoints.size() ? kPoints.size() : last;
 
     constexpr ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
@@ -555,10 +555,10 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first = 0, int last = -1) const
+  void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first, int last) const
   {
     // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+    last = last>kPoints.size() ? kPoints.size() : last;
 
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),

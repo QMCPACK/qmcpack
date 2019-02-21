@@ -40,7 +40,7 @@ Reference information and examples for the \texttt{<hamiltonian/>} XML element i
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{hamiltonian} element} \\
 \hline
@@ -66,7 +66,7 @@ Additional information:
 \end{itemize}
 
 % All-electron hamiltonian element
-\begin{lstlisting}[style=XML,caption=All electron Hamiltonian XML element.]
+\begin{lstlisting}[style=QMCPXML,caption=All electron Hamiltonian XML element.]
 <hamiltonian target="e">
   <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
   <pairpot name="ElecIon"  type="coulomb" source="i" target="e"/>
@@ -76,7 +76,7 @@ Additional information:
 
 
 % Pseudopotential hamiltonian element
-\begin{lstlisting}[style=XML,caption=Pseudopotential Hamiltonian XML element.]
+\begin{lstlisting}[style=QMCPXML,caption=Pseudopotential Hamiltonian XML element.]
 <hamiltonian target="e">
   <pairpot name="ElecElec"  type="coulomb" source="e" target="e"/>
   <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="xml">
@@ -96,7 +96,7 @@ Many pair potentials are supported.  Though only the most commonly used pair pot
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{pairpot} factory element} \\
 \hline
@@ -162,7 +162,7 @@ For information on how to set the boundary conditions, consult Sec. \ref{chap:si
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{pairpot type=coulomb} element} \\
 \hline
@@ -192,15 +192,15 @@ Additional information
 \end{itemize}
 
 
-\begin{lstlisting}[style=XML,caption=XML element for Coulomb interaction between electrons.]
+\begin{lstlisting}[style=QMCPXML,caption=QMCPXML element for Coulomb interaction between electrons.]
   <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
 \end{lstlisting}
 
-\begin{lstlisting}[style=XML,caption=XML element for Coulomb interaction between electrons and ions (all-electron only).]
+\begin{lstlisting}[style=QMCPXML,caption=QMCPXML element for Coulomb interaction between electrons and ions (all-electron only).]
   <pairpot name="ElecIon"  type="coulomb" source="i" target="e"/>
 \end{lstlisting}
 
-\begin{lstlisting}[style=XML,caption=XML element for Coulomb interaction between ions.]
+\begin{lstlisting}[style=QMCPXML,caption=QMCPXML element for Coulomb interaction between ions.]
   <pairpot name="IonIon"   type="coulomb" source="i" target="i"/>
 \end{lstlisting}
 
@@ -243,7 +243,7 @@ Evaluation of the localized pseudopotential energy $\Psi_T^{-1}V^{PP}\Psi_T$ req
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{pairpot type=pseudo} element} \\
 \hline
@@ -276,18 +276,18 @@ Additional information:
 \end{itemize}
 
 
-\begin{lstlisting}[style=XML,caption=XML element for pseudopotential electron-ion interaction (psf files).]
+\begin{lstlisting}[style=QMCPXML,caption=QMCPXML element for pseudopotential electron-ion interaction (psf files).]
   <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="psf"/>
 \end{lstlisting}
 
-\begin{lstlisting}[style=XML,caption=XML element for pseudopotential electron-ion interaction (xml files).]
+\begin{lstlisting}[style=QMCPXML,caption=QMCPXML element for pseudopotential electron-ion interaction (xml files).]
   <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="xml">
     <pseudo elementType="Li" href="Li.xml"/>
     <pseudo elementType="H" href="H.xml"/>
   </pairpot>
 \end{lstlisting}
 
-%\begin{lstlisting}[caption=XML element for pseudopotential electron-ion interaction (CASINO files).]
+%\begin{lstlisting}[caption=QMCPXML element for pseudopotential electron-ion interaction (CASINO files).]
 %  <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="xml">
 %    <pseudo elementType="Li" href="Li.data"/>
 %    <pseudo elementType="H" href="H.data"/>
@@ -321,7 +321,7 @@ Details of \texttt{<pseudo/>} input elements are given below.  It is possible to
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{pseudo} element} \\
 \hline
@@ -342,7 +342,7 @@ Details of \texttt{<pseudo/>} input elements are given below.  It is possible to
 \FloatBarrier
 
 
-\begin{lstlisting}[style=XML,caption=XML element for pseudopotential of single ionic species.]
+\begin{lstlisting}[style=QMCPXML,caption=QMCPXML element for pseudopotential of single ionic species.]
   <pseudo elementType="Li" href="Li.xml"/>
 \end{lstlisting}
 
@@ -367,7 +367,7 @@ The modified periodic Coulomb (MPC) interaction is an alternative to direct Ewal
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{pairpot type=mpc} element} \\
 \hline
@@ -393,7 +393,7 @@ Remarks
 \end{itemize}
 
 % MPC correction
-\begin{lstlisting}[style=XML,caption=Modified periodic coulomb for finite size post-correction.]
+\begin{lstlisting}[style=QMCPXML,caption=Modified periodic coulomb for finite size post-correction.]
   <pairpot type="MPC" name="MPC" source="e" target="e" ecut="60.0" physical="no"/>
 \end{lstlisting}
 
@@ -410,7 +410,7 @@ When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is 
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator} factory element} \\
 \hline
@@ -457,7 +457,7 @@ When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is 
 %\FloatBarrier
 %\begin{table}[h]
 %\begin{center}
-%\begin{tabularx}{\textwidth}{l l l l l l }
+%\begin{tabularx}{\textwidth}{l l l l l X }
 %\hline
 %\multicolumn{6}{l}{\texttt{estimator type=X} element} \\
 %\hline
@@ -484,7 +484,7 @@ This estimator calculates a finite size correction to the kinetic energy followi
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=chiesa} element} \\
 \hline
@@ -503,7 +503,7 @@ This estimator calculates a finite size correction to the kinetic energy followi
 \FloatBarrier
 
 % kinetic energy correction
-\begin{lstlisting}[style=XML,caption=``Chiesa'' kinetic energy finite size post-correction.]
+\begin{lstlisting}[style=QMCPXML,caption=``Chiesa'' kinetic energy finite size post-correction.]
    <estimator name="KEcorr" type="chiesa" source="e" psi="psi0"/>
 \end{lstlisting}
 
@@ -524,7 +524,7 @@ The \texttt{density} estimator accumulates the number density on a uniform histo
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=density} element} \\
 \hline
@@ -560,7 +560,7 @@ Additional information:
 
 
 % density estimator
-\begin{lstlisting}[style=XML,caption=Density estimator (uniform grid).]
+\begin{lstlisting}[style=QMCPXML,caption=Density estimator (uniform grid).]
    <estimator name="Density" type="density" delta="0.05 0.05 0.05"/>
 \end{lstlisting}
 
@@ -571,7 +571,7 @@ The spin density is similar to the total density described above.  In this case,
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=spindensity} element} \\
 \hline
@@ -608,13 +608,13 @@ Additional information:
 \end{itemize}
 
 % spin density estimators
-\begin{lstlisting}[style=XML,caption=Spin density estimator (uniform grid).]
+\begin{lstlisting}[style=QMCPXML,caption=Spin density estimator (uniform grid).]
   <estimator type="spindensity" name="SpinDensity" report="yes">
     <parameter name="grid"> 40 40 40 </parameter>
   </estimator>
 \end{lstlisting}
 
-\begin{lstlisting}[style=XML,caption=Spin density estimator (uniform grid centered about origin).]
+\begin{lstlisting}[style=QMCPXML,caption=Spin density estimator (uniform grid centered about origin).]
   <estimator type="spindensity" name="SpinDensity" report="yes">
     <parameter name="grid">
       20 20 20
@@ -649,7 +649,7 @@ where the radial coordinate $r$ is restricted to reside at the bin centers, $\de
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\linewidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=gofr} element} \\
 \hline
@@ -680,10 +680,10 @@ Additional information:
   \item{Data is outputted to the \texttt{stat.h5} for each QMC sub-run.  Individual histograms are named according to the quantum particleset and index of the pair.  For example, if the quantum particleset is named "e" and there are two species (up and down electrons, say), then there will be three sets of histogram data in each \texttt{stat.h5} file named \texttt{gofr\_e\_0\_0},  \texttt{gofr\_e\_0\_1}, and  \texttt{gofr\_e\_1\_1} for up-up, up-down, and down-down correlations, respectively.}
 \end{itemize}
 
-\begin{lstlisting}[style=XML,caption=Pair correlation function estimator element.]
+\begin{lstlisting}[style=QMCPXML,caption=Pair correlation function estimator element.]
   <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" />
 \end{lstlisting}
-\begin{lstlisting}[style=XML,caption=Pair correlation function estimator element with additional electron-ion correlations.]
+\begin{lstlisting}[style=QMCPXML,caption=Pair correlation function estimator element with additional electron-ion correlations.]
   <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" source="ion0" />
 \end{lstlisting}
 
@@ -702,7 +702,7 @@ S(\mathbf{k}) = \frac{1}{N^e}\langle \rho^e_{-\mathbf{k}} \rho^e_{\mathbf{k}} \r
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=sk} element} \\
 \hline
@@ -727,7 +727,7 @@ Additional information:
   \item{This is not a species resolved structure factor.  Additionally, for $\mathbf{k}$ vectors commensurate with the unit cell, $S(\mathbf{k})$ will include contributions from the static electronic density, thus meaning it won't accurately measure the electron-electron density response.  }
 \end{itemize}
 
-\begin{lstlisting}[style=XML,caption=Static structure factor estimator element.]
+\begin{lstlisting}[style=QMCPXML,caption=Static structure factor estimator element.]
   <estimator type="sk" name="sk" hdf5="yes"/>
 \end{lstlisting}
 
@@ -739,7 +739,7 @@ Record species-resolved kinetic energy instead of the total kinetic energy in th
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=specieskinetic} element} \\
 \hline
@@ -757,7 +757,7 @@ Record species-resolved kinetic energy instead of the total kinetic energy in th
 \FloatBarrier
 
 
-\begin{lstlisting}[style=XML,caption=Species kinetic energy estimator element.]
+\begin{lstlisting}[style=QMCPXML,caption=Species kinetic energy estimator element.]
   <estimator type="specieskinetic" name="skinetic" hdf5="no"/>
 \end{lstlisting}
 
@@ -769,7 +769,7 @@ Record deviation of a group of particles in one particle set (target) from a gro
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=latticedeviation} element} \\
 \hline
@@ -801,7 +801,7 @@ Additional information:
   \item{\texttt{hdf5}: Record particle-resolved distances in the h5 file if \texttt{gdf5=yes}.}.
 \end{itemize}
 
-\begin{lstlisting}[style=XML,caption={Lattice deviation estimator element.},label={lst:latdev}]
+\begin{lstlisting}[style=QMCPXML,caption={Lattice deviation estimator element.},label={lst:latdev}]
   <particleset name="e" random="yes">
     <group name="u" size="1" mass="1.0">
        <parameter name="charge"              >    -1                    </parameter>
@@ -852,7 +852,7 @@ In \qmcpack, the energy density can be accumulated on piecewise uniform three di
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=EnergyDensity} element} \\
 \hline
@@ -877,7 +877,7 @@ Additional information:
 \end{itemize}
 
 
-\begin{lstlisting}[style=XML,caption=Energy density estimator accumulated on a 20x10x10 grid over the simulation cell.]
+\begin{lstlisting}[style=QMCPXML,caption=Energy density estimator accumulated on a 20x10x10 grid over the simulation cell.]
   <estimator type="EnergyDensity" name="EDcell" dynamic="e" static="ion0">
     <spacegrid coord="cartesian">
       <origin p1="zero"/>
@@ -889,7 +889,7 @@ Additional information:
 \end{lstlisting}
 
 
-\begin{lstlisting}[style=XML,caption=Energy density estimator accumulated within spheres of radius 6.9 Bohr centered on the first and second atoms in the ion0 particleset.]
+\begin{lstlisting}[style=QMCPXML,caption=Energy density estimator accumulated within spheres of radius 6.9 Bohr centered on the first and second atoms in the ion0 particleset.]
   <estimator type="EnergyDensity" name="EDatom" dynamic="e" static="ion0">
     <reference_points coord="cartesian">
       r1 1 0 0 
@@ -912,7 +912,7 @@ Additional information:
 \end{lstlisting}
 
 
-\begin{lstlisting}[style=XML,caption=Energy density estimator accumulated within Voronoi polyhedra centered on the ions.]
+\begin{lstlisting}[style=QMCPXML,caption=Energy density estimator accumulated within Voronoi polyhedra centered on the ions.]
   <estimator type="EnergyDensity" name="EDvoronoi" dynamic="e" static="ion0">
     <spacegrid coord="voronoi"/>
   </estimator>
@@ -925,7 +925,7 @@ The \texttt{<reference\_points/>} element provides a set of points for later use
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{reference\_points} element} \\
 \hline
@@ -990,7 +990,7 @@ The \texttt{<spacegrid/>} element is used to specify a spatial histogramming gri
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{spacegrid} element} \\
 \hline
@@ -1014,7 +1014,7 @@ The \texttt{<origin/>} element gives the location of the origin for a non-Vorono
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{origin} element} \\
 \hline
@@ -1041,7 +1041,7 @@ The \texttt{<axis/>} element represents a coordinate axis used to construct the,
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{axis} element} \\
 \hline
@@ -1102,7 +1102,7 @@ For VMC, FN-DMC, FP-DMC, and RN-DMC the formula above represents an exact sampli
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=dm1b} element} \\
 \hline
@@ -1160,7 +1160,7 @@ Additional information
 \end{itemize}
 
 
-\begin{lstlisting}[style=XML,caption=One body density matrix with uniform grid integration.]
+\begin{lstlisting}[style=QMCPXML,caption=One body density matrix with uniform grid integration.]
   <estimator type="dm1b" name="DensityMatrices">
     <parameter name="basis"        >  spo_u spo_uv  </parameter>
     <parameter name="evaluator"    >  matrix        </parameter>
@@ -1172,7 +1172,7 @@ Additional information
 \end{lstlisting}
 
 
-\begin{lstlisting}[style=XML,caption=One body density matrix with uniform sampling.]
+\begin{lstlisting}[style=QMCPXML,caption=One body density matrix with uniform sampling.]
   <estimator type="dm1b" name="DensityMatrices">
     <parameter name="basis"        >  spo_u spo_uv  </parameter>
     <parameter name="evaluator"    >  matrix        </parameter>
@@ -1184,7 +1184,7 @@ Additional information
 \end{lstlisting}
 
 
-\begin{lstlisting}[style=XML,caption=One body density matrix with density sampling.]
+\begin{lstlisting}[style=QMCPXML,caption=One body density matrix with density sampling.]
   <estimator type="dm1b" name="DensityMatrices">
     <parameter name="basis"        >  spo_u spo_uv  </parameter>
     <parameter name="evaluator"    >  matrix        </parameter>
@@ -1196,7 +1196,7 @@ Additional information
 \end{lstlisting}
 
 
-\begin{lstlisting}[style=XML,caption={Example sposet initialization for density matrix use.  Occupied and virtual orbital sets are created separately, then joined (\texttt{basis="spo\_u spo\_uv"}).}]
+\begin{lstlisting}[style=QMCPXML,caption={Example sposet initialization for density matrix use.  Occupied and virtual orbital sets are created separately, then joined (\texttt{basis="spo\_u spo\_uv"}).}]
   <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">
     <sposet type="bspline" name="spo_u"  group="0" size="4"/>
     <sposet type="bspline" name="spo_d"  group="0" size="2"/>
@@ -1205,7 +1205,7 @@ Additional information
 \end{lstlisting}
 
 
-\begin{lstlisting}[style=XML,caption={Example sposet initialization for density matrix use.  Density matrix orbital basis created separately (\texttt{basis="dm\_basis"}).}]
+\begin{lstlisting}[style=QMCPXML,caption={Example sposet initialization for density matrix use.  Density matrix orbital basis created separately (\texttt{basis="dm\_basis"}).}]
   <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">
     <sposet type="bspline" name="spo_u"  group="0" size="4"/>
     <sposet type="bspline" name="spo_d"  group="0" size="2"/>
@@ -1299,7 +1299,7 @@ To forward walk on an observable, one declares a generic forward walking estimat
 
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=ForwardWalking} element} \\
 \hline
@@ -1316,7 +1316,7 @@ To forward walk on an observable, one declares a generic forward walking estimat
 
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{Observable} element} \\
 \hline
@@ -1342,7 +1342,7 @@ Additional information:
 
 In the following example case, QMCPACK forward walks on the potential energy for 300 time steps, and dumps the forward walked value at every time step.  
 
-\begin{lstlisting}[style=XML,caption=Forward walking estimator element.]
+\begin{lstlisting}[style=QMCPXML,caption=Forward walking estimator element.]
   <estimator name="fw" type="ForwardWalking">
       <Observable name="LocalPotential" max="300" frequency="1"/>
        <!--- Additional Observable blocks go here -->
@@ -1372,7 +1372,7 @@ Here, $m$ is the weighting exponent, $f_z(r)$ is the unfiltered radial force den
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{estimator type=Force} element} \\
 \hline
@@ -1404,7 +1404,7 @@ Additional information:
 \end{itemize}
 
 The following is an example use case.  
-\begin{lstlisting}[style=XML]
+\begin{lstlisting}[style=QMCPXML]
 <estimator name="myforce" type="Force" mode="cep" addionion="yes">
     <parameter name="rcut">0.1</parameter>
     <parameter name="nbasis">4</parameter>

@@ -260,7 +260,7 @@ private:
       std::string gridtype;
       if(myComm->rank()==0)
       {
-        if(!hin.read(gridtype, "grid_type"))
+        if(!hin.readEntry(gridtype, "grid_type"))
         {
           std::cerr<<"Could not read grid_type in H5; Probably Corrupt H5 file"<<std::endl;
           exit(0);

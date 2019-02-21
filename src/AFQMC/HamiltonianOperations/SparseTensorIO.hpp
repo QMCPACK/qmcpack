@@ -18,6 +18,7 @@
 
 #include<fstream>
 
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 
 #include "AFQMC/config.h"
@@ -66,7 +67,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
     APP_ABORT("");
   }
   if(TGwfn.Global().root()) {
-    if(!dump.read(dims,"dims")) {
+    if(!dump.readEntry(dims,"dims")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }
@@ -99,7 +100,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
       APP_ABORT("");
     }
     std::vector<ValueType> et;
-    if(!dump.read(et,"E0")) {
+    if(!dump.readEntry(et,"E0")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }
@@ -116,11 +117,11 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   boost::multi::array<ComplexType,2> H1({NMO,NMO});
   boost::multi::array<ComplexType,2> v0({NMO,NMO});
   if(TGwfn.Global().root()) {
-    if(!dump.read(H1,"H1")) {
+    if(!dump.readEntry(H1,"H1")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }
-    if(!dump.read(v0,"v0")) {
+    if(!dump.readEntry(v0,"v0")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }

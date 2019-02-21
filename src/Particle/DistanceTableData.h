@@ -79,7 +79,7 @@ struct DistanceTableData
    *     k = copies (walkers) index.
    */
   enum {WalkerIndex=0, SourceIndex, VisitorIndex, PairIndex};
-#if (__cplusplus >= 201103L)
+
   using IndexType=QMCTraits::IndexType;
   using RealType=QMCTraits::RealType;
   using PosType=QMCTraits::PosType;
@@ -87,15 +87,6 @@ struct DistanceTableData
   using TempDistType=TempDisplacement<RealType,DIM>;
   using ripair=std::pair<RealType,IndexType>;
   using RowContainer=VectorSoaContainer<RealType,DIM>;
-#else
-  typedef QMCTraits::IndexType IndexType;
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::PosType PosType;
-  typedef aligned_vector<IndexType> IndexVectorType;
-  typedef TempDisplacement<RealType,DIM> TempDistType;
-  typedef std::pair<RealType,IndexType> ripair;
-  typedef VectorSoaContainer<RealType,DIM> RowContainer;
-#endif
 
   ///type of cell
   int CellType;

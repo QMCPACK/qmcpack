@@ -462,6 +462,33 @@ namespace qmcplusplus
       }
     }
 
+    // 1D spline interface to einspline routines.
+    inline void set(multi_UBspline_1d_d* spline, int i, UBspline_1d_d* spline_in,
+         const int offset, const int N)
+    {
+      copy_UBspline_1d_d(spline, i, spline_in, offset, N);
+    }
+
+    inline void set(multi_UBspline_1d_s* spline, int i, UBspline_1d_d* spline_in,
+         const int offset, const int N)
+    {
+      copy_UBspline_1d_d_s(spline, i, spline_in, offset, N);
+    }
+
+    inline multi_UBspline_1d_d* create(multi_UBspline_1d_d* s, Ugrid& grid, BCtype_d& bc, int num_splines)
+    {
+      multi_UBspline_1d_d* newspline=create_multi_UBspline_1d_d(grid, bc, num_splines);
+      std::fill(newspline->coefs, newspline->coefs+newspline->coefs_size, 0.0);
+      return newspline;
+    }
+
+    inline multi_UBspline_1d_s* create(multi_UBspline_1d_s* s, Ugrid& grid, BCtype_s& bc, int num_splines)
+    {
+      multi_UBspline_1d_s* newspline=create_multi_UBspline_1d_s(grid, bc, num_splines);
+      std::fill(newspline->coefs, newspline->coefs+newspline->coefs_size, 0.0f);
+      return newspline;
+    }
+
     /** evaluate values only using multi_UBspline_1d_d
     */
     template<typename PT, typename VT>
