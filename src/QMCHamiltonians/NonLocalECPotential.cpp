@@ -505,7 +505,7 @@ NonLocalECPotential::setParticlePropertyList(QMCTraits::PropertySetType& plist,
       for(int x=0; x<OHMMS_DIM; x++)
       {
         plist[index++] = forces[iat][x];
-        plist[index++] = PulayTerm[iat][x];
+//        plist[index++] = PulayTerm[iat][x];
       }
     }
   }

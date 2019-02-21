@@ -205,6 +205,7 @@ class Job(NexusCore):
                  threads            = 1,    # number of openmp threads for the job
                  hyperthreads       = None,
                  ppn                = None,
+                 gpus               = None, # number of gpus per node
                  compiler           = None,
                  options            = None,
                  app_options        = None,
@@ -224,6 +225,7 @@ class Job(NexusCore):
                  processes_per_node = None,
                  email              = None,
                  constraint         = None, # slurm specific, Cori
+                 alloc_flags        = None, # lsf specific, Summit
                  fake               = False,
                  ):
 
@@ -249,6 +251,7 @@ class Job(NexusCore):
         self.threads            = threads
         self.hyperthreads       = hyperthreads
         self.ppn                = ppn
+        self.gpus               = gpus
         self.compiler           = compiler
         self.app_options        = Options()
         self.run_options        = Options()
@@ -268,6 +271,7 @@ class Job(NexusCore):
         self.account            = account
         self.email              = email
         self.constraint         = constraint
+        self.alloc_flags        = alloc_flags
         self.internal_id        = None
         self.system_id          = None
         self.tot_cores          = None
@@ -611,6 +615,14 @@ class Job(NexusCore):
             +str(int(self.seconds)).zfill(2)
         return walltime
     #end def ll_walltime
+
+
+    def lsf_walltime(self):
+        walltime=\
+            str(int(24*self.days+self.hours)).zfill(2)+':'\
+            +str(int(self.minutes)).zfill(2)
+        return walltime
+    #end def lsf_walltime
         
 
     def normalize_time(self):
@@ -1323,10 +1335,19 @@ class Supercomputer(Machine):
                                  EP = 'preempt_pending',
                                  MP = 'resume_pending',
                                  )
+        elif self.queue_querier=='bjobs':
+            self.job_states=dict(PEND  = 'pending',
+                                 RUN   = 'running',
+                                 DONE  = 'complete',
+                                 EXIT  = 'failed',
+                                 PSUSP = 'suspended',
+                                 USUSP = 'suspended',
+                                 SSUSP = 'suspended',
+                                 )
         else:
             self.error('ability to query queue with '+self.queue_querier+' has not yet been implemented')
         #end if
-            
+
     #end def __init__
 
 
@@ -1458,6 +1479,8 @@ class Supercomputer(Machine):
 	    	np	= '-n '+str(job.processes),
 	    	p	= '-o '+str(0),
 	    	)
+        elif launcher=='jsrun': # Summit
+            None # Summit class takes care of this in process_job_extra
         else:
             self.error(launcher+' is not yet implemented as an application launcher')
         #end if
@@ -1473,7 +1496,7 @@ class Supercomputer(Machine):
         self.system_queue.clear()
         if self.queue_querier=='qstat':
             if out is None:
-                out,err = Popen('qstat -a',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()            
+                out,err = Popen('qstat -a',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
             #end if
             lines = out.splitlines()
             for line in lines:
@@ -1604,6 +1627,26 @@ class Supercomputer(Machine):
                         elif len(tokens)==8:
                             jid,owner,subdate,subtime,status,pri,class_,running_on = tokens
                         #end if
+                        if status in self.job_states:
+                            self.system_queue[pid] = self.job_states[status]
+                        else:
+                            self.error('job state '+status+' is unrecognized')
+                        #end if
+                    #end if
+                #end if
+            #end for
+        elif self.queue_querier=='bjobs':
+            if out is None:
+                out,err = Popen('bjobs',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+            #end if
+            lines = out.splitlines()
+            for line in lines:
+                tokens=line.split()
+                if len(tokens)>0:
+                    spid = tokens[0]
+                    if spid.isdigit() and len(tokens)==8:
+                        pid = int(spid)
+                        jid,uname,status,slots,queue,start,finish,jname = tokens
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
@@ -2981,6 +3024,94 @@ cd $PBS_O_WORKDIR
 #end class Cades
 
 
+
+class Summit(Supercomputer):
+
+    name = 'summit'
+    requires_account = True
+    batch_capable    = True
+
+    def process_job_extra(self,job):
+        # add the options only if the user has not supplied options
+        if len(job.run_options)==0:
+            opt = obj(
+                launch_dist = '-d packed',
+                bind        = '-b rs',
+                )
+            if job.gpus is None:
+                job.gpus = 6 # gpus to use per node
+            #end if
+            if job.alloc_flags is None:
+                job.alloc_flags = 'smt1'
+            #end if
+            if job.gpus==0:
+                if job.processes%2==0:
+                    resource_sets_per_node = 2
+                else:
+                    resource_sets_per_node = 1
+                #end if
+                nrs   = job.nodes*resource_sets_per_node
+                pprs  = job.processes_per_node/resource_sets_per_node
+                gpurs = 0
+            else:
+                ppn = job.processes_per_node
+                if ppn is None:
+                    self.warn('job may not run properly on Summit\nat least one mpi process should be present for each node\nplease check the generated bsub file for correctness')
+                    ppn = 0
+                #end if
+                if ppn%job.gpus!=0:
+                    self.warn('job may not run properly on Summit\nprocesses per node should divide evenly into number of gpus requested\nprocesses per node requested: {0}\ngpus per node requested: {1}\nplease check the generated bsub file for correctness'.format(job.processes_per_node,job.gpus))
+                #end if
+                resource_sets_per_node = job.gpus
+                nrs   = job.nodes*resource_sets_per_node
+                pprs  = ppn/resource_sets_per_node
+                gpurs = 1
+            #end if
+            opt.set(
+                resource_sets= '-n {0}'.format(nrs),
+                rs_per_node  = '-r {0}'.format(resource_sets_per_node),
+                tasks_per_rs = '-a {0}'.format(pprs),
+                cpus_per_rs  = '-c {0}'.format(pprs*job.threads),
+                gpus_per_rs  = '-g {0}'.format(gpurs),
+                )
+            job.run_options.add(**opt)
+        #end if
+    #end def process_job_extra
+
+
+    def write_job_header(self,job):
+        c ='#!/bin/bash\n'
+        c+='#BSUB -P {0}\n'.format(job.account)
+        c+='#BSUB -J {0}\n'.format(job.name)
+        c+='#BSUB -o {0}\n'.format(job.outfile)
+        c+='#BSUB -e {0}\n'.format(job.errfile)
+        c+='#BSUB -W {0}\n'.format(job.lsf_walltime())
+        c+='#BSUB -nnodes {0}\n'.format(job.nodes)
+        if job.alloc_flags is not None:
+            c+='#BSUB -alloc_flags "{0}"\n'.format(job.alloc_flags)
+        #end if
+        return c
+    #end def write_job_header
+
+
+    def read_process_id(self,output):
+        pid = None
+        tokens = output.split()
+        for t in tokens:
+            if t.startswith('<'):
+                spid = t.strip('<>').strip()
+                if spid.isdigit():
+                    pid = int(spid)
+                    break
+                #end if
+            #end if
+        #end for
+        return pid
+    #end def read_process_id
+#end class Summit
+
+
+
 #Known machines
 #  workstations
 for cores in range(1,128+1):
@@ -3017,6 +3148,7 @@ Solo(          187,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'sc
 SuperMUC(      205,   4,    10,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
+Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
 
 #machine accessor functions
 get_machine_name = Machine.get_hostname

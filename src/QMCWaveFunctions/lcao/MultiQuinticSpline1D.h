@@ -26,7 +26,7 @@
 
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimQuinticSpline.h"
-#include "Numerics/NRSplineFunctions.h"
+#include "Numerics/SplineSolvers.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include <simd/allocator.hpp>
 
