@@ -2685,10 +2685,10 @@ QMCA examples:
         opt = self.options
         if opt.average and opt.save_average:
             for fmap in self.file_map:
-                fmt = ['%i']
                 ndata = len(fmap.data['LocalEnergy'])
                 data = [arange(ndata)]
-                keys = 'series'
+                keys = 'index'
+                fmt = ['%i']
                 for key in fmap.data.keys():
                     data.append(fmap.data[key])
                     keys+='     {}'.format(key)
