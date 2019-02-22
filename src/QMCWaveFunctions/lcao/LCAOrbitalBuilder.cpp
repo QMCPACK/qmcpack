@@ -24,12 +24,12 @@
 #include "QMCWaveFunctions/lcao/SoaAtomicBasisSet.h"
 #include "QMCWaveFunctions/lcao/SoaLocalizedBasisSet.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
-#include "QMCWaveFunctions/lcao/LCAOrbitalSetWithCorrection.h"
 //#include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/lcao/MultiFunctorAdapter.h"
 #if !defined(QMC_COMPLEX)
+#include "QMCWaveFunctions/lcao/LCAOrbitalSetWithCorrection.h"
 #include "QMCWaveFunctions/lcao/CuspCorrectionConstruction.h"
 #endif
 #include "io/hdf_archive.h"

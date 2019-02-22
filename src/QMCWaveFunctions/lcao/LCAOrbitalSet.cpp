@@ -68,13 +68,18 @@ namespace qmcplusplus
   {
     if(Identity)
     { //PAY ATTENTION TO COMPLEX
+#if !defined(QMC_COMPLEX)
       myBasisSet->evaluateV(P,iat,psi.data());
+#endif
     }
     else
     {
-      Vector<ValueType> vTemp(Temp.data(0),BasisSetSize);
+      Vector<basis_type::value_type> vTemp(Temp.data(0),BasisSetSize);
       myBasisSet->evaluateV(P,iat,vTemp.data());
+#if !defined(QMC_COMPLEX)
+      // Y2A: implement gemv with a complex matrix and a real vector
       simd::gemv(*C,Temp.data(0),psi.data());
+#endif
     }
   }
 
@@ -91,13 +96,14 @@ namespace qmcplusplus
           zero, C.data(), C.capacity());
     }
 
-  inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
+  template<typename VGL>
+  inline void LCAOrbitalSet::evaluate_vgl_impl(const VGL& temp,
       ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) const
   {
     std::copy_n(temp.data(0),OrbitalSetSize,psi.data());
-    const ValueType* restrict gx=temp.data(1);
-    const ValueType* restrict gy=temp.data(2);
-    const ValueType* restrict gz=temp.data(3);
+    const auto* restrict gx=temp.data(1);
+    const auto* restrict gy=temp.data(2);
+    const auto* restrict gz=temp.data(3);
     for(size_t j=0; j<OrbitalSetSize; j++)
     {
       dpsi[j][0]=gx[j];
@@ -116,15 +122,18 @@ namespace qmcplusplus
         evaluate_vgl_impl(Temp,psi,dpsi,d2psi);
       else
       {
+#if !defined(QMC_COMPLEX)
+        // Y2A: implement gemm with a real matrix times complex matrix and save to a complex matrix
         Product_ABt(Temp,*C,Tempv);
+#endif
         evaluate_vgl_impl(Tempv,psi,dpsi,d2psi);
       }
     }
 
   void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
   {
-    Vector<ValueType> vTemp(Temp.data(0),BasisSetSize);
-    Vector<ValueType> invTemp(Temp.data(1),BasisSetSize);
+    Vector<basis_type::value_type> vTemp(Temp.data(0),BasisSetSize);
+    Vector<ValueType> invTemp(Tempv.data(0),BasisSetSize);
 
     MatrixOperators::product_Atx(*C, psiinv, invTemp.data());
 
@@ -148,13 +157,14 @@ namespace qmcplusplus
       }
 
   /* implement using gemm algorithm */
-  inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp, int i,
+  template<typename VGL>
+  inline void LCAOrbitalSet::evaluate_vgl_impl(const VGL& temp, int i,
       ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) const
   {
     std::copy_n(temp.data(0),OrbitalSetSize,logdet[i]);
-    const ValueType* restrict gx=temp.data(1);
-    const ValueType* restrict gy=temp.data(2);
-    const ValueType* restrict gz=temp.data(3);
+    const auto* restrict gx=temp.data(1);
+    const auto* restrict gy=temp.data(2);
+    const auto* restrict gz=temp.data(3);
     for(size_t j=0; j<OrbitalSetSize; j++)
     {
       dlogdet[i][j][0]=gx[j];
@@ -180,7 +190,10 @@ namespace qmcplusplus
       for(size_t i=0, iat=first; iat<last; i++,iat++)
       {
         myBasisSet->evaluateVGL(P,iat,Temp);
+#if !defined(QMC_COMPLEX)
+        // Y2A: implement gemm with a real matrix times complex matrix and save to a complex matrix
         Product_ABt(Temp,*C,Tempv);
+#endif
         evaluate_vgl_impl(Tempv,i,logdet,dlogdet,d2logdet);
       }
     }
@@ -278,6 +291,7 @@ namespace qmcplusplus
 
   void LCAOrbitalSet::buildOptVariables(const std::vector<std::pair<int,int>>& rotations)
   {
+#if !defined(QMC_COMPLEX)
     const size_t nmo = OrbitalSetSize;
     const size_t nb = BasisSetSize;
     m_init_B = *C;
@@ -356,6 +370,7 @@ namespace qmcplusplus
         myVars.ParameterType.erase(myVars.ParameterType.begin(),myVars.ParameterType.end());
         myVars.Recompute.erase(myVars.Recompute.begin(),myVars.Recompute.end());
       }
+#endif
   }
 
   void LCAOrbitalSet::evaluateDerivatives (ParticleSet& P,
@@ -385,6 +400,7 @@ namespace qmcplusplus
                              const size_t NP2,
                              const std::vector< std::vector<int> > & lookup_tbl)
   {
+#if !defined(QMC_COMPLEX)
     bool recalculate(false);
     for (int k=0; k<myVars.size(); ++k)
     {
@@ -468,8 +484,10 @@ namespace qmcplusplus
                         NP2,
                         lookup_tbl);
     }
+#endif
   }
 
+#if !defined(QMC_COMPLEX)
   void LCAOrbitalSet::apply_rotation(const std::vector<RealType>& param)
   {
     assert( param.size() == m_act_rot_inds.size() );
@@ -1012,6 +1030,7 @@ $
   }
 
 }
+#endif // !defined(QMC_COMPLEX)
 
 
 }
