@@ -68,18 +68,13 @@ namespace qmcplusplus
   {
     if(Identity)
     { //PAY ATTENTION TO COMPLEX
-#if !defined(QMC_COMPLEX)
       myBasisSet->evaluateV(P,iat,psi.data());
-#endif
     }
     else
     {
       Vector<basis_type::value_type> vTemp(Temp.data(0),BasisSetSize);
       myBasisSet->evaluateV(P,iat,vTemp.data());
-#if !defined(QMC_COMPLEX)
-      // Y2A: implement gemv with a complex matrix and a real vector
       simd::gemv(*C,Temp.data(0),psi.data());
-#endif
     }
   }
 
@@ -122,10 +117,7 @@ namespace qmcplusplus
         evaluate_vgl_impl(Temp,psi,dpsi,d2psi);
       else
       {
-#if !defined(QMC_COMPLEX)
-        // Y2A: implement gemm with a real matrix times complex matrix and save to a complex matrix
         Product_ABt(Temp,*C,Tempv);
-#endif
         evaluate_vgl_impl(Tempv,psi,dpsi,d2psi);
       }
     }
@@ -190,10 +182,7 @@ namespace qmcplusplus
       for(size_t i=0, iat=first; iat<last; i++,iat++)
       {
         myBasisSet->evaluateVGL(P,iat,Temp);
-#if !defined(QMC_COMPLEX)
-        // Y2A: implement gemm with a real matrix times complex matrix and save to a complex matrix
         Product_ABt(Temp,*C,Tempv);
-#endif
         evaluate_vgl_impl(Tempv,i,logdet,dlogdet,d2logdet);
       }
     }
