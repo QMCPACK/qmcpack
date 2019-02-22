@@ -26,18 +26,19 @@
 namespace qmcplusplus
 {
 
-/** A localized basis set derived from RealBasisSetBase<typename COT::value_type>
+/** A localized basis set derived from SoaBasisSetBase<ORBT>
  *
  * This class performs the evaluation of the basis functions and their
  * derivatives for each of the N-particles in a configuration.
  * The template parameter COT denotes Centered-Orbital-Type which provides
  * a set of localized orbitals associated with a center.
+ * The template parameter ORBT denotes the orbital value return type
  */
 template<class COT, typename ORBT>
-struct SoaLocalizedBasisSet: public RealBasisSetBase<ORBT>
+struct SoaLocalizedBasisSet: public SoaBasisSetBase<ORBT>
 {
   typedef typename COT::RealType RealType;
-  typedef RealBasisSetBase<ORBT> BaseType;
+  typedef SoaBasisSetBase<ORBT> BaseType;
   typedef typename BaseType::vgl_type vgl_type;
 
   using BaseType::BasisSetSize;

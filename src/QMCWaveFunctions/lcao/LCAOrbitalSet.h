@@ -29,7 +29,7 @@ namespace qmcplusplus
   struct LCAOrbitalSet: public SPOSet
   {
   public:
-    typedef RealBasisSetBase<ValueType> basis_type;
+    typedef SoaBasisSetBase<ValueType> basis_type;
     typedef basis_type::vgl_type vgl_type;
 
     ///pointer to the basis set
