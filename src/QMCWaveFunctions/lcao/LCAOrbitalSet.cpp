@@ -278,6 +278,7 @@ namespace qmcplusplus
 
   void LCAOrbitalSet::buildOptVariables(const std::vector<std::pair<int,int>>& rotations)
   {
+#if !defined(QMC_COMPLEX)
     const size_t nmo = OrbitalSetSize;
     const size_t nb = BasisSetSize;
     m_init_B = *C;
@@ -356,6 +357,7 @@ namespace qmcplusplus
         myVars.ParameterType.erase(myVars.ParameterType.begin(),myVars.ParameterType.end());
         myVars.Recompute.erase(myVars.Recompute.begin(),myVars.Recompute.end());
       }
+#endif
   }
 
   void LCAOrbitalSet::evaluateDerivatives (ParticleSet& P,
@@ -385,6 +387,7 @@ namespace qmcplusplus
                              const size_t NP2,
                              const std::vector< std::vector<int> > & lookup_tbl)
   {
+#if !defined(QMC_COMPLEX)
     bool recalculate(false);
     for (int k=0; k<myVars.size(); ++k)
     {
@@ -468,8 +471,10 @@ namespace qmcplusplus
                         NP2,
                         lookup_tbl);
     }
+#endif
   }
 
+#if !defined(QMC_COMPLEX)
   void LCAOrbitalSet::apply_rotation(const std::vector<RealType>& param)
   {
     assert( param.size() == m_act_rot_inds.size() );
@@ -1012,6 +1017,7 @@ $
   }
 
 }
+#endif // !defined(QMC_COMPLEX)
 
 
 }

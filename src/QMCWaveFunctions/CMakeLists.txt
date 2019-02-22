@@ -80,18 +80,25 @@ IF(OHMMS_DIM MATCHES 3)
     Jastrow/CountingJastrowBuilder.cpp
     )
 
-  IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
-    SET(FERMION_SRCS ${FERMION_SRCS}
-      MolecularOrbitals/STOBuilder.cpp
-      MolecularOrbitals/GTOBuilder.cpp
-      MolecularOrbitals/NGOBuilder.cpp
-      )
-  ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
-
-  IF(NOT QMC_COMPLEX AND ENABLE_SOA)
-    #lcao is deigned for localized orbitals in bulk and complex
-    SET(FERMION_SRCS ${FERMION_SRCS}  lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp lcao/CuspCorrection.cpp lcao/LCAOrbitalSetWithCorrection.cpp)
-  ENDIF(NOT QMC_COMPLEX AND ENABLE_SOA)
+  IF(ENABLE_SOA)
+    SET(FERMION_SRCS ${FERMION_SRCS} lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp)
+    IF(NOT QMC_COMPLEX)
+      #lcao cusp correction is not ready for complex
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        lcao/CuspCorrection.cpp
+        lcao/LCAOrbitalSetWithCorrection.cpp
+        lcao/CuspCorrectionConstruction.cpp
+        )
+    ENDIF(NOT QMC_COMPLEX)
+  ELSE(ENABLE_SOA)
+    IF(NOT QMC_COMPLEX)
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        MolecularOrbitals/STOBuilder.cpp
+        MolecularOrbitals/GTOBuilder.cpp
+        MolecularOrbitals/NGOBuilder.cpp
+        )
+    ENDIF(NOT QMC_COMPLEX)
+  ENDIF(ENABLE_SOA)
 
   IF(QMC_CUDA)
     SET(FERMION_SRCS ${FERMION_SRCS}

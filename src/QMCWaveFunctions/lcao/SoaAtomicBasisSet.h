@@ -152,11 +152,11 @@ namespace qmcplusplus
           RealType* restrict d2phi=tempS.data(2);
 
           //V,Gx,Gy,Gz,L
-          T* restrict psi   =vgl.data(0)+offset; const T* restrict ylm_v=Ylm[0]; //value
-          T* restrict dpsi_x=vgl.data(1)+offset; const T* restrict ylm_x=Ylm[1]; //gradX
-          T* restrict dpsi_y=vgl.data(2)+offset; const T* restrict ylm_y=Ylm[2]; //gradY
-          T* restrict dpsi_z=vgl.data(3)+offset; const T* restrict ylm_z=Ylm[3]; //gradZ
-          T* restrict d2psi =vgl.data(4)+offset; const T* restrict ylm_l=Ylm[4]; //lap
+          auto* restrict psi   =vgl.data(0)+offset; const T* restrict ylm_v=Ylm[0]; //value
+          auto* restrict dpsi_x=vgl.data(1)+offset; const T* restrict ylm_x=Ylm[1]; //gradX
+          auto* restrict dpsi_y=vgl.data(2)+offset; const T* restrict ylm_y=Ylm[2]; //gradY
+          auto* restrict dpsi_z=vgl.data(3)+offset; const T* restrict ylm_z=Ylm[3]; //gradZ
+          auto* restrict d2psi =vgl.data(4)+offset; const T* restrict ylm_l=Ylm[4]; //lap
 
           for(size_t ib=0; ib<BasisSetSize; ++ib)
           {
@@ -220,16 +220,16 @@ namespace qmcplusplus
           } 
         }
 
-      template<typename LAT, typename T, typename PosType>
+      template<typename LAT, typename T, typename PosType, typename VT>
       inline void
-        evaluateV(const LAT& lattice, const T r, const PosType& dr, T* restrict psi) 
+        evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi) 
         {
          
           int TransX,TransY,TransZ;
 
           PosType dr_new;
           T r_new;
-          T psi_new;
+          //T psi_new;
           RealType* restrict ylm_v=tempS.data(0);
           RealType* restrict phi_r=tempS.data(1);
           for(size_t ib=0; ib<BasisSetSize; ++ib)

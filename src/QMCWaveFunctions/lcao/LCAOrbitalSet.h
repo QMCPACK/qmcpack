@@ -29,7 +29,7 @@ namespace qmcplusplus
   struct LCAOrbitalSet: public SPOSet
   {
   public:
-    typedef RealBasisSetBase<RealType> basis_type;
+    typedef SoaBasisSetBase<ValueType> basis_type;
     typedef basis_type::vgl_type vgl_type;
 
     ///pointer to the basis set
@@ -55,7 +55,7 @@ namespace qmcplusplus
     ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
     vgl_type Temp; 
     ///Tempv(OrbitalSetSize) Tempv=C*Temp
-    vgl_type Tempv; 
+    vgl_type Tempv;
     //vector that contains active orbital rotation parameter indices 
     std::vector<std::pair<int,int> > m_act_rot_inds;
     /** constructor
@@ -121,6 +121,7 @@ namespace qmcplusplus
     ///reset
     void resetParameters(const opt_variables_type& active)
     {
+#if !defined(QMC_COMPLEX)
       if (Optimizable)
       {
         std::vector<RealType> param( m_act_rot_inds.size() );
@@ -132,7 +133,7 @@ namespace qmcplusplus
         apply_rotation(param);
 
       }
-
+#endif
     }
 
     ///reset the target particleset
@@ -187,13 +188,15 @@ namespace qmcplusplus
 
     void evaluateThirdDeriv(const ParticleSet& P, int first, int last , GGGMatrix_t& grad_grad_grad_logdet);
 
+  private:
     //helper functions to handl Identity
     void evaluate_vgl_impl(const vgl_type& temp,
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) const;
+
     void evaluate_vgl_impl(const vgl_type& temp, int i,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) const;
 
-  private:
+#if !defined(QMC_COMPLEX)
     //function to perform orbital rotations
     void apply_rotation(const std::vector<RealType>& param);
 
@@ -230,6 +233,7 @@ namespace qmcplusplus
                            const size_t NP1,
                            const size_t NP2,
                            const std::vector< std::vector<int> > & lookup_tbl);
+#endif
 
   };
 }
