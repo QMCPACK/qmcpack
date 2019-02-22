@@ -33,13 +33,14 @@ namespace qmcplusplus
  * The template parameter COT denotes Centered-Orbital-Type which provides
  * a set of localized orbitals associated with a center.
  */
-template<class COT>
-struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::RealType>
+template<class COT, typename ORBT>
+struct SoaLocalizedBasisSet: public RealBasisSetBase<ORBT>
 {
   typedef typename COT::RealType RealType;
-  typedef typename RealBasisSetBase<RealType>::vgl_type vgl_type;
+  typedef RealBasisSetBase<ORBT> BaseType;
+  typedef typename BaseType::vgl_type vgl_type;
 
-  using RealBasisSetBase<RealType>::BasisSetSize;
+  using BaseType::BasisSetSize;
 
   ///number of centers, e.g., ions
   size_t NumCenters;
@@ -81,9 +82,9 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::RealType>
 
   /** makeClone */
   //SoaLocalizedBasisSet<COT>* makeClone() const
-  RealBasisSetBase<RealType>* makeClone() const
+  BaseType* makeClone() const
   {
-    SoaLocalizedBasisSet<COT>* myclone=new SoaLocalizedBasisSet<COT>(*this);
+    SoaLocalizedBasisSet<COT,ORBT>* myclone=new SoaLocalizedBasisSet<COT,ORBT>(*this);
     for(int i=0; i<LOBasisSet.size(); ++i)
       myclone->LOBasisSet[i]=LOBasisSet[i]->makeClone();
     return myclone;
@@ -170,7 +171,7 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::RealType>
    *
    * Always uses Temp_r and Temp_dr
    */
-  inline void evaluateV(const ParticleSet& P, int iat, RealType* restrict vals)
+  inline void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const RealType* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];

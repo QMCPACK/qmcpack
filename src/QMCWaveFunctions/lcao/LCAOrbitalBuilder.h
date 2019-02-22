@@ -33,7 +33,7 @@ namespace qmcplusplus
   class LCAOrbitalBuilder: public SPOSetBuilder
   {
     public:
-    typedef RealBasisSetBase<RealType> BasisSet_t;
+    typedef RealBasisSetBase<ValueType> BasisSet_t;
     /** constructor
      * \param els reference to the electrons
      * \param ions reference to the ions

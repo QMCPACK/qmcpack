@@ -40,61 +40,63 @@ namespace qmcplusplus
 {
   /** traits for a localized basis set; used by createBasisSet
    *
+   * T radial function value type
+   * ORBT orbital value type, can be complex
    * ROT {0=numuerica;, 1=gto; 2=sto}
    * SH {0=cartesian, 1=spherical}
    * If too confusing, inroduce enumeration.
    */
-  template<typename T, int ROT, int SH> struct ao_traits{};
+  template<typename T, typename ORBT, int ROT, int SH> struct ao_traits{};
 
   /** specialization for numerical-cartesian AO */
-  template<typename T>
-    struct ao_traits<T,0,0>
+  template<typename T, typename ORBT>
+    struct ao_traits<T,ORBT,0,0>
     {
-      typedef MultiQuinticSpline1D<T>                     radial_type;
-      typedef SoaCartesianTensor<T>                       angular_type;
-      typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+      using radial_type = MultiQuinticSpline1D<T>;
+      using angular_type = SoaCartesianTensor<T>;
+      using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
+      using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
 
     };
 
   /** specialization for numerical-spherical AO */
-  template<typename T>
-    struct ao_traits<T,0,1>
+  template<typename T, typename ORBT>
+    struct ao_traits<T,ORBT,0,1>
     {
-      typedef MultiQuinticSpline1D<T>                     radial_type;
-      typedef SoaSphericalTensor<T>                       angular_type;
-      typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+      using radial_type = MultiQuinticSpline1D<T>;
+      using angular_type = SoaSphericalTensor<T>;
+      using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
+      using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
     };
 
   /** specialization for GTO-cartesian AO */
-  template<typename T>
-    struct ao_traits<T,1,0>
+  template<typename T, typename ORBT>
+    struct ao_traits<T,ORBT,1,0>
     {
-      typedef MultiFunctorAdapter<GaussianCombo<T> >           radial_type;
-      typedef SoaCartesianTensor<T>                       angular_type;
-      typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+      using radial_type = MultiFunctorAdapter<GaussianCombo<T> >;
+      using angular_type = SoaCartesianTensor<T>;
+      using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
+      using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
     };
 
   /** specialization for GTO-cartesian AO */
-  template<typename T>
-    struct ao_traits<T,1,1>
+  template<typename T, typename ORBT>
+    struct ao_traits<T,ORBT,1,1>
     {
-      typedef MultiFunctorAdapter<GaussianCombo<T> >           radial_type;
-      typedef SoaSphericalTensor<T>                       angular_type;
-      typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+      using radial_type = MultiFunctorAdapter<GaussianCombo<T> >;
+      using angular_type = SoaSphericalTensor<T>;
+      using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
+      using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
     };
 
   /** specialization for STO-spherical AO */
-  template<typename T>
-    struct ao_traits<T,2,1>
+  template<typename T, typename ORBT>
+    struct ao_traits<T,ORBT,2,1>
     {
-      typedef MultiFunctorAdapter<SlaterCombo<T> >             radial_type;
-      typedef SoaSphericalTensor<T>                       angular_type;
-      typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+      using radial_type = MultiFunctorAdapter<SlaterCombo<T> >;
+      using angular_type = SoaSphericalTensor<T>;
+      using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
+      using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
     };
 
 
@@ -282,8 +284,8 @@ namespace qmcplusplus
 
     ReportEngine PRE(ClassName,"createBasisSet(xmlNodePtr)");
 
-    typedef typename ao_traits<RealType,I,J>::ao_type    ao_type;
-    typedef typename ao_traits<RealType,I,J>::basis_type basis_type;
+    using ao_type = typename ao_traits<RealType,ValueType,I,J>::ao_type;
+    using basis_type = typename ao_traits<RealType,ValueType,I,J>::basis_type;
 
     basis_type* mBasisSet=new basis_type(sourcePtcl,targetPtcl);
 
@@ -338,8 +340,8 @@ namespace qmcplusplus
 
     ReportEngine PRE(ClassName,"createBasisSetH5(xmlNodePtr)");
 
-    typedef typename ao_traits<RealType,I,J>::ao_type    ao_type;
-    typedef typename ao_traits<RealType,I,J>::basis_type basis_type;
+    using ao_type = typename ao_traits<RealType,ValueType,I,J>::ao_type;
+    using basis_type = typename ao_traits<RealType,ValueType,I,J>::basis_type;
 
     basis_type* mBasisSet=new basis_type(sourcePtcl,targetPtcl);
 

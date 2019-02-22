@@ -29,7 +29,7 @@ namespace qmcplusplus
   struct LCAOrbitalSet: public SPOSet
   {
   public:
-    typedef RealBasisSetBase<RealType> basis_type;
+    typedef RealBasisSetBase<ValueType> basis_type;
     typedef basis_type::vgl_type vgl_type;
 
     ///pointer to the basis set
@@ -55,7 +55,7 @@ namespace qmcplusplus
     ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
     vgl_type Temp; 
     ///Tempv(OrbitalSetSize) Tempv=C*Temp
-    VectorSoaContainer<ValueType,OHMMS_DIM+2> Tempv;
+    vgl_type Tempv;
     //vector that contains active orbital rotation parameter indices 
     std::vector<std::pair<int,int> > m_act_rot_inds;
     /** constructor
