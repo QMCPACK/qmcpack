@@ -72,7 +72,7 @@ namespace qmcplusplus
     }
     else
     {
-      Vector<basis_type::value_type> vTemp(Temp.data(0),BasisSetSize);
+      Vector<ValueType> vTemp(Temp.data(0),BasisSetSize);
       myBasisSet->evaluateV(P,iat,vTemp.data());
       simd::gemv(*C,Temp.data(0),psi.data());
     }
@@ -91,14 +91,13 @@ namespace qmcplusplus
           zero, C.data(), C.capacity());
     }
 
-  template<typename VGL>
-  inline void LCAOrbitalSet::evaluate_vgl_impl(const VGL& temp,
+  inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
       ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) const
   {
     std::copy_n(temp.data(0),OrbitalSetSize,psi.data());
-    const auto* restrict gx=temp.data(1);
-    const auto* restrict gy=temp.data(2);
-    const auto* restrict gz=temp.data(3);
+    const ValueType* restrict gx=temp.data(1);
+    const ValueType* restrict gy=temp.data(2);
+    const ValueType* restrict gz=temp.data(3);
     for(size_t j=0; j<OrbitalSetSize; j++)
     {
       dpsi[j][0]=gx[j];
@@ -124,8 +123,8 @@ namespace qmcplusplus
 
   void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
   {
-    Vector<basis_type::value_type> vTemp(Temp.data(0),BasisSetSize);
-    Vector<ValueType> invTemp(Tempv.data(0),BasisSetSize);
+    Vector<ValueType> vTemp(Temp.data(0),BasisSetSize);
+    Vector<ValueType> invTemp(Temp.data(1),BasisSetSize);
 
     MatrixOperators::product_Atx(*C, psiinv, invTemp.data());
 
@@ -149,14 +148,13 @@ namespace qmcplusplus
       }
 
   /* implement using gemm algorithm */
-  template<typename VGL>
-  inline void LCAOrbitalSet::evaluate_vgl_impl(const VGL& temp, int i,
+  inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp, int i,
       ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) const
   {
     std::copy_n(temp.data(0),OrbitalSetSize,logdet[i]);
-    const auto* restrict gx=temp.data(1);
-    const auto* restrict gy=temp.data(2);
-    const auto* restrict gz=temp.data(3);
+    const ValueType* restrict gx=temp.data(1);
+    const ValueType* restrict gy=temp.data(2);
+    const ValueType* restrict gz=temp.data(3);
     for(size_t j=0; j<OrbitalSetSize; j++)
     {
       dlogdet[i][j][0]=gx[j];

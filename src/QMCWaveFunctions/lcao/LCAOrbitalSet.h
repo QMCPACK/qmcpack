@@ -190,12 +190,10 @@ namespace qmcplusplus
 
   private:
     //helper functions to handl Identity
-    template<typename VGL>
-    void evaluate_vgl_impl(const VGL& temp,
+    void evaluate_vgl_impl(const vgl_type& temp,
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) const;
 
-    template<typename VGL>
-    void evaluate_vgl_impl(const VGL& temp, int i,
+    void evaluate_vgl_impl(const vgl_type& temp, int i,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) const;
 
 #if !defined(QMC_COMPLEX)
