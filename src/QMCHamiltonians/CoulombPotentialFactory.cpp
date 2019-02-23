@@ -259,6 +259,17 @@ HamiltonianFactory::addForceHam(xmlNodePtr cur)
     targetH->addOperator
     (new ZeroVarianceForce(*source, *target, psi), "ZVForce", false);
   }
+  else if(mode=="acforce")
+  {
+    app_log() <<"Adding Assaraf-Caffarel total force.\n";
+    OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+    if(psi_it == psiPool.end())
+    {
+      APP_ABORT("Unknown psi \""+PsiName+"\" for zero-variance force.");
+    }
+    TrialWaveFunction &psi = *psi_it->second->targetPsi;
+    
+  }
   
   else if(mode=="stress")
   {
