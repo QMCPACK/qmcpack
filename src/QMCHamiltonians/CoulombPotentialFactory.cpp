@@ -33,7 +33,7 @@
 
 #include "QMCHamiltonians/PulayForce.h"
 #include "QMCHamiltonians/ZeroVarianceForce.h"
-
+#include "QMCHamiltonians/ACForce.h"
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/MPC.h"
 #endif
@@ -268,7 +268,8 @@ HamiltonianFactory::addForceHam(xmlNodePtr cur)
       APP_ABORT("Unknown psi \""+PsiName+"\" for zero-variance force.");
     }
     TrialWaveFunction &psi = *psi_it->second->targetPsi;
-    
+    ACForce* acforce = new ACForce(*source,*target,psi,*targetH); 
+    targetH->addOperator(acforce,title,false);
   }
   
   else if(mode=="stress")
