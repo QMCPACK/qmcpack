@@ -20,19 +20,34 @@ namespace qmcplusplus
 {
 
 ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi_in, QMCHamiltonian& H):
-FirstForceIndex(-1), ions(source), elns(target), psi(psi_in), Nions(0)
+FirstForceIndex(-1), ions(source), elns(target), psi(psi_in), ham(H), Nions(0)
 {
   prefix="ACForce";
+  myName = prefix;
   Nions=ions.getTotalNum();
   hf_force.resize(Nions);
   pulay_force.resize(Nions);
   wf_grad.resize(Nions);
+  
 };
 
 QMCHamiltonianBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  ACForce* myclone = new ACForce(qp,ions,psi,ham);
+  APP_ABORT("ACForce::makeClone(ParticleSet&,TrialWaveFunction&) shouldn't be called");
+  return nullptr;
+}
+
+QMCHamiltonianBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
+{
+  QMCHamiltonianBase* myclone = new ACForce(qp,ions,psi_in,ham_in);
   return myclone;
+}
+void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& ham_in)
+{
+  //The following line is modified 
+  QMCHamiltonianBase* myclone = makeClone(qp,psi,ham_in);
+  if(myclone)
+    ham_in.addOperator(myclone,myName,UpdateMode[PHYSICAL]);
 }
 ACForce::Return_t ACForce::evaluate(ParticleSet& P)
 {
@@ -42,7 +57,6 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
 
   RealType localenergy=0;
   localenergy=ham.evaluateIonDerivs(P,hf_force,pulay_force,wf_grad);
-  hf_force[0][2]=3.0;
   return 0.0;
 };  
 
@@ -60,8 +74,8 @@ void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
       std::ostringstream wfgradname2;
       hfname << prefix << "_hf_" << iat << "_" << x;
       pulayname << prefix << "_pulay_" << iat << "_" << x;
-      wfgradname1 << prefix << "_wfgrad1_" << iat << "_" << x;
-      wfgradname2 << prefix << "_wfgrad2_" << iat << "_" << x;
+      wfgradname1 << prefix << "_Ewfgrad_" << iat << "_" << x;
+      wfgradname2 << prefix << "_wfgrad_" << iat << "_" << x;
       plist.add(hfname.str());
       plist.add(pulayname.str());
       plist.add(wfgradname1.str());
@@ -71,7 +85,6 @@ void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
 };
 void ACForce::setObservables(PropertySetType& plist)
 {
-  QMCHamiltonianBase::setObservables(plist);
   int myindex=FirstForceIndex;
   for(int iat=0; iat<Nions; iat++)
   {
@@ -86,7 +99,6 @@ void ACForce::setObservables(PropertySetType& plist)
 };
 void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
 {
-  QMCHamiltonianBase::setParticlePropertyList(plist, offset);
   int myindex=FirstForceIndex+offset;
   for(int iat=0; iat<Nions; iat++)
   {
