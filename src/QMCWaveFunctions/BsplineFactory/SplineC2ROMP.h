@@ -152,7 +152,8 @@ template<typename ST, typename TT>
 struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
 {
   static const int ALIGN=QMC_CLINE;
-  using OffloadAllocator=OMPallocator<ST, Mallocator<ST, QMC_CLINE>>;
+  using OffloadAllocatorST=OMPallocator<ST, Mallocator<ST, QMC_CLINE>>;
+  using OffloadAllocatorTT=OMPallocator<TT, Mallocator<TT, QMC_CLINE>>;
 
   static const int D=3;
   using BaseType=SplineAdoptorBase<ST,3>;
@@ -178,7 +179,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
-  MultiBspline<ST, ALIGN, OffloadAllocator>* SplineInst;
+  MultiBspline<ST, ALIGN, OffloadAllocatorST>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
   ///also used as identifier of shallow copy
   SplineType* MultiSpline;
@@ -195,9 +196,9 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT> ratios_private;
   ///offload scratch space, dynamically resized to the maximal need
-  Vector<ST,OffloadAllocator> offload_scratch;
+  Vector<ST,OffloadAllocatorST> offload_scratch;
   ///result scratch space, dynamically resized to the maximal need
-  Vector<TT,OffloadAllocator> results_scratch;
+  Vector<TT,OffloadAllocatorTT> results_scratch;
   ///the following pointers are used for keep and access the data on device
   ///cloned objects copy the pointer by value without the need of mapping to the device
   ///Thus master_PrimLattice_G_ptr is different from PrimLattice.G.data() in cloned objects
@@ -274,7 +275,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst=new MultiBspline<ST, ALIGN, OffloadAllocator>();
+    SplineInst=new MultiBspline<ST, ALIGN, OffloadAllocatorST>();
     SplineInst->create(xyz_g,xyz_bc,myV.size());
     MultiSpline=SplineInst->spline_m;
 
