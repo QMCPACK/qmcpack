@@ -2236,6 +2236,8 @@ QMCA examples:
    qmca -a qmc.g000.s*.scalar.dat qmc.g001.s*.scalar.dat
   user specified weights (w=2 for g=0 and w=4 for g=1)
    qmca -a -w '2 4' qmc.g000.s*.scalar.dat qmc.g001.s*.scalar.dat
+  save averaged data to scalar files (useful for timestep extrapolating averaged quantities)
+   qmca -a -w '2 4' --save_average qmc.g000.s*.scalar.dat qmc.g001.s*.scalar.dat
 
  plotting vs series
    qmca -p -q e -e 10 qmc.s*.scalar.dat
@@ -2290,6 +2292,10 @@ QMCA examples:
         parser.add_option('-a','--average',dest='average',
                           action='store_true',default=False,
                           help='Average over files in each series (default=%default).'
+                          )
+        parser.add_option('--save_average',dest='save_average',
+                          action='store_true',default=False,
+                          help='Save averaged data into scalar.dat files. (default=%default).'
                           )
         parser.add_option('-w','--weights',dest='weights',
                           default='None',
@@ -2677,6 +2683,21 @@ QMCA examples:
             #end for
         #end for
         opt = self.options
+        if opt.average and opt.save_average:
+            for fmap in self.file_map:
+                ndata = len(fmap.data.first())
+                data = [arange(ndata)]
+                keys = 'index'
+                fmt = ['%i']
+                for key in fmap.data.keys():
+                    data.append(fmap.data[key])
+                    keys+='     {}'.format(key)
+                    fmt.append('%.10e')
+                #end for
+                data = array(data).transpose()
+                savetxt(fmap.info.filepath,data,header=keys,fmt=fmt)
+            #end for
+        #end if
         show_text  = True
         plots = opt.plot or opt.trace or opt.histogram
         if opt.sort:
