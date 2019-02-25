@@ -13,9 +13,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file CrystalLattice.cpp
@@ -29,14 +26,14 @@ namespace qmcplusplus
 /*! \fn CrystalLattice::CrystalLattice()
  *  Default constructor. Initialized to a \p 1x1x1 cubic supercell.
  */
-template<class T, unsigned D,bool ORTHO>
-CrystalLattice<T,D,ORTHO>::CrystalLattice()
+template<class T, unsigned D, bool ORTHO>
+CrystalLattice<T, D, ORTHO>::CrystalLattice()
 {
-  BoxBConds=0;
-  VacuumScale=1.0;
+  BoxBConds   = 0;
+  VacuumScale = 1.0;
   R.diagonal(1e10);
-  G = R;
-  M = R;
+  G      = R;
+  M      = R;
   Volume = 1;
   reset();
 }
@@ -49,38 +46,38 @@ CrystalLattice<T,D,ORTHO>::CrystalLattice()
 //      reset();
 //    }
 
-template<class T, unsigned D,bool ORTHO>
-void CrystalLattice<T,D,ORTHO>::set(int argc, char **argv)
+template<class T, unsigned D, bool ORTHO>
+void CrystalLattice<T, D, ORTHO>::set(int argc, char** argv)
 {
   std::vector<std::string> opt;
-  for(int i=0; i<argc; i++)
+  for (int i = 0; i < argc; i++)
     opt.push_back(argv[i]);
   set(opt);
 }
 
-template<class T, unsigned D,bool ORTHO>
-void CrystalLattice<T,D,ORTHO>::set(std::vector<std::string>& argv)
+template<class T, unsigned D, bool ORTHO>
+void CrystalLattice<T, D, ORTHO>::set(std::vector<std::string>& argv)
 {
-  makelattice<CrystalLattice<T,D,ORTHO> >::apply(*this, argv);
+  makelattice<CrystalLattice<T, D, ORTHO>>::apply(*this, argv);
 }
 
 
-template<class T, unsigned D,bool ORTHO>
+template<class T, unsigned D, bool ORTHO>
 template<class TT>
-void CrystalLattice<T,D,ORTHO>::set(const Tensor<TT,D>& lat)
+void CrystalLattice<T, D, ORTHO>::set(const Tensor<TT, D>& lat)
 {
   R = lat;
   reset();
 }
 
-template<class T, unsigned D,bool ORTHO>
-void CrystalLattice<T,D,ORTHO>::set(T sc, T* lat)
+template<class T, unsigned D, bool ORTHO>
+void CrystalLattice<T, D, ORTHO>::set(T sc, T* lat)
 {
-  if(lat)
+  if (lat)
   {
-    for(int i=0; i<D; ++i)
-      for(int j=0; j<D; ++j)
-        R(i,j) = *lat++;
+    for (int i = 0; i < D; ++i)
+      for (int j = 0; j < D; ++j)
+        R(i, j) = *lat++;
     R *= sc;
   }
   else
@@ -91,62 +88,61 @@ void CrystalLattice<T,D,ORTHO>::set(T sc, T* lat)
   reset();
 }
 
-template<class T, unsigned D,bool ORTHO>
-void
-CrystalLattice<T,D,ORTHO>::set(const CrystalLattice<T,D,ORTHO>& oldlat, int *uc)
+template<class T, unsigned D, bool ORTHO>
+void CrystalLattice<T, D, ORTHO>::set(const CrystalLattice<T, D, ORTHO>& oldlat, int* uc)
 {
-  BoxBConds = oldlat.BoxBConds;
+  BoxBConds   = oldlat.BoxBConds;
   VacuumScale = oldlat.VacuumScale;
-  R = oldlat.R;
-  if(uc)
+  R           = oldlat.R;
+  if (uc)
   {
-    for(int i=0; i<D; ++i)
-      for(int j=0; j<D; ++j)
-        R(i,j) *= static_cast<T>(uc[i]);
+    for (int i = 0; i < D; ++i)
+      for (int j = 0; j < D; ++j)
+        R(i, j) *= static_cast<T>(uc[i]);
   }
   reset();
 }
 
-template<class T, unsigned D,bool ORTHO>
-void CrystalLattice<T,D,ORTHO>::reset()
+template<class T, unsigned D, bool ORTHO>
+void CrystalLattice<T, D, ORTHO>::reset()
 {
-  G = inverse(R); //G = transpose(Inverse(R));
-  Gt= transpose(G);
+  G      = inverse(R); //G = transpose(Inverse(R));
+  Gt     = transpose(G);
   Volume = std::abs(det(R));
   //M = dot(transpose(R),R);
-  M = dot(R,transpose(R));
-  T t = TWOPI*TWOPI;
-  Mg = t*dot(transpose(G),G);
-  for(int i=0; i<D; ++i)
-    for(int j=0; j<D; ++j)
-      Rv[i][j] = R(i,j);
-  for(int i=0; i<D; ++i)
-    for(int j=0; j<D; ++j)
-      Gv[i][j] = G(j,i);
-  for(int i=0; i<D; ++i)
+  M   = dot(R, transpose(R));
+  T t = TWOPI * TWOPI;
+  Mg  = t * dot(transpose(G), G);
+  for (int i = 0; i < D; ++i)
+    for (int j = 0; j < D; ++j)
+      Rv[i][j] = R(i, j);
+  for (int i = 0; i < D; ++i)
+    for (int j = 0; j < D; ++j)
+      Gv[i][j] = G(j, i);
+  for (int i = 0; i < D; ++i)
   {
-    Length[i]=std::sqrt(dot(Rv[i],Rv[i]));
-    OneOverLength[i]=1.0/Length[i];
+    Length[i]        = std::sqrt(dot(Rv[i], Rv[i]));
+    OneOverLength[i] = 1.0 / Length[i];
   }
   Center = 0.0;
-  for(int i=0;i<D;++i)
+  for (int i = 0; i < D; ++i)
     Center += Rv[i];
   Center *= .5;
   //analysis of a lattice using LatticeAnalyzer
-  LatticeAnalyzer<T,D> ldesc;
-  SuperCellEnum = ldesc(BoxBConds);
-  DiagonalOnly=ldesc.isDiagonalOnly(R);
-  ABC=ldesc.calcSolidAngles(Rv,OneOverLength);
-  WignerSeitzRadius = ldesc.calcWignerSeitzRadius(Rv);
-  WignerSeitzRadius_G = ldesc.calcWignerSeitzRadius(Gv);
+  LatticeAnalyzer<T, D> ldesc;
+  SuperCellEnum        = ldesc(BoxBConds);
+  DiagonalOnly         = ldesc.isDiagonalOnly(R);
+  ABC                  = ldesc.calcSolidAngles(Rv, OneOverLength);
+  WignerSeitzRadius    = ldesc.calcWignerSeitzRadius(Rv);
+  WignerSeitzRadius_G  = ldesc.calcWignerSeitzRadius(Gv);
   SimulationCellRadius = ldesc.calcSimulationCellRadius(Rv);
   // set equal WignerSeitzRadius and SimulationCellRadius when they are very close.
-  if ( WignerSeitzRadius > SimulationCellRadius &&
-       WignerSeitzRadius-SimulationCellRadius <= WignerSeitzRadius*std::numeric_limits<float>::epsilon()*2 )
+  if (WignerSeitzRadius > SimulationCellRadius &&
+      WignerSeitzRadius - SimulationCellRadius <= WignerSeitzRadius * std::numeric_limits<float>::epsilon() * 2)
     WignerSeitzRadius = SimulationCellRadius;
-  CellRadiusSq=SimulationCellRadius*SimulationCellRadius;
-  if(SuperCellEnum)
-    ldesc.makeNextCells(R,NextUnitCells);
+  CellRadiusSq = SimulationCellRadius * SimulationCellRadius;
+  if (SuperCellEnum)
+    ldesc.makeNextCells(R, NextUnitCells);
   //SimulationCellRadius = 1.0e50;
   //// Compute simulation cell radius
   //for (int i=0; i<D; i++) {
@@ -190,17 +186,16 @@ void CrystalLattice<T,D,ORTHO>::reset()
  *  \param sc A scaling factor.
  *  \brief Rescale this supercell by a scalar.
  */
-template<class T, unsigned D,bool ORTHO>
-CrystalLattice<T,D,ORTHO>&
-CrystalLattice<T,D,ORTHO>::operator*=(T sc)
+template<class T, unsigned D, bool ORTHO>
+CrystalLattice<T, D, ORTHO>& CrystalLattice<T, D, ORTHO>::operator*=(T sc)
 {
   R *= sc;
   reset();
   return *this;
 }
 
-template<class T, unsigned D,bool ORTHO>
-void CrystalLattice<T,D,ORTHO>::print(std::ostream& os, int level) const
+template<class T, unsigned D, bool ORTHO>
+void CrystalLattice<T, D, ORTHO>::print(std::ostream& os, int level) const
 {
   /*\note level == 0: print only the lattice vectors
    *      level == 1: lattice vectors, boundary conditions, grid
@@ -209,85 +204,83 @@ void CrystalLattice<T,D,ORTHO>::print(std::ostream& os, int level) const
   std::string unit_name = "bohr";
 
   std::string lattice_name = "  Lattice (" + unit_name + "):";
-  std::string pad(lattice_name.length(),' ');
-  os <<  lattice_name;
-  for(int i=0; i<D; ++i) {
-    if (i > 0) {
+  std::string pad(lattice_name.length(), ' ');
+  os << lattice_name;
+  for (int i = 0; i < D; ++i)
+  {
+    if (i > 0)
+    {
       os << pad;
     }
     os << Rv[i] << std::endl;
   }
-  if(level > 0)
+  if (level > 0)
   {
     os << std::endl;
     os << "  Boundary Conditions: ";
-    for(int i=0; i<D; ++i)
+    for (int i = 0; i < D; ++i)
     {
-      if(BoxBConds[i])
+      if (BoxBConds[i])
         os << " p ";
       else
         os << " n ";
     }
     os << std::endl;
-    if(VacuumScale != 1.0)
+    if (VacuumScale != 1.0)
       os << "  Vacuum scale: " << VacuumScale << std::endl;
   }
-  if(level > 1)
+  if (level > 1)
   {
     os << std::endl;
     os << "  Volume (bohr^3) = " << Volume << std::endl;
     os << std::endl;
     os << "  Reciprocal vectors without 2*pi.\n";
-    for(int i=0; i<D; ++i)
-      os << "    g_"<< i+1<< " = " << Gv[i] << std::endl;
+    for (int i = 0; i < D; ++i)
+      os << "    g_" << i + 1 << " = " << Gv[i] << std::endl;
     os << std::endl;
     os << "  Metric tensor in real-space.\n";
-    for(int i=0; i<D; ++i)
+    for (int i = 0; i < D; ++i)
     {
-      os << "    h_"<< i+1<< " = ";
-      for(int j=0; j< D; ++j)
+      os << "    h_" << i + 1 << " = ";
+      for (int j = 0; j < D; ++j)
       {
-        os << M(i,j) << " ";
+        os << M(i, j) << " ";
       }
       os << std::endl;
     }
     os << std::endl;
     os << "  Metric tensor in g-space.\n";
-    for(int i=0; i<D; ++i)
+    for (int i = 0; i < D; ++i)
     {
-      os << "    h_"<< i+1<< " = ";
-      for(int j=0; j< D; ++j)
+      os << "    h_" << i + 1 << " = ";
+      for (int j = 0; j < D; ++j)
       {
-        os << Mg(i,j) << " ";
+        os << Mg(i, j) << " ";
       }
       os << std::endl;
     }
   }
 }
 
-template<class T, unsigned D,bool ORTHO>
-inline bool operator==(const CrystalLattice<T,D,ORTHO>& lhs,
-                       const CrystalLattice<T,D,ORTHO>& rhs)
+template<class T, unsigned D, bool ORTHO>
+inline bool operator==(const CrystalLattice<T, D, ORTHO>& lhs, const CrystalLattice<T, D, ORTHO>& rhs)
 {
-  for(int i=0; i<D*D; ++i)
-    if(std::abs(lhs.R[i]-rhs.R[i]) > std::numeric_limits<T>::epsilon())
+  for (int i = 0; i < D * D; ++i)
+    if (std::abs(lhs.R[i] - rhs.R[i]) > std::numeric_limits<T>::epsilon())
       return false;
   return true;
 }
 
-template<class T, unsigned D,bool ORTHO>
-inline bool operator!=(const CrystalLattice<T,D,ORTHO>& lhs,
-                       const CrystalLattice<T,D,ORTHO>& rhs)
+template<class T, unsigned D, bool ORTHO>
+inline bool operator!=(const CrystalLattice<T, D, ORTHO>& lhs, const CrystalLattice<T, D, ORTHO>& rhs)
 {
   return !(lhs == rhs);
 }
 
 // free function to check if a CrystalLattice is orthorhombic
-template<class T, unsigned D,bool ORTHO>
-inline bool orthorombic(const CrystalLattice<T,D,ORTHO>& a)
+template<class T, unsigned D, bool ORTHO>
+inline bool orthorombic(const CrystalLattice<T, D, ORTHO>& a)
 {
   return ORTHO;
 }
-}
-
-
+} // namespace qmcplusplus
