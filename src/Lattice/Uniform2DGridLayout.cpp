@@ -74,9 +74,11 @@ void Uniform2DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
   }
   RS.resize(ic);
   FS.resize(ic);
-  int irc                                                                = static_cast<int>(4.0 * rr * scaleL);
-  int ir                                                                 = 0;
+  int irc = static_cast<int>(4.0 * rr * scaleL);
+  int ir  = 0;
+
   std::map<int, std::vector<SingleParticleIndex_t>*>::const_iterator cit = rs.begin();
+
   while (cit != rs.end())
   {
     bool inside                                  = ((*cit).first <= irc);
