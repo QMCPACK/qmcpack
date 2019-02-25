@@ -2685,7 +2685,6 @@ QMCA examples:
         opt = self.options
         if opt.average and opt.save_average:
             for fmap in self.file_map:
-                print(fmap.data.first())
                 ndata = len(fmap.data.first())
                 data = [arange(ndata)]
                 keys = 'index'
