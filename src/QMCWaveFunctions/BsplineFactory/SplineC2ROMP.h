@@ -35,9 +35,7 @@ namespace C2R
    */
 template<typename ST, typename TT>
   inline void assign_vgl(ST x, ST y, ST z,
-                         TT* restrict psi,
-                         TT* restrict dpsi,
-                         TT* restrict d2psi,
+                         TT* restrict results_scratch_ptr,
                          const ST* mKK_ptr,
                          size_t orb_size,
                          const ST* restrict offload_scratch_ptr,
@@ -74,6 +72,9 @@ template<typename ST, typename TT>
     const ST* restrict h12 = offload_scratch_ptr + spline_padded_size*8;
     const ST* restrict h22 = offload_scratch_ptr + spline_padded_size*9;
 
+    TT* restrict   psi = results_scratch_ptr;
+    TT* restrict  dpsi = results_scratch_ptr+orb_size;
+    TT* restrict d2psi = results_scratch_ptr+orb_size*4;
 #ifdef ENABLE_OFFLOAD
     #pragma omp for nowait
 #else
@@ -195,6 +196,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   Matrix<TT> ratios_private;
   ///offload scratch space, dynamically resized to the maximal need
   Vector<ST,OffloadAllocator> offload_scratch;
+  ///result scratch space, dynamically resized to the maximal need
+  Vector<TT,OffloadAllocator> results_scratch;
   ///the following pointers are used for keep and access the data on device
   ///cloned objects copy the pointer by value without the need of mapping to the device
   ///Thus master_PrimLattice_G_ptr is different from PrimLattice.G.data() in cloned objects
@@ -231,8 +234,8 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     {
       delete SplineInst;
       PRAGMA_OMP("omp target exit data map(delete:MultiSpline[0:1])")
-      PRAGMA_OMP("omp target exit data map(delete:master_myKcart_ptr[0:myKcart.capacity()*3])")
       PRAGMA_OMP("omp target exit data map(delete:master_mKK_ptr[0:mKK.size()])")
+      PRAGMA_OMP("omp target exit data map(delete:master_myKcart_ptr[0:myKcart.capacity()*3])")
       PRAGMA_OMP("omp target exit data map(delete:master_PrimLattice_G_ptr[0:9])")
       PRAGMA_OMP("omp target exit data map(delete:master_GGt_ptr[0:9])")
     }
@@ -588,18 +591,18 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     const auto padded_size = myV.size();
     if(offload_scratch.size()<padded_size*10)
       offload_scratch.resize(padded_size*10);
+    const auto orb_size = psi.size();
+    if(results_scratch.size()<orb_size*5)
+      results_scratch.resize(orb_size*5);
 
     // Ye: need to extract sizes and pointers before entering target region
     const auto* spline_ptr = SplineInst->spline_m;
     const auto* ru_ptr = ru.data();
     auto* offload_scratch_ptr = offload_scratch.data();
-    auto* psi_ptr = psi.data();
-    auto* dpsi_ptr = dpsi[0].data();
-    auto* d2psi_ptr = d2psi.data();
+    auto* results_scratch_ptr = results_scratch.data();
     const auto x = r[0], y = r[1], z = r[2];
     const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
     const auto myKcart_padded_size = myKcart.capacity();
-    const auto orb_size = psi.size();
     auto* mKK_ptr = master_mKK_ptr;
     auto* GGt_ptr = master_GGt_ptr;
     auto* PrimLattice_G_ptr = master_PrimLattice_G_ptr;
@@ -608,7 +611,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     int nComplexBands_local = nComplexBands;
 
     PRAGMA_OMP("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
-                map(from:psi_ptr[0:orb_size],dpsi_ptr[0:orb_size*3],d2psi_ptr[0:orb_size])")
+                map(always, from:results_scratch_ptr[0:orb_size*5])")
     for(int team_id = 0; team_id < NumTeams; team_id++)
     {
       int first = ChunkSizePerTeam * team_id;
@@ -620,10 +623,19 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
                                              offload_scratch_ptr+padded_size+first,
                                              offload_scratch_ptr+padded_size*4+first,
                                              padded_size, first, last);
-        C2R::assign_vgl(x, y, z, psi_ptr, dpsi_ptr, d2psi_ptr, mKK_ptr, orb_size,
+        C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size,
                    offload_scratch_ptr, padded_size, GGt_ptr, PrimLattice_G_ptr,
                    myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local, first/2, last/2);
       }
+    }
+
+    for(size_t i=0; i<orb_size; i++)
+    {
+      psi[i]=results_scratch[i];
+      dpsi[i][0]=results_scratch[orb_size+i*3];
+      dpsi[i][1]=results_scratch[orb_size+i*3+1];
+      dpsi[i][2]=results_scratch[orb_size+i*3+2];
+      d2psi[i]=results_scratch[orb_size*4+i];
     }
   }
 
