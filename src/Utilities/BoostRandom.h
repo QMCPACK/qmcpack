@@ -92,6 +92,14 @@ public:
     uni.engine().seed(baseSeed);
   }
 
+  /** initialize the generator with a seed
+   * @param iseed_in input seed
+   */
+  void init(uint_type iseed_in)
+  {
+    uni.engine().seed(iseed_in);
+  }
+
   ///get baseOffset
   inline int offset() const
   {

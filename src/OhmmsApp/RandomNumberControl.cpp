@@ -77,22 +77,30 @@ void RandomNumberControl::reset()
 }
 
 /// reset the generator
-void RandomNumberControl::make_seeds()
+void RandomNumberControl::make_seeds(bool init_from_time, uint_type time_seed)
 {
+  // step 1, get initial seed by time
+  if(init_from_time)
+  {
+    time_seed = std::chrono::system_clock::now().time_since_epoch().count();
+    app_summary() << "  Offset for the random number seeds based on time: " << time_seed << std::endl;
+  }
+  mpi::bcast(*OHMMS::Controller,time_seed);
+  // step 2, generate seeds for RNGs used by MC. Each rank needs omp_get_max_threads()+1 seeds
+  std::minstd_rand seed_generator(time_seed);
+  // jump ahead
   int pid = OHMMS::Controller->rank();
-  int nprocs = OHMMS::Controller->size();
-  uint_type iseed=static_cast<uint_type>(std::time(0))%1024;
-  mpi::bcast(*OHMMS::Controller,iseed);
-  //OHMMS::Controller->bcast(iseed);//broadcast the seed
-  Offset=iseed;
+  seed_generator.discard(pid*(omp_get_max_threads()+1));
+  // step 3, seed the per-rank RNG
+  Random.init(seed_generator());
+  // step 4, seed the per-thread RNG
   std::vector<uint_type> mySeeds;
-  RandomNumberControl::PrimeNumbers.get(Offset,nprocs*(omp_get_max_threads()+2), mySeeds);
-  Random.init(pid,nprocs,mySeeds[pid],Offset+pid);
-  //change children as well
-  make_children();
+  for(int tid=0; tid<omp_get_max_threads(); tid++)
+    mySeeds.push_back(seed_generator());
+  make_children(mySeeds);
 }
 
-void RandomNumberControl::make_children()
+void RandomNumberControl::make_children(std::vector<uint_type> &mySeeds)
 {
   int nthreads=omp_get_max_threads();
   int n=nthreads-Children.size();
@@ -101,16 +109,8 @@ void RandomNumberControl::make_children()
     Children.push_back(new RandomGenerator_t);
     n--;
   }
-  int rank=OHMMS::Controller->rank();
-  int nprocs=OHMMS::Controller->size();
-  int baseoffset=Offset+nprocs+nthreads*rank;
-  std::vector<uint_type> myprimes;
-  PrimeNumbers.get(baseoffset,nthreads,myprimes);
   for(int ip=0; ip<nthreads; ip++)
-  {
-    int offset=baseoffset+ip;
-    Children[ip]->init(rank,nprocs,myprimes[ip],offset);
-  }
+    Children[ip]->init(mySeeds[ip]);
 }
 
 xmlNodePtr
@@ -173,48 +173,20 @@ bool RandomNumberControl::put(xmlNodePtr cur)
 {
   if(NeverBeenInitialized)
   {
-    bool init_mpi = true;
-    int offset_in = -1; // default is to generate by Wall-clock
-    if(cur != NULL)
-    {
-      std::string pname("yes");
-      OhmmsAttributeSet oAttrib;
-      oAttrib.add(pname,"parallel");
-      oAttrib.add(offset_in,"seed");
-      oAttrib.put(cur);
-      if(pname == "0" || pname == "false" || pname == "no")
-        init_mpi=false;
-    }
-    int nprocs = 1;
-    int pid = 0;
-    if(init_mpi)
-    {
-      pid = OHMMS::Controller->rank();
-      nprocs = OHMMS::Controller->size();
-    }
     app_summary() << " Random Number" << std::endl;
     app_summary() << " -------------" << std::endl;
-    if(offset_in<0)
-    {
-      offset_in=static_cast<int>(static_cast<uint_type>(std::time(0))%1024);
-      app_summary() << "  Offset for the random number seeds based on time: " << offset_in << std::endl;
-      mpi::bcast(*OHMMS::Controller,offset_in);
-    }
-    else
-    {
-      offset_in%=1024;
-      app_summary() << "  Offset for the random number seeds from input file (mod 1024): " << offset_in << std::endl;
-    }
-    app_summary() << std::endl;
-    Offset=offset_in;
-    std::vector<uint_type> mySeeds;
-    //allocate twice of what is required
-    PrimeNumbers.get(Offset,nprocs*(omp_get_max_threads()+2), mySeeds);
-    Random.init(pid,nprocs,mySeeds[pid],Offset+pid);
-    app_log() <<  "  Range of prime numbers to use as seeds over processors and threads = " << mySeeds[0] <<"-" << mySeeds[nprocs*omp_get_max_threads()] <<  std::endl;
-    app_log() << std::endl;
 
-    make_children();
+    bool seed_from_time = true;
+    size_t offset_in = 0; // default is to generate by Wall-clock
+    if(cur != NULL)
+    {
+      OhmmsAttributeSet oAttrib;
+      oAttrib.add(offset_in,"seed");
+      oAttrib.put(cur);
+      app_summary() << "  Offset for the random number seeds from input file: " << offset_in << std::endl;
+      seed_from_time = false;
+    }
+    make_seeds(seed_from_time, offset_in);
     NeverBeenInitialized = false;
     app_log() << std::endl;
   }

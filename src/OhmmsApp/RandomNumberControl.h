@@ -18,6 +18,8 @@
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/PrimeNumberSet.h"
 #include <io/hdf_archive.h>
+#include <chrono>
+#include <random>
 
 class Communicate;
 
@@ -50,8 +52,8 @@ public:
   void reset();
   static void test();
 
-  static void make_seeds();
-  static void make_children();
+  static void make_seeds(bool init_from_time = true, uint_type time_seed = 0);
+  static void make_children(std::vector<uint_type> &mySeeds);
 
   xmlNodePtr initialize(xmlXPathContextPtr);
 
