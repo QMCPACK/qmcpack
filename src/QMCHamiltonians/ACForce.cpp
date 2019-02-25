@@ -14,12 +14,17 @@
  *@brief Implementation of ACForce, Assaraf-Caffarel ZVZB style force estimation.
  */
 #include "QMCHamiltonians/ACForce.h"
+#include <sstream>
 
 namespace qmcplusplus
 {
 
-ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi, QMCHamiltonian& H)
-{};
+ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi_in, QMCHamiltonian& H):
+FirstForceIndex(-1), ions(source), elns(target), psi(psi_in), Nions(0)
+{
+  prefix="ACForce";
+  Nions=ions.getTotalNum();
+};
 
 ACForce::Return_t ACForce::evaluate(ParticleSet& P)
 {
@@ -28,6 +33,17 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
 
 void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
 {
+  if(FirstForceIndex<0)
+    FirstForceIndex=plist.size();
+  for(int iat=0; iat<Nions; iat++)
+  {
+    for(int x=0; x<OHMMS_DIM; x++)
+    {
+      std::ostringstream obsName;
+      obsName << prefix << "_" << iat << "_" << x;
+      plist.add(obsName.str());
+    }
+  }
 };
 void ACForce::setObservables(PropertySetType& plist)
 {

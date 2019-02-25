@@ -15,7 +15,10 @@
  */
 #ifndef QMCPLUSPLUS_ACFORCE_H
 #define QMCPLUSPLUS_ACFORCE_H
+
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
@@ -26,7 +29,7 @@ struct ACForce: public QMCHamiltonianBase
   /** Destructor **/
   ~ACForce(){};
   /** Copy constructor **/
-  ACForce(const ACForce& ac){};
+  //ACForce(const ACForce& ac)  {};
  
   /** I/O Routines */
   bool put(xmlNodePtr cur){return true;};
@@ -43,6 +46,19 @@ struct ACForce: public QMCHamiltonianBase
 
   /** Evaluate **/
   Return_t evaluate(ParticleSet& P);  
+
+  //** Internal variables **/
+  TrialWaveFunction psi;
+  ParticleSet ions;
+  ParticleSet elns;
+  QMCHamiltonian ham;
+
+  //For indexing observables
+  IndexType FirstForceIndex;
+  IndexType Nions;
+
+  //Class info.
+  std::string prefix;
 
 };
 
