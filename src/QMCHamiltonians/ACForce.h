@@ -24,6 +24,7 @@ namespace qmcplusplus
 {
 struct ACForce: public QMCHamiltonianBase
 {
+  typedef ParticleSet::ParticlePos_t Force_t;
   /** Constructor **/
   ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi, QMCHamiltonian& H);
   /** Destructor **/
@@ -36,7 +37,7 @@ struct ACForce: public QMCHamiltonianBase
   bool get(std::ostream& os) const {return true;};
 
   /** Cloning **/
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi){return 0;};
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
   
   /** Initialization/assignment **/
   void resetTargetParticleSet(ParticleSet& P){};
@@ -56,6 +57,11 @@ struct ACForce: public QMCHamiltonianBase
   //For indexing observables
   IndexType FirstForceIndex;
   IndexType Nions;
+  
+  //Temporary Nion x 3 dimensional arrays for force storage.
+  Force_t hf_force;
+  Force_t pulay_force;
+  Force_t wf_grad;
 
   //Class info.
   std::string prefix;

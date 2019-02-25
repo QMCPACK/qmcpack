@@ -24,10 +24,25 @@ FirstForceIndex(-1), ions(source), elns(target), psi(psi_in), Nions(0)
 {
   prefix="ACForce";
   Nions=ions.getTotalNum();
+  hf_force.resize(Nions);
+  pulay_force.resize(Nions);
+  wf_grad.resize(Nions);
 };
 
+QMCHamiltonianBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+{
+  ACForce* myclone = new ACForce(qp,ions,psi,ham);
+  return myclone;
+}
 ACForce::Return_t ACForce::evaluate(ParticleSet& P)
 {
+  hf_force=0;
+  pulay_force=0;
+  wf_grad=0;
+
+  RealType localenergy=0;
+  localenergy=ham.evaluateIonDerivs(P,hf_force,pulay_force,wf_grad);
+  hf_force[0][2]=3.0;
   return 0.0;
 };  
 
@@ -39,17 +54,50 @@ void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
   {
     for(int x=0; x<OHMMS_DIM; x++)
     {
-      std::ostringstream obsName;
-      obsName << prefix << "_" << iat << "_" << x;
-      plist.add(obsName.str());
+      std::ostringstream hfname;
+      std::ostringstream pulayname;
+      std::ostringstream wfgradname1;
+      std::ostringstream wfgradname2;
+      hfname << prefix << "_hf_" << iat << "_" << x;
+      pulayname << prefix << "_pulay_" << iat << "_" << x;
+      wfgradname1 << prefix << "_wfgrad1_" << iat << "_" << x;
+      wfgradname2 << prefix << "_wfgrad2_" << iat << "_" << x;
+      plist.add(hfname.str());
+      plist.add(pulayname.str());
+      plist.add(wfgradname1.str());
+      plist.add(wfgradname2.str());
     }
   }
 };
 void ACForce::setObservables(PropertySetType& plist)
 {
+  QMCHamiltonianBase::setObservables(plist);
+  int myindex=FirstForceIndex;
+  for(int iat=0; iat<Nions; iat++)
+  {
+    for(int iondim=0; iondim<OHMMS_DIM; iondim++)
+    {
+      plist[myindex++] = hf_force[iat][iondim];
+      plist[myindex++] = pulay_force[iat][iondim];
+      plist[myindex++] = wf_grad[iat][iondim];
+      plist[myindex++] = wf_grad[iat][iondim];
+    }
+  }
 };
 void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
 {
+  QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+  int myindex=FirstForceIndex+offset;
+  for(int iat=0; iat<Nions; iat++)
+  {
+    for(int iondim=0; iondim<OHMMS_DIM; iondim++)
+    {
+      plist[myindex++] = hf_force[iat][iondim];
+      plist[myindex++] = pulay_force[iat][iondim];
+      plist[myindex++] = wf_grad[iat][iondim];
+      plist[myindex++] = wf_grad[iat][iondim];
+    }
+  }
 };
 
 }
