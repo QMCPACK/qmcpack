@@ -285,20 +285,17 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   {
     // map the SplineInst->spline_m structure to GPU
     PRAGMA_OMP("omp target enter data map(alloc:MultiSpline[0:1])")
-    PRAGMA_OMP("omp target update to(MultiSpline[0:1])")
     auto* restrict coefs=MultiSpline->coefs;
-    PRAGMA_OMP("omp target update to(coefs[0:MultiSpline->coefs_size])")
     // attach pointers on the device to achieve deep copy
-    auto* restrict MultiSpline_tmp = MultiSpline;
-    PRAGMA_OMP("omp target")
+    PRAGMA_OMP("omp target map(always, to: MultiSpline[0:1], coefs[0:MultiSpline->coefs_size])")
     {
-      MultiSpline_tmp->coefs = coefs;
+      MultiSpline->coefs = coefs;
     }
 
     // transfer static data to GPU
     master_mKK_ptr = mKK.data();
     PRAGMA_OMP("omp target enter data map(alloc:master_mKK_ptr[0:mKK.size()])")
-    PRAGMA_OMP("omp target update to(master_myKcart_ptr[0:mKK.size()])")
+    PRAGMA_OMP("omp target update to(master_mKK_ptr[0:mKK.size()])")
     master_myKcart_ptr = myKcart.data();
     PRAGMA_OMP("omp target enter data map(alloc:master_myKcart_ptr[0:myKcart.capacity()*3])")
     PRAGMA_OMP("omp target update to(master_myKcart_ptr[0:myKcart.capacity()*3])")
