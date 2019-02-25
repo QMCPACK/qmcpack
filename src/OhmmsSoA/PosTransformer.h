@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -19,7 +19,7 @@
 
 namespace qmcplusplus
 {
-  //Need to reorg
+//Need to reorg
 #if 0
   /** Dummy template class to be specialized
    *
@@ -135,7 +135,7 @@ namespace qmcplusplus
     };
 #endif
 
-  /** General conversion function from AoS[nrows][ncols] to SoA[ncols][ldb]
+/** General conversion function from AoS[nrows][ncols] to SoA[ncols][ldb]
    * @param nrows the first dimension
    * @param ncols the second dimension
    * @param iptr input pointer
@@ -145,24 +145,24 @@ namespace qmcplusplus
    *
    * Modeled after blas/lapack for lda/ldb
    */
-  template<typename T1, typename T2>
-    void PosAoS2SoA(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
-    { 
-      T2* restrict x=out      ;
-      T2* restrict y=out+  ldb;
-      T2* restrict z=out+2*ldb;
+template<typename T1, typename T2>
+void PosAoS2SoA(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
+{
+  T2* restrict x = out;
+  T2* restrict y = out + ldb;
+  T2* restrict z = out + 2 * ldb;
 #if !defined(__ibmxl__)
-      #pragma omp simd aligned(x,y,z)
+#pragma omp simd aligned(x, y, z)
 #endif
-      for(int i=0; i<nrows;++i)
-      {
-        x[i]=iptr[i*ncols  ]; //x[i]=in[i][0];
-        y[i]=iptr[i*ncols+1]; //y[i]=in[i][1];
-        z[i]=iptr[i*ncols+2]; //z[i]=in[i][2];
-      }
-    }
+  for (int i = 0; i < nrows; ++i)
+  {
+    x[i] = iptr[i * ncols];     //x[i]=in[i][0];
+    y[i] = iptr[i * ncols + 1]; //y[i]=in[i][1];
+    z[i] = iptr[i * ncols + 2]; //z[i]=in[i][2];
+  }
+}
 
-  /** General conversion function from SoA[ncols][ldb] to AoS[nrows][ncols] 
+/** General conversion function from SoA[ncols][ldb] to AoS[nrows][ncols] 
    * @param nrows the first dimension
    * @param ncols the second dimension
    * @param iptr input pointer
@@ -172,22 +172,22 @@ namespace qmcplusplus
    *
    * Modeled after blas/lapack for lda/ldb
    */
-  template<typename T1, typename T2>
-    void PosSoA2AoS(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
-    { 
-      const T1* restrict x=iptr      ;
-      const T1* restrict y=iptr+  lda;
-      const T1* restrict z=iptr+2*lda;
+template<typename T1, typename T2>
+void PosSoA2AoS(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
+{
+  const T1* restrict x = iptr;
+  const T1* restrict y = iptr + lda;
+  const T1* restrict z = iptr + 2 * lda;
 #if !defined(__ibmxl__)
-      #pragma omp simd aligned(x,y,z)
+#pragma omp simd aligned(x, y, z)
 #endif
-      for(int i=0; i<nrows;++i)
-      {
-        out[i*ldb  ]=x[i]; //out[i][0]=x[i];
-        out[i*ldb+1]=y[i]; //out[i][1]=y[i];
-        out[i*ldb+2]=z[i]; //out[i][2]=z[i];
-      }
-    }
+  for (int i = 0; i < nrows; ++i)
+  {
+    out[i * ldb]     = x[i]; //out[i][0]=x[i];
+    out[i * ldb + 1] = y[i]; //out[i][1]=y[i];
+    out[i * ldb + 2] = z[i]; //out[i][2]=z[i];
+  }
+}
 
 #if 0
 //#if defined(HAVE_MKL)
@@ -225,5 +225,5 @@ namespace qmcplusplus
 #endif
 
 
-}
+} // namespace qmcplusplus
 #endif

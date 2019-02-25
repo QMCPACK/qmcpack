@@ -6,7 +6,7 @@
 //
 // File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -35,11 +35,9 @@ TEST_CASE("read_file", "[xml]")
 
 TEST_CASE("parseString", "[xml]")
 {
-    string s1(
-"<?xml version=\"1.0\"?> \
+  string s1("<?xml version=\"1.0\"?> \
 <simulation> \
-</simulation> "
-);
+</simulation> ");
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(s1);
@@ -48,19 +46,17 @@ TEST_CASE("parseString", "[xml]")
   xmlNodePtr root = doc.getRoot();
   REQUIRE(root != NULL);
 
-  REQUIRE((char *)root->name == string("simulation"));
+  REQUIRE((char*)root->name == string("simulation"));
 
   string root_name;
   getNodeName(root_name, root);
 
   REQUIRE(root_name == "simulation");
-
 }
 
 TEST_CASE("putContent", "[xml]")
 {
-  string s1(
-"<?xml version=\"1.0\"?> \
+  string s1("<?xml version=\"1.0\"?> \
 <simulation> \
   <item1>2</item1> \
   <item2>3.5</item2> \
@@ -77,13 +73,13 @@ TEST_CASE("putContent", "[xml]")
 
   int a;
   xmlNodePtr item = xmlFirstElementChild(root);
-  REQUIRE(string((char *)item->name) == "item1");
+  REQUIRE(string((char*)item->name) == "item1");
   putContent(a, item);
   REQUIRE(a == 2);
 
   double b;
   item = xmlNextElementSibling(item);
-  REQUIRE(string((char *)item->name) == "item2");
+  REQUIRE(string((char*)item->name) == "item2");
   putContent(b, item);
   REQUIRE(b == 3.5);
 
@@ -93,18 +89,18 @@ TEST_CASE("putContent", "[xml]")
 
   vector<double> d;
   item = xmlNextElementSibling(item);
-  REQUIRE(string((char *)item->name) == "item3");
+  REQUIRE(string((char*)item->name) == "item3");
   putContent(d, item);
   REQUIRE(d.size() == 1);
   vector<double> e;
   item = xmlNextElementSibling(item);
-  REQUIRE(string((char *)item->name) == "item4");
+  REQUIRE(string((char*)item->name) == "item4");
   putContent(e, item);
   REQUIRE(e.size() == 2);
 
   vector<double> f;
   item = xmlNextElementSibling(item);
-  REQUIRE(string((char *)item->name) == "item5");
+  REQUIRE(string((char*)item->name) == "item5");
   // Will hang, don't test for now
   //putContent(f, item);
   //REQUIRE(f.size() == 2);
@@ -112,7 +108,7 @@ TEST_CASE("putContent", "[xml]")
 
 TEST_CASE("AttributeSet", "[xml]")
 {
-  const char *content = " \
+  const char* content = " \
 <simulation name=\"here\"> \
 </simulation>";
   Libxml2Document doc;
@@ -121,8 +117,8 @@ TEST_CASE("AttributeSet", "[xml]")
 
   xmlNodePtr root = doc.getRoot();
   OhmmsAttributeSet pattrib;
-  string name="default_name";
-  string other="default";
+  string name  = "default_name";
+  string other = "default";
   pattrib.add(name, "name");
   pattrib.add(other, "other");
   pattrib.put(root);
@@ -134,7 +130,7 @@ TEST_CASE("AttributeSet", "[xml]")
 
 TEST_CASE("ParameterSet", "[xml]")
 {
-  const char *content = " \
+  const char* content = " \
 <simulation> \
    <parameter name=\"p1\">1</parameter> \
    <p2>2</p2> \
@@ -173,7 +169,7 @@ TEST_CASE("write_file", "[xml]")
 
 TEST_CASE("XPathObject", "[xml]")
 {
-  const char *content = " \
+  const char* content = " \
 <simulation> \
    <parameter name=\"p1\">1</parameter> \
    <p2>2</p2> \
@@ -188,4 +184,3 @@ TEST_CASE("XPathObject", "[xml]")
   REQUIRE(xpath.size() == 1);
   REQUIRE(xpath[0] != NULL);
 }
-
