@@ -81,7 +81,7 @@ void CrystalAsciiParser::parse(const std::string &fname)
     if (currentWords[4] == "RESTRICTED")
     {
 	SpinRestricted=true;
-	SpinMultiplicity = 1;
+	spin = 0;
     }
     else
     {
@@ -90,15 +90,14 @@ void CrystalAsciiParser::parse(const std::string &fname)
 	if(lookFor(fin,"ALPHA-BETA ELECTRONS LOCKED TO",aline))
 	{
 	    parsewords(aline.c_str(),currentWords);
-	    int diff = atoi(currentWords[4].c_str()); //2S
-	    SpinMultiplicity = diff+1; //2S+1
+	    spin = atoi(currentWords[4].c_str()); //2S
 	}
 	else
 	{
-	    SpinMultiplicity = 1;
+            spin = 0;
 	}
     }
-    NumberOfAlpha = NumberOfEls/2+(SpinMultiplicity-1);
+    NumberOfAlpha = NumberOfEls/2+spin;
     NumberOfBeta = NumberOfEls-NumberOfAlpha;
 
     SizeOfBasisSet = numAO;
@@ -902,11 +901,21 @@ void CrystalAsciiParser::dumpHDF5(const std::string & fname)
     hout.write(NumberOfAlpha,"NbAlpha");
     hout.write(NumberOfBeta,"NbBeta");
     hout.write(NumberOfEls,"NbTotElec");
-    hout.write(SpinMultiplicity,"spin");
+    hout.write(spin,"spin");
     hout.write(SpinRestricted,"SpinRestricted");
     hout.write(BohrUnit,"Unit");
-    hout.write(numMO,"numMO");
-    hout.write(numAO,"numAO");
+    if (SpinRestricted)
+    {
+        hout.write(numMO,"numMO");
+        hout.write(numAO,"numAO");
+    }
+    else
+    {
+        hout.write(numMO,"numMO_up");
+        hout.write(numMO,"numMO_dn");
+        hout.write(numAO,"numAO_up");
+        hout.write(numAO,"numAO_dn");
+    }
     hout.pop();
 
     hout.push("basisset",true);

@@ -66,6 +66,7 @@ private:
     std::vector< std::vector< std::vector< std::complex<double> > > > complex_kmos;
     std::vector< std::vector< double > > eigvals;
     std::map<std::string,int> str_to_l;
+    int spin;
 };
 
 #endif

@@ -147,6 +147,9 @@ void LCAOParser::parse(const std::string& fname)
 
   
   hin.close();
+  EigVal_alpha.resize(numMO);
+  EigVal_beta.resize(numMO);
+  EigVec.resize(2*SizeOfBasisSet*numMO);
 
 
   IonSystem.create(NumberOfAtoms);
