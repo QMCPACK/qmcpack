@@ -2685,7 +2685,8 @@ QMCA examples:
         opt = self.options
         if opt.average and opt.save_average:
             for fmap in self.file_map:
-                ndata = len(fmap.data['LocalEnergy'])
+                print(fmap.data.first())
+                ndata = len(fmap.data.first())
                 data = [arange(ndata)]
                 keys = 'index'
                 fmt = ['%i']
@@ -2693,8 +2694,11 @@ QMCA examples:
                     data.append(fmap.data[key])
                     keys+='     {}'.format(key)
                     fmt.append('%.10e')
+                #end for
                 data = array(data).transpose()
                 savetxt(fmap.info.filepath,data,header=keys,fmt=fmt)
+            #end for
+        #end if
         show_text  = True
         plots = opt.plot or opt.trace or opt.histogram
         if opt.sort:
