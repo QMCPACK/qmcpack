@@ -606,6 +606,19 @@ QMCHamiltonian::evaluateWithToperator(ParticleSet& P)
   return LocalEnergy;
 }
 
+QMCHamiltonian::Return_t
+QMCHamiltonian::evaluateIonDerivs(ParticleSet& P, ParticleSet::ParticlePos_t& hf_term, ParticleSet::ParticlePos_t& pulay_terms,
+                                  ParticleSet::ParticlePos_t& wf_grad)
+{
+  RealType localEnergy = 0.0;
+  for(int i=0; i<H.size(); ++i)
+  {
+    localEnergy += H[i]->evaluate(P);
+  }
+  hf_term[0][0]=localEnergy;
+  return localEnergy;
+
+}
 
 QMCHamiltonian::Return_t QMCHamiltonian::getEnsembleAverage()
 {
