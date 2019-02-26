@@ -301,6 +301,16 @@ struct QMCHamiltonianBase: public QMCTraits
     return evaluate(P);
   }
 
+  /** evaluate value and terms associated with derivatives w.r.t ionic coordinates.
+  *   In particular, the local energy contribution, the "hellman-feynman" term, and the
+  *   "pulay" term.  See manual for more information.
+  */
+  virtual Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
+                                         ParticleSet::ParticlePos_t& hf_term,
+                                         ParticleSet::ParticlePos_t& pulay_term)
+  {
+    return evaluate(P);
+  }
   /** update data associated with a particleset
    * @param s source particle set
    *

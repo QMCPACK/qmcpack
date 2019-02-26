@@ -45,6 +45,10 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P);
 
+  Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
+                                 ParticleSet::ParticlePos_t& hf_terms,
+                                 ParticleSet::ParticlePos_t& pulay_terms); 
+
   Return_t evaluateWithToperator(ParticleSet& P);
 
   /** set non local moves options
@@ -140,6 +144,7 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
    */
   void evaluate(ParticleSet& P, bool Tmove);
 
+  
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
    * @param P particle set

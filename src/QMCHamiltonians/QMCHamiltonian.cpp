@@ -607,15 +607,24 @@ QMCHamiltonian::evaluateWithToperator(ParticleSet& P)
 }
 
 QMCHamiltonian::Return_t
-QMCHamiltonian::evaluateIonDerivs(ParticleSet& P, ParticleSet::ParticlePos_t& hf_term, ParticleSet::ParticlePos_t& pulay_terms,
+QMCHamiltonian::evaluateIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi, 
+                                  ParticleSet::ParticlePos_t& hf_term, 
+                                  ParticleSet::ParticlePos_t& pulay_terms,
                                   ParticleSet::ParticlePos_t& wf_grad)
 {
+  ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
+  wfgradraw_=0.0;
   RealType localEnergy = 0.0;
+
   for(int i=0; i<H.size(); ++i)
+    localEnergy += H[i]->evaluateWithIonDerivs(P,ions,psi,hf_term,pulay_terms);
+  
+  for(int iat=0; iat<ions.getTotalNum(); iat++)
   {
-    localEnergy += H[i]->evaluate(P);
-  }
-  hf_term[0][0]=localEnergy;
+    if(iat<0) APP_ABORT("Whoa! Something happened to iat in QMCHamiltonian\n");
+    wfgradraw_[iat] = psi.evalGradSource(P,ions,iat);
+    convert(wfgradraw_[iat],wf_grad[iat]);
+  } 
   return localEnergy;
 
 }
