@@ -76,13 +76,12 @@ namespace qmcplusplus {
         }
         const T cone(1);
         const T czero(0);
-        const T* AinvRow = Ainv[rowchanged];
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
-        // save AinvRow to new_AinvRow
-        std::copy_n(AinvRow, norb, invRow.data());
-        // multiply V (NxK) Binv(KxK) U(KxN) AinvRow right to the left
-        BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, AinvRow, 1, czero, p.data(), 1);
+        // save Ainv[rowchanged] to invRow
+        std::copy_n(Ainv[rowchanged], norb, invRow.data());
+        // multiply V (NxK) Binv(KxK) U(KxN) invRow right to the left
+        BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, invRow.data(), 1, czero, p.data(), 1);
         BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
         BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, Binv[delay_count], 1, cone, invRow.data(), 1);
       }
