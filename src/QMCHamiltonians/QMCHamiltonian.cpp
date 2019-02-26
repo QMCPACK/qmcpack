@@ -621,7 +621,6 @@ QMCHamiltonian::evaluateIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFu
   
   for(int iat=0; iat<ions.getTotalNum(); iat++)
   {
-    if(iat<0) APP_ABORT("Whoa! Something happened to iat in QMCHamiltonian\n");
     wfgradraw_[iat] = psi.evalGradSource(P,ions,iat);
     convert(wfgradraw_[iat],wf_grad[iat]);
   } 
