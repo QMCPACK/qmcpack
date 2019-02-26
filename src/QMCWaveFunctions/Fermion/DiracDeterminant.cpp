@@ -117,8 +117,8 @@ DiracDeterminant::evalGrad(ParticleSet& P, int iat)
 {
   const int WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
-  updateEng.getInvRow(psiM, WorkingIndex, invRow);
   invRow_id = WorkingIndex;
+  updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
   return g;
@@ -139,8 +139,8 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   // This is not a safety check. Some code paths do call ratioGrad without calling evalGrad first.
   if(invRow_id != WorkingIndex)
   {
-    updateEng.getInvRow(psiM, WorkingIndex, invRow);
     invRow_id = WorkingIndex;
+    updateEng.getInvRow(psiM, WorkingIndex, invRow);
   }
   curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
   grad_iat += ((RealType)1.0/curRatio) * simd::dot(invRow.data(), dpsiV.data(), invRow.size());
@@ -283,8 +283,8 @@ DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
   // This is intended to save redundant compuation in TM1 and TM3
   if(invRow_id != WorkingIndex)
   {
-    updateEng.getInvRow(psiM, WorkingIndex, invRow);
     invRow_id = WorkingIndex;
+    updateEng.getInvRow(psiM, WorkingIndex, invRow);
   }
   curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
   RatioTimer.stop();
@@ -293,9 +293,11 @@ DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
 
 void DiracDeterminant::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
-  ValueVector_t psiM_row(psiM[VP.refPtcl-FirstIndex], psiM.cols());
   SPOVTimer.start();
-  Phi->evaluateDetRatios(VP, psiV, psiM_row, ratios);
+  const int WorkingIndex = VP.refPtcl-FirstIndex;
+  invRow_id = WorkingIndex;
+  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  Phi->evaluateDetRatios(VP, psiV, invRow, ratios);
   SPOVTimer.stop();
 }
 
