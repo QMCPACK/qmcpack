@@ -1420,6 +1420,7 @@ void WaveFunctionTester::runGradSourceTest()
   //ValueType psi = Psi.evaluate(W);
   ValueType logpsi = Psi.evaluateLog(W);
   RealType eloc=H.evaluate(W);
+  H.auxHevaluate(W);
   app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
   for (int i=0; i<H.sizeOfObservables(); i++)
     app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
