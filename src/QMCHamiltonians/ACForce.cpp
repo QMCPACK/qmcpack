@@ -55,8 +55,7 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   pulay_force=0;
   wf_grad=0;
 
-  RealType localenergy=0;
-  localenergy=ham.evaluateIonDerivs(P,hf_force,pulay_force,wf_grad);
+  Value=ham.evaluateIonDerivs(P,ions,psi,hf_force,pulay_force,wf_grad);
   return 0.0;
 };  
 
@@ -92,7 +91,7 @@ void ACForce::setObservables(PropertySetType& plist)
     {
       plist[myindex++] = hf_force[iat][iondim];
       plist[myindex++] = pulay_force[iat][iondim];
-      plist[myindex++] = wf_grad[iat][iondim];
+      plist[myindex++] = Value*wf_grad[iat][iondim];
       plist[myindex++] = wf_grad[iat][iondim];
     }
   }
@@ -106,7 +105,7 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
     {
       plist[myindex++] = hf_force[iat][iondim];
       plist[myindex++] = pulay_force[iat][iondim];
-      plist[myindex++] = wf_grad[iat][iondim];
+      plist[myindex++] = Value*wf_grad[iat][iondim];
       plist[myindex++] = wf_grad[iat][iondim];
     }
   }
