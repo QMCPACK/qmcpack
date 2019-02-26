@@ -41,20 +41,9 @@ namespace qmcplusplus {
       /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
       int delay_count;
 
-      /// pointer to the row of up-to-date Ainv
-      const T* Ainv_row_ptr;
-      /** row id correspond to the up-to-date Ainv_row_ptr. [0 norb), Ainv_row_ptr is valid; -1, Ainv_row_ptr is not valid.
-       *  This id is set by getInvRow indicating Ainv_row_ptr has been prepared for the Ainv_row_id row
-       *  ratioGrad checks if Ainv_row_id is consistent. If not, Ainv_row_ptr needs to be recomputed.
-       *  acceptRow and updateInvMat mark Ainv_row_ptr invalid by setting Ainv_row_id to -1
-       */
-      int Ainv_row_id;
-      /// current determinant ratio
-      T curRatio;
-
     public:
       /// default constructor
-      DelayedUpdate(): delay_count(0), Ainv_row_ptr(nullptr), Ainv_row_id(-1) {}
+      DelayedUpdate(): delay_count(0) {}
 
       ///resize the internal storage
       /** resize the internal storage
@@ -76,13 +65,13 @@ namespace qmcplusplus {
        * @param Ainv inverse matrix
        * @param rowchanged the row id corresponding to the proposed electron
        */
-      inline void getInvRow(const Matrix<T>& Ainv, int rowchanged)
+      template<typename VVT>
+      inline void getInvRow(const Matrix<T>& Ainv, int rowchanged, VVT& invRow)
       {
-        Ainv_row_id = rowchanged;
         if ( delay_count == 0 )
         {
           // Ainv is fresh, directly access Ainv
-          Ainv_row_ptr = Ainv[rowchanged];
+          std::copy_n(Ainv[rowchanged], invRow.size(), invRow.data());
           return;
         }
         const T cone(1);
@@ -91,57 +80,11 @@ namespace qmcplusplus {
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
         // save AinvRow to new_AinvRow
-        std::copy_n(AinvRow, norb, V[delay_count]);
+        std::copy_n(AinvRow, norb, invRow.data());
         // multiply V (NxK) Binv(KxK) U(KxN) AinvRow right to the left
         BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, AinvRow, 1, czero, p.data(), 1);
         BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
-        BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, Binv[delay_count], 1, cone, V[delay_count], 1);
-        Ainv_row_ptr = V[delay_count];
-      }
-
-      /** compute determinant ratio of new determinant
-       * @param Ainv inverse matrix
-       * @param rowchanged the row id corresponding to the proposed electron
-       * @param psiV new orbital values
-       */
-      template<typename VVT>
-      inline T ratio(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
-      {
-        // check Ainv_row_id against rowchanged to see if getInvRow() has been called
-        // This is intended to save redundant compuation in TM1 and TM3
-        if(Ainv_row_id != rowchanged)
-          getInvRow(Ainv, rowchanged);
-        return curRatio = simd::dot(Ainv_row_ptr,psiV.data(),Ainv.cols());
-      }
-
-      /** compute the old gradient
-       * @param Ainv inverse matrix
-       * @param rowchanged the row id corresponding to the proposed electron
-       * @param dpsiV old orbital derivatives
-       */
-      template<typename GT>
-      inline GT evalGrad(const Matrix<T>& Ainv, int rowchanged, const GT* dpsiV)
-      {
-        getInvRow(Ainv, rowchanged);
-        return simd::dot(Ainv_row_ptr,dpsiV,Ainv.cols());
-      }
-
-      /** compute determinant ratio and gradients of new determinant
-       * @param Ainv inverse matrix
-       * @param rowchanged the row id corresponding to the proposed electron
-       * @param psiV new orbital values
-       * @param dpsiV new orbital derivatives
-       * @param g new gradients
-       */
-      template<typename VVT, typename GGT, typename GT>
-      inline T ratioGrad(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV, const GGT& dpsiV, GT& g)
-      {
-        // check Ainv_row_id against rowchanged to ensure getInvRow() called before ratioGrad()
-        // This is not a safety check. Some code paths do call ratioGrad without calling evalGrad first.
-        if(Ainv_row_id != rowchanged)
-          getInvRow(Ainv, rowchanged);
-        g = simd::dot(Ainv_row_ptr,dpsiV.data(),Ainv.cols());
-        return curRatio = simd::dot(Ainv_row_ptr,psiV.data(),Ainv.cols());
+        BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, Binv[delay_count], 1, cone, invRow.data(), 1);
       }
 
       /** accept a move with the update delayed
@@ -154,9 +97,6 @@ namespace qmcplusplus {
       template<typename VVT>
       inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
-        // Ainv_row_ptr is no more valid by marking Ainv_row_id -1
-        Ainv_row_id = -1;
-
         const T cminusone(-1);
         const T czero(0);
         const int norb = Ainv.rows();
@@ -188,8 +128,6 @@ namespace qmcplusplus {
        */
       inline void updateInvMat(Matrix<T>& Ainv)
       {
-        // Ainv_row_ptr is no more valid by marking Ainv_row_id -1
-        Ainv_row_id = -1;
         if(delay_count==0) return;
         // update the inverse matrix
         const T cone(1);
