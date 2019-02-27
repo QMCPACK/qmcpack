@@ -266,7 +266,7 @@ public:
       std::vector<RealType>& dhpsioverpsi,
       bool compute_deriv);
 
-  RealType evaluateIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
+  Return_t evaluateIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
                                              ParticleSet::ParticlePos_t& hf_terms,
                                              ParticleSet::ParticlePos_t& pulay_terms, 
                                              ParticleSet::ParticlePos_t& wf_grad); 
