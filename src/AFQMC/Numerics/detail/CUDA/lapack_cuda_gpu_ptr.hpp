@@ -95,7 +95,7 @@ namespace qmc_cuda
 
     int* info;
     if(cudaSuccess != cudaMalloc ((void**)&info,sizeof(int))) {
-      std::cerr<<" Error gqr: Error allocating on GPU." <<std::endl;
+      std::cerr<<" Error getri: Error allocating on GPU." <<std::endl;
       throw std::runtime_error("Error: cudaMalloc returned error code.");
     }
 
@@ -213,6 +213,18 @@ namespace qmc_cuda
     cudaFree(piv);
   }
 
+  template<typename T, typename I>
+  void static gqrStrided(int M, int N, int K, cuda_gpu_ptr<T> A, const int LDA, const int Astride, cuda_gpu_ptr<T> TAU, const int Tstride, cuda_gpu_ptr<T> WORK, int LWORK, cuda_gpu_ptr<I> info, int batchSize )
+  {
+    cusolverStatus_t status = cusolver::cusolver_gqr_strided(*A.handles.cusolverDn_handle, M, N, K,
+                    to_address(A), LDA, Astride, to_address(TAU), Tstride, to_address(WORK), LWORK, 
+                    to_address(info), batchSize);
+    if(CUSOLVER_STATUS_SUCCESS != status) {
+      std::cerr<<" cublas_gqr_strided status: " <<status <<std::endl; std::cerr.flush();
+      throw std::runtime_error("Error: cublas_gqr_strided returned error code.");
+    }
+  }
+
   // glq 
   template<typename T>
   static void glq_bufferSize (int m, int n, int k, cuda_gpu_ptr<T> a, int lda, int& lwork)
@@ -226,6 +238,73 @@ namespace qmc_cuda
       throw std::runtime_error("Error: glq not implemented in CUDA backend. \n"); 
   }
 
+  // batched geqrf
+  template<typename T, typename I>
+  inline static void geqrfBatched(int M, int N, cuda_gpu_ptr<T> *A, const int LDA, cuda_gpu_ptr<T>* TAU, cuda_gpu_ptr<I> info, int batchSize)
+  {
+    T **B_h = new T*[2*batchSize];
+    T **A_h(B_h);
+    T **T_h(B_h+batchSize);
+    for(int i=0; i<batchSize; i++) 
+      A_h[i] = to_address(A[i]);
+    for(int i=0; i<batchSize; i++) 
+      T_h[i] = to_address(TAU[i]);
+    T **B_d;
+    std::vector<int> inf(batchSize);
+    cudaMalloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
+    cudaMemcpy(B_d, B_h, 2*batchSize*sizeof(*B_h), cudaMemcpyHostToDevice);
+    T **A_d(B_d);
+    T **T_d(B_d+batchSize);
+    cublasStatus_t status = cublas::cublas_geqrfBatched(*(A[0]).handles.cublas_handle, M, N, A_d, LDA,
+                                                        T_d, to_address(inf.data()), batchSize);
+    if(CUBLAS_STATUS_SUCCESS != status)
+      throw std::runtime_error("Error: cublas_geqrfBatched returned error code.");
+    cudaFree(B_d);
+    delete [] B_h;
+  }
+
+  template<typename T, typename I>
+  inline static void geqrfStrided(int M, int N, cuda_gpu_ptr<T> A, const int LDA, const int Astride, cuda_gpu_ptr<T> TAU, const int Tstride, cuda_gpu_ptr<I> info, int batchSize)
+  {
+/*
+    T **B_h = new T*[2*batchSize];
+    T **A_h(B_h);
+    T **T_h(B_h+batchSize);
+    for(int i=0; i<batchSize; i++)
+      A_h[i] = to_address(A)+i*Astride;
+    for(int i=0; i<batchSize; i++)
+      T_h[i] = to_address(TAU)+i*Tstride;
+    T **B_d;
+    cudaMalloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
+    cudaMemcpy(B_d, B_h, 2*batchSize*sizeof(*B_h), cudaMemcpyHostToDevice);
+    T **A_d(B_d);
+    T **T_d(B_d+batchSize);
+*/
+
+    std::vector<int> inf(batchSize);
+    T **A_h = new T*[batchSize];
+    T **T_h = new T*[batchSize];
+    for(int i=0; i<batchSize; i++)
+      A_h[i] = to_address(A)+i*Astride;
+    for(int i=0; i<batchSize; i++)
+      T_h[i] = to_address(TAU)+i*Tstride;
+    T **A_d, **T_d;
+    cudaMalloc((void **)&A_d,  batchSize*sizeof(*A_h));
+    cudaMemcpy(A_d, A_h, batchSize*sizeof(*A_h), cudaMemcpyHostToDevice);
+    cudaMalloc((void **)&T_d,  batchSize*sizeof(*T_h));
+    cudaMemcpy(T_d, T_h, batchSize*sizeof(*T_h), cudaMemcpyHostToDevice);
+    cublasStatus_t status = cublas::cublas_geqrfBatched(*A.handles.cublas_handle, M, N, A_d, LDA,
+                                                        T_d, to_address(inf.data()), batchSize);
+    for(int i=0; i<batchSize; i++)
+      assert(inf[i]==0);
+    if(CUBLAS_STATUS_SUCCESS != status)
+      throw std::runtime_error("Error: cublas_geqrfBatched returned error code.");
+    cudaFree(A_d);
+    delete [] A_h;
+    cudaFree(T_d);
+    delete [] T_h;
+  }
+  
 
 }
 

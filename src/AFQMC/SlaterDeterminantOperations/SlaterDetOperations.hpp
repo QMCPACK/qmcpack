@@ -153,6 +153,14 @@ class SlaterDetOperations:
         );
     }
 
+    template<class... Args>
+    void BatchedOrthogonalize(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.BatchedOrthogonalize(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
 };
 
 }

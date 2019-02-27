@@ -171,6 +171,11 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedPropagate \n");
     }
 
+    template<class MatA>
+    void BatchedOrthogonalize(std::vector<MatA> &Ai, T* detR=nullptr) {
+      APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedOrthogonalize \n");
+    }
+
   protected:
 
     // shm temporary matrices

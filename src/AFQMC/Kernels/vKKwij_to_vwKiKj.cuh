@@ -20,17 +20,17 @@
 namespace kernels
 {
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                               bool* kk,int* nmo, int* nmo0, double const* A, double * B);
+                               int* kk,int* nmo, int* nmo0, double const* A, double * B);
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                               bool* kk, int* nmo, int* nmo0, float const* A, float * B);
+                               int* kk, int* nmo, int* nmo0, float const* A, float * B);
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                               bool* kk, int* nmo, int* nmo0, float const* A, double * B);
+                               int* kk, int* nmo, int* nmo0, float const* A, double * B);
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                                bool* kk, int* nmo, int* nmo0, std::complex<double> const* A, std::complex<double> * B);
+                                int* kk, int* nmo, int* nmo0, std::complex<double> const* A, std::complex<double> * B);
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                                bool* kk, int* nmo, int* nmo0, std::complex<float> const* A, std::complex<float> * B);
+                                int* kk, int* nmo, int* nmo0, std::complex<float> const* A, std::complex<float> * B);
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                                bool* kk, int* nmo, int* nmo0, std::complex<float> const* A, std::complex<double> * B);
+                                int* kk, int* nmo, int* nmo0, std::complex<float> const* A, std::complex<double> * B);
 }
 
 #endif

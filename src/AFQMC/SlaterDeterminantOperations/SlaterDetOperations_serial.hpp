@@ -49,6 +49,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     using IVector = typename Base::IVector;
     using TVector = typename Base::TVector;
     using TMatrix = typename Base::TMatrix;
+    using TMatrix_ref = typename Base::TMatrix_ref;
     using TTensor_ref = typename Base::TTensor_ref;
 
     using Base::MixedDensityMatrix;
@@ -185,6 +186,61 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
         IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
       SlaterDeterminantOperations::batched::Overlap(hermA,Bi,
                 std::forward<TVec>(ovlp),TNN3D,IWORK);
+    }
+
+    template<class MatA>
+    void BatchedOrthogonalize(std::vector<MatA> &Ai, T* detR=nullptr) {
+/*
+      if(detR == nullptr)
+        for(int i=0; i<Ai.size(); i++)
+          Orthogonalize(Ai[i],detR);
+      else  
+        for(int i=0; i<Ai.size(); i++)
+          Orthogonalize(Ai[i],detR+i);
+      return;
+*/
+#ifdef QMC_CUDA
+      // QR on the transpose
+      if(Ai.size()==0) return;
+      int NMO = Ai[0].size(0);
+      int NAEA = Ai[0].size(1);
+      int nbatch = Ai.size();
+      set_buffer(nbatch*(NMO*NAEA + 2*NMO));
+      TTensor_ref AT(TBuff.origin(), {nbatch,NAEA,NMO});
+      TMatrix_ref T_(AT.origin() + AT.num_elements(), {nbatch,NMO});
+      TMatrix_ref scl(T_.origin() + T_.num_elements(), {nbatch,NMO});
+      if(IWORK.num_elements() < nbatch*(NMO+1))
+        IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
+      int sz = ma::gqr_optimal_workspace_size(AT[0]);
+      if(WORK.num_elements() < nbatch*sz)
+        WORK.reextent(iextensions<1u>{nbatch*sz});
+      for(int i=0; i<nbatch; i++)
+        ma::transpose(Ai[i],AT[i]);
+      // careful, expects fortran order
+      geqrfStrided(NMO,NAEA,AT.origin(),NMO,NMO*NAEA,T_.origin(),NMO,IWORK.origin(),nbatch);
+      //for(int i=0; i<nbatch; i++)
+      //  ma::geqrf(AT[i],T_[i],WORK); 
+      using ma::determinant_from_geqrf;
+      using ma::scale_columns;
+// needs batched
+      for(int i=0; i<nbatch; i++) {
+        if(detR != nullptr)
+          determinant_from_geqrf(NAEA,AT[i].origin(),NMO,scl[i].origin(),detR+i);
+        else 
+          determinant_from_geqrf(NAEA,AT[i].origin(),NMO,scl[i].origin());
+      }
+//      for(int i=0; i<nbatch; i++) 
+//        ma::gqr(AT[i],T_[i],WORK);
+      gqrStrided(NMO,NAEA,NAEA,AT.origin(),NMO,NMO*NAEA,T_.origin(),NMO,WORK.origin(),sz,IWORK.origin(),nbatch);
+      for(int i=0; i<nbatch; i++) {
+        ma::transpose(AT[i],Ai[i]);
+        scale_columns(NMO,NAEA,Ai[i].origin(),Ai[i].stride(0),scl[i].origin());
+      }
+#else
+      int nw=Ai.size();
+      for(int i=0; i<nw; i++) 
+        Orthogonalize(Ai[i], detR+i);
+#endif
     }
 
   protected:

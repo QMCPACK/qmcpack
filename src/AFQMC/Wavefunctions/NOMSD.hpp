@@ -105,8 +105,6 @@ class NOMSD: public AFQMCInfo
                 req_SMsend(MPI_REQUEST_NULL),
                 req_SMrecv(MPI_REQUEST_NULL)
     {
-      setup_timers(Timers, NOMSDTimerNames, timer_level_coarse);
-
       compact_G_for_vbias = (ci.size()==1); // this should be input, since it is determined by HOps 
       transposed_G_for_vbias_ = HamOp.transposed_G_for_vbias();  
       transposed_G_for_E_ = HamOp.transposed_G_for_E();  
@@ -358,7 +356,13 @@ class NOMSD: public AFQMCInfo
      *         If false, add the determinant of R to the weight of the walker. 
      */
     template<class WlkSet>
-    void Orthogonalize(WlkSet& wset, bool impSamp); 
+    void Orthogonalize(WlkSet& wset, bool impSamp)
+    {
+      if(not excitedState && (nbatch < 0 || nbatch > 1))
+        Orthogonalize_batched(wset,impSamp);
+      else
+        Orthogonalize_shared(wset,impSamp);
+    }
 
     /*
      * Orthogonalizes the Slater matrix of a walker in an excited state calculation.
@@ -464,6 +468,12 @@ class NOMSD: public AFQMCInfo
     template<class WlkSet, class TVec>
     void Overlap_batched(const WlkSet& wset, TVec&& Ov);
 
+    template<class WlkSet>
+    void Orthogonalize_batched(WlkSet& wset, bool impSamp);
+
+    template<class WlkSet>
+    void Orthogonalize_shared(WlkSet& wset, bool impSamp);
+
     /*
      * Calculates the local energy and overlaps of all the walkers in the set and 
      * returns them in the appropriate data structures
@@ -516,48 +526,6 @@ class NOMSD: public AFQMCInfo
           return arr{-1,-1};
       }
     }
-
-    enum NOMSDTimers
-    {
-      Timer_E1,
-      Timer_E2,
-      Timer_E3,
-      Timer_E4,
-      Timer_E5,
-      Timer_E6,
-      Timer_O1,
-      Timer_O2,
-      Timer_O3,
-      Timer_O4,
-      Timer_G1,
-      Timer_G2,
-      Timer_G3,
-      Timer_G4,
-      Timer_G5,
-      Timer_G6
-    };
-
-    TimerNameList_t<NOMSDTimers> NOMSDTimerNames = {
-      {Timer_E1, "E1"},
-      {Timer_E2, "E2"},
-      {Timer_E3, "E3"},
-      {Timer_E4, "E4"},
-      {Timer_E5, "E5"},
-      {Timer_E6, "E6"},
-      {Timer_O1, "O1"},
-      {Timer_O2, "O2"},
-      {Timer_O3, "O3"},
-      {Timer_O4, "O4"},
-      {Timer_G1, "Galloc"},
-      {Timer_G2, "G2"},
-      {Timer_G3, "G3"},
-      {Timer_G4, "G4"},
-      {Timer_G5, "G5"},
-      {Timer_G6, "G6"}
-    };
-    TimerList_t Timers;
-
-
 
 };
 

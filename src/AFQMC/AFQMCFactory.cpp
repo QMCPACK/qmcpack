@@ -48,7 +48,19 @@ TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames =
   {G_for_vbias_timer,"G_for_vbias"},
   {propagate_timer, "Propagate"},
   {E_comm_overhead_timer, "Energy_comm_overhead"},
-  {vHS_comm_overhead_timer, "vHS_comm_overhead"}
+  {vHS_comm_overhead_timer, "vHS_comm_overhead"},
+  {popcont_timer, "population_control"},
+  {ortho_timer, "walker_orthogonalization"},
+  {setup_timer, "setup"},
+  {extra_timer, "extra"},
+  {T1_t, "T1_t"},
+  {T2_t, "T2_t"},
+  {T3_t, "T3_t"},
+  {T4_t, "T4_t"},
+  {T5_t, "T5_t"},
+  {T6_t, "T6_t"},
+  {T7_t, "T7_t"},
+  {T8_t, "T8_t"}
 };
 
 namespace afqmc

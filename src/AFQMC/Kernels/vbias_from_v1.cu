@@ -29,7 +29,7 @@ namespace kernels
 // vb[2*nchol_tot][nwalk]
 // ncholpQ0 includes factor of 2
 template<typename T, typename T2>
-__global__ void kernel_vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus, 
+__global__ void kernel_vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus, 
                                       int* ncholpQ, int* ncholpQ0, thrust::complex<T2> const alpha, 
                                       thrust::complex<T> const* v1, thrust::complex<T2> * vb)
 {
@@ -39,14 +39,14 @@ __global__ void kernel_vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q
   int nc0 = ncholpQ0[Q];
   int nc = ncholpQ[Q];
   int ncm = ncholpQ[Qm];
-  int Qm_ = Qm;
-  if(Q==Q0) Qm_=nkpts;
+  // now redefine Qm based on Qsym
+  if( Qsym[Q] >= 0 ) Qm = nkpts+Qsym[Q];
 
   if(blockIdx.y == 0) {
     // v+
     thrust::complex<T2>* vb_(vb + nc0*nwalk); 
     thrust::complex<T> const* v1_(v1 + Q*nchol_max*nwalk );
-    thrust::complex<T> const* v2_(v1 + Qm_*nchol_max*nwalk );
+    thrust::complex<T> const* v2_(v1 + Qm*nchol_max*nwalk );
     // v+ = a*(v[Q]+v[-Q]) 
     if(threadIdx.x < nc && threadIdx.y < nwalk) { 
       for(int n=threadIdx.x; n<nc; n+=blockDim.x)  
@@ -62,7 +62,7 @@ __global__ void kernel_vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q
     // v-
     thrust::complex<T2>* vb_(vb + (nc0+nc)*nwalk);
     thrust::complex<T> const* v1_(v1 + Q*nchol_max*nwalk );
-    thrust::complex<T> const* v2_(v1 + Qm_*nchol_max*nwalk );
+    thrust::complex<T> const* v2_(v1 + Qm*nchol_max*nwalk );
     // v- = -a*i*(v[Q]-v[-Q]) 
     thrust::complex<T2> ialpha(alpha*thrust::complex<T2>(0.0,1.0));
     if(threadIdx.x < nc && threadIdx.y < nwalk) {
@@ -75,10 +75,10 @@ __global__ void kernel_vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q
         for(int w=threadIdx.y; w<nwalk; w+=blockDim.y)
           vb_[ n*nwalk+w ] += ialpha*static_cast<thrust::complex<T2>>(v2_[ n*nwalk+w ]);
     }
-  } 
+  }
 }
 
-void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
+void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
                     int* ncholpQ, int* ncholpQ0, std::complex<double> const alpha,
                     std::complex<double> const* v1, std::complex<double> * vb)
 {
@@ -86,7 +86,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
   int yblock_dim = std::min(nwalk,16);  
   dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,2,1);
-  kernel_vbias_from_v1<<<grid_dim, block_dim>>>(nwalk,nkpts,nchol_max,Q0,kminus,ncholpQ,ncholpQ0,
+  kernel_vbias_from_v1<<<grid_dim, block_dim>>>(nwalk,nkpts,nchol_max,Qsym,kminus,ncholpQ,ncholpQ0,
                 static_cast<thrust::complex<double> const >(alpha),
                 reinterpret_cast<thrust::complex<double> const*>(v1),
                 reinterpret_cast<thrust::complex<double> *>(vb));
@@ -94,7 +94,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
   qmc_cuda::cuda_check(cudaDeviceSynchronize(),"vbias_from_v1");
 }
 
-void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
+void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
                     int* ncholpQ, int* ncholpQ0, std::complex<float> const alpha,
                     std::complex<float> const* v1, std::complex<float> * vb)
 {
@@ -102,7 +102,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
   int yblock_dim = std::min(nwalk,16);
   dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,2,1);
-  kernel_vbias_from_v1<<<grid_dim, block_dim>>>(nwalk,nkpts,nchol_max,Q0,kminus,ncholpQ,ncholpQ0,
+  kernel_vbias_from_v1<<<grid_dim, block_dim>>>(nwalk,nkpts,nchol_max,Qsym,kminus,ncholpQ,ncholpQ0,
                 static_cast<thrust::complex<float> const >(alpha),
                 reinterpret_cast<thrust::complex<float> const*>(v1),
                 reinterpret_cast<thrust::complex<float> *>(vb));
@@ -110,7 +110,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
   qmc_cuda::cuda_check(cudaDeviceSynchronize(),"vbias_from_v1");
 }
 
-void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
+void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
                     int* ncholpQ, int* ncholpQ0, std::complex<double> const alpha,
                     std::complex<float> const* v1, std::complex<double> * vb)
 {
@@ -118,7 +118,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
   int yblock_dim = std::min(nwalk,16);
   dim3 block_dim(xblock_dim,yblock_dim,1);
   dim3 grid_dim(nkpts,2,1);
-  kernel_vbias_from_v1<<<grid_dim, block_dim>>>(nwalk,nkpts,nchol_max,Q0,kminus,ncholpQ,ncholpQ0,
+  kernel_vbias_from_v1<<<grid_dim, block_dim>>>(nwalk,nkpts,nchol_max,Qsym,kminus,ncholpQ,ncholpQ0,
                 static_cast<thrust::complex<double> const >(alpha),
                 reinterpret_cast<thrust::complex<float> const*>(v1),
                 reinterpret_cast<thrust::complex<double> *>(vb));

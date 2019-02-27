@@ -39,6 +39,7 @@ namespace afqmc
 template<class WlkSet>
 void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt) 
 {
+  AFQMCTimers[setup_timer]->start();
   const ComplexType one(1.),zero(0.);
   auto walker_type = wset.getWalkerType();
   int nsteps= nsteps_;
@@ -72,6 +73,8 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   // 0. Allocate memory and set shared memory structures
   if(buffer.num_elements() < memory_needs ) {
     buffer = std::move(CVector(iextensions<1u>{memory_needs}));
+    using std::fill_n;
+    fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
     new_shm_space=true;
   }  
 
@@ -151,6 +154,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
   std::fill_n(vsend.origin()+vak0,(vakN-vak0),zero);
   TG.local_barrier();
+  AFQMCTimers[setup_timer]->stop();
 
   MPI_Status st;
 
@@ -276,6 +280,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     AFQMCTimers[pseudo_energy_timer]->stop();
 
     // 7. update weights/energy/etc, apply constrains/bounds/etc 
+    AFQMCTimers[extra_timer]->start();
     if(TG.TG_local().root()) {                           
       if(free_projection) { 
         free_projection_walker_update(wset,dt,new_overlaps,
@@ -290,6 +295,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       }
     }
     TG.local_barrier();
+    AFQMCTimers[extra_timer]->stop();
   }  
 }
 

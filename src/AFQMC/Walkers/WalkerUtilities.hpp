@@ -44,13 +44,6 @@ inline void BasicWalkerData(WlkBucket& wlk, DVec& curData, communicator& comm)
   wlk.getProperty(OVLP,w_data({0,nW},1));
   wlk.getProperty(PSEUDO_ELOC_,w_data({0,nW},2));
   bool modified=false;
-/*
-  for(typename WlkBucket::iterator it=wlk.begin(); it!=wlk.end(); ++it) { 
-    auto w0 = *it;
-    ComplexType weight = *w0.weight();
-    ComplexType ovlp = *w0.overlap(); 
-    ComplexType eloc = *w0.pseudo_energy();
-*/
   for(int iw=0; iw<nW; iw++) {
     ComplexType weight = w_data[iw][0]; 
     ComplexType ovlp = w_data[iw][1]; 

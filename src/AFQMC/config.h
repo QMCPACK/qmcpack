@@ -43,7 +43,19 @@ namespace qmcplusplus
     G_for_vbias_timer,
     propagate_timer,
     E_comm_overhead_timer,
-    vHS_comm_overhead_timer
+    vHS_comm_overhead_timer,
+    popcont_timer,    
+    ortho_timer,
+    setup_timer,
+    extra_timer,
+    T1_t,
+    T2_t,
+    T3_t,
+    T4_t,
+    T5_t,
+    T6_t,
+    T7_t,
+    T8_t
   };
   extern TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames;  
 

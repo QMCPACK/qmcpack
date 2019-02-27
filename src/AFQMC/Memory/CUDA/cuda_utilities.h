@@ -43,6 +43,8 @@ namespace qmc_cuda {
   extern curandGenerator_t afqmc_curand_generator;
   extern cusparseMatDescr_t afqmc_cusparse_matrix_descr;
 
+  extern std::vector<cudaStream_t> afqmc_cuda_streams;
+
   void cuda_check_error();
   void cuda_check(cudaError_t sucess, std::string message="");
   void cublas_check(cublasStatus_t sucess, std::string message="");
@@ -52,7 +54,7 @@ namespace qmc_cuda {
   cublasOperation_t cublasOperation(char A); 
   cusparseOperation_t cusparseOperation(char A); 
 
-  void CUDA_INIT(boost::mpi3::shared_communicator& node);
+  void CUDA_INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed = 911ULL);
 
   struct gpu_handles {
     cublasHandle_t* cublas_handle;

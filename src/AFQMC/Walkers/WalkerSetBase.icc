@@ -117,11 +117,11 @@ void WalkerSetBase<Alloc,Ptr>::setup()
 
   TimerNameList_t<WalkerSetBaseTimers> WalkerSetBaseTimerNames =
   {
-    {LoadBalance, "WalkerSetBase::loadBalance"},
-    {PopControl, "WalkerSetBase::popControl"}
+    {LoadBalance_t, "WalkerSetBase::loadBalance"},
+    {Branching_t, "WalkerSetBase::branching"}
   };
 
-  setup_timers(Timers, WalkerSetBaseTimerNames);
+  setup_timers(Timers, WalkerSetBaseTimerNames,timer_level_coarse);
 
   // careful! These are only used to calculate memory needs and access points/partitionings
   int ncol=NAEA;
@@ -257,7 +257,7 @@ void WalkerSetBase<Alloc,Ptr>::resize(int n) {
 template<class Alloc, typename Ptr>
 void WalkerSetBase<Alloc,Ptr>::popControl(std::vector<ComplexType>& curData)
 {
-  Timers[PopControl]->start();
+  Timers[Branching_t]->start();
   ComplexType minus = ComplexType(-1.0,0.0);
   bool needsLoadBalance = true;
 
@@ -275,7 +275,7 @@ void WalkerSetBase<Alloc,Ptr>::popControl(std::vector<ComplexType>& curData)
     RealType scl = 1.0/curData[0].real();
     scaleWeight(scl);
   }
-  TG.TG_local().broadcast_n(curData.data(),curData.size());
+  if(TG.TG_local().size() > 1) TG.TG_local().broadcast_n(curData.data(),curData.size());
 
   // matrix to hold walkers beyond targetN_per_TG
   // doing this to avoid resizing SHMBuffer, instead use local memory
@@ -301,14 +301,16 @@ void WalkerSetBase<Alloc,Ptr>::popControl(std::vector<ComplexType>& curData)
     //afqmc::DistCombBranching(*this,rng_heads,nwalk_counts_old);
 
   }
+  Timers[Branching_t]->stop();
 
+  Timers[LoadBalance_t]->start();
   // load balance after population control events
   loadBalance(Wexcess);
+  Timers[LoadBalance_t]->stop();
 
   if(tot_num_walkers != targetN_per_TG)
     APP_ABORT(" Error: tot_num_walkers != targetN_per_TG");
 
-  Timers[PopControl]->stop();
 }
 
 template<class Alloc, typename Ptr>

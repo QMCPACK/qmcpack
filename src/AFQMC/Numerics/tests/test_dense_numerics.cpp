@@ -658,6 +658,32 @@ void test_dense_matrix_mult_device(Allocator alloc)
      verify_approx(Id, Id2);
    }
    {
+     vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
+     vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+
+     array<T,3,Allocator> A({2,3,4},alloc);
+     copy_n(a.data(),a.size(),A[0].origin());
+     copy_n(a.data(),a.size(),A[1].origin());
+     REQUIRE(A.num_elements() == 2*a.size());
+
+     size_t sz =  std::max(ma::geqrf_optimal_workspace_size(A[0]),
+                          ma::gqr_optimal_workspace_size(A[0]));
+     array<T,1,Allocator> WORK(iextensions<1u>{sz},alloc);
+     array<T,2,Allocator> Id({3,3},alloc);
+     array<int,1,Allocator> info(iextensions<1u>{2},alloc);
+     array<T,2,Allocator> TAU({2,4},alloc);
+
+     geqrfStrided(4,3,A.origin(),4,12,TAU.origin(),4,info.origin(),2);
+     for(int i=0; i<2; i++) {
+       ma::gqr(A[i],TAU[i],WORK);
+
+       ma::product(A[i], ma::H(A[i]), Id);
+
+       array_ref<T, 2> Id2(id.data(),{3,3});
+       verify_approx(Id, Id2);
+     }
+   }
+   {
      vector<T> a = {
              9.,24.,30., 45.,
              4.,10.,12., 12.

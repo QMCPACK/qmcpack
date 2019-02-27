@@ -93,30 +93,44 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
 
 template<typename T, typename Q>
 void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                     bool* kk, int* nopk, int* nopk0,
+                     int* kk, int* nopk, int* nopk0,
                      Q const* A, T*  B) 
 {
   for(int w=0; w<nwalk; w++) {
-    for(int Ki=0; Ki<(nkpts+1); Ki++) {
+    for(int Ki=0; Ki<nkpts; Ki++) {
       for(int Kj=0; Kj<nkpts; Kj++) {
-        int Ki_ = (Ki==nkpts?Kj:Ki); // Ki==nkpts is the second term of Q0
-        int ni = nopk[Ki_];
+        int ni = nopk[Ki];
         int nj = nopk[Kj];
-        int ni0 = nopk0[Ki_];
+        int ni0 = nopk0[Ki];
         int nj0 = nopk0[Kj];
-        if(kk[Ki*nkpts+Kj]) { // transpose
+        // setup copy/transpose tags
+        // 1: copy from [Ki][Kj] without rho^+ term
+        // 2: transpose from [Ki][Kj] without rho^+ term
+        // -P: copy from [Ki][Kj] and transpose from [nkpts+P-1][Kj] 
+        int key = kk[Ki*nkpts+Kj];
+        if( key == 2 ) { // transpose
           auto vb_( B + w*nmo_tot*nmo_tot + ni0*nmo_tot + nj0);
           auto v_( A + ((Ki*nkpts+Kj)*nwalk + w )*nmo_max*nmo_max);
           for(int i=0; i<ni; i++) 
             for(int j=0; j<nj; j++)
               vb_[i*nmo_tot + j] += static_cast<T>(v_[j*nmo_max+i]);
-        } else { // copy
+        } else if((key==1) || (key<0)) { // copy
           for(int i=0; i<ni; i++) {
             auto vb_( B + w*nmo_tot*nmo_tot + (ni0+i)*nmo_tot + nj0);
             auto v_( A + (((Ki*nkpts+Kj)*nwalk + w )*nmo_max + i)*nmo_max);
             for(int j=0; j<nj; j++) 
               vb_[j] += static_cast<T>(v_[j]);
           }
+        } else {
+          APP_ABORT(" Error: Programming error. \n");
+        }
+        if( key < 0 ) { // transpose
+          key = (-key)-1;
+          auto vb_( B + w*nmo_tot*nmo_tot + nj0*nmo_tot + ni0);
+          auto v_( A + (((nkpts+key)*nkpts+Kj)*nwalk + w )*nmo_max*nmo_max);
+          for(int i=0; i<ni; i++)
+            for(int j=0; j<nj; j++)
+              vb_[j*nmo_tot + i] += static_cast<T>(v_[i*nmo_max+j]);
         }
       }  
     }
@@ -211,7 +225,7 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
 
 template<typename T, typename Q>
 void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                     cuda_gpu_ptr<bool> kk, cuda_gpu_ptr<int> nmo, cuda_gpu_ptr<int> nmo0,
+                     cuda_gpu_ptr<int> kk, cuda_gpu_ptr<int> nmo, cuda_gpu_ptr<int> nmo0,
                      cuda_gpu_ptr<Q> A, cuda_gpu_ptr<T>  B) {
   kernels::vKKwij_to_vwKiKj(nwalk,nkpts,nmo_max,nmo_tot,to_address(kk),to_address(nmo),
                             to_address(nmo0),to_address(A),to_address(B));

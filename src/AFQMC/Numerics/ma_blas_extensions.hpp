@@ -124,6 +124,20 @@ sum(MultiArray2D const& A){
         return sum(A.size(1), A.size(0), A.origin(), A.stride(0));
 }
 
+template<class MultiArray3D,
+         typename = typename std::enable_if<std::decay<MultiArray3D>::type::dimensionality == 3>::type,
+         typename = void,
+         typename = void
+>
+auto
+sum(MultiArray3D const& A){
+        // only arrays and array_refs for now
+        assert(A.stride(0) == A.size(1)*A.size(2));
+        assert(A.stride(1) == A.size(2));
+        assert(A.stride(2) == 1);
+        return sum(A.num_elements(), A.origin(), 1);
+}
+
 template<class T, class MultiArray1D,
         typename = typename std::enable_if< std::decay<MultiArray1D>::type::dimensionality == 1 >
 >

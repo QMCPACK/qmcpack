@@ -50,15 +50,16 @@ namespace qmc_cuda {
   bool afqmc_cuda_handles_init = false;
   cusparseMatDescr_t afqmc_cusparse_matrix_descr;
 
+  std::vector<cudaStream_t> afqmc_cuda_streams;
 
   gpu_handles base_cuda_gpu_ptr::handles{&afqmc_cublas_handle,
                                          &afqmc_cublasXt_handle,
                                          &afqmc_cusparse_handle,
                                          &afqmc_cusolverDn_handle,
                                          &afqmc_curand_generator  
-                                        };
-
-  void CUDA_INIT(boost::mpi3::shared_communicator& node)
+                                        }; 
+  // need a cleanup routine
+  void CUDA_INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed)
   {
 
     if(afqmc_cuda_handles_init) return;
@@ -87,9 +88,10 @@ namespace qmc_cuda {
     cublas_check(cublasXtSetPinningMemMode(afqmc_cublasXt_handle, CUBLASXT_PINNING_ENABLED), 
                                             "cublasXtSetPinningMemMode");
     cusolver_check(cusolverDnCreate (& afqmc_cusolverDn_handle ), "cusolverDnCreate");
-    curand_check(curandCreateGenerator(&afqmc_curand_generator, CURAND_RNG_PSEUDO_DEFAULT),
+    //curand_check(curandCreateGenerator(&afqmc_curand_generator, CURAND_RNG_PSEUDO_DEFAULT),
+    curand_check(curandCreateGenerator(&afqmc_curand_generator, CURAND_RNG_PSEUDO_MT19937),
                                             "curandCreateGenerator");
-    curand_check(curandSetPseudoRandomGeneratorSeed(afqmc_curand_generator,1234ULL),
+    curand_check(curandSetPseudoRandomGeneratorSeed(afqmc_curand_generator,iseed),
                                             "curandSetPseudoRandomGeneratorSeed");
 
     cusparse_check(cusparseCreate (& afqmc_cusparse_handle ), "cusparseCreate");

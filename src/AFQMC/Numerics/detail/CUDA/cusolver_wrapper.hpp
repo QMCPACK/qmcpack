@@ -511,7 +511,48 @@ namespace cusolver {
     return sucess;
   }
 
+  inline cusolverStatus_t cusolver_gqr_strided(
+    cusolverDnHandle_t handle,
+    const int m,
+    const int n,
+    const int k,
+    std::complex<double> *A,
+    const int lda,
+    const int Astride,
+    const std::complex<double> *tau,
+    const int tstride,
+    std::complex<double> *work,
+    int lwork,
+    int *devInfo,
+    int batchsize) {
 
+    using qmc_cuda::afqmc_cuda_streams;
+    if(afqmc_cuda_streams.size() < batchsize) {
+      int n0=afqmc_cuda_streams.size();
+      for(int n=n0; n<batchsize; n++) {
+        afqmc_cuda_streams.emplace_back(cudaStream_t{});
+        cudaStreamCreate(&(afqmc_cuda_streams.back()));
+      }
+    }
+
+    cudaStream_t s0;
+    qmc_cuda::cusolver_check(cusolverDnGetStream(handle,&s0), "cusolverDnGetStream");
+
+    for(int i=0; i<batchsize; i++) {
+      qmc_cuda::cusolver_check(cusolverDnSetStream(handle,afqmc_cuda_streams[i]), "cusolverDnSetStream");
+      cusolverStatus_t sucess =
+              cusolverDnZungqr(handle,m,n,k,reinterpret_cast<cuDoubleComplex *>(A)+i*Astride,lda,
+                        reinterpret_cast<cuDoubleComplex const *>(tau)+i*tstride,
+                        reinterpret_cast<cuDoubleComplex *>(work)+i*lwork,lwork,devInfo+i);
+      qmc_cuda::cusolver_check(sucess,"cusolver_gqr_strided"); 
+    }
+    qmc_cuda::cuda_check(cudaDeviceSynchronize(),"cusolver_gqr_strided");
+    qmc_cuda::cuda_check(cudaGetLastError(),"cusolver_gqr_strided");
+    qmc_cuda::cusolver_check(cusolverDnSetStream(handle,s0), "cusolverDnSetStream");
+
+    return CUSOLVER_STATUS_SUCCESS;
+
+  }
 
 }
 

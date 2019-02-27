@@ -745,17 +745,66 @@ namespace cublas {
     return sucess;
   }
 
-/*
-cublasStatus_t cublasDgeqrfBatched( cublasHandle_t handle, 
+  inline cublasStatus_t cublas_geqrfBatched( cublasHandle_t handle, 
                                     int m, 
                                     int n,
-                                    double *Aarray[],  
+                                    double **Aarray,  
                                     int lda, 
-                                    double *TauArray[],                                                         
+                                    double **TauArray,                                                         
                                     int *info,
-                                    int batchSize);
-*/
+                                    int batchSize) 
+  {
+    cublasStatus_t sucess = cublasDgeqrfBatched(handle,m,n,Aarray,lda,TauArray,info,batchSize);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
 
+  inline cublasStatus_t cublas_geqrfBatched( cublasHandle_t handle,
+                                    int m,
+                                    int n,
+                                    float **Aarray,
+                                    int lda,
+                                    float **TauArray,
+                                    int *info,
+                                    int batchSize)
+  {
+    cublasStatus_t sucess = cublasSgeqrfBatched(handle,m,n,Aarray,lda,TauArray,info,batchSize);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+
+  inline cublasStatus_t cublas_geqrfBatched( cublasHandle_t handle,
+                                    int m,
+                                    int n,
+                                    std::complex<double> **Aarray, 
+                                    int lda,
+                                    std::complex<double> **TauArray, 
+                                    int *info,
+                                    int batchSize) 
+  {
+     cublasStatus_t sucess = cublasZgeqrfBatched(handle,m,n,
+                        reinterpret_cast<cuDoubleComplex **>(Aarray),lda,
+                        reinterpret_cast<cuDoubleComplex **>(TauArray),info,batchSize);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cublasStatus_t cublas_geqrfBatched( cublasHandle_t handle,
+                                    int m,
+                                    int n,
+                                    std::complex<float> **Aarray,
+                                    int lda,
+                                    std::complex<float> **TauArray,
+                                    int *info,
+                                    int batchSize)
+  {
+     cublasStatus_t sucess = cublasCgeqrfBatched(handle,m,n,
+                        reinterpret_cast<cuComplex **>(Aarray),lda,
+                        reinterpret_cast<cuComplex **>(TauArray),info,batchSize);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
 
 }
 

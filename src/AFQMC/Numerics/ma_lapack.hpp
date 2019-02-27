@@ -80,7 +80,7 @@ MultiArray2D getri(MultiArray2D&& A, MultiArray1D const& IPIV, Buffer&& WORK){
 }
 
 template<class MultiArray2D>
-int geqrf_optimal_workspace_size(MultiArray2D & A){
+int geqrf_optimal_workspace_size(MultiArray2D && A){
 	assert(A.stride(0) > 0);
 	assert(A.stride(1) == 1);
 
@@ -101,7 +101,7 @@ MultiArray2D geqrf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 	int status = -1;
 	geqrf(
 		A.size(1), A.size(0), A.origin(), A.stride(0), 
-		TAU.data(), 
+		TAU.origin(), 
 		WORK.data(), WORK.size(),
 		status
 	);
@@ -110,7 +110,7 @@ MultiArray2D geqrf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 }
 
 template<class MultiArray2D>
-int gelqf_optimal_workspace_size(MultiArray2D & A){
+int gelqf_optimal_workspace_size(MultiArray2D && A){
 	assert(A.stride(0) > 0);
 	assert(A.stride(1) == 1);
 
@@ -139,7 +139,7 @@ MultiArray2D gelqf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 
 
 template<class MultiArray2D>
-int gqr_optimal_workspace_size(MultiArray2D & A){
+int gqr_optimal_workspace_size(MultiArray2D && A){
 	assert(A.stride(0) > 0);
 	assert(A.stride(1) == 1);
 
@@ -160,7 +160,7 @@ MultiArray2D gqr(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 	int status = -1;
 	gqr(
 		A.size(1), A.size(0), std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))), 
-		A.origin(), A.stride(0), TAU.data(), 
+		A.origin(), A.stride(0), TAU.origin(), 
 		WORK.data(), WORK.size(), 
 		status
 	);
@@ -169,7 +169,7 @@ MultiArray2D gqr(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 }
 
 template<class MultiArray2D>
-int glq_optimal_workspace_size(MultiArray2D & A){
+int glq_optimal_workspace_size(MultiArray2D && A){
 	assert(A.stride(0) > 0);
 	assert(A.stride(1) == 1);
 

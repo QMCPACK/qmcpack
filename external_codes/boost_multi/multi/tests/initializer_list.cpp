@@ -40,6 +40,7 @@ int main(){
 		{11.2, 34.4, 5.6},
 		{15.2, 32.4, 5.6}
 	};
+	multi::array<double, 2> B; B = A;
 	assert( size(A) == 3 );
 	assert( size(A) == 3 and size(A[0]) == 3 );
 	assert( A[1][1] == 34.4 );

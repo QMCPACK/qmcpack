@@ -19,29 +19,8 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-enum AFQMCTimers {
-  BlockTotal,
-  SubstepPropagate,
-  StepPopControl,
-  StepLoadBalance,
-  StepOrthogonalize
-};
-
-TimerNameList_t<AFQMCTimers> AFQMCTimerNames =
-{
-  {BlockTotal, "Block::Total"},
-  {SubstepPropagate, "Substep::Propagate"},
-  {StepPopControl, "Step:PopControl"},
-  {StepLoadBalance, "Step::LoadBalance"},
-  {StepOrthogonalize, "Step::Orthogonalize"}
-};
-
 bool AFQMCDriver::run(WalkerSet& wset)
 {
-  TimerList_t Timers;
-  setup_timers(Timers, AFQMCTimerNames, timer_level_medium);
-
-
   std::vector<ComplexType> curData;
 
   RealType w0 = wset.GlobalWeight();
@@ -55,25 +34,22 @@ bool AFQMCDriver::run(WalkerSet& wset)
   int step_tot=step0, iBlock ;
   for (iBlock=block0; iBlock<nBlock; ++iBlock) {
 
-    Timers[BlockTotal]->start();
     for (int iStep=0; iStep<nStep; ++iStep, ++step_tot) {
 
       // propagate nSubstep
-      Timers[SubstepPropagate]->start();
       prop0.Propagate(nSubstep,wset,Eshift,dt,fix_bias);
       total_time += nSubstep*dt;
-      Timers[SubstepPropagate]->stop();
 
       if (step_tot != 0 && step_tot % nStabilize == 0) {
-        Timers[StepOrthogonalize]->start();
+        AFQMCTimers[ortho_timer]->start();
         wfn0.Orthogonalize(wset,!prop0.free_propagation());
-        Timers[StepOrthogonalize]->stop();
+        AFQMCTimers[ortho_timer]->stop();
       }
 
       {
-        Timers[StepPopControl]->start();
+        AFQMCTimers[popcont_timer]->start();
         wset.popControl(curData);
-        Timers[StepPopControl]->stop();
+        AFQMCTimers[popcont_timer]->stop();
         estim0.accumulate_step(wset,curData);
       }
 
@@ -100,8 +76,6 @@ bool AFQMCDriver::run(WalkerSet& wset)
 
     // quantities that are measured once per block
     estim0.accumulate_block(wset);
-
-    Timers[BlockTotal]->stop();
 
     estim0.print(iBlock+1,total_time,Eshift,wset);
 

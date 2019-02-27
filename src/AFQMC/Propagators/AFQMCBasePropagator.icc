@@ -37,6 +37,7 @@ namespace afqmc
 template<class WlkSet>
 void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt) 
 { 
+  AFQMCTimers[setup_timer]->start();
   auto walker_type = wset.getWalkerType();
   int nsteps= nsteps_;
   int nwalk = wset.size();
@@ -65,8 +66,11 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
   size_t memory_needs = nwalk * ( Gsize + localnCV*(nsteps+1) + NMO*NMO*nsteps );
 
   // 0. Allocate memory and set shared memory structures
-  if(buffer.num_elements() < memory_needs ) 
+  if(buffer.num_elements() < memory_needs ) { 
     buffer = std::move(CVector(iextensions<1u>{memory_needs}));
+    using std::fill_n;
+    fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
+  }  
 
   // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
   // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
@@ -110,6 +114,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
                                 ma::sparse::is_root>;
     P1 = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1)); 
   }
+  AFQMCTimers[setup_timer]->stop();
 
   // 1. Calculate Green function for all walkers
   AFQMCTimers[G_for_vbias_timer]->start();
@@ -190,6 +195,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     AFQMCTimers[pseudo_energy_timer]->stop();
 
     // 7. update weights/energy/etc, apply constrains/bounds/etc 
+    AFQMCTimers[extra_timer]->start();
     if(TG.TG_local().root()) { 
       if(free_projection) { 
         free_projection_walker_update(wset,dt,new_overlaps,
@@ -204,6 +210,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
       }
     }
     TG.local_barrier();
+    AFQMCTimers[extra_timer]->stop();
 
   }  
 }

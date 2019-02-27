@@ -52,7 +52,17 @@ class AFQMCFactory
         DriverFac(gTG,TGHandler,InfoMap,WSetFac,PropFac,WfnFac,HamFac)
     {
 #ifdef QMC_CUDA
-      qmc_cuda::CUDA_INIT(gTG.Node());
+// taken from src/OhmmsApp/RandomNumberControl.cpp
+      int rank=gTG.Global().rank();
+      int nprocs=gTG.Global().size();
+      int baseoffset;
+      using uint_type = RandomNumberControl::uint_type;  
+      if(gTG.Global().root())  
+        baseoffset=static_cast<int>(static_cast<uint_type>(std::time(0))%1024);
+      gTG.Global().broadcast_value(baseoffset);  
+      std::vector<uint_type> myprimes;
+      RandomNumberControl::PrimeNumbers.get(baseoffset,nprocs,myprimes); 
+      qmc_cuda::CUDA_INIT(gTG.Node(),(unsigned long long int)(myprimes[rank]));
 #endif
       TimerManager.set_timer_threshold(timer_level_coarse);
       setup_timers(AFQMCTimers, AFQMCTimerNames,timer_level_coarse);

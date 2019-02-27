@@ -154,15 +154,7 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
     int i0,iN;
     std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),int(X.num_elements()),
                                          TG.TG_local().size());  
-// NOTE: FIX FIX FIX: Note sure what is wrong with cuda's RNG but results are slightly different!
-#ifdef QMC_CUDA
-    if(Xhost.num_elements() < X.num_elements()) 
-      Xhost.reextent(iextensions<1u>{X.num_elements()});
-    sampleGaussianFields_n(Xhost.origin(),Xhost.num_elements(),*rng);
-    copy_n(Xhost.origin(),Xhost.num_elements(),X.origin());
-#else
     sampleGaussianFields_n(X.origin()+i0,iN-i0,*rng);
-#endif
   }
 
   // construct X

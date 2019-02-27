@@ -78,7 +78,7 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
 }
 
 template<typename T, typename T1>
-void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
+void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
                     int* ncholpQ, int* ncholpQ0, std::complex<T> const alpha,
                     std::complex<T1> const* v1, std::complex<T>* vb)
 {
@@ -89,7 +89,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
     int ncm = ncholpQ[Qm];
     int Qm_ = Qm;
     int ntot = nc*nwalk;
-    if(Q==Q0) Qm_=nkpts;
+    if( Qsym[Q] >= 0 ) Qm_ = nkpts+Qsym[Q];
 
     // v+
     auto vb_(vb + nc0*nwalk);
@@ -138,12 +138,12 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
 }
 
 template<typename T, typename Q, typename R>
-void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, cuda_gpu_ptr<int> kminus,
+void vbias_from_v1( int nwalk, int nkpts, int nchol_max, cuda_gpu_ptr<int> Qsym, cuda_gpu_ptr<int> kminus,
                     cuda_gpu_ptr<int> ncholpQ, cuda_gpu_ptr<int> ncholpQ0, R alpha,
                     cuda_gpu_ptr<Q> v1, T* vb)
 {
-  kernels::vbias_from_v1(nwalk,nkpts,nchol_max,Q0,to_address(kminus),to_address(ncholpQ),
-            to_address(ncholpQ0),alpha,to_address(v1),vb);
+  kernels::vbias_from_v1(nwalk,nkpts,nchol_max,to_address(Qsym),to_address(kminus),
+            to_address(ncholpQ),to_address(ncholpQ0),alpha,to_address(v1),vb);
 }
 
 }

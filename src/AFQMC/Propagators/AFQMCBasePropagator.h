@@ -206,10 +206,6 @@ class AFQMCBasePropagator: public AFQMCInfo
                 (v/(std::abs(v)/static_cast<ValueType>(vbias_bound*sqrtdt))):(v);
     }
 
-// temporary until I fix issue with cuda's RNG
-#ifdef QMC_CUDA
-    boost::multi::array<ComplexType,1> Xhost;
-#endif
 };
 
 }

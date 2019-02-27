@@ -18,7 +18,7 @@
 #include <memory>
 #include <stack>
 #include <mpi.h>
-#include<AFQMC/config.0.h>
+#include<AFQMC/config.h>
 #include <Utilities/FairDivide.h>
 
 #include "AFQMC/Walkers/WalkerConfig.hpp"

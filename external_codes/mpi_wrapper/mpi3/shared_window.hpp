@@ -261,6 +261,56 @@ template<class T> struct allocator{
 	}
 };
 
+template<typename T, typename Size, typename... Args>
+array_ptr<T> uninitialized_fill_n(allocator<T>& alloc, array_ptr<T> first, Size n, Args&&...args){
+        if(n == 0) return first;
+        if(mpi3::group(*first.wSP_).root()) std::uninitialized_fill_n(to_address(first), n, std::forward<Args>(args)...); // change to to_pointer
+        first.wSP_->fence();
+        first.wSP_->fence();
+        alloc.comm_.barrier();
+        return first + n;
+}
+
+template<typename T, typename Q, typename Size>
+array_ptr<T> uninitialized_copy_n(allocator<T>& alloc, array_ptr<Q> first, Size n, array_ptr<T> dest){
+        if(n == 0) return dest;
+        if(mpi3::group(*first.wSP_).root()) std::uninitialized_copy_n(to_address(first), n, to_address(dest)); 
+        first.wSP_->fence();
+        first.wSP_->fence();
+        alloc.comm_.barrier();
+        return dest + n;
+}
+
+template<typename T, typename Q, typename Size>
+array_ptr<T> uninitialized_copy_n(allocator<T>& alloc, Q* first, Size n, array_ptr<T> dest){
+        if(n == 0) return dest;
+        if(mpi3::group(*first.wSP_).root()) std::uninitialized_copy_n(first, n, to_address(dest));
+        first.wSP_->fence();
+        first.wSP_->fence();
+        alloc.comm_.barrier();
+        return dest + n;
+}
+
+template<typename T, typename Q>
+array_ptr<T> uninitialized_copy(allocator<T>& alloc, array_ptr<Q> first, array_ptr<Q> last, array_ptr<T> dest){
+        return uninitialized_copy_n(alloc,first,std::distance(first,last),dest);
+}
+
+template<typename T, typename Q>
+array_ptr<T> uninitialized_copy(allocator<T>& alloc, Q* first, Q* last, array_ptr<T> dest){
+        return uninitialized_copy_n(alloc,first,std::distance(first,last),dest);
+}
+
+template<typename T, typename Size>
+array_ptr<T> uninitialized_value_construct_n(allocator<T>& alloc, array_ptr<T> first, Size n){
+        if(n == 0) return first;
+        if(mpi3::group(*first.wSP_).root()) std::uninitialized_fill_n(to_address(first), n, T());
+        first.wSP_->fence();
+        first.wSP_->fence();
+        alloc.comm_.barrier();
+        return first + n;
+}
+
 struct is_root{
 	shared_communicator& comm_;
 	template<class Alloc>

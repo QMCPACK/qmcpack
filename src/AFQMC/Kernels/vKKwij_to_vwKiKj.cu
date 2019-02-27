@@ -27,7 +27,7 @@ namespace kernels
 // very sloppy, needs improvement!!!!
 template<typename T, typename T2>
 __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot, 
-                                        bool* kk, int* nmo, int* nmo0, T const* A, T2 * B)
+                                        int* kk, int* nmo, int* nmo0, T const* A, T2 * B)
 {
   int Ki = blockIdx.x;  
   int Kj = blockIdx.y;  
@@ -37,6 +37,11 @@ __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int 
   int nj0 = nmo0[Kj]; 
   int ni = nmo[Ki]; 
   int nj = nmo[Kj];
+  // setup copy/transpose tags
+  // 1: copy from [Ki][Kj] without rho^+ term
+  // 2: transpose from [Ki][Kj] without rho^+ term
+  // -P: copy from [Ki][Kj] and transpose from [nkpts+P-1][Kj] 
+  int key = kk[Ki*nkpts+Kj];
   
   T2* B_(B + nw*nmo_tot*nmo_tot + ni0*nmo_tot + nj0); 
   T const* A_(A + ((Ki*nkpts + Kj)*nwalk + nw)*nmo_max*nmo_max);
@@ -44,32 +49,27 @@ __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int 
   if(threadIdx.x >= ni) return; 
   if(threadIdx.y >= nj) return; 
   
-  if(kk[Ki*nkpts+Kj]) { // transpose
+  if( key==2 ) { // transpose
     for(int i=threadIdx.x; i<ni; i+=blockDim.x) { 
       for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
         B_[ i*nmo_tot+j ] += static_cast<T2>(A_[ j*nmo_max+i ]);
       }
     }
-  } else { // copy
+  } else if((key==1) || (key<0)) { // copy
     for(int i=threadIdx.x; i<ni; i+=blockDim.x) { 
       for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
         B_[ i*nmo_tot+j ] += static_cast<T2>(A_[ i*nmo_max+j ]);
       }
     }
+  } else {
+    // how do I return an error !!!???
   }  
-  if(Ki==Kj) {
-    T const* A2_(A + ((nkpts*nkpts + Kj)*nwalk + nw)*nmo_max*nmo_max);
-    if(kk[nkpts*nkpts+Kj]) { // transpose
-      for(int i=threadIdx.x; i<ni; i+=blockDim.x) {
-        for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
-          B_[ i*nmo_tot+j ] += static_cast<T2>(A2_[ j*nmo_max+i ]);
-        }
-      }
-    } else { // copy
-      for(int i=threadIdx.x; i<ni; i+=blockDim.x) {
-        for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
-          B_[ i*nmo_tot+j ] += static_cast<T2>(A2_[ i*nmo_max+j ]);
-        }
+  if( key < 0) {
+    key = (-key)-1; //[P-1]
+    T const* A2_(A + ( ( (nkpts+key)*nkpts + Kj )*nwalk + nw )*nmo_max*nmo_max);
+    for(int i=threadIdx.x; i<ni; i+=blockDim.x) {
+      for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
+        B_[ i*nmo_tot+j ] += static_cast<T2>(A2_[ j*nmo_max+i ]);
       }
     }
   }
@@ -77,7 +77,7 @@ __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int 
 
 template<typename T, typename T2>
 __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot, 
-                                        bool* kk, int* nmo, int* nmo0, thrust::complex<T> const* A, thrust::complex<T2> * B)
+                                        int* kk, int* nmo, int* nmo0, thrust::complex<T> const* A, thrust::complex<T2> * B)
 {
 // use shared memory for transpose
 //  __shared__ thrust::complex<T2> tile[TILE_DIM][TILE_DIM+1];
@@ -89,6 +89,11 @@ __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int 
   int nj0 = nmo0[Kj];
   int ni = nmo[Ki];  
   int nj = nmo[Kj];  
+  // setup copy/transpose tags
+  // 1: copy from [Ki][Kj] without rho^+ term
+  // 2: transpose from [Ki][Kj] without rho^+ term
+  // -P: copy from [Ki][Kj] and transpose from [nkpts+P-1][Kj] 
+  int key = kk[Ki*nkpts+Kj];
             
   thrust::complex<T2>* B_(B + nw*nmo_tot*nmo_tot + ni0*nmo_tot + nj0);  
   thrust::complex<T> const* A_(A + ((Ki*nkpts + Kj)*nwalk + nw)*nmo_max*nmo_max);
@@ -96,39 +101,37 @@ __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int 
   if(threadIdx.x >= ni) return; 
   if(threadIdx.y >= nj) return; 
 
-  if(kk[Ki*nkpts+Kj]) { // transpose
+  if( key == 2) { // transpose
     for(int i=threadIdx.x; i<ni; i+=blockDim.x) { 
       for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
         B_[ i*nmo_tot+j ] += static_cast<thrust::complex<T2>>(A_[ j*nmo_max+i ]);
       }
     }
-  } else {  // copy
+  } else if((key==1) || (key<0)) {  // copy
     for(int i=threadIdx.x; i<ni; i+=blockDim.x) { 
       for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
         B_[ i*nmo_tot+j ] += static_cast<thrust::complex<T2>>(A_[ i*nmo_max+j ]);
       }
     }
+  } else {
+    // how do I return an error !!!???
   }
-  if(Ki==Kj) {
-    thrust::complex<T> const* A2_(A + ((nkpts*nkpts + Kj)*nwalk + nw)*nmo_max*nmo_max);
-    if(kk[nkpts*nkpts+Kj]) { // transpose
-      for(int i=threadIdx.x; i<ni; i+=blockDim.x) {
-        for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
-          B_[ i*nmo_tot+j ] += static_cast<thrust::complex<T2>>(A2_[ j*nmo_max+i ]);
-        }
-      }
-    } else {  // copy
-      for(int i=threadIdx.x; i<ni; i+=blockDim.x) {
-        for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
-          B_[ i*nmo_tot+j ] += static_cast<thrust::complex<T2>>(A2_[ i*nmo_max+j ]);
-        }
+  // look for [Kj][Ki] matrix since this one goes into [Ki][Kj] sector  
+  int key2 = kk[Kj*nkpts+Ki];
+  if( key2 < 0) {
+    // v[Kj][Ki][j][i] += v_[nkpts+key][Kj][i][j]
+    key2 = (-key2)-1; //[P-1]
+    thrust::complex<T> const* A2_(A + ( ( (nkpts+key2)*nkpts + Ki )*nwalk + nw )*nmo_max*nmo_max);
+    for(int i=threadIdx.x; i<ni; i+=blockDim.x) {
+      for(int j=threadIdx.y; j<nj; j+=blockDim.y) {
+        B_[ i*nmo_tot+j ] += static_cast<thrust::complex<T2>>(A2_[ j*nmo_max+i ]);
       }
     }
   }
 }
 
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                               bool* kk,int* nmo, int* nmo0, double const* A, double * B)
+                               int* kk,int* nmo, int* nmo0, double const* A, double * B)
 {
   int xblock_dim = 8;
   int yblock_dim = 8;
@@ -140,7 +143,7 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
 }
 
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                               bool* kk, int* nmo, int* nmo0, float const* A, float * B)
+                               int* kk, int* nmo, int* nmo0, float const* A, float * B)
 {
   int xblock_dim = 8;
   int yblock_dim = 8;
@@ -152,7 +155,7 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
 }
 
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                               bool* kk, int* nmo, int* nmo0, float const* A, double * B)
+                               int* kk, int* nmo, int* nmo0, float const* A, double * B)
 {
   int xblock_dim = 8;
   int yblock_dim = 8;
@@ -164,7 +167,7 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
 }
 
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                                bool* kk, int* nmo, int* nmo0, std::complex<double> const* A, std::complex<double> * B)
+                                int* kk, int* nmo, int* nmo0, std::complex<double> const* A, std::complex<double> * B)
 {
   int xblock_dim = 8;
   int yblock_dim = 8;
@@ -178,7 +181,7 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
 }
 
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                                bool* kk, int* nmo, int* nmo0, std::complex<float> const* A, std::complex<float> * B)
+                                int* kk, int* nmo, int* nmo0, std::complex<float> const* A, std::complex<float> * B)
 {
   int xblock_dim = 8;
   int yblock_dim = 8;
@@ -192,7 +195,7 @@ void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
 }
 
 void vKKwij_to_vwKiKj(int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                                bool* kk, int* nmo, int* nmo0, std::complex<float> const* A, std::complex<double> * B)
+                                int* kk, int* nmo, int* nmo0, std::complex<float> const* A, std::complex<double> * B)
 {
   int xblock_dim = 8;
   int yblock_dim = 8;

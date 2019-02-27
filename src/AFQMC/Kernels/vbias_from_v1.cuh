@@ -22,13 +22,13 @@
 namespace kernels
 {
 
-void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
+void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
                     int* ncholpQ, int* ncholpQ0, std::complex<double> const alpha,
                     std::complex<double> const* v1, std::complex<double> * vb);
-void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
+void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
                     int* ncholpQ, int* ncholpQ0, std::complex<float> const alpha,
                     std::complex<float> const* v1, std::complex<float> * vb);
-void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int Q0, int* kminus,
+void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
                     int* ncholpQ, int* ncholpQ0, std::complex<double> const alpha,
                     std::complex<float> const* v1, std::complex<double> * vb);
 }

@@ -45,7 +45,7 @@ class WalkerSetBase: public AFQMCInfo
 {
   protected:
 
-  enum WalkerSetBaseTimers { LoadBalance, PopControl };
+  enum WalkerSetBaseTimers { LoadBalance_t, Branching_t };
 
   using element = typename std::pointer_traits<Ptr>::element_type;
   using pointer = Ptr; 
@@ -511,7 +511,6 @@ class WalkerSetBase: public AFQMCInfo
   template<class Mat>
   void loadBalance(Mat&& M)
   {
-    Timers[LoadBalance]->start();
     if(load_balance == SIMPLE) {
 
       if(TG.TG_local().root())
@@ -527,8 +526,7 @@ class WalkerSetBase: public AFQMCInfo
     }
     TG.local_barrier();
     // since tot_num_walkers is local, you need to sync it
-    TG.TG_local().broadcast_n(&tot_num_walkers,1,0);
-    Timers[LoadBalance]->stop();
+    if(TG.TG_local().size() > 1) TG.TG_local().broadcast_n(&tot_num_walkers,1,0);
   }
 
   // branching algorithm

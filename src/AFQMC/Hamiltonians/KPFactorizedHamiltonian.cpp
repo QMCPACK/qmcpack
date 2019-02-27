@@ -168,29 +168,9 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
 
   int number_of_symmetric_Q=0;
   std::fill_n(Qsym_map.origin(),Qsym_map.num_elements(),-1);
-  int Q0=-1;  // stores the index of the Q=(0,0,0) Q-point
-              // this must always exist
-  for(int Q=0; Q<nkpts; Q++) {
-    if(kminus[Q]==Q) {
+  for(int Q=0; Q<nkpts; Q++) 
+    if(kminus[Q]==Q) 
       Qsym_map[Q] = number_of_symmetric_Q++;
-      bool found=true;
-      for(int KI=0; KI<nkpts; KI++)
-        if(KI != QKtok2[Q][KI]) {
-          found = false;
-          break;
-        }
-      if(found) {
-        if( Q0 > 0 )
-          APP_ABORT(" Error: @ Q-points satisfy Q=0 condition.\n");
-        Q0=Q;
-      } else {
-        if( nkpts%2 != 0)
-          APP_ABORT(" Error: Unexpected situation: Q==(-Q)!=Q0 and odd Nk. \n");
-      }
-    }
-  }
-  if(Q0<0)
-    APP_ABORT(" Error: Can not find Q=0 Q-point.\n");
   int nmo_max = *std::max_element(nmo_per_kp.begin(),nmo_per_kp.end());
   int nchol_max = *std::max_element(nchol_per_kp.begin(),nchol_per_kp.end());
   shmCTensor H1({nkpts,nmo_max,nmo_max},shared_allocator<ComplexType>{TG.Node()});
@@ -312,6 +292,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
     }
   }
 
+  // NOTE: LQKbnl is indexed by the K index of 'b', L[Q][Kb] 
   std::vector<shmSpMatrix> LQKbnl;
   LQKbnl.reserve(ndet*nspins*number_of_symmetric_Q);  // storing 2 components for Q=0, since it is not assumed symmetric
   for(int nd=0; nd<ndet; nd++) {
@@ -436,7 +417,6 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
       }
     }
   }
-  TG.Global().barrier();
 
   // now generate LQKbnl if Q==(-Q)
   for(int nd=0, nq0=0; nd<ndet; nd++, nq0+=number_of_symmetric_Q*nspins) {
@@ -453,6 +433,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           int nchol = nchol_per_kp[Q];
           Sp3Tensor_ref Likn(to_address(LQKikn[Q][K].origin()),
                                               {ni,nk,nchol});
+          // NOTE: LQKbnl is indexed by the K index of 'b', L[Q][Kb]
           if(type==COLLINEAR) {
             { // Alpha
               auto PsiQK = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd],QK);
@@ -682,6 +663,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   IVector nmo_per_kp(iextensions<1u>{nkpts});
   IVector nchol_per_kp(iextensions<1u>{nkpts});
   IVector kminus(iextensions<1u>{nkpts});
+  IVector Qsym_map(iextensions<1u>{nkpts});
   shmIMatrix QKtok2({nkpts,nkpts},shared_allocator<int>{TG.Node()});
   ValueType E0;
   if( TG.Global().root() ) {
@@ -740,41 +722,18 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     TG.Cores().broadcast_n(to_address(QKtok2.origin()),QKtok2.num_elements(),0);
   TG.Node().barrier();
 
-  int Q0=-1;  // stores the index of the Q=(0,0,0) Q-point
-              // this must always exist
-  for(int Q=0; Q<nkpts; Q++) {
-    if(kminus[Q]==Q) {
-      bool found=true;
-      for(int KI=0; KI<nkpts; KI++)
-        if(KI != QKtok2[Q][KI]) {
-          found = false;
-          break;
-        }
-      if(found) {
-        if( Q0 > 0 )
-          APP_ABORT(" Error: @ Q-points satisfy Q=0 condition.\n");
-        Q0=Q;
-      } else {
-        if( nkpts%2 != 0)
-          APP_ABORT(" Error: Unexpected situation: Q==(-Q)!=Q0 and odd Nk. \n");
-      }
-    }
-  }
-  if(Q0<0)
-    APP_ABORT(" Error: Can not find Q=0 Q-point.\n");
+  int number_of_symmetric_Q=0;
+  std::fill_n(Qsym_map.origin(),Qsym_map.num_elements(),-1);
+  for(int Q=0; Q<nkpts; Q++) 
+    if(kminus[Q]==Q) 
+      Qsym_map[Q] = number_of_symmetric_Q++;
   int nmo_max = *std::max_element(nmo_per_kp.begin(),nmo_per_kp.end());
   int nchol_max = *std::max_element(nchol_per_kp.begin(),nchol_per_kp.end());
   shmCTensor H1({nkpts,nmo_max,nmo_max},shared_allocator<ComplexType>{TG.Node()});
   std::vector<shmSpMatrix> LQKikn;
   LQKikn.reserve(nkpts);
   for(int Q=0; Q<nkpts; Q++)
-    if( Q==Q0 )
-      LQKikn.emplace_back( shmSpMatrix({nkpts,nmo_max*nmo_max*nchol_max},
-                                   shared_allocator<SPComplexType>{TG.Node()}) );
-    else if( kminus[Q] == Q )   // only storing half of K points and using symmetry
-      LQKikn.emplace_back( shmSpMatrix({nkpts/2,nmo_max*nmo_max*nchol_max},
-                                   shared_allocator<SPComplexType>{TG.Node()}) );
-    else if(Q < kminus[Q])
+    if(Q <= kminus[Q])
       LQKikn.emplace_back( shmSpMatrix({nkpts,nmo_max*nmo_max*nchol_max},
                                    shared_allocator<SPComplexType>{TG.Node()}) );
     else // Q > kminus[Q]
@@ -805,7 +764,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     for(int Q=0; Q<nkpts; Q++) {
       using std::conj;
       int nchol = nchol_per_kp[Q];
-      if(Q==Q0 || Q < kminus[Q]) {
+      if(Q <= kminus[Q]) {
         if(!dump.readEntry(L_,std::string("L")+std::to_string(Q))) {
           app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n";
@@ -822,28 +781,6 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             for(int k=0; k<nk; k++)
               copy_n(L1[i][k].origin(),nchol,L2[K][i][k].origin());
         }
-      } else if(kminus[Q]==Q) {
-        if(!dump.readEntry(L_,std::string("L")+std::to_string(Q))) {
-          app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
-                   <<" Problems reading /Hamiltonian/KPFactorized/L" <<Q <<". \n";
-          APP_ABORT("");
-        }
-        assert(L_.size(0) == nkpts);
-        Sp4Tensor_ref L2(LQKikn[Q].origin(),{nkpts/2,nmo_max,nmo_max,nchol_max});
-        int kpos=0;
-        for(int K=0; K<nkpts; K++) {
-          assert(K != QKtok2[Q][K]);
-          if(K < QKtok2[Q][K]) {
-            int QK = QKtok2[Q][K];
-            int ni = nmo_per_kp[K];
-            int nk = nmo_per_kp[QK];
-            Sp3Tensor_ref L1(L_[K].origin(),{ni,nk,nchol});
-            for(int i=0; i<ni; i++)
-              for(int k=0; k<nk; k++)
-                copy_n(L1[i][k].origin(),nchol,L2[kpos][i][k].origin());
-            kpos++;
-          }
-        }
       }
     }
     dump.pop();
@@ -855,6 +792,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
 
   // generate nocc_per_kp using PsiT and nmo_per_kp
   shmIMatrix nocc_per_kp({ndet,nspins*nkpts},shared_allocator<int>{TG.Node()});
+  TG.Node().barrier();
   if(TG.Node().root()) {
     if(type==COLLINEAR) {
       for(int i=0; i<ndet; i++) {
@@ -882,6 +820,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   int nocc_max = *std::max_element(to_address(nocc_per_kp.origin()),
                                    to_address(nocc_per_kp.origin())+nocc_per_kp.num_elements());
 
+  int nocc_tot = std::accumulate(to_address(nocc_per_kp.origin()),
+                                   to_address(nocc_per_kp.origin())+nocc_per_kp.num_elements(),0);
+  app_log()<<" Total number of electrons: " <<nocc_tot <<std::endl;
+
   /* half-rotate LQ and H1:
    * Given that PsiT = H(SM),
    * h[K][a][k] = sum_i PsiT[K][a][i] * h[K][i][k]
@@ -889,16 +831,16 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
    * Both permutations are stores, akn and ank, for performance reasons.
    */
   std::vector<shmSpMatrix> LQKank;
-  LQKank.reserve(ndet*nspins*(nkpts+1));  // storing 2 components for Q=0, since it is not assumed symmetric
+  LQKank.reserve(ndet*nspins*nkpts);  // storing 2 components for Q=0, since it is not assumed symmetric
   shmCMatrix haj({ndet*nkpts,(type==COLLINEAR?2:1)*nocc_max*nmo_max},shared_allocator<ComplexType>{TG.Node()});
   if(TG.Node().root()) std::fill_n(haj.origin(),haj.num_elements(),ComplexType(0.0));
   int ank_max = nocc_max*nchol_max*nmo_max;
   for(int nd=0; nd<ndet; nd++) {
-    for(int Q=0; Q<(nkpts+1); Q++) {
+    for(int Q=0; Q<nkpts; Q++) {
       LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
     }
     if(type==COLLINEAR) {
-      for(int Q=0; Q<(nkpts+1); Q++) {
+      for(int Q=0; Q<nkpts; Q++) {
         LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
       }
     }
@@ -906,22 +848,52 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   if(TG.Node().root()) for( auto& v: LQKank ) fill_n(v.origin(),v.num_elements(),SPComplexType(0.0));
 
   std::vector<shmSpMatrix> LQKakn;
-  LQKakn.reserve(ndet*nspins*(nkpts+1));  
+  LQKakn.reserve(ndet*nspins*nkpts);  
   for(int nd=0; nd<ndet; nd++) {
-    for(int Q=0; Q<(nkpts+1); Q++) {
+    for(int Q=0; Q<nkpts; Q++) {
       LQKakn.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
     }
     if(type==COLLINEAR) {
-      for(int Q=0; Q<(nkpts+1); Q++) {
+      for(int Q=0; Q<nkpts; Q++) {
         LQKakn.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
       }
     }
   }
   if(TG.Node().root()) for( auto& v: LQKakn ) fill_n(v.origin(),v.num_elements(),SPComplexType(0.0));
 
+  // NOTE: LQKbnl and LQKbln are indexed by the K index of 'b', L[Q][Kb]
+  std::vector<shmSpMatrix> LQKbnl;
+  LQKbnl.reserve(ndet*nspins*number_of_symmetric_Q);  // storing 2 components for Q=0, since it is not assumed symmetric
+  for(int nd=0; nd<ndet; nd++) {
+    for(int Q=0; Q<number_of_symmetric_Q; Q++) {
+      LQKbnl.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
+    }
+    if(type==COLLINEAR) {
+      for(int Q=0; Q<number_of_symmetric_Q; Q++) {
+        LQKbnl.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
+      }
+    }
+  }
+  if(TG.Node().root()) for( auto& v: LQKbnl ) fill_n(v.origin(),v.num_elements(),SPComplexType(0.0));
+
+  std::vector<shmSpMatrix> LQKbln;
+  LQKbln.reserve(ndet*nspins*number_of_symmetric_Q);  // storing 2 components for Q=0, since it is not assumed symmetric
+  for(int nd=0; nd<ndet; nd++) {
+    for(int Q=0; Q<number_of_symmetric_Q; Q++) {
+      LQKbln.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
+    } 
+    if(type==COLLINEAR) {
+      for(int Q=0; Q<number_of_symmetric_Q; Q++) {
+        LQKbln.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
+      }
+    }
+  }
+  if(TG.Node().root()) for( auto& v: LQKbln ) fill_n(v.origin(),v.num_elements(),SPComplexType(0.0));
+
   TG.Node().barrier();
   boost::multi::array<SPComplexType,2> buff({nmo_max,nchol_max});
-  for(int nd=0, nt=0, nq0=0; nd<ndet; nd++, nq0+=(nkpts+1)*nspins) {
+  int nt=0;
+  for(int nd=0, nq0=0; nd<ndet; nd++, nq0+=nkpts*nspins) {
     for(int Q=0; Q<nkpts; Q++) {
       for(int K=0; K<nkpts; K++, nt++) {
         if(nt%TG.Global().size() == TG.Global().rank()) {
@@ -962,35 +934,15 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             { // Alpha
               auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd],K);
               assert(Psi.size(0) == na);
-              if(Q < Qm || Q==Q0 || ((Q==Qm)&&(K<QK))) {
-                int kpos = K;
-                if( Q==Qm && Q!=Q0 ) { //find position in symmetric list
-                  kpos=0;
-                  for(int K_=0; K_<K; K_++)
-                    if(K_ < QKtok2[Q][K_]) kpos++;
-                }
-                Sp3Tensor_ref Likn(to_address(LQKikn[Q][kpos].origin()),
+              if(Q <= Qm) {
+                Sp3Tensor_ref Likn(to_address(LQKikn[Q][K].origin()),
                                               {nmo_max,nmo_max,nchol_max});
                 Sp3Tensor_ref Lakn(to_address(LQKakn[nq0+Q][K].origin()),
                                               {nocc_max,nmo_max,nchol_max});
                 Sp3Tensor_ref Lank(to_address(LQKank[nq0+Q][K].origin()),
                                               {nocc_max,nchol_max,nmo_max});
                 ma_rotate_padded::getLakn_Lank(Psi,Likn,Lakn,Lank);
-                if(Q==Q0) {
-                  assert(K==QK);
-                  Sp3Tensor_ref Lakn_(to_address(LQKakn[nq0+nkpts][K].origin()),
-                                              {nocc_max,nmo_max,nchol_max});
-                  Sp3Tensor_ref Lank_(to_address(LQKank[nq0+nkpts][K].origin()),
-                                              {nocc_max,nchol_max,nmo_max});
-                  ma_rotate_padded::getLakn_Lank_from_Lkin(Psi,Likn,Lakn_,Lank_,buff);
-                }
               } else {
-                int kpos = QK;
-                if( Q==Qm ) { //find position in symmetric list
-                  kpos=0;
-                  for(int K_=0; K_<QK; K_++)
-                    if(K_ < QKtok2[Q][K_]) kpos++;
-                }
                 Sp3Tensor_ref Lkin(to_address(LQKikn[Qm][QK].origin()),
                                               {nmo_max,nmo_max,nchol_max});
                 Sp3Tensor_ref Lank(to_address(LQKank[nq0+Q][K].origin()),
@@ -1003,78 +955,37 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             { // Beta
               auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],K);
               assert(Psi.size(0) == nb);
-              if(Q < Qm || Q==Q0 || ((Q==Qm)&&(K<QK))) {
-                int kpos = K;
-                if( Q==Qm && Q!=Q0 ) { //find position in symmetric list
-                  kpos=0;
-                  for(int K_=0; K_<K; K_++)
-                    if(K_ < QKtok2[Q][K_]) kpos++;
-                }
-                Sp3Tensor_ref Likn(to_address(LQKikn[Q][kpos].origin()),
+              if(Q <= Qm) {
+                Sp3Tensor_ref Likn(to_address(LQKikn[Q][K].origin()),
                                                 {nmo_max,nmo_max,nchol_max});
-                Sp3Tensor_ref Lakn(to_address(LQKakn[nq0+nkpts+1+Q][K].origin()),
+                Sp3Tensor_ref Lakn(to_address(LQKakn[nq0+nkpts+Q][K].origin()),
                                                 {nocc_max,nmo_max,nchol_max});
-                Sp3Tensor_ref Lank(to_address(LQKank[nq0+nkpts+1+Q][K].origin()),
+                Sp3Tensor_ref Lank(to_address(LQKank[nq0+nkpts+Q][K].origin()),
                                                 {nocc_max,nchol_max,nmo_max});
                 ma_rotate_padded::getLakn_Lank(Psi,Likn,Lakn,Lank);
-                if(Q==Q0) {
-                  assert(K==QK);
-                  Sp3Tensor_ref Lakn_(to_address(LQKakn[nq0+nkpts+1+nkpts][K].origin()),
-                                                {nocc_max,nmo_max,nchol_max});
-                  Sp3Tensor_ref Lank_(to_address(LQKank[nq0+nkpts+1+nkpts][K].origin()),
-                                                {nocc_max,nchol_max,nmo_max});
-                  ma_rotate_padded::getLakn_Lank_from_Lkin(Psi,Likn,Lakn_,Lank_,buff);
-                }
               } else {
-                int kpos = QK;
-                if( Q==Qm ) { //find position in symmetric list
-                  kpos=0;
-                  for(int K_=0; K_<QK; K_++)
-                    if(K_ < QKtok2[Q][K_]) kpos++;
-                }
                 Sp3Tensor_ref Lkin(to_address(LQKikn[Qm][QK].origin()),
                                                 {nmo_max,nmo_max,nchol_max});
-                Sp3Tensor_ref Lakn(to_address(LQKakn[nq0+nkpts+1+Q][K].origin()),
+                Sp3Tensor_ref Lakn(to_address(LQKakn[nq0+nkpts+Q][K].origin()),
                                                 {nocc_max,nmo_max,nchol_max});
-                Sp3Tensor_ref Lank(to_address(LQKank[nq0+nkpts+1+Q][K].origin()),
+                Sp3Tensor_ref Lank(to_address(LQKank[nq0+nkpts+Q][K].origin()),
                                                 {nocc_max,nchol_max,nmo_max});
                 ma_rotate_padded::getLakn_Lank_from_Lkin(Psi,Lkin,Lakn,Lank,buff);
               }
             }
           } else {
-// change get_PsiK to cast to the value_type of the result
             auto Psi = get_PsiK<SpMatrix>(nmo_per_kp,PsiT[nd],K);
             assert(Psi.size(0) == na);
-            if(Q < Qm || Q==Q0 || ((Q==Qm)&&(K<QK))) {
-              int kpos = K;
-              if( Q==Qm && Q!=Q0 ) { //find position in symmetric list
-                kpos=0;
-                for(int K_=0; K_<K; K_++)
-                  if(K_ < QKtok2[Q][K_]) kpos++;
-              }
-              Sp3Tensor_ref Likn(to_address(LQKikn[Q][kpos].origin()),
+            if(Q <= Qm) {
+              Sp3Tensor_ref Likn(to_address(LQKikn[Q][K].origin()),
                                               {nmo_max,nmo_max,nchol_max});
               Sp3Tensor_ref Lakn(to_address(LQKakn[nq0+Q][K].origin()),
                                               {nocc_max,nmo_max,nchol_max});
               Sp3Tensor_ref Lank(to_address(LQKank[nq0+Q][K].origin()),
                                               {nocc_max,nchol_max,nmo_max});
               ma_rotate_padded::getLakn_Lank(Psi,Likn,Lakn,Lank);
-              if(Q==Q0) {
-                assert(K==QK);
-                Sp3Tensor_ref Lakn_(to_address(LQKakn[nq0+nkpts][K].origin()),
-                                              {nocc_max,nmo_max,nchol_max});
-                Sp3Tensor_ref Lank_(to_address(LQKank[nq0+nkpts][K].origin()),
-                                              {nocc_max,nchol_max,nmo_max});
-                ma_rotate_padded::getLakn_Lank_from_Lkin(Psi,Likn,Lakn_,Lank_,buff);
-              }
             } else {
-              int kpos = QK;
-              if( Q==Qm ) { //find position in symmetric list
-                kpos=0;
-                for(int K_=0; K_<QK; K_++)
-                  if(K_ < QKtok2[Q][K_]) kpos++;
-              }
-              Sp3Tensor_ref Lkin(to_address(LQKikn[Qm][kpos].origin()),
+              Sp3Tensor_ref Lkin(to_address(LQKikn[Qm][QK].origin()),
                                               {nmo_max,nmo_max,nchol_max});
               Sp3Tensor_ref Lakn(to_address(LQKakn[nq0+Q][K].origin()),
                                               {nocc_max,nmo_max,nchol_max});
@@ -1087,28 +998,104 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
       }
     }
   }
+
+  // now generate LQKbnl if Q==(-Q)
+  for(int nd=0, nq0=0; nd<ndet; nd++, nq0+=number_of_symmetric_Q*nspins) {
+    for(int Q=0; Q<nkpts; Q++) {
+      if( Q != kminus[Q] ) continue;
+      for(int K=0; K<nkpts; K++, nt++) {
+        if(nt%TG.Global().size() == TG.Global().rank()) {
+          // careful with subtle redefinition of na,nb,... here
+          int QK = QKtok2[Q][K];
+          int na = nocc_per_kp[nd][QK];
+          int nb = (nspins==2?nocc_per_kp[nd][nkpts+QK]:na);
+          Sp3Tensor_ref Likn(to_address(LQKikn[Q][K].origin()),
+                                              {nmo_max,nmo_max,nchol_max});
+          if(type==COLLINEAR) {
+            { // Alpha
+              auto PsiQK = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd],QK);
+              Sp3Tensor_ref Lbnl(to_address(LQKbnl[nq0+Qsym_map[Q]][QK].origin()),
+                                          {nocc_max,nchol_max,nmo_max});
+              Sp3Tensor_ref Lbln(to_address(LQKbln[nq0+Qsym_map[Q]][QK].origin()),
+                                          {nocc_max,nmo_max,nchol_max});
+              ma_rotate_padded::getLakn_Lank_from_Lkin(PsiQK,Likn,Lbln,Lbnl,buff);
+            }
+            { // Beta
+              auto PsiQK = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[2*nd+1],QK);
+              assert(PsiQK.size(0) == nb);
+              Sp3Tensor_ref Lbnl(to_address(LQKbnl[nq0+number_of_symmetric_Q+Qsym_map[Q]][QK].origin()),
+                                                {nocc_max,nchol_max,nmo_max});
+              Sp3Tensor_ref Lbln(to_address(LQKbln[nq0+number_of_symmetric_Q+Qsym_map[Q]][QK].origin()),
+                                                {nocc_max,nmo_max,nchol_max});
+              ma_rotate_padded::getLakn_Lank_from_Lkin(PsiQK,Likn,Lbln,Lbnl,buff);
+            }
+          } else {
+            auto PsiQK = get_PsiK<SpMatrix>(nmo_per_kp,PsiT[nd],QK);
+            assert(PsiQK.size(0) == na);
+            Sp3Tensor_ref Lbnl(to_address(LQKbnl[nq0+Qsym_map[Q]][QK].origin()),
+                                              {nocc_max,nchol_max,nmo_max});
+            Sp3Tensor_ref Lbln(to_address(LQKbln[nq0+Qsym_map[Q]][QK].origin()),
+                                              {nocc_max,nmo_max,nchol_max});
+            ma_rotate_padded::getLakn_Lank_from_Lkin(PsiQK,Likn,Lbln,Lbnl,buff);
+          }
+        }
+      }
+    }
+  }
   TG.Global().barrier();
+
   if(TG.Node().root()) {
     TG.Cores().all_reduce_in_place_n(to_address(haj.origin()),
                                      haj.num_elements(),std::plus<>());
     for(int Q=0; Q<LQKank.size(); Q++)
       TG.Cores().all_reduce_in_place_n(to_address(LQKank[Q].origin()),
                                        LQKank[Q].num_elements(),std::plus<>());
+
+    for(int Q=0; Q<LQKakn.size(); Q++)
+      TG.Cores().all_reduce_in_place_n(to_address(LQKakn[Q].origin()),
+                                       LQKakn[Q].num_elements(),std::plus<>());
+
+    for(int Q=0; Q<LQKbnl.size(); Q++)
+      TG.Cores().all_reduce_in_place_n(to_address(LQKbnl[Q].origin()),
+                                       LQKbnl[Q].num_elements(),std::plus<>());
+
+    for(int Q=0; Q<LQKbln.size(); Q++)
+      TG.Cores().all_reduce_in_place_n(to_address(LQKbln[Q].origin()),
+                                       LQKbln[Q].num_elements(),std::plus<>());
     std::fill_n(to_address(vn0.origin()),vn0.num_elements(),ComplexType(0.0));
   }
   TG.Node().barrier();
 
-  // calculate (only Q=0) vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] conj(L[0][K][l][j][n])
-  for(int K=0; K<nkpts; K++) {
-    if(K%TG.Node().size() == TG.Node().rank()) {
-      boost::multi::array_ref<SPComplexType,2> Likn(to_address(LQKikn[Q0][K].origin()),
+  // calculate vn0(I,L) = -0.5 sum_K sum_j sum_n L[0][K][i][j][n] conj(L[0][K][l][j][n])
+  for(int Q=0; Q<nkpts; Q++) {
+    for(int K=0; K<nkpts; K++) {
+      if(K%TG.Node().size() == TG.Node().rank()) {
+        int QK = QKtok2[Q][K];
+        int Qm = kminus[Q];
+        if(Q <= Qm) {
+          boost::multi::array_ref<SPComplexType,2> Likn(to_address(LQKikn[Q][K].origin()),
                                                    {nmo_max,nmo_max*nchol_max});
-      using ma::H;
-      ma::product(-0.5,Likn,H(Likn),0.0,vn0[K]);
+          using ma::H;
+          ma::product(-0.5,Likn,H(Likn),1.0,vn0[K]);
+        } else {
+          int QmK = QKtok2[Qm][K];
+          boost::multi::array_ref<SPComplexType,3> Lkin(to_address(LQKikn[Qm][QK].origin()),
+                                                   {nmo_max,nmo_max,nchol_max});
+          boost::multi::array<SPComplexType,3> buff({nmo_max,nmo_max,nchol_max});
+          using std::conj;
+          for(int i=0; i<nmo_max; i++)
+          for(int k=0; k<nmo_max; k++)
+          for(int n=0; n<nchol_max; n++)
+            buff[i][k][n] = conj(Lkin[k][i][n]);
+          boost::multi::array_ref<SPComplexType,2> L_(to_address(buff.origin()),
+                                                   {nmo_max,nmo_max*nchol_max});
+          using ma::H;
+          ma::product(-0.5,L_,H(L_),1.0,vn0[K]);
+        }
+      }
     }
   }
   TG.Node().barrier();
-  // in parallel, whoever has Q=0 calculates and bcasts
 
 //  TG.Node().barrier();
 //  if(TG.Node().root())
@@ -1130,7 +1117,6 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     size_t nqk=0;
     for(int Q=0; Q<nkpts; ++Q) {            // momentum conservation index
       int Qm = kminus[Q];
-      int Qm_ = (Q==Q0?nkpts:Qm);
       for(int Ka=0; Ka<nkpts; ++Ka) {
         int Kk = QKtok2[Q][Ka];
         int Kb = Kk;
@@ -1146,8 +1132,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
 
           SpMatrix_ref Lank(to_address(LQKank[Q][Ka].origin()),
                                            {na*nchol_max,nmo_max});
-          SpMatrix_ref Lbnl(to_address(LQKank[Qm_][Kb].origin()),
-                                           {nb*nchol_max,nmo_max});
+          auto bnl_ptr(to_address(LQKank[Qm][Kb].origin()));
+          if( Q == Qm ) bnl_ptr = to_address(LQKbnl[Qsym_map[Q]][Kb].origin());
+          SpMatrix_ref Lbnl(bnl_ptr,{nb*nchol_max,nmo_max});
+
           SpMatrix Tban({nb,na*nchol_max});
           Sp3Tensor_ref T3ban(Tban.origin(),{nb,na,nchol_max});
           SpMatrix Tabn({na,nb*nchol_max});
@@ -1194,7 +1182,9 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   return HamiltonianOperations(KP3IndexFactorization_batched(
             type,std::move(nmo_per_kp),std::move(nchol_per_kp),std::move(kminus),
             std::move(nocc_per_kp),std::move(QKtok2),std::move(H1),std::move(haj),
-            std::move(LQKikn),std::move(LQKank),std::move(LQKakn),std::move(vn0),
+            std::move(LQKikn),std::move(LQKank),std::move(LQKakn),
+            std::move(LQKbnl),std::move(LQKbln),std::move(Qsym_map),
+            std::move(vn0),
             std::move(gQ),nsampleQ,E0,device_allocator<ComplexType>{},
             global_ncvecs));
 
