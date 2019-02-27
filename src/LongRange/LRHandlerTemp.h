@@ -80,6 +80,7 @@ public:
   {
     myFunc.reset(ref);
     fillFk(ref.SK->KLists);
+    fillFkg(ref.SK->KLists);
   }
 
   LRHandlerBase* makeClone(ParticleSet& ref)
@@ -91,6 +92,7 @@ public:
   {
     InitBreakup(ref.LRBox,1);
     fillFk(ref.SK->KLists);
+    fillFkg(ref.SK->KLists);
     LR_rc=Basis.get_rc();
   }
 
@@ -101,6 +103,7 @@ public:
     myFunc.reset(ref,rs);
     InitBreakup(ref.LRBox,1);
     fillFk(ref.SK->KLists);
+    fillFkg(ref.SK->KLists);
     LR_rc=Basis.get_rc();
   }
 
@@ -132,7 +135,7 @@ public:
     mRealType df = myFunc.df(r);
     //RealType df = myFunc.df(r, rinv);
     for(int n=0; n<coefs.size(); n++)
-      df -= coefs[n]*Basis.df(n,r);
+      df -= gcoefs[n]*Basis.df(n,r);
     return df;
   }
 
@@ -154,7 +157,7 @@ public:
     if(r<LR_rc)
     {
       for(int n=0; n<coefs.size(); n++)
-        dv += coefs[n]*Basis.df(n,r);
+        dv += gcoefs[n]*Basis.df(n,r);
     }
     else
       dv=myFunc.df(r);
@@ -187,6 +190,14 @@ private:
     mRealType FatK=myFunc.Fk(k,Basis.get_rc());
     for(int n=0; n<Basis.NumBasisElem(); n++)
       FatK += coefs[n]*Basis.c(n,k);
+    return FatK;
+  }
+  inline mRealType evalFkg(mRealType k)
+  {
+    //FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
+    mRealType FatK=myFunc.Fk(k,Basis.get_rc());
+    for(int n=0; n<Basis.NumBasisElem(); n++)
+      FatK += gcoefs[n]*Basis.c(n,k);
     return FatK;
   }
   inline mRealType evalXk(mRealType k)
@@ -240,18 +251,23 @@ private:
     //We temporarily store it in Fk, which is replaced with the full FT (0->inf)
     //of V_l(r) after the breakup has been done.
     fillXk(breakuphandler.KList);
+    fillXkg(breakuphandler.KList);
     //Allocate the space for the coefficients.
     coefs.resize(Basis.NumBasisElem()); //This must be after SetupKVecs.
-    
+    gcoefs.resize(Basis.NumBasisElem());
+ 
     mRealType chisqr(0.0);
+    mRealType chisqr_grad(0.0);
     chisqr=breakuphandler.DoBreakup(Fk.data(),coefs.data()); //Fill array of coefficients.
+    chisqr_grad=breakuphandler.DoGradBreakup(Fkg.data(),gcoefs.data()); //Fill array of coefficients.
     //I want this in scientific notation, but I don't want to mess up formatting flags elsewhere.
     //Save stream state.
     std::ios_base::fmtflags app_log_flags( app_log().flags() );
     app_log()<<std::scientific;
     app_log().precision(5);
 
-    app_log()<<"\n   LR Breakup chi^2 = "<<chisqr<<std::endl;
+    app_log()<<"\n   LR Breakup Energy chi^2 = "<<chisqr;
+    app_log()<<"\n   LR Breakup  Force chi^2 = "<<chisqr_grad<<std::endl;
     
     //reset the app_log() formatting.
     app_log().flags(app_log_flags);
@@ -267,6 +283,17 @@ private:
       Fk[ki] = evalXk(k); //Call derived fn.
     }
   }
+ 
+  void fillXkg(std::vector<TinyVector<mRealType,2> >& KList)
+  {
+    Fkg.resize(KList.size());
+    for(int ki=0; ki<KList.size(); ki++)
+    {
+      mRealType k=KList[ki][0];
+      Fkg[ki] = evalXk(k); //Call derived fn.
+    }
+  }
+
 
   void fillFk(KContainer& KList)
   {
@@ -281,6 +308,24 @@ private:
       Fk_symm[ks]=uk;
       while(ki<KList.kshell[ks+1] && ki<Fk.size())
         Fk[ki++]=uk;
+    }
+    //for(int ki=0; ki<KList.kpts_cart.size(); ki++){
+    //  RealType k=dot(KList.kpts_cart[ki],KList.kpts_cart[ki]);
+    //  k=std::sqrt(k);
+    //  Fk[ki] = evalFk(k); //Call derived fn.
+    //}
+  }
+  void fillFkg(KContainer& KList)
+  {
+    Fkg.resize(KList.kpts_cart.size());
+    const std::vector<int>& kshell(KList.kshell);
+    if(MaxKshell >= kshell.size())
+      MaxKshell=kshell.size()-1;
+    for(int ks=0,ki=0; ks<MaxKshell; ks++)
+    {
+      mRealType uk=evalFkg(std::sqrt(KList.ksq[ki]));
+      while(ki<KList.kshell[ks+1] && ki<Fk.size())
+        Fkg[ki++]=uk;
     }
     //for(int ki=0; ki<KList.kpts_cart.size(); ki++){
     //  RealType k=dot(KList.kpts_cart[ki],KList.kpts_cart[ki]);
