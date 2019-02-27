@@ -1331,7 +1331,7 @@ DiracDeterminantCUDA::NLratios_CPU
     {
       for (int iq=0; iq<numQuad; iq++)
       {
-        //The following line should be replaced with Phi->evaluateValues
+        //The following line should be replaced with Phi->evaluateDetRatios
         //Phi->evaluate(W, quadPoints[index], phi);
         ValueType ratio = 0.0;
         for (int i=0; i<NumOrbitals; i++)
