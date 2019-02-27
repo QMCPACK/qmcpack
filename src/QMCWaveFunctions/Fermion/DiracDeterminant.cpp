@@ -135,8 +135,9 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   UpdateMode=ORB_PBYP_PARTIAL;
   GradType rv;
 
-  // check invRow_id against WorkingIndex to ensure getInvRow() called before ratioGrad()
-  // This is not a safety check. Some code paths do call ratioGrad without calling evalGrad first.
+  // This is an optimization.
+  // check invRow_id against WorkingIndex to see if getInvRow() has been called already
+  // Some code paths call evalGrad before calling ratioGrad.
   if(invRow_id != WorkingIndex)
   {
     invRow_id = WorkingIndex;
@@ -264,6 +265,8 @@ void DiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
   buf.get(PhaseValue);
+  // start with invRow labelled invalid
+  invRow_id = -1;
   BufferTimer.stop();
 }
 
@@ -279,6 +282,7 @@ DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
   Phi->evaluate(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
+  // This is an optimization.
   // check invRow_id against WorkingIndex to see if getInvRow() has been called
   // This is intended to save redundant compuation in TM1 and TM3
   if(invRow_id != WorkingIndex)
