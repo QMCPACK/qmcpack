@@ -18,10 +18,10 @@
 #include<cassert>
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Memory/custom_pointers.hpp"
-#include "AFQMC/Numerics/detail/lapack_cpu.hpp"
+#include "AFQMC/Numerics/detail/CPU/lapack_cpu.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cublas_wrapper.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cusolver_wrapper.hpp"
-#include "AFQMC/Kernels/setIdentity.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/setIdentity.cuh"
 
 namespace qmc_cuda 
 {

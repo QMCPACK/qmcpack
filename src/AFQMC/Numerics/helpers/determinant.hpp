@@ -19,7 +19,7 @@
 #if defined(QMC_CUDA)
 #include <boost/stacktrace.hpp>
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
-#include "AFQMC/Kernels/determinant.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/determinant.cuh"
 #endif
 
 namespace ma 

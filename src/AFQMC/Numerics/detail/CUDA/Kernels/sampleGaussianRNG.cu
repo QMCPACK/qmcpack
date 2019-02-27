@@ -17,8 +17,8 @@
 #include<cuda.h>
 #include "curand.h"
 #include<cuda_runtime.h>
-#include "AFQMC/Kernels/cuda_settings.h"
-#include "AFQMC/Kernels/zero_complex_part.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/zero_complex_part.cuh"
 #define QMC_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 

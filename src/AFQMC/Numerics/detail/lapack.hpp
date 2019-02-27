@@ -16,7 +16,7 @@
 #define AFQMC_LAPACK_OPTIONS_HPP
 
 #include<cassert>
-#include "AFQMC/Numerics/detail/lapack_cpu.hpp"
+#include "AFQMC/Numerics/detail/CPU/lapack_cpu.hpp"
 #if defined(QMC_CUDA)
 #include "AFQMC/Numerics/detail/CUDA/lapack_cuda_gpu_ptr.hpp"
 //#include "AFQMC/Numerics/detail/CUDA/lapack_cuda_catch_all.hpp"

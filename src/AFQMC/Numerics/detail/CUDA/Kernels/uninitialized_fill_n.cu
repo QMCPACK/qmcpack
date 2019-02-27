@@ -22,7 +22,7 @@
 #include <thrust/uninitialized_fill.h>
 #define QMC_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
-//#include "AFQMC/Kernels/strided_range.hpp"
+//#include "AFQMC/Numerics/detail/CUDA/Kernels/strided_range.hpp"
 
 namespace kernels 
 {

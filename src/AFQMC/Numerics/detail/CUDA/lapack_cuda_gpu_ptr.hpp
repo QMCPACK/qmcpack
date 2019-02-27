@@ -20,7 +20,7 @@
 #include "AFQMC/Memory/custom_pointers.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cublas_wrapper.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cusolver_wrapper.hpp"
-#include "AFQMC/Kernels/setIdentity.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/setIdentity.cuh"
 
 namespace qmc_cuda 
 {

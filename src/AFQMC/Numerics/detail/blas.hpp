@@ -17,7 +17,7 @@
 
 #include<cassert>
 #include "AFQMC/Numerics/detail/utilities.hpp"
-#include "AFQMC/Numerics/detail/blas_cpu.hpp"
+#include "AFQMC/Numerics/detail/CPU/blas_cpu.hpp"
 #if defined(QMC_CUDA)
 #include "AFQMC/Numerics/detail/CUDA/blas_cuda_gpu_ptr.hpp"
 #include "AFQMC/Numerics/detail/CUDA/blas_cuda_catch_all.hpp"

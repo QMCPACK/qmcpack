@@ -22,12 +22,12 @@
 #include "AFQMC/Numerics/detail/CUDA/cublas_wrapper.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cublasXt_wrapper.hpp"
 // hand coded kernels for blas extensions
-#include "AFQMC/Kernels/adotpby.cuh"
-#include "AFQMC/Kernels/axty.cuh"
-#include "AFQMC/Kernels/sum.cuh"
-#include "AFQMC/Kernels/adiagApy.cuh"
-#include "AFQMC/Kernels/acAxpbB.cuh"
-#include "AFQMC/Kernels/zero_complex_part.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/adotpby.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/axty.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/sum.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/adiagApy.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/acAxpbB.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/zero_complex_part.cuh"
 
 // Currently available:
 // Lvl-1: dot, axpy, scal

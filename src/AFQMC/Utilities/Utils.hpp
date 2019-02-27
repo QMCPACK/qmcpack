@@ -27,7 +27,7 @@
 
 #include "AFQMC/Memory/custom_pointers.hpp"
 #ifdef QMC_CUDA
-#include "AFQMC/Kernels/sampleGaussianRNG.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/sampleGaussianRNG.cuh"
 #endif
 
 namespace qmcplusplus 

@@ -18,9 +18,9 @@
 #include<cassert>
 #if defined(QMC_CUDA)
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
-#include "AFQMC/Kernels/batched_dot_wabn_wban.cuh"
-#include "AFQMC/Kernels/batched_Tab_to_Klr.cuh"
-#include "AFQMC/Kernels/vbias_from_v1.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/batched_dot_wabn_wban.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/batched_Tab_to_Klr.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/vbias_from_v1.cuh"
 #endif
 
 namespace ma

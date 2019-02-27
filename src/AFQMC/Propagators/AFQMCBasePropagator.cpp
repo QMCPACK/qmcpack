@@ -7,7 +7,7 @@
 #include "AFQMC/Propagators/AFQMCBasePropagator.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
-#include "AFQMC/Kernels/construct_X.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/construct_X.cuh"
 
 namespace qmcplusplus 
 {

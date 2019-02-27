@@ -16,8 +16,8 @@
 #include <thrust/complex.h>
 #include <thrust/reduce.h>
 #include <thrust/device_ptr.h>
-#include "AFQMC/Kernels/strided_range.hpp"
-#include "AFQMC/Kernels/strided_2Drange.hpp"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/strided_range.hpp"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/strided_2Drange.hpp"
 #define QMC_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 

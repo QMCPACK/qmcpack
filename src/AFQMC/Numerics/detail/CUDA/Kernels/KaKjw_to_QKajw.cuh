@@ -17,7 +17,7 @@
 
 #include<cassert>
 #include <complex>
-#include "AFQMC/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
 
 namespace kernels
 {

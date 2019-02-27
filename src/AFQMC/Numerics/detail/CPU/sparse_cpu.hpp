@@ -19,7 +19,7 @@
 #define AFQMC_SPARSE_CPU_HPP
 
 #if defined(HAVE_MKL)
-#include "AFQMC/Numerics/detail/mkl_spblas.h"
+#include "AFQMC/Numerics/detail/CPU/mkl_spblas.h"
 #endif
 #include<cassert>
 #include<complex>

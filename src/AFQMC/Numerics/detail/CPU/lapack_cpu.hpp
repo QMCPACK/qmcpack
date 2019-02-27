@@ -29,7 +29,7 @@
 #define AFQMC_LAPACK_CPU_H
 
 // generic header for blas routines
-#include "AFQMC/Numerics/detail/Blasf.h"
+#include "AFQMC/Numerics/detail/CPU/Blasf.h"
 #include "AFQMC/Numerics/detail/utilities.hpp"
 
 namespace ma 

@@ -29,7 +29,7 @@
 #define AFQMC_BLAS_CPU_H
 
 // generic header for blas routines
-#include "AFQMC/Numerics/detail/Blasf.h"
+#include "AFQMC/Numerics/detail/CPU/Blasf.h"
 
 #if defined(HAVE_MKL)
 inline CBLAS_TRANSPOSE cblas_operation(char Op) {

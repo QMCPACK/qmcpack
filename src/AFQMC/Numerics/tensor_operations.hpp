@@ -19,10 +19,10 @@
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #if defined(QMC_CUDA)
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
-#include "AFQMC/Kernels/KaKjw_to_KKwaj.cuh"
-#include "AFQMC/Kernels/KaKjw_to_QKajw.cuh"
-#include "AFQMC/Kernels/vKKwij_to_vwKiKj.cuh"
-#include "AFQMC/Kernels/term_by_term_matrix_vec.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_KKwaj.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_QKajw.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/vKKwij_to_vwKiKj.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/term_by_term_matrix_vec.cuh"
 #endif
 
 namespace ma

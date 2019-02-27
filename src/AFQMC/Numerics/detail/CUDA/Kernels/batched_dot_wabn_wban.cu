@@ -17,11 +17,11 @@
 #include<cuda.h>
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
-#include "AFQMC/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
 #define QMC_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #if __CUDA_ARCH__ < 600
-#include "AFQMC/Kernels/myAtomicAdd.cu"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/myAtomicAdd.cu"
 #endif
 
 namespace kernels 
