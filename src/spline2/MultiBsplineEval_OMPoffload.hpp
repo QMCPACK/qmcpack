@@ -17,5 +17,6 @@
 #define SPLINE2_MULTIEINSPLINE_EVAL_OFFLOAD_HPP
 
 #include <spline2/MultiBsplineVGLH_OMPoffload.hpp>
+#include <spline2/MultiBsplineValue_OMPoffload.hpp>
 
 #endif

@@ -20,8 +20,8 @@
  * Function signatures modified anticipating its use by a class that can perform data parallel execution
  * - evaluate(...., int first, int last)
  */
-#ifndef SPLINE2_MULTIEINSPLINE_VGLH_OFFLOAD_HPP
-#define SPLINE2_MULTIEINSPLINE_VGLH_OFFLOAD_HPP
+#ifndef SPLINE2_OFFLOAD_MULTIEINSPLINE_VGLH_HPP
+#define SPLINE2_OFFLOAD_MULTIEINSPLINE_VGLH_HPP
 
 #include "OpenMP/OMPstd.hpp"
 #include "spline2/MultiBsplineData.hpp"
