@@ -266,6 +266,15 @@ public:
       std::vector<RealType>& dhpsioverpsi,
       bool compute_deriv);
 
+  /** evaluate local energy and derivatives w.r.t ionic coordinates.  
+  * @param P target particle set (electrons)
+  * @param ions source particle set (ions)
+  * @param psi Trial wave function
+  * @param hf_terms  Re [(dH)Psi]/Psi
+  * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
+  * @param wf_grad  Re (dPsi/Psi)
+  * @return Local Energy.
+  */
   Return_t evaluateIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
                                              ParticleSet::ParticlePos_t& hf_terms,
                                              ParticleSet::ParticlePos_t& pulay_terms, 
