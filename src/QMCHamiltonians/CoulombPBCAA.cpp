@@ -36,11 +36,11 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
   DistanceTableData *d_aa = DistanceTable::add(ref,DT_SOA_PREFERRED);
   PtclRefName=d_aa->Name;
   initBreakup(ref);
-  if(!is_active)
-  {
+//  if(!is_active)
+//  {
     //d_aa->evaluate(ref);
     update_source(ref);
-  }
+//  }
   prefix="F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
@@ -125,6 +125,15 @@ CoulombPBCAA::evaluate(ParticleSet& P)
   return Value;
 }
 
+CoulombPBCAA::Return_t
+CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
+                                    ParticleSet::ParticlePos_t& hf_terms,
+                                    ParticleSet::ParticlePos_t& pulay_terms)
+{
+  hf_terms-= forces;
+  //No pulay term.
+  return Value;
+}
 
 #if !defined(REMOVE_TRACEMANAGER)
 CoulombPBCAA::Return_t
