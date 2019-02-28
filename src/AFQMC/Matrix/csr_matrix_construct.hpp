@@ -27,6 +27,7 @@
 
 #include "Configuration.h"
 #include <Utilities/FairDivide.h>
+#include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "mpi3/shared_window.hpp"
@@ -60,19 +61,19 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA,
   int_type nr, nc;
   if(comm.rank()==0) {
     if(TA == 'N') {
-      nr = M.shape()[0];
-      nc = M.shape()[1];
+      nr = M.size(0);
+      nc = M.size(1);
       counts.resize(nr);
       for(int_type i=0; i<nr; i++)
         for(int_type j=0; j<nc; j++)
           if(std::abs(M[i][j]) > cutoff)
             ++counts[i];
     } else {
-      nr = M.shape()[1];
-      nc = M.shape()[0];
+      nr = M.size(1);
+      nc = M.size(0);
       counts.resize(nr);
-      for(int_type i=0; i<M.shape()[0]; i++)
-        for(int_type j=0; j<M.shape()[1]; j++)
+      for(int_type i=0; i<M.size(0); i++)
+        for(int_type j=0; j<M.size(1); j++)
           if(std::abs(M[i][j]) > cutoff)
             ++counts[j];
     }
@@ -82,7 +83,8 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA,
   if(comm.rank()!=0) counts.resize(nr);
   comm.broadcast_n(counts.begin(),counts.size());
   
-  CSR csr_mat(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},counts,boost::mpi3::intranode::allocator<typename CSR::value_type>(comm));
+  CSR csr_mat(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},counts,
+                            qmcplusplus::afqmc::shared_allocator<typename CSR::value_type>(comm));
 
   if(comm.rank()==0) {
     if(TA == 'N') {
@@ -91,17 +93,18 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA,
           if(std::abs(M[i][j]) > cutoff)
             csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(M[i][j]));
     } else if(TA == 'T') {
-      for(int_type i=0; i<M.shape()[1]; i++)
-        for(int_type j=0; j<M.shape()[0]; j++)
+      for(int_type i=0; i<M.size(1); i++)
+        for(int_type j=0; j<M.size(0); j++)
           if(std::abs(M[j][i]) > cutoff)
             csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(M[j][i]));
     } else if(TA == 'H') {
-      for(int_type i=0; i<M.shape()[1]; i++)
-        for(int_type j=0; j<M.shape()[0]; j++)
+      for(int_type i=0; i<M.size(1); i++)
+        for(int_type j=0; j<M.size(0); j++)
           if(std::abs(M[j][i]) > cutoff)
             csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(conj(M[j][i])));
     }
   }
+  csr_mat.remove_empty_spaces();
   comm.barrier();
 
   return csr_mat;
@@ -127,7 +130,6 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
   using IType = typename CSR::index_type;
   using PType = typename CSR::int_type;
   using UCSR = typename CSR::base; 
-  //using UCSR = ucsr_matrix<VType,IType,PType,boost::mpi3::intranode::allocator<VType>,ma::sparse::is_root>;
 
   std::vector<std::size_t> counts(nr);
   if(TA=='N') 
@@ -143,7 +145,8 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
   Timer.reset("G0");
   Timer.start("G0");
 
-  UCSR ucsr_mat(std::tuple<std::size_t,std::size_t>{nr, nc}, std::tuple<std::size_t,std::size_t>{0,0}, counts, boost::mpi3::intranode::allocator<VType>(comm));
+  UCSR ucsr_mat(std::tuple<std::size_t,std::size_t>{nr, nc}, std::tuple<std::size_t,std::size_t>{0,0}, counts, 
+                    qmcplusplus::afqmc::shared_allocator<VType>(comm));
 
   for(std::size_t r=0; r<comm.size(); r++) {
     comm.barrier();
@@ -177,15 +180,15 @@ template<class CSR,
          class task_group>
 CSR construct_csr_matrix_from_distributed_ucsr(typename CSR::base && ucsr, task_group &TG) { 
 
-  if(ucsr.shape()[0]==0 || ucsr.shape()[1]==0) return CSR(std::move(ucsr));; 
+  if(ucsr.size(0)==0 || ucsr.size(1)==0) return CSR(std::move(ucsr));; 
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
 
   std::size_t ak0,ak1;
-  std::tie(ak0, ak1) = FairDivideBoundary(std::size_t(coreid),ucsr.shape()[0],std::size_t(ncores));
+  std::tie(ak0, ak1) = FairDivideBoundary(std::size_t(coreid),ucsr.size(0),std::size_t(ncores));
 
   std::vector<std::size_t> counts_local(ak1-ak0);
-  std::vector<std::size_t> counts_global(ucsr.shape()[0]);
+  std::vector<std::size_t> counts_global(ucsr.size(0));
   for(std::size_t r=ak0, r0=0; r<ak1; ++r, ++r0) {
     counts_local[r0] = std::size_t(*ucsr.pointers_end(r)-*ucsr.pointers_begin(r));     
     counts_global[r] = counts_local[r0]; 
@@ -210,8 +213,8 @@ CSR construct_csr_matrix_from_distributed_ucsr(typename CSR::base && ucsr, task_
       auto c0 = cols.begin();
       std::copy(counts_local.begin(),counts_local.end(),counts.begin());
       for(std::size_t r=ak0, r0=0; r<ak1; ++r,++r0) {
-        v0 = std::copy_n( std::addressof(*ucsr.non_zero_values_data(r)), counts[r0], v0); 
-        c0 = std::copy_n( std::addressof(*ucsr.non_zero_indices2_data(r)), counts[r0], c0); 
+        v0 = std::copy_n( to_address(ucsr.non_zero_values_data(r)), counts[r0], v0); 
+        c0 = std::copy_n( to_address(ucsr.non_zero_indices2_data(r)), counts[r0], c0); 
       }
     }
     TG.Cores().broadcast_n(vals.begin(),sz_per_node[ni],ni);
@@ -528,13 +531,13 @@ typename CSR::template matrix_view<integer> local_balanced_partition(CSR& M, tas
   using std::size_t;
   using array_ = std::array<size_t,4>;
   if(TG.getNCoresPerTG() == 1) {
-    return M[array_{0,M.shape()[0],0,M.shape()[1]}]; 
+    return M[array_{0,M.size(0),0,M.size(1)}]; 
   } else {
     std::vector<size_t> bounds(TG.getNCoresPerTG()+1);
     if(TG.getCoreID()==0) {
-      std::vector<size_t> indx(M.shape()[0]+1);
+      std::vector<size_t> indx(M.size(0)+1);
       indx[0] = size_t(0);
-      for(size_t i=0, cnt=0; i<M.shape()[0]; i++) {
+      for(size_t i=0, cnt=0; i<M.size(0); i++) {
         cnt += size_t(M.pointers_end()[i]-M.pointers_begin()[i]);
         indx[i+1] = cnt;
       }  
@@ -551,8 +554,8 @@ typename CSR::template matrix_view<integer> local_balanced_partition(CSR& M, tas
       }
     }
     TG.Node().broadcast_n(bounds.begin(),bounds.size());
-    return M[array_{bounds[TG.getLocalTGRank()],bounds[TG.getLocalTGRank()+1],0,M.shape()[1]}]; 
-    //return M[array_{0,M.shape()[0],0,M.shape()[1]}];
+    return M[array_{bounds[TG.getLocalTGRank()],bounds[TG.getLocalTGRank()+1],0,M.size(1)}]; 
+    //return M[array_{0,M.size(0),0,M.size(1)}];
   }
 } 
 

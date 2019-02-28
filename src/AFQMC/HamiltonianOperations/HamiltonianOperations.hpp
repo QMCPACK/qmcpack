@@ -25,6 +25,7 @@
 #include "AFQMC/HamiltonianOperations/THCOps.hpp"
 #ifdef QMC_COMPLEX
 #include "AFQMC/HamiltonianOperations/KP3IndexFactorization.hpp"
+#include "AFQMC/HamiltonianOperations/KP3IndexFactorization_batched.hpp"
 #include "AFQMC/HamiltonianOperations/KPTHCOps.hpp"
 #endif
 
@@ -137,7 +138,11 @@ class dummy_HOps
 
 #ifdef QMC_COMPLEX
 class HamiltonianOperations:
-        public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,SparseTensor<ComplexType,ComplexType>,KP3IndexFactorization,KPTHCOps>
+        public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,
+                                SparseTensor<ComplexType,ComplexType>,
+                                KP3IndexFactorization,
+                                KP3IndexFactorization_batched,
+                                KPTHCOps>
 #else
 class HamiltonianOperations:
         public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,
@@ -164,6 +169,7 @@ class HamiltonianOperations:
     explicit HamiltonianOperations(STCR&& other) : variant(std::move(other)) {}
 #else
     explicit HamiltonianOperations(KP3IndexFactorization&& other) : variant(std::move(other)) {}
+    explicit HamiltonianOperations(KP3IndexFactorization_batched&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(KPTHCOps&& other) : variant(std::move(other)) {}
 #endif
     explicit HamiltonianOperations(STCC&& other) : variant(std::move(other)) {}
@@ -175,6 +181,7 @@ class HamiltonianOperations:
     explicit HamiltonianOperations(STCR const& other) = delete;
 #else
     explicit HamiltonianOperations(KP3IndexFactorization const& other) = delete;
+    explicit HamiltonianOperations(KP3IndexFactorization_batched const& other) = delete;
     explicit HamiltonianOperations(KPTHCOps const& other) = delete;
 #endif
     explicit HamiltonianOperations(STCC const& other) = delete;
@@ -233,6 +240,21 @@ class HamiltonianOperations:
             *this
         );
     }
+
+/*
+    template<class MatA, class MatB>
+    void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int nd=0) {
+        boost::apply_visitor(
+            [&](auto&& s){
+                if constexpr(typename std::is_convertible<std::>::value)
+                    s.vbias(G,std::forward<MatB>(v),a,c,nd);
+                else
+                    throw 0;
+            },
+            *this
+        );
+    }
+*/
 
     int local_number_of_cholesky_vectors() const{
         return boost::apply_visitor(

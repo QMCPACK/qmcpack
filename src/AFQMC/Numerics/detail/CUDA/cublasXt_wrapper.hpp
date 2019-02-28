@@ -19,7 +19,7 @@
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
 #include "cublasXt.h"
-#include "AFQMC/Memory/CUDA/cuda_utilities.hpp"
+#include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace cublas 
 {

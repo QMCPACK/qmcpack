@@ -25,6 +25,11 @@
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/config.0.h"
 
+#include "AFQMC/Memory/custom_pointers.hpp"
+#ifdef QMC_CUDA
+#include "AFQMC/Numerics/detail/CUDA/Kernels/sampleGaussianRNG.cuh"
+#endif
+
 namespace qmcplusplus 
 { 
 
@@ -303,7 +308,7 @@ template<class Mat,
         >
 void sampleGaussianFields(Mat&& M, RandomNumberGenerator_& rng)
 {
-  for(int i=0, iend=M.shape()[0]; i<iend; ++i)
+  for(int i=0, iend=M.size(0); i<iend; ++i)
     sampleGaussianFields(M[i],rng);
 }
 
@@ -324,6 +329,15 @@ void sampleGaussianFields_n(T* V, int n, RandomNumberGenerator_& rng)
     V[n-1]=std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2);
   }
 }
+
+#ifdef QMC_CUDA
+template<class T,
+        class Dummy>
+void sampleGaussianFields_n(qmc_cuda::cuda_gpu_ptr<T> V, int n, Dummy &r) 
+{
+  kernels::sampleGaussianRNG(to_address(V),n,qmc_cuda::afqmc_curand_generator);
+}
+#endif
 
 }
 

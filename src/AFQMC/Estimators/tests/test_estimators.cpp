@@ -115,9 +115,9 @@ const char *wlk_xml_block =
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.shape()[0]==2);
-    REQUIRE(initial_guess.shape()[1]==NMO);
-    REQUIRE(initial_guess.shape()[2]==NAEA);
+    REQUIRE(initial_guess.size(0)==2);
+    REQUIRE(initial_guess.size(1)==NMO);
+    REQUIRE(initial_guess.size(2)==NAEA);
     wset.resize(nwalk,initial_guess[0],initial_guess[0]);
     using EstimPtr = std::shared_ptr<EstimatorBase>;
     std::vector<EstimPtr> estimators;
@@ -159,12 +159,13 @@ const char *wlk_xml_block =
     // identical to the mixed estimate.
     boost::multi::array<ComplexType,3> OrbMat;
     readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+    SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
     boost::multi::array<ComplexType,2> G;
     G.reextent({NMO,NMO});
-    auto Ovlp = SDet.MixedDensityMatrix_noHerm(OrbMat[0],OrbMat[0],G);
+    ComplexType Ovlp;
+    SDet.MixedDensityMatrix_noHerm(OrbMat[0],OrbMat[0],G,&Ovlp);
     verify_approx(G, BPRDM[0]);
-    Ovlp = SDet.MixedDensityMatrix_noHerm(OrbMat[1],OrbMat[1],G);
+    SDet.MixedDensityMatrix_noHerm(OrbMat[1],OrbMat[1],G,&Ovlp);
     verify_approx(G, BPRDM[1]);
 
   }
