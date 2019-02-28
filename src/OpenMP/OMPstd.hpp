@@ -12,6 +12,9 @@
 /** @file OMPstd.hpp
  */
 
+#ifndef QMCPLUSPLUS_OPENMP_STD_H
+#define QMCPLUSPLUS_OPENMP_STD_H
+
 namespace OMPstd
 {
   template <typename T>
@@ -22,3 +25,4 @@ namespace OMPstd
       x[id]=value;
   }
 }
+#endif
