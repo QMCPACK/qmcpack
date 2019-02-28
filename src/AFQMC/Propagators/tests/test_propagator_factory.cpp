@@ -58,10 +58,10 @@ namespace qmcplusplus
 
 using namespace afqmc;
 
-TEST_CASE("propg_fac_shared", "[propagator_factory]")
+template<class Allocator>
+void propg_fac_shared(boost::mpi3::communicator & world)
 {
-  OHMMS::Controller->initialize(0, NULL);
-  auto world = boost::mpi3::environment::get_world_instance();
+  using pointer = device_ptr<ComplexType>;
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -98,6 +98,8 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
 
+    Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
+
 const char *wlk_xml_block =
 "<WalkerSet name=\"wset0\">  \
   <parameter name=\"walker_type\">closed</parameter>  \
@@ -124,9 +126,9 @@ const char *wlk_xml_block =
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.shape()[0]==2);
-    REQUIRE(initial_guess.shape()[1]==NMO);
-    REQUIRE(initial_guess.shape()[2]==NAEA);
+    REQUIRE(initial_guess.size(0)==2);
+    REQUIRE(initial_guess.size(1)==NMO);
+    REQUIRE(initial_guess.size(2)==NAEA);
     wset.resize(nwalk,initial_guess[0],initial_guess[0]);
 //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
 
@@ -142,25 +144,26 @@ const char *propg_xml_block =
     PropgFac.push(prop_name,doc4.getRoot());
     Propagator& prop = PropgFac.getPropagator(TG,prop_name,wfn,&rng);
 
+std::cout<<setprecision(12);
     wfn.Energy(wset);
     {
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       app_log()<<" Initial Energy: " <<(eav/ov).real() <<std::endl;
     }
     double tot_time=0;
     RealType dt=0.01;
-    RealType Eshift=std::abs(wset[0].overlap());
+    RealType Eshift=std::abs(ComplexType(*wset[0].overlap()));
     for(int i=0; i<4; i++) {
       prop.Propagate(2,wset,Eshift,dt,1);
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -171,8 +174,8 @@ const char *propg_xml_block =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -184,8 +187,8 @@ const char *propg_xml_block =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -196,13 +199,15 @@ const char *propg_xml_block =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=5*2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
       wfn.Orthogonalize(wset,true);
     }
+
+    TimerManager.print(nullptr);
 
   }
 }
@@ -274,9 +279,9 @@ const char *wlk_xml_block =
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.shape()[0]==2);
-    REQUIRE(initial_guess.shape()[1]==NMO);
-    REQUIRE(initial_guess.shape()[2]==NAEA);
+    REQUIRE(initial_guess.size(0)==2);
+    REQUIRE(initial_guess.size(1)==NMO);
+    REQUIRE(initial_guess.size(2)==NAEA);
     wset.resize(nwalk,initial_guess[0],initial_guess[0]);
 //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
 
@@ -301,21 +306,21 @@ const char *propg_xml_block1 =
     {
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       app_log()<<" Initial Energy: " <<(eav/ov).real() <<std::endl;
     }
     double tot_time=0;
     RealType dt=0.01;
-    RealType Eshift=std::abs(wset[0].overlap());
+    RealType Eshift=std::abs(ComplexType(*wset[0].overlap()));
     for(int i=0; i<4; i++) {
       prop.Propagate(2,wset,Eshift,dt,1);
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -326,8 +331,8 @@ const char *propg_xml_block1 =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -339,8 +344,8 @@ const char *propg_xml_block1 =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=4*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -351,8 +356,8 @@ const char *propg_xml_block1 =
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
       for(auto it=wset.begin(); it!=wset.end(); ++it) {
-        eav += it->weight()*(it->energy());
-        ov += it->weight();
+        eav += *it->weight()*(it->energy());
+        ov += *it->weight();
       }
       tot_time+=5*2*dt;
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
@@ -360,6 +365,24 @@ const char *propg_xml_block1 =
     }
 
   }
+}
+
+TEST_CASE("propg_fac_shared", "[propagator_factory]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+
+#ifdef QMC_CUDA
+  auto node = world.split_shared(world.rank());
+
+  qmc_cuda::CUDA_INIT(node);
+  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+#else
+  using Alloc = shared_allocator<ComplexType>;
+#endif
+
+  propg_fac_shared<Alloc>(world);
+
 }
 
 }

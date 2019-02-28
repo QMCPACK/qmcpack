@@ -67,17 +67,17 @@ template< class Container,
         >
 void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, Container& Q, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6, bool reserve_to_fit_=true)
 {
-  int NAEA = Alpha->shape()[0]; 
-  int NAEB = Alpha->shape()[0]; 
-  int NMO = Alpha->shape()[1]; 
+  int NAEA = Alpha->size(0); 
+  int NAEB = Alpha->size(0); 
+  int NMO = Alpha->size(1); 
   if(type==COLLINEAR)
-    NAEB = Beta->shape()[0];
+    NAEB = Beta->size(0);
   int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
-  int nvec = CholMat.shape()[1];  
+  int nvec = CholMat.size(1);  
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();  
 
-  assert(CholMat.shape()[0]==NMO*NMO); 
+  assert(CholMat.size(0)==NMO*NMO); 
   assert(kN > k0); 
   if(type == CLOSED && kN > NMO)
     APP_ABORT(" Error: kN > NMO in halfRotateCholeskyMatrix. \n");
@@ -99,11 +99,11 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   int Qdim = NAEA*(kN_alpha-k0_alpha) + NAEB*(kN_beta-k0_beta);
   if(transpose) {
     //if(not check_shape(Q,{nvec,Qdim}))
-    if(not (Q.shape()[0]==nvec && Q.shape()[1]==Qdim))
+    if(not (Q.size(0)==nvec && Q.size(1)==Qdim))
       APP_ABORT(" Error: Container Q has incorrect dimensions in halfRotateCholeskyMatrix. \n");
   } else {
     //if(not check_shape(Q,{Qdim,nvec}))
-    if(not (Q.shape()[0]==Qdim && Q.shape()[1]==nvec))
+    if(not (Q.size(0)==Qdim && Q.size(1)==nvec))
       APP_ABORT(" Error: Container Q has incorrect dimensions in halfRotateCholeskyMatrix. \n");
   }  
   std::tie(ak0,ak1) = FairDivideBoundary(coreid,Qdim,ncores);
@@ -111,7 +111,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   if(type==NONCOLLINEAR)
     APP_ABORT(" GHF not yet implemented. \n");
 
-  boost::multi::array<SPComplexType,1> vec(extensions<1u>{nvec});
+  boost::multi::array<SPComplexType,1> vec(iextensions<1u>{nvec});
   if(reserve_to_fit_) {
     std::vector<std::size_t> sz_per_row( Qdim ); 
     int cnt=0;
@@ -233,20 +233,20 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
 template<class task_group>
 SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_group& TG, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, double cutoff=1e-6)
 {
-  int NAEA = Alpha->shape()[0]; 
-  int NAEB = Alpha->shape()[0]; 
-  int NMO = Alpha->shape()[1]; 
+  int NAEA = Alpha->size(0); 
+  int NAEB = Alpha->size(0); 
+  int NMO = Alpha->size(1); 
   if(type!=CLOSED)
-    NAEB = Beta->shape()[0];
+    NAEB = Beta->size(0);
   int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
-  int nvec = CholMat.shape()[1];  
+  int nvec = CholMat.size(1);  
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();  
 
 // to speed up, generate new communicator for eqv_nodes and split full work among all
 // cores in this comm. Then build from distributed container?
 
-  assert(CholMat.shape()[0]==NMO*NMO); 
+  assert(CholMat.size(0)==NMO*NMO); 
 
   std::size_t Qdim = NAEA*NMO;
   if(type==COLLINEAR) Qdim += NAEB*NMO;
@@ -257,7 +257,7 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_g
   if(type==NONCOLLINEAR)
     APP_ABORT(" GHF not yet implemented. \n");
 
-  boost::multi::array<SPComplexType,1> vec(extensions<1u>{nvec});
+  boost::multi::array<SPComplexType,1> vec(iextensions<1u>{nvec});
   std::vector<std::size_t> sz_per_row( nvec ); 
   std::size_t cnt=0;
   for(int a=0; a<NAEA; a++) {
@@ -298,7 +298,7 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_g
   }
   TG.Node().all_reduce_in_place_n(sz_per_row.begin(),sz_per_row.size(),std::plus<>());
 
-  using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
+  using Alloc = shared_allocator<SPComplexType>;
   SpCType_shm_csr_matrix::base ucsr(tp_ul_ul{nvec,Qdim},tp_ul_ul{0,0},sz_per_row,Alloc(TG.Node()));
 
   using mat_wrapper = csr::matrix_emplace_wrapper<SpCType_shm_csr_matrix::base>;  
@@ -354,17 +354,17 @@ template< class MultiArray2D,
         >
 void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, MultiArray2D&& Q, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6)
 {
-  int NAEA = Alpha->shape()[0]; 
+  int NAEA = Alpha->size(0); 
   int NAEB = 0; 
-  int NMO = Alpha->shape()[1]; 
+  int NMO = Alpha->size(1); 
   if(type==COLLINEAR)
-    NAEB = Beta->shape()[0];
+    NAEB = Beta->size(0);
   int NEL = (type==CLOSED)?(NAEA):(NAEA+NAEB);
-  int nvec = CholMat.shape()[1];  
+  int nvec = CholMat.size(1);  
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();  
 
-  assert(CholMat.shape()[0]==NMO*NMO); 
+  assert(CholMat.size(0)==NMO*NMO); 
   if(type == CLOSED && kN > NMO)
     APP_ABORT(" Error: kN > NMO in halfRotateCholeskyMatrix. \n");
 
@@ -384,11 +384,11 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   int ak0, ak1;
   int Qdim = NAEA*(kN_alpha-k0_alpha) + NAEB*(kN_beta-k0_beta);
   if(transpose) {
-    assert(Q.shape()[0]==nvec);
-    assert(Q.shape()[1]==Qdim);
+    assert(Q.size(0)==nvec);
+    assert(Q.size(1)==Qdim);
   } else {
-    assert(Q.shape()[0]==Qdim);
-    assert(Q.shape()[1]==nvec);
+    assert(Q.size(0)==Qdim);
+    assert(Q.size(1)==nvec);
   }
   std::tie(ak0,ak1) = FairDivideBoundary(coreid,Qdim,ncores);
 
@@ -467,32 +467,33 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
   TG.Node().barrier();
 }
 
+// design for compact arrays
 template< class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
 void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, 
                                 MultiArray3DC&& Lank, MultiArray2D && buff)  
 {
-  int na = Aai.shape()[0];
-  int ni = Aai.shape()[1];
-  int nk = Likn.shape()[1];
-  int nchol = Likn.shape()[2];
-  assert(Likn.shape()[0]==ni);
-  assert(Lank.shape()[0]==na);
-  assert(Lank.shape()[1]==nchol);
-  assert(Lank.shape()[2]==nk);
-  assert(buff.shape()[0] >= nk);
-  assert(buff.shape()[1] >= nchol);
+  int na = Aai.size(0);
+  int ni = Aai.size(1);
+  int nk = Likn.size(1);
+  int nchol = Likn.size(2);
+  assert(Likn.size(0)==ni);
+  assert(Lank.size(0)==na);
+  assert(Lank.size(1)==nchol);
+  assert(Lank.size(2)==nk);
+  assert(buff.size(0) >= nk);
+  assert(buff.size(1) >= nchol);
 
   using element = typename std::decay<MultiArray3DC>::type::element;
-  boost::multi::array_ref<element,2> Li_kn(std::addressof(*Likn.origin()),
+  boost::multi::array_ref<element,2> Li_kn(to_address(Likn.origin()),
                                            {ni,nk*nchol});      
-  boost::multi::array_ref<element,2> La_kn(std::addressof(*Lank.origin()),
+  boost::multi::array_ref<element,2> La_kn(to_address(Lank.origin()),
                                            {na,nk*nchol});      
 
   ma::product(Aai,Li_kn,La_kn);
   for(int a=0; a<na; a++) {
-    boost::multi::array_ref<element,2> Lkn(std::addressof(*Lank[a].origin()),
+    boost::multi::array_ref<element,2> Lkn(to_address(Lank[a].origin()),
                                            {nk,nchol});
-    boost::multi::array_ref<element,2> Lnk(std::addressof(*Lank[a].origin()),
+    boost::multi::array_ref<element,2> Lnk(to_address(Lank[a].origin()),
                                            {nchol,nk});
     buff({0,nk},{0,nchol}) = Lkn;
     ma::transpose(buff({0,nk},{0,nchol}),Lnk);
@@ -503,18 +504,18 @@ template< class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class M
 void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
                                 MultiArray3DC&& Lank, MultiArray2D && buff)
 {
-  int na = Aai.shape()[0];
-  int ni = Aai.shape()[1];
-  int nk = Lkin.shape()[0];
-  int nchol = Lkin.shape()[2];
-  assert(Lkin.shape()[0]==ni);
-  assert(Lank.shape()[0]==na);
-  assert(Lank.shape()[1]==nchol);
-  assert(Lank.shape()[2]==nk);
+  int na = Aai.size(0);
+  int ni = Aai.size(1);
+  int nk = Lkin.size(0);
+  int nchol = Lkin.size(2);
+  assert(Lkin.size(0)==ni);
+  assert(Lank.size(0)==na);
+  assert(Lank.size(1)==nchol);
+  assert(Lank.size(2)==nk);
   assert(buff.num_elements() >= na*nchol);
 
   using Type = typename std::decay<MultiArray3DC>::type::element;
-  boost::multi::array_ref<Type,2> bna(std::addressof(*buff.origin()),
+  boost::multi::array_ref<Type,2> bna(to_address(buff.origin()),
                                       {nchol,na});      
   // Lank[a][n][k] = sum_i Aai[a][i] conj(Lkin[k][i][n])
   for(int k=0; k<nk; k++) {
@@ -526,6 +527,78 @@ void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
 }
 
 }
+
+namespace ma_rotate_padded
+{
+
+// designed for padded arrays
+template< class MultiArray2DA, class MultiArray3DB, class MultiArray3DC>
+void getLakn_Lank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, 
+                  MultiArray3DC&& Lakn, MultiArray3DC&& Lank)
+{
+  int na = Aai.size(0);
+  int ni = Aai.size(1);
+
+  int nmo = Likn.size(0);
+  int nchol = Likn.size(2);
+  assert(Likn.size(1)==nmo);
+
+  assert(Lakn.size(1)==nmo);
+  assert(Lakn.size(2)==nchol);
+
+  assert(Lakn.size(0)==Lank.size(0));
+  assert(Lank.size(1)==nchol);
+  assert(Lank.size(2)==nmo);
+
+  using elmB = typename std::decay<MultiArray3DB>::type::element;
+  using elmC = typename std::decay<MultiArray3DC>::type::element;
+
+  boost::multi::array_ref<elmB,2,decltype(Likn.origin())> Li_kn(Likn.origin(),{ni,nmo*nchol});
+  boost::multi::array_ref<elmC,2,decltype(Lakn.origin())> La_kn(Lakn.origin(),{na,nmo*nchol});
+
+  ma::product(Aai,Li_kn,La_kn);
+  for(int a=0; a<na; a++) 
+    ma::transpose(Lakn[a],Lank[a]);
+}
+
+template< class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
+void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin,
+                                MultiArray3DC&& Lakn,  MultiArray3DC&& Lank, MultiArray2D && buff)
+{
+  int na = Aai.size(0);
+  int ni = Aai.size(1);
+
+  int nmo =  Lkin.size(0);
+  int nchol =  Lkin.size(2);
+  assert(Lkin.size(1)==nmo);
+
+  assert(Lakn.size(1)==nmo);
+  assert(Lakn.size(2)==nchol);
+
+  assert(Lakn.size(0)==Lank.size(0));
+  assert(Lank.size(1)==nchol);
+  assert(Lank.size(2)==nmo);
+
+  assert(buff.num_elements() >= na*nchol);
+
+  using ptr2 = typename std::decay<MultiArray2D>::type::element_ptr;
+  using elm2 = typename std::decay<MultiArray2D>::type::element;
+
+  boost::multi::array_ref<elm2,2,ptr2> bna(buff.origin(),{nchol,na});
+  // Lakn[a][k][n] = sum_i Aai[a][i] conj(Lkin[k][i][n])
+  for(int k=0; k<nmo; k++) {
+    ma::product(ma::H(Lkin[k].sliced(0,ni)),ma::T(Aai),bna);
+    for(int a=0; a<na; a++) 
+      Lakn[a][k] = bna({0,nchol},a);
+  }
+  for(int a=0; a<na; a++) 
+    ma::transpose(Lakn[a],Lank[a]);
+}
+
+
+}
+
+
 
 }
 

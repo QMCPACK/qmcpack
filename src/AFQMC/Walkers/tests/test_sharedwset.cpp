@@ -38,7 +38,7 @@
 //#include "mpi3/environment.hpp"
 
 //#include "AFQMC/Walkers WalkerSetFactory.hpp"
-#include "AFQMC/Walkers/SharedWalkerSet.h"
+#include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Walkers/WalkerIO.hpp"
 
 using std::string;
@@ -70,11 +70,13 @@ void myREQUIRE(const std::complex<double>& a, const std::complex<double>& b)
 template<class M1, class M2>
 void check(M1&& A, M2& B)
 {
-  REQUIRE(A.shape()[0] == B.shape()[0]);
-  REQUIRE(A.shape()[1] == B.shape()[1]);
-  for(int i=0; i<A.shape()[0]; i++)
-    for(int j=0; j<A.shape()[1]; j++)
-      myREQUIRE(A[i][j],B[i][j]);
+  using element1 = typename std::decay<M1>::type::element;
+  using element2 = typename std::decay<M2>::type::element;
+  REQUIRE(A.size(0) == B.size(0));
+  REQUIRE(A.size(1) == B.size(1));
+  for(int i=0; i<A.size(0); i++)
+    for(int j=0; j<A.size(1); j++)
+      myREQUIRE(element1(A[i][j]),element2(B[i][j]));
 }
 
 using namespace afqmc;
@@ -84,6 +86,11 @@ void test_basic_walker_features(bool serial)
 {
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
+
+#ifdef QMC_CUDA
+  qmc_cuda::CUDA_INIT(node);
+#endif
 
   using Type = std::complex<double>;
 
@@ -120,60 +127,60 @@ const char *xml_block =
   bool okay = doc.parseFromString(xml_block);
   REQUIRE(okay);
 
-  SharedWalkerSet wset(TG,doc.getRoot(),info,&rng);
+  WalkerSet wset(TG,doc.getRoot(),info,&rng);
   wset.resize(nwalkers,initA,initB);
 
   REQUIRE( wset.size() == nwalkers );
   int cnt=0;
   double tot_weight=0.0;
-  for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
+  for(WalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     auto sm = it->SlaterMatrix(Alpha);
     REQUIRE( it->SlaterMatrix(Alpha) == initA );
-    it->weight() = cnt*1.0+0.5;
-    it->overlap() = cnt*1.0+0.5;
-    it->E1() = cnt*1.0+0.5;
-    it->EXX() = cnt*1.0+0.5;
-    it->EJ() = cnt*1.0+0.5;
+    *it->weight() = cnt*1.0+0.5;
+    *it->overlap() = cnt*1.0+0.5;
+    *it->E1() = cnt*1.0+0.5;
+    *it->EXX() = cnt*1.0+0.5;
+    *it->EJ() = cnt*1.0+0.5;
     tot_weight+=cnt*1.0+0.5;
     cnt++;
   }
   REQUIRE(cnt==nwalkers);
   cnt=0;
-  for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
+  for(WalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     Type d_(cnt*1.0+0.5);
-    REQUIRE( it->weight() == d_ );
-    REQUIRE( it->overlap() == cnt*1.0+0.5 );
-    REQUIRE( it->E1() == cnt*1.0+0.5 );
-    REQUIRE( it->EXX() == cnt*1.0+0.5 );
-    REQUIRE( it->EJ() == cnt*1.0+0.5 );
+    REQUIRE( *it->weight() == d_ );
+    REQUIRE( *it->overlap() == cnt*1.0+0.5 );
+    REQUIRE( *it->E1() == cnt*1.0+0.5 );
+    REQUIRE( *it->EXX() == cnt*1.0+0.5 );
+    REQUIRE( *it->EJ() == cnt*1.0+0.5 );
     cnt++;
   }
 
   wset.reserve(20);
   REQUIRE(wset.capacity() == 20);
   cnt=0;
-  for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
-    REQUIRE( it->weight() == cnt*1.0+0.5 );
-    REQUIRE( it->overlap() == cnt*1.0+0.5 );
-    REQUIRE( it->E1() == cnt*1.0+0.5 );
-    REQUIRE( it->EXX() == cnt*1.0+0.5 );
-    REQUIRE( it->EJ() == cnt*1.0+0.5 );
+  for(WalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
+    REQUIRE( *it->weight() == cnt*1.0+0.5 );
+    REQUIRE( *it->overlap() == cnt*1.0+0.5 );
+    REQUIRE( *it->E1() == cnt*1.0+0.5 );
+    REQUIRE( *it->EXX() == cnt*1.0+0.5 );
+    REQUIRE( *it->EJ() == cnt*1.0+0.5 );
     cnt++;
   }
   for(int i=0; i<wset.size(); i++) {
-    REQUIRE( wset[i].weight() == i*1.0+0.5 );
-    REQUIRE( wset[i].overlap() == i*1.0+0.5 );
-    REQUIRE( wset[i].E1() == i*1.0+0.5 );
-    REQUIRE( wset[i].EXX() == i*1.0+0.5 );
-    REQUIRE( wset[i].EJ() == i*1.0+0.5 );
+    REQUIRE( *wset[i].weight() == i*1.0+0.5 );
+    REQUIRE( *wset[i].overlap() == i*1.0+0.5 );
+    REQUIRE( *wset[i].E1() == i*1.0+0.5 );
+    REQUIRE( *wset[i].EXX() == i*1.0+0.5 );
+    REQUIRE( *wset[i].EJ() == i*1.0+0.5 );
   }
   for(int i=0; i<wset.size(); i++) {
     auto w = wset[i];
-    REQUIRE( w.weight() == i*1.0+0.5 );
-    REQUIRE( w.overlap() == i*1.0+0.5 );
-    REQUIRE( w.E1() == i*1.0+0.5 );
-    REQUIRE( w.EXX() == i*1.0+0.5 );
-    REQUIRE( w.EJ() == i*1.0+0.5 );
+    REQUIRE( *w.weight() == i*1.0+0.5 );
+    REQUIRE( *w.overlap() == i*1.0+0.5 );
+    REQUIRE( *w.E1() == i*1.0+0.5 );
+    REQUIRE( *w.EXX() == i*1.0+0.5 );
+    REQUIRE( *w.EJ() == i*1.0+0.5 );
   }
   REQUIRE(wset.get_TG_target_population() == nwalkers);
   REQUIRE(wset.get_global_target_population() == nwalkers*TG.getNumberOfTGs());
@@ -188,6 +195,7 @@ const char *xml_block =
 
   std::vector<ComplexType> Wdata;
   wset.popControl(Wdata);
+  REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
   REQUIRE(wset.get_TG_target_population() == nwalkers);
   REQUIRE(wset.get_global_target_population() == nwalkers*TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == nwalkers*TG.getNumberOfTGs());
@@ -195,9 +203,9 @@ const char *xml_block =
   REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
   for(int i=0; i<wset.size(); i++) {
     auto w = wset[i];
-    REQUIRE( w.overlap() == w.E1());
-    REQUIRE( w.EXX() == w.E1());
-    REQUIRE( w.EJ() == w.E1());
+    REQUIRE( *w.overlap() == *w.E1());
+    REQUIRE( *w.EXX() == *w.E1());
+    REQUIRE( *w.EJ() == *w.E1());
   }
 
   wset.clean();
@@ -210,6 +218,11 @@ void test_hyperslab()
 {
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
+
+#ifdef QMC_CUDA
+  qmc_cuda::CUDA_INIT(node);
+#endif
 
   using Type = std::complex<double>;
   using Matrix = boost::multi::array<Type,2>;
@@ -351,8 +364,13 @@ void test_walker_io()
 {
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
 
   using Type = std::complex<double>;
+
+#ifdef QMC_CUDA
+  qmc_cuda::CUDA_INIT(node);
+#endif
 
   //assert(world.size()%2 == 0);
 
@@ -383,20 +401,20 @@ const char *xml_block =
   bool okay = doc.parseFromString(xml_block);
   REQUIRE(okay);
 
-  SharedWalkerSet wset(TG,doc.getRoot(),info,&rng);
+  WalkerSet wset(TG,doc.getRoot(),info,&rng);
   wset.resize(nwalkers,initA,initB);
 
   REQUIRE( wset.size() == nwalkers );
   int cnt=0;
   double tot_weight=0.0;
-  for(SharedWalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
+  for(WalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     auto sm = it->SlaterMatrix(Alpha);
     REQUIRE( it->SlaterMatrix(Alpha) == initA );
-    it->weight() = cnt*1.0+0.5;
-    it->overlap() = cnt*1.0+0.5;
-    it->E1() = cnt*1.0+0.5;
-    it->EXX() = cnt*1.0+0.5;
-    it->EJ() = cnt*1.0+0.5;
+    *it->weight() = cnt*1.0+0.5;
+    *it->overlap() = cnt*1.0+0.5;
+    *it->E1() = cnt*1.0+0.5;
+    *it->EXX() = cnt*1.0+0.5;
+    *it->EJ() = cnt*1.0+0.5;
     tot_weight+=cnt*1.0+0.5;
     cnt++;
   }
@@ -435,15 +453,15 @@ const char *xml_block =
       }
     }
 
-    SharedWalkerSet wset2(TG,doc.getRoot(),info,&rng);
+    WalkerSet wset2(TG,doc.getRoot(),info,&rng);
     restartFromHDF5(wset2,nwalkers,"dummy_walkers.h5",read,true);
     for(int i=0; i < nwalkers; i++) {
       REQUIRE( wset[i].SlaterMatrix(Alpha) == wset2[i].SlaterMatrix(Alpha) );
-      REQUIRE( wset[i].weight() == wset2[i].weight() );
-      REQUIRE( wset[i].overlap() == wset2[i].overlap() );
-      REQUIRE( wset[i].E1() == wset2[i].E1() );
-      REQUIRE( wset[i].EXX() == wset2[i].EXX() );
-      REQUIRE( wset[i].EJ() == wset2[i].EJ() );
+      REQUIRE( *wset[i].weight() == *wset2[i].weight() );
+      REQUIRE( *wset[i].overlap() == *wset2[i].overlap() );
+      REQUIRE( *wset[i].E1() == *wset2[i].E1() );
+      REQUIRE( *wset[i].EXX() == *wset2[i].EXX() );
+      REQUIRE( *wset[i].EJ() == *wset2[i].EJ() );
     }
 
   }

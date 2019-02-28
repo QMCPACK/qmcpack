@@ -18,7 +18,7 @@
 #include <memory>
 #include <stack>
 #include <mpi.h>
-#include<AFQMC/config.0.h>
+#include<AFQMC/config.h>
 #include <Utilities/FairDivide.h>
 
 #include "AFQMC/Walkers/WalkerConfig.hpp"
@@ -51,9 +51,9 @@ inline int swapWalkersSimple(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNod
   NumContexts = comm.size();
   MyContext = comm.rank();  
   static_assert(std::decay<Mat>::type::dimensionality==2, "Wrong dimensionality");
-  if(wset.single_walker_size() != Wexcess.shape()[1])
+  if(wset.single_walker_size() != Wexcess.size(1))
     throw std::runtime_error("Array dimension error in swapWalkersSimple().");
-  if(1 != Wexcess.strides()[1]) 
+  if(1 != Wexcess.stride(1)) 
     throw std::runtime_error("Array shape error in swapWalkersSimple().");
   if(CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
     throw std::runtime_error("Array dimension error in swapWalkersSimple().");
@@ -81,7 +81,7 @@ inline int swapWalkersSimple(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNod
   if(deltaN <=0 && wset.size() != CurrNumPerNode[MyContext])
     throw std::runtime_error("error in swapWalkersSimple().");
   if(deltaN > 0 && 
-    (wset.size() != NewNumPerNode[MyContext] || int(Wexcess.shape()[0]) != deltaN))
+    (wset.size() != NewNumPerNode[MyContext] || int(Wexcess.size(0)) != deltaN))
     throw std::runtime_error("error in swapWalkersSimple().");
   int wlk_size = wset.single_walker_size();
   std::vector<ComplexType> buff;
@@ -119,10 +119,10 @@ inline int swapWalkersAsync(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode
   NumContexts = comm.size();
   MyContext = comm.rank();  
   static_assert(std::decay<Mat>::type::dimensionality==2, "Wrong dimensionality");
-  if(wset.single_walker_size() != Wexcess.shape()[1])
+  if(wset.single_walker_size() != Wexcess.size(1))
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
-  if(1 != Wexcess.strides()[1] || 
-     (Wexcess.shape()[0] > 0 && Wexcess.shape()[1] != Wexcess.strides()[0])) 
+  if(1 != Wexcess.stride(1) || 
+     (Wexcess.size(0) > 0 && Wexcess.size(1) != Wexcess.stride(0))) 
     throw std::runtime_error("Array shape error in swapWalkersAsync().");
   if(CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
@@ -152,7 +152,7 @@ inline int swapWalkersAsync(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode
   if(deltaN <=0 && wset.size() != CurrNumPerNode[MyContext])
     throw std::runtime_error("error(1) in swapWalkersAsync().");
   if(deltaN > 0 &&
-    (wset.size() != NewNumPerNode[MyContext] || int(Wexcess.shape()[0]) != deltaN))
+    (wset.size() != NewNumPerNode[MyContext] || int(Wexcess.size(0)) != deltaN))
     throw std::runtime_error("error(2) in swapWalkersAsync().");
   std::vector<ComplexType*> buffers;
   std::vector<boost::mpi3::request> requests;
@@ -167,7 +167,7 @@ inline int swapWalkersAsync(WlkBucket& wset, Mat&& Wexcess, IVec& CurrNumPerNode
       }
       else
       {
-        requests.emplace_back( comm.isend(Wexcess[nsend].origin(),Wexcess[nsend].origin()+countSend*Wexcess.shape()[1],minus[ic],plus[ic]+1999) );
+        requests.emplace_back( comm.isend(Wexcess[nsend].origin(),Wexcess[nsend].origin()+countSend*Wexcess.size(1),minus[ic],plus[ic]+1999) );
         nsend += countSend;
         countSend = 1;
       }

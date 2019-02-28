@@ -21,7 +21,7 @@
 #include "AFQMC/config.h"
 #include "boost/variant.hpp"
 
-#include "AFQMC/Propagators/AFQMCSharedPropagator.h"
+#include "AFQMC/Propagators/AFQMCBasePropagator.h"
 #include "AFQMC/Propagators/AFQMCDistributedPropagatorDistCV.h"
 #include "AFQMC/Propagators/AFQMCDistributedPropagator.h"
 
@@ -60,7 +60,7 @@ class dummy_Propagator
 };
 }
 
-class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCSharedPropagator,
+class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCBasePropagator,
                                         AFQMCDistributedPropagatorDistCV,
                                         AFQMCDistributedPropagator>
 {
@@ -69,8 +69,8 @@ class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCSharedPropa
     Propagator() { 
       APP_ABORT(" Error: Reached default constructor of Propagator. \n");  
     } 
-    explicit Propagator(AFQMCSharedPropagator&& other) : variant(std::move(other)) {}
-    explicit Propagator(AFQMCSharedPropagator const& other) = delete;
+    explicit Propagator(AFQMCBasePropagator&& other) : variant(std::move(other)) {}
+    explicit Propagator(AFQMCBasePropagator const& other) = delete;
 
     explicit Propagator(AFQMCDistributedPropagatorDistCV&& other) : variant(std::move(other)) {}
     explicit Propagator(AFQMCDistributedPropagatorDistCV const& other) = delete;
