@@ -77,7 +77,7 @@ public:
 		if(s != MPI_SUCCESS) throw std::runtime_error("rank not available");
 		return rank;
 	}
-	bool root() const{return rank() == 0;}
+	bool root() const{return (not empty()) and (rank() == 0);}
 	int size() const{
 		int size = -1;
 		int s = MPI_Group_size(impl_, &size);
