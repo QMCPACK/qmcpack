@@ -39,26 +39,30 @@ namespace afqmc
 
   // Input H1(i,j) = h(i,j) + sum_n vMF(n)*CholMat(i,j,n) + vn0(i,j)  
   // Output: sparse 1 body propagator = exp(-0.5*dt*H1) 
-  template<class MultiArray2D>  
-  P1Type generate1BodyPropagator(TaskGroup_& TG, RealType cut, RealType dt, MultiArray2D const& H1)
+  template<class P_Type, class MultiArray2D>  
+  P_Type generate1BodyPropagator(TaskGroup_& TG, RealType cut, RealType dt, MultiArray2D const& H1)
   {
     assert(H1.dimensionality==2);
-    assert(H1.shape()[0] == H1.shape()[1]);
-    assert(H1.strides()[1] == 1);
-    int NMO = H1.shape()[0];
+    assert(H1.size(0) == H1.size(1));
+    assert(H1.stride(1) == 1);
+    int NMO = H1.size(0);
     if(TG.TG_local().root()) {   
       boost::multi::array<ComplexType,2> v({NMO,NMO});
-      std::fill_n(v.origin(),v.num_elements(),ComplexType(0));  
+      fill_n(v.origin(),v.num_elements(),ComplexType(0));  
+
+      // running on host regardless
+      boost::multi::array<ComplexType,2> h1_(H1);
 
       for(int i=0; i<NMO; i++) 
-        ma::axpy(-0.5*dt,H1[i],v[i]);
+        ma::axpy(-0.5*dt,h1_[i],v[i]);
 
       boost::multi::array<ComplexType,2> P = ma::exp(v);
 
-      return csr::shm::construct_csr_matrix_single_input<P1Type>(P,cut,'N',TG.TG_local());
+// need a version of this that works with gpu_ptr!!!
+      return csr::shm::construct_csr_matrix_single_input<P_Type>(P,cut,'N',TG.TG_local());
     } else {
       boost::multi::array<ComplexType,2> P({1,1});
-      return csr::shm::construct_csr_matrix_single_input<P1Type>(P,cut,'N',TG.TG_local());
+      return csr::shm::construct_csr_matrix_single_input<P_Type>(P,cut,'N',TG.TG_local());
     }    
   }
 

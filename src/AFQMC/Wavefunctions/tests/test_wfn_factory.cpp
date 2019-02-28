@@ -20,7 +20,9 @@
 #include "io/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/SimpleRandom.h"
+#include <Utilities/NewTimer.h>
 #include "Utilities/Timer.h"
+#include "Utilities/OutputManager.h"
 
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
@@ -38,8 +40,6 @@
 
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
-#include "AFQMC/Utilities/myTimer.h"
-#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 
@@ -60,10 +60,11 @@ namespace qmcplusplus
 
 using namespace afqmc;
 
-TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
+template<class Allocator>
+void wfn_fac_sdet(boost::mpi3::communicator & world)
 {
-  OHMMS::Controller->initialize(0, NULL);
-  auto world = boost::mpi3::environment::get_world_instance();
+
+  using pointer = device_ptr<ComplexType>;
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -101,6 +102,8 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
+
+    Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
 const char *wlk_xml_block_closed =
 "<WalkerSet name=\"wset0\">  \
@@ -146,9 +149,9 @@ const char *wlk_xml_block_noncol =
       //nwalk=nw;
       WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
       auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-      REQUIRE(initial_guess.shape()[0]==2);
-      REQUIRE(initial_guess.shape()[1]==NMO);
-      REQUIRE(initial_guess.shape()[2]==NAEA);
+      REQUIRE(initial_guess.size(0)==2);
+      REQUIRE(initial_guess.size(1)==NMO);
+      REQUIRE(initial_guess.size(2)==NAEA);
 
       if(type == COLLINEAR)
         wset.resize(nwalk,initial_guess[0],
@@ -159,11 +162,11 @@ const char *wlk_xml_block_noncol =
 
       wfn.Overlap(wset);
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
-        REQUIRE(real(it->overlap()) == Approx(1.0));
-        REQUIRE(imag(it->overlap()) == Approx(0.0));
+        REQUIRE(real(*it->overlap()) == Approx(1.0));
+        REQUIRE(imag(*it->overlap()) == Approx(0.0));
       }
 
-      using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+      using CMatrix = ComplexMatrix<Allocator>;
 
       qmcplusplus::Timer Time;
       double t1;
@@ -173,26 +176,26 @@ const char *wlk_xml_block_noncol =
       t1=Time.elapsed();
       if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
         for(auto it = wset.begin(); it!=wset.end(); ++it) {
-          REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-          REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+          REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+          REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
           REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
         }
       } else {
         app_log()<<" E: " <<setprecision(12) <<wset[0].energy() <<" Time: " <<t1 <<std::endl;
-        app_log()<<" E0+E1: " <<setprecision(12) <<wset[0].E1() <<std::endl;
-        app_log()<<" EJ: " <<setprecision(12) <<wset[0].EJ() <<std::endl;
-        app_log()<<" EXX: " <<setprecision(12) <<wset[0].EXX() <<std::endl;
+        app_log()<<" E0+E1: " <<setprecision(12) <<*wset[0].E1() <<std::endl;
+        app_log()<<" EJ: " <<setprecision(12) <<*wset[0].EJ() <<std::endl;
+        app_log()<<" EXX: " <<setprecision(12) <<*wset[0].EXX() <<std::endl;
       }
 
       auto size_of_G = wfn.size_of_G_for_vbias();
       int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
       int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
-      shmCMatrix G({Gdim1,Gdim2},shared_allocator<ComplexType>{TG.TG_local()});
+      CMatrix G({Gdim1,Gdim2},alloc_);
       wfn.MixedDensityMatrix_for_vbias(wset,G);
 
       double sqrtdt = std::sqrt(0.01);
       auto nCV = wfn.local_number_of_cholesky_vectors();
-      shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
+      CMatrix X({nCV,nwalk},alloc_);
       Time.restart();
       wfn.vbias(G,X,sqrtdt);
       TG.local_barrier();
@@ -201,7 +204,7 @@ const char *wlk_xml_block_noncol =
       if(std::abs(file_data.Xsum)>1e-8) {
        for(int n=0; n<nwalk; n++) {
            Xsum=0;
-          for(int i=0; i<X.shape()[0]; i++)
+          for(int i=0; i<X.size(0); i++)
             Xsum += X[i][n];
           REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
           REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
@@ -209,7 +212,7 @@ const char *wlk_xml_block_noncol =
       } else {
         Xsum=0;
         ComplexType Xsum2=0;
-        for(int i=0; i<X.shape()[0]; i++) {
+        for(int i=0; i<X.size(0); i++) {
           Xsum += X[i][0];
           Xsum2 += 0.5*X[i][0]*X[i][0];
         }
@@ -219,7 +222,7 @@ const char *wlk_xml_block_noncol =
 
       int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
       int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
-      shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
+      CMatrix vHS({vdim1,vdim2},alloc_);
       Time.restart();
       wfn.vHS(X,vHS,sqrtdt);
       TG.local_barrier();
@@ -228,7 +231,7 @@ const char *wlk_xml_block_noncol =
       if(std::abs(file_data.Vsum)>1e-8) {
         for(int n=0; n<nwalk; n++) {
           Vsum=0;
-          for(int i=0; i<vHS.shape()[0]; i++)
+          for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][n];
           REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
           REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
@@ -236,14 +239,15 @@ const char *wlk_xml_block_noncol =
       } else {
         Vsum=0;
         if(wfn.transposed_vHS()) {
-          for(int i=0; i<vHS.shape()[1]; i++)
+          for(int i=0; i<vHS.size(1); i++)
             Vsum += vHS[0][i];
         } else {
-          for(int i=0; i<vHS.shape()[0]; i++)
+          for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][0];
         }
         app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<" Time: " <<t1 <<std::endl;
       }
+return;
 
       // Restarting Wavefunction from file
       const char *wfn_xml_block_restart =
@@ -262,9 +266,9 @@ const char *wlk_xml_block_noncol =
 
       WalkerSet wset2(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-      REQUIRE(initial_guess.shape()[0]==2);
-      REQUIRE(initial_guess.shape()[1]==NMO);
-      REQUIRE(initial_guess.shape()[2]==NAEA);
+      REQUIRE(initial_guess.size(0)==2);
+      REQUIRE(initial_guess.size(1)==NMO);
+      REQUIRE(initial_guess.size(2)==NAEA);
 
       if(type == COLLINEAR)
         wset2.resize(nwalk,initial_guess[0],
@@ -275,21 +279,21 @@ const char *wlk_xml_block_noncol =
 
       wfn2.Overlap(wset2);
       for(auto it = wset2.begin(); it!=wset2.end(); ++it) {
-        REQUIRE(real(it->overlap()) == Approx(1.0));
-        REQUIRE(imag(it->overlap()) == Approx(0.0));
+        REQUIRE(real(*it->overlap()) == Approx(1.0));
+        REQUIRE(imag(*it->overlap()) == Approx(0.0));
       }
 
       wfn2.Energy(wset2);
       if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
         for(auto it = wset2.begin(); it!=wset2.end(); ++it) {
-          REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-          REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+          REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+          REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
           REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
         }
       } else {
-        app_log()<<" E0+E1: " <<setprecision(12) <<wset[0].E1() <<std::endl;
-        app_log()<<" EJ: " <<setprecision(12) <<wset[0].EJ() <<std::endl;
-        app_log()<<" EXX: " <<setprecision(12) <<wset[0].EXX() <<std::endl;
+        app_log()<<" E0+E1: " <<setprecision(12) <<*wset[0].E1() <<std::endl;
+        app_log()<<" EJ: " <<setprecision(12) <<*wset[0].EJ() <<std::endl;
+        app_log()<<" EXX: " <<setprecision(12) <<*wset[0].EXX() <<std::endl;
       }
 
       REQUIRE(size_of_G == wfn2.size_of_G_for_vbias());
@@ -301,7 +305,7 @@ const char *wlk_xml_block_noncol =
       if(std::abs(file_data.Xsum)>1e-8) {
         for(int n=0; n<nwalk; n++) {
           Xsum=0;
-          for(int i=0; i<X.shape()[0]; i++)
+          for(int i=0; i<X.size(0); i++)
             Xsum += X[i][n];
           REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
           REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
@@ -309,7 +313,7 @@ const char *wlk_xml_block_noncol =
       } else {
         Xsum=0;
         ComplexType Xsum2(0.0);
-        for(int i=0; i<X.shape()[0]; i++) {
+        for(int i=0; i<X.size(0); i++) {
           Xsum += X[i][0];
           Xsum2 += 0.5*X[i][0]*X[i][0];
         }
@@ -323,14 +327,14 @@ const char *wlk_xml_block_noncol =
       if(std::abs(file_data.Vsum)>1e-8) {
         for(int n=0; n<nwalk; n++) {
           Vsum=0;
-          for(int i=0; i<vHS.shape()[0]; i++)
+          for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][n];
           REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
           REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
         }
       } else {
         Vsum=0;
-        for(int i=0; i<vHS.shape()[0]; i++)
+        for(int i=0; i<vHS.size(0); i++)
           Vsum += vHS[i][0];
         app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
       }
@@ -426,9 +430,9 @@ const char *wlk_xml_block_noncol =
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.shape()[0]==2);
-    REQUIRE(initial_guess.shape()[1]==NMO);
-    REQUIRE(initial_guess.shape()[2]==NAEA);
+    REQUIRE(initial_guess.size(0)==2);
+    REQUIRE(initial_guess.size(1)==NMO);
+    REQUIRE(initial_guess.size(2)==NAEA);
 
     if(type == COLLINEAR)
         wset.resize(nwalk,initial_guess[0],
@@ -439,8 +443,8 @@ const char *wlk_xml_block_noncol =
 
     wfn.Overlap(wset);
     for(auto it = wset.begin(); it!=wset.end(); ++it) {
-      REQUIRE(real(it->overlap()) == Approx(1.0));
-      REQUIRE(imag(it->overlap()) == Approx(0.0));
+      REQUIRE(real(*it->overlap()) == Approx(1.0));
+      REQUIRE(imag(*it->overlap()) == Approx(0.0));
     }
 
     using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
@@ -448,14 +452,14 @@ const char *wlk_xml_block_noncol =
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
-        REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-        REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+        REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+        REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
         REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
       }
     } else {
-      app_log()<<" E0+E1: " <<setprecision(12) <<wset[0].E1() <<std::endl;
-      app_log()<<" EJ: " <<setprecision(12) <<wset[0].EJ() <<std::endl;
-      app_log()<<" EXX: " <<setprecision(12) <<wset[0].EXX() <<std::endl;
+      app_log()<<" E0+E1: " <<setprecision(12) <<*wset[0].E1() <<std::endl;
+      app_log()<<" EJ: " <<setprecision(12) <<*wset[0].EJ() <<std::endl;
+      app_log()<<" EXX: " <<setprecision(12) <<*wset[0].EXX() <<std::endl;
     }
 
     auto size_of_G = wfn.size_of_G_for_vbias();
@@ -474,7 +478,7 @@ const char *wlk_xml_block_noncol =
       for(int n=0; n<nwalk; n++) {
         Xsum=0;
         if(TGwfn.TG_local().root())
-          for(int i=0; i<X.shape()[0]; i++)
+          for(int i=0; i<X.size(0); i++)
             Xsum += X[i][n];
         Xsum = ( TGwfn.TG() += Xsum );
         REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
@@ -483,7 +487,7 @@ const char *wlk_xml_block_noncol =
     } else {
       Xsum=0;
       if(TGwfn.TG_local().root())
-        for(int i=0; i<X.shape()[0]; i++)
+        for(int i=0; i<X.size(0); i++)
           Xsum += X[i][0];
       Xsum = ( TGwfn.TG() += Xsum );
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
@@ -496,7 +500,7 @@ const char *wlk_xml_block_noncol =
         std::copy_n(X.origin(),X.num_elements(),T.origin());
       else
         std::fill_n(T.origin(),T.num_elements(),ComplexType(0.0,0.0));
-      TGwfn.TG().all_reduce_in_place_n(std::addressof(*T.origin()),T.num_elements(),std::plus<>());
+      TGwfn.TG().all_reduce_in_place_n(to_address(T.origin()),T.num_elements(),std::plus<>());
       if(TGwfn.TG_local().root())
         std::copy_n(T.origin(),T.num_elements(),X.origin());
       TGwfn.TG_local().barrier();
@@ -512,7 +516,7 @@ const char *wlk_xml_block_noncol =
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
         if(TGwfn.TG_local().root())
-          for(int i=0; i<vHS.shape()[0]; i++)
+          for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][n];
         Vsum = ( TGwfn.TG() += Vsum );
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
@@ -521,7 +525,7 @@ const char *wlk_xml_block_noncol =
     } else {
       Vsum=0;
       if(TGwfn.TG_local().root())
-        for(int i=0; i<vHS.shape()[0]; i++)
+        for(int i=0; i<vHS.size(0); i++)
           Vsum += vHS[i][0];
       Vsum = ( TGwfn.TG() += Vsum );
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
@@ -544,9 +548,9 @@ const char *wlk_xml_block_noncol =
 
     WalkerSet wset2(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.shape()[0]==2);
-    REQUIRE(initial_guess.shape()[1]==NMO);
-    REQUIRE(initial_guess.shape()[2]==NAEA);
+    REQUIRE(initial_guess.size(0)==2);
+    REQUIRE(initial_guess.size(1)==NMO);
+    REQUIRE(initial_guess.size(2)==NAEA);
 
     if(type == COLLINEAR)
         wset2.resize(nwalk,initial_guess[0],
@@ -557,36 +561,36 @@ const char *wlk_xml_block_noncol =
 
     wfn2.Overlap(wset2);
     for(auto it = wset2.begin(); it!=wset2.end(); ++it) {
-      REQUIRE(real(it->overlap()) == Approx(1.0));
-      REQUIRE(imag(it->overlap()) == Approx(0.0));
+      REQUIRE(real(*it->overlap()) == Approx(1.0));
+      REQUIRE(imag(*it->overlap()) == Approx(0.0));
     }
 
     wfn2.Energy(wset2);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
       for(auto it = wset2.begin(); it!=wset2.end(); ++it) {
-        REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-        REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+        REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+        REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
         REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
       }
     } else {
       app_log()<<" E: " <<wset[0].energy() <<std::endl;
-      app_log()<<" E0+E1: " <<wset[0].E1() <<std::endl;
-      app_log()<<" EJ: " <<wset[0].EJ() <<std::endl;
-      app_log()<<" EXX: " <<wset[0].EXX() <<std::endl;
+      app_log()<<" E0+E1: " <<*wset[0].E1() <<std::endl;
+      app_log()<<" EJ: " <<*wset[0].EJ() <<std::endl;
+      app_log()<<" EXX: " <<*wset[0].EXX() <<std::endl;
     }
 
     REQUIRE(size_of_G == wfn2.size_of_G_for_vbias());
     wfn2.MixedDensityMatrix_for_vbias(wset2,G);
 
     nCV = wfn2.local_number_of_cholesky_vectors();
-    boost::multi::array_ref<ComplexType,2> X2(std::addressof(*X.origin()),{nCV,nwalk});
+    boost::multi::array_ref<ComplexType,2> X2(to_address(X.origin()),{nCV,nwalk});
     wfn2.vbias(G,X2,sqrtdt);
     Xsum=0;
     if(std::abs(file_data.Xsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Xsum=0;
         if(TGwfn.TG_local().root())
-          for(int i=0; i<X2.shape()[0]; i++)
+          for(int i=0; i<X2.size(0); i++)
             Xsum += X2[i][n];
         Xsum = ( TGwfn.TG() += Xsum );
         REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
@@ -595,7 +599,7 @@ const char *wlk_xml_block_noncol =
     } else {
       Xsum=0;
       if(TGwfn.TG_local().root())
-        for(int i=0; i<X2.shape()[0]; i++)
+        for(int i=0; i<X2.size(0); i++)
           Xsum += X2[i][0];
       Xsum = ( TGwfn.TG() += Xsum );
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
@@ -608,7 +612,7 @@ const char *wlk_xml_block_noncol =
         std::copy_n(X2.origin(),X2.num_elements(),T.origin());
       else
         std::fill_n(T.origin(),T.num_elements(),ComplexType(0.0,0.0));
-      TGwfn.TG().all_reduce_in_place_n(std::addressof(*T.origin()),T.num_elements(),std::plus<>());
+      TGwfn.TG().all_reduce_in_place_n(to_address(T.origin()),T.num_elements(),std::plus<>());
       if(TGwfn.TG_local().root())
         std::copy_n(T.origin(),T.num_elements(),X.origin());
       TGwfn.TG_local().barrier();
@@ -621,7 +625,7 @@ const char *wlk_xml_block_noncol =
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
         if(TGwfn.TG_local().root())
-          for(int i=0; i<vHS.shape()[0]; i++)
+          for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][n];
         Vsum = ( TGwfn.TG() += Vsum );
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
@@ -630,7 +634,7 @@ const char *wlk_xml_block_noncol =
     } else {
       Vsum=0;
       if(TGwfn.TG_local().root())
-        for(int i=0; i<vHS.shape()[0]; i++)
+        for(int i=0; i<vHS.size(0); i++)
           Vsum += vHS[i][0];
       Vsum = ( TGwfn.TG() += Vsum );
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
@@ -711,9 +715,9 @@ const char *wlk_xml_block =
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.shape()[0]==2);
-    REQUIRE(initial_guess.shape()[1]==NMO);
-    REQUIRE(initial_guess.shape()[2]==NAEA);
+    REQUIRE(initial_guess.size(0)==2);
+    REQUIRE(initial_guess.size(1)==NMO);
+    REQUIRE(initial_guess.size(2)==NAEA);
     wset.resize(nwalk,initial_guess[0],
                          initial_guess[1](initial_guess.extension(1),{0,NAEB}));
 
@@ -725,12 +729,12 @@ const char *wlk_xml_block =
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
-        REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-        REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+        REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+        REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
         REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
       }
     } else {
-      app_log()<<" E: " <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<std::endl;
+      app_log()<<" E: " <<*wset[0].E1() <<" " <<*wset[0].EXX() <<" " <<*wset[0].EJ() <<std::endl;
     }
 
     auto size_of_G = wfn.size_of_G_for_vbias();
@@ -747,14 +751,14 @@ const char *wlk_xml_block =
     if(std::abs(file_data.Xsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Xsum=0;
-        for(int i=0; i<X.shape()[0]; i++)
+        for(int i=0; i<X.size(0); i++)
           Xsum += X[i][n];
         REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
         REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
       }
     } else {
       Xsum=0;
-      for(int i=0; i<X.shape()[0]; i++)
+      for(int i=0; i<X.size(0); i++)
         Xsum += X[i][0];
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
     }
@@ -769,14 +773,14 @@ const char *wlk_xml_block =
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
-        for(int i=0; i<vHS.shape()[0]; i++)
+        for(int i=0; i<vHS.size(0); i++)
           Vsum += vHS[i][n];
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else {
       Vsum=0;
-      for(int i=0; i<vHS.shape()[0]; i++)
+      for(int i=0; i<vHS.size(0); i++)
         Vsum += vHS[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
@@ -850,9 +854,9 @@ const char *wlk_xml_block =
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.shape()[0]==2);
-    REQUIRE(initial_guess.shape()[1]==NMO);
-    REQUIRE(initial_guess.shape()[2]==NAEA);
+    REQUIRE(initial_guess.size(0)==2);
+    REQUIRE(initial_guess.size(1)==NMO);
+    REQUIRE(initial_guess.size(2)==NAEA);
     wset.resize(nwalk,initial_guess[0],
                          initial_guess[1](initial_guess.extension(1),{0,NAEB}));
 
@@ -864,8 +868,8 @@ const char *wlk_xml_block =
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
-        REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
-        REQUIRE( real(it->EXX()+it->EJ()) == Approx(real(file_data.E2)));
+        REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
+        REQUIRE( real(*it->EXX()+*it->EJ()) == Approx(real(file_data.E2)));
         REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
       }
     } else {
@@ -886,14 +890,14 @@ const char *wlk_xml_block =
     if(std::abs(file_data.Xsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Xsum=0;
-        for(int i=0; i<X.shape()[0]; i++)
+        for(int i=0; i<X.size(0); i++)
           Xsum += X[i][n];
         REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
         REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
       }
     } else {
       Xsum=0;
-      for(int i=0; i<X.shape()[0]; i++)
+      for(int i=0; i<X.size(0); i++)
         Xsum += X[i][0];
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
     }
@@ -908,14 +912,14 @@ const char *wlk_xml_block =
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
-        for(int i=0; i<vHS.shape()[0]; i++)
+        for(int i=0; i<vHS.size(0); i++)
           Vsum += vHS[i][n];
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else {
       Vsum=0;
-      for(int i=0; i<vHS.shape()[0]; i++)
+      for(int i=0; i<vHS.size(0); i++)
         Vsum += vHS[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
@@ -1011,9 +1015,9 @@ const char *wlk_xml_block =
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(initial_guess.shape()[0]==2);
-    REQUIRE(initial_guess.shape()[1]==NMO);
-    REQUIRE(initial_guess.shape()[2]==NAEA);
+    REQUIRE(initial_guess.size(0)==2);
+    REQUIRE(initial_guess.size(1)==NMO);
+    REQUIRE(initial_guess.size(2)==NAEA);
 
 
     std::default_random_engine generator;
@@ -1034,15 +1038,15 @@ const char *wlk_xml_block =
     Time.restart();
     nomsd.Overlap(wset);
     t1=Time.elapsed();
-    app_log()<<" NOMSD Overlap: " <<setprecision(12) <<wset[0].overlap() <<" " <<t1 <<std::endl;
+    app_log()<<" NOMSD Overlap: " <<setprecision(12) <<*wset[0].overlap() <<" " <<t1 <<std::endl;
 #endif
     Time.restart();
     wfn.Overlap(wset);
     t1=Time.elapsed();
-    app_log()<<" PHMSD Overlap: " <<setprecision(12) <<wset[0].overlap() <<" " <<t1 <<std::endl;
+    app_log()<<" PHMSD Overlap: " <<setprecision(12) <<*wset[0].overlap() <<" " <<t1 <<std::endl;
     for(int i=1; i<nwalk; i++) {
-      REQUIRE( real(wset[0].overlap()) == Approx(real(wset[i].overlap())));
-      REQUIRE( imag(wset[0].overlap()) == Approx(imag(wset[i].overlap())));
+      REQUIRE( real(*wset[0].overlap()) == Approx(real(*wset[i].overlap())));
+      REQUIRE( imag(*wset[0].overlap()) == Approx(imag(*wset[i].overlap())));
     }
 
     using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
@@ -1051,21 +1055,21 @@ const char *wlk_xml_block =
     wfn.Energy(wset);
     t1=Time.elapsed();
     app_log()<<" PHMSD E: " <<setprecision(12) <<wset[0].energy() <<" "
-             <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<" " <<t1 <<std::endl;
+             <<*wset[0].E1() <<" " <<*wset[0].EXX() <<" " <<*wset[0].EJ() <<" " <<t1 <<std::endl;
     for(int i=1; i<nwalk; i++) {
-      REQUIRE( real(wset[0].E1()) == Approx(real(wset[i].E1())));
-      REQUIRE( imag(wset[0].E1()) == Approx(imag(wset[i].E1())));
-      REQUIRE( real(wset[0].EJ()) == Approx(real(wset[i].EJ())));
-      REQUIRE( imag(wset[0].EJ()) == Approx(imag(wset[i].EJ())));
-      REQUIRE( real(wset[0].EXX()) == Approx(real(wset[i].EXX())));
-      REQUIRE( imag(wset[0].EXX()) == Approx(imag(wset[i].EXX())));
+      REQUIRE( real(*wset[0].E1()) == Approx(real(*wset[i].E1())));
+      REQUIRE( imag(*wset[0].E1()) == Approx(imag(*wset[i].E1())));
+      REQUIRE( real(*wset[0].EJ()) == Approx(real(*wset[i].EJ())));
+      REQUIRE( imag(*wset[0].EJ()) == Approx(imag(*wset[i].EJ())));
+      REQUIRE( real(*wset[0].EXX()) == Approx(real(*wset[i].EXX())));
+      REQUIRE( imag(*wset[0].EXX()) == Approx(imag(*wset[i].EXX())));
     }
 #ifdef __compare__
     Time.restart();
     nomsd.Energy(wset);
     t1=Time.elapsed();
     app_log()<<" NOMSD E: " <<setprecision(12) <<wset[0].energy() <<" "
-             <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<" " <<t1  <<std::endl;
+             <<*wset[0].E1() <<" " <<*wset[0].EXX() <<" " <<*wset[0].EJ() <<" " <<t1  <<std::endl;
      
       shmCMatrix Gph({2*NMO*NMO,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
       shmCMatrix Gno({2*NMO*NMO,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
@@ -1101,7 +1105,7 @@ else
     if(std::abs(file_data.Xsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Xsum=0;
-        for(int i=0; i<X.shape()[0]; i++)
+        for(int i=0; i<X.size(0); i++)
           Xsum += X[i][n];
         REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
         REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
@@ -1109,7 +1113,7 @@ else
     } else {
       Xsum=0;
       ComplexType Xsum2=0;
-      for(int i=0; i<X.shape()[0]; i++) {
+      for(int i=0; i<X.size(0); i++) {
         Xsum += X[i][0];
         Xsum2 += 0.5*X[i][0]*X[i][0];
       }
@@ -1117,7 +1121,7 @@ else
       app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
       for(int n=1; n<nwalk; n++) {
         ComplexType Xsum_=0;
-        for(int i=0; i<X.shape()[0]; i++)
+        for(int i=0; i<X.size(0); i++)
           Xsum_ += X[i][n];
         REQUIRE( real(Xsum) == Approx(real(Xsum_)) );
         REQUIRE( imag(Xsum) == Approx(imag(Xsum_)) );
@@ -1134,10 +1138,10 @@ else
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
         if(wfn.transposed_vHS())
-          for(int i=0; i<vHS.shape()[1]; i++)
+          for(int i=0; i<vHS.size(1); i++)
             Vsum += vHS[n][i];
         else
-          for(int i=0; i<vHS.shape()[0]; i++)
+          for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][n];
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
@@ -1145,31 +1149,31 @@ else
     } else {
       Vsum=0;
       if(wfn.transposed_vHS())
-        for(int i=0; i<vHS.shape()[1]; i++)
+        for(int i=0; i<vHS.size(1); i++)
           Vsum += vHS[0][i];
       else
-        for(int i=0; i<vHS.shape()[0]; i++)
+        for(int i=0; i<vHS.size(0); i++)
           Vsum += vHS[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
       for(int n=1; n<nwalk; n++) {
         ComplexType Vsum_=0;
         if(wfn.transposed_vHS())
-          for(int i=0; i<vHS.shape()[1]; i++)
+          for(int i=0; i<vHS.size(1); i++)
             Vsum_ += vHS[n][i];
         else
-          for(int i=0; i<vHS.shape()[0]; i++)
+          for(int i=0; i<vHS.size(0); i++)
             Vsum_ += vHS[i][n];
         REQUIRE( real(Vsum) == Approx(real(Vsum_)) );
         REQUIRE( imag(Vsum) == Approx(imag(Vsum_)) );
       }
     }
 
-    boost::multi::array<ComplexType,1> vMF(extensions<1u>{nCV});
+    boost::multi::array<ComplexType,1> vMF(iextensions<1u>{nCV});
     wfn.vMF(vMF);
     ComplexType vMFsum=0;
     {
       vMFsum=0;
-      for(int i=0; i<vMF.shape()[0]; i++)
+      for(int i=0; i<vMF.size(0); i++)
         vMFsum += vMF[i];
       app_log()<<" vMFsum: " <<setprecision(12) <<vMFsum <<std::endl;
     }
@@ -1194,11 +1198,11 @@ else
                    <<std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;
        }
 */
-      boost::multi::array_ref<ComplexType,2> X2(std::addressof(*X.origin())+nCV*nwalk,{nCV,nwalk});
+      boost::multi::array_ref<ComplexType,2> X2(to_address(X.origin())+nCV*nwalk,{nCV,nwalk});
       nomsd.vbias(G_,X2,sqrtdt);
       Xsum=0;
       ComplexType Xsum2(0.0);
-      for(int i=0; i<X2.shape()[0]; i++) {
+      for(int i=0; i<X2.size(0); i++) {
         Xsum += X2[i][0];
         Xsum2 += 0.5*X2[i][0]*X2[i][0];
       }
@@ -1215,10 +1219,10 @@ else
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
         if(nomsd.transposed_vHS())
-          for(int i=0; i<vHS_.shape()[1]; i++)
+          for(int i=0; i<vHS_.size(1); i++)
             Vsum += vHS_[0][i];
         else
-          for(int i=0; i<vHS_.shape()[0]; i++)
+          for(int i=0; i<vHS_.size(0); i++)
             Vsum += vHS_[i][0];
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
@@ -1226,21 +1230,21 @@ else
     } else {
       Vsum=0;
       if(nomsd.transposed_vHS())
-        for(int i=0; i<vHS_.shape()[1]; i++)
+        for(int i=0; i<vHS_.size(1); i++)
           Vsum += vHS_[0][i];
       else
-        for(int i=0; i<vHS_.shape()[0]; i++)
+        for(int i=0; i<vHS_.size(0); i++)
           Vsum += vHS_[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
 
-    boost::multi::array<ComplexType,1> vMF2(extensions<1u>{nCV});
+    boost::multi::array<ComplexType,1> vMF2(iextensions<1u>{nCV});
     nomsd.vMF(vMF2);
     vMFsum=0;
     {
       vMFsum=0;
       app_log()<<" vMF: " <<std::endl;
-      for(int i=0; i<vMF2.shape()[0]; i++) {
+      for(int i=0; i<vMF2.size(0); i++) {
         vMFsum += vMF2[i];
 //        if(std::abs(vMF[i]-vMF2[i]) > 1e-8)
 //          app_log()<<i <<": " <<setprecision(12) <<vMF[i] <<" " <<vMF2[i] <<" " <<std::abs(vMF[i]-vMF2[i]) <<std::endl;
@@ -1250,6 +1254,25 @@ else
 
 #endif
   }
+}
+
+TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+  if(not world.root()) infoLog.pause();
+
+#ifdef QMC_CUDA
+  auto node = world.split_shared(world.rank());
+
+  qmc_cuda::CUDA_INIT(node);
+  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+#else
+  using Alloc = shared_allocator<ComplexType>;
+#endif
+
+  wfn_fac_sdet<Alloc>(world);
+
 }
 
 }

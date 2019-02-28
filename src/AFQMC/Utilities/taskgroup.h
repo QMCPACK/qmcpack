@@ -120,20 +120,44 @@ class TaskGroup_
   TaskGroup_(GlobalTaskGroup& gTG, std::string name, int nn, int nc):
         tgname(name),global_(gTG.Global()),
         node_(gTG.Node()),core_(gTG.Cores()),
+#ifdef QMC_CUDA
+        local_tg_(node_.split(node_.rank(),node_.rank())),
+        tgrp_(),
+        tg_heads_(global_.split(0,global_.rank()))     
+#else
         local_tg_(node_.split(node_.rank()/((nc<1)?(1):(std::min(nc,node_.size()))),node_.rank())),
         tgrp_(),
         tg_heads_(global_.split(node_.rank()%((nc<1)?(1):(std::min(nc,node_.size()))),global_.rank()))     
+#endif
   {
+#ifdef QMC_CUDA
+    if(nc != 1) {
+      nc=1;
+      app_log()<<" WARNING: Code was compiled with QMC_CUDA, setting ncores=1. \n";
+    }
+#endif
     setup(nn,nc);
   }
 
   TaskGroup_(TaskGroup_& other, std::string name, int nn, int nc):
         tgname(name),global_(other.Global()),
         node_(other.Node()),core_(other.Cores()),
+#ifdef QMC_CUDA
+        local_tg_(node_.split(node_.rank(),node_.rank())),
+        tgrp_(),
+        tg_heads_(global_.split(0,global_.rank()))     
+#else
         local_tg_(node_.split(node_.rank()/((nc<1)?(1):(std::min(nc,node_.size()))),node_.rank())),
         tgrp_(),
         tg_heads_(global_.split(node_.rank()%((nc<1)?(1):(std::min(nc,node_.size()))),global_.rank()))     
+#endif
   {
+#ifdef QMC_CUDA
+    if(nc != 1) {
+      nc=1;
+      app_log()<<" WARNING: Code was compiled with QMC_CUDA, setting ncores=1. \n";
+    }
+#endif
     setup(nn,nc);
   }
 

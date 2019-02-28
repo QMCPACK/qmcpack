@@ -181,7 +181,7 @@ class array_of_sequences:
                                 for(size_type i = 0; i != base::size1_; ++i)
                                         for(auto p = base::data_ + base::pointers_begin_[i]; 
                                                  p != base::data_ + base::pointers_end_[i]; ++p)
-                                                Valloc_.destroy(std::addressof(*p));
+                                                Valloc_.destroy(to_address(p));
                         if(base::pointers_begin_ && base::pointers_end_) {
                                 for(size_type i = 0; i != base::size1_; ++i){
                                         Palloc_.destroy(std::addressof(base::pointers_begin_[i]));

@@ -29,6 +29,9 @@ namespace afqmc {
   template<class T>
   inline static std::complex<T>* to_address(std::complex<T>* p) { return p; }
 
+  template<class T>
+  inline static std::complex<T> const* to_address(std::complex<T> const* p) { return p; }
+
   template<class Q, class T,
            typename = typename std::enable_if_t<std::is_fundamental<Q>::value>,
            typename = typename std::enable_if_t<std::is_fundamental<T>::value>>

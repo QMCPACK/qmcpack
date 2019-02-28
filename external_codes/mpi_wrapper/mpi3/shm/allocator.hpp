@@ -1,5 +1,5 @@
 #if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wall -Wfatal-errors -D_TEST_MPI3_SHM_ALLOCATOR $0x.cpp -o $0x.x && time mpirun -n 3 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wall -Wextra -Wpedantic -Wfatal-errors -D_TEST_MPI3_SHM_ALLOCATOR $0x.cpp -o $0x.x && time mpirun -n 3 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
 #endif
 #ifndef MPI3_SHM_ALLOCATOR_HPP
 #define MPI3_SHM_ALLOCATOR_HPP
@@ -37,7 +37,7 @@ template<class A>
 struct monotonic{
 	A& a_;
 	template<class U> struct rebind{
-		using other = monotonic<U>;
+		using other = monotonic<typename A::template rebind<U>::other>;
 	//	using other = typename std::iterator_traits<A>::template alloc_rebind<U>;
 	};
 	using value_type = typename A::value_type;
@@ -49,7 +49,7 @@ struct monotonic{
 		mark_ = a_.allocate(s);
 		end_ = mark_ + s;
 	}
-	monotonic::pointer allocate(monotonic::size_type s, const void* hint = 0){
+	monotonic::pointer allocate(monotonic::size_type s, const void*/*hint*/= 0){
 		auto ret = mark_;
 		if(size_type(std::distance(mark_, end_)) < s) throw std::bad_alloc{};
 		mark_ += s;
@@ -64,7 +64,10 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 	std::allocator<double>::rebind<int>::other dd;
 	monotonic<std::allocator<double>> a(1024, stda);
 	std::vector<double, std::allocator<double>> v1(600, stda); 
-	std::vector<double, monotonic<std::allocator<double>>> v2(600, a); 
+
+	std::vector<double, monotonic<std::allocator<double> > > v2(600, a); 
+
+#if 1
 //	std::vector<double, monotonic<std::allocator<double>>> v2(600, a); 
 
 	mpi3::shared_communicator node = world.split_shared();
@@ -87,7 +90,7 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 	assert(data1[3] == 3.4);
 
 	A1.deallocate(data1, 80);
-
+#endif
 	return 0;
 }
 

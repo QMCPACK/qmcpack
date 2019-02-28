@@ -103,7 +103,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
   // INCONSISTENT IN REAL BUILD!!!!!! FIX FIX FIX
   // Until I figure something else, rotPiu and rotcPua are not distributed because a full copy is needed
-  size_t nel_ = PsiT[0].shape()[0] + ((type==CLOSED)?0:(PsiT[1].shape()[0]));
+  size_t nel_ = PsiT[0].size(0) + ((type==CLOSED)?0:(PsiT[1].size(0)));
   shm_Cmatrix rotMuv(TG.Node(),{rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0});
   shm_Cmatrix rotPiu(TG.Node(),{size_t(NMO),grotnmu});
   std::vector<shm_Cmatrix> rotcPua;
@@ -128,7 +128,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
       /***************************************/
       typename shm_Cmatrix::ma_type muv_(rotMuv.get());
       hyperslab_proxy<typename shm_Cmatrix::ma_type,2> hslab(muv_,
-                                                           rotMuv.global_shape(),
+                                                           rotMuv.global_size(),
                                                            rotMuv.shape(),
                                                            rotMuv.global_offset());
       if(!dump.readEntry(hslab,"HalfTransformedMuv")) {
@@ -145,7 +145,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     /***************************************/
     typename shm_Vmatrix::ma_type piu_(Piu.get());
     hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab(piu_,
-                                                         Piu.global_shape(),
+                                                         Piu.global_size(),
                                                          Piu.shape(),
                                                          Piu.global_offset());
     if(!dump.readEntry(hslab,"Orbitals")) {
@@ -156,7 +156,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     /***************************************/
     typename shm_Vmatrix::ma_type luv_(Luv.get());
     hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab2(luv_,
-                                                         Luv.global_shape(),
+                                                         Luv.global_size(),
                                                          Luv.shape(),
                                                          Luv.global_offset());
     if(!dump.readEntry(hslab2,"Luv")) {
@@ -168,7 +168,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   }
   TG.global_barrier();
 
-  boost::multi::array<ComplexType,2> v0({Piu.shape()[0],Piu.shape()[0]});
+  boost::multi::array<ComplexType,2> v0({Piu.size(0),Piu.size(0)});
   if(TGprop.getNNodesPerTG() > 1)
   {
 
@@ -222,7 +222,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = conj(*itT)*(*itM);
-    boost::multi::array<ValueType,2> T_({Tuv.shape()[1],size_t(NMO)});
+    boost::multi::array<ValueType,2> T_({Tuv.size(1),size_t(NMO)});
     ma::product(T(Tuv),H(Piu__.get()),T_);
     ma::product(-0.5,T(T_),T(Piu__.get()({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
 
@@ -262,7 +262,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = conj(*itT)*(*itM);
-    boost::multi::array<ValueType,2> T_({Tuv.shape()[1],size_t(NMO)});
+    boost::multi::array<ValueType,2> T_({Tuv.size(1),size_t(NMO)});
     ma::product(T(Tuv),H(Piu.get()),T_);
     ma::product(-0.5,T(T_),T(Piu.get()({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
 
@@ -271,8 +271,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   }
   TG.global_barrier();
 
-  long naea_ = PsiT[0].shape()[0];
-  long naeb_ = PsiT.back().shape()[0];
+  long naea_ = PsiT[0].size(0);
+  long naeb_ = PsiT.back().size(0);
 
   // half-rotated Pia
   std::vector<shm_Cmatrix> cPua;
@@ -301,7 +301,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
                       rotcPua[i].get()({0,long(grotnmu)},{naea_,long(nel_)}));
       }
     } else {
-      boost::multi::array<ComplexType,2> A({PsiT[0].shape()[1],PsiT[0].shape()[0]});
+      boost::multi::array<ComplexType,2> A({PsiT[0].size(1),PsiT[0].size(0)});
       for(int i=0; i<ndet; i++) {
         csr::CSR2MA('T',PsiT[i],A);
         // cPua = H(Piu) * conj(A)
@@ -332,7 +332,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   // dense one body hamiltonian
   auto H1 = getH1();
 
-//std::cout<<" nmu: " <<Luv.shape()[0] <<" " <<rotMuv.shape()[0] <<std::endl;
+//std::cout<<" nmu: " <<Luv.size(0) <<" " <<rotMuv.size(0) <<std::endl;
 
   if(write_hdf)
     writeTHCOps(hdf_restart,type,NMO,naea_,naeb_,ndet,TGprop,TGwfn,H1,
