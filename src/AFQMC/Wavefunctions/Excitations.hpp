@@ -165,8 +165,8 @@ inline std::vector<size_t> get_nnz(csr const& PsiT_MO, intT* refc, size_t N, siz
 // try putting this in shared memory later on
 template<class I = int,
 	 class VType = std::complex<double>,	
-         class Alloc = boost::mpi3::intranode::allocator<I>,
-         class is_root = boost::mpi3::intranode::is_root>
+         class Alloc = shared_allocator<I>,
+         class is_root = ma::sparse::is_root>
 struct ph_excitations
 {
   public:

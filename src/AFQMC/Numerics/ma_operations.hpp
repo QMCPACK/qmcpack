@@ -30,6 +30,9 @@
 
 #include "AFQMC/Utilities/type_conversion.hpp"
 
+// pass all pointers through a dispatch() call that can be customized to map pointer types
+// then define it generically to returned the argument, and specialize it for array_ptr_raw_ptr_dispatch<T>
+
 namespace ma{
 
 using qmcplusplus::afqmc::to_address;
@@ -170,12 +173,12 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
         csrmv( op_tag<SparseMatrixA>::value,
             arg(A).size(0), arg(A).size(1),
             elementC(alpha), "GxxCxx",
-            arg(A).non_zero_values_data(),
-            arg(A).non_zero_indices2_data(),
-            arg(A).pointers_begin(), 
-            arg(A).pointers_end(),
-            arg(B).origin(), elementC(beta), 
-            C.origin());
+            pointer_dispatch(arg(A).non_zero_values_data()),
+            pointer_dispatch(arg(A).non_zero_indices2_data()),
+            pointer_dispatch(arg(A).pointers_begin()), 
+            pointer_dispatch(arg(A).pointers_end()),
+            pointer_dispatch(arg(B).origin()), elementC(beta), 
+            pointer_dispatch(C.origin()));
 
         return std::forward<MultiArray1DC>(C);
 }
@@ -244,13 +247,13 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
         csrmm( op_tag<SparseMatrixA>::value, 
             arg(A).size(0), arg(B).size(1), arg(A).size(1), 
             elementC(alpha), "GxxCxx", 
-            arg(A).non_zero_values_data() , 
-            arg(A).non_zero_indices2_data(),
-            arg(A).pointers_begin(),  
-            arg(A).pointers_end(),
-            arg(B).origin(), arg(B).stride(0), 
+            pointer_dispatch(arg(A).non_zero_values_data()), 
+            pointer_dispatch(arg(A).non_zero_indices2_data()),
+            pointer_dispatch(arg(A).pointers_begin()),  
+            pointer_dispatch(arg(A).pointers_end()),
+            pointer_dispatch(arg(B).origin()), arg(B).stride(0), 
             elementC(beta), 
-            C.origin(), 
+            pointer_dispatch(C.origin()), 
             C.stride(0));
 
         return std::forward<MultiArray2DC>(C);
@@ -373,7 +376,7 @@ T invert(MultiArray2D&& m){
                                                     iallocator_type{m.get_allocator()}); 
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
-        T detvalue = determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data());
+        T detvalue = determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()));
         getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
 }
@@ -384,7 +387,7 @@ T invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK){
         assert(pivot.size() >= m.size(0)+1);
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
-        T detvalue = determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data());
+        T detvalue = determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()));
         getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
 }
@@ -395,7 +398,7 @@ void invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T* detvalue){
         assert(pivot.size() >= m.size(0)+1);
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
-        determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data(), detvalue);
+        determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()), detvalue);
         getri(std::forward<MultiArray2D>(m), pivot, WORK);
 }
 
@@ -405,7 +408,7 @@ T determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK){
         assert(pivot.size() >= m.size(0));
 
         getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot), WORK);
-        return determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data());
+        return determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()));
 }
 
 template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>
@@ -414,7 +417,7 @@ void determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T* detva
         assert(pivot.size() >= m.size(0));
 
         getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot), WORK);
-        determinant_from_getrf<T>(m.size(0), m.origin(), m.stride(0), pivot.data(), detvalue);
+        determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()), detvalue);
 }
 
 template<class MultiArray2D,
@@ -430,7 +433,7 @@ MultiArray2D exp(MultiArray2D const& A) {
         size_t N = A.size(0);
 
         MultiArray2D ExpA({N,N});
-        std::fill_n(to_address(ExpA.origin()),N*N,Type(0));
+        std::fill_n(pointer_dispatch(ExpA.origin()),N*N,Type(0));
 
         if(is_hermitian(A)) { 
         

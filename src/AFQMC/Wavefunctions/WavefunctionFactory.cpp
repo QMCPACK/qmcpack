@@ -103,7 +103,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
              <<"             This will lead to low performance. Set nbatch. \n";
   }
 
-  using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+  using Alloc = shared_allocator<ComplexType>;
   if(type=="msd" || type=="nomsd") {
 
     app_log()<<" Wavefunction type: NOMSD\n";
@@ -549,10 +549,10 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
 
     // setup configuration coupligs
     using index_aos = ma::sparse::array_of_sequences<int,int,
-                                                   boost::mpi3::intranode::allocator<int>,
-                                                   boost::mpi3::intranode::is_root>;
-//    std::allocator<ComplexType> alloc_{}; //boost::mpi3::intranode::allocator<ComplexType>;
-    boost::mpi3::intranode::allocator<int> alloc_{TGwfn.Node()};
+                                                   shared_allocator<int>,
+                                                   ma::sparse::is_root>;
+//    std::allocator<ComplexType> alloc_{}; //shared_allocator<ComplexType>;
+    shared_allocator<int> alloc_{TGwfn.Node()};
     
     // alpha
     std::vector<int> counts_alpha(abij.number_of_unique_excitations()[0]);
@@ -654,7 +654,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   std::vector<PsiT_Matrix> PsiT;
   std::vector<int> excitations;
 
-  using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+  using Alloc = shared_allocator<ComplexType>;
   // HOps, ci, PsiT, NCE
   hdf_archive dump(TGwfn.Global());
   if(!dump.open(filename,H5F_ACC_RDONLY)) {
@@ -720,7 +720,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
     int nd = (walker_type==COLLINEAR?2*ndets_to_read:ndets_to_read);
     PsiT.reserve(nd); 
-    using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using Alloc = shared_allocator<ComplexType>;
     for(int i=0; i<nd; ++i) {
       if(!dump.push(std::string("PsiT_")+std::to_string(i),false)) {
         app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
@@ -786,7 +786,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 /*
     int nd = (walker_type==COLLINEAR?2*ndets_to_read:ndets_to_read);
     PsiT.reserve(nd); 
-    using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using Alloc = shared_allocator<ComplexType>;
     for(int i=0; i<nd; ++i) {
       if(!dump.push(std::string("PsiT_")+std::to_string(i),false)) {
         app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";

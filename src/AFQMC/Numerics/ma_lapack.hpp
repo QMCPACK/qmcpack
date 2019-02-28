@@ -31,7 +31,7 @@ int getrf_optimal_workspace_size(MultiArray2D && A){
         assert(A.stride(1) == 1);
 
         int res;
-        getrf_bufferSize(A.size(1), A.size(0),A.origin(),A.stride(0),res);
+        getrf_bufferSize(A.size(1), A.size(0), pointer_dispatch(A.origin()),A.stride(0),res);
         return res;
 }
 
@@ -43,10 +43,10 @@ MultiArray2D getrf(MultiArray2D&& m, Array1D& pivot, Buffer&& WORK){
 
         int status = -1;
         getrf(
-                m.size(1), m.size(0), m.origin(), m.stride(0),
-                pivot.data(),
+                m.size(1), m.size(0),  pointer_dispatch(m.origin()), m.stride(0),
+                pointer_dispatch(pivot.data()),
                 status,
-                WORK.data()
+                pointer_dispatch(WORK.data())
         );
         assert(status==0);
         return std::forward<MultiArray2D>(m);
@@ -57,7 +57,7 @@ int getri_optimal_workspace_size(MultiArray2D && A){
         assert(A.stride(1) == 1);
         assert(A.size(0) == A.size(1));
         int lwork = -1;
-        getri_bufferSize(A.size(0), A.origin(), A.stride(0),lwork);
+        getri_bufferSize(A.size(0),  pointer_dispatch(A.origin()), A.stride(0),lwork);
         return lwork;
 }
 
@@ -70,9 +70,9 @@ MultiArray2D getri(MultiArray2D&& A, MultiArray1D const& IPIV, Buffer&& WORK){
 	
 	int status = -1;
 	getri(
-		A.size(0), A.origin(), A.stride(0), 
-		IPIV.data(), 
-		WORK.data(), WORK.size(), 
+		A.size(0),  pointer_dispatch(A.origin()), A.stride(0), 
+		pointer_dispatch(IPIV.data()), 
+		pointer_dispatch(WORK.data()), WORK.size(), 
 		status
 	);
 	assert(status == 0);
@@ -85,7 +85,7 @@ int geqrf_optimal_workspace_size(MultiArray2D && A){
 	assert(A.stride(1) == 1);
 
         int res;
-        geqrf_bufferSize(A.size(1), A.size(0),A.origin(),A.stride(0),res);
+        geqrf_bufferSize(A.size(1), A.size(0), pointer_dispatch(A.origin()),A.stride(0),res);
         return res;
 }
 
@@ -100,9 +100,9 @@ MultiArray2D geqrf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 	
 	int status = -1;
 	geqrf(
-		A.size(1), A.size(0), A.origin(), A.stride(0), 
-		TAU.origin(), 
-		WORK.data(), WORK.size(),
+		A.size(1), A.size(0),  pointer_dispatch(A.origin()), A.stride(0), 
+		 pointer_dispatch(TAU.origin()), 
+		pointer_dispatch(WORK.data()), WORK.size(),
 		status
 	);
 	assert(status==0);
@@ -115,7 +115,7 @@ int gelqf_optimal_workspace_size(MultiArray2D && A){
 	assert(A.stride(1) == 1);
 
         int res;
-        gelqf_bufferSize(A.size(1), A.size(0),A.origin(),A.stride(0),res);
+        gelqf_bufferSize(A.size(1), A.size(0), pointer_dispatch(A.origin()),A.stride(0),res);
 	return res;
 }
 
@@ -129,8 +129,8 @@ MultiArray2D gelqf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 
 	int status = -1;
 	gelqf(
-		A.size(1), A.size(0), A.origin(), A.stride(0), TAU.data(),
-		WORK.data(), WORK.size(), 
+		A.size(1), A.size(0),  pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.data()),
+		pointer_dispatch(WORK.data()), WORK.size(), 
 		status
 	);
 	assert(status==0);
@@ -146,7 +146,7 @@ int gqr_optimal_workspace_size(MultiArray2D && A){
         int res;
         gqr_bufferSize(A.size(1), A.size(0),
                        std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))),
-                       A.origin(),A.stride(0),res);
+                        pointer_dispatch(A.origin()),A.stride(0),res);
         return res;
 }
 
@@ -160,8 +160,8 @@ MultiArray2D gqr(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 	int status = -1;
 	gqr(
 		A.size(1), A.size(0), std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))), 
-		A.origin(), A.stride(0), TAU.origin(), 
-		WORK.data(), WORK.size(), 
+		 pointer_dispatch(A.origin()), A.stride(0),  pointer_dispatch(TAU.origin()), 
+		pointer_dispatch(WORK.data()), WORK.size(), 
 		status
 	);
 	assert(status==0);
@@ -176,7 +176,7 @@ int glq_optimal_workspace_size(MultiArray2D && A){
         int res;
         glq_bufferSize(A.size(1), A.size(0),
                        std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))),
-                       A.origin(),A.stride(0),res);
+                        pointer_dispatch(A.origin()),A.stride(0),res);
         return res;
 }
 
@@ -190,8 +190,8 @@ MultiArray2D glq(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 	int status = -1;
 	glq(
 		A.size(1), A.size(0), std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))), 
-		A.origin(), A.stride(0), TAU.data(), 
-		WORK.data(), WORK.size(), 
+		 pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.data()), 
+		pointer_dispatch(WORK.data()), WORK.size(), 
 		status
 	);
 	assert(status==0);
@@ -204,7 +204,7 @@ template<class MultiArray2D,
 MultiArray2D potrf(MultiArray2D&& A) {
         assert(A.size(0)==A.size(1));
         int INFO;
-        potrf('U',A.size(0),A.origin(),A.stride(0),INFO);
+        potrf('U',A.size(0), pointer_dispatch(A.origin()),A.stride(0),INFO);
         if(INFO != 0) throw std::runtime_error(" error in ma::potrf: Error code != 0");
 }
 
@@ -248,9 +248,9 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
             int LIWORK=-1;
             int INFO;
 
-            hevr (JOBZ, RANGE, UPLO, N, A_.origin(), LDA, VL, VU, IL, IU, ABSTOL, 
-                          M,eigVal.origin(), eigVec.origin(), N, ISUPPZ.data(), WORK.data(), LWORK, 
-                          RWORK.data(), LRWORK, IWORK.data(), LIWORK, INFO);
+            hevr (JOBZ, RANGE, UPLO, N, pointer_dispatch(A_.origin()), LDA, VL, VU, IL, IU, ABSTOL, 
+                          M,pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, pointer_dispatch(ISUPPZ.data()), pointer_dispatch(WORK.data()), LWORK, 
+                          pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()), LIWORK, INFO);
 
             LWORK = int(real(WORK[0]));
             WORK.resize(LWORK);
@@ -259,9 +259,9 @@ std::pair<MultiArray1D,MultiArray2D> symEig(MultiArray2D const& A) {
             LIWORK = int(IWORK[0]);
             IWORK.resize(LIWORK);
 
-            hevr (JOBZ, RANGE, UPLO, N, A_.origin(), LDA, VL, VU, IL, IU, ABSTOL, 
-                          M,eigVal.origin(), eigVec.origin(), N, ISUPPZ.data(), WORK.data(), LWORK, 
-                          RWORK.data(), LRWORK, IWORK.data(), LIWORK, INFO);
+            hevr (JOBZ, RANGE, UPLO, N, pointer_dispatch(A_.origin()), LDA, VL, VU, IL, IU, ABSTOL, 
+                          M,pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, pointer_dispatch(ISUPPZ.data()), pointer_dispatch(WORK.data()), LWORK, 
+                          pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()), LIWORK, INFO);
             if(INFO != 0) throw std::runtime_error(" error in ma::eig: Error code != 0");
             if(M != N) throw std::runtime_error(" error in ma::eig: Not enough eigenvalues"); 
             for(int i=0; i<N; i++)

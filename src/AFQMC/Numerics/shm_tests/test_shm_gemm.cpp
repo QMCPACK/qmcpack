@@ -39,7 +39,7 @@ void timing_shm_blas(int c)
 {
   using Type = double; 
   using communicator = boost::mpi3::communicator;
-  using shm_Alloc = boost::mpi3::intranode::allocator<Type>;
+  using shm_Alloc = shared_allocator<Type>;
   using Matrix = boost::multi::array_ref<Type,2>;
 
   myTimer Timer;

@@ -235,7 +235,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
 
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using shm_Alloc = shared_allocator<ComplexType>;
     using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
     boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
@@ -369,7 +369,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
 
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using shm_Alloc = shared_allocator<ComplexType>;
     using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
     boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);
@@ -499,7 +499,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
 
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using shm_Alloc = shared_allocator<ComplexType>;
     using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
     boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);
@@ -634,7 +634,7 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
 
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using shm_Alloc = shared_allocator<ComplexType>;
     using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
     boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);

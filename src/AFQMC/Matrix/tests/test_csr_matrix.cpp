@@ -20,7 +20,7 @@
 
 #include "mpi3/shared_window.hpp"
 #include "mpi3/shared_communicator.hpp"
-//#include "mpi3/shm/allocator.hpp"
+#include "AFQMC/Memory/SharedMemory/shm_ptr_with_raw_ptr_dispatch.hpp"
 
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #ifdef QMC_CUDA
@@ -573,7 +573,7 @@ TEST_CASE("csr_matrix_shm", "[csr]")
 
   {
     using Type = double;
-    using Alloc = boost::mpi3::intranode::allocator<Type>;
+    using Alloc = shm::allocator_shm_ptr_with_raw_ptr_dispatch<Type>;
     using is_root = ma::sparse::is_root;
     test_csr_matrix_shm_allocator<Type,int,std::size_t,Alloc,is_root>(Alloc(node),false);
     test_csr_matrix_shm_allocator<Type,int,int,Alloc,is_root>(Alloc(node),false);
@@ -581,7 +581,7 @@ TEST_CASE("csr_matrix_shm", "[csr]")
 
   {
     using Type = std::complex<double>;
-    using Alloc = boost::mpi3::intranode::allocator<Type>;
+    using Alloc = shm::allocator_shm_ptr_with_raw_ptr_dispatch<Type>;
     using is_root = ma::sparse::is_root;
     test_csr_matrix_shm_allocator<Type,int,std::size_t,Alloc,is_root>(Alloc(node),false);
     test_csr_matrix_shm_allocator<Type,int,int,Alloc,is_root>(Alloc(node),false);
@@ -599,7 +599,7 @@ TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
   mpi3::shared_communicator node(world.split_shared());
 
   using Type = std::complex<double>;
-  using Alloc = boost::mpi3::intranode::allocator<Type>;
+  using Alloc = shm::allocator_shm_ptr_with_raw_ptr_dispatch<Type>;
   using is_root = ma::sparse::is_root;
 
   using ucsr_matrix = ma::sparse::ucsr_matrix<Type,int,size_t,Alloc,is_root>;

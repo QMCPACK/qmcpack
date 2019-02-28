@@ -72,7 +72,7 @@ class dummy_Hamiltonian
   SpCType_shm_csr_matrix halfRotatedHijkl(WALKER_TYPES type, TaskGroup_& TGWfn, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, const RealType cut=1e-6)
   {
     throw std::runtime_error("calling visitor on dummy object");
-    using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
+    using Alloc = shared_allocator<SPComplexType>;
     return SpCType_shm_csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,Alloc(TGWfn.Node()));
   }
 
@@ -80,7 +80,7 @@ class dummy_Hamiltonian
         boost::multi::array<ComplexType,2>& vn0)
   {
     throw std::runtime_error("calling visitor on dummy object");
-    using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
+    using Alloc = shared_allocator<SPComplexType>;
     return SpCType_shm_csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,Alloc(TGprop.Node()));
   }
 

@@ -59,7 +59,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
                           RandomGenerator_t* r):
             AFQMCInfo(info),TG(tg_),wfn(wfn_),
             H1(std::move(h1_)),
-            P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,boost::mpi3::intranode::allocator<ComplexType>(tg_.TG_local()))),
+            P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,shared_allocator<ComplexType>(tg_.TG_local()))),
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(2*NMO,NAEA+NAEB),

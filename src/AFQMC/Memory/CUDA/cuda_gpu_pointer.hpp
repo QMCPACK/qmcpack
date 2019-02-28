@@ -491,7 +491,8 @@ void print(std::string str, cuda_gpu_ptr<T> p, int n) {
 
 }
 
-namespace boost::multi{
+namespace boost{
+namespace multi{
 
 using qmcplusplus::afqmc::to_address;
 
@@ -707,63 +708,7 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n(
 }
 
 }
+}
 
-// 
-/*
-namespace boost{
-namespace mpi3{
-namespace detail{
-
-template<class qmc_cuda::cuda_gpu_ptr<int>> struct iterator_category{ using type = contiguous_iterator_tag; };
-template<class qmc_cuda::cuda_gpu_ptr<long>> struct iterator_category{ using type = contiguous_iterator_tag; };
-template<class qmc_cuda::cuda_gpu_ptr<size_t>> struct iterator_category{ using type = contiguous_iterator_tag; };
-template<class qmc_cuda::cuda_gpu_ptr<float>> struct iterator_category{ using type = contiguous_iterator_tag; };
-template<class qmc_cuda::cuda_gpu_ptr<double>> struct iterator_category{ using type = contiguous_iterator_tag; };
-template<class qmc_cuda::cuda_gpu_ptr<std::complex<float>>> struct iterator_category{ using type = contiguous_iterator_tag; };
-template<class qmc_cuda::cuda_gpu_ptr<std::complex<double>>> struct iterator_category{ using type = contiguous_iterator_tag; };
-
-}
-}
-}
-*/
-/*
-namespace boost
-{
-namespace multi
-{
-  template<>
-  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<std::complex<double>>>:  
-            std::pointer_traits<std::complex<double>>{
-//    using element_type = std::complex<double>;
-    using allocator_type = qmc_cuda::cuda_gpu_allocator<std::complex<double>>;
-    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<std::complex<double>>){return allocator_type{};}
-  };
-  template<>
-  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<std::complex<float>>> {
-    using element_type = std::complex<float>;
-    using allocator_type = qmc_cuda::cuda_gpu_allocator<std::complex<float>>;
-    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<std::complex<float>>){return allocator_type{};}
-  };
-  template<>
-  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<double>> {
-    using element_type = double; 
-    using allocator_type = qmc_cuda::cuda_gpu_allocator<double>;
-    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<double>){return allocator_type{};}
-  };
-  template<>
-  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<float>> {
-    using element_type = float; 
-    using allocator_type = qmc_cuda::cuda_gpu_allocator<float>;
-    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<float>){return allocator_type{};}
-  };
-  template<>
-  struct pointer_traits<qmc_cuda::cuda_gpu_ptr<int>> {
-    using element_type = int; 
-    using allocator_type = qmc_cuda::cuda_gpu_allocator<int>;
-    static allocator_type allocator_of(qmc_cuda::cuda_gpu_ptr<int>){return allocator_type{};}
-  };
-}
-}
-*/
   
 #endif

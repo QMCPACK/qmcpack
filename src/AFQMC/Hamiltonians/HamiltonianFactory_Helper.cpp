@@ -47,9 +47,9 @@ namespace afqmc
   FactorizedSparseHamiltonian::shm_csr_matrix read_V2fact(hdf_archive& dump, TaskGroup_& TG, int nread, int NMO, int nvecs, double cutoff1bar, int int_blocks)
   {
       using counter =  qmcplusplus::afqmc::sparse_matrix_element_counter;
-      using Alloc = boost::mpi3::intranode::allocator<ValueType>;
+      using Alloc = shared_allocator<ValueType>;
       using ucsr_matrix = ma::sparse::ucsr_matrix<ValueType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<ValueType>,
+                                shared_allocator<ValueType>,
                                 ma::sparse::is_root>;
 
       int min_i = 0;

@@ -32,7 +32,7 @@ namespace afqmc
 SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double cut,
         TaskGroup_& TGprop, boost::multi::array<ComplexType,2>& vn0) {
 
-  using Alloc = boost::mpi3::intranode::allocator<SPValueType>;
+  using Alloc = shared_allocator<SPValueType>;
   if(TG.getNumberOfTGs() > 1)
     APP_ABORT("Error: HSPotential not implemented with distributed Hamiltonian. \n");
 
@@ -130,7 +130,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
 
  SpCType_shm_csr_matrix FactorizedSparseHamiltonian::halfRotatedHijkl(WALKER_TYPES type, bool addCoulomb, TaskGroup_& TGHam, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, RealType const cut){
     check_wavefunction_consistency(type,Alpha,Beta,NMO,NAEA,NAEB);
-    using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
+    using Alloc = shared_allocator<SPComplexType>;
     assert(Alpha!=nullptr);
     if(type==COLLINEAR) assert(Beta!=nullptr);
     std::size_t nr=Alpha->size(0)*Alpha->size(1);
@@ -158,7 +158,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
   }
 
   SpVType_shm_csr_matrix FactorizedSparseHamiltonian::generateHijkl(WALKER_TYPES type, bool addCoulomb, TaskGroup_& TGwfn, std::map<IndexType,std::pair<bool,IndexType>>& occ_a, std::map<IndexType,std::pair<bool,IndexType>>& occ_b , RealType const cut) {
-    using Alloc = boost::mpi3::intranode::allocator<SPValueType>;
+    using Alloc = shared_allocator<SPValueType>;
     int nel = 0;
     for(auto& i:occ_a) if(i.second.first) nel++;
     if(type!=CLOSED)

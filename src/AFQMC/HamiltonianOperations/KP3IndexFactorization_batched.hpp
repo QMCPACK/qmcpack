@@ -396,7 +396,7 @@ class KP3IndexFactorization_batched
         int na=0, nk=0, nb=0;
         for(int K=0; K<nkpts; ++K) {
 #if defined(MIXED_PRECISION) 
-          CMatrix_ref haj_K(haj[nd*nkpts+K].origin(),{nocc_max,nmo_max}); 
+          CMatrix_ref haj_K(make_device_ptr(haj[nd*nkpts+K].origin()),{nocc_max,nmo_max}); 
           for(int a=0; a<nelpk[nd][K]; ++a) 
             ma::product(ComplexType(1.),ma::T(G3Da[na+a].sliced(nk,nk+nopk[K])),
                                         haj_K[a].sliced(0,nopk[K]),
@@ -416,13 +416,13 @@ class KP3IndexFactorization_batched
           nk = nopk[K];
           {
             na = nelpk[nd][K];
-            CVector_ref haj_K(haj[nd*nkpts+K].origin(),{nocc_max*nmo_max});
+            CVector_ref haj_K(make_device_ptr(haj[nd*nkpts+K].origin()),{nocc_max*nmo_max});
             SpMatrix_ref Gaj(GKK[0][K][K].origin(),{nwalk,nocc_max*nmo_max});
             ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E({0,nwalk},0));
           }
           if(walker_type==COLLINEAR) {
             na = nelpk[nd][nkpts+K];
-            CVector_ref haj_K(haj[nd*nkpts+K].origin()+nocc_max*nmo_max,{nocc_max*nmo_max});
+            CVector_ref haj_K(make_device_ptr(haj[nd*nkpts+K].origin())+nocc_max*nmo_max,{nocc_max*nmo_max});
             SpMatrix_ref Gaj(GKK[1][K][K].origin(),{nwalk,nocc_max*nmo_max});
             ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E({0,nwalk},0));
           }  
@@ -498,12 +498,12 @@ class KP3IndexFactorization_batched
                 kdiag.push_back(batch_cnt);  
 
               if( Q == Qm )
-                Aarray.push_back(LQKbnl[nd*nspin*number_of_symmetric_Q+Qsym_map[Q]][Kb].origin());
+                Aarray.push_back(sp_pointer(LQKbnl[nd*nspin*number_of_symmetric_Q+Qsym_map[Q]][Kb].origin()));
               else  
-                Aarray.push_back(LQKank[nd*nspin*nkpts+Qm][Kb].origin());
+                Aarray.push_back(sp_pointer(LQKank[nd*nspin*nkpts+Qm][Kb].origin()));
               Barray.push_back(GKK[0][Ka][Kl_].origin());
               Carray.push_back(T1[batch_cnt++].origin());
-              Aarray.push_back(LQKank[nd*nspin*nkpts+Q][Ka].origin());
+              Aarray.push_back(sp_pointer(LQKank[nd*nspin*nkpts+Q][Ka].origin()));
               Barray.push_back(GKK[0][Kb][Kk].origin());
               Carray.push_back(T1[batch_cnt++].origin());
 
@@ -686,7 +686,7 @@ class KP3IndexFactorization_batched
           E[n][0] = E0;  
         for(int K=0; K<nkpts; ++K) {
 #if defined(MIXED_PRECISION) 
-          CMatrix_ref haj_K(haj[nd*nkpts+K].origin(),{nocc_max,nmo_max});
+          CMatrix_ref haj_K(make_device_ptr(haj[nd*nkpts+K].origin()),{nocc_max,nmo_max});
           for(int a=0; a<nelpk[nd][K]; ++a)
             ma::product(ComplexType(1.),ma::T(G3Da[na+a].sliced(nk,nk+nopk[K])),
                                         haj_K[a].sliced(0,nopk[K]),
@@ -706,13 +706,13 @@ class KP3IndexFactorization_batched
           nk = nopk[K];
           {
             na = nelpk[nd][K];
-            CVector_ref haj_K(haj[nd*nkpts+K].origin(),{nocc_max*nmo_max});
+            CVector_ref haj_K(make_device_ptr(haj[nd*nkpts+K].origin()),{nocc_max*nmo_max});
             SpMatrix_ref Gaj(GKK[0][K][K].origin(),{nwalk,nocc_max*nmo_max});
             ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E({0,nwalk},0));
           }
           if(walker_type==COLLINEAR) {
             na = nelpk[nd][nkpts+K];
-            CVector_ref haj_K(haj[nd*nkpts+K].origin()+nocc_max*nmo_max,{nocc_max*nmo_max});
+            CVector_ref haj_K(make_device_ptr(haj[nd*nkpts+K].origin())+nocc_max*nmo_max,{nocc_max*nmo_max});
             SpMatrix_ref Gaj(GKK[1][K][K].origin(),{nwalk,nocc_max*nmo_max});
             ma::product(ComplexType(1.),Gaj,haj_K,ComplexType(1.),E({0,nwalk},0));
           }
@@ -775,10 +775,10 @@ class KP3IndexFactorization_batched
 
                   SpMatrix_ref Gal(GKK[0][Ka][Kl].origin()+n*na*nl,{na,nl});
                   SpMatrix_ref Gbk(GKK[0][Kb][Kk].origin()+n*nb*nk,{nb,nk});
-                  SpMatrix_ref Lank(LQKank[nd*nspin*nkpts+Q][Ka].origin(),
+                  SpMatrix_ref Lank(sp_pointer(LQKank[nd*nspin*nkpts+Q][Ka].origin()),
                                                  {na*nchol,nk});
-                  auto bnl_ptr(LQKank[nd*nspin*nkpts+Qm][Kb].origin());
-                  if( Q == Qm ) bnl_ptr = LQKbnl[nd*nspin*number_of_symmetric_Q+Qsym_map[Q]][Kb].origin();
+                  auto bnl_ptr(sp_pointer(LQKank[nd*nspin*nkpts+Qm][Kb].origin()));
+                  if( Q == Qm ) bnl_ptr = sp_pointer(LQKbnl[nd*nspin*number_of_symmetric_Q+Qsym_map[Q]][Kb].origin());
                   SpMatrix_ref Lbnl(bnl_ptr,{nb*nchol,nl});
 
                   SpMatrix_ref Tban(TMats.origin()+local_cnt,{nb,na*nchol});
@@ -811,10 +811,11 @@ class KP3IndexFactorization_batched
 
                     SpMatrix_ref Gal(GKK[1][Ka][Kl].origin()+n*na*nl,{na,nl});
                     SpMatrix_ref Gbk(GKK[1][Kb][Kk].origin()+n*nb*nk,{nb,nk});
-                    SpMatrix_ref Lank(LQKank[(nd*nspin+1)*nkpts+Q][Ka].origin(),
+                    SpMatrix_ref Lank(sp_pointer(LQKank[(nd*nspin+1)*nkpts+Q][Ka].origin()),
                                                  {na*nchol,nk});
-                    auto bnl_ptr(LQKank[nd*nspin*nkpts+Qm][Kb].origin());
-                    if( Q == Qm ) bnl_ptr = LQKbnl[(nd*nspin+1)*number_of_symmetric_Q+Qsym_map[Q]][Kb].origin();
+                    auto bnl_ptr(sp_pointer(LQKank[nd*nspin*nkpts+Qm][Kb].origin()));
+                    if( Q == Qm ) bnl_ptr = sp_pointer(LQKbnl[(nd*nspin+1)*number_of_symmetric_Q+
+                                                                Qsym_map[Q]][Kb].origin());
                     SpMatrix_ref Lbnl(bnl_ptr,{nb*nchol,nl});
 
                     SpMatrix_ref Tban(TMats.origin()+local_cnt,{nb,na*nchol});
@@ -869,10 +870,10 @@ class KP3IndexFactorization_batched
 
               Sp3Tensor_ref Gwal(GKK[0][Ka][Kl].origin(),{nwalk,na,nl});
               Sp3Tensor_ref Gwbk(GKK[0][Ka][Kk].origin(),{nwalk,na,nk});
-              Sp3Tensor_ref Lank(LQKank[nd*nspin*nkpts+Q][Ka].origin(),
+              Sp3Tensor_ref Lank(sp_pointer(LQKank[nd*nspin*nkpts+Q][Ka].origin()),
                                                  {na,nchol,nk});
-              auto bnl_ptr(LQKank[nd*nspin*nkpts+Qm][Ka].origin());
-              if( Q == Qm ) bnl_ptr = LQKbnl[nd*nspin*number_of_symmetric_Q+Qsym_map[Q]][Ka].origin();
+              auto bnl_ptr(sp_pointer(LQKank[nd*nspin*nkpts+Qm][Ka].origin()));
+              if( Q == Qm ) bnl_ptr = sp_pointer(LQKbnl[nd*nspin*number_of_symmetric_Q+Qsym_map[Q]][Ka].origin());
               Sp3Tensor_ref Lbnl(bnl_ptr,{na,nchol,nl});
 
               // Twan = sum_l G[w][a][l] L[a][n][l]
@@ -900,10 +901,10 @@ class KP3IndexFactorization_batched
 
                 Sp3Tensor_ref Gwal(GKK[1][Ka][Kl].origin(),{nwalk,na,nl});
                 Sp3Tensor_ref Gwbk(GKK[1][Ka][Kk].origin(),{nwalk,na,nk});
-                Sp3Tensor_ref Lank(LQKank[(nd*nspin+1)*nkpts+Q][Ka].origin(),
+                Sp3Tensor_ref Lank(sp_pointer(LQKank[(nd*nspin+1)*nkpts+Q][Ka].origin()),
                                                  {na,nchol,nk});
-                auto bnl_ptr(LQKank[(nd*nspin+1)*nkpts+Qm][Ka].origin());
-                if( Q == Qm ) bnl_ptr = LQKbnl[(nd*nspin+1)*number_of_symmetric_Q+Qsym_map[Q]][Ka].origin();
+                auto bnl_ptr(sp_pointer(LQKank[(nd*nspin+1)*nkpts+Qm][Ka].origin()));
+                if( Q == Qm ) bnl_ptr = sp_pointer(LQKbnl[(nd*nspin+1)*number_of_symmetric_Q+Qsym_map[Q]][Ka].origin());
                 Sp3Tensor_ref Lbnl(bnl_ptr,{na,nchol,nl});
 
                 // Twan = sum_l G[w][a][l] L[a][n][l]
@@ -1035,7 +1036,7 @@ class KP3IndexFactorization_batched
         if(Q <= kminus[Q]) {
           for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (i,k)
             int QK = QKToK2[Q][K];
-            Aarray.push_back(LQKikn[Q][K].origin());
+            Aarray.push_back(sp_pointer(LQKikn[Q][K].origin()));
             Barray.push_back(XQnw[Q][0].origin());
             Carray.push_back(vKK[K][QK].origin());
           }
@@ -1054,7 +1055,7 @@ class KP3IndexFactorization_batched
         if(Q > kminus[Q]) { // use L(-Q)(ki)*
           for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (i,k)
             int QK = QKToK2[Q][K];
-            Aarray.push_back(LQKikn[kminus[Q]][QK].origin());
+            Aarray.push_back(sp_pointer(LQKikn[kminus[Q]][QK].origin()));
             Barray.push_back(XQnw[Q][0].origin());
             Carray.push_back(vKK[K][QK].origin());
           }
@@ -1062,7 +1063,7 @@ class KP3IndexFactorization_batched
         } else if(Q == kminus[Q]) { // rho(Q)^+ term 
           for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (i,k)
             int QK = QKToK2[Q][K];
-            Aarray.push_back(LQKikn[Q][K].origin());
+            Aarray.push_back(sp_pointer(LQKikn[Q][K].origin()));
             Barray.push_back(XQnw[Q][1].origin());
             Carray.push_back(vKK[nkpts+Qsym_map[Q]][QK].origin());
           }
@@ -1187,11 +1188,12 @@ class KP3IndexFactorization_batched
           // v_[Q][n][w] = sum_Kak LQ[Kak][n]*G[Q][Kak][w]
           //             F: -->   G[Kak][w] * LQ[Kak][n]
           Aarray.push_back(GQ[Q].origin());
-          Barray.push_back(LQKakn[nd*nspin*nkpts+spin*nkpts+Q].origin());
+          Barray.push_back(sp_pointer(LQKakn[nd*nspin*nkpts+spin*nkpts+Q].origin()));
           Carray.push_back(v1[Q].origin());
           if(Qsym_map[Q] >= 0) {
             Aarray.push_back(GQ[Q].origin());
-            Barray.push_back(LQKbln[nd*nspin*number_of_symmetric_Q+spin*number_of_symmetric_Q+Qsym_map[Q]].origin());
+            Barray.push_back(sp_pointer(LQKbln[nd*nspin*number_of_symmetric_Q+
+                                                spin*number_of_symmetric_Q+Qsym_map[Q]].origin()));
             Carray.push_back(v1[nkpts+Qsym_map[Q]].origin());
           }
         }

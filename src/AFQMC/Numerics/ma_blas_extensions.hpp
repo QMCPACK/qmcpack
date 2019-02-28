@@ -35,8 +35,8 @@ template<class T,
 >
 void adotpby(T const alpha, MultiArray1Dx const& x, MultiArray1Dy const& y, Q const beta, ptr res){
         assert(x.size() == y.size());
-        adotpby(x.size(), alpha, x.origin(), x.stride(0),
-                                        y.origin(), y.stride(0), beta, to_address(res));
+        adotpby(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(0),
+                                        pointer_dispatch(y.origin()), y.stride(0), beta, to_address(res));
 }
 
 template<class T,
@@ -48,7 +48,7 @@ template<class T,
 MultiArray1Dy
 axty(T const alpha, MultiArray1Dx const& x, MultiArray1Dy && y){
         assert(x.size() == y.size());
-        axty(x.size(), alpha, x.origin(), x.stride(0), y.origin(), y.stride(0));
+        axty(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()), y.stride(0));
         return y;
 }
 
@@ -66,7 +66,7 @@ axty(T const alpha, MultiArray2DA const& A, MultiArray2DB && B){
         assert(A.stride(0)==A.size(1));
         assert(B.stride(1)==1);
         assert(B.stride(0)==B.size(1));
-        axty(A.num_elements(), alpha, A.origin(), 1, B.origin(), 1);
+        axty(A.num_elements(), alpha, pointer_dispatch(A.origin()), 1, pointer_dispatch(B.origin()), 1);
         return B;
 }
 
@@ -86,8 +86,8 @@ acAxpbB(T const alpha, MultiArray2DA const& A, MultiArray1D const& x, T const be
         assert(A.size(0)==B.size(0));
         assert(A.size(1)==B.size(1));
         assert(A.size(1)==x.size(0));
-        acAxpbB(A.size(1),A.size(0),alpha,A.origin(),A.stride(0),
-                x.origin(),x.stride(0),beta,B.origin(),B.stride(0));
+        acAxpbB(A.size(1),A.size(0),alpha,pointer_dispatch(A.origin()),A.stride(0),
+                pointer_dispatch(x.origin()),x.stride(0),beta,pointer_dispatch(B.origin()),B.stride(0));
         return B;
 }
 
@@ -101,7 +101,7 @@ MultiArray1Dy
 adiagApy(T const alpha, MultiArray2DA const& A, MultiArray1Dy && y){
         assert(A.size(0) == A.size(1));
         assert(A.size(0) == y.size());
-        adiagApy(y.size(), alpha, A.origin(), A.stride(0), y.origin(), y.stride(0));
+        adiagApy(y.size(), alpha, pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(y.origin()), y.stride(0));
         return y;
 }
 
@@ -110,7 +110,7 @@ template<class MultiArray1D,
 >
 auto
 sum(MultiArray1D const& y){
-        return sum(y.size(), y.origin(), y.stride(0));
+        return sum(y.size(), pointer_dispatch(y.origin()), y.stride(0));
 }
 
 template<class MultiArray2D,
@@ -121,7 +121,7 @@ auto
 sum(MultiArray2D const& A){
         assert(A.stride(1) == 1);
         // blas call assumes fortran ordering
-        return sum(A.size(1), A.size(0), A.origin(), A.stride(0));
+        return sum(A.size(1), A.size(0), pointer_dispatch(A.origin()), A.stride(0));
 }
 
 template<class MultiArray3D,
@@ -135,14 +135,14 @@ sum(MultiArray3D const& A){
         assert(A.stride(0) == A.size(1)*A.size(2));
         assert(A.stride(1) == A.size(2));
         assert(A.stride(2) == 1);
-        return sum(A.num_elements(), A.origin(), 1);
+        return sum(A.num_elements(), pointer_dispatch(A.origin()), 1);
 }
 
 template<class T, class MultiArray1D,
         typename = typename std::enable_if< std::decay<MultiArray1D>::type::dimensionality == 1 >
 >
 MultiArray1D setVector(T alpha, MultiArray1D&& a){
-        set1D(a.size(0),  alpha, a.origin(), a.stride(0) );
+        set1D(a.size(0),  alpha, pointer_dispatch(a.origin()), a.stride(0) );
         return std::forward<MultiArray1D>(a);
 }
 
@@ -150,7 +150,7 @@ template<class MultiArray1D,
         typename = typename std::enable_if< std::decay<MultiArray1D>::type::dimensionality == 1 >
 >
 void zero_complex_part(MultiArray1D&& a){
-        zero_complex_part(a.num_elements(),a.origin());
+        zero_complex_part(a.num_elements(),pointer_dispatch(a.origin()));
 }
 
 }

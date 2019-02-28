@@ -905,6 +905,7 @@ namespace ma
 
 }
 
+/*
 #include "mpi3/shared_window.hpp"
 // temporary
 namespace boost {
@@ -919,5 +920,5 @@ auto dot(int const n, array_ptr<T> x, int const incx, array_ptr<Q> y, int const 
 } // intranode
 } // mpi3
 } // boost
-
+*/
 #endif

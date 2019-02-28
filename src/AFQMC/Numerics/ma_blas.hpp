@@ -33,7 +33,7 @@ template<class MultiArray1DX,
          typename = typename std::enable_if_t<std::decay<MultiArray1DY>::type::dimensionality == 1>
         >
 MultiArray1DY copy(MultiArray1DX&& x, MultiArray1DY&& y){
-        copy(x.size(), x.origin(), x.stride(0), y.origin(), y.stride(0));
+        copy(x.size(), pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()), y.stride(0));
         return std::forward<MultiArray1DY>(y);
 }
 
@@ -46,7 +46,7 @@ template<class MultiArray2DX,
 MultiArray2DY copy(MultiArray2DX&& x, MultiArray2DY&& y){
         assert( x.stride(0) == x.size(1) ); // only on contiguous arrays 
         assert( x.stride(1) == 1 );            // only on contiguous arrays 
-        copy(x.num_elements(), x.origin(), 1, y.origin(), 1);
+        copy(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
         return std::forward<MultiArray2DY>(y);
 }
 
@@ -59,12 +59,12 @@ template<class MultiArray1Dx,
 typename std::decay<MultiArray1Dx>::type::element
 dot(MultiArray1Dx&& x, MultiArray1Dy&& y){
         assert(x.size() == y.size());
-        return dot(x.size(), x.origin(), x.stride(0), y.origin(), y.stride(0));
+        return dot(x.size(), pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()), y.stride(0));
 }
 
 template<class T, class MultiArray1D, typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type >
 MultiArray1D scal(T a, MultiArray1D&& x){
-	scal(x.size(), a, x.origin(), x.stride(0));
+	scal(x.size(), a, pointer_dispatch(x.origin()), x.stride(0));
 	return std::forward<MultiArray1D>(x);
 }
 
@@ -76,7 +76,7 @@ template<class T,
 MultiArray2D scal(T a, MultiArray2D&& x){
         assert( x.stride(0) == x.size(1) ); // only on contiguous arrays 
         assert( x.stride(1) == 1 );            // only on contiguous arrays 
-        scal(x.num_elements(), a, x.origin(), 1);
+        scal(x.num_elements(), a, pointer_dispatch(x.origin()), 1);
         return std::forward<MultiArray2D>(x);
 }
 
@@ -90,7 +90,7 @@ template<class T, class MultiArray1DA, class MultiArray1DB,
 >
 MultiArray1DB axpy(T x, MultiArray1DA const& a, MultiArray1DB&& b){
 	assert( a.size(0) == b.size(0) );
-	axpy(a.size(0), x, a.origin(), a.stride(0), b.origin(), b.stride(0));
+	axpy(a.size(0), x, pointer_dispatch(a.origin()), a.stride(0), pointer_dispatch(b.origin()), b.stride(0));
 	return std::forward<MultiArray1DB>(b);
 }
 
@@ -104,7 +104,7 @@ MultiArray2DB axpy(T x, MultiArray2DA const& a, MultiArray2DB&& b){
         assert( a.stride(1) == 1 );            // only on contiguous arrays 
         assert( b.stride(0) == b.size(1) ); // only on contiguous arrays 
         assert( b.stride(1) == 1 );            // only on contiguous arrays 
-        axpy(a.num_elements(), x, a.origin(), 1, b.origin(), 1);
+        axpy(a.num_elements(), x, pointer_dispatch(a.origin()), 1, pointer_dispatch(b.origin()), 1);
         return std::forward<MultiArray2DB>(b);
 }
 
@@ -118,9 +118,9 @@ MultiArray1DY gemv(T alpha, MultiArray2DA const& A, MultiArray1DX const& x, T be
 	assert( A.stride(1) == 1 ); // gemv is not implemented for arrays with non-leading stride != 1
 	int M = A.size(1);
 	int N = A.size(0);
-	gemv(IN, M, N, alpha, A.origin(), A.stride(0), 
-                   x.origin(), x.stride(0), beta, 
-                   y.origin(), y.stride(0));
+	gemv(IN, M, N, alpha, pointer_dispatch(A.origin()), A.stride(0), 
+                   pointer_dispatch(x.origin()), x.stride(0), beta, 
+                   pointer_dispatch(y.origin()), y.stride(0));
 	return std::forward<MultiArray1DY>(y);
 } //y := alpha*A*x + beta*y,
 
@@ -173,10 +173,10 @@ MultiArray2DC gemm(T alpha, MultiArray2DA const& a, MultiArray2DB const& b, T be
 	gemm(
 		TA, TB, 
 		M, N, K, alpha, 
-		a.origin(), a.stride(0), 
-		b.origin(), b.stride(0),
+		pointer_dispatch(a.origin()), a.stride(0), 
+		pointer_dispatch(b.origin()), b.stride(0),
 		beta, 
-		c.origin(), c.stride(0)
+		pointer_dispatch(c.origin()), c.stride(0)
 	);
 	return std::forward<MultiArray2DC>(c);
 }
@@ -227,10 +227,10 @@ MultiArray3DC gemmStridedBatched(T alpha, MultiArray3DA const& a, MultiArray3DB 
                 TA, TB,
                 M, N, K,
                 alpha,
-                a.origin(), a.stride(1),a.stride(0),
-                b.origin(), b.stride(1),b.stride(0),
+                pointer_dispatch(a.origin()), a.stride(1),a.stride(0),
+                pointer_dispatch(b.origin()), b.stride(1),b.stride(0),
                 beta,
-                c.origin(), c.stride(1),c.stride(0),
+                pointer_dispatch(c.origin()), c.stride(1),c.stride(0),
                 a.size(0)
         );
         return std::forward<MultiArray3DC>(c);
@@ -269,9 +269,9 @@ MultiArray2DC geam(T alpha, MultiArray2DA const& a, T beta, MultiArray2DB const&
                 assert(b.size(1) == c.size(0) and b.size(0) == c.size(1));
         }
         geam(   TA, TB, c.size(1), c.size(0),
-                alpha, a.origin(), a.stride(0),
-                beta, b.origin(), b.stride(0),
-                c.origin(), c.stride(0)
+                alpha, pointer_dispatch(a.origin()), a.stride(0),
+                beta, pointer_dispatch(b.origin()), b.stride(0),
+                pointer_dispatch(c.origin()), c.stride(0)
         );
         return std::forward<MultiArray2DC>(c);
 }
@@ -290,11 +290,10 @@ MultiArray2DC geam(T alpha, MultiArray2DA const& a, MultiArray2DC&& c){
         if((TA == 'T' or TA == 'C')) {
                 assert(a.size(1) == c.size(0) and a.size(0) == c.size(1));
         }
-        auto aorg(a.origin());
         geam(   TA, TA, c.size(1), c.size(0),
-                alpha, a.origin(), a.stride(0),
-                T(0), a.origin(), a.stride(0),
-                c.origin(), c.stride(0)
+                alpha, pointer_dispatch(a.origin()), a.stride(0),
+                T(0), pointer_dispatch(a.origin()), a.stride(0),
+                pointer_dispatch(c.origin()), c.stride(0)
         );
         return std::forward<MultiArray2DC>(c);
 }

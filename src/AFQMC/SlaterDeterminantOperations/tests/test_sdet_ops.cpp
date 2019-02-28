@@ -739,7 +739,7 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   using array_ref = boost::multi::array_ref<Type,2>;
   using namespace std::complex_literals;
   using csr_matrix = ma::sparse::csr_matrix<Type,int,int,
-                                boost::mpi3::intranode::allocator<Type>,
+                                shared_allocator<Type>,
                                 ma::sparse::is_root>;
 
   const Type ov = -7.62332599999999 + 22.20453200000000i;

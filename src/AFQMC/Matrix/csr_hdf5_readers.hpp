@@ -486,9 +486,9 @@ inline SparseArray2D column_distributed_CSR_from_HDF(hdf_archive& dump, task_gro
   using counter =  qmcplusplus::afqmc::sparse_matrix_element_counter;
   using mat_map =  qmcplusplus::afqmc::matrix_map;
   // Take Alloc and is_root from SparseArray2D itself
-  using Alloc = boost::mpi3::intranode::allocator<value_type>;
+  using Alloc = shared_allocator<value_type>;
   using ucsr_matrix = ma::sparse::ucsr_matrix<value_type,index_type,int_type,
-                                boost::mpi3::intranode::allocator<value_type>,
+                                shared_allocator<value_type>,
                                 ma::sparse::is_root>;
 
   // if not specified, every core reads
@@ -568,9 +568,9 @@ inline SparseArray2D unstructured_distributed_CSR_from_HDF(hdf_archive& dump, ta
 
   using mat_map =  qmcplusplus::afqmc::matrix_map;
   // Take Alloc and is_root from SparseArray2D itself
-  using Alloc = boost::mpi3::intranode::allocator<value_type>;
+  using Alloc = shared_allocator<value_type>;
   using ucsr_matrix = ma::sparse::ucsr_matrix<value_type,index_type,int_type,
-                                boost::mpi3::intranode::allocator<value_type>,
+                                shared_allocator<value_type>,
                                 ma::sparse::is_root>;
 
   bool distribute_Ham = (TG.getNNodesPerTG() > 1);

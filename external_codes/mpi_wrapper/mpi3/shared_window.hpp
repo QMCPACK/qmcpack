@@ -115,6 +115,8 @@ struct array_ptr{
 	T& operator[](int idx) const{return ((T*)(wSP_->base(0)) + offset)[idx];}
 	T* operator->() const{return (T*)(wSP_->base(0)) + offset;}
 	T* get() const{return wSP_->base(0) + offset;}
+        explicit operator T*() const{return get();}
+/*
 	operator T*() { 
             if( not (bool)wSP_ ) return nullptr;
             return wSP_->base(0) + offset;
@@ -125,6 +127,7 @@ struct array_ptr{
         }
         // need non-const version, otherwise operator T*() gets precedence in some situations
 	explicit operator bool() { return (bool)wSP_;}//.get();}
+*/
 	explicit operator bool() const{ return (bool)wSP_;}//.get();}
 	bool operator==(std::nullptr_t) const{return not ((bool)wSP_);}
 	bool operator!=(std::nullptr_t) const{return not operator==(nullptr);}
@@ -311,6 +314,7 @@ array_ptr<T> uninitialized_value_construct_n(allocator<T>& alloc, array_ptr<T> f
         return first + n;
 }
 
+/*
 struct is_root{
 	shared_communicator& comm_;
 	template<class Alloc>
@@ -320,6 +324,7 @@ struct is_root{
 	int rank() {return comm_.rank();}
 	void barrier() {comm_.barrier();}
 };
+*/
 
 }
 

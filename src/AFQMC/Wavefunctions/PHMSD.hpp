@@ -69,8 +69,8 @@ class PHMSD: public AFQMCInfo
   using shared_C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
   using shmCVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;
   using index_aos = ma::sparse::array_of_sequences<int,int,
-                                                   boost::mpi3::intranode::allocator<int>,
-                                                   boost::mpi3::intranode::is_root>;
+                                                   shared_allocator<int>,
+                                                   ma::sparse::is_root>;
 
   public:
 

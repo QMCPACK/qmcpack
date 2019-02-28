@@ -21,7 +21,8 @@
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/coo_matrix.hpp"
 
-#include "mpi3/shared_window.hpp"
+//#include "mpi3/shared_window.hpp"
+#include "AFQMC/Memory/SharedMemory/shm_ptr_with_raw_ptr_dispatch.hpp"
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
@@ -78,7 +79,7 @@ namespace afqmc
 
   // allocators
   template<class T>
-  using shared_allocator = boost::mpi3::intranode::allocator<T>;
+  using shared_allocator = shm::allocator_shm_ptr_with_raw_ptr_dispatch<T>;
   template<class T>
   using shm_pointer = typename shared_allocator<T>::pointer; 
 
@@ -103,6 +104,11 @@ namespace afqmc
     print_stacktrace;
     throw std::runtime_error(" Invalid pointer conversion: cuda_gpu_ptr<T> to T*.");
   }   
+  template<class T> device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p) 
+  { 
+    print_stacktrace;
+    throw std::runtime_error(" Invalid pointer conversion: cuda_gpu_ptr<T> to T*.");
+  }   
 #else
   template<class T>  using device_allocator = std::allocator<T>;
   template<class T>  using device_ptr = T*;
@@ -115,10 +121,16 @@ namespace afqmc
 /*   Temporary fix for the conflict problem between cpu and gpu pointers. Find proper fix */
   template<class T> device_ptr<T> make_device_ptr(T* p) { return p; }
   template<class T> device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p) 
-    { return device_ptr<T>{to_address(p)}; }
+  { //return device_ptr<T>{to_address(p)}; }
+    print_stacktrace;
+    throw std::runtime_error(" Invalid pointer conversion: cuda_gpu_ptr<T> to T*.");
+  }  
+  template<class T> device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p) 
+  { return device_ptr<T>{to_address(p)}; }
 #endif
 
 
+/*
   // casting array types until I'm allowed to use c++17!!!
   template<class Ptr, class Array, 
            typename = decltype(std::declval<Array>().extensions())
@@ -133,32 +145,33 @@ namespace afqmc
     return boost::multi::array_ref<element,D,Ptr>(make_device_ptr(A.origin()),
                                                   A.extensions());
   }
+*/
 
 
   // new types
   using SpCType_shm_csr_matrix = ma::sparse::csr_matrix<SPComplexType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SPComplexType>,
+                                shared_allocator<SPComplexType>,
                                 ma::sparse::is_root>;
   using SpVType_shm_csr_matrix = ma::sparse::csr_matrix<SPValueType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SPValueType>,
+                                shared_allocator<SPValueType>,
                                 ma::sparse::is_root>;
   using CType_shm_csr_matrix = ma::sparse::csr_matrix<ComplexType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<ComplexType>,
+                                shared_allocator<ComplexType>,
                                 ma::sparse::is_root>;
   using VType_shm_csr_matrix = ma::sparse::csr_matrix<ValueType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<ValueType>,
+                                shared_allocator<ValueType>,
                                 ma::sparse::is_root>;
 
 //#ifdef PsiT_IN_SHM
   using PsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
-                                boost::mpi3::intranode::allocator<ComplexType>,
+                                shared_allocator<ComplexType>,
                                 ma::sparse::is_root>;
 #ifdef QMC_CUDA
   using devPsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
                                 device_allocator<ComplexType>>; 
 #else
   using devPsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
-                                boost::mpi3::intranode::allocator<ComplexType>,
+                                shared_allocator<ComplexType>,
                                 ma::sparse::is_root>;
 #endif
 //#else

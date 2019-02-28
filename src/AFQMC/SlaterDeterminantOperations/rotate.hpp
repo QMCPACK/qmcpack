@@ -298,7 +298,7 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_g
   }
   TG.Node().all_reduce_in_place_n(sz_per_row.begin(),sz_per_row.size(),std::plus<>());
 
-  using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
+  using Alloc = shared_allocator<SPComplexType>;
   SpCType_shm_csr_matrix::base ucsr(tp_ul_ul{nvec,Qdim},tp_ul_ul{0,0},sz_per_row,Alloc(TG.Node()));
 
   using mat_wrapper = csr::matrix_emplace_wrapper<SpCType_shm_csr_matrix::base>;  

@@ -94,7 +94,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
     // build HamiltonianOperations
     if(file_exists("./wfn.dat")) {
 
-        using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+        using shm_Alloc = shared_allocator<ComplexType>;
         boost::multi::array<ComplexType,3> OrbMat;
         int wfn_type = readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
         if(wfn_type != 0)
@@ -286,7 +286,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
     // build HamiltonianOperations
     if(file_exists("./wfn_collinear.dat")) {
 
-        using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+        using shm_Alloc = shared_allocator<ComplexType>;
         boost::multi::array<ComplexType,3> OrbMat;
         readWfn(std::string("./wfn_collinear.dat"),OrbMat,NMO,NAEA,NAEB);
 
@@ -479,7 +479,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
     if(file_exists("./wfn_collinear.dat")) {
 
         // new
-        using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+        using shm_Alloc = shared_allocator<ComplexType>;
         boost::multi::array<ComplexType,3> OrbMat;
         readWfn(std::string("./wfn_collinear.dat"),OrbMat,NMO,NAEA,NAEB);
 

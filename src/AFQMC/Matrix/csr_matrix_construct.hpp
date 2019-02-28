@@ -27,6 +27,7 @@
 
 #include "Configuration.h"
 #include <Utilities/FairDivide.h>
+#include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "mpi3/shared_window.hpp"
@@ -82,7 +83,8 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA,
   if(comm.rank()!=0) counts.resize(nr);
   comm.broadcast_n(counts.begin(),counts.size());
   
-  CSR csr_mat(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},counts,boost::mpi3::intranode::allocator<typename CSR::value_type>(comm));
+  CSR csr_mat(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},counts,
+                            qmcplusplus::afqmc::shared_allocator<typename CSR::value_type>(comm));
 
   if(comm.rank()==0) {
     if(TA == 'N') {
@@ -128,7 +130,6 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
   using IType = typename CSR::index_type;
   using PType = typename CSR::int_type;
   using UCSR = typename CSR::base; 
-  //using UCSR = ucsr_matrix<VType,IType,PType,boost::mpi3::intranode::allocator<VType>,ma::sparse::is_root>;
 
   std::vector<std::size_t> counts(nr);
   if(TA=='N') 
@@ -144,7 +145,8 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
   Timer.reset("G0");
   Timer.start("G0");
 
-  UCSR ucsr_mat(std::tuple<std::size_t,std::size_t>{nr, nc}, std::tuple<std::size_t,std::size_t>{0,0}, counts, boost::mpi3::intranode::allocator<VType>(comm));
+  UCSR ucsr_mat(std::tuple<std::size_t,std::size_t>{nr, nc}, std::tuple<std::size_t,std::size_t>{0,0}, counts, 
+                    qmcplusplus::afqmc::shared_allocator<VType>(comm));
 
   for(std::size_t r=0; r<comm.size(); r++) {
     comm.barrier();

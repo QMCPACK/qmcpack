@@ -771,12 +771,12 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           APP_ABORT("");
         }
         assert(L_.size(0) == nkpts);
-        Sp4Tensor_ref L2(LQKikn[Q].origin(),{nkpts,nmo_max,nmo_max,nchol_max});
+        Sp4Tensor_ref L2(to_address(LQKikn[Q].origin()),{nkpts,nmo_max,nmo_max,nchol_max});
         for(int K=0; K<nkpts; ++K) {  
           int QK = QKtok2[Q][K];
           int ni = nmo_per_kp[K];
           int nk = nmo_per_kp[QK];
-          Sp3Tensor_ref L1(L_[K].origin(),{ni,nk,nchol});
+          Sp3Tensor_ref L1(to_address(L_[K].origin()),{ni,nk,nchol});
           for(int i=0; i<ni; i++)
             for(int k=0; k<nk; k++)
               copy_n(L1[i][k].origin(),nchol,L2[K][i][k].origin());

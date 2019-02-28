@@ -235,7 +235,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   if(nodeid >= ngrp || sparseQk) 
     dummy_nrow=dummy_ncol=0;
 
-  using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
+  using Alloc = shared_allocator<SPComplexType>;
   // global_origin is not set correctly, careful not to rely on it
   SpCType_shm_csr_matrix SpQk(tp_ul_ul{nrow,ncol},tp_ul_ul{0,0},0,Alloc(TG.Node()));
   SpCType_shm_csr_matrix SpRl(tp_ul_ul{ncol,nrow},tp_ul_ul{0,0},0,Alloc(TG.Node()));
@@ -267,7 +267,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
       // since Rl is transposed, I can't emplace_back on the csr matrix.
       // In this case, I need to use a temporary ucsr with an emplace_wrapper
       using ucsr_matrix = ma::sparse::ucsr_matrix<SPComplexType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SPComplexType>,
+                                shared_allocator<SPComplexType>,
                                 ma::sparse::is_root>;
       ucsr_matrix ucsr(tp_ul_ul{ncol,nrow},tp_ul_ul{0,0},0,Alloc(TG.Node()));
       csr::matrix_emplace_wrapper<ucsr_matrix> ucsr_wrapper(ucsr,TG.Node());
