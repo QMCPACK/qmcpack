@@ -23,6 +23,7 @@
 #include "Numerics/BlasThreadingEnv.h"
 #include "Numerics/MatrixOperators.h"
 #include "simd/simd.hpp"
+#include <typeinfo>
 
 namespace qmcplusplus
 {
