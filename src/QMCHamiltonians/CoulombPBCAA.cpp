@@ -327,19 +327,19 @@ CoulombPBCAA::evalLRwithForces(ParticleSet& P)
 CoulombPBCAA::Return_t
 CoulombPBCAA::evalSRwithForces(ParticleSet& P)
 {
-  const DistanceTableData *d_aa = P.DistTables[0];
+  const DistanceTableData &d_aa(*P.DistTables[0]);
   mRealType SR=0.0;
   for(int ipart=0; ipart<NumCenters; ipart++)
   {
     mRealType esum = 0.0;
-    for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++)
+    for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
     {
       RealType rV, d_rV_dr, d2_rV_dr2;
-      rV = rVs->splint(d_aa->r(nn), d_rV_dr, d2_rV_dr2);
-      RealType V = rV *d_aa->rinv(nn);
-      esum += Zat[jpart]*d_aa->rinv(nn)*rV;
+      rV = rVs->splint(d_aa.r(nn), d_rV_dr, d2_rV_dr2);
+      RealType V = rV *d_aa.rinv(nn);
+      esum += Zat[jpart]*d_aa.rinv(nn)*rV;
       PosType grad = Zat[jpart]*Zat[ipart]*
-                     (d_rV_dr - V)*d_aa->rinv(nn)*d_aa->rinv(nn)*d_aa->dr(nn);
+                     (d_rV_dr - V)*d_aa.rinv(nn)*d_aa.rinv(nn)*d_aa.dr(nn);
       forces[ipart] += grad;
       forces[jpart] -= grad;
     }
