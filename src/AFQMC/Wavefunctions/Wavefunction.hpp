@@ -21,6 +21,7 @@
 #include "AFQMC/config.h"
 #include "boost/variant.hpp"
 
+#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Wavefunctions/NOMSD.hpp"
 #include "AFQMC/Wavefunctions/PHMSD.hpp"
 
@@ -149,6 +150,9 @@ class dummy_wavefunction
   void Orthogonalize(WlkSet& wset, bool impSamp) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
+
+  SlaterDetOperations SDet;
+  SlaterDetOperations* getSlaterDetOperations() {return std::addressof(SDet);}
 
 };
 }
@@ -312,6 +316,13 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     void BackPropagateOrbMat(Args&&... args) {
         boost::apply_visitor(
               [&](auto&& a){a.BackPropagateOrbMat(std::forward<Args>(args)...);},
+              *this
+        );
+    }
+
+    SlaterDetOperations* getSlaterDetOperations() {
+        return boost::apply_visitor(
+              [&](auto&& a){return a.getSlaterDetOperations();},
               *this
         );
     }

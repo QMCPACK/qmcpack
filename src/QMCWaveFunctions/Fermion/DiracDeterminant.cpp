@@ -23,6 +23,7 @@
 #include "Numerics/BlasThreadingEnv.h"
 #include "Numerics/MatrixOperators.h"
 #include "simd/simd.hpp"
+#include <typeinfo>
 
 namespace qmcplusplus
 {
@@ -32,7 +33,7 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 DiracDeterminant::DiracDeterminant(SPOSetPtr const spos, int first):
-  DiracDeterminantBase(spos,first), ndelay(1)
+  DiracDeterminantBase(spos,first), ndelay(1), invRow_id(-1)
 {
   ClassName = "DiracDeterminant";
 }
@@ -87,6 +88,7 @@ void DiracDeterminant::resize(int nel, int morb)
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
+  invRow.resize(norb);
   psiM_temp.resize(nel,norb);
   if( typeid(ValueType) != typeid(mValueType) )
     psiM_hp.resize(nel,norb);
@@ -116,7 +118,9 @@ DiracDeterminant::evalGrad(ParticleSet& P, int iat)
 {
   const int WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
-  GradType g = updateEng.evalGrad(psiM, WorkingIndex, dpsiM[WorkingIndex]);
+  invRow_id = WorkingIndex;
+  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
   return g;
 }
@@ -131,8 +135,17 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   const int WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
   GradType rv;
-  curRatio = updateEng.ratioGrad(psiM, WorkingIndex, psiV, dpsiV, rv);
-  grad_iat += ((RealType)1.0/curRatio) * rv;
+
+  // This is an optimization.
+  // check invRow_id against WorkingIndex to see if getInvRow() has been called already
+  // Some code paths call evalGrad before calling ratioGrad.
+  if(invRow_id != WorkingIndex)
+  {
+    invRow_id = WorkingIndex;
+    updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  }
+  curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
+  grad_iat += ((RealType)1.0/curRatio) * simd::dot(invRow.data(), dpsiV.data(), invRow.size());
   RatioTimer.stop();
   return curRatio;
 }
@@ -146,6 +159,8 @@ void DiracDeterminant::acceptMove(ParticleSet& P, int iat)
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
   updateEng.acceptRow(psiM,WorkingIndex,psiV);
+  // invRow becomes invalid after accepting a move
+  invRow_id = -1;
   if(UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
@@ -165,6 +180,8 @@ void DiracDeterminant::restore(int iat)
 void DiracDeterminant::completeUpdates()
 {
   UpdateTimer.start();
+  // invRow becomes invalid after updating the inverse matrix
+  invRow_id = -1;
   updateEng.updateInvMat(psiM);
   UpdateTimer.stop();
 }
@@ -250,6 +267,8 @@ void DiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
   buf.get(PhaseValue);
+  // start with invRow labelled invalid
+  invRow_id = -1;
   BufferTimer.stop();
 }
 
@@ -265,16 +284,26 @@ DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
   Phi->evaluate(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
-  curRatio = updateEng.ratio(psiM, WorkingIndex, psiV);
+  // This is an optimization.
+  // check invRow_id against WorkingIndex to see if getInvRow() has been called
+  // This is intended to save redundant compuation in TM1 and TM3
+  if(invRow_id != WorkingIndex)
+  {
+    invRow_id = WorkingIndex;
+    updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  }
+  curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
   RatioTimer.stop();
   return curRatio;
 }
 
 void DiracDeterminant::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
-  ValueVector_t psiM_row(psiM[VP.refPtcl-FirstIndex], psiM.cols());
   SPOVTimer.start();
-  Phi->evaluateDetRatios(VP, psiV, psiM_row, ratios);
+  const int WorkingIndex = VP.refPtcl-FirstIndex;
+  invRow_id = WorkingIndex;
+  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  Phi->evaluateDetRatios(VP, psiV, invRow, ratios);
   SPOVTimer.stop();
 }
 

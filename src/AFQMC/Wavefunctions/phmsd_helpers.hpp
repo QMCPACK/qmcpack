@@ -84,7 +84,7 @@ inline void calculate_overlaps(int rank, int ngrp, int spin, PH_EXCT const& abij
     } else {
       boost::multi::array_ref<ComplexType,2> Qwork_(Qwork.origin(),{nex,nex});
       boost::multi::array_ref<ComplexType,1> Qwork2_(Qwork.origin()+Qwork_.num_elements(),
-                                                     extensions<1u>{nex*nex});
+                                                     iextensions<1u>{nex*nex});
       for(auto it = abij.unique_begin(nex)[spin]; it<abij.unique_end(nex)[spin]; ++it, ++nd) 
         if(nd%ngrp==rank) {
           auto exct = *it;
@@ -115,16 +115,16 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
   std::vector<ComplexType> WORK(abij.maximum_excitation_number()[spin]*abij.maximum_excitation_number()[spin]);
   auto confgs = abij.configurations_begin();  
   auto refc = abij.reference_configuration(spin);
-  for(int i=0; i<R.shape()[0]; i++)
-    std::fill_n(R[i].origin(),R.shape()[1],ComplexType(0));  
-  int NEL = T.shape()[1];
+  for(int i=0; i<R.size(0); i++)
+    std::fill_n(R[i].origin(),R.size(1),ComplexType(0));  
+  int NEL = T.size(1);
   std::vector<int> orbs(NEL);
   ComplexType ov_a;
   // add reference contribution!!!
   if(rank==0){
     ComplexType w(0.0);
-    auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(0));
-    auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(0));
+    auto it = to_address(couplings.values()) + (*couplings.pointers_begin(0));
+    auto ite = to_address(couplings.values()) + (*couplings.pointers_end(0));
     if(spin==0)
       for(; it<ite; ++it)
         w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
@@ -160,8 +160,8 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
           ov_a = ma::invert(Q,IWORK,WORK);
         }
         ComplexType w(0.0);
-        auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(nd));  
-        auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(nd));  
+        auto it = to_address(couplings.values()) + (*couplings.pointers_begin(nd));  
+        auto ite = to_address(couplings.values()) + (*couplings.pointers_end(nd));  
         if(spin==0) 
           for(; it<ite; ++it) 
             w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
@@ -209,16 +209,16 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
   std::vector<ComplexType> WORK(abij.maximum_excitation_number()[spin]*abij.maximum_excitation_number()[spin]);
   auto confgs = abij.configurations_begin();
   auto refc = abij.reference_configuration(spin);
-  for(int i=0; i<R.shape()[0]; i++)
-    std::fill_n(R[i].origin(),R.shape()[1],ComplexType(0));
-  int NEL = T.shape()[1];
+  for(int i=0; i<R.size(0); i++)
+    std::fill_n(R[i].origin(),R.size(1),ComplexType(0));
+  int NEL = T.size(1);
   std::vector<int> orbs(NEL);
   ComplexType ov_a;
   // add reference contribution!!!
   if(rank==0){
     ComplexType w(0.0);
-    auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(0));
-    auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(0));
+    auto it = to_address(couplings.values()) + (*couplings.pointers_begin(0));
+    auto ite = to_address(couplings.values()) + (*couplings.pointers_end(0));
     if(spin==0)
       for(; it<ite; ++it)
         w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
@@ -254,8 +254,8 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
           ov_a = ma::invert(Q,IWORK,WORK);
         }
         ComplexType w(0.0);
-        auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(nd));
-        auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(nd));
+        auto it = to_address(couplings.values()) + (*couplings.pointers_begin(nd));
+        auto ite = to_address(couplings.values()) + (*couplings.pointers_end(nd));
         if(spin==0)
           for(; it<ite; ++it)
             w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];

@@ -21,13 +21,7 @@
 #include <io/hdf_pete.h>
 #include <io/hdf_stl.h>
 #include <io/hdf_hyperslab.h>
-#include <io/hdf_double_hyperslab.h>
-#if defined(HAVE_LIBBOOST)
-#include <io/hdf_ma.h>
-#if !defined(__bgq__)
-#include <io/hdf_boost_smvector.h>
-#endif
-#endif
+//#include <io/hdf_double_hyperslab.h>
 #endif
 #include <stack>
 #include <bitset>

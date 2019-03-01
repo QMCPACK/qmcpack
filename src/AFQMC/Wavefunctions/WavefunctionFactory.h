@@ -27,16 +27,12 @@
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
-#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
 namespace qmcplusplus
 {
 
 namespace afqmc
 {
-
-// keep a std::map<*AFQMCInfo,SlaterDetOperations> to construct Wfns, and route all determinant operations through this object in Wfn classes
-
 
 class WavefunctionFactory
 {
@@ -156,8 +152,6 @@ class WavefunctionFactory
   std::map<std::string,Wavefunction> wavefunctions;
 
   std::map<std::string,boost::multi::array<ComplexType,3>> initial_guess; 
-
-  //std::map<AFQMCInfo,SlaterDetOperations>
 
 };
 }

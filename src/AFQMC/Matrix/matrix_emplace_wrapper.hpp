@@ -60,6 +60,12 @@ struct matrix_emplace_wrapper {
       return M->shape();
     }
 
+    template<typename Size>
+    std::size_t size(Size d) {
+      if(not M) return 0;
+      return M->size(d);
+    }
+
     template<typename integer_type>
     void reserve(integer_type sz) { if(M) M->reserve(sz); }
 
