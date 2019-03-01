@@ -791,7 +791,7 @@ CoulombPBCAB::evalSRwithForces(ParticleSet& P)
         rV=Vat[a]->splint(dist[a]);
         frV=fVat[a]->splint(dist[a]);
         fdrV=fdVat[a]->splint(dist[a]);
-        dvdr=Qat[b]*Zat[a]*(fdrV-frV)*rinv;
+        dvdr=Qat[b]*Zat[a]*(fdrV-frV*rinv)*rinv;
         forces[a][0]-=dvdr*dr[a][0]*rinv;
         forces[a][1]-=dvdr*dr[a][1]*rinv;
         forces[a][2]-=dvdr*dr[a][2]*rinv;
