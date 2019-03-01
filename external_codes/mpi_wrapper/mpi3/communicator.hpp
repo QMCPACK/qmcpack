@@ -2185,10 +2185,6 @@ private:
 		using std::begin;
 		return scatter(begin(c), root);
 	}
-	template<class Range>
-	friend auto operator/(Range const& r, communicator& self)
-	->decltype(self.scatter(begin(r), end(r))){
-		return self.scatter(begin(r), end(r));}
 
 	
 
@@ -2282,6 +2278,48 @@ private:
 			root
 		);
 		return it2 + n;
+	}
+	template<class It1, typename Size1, class It2, typename Size2>
+	auto gather_n(
+		It1 first, 
+			detail::contiguous_iterator_tag,
+			detail::basic_tag,
+		Size1 count,
+		It2 d_first,
+			detail::contiguous_iterator_tag,
+			detail::basic_tag,
+		Size2 d_count, 
+		int root
+	){
+		auto e = static_cast<enum error>(
+			MPI_Gather(
+				detail::data(first), count, 
+				detail::basic_datatype<typename std::iterator_traits<It1>::value_type>{},
+				detail::data(d_first), d_count,
+				detail::basic_datatype<typename std::iterator_traits<It2>::value_type>{},
+				root, impl_
+			)
+		);
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot gather"};
+		return d_first += rank()==root?d_count*size():0;
+	}
+	template<class It1, class Size1, class It2, class Size2>
+	auto gather_n(It1 first, Size1 count, It2 d_first, Size2 d_count, int root){
+		return gather_n(
+			first, 
+				detail::iterator_category_t<It1>{},
+				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
+			count, 
+			d_first,
+				detail::iterator_category_t<It2>{},
+				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
+			d_count,
+			root
+		);
+	}
+	template<class It1, class Size1, class It2>
+	auto gather_n(It1 first, Size1 count, It2 d_first, int root){
+		return gather_n(first, count, d_first, count, root);
 	}
 	template<class It2, class Size, class It1>
 	auto scatterv_n_from(It2 d_first, Size n, It1 first, int root = 0){
@@ -2675,30 +2713,6 @@ public:
 		);
 	}
 	template<class It1, typename Size1, class It2, typename Size2>
-	auto gather_n(
-		It1 first, 
-			detail::contiguous_iterator_tag,
-			detail::basic_tag,
-		Size1 count,
-		It2 d_first,
-			detail::contiguous_iterator_tag,
-			detail::basic_tag,
-		Size2 d_count, 
-		int root
-	){
-		auto e = static_cast<enum error>(
-			MPI_Gather(
-				detail::data(first), count, 
-				detail::basic_datatype<typename std::iterator_traits<It1>::value_type>{},
-				detail::data(d_first), d_count,
-				detail::basic_datatype<typename std::iterator_traits<It2>::value_type>{},
-				root, impl_
-			)
-		);
-		if(e != mpi3::error::success) throw std::system_error{e, "cannot gather"};
-		return d_first += rank()==root?d_count*size():0;
-	}
-	template<class It1, typename Size1, class It2, typename Size2>
 	auto igather_n(
 		It1 first, 
 			detail::contiguous_iterator_tag,
@@ -2738,20 +2752,6 @@ public:
 		);
 		if(s != MPI_SUCCESS) throw std::runtime_error("cannot Iallgather");
 		return ret;
-	}
-	template<class It1, class Size1, class It2, class Size2>
-	auto gather_n(It1 first, Size1 count, It2 d_first, Size2 d_count, int root){
-		return gather_n(
-			first, 
-				detail::iterator_category_t<It1>{},
-				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
-			count, 
-			d_first,
-				detail::iterator_category_t<It2>{},
-				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
-			d_count,
-			root
-		);
 	}
 	template<class It1, typename Size1, class It2, class Size2>
 	auto gather_n(
@@ -2810,10 +2810,6 @@ public:
 				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
 			d_count
 		);
-	}
-	template<class It1, class Size1, class It2>
-	auto gather_n(It1 first, Size1 count, It2 d_first, int root){
-		return gather_n(first, count, d_first, count, root);
 	}
 	template<class It1, class Size1, class It2>
 	auto igather_n(It1 first, Size1 count, It2 d_first, int root = 0){
@@ -3125,6 +3121,11 @@ friend communicator& operator<<(communicator& comm, T const& t){
 
 
 };
+
+template<class Range>
+auto operator/(Range const& r, communicator& self)
+	->decltype(self.scatter(begin(r), end(r))){
+		return self.scatter(begin(r), end(r));}
 
 struct strided_range{
 	int first;
