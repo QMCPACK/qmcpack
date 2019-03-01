@@ -180,7 +180,8 @@ CoulombPBCAB::evaluateWithIonDerivs(ParticleSet&P, ParticleSet& ions, TrialWaveF
   forces=0.0;
   Value = evalLRwithForces(P)+evalSRwithForces(P)+myConst;
   hf_terms -= forces;
-  //And no Pulay contribution.  
+  //And no Pulay contribution.
+  return Value; 
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
