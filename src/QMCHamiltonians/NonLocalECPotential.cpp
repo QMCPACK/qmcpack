@@ -160,7 +160,7 @@ NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, Tr
   }
   hf_terms-=forces;
   pulay_terms-=PulayTerm;
-  
+  return Value;
 }
 
 NonLocalECPotential::Return_t
