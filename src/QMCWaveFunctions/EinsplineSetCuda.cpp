@@ -700,6 +700,7 @@ EinsplineSetExtended<T>::get_split_spline_pointers()
 {
   split_splines=(gpu::device_group_size>1);
   int size = OHMMS::Controller->size(); // how many MPI ranks
+#ifdef HAVE_MPI
   if ((size>1) && split_splines)
   {
     app_log() << "Gathering einspline GPU memory pointers from all ranks.\n";
@@ -753,6 +754,7 @@ EinsplineSetExtended<T>::get_split_spline_pointers()
     std::cerr << "\n";
 #endif
   }
+#endif
 }
 
 template<typename T> void

@@ -23,7 +23,6 @@ class Communicate;
 
 namespace qmcplusplus
 {
-
 /**class RandomNumberControl
  *\brief Encapsulate data to initialize and save the status of the random number generator
  *
@@ -33,16 +32,14 @@ namespace qmcplusplus
  */
 class RandomNumberControl : public OhmmsElementBase
 {
-
 public:
-
   typedef RandomGenerator_t::uint_type uint_type;
   static PrimeNumberSet<uint_type> PrimeNumbers;
   //children random number generator
-  static std::vector<RandomGenerator_t*>  Children;
+  static std::vector<RandomGenerator_t*> Children;
 
   /// constructors and destructors
-  RandomNumberControl(const char* aname="random");
+  RandomNumberControl(const char* aname = "random");
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
@@ -87,23 +84,22 @@ public:
    * @param comm communicator
    */
   static void write_rank_0(hdf_archive& hout, Communicate* comm);
-   /** read random state from a xml file
+  /** read random state from a xml file
    * @param fname file name
    * @param comm communicator
    */
   static void read_old(const std::string& fname, Communicate* comm);
-   /** write random state to a xml file
+  /** write random state to a xml file
    * @param fname file name
    * @param comm communicator
    */
   static void write_old(const std::string& fname, Communicate* comm);
-private:
 
+private:
   bool NeverBeenInitialized;
   xmlNodePtr myCur;
   static uint_type Offset;
 };
-}
+} // namespace qmcplusplus
 
 #endif
-

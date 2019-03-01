@@ -22,18 +22,18 @@ using std::string;
 
 namespace qmcplusplus
 {
-
-
 TEST_CASE("matrix", "[OhmmsPETE]")
 {
   typedef Matrix<OHMMS_PRECISION> mat_t;
-  mat_t A(3,3);
-  mat_t B(3,3);
-  mat_t C(3,3);
+  mat_t A(3, 3);
+  mat_t B(3, 3);
+  mat_t C(3, 3);
 
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      B(i,j) = (i+j)*2.1;
+  for (int i = 0; i < 3; i++)
+  {
+    for (int j = 0; j < 3; j++)
+    {
+      B(i, j) = (i + j) * 2.1;
     }
   }
 
@@ -48,7 +48,8 @@ TEST_CASE("matrix", "[OhmmsPETE]")
 
   // iterator
   mat_t::iterator ia = A.begin();
-  for (; ia != A.end(); ia++) {
+  for (; ia != A.end(); ia++)
+  {
     REQUIRE(*ia == Approx(3.1));
   }
 
@@ -58,21 +59,21 @@ TEST_CASE("matrix", "[OhmmsPETE]")
   REQUIRE(D.cols() == 3);
 
   // swap_rows
-  A(0,0)=0.0;
-  A(0,1)=1.0;
-  A(1,0)=1.0;
-  A(1,1)=2.0;
-  A.swap_rows(0,1);
-  REQUIRE(A(0,0) == 1.0);
-  REQUIRE(A(0,1) == 2.0);
-  REQUIRE(A(1,0) == 0.0);
-  REQUIRE(A(1,1) == 1.0);
+  A(0, 0) = 0.0;
+  A(0, 1) = 1.0;
+  A(1, 0) = 1.0;
+  A(1, 1) = 2.0;
+  A.swap_rows(0, 1);
+  REQUIRE(A(0, 0) == 1.0);
+  REQUIRE(A(0, 1) == 2.0);
+  REQUIRE(A(1, 0) == 0.0);
+  REQUIRE(A(1, 1) == 1.0);
   // swap_cols
-  A.swap_cols(0,1);
-  REQUIRE(A(0,0) == 2.0);
-  REQUIRE(A(0,1) == 1.0);
-  REQUIRE(A(1,0) == 1.0);
-  REQUIRE(A(1,1) == 0.0);
+  A.swap_cols(0, 1);
+  REQUIRE(A(0, 0) == 2.0);
+  REQUIRE(A(0, 1) == 1.0);
+  REQUIRE(A(1, 0) == 1.0);
+  REQUIRE(A(1, 1) == 0.0);
 }
 
-}
+} // namespace qmcplusplus
