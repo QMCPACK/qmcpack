@@ -240,11 +240,13 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   ghContainer_type mygH;
 
   ///thread private ratios for reduction when using nested threading, numVP x numThread
-  Matrix<TT> ratios_private;
+  Matrix<TT,OffloadAllocatorTT> ratios_private;
   ///offload scratch space, dynamically resized to the maximal need
   Vector<ST,OffloadAllocatorST> offload_scratch;
   ///result scratch space, dynamically resized to the maximal need
   Vector<TT,OffloadAllocatorTT> results_scratch;
+  ///particle position scratch, dynamically resized to the maximal need
+  Vector<ST,OffloadAllocatorST> pos_scratch;
   ///the following pointers are used for keep and access the data on device
   ///cloned objects copy the pointer by value without the need of mapping to the device
   ///Thus master_PrimLattice_G_ptr is different from PrimLattice.G.data() in cloned objects
@@ -490,18 +492,19 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
       int nComplexBands_local = nComplexBands;
 
       PRAGMA_OMP("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
-                  map(always, from:psi_ptr[0:orb_size])")
+                  map(always, from: psi_ptr[0:orb_size])")
       for(int team_id = 0; team_id < NumTeams; team_id++)
       {
-        int first = ChunkSizePerTeam * team_id;
-        int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam ;
+        const int first = ChunkSizePerTeam * team_id;
+        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam ;
         PRAGMA_OMP("omp parallel")
         {
           spline2offload::evaluate_v_impl_v2(spline_ptr, rux, ruy, ruz,
                                              offload_scratch_ptr+first,
-                                           first, last);
+                                             first, last);
           C2R::assign_v(x, y, z, psi_ptr, orb_size, offload_scratch_ptr,
-                     myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local, first/2, last/2);
+                        myKcart_ptr, myKcart_padded_size, first_spo_local,
+                        nComplexBands_local, first/2, last/2);
         }
       }
     }
@@ -510,38 +513,83 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   template<typename VV, typename RT>
   inline void evaluateDetRatios(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
-    const bool need_resize = ratios_private.rows()<VP.getTotalNum();
-
-    #pragma omp parallel
+    // pack particle positions
+    const int nVP = VP.getTotalNum();
+    if(pos_scratch.size()<nVP*6)
+      pos_scratch.resize(nVP*6);
+    for(int iat=0; iat<nVP; ++iat)
     {
-      int tid = omp_get_thread_num();
-      // initialize thread private ratios
-      if(need_resize)
-      {
-        if (tid==0) // just like #pragma omp master, but one fewer call to the runtime
-          ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
-        #pragma omp barrier
-      }
-      int first, last;
-      FairDivideAligned(myV.size(), getAlignment<ST>(),
-                        omp_get_num_threads(), tid,
-                        first, last);
-      const int first_cplx = first/2;
-      const int last_cplx = kPoints.size() < last/2 ? kPoints.size() : last/2;
-
-      for(int iat=0; iat<VP.getTotalNum(); ++iat)
-      {
-        const PointType& r=VP.activeR(iat);
-        PointType ru(PrimLattice.toUnit_floor(r));
-
-        spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
-        assign_v(r,myV,psi,first_cplx,last_cplx);
-
-        const int first_real = first_cplx+std::min(nComplexBands,first_cplx);
-        const int last_real  = last_cplx+std::min(nComplexBands,last_cplx);
-        ratios_private[iat][tid] = simd::dot(psi.data()+first_real, psiinv.data()+first_real, last_real-first_real);
-      }
+      const PointType& r=VP.activeR(iat);
+      PointType ru(PrimLattice.toUnit_floor(r));
+      pos_scratch[iat*6  ] = r[0];
+      pos_scratch[iat*6+1] = r[1];
+      pos_scratch[iat*6+2] = r[2];
+      pos_scratch[iat*6+3] = ru[0];
+      pos_scratch[iat*6+4] = ru[1];
+      pos_scratch[iat*6+5] = ru[2];
     }
+
+    const int ChunkSizePerTeam = 128;
+    const int NumTeams = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+
+    if(ratios_private.size()<NumTeams*nVP)
+      ratios_private.resize(nVP, NumTeams);
+    const auto padded_size = myV.size();
+    if(offload_scratch.size()<padded_size*nVP)
+      offload_scratch.resize(padded_size*nVP);
+    const auto orb_size = psi.size();
+    if(results_scratch.size()<orb_size*nVP)
+      results_scratch.resize(orb_size*nVP);
+
+    // Ye: need to extract sizes and pointers before entering target region
+    const auto* spline_ptr = SplineInst->spline_m;
+    auto* pos_scratch_ptr = pos_scratch.data();
+    auto* offload_scratch_ptr = offload_scratch.data();
+    auto* results_scratch_ptr = results_scratch.data();
+    const auto myKcart_padded_size = myKcart.capacity();
+    auto* myKcart_ptr = master_myKcart_ptr;
+    auto* psiinv_ptr = psiinv.data();
+    auto* ratios_private_ptr = ratios_private.data();
+    size_t first_spo_local = first_spo;
+    int nComplexBands_local = nComplexBands;
+
+    PRAGMA_OMP("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) thread_limit(ChunkSizePerTeam) \
+                map(always, to: pos_scratch_ptr[0:nVP*6], psiinv_ptr[0:orb_size]) \
+                map(always, from: ratios_private_ptr[0:NumTeams*nVP])")
+    for(int iat=0; iat<nVP; ++iat)
+      for(int team_id = 0; team_id < NumTeams; team_id++)
+      {
+        const int first = ChunkSizePerTeam * team_id;
+        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam ;
+        const int first_cplx = first/2;
+        const int last_cplx = kPoints.size() < last/2 ? kPoints.size() : last/2;
+        auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr+padded_size*iat;
+        auto* restrict psi_iat_ptr = results_scratch_ptr+orb_size*iat;
+        PRAGMA_OMP("omp parallel")
+        {
+          spline2offload::evaluate_v_impl_v2(spline_ptr,
+                                             pos_scratch_ptr[iat*6+3],
+                                             pos_scratch_ptr[iat*6+4],
+                                             pos_scratch_ptr[iat*6+5],
+                                             offload_scratch_iat_ptr+first,
+                                             first, last);
+          C2R::assign_v(pos_scratch_ptr[iat*6],
+                        pos_scratch_ptr[iat*6+1],
+                        pos_scratch_ptr[iat*6+2],
+                        psi_iat_ptr, orb_size,
+                        offload_scratch_iat_ptr,
+                        myKcart_ptr, myKcart_padded_size,
+                        first_spo_local, nComplexBands_local, first/2, last/2);
+
+          const int first_real = first_cplx+std::min(nComplexBands,first_cplx);
+          const int last_real  = last_cplx+std::min(nComplexBands,last_cplx);
+          TT sum(0);
+          PRAGMA_OMP("omp for reduction(+:sum)")
+          for(int i=first_real; i<last_real; i++)
+            sum += psi_iat_ptr[i]*psiinv_ptr[i];
+          ratios_private_ptr[iat*NumTeams+team_id] = sum;
+        }
+      }
 
     // do the reduction manually
     for(int iat=0; iat<VP.getTotalNum(); ++iat)
@@ -697,11 +745,11 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     int nComplexBands_local = nComplexBands;
 
     PRAGMA_OMP("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
-                map(always, from:results_scratch_ptr[0:orb_size*5])")
+                map(always, from: results_scratch_ptr[0:orb_size*5])")
     for(int team_id = 0; team_id < NumTeams; team_id++)
     {
-      int first = ChunkSizePerTeam * team_id;
-      int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam ;
+      const int first = ChunkSizePerTeam * team_id;
+      const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam ;
       PRAGMA_OMP("omp parallel")
       {
         spline2offload::evaluate_vgh_impl_v2(spline_ptr, rux, ruy, ruz,
