@@ -35,7 +35,7 @@ template<typename T1, typename T2>
 SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
 {
 
-#if defined(AFQMC_SP)
+#if defined(MIXED_PRECISION)
   using SpT1 = typename to_single_precision<T1>::value_type;
   using SpT2 = typename to_single_precision<T2>::value_type;
 #else

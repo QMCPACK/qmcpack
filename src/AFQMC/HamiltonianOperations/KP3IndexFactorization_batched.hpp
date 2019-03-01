@@ -333,8 +333,12 @@ class KP3IndexFactorization_batched
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
       size_t cnt(0);  
       if(addEJ) { 
+#if MIXED_PRECISION
+        mem_needs += 2*nwalk*local_nCV;
+#else
         if(not getKr) mem_needs += nwalk*local_nCV;
         if(not getKl) mem_needs += nwalk*local_nCV;
+#endif
       }
       set_buffer(mem_needs);
 
@@ -345,19 +349,35 @@ class KP3IndexFactorization_batched
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
+#if MIXED_PRECISION
+        if(getKr) {
+          assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
+          assert(KEright->stride(0) == KEright->size(1));
+        }
+#else
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV); 
           assert(KEright->stride() == KEright->size(1));
           Krptr = make_device_ptr(KEright->origin()); 
-        } else {
+        } else 
+#endif
+        {
           Krptr = BTMats.origin(); 
           cnt += nwalk*local_nCV;
         }
+#if MIXED_PRECISION
+        if(getKl) {
+          assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
+          assert(KEleft->stride(0) == KEleft->size(1));
+        }
+#else
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV); 
           assert(KEleft->stride(0) == KEleft->size(1));
           Klptr = make_device_ptr(KEleft->origin());
-        } else {
+        } else 
+#endif
+        {
           Klptr = BTMats.origin()+cnt; 
           cnt += nwalk*local_nCV;
         }
@@ -472,7 +492,7 @@ class KP3IndexFactorization_batched
           fill_n(IMats.origin(),batch_size,0);
         }
         SpVector_ref dev_scl_factors(TMats.origin(),{batch_size}); 
-        RealType scl = (walker_type==CLOSED?2.0:1.0);
+        SPRealType scl = (walker_type==CLOSED?2.0:1.0);
         size_t nqk=1;  
         for(int Q=0; Q<nkpts; ++Q) {
           bool haveKE=false;
@@ -623,8 +643,12 @@ class KP3IndexFactorization_batched
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
       size_t cnt(0);  
       if(addEJ) { 
+#if MIXED_PRECISION
+        mem_needs += 2*nwalk*local_nCV;
+#else
         if(not getKr) mem_needs += nwalk*local_nCV;
         if(not getKl) mem_needs += nwalk*local_nCV;
+#endif
       }
       set_buffer(mem_needs);
 
@@ -635,19 +659,35 @@ class KP3IndexFactorization_batched
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
+#if MIXED_PRECISION
+        if(getKr) {
+          assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
+          assert(KEright->stride(0) == KEright->size(1));
+        }
+#else
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride() == KEright->size(1));
           Krptr = make_device_ptr(KEright->origin());
-        } else {
+        } else 
+#endif
+        {
           Krptr = BTMats.origin();
           cnt += nwalk*local_nCV;
         }
+#if MIXED_PRECISION
+        if(getKl) {
+          assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
+          assert(KEleft->stride(0) == KEleft->size(1));
+        }
+#else
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
           Klptr = make_device_ptr(KEleft->origin());
-        } else {
+        } else 
+#endif
+        {
           Klptr = BTMats.origin()+cnt;
           cnt += nwalk*local_nCV;
         }
@@ -789,11 +829,11 @@ class KP3IndexFactorization_batched
                   ma::product(Gal,ma::T(Lbnl),Tabn);
                   ma::product(Gbk,ma::T(Lank),Tban);
 
-                  ComplexType E_(0.0);
+                  SPComplexType E_(0.0);
                   for(int a=0; a<na; ++a)
                     for(int b=0; b<nb; ++b)
                       E_ += ma::dot(T3Dabn[a][b],T3Dban[b][a]);
-                  E[n][1] -= scl*0.5*E_/gQ[Q]/double(nsampleQ);
+                  E[n][1] -= scl*0.5*static_cast<ComplexType>(E_)/gQ[Q]/double(nsampleQ);
 
                 } // if
 
@@ -826,11 +866,11 @@ class KP3IndexFactorization_batched
                     ma::product(Gal,ma::T(Lbnl),Tabn);
                     ma::product(Gbk,ma::T(Lank),Tban);
   
-                    ComplexType E_(0.0);
+                    SPComplexType E_(0.0);
                     for(int a=0; a<na; ++a)
                       for(int b=0; b<nb; ++b)
                         E_ += ma::dot(T3Dabn[a][b],T3Dban[b][a]);
-                    E[n][1] -= scl*0.5*E_/gQ[Q]/double(nsampleQ);
+                    E[n][1] -= scl*0.5*static_cast<ComplexType>(E_)/gQ[Q]/double(nsampleQ);
 
                   } // if
                 } // COLLINEAR 
@@ -941,8 +981,8 @@ class KP3IndexFactorization_batched
           for(int Q=0; Q<nkpts; ++Q) {      // momentum conservation index   
             {
               int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
-              E[n][2] += 0.5*scl*scl*ma::dot(Kl[n]({nc0,nc0+ncholpQ[Q]}),
-                                            Kr[n]({nc0,nc0+ncholpQ[Q]}));  
+              E[n][2] += 0.5*scl*scl*static_cast<ComplexType>(ma::dot(Kl[n]({nc0,nc0+ncholpQ[Q]}),
+                                            Kr[n]({nc0,nc0+ncholpQ[Q]})));  
             }
           }
         }
@@ -989,7 +1029,14 @@ class KP3IndexFactorization_batched
       assert(v.num_elements() == nwalk*nmo_tot*nmo_tot);
       SPComplexType one(1.0,0.0);
       SPComplexType im(0.0,1.0);
+      SPComplexType halfa(0.5*a,0.0);
+      SPComplexType minusimhalfa(0.0,-0.5*a);
+      SPComplexType imhalfa(0.0,0.5*a);
+
       size_t mem_needs((nkpts+number_of_symmetric_Q)*nkpts*nwalk*nmo_max*nmo_max + nwalk*2*nkpts*nchol_max);
+#if MIXED_PRECISION
+      mem_needs += X.num_elements();
+#endif
       if(BTMats.num_elements() < mem_needs) { 
         BTMats = std::move(SpVector(iextensions<1u>{mem_needs}));
         using std::fill_n;
@@ -997,18 +1044,22 @@ class KP3IndexFactorization_batched
       }
 
       Sp3Tensor_ref vKK(BTMats.origin(),{nkpts+number_of_symmetric_Q,nkpts,nwalk*nmo_max*nmo_max} );
-      Sp4Tensor_ref XQnw(BTMats.origin()+vKK.num_elements(),{nkpts,2,nchol_max,nwalk} );
+      Sp4Tensor_ref XQnw(vKK.origin()+vKK.num_elements(),{nkpts,2,nchol_max,nwalk} );
       fill_n(XQnw.origin(),XQnw.num_elements(),SPComplexType(0.0));
 
       // "rotate" X  
       //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)  
-// transform to single precision
+#if MIXED_PRECISION
+      SpMatrix_ref Xdev(XQnw.origin()+XQnw.num_elements(),X.extensions());
+      copy_n_cast(make_device_ptr(X.origin()),X.num_elements(),Xdev.origin());
+#else
       SpMatrix_ref Xdev(make_device_ptr(X.origin()),X.extensions());
+#endif
       for(int Q=0, nq=0; Q<nkpts; ++Q) { 
         auto&& Xp(Xdev.sliced(nq,nq+ncholpQ[Q]));
         auto&& Xm(Xdev.sliced(nq+ncholpQ[Q],nq+2*ncholpQ[Q]));
-        ma::add(ComplexType(0.5*a),Xp,ComplexType(-0.5*a*im),Xm,XQnw[Q][0].sliced(0,ncholpQ[Q]));
-        ma::add(ComplexType(0.5*a),Xp,ComplexType(0.5*a*im),Xm,XQnw[Q][1].sliced(0,ncholpQ[Q]));
+        ma::add(halfa,Xp,minusimhalfa,Xm,XQnw[Q][0].sliced(0,ncholpQ[Q]));
+        ma::add(halfa,Xp,imhalfa,Xm,XQnw[Q][1].sliced(0,ncholpQ[Q]));
         nq+=2*ncholpQ[Q];
       } 
       //  then combine Q/(-Q) pieces

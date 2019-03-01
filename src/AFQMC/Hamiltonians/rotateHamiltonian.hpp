@@ -81,14 +81,14 @@ inline boost::multi::array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, 
   if(walker_type == CLOSED || walker_type == NONCOLLINEAR) {
 
     N.reextent(iextensions<1u>{NAEA*NMO});
-#if(AFQMC_SP)
+#if(MIXED_PRECISION)
     boost::multi::array<ComplexType,2> N_({NAEA,NMO});
 #else
     boost::multi::array_ref<ComplexType,2> N_(N.origin(),{NAEA,NMO});
 #endif
 
     ma::product(*Alpha,H1,N_);
-#if(AFQMC_SP)
+#if(MIXED_PRECISION)
     std::copy_n(N_.origin(),NAEA*NMO,N.origin());
 #endif
     ma::scal(SPComplexType(2.0),N);
@@ -99,7 +99,7 @@ inline boost::multi::array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, 
     int NAEB = Beta->size(0);
 
     N.reextent(iextensions<1u>{(NAEA+NAEB)*NMO});
-#if(AFQMC_SP)
+#if(MIXED_PRECISION)
     boost::multi::array<ComplexType,2> NA_({NAEA,NMO});
     boost::multi::array<ComplexType,2> NB_({NAEB,NMO});
 #else
@@ -109,7 +109,7 @@ inline boost::multi::array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, 
 
     ma::product(*Alpha,H1,NA_);
     ma::product(*Beta,H1,NB_);
-#if(AFQMC_SP)
+#if(MIXED_PRECISION)
     std::copy_n(NA_.origin(),NAEA*NMO,N.origin());
     std::copy_n(NB_.origin(),NAEB*NMO,N.origin()+NAEA*NMO);
 #endif

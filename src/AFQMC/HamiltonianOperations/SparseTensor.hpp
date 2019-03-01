@@ -41,7 +41,7 @@ template<class T1, class T2=T1>
 class SparseTensor
 {
 
-#if defined(AFQMC_SP)
+#if defined(MIXED_PRECISION)
   using SpT1 = typename to_single_precision<T1>::value_type;
   using SpT2 = typename to_single_precision<T2>::value_type;
 #else

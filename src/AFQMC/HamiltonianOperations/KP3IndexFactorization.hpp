@@ -104,16 +104,15 @@ class KP3IndexFactorization
         Qsym_map(std::move(qqm_)),
         vn0(std::move(vn0_)),
         gQ(std::move(gQ_)),
-        Qwn({1,1},shared_allocator<SPComplexType>{c_}),
+        Qwn({1,1},shared_allocator<SPComplexType>{*comm}),
         generator(),
         distribution(gQ.begin(),gQ.end()),
         nsampleQ(nsampleQ_),
-        SM_TMats({1,1},shared_allocator<SPComplexType>{c_}),
+        SM_TMats({1,1},shared_allocator<SPComplexType>{*comm}),
         TMats({1,1}),
         EQ(nopk.size()+2),
         mutex(0)
     {
-app_log()<<" in shared KP3Index " <<std::endl;
       local_nCV = std::accumulate(ncholpQ.begin(),ncholpQ.end(),0);
       mutex.reserve(ncholpQ.size());
       for(int nQ=0; nQ<ncholpQ.size(); nQ++)
@@ -151,10 +150,13 @@ app_log()<<" in shared KP3Index " <<std::endl;
       boost::multi::array<ComplexType,2> P1({NMO,NMO});
 
       // making a copy of vMF since it will be modified
-      set_shm_buffer(vMF.size(0));
-      boost::multi::array_ref<ComplexType,1> vMF_(to_address(SM_TMats.origin()),{vMF.size(0)});
-      using std::copy_n;
-      copy_n(vMF.origin(),vMF.num_elements(),vMF_.origin());
+      shmCVector vMF_(iextensions<1u>{vMF.num_elements()},shared_allocator<ComplexType>{*comm});
+      comm->barrier();
+      if(comm->root()) {
+        using std::copy_n;
+        copy_n(vMF.origin(),vMF.num_elements(),vMF_.origin());
+      }
+      comm->barrier();
 
       boost::multi::array_ref<ComplexType,1> P1D(to_address(P1.origin()),{NMO*NMO});
       std::fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));
@@ -229,8 +231,12 @@ app_log()<<" in shared KP3Index " <<std::endl;
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
       size_t cnt(0);
       if(addEJ) {
+#if MIXED_PRECISION
+        mem_needs += 2*nwalk*local_nCV;
+#else
         if(not getKr) mem_needs += nwalk*local_nCV;
         if(not getKl) mem_needs += nwalk*local_nCV;
+#endif
       }
       set_shm_buffer(mem_needs);
 
@@ -241,19 +247,35 @@ app_log()<<" in shared KP3Index " <<std::endl;
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
+#if MIXED_PRECISION
+        if(getKr) {
+          assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
+          assert(KEright->stride(0) == KEright->size(1));
+        }
+#else
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
           Krptr = to_address(KEright->origin());
-        } else {
+        } else 
+#endif
+        {
           Krptr = to_address(SM_TMats.origin());
           cnt += nwalk*local_nCV;
         }
+#if MIXED_PRECISION
+        if(getKl) {
+          assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
+          assert(KEleft->stride(0) == KEleft->size(1));
+        }
+#else
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
           Klptr = to_address(KEleft->origin());
-        } else {
+        } else 
+#endif
+        {
           Klptr = to_address(SM_TMats.origin())+cnt;
           cnt += nwalk*local_nCV;
         }
@@ -289,7 +311,7 @@ app_log()<<" in shared KP3Index " <<std::endl;
         for(int n=0; n<nwalk; n++)
           E[n][0] = E0;
         for(int K=0; K<nkpts; ++K) {
-#ifdef AFQMC_SP
+#ifdef MIXED_PRECISION 
           boost::multi::array_ref<ComplexType,2> haj_K(to_address(haj[nd*nkpts+K].origin()),
                                                       {nelpk[nd][K],nopk[K]});
           for(int a=0; a<nelpk[nd][K]; ++a)
@@ -338,7 +360,7 @@ app_log()<<" in shared KP3Index " <<std::endl;
         cnt+=Kl_local.num_elements();
         std::fill_n(Kr_local.origin(),Kr_local.num_elements(),SPComplexType(0.0));
         std::fill_n(Kl_local.origin(),Kl_local.num_elements(),SPComplexType(0.0));
-        RealType scl = (walker_type==CLOSED?2.0:1.0);
+        SPRealType scl = (walker_type==CLOSED?2.0:1.0);
         size_t nqk=1;
         for(int Q=0; Q<nkpts; ++Q) {
           bool haveKE=false;
@@ -373,14 +395,14 @@ app_log()<<" in shared KP3Index " <<std::endl;
                 ma::product(Gwbk,ma::T(Lank),Twban);
 
                 for(int n=0; n<nwalk; ++n) {
-                  ComplexType E_(0.0);
+                  SPComplexType E_(0.0);
                   for(int a=0; a<na; ++a)
                     for(int b=0; b<nb; ++b)
                       E_ += ma::dot(T4Dwabn[n][a][b],T4Dwban[n][b][a]);
                   if(Q==kminus[Q] || Ka==Kb)
-                    E[n][1] -= scl*0.5*E_;
+                    E[n][1] -= 0.5*static_cast<ComplexType>(scl*E_);
                   else
-                    E[n][1] -= 2.0*scl*0.5*E_;
+                    E[n][1] -= static_cast<ComplexType>(scl*E_);
                 }
 
                 if(addEJ && Ka==Kb) {
@@ -423,14 +445,14 @@ app_log()<<" in shared KP3Index " <<std::endl;
                   ma::product(Gwbk,ma::T(Lank),Twban);
 
                   for(int n=0; n<nwalk; ++n) {
-                    ComplexType E_(0.0);
+                    SPComplexType E_(0.0);
                     for(int a=0; a<na; ++a)
                       for(int b=0; b<nb; ++b)
                         E_ += ma::dot(T4Dwabn[n][a][b],T4Dwban[n][b][a]);
                     if(Q==kminus[Q] || Ka==Kb)
-                      E[n][1] -= scl*0.5*E_;
+                      E[n][1] -= 0.5*static_cast<ComplexType>(scl*E_);
                     else
-                     E[n][1] -= 2.0*scl*0.5*E_;
+                     E[n][1] -= static_cast<ComplexType>(scl*E_);
                   }
 
                   if(addEJ && Ka==Kb) {
@@ -470,16 +492,29 @@ app_log()<<" in shared KP3Index " <<std::endl;
         }
         comm->barrier();
         size_t nqk=0;
-        RealType scl = (walker_type==CLOSED?2.0:1.0);
+        SPRealType scl = (walker_type==CLOSED?2.0:1.0);
         for(int n=0; n<nwalk; ++n) {
           for(int Q=0; Q<nkpts; ++Q) {      // momentum conservation index
             if((nqk++)%comm->size() == comm->rank()) {
               int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
-              E[n][2] += 0.5*scl*scl*ma::dot(Kl[n]({nc0,nc0+ncholpQ[Q]}),
-                                            Kr[n]({nc0,nc0+ncholpQ[Q]}));
+              E[n][2] += 0.5*static_cast<ComplexType>(scl*scl*ma::dot(Kl[n]({nc0,nc0+ncholpQ[Q]}),
+                                            Kr[n]({nc0,nc0+ncholpQ[Q]})));
             }
           }
         }
+#if MIXED_PRECISION
+        if(getKl) {
+          size_t i0, iN;
+          std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(KEleft->num_elements()),size_t(comm->size()));
+          copy_n_cast(Klptr+i0,iN-i0,to_address(KEleft->origin())+i0);
+        } 
+        if(getKr) {
+          size_t i0, iN;
+          std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(KEright->num_elements()),size_t(comm->size()));
+          copy_n_cast(Krptr+i0,iN-i0,to_address(KEright->origin())+i0);
+        }
+        comm->barrier();
+#endif
       }
     }
 
@@ -509,8 +544,12 @@ app_log()<<" in shared KP3Index " <<std::endl;
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
       size_t cnt(0);
       if(addEJ) {
+#if MIXED_PRECISION
+        mem_needs += 2*nwalk*local_nCV;
+#else
         if(not getKr) mem_needs += nwalk*local_nCV;
         if(not getKl) mem_needs += nwalk*local_nCV;
+#endif
       }
       set_shm_buffer(mem_needs);
 
@@ -521,19 +560,35 @@ app_log()<<" in shared KP3Index " <<std::endl;
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
+#if MIXED_PRECISION
+        if(getKr) {
+          assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
+          assert(KEright->stride(0) == KEright->size(1));
+        }
+#else
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
           Krptr = to_address(KEright->origin());
-        } else {
+        } else 
+#endif
+        {
           Krptr = to_address(SM_TMats.origin());
           cnt += nwalk*local_nCV;
         }
+#if MIXED_PRECISION
+        if(getKl) {
+          assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
+          assert(KEleft->stride(0) == KEleft->size(1));
+        }
+#else
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
           Klptr = to_address(KEleft->origin());
-        } else {
+        } else 
+#endif
+        {
           Klptr = to_address(SM_TMats.origin())+cnt;
           cnt += nwalk*local_nCV;
         }
@@ -570,7 +625,7 @@ app_log()<<" in shared KP3Index " <<std::endl;
         for(int n=0; n<nwalk; n++)
           E[n][0] = E0;
         for(int K=0; K<nkpts; ++K) {
-#ifdef AFQMC_SP
+#ifdef MIXED_PRECISION 
           boost::multi::array_ref<ComplexType,2> haj_K(to_address(haj[nd*nkpts+K].origin()),
                                                       {nelpk[nd][K],nopk[K]});
           for(int a=0; a<nelpk[nd][K]; ++a)
@@ -640,7 +695,7 @@ app_log()<<" in shared KP3Index " <<std::endl;
         size_t local_memory_needs = 2*nocca_max*nocca_max*nchol_max;
         if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
         size_t local_cnt=0;
-        RealType scl = (walker_type==CLOSED?2.0:1.0);
+        SPRealType scl = (walker_type==CLOSED?2.0:1.0);
         size_t nqk=1;
         for(int n=0; n<nwalk; ++n) {
           for(int nQ=0; nQ<nsampleQ; ++nQ) {
@@ -673,11 +728,11 @@ app_log()<<" in shared KP3Index " <<std::endl;
                   ma::product(Gal,ma::T(Lbnl),Tabn);
                   ma::product(Gbk,ma::T(Lank),Tban);
 
-                  ComplexType E_(0.0);
+                  SPComplexType E_(0.0);
                   for(int a=0; a<na; ++a)
                     for(int b=0; b<nb; ++b)
                       E_ += ma::dot(T3Dabn[a][b],T3Dban[b][a]);
-                  E[n][1] -= scl*0.5*E_/gQ[Q]/double(nsampleQ);
+                  E[n][1] -= 0.5*static_cast<ComplexType>(scl*E_)/gQ[Q]/double(nsampleQ);
 
                 } // if
 
@@ -709,11 +764,11 @@ app_log()<<" in shared KP3Index " <<std::endl;
                     ma::product(Gal,ma::T(Lbnl),Tabn);
                     ma::product(Gbk,ma::T(Lank),Tban);
 
-                    ComplexType E_(0.0);
+                    SPComplexType E_(0.0);
                     for(int a=0; a<na; ++a)
                       for(int b=0; b<nb; ++b)
                         E_ += ma::dot(T3Dabn[a][b],T3Dban[b][a]);
-                    E[n][1] -= scl*0.5*E_/gQ[Q]/double(nsampleQ);
+                    E[n][1] -= 0.5*static_cast<ComplexType>(scl*E_)/gQ[Q]/double(nsampleQ);
 
                   } // if
                 } // COLLINEAR
@@ -816,16 +871,29 @@ app_log()<<" in shared KP3Index " <<std::endl;
         } // Q
         comm->barrier();
         nqk=0;
-        RealType scl = (walker_type==CLOSED?2.0:1.0);
+        SPRealType scl = (walker_type==CLOSED?2.0:1.0);
         for(int n=0; n<nwalk; ++n) {
           for(int Q=0; Q<nkpts; ++Q) {      // momentum conservation index
             if((nqk++)%comm->size() == comm->rank()) {
               int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
-              E[n][2] += 0.5*scl*scl*ma::dot(Kl[n]({nc0,nc0+ncholpQ[Q]}),
-                                            Kr[n]({nc0,nc0+ncholpQ[Q]}));
+              E[n][2] += 0.5*static_cast<ComplexType>(scl*scl*ma::dot(Kl[n]({nc0,nc0+ncholpQ[Q]}),
+                                            Kr[n]({nc0,nc0+ncholpQ[Q]})));
             }
           }
         }
+#if MIXED_PRECISION
+        if(getKl) {
+          size_t i0, iN;
+          std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(KEleft->num_elements()),size_t(comm->size()));
+          copy_n_cast(Klptr+i0,iN-i0,to_address(KEleft->origin())+i0);
+        }
+        if(getKr) {
+          size_t i0, iN;
+          std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(KEright->num_elements()),size_t(comm->size()));
+          copy_n_cast(Krptr+i0,iN-i0,to_address(KEright->origin())+i0);
+        }
+        comm->barrier();
+#endif
       }
     }
 
@@ -854,22 +922,39 @@ app_log()<<" in shared KP3Index " <<std::endl;
              typename = typename std::enable_if_t<(std::decay<MatA>::type::dimensionality==2)>,
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
-    void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
+    void vHS(MatA& Xw, MatB&& v, double a=1., double c=0.) {
       int nkpts = nopk.size();
-      int nwalk = X.size(1);
+      int nwalk = Xw.size(1);
       assert(v.size(0)==nwalk);
       int nspin = (walker_type==COLLINEAR?2:1);
       int nmo_tot = std::accumulate(nopk.begin(),nopk.end(),0);
       int nmo_max = *std::max_element(nopk.begin(),nopk.end());
       int nchol_max = *std::max_element(ncholpQ.begin(),ncholpQ.end());
-      assert(X.num_elements() == nwalk*2*local_nCV);
+      assert(Xw.num_elements() == nwalk*2*local_nCV);
       assert(v.num_elements() == nwalk*nmo_tot*nmo_tot);
       SPComplexType one(1.0,0.0);
       SPComplexType im(0.0,1.0);
+      SPComplexType halfa(0.5*a,0.0); 
       size_t local_memory_needs = nmo_max*nmo_max*nwalk;
       if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
 
-      Sp3Tensor_ref v3D(to_address(v.origin()),{nwalk,nmo_tot,nmo_tot});
+      using vType = typename std::decay<MatB>::type::element; 
+      boost::multi::array_ref<vType,3>  v3D(to_address(v.origin()),{nwalk,nmo_tot,nmo_tot});
+
+#if MIXED_PRECISION
+      size_t mem_needs = Xw.num_elements();
+      set_shm_buffer(mem_needs);
+
+      SpMatrix_ref X(to_address(SM_TMats.origin()),Xw.extensions());
+      {
+        size_t i0, iN;
+        std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(Xw.num_elements()),size_t(comm->size()));
+        copy_n_cast(to_address(Xw.origin())+i0,iN-i0,X.origin()+i0);
+      }
+      comm->barrier();
+#else
+      SpMatrix_ref X(make_device_ptr(Xw.origin()),Xw.extensions());
+#endif
 
       // "rotate" X
       //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
@@ -880,8 +965,8 @@ app_log()<<" in shared KP3Index " <<std::endl;
         auto Xnm = to_address(X[nq+ncholpQ[Q]+nc0].origin());
         for(int n=nc0; n<ncN; ++n) {
           for(int nw=0; nw<nwalk; ++nw, ++Xnp, ++Xnm) {
-            ComplexType Xnp_ = 0.5*a*((*Xnp) -im*(*Xnm));
-            *Xnm =  0.5*a*((*Xnp) + im*(*Xnm));
+            SPComplexType Xnp_ = halfa*((*Xnp) -im*(*Xnm));
+            *Xnm =  halfa*((*Xnp) + im*(*Xnm));
             *Xnp = Xnp_;
           }
         }
@@ -937,7 +1022,7 @@ app_log()<<" in shared KP3Index " <<std::endl;
               ma::product(T(X.sliced(nc0,nc0+nchol)),
                         T(Likn),vik);
               for(int nw=0; nw<nwalk; nw++)
-                for(int i=0; i<ni; i++)
+                for(int i=0; i<ni; i++) 
                   ma::axpy(one,vik3D[nw][i],v3D[nw][ni0+i].sliced(nk0,nk0+nk));
             } else { // use L(-Q)(Kk)*
               SpMatrix_ref vki(TMats.origin(),{nwalk,nk*ni});
@@ -951,7 +1036,11 @@ app_log()<<" in shared KP3Index " <<std::endl;
                 for(int i=0; i<ni; i++) {
                   auto v3D_ni(to_address(v3D[nw][ni0+i].origin()) + nk0);
                   for(int k=0; k<nk; k++, ++v3D_ni)
+#if MIXED_PRECISION
+                    *v3D_ni += static_cast<vType>(vki_n[k][i]);
+#else
                     *v3D_ni += vki_n[k][i];
+#endif
                 }
               }
             } 
@@ -982,9 +1071,13 @@ app_log()<<" in shared KP3Index " <<std::endl;
               for(int nw=0; nw<nwalk; nw++) {
                 const auto&& vik3D_n = vik3D[nw];
                 for(int k=0; k<nk; k++) {
-                  ComplexType* v3D_nk = to_address(v3D[nw][nk0+k].origin()) + ni0;
+                  auto v3D_nk = to_address(v3D[nw][nk0+k].origin()) + ni0;
                   for(int i=0; i<ni; i++, ++v3D_nk)
+#if MIXED_PRECISION
+                    *v3D_nk += static_cast<vType>(vik3D_n[i][k]);
+#else
                     *v3D_nk += vik3D_n[i][k];
+#endif
                 }
               }
             }
@@ -1014,10 +1107,10 @@ app_log()<<" in shared KP3Index " <<std::endl;
              typename = typename std::enable_if_t<(std::decay<MatA>::type::dimensionality==2)>,
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
-    void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int nd=0) {
+    void vbias(const MatA& Gw, MatB&& v, double a=1., double c=0., int nd=0) {
       int nkpts = nopk.size();
       assert(nd >= 0 && nd < nelpk.size());
-      int nwalk = G.size(1);
+      int nwalk = Gw.size(1);
       assert(v.size(0)==2*local_nCV);
       assert(v.size(1)==nwalk);
       int nspin = (walker_type==COLLINEAR?2:1);
@@ -1045,12 +1138,28 @@ app_log()<<" in shared KP3Index " <<std::endl;
       std::fill_n(vlocal.origin(),vlocal.num_elements(),SPComplexType(0.0));
       SpMatrix_ref Gl(TMats.origin()+vlocal.num_elements(),{std::max(nocca_max,noccb_max),nwalk});
 
-      assert(G.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
+      assert(Gw.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
+#if MIXED_PRECISION
+      size_t mem_needs = Gw.num_elements();
+      set_shm_buffer(mem_needs);
+
+      {
+        size_t i0, iN;
+        std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(Gw.num_elements()),size_t(comm->size()));
+        copy_n_cast(to_address(Gw.origin())+i0,iN-i0,to_address(SM_TMats.origin())+i0);
+      }
+      boost::multi::array_ref<SPComplexType,3> G3Da(to_address(SM_TMats.origin()),
+                                                        {nocca_tot,nmo_tot,nwalk} );
+      boost::multi::array_ref<SPComplexType,3> G3Db(to_address(SM_TMats.origin())+
+                                                        G3Da.num_elements()*(nspin-1),
+                                                        {noccb_tot,nmo_tot,nwalk} );
+#else
       boost::multi::array_cref<ComplexType,3> G3Da(to_address(G.origin()),
                                                         {nocca_tot,nmo_tot,nwalk} );
       boost::multi::array_cref<ComplexType,3> G3Db(to_address(G.origin())+
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
+#endif
 
 
       {
@@ -1277,7 +1386,7 @@ app_log()<<" in shared KP3Index " <<std::endl;
             auto Gc_( to_address(Gca[na0+a][nj0].origin()) );
             for(int j=0; j<nj; j++, aj++) {
               for(int w=0, waj=0; w<nwalk; w++, ++Gc_, waj+=naj)
-#ifdef AFQMC_SP
+#ifdef MIXED_PRECISION 
                 G_[waj+aj] = static_cast<SPComplexType>(*Gc_);
 #else
                 G_[waj+aj] = (*Gc_);
@@ -1305,7 +1414,7 @@ app_log()<<" in shared KP3Index " <<std::endl;
               auto Gc_( to_address(Gcb[na0+a][nj0].origin()) );
               for(int j=0; j<nj; j++, aj++) {
                 for(int w=0, waj=0; w<nwalk; w++, ++Gc_, waj+=naj)
-#ifdef AFQMC_SP
+#ifdef MIXED_PRECISION 
                   G_[waj+aj] = static_cast<SPComplexType>(*Gc_);
 #else
                   G_[waj+aj] = (*Gc_);

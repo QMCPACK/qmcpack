@@ -38,7 +38,7 @@ namespace afqmc
 
 class KPTHCOps
 {
-#if defined(AFQMC_SP)
+#if defined(MIXED_PRECISION)
   using SpC = typename to_single_precision<ComplexType>::value_type;
 #else
   using SpC = ComplexType;
