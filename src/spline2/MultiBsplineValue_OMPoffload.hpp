@@ -88,7 +88,7 @@ namespace spline2offload
 #ifdef ENABLE_OFFLOAD
       #pragma omp for nowait
 #else
-      #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,vals)
+      #pragma omp simd aligned(vals)
 #endif
       for(int n=0; n<num_splines; n++)
       {
@@ -97,7 +97,7 @@ namespace spline2offload
           for (int j=0; j<4; j++)
           {
             const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
-            val += a[i] * b[j] * (c[0]*coefs[n] + c[1]*coefs[n+sz] + c[2]*coefs[n+sz*2] + c[3]*coefs[n+sz*3]);
+            val += a[i] * b[j] * (c[0]*coefs[n] + c[1]*coefs[n+zs] + c[2]*coefs[n+zs*2] + c[3]*coefs[n+zs*3]);
           }
         vals[n] = val;
       }
