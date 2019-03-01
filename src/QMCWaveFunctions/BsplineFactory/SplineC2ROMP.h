@@ -531,7 +531,6 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
 
     const int ChunkSizePerTeam = 128;
     const int NumTeams = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
-
     if(ratios_private.size()<NumTeams*nVP)
       ratios_private.resize(nVP, NumTeams);
     const auto padded_size = myV.size();
@@ -556,13 +555,15 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
     PRAGMA_OMP("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) thread_limit(ChunkSizePerTeam) \
                 map(always, to: pos_scratch_ptr[0:nVP*6], psiinv_ptr[0:orb_size]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*nVP])")
-    for(int iat=0; iat<nVP; ++iat)
+    for(int iat=0; iat<nVP; iat++)
       for(int team_id = 0; team_id < NumTeams; team_id++)
       {
         const int first = ChunkSizePerTeam * team_id;
         const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam ;
         const int first_cplx = first/2;
-        const int last_cplx = kPoints.size() < last/2 ? kPoints.size() : last/2;
+        const int last_cplx = orb_size < last/2 ? orb_size : last/2;
+        const int first_real = first_cplx + std::min(nComplexBands_local,first_cplx);
+        const int last_real  = last_cplx + std::min(nComplexBands_local,last_cplx);
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr+padded_size*iat;
         auto* restrict psi_iat_ptr = results_scratch_ptr+orb_size*iat;
         PRAGMA_OMP("omp parallel")
@@ -581,21 +582,20 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
                         myKcart_ptr, myKcart_padded_size,
                         first_spo_local, nComplexBands_local, first/2, last/2);
 
-          const int first_real = first_cplx+std::min(nComplexBands,first_cplx);
-          const int last_real  = last_cplx+std::min(nComplexBands,last_cplx);
-          TT sum(0);
-          PRAGMA_OMP("omp for reduction(+:sum)")
-          for(int i=first_real; i<last_real; i++)
-            sum += psi_iat_ptr[i]*psiinv_ptr[i];
-          ratios_private_ptr[iat*NumTeams+team_id] = sum;
+          //PRAGMA_OMP("omp for reduction(+:sum)")
+          // FIXME: The reduction is intended here
         }
+        TT sum(0);
+        for(int i=first_real; i<last_real; i++)
+          sum += psi_iat_ptr[i]*psiinv_ptr[i];
+        ratios_private_ptr[iat*NumTeams+team_id] = sum;
       }
 
     // do the reduction manually
-    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    for(int iat=0; iat<nVP; ++iat)
     {
       ratios[iat] = TT(0);
-      for(int tid = 0; tid < ratios_private.cols(); tid++)
+      for(int tid = 0; tid < NumTeams; tid++)
         ratios[iat] += ratios_private[iat][tid];
     }
   }
@@ -725,10 +725,10 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
 
     const auto padded_size = myV.size();
     if(offload_scratch.size()<padded_size*10)
-      offload_scratch.resize(padded_size*10);
+      offload_scratch.resize(padded_size*50); // temporal solution putting 5x
     const auto orb_size = psi.size();
     if(results_scratch.size()<orb_size*5)
-      results_scratch.resize(orb_size*5);
+      results_scratch.resize(orb_size*50); // temporal solution putting 10x
 
     // Ye: need to extract sizes and pointers before entering target region
     const auto* spline_ptr = SplineInst->spline_m;
