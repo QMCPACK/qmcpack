@@ -36,12 +36,14 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
   DistanceTableData *d_aa = DistanceTable::add(ref,DT_SOA_PREFERRED);
   PtclRefName=d_aa->Name;
   initBreakup(ref);
-  ref.turnOnPerParticleSK(); 
-  if(!is_active)
+
+  if(ComputeForces)
   {
-    //d_aa->evaluate(ref);
+    ref.turnOnPerParticleSK(); 
     update_source(ref);
   }
+  if(!is_active)
+    update_source(ref);
   prefix="F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
