@@ -412,6 +412,43 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
+  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first, int last) const
+  {
+    // protect last
+    last = last>kPoints.size() ? kPoints.size() : last;
+
+    const ST x=r[0], y=r[1], z=r[2];
+    const ST* restrict kx=myKcart.data(0);
+    const ST* restrict ky=myKcart.data(1);
+    const ST* restrict kz=myKcart.data(2);
+
+    TT* restrict psi_s=psi.data()+first_spo;
+    #pragma omp simd
+    for (size_t j=first; j<std::min(nComplexBands,last); j++)
+    {
+      ST s, c;
+      const size_t jr=j<<1;
+      const size_t ji=jr+1;
+      const ST val_r=myV[jr];
+      const ST val_i=myV[ji];
+      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+      psi_s[jr] = val_r*c-val_i*s;
+      psi_s[ji] = val_i*c+val_r*s;
+    }
+
+    psi_s += nComplexBands;
+    #pragma omp simd
+    for (size_t j=std::max(nComplexBands,first); j<last; j++)
+    {
+      ST s, c;
+      const ST val_r=myV[2*j  ];
+      const ST val_i=myV[2*j+1];
+      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+      psi_s[j] = val_r*c-val_i*s;
+    }
+  }
+
+  template<typename VV>
   inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
     const PointType& r=P.activeR(iat);
@@ -481,7 +518,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
         PointType ru(PrimLattice.toUnit_floor(r));
 
         spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
-        //assign_v(r,myV,psi,first_cplx,last_cplx);
+        assign_v(r,myV,psi,first_cplx,last_cplx);
 
         const int first_real = first_cplx+std::min(nComplexBands,first_cplx);
         const int last_real  = last_cplx+std::min(nComplexBands,last_cplx);
