@@ -329,22 +329,69 @@ CoulombPBCAA::evalSRwithForces(ParticleSet& P)
 {
   const DistanceTableData &d_aa(*P.DistTables[0]);
   mRealType SR=0.0;
-  for(int ipart=0; ipart<NumCenters; ipart++)
+  if(d_aa.DTType == DT_SOA)
   {
-    mRealType esum = 0.0;
-    for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+    for(size_t ipart=1; ipart<(NumCenters/2+1); ipart++)
     {
-      RealType rV, d_rV_dr, d2_rV_dr2;
-      rV = rVs->splint(d_aa.r(nn), d_rV_dr, d2_rV_dr2);
-      RealType V = rV *d_aa.rinv(nn);
-      esum += Zat[jpart]*d_aa.rinv(nn)*rV;
-      PosType grad = Zat[jpart]*Zat[ipart]*
-                     (d_rV_dr - V)*d_aa.rinv(nn)*d_aa.rinv(nn)*d_aa.dr(nn);
-      forces[ipart] += grad;
-      forces[jpart] -= grad;
+      mRealType esum = 0.0;
+      const RealType* restrict dist=d_aa.Distances[ipart];
+      const RowContainerType dr = d_aa.Displacements[ipart];
+      for(size_t j=0; j<ipart; ++j)
+      {
+        RealType V, rV, d_rV_dr, d2_rV_dr2;
+        RealType rinv = 1.0/dist[j];
+        rV = rVs->splint(dist[j], d_rV_dr, d2_rV_dr2);
+        V= rV*rinv;
+        esum += Zat[j]*V;
+
+        PosType grad = Zat[j]*Zat[ipart]*
+                       (d_rV_dr - V)*rinv*rinv*dr[j];
+        forces[ipart] += grad;
+        forces[j] -= grad;
+
+      }
+      SR += Zat[ipart]*esum;
+
+      if(ipart==NumCenters-ipart) continue;
+
+      esum = 0.0;
+      dist = d_aa.Distances[NumCenters-ipart];
+      for(size_t j=0; j<NumCenters-ipart; ++j)
+      {
+        RealType V, rV, d_rV_dr, d2_rV_dr2;
+        RealType rinv = 1.0/dist[j];
+        rV = rVs->splint(dist[j], d_rV_dr, d2_rV_dr2);
+        V= rV*rinv;
+        esum += Zat[j]*V;
+
+        PosType grad = Zat[j]*Zat[NumCenters-ipart]*
+                       (d_rV_dr - V)*rinv*rinv*dr[j];
+        forces[NumCenters-ipart] += grad;
+        forces[j] -= grad;
+      }
+      SR += Zat[NumCenters-ipart]*esum;
     }
-    //Accumulate pair sums...species charge for atom i.
-    SR += Zat[ipart]*esum;
+  }
+  else
+  {
+
+    for(int ipart=0; ipart<NumCenters; ipart++)
+    {
+      mRealType esum = 0.0;
+      for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+      {
+        RealType rV, d_rV_dr, d2_rV_dr2;
+        rV = rVs->splint(d_aa.r(nn), d_rV_dr, d2_rV_dr2);
+        RealType V = rV *d_aa.rinv(nn);
+        esum += Zat[jpart]*d_aa.rinv(nn)*rV;
+        PosType grad = Zat[jpart]*Zat[ipart]*
+                       (d_rV_dr - V)*d_aa.rinv(nn)*d_aa.rinv(nn)*d_aa.dr(nn);
+        forces[ipart] += grad;
+        forces[jpart] -= grad;
+      }
+      //Accumulate pair sums...species charge for atom i.
+      SR += Zat[ipart]*esum;
+    }
   }
   return SR;
 }
