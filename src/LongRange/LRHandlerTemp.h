@@ -132,7 +132,7 @@ public:
     mRealType df = myFunc.df(r);
     //RealType df = myFunc.df(r, rinv);
     for(int n=0; n<coefs.size(); n++)
-      df -= coefs[n]*Basis.df(n,r);
+      df -= gcoefs[n]*Basis.dh_dr(n,r);
     return df;
   }
 
@@ -154,7 +154,7 @@ public:
     if(r<LR_rc)
     {
       for(int n=0; n<coefs.size(); n++)
-        dv += coefs[n]*Basis.df(n,r);
+        dv += gcoefs[n]*Basis.dh_dr(n,r);
     }
     else
       dv=myFunc.df(r);
