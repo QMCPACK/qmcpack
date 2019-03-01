@@ -54,7 +54,7 @@ template<typename ST, typename TT>
     TT* restrict psi_s = results_scratch_ptr;
 
 #ifdef ENABLE_OFFLOAD
-    #pragma omp for nowait
+    #pragma omp for
 #else
     #pragma omp simd
 #endif
@@ -122,7 +122,7 @@ template<typename ST, typename TT>
     TT* restrict  dpsi = results_scratch_ptr+orb_size;
     TT* restrict d2psi = results_scratch_ptr+orb_size*4;
 #ifdef ENABLE_OFFLOAD
-    #pragma omp for nowait
+    #pragma omp for
 #else
     #pragma omp simd
 #endif
@@ -566,6 +566,7 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
         const int last_real  = last_cplx + std::min(nComplexBands_local,last_cplx);
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr+padded_size*iat;
         auto* restrict psi_iat_ptr = results_scratch_ptr+orb_size*iat;
+        TT sum(0);
         PRAGMA_OMP("omp parallel")
         {
           spline2offload::evaluate_v_impl_v2(spline_ptr,
@@ -582,12 +583,10 @@ struct SplineC2ROMP: public SplineAdoptorBase<ST,3>
                         myKcart_ptr, myKcart_padded_size,
                         first_spo_local, nComplexBands_local, first/2, last/2);
 
-          //PRAGMA_OMP("omp for reduction(+:sum)")
-          // FIXME: The reduction is intended here
+          PRAGMA_OMP("omp for reduction(+:sum)")
+          for(int i=first_real; i<last_real; i++)
+            sum += psi_iat_ptr[i]*psiinv_ptr[i];
         }
-        TT sum(0);
-        for(int i=first_real; i<last_real; i++)
-          sum += psi_iat_ptr[i]*psiinv_ptr[i];
         ratios_private_ptr[iat*NumTeams+team_id] = sum;
       }
 
