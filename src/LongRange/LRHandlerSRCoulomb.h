@@ -52,7 +52,6 @@ public:
   typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
   typedef BreakupBasis BreakupBasisType;
   typedef LinearGrid<mRealType>                               GridType;
-  typedef OneDimCubicSpline<mRealType>                       RadFunctorType;
 
   bool FirstTime;
   mRealType rs;
@@ -61,19 +60,10 @@ public:
 
   std::vector<mRealType> Fk_copy;
   
-  GridType* aGrid;
-  
-  RadFunctorType* rV_energy;
-  RadFunctorType* rV_force;
-  RadFunctorType* drV_force;
-  RadFunctorType* rV_stress;
-  RadFunctorType* drV_stress;
-  
 
   //Constructor
   LRHandlerSRCoulomb(ParticleSet& ref, mRealType kc_in=-1.0):
-    LRHandlerBase(kc_in),FirstTime(true), Basis(ref.LRBox), aGrid(0), 
-    rV_force(0), rV_energy(0), drV_force(0), rV_stress(0), drV_stress(0)
+    LRHandlerBase(kc_in),FirstTime(true), Basis(ref.LRBox) 
 
   {
     LRHandlerBase::ClassName="LRHandlerSRCoulomb";
@@ -104,24 +94,6 @@ public:
   LRHandlerSRCoulomb(const LRHandlerSRCoulomb& aLR, ParticleSet& ref):
     LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.LRBox)
   {
-//    myFunc.reset(ref);
-//    fillYk(ref.SK->KLists);
-//    fillYkg(ref.SK->KLists);
-//    filldFk_dk(ref.SK->KLists);
-   // app_log()<<"copy constructor called.  thread #"<<omp_get_num_threads()<< std::endl;
-    aGrid = new GridType(*(aLR.aGrid));
-   // new GridType(aLR.aGrid)
-    rV_energy = aLR.rV_energy->makeClone();
-    rV_force= aLR.rV_force->makeClone();
-    drV_force= aLR.drV_force->makeClone();
-    rV_stress= aLR.rV_stress->makeClone();
-    drV_stress= aLR.drV_stress->makeClone();
-//    rV_force = new RadFunctorType(*(aLR.rV_force));
-//    drV_force = new RadFunctorType(*(aLR.drV_force));
-//    rV_stress = new RadFunctorType(*(aLR.rV_stress));
-//    drV_stress = new RadFunctorType(*(aLR.drV_stress));  
-    
-
   }
 
   LRHandlerBase* makeClone(ParticleSet& ref)
@@ -153,96 +125,6 @@ public:
     LR_rc=Basis.get_rc();
    // makeSplines(1000);
   }
-  void makeSplines(int ngrid)
-  {
-     if(aGrid == 0)
-     {
-       aGrid = new GridType;
-       aGrid->set(0.0,Basis.get_rc(),ngrid);
-     }
-     
-     std::vector<mRealType> vE(ngrid);
-     std::vector<mRealType> vF(ngrid);
-     std::vector<mRealType> dvF(ngrid);
-     std::vector<mRealType> vS(ngrid);
-     std::vector<mRealType> dvS(ngrid);
-     
-     for( int i=1; i<ngrid; i++)
-     {
-		mRealType r=(*aGrid)[i];
-		
-		vE[i]=r*Basis.f(r,coefs);
-		vF[i]=r*Basis.f(r,gcoefs);
-		dvF[i]= r*r*Basis.df_dr(r,gcoefs);
-		vS[i]=r*Basis.f(r,gstraincoefs);
-		dvS[i]= r*r*Basis.df_dr(r,gstraincoefs);
-	 }
-	 
-	 vE[0]=1.0;
-	 vF[0]=1.0;
-	 dvF[0]=1.0;
-	 vS[0]=1.0;
-	 dvS[0]=1.0;
-	 
-
-     rV_energy=new RadFunctorType(aGrid,vE);
-     rV_force=new RadFunctorType(aGrid,vF);
-     drV_force=new RadFunctorType(aGrid,dvF);
-     rV_stress=new RadFunctorType(aGrid,vS);
-     drV_stress=new RadFunctorType(aGrid,dvS);
-     
-     rV_energy->spline(0,vE[0],ngrid-1,0);
-     rV_force->spline(0,vF[0],ngrid-1,0);
-     drV_force->spline(0,dvF[0],ngrid-1,0);
-     rV_stress->spline(0,vS[0],ngrid-1,0);
-     drV_stress->spline(0,dvS[0],ngrid-1,0);	  
-	  
-  }
- /* void makeSplines(int ngrid)
-  {
-     if(aGrid == 0)
-     {
-       aGrid = new GridType;
-       aGrid->set(0.0,Basis.get_rc(),ngrid);
-     }
-     
-     std::vector<mRealType> vE(ngrid);
-     std::vector<mRealType> vF(ngrid);
-     std::vector<mRealType> dvF(ngrid);
-     std::vector<mRealType> vS(ngrid);
-     std::vector<mRealType> dvS(ngrid);
-     
-     for( int i=1; i<ngrid; i++)
-     {
-		mRealType r=(*aGrid)[i];
-		
-		vE[i]=r*Basis.f(r,coefs);
-		vF[i]=r*Basis.f(r,gcoefs);
-		dvF[i]=r*Basis.df_dr(r,gcoefs)+Basis.f(r,gcoefs);
-		vS[i]=r*Basis.f(r,gstraincoefs);
-		dvS[i]= r*Basis.df_dr(r,gstraincoefs)+Basis.f(r,gstraincoefs);
-	 }
-	 
-	 vE[0]=1.0;
-	 vF[0]=1.0;
-	 dvF[0]=0.0;
-	 vS[0]=1.0;
-	 dvS[0]=1.0;
-	 
-
-     rV_energy=new RadFunctorType(aGrid,vE);
-     rV_force=new RadFunctorType(aGrid,vF);
-     drV_force=new RadFunctorType(aGrid,dvF);
-     rV_stress=new RadFunctorType(aGrid,vS);
-     drV_stress=new RadFunctorType(aGrid,dvS);
-     
-     rV_energy->spline(0,vE[0],ngrid-1,vE[ngrid-1]);
-     rV_force->spline(0,vF[0],ngrid-1,vF[ngrid-1]);
-     drV_force->spline(0,dvF[0],ngrid-1,dvF[ngrid-1]);
-     rV_stress->spline(0,vS[0],ngrid-1,vS[ngrid-1]);
-     drV_stress->spline(0,dvS[0],ngrid-1,dvS[ngrid-1]);	  
-	  
-  }*/
 
   void resetTargetParticleSet(ParticleSet& ref)
   {
@@ -270,29 +152,31 @@ public:
    */
   inline mRealType srDf(mRealType r, mRealType rinv)
   {
-   // mRealType df = Basis.df_dr(r, gcoefs);
+    mRealType df = Basis.df_dr(r, gcoefs);
      //app_log()<<"evaluate() #"<<omp_get_thread_num()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<< std::endl;
- //    return df; 
+     return df; 
 //    std::stringstream wee;
 //    wee<<"srDf() #"<<omp_get_thread_num()<<" dspl= "<<rinv*rinv*du-df<<" ref= "<<df<<" r= "<<r<< std::endl;
 //   app_log()<<wee.str();  
-    return drV_force->splint(r)/mRealType(r*r) ; 
   }
 
   inline mRealType srDf_strain(mRealType r, mRealType rinv)
   {
-  //  mRealType df = Basis.df_dr(r, gstraincoefs);
-  //  return df;
-    
-    mRealType du=drV_stress->splint(r);
-    return rinv*rinv*du; 
+    mRealType df = Basis.df_dr(r, gstraincoefs);
+    return df;
   }
 
+  inline mRealType lrDf(mRealType r)
+  {
+    mRealType lr = myFunc.df(r)-srDf(r,1.0/r);
+    return lr;
+  }
   /** evaluate the contribution from the long-range part for for spline
    */
   inline mRealType evaluateLR(mRealType r)
   {
     mRealType v=0.0;
+    v=myFunc(r,1.0/r) - evaluate(r,1.0/r);
    
   // for(int n=0; n<coefs.size(); n++)
   //    v -= coefs[n]*Basis.h(n,r);
@@ -541,7 +425,6 @@ private:
   //  fillYkg(ref.SK->KLists);
   //  filldFk_dk(ref.SK->KLists);
 
-    makeSplines(10001);
   }
 
 
