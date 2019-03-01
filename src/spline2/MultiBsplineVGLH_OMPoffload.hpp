@@ -85,7 +85,7 @@ namespace spline2offload
           const T* restrict coefs3zs = coefs+3*zs;
 
 #ifdef ENABLE_OFFLOAD
-          #pragma omp for nowait
+          #pragma omp for
 #else
           #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,gx,gy,gz,lx,ly,lz,vals)
 #endif
@@ -118,7 +118,7 @@ namespace spline2offload
       const T dzInv2 = dzInv*dzInv;
 
 #ifdef ENABLE_OFFLOAD
-      #pragma omp for nowait
+      #pragma omp for
 #else
       #pragma omp simd aligned(gx,gy,gz,lx)
 #endif
@@ -195,7 +195,7 @@ namespace spline2offload
           const T pre02 =   a[i]*d2b[j];
 
 #ifdef ENABLE_OFFLOAD
-          #pragma omp for nowait
+          #pragma omp for
 #else
           #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,vals,gx,gy,gz,hxx,hyy,hzz,hxy,hxz,hyz)
 #endif
@@ -235,7 +235,7 @@ namespace spline2offload
       const T dyz=dyInv*dzInv;
 
 #ifdef ENABLE_OFFLOAD
-      #pragma omp for nowait
+      #pragma omp for
 #else
       #pragma omp simd aligned(gx,gy,gz,hxx,hyy,hzz,hxy,hxz,hyz)
 #endif
@@ -301,7 +301,7 @@ namespace spline2offload
       const T dyz=dyInv*dzInv;
 
 #ifdef ENABLE_OFFLOAD
-      #pragma omp for nowait
+      #pragma omp for
 #else
       #pragma omp simd aligned(vals,gxs,gys,gzs,hxxs,hyys,hzzs,hxys,hxzs,hyzs)
 #endif

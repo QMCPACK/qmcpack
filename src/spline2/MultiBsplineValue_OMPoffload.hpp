@@ -53,7 +53,7 @@ namespace spline2offload
           const T* restrict coefs2zs = coefs+2*zs;
           const T* restrict coefs3zs = coefs+3*zs;
 #ifdef ENABLE_OFFLOAD
-          #pragma omp for nowait
+          #pragma omp for
 #else
           #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,vals)
 #endif
@@ -86,7 +86,7 @@ namespace spline2offload
 
       const int num_splines=last-first;
 #ifdef ENABLE_OFFLOAD
-      #pragma omp for nowait
+      #pragma omp for
 #else
       #pragma omp simd aligned(vals)
 #endif
