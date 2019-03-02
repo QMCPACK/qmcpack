@@ -139,9 +139,6 @@ public:
   inline mRealType evaluate(mRealType r, mRealType rinv)
   {
     mRealType v = Basis.f(r, coefs);
-    //app_log()<<"evaluate() #"<<omp_get_num_threads()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<< std::endl;
-   
-  //  return df;
     return v;
   }
 
@@ -153,11 +150,7 @@ public:
   inline mRealType srDf(mRealType r, mRealType rinv)
   {
     mRealType df = Basis.df_dr(r, gcoefs);
-     //app_log()<<"evaluate() #"<<omp_get_thread_num()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<< std::endl;
      return df; 
-//    std::stringstream wee;
-//    wee<<"srDf() #"<<omp_get_thread_num()<<" dspl= "<<rinv*rinv*du-df<<" ref= "<<df<<" r= "<<r<< std::endl;
-//   app_log()<<wee.str();  
   }
 
   inline mRealType srDf_strain(mRealType r, mRealType rinv)
@@ -177,9 +170,6 @@ public:
   {
     mRealType v=0.0;
     v=myFunc(r,1.0/r) - evaluate(r,1.0/r);
-   
-  // for(int n=0; n<coefs.size(); n++)
-  //    v -= coefs[n]*Basis.h(n,r);
     return v;
   }
 
@@ -194,32 +184,23 @@ public:
 
   inline mRealType evaluateLR_r0()
   {
-	//this is because the constraint v(r)=sigma(r) as r-->0.  
-	// so v(r)-sigma(r)="0".  Divergence prevents me from coding this.
+    //this is because the constraint v(r)=sigma(r) as r-->0.  
+    // so v(r)-sigma(r)="0".  Divergence prevents me from coding this.
     mRealType v0=0.0;
-//    for(int n=0; n<coefs.size(); n++)
-//      v0 += coefs[n]*Basis.h(n,0.0);
     return v0;
   }
   
-    //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
+  //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
   inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<mRealType, OHMMS_DIM> k, mRealType kmag)
   {
-	  SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
-	 // mRealType derivconst = Basis.fk(kmag, dcoefs);
-	//  app_log()<<"squoo "<<derivconst<< std::endl;
-	  
-	  for (int dim1=0; dim1<OHMMS_DIM; dim1++)
-		for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
-		{
-          deriv_tensor(dim1,dim2)=- evaldYkgstrain(kmag)*k[dim1]*k[dim2]/kmag; //- evaldFk_dk(kmag)*k[dim1]*k[dim2]/kmag ;
-          
-          if (dim1==dim2) deriv_tensor(dim1,dim2)-= evalYkgstrain(kmag); //+ derivconst;
-         // app_log()<<"squoo "<<Basis.fk(kmag, dcoefs(dim1,dim2))<< std::endl;
-		}
-	  	
-		
-	  return deriv_tensor;
+    SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
+    for (int dim1=0; dim1<OHMMS_DIM; dim1++)
+      for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
+      {
+        deriv_tensor(dim1,dim2)=- evaldYkgstrain(kmag)*k[dim1]*k[dim2]/kmag; //- evaldFk_dk(kmag)*k[dim1]*k[dim2]/kmag ;
+        if (dim1==dim2) deriv_tensor(dim1,dim2)-= evalYkgstrain(kmag); //+ derivconst;
+      }
+    return deriv_tensor;
   }
   
   
@@ -231,31 +212,12 @@ public:
 
     for (int dim1=0; dim1<OHMMS_DIM; dim1++)
     {
-		for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
-		{
-
-	       deriv_tensor(dim1,dim2)=r[dim1]*r[dim2]*Sr_r;
-
-	    }
-	}
-
-     	
-	return deriv_tensor;
+      for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
+        deriv_tensor(dim1,dim2)=r[dim1]*r[dim2]*Sr_r;
+    }
+    return deriv_tensor;
   }
   
-/*  inline mRealType evaluateSR_k0_dstrain()
-  {
-    mRealType v0=0.0;
-    mRealType norm=2.0*TWOPI/Basis.get_CellVolume();
-   
-    for(int n=0; n<coefs.size(); n++)
-      v0 += gstraincoefs[n]*Basis.hintr2(n);
-    
-    v0*=-norm
-    SymTensor stress(v0,0.0,v0,0.0,0.0,v0);
-    return stress;
- }
-   */
   inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain()
   {
     mRealType v0=0.0;
@@ -280,7 +242,7 @@ public:
   inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain()
   {
     SymTensor<mRealType, OHMMS_DIM> stress;
-	return stress;
+    return stress;
   }
 
 private:
@@ -375,14 +337,11 @@ private:
 
    
     Vector<mRealType> constraints;
-    //Vector<mRealType> strainconstraints;
 
     constraints.resize(Nbasis);
-  //  strainconstraints.resize(Nbasis);
     for (int i=0; i < Nbasis; i++) constraints[i]=1;
     
 
-   // mRealType rc=Basis.get_rc();
     
     ///This is to make sure there's no cusp in the LR part.  
     gstraincoefs[0]=gcoefs[0]=coefs[0] = 1.0;
@@ -411,19 +370,19 @@ private:
 
 
     Vector<mRealType> chisqr(3);
-  //  chisqr_f=breakuphandler.DoBreakup(Fk.data(),coefs.data(),constraints.data()); //Fill array of coefficients.
-  //  chisqr_df=breakuphandler.DoGradBreakup(Fkg.data(), gcoefs.data(), constraints.data());
-  //  chisqr_strain=breakuphandler.DoStrainBreakup(Fk.data(), Fkgstrain.data(), gstraincoefs.data(), strainconstraints.data());   
     breakuphandler.DoAllBreakup(chisqr.data(), Fk.data(), Fkgstrain.data(), coefs.data(), gcoefs.data(), gstraincoefs.data(), constraints.data());
+   
+    //I want this in scientific notation, but I don't want to mess up formatting flags elsewhere.
+    //Save stream state.
+    std::ios_base::fmtflags app_log_flags( app_log().flags() );
+    app_log()<<std::scientific;
+    app_log().precision(5);
+
     app_log()<<"         LR function chi^2 = "<<chisqr[0]<< std::endl;
     app_log()<<"    LR grad function chi^2 = "<<chisqr[1]<< std::endl;
     app_log()<<"  LR strain function chi^2 = "<<chisqr[2]<< std::endl;
-   // app_log()<<"  n  tn   gtn h(n)\n";
      
-  //  myFunc.reset(ref);
-  //  fillYk(ref.SK->KLists);
-  //  fillYkg(ref.SK->KLists);
-  //  filldFk_dk(ref.SK->KLists);
+    app_log().flags(app_log_flags);
 
   }
 
@@ -497,13 +456,9 @@ private:
   void filldFk_dk(KContainer& KList)
   {
     dFk_dstrain.resize(KList.kpts_cart.size());
-    
 
     for (int ki=0; ki<dFk_dstrain.size(); ki++)
-    {
-	  dFk_dstrain[ki] = evaluateLR_dstrain(KList.kpts_cart[ki], std::sqrt(KList.ksq[ki]));
-	}
-
+      dFk_dstrain[ki] = evaluateLR_dstrain(KList.kpts_cart[ki], std::sqrt(KList.ksq[ki]));
   }
 };
 }
