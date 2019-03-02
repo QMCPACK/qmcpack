@@ -1067,7 +1067,7 @@ class KP3IndexFactorization_batched
       for(int Q=0; Q<nkpts; ++Q) {
         if(Q != kminus[Q]) {
           int Qm = kminus[Q];
-          ma::axpy(ComplexType(1.0),XQnw[Qm][1],XQnw[Q][0]);
+          ma::axpy(SPComplexType(1.0),XQnw[Qm][1],XQnw[Q][0]);
         }
       }
       {
@@ -1125,7 +1125,8 @@ class KP3IndexFactorization_batched
                                                    SPComplexType(0.0),Carray.data(),nmo_max2,Aarray.size());
 
 
-      Sp3Tensor_ref v3D(make_device_ptr(v.origin()),{nwalk,nmo_tot,nmo_tot});
+      using vType = typename std::decay<MatB>::type::element;
+      boost::multi::array_ref<vType,3>  v3D(make_device_ptr(v.origin()),{nwalk,nmo_tot,nmo_tot});
       vKKwij_to_vwKiKj(vKK,v3D);
       // do I need to "rotate" back, can be done if necessary
     }

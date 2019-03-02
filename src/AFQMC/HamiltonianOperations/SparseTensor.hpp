@@ -21,6 +21,7 @@
 
 #include "Configuration.h"
 #include "AFQMC/config.h"
+#include "mpi3/shared_communicator.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 
@@ -65,11 +66,14 @@ class SparseTensor
   using T1Vector = boost::multi::array<T1,1>;
   using T1Matrix = boost::multi::array<T1,2>;
   using SpVector = boost::multi::array<SPComplexType,1>;
+  using shmSpVector = boost::multi::array<SPComplexType,1,shared_allocator<SPComplexType>>;
   using this_t = SparseTensor<T1,T2>;
+  using communicator = boost::mpi3::shared_communicator;
 
   public:
 
-    SparseTensor(WALKER_TYPES type,
+    SparseTensor(communicator c_, 
+                 WALKER_TYPES type,
                  CMatrix&& hij_,
                  std::vector<T1Vector>&& h1,
                  std::vector<T1shm_csr_matrix>&& v2,
@@ -94,6 +98,7 @@ class SparseTensor
  *  PHMSD provides different references (alpha/beta or multi-reference PH) in separate locations
  *  in the std:vector's.
  */
+        comm(std::addressof(c_)),
         walker_type(type),
         global_nCV(gncv),
         E0(e0_),
@@ -106,6 +111,7 @@ class SparseTensor
         SpvnT(std::move(vnT)),
         SpvnT_view(std::move(vnTview)),
         vn0(std::move(vn0_)),
+        SM_TMats(iextensions<1u>{0},shared_allocator<SPComplexType>{*comm}),
 	separateEJ(true)
     {
 	assert(haj.size() == Vakbl.size());
@@ -115,15 +121,6 @@ class SparseTensor
 	assert((haj.size() == SpvnT_view.size()) || (SpvnT_view.size()==1));
 	if((haj.size() > 1) && (SpvnT.size()==1)) // NOMSD with more than 1 determinant
           separateEJ = false;
-/*
-for(int i=0; i<haj[0].size(0); i++)
-  std::cout<<i <<" " <<haj[0][i]  <<"\n";
-std::cout<<"H1:\n";
-for(int i=0; i<hij.size(0); i++)
-  for(int j=0; j<hij.size(1); j++)
-    std::cout<<i <<" " <<j <<" " <<hij[i][j]  <<"\n";
-std::cout<<"\n";
-*/
     }
 
     ~SparseTensor() {}
@@ -261,12 +258,28 @@ std::cout<<"\n";
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
       assert( Spvn.size(1) == X.size(0) );
       assert( Spvn.size(0) == v.size(0) );
-      using Type = typename std::decay<MatB>::type::element;
 
+#if MIXED_PRECISION
+      size_t mem_needs = X.num_elements()+v.num_elements();  
+      set_buffer(mem_needs);
+      boost::multi::array_ref<SPComplexType,1> vsp(to_address(SM_TMats.origin()), v.extensions());  
+      boost::multi::array_ref<SPComplexType,1> Xsp(vsp.origin()+vsp.num_elements(), X.extensions());  
+      size_t i0, iN;
+      std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(X.num_elements()),size_t(comm->size()));
+      copy_n_cast(to_address(X.origin())+i0,iN-i0,to_address(Xsp.origin())+i0);
+      boost::multi::array_ref<SPComplexType,1> v_(to_address(vsp.origin()) + Spvn_view.local_origin()[0],
+                                        iextensions<1u>{Spvn_view.size(0)});
+      comm->barrier();
+      ma::product(SPValueType(a),Spvn_view,Xsp,SPValueType(c),v_);
+      copy_n_cast(to_address(v_.origin()),v_.num_elements(),to_address(v.origin())+Spvn_view.local_origin()[0]);
+      comm->barrier();
+#else
+      using Type = typename std::decay<MatB>::type::element;
       // Spvn*X
       boost::multi::array_ref<Type,1> v_(to_address(v.origin()) + Spvn_view.local_origin()[0],
                                         iextensions<1u>{Spvn_view.size(0)});
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
+#endif
     }
 
     template<class MatA, class MatB,
@@ -277,12 +290,28 @@ std::cout<<"\n";
       assert( Spvn.size(1) == X.size(0) );
       assert( Spvn.size(0) == v.size(0) );
       assert( X.size(1) == v.size(1) );
+#if MIXED_PRECISION
+      size_t mem_needs = X.num_elements()+v.num_elements();
+      set_buffer(mem_needs);
+      boost::multi::array_ref<SPComplexType,2> vsp(to_address(SM_TMats.origin()), v.extensions());
+      boost::multi::array_ref<SPComplexType,2> Xsp(vsp.origin()+vsp.num_elements(), X.extensions());
+      size_t i0, iN;
+      std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(X.num_elements()),size_t(comm->size()));
+      copy_n_cast(to_address(X.origin())+i0,iN-i0,to_address(Xsp.origin())+i0);
+      boost::multi::array_ref<SPComplexType,2> v_(to_address(vsp[Spvn_view.local_origin()[0]].origin()),
+                                        {long(Spvn_view.size(0)),long(vsp.size(1))});
+      comm->barrier();
+      ma::product(SPValueType(a),Spvn_view,Xsp,SPValueType(c),v_);
+      copy_n_cast(to_address(v_.origin()),v_.num_elements(),
+                  to_address(v[Spvn_view.local_origin()[0]].origin()));
+      comm->barrier();
+#else
       using Type = typename std::decay<MatB>::type::element;
-
       // Spvn*X
       boost::multi::array_ref<Type,2> v_(to_address(v[Spvn_view.local_origin()[0]].origin()),
                                         {long(Spvn_view.size(0)),long(v.size(1))});
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
+#endif
     }
 
     template<class MatA, class MatB,
@@ -294,13 +323,31 @@ std::cout<<"\n";
       if(not separateEJ) k=0;
       assert( SpvnT[k].size(1) == G.size(0) );
       assert( SpvnT[k].size(0) == v.size(0) );
-      using Type = typename std::decay<MatB>::type::element ;
 
+#if MIXED_PRECISION
+      size_t mem_needs = G.num_elements()+v.num_elements();
+      set_buffer(mem_needs);
+      boost::multi::array_ref<SPComplexType,1> vsp(to_address(SM_TMats.origin()), v.extensions());
+      boost::multi::array_ref<SPComplexType,1> Gsp(vsp.origin()+vsp.num_elements(), G.extensions());
+      size_t i0, iN;
+      std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(G.num_elements()),size_t(comm->size()));
+      copy_n_cast(to_address(G.origin())+i0,iN-i0,to_address(Gsp.origin())+i0);
+      boost::multi::array_ref<SPComplexType,1> v_(to_address(vsp.origin()) + SpvnT_view[k].local_origin()[0],
+                                        iextensions<1u>{SpvnT_view[k].size(0)});
+      comm->barrier();
+      if(walker_type==CLOSED) a*=2.0;
+      ma::product(SpT2(a), SpvnT_view[k], Gsp, SpT2(c), v_);
+      copy_n_cast(to_address(v_.origin()),v_.num_elements(),
+                  to_address(v.origin()) + SpvnT_view[k].local_origin()[0]);
+      comm->barrier();
+#else
+      using Type = typename std::decay<MatB>::type::element ;
       // SpvnT*G
       boost::multi::array_ref<Type,1> v_(to_address(v.origin()) + SpvnT_view[k].local_origin()[0],
                                         iextensions<1u>{SpvnT_view[k].size(0)});
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
+#endif
     }
 
     template<class MatA, class MatB,
@@ -312,13 +359,31 @@ std::cout<<"\n";
       assert( SpvnT[k].size(1) == G.size(0) );
       assert( SpvnT[k].size(0) == v.size(0) );
       assert( G.size(1) == v.size(1) );
-      using Type = typename std::decay<MatB>::type::element ;
 
+#if MIXED_PRECISION
+      size_t mem_needs = G.num_elements()+v.num_elements();
+      set_buffer(mem_needs);
+      boost::multi::array_ref<SPComplexType,2> vsp(to_address(SM_TMats.origin()), v.extensions());
+      boost::multi::array_ref<SPComplexType,2> Gsp(vsp.origin()+vsp.num_elements(), G.extensions());
+      size_t i0, iN;
+      std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(G.num_elements()),size_t(comm->size()));
+      copy_n_cast(to_address(G.origin())+i0,iN-i0,to_address(Gsp.origin())+i0);
+      boost::multi::array_ref<SPComplexType,2> v_(to_address(vsp[SpvnT_view[k].local_origin()[0]].origin()),
+                                        {long(SpvnT_view[k].size(0)),long(vsp.size(1))});
+      comm->barrier();
+      if(walker_type==CLOSED) a*=2.0;
+      ma::product(SpT2(a), SpvnT_view[k], Gsp, SpT2(c), v_);
+      copy_n_cast(to_address(v_.origin()),v_.num_elements(),
+                  to_address(vsp[SpvnT_view[k].local_origin()[0]].origin())); 
+      comm->barrier();
+#else
+      using Type = typename std::decay<MatB>::type::element ;
       // SpvnT*G
       boost::multi::array_ref<Type,2> v_(to_address(v[SpvnT_view[k].local_origin()[0]].origin()),
                                         {long(SpvnT_view[k].size(0)),long(v.size(1))});
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
+#endif
     }
 
     bool distribution_over_cholesky_vectors() const{ return true; }
@@ -335,6 +400,8 @@ std::cout<<"\n";
     bool fast_ph_energy() const { return false; }
 
   private:
+
+    communicator* comm;
 
     WALKER_TYPES walker_type;
 
@@ -373,6 +440,18 @@ std::cout<<"\n";
 
     // local storage
     SpVector Gcloc;
+
+    shmSpVector SM_TMats;    
+
+    void set_buffer(size_t N) {
+      if(SM_TMats.num_elements() < N) {
+        SM_TMats.reextent(iextensions<1u>{N});
+        using std::fill_n;
+        if(comm->root()) 
+          fill_n(to_address(SM_TMats.origin()),N,SPComplexType(0.0));
+        comm->barrier();
+      }
+    }
 
 };
 
