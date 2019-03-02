@@ -245,7 +245,14 @@ private:
     
     mRealType chisqr(0.0);
     chisqr=breakuphandler.DoBreakup(Fk.data(),coefs.data()); //Fill array of coefficients.
+    //I want this in scientific notation, but I don't want to mess up formatting flags elsewhere.
+    //Save stream state.
+    std::ios_base::fmtflags app_log_flags( app_log().flags() );
+    app_log()<<std::scientific;
+    app_log().precision(5);
     app_log()<<"\n   LR Breakup chi^2 = "<<chisqr<<std::endl;
+
+    app_log().flags(app_log_flags);
   }
 
   void fillXk(std::vector<TinyVector<mRealType,2> >& KList)
