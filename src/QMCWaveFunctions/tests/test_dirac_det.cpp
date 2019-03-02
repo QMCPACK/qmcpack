@@ -18,7 +18,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #ifdef QMC_CUDA_NEXT
-#include "QMCWaveFunctions/Fermion/DiracDeterminantCUDANext.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantCUBLAS.h"
 #else
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #endif
@@ -258,7 +258,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
 #ifdef QMC_CUDA_NEXT
-  DiracDeterminantCUDANext ddb(spo);
+  DiracDeterminantCUBLAS ddb(spo);
 #else
   DiracDeterminant ddb(spo);
 #endif
@@ -384,7 +384,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
 #ifdef QMC_CUDA_NEXT
-  DiracDeterminantCUDANext ddc(spo);
+  DiracDeterminantCUBLAS ddc(spo);
 #else
   DiracDeterminant ddc(spo);
 #endif

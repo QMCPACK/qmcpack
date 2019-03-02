@@ -34,7 +34,7 @@
 #if defined(QMC_CUDA)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #elif defined(QMC_CUDA_NEXT)
-#include "QMCWaveFunctions/Fermion/DiracDeterminantCUDANext.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantCUBLAS.h"
 #endif
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
@@ -486,7 +486,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   DiracDeterminantBase* adet=0;
   {
 #if defined(QMC_CUDA_NEXT)
-    adet = new DiracDeterminantCUDANext(psi,firstIndex);
+    adet = new DiracDeterminantCUBLAS(psi,firstIndex);
 #elif defined(QMC_CUDA)
     adet = new DiracDeterminantCUDA(psi,firstIndex);
 #else

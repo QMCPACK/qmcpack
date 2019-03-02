@@ -134,7 +134,7 @@ IF(OHMMS_DIM MATCHES 3)
 
   IF(QMC_CUDA_NEXT)
     SET(FERMION_SRCS ${FERMION_SRCS}
-      Fermion/DiracDeterminantCUDANext.cpp
+      Fermion/DiracDeterminantCUBLAS.cpp
       )
   ENDIF(QMC_CUDA_NEXT)
 

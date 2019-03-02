@@ -16,8 +16,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/**@file DiracDeterminantCUDANext.h
- * @brief Declaration of DiracDeterminantCUDANext with a S(ingle)P(article)O(rbital)Set
+/**@file DiracDeterminantCUBLAS.h
+ * @brief Declaration of DiracDeterminantCUBLAS with a S(ingle)P(article)O(rbital)Set
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANT_CUDANEXT_H
 #define QMCPLUSPLUS_DIRACDETERMINANT_CUDANEXT_H
@@ -32,7 +32,7 @@
 namespace qmcplusplus
 {
 
-class DiracDeterminantCUDANext: public DiracDeterminant
+class DiracDeterminantCUBLAS: public DiracDeterminant
 {
 protected:
   ParticleSet *targetPtcl;
@@ -62,20 +62,20 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantCUDANext(SPOSetPtr const &spos, int first=0);
+  DiracDeterminantCUBLAS(SPOSetPtr const &spos, int first=0);
 
   ///default destructor
-   ~DiracDeterminantCUDANext();
+   ~DiracDeterminantCUBLAS();
 
   /**copy constructor
-   * @param s existing DiracDeterminantCUDANext
+   * @param s existing DiracDeterminantCUBLAS
    *
    * This constructor makes a shallow copy of Phi.
    * Other data members are allocated properly.
    */
-  DiracDeterminantCUDANext(const DiracDeterminantCUDANext& s);
+  DiracDeterminantCUBLAS(const DiracDeterminantCUBLAS& s);
 
-  DiracDeterminantCUDANext& operator=(const DiracDeterminantCUDANext& s);
+  DiracDeterminantCUBLAS& operator=(const DiracDeterminantCUBLAS& s);
 
   ///** return a clone of Phi
   // */
@@ -140,7 +140,7 @@ public:
                                    std::vector<RealType>& dlogpsi,
                                    std::vector<RealType>& dhpsioverpsi);
 
-  // used by DiracDeterminantCUDANextWithBackflow
+  // used by DiracDeterminantCUBLASWithBackflow
    void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& active,
                                    int offset,
@@ -226,8 +226,8 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-   DiracDeterminantCUDANext* makeCopy(SPOSet* spo) const;
-//        DiracDeterminantCUDANext* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
+   DiracDeterminantCUBLAS* makeCopy(SPOSet* spo) const;
+//        DiracDeterminantCUBLAS* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
 
    void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
   ///total number of particles

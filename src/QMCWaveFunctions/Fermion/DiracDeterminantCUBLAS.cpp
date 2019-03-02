@@ -17,7 +17,7 @@
     
     
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantCUDANext.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantCUBLAS.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
 #include "Numerics/MatrixOperators.h"
@@ -30,37 +30,37 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantCUDANext::DiracDeterminantCUDANext(SPOSetPtr const &spos, int first):
+DiracDeterminantCUBLAS::DiracDeterminantCUBLAS(SPOSetPtr const &spos, int first):
   DiracDeterminant(spos, first), NP(0), Phi(spos), FirstIndex(first), ndelay(1),
-  UpdateTimer("DiracDeterminantCUDANext::update",timer_level_fine),
-  RatioTimer("DiracDeterminantCUDANext::ratio",timer_level_fine),
-  InverseTimer("DiracDeterminantCUDANext::inverse",timer_level_fine),
-  BufferTimer("DiracDeterminantCUDANext::buffer",timer_level_fine),
-  SPOVTimer("DiracDeterminantCUDANext::spoval",timer_level_fine),
-  SPOVGLTimer("DiracDeterminantCUDANext::spovgl",timer_level_fine)
+  UpdateTimer("DiracDeterminantCUBLAS::update",timer_level_fine),
+  RatioTimer("DiracDeterminantCUBLAS::ratio",timer_level_fine),
+  InverseTimer("DiracDeterminantCUBLAS::inverse",timer_level_fine),
+  BufferTimer("DiracDeterminantCUBLAS::buffer",timer_level_fine),
+  SPOVTimer("DiracDeterminantCUBLAS::spoval",timer_level_fine),
+  SPOVGLTimer("DiracDeterminantCUBLAS::spovgl",timer_level_fine)
 {
   Optimizable=false;
   if(Phi->Optimizable)
     Optimizable=true;
-  ClassName="DiracDeterminantCUDANext";
+  ClassName="DiracDeterminantCUBLAS";
   registerTimers();
 }
 
 ///default destructor
-DiracDeterminantCUDANext::~DiracDeterminantCUDANext() {}
+DiracDeterminantCUBLAS::~DiracDeterminantCUBLAS() {}
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
  *@param nel number of particles in the determinant
  */
-void DiracDeterminantCUDANext::set(int first, int nel, int delay)
+void DiracDeterminantCUBLAS::set(int first, int nel, int delay)
 {
   FirstIndex = first;
   ndelay = delay;
   resize(nel,nel);
 }
 
-void DiracDeterminantCUDANext::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
+void DiracDeterminantCUBLAS::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
 #ifdef MIXED_PRECISION
@@ -84,7 +84,7 @@ void DiracDeterminantCUDANext::invertPsiM(const ValueMatrix_t& logdetT, ValueMat
 
 
 ///reset the size: with the number of particles and number of orbtials
-void DiracDeterminantCUDANext::resize(int nel, int morb)
+void DiracDeterminantCUBLAS::resize(int nel, int morb)
 {
   int norb=morb;
   if(norb <= 0)
@@ -122,8 +122,8 @@ void DiracDeterminantCUDANext::resize(int nel, int morb)
   */
 }
 
-DiracDeterminantCUDANext::GradType
-DiracDeterminantCUDANext::evalGrad(ParticleSet& P, int iat)
+DiracDeterminantCUBLAS::GradType
+DiracDeterminantCUBLAS::evalGrad(ParticleSet& P, int iat)
 {
   WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
@@ -132,8 +132,8 @@ DiracDeterminantCUDANext::evalGrad(ParticleSet& P, int iat)
   return g;
 }
 
-DiracDeterminantCUDANext::ValueType
-DiracDeterminantCUDANext::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+DiracDeterminantCUBLAS::ValueType
+DiracDeterminantCUBLAS::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   SPOVGLTimer.start();
   Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
@@ -150,7 +150,7 @@ DiracDeterminantCUDANext::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 
 /** move was accepted, update the real container
 */
-void DiracDeterminantCUDANext::acceptMove(ParticleSet& P, int iat)
+void DiracDeterminantCUBLAS::acceptMove(ParticleSet& P, int iat)
 {
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));
@@ -167,19 +167,19 @@ void DiracDeterminantCUDANext::acceptMove(ParticleSet& P, int iat)
 
 /** move was rejected. copy the real container to the temporary to move on
 */
-void DiracDeterminantCUDANext::restore(int iat)
+void DiracDeterminantCUBLAS::restore(int iat)
 {
   curRatio=1.0;
 }
 
-void DiracDeterminantCUDANext::completeUpdates()
+void DiracDeterminantCUBLAS::completeUpdates()
 {
   UpdateTimer.start();
   updateEng.updateInvMat(psiM);
   UpdateTimer.stop();
 }
 
-void DiracDeterminantCUDANext::updateAfterSweep(ParticleSet& P,
+void DiracDeterminantCUBLAS::updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L)
 {
@@ -210,7 +210,7 @@ void DiracDeterminantCUDANext::updateAfterSweep(ParticleSet& P,
 }
 
 void
-DiracDeterminantCUDANext::registerData(ParticleSet& P, WFBufferType& buf)
+DiracDeterminantCUBLAS::registerData(ParticleSet& P, WFBufferType& buf)
 {
   // Ye: no idea about NP.
   if(NP == 0) //first time, allocate once
@@ -239,7 +239,7 @@ DiracDeterminantCUDANext::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(PhaseValue);
 }
 
-DiracDeterminantCUDANext::RealType DiracDeterminantCUDANext::updateBuffer(ParticleSet& P,
+DiracDeterminantCUBLAS::RealType DiracDeterminantCUBLAS::updateBuffer(ParticleSet& P,
     WFBufferType& buf, bool fromscratch)
 {
   if(fromscratch)
@@ -258,7 +258,7 @@ DiracDeterminantCUDANext::RealType DiracDeterminantCUDANext::updateBuffer(Partic
   return LogValue;
 }
 
-void DiracDeterminantCUDANext::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+void DiracDeterminantCUBLAS::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
   psiM.attachReference(MemoryInstance<ValueType>(buf.lendReference<ValueType>(psiM.size())));
@@ -274,7 +274,7 @@ void DiracDeterminantCUDANext::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
  * @param P current configuration
  * @param iat the particle thas is being moved
  */
-DiracDeterminantCUDANext::ValueType DiracDeterminantCUDANext::ratio(ParticleSet& P, int iat)
+DiracDeterminantCUBLAS::ValueType DiracDeterminantCUBLAS::ratio(ParticleSet& P, int iat)
 {
   UpdateMode=ORB_PBYP_RATIO;
   WorkingIndex = iat-FirstIndex;
@@ -287,7 +287,7 @@ DiracDeterminantCUDANext::ValueType DiracDeterminantCUDANext::ratio(ParticleSet&
   return curRatio;
 }
 
-void DiracDeterminantCUDANext::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+void DiracDeterminantCUBLAS::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   const int nVP = VP.getTotalNum();
   const size_t memory_needed = nVP*NumOrbitals+Phi->estimateMemory(nVP);
@@ -322,7 +322,7 @@ void DiracDeterminantCUDANext::evaluateRatios(VirtualParticleSet& VP, std::vecto
   }
 }
 
-void DiracDeterminantCUDANext::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+void DiracDeterminantCUBLAS::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   SPOVTimer.start();
   Phi->evaluate(P, -1, psiV);
@@ -330,16 +330,16 @@ void DiracDeterminantCUDANext::evaluateRatiosAlltoOne(ParticleSet& P, std::vecto
   MatrixOperators::product(psiM,psiV.data(),&ratios[FirstIndex]);
 }
 
-DiracDeterminantCUDANext::GradType
-DiracDeterminantCUDANext::evalGradSource(ParticleSet& P, ParticleSet& source,
+DiracDeterminantCUBLAS::GradType
+DiracDeterminantCUBLAS::evalGradSource(ParticleSet& P, ParticleSet& source,
                                      int iat)
 {
   Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
   return simd::dot(psiM.data(),grad_source_psiM.data(),psiM.size());
 }
 
-DiracDeterminantCUDANext::GradType
-DiracDeterminantCUDANext::evalGradSourcep
+DiracDeterminantCUBLAS::GradType
+DiracDeterminantCUBLAS::evalGradSourcep
 (ParticleSet& P, ParticleSet& source,int iat,
  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
@@ -433,7 +433,7 @@ DiracDeterminantCUDANext::evalGradSourcep
   return Psi_alpha_over_psi;
 }
 
-void DiracDeterminantCUDANext::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void DiracDeterminantCUBLAS::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
   //IM A HACK.  Assumes evaluateLog has already been executed.
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
@@ -456,8 +456,8 @@ void DiracDeterminantCUDANext::evaluateHessian(ParticleSet& P, HessVector_t& gra
   }
 }
 
-DiracDeterminantCUDANext::GradType
-DiracDeterminantCUDANext::evalGradSource
+DiracDeterminantCUBLAS::GradType
+DiracDeterminantCUBLAS::evalGradSource
 (ParticleSet& P, ParticleSet& source,int iat,
  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
@@ -564,8 +564,8 @@ DiracDeterminantCUDANext::evalGradSource
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-DiracDeterminantCUDANext::RealType
-DiracDeterminantCUDANext::evaluateLog(ParticleSet& P,
+DiracDeterminantCUBLAS::RealType
+DiracDeterminantCUBLAS::evaluateLog(ParticleSet& P,
                                   ParticleSet::ParticleGradient_t& G,
                                   ParticleSet::ParticleLaplacian_t& L)
 {
@@ -592,7 +592,7 @@ DiracDeterminantCUDANext::evaluateLog(ParticleSet& P,
 }
 
 void
-DiracDeterminantCUDANext::recompute(ParticleSet& P)
+DiracDeterminantCUBLAS::recompute(ParticleSet& P)
 {
   SPOVGLTimer.start();
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
@@ -611,27 +611,27 @@ DiracDeterminantCUDANext::recompute(ParticleSet& P)
 }
 
 void
-DiracDeterminantCUDANext::evaluateDerivatives(ParticleSet& P,
+DiracDeterminantCUBLAS::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& active,
     std::vector<RealType>& dlogpsi,
     std::vector<RealType>& dhpsioverpsi)
 {
 }
 
-WaveFunctionComponentPtr DiracDeterminantCUDANext::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr DiracDeterminantCUBLAS::makeClone(ParticleSet& tqp) const
 {
-  APP_ABORT(" Illegal action. Cannot use DiracDeterminantCUDANext::makeClone");
+  APP_ABORT(" Illegal action. Cannot use DiracDeterminantCUBLAS::makeClone");
   return 0;
 }
 
-DiracDeterminantCUDANext* DiracDeterminantCUDANext::makeCopy(SPOSetPtr spo) const
+DiracDeterminantCUBLAS* DiracDeterminantCUBLAS::makeCopy(SPOSetPtr spo) const
 {
-  DiracDeterminantCUDANext* dclone= new DiracDeterminantCUDANext(spo);
+  DiracDeterminantCUBLAS* dclone= new DiracDeterminantCUBLAS(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex,ndelay);
   return dclone;
 }
 
-DiracDeterminantCUDANext::DiracDeterminantCUDANext(const DiracDeterminantCUDANext& s)
+DiracDeterminantCUBLAS::DiracDeterminantCUBLAS(const DiracDeterminantCUBLAS& s)
   : DiracDeterminant(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex), ndelay(s.ndelay)
   ,UpdateTimer(s.UpdateTimer)
   ,RatioTimer(s.RatioTimer)
@@ -644,12 +644,12 @@ DiracDeterminantCUDANext::DiracDeterminantCUDANext(const DiracDeterminantCUDANex
   this->resize(s.NumPtcls,s.NumOrbitals);
 }
 
-//SPOSetPtr  DiracDeterminantCUDANext::clonePhi() const
+//SPOSetPtr  DiracDeterminantCUBLAS::clonePhi() const
 //{
 //  return Phi->makeClone();
 //}
 
-void DiracDeterminantCUDANext::registerTimers()
+void DiracDeterminantCUBLAS::registerTimers()
 {
   UpdateTimer.reset();
   RatioTimer.reset();
