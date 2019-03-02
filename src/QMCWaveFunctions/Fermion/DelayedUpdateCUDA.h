@@ -14,11 +14,11 @@
 
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include <simd/simd.hpp>
 #include "simd/CUDAallocator.hpp"
-#include <cublas_v2.h>
 #include <Numerics/CUDA/cuBLAS.hpp>
 #include "QMCWaveFunctions/Fermion/delayed_update_helper.h"
+#include <cuda_runtime_api.h>
+#include "CUDA/cudaError.h"
 
 namespace qmcplusplus {
 
@@ -71,16 +71,16 @@ namespace qmcplusplus {
       {
         // currently hard-coded first device
         // need to control CUDA_VISIBLE_DEVICES when using multiple MPI on a single node.
-        cudaSetDevice(0);
-        cublasCreate(&handle);
-        cudaStreamCreate(&hstream);
-        cublasSetStream(handle,hstream);
+        cudaErrorCheck( cudaSetDevice(0), "cudaSetDevice failed!" );
+        cublasErrorCheck( cublasCreate(&handle), "cublasCreate failed!" );
+        cudaErrorCheck( cudaStreamCreate(&hstream), "cudaStreamCreate failed!" );
+        cublasErrorCheck( cublasSetStream(handle,hstream), "cublasSetStream failed!" );
       }
 
       ~DelayedUpdateCUDA()
       {
-        cublasDestroy(handle);
-        cudaStreamDestroy(hstream);
+        cublasErrorCheck( cublasDestroy(handle), "cublasDestroy failed!" );
+        cudaErrorCheck( cudaStreamDestroy(hstream), "cudaStreamDestroy failed!" );
       }
 
       inline void resize(int norb, int delay)

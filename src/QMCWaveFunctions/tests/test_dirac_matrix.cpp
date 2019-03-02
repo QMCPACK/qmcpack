@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
+#include "simd/simd.hpp"
 
 #include <stdio.h>
 #include <string>

@@ -14,6 +14,46 @@
 
 #include <cublas_v2.h>
 #include <complex>
+#include <iostream>
+#include <string>
+#include <stdexcept>
+
+#define cublasErrorCheck(ans, cause) { cublasAssert((ans), cause, __FILE__, __LINE__); }
+
+inline void cublasAssert(cublasStatus_t code, const std::string& cause, const char *file, int line, bool abort=true)
+{
+  if (code != CUBLAS_STATUS_SUCCESS)
+  {
+    std::string cublas_error;
+    switch (code)
+    {
+      case CUBLAS_STATUS_NOT_INITIALIZED:
+        cublas_error = "CUBLAS_STATUS_NOT_INITIALIZED"; break;
+      case CUBLAS_STATUS_ALLOC_FAILED:
+        cublas_error = "CUBLAS_STATUS_ALLOC_FAILED"; break;
+      case CUBLAS_STATUS_INVALID_VALUE:
+        cublas_error = "CUBLAS_STATUS_INVALID_VALUE"; break;
+      case CUBLAS_STATUS_ARCH_MISMATCH:
+        cublas_error = "CUBLAS_STATUS_ARCH_MISMATCH"; break;
+      case CUBLAS_STATUS_MAPPING_ERROR:
+        cublas_error = "CUBLAS_STATUS_MAPPING_ERROR"; break;
+      case CUBLAS_STATUS_EXECUTION_FAILED:
+        cublas_error = "CUBLAS_STATUS_EXECUTION_FAILED"; break;
+      case CUBLAS_STATUS_INTERNAL_ERROR:
+        cublas_error = "CUBLAS_STATUS_INTERNAL_ERROR"; break;
+      default:
+        cublas_error = "<unknown>";
+    }
+
+    std::ostringstream err;
+    err << "cublasAssert: " << cublas_error
+        << ", file " << file << ", line " << line << std::endl
+        << cause << std::endl;
+    std::cerr << err.str();
+    //if (abort) exit(code);
+    throw std::runtime_error(cause);
+  }
+}
 
 namespace qmcplusplus {
 
@@ -29,9 +69,7 @@ struct cuBLAS
             const float *beta,
             float *C, int ldc)
   {
-    cublasStatus_t cublas_error;
-    cublas_error = cublasSgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
-    if( cublas_error != CUBLAS_STATUS_SUCCESS ) throw std::runtime_error("cublasSgemm failed error = " + std::to_string(cublas_error));
+    cublasErrorCheck( cublasSgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc), "cublasSgemm failed!" );
   }
 
   static inline
@@ -44,9 +82,7 @@ struct cuBLAS
             const double *beta,
             double *C, int ldc)
   {
-    cublasStatus_t cublas_error;
-    cublas_error = cublasDgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
-    if( cublas_error != CUBLAS_STATUS_SUCCESS ) throw std::runtime_error("cublasDgemm failed error = " + std::to_string(cublas_error));
+    cublasErrorCheck( cublasDgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc), "cublasDgemm failed!");
   }
 };
 

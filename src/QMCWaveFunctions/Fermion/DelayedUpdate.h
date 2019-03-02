@@ -14,7 +14,6 @@
 
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include <simd/simd.hpp>
 #include "Numerics/OhmmsBlas.h"
 #include "Numerics/BlasThreadingEnv.h"
 #include "config.h"
