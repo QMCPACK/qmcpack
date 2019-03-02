@@ -16,6 +16,8 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 
+#include <Numerics/MatrixOperators.h>
+#include "Numerics/DeterminantOperators.h"
 
 namespace qmcplusplus
 {
@@ -26,11 +28,10 @@ namespace qmcplusplus
    */
   struct LCAOrbitalSet: public SPOSet
   {
-    typedef RealBasisSetBase<RealType> basis_type;
+  public:
+    typedef SoaBasisSetBase<ValueType> basis_type;
     typedef basis_type::vgl_type vgl_type;
 
-    ///level of printing
-    int ReportLevel;
     ///pointer to the basis set
     basis_type* myBasisSet;
     ///number of Single-particle orbitals
@@ -40,6 +41,13 @@ namespace qmcplusplus
      * makeClone makes a shallow copy
      */
     ValueMatrix_t* C;
+    /// Scratch space for the initial coefficents before the rotation is applied
+    ValueMatrix_t m_init_B;
+    /// true if SPO parameters (orbital rotation parameters) have been supplied by input
+    bool params_supplied;
+    /// list of supplied orbital rotation parameters
+    std::vector<RealType> params;
+
     ///true if C is an identity matrix
     bool Identity;
     ///if true, do not clean up
@@ -47,13 +55,13 @@ namespace qmcplusplus
     ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
     vgl_type Temp; 
     ///Tempv(OrbitalSetSize) Tempv=C*Temp
-    vgl_type Tempv; 
-
+    vgl_type Tempv;
+    //vector that contains active orbital rotation parameter indices 
+    std::vector<std::pair<int,int> > m_act_rot_inds;
     /** constructor
      * @param bs pointer to the BasisSet
-     * @param rl report level
      */
-    LCAOrbitalSet(basis_type* bs=nullptr,int rl=0);
+    LCAOrbitalSet(basis_type* bs=nullptr);
 
     LCAOrbitalSet(const LCAOrbitalSet& in)=default;
 
@@ -61,10 +69,71 @@ namespace qmcplusplus
 
     SPOSet* makeClone() const;
 
+    /// create optimizable orbital rotation parameters
+    void buildOptVariables(const std::vector<std::pair<int,int>>& rotations);
+
+    void evaluateDerivatives (ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             std::vector<RealType>& dlogpsi, 
+                             std::vector<RealType>& dhpsioverpsi,
+                             const ValueType& psiCurrent,
+                             const std::vector<RealType>& Coeff,
+                             const std::vector<size_t>& C2node_up,
+                             const std::vector<size_t>& C2node_dn,
+                             const ValueVector_t& detValues_up, 
+                             const ValueVector_t& detValues_dn, 
+                             const GradMatrix_t& grads_up, 
+                             const GradMatrix_t& grads_dn, 
+                             const ValueMatrix_t& lapls_up, 
+                             const ValueMatrix_t& lapls_dn,
+                             const ValueMatrix_t& M_up,
+                             const ValueMatrix_t& M_dn,
+                             const ValueMatrix_t& Minv_up,
+                             const ValueMatrix_t& Minv_dn,
+                             const GradMatrix_t& B_grad,
+                             const ValueMatrix_t& B_lapl,
+                             const std::vector<int>& detData_up,
+                             const size_t N1,
+                             const size_t N2,
+                             const size_t NP1,
+                             const size_t NP2,
+                             const std::vector< std::vector<int> > & lookup_tbl);
+
+    
+    void checkInVariables(opt_variables_type& active)
+    {
+      if(Optimizable && !IsCloned)
+      {
+        if(myVars.size())
+          active.insertFrom(myVars);
+        else
+          Optimizable=false;
+      }
+    }
+
+    void checkOutVariables(const opt_variables_type& active)
+    {
+      if(Optimizable && !IsCloned)
+        myVars.getIndex(active);
+    }
+
+
     ///reset
     void resetParameters(const opt_variables_type& active)
     {
-      //myBasisSet->resetParameters(active);
+#if !defined(QMC_COMPLEX)
+      if (Optimizable)
+      {
+        std::vector<RealType> param( m_act_rot_inds.size() );
+        for (int i=0; i < m_act_rot_inds.size(); i++)
+        {
+          int loc=myVars.where(i);
+          param[i] = myVars[i] = active[loc];
+        }
+        apply_rotation(param);
+
+      }
+#endif
     }
 
     ///reset the target particleset
@@ -104,9 +173,7 @@ namespace qmcplusplus
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
-    void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem);
-
-    size_t estimateMemory(const int nP);
+    void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios);
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi);
 
@@ -121,11 +188,52 @@ namespace qmcplusplus
 
     void evaluateThirdDeriv(const ParticleSet& P, int first, int last , GGGMatrix_t& grad_grad_grad_logdet);
 
+  private:
     //helper functions to handl Identity
     void evaluate_vgl_impl(const vgl_type& temp,
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) const;
+
     void evaluate_vgl_impl(const vgl_type& temp, int i,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) const;
+
+#if !defined(QMC_COMPLEX)
+    //function to perform orbital rotations
+    void apply_rotation(const std::vector<RealType>& param);
+
+    //helper function to apply_rotation 
+    void exponentiate_antisym_matrix(ValueMatrix_t& mat);
+    
+
+    //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
+    void table_method_eval(std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi,
+                           const ParticleSet::ParticleLaplacian_t& myL_J,
+                           const ParticleSet::ParticleGradient_t& myG_J,
+                           const size_t nel,
+                           const size_t nmo,
+                           const ValueType& psiCurrent,
+                           const std::vector<RealType>& Coeff,
+                           const std::vector<size_t>& C2node_up,
+                           const std::vector<size_t>& C2node_dn,
+                           const ValueVector_t& detValues_up, 
+                           const ValueVector_t& detValues_dn, 
+                           const GradMatrix_t& grads_up, 
+                           const GradMatrix_t& grads_dn, 
+                           const ValueMatrix_t& lapls_up, 
+                           const ValueMatrix_t& lapls_dn,
+                           const ValueMatrix_t& M_up,
+                           const ValueMatrix_t& M_dn,
+                           const ValueMatrix_t& Minv_up,
+                           const ValueMatrix_t& Minv_dn,
+                           const GradMatrix_t& B_grad,
+                           const ValueMatrix_t& B_lapl,
+                           const std::vector<int>& detData_up,
+                           const size_t N1,
+                           const size_t N2,
+                           const size_t NP1,
+                           const size_t NP2,
+                           const std::vector< std::vector<int> > & lookup_tbl);
+#endif
 
   };
 }

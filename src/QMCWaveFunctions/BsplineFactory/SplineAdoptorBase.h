@@ -42,15 +42,9 @@ namespace qmcplusplus
 template<typename ST, unsigned D>
 struct SplineAdoptorBase
 {
-#if (__cplusplus >= 201103L)
   using PointType=TinyVector<ST,D>;
   using SingleSplineType=UBspline_3d_d;
   using DataType=ST; 
-#else
-  typedef TinyVector<ST,D> PointType;
-  typedef UBspline_3d_d SingleSplineType;
-  typedef ST DataType;
-#endif
   ///true if the computed values are complex
   bool is_complex;
   ///true, if it has only one k point and Gamma
@@ -89,9 +83,7 @@ struct SplineAdoptorBase
     MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
   { }
 
-#if (__cplusplus >= 201103L)
   SplineAdoptorBase(const SplineAdoptorBase& rhs)=default;
-#endif
 
   inline void init_base(int n)
   {
@@ -130,6 +122,8 @@ struct SplineAdoptorBase
     }
     return nCB; //return the number of complex bands
   }
+
+  virtual void finalizeConstruction() { }
 };
 
 }

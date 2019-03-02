@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 ///enumeration for main computing devices
-enum {SMP=0, CUDA=1, PHI=2};
+enum {SMP=0, CUDA=1};
 
 /** class to definte global variables to keep track a run
  */

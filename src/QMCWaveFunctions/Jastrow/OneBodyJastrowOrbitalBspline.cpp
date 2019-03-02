@@ -132,13 +132,15 @@ OneBodyJastrowOrbitalBspline<FT>::addLog (MCWalkerConfiguration &W,
 
 template<class FT>
 void
-OneBodyJastrowOrbitalBspline<FT>::update (std::vector<Walker_t*> &walkers, int iat)
+OneBodyJastrowOrbitalBspline<FT>::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k)
 {
   // for (int iw=0; iw<walkers.size(); iw++)
   //   UpdateListHost[iw] = (CTS::RealType*)walkers[iw]->R_GPU.data();
   // UpdateListGPU = UpdateListHost;
-  // one_body_update(UpdateListGPU.data(), N, iat, walkers.size());
+  // one_body_update(UpdateListGPU.data(), N, iat, N);
 }
+
+// #define DEBUG_DELAYED
 
 template<class FT>
 void
@@ -149,9 +151,11 @@ OneBodyJastrowOrbitalBspline<FT>::ratio
  std::vector<ValueType> &lapl)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
+  int N=W.Rnew_GPU.size();
+  int nw=walkers.size();
   bool zero = true;
-  if (SumGPU.size() < 4*walkers.size())
-    SumGPU.resize(4*walkers.size());
+  if (SumGPU.size() < 4*N)
+    SumGPU.resize(4*N);
   for (int group=0; group<NumCenterGroups; group++)
   {
     int first = CenterFirst[group];
@@ -163,32 +167,39 @@ OneBodyJastrowOrbitalBspline<FT>::ratio
 //  			    (CTS::RealType*)W.Rnew_GPU.data(), iat,
 // 			    spline.coefs.data(), spline.coefs.size(),
 // 			    spline.rMax, L.data(), Linv.data(),
-// 			    SumGPU.data(), walkers.size());
+// 			    SumGPU.data(), N);
       if (UsePBC)
       {
         bool use_fast_image = W.Lattice.SimulationCellRadius >= spline.rMax;
         one_body_ratio_grad_PBC (C.data(), W.RList_GPU.data(), first, last,
                                  (CTS::RealType*)W.Rnew_GPU.data(), iat,
-                                 spline.coefs.data(), spline.coefs.size(),
+                                 spline.coefs.data(), spline.coefs.size(), nw,
                                  spline.rMax, L.data(), Linv.data(), zero,
-                                 SumGPU.data(), walkers.size(), use_fast_image);
+                                 SumGPU.data(), N, use_fast_image);
       }
       else
         one_body_ratio_grad (C.data(), W.RList_GPU.data(), first, last,
                              (CTS::RealType*)W.Rnew_GPU.data(), iat,
-                             spline.coefs.data(), spline.coefs.size(),
-                             spline.rMax, zero, SumGPU.data(), walkers.size());
+                             spline.coefs.data(), spline.coefs.size(), nw,
+                             spline.rMax, zero, SumGPU.data(), N);
       zero = false;
     }
   }
   // Copy data back to CPU memory
   SumHost = SumGPU;
-  for (int iw=0; iw<walkers.size(); iw++)
+  for (int iw=0; iw<N; iw++)
   {
+#ifdef DEBUG_DELAYED
+    if(iw%nw==0) fprintf(stderr,"k = %i:\n",iw/nw);
+    fprintf(stderr,"walker %i ratio 1B Jastrow: %f|(%f,%f,%f) -> ",iw%nw,psi_ratios[iw],grad[iw][0],grad[iw][1],grad[iw][2]);
+#endif
     psi_ratios[iw] *= std::exp(-SumHost[4*iw+0]);
     grad[iw][0] -= SumHost[4*iw+1];
     grad[iw][1] -= SumHost[4*iw+2];
     grad[iw][2] -= SumHost[4*iw+3];
+#ifdef DEBUG_DELAYED
+    fprintf(stderr,"%f|(%f,%f,%f)\n",psi_ratios[iw],grad[iw][0],grad[iw][1],grad[iw][2]);
+#endif
   }
 #ifdef CUDA_DEBUG
   DTD_BConds<double,3,SUPERCELL_BULK> bconds;
@@ -218,10 +229,19 @@ OneBodyJastrowOrbitalBspline<FT>::calcRatio
  std::vector<GradType>  &grad,
  std::vector<ValueType> &lapl)
 {
+  int N = W.Rnew_GPU.size();
   std::vector<Walker_t*> &walkers = W.WalkerList;
+  int nw = walkers.size();
+  int kd = W.getkDelay();
+  int k = W.getkcurr()-(kd>1);
+  if(k<0)
+    k += W.getkupdate();
+  int offset=0;
+  if(W.getklinear())
+    offset=k*nw;
   bool zero = true;
-  if (SumGPU.size() < 4*walkers.size())
-    SumGPU.resize(4*walkers.size());
+  if (SumGPU.size() < 4*nw)
+    SumGPU.resize(4*nw);
   for (int group=0; group<NumCenterGroups; group++)
   {
     int first = CenterFirst[group];
@@ -233,16 +253,16 @@ OneBodyJastrowOrbitalBspline<FT>::calcRatio
       {
         bool use_fast_image = W.Lattice.SimulationCellRadius >= spline.rMax;
         one_body_ratio_grad_PBC (C.data(), W.RList_GPU.data(), first, last,
-                                 (CTS::RealType*)W.Rnew_GPU.data(), iat,
-                                 spline.coefs.data(), spline.coefs.size(),
+                                 &(((CTS::RealType*)W.Rnew_GPU.data())[3*offset]), iat,
+                                 spline.coefs.data(), spline.coefs.size(), walkers.size(),
                                  spline.rMax, L.data(), Linv.data(), zero,
-                                 SumGPU.data(), walkers.size(), use_fast_image);
+                                 SumGPU.data(), nw, use_fast_image);
       }
       else
         one_body_ratio_grad (C.data(), W.RList_GPU.data(), first, last,
-                             (CTS::RealType*)W.Rnew_GPU.data(), iat,
-                             spline.coefs.data(), spline.coefs.size(),
-                             spline.rMax, zero, SumGPU.data(), walkers.size());
+                             &(((CTS::RealType*)W.Rnew_GPU.data())[3*offset]), iat,
+                             spline.coefs.data(), spline.coefs.size(), walkers.size(),
+                             spline.rMax, zero, SumGPU.data(), nw);
       zero = false;
     }
   }
@@ -255,18 +275,26 @@ OneBodyJastrowOrbitalBspline<FT>::calcRatio
 template<class FT>
 void
 OneBodyJastrowOrbitalBspline<FT>::addRatio
-(MCWalkerConfiguration &W, int iat,
+(MCWalkerConfiguration &W, int iat, int k,
  std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
  std::vector<ValueType> &lapl)
 {
+  int N = W.Rnew_GPU.size();
   std::vector<Walker_t*> &walkers = W.WalkerList;
+  int nw = walkers.size();
   cudaEventSynchronize(gpu::ratioSyncOneBodyEvent);
-  for (int iw=0; iw<walkers.size(); iw++)
+  for (int iw=0; iw<nw; iw++)
   {
+#ifdef DEBUG_DELAYED
+    fprintf(stderr,"-> 1B Jastrow walker %i: ratio = %f ; grad = (%f,%f,%f) -> ",iw,psi_ratios[iw],grad[iw][0],grad[iw][1],grad[iw][2]);
+#endif
     psi_ratios[iw] *= std::exp(-SumHost[4*iw+0]);
     grad[iw][0] -= SumHost[4*iw+1];
     grad[iw][1] -= SumHost[4*iw+2];
     grad[iw][2] -= SumHost[4*iw+3];
+#ifdef DEBUG_DELAYED
+    fprintf(stderr,"ratio = %f ; grad = (%f,%f,%f)\n",psi_ratios[iw],grad[iw][0],grad[iw][1],grad[iw][2]);
+#endif
   }
 #ifdef CUDA_DEBUG
   DTD_BConds<double,3,SUPERCELL_BULK> bconds;
@@ -360,7 +388,7 @@ OneBodyJastrowOrbitalBspline<FT>::NLratios
 
 template<class FT>
 void OneBodyJastrowOrbitalBspline<FT>::calcGradient
-(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
+(MCWalkerConfiguration &W, int iat, int k, std::vector<GradType> &grad)
 {
   CTS::RealType sim_cell_radius = W.Lattice.SimulationCellRadius;
   std::vector<Walker_t*> &walkers = W.WalkerList;
@@ -402,8 +430,22 @@ void OneBodyJastrowOrbitalBspline<FT>::addGradient
   std::vector<Walker_t*> &walkers = W.WalkerList;
   cudaEventSynchronize(gpu::gradientSyncOneBodyEvent);
   for (int iw=0; iw<walkers.size(); iw++)
+  {
+#ifdef DEBUG_DELAYED
+    fprintf(stderr,"1B Jastrow grad walker %i: (",iw);
+#endif
     for (int dim=0; dim<OHMMS_DIM; dim++)
-      grad[iw][dim] -= this->OneGradHost[OHMMS_DIM*iw+dim];
+      {
+#ifdef DEBUG_DELAYED
+        if(dim>0) fprintf(stderr,", ");
+        fprintf(stderr,"%f (before: %f)",OneGradHost[OHMMS_DIM*iw+dim],grad[iw][dim]);
+#endif
+        grad[iw][dim] -= this->OneGradHost[OHMMS_DIM*iw+dim];
+      }
+#ifdef DEBUG_DELAYED
+    fprintf(stderr,")\n");
+#endif
+  }
 }
 
 template<class FT>
@@ -552,7 +594,7 @@ OneBodyJastrowOrbitalBspline<FT>::evaluateDerivatives
     SplineDerivsHost = SplineDerivsGPU;
 //       std::cerr << "SplineDerivsHost = " << std::endl;
 //       for (int i=0; i<SplineDerivsHost.size(); i++)
-// 	cerr << SplineDerivsHost[i] << std::endl;
+//         std::cerr << SplineDerivsHost[i] << std::endl;
     opt_variables_type splineVars = this->F[cgroup]->myVars;
     for (int iv=0; iv<splineVars.size(); iv++)
     {

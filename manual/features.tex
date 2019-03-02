@@ -76,7 +76,7 @@ $\ge$4.9 and Intel compiler versions $\ge 15.0$. \textbf{Users should
   requests to expand the functionality that they need.}
 
 As described in \ref{sec:cmakeoptions}, to enable the SoA
-implementation, QMCPACK should be configured with \texttt{-DENABLE\_SOA=1}.
+implementation, QMCPACK should be configured with \ishell{-DENABLE_SOA=1}.
 
 SoA code path currently does NOT support:
 \begin{itemize}
@@ -102,4 +102,30 @@ The orbital-space Auxiliary-Field Quantum Monte Carlo (AFMQC) method is now avai
     \item Distributed propagation algorithms for large systems. Enables calculations where the data structures do not fit on a single node.
     \item Complex implementation for PBC calculations with complex integrals.
     \item Sparse representation of large matrices for reduced memory usage.
+\end{itemize}
+
+\subsection{Sharing of spline data across multiple GPUs}
+
+Sharing of GPU spline data enables the distribution of the spline data
+across multiple GPUs on a given computational node. For example, on a
+two GPU per node system, each GPU would have half of the
+orbitals. This enables larger overall spline tables than would fit in
+the memory of individual GPUs to be utilized, and potentially up to
+the total GPU memory on a node. To obtain high performance, large
+electron counts or a high-performing CPU-GPU interconnect is required.
+
+In order to use this feature, the following needs to be done:
+
+\begin{itemize}
+    \item The CUDA Multi-Process Service (MPS) needs to be utilized
+      (e.g. on Summit/SummitDev use "-alloc\_flags gpumps" for
+      bsub). If MPI is not detected sharing will be disabled.
+    \item CUDA\_VISIBLE\_DEVICES needs to be properly set to control each
+      rank's visible CUDA devices (e.g. on OLCF Summit/SummitDev one
+      needs to create a resource set containing all GPUs with the
+      respective number of ranks with "jsrun --task-per-rs Ngpus -g
+      Ngpus")
+    \item In the determinant set definition of the <wavefunction>
+      section the "gpusharing" parameter needs to be set
+      (i.e. <determinantset gpusharing="yes">). See Sec. \ref{sec:spo_spline}.
 \end{itemize}

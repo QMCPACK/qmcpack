@@ -325,7 +325,7 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
 
   int numbasisgroups(0);
   if(myComm->rank()==0){
-     if(!hin.read(numbasisgroups,"NbBasisGroups"))
+     if(!hin.readEntry(numbasisgroups,"NbBasisGroups"))
          PRE.error("Could not read NbBasisGroups in H5; Probably Corrupt H5 file",true);
   }
   myComm->bcast(numbasisgroups);

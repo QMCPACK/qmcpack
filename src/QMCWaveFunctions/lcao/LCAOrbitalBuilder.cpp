@@ -23,14 +23,15 @@
 #include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
 #include "QMCWaveFunctions/lcao/SoaAtomicBasisSet.h"
 #include "QMCWaveFunctions/lcao/SoaLocalizedBasisSet.h"
-#include "QMCWaveFunctions/lcao/SoaCuspCorrectionBasisSet.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
-#include "QMCWaveFunctions/lcao/LCAOrbitalSetWithCorrection.h"
-#include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
+//#include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
-#include "QMCWaveFunctions/lcao/MultiFunctorBuilder.h"
-#include "QMCWaveFunctions/lcao/CuspCorrection.h"
+#include "QMCWaveFunctions/lcao/MultiFunctorAdapter.h"
+#if !defined(QMC_COMPLEX)
+#include "QMCWaveFunctions/lcao/LCAOrbitalSetWithCorrection.h"
+#include "QMCWaveFunctions/lcao/CuspCorrectionConstruction.h"
+#endif
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -39,61 +40,63 @@ namespace qmcplusplus
 {
   /** traits for a localized basis set; used by createBasisSet
    *
+   * T radial function value type
+   * ORBT orbital value type, can be complex
    * ROT {0=numuerica;, 1=gto; 2=sto}
    * SH {0=cartesian, 1=spherical}
    * If too confusing, inroduce enumeration.
    */
-  template<typename T, int ROT, int SH> struct ao_traits{};
+  template<typename T, typename ORBT, int ROT, int SH> struct ao_traits{};
 
   /** specialization for numerical-cartesian AO */
-  template<typename T>
-    struct ao_traits<T,0,0>
+  template<typename T, typename ORBT>
+    struct ao_traits<T,ORBT,0,0>
     {
-      typedef MultiQuinticSpline1D<T>                     radial_type;
-      typedef SoaCartesianTensor<T>                       angular_type;
-      typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+      using radial_type = MultiQuinticSpline1D<T>;
+      using angular_type = SoaCartesianTensor<T>;
+      using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
+      using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
 
     };
 
   /** specialization for numerical-spherical AO */
-  template<typename T>
-    struct ao_traits<T,0,1>
+  template<typename T, typename ORBT>
+    struct ao_traits<T,ORBT,0,1>
     {
-      typedef MultiQuinticSpline1D<T>                     radial_type;
-      typedef SoaSphericalTensor<T>                       angular_type;
-      typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+      using radial_type = MultiQuinticSpline1D<T>;
+      using angular_type = SoaSphericalTensor<T>;
+      using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
+      using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
     };
 
   /** specialization for GTO-cartesian AO */
-  template<typename T>
-    struct ao_traits<T,1,0>
+  template<typename T, typename ORBT>
+    struct ao_traits<T,ORBT,1,0>
     {
-      typedef MultiFunctorAdapter<GaussianCombo<T> >           radial_type;
-      typedef SoaCartesianTensor<T>                       angular_type;
-      typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+      using radial_type = MultiFunctorAdapter<GaussianCombo<T> >;
+      using angular_type = SoaCartesianTensor<T>;
+      using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
+      using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
     };
 
   /** specialization for GTO-cartesian AO */
-  template<typename T>
-    struct ao_traits<T,1,1>
+  template<typename T, typename ORBT>
+    struct ao_traits<T,ORBT,1,1>
     {
-      typedef MultiFunctorAdapter<GaussianCombo<T> >           radial_type;
-      typedef SoaSphericalTensor<T>                       angular_type;
-      typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+      using radial_type = MultiFunctorAdapter<GaussianCombo<T> >;
+      using angular_type = SoaSphericalTensor<T>;
+      using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
+      using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
     };
 
   /** specialization for STO-spherical AO */
-  template<typename T>
-    struct ao_traits<T,2,1>
+  template<typename T, typename ORBT>
+    struct ao_traits<T,ORBT,2,1>
     {
-      typedef MultiFunctorAdapter<SlaterCombo<T> >             radial_type;
-      typedef SoaSphericalTensor<T>                       angular_type;
-      typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+      using radial_type = MultiFunctorAdapter<SlaterCombo<T> >;
+      using angular_type = SoaSphericalTensor<T>;
+      using ao_type = SoaAtomicBasisSet<radial_type, angular_type>;
+      using basis_type = SoaLocalizedBasisSet<ao_type, ORBT>;
     };
 
 
@@ -236,7 +239,7 @@ namespace qmcplusplus
       std::string ElemID0="atomicBasisSet0";
       if(!hin.push(ElemID0.c_str()))
         PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file",true);
-      if(!hin.read(sph,"angular"))
+      if(!hin.readEntry(sph,"angular"))
         PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
       ylm=(sph=="cartesian")?0:1;
       hin.close();
@@ -281,8 +284,8 @@ namespace qmcplusplus
 
     ReportEngine PRE(ClassName,"createBasisSet(xmlNodePtr)");
 
-    typedef typename ao_traits<RealType,I,J>::ao_type    ao_type;
-    typedef typename ao_traits<RealType,I,J>::basis_type basis_type;
+    using ao_type = typename ao_traits<RealType,ValueType,I,J>::ao_type;
+    using basis_type = typename ao_traits<RealType,ValueType,I,J>::basis_type;
 
     basis_type* mBasisSet=new basis_type(sourcePtcl,targetPtcl);
 
@@ -337,8 +340,8 @@ namespace qmcplusplus
 
     ReportEngine PRE(ClassName,"createBasisSetH5(xmlNodePtr)");
 
-    typedef typename ao_traits<RealType,I,J>::ao_type    ao_type;
-    typedef typename ao_traits<RealType,I,J>::basis_type basis_type;
+    using ao_type = typename ao_traits<RealType,ValueType,I,J>::ao_type;
+    using basis_type = typename ao_traits<RealType,ValueType,I,J>::basis_type;
 
     basis_type* mBasisSet=new basis_type(sourcePtcl,targetPtcl);
 
@@ -377,9 +380,9 @@ namespace qmcplusplus
       {
         if(!hin.push(ElemType.c_str()))
           PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file",true);
-        if(!hin.read(basiset_name,"name"))
+        if(!hin.readEntry(basiset_name,"name"))
           PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
-        if(!hin.read(elementType,"elementType"))
+        if(!hin.readEntry(elementType,"elementType"))
           PRE.error("Could not read elementType in H5; Probably Corrupt H5 file",true);
       }
       myComm->bcast(basiset_name);
@@ -415,90 +418,6 @@ namespace qmcplusplus
     return mBasisSet;
   }
 
-  // Modifies orbital set lcwc
-  void createCuspCorrection(const Matrix<CuspCorrectionParameters> &info, int num_centers,
-                            int orbital_set_size, ParticleSet& targetPtcl, ParticleSet& sourcePtcl,
-                            LCAOrbitalSetWithCorrection& lcwc, const std::string &id)
-  {
-    typedef QMCTraits::RealType RealType;
-
-    LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet);
-    phi.setOrbitalSetSize(lcwc.OrbitalSetSize);
-    phi.BasisSetSize = lcwc.BasisSetSize;
-    phi.setIdentity(false);
-
-    LCAOrbitalSet eta = LCAOrbitalSet(lcwc.myBasisSet);
-    eta.setOrbitalSetSize(lcwc.OrbitalSetSize);
-    eta.BasisSetSize = lcwc.BasisSetSize;
-    eta.setIdentity(false);
-
-
-    std::vector<bool> corrCenter(num_centers, "true");
-
-    LogGrid<RealType>* radial_grid = new LogGrid<RealType>;
-    radial_grid->set(0.000001, 100.0, 1001);
-
-    Vector<RealType> xgrid;
-    Vector<RealType> rad_orb;
-    xgrid.resize(radial_grid->size());
-    rad_orb.resize(radial_grid->size());
-    for (int ig=0; ig < radial_grid->size(); ig++) {
-      xgrid[ig] = radial_grid->r(ig);
-    }
-
-    for (int ic = 0; ic < num_centers; ic++)
-    {
-      *(eta.C) = *(lcwc.C);
-      *(phi.C) = *(lcwc.C);
-
-      splitPhiEta(ic, corrCenter, phi, eta);
-
-      // loop over MO index - cot must be an array (of len MO size)
-      //   the loop is inside cot - in the multiqunitic
-      SoaCuspCorrection::COT *cot = new CuspCorrectionAtomicBasis<RealType>();
-      cot->AOs.initialize(radial_grid, orbital_set_size);
-      cot->ID.resize(orbital_set_size);
-      for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
-        cot->ID[mo_idx] = mo_idx;
-      }
-
-      for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
-        computeRadialPhiBar(&targetPtcl, &sourcePtcl, mo_idx, ic, &phi, xgrid, rad_orb, info(ic, mo_idx));
-        OneDimQuinticSpline<RealType> radial_spline(radial_grid, rad_orb);
-        RealType yprime_i = (rad_orb[1] - rad_orb[0])/(radial_grid->r(1) - radial_grid->r(0));
-        radial_spline.spline(0, yprime_i, rad_orb.size()-1, 0.0);
-        cot->AOs.add_spline(mo_idx, radial_spline);
-
-        if (outputManager.isDebugActive()) {
-          // For testing against AoS output
-          // Output phiBar to soaOrbs.downdet.C0.MO0
-          int nElms = 500;
-          RealType dx = info(ic,mo_idx).Rc * 1.2/nElms;
-          Vector<RealType> pos;
-          Vector<RealType> output_orb;
-          pos.resize(nElms);
-          output_orb.resize(nElms);
-          for (int i = 0; i < nElms; i++) {
-            pos[i] = (i+1.0)*dx;
-          }
-          computeRadialPhiBar(&targetPtcl, &sourcePtcl, mo_idx, ic, &phi, pos, output_orb, info(ic, mo_idx));
-          std::string filename = "soaOrbs." + id + ".C" + std::to_string(ic) + ".MO" + std::to_string(mo_idx);
-          std::cout << "Writing to " << filename << std::endl;
-          std::ofstream out(filename.c_str());
-          out << "# r phiBar(r)" << std::endl;
-          for (int i = 0; i < nElms; i++) {
-            out << pos[i] << "  "
-                << output_orb[i]
-                << std::endl;
-          }
-        out.close();
-        }
-      }
-      lcwc.cusp.add(ic, cot);
-    }
-    removeSTypeOrbitals(corrCenter, lcwc);
-  }
-
 
   SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
@@ -511,39 +430,41 @@ namespace qmcplusplus
     spoAttrib.add (optimize, "optimize");
     spoAttrib.put(cur);
 
-    if(optimize=="yes") PRE.error("Optimizable SPO has not been supported by SoA LCAO yet!.",true);
     if(myBasisSet==nullptr) PRE.error("Missing basisset.",true);
     LCAOrbitalSet *lcos = nullptr;
+#if !defined(QMC_COMPLEX)
     LCAOrbitalSetWithCorrection *lcwc = nullptr;
-    if (doCuspCorrection) {
-      lcwc =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, rank()==0);
-      lcos = lcwc;
-    } else {
-      lcos=new LCAOrbitalSet(myBasisSet,rank()==0);
-    }
+    if (doCuspCorrection)
+      lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet);
+    else
+      lcos = new LCAOrbitalSet(myBasisSet);
+#endif
     loadMO(*lcos, cur);
 
+#if !defined(QMC_COMPLEX)
     if (doCuspCorrection) {
-      if (cusp_file == "") {
-          APP_ABORT("cusp file required for now");
-      }
-
       int num_centers = sourcePtcl.getTotalNum();
 
       // Sometimes sposet attribute is 'name' and sometimes it is 'id'
       if (id == "") id = spo_name;
 
       int orbital_set_size = lcos->OrbitalSetSize;
-
       Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
-      bool okay = readCuspInfo(cusp_file, id, orbital_set_size, info);
-      if (!okay) {
-          APP_ABORT("failure in reading cusp info file");
+
+      bool valid= readCuspInfo(cusp_file, id, orbital_set_size, info);
+      if (!valid) {
+         generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, *lcwc, id);
       }
 
-      createCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
+      applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
     }
+#endif
 
+    if(optimize=="yes")
+    {
+      lcos->Optimizable = true; 
+      app_log() << "  SPOSet " << spo_name << " is optimizable\n";
+    }
 
     return lcos;
   }
@@ -585,6 +506,11 @@ namespace qmcplusplus
       {
         coeff_ptr=cur;
       }
+      else if(cname == "opt_vars")
+      {
+        spo.params_supplied = true;
+        putContent(spo.params, cur);
+      }
       cur=cur->next;
     }
     if(coeff_ptr == NULL)
@@ -607,7 +533,7 @@ namespace qmcplusplus
          if(!hin.push("PBC")
              PBC=false;
          else
-            if (!hin.read(PBC,"PBC"))
+            if (!hin.readEntry(PBC,"PBC"))
                 APP_ABORT("Could not read PBC dataset in H5 file. Probably corrupt file!!!.");
         // However, it always succeeds to enter the if condition even if the group does not exists...
         */
@@ -701,7 +627,7 @@ namespace qmcplusplus
       char name[72];
       sprintf(name,"%s%d","/KPTS_0/eigenset_",setVal);
       setname=name;
-      if(!hin.read(Ctemp,setname))
+      if(!hin.readEntry(Ctemp,setname))
       {
          setname="LCAOrbitalBuilder::putFromH5 Missing "+setname+" from HDF5 File.";
          APP_ABORT(setname.c_str());
@@ -788,7 +714,7 @@ namespace qmcplusplus
 
 
       setname=name;
-      if(!hin.read(Ctemp,setname))
+      if(!hin.readEntry(Ctemp,setname))
       {
          setname="LCAOrbitalBuilder::putFromH5 Missing "+setname+" from HDF5 File.";
          APP_ABORT(setname.c_str());

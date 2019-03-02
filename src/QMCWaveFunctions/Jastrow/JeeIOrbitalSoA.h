@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_EEIJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_EEIJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
-#if QMC_BUILD_LEVEL<5
+#if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #endif
 #include "Particle/DistanceTableData.h"
@@ -520,7 +520,7 @@ public:
     for (int iind=0; iind<ions_nearby_old.size(); iind++)
     {
       int jat=ions_nearby_old[iind];
-      auto iter = find(elecs_inside(ig,jat).begin(), elecs_inside(ig,jat).end(), iat);
+      auto iter = std::find(elecs_inside(ig,jat).begin(), elecs_inside(ig,jat).end(), iat);
       auto iter_dist = elecs_inside_dist(ig,jat).begin()+std::distance(elecs_inside(ig,jat).begin(),iter);
       auto iter_displ = elecs_inside_displ(ig,jat).begin()+std::distance(elecs_inside(ig,jat).begin(),iter);
       if(eI_table.Temp_r[jat] < Ion_cutoff[jat]) // the new position is still inside

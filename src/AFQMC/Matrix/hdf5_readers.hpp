@@ -9,6 +9,9 @@
 //// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef QMCPLUSPLUS_AFQMC_HDF5_READERS_HPP
+#define QMCPLUSPLUS_AFQMC_HDF5_READERS_HPP
+
 
 #include<cassert>
 #include<complex>
@@ -90,7 +93,7 @@ inline bool multiple_reader_hdf5_SpMat(SpMatrix& SpM, SpMatrix_Partition& split,
 #endif
 
     std::vector<int> block_size(nblk);
-    if(!dump.read(block_size,name+std::string("_block_sizes"))) {
+    if(!dump.readEntry(block_size,name+std::string("_block_sizes"))) {
       app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading ***_block_sizes dataset. \n";
       return false;
     }
@@ -119,11 +122,11 @@ inline bool multiple_reader_hdf5_SpMat(SpMatrix& SpM, SpMatrix_Partition& split,
       if(myblock_number < last_local_block) {
         ivec.resize(2*block_size[myblock_number]);
         vvec.resize(block_size[myblock_number]);
-        if(!dump.read(ivec,name+std::string("_index_")+std::to_string(myblock_number))) {
+        if(!dump.readEntry(ivec,name+std::string("_index_")+std::to_string(myblock_number))) {
           app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading ***_index_" <<myblock_number <<" dataset. \n";
           return false;
         }
-        if(!dump.read(vvec,name+std::string("_vals_")+std::to_string(myblock_number))) {
+        if(!dump.readEntry(vvec,name+std::string("_vals_")+std::to_string(myblock_number))) {
           app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading ***_vals_" <<myblock_number <<" dataset. \n";
           return false;
         }
@@ -197,7 +200,7 @@ inline bool multiple_reader_count_entries(hdf_archive& dump, SpMatrix_Partition&
   if( coreid < n_working_cores ) {
 
     std::vector<int> block_size(nblk);
-    if(!dump.read(block_size,name+std::string("_block_sizes"))) {
+    if(!dump.readEntry(block_size,name+std::string("_block_sizes"))) {
       app_error()<<" Error in multiple_reader_count_entries: Problems reading ***_block_sizes dataset. \n";
       return false;
     }
@@ -219,11 +222,11 @@ inline bool multiple_reader_count_entries(hdf_archive& dump, SpMatrix_Partition&
       if( ib%nnodes != nodeid ) continue;
       ivec.resize(2*block_size[ib]);
       vvec.resize(block_size[ib]);
-      if(!dump.read(ivec,name+std::string("_index_")+std::to_string(ib))) {
+      if(!dump.readEntry(ivec,name+std::string("_index_")+std::to_string(ib))) {
         app_error()<<" Error in multiple_reader_count_entries: Problems reading ***_index_" <<ib <<" dataset. \n";
         return false;
       }
-      if(!dump.read(vvec,name+std::string("_vals_")+std::to_string(ib))) {
+      if(!dump.readEntry(vvec,name+std::string("_vals_")+std::to_string(ib))) {
         app_error()<<" Error in multiple_reader_count_entries: Problems reading ***_vals_" <<ib <<" dataset. \n";
         return false;
       } 
@@ -270,7 +273,7 @@ inline bool single_reader_count_entries(hdf_archive& dump, SpMatrix_Partition& s
   std::fill(counts.begin(),counts.end(),0); 
 
   std::vector<int> block_size(nblk);
-  if(!dump.read(block_size,name+std::string("_block_sizes"))) {
+  if(!dump.readEntry(block_size,name+std::string("_block_sizes"))) {
     app_error()<<" Error in single_reader_count_entries: Problems reading ***_block_sizes dataset. \n";
     return false;
   }
@@ -285,11 +288,11 @@ inline bool single_reader_count_entries(hdf_archive& dump, SpMatrix_Partition& s
 
     ivec.resize(2*block_size[ib]);
     vvec.resize(block_size[ib]);
-    if(!dump.read(ivec,name+std::string("_index_")+std::to_string(ib))) {
+    if(!dump.readEntry(ivec,name+std::string("_index_")+std::to_string(ib))) {
       app_error()<<" Error in single_reader_count_entries: Problems reading ***_index_" <<ib <<" dataset. \n";
       return false;
     }
-    if(!dump.read(vvec,name+std::string("_vals_")+std::to_string(ib))) {
+    if(!dump.readEntry(vvec,name+std::string("_vals_")+std::to_string(ib))) {
       app_error()<<" Error in single_reader_count_entries: Problems reading ***_vals_" <<ib <<" dataset. \n";
       return false;
     }
@@ -495,3 +498,5 @@ inline std::tuple<int,int> write_hdf5_SpMat(SpMatrix& SpM, hdf_archive& dump, st
 }
 
 }
+
+#endif

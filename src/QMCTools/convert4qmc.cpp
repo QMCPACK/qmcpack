@@ -23,7 +23,6 @@
 #include "QMCTools/GaussianFCHKParser.h"
 #include "QMCTools/GamesXmlParser.h"
 #include "QMCTools/GamesAsciiParser.h"
-#include "QMCTools/VSVBParser.h"
 #include "QMCTools/QPParser.h"
 #include "QMCTools/GamesFMOParser.h"
 #include "QMCTools/LCAOH5Parser.h"
@@ -38,7 +37,7 @@ int main(int argc, char **argv)
 {
   if(argc<2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-pyscf|-orbitals] filename " << std::endl;
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-QP|-pyscf|-orbitals] filename " << std::endl;
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead -optDetCoeffs]" << std::endl;
@@ -47,7 +46,10 @@ int main(int argc, char **argv)
     std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.xml -> gamesxml" << std::endl;
     return 1;
   }
-  OHMMS::Controller->initialize(argc,argv);
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller->initialize(env);
+#endif
   if (OHMMS::Controller->rank() != 0) {
     outputManager.shutOff();
   }
@@ -74,9 +76,10 @@ int main(int argc, char **argv)
   bool usehdf5=false;
   bool useprefix=false;
   bool debug = false;
+  bool multidetH5=false;
   bool prod=false;
-  bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false,multidet=false,optDetCoeffs=false;
-  double thres=0.01;
+  bool ci=false,zeroCI=false,orderByExcitation=false, fmo=false,addCusp=false,multidet=false,optDetCoeffs=false;
+  double thres=1e-20;
   int readNO=0; // if > 0, read Natural Orbitals from gamess output
   int readGuess=0; // if > 0, read Initial Guess from gamess output
   std::vector <int> Image;
@@ -110,12 +113,6 @@ int main(int argc, char **argv)
       parser = new LCAOParser(argc,argv);
       in_file =argv[++iargc];
       allH5=true;
-    }
-    else if(a == "-VSVB")
-    {
-      parser = new VSVBParser(argc,argv);
-      in_file =argv[++iargc];
-      VSVB=true;
     }
     else if(a == "-gamessFMO")
     {
@@ -162,6 +159,7 @@ int main(int argc, char **argv)
     else if(a == "-multidet")
     {
       multidet=true;
+      multidetH5=true;
       punch_file = argv[++iargc];
     }
     else if(a == "-NbImages")
@@ -293,7 +291,6 @@ int main(int argc, char **argv)
     parser->Title=prefix;
     parser->debug=debug;
     parser->DoCusp=addCusp;
-    parser->ECP=!addCusp;
     parser->UseHDF5=usehdf5;
     if (usehdf5)
       parser->h5file=parser->Title+".orbs.h5";
@@ -314,6 +311,8 @@ int main(int argc, char **argv)
        parser->multideterminant=ci;
     if(multidet)
       parser->multideterminant=multidet;
+    parser->multidetH5=multidetH5;
+    parser->multih5file=punch_file;
     parser->production=prod;
     parser->ci_threshold=thres;
     parser->optDetCoeffs=optDetCoeffs;
@@ -323,7 +322,6 @@ int main(int argc, char **argv)
     parser->zeroCI = zeroCI;
     parser->readGuess=readGuess;
     parser->outputFile=punch_file;
-    parser->VSVB=VSVB;
     parser->Image=Image;
     parser->parse(in_file);
     if(prod)

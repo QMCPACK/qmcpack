@@ -144,6 +144,9 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 
 
   Return_t evaluate(ParticleSet& P);
+  Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
+                                 ParticleSet::ParticlePos_t& hf_terms,
+                                 ParticleSet::ParticlePos_t& pulay_terms);
 
   /** Do nothing */
   bool put(xmlNodePtr cur)

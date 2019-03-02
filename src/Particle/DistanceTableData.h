@@ -79,7 +79,7 @@ struct DistanceTableData
    *     k = copies (walkers) index.
    */
   enum {WalkerIndex=0, SourceIndex, VisitorIndex, PairIndex};
-#if (__cplusplus >= 201103L)
+
   using IndexType=QMCTraits::IndexType;
   using RealType=QMCTraits::RealType;
   using PosType=QMCTraits::PosType;
@@ -87,15 +87,6 @@ struct DistanceTableData
   using TempDistType=TempDisplacement<RealType,DIM>;
   using ripair=std::pair<RealType,IndexType>;
   using RowContainer=VectorSoaContainer<RealType,DIM>;
-#else
-  typedef QMCTraits::IndexType IndexType;
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::PosType PosType;
-  typedef aligned_vector<IndexType> IndexVectorType;
-  typedef TempDisplacement<RealType,DIM> TempDistType;
-  typedef std::pair<RealType,IndexType> ripair;
-  typedef VectorSoaContainer<RealType,DIM> RowContainer;
-#endif
 
   ///type of cell
   int CellType;
@@ -140,10 +131,22 @@ struct DistanceTableData
 
   /**defgroup SoA data */
   /*@{*/
-  /** Distances[i][j] , [Nsources][Ntargets] */
+  /** Distances[i][j] , [Nsources][Ntargets]
+   *  Note: For derived AA, only the lower triangle (j<i) is up-to-date after pbyp move
+   *          The upper triangle is symmetric to the lower one only when the full table is evaluated from scratch.
+   *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
+   *        For derived BA, the full table is up-to-date after pbyp move
+   */
   Matrix<RealType, aligned_allocator<RealType> > Distances;
 
-  /** Displacements[Nsources]x[3][Ntargets] */
+  /** Displacements[Nsources]x[3][Ntargets]
+   *  Note: This is a memory view using the memory space allocated in memoryPool
+   *        Displacements[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
+   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is allocated in memoryPool
+   *          For this reason, Displacements[i] and Displacements[i+1] overlap in memory
+   *          and they must be updated in order during PbyP move.
+   *        For derived BA, A1=A, A2=B, the full table is allocated.
+   */
   std::vector<RowContainer> Displacements;
 
   ///actual memory for Displacements

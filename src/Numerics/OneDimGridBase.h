@@ -43,8 +43,6 @@ struct OneDimGridBase
   typedef CT Array_t;
 
 
-  ///the current index of the grid
-  int Loc;
   int GridTag;
   int num_points;
   value_type lower_bound;
@@ -52,13 +50,6 @@ struct OneDimGridBase
   ///differential spacing of the grid
   value_type Delta;
   double     DeltaInv;
-  value_type dL;
-  value_type dLinv;
-  value_type cL;
-  value_type cR;
-  value_type p1,p2,q1,q2;
-  value_type dp1,dq1,dq2;
-  value_type d2p1,d2q1,d2q2;
 
   ///array to store the radial grid data
   Array_t X;
@@ -74,12 +65,6 @@ struct OneDimGridBase
   inline int getGridTag() const
   {
     return GridTag;
-  }
-
-  ///return the current index
-  inline int currentIndex() const
-  {
-    return Loc;
   }
 
   inline int getIndex(T r) const
@@ -159,125 +144,13 @@ struct OneDimGridBase
     return upper_bound;
   }
 
-  ///update the variables for interpolations
-  inline void updateFirstOrder(T r, bool all)
-  {
-    //int khi(Loc+1);
-    //h=X[khi]-X[Loc];
-    ////hinv=1.0/h;
-    //value_type hinv(1.0e0/h);
-    //value_type t((r-X[Loc])*hinv);
-    //value_type tm(t-1.0);
-    //replcate t -> cL tm ->cR
-    //p1=tm*tm*(1.0+2.0*t);
-    //p2=t*t*(3.0-2.0*t);
-    //q1=t*tm*tm;
-    //q2=t*t*tm;
-    //
-    //dp1=6.0*t*tm*hinv;
-    //dq1=(1.0-4.0*t+3.0*t*t);
-    //dq2=t*(3.0*t-2.0);
-    //
-    //d2p1=(12.0*t-6.0)*hinv*hinv;
-    //d2q1=(6.0*t-4.0)*hinv;
-    //d2q2=(6.0*t-2.0)*hinv;
-    //locate is called separately (PBC)
-    //locate(r);
-    dL = X[Loc+1]-X[Loc];
-    dLinv = 1.0e0/dL;
-    cL = (r-X[Loc])*dLinv;
-    cR = cL-1.0;
-    p1=cR*cR*(1.0+2.0*cL);
-    p2=cL*cL*(3.0-2.0*cL);
-    q1=cL*cR*cR;
-    q2=cL*cL*cR;
-    if(all)
-    {
-      dp1=6.0*cL*cR*dLinv;
-      dq1=1.0-4.0*cL+3.0*cL*cL;
-      dq2=cL*(3.0*cL-2.0);
-      d2p1=(12.0*cL-6.0)*dLinv*dLinv;
-      d2q1=(6.0*cL-4.0)*dLinv;
-      d2q2=(6.0*cL-2.0)*dLinv;
-    }
-  }
-
   template <typename T1>
-  inline T1 cubicInterpolateFirst(T1 a, T1 b, T1 a1, T1 b1)
+  inline int getIndexAndDistanceFromGridPoint(T r, T1 &dist) const
   {
-    return p1*a+p2*b+dL*(q1*a1+q2*b1);
-  }
-
-  template <typename T1>
-  inline T1 cubicInterpolateFirst(T1 a, T1 b, T1 a1, T1 b1, T1& du, T1& d2u)
-  {
-    du = dp1*(a-b)+dq1*a1+dq2*b1;
-    d2u = d2p1*(a-b)+d2q1*a1+d2q2*b1;
-    return p1*a+p2*b+dL*(q1*a1+q2*b1);
-  }
-
-  inline void updateSecondOrder(T r, bool all)
-  {
-    //Find Loc
-    locate(r);
-    dL = X[Loc+1]-X[Loc];
-    dLinv = 1.0e0/dL;
-    cL = (r-X[Loc])*dLinv; //B
-    cR = (X[Loc+1]-r)*dLinv;//A
-    const T onesixth = 1.0/6.0;
-    T h6(dL*onesixth);
-    q1 = cR*(cR*cR-1.0)*h6*dL; //C
-    q2 = cL*(cL*cL-1.0)*h6*dL; //D
-    if(all)
-    {
-      dq1 = h6*(1.0-3.0*cR*cR);
-      dq2 = h6*(3.0*cL*cL-1.0);
-    }
-  }
-
-  inline void updateForQuintic(T r, bool all)
-  {
-    //Find Loc
-    locate(r);
-    cL = (r-X[Loc]);
-  }
-
-  template <typename T1>
-  inline T1 cubicInterpolateSecond(T1 y1, T1 y2, T1 d2y1, T1 d2y2)
-  {
-    return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
-  }
-
-  template <typename T1>
-  inline T1 cubicInterpolateSecond(T1 y1, T1 y2, T1 d2y1, T1 d2y2,
-                                   T& du, T& d2u)
-  {
-    du = dLinv*(y2-y1)+dq1*d2y1+dq2*d2y2;
-    d2u = cR*d2y1+cL*d2y2;
-    return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
-  }
-
-  template <typename T1>
-  inline T1 quinticInterpolate(T1 a, T1 b, T1 c, T1 d, T1 e, T1 f)
-  {
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
-  }
-
-  template <typename T1>
-  inline T1 quinticInterpolate(T1 a, T1 b, T1 c, T1 d, T1 e, T1 f, T1 &du, T1 &d2u)
-  {
-    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
-    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
-  }
-
-  template <typename T1>
-  inline T1 quinticInterpolate(T1 a, T1 b, T1 c, T1 d, T1 e, T1 f, T1 &du, T1 &d2u, T1 &d3u)
-  {
-    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
-    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
-    d3u = 6.0*d+cL*(24.0*e+cL*f*60.0);
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
+     //Find Loc
+    int Loc = locate(r);
+    dist = (r-X[Loc]);
+    return Loc;
   }
 
   /** evaluate the index of r
@@ -285,7 +158,7 @@ struct OneDimGridBase
    *
    * The grid index satisfies \f$ X[Loc] \ge r < X[Loc+1]\f$.
    */
-  virtual void locate(T r)=0;
+  virtual int locate(T r) const = 0;
 
   /** Set the grid given the parameters.
    *@param ri initial grid point
@@ -307,7 +180,6 @@ template <class T, class CT=Vector<T> >
 struct LinearGrid: public OneDimGridBase<T,CT>
 {
 
-  using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::num_points;
   using OneDimGridBase<T,CT>::lower_bound;
@@ -321,9 +193,9 @@ struct LinearGrid: public OneDimGridBase<T,CT>
     return new LinearGrid<T,CT>(*this);
   }
 
-  inline void locate(T r)
+  inline int locate(T r) const
   {
-    Loc = static_cast<int>((static_cast<double>(r)-X[0])*DeltaInv);
+    return static_cast<int>((static_cast<double>(r)-X[0])*DeltaInv);
   }
 
   inline void set(T ri, T rf, int n)
@@ -365,7 +237,6 @@ template <class T, class CT=Vector<T> >
 struct LogGrid: public OneDimGridBase<T,CT>
 {
 
-  using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::num_points;
   using OneDimGridBase<T,CT>::lower_bound;
@@ -380,9 +251,9 @@ struct LogGrid: public OneDimGridBase<T,CT>
     return new LogGrid<T,CT>(*this);
   }
 
-  inline void locate(T r)
+  inline int locate(T r) const
   {
-    Loc = static_cast<int>(std::log(r/X[0])*OneOverLogDelta);
+    return static_cast<int>(std::log(r/X[0])*OneOverLogDelta);
   }
 
   inline void set(T ri, T rf, int n)
@@ -419,7 +290,6 @@ template <class T, class CT=Vector<T> >
 struct LogGridZero: public OneDimGridBase<T,CT>
 {
 
-  using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::num_points;
   using OneDimGridBase<T,CT>::lower_bound;
@@ -434,9 +304,9 @@ struct LogGridZero: public OneDimGridBase<T,CT>
     return new LogGridZero<T,CT>(*this);
   }
 
-  inline void locate(T r)
+  inline int locate(T r) const
   {
-    Loc= static_cast<int>(std::log(r*OneOverB+1.0)*OneOverA);
+    return static_cast<int>(std::log(r*OneOverB+1.0)*OneOverA);
   }
 
   /** the meaing of ri/rf are different from the convetions of other classes
@@ -468,7 +338,6 @@ template <class T, class CT=Vector<T> >
 struct NumericalGrid: public OneDimGridBase<T,CT>
 {
 
-  using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::num_points;
   using OneDimGridBase<T,CT>::lower_bound;
@@ -512,7 +381,7 @@ struct NumericalGrid: public OneDimGridBase<T,CT>
       X.resize(n);
   }
 
-  inline void locate(T r)
+  inline int locate(T r) const
   {
     int k;
     int klo=0;
@@ -526,7 +395,7 @@ struct NumericalGrid: public OneDimGridBase<T,CT>
       else
         klo=k;
     }
-    Loc= klo;
+    return klo;
   }
 
   inline void set(T ri, T rf, int n)

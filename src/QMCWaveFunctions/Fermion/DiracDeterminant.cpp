@@ -20,8 +20,10 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
+#include "Numerics/BlasThreadingEnv.h"
 #include "Numerics/MatrixOperators.h"
 #include "simd/simd.hpp"
+#include <typeinfo>
 
 namespace qmcplusplus
 {
@@ -30,20 +32,10 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
-  NP(0), Phi(spos), FirstIndex(first), ndelay(1),
-  UpdateTimer("DiracDeterminant::update",timer_level_fine),
-  RatioTimer("DiracDeterminant::ratio",timer_level_fine),
-  InverseTimer("DiracDeterminant::inverse",timer_level_fine),
-  BufferTimer("DiracDeterminant::buffer",timer_level_fine),
-  SPOVTimer("DiracDeterminant::spoval",timer_level_fine),
-  SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
+DiracDeterminant::DiracDeterminant(SPOSetPtr const spos, int first):
+  DiracDeterminantBase(spos,first), ndelay(1), invRow_id(-1)
 {
-  Optimizable=false;
-  if(Phi->Optimizable)
-    Optimizable=true;
-  ClassName="DiracDeterminant";
-  registerTimers();
+  ClassName = "DiracDeterminant";
 }
 
 ///default destructor
@@ -63,20 +55,23 @@ void DiracDeterminant::set(int first, int nel, int delay)
 void DiracDeterminant::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
+  {
+    BlasThreadingEnv knob(getNumThreadsNested());
 #ifdef MIXED_PRECISION
-  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
-                  psiM_hp.data(), NumOrbitals, psiM_hp.cols());
-  detEng.invert(psiM_hp,true);
-  LogValue = static_cast<RealType>(detEng.LogDet);
-  PhaseValue = static_cast<RealType>(detEng.Phase);
-  invMat = psiM_hp;
+    simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
+                    psiM_hp.data(), NumOrbitals, psiM_hp.cols());
+    detEng.invert(psiM_hp,true);
+    LogValue = static_cast<RealType>(detEng.LogDet);
+    PhaseValue = static_cast<RealType>(detEng.Phase);
+    invMat = psiM_hp;
 #else
-  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
-                  invMat.data(), NumOrbitals, invMat.cols());
-  detEng.invert(invMat,true);
-  LogValue = detEng.LogDet;
-  PhaseValue = detEng.Phase;
+    simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
+                    invMat.data(), NumOrbitals, invMat.cols());
+    detEng.invert(invMat,true);
+    LogValue = detEng.LogDet;
+    PhaseValue = detEng.Phase;
 #endif
+  } // end of BlasThreadingEnv
   InverseTimer.stop();
 }
 
@@ -93,8 +88,8 @@ void DiracDeterminant::resize(int nel, int morb)
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
-  memoryPool.resize(nel*norb);
-  psiM_temp.attachReference(MemoryInstance<ValueType>(memoryPool.data()),nel,norb);
+  invRow.resize(norb);
+  psiM_temp.resize(nel,norb);
   if( typeid(ValueType) != typeid(mValueType) )
     psiM_hp.resize(nel,norb);
   LastIndex = FirstIndex + nel;
@@ -105,28 +100,27 @@ void DiracDeterminant::resize(int nel, int morb)
   d2psiV.resize(NumOrbitals);
   FirstAddressOfdV = &(dpsiM(0,0)[0]); //(*dpsiM.begin())[0]);
   LastAddressOfdV = FirstAddressOfdV + NumPtcls*NumOrbitals*DIM;
-  // For forces
-  /* Ye Luo, Apr 18th 2015
-   * To save the memory used by every walker, the resizing the following giant matrices are commented.
-   * When ZVZB forces and stresses are ready for deployment, R. Clay will take care of those matrices.
-   */
-  /*
-  grad_source_psiM.resize(nel,norb);
-  grad_lapl_source_psiM.resize(nel,norb);
-  grad_grad_source_psiM.resize(nel,norb);
-  phi_alpha_Minv.resize(nel,norb);
-  grad_phi_Minv.resize(nel,norb);
-  lapl_phi_Minv.resize(nel,norb);
-  grad_phi_alpha_Minv.resize(nel,norb);
-  */
+  
+  if(ionDerivs)
+  {
+    grad_source_psiM.resize(nel,norb);
+    grad_lapl_source_psiM.resize(nel,norb);
+    grad_grad_source_psiM.resize(nel,norb);
+    phi_alpha_Minv.resize(nel,norb);
+    grad_phi_Minv.resize(nel,norb);
+    lapl_phi_Minv.resize(nel,norb);
+    grad_phi_alpha_Minv.resize(nel,norb);
+  }
 }
 
 DiracDeterminant::GradType
 DiracDeterminant::evalGrad(ParticleSet& P, int iat)
 {
-  WorkingIndex = iat-FirstIndex;
+  const int WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
-  GradType g = updateEng.evalGrad(psiM, WorkingIndex, dpsiM[WorkingIndex]);
+  invRow_id = WorkingIndex;
+  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
   return g;
 }
@@ -138,11 +132,20 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
   SPOVGLTimer.stop();
   RatioTimer.start();
-  WorkingIndex = iat-FirstIndex;
+  const int WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
   GradType rv;
-  curRatio = updateEng.ratioGrad(psiM, WorkingIndex, psiV, dpsiV, rv);
-  grad_iat += ((RealType)1.0/curRatio) * rv;
+
+  // This is an optimization.
+  // check invRow_id against WorkingIndex to see if getInvRow() has been called already
+  // Some code paths call evalGrad before calling ratioGrad.
+  if(invRow_id != WorkingIndex)
+  {
+    invRow_id = WorkingIndex;
+    updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  }
+  curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
+  grad_iat += ((RealType)1.0/curRatio) * simd::dot(invRow.data(), dpsiV.data(), invRow.size());
   RatioTimer.stop();
   return curRatio;
 }
@@ -151,10 +154,13 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 */
 void DiracDeterminant::acceptMove(ParticleSet& P, int iat)
 {
+  const int WorkingIndex = iat-FirstIndex;
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
   updateEng.acceptRow(psiM,WorkingIndex,psiV);
+  // invRow becomes invalid after accepting a move
+  invRow_id = -1;
   if(UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
@@ -174,6 +180,8 @@ void DiracDeterminant::restore(int iat)
 void DiracDeterminant::completeUpdates()
 {
   UpdateTimer.start();
+  // invRow becomes invalid after updating the inverse matrix
+  invRow_id = -1;
   updateEng.updateInvMat(psiM);
   UpdateTimer.stop();
 }
@@ -211,12 +219,6 @@ void DiracDeterminant::updateAfterSweep(ParticleSet& P,
 void
 DiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  // Ye: no idea about NP.
-  if(NP == 0) //first time, allocate once
-  {
-    NP=P.getTotalNum();
-  }
-
   if ( Bytes_in_WFBuffer == 0 )
   {
     //add the data: inverse, gradient and laplacian
@@ -265,6 +267,8 @@ void DiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   d2psiM.attachReference(MemoryInstance<ValueType>(buf.lendReference<ValueType>(d2psiM.size())));
   buf.get(LogValue);
   buf.get(PhaseValue);
+  // start with invRow labelled invalid
+  invRow_id = -1;
   BufferTimer.stop();
 }
 
@@ -275,49 +279,32 @@ void DiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
 {
   UpdateMode=ORB_PBYP_RATIO;
-  WorkingIndex = iat-FirstIndex;
+  const int WorkingIndex = iat-FirstIndex;
   SPOVTimer.start();
   Phi->evaluate(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
-  curRatio = updateEng.ratio(psiM, WorkingIndex, psiV);
+  // This is an optimization.
+  // check invRow_id against WorkingIndex to see if getInvRow() has been called
+  // This is intended to save redundant compuation in TM1 and TM3
+  if(invRow_id != WorkingIndex)
+  {
+    invRow_id = WorkingIndex;
+    updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  }
+  curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
   RatioTimer.stop();
   return curRatio;
 }
 
 void DiracDeterminant::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
-  const int nVP = VP.getTotalNum();
-  const size_t memory_needed = nVP*NumOrbitals+Phi->estimateMemory(nVP);
-  //std::cout << "debug " << memory_needed << " pool " << memoryPool.size() << std::endl;
-  if(memoryPool.size()<memory_needed)
-  {
-    // usually in small systems
-    for(int iat=0; iat<nVP; iat++)
-    {
-      SPOVTimer.start();
-      Phi->evaluate(VP, iat, psiV);
-      SPOVTimer.stop();
-      RatioTimer.start();
-      ratios[iat]=simd::dot(psiM[VP.refPtcl-FirstIndex],psiV.data(),NumOrbitals);
-      RatioTimer.stop();
-    }
-  }
-  else
-  {
-    const size_t offset = memory_needed-nVP*NumOrbitals;
-    // SPO value result matrix. Always use existing memory
-    Matrix<ValueType> psiT(memoryPool.data()+offset, nVP, NumOrbitals);
-    // SPO scratch memory. Always use existing memory
-    SPOSet::ValueAlignedVector_t SPOMem;
-    SPOMem.attachReference(MemoryInstance<ValueType>(memoryPool.data()),offset);
-    SPOVTimer.start();
-    Phi->evaluateValues(VP, psiT, SPOMem);
-    SPOVTimer.stop();
-    RatioTimer.start();
-    MatrixOperators::product(psiT, psiM[VP.refPtcl-FirstIndex], ratios.data());
-    RatioTimer.stop();
-  }
+  SPOVTimer.start();
+  const int WorkingIndex = VP.refPtcl-FirstIndex;
+  invRow_id = WorkingIndex;
+  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  Phi->evaluateDetRatios(VP, psiV, invRow, ratios);
+  SPOVTimer.stop();
 }
 
 void DiracDeterminant::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
@@ -332,6 +319,7 @@ DiracDeterminant::GradType
 DiracDeterminant::evalGradSource(ParticleSet& P, ParticleSet& source,
                                      int iat)
 {
+  if(!ionDerivs) APP_ABORT("DiracDeterminant::evalGradSource.  Determinant not initialized for force computations.");
   Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
   return simd::dot(psiM.data(),grad_source_psiM.data(),psiM.size());
 }
@@ -342,6 +330,7 @@ DiracDeterminant::evalGradSourcep
  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
 {
+  if(!ionDerivs) APP_ABORT("DiracDeterminant::evalGradSourcep.  Determinant not initialized for force computations.");
   Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat,
                            grad_source_psiM, grad_grad_source_psiM,
                            grad_lapl_source_psiM);
@@ -433,6 +422,8 @@ DiracDeterminant::evalGradSourcep
 
 void DiracDeterminant::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
+  // Hessian is not often used, so only resize/allocate if used
+  grad_grad_source_psiM.resize(psiM.rows(),psiM.cols());
   //IM A HACK.  Assumes evaluateLog has already been executed.
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
   invertPsiM(psiM_temp,psiM);
@@ -460,6 +451,7 @@ DiracDeterminant::evalGradSource
  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
 {
+  if(!ionDerivs) APP_ABORT("DiracDeterminant::evalGradSource.  Determinant not initialized for force computations.");
   Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat,
                            grad_source_psiM, grad_grad_source_psiM,
                            grad_lapl_source_psiM);
@@ -616,47 +608,11 @@ DiracDeterminant::evaluateDerivatives(ParticleSet& P,
 {
 }
 
-WaveFunctionComponentPtr DiracDeterminant::makeClone(ParticleSet& tqp) const
-{
-  APP_ABORT(" Illegal action. Cannot use DiracDeterminant::makeClone");
-  return 0;
-}
-
 DiracDeterminant* DiracDeterminant::makeCopy(SPOSetPtr spo) const
 {
   DiracDeterminant* dclone= new DiracDeterminant(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex,ndelay);
   return dclone;
-}
-
-DiracDeterminant::DiracDeterminant(const DiracDeterminant& s)
-  : WaveFunctionComponent(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex), ndelay(s.ndelay)
-  ,UpdateTimer(s.UpdateTimer)
-  ,RatioTimer(s.RatioTimer)
-  ,InverseTimer(s.InverseTimer)
-  ,BufferTimer(s.BufferTimer)
-  ,SPOVTimer(s.SPOVTimer)
-  ,SPOVGLTimer(s.SPOVGLTimer)
-{
-  registerTimers();
-  this->resize(s.NumPtcls,s.NumOrbitals);
-}
-
-//SPOSetPtr  DiracDeterminant::clonePhi() const
-//{
-//  return Phi->makeClone();
-//}
-
-void DiracDeterminant::registerTimers()
-{
-  UpdateTimer.reset();
-  RatioTimer.reset();
-  TimerManager.addTimer (&UpdateTimer);
-  TimerManager.addTimer (&RatioTimer);
-  TimerManager.addTimer (&InverseTimer);
-  TimerManager.addTimer (&BufferTimer);
-  TimerManager.addTimer (&SPOVTimer);
-  TimerManager.addTimer (&SPOVGLTimer);
 }
 
 }

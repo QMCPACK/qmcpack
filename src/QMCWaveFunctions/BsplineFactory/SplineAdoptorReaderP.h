@@ -173,29 +173,31 @@ struct SplineAdoptorReader: public BsplineReaderBase
       if(foundspline)
       {
         std::string aname("none");
-        foundspline = h5f.read(aname,"adoptor_name");
+        foundspline = h5f.readEntry(aname,"adoptor_name");
         foundspline = (aname.find(bspline->KeyWord) != std::string::npos);
       }
       if(foundspline)
       {
         int sizeD=0;
-        foundspline=h5f.read(sizeD,"sizeof");
+        foundspline=h5f.readEntry(sizeD,"sizeof");
         foundspline = (sizeD == sizeof(typename adoptor_type::DataType));
       }
       if(foundspline)
       {
         foundspline=bspline->read_splines(h5f);
-        if(foundspline) app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;
+        if(foundspline)
+          app_log() << "  Successfully restored coefficients from " << splinefile
+                    << ". The reading time is " << now.elapsed()
+                    << " sec." << std::endl;
       }
       h5f.close();
     }
     myComm->bcast(foundspline);
     if(foundspline)
     {
-      app_log() << "Use existing bspline tables in " << splinefile << std::endl;
       now.restart();
       bspline->bcast_tables(myComm);
-      app_log() << "  SplineAdoptorReader bcast the full table " << now.elapsed() << " sec" << std::endl;
+      app_log() << "  SplineAdoptorReader bcast the full table " << now.elapsed() << " sec." << std::endl;
       app_log().flush();
     }
     else
@@ -230,7 +232,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       }
       else//why, don't know
         initialize_spline_psi_r(spin,bandgroup);
-      if(qmc_common.save_wfs && root)
+      if(saveSplineCoefs && root)
       {
         now.restart();
         hdf_archive h5f;
@@ -240,7 +242,9 @@ struct SplineAdoptorReader: public BsplineReaderBase
         h5f.write(sizeD,"sizeof");
         bspline->write_splines(h5f);
         h5f.close();
-        app_log() << "  SplineAdoptorReader dump " << now.elapsed() << " sec" << std::endl;
+        app_log() << "  Stored spline coefficients in " << splinefile
+                  << " for potential reuse. The writing time is " << now.elapsed()
+                  << " sec." << std::endl;
       }
     }
 
@@ -300,7 +304,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
         int iorb_h5=bspline->BandIndexMap[iorb];
         int ti=cur_bands[iorb_h5].TwistIndex;
         std::string s=psi_g_path(ti,spin,cur_bands[iorb_h5].BandIndex);
-        if(!h5f.read(cG,s)) APP_ABORT("SplineAdoptorReader Failed to read band(s) from h5!\n");
+        if(!h5f.readEntry(cG,s)) APP_ABORT("SplineAdoptorReader Failed to read band(s) from h5!\n");
         double total_norm = compute_norm(cG);
         if((checkNorm)&&(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE))
         {
@@ -332,12 +336,22 @@ struct SplineAdoptorReader: public BsplineReaderBase
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
   {
     //not used by may be enabled later
+    APP_ABORT("SplineAdoptorReaderP initialize_spline_psi_r implementation not finished.");
     int nx=MeshSize[0];
     int ny=MeshSize[1];
     int nz=MeshSize[2];
-    Array<DataType,3> splineData_r(nx,ny,nz),splineData_i(ny,ny,nz);
+    splineData_r.resize(nx,ny,nz);
+    splineData_i.resize(ny,ny,nz);
     Array<std::complex<double>,3> rawData(nx,ny,nz);
     const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
+
+    // create single splines as an intermediate storage
+    TinyVector<double,3> start(0.0);
+    TinyVector<double,3> end(1.0);
+    spline_r=einspline::create(spline_r,start,end,MeshSize,bspline->HalfG);
+    if(bspline->is_complex)
+      spline_i=einspline::create(spline_i,start,end,MeshSize,bspline->HalfG);
+
     //this will be parallelized with OpenMP
     int N=bandgroup.getNumDistinctOrbitals();
     for(int iorb=0; iorb<N; ++iorb)
@@ -351,9 +365,13 @@ struct SplineAdoptorReader: public BsplineReaderBase
         simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
       }
       mpi::bcast(*myComm,splineData_r);
+      einspline::set(spline_r,splineData_r.data());
       if(bspline->is_complex)
+      {
         mpi::bcast(*myComm,splineData_i);
-      bspline->set_spline(splineData_r.data(),splineData_i.data(),cur_bands[iorb].TwistIndex,iorb,0);
+        einspline::set(spline_i,splineData_i.data());
+      }
+      bspline->set_spline(spline_r,spline_i,cur_bands[iorb].TwistIndex,iorb,0);
     }
   }
 };

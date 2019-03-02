@@ -24,7 +24,6 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
-#include "tau/profiler.h"
 #include "Particle/Reptile.h"
 #include "Utilities/RunTimeManager.h"
 #if !defined(REMOVE_TRACEMANAGER)

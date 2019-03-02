@@ -58,6 +58,10 @@ void QMCState::initialize(int argc, char **argv)
     }
     else if(c.find("--save_wfs") < c.size())
     {
+      if(io_node)
+        std::cerr << std::endl << "WARNING: command line option --save_wfs has been deprecated "
+                  << "and will be removed in the next release. "
+                  << "Use save_coefs input tag as described in the manual." << std::endl;
       save_wfs=(c.find("no")>=c.size());
     }
     else if(c.find("--help")< c.size())
@@ -71,7 +75,7 @@ void QMCState::initialize(int argc, char **argv)
     else if(c.find("--vacuum")<c.size())
     {
       if(io_node)
-        std::cerr << std::endl << "ERROR: command line option --vacuum has been deprecated. "
+        std::cerr << std::endl << "ERROR: command line option --vacuum has been removed. "
                   << "Use vacuum input tag as described in the manual." << std::endl;
       stopit=true;
     }

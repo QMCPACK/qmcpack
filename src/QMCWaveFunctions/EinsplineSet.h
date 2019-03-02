@@ -289,7 +289,14 @@ protected:
   CudaSplineType *CudaMultiSpline;
   gpu::device_vector<CudaStorageType> CudaValueVector, CudaGradLaplVector;
   gpu::device_vector<CudaStorageType*> CudaValuePointers, CudaGradLaplPointers;
+  std::vector<cudaIpcMemHandle_t> spline_rank_handles;
+  std::vector<CudaStorageType*> spline_rank_pointers;
+  std::vector<cudaEvent_t> spline_events;
+  std::vector<cudaStream_t> spline_streams;
+  int abort_counter=0;
+  bool split_splines=false;
   void resize_cuda(int numWalkers);
+  void get_split_spline_pointers();
   // Cuda equivalent
   gpu::device_vector<int> CudaMakeTwoCopies;
   gpu::device_vector<int> CudaTwoCopiesIndex;
@@ -299,9 +306,8 @@ protected:
   void applyPhaseFactors (gpu::device_vector<CudaStorageType*> &storageVector,
                           gpu::device_vector<CTS::RealType*> &phi);
   // Data for vectorized evaluations
-  std::vector<CTS::PosType> hostPos;
-  gpu::host_vector<CTS::PosType> NLhostPos;
-  gpu::device_vector<CTS::PosType> cudapos, NLcudapos;
+  gpu::host_vector<CTS::PosType> hostPos, hostPhasePos, NLhostPos;
+  gpu::device_vector<CTS::PosType> cudapos, cudaphasepos,  NLcudapos;
   gpu::host_vector<CTS::RealType> hostSign, NLhostSign;
   gpu::device_vector<CTS::RealType> cudaSign, NLcudaSign;
   // This stores the inverse of the lattice vector matrix in
@@ -391,7 +397,7 @@ public:
                             ComplexHessMatrix_t& grad_grad_psi,
                             ComplexGGGMatrix_t& grad_grad_grad_logdet);
 #ifdef QMC_CUDA
-  GPU_XRAY_TRACE void  initGPU();
+  GPU_XRAY_TRACE void  finalizeConstruction();
 
   // Vectorized evaluation functions
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
@@ -402,14 +408,33 @@ public:
                  gpu::device_vector<CTS::RealType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
 				 gpu::device_vector<CTS::ComplexType*> &phi);
+  inline
+  void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+                  gpu::device_vector<CTS::RealType*> &phi,
+                  gpu::device_vector<CTS::RealType*> &grad_lapl,
+                  int row_stride)
+  {
+    evaluate(walkers,newpos,phi,grad_lapl,row_stride,0,false);
+  }
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CTS::RealType*> &phi,
                  gpu::device_vector<CTS::RealType*> &grad_lapl,
-                 int row_stride);
+                 int row_stride, int k, bool klinear);
+
+  inline
+  void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+                  gpu::device_vector<CTS::ComplexType*> &phi,
+                  gpu::device_vector<CTS::ComplexType*> &grad_lapl,
+                  int row_stride)
+  {
+#ifdef QMC_COMPLEX
+    evaluate(walkers,newpos,phi,grad_lapl,row_stride,0,false);
+#endif
+  }
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-				 gpu::device_vector<CTS::ComplexType*> &phi,
-				 gpu::device_vector<CTS::ComplexType*> &grad_lapl,
-                 int row_stride);
+                  gpu::device_vector<CTS::ComplexType*> &phi,
+                  gpu::device_vector<CTS::ComplexType*> &grad_lapl,
+                  int row_stride, int k, bool klinear);
   GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi);
 #endif
@@ -548,7 +573,7 @@ protected:
   GPU_XRAY_TRACE void  sort_electrons(std::vector<PosType> &pos);
 
 public:
-  GPU_XRAY_TRACE void  initGPU();
+  GPU_XRAY_TRACE void  finalizeConstruction();
   //    void registerTimers();
 
   // Resize cuda objects

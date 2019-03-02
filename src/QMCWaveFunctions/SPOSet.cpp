@@ -40,12 +40,13 @@ SPOSet::SPOSet()
 #endif
 }
 
-void SPOSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOmem)
+void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
 {
+  assert(psi.size() == psiinv.size());
   for(int iat=0; iat<VP.getTotalNum(); ++iat)
   {
-    ValueVector_t psi(psiM[iat],OrbitalSetSize);
     evaluate(VP,iat,psi);
+    ratios[iat] = simd::dot(psi.data(),psiinv.data(), psi.size());
   }
 }
 
@@ -284,7 +285,7 @@ bool SPOSet::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
     char name[72];
     sprintf(name,"%s%d","/KPTS_0/eigenset_",setVal);
     setname=name;
-    if(!hin.read(Ctemp,setname))
+    if(!hin.readEntry(Ctemp,setname))
     {
        setname="SPOSet::putFromH5 Missing "+setname+" from HDF5 File.";
        APP_ABORT(setname.c_str());
@@ -367,7 +368,7 @@ void SPOSet::evaluateGradSource (const ParticleSet &P
                                      , int first, int last, const ParticleSet &source
                                      , int iat_src, GradMatrix_t &gradphi)
 {
-  APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
+  APP_ABORT("SPOSetBase::evalGradSource is not implemented");
 }
 
 void SPOSet::evaluateGradSource (const ParticleSet &P, int first, int last,
@@ -376,7 +377,7 @@ void SPOSet::evaluateGradSource (const ParticleSet &P, int first, int last,
                                      HessMatrix_t &grad_grad_phi,
                                      GradMatrix_t &grad_lapl_phi)
 {
-  APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
+  APP_ABORT("SPOSetBase::evalGradSource is not implemented");
 }
 
 #ifdef QMC_CUDA
@@ -402,6 +403,17 @@ void SPOSet::evaluate (std::vector<Walker_t*> &walkers,
                            gpu::device_vector<CTS::ValueType*> &phi,
                            gpu::device_vector<CTS::ValueType*> &grad_lapl_list,
                            int row_stride)
+{
+  app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSet.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
+  abort();
+}
+
+void SPOSet::evaluate (std::vector<Walker_t*> &walkers,
+                           std::vector<PosType> &new_pos,
+                           gpu::device_vector<CTS::ValueType*> &phi,
+                           gpu::device_vector<CTS::ValueType*> &grad_lapl_list,
+                           int row_stride, int k, bool klinear)
 {
   app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";

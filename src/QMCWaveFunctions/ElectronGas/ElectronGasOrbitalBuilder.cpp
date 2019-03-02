@@ -18,12 +18,11 @@
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "OhmmsData/AttributeSet.h"
-#if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -41,11 +40,7 @@ RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType
 }
 
 ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi):
-#if QMC_BUILD_LEVEL>2
   WaveFunctionComponentBuilder(els,psi),UseBackflow(false),BFTrans(0)
-#else
-  WaveFunctionComponentBuilder(els,psi),UseBackflow(false)
-#endif
 {
 }
 
@@ -64,7 +59,6 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   aAttrib.put(cur);
   if (nc2==-2)
     nc2=nc;
-#if QMC_BUILD_LEVEL>2
   xmlNodePtr curRoot=cur;
   xmlNodePtr BFNode(NULL);
   std::string cname;
@@ -81,8 +75,7 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     }
     cur = cur->next;
   }
-#endif
-  typedef SlaterDet::Determinant_t Det_t;
+  typedef DiracDeterminant Det_t;
   typedef SlaterDet SlaterDeterminant_t;
   HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
   HEGGrid<RealType,OHMMS_DIM> egGrid2(targetPtcl.Lattice);
@@ -135,11 +128,9 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     }
   //create a Slater determinant
   SlaterDeterminant_t *sdet;
-#if QMC_BUILD_LEVEL>2
   if(UseBackflow)
     sdet = new SlaterDetWithBackflow(targetPtcl,BFTrans);
   else
-#endif
     sdet  = new SlaterDeterminant_t(targetPtcl);
   //add SPOSets
   sdet->add(psiu,"u");
@@ -147,7 +138,6 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     sdet->add(psid,"d");
   {
     Det_t *updet, *downdet;
-#if QMC_BUILD_LEVEL>2
     if(UseBackflow)
     {
       app_log() <<"Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
@@ -173,7 +163,6 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
       sdet->resetTargetParticleSet(targetPtcl);
     }
     else
-#endif
     {
       //create up determinant
       updet = new Det_t(psiu);
@@ -189,12 +178,6 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
         sdet->add(downdet,1);
     }
   }
-//#if QMC_BUILD_LEVEL>2
-//    // change DistanceTables if using backflow
-//    if(UseBackflow)   {
-//       sdet->resetTargetParticleSet(targetPtcl);
-//    }
-//#endif
   //add Slater determinant to targetPsi
   targetPsi.addOrbital(sdet,"SlaterDet",true);
   return true;

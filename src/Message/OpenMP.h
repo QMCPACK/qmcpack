@@ -38,5 +38,25 @@ inline omp_int_t omp_get_num_threads()
 {
   return 1;
 }
+inline bool omp_get_nested()
+{
+  return false;
+}
 #endif
+
+/// get the number of threads at the next nested level
+inline int getNumThreadsNested()
+{
+  int num_threads = 1;
+  if(omp_get_nested())
+  {
+    #pragma omp parallel
+    {
+      #pragma omp master
+      num_threads = omp_get_num_threads();
+    }
+  }
+  return num_threads;
+}
+
 #endif // OHMMS_COMMUNICATE_H

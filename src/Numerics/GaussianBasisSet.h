@@ -28,7 +28,9 @@ namespace qmcplusplus
 template<class T>
 struct GaussianCombo: public OptimizableFunctorBase
 {
-
+  // Caution: most other code assumes value_type can only be real
+  // but maybe it can be different precision
+  // Possibly one of these types is the full precision and the other reduced precision
   typedef T value_type;
   real_type Y, dY, d2Y, d3Y;
 

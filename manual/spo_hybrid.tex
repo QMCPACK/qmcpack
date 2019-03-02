@@ -21,7 +21,7 @@ Orbitals in region C are computed as the regular B-spline basis described in sub
 \label{fig:hybridrep}
 \end{figure}
 
-To enable hybrid orbital representation, the input XML needs to see the tag \texttt{hybridrep="yes"} shown below.
+To enable hybrid orbital representation, the input XML needs to see the tag \ixml{hybridrep="yes"} shown below.
 \begin{lstlisting}[caption=Hybrid orbital representation input example.\label{listing:hybridrep}]
 <determinantset type="bspline" source="i" href="pwscf.h5"
                 tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
@@ -30,7 +30,7 @@ To enable hybrid orbital representation, the input XML needs to see the tag \tex
 </determinantset>
 \end{lstlisting}
 Second, the information describing the atomic regions is required in the particle set, shown below
-\begin{lstlisting}[caption=particleset elements for ions with information needed by hybrid orbital representation.\label{listing:hybridrep_particleset}]
+\begin{lstlisting}[style=QMCPXML,caption=particleset elements for ions with information needed by hybrid orbital representation.\label{listing:hybridrep_particleset}]
   <group name="Ni">
     <parameter name="charge">          18 </parameter>
     <parameter name="valence">         18 </parameter>

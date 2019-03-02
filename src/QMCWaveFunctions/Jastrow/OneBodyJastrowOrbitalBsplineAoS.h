@@ -76,7 +76,7 @@ public:
   GPU_XRAY_TRACE void recompute(MCWalkerConfiguration &W, bool firstTime);
   GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CTS::RealType> > &pool);
   GPU_XRAY_TRACE void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
-  GPU_XRAY_TRACE void update (std::vector<Walker_t*> &walkers, int iat);
+  GPU_XRAY_TRACE void update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
   {
     /* This function doesn't really need to return the ratio */
@@ -87,7 +87,7 @@ public:
   GPU_XRAY_TRACE void calcRatio (MCWalkerConfiguration &W, int iat,
                   std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
                   std::vector<ValueType> &lapl);
-  GPU_XRAY_TRACE void addRatio (MCWalkerConfiguration &W, int iat,
+  GPU_XRAY_TRACE void addRatio (MCWalkerConfiguration &W, int iat, int k,
                  std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
                  std::vector<ValueType> &lapl);
   GPU_XRAY_TRACE void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
@@ -97,7 +97,16 @@ public:
     /* This function doesn't really need to return the ratio */
   }
 
-  GPU_XRAY_TRACE void calcGradient(MCWalkerConfiguration &W, int iat,
+  void det_lookahead (MCWalkerConfiguration &W,
+                      std::vector<ValueType> &psi_ratios,
+                      std::vector<GradType>  &grad,
+                      std::vector<ValueType> &lapl,
+                      int iat, int k, int kd, int nw)
+  {
+    /* The one-body jastrow can be calculated for the entire k-block, so this function doesn't need to return anything */
+  }
+
+  GPU_XRAY_TRACE void calcGradient(MCWalkerConfiguration &W, int iat, int k,
                     std::vector<GradType> &grad);
   GPU_XRAY_TRACE void addGradient(MCWalkerConfiguration &W, int iat,
                    std::vector<GradType> &grad);

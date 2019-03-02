@@ -22,7 +22,6 @@
 #include <sstream>
 
 
-char *binpad (unsigned long int  n, size_t sz);
 
 LCAOParser::LCAOParser()
 {
@@ -53,7 +52,7 @@ LCAOParser::LCAOParser(int argc, char** argv):
 void LCAOParser::parse(const std::string& fname)
 {
 
-  hdf_archive hin(0);
+  hdf_archive hin;
 
   if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
   {
@@ -79,10 +78,10 @@ void LCAOParser::parse(const std::string& fname)
   std::cout <<"usingECP: " <<(ECP?("yes"):("no")) << std::endl;
   std::cout.flush();
 
-//  multideterminant=false;
-  std::cout <<"Multideterminant: " <<(multideterminant?("yes"):("no")) << std::endl;
-  hin.read(SpinRestricted,"SpinResticted");
+  std::cout <<"Multideterminants: " <<(multideterminant?("yes"):("no")) << std::endl;
+  std::cout.flush();
 
+  hin.read(SpinRestricted,"SpinRestricted");
   if(SpinRestricted)
   { 
      hin.read(numAO,"numAO");
@@ -132,7 +131,9 @@ void LCAOParser::parse(const std::string& fname)
   hin.read(NumberOfAlpha,"NbAlpha");
   hin.read(NumberOfBeta,"NbBeta");
   hin.read(NumberOfEls,"NbTotElec");
-  hin.read(SpinMultiplicity,"spin");
+  int ds;
+  hin.read(ds,"spin");
+  SpinMultiplicity = ds+1;
 
   std::cout <<"Number of alpha electrons: " <<NumberOfAlpha << std::endl;
   std::cout <<"Number of beta electrons: " <<NumberOfBeta << std::endl;
@@ -165,7 +166,7 @@ void LCAOParser::parse(const std::string& fname)
   if(multideterminant)
   {
      outputFile;
-     hdf_archive hin(0);
+     hdf_archive hin;
 
      if(!hin.open(outputFile.c_str(),H5F_ACC_RDONLY))
      {
@@ -175,7 +176,7 @@ void LCAOParser::parse(const std::string& fname)
      
      if(!hin.push("MultiDet"))
      {
-          std::cerr<<"Could not open H5 file"<<std::endl;
+          std::cerr<<"Could not open Multidet Group in H5 file"<<std::endl;
           abort();
      }
      else
@@ -188,17 +189,15 @@ void LCAOParser::parse(const std::string& fname)
            CIalpha.resize(ci_size);
            CIbeta.resize(ci_size);
 
-
            hin.read(ci_nstates,"nstate");
            int N_int;
            const int bit_kind = 64; 
            hin.read(N_int,"Nbits");
 
-
-           Matrix<unsigned long int> tempAlpha(ci_size,N_int);
+           Matrix< long int> tempAlpha(ci_size,N_int);
            hin.read(tempAlpha,"CI_Alpha");
 
-           Matrix<unsigned long int> tempBeta(ci_size,N_int);
+           Matrix< long int> tempBeta(ci_size,N_int);
            hin.read(tempBeta,"CI_Beta");
             
            std::string MyCItempAlpha,MyCItempBeta;
@@ -208,27 +207,36 @@ void LCAOParser::parse(const std::string& fname)
            for (int ni=0; ni<ci_size;ni++)
            {
                 int j=0;
-                int jj=0;
-                for (int k=0; k<N_int; k++)
+                for (int i=0; i< ci_nstates;i++)
                 {
+                   MyCItempAlpha[i] = '9';
+                   MyCItempBeta[i] = '9';
+                }
+		for (int k=0; k<N_int; k++)
+                {
+		    long int a = tempAlpha[ni][k];
+		    std::bitset<bit_kind> a2 = a;
+			
+		    auto b = tempBeta[ni][k];
+		    auto b2 =  std::bitset<bit_kind>(b);
+
+
+		    // ci_nstates == n_orbital
       	 	    for(int i=0; i<bit_kind;i++) 
                     {
-                        if ( j <ci_nstates ) 
+  
+			if ( j <ci_nstates ) 
                         {
-                     	   MyCItempAlpha[j] = binpad(tempAlpha[ni][k],bit_kind)[i]; 
+                     	   MyCItempAlpha[j] = a2[i] ? '1' : '0'; 
+                     	   MyCItempBeta[j] = b2[i] ? '1' : '0'; 
              		   j++;
-        		}
-                        if ( jj <ci_nstates ) 
-                        {
-                     	   MyCItempBeta[jj] = binpad(tempBeta[ni][k],bit_kind)[i]; 
-             		   jj++;
         		}
                      }
                 }
+                
                 CIalpha[ni]=MyCItempAlpha;
                 CIbeta[ni]=MyCItempBeta;
            }
-
            hin.read(CIcoeff,"Coeff");
 
            int ds=SpinMultiplicity-1;
@@ -242,6 +250,7 @@ void LCAOParser::parse(const std::string& fname)
            hin.close(); 
      }     
   }  
+           
 }
 
 void LCAOParser::getCell(const std::string& fname)
@@ -250,7 +259,7 @@ void LCAOParser::getCell(const std::string& fname)
   Y.resize(3);
   Z.resize(3);
 
-  hdf_archive hin(0);
+  hdf_archive hin;
 
   if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
   {
@@ -278,7 +287,7 @@ void LCAOParser::getCell(const std::string& fname)
 void LCAOParser::getGeometry(const std::string& fname)
 {
 
-  hdf_archive hin(0);
+  hdf_archive hin;
 
   if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
   {
@@ -339,7 +348,7 @@ void LCAOParser::getGeometry(const std::string& fname)
 void LCAOParser::getKpts(const std::string& fname)
 {
   Matrix <double> MyVec(1,3);
-  hdf_archive hin(0);
+  hdf_archive hin;
 
   if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
   {
@@ -377,21 +386,6 @@ void LCAOParser::getKpts(const std::string& fname)
 
 }
 
-
-
-char *binpad (unsigned long int n, size_t sz)
-{
-    static char s[64 + 1] = {0};
-    char *p = s + 64 ;
-
-    for (int i = sz ; i > 0; i--)
-        *--p = ( (n>> (i-1) ) & 1) ? '1' : '0';
-    
-    return p;
-}
-
-
-
 void LCAOParser::getMO(const std::string & fname)
 {
   EigVal_alpha.resize(numMO);
@@ -399,9 +393,9 @@ void LCAOParser::getMO(const std::string & fname)
   EigVec.resize(2*SizeOfBasisSet*numMO);
   
   std::string setname;
-  Matrix<double> CartMat(SizeOfBasisSet,SizeOfBasisSet);
+  Matrix<double> CartMat(numMO,SizeOfBasisSet);
 
-  hdf_archive hin(0);
+  hdf_archive hin;
 
   if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
   {
@@ -411,14 +405,12 @@ void LCAOParser::getMO(const std::string & fname)
     char name[72];
     sprintf(name,"%s","/KPTS_0/eigenset_0");
     setname=name;
-    if(!hin.read(CartMat,setname))
+    if(!hin.readEntry(CartMat,setname))
     {
        setname="SPOSet::putFromH5 Missing "+setname+" from HDF5 File.";
        APP_ABORT(setname.c_str());
     }
     hin.close();
-  //hin.push("KPTS_0");
-  //hin.read(CartMat,"eingenset_0"); 
   int cnt=0;
   for(int i=0; i<numMO; i++)
     for(int k=0; k<SizeOfBasisSet; k++)

@@ -37,6 +37,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
 
   typename OrbitalSetTraits<ValueType>::ValueVector_t psi_AO, d2psi_AO;
   typename OrbitalSetTraits<ValueType>::GradVector_t dpsi_AO;
+  Matrix<ST,aligned_allocator<ST> > multi_myV;
 
   using BaseAdoptor::myV;
   using BaseAdoptor::myG;
@@ -102,75 +103,60 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     {
       const PointType& r=P.activeR(iat);
       int bc_sign=HybridBase::get_bc_sign(r, PrimLattice, HalfG);
-      BaseAdoptor::assign_v(bc_sign,myV,psi);
+      BaseAdoptor::assign_v(bc_sign,myV,psi,0,myV.size());
     }
     else
     {
       const PointType& r=P.activeR(iat);
       psi_AO.resize(psi.size());
       int bc_sign=HybridBase::get_bc_sign(r, PrimLattice, HalfG);
-      BaseAdoptor::assign_v(bc_sign,myV,psi_AO);
+      BaseAdoptor::assign_v(bc_sign,myV,psi_AO,0,myV.size());
       BaseAdoptor::evaluate_v(P,iat,psi);
       for(size_t i=0; i<psi.size(); i++)
         psi[i] = psi_AO[i]*smooth_factor + psi[i]*(cone-smooth_factor);
     }
   }
 
-  template<typename VM, typename VAV>
-  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
+  template<typename VV, typename RT>
+  inline void evaluateDetRatios(const VirtualParticleSet& VP, VV& psi, const VV& psiinv, std::vector<RT>& ratios)
   {
-    const size_t m=psiM.cols();
     if(VP.isOnSphere() && HybridBase::is_batched_safe(VP))
     {
-      Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)SPOMem.data(),VP.getTotalNum(),myV.size());
+      // resize scratch space
+      psi_AO.resize(psi.size());
+      if(multi_myV.rows()<VP.getTotalNum()) multi_myV.resize(VP.getTotalNum(), myV.size());
       std::vector<int> bc_signs(VP.getTotalNum());
       const RealType smooth_factor=HybridBase::evaluateValuesR2R(VP, PrimLattice, HalfG, multi_myV, bc_signs);
       const RealType cone(1);
-      if(smooth_factor<0)
+      for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
-        for(int iat=0; iat<VP.getTotalNum(); ++iat)
-        {
-          Vector<SPOSet::ValueType> psi(psiM[iat],m);
+        if(smooth_factor<0)
           BaseAdoptor::evaluate_v(VP,iat,psi);
-        }
-      }
-      else if (smooth_factor==cone)
-      {
-        for(int iat=0; iat<VP.getTotalNum(); ++iat)
+        else if (smooth_factor==cone)
         {
           const PointType& r=VP.R[iat];
-          Vector<SPOSet::ValueType> psi(psiM[iat],m);
           Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
-          BaseAdoptor::assign_v(bc_signs[iat],myV_one,psi);
+          BaseAdoptor::assign_v(bc_signs[iat],myV_one,psi,0,myV.size());
         }
-      }
-      else
-      {
-        psi_AO.resize(m);
-        for(int iat=0; iat<VP.getTotalNum(); ++iat)
+        else
         {
-          Vector<SPOSet::ValueType> psi(psiM[iat],m);
           Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
-          BaseAdoptor::assign_v(bc_signs[iat],myV_one,psi_AO);
+          BaseAdoptor::assign_v(bc_signs[iat],myV_one,psi_AO,0,myV.size());
           BaseAdoptor::evaluate_v(VP,iat,psi);
           for(size_t i=0; i<psi.size(); i++)
             psi[i] = psi_AO[i]*smooth_factor + psi[i]*(cone-smooth_factor);
         }
+        ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
       }
     }
     else
     {
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
-        Vector<SPOSet::ValueType> psi(psiM[iat],m);
         evaluate_v(VP,iat,psi);
+        ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
       }
     }
-  }
-
-  inline size_t estimateMemory(const int nP)
-  {
-    return BaseAdoptor::estimateMemory(nP)+myV.size()*sizeof(ST)/sizeof(ValueType)*nP;
   }
 
   template<typename VV, typename GV>
@@ -219,7 +205,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     {
       const PointType& r=P.activeR(iat);
       int bc_sign=HybridBase::get_bc_sign(r, PrimLattice, HalfG);
-      BaseAdoptor::assign_vgh(bc_sign,psi,dpsi,grad_grad_psi);
+      BaseAdoptor::assign_vgh(bc_sign,psi,dpsi,grad_grad_psi,0,myV.size());
     }
     else
       BaseAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);

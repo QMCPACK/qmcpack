@@ -33,25 +33,25 @@ two_body_sum (double *R[], int e1_first, int e1_last, int e2_first, int e2_last,
 
 void
 two_body_ratio (float *R[], int first, int last,
-                float Rnew[], int inew,
+                float Rnew[], int inew, int offset,
                 float spline_coefs[], int numCoefs, float rMax,
                 float sum[], int numWalkers);
 
 void
 two_body_ratio (double *R[], int first, int last,
-                double Rnew[], int inew,
+                double Rnew[], int inew, int offset,
                 double spline_coefs[], int numCoefs, double rMax,
                 double sum[], int numWalkers);
 
 void
 two_body_ratio_grad(float *R[], int first, int last,
-                    float  Rnew[], int inew,
+                    float  Rnew[], int inew, int offset,
                     float spline_coefs[], int numCoefs, float rMax,
                     bool zero, float ratio_grad[], int numWalkers);
 
 void
 two_body_ratio_grad(double *R[], int first, int last,
-                    double  Rnew[], int inew,
+                    double  Rnew[], int inew, int offset,
                     double spline_coefs[], int numCoefs, double rMax,
                     bool zero,
                     double ratio_grad[], int numWalkers);
@@ -137,24 +137,24 @@ one_body_sum (double C[], double *R[], int e1_first, int e1_last, int e2_first, 
 void
 one_body_ratio (float C[], float *R[], int first, int last,
                 float Rnew[], int inew,
-                float spline_coefs[], int numCoefs, float rMax,
+                float spline_coefs[], int numCoefs, int nw, float rMax,
                 float sum[], int numWalkers);
 
 void
 one_body_ratio (double C[], double *R[], int first, int last,
                 double Rnew[], int inew,
-                double spline_coefs[], int numCoefs, double rMax,
+                double spline_coefs[], int numCoefs, int nw, double rMax,
                 double sum[], int numWalkers);
 
 void
 one_body_ratio_grad (float C[], float *R[], int first, int last,
                      float Rnew[], int inew,
-                     float spline_coefs[], int numCoefs, float rMax,
+                     float spline_coefs[], int numCoefs, int nw, float rMax,
                      bool zero, float ratio_grad[], int numWalkers);
 void
 one_body_ratio_grad (double C[], double *R[], int first, int last,
                      double Rnew[], int inew,
-                     double spline_coefs[], int numCoefs, double rMax,
+                     double spline_coefs[], int numCoefs, int nw, double rMax,
                      bool zero, double ratio_grad[], int numWalkers);
 
 void

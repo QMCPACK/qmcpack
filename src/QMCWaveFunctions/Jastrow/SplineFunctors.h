@@ -162,6 +162,7 @@ struct CubicSplineSingle: public OptimizableFunctorBase
     const real_type* restrict _distArray, real_type* restrict distArrayCompressed ) const
   {
     // need to actually implement this!
+    return real_type(0);
   }
 
   inline void evaluateVGL(const int iat, const int iStart, const int iEnd,

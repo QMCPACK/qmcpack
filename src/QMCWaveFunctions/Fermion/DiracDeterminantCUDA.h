@@ -21,7 +21,7 @@
 #ifndef QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
 #define QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
 #include <typeinfo>
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
 #include "Numerics/CUDA/cuda_inverse.h"
@@ -29,7 +29,7 @@
 
 namespace qmcplusplus
 {
-class DiracDeterminantCUDA: public DiracDeterminant
+class DiracDeterminantCUDA: public DiracDeterminantBase
 {
 public:
   typedef SPOSet::IndexVector_t IndexVector_t;
@@ -39,7 +39,7 @@ public:
   typedef SPOSet::GradMatrix_t  GradMatrix_t;
   typedef ParticleSet::Walker_t     Walker_t;
 
-  DiracDeterminantCUDA(SPOSetPtr const &spos, int first=0);
+  DiracDeterminantCUDA(SPOSetPtr const spos, int first=0);
   DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;
 
 protected:
@@ -47,17 +47,17 @@ protected:
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
   int RowStride;
-  size_t AOffset, AinvOffset, newRowOffset, AinvDeltaOffset,
+  size_t AOffset, AinvOffset, LemmaOffset, LemmaLUOffset, LemmaInvOffset, AinvUOffset, newRowOffset, AinvDeltaOffset,
          AinvColkOffset, gradLaplOffset, newGradLaplOffset, 
          AWorkOffset, AinvWorkOffset;
   gpu::host_vector<CTS::ValueType*> UpdateList;
   gpu::device_vector<CTS::ValueType*> UpdateList_d;
   gpu::host_vector<updateJob> UpdateJobList;
   gpu::device_vector<updateJob> UpdateJobList_d;
-  std::vector<CTS::ValueType*> srcList, destList, AList, AinvList, newRowList,
+  std::vector<CTS::ValueType*> srcList, destList, AList, AinvList, newRowList, LemmaList, LemmaLUList, LemmaInvList, AinvUList,
                               AinvDeltaList, AinvColkList, gradLaplList, newGradLaplList, 
                               AWorkList, AinvWorkList, GLList;
-  gpu::device_vector<CTS::ValueType*> srcList_d, destList_d, AList_d, AinvList_d, newRowList_d, 
+  gpu::device_vector<CTS::ValueType*> srcList_d, destList_d, AList_d, AinvList_d, newRowList_d, LemmaList_d, LemmaLUList_d, LemmaInvList_d, AinvUList_d,
                                     AinvDeltaList_d, AinvColkList_d, gradLaplList_d, 
                                     newGradLaplList_d, AWorkList_d, AinvWorkList_d, GLList_d;
   gpu::device_vector<int> PivotArray_d;
@@ -94,24 +94,37 @@ protected:
 
   void resizeLists(int numWalkers)
   {
+    resizeLists(numWalkers,1);
+  }
+
+  void resizeLists(int numWalkers, int kdelay)
+  {
     AList.resize(numWalkers);
     AList_d.resize(numWalkers);
-    AinvList.resize(numWalkers);
-    AinvList_d.resize(numWalkers);
-    newRowList.resize(numWalkers);
-    newRowList_d.resize(numWalkers);
+    AinvList.resize(numWalkers*kdelay);
+    AinvList_d.resize(numWalkers*kdelay);
+    AinvUList.resize(numWalkers);
+    AinvUList_d.resize(numWalkers);
+    newRowList.resize(numWalkers*kdelay);
+    newRowList_d.resize(numWalkers*kdelay);
     AinvDeltaList.resize(numWalkers);
     AinvDeltaList_d.resize(numWalkers);
     AinvColkList.resize(numWalkers);
     AinvColkList_d.resize(numWalkers);
+    LemmaList.resize(numWalkers);
+    LemmaList_d.resize(numWalkers);
+    LemmaLUList.resize(numWalkers);
+    LemmaLUList_d.resize(numWalkers);
+    LemmaInvList.resize(numWalkers);
+    LemmaInvList_d.resize(numWalkers);
     ratio_d.resize(5*numWalkers);
     ratio_host.resize(5*numWalkers);
     gradLaplList.resize(numWalkers);
     gradLaplList_d.resize(numWalkers);
     GLList.resize(numWalkers);
     GLList_d.resize(numWalkers);
-    newGradLaplList.resize(numWalkers);
-    newGradLaplList_d.resize(numWalkers);
+    newGradLaplList.resize(numWalkers*kdelay);
+    newGradLaplList_d.resize(numWalkers*kdelay);
     AWorkList.resize(numWalkers);
     AinvWorkList.resize(numWalkers);
     AWorkList_d.resize(numWalkers);
@@ -141,23 +154,72 @@ protected:
   }
 
 public:
-  ValueType ratio(ParticleSet& P, int iat)
+
+  // safe-guard all CPU interfaces
+  DiracDeterminantCUDA* makeCopy(SPOSet* spo) const
   {
-    return DiracDeterminant::ratio (P, iat);
+    APP_ABORT("Calling DiracDeterminantCUDA::makeCopy is illegal!");
   }
 
-  void update (std::vector<Walker_t*> &walkers, int iat);
+  RealType evaluateLog(ParticleSet& P,
+              ParticleSet::ParticleGradient_t& G,
+              ParticleSet::ParticleLaplacian_t& L)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
+  }
+
+  void acceptMove(ParticleSet& P, int iat)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::acceptMove is illegal!");
+  }
+
+  void restore(int iat)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::restore is illegal!");
+  }
+
+  ValueType ratio(ParticleSet& P, int iat)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::ratio is illegal!");
+  }
+
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::ratioGrad is illegal!");
+  }
+
+  void registerData(ParticleSet& P, WFBufferType& buf)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::registerData is illegal!");
+  }
+
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::updateBuffer is illegal!");
+  }
+
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+  {
+    APP_ABORT("Calling DiracDeterminantCUDA::copyFromBuffer is illegal!");
+  }
+
+  void update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
 
-  void reserve (PointerPool<gpu::device_vector<CTS::ValueType> > &pool) {
+  void reserve (PointerPool<gpu::device_vector<CTS::ValueType> > &pool, int kblocksize=1) {
     RowStride = ((NumOrbitals + 31)/32) * 32;
+    size_t kblock2 = ((kblocksize * kblocksize + 31)/32) * 32;
     AOffset           = pool.reserve((size_t)    NumPtcls * RowStride);
     AinvOffset        = pool.reserve((size_t)    NumPtcls * RowStride);
+    LemmaOffset       = pool.reserve((size_t)              kblock2);
+    LemmaLUOffset     = pool.reserve((size_t)              kblock2);
+    LemmaInvOffset    = pool.reserve((size_t)              kblock2);
+    AinvUOffset       = pool.reserve((size_t)1            * RowStride * kblocksize);
     gradLaplOffset    = pool.reserve((size_t)4 * NumPtcls * RowStride);
-    newRowOffset      = pool.reserve((size_t)1            * RowStride);
+    newRowOffset      = pool.reserve((size_t)1            * RowStride * kblocksize);
     AinvDeltaOffset   = pool.reserve((size_t)1            * RowStride);
     AinvColkOffset    = pool.reserve((size_t)1            * RowStride);
-    newGradLaplOffset = pool.reserve((size_t)4            * RowStride);
+    newGradLaplOffset = pool.reserve((size_t)4            * RowStride * kblocksize);
     if (typeid(CTS::RealType) == typeid(float))
     {
       AWorkOffset       = pool.reserve((size_t)2 * NumPtcls * RowStride);
@@ -166,7 +228,7 @@ public:
     else if (typeid(CTS::RealType) == typeid(double))
     {
       AWorkOffset       = pool.reserve((size_t)    NumPtcls * RowStride);
-      AinvWorkOffset    = 0;                  // not needed for inversion
+      AinvWorkOffset    = 0;
     }
     Phi->reserve(pool);
   }
@@ -178,7 +240,7 @@ public:
   void addGradient(MCWalkerConfiguration &W, int iat,
                    std::vector<GradType> &grad);
 
-  void calcGradient(MCWalkerConfiguration &W, int iat,
+  void calcGradient(MCWalkerConfiguration &W, int iat, int k,
                     std::vector<GradType> &grad);
 
   void ratio (MCWalkerConfiguration &W, int iat,
@@ -193,7 +255,7 @@ public:
   void calcRatio (MCWalkerConfiguration &W, int iat,
                   std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
                   std::vector<ValueType> &lapl);
-  void addRatio (MCWalkerConfiguration &W, int iat,
+  void addRatio (MCWalkerConfiguration &W, int iat, int k,
                  std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
                  std::vector<ValueType> &lapl);
 
@@ -209,6 +271,12 @@ public:
 
   void NLratios_CPU (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                      std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
+
+  void det_lookahead (MCWalkerConfiguration &W,
+                      std::vector<ValueType> &psi_ratios,
+                      std::vector<GradType>  &grad,
+                      std::vector<ValueType> &lapl,
+                      int iat, int k, int kd, int nw);
 };
 }
 #endif // QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H

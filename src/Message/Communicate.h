@@ -23,6 +23,11 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_MPI
+#include "mpi3/environment.hpp"
+namespace mpi3 = boost::mpi3;
+#endif
+
 #ifdef HAVE_OOMPI
 #include "oompi.h"
 struct CommunicatorTraits
@@ -33,11 +38,11 @@ struct CommunicatorTraits
   typedef OOMPI_Intra_comm intra_comm_type;
 };
 #define APP_ABORT(msg) \
-{std::cerr << "Fatal Error. Aborting at " << msg << std::endl; OOMPI_COMM_WORLD.Abort();}
+{std::cerr << "Fatal Error. Aborting at " << msg << std::endl; MPI_Abort(MPI_COMM_WORLD, 1);}
 
 #define APP_ABORT_TRACE(f,l,msg) \
 {std::cerr << "Fatal Error. Aborting at " << l \
-  << "::" << f << "\n " <<  msg << std::endl; OOMPI_COMM_WORLD.Abort();}
+  << "::" << f << "\n " <<  msg << std::endl; MPI_Abort(MPI_COMM_WORLD, 1);}
 
 #else
 struct CommunicatorTraits
@@ -80,28 +85,28 @@ public:
   ///constructor
   Communicate();
 
-  ///constructor with arguments
-  Communicate(int argc, char **argv);
+  ///constructor from mpi3 environment
+#ifdef HAVE_MPI
+  Communicate(const mpi3::environment &env);
+#endif
 
   ///constructor with communicator
   Communicate(const mpi_comm_type comm_input);
 
   ///constructor with communicator
   //Communicate(const intra_comm_type& c);
-  Communicate(const Communicate& comm, int nparts);
-
-  /** constructor
-   * @param comm a communicator which will be split into groups
-   * @param jobs number of tasks per group
-   */
-  Communicate(const Communicate& comm, const std::vector<int>& jobs);
+  Communicate(const Communicate& in_comm, int nparts);
 
   /**destructor
    * Call proper finalization of Communication library
    */
   virtual ~Communicate();
-
+  // Only for unit tests
   void initialize(int argc, char **argv);
+
+#ifdef HAVE_MPI
+  void initialize(const mpi3::environment &env);
+#endif
   void finalize();
   void abort();
   void abort(const char* msg);
@@ -236,32 +241,10 @@ public:
   template<typename T> request isend(int dest, int tag, T&);
   template<typename T> request irecv(int source, int tag, T*, int n);
   template<typename T> request isend(int dest, int tag, T*, int n);
-
-  // MMORALES: this is just a temporary fix for the communicator problem
-  //           Adding needed routines with explicit communicator arguments
-  //           until I fix the problem.
-  template<typename T> void allreduce(T&,mpi_comm_type comm);
-  template<typename T> void bcast(T&,mpi_comm_type);
-  template<typename T> void bcast(T* restrict, int n,mpi_comm_type comm);
-  template<typename T> void bcast(T* restrict, int n, int orig, mpi_comm_type comm); 
-  template<typename T> void send(T* restrict, int n, int dest, int tag, mpi_comm_type comm);
-#ifdef HAVE_MPI
-  template<typename T> void recv(T* restrict, int n, int dest, int tag, mpi_comm_type comm, MPI_Status*);
-#endif
   template<typename T, typename IT> void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest=0);
-#ifdef HAVE_MPI
-  template<typename T, typename IT> void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest, MPI_Comm comm);
-#endif
   template<typename T, typename TMPI, typename IT> void gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest=0);
-  template<typename T> void allgather(T& sb, T& rb, int count, mpi_comm_type comm);
   template<typename T> void allgather(T* sb, T* rb, int count);
-#ifdef HAVE_MPI
-  template<typename T, typename IT> void scatterv(T* sb, T* rb, int n, IT& counts, IT& displ, int source, MPI_Comm);
-#endif
   template<typename T> void gsum(T&);
-  template<typename T> void gsum(T&,mpi_comm_type comm);
-  template<typename T> void gmax(T&,mpi_comm_type comm);
-
 
 protected:
 
@@ -283,6 +266,11 @@ protected:
 public:
   /// Group Lead Communicator
   Communicate *GroupLeaderComm;
+
+  /// mpi3 communicator wrapper
+#ifdef HAVE_MPI
+  mpi3::communicator comm;
+#endif
 };
 
 

@@ -54,7 +54,7 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
 
   ///\f$Vat[i] = sum_(j) u_{i,j}\f$
   Vector<valT> Vat;
-  aligned_vector<valT> U, dU, d2U;
+  aligned_vector<valT> U, dU, d2U, d3U;
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
   Vector<posT> Grad;
@@ -95,6 +95,7 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
     U.resize(Nions);
     dU.resize(Nions);
     d2U.resize(Nions);
+    d3U.resize(Nions);
     DistCompressed.resize(Nions);
     DistIndice.resize(Nions);
   }
@@ -399,6 +400,74 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
   }
   /**@} */
 
+  inline GradType evalGradSource(ParticleSet& P,
+                                 ParticleSet& source, int isrc)
+  {
+    GradType g_return(0.0);
+    const DistanceTableData& d_ie(*(P.DistTables[myTableID]));
+    for(int iat=0; iat<Nelec; ++iat)
+    {
+      const valT* dist = d_ie.Distances[iat];
+      const RowContainer& displ = d_ie.Displacements[iat];
+      int gid=Ions.GroupID[isrc];
+      RealType r=dist[isrc];
+      RealType rinv=1.0/r;
+      PosType dr=displ[isrc];
+
+      if(F[gid]!=nullptr)
+      {
+        U[isrc]= F[gid]->evaluate(dist[isrc],dU[isrc],d2U[isrc],d3U[isrc]);
+        g_return-=dU[isrc]*rinv*dr;
+      }
+    }
+    return g_return;
+  }
+
+  inline GradType
+  evalGradSource(ParticleSet& P, ParticleSet& source, int isrc,
+                 TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+                 TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
+  {
+    GradType g_return(0.0);
+    const DistanceTableData& d_ie(*(P.DistTables[myTableID]));
+    for(int iat=0; iat<Nelec; ++iat)
+    {
+      const valT* dist = d_ie.Distances[iat];
+      const RowContainer& displ = d_ie.Displacements[iat];
+      int gid=Ions.GroupID[isrc];
+      RealType r=dist[isrc];
+      RealType rinv=1.0/r;
+      PosType dr=displ[isrc];
+
+      if(F[gid]!=nullptr)
+      {
+        U[isrc]= F[gid]->evaluate(dist[isrc],dU[isrc],d2U[isrc],d3U[isrc]);
+      }
+      else
+      {
+        APP_ABORT("J1OrbitalSoa::evaluateGradSource:  F[gid]==nullptr")
+      }
+     
+      g_return-=dU[isrc]*rinv*dr;
+     
+      //The following terms depend only on the radial component r.  Thus,
+      //we compute them and mix with position vectors to acquire the full
+      //cartesian vector objects. 
+      valT grad_component=(d2U[isrc]-dU[isrc]*rinv);
+      valT lapl_component=d3U[isrc]+2*rinv*grad_component;
+      
+      for(int idim=0; idim<OHMMS_DIM; idim++)
+      {
+        grad_grad[idim][iat]+=dr[idim]*dr*rinv*rinv*grad_component;
+        grad_grad[idim][iat][idim]+=rinv*dU[isrc];
+        
+        lapl_grad[idim][iat]-=lapl_component*rinv*dr[idim];
+      }
+    }
+    return g_return;
+    
+  }
+  
 };
 
 

@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant_help.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantCalculator.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
 //#include "Numerics/OhmmsBlas.h"
@@ -49,6 +49,9 @@ public:
   typedef SPOSet::GradMatrix_t  GradMatrix_t;
   typedef SPOSet::HessMatrix_t  HessMatrix_t;
   typedef SPOSet::HessType      HessType;
+
+  //lookup table mapping the unique determinants to their element position in C2_node vector
+  std::vector< std::vector<int> > lookup_tbl;
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -102,18 +105,69 @@ public:
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active)
   {
-    //Phi->checkInVariables(active);
+    Phi->checkInVariables(active);
   }
 
   inline void checkOutVariables(const opt_variables_type& active)
   {
-    //Phi->checkOutVariables(active);
+    Phi->checkOutVariables(active);
   }
+
+  /// create optimizable orbital rotation parameters
+  void buildOptVariables(std::vector<size_t>& C2node);
+  ///helper function to buildOptVariables
+  int build_occ_vec(const std::vector<int>& data, const size_t nel, const size_t nmo, std::vector<int>& occ_vec);
 
   void resetParameters(const opt_variables_type& active)
   {
-    //Phi->resetParameters(active);
+    Phi->resetParameters(active);
   }
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi,
+                           const MultiDiracDeterminant& pseudo_dn,
+                           const ValueType& psiCurrent,
+                           const std::vector<RealType>& Coeff,
+                           const std::vector<size_t>& C2node_up,
+                           const std::vector<size_t>& C2node_dn)
+  {
+    if(!Optimizable) return;
+
+    const ValueVector_t&  detValues_up = detValues;
+    const ValueVector_t&  detValues_dn = pseudo_dn.detValues;
+    const GradMatrix_t&   grads_up     = grads;
+    const GradMatrix_t&   grads_dn     = pseudo_dn.grads;
+    const ValueMatrix_t&  lapls_up     = lapls;
+    const ValueMatrix_t&  lapls_dn     = pseudo_dn.lapls;
+    const ValueMatrix_t&  M_up         = psiM;
+    const ValueMatrix_t&  M_dn         = pseudo_dn.psiM;
+    const ValueMatrix_t&  Minv_up      = psiMinv;
+    const ValueMatrix_t&  Minv_dn      = pseudo_dn.psiMinv;
+    const GradMatrix_t&   B_grad       = dpsiM;
+    const ValueMatrix_t&  B_lapl       = d2psiM; 
+
+    const size_t N1  = FirstIndex;
+    const size_t N2  = pseudo_dn.FirstIndex;
+    const size_t NP1 = NumPtcls;
+    const size_t NP2 = pseudo_dn.NumPtcls;
+    
+    Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent,
+                                                                Coeff,
+                                                                C2node_up, C2node_dn,
+                                                                detValues_up, detValues_dn,
+                                                                grads_up, grads_dn,
+                                                                lapls_up, lapls_dn,
+                                                                M_up, M_dn,
+                                                                Minv_up, Minv_dn,
+                                                                B_grad, B_lapl,
+                                                                *detData,
+                                                                N1, N2,
+                                                                NP1, NP2,
+                                                                lookup_tbl); 
+  }
+
 
   inline void reportStatus(std::ostream& os)
   {
@@ -381,11 +435,11 @@ public:
   std::vector<int>* detData;
   std::vector<std::pair<int,int> >* uniquePairs;
   std::vector<RealType>* DetSigns;
-  MyDeterminant<ValueType> DetCalculator;
+  MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 
 };
 
-//  #include "MultiDiracDeterminant_help.h"
+
 
 }
 #endif

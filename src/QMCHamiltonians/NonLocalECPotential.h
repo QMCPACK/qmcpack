@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/ForceBase.h"
+#include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
 {
@@ -43,6 +44,10 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 #endif
 
   Return_t evaluate(ParticleSet& P);
+
+  Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
+                                 ParticleSet::ParticlePos_t& hf_terms,
+                                 ParticleSet::ParticlePos_t& pulay_terms); 
 
   Return_t evaluateWithToperator(ParticleSet& P);
 
@@ -111,8 +116,14 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   int myTableIndex;
   ///reference to the electrons
   ParticleSet& Peln;
+  ///neighborlist of electrons
+  NeighborLists ElecNeighborIons;
+  ///neighborlist of ions
+  NeighborLists IonNeighborElecs;
   ///use T-moves
   int UseTMove;
+  ///ture if an electron is affected by other electrons moved by T-moves
+  std::vector<bool> elecTMAffected;
   ///non local operator
   NonLocalTOperator nonLocalOps;
   ///true if we should compute forces
@@ -133,12 +144,19 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
    */
   void evaluate(ParticleSet& P, bool Tmove);
 
+  
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
    * @param P particle set
    * @param ref_elec reference electron id
    */
   void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
+
+  /** mark all the electrons affected by Tmoves
+   * @param myTable electron ion distance table
+   * @param iel reference electron
+   */
+  void markAffectedElecs(const DistanceTableData* myTable, int iel);
 
 };
 }
