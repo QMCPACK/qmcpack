@@ -33,7 +33,8 @@
 #endif
 #if defined(QMC_CUDA)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
-#elif defined(QMC_CUDA_NEXT)
+#endif
+#if defined(ENABLE_CUBLAS)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUBLAS.h"
 #endif
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
@@ -427,10 +428,16 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 
   // whether to use an optimizable slater determinant
   std::string optimize("no");
+#if defined(ENABLE_CUBLAS)
+  std::string useGPU("yes");
+#else
+  std::string useGPU("no");
+#endif
   int delay_rank(1);
   OhmmsAttributeSet sdAttrib;
   sdAttrib.add(delay_rank,"delay_rank");
   sdAttrib.add(optimize, "optimize");
+  sdAttrib.add(useGPU, "gpu");
   sdAttrib.put(cur->parent);
 
   { //check determinant@group
@@ -485,9 +492,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   getNodeName(dname,cur);
   DiracDeterminantBase* adet=0;
   {
-#if defined(QMC_CUDA_NEXT)
-    adet = new DiracDeterminantCUBLAS(psi,firstIndex);
-#elif defined(QMC_CUDA)
+#if defined(QMC_CUDA)
     adet = new DiracDeterminantCUDA(psi,firstIndex);
 #else
     if(UseBackflow)
@@ -542,6 +547,13 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #endif
     else if (psi->Optimizable)
       adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
+#if defined(ENABLE_CUBLAS)
+    else if (useGPU == "yes")
+    {
+      app_log()<<"Using DiracDeterminantCUBLAS"<< std::endl;
+      adet = new DiracDeterminantCUBLAS(psi,firstIndex);
+    }
+#endif
     else
     {
       app_log()<<"Using DiracDeterminant"<< std::endl;

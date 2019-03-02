@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -12,7 +12,6 @@
 #ifndef QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
 #define QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
 
-#include "Numerics/Blasf.h"
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <simd/simd.hpp>
@@ -59,11 +58,6 @@ namespace qmcplusplus {
       Vector<int, CUDAAllocator<int>, MemorySpace::CUDA> delay_list_gpu;
       int delay_count;
 
-      Vector<T> Ainv_row;
-      // electron id of the up-to-date Ainv_row
-      int Ainv_row_ind;
-      // current ratio
-      T curRatio;
       // the range of prefetched_Ainv_rows
       Range prefetched_range;
       // Ainv prefetch buffer
@@ -73,8 +67,9 @@ namespace qmcplusplus {
       cublasHandle_t handle;
       cudaStream_t hstream;
 
-      DelayedUpdateCUDA(): delay_count(0), Ainv_row_ind(-1)
+      DelayedUpdateCUDA(): delay_count(0)
       {
+        //cudaSetDevice(0);
         cublasCreate(&handle);
         cudaStreamCreate(&hstream);
         cublasSetStream(handle,hstream);
@@ -93,7 +88,6 @@ namespace qmcplusplus {
         U.resize(delay, norb);
         p.resize(delay);
         Binv.resize(delay, delay);
-        Ainv_row.resize(norb);
         // prefect 8% more rows corresponding to roughly 96% acceptance ratio
         Ainv_buffer.resize(std::min(static_cast<int>(delay*1.08),norb), norb);
 
@@ -106,28 +100,28 @@ namespace qmcplusplus {
         delay_list_gpu.resize(delay);
       }
 
-      inline void transferAinvH2D(const Matrix<T>& Ainv)
+      inline void initializeInv(const Matrix<T>& Ainv)
       {
         cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size()*sizeof(T), cudaMemcpyHostToDevice, hstream);
         // safe mechanism
         delay_count = 0;
-        Ainv_row_ind = -1;
         prefetched_range.clear();
       }
 
-      inline void getInvRow(const Matrix<T>& Ainv, int rowchanged)
+      template<typename VVT>
+      inline void getInvRow(const Matrix<T>& Ainv, int rowchanged, VVT& invRow)
       {
         if(!prefetched_range.checkRange(rowchanged))
         {
           int last_row = std::min(rowchanged+Ainv_buffer.rows(), Ainv.rows());
           cudaMemcpyAsync(Ainv_buffer.data(), Ainv_gpu[rowchanged],
-                          Ainv_row.size()*(last_row-rowchanged)*sizeof(T),
+                          invRow.size()*(last_row-rowchanged)*sizeof(T),
                           cudaMemcpyDeviceToHost, hstream);
           prefetched_range.setRange(rowchanged, last_row);
           waitStream();
         }
         // save AinvRow to new_AinvRow
-        simd::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], Ainv_row.size(), Ainv_row.data());
+        std::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], invRow.size(), invRow.data());
         if ( delay_count > 0 )
         {
           const T cone(1);
@@ -135,51 +129,23 @@ namespace qmcplusplus {
           const int norb = Ainv.rows();
           const int lda_Binv = Binv.cols();
           // multiply V (NxK) Binv(KxK) U(KxN) AinvRow right to the left
-          BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, Ainv_row.data(), 1, czero, p.data(), 1);
+          BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, invRow.data(), 1, czero, p.data(), 1);
           BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
-          BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, Binv[delay_count], 1, cone, Ainv_row.data(), 1);
-          // Ainv_row no more has the prefectched value
+          BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, Binv[delay_count], 1, cone, invRow.data(), 1);
         }
-        Ainv_row_ind = rowchanged;
-      }
-
-      template<typename VVT>
-      inline T ratio(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
-      {
-        getInvRow(Ainv, rowchanged);
-        return curRatio = simd::dot(Ainv_row.data(),psiV.data(),Ainv_row.size());
-      }
-
-      template<typename GT>
-      inline GT evalGrad(const Matrix<T>& Ainv, int rowchanged, const GT* dpsiV)
-      {
-        getInvRow(Ainv, rowchanged);
-        return simd::dot(Ainv_row.data(),dpsiV,Ainv_row.size());
-      }
-
-      template<typename VVT, typename GGT, typename GT>
-      inline T ratioGrad(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV, const GGT& dpsiV, GT& g)
-      {
-        if(Ainv_row_ind != rowchanged)
-          getInvRow(Ainv, rowchanged);
-        g = simd::dot(Ainv_row.data(),dpsiV.data(),Ainv_row.size());
-        return curRatio = simd::dot(Ainv_row.data(),psiV.data(),Ainv_row.size());
       }
 
       // accept with the update delayed
       template<typename VVT>
       inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
-        // safe mechanism
-        Ainv_row_ind = -1;
-
         // update Binv from delay_count to delay_count+1
         const T cminusone(-1);
         const T czero(0);
         const int norb = Ainv.rows();
         const int lda_Binv = Binv.cols();
-        simd::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], norb, V[delay_count]);
-        simd::copy_n(psiV.data(), norb, U[delay_count]);
+        std::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], norb, V[delay_count]);
+        std::copy_n(psiV.data(), norb, U[delay_count]);
         delay_list[delay_count] = rowchanged;
         // the new Binv is [[X Y] [Z x]]
         BLAS::gemv('T', norb, delay_count+1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
@@ -237,7 +203,6 @@ namespace qmcplusplus {
           //BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
           cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
           delay_count = 0;
-          Ainv_row_ind = -1;
           // Ainv is invalid, reset range
           prefetched_range.clear();
         }

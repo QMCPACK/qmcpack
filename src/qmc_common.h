@@ -41,8 +41,8 @@ struct QMCState
   bool io_node;
   ///true, use Ewald instead of optimal breakup for the Coulomb
   bool use_ewald;
-  ///QMCPACK cuda implemenation generation
-  int cuda_gen;
+  ///int for compute_device
+  int compute_device;
   ///init for <qmc/> section
   int qmc_counter;
   ///number of mpi groups

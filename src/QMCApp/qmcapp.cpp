@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 #endif
   qmcplusplus::qmc_common.initialize(argc,argv);
   int clones=1;
-  bool useGPU=(qmc_common.cuda_gen>0);
+  bool useGPU=(qmc_common.compute_device == 1);
   std::vector<std::string> fgroup1,fgroup2;
   int i=1;
   while(i<argc)

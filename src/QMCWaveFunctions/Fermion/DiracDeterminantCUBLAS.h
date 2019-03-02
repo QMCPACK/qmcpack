@@ -19,32 +19,22 @@
 /**@file DiracDeterminantCUBLAS.h
  * @brief Declaration of DiracDeterminantCUBLAS with a S(ingle)P(article)O(rbital)Set
  */
-#ifndef QMCPLUSPLUS_DIRACDETERMINANT_CUDANEXT_H
-#define QMCPLUSPLUS_DIRACDETERMINANT_CUDANEXT_H
-#include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/SPOSet.h"
-#include "Utilities/NewTimer.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
+#ifndef QMCPLUSPLUS_DIRACDETERMINANT_CUBLAS_H
+#define QMCPLUSPLUS_DIRACDETERMINANT_CUBLAS_H
+
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 
 namespace qmcplusplus
 {
 
-class DiracDeterminantCUBLAS: public DiracDeterminant
+class DiracDeterminantCUBLAS: public DiracDeterminantBase
 {
 protected:
-  ParticleSet *targetPtcl;
   int ndelay;
+
 public:
-  bool Optimizable;
-  void registerTimers();
-  NewTimer UpdateTimer, RatioTimer, InverseTimer, BufferTimer, SPOVTimer, SPOVGLTimer;
-  // Optimizable parameters
-  opt_variables_type myVars;
-
-
   typedef SPOSet::IndexVector_t IndexVector_t;
   typedef SPOSet::ValueVector_t ValueVector_t;
   typedef SPOSet::ValueMatrix_t ValueMatrix_t;
@@ -62,162 +52,93 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantCUBLAS(SPOSetPtr const &spos, int first=0);
+  DiracDeterminantCUBLAS(SPOSetPtr const spos, int first=0);
 
   ///default destructor
-   ~DiracDeterminantCUBLAS();
+  virtual ~DiracDeterminantCUBLAS();
 
-  /**copy constructor
-   * @param s existing DiracDeterminantCUBLAS
-   *
-   * This constructor makes a shallow copy of Phi.
-   * Other data members are allocated properly.
-   */
-  DiracDeterminantCUBLAS(const DiracDeterminantCUBLAS& s);
-
-  DiracDeterminantCUBLAS& operator=(const DiracDeterminantCUBLAS& s);
-
-  ///** return a clone of Phi
-  // */
-  //SPOSetPtr clonePhi() const;
-
-  SPOSetPtr getPhi()
-  {
-    return Phi;
-  };
-
-  inline IndexType rows() const
-  {
-    return NumPtcls;
-  }
-
-  inline IndexType cols() const
-  {
-    return NumOrbitals;
-  }
+  // copy constructor and assign operator disabled
+  DiracDeterminantCUBLAS(const DiracDeterminantCUBLAS& s) = delete;
+  DiracDeterminantCUBLAS& operator=(const DiracDeterminantCUBLAS& s) = delete;
 
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
    *@param nel number of particles in the determinant
    */
-   void set(int first, int nel, int delay=1);
-
-  ///set BF pointers
-  
-  void setBF(BackflowTransformation* BFTrans) {}
-
-  ///optimizations  are disabled
-   inline void checkInVariables(opt_variables_type& active)
-  {
-    Phi->checkInVariables(active);
-    Phi->checkInVariables(myVars);
-  }
-
-   inline void checkOutVariables(const opt_variables_type& active)
-  {
-    Phi->checkOutVariables(active);
-    myVars.clear();
-    myVars.insertFrom(Phi->myVars);
-    myVars.getIndex(active);
-  }
-
-   void resetParameters(const opt_variables_type& active)
-  {
-    Phi->resetParameters(active);
-    for(int i=0; i<myVars.size(); ++i)
-    {
-      int ii=myVars.Index[i];
-      if(ii>=0)
-        myVars[i]= active[ii];
-    }
-  }
+  void set(int first, int nel, int delay=1) final;
 
   ///invert psiM or its copies
   void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
 
-   void evaluateDerivatives(ParticleSet& P,
+  virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& active,
                                    std::vector<RealType>& dlogpsi,
                                    std::vector<RealType>& dhpsioverpsi);
 
   // used by DiracDeterminantCUBLASWithBackflow
-   void evaluateDerivatives(ParticleSet& P,
+  virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& active,
                                    int offset,
                                    Matrix<RealType>& dlogpsi,
                                    Array<GradType,3>& dG,
                                    Matrix<RealType>& dL) {}
 
-  // void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
-  //                                     std::vector<RealType>& dgradlogpsi);
-
-  inline void reportStatus(std::ostream& os)
-  {
-  }
-   void resetTargetParticleSet(ParticleSet& P)
-  {
-    Phi->resetTargetParticleSet(P);
-    targetPtcl = &P;
-  }
-
   ///reset the size: with the number of particles and number of orbtials
-   void resize(int nel, int morb);
+  virtual void resize(int nel, int morb);
 
-   void registerData(ParticleSet& P, WFBufferType& buf);
+  virtual void registerData(ParticleSet& P, WFBufferType& buf);
 
-   void updateAfterSweep(ParticleSet& P,
+  void updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L);
 
-   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-   ValueType ratio(ParticleSet& P, int iat);
+  virtual ValueType ratio(ParticleSet& P, int iat);
 
   /** compute multiple ratios for a particle move
    */
-   void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
+  virtual void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
 
-   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-   GradType evalGrad(ParticleSet& P, int iat);
-   GradType evalGradSource(ParticleSet &P, ParticleSet &source,
+  virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  virtual GradType evalGrad(ParticleSet& P, int iat);
+  virtual GradType evalGradSource(ParticleSet &P, ParticleSet &source,
                                   int iat);
 
-   GradType evalGradSource
+  virtual GradType evalGradSource
   (ParticleSet& P, ParticleSet& source, int iat,
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
-   GradType evalGradSourcep
+  virtual GradType evalGradSourcep
   (ParticleSet& P, ParticleSet& source, int iat,
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
   /** move was accepted, update the real container
    */
-   void acceptMove(ParticleSet& P, int iat);
-   void completeUpdates();
+  virtual void acceptMove(ParticleSet& P, int iat);
+  virtual void completeUpdates();
 
   /** move was rejected. copy the real container to the temporary to move on
    */
-   void restore(int iat);
+  virtual void restore(int iat);
 
   ///evaluate log of determinant for a particle set: should not be called
-   RealType
+  virtual RealType
   evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L) ;
 
-   void recompute(ParticleSet& P);
+  virtual void recompute(ParticleSet& P);
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
-
-   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   /** cloning function
    * @param tqp target particleset
@@ -226,32 +147,14 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-   DiracDeterminantCUBLAS* makeCopy(SPOSet* spo) const;
-//        DiracDeterminantCUBLAS* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
+  virtual DiracDeterminantCUBLAS* makeCopy(SPOSet* spo) const;
 
-   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
-  ///total number of particles
-  int NP;
-  ///number of single-particle orbitals which belong to this Dirac determinant
-  int NumOrbitals;
-  ///number of particles which belong to this Dirac determinant
-  int NumPtcls;
-  ///index of the first particle with respect to the particle set
-  int FirstIndex;
-  ///index of the last particle with respect to the particle set
-  int LastIndex;
-  ///index of the particle (or row)
-  int WorkingIndex;
-  ///a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetPtr Phi;
+  virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   /////Current determinant value
   //ValueType CurrentDet;
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   ValueMatrix_t psiM, psiM_temp;
-
-  /// memory pool for temporal data
-  aligned_vector<ValueType> memoryPool;
 
   /// temporary container for testing
   ValueMatrix_t psiMinv;
@@ -280,25 +183,21 @@ public:
   DiracMatrix<mValueType> detEng;
   DelayedUpdateCUDA<ValueType> updateEng;
 
+  /// the row of up-to-date inverse matrix
+  ValueVector_t invRow;
+
+  /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
+   *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
+   *  ratioGrad checks if invRow_id is consistent. If not, invRow needs to be recomputed.
+   *  acceptMove and completeUpdates mark invRow invalid by setting invRow_id to -1
+   */
+  int invRow_id;
+
   ValueType curRatio,cumRatio;
   ParticleSet::SingleParticleValue_t *FirstAddressOfG;
   ParticleSet::SingleParticleValue_t *LastAddressOfG;
   ValueType *FirstAddressOfdV;
   ValueType *LastAddressOfdV;
-
-#ifdef QMC_CUDA
-  using WaveFunctionComponent::recompute;
-  using WaveFunctionComponent::reserve;
-  using WaveFunctionComponent::addLog;
-  using WaveFunctionComponent::ratio;
-  using WaveFunctionComponent::addRatio;
-  using WaveFunctionComponent::calcRatio;
-  using WaveFunctionComponent::addGradient;
-  using WaveFunctionComponent::calcGradient;
-  using WaveFunctionComponent::update;
-  using WaveFunctionComponent::gradLapl;
-  using WaveFunctionComponent::NLratios;
-#endif
 
 };
 

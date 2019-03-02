@@ -35,11 +35,9 @@ QMCState::QMCState()
   qmc_counter=0;
   memory_allocated=0;
 #if defined(QMC_CUDA)
-  cuda_gen=1;
-#elif defined(QMC_CUDA_NEXT)
-  cuda_gen=2;
+  compute_device=1;
 #else
-  cuda_gen=0;
+  compute_device=0;
 #endif
 }
 

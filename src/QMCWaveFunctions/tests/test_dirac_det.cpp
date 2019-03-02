@@ -17,7 +17,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#ifdef QMC_CUDA_NEXT
+#ifdef ENABLE_CUBLAS
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUBLAS.h"
 #else
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
@@ -198,7 +198,11 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(3);
+#ifdef ENABLE_CUBLAS
+  DiracDeterminantCUBLAS ddb(spo);
+#else
   DiracDeterminant ddb(spo);
+#endif
 
   int norb = 3;
   ddb.set(0,norb);
@@ -229,12 +233,13 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
   check_matrix(ddb.psiM, b);
 
 
-  DiracDeterminant::GradType grad;
+  ParticleSet::GradType grad;
   ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
   ValueType det_ratio1 = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
   ddb.acceptMove(elec, 0);
+  ddb.completeUpdates();
 
   b(0,0) =  3.455170657;
   b(0,1) =  -1.35124809;
@@ -247,8 +252,6 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
   b(2,2) = 0.9105960265;
 
   check_matrix(ddb.psiM, b);
-
-
 }
 
 //#define DUMP_INFO
@@ -257,7 +260,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
-#ifdef QMC_CUDA_NEXT
+#ifdef ENABLE_CUBLAS
   DiracDeterminantCUBLAS ddb(spo);
 #else
   DiracDeterminant ddb(spo);
@@ -314,7 +317,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   }
 
 
-  DiracDeterminant::GradType grad;
+  ParticleSet::GradType grad;
   ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
 
   dm.invert(a_update1, true);
@@ -383,7 +386,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
-#ifdef QMC_CUDA_NEXT
+#ifdef ENABLE_CUBLAS
   DiracDeterminantCUBLAS ddc(spo);
 #else
   DiracDeterminant ddc(spo);
@@ -441,7 +444,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   }
 
 
-  DiracDeterminant::GradType grad;
+  ParticleSet::GradType grad;
   ValueType det_ratio = ddc.ratioGrad(elec, 0, grad);
 
   dm.invert(a_update1, true);
