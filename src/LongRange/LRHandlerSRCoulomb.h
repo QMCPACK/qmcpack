@@ -72,17 +72,7 @@ public:
    
   ~LRHandlerSRCoulomb()
   {
-//	 delete aGrid;
-//	 delete rV_energy;
-//     delete rV_force;
-//     delete drV_force;
-//     delete rV_stress;
-//     delete drV_stress;  
   }
-  //LRHandlerSRCoulomb(ParticleSet& ref, mRealType rs, mRealType kc=-1.0): LRHandlerBase(kc), Basis(ref.LRBox)
-  //{
-  //  myFunc.reset(ref,rs);
-  //}
 
   /** "copy" constructor
    * @param aLR LRHandlerSRCoulomb
@@ -108,22 +98,21 @@ public:
     InitBreakup(ref.LRBox,1);
     fillYk(ref.SK->KLists);
     fillYkg(ref.SK->KLists);
-    filldFk_dk(ref.SK->KLists);
+    //This is expensive to calculate.  Deprecating stresses for now. 
+    //filldFk_dk(ref.SK->KLists);
     LR_rc=Basis.get_rc();
-    //makeSplines(1000);
   }
 
   void Breakup(ParticleSet& ref, mRealType rs_ext)
   {
-    //ref.LRBox.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     rs=rs_ext;
     myFunc.reset(ref,rs);
     InitBreakup(ref.LRBox,1);
     fillYk(ref.SK->KLists);
     fillYkg(ref.SK->KLists);
-    filldFk_dk(ref.SK->KLists);
+    //This is expensive to calculate.  Deprecating stresses for now. 
+    //filldFk_dk(ref.SK->KLists);
     LR_rc=Basis.get_rc();
-   // makeSplines(1000);
   }
 
   void resetTargetParticleSet(ParticleSet& ref)
@@ -193,6 +182,7 @@ public:
   //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
   inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<mRealType, OHMMS_DIM> k, mRealType kmag)
   {
+    APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
     for (int dim1=0; dim1<OHMMS_DIM; dim1++)
       for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
@@ -206,6 +196,7 @@ public:
   
   inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<mRealType, OHMMS_DIM> r, mRealType rmag)
   {
+    APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor=0;
 
     mRealType Sr_r=srDf_strain(rmag, 1.0/mRealType(rmag))/mRealType(rmag);
@@ -220,6 +211,7 @@ public:
   
   inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain()
   {
+    APP_ABORT("Stresses not supported yet\n");
     mRealType v0=0.0;
     mRealType norm=2.0*TWOPI/Basis.get_CellVolume();
    
@@ -235,12 +227,14 @@ public:
   
   inline mRealType evaluateLR_r0_dstrain(int i, int j)
   {
+    APP_ABORT("Stresses not supported yet\n");
 	//the t derivative for the relevant basis elements are all zero because of constraints.
     return 0.0; //Basis.f(0,dcoefs(i,j));
   }
   
   inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain()
   {
+    APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> stress;
     return stress;
   }
@@ -266,6 +260,7 @@ private:
   }
   inline mRealType evalYkgstrain(mRealType k)
   {
+    APP_ABORT("Stresses not supported yet\n");
     mRealType FatK=myFunc.Vk(k) - Basis.fk(k,gstraincoefs);
     //for(int n=0; n<Basis.NumBasisElem(); n++)
    //   FatK -= gcoefs[n]*Basis.c(n,k);
@@ -275,6 +270,7 @@ private:
   
   inline mRealType evaldYkgstrain(mRealType k)
   {
+    APP_ABORT("Stresses not supported yet\n");
     mRealType dFk_dk = myFunc.dVk_dk(k) - Basis.dfk_dk(k,gstraincoefs);
   //  mRealType dFk_dk = myFunc.dVk_dk(k,Basis.get_rc()) - Basis.dfk_dk(k,coefs);
     return dFk_dk;
@@ -442,6 +438,7 @@ private:
   
   void fillYkgstrain(KContainer& KList)
   {
+    APP_ABORT("Stresses not supported yet\n");
     Fkgstrain.resize(KList.kpts_cart.size());
     const std::vector<int>& kshell(KList.kshell);
     if(MaxKshell >= kshell.size())
@@ -455,6 +452,7 @@ private:
   }
   void filldFk_dk(KContainer& KList)
   {
+    APP_ABORT("Stresses not supported yet\n");
     dFk_dstrain.resize(KList.kpts_cart.size());
 
     for (int ki=0; ki<dFk_dstrain.size(); ki++)
