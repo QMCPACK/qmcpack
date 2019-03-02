@@ -41,6 +41,15 @@ TEST_CASE("OMPvector", "[OMP]")
 
   REQUIRE(A[0] == Approx(3.1));
   REQUIRE(A[1] == Approx(4.1));
+
+  A.resize(256);
+  A_ptr = A.data();
+  PRAGMA_OMP("omp target teams distribute map(always, tofrom:A_ptr[0:2])")
+  for(int i=0; i<2; i++)
+  {
+    A_ptr[i]+=i;
+  }
+
 }
 
 }
