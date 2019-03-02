@@ -69,7 +69,9 @@ namespace qmcplusplus {
 
       DelayedUpdateCUDA(): delay_count(0)
       {
-        //cudaSetDevice(0);
+        // currently hard-coded first device
+        // need to control CUDA_VISIBLE_DEVICES when using multiple MPI on a single node.
+        cudaSetDevice(0);
         cublasCreate(&handle);
         cudaStreamCreate(&hstream);
         cublasSetStream(handle,hstream);
