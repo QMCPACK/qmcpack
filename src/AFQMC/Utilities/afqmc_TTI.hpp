@@ -43,7 +43,7 @@ void reserve_to_fit(Container& C, std::vector<integer> const& v, double = 0){
     C.reserve(std::accumulate(v.begin(), v.end(), std::size_t(0)));
 }
 
-/*
+
 // checks for emplace_back(tuple<int,int,SPComplexType>)  
 using tp = std::tuple<int,int,SPComplexType>;
 template<class T, typename = decltype(std::declval<T>().emplace_back(tp{}))>
@@ -60,23 +60,25 @@ template<class V> struct has_emplace_tp : decltype(has_emplace_tp_aux(std::declv
 // dispatch to emplace_back preferentially
 template<
     class Container,
+    class tp_,
     typename = std::enable_if_t<has_emplace_back_tp<Container>{}>
 >
-void emplace(Container& C, tp const& a){
+void emplace(Container& C, tp_ const& a){
     C.emplace_back(a);
 }
 
 // dispatch to emplace if exists (and emplace_back doesn't) 
 template<
     class Container,
+    class tp_,
     typename = std::enable_if_t<not has_emplace_back_tp<Container>{}>,
     typename = std::enable_if_t<has_emplace_tp<Container>{}>
 >
-void emplace(Container& C, tp const& a){
+void emplace(Container& C, tp_ const& a){
     C.emplace(a);
 }
-*/
 
+/*
 // checks for emplace_back(tuple<int,int,SPComplexType>)  
 template<typename T> using tp = std::tuple<int,int,T>;
 template<class Q, class T, typename = decltype(std::declval<T>().emplace_back(tp<Q>{}))>
@@ -112,7 +114,7 @@ template<
 void emplace(Container& C, tp<T> const& a){
     C.emplace(a);
 }
-
+*/
 }
 
 }

@@ -1154,9 +1154,9 @@ class KP3IndexFactorization
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
 #else
-      boost::multi::array_cref<ComplexType,3> G3Da(to_address(G.origin()),
+      boost::multi::array_cref<ComplexType,3> G3Da(to_address(Gw.origin()),
                                                         {nocca_tot,nmo_tot,nwalk} );
-      boost::multi::array_cref<ComplexType,3> G3Db(to_address(G.origin())+
+      boost::multi::array_cref<ComplexType,3> G3Db(to_address(Gw.origin())+
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
 #endif

@@ -483,21 +483,39 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           boost::multi::array_ref<SPComplexType,2> Likn(to_address(LQKikn[Q][K].origin()),
                                                    {nmo_per_kp[K],nmo_per_kp[QK]*nchol_per_kp[Q]});
           using ma::H;
+#if MIXED_PRECISION
+          boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
+          ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(1.0),v1_);
+          boost::multi::array<ComplexType,2> v2_(v1_);
+          ma::add(ComplexType(1.0),v2_,
+                  ComplexType(1.0),vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
+                  vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+#else          
           ma::product(-0.5,Likn,H(Likn),1.0,vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+#endif
         } else {
           int QmK = QKtok2[Qm][K];
           boost::multi::array_ref<SPComplexType,3> Lkin(to_address(LQKikn[Qm][QK].origin()),
                                                    {nmo_per_kp[QK],nmo_per_kp[K],nchol_per_kp[Qm]});
-          boost::multi::array<SPComplexType,3> buff({nmo_per_kp[K],nmo_per_kp[QK],nchol_per_kp[Qm]});
+          boost::multi::array<SPComplexType,3> buff3D({nmo_per_kp[K],nmo_per_kp[QK],nchol_per_kp[Qm]});
           using std::conj;
           for(int i=0; i<nmo_per_kp[K]; i++)
           for(int k=0; k<nmo_per_kp[QK]; k++)
           for(int n=0; n<nchol_per_kp[Qm]; n++)
-            buff[i][k][n] = conj(Lkin[k][i][n]);
-          boost::multi::array_ref<SPComplexType,2> L_(to_address(buff.origin()),
+            buff3D[i][k][n] = conj(Lkin[k][i][n]);
+          boost::multi::array_ref<SPComplexType,2> L_(to_address(buff3D.origin()),
                                                    {nmo_per_kp[K],nmo_per_kp[QK]*nchol_per_kp[Qm]});
           using ma::H;
+#if MIXED_PRECISION
+          boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
+          ma::product(SPComplexType(-0.5),L_,H(L_),SPComplexType(1.0),v1_);
+          boost::multi::array<ComplexType,2> v2_(v1_);
+          ma::add(ComplexType(1.0),v2_,
+                  ComplexType(1.0),vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
+                  vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+#else
           ma::product(-0.5,L_,H(L_),1.0,vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+#endif
         }
       }
     }
@@ -563,7 +581,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           ComplexType E_(0.0);
           for(int a=0; a<na; ++a)
             for(int b=0; b<nb; ++b)
-              E_ += ma::dot(T3abn[a][b],T3ban[b][a]);
+              E_ += static_cast<SPComplexType>(ma::dot(T3abn[a][b],T3ban[b][a]));
           gQ[Q] -= scl*0.5*real(E_);
         }
         if(type==COLLINEAR) {
@@ -1076,21 +1094,41 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           boost::multi::array_ref<SPComplexType,2> Likn(to_address(LQKikn[Q][K].origin()),
                                                    {nmo_max,nmo_max*nchol_max});
           using ma::H;
-          ma::product(-0.5,Likn,H(Likn),1.0,vn0[K]);
+#if MIXED_PRECISION
+          boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
+          ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(1.0),v1_);
+          using std::copy_n;
+          boost::multi::array<ComplexType,2> v2_(v1_); 
+          ma::add(ComplexType(1.0),v2_,
+                  ComplexType(1.0),vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
+                  vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+#else
+          ma::product(-0.5,Likn,H(Likn),1.0,vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+#endif
         } else {
           int QmK = QKtok2[Qm][K];
           boost::multi::array_ref<SPComplexType,3> Lkin(to_address(LQKikn[Qm][QK].origin()),
                                                    {nmo_max,nmo_max,nchol_max});
-          boost::multi::array<SPComplexType,3> buff({nmo_max,nmo_max,nchol_max});
+          boost::multi::array<SPComplexType,3> buff3D({nmo_max,nmo_max,nchol_max});
           using std::conj;
           for(int i=0; i<nmo_max; i++)
           for(int k=0; k<nmo_max; k++)
           for(int n=0; n<nchol_max; n++)
-            buff[i][k][n] = conj(Lkin[k][i][n]);
-          boost::multi::array_ref<SPComplexType,2> L_(to_address(buff.origin()),
+            buff3D[i][k][n] = conj(Lkin[k][i][n]);
+          boost::multi::array_ref<SPComplexType,2> L_(to_address(buff3D.origin()),
                                                    {nmo_max,nmo_max*nchol_max});
           using ma::H;
+#if MIXED_PRECISION
+          boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
+          ma::product(SPComplexType(-0.5),L_,H(L_),
+                      SPComplexType(1.0),v1_);
+          boost::multi::array<ComplexType,2> v2_(v1_); 
+          ma::add(ComplexType(1.0),v2_,
+                  ComplexType(1.0),vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
+                  vn0[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+#else
           ma::product(-0.5,L_,H(L_),1.0,vn0[K]);
+#endif
         }
       }
     }

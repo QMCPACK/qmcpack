@@ -618,7 +618,7 @@ class ucsr_matrix:
         template<typename integer_type=IndxType,typename value_type=ValType>
         void emplace(std::tuple<integer_type,integer_type,value_type> const& val) {
             using std::get;
-            emplace( {get<0>(val), get<1>(val)}, get<2>(val) );
+            emplace( {get<0>(val), get<1>(val)}, static_cast<ValType>(get<2>(val)) );
         }
 	template<class Pair = std::array<IndxType, 2>, class... Args>
 	void emplace_back(Pair&& indices, Args&&... args){
@@ -627,7 +627,7 @@ class ucsr_matrix:
         template<typename integer_type=IndxType,typename value_type=ValType>
         void emplace_back(std::tuple<integer_type,integer_type,value_type> const&  val) {
             using std::get;
-            emplace( {get<0>(val), get<1>(val)}, get<2>(val) );
+            emplace( {get<0>(val), get<1>(val)}, static_cast<ValType>(get<2>(val)) );
         }
 	protected:
 	struct row_reference{
@@ -705,14 +705,19 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
         }
         // right now, this routine is limited to transfers from host-host, or host-device.
         // Will fail if transfering device-to-host, since I need to use to_address on source 
-        template<class ValType_alloc_, 
+        template<class ValType_, 
+                 class IndxType_, 
+                 class IntType_, 
+                 class ValType_alloc_, 
                  class IsRoot_,
                  class IndxType_alloc_, 
                  class IntType_alloc_,
                  typename = std::enable_if_t<not std::is_same<ValType_alloc_,ValType_alloc>::value>
                 >
-        csr_matrix(csr_matrix<ValType,IndxType,IntType,ValType_alloc_,IsRoot_,IndxType_alloc_,
-                              IntType_alloc_> const& csr, ValType_alloc const& alloc = {}): 
+        csr_matrix(csr_matrix<ValType_,IndxType_,IntType_,ValType_alloc_,IsRoot_,IndxType_alloc_,
+                              IntType_alloc_> const& csr, 
+                              ValType_alloc const& alloc = {}): 
+                              //IntType_alloc_> const& csr, ValType_alloc const& alloc = {}): 
                    base(std::tuple<size_type, size_type>{0,0},
                         std::tuple<size_type, size_type>{0,0},
                                             0,alloc)
@@ -735,7 +740,7 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                 IsRoot r(base::Valloc_);
                 if(r.root()){
                         using std::copy_n;
-                        copy_n_cast(to_address(csr.non_zero_values_data()),base::capacity_,base::data_);
+                        copy_n(to_address(csr.non_zero_values_data()),base::capacity_,base::data_);
                         copy_n(to_address(csr.non_zero_indices2_data()),base::capacity_,base::jdata_);
                         copy_n(to_address(csr.pointers_begin()),base::size1_+1,base::pointers_begin_);
                         copy_n(to_address(csr.pointers_end()),base::size1_,base::pointers_end_);
@@ -963,12 +968,12 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
         template<typename integer_type=IndxType,typename value_type=ValType>
         void emplace(std::tuple<integer_type,integer_type,value_type> const& val) {
             using std::get;
-            emplace( {get<0>(val), get<1>(val)}, get<2>(val) );
+            emplace( {get<0>(val), get<1>(val)}, static_cast<ValType>(get<2>(val)) );
         }
         template<typename integer_type=IndxType,typename value_type=ValType>
         void emplace_back(std::tuple<integer_type,integer_type,value_type> const& val) {
             using std::get;
-            emplace_back( {get<0>(val), get<1>(val)}, get<2>(val) );
+            emplace_back( {get<0>(val), get<1>(val)}, static_cast<ValType>(get<2>(val)) );
         }
 	void remove_empty_spaces() {
 		IsRoot r(base::Valloc_);

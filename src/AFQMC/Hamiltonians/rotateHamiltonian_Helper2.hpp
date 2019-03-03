@@ -38,7 +38,7 @@ namespace afqmc
 template<class MatQk,
          class MatRl,
          class MatTa>
-inline void count_Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, std::vector<std::size_t>& sz, int k0, int kN, int l0, int lN, int NMO, int NAEA, int NAEB, MatQk const& Qk, MatRl const& Rl, MatTa && Ta, const RealType cut)
+inline void count_Qk_x_Rl(WALKER_TYPES walker_type, SPComplexType EJX, TaskGroup_& TG, std::vector<std::size_t>& sz, int k0, int kN, int l0, int lN, int NMO, int NAEA, int NAEB, MatQk const& Qk, MatRl const& Rl, MatTa && Ta, const RealType cut)
 {
   using Type = typename std::decay<MatTa>::type::element;
   assert(Qk.size(0) == Ta.size(0));
@@ -58,6 +58,8 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_&
   if(coreid <nwork)
     std::tie(bl0, blN) = FairDivideBoundary(coreid,int(Rl.size(1)),nwork);
 
+  Type four(4.0);
+  Type two(2.0);
   if(walker_type == CLOSED) {
 
     // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
@@ -65,8 +67,6 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_&
     ma::product(Qk,Rl(Rl.extension(0),{bl0,blN}),
                    Ta(Ta.extension(0),{bl0,blN}));
     TG.node_barrier();
-    Type four = Type(4.0);
-    Type two = Type(2.0);
     for(int k=k0, ka=0; k<kN; k++) {
       for(int a=0; a<NAEA; a++, ka++) {
         for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEA+b
@@ -170,7 +170,7 @@ template<class MatQk,
          class MatRl,
          class MatTa,
          class Container>
-inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, int k0, int kN, int l0, int lN, int NMO, int NAEA, int NAEB, MatQk const& Qk, MatRl const& Rl, MatTa && Ta, Container& Vijkl, const RealType cut)
+inline void Qk_x_Rl(WALKER_TYPES walker_type, SPComplexType EJX, TaskGroup_& TG, int k0, int kN, int l0, int lN, int NMO, int NAEA, int NAEB, MatQk const& Qk, MatRl const& Rl, MatTa && Ta, Container& Vijkl, const RealType cut)
 {
   using Type = typename std::decay<MatTa>::type::element;
   assert(Qk.size(0) == Ta.size(0));
@@ -194,6 +194,8 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, i
   if(coreid <nwork)
     std::tie(ka0, kaN) = FairDivideBoundary(coreid,int(Qk.size(0)),nwork);
 
+  Type four(4.0);
+  Type two(2.0);
   if(walker_type == CLOSED) {
 
     // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
@@ -201,8 +203,6 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, i
     ma::product(Qk,Rl(Rl.extension(0),{bl0,blN}),
                    Ta(Ta.extension(0),{bl0,blN}));
     TG.node_barrier();
-    Type four = Type(4.0);
-    Type two = Type(2.0);
     for(int ka=ka0; ka<kaN; ka++) {  // ka = local range index
       int k = ka/NAEA+k0;  // global index
       int a = ka%NAEA;     // global index
@@ -215,7 +215,7 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, i
           Type qlakb = Ta[kb][la];  // Ta(kb,la)
           if(std::abs( EJX*four*qkalb - two*qlakb ) > cut)
             if(a!=b || k<l)
-              emplace(Vijkl,std::forward_as_tuple(a*NMO+k, b*NMO+l, 2.0*(EJX*four*qkalb - two*qlakb)));
+              emplace(Vijkl,std::forward_as_tuple(a*NMO+k, b*NMO+l, two*(EJX*four*qkalb - two*qlakb)));
             else if(k==l)
               emplace(Vijkl,std::forward_as_tuple(a*NMO+k, b*NMO+l, (EJX*four*qkalb - two*qlakb)));
         }
@@ -246,7 +246,7 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, i
               Type qlakb = Ta[kb][la];  // Ta(kb,la)
               if(std::abs( EJX*qkalb - qlakb ) > cut)
                 if(a!=b || k<l)
-                  emplace(Vijkl, std::forward_as_tuple(a*NMO+k, b*NMO+l, 2.0*(EJX*qkalb - qlakb)) );
+                  emplace(Vijkl, std::forward_as_tuple(a*NMO+k, b*NMO+l, two*(EJX*qkalb - qlakb)) );
                 else if(k==l)
                   emplace(Vijkl, std::forward_as_tuple(a*NMO+k, b*NMO+l, EJX*qkalb - qlakb) );
             }
@@ -265,7 +265,7 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, i
               int lb = (l-l0)*NAEB+b;
               Type qkalb = Ta[ka][lb];  // Ta(ka,lb)
               if(std::abs( EJX*qkalb ) > cut)
-                emplace( Vijkl,std::forward_as_tuple(a*NMO+k, NMO*NAEA+b*NMO+l-NMO, 2.0*(EJX*qkalb)));
+                emplace( Vijkl,std::forward_as_tuple(a*NMO+k, NMO*NAEA+b*NMO+l-NMO, two*(EJX*qkalb)));
             }
           }
         }
@@ -291,7 +291,7 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, i
               Type qlakb = Ta[kb][la];  // Ta(kb,la)
               if(std::abs( EJX*qkalb - qlakb ) > cut)
                 if(a!=b || k<l)
-                  emplace(Vijkl, std::forward_as_tuple(NMO*NAEA+a*NMO+k-NMO, NMO*NAEA+b*NMO+l-NMO, 2.0*(EJX*qkalb - qlakb)) );
+                  emplace(Vijkl, std::forward_as_tuple(NMO*NAEA+a*NMO+k-NMO, NMO*NAEA+b*NMO+l-NMO, two*(EJX*qkalb - qlakb)) );
                 else if(k==l)
                   emplace(Vijkl, std::forward_as_tuple(NMO*NAEA+a*NMO+k-NMO, NMO*NAEA+b*NMO+l-NMO, EJX*qkalb - qlakb) );
             }

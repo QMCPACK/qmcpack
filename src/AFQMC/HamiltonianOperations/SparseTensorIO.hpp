@@ -175,7 +175,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
     using matrix_view = typename SpCType_shm_csr_matrix::template matrix_view<int>;
     std::vector<matrix_view> SpvnTview;
 #if MIXED_PRECISION
-    auto PsiTsp(csr::shm::CSRvector_to_single_precision(PsiT));
+    auto PsiTsp(csr::shm::CSRvector_to_single_precision<PsiT_Matrix_t<SPComplexType>>(PsiT));
 #else
     auto& PsiTsp(PsiT);
 #endif

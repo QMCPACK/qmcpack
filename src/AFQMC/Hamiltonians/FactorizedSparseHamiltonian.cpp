@@ -128,7 +128,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
 
 }
 
- SpCType_shm_csr_matrix FactorizedSparseHamiltonian::halfRotatedHijkl(WALKER_TYPES type, bool addCoulomb, TaskGroup_& TGHam, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, RealType const cut){
+ SpCType_shm_csr_matrix FactorizedSparseHamiltonian::halfRotatedHijkl(WALKER_TYPES type, bool addCoulomb, TaskGroup_& TGHam, PsiT_Matrix_t<SPComplexType> *Alpha, PsiT_Matrix_t<SPComplexType> *Beta, RealType const cut){
     check_wavefunction_consistency(type,Alpha,Beta,NMO,NAEA,NAEB);
     using Alloc = shared_allocator<SPComplexType>;
     assert(Alpha!=nullptr);
@@ -189,6 +189,12 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     if(type==COLLINEAR)
       assert(PsiT.size()%2 == 0);
 
+#if MIXED_PRECISION
+    auto PsiTsp(csr::shm::CSRvector_to_single_precision<PsiT_Matrix_t<SPComplexType>>(PsiT));
+#else
+    auto& PsiTsp(PsiT);
+#endif
+
     // hack until parallel hdf is in place
     bool write_hdf = false;
     if(TGwfn.Global().root()) write_hdf = !dump.closed();
@@ -216,14 +222,14 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     // SparseTensor<Integrals_Type, SpvnT_Type>
     if(ndet==1) {
 
-      std::vector<boost::multi::array<SPComplexType,1>> hij;
+      std::vector<boost::multi::array<ComplexType,1>> hij;
       hij.reserve(ndet);
       hij.emplace_back(halfRotatedHij(type,&PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0]))));
       std::vector<SpCType_shm_csr_matrix> SpvnT;
       using matrix_view = typename SpCType_shm_csr_matrix::template matrix_view<int>;
       std::vector<matrix_view> SpvnTview;
       SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
-                              &PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0])),
+                              &PsiTsp[0],((type==COLLINEAR)?(&PsiTsp[1]):(&PsiTsp[0])),
                               Spvn,cutv2));
       SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
 
@@ -259,7 +265,8 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
           writeSparseTensor(dump,type,NMO,NAEA,NAEB,TGprop,TGwfn,H1,
                             V2,Spvn,vn0,E0,global_ncvecs,12);
 
-        return HamiltonianOperations(sparse_ham(TGwfn.TG_local(),type,std::move(H1),std::move(hij),std::move(V2),
+        return HamiltonianOperations(sparse_ham(TGwfn.TG_local(),type,std::move(H1),
+            std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
             std::move(vn0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs));
 
@@ -269,8 +276,8 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
 
         std::vector<SpCType_shm_csr_matrix> V2;
         V2.reserve(ndet);
-        V2.emplace_back(halfRotatedHijkl(type,addCoulomb,TGwfn,&PsiT[0],
-                                           ((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0])),cutv2));
+        V2.emplace_back(halfRotatedHijkl(type,addCoulomb,TGwfn,&PsiTsp[0],
+                                           ((type==COLLINEAR)?(&PsiTsp[1]):(&PsiTsp[0])),cutv2));
         std::vector<SpCType_shm_csr_matrix::template matrix_view<int>> V2view;
         V2view.reserve(ndet);
         V2view.emplace_back(csr::shm::local_balanced_partition(V2[0],TGwfn));
@@ -286,7 +293,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     } else if(addCoulomb) {
       // in multi determinant with addCoulomb, SpvnT is transposed(Spvn)
 
-      std::vector<boost::multi::array<SPComplexType,1>> hij;
+      std::vector<boost::multi::array<ComplexType,1>> hij;
       hij.reserve(ndet);
       int skp=((type==COLLINEAR)?1:0);
       for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1))
@@ -312,7 +319,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
         std::vector<SpCType_shm_csr_matrix> V2;
         V2.reserve(ndet);
         for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1))
-          V2.emplace_back(halfRotatedHijkl(type,addCoulomb,TGwfn,&PsiT[nd],&PsiT[nd+skp],cutv2));
+          V2.emplace_back(halfRotatedHijkl(type,addCoulomb,TGwfn,&PsiTsp[nd],&PsiTsp[nd+skp],cutv2));
         std::vector<SpCType_shm_csr_matrix::template matrix_view<int>> V2view;
         V2view.reserve(ndet);
         for(auto& v:V2)
@@ -329,7 +336,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     } else { // multideterminant for PHMSD
 
       assert(type==CLOSED);
-      std::vector<boost::multi::array<SPComplexType,1>> hij;
+      std::vector<boost::multi::array<ComplexType,1>> hij;
       hij.reserve(ndet);
       for(int n=0, nd=0; n<ndet; ++n, nd++)
          hij.emplace_back(halfRotatedHij(type,&PsiT[nd],&PsiT[nd]));
@@ -339,7 +346,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       SpvnT.reserve(ndet);
       for(int n=0; n<ndet; ++n) {
         SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
-                              &PsiT[n],&PsiT[n],
+                              &PsiTsp[n],&PsiTsp[n],
                               Spvn,cutv2));
         SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[n],TGprop));
       }
@@ -359,7 +366,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
         std::vector<SpCType_shm_csr_matrix> V2;
         V2.reserve(ndet);
         for(int n=0, nd=0; n<ndet; ++n, nd++)
-          V2.emplace_back(halfRotatedHijkl(type,addCoulomb,TGwfn,&PsiT[nd],&PsiT[nd],cutv2));
+          V2.emplace_back(halfRotatedHijkl(type,addCoulomb,TGwfn,&PsiTsp[nd],&PsiTsp[nd],cutv2));
         std::vector<SpCType_shm_csr_matrix::template matrix_view<int>> V2view;
         V2view.reserve(ndet);
         for(auto& v:V2)
