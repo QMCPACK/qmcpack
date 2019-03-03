@@ -789,7 +789,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         spo->occup(i,nq++) = k;
       }
     }
-    DiracDeterminant* adet;
+    DiracDeterminantBase* adet;
     if(UseBackflow)
     {
       adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetPtr) spo,0,0);
@@ -814,7 +814,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         spo->occup(i,nq++) = k;
       }
     }
-    DiracDeterminant* adet;
+    DiracDeterminantBase* adet;
     if(UseBackflow)
     {
       adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetPtr) spo,0,0);

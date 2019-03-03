@@ -83,7 +83,6 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     cur = cur->next;
   }
 #endif
-  typedef DiracDeterminant Det_t;
   typedef SlaterDet SlaterDeterminant_t;
   HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
   HEGGrid<RealType,OHMMS_DIM> egGrid2(targetPtcl.Lattice);
@@ -147,10 +146,10 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   if(ndn>0)
     sdet->add(psid,"d");
   {
-    Det_t *updet, *downdet;
 #if QMC_BUILD_LEVEL>2
     if(UseBackflow)
     {
+      DiracDeterminantWithBackflow *updet, *downdet;
       app_log() <<"Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
       //create up determinant
       updet = new DiracDeterminantWithBackflow(targetPtcl,psiu,BFTrans,0);
@@ -176,13 +175,14 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     else
 #endif
     {
+      DiracDeterminant *updet, *downdet;
       //create up determinant
-      updet = new Det_t(psiu);
+      updet = new DiracDeterminant(psiu);
       updet->set(0,nup);
       if(ndn>0)
       {
         //create down determinant
-        downdet = new Det_t(psid);
+        downdet = new DiracDeterminant(psid);
         downdet->set(nup,ndn);
       }
       sdet->add(updet,0);

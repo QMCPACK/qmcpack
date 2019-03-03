@@ -75,14 +75,6 @@ public:
                                    std::vector<RealType>& dlogpsi,
                                    std::vector<RealType>& dhpsioverpsi);
 
-  // used by DiracDeterminantWithBackflow
-  virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& active,
-                                   int offset,
-                                   Matrix<RealType>& dlogpsi,
-                                   Array<GradType,3>& dG,
-                                   Matrix<RealType>& dL) {}
-
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);
 
