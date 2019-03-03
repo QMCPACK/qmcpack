@@ -384,6 +384,8 @@ T* copy(cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, T* B) {
 }
 
 /**************** copy_n_cast *****************/
+// NOTE: Eliminate this routine, merge with copy_n and dispatch to kernel call
+// if types of pointers are not the same (without cv qualifiers)!!!
 template<typename T, typename Q, typename Size>
 cuda_gpu_ptr<T> copy_n_cast(cuda_gpu_ptr<T> const A, Size n, cuda_gpu_ptr<Q> B) {
   kernels::copy_n_cast(to_address(A),n,to_address(B));

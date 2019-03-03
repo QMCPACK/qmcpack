@@ -153,7 +153,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   dump.pop();
 
   // rotated 1 body hamiltonians
-  std::vector<boost::multi::array<SpT1,1>> hij;
+  std::vector<boost::multi::array<T1,1>> hij;
   hij.reserve(ndet);
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
@@ -174,12 +174,17 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
     std::vector<SpCType_shm_csr_matrix> SpvnT;
     using matrix_view = typename SpCType_shm_csr_matrix::template matrix_view<int>;
     std::vector<matrix_view> SpvnTview;
+#if MIXED_PRECISION
+    auto PsiTsp(csr::shm::CSRvector_to_single_precision(PsiT));
+#else
+    auto& PsiTsp(PsiT);
+#endif
     SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
-                              &PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0])),
+                              &PsiTsp[0],((type==COLLINEAR)?(&PsiTsp[1]):(&PsiTsp[0])),
                               Spvn,cutv2));
     SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
 
-    return SparseTensor<T1,T2>(type,std::move(H1),std::move(hij),std::move(V2),
+    return SparseTensor<T1,T2>(TGwfn.TG_local(),type,std::move(H1),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
             std::move(v0),std::move(SpvnT),std::move(SpvnTview),E0,Spvn_ncols);
   } else {
@@ -192,7 +197,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
     SpvnT.emplace_back(csr::shm::transpose(Spvn));
     SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
 
-    return SparseTensor<T1,T2>(type,std::move(H1),std::move(hij),std::move(V2),
+    return SparseTensor<T1,T2>(TGwfn.TG_local(),type,std::move(H1),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
             std::move(v0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs);
   }

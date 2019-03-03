@@ -190,14 +190,24 @@ class SparseTensor
       int getKl = Kl!=nullptr;
       if(E.size(0) != nwalk || E.size(1) < 3)
         APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix dimensions \n");
-
+      for(int n=0; n<nwalk; n++)
+        std::fill_n(E[n].origin(),3,ComplexType(0.));
       if(addEJ and getKl)
         assert(Kl->size(0) == nwalk && Kl->size(1) == SpvnT[k].size(0));
       if(addEJ and getKr)
         assert(Kr->size(0) == nwalk && Kr->size(1) == SpvnT[k].size(0));
 
-      for(int n=0; n<nwalk; n++)
-        std::fill_n(E[n].origin(),3,ComplexType(0.));
+#if MIXED_PRECISION
+      size_t mem_needs = Gc.num_elements();
+      set_buffer(mem_needs);
+      boost::multi::array_ref<SPComplexType,2> Gsp(to_address(SM_TMats.origin()), Gc.extensions());
+      size_t i0, iN;
+      std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(Gc.num_elements()),size_t(comm->size()));
+      copy_n_cast(to_address(Gc.origin())+i0,iN-i0,to_address(Gsp.origin())+i0);
+      comm->barrier();
+#else
+      auto& Gsp(Gc);  
+#endif
 
       // one-body contribution
       if(addH1) {
@@ -209,7 +219,7 @@ class SparseTensor
 
       // move calculation of H1 here
       if(addEXX) {
-        shm::calculate_energy(std::forward<Mat>(E),Gc,buff,Vakbl_view[k]);
+        shm::calculate_energy(std::forward<Mat>(E),Gsp,buff,Vakbl_view[k]);
       }
 
       if(separateEJ && addEJ) {
@@ -219,28 +229,30 @@ class SparseTensor
         assert(SpvnT_view[k].size(1) == Gc.size(0));
         RealType scl = (walker_type==CLOSED?4.0:1.0);
         // SpvnT*G
-        boost::multi::array_ref<T2,2> v_(Gcloc.origin()+
+        boost::multi::array_ref<SpT2,2> v_(Gcloc.origin()+
                                             SpvnT_view[k].local_origin()[0]*Gc.size(1),
                                         {long(SpvnT_view[k].size(0)),long(Gc.size(1))});
-        ma::product(SpvnT_view[k], Gc, v_);
+        ma::product(SpvnT_view[k], Gsp, v_);
         if(getKl || getKr) {
           for(int wi=0; wi<Gc.size(1); wi++) {
             auto _v_ = v_(v_.extension(0),wi); 
             if(getKl) {
               auto Kli = (*Kl)[wi];
               for(int ki=0, qi = SpvnT_view[k].local_origin()[0]; ki<_v_.size(); ki++, qi++)
-                Kli[qi] = _v_[ki];
+                Kli[qi] = static_cast<ComplexType>(_v_[ki]);
             }
             if(getKr) {
               auto Kri = (*Kr)[wi];
               for(int ki=0, qi = SpvnT_view[k].local_origin()[0]; ki<_v_.size(); ki++, qi++)
-                Kri[qi] = _v_[ki];
+                Kri[qi] = static_cast<ComplexType>(_v_[ki]);
             }
           }
         }
         for(int wi=0; wi<Gc.size(1); wi++)
-          E[wi][2] = 0.5*scl*ma::dot(v_(v_.extension(0),wi),v_(v_.extension(0),wi));
+          E[wi][2] = 0.5*scl*static_cast<ComplexType>(ma::dot(v_(v_.extension(0),wi),v_(v_.extension(0),wi)));
       }
+#if MIXED_PRECISION
+#endif
 
     }
 

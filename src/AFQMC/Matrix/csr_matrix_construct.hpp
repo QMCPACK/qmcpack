@@ -559,6 +559,18 @@ typename CSR::template matrix_view<integer> local_balanced_partition(CSR& M, tas
   }
 } 
 
+/*
+ * Constructs a vector of csr_matrix as a copy from a given csr_matrix but casted to single precision
+ */ 
+template<class CSRsp, class CSR>
+std::vector<CSRsp> CSRvector_to_single_precision(CSR const& A) 
+{
+  using Alloc = typename CSRsp::alloc_type;
+  std::vector<CSRsp> B;
+  B.reserve(A.size());
+  for(auto& v: A)
+    B.emplace_back( CSRsp(v,Alloc{v.getAlloc()}) );
+  return B;
 }
 
 }

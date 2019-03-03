@@ -735,7 +735,7 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                 IsRoot r(base::Valloc_);
                 if(r.root()){
                         using std::copy_n;
-                        copy_n(to_address(csr.non_zero_values_data()),base::capacity_,base::data_);
+                        copy_n_cast(to_address(csr.non_zero_values_data()),base::capacity_,base::data_);
                         copy_n(to_address(csr.non_zero_indices2_data()),base::capacity_,base::jdata_);
                         copy_n(to_address(csr.pointers_begin()),base::size1_+1,base::pointers_begin_);
                         copy_n(to_address(csr.pointers_end()),base::size1_,base::pointers_end_);

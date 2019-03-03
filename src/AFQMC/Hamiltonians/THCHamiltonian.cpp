@@ -321,7 +321,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   ValueType E0 = OneBodyHamiltonian::NuclearCoulombEnergy +
                  OneBodyHamiltonian::FrozenCoreEnergy;
 
-  std::vector<boost::multi::array<SPComplexType,1>> hij;
+  std::vector<boost::multi::array<ComplexType,1>> hij;
   hij.reserve(ndet);
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {

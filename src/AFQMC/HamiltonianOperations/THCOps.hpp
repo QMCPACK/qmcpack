@@ -45,6 +45,7 @@ class THCOps
   using SpC = ComplexType;
 #endif
 
+  using TVector = boost::multi::array<T,1>;
   using SpTVector = boost::multi::array<SpT,1>;
   using CVector = boost::multi::array<ComplexType,1>;
   using CMatrix = boost::multi::array<ComplexType,2>;
@@ -63,7 +64,7 @@ class THCOps
            int nmo_, int naoa_, int naob_,
            WALKER_TYPES type,
            CMatrix&& hij_,
-           std::vector<SpTVector>&& h1,
+           std::vector<TVector>&& h1,
            shmCMatrix&& rotmuv_,
            shmCMatrix&& rotpiu_,
            std::vector<shmCMatrix>&& rotpau_,
@@ -556,9 +557,6 @@ std::cout<<"\n";
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vHS(MatA & X, MatB&& v, double a=1., double c=0.) {
-//Timer.reset("T0");
-//Timer.reset("T1");
-//Timer.reset("T2");
       int nwalk = X.size(1);
 #if defined(QMC_COMPLEX)
       int nchol = 2*Luv.size(1);
@@ -587,7 +585,6 @@ std::cout<<"\n";
       set_shm_buffer(memory_needs);
       boost::multi::array_ref<ComplexType,2> Tuw(to_address(SM_TMats.origin()),{nu,nwalk});
       // O[nwalk * nmu * nmu]
-//Timer.start("T0");
 #if defined(QMC_COMPLEX)
       // reinterpret as RealType matrices with 2x the columns
       boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(Luv.origin()),
@@ -603,27 +600,22 @@ std::cout<<"\n";
                   Tuw.sliced(u0,uN));
 #endif
       comm->barrier();
-//Timer.stop("T0");
 #if defined(LOW_MEMORY)
       boost::multi::array_ref<ComplexType,2> Qiu(to_address(SM_TMats.origin())+nwalk*nu,{nmo_,nu});
       for(int wi=0; wi<nwalk; wi++) {
         // Qiu[i][u] = T[u][wi] * conj(Piu[i][u])
         // v[wi][ik] = sum_u Qiu[i][u] * Piu[k][u]
         // O[nmo * nmu]
-//Timer.start("T1");
         for(int i=k0; i<kN; i++) {
           auto p_ = Piu.get()[i].origin();
           for(int u=0; u<nu; u++, ++p_)
             Qiu[i][u] = Tuw[u][wi]*std::conj(*p_);
         }
-//Timer.stop("T1");
-//Timer.start("T2");
         boost::multi::array_ref<ComplexType,2> v_(to_address(v[wi].origin()),{nmo_,nmo_});
         // this can benefit significantly from 2-D partition of work
         // O[nmo * nmo * nmu]
         ma::product(a,Qiu.sliced(k0,kN),T(Piu.get()),
                     c,v_.sliced(k0,kN));
-//Timer.stop("T2");
       }
 #else
       boost::multi::array_ref<ComplexType,2> Qiu(to_address(SM_TMats.origin())+nwalk*nu,{nwalk*nmo_,nu});
@@ -631,28 +623,18 @@ std::cout<<"\n";
       // Qiu[i][u] = T[u][wi] * conj(Piu[i][u])
       // v[wi][ik] = sum_u Qiu[i][u] * Piu[k][u]
       // O[nmo * nmu]
-//Timer.start("T1");
       for(int wi=0; wi<nwalk; wi++)
         for(int i=k0; i<kN; i++) {
           auto p_ = Piu.get()[i].origin();
           for(int u=0; u<nu; u++, ++p_)
             Qwiu[wi][i][u] = Tuw[u][wi]*conj(*p_);
         }
-//Timer.stop("T1");
-//Timer.start("T2");
       boost::multi::array_ref<ComplexType,2> v_(to_address(v.origin()),{nwalk*nmo_,nmo_});
       // this can benefit significantly from 2-D partition of work
       // O[nmo * nmo * nmu]
       ma::product(a,Qiu.sliced(wk0,wkN),T(Piu.get()),
                   c,v_.sliced(wk0,wkN));
-//Timer.stop("T2");
 #endif
-/*
-app_log()
-<<"Tuw:  " <<Timer.total("T0") <<"\n"
-<<"Qiu:  " <<Timer.total("T1") <<"\n"
-<<"vHS:  " <<Timer.total("T2") <<std::endl;
-*/
       comm->barrier();
     }
 
@@ -969,7 +951,7 @@ app_log()
     CMatrix hij;
 
     // (potentially half rotated) one body hamiltonian
-    std::vector<SpTVector> haj;
+    std::vector<TVector> haj;
 
     /************************************************/
     // Used in the calculation of the energy
@@ -1001,7 +983,8 @@ app_log()
     ValueType E0;
 
     // shared memory for intermediates
-    shmSpMatrix SM_TMats;
+    //shmSpMatrix SM_TMats;
+    boost::multi::array<ComplexType,2,shared_allocator<ComplexType>> SM_TMats;
 
     boost::multi::array<ComplexType,2> Rbk;
 
