@@ -20,6 +20,7 @@
 #include "AFQMC/Matrix/csr_hdf5_readers.hpp"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
+#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Wavefunctions/NOMSD.hpp"
 #include "AFQMC/Wavefunctions/PHMSD.hpp"
 #include "AFQMC/HamiltonianOperations/HamOpsIO.hpp"
@@ -62,6 +63,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   int ndets_to_read(-1); // if not set, read the entire file
   int initial_configuration=0;  
   double randomize_guess(0.0);
+  int nbatch = ((number_of_devices()>0)?-1:0);
   std::string starting_det("");
   std::string str("false");
   std::string filename("");
@@ -75,6 +77,8 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   m_param.add(initialDet,"initialDetType","int");
   m_param.add(starting_det,"starting_det","std:string");
   m_param.add(ndets_to_read,"ndet","int");
+  if(TGwfn.TG_local().size() == 1)
+    m_param.add(nbatch,"nbatch","int");
   m_param.add(initial_configuration,"initial_configuration","int");
   m_param.add(randomize_guess,"randomize_guess","double");
   m_param.put(cur);
@@ -94,7 +98,12 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   }
   std::string wfn_type = getWfnType(in);
 
-  using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+  if(omp_get_num_threads() > 1 && (nbatch == 0)) {
+    app_log()<<" WARNING!!!: Found OMP_NUM_THREADS > 1 with nbatch=0.\n"
+             <<"             This will lead to low performance. Set nbatch. \n";
+  }
+
+  using Alloc = shared_allocator<ComplexType>;
   if(type=="msd" || type=="nomsd") {
 
     app_log()<<" Wavefunction type: NOMSD\n";
@@ -268,7 +277,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         auto p0 = pbegin[0]; 
         auto v0 = PsiT[iC].non_zero_values_data();  
         auto c0 = PsiT[iC].non_zero_indices2_data();  
-        for(int i=0; i<PsiT[iC].shape()[0]; i++) 
+        for(int i=0; i<PsiT[iC].size(0); i++) 
           for(int ip=pbegin[i]; ip<pend[i]; ip++) { 
             ((newg.first)->second)[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
           }
@@ -279,7 +288,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         auto p0 = pbegin[0];                
         auto v0 = PsiT[iC+1].non_zero_values_data();
         auto c0 = PsiT[iC+1].non_zero_indices2_data();
-        for(int i=0; i<PsiT[iC+1].shape()[0]; i++) 
+        for(int i=0; i<PsiT[iC+1].size(0); i++) 
           for(int ip=pbegin[i]; ip<pend[i]; ip++) { 
             ((newg.first)->second)[1][c0[ip-p0]][i] = conj(v0[ip-p0]);  
           }
@@ -287,9 +296,23 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n"); 
 
-    //return Wavefunction{}; 
-    return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
-                        walker_type,NCE,targetNW)); 
+    if(TGwfn.TG_local().size() > 1) {
+      SlaterDetOperations SDetOp( SlaterDetOperations_shared<ComplexType>(
+                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+                        std::move(ci),std::move(PsiT),
+                        walker_type,0,NCE,targetNW)); 
+    } else 
+    {
+      SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
+                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+                        std::move(ci),std::move(PsiT),
+                        walker_type,nbatch,NCE,targetNW));
+    }
+
   } else if(type == "phmsd") {
 
     app_log()<<" Wavefunction type: PHMSD\n";
@@ -526,10 +549,10 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
 
     // setup configuration coupligs
     using index_aos = ma::sparse::array_of_sequences<int,int,
-                                                   boost::mpi3::intranode::allocator<int>,
-                                                   boost::mpi3::intranode::is_root>;
-//    std::allocator<ComplexType> alloc_{}; //boost::mpi3::intranode::allocator<ComplexType>;
-    boost::mpi3::intranode::allocator<int> alloc_{TGwfn.Node()};
+                                                   shared_allocator<int>,
+                                                   ma::sparse::is_root>;
+//    std::allocator<ComplexType> alloc_{}; //shared_allocator<ComplexType>;
+    shared_allocator<int> alloc_{TGwfn.Node()};
     
     // alpha
     std::vector<int> counts_alpha(abij.number_of_unique_excitations()[0]);
@@ -598,6 +621,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   RealType cutv2(0.);
   int initialDet(1);
   int ndets_to_read(-1); // if not set, read the entire file
+  int nbatch = ((number_of_devices()>0)?-1:0);
   std::string starting_det("");
   std::string str("false");
   std::string filename("");
@@ -610,7 +634,14 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   m_param.add(initialDet,"initialDetType","int");
   m_param.add(starting_det,"starting_det","std:string");
   m_param.add(ndets_to_read,"ndet","int");
+  if(TGwfn.TG_local().size() == 1)
+    m_param.add(nbatch,"nbatch","int");
   m_param.put(cur);
+
+  if(omp_get_num_threads() > 1 && (nbatch == 0)) {
+    app_log()<<" WARNING!!!: Found OMP_NUM_THREADS > 1 with nbatch=0.\n"
+             <<"             This will lead to low performance. Set nbatch. \n";
+  }
 
   AFQMCInfo& AFinfo = InfoMap[info];
   ValueType NCE;
@@ -623,7 +654,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   std::vector<PsiT_Matrix> PsiT;
   std::vector<int> excitations;
 
-  using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+  using Alloc = shared_allocator<ComplexType>;
   // HOps, ci, PsiT, NCE
   hdf_archive dump(TGwfn.Global());
   if(!dump.open(filename,H5F_ACC_RDONLY)) {
@@ -642,7 +673,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     // check for consistency in parameters
   std::vector<int> dims(5); //{NMO,NAEA,NAEB,walker_type,ndets_to_read};
   if(TGwfn.Global().root()) {
-    if(!dump.read(dims,"dims")) {
+    if(!dump.readEntry(dims,"dims")) {
       app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading dims. \n";
       APP_ABORT("");
     }
@@ -667,13 +698,13 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
       app_error()<<" Error in WavefunctionFactory::fromHDF5(): Inconsistent  ndets_to_read. \n";
       APP_ABORT("");
     }
-    if(!dump.read(ci,"CICOEFFICIENTS")) {
+    if(!dump.readEntry(ci,"CICOEFFICIENTS")) {
       app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading CICOEFFICIENTS. \n";
       APP_ABORT("");
     }
     ci.resize(ndets_to_read);
     std::vector<ValueType> dum;  
-    if(!dump.read(dum,"NCE")) {
+    if(!dump.readEntry(dum,"NCE")) {
       app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading NCE. \n";
       APP_ABORT("");
     }
@@ -689,7 +720,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
     int nd = (walker_type==COLLINEAR?2*ndets_to_read:ndets_to_read);
     PsiT.reserve(nd); 
-    using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using Alloc = shared_allocator<ComplexType>;
     for(int i=0; i<nd; ++i) {
       if(!dump.push(std::string("PsiT_")+std::to_string(i),false)) {
         app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
@@ -714,7 +745,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
         auto p0 = pbegin[0];
         auto v0 = PsiT[0].non_zero_values_data();
         auto c0 = PsiT[0].non_zero_indices2_data();
-        for(int i=0; i<PsiT[0].shape()[0]; i++)
+        for(int i=0; i<PsiT[0].size(0); i++)
           for(int ip=pbegin[i]; ip<pend[i]; ip++)
             ((newg.first)->second)[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
       }
@@ -724,7 +755,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
         auto p0 = pbegin[0];
         auto v0 = PsiT[1].non_zero_values_data();
         auto c0 = PsiT[1].non_zero_indices2_data();
-        for(int i=0; i<PsiT[1].shape()[0]; i++)
+        for(int i=0; i<PsiT[1].size(0); i++)
           for(int ip=pbegin[i]; ip<pend[i]; ip++)
             ((newg.first)->second)[1][c0[ip-p0]][i] = conj(v0[ip-p0]);
       }
@@ -733,13 +764,29 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
     HamiltonianOperations HOps(loadHamOps(dump,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
 
-    return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
-                        walker_type,NCE,targetNW));
+    if(TGwfn.TG_local().size() > 1) {
+      SlaterDetOperations SDetOp( SlaterDetOperations_shared<ComplexType>(
+                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+                        std::move(ci),std::move(PsiT),
+                        walker_type,0,NCE,targetNW));
+    } else
+    {
+      SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
+                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+                        std::move(ci),std::move(PsiT),
+                        walker_type,nbatch,NCE,targetNW));
+    }
+
+
   } else if(type == "phmsd") {
 /*
     int nd = (walker_type==COLLINEAR?2*ndets_to_read:ndets_to_read);
     PsiT.reserve(nd); 
-    using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using Alloc = shared_allocator<ComplexType>;
     for(int i=0; i<nd; ++i) {
       if(!dump.push(std::string("PsiT_")+std::to_string(i),false)) {
         app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
@@ -764,7 +811,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
         auto p0 = pbegin[0];
         auto v0 = PsiT[0].non_zero_values_data();
         auto c0 = PsiT[0].non_zero_indices2_data();
-        for(int i=0; i<PsiT[0].shape()[0]; i++)
+        for(int i=0; i<PsiT[0].size(0); i++)
           for(int ip=pbegin[i]; ip<pend[i]; ip++)
             ((newg.first)->second)[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
       }
@@ -774,7 +821,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
         auto p0 = pbegin[0];
         auto v0 = PsiT[1].non_zero_values_data();
         auto c0 = PsiT[1].non_zero_indices2_data();
-        for(int i=0; i<PsiT[1].shape()[0]; i++)
+        for(int i=0; i<PsiT[1].size(0); i++)
           for(int ip=pbegin[i]; ip<pend[i]; ip++)
             ((newg.first)->second)[1][c0[ip-p0]][i] = conj(v0[ip-p0]);
       }

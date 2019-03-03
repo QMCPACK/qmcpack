@@ -309,6 +309,16 @@ RadialWF::Solve(double tolerance)
       Energy = Eold;
       done = true;
     }
+    else
+    {
+      if(std::isnan(Etrial))
+      {
+        std::cerr << "NaN detected!" << std::endl;
+        std::cerr << "NumNodes = " << NumNodes << " TotalNodes = " << TotalNodes << std::endl;
+        std::cerr << "Etrial = " << Etrial << " Eold = " << Eold << std::endl;
+        exit(1);
+      }
+    }
     Eold = Etrial;       
   }
   IntegrateInOut(tindex);

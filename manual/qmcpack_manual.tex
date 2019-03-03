@@ -1,4 +1,4 @@
-\documentclass[11pt,usletter]{report}
+\documentclass[11pt,letterpaper]{report}
 \usepackage{qmcpack_manual}
 \usepackage{bibtopic}
 \bibliographystyle{ieeetr}
@@ -9,11 +9,10 @@
 \usepackage{algorithm}
 \usepackage{makeidx}
 \usepackage{fancyhdr}
-\usepackage{hyperref} %for urls
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref} %for urls
 \usepackage{tabularx}
 \usepackage{placeins}
-% environment for shaded verbatim
-\usepackage{verbatim}
 \usepackage{caption}
 \usepackage{graphicx}
 
@@ -26,88 +25,7 @@
 %     -verbatim suffers from this also
 
 \usepackage{upquote}  % render ' properly
-\usepackage{listings}
-\usepackage{xcolor}
-
-\lstloadlanguages{C++,XML,Python,bash}
-
-\lstdefinestyle{C++}{language=C++,
-  basicstyle=\ttfamily\footnotesize,
-  keywordstyle=\color{blue}\ttfamily,
-  stringstyle=\color{red}\ttfamily,
-  commentstyle=\color{gray}\ttfamily,
-  morecomment=[l][\color{magenta}]{\#},
-  frame=tlrb
-  frameround=ftft
-}
-
-\lstdefinestyle{XML}{language=xml, 
-  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
-  keywordstyle=\color{blue}\bfseries,
-  backgroundcolor=\color{verbgray},
-  frame=tlrb,
-  frameround=ftft,
-  breaklines=true,
-  escapeinside={<:}{:>},
-  columns=fullflexible,   % copy/paste from pdf w/o added spaces
-  keepspaces=true,        % but do keep the spaces that are already there
-  showstringspaces=false, % avoid showing underbrackets in quoted text
-}
-
-\lstdefinestyle{SHELL}{language=bash, 
-  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
-  keywordstyle=\color{blue}\bfseries,
-  backgroundcolor=\color{verbgray},
-  breaklines=true,
-  columns=fullflexible,   % copy/paste from pdf w/o added spaces
-  keepspaces=true,        % but do keep the spaces that are already there
-  showstringspaces=false, % avoid showing underbrackets in quoted text
-}
-
-\newcommand{\inlinecode}[1]{\lstinline|#1|}
-
-%% \ifxetex
-%% \usepackage{framed}
-%% \usepackage{xcolor}
-%% \pagecolor{white}
-%% \definecolor{shadecolor}{rgb}{.9, .9, .9}
-
-
-%% \newenvironment{shade}%
-%%                {\snugshade\verbatim}%
-%%                {\endverbatim\endsnugshade}
-
-%% %% \newenvironment{shade}{
-%% %%   \begin{snugshade}[\hsize=\textwidth,\FrameRestore]%
-%% %% \small%
-%% %% }{%
-%% %%   \end{snugshade}&
-%% %%   }
-
-%% \else
-
-\usepackage{xcolor}
-\definecolor{verbgray}{gray}{0.9}
-
-\lstnewenvironment{shade}{%
-  \lstset{backgroundcolor=\color{verbgray},
-  frame=single,
-  framerule=0pt,
-  basicstyle=\ttfamily,
-  columns=fullflexible}}{}
-
-%% Default verbatim uses a rather large
-\makeatletter
-\newcommand{\verbatimfont}[1]{\renewcommand{\verbatim@font}{\ttfamily#1}}
-\makeatother
-
-
-%% \newenvironment{shade}
-%%    {\HCode{<div class='code'>}\verbatim}
-%%    {\endverbatim\HCode{</div>}}
-
-%% \fi
-
+\usepackage{qmcpack_listings}
 
 % set margins for whole document, lots of wasted space at top and bottom originally
 \usepackage[left=1.0in,right=1.0in,top=1.0in,bottom=1.0in]{geometry}
@@ -166,6 +84,26 @@
 \newcommand{\idop}{\hat{\mathbb{1}}}
 \newcommand{\bs}{\boldsymbol}
 \newcommand{\tr}{\text{tr}} % trace
+
+% urls are were too large
+% hyperref gives us an easy way to control that
+\renewcommand{\UrlFont}{\ttfamily\small}
+
+% latex itself doesn't give us an easy way to deal with \texttt's font size
+% so we need to define this command
+\usepackage{letltxmacro}
+% https://tex.stackexchange.com/q/88001/5764
+\LetLtxMacro\oldttfamily\ttfamily
+\DeclareRobustCommand{\ttfamily}{\oldttfamily\csname ttsize\endcsname}
+\newcommand{\setttsize}[1]{\def\ttsize{#1}}%
+
+% while \texttt use should be sparing (see contributing.tex) its necessary for the
+% QMCPACK input XML spec tables, but those are also nearly too big for the page
+\setttsize{\footnotesize}
+
+% We have a huge number of overfull boxes, this adds another pass to
+% typesetting a paragraph properly
+\setlength{\emergencystretch}{3em}
 
 
 \begin{document}

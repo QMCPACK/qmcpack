@@ -41,10 +41,10 @@ template<class MatQk,
 inline void count_Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, std::vector<std::size_t>& sz, int k0, int kN, int l0, int lN, int NMO, int NAEA, int NAEB, MatQk const& Qk, MatRl const& Rl, MatTa && Ta, const RealType cut)
 {
   using Type = typename std::decay<MatTa>::type::element;
-  assert(Qk.shape()[0] == Ta.shape()[0]);
-  assert(Qk.shape()[1] == Rl.shape()[0]);
-  assert(Rl.shape()[1] == Rl.shape()[1]);
-  int nvec = Qk.shape()[1];
+  assert(Qk.size(0) == Ta.size(0));
+  assert(Qk.size(1) == Rl.size(0));
+  assert(Rl.size(1) == Rl.size(1));
+  int nvec = Qk.size(1);
   int nk = kN-k0;
   int norb = lN-l0;
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
@@ -54,9 +54,9 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_&
     amIAlpha = false;
 
   int bl0=-1, blN=-1;
-  int nwork = std::min(int(Rl.shape()[1]),ncores);
+  int nwork = std::min(int(Rl.size(1)),ncores);
   if(coreid <nwork)
-    std::tie(bl0, blN) = FairDivideBoundary(coreid,int(Rl.shape()[1]),nwork);
+    std::tie(bl0, blN) = FairDivideBoundary(coreid,int(Rl.size(1)),nwork);
 
   if(walker_type == CLOSED) {
 
@@ -173,10 +173,10 @@ template<class MatQk,
 inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, int k0, int kN, int l0, int lN, int NMO, int NAEA, int NAEB, MatQk const& Qk, MatRl const& Rl, MatTa && Ta, Container& Vijkl, const RealType cut)
 {
   using Type = typename std::decay<MatTa>::type::element;
-  assert(Qk.shape()[0] == Ta.shape()[0]);
-  assert(Qk.shape()[1] == Rl.shape()[0]);
-  assert(Rl.shape()[1] == Rl.shape()[1]);
-  int nvec = Qk.shape()[1];
+  assert(Qk.size(0) == Ta.size(0));
+  assert(Qk.size(1) == Rl.size(0));
+  assert(Rl.size(1) == Rl.size(1));
+  int nvec = Qk.size(1);
   int nk = kN-k0;
   int norb = lN-l0;
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
@@ -187,12 +187,12 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type, ComplexType EJX, TaskGroup_& TG, i
 
   int bl0=-1, blN=-1;
   int ka0=-1, kaN=-1;
-  int nwork = std::min(int(Rl.shape()[1]),ncores);
+  int nwork = std::min(int(Rl.size(1)),ncores);
   if(coreid <nwork)
-    std::tie(bl0, blN) = FairDivideBoundary(coreid,int(Rl.shape()[1]),nwork);
-  nwork = std::min(int(Qk.shape()[0]),ncores);
+    std::tie(bl0, blN) = FairDivideBoundary(coreid,int(Rl.size(1)),nwork);
+  nwork = std::min(int(Qk.size(0)),ncores);
   if(coreid <nwork)
-    std::tie(ka0, kaN) = FairDivideBoundary(coreid,int(Qk.shape()[0]),nwork);
+    std::tie(ka0, kaN) = FairDivideBoundary(coreid,int(Qk.size(0)),nwork);
 
   if(walker_type == CLOSED) {
 

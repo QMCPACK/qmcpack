@@ -162,6 +162,7 @@ public:
   using WaveFunctionComponent::calcRatio;
   using WaveFunctionComponent::addGradient;
   using WaveFunctionComponent::calcGradient;
+  using WaveFunctionComponent::det_lookahead;
   using WaveFunctionComponent::update;
   using WaveFunctionComponent::gradLapl;
   using WaveFunctionComponent::NLratios;

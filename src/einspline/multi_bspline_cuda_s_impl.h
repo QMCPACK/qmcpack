@@ -14,6 +14,7 @@
 #define MULTI_BSPLINE_CUDA_S_IMPL_H
 
 //#include <stdio.h>
+#include <cassert>
 #include "multi_bspline.h"
 #include "multi_bspline_create_cuda.h"
 
@@ -76,6 +77,7 @@ eval_multi_multi_UBspline_1d_s_cuda (const multi_UBspline_1d_s_cuda *spline,
 {
   dim3 dimBlock(SPLINE_BLOCK_SIZE);
   dim3 dimGrid(num);
+  //This would be a good place to assert on bad pos_d >= grid.end
   eval_multi_multi_UBspline_1d_s_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, spline->coefs, vals_d, spline->dim, spline->stride, spline->num_splines);
   cudaDeviceSynchronize();

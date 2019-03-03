@@ -8,7 +8,7 @@ When an \verb|<estimator type="est_type" name="est_name" other_stuff="value"/>| 
 
 \subsubsection{Cloning}
 When \verb|OpenMP| threads are spawned, the estimator will be cloned by the \verb|CloneManager|, which is a parent class of many QMC drivers. 
-\begin{lstlisting}
+\begin{lstlisting}[style=C++]
 // In CloneManager.cpp
 #pragma omp parallel for shared(w,psi,ham)
 for(int ip=1; ip<NumThreads; ++ip)
@@ -19,7 +19,7 @@ for(int ip=1; ip<NumThreads; ++ip)
 }
 \end{lstlisting}
 In the above snippet, \verb|ham| is the reference to the estimator on the master thread. If the implemented estimator does not allocate memory for any array, then the default constructor should suffice for the \verb|makeClone| method.
-\begin{lstlisting}
+\begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.cpp
 QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
@@ -27,7 +27,7 @@ QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFu
 }
 \end{lstlisting}
 If memory is allocated during estimator construction (usually when parsing the xml node in the \verb|put| method), then the \verb|makeClone| method should perform the same initialization on each thread.
-\begin{lstlisting}
+\begin{lstlisting}[style=C++]
 QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(qp,spset,tgroup,sgroup);
@@ -352,7 +352,7 @@ void SpeciesKineticEnergy::addObservables(PropertySetType& plist, BufferType& co
 }
 \end{lstlisting}
 where ``num\_species'' and ``species\_name'' can be local variables initialized in the constructor. We should also initialize some local arrays to hold temporary data
-\begin{lstlisting}
+\begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.h
 private:
   int num_species;
@@ -376,7 +376,7 @@ SpeciesKineticEnergy::SpeciesKineticEnergy(ParticleSet& P):tpset(P)
   }
 }
 \end{lstlisting}
-Next, we need to override the default behavior of setObservables() to transfer multiple values to the property list kept by the main particle set, which eventually go into the scalar.dat file
+Next, we need to override the default behavior of \icode{setObservables()} to transfer multiple values to the property list kept by the main particle set, which eventually go into the scalar.dat file
 \begin{lstlisting}[style=C++]
 // In SpeciesKineticEnergy.cpp
 void SpeciesKineticEnergy::setObservables(PropertySetType& plist)

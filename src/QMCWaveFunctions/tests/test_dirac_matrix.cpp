@@ -121,13 +121,13 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   dm.invert(a,false);
 
   // new row
-  Vector<ValueType> v;
-  v.resize(3);
+  Vector<ValueType> v(3), invRow(3);
   v[0] = 1.9;
   v[1] = 2.0;
   v[2] = 3.1;
 
-  ValueType det_ratio1 = updateEng.ratio(a,0,v);
+  updateEng.getInvRow(a,0,invRow);
+  ValueType det_ratio1 = simd::dot(v.data(), invRow.data(), invRow.size());
 
   ValueType det_ratio = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));

@@ -16,11 +16,12 @@ namespace mpi3{
 namespace detail{
 
 struct unspecified{};
+struct output_iterator_tag{using base = unspecified;};
 struct input_iterator_tag{using base = unspecified;};
 struct forward_iterator_tag : input_iterator_tag{using base = input_iterator_tag;};
 struct random_access_iterator_tag : forward_iterator_tag{
 	using base = forward_iterator_tag;
-}; 
+};
 struct contiguous_iterator_tag : random_access_iterator_tag{
 	using base = random_access_iterator_tag;
 };
@@ -28,6 +29,7 @@ struct strided_contiguous_iterator_tag : std::random_access_iterator_tag{};
 
 template<class T> struct std_translate;
 
+template<> struct std_translate<std::output_iterator_tag>{using type = output_iterator_tag;};
 template<> struct std_translate<std::input_iterator_tag>{using type = input_iterator_tag;};
 template<> struct std_translate<std::forward_iterator_tag>{using type = forward_iterator_tag;};
 template<> struct std_translate<std::bidirectional_iterator_tag>{using type = forward_iterator_tag;};
@@ -51,6 +53,9 @@ template<class T> struct has_data : decltype(has_data_aux(std::declval<T>())){};
 
 template<class It, typename = std::enable_if_t<not has_data<It>::value> >
 typename std_translate<typename std::iterator_traits<It>::iterator_category>::type iterator_category_aux(It);
+
+//template<class It, typename = std::enable_if_t<std::is_same<typename std::iterator_traits<It>::iterator_category, std::output_iterator_tag>{}>>
+//std_translate<std::output_iterator_tag>::type iterator_category_aux(It);
 
 // intel compiler 17 needs this specialization
 template<class T>
@@ -175,6 +180,7 @@ int mpi3::main(int, char*[], mpi3::communicator){
 		++it;
 		assert( *std::addressof(*it) == 2 );		
 		cout << typeid(std::iterator_traits<std::istream_iterator<int>>::iterator_category).name() << '\n';
+		cout << typeid(std::iterator_traits<std::back_insert_iterator<std::vector<double>>>::iterator_category).name() << '\n';
 //		std::vector<double> v{5.,6.};// q.push(5.);//,6.};
 //		g(v.begin());
 	//	cout << mpi3::detail::has_data<decltype(v.begin())>{} << '\n';

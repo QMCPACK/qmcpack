@@ -466,7 +466,10 @@ QMCHamiltonian::evaluate(ParticleSet& P)
   for(int i=0; i<H.size(); ++i)
   {
     myTimers[i]->start();
-    LocalEnergy += H[i]->evaluate(P);
+    const auto LocalEnergyComponent = H[i]->evaluate(P);
+    if(std::isnan(LocalEnergyComponent))
+      APP_ABORT("QMCHamiltonian::evaluate component " + H[i]->myName + " returns NaN\n");
+    LocalEnergy += LocalEnergyComponent;
     H[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
     H[i]->collect_scalar_traces();
@@ -603,6 +606,27 @@ QMCHamiltonian::evaluateWithToperator(ParticleSet& P)
   return LocalEnergy;
 }
 
+QMCHamiltonian::Return_t
+QMCHamiltonian::evaluateIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi, 
+                                  ParticleSet::ParticlePos_t& hf_term, 
+                                  ParticleSet::ParticlePos_t& pulay_terms,
+                                  ParticleSet::ParticlePos_t& wf_grad)
+{
+  ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
+  wfgradraw_=0.0;
+  RealType localEnergy = 0.0;
+
+  for(int i=0; i<H.size(); ++i)
+    localEnergy += H[i]->evaluateWithIonDerivs(P,ions,psi,hf_term,pulay_terms);
+  
+  for(int iat=0; iat<ions.getTotalNum(); iat++)
+  {
+    wfgradraw_[iat] = psi.evalGradSource(P,ions,iat);
+    convert(wfgradraw_[iat],wf_grad[iat]);
+  } 
+  return localEnergy;
+
+}
 
 QMCHamiltonian::Return_t QMCHamiltonian::getEnsembleAverage()
 {

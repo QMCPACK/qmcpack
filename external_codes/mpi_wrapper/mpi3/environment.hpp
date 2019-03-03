@@ -142,8 +142,14 @@ class environment{
 	}
 	static inline communicator& get_world_instance(){
 		assert(initialized());
-		MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
-		static communicator instance{MPI_COMM_WORLD};
+	//	static communicator instance{MPI_COMM_WORLD};
+		static communicator instance = []{
+		//	MPI_Comm_create_errhandler(&throw_error_fn, &throw_error_);
+		//	MPI_Comm_set_errhandler(MPI_COMM_WORLD, throw_error_);
+			MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+		//	MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
+			return communicator{MPI_COMM_WORLD};
+		}();
 		//	MPI_Comm_create_errhandler(&throw_error_fn, &throw_error_);
 		//	MPI_Comm_set_errhandler(MPI_COMM_NULL, MPI_ERRORS_RETURN);
 		return instance;

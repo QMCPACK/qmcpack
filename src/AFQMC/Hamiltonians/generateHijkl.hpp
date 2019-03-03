@@ -105,7 +105,7 @@ namespace HamHelper
     int occi, occj, occk, occl;
     if(reserve_to_fit_) {
 
-      std::vector<std::size_t> sz_local(Vijkl.shape()[0]);
+      std::vector<std::size_t> sz_local(Vijkl.size(0));
 
       cnter=0;
       // Approximation: (similar to non factorized case)

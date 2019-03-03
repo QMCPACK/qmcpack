@@ -26,14 +26,40 @@ namespace spline2
  * @param x input coordinate
  * @param dx fractional part
  * @param ind integer part
- * @param ng upper bound
+ * @param nmax upper bound of the integer part
+ *
+ * x in the range of [0, nmax+1) will be split correctly.
+ * x < 0, ind = 0, dx = 0
+ * x >= nmax+1, ind = nmax, dx = 1 - epsilon
+ *
+ * Attention: nmax is not the number grid points but the maximum allowed grid index
+ * For example, ng is the number of grid point.
+ * the actual grid points indices are 0, 1, ..., ng - 1.
+ * In a periodic/anti periodic spline, set nmax = ng - 1
+ * In a natural boundary spline, set nmax = ng - 2
+ * because the end point should be excluded and the last grid point has an index ng - 2.
  */
 template<typename T, typename TRESIDUAL>
-inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int ng)
+inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int nmax)
 {
-  T ipart;
-  dx=std::modf(x,&ipart);
-  ind = std::min(std::max(int(0),static_cast<int>(ipart)),ng);
+  // lower bound
+  if (x < 0)
+  {
+    ind = 0;
+    dx = T(0);
+  }
+  else
+  {
+    T ipart;
+    dx=std::modf(x,&ipart);
+    ind = static_cast<int>(ipart);
+    // upper bound
+    if (ind > nmax)
+    {
+      ind = nmax;
+      dx = T(1) - std::numeric_limits<T>::epsilon();
+    }
+  }
 }
 
 /** class for cublic spline parameters

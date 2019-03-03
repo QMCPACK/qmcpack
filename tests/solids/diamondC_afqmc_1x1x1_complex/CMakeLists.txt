@@ -92,31 +92,31 @@ QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_uhf"
                   )
 
 # PHMSD CHOLESKY
-SET(TEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/afqmc/C_rhf/choldump_phmsd.h5)
-SET(TEST_WFN_INPUT ${qmcpack_SOURCE_DIR}/tests/afqmc/C_rhf/wfn_phmsd.dat)
-#symlink h5 file
-MAYBE_SYMLINK(${TEST_HDF_INPUT} ${CMAKE_CURRENT_BINARY_DIR}/choldump_phmsd.h5)
-#symlink wfn file
-MAYBE_SYMLINK(${TEST_WFN_INPUT} ${CMAKE_CURRENT_BINARY_DIR}/wfn_phmsd.dat)
-
-LIST(APPEND DIAMOND_AFQMC_SCALARS_PHMSD "EnergyEstim__nume_real" "-10.55085 0.00368")
-
-QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_phmsd"
-                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
-                  qmc_short_phmsd
-                  qmc_short_phmsd.in.xml
-                  16 1
-                  TRUE
-                  0 DIAMOND_AFQMC_SCALARS_PHMSD
-                  )
-
-LIST(APPEND LONG_DIAMOND_AFQMC_SCALARS_PHMSD "EnergyEstim__nume_real" "-10.55085 0.00119")
-
-QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_phmsd"
-                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
-                  qmc_long_phmsd
-                  qmc_long_phmsd.in.xml
-                  16 1
-                  TRUE
-                  0 LONG_DIAMOND_AFQMC_SCALARS_PHMSD
-                  )
+#SET(TEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/afqmc/C_rhf/choldump_phmsd.h5)
+#SET(TEST_WFN_INPUT ${qmcpack_SOURCE_DIR}/tests/afqmc/C_rhf/wfn_phmsd.dat)
+##symlink h5 file
+#MAYBE_SYMLINK(${TEST_HDF_INPUT} ${CMAKE_CURRENT_BINARY_DIR}/choldump_phmsd.h5)
+##symlink wfn file
+#MAYBE_SYMLINK(${TEST_WFN_INPUT} ${CMAKE_CURRENT_BINARY_DIR}/wfn_phmsd.dat)
+#
+#LIST(APPEND DIAMOND_AFQMC_SCALARS_PHMSD "EnergyEstim__nume_real" "-10.55085 0.00368")
+#
+#QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_phmsd"
+#                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+#                  qmc_short_phmsd
+#                  qmc_short_phmsd.in.xml
+#                  16 1
+#                  TRUE
+#                  0 DIAMOND_AFQMC_SCALARS_PHMSD
+#                  )
+#
+#LIST(APPEND LONG_DIAMOND_AFQMC_SCALARS_PHMSD "EnergyEstim__nume_real" "-10.55085 0.00119")
+#
+#QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_phmsd"
+#                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+#                  qmc_long_phmsd
+#                  qmc_long_phmsd.in.xml
+#                  16 1
+#                  TRUE
+#                  0 LONG_DIAMOND_AFQMC_SCALARS_PHMSD
+#                  )

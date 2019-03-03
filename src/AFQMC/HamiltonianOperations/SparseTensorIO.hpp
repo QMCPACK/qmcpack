@@ -18,6 +18,7 @@
 
 #include<fstream>
 
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 
 #include "AFQMC/config.h"
@@ -44,10 +45,10 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
 
   // NEEDS TO BE FIXED FOR SP CASE
   using T1_shm_csr_matrix = ma::sparse::csr_matrix<SpT1,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SpT1>,
+                                shared_allocator<SpT1>,
                                 ma::sparse::is_root>;
   using T2_shm_csr_matrix = ma::sparse::csr_matrix<SpT2,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SpT2>,
+                                shared_allocator<SpT2>,
                                 ma::sparse::is_root>;
 
   std::vector<int> dims(10);
@@ -66,7 +67,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
     APP_ABORT("");
   }
   if(TGwfn.Global().root()) {
-    if(!dump.read(dims,"dims")) {
+    if(!dump.readEntry(dims,"dims")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }
@@ -99,7 +100,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
       APP_ABORT("");
     }
     std::vector<ValueType> et;
-    if(!dump.read(et,"E0")) {
+    if(!dump.readEntry(et,"E0")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }
@@ -116,11 +117,11 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   boost::multi::array<ComplexType,2> H1({NMO,NMO});
   boost::multi::array<ComplexType,2> v0({NMO,NMO});
   if(TGwfn.Global().root()) {
-    if(!dump.read(H1,"H1")) {
+    if(!dump.readEntry(H1,"H1")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }
-    if(!dump.read(v0,"v0")) {
+    if(!dump.readEntry(v0,"v0")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }
@@ -214,7 +215,7 @@ inline void writeSparseTensor(hdf_archive& dump, WALKER_TYPES type, int NMO, int
     dump.push("HamiltonianOperations");
     dump.push("SparseTensor");
     std::vector<int> dims{NMO,NAEA,NAEB,int(v2.size()),type,
-                          int(v2[0].shape()[0]),int(v2[0].shape()[1]),int(Spvn.shape()[0]),gncv};
+                          int(v2[0].size(0)),int(v2[0].size(1)),int(Spvn.size(0)),gncv};
     dump.write(dims,"dims");
     std::vector<int> dm{code};
     dump.write(dm,"type");

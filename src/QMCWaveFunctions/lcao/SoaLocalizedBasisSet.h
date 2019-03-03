@@ -26,20 +26,22 @@
 namespace qmcplusplus
 {
 
-/** A localized basis set derived from RealBasisSetBase<typename COT::value_type>
+/** A localized basis set derived from SoaBasisSetBase<ORBT>
  *
  * This class performs the evaluation of the basis functions and their
  * derivatives for each of the N-particles in a configuration.
  * The template parameter COT denotes Centered-Orbital-Type which provides
  * a set of localized orbitals associated with a center.
+ * The template parameter ORBT denotes the orbital value return type
  */
-template<class COT>
-struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
+template<class COT, typename ORBT>
+struct SoaLocalizedBasisSet: public SoaBasisSetBase<ORBT>
 {
-  typedef typename COT::value_type value_type;
-  typedef typename RealBasisSetBase<value_type>::vgl_type vgl_type;
+  typedef typename COT::RealType RealType;
+  typedef SoaBasisSetBase<ORBT> BaseType;
+  typedef typename BaseType::vgl_type vgl_type;
 
-  using RealBasisSetBase<value_type>::BasisSetSize;
+  using BaseType::BasisSetSize;
 
   ///number of centers, e.g., ions
   size_t NumCenters;
@@ -81,9 +83,9 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
 
   /** makeClone */
   //SoaLocalizedBasisSet<COT>* makeClone() const
-  RealBasisSetBase<value_type>* makeClone() const
+  BaseType* makeClone() const
   {
-    SoaLocalizedBasisSet<COT>* myclone=new SoaLocalizedBasisSet<COT>(*this);
+    SoaLocalizedBasisSet<COT,ORBT>* myclone=new SoaLocalizedBasisSet<COT,ORBT>(*this);
     for(int i=0; i<LOBasisSet.size(); ++i)
       myclone->LOBasisSet[i]=LOBasisSet[i]->makeClone();
     return myclone;
@@ -158,7 +160,7 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
   inline void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    const value_type* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
+    const RealType* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
     const auto& displ= (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
     {
@@ -170,10 +172,10 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
    *
    * Always uses Temp_r and Temp_dr
    */
-  inline void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals)
+  inline void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    const value_type* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
+    const RealType* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
     const auto& displ= (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
     {

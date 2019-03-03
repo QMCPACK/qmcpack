@@ -60,14 +60,21 @@ class BasicEstimator: public EstimatorBase
     data2.resize(10);
     data3.resize(2);
 
-    AFQMCTimers[block_timer]->reset();
-    AFQMCTimers[pseudo_energy_timer]->reset();
-    AFQMCTimers[vHS_timer]->reset();
-    AFQMCTimers[vbias_timer]->reset();
-    AFQMCTimers[G_for_vbias_timer]->reset();
-    AFQMCTimers[propagate_timer]->reset();
-    AFQMCTimers[E_comm_overhead_timer]->reset();
-    AFQMCTimers[vHS_comm_overhead_timer]->reset();
+    if(timers) {
+      AFQMCTimers[block_timer]->reset();
+      AFQMCTimers[pseudo_energy_timer]->reset();
+      AFQMCTimers[vHS_timer]->reset();
+      AFQMCTimers[vbias_timer]->reset();
+      AFQMCTimers[G_for_vbias_timer]->reset();
+      AFQMCTimers[propagate_timer]->reset();
+      AFQMCTimers[E_comm_overhead_timer]->reset();
+      AFQMCTimers[vHS_comm_overhead_timer]->reset();
+      AFQMCTimers[assemble_X_timer]->reset();
+      AFQMCTimers[popcont_timer]->reset();
+      AFQMCTimers[ortho_timer]->reset();
+      AFQMCTimers[setup_timer]->reset();
+      AFQMCTimers[extra_timer]->reset();
+    }
 
     enume=0.0;
     edeno=0.0;
@@ -143,10 +150,10 @@ class BasicEstimator: public EstimatorBase
   void tags_timers(std::ofstream& out)
   {
     if(writer)
-      if(timers) out<<"PseudoEnergy_t vHS_t vbias_t G_t Propagate_t Energy_comm_t vHS_comm_t Block_t ";
+      if(timers) out<<"PseudoEnergy_t vHS_t vbias_t G_t Propagate_t Energy_comm_t vHS_comm_t X_t popC_t ortho_t setup_t extra_t Block_t ";
   }
 
-  void print(std::ofstream& out,WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
   {
     data[0] = enume.real()/ncalls;
     data[1] = edeno.real()/ncalls;
@@ -189,18 +196,29 @@ class BasicEstimator: public EstimatorBase
                     <<AFQMCTimers[propagate_timer]->get_total() <<" "
                     <<AFQMCTimers[E_comm_overhead_timer]->get_total() <<" "
                     <<AFQMCTimers[vHS_comm_overhead_timer]->get_total() <<" "
+                    <<AFQMCTimers[assemble_X_timer]->get_total() <<" "
+                    <<AFQMCTimers[popcont_timer]->get_total() <<" "
+                    <<AFQMCTimers[ortho_timer]->get_total() <<" "
+                    <<AFQMCTimers[setup_timer]->get_total() <<" "
+                    <<AFQMCTimers[extra_timer]->get_total() <<" "
                     <<AFQMCTimers[block_timer]->get_total() <<" "
                     <<std::setprecision(16);
     }
-    AFQMCTimers[block_timer]->reset();
-    AFQMCTimers[pseudo_energy_timer]->reset();
-    AFQMCTimers[vHS_timer]->reset();
-    AFQMCTimers[vbias_timer]->reset();
-    AFQMCTimers[G_for_vbias_timer]->reset();
-    AFQMCTimers[propagate_timer]->reset();
-    AFQMCTimers[E_comm_overhead_timer]->reset();
-    AFQMCTimers[vHS_comm_overhead_timer]->reset();
-
+    if(timers) {
+      AFQMCTimers[block_timer]->reset();
+      AFQMCTimers[pseudo_energy_timer]->reset();
+      AFQMCTimers[vHS_timer]->reset();
+      AFQMCTimers[vbias_timer]->reset();
+      AFQMCTimers[G_for_vbias_timer]->reset();
+      AFQMCTimers[propagate_timer]->reset();
+      AFQMCTimers[E_comm_overhead_timer]->reset();
+      AFQMCTimers[vHS_comm_overhead_timer]->reset();
+      AFQMCTimers[popcont_timer]->reset();
+      AFQMCTimers[assemble_X_timer]->reset();
+      AFQMCTimers[ortho_timer]->reset();
+      AFQMCTimers[setup_timer]->reset();
+      AFQMCTimers[extra_timer]->reset();
+    }
     AFQMCTimers[block_timer]->start();
   }
 

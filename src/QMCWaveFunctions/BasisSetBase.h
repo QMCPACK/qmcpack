@@ -141,7 +141,7 @@ struct BasisSetBase: public OrbitalSetTraits<T>
  * Used by lcao
  */
 template<typename T>
-struct RealBasisSetBase
+struct SoaBasisSetBase
 {
   typedef T value_type;
   typedef VectorSoaContainer<T,OHMMS_DIM+2> vgl_type;
@@ -153,7 +153,7 @@ struct RealBasisSetBase
     return BasisSetSize;
   }
 
-  virtual RealBasisSetBase<T>* makeClone() const = 0;
+  virtual SoaBasisSetBase<T>* makeClone() const = 0;
   virtual void setBasisSetSize(int nbs)=0;
   virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)=0;
   virtual void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals)=0;

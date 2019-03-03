@@ -6,11 +6,10 @@ SET(AFQMC_DEBUG 3)
 #-------------------------------------------------------------------
 SET (AFQMC_SRCS
   AFQMCFactory.cpp
-  Walkers/SharedWalkerSet.cpp
   Drivers/DriverFactory.cpp
   Drivers/AFQMCDriver.cpp
 #  Drivers/BenchmarkDriver.cpp
-  Propagators/AFQMCSharedPropagator.cpp
+  Propagators/AFQMCBasePropagator.cpp
   Propagators/PropagatorFactory.cpp
   Wavefunctions/WavefunctionFactory.cpp
   Utilities/readWfn.cpp
@@ -25,28 +24,33 @@ SET (AFQMC_SRCS
 
 IF(QMC_CUDA)
   SET(AFQMC_SRCS ${AFQMC_SRCS} 
-    Kernels/determinant.cu 
-    Kernels/adotpby.cu
-    Kernels/fill_n.cu
-    Kernels/uninitialized_fill_n.cu
-    Kernels/axty.cu
-    Kernels/adiagApy.cu
-    Kernels/sum.cu
-    Kernels/acAxpbB.cu
-    Kernels/print.cu
-    Kernels/setIdentity.cu
-    Kernels/zero_complex_part.cu
-    Kernels/batchedDot.cu
-    Kernels/copy_n_cast.cu
-    Kernels/ajw_to_waj.cu 
-    Kernels/dot_wabn_wban.cu 
-    Kernels/vKKwij_to_vwKiKj.cu 
-    Kernels/KaKjw_to_QKajw.cu
-    Kernels/vbias_from_v1.cu
-    Kernels/KaKjw_to_KKwaj.cu
-    Kernels/batched_dot_wabn_wban.cu
-    Kernels/batched_Tab_to_Klr.cu
-#    Kernels/myAtomicAdd.cu
+    Memory/CUDA/cuda_utilities.cpp
+    Numerics/detail/CUDA/Kernels/determinant.cu 
+    Numerics/detail/CUDA/Kernels/adotpby.cu
+    Numerics/detail/CUDA/Kernels/fill_n.cu
+    Numerics/detail/CUDA/Kernels/uninitialized_fill_n.cu
+    Numerics/detail/CUDA/Kernels/uninitialized_copy_n.cu
+    Numerics/detail/CUDA/Kernels/axty.cu
+    Numerics/detail/CUDA/Kernels/adiagApy.cu
+    Numerics/detail/CUDA/Kernels/sum.cu
+    Numerics/detail/CUDA/Kernels/acAxpbB.cu
+    Numerics/detail/CUDA/Kernels/print.cu
+    Numerics/detail/CUDA/Kernels/setIdentity.cu
+    Numerics/detail/CUDA/Kernels/zero_complex_part.cu
+    Numerics/detail/CUDA/Kernels/batchedDot.cu
+    Numerics/detail/CUDA/Kernels/copy_n_cast.cu
+    Numerics/detail/CUDA/Kernels/ajw_to_waj.cu 
+    Numerics/detail/CUDA/Kernels/vKKwij_to_vwKiKj.cu 
+    Numerics/detail/CUDA/Kernels/KaKjw_to_QKajw.cu
+    Numerics/detail/CUDA/Kernels/vbias_from_v1.cu
+    Numerics/detail/CUDA/Kernels/KaKjw_to_KKwaj.cu
+    Numerics/detail/CUDA/Kernels/batched_dot_wabn_wban.cu
+    Numerics/detail/CUDA/Kernels/batched_Tab_to_Klr.cu
+    Numerics/detail/CUDA/Kernels/sampleGaussianRNG.cu
+    Numerics/detail/CUDA/Kernels/construct_X.cu
+    Numerics/detail/CUDA/Kernels/reference_operations.cu
+    Numerics/detail/CUDA/Kernels/term_by_term_matrix_vec.cu
+#    Numerics/detail/CUDA/Kernels/myAtomicAdd.cu
   )
 ENDIF(QMC_CUDA)
 
@@ -69,5 +73,6 @@ IF (BUILD_UNIT_TESTS)
   SUBDIRS(HamiltonianOperations/tests)
   SUBDIRS(Wavefunctions/tests)
   SUBDIRS(Propagators/tests)
+  SUBDIRS(Estimators/tests)
 ENDIF()
 

@@ -21,7 +21,7 @@
 #define QMCPLUSPLUS_GRID_FUNCTOR_CUBIC_SPLINE_H
 
 #include "Numerics/OneDimGridFunctor.h"
-#include "Numerics/NRSplineFunctions.h"
+#include "Numerics/SplineSolvers.h"
 
 namespace qmcplusplus
 {
@@ -109,6 +109,49 @@ namespace qmcplusplus
  the endpoints using equation.
  *
 */
+
+template <class T>
+class CubicSplineEvaluator
+{
+private:
+  T dist;
+  T dL;
+  T dLinv;
+  T cL;
+  T cR;
+  T h6;
+  T q1;
+  T q2;
+  T dq1;
+  T dq2;
+
+public:
+  CubicSplineEvaluator(T dist, T dL)
+  {
+    dLinv = 1.0/dL;
+    cL = dist*dLinv;
+    cR = (dL - dist)*dLinv;
+    h6 = dL/6.0;
+    q1 = cR*(cR*cR-1.0)*h6*dL;
+    q2 = cL*(cL*cL-1.0)*h6*dL;
+    dq1 = h6*(1.0-3.0*cR*cR);
+    dq2 = h6*(3.0*cL*cL-1.0);
+  }
+
+  template <typename T1>
+  inline T1 cubicInterpolate(T1 y1, T1 y2, T1 d2y1, T1 d2y2) const
+  {
+    return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
+  }
+
+  template <typename T1>
+  inline T1 cubicInterpolateSecondDeriv(T1 y1, T1 y2, T1 d2y1, T1 d2y2, T1& du, T1& d2u) const
+  {
+    du = dLinv*(y2-y1)+dq1*d2y1+dq2*d2y2;
+    d2u = cR*d2y1+cL*d2y2;
+    return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
+  }
+};
 
 template <class Td,
          class Tg = Td,
@@ -202,29 +245,8 @@ public:
   //  m_grid->locate(r);
   //}
 
-  inline value_type splint(point_type r)
+  inline value_type splint(point_type r) const
   {
-    //if(r<r_min) {
-    //  return m_Y[0]+first_deriv*(r-r_min);
-    //}  else if(r>=r_max) {
-    //  return 1e-20;
-    //}
-    //const Td onesixth = 1.0/6.0;
-    ////first set Loc for the grid
-    //m_grid->locate(r);
-    //int klo = m_grid->Loc;
-    //int khi = klo+1;
-    //point_type h = m_grid->dr(klo);
-    //point_type hinv = 1.0/h;
-    ////point_type h6 = h*onesixth;
-    //point_type hh6 = h*h*onesixth;
-    //point_type A = (m_grid->r(khi)-r)*hinv;
-    //point_type B = (r-m_grid->r(klo))*hinv;
-    ////point_type C = A*(A*A-1.0)*hh6;
-    ////point_type D = B*(B*B-1.0)*hh6;
-    ////return A*m_Y[klo]+B*m_Y[khi]+C*m_Y2[klo]+D*m_Y2[khi];
-    //return A*m_Y[klo]+B*m_Y[khi]+
-    //  hh6*(A*(A*A-1.0)*m_Y2[klo]+B*(B*B-1.0)*m_Y2[khi]);
     if(r<r_min)
     {
       return m_Y[0]+first_deriv*(r-r_min);
@@ -234,12 +256,12 @@ public:
       {
         return ConstValue;
       }
-    if(GridManager)
-    {
-      m_grid->updateSecondOrder(r,false);
-    }
-    int Loc(m_grid->currentIndex());
-    return m_grid->cubicInterpolateSecond(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1]);
+
+    value_type dist;
+    int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
+    value_type dL = m_grid->dr(Loc);
+    CubicSplineEvaluator<value_type> eval(dist, dL);
+    return eval.cubicInterpolate(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1]);
   }
 
   /** Interpolation to evaluate the function and itsderivatives.
@@ -249,7 +271,7 @@ public:
    *@return the value of the function
   */
   inline value_type
-  splint(point_type r, value_type& du, value_type& d2u)
+  splint(point_type r, value_type& du, value_type& d2u) const
   {
     if(r<r_min)
       //linear-extrapolation returns y[0]+y'*(r-r[0])
@@ -265,32 +287,11 @@ public:
         d2u = 0.0;
         return ConstValue;
       }
-    if(GridManager)
-    {
-      m_grid->updateSecondOrder(r,true);
-    }
-    int Loc(m_grid->currentIndex());
-    return
-      m_grid->cubicInterpolateSecond(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
-    //const Td onesixth = 1.0/6.0;
-    ////first set Loc for the grid
-    //int klo = m_grid->Loc;
-    //int khi = klo+1;
-    //point_type h = m_grid->dr(klo);
-    //point_type hinv = 1.0/h;
-    //point_type h6 = h*onesixth;
-    //point_type hh6 = h6*h;
-    //point_type A = (m_grid->r(khi)-r)*hinv;
-    //point_type B = (r-m_grid->r(klo))*hinv;
-    //point_type dA = -hinv;
-    //point_type dB = hinv;
-    //point_type C = A*(A*A-1.0)*hh6;
-    //point_type D = B*(B*B-1.0)*hh6;
-    //point_type dC = -h6*(3*A*A-1.0);
-    //point_type dD = h6*(3*B*B-1.0);
-    //du = dA*m_Y[klo]+dB*m_Y[khi]+ dC*m_Y2[klo] + dD*m_Y2[khi];
-    //d2u = A*m_Y2[klo] + B*m_Y2[khi];
-    //return A*m_Y[klo]+B*m_Y[khi]+C*m_Y2[klo]+D*m_Y2[khi];
+    value_type dist;
+    int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
+    value_type dL = m_grid->dr(Loc);
+    CubicSplineEvaluator<value_type> eval(dist, dL);
+    return eval.cubicInterpolateSecondDeriv(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
   }
 
   /** Interpolation to evaluate the function and itsderivatives.
@@ -301,7 +302,7 @@ public:
    *@return the value of the function
   */
   inline value_type
-  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u)
+  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u) const
   {
     if(r<r_min)
       //linear-extrapolation returns y[0]+y'*(r-r[0])
@@ -317,15 +318,14 @@ public:
         d2u = 0.0;
         return ConstValue;
       }
-    if(GridManager)
-    {
-      m_grid->updateSecondOrder(r,true);
-    }
-    int Loc(m_grid->currentIndex());
     // no third derivatives yet, only for templating purposes
     d3u = 0.0;
-    return
-      m_grid->cubicInterpolateSecond(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
+
+    value_type dist;
+    int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
+    value_type dL = m_grid->dr(Loc);
+    CubicSplineEvaluator<value_type> eval(dist, dL);
+    return eval.cubicInterpolateSecondDeriv(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
   }
   /** Evaluate the 2nd derivative on the grid points
    *\param imin the index of the first valid data point
@@ -347,7 +347,7 @@ public:
     int npts(this->size());
     m_Y2.resize(npts);
     m_Y2 = 0.0;
-    NRCubicSpline(m_grid->data()+imin, m_Y.data()+imin,
+    CubicSplineSolve(m_grid->data()+imin, m_Y.data()+imin,
                   npts-imin, yp1, ypn, m_Y2.data()+imin);
     ConstValue=m_Y[imax];
     //FirstAddress[0]=m_Y.data()+imin;

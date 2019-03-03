@@ -149,9 +149,6 @@ public:
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   ValueMatrix_t psiM;
 
-  /// memory pool for temporal data
-  aligned_vector<ValueType> memoryPool;
-
   /// temporary container for testing
   ValueMatrix_t psiMinv;
 
@@ -178,6 +175,16 @@ public:
   ValueMatrix_hp_t psiM_hp;
   DiracMatrix<mValueType> detEng;
   DelayedUpdate<ValueType> updateEng;
+
+  /// the row of up-to-date inverse matrix
+  ValueVector_t invRow;
+
+  /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
+   *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
+   *  ratioGrad checks if invRow_id is consistent. If not, invRow needs to be recomputed.
+   *  acceptMove and completeUpdates mark invRow invalid by setting invRow_id to -1
+   */
+  int invRow_id;
 
   ValueType curRatio;
   ValueType *FirstAddressOfdV;

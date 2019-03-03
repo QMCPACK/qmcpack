@@ -12,8 +12,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef ESTOOLS_OHMMS_LIBXML_DEF_H
@@ -32,9 +30,9 @@
 template<typename _CharT>
 inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
 {
-  cname=(const char*)cur->name;
-  for(int i=0; i<cname.size(); i++)
-    cname[i]=tolower(cname[i]);
+  cname = (const char*)cur->name;
+  for (int i = 0; i < cname.size(); i++)
+    cname[i] = tolower(cname[i]);
   //std::transform(cname.begin(), cname.end(), cname.begin(), std::tolower);
 }
 
@@ -67,8 +65,7 @@ inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
 template<class T>
 bool putContent(T& a, xmlNodePtr cur)
 {
-  std::istringstream
-  stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
   stream >> a;
   return !stream.fail();
 }
@@ -76,13 +73,12 @@ bool putContent(T& a, xmlNodePtr cur)
 template<class IT>
 bool putContent(IT first, IT last, xmlNodePtr cur)
 {
-  std::istringstream
-  stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
-  bool success=true;
-  while(success && first!=last)
+  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  bool success = true;
+  while (success && first != last)
   {
     stream >> *first++;
-    success=!stream.fail();
+    success = !stream.fail();
   }
   return success;
 }
@@ -100,12 +96,13 @@ bool putContent(IT first, IT last, xmlNodePtr cur)
 template<class T>
 bool getContent(const T& a, xmlNodePtr cur)
 {
-  if(cur->children == NULL) return false;
+  if (cur->children == NULL)
+    return false;
   std::stringstream s;
   s.setf(std::ios::scientific, std::ios::floatfield);
   s.precision(10);
   s << a;
-  xmlNodeSetContent(cur,(const xmlChar*)(s.str().c_str()));
+  xmlNodeSetContent(cur, (const xmlChar*)(s.str().c_str()));
   return true;
 }
 
@@ -118,18 +115,16 @@ bool getContent(const T& a, xmlNodePtr cur)
  *e.g., std::vector<double>
  */
 template<class T>
-inline bool
-putContent(std::vector<T>& a, xmlNodePtr cur)
+inline bool putContent(std::vector<T>& a, xmlNodePtr cur)
 {
-  if(cur->children == NULL) return false;
-  std::istringstream
-  stream((const char*)
-         (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  if (cur->children == NULL)
+    return false;
+  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
   std::vector<T> b;
   T t;
-  while(!stream.eof())
+  while (!stream.eof())
   {
-    if( stream >> t)
+    if (stream >> t)
       b.push_back(t);
   }
   a = b;
@@ -146,15 +141,14 @@ putContent(std::vector<T>& a, xmlNodePtr cur)
  *well for large vectors. Use HDF5 library for the real data.
  */
 template<class T>
-inline bool
-getContent(const std::vector<T>& a, xmlNodePtr cur)
+inline bool getContent(const std::vector<T>& a, xmlNodePtr cur)
 {
   std::stringstream s;
   s.precision(10);
-  for(int i=0; i<a.size(); i++)
-    s << ' ' <<  a[i];
+  for (int i = 0; i < a.size(); i++)
+    s << ' ' << a[i];
   //xmlNodeAddContent(cur,(const xmlChar*)(s.str().c_str()));
-  xmlNodeSetContent(cur,(const xmlChar*)(s.str().c_str()));
+  xmlNodeSetContent(cur, (const xmlChar*)(s.str().c_str()));
   return true;
 }
 

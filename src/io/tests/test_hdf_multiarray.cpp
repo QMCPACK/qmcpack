@@ -14,13 +14,17 @@
 #include "catch.hpp"
 
 #include "io/hdf_archive.h"
+#include "io/hdf_multi.h"
 #include <vector>
-#include "boost/multi_array.hpp"
+#include "multi/array.hpp"
 
 
 using std::vector;
 
 using namespace qmcplusplus;
+
+template<std::ptrdiff_t D>
+using extensions = typename boost::multi::layout_t<D>::extensions_type;
 
 TEST_CASE("hdf_multiarray_one_dim", "[hdf]")
 {
@@ -28,12 +32,12 @@ TEST_CASE("hdf_multiarray_one_dim", "[hdf]")
   hdf_archive hd;
   hd.create("test_stl.hdf");
 
-  boost::multi_array<double,1> v(boost::extents[3]);
+  boost::multi::array<double,1> v(extensions<1u>{3});
   v[0] = 2.3;
   v[1] = -100.3;
   v[2] = 135.22;
 
-  bool okay = hd.write(v, "boost_multiarray_one_dim");
+  bool okay = hd.writeEntry(v, "boost_multiarray_one_dim");
   REQUIRE(okay);
 
   hd.close();
@@ -42,8 +46,8 @@ TEST_CASE("hdf_multiarray_one_dim", "[hdf]")
   okay = hd2.open("test_stl.hdf");
   REQUIRE(okay);
 
-  boost::multi_array<double,1> v2(boost::extents[3]);
-  okay = hd2.read(v2, "boost_multiarray_one_dim");
+  boost::multi::array<double,1> v2(extensions<1u>{3});
+  hd2.read(v2, "boost_multiarray_one_dim");
   REQUIRE(v2.size() == 3);
   for (int i = 0; i < v.size(); i++)
   {

@@ -111,7 +111,7 @@ WaveFunctionTester::run()
   else if (sourceName.size() != 0)
   {
     runGradSourceTest();
-    runZeroVarianceTest();
+   // runZeroVarianceTest();
   }
   else if (checkRatio =="deriv")
   {
@@ -140,6 +140,7 @@ WaveFunctionTester::run()
 
 void WaveFunctionTester::runCloneTest()
 {
+  app_log() <<" ===== runCloneTest =====\n";
   for (int iter=0; iter<4; ++iter)
   {
     app_log() << "Clone" << iter << std::endl;
@@ -194,6 +195,7 @@ void WaveFunctionTester::runCloneTest()
 
 void WaveFunctionTester::printEloc()
 {
+  app_log() <<" ===== printEloc =====\n";
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
     app_log() << "ParticelSet = " << p->first << std::endl;
@@ -1244,6 +1246,7 @@ void WaveFunctionTester::runRatioTest()
 
 void WaveFunctionTester::runRatioTest2()
 {
+  app_log() <<" ===== runRatioTest2 =====\n";
   int nat = W.getTotalNum();
   ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
   ParticleSet::ParticleLaplacian_t Lp(nat), dLp(nat);
@@ -1389,6 +1392,7 @@ void WaveFunctionTester::runRatioV()
 
 void WaveFunctionTester::runGradSourceTest()
 {
+  app_log() <<" ===== runGradSourceTest =====\n";
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
     app_log() << "ParticelSet = " << p->first << std::endl;
@@ -1416,6 +1420,7 @@ void WaveFunctionTester::runGradSourceTest()
   //ValueType psi = Psi.evaluate(W);
   ValueType logpsi = Psi.evaluateLog(W);
   RealType eloc=H.evaluate(W);
+  H.auxHevaluate(W);
   app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
   for (int i=0; i<H.sizeOfObservables(); i++)
     app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
@@ -1424,6 +1429,41 @@ void WaveFunctionTester::runGradSourceTest()
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
   G = W.G;
   L = W.L;
+
+  //This code computes d/dR \ln \Psi_T using the evalGradSource method, and 
+  // by finite difference.  Results are saved in grad_ion and grad_ion_FD respectively.
+  // GRAD TEST COMPUTATION
+  int nions=source.getTotalNum();
+  ParticleSet::ParticleGradient_t grad_ion(nions), grad_ion_FD(nions);
+  for (int iat=0; iat<nions; iat++)
+  {
+    grad_ion[iat]=Psi.evalGradSource(W,source,iat);
+    PosType rI = source.R[iat];
+    for (int iondim=0; iondim<3; iondim++)
+    {
+      source.R[iat][iondim] = rI[iondim]+delta;
+      source.update();
+      W.update();
+      
+      ValueType log_p = Psi.evaluateLog(W);
+      
+      source.R[iat][iondim] = rI[iondim]-delta;
+      source.update();
+      W.update();
+      ValueType log_m = Psi.evaluateLog(W);
+    
+      //symmetric finite difference formula for gradient. 
+      grad_ion_FD[iat][iondim]=c1*(log_p-log_m);
+   
+      //reset everything to how it was.
+      source.R[iat][iondim] = rI[iondim];
+      source.update();
+      W.update();
+    }
+    //this lastone makes sure the distance tables correspond to unperturbed source.
+  }
+  //END GRAD TEST COMPUTATION
+
   for (int isrc=0; isrc < 1/*source.getTotalNum()*/; isrc++)
   {
     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad;
@@ -1475,22 +1515,34 @@ void WaveFunctionTester::runGradSourceTest()
       for (int iat=0; iat<nat; iat++)
       {
         fout << "For particle #" << iat << " at " << W.R[iat] << std::endl;
-        fout << "Gradient      = " << std::setw(12) << grad_grad[dimsrc][iat] << std::endl
-             << "  Finite diff = " << std::setw(12) << grad_grad_FD[dimsrc][iat] << std::endl
-             << "  Error       = " << std::setw(12)
+        fout << "Grad Gradient  = " << std::setw(12) << grad_grad[dimsrc][iat] << std::endl
+             << "  Finite diff  = " << std::setw(12) << grad_grad_FD[dimsrc][iat] << std::endl
+             << "  Error        = " << std::setw(12)
              <<  grad_grad_FD[dimsrc][iat] - grad_grad[dimsrc][iat] << std::endl << std::endl;
-        fout << "Laplacian     = " << std::setw(12) << lapl_grad[dimsrc][iat] << std::endl
-             << "  Finite diff = " << std::setw(12) << lapl_grad_FD[dimsrc][iat] << std::endl
-             << "  Error       = " << std::setw(12)
+        fout << "Grad Laplacian = " << std::setw(12) << lapl_grad[dimsrc][iat] << std::endl
+             << "  Finite diff  = " << std::setw(12) << lapl_grad_FD[dimsrc][iat] << std::endl
+             << "  Error        = " << std::setw(12)
              << lapl_grad_FD[dimsrc][iat] - lapl_grad[dimsrc][iat] << std::endl << std::endl;
       }
     }
+    fout<<"==== BEGIN Ion Gradient Check ====\n";
+    for( int iat=0; iat<nions; iat++)
+    {
+        fout << "For ion      #" << iat << " at " << source.R[iat] << std::endl;
+        fout << "Gradient       = " << std::setw(12) << grad_ion[iat] << std::endl
+             << "  Finite diff  = " << std::setw(12) << grad_ion_FD[iat] << std::endl
+             << "  Error        = " << std::setw(12)
+             <<  grad_ion_FD[iat] - grad_ion[iat] << std::endl << std::endl;
+    }
+    fout<<"==== END Ion Gradient Check  ====\n";
+    fout.flush();
   }
 }
 
 
 void WaveFunctionTester::runZeroVarianceTest()
 {
+  app_log() <<" ===== runZeroVarianceTest =====\n";
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
     app_log() << "ParticelSet = " << p->first << std::endl;
@@ -1607,6 +1659,7 @@ WaveFunctionTester::put(xmlNodePtr q)
 
 void WaveFunctionTester::runDerivTest()
 {
+  app_log() <<" ===== runDerivTest =====\n";
   app_log()<<" Testing derivatives"<< std::endl;
   int nat = W.getTotalNum();
   MCWalkerConfiguration::PropertyContainer_t Properties;
@@ -1707,6 +1760,7 @@ void WaveFunctionTester::runDerivTest()
 
 void WaveFunctionTester::runDerivNLPPTest()
 {
+  app_log() <<" ===== runDerivNLPPTest =====\n";
   char fname[16];
   sprintf(fname,"nlpp.%03d",OHMMS::Controller->rank());
   std::ofstream nlout(fname);
@@ -1820,6 +1874,7 @@ void WaveFunctionTester::runDerivNLPPTest()
 
 void WaveFunctionTester::runDerivCloneTest()
 {
+  app_log() <<" ===== runDerivCloneTest =====\n";
   app_log()<<" Testing derivatives clone"<< std::endl;
   RandomGenerator_t* Rng1= new RandomGenerator_t();
   RandomGenerator_t* Rng2= new RandomGenerator_t();
@@ -2180,6 +2235,7 @@ void WaveFunctionTester::runwftricks()
 
 void  WaveFunctionTester::runNodePlot()
 {
+  app_log() <<" ===== runNodePlot =====\n";
   xmlNodePtr kids=myNode->children;
   std::string doEnergy("no");
   ParameterSet aAttrib;

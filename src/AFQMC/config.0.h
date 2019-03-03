@@ -1,6 +1,8 @@
 #ifndef AFQMC_CONFIG_0_H 
 #define AFQMC_CONFIG_0_H 
 
+#define BOOST_NO_AUTO_PTR
+
 #define ADD_TESTS_TIMERS
 
 #define AFQMC_DEBUG 3 
@@ -23,6 +25,15 @@
 #define byCols   111
 
 #define PsiT_IN_SHM
+
+// guard with directive that checks if boost version is >=1.65
+#include <boost/version.hpp>
+#if BOOST_VERSION >= 106500
+#include <boost/stacktrace.hpp>
+#define print_stacktrace std::cout << boost::stacktrace::stacktrace();
+#else
+#define print_stacktrace std::cout << "stacktrace not enabled.\n"; 
+#endif
 
 namespace qmcplusplus
 {

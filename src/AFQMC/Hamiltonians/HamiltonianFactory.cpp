@@ -21,6 +21,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "Utilities/SimpleParser.h"
 #include "Configuration.h"
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
 
@@ -111,9 +112,6 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
     orderStates = (order == "yes" || order == "true");
 
-    Timer.reset("Generic");
-    Timer.start("Generic");
-
     // make or get TG
     number_of_TGs = std::max(1, std::min(number_of_TGs,gTG.getTotalNodes()));
     TaskGroup_& TG = getTG(gTG,number_of_TGs);
@@ -151,7 +149,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     int int_blocks,nvecs,nkpts=-1;
     std::vector<int> Idata(8);
     if(head)
-      if(!dump.read(Idata,"dims")) {
+      if(!dump.readEntry(Idata,"dims")) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading dims. \n";
         APP_ABORT("");
       }
@@ -181,7 +179,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
     if(head) {
       std::vector<ValueType> Rdata(2);
-      if(!dump.read(Rdata,"Energies")) {
+      if(!dump.readEntry(Rdata,"Energies")) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading  dataset. \n";
         APP_ABORT(" ");
       }
@@ -201,7 +199,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       bool foundH1=false;
       if(nkpts > 0) {
         // nothing to do, H1 is read during construction of HamiltonianOperations object.
-      } else if(dump.read(H1,"hcore")) {
+      } else if(dump.readEntry(H1,"hcore")) {
         foundH1 = true;
       } else {
 
@@ -212,12 +210,12 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
         }
 
         std::vector<OrbitalType> ivec(2*Idata[0]);
-        if(!dump.read(ivec,"H1_indx")) {
+        if(!dump.readEntry(ivec,"H1_indx")) {
           app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1_indx. \n";
           APP_ABORT(" ");
         }
         std::vector<ValueType> vvec(Idata[0]);
-        if(!dump.read(vvec,"H1")) {
+        if(!dump.readEntry(vvec,"H1")) {
           app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1.  \n";
           APP_ABORT(" ");
         }
@@ -234,7 +232,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
         }
       }
     }
-    TG.Global().broadcast_n(std::addressof(*H1.origin()),H1.num_elements(),0);
+    TG.Global().broadcast_n(to_address(H1.origin()),H1.num_elements(),0);
 
     // now read the integrals
     if(htype == KPTHC) {
@@ -298,12 +296,8 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
       FactorizedSparseHamiltonian::shm_csr_matrix V2_fact = read_V2fact(dump,TG,nread,NMO,nvecs,cutoff1bar,int_blocks);
 
-      Timer.stop("Generic1");
-      app_log()<<" -- Time to read move ucsr into csr matrix: "
-               <<Timer.average("Generic1") <<"\n";
-
       app_log()<<" Memory used by factorized 2-el integral table (on head node): "
-               <<(V2_fact.capacity()*(sizeof(ValueType)+sizeof(IndexType)) + V2_fact.shape()[0]*(2*sizeof(std::size_t)))/1024.0/1024.0 <<" MB. " <<std::endl;
+               <<(V2_fact.capacity()*(sizeof(ValueType)+sizeof(IndexType)) + V2_fact.size(0)*(2*sizeof(std::size_t)))/1024.0/1024.0 <<" MB. " <<std::endl;
 
       if( coreid < nread ) {
         dump.pop();
@@ -311,9 +305,6 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
         dump.close();
       }
       TG.global_barrier();
-
-      Timer.stop("Generic");
-      app_log()<<" -- Time to initialize Hamiltonian from h5 file: " <<Timer.average("Generic") <<"\n";
 
       return Hamiltonian(FactorizedSparseHamiltonian(AFinfo,cur,std::move(H1),std::move(V2_fact),TG,NuclearCoulombEnergy,FrozenCoreEnergy));
     } else {
