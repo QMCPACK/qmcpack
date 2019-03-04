@@ -22,6 +22,7 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
