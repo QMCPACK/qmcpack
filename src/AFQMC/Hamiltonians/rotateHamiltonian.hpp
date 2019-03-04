@@ -378,6 +378,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   SPComplexType EJX(0.0);
   if(addCoulomb) EJX = SPComplexType(1.0);
 
+  TG.Node().barrier();
   if(reserve_to_fit_) {
     // count and resize container
     std::vector<std::size_t> sz_local;
@@ -712,6 +713,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
   if(addCoulomb) EJX = SPComplexType(1.0);
   int nblk = (NMO+maxnk-1)/maxnk;
 
+  TG.Node().barrier();
   if(reserve_to_fit_) {
     // count and resize container
     std::vector<std::size_t> sz_local;
@@ -803,6 +805,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
 
     reserve_to_fit(Vijkl,sz_global);
   }
+  TG.Node().barrier();
 
   // now calculate fully distributed matrix elements
   for( int bi = 0; bi < nblk; bi++) {
@@ -816,11 +819,10 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
         Qk_x_Rl(walker_type,EJX,TG,k0,kN,0,NMO,NMO,NAEA,NAEB,
                       SpQk[{size_t(k0*NAEA),std::size_t(kN*NAEA)}],
                       Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,Vijkl,cut);
-      else if(type == "DD")  {
+      else if(type == "DD")  
         Qk_x_Rl(walker_type,EJX,TG,k0,kN,0,NMO,NMO,NAEA,NAEB,
-                      Qk.sliced(k0*NAEA,kN*NAEA),
+                      Qk.sliced(size_t(k0*NAEA),size_t(kN*NAEA)),
                       Rl(Rl.extension(0),{0,NAEA*NMO}),Ta,Vijkl,cut);
-      }
     }
     TG.Node().barrier();
     if(walker_type==COLLINEAR)
@@ -831,11 +833,10 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
         Qk_x_Rl(walker_type,EJX,TG,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
                       SpQk[{size_t(NAEA*NMO+k0*NAEB),std::size_t(NAEA*NMO+kN*NAEB)}],
                       Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,Vijkl,cut);
-      else if(type == "DD") {
+      else if(type == "DD") 
         Qk_x_Rl(walker_type,EJX,TG,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
                       Qk.sliced(NAEA*NMO+k0*NAEB,NAEA*NMO+kN*NAEB),
                       Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,Vijkl,cut);
-      }
       TG.Node().barrier();
       if(addCoulomb)
       { // alpha-beta
@@ -845,11 +846,10 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
           Qk_x_Rl(walker_type,EJX,TG,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,
                       SpQk[{size_t(k0*NAEA),std::size_t(kN*NAEA)}],
                       Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta,Vijkl,cut);
-        else if(type == "DD") {
+        else if(type == "DD") 
           Qk_x_Rl(walker_type,EJX,TG,k0,kN,NMO,2*NMO,NMO,NAEA,NAEB,
                       Qk.sliced(k0*NAEA,kN*NAEA),
                       Rl(Rl.extension(0),{NAEA*NMO,(NAEA+NAEB)*NMO}),Ta_,Vijkl,cut);
-        }
       }
       TG.Node().barrier();
     }

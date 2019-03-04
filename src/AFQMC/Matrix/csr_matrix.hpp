@@ -478,15 +478,15 @@ class ucsr_matrix:
                 base::jdata_ = Ialloc_.allocate(base::capacity_);
                 base::pointers_begin_ = Palloc_.allocate(base::size1_+1);
                 base::pointers_end_ = Palloc_.allocate(base::size1_);
-                IsRoot r(Valloc_);
-                if(r.root()){
+//                IsRoot r(Valloc_);
+//                if(r.root()){
                         using std::copy_n;
                         copy_n(other.data_,base::capacity_,base::data_);
                         copy_n(other.jdata_,base::capacity_,base::jdata_);
                         copy_n(other.pointers_begin_,base::size1_+1,base::pointers_begin_);
                         copy_n(other.pointers_end_,base::size1_,base::pointers_end_);
-                }
-                r.barrier();
+//                }
+//                r.barrier();
         }
         ucsr_matrix& operator=(this_t const& other) {
                 base::reset();
@@ -501,15 +501,15 @@ class ucsr_matrix:
                 base::jdata_ = Ialloc_.allocate(base::capacity_);
                 base::pointers_begin_ = Palloc_.allocate(base::size1_+1);
                 base::pointers_end_ = Palloc_.allocate(base::size1_);
-                IsRoot r(Valloc_);
-                if(r.root()){
+//                IsRoot r(Valloc_);
+//                if(r.root()){
                         using std::copy_n;
                         copy_n(other.data_,base::capacity_,base::data_);
                         copy_n(other.jdata_,base::capacity_,base::jdata_);
                         copy_n(other.pointers_begin_,base::size1_+1,base::pointers_begin_);
                         copy_n(other.pointers_end_,base::size1_,base::pointers_end_);
-                }
-                r.barrier();
+//                }
+//                r.barrier();
         }
 	ucsr_matrix(this_t&& other):ucsr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,other.Valloc_)
 	{ *this = std::move(other); } 
@@ -549,7 +549,7 @@ class ucsr_matrix:
                         tp_ul_ul{base::global_origin1_,base::global_origin2_},nnzpr_unique,Valloc_);
                 if(base::capacity_ > 0) {
                     IsRoot r(Valloc_);
-                    if(r.root()){
+//                    if(r.root()){
                         for(size_type i=0; i<base::size1_; i++)
 			{
 				size_type disp = static_cast<size_type>(base::pointers_end_[i]-
@@ -561,15 +561,16 @@ class ucsr_matrix:
 				copy_n(base::jdata_ + base::pointers_begin_[i],
 					    disp,
 	       				    other.jdata_ + other.pointers_begin_[i]);
-				other.pointers_end_[i] = other.pointers_begin_[i] + disp;
+				if(r.root()) other.pointers_end_[i] = other.pointers_begin_[i] + disp;
 			}
-                    }
+//                    }
                     r.barrier();
                 }
                 *this = std::move(other);
         }
         template<typename integer_type>
         void reserve(std::vector<integer_type> const& nnzpr){
+IsRoot r_(Valloc_);
                 if(base::size1_==0) return;
                 bool resz = false;
                 assert(nnzpr.size() >= base::size1_);
@@ -585,7 +586,7 @@ class ucsr_matrix:
                         tp_ul_ul{base::global_origin1_,base::global_origin2_},nnzpr,Valloc_);
                 if(base::capacity_ > 0) {
                     IsRoot r(Valloc_);
-                    if(r.root()){
+//                    if(r.root()){
                         for(size_type i=0; i<base::size1_; i++)
                         {
                                 size_type disp = static_cast<size_type>(base::pointers_end_[i]-
@@ -597,9 +598,9 @@ class ucsr_matrix:
                                 std::copy_n(base::jdata_ + base::pointers_begin_[i],
                                             disp,
                                             other.jdata_ + other.pointers_begin_[i]);
-                                other.pointers_end_[i] = other.pointers_begin_[i] + disp;
+                                if(r.root()) other.pointers_end_[i] = other.pointers_begin_[i] + disp;
                         }
-                    }
+//                    }
                     r.barrier();
                 }
                 *this = std::move(other);
@@ -613,7 +614,10 @@ class ucsr_matrix:
 			Valloc_ts::construct(Valloc_,to_address(base::data_ + base::pointers_end_[get<0>(indices)]), std::forward<Args>(args)...);
 			Ialloc_ts::construct(Ialloc_,to_address(base::jdata_ + base::pointers_end_[get<0>(indices)]), get<1>(indices));
 			++base::pointers_end_[get<0>(indices)];
-		} else   throw std::out_of_range("row size exceeded the maximum");
+		} else  {
+                  APP_ABORT(" Error: row size exceeded the maximum \n\n\n");
+                  throw std::out_of_range("row size exceeded the maximum");
+                }
 	}
         template<typename integer_type=IndxType,typename value_type=ValType>
         void emplace(std::tuple<integer_type,integer_type,value_type> const& val) {
@@ -737,15 +741,19 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                 base::jdata_ = base::Ialloc_.allocate(base::capacity_);
                 base::pointers_begin_ = base::Palloc_.allocate(base::size1_+1);
                 base::pointers_end_ = base::Palloc_.allocate(base::size1_);
-                IsRoot r(base::Valloc_);
-                if(r.root()){
+//                IsRoot r(base::Valloc_);
+//                if(r.root()){
                         using std::copy_n;
-                        copy_n(to_address(csr.non_zero_values_data()),base::capacity_,base::data_);
-                        copy_n(to_address(csr.non_zero_indices2_data()),base::capacity_,base::jdata_);
-                        copy_n(to_address(csr.pointers_begin()),base::size1_+1,base::pointers_begin_);
-                        copy_n(to_address(csr.pointers_end()),base::size1_,base::pointers_end_);
-                }
-                r.barrier();
+                        copy_n(to_address(csr.non_zero_values_data()),base::capacity_,
+                               base::data_);
+                        copy_n(to_address(csr.non_zero_indices2_data()),base::capacity_,
+                               base::jdata_);
+                        copy_n(to_address(csr.pointers_begin()),base::size1_+1,
+                               base::pointers_begin_);
+                        copy_n(to_address(csr.pointers_end()),base::size1_,
+                               base::pointers_end_);
+//                }
+//                r.barrier();
         }
         
 	csr_matrix& operator=(this_t const& csr) {
@@ -761,15 +769,15 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                 base::jdata_ = base::Ialloc_.allocate(base::capacity_);
                 base::pointers_begin_ = base::Palloc_.allocate(base::size1_+1);
                 base::pointers_end_ = base::Palloc_.allocate(base::size1_);
-                IsRoot r(base::Valloc_);
-                if(r.root()){
+//                IsRoot r(base::Valloc_);
+//                if(r.root()){
                         using std::copy_n;
                         copy_n(csr.data_,base::capacity_,base::data_);
                         copy_n(csr.jdata_,base::capacity_,base::jdata_);
                         copy_n(csr.pointers_begin_,base::size1_+1,base::pointers_begin_);
                         copy_n(csr.pointers_end_,base::size1_,base::pointers_end_);
-                }
-                r.barrier();
+//                }
+//                r.barrier();
         }
         template<class ValType_alloc_,
                  class IsRoot_,
@@ -794,15 +802,19 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                 base::jdata_ = base::Ialloc_.allocate(base::capacity_);
                 base::pointers_begin_ = base::Palloc_.allocate(base::size1_+1);
                 base::pointers_end_ = base::Palloc_.allocate(base::size1_);
-                IsRoot r(base::Valloc_);
-                if(r.root()){
+//                IsRoot r(base::Valloc_);
+//                if(r.root()){
                         using std::copy_n;
-                        copy_n(to_address(csr.non_zero_values_data()),base::capacity_,base::data_);
-                        copy_n(to_address(csr.non_zero_indices2_data()),base::capacity_,base::jdata_);
-                        copy_n(to_address(csr.pointers_begin()),base::size1_+1,base::pointers_begin_);
-                        copy_n(to_address(csr.pointers_end()),base::size1_,base::pointers_end_);
-                }
-                r.barrier();
+                        copy_n(to_address(csr.non_zero_values_data()),base::capacity_,
+                               base::data_);
+                        copy_n(to_address(csr.non_zero_indices2_data()),base::capacity_,
+                               base::jdata_);
+                        copy_n(to_address(csr.pointers_begin()),base::size1_+1,
+                               base::pointers_begin_);
+                        copy_n(to_address(csr.pointers_end()),base::size1_,
+                               base::pointers_end_);
+//                }
+//                r.barrier();
         }
 
         csr_matrix& operator=(ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRoot> const& other) {
@@ -824,14 +836,14 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                 if(base::size1_ == 0 || base::capacity_ == 0) return *this;
                 using qmcplusplus::make_paired_iterator;
                 IsRoot r(base::Valloc_);
-                if(r.root()){
+//                if(r.root()){
                         using std::copy_n;
                         copy_n(other.non_zero_values_data(),base::capacity_,base::data_);
                         copy_n(other.non_zero_indices2_data(),base::capacity_,base::jdata_);
                         copy_n(other.pointers_begin(),base::size1_+1,base::pointers_begin_);
                         copy_n(other.pointers_end(),base::size1_,base::pointers_end_);
-                }
-                r.barrier();
+//                }
+//                r.barrier();
                 for(size_type p=0; p<base::size1_; p++) {
                         if(p%static_cast<size_type>(r.size()) == static_cast<size_type>(r.rank())) {
                                 auto i1 = base::pointers_begin_[p];

@@ -72,7 +72,7 @@ class SparseTensor
 
   public:
 
-    SparseTensor(communicator c_, 
+    SparseTensor(communicator& c_, 
                  WALKER_TYPES type,
                  CMatrix&& hij_,
                  std::vector<T1Vector>&& h1,
@@ -111,7 +111,7 @@ class SparseTensor
         SpvnT(std::move(vnT)),
         SpvnT_view(std::move(vnTview)),
         vn0(std::move(vn0_)),
-        SM_TMats(iextensions<1u>{0},shared_allocator<SPComplexType>{*comm}),
+        SM_TMats(iextensions<1u>{0},shared_allocator<SPComplexType>{c_}),
 	separateEJ(true)
     {
 	assert(haj.size() == Vakbl.size());
@@ -343,13 +343,14 @@ class SparseTensor
       boost::multi::array_ref<SPComplexType,1> Gsp(vsp.origin()+vsp.num_elements(), G.extensions());
       size_t i0, iN;
       std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(G.num_elements()),size_t(comm->size()));
-      copy_n_cast(to_address(G.origin())+i0,iN-i0,to_address(Gsp.origin())+i0);
+      using std::copy_n;
+      copy_n(to_address(G.origin())+i0,iN-i0,to_address(Gsp.origin())+i0);
       boost::multi::array_ref<SPComplexType,1> v_(to_address(vsp.origin()) + SpvnT_view[k].local_origin()[0],
                                         iextensions<1u>{SpvnT_view[k].size(0)});
       comm->barrier();
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], Gsp, SpT2(c), v_);
-      copy_n_cast(to_address(v_.origin()),v_.num_elements(),
+      copy_n(to_address(v_.origin()),v_.num_elements(),
                   to_address(v.origin()) + SpvnT_view[k].local_origin()[0]);
       comm->barrier();
 #else
@@ -379,14 +380,14 @@ class SparseTensor
       boost::multi::array_ref<SPComplexType,2> Gsp(vsp.origin()+vsp.num_elements(), G.extensions());
       size_t i0, iN;
       std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(G.num_elements()),size_t(comm->size()));
-      copy_n_cast(to_address(G.origin())+i0,iN-i0,to_address(Gsp.origin())+i0);
+      copy_n(to_address(G.origin())+i0,iN-i0,to_address(Gsp.origin())+i0);
       boost::multi::array_ref<SPComplexType,2> v_(to_address(vsp[SpvnT_view[k].local_origin()[0]].origin()),
                                         {long(SpvnT_view[k].size(0)),long(vsp.size(1))});
       comm->barrier();
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], Gsp, SpT2(c), v_);
-      copy_n_cast(to_address(v_.origin()),v_.num_elements(),
-                  to_address(vsp[SpvnT_view[k].local_origin()[0]].origin())); 
+      copy_n(to_address(v_.origin()),v_.num_elements(),
+                  to_address(to_address(v[SpvnT_view[k].local_origin()[0]].origin()))); 
       comm->barrier();
 #else
       using Type = typename std::decay<MatB>::type::element ;
