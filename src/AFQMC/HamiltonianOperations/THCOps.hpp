@@ -37,7 +37,7 @@ namespace afqmc
 template<class T>
 class THCOps
 {
-#if defined(MIXED_PRECISION)
+#if defined(AFQMC_MIXED_PRECISION)
   using SpT = typename to_single_precision<T>::value_type;
   using SpC = typename to_single_precision<ComplexType>::value_type;
 #else

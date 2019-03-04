@@ -189,7 +189,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     if(type==COLLINEAR)
       assert(PsiT.size()%2 == 0);
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
     auto PsiTsp(csr::shm::CSRvector_to_single_precision<PsiT_Matrix_t<SPComplexType>>(PsiT));
 #else
     auto& PsiTsp(PsiT);

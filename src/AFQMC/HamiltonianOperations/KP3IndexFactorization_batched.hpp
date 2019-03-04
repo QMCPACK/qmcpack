@@ -333,7 +333,7 @@ class KP3IndexFactorization_batched
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
       size_t cnt(0);  
       if(addEJ) { 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         mem_needs += 2*nwalk*local_nCV;
 #else
         if(not getKr) mem_needs += nwalk*local_nCV;
@@ -349,7 +349,7 @@ class KP3IndexFactorization_batched
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
@@ -365,7 +365,7 @@ class KP3IndexFactorization_batched
           Krptr = BTMats.origin(); 
           cnt += nwalk*local_nCV;
         }
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
@@ -415,7 +415,7 @@ class KP3IndexFactorization_batched
         // must use Gc since GKK is is SP
         int na=0, nk=0, nb=0;
         for(int K=0; K<nkpts; ++K) {
-#if defined(MIXED_PRECISION) 
+#if defined(AFQMC_MIXED_PRECISION) 
           CMatrix_ref haj_K(make_device_ptr(haj[nd*nkpts+K].origin()),{nocc_max,nmo_max}); 
           for(int a=0; a<nelpk[nd][K]; ++a) 
             ma::product(ComplexType(1.),ma::T(G3Da[na+a].sliced(nk,nk+nopk[K])),
@@ -423,7 +423,7 @@ class KP3IndexFactorization_batched
                         ComplexType(1.),E({0,nwalk},0));
           na+=nelpk[nd][K];
           if(walker_type==COLLINEAR) {
-            boost::multi::array_ref<ComplexType,2> haj_Kb(haj_K.origin()+haj_K.num_elements(),
+            boost::multi::array_ref<ComplexType,2,pointer> haj_Kb(haj_K.origin()+haj_K.num_elements(),
                                                       {nocc_max,nmo_max}); 
             for(int b=0; b<nelpk[nd][nkpts+K]; ++b) 
               ma::product(ComplexType(1.),ma::T(G3Db[nb+b].sliced(nk,nk+nopk[K])),
@@ -643,7 +643,7 @@ class KP3IndexFactorization_batched
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
       size_t cnt(0);  
       if(addEJ) { 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         mem_needs += 2*nwalk*local_nCV;
 #else
         if(not getKr) mem_needs += nwalk*local_nCV;
@@ -659,7 +659,7 @@ class KP3IndexFactorization_batched
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
@@ -675,7 +675,7 @@ class KP3IndexFactorization_batched
           Krptr = BTMats.origin();
           cnt += nwalk*local_nCV;
         }
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
@@ -725,7 +725,7 @@ class KP3IndexFactorization_batched
         for(int n=0; n<nwalk; n++)
           E[n][0] = E0;  
         for(int K=0; K<nkpts; ++K) {
-#if defined(MIXED_PRECISION) 
+#if defined(AFQMC_MIXED_PRECISION) 
           CMatrix_ref haj_K(make_device_ptr(haj[nd*nkpts+K].origin()),{nocc_max,nmo_max});
           for(int a=0; a<nelpk[nd][K]; ++a)
             ma::product(ComplexType(1.),ma::T(G3Da[na+a].sliced(nk,nk+nopk[K])),
@@ -733,7 +733,7 @@ class KP3IndexFactorization_batched
                         ComplexType(1.),E({0,nwalk},0));
           na+=nelpk[nd][K];
           if(walker_type==COLLINEAR) {
-            boost::multi::array_ref<ComplexType,2> haj_Kb(haj_K.origin()+haj_K.num_elements(),
+            boost::multi::array_ref<ComplexType,2,pointer> haj_Kb(haj_K.origin()+haj_K.num_elements(),
                                                       {nocc_max,nmo_max});
             for(int b=0; b<nelpk[nd][nkpts+K]; ++b)
               ma::product(ComplexType(1.),ma::T(G3Db[nb+b].sliced(nk,nk+nopk[K])),
@@ -1034,7 +1034,7 @@ class KP3IndexFactorization_batched
       SPComplexType imhalfa(0.0,0.5*a);
 
       size_t mem_needs((nkpts+number_of_symmetric_Q)*nkpts*nwalk*nmo_max*nmo_max + nwalk*2*nkpts*nchol_max);
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
       mem_needs += X.num_elements();
 #endif
       if(BTMats.num_elements() < mem_needs) { 
@@ -1049,7 +1049,7 @@ class KP3IndexFactorization_batched
 
       // "rotate" X  
       //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)  
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
       SpMatrix_ref Xdev(XQnw.origin()+XQnw.num_elements(),X.extensions());
       copy_n_cast(make_device_ptr(X.origin()),X.num_elements(),Xdev.origin());
 #else
@@ -1126,7 +1126,7 @@ class KP3IndexFactorization_batched
 
 
       using vType = typename std::decay<MatB>::type::element;
-      boost::multi::array_ref<vType,3>  v3D(make_device_ptr(v.origin()),{nwalk,nmo_tot,nmo_tot});
+      boost::multi::array_ref<vType,3,decltype(make_device_ptr(v.origin()))>  v3D(make_device_ptr(v.origin()),{nwalk,nmo_tot,nmo_tot});
       vKKwij_to_vwKiKj(vKK,v3D);
       // do I need to "rotate" back, can be done if necessary
     }

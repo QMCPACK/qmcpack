@@ -103,7 +103,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         PsiT_Matrix TrialWfn = csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         OrbMat[0],1e-8,'H',gTG.Node());
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         auto spTrialWfn(PsiT_Matrix_t<SPComplexType>{TrialWfn,
                                                     shared_allocator<SPComplexType>{gTG.Node()}});
 #else
@@ -122,7 +122,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         REQUIRE( real(Ovlp*Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp*Ovlp) == Approx(0.0) );
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         boost::multi::array<SPComplexType,2> Gsp(G);
         boost::multi::array_ref<SPComplexType,1> G0sp(Gsp.origin(),iextensions<1u>{NMO*NAEA});
 #else
@@ -203,7 +203,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         REQUIRE( real(Ovlp*Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp*Ovlp) == Approx(0.0) );
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         boost::multi::array<SPComplexType,3> GMsp(GM);
         boost::multi::array_ref<SPComplexType,1> G0Msp(GMsp.origin(),iextensions<1u>{NMO*NMO});
 #else
@@ -336,7 +336,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         boost::multi::array<SPComplexType,2> Gsp(G);
         boost::multi::array_ref<SPComplexType,1> G0sp(Gsp.origin(),G0.extensions());
 #else
@@ -363,7 +363,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
 
         // V2 uses std::size_t to store pointers_begin/end.
         bool addCoulomb = true;
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         auto spTrialWfn_Alpha(PsiT_Matrix_t<SPComplexType>{TrialWfn.first,
                                                     shared_allocator<SPComplexType>{gTG.Node()}}); 
         auto spTrialWfn_Beta(PsiT_Matrix_t<SPComplexType>{TrialWfn.second,
@@ -416,7 +416,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         boost::multi::array<SPComplexType,3> GMsp(GM);
         boost::multi::array_ref<SPComplexType,1> G0Msp(GMsp.origin(),iextensions<1u>{NMO*NMO});
 #else
@@ -562,7 +562,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
                                                                    std::addressof(TrialWfn.second));
         ComplexType E1 = ma::dot(hij,G0);
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         boost::multi::array<SPComplexType,2> Gsp(G);
         boost::multi::array_ref<SPComplexType,1> G0sp(Gsp.origin(),G0.extensions());
 #else
@@ -583,7 +583,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
 
         // V2 uses std::size_t to store pointers_begin/end.
         bool addCoulomb = true;
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         auto spTrialWfn_Alpha(PsiT_Matrix_t<SPComplexType>{TrialWfn.first,
                                                     shared_allocator<SPComplexType>{gTG.Node()}});   
         auto spTrialWfn_Beta(PsiT_Matrix_t<SPComplexType>{TrialWfn.second,
@@ -636,7 +636,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
         boost::multi::array<SPComplexType,3> GMsp(GM);
         boost::multi::array_ref<SPComplexType,1> G0Msp(GMsp.origin(),iextensions<1u>{NMO*NMO});
 #else

@@ -42,7 +42,7 @@ template<class T1, class T2=T1>
 class SparseTensor
 {
 
-#if defined(MIXED_PRECISION)
+#if defined(AFQMC_MIXED_PRECISION)
   using SpT1 = typename to_single_precision<T1>::value_type;
   using SpT2 = typename to_single_precision<T2>::value_type;
 #else
@@ -197,7 +197,7 @@ class SparseTensor
       if(addEJ and getKr)
         assert(Kr->size(0) == nwalk && Kr->size(1) == SpvnT[k].size(0));
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
       size_t mem_needs = Gc.num_elements();
       set_buffer(mem_needs);
       boost::multi::array_ref<SPComplexType,2> Gsp(to_address(SM_TMats.origin()), Gc.extensions());
@@ -251,7 +251,7 @@ class SparseTensor
         for(int wi=0; wi<Gc.size(1); wi++)
           E[wi][2] = 0.5*scl*static_cast<ComplexType>(ma::dot(v_(v_.extension(0),wi),v_(v_.extension(0),wi)));
       }
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
 #endif
 
     }
@@ -271,7 +271,7 @@ class SparseTensor
       assert( Spvn.size(1) == X.size(0) );
       assert( Spvn.size(0) == v.size(0) );
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
       size_t mem_needs = X.num_elements()+v.num_elements();  
       set_buffer(mem_needs);
       boost::multi::array_ref<SPComplexType,1> vsp(to_address(SM_TMats.origin()), v.extensions());  
@@ -302,7 +302,7 @@ class SparseTensor
       assert( Spvn.size(1) == X.size(0) );
       assert( Spvn.size(0) == v.size(0) );
       assert( X.size(1) == v.size(1) );
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
       size_t mem_needs = X.num_elements()+v.num_elements();
       set_buffer(mem_needs);
       boost::multi::array_ref<SPComplexType,2> vsp(to_address(SM_TMats.origin()), v.extensions());
@@ -336,7 +336,7 @@ class SparseTensor
       assert( SpvnT[k].size(1) == G.size(0) );
       assert( SpvnT[k].size(0) == v.size(0) );
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
       size_t mem_needs = G.num_elements()+v.num_elements();
       set_buffer(mem_needs);
       boost::multi::array_ref<SPComplexType,1> vsp(to_address(SM_TMats.origin()), v.extensions());
@@ -373,7 +373,7 @@ class SparseTensor
       assert( SpvnT[k].size(0) == v.size(0) );
       assert( G.size(1) == v.size(1) );
 
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
       size_t mem_needs = G.num_elements()+v.num_elements();
       set_buffer(mem_needs);
       boost::multi::array_ref<SPComplexType,2> vsp(to_address(SM_TMats.origin()), v.extensions());
