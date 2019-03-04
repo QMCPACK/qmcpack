@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 #include "Numerics/e2iphi.h"
 #include "simd/vmath.hpp"
 #include <Utilities/ProgressReportEngine.h>

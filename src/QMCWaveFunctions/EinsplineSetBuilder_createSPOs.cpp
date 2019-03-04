@@ -33,18 +33,10 @@
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+#include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 
 namespace qmcplusplus
 {
-
-  ///create R2R, real wavefunction in double
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create R2R, real wavefunction in float
-  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create C2C or C2R, complex wavefunction in double
-  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create C2C or C2R, complex wavefunction in single
-  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep);
 
 void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
 {
