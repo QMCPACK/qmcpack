@@ -18,6 +18,9 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2RAdoptor.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2CAdoptor.h"
+#if defined(ENABLE_OFFLOAD)
+#include "QMCWaveFunctions/BsplineFactory/SplineC2ROMP.h"
+#endif
 #include "QMCWaveFunctions/BsplineFactory/HybridCplxAdoptor.h"
 #include <fftw3.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
@@ -40,7 +43,7 @@ namespace qmcplusplus
       aReader= new SplineAdoptorReader<SplineC2CSoA<double,RealType> >(e);
 #else //QMC_COMPLEX
 #if defined(ENABLE_OFFLOAD)
-    if(useGPU="yes")
+    if(useGPU=="yes")
     {
       aReader= new SplineAdoptorReader<SplineC2ROMP<double,RealType> >(e);
     }
