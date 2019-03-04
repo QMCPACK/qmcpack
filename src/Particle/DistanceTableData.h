@@ -11,9 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_DISTANCETABLEDATAIMPL_H
@@ -30,7 +27,6 @@
 
 namespace qmcplusplus
 {
-
 /** @defgroup nnlist Distance-table group
  * @brief class to manage a set of data for distance relations between ParticleSet objects.
  */
@@ -42,13 +38,13 @@ struct TempDisplacement
   ///inverse of the new distance
   T rinv1;
   ///new displacement
-  TinyVector<T,N> dr1;
-  inline TempDisplacement():r1(0.0),rinv1(0.0) {}
+  TinyVector<T, N> dr1;
+  inline TempDisplacement() : r1(0.0), rinv1(0.0) {}
   inline void reset()
   {
-    r1=0.0;
-    rinv1=0.0;
-    dr1=0.0;
+    r1    = 0.0;
+    rinv1 = 0.0;
+    dr1   = 0.0;
   }
 };
 
@@ -61,16 +57,22 @@ struct TempDisplacement
  * The first user of each pair will decide the type of distance table.
  * It is the responsibility of the user class to check DTType.
  */
-enum DistTableType {DT_AOS=0,  DT_SOA, DT_AOS_PREFERRED, DT_SOA_PREFERRED};
+enum DistTableType
+{
+  DT_AOS = 0,
+  DT_SOA,
+  DT_AOS_PREFERRED,
+  DT_SOA_PREFERRED
+};
 
 /** @ingroup nnlist
  * @brief Abstract class to manage pair data between two ParticleSets.
  *
  * Each DistanceTableData object is fined by Source and Target of ParticleSet types.
  */
-struct DistanceTableData 
+struct DistanceTableData
 {
-  static constexpr unsigned DIM=OHMMS_DIM;
+  static constexpr unsigned DIM = OHMMS_DIM;
 
   /**enum for index ordering and storage.
    *@brief Equivalent to using three-dimensional array with (i,j,k)
@@ -78,15 +80,21 @@ struct DistanceTableData
    *     j = target particle index
    *     k = copies (walkers) index.
    */
-  enum {WalkerIndex=0, SourceIndex, VisitorIndex, PairIndex};
+  enum
+  {
+    WalkerIndex = 0,
+    SourceIndex,
+    VisitorIndex,
+    PairIndex
+  };
 
-  using IndexType=QMCTraits::IndexType;
-  using RealType=QMCTraits::RealType;
-  using PosType=QMCTraits::PosType;
-  using IndexVectorType=aligned_vector<IndexType>;
-  using TempDistType=TempDisplacement<RealType,DIM>;
-  using ripair=std::pair<RealType,IndexType>;
-  using RowContainer=VectorSoaContainer<RealType,DIM>;
+  using IndexType       = QMCTraits::IndexType;
+  using RealType        = QMCTraits::RealType;
+  using PosType         = QMCTraits::PosType;
+  using IndexVectorType = aligned_vector<IndexType>;
+  using TempDistType    = TempDisplacement<RealType, DIM>;
+  using ripair          = std::pair<RealType, IndexType>;
+  using RowContainer    = VectorSoaContainer<RealType, DIM>;
 
   ///type of cell
   int CellType;
@@ -95,7 +103,7 @@ struct DistanceTableData
   ///Type of DT
   int DTType;
   ///size of indicies
-  TinyVector<IndexType,4> N;
+  TinyVector<IndexType, 4> N;
 
   /** @brief M.size() = N[SourceIndex]+1
    *
@@ -137,7 +145,7 @@ struct DistanceTableData
    *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
    *        For derived BA, the full table is up-to-date after pbyp move
    */
-  Matrix<RealType, aligned_allocator<RealType> > Distances;
+  Matrix<RealType, aligned_allocator<RealType>> Distances;
 
   /** Displacements[Nsources]x[3][Ntargets]
    *  Note: This is a memory view using the memory space allocated in memoryPool
@@ -166,104 +174,53 @@ struct DistanceTableData
   std::string Name;
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-    : Origin(&source), N(0), Need_full_table_loadWalker(false)
-  { }
+      : Origin(&source), N(0), Need_full_table_loadWalker(false)
+  {}
 
   ///virutal destructor
-  virtual ~DistanceTableData() { }
+  virtual ~DistanceTableData() {}
 
   ///return the name of table
-  inline std::string getName() const
-  {
-    return Name;
-  }
+  inline std::string getName() const { return Name; }
   ///set the name of table
-  inline void setName(const std::string& tname)
-  {
-    Name = tname;
-  }
+  inline void setName(const std::string& tname) { Name = tname; }
 
   ///returns the reference the origin particleset
-  const ParticleSet& origin() const
-  {
-    return *Origin;
-  }
-  inline void reset(const ParticleSet* newcenter)
-  {
-    Origin=newcenter;
-  }
+  const ParticleSet& origin() const { return *Origin; }
+  inline void reset(const ParticleSet* newcenter) { Origin = newcenter; }
 
-  inline bool is_same_type(int dt_type) const
-  {
-    return DTType == dt_type;
-  }
+  inline bool is_same_type(int dt_type) const { return DTType == dt_type; }
 
   //@{access functions to the distance, inverse of the distance and directional consine vector
-  inline PosType dr(int j) const
-  {
-    return dr_m[j];
-  }
-  inline RealType r(int j) const
-  {
-    return r_m[j];
-  }
-  inline RealType rinv(int j) const
-  {
-    return rinv_m[j];
-  }
+  inline PosType dr(int j) const { return dr_m[j]; }
+  inline RealType r(int j) const { return r_m[j]; }
+  inline RealType rinv(int j) const { return rinv_m[j]; }
 
   //@}
 
   ///returns the number of centers
-  inline IndexType centers() const
-  {
-    return Origin->getTotalNum();
-  }
-      
-  ///returns the number of centers
-  inline IndexType targets() const
-  {
-    return N[VisitorIndex];
-  }
-  
-  ///returns the size of each dimension using enum
-  inline IndexType size(int i) const
-  {
-    return N[i];
-  }
+  inline IndexType centers() const { return Origin->getTotalNum(); }
 
-  inline IndexType getTotNadj() const
-  {
-    return npairs_m;
-  }
+  ///returns the number of centers
+  inline IndexType targets() const { return N[VisitorIndex]; }
+
+  ///returns the size of each dimension using enum
+  inline IndexType size(int i) const { return N[i]; }
+
+  inline IndexType getTotNadj() const { return npairs_m; }
 
   /// return the distance |R[iadj(i,nj)]-R[i]|
-  inline RealType distance(int i, int nj) const
-  {
-    return r_m[M[i]+nj];
-  }
+  inline RealType distance(int i, int nj) const { return r_m[M[i] + nj]; }
 
   /// return the displacement R[iadj(i,nj)]-R[i]
-  inline PosType displacement(int i, int nj) const
-  {
-    return dr_m[M[i]+nj];
-  }
+  inline PosType displacement(int i, int nj) const { return dr_m[M[i] + nj]; }
 
   //!< Returns a number of neighbors of the i-th ptcl.
-  inline IndexType nadj(int i) const
-  {
-    return M[i+1]-M[i];
-  }
+  inline IndexType nadj(int i) const { return M[i + 1] - M[i]; }
   //!< Returns the id of nj-th neighbor for i-th ptcl
-  inline IndexType iadj(int i, int nj) const
-  {
-    return J[M[i] +nj];
-  }
+  inline IndexType iadj(int i, int nj) const { return J[M[i] + nj]; }
   //!< Returns the id of j-th neighbor for i-th ptcl
-  inline IndexType loc(int i, int j) const
-  {
-    return M[i] + j;
-  }
+  inline IndexType loc(int i, int j) const { return M[i] + j; }
 
   /** search the closest source particle within rcut
    * @param rcut cutoff radius
@@ -274,10 +231,11 @@ struct DistanceTableData
    */
   inline IndexType find_closest_source(RealType rcut) const
   {
-    int i=0;
-    while(i<N[SourceIndex])
+    int i = 0;
+    while (i < N[SourceIndex])
     {
-      if(Temp[i].r1<rcut) return i;
+      if (Temp[i].r1 < rcut)
+        return i;
       i++;
     }
     return -1;
@@ -292,11 +250,12 @@ struct DistanceTableData
    */
   inline IndexType find_closest_source(int iel, RealType rcut) const
   {
-    int i=0,nn=iel;
-    while(nn<r_m.size())
+    int i = 0, nn = iel;
+    while (nn < r_m.size())
     {
-      if(r_m[nn]<rcut) return i;
-      nn+=N[VisitorIndex];
+      if (r_m[nn] < rcut)
+        return i;
+      nn += N[VisitorIndex];
       i++;
     }
     return -1;
@@ -306,13 +265,13 @@ struct DistanceTableData
   virtual void evaluate(ParticleSet& P) = 0;
 
   /// evaluate the Distance Table for a given electron
-  virtual void evaluate(ParticleSet& P, int jat)=0;
+  virtual void evaluate(ParticleSet& P, int jat) = 0;
 
   ///evaluate the temporary pair relations
-  virtual void move(const ParticleSet& P, const PosType& rnew) =0;
+  virtual void move(const ParticleSet& P, const PosType& rnew) = 0;
 
   ///evaluate the distance tables with a sphere move
-  virtual void moveOnSphere(const ParticleSet& P, const PosType& rnew) =0;
+  virtual void moveOnSphere(const ParticleSet& P, const PosType& rnew) = 0;
 
   ///update the distance table by the pair relations
   virtual void update(IndexType jat) = 0;
@@ -325,7 +284,11 @@ struct DistanceTableData
    * @param displ compressed displacement
    * @return number of target particles within rcut
    */
-  virtual size_t get_neighbors(int iat, RealType rcut, int* restrict jid, RealType* restrict dist, PosType* restrict displ) const
+  virtual size_t get_neighbors(int iat,
+                               RealType rcut,
+                               int* restrict jid,
+                               RealType* restrict dist,
+                               PosType* restrict displ) const
   {
     return 0;
   }
@@ -350,44 +313,46 @@ struct DistanceTableData
    * @param dist compressed distance
    * @return number of target particles within rcut
    */
-  virtual size_t get_neighbors(int iat, RealType rcut, RealType* restrict dist) const
-  {
-    return 0;
-  }
+  virtual size_t get_neighbors(int iat, RealType rcut, RealType* restrict dist) const { return 0; }
 
   /// find index and distance of each nearest neighbor particle
-  virtual void nearest_neighbor(std::vector<ripair>& ri,bool transposed=false) const
+  virtual void nearest_neighbor(std::vector<ripair>& ri, bool transposed = false) const
   {
     APP_ABORT("DistanceTableData::nearest_neighbor is not implemented in calling base class");
   }
 
   /// find indices and distances of nearest neighbors particles to particle n
-  virtual void nearest_neighbors(int n,int neighbors,std::vector<ripair>& ri,bool transposed=false)
+  virtual void nearest_neighbors(int n, int neighbors, std::vector<ripair>& ri, bool transposed = false)
   {
     APP_ABORT("DistanceTableData::nearest_neighbors is not implemented in calling base class");
   }
 
   /// find species resolved indices and distances of nearest particles to particle n
-  virtual void nearest_neighbors_by_spec(int n,int neighbors,int spec_start,std::vector<ripair>& ri,bool transposed=false)
+  virtual void nearest_neighbors_by_spec(int n,
+                                         int neighbors,
+                                         int spec_start,
+                                         std::vector<ripair>& ri,
+                                         bool transposed = false)
   {
     APP_ABORT("DistanceTableData::nearest_neighbors is not implemented in calling base class");
   }
 
-  inline void check_neighbor_size(std::vector<ripair>& ri,bool transposed=false) const
+  inline void check_neighbor_size(std::vector<ripair>& ri, bool transposed = false) const
   {
     int m;
-    if(transposed)
+    if (transposed)
       m = N[SourceIndex];
     else
       m = N[VisitorIndex];
-    if(ri.size()!=m)
-      APP_ABORT("DistanceTableData::check_neighbor_size  distance/index vector length is not equal to the number of neighbor particles");
+    if (ri.size() != m)
+      APP_ABORT("DistanceTableData::check_neighbor_size  distance/index vector length is not equal to the number of "
+                "neighbor particles");
   }
 
   inline void print(std::ostream& os)
   {
     os << "Table " << Origin->getName() << std::endl;
-    for(int i=0; i<r_m.size(); i++)
+    for (int i = 0; i < r_m.size(); i++)
       os << r_m[i] << " ";
     os << std::endl;
   }
@@ -424,7 +389,7 @@ struct DistanceTableData
    */
   void resize(int npairs, int nw)
   {
-    N[WalkerIndex] =nw;
+    N[WalkerIndex] = nw;
     //if(nw==1)
     {
       dr_m.resize(npairs);
@@ -433,7 +398,6 @@ struct DistanceTableData
       Temp.resize(N[SourceIndex]);
     }
   }
-
 };
-}
+} // namespace qmcplusplus
 #endif

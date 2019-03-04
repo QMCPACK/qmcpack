@@ -17,11 +17,10 @@
 
 namespace qmcplusplus
 {
-
 template<typename P>
 class TestQMCTypes
 {
-  using TA = QMCTypes<P,3>;
+  using TA = QMCTypes<P, 3>;
   typename TA::RealType testReal;
   typename TA::ComplexType testComplex;
 };
@@ -37,4 +36,4 @@ TEST_CASE("QMCTypes", "[type_traits]")
   //REQUIRE(floatTest);
 }
 
-}
+} // namespace qmcplusplus
