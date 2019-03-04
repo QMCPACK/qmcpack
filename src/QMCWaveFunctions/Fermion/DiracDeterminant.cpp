@@ -23,6 +23,7 @@
 #include "Numerics/BlasThreadingEnv.h"
 #include "Numerics/MatrixOperators.h"
 #include "simd/simd.hpp"
+#include <typeinfo>
 
 namespace qmcplusplus
 {
@@ -145,6 +146,7 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   }
   curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
   grad_iat += ((RealType)1.0/curRatio) * simd::dot(invRow.data(), dpsiV.data(), invRow.size());
+  RatioTimer.stop();
   return curRatio;
 }
 

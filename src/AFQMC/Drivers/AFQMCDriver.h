@@ -62,8 +62,6 @@ class AFQMCDriver: public AFQMCInfo
     int m_series;
     std::string project_title;
 
-    myTimer LocalTimer;
-
     std::string hdf_write_restart;
 
     int nBlock;

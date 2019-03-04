@@ -59,12 +59,13 @@ class AFQMCSharedPropagator: public AFQMCInfo
                           RandomGenerator_t* r):
             AFQMCInfo(info),TG(tg_),wfn(wfn_),
             H1(std::move(h1_)),
-            P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,boost::mpi3::intranode::allocator<ComplexType>(tg_.TG_local()))),
+            P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,shared_allocator<ComplexType>(tg_.TG_local()))),
             vMF(std::move(vmf_)),
             rng(r),
-            SDetOp(2*NMO,NAEA+NAEB), // safe for now, since I don't know walker_type
+            SDetOp(2*NMO,NAEA+NAEB),
+            //SDetOp(SlaterDetOperations_shared<ComplexType>(2*NMO,NAEA+NAEB)),
             TSM({2*NMO,NAEA+NAEB}), // safe for now, since I don't know walker_type
-            shmbuff(extensions<1u>{1},shared_allocator<ComplexType>{TG.TG_local()}),
+            shmbuff(iextensions<1u>{1},shared_allocator<ComplexType>{TG.TG_local()}),
             local_group_comm(),
             last_nextra(-1),
             last_task_index(-1),
@@ -99,7 +100,7 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     // reset shared memory buffers
     // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
-    void reset() { shmbuff.reextent(extensions<1u>{0}); }
+    void reset() { shmbuff.reextent(iextensions<1u>{0}); }
 
     bool hybrid_propagation() { return hybrid; }
 
@@ -119,7 +120,8 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     RandomGenerator_t* rng;
 
-    SlaterDetOperations<ComplexType> SDetOp;
+    SlaterDetOperations_shared<ComplexType> SDetOp;
+    //SlaterDetOperations SDetOp;
 
     shmCVector shmbuff;    
 

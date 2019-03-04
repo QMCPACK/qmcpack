@@ -39,11 +39,11 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
 {
 
   auto walker_type = wset.getWalkerType();
-  size_t nsteps= size_t(nsteps_);
-  size_t nwalk = wset.size();
+  int nsteps= nsteps_;
+  int nwalk = wset.size();
   RealType sqrtdt = std::sqrt(dt);  
-  size_t Gsize = wfn.size_of_G_for_vbias();
-  size_t localnCV = wfn.local_number_of_cholesky_vectors();
+  long Gsize = wfn.size_of_G_for_vbias();
+  long localnCV = wfn.local_number_of_cholesky_vectors();
   // if transposed_XXX_=true  --> XXX[nwalk][...], 
   // if transposed_XXX_=false --> XXX[...][nwalk]
   int vhs_nr = NMO*NMO, vhs_nc = nwalk*nsteps;
@@ -66,42 +66,42 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
 
   // 0. Allocate memory and set shared memory structures
   if(shmbuff.num_elements() < memory_needs ) 
-    shmbuff.reextent(extensions<1u>{memory_needs});
+    shmbuff.reextent(iextensions<1u>{memory_needs});
   size_t displ=0;
   // Mixed Density Matrix for walkers at original configuration
   // Actual dimensions depend on transposed_G_, see above
-  CMatrix_ref G(std::addressof(*shmbuff.origin())+displ, {G_nr,G_nc}); 
+  CMatrix_ref G(to_address(shmbuff.origin())+displ, {G_nr,G_nc}); 
     displ+=G_nr*G_nc; 
   // vias potential for walkers at original configuration
-  CMatrix_ref vbias(std::addressof(*shmbuff.origin())+displ, {localnCV,nwalk}); 
+  CMatrix_ref vbias(to_address(shmbuff.origin())+displ, {long(localnCV),long(nwalk)}); 
     displ+=localnCV*nwalk;
   // right hand side matrix in calculation of HS potential for all steps: ~ sigma + (vbias-vMF)
   // The same vbias is used in all steps
-  CMatrix_ref X(std::addressof(*shmbuff.origin())+displ, {localnCV,nwalk*nsteps}); 
+  CMatrix_ref X(to_address(shmbuff.origin())+displ, {long(localnCV),long(nwalk*nsteps)}); 
     displ+=localnCV*nwalk*nsteps;
   // HS potential for all steps.
   // Actual dimensions depend on transposed_vHS_, see above
-  CMatrix_ref vHS(std::addressof(*shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
+  CMatrix_ref vHS(to_address(shmbuff.origin())+displ, {vhs_nr,vhs_nc}); 
   // second view of vHS matrix for use in propagation step
   // Actual dimensions depend on transposed_vHS_, see above
-  boost::multi::array_ref<ComplexType,3> vHS3D(std::addressof(*shmbuff.origin())+displ, 
+  boost::multi::array_ref<ComplexType,3> vHS3D(to_address(shmbuff.origin())+displ, 
                                               {vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
 
   // local matrices for temporary accumulation
-  if(MFfactor.shape()[0] != nsteps || MFfactor.shape()[1] != nwalk) 
-    MFfactor.reextent({nsteps,nwalk});
-  if(hybrid_weight.shape()[0] != nsteps || hybrid_weight.shape()[1] != nwalk) 
-    hybrid_weight.reextent({nsteps,nwalk});
-  if(new_overlaps.shape()[0] != nwalk) new_overlaps.reextent(extensions<1u>{nwalk});
-  if(new_energies.shape()[0] != nwalk || new_energies.shape()[1] != 3) 
-    new_energies.reextent({nwalk,3});
+  if(MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk) 
+    MFfactor.reextent({long(nsteps),long(nwalk)});
+  if(hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk) 
+    hybrid_weight.reextent({long(nsteps),long(nwalk)});
+  if(new_overlaps.size(0) != nwalk) new_overlaps.reextent(iextensions<1u>{nwalk});
+  if(new_energies.size(0) != nwalk || new_energies.size(1) != 3) 
+    new_energies.reextent({long(nwalk),3});
   // these is only needed if vHS matrix has strides != 1, e.g. when transposed_vHS_ == false  
   if(not transposed_vHS_) {
     if(walker_type==NONCOLLINEAR)
-      if(local_vHS.shape()[0] != 2*NMO || local_vHS.shape()[1] != 2*NMO)
+      if(local_vHS.size(0) != 2*NMO || local_vHS.size(1) != 2*NMO)
         local_vHS.reextent({2*NMO,2*NMO});
     else
-      if(local_vHS.shape()[0] != NMO || local_vHS.shape()[1] != NMO)
+      if(local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
         local_vHS.reextent({NMO,NMO});
   }  
 
@@ -281,20 +281,20 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
 {
   int nwalk = wset.size();
   auto walker_type = wset.getWalkerType();
+  auto TAlpha(TSM({0,NMO},{0,NAEA}));
+  auto TBeta(TSM({0,NMO},{0,NAEB})); 
   if(transposed_vHS_) {
     // vHS3D[nstep*nwalk][M][M]
     if(walker_type == COLLINEAR) {
       // in this case, tk corresponds to 2x the walker number
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk/2;
-        CMatrix_ref B = wset[tk/2].BMatrix();
+        auto B(wset[tk/2].BMatrix());
         SDetOp.Propagate(B,P1,vHS3D[nt],order);
         if(tk%2==0) {
-          CMatrix_ref TAlpha = CMatrix_ref(TSM.data(), {NMO,NAEA});
           TAlpha = wset[tk/2].SlaterMatrix(Alpha);
           ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
         } else {
-          CMatrix_ref TBeta = CMatrix_ref(TSM.data()+NMO*NAEA, {NMO,NAEB});
           TBeta = wset[tk/2].SlaterMatrix(Beta);
           ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
         }
@@ -303,14 +303,12 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
       if(last_nextra > 0) {
         int tk = (ntasks_total_serial+last_task_index);
         int nt = ni*nwalk+tk/2;
-        CMatrix_ref B = wset[tk/2].BMatrix();
+        auto B(wset[tk/2].BMatrix());
         SDetOp.Propagate(B,P1,vHS3D[nt],order);
         if(tk%2==0) {
-          CMatrix_ref TAlpha = CMatrix_ref(TSM.data(), {NMO,NAEA});
           TAlpha = wset[tk/2].SlaterMatrix(Alpha);
           ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
         } else {
-          CMatrix_ref TBeta = CMatrix_ref(TSM.data()+NMO*NAEA, {NMO,NAEB});
           TBeta = wset[tk/2].SlaterMatrix(Beta);
           ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
         }
@@ -320,9 +318,8 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
       // in this case, tk corresponds to walker number
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk;
-        CMatrix_ref B = wset[tk].BMatrix();
+        auto B(wset[tk].BMatrix());
         SDetOp.Propagate(B,P1,vHS3D[nt],order);
-        CMatrix_ref TAlpha = CMatrix_ref(TSM.data(), {NMO,NAEA});
         TAlpha = wset[tk].SlaterMatrix(Alpha);
         ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
         wset[tk/2].incrementBMatrix();
@@ -330,9 +327,8 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
       if(last_nextra > 0) {
         int iw = ntasks_total_serial+last_task_index;
         int nt = ni*nwalk+iw;
-        CMatrix_ref B = wset[iw].BMatrix();
+        auto B(wset[iw].BMatrix());
         SDetOp.Propagate(B,P1,vHS3D[nt],order);
-        CMatrix_ref TAlpha = CMatrix_ref(TSM.data(), {NMO,NAEA});
         TAlpha = wset[iw].SlaterMatrix(Alpha);
         ma::product(B, TAlpha, wset[iw].SlaterMatrix(Alpha));
       }
@@ -348,14 +344,12 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
           local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
           oldw=tk/2;
         }
-        CMatrix_ref B = wset[tk/2].BMatrix();
+        auto B(wset[tk/2].BMatrix());
         SDetOp.Propagate(B,P1,local_vHS,order);
         if(tk%2==0) {
-          CMatrix_ref TAlpha = CMatrix_ref(TSM.data(), {NMO,NAEA});
           TAlpha = wset[tk/2].SlaterMatrix(Alpha);
           ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
         } else {
-          CMatrix_ref TBeta = CMatrix_ref(TSM.data()+NMO*NAEA, {NMO,NAEB});
           TBeta = wset[tk/2].SlaterMatrix(Beta);
           ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
         }
@@ -365,14 +359,12 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
         int tk = (ntasks_total_serial+last_task_index);
         int nt = ni*nwalk+tk/2;
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        CMatrix_ref B = wset[tk/2].BMatrix();
+        auto B(wset[tk/2].BMatrix());
         SDetOp.Propagate(B,P1,local_vHS,order);
         if(tk%2==0) {
-          CMatrix_ref TAlpha = CMatrix_ref(TSM.data(), {NMO,NAEA});
           TAlpha = wset[tk/2].SlaterMatrix(Alpha);
           ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
         } else {
-          CMatrix_ref TBeta = CMatrix_ref(TSM.data()+NMO*NAEA, {NMO,NAEB});
           TBeta = wset[tk/2].SlaterMatrix(Beta);
           ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
         }
@@ -383,9 +375,8 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk;
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        CMatrix_ref B = wset[tk].BMatrix();
+        auto B(wset[tk].BMatrix());
         SDetOp.Propagate(B,P1,local_vHS,order);
-        CMatrix_ref TAlpha = CMatrix_ref(TSM.data(), {NMO,NAEA});
         TAlpha = wset[tk].SlaterMatrix(Alpha);
         ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
         wset[tk].incrementBMatrix();
@@ -394,9 +385,8 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
         int iw = ntasks_total_serial+last_task_index;
         int nt = ni*nwalk+iw;
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        CMatrix_ref B = wset[iw].BMatrix();
+        auto B(wset[iw].BMatrix());
         SDetOp.Propagate(B,P1,local_vHS,order);
-        CMatrix_ref TAlpha = CMatrix_ref(TSM.data(), {NMO,NAEA});
         TAlpha = wset[iw].SlaterMatrix(Alpha);
         ma::product(B, TAlpha, wset[iw].SlaterMatrix(Alpha));
         wset[iw].incrementBMatrix();

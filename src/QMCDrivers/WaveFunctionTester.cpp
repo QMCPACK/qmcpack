@@ -140,6 +140,7 @@ WaveFunctionTester::run()
 
 void WaveFunctionTester::runCloneTest()
 {
+  app_log() <<" ===== runCloneTest =====\n";
   for (int iter=0; iter<4; ++iter)
   {
     app_log() << "Clone" << iter << std::endl;
@@ -194,6 +195,7 @@ void WaveFunctionTester::runCloneTest()
 
 void WaveFunctionTester::printEloc()
 {
+  app_log() <<" ===== printEloc =====\n";
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
     app_log() << "ParticelSet = " << p->first << std::endl;
@@ -1244,6 +1246,7 @@ void WaveFunctionTester::runRatioTest()
 
 void WaveFunctionTester::runRatioTest2()
 {
+  app_log() <<" ===== runRatioTest2 =====\n";
   int nat = W.getTotalNum();
   ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
   ParticleSet::ParticleLaplacian_t Lp(nat), dLp(nat);
@@ -1389,6 +1392,7 @@ void WaveFunctionTester::runRatioV()
 
 void WaveFunctionTester::runGradSourceTest()
 {
+  app_log() <<" ===== runGradSourceTest =====\n";
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
     app_log() << "ParticelSet = " << p->first << std::endl;
@@ -1416,6 +1420,7 @@ void WaveFunctionTester::runGradSourceTest()
   //ValueType psi = Psi.evaluate(W);
   ValueType logpsi = Psi.evaluateLog(W);
   RealType eloc=H.evaluate(W);
+  H.auxHevaluate(W);
   app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
   for (int i=0; i<H.sizeOfObservables(); i++)
     app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
@@ -1537,6 +1542,7 @@ void WaveFunctionTester::runGradSourceTest()
 
 void WaveFunctionTester::runZeroVarianceTest()
 {
+  app_log() <<" ===== runZeroVarianceTest =====\n";
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
     app_log() << "ParticelSet = " << p->first << std::endl;
@@ -1653,6 +1659,7 @@ WaveFunctionTester::put(xmlNodePtr q)
 
 void WaveFunctionTester::runDerivTest()
 {
+  app_log() <<" ===== runDerivTest =====\n";
   app_log()<<" Testing derivatives"<< std::endl;
   int nat = W.getTotalNum();
   MCWalkerConfiguration::PropertyContainer_t Properties;
@@ -1753,6 +1760,7 @@ void WaveFunctionTester::runDerivTest()
 
 void WaveFunctionTester::runDerivNLPPTest()
 {
+  app_log() <<" ===== runDerivNLPPTest =====\n";
   char fname[16];
   sprintf(fname,"nlpp.%03d",OHMMS::Controller->rank());
   std::ofstream nlout(fname);
@@ -1866,6 +1874,7 @@ void WaveFunctionTester::runDerivNLPPTest()
 
 void WaveFunctionTester::runDerivCloneTest()
 {
+  app_log() <<" ===== runDerivCloneTest =====\n";
   app_log()<<" Testing derivatives clone"<< std::endl;
   RandomGenerator_t* Rng1= new RandomGenerator_t();
   RandomGenerator_t* Rng2= new RandomGenerator_t();
@@ -2226,6 +2235,7 @@ void WaveFunctionTester::runwftricks()
 
 void  WaveFunctionTester::runNodePlot()
 {
+  app_log() <<" ===== runNodePlot =====\n";
   xmlNodePtr kids=myNode->children;
   std::string doEnergy("no");
   ParameterSet aAttrib;

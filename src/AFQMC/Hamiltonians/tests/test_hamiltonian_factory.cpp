@@ -94,7 +94,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
     // build HamiltonianOperations
     if(file_exists("./wfn.dat")) {
 
-        using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+        using shm_Alloc = shared_allocator<ComplexType>;
         boost::multi::array<ComplexType,3> OrbMat;
         int wfn_type = readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
         if(wfn_type != 0)
@@ -106,11 +106,13 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
 
         // Calculates Overlap, G
-        SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+        SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
+        //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 
         boost::multi::array<ComplexType,2> G({NAEA,NMO});
-        boost::multi::array_ref<ComplexType,1> G0(G.origin(),extensions<1u>{NMO*NAEA});
-        auto Ovlp = SDet.MixedDensityMatrix(TrialWfn,OrbMat[0],G,true);
+        boost::multi::array_ref<ComplexType,1> G0(G.origin(),iextensions<1u>{NMO*NAEA});
+        ComplexType Ovlp;
+        SDet.MixedDensityMatrix(TrialWfn,OrbMat[0],G,std::addressof(Ovlp),true);
         REQUIRE( real(Ovlp*Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp*Ovlp) == Approx(0.0) );
 
@@ -133,7 +135,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
 
         std::map<IndexType,std::pair<bool,IndexType>> occ_a;
         for(int i=0; i<NMO; i++) occ_a[i] = {false,0};
-        auto nel = TrialWfn.shape()[0];
+        auto nel = TrialWfn.size(0);
         REQUIRE( nel == NAEA );
         for(std::size_t i=0; i<nel; i++) {
           if(TrialWfn.num_non_zero_elements(i) != 1)
@@ -149,14 +151,14 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         // TODO (FDM): addCoulomb=false not yet implemented.
         bool addCoulomb = true;
         auto V2(ham.generateHijkl(CLOSED,addCoulomb,TG,occ_a,occ_a,1e-5));
-        REQUIRE(V2.shape()[0] == NAEA*NMO);
-        REQUIRE(V2.shape()[0] == V2.shape()[1]);
+        REQUIRE(V2.size(0) == NAEA*NMO);
+        REQUIRE(V2.size(0) == V2.size(1));
 
         // to get rid of narrowing warnings
-        auto V2view(V2[array_{zero,V2.shape()[0],zero,V2.shape()[1]}]);
-        REQUIRE(V2view.shape()[0] == NAEA*NMO);
-        REQUIRE(V2view.shape()[0] == V2view.shape()[1]);
-        boost::multi::array<ComplexType,1> V0(extensions<1u>{V2.shape()[0]});
+        auto V2view(V2[array_{zero,V2.size(0),zero,V2.size(1)}]);
+        REQUIRE(V2view.size(0) == NAEA*NMO);
+        REQUIRE(V2view.size(0) == V2view.size(1));
+        boost::multi::array<ComplexType,1> V0(iextensions<1u>{V2.size(0)});
         ma::product(V2view,G0,V0);
         ComplexType E2 = 0.5*ma::dot(G0,V0);
         if(std::abs(file_data.E2)>1e-8) {
@@ -176,18 +178,18 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
                                 std::addressof(TrialWfn),
                                 Spvn,1e-6));
 
-        auto Spvnview(Spvn[array_{zero,Spvn.shape()[0],zero,Spvn.shape()[1]}]);
-        auto SpvnTview(SpvnT[array_{zero,SpvnT.shape()[0],zero,SpvnT.shape()[1]}]);
-        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.shape()[0],zero,rotSpvnT.shape()[1]}]);
+        auto Spvnview(Spvn[array_{zero,Spvn.size(0),zero,Spvn.size(1)}]);
+        auto SpvnTview(SpvnT[array_{zero,SpvnT.size(0),zero,SpvnT.size(1)}]);
+        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.size(0),zero,rotSpvnT.size(1)}]);
 
         boost::multi::array<ComplexType,3> GM({1,NMO,NMO});
-        boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),extensions<1u>{NMO*NMO});
-        Ovlp = SDet.MixedDensityMatrix(TrialWfn,OrbMat[0],
-            GM[0],false);
+        boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),iextensions<1u>{NMO*NMO});
+        SDet.MixedDensityMatrix(TrialWfn,OrbMat[0],
+            GM[0],std::addressof(Ovlp),false);
         REQUIRE( real(Ovlp*Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp*Ovlp) == Approx(0.0) );
 
-        boost::multi::array<ComplexType,1> X(extensions<1u>{Spvn.shape()[1]});
+        boost::multi::array<ComplexType,1> X(iextensions<1u>{Spvn.size(1)});
         using ma::T;
         ma::product(2.0*sqrtdt,T(Spvnview),
                     G0M.sliced(0,NMO*NMO),0.,X);
@@ -224,7 +226,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
           app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
         }
 
-        boost::multi::array<ComplexType,1> vHS(extensions<1u>{NMO*NMO});
+        boost::multi::array<ComplexType,1> vHS(iextensions<1u>{NMO*NMO});
         ma::product(sqrtdt,Spvnview,X,0.,vHS);
         ComplexType Vsum=0;
         for(int i=0; i<vHS.size(); i++)
@@ -284,7 +286,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
     // build HamiltonianOperations
     if(file_exists("./wfn_collinear.dat")) {
 
-        using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+        using shm_Alloc = shared_allocator<ComplexType>;
         boost::multi::array<ComplexType,3> OrbMat;
         readWfn(std::string("./wfn_collinear.dat"),OrbMat,NMO,NAEA,NAEB);
 
@@ -298,14 +300,17 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
 
         // Calculates Overlap, G
-        SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+        //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+        SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
         boost::multi::array<ComplexType,2> G({NAEA+NAEB,NMO});
-        boost::multi::array_ref<ComplexType,1> G0(G.origin(),extensions<1u>{NMO*(NAEA+NAEB)});
-        auto Ovlp = SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
-            G.sliced(0,NAEA),true);
-        Ovlp *= SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
-            G.sliced(NAEA,NAEA+NAEB),true);
+        boost::multi::array_ref<ComplexType,1> G0(G.origin(),iextensions<1u>{NMO*(NAEA+NAEB)});
+        ComplexType Ovlp, ov_;
+        SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
+            G.sliced(0,NAEA),std::addressof(Ovlp),true);
+        SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
+            G.sliced(NAEA,NAEA+NAEB),std::addressof(ov_),true);
+        Ovlp *= ov_;
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
@@ -330,14 +335,14 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         bool addCoulomb = true;
         auto V2(ham.halfRotatedHijkl(COLLINEAR,addCoulomb,TG,std::addressof(TrialWfn.first),
                                           std::addressof(TrialWfn.second),1e-5));
-        REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
-        REQUIRE(V2.shape()[0] == V2.shape()[1]);
+        REQUIRE(V2.size(0) == (NAEA+NAEB)*NMO);
+        REQUIRE(V2.size(0) == V2.size(1));
 
         // to get rid of narrowing warnings
-        auto V2view(V2[array_{zero,V2.shape()[0],zero,V2.shape()[1]}]);
-        REQUIRE(V2view.shape()[0] == (NAEA+NAEB)*NMO);
-        REQUIRE(V2view.shape()[0] == V2view.shape()[1]);
-        boost::multi::array<ComplexType,1> V0(extensions<1u>{V2.shape()[0]});
+        auto V2view(V2[array_{zero,V2.size(0),zero,V2.size(1)}]);
+        REQUIRE(V2view.size(0) == (NAEA+NAEB)*NMO);
+        REQUIRE(V2view.size(0) == V2view.size(1));
+        boost::multi::array<ComplexType,1> V0(iextensions<1u>{V2.size(0)});
         ma::product(V2view,G0,V0);
         ComplexType E2 = 0.5*ma::dot(G0,V0);
         if(std::abs(file_data.E2)>1e-8) {
@@ -357,20 +362,21 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
                                 std::addressof(TrialWfn.second),
                                 Spvn,1e-6));
 
-        auto Spvnview(Spvn[array_{zero,Spvn.shape()[0],zero,Spvn.shape()[1]}]);
-        auto SpvnTview(SpvnT[array_{zero,SpvnT.shape()[0],zero,SpvnT.shape()[1]}]);
-        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.shape()[0],zero,rotSpvnT.shape()[1]}]);
+        auto Spvnview(Spvn[array_{zero,Spvn.size(0),zero,Spvn.size(1)}]);
+        auto SpvnTview(SpvnT[array_{zero,SpvnT.size(0),zero,SpvnT.size(1)}]);
+        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.size(0),zero,rotSpvnT.size(1)}]);
 
         boost::multi::array<ComplexType,3> GM({2,NMO,NMO});
-        boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),extensions<1u>{2*NMO*NMO});
-        Ovlp = SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
-            GM[0],false);
-        Ovlp *= SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
-            GM[1],false);
+        boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),iextensions<1u>{2*NMO*NMO});
+        SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
+            GM[0],std::addressof(Ovlp),false);
+        SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
+            GM[1],std::addressof(ov_),false);
+        Ovlp *= ov_;
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-        boost::multi::array<ComplexType,1> X(extensions<1u>{Spvn.shape()[1]});
+        boost::multi::array<ComplexType,1> X(iextensions<1u>{Spvn.size(1)});
         using ma::T;
         ma::product(sqrtdt,T(Spvnview),
                     G0M.sliced(0,NMO*NMO),0.,X);
@@ -411,7 +417,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
           app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
         }
 
-        boost::multi::array<ComplexType,1> vHS(extensions<1u>{NMO*NMO});
+        boost::multi::array<ComplexType,1> vHS(iextensions<1u>{NMO*NMO});
         ma::product(sqrtdt,Spvnview,X,0.,vHS);
         ComplexType Vsum=0;
         for(int i=0; i<vHS.size(); i++)
@@ -473,7 +479,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
     if(file_exists("./wfn_collinear.dat")) {
 
         // new
-        using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+        using shm_Alloc = shared_allocator<ComplexType>;
         boost::multi::array<ComplexType,3> OrbMat;
         readWfn(std::string("./wfn_collinear.dat"),OrbMat,NMO,NAEA,NAEB);
 
@@ -488,14 +494,17 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),gTG.getTotalNodes(),gTG.getTotalCores());
 
         // Calculates Overlap, G
-        SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+        //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+        SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
         boost::multi::array<ComplexType,2> G({NAEA+NAEB,NMO});
-        boost::multi::array_ref<ComplexType,1> G0(G.origin(),extensions<1u>{NMO*(NAEA+NAEB)});
-        auto Ovlp = SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
-            G.sliced(0,NAEA),true);
-        Ovlp *= SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
-            G.sliced(NAEA,NAEA+NAEB),true);
+        boost::multi::array_ref<ComplexType,1> G0(G.origin(),iextensions<1u>{NMO*(NAEA+NAEB)});
+        ComplexType Ovlp, ov_;
+        SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
+            G.sliced(0,NAEA),std::addressof(Ovlp),true);
+        SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
+            G.sliced(NAEA,NAEA+NAEB),std::addressof(ov_),true);
+        Ovlp *= ov_;
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
@@ -520,14 +529,14 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         bool addCoulomb = true;
         auto V2(ham.halfRotatedHijkl(COLLINEAR,true,TG,std::addressof(TrialWfn.first),
                                           std::addressof(TrialWfn.second),1e-5));
-        REQUIRE(V2.shape()[0] == (NAEA+NAEB)*NMO);
-        REQUIRE(V2.shape()[0] == V2.shape()[1]);
+        REQUIRE(V2.size(0) == (NAEA+NAEB)*NMO);
+        REQUIRE(V2.size(0) == V2.size(1));
 
         // to get rid of narrowing warnings
-        auto V2view(V2[array_{zero,V2.shape()[0],zero,V2.shape()[1]}]);
-        REQUIRE(V2view.shape()[0] == (NAEA+NAEB)*NMO);
-        REQUIRE(V2view.shape()[0] == V2view.shape()[1]);
-        boost::multi::array<ComplexType,1> V0(extensions<1u>{V2.shape()[0]});
+        auto V2view(V2[array_{zero,V2.size(0),zero,V2.size(1)}]);
+        REQUIRE(V2view.size(0) == (NAEA+NAEB)*NMO);
+        REQUIRE(V2view.size(0) == V2view.size(1));
+        boost::multi::array<ComplexType,1> V0(iextensions<1u>{V2.size(0)});
         ma::product(V2view,G0,V0);
         ComplexType E2 = 0.5*ma::dot(G0,V0);
         E2 = ( TG.Cores() += E2 );
@@ -548,20 +557,21 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
                                 std::addressof(TrialWfn.second),
                                 Spvn,1e-6));
 
-        auto Spvnview(Spvn[array_{zero,Spvn.shape()[0],zero,Spvn.shape()[1]}]);
-        auto SpvnTview(SpvnT[array_{zero,SpvnT.shape()[0],zero,SpvnT.shape()[1]}]);
-        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.shape()[0],zero,rotSpvnT.shape()[1]}]);
+        auto Spvnview(Spvn[array_{zero,Spvn.size(0),zero,Spvn.size(1)}]);
+        auto SpvnTview(SpvnT[array_{zero,SpvnT.size(0),zero,SpvnT.size(1)}]);
+        auto rotSpvnTview(rotSpvnT[array_{zero,rotSpvnT.size(0),zero,rotSpvnT.size(1)}]);
 
         boost::multi::array<ComplexType,3> GM({2,NMO,NMO});
-        boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),extensions<1u>{2*NMO*NMO});
-        Ovlp = SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
-            GM[0],false);
-        Ovlp *= SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
-            GM[1],false);
+        boost::multi::array_ref<ComplexType,1> G0M(GM.origin(),iextensions<1u>{2*NMO*NMO});
+        SDet.MixedDensityMatrix(TrialWfn.first,OrbMat[0],
+            GM[0],std::addressof(Ovlp),false);
+        SDet.MixedDensityMatrix(TrialWfn.second,OrbMat[1],
+            GM[1],std::addressof(ov_),false);
+        Ovlp *= ov_;
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-        boost::multi::array<ComplexType,1> X(extensions<1u>{Spvn.shape()[1]});
+        boost::multi::array<ComplexType,1> X(iextensions<1u>{Spvn.size(1)});
         using ma::T;
         ma::product(sqrtdt,T(Spvnview),
                     G0M.sliced(0,NMO*NMO),0.,X);
@@ -605,7 +615,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
           app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
         }
 
-        boost::multi::array<ComplexType,1> vHS(extensions<1u>{NMO*NMO});
+        boost::multi::array<ComplexType,1> vHS(iextensions<1u>{NMO*NMO});
         ma::product(sqrtdt,Spvnview,X,0.,vHS);
         ComplexType Vsum=0;
         for(int i=0; i<vHS.size(); i++)

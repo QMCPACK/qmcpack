@@ -47,9 +47,9 @@ namespace afqmc
   FactorizedSparseHamiltonian::shm_csr_matrix read_V2fact(hdf_archive& dump, TaskGroup_& TG, int nread, int NMO, int nvecs, double cutoff1bar, int int_blocks)
   {
       using counter =  qmcplusplus::afqmc::sparse_matrix_element_counter;
-      using Alloc = boost::mpi3::intranode::allocator<ValueType>;
+      using Alloc = shared_allocator<ValueType>;
       using ucsr_matrix = ma::sparse::ucsr_matrix<ValueType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<ValueType>,
+                                shared_allocator<ValueType>,
                                 ma::sparse::is_root>;
 
       int min_i = 0;
@@ -58,9 +58,6 @@ namespace afqmc
       int nrows = NMO*NMO;
       bool distribute_Ham = (TG.getNNodesPerTG() < TG.getTotalNodes());
       std::vector<IndexType> row_counts(nrows);
-
-      Timer.reset("Generic1");
-      Timer.start("Generic1");
 
       // calculate column range that belong to this node
       if(distribute_Ham) {
@@ -103,15 +100,8 @@ namespace afqmc
 
       }
 
-      Timer.stop("Generic1");
-      app_log()<<" -- Time to count elements in hdf5 read: "
-               <<Timer.average("Generic1") <<"\n";
-
       ucsr_matrix ucsr(tp_ul_ul{nrows,max_i-min_i},tp_ul_ul{0,min_i},row_counts,Alloc(TG.Node()));
       csr::matrix_emplace_wrapper<ucsr_matrix> csr_wrapper(ucsr,TG.Node());
-
-      Timer.reset("Generic1");
-      Timer.start("Generic1");
 
       using mat_map =  qmcplusplus::afqmc::matrix_map;
       csr_hdf5::multiple_reader_hdf5_csr<ValueType,int>(csr_wrapper,
@@ -119,14 +109,6 @@ namespace afqmc
                                   dump,TG,nread);
       csr_wrapper.push_buffer();
       TG.node_barrier();
-
-      Timer.stop("Generic1");
-      app_log()<<" -- Time to read into ucsr matrix: "
-               <<Timer.average("Generic1") <<"\n";
-
-      // careful here!!!
-      Timer.reset("Generic1");
-      Timer.start("Generic1");
 
       return FactorizedSparseHamiltonian::shm_csr_matrix(std::move(ucsr));
   }
