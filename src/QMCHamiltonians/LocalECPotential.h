@@ -22,6 +22,7 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
@@ -36,6 +37,9 @@ struct LocalECPotential: public QMCHamiltonianBase
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
 
+ 
+  typedef DistanceTableData::RowContainer RowContainerType;
+  
   ///reference to the ionic configuration
   const ParticleSet& IonConfig;
   ///the number of ioncs
@@ -76,6 +80,11 @@ struct LocalECPotential: public QMCHamiltonianBase
 #endif
 
   Return_t evaluate(ParticleSet& P);
+
+  Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
+                                 ParticleSet::ParticlePos_t& hf_terms,
+                                 ParticleSet::ParticlePos_t& pulay_terms);
+
 
   Return_t evaluate_orig(ParticleSet& P);
 
