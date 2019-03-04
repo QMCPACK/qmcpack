@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
@@ -36,6 +37,9 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
   typedef LRCoulombSingleton::GridType       GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
   typedef LRHandlerType::mRealType           mRealType;
+
+  typedef DistanceTableData::RowContainer RowContainerType;
+ 
   LRHandlerType* AA;
   GridType* myGrid;
   RadFunctorType* rVs;
