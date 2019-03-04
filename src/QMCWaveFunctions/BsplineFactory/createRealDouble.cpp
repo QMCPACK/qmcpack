@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep)
+  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep, const std::string& useGPU)
   {
     BsplineReaderBase* aReader=nullptr;
     if(hybrid_rep)

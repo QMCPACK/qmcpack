@@ -29,7 +29,7 @@
 namespace qmcplusplus
 {
 
-  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep)
+  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep, const std::string& useGPU)
   {
     typedef OHMMS_PRECISION RealType;
     BsplineReaderBase* aReader=nullptr;
@@ -40,13 +40,20 @@ namespace qmcplusplus
     else
       aReader= new SplineAdoptorReader<SplineC2CSoA<float,RealType> >(e);
 #else //QMC_COMPLEX
-    if(hybrid_rep)
-      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<float,RealType> > >(e);
-    else
+#if defined(ENABLE_OFFLOAD)
+    if(useGPU="yes")
+    {
       aReader= new SplineAdoptorReader<SplineC2ROMP<float,RealType> >(e);
-      //aReader= new SplineAdoptorReader<SplineC2RSoA<float,RealType> >(e);
+    }
+    else
 #endif
-
+    {
+      if(hybrid_rep)
+        aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<float,RealType> > >(e);
+      else
+        aReader= new SplineAdoptorReader<SplineC2RSoA<float,RealType> >(e);
+    }
+#endif
     return aReader;
   }
 }

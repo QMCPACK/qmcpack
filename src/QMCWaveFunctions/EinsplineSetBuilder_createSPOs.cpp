@@ -124,7 +124,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string truncate("no");
   std::string hybrid_rep("no");
   std::string use_einspline_set_extended("no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
-#if defined(QMC_CUDA)
+#if defined(QMC_CUDA) || defined(ENABLE_OFFLOAD)
   std::string useGPU="yes";
 #else
   std::string useGPU="no";
@@ -309,9 +309,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if(MixedSplineReader==0)
     {
       if(use_single)
-        MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes", useGPU);
       else
-        MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes", useGPU);
     }
   }
   else
@@ -320,9 +320,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if(MixedSplineReader==0)
     {
       if(use_single)
-        MixedSplineReader= createBsplineComplexSingle(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineComplexSingle(this, hybrid_rep=="yes", useGPU);
       else
-        MixedSplineReader= createBsplineComplexDouble(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineComplexDouble(this, hybrid_rep=="yes", useGPU);
     }
   }
 
