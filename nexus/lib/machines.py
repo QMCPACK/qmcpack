@@ -1291,21 +1291,21 @@ class Supercomputer(Machine):
                                  R = 'running',
                                  S = 'suspended',
                                  CD = 'complete',
-				 RD = 'held',
-				 BF = 'failed',
-				 CF = 'configuring',
-				 DL = 'deadline',
-				 OOM= 'out_of_memory',
-				 PR = 'preempted',
-				 RF = 'requeue_fed',
-				 RH = 'requeue_hold',
-				 RQ = 'requeued',
-				 RS = 'resizing',
-				 RV = 'revoked',
-				 SI = 'signaling',
-				 SE = 'special_exit',
-				 SO = 'stage_out',
-				 ST = 'stopped',
+                                 RD = 'held',
+                                 BF = 'failed',
+                                 CF = 'configuring',
+                                 DL = 'deadline',
+                                 OOM= 'out_of_memory',
+                                 PR = 'preempted',
+                                 RF = 'requeue_fed',
+                                 RH = 'requeue_hold',
+                                 RQ = 'requeued',
+                                 RS = 'resizing',
+                                 RV = 'revoked',
+                                 SI = 'signaling',
+                                 SE = 'special_exit',
+                                 SO = 'stage_out',
+                                 ST = 'stopped',
                                  )
         elif self.queue_querier=='sacct':
             self.job_states=dict(CANCELLED = 'failed',  #long form
@@ -1568,7 +1568,7 @@ class Supercomputer(Machine):
                     if spid.isdigit():
                         pid = int(spid)
                         status = None
-			jid,loc,name,uname,status,wtime,nodes,reason = tokens[:8]
+                        jid,loc,name,uname,status,wtime,nodes,reason = tokens[:8]
                         if status is not None:
                             if status in self.job_states:
                                 self.system_queue[pid] = self.job_states[status]
