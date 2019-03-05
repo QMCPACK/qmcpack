@@ -10,6 +10,7 @@
 #include "io/hdf_archive.h"
 
 #include "AFQMC/config.h"
+#include "AFQMC/Memory/utilities.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
 
@@ -35,19 +36,23 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
                           boost::multi::array<ComplexType,2>&& h,
                           TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
-                                    TG(tg_),fileName("")
+                                    TG(tg_),fileName(""),batched("no")
   {
 
-    if( TG.getNumberOfTGs() > 1 )
-        APP_ABORT(" Error: Distributed KPFactorizedHamiltonian not yet implemented.\n");
-
+    if(number_of_devices() > 0) batched="yes";
     std::string str("yes");
     ParameterSet m_param;
     m_param.add(cutoff_cholesky,"cutoff_cholesky","double");
     m_param.add(fileName,"filename","std::string");
+    if(TG.TG_local().size() == 1)
+      m_param.add(batched,"batched","std::string");
     m_param.add(nsampleQ,"nsampleQ","int");
     m_param.put(cur);
 
+    if(omp_get_num_threads() > 1 && (batched != "yes" && batched != "true")) {
+      app_log()<<" WARNING!!!: Found OMP_NUM_THREADS > 1 with batched=no.\n"
+               <<"             This will lead to low performance. Set batched=yes. \n"; 
+    }
   }
 
   ~KPFactorizedHamiltonian() {}
@@ -85,6 +90,16 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
   double cutoff_cholesky;
 
   int nsampleQ = -1;
+
+  std::string batched;
+
+  HamiltonianOperations getHamiltonianOperations_shared(bool pureSD, bool addCoulomb, WALKER_TYPES type,
+            std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
+            TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump);
+
+  HamiltonianOperations getHamiltonianOperations_batched(bool pureSD, bool addCoulomb, WALKER_TYPES type,
+            std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
+            TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump);
 
 };
 

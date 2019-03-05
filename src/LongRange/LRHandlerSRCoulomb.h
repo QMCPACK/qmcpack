@@ -52,7 +52,6 @@ public:
   typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
   typedef BreakupBasis BreakupBasisType;
   typedef LinearGrid<mRealType>                               GridType;
-  typedef OneDimCubicSpline<mRealType>                       RadFunctorType;
 
   bool FirstTime;
   mRealType rs;
@@ -61,19 +60,10 @@ public:
 
   std::vector<mRealType> Fk_copy;
   
-  GridType* aGrid;
-  
-  RadFunctorType* rV_energy;
-  RadFunctorType* rV_force;
-  RadFunctorType* drV_force;
-  RadFunctorType* rV_stress;
-  RadFunctorType* drV_stress;
-  
 
   //Constructor
   LRHandlerSRCoulomb(ParticleSet& ref, mRealType kc_in=-1.0):
-    LRHandlerBase(kc_in),FirstTime(true), Basis(ref.LRBox), aGrid(0), 
-    rV_force(0), rV_energy(0), drV_force(0), rV_stress(0), drV_stress(0)
+    LRHandlerBase(kc_in),FirstTime(true), Basis(ref.LRBox) 
 
   {
     LRHandlerBase::ClassName="LRHandlerSRCoulomb";
@@ -82,17 +72,7 @@ public:
    
   ~LRHandlerSRCoulomb()
   {
-//	 delete aGrid;
-//	 delete rV_energy;
-//     delete rV_force;
-//     delete drV_force;
-//     delete rV_stress;
-//     delete drV_stress;  
   }
-  //LRHandlerSRCoulomb(ParticleSet& ref, mRealType rs, mRealType kc=-1.0): LRHandlerBase(kc), Basis(ref.LRBox)
-  //{
-  //  myFunc.reset(ref,rs);
-  //}
 
   /** "copy" constructor
    * @param aLR LRHandlerSRCoulomb
@@ -104,24 +84,6 @@ public:
   LRHandlerSRCoulomb(const LRHandlerSRCoulomb& aLR, ParticleSet& ref):
     LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.LRBox)
   {
-//    myFunc.reset(ref);
-//    fillYk(ref.SK->KLists);
-//    fillYkg(ref.SK->KLists);
-//    filldFk_dk(ref.SK->KLists);
-   // app_log()<<"copy constructor called.  thread #"<<omp_get_num_threads()<< std::endl;
-    aGrid = new GridType(*(aLR.aGrid));
-   // new GridType(aLR.aGrid)
-    rV_energy = aLR.rV_energy->makeClone();
-    rV_force= aLR.rV_force->makeClone();
-    drV_force= aLR.drV_force->makeClone();
-    rV_stress= aLR.rV_stress->makeClone();
-    drV_stress= aLR.drV_stress->makeClone();
-//    rV_force = new RadFunctorType(*(aLR.rV_force));
-//    drV_force = new RadFunctorType(*(aLR.drV_force));
-//    rV_stress = new RadFunctorType(*(aLR.rV_stress));
-//    drV_stress = new RadFunctorType(*(aLR.drV_stress));  
-    
-
   }
 
   LRHandlerBase* makeClone(ParticleSet& ref)
@@ -134,115 +96,24 @@ public:
   void initBreakup(ParticleSet& ref)
   {
     InitBreakup(ref.LRBox,1);
-    fillYk(ref.SK->KLists);
+//    fillYk(ref.SK->KLists);
     fillYkg(ref.SK->KLists);
-    filldFk_dk(ref.SK->KLists);
+    //This is expensive to calculate.  Deprecating stresses for now. 
+    //filldFk_dk(ref.SK->KLists);
     LR_rc=Basis.get_rc();
-    //makeSplines(1000);
   }
 
   void Breakup(ParticleSet& ref, mRealType rs_ext)
   {
-    //ref.LRBox.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     rs=rs_ext;
     myFunc.reset(ref,rs);
     InitBreakup(ref.LRBox,1);
-    fillYk(ref.SK->KLists);
+//    fillYk(ref.SK->KLists);
     fillYkg(ref.SK->KLists);
-    filldFk_dk(ref.SK->KLists);
+    //This is expensive to calculate.  Deprecating stresses for now. 
+    //filldFk_dk(ref.SK->KLists);
     LR_rc=Basis.get_rc();
-   // makeSplines(1000);
   }
-  void makeSplines(int ngrid)
-  {
-     if(aGrid == 0)
-     {
-       aGrid = new GridType;
-       aGrid->set(0.0,Basis.get_rc(),ngrid);
-     }
-     
-     std::vector<mRealType> vE(ngrid);
-     std::vector<mRealType> vF(ngrid);
-     std::vector<mRealType> dvF(ngrid);
-     std::vector<mRealType> vS(ngrid);
-     std::vector<mRealType> dvS(ngrid);
-     
-     for( int i=1; i<ngrid; i++)
-     {
-		mRealType r=(*aGrid)[i];
-		
-		vE[i]=r*Basis.f(r,coefs);
-		vF[i]=r*Basis.f(r,gcoefs);
-		dvF[i]= r*r*Basis.df_dr(r,gcoefs);
-		vS[i]=r*Basis.f(r,gstraincoefs);
-		dvS[i]= r*r*Basis.df_dr(r,gstraincoefs);
-	 }
-	 
-	 vE[0]=1.0;
-	 vF[0]=1.0;
-	 dvF[0]=1.0;
-	 vS[0]=1.0;
-	 dvS[0]=1.0;
-	 
-
-     rV_energy=new RadFunctorType(aGrid,vE);
-     rV_force=new RadFunctorType(aGrid,vF);
-     drV_force=new RadFunctorType(aGrid,dvF);
-     rV_stress=new RadFunctorType(aGrid,vS);
-     drV_stress=new RadFunctorType(aGrid,dvS);
-     
-     rV_energy->spline(0,vE[0],ngrid-1,0);
-     rV_force->spline(0,vF[0],ngrid-1,0);
-     drV_force->spline(0,dvF[0],ngrid-1,0);
-     rV_stress->spline(0,vS[0],ngrid-1,0);
-     drV_stress->spline(0,dvS[0],ngrid-1,0);	  
-	  
-  }
- /* void makeSplines(int ngrid)
-  {
-     if(aGrid == 0)
-     {
-       aGrid = new GridType;
-       aGrid->set(0.0,Basis.get_rc(),ngrid);
-     }
-     
-     std::vector<mRealType> vE(ngrid);
-     std::vector<mRealType> vF(ngrid);
-     std::vector<mRealType> dvF(ngrid);
-     std::vector<mRealType> vS(ngrid);
-     std::vector<mRealType> dvS(ngrid);
-     
-     for( int i=1; i<ngrid; i++)
-     {
-		mRealType r=(*aGrid)[i];
-		
-		vE[i]=r*Basis.f(r,coefs);
-		vF[i]=r*Basis.f(r,gcoefs);
-		dvF[i]=r*Basis.df_dr(r,gcoefs)+Basis.f(r,gcoefs);
-		vS[i]=r*Basis.f(r,gstraincoefs);
-		dvS[i]= r*Basis.df_dr(r,gstraincoefs)+Basis.f(r,gstraincoefs);
-	 }
-	 
-	 vE[0]=1.0;
-	 vF[0]=1.0;
-	 dvF[0]=0.0;
-	 vS[0]=1.0;
-	 dvS[0]=1.0;
-	 
-
-     rV_energy=new RadFunctorType(aGrid,vE);
-     rV_force=new RadFunctorType(aGrid,vF);
-     drV_force=new RadFunctorType(aGrid,dvF);
-     rV_stress=new RadFunctorType(aGrid,vS);
-     drV_stress=new RadFunctorType(aGrid,dvS);
-     
-     rV_energy->spline(0,vE[0],ngrid-1,vE[ngrid-1]);
-     rV_force->spline(0,vF[0],ngrid-1,vF[ngrid-1]);
-     drV_force->spline(0,dvF[0],ngrid-1,dvF[ngrid-1]);
-     rV_stress->spline(0,vS[0],ngrid-1,vS[ngrid-1]);
-     drV_stress->spline(0,dvS[0],ngrid-1,dvS[ngrid-1]);	  
-	  
-  }*/
 
   void resetTargetParticleSet(ParticleSet& ref)
   {
@@ -255,11 +126,9 @@ public:
   }
 
   inline mRealType evaluate(mRealType r, mRealType rinv)
-  {
-    mRealType v = Basis.f(r, coefs);
-    //app_log()<<"evaluate() #"<<omp_get_num_threads()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<< std::endl;
-   
-  //  return df;
+  { 
+    //Right now LRHandlerSRCoulomb is the force only handler.  This is why the gcoefs are used for evaluate.
+    mRealType v = Basis.f(r, gcoefs);
     return v;
   }
 
@@ -270,32 +139,28 @@ public:
    */
   inline mRealType srDf(mRealType r, mRealType rinv)
   {
-   // mRealType df = Basis.df_dr(r, gcoefs);
-     //app_log()<<"evaluate() #"<<omp_get_thread_num()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<< std::endl;
- //    return df; 
-//    std::stringstream wee;
-//    wee<<"srDf() #"<<omp_get_thread_num()<<" dspl= "<<rinv*rinv*du-df<<" ref= "<<df<<" r= "<<r<< std::endl;
-//   app_log()<<wee.str();  
-    return drV_force->splint(r)/mRealType(r*r) ; 
+    mRealType df = Basis.df_dr(r, gcoefs);
+     return df; 
   }
 
   inline mRealType srDf_strain(mRealType r, mRealType rinv)
   {
-  //  mRealType df = Basis.df_dr(r, gstraincoefs);
-  //  return df;
-    
-    mRealType du=drV_stress->splint(r);
-    return rinv*rinv*du; 
+    APP_ABORT("Stresses not supported yet\n");
+    mRealType df = Basis.df_dr(r, gstraincoefs);
+    return df;
   }
 
+  inline mRealType lrDf(mRealType r)
+  {
+    mRealType lr = myFunc.df(r)-srDf(r,1.0/r);
+    return lr;
+  }
   /** evaluate the contribution from the long-range part for for spline
    */
   inline mRealType evaluateLR(mRealType r)
   {
     mRealType v=0.0;
-   
-  // for(int n=0; n<coefs.size(); n++)
-  //    v -= coefs[n]*Basis.h(n,r);
+    v=myFunc(r,1.0/r) - evaluate(r,1.0/r);
     return v;
   }
 
@@ -310,70 +175,45 @@ public:
 
   inline mRealType evaluateLR_r0()
   {
-	//this is because the constraint v(r)=sigma(r) as r-->0.  
-	// so v(r)-sigma(r)="0".  Divergence prevents me from coding this.
+    //this is because the constraint v(r)=sigma(r) as r-->0.  
+    // so v(r)-sigma(r)="0".  Divergence prevents me from coding this.
     mRealType v0=0.0;
-//    for(int n=0; n<coefs.size(); n++)
-//      v0 += coefs[n]*Basis.h(n,0.0);
     return v0;
   }
   
-    //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
+  //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
   inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<mRealType, OHMMS_DIM> k, mRealType kmag)
   {
-	  SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
-	 // mRealType derivconst = Basis.fk(kmag, dcoefs);
-	//  app_log()<<"squoo "<<derivconst<< std::endl;
-	  
-	  for (int dim1=0; dim1<OHMMS_DIM; dim1++)
-		for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
-		{
-          deriv_tensor(dim1,dim2)=- evaldYkgstrain(kmag)*k[dim1]*k[dim2]/kmag; //- evaldFk_dk(kmag)*k[dim1]*k[dim2]/kmag ;
-          
-          if (dim1==dim2) deriv_tensor(dim1,dim2)-= evalYkgstrain(kmag); //+ derivconst;
-         // app_log()<<"squoo "<<Basis.fk(kmag, dcoefs(dim1,dim2))<< std::endl;
-		}
-	  	
-		
-	  return deriv_tensor;
+    APP_ABORT("Stresses not supported yet\n");
+    SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
+    for (int dim1=0; dim1<OHMMS_DIM; dim1++)
+      for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
+      {
+        deriv_tensor(dim1,dim2)=- evaldYkgstrain(kmag)*k[dim1]*k[dim2]/kmag; //- evaldFk_dk(kmag)*k[dim1]*k[dim2]/kmag ;
+        if (dim1==dim2) deriv_tensor(dim1,dim2)-= evalYkgstrain(kmag); //+ derivconst;
+      }
+    return deriv_tensor;
   }
   
   
   inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<mRealType, OHMMS_DIM> r, mRealType rmag)
   {
+    APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor=0;
 
     mRealType Sr_r=srDf_strain(rmag, 1.0/mRealType(rmag))/mRealType(rmag);
 
     for (int dim1=0; dim1<OHMMS_DIM; dim1++)
     {
-		for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
-		{
-
-	       deriv_tensor(dim1,dim2)=r[dim1]*r[dim2]*Sr_r;
-
-	    }
-	}
-
-     	
-	return deriv_tensor;
+      for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
+        deriv_tensor(dim1,dim2)=r[dim1]*r[dim2]*Sr_r;
+    }
+    return deriv_tensor;
   }
   
-/*  inline mRealType evaluateSR_k0_dstrain()
-  {
-    mRealType v0=0.0;
-    mRealType norm=2.0*TWOPI/Basis.get_CellVolume();
-   
-    for(int n=0; n<coefs.size(); n++)
-      v0 += gstraincoefs[n]*Basis.hintr2(n);
-    
-    v0*=-norm
-    SymTensor stress(v0,0.0,v0,0.0,0.0,v0);
-    return stress;
- }
-   */
   inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain()
   {
+    APP_ABORT("Stresses not supported yet\n");
     mRealType v0=0.0;
     mRealType norm=2.0*TWOPI/Basis.get_CellVolume();
    
@@ -389,14 +229,16 @@ public:
   
   inline mRealType evaluateLR_r0_dstrain(int i, int j)
   {
+    APP_ABORT("Stresses not supported yet\n");
 	//the t derivative for the relevant basis elements are all zero because of constraints.
     return 0.0; //Basis.f(0,dcoefs(i,j));
   }
   
   inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain()
   {
+    APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> stress;
-	return stress;
+    return stress;
   }
 
 private:
@@ -420,6 +262,7 @@ private:
   }
   inline mRealType evalYkgstrain(mRealType k)
   {
+    APP_ABORT("Stresses not supported yet\n");
     mRealType FatK=myFunc.Vk(k) - Basis.fk(k,gstraincoefs);
     //for(int n=0; n<Basis.NumBasisElem(); n++)
    //   FatK -= gcoefs[n]*Basis.c(n,k);
@@ -429,6 +272,7 @@ private:
   
   inline mRealType evaldYkgstrain(mRealType k)
   {
+    APP_ABORT("Stresses not supported yet\n");
     mRealType dFk_dk = myFunc.dVk_dk(k) - Basis.dfk_dk(k,gstraincoefs);
   //  mRealType dFk_dk = myFunc.dVk_dk(k,Basis.get_rc()) - Basis.dfk_dk(k,coefs);
     return dFk_dk;
@@ -480,9 +324,9 @@ private:
     fillVk(breakuphandler.KList);
     //Allocate the space for the coefficients.
     int Nbasis=Basis.NumBasisElem();
-    coefs.resize(Nbasis); //This must be after SetupKVecs.
+//    coefs.resize(Nbasis); //This must be after SetupKVecs.
     gcoefs.resize(Nbasis);
-    gstraincoefs.resize(Nbasis);
+ //   gstraincoefs.resize(Nbasis);
 
     //Going to implement a smooth real space cutoff.  This means that alpha=0,1,2 for the LPQHI basis at knot r_c
     //all equal the 0, 1st, and 2nd derivatives of our bare function.  
@@ -491,57 +335,62 @@ private:
 
    
     Vector<mRealType> constraints;
-    //Vector<mRealType> strainconstraints;
 
     constraints.resize(Nbasis);
-  //  strainconstraints.resize(Nbasis);
     for (int i=0; i < Nbasis; i++) constraints[i]=1;
     
 
-   // mRealType rc=Basis.get_rc();
     
     ///This is to make sure there's no cusp in the LR part.  
-    gstraincoefs[0]=gcoefs[0]=coefs[0] = 1.0;
+   // gstraincoefs[0]=gcoefs[0]=coefs[0] = 1.0;
+    gcoefs[0] = 1.0;
     constraints[0]=0;
    
-    gstraincoefs[1]=gcoefs[1] = coefs[1] = 0.0;
+    //gstraincoefs[1]=gcoefs[1] = coefs[1] = 0.0;
+    gcoefs[1]= 0.0;
     constraints[1]=0;
     
-    gstraincoefs[2]=gcoefs[2] = coefs[2] = 0.0; 
+    //gstraincoefs[2]=gcoefs[2] = coefs[2] = 0.0; 
+    gcoefs[2] = 0.0; 
     constraints[2]=0.0;
    
-
-    gstraincoefs[Nbasis-1]= gcoefs[Nbasis-1]=coefs[Nbasis-1]=0.0;
+    //Boundary conditions at r=rc
+    //
+    //2nd derivative continuity.
+    //gstraincoefs[Nbasis-1]= gcoefs[Nbasis-1]=coefs[Nbasis-1]=0.0;
+    gcoefs[Nbasis-1] = 0.0;
     constraints[Nbasis-1]=0;
    
-    //1st derivative
+    //1st derivative continuity
     
-    gstraincoefs[Nbasis-2]=gcoefs[Nbasis-2]=coefs[Nbasis-2]=0.0;
+    //gstraincoefs[Nbasis-2]=gcoefs[Nbasis-2]=coefs[Nbasis-2]=0.0;
+    gcoefs[Nbasis-2]=0.0;
     constraints[Nbasis-2]=0;
 
-    //Function value 
-    gstraincoefs[Nbasis-3]=gcoefs[Nbasis-3]=coefs[Nbasis-3]=0.0;
+    //Function value continuity
+    //gstraincoefs[Nbasis-3]=gcoefs[Nbasis-3]=coefs[Nbasis-3]=0.0;
+    gcoefs[Nbasis-3]=0.0;
     constraints[Nbasis-3]=0;
     //And now to impose the constraints
     
 
 
     Vector<mRealType> chisqr(3);
-  //  chisqr_f=breakuphandler.DoBreakup(Fk.data(),coefs.data(),constraints.data()); //Fill array of coefficients.
-  //  chisqr_df=breakuphandler.DoGradBreakup(Fkg.data(), gcoefs.data(), constraints.data());
-  //  chisqr_strain=breakuphandler.DoStrainBreakup(Fk.data(), Fkgstrain.data(), gstraincoefs.data(), strainconstraints.data());   
-    breakuphandler.DoAllBreakup(chisqr.data(), Fk.data(), Fkgstrain.data(), coefs.data(), gcoefs.data(), gstraincoefs.data(), constraints.data());
-    app_log()<<"         LR function chi^2 = "<<chisqr[0]<< std::endl;
-    app_log()<<"    LR grad function chi^2 = "<<chisqr[1]<< std::endl;
-    app_log()<<"  LR strain function chi^2 = "<<chisqr[2]<< std::endl;
-   // app_log()<<"  n  tn   gtn h(n)\n";
-     
-  //  myFunc.reset(ref);
-  //  fillYk(ref.SK->KLists);
-  //  fillYkg(ref.SK->KLists);
-  //  filldFk_dk(ref.SK->KLists);
+//    breakuphandler.DoAllBreakup(chisqr.data(), Fk.data(), Fkgstrain.data(), coefs.data(), gcoefs.data(), gstraincoefs.data(), constraints.data());
+    mRealType chisqr_force=0;
+    chisqr_force = breakuphandler.DoGradBreakup(Fkg.data(),gcoefs.data(),constraints.data());
+    //I want this in scientific notation, but I don't want to mess up formatting flags elsewhere.
+    //Save stream state.
+    std::ios_base::fmtflags app_log_flags( app_log().flags() );
+    app_log()<<std::scientific;
+    app_log().precision(5);
 
-    makeSplines(10001);
+//    app_log()<<"         LR function chi^2 = "<<chisqr[0]<< std::endl;
+    app_log()<<"    LR grad function chi^2 = "<<chisqr_force<< std::endl;
+ //   app_log()<<"  LR strain function chi^2 = "<<chisqr[2]<< std::endl;
+     
+    app_log().flags(app_log_flags);
+
   }
 
 
@@ -550,14 +399,14 @@ private:
   {
     Fk.resize(KList.size());
     Fkg.resize(KList.size());
-    Fkgstrain.resize(KList.size());
+   // Fkgstrain.resize(KList.size());
    // Fk_copy.resize(KList.size());
     for(int ki=0; ki<KList.size(); ki++)
     {
       mRealType k=KList[ki][0];
-      Fk[ki] = myFunc.Vk(k); //Call derived fn.
+//      Fk[ki] = myFunc.Vk(k); //Call derived fn.
       Fkg[ki]= myFunc.Vk(k);
-      Fkgstrain[ki] = myFunc.dVk_dk(k);
+//      Fkgstrain[ki] = myFunc.dVk_dk(k);
      // Fk_copy[ki]=myFunc.Vk(k);
     }
   }
@@ -585,6 +434,10 @@ private:
   void fillYkg(KContainer& KList)
   {
     Fkg.resize(KList.kpts_cart.size());
+    //LRHandlerSRCoulomb is the force handler now.  Only want
+    //Fourier coefficients optimized for forces being used period.  
+
+    Fk.resize(KList.kpts_cart.size());
     const std::vector<int>& kshell(KList.kshell);
     if(MaxKshell >= kshell.size())
       MaxKshell=kshell.size()-1;
@@ -596,10 +449,15 @@ private:
       while(ki<KList.kshell[ks+1] && ki<Fkg.size())
         Fkg[ki++]=uk;
     }
+    //Have to set this, because evaluate and evaluateGrad for LR piece uses
+    //diferent fourier components.  Only want to use the ones optimized for
+    //forces.
+    Fk=Fkg;
   }
   
   void fillYkgstrain(KContainer& KList)
   {
+    APP_ABORT("Stresses not supported yet\n");
     Fkgstrain.resize(KList.kpts_cart.size());
     const std::vector<int>& kshell(KList.kshell);
     if(MaxKshell >= kshell.size())
@@ -613,14 +471,11 @@ private:
   }
   void filldFk_dk(KContainer& KList)
   {
+    APP_ABORT("Stresses not supported yet\n");
     dFk_dstrain.resize(KList.kpts_cart.size());
-    
 
     for (int ki=0; ki<dFk_dstrain.size(); ki++)
-    {
-	  dFk_dstrain[ki] = evaluateLR_dstrain(KList.kpts_cart[ki], std::sqrt(KList.ksq[ki]));
-	}
-
+      dFk_dstrain[ki] = evaluateLR_dstrain(KList.kpts_cart[ki], std::sqrt(KList.ksq[ki]));
   }
 };
 }

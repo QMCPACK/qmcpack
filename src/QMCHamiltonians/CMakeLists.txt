@@ -18,6 +18,7 @@
     
     
 SET(HAMSRCS
+  ACForce.cpp
   QMCHamiltonianBase.cpp
   QMCHamiltonian.cpp
   CoulombPBCAA.cpp

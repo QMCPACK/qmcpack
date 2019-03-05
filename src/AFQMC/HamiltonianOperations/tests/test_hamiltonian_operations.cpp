@@ -34,7 +34,6 @@
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
-#include "AFQMC/Utilities/myTimer.h"
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Utilities/test_utils.hpp"
@@ -55,10 +54,11 @@ namespace qmcplusplus
 
 using namespace afqmc;
 
-TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
+template<class Alloc>
+void ham_ops_basic_serial(boost::mpi3::communicator & world)
 {
-  OHMMS::Controller->initialize(0, NULL);
-  auto world = boost::mpi3::environment::get_world_instance();
+
+  using pointer = device_ptr<ComplexType>; 
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -77,9 +77,8 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
     HamiltonianFactory HamFac(InfoMap);
     const char *xml_block =
-"<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
+"<Hamiltonian name=\"ham0\" info=\"info0\"> \
     <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"version\">new</parameter> \
     <parameter name=\"filename\">./afqmc.h5</parameter> \
     <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
   </Hamiltonian> \
@@ -92,8 +91,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
+    using CMatrix = ComplexMatrix<Alloc>;
     boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
     int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
@@ -115,23 +113,38 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,true,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+// NOTE: Make small factory routine!
+    //SlaterDetOperations SDet( SlaterDetOperations_serial<Alloc>(NMO,NAEA) );
+#ifdef QMC_CUDA
+    auto SDet( SlaterDetOperations_serial<Alloc>(NMO,NAEA) );
+#else
+    auto SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+#endif
 
-    shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
-        G.sliced(0,NAEA),true);
-    if(WTYPE==COLLINEAR)
-      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1](OrbMat.extension(1),{0,NAEB}),
-        G.sliced(NAEA,NAEA+NAEB),true);
-    REQUIRE( real(Ovlp) == Approx(1.0) );
-    REQUIRE( imag(Ovlp) == Approx(0.0) );
+    Alloc alloc_(make_localTG_allocator<ComplexType>(TG));
+    boost::multi::array<ComplexType,3,Alloc> devOrbMat(OrbMat, alloc_);
+    std::vector<devPsiT_Matrix> devPsiT(move_vector<devPsiT_Matrix>(std::move(PsiT)));
 
-    boost::multi::array<ComplexType,2> Eloc({1,3});
-    boost::multi::array_ref<ComplexType,2> Gw(std::addressof(*G.origin()),{NEL*NMO,1});
+    CMatrix G({NEL,NMO},alloc_);
+    typename Alloc::pointer Ovlp = alloc_.allocate(1);
+    SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0],
+        G.sliced(0,NAEA),to_address(Ovlp),true);
+    if(WTYPE==COLLINEAR) {
+      typename Alloc::pointer Ovlp_ = alloc_.allocate(1);
+      SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}),
+        G.sliced(NAEA,NAEA+NAEB),to_address(Ovlp_),true);
+      (*Ovlp) *= (*Ovlp_); 
+      alloc_.deallocate(Ovlp_,1);
+    }
+    REQUIRE( real(*Ovlp) == Approx(1.0) );
+    REQUIRE( imag(*Ovlp) == Approx(0.0) );
+
+    boost::multi::array<ComplexType,2,Alloc> Eloc({1,3},alloc_);
+    boost::multi::array_ref<ComplexType,2,pointer> Gw(make_device_ptr(G.origin()),{NEL*NMO,1});
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
-    Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
-    Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
-    Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
+    Eloc[0][0] = ( TG.Node() += ComplexType(Eloc[0][0]) );
+    Eloc[0][1] = ( TG.Node() += ComplexType(Eloc[0][1]) );
+    Eloc[0][2] = ( TG.Node() += ComplexType(Eloc[0][2]) );
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
@@ -149,7 +162,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     double sqrtdt = std::sqrt(0.01);
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
-    shmCMatrix X({nCV,1},shared_allocator<ComplexType>{TG.TG_local()});
+    CMatrix X({nCV,1},alloc_);
     HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
     ComplexType Xsum=0;
@@ -162,23 +175,27 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
     }
 
-    shmCMatrix vHS({NMO*NMO,1},shared_allocator<ComplexType>{TG.TG_local()});
+    int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
+    int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
+    CMatrix vHS({vdim1,vdim2},alloc_);
     TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
-    for(int i=0; i<vHS.size(); i++)
+    if(HOps.transposed_vHS()) {
+      for(int i=0; i<vHS.size(1); i++)
+        Vsum += vHS[0][i];
+    } else {
+      for(int i=0; i<vHS.size(0); i++)
         Vsum += vHS[i][0];
+    }
     if(std::abs(file_data.Vsum)>1e-8) {
       REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
       REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
     } else {
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
+    alloc_.deallocate(Ovlp,1);
   }
 }
 
@@ -204,9 +221,8 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
     HamiltonianFactory HamFac(InfoMap);
     const char *xml_block =
-"<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
+"<Hamiltonian name=\"ham0\" info=\"info0\"> \
     <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"version\">new</parameter> \
     <parameter name=\"filename\">./afqmc.h5</parameter> \
     <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
   </Hamiltonian> \
@@ -219,7 +235,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
 
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using shm_Alloc = shared_allocator<ComplexType>;
     using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
     boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
@@ -242,19 +258,24 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,true,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+    //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
     shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
-        G.sliced(0,NAEA),true);
-    if(WTYPE==COLLINEAR)
-      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1](OrbMat.extension(1),{0,NAEB}),
-        G.sliced(NAEA,NAEA+NAEB),true);
+    ComplexType Ovlp;
+    SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
+        G.sliced(0,NAEA),std::addressof(Ovlp),true);
+    if(WTYPE==COLLINEAR) {
+      ComplexType Ovlp_;  
+      SDet.MixedDensityMatrix(PsiT[1],OrbMat[1](OrbMat.extension(1),{0,NAEB}),
+        G.sliced(NAEA,NAEA+NAEB),std::addressof(Ovlp_),true);
+      Ovlp *= Ovlp_;
+    }  
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
     boost::multi::array<ComplexType,2> Eloc({1,3});
-    boost::multi::array_ref<ComplexType,2> Gw(std::addressof(*G.origin()),{NEL*NMO,1});
+    boost::multi::array_ref<ComplexType,2> Gw(to_address(G.origin()),{NEL*NMO,1});
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
     Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
@@ -289,17 +310,20 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
     }
 
-    shmCMatrix vHS({NMO*NMO,1},shared_allocator<ComplexType>{TG.TG_local()});
+    int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
+    int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
+    shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
     TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
-    for(int i=0; i<vHS.size(); i++)
+    if(HOps.transposed_vHS()) {
+      for(int i=0; i<vHS.size(1); i++)
+        Vsum += vHS[0][i];
+    } else {
+      for(int i=0; i<vHS.size(0); i++)
         Vsum += vHS[i][0];
+    }
     if(std::abs(file_data.Vsum)>1e-8) {
       REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
       REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
@@ -345,7 +369,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
 
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using shm_Alloc = shared_allocator<ComplexType>;
     using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
     boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);
@@ -368,29 +392,27 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+    //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
     int nw=1;
 
     shmCMatrix Gbuff({nw,NEL*NMO},shared_allocator<ComplexType>{TG.TG_local()});
-    boost::multi::array_ref<ComplexType,2> G(std::addressof(*Gbuff.origin()),{NEL,NMO});
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
+    boost::multi::array_ref<ComplexType,2> G(to_address(Gbuff.origin()),{NEL,NMO});
+    ComplexType Ovlp;
+    SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,std::addressof(Ovlp),true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-    boost::multi::array_ref<ComplexType,2> Gw(std::addressof(*Gbuff.origin()),{nw,NEL*NMO});
+    boost::multi::array_ref<ComplexType,2> Gw(to_address(Gbuff.origin()),{nw,NEL*NMO});
     boost::multi::array<ComplexType,2> Eloc({nw,3});
 
     if(TG.Node().root())
       for(int i=1; i<nw; i++)
         Gw[i] = Gw[0];
 
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.energy(Eloc,Gw,0,true);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
@@ -409,12 +431,8 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     shmCMatrix X({nCV,nw},shared_allocator<ComplexType>{TG.TG_local()});
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vbias: " <<Timer.total("Generic") <<std::endl;
     ComplexType Xsum=0;
     for(int i=0; i<X.size(); i++)
         Xsum += X[i][0];
@@ -429,14 +447,10 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
     // doing twice to get reasonable timing estimate
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
-    for(int i=0; i<vHS.shape()[1]; i++)
+    for(int i=0; i<vHS.size(1); i++)
         Vsum += vHS[0][i];
     if(std::abs(file_data.Vsum)>1e-8) {
       REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
@@ -485,7 +499,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
 
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using shm_Alloc = shared_allocator<ComplexType>;
     using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
     boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);
@@ -515,21 +529,19 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+    //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
     shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
+    ComplexType Ovlp;
+    SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,std::addressof(Ovlp),true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-    boost::multi::array_ref<ComplexType,2> Gw(std::addressof(*G.origin()),{1,NEL*NMO});
+    boost::multi::array_ref<ComplexType,2> Gw(to_address(G.origin()),{1,NEL*NMO});
     boost::multi::array<ComplexType,2> Eloc({1,3});
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
     Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
     Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
     Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
@@ -551,12 +563,8 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     shmCMatrix X({nCV,1},shared_allocator<ComplexType>{TG.TG_local()});
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vbias: " <<Timer.total("Generic") <<std::endl;
     ComplexType Xsum=0,X2sum=0;
     for(int i=0; i<X.size(); i++)
         Xsum += X[i][0];
@@ -573,14 +581,10 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     // doing twice to get reasonable timing estimate
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
-    for(int i=0; i<vHS.shape()[1]; i++)
+    for(int i=0; i<vHS.size(1); i++)
         Vsum += vHS[0][i];
     if(std::abs(file_data.Vsum)>1e-8) {
       REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
@@ -630,7 +634,7 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
 
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using shm_Alloc = shared_allocator<ComplexType>;
     using shmCMatrix = ComplexMatrix<shared_allocator<ComplexType>>;
     boost::multi::array<ComplexType,3> OrbMat;
     int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);
@@ -663,21 +667,19 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     auto HOps(thcHam.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+    //SlaterDetOperations SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+    SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
 
     shmCMatrix G({NEL,NMO},shared_allocator<ComplexType>{TG.TG_local()});
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
+    ComplexType Ovlp;
+    SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,std::addressof(Ovlp),true);
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-    boost::multi::array_ref<ComplexType,2> Gw(std::addressof(*G.origin()),{1,NEL*NMO});
+    boost::multi::array_ref<ComplexType,2> Gw(to_address(G.origin()),{1,NEL*NMO});
     boost::multi::array<ComplexType,2> Eloc({1,3});
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
     Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
     Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
     Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
@@ -699,12 +701,8 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     shmCMatrix X({nCV,1},shared_allocator<ComplexType>{TG.TG_local()});
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vbias: " <<Timer.total("Generic") <<std::endl;
     ComplexType Xsum=0,X2sum=0;
     for(int i=0; i<X.size(); i++)
         Xsum += X[i][0];
@@ -721,14 +719,10 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     // doing twice to get reasonable timing estimate
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
-    for(int i=0; i<vHS.shape()[1]; i++)
+    for(int i=0; i<vHS.size(1); i++)
         Vsum += vHS[0][i];
     if(std::abs(file_data.Vsum)>1e-8) {
       REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
@@ -741,5 +735,25 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
   }
 
 }
+
+TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+
+#ifdef QMC_CUDA
+  auto node = world.split_shared(world.rank());
+
+  qmc_cuda::CUDA_INIT(node);
+  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+#else
+  using Alloc = shared_allocator<ComplexType>;
+#endif
+
+  ham_ops_basic_serial<Alloc>(world);
+}
+
+
+
 
 }

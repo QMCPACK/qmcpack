@@ -43,27 +43,27 @@ void count_over_cholvec(double cut, std::vector<std::size_t>& count, int c0, int
 {
   assert(c1>=c0);
   if(c0==c1) return;
-  auto cik = std::lower_bound( std::addressof(*Lik.non_zero_indices2_data()),
-                               std::addressof(*(Lik.non_zero_indices2_data()
+  auto cik = std::lower_bound( to_address(Lik.non_zero_indices2_data()),
+                               to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                c0);
   auto cik_end = std::lower_bound( cik,
-                                   std::addressof(*(Lik.non_zero_indices2_data()
+                                   to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                    c1);
-  auto vik = std::addressof(*Lik.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lik.non_zero_indices2_data()),cik);
+  auto vik = to_address(Lik.non_zero_values_data()) +
+                    std::distance(to_address(Lik.non_zero_indices2_data()),cik);
 
-  auto cki = std::lower_bound( std::addressof(*Lki.non_zero_indices2_data()),
-                               std::addressof(*(Lki.non_zero_indices2_data()
+  auto cki = std::lower_bound( to_address(Lki.non_zero_indices2_data()),
+                               to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                c0);
   auto cki_end = std::lower_bound( cki,
-                                   std::addressof(*(Lki.non_zero_indices2_data()
+                                   to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                    c1);
-  auto vki = std::addressof(*Lki.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lki.non_zero_indices2_data()),cki);
+  auto vki = to_address(Lki.non_zero_values_data()) +
+                    std::distance(to_address(Lki.non_zero_indices2_data()),cki);
 
   // ignoring factor of 0.5 to keep it consistent with the old code for now
   using std::conj;
@@ -124,16 +124,16 @@ void count_over_cholvec(double cut, std::vector<std::size_t>& count, int c0, int
 {
   assert(c1>=c0);
   if(c0==c1) return;
-  auto ci = std::lower_bound( std::addressof(*Lii.non_zero_indices2_data()),
-                              std::addressof(*(Lii.non_zero_indices2_data()
+  auto ci = std::lower_bound( to_address(Lii.non_zero_indices2_data()),
+                              to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                               c0);
   auto ci_end = std::lower_bound( ci,
-                                  std::addressof(*(Lii.non_zero_indices2_data()
+                                  to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                                   c1);
-  auto vi = std::addressof(*Lii.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lii.non_zero_indices2_data()),ci);
+  auto vi = to_address(Lii.non_zero_values_data()) +
+                    std::distance(to_address(Lii.non_zero_indices2_data()),ci);
 
   // ignoring factor of 0.5 to keep it consistent with the old code for now
   using std::conj;
@@ -158,27 +158,27 @@ void count_nnz(double cut, std::size_t& nik, std::size_t& nki, int c0, int c1, S
   assert(c1>=c0);
   nik = nki = size_t(0);
   if(c0==c1) return;
-  auto cik = std::lower_bound( std::addressof(*Lik.non_zero_indices2_data()),
-                               std::addressof(*(Lik.non_zero_indices2_data()
+  auto cik = std::lower_bound( to_address(Lik.non_zero_indices2_data()),
+                               to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                c0/2);
   auto cik_end = std::lower_bound( cik,
-                                   std::addressof(*(Lik.non_zero_indices2_data()
+                                   to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                    (c1+1)/2);
-  auto vik = std::addressof(*Lik.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lik.non_zero_indices2_data()),cik);
+  auto vik = to_address(Lik.non_zero_values_data()) +
+                    std::distance(to_address(Lik.non_zero_indices2_data()),cik);
 
-  auto cki = std::lower_bound( std::addressof(*Lki.non_zero_indices2_data()),
-                               std::addressof(*(Lki.non_zero_indices2_data()
+  auto cki = std::lower_bound( to_address(Lki.non_zero_indices2_data()),
+                               to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                c0/2);
   auto cki_end = std::lower_bound( cki,
-                                   std::addressof(*(Lki.non_zero_indices2_data()
+                                   to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                    (c1+1)/2);
-  auto vki = std::addressof(*Lki.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lki.non_zero_indices2_data()),cki);
+  auto vki = to_address(Lki.non_zero_values_data()) +
+                    std::distance(to_address(Lki.non_zero_indices2_data()),cki);
 
   // ignoring factor of 0.5 to keep it consistent with the old code for now
   while( cik!=cik_end && cki!=cki_end ) {
@@ -251,16 +251,16 @@ void count_nnz(double cut, size_t& ni, int c0, int c1, SpVType_shm_csr_matrix::r
   assert(c1>=c0);
   ni=size_t(0);
   if(c0==c1) return;
-  auto ci = std::lower_bound( std::addressof(*Lii.non_zero_indices2_data()),
-                              std::addressof(*(Lii.non_zero_indices2_data()
+  auto ci = std::lower_bound( to_address(Lii.non_zero_indices2_data()),
+                              to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                               c0/2);
   auto ci_end = std::lower_bound( ci,
-                                  std::addressof(*(Lii.non_zero_indices2_data()
+                                  to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                                   (c1+1)/2);
-  auto vi = std::addressof(*Lii.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lii.non_zero_indices2_data()),ci);
+  auto vi = to_address(Lii.non_zero_values_data()) +
+                    std::distance(to_address(Lii.non_zero_indices2_data()),ci);
 
   // ignoring factor of 0.5 to keep it consistent with the old code for now
   while( ci!=ci_end ) {
@@ -280,30 +280,30 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
   using std::size_t;
   assert(c1>=c0);
   if(c0==c1) return;
-  auto ci = std::lower_bound( std::addressof(*Lii.non_zero_indices2_data()),
-                              std::addressof(*(Lii.non_zero_indices2_data()
+  auto ci = std::lower_bound( to_address(Lii.non_zero_indices2_data()),
+                              to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                               c0/2);
   auto ci_end = std::lower_bound( ci,
-                                  std::addressof(*(Lii.non_zero_indices2_data()
+                                  to_address((Lii.non_zero_indices2_data()
                                                +Lii.num_non_zero_elements())),
                                   (c1+1)/2);
-  auto vi = std::addressof(*Lii.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lii.non_zero_indices2_data()),ci);
+  auto vi = to_address(Lii.non_zero_values_data()) +
+                    std::distance(to_address(Lii.non_zero_indices2_data()),ci);
 
   int c_origin = vn.global_origin()[1];
   ComplexType im(0.0,1.0);
   while( ci!=ci_end ) {
     if(abs(*vi + conj(*vi)) > cut && 2*(*ci)>=c0 && 2*(*ci)<c1 ) {
         assert(map_[2*(*ci)] >= 0);
-        assert(map_[2*(*ci)]-c_origin < vn.shape()[1]);
+        assert(map_[2*(*ci)]-c_origin < vn.size(1));
         vn.emplace_back({ik,(map_[2*(*ci)]-c_origin)},
                 static_cast<SPValueType>(0.5*(*vi+conj(*vi)))); // Lii + Lii*
     }
 #if defined(QMC_COMPLEX)
     if(abs(*vi - conj(*vi)) > cut && 2*(*ci)+1>=c0 && 2*(*ci)+1<c1) {
         assert(map_[2*(*ci)+1] >= 0);
-        assert(map_[2*(*ci)+1]-c_origin < vn.shape()[1]);
+        assert(map_[2*(*ci)+1]-c_origin < vn.size(1));
         vn.emplace_back({ik,(map_[2*(*ci)+1]-c_origin)},
                 static_cast<SPValueType>(0.5*im*(*vi-conj(*vi)))); // Lii - Lii*
     }
@@ -320,27 +320,27 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
   using std::size_t;
   assert(c1>=c0);
   if(c0==c1) return;
-  auto cik = std::lower_bound( std::addressof(*Lik.non_zero_indices2_data()),
-                               std::addressof(*(Lik.non_zero_indices2_data()
+  auto cik = std::lower_bound( to_address(Lik.non_zero_indices2_data()),
+                               to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                c0/2);
   auto cik_end = std::lower_bound( cik,
-                                   std::addressof(*(Lik.non_zero_indices2_data()
+                                   to_address((Lik.non_zero_indices2_data()
                                                +Lik.num_non_zero_elements())),
                                    (c1+1)/2);
-  auto vik = std::addressof(*Lik.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lik.non_zero_indices2_data()),cik);
+  auto vik = to_address(Lik.non_zero_values_data()) +
+                    std::distance(to_address(Lik.non_zero_indices2_data()),cik);
 
-  auto cki = std::lower_bound( std::addressof(*Lki.non_zero_indices2_data()),
-                               std::addressof(*(Lki.non_zero_indices2_data()
+  auto cki = std::lower_bound( to_address(Lki.non_zero_indices2_data()),
+                               to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                c0/2);
   auto cki_end = std::lower_bound( cki,
-                                   std::addressof(*(Lki.non_zero_indices2_data()
+                                   to_address((Lki.non_zero_indices2_data()
                                                +Lki.num_non_zero_elements())),
                                    (c1+1)/2);
-  auto vki = std::addressof(*Lki.non_zero_values_data()) +
-                    std::distance(std::addressof(*Lki.non_zero_indices2_data()),cki);
+  auto vki = to_address(Lki.non_zero_values_data()) +
+                    std::distance(to_address(Lki.non_zero_indices2_data()),cki);
 
   ComplexType im(0.0,1.0);
   int c_origin = vn.global_origin()[1];
@@ -349,7 +349,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
       if(abs(*vik + conj(*vki)) > cut) { // Lik + Lki* and Lki + Lik*
           if(2*(*cik)>=c0 && 2*(*cik)<c1) {
             assert(map_[2*(*cik)] >= 0);
-            assert(map_[2*(*cik)]-c_origin < vn.shape()[1]);
+            assert(map_[2*(*cik)]-c_origin < vn.size(1));
             vn.emplace_back({ik,(map_[2*(*cik)]-c_origin)},
                   static_cast<SPValueType>(0.5*(*vik+conj(*vki)))); // Lik + Lki*
             vn.emplace_back({ki,(map_[2*(*cki)]-c_origin)},
@@ -360,7 +360,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
       if(abs(*vik - conj(*vki)) > cut) { // Lik - Lki* and Lki - Lik*
           if(2*(*cik)+1>=c0 && 2*(*cik)+1<c1) {
             assert(map_[2*(*cik)+1] >= 0);
-            assert(map_[2*(*cik)+1]-c_origin < vn.shape()[1]);
+            assert(map_[2*(*cik)+1]-c_origin < vn.size(1));
             vn.emplace_back({ik,(map_[2*(*cik)+1]-c_origin)},
                   static_cast<SPValueType>(0.5*im*(*vik-conj(*vki)))); // Lik - Lki*
             vn.emplace_back({ki,(map_[2*(*cki)+1]-c_origin)},
@@ -376,7 +376,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
       if(abs(*vik) > cut) {
           if(2*(*cik)>=c0 && 2*(*cik)<c1) {
             assert(map_[2*(*cik)] >= 0);
-            assert(map_[2*(*cik)]-c_origin < vn.shape()[1]);
+            assert(map_[2*(*cik)]-c_origin < vn.size(1));
             vn.emplace_back({ik,(map_[2*(*cik)]-c_origin)},
                   static_cast<SPValueType>(0.5*(*vik))); // Lik + 0
             vn.emplace_back({ki,(map_[2*(*cik)]-c_origin)},
@@ -385,7 +385,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
 #if defined(QMC_COMPLEX)
           if(2*(*cik)+1>=c0 && 2*(*cik)+1<c1) {
             assert(map_[2*(*cik)+1] >= 0);
-            assert(map_[2*(*cik)+1]-c_origin < vn.shape()[1]);
+            assert(map_[2*(*cik)+1]-c_origin < vn.size(1));
             vn.emplace_back({ik,(map_[2*(*cik)+1]-c_origin)},
                   static_cast<SPValueType>(0.5*im*(*vik))); // Lik - 0
             vn.emplace_back({ki,(map_[2*(*cik)+1]-c_origin)},
@@ -399,7 +399,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
       if(abs(*vki) > cut) {
           if(2*(*cki)>=c0 && 2*(*cki)<c1) {
             assert(map_[2*(*cki)] >= 0);
-            assert(map_[2*(*cki)]-c_origin < vn.shape()[1]);
+            assert(map_[2*(*cki)]-c_origin < vn.size(1));
             vn.emplace_back({ik,(map_[2*(*cki)]-c_origin)},
                   static_cast<SPValueType>(0.5*conj(*vki))); // Lki + 0
             vn.emplace_back({ki,(map_[2*(*cki)]-c_origin)},
@@ -408,7 +408,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
 #if defined(QMC_COMPLEX)
           if(2*(*cki)+1>=c0 && 2*(*cki)+1<c1) {
             assert(map_[2*(*cki)+1] >= 0);
-            assert(map_[2*(*cki)+1]-c_origin < vn.shape()[1]);
+            assert(map_[2*(*cki)+1]-c_origin < vn.size(1));
             vn.emplace_back({ik,(map_[2*(*cki)+1]-c_origin)},
                   static_cast<SPValueType>(-0.5*im*conj(*vki))); // Lki - 0
             vn.emplace_back({ki,(map_[2*(*cki)+1]-c_origin)},
@@ -424,7 +424,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
     if(abs(*vik) > cut) {
         if(2*(*cik)>=c0 && 2*(*cik)<c1) {
           assert(map_[2*(*cik)] >= 0);
-          assert(map_[2*(*cik)]-c_origin < vn.shape()[1]);
+          assert(map_[2*(*cik)]-c_origin < vn.size(1));
           vn.emplace_back({ik,(map_[2*(*cik)]-c_origin)},
                 static_cast<SPValueType>(0.5*(*vik))); // Lik + 0
           vn.emplace_back({ki,(map_[2*(*cik)]-c_origin)},
@@ -433,7 +433,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
 #if defined(QMC_COMPLEX)
         if(2*(*cik)+1>=c0 && 2*(*cik)+1<c1) {
           assert(map_[2*(*cik)+1] >= 0);
-          assert(map_[2*(*cik)+1]-c_origin < vn.shape()[1]);
+          assert(map_[2*(*cik)+1]-c_origin < vn.size(1));
           vn.emplace_back({ik,(map_[2*(*cik)+1]-c_origin)},
                 static_cast<SPValueType>(0.5*im*(*vik))); // Lik - 0
           vn.emplace_back({ki,(map_[2*(*cik)+1]-c_origin)},
@@ -448,7 +448,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
     if(abs(*vki) > cut) {
         if(2*(*cki)>=c0 && 2*(*cki)<c1) {
           assert(map_[2*(*cki)] >= 0);
-          assert(map_[2*(*cki)]-c_origin < vn.shape()[1]);
+          assert(map_[2*(*cki)]-c_origin < vn.size(1));
           vn.emplace_back({ik,(map_[2*(*cki)]-c_origin)},
                 static_cast<SPValueType>(0.5*conj(*vki))); // Lki + 0
           vn.emplace_back({ki,(map_[2*(*cki)]-c_origin)},
@@ -457,7 +457,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
 #if defined(QMC_COMPLEX)
         if(2*(*cki)+1>=c0 && 2*(*cki)+1<c1) {
           assert(map_[2*(*cki)+1] >= 0);
-          assert(map_[2*(*cki)+1]-c_origin < vn.shape()[1]);
+          assert(map_[2*(*cki)+1]-c_origin < vn.size(1));
           vn.emplace_back({ik,(map_[2*(*cki)+1]-c_origin)},
                 static_cast<SPValueType>(-0.5*im*conj(*vki))); // Lki - 0
           vn.emplace_back({ki,(map_[2*(*cki)+1]-c_origin)},
@@ -480,15 +480,15 @@ std::vector<std::size_t> count_nnz_per_cholvec(double cut, TaskGroup_& TG, SpVTy
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
-  if(V2.shape()[0] != NMO*NMO)
-    APP_ABORT(" Error in count_nnz_per_cholvec: V2.shape()[0] ! NMO*NMO \n");
+  if(V2.size(0) != NMO*NMO)
+    APP_ABORT(" Error in count_nnz_per_cholvec: V2.size(0) ! NMO*NMO \n");
   int ik0, ikN;
   // only upper triangular part since both ik/ki are processed simultaneously
   std::tie(ik0, ikN) = FairDivideBoundary(TG.getGlobalRank(),int(NMO*(NMO+1)/2),TG.getGlobalSize());
 
   if(cut < 1e-12) cut=1e-12;
-  std::vector<std::size_t> counts(2*V2.shape()[1]);
-  int nvecs = V2.shape()[1];
+  std::vector<std::size_t> counts(2*V2.size(1));
+  int nvecs = V2.size(1);
 
   for(int i=0, cnt=0; i<NMO; i++)
     for(int k=i; k<NMO; k++, cnt++) {
@@ -506,22 +506,22 @@ std::vector<std::size_t> count_nnz_per_cholvec(double cut, TaskGroup_& TG, SpVTy
 
 std::vector<std::size_t> count_nnz_per_ik(double cut, TaskGroup_& TG, SpVType_shm_csr_matrix& V2, int NMO, int cv0, int cvN)
 {
-  assert(cv0 >= 0 && cvN <= 2*V2.shape()[1]);
+  assert(cv0 >= 0 && cvN <= 2*V2.size(1));
   if(TG.getNumberOfTGs() > 1)
     APP_ABORT("Error: count_nnz_per_ik is not designed for distributed CholMat. \n");
 
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
-  if(V2.shape()[0] != NMO*NMO)
-    APP_ABORT(" Error in count_nnz_per_cholvec: V2.shape()[0] ! NMO*NMO \n");
+  if(V2.size(0) != NMO*NMO)
+    APP_ABORT(" Error in count_nnz_per_cholvec: V2.size(0) ! NMO*NMO \n");
   int ik0, ikN;
   // only upper triangular part since both ik/ki are processed simultaneously
   // it is possible to ssubdivide this over equivalent nodes and then reduce over them
   std::tie(ik0, ikN) = FairDivideBoundary(coreid,int(NMO*(NMO+1)/2),ncores);
 
   if(cut < 1e-12) cut=1e-12;
-  std::vector<std::size_t> counts(V2.shape()[0]);
+  std::vector<std::size_t> counts(V2.size(0));
 
   std::size_t nik,nki;
   for(int i=0, cnt=0; i<NMO; i++)
@@ -543,15 +543,15 @@ std::vector<std::size_t> count_nnz_per_ik(double cut, TaskGroup_& TG, SpVType_sh
 void generateHSPotential(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double cut, TaskGroup_& TG, SpVType_shm_csr_matrix& V2, int NMO, int cv0, int cvN)
 {
 
-  assert(cv0 >= 0 && cvN <= 2*V2.shape()[1]);
+  assert(cv0 >= 0 && cvN <= 2*V2.size(1));
   if(TG.getNumberOfTGs() > 1)
     APP_ABORT("Error: generateHSPotential is not designed for distributed CholMat. \n");
 
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
-  if(V2.shape()[0] != NMO*NMO)
-    APP_ABORT(" Error in generateHSPotential: V2.shape()[0] ! NMO*NMO \n");
+  if(V2.size(0) != NMO*NMO)
+    APP_ABORT(" Error in generateHSPotential: V2.size(0) ! NMO*NMO \n");
   int ik0, ikN;
   // only upper triangular part since both ik/ki are processed simultaneously
   // it is possible to ssubdivide this over equivalent nodes and then reduce over them

@@ -39,6 +39,8 @@ endif()
 set(TEST_SRCS
 communicator_abort.cpp
 communicator_all_gather.cpp
+communicator_all_gatherv.cpp
+communicator_all_gatherv_output_iterator.cpp
 communicator_all_reduce.cpp
 communicator_barrier.cpp
 communicator_broadcast.cpp
@@ -48,6 +50,7 @@ communicator_ibroadcast.cpp
 communicator_igather.cpp
 communicator_operator.cpp
 communicator_reduce.cpp
+communicator_reduce_in_place.cpp
 communicator_scatter.cpp
 communicator_set_error_handler.cpp
 communicator_split.cpp

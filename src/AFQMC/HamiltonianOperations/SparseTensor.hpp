@@ -49,15 +49,15 @@ class SparseTensor
   using SpT2 = T2;
 #endif
   using T1shm_csr_matrix = ma::sparse::csr_matrix<SpT1,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SpT1>,
+                                shared_allocator<SpT1>,
                                 ma::sparse::is_root>;
   using T1shm_csr_matrix_view = typename T1shm_csr_matrix::template matrix_view<int>;
   using T2shm_csr_matrix = ma::sparse::csr_matrix<SpT2,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SpT2>,
+                                shared_allocator<SpT2>,
                                 ma::sparse::is_root>;
   using T2shm_csr_matrix_view = typename T2shm_csr_matrix::template matrix_view<int>;
   using Vshm_csr_matrix = ma::sparse::csr_matrix<SPValueType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SPValueType>,
+                                shared_allocator<SPValueType>,
                                 ma::sparse::is_root>;
   using Vshm_csr_matrix_view = typename Vshm_csr_matrix::template matrix_view<int>;
   using CVector = boost::multi::array<ComplexType,1>;
@@ -116,11 +116,11 @@ class SparseTensor
 	if((haj.size() > 1) && (SpvnT.size()==1)) // NOMSD with more than 1 determinant
           separateEJ = false;
 /*
-for(int i=0; i<haj[0].shape()[0]; i++)
+for(int i=0; i<haj[0].size(0); i++)
   std::cout<<i <<" " <<haj[0][i]  <<"\n";
 std::cout<<"H1:\n";
-for(int i=0; i<hij.shape()[0]; i++)
-  for(int j=0; j<hij.shape()[1]; j++)
+for(int i=0; i<hij.size(0); i++)
+  for(int j=0; j<hij.size(1); j++)
     std::cout<<i <<" " <<j <<" " <<hij[i][j]  <<"\n";
 std::cout<<"\n";
 */
@@ -135,7 +135,7 @@ std::cout<<"\n";
 
     CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF) {
 
-      int NMO = hij.shape()[0];
+      int NMO = hij.size(0);
       // in non-collinear case with SO, keep SO matrix here and add it
       // for now, stay collinear
       CMatrix H1({NMO,NMO});
@@ -180,31 +180,31 @@ std::cout<<"\n";
     // Kl and Kr must be in shared memory for this to work correctly
     template<class Mat, class MatB, class MatC, class MatD>
     void energy(Mat&& E, MatB const& Gc, int k, MatC* Kl, MatD* Kr, bool addH1=true, bool addEJ=true, bool addEXX=true) {
-      assert(E.shape()[1]>=3);
+      assert(E.size(1)>=3);
       assert(k >= 0 && k < haj.size());
       assert(k >= 0 && k < Vakbl_view.size());
-      if(Gcloc.num_elements() < Gc.shape()[1] * Vakbl_view[k].shape()[0])
-        Gcloc.reextent(extensions<1u>{Vakbl_view[k].shape()[0]*Gc.shape()[1]});
+      if(Gcloc.num_elements() < Gc.size(1) * Vakbl_view[k].size(0))
+        Gcloc.reextent(iextensions<1u>{Vakbl_view[k].size(0)*Gc.size(1)});
       boost::multi::array_ref<SPComplexType,2> buff(Gcloc.data(),
-                        {Vakbl_view[k].shape()[0],Gc.shape()[1]});
+                        {long(Vakbl_view[k].size(0)),long(Gc.size(1))});
 
-      int nwalk = Gc.shape()[1];
+      int nwalk = Gc.size(1);
       int getKr = Kr!=nullptr;
       int getKl = Kl!=nullptr;
-      if(E.shape()[0] != nwalk || E.shape()[1] < 3)
+      if(E.size(0) != nwalk || E.size(1) < 3)
         APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix dimensions \n");
 
       if(addEJ and getKl)
-        assert(Kl->shape()[0] == nwalk && Kl->shape()[1] == SpvnT[k].shape()[0]);
+        assert(Kl->size(0) == nwalk && Kl->size(1) == SpvnT[k].size(0));
       if(addEJ and getKr)
-        assert(Kr->shape()[0] == nwalk && Kr->shape()[1] == SpvnT[k].shape()[0]);
+        assert(Kr->size(0) == nwalk && Kr->size(1) == SpvnT[k].size(0));
 
       for(int n=0; n<nwalk; n++)
         std::fill_n(E[n].origin(),3,ComplexType(0.));
 
       // one-body contribution
       if(addH1) {
-        boost::multi::const_array_ref<ComplexType,1> haj_ref(std::addressof(*haj[k].origin()), extensions<1u>{haj[k].num_elements()});
+        boost::multi::array_cref<ComplexType,1> haj_ref(to_address(haj[k].origin()), iextensions<1u>{haj[k].num_elements()});
         ma::product(ComplexType(1.),ma::T(Gc),haj_ref,ComplexType(1.),E(E.extension(0),0));
         for(int i=0; i<nwalk; i++)
           E[i][0] += E0;
@@ -217,17 +217,17 @@ std::cout<<"\n";
 
       if(separateEJ && addEJ) {
         using ma::T;
-        if(Gcloc.num_elements() < SpvnT[k].shape()[0] * Gc.shape()[1])
-          Gcloc.reextent(extensions<1u>{SpvnT[k].shape()[0]*Gc.shape()[1]});
-        assert(SpvnT_view[k].shape()[1] == Gc.shape()[0]);
+        if(Gcloc.num_elements() < SpvnT[k].size(0) * Gc.size(1))
+          Gcloc.reextent(iextensions<1u>{SpvnT[k].size(0)*Gc.size(1)});
+        assert(SpvnT_view[k].size(1) == Gc.size(0));
         RealType scl = (walker_type==CLOSED?4.0:1.0);
         // SpvnT*G
         boost::multi::array_ref<T2,2> v_(Gcloc.origin()+
-                                            SpvnT_view[k].local_origin()[0]*Gc.shape()[1],
-                                        {SpvnT_view[k].shape()[0],Gc.shape()[1]});
+                                            SpvnT_view[k].local_origin()[0]*Gc.size(1),
+                                        {long(SpvnT_view[k].size(0)),long(Gc.size(1))});
         ma::product(SpvnT_view[k], Gc, v_);
         if(getKl || getKr) {
-          for(int wi=0; wi<Gc.shape()[1]; wi++) {
+          for(int wi=0; wi<Gc.size(1); wi++) {
             auto _v_ = v_(v_.extension(0),wi); 
             if(getKl) {
               auto Kli = (*Kl)[wi];
@@ -241,7 +241,7 @@ std::cout<<"\n";
             }
           }
         }
-        for(int wi=0; wi<Gc.shape()[1]; wi++)
+        for(int wi=0; wi<Gc.size(1); wi++)
           E[wi][2] = 0.5*scl*ma::dot(v_(v_.extension(0),wi),v_(v_.extension(0),wi));
       }
 
@@ -259,13 +259,13 @@ std::cout<<"\n";
              typename = void
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
-      assert( Spvn.shape()[1] == X.shape()[0] );
-      assert( Spvn.shape()[0] == v.shape()[0] );
+      assert( Spvn.size(1) == X.size(0) );
+      assert( Spvn.size(0) == v.size(0) );
       using Type = typename std::decay<MatB>::type::element;
 
       // Spvn*X
-      boost::multi::array_ref<Type,1> v_(std::addressof(*v.origin()) + Spvn_view.local_origin()[0],
-                                        extensions<1u>{Spvn_view.shape()[0]});
+      boost::multi::array_ref<Type,1> v_(to_address(v.origin()) + Spvn_view.local_origin()[0],
+                                        iextensions<1u>{Spvn_view.size(0)});
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
     }
 
@@ -274,14 +274,14 @@ std::cout<<"\n";
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
-      assert( Spvn.shape()[1] == X.shape()[0] );
-      assert( Spvn.shape()[0] == v.shape()[0] );
-      assert( X.shape()[1] == v.shape()[1] );
+      assert( Spvn.size(1) == X.size(0) );
+      assert( Spvn.size(0) == v.size(0) );
+      assert( X.size(1) == v.size(1) );
       using Type = typename std::decay<MatB>::type::element;
 
       // Spvn*X
-      boost::multi::array_ref<Type,2> v_(std::addressof(*v[Spvn_view.local_origin()[0]].origin()),
-                                        {Spvn_view.shape()[0],v.shape()[1]});
+      boost::multi::array_ref<Type,2> v_(to_address(v[Spvn_view.local_origin()[0]].origin()),
+                                        {long(Spvn_view.size(0)),long(v.size(1))});
       ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
     }
 
@@ -292,13 +292,13 @@ std::cout<<"\n";
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
       if(not separateEJ) k=0;
-      assert( SpvnT[k].shape()[1] == G.shape()[0] );
-      assert( SpvnT[k].shape()[0] == v.shape()[0] );
+      assert( SpvnT[k].size(1) == G.size(0) );
+      assert( SpvnT[k].size(0) == v.size(0) );
       using Type = typename std::decay<MatB>::type::element ;
 
       // SpvnT*G
-      boost::multi::array_ref<Type,1> v_(std::addressof(*v.origin()) + SpvnT_view[k].local_origin()[0],
-                                        extensions<1u>{SpvnT_view[k].shape()[0]});
+      boost::multi::array_ref<Type,1> v_(to_address(v.origin()) + SpvnT_view[k].local_origin()[0],
+                                        iextensions<1u>{SpvnT_view[k].size(0)});
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
     }
@@ -309,21 +309,21 @@ std::cout<<"\n";
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
       if(not separateEJ) k=0;
-      assert( SpvnT[k].shape()[1] == G.shape()[0] );
-      assert( SpvnT[k].shape()[0] == v.shape()[0] );
-      assert( G.shape()[1] == v.shape()[1] );
+      assert( SpvnT[k].size(1) == G.size(0) );
+      assert( SpvnT[k].size(0) == v.size(0) );
+      assert( G.size(1) == v.size(1) );
       using Type = typename std::decay<MatB>::type::element ;
 
       // SpvnT*G
-      boost::multi::array_ref<Type,2> v_(std::addressof(*v[SpvnT_view[k].local_origin()[0]].origin()),
-                                        {SpvnT_view[k].shape()[0],v.shape()[1]});
+      boost::multi::array_ref<Type,2> v_(to_address(v[SpvnT_view[k].local_origin()[0]].origin()),
+                                        {long(SpvnT_view[k].size(0)),long(v.size(1))});
       if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
     }
 
     bool distribution_over_cholesky_vectors() const{ return true; }
-    int number_of_ke_vectors() const{ return Spvn.shape()[1]; }
-    int local_number_of_cholesky_vectors() const{ return Spvn.shape()[1]; }
+    int number_of_ke_vectors() const{ return Spvn.size(1); }
+    int local_number_of_cholesky_vectors() const{ return Spvn.size(1); }
     int global_number_of_cholesky_vectors() const{ return global_nCV; }
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]

@@ -88,7 +88,7 @@ template<> struct predefined_operation<CppoP>{ \
 /*	constexpr*/ operator MPI_Op() const{return MpinamE;} \
 /*	static constexpr MPI_Op value = MpinamE;*/ \
 }; \
-using NamE = predefined_operation<CppoP>;
+using NamE = predefined_operation<CppoP>
 
 BOOST_MPI3_DECLARE_PREDEFINED_OPERATION(std::plus<>, MPI_SUM, sum);
 BOOST_MPI3_DECLARE_PREDEFINED_OPERATION(std::multiplies<>, MPI_PROD, product);

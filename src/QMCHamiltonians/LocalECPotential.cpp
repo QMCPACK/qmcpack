@@ -137,7 +137,46 @@ LocalECPotential::evaluate(ParticleSet& P)
   return Value;
 }
 
-
+LocalECPotential::Return_t
+LocalECPotential::evaluateWithIonDerivs(ParticleSet&P, ParticleSet& ions, TrialWaveFunction& psi,
+                                    ParticleSet::ParticlePos_t& hf_terms,
+                                    ParticleSet::ParticlePos_t& pulay_terms)
+{
+  const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
+  Value=0.0;
+  if(d_table.DTType==DT_SOA)
+  {
+    const size_t Nelec = P.getTotalNum();
+    for(size_t iel=0; iel<Nelec; ++iel)
+    {
+      const RealType* restrict dist=d_table.Distances[iel];
+      const RowContainerType dr = d_table.Displacements[iel];
+      Return_t esum(0);
+      //value, radial derivative, and 2nd derivative of spline r*V.
+      RealType v(0.0), dv(0.0), d2v(0.0);
+      //radial derivative dV/dr
+      RealType dvdr(0.0); 
+      RealType rinv(1.0);
+      for(size_t iat=0; iat<NumIons; ++iat)
+      {
+        if(PP[iat]!=nullptr)
+        {
+          rinv=1.0/dist[iat];
+          v=PP[iat]->splint(dist[iat],dv,d2v);
+          dvdr= -Zeff[iat]*(dv-v*rinv)*rinv; //the minus is because of charge of electron.
+          hf_terms[iat]+=dvdr*dr[iat]*rinv;
+          esum+= -Zeff[iat]*v*rinv;
+        }
+      }
+      Value += esum;
+    }
+  }
+  else
+  {
+    APP_ABORT("LocalECPotential::evaluateWithIonDerivs(...):  Forces not implemented in AoS build");
+  }
+  return Value;
+}
 
 #if !defined(REMOVE_TRACEMANAGER)
 LocalECPotential::Return_t

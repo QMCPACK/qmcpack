@@ -359,36 +359,36 @@ private:
   int ndelay; // delay rank
 
 public:
-  void freeGPUmem GPU_XRAY_TRACE ();
+  void freeGPUmem  ();
 
-  void recompute GPU_XRAY_TRACE (MCWalkerConfiguration &W, bool firstTime=true);
+  void recompute  (MCWalkerConfiguration &W, bool firstTime=true);
 
-  void reserve GPU_XRAY_TRACE (PointerPool<gpu::device_vector<CTS::ValueType> > &pool,
+  void reserve  (PointerPool<gpu::device_vector<CTS::ValueType> > &pool,
                 bool onlyOptimizable=false, int kblocksize=1);
-  void getGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
+  void getGradient  (MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);
-  void calcGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat, int k,
+  void calcGradient  (MCWalkerConfiguration &W, int iat, int k,
                      std::vector<GradType> &grad);
-  void calcGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
+  void calcGradient  (MCWalkerConfiguration &W, int iat,
                      std::vector<GradType> &grad) { calcGradient (W, iat, 0, grad); }
-  void addGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
+  void addGradient  (MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);
-  void evaluateLog GPU_XRAY_TRACE (MCWalkerConfiguration &W,
+  void evaluateLog  (MCWalkerConfiguration &W,
                     std::vector<RealType> &logPsi);
-  void ratio GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
+  void ratio  (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios);
-  void ratio GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
+  void ratio  (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios,
               std::vector<GradType> &newG);
-  void ratio GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
+  void ratio  (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios,
               std::vector<GradType> &newG,
               std::vector<ValueType> &newL);
-  void calcRatio GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
+  void calcRatio  (MCWalkerConfiguration &W, int iat,
                   std::vector<ValueType> &psi_ratios,
                   std::vector<GradType> &newG,
                   std::vector<ValueType> &newL);
-  void addRatio GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat, int k,
+  void addRatio  (MCWalkerConfiguration &W, int iat, int k,
                  std::vector<ValueType> &psi_ratios,
                  std::vector<GradType> &newG,
                  std::vector<ValueType> &newL);
@@ -404,16 +404,16 @@ public:
                       int iat, int k, int kd, int nw);
 
 #ifdef QMC_COMPLEX
-  void convertRatiosFromComplexToReal GPU_XRAY_TRACE (std::vector<ValueType> &psi_ratios,
+  void convertRatiosFromComplexToReal  (std::vector<ValueType> &psi_ratios,
                                        std::vector<RealType> &psi_ratios_real);
 #endif
-  void ratio GPU_XRAY_TRACE (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
+  void ratio  (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
               std::vector<PosType> &rNew,
               std::vector<ValueType> &psi_ratios,
               std::vector<GradType> &newG,
               std::vector<ValueType> &newL);
 
-  void NLratios GPU_XRAY_TRACE (MCWalkerConfiguration &W,
+  void NLratios  (MCWalkerConfiguration &W,
                  gpu::device_vector<CUDA_PRECISION*> &Rlist,
                  gpu::device_vector<int*>            &ElecList,
                  gpu::device_vector<int>             &NumCoreElecs,
@@ -421,44 +421,44 @@ public:
                  gpu::device_vector<CUDA_PRECISION*> &RatioList,
                  int numQuadPoints);
 
-  void NLratios GPU_XRAY_TRACE (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
+  void NLratios  (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                  std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 
-  void update GPU_XRAY_TRACE (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k);
-  void update GPU_XRAY_TRACE (std::vector<Walker_t*> &walkers, int iat){ update(NULL,walkers,iat,NULL,0); }
-  void update GPU_XRAY_TRACE (const std::vector<Walker_t*> &walkers,
+  void update  (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k);
+  void update  (std::vector<Walker_t*> &walkers, int iat){ update(NULL,walkers,iat,NULL,0); }
+  void update  (const std::vector<Walker_t*> &walkers,
                const std::vector<int> &iatList);
 
-  void gradLapl GPU_XRAY_TRACE (MCWalkerConfiguration &W, GradMatrix_t &grads,
+  void gradLapl  (MCWalkerConfiguration &W, GradMatrix_t &grads,
                  ValueMatrix_t &lapl);
 
 
   void evaluateDeltaLog(MCWalkerConfiguration &W,
                         std::vector<RealType>& logpsi_opt);
 
-  void evaluateDeltaLog GPU_XRAY_TRACE (MCWalkerConfiguration &W,
+  void evaluateDeltaLog  (MCWalkerConfiguration &W,
                         std::vector<RealType>& logpsi_fixed,
                         std::vector<RealType>& logpsi_opt,
                         GradMatrix_t&  fixedG,
                         ValueMatrix_t& fixedL);
 
-  void evaluateOptimizableLog GPU_XRAY_TRACE (MCWalkerConfiguration &W,
+  void evaluateOptimizableLog  (MCWalkerConfiguration &W,
                                std::vector<RealType>& logpsi_opt,
                                GradMatrix_t&  optG,
                                ValueMatrix_t& optL);
 
-  void evaluateDerivatives GPU_XRAY_TRACE (MCWalkerConfiguration &W,
+  void evaluateDerivatives  (MCWalkerConfiguration &W,
                             const opt_variables_type& optvars,
                             RealMatrix_t &dlogpsi,
                             RealMatrix_t &dhpsioverpsi);
 
 
-  void setndelay GPU_XRAY_TRACE (int delay)
+  void setndelay  (int delay)
   {
     ndelay=delay;
   }
 
-  int getndelay GPU_XRAY_TRACE ()
+  int getndelay  ()
   {
     return ndelay;
   }

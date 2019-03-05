@@ -40,12 +40,12 @@ protected:
   void initBreakup();
 
 public:
-  GPU_XRAY_TRACE MPC_CUDA(ParticleSet& ref, double cutoff);
+   MPC_CUDA(ParticleSet& ref, double cutoff);
 
-  GPU_XRAY_TRACE QMCHamiltonianBase* makeClone(ParticleSet& qp,
+   QMCHamiltonianBase* makeClone(ParticleSet& qp,
 					       TrialWaveFunction& psi);
 
-  GPU_XRAY_TRACE void addEnergy(MCWalkerConfiguration &W,
+   void addEnergy(MCWalkerConfiguration &W,
 				std::vector<RealType> &LocalEnergy);
 
 };

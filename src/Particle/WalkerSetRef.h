@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_WALKERSETREF_H
@@ -23,57 +20,50 @@
 
 namespace qmcplusplus
 {
-
 /** class to assist vectorized operations on Walkers
  */
-struct WalkerSetRef: public QMCTraits
+struct WalkerSetRef : public QMCTraits
 {
-
   /** enum for the particle and walker indices
    *@brief Introduced to handle fast access to Particles or Walkers
    *indices.
    */
-  enum {Particles =0, Walkers };
+  enum
+  {
+    Particles = 0,
+    Walkers
+  };
 
   /**
    *<ul>
    *<li>N[Particles] = number of particles
    *<li>N[Walkers] = number of walkers
    */
-  TinyVector<int,2> N;
-  typedef Matrix<PosType>   WalkerPosition_t;
-  typedef Matrix<GradType>  WalkerGradient_t;
+  TinyVector<int, 2> N;
+  typedef Matrix<PosType> WalkerPosition_t;
+  typedef Matrix<GradType> WalkerGradient_t;
   typedef Matrix<ValueType> WalkerLaplacian_t;
 
   const ParticleSet& PtclRef;
-  WalkerPosition_t  R;
-  WalkerGradient_t  G;
+  WalkerPosition_t R;
+  WalkerGradient_t G;
   WalkerLaplacian_t L;
 
   ///default constructor
-  WalkerSetRef(const ParticleSet& p): PtclRef(p)
-  {
-    N = 0;
-  }
+  WalkerSetRef(const ParticleSet& p) : PtclRef(p) { N = 0; }
 
-  inline int walkers() const
-  {
-    return N[Walkers];
-  }
+  inline int walkers() const { return N[Walkers]; }
 
-  inline int particles() const
-  {
-    return N[Particles];
-  }
+  inline int particles() const { return N[Particles]; }
 
   /** resize the containers */
   inline void resize(int nw, int nptcl)
   {
-    R.resize(nw,nptcl);
-    G.resize(nw,nptcl);
-    L.resize(nw,nptcl);
+    R.resize(nw, nptcl);
+    G.resize(nw, nptcl);
+    L.resize(nw, nptcl);
     N[Particles] = nptcl;
-    N[Walkers] = nw;
+    N[Walkers]   = nw;
   }
 
   /**@param first an iterator of the first walker to work on
@@ -88,13 +78,13 @@ struct WalkerSetRef: public QMCTraits
     R *= tauinv;
     ///reset the number of active walkers to zero to count them
     int iw = 0;
-    while(first != last)
+    while (first != last)
     {
-      const ParticleSet::ParticlePos_t& r = (*first)->R;
+      const ParticleSet::ParticlePos_t& r     = (*first)->R;
       const ParticleSet::ParticlePos_t& drift = (*first)->Drift;
-      for(int jat=0; jat<N[Particles]; jat++)
+      for (int jat = 0; jat < N[Particles]; jat++)
       {
-        R(iw,jat) += r[jat]+drift[jat];
+        R(iw, jat) += r[jat] + drift[jat];
       }
       ///increment the index and iterator
       iw++;
@@ -102,5 +92,5 @@ struct WalkerSetRef: public QMCTraits
     }
   }
 };
-}
+} // namespace qmcplusplus
 #endif

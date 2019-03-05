@@ -48,7 +48,7 @@ private:
 template<class Iterator>
 strided<Iterator> make_strided(Iterator it, typename std::iterator_traits<Iterator>::difference_type stride){
     return {it, stride};
-};
+}
 
 template<class Iterator>
 strided<Iterator> stride(Iterator&& it, typename std::iterator_traits<std::decay_t<Iterator>>::difference_type stride){

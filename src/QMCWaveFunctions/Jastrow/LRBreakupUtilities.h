@@ -82,6 +82,10 @@ struct YukawaBreakup
       return -Rs*rinv*rinv*(1.0 - exponential) + exponential*rinv*SqrtRs;
     }
   }
+  inline T df2(T r)
+  {
+    APP_ABORT("Need to implement df2 in YukawaBreakup");
+  }
 
   inline T Fk(T k, T rc)
   {
@@ -357,6 +361,10 @@ struct DerivYukawaBreakup
       T exponential = std::exp(-r*OneOverSqrtRs);
       return -0.5*OneOverRs*std::exp(-r*OneOverSqrtRs);
     }
+  }
+  inline T df2(T r)
+  {
+    APP_ABORT("Need to implement df2 in DerivYukawaBreakup");
   }
 
   inline T integrate_r2(T rc)
