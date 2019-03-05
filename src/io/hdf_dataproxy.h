@@ -4,10 +4,10 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //		      Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
-//		      
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+//
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -19,7 +19,6 @@
 
 namespace qmcplusplus
 {
-
 /** free function to check dimension
  * @param grp group id
  * @param aname name of the dataspace
@@ -27,23 +26,23 @@ namespace qmcplusplus
  * @param dims[rank] size for each direction
  * @return true if the dims is the same as the dataspace
  */
-inline bool get_space(hid_t grp, const std::string& aname, int rank, hsize_t* dims, bool fatalerr=true)
+inline bool get_space(hid_t grp, const std::string& aname, int rank, hsize_t* dims, bool fatalerr = true)
 {
-  hid_t h1 = H5Dopen(grp, aname.c_str());
+  hid_t h1        = H5Dopen(grp, aname.c_str());
   hid_t dataspace = H5Dget_space(h1);
-  int rank_in = H5Sget_simple_extent_ndims(dataspace);
-  if(rank < rank_in && fatalerr)
+  int rank_in     = H5Sget_simple_extent_ndims(dataspace);
+  if (rank < rank_in && fatalerr)
   {
     APP_ABORT(aname + " dataspace does not match ");
   }
   std::vector<hsize_t> dims_in(rank);
   int status_n = H5Sget_simple_extent_dims(dataspace, &dims_in[0], NULL);
   H5Dclose(h1);
-  bool thesame=true;
-  for(int i=0; i<rank; ++i)
+  bool thesame = true;
+  for (int i = 0; i < rank; ++i)
   {
-    thesame &= (dims_in[i]==dims[i]);
-    dims[i]=dims_in[i];
+    thesame &= (dims_in[i] == dims[i]);
+    dims[i] = dims_in[i];
   }
   return thesame;
 }
@@ -52,37 +51,41 @@ inline bool get_space(hid_t grp, const std::string& aname, int rank, hsize_t* di
 template<typename T>
 inline bool h5d_read(hid_t grp, const std::string& aname, T* first, hid_t xfer_plist)
 {
-  if(grp<0)
+  if (grp < 0)
     return true;
   hid_t h1 = H5Dopen(grp, aname.c_str());
-  if(h1<0)
+  if (h1 < 0)
     return false;
-  hid_t h5d_type_id=get_h5_datatype(*first);
-  herr_t ret = H5Dread(h1, h5d_type_id, H5S_ALL, H5S_ALL, xfer_plist, first);
+  hid_t h5d_type_id = get_h5_datatype(*first);
+  herr_t ret        = H5Dread(h1, h5d_type_id, H5S_ALL, H5S_ALL, xfer_plist, first);
   H5Dclose(h1);
   return ret != -1;
 }
 
 template<typename T>
-inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, const hsize_t* dims, const T* first
-                      , hid_t xfer_plist)
+inline bool h5d_write(hid_t grp,
+                      const std::string& aname,
+                      hsize_t ndims,
+                      const hsize_t* dims,
+                      const T* first,
+                      hid_t xfer_plist)
 {
-  if(grp<0)
+  if (grp < 0)
     return true;
-  hid_t h5d_type_id=get_h5_datatype(*first);
-  hid_t h1 = H5Dopen(grp, aname.c_str());
-  herr_t ret=-1;
-  if(h1<0) //missing create one
+  hid_t h5d_type_id = get_h5_datatype(*first);
+  hid_t h1          = H5Dopen(grp, aname.c_str());
+  herr_t ret        = -1;
+  if (h1 < 0) //missing create one
   {
-    hid_t dataspace  = H5Screate_simple(ndims, dims, NULL);
-    hid_t dataset =  H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT);
-    ret = H5Dwrite(dataset, h5d_type_id, H5S_ALL, H5S_ALL, xfer_plist, first);
+    hid_t dataspace = H5Screate_simple(ndims, dims, NULL);
+    hid_t dataset   = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT);
+    ret             = H5Dwrite(dataset, h5d_type_id, H5S_ALL, H5S_ALL, xfer_plist, first);
     H5Sclose(dataspace);
     H5Dclose(dataset);
   }
   else
   {
-    ret = H5Dwrite(h1, h5d_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT,first);
+    ret = H5Dwrite(h1, h5d_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, first);
   }
   H5Dclose(h1);
   return ret != -1;
@@ -90,28 +93,33 @@ inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, const 
 
 // MAM: Make new h5d_read/write overloads that take more parameters which allow you to
 // use a hyperslab on the memory space too. Then use it through a template specialization of
-// hyperslap for multi::array that allows you to define the memory space hyperslab using 
-// shape and strides. 
+// hyperslap for multi::array that allows you to define the memory space hyperslab using
+// shape and strides.
 
 /** return true, if successful */
 template<typename T>
-bool h5d_read(hid_t grp, const std::string& aname, hsize_t ndims, 
-    const hsize_t* gcounts, const hsize_t* counts, const hsize_t* offsets,
-    T* first , hid_t xfer_plist)
+bool h5d_read(hid_t grp,
+              const std::string& aname,
+              hsize_t ndims,
+              const hsize_t* gcounts,
+              const hsize_t* counts,
+              const hsize_t* offsets,
+              T* first,
+              hid_t xfer_plist)
 {
-  if(grp<0)
+  if (grp < 0)
     return true;
   hid_t h1 = H5Dopen(grp, aname.c_str());
-  if(h1<0)
+  if (h1 < 0)
     return false;
   //herr_t ret = H5Dread(h1, h5d_type_id, H5S_ALL, H5S_ALL, xfer_plist, first);
-  
-  hid_t dataspace = H5Dget_space(h1);
-  hid_t memspace = H5Screate_simple(ndims, counts, NULL);
-  herr_t ret = H5Sselect_hyperslab(dataspace,H5S_SELECT_SET, offsets,NULL,counts,NULL);
 
-  hid_t h5d_type_id=get_h5_datatype(*first);
-  ret = H5Dread(h1, h5d_type_id, memspace, dataspace, xfer_plist, first);
+  hid_t dataspace = H5Dget_space(h1);
+  hid_t memspace  = H5Screate_simple(ndims, counts, NULL);
+  herr_t ret      = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
+
+  hid_t h5d_type_id = get_h5_datatype(*first);
+  ret               = H5Dread(h1, h5d_type_id, memspace, dataspace, xfer_plist, first);
 
   H5Sclose(dataspace);
   H5Sclose(memspace);
@@ -122,26 +130,31 @@ bool h5d_read(hid_t grp, const std::string& aname, hsize_t ndims,
 
 
 template<typename T>
-inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims, 
-    const hsize_t* gcounts, const hsize_t* counts, const hsize_t* offsets,
-    const T* first , hid_t xfer_plist)
+inline bool h5d_write(hid_t grp,
+                      const std::string& aname,
+                      hsize_t ndims,
+                      const hsize_t* gcounts,
+                      const hsize_t* counts,
+                      const hsize_t* offsets,
+                      const T* first,
+                      hid_t xfer_plist)
 {
-  if(grp<0)
+  if (grp < 0)
     return true;
-  hid_t h5d_type_id=get_h5_datatype(*first);
-  hid_t h1 = H5Dopen(grp, aname.c_str());
+  hid_t h5d_type_id = get_h5_datatype(*first);
+  hid_t h1          = H5Dopen(grp, aname.c_str());
   hid_t filespace, memspace;
-  herr_t ret=-1;
-  if(h1<0) //missing create one
+  herr_t ret = -1;
+  if (h1 < 0) //missing create one
   {
-    hid_t dataspace=H5Screate_simple(ndims,gcounts,NULL);
-    hid_t dataset=H5Dcreate(grp, aname.c_str(),h5d_type_id, dataspace, H5P_DEFAULT);
+    hid_t dataspace = H5Screate_simple(ndims, gcounts, NULL);
+    hid_t dataset   = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT);
 
-    hid_t filespace=H5Dget_space(dataset);
-    ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offsets,NULL,counts,NULL); 
+    hid_t filespace = H5Dget_space(dataset);
+    ret             = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
 
-    hid_t memspace=H5Screate_simple(ndims,counts,NULL);
-    ret=H5Dwrite(dataset,h5d_type_id,memspace,filespace,xfer_plist,first);
+    hid_t memspace = H5Screate_simple(ndims, counts, NULL);
+    ret            = H5Dwrite(dataset, h5d_type_id, memspace, filespace, xfer_plist, first);
 
     H5Dclose(memspace);
     H5Sclose(filespace);
@@ -150,11 +163,11 @@ inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims,
   }
   else
   {
-    filespace=H5Dget_space(h1);
-    ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offsets,NULL,counts,NULL);
+    filespace = H5Dget_space(h1);
+    ret       = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
 
-    memspace=H5Screate_simple(ndims,counts,NULL);
-    ret = H5Dwrite(h1, h5d_type_id, memspace, filespace, xfer_plist, first);
+    memspace = H5Screate_simple(ndims, counts, NULL);
+    ret      = H5Dwrite(h1, h5d_type_id, memspace, filespace, xfer_plist, first);
 
     H5Sclose(filespace);
     H5Dclose(memspace);
@@ -165,31 +178,38 @@ inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims,
 
 /** return true, if successful */
 template<typename T>
-bool h5d_read(hid_t grp, const std::string& aname, hsize_t ndims,
-    const hsize_t* gcounts, const hsize_t* counts, const hsize_t* offsets,
-    hsize_t mem_ndims,
-    const hsize_t* mem_gcounts, const hsize_t* mem_counts, const hsize_t* mem_offsets,
-    T* first , hid_t xfer_plist)
+bool h5d_read(hid_t grp,
+              const std::string& aname,
+              hsize_t ndims,
+              const hsize_t* gcounts,
+              const hsize_t* counts,
+              const hsize_t* offsets,
+              hsize_t mem_ndims,
+              const hsize_t* mem_gcounts,
+              const hsize_t* mem_counts,
+              const hsize_t* mem_offsets,
+              T* first,
+              hid_t xfer_plist)
 {
-  if(grp<0)
+  if (grp < 0)
     return true;
   hid_t h1 = H5Dopen(grp, aname.c_str());
-  if(h1<0)
+  if (h1 < 0)
     return false;
 
   hid_t dataspace = H5Dget_space(h1);
-  if(ndims != H5Sget_simple_extent_ndims (dataspace))
+  if (ndims != H5Sget_simple_extent_ndims(dataspace))
   {
     APP_ABORT(aname + " dataspace does not match ");
   }
-  // check gcounts???  
-  herr_t ret = H5Sselect_hyperslab(dataspace,H5S_SELECT_SET, offsets,NULL,counts,NULL);
+  // check gcounts???
+  herr_t ret = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
 
   hid_t memspace = H5Screate_simple(mem_ndims, mem_gcounts, NULL);
-  herr_t mem_ret = H5Sselect_hyperslab(memspace,H5S_SELECT_SET, mem_offsets,NULL,mem_counts,NULL);
+  herr_t mem_ret = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, mem_offsets, NULL, mem_counts, NULL);
 
-  hid_t h5d_type_id=get_h5_datatype(*first);
-  ret = H5Dread(h1, h5d_type_id, memspace, dataspace, xfer_plist, first);
+  hid_t h5d_type_id = get_h5_datatype(*first);
+  ret               = H5Dread(h1, h5d_type_id, memspace, dataspace, xfer_plist, first);
 
   H5Sclose(dataspace);
   H5Sclose(memspace);
@@ -199,33 +219,38 @@ bool h5d_read(hid_t grp, const std::string& aname, hsize_t ndims,
 }
 
 template<typename T>
-inline bool h5d_write(hid_t grp, const std::string& aname, hsize_t ndims,
-    const hsize_t* gcounts, const hsize_t* counts, const hsize_t* offsets,
-    hsize_t mem_ndims,
-    const hsize_t* mem_gcounts, const hsize_t* mem_counts, const hsize_t* mem_offsets,
-    const T* first , hid_t xfer_plist)
+inline bool h5d_write(hid_t grp,
+                      const std::string& aname,
+                      hsize_t ndims,
+                      const hsize_t* gcounts,
+                      const hsize_t* counts,
+                      const hsize_t* offsets,
+                      hsize_t mem_ndims,
+                      const hsize_t* mem_gcounts,
+                      const hsize_t* mem_counts,
+                      const hsize_t* mem_offsets,
+                      const T* first,
+                      hid_t xfer_plist)
 {
-  if(grp<0)
+  if (grp < 0)
     return true;
-std::cout<<" h5d_write: " <<mem_ndims <<" "
-<<*mem_gcounts <<" " <<*(mem_gcounts+1) <<" " <<*(mem_gcounts+2) <<" "
-<<*mem_counts <<" " <<*(mem_counts+1) <<" " <<*(mem_counts+2) <<" "
-<<*mem_offsets <<" " <<*(mem_offsets+1) <<" " <<*(mem_offsets+2) <<" "
-<<std::endl;
-  hid_t h5d_type_id=get_h5_datatype(*first);
-  hid_t h1 = H5Dopen(grp, aname.c_str());
-  herr_t ret=-1;
-  if(h1<0) //missing create one
+  std::cout << " h5d_write: " << mem_ndims << " " << *mem_gcounts << " " << *(mem_gcounts + 1) << " "
+            << *(mem_gcounts + 2) << " " << *mem_counts << " " << *(mem_counts + 1) << " " << *(mem_counts + 2) << " "
+            << *mem_offsets << " " << *(mem_offsets + 1) << " " << *(mem_offsets + 2) << " " << std::endl;
+  hid_t h5d_type_id = get_h5_datatype(*first);
+  hid_t h1          = H5Dopen(grp, aname.c_str());
+  herr_t ret        = -1;
+  if (h1 < 0) //missing create one
   {
-    hid_t dataspace=H5Screate_simple(ndims,gcounts,NULL);
-    hid_t dataset=H5Dcreate(grp, aname.c_str(),h5d_type_id, dataspace, H5P_DEFAULT);
+    hid_t dataspace = H5Screate_simple(ndims, gcounts, NULL);
+    hid_t dataset   = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT);
 
-    hid_t filespace=H5Dget_space(dataset);
-    ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offsets,NULL,counts,NULL);
+    hid_t filespace = H5Dget_space(dataset);
+    ret             = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
 
-    hid_t memspace=H5Screate_simple(mem_ndims,mem_gcounts,NULL);
-    ret=H5Sselect_hyperslab(memspace,H5S_SELECT_SET,mem_offsets,NULL,mem_counts,NULL);
-    ret=H5Dwrite(dataset,h5d_type_id,memspace,filespace,xfer_plist,first);
+    hid_t memspace = H5Screate_simple(mem_ndims, mem_gcounts, NULL);
+    ret            = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, mem_offsets, NULL, mem_counts, NULL);
+    ret            = H5Dwrite(dataset, h5d_type_id, memspace, filespace, xfer_plist, first);
 
     H5Dclose(memspace);
     H5Sclose(filespace);
@@ -234,12 +259,12 @@ std::cout<<" h5d_write: " <<mem_ndims <<" "
   }
   else
   {
-    hid_t filespace=H5Dget_space(h1);
-    ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offsets,NULL,counts,NULL);
+    hid_t filespace = H5Dget_space(h1);
+    ret             = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
 
-    hid_t memspace=H5Screate_simple(mem_ndims,mem_gcounts,NULL);
-    ret=H5Sselect_hyperslab(memspace,H5S_SELECT_SET,mem_offsets,NULL,mem_counts,NULL);
-    ret = H5Dwrite(h1, h5d_type_id, memspace, filespace, xfer_plist, first);
+    hid_t memspace = H5Screate_simple(mem_ndims, mem_gcounts, NULL);
+    ret            = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, mem_offsets, NULL, mem_counts, NULL);
+    ret            = H5Dwrite(h1, h5d_type_id, memspace, filespace, xfer_plist, first);
 
     H5Sclose(filespace);
     H5Dclose(memspace);
@@ -249,30 +274,35 @@ std::cout<<" h5d_write: " <<mem_ndims <<" "
 }
 
 template<typename T>
-inline bool h5d_append(hid_t grp, const std::string& aname, hsize_t& current,
-                       hsize_t ndims, const hsize_t* dims, const T* first,
-                       hsize_t chunk_size=1,hid_t xfer_plist=H5P_DEFAULT)
+inline bool h5d_append(hid_t grp,
+                       const std::string& aname,
+                       hsize_t& current,
+                       hsize_t ndims,
+                       const hsize_t* dims,
+                       const T* first,
+                       hsize_t chunk_size = 1,
+                       hid_t xfer_plist   = H5P_DEFAULT)
 {
   //app_log()<<omp_get_thread_num()<<"  h5d_append  group = "<<grp<<"  name = "<<aname.c_str()<< std::endl;
-  if(grp<0)
+  if (grp < 0)
     return true;
-  hid_t h5d_type_id=get_h5_datatype(*first);
+  hid_t h5d_type_id = get_h5_datatype(*first);
   hid_t dataspace;
   hid_t memspace;
   hid_t dataset = H5Dopen(grp, aname.c_str());
   hsize_t max_dims[ndims];
-  max_dims[0]   = H5S_UNLIMITED;
-  for(int d=1; d<ndims; ++d)
+  max_dims[0] = H5S_UNLIMITED;
+  for (int d = 1; d < ndims; ++d)
     max_dims[d] = dims[d];
-  herr_t ret=-1;
-  if(dataset<0) //missing create one
+  herr_t ret = -1;
+  if (dataset < 0) //missing create one
   {
     //set file pointer
     current = 0;
     // set max and chunk dims
     hsize_t chunk_dims[ndims];
     chunk_dims[0] = chunk_size;
-    for(int d=1; d<ndims; ++d)
+    for (int d = 1; d < ndims; ++d)
       chunk_dims[d] = dims[d];
     // create a dataspace sized to the current buffer
     dataspace = H5Screate_simple(ndims, dims, max_dims);
@@ -316,23 +346,23 @@ inline bool h5d_append(hid_t grp, const std::string& aname, hsize_t& current,
     // new end of file
     hsize_t start[ndims];
     hsize_t end[ndims];
-    for(int d=1; d<ndims; ++d)
+    for (int d = 1; d < ndims; ++d)
     {
       start[d] = 0;
       end[d]   = dims[d];
     }
     start[0] = current;
-    end[0] = start[0]+dims[0];
+    end[0]   = start[0] + dims[0];
     //extend the dataset (file)
-    herr_t he  = H5Dextend(dataset, end);
+    herr_t he = H5Dextend(dataset, end);
     //get the corresponding dataspace (filespace)
-    dataspace  = H5Dget_space(dataset);
+    dataspace = H5Dget_space(dataset);
     //set the extent
     herr_t hse = H5Sset_extent_simple(dataspace, ndims, end, max_dims);
     //select hyperslab/slice of multidimensional data for appended write
     herr_t hsh = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start, NULL, dims, NULL);
     //create memory space describing current data block
-    memspace   = H5Screate_simple(ndims, dims, NULL);
+    memspace = H5Screate_simple(ndims, dims, NULL);
     //append the datablock to the dataset
     ret = H5Dwrite(dataset, h5d_type_id, memspace, dataspace, H5P_DEFAULT, first);
     // update the "file pointer"
@@ -368,29 +398,26 @@ inline bool h5d_append(hid_t grp, const std::string& aname, hsize_t& current,
 
 /** generic h5data_proxy<T> for hdf5 native type T
 */
-template<typename T> struct h5data_proxy
-    : public h5_space_type<T,1>
+template<typename T>
+struct h5data_proxy : public h5_space_type<T, 1>
 {
   typedef T data_type;
-  using h5_space_type<T,1>::dims;
-  using h5_space_type<T,1>::get_address;
+  using h5_space_type<T, 1>::dims;
+  using h5_space_type<T, 1>::get_address;
   data_type& ref_;
 
-  inline h5data_proxy(data_type& a): ref_(a)
+  inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = 1; }
+
+  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    dims[0]=1;
+    return h5d_read(grp, aname, get_address(&ref_), xfer_plist);
   }
 
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
+  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_read(grp,aname,get_address(&ref_),xfer_plist);
-  }
-
-  inline bool write(hid_t grp, const std::string& aname,hid_t xfer_plist=H5P_DEFAULT)
-  {
-    return h5d_write(grp,aname.c_str(),this->size(),dims,get_address(&ref_),xfer_plist);
+    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(&ref_), xfer_plist);
   }
 };
 
-}
+} // namespace qmcplusplus
 #endif

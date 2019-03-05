@@ -18,27 +18,20 @@
 
 namespace qmcplusplus
 {
-
 class NeighborLists
 {
-  protected:
+protected:
   /// neighbor particle IDs of all the reference particles
   std::vector<std::vector<int>> NeighborIDs;
 
-  public:
+public:
   /// constructor
   NeighborLists(const ParticleSet& source) : NeighborIDs(source.getTotalNum()) {}
 
   /// get the neighbor list of the source particle
-  std::vector<int>& getNeighborList(int source)
-  {
-    return NeighborIDs[source];
-  }
-  const std::vector<int>& getNeighborList(int source) const
-  {
-    return NeighborIDs[source];
-  }
+  std::vector<int>& getNeighborList(int source) { return NeighborIDs[source]; }
+  const std::vector<int>& getNeighborList(int source) const { return NeighborIDs[source]; }
 };
 
-}
+} // namespace qmcplusplus
 #endif
