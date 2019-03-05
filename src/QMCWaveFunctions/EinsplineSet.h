@@ -444,17 +444,15 @@ public:
                             ComplexHessMatrix_t& grad_grad_psi,
                             ComplexGGGMatrix_t& grad_grad_grad_logdet);
 #ifdef QMC_CUDA
-   void finalizeConstruction();
+  void finalizeConstruction();
 
   // Vectorized evaluation functions
-   void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi);
-   void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi);
-   void evaluate(std::vector<Walker_t*>& walkers,
-                               std::vector<PosType>& newpos,
-                               gpu::device_vector<CTS::RealType*>& phi);
-   void evaluate(std::vector<Walker_t*>& walkers,
-                               std::vector<PosType>& newpos,
-                               gpu::device_vector<CTS::ComplexType*>& phi);
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi);
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi);
+  void evaluate(std::vector<Walker_t*>& walkers, std::vector<PosType>& newpos, gpu::device_vector<CTS::RealType*>& phi);
+  void evaluate(std::vector<Walker_t*>& walkers,
+                std::vector<PosType>& newpos,
+                gpu::device_vector<CTS::ComplexType*>& phi);
   inline void evaluate(std::vector<Walker_t*>& walkers,
                        std::vector<PosType>& newpos,
                        gpu::device_vector<CTS::RealType*>& phi,
@@ -463,13 +461,13 @@ public:
   {
     evaluate(walkers, newpos, phi, grad_lapl, row_stride, 0, false);
   }
-   void evaluate(std::vector<Walker_t*>& walkers,
-                               std::vector<PosType>& newpos,
-                               gpu::device_vector<CTS::RealType*>& phi,
-                               gpu::device_vector<CTS::RealType*>& grad_lapl,
-                               int row_stride,
-                               int k,
-                               bool klinear);
+  void evaluate(std::vector<Walker_t*>& walkers,
+                std::vector<PosType>& newpos,
+                gpu::device_vector<CTS::RealType*>& phi,
+                gpu::device_vector<CTS::RealType*>& grad_lapl,
+                int row_stride,
+                int k,
+                bool klinear);
 
   inline void evaluate(std::vector<Walker_t*>& walkers,
                        std::vector<PosType>& newpos,
@@ -481,15 +479,15 @@ public:
     evaluate(walkers, newpos, phi, grad_lapl, row_stride, 0, false);
 #endif
   }
-   void evaluate(std::vector<Walker_t*>& walkers,
-                               std::vector<PosType>& newpos,
-                               gpu::device_vector<CTS::ComplexType*>& phi,
-                               gpu::device_vector<CTS::ComplexType*>& grad_lapl,
-                               int row_stride,
-                               int k,
-                               bool klinear);
-   void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi);
-   void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi);
+  void evaluate(std::vector<Walker_t*>& walkers,
+                std::vector<PosType>& newpos,
+                gpu::device_vector<CTS::ComplexType*>& phi,
+                gpu::device_vector<CTS::ComplexType*>& grad_lapl,
+                int row_stride,
+                int k,
+                bool klinear);
+  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi);
+  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi);
 #endif
 
   void resetParameters(const opt_variables_type& active);
@@ -621,42 +619,40 @@ protected:
   ////////////
   // Data for vectorized evaluations
 
-   void sort_electrons(std::vector<PosType>& pos);
+  void sort_electrons(std::vector<PosType>& pos);
 
 public:
-   void finalizeConstruction();
+  void finalizeConstruction();
   //    void registerTimers();
 
   // Resize cuda objects
-   void resize_cuda(int numwalkers);
+  void resize_cuda(int numwalkers);
 
   // Vectorized evaluation functions
-   void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi);
-   void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi);
-   void evaluate(std::vector<Walker_t*>& walkers,
-                               std::vector<PosType>& newpos,
-                               gpu::device_vector<CTS::RealType*>& phi);
-   void evaluate(std::vector<Walker_t*>& walkers,
-                               std::vector<PosType>& newpos,
-                               gpu::device_vector<CTS::ComplexType*>& phi);
-   void evaluate(std::vector<Walker_t*>& walkers,
-                               std::vector<PosType>& newpos,
-                               gpu::device_vector<CTS::RealType*>& phi,
-                               gpu::device_vector<CTS::RealType*>& grad_lapl,
-                               int row_stride);
-   void evaluate(std::vector<Walker_t*>& walkers,
-                               std::vector<PosType>& newpos,
-                               gpu::device_vector<CTS::ComplexType*>& phi,
-                               gpu::device_vector<CTS::ComplexType*>& grad_lapl,
-                               int row_stride);
-   void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi);
-   void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi);
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi);
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi);
+  void evaluate(std::vector<Walker_t*>& walkers, std::vector<PosType>& newpos, gpu::device_vector<CTS::RealType*>& phi);
+  void evaluate(std::vector<Walker_t*>& walkers,
+                std::vector<PosType>& newpos,
+                gpu::device_vector<CTS::ComplexType*>& phi);
+  void evaluate(std::vector<Walker_t*>& walkers,
+                std::vector<PosType>& newpos,
+                gpu::device_vector<CTS::RealType*>& phi,
+                gpu::device_vector<CTS::RealType*>& grad_lapl,
+                int row_stride);
+  void evaluate(std::vector<Walker_t*>& walkers,
+                std::vector<PosType>& newpos,
+                gpu::device_vector<CTS::ComplexType*>& phi,
+                gpu::device_vector<CTS::ComplexType*>& grad_lapl,
+                int row_stride);
+  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi);
+  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi);
 
   std::string Type();
 
-   SPOSet* makeClone() const;
+  SPOSet* makeClone() const;
 
-   EinsplineSetHybrid();
+  EinsplineSetHybrid();
 };
 
 #endif

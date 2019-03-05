@@ -81,44 +81,40 @@ private:
 public:
   typedef ParticleSet::Walker_t Walker_t;
 
-   void resetParameters(const opt_variables_type& active);
-   void checkInVariables(opt_variables_type& active);
-   void addFunc(int ig, FT* j, int jg = -1);
-   void recompute(MCWalkerConfiguration& W, bool firstTime);
-   void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
-   void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi);
-   void update(MCWalkerConfiguration* W,
-                             std::vector<Walker_t*>& walkers,
-                             int iat,
-                             std::vector<bool>* acc,
-                             int k);
+  void resetParameters(const opt_variables_type& active);
+  void checkInVariables(opt_variables_type& active);
+  void addFunc(int ig, FT* j, int jg = -1);
+  void recompute(MCWalkerConfiguration& W, bool firstTime);
+  void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
+  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi);
+  void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k);
 
   void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList)
   {
     /* This function doesn't really need to return the ratio */
   }
-   void ratio(MCWalkerConfiguration& W,
-                            int iat,
-                            std::vector<ValueType>& psi_ratios,
-                            std::vector<GradType>& grad,
-                            std::vector<ValueType>& lapl);
-   void calcRatio(MCWalkerConfiguration& W,
-                                int iat,
-                                std::vector<ValueType>& psi_ratios,
-                                std::vector<GradType>& grad,
-                                std::vector<ValueType>& lapl);
-   void addRatio(MCWalkerConfiguration& W,
-                               int iat,
-                               int k,
-                               std::vector<ValueType>& psi_ratios,
-                               std::vector<GradType>& grad,
-                               std::vector<ValueType>& lapl);
-   void ratio(std::vector<Walker_t*>& walkers,
-                            std::vector<int>& iatList,
-                            std::vector<PosType>& rNew,
-                            std::vector<ValueType>& psi_ratios,
-                            std::vector<GradType>& grad,
-                            std::vector<ValueType>& lapl)
+  void ratio(MCWalkerConfiguration& W,
+             int iat,
+             std::vector<ValueType>& psi_ratios,
+             std::vector<GradType>& grad,
+             std::vector<ValueType>& lapl);
+  void calcRatio(MCWalkerConfiguration& W,
+                 int iat,
+                 std::vector<ValueType>& psi_ratios,
+                 std::vector<GradType>& grad,
+                 std::vector<ValueType>& lapl);
+  void addRatio(MCWalkerConfiguration& W,
+                int iat,
+                int k,
+                std::vector<ValueType>& psi_ratios,
+                std::vector<GradType>& grad,
+                std::vector<ValueType>& lapl);
+  void ratio(std::vector<Walker_t*>& walkers,
+             std::vector<int>& iatList,
+             std::vector<PosType>& rNew,
+             std::vector<ValueType>& psi_ratios,
+             std::vector<GradType>& grad,
+             std::vector<ValueType>& lapl)
   {
     /* This function doesn't really need to return the ratio */
   }
@@ -135,17 +131,17 @@ public:
     /* The one-body jastrow can be calculated for the entire k-block, so this function doesn't need to return anything */
   }
 
-   void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad);
-   void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
-   void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl);
-   void NLratios(MCWalkerConfiguration& W,
-                               std::vector<NLjob>& jobList,
-                               std::vector<PosType>& quadPoints,
-                               std::vector<ValueType>& psi_ratios);
-   void evaluateDerivatives(MCWalkerConfiguration& W,
-                                          const opt_variables_type& optvars,
-                                          RealMatrix_t& dlogpsi,
-                                          RealMatrix_t& dlapl_over_psi);
+  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad);
+  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl);
+  void NLratios(MCWalkerConfiguration& W,
+                std::vector<NLjob>& jobList,
+                std::vector<PosType>& quadPoints,
+                std::vector<ValueType>& psi_ratios);
+  void evaluateDerivatives(MCWalkerConfiguration& W,
+                           const opt_variables_type& optvars,
+                           RealMatrix_t& dlogpsi,
+                           RealMatrix_t& dlapl_over_psi);
   OneBodyJastrowOrbitalBspline(ParticleSet& centers, ParticleSet& elecs)
       : J1OrbitalSoA<FT>(centers, elecs),
         ElecRef(elecs),
