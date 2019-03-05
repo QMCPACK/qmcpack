@@ -24,79 +24,43 @@
 
 namespace qmcplusplus
 {
-
-struct NGOrbital: public OptimizableFunctorBase
+struct NGOrbital : public OptimizableFunctorBase
 {
-  typedef real_type                    value_type;
-  typedef real_type                    point_type;
-  typedef OneDimGridBase<real_type>    grid_type;
+  typedef real_type value_type;
+  typedef real_type point_type;
+  typedef OneDimGridBase<real_type> grid_type;
   typedef OneDimQuinticSpline<real_type> functor_type;
   functor_type myFunc;
   real_type Y, dY, d2Y, d3Y;
 
-  NGOrbital(grid_type* agrid):myFunc(agrid) { }
+  NGOrbital(grid_type* agrid) : myFunc(agrid) {}
 
   template<typename VV>
-  NGOrbital(grid_type* agrid, const VV& nv):myFunc(agrid,nv) { }
+  NGOrbital(grid_type* agrid, const VV& nv) : myFunc(agrid, nv)
+  {}
 
   void checkInVariables(opt_variables_type& active) {}
   void checkOutVariables(const opt_variables_type& active) {}
   void resetParameters(const opt_variables_type& active) {}
   void reset() {}
-  inline real_type f(real_type r)
-  {
-    return myFunc.f(r);
-  }
-  inline real_type df(real_type r)
-  {
-    return myFunc.df(r);
-  }
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  inline real_type f(real_type r) { return myFunc.f(r); }
+  inline real_type df(real_type r) { return myFunc.df(r); }
+  bool put(xmlNodePtr cur) { return true; }
   OptimizableFunctorBase* makeClone() const;
 
-  inline real_type evaluate(real_type r, real_type rinv)
-  {
-    return Y=myFunc.splint(r);
-  }
-  inline value_type evaluateAll(real_type r, real_type rinv)
-  {
-    return Y=myFunc.splint(r,dY,d2Y);
-  }
+  inline real_type evaluate(real_type r, real_type rinv) { return Y = myFunc.splint(r); }
+  inline value_type evaluateAll(real_type r, real_type rinv) { return Y = myFunc.splint(r, dY, d2Y); }
 
-  inline value_type evaluateWithThirdDeriv(real_type r, real_type rinv)
-  {
-    return Y=myFunc.splint(r,dY,d2Y,d3Y);
-  }
+  inline value_type evaluateWithThirdDeriv(real_type r, real_type rinv) { return Y = myFunc.splint(r, dY, d2Y, d3Y); }
 
-  inline value_type operator()(int i) const
-  {
-    return myFunc(i);
-  }
-  inline value_type& operator()(int i)
-  {
-    return myFunc(i);
-  }
-  inline grid_type& grid()
-  {
-    return myFunc.grid();
-  }
-  inline void setGridManager(bool willmanage)
-  {
-    myFunc.setGridManager(willmanage);
-  }
+  inline value_type operator()(int i) const { return myFunc(i); }
+  inline value_type& operator()(int i) { return myFunc(i); }
+  inline grid_type& grid() { return myFunc.grid(); }
+  inline void setGridManager(bool willmanage) { myFunc.setGridManager(willmanage); }
 
-  inline void spline(int imin, value_type yp1, int imax, value_type ypn)
-  {
-    myFunc.spline(imin,yp1,imax,ypn);
-  }
+  inline void spline(int imin, value_type yp1, int imax, value_type ypn) { myFunc.spline(imin, yp1, imax, ypn); }
 
-  inline void resize(int n)
-  {
-    myFunc.resize(n);
-  }
+  inline void resize(int n) { myFunc.resize(n); }
 };
 
 /**Class to convert SlaterTypeOrbital to a radial orbital on a log grid.
@@ -105,22 +69,21 @@ struct NGOrbital: public OptimizableFunctorBase
  *   - only one grid is used
  *   - any number of radial orbitals
  */
-class NGOBuilder: public QMCTraits
+class NGOBuilder : public QMCTraits
 {
-
 public:
   //typedef OneDimGridBase<RealType>                        GridType;
   //typedef OneDimGridFunctor<RealType>                     RadialOrbitalType;
-  typedef NGOrbital                                     RadialOrbitalType;
-  typedef NGOrbital::grid_type                          GridType;
-  typedef SphericalBasisSet<RadialOrbitalType,GridType> CenteredOrbitalType;
+  typedef NGOrbital RadialOrbitalType;
+  typedef NGOrbital::grid_type GridType;
+  typedef SphericalBasisSet<RadialOrbitalType, GridType> CenteredOrbitalType;
 
   ///true, if the RadialOrbitalType is normalized
   bool Normalized;
   ///the radial orbitals
   CenteredOrbitalType* m_orbitals;
   ///input grid in case transform is needed
-  GridType *input_grid;
+  GridType* input_grid;
   ///maximum cutoff
   RealType m_rcut;
   ///the quantum number of this node
@@ -131,7 +94,7 @@ public:
   std::string m_infunctype;
 
   ///constructor
-  NGOBuilder(xmlNodePtr cur=NULL);
+  NGOBuilder(xmlNodePtr cur = NULL);
   ///destructor
   ~NGOBuilder();
 
@@ -140,14 +103,14 @@ public:
 
   ///add a grid
   bool addGrid(xmlNodePtr cur);
-  bool addGridH5(hdf_archive &hin);
+  bool addGridH5(hdf_archive& hin);
 
   /** add a radial functor
    * @param cur xml element
    * @param nlms quantum number
    */
   bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
-  bool addRadialOrbitalH5(hdf_archive &hin, const QuantumNumberType& nlms);
+  bool addRadialOrbitalH5(hdf_archive& hin, const QuantumNumberType& nlms);
 
   /** put common element
    * @param cur xml element
@@ -156,12 +119,12 @@ public:
 
 private:
   void addGaussian(xmlNodePtr cur);
-  void addGaussianH5(hdf_archive &hin);
+  void addGaussianH5(hdf_archive& hin);
   void addSlater(xmlNodePtr cur);
   void addNumerical(xmlNodePtr cur, const std::string& dsname);
   void addPade(xmlNodePtr cur);
   hid_t m_fileid;
 };
 
-}
+} // namespace qmcplusplus
 #endif

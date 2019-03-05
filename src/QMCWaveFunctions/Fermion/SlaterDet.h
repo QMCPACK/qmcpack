@@ -140,10 +140,9 @@ public:
     }
   }
 
-  virtual
-  void completeUpdates()
+  virtual void completeUpdates()
   {
-    for(int i=0; i<Dets.size(); i++)
+    for (int i = 0; i < Dets.size(); i++)
       Dets[i]->completeUpdates();
   }
 
@@ -190,10 +189,10 @@ public:
       Dets[id]->recompute(W, firstTime);
   }
 
-  GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CTS::ValueType> > &pool, int kblocksize=1)
+  GPU_XRAY_TRACE void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool, int kblocksize = 1)
   {
-    for (int id=0; id<Dets.size(); id++)
-      Dets[id]->reserve(pool,kblocksize);
+    for (int id = 0; id < Dets.size(); id++)
+      Dets[id]->reserve(pool, kblocksize);
   }
 
   GPU_XRAY_TRACE void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi)
@@ -211,12 +210,14 @@ public:
     Dets[getDetID(iat)]->ratio(W, iat, psi_ratios, grad, lapl);
   }
 
-  GPU_XRAY_TRACE void
-  det_lookahead (MCWalkerConfiguration &W,
-                 std::vector<ValueType> &psi_ratios,
-                 std::vector<GradType>  &grad,
-                 std::vector<ValueType> &lapl,
-                 int iat, int k, int kd, int nw)
+  GPU_XRAY_TRACE void det_lookahead(MCWalkerConfiguration& W,
+                                    std::vector<ValueType>& psi_ratios,
+                                    std::vector<GradType>& grad,
+                                    std::vector<ValueType>& lapl,
+                                    int iat,
+                                    int k,
+                                    int kd,
+                                    int nw)
   {
     Dets[getDetID(iat)]->det_lookahead(W, psi_ratios, grad, lapl, iat, k, kd, nw);
   }
@@ -230,7 +231,8 @@ public:
   }
 
   GPU_XRAY_TRACE void addRatio(MCWalkerConfiguration& W,
-                               int iat, int k,
+                               int iat,
+                               int k,
                                std::vector<ValueType>& psi_ratios,
                                std::vector<GradType>& grad,
                                std::vector<ValueType>& lapl)
@@ -255,7 +257,11 @@ public:
     Dets[getDetID(iat)]->addGradient(W, iat, grad);
   }
 
-  GPU_XRAY_TRACE void update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k)
+  GPU_XRAY_TRACE void update(MCWalkerConfiguration* W,
+                             std::vector<Walker_t*>& walkers,
+                             int iat,
+                             std::vector<bool>* acc,
+                             int k)
   {
     Dets[getDetID(iat)]->update(W, walkers, iat, acc, k);
   }

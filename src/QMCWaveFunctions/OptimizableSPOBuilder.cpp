@@ -11,26 +11,21 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #include "QMCWaveFunctions/OptimizableSPOBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {
+OptimizableSPOBuilder::OptimizableSPOBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur)
+    : SPOSetBuilder(comm), targetPtcl(&p)
+{}
 
-OptimizableSPOBuilder::OptimizableSPOBuilder
-(ParticleSet& p, PtclPoolType& psets, Communicate *comm, xmlNodePtr cur) :
-  SPOSetBuilder(comm), targetPtcl (&p)
+SPOSet* OptimizableSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-}
-
-SPOSet*
-OptimizableSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
-{
-  OptimizableSPOSet *spo =  new OptimizableSPOSet();
+  OptimizableSPOSet* spo = new OptimizableSPOSet();
   return spo;
 }
 
-}
+} // namespace qmcplusplus

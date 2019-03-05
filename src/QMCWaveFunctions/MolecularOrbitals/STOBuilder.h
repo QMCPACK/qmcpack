@@ -20,14 +20,11 @@
 #include "io/hdf_archive.h"
 namespace qmcplusplus
 {
-
-class STOBuilder: public QMCTraits
+class STOBuilder : public QMCTraits
 {
-
 public:
-
-  typedef SlaterCombo<RealType>                      RadialOrbitalType;
-  typedef SphericalBasisSet<RadialOrbitalType>     CenteredOrbitalType;
+  typedef SlaterCombo<RealType> RadialOrbitalType;
+  typedef SphericalBasisSet<RadialOrbitalType> CenteredOrbitalType;
 
   ///true, if the RadialOrbitalType is normalized
   bool Normalized;
@@ -36,33 +33,23 @@ public:
   ///the species
   std::string m_species;
   ///constructor
-  STOBuilder(xmlNodePtr cur=NULL);
+  STOBuilder(xmlNodePtr cur = NULL);
 
   ///assign a CenteredOrbitalType to work on
   void setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter)
   {
     m_orbitals = oset;
-    m_species = acenter;
+    m_species  = acenter;
   }
 
-  bool addGrid(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool addGrid(xmlNodePtr cur) { return true; }
 
-  bool addGridH5(hdf_archive &hin)
-  {
-    return true;
-  }
+  bool addGridH5(hdf_archive& hin) { return true; }
 
   bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
 
-  bool addRadialOrbitalH5(hdf_archive &hin, const QuantumNumberType& nlms)
-  {
-    return 0;
-  }
+  bool addRadialOrbitalH5(hdf_archive& hin, const QuantumNumberType& nlms) { return 0; }
   bool putCommon(xmlNodePtr cur);
-
 };
-}
+} // namespace qmcplusplus
 #endif

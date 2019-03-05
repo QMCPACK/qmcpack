@@ -23,14 +23,13 @@
 
 namespace qmcplusplus
 {
-
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep)
-  {
-    BsplineReaderBase* aReader=nullptr;
-    if(hybrid_rep)
-      aReader= new SplineHybridAdoptorReader<HybridRealSoA<SplineR2RSoA<double,OHMMS_PRECISION> > >(e);
-    else
-      aReader= new SplineAdoptorReader<SplineR2RSoA<double,OHMMS_PRECISION> >(e);
-    return aReader;
-  }
+BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep)
+{
+  BsplineReaderBase* aReader = nullptr;
+  if (hybrid_rep)
+    aReader = new SplineHybridAdoptorReader<HybridRealSoA<SplineR2RSoA<double, OHMMS_PRECISION>>>(e);
+  else
+    aReader = new SplineAdoptorReader<SplineR2RSoA<double, OHMMS_PRECISION>>(e);
+  return aReader;
 }
+} // namespace qmcplusplus

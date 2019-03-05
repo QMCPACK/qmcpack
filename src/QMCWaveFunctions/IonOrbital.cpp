@@ -11,39 +11,37 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include "QMCWaveFunctions/IonOrbital.h"
 
 namespace qmcplusplus
 {
-
 typedef IonOrbital::ValueType ValueType;
-typedef IonOrbital::GradType  GradType;
+typedef IonOrbital::GradType GradType;
 
-IonOrbital::IonOrbital (ParticleSet &centers, ParticleSet &ptcls) :
-  CenterRef(centers)
+IonOrbital::IonOrbital(ParticleSet& centers, ParticleSet& ptcls) : CenterRef(centers)
 {
-  Optimizable=false;
-  ClassName="IonOrbital";
+  Optimizable    = false;
+  ClassName      = "IonOrbital";
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
-  myTableID=ptcls.addTable(CenterRef,DT_AOS);
+  myTableID      = ptcls.addTable(CenterRef, DT_AOS);
   U.resize(NumTargetPtcls);
   dU.resize(NumTargetPtcls);
   d2U.resize(NumTargetPtcls);
   FirstAddressOfdU = &(dU[0][0]);
-  LastAddressOfdU = FirstAddressOfdU + dU.size()*OHMMS_DIM;
+  LastAddressOfdU  = FirstAddressOfdU + dU.size() * OHMMS_DIM;
 }
 
-IonOrbital::~IonOrbital() { }
+IonOrbital::~IonOrbital() {}
 
 //evaluate the distance table with P
-void IonOrbital::resetTargetParticleSet(ParticleSet& P)              { }
-void IonOrbital::checkInVariables(opt_variables_type& active)        { }
-void IonOrbital::checkOutVariables(const opt_variables_type& active) { }
-void IonOrbital::resetParameters(const opt_variables_type& active)   { }
-void IonOrbital::reportStatus(std::ostream& os)                      { }
+void IonOrbital::resetTargetParticleSet(ParticleSet& P) {}
+void IonOrbital::checkInVariables(opt_variables_type& active) {}
+void IonOrbital::checkOutVariables(const opt_variables_type& active) {}
+void IonOrbital::resetParameters(const opt_variables_type& active) {}
+void IonOrbital::reportStatus(std::ostream& os) {}
 
 /**
      *@param P input configuration containing N particles
@@ -59,29 +57,28 @@ void IonOrbital::reportStatus(std::ostream& os)                      { }
      *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
      *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
      */
-IonOrbital::RealType
-IonOrbital::evaluateLog(ParticleSet& P,
-                        ParticleSet::ParticleGradient_t& G,
-                        ParticleSet::ParticleLaplacian_t& L)
+IonOrbital::RealType IonOrbital::evaluateLog(ParticleSet& P,
+                                             ParticleSet::ParticleGradient_t& G,
+                                             ParticleSet::ParticleLaplacian_t& L)
 {
-  const auto &d_table=P.DistTables[myTableID];
-  int icent = 0;
-  LogValue = 0.0;
-  for (int iat=0; iat<NumTargetPtcls; iat++)
+  const auto& d_table = P.DistTables[myTableID];
+  int icent           = 0;
+  LogValue            = 0.0;
+  for (int iat = 0; iat < NumTargetPtcls; iat++)
   {
-    U[iat]   = 0.0;
-    dU[iat]  = 0.0;
-    d2U[iat] = 0.0;
+    U[iat]     = 0.0;
+    dU[iat]    = 0.0;
+    d2U[iat]   = 0.0;
     RealType a = ParticleAlpha[iat];
     if (a > 0.0)
     {
-      int index = d_table->M[icent] + iat;
+      int index     = d_table->M[icent] + iat;
       RealType dist = d_table->r(index);
-      PosType  disp  = d_table->dr(index);
-      LogValue -= a*dist*dist;
-      U[iat]   += a*dist*dist;
-      G[iat]   -= 2.0*a*disp;
-      L[iat]   -= 6.0*a;
+      PosType disp  = d_table->dr(index);
+      LogValue -= a * dist * dist;
+      U[iat] += a * dist * dist;
+      G[iat] -= 2.0 * a * disp;
+      L[iat] -= 6.0 * a;
       icent++;
     }
   }
@@ -92,30 +89,28 @@ IonOrbital::evaluateLog(ParticleSet& P,
  * @param P active particle set
  * @param iat particle that has been moved.
  */
-ValueType
-IonOrbital::ratio(ParticleSet& P, int iat)
+ValueType IonOrbital::ratio(ParticleSet& P, int iat)
 {
-  const auto &d_table=P.DistTables[myTableID];
-  int icent = ParticleCenter[iat];
+  const auto& d_table = P.DistTables[myTableID];
+  int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
-  int index = d_table->M[icent] + iat;
+  int index        = d_table->M[icent] + iat;
   RealType newdist = d_table->Temp[icent].r1;
-  curVal = ParticleAlpha[iat]*(newdist*newdist);
+  curVal           = ParticleAlpha[iat] * (newdist * newdist);
   return std::exp(U[iat] - curVal);
 }
 
 
-GradType
-IonOrbital::evalGrad(ParticleSet& P, int iat)
+GradType IonOrbital::evalGrad(ParticleSet& P, int iat)
 {
-  const auto &d_table=P.DistTables[myTableID];
-  int icent = ParticleCenter[iat];
+  const auto& d_table = P.DistTables[myTableID];
+  int icent           = ParticleCenter[iat];
   if (icent == -1)
     return GradType();
-  RealType a = ParticleAlpha[iat];
-  PosType  newdisp = d_table->Temp[icent].dr1;
-  curGrad = -2.0*a*newdisp;
+  RealType a      = ParticleAlpha[iat];
+  PosType newdisp = d_table->Temp[icent].dr1;
+  curGrad         = -2.0 * a * newdisp;
   return curGrad;
 }
 
@@ -128,82 +123,75 @@ IonOrbital::evalGrad(ParticleSet& P, int iat)
 //   {
 //   }
 
-ValueType
-IonOrbital::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+ValueType IonOrbital::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  const auto &d_table=P.DistTables[myTableID];
-  int icent = ParticleCenter[iat];
+  const auto& d_table = P.DistTables[myTableID];
+  int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
-  RealType a = ParticleAlpha[iat];
+  RealType a       = ParticleAlpha[iat];
   RealType newdist = d_table->Temp[icent].r1;
-  PosType  newdisp = d_table->Temp[icent].dr1;
-  curVal = a*newdist*newdist;
-  curGrad = -2.0*a*newdisp;
+  PosType newdisp  = d_table->Temp[icent].dr1;
+  curVal           = a * newdist * newdist;
+  curGrad          = -2.0 * a * newdisp;
   grad_iat += curGrad;
-  return std::exp(U[iat]-curVal);
+  return std::exp(U[iat] - curVal);
 }
 
-void
-IonOrbital::restore(int iat) {}
+void IonOrbital::restore(int iat) {}
 
-void
-IonOrbital::acceptMove(ParticleSet& P, int iat)
+void IonOrbital::acceptMove(ParticleSet& P, int iat)
 {
-  U[iat] = curVal;
-  dU[iat]=curGrad;
-  d2U[iat]=curLap;
+  U[iat]   = curVal;
+  dU[iat]  = curGrad;
+  d2U[iat] = curLap;
 }
 
-void
-IonOrbital::evaluateLogAndStore(ParticleSet& P,
-                                ParticleSet::ParticleGradient_t& dG,
-                                ParticleSet::ParticleLaplacian_t& dL)
+void IonOrbital::evaluateLogAndStore(ParticleSet& P,
+                                     ParticleSet::ParticleGradient_t& dG,
+                                     ParticleSet::ParticleLaplacian_t& dL)
 {
-  const auto &d_table=P.DistTables[myTableID];
-  int icent = 0;
-  LogValue = 0.0;
-  U=0.0;
-  dU=0.0;
-  d2U=0.0;
-  for (int iat=0; iat<NumTargetPtcls; iat++)
+  const auto& d_table = P.DistTables[myTableID];
+  int icent           = 0;
+  LogValue            = 0.0;
+  U                   = 0.0;
+  dU                  = 0.0;
+  d2U                 = 0.0;
+  for (int iat = 0; iat < NumTargetPtcls; iat++)
   {
     RealType a = ParticleAlpha[iat];
     if (a > 0.0)
     {
-      int index = d_table->M[icent] + iat;
+      int index     = d_table->M[icent] + iat;
       RealType dist = d_table->r(index);
-      PosType  disp  = d_table->dr(index);
-      LogValue -= a*dist*dist;
-      U[iat]   += a*dist*dist;
-      dU[iat]  -= 2.0*a*disp;
-      d2U[iat] -= 6.0*a;
-      dG[iat]  -= 2.0*a*disp;
-      dL[iat]  -= 6.0*a;
+      PosType disp  = d_table->dr(index);
+      LogValue -= a * dist * dist;
+      U[iat] += a * dist * dist;
+      dU[iat]  -= 2.0 * a * disp;
+      d2U[iat] -= 6.0 * a;
+      dG[iat]  -= 2.0 * a * disp;
+      dL[iat]  -= 6.0 * a;
       icent++;
     }
   }
 }
 
 /** equivalent to evalaute with additional data management */
-void
-IonOrbital::registerData(ParticleSet& P, WFBufferType& buf)
+void IonOrbital::registerData(ParticleSet& P, WFBufferType& buf)
 {
   evaluateLogAndStore(P, P.G, P.L);
   // Add U, d2U and dU. Keep the order!!!
   buf.add(U.begin(), U.end());
   buf.add(d2U.begin(), d2U.end());
-  buf.add(FirstAddressOfdU,LastAddressOfdU);
+  buf.add(FirstAddressOfdU, LastAddressOfdU);
 }
 
-IonOrbital::RealType
-IonOrbital::updateBuffer(ParticleSet& P, WFBufferType& buf,
-                         bool fromscratch=false)
+IonOrbital::RealType IonOrbital::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
 {
-  evaluateLogAndStore(P,P.G,P.L);
+  evaluateLogAndStore(P, P.G, P.L);
   buf.put(U.first_address(), U.last_address());
   buf.put(d2U.first_address(), d2U.last_address());
-  buf.put(FirstAddressOfdU,LastAddressOfdU);
+  buf.put(FirstAddressOfdU, LastAddressOfdU);
   return LogValue;
 }
 
@@ -213,21 +201,19 @@ IonOrbital::updateBuffer(ParticleSet& P, WFBufferType& buf,
  *
  *copyFromBuffer uses the data stored by registerData
  */
-void
-IonOrbital::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+void IonOrbital::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(U.first_address(), U.last_address());
   buf.get(d2U.first_address(), d2U.last_address());
-  buf.get(FirstAddressOfdU,LastAddressOfdU);
+  buf.get(FirstAddressOfdU, LastAddressOfdU);
 }
 
-WaveFunctionComponentPtr
-IonOrbital::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr IonOrbital::makeClone(ParticleSet& tqp) const
 {
-  IonOrbital* j1copy=new IonOrbital(CenterRef,tqp);
-  j1copy->ParticleAlpha = ParticleAlpha;
+  IonOrbital* j1copy     = new IonOrbital(CenterRef, tqp);
+  j1copy->ParticleAlpha  = ParticleAlpha;
   j1copy->ParticleCenter = ParticleCenter;
   return j1copy;
 }
 
-};
+}; // namespace qmcplusplus

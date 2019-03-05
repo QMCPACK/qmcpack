@@ -11,8 +11,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file BsplineSet.h
  *
  * BsplineSet<SplineAdoptor> is a SPOSet class to work with determinant classes
@@ -27,7 +27,6 @@
 
 namespace qmcplusplus
 {
-
 /** BsplineSet<SplineAdoptor>, a SPOSet
  * @tparam SplineAdoptor implements evaluation functions that matched the storage requirements.
  *
@@ -38,41 +37,33 @@ namespace qmcplusplus
  * cases.
  */
 template<typename SplineAdoptor>
-struct BsplineSet: public SPOSet, public SplineAdoptor
+struct BsplineSet : public SPOSet, public SplineAdoptor
 {
   typedef typename SplineAdoptor::SplineType SplineType;
-  typedef typename SplineAdoptor::PointType  PointType;
-  typedef typename SplineAdoptor::DataType  DataType;
+  typedef typename SplineAdoptor::PointType PointType;
+  typedef typename SplineAdoptor::DataType DataType;
 
   ///** default constructor */
   //BsplineSet() { }
 
-  SPOSet* makeClone() const
-  {
-    return new BsplineSet<SplineAdoptor>(*this);
-  }
+  SPOSet* makeClone() const { return new BsplineSet<SplineAdoptor>(*this); }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
-  {
-    SplineAdoptor::evaluate_v(P,iat,psi);
-  }
+  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) { SplineAdoptor::evaluate_v(P, iat, psi); }
 
-  inline void evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)
+  inline void evaluateDetRatios(const VirtualParticleSet& VP,
+                                ValueVector_t& psi,
+                                const ValueVector_t& psiinv,
+                                std::vector<ValueType>& ratios)
   {
     assert(psi.size() == psiinv.size());
     SplineAdoptor::evaluateDetRatios(VP, psi, psiinv, ratios);
   }
 
-  inline void finalizeConstruction()
-  {
-    return SplineAdoptor::finalizeConstruction();
-  }
+  inline void finalizeConstruction() { return SplineAdoptor::finalizeConstruction(); }
 
-  void resetParameters(const opt_variables_type& active)
-  { }
+  void resetParameters(const opt_variables_type& active) {}
 
-  void resetTargetParticleSet(ParticleSet& e)
-  { }
+  void resetTargetParticleSet(ParticleSet& e) {}
 
   void setOrbitalSetSize(int norbs)
   {
@@ -81,79 +72,100 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     //SplineAdoptor::last_spo=norbs;
   }
 
-  inline void evaluate(const ParticleSet& P, int iat,
-                       ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
-    SplineAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
+    SplineAdoptor::evaluate_vgl(P, iat, psi, dpsi, d2psi);
   }
 
-  inline void evaluate(const ParticleSet& P, int iat,
-                       ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
+  inline void evaluate(const ParticleSet& P,
+                       int iat,
+                       ValueVector_t& psi,
+                       GradVector_t& dpsi,
+                       HessVector_t& grad_grad_psi)
   {
-    SplineAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
+    SplineAdoptor::evaluate_vgh(P, iat, psi, dpsi, grad_grad_psi);
   }
 
-  void evaluate_notranspose(const ParticleSet& P, int first, int last
-                            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
-  {
-    typedef ValueMatrix_t::value_type value_type;
-    typedef GradMatrix_t::value_type grad_type;
-    for(int iat=first, i=0; iat<last; ++iat,++i)
-    {
-      ValueVector_t v(logdet[i],OrbitalSetSize);
-      GradVector_t  g(dlogdet[i],OrbitalSetSize);
-      ValueVector_t l(d2logdet[i],OrbitalSetSize);
-      SplineAdoptor::evaluate_vgl(P,iat,v,g,l);
-    }
-  }
-
-  virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
-                                    , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            ValueMatrix_t& d2logdet)
   {
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
-    typedef HessMatrix_t::value_type hess_type;
-    for(int iat=first, i=0; iat<last; ++iat,++i)
+    for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
-      ValueVector_t v(logdet[i],OrbitalSetSize);
-      GradVector_t  g(dlogdet[i],OrbitalSetSize);
-      HessVector_t  h(grad_grad_logdet[i],OrbitalSetSize);
-      SplineAdoptor::evaluate_vgh(P,iat,v,g,h);
+      ValueVector_t v(logdet[i], OrbitalSetSize);
+      GradVector_t g(dlogdet[i], OrbitalSetSize);
+      ValueVector_t l(d2logdet[i], OrbitalSetSize);
+      SplineAdoptor::evaluate_vgl(P, iat, v, g, l);
     }
   }
 
-  virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
-                                    , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+  virtual void evaluate_notranspose(const ParticleSet& P,
+                                    int first,
+                                    int last,
+                                    ValueMatrix_t& logdet,
+                                    GradMatrix_t& dlogdet,
+                                    HessMatrix_t& grad_grad_logdet)
   {
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
     typedef HessMatrix_t::value_type hess_type;
-    typedef GGGMatrix_t::value_type  ghess_type;
-    for(int iat=first, i=0; iat<last; ++iat,++i)
+    for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
-      ValueVector_t v(logdet[i],OrbitalSetSize);
-      GradVector_t  g(dlogdet[i],OrbitalSetSize);
-      HessVector_t  h(grad_grad_logdet[i],OrbitalSetSize);
-      GGGVector_t  gh(grad_grad_grad_logdet[i],OrbitalSetSize);
-      SplineAdoptor::evaluate_vghgh(P,iat,v,g,h,gh);
+      ValueVector_t v(logdet[i], OrbitalSetSize);
+      GradVector_t g(dlogdet[i], OrbitalSetSize);
+      HessVector_t h(grad_grad_logdet[i], OrbitalSetSize);
+      SplineAdoptor::evaluate_vgh(P, iat, v, g, h);
     }
   }
-  virtual void evaluateGradSource (const ParticleSet &P
-                                     , int first, int last, const ParticleSet &source
-                                     , int iat_src, GradMatrix_t &gradphi)
+
+  virtual void evaluate_notranspose(const ParticleSet& P,
+                                    int first,
+                                    int last,
+                                    ValueMatrix_t& logdet,
+                                    GradMatrix_t& dlogdet,
+                                    HessMatrix_t& grad_grad_logdet,
+                                    GGGMatrix_t& grad_grad_grad_logdet)
+  {
+    typedef ValueMatrix_t::value_type value_type;
+    typedef GradMatrix_t::value_type grad_type;
+    typedef HessMatrix_t::value_type hess_type;
+    typedef GGGMatrix_t::value_type ghess_type;
+    for (int iat = first, i = 0; iat < last; ++iat, ++i)
+    {
+      ValueVector_t v(logdet[i], OrbitalSetSize);
+      GradVector_t g(dlogdet[i], OrbitalSetSize);
+      HessVector_t h(grad_grad_logdet[i], OrbitalSetSize);
+      GGGVector_t gh(grad_grad_grad_logdet[i], OrbitalSetSize);
+      SplineAdoptor::evaluate_vghgh(P, iat, v, g, h, gh);
+    }
+  }
+  virtual void evaluateGradSource(const ParticleSet& P,
+                                  int first,
+                                  int last,
+                                  const ParticleSet& source,
+                                  int iat_src,
+                                  GradMatrix_t& gradphi)
   {
     //Do nothing, since Einsplines don't explicitly depend on ion positions.
   }
 
-  virtual void evaluateGradSource (const ParticleSet &P, int first, int last,
-                                     const ParticleSet &source, int iat_src,
-                                     GradMatrix_t &grad_phi,
-                                     HessMatrix_t &grad_grad_phi,
-                                     GradMatrix_t &grad_lapl_phi)
+  virtual void evaluateGradSource(const ParticleSet& P,
+                                  int first,
+                                  int last,
+                                  const ParticleSet& source,
+                                  int iat_src,
+                                  GradMatrix_t& grad_phi,
+                                  HessMatrix_t& grad_grad_phi,
+                                  GradMatrix_t& grad_lapl_phi)
   {
     //Do nothing, since Einsplines don't explicitly depend on ion positions.
   }
 };
 
-}
+} // namespace qmcplusplus
 #endif
