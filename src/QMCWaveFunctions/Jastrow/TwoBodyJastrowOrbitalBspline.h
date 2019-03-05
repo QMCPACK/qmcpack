@@ -75,14 +75,14 @@ private:
 public:
   typedef ParticleSet::Walker_t Walker_t;
 
-  GPU_XRAY_TRACE void freeGPUmem();
-  GPU_XRAY_TRACE void checkInVariables(opt_variables_type& active);
+   void freeGPUmem();
+   void checkInVariables(opt_variables_type& active);
   //void addFunc(const std::string& aname, int ia, int ib, FT* j);
-  GPU_XRAY_TRACE void addFunc(int ia, int ib, FT* j);
-  GPU_XRAY_TRACE void recompute(MCWalkerConfiguration& W, bool firstTime);
-  GPU_XRAY_TRACE void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
-  GPU_XRAY_TRACE void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi);
-  GPU_XRAY_TRACE void update(MCWalkerConfiguration* W,
+   void addFunc(int ia, int ib, FT* j);
+   void recompute(MCWalkerConfiguration& W, bool firstTime);
+   void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
+   void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi);
+   void update(MCWalkerConfiguration* W,
                              std::vector<Walker_t*>& walkers,
                              int iat,
                              std::vector<bool>* acc,
@@ -92,17 +92,17 @@ public:
     /* This function doesn't really need to return the ratio */
   }
 
-  GPU_XRAY_TRACE void ratio(MCWalkerConfiguration& W,
+   void ratio(MCWalkerConfiguration& W,
                             int iat,
                             std::vector<ValueType>& psi_ratios,
                             std::vector<GradType>& grad,
                             std::vector<ValueType>& lapl);
-  GPU_XRAY_TRACE void calcRatio(MCWalkerConfiguration& W,
+   void calcRatio(MCWalkerConfiguration& W,
                                 int iat,
                                 std::vector<ValueType>& psi_ratios,
                                 std::vector<GradType>& grad,
                                 std::vector<ValueType>& lapl);
-  GPU_XRAY_TRACE void addRatio(MCWalkerConfiguration& W,
+   void addRatio(MCWalkerConfiguration& W,
                                int iat,
                                int k,
                                std::vector<ValueType>& psi_ratios,
@@ -118,7 +118,7 @@ public:
     /* This function doesn't really need to return the ratio */
   }
 
-  GPU_XRAY_TRACE void det_lookahead(MCWalkerConfiguration& W,
+   void det_lookahead(MCWalkerConfiguration& W,
                                     std::vector<ValueType>& psi_ratios,
                                     std::vector<GradType>& grad,
                                     std::vector<ValueType>& lapl,
@@ -137,20 +137,20 @@ public:
     }
   }
 
-  GPU_XRAY_TRACE void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad);
-  GPU_XRAY_TRACE void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
-  GPU_XRAY_TRACE void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl);
-  GPU_XRAY_TRACE void NLratios(MCWalkerConfiguration& W,
+   void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad);
+   void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
+   void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl);
+   void NLratios(MCWalkerConfiguration& W,
                                std::vector<NLjob>& jobList,
                                std::vector<PosType>& quadPoints,
                                std::vector<ValueType>& psi_ratios);
 
-  GPU_XRAY_TRACE void resetParameters(const opt_variables_type& active);
+   void resetParameters(const opt_variables_type& active);
 
   // Evaluates the derivatives of log psi and laplacian log psi w.r.t.
   // the parameters for optimization.  First index of the ValueMatrix is
   // the parameter.  The second is the walker.
-  GPU_XRAY_TRACE void evaluateDerivatives(MCWalkerConfiguration& W,
+   void evaluateDerivatives(MCWalkerConfiguration& W,
                                           const opt_variables_type& optvars,
                                           RealMatrix_t& dlogpsi,
                                           RealMatrix_t& dlapl_over_psi);

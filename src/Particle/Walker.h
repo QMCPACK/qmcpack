@@ -164,11 +164,11 @@ struct Walker
     if (num_k)
       Rhok_GPU.resize(num_species * k_species_stride);
   }
-  GPU_XRAY_TRACE
+  
   inline CUDA_PRECISION_FULL* get_rhok_ptr() { return Rhok_GPU.data(); }
-  GPU_XRAY_TRACE
+  
   inline CUDA_PRECISION_FULL* get_rhok_ptr(int isp) { return Rhok_GPU.data() + k_species_stride * isp; }
-  GPU_XRAY_TRACE
+  
 
 #endif
 
@@ -195,7 +195,7 @@ struct Walker
       resize(nptcl);
     Properties = 0.0;
   }
-  GPU_XRAY_TRACE
+  
 
   inline int addPropertyHistory(int leng)
   {
@@ -269,7 +269,7 @@ struct Walker
 #endif
     //Drift.resize(nptcl);
   }
-  GPU_XRAY_TRACE
+  
 
   ///copy the content of a walker
   inline void makeCopy(const Walker& a)
@@ -304,7 +304,7 @@ struct Walker
     Lap_GPU      = a.Lap_GPU;
 #endif
   }
-  GPU_XRAY_TRACE
+  
 
   //return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase() { return Properties.data(); }
@@ -447,7 +447,7 @@ struct Walker
     block_end  = DataSet.current();
     scalar_end = DataSet.current_scalar();
   }
-  GPU_XRAY_TRACE
+  
 
   void copyFromBuffer()
   {
@@ -495,11 +495,11 @@ struct Walker
     assert(block_end == DataSet.current());
     assert(scalar_end == DataSet.current_scalar());
   }
-  GPU_XRAY_TRACE
+  
 
   // In Clang 4.0.1 it is unclear why but attibute list cannot go at the end
   // when a template declaration follows
-  GPU_XRAY_TRACE void updateBuffer()
+   void updateBuffer()
   {
     DataSet.rewind();
     DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
