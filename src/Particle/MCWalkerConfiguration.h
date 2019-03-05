@@ -116,18 +116,18 @@ public:
   gpu::device_vector<int> AcceptList_GPU;
   gpu::host_vector<int> AcceptList_host;
 
-  GPU_XRAY_TRACE void allocateGPU(size_t buffersize);
-  GPU_XRAY_TRACE void copyWalkersToGPU(bool copyGrad=false);
-  GPU_XRAY_TRACE void copyWalkerGradToGPU();
-  GPU_XRAY_TRACE void updateLists_GPU();
+   void allocateGPU(size_t buffersize);
+   void copyWalkersToGPU(bool copyGrad=false);
+   void copyWalkerGradToGPU();
+   void updateLists_GPU();
   int CurrentParticle;
-  GPU_XRAY_TRACE void proposeMove_GPU
+   void proposeMove_GPU
   (std::vector<PosType> &newPos, int iat);
-  GPU_XRAY_TRACE void acceptMove_GPU
+   void acceptMove_GPU
   (std::vector<bool> &toAccept, int k);
-  GPU_XRAY_TRACE void acceptMove_GPU
+   void acceptMove_GPU
   (std::vector<bool> &toAccept){ acceptMove_GPU(toAccept,0); }
-  GPU_XRAY_TRACE void NLMove_GPU (std::vector<Walker_t*> &walkers,
+   void NLMove_GPU (std::vector<Walker_t*> &walkers,
                                   std::vector<PosType> &Rnew,
                                   std::vector<int> &iat);
 #endif
@@ -145,12 +145,12 @@ public:
    *
    * Append Walkers to WalkerList.
    */
-  GPU_XRAY_TRACE void createWalkers(int numWalkers);
+   void createWalkers(int numWalkers);
   /** create walkers
    * @param first walker iterator
    * @param last walker iterator
    */
-  GPU_XRAY_TRACE void createWalkers(iterator first, iterator last);
+   void createWalkers(iterator first, iterator last);
   /** copy walkers
    * @param first input walker iterator
    * @param last input walker iterator
@@ -158,7 +158,7 @@ public:
    *
    * No memory allocation is allowed.
    */
-  GPU_XRAY_TRACE void copyWalkers(iterator first, iterator last, iterator start);
+   void copyWalkers(iterator first, iterator last, iterator start);
 
   /** destroy Walkers from itstart to itend
    *@param first starting iterator of the walkers
@@ -179,15 +179,15 @@ public:
    * Clear the current WalkerList and add two walkers, head and tail.
    * OwnWalkers are set to false.
    */
-  GPU_XRAY_TRACE void copyWalkerRefs(Walker_t* head, Walker_t* tail);
+   void copyWalkerRefs(Walker_t* head, Walker_t* tail);
 
   ///clean up the walker list and make a new list
-  GPU_XRAY_TRACE void resize(int numWalkers, int numPtcls);
+   void resize(int numWalkers, int numPtcls);
 
   ///make random moves for all the walkers
   //void sample(iterator first, iterator last, value_type tauinv);
   ///make a random move for a walker
-  GPU_XRAY_TRACE void sample(iterator it, RealType tauinv);
+   void sample(iterator it, RealType tauinv);
 
   ///return the number of active walkers
   inline int getActiveWalkers() const
@@ -341,25 +341,25 @@ public:
   ///set the number of max samples
   void setNumSamples(int n);
   ///save the position of current walkers to SampleStack
-  GPU_XRAY_TRACE void saveEnsemble();
+   void saveEnsemble();
   ///save the position of current walkers
-  GPU_XRAY_TRACE void saveEnsemble(iterator first, iterator last);
+   void saveEnsemble(iterator first, iterator last);
   /// load a single sample from SampleStack
-  GPU_XRAY_TRACE void loadSample(ParticleSet::ParticlePos_t &Pos, size_t iw) const;
+   void loadSample(ParticleSet::ParticlePos_t &Pos, size_t iw) const;
   /** load SampleStack data to current walkers
    */
-  GPU_XRAY_TRACE void loadEnsemble();
+   void loadEnsemble();
   //void loadEnsemble(const Walker_t& wcopy);
   /** load SampleStack from others
     */
-  GPU_XRAY_TRACE void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean=true);
+   void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean=true);
   /** dump Samples to a file
    * @param others MCWalkerConfigurations whose samples will be collected
    * @param out engine to write the samples to state_0/walkers
    * @param np number of processors
    * @return true with non-zero samples
    */
-  GPU_XRAY_TRACE bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
+   bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
   //@}
