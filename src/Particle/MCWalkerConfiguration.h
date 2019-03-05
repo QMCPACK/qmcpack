@@ -15,9 +15,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /** @file MCWalkerConfiguration.h
@@ -36,7 +33,6 @@
 
 namespace qmcplusplus
 {
-
 //Forward declaration
 class MultiChain;
 class MCSample;
@@ -60,28 +56,28 @@ class Reptile;
 
  *</ul>
  */
-class MCWalkerConfiguration: public ParticleSet
+class MCWalkerConfiguration : public ParticleSet
 {
-
 public:
-
   /**enumeration for update*/
-  enum {Update_All = 0, ///move all the active walkers
-        Update_Walker,  ///move a walker by walker
-        Update_Particle ///move a particle by particle
-       };
+  enum
+  {
+    Update_All = 0, ///move all the active walkers
+    Update_Walker,  ///move a walker by walker
+    Update_Particle ///move a particle by particle
+  };
 
   ///container type of the Properties of a Walker
-  typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+  typedef Walker_t::PropertyContainer_t PropertyContainer_t;
   ///container type of Walkers
-  typedef std::vector<Walker_t*>         WalkerList_t;
+  typedef std::vector<Walker_t*> WalkerList_t;
   ///iterator of Walker container
-  typedef WalkerList_t::iterator         iterator;
+  typedef WalkerList_t::iterator iterator;
   ///const_iterator of Walker container
-  typedef WalkerList_t::const_iterator   const_iterator;
- 
-  typedef std::vector<Reptile*>          ReptileList_t;
-   /** starting index of the walkers in a processor group
+  typedef WalkerList_t::const_iterator const_iterator;
+
+  typedef std::vector<Reptile*> ReptileList_t;
+  /** starting index of the walkers in a processor group
    *
    * WalkerOffsets[0]=0 and WalkerOffsets[WalkerOffsets.size()-1]=total number of walkers in a group
    * WalkerOffsets[processorid+1]-WalkerOffsets[processorid] is equal to the number of walkers on a processor,
@@ -96,40 +92,35 @@ public:
   // passed to GPU kernels.
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
-  gpu::device_vector<CTS::RealType*>  RList_GPU;
+  gpu::device_vector<CTS::RealType*> RList_GPU;
   gpu::device_vector<CTS::ValueType*> GradList_GPU, LapList_GPU;
   // First index is the species.  The second index is the walker
-  std::vector<gpu::device_vector<CUDA_PRECISION_FULL*> > RhokLists_GPU;
-  gpu::device_vector<CTS::ValueType*>  DataList_GPU;
-  gpu::device_vector<CTS::PosType>    Rnew_GPU;
-  gpu::host_vector<CTS::PosType>      Rnew_host;
-  std::vector<PosType>                    Rnew;
-  gpu::device_vector<CTS::RealType*>  NLlist_GPU;
-  gpu::host_vector<CTS::RealType*>    NLlist_host;
-  gpu::host_vector<CTS::RealType*>    hostlist;
-  gpu::host_vector<CTS::ValueType*>   hostlist_valueType;
-  gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA; 
-  gpu::host_vector<CTS::PosType>      R_host;
-  gpu::host_vector<CTS::GradType>     Grad_host;
+  std::vector<gpu::device_vector<CUDA_PRECISION_FULL*>> RhokLists_GPU;
+  gpu::device_vector<CTS::ValueType*> DataList_GPU;
+  gpu::device_vector<CTS::PosType> Rnew_GPU;
+  gpu::host_vector<CTS::PosType> Rnew_host;
+  std::vector<PosType> Rnew;
+  gpu::device_vector<CTS::RealType*> NLlist_GPU;
+  gpu::host_vector<CTS::RealType*> NLlist_host;
+  gpu::host_vector<CTS::RealType*> hostlist;
+  gpu::host_vector<CTS::ValueType*> hostlist_valueType;
+  gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA;
+  gpu::host_vector<CTS::PosType> R_host;
+  gpu::host_vector<CTS::GradType> Grad_host;
   gpu::device_vector<int> iatList_GPU;
   gpu::host_vector<int> iatList_host;
   gpu::device_vector<int> AcceptList_GPU;
   gpu::host_vector<int> AcceptList_host;
 
-   void allocateGPU(size_t buffersize);
-   void copyWalkersToGPU(bool copyGrad=false);
-   void copyWalkerGradToGPU();
-   void updateLists_GPU();
+  void allocateGPU(size_t buffersize);
+  void copyWalkersToGPU(bool copyGrad = false);
+  void copyWalkerGradToGPU();
+  void updateLists_GPU();
   int CurrentParticle;
-   void proposeMove_GPU
-  (std::vector<PosType> &newPos, int iat);
-   void acceptMove_GPU
-  (std::vector<bool> &toAccept, int k);
-   void acceptMove_GPU
-  (std::vector<bool> &toAccept){ acceptMove_GPU(toAccept,0); }
-   void NLMove_GPU (std::vector<Walker_t*> &walkers,
-                                  std::vector<PosType> &Rnew,
-                                  std::vector<int> &iat);
+  void proposeMove_GPU(std::vector<PosType>& newPos, int iat);
+  void acceptMove_GPU(std::vector<bool>& toAccept, int k);
+  void acceptMove_GPU(std::vector<bool>& toAccept) { acceptMove_GPU(toAccept, 0); }
+  void NLMove_GPU(std::vector<Walker_t*>& walkers, std::vector<PosType>& Rnew, std::vector<int>& iat);
 #endif
 
   ///default constructor
@@ -145,12 +136,12 @@ public:
    *
    * Append Walkers to WalkerList.
    */
-   void createWalkers(int numWalkers);
+  void createWalkers(int numWalkers);
   /** create walkers
    * @param first walker iterator
    * @param last walker iterator
    */
-   void createWalkers(iterator first, iterator last);
+  void createWalkers(iterator first, iterator last);
   /** copy walkers
    * @param first input walker iterator
    * @param last input walker iterator
@@ -158,7 +149,7 @@ public:
    *
    * No memory allocation is allowed.
    */
-   void copyWalkers(iterator first, iterator last, iterator start);
+  void copyWalkers(iterator first, iterator last, iterator start);
 
   /** destroy Walkers from itstart to itend
    *@param first starting iterator of the walkers
@@ -179,77 +170,50 @@ public:
    * Clear the current WalkerList and add two walkers, head and tail.
    * OwnWalkers are set to false.
    */
-   void copyWalkerRefs(Walker_t* head, Walker_t* tail);
+  void copyWalkerRefs(Walker_t* head, Walker_t* tail);
 
   ///clean up the walker list and make a new list
-   void resize(int numWalkers, int numPtcls);
+  void resize(int numWalkers, int numPtcls);
 
   ///make random moves for all the walkers
   //void sample(iterator first, iterator last, value_type tauinv);
   ///make a random move for a walker
-   void sample(iterator it, RealType tauinv);
+  void sample(iterator it, RealType tauinv);
 
   ///return the number of active walkers
-  inline int getActiveWalkers() const
-  {
-    return WalkerList.size();
-  }
+  inline int getActiveWalkers() const { return WalkerList.size(); }
   ///return the total number of active walkers among a MPI group
-  inline int getGlobalNumWalkers() const
-  {
-    return GlobalNumWalkers;
-  }
+  inline int getGlobalNumWalkers() const { return GlobalNumWalkers; }
   ///return the total number of active walkers among a MPI group
   inline void setGlobalNumWalkers(int nw)
   {
-    GlobalNumWalkers=nw;
-    EnsembleProperty.NumSamples=nw;
-    EnsembleProperty.Weight=nw;
+    GlobalNumWalkers            = nw;
+    EnsembleProperty.NumSamples = nw;
+    EnsembleProperty.Weight     = nw;
   }
 
-  inline void setWalkerOffsets(const std::vector<int>& o)
-  {
-    WalkerOffsets=o;
-  }
+  inline void setWalkerOffsets(const std::vector<int>& o) { WalkerOffsets = o; }
 
   ///return the number of particles per walker
-  inline int getParticleNum() const
-  {
-    return R.size();
-  }
+  inline int getParticleNum() const { return R.size(); }
 
   /// return the first iterator
-  inline iterator begin()
-  {
-    return WalkerList.begin();
-  }
+  inline iterator begin() { return WalkerList.begin(); }
   /// return the last iterator, [begin(), end())
-  inline iterator end()
-  {
-    return WalkerList.end();
-  }
+  inline iterator end() { return WalkerList.end(); }
 
   /// return the first const_iterator
-  inline const_iterator begin() const
-  {
-    return WalkerList.begin();
-  }
+  inline const_iterator begin() const { return WalkerList.begin(); }
 
   /// return the last const_iterator  [begin(), end())
-  inline const_iterator end() const
-  {
-    return WalkerList.end();
-  }
+  inline const_iterator end() const { return WalkerList.end(); }
   /**@}*/
 
   /** clear the WalkerList without destroying them
    *
    * Provide std::vector::clear interface
    */
-  inline void clear()
-  {
-    WalkerList.clear();
-  }
+  inline void clear() { WalkerList.clear(); }
 
   /** insert elements
    * @param it locator where the inserting begins
@@ -261,7 +225,7 @@ public:
   template<class INPUT_ITER>
   inline void insert(iterator it, INPUT_ITER first, INPUT_ITER last)
   {
-    WalkerList.insert(it,first,last);
+    WalkerList.insert(it, first, last);
   }
 
   /** add Walker_t* at the end
@@ -269,10 +233,7 @@ public:
    *
    * Provide std::vector::push_back interface
    */
-  inline void push_back(Walker_t* awalker)
-  {
-    WalkerList.push_back(awalker);
-  }
+  inline void push_back(Walker_t* awalker) { WalkerList.push_back(awalker); }
 
   ///resize Walker::PropertyHistory and Walker::PHindex:
   void resizeWalkerHistories();
@@ -287,79 +248,55 @@ public:
     WalkerList.pop_back();
   }
 
-  inline Walker_t* operator[](int i)
-  {
-    return WalkerList[i];
-  }
+  inline Walker_t* operator[](int i) { return WalkerList[i]; }
 
-  inline const Walker_t* operator[](int i) const
-  {
-    return WalkerList[i];
-  }
+  inline const Walker_t* operator[](int i) const { return WalkerList[i]; }
 
   /** set LocalEnergy
    * @param e current average Local Energy
    */
-  inline void setLocalEnergy(RealType e)
-  {
-    LocalEnergy = e;
-  }
+  inline void setLocalEnergy(RealType e) { LocalEnergy = e; }
 
   /** return LocalEnergy
    */
-  inline RealType getLocalEnergy() const
-  {
-    return LocalEnergy;
-  }
+  inline RealType getLocalEnergy() const { return LocalEnergy; }
 
-  inline MultiChain* getPolymer()
-  {
-    return Polymer;
-  }
+  inline MultiChain* getPolymer() { return Polymer; }
 
-  inline void setPolymer(MultiChain *chain)
-  {
-    Polymer=chain;
-  }
+  inline void setPolymer(MultiChain* chain) { Polymer = chain; }
 
   /** reset the Walkers
    */
   void reset();
 
-  void resetWalkerProperty(int ncopy=1);
+  void resetWalkerProperty(int ncopy = 1);
 
-  inline bool updatePbyP() const
-  {
-    return ReadyForPbyP;
-  }
+  inline bool updatePbyP() const { return ReadyForPbyP; }
 
   //@{save/load/clear function for optimization
-  inline int numSamples() const
-  {
-    return CurSampleCount;
-  }
+  inline int numSamples() const { return CurSampleCount; }
   ///set the number of max samples
   void setNumSamples(int n);
   ///save the position of current walkers to SampleStack
-   void saveEnsemble();
+  void saveEnsemble();
   ///save the position of current walkers
-   void saveEnsemble(iterator first, iterator last);
+  void saveEnsemble(iterator first, iterator last);
   /// load a single sample from SampleStack
-   void loadSample(ParticleSet::ParticlePos_t &Pos, size_t iw) const;
+  void loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const;
   /** load SampleStack data to current walkers
    */
-   void loadEnsemble();
+  void loadEnsemble();
   //void loadEnsemble(const Walker_t& wcopy);
   /** load SampleStack from others
     */
-   void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean=true);
+  void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean = true);
   /** dump Samples to a file
    * @param others MCWalkerConfigurations whose samples will be collected
    * @param out engine to write the samples to state_0/walkers
    * @param np number of processors
    * @return true with non-zero samples
    */
-   bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
+  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
   //@}
@@ -367,119 +304,99 @@ public:
   template<typename ForwardIter>
   inline void putConfigurations(ForwardIter target)
   {
-    int ds=OHMMS_DIM*TotalNum;
-    for(iterator it=WalkerList.begin(); it!= WalkerList.end(); ++it,target+=ds)
+    int ds = OHMMS_DIM * TotalNum;
+    for (iterator it = WalkerList.begin(); it != WalkerList.end(); ++it, target += ds)
     {
-      copy(get_first_address((*it)->R),get_last_address((*it)->R),target);
+      copy(get_first_address((*it)->R), get_last_address((*it)->R), target);
     }
   }
 
-  inline void resetWalkerParents( )
+  inline void resetWalkerParents()
   {
-    for(iterator it=WalkerList.begin(); it!= WalkerList.end(); ++it )
+    for (iterator it = WalkerList.begin(); it != WalkerList.end(); ++it)
     {
       (*it)->ParentID = (*it)->ID;
     }
   }
 
 #ifdef QMC_CUDA
-  inline void setklinear()
-  {
-    klinear=true;
-  }
+  inline void setklinear() { klinear = true; }
 
-  inline bool getklinear()
-  {
-    return klinear;
-  }
+  inline bool getklinear() { return klinear; }
 
   inline void setkDelay(int k)
   {
-    klinear=false;
-    kDelay=k;
-    if (kDelay<0)
+    klinear = false;
+    kDelay  = k;
+    if (kDelay < 0)
     {
-      app_log() << "  Warning: Specified negative delayed updates k = " << k << ", setting to zero (no delay)." << std::endl;
-      kDelay=0;
+      app_log() << "  Warning: Specified negative delayed updates k = " << k << ", setting to zero (no delay)."
+                << std::endl;
+      kDelay = 0;
     }
-    if (kDelay==1)
-      kDelay=0; // use old algorithm as additional overhead for k=1 is not doing anything useful outside of code development
-    kblocksize=1;
-    kblock=0;
-    kcurr=0;
-    kstart=0;
-    if(kDelay)
+    if (kDelay == 1)
+      kDelay =
+          0; // use old algorithm as additional overhead for k=1 is not doing anything useful outside of code development
+    kblocksize = 1;
+    kblock     = 0;
+    kcurr      = 0;
+    kstart     = 0;
+    if (kDelay)
     {
       app_log() << "  Using delayed updates (k = " << kDelay << ") for all walkers" << std::endl;
-      kblocksize=kDelay;
+      kblocksize = kDelay;
     }
-    kupdate=kblocksize;
+    kupdate = kblocksize;
   }
 
-  inline int getkDelay()
-  {
-    return kDelay;
-  }
+  inline int getkDelay() { return kDelay; }
 
-  inline int getkblock()
-  {
-    return kblock;
-  }
+  inline int getkblock() { return kblock; }
 
-  inline int getkblocksize()
-  {
-    return kblocksize;
-  }
+  inline int getkblocksize() { return kblocksize; }
 
-  inline int getkcurr()
-  {
-    return kcurr;
-  }
+  inline int getkcurr() { return kcurr; }
 
-  inline int getkstart()
-  {
-    return kstart;
-  }
+  inline int getkstart() { return kstart; }
 
-  inline int getkupdate()
-  {
-    return kupdate;
-  }
+  inline int getkupdate() { return kupdate; }
 
   inline int getnat(int iat)
   {
-    for(unsigned int gid=0; gid<groups(); gid++)
-      if(last(gid)>iat)
-        return last(gid)-first(gid);
+    for (unsigned int gid = 0; gid < groups(); gid++)
+      if (last(gid) > iat)
+        return last(gid) - first(gid);
   }
 
   inline bool update_now(int iat)
   {
     // in case that we finished the current k-block (kcurr=0) *or* (<- This case also takes care of no delayed updates as kcurr will always be zero then)
     // if we run out of electrons (nat) but still have some k's in the current k-block, an update needs to happen now
-    bool end_of_matrix = (kcurr+kblock*kblocksize>=getnat(iat));
-    bool update=((!kcurr) || end_of_matrix);
-    kupdate=kblocksize;
-    if(update)
+    bool end_of_matrix = (kcurr + kblock * kblocksize >= getnat(iat));
+    bool update        = ((!kcurr) || end_of_matrix);
+    kupdate            = kblocksize;
+    if (update)
     {
-      if(kblock>0)
+      if (kblock > 0)
       {
-         kstart=kblock*kblocksize;
-         if(kcurr==0) kstart-=kblocksize; // means we looped cleanly within kblocksize matrix (and kblock is too large by 1), hence start is at (kblock-1)*kblocksize
-         kupdate=kcurr+kblock*kblocksize-kstart;
-         kcurr=0;
-         if(!klinear) CurrentParticle-=kupdate-1;
+        kstart = kblock * kblocksize;
+        if (kcurr == 0)
+          kstart -=
+              kblocksize; // means we looped cleanly within kblocksize matrix (and kblock is too large by 1), hence start is at (kblock-1)*kblocksize
+        kupdate = kcurr + kblock * kblocksize - kstart;
+        kcurr   = 0;
+        if (!klinear)
+          CurrentParticle -= kupdate - 1;
       }
     }
     // reset kblock if we're out of matrix blocks
-    if(end_of_matrix)
-      kblock=0;
+    if (end_of_matrix)
+      kblock = 0;
     return update;
   }
 #endif
 
 protected:
-
   ///boolean for cleanup
   bool OwnWalkers;
   ///true if the buffer is ready for particle-by-particle updates
@@ -494,7 +411,7 @@ protected:
   ///delayed update streak parameter k
   int kDelay;
   ///block dimension (usually k) in case delayed updates are used (there are nat/kblocksize blocks available)
-  int kblocksize=1;
+  int kblocksize = 1;
   ///current block
   int kblock;
   ///current k within current block
@@ -517,8 +434,7 @@ public:
   Reptile* reptile;
 
 private:
-
-  MultiChain *Polymer;
+  MultiChain* Polymer;
 
   int MaxSamples;
   int CurSampleCount;
@@ -531,5 +447,5 @@ private:
   void initPropertyList();
    */
 };
-}
+} // namespace qmcplusplus
 #endif
