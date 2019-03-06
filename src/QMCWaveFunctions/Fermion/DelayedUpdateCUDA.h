@@ -72,8 +72,8 @@ namespace qmcplusplus {
         // currently hard-coded first device
         // need to control CUDA_VISIBLE_DEVICES when using multiple MPI on a single node.
         cudaErrorCheck( cudaSetDevice(0), "cudaSetDevice failed!" );
-        cublasErrorCheck( cublasCreate(&handle), "cublasCreate failed!" );
         cudaErrorCheck( cudaStreamCreate(&hstream), "cudaStreamCreate failed!" );
+        cublasErrorCheck( cublasCreate(&handle), "cublasCreate failed!" );
         cublasErrorCheck( cublasSetStream(handle,hstream), "cublasSetStream failed!" );
       }
 
