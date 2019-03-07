@@ -17,7 +17,6 @@
 
 namespace qmcplusplus
 {
-
 ///forward declaration
 struct BsplineReaderBase;
 struct EinsplineSetBuilder;
@@ -42,5 +41,5 @@ BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_r
  */
 BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep, const std::string& useGPU);
 
-}
+} // namespace qmcplusplus
 #endif
