@@ -56,7 +56,7 @@ namespace afqmc
       int max_i = nvecs;
 
       int nrows = NMO*NMO;
-      bool distribute_Ham = (TG.getNNodesPerTG() < TG.getTotalNodes());
+      bool distribute_Ham = (TG.getNGroupsPerTG() < TG.getTotalNodes());
       std::vector<IndexType> row_counts(nrows);
 
       // calculate column range that belong to this node

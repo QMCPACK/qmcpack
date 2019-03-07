@@ -46,7 +46,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   RealType sqrtdt = std::sqrt(dt);  
   long Gsize = wfn.size_of_G_for_vbias();
   long nCV = wfn.global_number_of_cholesky_vectors();
-  const int nnodes = TG.getNNodesPerTG();  
+  const int nnodes = TG.getNGroupsPerTG();  
   const int node_number = TG.getLocalGroupNumber();
   // if transposed_XXX_=true  --> XXX[nwalk][...], 
   // if transposed_XXX_=false --> XXX[...][nwalk]

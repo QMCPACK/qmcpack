@@ -231,8 +231,12 @@ const char *wlk_xml_block_noncol =
       if(std::abs(file_data.Vsum)>1e-8) {
         for(int n=0; n<nwalk; n++) {
           Vsum=0;
-          for(int i=0; i<vHS.size(0); i++)
-            Vsum += vHS[i][n];
+          if(wfn.transposed_vHS()) 
+            for(int i=0; i<vHS.size(1); i++)
+              Vsum += vHS[n][i];
+          else
+            for(int i=0; i<vHS.size(0); i++)
+              Vsum += vHS[i][n];
           REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
           REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
         }
@@ -327,15 +331,23 @@ return;
       if(std::abs(file_data.Vsum)>1e-8) {
         for(int n=0; n<nwalk; n++) {
           Vsum=0;
-          for(int i=0; i<vHS.size(0); i++)
-            Vsum += vHS[i][n];
+          if(wfn.transposed_vHS()) 
+            for(int i=0; i<vHS.size(1); i++)
+              Vsum += vHS[n][i];
+          else
+            for(int i=0; i<vHS.size(0); i++)
+              Vsum += vHS[i][n];
           REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
           REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
         }
       } else {
         Vsum=0;
-        for(int i=0; i<vHS.size(0); i++)
-          Vsum += vHS[i][0];
+        if(wfn.transposed_vHS()) 
+          for(int i=0; i<vHS.size(1); i++)
+            Vsum += vHS[0][i];
+        else
+          for(int i=0; i<vHS.size(0); i++)
+            Vsum += vHS[i][0];
         app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
       }
 
@@ -517,8 +529,12 @@ const char *wlk_xml_block_noncol =
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
         if(TGwfn.TG_local().root())
-          for(int i=0; i<vHS.size(0); i++)
-            Vsum += vHS[i][n];
+          if(wfn.transposed_vHS()) 
+            for(int i=0; i<vHS.size(1); i++)
+              Vsum += vHS[n][i];
+          else  
+            for(int i=0; i<vHS.size(0); i++)
+              Vsum += vHS[i][n];
         Vsum = ( TGwfn.TG() += Vsum );
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
@@ -526,8 +542,12 @@ const char *wlk_xml_block_noncol =
     } else {
       Vsum=0;
       if(TGwfn.TG_local().root())
-        for(int i=0; i<vHS.size(0); i++)
-          Vsum += vHS[i][0];
+        if(wfn.transposed_vHS()) 
+          for(int i=0; i<vHS.size(1); i++)
+            Vsum += vHS[0][i];
+        else
+          for(int i=0; i<vHS.size(0); i++)
+            Vsum += vHS[i][0];
       Vsum = ( TGwfn.TG() += Vsum );
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
@@ -626,8 +646,12 @@ const char *wlk_xml_block_noncol =
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
         if(TGwfn.TG_local().root())
-          for(int i=0; i<vHS.size(0); i++)
-            Vsum += vHS[i][n];
+          if(wfn.transposed_vHS()) 
+            for(int i=0; i<vHS.size(1); i++)
+              Vsum += vHS[n][i];
+          else
+            for(int i=0; i<vHS.size(0); i++)
+              Vsum += vHS[i][n];
         Vsum = ( TGwfn.TG() += Vsum );
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
@@ -635,8 +659,12 @@ const char *wlk_xml_block_noncol =
     } else {
       Vsum=0;
       if(TGwfn.TG_local().root())
-        for(int i=0; i<vHS.size(0); i++)
-          Vsum += vHS[i][0];
+        if(wfn.transposed_vHS()) 
+          for(int i=0; i<vHS.size(1); i++)
+            Vsum += vHS[0][i];
+        else
+          for(int i=0; i<vHS.size(0); i++)
+            Vsum += vHS[i][0];
       Vsum = ( TGwfn.TG() += Vsum );
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
@@ -775,15 +803,23 @@ const char *wlk_xml_block =
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
-        for(int i=0; i<vHS.size(0); i++)
-          Vsum += vHS[i][n];
+        if(wfn.transposed_vHS()) 
+          for(int i=0; i<vHS.size(1); i++)
+            Vsum += vHS[n][i];
+        else
+          for(int i=0; i<vHS.size(0); i++)
+            Vsum += vHS[i][n];
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else {
       Vsum=0;
-      for(int i=0; i<vHS.size(0); i++)
-        Vsum += vHS[i][0];
+      if(wfn.transposed_vHS()) 
+        for(int i=0; i<vHS.size(1); i++)
+          Vsum += vHS[0][i];
+      else
+        for(int i=0; i<vHS.size(0); i++)
+          Vsum += vHS[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
   }
@@ -915,15 +951,23 @@ const char *wlk_xml_block =
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
-        for(int i=0; i<vHS.size(0); i++)
-          Vsum += vHS[i][n];
+        if(wfn.transposed_vHS()) 
+          for(int i=0; i<vHS.size(1); i++)
+            Vsum += vHS[n][i];
+        else
+          for(int i=0; i<vHS.size(0); i++)
+            Vsum += vHS[i][n];
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else {
       Vsum=0;
-      for(int i=0; i<vHS.size(0); i++)
-        Vsum += vHS[i][0];
+      if(wfn.transposed_vHS()) 
+        for(int i=0; i<vHS.size(1); i++)
+          Vsum += vHS[0][i];
+      else
+        for(int i=0; i<vHS.size(0); i++)
+          Vsum += vHS[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
   }

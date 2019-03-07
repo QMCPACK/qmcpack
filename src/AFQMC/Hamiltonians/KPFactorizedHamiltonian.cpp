@@ -172,14 +172,32 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   //    0: Calculate, without rho^+ contribution
   //   >0: Calculate, with rho^+ contribution. LQKbln data located at Qmap[Q]-1
   std::fill_n(Qmap.origin(),Qmap.num_elements(),-1);
-  for(int Q=0; Q<nkpts; Q++) 
-    if(kminus[Q]==Q) 
-      Qmap[Q] = 1+ (number_of_symmetric_Q++);
-    else 
-      Qmap[Q] = 0;
+  {
+    int ngrp(TGwfn.getNGroupsPerTG());
+    int ig(TGwfn.getLocalGroupNumber());
+    // assign Q/Qm pairs of vectors to groups round-robin
+    for(int Q=0, work=0; Q<nkpts; Q++) { 
+      if(kminus[Q]==Q) { 
+        if( work%ngrp == ig )
+          Qmap[Q] = 1 + (number_of_symmetric_Q++);
+        work++;
+      } else if(Q < kminus[Q]) { 
+        if( work%ngrp == ig ) {
+          Qmap[Q] = 0;
+          Qmap[kminus[Q]] = 0;
+        }
+        work++;
+      }  
+    }
+//  for(int Q=0; Q<nkpts; Q++) 
+//    if(kminus[Q]==Q) 
+//      Qmap[Q] = 1+ (number_of_symmetric_Q++);
+//    else 
+//      Qmap[Q] = 0;
+  }
   // new communicator over nodes that share the same set of Q 
-  auto Qcomm(TG.Global().split(TG.getLocalGroupNumber(),TG.Global().rank()));
-  auto Qcomm_roots(Qcomm.split(TG.Node().rank(),Qcomm.rank()));
+  auto Qcomm(TG.Global().split(TGwfn.getLocalGroupNumber(),TG.Global().rank()));
+  auto Qcomm_roots(Qcomm.split(TGwfn.Node().rank(),Qcomm.rank()));
 
   int nmo_max = *std::max_element(nmo_per_kp.begin(),nmo_per_kp.end());
   int nchol_max = *std::max_element(nchol_per_kp.begin(),nchol_per_kp.end());
@@ -285,17 +303,18 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
       if(Qmap[Q]>=0)
         LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
       else
-        LQKank.emplace_back(shmSpMatrix({0,0},shared_allocator<ComplexType>{TG.Node()}));
+        LQKank.emplace_back(shmSpMatrix({1,1},shared_allocator<ComplexType>{TG.Node()}));
     if(type==COLLINEAR) {
       for(int Q=0; Q<nkpts; Q++) 
         if(Qmap[Q]>=0)
           LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
         else
-          LQKank.emplace_back(shmSpMatrix({0,0},shared_allocator<ComplexType>{TG.Node()}));
+          LQKank.emplace_back(shmSpMatrix({1,1},shared_allocator<ComplexType>{TG.Node()}));
     }
   }
   for(int nd=0, nt=0, nq0=0; nd<ndet; nd++, nq0+=nkpts*nspins) {
     for(int Q=0; Q<nkpts; Q++) {
+      if(Qmap[Q] < 0) continue;
       for(int K=0; K<nkpts; K++, nt++) {
         if(nt%TG.Node().size() == TG.Node().rank()) {
           std::fill_n(to_address(LQKank[nq0+Q][K].origin()),LQKank[nq0+Q][K].num_elements(),SPComplexType(0.0));

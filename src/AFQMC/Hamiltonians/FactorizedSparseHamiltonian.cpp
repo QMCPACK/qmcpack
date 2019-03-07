@@ -68,7 +68,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
 
     // partition and
     std::size_t cv0, cvN;
-    if(TGprop.getNNodesPerTG() == 1 ) { // Spvn is not distributed
+    if(TGprop.getNGroupsPerTG() == 1 ) { // Spvn is not distributed
       cv0 = 0;
       cvN = nnz_per_cv.size();
       if(TG.Global().root()) {
@@ -83,7 +83,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
         app_log()<<std::endl;
       }
     } else {
-      std::vector<std::size_t> cv_boundaries(TGprop.getNNodesPerTG()+1);
+      std::vector<std::size_t> cv_boundaries(TGprop.getNGroupsPerTG()+1);
       simple_matrix_partition<TaskGroup_,std::size_t,double> split(V2_fact.size(0),
                                                                    nnz_per_cv.size(),cut);
       // no need for all cores to do this
@@ -95,13 +95,13 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       // no need for all cores to do this
       if(TG.Global().root()) {
         app_log()<<std::endl <<"Partition of cholesky vector over nodes in TG: ";
-        for(int i=0; i<TGprop.getNNodesPerTG(); i++)
+        for(int i=0; i<TGprop.getNGroupsPerTG(); i++)
             app_log()<<std::count_if(nnz_per_cv.begin()+cv_boundaries[i],
                        nnz_per_cv.begin()+cv_boundaries[i+1],
                        [] (std::size_t i) { return i>0; } ) <<" ";
         app_log()<<std::endl;
         app_log()<<"Number of terms in Cholesky Matrix per node in TG: ";
-        for(int i=0; i<TGprop.getNNodesPerTG(); i++)
+        for(int i=0; i<TGprop.getNGroupsPerTG(); i++)
             app_log()<<std::accumulate(nnz_per_cv.begin()+cv_boundaries[i],
                        nnz_per_cv.begin()+cv_boundaries[i+1],std::size_t(0)) <<" ";
         app_log()<<std::endl <<std::endl;
@@ -135,7 +135,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     if(type==COLLINEAR) assert(Beta!=nullptr);
     std::size_t nr=Alpha->size(0)*Alpha->size(1);
     if(type==COLLINEAR) nr = (Alpha->size(0)+Beta->size(0))*Alpha->size(1);
-    if(TGHam.getNNodesPerTG() > 1) {
+    if(TGHam.getNGroupsPerTG() > 1) {
       using tvec = std::vector<std::tuple<int,int,SPComplexType>>;
       tvec tmat;
       tmat.reserve(100000); // reserve some space
@@ -165,7 +165,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       for(auto& i:occ_b) if(i.second.first) nel++;
     std::size_t nr=nel*NMO;
     if(type==NONCOLLINEAR) nr *= 2;
-    if(TGwfn.getNNodesPerTG() > 1) {
+    if(TGwfn.getNGroupsPerTG() > 1) {
       APP_ABORT("Finish \n");
       return SpVType_shm_csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,Alloc(TG.Node()));
     } else {

@@ -319,7 +319,7 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
   int node_number = TG.getLocalGroupNumber();
-  int nnodes_per_TG = TG.getNNodesPerTG();  
+  int nnodes_per_TG = TG.getNGroupsPerTG();  
 
   // 1. Define new communicator for equivalent cores
   boost::mpi3::communicator eq_cores(TG.Cores().split(node_number,TG.Cores().rank())); 

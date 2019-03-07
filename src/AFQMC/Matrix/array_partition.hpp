@@ -150,7 +150,7 @@ struct simple_matrix_partition
   // this breaks a matrix dimension over TG.nnodes, assuming homogeneous blocks 
   inline void partition(const task_group& TG, bool byRow, std::vector<IType>& sets)
   {
-    int nnodes = TG.getNNodesPerTG();
+    int nnodes = TG.getNGroupsPerTG();
     IType cnt=0;
     int nblk; 
     if(byRow)
@@ -186,7 +186,7 @@ struct simple_matrix_partition
   // this breaks a matrix dimension over TG.nnodes 
   inline void partition(const task_group& TG, bool byRow, const std::vector<IType>& counts, std::vector<IType>& sets)
   {
-    int nnodes = TG.getNNodesPerTG();
+    int nnodes = TG.getNGroupsPerTG();
     int nblk = counts.size();
     IType cnt=0;
     assert(nblk >= nnodes);

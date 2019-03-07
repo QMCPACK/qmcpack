@@ -51,10 +51,10 @@ inline void write_distributed_MA(MultiArray & A, std::array<size_t,2> offset, st
 {
   using value_type = typename MultiArray::element;
 // serial hdf for now
-  if(TG.getNNodesPerTG() == 1) {
+  if(TG.getNGroupsPerTG() == 1) {
     if(TG.Global().root()) dump.write(A,name);
   } else {
-    size_t nnodes_per_TG = TG.getNNodesPerTG();
+    size_t nnodes_per_TG = TG.getNGroupsPerTG();
     if(TG.Global().root()) {
       std::vector<size_t> ndim(4*nnodes_per_TG);
       ndim[4*TG.Cores().rank()] = offset[0]; 

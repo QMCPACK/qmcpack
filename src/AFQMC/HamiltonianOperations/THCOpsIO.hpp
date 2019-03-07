@@ -121,12 +121,12 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   // setup partition, in general matrices are partitioned along 'u'
   {
     int node_number = TGwfn.getLocalGroupNumber();
-    int nnodes_prt_TG = TGwfn.getNNodesPerTG();
+    int nnodes_prt_TG = TGwfn.getNGroupsPerTG();
     std::tie(rotnmu0,rotnmuN) = FairDivideBoundary(std::size_t(node_number),grotnmu,std::size_t(nnodes_prt_TG));
     rotnmu = rotnmuN-rotnmu0;
 
     node_number = TGprop.getLocalGroupNumber();
-    nnodes_prt_TG = TGprop.getNNodesPerTG();
+    nnodes_prt_TG = TGprop.getNGroupsPerTG();
     std::tie(nmu0,nmuN) = FairDivideBoundary(std::size_t(node_number),gnmu,std::size_t(nnodes_prt_TG));
     nmu = nmuN-nmu0;
   }

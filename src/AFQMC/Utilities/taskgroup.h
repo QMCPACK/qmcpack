@@ -208,7 +208,7 @@ class TaskGroup_
 
   int getNCoresPerTG() const { return local_tg_.size(); }
 
-  int getNNodesPerTG() const { return nnodes_per_TG; }
+  int getNGroupsPerTG() const { return nnodes_per_TG; }
 
 // THIS NEEDS TO CHANGE IN GPU CODE!
   int getLocalGroupNumber() const { return core_.rank()%nnodes_per_TG; }

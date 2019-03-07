@@ -113,7 +113,7 @@ namespace afqmc
     assert(ci.size()==1);
     bool new_shm_space=false; 
     const int node_number = TG.getLocalGroupNumber();
-    const int nnodes = TG.getNNodesPerTG();
+    const int nnodes = TG.getNGroupsPerTG();
     const int Gsize = dm_size(false);
     const ComplexType zero(0.0);
     const int nwalk = wset.size();
@@ -221,7 +221,7 @@ namespace afqmc
     assert(ci.size()>1);
     bool new_shm_space=false; 
     const int node_number = TG.getLocalGroupNumber();
-    const int nnodes = TG.getNNodesPerTG();
+    const int nnodes = TG.getNGroupsPerTG();
     const int Gsize = dm_size(false); // this will also be the SlaterMat size
     const ComplexType zero(0.0);
     const int nwalk = wset.size();
