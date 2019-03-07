@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -45,15 +45,9 @@ struct h5_space_type
   ///shape of the dataspace
   hsize_t dims[D];
   ///size, dimension,  of the dataspace
-  inline int size() const
-  {
-    return D;
-  }
+  inline int size() const { return D; }
   ///return the address
-  inline pointer get_address(T* a)
-  {
-    return a;
-  }
+  inline pointer get_address(T* a) { return a; }
 };
 
 /** specialization of h5_space_type for std::complex<T>
@@ -61,110 +55,74 @@ struct h5_space_type
  * Raize the dimension of the space by 1 and set the last dimension=2
  */
 template<typename T, hsize_t D>
-struct h5_space_type<std::complex<T>,D>
+struct h5_space_type<std::complex<T>, D>
 {
   typedef T* pointer;
-  hsize_t dims[D+1];
-  inline h5_space_type()
-  {
-    dims[D]=2;
-  }
-  inline int size() const
-  {
-    return D+1;
-  }
-  inline pointer get_address(std::complex<T>* a)
-  {
-    return reinterpret_cast<T*>(a);
-  }
+  hsize_t dims[D + 1];
+  inline h5_space_type() { dims[D] = 2; }
+  inline int size() const { return D + 1; }
+  inline pointer get_address(std::complex<T>* a) { return reinterpret_cast<T*>(a); }
 };
 
 /** specialization of h5_space_type for TinyVector<T,D> for any intrinsic type T
  */
 template<typename T, unsigned D, hsize_t DS>
-struct h5_space_type<TinyVector<T,D>, DS>
+struct h5_space_type<TinyVector<T, D>, DS>
 {
   typedef T* pointer;
-  hsize_t dims[DS+1];
-  inline h5_space_type()
-  {
-    dims[DS]=D;
-  }
-  inline int size() const
-  {
-    return DS+1;
-  }
-  inline pointer get_address(TinyVector<T,D>* a)
-  {
-    return a->data();
-  }
+  hsize_t dims[DS + 1];
+  inline h5_space_type() { dims[DS] = D; }
+  inline int size() const { return DS + 1; }
+  inline pointer get_address(TinyVector<T, D>* a) { return a->data(); }
 };
 
 /** specialization of h5_space_type for TinyVector<std::complex<T>,D> for std::complex<T>
  */
 template<typename T, unsigned D, hsize_t DS>
-struct h5_space_type<TinyVector<std::complex<T>,D>, DS>
+struct h5_space_type<TinyVector<std::complex<T>, D>, DS>
 {
   typedef T* pointer;
-  hsize_t dims[DS+2];
+  hsize_t dims[DS + 2];
   inline h5_space_type()
   {
-    dims[DS]=D;
-    dims[DS+1]=2;
+    dims[DS]     = D;
+    dims[DS + 1] = 2;
   }
-  inline int size() const
-  {
-    return DS+2;
-  }
-  inline pointer get_address(TinyVector<std::complex<T>,D>* a)
-  {
-    return reinterpret_cast<T*>(a->data());
-  }
+  inline int size() const { return DS + 2; }
+  inline pointer get_address(TinyVector<std::complex<T>, D>* a) { return reinterpret_cast<T*>(a->data()); }
 };
 
 /** specialization of h5_space_type for TinyVector<T,D> for any intrinsic type T
  */
 template<typename T, unsigned D, hsize_t DS>
-struct h5_space_type<Tensor<T,D>, DS>
+struct h5_space_type<Tensor<T, D>, DS>
 {
   typedef T* pointer;
-  hsize_t dims[DS+2];
+  hsize_t dims[DS + 2];
   inline h5_space_type()
   {
-    dims[DS]=D;
-    dims[DS+1]=D;
+    dims[DS]     = D;
+    dims[DS + 1] = D;
   }
-  inline int size() const
-  {
-    return DS+2;
-  }
-  inline pointer get_address(Tensor<T,D>* a)
-  {
-    return a->data();
-  }
+  inline int size() const { return DS + 2; }
+  inline pointer get_address(Tensor<T, D>* a) { return a->data(); }
 };
 
 /** specialization of h5_space_type for TinyVector<std::complex<T>,D> for std::complex<T>
  */
 template<typename T, unsigned D, hsize_t DS>
-struct h5_space_type<Tensor<std::complex<T>,D>, DS>
+struct h5_space_type<Tensor<std::complex<T>, D>, DS>
 {
   typedef T* pointer;
-  hsize_t dims[DS+3];
+  hsize_t dims[DS + 3];
   inline h5_space_type()
   {
-    dims[DS]=D;
-    dims[DS+1]=D;
-    dims[DS+2]=2;
+    dims[DS]     = D;
+    dims[DS + 1] = D;
+    dims[DS + 2] = 2;
   }
-  inline int size() const
-  {
-    return DS+2;
-  }
-  inline pointer get_address(Tensor<std::complex<T>,D>* a)
-  {
-    return reinterpret_cast<T*>(a->data());
-  }
+  inline int size() const { return DS + 2; }
+  inline pointer get_address(Tensor<std::complex<T>, D>* a) { return reinterpret_cast<T*>(a->data()); }
 };
-}
+} // namespace qmcplusplus
 #endif

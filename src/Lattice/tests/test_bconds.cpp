@@ -26,21 +26,19 @@ using std::string;
 
 namespace qmcplusplus
 {
-
-typedef TinyVector<double ,3> vec_t;
+typedef TinyVector<double, 3> vec_t;
 
 TEST_CASE("open_bconds", "[lattice]")
 {
-
   typedef DTD_BConds<double, 3, SUPERCELL_OPEN> bcond_t;
   // Following give a compile error
   // test_bconds.cpp:27:23: error: request for member ‘apply_bc’ in ‘qmcplusplus::bcond’, which is of non-class type ‘qmcplusplus::DTD_BConds<double, 3u, 0>(qmcplusplus::CrystalLattice<double, 3u>)’
   //DTD_BConds<double, 3, SUPERCELL_OPEN> bcond(CrystalLattice<double, 3>);
   //double r2 = bcond.apply_bc(v);
 
-  bcond_t *bcond = new bcond_t(CrystalLattice<double, 3>());
+  bcond_t* bcond = new bcond_t(CrystalLattice<double, 3>());
 
-  vec_t  v(3.0, 4.0, 5.0);
+  vec_t v(3.0, 4.0, 5.0);
 
   double r2 = bcond->apply_bc(v);
   REQUIRE(Approx(r2) == 50.0);
@@ -53,7 +51,7 @@ TEST_CASE("open_bconds", "[lattice]")
   bcond->apply_bc(disps, r, rinv);
 
   REQUIRE(Approx(r[0]) == std::sqrt(50.0));
-  REQUIRE(Approx(rinv[0]) == 1.0/std::sqrt(50.0));
+  REQUIRE(Approx(rinv[0]) == 1.0 / std::sqrt(50.0));
 
   r[0] = 0.0;
   bcond->apply_bc(disps, r);
@@ -65,21 +63,20 @@ TEST_CASE("open_bconds", "[lattice]")
 
 TEST_CASE("periodic_bulk_bconds", "[lattice]")
 {
-
   typedef DTD_BConds<double, 3, SUPERCELL_BULK> bcond_t;
 
   CrystalLattice<double, 3>* cl = new CrystalLattice<double, 3>();
   std::vector<string> argv;
   argv.push_back("cubic");
   argv.push_back("0.4");
-    
+
 
   cl->set(argv);
 
-  REQUIRE(cl->Volume == Approx(0.4*0.4*0.4));
+  REQUIRE(cl->Volume == Approx(0.4 * 0.4 * 0.4));
 
 
-  bcond_t *bcond = new bcond_t(*cl);
+  bcond_t* bcond = new bcond_t(*cl);
 
   vec_t v1(0.0, 0.0, 0.0);
 
@@ -97,7 +94,6 @@ TEST_CASE("periodic_bulk_bconds", "[lattice]")
   vec_t v4(0.45, 0.2, 0.1);
   REQUIRE(cl->isValid(v4) == true);
   REQUIRE(cl->outOfBound(v4) == false);
-
 }
 
 TEST_CASE("uniform 3D grid layout", "[lattice]")
@@ -109,4 +105,4 @@ TEST_CASE("uniform 3D grid layout", "[lattice]")
   grid.reset();
 }
 
-}
+} // namespace qmcplusplus

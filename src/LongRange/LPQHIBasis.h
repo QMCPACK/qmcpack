@@ -91,6 +91,7 @@ public:
   }
   inline mRealType df(int n, mRealType r) const
   {
+    APP_ABORT("LPQHIBasis::df.  Function slated for deprecation.  Contact a developer");
     int i=n/3;
     int alpha = n-3*i;
     mRealType ra = delta*(i-1);
@@ -109,6 +110,28 @@ public:
     {
       mRealType x=(r-rb)*deltainv;
       return Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*Sa[4])));
+    }
+  }
+  inline mRealType dh_dr(int n, mRealType r) const
+  {
+    int i=n/3;
+    int alpha = n-3*i;
+    mRealType ra = delta*(i-1);
+    mRealType rb = delta*i;
+    mRealType rc = delta*(i+1);
+    rc = std::min(m_rc, rc);
+    const mRealType* restrict Sa(S[alpha]);
+    if(r<ra || r>rc)
+      return 0.0;
+    if (r <= rb)
+    {
+      mRealType x=(rb-r)*deltainv;
+      return -deltainv*Mfactor[alpha]*(Sa[1]+x*(2*Sa[2]+x*(3*Sa[3]+x*(4*Sa[4]+x*5*Sa[5]))));
+    }
+    else
+    {
+      mRealType x=(r-rb)*deltainv;
+      return deltainv*(Sa[1]+x*(2*Sa[2]+x*(3*Sa[3]+x*(4*Sa[4]+x*5*Sa[5]))));
     }
   }
 //    inline TinyVector<mRealType,3> getTriplet(int n, mRealType r) const {

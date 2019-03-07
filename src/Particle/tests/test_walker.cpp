@@ -17,7 +17,6 @@
 #include "Particle/HDFWalkerInput_0_4.h"
 
 
-
 #include <stdio.h>
 #include <string>
 
@@ -25,8 +24,6 @@ using std::string;
 
 namespace qmcplusplus
 {
-
-
 typedef Walker<QMCTraits, PtclOnLatticeTraits> Walker_t;
 
 TEST_CASE("walker", "[particle]")
@@ -44,7 +41,7 @@ TEST_CASE("walker", "[particle]")
 TEST_CASE("walker HDF read and write", "[particle]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
   Walker_t w1(1);
   w1.R[0] = 1.0;
@@ -64,17 +61,17 @@ TEST_CASE("walker HDF read and write", "[particle]")
 
   // This method sets ownership to false so class does not attempt to
   // free the walker elements.
-  W.copyWalkerRefs(&w1,&w2);
+  W.copyWalkerRefs(&w1, &w2);
 
   REQUIRE(W.getActiveWalkers() == 2);
 
-  std::vector<int> walker_offset(c->size()+1);
+  std::vector<int> walker_offset(c->size() + 1);
 
   walker_offset[0] = 0;
-  int offset = 2;
+  int offset       = 2;
   for (int i = 0; i < c->size(); i++)
   {
-    walker_offset[i+1] = offset;
+    walker_offset[i + 1] = offset;
     offset += 2;
   }
 
@@ -90,7 +87,7 @@ TEST_CASE("walker HDF read and write", "[particle]")
   W2.setName("electrons");
   W2.create(1);
 
-  HDFVersion version(0,4);
+  HDFVersion version(0, 4);
   HDFWalkerInput_0_4 hinp(W2, c, version);
   bool okay = hinp.read_hdf5("walker_test");
   REQUIRE(okay);
@@ -103,4 +100,4 @@ TEST_CASE("walker HDF read and write", "[particle]")
   }
 }
 
-}
+} // namespace qmcplusplus
