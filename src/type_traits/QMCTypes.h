@@ -1,4 +1,4 @@
- //////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
@@ -19,7 +19,6 @@
 
 namespace qmcplusplus
 {
-
 /* Facilitates use of full/mixed precision without rebuilding the code
  *
  * a template class may define its local types
@@ -38,14 +37,14 @@ public:
   using RealType    = Precision;
   using ComplexType = std::complex<Precision>;
 #ifdef QMC_COMPLEX
-  using ValueType   = ComplexType;
+  using ValueType = ComplexType;
 #else
-  using ValueType   = RealType;
+  using ValueType = RealType;
 #endif
-  using GradType    = TinyVector<ValueType, DIM>;
-  using PosType     = TinyVector<RealType, DIM>;
-  using TensorType  = Tensor<RealType, DIM>;
+  using GradType   = TinyVector<ValueType, DIM>;
+  using PosType    = TinyVector<RealType, DIM>;
+  using TensorType = Tensor<RealType, DIM>;
 };
 
-}
+} // namespace qmcplusplus
 #endif

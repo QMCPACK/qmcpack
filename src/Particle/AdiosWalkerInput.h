@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifdef HAVE_ADIOS
@@ -23,11 +20,9 @@
 
 namespace qmcplusplus
 {
-
 class AdiosWalkerInput
 {
-public :
-
+public:
   std::string FileRoot;
   typedef ParticleSet::Walker_t::ParticlePos_t R_t;
   int particle_num;
@@ -40,29 +35,11 @@ public :
   bool put(std::vector<xmlNodePtr>& wset);
 
   void read(int nprocs, ADIOS_FILE* file_handle, int& walker_win, std::vector<int>& nw);
-  void append_walkers(R_t& walker_buff,int, int);
+  void append_walkers(R_t& walker_buff, int, int);
   void setMCWalker(std::vector<int> nw);
 
   std::string getFileRoot();
 };
-}
+} // namespace qmcplusplus
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

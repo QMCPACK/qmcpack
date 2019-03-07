@@ -19,8 +19,8 @@
 #include <sstream>
 
 
-using std::vector;
 using std::string;
+using std::vector;
 
 using namespace qmcplusplus;
 
@@ -51,19 +51,19 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
 {
   hdf_archive hd;
   hd.create("test_simple_data.hdf");
-  int i = 23;
+  int i     = 23;
   bool okay = hd.writeEntry(i, "int");
   REQUIRE(okay);
 
   float f = -2.3;
-  okay = hd.writeEntry(f, "float");
+  okay    = hd.writeEntry(f, "float");
   REQUIRE(okay);
 
   double d = 4.5;
-  okay = hd.writeEntry(d, "double");
+  okay     = hd.writeEntry(d, "double");
   REQUIRE(okay);
 
-  std::complex<float> cf(2.3,3.4);
+  std::complex<float> cf(2.3, 3.4);
   okay = hd.writeEntry(cf, "complex float");
   REQUIRE(okay);
 
@@ -106,7 +106,7 @@ TEST_CASE("hdf_archive_simple_data", "[hdf]")
 
   // check an error occurs for non-existant entry
   int i666;
-  okay = hd2.readEntry(i666,"not an entry");
+  okay = hd2.readEntry(i666, "not an entry");
   REQUIRE(!okay);
 
   hd2.close();
@@ -168,14 +168,14 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   hdf_archive hd;
   hd.create("test_group.hdf");
 
-  int i = 3;
+  int i     = 3;
   bool okay = hd.writeEntry(i, "int");
   REQUIRE(okay);
 
   hd.push("name1");
 
   int j = 3;
-  okay = hd.writeEntry(j, "int2");
+  okay  = hd.writeEntry(j, "int2");
   REQUIRE(okay);
 
   hd.close();
@@ -189,7 +189,7 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   REQUIRE(name1_is_group);
 
   int j2 = 0;
-  okay = hd2.readEntry(j2, "name1/int2");
+  okay   = hd2.readEntry(j2, "name1/int2");
   REQUIRE(okay);
   REQUIRE(j2 == j);
 
@@ -236,10 +236,10 @@ TEST_CASE("hdf_archive_tensor", "[hdf]")
 
   Tensor<float, 2> v(2);
 
-  v(0,1) = 1.2f;
-  v(1,0) = 1.3f;
-  v(0,1) = -2.3f;
-  v(1,1) = 10.0f;
+  v(0, 1) = 1.2f;
+  v(1, 0) = 1.3f;
+  v(0, 1) = -2.3f;
+  v(1, 1) = 10.0f;
 
   bool okay = hd.writeEntry(v, "tiny_tensor_float");
   REQUIRE(okay);
@@ -256,7 +256,7 @@ TEST_CASE("hdf_archive_tensor", "[hdf]")
   {
     for (int j = 0; j < 2; j++)
     {
-      REQUIRE(v(i,j) == v2(i,j));
+      REQUIRE(v(i, j) == v2(i, j));
     }
   }
 }

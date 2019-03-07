@@ -67,18 +67,18 @@ protected:
 
   std::vector<PosType> SortedIons;
 
-  GPU_XRAY_TRACE void setupCUDA(ParticleSet &elecs);
-  GPU_XRAY_TRACE void resizeCUDA(int nw);
+   void setupCUDA(ParticleSet &elecs);
+   void resizeCUDA(int nw);
 
 public:
-  GPU_XRAY_TRACE NonLocalECPotential_CUDA(ParticleSet& ions, ParticleSet& els,
+   NonLocalECPotential_CUDA(ParticleSet& ions, ParticleSet& els,
                            TrialWaveFunction& psi, bool usePBC,
                            bool doForces=false);
 
-  GPU_XRAY_TRACE QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-  GPU_XRAY_TRACE void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
-  GPU_XRAY_TRACE void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy,
+   void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
+   void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy,
                  std::vector<std::vector<NonLocalData> > &Txy);
 };
 

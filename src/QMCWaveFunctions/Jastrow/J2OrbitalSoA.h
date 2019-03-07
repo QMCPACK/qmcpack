@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp. 
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //                    Amrita Mathuriya, amrita.mathuriya@intel.com, Intel Corp.
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -27,7 +27,6 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
  *
@@ -44,16 +43,16 @@ namespace qmcplusplus
  * - Memory use is O(N). 
  */
 template<class FT>
-struct  J2OrbitalSoA : public WaveFunctionComponent
+struct J2OrbitalSoA : public WaveFunctionComponent
 {
   ///alias FuncType
-  using FuncType=FT;
+  using FuncType = FT;
   ///type of each component U, dU, d2U;
-  using valT=typename FT::real_type;
+  using valT = typename FT::real_type;
   ///element position type
-  using posT=TinyVector<valT,OHMMS_DIM>;
-  ///use the same container 
-  using RowContainer=DistanceTableData::RowContainer;
+  using posT = TinyVector<valT, OHMMS_DIM>;
+  ///use the same container
+  using RowContainer = DistanceTableData::RowContainer;
 
   ///number of particles
   size_t N;
@@ -72,7 +71,7 @@ struct  J2OrbitalSoA : public WaveFunctionComponent
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
   Vector<valT> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  using gContainer_type=VectorSoaContainer<valT,OHMMS_DIM>;
+  using gContainer_type = VectorSoaContainer<valT, OHMMS_DIM>;
   gContainer_type dUat;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
   Vector<valT> d2Uat;
@@ -84,10 +83,10 @@ struct  J2OrbitalSoA : public WaveFunctionComponent
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
   ///Uniquue J2 set for cleanup
-  std::map<std::string,FT*> J2Unique;
+  std::map<std::string, FT*> J2Unique;
 
   J2OrbitalSoA(ParticleSet& p, int tid);
-  J2OrbitalSoA(const J2OrbitalSoA& rhs)=delete;
+  J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
   ~J2OrbitalSoA();
 
   /* initialize storage */
@@ -99,7 +98,7 @@ struct  J2OrbitalSoA : public WaveFunctionComponent
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    if(dPsi)
+    if (dPsi)
       dPsi->resetTargetParticleSet(P);
   }
 
@@ -109,8 +108,8 @@ struct  J2OrbitalSoA : public WaveFunctionComponent
   void checkInVariables(opt_variables_type& active)
   {
     myVars.clear();
-    typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
-    while(it != it_end)
+    typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
+    while (it != it_end)
     {
       (*it).second->checkInVariables(active);
       (*it).second->checkInVariables(myVars);
@@ -123,57 +122,55 @@ struct  J2OrbitalSoA : public WaveFunctionComponent
   void checkOutVariables(const opt_variables_type& active)
   {
     myVars.getIndex(active);
-    Optimizable=myVars.is_optimizable();
-    typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
-    while(it != it_end)
+    Optimizable = myVars.is_optimizable();
+    typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
+    while (it != it_end)
     {
       (*it).second->checkOutVariables(active);
       ++it;
     }
-    if(dPsi)
+    if (dPsi)
       dPsi->checkOutVariables(active);
   }
 
   ///reset the value of all the unique Two-Body Jastrow functions
   void resetParameters(const opt_variables_type& active)
   {
-    if(!Optimizable)
+    if (!Optimizable)
       return;
-    typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
-    while(it != it_end)
+    typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
+    while (it != it_end)
     {
       (*it).second->resetParameters(active);
       ++it;
     }
-    if(dPsi)
-      dPsi->resetParameters( active );
-    for(int i=0; i<myVars.size(); ++i)
+    if (dPsi)
+      dPsi->resetParameters(active);
+    for (int i = 0; i < myVars.size(); ++i)
     {
-      int ii=myVars.Index[i];
-      if(ii>=0)
-        myVars[i]= active[ii];
+      int ii = myVars.Index[i];
+      if (ii >= 0)
+        myVars[i] = active[ii];
     }
   }
 
   /** print the state, e.g., optimizables */
   void reportStatus(std::ostream& os)
   {
-    typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
-    while(it != it_end)
+    typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
+    while (it != it_end)
     {
       (*it).second->myVars.print(os);
       ++it;
     }
     ChiesaKEcorrection();
   }
-  RealType ChiesaKEcorrection() { return RealType();}
+  RealType ChiesaKEcorrection() { return RealType(); }
   /**@} */
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L);
+  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   /** recompute internal data assuming distance table is fully ready */
   void recompute(ParticleSet& P);
@@ -181,9 +178,8 @@ struct  J2OrbitalSoA : public WaveFunctionComponent
   ValueType ratio(ParticleSet& P, int iat);
   void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    for(int k=0; k<ratios.size(); ++k)
-      ratios[k]=std::exp(Uat[VP.refPtcl] -
-                         computeU(VP.refPS, VP.refPtcl, VP.DistTables[0]->Distances[k]));
+    for (int k = 0; k < ratios.size(); ++k)
+      ratios[k] = std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.DistTables[0]->Distances[k]));
   }
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
@@ -195,18 +191,19 @@ struct  J2OrbitalSoA : public WaveFunctionComponent
   /** compute G and L after the sweep
    */
   void evaluateGL(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L, bool fromscratch=false);
+                  ParticleSet::ParticleGradient_t& G,
+                  ParticleSet::ParticleLaplacian_t& L,
+                  bool fromscratch = false);
 
   inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    if ( Bytes_in_WFBuffer == 0 )
+    if (Bytes_in_WFBuffer == 0)
     {
       Bytes_in_WFBuffer = buf.current();
       buf.add(Uat.begin(), Uat.end());
       buf.add(dUat.data(), dUat.end());
       buf.add(d2Uat.begin(), d2Uat.end());
-      Bytes_in_WFBuffer = buf.current()-Bytes_in_WFBuffer;
+      Bytes_in_WFBuffer = buf.current() - Bytes_in_WFBuffer;
       // free local space
       Uat.free();
       dUat.free();
@@ -221,11 +218,11 @@ struct  J2OrbitalSoA : public WaveFunctionComponent
   inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     Uat.attachReference(buf.lendReference<valT>(N), N);
-    dUat.attachReference(N, N_padded, buf.lendReference<valT>(N_padded*OHMMS_DIM));
+    dUat.attachReference(N, N_padded, buf.lendReference<valT>(N_padded * OHMMS_DIM));
     d2Uat.attachReference(buf.lendReference<valT>(N), N);
   }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateGL(P, P.G, P.L, false);
     buf.forward(Bytes_in_WFBuffer);
@@ -236,68 +233,73 @@ struct  J2OrbitalSoA : public WaveFunctionComponent
   inline valT computeU(const ParticleSet& P, int iat, const RealType* restrict dist)
   {
     valT curUat(0);
-    const int igt=P.GroupID[iat]*NumGroups;
-    for(int jg=0; jg<NumGroups; ++jg)
+    const int igt = P.GroupID[iat] * NumGroups;
+    for (int jg = 0; jg < NumGroups; ++jg)
     {
-      const FuncType& f2(*F[igt+jg]);
+      const FuncType& f2(*F[igt + jg]);
       int iStart = P.first(jg);
-      int iEnd = P.last(jg);
+      int iEnd   = P.last(jg);
       curUat += f2.evaluateV(iat, iStart, iEnd, dist, DistCompressed.data());
     }
     return curUat;
   }
 
-  inline void computeU3(const ParticleSet& P, int iat, const RealType* restrict dist,
-      RealType* restrict u, RealType* restrict du, RealType* restrict d2u, bool triangle=false);
+  inline void computeU3(const ParticleSet& P,
+                        int iat,
+                        const RealType* restrict dist,
+                        RealType* restrict u,
+                        RealType* restrict du,
+                        RealType* restrict d2u,
+                        bool triangle = false);
 
   /** compute gradient
    */
   inline posT accumulateG(const valT* restrict du, const RowContainer& displ) const
   {
     posT grad;
-    for(int idim=0; idim<OHMMS_DIM; ++idim)
+    for (int idim = 0; idim < OHMMS_DIM; ++idim)
     {
-      const valT* restrict dX=displ.data(idim);
-      valT s=valT();
+      const valT* restrict dX = displ.data(idim);
+      valT s                  = valT();
 
-      #pragma omp simd reduction(+:s) aligned(du,dX)
-      for(int jat=0; jat<N; ++jat) s+=du[jat]*dX[jat];
-      grad[idim]=s;
+#pragma omp simd reduction(+ : s) aligned(du, dX)
+      for (int jat = 0; jat < N; ++jat)
+        s += du[jat] * dX[jat];
+      grad[idim] = s;
     }
     return grad;
   }
   /**@} */
-
 };
 
 template<typename FT>
 J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid) : TaskID(tid)
 {
   init(p);
-  FirstTime =true;
-  KEcorr=0.0;
+  FirstTime = true;
+  KEcorr    = 0.0;
   ClassName = "J2OrbitalSoA";
 }
 
 template<typename FT>
 J2OrbitalSoA<FT>::~J2OrbitalSoA()
-{ 
-  auto it=J2Unique.begin();
-  while(it != J2Unique.end())
+{
+  auto it = J2Unique.begin();
+  while (it != J2Unique.end())
   {
     delete ((*it).second);
     ++it;
   }
-}//need to clean up J2Unique 
+} //need to clean up J2Unique
 
 template<typename FT>
 void J2OrbitalSoA<FT>::init(ParticleSet& p)
 {
-  N=p.getTotalNum();
-  N_padded=getAlignedSize<valT>(N);
-  NumGroups=p.groups();
+  N         = p.getTotalNum();
+  N_padded  = getAlignedSize<valT>(N);
+  NumGroups = p.groups();
 
-  Uat.resize(N); 
+  Uat.resize(N);
   dUat.resize(N);
   d2Uat.resize(N);
   cur_u.resize(N);
@@ -306,7 +308,7 @@ void J2OrbitalSoA<FT>::init(ParticleSet& p)
   old_u.resize(N);
   old_du.resize(N);
   old_d2u.resize(N);
-  F.resize(NumGroups*NumGroups,nullptr);
+  F.resize(NumGroups * NumGroups, nullptr);
   DistCompressed.resize(N);
   DistIndice.resize(N);
 }
@@ -314,38 +316,39 @@ void J2OrbitalSoA<FT>::init(ParticleSet& p)
 template<typename FT>
 void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
 {
-  if(ia==ib)
+  if (ia == ib)
   {
-    if(ia==0)//first time, assign everything
+    if (ia == 0) //first time, assign everything
     {
-      int ij=0;
-      for(int ig=0; ig<NumGroups; ++ig)
-        for(int jg=0; jg<NumGroups; ++jg, ++ij)
-          if(F[ij]==nullptr) F[ij]=j;
+      int ij = 0;
+      for (int ig = 0; ig < NumGroups; ++ig)
+        for (int jg = 0; jg < NumGroups; ++jg, ++ij)
+          if (F[ij] == nullptr)
+            F[ij] = j;
     }
     else
-      F[ia*NumGroups+ib]=j;
+      F[ia * NumGroups + ib] = j;
   }
   else
   {
-    if(N==2)
+    if (N == 2)
     {
       // a very special case, 1 up + 1 down
       // uu/dd was prevented by the builder
-      for(int ig=0; ig<NumGroups; ++ig)
-        for(int jg=0; jg<NumGroups; ++jg)
-          F[ig*NumGroups+jg]=j;
+      for (int ig = 0; ig < NumGroups; ++ig)
+        for (int jg = 0; jg < NumGroups; ++jg)
+          F[ig * NumGroups + jg] = j;
     }
     else
     {
       // generic case
-      F[ia*NumGroups+ib]=j;
-      F[ib*NumGroups+ia]=j;
+      F[ia * NumGroups + ib] = j;
+      F[ib * NumGroups + ia] = j;
     }
   }
   std::stringstream aname;
-  aname<<ia<<ib;
-  J2Unique[aname.str()]=j;
+  aname << ia << ib;
+  J2Unique[aname.str()] = j;
   //ChiesaKEcorrection();
   FirstTime = false;
 }
@@ -353,23 +356,23 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
 template<typename FT>
 WaveFunctionComponentPtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
 {
-  J2OrbitalSoA<FT>* j2copy=new J2OrbitalSoA<FT>(tqp,-1);
+  J2OrbitalSoA<FT>* j2copy = new J2OrbitalSoA<FT>(tqp, -1);
   if (dPsi)
     j2copy->dPsi = dPsi->makeClone(tqp);
-  std::map<const FT*,FT*> fcmap;
-  for(int ig=0; ig<NumGroups; ++ig)
-    for(int jg=ig; jg<NumGroups; ++jg)
+  std::map<const FT*, FT*> fcmap;
+  for (int ig = 0; ig < NumGroups; ++ig)
+    for (int jg = ig; jg < NumGroups; ++jg)
     {
-      int ij=ig*NumGroups+jg;
-      if(F[ij]==0)
+      int ij = ig * NumGroups + jg;
+      if (F[ij] == 0)
         continue;
-      typename std::map<const FT*,FT*>::iterator fit=fcmap.find(F[ij]);
-      if(fit == fcmap.end())
+      typename std::map<const FT*, FT*>::iterator fit = fcmap.find(F[ij]);
+      if (fit == fcmap.end())
       {
-        FT* fc=new FT(*F[ij]);
-        j2copy->addFunc(ig,jg,fc);
+        FT* fc = new FT(*F[ij]);
+        j2copy->addFunc(ig, jg, fc);
         //if (dPsi) (j2copy->dPsi)->addFunc(aname.str(),ig,jg,fc);
-        fcmap[F[ij]]=fc;
+        fcmap[F[ij]] = fc;
       }
     }
   j2copy->Optimizable = Optimizable;
@@ -385,22 +388,26 @@ WaveFunctionComponentPtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
  * @param d2u starting second deriv
  */
 template<typename FT>
-inline void
-J2OrbitalSoA<FT>::computeU3(const ParticleSet& P, int iat, const RealType* restrict dist,
-    RealType* restrict u, RealType* restrict du, RealType* restrict d2u, bool triangle)
+inline void J2OrbitalSoA<FT>::computeU3(const ParticleSet& P,
+                                        int iat,
+                                        const RealType* restrict dist,
+                                        RealType* restrict u,
+                                        RealType* restrict du,
+                                        RealType* restrict d2u,
+                                        bool triangle)
 {
-  const int jelmax=triangle?iat:N;
+  const int jelmax = triangle ? iat : N;
   constexpr valT czero(0);
-  std::fill_n(u,  jelmax,czero);
-  std::fill_n(du, jelmax,czero);
-  std::fill_n(d2u,jelmax,czero);
+  std::fill_n(u, jelmax, czero);
+  std::fill_n(du, jelmax, czero);
+  std::fill_n(d2u, jelmax, czero);
 
-  const int igt=P.GroupID[iat]*NumGroups;
-  for(int jg=0; jg<NumGroups; ++jg)
+  const int igt = P.GroupID[iat] * NumGroups;
+  for (int jg = 0; jg < NumGroups; ++jg)
   {
-    const FuncType& f2(*F[igt+jg]);
+    const FuncType& f2(*F[igt + jg]);
     int iStart = P.first(jg);
-    int iEnd = std::min(jelmax,P.last(jg));
+    int iEnd   = std::min(jelmax, P.last(jg));
     f2.evaluateVGL(iat, iStart, iEnd, dist, u, du, d2u, DistCompressed.data(), DistIndice.data());
   }
   //u[iat]=czero;
@@ -409,195 +416,189 @@ J2OrbitalSoA<FT>::computeU3(const ParticleSet& P, int iat, const RealType* restr
 }
 
 template<typename FT>
-typename  J2OrbitalSoA<FT>::ValueType 
-J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
+typename J2OrbitalSoA<FT>::ValueType J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
 {
   //only ratio, ready to compute it again
-  UpdateMode=ORB_PBYP_RATIO;
-  cur_Uat=computeU(P, iat, P.DistTables[0]->Temp_r.data());
-  return std::exp(Uat[iat]-cur_Uat);
+  UpdateMode = ORB_PBYP_RATIO;
+  cur_Uat    = computeU(P, iat, P.DistTables[0]->Temp_r.data());
+  return std::exp(Uat[iat] - cur_Uat);
 }
 
 template<typename FT>
-inline void
-J2OrbitalSoA<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+inline void J2OrbitalSoA<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  const DistanceTableData* d_table=P.DistTables[0];
-  const auto dist=d_table->Temp_r.data();
+  const DistanceTableData* d_table = P.DistTables[0];
+  const auto dist                  = d_table->Temp_r.data();
 
-  for(int ig=0; ig<NumGroups; ++ig)
+  for (int ig = 0; ig < NumGroups; ++ig)
   {
-    const int igt=ig*NumGroups;
+    const int igt = ig * NumGroups;
     valT sumU(0);
-    for(int jg=0; jg<NumGroups; ++jg)
+    for (int jg = 0; jg < NumGroups; ++jg)
     {
-      const FuncType& f2(*F[igt+jg]);
+      const FuncType& f2(*F[igt + jg]);
       int iStart = P.first(jg);
-      int iEnd = P.last(jg);
+      int iEnd   = P.last(jg);
       sumU += f2.evaluateV(-1, iStart, iEnd, dist, DistCompressed.data());
     }
 
-    for(int i=P.first(ig); i<P.last(ig); ++i)
+    for (int i = P.first(ig); i < P.last(ig); ++i)
     {
       // remove self-interaction
-      const valT Uself = F[igt+ig]->evaluate(dist[i]);
-      ratios[i]=std::exp(Uat[i]+Uself-sumU);
+      const valT Uself = F[igt + ig]->evaluate(dist[i]);
+      ratios[i]        = std::exp(Uat[i] + Uself - sumU);
     }
   }
 }
 
 template<typename FT>
-typename  J2OrbitalSoA<FT>::GradType 
-J2OrbitalSoA<FT>::evalGrad(ParticleSet& P, int iat)
+typename J2OrbitalSoA<FT>::GradType J2OrbitalSoA<FT>::evalGrad(ParticleSet& P, int iat)
 {
   return GradType(dUat[iat]);
 }
 
 template<typename FT>
-typename  J2OrbitalSoA<FT>::ValueType
-J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+typename J2OrbitalSoA<FT>::ValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
+  UpdateMode = ORB_PBYP_PARTIAL;
 
-  UpdateMode=ORB_PBYP_PARTIAL;
-
-  computeU3(P,iat,P.DistTables[0]->Temp_r.data(), cur_u.data(),cur_du.data(),cur_d2u.data());
-  cur_Uat=simd::accumulate_n(cur_u.data(),N,valT());
-  DiffVal=Uat[iat]-cur_Uat;
-  grad_iat+=accumulateG(cur_du.data(),P.DistTables[0]->Temp_dr);
+  computeU3(P, iat, P.DistTables[0]->Temp_r.data(), cur_u.data(), cur_du.data(), cur_d2u.data());
+  cur_Uat = simd::accumulate_n(cur_u.data(), N, valT());
+  DiffVal = Uat[iat] - cur_Uat;
+  grad_iat += accumulateG(cur_du.data(), P.DistTables[0]->Temp_dr);
   return std::exp(DiffVal);
 }
 
 template<typename FT>
-void
-J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
+void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
 {
   // get the old u, du, d2u
-  const DistanceTableData* d_table=P.DistTables[0];
-  computeU3(P,iat,d_table->Distances[iat],old_u.data(),old_du.data(),old_d2u.data());
-  if(UpdateMode == ORB_PBYP_RATIO)
-  {//ratio-only during the move; need to compute derivatives
-    const auto dist=d_table->Temp_r.data();
-    computeU3(P,iat,dist,cur_u.data(),cur_du.data(),cur_d2u.data());
+  const DistanceTableData* d_table = P.DistTables[0];
+  computeU3(P, iat, d_table->Distances[iat], old_u.data(), old_du.data(), old_d2u.data());
+  if (UpdateMode == ORB_PBYP_RATIO)
+  { //ratio-only during the move; need to compute derivatives
+    const auto dist = d_table->Temp_r.data();
+    computeU3(P, iat, dist, cur_u.data(), cur_du.data(), cur_d2u.data());
   }
 
   valT cur_d2Uat(0);
-  const auto& new_dr=d_table->Temp_dr;
-  const auto& old_dr=d_table->Displacements[iat];
-  constexpr valT lapfac=OHMMS_DIM-RealType(1);
-  #pragma omp simd reduction(+:cur_d2Uat)
-  for(int jat=0; jat<N; jat++)
+  const auto& new_dr    = d_table->Temp_dr;
+  const auto& old_dr    = d_table->Displacements[iat];
+  constexpr valT lapfac = OHMMS_DIM - RealType(1);
+#pragma omp simd reduction(+ : cur_d2Uat)
+  for (int jat = 0; jat < N; jat++)
   {
     const valT du   = cur_u[jat] - old_u[jat];
-    const valT newl = cur_d2u[jat] + lapfac*cur_du[jat];
-    const valT dl   = old_d2u[jat] + lapfac*old_du[jat] - newl;
+    const valT newl = cur_d2u[jat] + lapfac * cur_du[jat];
+    const valT dl   = old_d2u[jat] + lapfac * old_du[jat] - newl;
     Uat[jat]   += du;
     d2Uat[jat] += dl;
-    cur_d2Uat  -= newl;
+    cur_d2Uat -= newl;
   }
   posT cur_dUat;
-  for(int idim=0; idim<OHMMS_DIM; ++idim)
+  for (int idim = 0; idim < OHMMS_DIM; ++idim)
   {
-    const valT* restrict new_dX=new_dr.data(idim);
-    const valT* restrict old_dX=old_dr.data(idim);
-    const valT* restrict cur_du_pt=cur_du.data();
-    const valT* restrict old_du_pt=old_du.data();
-    valT* restrict save_g=dUat.data(idim);
-    valT cur_g=cur_dUat[idim];
-    #pragma omp simd reduction(+:cur_g) aligned(old_dX,new_dX,save_g,cur_du_pt,old_du_pt)
-    for(int jat=0; jat<N; jat++)
+    const valT* restrict new_dX    = new_dr.data(idim);
+    const valT* restrict old_dX    = old_dr.data(idim);
+    const valT* restrict cur_du_pt = cur_du.data();
+    const valT* restrict old_du_pt = old_du.data();
+    valT* restrict save_g          = dUat.data(idim);
+    valT cur_g                     = cur_dUat[idim];
+#pragma omp simd reduction(+ : cur_g) aligned(old_dX, new_dX, save_g, cur_du_pt, old_du_pt)
+    for (int jat = 0; jat < N; jat++)
     {
       const valT newg = cur_du_pt[jat] * new_dX[jat];
-      const valT dg   = newg - old_du_pt[jat]*old_dX[jat];
-      save_g[jat]  -= dg;
+      const valT dg   = newg - old_du_pt[jat] * old_dX[jat];
+      save_g[jat] -= dg;
       cur_g += newg;
     }
     cur_dUat[idim] = cur_g;
   }
-  LogValue  += Uat[iat]-cur_Uat;
+  LogValue += Uat[iat] - cur_Uat;
   Uat[iat]   = cur_Uat;
   dUat(iat)  = cur_dUat;
   d2Uat[iat] = cur_d2Uat;
 }
 
 template<typename FT>
-void
-J2OrbitalSoA<FT>::recompute(ParticleSet& P)
+void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 {
-  const DistanceTableData* d_table=P.DistTables[0];
-  for(int ig=0; ig<NumGroups; ++ig)
+  const DistanceTableData* d_table = P.DistTables[0];
+  for (int ig = 0; ig < NumGroups; ++ig)
   {
-    const int igt=ig*NumGroups;
-    for(int iat=P.first(ig),last=P.last(ig); iat<last; ++iat)
+    const int igt = ig * NumGroups;
+    for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
     {
-      computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data(),true);
-      Uat[iat]=simd::accumulate_n(cur_u.data(),iat,valT());
+      computeU3(P, iat, d_table->Distances[iat], cur_u.data(), cur_du.data(), cur_d2u.data(), true);
+      Uat[iat] = simd::accumulate_n(cur_u.data(), iat, valT());
       posT grad;
       valT lap(0);
-      const valT* restrict    u = cur_u.data();
-      const valT* restrict   du = cur_du.data();
-      const valT* restrict  d2u = cur_d2u.data();
+      const valT* restrict u    = cur_u.data();
+      const valT* restrict du   = cur_du.data();
+      const valT* restrict d2u  = cur_d2u.data();
       const RowContainer& displ = d_table->Displacements[iat];
-      constexpr valT lapfac=OHMMS_DIM-RealType(1);
-      #pragma omp simd reduction(+:lap) aligned(du,d2u)
-      for(int jat=0; jat<iat; ++jat)
-        lap+=d2u[jat]+lapfac*du[jat];
-      for(int idim=0; idim<OHMMS_DIM; ++idim)
+      constexpr valT lapfac     = OHMMS_DIM - RealType(1);
+#pragma omp simd reduction(+ : lap) aligned(du, d2u)
+      for (int jat = 0; jat < iat; ++jat)
+        lap += d2u[jat] + lapfac * du[jat];
+      for (int idim = 0; idim < OHMMS_DIM; ++idim)
       {
-        const valT* restrict dX=displ.data(idim);
-        valT s=valT();
-        #pragma omp simd reduction(+:s) aligned(du,dX)
-        for(int jat=0; jat<iat; ++jat) s+=du[jat]*dX[jat];
-        grad[idim]=s;
+        const valT* restrict dX = displ.data(idim);
+        valT s                  = valT();
+#pragma omp simd reduction(+ : s) aligned(du, dX)
+        for (int jat = 0; jat < iat; ++jat)
+          s += du[jat] * dX[jat];
+        grad[idim] = s;
       }
-      dUat(iat)=grad;
-      d2Uat[iat]=-lap;
-      // add the contribution from the upper triangle
-      #pragma omp simd aligned(u,du,d2u)
-      for(int jat=0; jat<iat; jat++)
+      dUat(iat)  = grad;
+      d2Uat[iat] = -lap;
+// add the contribution from the upper triangle
+#pragma omp simd aligned(u, du, d2u)
+      for (int jat = 0; jat < iat; jat++)
       {
         Uat[jat] += u[jat];
-        d2Uat[jat] -= d2u[jat]+lapfac*du[jat];
+        d2Uat[jat] -= d2u[jat] + lapfac * du[jat];
       }
-      for(int idim=0; idim<OHMMS_DIM; ++idim)
+      for (int idim = 0; idim < OHMMS_DIM; ++idim)
       {
-        valT* restrict save_g=dUat.data(idim);
-        const valT* restrict dX=displ.data(idim);
-        #pragma omp simd aligned(save_g,du,dX)
-        for(int jat=0; jat<iat; jat++)
-          save_g[jat]-=du[jat]*dX[jat];
+        valT* restrict save_g   = dUat.data(idim);
+        const valT* restrict dX = displ.data(idim);
+#pragma omp simd aligned(save_g, du, dX)
+        for (int jat = 0; jat < iat; jat++)
+          save_g[jat] -= du[jat] * dX[jat];
       }
     }
   }
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::RealType
-J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L)
+typename J2OrbitalSoA<FT>::RealType J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
+                                                                  ParticleSet::ParticleGradient_t& G,
+                                                                  ParticleSet::ParticleLaplacian_t& L)
 {
-  evaluateGL(P,G,L,true);
+  evaluateGL(P, G, L, true);
   return LogValue;
 }
 
 template<typename FT>
-void
-J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L, bool fromscratch)
+void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
+                                  ParticleSet::ParticleGradient_t& G,
+                                  ParticleSet::ParticleLaplacian_t& L,
+                                  bool fromscratch)
 {
-  if(fromscratch) recompute(P);
-  LogValue=valT(0);
-  for(int iat=0; iat<N; ++iat)
+  if (fromscratch)
+    recompute(P);
+  LogValue = valT(0);
+  for (int iat = 0; iat < N; ++iat)
   {
     LogValue += Uat[iat];
-    G[iat] += dUat[iat];
-    L[iat] += d2Uat[iat];
+    G[iat]   += dUat[iat];
+    L[iat]   += d2Uat[iat];
   }
 
   constexpr valT mhalf(-0.5);
-  LogValue=mhalf*LogValue;
+  LogValue = mhalf * LogValue;
 }
 
-}
+} // namespace qmcplusplus
 #endif
