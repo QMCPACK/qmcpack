@@ -34,6 +34,9 @@ SET(MOSRCS
   GamesFMOParser.cpp
   QPParser.cpp
   LCAOH5Parser.cpp
+  QBoxConverter.cpp 
+  WriteEshdf.cpp
+  XmlRep.cpp
 )
 
 # create libmocommon 
@@ -46,6 +49,15 @@ INSTALL(TARGETS qmc-get-supercell
 ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
 INSTALL(TARGETS qmc-check-affinity
         RUNTIME DESTINATION bin)
+
+ADD_EXECUTABLE(QBoxConverter QBoxConverter.cpp XmlRep.cpp WriteEshdf.cpp)
+FOREACH(l ${QMC_UTIL_LIBS})		       
+  TARGET_LINK_LIBRARIES(QBoxConverter ${l})
+ENDFOREACH(l ${QMC_UTIL_LIBS})
+
+INSTALL(TARGETS QBoxConverter
+        RUNTIME DESTINATION bin)
+
 
 FOREACH(p ${QTOOLS})
 
