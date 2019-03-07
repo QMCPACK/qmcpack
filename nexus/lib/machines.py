@@ -1291,7 +1291,21 @@ class Supercomputer(Machine):
                                  R = 'running',
                                  S = 'suspended',
                                  CD = 'complete',
-				 RD = 'held'
+                                 RD = 'held',
+                                 BF = 'failed',
+                                 CF = 'configuring',
+                                 DL = 'deadline',
+                                 OOM= 'out_of_memory',
+                                 PR = 'preempted',
+                                 RF = 'requeue_fed',
+                                 RH = 'requeue_hold',
+                                 RQ = 'requeued',
+                                 RS = 'resizing',
+                                 RV = 'revoked',
+                                 SI = 'signaling',
+                                 SE = 'special_exit',
+                                 SO = 'stage_out',
+                                 ST = 'stopped',
                                  )
         elif self.queue_querier=='sacct':
             self.job_states=dict(CANCELLED = 'failed',  #long form
@@ -1554,13 +1568,7 @@ class Supercomputer(Machine):
                     if spid.isdigit():
                         pid = int(spid)
                         status = None
-                        if len(tokens)==8:
-                            jid,loc,name,uname,status,wtime,nodes,reason = tokens
-                        elif len(tokens)==11 and self.name != 'stampede2': # nersc squeue output
-                            jid,uname,acc,jname,part,qos,nodes,tlimit,wtime,status,start_time = tokens
-                        elif len(tokens)==11 and self.name == 'stampede2': # stampede squeue output
-                            jid,loc,name,uname,status,wtime,nodes,reason,tmp1,tmp2,tmp3 = tokens
-                        #end if
+                        jid,loc,name,uname,status,wtime,nodes,reason = tokens[:8]
                         if status is not None:
                             if status in self.job_states:
                                 self.system_queue[pid] = self.job_states[status]
