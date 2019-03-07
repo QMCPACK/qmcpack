@@ -87,12 +87,12 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
   // setup partition, in general matrices are partitioned asize_t 'u'
   {
-    int node_number = TGwfn.getLocalNodeNumber();
+    int node_number = TGwfn.getLocalGroupNumber();
     int nnodes_prt_TG = TGwfn.getNNodesPerTG();
     std::tie(rotnmu0,rotnmuN) = FairDivideBoundary(size_t(node_number),grotnmu,size_t(nnodes_prt_TG));
     rotnmu = rotnmuN-rotnmu0;
 
-    node_number = TGprop.getLocalNodeNumber();
+    node_number = TGprop.getLocalGroupNumber();
     nnodes_prt_TG = TGprop.getNNodesPerTG();
     std::tie(nmu0,nmuN) = FairDivideBoundary(size_t(node_number),gnmu,size_t(nnodes_prt_TG));
     nmu = nmuN-nmu0;

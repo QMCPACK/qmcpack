@@ -318,7 +318,7 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
     return CSR(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},0,typename CSR::alloc_type(TG.Node()));
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
-  int node_number = TG.getLocalNodeNumber();
+  int node_number = TG.getLocalGroupNumber();
   int nnodes_per_TG = TG.getNNodesPerTG();  
 
   // 1. Define new communicator for equivalent cores

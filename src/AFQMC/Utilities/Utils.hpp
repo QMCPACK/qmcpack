@@ -19,6 +19,7 @@
 #include<fstream>
 #include<complex>
 
+#include "Platforms/sysutil.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
@@ -28,6 +29,7 @@
 #include "AFQMC/Memory/custom_pointers.hpp"
 #ifdef QMC_CUDA
 #include "AFQMC/Numerics/detail/CUDA/Kernels/sampleGaussianRNG.cuh"
+#include "cuda_runtime.h"
 #endif
 
 namespace qmcplusplus 
@@ -328,6 +330,18 @@ void sampleGaussianFields_n(T* V, int n, RandomNumberGenerator_& rng)
     RealType temp1=1-0.9999999999*rng(), temp2=rng();
     V[n-1]=std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2);
   }
+}
+
+inline void memory_report()
+{
+  qmcplusplus::app_log()<<"\n --> CPU Memory Available: "
+                          <<freemem() <<std::endl;
+#ifdef QMC_CUDA
+  size_t free_,tot_;
+  cudaMemGetInfo(&free_,&tot_);
+  qmcplusplus::app_log()<<" --> GPU Memory Available,  Total in MB: "
+                          <<free_/1024.0/1024.0 <<" " <<tot_/1024.0/1024.0 <<"\n" <<std::endl;
+#endif
 }
 
 #ifdef QMC_CUDA

@@ -162,7 +162,7 @@ struct simple_matrix_partition
     sets[0] = 0;
     if(nnodes > 1) {
       FairDivide(nblk,nnodes,sets);
-      int node_number = TG.getLocalNodeNumber(); 
+      int node_number = TG.getLocalGroupNumber(); 
       if(byRow) {
         r0=sets[node_number];
         r1=sets[node_number+1];
@@ -205,7 +205,7 @@ struct simple_matrix_partition
         (*itn)=cnt;
       }
       balance_partition_ordered_set(counts.size(),nv.data(),sets);
-      int node_number = TG.getLocalNodeNumber(); 
+      int node_number = TG.getLocalGroupNumber(); 
       if(byRow) {
         r0=sets[node_number];
         r1=sets[node_number+1];

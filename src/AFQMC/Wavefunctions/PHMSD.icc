@@ -290,7 +290,7 @@ namespace afqmc
 
     assert(ci.size()==1);
     bool new_shm_space=false; 
-    const int node_number = TG.getLocalNodeNumber();
+    const int node_number = TG.getLocalGroupNumber();
     const int nnodes = TG.getNNodesPerTG();
     const int Gsize = dm_size(false);
     const ComplexType zero(0.0);

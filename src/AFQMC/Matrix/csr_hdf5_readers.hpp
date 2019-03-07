@@ -522,8 +522,8 @@ inline SparseArray2D column_distributed_CSR_from_HDF(hdf_archive& dump, task_gro
     }
 
     TG.Global().broadcast(sets.begin(),sets.end());
-    c0 = sets[TG.getLocalNodeNumber()];
-    cN = sets[TG.getLocalNodeNumber()+1];
+    c0 = sets[TG.getLocalGroupNumber()];
+    cN = sets[TG.getLocalGroupNumber()+1];
 
     csr_hdf5::multiple_reader_local_count(dump,
                              counter(true,nrows,ncols,0,nrows,c0,cN,cutoff1bar),

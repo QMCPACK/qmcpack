@@ -101,7 +101,8 @@ class KP3IndexFactorization
         LQKikn(std::move(vik)),
         LQKank(std::move(vak)),
         LQKbnl(std::move(vbl)),
-        Qsym_map(std::move(qqm_)),
+        Qmap(std::move(qqm_)),
+        Q2vbias(Qmap.size()),
         vn0(std::move(vn0_)),
         gQ(std::move(gQ_)),
         Qwn({1,1},shared_allocator<SPComplexType>{*comm}),
@@ -113,22 +114,38 @@ class KP3IndexFactorization
         EQ(nopk.size()+2),
         mutex(0)
     {
-      local_nCV = std::accumulate(ncholpQ.begin(),ncholpQ.end(),0);
       mutex.reserve(ncholpQ.size());
       for(int nQ=0; nQ<ncholpQ.size(); nQ++)
           mutex.emplace_back(std::make_unique<shared_mutex>(*comm));
       std::fill_n(EQ.data(),EQ.size(),0);
       int nkpts = nopk.size();
+      // Defines behavior over Q vector:
+      //   <0: Ignore (handled by another TG)
+      //    0: Calculate, without rho^+ contribution
+      //   >0: Calculate, with rho^+ contribution. LQKbln data located at Qmap[Q]-1
       number_of_symmetric_Q = 0;  
-      for(int Q=0; Q<nkpts; Q++) 
-        if(kminus[Q]==Q) 
-          number_of_symmetric_Q++;
+      local_nCV=0;
+      std::fill_n(Q2vbias.origin(),nkpts,0);
       for(int Q=0; Q<nkpts; Q++) {
-        if(kminus[Q]==Q) {
-          assert(Qsym_map[Q]>=0);  
-          assert(Qsym_map[Q]<number_of_symmetric_Q);  
-        } else {
-          assert(Qsym_map[Q]<0);  
+        if(Q > kminus[Q]) {  
+          if(Qmap[ kminus[Q] ] == 0) {
+            assert(Qmap[Q] == 0);
+            Q2vbias[Q] = 2*local_nCV;
+            local_nCV += ncholpQ[Q];
+          } else {
+            assert(Qmap[ kminus[Q] ] < 0);
+            assert(Qmap[ Q ] < 0);
+          }
+        } else if(Qmap[Q] >= 0) {
+          Q2vbias[Q] = 2*local_nCV;
+          local_nCV += ncholpQ[Q];
+          if(Qmap[Q] > 0) number_of_symmetric_Q++; 
+        } 
+      }
+      for(int Q=0; Q<nkpts; Q++) {
+        if(Qmap[Q] > 0) {
+          assert(Q == kminus[Q]);  
+          assert(Qmap[Q]<=number_of_symmetric_Q);  
         }    
       }  
       comm->barrier();
@@ -297,6 +314,8 @@ class KP3IndexFactorization
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
 
+      // with yet another mapping, it is possible to reduce the memory usage here!
+      // avoiding for now!
       Sp4Tensor_ref GKK(to_address(SM_TMats.origin())+cnt,
                         {nspin,nkpts,nkpts,nwalk*nmo_max*nocca_max});
       GKaKjw_to_GKKwaj(nd,Gc,GKK,nocca_tot,noccb_tot,nmo_tot,nmo_max*nocca_max);
@@ -363,9 +382,10 @@ class KP3IndexFactorization
         SPRealType scl = (walker_type==CLOSED?2.0:1.0);
         size_t nqk=1;
         for(int Q=0; Q<nkpts; ++Q) {
+          if( Qmap[Q] < 0 ) continue; 
           bool haveKE=false;
           for(int Ka=0; Ka<nkpts; ++Ka) {
-            int K0 = ((Q==kminus[Q])?0:Ka);
+            int K0 = ((Qmap[Q]>0)?0:Ka);
             for(int Kb=K0; Kb<nkpts; ++Kb) {
 
               if((nqk++)%comm->size() == comm->rank()) {
@@ -383,7 +403,7 @@ class KP3IndexFactorization
                 SpMatrix_ref Lank(to_address(LQKank[nd*nspin*nkpts+Q][Ka].origin()),
                                                  {na*nchol,nk});
                 auto bnl_ptr(to_address(LQKank[nd*nspin*nkpts+Qm][Kb].origin()));
-                if( Q == Qm ) bnl_ptr = to_address(LQKbnl[nd*nspin*number_of_symmetric_Q+Qsym_map[Q]][Kb].origin());
+                if( Qmap[Q] > 0 ) bnl_ptr = to_address(LQKbnl[nd*nspin*number_of_symmetric_Q+Qmap[Q]-1][Kb].origin());
                 SpMatrix_ref Lbnl(bnl_ptr,{nb*nchol,nl});
 
                 SpMatrix_ref Twban(TMats.origin()+cnt,{nwalk*nb,na*nchol});
@@ -399,7 +419,7 @@ class KP3IndexFactorization
                   for(int a=0; a<na; ++a)
                     for(int b=0; b<nb; ++b)
                       E_ += ma::dot(T4Dwabn[n][a][b],T4Dwban[n][b][a]);
-                  if(Q==kminus[Q] || Ka==Kb)
+                  if(Qmap[Q]>0 || Ka==Kb)
                     E[n][1] -= 0.5*static_cast<ComplexType>(scl*E_);
                   else
                     E[n][1] -= static_cast<ComplexType>(scl*E_);
@@ -433,7 +453,7 @@ class KP3IndexFactorization
                   SpMatrix_ref Lank(to_address(LQKank[(nd*nspin+1)*nkpts+Q][Ka].origin()),
                                                  {na*nchol,nk});
                   auto bnl_ptr(to_address(LQKank[(nd*nspin+1)*nkpts+Qm][Kb].origin()));
-                  if( Q == Qm ) bnl_ptr = to_address(LQKbnl[(nd*nspin+1)*number_of_symmetric_Q+Qsym_map[Q]][Kb].origin());
+                  if( Qmap[Q] > 0 ) bnl_ptr = to_address(LQKbnl[(nd*nspin+1)*number_of_symmetric_Q+Qmap[Q]-1][Kb].origin());
                   SpMatrix_ref Lbnl(bnl_ptr,{nb*nchol,nl});
 
                   SpMatrix_ref Twban(TMats.origin()+cnt,{nwalk*nb,na*nchol});
@@ -449,7 +469,7 @@ class KP3IndexFactorization
                     for(int a=0; a<na; ++a)
                       for(int b=0; b<nb; ++b)
                         E_ += ma::dot(T4Dwabn[n][a][b],T4Dwban[n][b][a]);
-                    if(Q==kminus[Q] || Ka==Kb)
+                    if(Qmap[Q]>0 || Ka==Kb)
                       E[n][1] -= 0.5*static_cast<ComplexType>(scl*E_);
                     else
                      E[n][1] -= static_cast<ComplexType>(scl*E_);
@@ -470,7 +490,7 @@ class KP3IndexFactorization
           } // Ka
           if(addEJ && haveKE) {
             std::lock_guard<shared_mutex> guard(*mutex[Q]);
-            int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
+            int nc0 = Q2vbias[Q]/2; //std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
             for(int n=0; n<nwalk; n++) {
               ma::axpy(SPComplexType(1.0),Kr_local[n].sliced(0,ncholpQ[Q]),
                                         Kr[n].sliced(nc0,nc0+ncholpQ[Q]));
@@ -495,8 +515,9 @@ class KP3IndexFactorization
         SPRealType scl = (walker_type==CLOSED?2.0:1.0);
         for(int n=0; n<nwalk; ++n) {
           for(int Q=0; Q<nkpts; ++Q) {      // momentum conservation index
+            if( Qmap[Q] < 0 ) continue;
             if((nqk++)%comm->size() == comm->rank()) {
-              int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
+              int nc0 = Q2vbias[Q]/2; //std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
               E[n][2] += 0.5*static_cast<ComplexType>(scl*scl*ma::dot(Kl[n]({nc0,nc0+ncholpQ[Q]}),
                                             Kr[n]({nc0,nc0+ncholpQ[Q]})));
             }
@@ -513,14 +534,17 @@ class KP3IndexFactorization
           std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(KEright->num_elements()),size_t(comm->size()));
           copy_n_cast(Krptr+i0,iN-i0,to_address(KEright->origin())+i0);
         }
-        comm->barrier();
 #endif
+        comm->barrier();
       }
     }
 
     // KEleft and KEright must be in shared memory for this to work correctly
     template<class Mat, class MatB, class MatC, class MatD>
     void energy_sampleQ(Mat&& E, MatB const& Gc, int nd, MatC* KEleft, MatD* KEright, bool addH1=true, bool addEJ=true, bool addEXX=true) {
+
+      APP_ABORT(" Error: Incomplete implementation. \n");
+      // need to finish modifications for distribution of Q
 
       int nkpts = nopk.size();
       assert(E.size(1)>=3);
@@ -717,7 +741,7 @@ class KP3IndexFactorization
                   SpMatrix_ref Lank(to_address(LQKank[nd*nspin*nkpts+Q][Ka].origin()),
                                                  {na*nchol,nk});
                   auto bnl_ptr(to_address(LQKank[nd*nspin*nkpts+Qm][Kb].origin()));
-                  if( Q == Qm ) bnl_ptr = to_address(LQKbnl[nd*nspin*number_of_symmetric_Q+Qsym_map[Q]][Kb].origin());
+                  if( Q == Qm ) bnl_ptr = to_address(LQKbnl[nd*nspin*number_of_symmetric_Q+Qmap[Q]-1][Kb].origin());
                   SpMatrix_ref Lbnl(bnl_ptr,{nb*nchol,nl});
 
                   SpMatrix_ref Tban(TMats.origin()+local_cnt,{nb,na*nchol});
@@ -753,7 +777,7 @@ class KP3IndexFactorization
                     SpMatrix_ref Lank(to_address(LQKank[(nd*nspin+1)*nkpts+Q][Ka].origin()),
                                                  {na*nchol,nk});
                     auto bnl_ptr(to_address(LQKank[(nd*nspin+1)*nkpts+Qm][Kb].origin()));
-                    if( Q == Qm ) bnl_ptr = to_address(LQKbnl[(nd*nspin+1)*number_of_symmetric_Q+Qsym_map[Q]][Kb].origin());
+                    if( Q == Qm ) bnl_ptr = to_address(LQKbnl[(nd*nspin+1)*number_of_symmetric_Q+Qmap[Q]-1][Kb].origin());
                     SpMatrix_ref Lbnl(bnl_ptr,{nb*nchol,nl});
 
                     SpMatrix_ref Tban(TMats.origin()+local_cnt,{nb,na*nchol});
@@ -807,7 +831,7 @@ class KP3IndexFactorization
               Sp3Tensor_ref Lank(to_address(LQKank[nd*nspin*nkpts+Q][Ka].origin()),
                                                  {na,nchol,nk});
               SPComplexType* bnl_ptr(to_address(LQKank[nd*nspin*nkpts+Qm][Ka].origin()));
-              if( Q == Qm ) bnl_ptr = to_address(LQKbnl[nd*nspin*number_of_symmetric_Q+Qsym_map[Q]][Ka].origin());
+              if( Q == Qm ) bnl_ptr = to_address(LQKbnl[nd*nspin*number_of_symmetric_Q+Qmap[Q]-1][Ka].origin());
               Sp3Tensor_ref Lbnl(bnl_ptr,{na,nchol,nl});
 
               // Twan = sum_l G[w][a][l] L[a][n][l]
@@ -838,7 +862,7 @@ class KP3IndexFactorization
                 Sp3Tensor_ref Lank(to_address(LQKank[(nd*nspin+1)*nkpts+Q][Ka].origin()),
                                                  {na,nchol,nk});
                 auto bnl_ptr(to_address(LQKank[(nd*nspin+1)*nkpts+Qm][Ka].origin()));
-                if( Q == Qm ) bnl_ptr = to_address(LQKbnl[(nd*nspin+1)*number_of_symmetric_Q+Qsym_map[Q]][Ka].origin());
+                if( Q == Qm ) bnl_ptr = to_address(LQKbnl[(nd*nspin+1)*number_of_symmetric_Q+Qmap[Q]-1][Ka].origin());
                 Sp3Tensor_ref Lbnl(bnl_ptr,{na,nchol,nl});
 
                 // Twan = sum_l G[w][a][l] L[a][n][l]
@@ -958,7 +982,9 @@ class KP3IndexFactorization
 
       // "rotate" X
       //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
-      for(int Q=0, nq=0; Q<nkpts; ++Q) {
+      for(int Q=0; Q<nkpts; ++Q) {
+        if( Qmap[Q] < 0 ) continue;
+        int nq = Q2vbias[Q];
         int nc0, ncN;
         std::tie(nc0,ncN) = FairDivideBoundary(comm->rank(),ncholpQ[Q],comm->size());
         auto Xnp = to_address(X[nq+nc0].origin());
@@ -970,15 +996,15 @@ class KP3IndexFactorization
             *Xnp = Xnp_;
           }
         }
-        nq+=2*ncholpQ[Q];
       }
       comm->barrier();
       //  then combine Q/(-Q) pieces if Q != -Q
       //  X(Q)np = (X(Q)np + X(-Q)nm)
-      for(int Q=0, nq=0; Q<nkpts; ++Q) {
-        if(Q != kminus[Q]) {
+      for(int Q=0; Q<nkpts; ++Q) {
+        if(Qmap[Q] == 0) {
           int Qm = kminus[Q];
-          int nqm0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Qm,0);
+          int nq = Q2vbias[Q];
+          int nqm0 = Q2vbias[Qm];
           int nc0, ncN;
           std::tie(nc0,ncN) = FairDivideBoundary(comm->rank(),ncholpQ[Q],comm->size());
           auto Xnp = to_address(X[nq+nc0].origin());
@@ -987,7 +1013,6 @@ class KP3IndexFactorization
             for(int nw=0; nw<nwalk; ++nw, ++Xnp, ++Xnm)
               *Xnp =  ((*Xnp) + (*Xnm));
         }
-        nq+=2*ncholpQ[Q];
       }
       // scale v by 'c': assuming contiguous data
       {
@@ -1002,7 +1027,9 @@ class KP3IndexFactorization
       using ma::T;
       using ma::H;
       size_t nqk=0;
-      for(int Q=0, nc0=0; Q<nkpts; ++Q) {      // momentum conservation index
+      for(int Q=0; Q<nkpts; ++Q) {      // momentum conservation index
+        if( Qmap[Q] < 0 ) continue; 
+        int nc0 = Q2vbias[Q];
         for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (i,k)
           if((nqk++)%comm->size() == comm->rank()) {
             int nchol = ncholpQ[Q];
@@ -1046,14 +1073,13 @@ class KP3IndexFactorization
             } 
           }
         }
-        nc0+=2*ncholpQ[Q];
       }
       comm->barrier();
       // adding second half when Q==(-Q) 
       nqk=0;
       for(int Q=0; Q<nkpts; ++Q) {      
-        if( Q == kminus[Q] ) { // rho(Q)^+ term 
-          int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
+        if( Qmap[Q] > 0 ) { // rho(Q)^+ term 
+          int nc0 = Q2vbias[Q];
           for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (i,k)
             if((nqk++)%comm->size() == comm->rank()) {
               int nchol = ncholpQ[Q];
@@ -1173,6 +1199,7 @@ class KP3IndexFactorization
       size_t nqk=0;  // start count at 1 to "offset" the calcuation of E1 done at root
       for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (a,k)
         for(int Q=0; Q<nkpts; ++Q) {      // momentum conservation index
+          if( Qmap[Q] < 0 ) continue;
           bool haveV=false;
           if((nqk++)%comm->size() == comm->rank()) {
             haveV=true;
@@ -1199,15 +1226,15 @@ class KP3IndexFactorization
           if(haveV) {
             {
               std::lock_guard<shared_mutex> guard(*mutex[Q]);
-              int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
+              int nc0 = Q2vbias[Q]; 
               // v+ = 0.5*a*(v1+v2)
               ma::axpy(halfa,vlocal.sliced(0,ncholpQ[Q]),v.sliced(nc0,nc0+ncholpQ[Q]));
               // v- = -0.5*a*i*(v1-v2)
               ma::axpy(minusimhalfa,vlocal.sliced(0,ncholpQ[Q]),v.sliced(nc0+ncholpQ[Q],nc0+2*ncholpQ[Q]));
             }
             int Qm = kminus[Q];
-            int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Qm,0);
-            if(Q != Qm) {
+            int nc0 = Q2vbias[Qm]; 
+            if(Qmap[Q]==0) {
               std::lock_guard<shared_mutex> guard(*mutex[Qm]);
               // v+ = 0.5*a*(v1+v2)
               ma::axpy(halfa,vlocal.sliced(0,ncholpQ[Qm]),v.sliced(nc0,nc0+ncholpQ[Qm]));
@@ -1221,7 +1248,7 @@ class KP3IndexFactorization
       }
       // add second contribution when Q==(-Q)
       for(int Q=0; Q<nkpts; ++Q) {
-        if( Q == kminus[Q] ) { // rho(Q)^+ term 
+        if( Qmap[Q] > 0  ) { // rho(Q)^+ term 
           for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (a,k)
             bool haveV=false;
             if((nqk++)%comm->size() == comm->rank()) {
@@ -1233,7 +1260,7 @@ class KP3IndexFactorization
               int nk0 = std::accumulate(nopk.begin(),nopk.begin()+QKToK2[Q][K],0);
               auto&& v1 = vlocal({0,nchol},{0,nwalk});
 
-              Sp3Tensor_ref Lbnl(to_address(LQKbnl[nd*nspin*number_of_symmetric_Q+Qsym_map[Q]][K].origin()),
+              Sp3Tensor_ref Lbnl(to_address(LQKbnl[nd*nspin*number_of_symmetric_Q+Qmap[Q]-1][K].origin()),
                                                  {na,nchol,nk});
 
               // v1[Q][n][nw] += sum_K sum_a_k LQK[b][n][l] G[b][l][nw]
@@ -1249,7 +1276,7 @@ class KP3IndexFactorization
             if(haveV) {
               {
                 std::lock_guard<shared_mutex> guard(*mutex[Q]);
-                int nc0 = 2*std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
+                int nc0 = Q2vbias[Q]; 
                 // v+ = 0.5*a*(v1+v2)
                 ma::axpy(halfa,vlocal.sliced(0,ncholpQ[Q]),v.sliced(nc0,nc0+ncholpQ[Q]));
                 // v- = -0.5*a*i*(v1-v2)
@@ -1265,8 +1292,8 @@ class KP3IndexFactorization
     }
 
     bool distribution_over_cholesky_vectors() const{ return true; }
-    int number_of_ke_vectors() const{ return std::accumulate(ncholpQ.begin(),ncholpQ.end(),0); }
-    int local_number_of_cholesky_vectors() const{ return 2*std::accumulate(ncholpQ.begin(),ncholpQ.end(),0); }
+    int number_of_ke_vectors() const{ return local_nCV; }
+    int local_number_of_cholesky_vectors() const{ return 2*local_nCV; }
     int global_number_of_cholesky_vectors() const{ return global_nCV; }
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
@@ -1319,11 +1346,13 @@ class KP3IndexFactorization
     // half-tranformed Cholesky tensor
     std::vector<shmSpMatrix> LQKbnl;
 
-    // number of Q vectors that satisfy Q==-Q
+    // Defines behavior over Q vector:
+    //   <0: Ignore (handled by another TG)
+    //    0: Calculate, without rho^+ contribution
+    //   >0: Calculate, with rho^+ contribution. LQKbln data located at Qmap[Q]-1
+    IVector Qmap;
+    IVector Q2vbias;
     int number_of_symmetric_Q;
-
-    // For Q vectors that satisfy Q==kminus[Q], maps to the position in LQKbnl 
-    IVector Qsym_map;
 
     // one-body piece of Hamiltonian factorization
     shmC3Tensor vn0;

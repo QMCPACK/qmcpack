@@ -210,7 +210,8 @@ class TaskGroup_
 
   int getNNodesPerTG() const { return nnodes_per_TG; }
 
-  int getLocalNodeNumber() const { return core_.rank()%nnodes_per_TG; }
+// THIS NEEDS TO CHANGE IN GPU CODE!
+  int getLocalGroupNumber() const { return core_.rank()%nnodes_per_TG; }
 
   int getTGNumber() const { return TG_number; }
 
@@ -297,6 +298,7 @@ app_log()<<nn <<" " <<nc <<std::endl;
       APP_ABORT(" Error in TaskGroup_::TaskGroup_() \n");
     }
 
+// this needs to change in GPU
     int myrow, mycol, nrows, ncols, node_in_TG;
     // setup TG grid 
     nrows = node_.size()/ncores_per_TG;

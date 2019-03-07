@@ -90,8 +90,8 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       if(TG.Global().root())
         split.partition(TGprop,false,nnz_per_cv,cv_boundaries);
       TG.Global().broadcast_n(cv_boundaries.begin(),cv_boundaries.size());
-      cv0 = cv_boundaries[TGprop.getLocalNodeNumber()];
-      cvN = cv_boundaries[TGprop.getLocalNodeNumber()+1];
+      cv0 = cv_boundaries[TGprop.getLocalGroupNumber()];
+      cvN = cv_boundaries[TGprop.getLocalGroupNumber()+1];
       // no need for all cores to do this
       if(TG.Global().root()) {
         app_log()<<std::endl <<"Partition of cholesky vector over nodes in TG: ";

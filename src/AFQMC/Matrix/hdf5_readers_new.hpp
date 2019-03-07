@@ -390,7 +390,7 @@ inline std::tuple<int,int> write_hdf5_SpMat(SpMatrix& SpM, hdf_archive& dump, st
   if(TG.getTGNumber() > 0)
     return std::make_tuple(nblocks,ntot);
   int nnodes_per_TG = TG.getNNodesPerTG();
-  int node_number = TG.getLocalNodeNumber();
+  int node_number = TG.getLocalGroupNumber();
   int core_rank = TG.getCoreRank();
   if(core_rank==0 && node_number==0) {
 
