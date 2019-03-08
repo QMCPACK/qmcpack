@@ -2950,6 +2950,7 @@ class Structure(Sobj):
         in_place           = kwargs.pop('in_place',False)
         magnetic_order     = kwargs.pop('magnetic_order',None)
         magnetic_primitive = kwargs.pop('magnetic_primitive',True)
+        check              = kwargs.pop('check',False)
 
         dim = self.dim
         if len(td)==1:
@@ -3014,6 +3015,10 @@ class Structure(Sobj):
             self.clear()
             self.transfer_from(ts)
             ts = self
+        #end if
+
+        if check:
+            ts.check_tiling()
         #end if
 
         return ts
@@ -3095,6 +3100,39 @@ class Structure(Sobj):
         Topt,ropt = self.opt_tilematrix(*args,**kwargs)
         return self.tile(Topt)
     #end def tile_opt
+
+
+    def check_tiling(self,tol=1e-6):
+        if not self.is_tiled():
+            return
+        #end if
+        msgs = []
+        st = self
+        s  = self.folded_structure
+        nt = len(st.pos)
+        n  = len(s.pos)
+        if nt%n!=0:
+            msgs.append('tiled atom count does is not divisible by untiled atom count')
+        #end if
+        vratio = st.volume()/s.volume()
+        if abs(vratio-float(nt)/n)>tol:
+            msgs.append('tiled/untiled volume ratio does not match tiled/untiled atom count ratio')
+        #end if
+        if abs(vratio-abs(det(st.tmatrix)))>tol:
+            msgs.append('tiled/untiled volume ratio does not match tiling matrix determinant')
+        #end if
+        p,w,pmap = self.unique_points_fast(st.pos,st.axes)
+        if len(p)!=nt:
+            msgs.append('tiled positions are not unique')
+        #end if
+        if len(msgs)>0:
+            msg = 'tiling check failed'
+            for m in msgs:
+                msg += '\n'+m
+            #end for
+            self.error(msg)
+        #end if
+    #end def check_tiling
 
 
     def kfold(self,tiling,kpoints,kweights):
