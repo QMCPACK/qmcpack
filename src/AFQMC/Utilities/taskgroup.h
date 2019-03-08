@@ -14,7 +14,8 @@
 #include<ostream>
 #include <mpi.h>
 
-#include"AFQMC/config.h"
+#include "AFQMC/config.h"
+#include "AFQMC/Memory/utilities.hpp"
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 
@@ -211,7 +212,11 @@ class TaskGroup_
   int getNGroupsPerTG() const { return nnodes_per_TG; }
 
 // THIS NEEDS TO CHANGE IN GPU CODE!
+#if QMC_CUDA
+  int getLocalGroupNumber() const { return getTGRank(); } 
+#else
   int getLocalGroupNumber() const { return core_.rank()%nnodes_per_TG; }
+#endif
 
   int getTGNumber() const { return TG_number; }
 
@@ -292,41 +297,70 @@ app_log()<<nn <<" " <<nc <<std::endl;
       APP_ABORT(" Error in TaskGroup::TaskGroup() \n");
     }
 
-    if( core_.size()%nnodes_per_TG != 0  ) {
-      app_error()<<"Found " <<core_.size() <<" nodes. " <<std::endl;
-      app_error()<<" Error in TaskGroup setup(): Number of nodes is not divisible by requested number of nodes in Task Group." <<std::endl;
-      APP_ABORT(" Error in TaskGroup_::TaskGroup_() \n");
+    int ndevices(number_of_devices());
+
+    if(ndevices == 0) {
+      // assign groups from different nodes to TGs
+      if( core_.size()%nnodes_per_TG != 0  ) {
+        app_error()<<"Found " <<core_.size() <<" nodes. " <<std::endl;
+        app_error()<<" Error in TaskGroup setup(): Number of nodes is not divisible by requested number of nodes in Task Group." <<std::endl;
+        APP_ABORT(" Error in TaskGroup_::TaskGroup_() \n");
+      }
+
+      int myrow, mycol, nrows, ncols, node_in_TG;
+      // setup TG grid 
+      nrows = node_.size()/ncores_per_TG;
+      ncols = core_.size()/nnodes_per_TG;
+      mycol = core_.rank()/nnodes_per_TG;     // simple square asignment 
+      node_in_TG = core_.rank()%nnodes_per_TG;
+      myrow = node_.rank()/ncores_per_TG;
+      TG_number = mycol + ncols*myrow;
+      number_of_TGs = nrows*ncols;
+
+      // split communicator
+      tgrp_ = global_.split(TG_number,global_.rank());
+
+      if( tgrp_.rank() != node_in_TG*ncores_per_TG+local_tg_.rank() ) {
+        app_error()<<" Error in TG::setup(): Unexpected TG_rank: " <<tgrp_.rank()  <<" " <<node_in_TG <<" " <<local_tg_.rank() <<" " <<node_in_TG*ncores_per_TG+local_tg_.rank() <<std::endl;
+        APP_ABORT("Error in TG::setup(): Unexpected TG_rank \n");
+      }
+
+      // define ring communication pattern
+      // these are the ranks (in TGcomm) of cores with the same core_rank 
+      // on nodes with id +-1 (with respect to local node). 
+      next_core_circular_node_pattern = ((node_in_TG+1)%nnodes_per_TG)*ncores_per_TG+local_tg_.rank();
+      if(node_in_TG==0)
+        prev_core_circular_node_pattern = (nnodes_per_TG-1)*ncores_per_TG+local_tg_.rank();
+      else
+        prev_core_circular_node_pattern = ((node_in_TG-1)%nnodes_per_TG)*ncores_per_TG+local_tg_.rank();
+    } else { // ndevices > 0
+      // assign groups from the same node to TGs
+
+      if(ncores_per_TG > 1) {
+        app_error()<<" Error in TaskGroup setup(): ncores > 1 incompatible with ndevices>0." 
+                   <<std::endl;   
+        APP_ABORT(" Error in TaskGroup_::TaskGroup_() \n");
+      }
+      // limiting to full nodes if nnodes_per_TG > ndevices
+      if( global_.size()%nnodes_per_TG != 0  ) {
+        app_error()<<"Found " <<global_.size() <<" MPI tasks. " <<std::endl;
+        app_error()<<" Error in TaskGroup setup(): Number of MPI tasks is not divisible by requested number of groups in Task Group." <<std::endl;
+        APP_ABORT(" Error in TaskGroup_::TaskGroup_() \n");
+      }
+      
+      TG_number = global_.rank()/nnodes_per_TG; 
+      number_of_TGs = global_.size()/nnodes_per_TG;
+      
+      // split communicator
+      tgrp_ = global_.split(TG_number,global_.rank());
+      
+      // define ring communication pattern
+      next_core_circular_node_pattern = (tgrp_.rank()+1)%tgrp_.size(); 
+      if(tgrp_.rank()==0)
+        prev_core_circular_node_pattern = tgrp_.size()-1; 
+      else
+        prev_core_circular_node_pattern = tgrp_.rank()-1; 
     }
-
-// this needs to change in GPU
-    int myrow, mycol, nrows, ncols, node_in_TG;
-    // setup TG grid 
-    nrows = node_.size()/ncores_per_TG;
-    ncols = core_.size()/nnodes_per_TG;
-    mycol = core_.rank()/nnodes_per_TG;     // simple square asignment 
-    node_in_TG = core_.rank()%nnodes_per_TG;
-    myrow = node_.rank()/ncores_per_TG;
-    TG_number = mycol + ncols*myrow;
-    number_of_TGs = nrows*ncols;
-
-    // split communicator
-    tgrp_ = global_.split(TG_number,global_.rank());
-
-    if( tgrp_.rank() != node_in_TG*ncores_per_TG+local_tg_.rank() ) {
-      app_error()<<" Error in TG::setup(): Unexpected TG_rank: " <<tgrp_.rank()  <<" " <<node_in_TG <<" " <<local_tg_.rank() <<" " <<node_in_TG*ncores_per_TG+local_tg_.rank() <<std::endl;
-      APP_ABORT("Error in TG::setup(): Unexpected TG_rank \n");
-    }
-
-    // define ring communication pattern
-    // these are the ranks (in TGcomm) of cores with the same core_rank 
-    // on nodes with id +-1 (with respect to local node). 
-    next_core_circular_node_pattern = ((node_in_TG+1)%nnodes_per_TG)*ncores_per_TG+local_tg_.rank();
-    if(node_in_TG==0)
-      prev_core_circular_node_pattern = (nnodes_per_TG-1)*ncores_per_TG+local_tg_.rank();
-    else
-      prev_core_circular_node_pattern = ((node_in_TG-1)%nnodes_per_TG)*ncores_per_TG+local_tg_.rank();
-
-//    app_log()<<"**************************************************************" <<std::endl;
   }
 
 };
