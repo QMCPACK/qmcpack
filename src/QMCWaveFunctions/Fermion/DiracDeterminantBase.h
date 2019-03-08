@@ -133,7 +133,7 @@ public:
                                    Array<GradType,3>& dG,
                                    Matrix<RealType>& dL)
   {
-    APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
+    APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::evaluateDerivatives");
   }
 
   // Stop makeClone
