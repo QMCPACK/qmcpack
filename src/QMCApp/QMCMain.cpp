@@ -482,12 +482,20 @@ bool QMCMain::validateXML()
       xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
       if(a)
       {
-        if(pushDocument((const char*)a))
+        bool success = pushDocument((const char*)a);
+        xmlFree(a);
+        if(success)
         {
           inputnode = processPWH(XmlDocStack.top()->getRoot());
           popDocument();
         }
-        xmlFree(a);
+        else
+          myComm->abort();
+      }
+      else
+      {
+        app_error() << "tag \"include\" must include an \"href\" attribute." << std::endl;
+        myComm->abort();
       }
     }
     else if(cname == "qmcsystem")
