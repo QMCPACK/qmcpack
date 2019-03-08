@@ -1015,10 +1015,9 @@ DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr s
 {
 //    BackflowTransformation *BF = BFTrans->makeClone();
   // mmorales: particle set is only needed to get number of particles, so using QP set here
-  DiracDeterminantWithBackflow* dclone= new DiracDeterminantWithBackflow(BFTrans->QP,spo,BFTrans);
+  DiracDeterminantWithBackflow* dclone= new DiracDeterminantWithBackflow(BFTrans->QP,spo,BFTrans,FirstIndex);
   dclone->resize(NumPtcls, NumOrbitals);
   dclone->Optimizable=Optimizable;
-  dclone->set(FirstIndex,LastIndex-FirstIndex);
   return dclone;
 }
 
