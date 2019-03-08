@@ -67,6 +67,7 @@ private:
   MultiSlaterDeterminantFast* multislaterdetfast_0;
 
   bool UseBackflow;
+  bool UseComplexCoefficients;
   BackflowTransformation *BFTrans;
 
   /** process a determinant element
@@ -85,6 +86,13 @@ private:
       std::vector<std::string>& CItags, std::vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn,
       std::vector<RealType>& CSFcoeff, std::vector<size_t>& DetsPerCSF, std::vector<RealType>& CSFexpansion, bool& usingCSF);
       
+  #ifdef QMC_COMPLEX
+  bool readDetList(xmlNodePtr cur, std::vector<ci_configuration>& uniqueConfg_up, 
+      std::vector<ci_configuration>& uniqueConfg_dn, std::vector<size_t>& C2node_up, std::vector<size_t>& C2node_dn, 
+      std::vector<std::string>& CItags, std::vector<ValueType>& coeff,
+      bool& optimizeCI, int nels_up, int nels_dn, std::vector<ValueType>& CSFcoeff, std::vector<size_t>& DetsPerCSF, 
+      std::vector<RealType>& CSFexpansion, bool& usingCSF);
+  #endif
 
   bool readDetListH5(xmlNodePtr cur, std::vector<ci_configuration>& uniqueConfg_up, 
       std::vector<ci_configuration>& uniqueConfg_dn, std::vector<size_t>& C2node_up, std::vector<size_t>& C2node_dn, 

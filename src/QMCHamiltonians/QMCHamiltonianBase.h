@@ -66,6 +66,11 @@ struct QMCHamiltonianBase: public QMCTraits
   /** type of return value of evaluate
    */
   typedef EstimatorRealType Return_t;
+  #ifdef QMC_COMPLEX
+  /** type of return value of complex evaluate
+   */
+  typedef EstimatorValueType Return_ct;
+  #endif
   /** typedef for the serialized buffer
    *
    * PooledData<RealType> is used to serialized an anonymous buffer
@@ -103,6 +108,10 @@ struct QMCHamiltonianBase: public QMCTraits
   int Dependants;
   ///current value
   Return_t Value;
+  #ifdef QMC_COMPLEX
+  ///current complex value 
+  Return_ct CplxValue;
+  #endif
   ///a new value for a proposed move
   Return_t NewValue;
   /// This is used to store the value for force on the source
@@ -279,6 +288,13 @@ struct QMCHamiltonianBase: public QMCTraits
    *@return the value of the Hamiltonian component
    */
   virtual Return_t evaluate(ParticleSet& P) = 0;
+  /** Evaluate rhe local energies of a N-particle configuration
+   *@param P input configuration conraining N particles
+   *@return the value of the Hamiltonian
+   */
+  #ifdef QMC_COMPLEX
+  virtual Return_ct evaluate_complex(ParticleSet& P) { return 0.0; }
+  #endif
   virtual Return_t rejectedMove(ParticleSet& P)
   {
     return 0;
@@ -300,6 +316,20 @@ struct QMCHamiltonianBase: public QMCTraits
   {
     return evaluate(P);
   }
+
+  #ifdef QMC_COMPLEX
+  /** evaluate value and derivatives wrt the optimizables
+   *
+   * Default uses evaluate
+   */
+  virtual Return_ct evaluateValueAndDerivatives(ParticleSet& P,
+      const opt_variables_type& optvars,
+      const std::vector<ValueType>& dlogpsi,
+      std::vector<ValueType>& dhpsioverpsi)
+  {
+    return evaluate_complex(P);
+  }
+  #endif
 
   /** evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from QMCHamiltonianBase.  
   * @param P target particle set (electrons)

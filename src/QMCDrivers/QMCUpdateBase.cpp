@@ -220,7 +220,11 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     Psi.evaluateLog(W);
     RealType logpsi=Psi.updateBuffer(W,awalker.DataSet,false);
     W.saveWalker(awalker);
+    #ifndef QMC_COMPLEX
     RealType eloc=H.evaluate(W);
+    #else
+    RealType eloc = std::real(H.evaluate_complex(W));
+    #endif
     BadState |= std::isnan(eloc);
     awalker.resetProperty(logpsi,Psi.getPhase(), eloc);
     H.auxHevaluate(W,awalker);

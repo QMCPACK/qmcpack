@@ -32,6 +32,10 @@ public:
 
   typedef T Return_t;
 
+  #ifdef QMC_COMPLEX
+  typedef std::complex<T> Return_ct;
+  #endif
+
   /** boolean to indicate if the cost function is valid.
    *
    * Can be used by optimizers to stop optimization.

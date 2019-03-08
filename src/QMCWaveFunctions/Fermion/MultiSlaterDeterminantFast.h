@@ -99,6 +99,12 @@ public:
     Dets[1]->setBF(bf);
   }
 
+  ///set complex coefficients
+  void setComplex()
+  {
+    Coeffiscomplex = true;
+  }
+
   ValueType
   evaluate_vgl_impl(ParticleSet& P
            ,ParticleSet::ParticleGradient_t& g_tmp
@@ -140,6 +146,19 @@ public:
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi);
 
+  #ifdef QMC_COMPLEX
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi);
+
+  void evaluateDerivativesForNonLocalPP(ParticleSet& P,
+                                        int iat,
+                                        const opt_variables_type& optvars,
+                                        std::vector<ValueType>& dlogpsi);
+  void RestoreDets(ParticleSet& P);
+  #endif
+
   void resize(int,int);
   void initialize();
 
@@ -153,6 +172,7 @@ public:
   size_t FirstIndex_dn;
   size_t ActiveSpin;
   bool usingCSF;
+  bool Coeffiscomplex;
   bool IsCloned;
   ValueType curRatio;
   ValueType psiCurrent;
@@ -164,7 +184,10 @@ public:
   // map determinant in linear combination to unique det list
   std::vector<size_t>* C2node_up;
   std::vector<size_t>* C2node_dn;
-  std::vector<RealType>* C;
+  std::vector<ValueType>* C;
+
+  /// phase of each CSF
+  std::vector<RealType> Phase;
 
   ParticleSet::ParticleGradient_t myG,myG_temp;
   ParticleSet::ParticleLaplacian_t myL,myL_temp;
@@ -174,7 +197,7 @@ public:
   //optimizable variable is shared with the clones
   opt_variables_type* myVars;
   // coefficients of csfs, these are only used during optm
-  std::vector<RealType>* CSFcoeff;
+  std::vector<ValueType>* CSFcoeff;
   // number of dets per csf
   std::vector<size_t>* DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)

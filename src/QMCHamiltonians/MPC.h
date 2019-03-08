@@ -76,6 +76,9 @@ public:
   void resetTargetParticleSet(ParticleSet& P);
 
   Return_t evaluate(ParticleSet& P);
+  #ifdef QMC_COMPLEX
+  Return_ct evaluate_complex(ParticleSet& P);
+  #endif
 
   /** implement all-walker stuff */
   virtual void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);

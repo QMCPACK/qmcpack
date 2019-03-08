@@ -64,6 +64,10 @@ struct NonLocalECPComponent: public QMCTraits
   std::vector<RealType> sgridweight_m;
   ///Working arrays
   std::vector<RealType> psiratio,vrad,dvrad,wvec,Amat,dAmat;
+  // Complex working arrays
+  #ifdef QMC_COMPLEX
+  std::vector<ValueType> psiratio_cplx,vrad_cplx, wvec_cplx,Amat_cplx;
+  #endif
   std::vector<PosType> psigrad, psigrad_source;
   std::vector<RealType> lpol, dlpol;
 
@@ -173,6 +177,18 @@ struct NonLocalECPComponent: public QMCTraits
       const opt_variables_type& optvars,
       const std::vector<RealType>& dlogpsi,
       std::vector<RealType>& dhpsioverpsi);
+
+  #ifdef QMC_COMPLEX
+  ValueType
+  evaluateValueAndDerivatives(ParticleSet& P,
+      int iat, TrialWaveFunction& psi,
+      const opt_variables_type& optvars,
+      const std::vector<ValueType>& dlogpsi,
+      std::vector<ValueType>& dhpsioverpsi);
+
+  ValueType evaluateOneCplx(ParticleSet& P, int iat, TrialWaveFunction& Psi,
+       int iel, RealType r, const PosType& dr) const;
+  #endif
 
   void print(std::ostream& os);
 

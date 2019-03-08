@@ -48,6 +48,9 @@ public:
   typedef QMCHamiltonianBase::PropertySetType  PropertySetType;
   typedef QMCHamiltonianBase::BufferType  BufferType;
   typedef QMCHamiltonianBase::Walker_t  Walker_t;
+  #ifdef QMC_COMPLEX
+  typedef QMCHamiltonianBase::Return_ct Return_ct;
+  #endif
 
   enum {DIM=OHMMS_DIM};
 
@@ -266,6 +269,16 @@ public:
       std::vector<RealType>& dhpsioverpsi,
       bool compute_deriv);
 
+  #ifdef QMC_COMPLEX
+  ValueType evaluateValueAndDerivatives(ParticleSet& P, 
+       const opt_variables_type& optvars,
+       std::vector<ValueType>& dlogpsi,
+       std::vector<ValueType>& dhpsioverpsi,
+       bool compute_deriv);
+  Return_ct evaluate_complex(ParticleSet& P);
+  Return_ct evaluate_kinetic(ParticleSet& P);
+  #endif
+
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)
   * @param ions source particle set (ions)
@@ -362,6 +375,12 @@ private:
   Return_t LocalEnergy;
   ///Current Kinetic Energy
   Return_t KineticEnergy;
+  #ifdef QMC_COMPLEX
+  ///Current complex Local Energy
+  Return_ct CplxLocalEnergy;
+  ///Current complex kinetic energy
+  Return_ct CplxKineticEnergy;
+  #endif
   ///Current Local Energy for the proposed move
   Return_t NewLocalEnergy;
   ///getName is in the way

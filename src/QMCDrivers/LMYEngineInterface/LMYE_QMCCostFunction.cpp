@@ -32,7 +32,7 @@ int QMCCostFunction::total_samples() {
 /// \brief  Computes the cost function using the LMYEngine
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-QMCCostFunction::Return_t QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj) {
+QMCCostFunction::Return_t QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine<ValueType> * EngineObj) {
 
   // get total number of samples
   const int m = this->total_samples();
@@ -59,9 +59,14 @@ QMCCostFunction::Return_t QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LM
 
       // record the sample's local energy
       //lce_vec.at(j) = saved[ENERGY_NEW];
-
+      #ifndef QMC_COMPLEX
       // take sample 
       EngineObj->take_sample(saved[ENERGY_NEW], 1.0, saved[REWEIGHT] / SumValue[SUM_WGT]);
+      #else
+      Return_ct loc_eng_cplx(0.0); 
+      convert(saved[ENERGY_NEW], loc_eng_cplx);
+      EngineObj->take_sample(loc_eng_cplx, 1.0, saved[REWEIGHT]/ SumValue[SUM_WGT]);
+      #endif
 
     }
   }

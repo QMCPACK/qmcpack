@@ -100,7 +100,7 @@ vdeps(1,std::vector<double>()),
   #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
   std::vector<double> shift_scales(3, 1.0);
-  EngineObj = new cqmc::engine::LMYEngine(&vdeps, 
+  EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps, 
                                           false, // exact sampling
                                           true, // ground state?
                                           false, // variance correct,
@@ -724,6 +724,39 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Process the sample that was taken in order to compute the energy, variance,
+///         cost function, and, if we need them, the linear method matrix components.
+///
+/// \param[in]      blm_second_call       whether this call is for the blocked linear method's
+///                                       second processing of the sample
+///
+/// \return  the value of the cost function
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef HAVE_LMY_ENGINE
+QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::engine_process_sample(const bool blm_second_call)
+{
+
+  // some things we don't do for the blocked linear method's second processing of the sample
+  if ( ! blm_second_call ) {
+    EngineObj->reset(); // reset the engine object
+    optTarget->resetPsi(); // take care to reset the trial function in case we have changed its variables
+  }
+
+  // process the sample
+  optTarget->engine_checkConfigurations(EngineObj);
+
+  // return the cost function value, or, if this is the second call during the blocked linear method, return zero
+  if ( ! blm_second_call ) {
+    EngineObj->energy_target_compute(); // also computes the energy and variance
+    return EngineObj->target_value();
+  }
+  return 0.0;
+
+}
+#endif
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Performs one iteration of the linear method using an adaptive scheme that tries three
 ///         different shift magnitudes and picks the best one.
 ///         The scheme is adaptive in that it saves the best shift to use as a starting point
@@ -748,7 +781,19 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   const int central_index = num_shifts / 2;
 
   // get number of optimizable parameters
+  #ifndef QMC_COMPLEX
   numParams = optTarget->NumParams();
+  int numLinearParams = optTarget->NumLinearParams();
+  #else
+  // number of linear parameters
+  int totParams = optTarget->NumParams();
+  int numLinearParams = optTarget->NumLinearParams();
+  int numNonLinearParams = totParams - 2 * numLinearParams;
+  numParams = optTarget->NumParams() - optTarget->NumLinearParams();
+  #endif
+
+  // get number of optimizable parameters
+  //numParams = optTarget->NumParams();
 
   // prepare the shifts that we will try
   const std::vector<double> shifts_i = prepare_shifts(bestShift_i);
@@ -808,15 +853,19 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   EngineObj->reset();
 
   // generate samples and compute weights, local energies, and derivative vectors
-  engine_start(EngineObj);
+  this->engine_start();
+
+  // from the sample, extract what we need for the energy and variance ans also the matrix pieces needed for the linear method
+  const Return_t starting_cost = this->engine_process_sample(false);
+  const Return_t init_energy = EngineObj->energy_mean();
 
   // get dimension of the linear method matrices
   N = numParams + 1;
 
   // have the cost function prepare derivative vectors
-  EngineObj->energy_target_compute();
-  const Return_t starting_cost = EngineObj->target_value();
-  const Return_t init_energy = EngineObj->energy_mean();
+  //EngineObj->energy_target_compute();
+  //const Return_t starting_cost = EngineObj->target_value();
+  //const Return_t init_energy = EngineObj->energy_mean();
   
   // print out the initial energy
   app_log() << std::endl
@@ -839,10 +888,13 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
     EngineObj->reset();
 
     // finish last sample
-    finish();
+    this->finish();
 
     // take sample
-    engine_start(EngineObj);
+    this->engine_start();
+
+    // extract what we need from the sampled configurations
+    this->engine_process_sample(true);
   }
 
   // say what we are doing
@@ -854,24 +906,35 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   // for each set of shifts, solve the linear method equations for the parameter update direction
   std::vector<std::vector<RealType> > parameterDirections;
+
   #ifdef HAVE_LMY_ENGINE
   // call the engine to perform update
   EngineObj->wfn_update_compute();
-  //std::cout << "optimization here 0.5" << std::endl;
   #else
   solveShiftsWithoutLMYEngine(shifts_i, shifts_s, parameterDirections);
   #endif
 
   // size update direction vector correctly
-  //for (int i = 0; i < EngineObj->good_solve().size(); i++) 
-  //  app_log() << EngineObj->good_solve().at(i) << "  ";
-  //app_log() << endl;
   parameterDirections.resize(shifts_i.size());
   for (int i = 0; i < shifts_i.size(); i++) {
+    #ifndef QMC_COMPLEX
     parameterDirections.at(i).assign(N, 0.0);
+    #else
+    parameterDirections.at(i).assign(totParams+2, 0.0);   
+    #endif
     if ( true ) {
+      #ifndef QMC_COMPLEX
       for (int j = 0; j < N; j++) 
         parameterDirections.at(i).at(j) = EngineObj->wfn_update().at(i*N+j);
+      #else
+      for (int j = 0; j < numLinearParams+1; j++) {
+        parameterDirections.at(i).at(2*j) = EngineObj->wfn_update().at(i*N+j).real();
+        parameterDirections.at(i).at(2*j+1) = EngineObj->wfn_update().at(i*N+j).imag();
+      }
+      for (int j = 0; j < numNonLinearParams; j++) {
+        parameterDirections.at(i).at(2+numLinearParams*2+j) = EngineObj->wfn_update().at(i*N+numLinearParams+1+j).real();
+      }
+      #endif
     }
     else 
       parameterDirections.at(i).at(0) = 1.0;
@@ -881,11 +944,23 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   optTarget->setneedGrads(false);
 
   // prepare vectors to hold the initial and current parameters
+  #ifndef QMC_COMPLEX
   std::vector<RealType> currParams(numParams, 0.0);
+  #else
+  std::vector<RealType> currParams(totParams, 0.0);
+  std::vector<RealType> initParams(totParams, 0.0);
+  #endif    
 
   // initialize the initial and current parameter vectors
+  #ifndef QMC_COMPLEX
   for (int i=0; i<numParams; i++)
     currParams.at(i) = optTarget->Params(i);
+  #else
+  for (int i=0; i<totParams; i++) {
+    currParams.at(i) = this->optTarget->Params(i);
+    initParams.at(i) = this->optTarget->Params(i);
+  }
+  #endif
 
   // create a vector telling which updates are within our constraints
   std::vector<bool> good_update(parameterDirections.size(), true);
@@ -893,14 +968,39 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   // compute the largest parameter change for each shift, and zero out updates that have too-large changes
   std::vector<RealType> max_change(parameterDirections.size(), 0.0);
   for (int k = 0; k < parameterDirections.size(); k++) {
+    #ifndef QMC_COMPLEX
     for ( int i = 0; i < numParams; i++)
       max_change.at(k) = std::max(max_change.at(k), std::abs(parameterDirections.at(k).at(i+1) / parameterDirections.at(k).at(0)));
+    #else
+    // real part
+    RealType real = parameterDirections.at(k).at(0);
+    // imag part
+    RealType imag = parameterDirections.at(k).at(1);
+    RealType cur_param = std::sqrt(real*real + imag*imag);
+    // loop over linear parameters
+    for (int i = 0; i < 2 * numLinearParams; i+=2) {
+      // real part
+      RealType change_real = parameterDirections.at(k).at(i+2);
+      // imag part
+      RealType change_imag = parameterDirections.at(k).at(i+3);
+      RealType change_param = std::sqrt(change_real*change_real + change_imag*change_imag);
+      max_change.at(k) = std::max(max_change.at(k), change_param / cur_param); 
+    }
+    // loop over nonlinear parameters
+    for (int j = 0; j < numNonLinearParams; j++) 
+      max_change.at(k) = std::max(max_change.at(k), std::abs(parameterDirections.at(k).at(j + 2 + 2*numLinearParams) / cur_param));
+    #endif
     good_update.at(k) = ( good_update.at(k) && max_change.at(k) <= max_param_change );
   }
 
   // prepare to use the middle shift's update as the guiding function for a new sample
+  #ifndef QMC_COMPLEX
   for (int i=0; i<numParams; i++)
-    optTarget->Params(i) = currParams.at(i) + parameterDirections.at(central_index).at(i+1);
+    this->optTarget->Params(i) = currParams.at(i) + parameterDirections.at(central_index).at(i+1);
+  #else
+  for (int i=0; i<totParams; i++)
+    this->optTarget->Params(i) = currParams.at(i) + parameterDirections.at(central_index).at(i+2);
+  #endif
 
   // say what we are doing
   app_log() << std::endl
@@ -911,21 +1011,25 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   // generate the new sample on which we will compare the different shifts
 
-  finish();
-      // reset the number of samples
-      //this->optTarget->setNumSamples(nsamp_comp);
-      //nTargetSamples = nsamp_comp;
-      //app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
-      //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
-      app_log() << std::endl
-		<< "*************************************************************" << std::endl
+  // finalize rhe sample we no longer need
+  this->finish();
+
+  // turn off wavefunction update mode
+  EngineObj->turn_off_update();
+
+  // reset the engine object
+  EngineObj->reset();
+
+  app_log() << std::endl
+		        << "*************************************************************" << std::endl
             << "Generating a new sample based on the updated guiding function" << std::endl
             << "*************************************************************" << std::endl
             << std::endl;
 
   std::string old_name = vmcEngine->getCommunicator()->getName();
   vmcEngine->getCommunicator()->setName(old_name+".middleShift");
-  start();
+  //this->engine_start();
+  this->start();
   vmcEngine->getCommunicator()->setName(old_name);
   //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
 
@@ -937,16 +1041,29 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
             << std::endl;
 
   // update the current parameters to those of the new guiding function
+  #ifndef QMC_COMPLEX
   for (int i=0; i<numParams; i++)
     currParams.at(i) = optTarget->Params(i);
+  #else
+  for (int i=0; i<totParams; i++)
+    currParams.at(i) = optTarget->Params(i);
+  #endif
 
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
+  #ifndef QMC_COMPLEX
   for (int i=0; i<numParams; i++)
     optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i+1);
+  #else
+  for (int i=0; i<totParams; i++)
+    this->optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i+2);
+  #endif
+
   optTarget->IsValid = true;
+  //const RealType initCost = this->engine_process_sample(false);
   const RealType initCost = optTarget->LMYEngineCost(false, EngineObj);
 
   // compute the update directions for the smaller and larger shifts relative to that of the middle shift
+  #ifndef QMC_COMPLEX
   for (int i=0; i<numParams; i++) {
     for (int j = 0; j < parameterDirections.size(); j++) {
       if ( j != central_index ) 
@@ -954,11 +1071,20 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
     //parameterDirections.at(2).at(i+1) -= parameterDirections.at(1).at(i+1);
     }
   }
+  #else
+  for (int i=0; i<totParams; i++) {
+    for (int j = 0; j < parameterDirections.size(); j++) {
+      if ( j != central_index )
+        parameterDirections.at(j).at(i+2) -= parameterDirections.at(central_index).at(i+2);
+    }
+  }
+  #endif
 
   // prepare a vector to hold the cost function value for each different shift
   std::vector<RealType> costValues(num_shifts, 0.0);
 
   // compute the cost function value for each shift and make sure the change is within our constraints
+  #ifndef QMC_COMPLEX
   for (int k = 0; k < parameterDirections.size(); k++) {
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currParams.at(i) + ( k == num_shifts ? 0.0 : parameterDirections.at(k).at(i+1) );
@@ -969,6 +1095,27 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
     if (!good_update.at(k))
       costValues.at(k) = std::abs(1.5*initCost) + 1.0;
   }
+  #else
+  for (int k = 0; k < parameterDirections.size(); k++) {
+    for (int i=0; i<totParams; i++)
+      this->optTarget->Params(i) = currParams.at(i) + ( k == central_index ? 0.0 : parameterDirections.at(k).at(i+2) );
+    //for (int j=0; j<2*numLinearParams; j+=2) {
+    //  ValueType old_coeff = std::complex<RealType>(initParams.at(j), initParams.at(j+1));
+    //  //app_log() << old_coeff << std::endl;
+    //  ValueType new_coeff = std::complex<RealType>(this->optTarget->Params(j), this->optTarget->Params(j+1));
+    //  //app_log() << new_coeff << std::endl;
+    //  ovlpValues.at(k) += std::conj(old_coeff) * new_coeff;
+    //  norm.at(k+1) += std::real(std::conj(new_coeff) * new_coeff);
+    //}
+    //ovlpValues.at(k) /= (std::sqrt(norm.at(0)) * std::sqrt(norm.at(k+1)));
+    this->optTarget->IsValid = true;
+    //costValues.at(k) = this->engine_process_sample(false);
+    costValues.at(k) = optTarget->LMYEngineCost(false, EngineObj);
+    good_update.at(k) = ( good_update.at(k) && std::abs( (initCost - costValues.at(k)) / initCost ) < max_relative_cost_change );
+    if (!good_update.at(k))
+      costValues.at(k) = std::abs(1.5*initCost) + 1.0;
+  }
+  #endif
   //app_log() << endl;
 
   //for (int i = 0; i < good_update.size(); i++)
@@ -996,8 +1143,13 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
     bestShift_i = shifts_i.at(best_shift);
     bestShift_s = shifts_s.at(best_shift);
+    #ifndef QMC_COMPLEX
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currParams.at(i) + ( best_shift == central_index ? 0.0 : bestDirection->at(i+1) );
+    #else
+    for (int i=0; i<totParams; i++)
+      optTarget->Params(i) = currParams.at(i) + ( best_shift == central_index ? 0.0 : bestDirection->at(i+2) );
+    #endif
     app_log() << std::endl
               << "*****************************************************************************" << std::endl
               << "Applying the update for shift_i = "
@@ -1012,8 +1164,13 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   } else {
     bestShift_i *= 10.0;
     bestShift_s *= 10.0;
+    #ifndef QMC_COMPLEX
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i+1);
+    #else
+    for (int i=0; i<totParams; i++)
+      optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i+2);
+    #endif
     app_log() << std::endl
               << "***********************************************************" << std::endl
               << "Reverting to old parameters and increasing shift magnitudes" << std::endl
@@ -1026,8 +1183,11 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
     
     // save the difference between the updated and old variables
     formic::ColVec<double> update_dirs(numParams, 0.0);
-    for (int i = 0; i < numParams; i++) 
-      update_dirs.at(i) = bestDirection->at(i+1) + parameterDirections.at(central_index).at(i+1);
+    for (int i = 0; i < numParams; i++)  {
+      RealType d = 0.0;
+      convert(bestDirection->at(i+1) + parameterDirections.at(central_index).at(i+1), d);
+      update_dirs.at(i) = d;
+    }
     previous_update.insert(previous_update.begin(), update_dirs);
     
     // eliminate the oldest saved update if necessary

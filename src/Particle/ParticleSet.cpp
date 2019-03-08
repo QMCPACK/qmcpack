@@ -540,6 +540,43 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
   }
 }
 
+bool
+ParticleSet::makeMoveAndNoCheck(Index_t iat, const SingleParticlePos_t& displ)
+{
+  myTimers[0]->start();
+  activePtcl=iat;
+  activePos=R[iat]+displ;
+  //SingleParticlePos_t red_displ(Lattice.toUnit(displ));
+  if (UseBoundBox)
+  {
+    if (Lattice.outOfBound(Lattice.toUnit(displ)))
+    {
+      myTimers[0]->stop();
+      return false;
+    }
+    newRedPos=Lattice.toUnit(activePos);
+    if (Lattice.isValid(newRedPos))
+    {
+      for (int i=0; i< DistTables.size(); ++i)
+        DistTables[i]->move(*this,activePos);
+      if (SK && SK->DoUpdate)
+        SK->makeMove(iat,activePos);
+      myTimers[0]->stop();
+      return true;
+    }
+    //out of bound
+    myTimers[0]->stop();
+    return false;
+  }
+  else
+  {
+    for (int i=0; i< DistTables.size(); ++i)
+      DistTables[i]->move(*this,activePos);
+    myTimers[0]->stop();
+    return true;
+  }
+}
+
 bool ParticleSet::makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt)
 {
   activePtcl = -1;

@@ -79,6 +79,30 @@ struct VariableSet
   {
     return num_active_vars;
   }
+  ///return the number of linear parameters
+  inline int size_of_linear_param() const
+  {
+    int linear_param = 0;
+    for (auto it = ParameterType.begin(); it != ParameterType.end(); it++) {
+      if ((*it).second == LINEAR_P) 
+        linear_param ++;
+    }
+    #ifndef QMC_COMPLEX
+    return linear_param;
+    #else
+    return linear_param/2;
+    #endif
+  }
+  ///return the number of non-linear parameters
+  inline int size_of_nonlin_param() const 
+  {
+    int non_linear_param = 0;
+    for (auto it = ParameterType.begin(); it != ParameterType.end(); it++) {
+      if ((*it).second != LINEAR_P)
+        non_linear_param ++;
+    }
+    return non_linear_param;
+  }
   ///return the first const_iterator
   inline const_iterator begin() const
   {

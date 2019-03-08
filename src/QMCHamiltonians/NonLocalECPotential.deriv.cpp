@@ -87,6 +87,23 @@ namespace qmcplusplus
       return Value;
     }
 
+  #ifdef QMC_COMPLEX
+  NonLocalECPotential::Return_ct
+    NonLocalECPotential::evaluateValueAndDerivatives(ParticleSet& P,
+        const opt_variables_type& optvars,
+        const std::vector<ValueType>& dlogpsi,
+        std::vector<ValueType>& dhpsioverpsi)
+    {
+      CplxValue=0.0;
+      for(int ipp=0; ipp<PPset.size(); ipp++)
+        if(PPset[ipp]) PPset[ipp]->randomize_grid(*myRNG);
+      for(int iat=0; iat<NumIons; iat++)
+        if(PP[iat])
+          CplxValue+=PP[iat]->evaluateValueAndDerivatives(P,iat,Psi,optvars,dlogpsi,dhpsioverpsi);
+      return CplxValue;
+    }
+    #endif
+
   /** evaluate the non-local potential of the iat-th ionic center
    * @param W electron configuration
    * @param iat ionic index
@@ -198,5 +215,112 @@ namespace qmcplusplus
 
       return esum;
     }
+
+  #ifdef QMC_COMPLEX
+  NonLocalECPComponent::ValueType
+    NonLocalECPComponent::evaluateValueAndDerivatives(ParticleSet& W,
+        int iat, TrialWaveFunction& psi,
+        const opt_variables_type& optvars,
+        const std::vector<ValueType>& dlogpsi,
+        std::vector<ValueType>& dhpsioverpsi)
+    {
+      Matrix<ValueType> dratio(optvars.num_active_vars,nknot);
+      std::vector<ValueType> dlogpsi_t(dlogpsi.size(),0.0);
+      std::vector<ValueType> dhlogpsi_t(dlogpsi.size(),0.0);
+
+      DistanceTableData* myTable = W.DistTables[myTableIndex];
+      ValueType esum=0.0;
+      ValueType pairpot;
+      ParticleSet::ParticlePos_t deltarV(nknot);
+      for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
+      {
+        register RealType r(myTable->r(nn));
+        if(r>Rmax)
+          continue;
+
+        register RealType rinv(myTable->rinv(nn));
+        register PosType  dr(myTable->dr(nn));
+
+        //displacements wrt W.R[iel]
+        for (int j=0; j < nknot ; j++) deltarV[j]=r*rrotsgrid_m[j]-dr;
+
+        for (int j=0; j < nknot ; j++)
+        {
+          PosType pos_now=W.R[iel];
+          W.makeMoveAndNoCheck(iel,deltarV[j]);
+          //app_log() << "after makeMoveAndCheck " << iel << "   " << W.activePtcl << std::endl;
+          psiratio_cplx[j]=psi.ratio_cplx(W,iel);
+          psi.resetPhaseDiff();
+
+          //use existing methods
+          W.acceptMove(iel);
+
+          std::fill(dlogpsi_t.begin(),dlogpsi_t.end(),0.0);
+          //psi.evaluateDerivatives(W, optvars, dlogpsi_t,dhlogpsi_t);
+          // evalute derivatives for this new configuration
+          psi.evaluateDerivativesForNonLocalPP(W, iel, optvars, dlogpsi_t);
+          for(int v=0; v<dlogpsi_t.size(); ++v) dratio(v,j)=dlogpsi_t[v];
+
+          PosType md=-1.0*deltarV[j];
+          W.makeMoveAndNoCheck(iel,md);
+          //app_log() << "after makeMoveAndCheck2 " << iel << "   " << W.activePtcl << std::endl;
+          W.acceptMove(iel);
+        }
+
+        for(int j=0; j<nknot; ++j) psiratio_cplx[j]*=sgridweight_m[j];
+
+        for(int ip=0; ip< nchannel; ip++)
+          vrad_cplx[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
+        // Compute spherical harmonics on grid
+        for (int j=0, jl=0; j<nknot ; j++)
+        {
+          RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
+          // Forming the Legendre polynomials
+          lpol[0]=1.0;
+          RealType lpolprev=0.0;
+          for (int l=0 ; l< lmax ; l++)
+          {
+            lpol[l+1]=Lfactor1[l]*zz*lpol[l]-l*lpolprev;
+            lpol[l+1]*=Lfactor2[l];
+            lpolprev=lpol[l];
+          }
+          for(int l=0; l <nchannel; l++,jl++)
+            Amat[jl]=lpol[ angpp_m[l] ];
+        }
+        if(nchannel==1)
+        {
+          pairpot = vrad_cplx[0]*BLAS::dot(nknot, &Amat[0],&psiratio_cplx[0]);
+          for(int v=0; v<dhpsioverpsi.size(); ++v)
+          {
+            for(int j=0; j<nknot; ++j)
+              dratio(v,j)=psiratio_cplx[j]*(dratio(v,j)-dlogpsi[v]);
+            dhpsioverpsi[v]+=vrad_cplx[0]*BLAS::dot(nknot, &Amat[0],dratio[v]);
+          }
+        }
+        else
+        {
+          Amat_cplx.resize(Amat.size());
+          wvec_cplx.resize(wvec.size());
+          for (int i=0; i<Amat.size(); i++) 
+            convert(Amat.at(i), Amat_cplx.at(i));
+
+          BLAS::gemv(nknot, nchannel, &Amat_cplx[0], &psiratio_cplx[0], &wvec_cplx[0]);
+          pairpot = BLAS::dot(nchannel, &vrad_cplx[0], &wvec_cplx[0]);
+          for(int v=0; v<dhpsioverpsi.size(); ++v)
+          {
+            for(int j=0; j<nknot; ++j)
+              dratio(v,j)=psiratio_cplx[j]*(dratio(v,j)-dlogpsi[v]);
+            BLAS::gemv(nknot, nchannel, &Amat_cplx[0], dratio[v], &wvec_cplx[0]);
+            dhpsioverpsi[v]+=BLAS::dot(nchannel, &vrad_cplx[0], &wvec_cplx[0]);
+          }
+        }
+
+
+        esum += pairpot;
+      }   /* end loop over electron */
+
+      return esum;
+    }
+    #endif
 
 }

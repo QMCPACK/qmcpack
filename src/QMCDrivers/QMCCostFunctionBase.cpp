@@ -519,6 +519,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       }
     }
     xmlXPathFreeObject(result);
+    #ifndef QMCPACK_COMPLEX
     //check csf
     result = xmlXPathEvalExpression((const xmlChar*)"//csf",acontext);
     for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
@@ -536,6 +537,43 @@ void QMCCostFunctionBase::updateXmlNodes()
       }
     }
     xmlXPathFreeObject(result);
+    #else
+    result = xmlXPathEvalExpression((const xmlChar*)"//csf",acontext);
+    for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
+    {
+      xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+      const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
+      if (iptr == NULL)
+        continue;
+      std::string aname((const char*)iptr);
+      aname += "_real";
+      xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"coeff_real");
+      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
+      if (aptr != NULL && oit != OptVariablesForPsi.end())
+      {
+        attribNodes[aname]= std::pair<xmlNodePtr,std::string>(cur,"coeff_real");
+      }
+    }
+    xmlXPathFreeObject(result);
+
+    result = xmlXPathEvalExpression((const xmlChar*)"//csf",acontext);
+    for (int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
+    {
+      xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+      const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
+      if (iptr == NULL)
+        continue;
+      std::string aname((const char*)iptr);
+      aname += "_imag";
+      xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"coeff_imag");
+      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
+      if (aptr != NULL && oit != OptVariablesForPsi.end())
+      {
+        attribNodes[aname]= std::pair<xmlNodePtr,std::string>(cur,"coeff_imag");
+      }
+    }
+    xmlXPathFreeObject(result);
+    #endif
     addCoefficients(acontext, "//coefficient");
     addCoefficients(acontext, "//coefficients");
     xmlXPathFreeContext(acontext);
@@ -755,7 +793,7 @@ QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0, const std
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
-QMCCostFunctionBase::Return_t QMCCostFunctionBase::LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine * EngineObj) {
+QMCCostFunctionBase::Return_t QMCCostFunctionBase::LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine<QMCTraits::ValueType> * EngineObj) {
 
   // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
   const Return_t standardCost = this->Cost(needDeriv);

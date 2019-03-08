@@ -172,6 +172,17 @@ CoulombPBCAB::evaluate(ParticleSet& P)
   return Value;
 }
 
+#ifdef QMC_COMPLEX
+CoulombPBCAB::Return_ct
+CoulombPBCAB::evaluate_complex(ParticleSet& P)
+{
+  Value = this->evaluate(P);
+  convert(Value, CplxValue);
+  return CplxValue;
+}
+#endif
+
+
 CoulombPBCAB::Return_t
 CoulombPBCAB::evaluateWithIonDerivs(ParticleSet&P, ParticleSet& ions, TrialWaveFunction& psi, 
                                     ParticleSet::ParticlePos_t& hf_terms,

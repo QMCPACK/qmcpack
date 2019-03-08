@@ -214,11 +214,17 @@ public:
 
   /** functions to handle particle-by-particle update */
   RealType ratio(ParticleSet& P, int iat);
+  #ifdef QMC_COMPLEX
+  ValueType ratio_cplx(ParticleSet& P, int iat);
+  #endif
   ValueType full_ratio(ParticleSet& P, int iat);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
   void evaluateRatios(VirtualParticleSet& P, std::vector<RealType>& ratios);
+  #ifdef QMC_COMPLEX
+  void evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios);
+  #endif
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
       std::vector<RealType>& ratios, Matrix<RealType>& dratio);
@@ -262,6 +268,20 @@ public:
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi,
                            bool project=false);
+
+  #ifdef QMC_COMPLEX
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi,
+                           bool project=false);
+  void evaluateDerivativesForNonLocalPP(ParticleSet& P, 
+                                        int iat,
+                                        const opt_variables_type& optvars, 
+                                        std::vector<ValueType>& dlogpsi);
+
+  //void RestoreDets(ParticleSet& P);
+  #endif
 
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
                                std::vector<RealType>& dgradlogpsi);

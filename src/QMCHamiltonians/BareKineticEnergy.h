@@ -233,6 +233,37 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     return Value;
   }
 
+  #ifdef QMC_COMPLEX
+  inline Return_ct evaluate_complex(ParticleSet& P)
+  {
+#if !defined(REMOVE_TRACEMANAGER)
+    if( streaming_particles)
+    {
+      Value = evaluate_sp(P);
+      convert(Value, CplxValue);
+    }
+    else
+#endif
+      if(SameMass)
+      {
+        CplxValue = CplxDot(P.G,P.G) + CplxSum(P.L);
+        CplxValue*=-OneOver2M;
+      }
+      else
+      {
+        Value=0.0;
+        for(int i=0; i<MinusOver2M.size(); ++i)
+        {
+          T x=0.0;
+          for(int j=P.first(i); j<P.last(i); ++j)
+            x += laplacian(P.G[j],P.L[j]);
+          Value += x*MinusOver2M[i];
+        }
+      convert(Value, CplxValue);
+      }
+    return CplxValue;
+  }
+  #endif
   /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
  *  
  *  This general function represents the QMCHamiltonianBase interface for computing.  For an operator \hat{O}, this

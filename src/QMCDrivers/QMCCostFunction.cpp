@@ -342,8 +342,11 @@ void QMCCostFunction::checkConfigurations()
 
 #ifdef HAVE_LMY_ENGINE
 /** evaluate everything before optimization */
-void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj)
+void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<ValueType> * EngineObj)
 {
+  // get whether we need parameter gradients
+  needGrads = EngineObj->do_update();
+
   RealType et_tot=0.0;
   RealType e2_tot=0.0;
 #pragma omp parallel reduction(+:et_tot,e2_tot)
@@ -384,21 +387,41 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine * Engin
     Return_t e2=0.0;
     for (int iw=0, iwg=wPerNode[ip]; iw<wRef.numSamples(); ++iw,++iwg)
     {
+      ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.loadSample(wRef.R, iw);
       wRef.update();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
       saved[REWEIGHT]=1.0;
+
+      // extract the log of the trial function 
+      const RealType logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
+
+      // compute the value-to-guiding square ratio
+      const RealType vgs = 1.0;
+
       Return_t etmp;
+      #ifdef QMC_COMPLEX
+      Return_ct etmp_cplx;
+      #endif
       if (needGrads)
       {
+        #ifndef QMC_COMPLEX
+
+        // number of linear parameters
+        int num_lin_params = this->NumLinearParams();
+
         //allocate vector
         std::vector<Return_t> Dsaved(NumOptimizables,0.0);
         std::vector<Return_t> HDsaved(NumOptimizables,0.0);
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
         etmp =hClones[ip]->evaluateValueAndDerivatives(wRef,OptVariablesForPsi,Dsaved,HDsaved,compute_nlpp);
+        //wRef.get(app_log());
         //std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
         //std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
+        //for (int i = 0; i < Dsaved.size(); i++)
+        //  app_log() << std::setprecision(9) << HDsaved[i] << "   ";
+        //app_log() << std::endl;
 
         // add non-differentiated derivative vector
         std::vector<Return_t> der_rat_samp(NumOptimizables+1, 0.0);
@@ -410,7 +433,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine * Engin
           der_rat_samp.at(i+1) = Dsaved.at(i);
 
         // evaluate local energy
-        etmp= hClones[ip]->evaluate(wRef);
+        //etmp= hClones[ip]->evaluate(wRef);
         
         // energy dervivatives 
         le_der_samp.at(0) = etmp;
@@ -422,13 +445,74 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine * Engin
         EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
 #endif
 
-        //etmp= hClones[ip]->evaluate(wRef);
-      }
-      else
-        etmp= hClones[ip]->evaluate(wRef);
+        #else
+        // first we need to figure out the number of optimizable variables since real and imag parts are seperated
+        // number of linear params
+        int num_lin_params = this->NumLinearParams();
+        // number of optimizable parameters
+        int num_params = NumOptimizables - num_lin_params;
 
+        //allocate vector
+        std::vector<Return_ct> Dsaved(NumOptimizables, 0.0);
+        std::vector<Return_ct> HDsaved(NumOptimizables, 0.0);
+        std::vector<Return_ct> Theta(num_lin_params+1, 0.0);
+        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        //wRef.get(app_log());
+        //for (int i = 0; i < Dsaved.size(); i++)
+        //  app_log() << std::setprecision(9) << std::real(HDsaved[i]) << "  " << std::setprecision(9) << std::imag(HDsaved[i]) << "  ";
+        //app_log() << std::endl;
+
+
+        etmp_cplx = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
+        //for (int i = 0; i < Dsaved.size(); i++)
+        //  app_log() << std::setprecision(9) << std::real(HDsaved[i]) << "  " << std::setprecision(9) << std::imag(HDsaved[i]) << "  ";
+        //app_log() << std::endl;
+        //DM = hClones[ip]->LZauxHevaluate(wRef);
+
+        // add non-differentiated derivative vector
+        std::vector<Return_ct> der_rat_samp(num_params+1, 0.0);
+        std::vector<Return_ct> le_der_samp(num_params+1, 0.0);
+
+        // dervative vectors
+        der_rat_samp.at(0) = (Return_ct)std::complex<double>(1.0, 0.0);
+        for (int i = 0; i < num_params; i++) {
+          if ( i < num_lin_params )
+            der_rat_samp.at(i+1) = Dsaved.at(i);
+          else 
+            der_rat_samp.at(i+1) = Dsaved.at(i+num_lin_params);
+        }
+
+        // energy dervivatives 
+        le_der_samp.at(0) = etmp_cplx;
+        for (int i = 0; i < num_params; i++) {
+          if ( i < num_lin_params )
+            le_der_samp.at(i+1) = HDsaved.at(i) + etmp_cplx * Dsaved.at(i);
+          else
+            le_der_samp.at(i+1) = HDsaved.at(i+num_lin_params) + etmp_cplx * Dsaved.at(i+num_lin_params);
+        }
+        
+        // pass into engine
+        EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, vgs, saved[REWEIGHT]);
+        #endif
+
+      }
+      else {
+        #ifndef QMC_COMPLEX
+        etmp= hClones[ip]->evaluate(wRef);
+        EngineObj->take_sample(etmp, vgs, saved[REWEIGHT]);
+        #else
+        etmp_cplx = hClones[ip]->evaluate_complex(wRef);
+        EngineObj->take_sample(etmp_cplx, vgs, saved[REWEIGHT]);
+        #endif
+      }
+
+      #ifndef QMC_COMPLEX
       e0 += saved[ENERGY_TOT] = etmp;
       e2 += etmp*etmp;
+      #else
+      e0 += saved[ENERGY_TOT] = etmp_cplx.real();
+      e2 += etmp_cplx.real()*etmp_cplx.real();
+      #endif
       saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
       if(nlpp)
         saved[ENERGY_FIXED] -= nlpp->Value;
@@ -443,12 +527,12 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine * Engin
 #ifdef HAVE_LMY_ENGINE
   // engine finish taking samples 
   EngineObj->sample_finish();
-#endif
 
   if ( EngineObj->block_first() ) {
     OptVariablesForPsi.setComputed();
     app_log() << "calling setComputed function" << std::endl;
   }
+#endif
   //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << endl;
   //Need to sum over the processors
   std::vector<Return_t> etemp(3);
@@ -538,8 +622,13 @@ QMCCostFunction::Return_t QMCCostFunction::correlatedSampling(bool needGrad)
           }
         //saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
       }
-      else
+      else {
+        #ifndef QMC_COMPLEX
         saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
+        #else
+        saved[ENERGY_NEW] = std::real(H_KE_Node[ip]->evaluate_complex(wRef)) + saved[ENERGY_FIXED];
+        #endif
+      }
       wgt_node+=inv_n_samples*weight;
       wgt_node2+=inv_n_samples*weight*weight;
     }

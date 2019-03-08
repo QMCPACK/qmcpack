@@ -57,10 +57,13 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   myTimers[1]->start();
   bool moved = false;
   constexpr RealType mhalf(-0.5);
+  //app_log() << "initial walker" << std::endl;
+  //W.get(app_log());
   for (int iter=0; iter<nSubSteps; ++iter)
   {
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandomWithEngine(deltaR,RandomGen);
+    //app_log() << deltaR[0] << std::endl;
     moved = false;
     for(int ig=0; ig<W.groups(); ++ig) //loop over species
     {
@@ -80,6 +83,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         else
         {
           dr = sqrttau*deltaR[iat];
+          //app_log() << dr << std::endl;
         }
         if (!W.makeMoveAndCheck(iat,dr))
         {
@@ -101,6 +105,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         {
           RealType ratio = Psi.ratio(W,iat);
           prob = ratio*ratio;
+          //app_log() << "prob is " << prob << std::endl;
         }
         if ( prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob*std::exp(logGb-logGf) )
         {
@@ -127,7 +132,11 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   myTimers[0]->stop();
   // end PbyP moves
   myTimers[2]->start();
+  #ifndef QMC_COMPLEX
   EstimatorRealType eloc=H.evaluate(W);
+  #else
+  EstimatorRealType eloc = std::real(H.evaluate_complex(W));
+  #endif
   thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
   myTimers[2]->stop();
   myTimers[3]->start();

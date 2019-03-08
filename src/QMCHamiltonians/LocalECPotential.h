@@ -80,6 +80,9 @@ struct LocalECPotential: public QMCHamiltonianBase
 #endif
 
   Return_t evaluate(ParticleSet& P);
+  #ifdef QMC_COMPLEX
+  Return_ct evaluate_complex(ParticleSet& P);
+  #endif
 
   Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos_t& hf_terms,

@@ -306,9 +306,12 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
   for (int ii=V_TIMER; it!=it_end; ++it,ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
+    //app_log() << (*it)->ClassName << std::endl;
     r *= (*it)->ratio(P,iat);
+    //app_log() << r << std::endl;
     myTimers[ii]->stop();
   }
+  //app_log() << std::endl;
 #if defined(QMC_COMPLEX)
   //return std::exp(evaluateLogAndPhase(r,PhaseValue));
   RealType logr=evaluateLogAndPhase(r,PhaseDiff);
@@ -583,6 +586,29 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealT
 #endif
 }
 
+#ifdef QMC_COMPLEX
+void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+{
+  assert(VP.getTotalNum()==ratios.size());
+  std::vector<ValueType> t(ratios.size()),r(ratios.size(),1.0);;
+  for (int i=0, ii=NL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    Z[i]->evaluateRatios(VP,t);
+    for (int j=0; j<ratios.size(); ++j)
+      r[j]*=t[j];
+    myTimers[ii]->stop();
+  }
+  for(int j=0; j<ratios.size(); ++j)
+  {
+    //RealType logr=evaluateLogAndPhase(r[j],pdiff);
+    //ratios[j]=std::exp(logr)*std::cos(pdiff);
+    ratios[j] = r[j];
+    //ratios[j]=std::abs(r)*std::cos(std::arg(r[j]));
+  }
+}
+#endif
+
 void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
     std::vector<RealType>& ratios, Matrix<RealType>& dratio)
 {
@@ -667,6 +693,74 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
       dlogpsi[i] *= psiValue;
   }
 }
+
+#ifdef QMC_COMPLEX
+void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
+    const opt_variables_type& optvars,
+    std::vector<ValueType>& dlogpsi,
+    std::vector<ValueType>& dhpsioverpsi,
+    bool project)
+{
+  //     // First, zero out derivatives
+  //  This should only be done for some variables.
+  //     for (int j=0; j<dlogpsi.size(); j++)
+  //       dlogpsi[j] = dhpsioverpsi[j] = 0.0;
+  for (int i=0; i<Z.size(); i++)
+  {
+    if (Z[i]->dPsi)
+      (Z[i]->dPsi)->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+    else
+      Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+  }
+  //orbitals do not know about mass of particle.
+  for (int i=0; i<dhpsioverpsi.size(); i++)
+    dhpsioverpsi[i]*=OneOverM;
+
+  if (project)
+  {
+    for (int i=0; i<Z.size(); i++)
+    {
+      if (Z[i]->dPsi)
+        (Z[i]->dPsi)->multiplyDerivsByOrbR(dlogpsi);
+      else
+        Z[i]->multiplyDerivsByOrbR(dlogpsi);
+    }
+    RealType psiValue=std::exp(-LogValue)*std::cos(PhaseValue);
+    for (int i=0; i<dlogpsi.size(); i++)
+      dlogpsi[i] *= psiValue;
+  }
+}
+
+TrialWaveFunction::ValueType TrialWaveFunction::ratio_cplx(ParticleSet& P,int iat)
+{
+  //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
+  ValueType r(1.0);
+  for (int i=0,ii=V_TIMER; i<Z.size(); ++i,ii+=TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    r *= Z[i]->ratio(P,iat);
+    myTimers[ii]->stop();
+  }
+  return r;
+}
+
+void TrialWaveFunction::evaluateDerivativesForNonLocalPP(ParticleSet& P, 
+   int iat,
+   const opt_variables_type& optvars, 
+   std::vector<ValueType>& dlogpsi)
+{
+  for (int i=0; i<Z.size(); i++) 
+    Z[i]->evaluateDerivativesForNonLocalPP(P, iat, optvars, dlogpsi);
+}
+
+//void TrialWaveFunction::RestoreDets(ParticleSet& P)
+//{
+//  for (int i=0; i < Z.size(); i++)
+//  {
+//    Z[i] -> RestoreDets(P);
+//  }
+//}
+#endif
 
 void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
                                                 std::vector<RealType>& dgradlogpsi) {

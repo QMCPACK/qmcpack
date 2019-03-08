@@ -417,6 +417,15 @@ MPC::evaluate (ParticleSet& P)
   Value = evalSR(P) + evalLR(P) + Vconst;
   return Value;
 }
+#ifdef QMC_COMPLEX
+MPC::Return_ct
+MPC::evaluate_complex (ParticleSet& P)
+{
+  Value = this->evaluate(P);
+  convert(Value, CplxValue);
+  return CplxValue;
+}
+#endif
 
 void MPC::addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy)
 {

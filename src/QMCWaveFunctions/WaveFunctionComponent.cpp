@@ -65,6 +65,33 @@ void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
     dPsi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
 }
 
+#ifdef QMC_COMPLEX
+void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
+                                      const opt_variables_type& active, 
+                                      std::vector<ValueType>& dlogpsi, std::vector<ValueType>& dhpsioverpsi)
+{
+#if defined(ENABLE_SMARTPOINTER)
+  if (dPsi.get())
+#else
+  if (dPsi)
+#endif
+    dPsi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
+}
+
+void WaveFunctionComponent::evaluateDerivativesForNonLocalPP(ParticleSet& P, 
+                                                             int iat,
+                                                             const opt_variables_type& optvars,
+                                                             std::vector<ValueType>& dlogpsi)
+{
+  #if defined(ENABLE_SMARTPOINTER)
+    if (dPsi.get())
+  #else
+    if (dPsi)
+  #endif
+      dPsi->evaluateDerivativesForNonLocalPP(P, iat, optvars, dlogpsi);
+}
+#endif
+
 /*@todo makeClone should be a pure virtual function
  */
 WaveFunctionComponentPtr WaveFunctionComponent::makeClone(ParticleSet& tpq) const

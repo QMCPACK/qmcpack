@@ -44,7 +44,7 @@ public:
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
 #ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj);
+  void engine_checkConfigurations(cqmc::engine::LMYEngine<ValueType> * EngineObj);
 #endif
   void resetPsi(bool final_reset=false);
   void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0);
@@ -64,7 +64,7 @@ protected:
 
   #ifdef HAVE_LMY_ENGINE
   int total_samples();
-  Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj);
+  Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine<ValueType> * EngineObj);
   #endif
 
 };

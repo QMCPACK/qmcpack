@@ -117,7 +117,7 @@ void QMCLinearOptimize::start()
 }
 
 #ifdef HAVE_LMY_ENGINE
-void QMCLinearOptimize::engine_start( cqmc::engine::LMYEngine * EngineObj ) 
+void QMCLinearOptimize::engine_start() 
 {
   app_log() << "entering engine_start function" << std::endl;
 
@@ -141,7 +141,12 @@ void QMCLinearOptimize::engine_start( cqmc::engine::LMYEngine * EngineObj )
   myTimers[1]->start();
   optTarget->getConfigurations(h5FileRoot);
   optTarget->setRng(vmcEngine->getRng());
-  optTarget->engine_checkConfigurations(EngineObj); // computes derivative ratios and pass into engine
+
+  // NOTE: We don't process the configurations to compute derivative ratios here anymore. 
+  //       This is now done in QMCFixedSampleLinearOptimize::engine_process_sample
+  //
+  //optTarget->engine_checkConfigurations(EngineObj); // computes derivative ratios and pass into engine
+
   myTimers[1]->stop();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>"<<std::endl;

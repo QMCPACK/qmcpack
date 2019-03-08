@@ -341,6 +341,15 @@ struct CoulombPotential: public QMCHamiltonianBase
     return Value;
   }
 
+  #ifdef QMC_COMPLEX
+  inline Return_ct evaluate_complex(ParticleSet& P)
+  {
+    Value = this->evaluate(P);
+    convert(Value, CplxValue);
+    return CplxValue;
+  }
+  #endif
+
   bool put(xmlNodePtr cur)
   {
     return true;

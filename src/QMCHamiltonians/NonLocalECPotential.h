@@ -44,6 +44,13 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 #endif
 
   Return_t evaluate(ParticleSet& P);
+  #ifdef QMC_COMPLEX
+  Return_ct evaluate_complex(ParticleSet& P);
+  Return_ct evaluateValueAndDerivatives(ParticleSet& P,
+      const opt_variables_type& optvars,
+      const std::vector<ValueType>& dlogpsi,
+      std::vector<ValueType>& dhpsioverpsi);
+  #endif
 
   Return_t evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos_t& hf_terms,

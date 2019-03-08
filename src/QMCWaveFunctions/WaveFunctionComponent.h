@@ -360,6 +360,30 @@ struct WaveFunctionComponent: public QMCTraits
                                    const opt_variables_type& optvars,
                                    std::vector<RealType>& dlogpsi,
                                    std::vector<RealType>& dhpsioverpsi) ;
+
+  #ifdef QMC_COMPLEX
+  virtual void evaluateDerivatives(ParticleSet& P,
+                                   const opt_variables_type& optvars, 
+                                   std::vector<ValueType>& dlogpsi,
+                                   std::vector<ValueType>& dhpsioverpsi);
+
+  virtual void evaluateDerivativesForNonLocalPP(ParticleSet& P, 
+                                                int iat,
+                                                const opt_variables_type& optvars,
+                                                std::vector<ValueType>& dlogpsi);
+
+  virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
+  {
+    std::complex<RealType> eit(std::cos(PhaseValue), std::sin(PhaseValue));
+    ValueType myrat = std::exp(LogValue)*eit;
+    for(int j=0; j<myVars.size(); j++)
+    {
+      int loc=myVars.where(j)/2;
+      dlogpsi[loc] *= myrat;
+    }
+  }
+  #endif
+
   virtual void multiplyDerivsByOrbR(std::vector<RealType>& dlogpsi)
   {
     RealType myrat = std::exp(LogValue)*std::cos(PhaseValue);

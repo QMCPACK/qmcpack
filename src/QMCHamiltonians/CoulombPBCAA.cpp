@@ -128,6 +128,16 @@ CoulombPBCAA::evaluate(ParticleSet& P)
   return Value;
 }
 
+#ifdef QMC_COMPLEX
+CoulombPBCAA::Return_ct
+CoulombPBCAA::evaluate_complex(ParticleSet& P)
+{
+  Value = this->evaluate(P);
+  convert(Value, CplxValue);
+  return CplxValue;
+}
+#endif
+
 CoulombPBCAA::Return_t
 CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P, ParticleSet& ions, TrialWaveFunction& psi,
                                     ParticleSet::ParticlePos_t& hf_terms,

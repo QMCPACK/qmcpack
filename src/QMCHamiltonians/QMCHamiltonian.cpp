@@ -502,6 +502,63 @@ QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
   return LocalEnergy;
 }
 
+#ifdef QMC_COMPLEX
+QMCHamiltonian::ValueType 
+QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
+    const opt_variables_type& optvars,
+    std::vector<ValueType>& dlogpsi,
+    std::vector<ValueType>& dhpsioverpsi,
+    bool compute_deriv)
+{
+  //if(EnableVirtualMoves) P.initVirtualMoves();
+
+  CplxLocalEnergy=CplxKineticEnergy=H[0]->evaluate_complex(P);
+  if(compute_deriv)
+    for(int i=1; i<H.size(); ++i)
+      CplxLocalEnergy += H[i]->evaluateValueAndDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
+  else
+    for(int i=1; i<H.size(); ++i)
+      CplxLocalEnergy += H[i]->evaluate_complex(P);
+  //auxHevaluate(P);
+  return CplxLocalEnergy;
+}
+
+QMCHamiltonian::Return_ct
+QMCHamiltonian::evaluate_complex(ParticleSet& P)
+{
+  //if(EnableVirtualMoves) P.initVirtualMoves();
+  CplxLocalEnergy = 0.0;
+  for(int i=0; i<H.size(); ++i)
+  {
+    myTimers[i]->start();
+    CplxLocalEnergy += H[i]->evaluate_complex(P);
+    //std::cout << "cplx H " << i << " " << "name " << H[i]->myName << " " << H[i]->evaluate_complex(P) << std::endl;
+    H[i]->setObservables(Observables);
+#if !defined(REMOVE_TRACEMANAGER)
+    H[i]->collect_scalar_traces();
+#endif
+    myTimers[i]->stop();
+    H[i]->setParticlePropertyList(P.PropertyList,myIndex);
+  }
+  CplxKineticEnergy=H[0]->CplxValue;
+  convert(CplxLocalEnergy, LocalEnergy);
+  convert(CplxKineticEnergy, KineticEnergy);
+  P.PropertyList[LOCALENERGY]=LocalEnergy;
+  P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
+  // auxHevaluate(P);
+  return CplxLocalEnergy;
+}
+
+QMCHamiltonian::Return_ct
+QMCHamiltonian::evaluate_kinetic(ParticleSet& P)
+{
+  //if(EnableVirtualMoves) P.initVirtualMoves();
+  Return_ct CplxKEnergy = H[0]->evaluate_complex(P);
+  return CplxKEnergy;
+}
+
+#endif
+
 QMCHamiltonian::RealType 
 QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
 {

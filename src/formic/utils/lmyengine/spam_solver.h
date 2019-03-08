@@ -67,7 +67,7 @@ namespace cqmc {
   
   namespace engine { 
   
-  class SpamLMHD : public EigenSolver { 
+  class SpamLMHD : public EigenSolver<double> { 
 
 private: 
 
@@ -338,6 +338,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////////////
 
   void SMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool approximate);
+  void LSMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool approximate) {}
 
   ////////////////////////////////////////////////////////////////////////////////////
   // \brief function that performs overlap matrix-matrix multiplication 

@@ -88,6 +88,42 @@ struct DiffWaveFunctionComponent
                                    std::vector<RealType>& dlogpsi,
                                    std::vector<RealType>& dhpsioverpsi)=0;
 
+  #ifdef QMC_COMPLEX
+  virtual void evaluateDerivatives(ParticleSet& P, 
+                                   const opt_variables_type& optvars,
+                                   std::vector<ValueType>& dlogpsi,
+                                   std::vector<ValueType>& dhpsioverpsi)
+  {
+    app_error() << "Need specialization of DiffOrbitalBase::evaluateDerivatives.\n";
+    abort();
+  }
+
+  virtual void evaluateDerivativesForNonLocalPP(ParticleSet& P, 
+                                                int iat,
+                                                const opt_variables_type& optvars, 
+                                                std::vector<ValueType>& dlogpsi)
+  {
+    app_error() << "Need specialization of DiffOrbitalBase::evaluateDerivatives.\n";
+    abort();
+  }
+
+  virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
+  {
+    for (int i=0; i<refOrbital.size(); ++i)
+    {
+      std::complex<RealType> eit(std::cos(refOrbital[i]->PhaseValue), std::sin(refOrbital[i]->PhaseValue));
+      ValueType myrat = std::exp(refOrbital[i]->LogValue) * eit;
+      for(int j=0; j<refOrbital[i]->myVars.size(); j++)
+      {
+        int loc=refOrbital[j]->myVars.where(j);
+        dlogpsi[loc] *= myrat;
+      }
+    }
+  }
+
+  virtual void RestoreDets(ParticleSet& P) {}
+  #endif
+
   virtual void evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars, Matrix<ValueType>& dratios);
 
   virtual void multiplyDerivsByOrbR(std::vector<RealType>& dlogpsi)

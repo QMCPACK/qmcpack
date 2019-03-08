@@ -282,6 +282,95 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
 #endif
 }
 
+#ifdef QMC_COMPLEX
+NonLocalECPotential::Return_ct
+NonLocalECPotential::evaluate_complex(ParticleSet& P)
+{
+  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
+  CplxValue=0.0;
+#if !defined(REMOVE_TRACEMANAGER)
+  if( streaming_particles)
+  {
+    (*Ve_sample) = 0.0;
+    (*Vi_sample) = 0.0;
+  }
+#endif
+  for(int ipp=0; ipp<PPset.size(); ipp++)
+    if(PPset[ipp]) PPset[ipp]->randomize_grid(*myRNG);
+  //loop over all the ions
+  const auto myTable = P.DistTables[myTableIndex];
+  // clear all the electron and ion neighbor lists
+  for(int iat=0; iat<NumIons; iat++)
+    IonNeighborElecs.getNeighborList(iat).clear();
+  for(int jel=0; jel<P.getTotalNum(); jel++)
+    ElecNeighborIons.getNeighborList(jel).clear();
+
+  if (ComputeForces)
+  {
+    APP_ABORT("complex wave function is not compatible with force evaluation!");
+  }
+  else
+  {
+    if(myTable->DTType == DT_SOA)
+    {
+      for(int jel=0; jel<P.getTotalNum(); jel++)
+      {
+        const auto& dist  = myTable->Distances[jel];
+        const auto& displ = myTable->Displacements[jel];
+        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+        for(int iat=0; iat<NumIons; iat++)
+          if(PP[iat]!=nullptr && dist[iat]<PP[iat]->Rmax)
+          {
+            CplxValue += PP[iat]->evaluateOneCplx(P,iat,Psi,jel,dist[iat],RealType(-1)*displ[iat]);
+            NeighborIons.push_back(iat);
+            IonNeighborElecs.getNeighborList(iat).push_back(jel);
+          }
+      }
+    }
+    else
+    {
+      for(int iat=0; iat<NumIons; iat++)
+      {
+        if(PP[iat]==nullptr) continue;
+        std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
+        for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
+        {
+          const RealType r(myTable->r(nn));
+          if(r>PP[iat]->Rmax) continue;
+          CplxValue += PP[iat]->evaluateOneCplx(P,iat,Psi,iel,r,myTable->dr(nn));
+          NeighborElecs.push_back(iel);
+          ElecNeighborIons.getNeighborList(iel).push_back(iat);
+        }
+      }
+    }
+  }
+#if defined(TRACE_CHECK)
+  if( streaming_particles)
+  {
+    Return_t Vnow = Value;
+    RealType Visum = Vi_sample->sum();
+    RealType Vesum = Ve_sample->sum();
+    RealType Vsum  = Vesum+Visum;
+    if(std::abs(Vsum-Vnow)>TraceManager::trace_tol)
+    {
+      app_log()<<"accumtest: NonLocalECPotential::evaluate()"<< std::endl;
+      app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
+      app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
+      APP_ABORT("Trace check failed");
+    }
+    if(std::abs(Vesum-Visum)>TraceManager::trace_tol)
+    {
+      app_log()<<"sharetest: NonLocalECPotential::evaluate()"<< std::endl;
+      app_log()<<"sharetest:   e share:"<< Vesum << std::endl;
+      app_log()<<"sharetest:   i share:"<< Visum << std::endl;
+      APP_ABORT("Trace check failed");
+    }
+  }
+#endif
+  return CplxValue;
+}
+#endif
+
 void
 NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
 {

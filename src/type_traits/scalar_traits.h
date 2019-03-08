@@ -70,6 +70,20 @@ inline void convert(const std::complex<T1>& in, float& out)
   out = in.real();
 }
 
+/** specialization of conversion from real to complex 
+ */
+template<typename T1>
+inline void convert(const double& in, std::complex<T1>& out)
+{
+  out=std::complex<T1>(in);
+}
+
+template<typename T1>
+inline void convert(const float& in, std::complex<T1>& out)
+{
+  out=std::complex<T1>(in);
+}
+
 /* specialization of D-dim vectors
  *
  */

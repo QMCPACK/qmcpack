@@ -137,6 +137,17 @@ LocalECPotential::evaluate(ParticleSet& P)
   return Value;
 }
 
+#ifdef QMC_COMPLEX
+LocalECPotential::Return_ct
+LocalECPotential::evaluate_complex(ParticleSet& P)
+{
+  Value = this->evaluate(P);
+  convert(Value, CplxValue);
+  return CplxValue;
+}
+#endif
+
+
 LocalECPotential::Return_t
 LocalECPotential::evaluateWithIonDerivs(ParticleSet&P, ParticleSet& ions, TrialWaveFunction& psi,
                                     ParticleSet::ParticlePos_t& hf_terms,

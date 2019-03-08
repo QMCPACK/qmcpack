@@ -339,6 +339,8 @@ public:
    */
   bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
 
+  bool makeMoveAndNoCheck(Index_t iat, const SingleParticlePos_t& displ);
+
   /** move all the particles of a walker
    * @param awalker the walker to operate
    * @param deltaR proposed displacement

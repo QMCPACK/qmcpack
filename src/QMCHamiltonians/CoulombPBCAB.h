@@ -148,6 +148,10 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
                                  ParticleSet::ParticlePos_t& hf_terms,
                                  ParticleSet::ParticlePos_t& pulay_terms);
 
+  #ifdef QMC_COMPLEX
+  Return_ct evaluate_complex(ParticleSet& P);
+  #endif
+
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {
