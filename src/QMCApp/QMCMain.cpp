@@ -479,12 +479,15 @@ bool QMCMain::validateXML()
     else if(cname == "include")
     {
       //file is provided
-      const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
+      xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
       if(a)
       {
-        pushDocument((const char*)a);
-        inputnode = processPWH(XmlDocStack.top()->getRoot());
-        popDocument();
+        if(pushDocument((const char*)a))
+        {
+          inputnode = processPWH(XmlDocStack.top()->getRoot());
+          popDocument();
+        }
+        xmlFree(a);
       }
     }
     else if(cname == "qmcsystem")
