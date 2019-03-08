@@ -1496,12 +1496,25 @@ namespace afqmc
             SDetOp.MixedDensityMatrix(OrbMats[2*q],PsiT,
                                 G_.sliced(0,NMO),to_address(ov_),false);
             ComplexType ov1 = ComplexType(*ov_);
+            if(std::abs(ov1) == ComplexType(0.0))
+              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q],PsiT,
+                                G_.sliced(0,NMO),false); 
             SDetOp.MixedDensityMatrix(OrbMats[2*q+1],PsiTB,
                                 G_.sliced(NMO,2*NMO),to_address(ov_),false);
-            ov += real(conj(ci[q])*ci[p]*ov1*ComplexType(*ov_));
+            ComplexType ov2 = ComplexType(*ov_);
+            if(std::abs(ov2) == ComplexType(0.0))
+              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q+1],PsiTB,
+                                G_.sliced(NMO,2*NMO),false); 
+            ov += real(conj(ci[q])*ci[p]*ov1*ov2);
+            // in this case, factor of overlap is included in G 
+            // in routine OrthogonalUnnormalizedMixedDensityMatrix
+FINISH!!! THIS IS WRONG!!!
+            if(std::abs(ov1) == ComplexType(0.0)) ov1 = ComplexType(1.0);
+            if(std::abs(ov2) == ComplexType(0.0)) ov2 = ComplexType(1.0);
+            // 
 // !!! GPU !!!
             for(int i=0; i<G1D.num_elements(); i++)
-              G1D[i] += real(conj(ci[q])*ci[p]*ov1*G1D_[i]);
+              G1D[i] += real(conj(ci[q])*ci[p]*ov1*ov2*G1D_[i]);
           }
         }
       }  

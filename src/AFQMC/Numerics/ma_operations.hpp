@@ -377,7 +377,10 @@ T invert(MultiArray2D&& m){
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         T detvalue = determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()));
-        getri(std::forward<MultiArray2D>(m), pivot, WORK);
+        if( std::abs(detvalue) == 0.0 ) 
+          fill2D(m.size(0),m.size(1),m.origin(),m.stride(0),element(0.0));    
+        else 
+          getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
 }
 
@@ -388,7 +391,10 @@ T invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK){
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         T detvalue = determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()));
-        getri(std::forward<MultiArray2D>(m), pivot, WORK);
+        if( std::abs(detvalue) == 0.0 )
+          fill2D(m.size(0),m.size(1),m.origin(),m.stride(0),element(0.0));
+        else
+          getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
 }
 
@@ -399,7 +405,10 @@ void invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T* detvalue){
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()), detvalue);
-        getri(std::forward<MultiArray2D>(m), pivot, WORK);
+        if( std::abs(ComplexType(*detvalue)) == 0.0 )
+          fill2D(m.size(0),m.size(1),m.origin(),m.stride(0),element(0.0));
+        else
+          getri(std::forward<MultiArray2D>(m), pivot, WORK);
 }
 
 template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>

@@ -491,6 +491,13 @@ void print(std::string str, cuda_gpu_ptr<T> p, int n) {
   kernels::print(str,to_address(p),n);
 }
 
+template<typename T>
+void fill2D(int n, int m, qmc_cuda::cuda_gpu_ptr<T> first, int lda, T const& val) { 
+  if(n == 0 || m==0) return first;
+  assert(lda >= m);  
+  kernels::fill2D_n(n,m,to_address(first),lda,val);
+}
+
 }
 
 namespace boost{

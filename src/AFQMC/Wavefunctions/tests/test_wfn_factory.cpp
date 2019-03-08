@@ -1050,7 +1050,7 @@ const char *wlk_xml_block =
   </Wavefunction> \
 ";
 
-//#define __compare__
+#define __compare__
 #ifdef __compare__
     Libxml2Document doc2_;
     okay = doc2_.parseFromString(wfn_xml_block2);
@@ -1150,6 +1150,7 @@ else
     shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
     wfn.vbias(G,X,sqrtdt);
     ComplexType Xsum=0;
+#ifndef __compare__
     if(std::abs(file_data.Xsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Xsum=0;
@@ -1158,7 +1159,9 @@ else
         REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
         REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
       }
-    } else {
+    } else 
+#endif
+    {
       Xsum=0;
       ComplexType Xsum2=0;
       for(int i=0; i<X.size(0); i++) {
@@ -1182,6 +1185,7 @@ else
     wfn.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
     ComplexType Vsum=0;
+#ifndef __compare__
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
@@ -1194,7 +1198,9 @@ else
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
-    } else {
+    } else  
+#endif
+    {
       Vsum=0;
       if(wfn.transposed_vHS())
         for(int i=0; i<vHS.size(1); i++)
@@ -1263,6 +1269,7 @@ else
     nomsd.vHS(X2,vHS_,sqrtdt);
     TG.local_barrier();
     Vsum=0;
+/*
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
@@ -1275,7 +1282,9 @@ else
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
-    } else {
+    } else 
+*/
+    {
       Vsum=0;
       if(nomsd.transposed_vHS())
         for(int i=0; i<vHS_.size(1); i++)
