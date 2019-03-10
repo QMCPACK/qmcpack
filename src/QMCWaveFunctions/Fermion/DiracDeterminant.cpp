@@ -72,6 +72,7 @@ void DiracDeterminant::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& i
     PhaseValue = detEng.Phase;
 #endif
   } // end of BlasThreadingEnv
+  updateEng.initializeInv(invMat);
   InverseTimer.stop();
 }
 
@@ -269,6 +270,7 @@ void DiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(PhaseValue);
   // start with invRow labelled invalid
   invRow_id = -1;
+  updateEng.initializeInv(psiM);
   BufferTimer.stop();
 }
 

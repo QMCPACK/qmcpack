@@ -60,6 +60,15 @@ namespace qmcplusplus {
         delay_list.resize(delay);
       }
 
+      /** initialize internal objects when Ainv is refreshed
+       * @param Ainv inverse matrix
+       */
+      inline void initializeInv(const Matrix<T>& Ainv)
+      {
+        // safe mechanism
+        delay_count = 0;
+      }
+
       /** compute the row of up-to-date Ainv
        * @param Ainv inverse matrix
        * @param rowchanged the row id corresponding to the proposed electron
