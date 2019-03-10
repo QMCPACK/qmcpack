@@ -56,7 +56,7 @@ public:
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer,AccRejTimer,evalOrbTimer;
 
-  typedef DiracDeterminantBase*    DiracDeterminantPtr;
+  typedef DiracDeterminantBase*    DiracDeterminantBasePtr;
   typedef SPOSet*              SPOSetPtr;
   typedef SPOSetProxyForMSD*             SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
@@ -134,8 +134,8 @@ public:
   SPOSetProxyPtr spo_up;
   SPOSetProxyPtr spo_dn;
 
-  std::vector<DiracDeterminantPtr> dets_up;
-  std::vector<DiracDeterminantPtr> dets_dn;
+  std::vector<DiracDeterminantBasePtr> dets_up;
+  std::vector<DiracDeterminantBasePtr> dets_dn;
 
   // map determinant in linear combination to unique det list
   std::vector<size_t> C2node_up;

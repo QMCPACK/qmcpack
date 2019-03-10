@@ -109,7 +109,7 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
   //catch parameters
   myParam->put(cur);
   typedef SlaterDet SlaterDeterminant_t;
-  typedef DiracDeterminant Det_t;
+  typedef DiracDeterminant<> Det_t;
   SlaterDeterminant_t* sdet(new SlaterDeterminant_t(targetPtcl));
   int spin_group=0;
   cur=cur->children;

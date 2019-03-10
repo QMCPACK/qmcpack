@@ -34,9 +34,6 @@
 #if defined(QMC_CUDA)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #endif
-#if defined(ENABLE_CUBLAS)
-#include "QMCWaveFunctions/Fermion/DiracDeterminantCUBLAS.h"
-#endif
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantWithBackflow.h"
@@ -547,14 +544,14 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #if defined(ENABLE_CUBLAS)
     else if (useGPU == "yes")
     {
-      app_log()<<"Using DiracDeterminantCUBLAS"<< std::endl;
-      adet = new DiracDeterminantCUBLAS(psi,firstIndex);
+      app_log() << "Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
+      adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType>>(psi,firstIndex);
     }
 #endif
     else
     {
-      app_log()<<"Using DiracDeterminant"<< std::endl;
-      adet = new DiracDeterminant(psi,firstIndex);
+      app_log() << "Using DiracDeterminant with DelayedUpdate engine" << std::endl;
+      adet = new DiracDeterminant<DelayedUpdate<ValueType>>(psi,firstIndex);
     }
 #endif
   }
@@ -825,7 +822,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
     }
     else
     {
-      adet = new DiracDeterminant((SPOSetPtr) spo,0);
+      adet = new DiracDeterminant<DelayedUpdate<ValueType>>((SPOSetPtr) spo,0);
     }
     adet->set(multiSD->FirstIndex_up,multiSD->nels_up);
     multiSD->dets_up.push_back(adet);
@@ -850,7 +847,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
     }
     else
     {
-      adet = new DiracDeterminant((SPOSetPtr) spo,0);
+      adet = new DiracDeterminant<DelayedUpdate<ValueType>>((SPOSetPtr) spo,0);
     }
     adet->set(multiSD->FirstIndex_dn,multiSD->nels_dn);
     multiSD->dets_dn.push_back(adet);

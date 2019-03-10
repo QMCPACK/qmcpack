@@ -17,11 +17,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#ifdef ENABLE_CUBLAS
-#include "QMCWaveFunctions/Fermion/DiracDeterminantCUBLAS.h"
-#else
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
-#endif
 
 
 #include <stdio.h>
@@ -34,6 +30,11 @@ namespace qmcplusplus
 {
 
 typedef QMCTraits::ValueType ValueType;
+#ifdef ENABLE_CUBLAS
+typedef DiracDeterminant<DelayedUpdateCUDA<ValueType>> DetType;
+#else
+typedef DiracDeterminant<DelayedUpdate<ValueType>> DetType;
+#endif
 
 template <typename T1, typename T2> void check_matrix(Matrix<T1> &a, Matrix<T2> &b)
 {
@@ -198,11 +199,7 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(3);
-#ifdef ENABLE_CUBLAS
-  DiracDeterminantCUBLAS ddb(spo);
-#else
-  DiracDeterminant ddb(spo);
-#endif
+  DetType ddb(spo);
 
   int norb = 3;
   ddb.set(0,norb);
@@ -260,11 +257,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
-#ifdef ENABLE_CUBLAS
-  DiracDeterminantCUBLAS ddb(spo);
-#else
-  DiracDeterminant ddb(spo);
-#endif
+  DetType ddb(spo);
 
   int norb = 4;
   ddb.set(0,norb);
@@ -386,11 +379,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
-#ifdef ENABLE_CUBLAS
-  DiracDeterminantCUBLAS ddc(spo);
-#else
-  DiracDeterminant ddc(spo);
-#endif
+  DetType ddc(spo);
 
   int norb = 4;
   // maximum delay 2
