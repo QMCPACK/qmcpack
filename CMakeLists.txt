@@ -406,6 +406,11 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ENDIF()
 
 
+  #--------------------------------------------------------------------------
+  # Check that a C++ compiler is compatiable with the underlying libstdc++
+  #--------------------------------------------------------------------------
+  include(CMake/Testlibstdc++.cmake)
+
   #---------------------------------------------------
   # Check that a C++ 14 standard library is configured
   #---------------------------------------------------

@@ -46,12 +46,6 @@
 #define DEBUG_PSIBUFFER(who,msg)
 #endif
 
-#if defined(GPU_XRAY_TRACE_ON)
-#define GPU_XRAY_TRACE [[clang::xray_always_instrument]]
-#else
-#define GPU_XRAY_TRACE
-#endif
-
 namespace qmcplusplus
 {
 

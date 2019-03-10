@@ -11,8 +11,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file LRTwoBodyJastrow.h
  * @brief Declaration of Long-range TwoBody Jastrow
  *
@@ -33,8 +33,7 @@
 
 namespace qmcplusplus
 {
-
-class LRTwoBodyJastrow: public WaveFunctionComponent
+class LRTwoBodyJastrow : public WaveFunctionComponent
 {
   bool NeedToRestore;
   IndexType NumPtcls;
@@ -53,14 +52,14 @@ class LRTwoBodyJastrow: public WaveFunctionComponent
   RealType curVal, curLap;
   PosType curGrad;
 
-  RealType *FirstAddressOfdU;
-  RealType *LastAddressOfdU;
+  RealType* FirstAddressOfdU;
+  RealType* LastAddressOfdU;
   StructFact* skRef;
   // handler used to do evalFk
   typedef LRHandlerBase HandlerType;
   HandlerType* handler;
 
-  Vector<RealType> U,d2U;
+  Vector<RealType> U, d2U;
   Vector<PosType> dU;
   Vector<RealType> offU, offd2U;
   Vector<PosType> offdU;
@@ -95,6 +94,7 @@ class LRTwoBodyJastrow: public WaveFunctionComponent
   Vector<RealType> Fk_0;
   ///variable components of Fk
   Vector<RealType> Fk_1;
+
 public:
   ///Fk[kindex]
   Vector<RealType> Fk;
@@ -122,25 +122,23 @@ public:
   //evaluate the distance table with els
   void resetTargetParticleSet(ParticleSet& P);
 
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L);
+  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
   /** reset the coefficients by a function
   */
   template<typename FUNC>
   void resetByFunction(RealType kc)
   {
-    RealType kcsq=kc*kc;
-    int maxshell=skRef->KLists.kshell.size()-1;
+    RealType kcsq = kc * kc;
+    int maxshell  = skRef->KLists.kshell.size() - 1;
     const KContainer::SContainer_t& kk(skRef->KLists.ksq);
-    int ksh=0,ik=0;
-    while(ksh<maxshell)
+    int ksh = 0, ik = 0;
+    while (ksh < maxshell)
     {
-      if(kk[ik]>kcsq)
-        break; 
-      ik=skRef->KLists.kshell[++ksh];
+      if (kk[ik] > kcsq)
+        break;
+      ik = skRef->KLists.kshell[++ksh];
     }
-    MaxKshell=ksh;
+    MaxKshell = ksh;
     Fk_symm.resize(MaxKshell);
     FkbyKK.resize(MaxKshell);
     Fk.resize(ik);
@@ -148,21 +146,21 @@ public:
     //create a function
     FUNC uk(Rs);
     //- sign is for the form of two-body Jastrow
-    RealType u0 = -4.0*M_PI/CellVolume;
-    for(ksh=0,ik=0; ksh<MaxKshell; ksh++, ik++)
+    RealType u0 = -4.0 * M_PI / CellVolume;
+    for (ksh = 0, ik = 0; ksh < MaxKshell; ksh++, ik++)
     {
-      RealType v=u0*uk(kk[ik]);
-      Fk_symm[ksh]=v;
-      FkbyKK[ksh]=kk[ik]*v;
-      for(; ik<skRef->KLists.kshell[ksh+1]; ik++)
-        Fk[ik]=v;
+      RealType v   = u0 * uk(kk[ik]);
+      Fk_symm[ksh] = v;
+      FkbyKK[ksh]  = kk[ik] * v;
+      for (; ik < skRef->KLists.kshell[ksh + 1]; ik++)
+        Fk[ik] = v;
     }
-    Fk_0=Fk;
+    Fk_0 = Fk;
   }
 
   ValueType ratio(ParticleSet& P, int iat);
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType & g);
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType& g);
 
   GradType evalGrad(ParticleSet& P, int iat);
 
@@ -170,7 +168,7 @@ public:
   void acceptMove(ParticleSet& P, int iat);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   ///process input file
@@ -178,5 +176,5 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 };
-}
+} // namespace qmcplusplus
 #endif

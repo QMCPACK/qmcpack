@@ -283,7 +283,7 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFu
       //Real nonlocalpp forces seem to differ from those in the complex build.  Since
       //complex build has been validated against QE, that indicates there's a bug for the real build.
       
-      APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented for real wavefunctions yet.");
+//      APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented for real wavefunctions yet.");
 
       gradtmp_=0;
       ratio=psi.ratioGrad(W,iel,gradtmp_);
@@ -486,11 +486,10 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, ParticleSet& ions, i
       //Real nonlocalpp forces seem to differ from those in the complex build.  Since
       //complex build has been validated against QE, that indicates there's a bug for the real build.
       
-      APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented for real wavefunctions yet.");
-
       gradtmp_=0;
       ratio=psi.ratioGrad(W,iel,gradtmp_);
       
+      psiratiofull_[j]=ratio;
       gradtmp_*=ratio;
       psiratio_[j]=ratio*sgridweight_m[j]; 
      
@@ -530,8 +529,10 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, ParticleSet& ions, i
       W.acceptMove(iel);
       iongradtmp_ = psi.evalGradSource(W,ions,jat);
       iongradtmp_*=psiratiofull_[j]*sgridweight_m[j];
+      #ifdef QMC_COMPLEX
       convert(iongradtmp_,pulay_quad[j][jat]);
-      
+      #endif
+      pulay_quad[j][jat] = iongradtmp_;
       //And move the particle back.
       deltaV[j]=dr-r*rrotsgrid_m[j];
       W.makeMoveOnSphere(iel,deltaV[j]);

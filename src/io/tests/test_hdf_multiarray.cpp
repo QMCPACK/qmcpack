@@ -28,11 +28,10 @@ using extensions = typename boost::multi::layout_t<D>::extensions_type;
 
 TEST_CASE("hdf_multiarray_one_dim", "[hdf]")
 {
-
   hdf_archive hd;
   hd.create("test_stl.hdf");
 
-  boost::multi::array<double,1> v(extensions<1u>{3});
+  boost::multi::array<double, 1> v(extensions<1u>{3});
   v[0] = 2.3;
   v[1] = -100.3;
   v[2] = 135.22;
@@ -46,13 +45,11 @@ TEST_CASE("hdf_multiarray_one_dim", "[hdf]")
   okay = hd2.open("test_stl.hdf");
   REQUIRE(okay);
 
-  boost::multi::array<double,1> v2(extensions<1u>{3});
+  boost::multi::array<double, 1> v2(extensions<1u>{3});
   hd2.read(v2, "boost_multiarray_one_dim");
   REQUIRE(v2.size() == 3);
   for (int i = 0; i < v.size(); i++)
   {
     REQUIRE(v[i] == v2[i]);
   }
-
 }
-

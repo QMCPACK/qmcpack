@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifdef HAVE_ADIOS
@@ -23,7 +20,6 @@
 
 namespace qmcplusplus
 {
-
 void check_adios_error()
 {
   if (adios_errno < 0)
@@ -33,20 +29,11 @@ void check_adios_error()
 }
 
 
-AdiosWalkerInput::AdiosWalkerInput(MCWalkerConfiguration& w, Communicate* c):
-  targetW(w),myComm(c)
-{
-  FileRoot = "";
-}
+AdiosWalkerInput::AdiosWalkerInput(MCWalkerConfiguration& w, Communicate* c) : targetW(w), myComm(c) { FileRoot = ""; }
 
-AdiosWalkerInput::~AdiosWalkerInput()
-{
-}
+AdiosWalkerInput::~AdiosWalkerInput() {}
 
-string AdiosWalkerInput::getFileRoot()
-{
-  return FileRoot;
-}
+string AdiosWalkerInput::getFileRoot() { return FileRoot; }
 
 bool AdiosWalkerInput::put(std::vector<xmlNodePtr>& wset)
 {
@@ -84,8 +71,7 @@ bool AdiosWalkerInput::put(std::vector<xmlNodePtr>& wset)
     if (!froot.empty())
     {
       bpFileName = froot + ".config.bp";
-      app_log() << "Using froot: ignoring href and file tags"
-                << std::endl;
+      app_log() << "Using froot: ignoring href and file tags" << std::endl;
     }
     else if (!file.empty())
     {
@@ -101,14 +87,12 @@ bool AdiosWalkerInput::put(std::vector<xmlNodePtr>& wset)
       app_error() << "No file associated tag in mcwalkerset tag" << std::endl;
     app_log() << "Reading walker configurations from: " << bpFileName << std::endl;
     //Open the bp file
-    ADIOS_FILE* adios_file_handle = adios_read_open_file(bpFileName.c_str(),
-                                    ADIOS_READ_METHOD_BP,
-                                    myComm->getMPI());
+    ADIOS_FILE* adios_file_handle = adios_read_open_file(bpFileName.c_str(), ADIOS_READ_METHOD_BP, myComm->getMPI());
     //Did the bp file open successfully
     check_adios_error();
     //Inquire about the number of process
     ADIOS_VARINFO* var_info = adios_inq_var(adios_file_handle, "walkers");
-    nprocs = *var_info->nblocks;
+    nprocs                  = *var_info->nblocks;
     app_log() << "Number of procs that wrote " << nprocs << std::endl;
     adios_free_varinfo(var_info);
     //read in the data
@@ -116,7 +100,7 @@ bool AdiosWalkerInput::put(std::vector<xmlNodePtr>& wset)
   }
   FileRoot = bpFileName;
   //Set mcwalker data
-  setMCWalker( nw);
+  setMCWalker(nw);
   return true;
 }
 
@@ -125,17 +109,14 @@ void AdiosWalkerInput::setMCWalker(std::vector<int> nw)
   //Now we generate the walker offsets
   int np = myComm->size();
   std::vector<int> nwoff(myComm->size() + 1, 0);
-  for(int ip=0; ip<np; ++ip)
-    nwoff[ip+1]=nwoff[ip]+nw[ip];
+  for (int ip = 0; ip < np; ++ip)
+    nwoff[ip + 1] = nwoff[ip] + nw[ip];
   app_log() << "Number of walkers " << nwoff[np] << std::endl;
   targetW.setGlobalNumWalkers(nwoff[np]);
   targetW.setWalkerOffsets(nwoff);
 }
 
-void AdiosWalkerInput::read(int nprocs,
-                            ADIOS_FILE* file_handle,
-                            int& walker_win,
-                            std::vector<int>& nw)
+void AdiosWalkerInput::read(int nprocs, ADIOS_FILE* file_handle, int& walker_win, std::vector<int>& nw)
 {
   //iterate over the number of blocks in the adios file
   std::vector<int> walker_num(nprocs, 0);
@@ -162,15 +143,14 @@ void AdiosWalkerInput::read(int nprocs,
   //Calculate how many walkers each process should read and from which files
   // this process should read
   int current_adios_block = 0;
-  int current_offset = 0;
+  int current_offset      = 0;
   int next_offset;
   int next_adios_block;
   for (int i = 0; i < myComm->size(); i++)
   {
     int walkers_to_read;
-    if ( (walker_win <= i && i < walker_win + walker_wrap) ||
-         (i < (walker_win + walker_wrap) % myComm->size() &&
-          (walker_win + walker_wrap) % myComm->size() <= walker_win))
+    if ((walker_win <= i && i < walker_win + walker_wrap) ||
+        (i < (walker_win + walker_wrap) % myComm->size() && (walker_win + walker_wrap) % myComm->size() <= walker_win))
       walkers_to_read = total_walker_num / myComm->size() + 1;
     else
       walkers_to_read = total_walker_num / myComm->size();
@@ -185,17 +165,17 @@ void AdiosWalkerInput::read(int nprocs,
       int read_size;
       if (walker_num[current_adios_block] > walkers_to_read)
       {
-        read_size = walkers_to_read;
+        read_size   = walkers_to_read;
         next_offset = read_size + current_offset;
         walker_num[current_adios_block] -= read_size;
         next_adios_block = current_adios_block;
       }
       else
       {
-        read_size = walker_num[current_adios_block];
-        next_offset = 0;
+        read_size                       = walker_num[current_adios_block];
+        next_offset                     = 0;
         walker_num[current_adios_block] = 0;
-        next_adios_block = current_adios_block + 1;
+        next_adios_block                = current_adios_block + 1;
       }
       walkers_to_read -= read_size;
       app_log() << "Read Size=" << read_size << std::endl;
@@ -213,7 +193,7 @@ void AdiosWalkerInput::read(int nprocs,
         append_walkers(block_buff, read_size, current_offset);
       }
       current_adios_block = next_adios_block;
-      current_offset = next_offset;
+      current_offset      = next_offset;
     }
   }
   check_adios_error();
@@ -222,20 +202,19 @@ void AdiosWalkerInput::read(int nprocs,
   //Append the walkers we read from the buffer to the walkers list
 }
 
-void AdiosWalkerInput::append_walkers(R_t& walker_buff, int read_size,
-                                      int current_offset)
+void AdiosWalkerInput::append_walkers(R_t& walker_buff, int read_size, int current_offset)
 {
   int offset = current_offset * targetW.getParticleNum();
-  int cw = targetW.getActiveWalkers();
+  int cw     = targetW.getActiveWalkers();
   targetW.createWalkers(read_size);
   int pn = targetW.getParticleNum();
   //Now lets append all those walkers to the walker list
   for (int w = cw; w < (cw + read_size); w++) //through walkers
-    for ( int i = 0; i < pn; i++)   //through R
+    for (int i = 0; i < pn; i++)              //through R
     {
       targetW.WalkerList[w]->R[i] = walker_buff[offset + w * pn + i];
     }
 }
 
-}
+} // namespace qmcplusplus
 #endif

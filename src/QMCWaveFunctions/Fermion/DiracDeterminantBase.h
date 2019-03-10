@@ -125,6 +125,17 @@ public:
   using WaveFunctionComponent::evaluateRatiosAlltoOne;
   using WaveFunctionComponent::evaluateHessian;
 
+  // used by DiracDeterminantWithBackflow
+  virtual void evaluateDerivatives(ParticleSet& P,
+                                   const opt_variables_type& active,
+                                   int offset,
+                                   Matrix<RealType>& dlogpsi,
+                                   Array<GradType,3>& dG,
+                                   Matrix<RealType>& dL)
+  {
+    APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::evaluateDerivatives");
+  }
+
   // Stop makeClone
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const final
   {

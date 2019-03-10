@@ -21,6 +21,7 @@
 
 #include "multi/array_ref.hpp"
 #include "mpi3/communicator.hpp"
+#include "mpi3/group.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "mpi3/shared_window.hpp"
 #include "AFQMC/Memory/raw_pointers.hpp"
@@ -176,6 +177,19 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_fill_n(shm_ptr_with_raw_ptr_dispa
         return first + n;
 }
 
+template<class Alloc, typename T, typename Size, typename TT>
+shm_ptr_with_raw_ptr_dispatch<T> uninitialized_fill_n(Alloc &a, shm_ptr_with_raw_ptr_dispatch<T> first, Size n, TT const& val){
+        if(n == 0) {
+            a.comm_.barrier();
+            return first;
+        }
+        if(mpi3::group(*first.wSP_).root()) std::uninitialized_fill_n(to_address(first), n, val); // change to to_pointer
+        first.wSP_->fence();
+        first.wSP_->fence();
+        a.comm_.barrier();
+        return first + n;
+}
+
 template<typename T, typename Size>
 shm_ptr_with_raw_ptr_dispatch<T> destroy_n(shm_ptr_with_raw_ptr_dispatch<T> first, Size n){
         if(n == 0) return first;
@@ -230,16 +244,37 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy(It1 f, It1 l, shm_ptr_with_r
         return d + distance(f, l);
 }
 
+template<class Alloc, class It1, class Size, typename T>
+shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy_n(Alloc &a, It1 f, Size n, shm_ptr_with_raw_ptr_dispatch<T> d){
+        if(n == 0) return d;
+        f.wSP_->fence();
+        using std::uninitialized_copy_n;
+        if(mpi3::group(*d.wSP_).root()) uninitialized_copy_n(f, n, to_address(d));
+        f.wSP_->fence();
+        a.comm_.barrier();
+        return d + n;
+}
+
+template<class Alloc, class It1, typename T>
+shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy(Alloc &a, It1 f, It1 l, shm_ptr_with_raw_ptr_dispatch<T> d){
+        if(f == l) return d;
+        f.wSP_->fence();
+        using std::uninitialized_copy;
+        if(mpi3::group(*d.wSP_).root()) uninitialized_copy(f, l, to_address(d));
+        f.wSP_->fence();
+        a.comm_.barrier();
+        using std::distance;
+        return d + distance(f, l);
+}
+
 template<class T, class Size>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_default_construct_n(shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
         if(n == 0) return f;
         f.wSP_->fence();
-        if(group(*f.wSP_).root()) {
-//            uninitialized_value_construct_n(to_address(f), n);
+        if(mpi3::group(*f.wSP_).root()) {
             T* current(to_address(f));
             try{
                 for(; n > 0; ++current, --n) (::new((void*)current) T()); 
-                return current;
             }catch(...) {throw;} // leak!
         }
         f.wSP_->fence();
@@ -250,37 +285,76 @@ template<class T, class Size>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_value_construct_n(shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
         if(n == 0) return f;
         f.wSP_->fence();
-        if(group(*f.wSP_).root()) {
-//            uninitialized_value_construct_n(to_address(f), n);
+        if(mpi3::group(*f.wSP_).root()) {
             T* current(to_address(f));
             try{
                 for(; n > 0; ++current, --n) (::new((void*)current) T());
-                return current;
             }catch(...){throw;} // leak !!
         }
         f.wSP_->fence();
         return f + n;
 }
 
+template<class Alloc, class T, class Size>
+shm_ptr_with_raw_ptr_dispatch<T> uninitialized_default_construct_n(Alloc &a, shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
+        if(n == 0) {
+            a.comm_.barrier();
+            return f;
+        }
+        f.wSP_->fence();
+        if(mpi3::group(*f.wSP_).root()) {
+            T* current(to_address(f));
+            try{
+                for(; n > 0; ++current, --n) (::new((void*)current) T());
+            }catch(...) {throw;} // leak!
+        }
+        f.wSP_->fence();
+        a.comm_.barrier();
+        return f + n;
 }
 
-#if 0
+template<class Alloc, class T, class Size>
+shm_ptr_with_raw_ptr_dispatch<T> uninitialized_value_construct_n(Alloc &a, shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
+        if(n == 0) {
+            a.comm_.barrier();
+            return f;
+        }
+        f.wSP_->fence();
+        if(mpi3::group(*f.wSP_).root()) {
+            T* current(to_address(f));
+            try{
+                for(; n > 0; ++current, --n) (::new((void*)current) T());
+            }catch(...){throw;} // leak !!
+        }
+        f.wSP_->fence();
+        a.comm_.barrier();
+        return f + n;
+}
+
+}
+
 namespace boost{
 namespace multi{
-
-using qmcplusplus::afqmc::to_address;
-
-/**************** copy *****************/
-// Can always call cudaMemcopy2D like you do in the blas backend
 
 template<class Alloc, typename T, typename Size>
 multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_fill_n(
                     Alloc &a,
-                    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first, 
+                    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f, 
                     Size n, T const& val){
-  if(n == 0) return first;
-  kernels::fill_n(to_address(base(first)), n, stride(first), val);
-  return first + n;
+  if(n == 0) {
+    a.comm_.barrier();
+    return f;
+  }
+  base(f).wSP_->fence();
+  if(mpi3::group(*base(f).wSP_).root()) {
+      auto current(f);
+      try{
+          for(; n > 0; ++current, --n) (::new((void*) std::addressof(*current)) T(val));
+      }catch(...) {throw;} // leak!
+  }
+  base(f).wSP_->fence();
+  a.comm_.barrier();
+  return f + n;
 }
 
 template<class Alloc, typename T, typename Size>
@@ -289,25 +363,60 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
                     multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first, 
                     multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last, T const& val){
   assert( stride(first) == stride(last) );
-  if(std::distance(first,last) == 0 ) return first;
-  kernels::fill_n(to_address(base(first)), std::distance(first,last), stride(first), val);
-  return first + std::distance(first,last);
+  return uninitialized_fill_n(a,first,std::distance(first,last),val);
+}
+
+template<class T, class Q1, class Q2, typename Size>
+multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n( 
+             multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> f,
+             Size n,
+             multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> d ){
+  static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
+  static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
+  base(f).wSP_->fence();
+  base(d).wSP_->fence();
+  if(mpi3::group(*base(d).wSP_).root()) {
+    for(; n > 0; ++f, ++d, --n) *d = *f; 
+  }
+  base(d).wSP_->fence();
+  return d + n;
+}
+
+template<class T, class ForwardIt, typename Size>
+multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
+                         ForwardIt f,
+                         Size n,
+                         multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> d ){
+  base(d).wSP_->fence();
+  if(mpi3::group(*base(d).wSP_).root()) {
+    for(; n > 0; ++f, ++d, --n) *d = *f;
+  }
+  base(d).wSP_->fence();
+  return d + n;
+}
+
+template<class T, class Q1, class Q2, typename Size>
+multi::array_iterator<T, 1, T*> copy_n(
+                         multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> f,
+                         Size n,
+                         multi::array_iterator<T, 1, T*> d ){
+  static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
+  static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
+  base(f).wSP_->fence();
+// all processes copy
+  for(; n > 0; ++f, ++d, --n) *d = *f;
+  return d + n;
 }
 
 template<class T, class Q1, class Q2>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy( 
+multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
            multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
            multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> last,
            multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
   assert( stride(first) == stride(last) );
-  if(std::distance(first,last) == 0 ) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
-                                 sizeof(T),std::distance(first,last),cudaMemcpyDeviceToDevice))
-      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-  return dest+std::distance(first,last);
+  return copy_n(first,std::distance(first,last),dest); 
 }
 
 template<class T, class ForwardIt>
@@ -316,12 +425,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
                          ForwardIt last,
                          multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
   assert( stride(first) == stride(last) );
-  if(std::distance(first,last) == 0 ) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
-                                 sizeof(T),std::distance(first,last),cudaMemcpyDefault))
-      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-  return dest+std::distance(first,last);
+  return copy_n(first,std::distance(first,last),dest); 
 }
 
 template<class T, class Q1, class Q2>
@@ -332,70 +436,42 @@ multi::array_iterator<T, 1, T*> copy(
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
   assert( stride(first) == stride(last) );
-  if(std::distance(first,last) == 0 ) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
-                                 sizeof(T),std::distance(first,last),cudaMemcpyDeviceToHost))
-      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-  return dest+std::distance(first,last);
+  return copy_n(first,std::distance(first,last),dest); 
 }
 
-template<class T, class Q1, class Q2, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n( 
-             multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
-             Size N,
-             multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
-  static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
-  static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
-  if(N==0) return dest;  
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
-                                 sizeof(T),N,cudaMemcpyDeviceToDevice))
-      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-  return dest+N;
-}
-
-template<class T, class ForwardIt, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
-                         ForwardIt first,
-                         Size n,
-                         multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
-  if(n == 0) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
-                                 sizeof(T),n,cudaMemcpyDefault))
-      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-  return dest+n;
-}
-
-template<class T, class Q1, class Q2, typename Size>
-multi::array_iterator<T, 1, T*> copy_n(
-                         multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
-                         Size N,
-                         multi::array_iterator<T, 1, T*> dest ){
-  static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
-  static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
-  if( N == 0 ) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
-                                 sizeof(T),N,cudaMemcpyDeviceToHost))
-      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-  return dest+N;
+template<class Alloc, class T, class Q, typename Size>
+multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy_n( 
+                           Alloc &a,
+                           multi::array_iterator<Q, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q>> f,
+                           Size n,
+                           multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> d ){
+  static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
+  if(n == 0) {
+    a.comm_.barrier();
+    return d;
+  }
+  base(f).wSP_->fence();
+  base(d).wSP_->fence();
+  if(mpi3::group(*base(d).wSP_).root()) {
+      auto current(d);
+      auto val(f);
+      try{
+          for(; n > 0; ++current, ++val, --n) (::new((void*) std::addressof(*current)) T(*val));
+      }catch(...) {throw;} // leak!
+  }
+  f.wSP_->fence();
+  a.comm_.barrier();
+  return f + n;
 }
 
 template<class Alloc, class T, class ForwardIt>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy( 
+multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy(
                          Alloc &a,
                          ForwardIt first,
                          ForwardIt last,
                          multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
   assert( stride(first) == stride(last) );
-  if(std::distance(first,last) == 0 ) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
-                                 sizeof(T),std::distance(first,last),cudaMemcpyDefault))
-      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-  return dest+std::distance(first,last); 
+  return uninitialized_copy_n(a,first,std::distance(first,last),dest); 
 }
 
 template<class Alloc, class T, class Q1, class Q2>
@@ -407,66 +483,35 @@ multi::array_iterator<T, 1, T*> uninitialized_copy(
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
   assert( stride(first) == stride(last) );
-  if(std::distance(first,last) == 0 ) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
-                                 sizeof(T),std::distance(first,last),cudaMemcpyDeviceToHost))
-      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-  return dest+std::distance(first,last);
-}
-
-template<class Alloc, class T, class Q, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy_n( 
-                           Alloc &a,
-                           multi::array_iterator<Q, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q>> first,
-                           Size N,
-                           multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
-  static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
-  if(N==0) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
-                                 sizeof(T),N,cudaMemcpyDeviceToDevice))
-      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
-  return dest+N;
+  return uninitialized_copy_n(a,first,std::distance(first,last),dest); 
 }
 
 template<class Alloc, class T, class Size>
-shm_ptr_with_raw_ptr_dispatch<T> uninitialized_default_construct_n(Alloc& a, shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
-        using AT = typename std::allocator_traits<Alloc>;
-        if(n == 0) return f;
-        f.wSP_->fence();
-        if(group(*f.wSP_).root()) {
-//            uninitialized_value_construct_n(to_address(f), n);
-            T* current(to_address(f));
-            try{
-                for(; n > 0; ++current, --n) AT::construct(a, current, T());
-                return current;
-            }catch(...){throw;}
-        }
-        f.wSP_->fence();
-        return f + n;
+multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_default_construct_n(Alloc& a, 
+                                    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f, Size n){
+  if(n == 0) {
+    a.comm_.barrier();
+    return f;
+  }  
+  f.wSP_->fence();
+  if(mpi3::group(*f.wSP_).root()) {
+      auto current(f);
+      try{
+          for(; n > 0; ++current, --n) (::new((void*) std::addressof(*current)) T());
+      }catch(...) {throw;} // leak!
+  }
+  f.wSP_->fence();
+  a.comm_.barrier();
+  return f + n;
 }
 
 template<class Alloc, class T, class Size>
-shm_ptr_with_raw_ptr_dispatch<T> uninitialized_value_construct_n(Alloc& a, shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
-        using AT = typename std::allocator_traits<Alloc>;
-        if(n == 0) return f;
-        f.wSP_->fence();
-        if(group(*f.wSP_).root()) {
-//            uninitialized_value_construct_n(to_address(f), n);
-            T* current(to_address(f));
-            try{
-                for(; n > 0; ++current, --n) AT::construct(a, current, T());
-                return current;
-            }catch(...){throw;}
-        }
-        f.wSP_->fence();
-        return f + n;
+multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_value_construct_n(Alloc& a, 
+                                    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f, Size n){
+  return uninitialized_default_construct_n(a,f,n);
 }
 
 } // multi
 } // boost
 
-#endif 
- 
 #endif
