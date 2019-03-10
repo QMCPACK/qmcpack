@@ -95,17 +95,13 @@ public:
   inline void free() { X.free(); }
 
   // Attach to pre-allocated memory
-  template<unsigned MT>
-  inline void attachReference(const MemoryInstance<T, MT>& ref)
+  inline void attachReference(T* ref)
   {
-    static_assert(MemType == MT, "Matrix::attachReference MemType must be the same");
     X.attachReference(ref, TotSize);
   }
 
-  template<unsigned MT>
-  inline void attachReference(const MemoryInstance<T, MT>& ref, size_type n, size_type m)
+  inline void attachReference(T* ref, size_type n, size_type m)
   {
-    static_assert(MemType == MT, "Matrix::attachReference MemType must be the same");
     D1      = n;
     D2      = m;
     TotSize = n * m;

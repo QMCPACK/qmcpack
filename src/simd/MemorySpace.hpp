@@ -20,16 +20,6 @@ namespace qmcplusplus
   {
     enum { HOST = 0, CUDA };
   };
-
-  template<typename T, unsigned MemType = MemorySpace::HOST>
-  class MemoryInstance
-  {
-    T* const inst;
-
-    public:
-    inline MemoryInstance(T* const in) : inst(in) { };
-    inline T* getPointer() const { return inst; };
-  };
 }
 
 #endif

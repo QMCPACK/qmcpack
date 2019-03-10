@@ -109,15 +109,13 @@ public:
   }
 
   // Attach to pre-allocated memory
-  template<unsigned MT>
-  inline void attachReference(const MemoryInstance<T, MT>& ref, size_t n)
+  inline void attachReference(T* ref, size_t n)
   {
-    static_assert(MemType == MT, "Vector::attachReference MemType must be the same");
     if (nAllocated)
       throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
     nLocal     = n;
     nAllocated = 0;
-    X          = ref.getPointer();
+    X          = ref;
   }
 
   //! return the current size
