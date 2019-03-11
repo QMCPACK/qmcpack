@@ -29,8 +29,18 @@ void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
                         cudaStream_t& hstream);
 
 void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
+                        complex<float>* temp_gpu, const int numorbs, const int ndelay,
+                        complex<float>* V_gpu, const complex<float>* Ainv,
+                        cudaStream_t& hstream);
+
+void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
                         double* temp_gpu, const int numorbs, const int ndelay,
                         double* V_gpu, const double* Ainv,
+                        cudaStream_t& hstream);
+
+void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
+                        complex<double>* temp_gpu, const int numorbs, const int ndelay,
+                        complex<double>* V_gpu, const complex<double>* Ainv,
                         cudaStream_t& hstream);
 
 void updateBinv_x_cuda(int* delay_list_gpu, const int delay_count,

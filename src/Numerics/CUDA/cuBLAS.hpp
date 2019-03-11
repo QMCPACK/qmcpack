@@ -76,6 +76,21 @@ struct cuBLAS
   void gemm(cublasHandle_t& handle,
             const cublasOperation_t& transa, const cublasOperation_t& transb,
             int m, int n, int k,
+            const complex<float> *alpha,
+            const complex<float> *A, int lda,
+            const complex<float> *B, int ldb,
+            const complex<float> *beta,
+            complex<float> *C, int ldc)
+  {
+    cublasErrorCheck( cublasSgemm(handle, transa, transb, m, n, k,
+                      (const cuComplex*)alpha, (const cuComplex*)A, lda, (const cuComplex*)B, ldb,
+                      (const cuComplex*)beta, (cuComplex*)C, ldc), "cublasSgemm failed!" );
+  }
+
+  static inline
+  void gemm(cublasHandle_t& handle,
+            const cublasOperation_t& transa, const cublasOperation_t& transb,
+            int m, int n, int k,
             const double *alpha,
             const double *A, int lda,
             const double *B, int ldb,
@@ -83,6 +98,21 @@ struct cuBLAS
             double *C, int ldc)
   {
     cublasErrorCheck( cublasDgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc), "cublasDgemm failed!");
+  }
+
+  static inline
+  void gemm(cublasHandle_t& handle,
+            const cublasOperation_t& transa, const cublasOperation_t& transb,
+            int m, int n, int k,
+            const complex<double> *alpha,
+            const complex<double> *A, int lda,
+            const complex<double> *B, int ldb,
+            const complex<double> *beta,
+            complex<double> *C, int ldc)
+  {
+    cublasErrorCheck( cublasDgemm(handle, transa, transb, m, n, k,
+                      (const cuDoubleComplex*)alpha, (const cuDoubleComplex*)A, lda, (const cuDoubleComplex*)B, ldb,
+                      (const cuDoubleComplex*)beta, (cuDoubleComplex*)C, ldc), "cublasDgemm failed!");
   }
 };
 

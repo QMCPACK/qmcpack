@@ -50,8 +50,6 @@ namespace qmcplusplus {
       Matrix<T> V;
       //Matrix<T> tempMat; // for debugging only
       Matrix<T, CUDAAllocator<T>, MemorySpace::CUDA> U_gpu, V_gpu, Binv_gpu, temp_gpu, Ainv_gpu;
-      // temporal scratch space used by SM-1
-      Vector<T> temp, rcopy;
       // auxiliary arrays for B
       Vector<T> p;
       Vector<int, CUDAHostAllocator<int>> delay_list;
