@@ -172,7 +172,7 @@ void Communicate::cleanupMessage(void*)
 
 void Communicate::abort()
 {
-  OOMPI_COMM_WORLD.Abort();
+  myComm.Abort();
 }
 
 void Communicate::barrier()
@@ -183,7 +183,7 @@ void Communicate::barrier()
 void Communicate::abort(const char* msg)
 {
   std::cerr << msg << std::endl;
-  OOMPI_COMM_WORLD.Abort();
+  myComm.Abort();
 }
 
 
