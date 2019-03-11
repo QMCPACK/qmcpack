@@ -20,7 +20,6 @@
 #ifndef QMCPLUSPLUS_SINGLEPARTICLEORBITALSETBASE_H
 #define QMCPLUSPLUS_SINGLEPARTICLEORBITALSETBASE_H
 
-#include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
@@ -216,11 +215,7 @@ public:
   /** Evaluate the SPO value at an explicit position.
    * Ye: This is used only for debugging the CUDA code and should be removed.
    */
-  virtual void
-  evaluate (const ParticleSet& P, PosType &r, ValueVector_t &psi)
-  {
-    APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
-  }
+  virtual void evaluate (const ParticleSet& P, PosType &r, ValueVector_t &psi);
 
   /** evaluate the values of this single-particle orbital set
    * @param P current ParticleSet
