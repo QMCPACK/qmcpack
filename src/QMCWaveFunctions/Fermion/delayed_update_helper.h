@@ -15,14 +15,6 @@
 
 #include <complex>
 
-void applyW_cuda(const int *delay_list_gpu, const int delay_count,
-                 float* temp_gpu, const int ndelay,
-                 cudaStream_t& hstream);
-
-void applyW_cuda(const int *delay_list_gpu, const int delay_count,
-                 double* temp_gpu, const int ndelay,
-                 cudaStream_t& hstream);
-
 void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
                         float* temp_gpu, const int numorbs, const int ndelay,
                         float* V_gpu, const float* Ainv,
@@ -42,13 +34,5 @@ void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
                         complex<double>* temp_gpu, const int numorbs, const int ndelay,
                         complex<double>* V_gpu, const complex<double>* Ainv,
                         cudaStream_t& hstream);
-
-void updateBinv_x_cuda(int* delay_list_gpu, const int delay_count,
-                       const int rowchanged, float* Binv_row_gpu, float* p,
-                       cudaStream_t& hstream);
-
-void updateBinv_x_cuda(int* delay_list_gpu, const int delay_count,
-                       const int rowchanged, double* Binv_row_gpu, double* p,
-                       cudaStream_t& hstream);
 
 #endif
