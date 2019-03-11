@@ -21,8 +21,8 @@ void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
                         cudaStream_t& hstream);
 
 void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
-                        complex<float>* temp_gpu, const int numorbs, const int ndelay,
-                        complex<float>* V_gpu, const complex<float>* Ainv,
+                        std::complex<float>* temp_gpu, const int numorbs, const int ndelay,
+                        std::complex<float>* V_gpu, const std::complex<float>* Ainv,
                         cudaStream_t& hstream);
 
 void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
@@ -31,8 +31,8 @@ void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
                         cudaStream_t& hstream);
 
 void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
-                        complex<double>* temp_gpu, const int numorbs, const int ndelay,
-                        complex<double>* V_gpu, const complex<double>* Ainv,
+                        std::complex<double>* temp_gpu, const int numorbs, const int ndelay,
+                        std::complex<double>* V_gpu, const std::complex<double>* Ainv,
                         cudaStream_t& hstream);
 
 #endif

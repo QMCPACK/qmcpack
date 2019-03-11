@@ -10,8 +10,26 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-
+#include <cuComplex.h>
 #include "determinant_update.h"
+
+template<typename T>
+__host__ __device__ __inline__ T subtractOne(T x)
+{
+  return x+T(-1);
+}
+
+template<>
+__host__ __device__ __inline__ cuComplex subtractOne<cuComplex>(cuComplex x)
+{
+  return make_cuComplex(cuCrealf(x)-1.0f, cuCimagf(x));
+}
+
+template<>
+__host__ __device__ __inline__ cuDoubleComplex subtractOne<cuDoubleComplex>(cuDoubleComplex x)
+{
+  return make_cuDoubleComplex(cuCreal(x)-1.0f, cuCimag(x));
+}
 
 template<typename T, int BS>
 __global__ void applyW_stageV_kernel(const int *delay_list_gpu, const int delay_count,
@@ -29,7 +47,8 @@ __global__ void applyW_stageV_kernel(const int *delay_list_gpu, const int delay_
   }
 
   // apply W to temp
-  if( col<delay_count ) temp_gpu[ndelay*delay_list_gpu[col] + col] += T(-1);
+  if( col<delay_count )
+    temp_gpu[ndelay*delay_list_gpu[col] + col] = subtractOne<T>(temp_gpu[ndelay*delay_list_gpu[col] + col]);
 }
 
 void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
@@ -46,8 +65,8 @@ void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
 }
 
 void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
-                        complex<float>* temp_gpu, const int numorbs, const int ndelay,
-                        complex<float>* V_gpu, const complex<float>* Ainv,
+                        std::complex<float>* temp_gpu, const int numorbs, const int ndelay,
+                        std::complex<float>* V_gpu, const std::complex<float>* Ainv,
                         cudaStream_t& hstream)
 {
   const int BS = 128;
@@ -72,8 +91,8 @@ void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
 }
 
 void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
-                        complex<double>* temp_gpu, const int numorbs, const int ndelay,
-                        complex<double>* V_gpu, const complex<double>* Ainv,
+                        std::complex<double>* temp_gpu, const int numorbs, const int ndelay,
+                        std::complex<double>* V_gpu, const std::complex<double>* Ainv,
                         cudaStream_t& hstream)
 {
   const int BS = 128;
