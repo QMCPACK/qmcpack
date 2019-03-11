@@ -102,7 +102,7 @@ namespace qmcplusplus {
 
       inline void initializeInv(const Matrix<T>& Ainv)
       {
-        cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size()*sizeof(T), cudaMemcpyHostToDevice, hstream);
+        cudaErrorCheck( cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size()*sizeof(T), cudaMemcpyHostToDevice, hstream), "cudaMemcpyAsync failed!");
         // safe mechanism
         delay_count = 0;
         prefetched_range.clear();
@@ -114,9 +114,9 @@ namespace qmcplusplus {
         if(!prefetched_range.checkRange(rowchanged))
         {
           int last_row = std::min(rowchanged+Ainv_buffer.rows(), Ainv.rows());
-          cudaMemcpyAsync(Ainv_buffer.data(), Ainv_gpu[rowchanged],
-                          invRow.size()*(last_row-rowchanged)*sizeof(T),
-                          cudaMemcpyDeviceToHost, hstream);
+          cudaErrorCheck( cudaMemcpyAsync(Ainv_buffer.data(), Ainv_gpu[rowchanged],
+                                          invRow.size()*(last_row-rowchanged)*sizeof(T),
+                                          cudaMemcpyDeviceToHost, hstream), "cudaMemcpyAsync failed!");
           prefetched_range.setRange(rowchanged, last_row);
           waitStream();
         }
@@ -176,31 +176,12 @@ namespace qmcplusplus {
           const int norb=Ainv.rows();
           const int lda_Binv=Binv.cols();
           const T cminusone(-1);
-          cudaError_t error(cudaSuccess);
-          error = cudaMemcpyAsync(U_gpu.data(), U.data(), norb*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream);
-              if( error!=cudaSuccess ) std::cout <<"debug error 1 code " << error << std::endl;
-          //BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
-          //    cudaMemPrefetchAsync(Ainv.data(), Ainv.size()*sizeof(T), 0, hstream);
+          cudaErrorCheck( cudaMemcpyAsync(U_gpu.data(), U.data(), norb*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream), "cudaMemcpyAsync failed!");
           cuBLAS::gemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(), norb, Ainv_gpu.data(), norb, &czero, temp_gpu.data(), lda_Binv);
-          error = cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count*sizeof(int), cudaMemcpyHostToDevice, hstream);
-              if( error!=cudaSuccess ) std::cout <<"debug error 2 code " << error << std::endl;
-          //for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
+          cudaErrorCheck( cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count*sizeof(int), cudaMemcpyHostToDevice, hstream), "cudaMemcpyAsync failed!");
           applyW_stageV_cuda(delay_list_gpu.data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(), Ainv_gpu.data(), hstream);
-          //error = cudaMemcpyAsync(tempMat.data(), temp_gpu.data(), tempMat.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream);
-          //    if( error!=cudaSuccess ) std::cout <<"debug error 3 code " << error << std::endl;
-          //error = cudaStreamSynchronize(hstream);
-          //    if( error!=cudaSuccess ) std::cout <<"debug error 4 code " << error << std::endl;
-              //std::cout << "debug tempMat " << tempMat << std::endl;
-          error = cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream);
-              if( error!=cudaSuccess ) std::cout <<"debug error 3 code " << error << std::endl;
-          //BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
+          cudaErrorCheck( cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream), "cudaMemcpyAsync failed!");
           cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone, V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb);
-          //error = cudaMemcpyAsync(U.data(), U_gpu.data(), norb*delay_count*sizeof(T), cudaMemcpyDeviceToHost, hstream);
-          //    if( error!=cudaSuccess ) std::cout <<"debug error 5 code " << error << std::endl;
-          //error = cudaStreamSynchronize(hstream);
-          //    if( error!=cudaSuccess ) std::cout <<"debug error 6 code " << error << std::endl;
-              //std::cout << "debug U " << U << std::endl;
-          //BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
           cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
           delay_count = 0;
           // Ainv is invalid, reset range
@@ -210,7 +191,7 @@ namespace qmcplusplus {
         // transfer Ainv_gpu to Ainv and wait till completion
         if(transfer_to_host)
         {
-          cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream);
+          cudaErrorCheck( cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream), "cudaMemcpyAsync failed!");
           // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
           //waitStream();
         }
@@ -218,8 +199,7 @@ namespace qmcplusplus {
 
       inline void waitStream()
       {
-        cudaError_t error = cudaStreamSynchronize(hstream);
-        if( error!=cudaSuccess ) throw std::runtime_error("DelayedUpdateCUDA::waitStream cudaStreamSynchronize failed!\n");
+        cudaErrorCheck( cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
       }
     };
 }

@@ -84,7 +84,7 @@ struct cuBLAS
   {
     cublasErrorCheck( cublasCgemm(handle, transa, transb, m, n, k,
                       (const cuComplex*)alpha, (const cuComplex*)A, lda, (const cuComplex*)B, ldb,
-                      (const cuComplex*)beta, (cuComplex*)C, ldc), "cublasSgemm failed!" );
+                      (const cuComplex*)beta, (cuComplex*)C, ldc), "cublasCgemm failed!" );
   }
 
   static inline
@@ -112,7 +112,7 @@ struct cuBLAS
   {
     cublasErrorCheck( cublasZgemm(handle, transa, transb, m, n, k,
                       (const cuDoubleComplex*)alpha, (const cuDoubleComplex*)A, lda, (const cuDoubleComplex*)B, ldb,
-                      (const cuDoubleComplex*)beta, (cuDoubleComplex*)C, ldc), "cublasDgemm failed!");
+                      (const cuDoubleComplex*)beta, (cuDoubleComplex*)C, ldc), "cublasZgemm failed!");
   }
 };
 
