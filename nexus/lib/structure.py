@@ -29,7 +29,7 @@
 import os
 from copy import deepcopy
 from random import randint
-from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64,sign,isclose
+from numpy import abs,all,append,arange,around,array,atleast_2d,ceil,cos,cross,cross,diag,dot,empty,exp,flipud,floor,gcd,identity,isclose,logical_not,mgrid,mod,ndarray,ones,pi,round,sign,sin,sqrt,uint64,zeros
 from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
@@ -39,7 +39,6 @@ from fileio import XsfFile
 from generic import obj
 from developer import DevBase,unavailable,error,warn
 from debug import ci,ls,gs
-
 
 try:
     from scipy.special import erfc
@@ -4644,14 +4643,13 @@ def get_band_tiling(
     kpoints_label  = None, 
     kpoints_rel    = None, 
     max_volfac     = 20,
+    min_volfac     = 0,
+    target_volfac  = None,    
     ):
-    import numpy as np
-    import itertools
-    import pdb
-    import time
+
     def cube_deviation(axes):
         a = axes
-        volume = np.abs(np.dot(np.cross(axes[0,:], axes[1,:]), axes[2,:]))
+        volume = abs(dot(cross(axes[0,:], axes[1,:]), axes[2,:]))
         dc = volume**(1./3)*sqrt(2.)
         d1 = abs(norm(a[0]+a[1])-dc)
         d2 = abs(norm(a[1]+a[2])-dc)
@@ -4661,158 +4659,232 @@ def get_band_tiling(
         d6 = abs(norm(a[2]-a[0])-dc)
         return (d1+d2+d3+d4+d5+d6)/(6*dc)
     #end def cube_deviation
-    def reduce_axes(axes):
-        newaxes   = [ axes[0,:] + axes[1,:] + axes[2,:],
-                     -axes[0,:] + axes[1,:] + axes[2,:],
-                      axes[0,:] - axes[1,:] + axes[2,:],
-                      axes[0,:] + axes[1,:] - axes[2,:],
-                     -axes[0,:] - axes[1,:] + axes[2,:],
-                     -axes[0,:] + axes[1,:] - axes[2,:],
-                      axes[0,:] - axes[1,:] - axes[2,:],
-                     -axes[0,:] - axes[1,:] - axes[2,:]]
-        found        = False
-        max_cubicity = cube_deviation(axes)
-        new_axes     = []
-        for na in newaxes:
-            for i in range(0,3):
-                tempaxes=axes.copy()
-                tempaxes[i,:] = na 
-                tempaxes_cubicity = cube_deviation(tempaxes)
-                if tempaxes_cubicity < max_cubicity:
-                    new_axes = tempaxes
-                    max_cubicity = tempaxes_cubicity
-                    found = True
-                #end if
-            #end for
-        #end for
-        if found:
-            return reduce_axes(new_axes)
-        else:
-            return axes
-        #end if
-    #end def reduce_axes    
-    kpath       = get_kpath(structure = structure, check_standard = check_standard)
-    kpath_label = array(kpath['explicit_kpoints_labels'])
-    kpath_rel   = kpath['explicit_kpoints_rel']
-    kpts        = dict()
-    ## Read input k-points
-    if kpoints_label is None:
-        kpoints_label = []
-        if kpoints_rel is None:
-            Structure.class_error('Please define symbolic or crystal coordinates for kpoints. e.g. [\'GAMMA\', \'K\']  or [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]')
-        else:
-            for k in kpoints_rel:
-                kindex = np.isclose(kpath_rel,k, atol=1e-5).all(1)
-                if any(kindex):
-                    kpts[kpath_label[kindex][0]] = array(k)
-                else:
-                    Structure.class_error('{0} is not found in the kpath'.format(k))
-                #end if
-            #end for
-        #end if
-    else:
-        if kpoints_rel is not None:
-            Structure.class_error('Both symbolic and crystal k-points are defined.')
-        else:
-            kpoints_rel = []
-            num_kpoints = 0
-            for k in kpoints_label:
-                kindex = k == kpath_label
-                if any(kindex):
-                    if k == '' or k == None:
-                        k = '{0}'.format(num_kpoints)
-                    #end if
-                    kpts[k] = array(kpath_rel[kindex][0])
-                else:
-                    Structure.class_error('{0} is not found in the kpath'.format(k))
-                #end if
-            #end for
-        #end if
-    #end if
-    #Generate greatest common divisor grid for the given kpts        
-    alphas     = array([x[0] - x[1] for x in itertools.combinations(kpts.values(),2)])
-    abs_alphas = abs(alphas)
-    divs       = []
-    volfac     = 1e6
-    ktol       = 1.0/max_volfac
-    for i in range(max_volfac, 0, -1):
-        for j in range(max_volfac, 0, -1):
-            for k in range(max_volfac, 0, -1):
-                rec_grid = array([1./i,1./j,1./k])
-                rem = np.mod(abs_alphas, rec_grid)
-                if np.all(np.any([rem<=ktol, rem>=(rec_grid-ktol)], axis=0)):
-                    n1     = i
-                    n2     = j
-                    n3     = k
-                    g12    = np.gcd.reduce([n1,n2])
-                    g13    = np.gcd.reduce([n1,n3])
-                    g23    = np.gcd.reduce([n2,n3])
-                    g123   = np.gcd.reduce([n1, n2, n3])
-                    temp_volfac = n1*n2*n3*g123/(g12*g13*g23)
 
-                    if temp_volfac <= volfac:
-                        divs = array([n1, n2, n3])
-                        volfac = temp_volfac
-                    #end if
+    def cuboid_with_int_edges(vol):
+        # Given a volume, return the cuboids which have integer edges
+        divisors = []
+        edges = []
+        if isinstance(vol, int):
+            i = 1
+            while i<=vol:
+                if vol%i==0:
+                    divisors.append(i)
                 #end if
+                i+=1
+            #end while
+            for i in divisors:
+                for j in divisors:
+                    for k in divisors:
+                        if i*j*k == vol:
+                            edges.append([i,j,k])
+                        #end if
+                    #end for
+                #end for
             #end for
+        else:
+            self.error('Volume multiplier must be integer')
+        #end if
+        
+        return edges
+    #end def cuboid_with_int_edges
+
+    def alphas_on_grid(alphas, divs):
+        new_alphas = []
+        for alpha in alphas:
+            abs_alpha  = abs(alpha)
+            sign_alpha = sign(alpha) 
+            new_alpha  = round(abs_alpha*divs)*1./divs*sign_alpha
+            new_alphas.append(new_alpha)
         #end for
-    #end for
-    quotients, rems = np.divmod(alphas,(1./divs))
-    quotients[rems>0.5/divs]+=1
-    n1, n2, n3 = divs
-    g12    = np.gcd.reduce([n1,n2])
-    g13    = np.gcd.reduce([n1,n3])
-    g23    = np.gcd.reduce([n2,n3])
-    g123   = np.gcd.reduce([n1, n2, n3])
-    #New alphas with the tolerance
-    alpha_abs   = abs(alphas)
-    alpha_signs = sign(alphas) 
-    alpha_signs[alpha_signs == 0.0] = 1.0 # 0/0 division
-    new_alphas  = np.round(alpha_abs*divs)*1./divs*alpha_signs
-    #new_rem    = np.divmod(alphas,1.0/divs)[1]
-    #Generate possible matrices in the Upper Triangular Hermite Normal Form, from PHYSICAL REVIEW B 92, 184301 (2015)
-    mats = []
-    for p in range(0, g23):
-        for q in range(0, g12/g123):
-            for r in range(g13*g23/g123):
-                tmat = [[g123*n1/(g12*g13), q*g123*n2/(g12*g23), r*g123*n3/(g13*g23)], [0, n2/g23, p*n3/g23], [0,0,n3]]
-                comm = []
-                for ai in new_alphas:
-                    if (np.abs(np.mod(np.sum(tmat*ai+1e-6, axis=1), 1) <=  4e-6)).all():
-                        comm.append(True)
+        return new_alphas
+    #end def alphas_on_grid
+
+    def find_alphas(structure, kpoints_label, kpoints_rel, check_standard):
+        # Read wavevectors from the input and return the differences between all wavevectors (alphas) 
+        kpath       = get_kpath(structure = structure, check_standard = check_standard)
+        kpath_label = array(kpath['explicit_kpoints_labels'])
+        kpath_rel   = kpath['explicit_kpoints_rel']
+        kpts        = dict()
+    
+        if kpoints_label is None:
+            kpoints_label = []
+            if kpoints_rel is None:
+                Structure.class_error('Please define symbolic or crystal coordinates for kpoints. e.g. [\'GAMMA\', \'K\']  or [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]')
+            else:
+                for k in kpoints_rel:
+                    kindex = isclose(kpath_rel,k, atol=1e-5).all(1)
+                    if any(kindex):
+                        kpts[kpath_label[kindex][0]] = array(k)
                     else:
-                        comm.append(False)
+                        Structure.class_error('{0} is not found in the kpath'.format(k))
                     #end if
                 #end for
-                if all(comm):
-                    mats.append(tmat)
+            #end if
+        else:
+            if kpoints_rel is not None:
+                Structure.class_error('Both symbolic and crystal k-points are defined.')
+            else:
+                kpoints_rel = []
+                num_kpoints = 0
+                for k in kpoints_label:
+                    kindex = k == kpath_label
+                    if any(kindex):
+                        if k == '' or k == None:
+                            k = '{0}'.format(num_kpoints)
+                        #end if
+                        kpts[k] = array(kpath_rel[kindex][0])
+                    else:
+                        Structure.class_error('{0} is not found in the kpath'.format(k))
+                    #end if
+                #end for
+            #end if
+        #end if
+        alphas = array([x[0] - x[1] for x in itertools.combinations(kpts.values(),2)]) #Combinations of k_1 - k_2 in kpts list
+        kpt0 = kpts.values()[0]
+        return alphas, kpt0
+    #end def find_alphas
+
+    def find_vars(alphas,min_volfac, max_volfac, target_volfac, use_ktol):
+        '''
+        Find variables to generate possible smallest matrices in the Upper Triangular Hermite Normal Form, from PHYSICAL REVIEW B 92, 184301 (2015)
+        For target or min/max volumes, it returns vol_mul, which is the smallest volume multiplier to be used on the volfac here   
+        '''
+        if use_ktol:               
+            ktol = 0.25/max_volfac  
+        else:
+            ktol = 0.0
+        #end if
+
+        if target_volfac is not None:
+            if min_volfac is None and max_volfac is None:
+                min_volfac = target_volfac
+                max_volfac = target_volfac
+            else:
+                print "target_volfac and {min_volfac, max_volfac} cannot be defined together!"
+                exit()
+            #end if
+        #end if
+        
+        cur_volfac     = 1e6
+        vars       = []
+        for mvol in range(max_volfac, 0, -1):
+            cuboids = cuboid_with_int_edges(mvol)
+            for c in cuboids:
+                a_1, a_2, a_3 = c
+                new_alphas = alphas_on_grid(alphas, c)
+
+    
+                rec_grid_voxel = array([1./a_1,1./a_2,1./a_3]) # reciprocal grid voxel size
+                rem = []
+                for alpha in alphas:
+                    rem.append(mod(abs(alpha), rec_grid_voxel))
+                #end for
+                if all(isclose(rem,0.0,atol=ktol)):
+                    n1     = a_1
+                    n2     = a_2
+                    n3     = a_3
+                    g12    = gcd.reduce([n1,n2])
+                    g13    = gcd.reduce([n1,n3])
+                    g23    = gcd.reduce([n2,n3])
+                    g123   = gcd.reduce([n1, n2, n3])
+                    volfac = n1*n2*n3*g123/(g12*g13*g23)
+                    if volfac < cur_volfac: #min_volfac <= volfac and  and volfac <= max_volfac:
+                        vars = [[n1, n2, n3, g12, g13, g23, g123]]
+                        cur_volfac = volfac
+                    elif volfac == cur_volfac:
+                        vars.append([n1, n2, n3, g12, g13, g23, g123])
+                    #end if
                 #end if
             #end for
         #end for
-    #end for
-    axes             = structure.axes
-    final_mat        = []
-    final_s_cubicity = 1e6
-    mats             = array(mats)
-    for m in mats:
-        s_axes         = np.dot(m, axes)
-        new_s_axes     = reduce_axes(s_axes)
-        new_s_cubicity = cube_deviation(new_s_axes)
-        if new_s_cubicity < final_s_cubicity:
-            final_mat        = new_s_axes
-            final_s_cubicity = new_s_cubicity
+        if vars == []:
+            print 'Change ktol'
+            exit()
+        else:
+            can_be_found = False
+            vol_mul = 1
+            while not can_be_found:           
+                if volfac*vol_mul <= max_volfac and volfac*vol_mul >= min_volfac:
+                    can_be_found = True
+                elif volfac*vol_mul > max_volfac:
+                    print 'Increase max_volfac or target_volfac!'
+                    exit()
+                else:
+                    vol_mul+=1
+                #end if
+                
+            return vars, vol_mul
         #end if
-    #end for
-    t = array(np.dot(final_mat, np.linalg.inv(axes)))
-    t_float = t.copy()
-    tol = 10**-6
-    t[abs(t)< tol] = 0
-    t_int = around(t).astype(int)
-    if not (abs(t_int-t_float) < tol).any():
-        print "Tiling matrix has non-integer elements!"
-        exit()
-    return t_int.tolist()
+        
+    #end def find_vars
+
+    def find_mats(mat_vars, alphas):
+        '''
+        Given the variables (v), return the list of all upper triangular matrices as in  PHYSICAL REVIEW B 92, 184301 (2015)
+        '''
+        mats = []
+        for v in mat_vars:
+            n1, n2, n3, g12, g13, g23, g123 = v
+            #New alphas exactly on the voxels thanks to ktol
+            for p in range(0, g23):
+                for q in range(0, g12/g123):
+                    for r in range(g13*g23/g123):
+                        temp_mat = [[g123*n1/(g12*g13), q*g123*n2/(g12*g23), r*g123*n3/(g13*g23)], [0, n2/g23, p*n3/g23], [0,0,n3]]
+                        comm = []
+                        div = array([n1, n2, n3])
+                        new_alphas = alphas_on_grid(alphas, div)
+                        for new_alpha in new_alphas:
+                            if (isclose(abs(dot(temp_mat,new_alpha))%1.0, 0, atol = 1e-6)).all():
+                                comm.append(True) # new_alpha is commensurate with tmat
+                            else:
+                                comm.append(False)
+                            #end if
+                        #end for
+                        if all(comm) and temp_mat not in mats: # if all new_alphas are commensurate with tmat
+                            mats.append(temp_mat)
+                        #end if
+                    #end for
+                #end for
+            #end for
+        #end for
+
+        return mats
+
+    #end def find_mats
+    
+    def find_cubic_mat(mats, structure, mat_vol_mul):
+        final_axes       = []
+        final_t          = []
+        final_cubicity   = 1e6
+        mats             = array(mats)
+        for m in mats:
+            axes     = structure.axes.copy()
+            s        = structure.copy()
+            [m_t, r] = optimal_tilematrix(s.tile(m), volfac=mat_vol_mul)
+            m_axes = dot(dot(m_t, m), axes)
+            m_cubicity = cube_deviation(m_axes)
+            if m_cubicity < final_cubicity:
+                final_axes        = m_axes
+                final_cubicity    = m_cubicity
+                final_t           = dot(m_t, m)
+            #end if
+        #end for
+        return final_t.tolist()                
+    #end def find_cubic_mat
+
+    def find_shift(final_mat, structure, kpt0):
+        return None
+    #end def find_cubic_mat
+    
+    alphas, kpt0            = find_alphas(structure,kpoints_label,kpoints_rel, check_standard) # Wavevector differences
+    mat_vars, mat_vol_mul   = find_vars(alphas,min_volfac,max_volfac,target_volfac,use_ktol)   # Variables to construct upper triangular matrices
+    mats                    = find_mats(mat_vars,alphas)                                       # List of upper triangular matrices that are commensurate with alphas
+    final_mat               = find_cubic_mat(mats, structure, mat_vol_mul)                     # Matrix leading to a lattice with highest cubicity, optimized using elementary operations
+    shift                   = find_shift(final_mat, structure)                                 # Find the grid shift
+    o = obj()
+    o.mat   = final_mat
+    o.shift = shift
+    return o
 #end def get_band_tiling
 
 def get_seekpath_full(
@@ -6215,6 +6287,7 @@ def read_structure(filepath,elem=None,format=None):
 
 
 if __name__=='__main__':
+
     large = generate_structure(
         type      = 'crystal',
         structure = 'diamond',
@@ -6230,4 +6303,10 @@ if __name__=='__main__':
     small = large.folded_structure
 
     print small.kpoints_unit()
+
+    prim       = read_structure('scf.struct.xsf')
+    prim       = get_primitive_cell(structure=prim)['structure']
+    tiling     = get_band_tiling(structure=prim, kpoints_label = ['L', 'F'], min_volfac=6, max_volfac = 6)
+
+    print tiling
 #end if
