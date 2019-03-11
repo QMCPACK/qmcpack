@@ -42,6 +42,9 @@ int TagMaker::CurrentTag = 1000;
 //Global Communicator is created without initialization
 Communicate* OHMMS::Controller = new Communicate;
 
+//Node Communicator is created without initialization
+Communicate* OHMMS::NodeController = new Communicate;
+
 //default constructor: ready for a serial execution
 Communicate::Communicate():
   myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
@@ -149,6 +152,13 @@ void Communicate::initialize(int argc, char **argv)
 {
 }
 
+void Communicate::initializeAsNodeComm(const Communicate& parent)
+{
+  MPI_Comm_split_type(parent.getMPI(), MPI_COMM_TYPE_SHARED, parent.rank(), MPI_INFO_NULL, &myMPI);
+  myComm=OOMPI_Intra_comm(myMPI);
+  d_mycontext=myComm.Rank();
+  d_ncontexts=myComm.Size();
+}
 
 void Communicate::finalize()
 {
@@ -192,6 +202,10 @@ void Communicate::abort(const char* msg)
 void Communicate::initialize(int argc, char **argv)
 {
   std::string when="qmc."+getDateAndTime("%Y%m%d_%H%M");
+}
+
+void Communicate::initializeAsNodeComm(const Communicate& parent)
+{
 }
 
 void Communicate::finalize()

@@ -107,6 +107,8 @@ public:
 #ifdef HAVE_MPI
   void initialize(const mpi3::environment &env);
 #endif
+  /// initialize this as a node/shared-memory communicator
+  void initializeAsNodeComm(const Communicate& parent);
   void finalize();
   void abort();
   void abort(const char* msg);
@@ -279,6 +281,9 @@ namespace OHMMS
 /** Global Communicator for a process
  */
 extern Communicate* Controller;
+/** Node Communicator for a process
+ */
+extern Communicate* NodeController;
 }
 
 

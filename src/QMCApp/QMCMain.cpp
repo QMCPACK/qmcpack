@@ -81,9 +81,10 @@ QMCMain::QMCMain(Communicate* c)
   app_summary()  << "=====================================================\n";
   qmc_common.print_options(app_log());
   app_summary()
-      << "\n  MPI Nodes             = " << OHMMS::Controller->size()
-      << "\n  MPI Nodes per group   = " << myComm->size()
+      << "\n  MPI Ranks             = " << OHMMS::Controller->size()
+      << "\n  MPI Ranks per group   = " << myComm->size()
       << "\n  MPI Group ID          = " << myComm->getGroupID()
+      << "\n  MPI Ranks per node    = " << OHMMS::NodeController->size()
       << std::endl;
   #pragma omp parallel
   {

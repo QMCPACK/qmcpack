@@ -51,6 +51,7 @@ int main(int argc, char **argv)
   mpi3::environment env(argc, argv);
   OHMMS::Controller->initialize(env);
 #endif
+  OHMMS::NodeController->initializeAsNodeComm(*OHMMS::Controller);
   qmcplusplus::qmc_common.initialize(argc,argv);
   int clones=1;
   bool useGPU=(qmc_common.compute_device == 1);
