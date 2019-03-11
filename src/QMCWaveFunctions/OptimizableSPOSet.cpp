@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-
+#include "Message/Communicate.h"
 #include "QMCWaveFunctions/OptimizableSPOSet.h"
 #include "Numerics/OhmmsBlas.h"
 #include "OhmmsData/AttributeSet.h"
@@ -447,8 +447,7 @@ OptimizableSPOSet::evaluate(const ParticleSet& P, int iat,
                             ValueVector_t& psi, GradVector_t& dpsi,
                             HessVector_t& gg_psi)
 {
-  app_error() << "Need specialization for OptimizableSPOSet::evaluate(HessVector_t)  Abort.\n";
-  abort();
+  APP_ABORT("Need specialization for OptimizableSPOSet::evaluate(HessVector_t)  Abort.\n");
 }
 
 void

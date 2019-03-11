@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_SINGLEPARTICLEORBITALSETBASE_H
 #define QMCPLUSPLUS_SINGLEPARTICLEORBITALSETBASE_H
 
+#include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
@@ -218,9 +219,7 @@ public:
   virtual void
   evaluate (const ParticleSet& P, PosType &r, ValueVector_t &psi)
   {
-    app_error() << "Need specialization for SPOSet::evaluate "
-                << "(const ParticleSet& P, PosType &r).\n";
-    abort();
+    APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
   }
 
   /** evaluate the values of this single-particle orbital set
