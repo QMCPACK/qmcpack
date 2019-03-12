@@ -58,8 +58,8 @@ Communicate::Communicate(const mpi3::environment &env):
 
 Communicate::~Communicate()
 {
-  myComm.~OOMPI_Intra_comm();
 #ifdef HAVE_MPI
+  myComm.~OOMPI_Intra_comm();
   if(myMPI!=MPI_COMM_NULL) MPI_Comm_free(&myMPI);
 #endif
   if(GroupLeaderComm!=nullptr) delete GroupLeaderComm;
