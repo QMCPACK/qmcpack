@@ -4451,7 +4451,7 @@ Structure.set_operations()
 #
 #  installation of seekpath
 #    pip install seekpath
-
+import itertools
 from periodic_table import pt as ptable
 try:
     from numpy import array_equal
@@ -4880,10 +4880,11 @@ def get_band_tiling(
     mat_vars, mat_vol_mul   = find_vars(alphas,min_volfac,max_volfac,target_volfac,use_ktol)   # Variables to construct upper triangular matrices
     mats                    = find_mats(mat_vars,alphas)                                       # List of upper triangular matrices that are commensurate with alphas
     final_mat               = find_cubic_mat(mats, structure, mat_vol_mul)                     # Matrix leading to a lattice with highest cubicity, optimized using elementary operations
-    shift                   = find_shift(final_mat, structure)                                 # Find the grid shift
+    shift                   = find_shift(final_mat, structure, kpts0)                          # Find the grid shift
     o = obj()
     o.mat   = final_mat
     o.shift = shift
+    o.det   = det(final_mat)
     return o
 #end def get_band_tiling
 
