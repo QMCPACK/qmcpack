@@ -34,11 +34,7 @@ QMCState::QMCState()
   use_ewald=false;
   qmc_counter=0;
   memory_allocated=0;
-#if defined(QMC_CUDA)
-  compute_device=1;
-#else
-  compute_device=0;
-#endif
+  default_accelerator_id=-1;
 }
 
 void QMCState::initialize(int argc, char **argv)
