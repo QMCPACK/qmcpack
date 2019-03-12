@@ -103,7 +103,7 @@ public:
    */
   virtual ~Communicate();
 
-  ///constructor with communicator
+  ///disable constructor
   Communicate(const Communicate&) = delete;
 
   // Only for unit tests
@@ -286,9 +286,6 @@ namespace OHMMS
 /** Global Communicator for a process
  */
 extern Communicate* Controller;
-/** Node Communicator for a process
- */
-extern Communicate* NodeController;
 }
 
 
