@@ -255,7 +255,11 @@ public:
 
 protected:
 
-  /// Raw communicator
+  /** Raw communicator
+   *
+   *  Currently it is only owned by Communicate which manages its creation and destruction
+   *  After switching to mpi3::communicator, myMPI is only a reference to the raw communicator owned by mpi3::communicator
+   */
   mpi_comm_type myMPI;
   /// OOMPI communicator
   intra_comm_type myComm;

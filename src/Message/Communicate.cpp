@@ -73,6 +73,7 @@ Communicate::Communicate(const mpi_comm_type comm_input):
 {
   MPI_Comm_dup(comm_input, &myMPI);
   myComm = OOMPI_Intra_comm(myMPI);
+  // TODO: mpi3 needs to define comm
   d_mycontext = myComm.Rank();
   d_ncontexts = myComm.Size();
 }
@@ -85,6 +86,7 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
   int q=in_comm.rank()-nplist[p]; //rank within a group
   MPI_Comm_split(in_comm.getMPI(),p,q,&myMPI);
   myComm=OOMPI_Intra_comm(myMPI);
+  // TODO: mpi3 needs to define comm
   d_mycontext=myComm.Rank();
   d_ncontexts=myComm.Size();
   d_groupid=p;
@@ -143,6 +145,7 @@ void Communicate::initializeAsNodeComm(const Communicate& parent)
 {
   MPI_Comm_split_type(parent.getMPI(), MPI_COMM_TYPE_SHARED, parent.rank(), MPI_INFO_NULL, &myMPI);
   myComm = OOMPI_Intra_comm(myMPI);
+  // TODO: mpi3 needs to define comm
   d_mycontext = myComm.Rank();
   d_ncontexts = myComm.Size();
 }
