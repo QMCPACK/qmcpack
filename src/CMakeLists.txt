@@ -160,6 +160,7 @@ ENDIF(HAVE_OOMPI)
     Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
     Platforms/sysutil.cpp
+    Platforms/accelerators.cpp
     QMCFactory/OneDimGridFactory.cpp
     Message/Communicate.cpp 
     Message/MPIObjectBase.cpp 

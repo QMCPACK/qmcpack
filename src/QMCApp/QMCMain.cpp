@@ -24,6 +24,7 @@
  * @brief Implments QMCMain operators.
  */
 #include "QMCApp/QMCMain.h"
+#include "Platforms/accelerators.hpp"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/HamiltonianPool.h"
@@ -107,6 +108,8 @@ QMCMain::QMCMain(Communicate* c)
       }
     }
   }
+  // assign accelerators within a node
+  assignAccelerators(NodeComm);
   app_summary()
       << "\n  Precision used in this calculation, see definitions in the manual:"
       << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)

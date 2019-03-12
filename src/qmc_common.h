@@ -45,6 +45,8 @@ struct QMCState
   int mpi_groups;
   ///size of memory allocated in byte per MPI
   size_t memory_allocated;
+  /// the id of the default accelerator
+  int default_accelerator_id;
 
   ///constructor
   QMCState();
