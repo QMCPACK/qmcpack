@@ -51,7 +51,6 @@ int main(int argc, char **argv)
   mpi3::environment env(argc, argv);
   OHMMS::Controller->initialize(env);
 #endif
-  OHMMS::NodeController->initializeAsNodeComm(*OHMMS::Controller);
   qmcplusplus::qmc_common.initialize(argc,argv);
   int clones=1;
 #ifdef QMC_CUDA

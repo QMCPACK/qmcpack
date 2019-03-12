@@ -69,6 +69,9 @@ QMCMain::QMCMain(Communicate* c)
   , traces_xml(NULL)
 #endif
 {
+  Communicate NodeComm;
+  NodeComm.initializeAsNodeComm(*OHMMS::Controller);
+
   app_summary()
       << "\n=====================================================\n"
       <<  "                    QMCPACK "
@@ -84,7 +87,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI Ranks             = " << OHMMS::Controller->size()
       << "\n  MPI Ranks per group   = " << myComm->size()
       << "\n  MPI Group ID          = " << myComm->getGroupID()
-      << "\n  MPI Ranks per node    = " << OHMMS::NodeController->size()
+      << "\n  MPI Ranks per node    = " << NodeComm.size()
       << std::endl;
   #pragma omp parallel
   {

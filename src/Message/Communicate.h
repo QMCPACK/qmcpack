@@ -51,6 +51,7 @@ struct CommunicatorTraits
   typedef int  status;
   typedef int  request;
   typedef int  intra_comm_type;
+  static const int MPI_COMM_NULL = 0;
   static const int MPI_REQUEST_NULL = 1;
 };
 
@@ -101,6 +102,10 @@ public:
    * Call proper finalization of Communication library
    */
   virtual ~Communicate();
+
+  ///constructor with communicator
+  Communicate(const Communicate&) = delete;
+
   // Only for unit tests
   void initialize(int argc, char **argv);
 

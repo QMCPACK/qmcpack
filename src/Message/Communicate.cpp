@@ -42,12 +42,9 @@ int TagMaker::CurrentTag = 1000;
 //Global Communicator is created without initialization
 Communicate* OHMMS::Controller = new Communicate;
 
-//Node Communicator is created without initialization
-Communicate* OHMMS::NodeController = new Communicate;
-
 //default constructor: ready for a serial execution
 Communicate::Communicate():
-  myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
+  myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
 {
 }
 
@@ -61,6 +58,10 @@ Communicate::Communicate(const mpi3::environment &env):
 
 Communicate::~Communicate()
 {
+  myComm.~OOMPI_Intra_comm();
+#ifdef HAVE_MPI
+  if(myMPI!=MPI_COMM_NULL) MPI_Comm_free(&myMPI);
+#endif
   if(GroupLeaderComm!=nullptr) delete GroupLeaderComm;
 }
 
@@ -68,40 +69,25 @@ Communicate::~Communicate()
 #ifdef HAVE_OOMPI
 
 Communicate::Communicate(const mpi_comm_type comm_input):
-  myMPI(comm_input), d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
+  d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
 {
-  myComm=OOMPI_Intra_comm(myMPI);
-  d_mycontext=myComm.Rank();
-  d_ncontexts=myComm.Size();
+  MPI_Comm_dup(comm_input, &myMPI);
+  myComm = OOMPI_Intra_comm(myMPI);
+  d_mycontext = myComm.Rank();
+  d_ncontexts = myComm.Size();
 }
 
 
 Communicate::Communicate(const Communicate& in_comm, int nparts)
 {
   std::vector<int> nplist(nparts+1);
-
-  //this is a workaround due to the OOMPI bug with split
-  if(nparts>1)
-  {
-    int p=FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
-    int q=in_comm.rank()-nplist[p];//rank within a group
-    //int n=comm.size()/nparts;
-    //int p=comm.rank()/n;
-    //int q=comm.rank()%n;
-    MPI_Comm row;
-    MPI_Comm_split(in_comm.getMPI(),p,q,&row);
-    myComm=OOMPI_Intra_comm(row);
-    d_groupid=p;
-  }
-  else
-  {
-    nplist[0]=0; nplist[1]=in_comm.size();
-    myComm=OOMPI_Intra_comm(in_comm.getComm());
-    d_groupid=0;
-  }
-  myMPI = myComm.Get_mpi();
+  int p=FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
+  int q=in_comm.rank()-nplist[p]; //rank within a group
+  MPI_Comm_split(in_comm.getMPI(),p,q,&myMPI);
+  myComm=OOMPI_Intra_comm(myMPI);
   d_mycontext=myComm.Rank();
   d_ncontexts=myComm.Size();
+  d_groupid=p;
   d_ngroups=nparts;
   // create a communicator among group leaders.
   MPI_Group parent_group, leader_group;
@@ -113,8 +99,9 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
     GroupLeaderComm = new Communicate(leader_comm);
   else
     GroupLeaderComm = nullptr;
-  MPI_Group_free(&parent_group);
+  MPI_Comm_free(&leader_comm);
   MPI_Group_free(&leader_group);
+  MPI_Group_free(&parent_group);
 }
 
 
@@ -126,10 +113,10 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 void Communicate::initialize(const mpi3::environment &env)
 {
   comm = env.world();
-  myComm = OOMPI_Intra_comm(&comm);
-  myMPI = myComm.Get_mpi();
-  d_mycontext = comm.rank();
-  d_ncontexts = comm.size();
+  MPI_Comm_dup(&comm, &myMPI);
+  myComm = OOMPI_Intra_comm(myMPI);
+  d_mycontext = myComm.Rank();
+  d_ncontexts = myComm.Size();
   d_groupid=0;
   d_ngroups=1;
 #ifdef __linux__
@@ -155,9 +142,9 @@ void Communicate::initialize(int argc, char **argv)
 void Communicate::initializeAsNodeComm(const Communicate& parent)
 {
   MPI_Comm_split_type(parent.getMPI(), MPI_COMM_TYPE_SHARED, parent.rank(), MPI_INFO_NULL, &myMPI);
-  myComm=OOMPI_Intra_comm(myMPI);
-  d_mycontext=myComm.Rank();
-  d_ncontexts=myComm.Size();
+  myComm = OOMPI_Intra_comm(myMPI);
+  d_mycontext = myComm.Rank();
+  d_ncontexts = myComm.Size();
 }
 
 void Communicate::finalize()
@@ -232,7 +219,7 @@ void Communicate::cleanupMessage(void*)
 }
 
 Communicate::Communicate(const Communicate& in_comm, int nparts)
-  : myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0)
+  : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0)
 {
   GroupLeaderComm = new Communicate();
 }
