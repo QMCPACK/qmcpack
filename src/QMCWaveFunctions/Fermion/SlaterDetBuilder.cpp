@@ -424,7 +424,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 
   // whether to use an optimizable slater determinant
   std::string optimize("no");
-#if defined(ENABLE_CUBLAS)
+#if defined(ENABLE_CUDA)
   std::string useGPU("yes");
 #else
   std::string useGPU("no");
@@ -541,7 +541,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #endif
     }
 #endif
-#if defined(ENABLE_CUBLAS)
+#if defined(ENABLE_CUDA)
     else if (useGPU == "yes")
     {
       app_log() << "Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;

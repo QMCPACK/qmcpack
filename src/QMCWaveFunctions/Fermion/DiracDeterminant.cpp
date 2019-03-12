@@ -640,7 +640,7 @@ DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) const
 
 typedef QMCTraits::ValueType ValueType;
 template class DiracDeterminant<DelayedUpdate<ValueType>>;
-#if defined(ENABLE_CUBLAS)
+#if defined(ENABLE_CUDA)
 template class DiracDeterminant<DelayedUpdateCUDA<ValueType>>;
 #endif
 

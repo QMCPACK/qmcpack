@@ -30,7 +30,7 @@ namespace qmcplusplus
 {
 
 typedef QMCTraits::ValueType ValueType;
-#ifdef ENABLE_CUBLAS
+#ifdef ENABLE_CUDA
 typedef DiracDeterminant<DelayedUpdateCUDA<ValueType>> DetType;
 #else
 typedef DiracDeterminant<DelayedUpdate<ValueType>> DetType;

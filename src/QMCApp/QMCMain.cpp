@@ -38,7 +38,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
-#ifdef ENABLE_CUBLAS
+#ifdef ENABLE_CUDA
 #include <cuda_runtime_api.h>
 #endif
 #include <queue>
@@ -121,7 +121,7 @@ QMCMain::QMCMain(Communicate* c)
   app_summary() << std::endl;
   app_summary().flush();
 
-#ifdef ENABLE_CUBLAS
+#ifdef ENABLE_CUDA
   // force the initialization of CUDA
   // This is only a temporal solution and more rigorous intialization of accelerators will replace the current hack
   cudaFree(0);
