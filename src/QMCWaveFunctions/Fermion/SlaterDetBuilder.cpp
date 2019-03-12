@@ -44,7 +44,6 @@
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/SPOSetProxy.h"
 #include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantOpt.h"
 
 #include <bitset>
 #include <unordered_map>
@@ -536,8 +535,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #endif
     }
 #endif
-    else if (psi->Optimizable)
-      adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
     else
     {
       app_log()<<"Using DiracDeterminant"<< std::endl;
@@ -805,7 +802,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         spo->occup(i,nq++) = k;
       }
     }
-    DiracDeterminant* adet;
+    DiracDeterminantBase* adet;
     if(UseBackflow)
     {
       adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetPtr) spo,0,0);
@@ -830,7 +827,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         spo->occup(i,nq++) = k;
       }
     }
-    DiracDeterminant* adet;
+    DiracDeterminantBase* adet;
     if(UseBackflow)
     {
       adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetPtr) spo,0,0);
