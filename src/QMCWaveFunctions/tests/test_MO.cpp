@@ -141,6 +141,57 @@ void test_He(bool transform)
     REQUIRE(dpsi[0][2] == Approx(              0));
     REQUIRE(d2psi[0] == Approx(  -0.2618497452));
 
+    //==========Hessian and Grad Hessian Test==========
+    /*
+    // Generated from gen_mo.py for position [0.1, 0.0, 0.0]
+    REQUIRE(values[0] == Approx(   0.9671159429));
+    REQUIRE(dpsi[0][0] == Approx(  -0.6320767316));
+    REQUIRE(dpsi[0][1] == Approx(              0));
+    REQUIRE(dpsi[0][2] == Approx(              0));
+    //Hessian (xx,xy,xz,yy,yz,zz) 
+    REQUIRE(dhpsi[0][0] == Approx(   -5.628119783));
+    REQUIRE(dhpsi[0][1] == Approx(              0));
+    REQUIRE(dhpsi[0][2] == Approx(              0));
+    REQUIRE(dhpsi[0][3] == Approx(   -6.320767316));
+    REQUIRE(dhpsi[0][4] == Approx(              0));
+    REQUIRE(dhpsi[0][5] == Approx(   -6.320767316));
+    //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
+    REQUIRE(dghpsi[0][0] == Approx(    19.92222542));
+    REQUIRE(dghpsi[0][1] == Approx(              0));
+    REQUIRE(dghpsi[0][2] == Approx(              0));
+    REQUIRE(dghpsi[0][3] == Approx(    6.926475328));
+    REQUIRE(dghpsi[0][4] == Approx(              0));
+    REQUIRE(dghpsi[0][5] == Approx(    6.926475328));
+    REQUIRE(dghpsi[0][6] == Approx(              0));
+    REQUIRE(dghpsi[0][7] == Approx(              0));
+    REQUIRE(dghpsi[0][8] == Approx(              0));
+    REQUIRE(dghpsi[0][9] == Approx(              0));
+
+
+    // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
+    REQUIRE(values[0] == Approx(   0.2315567641));
+    REQUIRE(dpsi[0][0] == Approx(  -0.3805431885));
+    REQUIRE(dpsi[0][1] == Approx(              0));
+    REQUIRE(dpsi[0][2] == Approx(              0));
+    //Hessian (xx,xy,xz,yy,yz,zz) 
+    REQUIRE(dhpsi[0][0] == Approx(   0.4992366319));
+    REQUIRE(dhpsi[0][1] == Approx(              0));
+    REQUIRE(dhpsi[0][2] == Approx(              0));
+    REQUIRE(dhpsi[0][3] == Approx(  -0.3805431885));
+    REQUIRE(dhpsi[0][4] == Approx(              0));
+    REQUIRE(dhpsi[0][5] == Approx(  -0.3805431885));
+    //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
+    REQUIRE(dghpsi[0][0] == Approx(   -0.616261556));
+    REQUIRE(dghpsi[0][1] == Approx(              0));
+    REQUIRE(dghpsi[0][2] == Approx(              0));
+    REQUIRE(dghpsi[0][3] == Approx(   0.8797798204));
+    REQUIRE(dghpsi[0][4] == Approx(              0));
+    REQUIRE(dghpsi[0][5] == Approx(   0.8797798204));
+    REQUIRE(dghpsi[0][6] == Approx(              0));
+    REQUIRE(dghpsi[0][7] == Approx(              0));
+    REQUIRE(dghpsi[0][8] == Approx(              0));
+    REQUIRE(dghpsi[0][9] == Approx(              0));
+   */
     SPOSetBuilderFactory::clear();
   }
 }
@@ -275,6 +326,71 @@ void test_Ne(bool transform)
     REQUIRE(dpsi[0][2] == Approx(              0));
     REQUIRE(d2psi[0] == Approx( -0.01551755818));
 
+    // Generated from gen_mo.py for position [0.1, 0.0, 0.0]
+    REQUIRE(values[0] == Approx(   -6.396636447));
+    REQUIRE(dpsi[0][0] == Approx(    61.34443539));
+    REQUIRE(dpsi[0][1] == Approx(              0));
+    REQUIRE(dpsi[0][2] == Approx(              0));
+    REQUIRE(d2psi[0] == Approx(    688.5882403));
+
+    //==========Hessian and Grad Hessian Test==========
+    /*
+    // Generated from gen_mo.py for position [0.1, 0.0, 0.0]
+    REQUIRE(values[0] == Approx(   -6.396636447));
+    REQUIRE(dpsi[0][0] == Approx(    61.34443539));
+    REQUIRE(dpsi[0][1] == Approx(              0));
+    REQUIRE(dpsi[0][2] == Approx(              0));
+    //Hessian (xx,xy,xz,yy,yz,zz) 
+    REQUIRE(dhpsi[0][0] == Approx(   -538.3004675));
+    REQUIRE(dhpsi[0][1] == Approx(              0));
+    REQUIRE(dhpsi[0][2] == Approx(              0));
+    REQUIRE(dhpsi[0][3] == Approx(    613.4443539));
+    REQUIRE(dhpsi[0][4] == Approx(              0));
+    REQUIRE(dhpsi[0][5] == Approx(    613.4443539));
+    //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
+    REQUIRE(dghpsi[0][0] == Approx(    4600.699837));
+    REQUIRE(dghpsi[0][1] == Approx(              0));
+    REQUIRE(dghpsi[0][2] == Approx(              0));
+    REQUIRE(dghpsi[0][3] == Approx(   -11517.44821));
+    REQUIRE(dghpsi[0][4] == Approx(              0));
+    REQUIRE(dghpsi[0][5] == Approx(   -11517.44821));
+    REQUIRE(dghpsi[0][6] == Approx(              0));
+    REQUIRE(dghpsi[0][7] == Approx(              0));
+    REQUIRE(dghpsi[0][8] == Approx(              0));
+    REQUIRE(dghpsi[0][9] == Approx(              0));
+
+    // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
+    REQUIRE(values[0] == Approx(-0.005041631374));
+    // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
+    REQUIRE(values[0] == Approx(-0.005041631374));
+    REQUIRE(dpsi[0][0] == Approx(  0.01862216578));
+    REQUIRE(dpsi[0][1] == Approx(              0));
+    REQUIRE(dpsi[0][2] == Approx(              0));
+    REQUIRE(d2psi[0] == Approx( -0.01551755818));
+    // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
+    REQUIRE(values[0] == Approx(-0.005041631374));
+    REQUIRE(dpsi[0][0] == Approx(  0.01862216578));
+    REQUIRE(dpsi[0][1] == Approx(              0));
+    REQUIRE(dpsi[0][2] == Approx(              0));
+    //Hessian (xx,xy,xz,yy,yz,zz) 
+    REQUIRE(dhpsi[0][0] == Approx( -0.05276188973));
+    REQUIRE(dhpsi[0][1] == Approx(              0));
+    REQUIRE(dhpsi[0][2] == Approx(              0));
+    REQUIRE(dhpsi[0][3] == Approx(  0.01862216578));
+    REQUIRE(dhpsi[0][4] == Approx(              0));
+    REQUIRE(dhpsi[0][5] == Approx(  0.01862216578));
+    //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
+    REQUIRE(dghpsi[0][0] == Approx(   0.3540494545));
+    REQUIRE(dghpsi[0][1] == Approx(              0));
+    REQUIRE(dghpsi[0][2] == Approx(              0));
+    REQUIRE(dghpsi[0][3] == Approx( -0.07138405551));
+    REQUIRE(dghpsi[0][4] == Approx(              0));
+    REQUIRE(dghpsi[0][5] == Approx( -0.07138405551));
+    REQUIRE(dghpsi[0][6] == Approx(              0));
+    REQUIRE(dghpsi[0][7] == Approx(              0));
+    REQUIRE(dghpsi[0][8] == Approx(              0));
+    REQUIRE(dghpsi[0][9] == Approx(              0));
+    */
 
     SPOSetBuilderFactory::clear();
   }
@@ -446,6 +562,80 @@ void test_HCN(bool transform)
     REQUIRE(dpsi[6][2] == Approx(   0.4221165864));
     REQUIRE(d2psi[6] == Approx(              0));
 
+    //==========Hessian and Grad Hessian Test==========
+    /*
+    // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
+    REQUIRE(values[0] == Approx( 0.009452265234));
+    REQUIRE(dpsi[0][0] == Approx( -0.05400764372));
+    REQUIRE(dpsi[0][1] == Approx(              0));
+    REQUIRE(dpsi[0][2] == Approx(              0));
+    //Hessian (xx,xy,xz,yy,yz,zz) 
+    REQUIRE(dhpsi[0][0] == Approx(   0.3523924743));
+    REQUIRE(dhpsi[0][1] == Approx(              0));
+    REQUIRE(dhpsi[0][2] == Approx(              0));
+    REQUIRE(dhpsi[0][3] == Approx( -0.04958838002));
+    REQUIRE(dhpsi[0][4] == Approx(              0));
+    REQUIRE(dhpsi[0][5] == Approx( -0.04958838002));
+    //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
+    REQUIRE(dghpsi[0][0] == Approx(   -2.241965465));
+    REQUIRE(dghpsi[0][1] == Approx(              0));
+    REQUIRE(dghpsi[0][2] == Approx(              0));
+    REQUIRE(dghpsi[0][3] == Approx(   0.3714481861));
+    REQUIRE(dghpsi[0][4] == Approx(              0));
+    REQUIRE(dghpsi[0][5] == Approx(   0.3714481861));
+    REQUIRE(dghpsi[0][6] == Approx(              0));
+    REQUIRE(dghpsi[0][7] == Approx(              0));
+    REQUIRE(dghpsi[0][8] == Approx(              0));
+    REQUIRE(dghpsi[0][9] == Approx(              0));
+
+    // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
+    REQUIRE(values[1] == Approx(  0.02008357407));
+    REQUIRE(dpsi[1][0] == Approx(   0.1009262252));
+    REQUIRE(dpsi[1][1] == Approx(              0));
+    REQUIRE(dpsi[1][2] == Approx(              0));
+    //Hessian (xx,xy,xz,yy,yz,zz) 
+    REQUIRE(dhpsi[1][0] == Approx(   0.5298289497));
+    REQUIRE(dhpsi[1][1] == Approx(              0));
+    REQUIRE(dhpsi[1][2] == Approx(              0));
+    REQUIRE(dhpsi[1][3] == Approx( -0.09373846794));
+    REQUIRE(dhpsi[1][4] == Approx(              0));
+    REQUIRE(dhpsi[1][5] == Approx( -0.09373846794));
+    //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
+    REQUIRE(dghpsi[1][0] == Approx(    2.594787656));
+    REQUIRE(dghpsi[1][1] == Approx(              0));
+    REQUIRE(dghpsi[1][2] == Approx(              0));
+    REQUIRE(dghpsi[1][3] == Approx(  -0.5720485625));
+    REQUIRE(dghpsi[1][4] == Approx(              0));
+    REQUIRE(dghpsi[1][5] == Approx(  -0.5720485625));
+    REQUIRE(dghpsi[1][6] == Approx(              0));
+    REQUIRE(dghpsi[1][7] == Approx(              0));
+    REQUIRE(dghpsi[1][8] == Approx(              0));
+    REQUIRE(dghpsi[1][9] == Approx(              0));
+
+    // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
+    REQUIRE(values[2] == Approx(   0.4163749594));
+    REQUIRE(dpsi[2][0] == Approx(  -0.1202256419));
+    REQUIRE(dpsi[2][1] == Approx(              0));
+    REQUIRE(dpsi[2][2] == Approx(              0));
+    //Hessian (xx,xy,xz,yy,yz,zz) 
+    REQUIRE(dhpsi[2][0] == Approx( -0.02607695984));
+    REQUIRE(dhpsi[2][1] == Approx(              0));
+    REQUIRE(dhpsi[2][2] == Approx(              0));
+    REQUIRE(dhpsi[2][3] == Approx(  -0.5760364698));
+    REQUIRE(dhpsi[2][4] == Approx(              0));
+    REQUIRE(dhpsi[2][5] == Approx(  -0.5760364698));
+    //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
+    REQUIRE(dghpsi[2][0] == Approx(   -0.227147312));
+    REQUIRE(dghpsi[2][1] == Approx(              0));
+    REQUIRE(dghpsi[2][2] == Approx(              0));
+    REQUIRE(dghpsi[2][3] == Approx(   0.2992015499));
+    REQUIRE(dghpsi[2][4] == Approx(              0));
+    REQUIRE(dghpsi[2][5] == Approx(   0.2992015499));
+    REQUIRE(dghpsi[2][6] == Approx(              0));
+    REQUIRE(dghpsi[2][7] == Approx(              0));
+    REQUIRE(dghpsi[2][8] == Approx(              0));
+    REQUIRE(dghpsi[2][9] == Approx(              0));
+    */
     SPOSetBuilderFactory::clear();
   }
 }
