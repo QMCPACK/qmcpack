@@ -61,6 +61,17 @@ public:
   DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s) = delete;
   DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
 
+  /** set the index of the first particle in the determinant and reset the size of the determinant
+   *@param first index of first particle
+   *@param nel number of particles in the determinant
+   *@param delay dummy argument
+   */
+  void set(int first, int nel, int delay=1) final
+  {
+    FirstIndex = first;
+    resize(nel,nel);
+  }
+
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
   {
