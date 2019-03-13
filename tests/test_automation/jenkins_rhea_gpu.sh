@@ -11,10 +11,9 @@ cat > $BUILD_TAG.pbs << EOF
 #PBS -d $BUILD_DIR
 #PBS -l partition=gpu
 
-source /sw/rhea/environment-modules/3.2.10/rhel6.7_gnu4.4.7/init/bash
+source /sw/rhea/lmod/7.8.2/rhel7.5_4.8.5/lmod/7.8.2/init/bash
 
-
-module intel
+module unload intel
 module load gcc/6.2.0
 module load cuda/10.0.130
 module load fftw/3.3.8
