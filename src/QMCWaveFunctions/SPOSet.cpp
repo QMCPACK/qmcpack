@@ -16,6 +16,7 @@
 
 
 #include "QMCWaveFunctions/SPOSet.h"
+#include "Message/Communicate.h"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
 #include <simd/simd.hpp>
@@ -38,6 +39,11 @@ SPOSet::SPOSet()
   //default is false: LCOrbitalSet.h needs to set this true and recompute needs to check
   myComm=nullptr;
 #endif
+}
+
+void SPOSet::evaluate (const ParticleSet& P, PosType &r, ValueVector_t &psi)
+{
+  APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
 }
 
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP, ValueVector_t& psi, const ValueVector_t& psiinv, std::vector<ValueType>& ratios)

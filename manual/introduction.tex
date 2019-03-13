@@ -69,9 +69,9 @@ of a water molecule:
 
 \begin{enumerate}
 \item Go to the appropriate example directory: \ishell{cd
-    ../examples/molecules}
+    ../examples/molecules/H2O}
 \item (Optional) Put the QMCPACK binary on your path:\\ \ishell{export PATH=\$PATH:location-of-qmcpack/build/bin}
-\item Run QMCPACK: \ishell{../../build/bin/qmcpack simple-H2O.xml} or
+\item Run QMCPACK: \ishell{../../../build/bin/qmcpack simple-H2O.xml} or
   \ishell{qmcpack simple-H2O.xml} if you followed the step above.
 \item The run will output to the screen and generate a number of files:
 \begin{verbatim}
@@ -89,7 +89,7 @@ If you have python and matplotlib installed, you can use the
 data. See Chapter \ref{chap:analyzing} for information on analyzing
 QMCPACK data.
 \begin{verbatim}
-export PATH=$PATH:location-of-qmcpack/nexus/executables 
+export PATH=$PATH:location-of-qmcpack/nexus/bin 
 export PYTHONPATH=$PYTHONPATH:location-of-qmcpack/nexus/library
 qmca H2O.s002.scalar.dat         # For statistical analysis of the DMC data
 qmca -t -q e H2O.s002.scalar.dat # Graphical plot of DMC energy

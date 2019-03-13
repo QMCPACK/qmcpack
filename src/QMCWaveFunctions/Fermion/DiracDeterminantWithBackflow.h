@@ -29,7 +29,7 @@ namespace qmcplusplus
 
 /** class to handle determinants with backflow
  */
-class DiracDeterminantWithBackflow: public DiracDeterminant
+class DiracDeterminantWithBackflow: public DiracDeterminantBase
 {
 public:
 
@@ -60,6 +60,17 @@ public:
   // copy constructor and assign operator disabled
   DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s) = delete;
   DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
+
+  /** set the index of the first particle in the determinant and reset the size of the determinant
+   *@param first index of first particle
+   *@param nel number of particles in the determinant
+   *@param delay dummy argument
+   */
+  void set(int first, int nel, int delay=1) final
+  {
+    FirstIndex = first;
+    resize(nel,nel);
+  }
 
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
@@ -173,6 +184,28 @@ public:
   GradMatrix_t Fmat;
   GradVector_t Fmatdiag;
   GradVector_t Fmatdiag_temp;
+
+  /////Current determinant value
+  //ValueType CurrentDet;
+  /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
+  ValueMatrix_t psiM, psiM_temp;
+
+  /// temporary container for testing
+  ValueMatrix_t psiMinv;
+
+  /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
+  GradMatrix_t  dpsiM, dpsiM_temp;
+
+  /// value of single-particle orbital for particle-by-particle update
+  ValueVector_t psiV;
+  GradVector_t dpsiV;
+  ValueVector_t d2psiV;
+
+  ValueType curRatio;
+  ParticleSet::SingleParticleValue_t *FirstAddressOfG;
+  ParticleSet::SingleParticleValue_t *LastAddressOfG;
+  ValueType *FirstAddressOfdV;
+  ValueType *LastAddressOfdV;
 
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;

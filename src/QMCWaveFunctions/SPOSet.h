@@ -215,13 +215,7 @@ public:
   /** Evaluate the SPO value at an explicit position.
    * Ye: This is used only for debugging the CUDA code and should be removed.
    */
-  virtual void
-  evaluate (const ParticleSet& P, PosType &r, ValueVector_t &psi)
-  {
-    app_error() << "Need specialization for SPOSet::evaluate "
-                << "(const ParticleSet& P, PosType &r).\n";
-    abort();
-  }
+  virtual void evaluate (const ParticleSet& P, PosType &r, ValueVector_t &psi);
 
   /** evaluate the values of this single-particle orbital set
    * @param P current ParticleSet
