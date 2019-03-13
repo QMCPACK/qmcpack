@@ -63,18 +63,10 @@ CloneManager::clear_for_unit_tests()
 
 /// Constructor.
 CloneManager::CloneManager()
+  : NumThreads(omp_get_max_threads())
 {
-  NumThreads=omp_get_max_threads();
   wPerNode.resize(NumThreads+1,0);
 }
-
-void
-CloneManager::setup(int numThreads)
-{
-  NumThreads = numThreads;
-  wPerNode.resize(NumThreads+1, 0);
-}
-
 
 ///cleanup non-static data members
 CloneManager::~CloneManager()
@@ -111,6 +103,11 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
 
   #pragma omp parallel
   {
+    // check sizes
+    #pragma omp master
+    if(NumThreads!=omp_get_num_threads())
+      throw std::runtime_error("CloneManager::makeClones Inconsist NumThreads and omp_get_num_threads()!\n");
+
     const int ip = omp_get_thread_num();
     // all the [ip] objects must be created on the ip threads to have first touch accurate.
     if (ip > 0)

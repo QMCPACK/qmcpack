@@ -67,7 +67,7 @@ public:
 
 protected:
   ///number of threads
-  IndexType NumThreads;
+  const IndexType NumThreads;
   ///walkers
   static std::vector<MCWalkerConfiguration*> wClones;
   static std::vector<MCWalkerConfiguration*> wgClones;

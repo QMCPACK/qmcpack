@@ -39,9 +39,6 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
-#ifdef ENABLE_CUDA
-#include <cuda_runtime_api.h>
-#endif
 #include <queue>
 #include <cstring>
 #include "HDFVersion.h"
