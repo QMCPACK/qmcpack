@@ -15,6 +15,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <stdexcept>
 #include <cuda_runtime_api.h>
 

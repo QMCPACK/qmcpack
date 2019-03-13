@@ -10,6 +10,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "config.h"
+#ifdef ENABLE_CUDA
+#include <cuda_runtime_api.h>
+#include <CUDA/cudaError.h>
+#endif
 #include <omp.h>
 #include "qmc_common.h"
 
@@ -33,12 +38,12 @@ void assignAccelerators(Communicate& NodeComm)
 #ifdef ENABLE_CUDA
   int cudaDeviceCount;
   int cudaDeviceID;
-  cudaGetDeviceCount(&cudaDeviceCount);
+  cudaErrorCheck( cudaGetDeviceCount(&cudaDeviceCount), "cudaGetDeviceCount failed!");
   if(num_accelerators==0)
     num_accelerators = cudaDeviceCount;
   else if(num_accelerators!=cudaDeviceCount)
     throw std::runtime_error("Inconsistent number of CUDA devices with the previous record!");
-  if(cudaDeviceCount > NodeComm.rank())
+  if(cudaDeviceCount > NodeComm.size())
     app_warning() << "More CUDA devices than the number of MPI ranks. "
                   << "Some devices will be left idle.\n"
                   << "There is potential performance issue with the GPU affinity. "
@@ -50,7 +55,10 @@ void assignAccelerators(Communicate& NodeComm)
       assigned_accelerators_id = cudaDeviceID;
     else if(assigned_accelerators_id != cudaDeviceID)
       throw std::runtime_error("Inconsistent assigned CUDA devices with the previous record!");
-    cudaSetDevice(cudaDeviceID);
+    #pragma omp parallel
+    {
+      cudaErrorCheck( cudaSetDevice(cudaDeviceID), "cudaSetDevice failed!");
+    }
   }
 #endif
 #ifdef ENABLE_OFFLOAD
@@ -60,7 +68,7 @@ void assignAccelerators(Communicate& NodeComm)
     num_accelerators = ompDeviceCount;
   else if(num_accelerators!=ompDeviceCount)
     throw std::runtime_error("Inconsistent number of OpenMP devices with the previous record!");
-  if(ompDeviceCount > NodeComm.rank())
+  if(ompDeviceCount > NodeComm.size())
     app_warning() << "More OpenMP devices than the number of MPI ranks. "
                   << "Some devices will be left idle.\n"
                   << "There is potential performance issue with the GPU affinity.\n";
@@ -76,7 +84,7 @@ void assignAccelerators(Communicate& NodeComm)
 #endif
   if(num_accelerators>0)
   {
-    app_log() << "         Number of accelerators = " << num_accelerators << std::endl;
+    app_log() << "  Accelerators per node = " << num_accelerators << std::endl;
     if(NodeComm.rank()%num_accelerators!=0)
       app_warning() << "The number of MPI ranks on the node is not dividable by the number of accelerators. "
                     << "Imbalanced load may cause performance loss.\n";
