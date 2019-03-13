@@ -34,13 +34,13 @@ namespace qmcplusplus
     value_type* allocate(std::size_t n)
     {
       value_type* pt = HostAllocator::allocate(n);
-      PRAGMA_OMP("omp target enter data map(alloc:pt[0:n])")
+      PRAGMA_OFFLOAD("omp target enter data map(alloc:pt[0:n])")
       return pt;
     }
 
     void deallocate(value_type* pt, std::size_t n)
     {
-      PRAGMA_OMP("omp target exit data map(delete:pt)")
+      PRAGMA_OFFLOAD("omp target exit data map(delete:pt)")
       HostAllocator::deallocate(pt,n);
     }
   };

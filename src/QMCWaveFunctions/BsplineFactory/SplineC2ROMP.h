@@ -299,11 +299,11 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     if (MultiSpline != nullptr)
     {
       delete SplineInst;
-      PRAGMA_OMP("omp target exit data map(delete:MultiSpline[0:1])")
-      PRAGMA_OMP("omp target exit data map(delete:master_mKK_ptr[0:mKK.size()])")
-      PRAGMA_OMP("omp target exit data map(delete:master_myKcart_ptr[0:myKcart.capacity()*3])")
-      PRAGMA_OMP("omp target exit data map(delete:master_PrimLattice_G_ptr[0:9])")
-      PRAGMA_OMP("omp target exit data map(delete:master_GGt_ptr[0:9])")
+      PRAGMA_OFFLOAD("omp target exit data map(delete:MultiSpline[0:1])")
+      PRAGMA_OFFLOAD("omp target exit data map(delete:master_mKK_ptr[0:mKK.size()])")
+      PRAGMA_OFFLOAD("omp target exit data map(delete:master_myKcart_ptr[0:myKcart.capacity()*3])")
+      PRAGMA_OFFLOAD("omp target exit data map(delete:master_PrimLattice_G_ptr[0:9])")
+      PRAGMA_OFFLOAD("omp target exit data map(delete:master_GGt_ptr[0:9])")
     }
   }
 
@@ -350,27 +350,27 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
   void finalizeConstruction()
   {
     // map the SplineInst->spline_m structure to GPU
-    PRAGMA_OMP("omp target enter data map(alloc:MultiSpline[0:1])")
+    PRAGMA_OFFLOAD("omp target enter data map(alloc:MultiSpline[0:1])")
     auto* restrict coefs = MultiSpline->coefs;
     // attach pointers on the device to achieve deep copy
-    PRAGMA_OMP("omp target map(always, to: MultiSpline[0:1], coefs[0:MultiSpline->coefs_size])")
+    PRAGMA_OFFLOAD("omp target map(always, to: MultiSpline[0:1], coefs[0:MultiSpline->coefs_size])")
     {
       MultiSpline->coefs = coefs;
     }
 
     // transfer static data to GPU
     master_mKK_ptr = mKK.data();
-    PRAGMA_OMP("omp target enter data map(alloc:master_mKK_ptr[0:mKK.size()])")
-    PRAGMA_OMP("omp target update to(master_mKK_ptr[0:mKK.size()])")
+    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_mKK_ptr[0:mKK.size()])")
+    PRAGMA_OFFLOAD("omp target update to(master_mKK_ptr[0:mKK.size()])")
     master_myKcart_ptr = myKcart.data();
-    PRAGMA_OMP("omp target enter data map(alloc:master_myKcart_ptr[0:myKcart.capacity()*3])")
-    PRAGMA_OMP("omp target update to(master_myKcart_ptr[0:myKcart.capacity()*3])")
+    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_myKcart_ptr[0:myKcart.capacity()*3])")
+    PRAGMA_OFFLOAD("omp target update to(master_myKcart_ptr[0:myKcart.capacity()*3])")
     master_PrimLattice_G_ptr = PrimLattice.G.data();
-    PRAGMA_OMP("omp target enter data map(alloc:master_PrimLattice_G_ptr[0:9])")
-    PRAGMA_OMP("omp target update to(master_PrimLattice_G_ptr[0:9])")
+    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_PrimLattice_G_ptr[0:9])")
+    PRAGMA_OFFLOAD("omp target update to(master_PrimLattice_G_ptr[0:9])")
     master_GGt_ptr = GGt.data();
-    PRAGMA_OMP("omp target enter data map(alloc:master_GGt_ptr[0:9])")
-    PRAGMA_OMP("omp target update to(master_GGt_ptr[0:9])")
+    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_GGt_ptr[0:9])")
+    PRAGMA_OFFLOAD("omp target update to(master_GGt_ptr[0:9])")
     /* debug pointers
     std::cout << "Ye debug mapping" << std::endl;
     std::cout << "SplineInst = " << SplineInst << std::endl;
@@ -499,13 +499,13 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
       size_t first_spo_local         = first_spo;
       int nComplexBands_local        = nComplexBands;
 
-      PRAGMA_OMP("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
+      PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
                   map(always, from: psi_ptr[0:orb_size])")
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
         const int first = ChunkSizePerTeam * team_id;
         const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-        PRAGMA_OMP("omp parallel")
+        PRAGMA_OFFLOAD("omp parallel")
         {
           spline2offload::evaluate_v_impl_v2(spline_ptr, rux, ruy, ruz, offload_scratch_ptr + first, first, last);
           C2R::assign_v(x,
@@ -567,7 +567,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     size_t first_spo_local         = first_spo;
     int nComplexBands_local        = nComplexBands;
 
-    PRAGMA_OMP("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) thread_limit(ChunkSizePerTeam) \
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) thread_limit(ChunkSizePerTeam) \
                 map(always, to: pos_scratch_ptr[0:nVP*6], psiinv_ptr[0:orb_size]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*nVP])")
     for (int iat = 0; iat < nVP; iat++)
@@ -582,7 +582,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
         TT sum(0);
-        PRAGMA_OMP("omp parallel")
+        PRAGMA_OFFLOAD("omp parallel")
         {
           spline2offload::evaluate_v_impl_v2(spline_ptr,
                                              pos_scratch_ptr[iat * 6 + 3],
@@ -604,7 +604,7 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
                         first / 2,
                         last / 2);
 
-          PRAGMA_OMP("omp for reduction(+:sum)")
+          PRAGMA_OFFLOAD("omp for reduction(+:sum)")
           for (int i = first_real; i < last_real; i++)
             sum += psi_iat_ptr[i] * psiinv_ptr[i];
         }
@@ -770,13 +770,13 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
     size_t first_spo_local         = first_spo;
     int nComplexBands_local        = nComplexBands;
 
-    PRAGMA_OMP("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
+    PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
                 map(always, from: results_scratch_ptr[0:orb_size*5])")
     for (int team_id = 0; team_id < NumTeams; team_id++)
     {
       const int first = ChunkSizePerTeam * team_id;
       const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-      PRAGMA_OMP("omp parallel")
+      PRAGMA_OFFLOAD("omp parallel")
       {
         spline2offload::evaluate_vgh_impl_v2(spline_ptr,
                                              rux,

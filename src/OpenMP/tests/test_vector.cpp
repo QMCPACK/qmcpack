@@ -33,7 +33,7 @@ TEST_CASE("OMPvector", "[OMP]")
   }
 
   auto* A_ptr = A.data();
-  PRAGMA_OMP("omp target teams distribute map(always, tofrom:A_ptr[0:2])")
+  PRAGMA_OFFLOAD("omp target teams distribute map(always, tofrom:A_ptr[0:2])")
   for(int i=0; i<2; i++)
   {
     A_ptr[i]+=i;
@@ -44,7 +44,7 @@ TEST_CASE("OMPvector", "[OMP]")
 
   A.resize(256);
   A_ptr = A.data();
-  PRAGMA_OMP("omp target teams distribute map(always, tofrom:A_ptr[0:2])")
+  PRAGMA_OFFLOAD("omp target teams distribute map(always, tofrom:A_ptr[0:2])")
   for(int i=0; i<2; i++)
   {
     A_ptr[i]+=i;

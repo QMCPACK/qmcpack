@@ -32,7 +32,7 @@ TEST_CASE("OMPmath", "[OMP]")
   }
 
   auto* A_ptr = A.data();
-  PRAGMA_OMP("omp target teams distribute map(always, tofrom:A_ptr[0:2])")
+  PRAGMA_OFFLOAD("omp target teams distribute map(always, tofrom:A_ptr[0:2])")
   for(int i=0; i<2; i++)
   {
     float s, c, v = 1.2;

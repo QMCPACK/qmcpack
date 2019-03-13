@@ -20,7 +20,7 @@ namespace OMPstd
   template <typename T>
   inline void fill_n(T *x, size_t count, const T& value)
   {
-    PRAGMA_OMP("omp for")
+    PRAGMA_OFFLOAD("omp for")
     for(size_t id=0; id<count; id++)
       x[id]=value;
   }
