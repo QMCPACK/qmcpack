@@ -21,14 +21,24 @@
 namespace qmcplusplus
 {
 
-
+/** distribute MPI ranks among devices
+ *
+ * the amount of MPI ranks for each device differs by 1 at maximum.
+ * larger id has more MPI ranks.
+ */
 int getDeviceID(int rank_id, int num_ranks, int num_devices)
 {
   if(num_ranks<num_devices)
     num_devices = num_ranks;
   // ranks are equally distributed among devices
-  int max_ranks_per_device = (num_ranks + num_devices - 1) / num_devices;
-  return (rank_id + max_ranks_per_device * num_devices - num_ranks) / max_ranks_per_device;
+  int min_ranks_per_device = num_ranks / num_devices;
+  int residual = num_ranks % num_devices;
+  int assigned_device_id;
+  if (rank_id < min_ranks_per_device * (num_devices - residual))
+    assigned_device_id = rank_id / min_ranks_per_device;
+  else
+    assigned_device_id = (rank_id + num_devices - residual) / (min_ranks_per_device + 1);
+  return assigned_device_id;
 }
 
 void assignAccelerators(Communicate& NodeComm)
