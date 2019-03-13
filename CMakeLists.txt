@@ -143,6 +143,10 @@ SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA")
 SET(ENABLE_SOA 0 CACHE BOOL "Enable/disable SoA optimization")
 
+IF(ENABLE_CUDA AND QMC_CUDA)
+  MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
+ENDIF(ENABLE_CUDA AND QMC_CUDA)
+
 ######################################################################
 # set debug printout
 # DEBUG_PSIBUFFER_ON keep track buffer's locator
