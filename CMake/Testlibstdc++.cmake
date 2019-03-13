@@ -18,6 +18,8 @@ int main(int argc, char **argv)
 
 try_compile(LIBSTDCXX_OKAY ${CMAKE_BINARY_DIR}
             ${TEST_LIBSTDCXX_SOURCE}
+            CXX_STANDARD 14
+            CXX_STANDARD_REQUIRED ON
             OUTPUT_VARIABLE COMPILE_OUTPUT)
 
 if (NOT LIBSTDCXX_OKAY)

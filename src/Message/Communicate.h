@@ -51,6 +51,7 @@ struct CommunicatorTraits
   typedef int  status;
   typedef int  request;
   typedef int  intra_comm_type;
+  static const int MPI_COMM_NULL = 0;
   static const int MPI_REQUEST_NULL = 1;
 };
 
@@ -101,12 +102,18 @@ public:
    * Call proper finalization of Communication library
    */
   virtual ~Communicate();
+
+  ///disable constructor
+  Communicate(const Communicate&) = delete;
+
   // Only for unit tests
   void initialize(int argc, char **argv);
 
 #ifdef HAVE_MPI
   void initialize(const mpi3::environment &env);
 #endif
+  /// initialize this as a node/shared-memory communicator
+  void initializeAsNodeComm(const Communicate& parent);
   void finalize();
   void abort();
   void abort(const char* msg);
@@ -248,7 +255,11 @@ public:
 
 protected:
 
-  /// Raw communicator
+  /** Raw communicator
+   *
+   *  Currently it is only owned by Communicate which manages its creation and destruction
+   *  After switching to mpi3::communicator, myMPI is only a reference to the raw communicator owned by mpi3::communicator
+   */
   mpi_comm_type myMPI;
   /// OOMPI communicator
   intra_comm_type myComm;
