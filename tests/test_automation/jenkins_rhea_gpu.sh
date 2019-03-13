@@ -51,8 +51,8 @@ cd /tmp/${BUILD_TAG}-build
 time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 # hacky way to check on cmake. works for now
-if ! ( grep -- '-- The C compiler identification is GNU 5.3.0' cmake.out && \
-       grep -- '-- The CXX compiler identification is GNU 5.3.0' cmake.out ) ;
+if ! ( grep -- '-- The C compiler identification is GNU 6.2.0' cmake.out && \
+       grep -- '-- The CXX compiler identification is GNU 6.2.0' cmake.out ) ;
 then
   echo "compiler version mismatch. exiting."
   exit 1
