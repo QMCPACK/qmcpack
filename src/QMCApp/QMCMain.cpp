@@ -127,12 +127,6 @@ QMCMain::QMCMain(Communicate* c)
       << std::endl;
   app_summary() << std::endl;
   app_summary().flush();
-
-#ifdef ENABLE_CUDA
-  // force the initialization of CUDA
-  // This is only a temporal solution and more rigorous intialization of accelerators will replace the current hack
-  cudaFree(0);
-#endif
 }
 
 ///destructor
