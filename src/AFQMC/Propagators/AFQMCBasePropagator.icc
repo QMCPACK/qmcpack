@@ -97,6 +97,8 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
   C3Tensor_ref vHS3D(mem_pool.origin()+displ,{vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
 
   // local matrices for temporary accumulation
+// MAM: Note -  Since nsteps can change routinely, don't reextent these.
+//              Instead have a buffer and create array_refs from them!!!
   if(MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk) 
     MFfactor = std::move(CMatrix({long(nsteps),long(nwalk)}));
   if(hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk) 

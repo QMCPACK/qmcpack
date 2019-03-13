@@ -26,6 +26,8 @@
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 #include "AFQMC/Numerics/ma_blas.hpp"
 
+#include "Utilities/Timer.h"
+
 namespace qmcplusplus
 {
 
@@ -71,9 +73,10 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   bool new_shm_space=false;  
 
   // 0. Allocate memory and set shared memory structures
+  using std::fill_n;
+  using std::copy_n;
   if(buffer.num_elements() < memory_needs ) {
     buffer = std::move(CVector(iextensions<1u>{memory_needs}));
-    using std::fill_n;
     fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
     new_shm_space=true;
   }  
@@ -152,7 +155,8 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     P1 = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1)); 
   }
 
-  std::fill_n(vsend.origin()+vak0,(vakN-vak0),zero);
+  fill_n(vsend.origin()+vak0,(vakN-vak0),zero);
+
   TG.local_barrier();
   AFQMCTimers[setup_timer]->stop();
 
@@ -170,7 +174,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     if(k>0) {
       MPI_Wait(&req_Grecv,&st);
       MPI_Wait(&req_Gsend,&st);     // need to wait for Gsend in order to overwrite Gwork  
-      std::copy_n(Grecv.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
+      copy_n(Grecv.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
       TG.local_barrier();
     }    
 
@@ -204,7 +208,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     if(k > 0) {
       MPI_Wait(&req_vrecv,&st);
       MPI_Wait(&req_vsend,&st);
-      std::copy_n(vrecv.origin()+vak0,vakN-vak0,vsend.origin()+vak0);
+      copy_n(vrecv.origin()+vak0,vakN-vak0,vsend.origin()+vak0);
     }
 
     // 6. add local contribution to vsend

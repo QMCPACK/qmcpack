@@ -281,7 +281,6 @@ class TaskGroup_
 //             <<" Setting up Task Group: " <<tgname <<std::endl;
 
     int ncores_per_TG = (nc<1)?(1):(std::min(nc,node_.size()));
-    nnodes_per_TG = (nn<1)?(1):(std::min(nn,core_.size()));
 
     // now setup local_tg_ 
 
@@ -300,6 +299,9 @@ app_log()<<nn <<" " <<nc <<std::endl;
     int ndevices(number_of_devices());
 
     if(ndevices == 0) {
+
+      nnodes_per_TG = (nn<1)?(1):(std::min(nn,core_.size()));
+
       // assign groups from different nodes to TGs
       if( core_.size()%nnodes_per_TG != 0  ) {
         app_error()<<"Found " <<core_.size() <<" nodes. " <<std::endl;
@@ -336,6 +338,8 @@ app_log()<<nn <<" " <<nc <<std::endl;
     } else { // ndevices > 0
       // assign groups from the same node to TGs
 
+      nnodes_per_TG = (nn<1)?(1):(std::min(nn,global_.size()));
+
       if(ncores_per_TG > 1) {
         app_error()<<" Error in TaskGroup setup(): ncores > 1 incompatible with ndevices>0." 
                    <<std::endl;   
@@ -350,7 +354,7 @@ app_log()<<nn <<" " <<nc <<std::endl;
       
       TG_number = global_.rank()/nnodes_per_TG; 
       number_of_TGs = global_.size()/nnodes_per_TG;
-      
+
       // split communicator
       tgrp_ = global_.split(TG_number,global_.rank());
       
@@ -379,8 +383,10 @@ class TaskGroupHandler {
       APP_ABORT(" Error: Calling TaskGroupHandler::getTG() before setting ncores. \n\n\n");
     auto t = TGMap.find(nn);
     if(t == TGMap.end()) {
+#ifndef QMC_CUDA
       if( gTG_.getTotalNodes()%nn != 0)
         APP_ABORT("Error: nnodes must divide the total number of processors. \n\n\n");
+#endif
       auto p = TGMap.insert(std::make_pair(nn,afqmc::TaskGroup_(gTG_,std::string("TaskGroup_")+std::to_string(nn),nn,ncores)));
       if(!p.second)
         APP_ABORT(" Error: Problems creating new TG in TaskGroupHandler::getTG(int). \n");

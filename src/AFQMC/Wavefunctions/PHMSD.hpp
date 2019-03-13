@@ -62,8 +62,8 @@ class PHMSD: public AFQMCInfo
 {
 
   // allocators
-  using Allocator = device_allocator<ComplexType>;
-  using Allocator_shared = localTG_allocator<ComplexType>;
+  using Allocator = std::allocator<ComplexType>; //device_allocator<ComplexType>;
+  using Allocator_shared = shared_allocator<ComplexType>; //localTG_allocator<ComplexType>;
 
   // type defs
   using pointer = typename Allocator::pointer;

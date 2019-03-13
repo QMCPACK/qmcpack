@@ -369,6 +369,7 @@ T invert(MultiArray2D&& m){
         using allocator_type = typename std::decay<MultiArray2D>::type::allocator_type;
         using iallocator_type = typename allocator_type::template rebind<int>::other;
         using extensions = typename boost::multi::layout_t<1u>::extensions_type;
+        using qmcplusplus::afqmc::fill2D;
         size_t bufferSize(invert_optimal_workspace_size(std::forward<MultiArray2D>(m)));
         boost::multi::array<element,1,allocator_type> WORK(extensions{bufferSize},
                                                             m.get_allocator()); 
@@ -378,7 +379,7 @@ T invert(MultiArray2D&& m){
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         T detvalue = determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()));
         if( std::abs(detvalue) == 0.0 ) 
-          fill2D(m.size(0),m.size(1),m.origin(),m.stride(0),element(0.0));    
+          fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),element(0.0));    
         else 
           getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
@@ -388,11 +389,13 @@ template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typenam
 T invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK){
         assert(m.size(0) == m.size(1));
         assert(pivot.size() >= m.size(0)+1);
+        using element = typename std::decay<MultiArray2D>::type::element;
+        using qmcplusplus::afqmc::fill2D;
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         T detvalue = determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()));
         if( std::abs(detvalue) == 0.0 )
-          fill2D(m.size(0),m.size(1),m.origin(),m.stride(0),element(0.0));
+          fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),element(0.0));
         else
           getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
@@ -402,12 +405,14 @@ template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typenam
 void invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T* detvalue){
         assert(m.size(0) == m.size(1));
         assert(pivot.size() >= m.size(0)+1);
+        using element = typename std::decay<MultiArray2D>::type::element;
+        using qmcplusplus::afqmc::fill2D;
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()), detvalue);
-        if( std::abs(ComplexType(*detvalue)) == 0.0 )
-          fill2D(m.size(0),m.size(1),m.origin(),m.stride(0),element(0.0));
-        else
+//        if( std::abs(T(*detvalue)) == 0.0 )
+//          fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),element(0.0));
+//        else
           getri(std::forward<MultiArray2D>(m), pivot, WORK);
 }
 

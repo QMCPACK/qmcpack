@@ -38,6 +38,8 @@ namespace afqmc
 template<class WlkSet>
 void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt) 
 {
+  using std::fill_n;
+  using std::copy_n;
   AFQMCTimers[setup_timer]->start();
   const ComplexType one(1.),zero(0.);
   auto walker_type = wset.getWalkerType();
@@ -72,7 +74,6 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   // 0. Allocate memory and set shared memory structures
   if(buffer.num_elements() < memory_needs ) {
     buffer = std::move(CVector(iextensions<1u>{memory_needs}));
-    using std::fill_n;
     fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
     new_shm_space=true;
   }  

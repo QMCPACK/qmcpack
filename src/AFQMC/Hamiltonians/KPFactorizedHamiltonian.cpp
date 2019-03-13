@@ -59,6 +59,12 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   using SpMatrix_ref = boost::multi::array_ref<SPComplexType,2>;
   using Sp3Tensor_ref = boost::multi::array_ref<SPComplexType,3>;
 
+  if( TGprop.TG() != TGwfn.TG() ) {
+    app_error()<<" Error: KPFactorizedHamiltonian requires nnodes to be the same in Wavefunction \n"
+               <<"        and Propagator xml blocks." <<std::endl;
+    APP_ABORT("Error: Inconsistent nnodes in KPFactorizedHamiltonian \n");
+  }
+
   // hack until parallel hdf is in place
   bool write_hdf = false;
   if(TGwfn.Global().root()) write_hdf = !hdf_restart.closed();
@@ -694,6 +700,12 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   using Sp3Tensor_ref = boost::multi::array_ref<SPComplexType,3>;
   using Sp4Tensor_ref = boost::multi::array_ref<SPComplexType,4>;
 
+  if( TGprop.TG() != TGwfn.TG() ) {
+    app_error()<<" Error: KPFactorizedHamiltonian requires nnodes to be the same in Wavefunction \n"
+               <<"        and Propagator xml blocks." <<std::endl;
+    APP_ABORT("Error: Inconsistent nnodes in KPFactorizedHamiltonian \n");
+  }
+
   if(TG.TG_local().size() > 1)
     APP_ABORT(" Error: KPFactorizedHamiltonian::getHamiltonianOperations_batched expects ncores=1. \n"); 
 
@@ -710,10 +722,14 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   if(ndet > 1)
     APP_ABORT("Error: ndet > 1 not yet implemented in THCHamiltonian::getHamiltonianOperations.\n");
 
+  auto Qcomm(TG.Global().split(TGwfn.getLocalGroupNumber(),TG.Global().rank()));
+  auto distNode(TG.Node().split(TGwfn.getLocalGroupNumber(),TG.Node().rank())); 
+  auto Qcomm_roots(Qcomm.split(distNode.rank(),Qcomm.rank()));
+
   long nkpts, Qbeg=0, Qend, nQ;
   hdf_archive dump(TGwfn.Global());
   // right now only Node.root() reads
-  if( TG.Node().root() ) {
+  if( distNode.root() ) {
     if(!dump.open(fileName,H5F_ACC_RDONLY)) {
       app_error()<<" Error opening integral file in THCHamiltonian. \n";
       APP_ABORT("");
@@ -827,9 +843,6 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
       }
     }
   }
-  auto Qcomm(TG.Global().split(TGwfn.getLocalGroupNumber(),TG.Global().rank()));
-  auto distNode(TG.Node().split(TGwfn.getLocalGroupNumber(),TG.Node().rank())); 
-  auto Qcomm_roots(Qcomm.split(distNode.rank(),Qcomm.rank()));
 
   int nmo_max = *std::max_element(nmo_per_kp.begin(),nmo_per_kp.end());
   int nchol_max = *std::max_element(nchol_per_kp.begin(),nchol_per_kp.end());
@@ -963,11 +976,17 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   LQKakn.reserve(ndet*nspins*nkpts);  
   for(int nd=0; nd<ndet; nd++) {
     for(int Q=0; Q<nkpts; Q++) {
-      LQKakn.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
+      if(Qmap[Q]>=0)
+        LQKakn.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
+      else  
+        LQKakn.emplace_back(shmSpMatrix({1,1},shared_allocator<ComplexType>{distNode}));
     }
     if(type==COLLINEAR) {
       for(int Q=0; Q<nkpts; Q++) {
-        LQKakn.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
+        if(Qmap[Q]>=0)
+          LQKakn.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
+        else
+          LQKakn.emplace_back(shmSpMatrix({1,1},shared_allocator<ComplexType>{distNode}));
       }
     }
   }

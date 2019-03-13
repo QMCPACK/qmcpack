@@ -20,6 +20,7 @@
 #include <tuple>
 #include<mutex>
 
+#include "Utilities/Timer.h"
 #include "Utilities/FairDivide.h" 
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/csr_blas.hpp"
@@ -113,7 +114,7 @@ namespace afqmc
     assert(ci.size()==1);
     bool new_shm_space=false; 
     const int node_number = TG.getLocalGroupNumber();
-    const int nnodes = TG.getNGroupsPerTG();
+    const int ngroups = TG.getNGroupsPerTG();
     const int Gsize = dm_size(false);
     const ComplexType zero(0.0);
     const int nwalk = wset.size();
@@ -138,9 +139,8 @@ namespace afqmc
     CMatrix_ref Gwork(make_device_ptr(shmbuff_for_E.origin()),{nr,nc});
     CMatrix_ref Grecv(Gwork.origin()+Gwork.num_elements(),{nr,nc});
     CVector_ref overlaps(Grecv.origin()+Grecv.num_elements(),iextensions<1u>{nwalk});
-    if(eloc2.size(0) != nnodes*nwalk || eloc2.size(1) != 3) 
-        eloc2.reextent({nnodes*nwalk,3});
-    auto elocal = eloc2[node_number*nwalk];
+    if(eloc2.size(0) != ngroups*nwalk || eloc2.size(1) != 3) 
+        eloc2.reextent({ngroups*nwalk,3});
     int nak0,nak1;
     std::tie(nak0,nak1) = FairDivideBoundary(TG.getLocalTGRank(),Gsize*nwalk,TG.getNCoresPerTG());
 
@@ -156,7 +156,7 @@ namespace afqmc
                     TG.next_core(),1234,&(TG.TG()),&req_Grecv);
     }
    
-    fill_n(eloc2.origin(),3*nnodes*nwalk,ComplexType(0.0)); 
+    fill_n(eloc2.origin(),3*ngroups*nwalk,ComplexType(0.0)); 
     TG.local_barrier();
 
     MPI_Status st;
@@ -164,7 +164,9 @@ namespace afqmc
     // calculate G for local walkers
     MixedDensityMatrix_for_E(wset,Gwork,overlaps,0);
 
-    for(int k=0; k<nnodes; k++) {
+    qmcplusplus::Timer Time;  
+  
+    for(int k=0; k<ngroups; k++) {
 
       // wait for G from node behind you, copy to Gwork  
       if(k>0) {
@@ -175,21 +177,20 @@ namespace afqmc
       }
 
       // post send/recv messages with nodes ahead and behind you
-      if(k < nnodes-1) {
+      if(k < ngroups-1) {
         MPI_Start(&req_Gsend); 
         MPI_Start(&req_Grecv); 
       }
-
       // calculate your contribution of the local enery to the set of walkers in Gwork
-      int q = (k+node_number)%nnodes;
+      int q = (k+node_number)%ngroups;
       HamOp.energy(eloc2.sliced(q*nwalk,(q+1)*nwalk),
                    Gwork,0,TG.TG_local().root() && k==0);
       TG.local_barrier();
 
     }
-    TG.TG().all_reduce_in_place_n(to_address(eloc2.origin()),3*nnodes*nwalk,std::plus<>());
+    TG.TG().all_reduce_in_place_n(to_address(eloc2.origin()),3*ngroups*nwalk,std::plus<>());
     TG.local_barrier();    
-    copy_n(elocal.origin(),3*nwalk,E.origin());
+    copy_n(eloc2[node_number*nwalk].origin(),3*nwalk,E.origin());
     copy_n(overlaps.origin(),nwalk,Ov.origin());
     TG.local_barrier();    
   }
@@ -1427,6 +1428,7 @@ namespace afqmc
       localGbuff.reextent(iextensions<1u>{1});
     pointer ov_(localGbuff.origin());
  
+    bool found=false;
     using std::conj;
     if(ndets == 1) {
       CMatrix G;
@@ -1496,21 +1498,22 @@ namespace afqmc
             SDetOp.MixedDensityMatrix(OrbMats[2*q],PsiT,
                                 G_.sliced(0,NMO),to_address(ov_),false);
             ComplexType ov1 = ComplexType(*ov_);
-            if(std::abs(ov1) == ComplexType(0.0))
-              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q],PsiT,
-                                G_.sliced(0,NMO),false); 
+            if(std::abs(ov1) == ComplexType(0.0) && not found) {
+              found=true;
+              app_warning()<<" WARNING: Found orthogonal determinants in trial wave function of NOMSD. The mean-field substraction potential is potentially wrong. ! \n";   
+//              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q],PsiT,
+//                                G_.sliced(0,NMO),false); 
+            }
             SDetOp.MixedDensityMatrix(OrbMats[2*q+1],PsiTB,
                                 G_.sliced(NMO,2*NMO),to_address(ov_),false);
             ComplexType ov2 = ComplexType(*ov_);
-            if(std::abs(ov2) == ComplexType(0.0))
-              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q+1],PsiTB,
-                                G_.sliced(NMO,2*NMO),false); 
+            if(std::abs(ov2) == ComplexType(0.0) && not found) {
+              found=true;
+              app_warning()<<" WARNING: Found orthogonal determinants in trial wave function of NOMSD. The mean-field substraction potential is potentially wrong. ! \n";   
+//              SDetOp.OrthogonalUnnormalizedMixedDensityMatrix(OrbMats[2*q+1],PsiTB,
+//                                G_.sliced(NMO,2*NMO),false); 
+            }
             ov += real(conj(ci[q])*ci[p]*ov1*ov2);
-            // in this case, factor of overlap is included in G 
-            // in routine OrthogonalUnnormalizedMixedDensityMatrix
-FINISH!!! THIS IS WRONG!!!
-            if(std::abs(ov1) == ComplexType(0.0)) ov1 = ComplexType(1.0);
-            if(std::abs(ov2) == ComplexType(0.0)) ov2 = ComplexType(1.0);
             // 
 // !!! GPU !!!
             for(int i=0; i<G1D.num_elements(); i++)

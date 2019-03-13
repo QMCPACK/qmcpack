@@ -354,7 +354,6 @@ class KP3IndexFactorization_batched
       int nocca_tot = std::accumulate(nelpk[nd].begin(),nelpk[nd].begin()+nkpts,0);
       int nocca_max = *std::max_element(nelpk[nd].begin(),nelpk[nd].begin()+nkpts);
       int nchol_max = *std::max_element(ncholpQ.begin(),ncholpQ.end());
-      int nchol_tot = std::accumulate(ncholpQ.begin(),ncholpQ.end(),0);
       int noccb_tot = 0;
       if(walker_type==COLLINEAR) noccb_tot = std::accumulate(nelpk[nd].begin()+nkpts,
                                       nelpk[nd].begin()+2*nkpts,0);
@@ -518,21 +517,11 @@ class KP3IndexFactorization_batched
         std::vector<int> kdiag;
         kdiag.reserve(batch_size);
 
-/*
-        size_t local_memory_needs = batch_size*size_t(nwalk*nocc_max*nocc_max*nchol_max) + 
-                                    batch_size; 
-        if(TMats.num_elements() < local_memory_needs) { 
-          TMats = std::move(SpVector(iextensions<1u>{local_memory_needs}));
-          using std::fill_n;
-          fill_n(TMats.origin(),local_memory_needs,SPComplexType(0.0));
-        }
-*/
         if(IMats.num_elements() < batch_size) {
           IMats = std::move(IVector(iextensions<1u>{batch_size}));
           using std::fill_n;
           fill_n(IMats.origin(),batch_size,0);
         }
-//        SpVector_ref dev_scl_factors(TMats.origin(),{batch_size}); 
         SpVector_ref dev_scl_factors(BTMats.origin()+cnt,{batch_size}); 
         cnt += dev_scl_factors.num_elements();
         SPRealType scl = (walker_type==CLOSED?2.0:1.0);
@@ -591,10 +580,10 @@ class KP3IndexFactorization_batched
                                          to_address(E[0].origin())+1,E.stride(0));
 
                 if(addEJ) {
-                    int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
+                    int nc0 = Q2vbias[Q]/2; //std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
                     copy_n(kdiag.data(),kdiag.size(),IMats.origin());
                     using ma::batched_Tab_to_Klr;
-                    batched_Tab_to_Klr(kdiag.size(),nwalk,nocc_max,nchol_max,nchol_tot,
+                    batched_Tab_to_Klr(kdiag.size(),nwalk,nocc_max,nchol_max,local_nCV,
                                         ncholpQ[Q],nc0,
                                         IMats.origin(),
                                         T1.origin(),
@@ -628,10 +617,10 @@ class KP3IndexFactorization_batched
                                          to_address(E[0].origin())+1,E.stride(0));
 
             if(addEJ) {
-                int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
+                int nc0 = Q2vbias[Q]/2; //std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
                 copy_n(kdiag.data(),kdiag.size(),IMats.origin());
                 using ma::batched_Tab_to_Klr;
-                batched_Tab_to_Klr(kdiag.size(),nwalk,nocc_max,nchol_max,nchol_tot,
+                batched_Tab_to_Klr(kdiag.size(),nwalk,nocc_max,nchol_max,local_nCV,
                                         ncholpQ[Q],nc0,
                                         IMats.origin(),
                                         T1.origin(),
@@ -1005,7 +994,7 @@ class KP3IndexFactorization_batched
             } // COLLINEAR
           } // Ka
           if(haveKE) {
-            int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);  
+            int nc0 = Q2vbias[Q]/2; //std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);  
             using ma::axpy;
             for(int n=0; n<nwalk; n++) {
               axpy(SPComplexType(1.0),Kr_local[n].sliced(0,ncholpQ[Q]),
@@ -1024,7 +1013,7 @@ class KP3IndexFactorization_batched
         for(int n=0; n<nwalk; ++n) {
           for(int Q=0; Q<nkpts; ++Q) {      // momentum conservation index   
             {
-              int nc0 = std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
+              int nc0 = Q2vbias[Q]/2; //std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
               E[n][2] += 0.5*scl*scl*static_cast<ComplexType>(ma::dot(Kl[n]({nc0,nc0+ncholpQ[Q]}),
                                             Kr[n]({nc0,nc0+ncholpQ[Q]})));  
             }
@@ -1311,8 +1300,8 @@ class KP3IndexFactorization_batched
     }
 
     bool distribution_over_cholesky_vectors() const{ return true; }
-    int number_of_ke_vectors() const{ return std::accumulate(ncholpQ.begin(),ncholpQ.end(),0); }
-    int local_number_of_cholesky_vectors() const{ return 2*std::accumulate(ncholpQ.begin(),ncholpQ.end(),0); } 
+    int number_of_ke_vectors() const{ return local_nCV; }
+    int local_number_of_cholesky_vectors() const{ return 2*local_nCV; } 
     int global_number_of_cholesky_vectors() const{ return global_nCV; }
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]

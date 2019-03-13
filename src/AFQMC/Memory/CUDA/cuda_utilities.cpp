@@ -39,8 +39,9 @@ namespace qmc_cuda {
 
   // work around for problem with csrmm 
   boost::multi::array<std::complex<double>,1,qmc_cuda::cuda_gpu_allocator<std::complex<double>>> 
-                            cusparse_buffer(typename boost::multi::layout_t<1u>::extensions_type{1},
-                                            qmc_cuda::cuda_gpu_allocator<std::complex<double>>{});
+                            *cusparse_buffer(nullptr);
+                                        //(typename boost::multi::layout_t<1u>::extensions_type{1},
+                                        //qmc_cuda::cuda_gpu_allocator<std::complex<double>>{});
 
   cublasHandle_t afqmc_cublas_handle;
   cublasXtHandle_t afqmc_cublasXt_handle;
@@ -99,6 +100,11 @@ namespace qmc_cuda {
             "cusparseCreateMatDescr: Matrix descriptor initialization failed"); 
     cusparseSetMatType(afqmc_cusparse_matrix_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(afqmc_cusparse_matrix_descr,CUSPARSE_INDEX_BASE_ZERO); 
+
+    cusparse_buffer = new boost::multi::array<std::complex<double>,1,
+                                 qmc_cuda::cuda_gpu_allocator<std::complex<double>>>(
+                                 (typename boost::multi::layout_t<1u>::extensions_type{1},
+                                 qmc_cuda::cuda_gpu_allocator<std::complex<double>>{}));
 
   }
 
