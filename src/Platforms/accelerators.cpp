@@ -68,6 +68,7 @@ void assignAccelerators(Communicate& NodeComm)
     #pragma omp parallel
     {
       cudaErrorCheck( cudaSetDevice(cudaDeviceID), "cudaSetDevice failed!");
+      cudaErrorCheck( cudaFree(0), "cudaFree failed!");
     }
   }
 #endif
