@@ -91,8 +91,10 @@ public:
   Communicate(const mpi3::environment &env);
 #endif
 
+#ifdef HAVE_MPI
   ///constructor with communicator
-  Communicate(const mpi_comm_type comm_input);
+  Communicate(const mpi3::communicator &in_comm);
+#endif
 
   ///constructor with communicator
   //Communicate(const intra_comm_type& c);
