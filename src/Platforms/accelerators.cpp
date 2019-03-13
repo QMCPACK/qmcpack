@@ -62,7 +62,7 @@ void assignAccelerators(Communicate& NodeComm)
   }
 #endif
 #ifdef ENABLE_OFFLOAD
-  int ompDeviceCount = omp_get_num_device();
+  int ompDeviceCount = omp_get_num_devices();
   int ompDeviceID;
   if(num_accelerators==0)
     num_accelerators = ompDeviceCount;
@@ -85,8 +85,8 @@ void assignAccelerators(Communicate& NodeComm)
   if(num_accelerators>0)
   {
     app_log() << "  Accelerators per node = " << num_accelerators << std::endl;
-    if(NodeComm.rank()%num_accelerators!=0)
-      app_warning() << "The number of MPI ranks on the node is not dividable by the number of accelerators. "
+    if(NodeComm.size()%num_accelerators!=0)
+      app_warning() << "The number of MPI ranks on the node is not divisible by the number of accelerators. "
                     << "Imbalanced load may cause performance loss.\n";
     qmc_common.default_accelerator_id = assigned_accelerators_id;
   }

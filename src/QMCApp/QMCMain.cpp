@@ -93,6 +93,8 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI Group ID          = " << myComm->getGroupID()
       << "\n  MPI Ranks per node    = " << NodeComm.size()
       << std::endl;
+  // assign accelerators within a node
+  assignAccelerators(NodeComm);
   #pragma omp parallel
   {
     const int L1_tid = omp_get_thread_num();
@@ -111,8 +113,6 @@ QMCMain::QMCMain(Communicate* c)
       }
     }
   }
-  // assign accelerators within a node
-  assignAccelerators(NodeComm);
   app_summary()
       << "\n  Precision used in this calculation, see definitions in the manual:"
       << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)
