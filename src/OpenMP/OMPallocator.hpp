@@ -31,15 +31,16 @@ namespace qmcplusplus
     template <class U, class V> OMPallocator(const OMPallocator<U, V>&) {}
     template <class U, class V> struct rebind { typedef OMPallocator<U, V> other; };
 
-    value_type* allocate(std::size_t n, int device_id = 0)
+    value_type* allocate(std::size_t n)
     {
       value_type* pt = HostAllocator::allocate(n);
-      PRAGMA_OMP("omp target enter data map(alloc:pt[0:n]) device(device_id)")
+      PRAGMA_OMP("omp target enter data map(alloc:pt[0:n])")
       return pt;
     }
 
-    void deallocate(value_type* pt, std::size_t n, int device_id = 0) {
-      PRAGMA_OMP("omp target exit data map(delete:pt) device(device_id)")
+    void deallocate(value_type* pt, std::size_t n)
+    {
+      PRAGMA_OMP("omp target exit data map(delete:pt)")
       HostAllocator::deallocate(pt,n);
     }
   };
