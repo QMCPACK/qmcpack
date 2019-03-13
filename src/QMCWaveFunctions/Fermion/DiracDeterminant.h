@@ -123,7 +123,7 @@ public:
    */
   void restore(int iat);
 
-  ///evaluate log of determinant for a particle set: should not be called
+  ///evaluate log of a determinant for a particle set
   RealType
   evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G,

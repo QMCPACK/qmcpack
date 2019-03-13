@@ -856,7 +856,7 @@ given node, the walkers are split across all the threads in the system.}
 \newpage
 \section{Appendix E: Wave-function XML block}
 
-\begin{lstlisting}[style=QMCPXML,caption="Basic framework for a single determinant determinantset XML block.",label=lam_xml_determinantset]
+\begin{lstlisting}[style=QMCPXML,caption="Basic framework for a single determinant determinantset XML block.",label=lst:lam_xml_determinantset]
 <wavefunction name="psi0" target="e">
   <determinantset type="MolecularOrbital" name="LCAOBSet"
    source="ion0" transform="yes">
@@ -899,14 +899,16 @@ functions) since changes can lead to unexpected results.
 A QMCPACK wavefunction XML block is a combination of a determinantset, which
 contains the anti-symmetric part of the wave-function, and one or more jastrow blocks.
 The syntax of the anti-symmetric block depends on whether the wave-function is a single
-determinant or a multi-determinant expansion. Listing \ref{lam_xml_determinantset} 
+determinant or a multi-determinant expansion. Listing \ref{lst:lam_xml_determinantset} 
 shows the general structure of the
 single determinant case. The determinantset block is composed of a basisset block, which
 defines the atomic orbital basis set, and a slaterdeterminant block, which defines the single
-particle orbitals and occupation numbers of the Slater determinant. Figure \ref{lam_xml_basisset} 
-shows a section
-of a basisset block for a gold atom. The structure of this block is rigid and should not
-be modified. Figure \ref{lam_xml_slaterdeterminant} shows a (piece of a) sample of a 
+particle orbitals and occupation numbers of the Slater determinant.
+% Listing \ref{lst:lam_xml_basisset} 
+%shows a section
+%of a basisset block for a gold atom. The structure of this block is rigid and should not
+%be modified.
+ Listing \ref{lst:lam_xml_slaterdeterminant} shows a (piece of a) sample of a 
 slaterdeterminant block. The
 slaterdeterminant block consists of 2 determinant blocks, one for each electron spin. The
 parameter “size” in the determinant block refers to the number of single particle orbitals
@@ -1004,7 +1006,7 @@ Optimization of individual radial functions can be turned on/off using the “op
 parameter. It can be added to any coefficients block, even though it is currently not 
 present in the J1 and J2 blocks.
 
-\begin{lstlisting}[style=QMCPXML,caption="Sample Jastrow XML block.",label=lam_xml_jastrow]
+\begin{lstlisting}[style=QMCPXML,caption="Sample Jastrow XML block.",label=fig:lam_xml_jastrow]
 <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
       <correlation rcut="10" size="10" speciesA="u" speciesB="u">
         <coefficients id="uu" type="Array">0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0</coefficients>
