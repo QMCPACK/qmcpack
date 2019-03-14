@@ -255,13 +255,16 @@ public:
   template<typename T> void allgather(T* sb, T* rb, int count);
   template<typename T> void gsum(T&);
 
-protected:
-
-  /** Raw communicator
-   *
-   *  Currently it is only owned by Communicate which manages its creation and destruction
-   *  After switching to mpi3::communicator, myMPI is only a reference to the raw communicator owned by mpi3::communicator
+public:
+#ifdef HAVE_MPI
+  /** mpi3 communicator wrapper
+   * must be declared before myComm to ensure its destruction after myComm
    */
+  mpi3::communicator comm;
+#endif
+
+protected:
+  /// a reference to the raw communicator owned by comm
   mpi_comm_type myMPI;
   /// OOMPI communicator
   intra_comm_type myComm;
@@ -279,11 +282,6 @@ protected:
 public:
   /// Group Lead Communicator
   Communicate *GroupLeaderComm;
-
-  /// mpi3 communicator wrapper
-#ifdef HAVE_MPI
-  mpi3::communicator comm;
-#endif
 };
 
 

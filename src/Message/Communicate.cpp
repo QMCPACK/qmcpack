@@ -62,10 +62,6 @@ Communicate::Communicate(const mpi3::environment &env):
 
 Communicate::~Communicate()
 {
-#ifdef HAVE_MPI
-  myComm.~OOMPI_Intra_comm();
-  if(myMPI!=MPI_COMM_NULL) MPI_Comm_free(&myMPI);
-#endif
   if(GroupLeaderComm!=nullptr) delete GroupLeaderComm;
 }
 
@@ -88,13 +84,10 @@ Communicate::Communicate(const mpi3::communicator &in_comm):
 Communicate::Communicate(const Communicate& in_comm, int nparts)
 {
   std::vector<int> nplist(nparts+1);
-  int p=FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
-  int q=in_comm.rank()-nplist[p]; //rank within a group
-
-  comm = in_comm.comm.split(p, q);
+  int p = FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
+  comm = in_comm.comm.split(p, in_comm.rank());
   myMPI = &comm;
   myComm = OOMPI_Intra_comm(myMPI);
-
 
   d_mycontext=myComm.Rank();
   d_ncontexts=myComm.Size();
@@ -119,7 +112,7 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 void Communicate::initialize(const mpi3::environment &env)
 {
   comm = env.world();
-  MPI_Comm_dup(&comm, &myMPI);
+  myMPI = &comm;
   myComm = OOMPI_Intra_comm(myMPI);
   d_mycontext = myComm.Rank();
   d_ncontexts = myComm.Size();
