@@ -261,6 +261,21 @@ protected:
    *  After switching to mpi3::communicator, myMPI is only a reference to the raw communicator owned by mpi3::communicator
    */
   mpi_comm_type myMPI;
+#ifdef HAVE_MPI
+  /* helper class to destroy myMPI after the destruction of myComm
+   * it must be declared before myComm and the destruction automatically happens after myComm
+   */
+  class MPI_Comm_destructor
+  {
+    MPI_Comm& comm;
+  public:
+    MPI_Comm_destructor(MPI_Comm& myMPI) : comm(myMPI) {}
+    ~MPI_Comm_destructor()
+    {
+      if(comm!=MPI_COMM_NULL) MPI_Comm_free(&comm);
+    }
+  } myMPI_destroy_helper;
+#endif
   /// OOMPI communicator
   intra_comm_type myComm;
   /// Communicator name
@@ -278,8 +293,8 @@ public:
   /// Group Lead Communicator
   Communicate *GroupLeaderComm;
 
-  /// mpi3 communicator wrapper
 #ifdef HAVE_MPI
+  /// mpi3 communicator wrapper
   mpi3::communicator comm;
 #endif
 };
