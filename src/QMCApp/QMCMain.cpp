@@ -85,8 +85,8 @@ QMCMain::QMCMain(Communicate* c)
   app_summary()  << "=====================================================\n";
   qmc_common.print_options(app_log());
   app_summary()
-      << "\n  MPI Ranks             = " << OHMMS::Controller->size()
-      << "\n  Number of MPI groups  = " << myComm->getNumGroups()
+      << "\n  MPI Ranks in total    = " << OHMMS::Controller->size()
+      << "\n  Number of rank groups = " << myComm->getNumGroups()
       << "\n  MPI Group ID          = " << myComm->getGroupID()
       << "\n  MPI Ranks in group    = " << myComm->size()
       << "\n  MPI Ranks per node    = " << NodeComm.size()
