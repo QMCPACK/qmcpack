@@ -34,7 +34,12 @@ class GlobalTaskGroup
 
   GlobalTaskGroup(communicator& comm):
             global_(comm),
+//#ifdef QMC_CUDA
+// PAMI_DISABLE_IPC issue
+//            node_(comm.split_shared(boost::mpi3::communicator_type::socket,comm.rank())),
+//#else
             node_(comm.split_shared(comm.rank())),
+//#endif
             core_(comm.split(node_.rank(),comm.rank()))
   {
 

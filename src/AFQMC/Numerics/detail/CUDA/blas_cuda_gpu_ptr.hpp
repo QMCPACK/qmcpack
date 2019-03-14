@@ -20,7 +20,7 @@
 #include<vector>
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cublas_wrapper.hpp"
-#include "AFQMC/Numerics/detail/CUDA/cublasXt_wrapper.hpp"
+//#include "AFQMC/Numerics/detail/CUDA/cublasXt_wrapper.hpp"
 // hand coded kernels for blas extensions
 #include "AFQMC/Numerics/detail/CUDA/Kernels/adotpby.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/axty.cuh"

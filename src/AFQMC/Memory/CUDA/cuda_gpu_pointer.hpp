@@ -19,8 +19,8 @@
 #include "Configuration.h"
 #include<cassert>
 #include <cuda_runtime.h>
-#include "cublas_v2.h"
-#include "cublasXt.h"
+//#include "cublas_v2.h"
+//#include "cublasXt.h"
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/fill_n.cuh"
 //#include "AFQMC/Numerics/detail/CUDA/Kernels/uninitialized_fill_n.cuh"

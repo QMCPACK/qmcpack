@@ -25,7 +25,7 @@
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
-#include "cublasXt.h"
+//#include "cublasXt.h"
 #include "cusparse.h"
 #include "cusolverDn.h"
 #include "curand.h"
@@ -44,7 +44,7 @@ namespace qmc_cuda {
                                         //qmc_cuda::cuda_gpu_allocator<std::complex<double>>{});
 
   cublasHandle_t afqmc_cublas_handle;
-  cublasXtHandle_t afqmc_cublasXt_handle;
+//  cublasXtHandle_t afqmc_cublasXt_handle;
   cusparseHandle_t afqmc_cusparse_handle;
   cusolverDnHandle_t afqmc_cusolverDn_handle;
   curandGenerator_t afqmc_curand_generator;
@@ -54,7 +54,7 @@ namespace qmc_cuda {
   std::vector<cudaStream_t> afqmc_cuda_streams;
 
   gpu_handles base_cuda_gpu_ptr::handles{&afqmc_cublas_handle,
-                                         &afqmc_cublasXt_handle,
+//                                         &afqmc_cublasXt_handle,
                                          &afqmc_cusparse_handle,
                                          &afqmc_cusolverDn_handle,
                                          &afqmc_curand_generator  
@@ -83,11 +83,11 @@ namespace qmc_cuda {
     cuda_check(cudaSetDevice(node.rank()),"cudaSetDevice()");
 
     cublas_check(cublasCreate (& afqmc_cublas_handle ), "cublasCreate");
-    cublas_check(cublasXtCreate (& afqmc_cublasXt_handle ), "cublasXtCreate");
+//    cublas_check(cublasXtCreate (& afqmc_cublasXt_handle ), "cublasXtCreate");
     int devID[8] {0,1,2,3,4,5,6,7};
-    cublas_check(cublasXtDeviceSelect(afqmc_cublasXt_handle, 1, devID), "cublasXtDeviceSelect");
-    cublas_check(cublasXtSetPinningMemMode(afqmc_cublasXt_handle, CUBLASXT_PINNING_ENABLED), 
-                                            "cublasXtSetPinningMemMode");
+//    cublas_check(cublasXtDeviceSelect(afqmc_cublasXt_handle, 1, devID), "cublasXtDeviceSelect");
+//    cublas_check(cublasXtSetPinningMemMode(afqmc_cublasXt_handle, CUBLASXT_PINNING_ENABLED), 
+//                                            "cublasXtSetPinningMemMode");
     cusolver_check(cusolverDnCreate (& afqmc_cusolverDn_handle ), "cusolverDnCreate");
     //curand_check(curandCreateGenerator(&afqmc_curand_generator, CURAND_RNG_PSEUDO_DEFAULT),
     curand_check(curandCreateGenerator(&afqmc_curand_generator, CURAND_RNG_PSEUDO_MT19937),
