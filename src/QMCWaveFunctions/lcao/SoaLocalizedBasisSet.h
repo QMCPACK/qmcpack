@@ -4,12 +4,12 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file SoaLocalizedBasisSet.h
  * @brief A derived class from BasisSetBase
  *
@@ -25,7 +25,6 @@
 
 namespace qmcplusplus
 {
-
 /** A localized basis set derived from SoaBasisSetBase<ORBT>
  *
  * This class performs the evaluation of the basis functions and their
@@ -35,7 +34,7 @@ namespace qmcplusplus
  * The template parameter ORBT denotes the orbital value return type
  */
 template<class COT, typename ORBT>
-struct SoaLocalizedBasisSet: public SoaBasisSetBase<ORBT>
+struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 {
   typedef typename COT::RealType RealType;
   typedef SoaBasisSetBase<ORBT> BaseType;
@@ -56,7 +55,7 @@ struct SoaLocalizedBasisSet: public SoaBasisSetBase<ORBT>
    *
    * the number of basis states for center J is BasisOffset[J+1]-Basis[J]
    */
-  aligned_vector<size_t>  BasisOffset;
+  aligned_vector<size_t> BasisOffset;
 
   /** container of the unique pointers to the Atomic Orbitals
    *
@@ -68,65 +67,70 @@ struct SoaLocalizedBasisSet: public SoaBasisSetBase<ORBT>
    * @param ions ionic system
    * @param els electronic system
    */
-  SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els): IonID(ions.GroupID)
+  SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els) : IonID(ions.GroupID)
   {
-    myTableIndex=els.addTable(ions,DT_SOA);
-    NumCenters=ions.getTotalNum();
-    NumTargets=els.getTotalNum();
-    LOBasisSet.resize(ions.getSpeciesSet().getTotalNum(),0);
-    BasisOffset.resize(NumCenters+1);
-    BasisSetSize=0;
+    myTableIndex = els.addTable(ions, DT_SOA);
+    NumCenters   = ions.getTotalNum();
+    NumTargets   = els.getTotalNum();
+    LOBasisSet.resize(ions.getSpeciesSet().getTotalNum(), 0);
+    BasisOffset.resize(NumCenters + 1);
+    BasisSetSize = 0;
   }
 
   /** copy constructor */
-  SoaLocalizedBasisSet(const SoaLocalizedBasisSet& a)=default;
+  SoaLocalizedBasisSet(const SoaLocalizedBasisSet& a) = default;
 
   /** makeClone */
   //SoaLocalizedBasisSet<COT>* makeClone() const
   BaseType* makeClone() const
   {
-    SoaLocalizedBasisSet<COT,ORBT>* myclone=new SoaLocalizedBasisSet<COT,ORBT>(*this);
-    for(int i=0; i<LOBasisSet.size(); ++i)
-      myclone->LOBasisSet[i]=LOBasisSet[i]->makeClone();
+    SoaLocalizedBasisSet<COT, ORBT>* myclone = new SoaLocalizedBasisSet<COT, ORBT>(*this);
+    for (int i = 0; i < LOBasisSet.size(); ++i)
+      myclone->LOBasisSet[i] = LOBasisSet[i]->makeClone();
     return myclone;
   }
   /** set Number of periodic Images to evaluate the orbitals. 
       Set to 0 for non-PBC, and set manually in the input.
   */
-  void setPBCImages(const TinyVector<int,3>& PBCImages)
+  void setPBCImages(const TinyVector<int, 3>& PBCImages)
   {
-    for(int i=0; i<LOBasisSet.size(); ++i)
+    for (int i = 0; i < LOBasisSet.size(); ++i)
       LOBasisSet[i]->setPBCImages(PBCImages);
-
   }
   /** set BasisSetSize and allocate mVGL container
    */
   void setBasisSetSize(int nbs)
   {
-    if(BasisSetSize>0 && nbs == BasisSetSize) return;
+    if (BasisSetSize > 0 && nbs == BasisSetSize)
+      return;
 
     //evaluate the total basis dimension and offset for each center
     BasisOffset[0] = 0;
-    for(int c=0; c<NumCenters; c++)
+    for (int c = 0; c < NumCenters; c++)
     {
-      BasisOffset[c+1] = BasisOffset[c]+LOBasisSet[IonID[c]]->getBasisSetSize();
+      BasisOffset[c + 1] = BasisOffset[c] + LOBasisSet[IonID[c]]->getBasisSetSize();
     }
     BasisSetSize = BasisOffset[NumCenters];
   }
 
   /**  Determine which orbitals are S-type.  Used by cusp correction.
     */
-  void queryOrbitalsForSType(const std::vector<bool> &corrCenter, std::vector<bool> &is_s_orbital) const
+  void queryOrbitalsForSType(const std::vector<bool>& corrCenter, std::vector<bool>& is_s_orbital) const
   {
     int idx = 0;
-    for (int c = 0; c < NumCenters; c++) {
+    for (int c = 0; c < NumCenters; c++)
+    {
       int bss = LOBasisSet[IonID[c]]->BasisSetSize;
       std::vector<bool> local_is_s_orbital(bss);
       LOBasisSet[IonID[c]]->queryOrbitalsForSType(local_is_s_orbital);
-      for (int k = 0; k < bss; k++) {
-        if (corrCenter[c]) {
+      for (int k = 0; k < bss; k++)
+      {
+        if (corrCenter[c])
+        {
           is_s_orbital[idx++] = local_is_s_orbital[k];
-        } else {
+        }
+        else
+        {
           is_s_orbital[idx++] = false;
         }
       }
@@ -159,12 +163,12 @@ struct SoaLocalizedBasisSet: public SoaBasisSetBase<ORBT>
    */
   inline void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)
   {
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    const RealType* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
-    const auto& displ= (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
-    for(int c=0; c<NumCenters; c++)
+    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
+    const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    for (int c = 0; c < NumCenters; c++)
     {
-      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice,dist[c],displ[c],BasisOffset[c],vgl);
+      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl);
     }
   }
 
@@ -174,12 +178,12 @@ struct SoaLocalizedBasisSet: public SoaBasisSetBase<ORBT>
    */
   inline void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
   {
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    const RealType* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
-    const auto& displ= (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
-    for(int c=0; c<NumCenters; c++)
+    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
+    const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    for (int c = 0; c < NumCenters; c++)
     {
-      LOBasisSet[IonID[c]]->evaluateV(P.Lattice,dist[c],displ[c],vals+BasisOffset[c]);
+      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c]);
     }
   }
 
@@ -187,10 +191,7 @@ struct SoaLocalizedBasisSet: public SoaBasisSetBase<ORBT>
    * @param icenter the index of the center
    * @param aos a set of Centered Atomic Orbitals
    */
-  void add(int icenter, COT* aos)
-  {
-    LOBasisSet[icenter]=aos;
-  }
+  void add(int icenter, COT* aos) { LOBasisSet[icenter] = aos; }
 };
-}
+} // namespace qmcplusplus
 #endif
