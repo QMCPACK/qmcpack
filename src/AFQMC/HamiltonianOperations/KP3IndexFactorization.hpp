@@ -977,7 +977,8 @@ class KP3IndexFactorization
       }
       comm->barrier();
 #else
-      SpMatrix_ref X(make_device_ptr(Xw.origin()),Xw.extensions());
+      //SpMatrix_ref X(make_device_ptr(Xw.origin()),Xw.extensions());
+      SpMatrix_ref X(to_address(Xw.origin()),Xw.extensions());
 #endif
 
       // "rotate" X
