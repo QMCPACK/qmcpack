@@ -1417,8 +1417,10 @@ class KP3IndexFactorization_batched
 
     void set_buffer(size_t N) {
       if(BTMats.num_elements() < N) { 
-        BTMats = std::move(SpVector(iextensions<1u>{N}));
         app_log()<<" Resizing buffer space in KP3IndexFactorization_batched to " <<N*sizeof(SPComplexType)/1024.0/1024.0 <<" MBs. \n";
+        {
+          BTMats = std::move(SpVector(iextensions<1u>{N}));
+        }
         memory_report();
         using std::fill_n;
         fill_n(BTMats.origin(),N,SPComplexType(0.0));
