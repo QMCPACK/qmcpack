@@ -11,8 +11,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_LCORBITALSETBUILDER_H
 #define QMCPLUSPLUS_LCORBITALSETBUILDER_H
 
@@ -28,16 +28,13 @@
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 namespace qmcplusplus
 {
-
 /** derived class from WaveFunctionComponentBuilder
  *
  * Builder SlaterDeterminant with LCOrbitalSet
  */
-class SlaterDetBuilder: public WaveFunctionComponentBuilder
+class SlaterDetBuilder : public WaveFunctionComponentBuilder
 {
-
 public:
-
   typedef SlaterDet SlaterDeterminant_t;
   typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
   /** constructor
@@ -57,7 +54,6 @@ public:
 
 
 private:
-
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
   SPOSetBuilderFactory* mySPOSetBuilderFactory;
@@ -66,7 +62,7 @@ private:
   MultiSlaterDeterminantFast* multislaterdetfast_0;
 
   bool UseBackflow;
-  BackflowTransformation *BFTrans;
+  BackflowTransformation* BFTrans;
 
   /** process a determinant element
    * @param cur xml node
@@ -79,15 +75,32 @@ private:
 
   bool createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNodePtr cur);
 
-  bool readDetList(xmlNodePtr cur, std::vector<ci_configuration>& uniqueConfg_up, 
-      std::vector<ci_configuration>& uniqueConfg_dn, std::vector<size_t>& C2node_up, std::vector<size_t>& C2node_dn, 
-      std::vector<std::string>& CItags, std::vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn,
-      std::vector<RealType>& CSFcoeff, std::vector<size_t>& DetsPerCSF, std::vector<RealType>& CSFexpansion, bool& usingCSF);
-      
+  bool readDetList(xmlNodePtr cur,
+                   std::vector<ci_configuration>& uniqueConfg_up,
+                   std::vector<ci_configuration>& uniqueConfg_dn,
+                   std::vector<size_t>& C2node_up,
+                   std::vector<size_t>& C2node_dn,
+                   std::vector<std::string>& CItags,
+                   std::vector<RealType>& coeff,
+                   bool& optimizeCI,
+                   int nels_up,
+                   int nels_dn,
+                   std::vector<RealType>& CSFcoeff,
+                   std::vector<size_t>& DetsPerCSF,
+                   std::vector<RealType>& CSFexpansion,
+                   bool& usingCSF);
 
-  bool readDetListH5(xmlNodePtr cur, std::vector<ci_configuration>& uniqueConfg_up, 
-      std::vector<ci_configuration>& uniqueConfg_dn, std::vector<size_t>& C2node_up, std::vector<size_t>& C2node_dn, 
-      std::vector<std::string>& CItags, std::vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn);
+
+  bool readDetListH5(xmlNodePtr cur,
+                     std::vector<ci_configuration>& uniqueConfg_up,
+                     std::vector<ci_configuration>& uniqueConfg_dn,
+                     std::vector<size_t>& C2node_up,
+                     std::vector<size_t>& C2node_dn,
+                     std::vector<std::string>& CItags,
+                     std::vector<RealType>& coeff,
+                     bool& optimizeCI,
+                     int nels_up,
+                     int nels_dn);
 };
-}
+} // namespace qmcplusplus
 #endif

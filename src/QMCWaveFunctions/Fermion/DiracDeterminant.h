@@ -14,8 +14,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file DiracDeterminant.h
  * @brief Declaration of DiracDeterminant with a S(ingle)P(article)O(rbital)Set
  */
@@ -31,9 +31,8 @@
 
 namespace qmcplusplus
 {
-
 template<typename DU_TYPE = DelayedUpdate<QMCTraits::ValueType>>
-class DiracDeterminant: public DiracDeterminantBase
+class DiracDeterminant : public DiracDeterminantBase
 {
 protected:
   int ndelay;
@@ -42,21 +41,21 @@ public:
   typedef SPOSet::IndexVector_t IndexVector_t;
   typedef SPOSet::ValueVector_t ValueVector_t;
   typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
-  typedef SPOSet::GradMatrix_t  GradMatrix_t;
-  typedef SPOSet::HessMatrix_t  HessMatrix_t;
-  typedef SPOSet::HessVector_t  HessVector_t;
-  typedef SPOSet::HessType      HessType;
+  typedef SPOSet::GradVector_t GradVector_t;
+  typedef SPOSet::GradMatrix_t GradMatrix_t;
+  typedef SPOSet::HessMatrix_t HessMatrix_t;
+  typedef SPOSet::HessVector_t HessVector_t;
+  typedef SPOSet::HessType HessType;
 
   typedef ParticleSet::SingleParticleValue_t mValueType;
   typedef OrbitalSetTraits<mValueType>::ValueMatrix_t ValueMatrix_hp_t;
-  typedef TinyVector<mValueType,DIM> mGradType;
+  typedef TinyVector<mValueType, DIM> mGradType;
 
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminant(SPOSetPtr const spos, int first=0);
+  DiracDeterminant(SPOSetPtr const spos, int first = 0);
 
   // copy constructor and assign operator disabled
   DiracDeterminant(const DiracDeterminant& s) = delete;
@@ -66,26 +65,24 @@ public:
    *@param first index of first particle
    *@param nel number of particles in the determinant
    */
-  void set(int first, int nel, int delay=1) final;
+  void set(int first, int nel, int delay = 1) final;
 
   ///invert psiM or its copies
   void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
 
   void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& active,
-                                   std::vector<RealType>& dlogpsi,
-                                   std::vector<RealType>& dhpsioverpsi);
+                           const opt_variables_type& active,
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi);
 
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  void updateAfterSweep(ParticleSet& P,
-      ParticleSet::ParticleGradient_t& G,
-      ParticleSet::ParticleLaplacian_t& L);
+  void updateAfterSweep(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
@@ -101,18 +98,19 @@ public:
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
-  GradType evalGradSource(ParticleSet &P, ParticleSet &source,
-                                  int iat);
+  GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat);
 
-  GradType evalGradSource
-  (ParticleSet& P, ParticleSet& source, int iat,
-   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
+  GradType evalGradSource(ParticleSet& P,
+                          ParticleSet& source,
+                          int iat,
+                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
-  GradType evalGradSourcep
-  (ParticleSet& P, ParticleSet& source, int iat,
-   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
+  GradType evalGradSourcep(ParticleSet& P,
+                           ParticleSet& source,
+                           int iat,
+                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
+                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
   /** move was accepted, update the real container
    */
@@ -124,10 +122,7 @@ public:
   void restore(int iat);
 
   ///evaluate log of a determinant for a particle set
-  RealType
-  evaluateLog(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& G,
-              ParticleSet::ParticleLaplacian_t& L) ;
+  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   void recompute(ParticleSet& P);
 
@@ -154,15 +149,15 @@ public:
   ValueMatrix_t psiMinv;
 
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix_t  dpsiM;
+  GradMatrix_t dpsiM;
 
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
   ValueMatrix_t d2psiM;
 
   /// Used for force computations
   GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;
-  HessMatrix_t  grad_grad_source_psiM;
-  
+  HessMatrix_t grad_grad_source_psiM;
+
   GradMatrix_t phi_alpha_Minv, grad_phi_Minv;
   ValueMatrix_t lapl_phi_Minv;
   HessMatrix_t grad_phi_alpha_Minv;
@@ -188,12 +183,10 @@ public:
   int invRow_id;
 
   ValueType curRatio;
-  ValueType *FirstAddressOfdV;
-  ValueType *LastAddressOfdV;
-
+  ValueType* FirstAddressOfdV;
+  ValueType* LastAddressOfdV;
 };
 
 
-
-}
+} // namespace qmcplusplus
 #endif
