@@ -314,8 +314,7 @@ const char *propg_xml_block1 =
     RealType dt=0.01;
     RealType Eshift=std::abs(ComplexType(*wset[0].overlap()));
     Time.restart();
-    //for(int i=0; i<4; i++) {
-    for(int i=0; i<2; i++) {
+    for(int i=0; i<4; i++) {
       prop.Propagate(2,wset,Eshift,dt,1);
       wfn.Energy(wset);
       ComplexType eav=0,ov=0;
@@ -328,7 +327,6 @@ const char *propg_xml_block1 =
       t1=Time.elapsed();
       app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<" Time: " <<t1 <<std::endl;
     }
-
     for(int i=0; i<4; i++) {
       prop.Propagate(4,wset,Eshift,dt,1);
       wfn.Energy(wset);

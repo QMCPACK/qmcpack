@@ -35,7 +35,8 @@ class AFQMCDriver: public AFQMCInfo
 		estim0(estim_),
                 block0(blk0),
 		step0(stp0),
-		Eshift(eshft_)
+		Eshift(eshft_),
+                weight_reset_period(0.0)
     {
       name = "AFQMCDriver";
 
@@ -83,6 +84,8 @@ class AFQMCDriver: public AFQMCInfo
     bool writeSamples(WalkerSet&);
 
     int samplePeriod;
+
+    double weight_reset_period;
 
     RealType dShift;
     RealType Eshift;
