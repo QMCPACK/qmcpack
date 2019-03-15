@@ -251,13 +251,8 @@ public:
           std::string tmp = cuspInfo;
           if (cusp_file != "")
             tmp = cusp_file;
-          lcos = new LCOrbitalSetWithCorrection<ThisBasisSetType, false>(thisBasisSet,
-                                                                         &targetPtcl,
-                                                                         &sourcePtcl,
-                                                                         rank() == 0,
-                                                                         0.1,
-                                                                         tmp,
-                                                                         algorithm);
+          lcos = new LCOrbitalSetWithCorrection<ThisBasisSetType, false>(thisBasisSet, &targetPtcl, &sourcePtcl,
+                                                                         rank() == 0, 0.1, tmp, algorithm);
           // mmorales:
           // this is a small hack to allow the cusp correction to work
           // but it should be fixed, all basisset/sposet objects should always be named

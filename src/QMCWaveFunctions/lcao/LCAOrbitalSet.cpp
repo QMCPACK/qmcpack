@@ -87,18 +87,7 @@ inline void Product_ABt(const VectorSoaContainer<T, D>& A, const Matrix<T>& B, V
   constexpr char transb = 'n';
   constexpr T zone(1);
   constexpr T zero(0);
-  BLAS::gemm(transa,
-             transb,
-             B.rows(),
-             D,
-             B.cols(),
-             zone,
-             B.data(),
-             B.cols(),
-             A.data(),
-             A.capacity(),
-             zero,
-             C.data(),
+  BLAS::gemm(transa, transb, B.rows(), D, B.cols(), zone, B.data(), B.cols(), A.data(), A.capacity(), zero, C.data(),
              C.capacity());
 }
 
@@ -482,34 +471,9 @@ void LCAOrbitalSet::evaluateDerivatives(ParticleSet& P,
     }
 
 
-    table_method_eval(dlogpsi,
-                      dhpsioverpsi,
-                      myL_J,
-                      myG_J,
-                      nel,
-                      nmo,
-                      psiCurrent,
-                      Coeff,
-                      C2node_up,
-                      C2node_dn,
-                      detValues_up,
-                      detValues_dn,
-                      grads_up,
-                      grads_dn,
-                      lapls_up,
-                      lapls_dn,
-                      M_up,
-                      M_dn,
-                      Minv_up,
-                      Minv_dn,
-                      B_grad,
-                      B_lapl,
-                      detData_up,
-                      N1,
-                      N2,
-                      NP1,
-                      NP2,
-                      lookup_tbl);
+    table_method_eval(dlogpsi, dhpsioverpsi, myL_J, myG_J, nel, nmo, psiCurrent, Coeff, C2node_up, C2node_dn,
+                      detValues_up, detValues_dn, grads_up, grads_dn, lapls_up, lapls_dn, M_up, M_dn, Minv_up, Minv_dn,
+                      B_grad, B_lapl, detData_up, N1, N2, NP1, NP2, lookup_tbl);
   }
 #endif
 }
@@ -537,18 +501,7 @@ void LCAOrbitalSet::apply_rotation(const std::vector<RealType>& param)
 
   exponentiate_antisym_matrix(rot_mat);
 
-  BLAS::gemm('N',
-             'T',
-             nb,
-             nmo,
-             nmo,
-             RealType(1.0),
-             m_init_B.data(),
-             nb,
-             rot_mat.data(),
-             nmo,
-             RealType(0.0),
-             C->data(),
+  BLAS::gemm('N', 'T', nb, nmo, nmo, RealType(1.0), m_init_B.data(), nb, rot_mat.data(), nmo, RealType(0.0), C->data(),
              nb);
 }
 
@@ -600,32 +553,10 @@ void LCAOrbitalSet::exponentiate_antisym_matrix(ValueMatrix_t& mat)
   }
   // perform matrix multiplication
   // assume row major
-  BLAS::gemm('N',
-             'C',
-             n,
-             n,
-             n,
-             std::complex<RealType>(1.0, 0),
-             &mat_d.at(0),
-             n,
-             &mat_h.at(0),
-             n,
-             std::complex<RealType>(0.0, 0.0),
-             &mat_t.at(0),
-             n);
-  BLAS::gemm('N',
-             'N',
-             n,
-             n,
-             n,
-             std::complex<RealType>(1.0, 0),
-             &mat_h.at(0),
-             n,
-             &mat_t.at(0),
-             n,
-             std::complex<RealType>(0.0, 0.0),
-             &mat_d.at(0),
-             n);
+  BLAS::gemm('N', 'C', n, n, n, std::complex<RealType>(1.0, 0), &mat_d.at(0), n, &mat_h.at(0), n,
+             std::complex<RealType>(0.0, 0.0), &mat_t.at(0), n);
+  BLAS::gemm('N', 'N', n, n, n, std::complex<RealType>(1.0, 0), &mat_h.at(0), n, &mat_t.at(0), n,
+             std::complex<RealType>(0.0, 0.0), &mat_d.at(0), n);
   for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
     {
@@ -1027,32 +958,10 @@ $
   BLAS::gemm('N', 'N', nmo, nmo, nel, 1.0 / const0, Y2.data(), nmo, pK2.data(), nel, RealType(0.0), K2XA.data(), nmo);
   BLAS::gemm('N', 'N', nmo, nel, nmo, RealType(1.0), K2XA.data(), nmo, T, nmo, RealType(0.0), TK2XA.data(), nmo);
 
-  BLAS::gemm('N',
-             'N',
-             nmo,
-             nmo,
-             nel,
-             const1 / (const0 * const0),
-             T,
-             nmo,
-             pK2.data(),
-             nel,
-             RealType(0.0),
-             K2T.data(),
+  BLAS::gemm('N', 'N', nmo, nmo, nel, const1 / (const0 * const0), T, nmo, pK2.data(), nel, RealType(0.0), K2T.data(),
              nmo);
   BLAS::gemm('N', 'N', nmo, nel, nmo, RealType(1.0), K2T.data(), nmo, T, nmo, RealType(0.0), TK2T.data(), nmo);
-  BLAS::gemm('N',
-             'N',
-             nmo,
-             nel,
-             nmo,
-             const0 / const1,
-             K2T.data(),
-             nmo,
-             Y4.data(),
-             nmo,
-             RealType(0.0),
-             MK2T.data(),
+  BLAS::gemm('N', 'N', nmo, nel, nmo, const0 / const1, K2T.data(), nmo, Y4.data(), nmo, RealType(0.0), MK2T.data(),
              nmo);
 
   BLAS::gemm('N', 'N', nmo, nmo, nel, 1.0 / const0, T, nmo, pK3.data(), nel, RealType(0.0), K3T.data(), nmo);

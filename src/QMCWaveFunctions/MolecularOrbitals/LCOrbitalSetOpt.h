@@ -255,19 +255,8 @@ public:
   void rotate_B(const std::vector<RealType>& rot_mat)
   {
     // get the linear combination coefficients by applying the rotation to the old coefficients
-    BLAS::gemm('N',
-               'T',
-               m_nb,
-               m_nlc,
-               m_nlc,
-               RealType(1.0),
-               m_init_B.data(),
-               m_nb,
-               rot_mat.data(),
-               m_nlc,
-               RealType(0.0),
-               m_B.data(),
-               m_nb);
+    BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), m_init_B.data(), m_nb, rot_mat.data(), m_nlc, RealType(0.0),
+               m_B.data(), m_nb);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -601,51 +590,18 @@ public:
     }
 
     // compute the matrix of linear combination values for each particle
-    BLAS::gemm('N',
-               'N',
-               no,
-               np,
-               nb,
-               ValueType(1.0),
-               &m_lc_coeffs[0],
-               no,
-               &m_basis_vals[0],
-               nb,
-               ValueType(0.0),
-               vmat,
+    BLAS::gemm('N', 'N', no, np, nb, ValueType(1.0), &m_lc_coeffs[0], no, &m_basis_vals[0], nb, ValueType(0.0), vmat,
                no);
 
     // compute the matrix of summed 2nd derivatives of linear combinations for each particle
-    BLAS::gemm('N',
-               'N',
-               no,
-               np,
-               nb,
-               ValueType(1.0),
-               &m_lc_coeffs[0],
-               no,
-               &m_basis_der2[0],
-               nb,
-               ValueType(0.0),
-               lmat,
+    BLAS::gemm('N', 'N', no, np, nb, ValueType(1.0), &m_lc_coeffs[0], no, &m_basis_der2[0], nb, ValueType(0.0), lmat,
                no);
 
     // compute the matrix of 1st derivatives of linear combinations for each particle (using m_basis_vals as temporary storage)
     for (int p = 0; p < 3; p++)
     {
-      BLAS::gemm('N',
-                 'N',
-                 no,
-                 np,
-                 nb,
-                 ValueType(1.0),
-                 &m_lc_coeffs[0],
-                 no,
-                 &m_basis_der1[p * np * nb],
-                 nb,
-                 ValueType(0.0),
-                 &m_basis_vals[0],
-                 no);
+      BLAS::gemm('N', 'N', no, np, nb, ValueType(1.0), &m_lc_coeffs[0], no, &m_basis_der1[p * np * nb], nb,
+                 ValueType(0.0), &m_basis_vals[0], no);
       if (careful_loops_for_grad)
       {
         for (int j = 0; j < np; j++)
@@ -740,9 +696,7 @@ public:
     //app_log() << "d2logdet.rows()      = " << d2logdet.rows() << std::endl;
     //app_log() << "this->OrbitalSetSize = " << this->OrbitalSetSize << std::endl;
     // check sanity
-    this->check_input_dim("logdet # of columns",
-                          "LCOrbitalSetOpt::evaluate_notranspose",
-                          logdet.cols(),
+    this->check_input_dim("logdet # of columns", "LCOrbitalSetOpt::evaluate_notranspose", logdet.cols(),
                           this->OrbitalSetSize);
     if (logdet.cols() != dlogdet.cols() || logdet.cols() != d2logdet.cols())
       throw std::runtime_error("logdet, dlogdet, and d2logdet should have the same number of columns in "
@@ -752,14 +706,7 @@ public:
           "logdet, dlogdet, and d2logdet should have the same number of rows in LCOrbitalSetOpt::evaluate_notranspose");
 
     // evaluate the first logdet.cols() orbitals for the particles in the range [first, last)
-    this->evaluate_notranspose_ranges(P,
-                                      'w',
-                                      0,
-                                      logdet.cols(),
-                                      first,
-                                      last,
-                                      logdet.data(),
-                                      dlogdet.data(),
+    this->evaluate_notranspose_ranges(P, 'w', 0, logdet.cols(), first, last, logdet.data(), dlogdet.data(),
                                       d2logdet.data());
   }
 

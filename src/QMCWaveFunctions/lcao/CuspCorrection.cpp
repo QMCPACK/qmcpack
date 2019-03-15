@@ -418,8 +418,7 @@ void minimizeForRc(CuspCorrection& cusp,
         cusp.cparam.Rc = x;
         return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
       },
-      Rc_init,
-      Rc_max);
+      Rc_init, Rc_max);
 
   if (bracket.success)
   {
