@@ -523,7 +523,7 @@ hid_t PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
   {
     return -1;
   }
-  hid_t h = H5Fopen((const char*)aptr,H5F_ACC_RDWR,H5P_DEFAULT);
+  hid_t h = H5Fopen((const char*)aptr,H5F_ACC_RDONLY,H5P_DEFAULT);
   if(h<0)
   {
     app_error() << " Cannot open " << (const char*)aptr << " file." << std::endl;
