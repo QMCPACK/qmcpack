@@ -11,9 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_WALKER_OUTPUT_H
@@ -33,8 +30,6 @@
 
 namespace qmcplusplus
 {
-
-
 /** Writes a set of walker configurations to an HDF5 file. */
 class HDFWalkerOutput
 {
@@ -60,8 +55,8 @@ class HDFWalkerOutput
   ///rootname
   std::string RootName;
   std::string prevFile;
-//     ///handle for the storeConfig.h5
-//     hdf_archive fw_out;
+  //     ///handle for the storeConfig.h5
+  //     hdf_archive fw_out;
 public:
   ///constructor
   HDFWalkerOutput(MCWalkerConfiguration& W, const std::string& fname, Communicate* c);
@@ -75,7 +70,7 @@ public:
 #ifdef ADIOS_VERIFY
   void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, OHMMS_PRECISION* origin);
   void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, int origin);
-  void adios_checkpoint_verify(MCWalkerConfiguration& W,ADIOS_FILE* fp);
+  void adios_checkpoint_verify(MCWalkerConfiguration& W, ADIOS_FILE* fp);
 #endif
 #endif
 
@@ -83,23 +78,22 @@ public:
    * @param w walkers
    */
   bool dump(MCWalkerConfiguration& w, int block);
-//     bool dump(ForwardWalkingHistoryObject& FWO);
+  //     bool dump(ForwardWalkingHistoryObject& FWO);
 
 private:
-
   ///PooledData<T> is used to define the shape of multi-dimensional array
   typedef PooledData<OHMMS_PRECISION> BufferType;
   std::vector<Communicate::request> myRequest;
   std::vector<BufferType*> RemoteData;
   int block;
 
-//     //define some types for the FW collection
-//     typedef std::vector<ForwardWalkingData> FWBufferType;
-//     std::vector<FWBufferType*> FWData;
-//     std::vector<std::vector<int> > FWCountData;
+  //     //define some types for the FW collection
+  //     typedef std::vector<ForwardWalkingData> FWBufferType;
+  //     std::vector<FWBufferType*> FWData;
+  //     std::vector<std::vector<int> > FWCountData;
 
   void write_configuration(MCWalkerConfiguration& W, hdf_archive& hout, int block);
 };
 
-}
+} // namespace qmcplusplus
 #endif

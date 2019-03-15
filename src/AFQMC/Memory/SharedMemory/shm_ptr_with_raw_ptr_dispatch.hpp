@@ -21,6 +21,7 @@
 
 #include "multi/array_ref.hpp"
 #include "mpi3/communicator.hpp"
+#include "mpi3/group.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "mpi3/shared_window.hpp"
 #include "AFQMC/Memory/raw_pointers.hpp"
@@ -329,11 +330,6 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_value_construct_n(Alloc &a, shm_p
 namespace boost{
 namespace multi{
 
-using qmcplusplus::afqmc::to_address;
-
-/**************** copy *****************/
-// Can always call cudaMemcopy2D like you do in the blas backend
-
 template<class Alloc, typename T, typename Size>
 multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_fill_n(
                     Alloc &a,
@@ -423,7 +419,7 @@ multi::array_iterator<T, 1, T*> copy_n(
 }
 
 template<class T, class Q1, class Q2>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy( 
+multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
            multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
            multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> last,
            multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
@@ -478,7 +474,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
 }
 
 template<class Alloc, class T, class ForwardIt>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy( 
+multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy(
                          Alloc &a,
                          ForwardIt first,
                          ForwardIt last,

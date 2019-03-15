@@ -363,8 +363,6 @@ template<class Allocator>
 void wfn_fac_sdet_distributed(boost::mpi3::communicator & world, int ngroups)
 {
 
-  using pointer = device_ptr<ComplexType>;
-
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
     app_log()<<" Skipping wfn_fac_sdet_distributed text. afqmc.h5 and ./wfn.dat files not found. \n";

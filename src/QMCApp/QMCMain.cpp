@@ -69,6 +69,9 @@ QMCMain::QMCMain(Communicate* c)
   , traces_xml(NULL)
 #endif
 {
+  Communicate NodeComm;
+  NodeComm.initializeAsNodeComm(*OHMMS::Controller);
+
   app_summary()
       << "\n=====================================================\n"
       <<  "                    QMCPACK "
@@ -81,9 +84,10 @@ QMCMain::QMCMain(Communicate* c)
   app_summary()  << "=====================================================\n";
   qmc_common.print_options(app_log());
   app_summary()
-      << "\n  MPI Nodes             = " << OHMMS::Controller->size()
-      << "\n  MPI Nodes per group   = " << myComm->size()
+      << "\n  MPI Ranks             = " << OHMMS::Controller->size()
+      << "\n  MPI Ranks per group   = " << myComm->size()
       << "\n  MPI Group ID          = " << myComm->getGroupID()
+      << "\n  MPI Ranks per node    = " << NodeComm.size()
       << std::endl;
   #pragma omp parallel
   {
@@ -479,12 +483,23 @@ bool QMCMain::validateXML()
     else if(cname == "include")
     {
       //file is provided
-      const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
+      xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
       if(a)
       {
-        pushDocument((const char*)a);
-        inputnode = processPWH(XmlDocStack.top()->getRoot());
-        popDocument();
+        bool success = pushDocument((const char*)a);
+        xmlFree(a);
+        if(success)
+        {
+          inputnode = processPWH(XmlDocStack.top()->getRoot());
+          popDocument();
+        }
+        else
+          myComm->abort();
+      }
+      else
+      {
+        app_error() << "tag \"include\" must include an \"href\" attribute." << std::endl;
+        myComm->abort();
       }
     }
     else if(cname == "qmcsystem")

@@ -26,25 +26,23 @@
 
 namespace qmcplusplus
 {
-
-  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep)
-  {
-    typedef OHMMS_PRECISION RealType;
-    BsplineReaderBase* aReader=nullptr;
+BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep)
+{
+  typedef OHMMS_PRECISION RealType;
+  BsplineReaderBase* aReader = nullptr;
 
 #if defined(QMC_COMPLEX)
-    if(hybrid_rep)
-      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CSoA<float,RealType> > >(e);
-    else
-      aReader= new SplineAdoptorReader<SplineC2CSoA<float,RealType> >(e);
+  if (hybrid_rep)
+    aReader = new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CSoA<float, RealType>>>(e);
+  else
+    aReader = new SplineAdoptorReader<SplineC2CSoA<float, RealType>>(e);
 #else //QMC_COMPLEX
-    if(hybrid_rep)
-      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<float,RealType> > >(e);
-    else
-      aReader= new SplineAdoptorReader<SplineC2RSoA<float,RealType> >(e);
+  if (hybrid_rep)
+    aReader = new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<float, RealType>>>(e);
+  else
+    aReader = new SplineAdoptorReader<SplineC2RSoA<float, RealType>>(e);
 #endif
 
-    return aReader;
-  }
+  return aReader;
 }
-
+} // namespace qmcplusplus

@@ -299,11 +299,8 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
       {
           Value1 += nlpp->evaluateOne(elec,iat,psi,jel,dist[iat],RealType(-1)*displ[iat],0,Txy);
           
-          //I know the real version doesn't work yet.  Only test if complex.
-          #ifdef QMC_COMPLEX
           Value2 += nlpp->evaluateOneWithForces(elec,iat,psi,jel,dist[iat],RealType(-1)*displ[iat],HFTerm[iat],0,Txy);
           Value3 += nlpp->evaluateOneWithForces(elec,ions,iat,psi,jel,dist[iat],RealType(-1)*displ[iat],HFTerm2[iat],PulayTerm,0,Txy);
-          #endif
       }
     }
   //These numbers are validated against an alternate code path via wavefunction tester.  
@@ -314,7 +311,6 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
   //  These numbers assume the Hellman Feynmann implementation is correct, and dump the values
   //  when a one body term is added in.  
   
-#ifdef QMC_COMPLEX 
   REQUIRE( Value2 == Approx(6.9015710211e-02) );
   REQUIRE( Value3 == Approx(6.9015710211e-02) );
  
@@ -356,7 +352,6 @@ TEST_CASE("Evaluate_ecp","[hamiltonian]")
   //HFTerm[1][1]+PulayTerm[1][1] =  0.0
   //HFTerm[1][2]+PulayTerm[1][2] =  0.0
   
-  #endif
 
  #else
 

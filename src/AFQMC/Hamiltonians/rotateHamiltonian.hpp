@@ -199,6 +199,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   if(addCoulomb) key = 1;    // single communicator with all working nodes
   else key = (amIAlpha?1:2); // 2 communicators, one for each spin (if there are 2)
   boost::mpi3::communicator comm(TG.Cores().split(key));
+  //boost::mpi3::communicator comm(TG.Cores().split(0));
 
   int norb = lN-l0;
   int maxnorb = 0;
@@ -386,20 +387,21 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
     else if(walker_type==COLLINEAR) sz_local.resize(NMO*(NAEA+NAEB));
     else if(walker_type==NONCOLLINEAR) sz_local.resize(2*NMO*(NAEA+NAEB));
 
-
+    int K0_ = (key==2?NMO:0);
+    int nn0 = (key==2?ngrp/2:0);
     for(int nn=0, nb=0, nkcum=0; nn<comm.size(); nn++) {
 
       // just checking
-      assert(nkcum==M_split[nn]);
-      if(M_split[nn+1]==M_split[nn]) continue;
+      assert(nkcum+K0_==M_split[nn+nn0]);
+      if(M_split[nn+nn0+1]==M_split[nn+nn0]) continue;
       int nblk = Qknum[nn];
       long ntermscum=0;
       for( int bi = 0; bi < nblk; bi++, nb++) {
         int nterms = Qksizes[2*nb];      // number of terms in block
         int nk = Qksizes[2*nb+1];        // number of k-blocks in block
-        int k0 = nkcum;                  // first value of k in block
+        int k0 = nkcum+K0_;                  // first value of k in block
         nkcum+=nk;
-        int kN = nkcum;                  // last+1 value
+        int kN = nkcum+K0_;                  // last+1 value
         int NEL0 = (k0<NMO)?NAEA:NAEB;   // number of electrons in this spin block
         assert(nk > 0 && nk <= maxnk );  // just checking
 
@@ -411,8 +413,8 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
         if(sparseQk) {
           if(coreid==0) {
             if(nn == comm.rank()) {
-              auto ka0 = (k0-M_split[nn])*NEL0;
-              auto kaN = (k0-M_split[nn]+nk)*NEL0;
+              auto ka0 = (k0-M_split[nn+nn0])*NEL0;
+              auto kaN = (k0-M_split[nn+nn0]+nk)*NEL0;
               auto n0 = *SpQk.pointers_begin( ka0 );
               auto n1 = *SpQk.pointers_end(kaN);
               int nt_ = static_cast<int>(n1-n0);
@@ -509,19 +511,21 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
   }
 
   // now calculate fully distributed matrix elements
+  int K0_ = (key==2?NMO:0);
+  int nn0 = (key==2?ngrp/2:0);
   for(int nn=0, nb=0, nkcum=0; nn<comm.size(); nn++) {
 
     // just checking
-    assert(nkcum==M_split[nn]);
-    if(M_split[nn+1]==M_split[nn]) continue;
+    assert(nkcum==M_split[nn+nn0]);
+    if(M_split[nn+nn0+1]==M_split[nn+nn0]) continue;
     int nblk = Qknum[nn];
     long ntermscum=0;
     for( int bi = 0; bi < nblk; bi++, nb++) {
       int nterms = Qksizes[2*nb];      // number of terms in block
       int nk = Qksizes[2*nb+1];        // number of k-blocks in block
-      int k0 = nkcum;                  // first value of k in block
+      int k0 = nkcum+K0_;                  // first value of k in block
       nkcum+=nk;
-      int kN = nkcum;                  // last+1 value
+      int kN = nkcum+K0_;                  // last+1 value
       int NEL0 = (k0<NMO)?NAEA:NAEB;   // number of electrons in this spin block
       assert(nk > 0 && nk <= maxnk );  // just checking
 
@@ -533,8 +537,8 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
       if(sparseQk) {
         if(coreid==0) {
           if(nn == comm.rank()) {
-            auto ka0 = (k0-M_split[nn])*NEL0;
-            auto kaN = (k0-M_split[nn]+nk)*NEL0;
+            auto ka0 = (k0-M_split[nn+nn0])*NEL0;
+            auto kaN = (k0-M_split[nn+nn0]+nk)*NEL0;
             auto n0 = *SpQk.pointers_begin( ka0 );
             auto n1 = *SpQk.pointers_end(kaN);
             int nt_ = static_cast<int>(n1-n0);

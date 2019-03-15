@@ -16,6 +16,7 @@
 /**@file QMCHamiltonianBase.cpp
  *@brief Definition of QMCHamiltonianBase
  */
+#include "Message/Communicate.h"
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
 #include <QMCHamiltonians/QMCHamiltonian.h>
 
@@ -119,8 +120,7 @@ void QMCHamiltonianBase::registerObservables(std::vector<observable_helper*>& h5
 void QMCHamiltonianBase::addEnergy(MCWalkerConfiguration &W,
     std::vector<RealType> &LocalEnergy)
 {
-  app_error() << "Need specialization for " << myName
-    << "::addEnergy(MCWalkerConfiguration &W).\n";
+  APP_ABORT("Need specialization for "+myName+"::addEnergy(MCWalkerConfiguration &W).\n Required functionality not implemented\n");
 }
 
 }
