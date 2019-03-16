@@ -26,7 +26,8 @@ inline void cudaAssert(cudaError_t code, const std::string& cause, const char *f
   if (code != cudaSuccess) 
   {
     std::ostringstream err;
-    err << "cudaAssert: " << cudaGetErrorString(code)
+    err << "cudaAssert: " << cudaGetErrorName(code)
+        << " " << cudaGetErrorString(code)
         << ", file " << file << ", line " << line << std::endl
         << cause << std::endl;
     std::cerr << err.str();
