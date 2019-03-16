@@ -21,17 +21,7 @@ EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 ADD_EXECUTABLE(${UTEST_EXE} test_hamiltonian_operations.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil
                       ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
-
-LIST(LENGTH AFQMC_UNIT_TEST_INPUTS NUM_PAIRS)
-MATH(EXPR ENDP "${NUM_PAIRS}-1")
-FOREACH(I RANGE 0 ${ENDP} 2)
-    LIST(GET AFQMC_UNIT_TEST_INPUTS ${I} HAMIL_FILE)
-    MATH(EXPR J "${I}+1")
-    LIST(GET AFQMC_UNIT_TEST_INPUTS ${J} WFN_FILE)
-    GET_FILENAME_COMPONENT(HAMIL ${HAMIL_FILE} NAME_WE)
-    GET_FILENAME_COMPONENT(WFN ${WFN_FILE} NAME_WE)
-    SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_${HAMIL}_${WFN})
-    ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
-                  "--hamil ${HAMIL_FILE}" "--wfn ${WFN_FILE}")
-    SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit;afqmc" WORKING_DIRECTORY ${UTEST_DIR})
-ENDFOREACH()
+SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_"ham_chol_sc"_"wfn_rhf")
+ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
+              "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/ham_chol_uc.h5"
+              "--wfn ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/wfn_rhf.dat")
