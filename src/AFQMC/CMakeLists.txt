@@ -74,8 +74,8 @@ IF (BUILD_UNIT_TESTS)
       ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/wfn_uhf.dat
       ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5
       ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/wfn_msd.dat
-      ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5
-      ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/wfn_phmsd.dat
+      #${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5
+      #${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/wfn_phmsd.dat
       ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_szv/ham_thc_sc.h5
       ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_szv/wfn_rhf.dat
       )
