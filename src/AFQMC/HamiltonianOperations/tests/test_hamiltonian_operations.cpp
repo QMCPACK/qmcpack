@@ -160,8 +160,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
       app_log()<<" E1: " <<setprecision(12) <<Eloc[0][0] <<std::endl;
     }
     if(std::abs(file_data.E2)>1e-8) {
-      REQUIRE( real(Eloc[0][1]) == Approx(real(file_data.E2)));
-      REQUIRE( imag(Eloc[0][1]) == Approx(imag(file_data.E2)));
+      REQUIRE( real(Eloc[0][1]+Eloc[0][2]) == Approx(real(file_data.E2)));
+      REQUIRE( imag(Eloc[0][1]+Eloc[0][2]) == Approx(imag(file_data.E2)));
     } else {
       app_log()<<" EJ: " <<setprecision(12) <<Eloc[0][2] <<std::endl;
       app_log()<<" EXX: " <<setprecision(12) <<Eloc[0][1] <<std::endl;
