@@ -16,7 +16,6 @@
 
 namespace qmcplusplus
 {
-
 TEST_CASE("Bessel", "[numerics]")
 {
   double bessel_array[100];
@@ -28,7 +27,6 @@ TEST_CASE("Bessel", "[numerics]")
   REQUIRE(bessel_array[5] == Approx(9.256115861125815763e-05));
   REQUIRE(bessel_array[7] == Approx(4.790134198739488623e-07));
   REQUIRE(bessel_array[10] == Approx(7.116552640047313024e-11));
-
 }
 
-}
+} // namespace qmcplusplus
