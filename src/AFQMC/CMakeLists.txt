@@ -16,7 +16,7 @@ SET (AFQMC_SRCS
   Hamiltonians/HSPotential_Helpers.cpp
   Hamiltonians/FactorizedSparseHamiltonian.cpp
   Hamiltonians/KPFactorizedHamiltonian.cpp
-  Hamiltonians/KPTHCHamiltonian.cpp
+#  Hamiltonians/KPTHCHamiltonian.cpp
   Hamiltonians/HamiltonianFactory_Helper.cpp
   Hamiltonians/HamiltonianFactory.cpp
   Hamiltonians/THCHamiltonian.cpp
@@ -57,6 +57,9 @@ ENDIF(QMC_CUDA)
 IF(QMC_CUDA)
   CUDA_ADD_LIBRARY(afqmc ${AFQMC_SRCS})
   CUDA_ADD_CUBLAS_TO_TARGET(afqmc)
+  target_link_libraries( afqmc ${CUDA_cusparse_LIBRARY} )
+  target_link_libraries( afqmc ${CUDA_cusolver_LIBRARY} )
+  target_link_libraries( afqmc ${CUDA_curand_LIBRARY} )
 ELSE(QMC_CUDA)
   ADD_LIBRARY(afqmc ${AFQMC_SRCS})
 ENDIF(QMC_CUDA)

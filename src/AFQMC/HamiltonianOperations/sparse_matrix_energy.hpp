@@ -61,9 +61,7 @@ inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const Sp
   assert(Gc.size(0) == Vakbl.size(0));
   assert(Gc.size(0) == Vakbl.size(1));
 
-  using Type = typename std::decay<MatA>::type::element;
-  Type zero = Type(0.);
-  Type one = Type(1.);
+  using Type = typename std::decay<EMat>::type::element;
   Type half = Type(0.5);
 
   int nwalk = Gc.size(1);
@@ -72,7 +70,11 @@ inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const Sp
 
   for(int i=0, iend=Gc.size(0); i<iend; i++)
     for(int n=0; n<nwalk; n++)
+#if AFQMC_MIXED_PRECISION
+      locV[n][1] += static_cast<Type>(Gc[i][n]*Gcloc[i][n]);
+#else
       locV[n][1] += Gc[i][n]*Gcloc[i][n];
+#endif
   for(int n=0; n<nwalk; n++) locV[n][1] *= half;
 }
 
@@ -112,9 +114,7 @@ inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const Sp
   assert(Vakbl.size(0)  == Gcloc.size(0));
   assert(Gc.size(0) == Vakbl.size(1));
 
-  using Type = typename std::decay<MatB>::type::element;
-  const Type zero = Type(0.);
-  const Type one = Type(1.);
+  using Type = typename std::decay<EMat>::type::element;
   const Type half = Type(0.5);
 
   int nwalk = Gc.size(1);
@@ -125,7 +125,12 @@ inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const Sp
   int r0 = Vakbl.local_origin()[0];
   for(int i=0, iend=Gcloc.size(0); i<iend; i++)
     for(int n=0; n<nwalk; n++)
+#if AFQMC_MIXED_PRECISION
+      locV[n][1] += static_cast<Type>(Gc[i+r0][n]*Gcloc[i][n]);
+#else
       locV[n][1] += Gc[i+r0][n]*Gcloc[i][n];
+#endif
+  
   for(int n=0; n<nwalk; n++) locV[n][1] *= half;
 }
 

@@ -231,8 +231,12 @@ const char *wlk_xml_block_noncol =
       if(std::abs(file_data.Vsum)>1e-8) {
         for(int n=0; n<nwalk; n++) {
           Vsum=0;
-          for(int i=0; i<vHS.size(0); i++)
-            Vsum += vHS[i][n];
+          if(wfn.transposed_vHS()) 
+            for(int i=0; i<vHS.size(1); i++)
+              Vsum += vHS[n][i];
+          else
+            for(int i=0; i<vHS.size(0); i++)
+              Vsum += vHS[i][n];
           REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
           REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
         }
@@ -327,15 +331,23 @@ return;
       if(std::abs(file_data.Vsum)>1e-8) {
         for(int n=0; n<nwalk; n++) {
           Vsum=0;
-          for(int i=0; i<vHS.size(0); i++)
-            Vsum += vHS[i][n];
+          if(wfn.transposed_vHS()) 
+            for(int i=0; i<vHS.size(1); i++)
+              Vsum += vHS[n][i];
+          else
+            for(int i=0; i<vHS.size(0); i++)
+              Vsum += vHS[i][n];
           REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
           REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
         }
       } else {
         Vsum=0;
-        for(int i=0; i<vHS.size(0); i++)
-          Vsum += vHS[i][0];
+        if(wfn.transposed_vHS()) 
+          for(int i=0; i<vHS.size(1); i++)
+            Vsum += vHS[0][i];
+        else
+          for(int i=0; i<vHS.size(0); i++)
+            Vsum += vHS[i][0];
         app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
       }
 
@@ -347,11 +359,9 @@ return;
   }
 }
 
-TEST_CASE("wfn_fac_sdet_distributed", "[wavefunction_factory]")
+template<class Allocator>
+void wfn_fac_sdet_distributed(boost::mpi3::communicator & world, int ngroups)
 {
-  OHMMS::Controller->initialize(0, NULL);
-  auto world = boost::mpi3::environment::get_world_instance();
-  if(not world.root()) infoLog.pause();
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -386,9 +396,11 @@ TEST_CASE("wfn_fac_sdet_distributed", "[wavefunction_factory]")
 
 
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
-    auto TGwfn = TaskGroup_(gTG,std::string("WfnTG"),gTG.getTotalNodes(),gTG.getTotalCores());
+    auto TGwfn = TaskGroup_(gTG,std::string("WfnTG"),ngroups,gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
+
+    Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
 const char *wlk_xml_block_closed =
 "<WalkerSet name=\"wset0\">  \
@@ -448,9 +460,14 @@ const char *wlk_xml_block_noncol =
       REQUIRE(imag(*it->overlap()) == Approx(0.0));
     }
 
-    using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
-
+    using CMatrix = ComplexMatrix<Allocator>; 
+    qmcplusplus::Timer Time;
+    double t1;
+    Time.restart();
     wfn.Energy(wset);
+    TG.TG().barrier();
+    t1=Time.elapsed();
+
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
         REQUIRE( real(*it->E1()) == Approx(real(file_data.E0+file_data.E1)));
@@ -458,7 +475,7 @@ const char *wlk_xml_block_noncol =
         REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
       }
     } else {
-      app_log()<<" E0+E1: " <<setprecision(12) <<*wset[0].E1() <<std::endl;
+      app_log()<<" E0+E1: " <<setprecision(12) <<*wset[0].E1() <<" Time: " <<t1  <<std::endl;
       app_log()<<" EJ: " <<setprecision(12) <<*wset[0].EJ() <<std::endl;
       app_log()<<" EXX: " <<setprecision(12) <<*wset[0].EXX() <<std::endl;
     }
@@ -466,13 +483,16 @@ const char *wlk_xml_block_noncol =
     auto size_of_G = wfn.size_of_G_for_vbias();
     int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
     int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
-    shmCMatrix G({Gdim1,Gdim2},shared_allocator<ComplexType>{TG.TG_local()});
+    CMatrix G({Gdim1,Gdim2},alloc_);
     wfn.MixedDensityMatrix_for_vbias(wset,G);
 
     double sqrtdt = std::sqrt(0.01);
     auto nCV = wfn.local_number_of_cholesky_vectors();
-    shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
+    CMatrix X({nCV,nwalk},alloc_);
+    Time.restart();
     wfn.vbias(G,X,sqrtdt);
+    TG.TG().barrier();
+    t1=Time.elapsed();
 
     ComplexType Xsum=0;
     if(std::abs(file_data.Xsum)>1e-8) {
@@ -491,7 +511,7 @@ const char *wlk_xml_block_noncol =
         for(int i=0; i<X.size(0); i++)
           Xsum += X[i][0];
       Xsum = ( TGwfn.TG() += Xsum );
-      app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
+      app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<" Time: " <<t1 <<std::endl;
     }
 
     // vbias must be reduced if false
@@ -509,16 +529,22 @@ const char *wlk_xml_block_noncol =
 
     int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
-    shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
+    CMatrix vHS({vdim1,vdim2},alloc_);
+    Time.restart();
     wfn.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
+    t1=Time.elapsed();
     ComplexType Vsum=0;
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
         if(TGwfn.TG_local().root())
-          for(int i=0; i<vHS.size(0); i++)
-            Vsum += vHS[i][n];
+          if(wfn.transposed_vHS()) 
+            for(int i=0; i<vHS.size(1); i++)
+              Vsum += vHS[n][i];
+          else  
+            for(int i=0; i<vHS.size(0); i++)
+              Vsum += vHS[i][n];
         Vsum = ( TGwfn.TG() += Vsum );
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
@@ -526,10 +552,14 @@ const char *wlk_xml_block_noncol =
     } else {
       Vsum=0;
       if(TGwfn.TG_local().root())
-        for(int i=0; i<vHS.size(0); i++)
-          Vsum += vHS[i][0];
+        if(wfn.transposed_vHS()) 
+          for(int i=0; i<vHS.size(1); i++)
+            Vsum += vHS[0][i];
+        else
+          for(int i=0; i<vHS.size(0); i++)
+            Vsum += vHS[i][0];
       Vsum = ( TGwfn.TG() += Vsum );
-      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
+      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<" Time: " <<t1 <<std::endl;
     }
 
   // Restarting Wavefunction from file
@@ -626,8 +656,12 @@ const char *wlk_xml_block_noncol =
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
         if(TGwfn.TG_local().root())
-          for(int i=0; i<vHS.size(0); i++)
-            Vsum += vHS[i][n];
+          if(wfn.transposed_vHS()) 
+            for(int i=0; i<vHS.size(1); i++)
+              Vsum += vHS[n][i];
+          else
+            for(int i=0; i<vHS.size(0); i++)
+              Vsum += vHS[i][n];
         Vsum = ( TGwfn.TG() += Vsum );
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
@@ -635,8 +669,12 @@ const char *wlk_xml_block_noncol =
     } else {
       Vsum=0;
       if(TGwfn.TG_local().root())
-        for(int i=0; i<vHS.size(0); i++)
-          Vsum += vHS[i][0];
+        if(wfn.transposed_vHS()) 
+          for(int i=0; i<vHS.size(1); i++)
+            Vsum += vHS[0][i];
+        else
+          for(int i=0; i<vHS.size(0); i++)
+            Vsum += vHS[i][0];
       Vsum = ( TGwfn.TG() += Vsum );
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
@@ -650,11 +688,9 @@ const char *wlk_xml_block_noncol =
   }
 }
 
-TEST_CASE("wfn_fac_collinear_multidet", "[wavefunction_factory]")
+template<class Allocator>
+void wfn_fac_collinear_multidet(boost::mpi3::communicator & world)
 {
-  OHMMS::Controller->initialize(0, NULL);
-  auto world = boost::mpi3::environment::get_world_instance();
-  if(not world.root()) infoLog.pause();
 
   if(not file_exists("./afqmc_msd.h5") ||
      not file_exists("./wfn_msd.dat") ) {
@@ -691,6 +727,8 @@ TEST_CASE("wfn_fac_collinear_multidet", "[wavefunction_factory]")
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
 
+    Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
+
 const char *wlk_xml_block =
 "<WalkerSet name=\"wset0\">  \
   <parameter name=\"walker_type\">collinear</parameter>  \
@@ -726,7 +764,7 @@ const char *wlk_xml_block =
     // no guarantee that overlap is 1.0
     wfn.Overlap(wset);
 
-    using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+    using CMatrix = ComplexMatrix<Allocator>;
 
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
@@ -742,12 +780,12 @@ const char *wlk_xml_block =
     auto size_of_G = wfn.size_of_G_for_vbias();
     int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
     int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
-    shmCMatrix G({Gdim1,Gdim2},shared_allocator<ComplexType>{TG.TG_local()});
+    CMatrix G({Gdim1,Gdim2},alloc_);
     wfn.MixedDensityMatrix_for_vbias(wset,G);
 
     double sqrtdt = std::sqrt(0.01);
     auto nCV = wfn.local_number_of_cholesky_vectors();
-    shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
+    CMatrix X({nCV,nwalk},alloc_);
     wfn.vbias(G,X,sqrtdt);
     ComplexType Xsum=0;
     if(std::abs(file_data.Xsum)>1e-8) {
@@ -768,32 +806,38 @@ const char *wlk_xml_block =
 
     int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
-    shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
+    CMatrix vHS({vdim1,vdim2},alloc_);
     wfn.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
     ComplexType Vsum=0;
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
-        for(int i=0; i<vHS.size(0); i++)
-          Vsum += vHS[i][n];
+        if(wfn.transposed_vHS()) 
+          for(int i=0; i<vHS.size(1); i++)
+            Vsum += vHS[n][i];
+        else
+          for(int i=0; i<vHS.size(0); i++)
+            Vsum += vHS[i][n];
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else {
       Vsum=0;
-      for(int i=0; i<vHS.size(0); i++)
-        Vsum += vHS[i][0];
+      if(wfn.transposed_vHS()) 
+        for(int i=0; i<vHS.size(1); i++)
+          Vsum += vHS[0][i];
+      else
+        for(int i=0; i<vHS.size(0); i++)
+          Vsum += vHS[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
   }
 }
 
-TEST_CASE("wfn_fac_collinear_multidet_distributed", "[wavefunction_factory]")
+template<class Allocator>
+void wfn_fac_collinear_multidet_distributed(boost::mpi3::communicator & world)
 {
-  OHMMS::Controller->initialize(0, NULL);
-  auto world = boost::mpi3::environment::get_world_instance();
-  if(not world.root()) infoLog.pause();
 
   if(not file_exists("./afqmc_msd.h5") ||
      not file_exists("./wfn_msd.dat") ) {
@@ -831,6 +875,8 @@ TEST_CASE("wfn_fac_collinear_multidet_distributed", "[wavefunction_factory]")
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
 
+    Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
+
 const char *wlk_xml_block =
 "<WalkerSet name=\"wset0\">  \
   <parameter name=\"walker_type\">collinear</parameter>  \
@@ -866,7 +912,7 @@ const char *wlk_xml_block =
     // no guarantee that overlap is 1.0
     wfn.Overlap(wset);
 
-    using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+    using CMatrix = ComplexMatrix<Allocator>; 
 
     wfn.Energy(wset);
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
@@ -882,12 +928,12 @@ const char *wlk_xml_block =
     auto size_of_G = wfn.size_of_G_for_vbias();
     int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
     int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
-    shmCMatrix G({Gdim1,Gdim2},shared_allocator<ComplexType>{TG.TG_local()});
+    CMatrix G({Gdim1,Gdim2},alloc_);
     wfn.MixedDensityMatrix_for_vbias(wset,G);
 
     double sqrtdt = std::sqrt(0.01);
     auto nCV = wfn.local_number_of_cholesky_vectors();
-    shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
+    CMatrix X({nCV,nwalk},alloc_);
     wfn.vbias(G,X,sqrtdt);
     ComplexType Xsum=0;
     if(std::abs(file_data.Xsum)>1e-8) {
@@ -908,27 +954,36 @@ const char *wlk_xml_block =
 
     int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
-    shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
+    CMatrix vHS({vdim1,vdim2},alloc_);
     wfn.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
     ComplexType Vsum=0;
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
-        for(int i=0; i<vHS.size(0); i++)
-          Vsum += vHS[i][n];
+        if(wfn.transposed_vHS()) 
+          for(int i=0; i<vHS.size(1); i++)
+            Vsum += vHS[n][i];
+        else
+          for(int i=0; i<vHS.size(0); i++)
+            Vsum += vHS[i][n];
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else {
       Vsum=0;
-      for(int i=0; i<vHS.size(0); i++)
-        Vsum += vHS[i][0];
+      if(wfn.transposed_vHS()) 
+        for(int i=0; i<vHS.size(1); i++)
+          Vsum += vHS[0][i];
+      else
+        for(int i=0; i<vHS.size(0); i++)
+          Vsum += vHS[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
   }
 }
 
+#if 0
 TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
@@ -1006,7 +1061,7 @@ const char *wlk_xml_block =
   </Wavefunction> \
 ";
 
-//#define __compare__
+#define __compare__
 #ifdef __compare__
     Libxml2Document doc2_;
     okay = doc2_.parseFromString(wfn_xml_block2);
@@ -1053,7 +1108,7 @@ const char *wlk_xml_block =
       REQUIRE( imag(*wset[0].overlap()) == Approx(imag(*wset[i].overlap())));
     }
 
-    using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+    using shmCMatrix = boost::multi::array<ComplexType,2alloc_,
 
     Time.restart();
     wfn.Energy(wset);
@@ -1075,8 +1130,8 @@ const char *wlk_xml_block =
     app_log()<<" NOMSD E: " <<setprecision(12) <<wset[0].energy() <<" "
              <<*wset[0].E1() <<" " <<*wset[0].EXX() <<" " <<*wset[0].EJ() <<" " <<t1  <<std::endl;
      
-      shmCMatrix Gph({2*NMO*NMO,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
-      shmCMatrix Gno({2*NMO*NMO,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
+      shmCMatrix Gph({2*NMO*NMO,nwalk},alloc_);
+      shmCMatrix Gno({2*NMO*NMO,nwalk},alloc_);
       wfn.MixedDensityMatrix(wset,Gph,false,false);
       nomsd.MixedDensityMatrix(wset,Gno,false,false);
       std::cout<<" Comparing G \n";
@@ -1090,22 +1145,15 @@ const char *wlk_xml_block =
     auto size_of_G = wfn.size_of_G_for_vbias();
     int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
     int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
-    shmCMatrix G({Gdim1,Gdim2},shared_allocator<ComplexType>{TG.TG_local()});
+    shmCMatrix G({Gdim1,Gdim2},alloc_);
     wfn.MixedDensityMatrix_for_vbias(wset,G);
-/*
-std::cout<<" G: \n";
-if(wfn.transposed_G_for_vbias())
- for(int i=0; i<size_of_G; i++)
-  std::cout<<i <<" " <<G[0][i] <<"\n";
-else
- for(int i=0; i<size_of_G; i++)
-  std::cout<<i <<" " <<G[i][0] <<"\n";
-*/
+
     double sqrtdt = std::sqrt(0.01);
     auto nCV = wfn.local_number_of_cholesky_vectors();
-    shmCMatrix X({nCV,nwalk},shared_allocator<ComplexType>{TG.TG_local()});
+    shmCMatrix X({nCV,nwalk},alloc_);
     wfn.vbias(G,X,sqrtdt);
     ComplexType Xsum=0;
+#ifndef __compare__
     if(std::abs(file_data.Xsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Xsum=0;
@@ -1114,7 +1162,9 @@ else
         REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
         REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
       }
-    } else {
+    } else 
+#endif
+    {
       Xsum=0;
       ComplexType Xsum2=0;
       for(int i=0; i<X.size(0); i++) {
@@ -1134,10 +1184,11 @@ else
 
     int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
-    shmCMatrix vHS({vdim1,vdim2},shared_allocator<ComplexType>{TG.TG_local()});
+    shmCMatrix vHS({vdim1,vdim2},alloc_);
     wfn.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
     ComplexType Vsum=0;
+#ifndef __compare__
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
@@ -1150,7 +1201,9 @@ else
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
-    } else {
+    } else  
+#endif
+    {
       Vsum=0;
       if(wfn.transposed_vHS())
         for(int i=0; i<vHS.size(1); i++)
@@ -1188,20 +1241,9 @@ else
       auto size_of_G2 = nomsd.size_of_G_for_vbias();
       int Gdim1_ = (nomsd.transposed_G_for_vbias()?nwalk:size_of_G2);
       int Gdim2_ = (nomsd.transposed_G_for_vbias()?size_of_G2:nwalk);
-      shmCMatrix G_({Gdim1_,Gdim2_},shared_allocator<ComplexType>{TG.TG_local()});
+      shmCMatrix G_({Gdim1_,Gdim2_},alloc_);
       nomsd.MixedDensityMatrix_for_vbias(wset,G_);
-/*
-      std::cout<<" Comparing G \n";
-      for(int i=0; i<NMO; i++)
-       for(int j=0; j<NMO; j++) {
-        if(std::abs(Gph[i*NMO+j][0]-G_[i*NMO+j][0]) > 1e-8)
-          std::cout<<i <<" - " <<j <<" " <<Gph[i*NMO+j][0] <<" " <<G_[i*NMO+j][0] <<" "
-                   <<std::abs(Gph[i*NMO+j][0]-G_[i*NMO+j][0]) <<std::endl;
-        if(std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) > 1e-8)
-          std::cout<<i <<" -- " <<j <<" " <<G_[i*NMO+j][0] <<" " <<Gno[i*NMO+j][0] <<" "
-                   <<std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;
-       }
-*/
+
       boost::multi::array_ref<ComplexType,2> X2(to_address(X.origin())+nCV*nwalk,{nCV,nwalk});
       nomsd.vbias(G_,X2,sqrtdt);
       Xsum=0;
@@ -1215,10 +1257,11 @@ else
 
     int vdim1_ = (nomsd.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2_ = (nomsd.transposed_vHS()?NMO*NMO:nwalk);
-    shmCMatrix vHS_({vdim1_,vdim2_},shared_allocator<ComplexType>{TG.TG_local()});
+    shmCMatrix vHS_({vdim1_,vdim2_},alloc_);
     nomsd.vHS(X2,vHS_,sqrtdt);
     TG.local_barrier();
     Vsum=0;
+/*
     if(std::abs(file_data.Vsum)>1e-8) {
       for(int n=0; n<nwalk; n++) {
         Vsum=0;
@@ -1231,7 +1274,9 @@ else
         REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
         REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
-    } else {
+    } else 
+*/
+    {
       Vsum=0;
       if(nomsd.transposed_vHS())
         for(int i=0; i<vHS_.size(1); i++)
@@ -1259,6 +1304,7 @@ else
 #endif
   }
 }
+#endif
 
 TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 {
@@ -1278,5 +1324,62 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
   wfn_fac_sdet<Alloc>(world);
 
 }
+
+TEST_CASE("wfn_fac_sdet_distributed", "[wavefunction_factory]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+  if(not world.root()) infoLog.pause();
+
+#ifdef QMC_CUDA
+  auto node = world.split_shared(world.rank());
+  int ngrp(world.size());
+
+  qmc_cuda::CUDA_INIT(node);
+  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+#else
+  auto node = world.split_shared(world.rank());
+  int ngrp(world.size()/node.size());
+  using Alloc = shared_allocator<ComplexType>;
+#endif
+
+  wfn_fac_sdet_distributed<Alloc>(world, ngrp);
+
+}
+
+TEST_CASE("wfn_fac_collinear_multidet", "[wavefunction_factory]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+  if(not world.root()) infoLog.pause();
+
+#ifdef QMC_CUDA
+  auto node = world.split_shared(world.rank());
+  qmc_cuda::CUDA_INIT(node);
+  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+#else
+  using Alloc = shared_allocator<ComplexType>;
+#endif
+  wfn_fac_collinear_multidet<Alloc>(world);
+
+}
+
+TEST_CASE("wfn_fac_collinear_multidet_distributed", "[wavefunction_factory]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+  if(not world.root()) infoLog.pause();
+
+#ifdef QMC_CUDA
+  auto node = world.split_shared(world.rank());
+  qmc_cuda::CUDA_INIT(node);
+  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+#else
+  using Alloc = shared_allocator<ComplexType>;
+#endif
+  wfn_fac_collinear_multidet_distributed<Alloc>(world);
+
+}
+
 
 }

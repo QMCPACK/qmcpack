@@ -49,6 +49,11 @@ namespace afqmc
 class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
 {
   using base = AFQMCBasePropagator;
+  using stdCVector = ComplexVector<std::allocator<ComplexType>>;
+  using stdCVector_ref = ComplexVector_ref<ComplexType*>; 
+  using stdCMatrix_ref = ComplexMatrix_ref<ComplexType*>; 
+  using stdC3Tensor_ref = boost::multi::array_ref<ComplexType,3>;
+
   public:
 
     AFQMCDistributedPropagatorDistCV(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
@@ -95,6 +100,12 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
 
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_vsend, req_vrecv;
+
+#ifdef QMC_CUDA
+    stdCVector comm_buffer;
+#else
+    sharedCVector comm_buffer;
+#endif
 
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);

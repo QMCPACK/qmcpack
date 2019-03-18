@@ -103,6 +103,12 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         PsiT_Matrix TrialWfn = csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         OrbMat[0],1e-8,'H',gTG.Node());
 
+#if AFQMC_MIXED_PRECISION
+        auto spTrialWfn(PsiT_Matrix_t<SPComplexType>{TrialWfn,
+                                                    shared_allocator<SPComplexType>{gTG.Node()}});
+#else
+        auto& spTrialWfn(TrialWfn);
+#endif
         auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
 
         // Calculates Overlap, G
@@ -115,6 +121,14 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         SDet.MixedDensityMatrix(TrialWfn,OrbMat[0],G,std::addressof(Ovlp),true);
         REQUIRE( real(Ovlp*Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp*Ovlp) == Approx(0.0) );
+
+#if AFQMC_MIXED_PRECISION
+        boost::multi::array<SPComplexType,2> Gsp(G);
+        boost::multi::array_ref<SPComplexType,1> G0sp(Gsp.origin(),iextensions<1u>{NMO*NAEA});
+#else
+        auto& Gsp(G);
+        auto& G0sp(G0);
+#endif
 
         //assert(gTG.getTotalNodes()>1);
         boost::multi::array<ComplexType,1> hij = ham.halfRotatedHij(CLOSED,
@@ -158,9 +172,9 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         auto V2view(V2[array_{zero,V2.size(0),zero,V2.size(1)}]);
         REQUIRE(V2view.size(0) == NAEA*NMO);
         REQUIRE(V2view.size(0) == V2view.size(1));
-        boost::multi::array<ComplexType,1> V0(iextensions<1u>{V2.size(0)});
-        ma::product(V2view,G0,V0);
-        ComplexType E2 = 0.5*ma::dot(G0,V0);
+        boost::multi::array<SPComplexType,1> V0(iextensions<1u>{V2.size(0)});
+        ma::product(V2view,G0sp,V0);
+        ComplexType E2 = 0.5*static_cast<ComplexType>(ma::dot(G0sp,V0));
         if(std::abs(file_data.E2)>1e-8) {
           //REQUIRE( real(E2) == Approx(real(file_data.E2)));
           //REQUIRE( imag(E2) == Approx(imag(file_data.E2)));
@@ -174,8 +188,8 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         auto Spvn(ham.calculateHSPotentials(1e-6,TG,vn0));
         auto SpvnT(csr::shm::transpose(Spvn));
         auto rotSpvnT(sparse_rotate::halfRotateCholeskyMatrixForBias(CLOSED,TG,
-                                std::addressof(TrialWfn),
-                                std::addressof(TrialWfn),
+                                std::addressof(spTrialWfn),
+                                std::addressof(spTrialWfn),
                                 Spvn,1e-6));
 
         auto Spvnview(Spvn[array_{zero,Spvn.size(0),zero,Spvn.size(1)}]);
@@ -189,10 +203,18 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         REQUIRE( real(Ovlp*Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp*Ovlp) == Approx(0.0) );
 
-        boost::multi::array<ComplexType,1> X(iextensions<1u>{Spvn.size(1)});
+#if AFQMC_MIXED_PRECISION
+        boost::multi::array<SPComplexType,3> GMsp(GM);
+        boost::multi::array_ref<SPComplexType,1> G0Msp(GMsp.origin(),iextensions<1u>{NMO*NMO});
+#else
+        auto& GMsp(GM);
+        auto& G0Msp(G0M);
+#endif
+
+        boost::multi::array<SPComplexType,1> X(iextensions<1u>{Spvn.size(1)});
         using ma::T;
         ma::product(2.0*sqrtdt,T(Spvnview),
-                    G0M.sliced(0,NMO*NMO),0.,X);
+                    G0Msp.sliced(0,NMO*NMO),0.,X);
         ComplexType Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -203,7 +225,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
           app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
         }
 
-        ma::product(2.0*sqrtdt,rotSpvnTview,G0,0.,X);
+        ma::product(2.0*sqrtdt,rotSpvnTview,G0sp,0.,X);
         Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -215,7 +237,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
         }
 
         ma::product(2.0*sqrtdt,SpvnTview,
-                    G0M.sliced(0,NMO*NMO),0.,X);
+                    G0Msp.sliced(0,NMO*NMO),0.,X);
         Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -226,7 +248,7 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
           app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
         }
 
-        boost::multi::array<ComplexType,1> vHS(iextensions<1u>{NMO*NMO});
+        boost::multi::array<SPComplexType,1> vHS(iextensions<1u>{NMO*NMO});
         ma::product(sqrtdt,Spvnview,X,0.,vHS);
         ComplexType Vsum=0;
         for(int i=0; i<vHS.size(); i++)
@@ -314,6 +336,14 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
+#if AFQMC_MIXED_PRECISION
+        boost::multi::array<SPComplexType,2> Gsp(G);
+        boost::multi::array_ref<SPComplexType,1> G0sp(Gsp.origin(),G0.extensions());
+#else
+        auto& Gsp(G);
+        auto& G0sp(G0);
+#endif
+
         //assert(gTG.getTotalNodes()>1);
         boost::multi::array<ComplexType,1> hij = ham.halfRotatedHij(COLLINEAR,
                                                                    std::addressof(TrialWfn.first),
@@ -333,8 +363,18 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
 
         // V2 uses std::size_t to store pointers_begin/end.
         bool addCoulomb = true;
-        auto V2(ham.halfRotatedHijkl(COLLINEAR,addCoulomb,TG,std::addressof(TrialWfn.first),
-                                          std::addressof(TrialWfn.second),1e-5));
+#if AFQMC_MIXED_PRECISION
+        auto spTrialWfn_Alpha(PsiT_Matrix_t<SPComplexType>{TrialWfn.first,
+                                                    shared_allocator<SPComplexType>{gTG.Node()}}); 
+        auto spTrialWfn_Beta(PsiT_Matrix_t<SPComplexType>{TrialWfn.second,
+                                                    shared_allocator<SPComplexType>{gTG.Node()}}); 
+#else
+        auto& spTrialWfn_Alpha(TrialWfn.first);
+        auto& spTrialWfn_Beta(TrialWfn.second);
+#endif
+
+        auto V2(ham.halfRotatedHijkl(COLLINEAR,addCoulomb,TG,std::addressof(spTrialWfn_Alpha),
+                                          std::addressof(spTrialWfn_Beta),1e-5));
         REQUIRE(V2.size(0) == (NAEA+NAEB)*NMO);
         REQUIRE(V2.size(0) == V2.size(1));
 
@@ -342,9 +382,9 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         auto V2view(V2[array_{zero,V2.size(0),zero,V2.size(1)}]);
         REQUIRE(V2view.size(0) == (NAEA+NAEB)*NMO);
         REQUIRE(V2view.size(0) == V2view.size(1));
-        boost::multi::array<ComplexType,1> V0(iextensions<1u>{V2.size(0)});
-        ma::product(V2view,G0,V0);
-        ComplexType E2 = 0.5*ma::dot(G0,V0);
+        boost::multi::array<SPComplexType,1> V0(iextensions<1u>{V2.size(0)});
+        ma::product(V2view,G0sp,V0);
+        ComplexType E2 = 0.5*static_cast<ComplexType>(ma::dot(G0sp,V0));
         if(std::abs(file_data.E2)>1e-8) {
           REQUIRE( real(E2) == Approx(real(file_data.E2)));
           REQUIRE( imag(E2) == Approx(imag(file_data.E2)));
@@ -358,8 +398,8 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         auto Spvn(ham.calculateHSPotentials(1e-6,TG,vn0));
         auto SpvnT(csr::shm::transpose(Spvn));
         auto rotSpvnT(sparse_rotate::halfRotateCholeskyMatrixForBias(COLLINEAR,TG,
-                                std::addressof(TrialWfn.first),
-                                std::addressof(TrialWfn.second),
+                                std::addressof(spTrialWfn_Alpha),
+                                std::addressof(spTrialWfn_Beta),
                                 Spvn,1e-6));
 
         auto Spvnview(Spvn[array_{zero,Spvn.size(0),zero,Spvn.size(1)}]);
@@ -376,12 +416,20 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-        boost::multi::array<ComplexType,1> X(iextensions<1u>{Spvn.size(1)});
+#if AFQMC_MIXED_PRECISION
+        boost::multi::array<SPComplexType,3> GMsp(GM);
+        boost::multi::array_ref<SPComplexType,1> G0Msp(GMsp.origin(),iextensions<1u>{NMO*NMO});
+#else
+        auto& GMsp(GM);
+        auto& G0Msp(G0M);
+#endif
+
+        boost::multi::array<SPComplexType,1> X(iextensions<1u>{Spvn.size(1)});
         using ma::T;
         ma::product(sqrtdt,T(Spvnview),
-                    G0M.sliced(0,NMO*NMO),0.,X);
+                    G0Msp.sliced(0,NMO*NMO),0.,X);
         ma::product(sqrtdt,T(Spvnview),
-                    G0M.sliced(NMO*NMO,2*NMO*NMO),1.,X);
+                    G0Msp.sliced(NMO*NMO,2*NMO*NMO),1.,X);
         ComplexType Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -392,7 +440,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
           app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
         }
 
-        ma::product(sqrtdt,rotSpvnTview,G0,0.,X);
+        ma::product(sqrtdt,rotSpvnTview,G0sp,0.,X);
         Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -404,9 +452,9 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
         }
 
         ma::product(sqrtdt,SpvnTview,
-                    G0M.sliced(0,NMO*NMO),0.,X);
+                    G0Msp.sliced(0,NMO*NMO),0.,X);
         ma::product(sqrtdt,SpvnTview,
-                    G0M.sliced(NMO*NMO,2*NMO*NMO),1.,X);
+                    G0Msp.sliced(NMO*NMO,2*NMO*NMO),1.,X);
         Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -417,7 +465,7 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
           app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
         }
 
-        boost::multi::array<ComplexType,1> vHS(iextensions<1u>{NMO*NMO});
+        boost::multi::array<SPComplexType,1> vHS(iextensions<1u>{NMO*NMO});
         ma::product(sqrtdt,Spvnview,X,0.,vHS);
         ComplexType Vsum=0;
         for(int i=0; i<vHS.size(); i++)
@@ -514,6 +562,14 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
                                                                    std::addressof(TrialWfn.second));
         ComplexType E1 = ma::dot(hij,G0);
 
+#if AFQMC_MIXED_PRECISION
+        boost::multi::array<SPComplexType,2> Gsp(G);
+        boost::multi::array_ref<SPComplexType,1> G0sp(Gsp.origin(),G0.extensions());
+#else
+        auto& Gsp(G);
+        auto& G0sp(G0);
+#endif
+
         // this will be slightly dependent on cutoff, so be carefull
         if(std::abs(file_data.E1)>1e-8) {
           REQUIRE( real(E1) == Approx(real(file_data.E1)) );
@@ -527,8 +583,17 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
 
         // V2 uses std::size_t to store pointers_begin/end.
         bool addCoulomb = true;
-        auto V2(ham.halfRotatedHijkl(COLLINEAR,true,TG,std::addressof(TrialWfn.first),
-                                          std::addressof(TrialWfn.second),1e-5));
+#if AFQMC_MIXED_PRECISION
+        auto spTrialWfn_Alpha(PsiT_Matrix_t<SPComplexType>{TrialWfn.first,
+                                                    shared_allocator<SPComplexType>{gTG.Node()}});   
+        auto spTrialWfn_Beta(PsiT_Matrix_t<SPComplexType>{TrialWfn.second,
+                                                    shared_allocator<SPComplexType>{gTG.Node()}});
+#else
+        auto& spTrialWfn_Alpha(TrialWfn.first);
+        auto& spTrialWfn_Beta(TrialWfn.second);
+#endif
+        auto V2(ham.halfRotatedHijkl(COLLINEAR,true,TG,std::addressof(spTrialWfn_Alpha),
+                                          std::addressof(spTrialWfn_Beta),1e-5));
         REQUIRE(V2.size(0) == (NAEA+NAEB)*NMO);
         REQUIRE(V2.size(0) == V2.size(1));
 
@@ -536,9 +601,9 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         auto V2view(V2[array_{zero,V2.size(0),zero,V2.size(1)}]);
         REQUIRE(V2view.size(0) == (NAEA+NAEB)*NMO);
         REQUIRE(V2view.size(0) == V2view.size(1));
-        boost::multi::array<ComplexType,1> V0(iextensions<1u>{V2.size(0)});
-        ma::product(V2view,G0,V0);
-        ComplexType E2 = 0.5*ma::dot(G0,V0);
+        boost::multi::array<SPComplexType,1> V0(iextensions<1u>{V2.size(0)});
+        ma::product(V2view,G0sp,V0);
+        ComplexType E2 = 0.5*static_cast<ComplexType>(ma::dot(G0sp,V0));
         E2 = ( TG.Cores() += E2 );
         if(std::abs(file_data.E2)>1e-8) {
           REQUIRE( real(E2) == Approx(real(file_data.E2)));
@@ -553,8 +618,8 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         auto Spvn(ham.calculateHSPotentials(1e-6,TG,vn0));
         auto SpvnT(csr::shm::transpose(Spvn));
         auto rotSpvnT(sparse_rotate::halfRotateCholeskyMatrixForBias(COLLINEAR,TG,
-                                std::addressof(TrialWfn.first),
-                                std::addressof(TrialWfn.second),
+                                std::addressof(spTrialWfn_Alpha),
+                                std::addressof(spTrialWfn_Beta),
                                 Spvn,1e-6));
 
         auto Spvnview(Spvn[array_{zero,Spvn.size(0),zero,Spvn.size(1)}]);
@@ -571,12 +636,20 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         REQUIRE( real(Ovlp) == Approx(1.0) );
         REQUIRE( imag(Ovlp) == Approx(0.0) );
 
-        boost::multi::array<ComplexType,1> X(iextensions<1u>{Spvn.size(1)});
+#if AFQMC_MIXED_PRECISION
+        boost::multi::array<SPComplexType,3> GMsp(GM);
+        boost::multi::array_ref<SPComplexType,1> G0Msp(GMsp.origin(),iextensions<1u>{NMO*NMO});
+#else
+        auto& GMsp(GM);
+        auto& G0Msp(G0M);
+#endif
+
+        boost::multi::array<SPComplexType,1> X(iextensions<1u>{Spvn.size(1)});
         using ma::T;
         ma::product(sqrtdt,T(Spvnview),
-                    G0M.sliced(0,NMO*NMO),0.,X);
+                    G0Msp.sliced(0,NMO*NMO),0.,X);
         ma::product(sqrtdt,T(Spvnview),
-                    G0M.sliced(NMO*NMO,2*NMO*NMO),1.,X);
+                    G0Msp.sliced(NMO*NMO,2*NMO*NMO),1.,X);
         ComplexType Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -588,7 +661,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
           app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
         }
 
-        ma::product(sqrtdt,rotSpvnTview,G0,0.,X);
+        ma::product(sqrtdt,rotSpvnTview,G0sp,0.,X);
         Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -601,9 +674,9 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
         }
 
         ma::product(sqrtdt,SpvnTview,
-                    G0M.sliced(0,NMO*NMO),0.,X);
+                    G0Msp.sliced(0,NMO*NMO),0.,X);
         ma::product(sqrtdt,SpvnTview,
-                    G0M.sliced(NMO*NMO,2*NMO*NMO),1.,X);
+                    G0Msp.sliced(NMO*NMO,2*NMO*NMO),1.,X);
         Xsum=0;
         for(int i=0; i<X.size(); i++)
             Xsum += X[i];
@@ -615,7 +688,7 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
           app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
         }
 
-        boost::multi::array<ComplexType,1> vHS(iextensions<1u>{NMO*NMO});
+        boost::multi::array<SPComplexType,1> vHS(iextensions<1u>{NMO*NMO});
         ma::product(sqrtdt,Spvnview,X,0.,vHS);
         ComplexType Vsum=0;
         for(int i=0; i<vHS.size(); i++)

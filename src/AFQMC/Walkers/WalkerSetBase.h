@@ -475,6 +475,15 @@ class WalkerSetBase: public AFQMCInfo
     ma::copy(v.sliced(0,tot_num_walkers), W_({0,tot_num_walkers},data_displ[id]));
   }
 
+  void resetWeights() {
+    TG.TG_local().barrier();
+    if(TG.TG_local().root()) {
+      boost::multi::array<element,1> w_(iextensions<1u>{tot_num_walkers},ComplexType(1.0)); 
+      setProperty(WEIGHT,w_);  
+    } 
+    TG.TG_local().barrier();
+  }
+
   protected:
 
   RandomGenerator_t* rng;

@@ -19,12 +19,12 @@
 #include "Configuration.h"
 #include<cassert>
 #include <cuda_runtime.h>
-#include "cublas_v2.h"
-#include "cublasXt.h"
+//#include "cublas_v2.h"
+//#include "cublasXt.h"
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/fill_n.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/uninitialized_fill_n.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/uninitialized_copy_n.cuh"
+//#include "AFQMC/Numerics/detail/CUDA/Kernels/uninitialized_fill_n.cuh"
+//#include "AFQMC/Numerics/detail/CUDA/Kernels/uninitialized_copy_n.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/copy_n_cast.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/print.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/reference_operations.cuh"
@@ -384,20 +384,22 @@ T* copy(cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, T* B) {
 }
 
 /**************** copy_n_cast *****************/
+// NOTE: Eliminate this routine, merge with copy_n and dispatch to kernel call
+// if types of pointers are not the same (without cv qualifiers)!!!
 template<typename T, typename Q, typename Size>
-cuda_gpu_ptr<T> copy_n_cast(cuda_gpu_ptr<T> const A, Size n, cuda_gpu_ptr<Q> B) {
+cuda_gpu_ptr<Q> copy_n_cast(cuda_gpu_ptr<T> const A, Size n, cuda_gpu_ptr<Q> B) {
   kernels::copy_n_cast(to_address(A),n,to_address(B));
   return B+n;
 }
 
-template<typename T, typename Size>
-cuda_gpu_ptr<T> copy_n_cast(T* const A, Size n, cuda_gpu_ptr<T> B) {
+template<typename T, typename Q, typename Size>
+cuda_gpu_ptr<Q> copy_n_cast(T* const A, Size n, cuda_gpu_ptr<Q> B) {
   throw std::runtime_error(" Error: copy_n_cast(gpu_ptr,n,T*) is disabled.");
   return B+n;
 }
 
-template<typename T, typename Size>
-T* copy_n_cast(cuda_gpu_ptr<T> const A, Size n, T* B) {
+template<typename T, typename Q, typename Size>
+Q* copy_n_cast(cuda_gpu_ptr<T> const A, Size n, Q* B) {
   throw std::runtime_error(" Error: copy_n_cast(gpu_ptr,n,T*) is disabled.");
   return B+n;
 }
@@ -424,19 +426,12 @@ cuda_gpu_ptr<T> fill(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, T const& val){
 
 
 /**************** uninitialized_fill_n *****************/
-/*
-template<typename T, typename Size, typename... Args>
-cuda_gpu_ptr<T> uninitialized_fill_n(cuda_gpu_ptr<T> first, Size n, Args&&...args){
-  if(n == 0) return first;
-  kernels::uninitialized_fill_n(to_address(first), n, std::forward<Args>(args)...); 
-  return first + n;
-}
-*/
 
 template<typename T, typename Size>
 cuda_gpu_ptr<T> uninitialized_fill_n(cuda_gpu_ptr<T> first, Size n, T const& val){
   if(n == 0) return first;
-  kernels::uninitialized_fill_n(to_address(first), n, val);
+  //kernels::uninitialized_fill_n(to_address(first), n, val);
+  kernels::fill_n(to_address(first), n, val);
   return first + n;
 }
 
@@ -445,23 +440,63 @@ cuda_gpu_ptr<T> uninitialized_fill(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, 
   return uninitialized_fill_n(first,std::distance(first,last),val);
 }
 
+template<class Alloc, typename T, typename Size>
+cuda_gpu_ptr<T> uninitialized_fill_n(Alloc &a, cuda_gpu_ptr<T> first, Size n, T const& val){
+  if(n == 0) return first;
+  //kernels::uninitialized_fill_n(to_address(first), n, val);
+  kernels::fill_n(to_address(first), n, val);
+  return first + n;
+}
 
+template<class Alloc, typename T>
+cuda_gpu_ptr<T> uninitialized_fill(Alloc &a, cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, T const& val){
+  return uninitialized_fill_n(a, first,std::distance(first,last),val);
+}
 
 /******************/
 
-
 template<typename T, typename Size>
 cuda_gpu_ptr<T> uninitialized_default_construct_n(cuda_gpu_ptr<T> first, Size n){
-  return first+n;
-// what to do???
+  return uninitialized_fill_n(first,n,T());
 }
+
+template<typename T>
+cuda_gpu_ptr<T> uninitialized_default_construct(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last){
+  return uninitialized_fill_n(first,std::distance(first,last),T());
+}
+
+template<class Alloc, typename T, typename Size>
+cuda_gpu_ptr<T> uninitialized_default_construct_n(Alloc &a, cuda_gpu_ptr<T> first, Size n){
+  return uninitialized_fill_n(first,n,T());
+}
+
+template<class Alloc, typename T>
+cuda_gpu_ptr<T> uninitialized_default_construct(Alloc &a, cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last){
+  return uninitialized_fill_n(first,std::distance(first,last),T());
+}
+
 template<typename T, typename Size>
 cuda_gpu_ptr<T> uninitialized_value_construct_n(cuda_gpu_ptr<T> first, Size n){
-  return first+n;
-// what to do???
+  return uninitialized_fill_n(first,n,T());
+}
+
+template<typename T>
+cuda_gpu_ptr<T> uninitialized_value_construct_n(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last){
+  return uninitialized_fill_n(first,std::distance(first,last),T());
+}
+
+template<class Alloc, typename T, typename Size>
+cuda_gpu_ptr<T> uninitialized_value_construct_n(Alloc &a, cuda_gpu_ptr<T> first, Size n){
+  return uninitialized_fill_n(first,n,T());
+}
+
+template<class Alloc, typename T>
+cuda_gpu_ptr<T> uninitialized_value_construct_n(Alloc &a, cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last){
+  return uninitialized_fill_n(first,std::distance(first,last),T());
 }
 
 /**************** uninitialized_copy_n *****************/
+/*
 template<typename T, typename Size> 
 cuda_gpu_ptr<T> uninitialized_copy_n(cuda_gpu_ptr<T> first, Size n, cuda_gpu_ptr<T> dest){
   if(n == 0) return dest;
@@ -473,6 +508,68 @@ template<class T>
 cuda_gpu_ptr<T> uninitialized_copy(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, cuda_gpu_ptr<T> dest){
   return uninitialized_copy_n(first,std::distance(first,last),dest); 
 }
+*/
+// only trivial types for now, no placement new yet 
+template<typename T, typename Size>
+cuda_gpu_ptr<T> uninitialized_copy_n(cuda_gpu_ptr<T> A, Size n, cuda_gpu_ptr<T> B) {
+  return copy_n(A,n,B);
+}
+
+template<typename T, typename Size>
+cuda_gpu_ptr<T> uninitialized_copy_n(T* A, Size n, cuda_gpu_ptr<T> B) {
+  return copy_n(A,n,B);
+}
+
+template<typename T, typename Size>
+T* uninitialized_copy_n(cuda_gpu_ptr<T> A, Size n, T* B) {
+  return copy_n(A,n,B);
+}
+
+template<class Alloc, typename T, typename Size>
+cuda_gpu_ptr<T> uninitialized_copy_n(Alloc &a, cuda_gpu_ptr<T> A, Size n, cuda_gpu_ptr<T> B) {
+  return copy_n(A,n,B);
+}
+
+template<class Alloc, typename T, typename Size>
+cuda_gpu_ptr<T> uninitialized_copy_n(Alloc &a, T* A, Size n, cuda_gpu_ptr<T> B) {
+  return copy_n(A,n,B);
+}
+
+template<class Alloc, typename T, typename Size>
+T* uninitialized_copy_n(Alloc &a, cuda_gpu_ptr<T> A, Size n, T* B) {
+  return copy_n(A,n,B);
+}
+
+/**************** uninitialized_copy *****************/
+template<typename T>
+cuda_gpu_ptr<T> uninitialized_copy(cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, cuda_gpu_ptr<T> B) {
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
+}
+
+template<typename T>
+cuda_gpu_ptr<T> uninitialized_copy(T* const Abeg, T* const Aend, cuda_gpu_ptr<T> B) {
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
+}
+
+template<typename T>
+T* uninitialized_copy(cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, T* B) {
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
+}
+
+template<class Alloc, typename T>
+cuda_gpu_ptr<T> uninitialized_copy(Alloc &a, cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, cuda_gpu_ptr<T> B) {
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
+}
+
+template<class Alloc, typename T>
+cuda_gpu_ptr<T> uninitialized_copy(Alloc &a, T* const Abeg, T* const Aend, cuda_gpu_ptr<T> B) {
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
+}
+
+template<class Alloc, typename T>
+T* uninitialized_copy(Alloc &a, cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, T* B) {
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
+}
 
 
 /**************** destroy_n *****************/
@@ -483,10 +580,21 @@ cuda_gpu_ptr<T> destroy_n(cuda_gpu_ptr<T> first, Size n){
   return first + n;
 }
 
+template<class Alloc, typename T, typename Size>
+cuda_gpu_ptr<T> destroy_n(Alloc &a, cuda_gpu_ptr<T> first, Size n){
+  return first + n;
+}
+
 /**************** print *****************/
 template<typename T>
 void print(std::string str, cuda_gpu_ptr<T> p, int n) {
   kernels::print(str,to_address(p),n);
+}
+
+template<typename T>
+void fill2D(int n, int m, qmc_cuda::cuda_gpu_ptr<T> first, int lda, T const& val) { 
+  assert(lda >= m);  
+  kernels::fill2D_n(n,m,to_address(first),lda,val);
 }
 
 }
@@ -692,6 +800,7 @@ multi::array_iterator<T, 1, T*> uninitialized_copy(
   return dest+std::distance(first,last);
 }
 
+/*
 template<class Alloc, class T, class Q, typename Size>
 multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n( 
                            Alloc &a,
@@ -706,9 +815,70 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n(
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   return dest+N;
 }
+*/
 
+template<class Alloc, class T, class Q1, class Q2, typename Size>
+multi::array_iterator<T, 1, T*> uninitialized_copy_n(
+                         Alloc &a,
+                         multi::array_iterator<Q1, 1, qmc_cuda::cuda_gpu_ptr<Q2>> first,
+                         Size n,
+                         multi::array_iterator<T, 1, T*> dest ){
+  static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
+  static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
+  if(n == 0 ) return dest;
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
+                                 to_address(base(first)),sizeof(T)*stride(first),
+                                 sizeof(T),n,cudaMemcpyDefault))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+  return dest+n;
 }
+
+template<class Alloc, class T, class ForwardIt, typename Size>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n(
+                         Alloc &a,
+                         ForwardIt first,
+                         Size n,
+                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+  if(n == 0 ) return dest;
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
+                                 to_address(base(first)),sizeof(T)*stride(first),
+                                 sizeof(T),n,cudaMemcpyDefault))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+  return dest+n;
 }
+
+template<class Alloc, typename T, typename Size>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_default_construct_n(
+                        Alloc &a, 
+                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first, Size n){
+  return uninitialized_fill_n(first,n,T());
+}
+
+template<class Alloc, typename T>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_default_construct(
+                        Alloc &a, 
+                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first, 
+                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> last){
+  return uninitialized_fill_n(a,first,std::distance(first,last),T());
+}
+
+template<class Alloc, typename T, typename Size>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_value_construct_n(
+                        Alloc &a,
+                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first, Size n){
+  return uninitialized_fill_n(first,n,T());
+}
+
+template<class Alloc, typename T>
+multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_value_construct(
+                        Alloc &a,
+                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,
+                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> last){
+  return uninitialized_fill_n(a,first,std::distance(first,last),T());
+}
+
+} // multi
+} // boost 
 
   
 #endif
