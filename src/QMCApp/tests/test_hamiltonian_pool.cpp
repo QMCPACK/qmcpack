@@ -26,14 +26,11 @@
 #include <sstream>
 
 
-
 namespace qmcplusplus
 {
-
-ParticleSet *
-createElectronParticleSet()
+ParticleSet* createElectronParticleSet()
 {
-  ParticleSet *qp = new ParticleSet;
+  ParticleSet* qp = new ParticleSet;
   qp->setName("e");
   qp->create(2);
   qp->R[0][0] = 1.0;
@@ -43,9 +40,9 @@ createElectronParticleSet()
   qp->R[1][1] = 1.1;
   qp->R[1][2] = 2.2;
 
-  SpeciesSet &tspecies = qp->getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int massIdx = tspecies.addAttribute("mass");
+  SpeciesSet& tspecies     = qp->getSpeciesSet();
+  int upIdx                = tspecies.addSpecies("u");
+  int massIdx              = tspecies.addAttribute("mass");
   tspecies(massIdx, upIdx) = 1.0;
 
   return qp;
@@ -54,8 +51,7 @@ createElectronParticleSet()
 
 TEST_CASE("HamiltonianPool", "[qmcapp]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -63,9 +59,8 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
 
   REQUIRE(hpool.empty());
 
-// See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
-  const char* hamiltonian_xml = \
-"<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
+  // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
+  const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
 </hamiltonian>";
 
@@ -76,7 +71,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   xmlNodePtr root = doc.getRoot();
 
   ParticleSetPool pp(c);
-  ParticleSet *qp = createElectronParticleSet();
+  ParticleSet* qp = createElectronParticleSet();
   pp.addParticleSet(qp);
 
   hpool.setParticleSetPool(&pp);
@@ -87,8 +82,8 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   wfp.setPrimary(&psi);
 
   WaveFunctionFactory::PtclPoolType ptcl_pool;
-  ptcl_pool["e"] = qp;
-  WaveFunctionFactory *wf_factory = new WaveFunctionFactory(qp, ptcl_pool, c);
+  ptcl_pool["e"]                  = qp;
+  WaveFunctionFactory* wf_factory = new WaveFunctionFactory(qp, ptcl_pool, c);
   wf_factory->setPsi(&psi);
   wfp.getPool()["psi0"] = wf_factory;
 
@@ -96,11 +91,11 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
 
   hpool.put(root);
 
-  QMCHamiltonian *h = hpool.getHamiltonian("h0");
+  QMCHamiltonian* h = hpool.getHamiltonian("h0");
   REQUIRE(h != NULL);
 
   // Bare kinetic energy is always added
   REQUIRE(h->size() == 2);
 }
 
-}
+} // namespace qmcplusplus

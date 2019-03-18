@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file HamiltonianPool.h
@@ -29,7 +26,6 @@ class Libxml2Document;
 
 namespace qmcplusplus
 {
-
 class ParticleSet;
 class MCWalkerConfiguration;
 class ParticleSetPool;
@@ -43,10 +39,8 @@ class WaveFunctionPool;
  */
 class HamiltonianPool : public MPIObjectBase
 {
-
 public:
-
-  typedef std::map<std::string,HamiltonianFactory*> PoolType;
+  typedef std::map<std::string, HamiltonianFactory*> PoolType;
 
   HamiltonianPool(Communicate* c, const char* aname = "hamiltonian");
 
@@ -54,20 +48,14 @@ public:
   bool get(std::ostream& os) const;
   void reset();
 
-  inline bool empty() const
-  {
-    return myPool.empty();
-  }
+  inline bool empty() const { return myPool.empty(); }
 
   /** return the pointer to the primary QMCHamiltonian
    *
    * The first QMCHamiltonian is assigned to the primaryH.
    * The last QMCHamiltonian with role="primary" will be the primaryH.
    */
-  inline QMCHamiltonian* getPrimary()
-  {
-    return primaryH;
-  }
+  inline QMCHamiltonian* getPrimary() { return primaryH; }
 
   /** return the pointer to a QMCHamiltonian with the name
    * @param pname name of the QMCHamiltonian
@@ -75,9 +63,9 @@ public:
   inline QMCHamiltonian* getHamiltonian(const std::string& pname)
   {
     PoolType::iterator hit(myPool.find(pname));
-    if(hit == myPool.end())
+    if (hit == myPool.end())
     {
-      if(myPool.empty())
+      if (myPool.empty())
         return 0;
       else
         return (*(myPool.begin())).second->targetH;
@@ -86,27 +74,17 @@ public:
       return (*hit).second->targetH;
   }
 
-  void setDocument(Libxml2Document* doc)
-  {
-    curDoc=doc;
-  }
+  void setDocument(Libxml2Document* doc) { curDoc = doc; }
 
   /** assign a pointer to a ParticleSetPool
    */
-  inline void setParticleSetPool(ParticleSetPool* pset)
-  {
-    ptclPool=pset;
-  }
+  inline void setParticleSetPool(ParticleSetPool* pset) { ptclPool = pset; }
 
   /** assign a pointer to a WaveFunctionPool
    */
-  inline void setWaveFunctionPool(WaveFunctionPool* pset)
-  {
-    psiPool=pset;
-  }
+  inline void setWaveFunctionPool(WaveFunctionPool* pset) { psiPool = pset; }
 
 private:
-
   /** pointer to the primary QMCHamiltonian
    */
   QMCHamiltonian* primaryH;
@@ -138,5 +116,5 @@ private:
   /** storage for HamiltonianFactory */
   PoolType myPool;
 };
-}
+} // namespace qmcplusplus
 #endif
