@@ -26,11 +26,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("ProjectData", "[ohmmsapp]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -57,14 +55,13 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
 
 TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ProjectData proj("test");
 
-  const char *xml_input = "<project id='test1'></project>";
+  const char* xml_input = "<project id='test1'></project>";
   Libxml2Document doc;
   bool okay = doc.parseFromString(xml_input);
   REQUIRE(okay);
@@ -77,14 +74,13 @@ TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 
 TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ProjectData proj("test");
 
-  const char *xml_input = "<project id='test1' series='1'></project>";
+  const char* xml_input = "<project id='test1' series='1'></project>";
   Libxml2Document doc;
   bool okay = doc.parseFromString(xml_input);
   REQUIRE(okay);
@@ -95,8 +91,6 @@ TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
   REQUIRE(proj.m_series == 1);
 
   // host and date nodes get added for output to the .cont.xml file
-
 }
 
-}
-
+} // namespace qmcplusplus

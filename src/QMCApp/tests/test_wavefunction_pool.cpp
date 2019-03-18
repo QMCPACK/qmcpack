@@ -24,16 +24,12 @@
 #include <sstream>
 
 
-
 namespace qmcplusplus
 {
-
-void setupParticleSetPool(ParticleSetPool &pp)
+void setupParticleSetPool(ParticleSetPool& pp)
 {
-
-// See ParticleIO/tests/test_xml_io.cpp for particle parsing
-const char *particles = \
-" \
+  // See ParticleIO/tests/test_xml_io.cpp for particle parsing
+  const char* particles = " \
 <tmp> \
  <simulationcell> \
       <parameter name='lattice' units='bohr'> \
@@ -70,8 +66,8 @@ const char *particles = \
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
 
-  xmlNodePtr root = doc.getRoot();
-  xmlNodePtr sim_cell= xmlFirstElementChild(root);
+  xmlNodePtr root     = doc.getRoot();
+  xmlNodePtr sim_cell = xmlFirstElementChild(root);
   // Need to set up simulation cell lattice before reading particle sets
   pp.putLattice(sim_cell);
 
@@ -85,8 +81,7 @@ const char *particles = \
 
 TEST_CASE("WaveFunctionPool", "[qmcapp]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -99,8 +94,7 @@ TEST_CASE("WaveFunctionPool", "[qmcapp]")
   setupParticleSetPool(pp);
   wp.setParticleSetPool(&pp);
 
-  const char *wf_input = \
-  "<wavefunction target='e'>\
+  const char* wf_input = "<wavefunction target='e'>\
      <determinantset type='einspline' href='pwscf.pwscf.h5' tilematrix='1 0 0 0 1 0 0 0 1' twistnum='0' source='ion' meshfactor='1.0' precision='float'> \
          <slaterdeterminant> \
             <determinant id='updet' size='4'> \
@@ -114,15 +108,15 @@ TEST_CASE("WaveFunctionPool", "[qmcapp]")
    </wavefunction> \
   ";
 
-  Libxml2Document *doc = new Libxml2Document;
-  bool okay = doc->parseFromString(wf_input);
+  Libxml2Document* doc = new Libxml2Document;
+  bool okay            = doc->parseFromString(wf_input);
   REQUIRE(okay);
 
   xmlNodePtr root = doc->getRoot();
 
   wp.put(root);
 
-  TrialWaveFunction *psi = wp.getWaveFunction("psi0");
+  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
   REQUIRE(psi != NULL);
 }
-}
+} // namespace qmcplusplus

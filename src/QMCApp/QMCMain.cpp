@@ -15,9 +15,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file QMCMain.cpp
@@ -46,7 +43,8 @@
 #ifdef HAVE_ADIOS
 #include "ADIOS/ADIOS_config.h"
 #include <adios_read.h>
-extern "C" {
+extern "C"
+{
 #include <adios_error.h>
 }
 #endif
@@ -54,7 +52,7 @@ extern "C" {
 #include "AFQMC/AFQMCFactory.h"
 #endif
 #ifdef BUILD_FCIQMC
-#include "FCIQMC/App/SQCFactory.h" 
+#include "FCIQMC/App/SQCFactory.h"
 #endif
 
 #define STR_VAL(arg) #arg
@@ -62,100 +60,98 @@ extern "C" {
 
 namespace qmcplusplus
 {
-
 QMCMain::QMCMain(Communicate* c)
-  : QMCDriverFactory(c), QMCAppBase(), FirstQMC(true)
+    : QMCDriverFactory(c),
+      QMCAppBase(),
+      FirstQMC(true)
 #if !defined(REMOVE_TRACEMANAGER)
-  , traces_xml(NULL)
+      ,
+      traces_xml(NULL)
 #endif
 {
   Communicate NodeComm;
   NodeComm.initializeAsNodeComm(*OHMMS::Controller);
 
-  app_summary()
-      << "\n=====================================================\n"
-      <<  "                    QMCPACK "
-      << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH << "\n\n"
-      << "       (c) Copyright 2003-  QMCPACK developers\n\n"
-      << "                    Please cite:\n"
-      << " J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)\n"
-      << "      https://doi.org/10.1088/1361-648X/aab9c3\n";
+  app_summary() << "\n=====================================================\n"
+                << "                    QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
+                << QMCPACK_VERSION_PATCH << "\n\n"
+                << "       (c) Copyright 2003-  QMCPACK developers\n\n"
+                << "                    Please cite:\n"
+                << " J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)\n"
+                << "      https://doi.org/10.1088/1361-648X/aab9c3\n";
   qmc_common.print_git_info_if_present(app_summary());
-  app_summary()  << "=====================================================\n";
+  app_summary() << "=====================================================\n";
   qmc_common.print_options(app_log());
-  app_summary()
-      << "\n  MPI Ranks             = " << OHMMS::Controller->size()
-      << "\n  MPI Ranks per group   = " << myComm->size()
-      << "\n  MPI Group ID          = " << myComm->getGroupID()
-      << "\n  MPI Ranks per node    = " << NodeComm.size()
-      << std::endl;
-  #pragma omp parallel
+  app_summary() << "\n  MPI Ranks             = " << OHMMS::Controller->size()
+                << "\n  MPI Ranks per group   = " << myComm->size()
+                << "\n  MPI Group ID          = " << myComm->getGroupID()
+                << "\n  MPI Ranks per node    = " << NodeComm.size() << std::endl;
+#pragma omp parallel
   {
     const int L1_tid = omp_get_thread_num();
-    if(L1_tid==0)
+    if (L1_tid == 0)
       app_summary() << "  OMP 1st level threads = " << omp_get_num_threads() << std::endl;
-    #pragma omp parallel
+#pragma omp parallel
     {
-      const int L2_tid = omp_get_thread_num();
+      const int L2_tid         = omp_get_thread_num();
       const int L2_num_threads = omp_get_num_threads();
-      if(L1_tid==0&&L2_tid==0)
+      if (L1_tid == 0 && L2_tid == 0)
       {
-        if (L2_num_threads==1)
+        if (L2_num_threads == 1)
           app_summary() << "  OMP nested threading disabled or only 1 thread on the 2nd level" << std::endl;
         else
           app_summary() << "  OMP 2nd level threads = " << L2_num_threads << std::endl;
       }
     }
   }
-  app_summary()
-      << "\n  Precision used in this calculation, see definitions in the manual:"
-      << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)
-      << "\n  Full precision      = " << GET_MACRO_VAL(OHMMS_PRECISION_FULL)
+  app_summary() << "\n  Precision used in this calculation, see definitions in the manual:"
+                << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)
+                << "\n  Full precision      = " << GET_MACRO_VAL(OHMMS_PRECISION_FULL)
 #ifdef QMC_CUDA
-      << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION) 
-      << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
+                << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION)
+                << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
 #endif
 #ifdef ENABLE_SOA
-      << "\n\n  Structure-of-arrays (SoA) optimization enabled"
+                << "\n\n  Structure-of-arrays (SoA) optimization enabled"
 #endif
-      << std::endl;
+                << std::endl;
   app_summary() << std::endl;
   app_summary().flush();
 }
 
 ///destructor
-QMCMain::~QMCMain()
-{
-}
+QMCMain::~QMCMain() {}
 
 
 bool QMCMain::execute()
 {
   Timer t0;
-  if(XmlDocStack.empty())
+  if (XmlDocStack.empty())
   {
     ERRORMSG("No valid input file exists! Aborting QMCMain::execute")
     return false;
   }
 
   std::string simulationType = "realspaceQMC";
-  {  // mmorales: is this necessary??? Don't want to leave xmlNodes lying around unused 
-    xmlNodePtr cur=XmlDocStack.top()->getRoot();
+  { // mmorales: is this necessary??? Don't want to leave xmlNodes lying around unused
+    xmlNodePtr cur = XmlDocStack.top()->getRoot();
     OhmmsAttributeSet simType;
-    simType.add (simulationType, "type");
-    simType.add (simulationType, "name");
-    simType.add (simulationType, "method");
+    simType.add(simulationType, "type");
+    simType.add(simulationType, "name");
+    simType.add(simulationType, "method");
     simType.put(cur);
   }
 
 #ifdef BUILD_AFQMC
-  if(simulationType == "afqmc") {
-    NewTimer *t2 = TimerManager.createTimer("Total", timer_level_coarse);
+  if (simulationType == "afqmc")
+  {
+    NewTimer* t2 = TimerManager.createTimer("Total", timer_level_coarse);
     ScopedTimer t2_scope(t2);
-    app_log() << std::endl << "/*************************************************\n"
-                      << " ********  This is an AFQMC calculation   ********\n"
-                      << " *************************************************" <<std::endl;
-    xmlNodePtr cur=XmlDocStack.top()->getRoot(); 
+    app_log() << std::endl
+              << "/*************************************************\n"
+              << " ********  This is an AFQMC calculation   ********\n"
+              << " *************************************************" << std::endl;
+    xmlNodePtr cur = XmlDocStack.top()->getRoot();
 
     xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
     //initialize the random number generator
@@ -163,30 +159,32 @@ bool QMCMain::execute()
 
     auto world = boost::mpi3::environment::get_world_instance();
     afqmc::AFQMCFactory afqmc_fac(world);
-    if(!afqmc_fac.parse(cur)) {
-      app_log()<<" Error in AFQMCFactory::parse() ." <<std::endl;
+    if (!afqmc_fac.parse(cur))
+    {
+      app_log() << " Error in AFQMCFactory::parse() ." << std::endl;
       return false;
     }
-    cur=XmlDocStack.top()->getRoot(); 
+    cur = XmlDocStack.top()->getRoot();
     return afqmc_fac.execute(cur);
   }
 #else
-  if(simulationType == "afqmc") {
-    app_error()<<" Executable not compiled with AFQMC. Recompile with BUILD_AFQMC set to 1." <<std::endl; 
+  if (simulationType == "afqmc")
+  {
+    app_error() << " Executable not compiled with AFQMC. Recompile with BUILD_AFQMC set to 1." << std::endl;
     return false;
   }
 #endif
 
 
-  NewTimer *t2 = TimerManager.createTimer("Total", timer_level_coarse);
+  NewTimer* t2 = TimerManager.createTimer("Total", timer_level_coarse);
   t2->start();
 
-  NewTimer *t3 = TimerManager.createTimer("Startup", timer_level_coarse);
+  NewTimer* t3 = TimerManager.createTimer("Startup", timer_level_coarse);
   t3->start();
 
   //validate the input file
   bool success = validateXML();
-  if(!success)
+  if (!success)
   {
     ERRORMSG("Input document does not contain valid objects")
     return false;
@@ -203,35 +201,35 @@ bool QMCMain::execute()
   ptclPool->get(app_log());
   hamPool->get(app_log());
   OHMMS::Controller->barrier();
-  if(qmc_common.dryrun)
+  if (qmc_common.dryrun)
   {
     app_log() << "  dryrun == 1 Ignore qmc/loop elements " << std::endl;
     APP_ABORT("QMCMain::execute");
   }
   t3->stop();
   Timer t1;
-  curMethod = std::string("invalid");
-  qmc_common.qmc_counter=0;
-  for(int qa=0; qa<m_qmcaction.size(); qa++)
+  curMethod              = std::string("invalid");
+  qmc_common.qmc_counter = 0;
+  for (int qa = 0; qa < m_qmcaction.size(); qa++)
   {
-    xmlNodePtr cur=m_qmcaction[qa].first;
+    xmlNodePtr cur = m_qmcaction[qa].first;
     std::string cname((const char*)cur->name);
-    if(cname == "qmc" || cname == "optimize")
+    if (cname == "qmc" || cname == "optimize")
     {
       executeQMCSection(cur);
       qmc_common.qmc_counter++; // increase the counter
     }
-    else if(cname == "loop")
+    else if (cname == "loop")
     {
-      qmc_common.qmc_counter=0;
+      qmc_common.qmc_counter = 0;
       executeLoop(cur);
-      qmc_common.qmc_counter=0;
+      qmc_common.qmc_counter = 0;
     }
-    else if(cname == "cmc")
+    else if (cname == "cmc")
     {
       executeCMCSection(cur);
     }
-    else if(cname == "debug")
+    else if (cname == "debug")
     {
       executeDebugSection(cur);
       app_log() << "  Debug is done. Skip the rest of the input " << std::endl;
@@ -241,40 +239,40 @@ bool QMCMain::execute()
   m_qmcaction.clear();
   t2->stop();
   app_log() << "  Total Execution time = " << std::setprecision(4) << t1.elapsed() << " secs" << std::endl;
-  if(is_manager())
+  if (is_manager())
   {
     //generate multiple files
     xmlNodePtr mcptr = NULL;
-    if(m_walkerset.size())
-      mcptr=m_walkerset[0];
+    if (m_walkerset.size())
+      mcptr = m_walkerset[0];
     //remove input mcwalkerset but one
-    for(int i=1; i<m_walkerset.size(); i++)
+    for (int i = 1; i < m_walkerset.size(); i++)
     {
       xmlUnlinkNode(m_walkerset[i]);
       xmlFreeNode(m_walkerset[i]);
     }
-    m_walkerset.clear();//empty the container
+    m_walkerset.clear(); //empty the container
     std::ostringstream np_str, v_str;
-    np_str<<myComm->size();
+    np_str << myComm->size();
     HDFVersion cur_version;
     v_str << cur_version[0] << " " << cur_version[1];
-    xmlNodePtr newmcptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
-    xmlNewProp(newmcptr,(const xmlChar*)"fileroot",(const xmlChar*)myProject.CurrentMainRoot());
-    xmlNewProp(newmcptr,(const xmlChar*)"node",(const xmlChar*)"-1");
-    xmlNewProp(newmcptr,(const xmlChar*)"nprocs",(const xmlChar*)np_str.str().c_str());
-    xmlNewProp(newmcptr,(const xmlChar*)"version",(const xmlChar*)v_str.str().c_str());
-//#if defined(H5_HAVE_PARALLEL)
-    xmlNewProp(newmcptr,(const xmlChar*)"collected",(const xmlChar*)"yes");
-//#else
-//      xmlNewProp(newmcptr,(const xmlChar*)"collected",(const xmlChar*)"no");
-//#endif
-    if(mcptr == NULL)
+    xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
+    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.CurrentMainRoot());
+    xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
+    xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
+    xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
+    //#if defined(H5_HAVE_PARALLEL)
+    xmlNewProp(newmcptr, (const xmlChar*)"collected", (const xmlChar*)"yes");
+    //#else
+    //      xmlNewProp(newmcptr,(const xmlChar*)"collected",(const xmlChar*)"no");
+    //#endif
+    if (mcptr == NULL)
     {
-      xmlAddNextSibling(lastInputNode,newmcptr);
+      xmlAddNextSibling(lastInputNode, newmcptr);
     }
     else
     {
-      xmlReplaceNode(mcptr,newmcptr);
+      xmlReplaceNode(mcptr, newmcptr);
     }
     saveXml();
   }
@@ -283,31 +281,31 @@ bool QMCMain::execute()
 
 void QMCMain::executeLoop(xmlNodePtr cur)
 {
-  int niter=1;
+  int niter = 1;
   OhmmsAttributeSet a;
-  a.add(niter,"max");
+  a.add(niter, "max");
   a.put(cur);
   //reset qmc_counter
-  qmc_common.qmc_counter=0;
+  qmc_common.qmc_counter = 0;
   app_log() << "Loop execution max-interations = " << niter << std::endl;
-  for(int iter=0; iter<niter; iter++)
+  for (int iter = 0; iter < niter; iter++)
   {
-    xmlNodePtr tcur=cur->children;
-    while(tcur != NULL)
+    xmlNodePtr tcur = cur->children;
+    while (tcur != NULL)
     {
       std::string cname((const char*)tcur->name);
-      if(cname == "qmc")
+      if (cname == "qmc")
       {
         //prevent completed is set
         bool success = executeQMCSection(tcur, false);
-        if(!success)
+        if (!success)
         {
           app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
           return;
         }
         qmc_common.qmc_counter++; // increase the counter
       }
-      tcur=tcur->next;
+      tcur = tcur->next;
     }
   }
 }
@@ -317,15 +315,15 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
   std::string target("e");
   std::string random_test("no");
   OhmmsAttributeSet a;
-  a.add(target,"target");
-  a.add(random_test,"testrng");
+  a.add(target, "target");
+  a.add(random_test, "testrng");
   a.put(cur);
-  if(random_test=="yes")
+  if (random_test == "yes")
     RandomNumberControl::test();
-  if(qmcSystem ==0)
+  if (qmcSystem == 0)
     qmcSystem = ptclPool->getWalkerSet(target);
   bool success = runQMC(cur);
-  FirstQMC=false;
+  FirstQMC     = false;
   return success;
 }
 
@@ -346,16 +344,16 @@ bool QMCMain::validateXML()
 {
   xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
 #ifdef HAVE_ADIOS
-  OhmmsXPathObject ai("//adiosinit",m_context);
-  if(ai.empty())
+  OhmmsXPathObject ai("//adiosinit", m_context);
+  if (ai.empty())
   {
-    app_warning()<<"adiosinit is not defined"<< std::endl;
+    app_warning() << "adiosinit is not defined" << std::endl;
   }
   else
   {
-    xmlAttr* curr = ai[0]->properties;
-    const char *value = (char *)xmlNodeListGetString(ai[0]->doc, curr->children, 1);
-    if(!strncmp((char *)curr->name, "href", 4))
+    xmlAttr* curr     = ai[0]->properties;
+    const char* value = (char*)xmlNodeListGetString(ai[0]->doc, curr->children, 1);
+    if (!strncmp((char*)curr->name, "href", 4))
     {
       if (adios_init(value, myComm->getMPI()))
       {
@@ -371,25 +369,25 @@ bool QMCMain::validateXML()
       adios_read_init_method(ADIOS_READ_METHOD_BP, myComm->getMPI(), "verbose=3");
     }
   }
-  OhmmsXPathObject io("//checkpoint",m_context);
-  if(io.empty())
+  OhmmsXPathObject io("//checkpoint", m_context);
+  if (io.empty())
   {
     app_warning() << "checkpoint IO is not defined, no checkpoint will be written out." << std::endl;
   }
-  else{
-  
+  else
+  {
     xmlAttr* curr = io[0]->properties;
-    char* value = NULL;
+    char* value   = NULL;
     bool UseADIOS = false;
-    bool UseHDF5 = false;
-    for(curr; curr; curr = curr->next)
+    bool UseHDF5  = false;
+    for (curr; curr; curr = curr->next)
     {
-      value = (char *)xmlNodeListGetString(io[0]->doc, curr->children, 1);
-      if(!strncmp((char *)curr->name, "adios", 6) && !strncmp(value, "yes", 4))
+      value = (char*)xmlNodeListGetString(io[0]->doc, curr->children, 1);
+      if (!strncmp((char*)curr->name, "adios", 6) && !strncmp(value, "yes", 4))
       {
         UseADIOS = true;
       }
-      else if(!strncmp((char *)curr->name, "hdf5", 5) && !strncmp(value, "yes", 4))
+      else if (!strncmp((char*)curr->name, "hdf5", 5) && !strncmp(value, "yes", 4))
       {
         UseHDF5 = true;
       }
@@ -397,24 +395,24 @@ bool QMCMain::validateXML()
     }
     ADIOS::initialize(UseHDF5, UseADIOS);
   }
-  OhmmsXPathObject rd("//restart",m_context);
-  if(rd.empty())
+  OhmmsXPathObject rd("//restart", m_context);
+  if (rd.empty())
   {
     app_warning() << "Checkpoint restart read method is not defined. frest start." << std::endl;
   }
   else
   {
-    xmlAttr* curr = rd[0]->properties;
-    const char *value = (char *)xmlNodeListGetString(rd[0]->doc, curr->children, 1);
-    if(!strncmp((char *)curr->name, "method", 6))
+    xmlAttr* curr     = rd[0]->properties;
+    const char* value = (char*)xmlNodeListGetString(rd[0]->doc, curr->children, 1);
+    if (!strncmp((char*)curr->name, "method", 6))
     {
       ADIOS::initialize(value);
     }
   }
 #endif
-  OhmmsXPathObject result("//project",m_context);
+  OhmmsXPathObject result("//project", m_context);
   myProject.setCommunicator(myComm);
-  if(result.empty())
+  if (result.empty())
   {
     app_warning() << "Project is not defined" << std::endl;
     myProject.reset();
@@ -426,31 +424,31 @@ bool QMCMain::validateXML()
   app_summary() << std::endl;
   myProject.get(app_summary());
   app_summary() << std::endl;
-  OhmmsXPathObject ham("//hamiltonian",m_context);
-  if(ham.empty())
+  OhmmsXPathObject ham("//hamiltonian", m_context);
+  if (ham.empty())
   {
-    qmc_common.use_density=true;
+    qmc_common.use_density = true;
   }
   else
   {
-    for(int i=0; i<ham.size(); ++i)
+    for (int i = 0; i < ham.size(); ++i)
     {
-      xmlNodePtr cur=ham[i]->children;
-      while(cur != NULL)
+      xmlNodePtr cur = ham[i]->children;
+      while (cur != NULL)
       {
-        std::string aname="0";
+        std::string aname = "0";
         OhmmsAttributeSet a;
-        a.add(aname,"type");
+        a.add(aname, "type");
         a.put(cur);
-        if(aname == "mpc" || aname == "MPC")
+        if (aname == "mpc" || aname == "MPC")
         {
-          qmc_common.use_density=true;
+          qmc_common.use_density = true;
         }
         cur = cur->next;
       }
     }
   }
-  if(qmc_common.use_density)
+  if (qmc_common.use_density)
   {
     app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl;
   }
@@ -458,37 +456,37 @@ bool QMCMain::validateXML()
   //initialize the random number generator
   xmlNodePtr rptr = myRandomControl.initialize(m_context);
   //preserve the input order
-  xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
-  lastInputNode = NULL;
-  while(cur != NULL)
+  xmlNodePtr cur = XmlDocStack.top()->getRoot()->children;
+  lastInputNode  = NULL;
+  while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
-    bool inputnode=true;
-    if(cname == "parallel")
+    bool inputnode = true;
+    if (cname == "parallel")
     {
       putCommunicator(cur);
     }
-    else if(cname == "particleset")
+    else if (cname == "particleset")
     {
       ptclPool->put(cur);
     }
-    else if(cname == "wavefunction")
+    else if (cname == "wavefunction")
     {
       psiPool->put(cur);
     }
-    else if(cname == "hamiltonian")
+    else if (cname == "hamiltonian")
     {
       hamPool->put(cur);
     }
-    else if(cname == "include")
+    else if (cname == "include")
     {
       //file is provided
-      xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
-      if(a)
+      xmlChar* a = xmlGetProp(cur, (const xmlChar*)"href");
+      if (a)
       {
         bool success = pushDocument((const char*)a);
         xmlFree(a);
-        if(success)
+        if (success)
         {
           inputnode = processPWH(XmlDocStack.top()->getRoot());
           popDocument();
@@ -502,17 +500,17 @@ bool QMCMain::validateXML()
         myComm->abort();
       }
     }
-    else if(cname == "qmcsystem")
+    else if (cname == "qmcsystem")
     {
       processPWH(cur);
     }
-    else if(cname == "init")
+    else if (cname == "init")
     {
       InitMolecularSystem moinit(ptclPool);
       moinit.put(cur);
     }
 #if !defined(REMOVE_TRACEMANAGER)
-    else if(cname == "traces")
+    else if (cname == "traces")
     {
       traces_xml = cur;
     }
@@ -520,24 +518,24 @@ bool QMCMain::validateXML()
     else
     {
       //everything else goes to m_qmcaction
-      m_qmcaction.push_back(std::pair<xmlNodePtr,bool>(cur,true));
-      inputnode=false;
+      m_qmcaction.push_back(std::pair<xmlNodePtr, bool>(cur, true));
+      inputnode = false;
     }
-    if(inputnode)
-      lastInputNode=cur;
-    cur=cur->next;
+    if (inputnode)
+      lastInputNode = cur;
+    cur = cur->next;
   }
-  if(ptclPool->empty())
+  if (ptclPool->empty())
   {
     ERRORMSG("Illegal input. Missing particleset ")
     return false;
   }
-  if(psiPool->empty())
+  if (psiPool->empty())
   {
     ERRORMSG("Illegal input. Missing wavefunction. ")
     return false;
   }
-  if(hamPool->empty())
+  if (hamPool->empty())
   {
     ERRORMSG("Illegal input. Missing hamiltonian. ")
     return false;
@@ -551,7 +549,6 @@ bool QMCMain::validateXML()
 }
 
 
-
 /** grep basic objects and add to Pools
  * @param cur current node
  *
@@ -561,42 +558,42 @@ bool QMCMain::validateXML()
 bool QMCMain::processPWH(xmlNodePtr cur)
 {
   //return true and will be ignored
-  if(cur == NULL)
+  if (cur == NULL)
     return true;
-  bool inputnode=false;
+  bool inputnode = false;
   //save the root to grep @tilematrix
-  xmlNodePtr cur_root=cur;
-  cur=cur->children;
-  while(cur != NULL)
+  xmlNodePtr cur_root = cur;
+  cur                 = cur->children;
+  while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
-    if(cname == "simulationcell")
+    if (cname == "simulationcell")
     {
-      inputnode=true;
+      inputnode = true;
       ptclPool->putLattice(cur);
     }
-    else if(cname == "particleset")
+    else if (cname == "particleset")
     {
-      inputnode=true;
+      inputnode = true;
       ptclPool->putTileMatrix(cur_root);
       ptclPool->put(cur);
     }
-    else if(cname == "wavefunction")
+    else if (cname == "wavefunction")
     {
-      inputnode=true;
+      inputnode = true;
       psiPool->put(cur);
     }
-    else if(cname == "hamiltonian")
+    else if (cname == "hamiltonian")
     {
-      inputnode=true;
+      inputnode = true;
       hamPool->put(cur);
     }
     else
-      //add to m_qmcaction
+    //add to m_qmcaction
     {
-      m_qmcaction.push_back(std::pair<xmlNodePtr,bool>(xmlCopyNode(cur,1),false));
+      m_qmcaction.push_back(std::pair<xmlNodePtr, bool>(xmlCopyNode(cur, 1), false));
     }
-    cur=cur->next;
+    cur = cur->next;
   }
   //flush
   app_log().flush();
@@ -609,14 +606,14 @@ bool QMCMain::processPWH(xmlNodePtr cur)
  */
 bool QMCMain::runQMC(xmlNodePtr cur)
 {
-  bool append_run = setQMCDriver(myProject.m_series,cur);
-  if(qmcDriver)
+  bool append_run = setQMCDriver(myProject.m_series, cur);
+  if (qmcDriver)
   {
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
-    if(!FirstQMC && !append_run)
+    if (!FirstQMC && !append_run)
       myProject.advance();
-    qmcDriver->setStatus(myProject.CurrentMainRoot(),PrevConfigFile, append_run);
+    qmcDriver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, append_run);
     qmcDriver->putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
     qmcDriver->putTraces(traces_xml);
@@ -625,7 +622,7 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     infoSummary.flush();
     infoLog.flush();
     Timer qmcTimer;
-    NewTimer *t1 = TimerManager.createTimer(qmcDriver->getEngineName(), timer_level_coarse);
+    NewTimer* t1 = TimerManager.createTimer(qmcDriver->getEngineName(), timer_level_coarse);
     t1->start();
     qmcDriver->run();
     t1->stop();
@@ -642,28 +639,27 @@ bool QMCMain::runQMC(xmlNodePtr cur)
 
 bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
 {
-  OhmmsXPathObject result("/simulation/mcwalkerset",context_);
-  for(int iconf=0; iconf<result.size(); iconf++)
+  OhmmsXPathObject result("/simulation/mcwalkerset", context_);
+  for (int iconf = 0; iconf < result.size(); iconf++)
   {
     xmlNodePtr mc_ptr = result[iconf];
     m_walkerset.push_back(mc_ptr);
     m_walkerset_in.push_back(mc_ptr);
   }
   //use the last mcwalkerset to initialize random numbers if possible
-  if(result.size())
+  if (result.size())
   {
     std::string fname;
     OhmmsAttributeSet a;
-    a.add(fname,"fileroot");
-    a.add(fname,"href");
-    a.add(fname,"src");
-    a.put(result[result.size()-1]);
-    if(fname.size())
-      RandomNumberControl::read(fname,myComm);
+    a.add(fname, "fileroot");
+    a.add(fname, "href");
+    a.add(fname, "src");
+    a.put(result[result.size() - 1]);
+    if (fname.size())
+      RandomNumberControl::read(fname, myComm);
   }
   return true;
 }
 
 
-
-}
+} // namespace qmcplusplus

@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -24,82 +24,90 @@
 
 namespace qmcplusplus
 {
-  /** trait class to map (datatype,D) to Einspline engine type */
-  template<typename T, unsigned D> struct bspline_traits{};
+/** trait class to map (datatype,D) to Einspline engine type */
+template<typename T, unsigned D>
+struct bspline_traits
+{};
 
-  template<>
-    struct bspline_traits<float,3>
-    {
-      typedef multi_UBspline_3d_s SplineType;  
-      typedef UBspline_3d_s       SingleSplineType;  
-      typedef BCtype_s            BCType;
-      typedef float real_type;
-      typedef float value_type;
-      static const spline_code spcode = MULTI_U3D;
-      static const spline_code single_spcode = U3D;
-      static const type_code tcode = SINGLE_REAL;
-    };
+template<>
+struct bspline_traits<float, 3>
+{
+  typedef multi_UBspline_3d_s SplineType;
+  typedef UBspline_3d_s SingleSplineType;
+  typedef BCtype_s BCType;
+  typedef float real_type;
+  typedef float value_type;
+  static const spline_code spcode        = MULTI_U3D;
+  static const spline_code single_spcode = U3D;
+  static const type_code tcode           = SINGLE_REAL;
+};
 
-  template<>
-    struct bspline_traits<double,3>
-    {
-      typedef multi_UBspline_3d_d SplineType;  
-      typedef UBspline_3d_d       SingleSplineType;  
-      typedef BCtype_d            BCType;
-      typedef double real_type;
-      typedef double value_type;
-      static const spline_code spcode = MULTI_U3D;
-      static const spline_code single_spcode = U3D;
-      static const type_code tcode = DOUBLE_REAL;
-    };
+template<>
+struct bspline_traits<double, 3>
+{
+  typedef multi_UBspline_3d_d SplineType;
+  typedef UBspline_3d_d SingleSplineType;
+  typedef BCtype_d BCType;
+  typedef double real_type;
+  typedef double value_type;
+  static const spline_code spcode        = MULTI_U3D;
+  static const spline_code single_spcode = U3D;
+  static const type_code tcode           = DOUBLE_REAL;
+};
 
-  /** specialization for 1D float */
-  template<>
-    struct bspline_traits<float,1>
-    {
-      typedef multi_UBspline_1d_s SplineType;
-      typedef UBspline_1d_s       SingleSplineType;
-      typedef BCtype_s            BCType;
-      typedef float               DataType;
-      typedef float               real_type;
-      typedef float               value_type;
-    };
+/** specialization for 1D float */
+template<>
+struct bspline_traits<float, 1>
+{
+  typedef multi_UBspline_1d_s SplineType;
+  typedef UBspline_1d_s SingleSplineType;
+  typedef BCtype_s BCType;
+  typedef float DataType;
+  typedef float real_type;
+  typedef float value_type;
+};
 
-  /** specialization for 1D double */
-  template<>
-    struct bspline_traits<double,1>
-    {
-      typedef multi_UBspline_1d_d SplineType;
-      typedef UBspline_1d_d       SingleSplineType;
-      typedef BCtype_d            BCType;
-      typedef double              DataType;
-      typedef double              real_type;
-      typedef double              value_type;
-    };
+/** specialization for 1D double */
+template<>
+struct bspline_traits<double, 1>
+{
+  typedef multi_UBspline_1d_d SplineType;
+  typedef UBspline_1d_d SingleSplineType;
+  typedef BCtype_d BCType;
+  typedef double DataType;
+  typedef double real_type;
+  typedef double value_type;
+};
 
 
-  /** helper class to determine the value_type of einspline objects
+/** helper class to determine the value_type of einspline objects
    */
-  template<typename ST> struct bspline_type {};
+template<typename ST>
+struct bspline_type
+{};
 
-  template<> struct bspline_type<multi_UBspline_3d_s> 
-  {
-    typedef float value_type;
-  };
+template<>
+struct bspline_type<multi_UBspline_3d_s>
+{
+  typedef float value_type;
+};
 
-  template<> struct bspline_type<multi_UBspline_3d_d> 
-  {
-    typedef double value_type;
-  };
+template<>
+struct bspline_type<multi_UBspline_3d_d>
+{
+  typedef double value_type;
+};
 
-  template<> struct bspline_type<UBspline_3d_s> 
-  {
-    typedef float value_type;
-  };
+template<>
+struct bspline_type<UBspline_3d_s>
+{
+  typedef float value_type;
+};
 
-  template<> struct bspline_type<UBspline_3d_d> 
-  {
-    typedef double value_type;
-  };
-}
+template<>
+struct bspline_type<UBspline_3d_d>
+{
+  typedef double value_type;
+};
+} // namespace qmcplusplus
 #endif
