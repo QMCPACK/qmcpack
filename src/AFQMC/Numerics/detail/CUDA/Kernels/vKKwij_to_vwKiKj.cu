@@ -46,6 +46,7 @@ __global__ void kernel_vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int 
   T2* B_(B + nw*nmo_tot*nmo_tot + ni0*nmo_tot + nj0); 
   T const* A_(A + ((Ki*nkpts + Kj)*nwalk + nw)*nmo_max*nmo_max);
 
+  if( key == 3 ) return;
   if(threadIdx.x >= ni) return; 
   if(threadIdx.y >= nj) return; 
   

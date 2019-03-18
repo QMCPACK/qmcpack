@@ -3,8 +3,9 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 
-\usepackage[usenames,dvipsnames]{color}
-\usepackage[pdftex, pdfstartview = {FitH}]{hyperref}
+%\usepackage[usenames,dvipsnames]{color}
+%\usepackage[pdftex, pdfstartview = {FitH}]{hyperref}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref} %for urls
 
 \usepackage{anyfontsize}
 
@@ -28,9 +29,9 @@
 
 \hypersetup{
     colorlinks=true,
-    citecolor = Blue,
-    linkcolor = Blue,
-    urlcolor  = Blue,
+    citecolor = blue,
+    linkcolor = blue,
+    urlcolor  = blue,
     pdfborder={0 0 0},
 }
 
@@ -854,7 +855,7 @@ The files for this example are found in:
 
 By following the instructions contained in this section the reader can execute a simple workflow with Nexus.  The workflow presented here is intended to illustrate basic Nexus usage.  The example workflow has three stages: (1) orbital generation in a primitive (2 atom) cell of diamond with PWSCF, (2) conversion of the orbitals from the native PWSCF format to the ESHDF format that QMCPACK reads, and (3) a minimal variational Monte Carlo (VMC) run of a 16 atom supercell of diamond with QMCPACK.  The Nexus input script corresponding to this workflow is shown below.  
 
-The script is similar to the one discussed in section \ref{sec:ui}, differing mainly in the name-by-name imports and the description of the physical system.  Instead of reading an external VASP POSCAR file, the structure is specified in a format native to Nexus.  The physical system is specified by providing the unit system (Angstrom in this case), the three vectors comprising the axes of the simulation cell, and the names and positions (Cartesian coordinates) of the atoms involved.  The use of ``\texttt{tiling=(2,2,2)}'' communicates the request that a $2\times2\times2$ supercell be constructed out of the specified 2 atom primitive cell.  The k-point grid applies to the supercell and is comprised of a single k-point.  The eight corresponding primitive cell images of this k-point are determined automatically by Nexus.  The text ``\texttt{C = 4}'' specifies the number of valence electrons for the carbon pseudopotential.  The pseudopotential files used in this example (\texttt{C.BFD.*}) have been adapted from an open access pseudopotential database (see \url{http://www.burkatzki.com/pseudos/index.2.html}) for use in PWSCF and QMCPACK.  Since the \texttt{PhysicalSystem} object, ``\texttt{dia16}'', contains both the supercell and its equivalent folded/primitive version, the PWSCF DFT calculation will be performed in the primitive cell to save memory for the subsequent VMC calculation of the full supercell performed with QMCPACK.
+The script is similar to the one discussed in section \ref{sec:user_imports}, differing mainly in the name-by-name imports and the description of the physical system.  Instead of reading an external VASP POSCAR file, the structure is specified in a format native to Nexus.  The physical system is specified by providing the unit system (Angstrom in this case), the three vectors comprising the axes of the simulation cell, and the names and positions (Cartesian coordinates) of the atoms involved.  The use of ``\texttt{tiling=(2,2,2)}'' communicates the request that a $2\times2\times2$ supercell be constructed out of the specified 2 atom primitive cell.  The k-point grid applies to the supercell and is comprised of a single k-point.  The eight corresponding primitive cell images of this k-point are determined automatically by Nexus.  The text ``\texttt{C = 4}'' specifies the number of valence electrons for the carbon pseudopotential.  The pseudopotential files used in this example (\texttt{C.BFD.*}) have been adapted from an open access pseudopotential database (see \url{http://www.burkatzki.com/pseudos/index.2.html}) for use in PWSCF and QMCPACK.  Since the \texttt{PhysicalSystem} object, ``\texttt{dia16}'', contains both the supercell and its equivalent folded/primitive version, the PWSCF DFT calculation will be performed in the primitive cell to save memory for the subsequent VMC calculation of the full supercell performed with QMCPACK.
 
 %\begin{lstlisting}[caption={Nexus input script for the usage example (\texttt{diamond.py}).  DFT is performed in diamond primitive cell followed by VMC in a 16 atom supercell.},label={ex:d16}]
 \HRule
@@ -946,7 +947,7 @@ run_project(scf,conv,qmc)
 %\end{lstlisting}
 
 
-To fully execute the usage example provided here, copies of PWSCF, QMCPACK, and the orbital converter pw2qmcpack will need to be installed on the local machine.  The example assumes that the executables are in the user's \texttt{PATH} and are named \texttt{pw.x}, \texttt{qmcpack}, and \texttt{pw2qmcpack.x}.  See Sec. \ref{sec:install_code} for download and installation instructions for these codes. A test of Nexus including the generation of input files, but without actual job submission, can be performed without installing these codes.  However, Python itself and NumPy are required to run Nexus (see Sec. \ref{install_python}).    The example also assumes the local machine is a workstation with 16 available cores (``\texttt{ws16}'').  If fewer than 16 cores are available, \emph{e.g.} 4, change the example files to reflect this: \texttt{ws16}$\rightarrow$\texttt{ws4}, \texttt{Job(cores=16,$\ldots$)}$\rightarrow$\texttt{Job(cores=4,$\ldots$)}. 
+To fully execute the usage example provided here, copies of PWSCF, QMCPACK, and the orbital converter pw2qmcpack will need to be installed on the local machine.  The example assumes that the executables are in the user's \texttt{PATH} and are named \texttt{pw.x}, \texttt{qmcpack}, and \texttt{pw2qmcpack.x}.  See Sec. \ref{sec:install_code} for download and installation instructions for these codes. A test of Nexus including the generation of input files, but without actual job submission, can be performed without installing these codes.  However, Python itself and NumPy are required to run Nexus (see Sec. \ref{sec:install_python}).    The example also assumes the local machine is a workstation with 16 available cores (``\texttt{ws16}'').  If fewer than 16 cores are available, \emph{e.g.} 4, change the example files to reflect this: \texttt{ws16}$\rightarrow$\texttt{ws4}, \texttt{Job(cores=16,$\ldots$)}$\rightarrow$\texttt{Job(cores=4,$\ldots$)}. 
 
 In this example, we will run Nexus in three different modes:
 \begin{enumerate}
@@ -2165,7 +2166,6 @@ Now actually submit the optimization and DMC jobs.  Reset the state of the simul
 After completion, try expanding to the full set of ``\texttt{scale}'' values:\newline \texttt{[0.90,0.925,0.95,0.975,1.00,1.025,1.05,1.075,1.10]}.  Nexus should only run the workflows that correspond to new values.  In this way, Nexus scripts can be expanded over time to include new aspects of growing projects. 
 
 
-\section{Example 5: Bulk Diamond Excited States VMC}\label{excited}
 \section{Example 5: Bulk Diamond Excited States VMC}\label{excited}
 The files for this example are found in:
 \begin{shaded}

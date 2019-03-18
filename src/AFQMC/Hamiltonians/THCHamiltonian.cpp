@@ -87,13 +87,13 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
   // setup partition, in general matrices are partitioned asize_t 'u'
   {
-    int node_number = TGwfn.getLocalNodeNumber();
-    int nnodes_prt_TG = TGwfn.getNNodesPerTG();
+    int node_number = TGwfn.getLocalGroupNumber();
+    int nnodes_prt_TG = TGwfn.getNGroupsPerTG();
     std::tie(rotnmu0,rotnmuN) = FairDivideBoundary(size_t(node_number),grotnmu,size_t(nnodes_prt_TG));
     rotnmu = rotnmuN-rotnmu0;
 
-    node_number = TGprop.getLocalNodeNumber();
-    nnodes_prt_TG = TGprop.getNNodesPerTG();
+    node_number = TGprop.getLocalGroupNumber();
+    nnodes_prt_TG = TGprop.getNGroupsPerTG();
     std::tie(nmu0,nmuN) = FairDivideBoundary(size_t(node_number),gnmu,size_t(nnodes_prt_TG));
     nmu = nmuN-nmu0;
   }
@@ -169,7 +169,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   TG.global_barrier();
 
   boost::multi::array<ComplexType,2> v0({Piu.size(0),Piu.size(0)});
-  if(TGprop.getNNodesPerTG() > 1)
+  if(TGprop.getNGroupsPerTG() > 1)
   {
 
     // TOO MUCH MEMORY, FIX FIX FIX!!!
@@ -321,7 +321,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   ValueType E0 = OneBodyHamiltonian::NuclearCoulombEnergy +
                  OneBodyHamiltonian::FrozenCoreEnergy;
 
-  std::vector<boost::multi::array<SPComplexType,1>> hij;
+  std::vector<boost::multi::array<ComplexType,1>> hij;
   hij.reserve(ndet);
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {

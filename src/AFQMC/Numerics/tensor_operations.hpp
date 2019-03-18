@@ -108,6 +108,7 @@ void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
         // 2: transpose from [Ki][Kj] without rho^+ term
         // -P: copy from [Ki][Kj] and transpose from [nkpts+P-1][Kj] 
         int key = kk[Ki*nkpts+Kj];
+        if( key == 3 ) continue;
         if( key == 2 ) { // transpose
           auto vb_( B + w*nmo_tot*nmo_tot + ni0*nmo_tot + nj0);
           auto v_( A + ((Ki*nkpts+Kj)*nwalk + w )*nmo_max*nmo_max);

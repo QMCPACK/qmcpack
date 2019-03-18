@@ -263,7 +263,7 @@ class NOMSD: public AFQMCInfo
      */
     template<class WlkSet, class Mat, class TVec> 
     void Energy(const WlkSet& wset, Mat&& E, TVec&& Ov) {
-      if(TG.getNNodesPerTG() > 1)
+      if(TG.getNGroupsPerTG() > 1)
         Energy_distributed(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
       else
         Energy_shared(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));

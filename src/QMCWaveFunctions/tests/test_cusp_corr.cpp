@@ -31,42 +31,41 @@
 
 namespace qmcplusplus
 {
-
 TEST_CASE("CuspCorrection He", "[wavefunction]")
 {
-    OHMMS::Controller->initialize(0, NULL);
-    Communicate *c = OHMMS::Controller;
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c = OHMMS::Controller;
 
-    ParticleSet elec;
-    std::vector<int> agroup(2);
-    agroup[0] = 1;
-    agroup[1] = 1;
-    elec.setName("e");
-    elec.create(agroup);
-    elec.R[0] = 0.0;
+  ParticleSet elec;
+  std::vector<int> agroup(2);
+  agroup[0] = 1;
+  agroup[1] = 1;
+  elec.setName("e");
+  elec.create(agroup);
+  elec.R[0] = 0.0;
 
-    SpeciesSet &tspecies = elec.getSpeciesSet();
-    int upIdx = tspecies.addSpecies("u");
-    int downIdx = tspecies.addSpecies("d");
-    int massIdx = tspecies.addAttribute("mass");
-    tspecies(massIdx, upIdx) = 1.0;
-    tspecies(massIdx, downIdx) = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int downIdx                = tspecies.addSpecies("d");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(massIdx, upIdx)   = 1.0;
+  tspecies(massIdx, downIdx) = 1.0;
 
-    ParticleSet ions;
-    ions.setName("ion0");
-    ions.create(1);
-    ions.R[0] = 0.0;
-    SpeciesSet &ispecies = ions.getSpeciesSet();
-    int heIdx = ispecies.addSpecies("He");
-    ions.update();
+  ParticleSet ions;
+  ions.setName("ion0");
+  ions.create(1);
+  ions.R[0]            = 0.0;
+  SpeciesSet& ispecies = ions.getSpeciesSet();
+  int heIdx            = ispecies.addSpecies("He");
+  ions.update();
 
 
-  #ifdef ENABLE_SOA
-    elec.addTable(ions,DT_SOA);
-  #else
-    elec.addTable(ions,DT_AOS);
-  #endif
-    elec.update();
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
+  elec.addTable(ions, DT_AOS);
+#endif
+  elec.update();
 
 
   Libxml2Document doc;
@@ -77,7 +76,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   TrialWaveFunction psi(c);
 
   WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
-  particle_set_map["e"] = &elec;
+  particle_set_map["e"]    = &elec;
   particle_set_map["ion0"] = &ions;
 
 
@@ -86,25 +85,25 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
   REQUIRE(MO_base.size() == 1);
 
-  SPOSetBuilder *bb = bf.createSPOSetBuilder(MO_base[0]);
+  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
   REQUIRE(bb != NULL);
 
   OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
   bb->loadBasisSetFromXML(MO_base[0]);
-  SPOSet *sposet = bb->createSPOSet(slater_base[0]);
+  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
 
   typedef OneDimGridBase<double> GridType;
   typedef LCOrbitalSet<LocalizedBasisSet<SphericalBasisSet<NGOrbital, GridType>>, false> OrbType;
-  OrbType *lcob = dynamic_cast<OrbType *>(sposet);
+  OrbType* lcob = dynamic_cast<OrbType*>(sposet);
   REQUIRE(lcob != NULL);
 
 
-  typedef CuspCorr<LocalizedBasisSet<SphericalBasisSet<NGOrbital, GridType>>>  CuspCorrType;
+  typedef CuspCorr<LocalizedBasisSet<SphericalBasisSet<NGOrbital, GridType>>> CuspCorrType;
   typedef OrbitalSetTraits<double>::ValueVector_t ValueVector_t;
 
   double rc = 0.1;
-  int npts = 10;
+  int npts  = 10;
   CuspCorrType cusp(rc, npts, &elec, &ions);
 
   typedef NGOBuilder::CenteredOrbitalType COT;
@@ -121,13 +120,13 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   bs_eta.setIdentity(false);
   *(bs_eta.C) = *(lcob->C);
   // For He in a minimal basis, there are only s-type orbitals
-  (*bs_eta.C)(0,0) = 0.0;
+  (*bs_eta.C)(0, 0) = 0.0;
 
   cusp.setPhiAndEta(&bs_phi, &bs_eta);
 
   cusp.curCenter = 0;
-  cusp.curOrb = 0;
-  cusp.Z = 2.0;
+  cusp.curOrb    = 0;
+  cusp.Z         = 2.0;
   cusp.computeValAtZero();
 
   ValueVector_t X(5);
@@ -230,7 +229,6 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   cusp.execute(0, 0, 2.0, &bs_phi, &bs_eta, xgrid, rad_orb, "none", rc, data);
 
   SPOSetBuilderFactory::clear();
-
 }
 
 TEST_CASE("readCuspInfo", "[wavefunction]")
@@ -243,35 +241,34 @@ TEST_CASE("readCuspInfo", "[wavefunction]")
   OrbType orb;
 
   Matrix<CuspCorrectionParameters> info;
-  int num_center = 3;
+  int num_center       = 3;
   int orbital_set_size = 7;
   info.resize(num_center, orbital_set_size);
   orb.cuspInfoFile = "hcn_downdet.cuspInfo.xml";
-  orb.objectName = "downdet";
+  orb.objectName   = "downdet";
   orb.setOrbitalSetSize(orbital_set_size);
   bool okay = orb.readCuspInfo(info);
   REQUIRE(okay);
 
   // N
-  REQUIRE(info(0,0).redo == Approx(0.0));
-  REQUIRE(info(0,0).C == Approx(0.0));
-  REQUIRE(info(0,0).sg == Approx(1.0));
-  REQUIRE(info(0,0).Rc == Approx(0.0769130700800000));
-  REQUIRE(info(0,0).alpha[0] == Approx(2.29508580995773));
-  REQUIRE(info(0,0).alpha[1] == Approx(-7.00028778782666));
-  REQUIRE(info(0,0).alpha[2] == Approx(0.834942828252775));
-  REQUIRE(info(0,0).alpha[3] == Approx(-4.61597420905980));
-  REQUIRE(info(0,0).alpha[4] == Approx(31.6558091872316));
+  REQUIRE(info(0, 0).redo == Approx(0.0));
+  REQUIRE(info(0, 0).C == Approx(0.0));
+  REQUIRE(info(0, 0).sg == Approx(1.0));
+  REQUIRE(info(0, 0).Rc == Approx(0.0769130700800000));
+  REQUIRE(info(0, 0).alpha[0] == Approx(2.29508580995773));
+  REQUIRE(info(0, 0).alpha[1] == Approx(-7.00028778782666));
+  REQUIRE(info(0, 0).alpha[2] == Approx(0.834942828252775));
+  REQUIRE(info(0, 0).alpha[3] == Approx(-4.61597420905980));
+  REQUIRE(info(0, 0).alpha[4] == Approx(31.6558091872316));
 
 
   // Spot check a few values from these centers
   // C
-  REQUIRE(info(0,6).C == Approx(0.0));
-  REQUIRE(info(0,6).alpha[4] == Approx(0.0));
+  REQUIRE(info(0, 6).C == Approx(0.0));
+  REQUIRE(info(0, 6).alpha[4] == Approx(0.0));
 
   // H
-  REQUIRE(info(2,4).alpha[4] == Approx(-404.733151049101));
-
+  REQUIRE(info(2, 4).alpha[4] == Approx(-404.733151049101));
 }
 
-}
+} // namespace qmcplusplus

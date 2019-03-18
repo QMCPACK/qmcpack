@@ -67,14 +67,15 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   // 0. Allocate memory and set shared memory structures
   if(buffer.num_elements() < memory_needs ) { 
-    buffer = std::move(CVector(iextensions<1u>{memory_needs}));
+    buffer = std::move(sharedCVector(iextensions<1u>{memory_needs},aux_alloc_));
     using std::fill_n;
     fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
   }  
 
   // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
   // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
-  auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+  //auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+  CVector_ref mem_pool(make_device_ptr(buffer.origin()),buffer.extensions());
   //auto mem_pool(array_cast<pointer>(buffer));
 
   size_t displ=0;
@@ -97,6 +98,8 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
   C3Tensor_ref vHS3D(mem_pool.origin()+displ,{vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
 
   // local matrices for temporary accumulation
+// MAM: Note -  Since nsteps can change routinely, don't reextent these.
+//              Instead have a buffer and create array_refs from them!!!
   if(MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk) 
     MFfactor = std::move(CMatrix({long(nsteps),long(nwalk)}));
   if(hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk) 

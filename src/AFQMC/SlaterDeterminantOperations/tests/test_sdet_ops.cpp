@@ -487,7 +487,6 @@ void SDetOps_complex_serial(Allocator alloc)
 
   array G({NMO,NMO},alloc);
   array Gc({NEL,NMO},alloc);
-
   SDet.MixedDensityMatrix(A,B,G,to_address(ov_),false); check(G,g_ref);
   SDet.MixedDensityMatrix(Aref,B,G,to_address(ov_),false); check(G,g_ref);
   SDet.MixedDensityMatrix(A,Bref,G,to_address(ov_),false); check(G,g_ref);
