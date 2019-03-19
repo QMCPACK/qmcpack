@@ -7,7 +7,7 @@
 ## * Execute this script in trunk/                            ##
 ##   ./config/build_ornl_cades.sh                             ##
 ##                                                            ##
-## Last verified: Mar 12, 2018                                ##
+## Last verified: Mar 12, 2019                                ##
 ################################################################
 
 # module files resulting from module imports below:
