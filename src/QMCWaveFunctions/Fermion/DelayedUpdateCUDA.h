@@ -22,6 +22,7 @@
 
 namespace qmcplusplus {
 
+  /// helper class for the prefetched range of a vector
   class Range
   {
     // [first, last) rows of Ainv
@@ -43,7 +44,7 @@ namespace qmcplusplus {
   };
 
   template<typename T>
-    struct DelayedUpdateCUDA
+    class DelayedUpdateCUDA
     {
       // Data staged during for delayed acceptRows
       Matrix<T, CUDAHostAllocator<T>> U, Binv;
@@ -65,6 +66,13 @@ namespace qmcplusplus {
       cublasHandle_t handle;
       cudaStream_t hstream;
 
+      inline void waitStream()
+      {
+        cudaErrorCheck( cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
+      }
+
+    public:
+      /// default constructor
       DelayedUpdateCUDA(): delay_count(0)
       {
         cudaErrorCheck( cudaStreamCreate(&hstream), "cudaStreamCreate failed!" );
@@ -78,6 +86,10 @@ namespace qmcplusplus {
         cudaErrorCheck( cudaStreamDestroy(hstream), "cudaStreamDestroy failed!" );
       }
 
+      /** resize the internal storage
+       * @param norb number of electrons/orbitals
+       * @param delay, maximum delay 0<delay<=norb
+       */
       inline void resize(int norb, int delay)
       {
         //tempMat.resize(norb, delay);
@@ -97,6 +109,9 @@ namespace qmcplusplus {
         delay_list_gpu.resize(delay);
       }
 
+      /** initialize internal objects when Ainv is refreshed
+       * @param Ainv inverse matrix
+       */
       inline void initializeInv(const Matrix<T>& Ainv)
       {
         cudaErrorCheck( cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size()*sizeof(T), cudaMemcpyHostToDevice, hstream), "cudaMemcpyAsync failed!");
@@ -105,6 +120,10 @@ namespace qmcplusplus {
         prefetched_range.clear();
       }
 
+      /** compute the row of up-to-date Ainv
+       * @param Ainv inverse matrix
+       * @param rowchanged the row id corresponding to the proposed electron
+       */
       template<typename VVT>
       inline void getInvRow(const Matrix<T>& Ainv, int rowchanged, VVT& invRow)
       {
@@ -132,7 +151,13 @@ namespace qmcplusplus {
         }
       }
 
-      // accept with the update delayed
+     /** accept a move with the update delayed
+       * @param Ainv inverse matrix
+       * @param rowchanged the row id corresponding to the proposed electron
+       * @param psiV new orbital values
+       *
+       * Before delay_count reaches the maximum delay, only Binv is updated with a recursive algorithm
+       */
       template<typename VVT>
       inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
@@ -163,6 +188,9 @@ namespace qmcplusplus {
         if(delay_count==lda_Binv) updateInvMat(Ainv,false);
       }
 
+      /** update the full Ainv and reset delay_count
+       * @param Ainv inverse matrix
+       */
       inline void updateInvMat(Matrix<T>& Ainv, bool transfer_to_host = true)
       {
         // update the inverse matrix
@@ -192,11 +220,6 @@ namespace qmcplusplus {
           // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
           //waitStream();
         }
-      }
-
-      inline void waitStream()
-      {
-        cudaErrorCheck( cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
       }
     };
 }

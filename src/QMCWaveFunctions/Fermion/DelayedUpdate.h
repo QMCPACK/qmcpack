@@ -44,7 +44,6 @@ public:
   /// default constructor
   DelayedUpdate() : delay_count(0) {}
 
-  ///resize the internal storage
   /** resize the internal storage
        * @param norb number of electrons/orbitals
        * @param delay, maximum delay 0<delay<=norb
