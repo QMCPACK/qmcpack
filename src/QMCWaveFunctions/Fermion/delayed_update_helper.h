@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -14,6 +14,10 @@
 #define CUDA_DELAYED_UPDATE_HELPER_H
 
 #include <complex>
+
+/** helper function for delayed update algorithm
+ * W matrix is applied and copy selected rows of Ainv into V
+ */
 
 void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
                         float* temp_gpu, const int numorbs, const int ndelay,

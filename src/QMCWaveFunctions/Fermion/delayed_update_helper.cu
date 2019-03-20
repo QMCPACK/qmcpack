@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -31,6 +31,9 @@ __host__ __device__ __inline__ cuDoubleComplex subtractOne<cuDoubleComplex>(cuDo
   return make_cuDoubleComplex(cuCreal(x)-1.0f, cuCimag(x));
 }
 
+/** helper kernel for delayed update algorithm
+ * W matrix is applied and copy selected rows of Ainv into V
+ */
 template<typename T, int BS>
 __global__ void applyW_stageV_kernel(const int *delay_list_gpu, const int delay_count,
                                      T* temp_gpu, const int numorbs, const int ndelay,
