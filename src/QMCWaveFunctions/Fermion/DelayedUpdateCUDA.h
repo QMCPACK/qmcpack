@@ -97,7 +97,7 @@ public:
     U.resize(delay, norb);
     p.resize(delay);
     Binv.resize(delay, delay);
-    // prefect 8% more rows corresponding to roughly 96% acceptance ratio
+    // prefetch 8% more rows corresponding to roughly 96% acceptance ratio
     Ainv_buffer.resize(std::min(static_cast<int>(delay * 1.08), norb), norb);
 
     temp_gpu.resize(norb, delay);
