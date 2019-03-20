@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -19,7 +19,7 @@
 #include <stdexcept>
 
 #define cublasErrorCheck(ans, cause) { cublasAssert((ans), cause, __FILE__, __LINE__); }
-
+/// prints cuBLAS error messages. Always use cublasErrorCheck macro.
 inline void cublasAssert(cublasStatus_t code, const std::string& cause, const char *file, int line, bool abort=true)
 {
   if (code != CUBLAS_STATUS_SUCCESS)
@@ -57,6 +57,8 @@ inline void cublasAssert(cublasStatus_t code, const std::string& cause, const ch
 
 namespace qmcplusplus {
 
+/** interface to cuBLAS calls for different data types S/C/D/Z
+ */
 struct cuBLAS
 {
   static inline
