@@ -11,17 +11,18 @@ cat > $BUILD_TAG.pbs << EOF
 #PBS -d $BUILD_DIR
 #PBS -l partition=gpu
 
-source /sw/rhea/environment-modules/3.2.10/rhel6.7_gnu4.4.7/init/bash
+source /sw/rhea/lmod/7.8.2/rhel7.5_4.8.5/lmod/7.8.2/init/bash
 
-module unload PE-intel
-module load PE-gnu/5.3.0-1.10.2
-module load fftw
-export FFTW_HOME=\$FFTW3_DIR
-module load hdf5
-module load git
-module load cudatoolkit/8.0.44
-module load cmake/3.6.1
-module load boost/1.61.0
+module unload intel
+module load gcc/6.2.0
+module load openblas/0.3.5
+module load cuda/10.0.130
+module load fftw/3.3.8
+export FFTW_HOME=\$OLCF_FFTW_ROOT
+module load hdf5/1.10.3
+module load git/2.18.0
+module load cmake/3.13.4
+module load boost/1.67.0
 
 env
 module list
@@ -47,11 +48,11 @@ echo ""
 mkdir -p /tmp/${BUILD_TAG}-build
 cd /tmp/${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 # hacky way to check on cmake. works for now
-if ! ( grep -- '-- The C compiler identification is GNU 5.3.0' cmake.out && \
-       grep -- '-- The CXX compiler identification is GNU 5.3.0' cmake.out ) ;
+if ! ( grep -- '-- The C compiler identification is GNU 6.2.0' cmake.out && \
+       grep -- '-- The CXX compiler identification is GNU 6.2.0' cmake.out ) ;
 then
   echo "compiler version mismatch. exiting."
   exit 1
@@ -77,7 +78,7 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 time make -j 24
 time make -j 24
@@ -98,7 +99,7 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 time make -j 24
 time make -j 24
@@ -118,7 +119,7 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 time make -j 24
 time make -j 24

@@ -44,9 +44,9 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump, WALKER
   using SpMatrix_ref = boost::multi::array_ref<SPComplexType,2>;
   using Sp3Tensor_ref = boost::multi::array_ref<SPComplexType,3>;
 
-  if(TGprop.getNNodesPerTG() > 1)
+  if(TGprop.getNGroupsPerTG() > 1)
     APP_ABORT(" Error: Distributed KP3INdex not yet implemented.\n");
-  if(TGwfn.getNNodesPerTG() > 1)
+  if(TGwfn.getNGroupsPerTG() > 1)
     APP_ABORT(" Error: Distributed KP3INdex not yet implemented.\n");
 
   std::vector<int> dims(7);
@@ -471,9 +471,9 @@ inline void writeKP3IndexFactorization(hdf_archive& dump, WALKER_TYPES type,
                               ValueType E0, int gncv) 
 {
 
-  if(TGprop.getNNodesPerTG() > 1)
+  if(TGprop.getNGroupsPerTG() > 1)
     APP_ABORT(" Error: Distributed KP3INdex not yet implemented.\n");
-  if(TGwfn.getNNodesPerTG() > 1)
+  if(TGwfn.getNGroupsPerTG() > 1)
     APP_ABORT(" Error: Distributed KP3INdex not yet implemented.\n");
 
   if(TGwfn.Global().root()) {

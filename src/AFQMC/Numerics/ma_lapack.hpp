@@ -48,7 +48,7 @@ MultiArray2D getrf(MultiArray2D&& m, Array1D& pivot, Buffer&& WORK){
                 status,
                 pointer_dispatch(WORK.data())
         );
-        assert(status==0);
+        //assert(status==0); 
         return std::forward<MultiArray2D>(m);
 }
 

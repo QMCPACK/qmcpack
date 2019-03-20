@@ -86,5 +86,22 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
   qmc_cuda::cuda_check(cudaDeviceSynchronize(),"batched_Tab_to_Klr");
 }
 
+void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
+                    int nchol_tot, int ncholQ, int ncholQ0, int* kdiag,
+                    std::complex<float> const* Tab,
+                    std::complex<float> * Kl,
+                    std::complex<float> * Kr)
+{
+  dim3 grid_dim(nwalk,2,1);
+  int nthr = std::min(256,ncholQ); // is this needed? 
+  kernel_batched_Tab_to_Klr<<<grid_dim,nthr>>>(nterms,nwalk,nocc,nchol_max,nchol_tot,ncholQ,
+                                     ncholQ0,kdiag,
+                                   reinterpret_cast<thrust::complex<float> const*>(Tab),
+                                   reinterpret_cast<thrust::complex<float> *>(Kl),
+                                   reinterpret_cast<thrust::complex<float> *>(Kr));
+  qmc_cuda::cuda_check(cudaGetLastError(),"batched_Tab_to_Klr");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"batched_Tab_to_Klr");
+}
+
 
 }

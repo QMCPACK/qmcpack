@@ -21,7 +21,6 @@
 
 namespace spline2
 {
-
 /** break x into the integer part and residual part and apply bounds
  * @param x input coordinate
  * @param dx fractional part
@@ -46,18 +45,18 @@ inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int nmax)
   if (x < 0)
   {
     ind = 0;
-    dx = T(0);
+    dx  = T(0);
   }
   else
   {
     T ipart;
-    dx=std::modf(x,&ipart);
+    dx  = std::modf(x, &ipart);
     ind = static_cast<int>(ipart);
     // upper bound
     if (ind > nmax)
     {
       ind = nmax;
-      dx = T(1) - std::numeric_limits<T>::epsilon();
+      dx  = T(1) - std::numeric_limits<T>::epsilon();
     }
   }
 }
@@ -130,8 +129,8 @@ struct MultiBsplineData
     d2a[1] = ((d2A44[4] * tx + d2A44[5]) * tx + d2A44[6]) * tx + d2A44[7];
     d2a[2] = ((d2A44[8] * tx + d2A44[9]) * tx + d2A44[10]) * tx + d2A44[11];
     d2a[3] = ((d2A44[12] * tx + d2A44[13]) * tx + d2A44[14]) * tx + d2A44[15];
-    d3a[0] = d3A44[ 3];
-    d3a[1] = d3A44[ 7];
+    d3a[0] = d3A44[3];
+    d3a[1] = d3A44[7];
     d3a[2] = d3A44[11];
     d3a[3] = d3A44[15];
   }

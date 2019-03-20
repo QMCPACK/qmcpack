@@ -63,9 +63,10 @@ namespace sparse_rotate
  *  If conjV=true, Spvn(ik,n) -> conj(Spvn(ki,n)) in the expressions above
  */ 
 template< class Container,
-          class task_group
+          class task_group,
+          class PsiT_Type
         >
-void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, Container& Q, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6, bool reserve_to_fit_=true)
+void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, Container& Q, PsiT_Type *Alpha, PsiT_Type *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6, bool reserve_to_fit_=true)
 {
   int NAEA = Alpha->size(0); 
   int NAEB = Alpha->size(0); 
@@ -230,8 +231,8 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
  *  Since we only rotate the "local" cholesky matrix, the algorithm is only parallelized
  *  over a node. In principle, it is possible to spread this over equivalent nodes.
  */ 
-template<class task_group>
-SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_group& TG, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, double cutoff=1e-6)
+template<class task_group, class PsiT_Type>
+SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_group& TG, PsiT_Type *Alpha, PsiT_Type *Beta, SpVType_shm_csr_matrix const& CholMat, double cutoff=1e-6)
 {
   int NAEA = Alpha->size(0); 
   int NAEB = Alpha->size(0); 
@@ -350,9 +351,10 @@ namespace ma_rotate
 {
 
 template< class MultiArray2D, 
-          class task_group
+          class task_group,
+          class PsiT_Type
         >
-void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, MultiArray2D&& Q, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6)
+void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN, MultiArray2D&& Q, PsiT_Type *Alpha, PsiT_Type *Beta, SpVType_shm_csr_matrix const& CholMat, bool transpose, bool conjV = false, double cutoff=1e-6)
 {
   int NAEA = Alpha->size(0); 
   int NAEB = 0; 

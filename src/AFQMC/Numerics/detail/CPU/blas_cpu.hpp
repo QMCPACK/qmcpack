@@ -100,6 +100,22 @@ namespace ma
     zaxpy(n, x, a, incx, b, incy);
   }
 
+  inline static void axpy(int n, const float x,
+                          const float *a, int incx,
+                          double *b, int incy)
+  {
+    for (int i = 0; i < n; ++i, a+=incx, b+=incy)
+      (*b) += static_cast<double>(x*(*a));
+  }
+
+  inline static void axpy(int n, const std::complex<float> x,
+                          const std::complex<float> *a, int incx,
+                          std::complex<double> *b, int incy)
+  {
+    for (int i = 0; i < n; ++i, a+=incx, b+=incy)
+      (*b) += static_cast<std::complex<double>>(x*(*a));
+  }
+
   inline static double norm2(int n, const double *a, int incx = 1)
   {
     return dnrm2(n, a, incx);

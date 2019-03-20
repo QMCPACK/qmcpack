@@ -318,8 +318,8 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
     return CSR(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},0,typename CSR::alloc_type(TG.Node()));
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
-  int node_number = TG.getLocalNodeNumber();
-  int nnodes_per_TG = TG.getNNodesPerTG();  
+  int node_number = TG.getLocalGroupNumber();
+  int nnodes_per_TG = TG.getNGroupsPerTG();  
 
   // 1. Define new communicator for equivalent cores
   boost::mpi3::communicator eq_cores(TG.Cores().split(node_number,TG.Cores().rank())); 
@@ -558,6 +558,19 @@ typename CSR::template matrix_view<integer> local_balanced_partition(CSR& M, tas
     //return M[array_{0,M.size(0),0,M.size(1)}];
   }
 } 
+
+/*
+ * Constructs a vector of csr_matrix as a copy from a given csr_matrix but casted to single precision
+ */ 
+template<class CSRsp, class CSR>
+std::vector<CSRsp> CSRvector_to_single_precision(std::vector<CSR> const& A) 
+{
+  using Alloc = typename CSRsp::alloc_type;
+  std::vector<CSRsp> B;
+  B.reserve(A.size());
+  for(auto& v: A) B.emplace_back( CSRsp(v,Alloc{v.getAlloc()}) );
+  return B;
+}
 
 }
 
