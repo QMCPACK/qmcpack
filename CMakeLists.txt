@@ -142,7 +142,7 @@ SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
-SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA")
+SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)")
 SET(ENABLE_SOA 0 CACHE BOOL "Enable/disable SoA optimization")
 
 IF(ENABLE_CUDA AND QMC_CUDA)
