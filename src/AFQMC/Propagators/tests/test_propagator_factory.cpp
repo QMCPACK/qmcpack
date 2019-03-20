@@ -33,7 +33,8 @@
 #include <iomanip>
 
 #include "AFQMC/Utilities/test_utils.hpp"
-#include "AFQMC/Utilities/myTimer.h"
+//#include "AFQMC/Utilities/myTimer.h"
+#include "Utilities/Timer.h"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
@@ -58,14 +59,13 @@ namespace qmcplusplus
 
 using namespace afqmc;
 
-template<class Allocator>
+//template<class Allocator>
 void propg_fac_shared(boost::mpi3::communicator & world)
 {
-  using pointer = device_ptr<ComplexType>;
-
-  if(not file_exists("./afqmc.h5") ||
-     not file_exists("./wfn.dat") ) {
-    app_log()<<" Skipping propg_fac_shared. afqmc.h5 and ./wfn.dat files not found. \n";
+  if(not file_exists(UTEST_HAMIL) ||
+     not file_exists(UTEST_WFN) ) {
+    app_log()<<" Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
+    app_log()<<" Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
   } else {
 
     TimerManager.set_timer_threshold(timer_level_coarse);
@@ -75,18 +75,19 @@ void propg_fac_shared(boost::mpi3::communicator & world)
     afqmc::GlobalTaskGroup gTG(world);
 
     int NMO,NAEA,NAEB;
-    std::tie(NMO,NAEA,NAEB) = read_info_from_hdf("./afqmc.h5");
+    std::tie(NMO,NAEA,NAEB) = read_info_from_hdf(UTEST_HAMIL);
 
     std::map<std::string,AFQMCInfo> InfoMap;
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
     HamiltonianFactory HamFac(InfoMap);
-    const char *ham_xml_block =
+    std::string hamil_xml =
 "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-    <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"filename\">./afqmc.h5</parameter> \
-    <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-  </Hamiltonian> \
+<parameter name=\"filetype\">hdf5</parameter> \
+<parameter name=\"filename\">"+UTEST_HAMIL+"</parameter> \
+<parameter name=\"cutoff_decomposition\">1e-5</parameter> \
+</Hamiltonian> \
 ";
+    const char *ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
     REQUIRE(okay);
@@ -98,31 +99,46 @@ void propg_fac_shared(boost::mpi3::communicator & world)
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
 
-    Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
+//    Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
-const char *wlk_xml_block =
-"<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">closed</parameter>  \
-</WalkerSet> \
-";
+    WALKER_TYPES type = afqmc::getWalkerType(UTEST_WFN);
+    const char *wlk_xml_block_closed =
+    "<WalkerSet name=\"wset0\">  \
+      <parameter name=\"walker_type\">closed</parameter>  \
+    </WalkerSet> \
+    ";
+    const char *wlk_xml_block_coll =
+    "<WalkerSet name=\"wset0\">  \
+      <parameter name=\"walker_type\">collinear</parameter>  \
+    </WalkerSet> \
+    ";
+    const char *wlk_xml_block_noncol =
+    "<WalkerSet name=\"wset0\">  \
+      <parameter name=\"walker_type\">noncollinear</parameter>  \
+    </WalkerSet> \
+    ";
+    const char *wlk_xml_block = ( (type==CLOSED)?(wlk_xml_block_closed):
+                                  (type==COLLINEAR?wlk_xml_block_coll:wlk_xml_block_noncol) );
     Libxml2Document doc3;
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
 
-    const char *wfn_xml_block =
+    std::string wfn_xml =
 "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">./wfn.dat</parameter> \
+      <parameter name=\"filename\">"+UTEST_WFN+"</parameter> \
       <parameter name=\"cutoff\">1e-6</parameter> \
+      <parameter name=\"restart_file\">dummy.h5</parameter> \
   </Wavefunction> \
 ";
+    const char *wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
     REQUIRE(okay);
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
-    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,CLOSED,&ham,1e-6,nwalk);
+    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,type,&ham,1e-6,nwalk);
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
@@ -212,14 +228,13 @@ std::cout<<setprecision(12);
   }
 }
 
-TEST_CASE("propg_fac_distributed", "[propagator_factory]")
+void propg_fac_distributed(boost::mpi3::communicator & world, int ngrp)
 {
-  OHMMS::Controller->initialize(0, NULL);
-  auto world = boost::mpi3::environment::get_world_instance();
 
-  if(not file_exists("./afqmc.h5") ||
-     not file_exists("./wfn.dat") ) {
-    app_log()<<" Skipping propg_fac_shared. afqmc.h5 and ./wfn.dat files not found. \n";
+  if(not file_exists(UTEST_HAMIL) ||
+     not file_exists(UTEST_WFN) ) {
+    app_log()<<" Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
+    app_log()<<" Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
   } else {
 
     TimerManager.set_timer_threshold(timer_level_coarse);
@@ -229,18 +244,19 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
     afqmc::GlobalTaskGroup gTG(world);
 
     int NMO,NAEA,NAEB;
-    std::tie(NMO,NAEA,NAEB) = read_info_from_hdf("./afqmc.h5");
+    std::tie(NMO,NAEA,NAEB) = read_info_from_hdf(UTEST_HAMIL);
 
     std::map<std::string,AFQMCInfo> InfoMap;
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
     HamiltonianFactory HamFac(InfoMap);
-    const char *ham_xml_block =
-"<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
-    <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"filename\">./afqmc.h5</parameter> \
-    <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-  </Hamiltonian> \
+    std::string hamil_xml =
+"<Hamiltonian name=\"ham0\" info=\"info0\"> \
+<parameter name=\"filetype\">hdf5</parameter> \
+<parameter name=\"filename\">"+UTEST_HAMIL+"</parameter> \
+<parameter name=\"cutoff_decomposition\">1e-5</parameter> \
+</Hamiltonian> \
 ";
+    const char *ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
     REQUIRE(okay);
@@ -249,33 +265,50 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
-    auto TGprop = TaskGroup_(gTG,std::string("WfnTG"),gTG.getTotalNodes(),gTG.getTotalCores());
+    auto TGprop = TaskGroup_(gTG,std::string("WfnTG"),ngrp,gTG.getTotalCores());
+    //int nwalk = 4; // choose prime number to force non-trivial splits in shared routines
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
+    qmcplusplus::Timer Time;
 
-const char *wlk_xml_block =
-"<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">closed</parameter>  \
-</WalkerSet> \
-";
+    WALKER_TYPES type = afqmc::getWalkerType(UTEST_WFN);
+    const char *wlk_xml_block_closed =
+    "<WalkerSet name=\"wset0\">  \
+      <parameter name=\"walker_type\">closed</parameter>  \
+    </WalkerSet> \
+    ";
+    const char *wlk_xml_block_coll =
+    "<WalkerSet name=\"wset0\">  \
+      <parameter name=\"walker_type\">collinear</parameter>  \
+    </WalkerSet> \
+    ";
+    const char *wlk_xml_block_noncol =
+    "<WalkerSet name=\"wset0\">  \
+      <parameter name=\"walker_type\">noncollinear</parameter>  \
+    </WalkerSet> \
+    ";
+    const char *wlk_xml_block = ( (type==CLOSED)?(wlk_xml_block_closed):
+                                  (type==COLLINEAR?wlk_xml_block_coll:wlk_xml_block_noncol) );
     Libxml2Document doc3;
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
 
-    const char *wfn_xml_block =
+    std::string wfn_xml =
 "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">./wfn.dat</parameter> \
+      <parameter name=\"filename\">"+UTEST_WFN+"</parameter> \
       <parameter name=\"cutoff\">1e-6</parameter> \
+      <parameter name=\"restart_file\">dummy.h5</parameter> \
   </Wavefunction> \
 ";
+    const char *wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
     REQUIRE(okay);
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
-    Wavefunction& wfn = WfnFac.getWavefunction(TGprop,TG,wfn_name,CLOSED,&ham,1e-6,nwalk);
+    Wavefunction& wfn = WfnFac.getWavefunction(TGprop,TGprop,wfn_name,type,&ham,1e-6,nwalk);
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
@@ -283,7 +316,6 @@ const char *wlk_xml_block =
     REQUIRE(initial_guess.size(1)==NMO);
     REQUIRE(initial_guess.size(2)==NAEA);
     wset.resize(nwalk,initial_guess[0],initial_guess[0]);
-//                         initial_guess[1](XXX.extension(0),{0,NAEB}));
 
 const char *propg_xml_block0 =
 "<Propagator name=\"prop0\">  \
@@ -311,9 +343,10 @@ const char *propg_xml_block1 =
       }
       app_log()<<" Initial Energy: " <<(eav/ov).real() <<std::endl;
     }
-    double tot_time=0;
+    double tot_time=0,t1;
     RealType dt=0.01;
     RealType Eshift=std::abs(ComplexType(*wset[0].overlap()));
+    Time.restart();
     for(int i=0; i<4; i++) {
       prop.Propagate(2,wset,Eshift,dt,1);
       wfn.Energy(wset);
@@ -323,8 +356,9 @@ const char *propg_xml_block1 =
         ov += *it->weight();
       }
       tot_time+=2*dt;
-      app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
       wfn.Orthogonalize(wset,true);
+      t1=Time.elapsed();
+      app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<" Time: " <<t1 <<std::endl;
     }
     for(int i=0; i<4; i++) {
       prop.Propagate(4,wset,Eshift,dt,1);
@@ -335,8 +369,9 @@ const char *propg_xml_block1 =
         ov += *it->weight();
       }
       tot_time+=4*dt;
-      app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
       wfn.Orthogonalize(wset,true);
+      t1=Time.elapsed();
+      app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<" Time: " <<t1 <<std::endl;
     }
 
     for(int i=0; i<4; i++) {
@@ -348,8 +383,9 @@ const char *propg_xml_block1 =
         ov += *it->weight();
       }
       tot_time+=4*dt;
-      app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
       wfn.Orthogonalize(wset,true);
+      t1=Time.elapsed();
+      app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<" Time: " <<t1 <<std::endl;
     }
     for(int i=0; i<4; i++) {
       prop.Propagate(5,wset,Eshift,2*dt,2);
@@ -360,10 +396,12 @@ const char *propg_xml_block1 =
         ov += *it->weight();
       }
       tot_time+=5*2*dt;
-      app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<std::endl;
       wfn.Orthogonalize(wset,true);
+      t1=Time.elapsed();
+      app_log()<<" -- " <<i <<" " <<tot_time <<" " <<(eav/ov).real() <<" Time: " <<t1 <<std::endl;
     }
 
+    TimerManager.print(nullptr);
   }
 }
 
@@ -371,6 +409,7 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
+  if(not world.root()) infoLog.pause();
 
 #ifdef QMC_CUDA
   auto node = world.split_shared(world.rank());
@@ -381,7 +420,29 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
   using Alloc = shared_allocator<ComplexType>;
 #endif
 
-  propg_fac_shared<Alloc>(world);
+  propg_fac_shared(world);
+
+}
+
+TEST_CASE("propg_fac_distributed", "[propagator_factory]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+  if(not world.root()) infoLog.pause();
+
+#ifdef QMC_CUDA
+  auto node = world.split_shared(world.rank());
+  int ngrp(world.size());
+
+  qmc_cuda::CUDA_INIT(node);
+  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+#else
+  auto node = world.split_shared(world.rank());
+  int ngrp(world.size()/node.size());
+  using Alloc = shared_allocator<ComplexType>;
+#endif
+
+  propg_fac_distributed(world,ngrp);
 
 }
 

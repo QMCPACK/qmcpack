@@ -38,6 +38,8 @@ namespace afqmc
 template<class WlkSet>
 void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt) 
 {
+  using std::fill_n;
+  using std::copy_n;
   AFQMCTimers[setup_timer]->start();
   const ComplexType one(1.),zero(0.);
   auto walker_type = wset.getWalkerType();
@@ -46,8 +48,8 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   RealType sqrtdt = std::sqrt(dt);  
   long Gsize = wfn.size_of_G_for_vbias();
   long nCV = wfn.global_number_of_cholesky_vectors();
-  const int nnodes = TG.getNNodesPerTG();  
-  const int node_number = TG.getLocalNodeNumber();
+  const int nnodes = TG.getNGroupsPerTG();  
+  const int node_number = TG.getLocalGroupNumber();
   // if transposed_XXX_=true  --> XXX[nwalk][...], 
   // if transposed_XXX_=false --> XXX[...][nwalk]
   int vhs_nr = NMO*NMO, vhs_nc = nwalk*nsteps;
@@ -71,15 +73,15 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
 
   // 0. Allocate memory and set shared memory structures
   if(buffer.num_elements() < memory_needs ) {
-    buffer = std::move(CVector(iextensions<1u>{memory_needs}));
-    using std::fill_n;
+    buffer = std::move(sharedCVector(iextensions<1u>{memory_needs},aux_alloc_));
     fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
     new_shm_space=true;
   }  
 
   // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
   // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
-  auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+  //auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+  CVector_ref mem_pool(make_device_ptr(buffer.origin()),buffer.extensions());
 
   /* 
    * MAM: Careful here!!!
@@ -265,14 +267,14 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     if(TG.TG_local().root()) {                           
       if(free_projection) { 
         free_projection_walker_update(wset,dt,new_overlaps,
-                         MFfactor[ni],Eshift,hybrid_weight[ni],work);
+                         MFfactor[0][ni],Eshift,hybrid_weight[0][ni],work);
       } else if(hybrid) {
         hybrid_walker_update(wset,dt,apply_constrain,importance_sampling,
-                         Eshift,new_overlaps,MFfactor[ni],hybrid_weight[ni],work);
+                         Eshift,new_overlaps,MFfactor[0][ni],hybrid_weight[0][ni],work);
       } else {
         local_energy_walker_update(wset,dt,apply_constrain,Eshift,
                                    new_overlaps,new_energies,
-                                   MFfactor[ni],hybrid_weight[ni],work);
+                                   MFfactor[0][ni],hybrid_weight[0][ni],work);
       }
     }
     TG.local_barrier();

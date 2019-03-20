@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file PWOrbitalSet.h
  * @brief Definition of member functions of Plane-wave basis set
  */
@@ -24,33 +24,30 @@
 
 namespace qmcplusplus
 {
-
-class PWOrbitalSet: public SPOSet
+class PWOrbitalSet : public SPOSet
 {
-
 public:
-
-  typedef PWBasis                    BasisSet_t;
+  typedef PWBasis BasisSet_t;
 #if defined(ENABLE_SMARTPOINTER)
   typedef boost::shared_ptr<PWBasis> PWBasisPtr;
 #else
-  typedef PWBasis*                   PWBasisPtr;
+  typedef PWBasis* PWBasisPtr;
 #endif
 
   /** inherit the enum of BasisSet_t */
-  enum {PW_VALUE=   BasisSet_t::PW_VALUE,
-        PW_LAP=     BasisSet_t::PW_LAP,
-        PW_GRADX=   BasisSet_t::PW_GRADX,
-        PW_GRADY=   BasisSet_t::PW_GRADY,
-        PW_GRADZ=   BasisSet_t::PW_GRADZ,
-        PW_MAXINDEX=BasisSet_t::PW_MAXINDEX
-       };
+  enum
+  {
+    PW_VALUE    = BasisSet_t::PW_VALUE,
+    PW_LAP      = BasisSet_t::PW_LAP,
+    PW_GRADX    = BasisSet_t::PW_GRADX,
+    PW_GRADY    = BasisSet_t::PW_GRADY,
+    PW_GRADZ    = BasisSet_t::PW_GRADZ,
+    PW_MAXINDEX = BasisSet_t::PW_MAXINDEX
+  };
 
   /** default constructor
   */
-  PWOrbitalSet(): OwnBasisSet(false), BasisSetSize(0), IsCloned(false), myBasisSet(nullptr), C(nullptr)
-  {
-  }
+  PWOrbitalSet() : OwnBasisSet(false), BasisSetSize(0), IsCloned(false), myBasisSet(nullptr), C(nullptr) {}
 
   /** delete BasisSet only it owns this
    *
@@ -64,12 +61,12 @@ public:
    * @param nbands number of bands
    * @param cleaup if true, owns PWBasis. Will clean up.
    */
-  void resize(PWBasisPtr bset, int nbands, bool cleanup=false);
+  void resize(PWBasisPtr bset, int nbands, bool cleanup = false);
 
   /** Builder class takes care of the assertion
   */
-  void addVector(const std::vector<ComplexType>& coefs,int jorb);
-  void addVector(const std::vector<RealType>& coefs,int jorb);
+  void addVector(const std::vector<ComplexType>& coefs, int jorb);
+  void addVector(const std::vector<RealType>& coefs, int jorb);
 
   void resetParameters(const opt_variables_type& optVariables);
 
@@ -80,21 +77,21 @@ public:
   inline ValueType evaluate(int ib, const PosType& pos)
   {
     myBasisSet->evaluate(pos);
-    return BLAS::dot(BasisSetSize,(*C)[ib],myBasisSet->Zv.data());
+    return BLAS::dot(BasisSetSize, (*C)[ib], myBasisSet->Zv.data());
   }
 
-  void
-  evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
 
-  void
-  evaluate(const ParticleSet& P, int iat,
-           ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
-  void evaluate_notranspose(const ParticleSet& P, int first, int last,
-                            ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            ValueMatrix_t& d2logdet);
 
- void evaluate(const ParticleSet& P, int iat,
-                ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& gg_psi)
+  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& gg_psi)
   {
     APP_ABORT("Need specialization of evaluate(iat) for HessVector. \n");
   }
@@ -122,5 +119,5 @@ public:
   /** temporary array to perform gemm operation */
   Matrix<ValueType> Temp;
 };
-}
+} // namespace qmcplusplus
 #endif

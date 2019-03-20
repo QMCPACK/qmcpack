@@ -11,9 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file WaveFunctionPool.cpp
@@ -25,20 +22,17 @@
 
 namespace qmcplusplus
 {
-
-
-WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname)
-  : MPIObjectBase(c)
+WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname) : MPIObjectBase(c)
 {
-  ClassName="WaveFunctionPool";
-  myName=aname;
+  ClassName = "WaveFunctionPool";
+  myName    = aname;
 }
 
 WaveFunctionPool::~WaveFunctionPool()
 {
   DEBUG_MEMORY("WaveFunctionPool::~WaveFunctionPool");
   PoolType::iterator it(myPool.begin());
-  while(it != myPool.end())
+  while (it != myPool.end())
   {
     delete (*it).second;
     ++it;
@@ -49,63 +43,62 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
 {
   std::string id("psi0"), target("e"), role("extra");
   OhmmsAttributeSet pAttrib;
-  pAttrib.add(id,"id");
-  pAttrib.add(id,"name");
-  pAttrib.add(target,"target");
-  pAttrib.add(target,"ref");
-  pAttrib.add(role,"role");
+  pAttrib.add(id, "id");
+  pAttrib.add(id, "name");
+  pAttrib.add(target, "target");
+  pAttrib.add(target, "ref");
+  pAttrib.add(role, "role");
   pAttrib.put(cur);
-  ParticleSet *qp = ptclPool->getParticleSet(target);
- 
-  {//check ESHDF should be used to initialize both target and associated ionic system
-    xmlNodePtr tcur=cur->children;
-    while(tcur != NULL)
+  ParticleSet* qp = ptclPool->getParticleSet(target);
+
+  { //check ESHDF should be used to initialize both target and associated ionic system
+    xmlNodePtr tcur = cur->children;
+    while (tcur != NULL)
     { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
       std::string cname((const char*)tcur->name);
-      if(cname == WaveFunctionComponentBuilder::detset_tag || cname =="sposet_builder")
-      { 
-        qp=ptclPool->createESParticleSet(tcur,target,qp);
+      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder")
+      {
+        qp = ptclPool->createESParticleSet(tcur, target, qp);
       }
-      tcur=tcur->next;
+      tcur = tcur->next;
     }
   }
-  if(qp==0)
+  if (qp == 0)
   {
     APP_ABORT("WaveFunctionPool::put Target ParticleSet is not found.");
   }
-  std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(id));
-  WaveFunctionFactory* psiFactory=0;
-  bool isPrimary=true;
-  if(pit == myPool.end())
+  std::map<std::string, WaveFunctionFactory*>::iterator pit(myPool.find(id));
+  WaveFunctionFactory* psiFactory = 0;
+  bool isPrimary                  = true;
+  if (pit == myPool.end())
   {
-    psiFactory=new WaveFunctionFactory(qp,ptclPool->getPool(),myComm);
+    psiFactory = new WaveFunctionFactory(qp, ptclPool->getPool(), myComm);
     psiFactory->setName(id);
-    isPrimary = (myPool.empty() || role == "primary");
-    myPool[id]=psiFactory;
+    isPrimary  = (myPool.empty() || role == "primary");
+    myPool[id] = psiFactory;
     app_summary() << " Wavefunction setup: " << std::endl;
     app_summary() << " ------------------- " << std::endl;
     app_summary() << "  Name: " << psiFactory->getName() << std::endl;
-
   }
   else
   {
-    psiFactory=(*pit).second;
+    psiFactory = (*pit).second;
   }
   bool success = psiFactory->put(cur);
-  if(success && isPrimary)
+  if (success && isPrimary)
   {
-    primaryPsi=psiFactory->targetPsi;
+    primaryPsi = psiFactory->targetPsi;
   }
   return success;
 }
 
-void  WaveFunctionPool::addFactory(WaveFunctionFactory* psifac)
+void WaveFunctionPool::addFactory(WaveFunctionFactory* psifac)
 {
   PoolType::iterator oit(myPool.find(psifac->getName()));
-  if(oit == myPool.end())
+  if (oit == myPool.end())
   {
     app_log() << "  Adding " << psifac->getName() << " WaveFunctionFactory to the pool" << std::endl;
-    myPool[psifac->getName()]=psifac;
+    myPool[psifac->getName()] = psifac;
   }
   else
   {
@@ -115,10 +108,10 @@ void  WaveFunctionPool::addFactory(WaveFunctionFactory* psifac)
 
 xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
 {
-  if(myPool.empty())
+  if (myPool.empty())
     return NULL;
-  std::map<std::string,WaveFunctionFactory*>::iterator it(myPool.find(id));
-  if(it == myPool.end())
+  std::map<std::string, WaveFunctionFactory*>::iterator it(myPool.find(id));
+  if (it == myPool.end())
   {
     return (*myPool.begin()).second->myNode;
   }
@@ -127,4 +120,4 @@ xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
     return (*it).second->myNode;
   }
 }
-}
+} // namespace qmcplusplus
