@@ -37,7 +37,7 @@ template<typename T>
 THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
 {
 
-#if defined(AFQMC_SP)
+#if defined(AFQMC_MIXED_PRECISION)
   using SpT = typename to_single_precision<T>::value_type;
   using SpC = typename to_single_precision<ComplexType>::value_type;
 #else
@@ -120,13 +120,13 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
 
   // setup partition, in general matrices are partitioned along 'u'
   {
-    int node_number = TGwfn.getLocalNodeNumber();
-    int nnodes_prt_TG = TGwfn.getNNodesPerTG();
+    int node_number = TGwfn.getLocalGroupNumber();
+    int nnodes_prt_TG = TGwfn.getNGroupsPerTG();
     std::tie(rotnmu0,rotnmuN) = FairDivideBoundary(std::size_t(node_number),grotnmu,std::size_t(nnodes_prt_TG));
     rotnmu = rotnmuN-rotnmu0;
 
-    node_number = TGprop.getLocalNodeNumber();
-    nnodes_prt_TG = TGprop.getNNodesPerTG();
+    node_number = TGprop.getLocalGroupNumber();
+    nnodes_prt_TG = TGprop.getNGroupsPerTG();
     std::tie(nmu0,nmuN) = FairDivideBoundary(std::size_t(node_number),gnmu,std::size_t(nnodes_prt_TG));
     nmu = nmuN-nmu0;
   }
@@ -239,7 +239,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   TGwfn.node_barrier();
 
   // rotated 1 body hamiltonians
-  std::vector<boost::multi::array<SpT,1>> hij;
+  std::vector<boost::multi::array<T,1>> hij;
   hij.reserve(ndet);
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {

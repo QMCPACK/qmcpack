@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef LINEAR_FIT_H
@@ -26,9 +23,8 @@
 
 namespace qmcplusplus
 {
-
 template<typename T>
-inline void LinearFit (std::vector<T> &y, Matrix<T> &A, std::vector<T> &coefs)
+inline void LinearFit(std::vector<T>& y, Matrix<T>& A, std::vector<T>& coefs)
 {
   int N = A.size(0);
   int M = A.size(1);
@@ -39,23 +35,23 @@ inline void LinearFit (std::vector<T> &y, Matrix<T> &A, std::vector<T> &coefs)
     abort();
   }
   // Construct alpha matrix
-  Matrix<T> alpha(M,M);
+  Matrix<T> alpha(M, M);
   alpha = 0.0;
-  for (int j=0; j<M; j++)
-    for (int k=0; k<M; k++)
-      for (int i=0; i<N; i++)
-        alpha(k,j) += A(i,j) * A(i,k);
+  for (int j = 0; j < M; j++)
+    for (int k = 0; k < M; k++)
+      for (int i = 0; i < N; i++)
+        alpha(k, j) += A(i, j) * A(i, k);
   // Next, construct beta vector
-  std::vector<T> beta(M,0.0);
-  for (int k=0; k<M; k++)
-    for (int i=0; i<N; i++)
-      beta[k] += y[i]*A(i,k);
+  std::vector<T> beta(M, 0.0);
+  for (int k = 0; k < M; k++)
+    for (int i = 0; i < N; i++)
+      beta[k] += y[i] * A(i, k);
   invert_matrix(alpha, false);
-  coefs.resize (M, 0.0);
-  for (int i=0; i<M; i++)
-    for (int j=0; j<M; j++)
-      coefs[i] += alpha(i,j)*beta[j];
+  coefs.resize(M, 0.0);
+  for (int i = 0; i < M; i++)
+    for (int j = 0; j < M; j++)
+      coefs[i] += alpha(i, j) * beta[j];
 }
-}
+} // namespace qmcplusplus
 
 #endif

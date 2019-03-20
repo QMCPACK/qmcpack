@@ -45,7 +45,7 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   m_param.add(impsam,"importance_sampling","std::string");
   m_param.add(hyb,"hybrid","std::string");
   if(TG.TG_local().size() == 1)
-    m_param.add(nbatched_propagation,"batched","int");
+    m_param.add(nbatched_propagation,"nbatch","int");
   m_param.add(freep,"free_projection","std::string");
 
   //m_param.add(sz_pin_field_file,"sz_pinning_field_file","std::string");

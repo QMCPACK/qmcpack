@@ -163,9 +163,11 @@ namespace afqmc
                                 ma::sparse::is_root>;
 
 //#ifdef PsiT_IN_SHM
-  using PsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
-                                shared_allocator<ComplexType>,
+  template<typename T>
+  using PsiT_Matrix_t = ma::sparse::csr_matrix<T,int,int,
+                                shared_allocator<T>,
                                 ma::sparse::is_root>;
+  using PsiT_Matrix = PsiT_Matrix_t<ComplexType>;
 #ifdef QMC_CUDA
   using devPsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
                                 device_allocator<ComplexType>>; 
