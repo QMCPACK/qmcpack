@@ -17,6 +17,13 @@
 
 namespace qmcplusplus
 {
+/* assign one default accelerator to each MPI rank
+ *
+ * on a node with multiple accelerators, each MPI rank will be assgined a default one.
+ * If the number of MPI ranks is more than the number of accelerators,
+ * MPI ranks will distributed among the accelerators.
+ * This routine also initialze the device runtime library.
+ */
 void assignAccelerators(Communicate& NodeComm);
 }
 #endif

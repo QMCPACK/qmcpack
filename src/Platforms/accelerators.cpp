@@ -95,7 +95,7 @@ void assignAccelerators(Communicate& NodeComm)
 #endif
   if(num_accelerators>0)
   {
-    app_log() << "  Accelerators per node = " << num_accelerators << std::endl;
+    app_log() << "  Accelerators per node     = " << num_accelerators << std::endl;
     if(NodeComm.size()%num_accelerators!=0)
       app_warning() << "The number of MPI ranks on the node is not divisible by the number of accelerators. "
                     << "Imbalanced load may cause performance loss.\n";
