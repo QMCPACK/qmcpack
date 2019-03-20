@@ -26,6 +26,8 @@
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 #include "AFQMC/Numerics/ma_blas.hpp"
 
+#include "Utilities/Timer.h"
+
 namespace qmcplusplus
 {
 
@@ -47,8 +49,8 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   RealType sqrtdt = std::sqrt(dt);  
   long Gsize = wfn.size_of_G_for_vbias();
   long localnCV = wfn.local_number_of_cholesky_vectors();
-  const int nnodes = TG.getNNodesPerTG();  
-  const int node_number = TG.getLocalNodeNumber();
+  const int nnodes = TG.getNGroupsPerTG();  
+  const int node_number = TG.getLocalGroupNumber();
   // if transposed_XXX_=true  --> XXX[nwalk][...], 
   // if transposed_XXX_=false --> XXX[...][nwalk]
   int vhs_nr = NMO*NMO, vhs_nc = nwalk*nsteps;
@@ -71,16 +73,18 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   bool new_shm_space=false;  
 
   // 0. Allocate memory and set shared memory structures
+  using std::fill_n;
+  using std::copy_n;
   if(buffer.num_elements() < memory_needs ) {
     buffer = std::move(CVector(iextensions<1u>{memory_needs}));
-    using std::fill_n;
     fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
     new_shm_space=true;
   }  
 
   // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
   // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
-  auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+  //auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+  CVector_ref mem_pool(make_device_ptr(buffer.origin()),buffer.extensions());
 
   size_t displ=0;
   // Mixed Density Matrix for walkers at original configuration
@@ -152,7 +156,8 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     P1 = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1)); 
   }
 
-  std::fill_n(vsend.origin()+vak0,(vakN-vak0),zero);
+  fill_n(vsend.origin()+vak0,(vakN-vak0),zero);
+
   TG.local_barrier();
   AFQMCTimers[setup_timer]->stop();
 
@@ -170,7 +175,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     if(k>0) {
       MPI_Wait(&req_Grecv,&st);
       MPI_Wait(&req_Gsend,&st);     // need to wait for Gsend in order to overwrite Gwork  
-      std::copy_n(Grecv.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
+      copy_n(Grecv.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
       TG.local_barrier();
     }    
 
@@ -204,7 +209,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     if(k > 0) {
       MPI_Wait(&req_vrecv,&st);
       MPI_Wait(&req_vsend,&st);
-      std::copy_n(vrecv.origin()+vak0,vakN-vak0,vsend.origin()+vak0);
+      copy_n(vrecv.origin()+vak0,vakN-vak0,vsend.origin()+vak0);
     }
 
     // 6. add local contribution to vsend
@@ -284,14 +289,14 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     if(TG.TG_local().root()) {                           
       if(free_projection) { 
         free_projection_walker_update(wset,dt,new_overlaps,
-                         MFfactor[ni],Eshift,hybrid_weight[ni],work);
+                         MFfactor[n0+ni],Eshift,hybrid_weight[n0+ni],work);
       } else if(hybrid) {
         hybrid_walker_update(wset,dt,apply_constrain,importance_sampling,
-                         Eshift,new_overlaps,MFfactor[ni],hybrid_weight[ni],work);
+                         Eshift,new_overlaps,MFfactor[n0+ni],hybrid_weight[n0+ni],work);
       } else {
         local_energy_walker_update(wset,dt,apply_constrain,Eshift,
                                    new_overlaps,new_energies,
-                                   MFfactor[ni],hybrid_weight[ni],work);
+                                   MFfactor[n0+ni],hybrid_weight[n0+ni],work);
       }
     }
     TG.local_barrier();

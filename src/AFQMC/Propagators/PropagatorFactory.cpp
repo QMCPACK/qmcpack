@@ -94,7 +94,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
   CMatrix H1(wfn.getOneBodyPropagatorMatrix(TG,vMF_));
   // assemble H1(i,j) = h(i,j) + vn0(i,j) + sum_n vMF[n]*Spvn(i,j,n) 
 
-  if(TG.getNNodesPerTG() == 1) 
+  if(TG.getNGroupsPerTG() == 1) 
     return Propagator(AFQMCBasePropagator(AFinfo,cur,TG,wfn,std::move(H1),std::move(vMF),rng));
   else { 
     if(wfn.distribution_over_cholesky_vectors()) 

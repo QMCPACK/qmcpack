@@ -60,7 +60,7 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
             req_vsend(MPI_REQUEST_NULL),
             req_vrecv(MPI_REQUEST_NULL)
     {
-      assert(TG.getNNodesPerTG() > 1);
+      assert(TG.getNGroupsPerTG() > 1);
     }
 
     ~AFQMCDistributedPropagatorDistCV() {

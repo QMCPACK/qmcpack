@@ -16,9 +16,19 @@ int main(int argc, char **argv)
 ")
 
 
-try_compile(LIBSTDCXX_OKAY ${CMAKE_BINARY_DIR}
-            ${TEST_LIBSTDCXX_SOURCE}
-            OUTPUT_VARIABLE COMPILE_OUTPUT)
+if (${CMAKE_VERSION} VERSION_LESS 3.8.0)
+  try_compile(LIBSTDCXX_OKAY ${CMAKE_BINARY_DIR}
+              ${TEST_LIBSTDCXX_SOURCE}
+              COMPILE_DEFINITIONS ${CMAKE_CXX14_STANDARD_COMPILE_OPTION}
+              OUTPUT_VARIABLE COMPILE_OUTPUT)
+else()
+  try_compile(LIBSTDCXX_OKAY ${CMAKE_BINARY_DIR}
+              ${TEST_LIBSTDCXX_SOURCE}
+              CXX_STANDARD 14
+              CXX_STANDARD_REQUIRED ON
+              OUTPUT_VARIABLE COMPILE_OUTPUT)
+endif()
+
 
 if (NOT LIBSTDCXX_OKAY)
   set(COMPILE_FAIL_OUTPUT libstdc++_compile_fail.txt)

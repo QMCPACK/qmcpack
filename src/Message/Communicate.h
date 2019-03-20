@@ -51,6 +51,7 @@ struct CommunicatorTraits
   typedef int  status;
   typedef int  request;
   typedef int  intra_comm_type;
+  static const int MPI_COMM_NULL = 0;
   static const int MPI_REQUEST_NULL = 1;
 };
 
@@ -101,12 +102,18 @@ public:
    * Call proper finalization of Communication library
    */
   virtual ~Communicate();
+
+  ///disable constructor
+  Communicate(const Communicate&) = delete;
+
   // Only for unit tests
   void initialize(int argc, char **argv);
 
 #ifdef HAVE_MPI
   void initialize(const mpi3::environment &env);
 #endif
+  /// initialize this as a node/shared-memory communicator
+  void initializeAsNodeComm(const Communicate& parent);
   void finalize();
   void abort();
   void abort(const char* msg);
@@ -248,8 +255,27 @@ public:
 
 protected:
 
-  /// Raw communicator
+  /** Raw communicator
+   *
+   *  Currently it is only owned by Communicate which manages its creation and destruction
+   *  After switching to mpi3::communicator, myMPI is only a reference to the raw communicator owned by mpi3::communicator
+   */
   mpi_comm_type myMPI;
+#ifdef HAVE_MPI
+  /* helper class to destroy myMPI after the destruction of myComm
+   * it must be declared before myComm and the destruction automatically happens after myComm
+   */
+  class MPI_Comm_destructor
+  {
+    MPI_Comm& comm;
+  public:
+    MPI_Comm_destructor(MPI_Comm& myMPI) : comm(myMPI) {}
+    ~MPI_Comm_destructor()
+    {
+      if(comm!=MPI_COMM_NULL) MPI_Comm_free(&comm);
+    }
+  } myMPI_destroy_helper;
+#endif
   /// OOMPI communicator
   intra_comm_type myComm;
   /// Communicator name
@@ -267,8 +293,8 @@ public:
   /// Group Lead Communicator
   Communicate *GroupLeaderComm;
 
-  /// mpi3 communicator wrapper
 #ifdef HAVE_MPI
+  /// mpi3 communicator wrapper
   mpi3::communicator comm;
 #endif
 };
