@@ -36,7 +36,7 @@ CMAKE_FLAGS="-DCMAKE_C_COMPILER=mpicc \
              -DCMAKE_CXX_COMPILER=mpicxx \
              -DCMAKE_C_FLAGS=-xCOMMON-AVX512 \
              -DCMAKE_CXX_FLAGS=-xCOMMON-AVX512 \
-             -DHAVE_MKL=1"
+             -DENABLE_MKL=1"
 
 # Configure and build cpu real AoS
 echo ""
