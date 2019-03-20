@@ -461,7 +461,8 @@ inline void multiple_reader_global_count(hdf_archive& dump, matrix_partition con
       } 
       for(int ik=0, ikend=block_size[ib]; ik<ikend; ik++) {
         int ip = split.map(ivec[2*ik],ivec[2*ik+1], vvec[ik]);
-        assert( ip < counts.size() );
+        if( ip > 0 )
+          assert( ip < counts.size() );
         if( ip >= 0 ) counts[ip]++;
       }
     }
