@@ -1059,8 +1059,10 @@ namespace afqmc
     TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
   }
 
-  // Computes back propagated 1RDM.
-  // G is computed locally on each core and needs to be reduced.
+  // Computes walker averaged density matrix:
+  //   G(j,l) = \sum_iw wfac[iw] * G(iw,jl) / \sum_iw wfac[iw],
+  // where wfac is the walker's weight potentially multiplied by various factors if doing
+  // back propagation or free projection.
   template<class WlkSet, class MatG, class CVec>
   void NOMSD::WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec &denom, bool path_restoration, bool free_projection, bool back_propagated)
   {
@@ -1149,7 +1151,6 @@ namespace afqmc
         ma::axpy(ov_denom, G21D_, G1D);
       }
     } else {
-      //std::cout << "Back propagated: " << back_propagated << std::endl;
       auto GAdims = dm_dims(not compact,Alpha);
       auto GBdims = dm_dims(not compact,Beta);
       CMatrix_ref GA2D_(localGbuff.origin(),
