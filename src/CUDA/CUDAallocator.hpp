@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -10,6 +10,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /** @file CUDAallocator.hpp
+ * this file provides three C++ memory allocators using CUDA specific memory allocation functions.
+ *
+ * CUDAManagedAllocator allocates CUDA unified memory
+ * CUDAAllocator allocates CUDA device memory
+ * CUDAHostAllocator allocates CUDA host pinned memory
  */
 #ifndef QMCPLUSPLUS_CUDA_ALLOCATOR_H
 #define QMCPLUSPLUS_CUDA_ALLOCATOR_H
@@ -21,6 +26,7 @@
 
 namespace qmcplusplus
 {
+  /// allocator for CUDA unified memory
   template<typename T>
   struct CUDAManagedAllocator
   {
@@ -52,6 +58,7 @@ namespace qmcplusplus
   template <class T1, class T2>
   bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&) { return false; }
 
+  /// allocator for CUDA device memory
   template<typename T>
   struct CUDAAllocator
   {
@@ -82,6 +89,7 @@ namespace qmcplusplus
   template <class T1, class T2>
   bool operator!=(const CUDAAllocator<T1>&, const CUDAAllocator<T2>&) { return false; }
 
+  /// allocator for CUDA host pinned memory
   template<typename T>
   struct CUDAHostAllocator
   {
