@@ -1062,7 +1062,7 @@ namespace afqmc
   // Computes back propagated 1RDM.
   // G is computed locally on each core and needs to be reduced.
   template<class WlkSet, class MatG, class CVec>
-  void NOMSD::BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVec &denom, bool path_restoration, bool free_projection)
+  void NOMSD::WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec &denom, bool path_restoration, bool free_projection, bool back_propagated)
   {
     using std::fill_n;
     using std::copy_n;
@@ -1117,10 +1117,17 @@ namespace afqmc
         for(int id=0; id<ndet; id++) {
           // We construct PsiBP^{\dagger}
           CMatrix_ref PsiBP = CMatrix_ref(T3ForBP.origin(), {NAEA,NMO});
-          ComplexType detR = BackPropagateOrbMat(OrbMats[id], wset[iw], PsiBP);
+          ComplexType detR = ComplexType(1.0,0.0);
+          if (back_propagated) {
+            detR = BackPropagateOrbMat(OrbMats[id], wset[iw], PsiBP);
+            SDetOp.MixedDensityMatrix(PsiBP,wset[iw].SlaterMatrixN(Alpha),
+                                      G2D_,to_address(ov_),compact);
+          } else {
+            // Mixed density matrix.
+            SDetOp.MixedDensityMatrix(OrbMats[id],wset[iw].SlaterMatrixN(Alpha),
+                                      G2D_,to_address(ov_),compact);
+          }
           // Construct RDM with Slater Matrix from beginning of path.
-          SDetOp.MixedDensityMatrix(PsiBP,wset[iw].SlaterMatrixN(Alpha),
-                                                     G2D_,to_address(ov_),compact);
           ComplexType ov(*ov_);
           if(walker_type==CLOSED) {
             ov *= ov;
@@ -1142,6 +1149,7 @@ namespace afqmc
         ma::axpy(ov_denom, G21D_, G1D);
       }
     } else {
+      //std::cout << "Back propagated: " << back_propagated << std::endl;
       auto GAdims = dm_dims(not compact,Alpha);
       auto GBdims = dm_dims(not compact,Beta);
       CMatrix_ref GA2D_(localGbuff.origin(),
@@ -1176,18 +1184,25 @@ namespace afqmc
         ComplexType wfac = (*wset[iw].weight()) * factor;
         ComplexType overlap = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
-          CMatrix_ref PsiBPAlpha = CMatrix_ref(T3ForBP.origin(), {NAEA,NMO});
-          ComplexType detR = BackPropagateOrbMat(OrbMats[2*id], wset[iw], PsiBPAlpha);
-          SDetOp.MixedDensityMatrix(PsiBPAlpha,wset[iw].SlaterMatrixN(Alpha),
-                                                      GA2D_,to_address(ov_),compact);
-         
+          if (back_propagated) {
+            CMatrix_ref PsiBPAlpha = CMatrix_ref(T3ForBP.origin(), {NAEA,NMO});
+            ComplexType detR = BackPropagateOrbMat(OrbMats[2*id], wset[iw], PsiBPAlpha);
+            SDetOp.MixedDensityMatrix(PsiBPAlpha,wset[iw].SlaterMatrixN(Alpha),
+                                      GA2D_,to_address(ov_),compact);
+            CMatrix_ref PsiBPBeta = CMatrix_ref(T3ForBP.origin(), {NAEB,NMO});
+            detR *= BackPropagateOrbMat(OrbMats[2*id+1], wset[iw], PsiBPBeta);
+            SDetOp.MixedDensityMatrix(PsiBPBeta,wset[iw].SlaterMatrixN(Beta),
+                                      GB2D_,to_address(ov_),compact);
+          } else {
+            // Mixed density matrix.
+            SDetOp.MixedDensityMatrix(OrbMats[2*id],wset[iw].SlaterMatrix(Alpha),
+                                                        GA2D_,to_address(ov_),compact);
+
+            SDetOp.MixedDensityMatrix(OrbMats[2*id+1],wset[iw].SlaterMatrix(Beta),
+                                             GB2D_,to_address(ov_),compact);
+          }
           ComplexType ov(*ov_);
-          CMatrix_ref PsiBPBeta = CMatrix_ref(T3ForBP.origin(), {NAEB,NMO});
-          detR *= BackPropagateOrbMat(OrbMats[2*id+1], wset[iw], PsiBPBeta);
-          SDetOp.MixedDensityMatrix(PsiBPBeta,wset[iw].SlaterMatrix(Beta),
-                                           GB2D_,to_address(ov_),compact);
-          ComplexType ov2(*ov_);
-          ov *= ov2*std::conj(ci[id]);
+          ov *= ov*std::conj(ci[id]);
           overlap += ov;
           ma::axpy(ov,GA1D_,GA21D_);
           ma::axpy(ov,GB1D_,GB21D_);
@@ -1207,10 +1222,6 @@ namespace afqmc
     // Average over walker's
     TG.Global().all_reduce_in_place_n(to_address(denom.origin()),1,std::plus<>());
     TG.Global().all_reduce_in_place_n(to_address(G.origin()),Gsize,std::plus<>());
-    auto denominator= ComplexType(1.0,0.0)/denom[0];
-    CVector_ref GFull(make_device_ptr(G.origin()), iextensions<1u>{Gsize});
-    if(!free_projection) 
-      ma::scal(denominator,GFull);
     TG.local_barrier();
   }
 
@@ -1569,7 +1580,7 @@ namespace afqmc
       }
       T1 = PsiBP;
     }
-    return detR/1e6;
+    return detR;
   }
 
 }

@@ -9,7 +9,7 @@
 #include "AFQMC/Estimators/EstimatorBase.h"
 #include "AFQMC/Estimators/EnergyEstimator.h"
 #include "AFQMC/Estimators/BasicEstimator.h"
-//#include "AFQMC/Estimators/OneRdmEstimator.h"
+#include "AFQMC/Estimators/MixedRDMEstimator.h"
 #include "AFQMC/Estimators/BackPropagatedEstimator.h"
 //#include "AFQMC/Estimators/WalkerDMEstimator.h"
 
@@ -125,8 +125,8 @@ class EstimatorHandler: public AFQMCInfo
             }
           }
 
-          if (name == "reduced_density_matrix") {
-//            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<OneRdmEstimator>(TGgen.getTG(1),info,title,cur,*wfn)));
+          if (name == "mixed_one_rdm") {
+            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<MixedRDMEstimator>(TGgen.getTG(1),info,title,cur,walker_type,*wfn,impsamp)));
           } else if (name == "back_propagation") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,cur,walker_type,*wfn,impsamp)));
           } else if (name == "energy") {
