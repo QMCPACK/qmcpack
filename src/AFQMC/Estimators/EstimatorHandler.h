@@ -44,6 +44,7 @@ class EstimatorHandler: public AFQMCInfo
         bool defaultEnergyEstim=false,
         bool impsamp=true):
             AFQMCInfo(info),
+            hdf_output(false),
             project_title(title)
   {
     estimators.reserve(10);
@@ -127,8 +128,10 @@ class EstimatorHandler: public AFQMCInfo
 
           if (name == "mixed_one_rdm") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<MixedRDMEstimator>(TGgen.getTG(1),info,title,cur,walker_type,*wfn,impsamp)));
+            hdf_output = true;
           } else if (name == "back_propagation") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,cur,walker_type,*wfn,impsamp)));
+            hdf_output = true;
           } else if (name == "energy") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<EnergyEstimator>(TGgen.getTG(1),info,cur,*wfn,impsamp)));
           } else {
@@ -143,10 +146,13 @@ class EstimatorHandler: public AFQMCInfo
     if(TGgen.getTG(1).getGlobalRank() == 0) {
       //out.open(filename.c_str(),std::ios_base::app | std::ios_base::out);
       std::string filename = project_title+".scalar.dat";
-      hdf_file = project_title+".scalar.h5";
-      if(!dump.create(hdf_file)) {
-        app_log()<<"Problems opening estimator hdf5 output file: " << hdf_file <<std::endl;
-        APP_ABORT("Problems opening estimator hdf5 output file.\n");
+      if(hdf_output) {
+        hdf_file = project_title+".scalar.h5";
+        if(!dump.create(hdf_file)) {
+          app_log()<<"Problems opening estimator hdf5 output file: " << hdf_file <<std::endl;
+          APP_ABORT("Problems opening estimator hdf5 output file.\n");
+        }
+        write_hdf_metadata(walker_type);
       }
       out.open(filename.c_str());
       if(out.fail()) {
@@ -179,13 +185,15 @@ class EstimatorHandler: public AFQMCInfo
   void print(int block, double time, double Es, WalkerSet& wlks)
   {
     out<<block <<" " <<time <<" ";
-    dump.open(hdf_file);
+    if(hdf_output)
+      dump.open(hdf_file);
     for(std::vector<EstimPtr>::iterator it=estimators.begin(); it!=estimators.end(); it++)
       (*it)->print(out,dump,wlks);
     out<<std::setprecision(12) <<Es <<"  " <<freemem() <<" ";
     estimators[0]->print_timers(out);
     out<<std::endl;
-    dump.close();
+    if(hdf_output)
+      dump.close();
     if( (block+1)%10==0 ) out.flush();
   }
 
@@ -203,6 +211,18 @@ class EstimatorHandler: public AFQMCInfo
       (*it)->accumulate_block(wlks);
   }
 
+  void write_hdf_metadata(WALKER_TYPES wlk)
+  {
+    dump.open(hdf_file);
+    dump.push("Metadata");
+    dump.write(NMO, "NMO");
+    dump.write(NAEA, "NAEA");
+    dump.write(NAEB, "NAEB");
+    dump.write(wlk, "WALKER_TYPE");
+    dump.pop();
+    dump.close();
+  }
+
   private:
 
   std::string project_title;
@@ -213,6 +233,7 @@ class EstimatorHandler: public AFQMCInfo
   std::ofstream out;
   hdf_archive dump;
   std::string hdf_file;
+  bool hdf_output;
 
 };
 }
