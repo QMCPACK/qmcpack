@@ -5501,236 +5501,193 @@ def generate_qmcpack_input(selector,*args,**kwargs):
 
 
 
+gen_basic_input_defaults = obj(
+    id             = 'qmc',            
+    series         = 0,                
+    purpose        = '',               
+    seed           = None,             
+    bconds         = None,             
+    truncate       = False,            
+    buffer         = None,             
+    lr_dim_cutoff  = 15,               
+    remove_cell    = False,            
+    randomsrc      = False,            
+    meshfactor     = 1.0,              
+    orbspline      = None,             
+    precision      = 'float',          
+    twistnum       = None,             
+    twist          = None,             
+    spin_polarized = None,             
+    partition      = None,             
+    partition_mf   = None,             
+    hybridrep      = None,             
+    hybrid_rcut    = None,             
+    hybrid_lmax    = None,             
+    orbitals_h5    = 'MISSING.h5',     
+    excitation     = None,             
+    system         = 'missing',        
+    pseudos        = None,             
+    jastrows       = 'generateJ12',    
+    interactions   = 'all',            
+    corrections    = 'default',        
+    observables    = None,             
+    estimators     = None,             
+    traces         = None,             
+    calculations   = None,             
+    det_format     = 'new',            
+    J1             = False,            
+    J2             = False,            
+    J3             = False,            
+    J1_size        = None,             
+    J1_rcut        = None,             
+    J1_dr          = 0.5,              
+    J2_size        = None,             
+    J2_rcut        = None,             
+    J2_dr          = 0.5,              
+    J2_init        = 'zero',           
+    J3_isize       = 3,                
+    J3_esize       = 3,                
+    J3_rcut        = 5.0,              
+    J1_rcut_open   = 5.0,              
+    J2_rcut_open   = 10.0,             
+    )
 
-def generate_basic_input(id             = 'qmc',
-                         series         = 0,
-                         purpose        = '',
-                         seed           = None,
-                         bconds         = None,
-                         truncate       = False,
-                         buffer         = None,
-                         lr_dim_cutoff  = 15,
-                         remove_cell    = False,
-                         randomsrc      = False,
-                         meshfactor     = 1.0,
-                         orbspline      = None,
-                         precision      = 'float',
-                         twistnum       = None, 
-                         twist          = None,
-                         spin_polarized = None,
-                         partition      = None,
-                         partition_mf   = None,
-                         hybridrep      = None,
-                         hybrid_rcut    = None,
-                         hybrid_lmax    = None,
-                         orbitals_h5    = 'MISSING.h5',
-                         excitation     = None,
-                         system         = 'missing',
-                         pseudos        = None,
-                         jastrows       = 'generateJ12',
-                         interactions   = 'all',
-                         corrections    = 'default',
-                         observables    = None,
-                         estimators     = None,
-                         traces         = None,
-                         calculations   = None,
-                         det_format     = 'new',
-                         J1             = False,
-                         J2             = False,
-                         J3             = False,
-                         J1_size        = None,
-                         J1_rcut        = None,
-                         J1_dr          = 0.5,
-                         J2_size        = None,
-                         J2_rcut        = None,
-                         J2_dr          = 0.5,
-                         J2_init        = 'zero',
-                         J3_isize       = 3,
-                         J3_esize       = 3,
-                         J3_rcut        = 5.0,
-                         J1_rcut_open   = 5.0,
-                         J2_rcut_open   = 10.0,
-                         **invalid_kwargs
-                         ):
-
+def generate_basic_input(**kwargs):
+    # capture inputs
+    kw = obj(kwargs)
+    # apply defaults
+    kw.set_optional(**gen_basic_input_defaults)
+    # screen for invalid keywords
+    valid = set(gen_basic_input_defaults.keys())
+    invalid_kwargs = set(kw.keys())-valid
     if len(invalid_kwargs)>0:
-        valid = '''
-            id             
-            series         
-            purpose        
-            seed           
-            bconds         
-            truncate       
-            buffer         
-            lr_dim_cutoff  
-            remove_cell    
-            randomsrc      
-            meshfactor     
-            orbspline      
-            precision      
-            twistnum       
-            twist          
-            spin_polarized 
-            partition      
-            partition_mf   
-            hybridrep      
-            hybrid_rcut    
-            hybrid_lmax    
-            orbitals_h5    
-            excitation     
-            system         
-            pseudos        
-            jastrows       
-            interactions   
-            corrections    
-            observables    
-            estimators     
-            traces         
-            calculations   
-            det_format     
-            J1             
-            J2             
-            J3             
-            J1_size        
-            J1_rcut    
-            J1_dr
-            J2_size        
-            J2_rcut
-            J2_dr
-            J2_init        
-            J3_isize       
-            J3_esize       
-            J3_rcut        
-            J1_rcut_open   
-            J2_rcut_open
-            '''.split()
-        QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs.keys()),sorted(valid)),'generate_qmcpack_input')
+        QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs),sorted(valid)),'generate_qmcpack_input')
     #end if
 
-    if system=='missing':
-        QmcpackInput.class_error('generate_basic_input argument system is missing\n  if you really do not want particlesets to be generated, set system to None')
+    if kw.system=='missing':
+        QmcpackInput.class_error('generate_basic_input argument system is missing\nif you really do not want particlesets to be generated, set system to None')
     #end if
-    if bconds is None:
-        if system is not None:
-            s = system.structure
-            bconds = s.bconds
-            if len(bconds)==0 or not s.has_axes():
-                bconds = 'nnn'
+    if kw.bconds is None:
+        if kw.system is not None:
+            s = kw.system.structure
+            kw.bconds = s.bconds
+            if len(kw.bconds)==0 or not s.has_axes():
+                kw.bconds = 'nnn'
             #end if
         else:
-            bconds = 'ppp'
+            kw.bconds = 'ppp'
         #end if
     #end if
-    if corrections=='default' and tuple(bconds)==tuple('ppp'):
-        corrections = ['mpc','chiesa']
-    elif isinstance(corrections,(list,tuple)):
+    if kw.corrections=='default' and tuple(kw.bconds)==tuple('ppp'):
+        kw.corrections = ['mpc','chiesa']
+    elif isinstance(kw.corrections,(list,tuple)):
         None
     else:
-        corrections = []
+        kw.corrections = []
     #end if
-    if observables is None:
+    if kw.observables is None:
         #observables = ['localenergy']
-        observables = []
+        kw.observables = []
     #end if
-    if estimators is None:
-        estimators = []
+    if kw.estimators is None:
+        kw.estimators = []
     #end if
-    estimators = estimators + observables + corrections
-    if calculations is None:
-        calculations = []
+    kw.estimators = kw.estimators + kw.observables + kw.corrections
+    if kw.calculations is None:
+        kw.calculations = []
     #end if
-    if spin_polarized is None:
-        spin_polarized = system.net_spin>0
+    if kw.spin_polarized is None:
+        kw.spin_polarized = kw.system.net_spin>0
     #end if
-    if partition!=None:
-        det_format = 'new'
+    if kw.partition is not None:
+        kw.det_format = 'new'
     #end if
-    if hybrid_rcut is not None or hybrid_lmax is not None:
-        hybridrep = True
+    if kw.hybrid_rcut is not None or kw.hybrid_lmax is not None:
+        kw.hybridrep = True
     #end if
 
     metadata = QmcpackInput.default_metadata.copy()
 
     proj = project(
-        id          = id,
-        series      = series,
-        application = application()
+        id          = kw.id,
+        series      = kw.series,
+        application = application(),
         )
 
     simcell = generate_simulationcell(
-        bconds        = bconds,
-        lr_dim_cutoff = lr_dim_cutoff,
-        system        = system
+        bconds        = kw.bconds,
+        lr_dim_cutoff = kw.lr_dim_cutoff,
+        system        = kw.system,
         )
 
-    if system!=None:
-        system.structure.set_bconds(bconds)
+    if kw.system is not None:
+        kw.system.structure.set_bconds(kw.bconds)
         particlesets = generate_particlesets(
-            system      = system,
-            randomsrc   = randomsrc or tuple(bconds)!=('p','p','p'),
-            hybrid_rcut = hybrid_rcut,
-            hybrid_lmax = hybrid_lmax,
+            system      = kw.system,
+            randomsrc   = kw.randomsrc or tuple(kw.bconds)!=('p','p','p'),
+            hybrid_rcut = kw.hybrid_rcut,
+            hybrid_lmax = kw.hybrid_lmax,
             )
     #end if
 
 
-    if det_format=='new':
-        if excitation is not None:
+    if kw.det_format=='new':
+        if kw.excitation is not None:
             QmcpackInput.class_error('user provided "excitation" input argument with new style determinant format\nplease add det_format="old" and try again')
         #end if
-        if system!=None and isinstance(system.structure,Jellium):
+        if kw.system is not None and isinstance(kw.system.structure,Jellium):
             ssb = generate_sposet_builder(
                 type           = 'heg',
-                twist          = twist,
-                spin_polarized = spin_polarized,
-                system         = system
+                twist          = kw.twist,
+                spin_polarized = kw.spin_polarized,
+                system         = kw.system,
                 )
         else:
-            if orbspline is None:
-                orbspline = 'bspline'
+            if kw.orbspline is None:
+                kw.orbspline = 'bspline'
             #end if
             ssb = generate_sposet_builder(
-                type           = orbspline,
-                twist          = twist,
-                twistnum       = twistnum,
-                meshfactor     = meshfactor,
-                precision      = precision,
-                truncate       = truncate,
-                buffer         = buffer,
-                hybridrep      = hybridrep,
-                href           = orbitals_h5,
-                spin_polarized = spin_polarized,
-                system         = system
+                type           = kw.orbspline,
+                twist          = kw.twist,
+                twistnum       = kw.twistnum,
+                meshfactor     = kw.meshfactor,
+                precision      = kw.precision,
+                truncate       = kw.truncate,
+                buffer         = kw.buffer,
+                hybridrep      = kw.hybridrep,
+                href           = kw.orbitals_h5,
+                spin_polarized = kw.spin_polarized,
+                system         = kw.system,
                 )
         #end if
-        if partition is None:
+        if kw.partition is None:
             spobuilders = [ssb]
         else:
             spobuilders = partition_sposets(
                 sposet_builder = ssb,
-                partition      = partition,
-                partition_meshfactors = partition_mf,
+                partition      = kw.partition,
+                partition_meshfactors = kw.partition_mf,
                 )
         #end if
 
         dset = generate_determinantset(
-            spin_polarized = spin_polarized,
-            system         = system
+            spin_polarized = kw.spin_polarized,
+            system         = kw.system,
             )
     elif det_format=='old':
         spobuilders = None
-        if orbspline is None:
-            orbspline = 'einspline'
+        if kw.orbspline is None:
+            kw.orbspline = 'einspline'
         #end if
         dset = generate_determinantset_old(
-            type           = orbspline,
-            twistnum       = twistnum,
-            meshfactor     = meshfactor,
-            precision      = precision,
-            href           = orbitals_h5,
-            spin_polarized = spin_polarized,
-            excitation     = excitation,
-            system         = system,
+            type           = kw.orbspline,
+            twistnum       = kw.twistnum,
+            meshfactor     = kw.meshfactor,
+            precision      = kw.precision,
+            href           = kw.orbitals_h5,
+            spin_polarized = kw.spin_polarized,
+            excitation     = kw.excitation,
+            system         = kw.system,
             )
     else:
         QmcpackInput.class_error('generate_basic_input argument det_format is invalid\n  received: {0}\n  valid options are: new,old'.format(det_format))
@@ -5740,68 +5697,68 @@ def generate_basic_input(id             = 'qmc',
     wfn = wavefunction(        
         name           = 'psi0',
         target         = 'e',
-        determinantset = dset
+        determinantset = dset,
         )
 
-    if J1 or J2 or J3:
-        jastrows = generate_jastrows_alt(
-            J1           = J1          ,
-            J2           = J2          ,
-            J3           = J3          ,
-            J1_size      = J1_size     ,
-            J1_rcut      = J1_rcut     ,
-            J1_dr        = J1_dr       ,
-            J2_size      = J2_size     ,
-            J2_rcut      = J2_rcut     ,
-            J2_dr        = J2_dr       ,
-            J2_init      = J2_init     ,
-            J3_isize     = J3_isize    ,
-            J3_esize     = J3_esize    ,
-            J3_rcut      = J3_rcut     ,
-            J1_rcut_open = J1_rcut_open,
-            J2_rcut_open = J2_rcut_open,
-            system       = system      ,
+    if kw.J1 or kw.J2 or kw.J3:
+        kw.jastrows = generate_jastrows_alt(
+            J1           = kw.J1          ,
+            J2           = kw.J2          ,
+            J3           = kw.J3          ,
+            J1_size      = kw.J1_size     ,
+            J1_rcut      = kw.J1_rcut     ,
+            J1_dr        = kw.J1_dr       ,
+            J2_size      = kw.J2_size     ,
+            J2_rcut      = kw.J2_rcut     ,
+            J2_dr        = kw.J2_dr       ,
+            J2_init      = kw.J2_init     ,
+            J3_isize     = kw.J3_isize    ,
+            J3_esize     = kw.J3_esize    ,
+            J3_rcut      = kw.J3_rcut     ,
+            J1_rcut_open = kw.J1_rcut_open,
+            J2_rcut_open = kw.J2_rcut_open,
+            system       = kw.system      ,
             )
     #end if
-    if jastrows is not None:
-        wfn.jastrows = generate_jastrows(jastrows,system,check_ions=True)
+    if kw.jastrows is not None:
+        wfn.jastrows = generate_jastrows(kw.jastrows,kw.system,check_ions=True)
     #end if
 
     hmltn = generate_hamiltonian(
-        system       = system,
-        pseudos      = pseudos,
-        interactions = interactions,
-        estimators   = estimators
+        system       = kw.system,
+        pseudos      = kw.pseudos,
+        interactions = kw.interactions,
+        estimators   = kw.estimators,
         )
 
-    if spobuilders!=None:
+    if spobuilders is not None:
         wfn.sposet_builders = make_collection(spobuilders)
     #end if
 
     qmcsys = qmcsystem(
         simulationcell  = simcell,
         wavefunction    = wfn,
-        hamiltonian     = hmltn
+        hamiltonian     = hmltn,
         )
 
-    if system!=None:
+    if kw.system is not None:
         qmcsys.particlesets = particlesets
     #end if
 
     sim = simulation(
         project   = proj,
-        qmcsystem = qmcsys
+        qmcsystem = qmcsys,
         )
 
-    if seed!=None:
-        sim.random = random(seed=seed)
+    if kw.seed is not None:
+        sim.random = random(seed=kw.seed)
     #end if
 
-    if traces!=None:
-        sim.traces = traces
+    if kw.traces is not None:
+        sim.traces = kw.traces
     #end if
 
-    for calculation in calculations:
+    for calculation in kw.calculations:
         if isinstance(calculation,loop):
             calc = calculation.qmc
         else:
@@ -5823,13 +5780,13 @@ def generate_basic_input(id             = 'qmc',
             calc.estimators = estimators
         #end if
     #end for
-    sim.calculations = make_collection(calculations).copy()
+    sim.calculations = make_collection(kw.calculations).copy()
 
     qi = QmcpackInput(metadata,sim)
 
     qi.incorporate_defaults(elements=False,overwrite=False,propagate=True)
 
-    if remove_cell:
+    if kw.remove_cell:
         qi.remove_physical_system()
     #end if
 
