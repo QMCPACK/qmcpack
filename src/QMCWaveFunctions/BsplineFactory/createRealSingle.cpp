@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 #include <Utilities/ProgressReportEngine.h>
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
@@ -23,7 +24,7 @@
 
 namespace qmcplusplus
 {
-BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep)
+BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep, const std::string& useGPU)
 {
   BsplineReaderBase* aReader = nullptr;
 
