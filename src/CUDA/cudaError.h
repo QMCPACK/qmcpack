@@ -31,8 +31,7 @@ inline void cudaAssert(cudaError_t code, const std::string& cause, const char *f
         << ", file " << filename << ", line " << line << std::endl
         << cause << std::endl;
     std::cerr << err.str();
-    //if (abort) exit(code);
-    throw std::runtime_error(cause);
+    if (abort) throw std::runtime_error(cause);
   }
 }
 
