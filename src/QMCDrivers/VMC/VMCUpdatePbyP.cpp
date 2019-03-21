@@ -12,8 +12,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
@@ -27,86 +25,82 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
-
 /// Constructor
-VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                             QMCHamiltonian& h, RandomGenerator_t& rg):
-  QMCUpdateBase(w,psi,h,rg)
+VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+    : QMCUpdateBase(w, psi, h, rg)
 {
-  myTimers.push_back(new NewTimer("VMCUpdatePbyP::Buffer",timer_level_medium)); //timer for MC, ratio etc
-  myTimers.push_back(new NewTimer("VMCUpdatePbyP::MovePbyP",timer_level_medium)); //timer for MC, ratio etc
-  myTimers.push_back(new NewTimer("VMCUpdatePbyP::Hamiltonian",timer_level_medium)); //timer for Hamiltonian
-  myTimers.push_back(new NewTimer("VMCUpdatePbyP::Collectables",timer_level_medium)); //timer for measurements
-  for (int i=0; i<myTimers.size(); ++i)
+  myTimers.push_back(new NewTimer("VMCUpdatePbyP::Buffer", timer_level_medium));       //timer for MC, ratio etc
+  myTimers.push_back(new NewTimer("VMCUpdatePbyP::MovePbyP", timer_level_medium));     //timer for MC, ratio etc
+  myTimers.push_back(new NewTimer("VMCUpdatePbyP::Hamiltonian", timer_level_medium));  //timer for Hamiltonian
+  myTimers.push_back(new NewTimer("VMCUpdatePbyP::Collectables", timer_level_medium)); //timer for measurements
+  for (int i = 0; i < myTimers.size(); ++i)
     TimerManager.addTimer(myTimers[i]);
 }
 
-VMCUpdatePbyP::~VMCUpdatePbyP()
-{
-}
+VMCUpdatePbyP::~VMCUpdatePbyP() {}
 
 void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
   myTimers[0]->start();
-  W.loadWalker(thisWalker,true);
+  W.loadWalker(thisWalker, true);
   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
-  Psi.copyFromBuffer(W,w_buffer);
+  Psi.copyFromBuffer(W, w_buffer);
   myTimers[0]->stop();
 
   // start PbyP moves
   myTimers[1]->start();
   bool moved = false;
   constexpr RealType mhalf(-0.5);
-  for (int iter=0; iter<nSubSteps; ++iter)
+  for (int iter = 0; iter < nSubSteps; ++iter)
   {
     //create a 3N-Dimensional Gaussian with variance=1
-    makeGaussRandomWithEngine(deltaR,RandomGen);
+    makeGaussRandomWithEngine(deltaR, RandomGen);
     moved = false;
-    for(int ig=0; ig<W.groups(); ++ig) //loop over species
+    for (int ig = 0; ig < W.groups(); ++ig) //loop over species
     {
-      RealType tauovermass = Tau*MassInvS[ig];
-      RealType oneover2tau = 0.5/(tauovermass);
-      RealType sqrttau = std::sqrt(tauovermass);
-      for (int iat=W.first(ig); iat<W.last(ig); ++iat)
+      RealType tauovermass = Tau * MassInvS[ig];
+      RealType oneover2tau = 0.5 / (tauovermass);
+      RealType sqrttau     = std::sqrt(tauovermass);
+      for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
         W.setActive(iat);
         mPosType dr;
-        if(UseDrift)
+        if (UseDrift)
         {
-          GradType grad_now=Psi.evalGrad(W,iat);
-          getScaledDrift(tauovermass,grad_now,dr);
-          dr += sqrttau*deltaR[iat];
+          GradType grad_now = Psi.evalGrad(W, iat);
+          getScaledDrift(tauovermass, grad_now, dr);
+          dr += sqrttau * deltaR[iat];
         }
         else
         {
-          dr = sqrttau*deltaR[iat];
+          dr = sqrttau * deltaR[iat];
         }
-        if (!W.makeMoveAndCheck(iat,dr))
+        if (!W.makeMoveAndCheck(iat, dr))
         {
           ++nReject;
           continue;
         }
         RealType logGf(1), logGb(1), prob;
-        if(UseDrift)
+        if (UseDrift)
         {
           GradType grad_new;
-          RealType ratio = Psi.ratioGrad(W,iat,grad_new);
-          prob = ratio*ratio;
-          logGf = mhalf*dot(deltaR[iat],deltaR[iat]);
-          getScaledDrift(tauovermass,grad_new,dr);
-          dr = W.R[iat] - W.activePos - dr;
-          logGb = -oneover2tau*dot(dr,dr);
+          RealType ratio = Psi.ratioGrad(W, iat, grad_new);
+          prob           = ratio * ratio;
+          logGf          = mhalf * dot(deltaR[iat], deltaR[iat]);
+          getScaledDrift(tauovermass, grad_new, dr);
+          dr    = W.R[iat] - W.activePos - dr;
+          logGb = -oneover2tau * dot(dr, dr);
         }
         else
         {
-          RealType ratio = Psi.ratio(W,iat);
-          prob = ratio*ratio;
+          RealType ratio = Psi.ratio(W, iat);
+          prob           = ratio * ratio;
         }
-        if ( prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob*std::exp(logGb-logGf) )
+        if (prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob * std::exp(logGb - logGf))
         {
           moved = true;
           ++nAccept;
-          Psi.acceptMove(W,iat);
+          Psi.acceptMove(W, iat);
           W.acceptMove(iat);
         }
         else
@@ -122,23 +116,23 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   W.donePbyP();
   myTimers[1]->stop();
   myTimers[0]->start();
-  RealType logpsi = Psi.updateBuffer(W,w_buffer,recompute);
+  RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
   W.saveWalker(thisWalker);
   myTimers[0]->stop();
   // end PbyP moves
   myTimers[2]->start();
-  EstimatorRealType eloc=H.evaluate(W);
-  thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
+  EstimatorRealType eloc = H.evaluate(W);
+  thisWalker.resetProperty(logpsi, Psi.getPhase(), eloc);
   myTimers[2]->stop();
   myTimers[3]->start();
-  H.auxHevaluate(W,thisWalker);
+  H.auxHevaluate(W, thisWalker);
   H.saveProperty(thisWalker.getPropertyBase());
   myTimers[3]->stop();
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
 #endif
-  if(!moved)
+  if (!moved)
     ++nAllRejected;
 }
 
-}
+} // namespace qmcplusplus

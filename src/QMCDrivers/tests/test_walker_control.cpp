@@ -34,14 +34,20 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 // add declaration here so it's accessible for testing
-void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, const std::vector<int> &NumPerNode, std::vector<int> &FairOffset, std::vector<int> &minus, std::vector<int> &plus);
+void determineNewWalkerPopulation(int Cur_pop,
+                                  int NumContexts,
+                                  int MyContext,
+                                  const std::vector<int>& NumPerNode,
+                                  std::vector<int>& FairOffset,
+                                  std::vector<int>& minus,
+                                  std::vector<int>& plus);
 
-void output_vector(const std::string &name, std::vector<int> &vec)
+void output_vector(const std::string& name, std::vector<int>& vec)
 {
   std::cout << name;
-  for (int i = 0; i < vec.size(); i++) {
+  for (int i = 0; i < vec.size(); i++)
+  {
     std::cout << vec[i] << " ";
   }
   std::cout << std::endl;
@@ -50,11 +56,11 @@ void output_vector(const std::string &name, std::vector<int> &vec)
 // uncomment the std::cout and output_vector lines to see the walker assignments
 TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
 {
-  int Cur_pop = 8;
-  int NumContexts = 4;
-  int MyContext = 0;
-  std::vector<int> NumPerNode = {4,4,0,0};
-  std::vector<int> FairOffset(NumContexts+1);
+  int Cur_pop                 = 8;
+  int NumContexts             = 4;
+  int MyContext               = 0;
+  std::vector<int> NumPerNode = {4, 4, 0, 0};
+  std::vector<int> FairOffset(NumContexts + 1);
 
   std::vector<int> NewNum = NumPerNode;
   for (int me = 0; me < NumContexts; me++)
@@ -70,17 +76,22 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
 
     //output_vector("  Plus: ", plus);
 
-    for (int i = 0; i < plus.size(); i++) {
-      if (me == plus[i]) NewNum[plus[i]]--;
+    for (int i = 0; i < plus.size(); i++)
+    {
+      if (me == plus[i])
+        NewNum[plus[i]]--;
     }
-    for (int i = 0; i < minus.size(); i++) {
-      if (me == minus[i]) NewNum[minus[i]]++;
+    for (int i = 0; i < minus.size(); i++)
+    {
+      if (me == minus[i])
+        NewNum[minus[i]]++;
     }
   }
   //output_vector("New num per node: ", NewNum);
 
-  for (int i = 0; i < NewNum.size(); i++) {
-    int num = FairOffset[i+1] - FairOffset[i];
+  for (int i = 0; i < NewNum.size(); i++)
+  {
+    int num = FairOffset[i + 1] - FairOffset[i];
     REQUIRE(NewNum[i] == num);
   }
 }
@@ -101,21 +112,24 @@ TEST_CASE("Walker control assign walkers many", "[drivers][walker_control][prope
   //std::mt19937 mt(rd());
   // Use fixed seed for reproducibility
   std::mt19937 mt(100);
-  std::uniform_int_distribution<int> NumNodes(1,1000);
-  std::uniform_int_distribution<int> TotalPop(0,1000);
+  std::uniform_int_distribution<int> NumNodes(1, 1000);
+  std::uniform_int_distribution<int> TotalPop(0, 1000);
 
-  for (int nt = 0; nt < 1000; nt++) {
+  for (int nt = 0; nt < 1000; nt++)
+  {
     int NumContexts = NumNodes(mt);
-    int Cur_pop = TotalPop(mt);
-    std::uniform_int_distribution<int> WalkerPop(0,2*Cur_pop/NumContexts);
+    int Cur_pop     = TotalPop(mt);
+    std::uniform_int_distribution<int> WalkerPop(0, 2 * Cur_pop / NumContexts);
     std::vector<int> NumPerNode(NumContexts);
     int current_pop = Cur_pop;
-    for (int i = 0; i < NumContexts; i++) {
+    for (int i = 0; i < NumContexts; i++)
+    {
       int p = WalkerPop(mt);
-      p = std::min(current_pop, p);
+      p     = std::min(current_pop, p);
       current_pop -= p;
       // Make sure all walkers are accounted for on the last node
-      if (i == NumContexts-1 && current_pop > 0) {
+      if (i == NumContexts - 1 && current_pop > 0)
+      {
         p += current_pop;
       }
       NumPerNode[i] = p;
@@ -133,21 +147,26 @@ TEST_CASE("Walker control assign walkers many", "[drivers][walker_control][prope
       determineNewWalkerPopulation(Cur_pop, NumContexts, me, NumPerNode, minus, plus);
       REQUIRE(minus.size() == plus.size());
 
-      for (int i = 0; i < plus.size(); i++) {
-        if (me == plus[i]) NewNum[plus[i]]--;
+      for (int i = 0; i < plus.size(); i++)
+      {
+        if (me == plus[i])
+          NewNum[plus[i]]--;
       }
-      for (int i = 0; i < minus.size(); i++) {
-        if (me == minus[i]) NewNum[minus[i]]++;
+      for (int i = 0; i < minus.size(); i++)
+      {
+        if (me == minus[i])
+          NewNum[minus[i]]++;
       }
     }
 
     std::vector<int> FairOffset;
-    FairDivideLow(Cur_pop,NumContexts,FairOffset);
-    for (int i = 0; i < NewNum.size(); i++) {
-      int num = FairOffset[i+1] - FairOffset[i];
+    FairDivideLow(Cur_pop, NumContexts, FairOffset);
+    for (int i = 0; i < NewNum.size(); i++)
+    {
+      int num = FairOffset[i + 1] - FairOffset[i];
       REQUIRE(NewNum[i] == num);
     }
   }
 }
 #endif
-}
+} // namespace qmcplusplus

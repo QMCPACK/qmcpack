@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_WALKER_CONTROL_MPI_H
@@ -22,14 +20,13 @@
 
 namespace qmcplusplus
 {
-
 class NewTimer;
 
 /** Class to handle walker controls with simple global sum
  *
  * Base class to handle serial mode with branching only
  */
-struct WalkerControlMPI: public WalkerControlBase
+struct WalkerControlMPI : public WalkerControlBase
 {
   int Cur_pop;
   int Cur_max;
@@ -39,15 +36,13 @@ struct WalkerControlMPI: public WalkerControlBase
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControlMPI(Communicate* c=0);
+  WalkerControlMPI(Communicate* c = 0);
 
   /** perform branch and swap walkers as required */
   int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
 
   //current implementations
   void swapWalkersSimple(MCWalkerConfiguration& W);
-
 };
-}
+} // namespace qmcplusplus
 #endif
-

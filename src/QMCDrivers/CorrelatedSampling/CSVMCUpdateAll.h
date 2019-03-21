@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /**@file CSVMCUpdateAll.h
@@ -25,19 +23,19 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup QMCDrivers WalkerByWalker MultiplePsi
  * @brief Implements the VMC algorithm using umbrella sampling.
  *
  * Energy difference method with multiple H/Psi.
  * Consult S. Chiesa's note.
  */
-class CSVMCUpdateAll: public CSUpdateBase
+class CSVMCUpdateAll : public CSUpdateBase
 {
-
 public:
   /// Constructor.
-  CSVMCUpdateAll(MCWalkerConfiguration& w,  std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h,
+  CSVMCUpdateAll(MCWalkerConfiguration& w,
+                 std::vector<TrialWaveFunction*>& psi,
+                 std::vector<QMCHamiltonian*>& h,
                  RandomGenerator_t& rg);
 
   void advanceWalker(Walker_t& thisWalker, bool recompute);
@@ -46,18 +44,19 @@ private:
 };
 
 
-class CSVMCUpdateAllWithDrift: public CSUpdateBase
+class CSVMCUpdateAllWithDrift : public CSUpdateBase
 {
-
 public:
   /// Constructor.
-  CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w,  std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h,
-                 RandomGenerator_t& rg);
+  CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w,
+                          std::vector<TrialWaveFunction*>& psi,
+                          std::vector<QMCHamiltonian*>& h,
+                          RandomGenerator_t& rg);
 
   void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
 };
-}
+} // namespace qmcplusplus
 
 #endif

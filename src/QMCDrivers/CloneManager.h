@@ -12,8 +12,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /** @file CloneManager.h
@@ -26,7 +24,6 @@
 
 namespace qmcplusplus
 {
-
 class HamiltonianPool;
 
 /** Manager clones for threaded applications
@@ -34,7 +31,7 @@ class HamiltonianPool;
  * Clones for the ParticleSet, TrialWaveFunction and QMCHamiltonian
  * are static to ensure only one set of clones persist during a run.
  */
-class CloneManager: public QMCTraits
+class CloneManager : public QMCTraits
 {
 public:
   /// Constructor.
@@ -55,14 +52,14 @@ public:
 
   inline RealType acceptRatio() const
   {
-    IndexType nAcceptTot=0;
-    IndexType nRejectTot=0;
-    for(int ip=0; ip<NumThreads; ip++)
+    IndexType nAcceptTot = 0;
+    IndexType nRejectTot = 0;
+    for (int ip = 0; ip < NumThreads; ip++)
     {
-      nAcceptTot+=Movers[ip]->nAccept;
-      nRejectTot+=Movers[ip]->nReject;
+      nAcceptTot += Movers[ip]->nAccept;
+      nRejectTot += Movers[ip]->nReject;
     }
-    return static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot);
+    return static_cast<RealType>(nAcceptTot) / static_cast<RealType>(nAcceptTot + nRejectTot);
   }
 
 protected:
@@ -83,15 +80,15 @@ protected:
   std::vector<EstimatorManagerBase*> estimatorClones;
   ///trace managers
   std::vector<TraceManager*> traceClones;
-  
+
   //for correlated sampling.
-  static std::vector<std::vector<MCWalkerConfiguration*> > WPoolClones; 
-  static std::vector<std::vector<TrialWaveFunction*> > PsiPoolClones;
-  static std::vector<std::vector<QMCHamiltonian*> > HPoolClones;
+  static std::vector<std::vector<MCWalkerConfiguration*>> WPoolClones;
+  static std::vector<std::vector<TrialWaveFunction*>> PsiPoolClones;
+  static std::vector<std::vector<QMCHamiltonian*>> HPoolClones;
   std::vector<CSUpdateBase*> CSMovers;
 
   ///Walkers per node
   std::vector<int> wPerNode;
 };
-}
+} // namespace qmcplusplus
 #endif
