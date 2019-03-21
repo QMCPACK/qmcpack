@@ -75,6 +75,7 @@ class BackPropagatedEstimator: public EstimatorBase
     std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
     denom.reextent({1});
     denom_average.reextent({1});
+    denom_average[0] = 0;
   }
 
   ~BackPropagatedEstimator() {}
@@ -117,9 +118,10 @@ class BackPropagatedEstimator: public EstimatorBase
           denom_average[0] /= block_size;
           dump.push("BackPropagated");
           dump.write(DMAverage, "one_rdm_"+std::to_string(iblock));
-          dump.write(denom, "one_rdm_denom_"+std::to_string(iblock));
+          dump.write(denom_average, "one_rdm_denom_"+std::to_string(iblock));
           dump.pop();
           std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
+          std::fill(denom_average.begin(), denom_average.end(), ComplexType(0.0,0.0));
         }
         write_back_prop = false;
       }
