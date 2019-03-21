@@ -152,7 +152,7 @@ class EstimatorHandler: public AFQMCInfo
           app_log()<<"Problems opening estimator hdf5 output file: " << hdf_file <<std::endl;
           APP_ABORT("Problems opening estimator hdf5 output file.\n");
         }
-        write_hdf_metadata(walker_type);
+        write_hdf_metadata(walker_type,!impsamp);
       }
       out.open(filename.c_str());
       if(out.fail()) {
@@ -211,7 +211,7 @@ class EstimatorHandler: public AFQMCInfo
       (*it)->accumulate_block(wlks);
   }
 
-  void write_hdf_metadata(WALKER_TYPES wlk)
+  void write_hdf_metadata(WALKER_TYPES wlk, bool free_projection)
   {
     dump.open(hdf_file);
     dump.push("Metadata");
@@ -219,6 +219,7 @@ class EstimatorHandler: public AFQMCInfo
     dump.write(NAEA, "NAEA");
     dump.write(NAEB, "NAEB");
     dump.write(wlk, "WALKER_TYPE");
+    dump.write(free_projection, "FREE_PROJECTION");
     dump.pop();
     dump.close();
   }
