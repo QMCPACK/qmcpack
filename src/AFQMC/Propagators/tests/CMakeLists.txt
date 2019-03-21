@@ -18,8 +18,6 @@ SET(UTEST_EXE test_${SRC_DIR})
 
 SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/afqmc/Propagators)
 
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
-
 ADD_EXECUTABLE(${UTEST_EXE} test_propagator_factory.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil
                       ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
