@@ -98,7 +98,6 @@ class BackPropagatedEstimator: public EstimatorBase
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         wset[iw].resetForBackPropagation();
       }
-      write_back_prop = true;
       iblock++;
     }
   }
@@ -108,7 +107,8 @@ class BackPropagatedEstimator: public EstimatorBase
   void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
   {
     if(writer) {
-      if(write_back_prop) {
+      bool write = wset[0].isBMatrixBufferFull();
+      if(write) {
         for(int i = 0; i < DMBuffer.size(); i++)
           DMAverage[i] += DMBuffer[i];
         denom_average[0] += denom[0];
@@ -123,7 +123,6 @@ class BackPropagatedEstimator: public EstimatorBase
           std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
           std::fill(denom_average.begin(), denom_average.end(), ComplexType(0.0,0.0));
         }
-        write_back_prop = false;
       }
     }
   }
@@ -160,7 +159,6 @@ class BackPropagatedEstimator: public EstimatorBase
   bool path_restoration, importanceSampling;
   std::vector<ComplexType> weights;
   int dm_size;
-  bool write_back_prop = false;
   std::pair<int,int> dm_dims;
   CVector denom, denom_average;
 
