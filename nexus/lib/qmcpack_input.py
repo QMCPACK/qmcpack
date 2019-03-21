@@ -4833,8 +4833,8 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
 
 
 def generate_jastrows_alt(
-    J1           = True,
-    J2           = True,
+    J1           = False,
+    J2           = False,
     J3           = False,
     J1_size      = None,
     J1_rcut      = None,
@@ -4860,7 +4860,13 @@ def generate_jastrows_alt(
     openbc = system.structure.is_open()
 
     jastrows = []
-    if J1==True:
+    J2 |= J3
+    J1 |= J2
+    if not J1 and not J2 and not J3:
+        J1 = True
+        J2 = True
+    #end if
+    if J1:
         if J1_rcut is None:
             if openbc:
                 J1_rcut = J1_rcut_open
@@ -4874,7 +4880,7 @@ def generate_jastrows_alt(
         J = generate_jastrow('J1','bspline',J1_size,J1_rcut,system=system)
         jastrows.append(J)
     #end if
-    if J2==True:
+    if J2:
         if J2_rcut is None:
             if openbc:
                 J2_rcut = J2_rcut_open
@@ -4888,7 +4894,7 @@ def generate_jastrows_alt(
         J = generate_jastrow('J2','bspline',J2_size,J2_rcut,init=J2_init,system=system)
         jastrows.append(J)
     #end if
-    if J3==True:
+    if J3:
         J = generate_jastrow('J3','polynomial',J3_esize,J3_isize,J3_rcut,system=system)
         jastrows.append(J)
     #end if
