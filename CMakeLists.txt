@@ -143,6 +143,7 @@ SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 SET(ENABLE_SOA 0 CACHE BOOL "Enable/disable SoA optimization")
+SET(ENABLE_OFFLOAD 0 CACHE BOOL "Enable OpenMP offload")
 
 ######################################################################
 # set debug printout

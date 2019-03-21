@@ -35,6 +35,15 @@
 /* Enable OpenMP parallelization. */
 #cmakedefine ENABLE_OPENMP @ENABLE_OPENMP@
 
+/* Enable OpenMP offload. */
+#cmakedefine ENABLE_OFFLOAD @ENABLE_OFFLOAD@
+
+#ifdef ENABLE_OFFLOAD
+  #define PRAGMA_OFFLOAD(x) _Pragma(x)
+#else
+  #define PRAGMA_OFFLOAD(x)
+#endif
+
 /* Define to 1 if you have the `hdf5' library (-lhdf5). */
 #cmakedefine HAVE_LIBHDF5 @HAVE_LIBHDF5@
 
