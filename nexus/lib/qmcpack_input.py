@@ -5555,7 +5555,87 @@ gen_basic_input_defaults = obj(
     J3_esize       = 3,                
     J3_rcut        = 5.0,              
     J1_rcut_open   = 5.0,              
-    J2_rcut_open   = 10.0,             
+    J2_rcut_open   = 10.0,
+    qmc            = None, # opt,vmc,vmc_test,dmc,dmc_test
+    )
+
+opt_defaults = obj(
+    method      = 'linear',
+    cost        = 'variance',
+    cycles      = 12,
+    var_cycles  = 4,
+    samples     = 204800,             
+    warmupsteps = 300,                
+    blocks      = 100,                
+    steps       = 1,                  
+    substeps    = 10,                 
+    timestep    = 0.3,
+    usedrift    = False,  
+    )
+
+vmc_defaults = obj(
+    walkers     = 1,
+    warmupsteps = 50,
+    blocks      = 800,
+    steps       = 10,
+    substeps    = 3,
+    timestep    = 0.3,
+    checkpoint  = -1,
+    )
+vmc_test_defaults = obj(
+    warmupsteps = 10,
+    blocks      = 20,
+    steps       =  4,
+    ).set_optional(**vmc_defaults)
+vmc_noJ_defaults = obj(
+    warmupsteps = 200,
+    blocks      = 800,
+    steps       = 100,
+    ).set_optional(**vmc_defaults)
+
+dmc_defaults = obj(
+    warmupsteps          = 20,
+    blocks               = 200,
+    steps                = 10,
+    timestep             = 0.01,
+    checkpoint           = -1,
+    vmc_samples          = 2048,
+    vmc_samplesperthread = None, 
+    vmc_walkers          = 1,
+    vmc_warmupsteps      = 30,
+    vmc_blocks           = 40,
+    vmc_steps            = 10,
+    vmc_substeps         = 3,
+    vmc_timestep         = 0.3,
+    vmc_checkpoint       = -1,
+    eq_dmc               = False,
+    eq_warmupsteps       = 20,
+    eq_blocks            = 20,
+    eq_steps             = 5,
+    eq_timestep          = 0.02,
+    eq_checkpoint        = -1,
+    ntimesteps           = 1,
+    timestep_factor      = 0.5,    
+    nonlocalmoves        = None,
+    )
+dmc_test_defaults = obj(
+    warmupsteps     = 2,
+    blocks          = 10,
+    steps           = 2,
+    ).set_optional(**dmc_defaults)
+dmc_noJ_defaults = obj(
+    warmupsteps     = 40,
+    blocks          = 400,
+    steps           = 20,
+    ).set_optional(**dmc_defaults)
+
+qmc_defaults = obj(
+    vmc      = vmc_defaults,
+    vmc_test = vmc_test_defaults,
+    vmc_noJ  = vmc_noJ_defaults,
+    dmc      = dmc_defaults,
+    dmc_test = dmc_test_defaults,
+    dmc_noJ  = dmc_noJ_defaults,
     )
 
 def generate_basic_input(**kwargs):
@@ -5563,8 +5643,8 @@ def generate_basic_input(**kwargs):
     kw = obj(kwargs)
     # apply defaults
     kw.set_optional(**gen_basic_input_defaults)
-    # screen for invalid keywords
     valid = set(gen_basic_input_defaults.keys())
+    # screen for invalid keywords
     invalid_kwargs = set(kw.keys())-valid
     if len(invalid_kwargs)>0:
         QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs),sorted(valid)),'generate_qmcpack_input')
