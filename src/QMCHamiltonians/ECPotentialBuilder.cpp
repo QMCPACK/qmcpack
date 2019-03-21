@@ -53,6 +53,9 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   std::string ecpFormat("table");
   std::string NLPP_algo(omp_get_nested()?"batched":"default");
+#ifdef ENABLE_OFFLOAD
+  NLPP_algo = "batched"; // set "batched" as the default
+#endif
   std::string pbc("yes");
   std::string forces("no");
   OhmmsAttributeSet pAttrib;
