@@ -4832,6 +4832,71 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
 
 
 
+def generate_jastrows_alt(
+    J1           = True,
+    J2           = True,
+    J3           = False,
+    J1_size      = None,
+    J1_rcut      = None,
+    J1_dr        = 0.5,
+    J2_size      = None,
+    J2_rcut      = None,
+    J2_dr        = 0.5,
+    J2_init      = 'zero',
+    J3_isize     = 3,
+    J3_esize     = 3,
+    J3_rcut      = 5.0,
+    J1_rcut_open = 5.0,
+    J2_rcut_open = 10.0,
+    system       = None,
+    ):
+    if system is None:
+        QmcpackInput.class_error('input variable "system" is required to generate jastrows','generate_jastrows_alt')
+    elif system.structure.units!='B':
+        system = system.copy()
+        system.structure.change_units('B')
+    #end if
+
+    openbc = system.structure.is_open()
+
+    jastrows = []
+    if J1==True:
+        if J1_rcut is None:
+            if openbc:
+                J1_rcut = J1_rcut_open
+            else:
+                J1_rcut = system.structure.rwigner(1)
+            #end if
+        #end if
+        if J1_size is None:
+            J1_size = int(ceil(J1_rcut/J1_dr))
+        #end if
+        J = generate_jastrow('J1','bspline',J1_size,J1_rcut,system=system)
+        jastrows.append(J)
+    #end if
+    if J2==True:
+        if J2_rcut is None:
+            if openbc:
+                J2_rcut = J2_rcut_open
+            else:
+                J2_rcut = system.structure.rwigner(1)
+            #end if
+        #end if
+        if J2_size is None:
+            J2_size = int(ceil(J2_rcut/J2_dr))
+        #end if
+        J = generate_jastrow('J2','bspline',J2_size,J2_rcut,init=J2_init,system=system)
+        jastrows.append(J)
+    #end if
+    if J3==True:
+        J = generate_jastrow('J3','polynomial',J3_esize,J3_isize,J3_rcut,system=system)
+        jastrows.append(J)
+    #end if
+
+    return jastrows
+#end def generate_jastrows_alt
+
+
 def generate_jastrow(descriptor,*args,**kwargs):
     keywords = set(['function','size','rcut','elements','coeff','cusp','ename',
                     'iname','spins','density','Buu','Bud','system','isize','esize','init'])
@@ -5470,17 +5535,75 @@ def generate_basic_input(id             = 'qmc',
                          traces         = None,
                          calculations   = None,
                          det_format     = 'new',
+                         J1             = False,
+                         J2             = False,
+                         J3             = False,
+                         J1_size        = None,
+                         J1_rcut        = None,
+                         J1_dr          = 0.5,
+                         J2_size        = None,
+                         J2_rcut        = None,
+                         J2_dr          = 0.5,
+                         J2_init        = 'zero',
+                         J3_isize       = 3,
+                         J3_esize       = 3,
+                         J3_rcut        = 5.0,
+                         J1_rcut_open   = 5.0,
+                         J2_rcut_open   = 10.0,
                          **invalid_kwargs
                          ):
 
     if len(invalid_kwargs)>0:
-        valid = ['id','series','purpose','seed','bconds','truncate',
-                 'buffer','lr_dim_cutoff','remove_cell','randomsrc',
-                 'meshfactor','orbspline','precision','twistnum',
-                 'twist','spin_polarized','partition','orbitals_h5',
-                 'system','pseudos','jastrows','interactions',
-                 'corrections','observables','estimators','traces',
-                 'calculations','det_format']
+        valid = '''
+            id             
+            series         
+            purpose        
+            seed           
+            bconds         
+            truncate       
+            buffer         
+            lr_dim_cutoff  
+            remove_cell    
+            randomsrc      
+            meshfactor     
+            orbspline      
+            precision      
+            twistnum       
+            twist          
+            spin_polarized 
+            partition      
+            partition_mf   
+            hybridrep      
+            hybrid_rcut    
+            hybrid_lmax    
+            orbitals_h5    
+            excitation     
+            system         
+            pseudos        
+            jastrows       
+            interactions   
+            corrections    
+            observables    
+            estimators     
+            traces         
+            calculations   
+            det_format     
+            J1             
+            J2             
+            J3             
+            J1_size        
+            J1_rcut    
+            J1_dr
+            J2_size        
+            J2_rcut
+            J2_dr
+            J2_init        
+            J3_isize       
+            J3_esize       
+            J3_rcut        
+            J1_rcut_open   
+            J2_rcut_open
+            '''.split()
         QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs.keys()),sorted(valid)),'generate_qmcpack_input')
     #end if
 
@@ -5620,8 +5743,27 @@ def generate_basic_input(id             = 'qmc',
         determinantset = dset
         )
 
-
-    if jastrows!=None:
+    if J1 or J2 or J3:
+        jastrows = generate_jastrows_alt(
+            J1           = J1          ,
+            J2           = J2          ,
+            J3           = J3          ,
+            J1_size      = J1_size     ,
+            J1_rcut      = J1_rcut     ,
+            J1_dr        = J1_dr       ,
+            J2_size      = J2_size     ,
+            J2_rcut      = J2_rcut     ,
+            J2_dr        = J2_dr       ,
+            J2_init      = J2_init     ,
+            J3_isize     = J3_isize    ,
+            J3_esize     = J3_esize    ,
+            J3_rcut      = J3_rcut     ,
+            J1_rcut_open = J1_rcut_open,
+            J2_rcut_open = J2_rcut_open,
+            system       = system      ,
+            )
+    #end if
+    if jastrows is not None:
         wfn.jastrows = generate_jastrows(jastrows,system,check_ions=True)
     #end if
 
