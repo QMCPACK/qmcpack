@@ -89,9 +89,9 @@ QMCMain::QMCMain(Communicate* c)
 #endif
       << "\n  Total number of MPI ranks = " << OHMMS::Controller->size()
       << "\n  Number of MPI groups      = " << myComm->getNumGroups()
-      << "\n  MPI Group ID              = " << myComm->getGroupID()
+      << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
-      << "\n  MPI Ranks per node        = " << NodeComm.size()
+      << "\n  MPI ranks per node        = " << NodeComm.size()
       << std::endl;
   // assign accelerators within a node
   assignAccelerators(NodeComm);
