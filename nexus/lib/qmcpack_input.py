@@ -4855,12 +4855,16 @@ def generate_jastrows_alt(
         J1 = True
         J2 = True
     #end if
+    rwigner = None
     if J1:
         if J1_rcut is None:
             if openbc:
                 J1_rcut = J1_rcut_open
             else:
-                J1_rcut = system.structure.rwigner(1)
+                if rwigner is None:
+                    rwigner = system.structure.rwigner(1)
+                #end if
+                J1_rcut = rwigner 
             #end if
         #end if
         if J1_size is None:
@@ -4874,7 +4878,10 @@ def generate_jastrows_alt(
             if openbc:
                 J2_rcut = J2_rcut_open
             else:
-                J2_rcut = system.structure.rwigner(1)
+                if rwigner is None:
+                    rwigner = system.structure.rwigner(1)
+                #end if
+                J2_rcut = rwigner
             #end if
         #end if
         if J2_size is None:
@@ -4884,6 +4891,12 @@ def generate_jastrows_alt(
         jastrows.append(J)
     #end if
     if J3:
+        if not openbc:
+            if rwigner is None:
+                rwigner = system.structure.rwigner(1)
+            #end if
+            J3_rcut = min(J3_rcut,rwigner)
+        #end if
         J = generate_jastrow('J3','polynomial',J3_esize,J3_isize,J3_rcut,system=system)
         jastrows.append(J)
     #end if
@@ -5584,7 +5597,7 @@ linear_adaptive_defaults = obj(
     shift_s             = 1.00,
     )
 
-opt_method_defaults = obj(
+opt_method_defaults = obj({
     ('linear'  ,'quartic' ) : linear_quartic_defaults,
     ('linear'  ,'rescale' ) : linear_quartic_defaults,
     ('linear'  ,'linemin' ) : linear_quartic_defaults,
@@ -5594,7 +5607,7 @@ opt_method_defaults = obj(
     ('linear'  ,'adaptive') : linear_adaptive_defaults,
     ('linear'  ,'oneshift') : linear_oneshift_defaults,
     ('linear'  ,'oneshiftonly') : linear_oneshift_defaults,
-    )
+    })
 
 vmc_defaults = obj(
     walkers     = 1,
