@@ -1141,11 +1141,7 @@ namespace afqmc
             detR *= detR;
           }
           // By construction detR is real (so no complex conjugation needed).
-          if(free_projection) {
-            ov *= detR * std::conj(ci[id]);
-          } else {
-            ov *= std::conj(ci[id]);
-          }
+          ov *= detR * std::conj(ci[id]);
           overlap += ov;
           ma::axpy(ov,G1D_,G21D_);
         }
@@ -1223,11 +1219,7 @@ namespace afqmc
                                              GB2D_,to_address(ov_),compact);
           }
           ComplexType ov(*ov_);
-          if(free_projection) {
-            ov *= detR * std::conj(ci[id]);
-          } else {
-            ov *= std::conj(ci[id]);
-          }
+          ov *= detR * std::conj(ci[id]);
           overlap += ov;
           ma::axpy(ov,GA1D_,GA21D_);
           ma::axpy(ov,GB1D_,GB21D_);
