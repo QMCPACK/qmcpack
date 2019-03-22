@@ -2395,9 +2395,13 @@ class linear(QIxml):
                   'walkers','nonlocalpp','usebuffer','gevmethod','steps','substeps',
                   'stabilizermethod','rnwarmupsteps','walkersperthread','minke',
                   'gradtol','alpha','tries','min_walkers','samplesperthread',
-                  'use_nonlocalpp_deriv']
+                  'use_nonlocalpp_deriv',
+                  'shift_i','shift_s','max_relative_change','max_param_change',
+                  'chase_lowest','chase_closest','block_lm','nblocks','nolds',
+                  'nkept',
+                  ]
     costs      = ['energy','unreweightedvariance','reweightedvariance','variance','difference']
-    write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno)
+    write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno,chase_lowest=yesno,chase_closest=yesno,block_lm=yesno)
 #end class linear
 
 class cslinear(QIxml):
@@ -2782,21 +2786,6 @@ dmc.defaults.set(
     )
 
 
-
-opt_defaults = obj(
-    linear = obj(
-        jmm = linear(
-            warmupsteps         = 100,
-            timestep            = 0.5,
-            stepsbetweensamples = 10,
-            minwalkers          = 0.0,
-            bigchange           = 15.0,
-            alloweddifference   = 1.e-4
-            )
-        ),
-    cslinear = obj(
-        )
-    )
 
 
 
@@ -5561,16 +5550,50 @@ gen_basic_input_defaults = obj(
 
 opt_defaults = obj(
     method      = 'linear',
+    minmethod   = 'quartic',
     cost        = 'variance',
     cycles      = 12,
     var_cycles  = 4,
-    samples     = 204800,             
+    samples     = 204800,
+    minwalkers  = 0.3,
+    nonlocalpp  = True,
     warmupsteps = 300,                
     blocks      = 100,                
     steps       = 1,                  
     substeps    = 10,                 
     timestep    = 0.3,
     usedrift    = False,  
+    )
+
+linear_quartic_defaults = obj(
+    usebuffer         = True,
+    exp0              = -6,
+    bigchange         = 10.0,
+    alloweddifference = 1e-04,
+    stepsize          = 0.15,
+    nstabilizers      = 1,
+    )
+linear_oneshift_defaults = obj(
+    shift_i = 0.01,
+    shift_s = 1.00,
+    )
+linear_adaptive_defaults = obj(
+    max_relative_change = 10.0,
+    max_param_change    = 0.3,
+    shift_i             = 0.01,
+    shift_s             = 1.00,
+    )
+
+opt_method_defaults = obj(
+    ('linear'  ,'quartic' ) : linear_quartic_defaults,
+    ('linear'  ,'rescale' ) : linear_quartic_defaults,
+    ('linear'  ,'linemin' ) : linear_quartic_defaults,
+    ('cslinear','quartic' ) : linear_quartic_defaults,
+    ('cslinear','rescale' ) : linear_quartic_defaults,
+    ('cslinear','linemin' ) : linear_quartic_defaults,
+    ('linear'  ,'adaptive') : linear_adaptive_defaults,
+    ('linear'  ,'oneshift') : linear_oneshift_defaults,
+    ('linear'  ,'oneshiftonly') : linear_oneshift_defaults,
     )
 
 vmc_defaults = obj(
@@ -5630,6 +5653,7 @@ dmc_noJ_defaults = obj(
     ).set_optional(**dmc_defaults)
 
 qmc_defaults = obj(
+    opt      = opt_defaults,
     vmc      = vmc_defaults,
     vmc_test = vmc_test_defaults,
     vmc_noJ  = vmc_noJ_defaults,
@@ -5641,9 +5665,26 @@ qmc_defaults = obj(
 def generate_basic_input(**kwargs):
     # capture inputs
     kw = obj(kwargs)
-    # apply defaults
+    # apply general defaults
     kw.set_optional(**gen_basic_input_defaults)
     valid = set(gen_basic_input_defaults.keys())
+    # apply method specific defaults
+    if kw.qmc is not None:
+        if kw.qmc not in qmc_defaults:
+            QmcpackInput.class_error('invalid input for argument "qmc"\ninvalid input: {}\nvalid options are: {}'.format(kw.qmc,sorted(qmc_defaults.keys())),'generate_basic_input')
+        #end if
+        kw.set_optional(**qmc_defaults[kw.qmc])
+        valid |= set(qmc_defaults[kw.qmc].keys())
+        if kw.qmc=='opt':
+            key = (kw.method,kw.minmethod)
+            if key not in opt_method_defaults:
+                QmcpackInput.class_error('invalid input for arguments "method,minmethod"\ninvalid input: {}\nvalid options are: {}'.format(key,sorted(opt_method_defaults.keys())),'generate_basic_input')
+            #end if
+            kw.set_optional(**opt_method_defaults[key])
+            valid |= set(opt_method_defaults[key].keys())
+            del key
+        #end if
+    #end if
     # screen for invalid keywords
     invalid_kwargs = set(kw.keys())-valid
     if len(invalid_kwargs)>0:
