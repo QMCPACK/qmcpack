@@ -75,7 +75,7 @@ class SparseTensor
     SparseTensor(communicator& c_, 
                  WALKER_TYPES type,
                  CMatrix&& hij_,
-                 std::vector<T1Vector>&& h1,
+                 std::vector<CVector>&& h1,
                  std::vector<T1shm_csr_matrix>&& v2,
                  std::vector<T1shm_csr_matrix_view>&& v2view,
                  Vshm_csr_matrix&& vn,
@@ -229,7 +229,7 @@ class SparseTensor
         assert(SpvnT_view[k].size(1) == Gc.size(0));
         RealType scl = (walker_type==CLOSED?4.0:1.0);
         // SpvnT*G
-        boost::multi::array_ref<SpT2,2> v_(Gcloc.origin()+
+        boost::multi::array_ref<SPComplexType,2> v_(Gcloc.origin()+
                                             SpvnT_view[k].local_origin()[0]*Gc.size(1),
                                         {long(SpvnT_view[k].size(0)),long(Gc.size(1))});
         ma::product(SpvnT_view[k], Gsp, v_);
@@ -428,7 +428,7 @@ class SparseTensor
     CMatrix hij;
 
     // (potentially half rotated) one body hamiltonian
-    std::vector<T1Vector> haj;
+    std::vector<CVector> haj;
 
     // sparse 2-body 2-electron integrals in matrix form
     std::vector<T1shm_csr_matrix> Vakbl;

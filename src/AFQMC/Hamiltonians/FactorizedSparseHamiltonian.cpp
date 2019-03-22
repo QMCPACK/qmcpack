@@ -228,7 +228,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       std::vector<SpCType_shm_csr_matrix> SpvnT;
       using matrix_view = typename SpCType_shm_csr_matrix::template matrix_view<int>;
       std::vector<matrix_view> SpvnTview;
-      SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
+      SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias<SPComplexType>(type,TGprop,
                               &PsiTsp[0],((type==COLLINEAR)?(&PsiTsp[1]):(&PsiTsp[0])),
                               Spvn,cutv2));
       SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
@@ -301,7 +301,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       std::vector<SpVType_shm_csr_matrix> SpvnT;
       using matrix_view = typename SpVType_shm_csr_matrix::template matrix_view<int>;
       std::vector<matrix_view> SpvnTview;
-      SpvnT.emplace_back(csr::shm::transpose(Spvn));
+      SpvnT.emplace_back(csr::shm::transpose<SpVType_shm_csr_matrix>(Spvn));
       SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
 
       if(pureSD) {
@@ -341,11 +341,11 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       for(int n=0, nd=0; n<ndet; ++n, nd++)
          hij.emplace_back(halfRotatedHij(type,&PsiT[nd],&PsiT[nd]));
       std::vector<SpCType_shm_csr_matrix> SpvnT;
-      using matrix_view = typename SpVType_shm_csr_matrix::template matrix_view<int>;
+      using matrix_view = typename SpCType_shm_csr_matrix::template matrix_view<int>;
       std::vector<matrix_view> SpvnTview;
       SpvnT.reserve(ndet);
       for(int n=0; n<ndet; ++n) {
-        SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
+        SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias<SPComplexType>(type,TGprop,
                               &PsiTsp[n],&PsiTsp[n],
                               Spvn,cutv2));
         SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[n],TGprop));

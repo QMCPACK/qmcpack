@@ -64,14 +64,14 @@ class THCOps
            int nmo_, int naoa_, int naob_,
            WALKER_TYPES type,
            CMatrix&& hij_,
-           std::vector<TVector>&& h1,
-           shmCMatrix&& rotmuv_,
+           std::vector<CVector>&& h1,
+           shmVMatrix&& rotmuv_,
            shmCMatrix&& rotpiu_,
            std::vector<shmCMatrix>&& rotpau_,
            shmVMatrix&& luv_,
-           shmVMatrix&& piu_,
+           shmCMatrix&& piu_,
            std::vector<shmCMatrix>&& pau_,
-           TMatrix&& v0_,
+           CMatrix&& v0_,
            ValueType e0_,
            bool verbose=false ):
                 comm(std::addressof(c_)),
@@ -951,7 +951,7 @@ std::cout<<"\n";
     CMatrix hij;
 
     // (potentially half rotated) one body hamiltonian
-    std::vector<TVector> haj;
+    std::vector<CVector> haj;
 
     /************************************************/
     // Used in the calculation of the energy
@@ -959,7 +959,7 @@ std::cout<<"\n";
     shmVMatrix rotMuv;
 
     // Orbitals at interpolating points
-    shmVMatrix rotPiu;
+    shmCMatrix rotPiu;
 
     // Half-rotated Orbitals at interpolating points
     std::vector<shmCMatrix> rotcPua;
@@ -971,14 +971,14 @@ std::cout<<"\n";
     shmVMatrix Luv;
 
     // Orbitals at interpolating points
-    shmVMatrix Piu;
+    shmCMatrix Piu;
 
     // Half-rotated Orbitals at interpolating points
     std::vector<shmCMatrix> cPua;
     /************************************************/
 
     // one-body piece of Hamiltonian factorization
-    TMatrix v0;
+    CMatrix v0;
 
     ValueType E0;
 

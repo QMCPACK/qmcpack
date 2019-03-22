@@ -157,9 +157,9 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
         using elementA = typename SparseMatrixA::element; 
         using elementB = typename MultiArray1DB::element; 
         using elementC = typename std::decay<MultiArray1DC>::type::element;
-        static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
-        static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");
-        static_assert(std::is_convertible<T,elementC>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_convertible<T,elementC>::value,"Problems with sparse dispatch");
         assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T');
         assert(op_tag<MultiArray1DB>::value == 'N');
         if(op_tag<SparseMatrixA>::value == 'N') {
@@ -172,12 +172,12 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
 
         csrmv( op_tag<SparseMatrixA>::value,
             arg(A).size(0), arg(A).size(1),
-            elementC(alpha), "GxxCxx",
+            elementA(alpha), "GxxCxx",
             pointer_dispatch(arg(A).non_zero_values_data()),
             pointer_dispatch(arg(A).non_zero_indices2_data()),
             pointer_dispatch(arg(A).pointers_begin()), 
             pointer_dispatch(arg(A).pointers_end()),
-            pointer_dispatch(arg(B).origin()), elementC(beta), 
+            pointer_dispatch(arg(B).origin()), elementA(beta), 
             pointer_dispatch(C.origin()));
 
         return std::forward<MultiArray1DC>(C);
@@ -192,7 +192,7 @@ template<class MultiArray2DA, class MultiArray1DB, class MultiArray1DC,
         >::type, typename = void // TODO change to use dispatch 
 >
 MultiArray1DC product(MultiArray2DA const& A, MultiArray1DB const& B, MultiArray1DC&& C){
-        using Type = typename std::decay<MultiArray1DC>::type::element;
+        using Type = typename std::decay<MultiArray2DA>::type::element;
         return product(Type(1.), A, B, Type(0.), std::forward<MultiArray1DC>(C));
 }
 //*/
@@ -227,9 +227,9 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
         using elementA = std::remove_cv_t<typename SparseMatrixA::element>; 
         using elementB = std::remove_cv_t<typename MultiArray2DB::element>; 
         using elementC = typename std::decay<MultiArray2DC>::type::element;
-        static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
-        static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");
-        static_assert(std::is_convertible<T,elementC>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_convertible<T,elementC>::value,"Problems with sparse dispatch");
         assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T'); 
         assert(op_tag<MultiArray2DB>::value == 'N');
         assert( arg(B).stride(1) == 1 );
@@ -246,13 +246,13 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
 
         csrmm( op_tag<SparseMatrixA>::value, 
             arg(A).size(0), arg(B).size(1), arg(A).size(1), 
-            elementC(alpha), "GxxCxx", 
+            elementA(alpha), "GxxCxx", 
             pointer_dispatch(arg(A).non_zero_values_data()), 
             pointer_dispatch(arg(A).non_zero_indices2_data()),
             pointer_dispatch(arg(A).pointers_begin()),  
             pointer_dispatch(arg(A).pointers_end()),
             pointer_dispatch(arg(B).origin()), arg(B).stride(0), 
-            elementC(beta), 
+            elementA(beta), 
             pointer_dispatch(C.origin()), 
             C.stride(0));
 
@@ -267,7 +267,7 @@ template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
         >::type
 >
 MultiArray2DC product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArray2DC&& C){
-        using Type = typename std::decay<MultiArray2DC>::type::element;
+        using Type = typename std::decay<MultiArray2DA>::type::element;
         return product(Type(1.), A, B, Type(0.), std::forward<MultiArray2DC>(C));
 }
 

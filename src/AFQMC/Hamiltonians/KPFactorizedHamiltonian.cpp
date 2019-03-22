@@ -29,6 +29,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+#if QMC_COMPLEX
 HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pureSD,
 	     bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
 	     double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
@@ -1378,6 +1379,35 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             global_ncvecs));
 
 }
+
+#else
+
+HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pureSD,
+             bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
+             double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
+             hdf_archive& hdf_restart) {
+  APP_ABORT(" Error: KPFactorizedHamiltonian requires complex build (QMC_COMPLEX=1). \n"); 
+  return HamiltonianOperations();
+}
+
+HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(bool pureSD,
+             bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
+             double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
+             hdf_archive& hdf_restart) {
+  APP_ABORT(" Error: KPFactorizedHamiltonian requires complex build (QMC_COMPLEX=1). \n"); 
+  return HamiltonianOperations();
+}
+
+HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(bool pureSD,
+             bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
+             double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
+             hdf_archive& hdf_restart) {
+  APP_ABORT(" Error: KPFactorizedHamiltonian requires complex build (QMC_COMPLEX=1). \n");
+  return HamiltonianOperations();
+}
+
+
+#endif
 
 }
 }

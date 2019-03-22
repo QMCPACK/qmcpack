@@ -298,6 +298,38 @@ namespace backup_impl
 #endif
   }
 
-}
+  inline static
+  void csrmv(const char transa, const int M, const int K, float alpha, const char *matdescra, float *A, const int* indx, const int *pntrb, const int *pntre, const std::complex<float> *x, const float beta, std::complex<float> *y  )
+  {
+    assert(matdescra[0]=='G' && (matdescra[3]=='C'));
+    csrmm(transa,M,2,K,alpha,matdescra,A,indx,pntrb,pntre,reinterpret_cast<float const*>(x),2,
+                                       beta,reinterpret_cast<float *>(y),2);
+  }
 
+  inline static
+  void csrmv(const char transa, const int M, const int K, double alpha, const char *matdescra, double *A, const int* indx, const int *pntrb, const int *pntre, const std::complex<double> *x, const double beta, std::complex<double> *y  )
+  {
+    assert(matdescra[0]=='G' && (matdescra[3]=='C'));
+    csrmm(transa,M,2,K,alpha,matdescra,A,indx,pntrb,pntre,reinterpret_cast<double const*>(x),2,
+                                       beta,reinterpret_cast<double *>(y),2);
+  }
+
+  inline static
+  void csrmm(const char transa, const int M, const int N, const int K, const double alpha, const char *matdescra, const double *A, const int *indx, const int *pntrb, const int *pntre, const std::complex<double> *B, const int ldb, const double beta, std::complex<double> *C, const int ldc)
+  {
+    assert(matdescra[0]=='G' && (matdescra[3]=='C'));
+    csrmm(transa,M,2*N,K,alpha,matdescra,A,indx,pntrb,pntre,reinterpret_cast<double const*>(B),2*ldb,
+                                       beta,reinterpret_cast<double *>(C),2*ldc);
+  }
+
+  inline static
+  void csrmm(const char transa, const int M, const int N, const int K, const float alpha, const char *matdescra, const float *A, const int *indx, const int *pntrb, const int *pntre, const std::complex<float> *B, const int ldb, const float beta, std::complex<float> *C, const int ldc)
+  {
+    assert(matdescra[0]=='G' && (matdescra[3]=='C'));
+    csrmm(transa,M,2*N,K,alpha,matdescra,A,indx,pntrb,pntre,reinterpret_cast<float const*>(B),2*ldb,
+                                       beta,reinterpret_cast<float *>(C),2*ldc);
+  }
+
+
+}
 #endif

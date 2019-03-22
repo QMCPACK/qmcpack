@@ -146,7 +146,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       htype = HamiltonianTypes(htype_);
     }
 
-    int int_blocks,nvecs,nkpts=-1;
+    int int_blocks,nvecs;
     std::vector<int> Idata(8);
     if(head)
       if(!dump.readEntry(Idata,"dims")) {
@@ -169,7 +169,10 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 //      APP_ABORT(" ");
     }
     nvecs = Idata[7];
+#ifdef QMC_COMPLEX
+    int nkpts=-1;
     if(htype == KPFactorized || htype == KPTHC) nkpts=Idata[2];
+#endif
 
     // 1 body hamiltonian: Why isn't this in shared memory!!!
     boost::multi::array<ValueType,2> H1({NMO,NMO});
@@ -197,9 +200,12 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       using std::conj;
       using std::imag;
       bool foundH1=false;
+#ifdef QMC_COMPLEX
       if(nkpts > 0) {
         // nothing to do, H1 is read during construction of HamiltonianOperations object.
-      } else if(dump.readEntry(H1,"hcore")) {
+      } else 
+#endif
+      if(dump.readEntry(H1,"hcore")) {
         foundH1 = true;
       } else {
 
@@ -235,6 +241,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     TG.Global().broadcast_n(to_address(H1.origin()),H1.num_elements(),0);
 
     // now read the integrals
+#ifdef QMC_COMPLEX
     if(htype == KPTHC) {
 
       APP_ABORT(" Error: KPTHC hamiltonian not yet working. \n");  
@@ -269,7 +276,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       return Hamiltonian(KPFactorizedHamiltonian(AFinfo,cur,std::move(H1),TG,
                                         NuclearCoulombEnergy,FrozenCoreEnergy));
 
-    } else if(htype == THC) {
+    } else 
+#endif
+    if(htype == THC) {
 
       if(coreid < nread && !dump.push("THC",false)) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not THC found. \n";
