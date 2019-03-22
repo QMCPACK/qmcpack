@@ -5488,6 +5488,245 @@ def generate_opts(opt_reqs,**kwargs):
 #end def generate_opts
 
 
+opt_defaults = obj(
+    method      = 'linear',
+    minmethod   = 'quartic',
+    cost        = 'variance',
+    cycles      = 12,
+    var_cycles  = 4,
+    samples     = 204800,
+    minwalkers  = 0.3,
+    nonlocalpp  = True,
+    warmupsteps = 300,                
+    blocks      = 100,                
+    steps       = 1,                  
+    substeps    = 10,                 
+    timestep    = 0.3,
+    usedrift    = False,  
+    )
+
+linear_quartic_defaults = obj(
+    usebuffer         = True,
+    exp0              = -6,
+    bigchange         = 10.0,
+    alloweddifference = 1e-04,
+    stepsize          = 0.15,
+    nstabilizers      = 1,
+    )
+linear_oneshift_defaults = obj(
+    shift_i = 0.01,
+    shift_s = 1.00,
+    )
+linear_adaptive_defaults = obj(
+    max_relative_change = 10.0,
+    max_param_change    = 0.3,
+    shift_i             = 0.01,
+    shift_s             = 1.00,
+    )
+
+opt_method_defaults = obj({
+    ('linear'  ,'quartic' ) : linear_quartic_defaults,
+    ('linear'  ,'rescale' ) : linear_quartic_defaults,
+    ('linear'  ,'linemin' ) : linear_quartic_defaults,
+    ('cslinear','quartic' ) : linear_quartic_defaults,
+    ('cslinear','rescale' ) : linear_quartic_defaults,
+    ('cslinear','linemin' ) : linear_quartic_defaults,
+    ('linear'  ,'adaptive') : linear_adaptive_defaults,
+    ('linear'  ,'oneshift') : linear_oneshift_defaults,
+    ('linear'  ,'oneshiftonly') : linear_oneshift_defaults,
+    })
+del linear_quartic_defaults
+del linear_oneshift_defaults
+del linear_adaptive_defaults
+
+vmc_defaults = obj(
+    walkers     = 1,
+    warmupsteps = 50,
+    blocks      = 800,
+    steps       = 10,
+    substeps    = 3,
+    timestep    = 0.3,
+    checkpoint  = -1,
+    )
+vmc_test_defaults = obj(
+    warmupsteps = 10,
+    blocks      = 20,
+    steps       =  4,
+    ).set_optional(**vmc_defaults)
+vmc_noJ_defaults = obj(
+    warmupsteps = 200,
+    blocks      = 800,
+    steps       = 100,
+    ).set_optional(**vmc_defaults)
+
+dmc_defaults = obj(
+    warmupsteps          = 20,
+    blocks               = 200,
+    steps                = 10,
+    timestep             = 0.01,
+    checkpoint           = -1,
+    vmc_samples          = 2048,
+    vmc_samplesperthread = None, 
+    vmc_walkers          = 1,
+    vmc_warmupsteps      = 30,
+    vmc_blocks           = 40,
+    vmc_steps            = 10,
+    vmc_substeps         = 3,
+    vmc_timestep         = 0.3,
+    vmc_checkpoint       = -1,
+    eq_dmc               = False,
+    eq_warmupsteps       = 20,
+    eq_blocks            = 20,
+    eq_steps             = 5,
+    eq_timestep          = 0.02,
+    eq_checkpoint        = -1,
+    ntimesteps           = 1,
+    timestep_factor      = 0.5,    
+    nonlocalmoves        = None,
+    )
+dmc_test_defaults = obj(
+    warmupsteps     = 2,
+    blocks          = 10,
+    steps           = 2,
+    ).set_optional(**dmc_defaults)
+dmc_noJ_defaults = obj(
+    warmupsteps     = 40,
+    blocks          = 400,
+    steps           = 20,
+    ).set_optional(**dmc_defaults)
+
+qmc_defaults = obj(
+    opt      = opt_defaults,
+    vmc      = vmc_defaults,
+    vmc_test = vmc_test_defaults,
+    vmc_noJ  = vmc_noJ_defaults,
+    dmc      = dmc_defaults,
+    dmc_test = dmc_test_defaults,
+    dmc_noJ  = dmc_noJ_defaults,
+    )
+del opt_defaults
+del vmc_defaults
+del vmc_test_defaults
+del vmc_noJ_defaults
+del dmc_defaults
+del dmc_test_defaults
+del dmc_noJ_defaults
+
+def generate_vmc_calculations(
+    walkers    ,
+    warmupsteps,
+    blocks     ,
+    steps      ,
+    substeps   ,
+    timestep   ,
+    checkpoint ,
+    loc        = 'generate_vmc_calculations',
+    ):
+    vmc_calcs = [
+        vmc(
+            walkers     = walkers,
+            warmupsteps = warmupsteps,
+            blocks      = blocks,
+            steps       = steps,
+            substeps    = substeps,
+            timestep    = timestep,
+            checkpoint  = checkpoint,
+            )
+        ]
+    return vmc_calcs
+#end def generate_vmc_calculations
+
+
+
+def generate_dmc_calculations(
+    warmupsteps         ,
+    blocks              ,
+    steps               ,
+    timestep            ,
+    checkpoint          ,
+    vmc_samples         ,
+    vmc_samplesperthread, 
+    vmc_walkers         ,
+    vmc_warmupsteps     ,
+    vmc_blocks          ,
+    vmc_steps           ,
+    vmc_substeps        ,
+    vmc_timestep        ,
+    vmc_checkpoint      ,
+    eq_dmc              ,
+    eq_warmupsteps      ,
+    eq_blocks           ,
+    eq_steps            ,
+    eq_timestep         ,
+    eq_checkpoint       ,
+    ntimesteps          ,
+    timestep_factor     ,    
+    nonlocalmoves       ,
+    loc                 = 'generate_dmc_calculations',
+    ):
+
+    if missing(vmc_samples) and missing(vmc_samplesperthread):
+        error('vmc samples (dmc walkers) not specified\nplease provide one of the following keywords: vmc_samples, vmc_samplesperthread',loc)
+    #end if
+
+    vsec = vmc(
+        walkers     = vmc_walkers,
+        warmupsteps = vmc_warmupsteps,
+        blocks      = vmc_blocks,
+        steps       = vmc_steps,
+        substeps    = vmc_substeps,
+        timestep    = vmc_timestep,
+        checkpoint  = vmc_checkpoint,
+        )
+    if not missing(vmc_samplesperthread):
+        vsec.samplesperthread = vmc_samplesperthread
+    elif not missing(vmc_samples):
+        vsec.samples = vmc_samples
+    #end if
+
+    if J0:
+        warmupsteps = J0_warmupsteps
+        blocks      = J0_blocks
+        steps       = J0_steps
+    elif test:
+        warmupsteps = test_warmupsteps
+        blocks      = test_blocks
+        steps       = test_steps
+    #end if
+
+    dmc_calcs = [vsec]
+    if eq_dmc:
+        dmc_calcs.append(
+            dmc(
+                warmupsteps   = eq_warmupsteps,
+                blocks        = eq_blocks,
+                steps         = eq_steps,
+                timestep      = eq_timestep,
+                checkpoint    = eq_checkpoint,
+                nonlocalmoves = nlmove,
+                )
+            )
+    #end if
+    tfac = 1.0
+    for n in range(ntimesteps):
+        sfac = 1.0/tfac
+        dmc_calcs.append(
+            dmc(
+                warmupsteps   = int(sfac*warmupsteps),
+                blocks        = blocks,
+                steps         = int(sfac*steps),
+                timestep      = tfac*timestep,
+                checkpoint    = checkpoint,
+                nonlocalmoves = nlmove,
+                )
+            )
+        tfac *= timestep_factor
+    #end for
+    
+    return dmc_calcs
+#end def generate_dmc_calculations
+
+
 
 def generate_qmcpack_input(selector,*args,**kwargs):
     QIcollections.clear()
@@ -5561,120 +5800,6 @@ gen_basic_input_defaults = obj(
     qmc            = None, # opt,vmc,vmc_test,dmc,dmc_test
     )
 
-opt_defaults = obj(
-    method      = 'linear',
-    minmethod   = 'quartic',
-    cost        = 'variance',
-    cycles      = 12,
-    var_cycles  = 4,
-    samples     = 204800,
-    minwalkers  = 0.3,
-    nonlocalpp  = True,
-    warmupsteps = 300,                
-    blocks      = 100,                
-    steps       = 1,                  
-    substeps    = 10,                 
-    timestep    = 0.3,
-    usedrift    = False,  
-    )
-
-linear_quartic_defaults = obj(
-    usebuffer         = True,
-    exp0              = -6,
-    bigchange         = 10.0,
-    alloweddifference = 1e-04,
-    stepsize          = 0.15,
-    nstabilizers      = 1,
-    )
-linear_oneshift_defaults = obj(
-    shift_i = 0.01,
-    shift_s = 1.00,
-    )
-linear_adaptive_defaults = obj(
-    max_relative_change = 10.0,
-    max_param_change    = 0.3,
-    shift_i             = 0.01,
-    shift_s             = 1.00,
-    )
-
-opt_method_defaults = obj({
-    ('linear'  ,'quartic' ) : linear_quartic_defaults,
-    ('linear'  ,'rescale' ) : linear_quartic_defaults,
-    ('linear'  ,'linemin' ) : linear_quartic_defaults,
-    ('cslinear','quartic' ) : linear_quartic_defaults,
-    ('cslinear','rescale' ) : linear_quartic_defaults,
-    ('cslinear','linemin' ) : linear_quartic_defaults,
-    ('linear'  ,'adaptive') : linear_adaptive_defaults,
-    ('linear'  ,'oneshift') : linear_oneshift_defaults,
-    ('linear'  ,'oneshiftonly') : linear_oneshift_defaults,
-    })
-
-vmc_defaults = obj(
-    walkers     = 1,
-    warmupsteps = 50,
-    blocks      = 800,
-    steps       = 10,
-    substeps    = 3,
-    timestep    = 0.3,
-    checkpoint  = -1,
-    )
-vmc_test_defaults = obj(
-    warmupsteps = 10,
-    blocks      = 20,
-    steps       =  4,
-    ).set_optional(**vmc_defaults)
-vmc_noJ_defaults = obj(
-    warmupsteps = 200,
-    blocks      = 800,
-    steps       = 100,
-    ).set_optional(**vmc_defaults)
-
-dmc_defaults = obj(
-    warmupsteps          = 20,
-    blocks               = 200,
-    steps                = 10,
-    timestep             = 0.01,
-    checkpoint           = -1,
-    vmc_samples          = 2048,
-    vmc_samplesperthread = None, 
-    vmc_walkers          = 1,
-    vmc_warmupsteps      = 30,
-    vmc_blocks           = 40,
-    vmc_steps            = 10,
-    vmc_substeps         = 3,
-    vmc_timestep         = 0.3,
-    vmc_checkpoint       = -1,
-    eq_dmc               = False,
-    eq_warmupsteps       = 20,
-    eq_blocks            = 20,
-    eq_steps             = 5,
-    eq_timestep          = 0.02,
-    eq_checkpoint        = -1,
-    ntimesteps           = 1,
-    timestep_factor      = 0.5,    
-    nonlocalmoves        = None,
-    )
-dmc_test_defaults = obj(
-    warmupsteps     = 2,
-    blocks          = 10,
-    steps           = 2,
-    ).set_optional(**dmc_defaults)
-dmc_noJ_defaults = obj(
-    warmupsteps     = 40,
-    blocks          = 400,
-    steps           = 20,
-    ).set_optional(**dmc_defaults)
-
-qmc_defaults = obj(
-    opt      = opt_defaults,
-    vmc      = vmc_defaults,
-    vmc_test = vmc_test_defaults,
-    vmc_noJ  = vmc_noJ_defaults,
-    dmc      = dmc_defaults,
-    dmc_test = dmc_test_defaults,
-    dmc_noJ  = dmc_noJ_defaults,
-    )
-
 def generate_basic_input(**kwargs):
     # capture inputs
     kw = obj(kwargs)
@@ -5686,17 +5811,19 @@ def generate_basic_input(**kwargs):
         if kw.qmc not in qmc_defaults:
             QmcpackInput.class_error('invalid input for argument "qmc"\ninvalid input: {}\nvalid options are: {}'.format(kw.qmc,sorted(qmc_defaults.keys())),'generate_basic_input')
         #end if
+        qmc_keys = []
         kw.set_optional(**qmc_defaults[kw.qmc])
-        valid |= set(qmc_defaults[kw.qmc].keys())
+        qmc_keys += list(qmc_defaults[kw.qmc].keys())
         if kw.qmc=='opt':
             key = (kw.method,kw.minmethod)
             if key not in opt_method_defaults:
                 QmcpackInput.class_error('invalid input for arguments "method,minmethod"\ninvalid input: {}\nvalid options are: {}'.format(key,sorted(opt_method_defaults.keys())),'generate_basic_input')
             #end if
             kw.set_optional(**opt_method_defaults[key])
-            valid |= set(opt_method_defaults[key].keys())
+            qmc_keys += list(opt_method_defaults[key].keys())
             del key
         #end if
+        valid |= set(qmc_keys)
     #end if
     # screen for invalid keywords
     invalid_kwargs = set(kw.keys())-valid
@@ -5898,6 +6025,12 @@ def generate_basic_input(**kwargs):
         sim.traces = kw.traces
     #end if
 
+    if len(kw.calculations)==0 and kw.qmc is not None:
+        qmc_inputs = kw.obj(*qmc_keys)
+        if 'vmc' in kw.qmc:
+            kw.calculations = generate_vmc_calculations(**qmc_inputs)
+        #end if
+    #end if
     for calculation in kw.calculations:
         if isinstance(calculation,loop):
             calc = calculation.qmc
