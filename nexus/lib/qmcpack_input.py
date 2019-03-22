@@ -142,7 +142,7 @@ from StringIO import StringIO
 from superstring import string2val
 from generic import obj,hidden
 from xmlreader import XMLreader,XMLelement
-from developer import DevBase
+from developer import DevBase,error
 from periodic_table import is_element
 from structure import Structure,Jellium
 from physical_system import PhysicalSystem
@@ -216,6 +216,14 @@ def yesno(var):
         return 'no'
     #end if
 #end def yesno
+
+def yesnostr(var):
+    if isinstance(var,str):
+        return var
+    else:
+        return yesno(var)
+    #end if
+#end def yesnostr
 
 def onezero(var):
     if var:
@@ -2388,14 +2396,14 @@ class linear(QIxml):
     tag = 'qmc'
     attributes = ['method','move','checkpoint','gpu','trace']
     elements   = ['estimator']
-    parameters = ['blocks','warmupsteps','stepsbetweensamples','timestep',
-                  'samples','minwalkers','maxweight','usedrift','minmethod',
-                  'beta','exp0','bigchange','alloweddifference','stepsize',
-                  'stabilizerscale','nstabilizers','max_its','cgsteps','eigcg',
-                  'walkers','nonlocalpp','usebuffer','gevmethod','steps','substeps',
-                  'stabilizermethod','rnwarmupsteps','walkersperthread','minke',
-                  'gradtol','alpha','tries','min_walkers','samplesperthread',
-                  'use_nonlocalpp_deriv',
+    parameters = ['walkers','warmupsteps','blocks','steps','substeps','timestep',
+                  'usedrift','stepsbetweensamples','samples','minmethod',
+                  'minwalkers','maxweight','nonlocalpp','usebuffer',
+                  'alloweddifference','gevmethod','beta','exp0','bigchange',
+                  'stepsize','stabilizerscale','nstabilizers','max_its',
+                  'cgsteps','eigcg','stabilizermethod','rnwarmupsteps',
+                  'walkersperthread','minke','gradtol','alpha','tries',
+                  'min_walkers','samplesperthread','use_nonlocalpp_deriv',
                   'shift_i','shift_s','max_relative_change','max_param_change',
                   'chase_lowest','chase_closest','block_lm','nblocks','nolds',
                   'nkept',
@@ -2409,11 +2417,13 @@ class cslinear(QIxml):
     tag = 'qmc'
     attributes = ['method','move','checkpoint','gpu','trace']
     elements   = ['estimator']
-    parameters = ['blocks','warmupsteps','stepsbetweensamples','steps','samples','timestep','usedrift',
-                  'minmethod','gevmethod','exp0','nstabilizers','stabilizerscale',
-                  'stepsize','alloweddifference','beta','bigchange','minwalkers',
-                  'usebuffer','maxweight','nonlocalpp','max_its','walkers','substeps',
-                  'stabilizermethod','cswarmupsteps','alpha_error','gevsplit','beta_error']
+    parameters = ['walkers','warmupsteps','blocks','steps','substeps','timestep',
+                  'usedrift','stepsbetweensamples','samples','minmethod',
+                  'minwalkers','maxweight','nonlocalpp','usebuffer',
+                  'alloweddifference','gevmethod','beta','exp0','bigchange',
+                  'stepsize','stabilizerscale','nstabilizers','max_its',
+                  'stabilizermethod','cswarmupsteps','alpha_error','gevsplit',
+                  'beta_error']
     costs      = ['energy','unreweightedvariance','reweightedvariance']
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno)
 #end class cslinear
@@ -2423,7 +2433,7 @@ class vmc(QIxml):
     tag = 'qmc'
     attributes = ['method','multiple','warp','move','gpu','checkpoint','trace','target','completed','id']
     elements   = ['estimator','record']
-    parameters = ['walkers','blocks','steps','substeps','timestep','usedrift','warmupsteps','samples','nonlocalpp','stepsbetweensamples','samplesperthread','tau','walkersperthread','reconfiguration','dmcwalkersperthread','current','ratio','firststep','minimumtargetwalkers']
+    parameters = ['walkers','warmupsteps','blocks','steps','substeps','timestep','usedrift','stepsbetweensamples','samples','samplesperthread','nonlocalpp','tau','walkersperthread','reconfiguration','dmcwalkersperthread','current','ratio','firststep','minimumtargetwalkers']
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,reconfiguration=yesno,ratio=yesno,completed=yesno)
 #end class vmc
 
@@ -2432,8 +2442,8 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace','target','completed','id','continue']
     elements   = ['estimator']
-    parameters = ['walkers','blocks','steps','timestep','nonlocalmove','nonlocalmoves','warmupsteps','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger']
-    write_types = obj(gpu=yesno,nonlocalmoves=yesno,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno)
+    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger']
+    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno)
 #end class dmc
 
 class rmc(QIxml):
@@ -5488,12 +5498,17 @@ def generate_opts(opt_reqs,**kwargs):
 #end def generate_opts
 
 
+
 opt_defaults = obj(
     method      = 'linear',
     minmethod   = 'quartic',
     cost        = 'variance',
     cycles      = 12,
     var_cycles  = 4,
+    var_samples = None,
+    )
+
+shared_opt_defaults = obj(
     samples     = 204800,
     minwalkers  = 0.3,
     nonlocalpp  = True,
@@ -5512,16 +5527,19 @@ linear_quartic_defaults = obj(
     alloweddifference = 1e-04,
     stepsize          = 0.15,
     nstabilizers      = 1,
+    **shared_opt_defaults
     )
 linear_oneshift_defaults = obj(
     shift_i = 0.01,
     shift_s = 1.00,
+    **shared_opt_defaults
     )
 linear_adaptive_defaults = obj(
     max_relative_change = 10.0,
     max_param_change    = 0.3,
     shift_i             = 0.01,
     shift_s             = 1.00,
+    **shared_opt_defaults
     )
 
 opt_method_defaults = obj({
@@ -5535,9 +5553,13 @@ opt_method_defaults = obj({
     ('linear'  ,'oneshift') : linear_oneshift_defaults,
     ('linear'  ,'oneshiftonly') : linear_oneshift_defaults,
     })
+del shared_opt_defaults
 del linear_quartic_defaults
 del linear_oneshift_defaults
 del linear_adaptive_defaults
+
+allowed_opt_method_inputs = set(linear.attributes+linear.parameters
+                                +cslinear.attributes+cslinear.parameters)
 
 vmc_defaults = obj(
     walkers     = 1,
@@ -5585,14 +5607,20 @@ dmc_defaults = obj(
     nonlocalmoves        = None,
     )
 dmc_test_defaults = obj(
-    warmupsteps     = 2,
+    vmc_warmupsteps = 10,
+    vmc_blocks      = 20,
+    vmc_steps       =  4,
+    eq_warmupsteps  =  2,
+    eq_blocks       =  5,
+    eq_steps        =  2,
+    warmupsteps     =  2,
     blocks          = 10,
-    steps           = 2,
+    steps           =  2,
     ).set_optional(**dmc_defaults)
 dmc_noJ_defaults = obj(
-    warmupsteps     = 40,
+    warmupsteps     =  40,
     blocks          = 400,
-    steps           = 20,
+    steps           =  20,
     ).set_optional(**dmc_defaults)
 
 qmc_defaults = obj(
@@ -5611,6 +5639,69 @@ del vmc_noJ_defaults
 del dmc_defaults
 del dmc_test_defaults
 del dmc_noJ_defaults
+
+
+
+def generate_opt_calculations(
+    method     ,
+    cost       ,
+    cycles     ,
+    var_cycles ,
+    var_samples,
+    loc        = 'generate_opt_calculations',
+    **opt_inputs
+    ):
+
+    methods = obj(linear=linear,cslinear=cslinear)
+    if method not in methods:
+        error('invalid optimization method requested\ninvalid method: {0}\nvalid options are: {1}'.format(method,sorted(methods.keys())),loc)
+    #end if
+    opt = methods[method]
+
+    opt_inputs = obj(opt_inputs)
+    invalid = set(opt_inputs.keys())-allowed_opt_method_inputs
+    if len(invalid)>0:
+        error('invalid optimization inputs provided\ninvalid inputs: {}\nvalid options are: {}'.format(sorted(invalid),sorted(allowed_opt_method_inputs)))
+    #end if
+    if 'minmethod' in opt_inputs and opt_inputs.minmethod.lower().startswith('oneshift'):
+        opt_inputs.minmethod = 'OneShiftOnly'
+    #end if
+
+    if cost=='variance':
+        cost = (0.0,1.0,0.0)
+    elif cost=='energy':
+        cost = (1.0,0.0,0.0)
+    elif isinstance(cost,(tuple,list)) and (len(cost)==2 or len(cost)==3):
+        if len(cost)==2:
+            cost = (cost[0],0.0,cost[1])
+        #end if
+    else:
+        error('invalid optimization cost function encountered\ninvalid cost fuction: {0}\nvalid options are: variance, energy, (0.95,0.05), etc'.format(cost),loc)
+    #end if
+    opt_calcs = []
+    if abs(cost[0])>1e-6 and var_cycles>0:
+        vmin_opt = opt(
+            energy               = 0.0,
+            unreweightedvariance = 1.0,
+            reweightedvariance   = 0.0,
+            **opt_inputs
+            )
+        if var_samples is not None:
+            vmin_opt.samples = var_samples
+        #end if
+        opt_calcs.append(loop(max=var_cycles,qmc=vmin_opt))
+    #end if
+    cost_opt = opt(
+        energy               = cost[0],
+        unreweightedvariance = cost[1],
+        reweightedvariance   = cost[2],
+        **opt_inputs
+        )
+    opt_calcs.append(loop(max=cycles,qmc=cost_opt))
+    return opt_calcs
+#end def generate_opt_calculations
+
+
 
 def generate_vmc_calculations(
     walkers    ,
@@ -5665,11 +5756,11 @@ def generate_dmc_calculations(
     loc                 = 'generate_dmc_calculations',
     ):
 
-    if missing(vmc_samples) and missing(vmc_samplesperthread):
+    if vmc_samples is None and vmc_samplesperthread is None:
         error('vmc samples (dmc walkers) not specified\nplease provide one of the following keywords: vmc_samples, vmc_samplesperthread',loc)
     #end if
 
-    vsec = vmc(
+    vmc_calc = vmc(
         walkers     = vmc_walkers,
         warmupsteps = vmc_warmupsteps,
         blocks      = vmc_blocks,
@@ -5678,23 +5769,13 @@ def generate_dmc_calculations(
         timestep    = vmc_timestep,
         checkpoint  = vmc_checkpoint,
         )
-    if not missing(vmc_samplesperthread):
-        vsec.samplesperthread = vmc_samplesperthread
-    elif not missing(vmc_samples):
-        vsec.samples = vmc_samples
+    if vmc_samplesperthread is not None:
+        vmc_calc.samplesperthread = vmc_samplesperthread
+    elif vmc_samples is not None:
+        vmc_calc.samples = vmc_samples
     #end if
 
-    if J0:
-        warmupsteps = J0_warmupsteps
-        blocks      = J0_blocks
-        steps       = J0_steps
-    elif test:
-        warmupsteps = test_warmupsteps
-        blocks      = test_blocks
-        steps       = test_steps
-    #end if
-
-    dmc_calcs = [vsec]
+    dmc_calcs = [vmc_calc]
     if eq_dmc:
         dmc_calcs.append(
             dmc(
@@ -5703,7 +5784,6 @@ def generate_dmc_calculations(
                 steps         = eq_steps,
                 timestep      = eq_timestep,
                 checkpoint    = eq_checkpoint,
-                nonlocalmoves = nlmove,
                 )
             )
     #end if
@@ -5717,11 +5797,18 @@ def generate_dmc_calculations(
                 steps         = int(sfac*steps),
                 timestep      = tfac*timestep,
                 checkpoint    = checkpoint,
-                nonlocalmoves = nlmove,
                 )
             )
         tfac *= timestep_factor
     #end for
+
+    if nonlocalmoves is not None:
+        for calc in dmc_calcs:
+            if isinstance(calc,dmc):
+                calc.nonlocalmoves = nonlocalmoves
+            #end if
+        #end for
+    #end if
     
     return dmc_calcs
 #end def generate_dmc_calculations
@@ -5815,7 +5902,7 @@ def generate_basic_input(**kwargs):
         kw.set_optional(**qmc_defaults[kw.qmc])
         qmc_keys += list(qmc_defaults[kw.qmc].keys())
         if kw.qmc=='opt':
-            key = (kw.method,kw.minmethod)
+            key = (kw.method,kw.minmethod.lower())
             if key not in opt_method_defaults:
                 QmcpackInput.class_error('invalid input for arguments "method,minmethod"\ninvalid input: {}\nvalid options are: {}'.format(key,sorted(opt_method_defaults.keys())),'generate_basic_input')
             #end if
@@ -6027,8 +6114,12 @@ def generate_basic_input(**kwargs):
 
     if len(kw.calculations)==0 and kw.qmc is not None:
         qmc_inputs = kw.obj(*qmc_keys)
-        if 'vmc' in kw.qmc:
+        if kw.qmc=='opt':
+            kw.calculations = generate_opt_calculations(**qmc_inputs)
+        elif 'vmc' in kw.qmc:
             kw.calculations = generate_vmc_calculations(**qmc_inputs)
+        elif 'dmc' in kw.qmc:
+            kw.calculations = generate_dmc_calculations(**qmc_inputs)
         #end if
     #end if
     for calculation in kw.calculations:
