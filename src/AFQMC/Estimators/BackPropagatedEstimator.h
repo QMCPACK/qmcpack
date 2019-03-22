@@ -107,6 +107,13 @@ class BackPropagatedEstimator: public EstimatorBase
   void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
   {
     if(writer) {
+      if(write_metadata) {
+        dump.push("Metadata");
+        int nback_prop = wset.getNBackProp();
+        dump.write(nback_prop, "NumBackProp");
+        dump.pop();
+        write_metadata = false;
+      }
       bool write = wset[0].isBMatrixBufferFull();
       if(write) {
         for(int i = 0; i < DMBuffer.size(); i++)
@@ -161,6 +168,7 @@ class BackPropagatedEstimator: public EstimatorBase
   int dm_size;
   std::pair<int,int> dm_dims;
   CVector denom, denom_average;
+  bool write_metadata = true;
 
 };
 }
