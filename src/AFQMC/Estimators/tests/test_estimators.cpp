@@ -185,7 +185,7 @@ TEST_CASE("reduced_density_matrix", "[estimators]")
       ma::scal(1.0/denom, BPRDM);
       ComplexType trace = ComplexType(0.0);
       for(int i = 0; i < NMO; i++) trace += BPRDM[i][i];
-      REQUIRE(int(trace.real())==NAEA);
+      REQUIRE(trace.real() == Approx(NAEA));
       boost::multi::array<ComplexType,2> Gw;
       Gw.reextent({1,NMO*NMO});
       wfn.MixedDensityMatrix(wset, Gw, false, true);
@@ -196,8 +196,9 @@ TEST_CASE("reduced_density_matrix", "[estimators]")
       ma::scal(1.0/denom, BPRDM[0]);
       ma::scal(1.0/denom, BPRDM[1]);
       ComplexType trace = ComplexType(0.0);
-      for(int i = 0; i < NMO; i++) trace += BPRDM[0][i][i] + BPRDM[1][i][i];
-      REQUIRE(int(trace.real())==(NAEA+NAEB));
+      for(int i = 0; i < NMO; i++)
+        trace += BPRDM[0][i][i] + BPRDM[1][i][i];
+      REQUIRE(trace.real() == Approx(NAEA+NAEB));
       boost::multi::array<ComplexType,2> Gw;
       Gw.reextent({1,2*NMO*NMO});
       wfn.MixedDensityMatrix(wset, Gw, false, true);
