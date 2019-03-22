@@ -53,6 +53,8 @@ class BackPropagatedEstimator: public EstimatorBase
     }
 
     ncores_per_TG = TG.getNCoresPerTG();
+    if(ncores_per_TG > 1)
+      APP_ABORT("ncores > 1 is broken with back propagation. Fix this.");
     core_rank = TG.getLocalTGRank();
     writer = (TG.getGlobalRank()==0);
     if(wlk == CLOSED) {
