@@ -6027,7 +6027,7 @@ def generate_basic_input(**kwargs):
             spin_polarized = kw.spin_polarized,
             system         = kw.system,
             )
-    elif det_format=='old':
+    elif kw.det_format=='old':
         spobuilders = None
         if kw.orbspline is None:
             kw.orbspline = 'einspline'
