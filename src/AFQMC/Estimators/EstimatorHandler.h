@@ -41,6 +41,7 @@ class EstimatorHandler: public AFQMCInfo
         WALKER_TYPES walker_type,
         HamiltonianFactory& HamFac,
         std::string ham0,
+        double dt,
         bool defaultEnergyEstim=false,
         bool impsamp=true):
             AFQMCInfo(info),
@@ -152,7 +153,7 @@ class EstimatorHandler: public AFQMCInfo
           app_log()<<"Problems opening estimator hdf5 output file: " << hdf_file <<std::endl;
           APP_ABORT("Problems opening estimator hdf5 output file.\n");
         }
-        write_hdf_metadata(walker_type,!impsamp);
+        write_hdf_metadata(walker_type,!impsamp,dt);
       }
       out.open(filename.c_str());
       if(out.fail()) {
@@ -211,15 +212,16 @@ class EstimatorHandler: public AFQMCInfo
       (*it)->accumulate_block(wlks);
   }
 
-  void write_hdf_metadata(WALKER_TYPES wlk, bool free_projection)
+  void write_hdf_metadata(WALKER_TYPES wlk, bool free_projection, double dt)
   {
     dump.open(hdf_file);
     dump.push("Metadata");
     dump.write(NMO, "NMO");
     dump.write(NAEA, "NAEA");
     dump.write(NAEB, "NAEB");
-    dump.write(wlk, "WALKER_TYPE");
-    dump.write(free_projection, "FREE_PROJECTION");
+    dump.write(wlk, "WalkerType");
+    dump.write(free_projection, "FreeProjection");
+    dump.write(dt, "Timestep");
     dump.pop();
     dump.close();
   }
