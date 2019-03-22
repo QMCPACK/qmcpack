@@ -5815,18 +5815,17 @@ def generate_dmc_calculations(
 
 
 
-def generate_qmcpack_input(selector,*args,**kwargs):
+def generate_qmcpack_input(**kwargs):
     QIcollections.clear()
-    if 'system' in kwargs:
-        system = kwargs['system']
-        if isinstance(system,PhysicalSystem):
-            system.update_particles()
-        #end if
+    system = kwargs.get('system',None)
+    if isinstance(system,PhysicalSystem):
+        system.update_particles()
     #end if
+    selector = kwargs.pop('input_type','basic')
     if selector=='basic':
         inp = generate_basic_input(**kwargs)
     elif selector=='opt_jastrow':
-        inp = generate_opt_jastrow_input(*args,**kwargs)
+        inp = generate_opt_jastrow_input(**kwargs)
     else:
         QmcpackInput.class_error('selection '+str(selector)+' has not been implemented for qmcpack input generation')
     #end if
