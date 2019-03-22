@@ -66,6 +66,7 @@ class MixedRDMEstimator: public EstimatorBase
     std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
     denom.reextent({1});
     denom_average.reextent({1});
+    denom_average[0] = ComplexType(0.0);
   }
 
   ~MixedRDMEstimator() {}
@@ -97,9 +98,10 @@ class MixedRDMEstimator: public EstimatorBase
         denom_average[0] /= block_size;
         dump.push("Mixed");
         dump.write(DMAverage, "one_rdm_"+std::to_string(iblock));
-        dump.write(denom, "one_rdm_denom_"+std::to_string(iblock));
+        dump.write(denom_average, "one_rdm_denom_"+std::to_string(iblock));
         dump.pop();
         std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
+        std::fill(denom_average.begin(), denom_average.end(), ComplexType(0.0,0.0));
       }
     }
   }
