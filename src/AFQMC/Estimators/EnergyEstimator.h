@@ -71,8 +71,7 @@ class EnergyEstimator: public EstimatorBase
       wset.getProperty(WEIGHT,wprop[0]);  
       wset.getProperty(OVLP,wprop[1]);  
       wset.getProperty(PHASE,wprop[2]);  
-      //data[0] = data[1] = std::complex<double>(0,0);
-      std::fill_n(data.begin(), data.end(), ComplexType(0.0));
+      std::fill_n(data.begin(), data.size(), ComplexType(0.0));
       for(int i=0; i<nwalk; i++) {
         if(std::isnan(real(wprop[0][i]))) continue;
         if(importanceSampling) {
