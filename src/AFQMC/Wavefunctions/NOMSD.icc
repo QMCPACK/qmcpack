@@ -1131,7 +1131,7 @@ namespace afqmc
 #endif
           } else {
             // Mixed density matrix.
-            SDetOp.MixedDensityMatrix(OrbMats[id],wset[iw].SlaterMatrixN(Alpha),
+            SDetOp.MixedDensityMatrix(OrbMats[id],wset[iw].SlaterMatrix(Alpha),
                                       G2D_,to_address(ov_),compact);
           }
           // Construct RDM with Slater Matrix from beginning of path.
