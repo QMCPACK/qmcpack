@@ -108,6 +108,8 @@ class BackPropagatedEstimator: public EstimatorBase
 
   void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
   {
+    // I doubt we will ever collect a billion blocks of data.
+    int n_zero = 9;
     if(writer) {
       if(write_metadata) {
         dump.push("Metadata");
@@ -126,8 +128,9 @@ class BackPropagatedEstimator: public EstimatorBase
             DMAverage[i] /= block_size;
           denom_average[0] /= block_size;
           dump.push("BackPropagated");
-          dump.write(DMAverage, "one_rdm_"+std::to_string(iblock));
-          dump.write(denom_average, "one_rdm_denom_"+std::to_string(iblock));
+          std::string padded_iblock = std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
+          dump.write(DMAverage, "one_rdm_"+padded_iblock);
+          dump.write(denom_average, "one_rdm_denom_"+padded_iblock);
           dump.pop();
           std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
           std::fill(denom_average.begin(), denom_average.end(), ComplexType(0.0,0.0));
