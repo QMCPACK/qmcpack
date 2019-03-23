@@ -152,7 +152,7 @@ std::cout<<"\n";
       TG.TG().all_reduce_in_place_n(H1D.origin(),H1D.num_elements(),std::plus<>());
 
       // add hij + v0 and symmetrize
-      using std::conj;
+      using ma::conj;
       for(int i=0; i<NMO; i++) {
         H1[i][i] += hij[i][i] + v0[i][i];
         for(int j=i+1; j<NMO; j++) {
@@ -609,7 +609,7 @@ std::cout<<"\n";
         for(int i=k0; i<kN; i++) {
           auto p_ = Piu.get()[i].origin();
           for(int u=0; u<nu; u++, ++p_)
-            Qiu[i][u] = Tuw[u][wi]*std::conj(*p_);
+            Qiu[i][u] = Tuw[u][wi]*ma::conj(*p_);
         }
         boost::multi::array_ref<ComplexType,2> v_(to_address(v[wi].origin()),{nmo_,nmo_});
         // this can benefit significantly from 2-D partition of work

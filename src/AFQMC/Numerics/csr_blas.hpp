@@ -45,7 +45,7 @@ template<class T,
         typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type 
         >
 MultiArray1D axpy(char TA, T a, SparseArray1D&& x, MultiArray1D&& y){
-        using std::conj;
+        using ma::conj;
         assert(x.size(0) == y.size(0));
         auto vals = x.non_zero_values_data();
         auto cols = x.non_zero_indices2_data();
@@ -73,7 +73,7 @@ template<class T,
         typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type
         >
 MultiArray1D axpby(char TA, T a, SparseArray1D&& x, T b, MultiArray1D&& y){
-        using std::conj;
+        using ma::conj;
         assert(x.size(0) == y.size(0));
         auto vals = x.non_zero_values_data();
         auto cols = x.non_zero_indices2_data();

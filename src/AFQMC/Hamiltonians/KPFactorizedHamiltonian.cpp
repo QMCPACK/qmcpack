@@ -240,7 +240,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
       APP_ABORT("");
     }
     for(int Q=0; Q<nkpts; Q++) {
-      using std::conj;
+      using ma::conj;
       if(Qmap[Q] >= 0 && Q <= kminus[Q]) {
         if(!dump.readEntry(LQKikn[Q],std::string("L")+std::to_string(Q))) {
           app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
@@ -567,7 +567,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           boost::multi::array_ref<SPComplexType,3> Lkin(to_address(LQKikn[Qm][QK].origin()),
                                                    {nmo_per_kp[QK],nmo_per_kp[K],nchol_per_kp[Qm]});
           boost::multi::array<SPComplexType,3> buff3D({nmo_per_kp[K],nmo_per_kp[QK],nchol_per_kp[Qm]});
-          using std::conj;
+          using ma::conj;
           for(int i=0; i<nmo_per_kp[K]; i++)
           for(int k=0; k<nmo_per_kp[QK]; k++)
           for(int n=0; n<nchol_per_kp[Qm]; n++)
@@ -883,7 +883,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     // read in compact form and transform to padded 
     SpMatrix L_({1,1});
     for(int Q=0; Q<nkpts; Q++) {
-      using std::conj;
+      using ma::conj;
       int nchol = nchol_per_kp[Q];
       if(Qmap[Q] >= 0 && Q <= kminus[Q]) {
         if(!dump.readEntry(L_,std::string("L")+std::to_string(Q))) {
@@ -1260,7 +1260,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           boost::multi::array_ref<SPComplexType,3> Lkin(to_address(LQKikn[Qm][QK].origin()),
                                                    {nmo_max,nmo_max,nchol_max});
           boost::multi::array<SPComplexType,3> buff3D({nmo_max,nmo_max,nchol_max});
-          using std::conj;
+          using ma::conj;
           for(int i=0; i<nmo_max; i++)
           for(int k=0; k<nmo_max; k++)
           for(int n=0; n<nchol_max; n++)

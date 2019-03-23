@@ -181,7 +181,7 @@ class KP3IndexFactorization
       TG.TG().all_reduce_in_place_n(P1D.origin(),P1D.num_elements(),std::plus<>());
 
       // add H1 + vn0 and symmetrize
-      using std::conj;
+      using ma::conj;
 
       for(int K=0, nk0=0; K<nkpts; ++K) {
         for(int i=0, I=nk0; i<nopk[K]; i++, I++) {

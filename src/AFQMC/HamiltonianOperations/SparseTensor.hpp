@@ -144,7 +144,7 @@ class SparseTensor
       TG.TG().all_reduce_in_place_n(H1D.origin(),H1D.num_elements(),std::plus<>());
 
       // add hij + vn0 and symmetrize
-      using std::conj;
+      using ma::conj;
 
       for(int i=0; i<NMO; i++) {
         H1[i][i] += hij[i][i] + vn0[i][i];

@@ -197,7 +197,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
     if(head) {
 
-      using std::conj;
+      using ma::conj;
       using std::imag;
       bool foundH1=false;
 #ifdef QMC_COMPLEX

@@ -115,7 +115,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   // right now only 1 reader. Use hyperslabs and parallel io later
   // read Half transformed first
   if(TG.Node().root()) {
-    using std::conj;
+    using ma::conj;
     if(not test_Luv) {
       /***************************************/
       // read full matrix, not distributed for now
@@ -193,7 +193,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
     using ma::H;
     using ma::T;
-    using std::conj;
+    using ma::conj;
     size_t c0,cN,nc;
     std::tie(c0,cN) = FairDivideBoundary(size_t(TG.Global().rank()),gnmu,size_t(TG.Global().size()));
     nc = cN-c0;
@@ -233,7 +233,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     // very simple partitioning until something more sophisticated is in place!!!
     using ma::H;
     using ma::T;
-    using std::conj;
+    using ma::conj;
     size_t c0,cN,nc;
     std::tie(c0,cN) = FairDivideBoundary(size_t(TG.Global().rank()),nmu,size_t(TG.Global().size()));
     nc = cN-c0;

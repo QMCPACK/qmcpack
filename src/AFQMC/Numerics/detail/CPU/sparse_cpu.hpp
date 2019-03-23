@@ -94,7 +94,7 @@ namespace backup_impl
       for(int nr=0; nr<M; nr++,pntrb++,pntre++,x++) {
         for(int i=*pntrb-p0; i<*pntre-p0; i++) {
           if(*indx+disp >= K) continue;
-          *(y+(*(indx+i))+disp) += alpha * std::conj(*(A+i)) * (*x);
+          *(y+(*(indx+i))+disp) += alpha * ma::conj(*(A+i)) * (*x);
         }
       }
     }
@@ -208,7 +208,7 @@ namespace backup_impl
           // C(c,:) = A_rc * B(r,:)
           const std::complex<T>* Br = B;
           std::complex<T>* Cc = C+ldc*(*(indx+i)+disp);
-          std::complex<T> Arc = alpha*std::conj(*(A+i));
+          std::complex<T> Arc = alpha*ma::conj(*(A+i));
           for(int k=0; k<N; k++, Cc++, Br++)
             *Cc += Arc * (*Br);
         }
