@@ -894,7 +894,7 @@ namespace afqmc
     fill_n(Ov.origin(),nw,0);
     if(ovlp2.size(0) < 3*nw) ovlp2.reextent(iextensions<1u>{3*nw});
     fill_n(ovlp2.origin(),ovlp2.num_elements(),ComplexType(0.0));
-    stdCVector hvec(iextensions<1u>{2*nw});
+    stdCVector hvec(iextensions<1u>{3*nw});
     fill_n(hvec.origin(),hvec.num_elements(),ComplexType(0.0));
     TG.local_barrier();
     std::vector<CMatrix_ref> Ai;
