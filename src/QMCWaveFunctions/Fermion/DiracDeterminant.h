@@ -23,7 +23,6 @@
 #define QMCPLUSPLUS_DIRACDETERMINANT_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 #if defined(ENABLE_CUDA)
 #include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
@@ -167,8 +166,7 @@ public:
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 
-  /// temporal matrix in higher precision for the accurate inversion.
-  DiracMatrix<mValueType, ValueType> detEng;
+  /// delayed update engine
   DU_TYPE updateEng;
 
   /// the row of up-to-date inverse matrix

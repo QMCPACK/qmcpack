@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
-#include "Numerics/BlasThreadingEnv.h"
 #include "Numerics/MatrixOperators.h"
 #include "simd/simd.hpp"
 
@@ -52,11 +51,7 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
-  {
-    BlasThreadingEnv knob(getNumThreadsNested());
-    detEng.invert_transpose(logdetT, invMat, LogValue, PhaseValue);
-  } // end of BlasThreadingEnv
-  updateEng.initializeInv(invMat);
+  updateEng.invert_transpose(logdetT, invMat, LogValue, PhaseValue);
   InverseTimer.stop();
 }
 

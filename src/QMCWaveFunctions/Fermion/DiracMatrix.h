@@ -2,9 +2,9 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by:
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -14,6 +14,7 @@
 
 #include "Numerics/Blasf.h"
 #include <OhmmsPETE/OhmmsMatrix.h>
+#include "Numerics/BlasThreadingEnv.h"
 #include <type_traits/scalar_traits.h>
 #include "simd/simd.hpp"
 
@@ -162,6 +163,7 @@ public:
                                real_type& LogDet,
                                real_type& Phase)
   {
+    BlasThreadingEnv knob(getNumThreadsNested());
     const int n   = invMat.rows();
     const int lda = invMat.cols();
     T_FP* invMat_ptr(nullptr);

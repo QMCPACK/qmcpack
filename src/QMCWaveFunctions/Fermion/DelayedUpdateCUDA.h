@@ -17,6 +17,7 @@
 #include "CUDA/CUDAallocator.hpp"
 #include <Numerics/CUDA/cuBLAS.hpp>
 #include "QMCWaveFunctions/Fermion/delayed_update_helper.h"
+#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include <cuda_runtime_api.h>
 #include "CUDA/cudaError.h"
 
@@ -49,6 +50,8 @@ public:
 template<typename T, typename T_FP>
 class DelayedUpdateCUDA
 {
+  /// define real type
+  using real_type = typename scalar_traits<T>::real_type;
   // Data staged during for delayed acceptRows
   Matrix<T, CUDAHostAllocator<T>> U, Binv;
   Matrix<T> V;
@@ -58,7 +61,10 @@ class DelayedUpdateCUDA
   Vector<T> p;
   Vector<int, CUDAHostAllocator<int>> delay_list;
   Vector<int, CUDAAllocator<int>, MemorySpace::CUDA> delay_list_gpu;
+  /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
+  /// matrix inversion engine
+  DiracMatrix<T_FP, T> detEng;
 
   // the range of prefetched_Ainv_rows
   Range prefetched_range;
@@ -107,6 +113,17 @@ public:
     Binv_gpu.resize(delay, delay);
     Ainv_gpu.resize(norb, norb);
     delay_list_gpu.resize(delay);
+  }
+
+  /** compute the inverse of the transpose of matrix A
+   * @param logdetT orbital value matrix
+   * @param Ainv inverse matrix
+   */
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, real_type& LogValue, real_type& PhaseValue)
+  {
+    detEng.invert_transpose(logdetT, Ainv, LogValue, PhaseValue);
+    // safe mechanism
+    delay_count = 0;
   }
 
   /** initialize internal objects when Ainv is refreshed
