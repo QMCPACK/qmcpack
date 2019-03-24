@@ -63,18 +63,10 @@ CloneManager::clear_for_unit_tests()
 
 /// Constructor.
 CloneManager::CloneManager()
+  : NumThreads(omp_get_max_threads())
 {
-  NumThreads=omp_get_max_threads();
   wPerNode.resize(NumThreads+1,0);
 }
-
-void
-CloneManager::setup(int numThreads)
-{
-  NumThreads = numThreads;
-  wPerNode.resize(NumThreads+1, 0);
-}
-
 
 ///cleanup non-static data members
 CloneManager::~CloneManager()
@@ -109,16 +101,25 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   print_mem("Memory Usage before cloning", app_log());
   outputManager.pause();
 
-  #pragma omp parallel for shared(w,psi,ham)
-  for(int ip=1; ip<NumThreads; ++ip)
+  #pragma omp parallel
   {
+    // check sizes
+    #pragma omp master
+    if(NumThreads!=omp_get_num_threads())
+      throw std::runtime_error("CloneManager::makeClones Inconsist NumThreads and omp_get_num_threads()!\n");
+
+    const int ip = omp_get_thread_num();
+    // all the [ip] objects must be created on the ip threads to have first touch accurate.
+    if (ip > 0)
+    {
 #if defined(USE_PARTCILESET_CLONE)
-    wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
+      wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
 #else
-    wClones[ip]=new MCWalkerConfiguration(w);
+      wClones[ip]=new MCWalkerConfiguration(w);
 #endif
-    psiClones[ip]=psi.makeClone(*wClones[ip]);
-    hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
+      psiClones[ip]=psi.makeClone(*wClones[ip]);
+      hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
+    }
   }
   infoLog.resume();
   infoSummary.resume();

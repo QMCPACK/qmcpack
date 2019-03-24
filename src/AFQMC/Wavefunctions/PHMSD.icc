@@ -290,8 +290,8 @@ namespace afqmc
 
     assert(ci.size()==1);
     bool new_shm_space=false; 
-    const int node_number = TG.getLocalNodeNumber();
-    const int nnodes = TG.getNNodesPerTG();
+    const int node_number = TG.getLocalGroupNumber();
+    const int nnodes = TG.getNGroupsPerTG();
     const int Gsize = dm_size(false);
     const ComplexType zero(0.0);
     const int nwalk = wset.size();
@@ -560,23 +560,23 @@ namespace afqmc
                                                                                TG.TG_local().size()))); 
           // this probably does not work!!!
           {
-            shared_CMatrix unique_overlaps_({2,maxn_unique_confg},shared_allocator<ComplexType>{local_group_comm}); 
+            shmCMatrix unique_overlaps_({2,maxn_unique_confg},shared_allocator<ComplexType>{local_group_comm}); 
             unique_overlaps.swap(unique_overlaps_);
           }
           {
-            shared_CMatrix QQ0inv0_({OrbMats[0].size(0),NAEA},shared_allocator<ComplexType>{local_group_comm}); 
+            shmCMatrix QQ0inv0_({OrbMats[0].size(0),NAEA},shared_allocator<ComplexType>{local_group_comm}); 
             QQ0inv0.swap(QQ0inv0_);
           }
           {
-            shared_CMatrix QQ0inv1_({OrbMats.back().size(0),NAEB},shared_allocator<ComplexType>{local_group_comm}); 
+            shmCMatrix QQ0inv1_({OrbMats.back().size(0),NAEB},shared_allocator<ComplexType>{local_group_comm}); 
             QQ0inv1.swap(QQ0inv1_);
           }
           {
-            shared_CMatrix GA2D0_shm_({GAdims0.first,GAdims0.second},shared_allocator<ComplexType>{local_group_comm}); 
+            shmCMatrix GA2D0_shm_({GAdims0.first,GAdims0.second},shared_allocator<ComplexType>{local_group_comm}); 
             GA2D0_shm.swap(GA2D0_shm_);
           }
           {
-            shared_CMatrix GB2D0_shm_({GBdims0.first,GBdims0.second},shared_allocator<ComplexType>{local_group_comm}); 
+            shmCMatrix GB2D0_shm_({GBdims0.first,GBdims0.second},shared_allocator<ComplexType>{local_group_comm}); 
             GB2D0_shm.swap(GB2D0_shm_);
           }
         }
@@ -736,7 +736,7 @@ namespace afqmc
    * TODO: Implement.
    */
   template<class WlkSet, class MatG, class CVec>
-  void PHMSD::BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVec &denom, bool path_restoration, bool free_projection)
+  void PHMSD::WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec &denom, bool path_restoration, bool free_projection, bool back_propagated)
   {
     APP_ABORT(" Error: Back Propagation not implemented for PHMSD. \n");
   }
@@ -802,12 +802,12 @@ namespace afqmc
           local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,
                                                                                TG.TG_local().size())));
           {  
-            shared_CMatrix _ov_({2,maxn_unique_confg},  
+            shmCMatrix _ov_({2,maxn_unique_confg},  
                                 shared_allocator<ComplexType>{local_group_comm});
             unique_overlaps.swap(_ov_); 
           }
           {
-            shared_CTensor _qq0inv_({1,maxnactive,size_t(NAEA)},
+            shmC3Tensor _qq0inv_({1,maxnactive,size_t(NAEA)},
                                     shared_allocator<ComplexType>{local_group_comm});
             QQ0inv.swap(_qq0inv_);
           }
@@ -879,24 +879,24 @@ namespace afqmc
           auto GAdims0 = dm_dims_ref(false,Alpha);
           auto GBdims0 = dm_dims_ref(false,Beta);
           {
-            shared_CMatrix unique_overlaps_({2,maxn_unique_confg},shared_allocator<ComplexType>{local_group_comm});
+            shmCMatrix unique_overlaps_({2,maxn_unique_confg},shared_allocator<ComplexType>{local_group_comm});
             unique_overlaps.swap(unique_overlaps_);
           }
           {
-            shared_CMatrix QQ0inv0_({OrbMats[0].size(0),NAEA},shared_allocator<ComplexType>{local_group_comm});
+            shmCMatrix QQ0inv0_({OrbMats[0].size(0),NAEA},shared_allocator<ComplexType>{local_group_comm});
             QQ0inv0.swap(QQ0inv0_);
           }
           {
-            shared_CMatrix QQ0inv1_({OrbMats.back().size(0),NAEB},shared_allocator<ComplexType>{local_group_comm});
+            shmCMatrix QQ0inv1_({OrbMats.back().size(0),NAEB},shared_allocator<ComplexType>{local_group_comm});
             QQ0inv1.swap(QQ0inv1_);
           }
           // don't need them here, but allocate anyway to avoid dimension check every time 
           {
-            shared_CMatrix GA2D0_shm_({GAdims0.first,GAdims0.second},shared_allocator<ComplexType>{local_group_comm});
+            shmCMatrix GA2D0_shm_({GAdims0.first,GAdims0.second},shared_allocator<ComplexType>{local_group_comm});
             GA2D0_shm.swap(GA2D0_shm_);
           }
           {
-            shared_CMatrix GB2D0_shm_({GBdims0.first,GBdims0.second},shared_allocator<ComplexType>{local_group_comm});
+            shmCMatrix GB2D0_shm_({GBdims0.first,GBdims0.second},shared_allocator<ComplexType>{local_group_comm});
             GB2D0_shm.swap(GB2D0_shm_);
           }
           local_group_comm.barrier();
@@ -1055,7 +1055,7 @@ namespace afqmc
     if(localGbuff.size() < Gsize)
       localGbuff.reextent(iextensions<1u>{Gsize});
 
-    //shared_CMatrix ovlps({2,maxn_unique_confg},shared_allocator<ComplexType>{TG.Node()}); 
+    //shmCMatrix ovlps({2,maxn_unique_confg},shared_allocator<ComplexType>{TG.Node()}); 
     //boost::multi::array<ComplexType,2> ovlps({2,maxn_unique_confg});
     boost::multi::array<ComplexType,2> ovlps({2,maxn_unique_confg});
     //if(TG.Node().root()) 

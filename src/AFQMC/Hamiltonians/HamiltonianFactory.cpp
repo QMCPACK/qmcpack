@@ -32,7 +32,7 @@
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
 #include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian.h"
 #include "AFQMC/Hamiltonians/KPFactorizedHamiltonian.h"
-#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
+//#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
 
 #include "AFQMC/Utilities/readHeader.h"
 #include "AFQMC/Utilities/Utils.hpp"
@@ -237,6 +237,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     // now read the integrals
     if(htype == KPTHC) {
 
+      APP_ABORT(" Error: KPTHC hamiltonian not yet working. \n");  
       if(coreid < nread && !dump.push("KPTHC",false)) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not KPTHC found. \n";
         APP_ABORT("");
@@ -247,8 +248,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
         dump.close();
       }
       TG.global_barrier();
-      return Hamiltonian(KPTHCHamiltonian(AFinfo,cur,std::move(H1),TG,
-                                        NuclearCoulombEnergy,FrozenCoreEnergy));
+      return Hamiltonian{};  
+//      return Hamiltonian(KPTHCHamiltonian(AFinfo,cur,std::move(H1),TG,
+//                                        NuclearCoulombEnergy,FrozenCoreEnergy));
 
     } else if(htype == KPFactorized) {
 

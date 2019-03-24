@@ -46,6 +46,9 @@ bool AFQMCDriver::run(WalkerSet& wset)
         AFQMCTimers[ortho_timer]->stop();
       }
 
+      if(total_time < weight_reset_period && !prop0.free_propagation()) 
+        wset.resetWeights();
+
       {
         AFQMCTimers[popcont_timer]->start();
         wset.popControl(curData);
@@ -111,6 +114,7 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   m_param.add(nStabilize,"ortho","int");
   m_param.add(nCheckpoint,"checkpoint","int");
   m_param.add(samplePeriod,"samplePeriod","int");
+  m_param.add(weight_reset_period,"weight_reset","double");
   m_param.add(dt,"dt","double");
   m_param.add(dt,"timestep","double");
   m_param.add(dShift,"dshift","double");

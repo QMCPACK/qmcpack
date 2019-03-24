@@ -138,15 +138,14 @@ std::cout<<" update: "
     work[0][i] *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + old_eloc.real() ) - Eshift )),0.0);
     work[1][i] = eloc;
     work[2][i] = work[4][i];
-    if(BackProp && std::abs(scale) > 1e-16) 
+    if(BackProp && std::abs(scale) > 1e-16)
       work[3][i] *= std::exp( -ComplexType(0.0,dt) * ( 0.5*( eloc.imag() + old_eloc.imag()) ) ) / scale;
 
   }
-  
   w.setProperty(WEIGHT,work[0]);
   w.setProperty(PSEUDO_ELOC_,work[1]);
   w.setProperty(OVLP,work[2]);
-  if(BackProp) 
+  if(BackProp)
     w.setProperty(WEIGHT_FAC,work[3]);
 
 }

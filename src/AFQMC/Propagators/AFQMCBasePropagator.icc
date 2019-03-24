@@ -67,14 +67,15 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   // 0. Allocate memory and set shared memory structures
   if(buffer.num_elements() < memory_needs ) { 
-    buffer = std::move(CVector(iextensions<1u>{memory_needs}));
+    buffer = std::move(sharedCVector(iextensions<1u>{memory_needs},aux_alloc_));
     using std::fill_n;
     fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
   }  
 
   // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
   // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
-  auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+  //auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
+  CVector_ref mem_pool(make_device_ptr(buffer.origin()),buffer.extensions());
   //auto mem_pool(array_cast<pointer>(buffer));
 
   size_t displ=0;
@@ -97,6 +98,8 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
   C3Tensor_ref vHS3D(mem_pool.origin()+displ,{vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
 
   // local matrices for temporary accumulation
+// MAM: Note -  Since nsteps can change routinely, don't reextent these.
+//              Instead have a buffer and create array_refs from them!!!
   if(MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk) 
     MFfactor = std::move(CMatrix({long(nsteps),long(nwalk)}));
   if(hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk) 
@@ -152,6 +155,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   int nx = 1;
   if(walker_type == COLLINEAR) nx=2;
+  if(wset.getNBackProp() > 0) nx = 1;
 
   // from now on, individual work on each walker/step
   const int ntasks_per_core = int(nx*nwalk)/TG.getNCoresPerTG();
@@ -362,54 +366,31 @@ void AFQMCBasePropagator::apply_propagators_construct_propagator(WSet& wset,
   auto TAlpha(TSM({0,NMO},{0,NAEA}));
   auto TBeta(TSM({0,NMO},{0,NAEB})); 
   if(transposed_vHS_) {
-    // vHS3D[nstep*nwalk][M][M]
-    if(walker_type == COLLINEAR) {
-      // in this case, tk corresponds to 2x the walker number
-      for(int tk=tk0; tk<tkN; ++tk) {
-        int nt = ni*nwalk+tk/2;
-        auto B(wset[tk/2].BMatrix());
-        SDetOp->Propagate(B,P1,vHS3D[nt],order);
-        if(tk%2==0) {
-          TAlpha = wset[tk/2].SlaterMatrix(Alpha);
-          ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
-        } else {
-          TBeta = wset[tk/2].SlaterMatrix(Beta);
-          ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
-        }
-        wset[tk/2].incrementBMatrix();
+    // in this case, tk corresponds to the walker number
+    for(int tk=tk0; tk<tkN; ++tk) {
+      int nt = ni*nwalk + tk;
+      auto B(wset[tk].BMatrix());
+      SDetOp->Propagate(B,P1,vHS3D[nt],order);
+      TAlpha = wset[tk].SlaterMatrix(Alpha);
+      ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
+      if(walker_type == COLLINEAR) {
+        TBeta = wset[tk].SlaterMatrix(Beta);
+        ma::product(B, TBeta, wset[tk].SlaterMatrix(Beta));
       }
-      if(last_nextra > 0) {
-        int tk = (ntasks_total_serial+last_task_index);
-        int nt = ni*nwalk+tk/2;
-        auto B(wset[tk/2].BMatrix());
-        SDetOp->Propagate(B,P1,vHS3D[nt],order);
-        if(tk%2==0) {
-          TAlpha = wset[tk/2].SlaterMatrix(Alpha);
-          ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
-        } else {
-          TBeta = wset[tk/2].SlaterMatrix(Beta);
-          ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
-        }
-        wset[tk/2].incrementBMatrix();
+      wset[tk].incrementBMatrix();
+    }
+    if(last_nextra > 0) {
+      int tk = (ntasks_total_serial+last_task_index);
+      int nt = ni*nwalk+tk;
+      auto B(wset[tk].BMatrix());
+      SDetOp->Propagate(B,P1,vHS3D[nt],order);
+      TAlpha = wset[tk].SlaterMatrix(Alpha);
+      ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
+      if(walker_type == COLLINEAR) {
+        TBeta = wset[tk].SlaterMatrix(Beta);
+        ma::product(B, TBeta, wset[tk].SlaterMatrix(Beta));
       }
-    } else {
-      // in this case, tk corresponds to walker number
-      for(int tk=tk0; tk<tkN; ++tk) {
-        int nt = ni*nwalk+tk;
-        auto B(wset[tk].BMatrix());
-        SDetOp->Propagate(B,P1,vHS3D[nt],order);
-        TAlpha = wset[tk].SlaterMatrix(Alpha);
-        ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
-        wset[tk/2].incrementBMatrix();
-      }
-      if(last_nextra > 0) {
-        int iw = ntasks_total_serial+last_task_index;
-        int nt = ni*nwalk+iw;
-        auto B(wset[iw].BMatrix());
-        SDetOp->Propagate(B,P1,vHS3D[nt],order);
-        TAlpha = wset[iw].SlaterMatrix(Alpha);
-        ma::product(B, TAlpha, wset[iw].SlaterMatrix(Alpha));
-      }
+      wset[tk].incrementBMatrix();
     }
   } else {
     if(walker_type==NONCOLLINEAR) {
@@ -420,62 +401,37 @@ void AFQMCBasePropagator::apply_propagators_construct_propagator(WSet& wset,
         local_vHS = std::move(CMatrix({NMO,NMO}));
     }
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
-    if(walker_type == COLLINEAR) {
-      int oldw=-1;
-      // in this case, tk corresponds to 2x the walker number
-      for(int tk=tk0; tk<tkN; ++tk) {
-        int nt = ni*nwalk+tk/2;
-        if(oldw != tk/2) {
-          local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-          oldw=tk/2;
-        }
-        auto B(wset[tk/2].BMatrix());
-        SDetOp->Propagate(B,P1,local_vHS,order);
-        if(tk%2==0) {
-          TAlpha = wset[tk/2].SlaterMatrix(Alpha);
-          ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
-        } else {
-          TBeta = wset[tk/2].SlaterMatrix(Beta);
-          ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
-        }
-        wset[tk/2].incrementBMatrix();
-      }
-      if(last_nextra > 0) {
-        int tk = (ntasks_total_serial+last_task_index);
-        int nt = ni*nwalk+tk/2;
+    int oldw=-1;
+    // in this case, tk corresponds to 2x the walker number
+    for(int tk=tk0; tk<tkN; ++tk) {
+      int nt = ni*nwalk+tk;
+      if(oldw != tk) {
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        auto B(wset[tk/2].BMatrix());
-        SDetOp->Propagate(B,P1,local_vHS,order);
-        if(tk%2==0) {
-          TAlpha = wset[tk/2].SlaterMatrix(Alpha);
-          ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
-        } else {
-          TBeta = wset[tk/2].SlaterMatrix(Beta);
-          ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
-        }
-        wset[tk/2].incrementBMatrix();
+        oldw=tk;
       }
-    } else {
-      // in this case, tk corresponds to walker number
-      for(int tk=tk0; tk<tkN; ++tk) {
-        int nt = ni*nwalk+tk;
-        local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        auto B(wset[tk].BMatrix());
-        SDetOp->Propagate(B,P1,local_vHS,order);
-        TAlpha = wset[tk].SlaterMatrix(Alpha);
-        ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
-        wset[tk].incrementBMatrix();
+      auto B(wset[tk].BMatrix());
+      SDetOp->Propagate(B,P1,local_vHS,order);
+      TAlpha = wset[tk].SlaterMatrix(Alpha);
+      ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
+      if(walker_type == COLLINEAR) {
+        TBeta = wset[tk].SlaterMatrix(Beta);
+        ma::product(B, TBeta, wset[tk].SlaterMatrix(Beta));
       }
-      if(last_nextra > 0) {
-        int iw = ntasks_total_serial+last_task_index;
-        int nt = ni*nwalk+iw;
-        local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        auto B(wset[iw].BMatrix());
-        SDetOp->Propagate(B,P1,local_vHS,order);
-        TAlpha = wset[iw].SlaterMatrix(Alpha);
-        ma::product(B, TAlpha, wset[iw].SlaterMatrix(Alpha));
-        wset[iw].incrementBMatrix();
+      wset[tk].incrementBMatrix();
+    }
+    if(last_nextra > 0) {
+      int tk = (ntasks_total_serial+last_task_index);
+      int nt = ni*nwalk+tk;
+      local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
+      auto B(wset[tk].BMatrix());
+      SDetOp->Propagate(B,P1,local_vHS,order);
+      TAlpha = wset[tk].SlaterMatrix(Alpha);
+      ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
+      if(walker_type == COLLINEAR) {
+        TBeta = wset[tk].SlaterMatrix(Beta);
+        ma::product(B, TBeta, wset[tk].SlaterMatrix(Beta));
       }
+      wset[tk].incrementBMatrix();
     }
   }
   TG.local_barrier();
