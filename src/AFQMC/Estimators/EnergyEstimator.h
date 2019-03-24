@@ -30,10 +30,21 @@ class EnergyEstimator: public EstimatorBase
 
   EnergyEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo info, xmlNodePtr cur,
         Wavefunction& wfn, bool impsamp_=true, bool timer=true):
-            EstimatorBase(info),TG(tg_),wfn0(wfn),importanceSampling(impsamp_)
+            EstimatorBase(info),TG(tg_),wfn0(wfn),importanceSampling(impsamp_),energy_components(false)
   {
 
-    data.resize(2);
+    if(cur != NULL) {
+      ParameterSet m_param;
+      std::string print_components;
+      m_param.add(print_components, "print_components", "str::string");
+      m_param.put(cur);
+      if(print_components == "true" || print_components == "yes") {
+        energy_components = true;
+      } else {
+        energy_components = false;
+      }
+    }
+    data.resize(5);
   }
 
   ~EnergyEstimator() {}
@@ -60,7 +71,7 @@ class EnergyEstimator: public EstimatorBase
       wset.getProperty(WEIGHT,wprop[0]);  
       wset.getProperty(OVLP,wprop[1]);  
       wset.getProperty(PHASE,wprop[2]);  
-      data[0] = data[1] = std::complex<double>(0,0);
+      std::fill_n(data.begin(), data.size(), ComplexType(0.0));
       for(int i=0; i<nwalk; i++) {
         if(std::isnan(real(wprop[0][i]))) continue;
         if(importanceSampling) {
@@ -72,6 +83,9 @@ class EnergyEstimator: public EstimatorBase
         if( (!std::isfinite(real(dum))) || (!std::isfinite(real(et*dum))) ) continue;
         data[1] += dum;
         data[0] += et*dum;
+        data[2] += eloc_[i][0]*dum;
+        data[3] += eloc_[i][1]*dum;
+        data[4] += eloc_[i][2]*dum;
       }
       TG.TG_heads().all_reduce_in_place_n(data.begin(),data.size(),std::plus<>());
     }
@@ -85,6 +99,11 @@ class EnergyEstimator: public EstimatorBase
       out<<"EnergyEstim_" <<name <<"_nume_real  EnergyEstim_" <<name <<"_nume_imag "
          <<"EnergyEstim_" <<name <<"_deno_real  EnergyEstim_" <<name <<"_deno_imag "
          <<"EnergyEstim_" <<name <<"_timer ";
+      if(energy_components) {
+        out<<"OneBodyEnergyEstim__nume_real "
+           <<"ECoulEnergyEstim__nume_real "
+           <<"EXXEnergyEstim__nume_real ";
+      }
     }
   }
 
@@ -95,6 +114,9 @@ class EnergyEstimator: public EstimatorBase
       out<< data[0].real()/n << " " << data[0].imag()/n << " "
          << data[1].real()/n << " " << data[1].imag()/n << " "
          <<AFQMCTimers[energy_timer]->get_total() <<" ";
+      if(energy_components) {
+        out<< data[2].real()/n << " " << data[3].real()/n << " " << data[4].real()/n << " ";
+      }
       AFQMCTimers[energy_timer]->reset();
     }
   }
@@ -114,6 +136,7 @@ class EnergyEstimator: public EstimatorBase
   std::vector<std::complex<double> > data;
 
   bool importanceSampling;
+  bool energy_components;
 
 };
 }
