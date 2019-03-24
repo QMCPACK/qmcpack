@@ -33,7 +33,7 @@ namespace qmcplusplus
  */
 #define DEFAULT_PAGE_SIZE 4096
 template<typename T_scalar=OHMMS_PRECISION_FULL,
-         typename Alloc=Mallocator<char, DEFAULT_PAGE_SIZE >
+         typename Alloc=Mallocator<char, DEFAULT_PAGE_SIZE>>
 struct PooledMemory
 {
   typedef char T;
