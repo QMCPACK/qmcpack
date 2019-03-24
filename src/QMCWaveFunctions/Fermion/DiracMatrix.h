@@ -92,33 +92,31 @@ inline void TansposeSquare(const TIN* restrict in, TOUT* restrict out, size_t n,
 
 
 template<typename T>
-inline T computeLogDet(const T* restrict X, int n, int lda, const int* restrict pivot, T& phase)
+inline T computeLogDet(const T* restrict diag, int n, const int* restrict pivot, T& phase)
 {
   T logdet(0);
   int sign_det = 1;
   for (size_t i = 0; i < n; i++)
   {
-    const size_t ii = i * lda + i;
     sign_det *= (pivot[i] == i + 1) ? 1 : -1;
-    sign_det *= (X[ii] > 0) ? 1 : -1;
-    logdet += std::log(std::abs(X[ii]));
+    sign_det *= (diag[i] > 0) ? 1 : -1;
+    logdet += std::log(std::abs(diag[i]));
   }
   phase = (sign_det > 0) ? T(0) : M_PI;
   return logdet;
 }
 
 template<typename T>
-inline T computeLogDet(const std::complex<T>* restrict X, int n, int lda, const int* restrict pivot, T& phase)
+inline T computeLogDet(const std::complex<T>* restrict diag, int n, const int* restrict pivot, T& phase)
 {
   T logdet(0);
   phase = T(0);
   for (size_t i = 0; i < n; i++)
   {
-    const size_t ii = i * lda + i;
-    phase += std::arg(X[ii]);
+    phase += std::arg(diag[i]);
     if (pivot[i] != i + 1)
       phase += M_PI;
-    logdet += std::log(X[ii].real() * X[ii].real() + X[ii].imag() * X[ii].imag());
+    logdet += std::log(diag[i].real() * diag[i].real() + diag[i].imag() * diag[i].imag());
     //slightly smaller error with the following
     //        logdet+=2.0*std::log(std::abs(x[ii]);
   }
@@ -137,6 +135,8 @@ class DiracMatrix
   int Lwork;
   /// scartch space used for mixed precision
   Matrix<T_FP> psiM_fp;
+  /// LU diagonal elements
+  aligned_vector<T_FP> LU_diag;
 
   /// reset internal work space
   inline void reset(T_FP* invMat_ptr, const int lda)
@@ -149,6 +149,7 @@ class DiracMatrix
     convert(tmp, lw);
     Lwork = static_cast<int>(lw);
     m_work.resize(Lwork);
+    LU_diag.resize(lda);
   }
 
 public:
@@ -179,8 +180,10 @@ public:
     if (Lwork < lda)
       reset(invMat_ptr, lda);
     Xgetrf(n, n, invMat_ptr, lda, m_pivot.data());
+    for(int i=0; i<n; i++)
+      LU_diag[i] = invMat_ptr[i*lda+i];
     real_type_fp Phase_tmp;
-    LogDet = computeLogDet(invMat_ptr, n, lda, m_pivot.data(), Phase_tmp);
+    LogDet = computeLogDet(LU_diag.data(), n, m_pivot.data(), Phase_tmp);
     Phase = Phase_tmp;
     Xgetri(n, invMat_ptr, lda, m_pivot.data(), m_work.data(), Lwork);
 #if defined(MIXED_PRECISION)
