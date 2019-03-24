@@ -129,7 +129,8 @@ inline T computeLogDet(const std::complex<T>* restrict X, int n, int lda, const 
 template<typename T_FP, typename T = T_FP>
 class DiracMatrix
 {
-  typedef typename scalar_traits<T_FP>::real_type real_type;
+  typedef typename scalar_traits<T>::real_type real_type;
+  typedef typename scalar_traits<T_FP>::real_type real_type_fp;
   aligned_vector<T_FP> m_work;
   aligned_vector<int> m_pivot;
   int Lwork;
@@ -142,7 +143,7 @@ class DiracMatrix
     m_pivot.resize(lda);
     Lwork = -1;
     T_FP tmp;
-    real_type lw;
+    real_type_fp lw;
     Xgetri(lda, invMat_ptr, lda, m_pivot.data(), &tmp, Lwork);
     convert(tmp, lw);
     Lwork = static_cast<int>(lw);
@@ -156,7 +157,10 @@ public:
   /** compute the inverse of the transpose of matrix A
    * assume precision T_FP >= T, do the inversion always with T_FP
    */
-  inline void invert_transpose(const Matrix<T>& amat, Matrix<T>& invMat, T& LogDet, T& Phase)
+  inline void invert_transpose(const Matrix<T>& amat,
+                               Matrix<T>& invMat,
+                               real_type& LogDet,
+                               real_type& Phase)
   {
     const int n   = invMat.rows();
     const int lda = invMat.cols();
@@ -173,7 +177,7 @@ public:
     if (Lwork < lda)
       reset(invMat_ptr, lda);
     Xgetrf(n, n, invMat_ptr, lda, m_pivot.data());
-    T_FP Phase_tmp;
+    real_type_fp Phase_tmp;
     LogDet = computeLogDet(invMat_ptr, n, lda, m_pivot.data(), Phase_tmp);
     Phase = Phase_tmp;
     Xgetri(n, invMat_ptr, lda, m_pivot.data(), m_work.data(), Lwork);
