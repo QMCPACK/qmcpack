@@ -51,6 +51,7 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
 
 WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
+  typedef DiracDeterminant<DelayedUpdate<ValueType>> SingleDet_t;
   SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
   SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
   spo_up_C->occup             = spo_up->occup;
@@ -78,7 +79,7 @@ WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) con
     //           spo->occup(i,nq++) = k;
     //         }
     //       }
-    DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr)clone->spo_up, 0);
+    SingleDet_t* adet = new SingleDet_t((SPOSetPtr)clone->spo_up, 0);
     adet->set(clone->FirstIndex_up, clone->nels_up);
     adet->resetTargetParticleSet(tqp);
     clone->dets_up.push_back(adet);
@@ -94,7 +95,7 @@ WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) con
     //           spo->occup(i,nq++) = k;
     //         }
     //       }
-    DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr)clone->spo_dn, 0);
+    SingleDet_t* adet = new SingleDet_t((SPOSetPtr)clone->spo_dn, 0);
     adet->set(clone->FirstIndex_dn, clone->nels_dn);
     adet->resetTargetParticleSet(tqp);
     clone->dets_dn.push_back(adet);

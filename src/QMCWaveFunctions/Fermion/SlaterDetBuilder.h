@@ -37,7 +37,6 @@ class SlaterDetBuilder : public WaveFunctionComponentBuilder
 public:
   typedef SlaterDet SlaterDeterminant_t;
   typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
-  typedef DiracDeterminant Det_t;
   /** constructor
    * \param els reference to the electrons
    * \param psi reference to the wavefunction
