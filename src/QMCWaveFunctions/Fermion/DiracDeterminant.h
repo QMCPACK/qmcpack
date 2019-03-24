@@ -168,7 +168,6 @@ public:
   ValueVector_t d2psiV;
 
   /// temporal matrix in higher precision for the accurate inversion.
-  ValueMatrix_hp_t psiM_hp;
   DiracMatrix<mValueType, ValueType> detEng;
   DU_TYPE updateEng;
 

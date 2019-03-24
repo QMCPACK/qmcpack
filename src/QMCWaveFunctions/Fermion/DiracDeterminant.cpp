@@ -22,7 +22,6 @@
 #include "Numerics/BlasThreadingEnv.h"
 #include "Numerics/MatrixOperators.h"
 #include "simd/simd.hpp"
-#include <typeinfo>
 
 namespace qmcplusplus
 {
@@ -76,8 +75,6 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   psiV.resize(norb);
   invRow.resize(norb);
   psiM_temp.resize(nel, norb);
-  if (typeid(ValueType) != typeid(mValueType))
-    psiM_hp.resize(nel, norb);
   LastIndex   = FirstIndex + nel;
   NumPtcls    = nel;
   NumOrbitals = norb;

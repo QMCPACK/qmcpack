@@ -16,7 +16,6 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <type_traits/scalar_traits.h>
 #include "simd/simd.hpp"
-#include <typeinfo>
 
 namespace qmcplusplus
 {
@@ -162,23 +161,25 @@ public:
     const int n   = invMat.rows();
     const int lda = invMat.cols();
     T_FP* invMat_ptr(nullptr);
-    if (typeid(T_FP) == typeid(T))
-    {
-      simd::transpose(amat.data(), n, amat.cols(), invMat.data(), n, invMat.cols());
-      invMat_ptr = invMat.data();
-    }
-    else
-    {
-      psiM_fp.resize(n,lda);
-      simd::transpose(amat.data(), n, amat.cols(), psiM_fp.data(), n, psiM_fp.cols());
-      invMat_ptr = psiM_fp.data();
-    }
+#if !defined(MIXED_PRECISION)
+    // ifdef is very ugly and "if consexpr" from C++17 is a much better solution
+    simd::transpose(amat.data(), n, amat.cols(), invMat.data(), n, invMat.cols());
+    invMat_ptr = invMat.data();
+#else
+    psiM_fp.resize(n,lda);
+    simd::transpose(amat.data(), n, amat.cols(), psiM_fp.data(), n, psiM_fp.cols());
+    invMat_ptr = psiM_fp.data();
+#endif
     if (Lwork < lda)
       reset(invMat_ptr, lda);
     Xgetrf(n, n, invMat_ptr, lda, m_pivot.data());
-    LogDet = computeLogDet(invMat_ptr, n, lda, m_pivot.data(), Phase);
+    T_FP Phase_tmp;
+    LogDet = computeLogDet(invMat_ptr, n, lda, m_pivot.data(), Phase_tmp);
+    Phase = Phase_tmp;
     Xgetri(n, invMat_ptr, lda, m_pivot.data(), m_work.data(), Lwork);
-    if (typeid(T_FP) != typeid(T)) invMat = psiM_fp;
+#if defined(MIXED_PRECISION)
+    invMat = psiM_fp;
+#endif
   }
 };
 } // namespace qmcplusplus
