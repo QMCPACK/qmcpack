@@ -165,8 +165,8 @@ TEST_CASE("reduced_density_matrix", "[estimators]")
       app_error()<<" Error opening estimates.h5. \n";
       APP_ABORT("");
     }
-    reader.read(read_data, "BackPropagated/one_rdm_4");
-    reader.read(denom, "BackPropagated/one_rdm_denom_4");
+    reader.read(read_data, "BackPropagated/one_rdm_000000004");
+    reader.read(denom, "BackPropagated/one_rdm_denom_000000004");
     // Test EstimatorHandler eventually.
     //int NAEA_READ, NAEB_READ, NMO_READ, WALKER_TYPE_READ;
     //reader.read(NAEA_READ, "Metadata/NAEA");
