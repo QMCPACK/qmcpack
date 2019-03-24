@@ -67,6 +67,30 @@ ENDIF(QMC_CUDA)
 
 IF (BUILD_UNIT_TESTS)
   INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
+  SET(AFQMC_UNIT_TEST_INPUT_NOSYM
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/wfn_rhf.dat
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/wfn_uhf.dat
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/wfn_msd.dat
+      #${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5
+      #${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/wfn_phmsd.dat
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_szv/ham_thc_sc.h5
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_szv/wfn_rhf.dat
+      )
+  SET(AFQMC_UNIT_TEST_INPUT_SYM
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/ham_chol_uc.h5
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/wfn_rhf.dat
+      )
+  IF (QMC_CUDA)
+      SET(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_SYM})
+  ELSE()
+      SET(AFQMC_UNIT_TEST_INPUTS
+          ${AFQMC_UNIT_TEST_INPUT_SYM}
+          ${AFQMC_UNIT_TEST_INPUT_NOSYM}
+          )
+  ENDIF()
   SUBDIRS(Matrix/tests)
   SUBDIRS(Numerics/tests)
   #SUBDIRS(Numerics/shm_tests)

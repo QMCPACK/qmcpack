@@ -241,6 +241,8 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   // From here on is similar to Shared 
   int nx = 1;
   if(walker_type == COLLINEAR) nx=2;
+  // Only parallelise over walkers.
+  if(wset.getNBackProp() > 0) nx = 1;
 
   // from now on, individual work on each walker/step
   const int ntasks_per_core = int(nx*nwalk)/TG.getNCoresPerTG();

@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_GRID_FUNCTOR_QUINTIC_SPLINE_H
@@ -23,32 +20,26 @@
 
 namespace qmcplusplus
 {
-
 /*
  * Perform One-Dimensional Quintic Spline Interpolation.
  */
 
-template <class Td,
-         class Tg = Td,
-         class CTd= Vector<Td>,
-         class CTg= Vector<Tg> >
-class OneDimQuinticSpline: public OneDimGridFunctor<Td,Tg,CTd,CTg>
+template<class Td, class Tg = Td, class CTd = Vector<Td>, class CTg = Vector<Tg>>
+class OneDimQuinticSpline : public OneDimGridFunctor<Td, Tg, CTd, CTg>
 {
-
 public:
-
-  typedef OneDimGridFunctor<Td,Tg,CTd,CTg> base_type;
-  typedef typename base_type::value_type  value_type;
-  typedef typename base_type::point_type  point_type;
+  typedef OneDimGridFunctor<Td, Tg, CTd, CTg> base_type;
+  typedef typename base_type::value_type value_type;
+  typedef typename base_type::point_type point_type;
   typedef typename base_type::data_type data_type;
   typedef typename base_type::grid_type grid_type;
 
+  using base_type::d2Y;
+  using base_type::dY;
   using base_type::GridManager;
   using base_type::m_grid;
-  using base_type::Y;
-  using base_type::dY;
-  using base_type::d2Y;
   using base_type::m_Y;
+  using base_type::Y;
 
   data_type m_Y2;
   data_type B;
@@ -64,11 +55,10 @@ public:
   value_type last_deriv;
   value_type ConstValue;
 
-  OneDimQuinticSpline(grid_type* gt = 0):base_type(gt) { }
+  OneDimQuinticSpline(grid_type* gt = 0) : base_type(gt) {}
 
   template<class VV>
-  OneDimQuinticSpline(grid_type* gt, const VV& nv):
-    base_type(gt),first_deriv(0.0),last_deriv(0.0)
+  OneDimQuinticSpline(grid_type* gt, const VV& nv) : base_type(gt), first_deriv(0.0), last_deriv(0.0)
   {
     int n = nv.size();
     m_Y.resize(nv.size());
@@ -92,13 +82,10 @@ public:
     F.resize(n);
   }
 
-  OneDimQuinticSpline<Td,Tg,CTd,CTg>* makeClone() const
-  {
-    return new OneDimQuinticSpline<Td,Tg,CTd,CTg>(*this);
-  }
+  OneDimQuinticSpline<Td, Tg, CTd, CTg>* makeClone() const { return new OneDimQuinticSpline<Td, Tg, CTd, CTg>(*this); }
 
-  OneDimQuinticSpline<Td,Tg,CTd,CTg>(const OneDimQuinticSpline<Td,Tg,CTd,CTg>& a)
-    : OneDimGridFunctor<Td,Tg,CTd,CTg>(a)
+  OneDimQuinticSpline<Td, Tg, CTd, CTg>(const OneDimQuinticSpline<Td, Tg, CTd, CTg>& a)
+      : OneDimGridFunctor<Td, Tg, CTd, CTg>(a)
   {
     m_Y2.resize(a.m_Y2.size());
     m_Y2        = a.m_Y2;
@@ -108,126 +95,119 @@ public:
     first_deriv = a.first_deriv;
     last_deriv  = a.last_deriv;
     B.resize(a.B.size());
-    B           = a.B;
+    B = a.B;
     D.resize(a.D.size());
-    D           = a.D;
+    D = a.D;
     E.resize(a.E.size());
-    E           = a.E;
+    E = a.E;
     F.resize(a.F.size());
-    F           = a.F;
+    F = a.F;
   }
 
-  const OneDimQuinticSpline<Td,Tg,CTd,CTg>&
-  operator=(const OneDimQuinticSpline<Td,Tg,CTd,CTg>& a)
+  const OneDimQuinticSpline<Td, Tg, CTd, CTg>& operator=(const OneDimQuinticSpline<Td, Tg, CTd, CTg>& a)
   {
     shallow_copy(a);
     return *this;
   }
 
-  void shallow_copy(const OneDimQuinticSpline<Td,Tg,CTd,CTg>& a)
+  void shallow_copy(const OneDimQuinticSpline<Td, Tg, CTd, CTg>& a)
   {
     this->GridManager = a.GridManager;
-    this->OwnGrid=false;
-    m_grid = a.m_grid;
+    this->OwnGrid     = false;
+    m_grid            = a.m_grid;
     m_Y.resize(a.m_Y.size());
     m_Y2.resize(a.m_Y2.size());
-    m_Y=a.m_Y;
-    m_Y2=a.m_Y2;
-    ConstValue = a.ConstValue;
-    r_min = a.r_min;
-    r_max = a.r_max;
+    m_Y         = a.m_Y;
+    m_Y2        = a.m_Y2;
+    ConstValue  = a.ConstValue;
+    r_min       = a.r_min;
+    r_max       = a.r_max;
     first_deriv = a.first_deriv;
-    last_deriv = a.last_deriv;
+    last_deriv  = a.last_deriv;
     B.resize(a.B.size());
-    B           = a.B;
+    B = a.B;
     D.resize(a.D.size());
-    D           = a.D;
+    D = a.D;
     E.resize(a.E.size());
-    E           = a.E;
+    E = a.E;
     F.resize(a.F.size());
-    F           = a.F;
+    F = a.F;
   }
 
 private:
   inline Td quinticInterpolate(Td cL, Td a, Td b, Td c, Td d, Td e, Td f) const
   {
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
+    return a + cL * (b + cL * (c + cL * (d + cL * (e + cL * f))));
   }
 
-  inline Td quinticInterpolateSecondDeriv(Td cL, Td a, Td b, Td c, Td d, Td e, Td f, Td &du, Td &d2u) const
+  inline Td quinticInterpolateSecondDeriv(Td cL, Td a, Td b, Td c, Td d, Td e, Td f, Td& du, Td& d2u) const
   {
-    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
-    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
+    du  = b + cL * (2.0 * c + cL * (3.0 * d + cL * (4.0 * e + cL * f * 5.0)));
+    d2u = 2.0 * c + cL * (6.0 * d + cL * (12.0 * e + cL * f * 20.0));
+    return a + cL * (b + cL * (c + cL * (d + cL * (e + cL * f))));
   }
 
-  inline Td quinticInterpolateThirdDeriv(Td cL, Td a, Td b, Td c, Td d, Td e, Td f, Td &du, Td &d2u, Td &d3u) const
+  inline Td quinticInterpolateThirdDeriv(Td cL, Td a, Td b, Td c, Td d, Td e, Td f, Td& du, Td& d2u, Td& d3u) const
   {
-    du = b+cL*(2.0*c+cL*(3.0*d+cL*(4.0*e+cL*f*5.0)));
-    d2u = 2.0*c+cL*(6.0*d+cL*(12.0*e+cL*f*20.0));
-    d3u = 6.0*d+cL*(24.0*e+cL*f*60.0);
-    return a+cL*(b+cL*(c+cL*(d+cL*(e+cL*f))));
+    du  = b + cL * (2.0 * c + cL * (3.0 * d + cL * (4.0 * e + cL * f * 5.0)));
+    d2u = 2.0 * c + cL * (6.0 * d + cL * (12.0 * e + cL * f * 20.0));
+    d3u = 6.0 * d + cL * (24.0 * e + cL * f * 60.0);
+    return a + cL * (b + cL * (c + cL * (d + cL * (e + cL * f))));
   }
 
 public:
   inline value_type splint(point_type r) const
   {
-    if(r<r_min)
+    if (r < r_min)
     {
-      return m_Y[0]+first_deriv*(r-r_min);
+      return m_Y[0] + first_deriv * (r - r_min);
     }
-    else
-      if(r>=r_max)
-      {
-        return ConstValue;
-      }
+    else if (r >= r_max)
+    {
+      return ConstValue;
+    }
     Td cL;
     int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, cL);
-    return quinticInterpolate(cL, m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc]);
+    return quinticInterpolate(cL, m_Y[Loc], B[Loc], m_Y2[Loc], D[Loc], E[Loc], F[Loc]);
   }
 
 
-  inline value_type
-  splint(point_type r, value_type& du, value_type& d2u) const
+  inline value_type splint(point_type r, value_type& du, value_type& d2u) const
   {
-    if(r<r_min)
+    if (r < r_min)
     {
-      return m_Y[0]+first_deriv*(r-r_min);
+      return m_Y[0] + first_deriv * (r - r_min);
     }
-    else
-      if(r>=r_max)
-      {
-        return ConstValue;
-      }
+    else if (r >= r_max)
+    {
+      return ConstValue;
+    }
     Td cL;
     int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, cL);
-    return quinticInterpolateSecondDeriv(cL, m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc],du,d2u);
+    return quinticInterpolateSecondDeriv(cL, m_Y[Loc], B[Loc], m_Y2[Loc], D[Loc], E[Loc], F[Loc], du, d2u);
   }
 
-  inline value_type
-  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u) const
+  inline value_type splint(point_type r, value_type& du, value_type& d2u, value_type& d3u) const
   {
-    if(r<r_min)
+    if (r < r_min)
     {
-      return m_Y[0]+first_deriv*(r-r_min);
+      return m_Y[0] + first_deriv * (r - r_min);
     }
-    else
-      if(r>=r_max)
-      {
-        return ConstValue;
-      }
+    else if (r >= r_max)
+    {
+      return ConstValue;
+    }
     Td cL;
     int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, cL);
-    return quinticInterpolateThirdDeriv(cL, m_Y[Loc],B[Loc],m_Y2[Loc],D[Loc],E[Loc],F[Loc],du,d2u,d3u);
+    return quinticInterpolateThirdDeriv(cL, m_Y[Loc], B[Loc], m_Y2[Loc], D[Loc], E[Loc], F[Loc], du, d2u, d3u);
   }
 
-  inline
-  void spline(int imin, value_type yp1, int imax, value_type ypn)
+  inline void spline(int imin, value_type yp1, int imax, value_type ypn)
   {
     first_deriv = yp1;
-    last_deriv = ypn;
-    r_min = m_grid->r(imin);
-    r_max = m_grid->r(imax);
+    last_deriv  = ypn;
+    r_min       = m_grid->r(imin);
+    r_max       = m_grid->r(imax);
     int npts(this->size());
     m_Y2.resize(npts);
     B.resize(npts);
@@ -235,22 +215,18 @@ public:
     E.resize(npts);
     F.resize(npts);
     m_Y2 = 0.0;
-    B = 0.0;
-    D = 0.0;
-    E = 0.0;
-    F = 0.0;
-    QuinticSplineSolve(npts-imin,m_grid->data()+imin, m_Y.data()+imin,
-                       B.data()+imin, m_Y2.data()+imin,D.data()+imin,E.data()+imin,F.data()+imin);
-    ConstValue=m_Y[imax];
+    B    = 0.0;
+    D    = 0.0;
+    E    = 0.0;
+    F    = 0.0;
+    QuinticSplineSolve(npts - imin, m_grid->data() + imin, m_Y.data() + imin, B.data() + imin, m_Y2.data() + imin,
+                       D.data() + imin, E.data() + imin, F.data() + imin);
+    ConstValue = m_Y[imax];
   }
 
-  inline
-  void spline()
-  {
-    spline(0,0.0,m_grid->size()-1,0.0);
-  }
+  inline void spline() { spline(0, 0.0, m_grid->size() - 1, 0.0); }
 };
 
 
-}
+} // namespace qmcplusplus
 #endif

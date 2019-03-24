@@ -152,15 +152,9 @@ SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInp
   BandInfoGroup vals;
   vals.TwistIndex = fullband[0].TwistIndex;
   vals.GroupID    = 0;
-  vals.myName     = make_bandgroup_name(mybuilder->getName(),
-                                    spin,
-                                    mybuilder->TwistNum,
-                                    mybuilder->TileMatrix,
-                                    input_info.min_index(),
-                                    input_info.max_index());
-  vals.selectBands(fullband,
-                   spo2band[spin][input_info.min_index()],
-                   input_info.max_index() - input_info.min_index(),
+  vals.myName     = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->TwistNum, mybuilder->TileMatrix,
+                                    input_info.min_index(), input_info.max_index());
+  vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index(),
                    false);
 
   return create_spline_set(spin, vals);
@@ -200,10 +194,7 @@ void BsplineReaderBase::initialize_spo2band(int spin,
   if (comm->rank())
     return;
 
-  std::string aname = make_bandinfo_filename(mybuilder->getName(),
-                                             spin,
-                                             mybuilder->TwistNum,
-                                             mybuilder->TileMatrix,
+  std::string aname = make_bandinfo_filename(mybuilder->getName(), spin, mybuilder->TwistNum, mybuilder->TileMatrix,
                                              comm->getGroupID());
   aname += ".bandinfo.dat";
 
@@ -220,20 +211,8 @@ void BsplineReaderBase::initialize_spo2band(int spin,
     double e  = bigspace[i].Energy;
     int nd    = (bigspace[i].MakeTwoCopies) ? 2 : 1;
     PosType k = mybuilder->PrimCell.k_cart(mybuilder->TwistAngles[ti]);
-    sprintf(s,
-            "%8d %8d %8d %8d %12.6f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %6d\n",
-            i,
-            ns,
-            ti,
-            bi,
-            e,
-            k[0],
-            k[1],
-            k[2],
-            mybuilder->TwistAngles[ti][0],
-            mybuilder->TwistAngles[ti][1],
-            mybuilder->TwistAngles[ti][2],
-            nd);
+    sprintf(s, "%8d %8d %8d %8d %12.6f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %6d\n", i, ns, ti, bi, e, k[0], k[1], k[2],
+            mybuilder->TwistAngles[ti][0], mybuilder->TwistAngles[ti][1], mybuilder->TwistAngles[ti][2], nd);
     o << s;
     ns += nd;
   }

@@ -29,9 +29,8 @@ fi
 module load PrgEnv-gnu
 module load cray-hdf5-parallel
 module load fftw
-module load boost
-module load subversion
-module load cmake3/3.6.1
+module load boost/1.67.0 # Default 1.60.0 on 2019-03-22 is too old
+module load cmake3
 
 # always dynamic linking
 export CRAYPE_LINK_TYPE=dynamic

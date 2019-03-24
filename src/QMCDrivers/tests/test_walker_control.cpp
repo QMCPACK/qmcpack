@@ -23,6 +23,10 @@
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerControlBase.h"
+#ifdef HAVE_MPI
+#include "QMCDrivers/DMC/WalkerControlMPI.h"
+#include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
+#endif
 
 
 #include <stdio.h>
@@ -168,5 +172,154 @@ TEST_CASE("Walker control assign walkers many", "[drivers][walker_control][prope
     }
   }
 }
+#endif
+
+#ifdef HAVE_MPI
+void test_swap_walkers(bool use_nonblocking)
+{
+  Communicate* c = OHMMS::Controller;
+  WalkerControlMPI wc(c);
+
+  wc.use_nonblocking = use_nonblocking;
+
+  MCWalkerConfiguration W; // Unused in the function
+  typedef MCWalkerConfiguration::Walker_t Walker_t;
+
+  // Set up Cur_pop
+  // Set up good_w and bad_w
+
+  wc.Cur_pop = c->size();
+  for (int i = 0; i < c->size(); i++)
+  {
+    wc.NumPerNode[i] = 1;
+  }
+  // One walker on every node, should be no swapping
+  wc.good_w.push_back(new Walker_t());
+  wc.good_w[0]->ID = c->rank();
+  wc.ncopy_w.push_back(0);
+
+  wc.swapWalkersSimple(W);
+
+  REQUIRE(wc.good_w.size() == 1);
+  REQUIRE(wc.bad_w.size() == 0);
+
+
+  // 3 walkers on rank 0, 1 walker on others - should redistribute if
+  //   there is more than one rank
+  if (c->rank() == 0)
+  {
+    wc.good_w.push_back(new Walker_t());
+    wc.good_w.push_back(new Walker_t());
+
+    // Use the ID variable to check that the walker content was transmitted
+    wc.good_w[1]->ID = c->size();
+    wc.good_w[2]->ID = c->size() + 1;
+
+    wc.ncopy_w.push_back(0);
+    wc.ncopy_w.push_back(0);
+  }
+  wc.NumPerNode[0] = 3;
+  wc.Cur_pop += 2;
+
+  wc.swapWalkersSimple(W);
+
+  //std::cout << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
+  //          " ID = " << wc.good_w[0]->ID << std::endl;
+
+  if (c->size() > 1)
+  {
+    if (c->rank() == c->size() - 2)
+    {
+      REQUIRE(wc.good_w.size() == 2);
+      // This check is a bit too restrictive - no guarantee the last walker was the
+      //  one transmitted
+      bool okay1 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
+      REQUIRE(okay1);
+    }
+    else if (c->rank() == c->size() - 1)
+    {
+      REQUIRE(wc.good_w.size() == 2);
+      bool okay2 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
+      REQUIRE(okay2);
+    }
+    else
+    {
+      REQUIRE(wc.good_w.size() == 1);
+      REQUIRE(wc.good_w[0]->ID == c->rank());
+    }
+  }
+}
+
+TEST_CASE("Walker control swap walkers blocking", "[drivers][walker_control]")
+{
+  SECTION("blocking")
+  {
+    bool non_blocking = false;
+    test_swap_walkers(non_blocking);
+  }
+}
+
+TEST_CASE("Walker control swap walkers nonblocking", "[drivers][walker_control]")
+{
+  SECTION("nonblocking")
+  {
+    bool non_blocking = true;
+    test_swap_walkers(non_blocking);
+  }
+}
+
+TEST_CASE("Walker control reconfiguration", "[drivers][walker_control]")
+{
+  Communicate* c = OHMMS::Controller;
+  WalkerReconfigurationMPI wr(c);
+
+  wr.dN.resize(c->size());
+
+  wr.dN[c->rank()] = 0;
+  if (c->size() > 1)
+  {
+    wr.dN[0] = 1;
+    wr.dN[1] = -1;
+  }
+
+  MCWalkerConfiguration W;
+  W.createWalkers(1);
+  typedef MCWalkerConfiguration::Walker_t Walker_t;
+
+  if (c->rank() == 0)
+  {
+    W[0]->ID = 100;
+  }
+  else
+  {
+    W[0]->ID = 1;
+  }
+
+  std::vector<int> plus, minus;
+  if (c->size() > 1)
+  {
+    if (c->rank() == 0)
+      plus.push_back(0);
+    if (c->rank() == 1)
+      minus.push_back(0);
+  }
+
+  if (plus.size() > 0)
+  {
+    wr.sendWalkers(W, plus);
+    REQUIRE(W.WalkerList.size() == 1);
+    REQUIRE(W[0]->ID == 100);
+  }
+
+  if (minus.size() > 0)
+  {
+    wr.recvWalkers(W, minus);
+    REQUIRE(W.WalkerList.size() == 1);
+    // Use ID and ParentID to check the walker was transmitted
+    REQUIRE(W[0]->ID == 1 + c->size());
+    REQUIRE(W[0]->ParentID == 100);
+  }
+}
+
 #endif
 } // namespace qmcplusplus

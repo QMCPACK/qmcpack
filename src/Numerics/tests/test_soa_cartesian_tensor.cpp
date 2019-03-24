@@ -24,21 +24,21 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 typedef OHMMS_PRECISION real_type;
 
 
 // Use gen_gto.py to generate the checks
 
-TEST_CASE("SoA Cartesian Tensor", "[numerics]") {
+TEST_CASE("SoA Cartesian Tensor", "[numerics]")
+{
   SoaCartesianTensor<double> ct(6);
 
   double x = 1.3;
   double y = 1.2;
   double z = -0.5;
-  ct.evaluateV(x,y,z);
+  ct.evaluateV(x, y, z);
 
-  double *XYZ = ct.cXYZ.data(0);
+  double* XYZ = ct.cXYZ.data(0);
 
   REQUIRE(XYZ[0] == Approx(0.282094791774));
   REQUIRE(XYZ[1] == Approx(0.635183265474));
@@ -126,19 +126,20 @@ TEST_CASE("SoA Cartesian Tensor", "[numerics]") {
   REQUIRE(XYZ[83] == Approx(12.1418905657));
 }
 
-TEST_CASE("SoA Cartesian Tensor evaluateVGL subset", "[numerics]") {
+TEST_CASE("SoA Cartesian Tensor evaluateVGL subset", "[numerics]")
+{
   SoaCartesianTensor<double> ct(6);
 
   double x = 1.3;
   double y = 1.2;
   double z = -0.5;
-  ct.evaluateVGL(x,y,z);
+  ct.evaluateVGL(x, y, z);
 
-  double *XYZ = ct.cXYZ.data(0);
-  double *gr0 = ct.cXYZ.data(1);
-  double *gr1 = ct.cXYZ.data(2);
-  double *gr2 = ct.cXYZ.data(3);
-  double *lap = ct.cXYZ.data(4);
+  double* XYZ = ct.cXYZ.data(0);
+  double* gr0 = ct.cXYZ.data(1);
+  double* gr1 = ct.cXYZ.data(2);
+  double* gr2 = ct.cXYZ.data(3);
+  double* lap = ct.cXYZ.data(4);
 
   REQUIRE(XYZ[0] == Approx(0.282094791774));
   REQUIRE(gr0[0] == Approx(0));
@@ -183,24 +184,25 @@ TEST_CASE("SoA Cartesian Tensor evaluateVGL subset", "[numerics]") {
   REQUIRE(lap[83] == Approx(128.367962683));
 }
 
-TEST_CASE("SoA Cartesian Tensor evaluateVGH subset", "[numerics]") {
+TEST_CASE("SoA Cartesian Tensor evaluateVGH subset", "[numerics]")
+{
   SoaCartesianTensor<double> ct(6);
 
   double x = 1.3;
   double y = 1.2;
   double z = -0.5;
-  ct.evaluateVGH(x,y,z);
+  ct.evaluateVGH(x, y, z);
 
-  double *XYZ = ct.cXYZ.data(0);
-  double *gr0 = ct.cXYZ.data(1);
-  double *gr1 = ct.cXYZ.data(2);
-  double *gr2 = ct.cXYZ.data(3);
-  double *h00 = ct.cXYZ.data(4);
-  double *h01 = ct.cXYZ.data(5);
-  double *h02 = ct.cXYZ.data(6);
-  double *h11 = ct.cXYZ.data(7);
-  double *h12 = ct.cXYZ.data(8);
-  double *h22 = ct.cXYZ.data(9);
+  double* XYZ = ct.cXYZ.data(0);
+  double* gr0 = ct.cXYZ.data(1);
+  double* gr1 = ct.cXYZ.data(2);
+  double* gr2 = ct.cXYZ.data(3);
+  double* h00 = ct.cXYZ.data(4);
+  double* h01 = ct.cXYZ.data(5);
+  double* h02 = ct.cXYZ.data(6);
+  double* h11 = ct.cXYZ.data(7);
+  double* h12 = ct.cXYZ.data(8);
+  double* h22 = ct.cXYZ.data(9);
 
   REQUIRE(XYZ[0] == Approx(0.282094791774));
   REQUIRE(gr0[0] == Approx(0));
@@ -280,4 +282,4 @@ TEST_CASE("SoA Cartesian Tensor evaluateVGH subset", "[numerics]") {
   REQUIRE(h22[71] == Approx(0));
 }
 
-}
+} // namespace qmcplusplus

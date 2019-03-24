@@ -202,13 +202,8 @@ struct SplineAdoptorReader : public BsplineReaderBase
       if (havePsig) //perform FFT using FFTW
       {
         FFTbox.resize(nx, ny, nz);
-        FFTplan = fftw_plan_dft_3d(nx,
-                                   ny,
-                                   nz,
-                                   reinterpret_cast<fftw_complex*>(FFTbox.data()),
-                                   reinterpret_cast<fftw_complex*>(FFTbox.data()),
-                                   +1,
-                                   FFTW_ESTIMATE);
+        FFTplan = fftw_plan_dft_3d(nx, ny, nz, reinterpret_cast<fftw_complex*>(FFTbox.data()),
+                                   reinterpret_cast<fftw_complex*>(FFTbox.data()), +1, FFTW_ESTIMATE);
         splineData_r.resize(nx, ny, nz);
         if (bspline->is_complex)
           splineData_i.resize(nx, ny, nz);
@@ -260,11 +255,7 @@ struct SplineAdoptorReader : public BsplineReaderBase
     fftw_execute(FFTplan);
     if (bspline->is_complex)
     {
-      fix_phase_rotate_c2c(FFTbox,
-                           splineData_r,
-                           splineData_i,
-                           mybuilder->TwistAngles[ti],
-                           rotate_phase_r,
+      fix_phase_rotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->TwistAngles[ti], rotate_phase_r,
                            rotate_phase_i);
       einspline::set(spline_r, splineData_r.data());
       einspline::set(spline_i, splineData_i.data());

@@ -298,7 +298,7 @@ struct AtomicOrbitalSoA
           // laplacian
           lapl[ib] += (local_l + (local_g * (2 - l_val) - Vpart) * rinv) * Ylm_rescale + (local_g - Vpart) * rhat_dot_G;
         }
-        local_val  += Npad;
+        local_val += Npad;
         local_grad += Npad;
         local_lapl += Npad;
       }
@@ -344,7 +344,7 @@ struct AtomicOrbitalSoA
           // laplacian
           lapl[ib] += local_l * (cone - chalf * l_val) * (3 * Ylm_rescale + rhat_dot_G);
         }
-        local_val  += Npad;
+        local_val += Npad;
         local_grad += Npad;
         local_lapl += Npad;
       }
@@ -363,7 +363,7 @@ struct AtomicOrbitalSoA
         // laplacian
         lapl[ib] = local_lapl[ib] * static_cast<ST>(3) * Ylm_v[0];
       }
-      local_val  += Npad;
+      local_val += Npad;
       local_grad += Npad;
       local_lapl += Npad;
       if (lm_tot > 0)

@@ -11,9 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef OHMMS_LIBXML_NUMERICATTRIBIO_H
@@ -27,15 +24,12 @@
  *\return ture if successful
  */
 template<class T>
-inline bool
-putContent(qmcplusplus::Vector<T>& a, xmlNodePtr cur)
+inline bool putContent(qmcplusplus::Vector<T>& a, xmlNodePtr cur)
 {
-  std::istringstream
-  stream((const char*)
-         (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
-  int i=0;
+  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  int i = 0;
   int n(a.size());
-  while(!stream.eof() && i<n )
+  while (!stream.eof() && i < n)
   {
     stream >> a[i++];
   }
@@ -43,14 +37,11 @@ putContent(qmcplusplus::Vector<T>& a, xmlNodePtr cur)
 }
 
 template<typename T>
-inline bool
-putContent(qmcplusplus::Matrix<T>& a, xmlNodePtr cur)
+inline bool putContent(qmcplusplus::Matrix<T>& a, xmlNodePtr cur)
 {
-  std::istringstream
-  stream((const char*)
-         (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
-  int i=0, ntot=a.size();
-  while(!stream.eof() && i<ntot)
+  std::istringstream stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  int i = 0, ntot = a.size();
+  while (!stream.eof() && i < ntot)
   {
     stream >> a(i++);
   }

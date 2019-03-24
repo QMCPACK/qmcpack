@@ -159,7 +159,7 @@ public:
     return d_groupid;
   }
   ///return the number of intra_comms which belong to the same group
-  inline int getGroupSize() const
+  inline int getNumGroups() const
   {
     return d_ngroups;
   }

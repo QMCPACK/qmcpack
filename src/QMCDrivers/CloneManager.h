@@ -39,8 +39,6 @@ public:
   ///virtual destructor
   virtual ~CloneManager();
 
-  // Set up for a specific number of threads.  Used in unit testing.
-  void setup(int numThreads);
   // Clear static array so makeClones will populate properly
   // Only for using in unit testing.
   static void clear_for_unit_tests();
@@ -64,7 +62,7 @@ public:
 
 protected:
   ///number of threads
-  IndexType NumThreads;
+  const IndexType NumThreads;
   ///walkers
   static std::vector<MCWalkerConfiguration*> wClones;
   static std::vector<MCWalkerConfiguration*> wgClones;

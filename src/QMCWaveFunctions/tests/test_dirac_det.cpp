@@ -28,6 +28,11 @@ using std::string;
 namespace qmcplusplus
 {
 typedef QMCTraits::ValueType ValueType;
+#ifdef ENABLE_CUDA
+typedef DiracDeterminant<DelayedUpdateCUDA<ValueType>> DetType;
+#else
+typedef DiracDeterminant<DelayedUpdate<ValueType>> DetType;
+#endif
 
 template<typename T1, typename T2>
 void check_matrix(Matrix<T1>& a, Matrix<T2>& b)
@@ -212,7 +217,7 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 {
   FakeSPO* spo = new FakeSPO();
   spo->setOrbitalSetSize(3);
-  DiracDeterminant ddb(spo);
+  DetType ddb(spo);
 
   int norb = 3;
   ddb.set(0, norb);
@@ -243,12 +248,13 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
   check_matrix(ddb.psiM, b);
 
 
-  DiracDeterminant::GradType grad;
-  ValueType det_ratio  = ddb.ratioGrad(elec, 0, grad);
+  ParticleSet::GradType grad;
+  ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
   ValueType det_ratio1 = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
   ddb.acceptMove(elec, 0);
+  ddb.completeUpdates();
 
   b(0, 0) = 3.455170657;
   b(0, 1) = -1.35124809;
@@ -269,7 +275,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 {
   FakeSPO* spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
-  DiracDeterminant ddb(spo);
+  DetType ddb(spo);
 
   int norb = 4;
   ddb.set(0, norb);
@@ -327,7 +333,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   }
 
 
-  DiracDeterminant::GradType grad;
+  ParticleSet::GradType grad;
   ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
 
   dm.invert(a_update1, true);
@@ -376,6 +382,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   //check_value(det_ratio3, det_ratio3_val);
 
   ddb.acceptMove(elec, 2);
+  ddb.completeUpdates();
 
   dm.invert(orig_a, false);
 
@@ -393,7 +400,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 {
   FakeSPO* spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
-  DiracDeterminant ddc(spo);
+  DetType ddc(spo);
 
   int norb = 4;
   // maximum delay 2
@@ -452,7 +459,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   }
 
 
-  DiracDeterminant::GradType grad;
+  ParticleSet::GradType grad;
   ValueType det_ratio = ddc.ratioGrad(elec, 0, grad);
 
   dm.invert(a_update1, true);
@@ -508,7 +515,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 
   // maximal delay reached and Ainv is updated fully
   ddc.acceptMove(elec, 2);
-  //ddc.completeUpdates();
+  ddc.completeUpdates();
 
   // fresh invert orig_a
   dm.invert(orig_a, false);
