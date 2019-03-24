@@ -18,10 +18,9 @@
 
 namespace qmcplusplus
 {
-
 TEST_CASE("drift pbyp and node correction real", "[drivers][drift]")
 {
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -33,26 +32,26 @@ TEST_CASE("drift pbyp and node correction real", "[drivers][drift]")
   agroup[0] = 1;
   elec.create(agroup);
 
-  ParticleSet::RealType tau = 0.5;
-  ParticleSet::RealType mass= 0.85;
-  std::vector<ParticleSet::RealType> massinv(1,1./mass);
+  ParticleSet::RealType tau  = 0.5;
+  ParticleSet::RealType mass = 0.85;
+  std::vector<ParticleSet::RealType> massinv(1, 1. / mass);
   ParticleSet::ParticlePos_t drift(1);
 
-  // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx) 
+  // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx)
   double xtot  = 10.;
-  int    nx    = 100;
-  double gradx = -xtot/2.;
-  double dx    = xtot/nx;
+  int nx       = 100;
+  double gradx = -xtot / 2.;
+  double dx    = xtot / nx;
 
   //app_log() << " begin printing" << std::endl;
-  for (int ix=0;ix<nx;ix++)
+  for (int ix = 0; ix < nx; ix++)
   {
     elec.G[0][0] = gradx;
-    setScaledDriftPbyPandNodeCorr(tau,massinv,elec.G,drift);
-    double dval = drift[0][0]; 
+    setScaledDriftPbyPandNodeCorr(tau, massinv, elec.G, drift);
+    double dval = drift[0][0];
 
-    double scale_factor = (-1.+std::sqrt(1.+2.*gradx*gradx*tau/mass))/(gradx*gradx*tau/mass);
-    REQUIRE( dval == Approx(scale_factor*gradx*tau/mass) );
+    double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
+    REQUIRE(dval == Approx(scale_factor * gradx * tau / mass));
 
     //app_log() << gradx << " " << dval << std::endl;
     gradx += dx;
@@ -63,7 +62,7 @@ TEST_CASE("drift pbyp and node correction real", "[drivers][drift]")
 #ifdef QMC_COMPLEX
 TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
 { // basically copy and pasted from real test, except "myi"
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -75,27 +74,27 @@ TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
   agroup[0] = 1;
   elec.create(agroup);
 
-  ParticleSet::RealType tau = 0.5;
-  ParticleSet::RealType mass= 0.85;
-  std::vector<ParticleSet::RealType> massinv(1,1./mass);
+  ParticleSet::RealType tau  = 0.5;
+  ParticleSet::RealType mass = 0.85;
+  std::vector<ParticleSet::RealType> massinv(1, 1. / mass);
   ParticleSet::ParticlePos_t drift(1);
 
-  // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx) 
+  // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx)
   double xtot  = 10.;
-  int    nx    = 100;
-  double gradx = -xtot/2.;
-  double dx    = xtot/nx;
+  int nx       = 100;
+  double gradx = -xtot / 2.;
+  double dx    = xtot / nx;
 
   // imaginary component of wf gradient should NOT affect drift
-  std::complex<double> myi(0,1.9);
-  for (int ix=0;ix<nx;ix++)
+  std::complex<double> myi(0, 1.9);
+  for (int ix = 0; ix < nx; ix++)
   {
-    elec.G[0][0] = gradx+myi;
-    setScaledDriftPbyPandNodeCorr(tau,massinv,elec.G,drift);
-    double dval = drift[0][0]; 
+    elec.G[0][0] = gradx + myi;
+    setScaledDriftPbyPandNodeCorr(tau, massinv, elec.G, drift);
+    double dval = drift[0][0];
 
-    double scale_factor = (-1.+std::sqrt(1.+2.*gradx*gradx*tau/mass))/(gradx*gradx*tau/mass);
-    REQUIRE( dval == Approx(scale_factor*gradx*tau/mass) );
+    double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
+    REQUIRE(dval == Approx(scale_factor * gradx * tau / mass));
 
     gradx += dx;
   }
@@ -104,7 +103,7 @@ TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
 
 TEST_CASE("get scaled drift real", "[drivers][drift]")
 {
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -116,25 +115,25 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
   agroup[0] = 1;
   elec.create(agroup);
 
-  ParticleSet::RealType tau = 0.5;
-  ParticleSet::RealType mass= 0.85;
-  std::vector<ParticleSet::RealType> massinv(1,1./mass);
+  ParticleSet::RealType tau  = 0.5;
+  ParticleSet::RealType mass = 0.85;
+  std::vector<ParticleSet::RealType> massinv(1, 1. / mass);
   ParticleSet::PosType drift;
 
-  // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx) 
+  // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx)
   double xtot  = 10.;
-  int    nx    = 100;
-  double gradx = -xtot/2.;
-  double dx    = xtot/nx;
+  int nx       = 100;
+  double gradx = -xtot / 2.;
+  double dx    = xtot / nx;
 
-  for (int ix=0;ix<nx;ix++)
+  for (int ix = 0; ix < nx; ix++)
   {
     elec.G[0][0] = gradx;
-    getScaledDrift(tau/mass,elec.G[0],drift);
-    double dval = drift[0]; 
+    getScaledDrift(tau / mass, elec.G[0], drift);
+    double dval = drift[0];
 
-    double scale_factor = (-1.+std::sqrt(1.+2.*gradx*gradx*tau/mass))/(gradx*gradx*tau/mass);
-    REQUIRE( dval == Approx(scale_factor*gradx*tau/mass) );
+    double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
+    REQUIRE(dval == Approx(scale_factor * gradx * tau / mass));
 
     gradx += dx;
   }
@@ -143,7 +142,7 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
 #ifdef QMC_COMPLEX
 TEST_CASE("get scaled drift complex", "[drivers][drift]")
 {
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -155,32 +154,31 @@ TEST_CASE("get scaled drift complex", "[drivers][drift]")
   agroup[0] = 1;
   elec.create(agroup);
 
-  ParticleSet::RealType tau = 0.5;
-  ParticleSet::RealType mass= 0.85;
-  std::vector<ParticleSet::RealType> massinv(1,1./mass);
+  ParticleSet::RealType tau  = 0.5;
+  ParticleSet::RealType mass = 0.85;
+  std::vector<ParticleSet::RealType> massinv(1, 1. / mass);
   ParticleSet::PosType drift;
 
-  // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx) 
+  // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx)
   double xtot  = 10.;
-  int    nx    = 100;
-  double gradx = -xtot/2.;
-  double dx    = xtot/nx;
+  int nx       = 100;
+  double gradx = -xtot / 2.;
+  double dx    = xtot / nx;
 
   // imaginary component of wf gradient should NOT affect drift
-  std::complex<double> myi(0,1.9);
-  for (int ix=0;ix<nx;ix++)
+  std::complex<double> myi(0, 1.9);
+  for (int ix = 0; ix < nx; ix++)
   {
-    elec.G[0][0] = gradx+myi;
-    getScaledDrift(tau/mass,elec.G[0],drift);
-    double dval = drift[0]; 
+    elec.G[0][0] = gradx + myi;
+    getScaledDrift(tau / mass, elec.G[0], drift);
+    double dval = drift[0];
 
-    double scale_factor = (-1.+std::sqrt(1.+2.*gradx*gradx*tau/mass))/(gradx*gradx*tau/mass);
-    REQUIRE( dval == Approx(scale_factor*gradx*tau/mass) );
+    double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
+    REQUIRE(dval == Approx(scale_factor * gradx * tau / mass));
 
     gradx += dx;
   }
 }
 #endif
 
-}
-
+} // namespace qmcplusplus
