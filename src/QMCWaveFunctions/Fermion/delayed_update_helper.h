@@ -39,4 +39,10 @@ void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
                         std::complex<double>* V_gpu, const std::complex<double>* Ainv,
                         cudaStream_t& hstream);
 
+/** create identity matrix on the device
+ */
+void make_identity_matrix_cuda(const int nrows, double* mat, const int lda, cudaStream_t& hstream);
+
+void make_identity_matrix_cuda(const int nrows, std::complex<double>* mat, const int lda, cudaStream_t& hstream);
+
 #endif

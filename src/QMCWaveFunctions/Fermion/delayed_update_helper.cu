@@ -28,7 +28,7 @@ __host__ __device__ __inline__ cuComplex subtractOne<cuComplex>(cuComplex x)
 template<>
 __host__ __device__ __inline__ cuDoubleComplex subtractOne<cuDoubleComplex>(cuDoubleComplex x)
 {
-  return make_cuDoubleComplex(cuCreal(x)-1.0f, cuCimag(x));
+  return make_cuDoubleComplex(cuCreal(x)-1.0, cuCimag(x));
 }
 
 /** helper kernel for delayed update algorithm
@@ -104,4 +104,62 @@ void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
   dim3 dimGrid(NB);
   applyW_stageV_kernel<cuDoubleComplex, BS><<<dimGrid, dimBlock, 0, hstream>>>
   (delay_list_gpu, delay_count, (cuDoubleComplex*)temp_gpu, numorbs, ndelay, (cuDoubleComplex*)V_gpu, (cuDoubleComplex*)Ainv);
+}
+
+template<typename T>
+__host__ __device__ __inline__ T makeZero()
+{
+  return T(0);
+}
+
+template<>
+__host__ __device__ __inline__ cuDoubleComplex makeZero<cuDoubleComplex>()
+{
+  return make_cuDoubleComplex(0.0, 0.0);
+}
+
+template<typename T>
+__host__ __device__ __inline__ T makeOne()
+{
+  return T(1);
+}
+
+template<>
+__host__ __device__ __inline__ cuDoubleComplex makeOne<cuDoubleComplex>()
+{
+  return make_cuDoubleComplex(1.0, 0.0);
+}
+
+template<typename T, int BS>
+__global__ void make_identity_matrix_kernel(const int nrows, T* mat, const int lda)
+{
+  int col = threadIdx.x + blockIdx.x * BS;
+  if(col<nrows)
+  {
+    for(int row = blockIdx.y * BS; row < min((blockIdx.y+1)*BS, nrows); row++)
+      mat[row*lda+col] = makeZero<T>();
+    if(blockIdx.x==blockIdx.y)
+      mat[col*lda+col] = makeOne<T>();
+  }
+}
+
+
+void make_identity_matrix_cuda(const int nrows, double* mat, const int lda, cudaStream_t& hstream)
+{
+  const int BS = 128;
+  const int NB = (nrows+BS-1)/BS;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(NB,NB);
+  make_identity_matrix_kernel<double, BS><<<dimGrid, dimBlock, 0, hstream>>>
+  (nrows, mat, lda);
+}
+
+void make_identity_matrix_cuda(const int nrows, std::complex<double>* mat, const int lda, cudaStream_t& hstream)
+{
+  const int BS = 128;
+  const int NB = (nrows+BS-1)/BS;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(NB,NB);
+  make_identity_matrix_kernel<cuDoubleComplex, BS><<<dimGrid, dimBlock, 0, hstream>>>
+  (nrows, (cuDoubleComplex*)mat, lda);
 }
