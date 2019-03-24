@@ -112,7 +112,7 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
 TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
 {
   DiracMatrix<ValueType> dm;
-  DelayedUpdate<ValueType> updateEng;
+  DelayedUpdate<ValueType, QMCTraits::QTFull::ValueType> updateEng;
   updateEng.resize(3, 1);
 
   Matrix<ValueType> a, a_T, a_inv;

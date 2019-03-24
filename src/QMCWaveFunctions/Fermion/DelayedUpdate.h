@@ -20,7 +20,7 @@
 
 namespace qmcplusplus
 {
-template<typename T>
+template<typename T, typename T_FP>
 class DelayedUpdate
 {
   /// orbital values of delayed electrons

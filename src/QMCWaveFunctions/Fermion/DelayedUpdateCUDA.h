@@ -46,7 +46,7 @@ public:
   inline bool checkRange(int index) const { return (index >= first) && (index < last); };
 };
 
-template<typename T>
+template<typename T, typename T_FP>
 class DelayedUpdateCUDA
 {
   // Data staged during for delayed acceptRows

@@ -31,9 +31,9 @@ namespace qmcplusplus
 typedef QMCTraits::RealType RealType;
 typedef QMCTraits::ValueType ValueType;
 #ifdef ENABLE_CUDA
-typedef DiracDeterminant<DelayedUpdateCUDA<ValueType>> DetType;
+typedef DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
 #else
-typedef DiracDeterminant<DelayedUpdate<ValueType>> DetType;
+typedef DiracDeterminant<> DetType;
 #endif
 
 template<typename T1, typename T2>

@@ -31,7 +31,7 @@
 
 namespace qmcplusplus
 {
-template<typename DU_TYPE = DelayedUpdate<QMCTraits::ValueType>>
+template<typename DU_TYPE = DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 class DiracDeterminant : public DiracDeterminantBase
 {
 protected:
