@@ -72,7 +72,8 @@ class DelayedUpdateCUDA
   Matrix<T, CUDAHostAllocator<T>> Ainv_buffer;
 
   // CUDA specific variables
-  cublasHandle_t handle;
+  cublasHandle_t h_cublas;
+  //cusolverDnHandle_t h_cusolver;
   cudaStream_t hstream;
 
   inline void waitStream() { cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!"); }
@@ -82,13 +83,13 @@ public:
   DelayedUpdateCUDA() : delay_count(0)
   {
     cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
-    cublasErrorCheck(cublasCreate(&handle), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(handle, hstream), "cublasSetStream failed!");
+    cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
+    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
   }
 
   ~DelayedUpdateCUDA()
   {
-    cublasErrorCheck(cublasDestroy(handle), "cublasDestroy failed!");
+    cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
     cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
   }
 
@@ -227,7 +228,7 @@ public:
       cudaErrorCheck(cudaMemcpyAsync(U_gpu.data(), U.data(), norb * delay_count * sizeof(T), cudaMemcpyHostToDevice,
                                      hstream),
                      "cudaMemcpyAsync failed!");
-      cuBLAS::gemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(), norb,
+      cuBLAS::gemm(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(), norb,
                    Ainv_gpu.data(), norb, &czero, temp_gpu.data(), lda_Binv);
       cudaErrorCheck(cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count * sizeof(int),
                                      cudaMemcpyHostToDevice, hstream),
@@ -237,9 +238,9 @@ public:
       cudaErrorCheck(cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T),
                                      cudaMemcpyHostToDevice, hstream),
                      "cudaMemcpyAsync failed!");
-      cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone, V_gpu.data(), norb,
+      cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone, V_gpu.data(), norb,
                    Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb);
-      cuBLAS::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb,
+      cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb,
                    temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
       delay_count = 0;
       // Ainv is invalid, reset range
