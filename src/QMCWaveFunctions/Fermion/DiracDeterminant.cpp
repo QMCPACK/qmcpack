@@ -55,18 +55,7 @@ void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMa
   InverseTimer.start();
   {
     BlasThreadingEnv knob(getNumThreadsNested());
-#ifdef MIXED_PRECISION
-    simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(), psiM_hp.data(), NumOrbitals, psiM_hp.cols());
-    detEng.invert(psiM_hp, true);
-    LogValue   = static_cast<RealType>(detEng.LogDet);
-    PhaseValue = static_cast<RealType>(detEng.Phase);
-    invMat     = psiM_hp;
-#else
-    simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(), invMat.data(), NumOrbitals, invMat.cols());
-    detEng.invert(invMat, true);
-    LogValue   = detEng.LogDet;
-    PhaseValue = detEng.Phase;
-#endif
+    detEng.invert_transpose(logdetT, invMat, LogValue, PhaseValue);
   } // end of BlasThreadingEnv
   updateEng.initializeInv(invMat);
   InverseTimer.stop();

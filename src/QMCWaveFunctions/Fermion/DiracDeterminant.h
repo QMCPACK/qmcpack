@@ -47,7 +47,7 @@ public:
   typedef SPOSet::HessVector_t HessVector_t;
   typedef SPOSet::HessType HessType;
 
-  typedef ParticleSet::SingleParticleValue_t mValueType;
+  typedef QMCTraits::QTFull::ValueType mValueType;
   typedef OrbitalSetTraits<mValueType>::ValueMatrix_t ValueMatrix_hp_t;
   typedef TinyVector<mValueType, DIM> mGradType;
 
@@ -169,7 +169,7 @@ public:
 
   /// temporal matrix in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
-  DiracMatrix<mValueType> detEng;
+  DiracMatrix<mValueType, ValueType> detEng;
   DU_TYPE updateEng;
 
   /// the row of up-to-date inverse matrix

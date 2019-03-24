@@ -15,6 +15,8 @@
 #include "Numerics/Blasf.h"
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <type_traits/scalar_traits.h>
+#include "simd/simd.hpp"
+#include <typeinfo>
 
 namespace qmcplusplus
 {
@@ -125,42 +127,58 @@ inline T computeLogDet(const std::complex<T>* restrict X, int n, int lda, const 
   return 0.5 * logdet;
 }
 
-template<typename T>
-struct DiracMatrix
+template<typename T_FP, typename T = T_FP>
+class DiracMatrix
 {
-  typedef typename scalar_traits<T>::real_type real_type;
-  aligned_vector<T> m_work;
+  typedef typename scalar_traits<T_FP>::real_type real_type;
+  aligned_vector<T_FP> m_work;
   aligned_vector<int> m_pivot;
   int Lwork;
-  real_type LogDet;
-  real_type Phase;
+  /// scartch space used for mixed precision
+  Matrix<T_FP> psiM_fp;
 
-  DiracMatrix() : Lwork(0) {}
-
-  inline void invert(Matrix<T>& amat, bool computeDet)
-  {
-    const int n   = amat.rows();
-    const int lda = amat.cols();
-    if (Lwork < lda)
-      reset(amat, lda);
-    Xgetrf(n, n, amat.data(), lda, m_pivot.data());
-    if (computeDet)
-    {
-      LogDet = computeLogDet(amat.data(), n, lda, m_pivot.data(), Phase);
-    }
-    Xgetri(n, amat.data(), lda, m_pivot.data(), m_work.data(), Lwork);
-  }
-
-  inline void reset(Matrix<T>& amat, const int lda)
+  /// reset internal work space
+  inline void reset(T_FP* invMat_ptr, const int lda)
   {
     m_pivot.resize(lda);
     Lwork = -1;
-    T tmp;
+    T_FP tmp;
     real_type lw;
-    Xgetri(lda, amat.data(), lda, m_pivot.data(), &tmp, Lwork);
+    Xgetri(lda, invMat_ptr, lda, m_pivot.data(), &tmp, Lwork);
     convert(tmp, lw);
     Lwork = static_cast<int>(lw);
     m_work.resize(Lwork);
+  }
+
+public:
+
+  DiracMatrix() : Lwork(0) {}
+
+  /** compute the inverse of the transpose of matrix A
+   * assume precision T_FP >= T, do the inversion always with T_FP
+   */
+  inline void invert_transpose(const Matrix<T>& amat, Matrix<T>& invMat, T& LogDet, T& Phase)
+  {
+    const int n   = invMat.rows();
+    const int lda = invMat.cols();
+    T_FP* invMat_ptr(nullptr);
+    if (typeid(T_FP) == typeid(T))
+    {
+      simd::transpose(amat.data(), n, amat.cols(), invMat.data(), n, invMat.cols());
+      invMat_ptr = invMat.data();
+    }
+    else
+    {
+      psiM_fp.resize(n,lda);
+      simd::transpose(amat.data(), n, amat.cols(), psiM_fp.data(), n, psiM_fp.cols());
+      invMat_ptr = psiM_fp.data();
+    }
+    if (Lwork < lda)
+      reset(invMat_ptr, lda);
+    Xgetrf(n, n, invMat_ptr, lda, m_pivot.data());
+    LogDet = computeLogDet(invMat_ptr, n, lda, m_pivot.data(), Phase);
+    Xgetri(n, invMat_ptr, lda, m_pivot.data(), m_work.data(), Lwork);
+    if (typeid(T_FP) != typeid(T)) invMat = psiM_fp;
   }
 };
 } // namespace qmcplusplus
