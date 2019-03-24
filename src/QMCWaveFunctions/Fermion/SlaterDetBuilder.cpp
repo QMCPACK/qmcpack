@@ -31,7 +31,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetOpt.h"
 #endif
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #endif
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
@@ -435,10 +435,16 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 
   // whether to use an optimizable slater determinant
   std::string optimize("no");
+#if defined(ENABLE_CUDA)
+  std::string useGPU("yes");
+#else
+  std::string useGPU("no");
+#endif
   int delay_rank(1);
   OhmmsAttributeSet sdAttrib;
   sdAttrib.add(delay_rank, "delay_rank");
   sdAttrib.add(optimize, "optimize");
+  sdAttrib.add(useGPU, "gpu");
   sdAttrib.put(cur->parent);
 
   { //check determinant@group
@@ -494,7 +500,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   getNodeName(dname, cur);
   DiracDeterminantBase* adet = 0;
   {
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA)
     adet = new DiracDeterminantCUDA(psi, firstIndex);
 #else
     if (UseBackflow)
@@ -551,10 +557,17 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #endif
     }
 #endif
+#if defined(ENABLE_CUDA)
+    else if (useGPU == "yes")
+    {
+      app_log() << "Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
+      adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType>>(psi,firstIndex);
+    }
+#endif
     else
     {
-      app_log() << "Using DiracDeterminant" << std::endl;
-      adet = new DiracDeterminant(psi, firstIndex);
+      app_log() << "Using DiracDeterminant with DelayedUpdate engine" << std::endl;
+      adet = new DiracDeterminant<DelayedUpdate<ValueType>>(psi, firstIndex);
     }
 #endif
   }
@@ -856,7 +869,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
     }
     else
     {
-      adet = new DiracDeterminant((SPOSetPtr)spo, 0);
+      adet = new DiracDeterminant<DelayedUpdate<ValueType>>((SPOSetPtr)spo, 0);
     }
     adet->set(multiSD->FirstIndex_up, multiSD->nels_up);
     multiSD->dets_up.push_back(adet);
@@ -881,7 +894,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
     }
     else
     {
-      adet = new DiracDeterminant((SPOSetPtr)spo, 0);
+      adet = new DiracDeterminant<DelayedUpdate<ValueType>>((SPOSetPtr)spo, 0);
     }
     adet->set(multiSD->FirstIndex_dn, multiSD->nels_dn);
     multiSD->dets_dn.push_back(adet);

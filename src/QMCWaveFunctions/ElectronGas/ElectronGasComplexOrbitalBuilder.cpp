@@ -60,7 +60,7 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   aAttrib.put(cur);
   //typedef DiracDeterminant<EGOSet>  Det_t;
   //typedef SlaterDeterminant<EGOSet> SlaterDeterminant_t;
-  typedef DiracDeterminant Det_t;
+  typedef DiracDeterminant<> Det_t;
   typedef SlaterDet SlaterDeterminant_t;
   int nat = targetPtcl.getTotalNum();
   int nup = nat / 2;

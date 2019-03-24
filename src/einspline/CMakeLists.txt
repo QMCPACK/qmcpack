@@ -34,15 +34,15 @@ SET(SRCS ${SRCS}
 )
 
 
-if(HAVE_CUDA)
+IF(QMC_CUDA)
   SET(SRCS  ${SRCS}
     multi_bspline_create_cuda.cu
     bspline_create_cuda.cu
     )
   CUDA_ADD_LIBRARY(einspline ${SRCS})
-else()
+  ELSE()
   ADD_LIBRARY(einspline ${SRCS})
-endif()
+ENDIF()
 
 #ADD_EXECUTABLE(time_multi time_multi_new.c)
 #target_link_libraries(time_multi einspline)

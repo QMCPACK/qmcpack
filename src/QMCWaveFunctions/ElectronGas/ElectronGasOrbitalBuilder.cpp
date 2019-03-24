@@ -160,14 +160,14 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     }
     else
     {
-      DiracDeterminant *updet, *downdet;
+      DiracDeterminant<> *updet, *downdet;
       //create up determinant
-      updet = new DiracDeterminant(psiu);
+      updet = new DiracDeterminant<>(psiu);
       updet->set(0, nup);
       if (ndn > 0)
       {
         //create down determinant
-        downdet = new DiracDeterminant(psid);
+        downdet = new DiracDeterminant<>(psid);
         downdet->set(nup, ndn);
       }
       sdet->add(updet, 0);
