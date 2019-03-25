@@ -25,6 +25,7 @@
 #include <OhmmsData/FileUtility.h>
 #include <io/hdf_archive.h>
 #include <einspline/multi_bspline_copy.h>
+#include <limits>
 
 namespace qmcplusplus
 {
@@ -61,9 +62,13 @@ namespace qmcplusplus
     std::vector<int> counts(offset.size()-1,0);
     for(size_t ib=0; ib<counts.size(); ib++)
       counts[ib] = offset[ib+1] - offset[ib];
-    if( buffer->coefs_size / ncol > (1<<20) )
+    const size_t coef_type_bytes = sizeof(typename bspline_engine_traits<ENGT>::value_type);
+    if( buffer->coefs_size*coef_type_bytes >= std::numeric_limits<int>::max() )
     {
       const size_t xs = buffer->x_stride;
+      if( xs*coef_type_bytes >= std::numeric_limits<int>::max() )
+        app_warning() << "Large single message even after splitting by the number of grid points in x direction! "
+                      << "Some MPI library may not work!" << std::endl;
       const size_t nx = buffer->coefs_size / xs;
       const int nrow = buffer->coefs_size / (ncol*nx);
       MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
