@@ -65,10 +65,12 @@ namespace qmcplusplus
     const size_t coef_type_bytes = sizeof(typename bspline_engine_traits<ENGT>::value_type);
     if( buffer->coefs_size*coef_type_bytes >= std::numeric_limits<int>::max() )
     {
+  // Some MPI libraries have problems when message sizes exceed range of integer (2^31)
+  // Perform the gatherv in columns to reduce risk       
       const size_t xs = buffer->x_stride;
       if( xs*coef_type_bytes >= std::numeric_limits<int>::max() )
         app_warning() << "Large single message even after splitting by the number of grid points in x direction! "
-                      << "Some MPI library may not work!" << std::endl;
+                      << "Some MPI libraries may not work!" << std::endl;
       const size_t nx = buffer->coefs_size / xs;
       const int nrow = buffer->coefs_size / (ncol*nx);
       MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
