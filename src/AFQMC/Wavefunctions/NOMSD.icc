@@ -188,7 +188,8 @@ namespace afqmc
       TG.local_barrier();
 
     }
-    TG.TG().all_reduce_in_place_n(to_address(eloc2.origin()),3*ngroups*nwalk,std::plus<>());
+    if(TG.TG().size() > 1)
+      TG.TG().all_reduce_in_place_n(to_address(eloc2.origin()),3*ngroups*nwalk,std::plus<>());
     TG.local_barrier();    
     copy_n(eloc2[node_number*nwalk].origin(),3*nwalk,E.origin());
     copy_n(overlaps.origin(),nwalk,Ov.origin());
@@ -315,8 +316,8 @@ namespace afqmc
       TG.local_barrier();
 
     }
-
-    TG.TG().all_reduce_in_place_n(to_address(eloc2.origin()),3*nnodes*nwalk,std::plus<>());
+    if(TG.TG().size() > 1)
+      TG.TG().all_reduce_in_place_n(to_address(eloc2.origin()),3*nnodes*nwalk,std::plus<>());
     TG.local_barrier();    
     auto elocal = eloc2.sliced(node_number*nwalk,(node_number+1)*nwalk);
     for(int i=0; i<nwalk; i++) {
@@ -413,7 +414,8 @@ namespace afqmc
       }
       // CHECK: I don't need all_reduce here, but the current version of mpi3 
       //        fails if I use reduce_in_place_n  
-      TG.TG_local().all_reduce_in_place_n(to_address(ovlp2.origin()),2*nw,std::plus<>());  
+      if(TG.TG_local().size() > 1 )  
+        TG.TG_local().all_reduce_in_place_n(to_address(ovlp2.origin()),2*nw,std::plus<>());  
       if(TG.TG_local().root())
         for(int iw=0; iw<nw; ++iw)
 // to GPU
@@ -733,7 +735,8 @@ namespace afqmc
       }
     }
     // normalize G
-    TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
+    if(TG.TG_local().size() > 1 )
+      TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
     if(transpose) {
       for(size_t iw=0; iw<G.size(0); ++iw) 
         if( iw%TG.TG_local().size() == TG.TG_local().rank() ) {
@@ -1056,7 +1059,8 @@ namespace afqmc
         }
       }
     }
-    TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
+    if(TG.TG_local().size() > 1) 
+      TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
   }
 
   // Computes walker averaged density matrix:
@@ -1241,8 +1245,10 @@ namespace afqmc
       }
     }
     // Average over walker's
-    TG.Global().all_reduce_in_place_n(to_address(denom.origin()),1,std::plus<>());
-    TG.Global().all_reduce_in_place_n(to_address(G.origin()),Gsize,std::plus<>());
+    if(TG.Global().size() > 1) {
+      TG.Global().all_reduce_in_place_n(to_address(denom.origin()),1,std::plus<>());
+      TG.Global().all_reduce_in_place_n(to_address(G.origin()),Gsize,std::plus<>());
+    }
     TG.local_barrier();
   }
 
@@ -1553,7 +1559,8 @@ namespace afqmc
           }
         }
       }  
-      TG.Global().all_reduce_in_place_n(to_address(G1D.origin()),G1D.num_elements(),std::plus<>());  
+      if(TG.Global().size() > 1) 
+        TG.Global().all_reduce_in_place_n(to_address(G1D.origin()),G1D.num_elements(),std::plus<>());  
       ComplexType ov1 = ( TG.Global() += ov );
       ma::scal(ComplexType(1.0,0.0)/ov1,G1D);
       HamOp.vbias(G1D.sliced(0,Gdims.first*Gdims.second),
