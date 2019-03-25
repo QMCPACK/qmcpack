@@ -11,5 +11,5 @@ update check for unsafe operations ("rm *") or script actions that can
 go awry e.g. if a filesystem is full or unavailable.
 
 Note that if you are copying/reusing these files, they might not
-reflect those used in production, since these are sometimes tweaked
-for runtime, minor software version updates etc.
+correspond to exactly those used in production, since these are
+sometimes tweaked for runtime, minor software version updates etc.
