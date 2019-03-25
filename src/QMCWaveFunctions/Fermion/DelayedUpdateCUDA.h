@@ -48,6 +48,10 @@ public:
   inline bool checkRange(int index) const { return (index >= first) && (index < last); };
 };
 
+/** implements delayed update on NVIDIA GPU using cuBLAS and cusolverDN
+ * @tparam T base precision for most computation
+ * @tparam T_FP high precision for matrix inversion, T_FP >= T
+ */
 template<typename T, typename T_FP>
 class DelayedUpdateCUDA
 {

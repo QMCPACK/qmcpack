@@ -21,6 +21,11 @@
 
 namespace qmcplusplus
 {
+
+/** implements delayed update on CPU using BLAS
+ * @tparam T base precision for most computation
+ * @tparam T_FP high precision for matrix inversion, T_FP >= T
+ */
 template<typename T, typename T_FP>
 class DelayedUpdate
 {

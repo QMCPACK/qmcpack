@@ -169,7 +169,6 @@ public:
     const int lda = invMat.cols();
     T_FP* invMat_ptr(nullptr);
 #if !defined(MIXED_PRECISION)
-    // ifdef is very ugly and "if consexpr" from C++17 is a much better solution
     simd::transpose(amat.data(), n, amat.cols(), invMat.data(), n, invMat.cols());
     invMat_ptr = invMat.data();
 #else
