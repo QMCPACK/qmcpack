@@ -318,7 +318,7 @@ ELSE()
 #    CTEST_TEST( INCLUDE short PARALLEL_LEVEL ${N_PROCS} )
     # run and submit the classified tests to their corresponding track
     CTEST_START( "${CTEST_DASHBOARD}" TRACK "Deterministic" APPEND)
-    CTEST_TEST( INCLUDE_LABEL "unit" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_TEST( INCLUDE_LABEL "deterministic" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
     CTEST_SUBMIT( PARTS Test )
     CTEST_START( "${CTEST_DASHBOARD}" TRACK "Converter" APPEND)
     CTEST_TEST( INCLUDE_LABEL "converter" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
@@ -331,7 +331,7 @@ ELSE()
     CTEST_SUBMIT( PARTS Test )
     # run and submit unclassified tests to the default track
     CTEST_START( "${CTEST_DASHBOARD}" TRACK "${CTEST_DASHBOARD}" APPEND)
-    CTEST_TEST( EXCLUDE_LABEL "unit|performance|converter|unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
+    CTEST_TEST( EXCLUDE_LABEL "deterministic|performance|converter|unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS} )
     CTEST_SUBMIT( PARTS Test )
 ENDIF()
 
