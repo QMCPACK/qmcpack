@@ -154,7 +154,7 @@ struct h5data_proxy<boost::multi::array<T, 1, qmc_cuda::cuda_gpu_allocator<T>>> 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!get_space(grp, aname, this->size(), dims))
-      ref_.resize({dims[0]});
+      ref_.reextent({dims[0]});
     std::size_t sz = ref_.num_elements();
     boost::multi::array<T, 1> buf({sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
