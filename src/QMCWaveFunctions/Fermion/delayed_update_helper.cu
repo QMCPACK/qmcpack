@@ -106,6 +106,7 @@ void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
   (delay_list_gpu, delay_count, (cuDoubleComplex*)temp_gpu, numorbs, ndelay, (cuDoubleComplex*)V_gpu, (cuDoubleComplex*)Ainv);
 }
 
+
 template<typename T>
 __host__ __device__ __inline__ T makeZero()
 {
@@ -143,7 +144,6 @@ __global__ void make_identity_matrix_kernel(const int nrows, T* mat, const int l
   }
 }
 
-
 void make_identity_matrix_cuda(const int nrows, double* mat, const int lda, cudaStream_t& hstream)
 {
   const int BS = 128;
@@ -162,4 +162,31 @@ void make_identity_matrix_cuda(const int nrows, std::complex<double>* mat, const
   dim3 dimGrid(NB,NB);
   make_identity_matrix_kernel<cuDoubleComplex, BS><<<dimGrid, dimBlock, 0, hstream>>>
   (nrows, (cuDoubleComplex*)mat, lda);
+}
+
+template<typename T, int BS>
+__global__ void extract_matrix_diagonal_kernel(const int nrows, const T* mat, const int lda, T* diag)
+{
+  int col = threadIdx.x + blockIdx.x * BS;
+  if(col<nrows) diag[col] = mat[col*lda+col];
+}
+
+void extract_matrix_diagonal_cuda(const int nrows, const double* mat, const int lda, double* diag, cudaStream_t& hstream)
+{
+  const int BS = 128;
+  const int NB = (nrows+BS-1)/BS;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(NB);
+  extract_matrix_diagonal_kernel<double, BS><<<dimGrid, dimBlock, 0, hstream>>>
+  (nrows, mat, lda, diag);
+}
+
+void extract_matrix_diagonal_cuda(const int nrows, const std::complex<double>* mat, const int lda, std::complex<double>* diag, cudaStream_t& hstream)
+{
+  const int BS = 128;
+  const int NB = (nrows+BS-1)/BS;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(NB);
+  extract_matrix_diagonal_kernel<cuDoubleComplex, BS><<<dimGrid, dimBlock, 0, hstream>>>
+  (nrows, (cuDoubleComplex*)mat, lda, (cuDoubleComplex*)diag);
 }

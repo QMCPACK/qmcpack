@@ -45,4 +45,10 @@ void make_identity_matrix_cuda(const int nrows, double* mat, const int lda, cuda
 
 void make_identity_matrix_cuda(const int nrows, std::complex<double>* mat, const int lda, cudaStream_t& hstream);
 
+/** extract matrix diagonal
+ */
+void extract_matrix_diagonal_cuda(const int nrows, const double* mat, const int lda, double* diag, cudaStream_t& hstream);
+
+void extract_matrix_diagonal_cuda(const int nrows, const std::complex<double>* mat, const int lda, std::complex<double>* diag, cudaStream_t& hstream);
+
 #endif

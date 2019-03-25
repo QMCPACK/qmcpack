@@ -16,6 +16,7 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include "CUDA/CUDAallocator.hpp"
 #include <Numerics/CUDA/cuBLAS.hpp>
+#include <Numerics/CUDA/cusolver.hpp>
 #include "QMCWaveFunctions/Fermion/delayed_update_helper.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include <cuda_runtime_api.h>
@@ -65,6 +66,16 @@ class DelayedUpdateCUDA
   int delay_count;
   /// matrix inversion engine
   DiracMatrix<T_FP, T> detEng;
+  /// scratch memory for cusolverDN
+  Matrix<T_FP, CUDAAllocator<T_FP>, MemorySpace::CUDA> Mat1_gpu, Mat2_gpu;
+  /// pivot array + info
+  Vector<int, CUDAHostAllocator<int>> ipiv;
+  Vector<int, CUDAAllocator<int>, MemorySpace::CUDA> ipiv_gpu;
+  /// workspace
+  Vector<T_FP, CUDAAllocator<T_FP>, MemorySpace::CUDA> work_gpu;
+  /// diagonal terms of LU matrix
+  Vector<T_FP, CUDAHostAllocator<T_FP>> LU_diag;
+  Vector<T_FP, CUDAAllocator<T_FP>, MemorySpace::CUDA> LU_diag_gpu;
 
   // the range of prefetched_Ainv_rows
   Range prefetched_range;
@@ -73,7 +84,7 @@ class DelayedUpdateCUDA
 
   // CUDA specific variables
   cublasHandle_t h_cublas;
-  //cusolverDnHandle_t h_cusolver;
+  cusolverDnHandle_t h_cusolver;
   cudaStream_t hstream;
 
   inline void waitStream() { cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!"); }
@@ -85,10 +96,13 @@ public:
     cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
     cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
     cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
+    cusolverErrorCheck(cusolverDnCreate(&h_cusolver), "cusolverCreate failed!");
+    cusolverErrorCheck(cusolverDnSetStream(h_cusolver, hstream), "cusolverSetStream failed!");
   }
 
   ~DelayedUpdateCUDA()
   {
+    cusolverErrorCheck(cusolverDnDestroy(h_cusolver), "cusolverDestroy failed!");
     cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
     cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
   }
@@ -112,8 +126,19 @@ public:
     U_gpu.resize(delay, norb);
     V_gpu.resize(delay, norb);
     Binv_gpu.resize(delay, delay);
-    Ainv_gpu.resize(norb, norb);
     delay_list_gpu.resize(delay);
+    Mat1_gpu.resize(norb, norb);
+    Mat2_gpu.resize(norb, norb);
+    LU_diag.resize(norb);
+    LU_diag_gpu.resize(norb);
+    // Ainv_gpu reuses all or part of the memory of Mat2_gpu
+    Ainv_gpu.attachReference(reinterpret_cast<T*>(Mat2_gpu.data()), norb, norb);
+
+    ipiv.resize(norb+1);
+    ipiv_gpu.resize(norb+1);
+    int lwork;
+    cusolver::getrf_bufferSize(h_cusolver, norb, norb, Mat2_gpu.data(), norb, &lwork);
+    work_gpu.resize(lwork);
   }
 
   /** compute the inverse of the transpose of matrix A
@@ -122,9 +147,58 @@ public:
    */
   inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, real_type& LogValue, real_type& PhaseValue)
   {
-    detEng.invert_transpose(logdetT, Ainv, LogValue, PhaseValue);
     // safe mechanism
     delay_count = 0;
+    int norb = logdetT.rows();
+#if !defined(MIXED_PRECISION)
+    cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T),
+                                   cudaMemcpyHostToDevice, hstream),
+                   "cudaMemcpyAsync failed!");
+    cusolver::getrf(h_cusolver, norb, norb, Mat1_gpu.data(), norb,
+                    work_gpu.data(), ipiv_gpu.data()+1, ipiv_gpu.data());
+    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int), cudaMemcpyDeviceToHost,
+                                   hstream),
+                   "cudaMemcpyAsync failed!");
+    extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), hstream);
+    cudaErrorCheck(cudaMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T), cudaMemcpyDeviceToHost,
+                                   hstream),
+                   "cudaMemcpyAsync failed!");
+    // check LU success
+    waitStream();
+    if(ipiv[0]!=0)
+    {
+      std::ostringstream err;
+      err << "cusolverDnDgetrf calculation failed with devInfo = " << ipiv[0] << std::endl;
+      std::cerr << err.str();
+      throw std::runtime_error(err.str());
+    }
+    make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, hstream);
+    cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat1_gpu.data(), norb,
+                    ipiv_gpu.data()+1, Mat2_gpu.data(), norb, ipiv_gpu.data());
+    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost,
+                                   hstream),
+                   "cudaMemcpyAsync failed!");
+
+    typename scalar_traits<T_FP>::real_type Phase_tmp;
+    LogValue = computeLogDet(LU_diag.data(), norb, ipiv.data()+1, Phase_tmp);
+    PhaseValue = Phase_tmp;
+#else
+    detEng.invert_transpose(logdetT, Ainv, LogValue, PhaseValue);
+    initializeInv(Ainv);
+    ipiv[0] = 0;
+#endif
+    cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
+                                   hstream),
+                   "cudaMemcpyAsync failed!");
+    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
+    //waitStream();
+    if(ipiv[0]!=0)
+    {
+      std::ostringstream err;
+      err << "cusolverDnDgetrs calculation failed with devInfo = " << ipiv[0] << std::endl;
+      std::cerr << err.str();
+      throw std::runtime_error(err.str());
+    }
   }
 
   /** initialize internal objects when Ainv is refreshed
