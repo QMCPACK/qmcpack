@@ -53,6 +53,7 @@ class DelayedUpdateCUDA
 {
   /// define real type
   using real_type = typename scalar_traits<T>::real_type;
+  using real_type_fp = typename scalar_traits<T_FP>::real_type;
   // Data staged during for delayed acceptRows
   Matrix<T, CUDAHostAllocator<T>> U, Binv;
   Matrix<T> V;
@@ -64,8 +65,6 @@ class DelayedUpdateCUDA
   Vector<int, CUDAAllocator<int>, MemorySpace::CUDA> delay_list_gpu;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
-  /// matrix inversion engine
-  DiracMatrix<T_FP, T> detEng;
   /// scratch memory for cusolverDN
   Matrix<T_FP, CUDAAllocator<T_FP>, MemorySpace::CUDA> Mat1_gpu, Mat2_gpu;
   /// pivot array + info
@@ -168,25 +167,47 @@ public:
     if(ipiv[0]!=0)
     {
       std::ostringstream err;
-      err << "cusolverDnDgetrf calculation failed with devInfo = " << ipiv[0] << std::endl;
+      err << "cusolver::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
     make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, hstream);
     cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat1_gpu.data(), norb,
                     ipiv_gpu.data()+1, Mat2_gpu.data(), norb, ipiv_gpu.data());
+#else
+    cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T),
+                                   cudaMemcpyHostToDevice, hstream),
+                   "cudaMemcpyAsync failed!");
+    copy_matrix_cuda(norb, norb, (T*)Mat1_gpu.data(), norb, Mat2_gpu.data(), norb, hstream);
+    cusolver::getrf(h_cusolver, norb, norb, Mat2_gpu.data(), norb,
+                    work_gpu.data(), ipiv_gpu.data()+1, ipiv_gpu.data());
+    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int), cudaMemcpyDeviceToHost,
+                                   hstream),
+                   "cudaMemcpyAsync failed!");
+    extract_matrix_diagonal_cuda(norb, Mat2_gpu.data(), norb, LU_diag_gpu.data(), hstream);
+    cudaErrorCheck(cudaMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP), cudaMemcpyDeviceToHost,
+                                   hstream),
+                   "cudaMemcpyAsync failed!");
+    // check LU success
+    waitStream();
+    if(ipiv[0]!=0)
+    {
+      std::ostringstream err;
+      err << "cusolver::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
+      std::cerr << err.str();
+      throw std::runtime_error(err.str());
+    }
+    make_identity_matrix_cuda(norb, Mat1_gpu.data(), norb, hstream);
+    cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat2_gpu.data(), norb,
+                    ipiv_gpu.data()+1, Mat1_gpu.data(), norb, ipiv_gpu.data());
+    copy_matrix_cuda(norb, norb, Mat1_gpu.data(), norb, (T*)Mat2_gpu.data(), norb, hstream);
+#endif
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync failed!");
-
-    typename scalar_traits<T_FP>::real_type Phase_tmp;
+    real_type_fp Phase_tmp;
     LogValue = computeLogDet(LU_diag.data(), norb, ipiv.data()+1, Phase_tmp);
     PhaseValue = Phase_tmp;
-#else
-    detEng.invert_transpose(logdetT, Ainv, LogValue, PhaseValue);
-    initializeInv(Ainv);
-    ipiv[0] = 0;
-#endif
     cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync failed!");

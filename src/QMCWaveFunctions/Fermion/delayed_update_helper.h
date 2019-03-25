@@ -51,4 +51,14 @@ void extract_matrix_diagonal_cuda(const int nrows, const double* mat, const int 
 
 void extract_matrix_diagonal_cuda(const int nrows, const std::complex<double>* mat, const int lda, std::complex<double>* diag, cudaStream_t& hstream);
 
+/** copy matrix with precision difference
+ */
+void copy_matrix_cuda(const int nrows, const int ncols, const double* mat_in, const int lda, float* mat_out, const int ldb, cudaStream_t& hstream);
+
+void copy_matrix_cuda(const int nrows, const int ncols, const float* mat_in, const int lda, double* mat_out, const int ldb, cudaStream_t& hstream);
+
+void copy_matrix_cuda(const int nrows, const int ncols, const std::complex<double>* mat_in, const int lda, std::complex<float>* mat_out, const int ldb, cudaStream_t& hstream);
+
+void copy_matrix_cuda(const int nrows, const int ncols, const std::complex<float>* mat_in, const int lda, std::complex<double>* mat_out, const int ldb, cudaStream_t& hstream);
+
 #endif
