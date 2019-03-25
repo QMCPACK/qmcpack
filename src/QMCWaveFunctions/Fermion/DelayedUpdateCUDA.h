@@ -136,7 +136,7 @@ public:
     LU_diag_gpu.resize(norb);
     // Ainv_gpu reuses all or part of the memory of Mat2_gpu
     Ainv_gpu.attachReference(reinterpret_cast<T*>(Mat2_gpu.data()), norb, norb);
-
+    // prepare cusolver auxiliary arrays
     ipiv.resize(norb+1);
     ipiv_gpu.resize(norb+1);
     int lwork;

@@ -57,7 +57,7 @@ inline void cusolverAssert(cusolverStatus_t code, const std::string& cause, cons
 
 namespace qmcplusplus {
 
-/** interface to cu solver calls for different data types S/C/D/Z
+/** interface to cusolver calls for different data types S/C/D/Z
  */
 struct cusolver
 {
