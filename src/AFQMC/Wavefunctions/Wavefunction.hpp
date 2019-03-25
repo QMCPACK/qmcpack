@@ -122,7 +122,7 @@ class dummy_wavefunction
   }
 
   template<class WlkSet, class MatG>
-  void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, boost::multi::array<ComplexType,1>& denom, bool path_restoration=false, bool free_projection=false) {
+  void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, boost::multi::array<ComplexType,1>& denom, bool path_restoration=false, bool free_projection=false, bool back_propagate=false) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
   }
 
@@ -305,9 +305,9 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     }
 
     template<class... Args>
-    void BackPropagatedDensityMatrix(Args&&... args) {
+    void WalkerAveragedDensityMatrix(Args&&... args) {
         boost::apply_visitor(
-              [&](auto&& a){a.BackPropagatedDensityMatrix(std::forward<Args>(args)...);},
+              [&](auto&& a){a.WalkerAveragedDensityMatrix(std::forward<Args>(args)...);},
               *this
         );
     }

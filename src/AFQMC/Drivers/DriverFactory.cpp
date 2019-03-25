@@ -247,7 +247,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
 
   // estimator setup
   // FIX issue with Hamiltonian object expected by estimator handler
-  EstimatorHandler estim0(TGHandler,AFinfo,title,cur,WfnFac,wfn0,walker_type,HamFac,ham_name,addEnergyEstim,!free_proj);
+  EstimatorHandler estim0(TGHandler,AFinfo,title,cur,WfnFac,wfn0,walker_type,HamFac,ham_name,dt,addEnergyEstim,!free_proj);
 
   app_log()<<"\n****************************************************\n"
            <<"****************************************************\n"

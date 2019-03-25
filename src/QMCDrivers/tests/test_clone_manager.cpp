@@ -38,23 +38,20 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 class FakeUpdate : public QMCUpdateBase
 {
 public:
+  FakeUpdate(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+      : QMCUpdateBase(w, psi, h, rg)
+  {}
 
-  FakeUpdate(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-             RandomGenerator_t& rg) : QMCUpdateBase(w, psi, h, rg) {}
-
-  void advanceWalker(Walker_t& thisWalker, bool recompute) override {
-  }
-
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override {}
 };
 
 TEST_CASE("QMCUpdate", "[drivers]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
   MCWalkerConfiguration elec;
   elec.setName("e");
@@ -77,7 +74,7 @@ TEST_CASE("QMCUpdate", "[drivers]")
 TEST_CASE("CloneManager", "[drivers]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
   HamiltonianPool hpool(c);
   CloneManager cm;
@@ -86,4 +83,4 @@ TEST_CASE("CloneManager", "[drivers]")
   //std::cout << "acc ratio = " << acc_ratio << std::endl;
 }
 
-}
+} // namespace qmcplusplus

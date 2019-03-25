@@ -1,6 +1,6 @@
-diff -W 205 -urN qe-6.2.1_original/clib/esh5_interfaces.c qe-6.2.1_updated/clib/esh5_interfaces.c
---- qe-6.2.1_original/clib/esh5_interfaces.c	1969-12-31 18:00:00.000000000 -0600
-+++ qe-6.2.1_updated/clib/esh5_interfaces.c	2018-04-25 13:54:45.809746856 -0500
+diff -W 205 -urN qe-6.4_original/clib/esh5_interfaces.c qe-6.4_updated/clib/esh5_interfaces.c
+--- qe-6.4_original/clib/esh5_interfaces.c	1969-12-31 18:00:00.000000000 -0600
++++ qe-6.4_updated/clib/esh5_interfaces.c	2019-03-04 13:29:02.000000000 -0600
 @@ -0,0 +1,962 @@
 +/*
 + * Copyright (C) 2004 PWSCF group 
@@ -964,17 +964,17 @@ diff -W 205 -urN qe-6.2.1_original/clib/esh5_interfaces.c qe-6.2.1_updated/clib/
 +}
 +
 +#endif
-diff -W 205 -urN qe-6.2.1_original/clib/make.depend qe-6.2.1_updated/clib/make.depend
---- qe-6.2.1_original/clib/make.depend	2017-12-11 10:51:48.000000000 -0600
-+++ qe-6.2.1_updated/clib/make.depend	2018-04-25 13:54:45.809746856 -0500
+diff -W 205 -urN qe-6.4_original/clib/make.depend qe-6.4_updated/clib/make.depend
+--- qe-6.4_original/clib/make.depend	2019-03-04 07:51:39.000000000 -0600
++++ qe-6.4_updated/clib/make.depend	2019-03-04 13:29:02.000000000 -0600
 @@ -1,3 +1,4 @@
  md5.o : 
  md5_from_file.o : 
  memstat.o : ../include/c_defs.h
 +esh5_interfaces.o : ../include/c_defs.h
-diff -W 205 -urN qe-6.2.1_original/clib/Makefile qe-6.2.1_updated/clib/Makefile
---- qe-6.2.1_original/clib/Makefile	2017-12-11 10:51:48.000000000 -0600
-+++ qe-6.2.1_updated/clib/Makefile	2018-04-25 13:54:45.809746856 -0500
+diff -W 205 -urN qe-6.4_original/clib/Makefile qe-6.4_updated/clib/Makefile
+--- qe-6.4_original/clib/Makefile	2019-03-04 07:51:39.000000000 -0600
++++ qe-6.4_updated/clib/Makefile	2019-03-04 13:29:02.000000000 -0600
 @@ -16,14 +16,18 @@
  ptrace.o \
  sockets.o \
@@ -996,12 +996,12 @@ diff -W 205 -urN qe-6.2.1_original/clib/Makefile qe-6.2.1_updated/clib/Makefile
  source :
  	co -l $(OBJS:.o=.c)
  
-diff -W 205 -urN qe-6.2.1_original/install/configure qe-6.2.1_updated/install/configure
---- qe-6.2.1_original/install/configure	2017-12-11 10:52:53.000000000 -0600
-+++ qe-6.2.1_updated/install/configure	2018-04-25 13:54:45.813746859 -0500
-@@ -8809,10 +8809,10 @@
-          elif test -e $with_hdf5_path/bin/h5fc; then
+diff -W 205 -urN qe-6.4_original/install/configure qe-6.4_updated/install/configure
+--- qe-6.4_original/install/configure	2019-03-04 07:51:39.000000000 -0600
++++ qe-6.4_updated/install/configure	2019-03-04 13:29:02.000000000 -0600
+@@ -9659,10 +9659,10 @@
               hdf5_libs=`$with_hdf5_path/bin/h5fc -show | awk -F'-L' '{$1="";$2="-L"$2; print $0}'`
+              try_dflags="$try_dflags -D__HDF5_SERIAL"
           else
 -          hdf5_libs="-L$with_hdf5_path/lib -lhdf5_fortran -lhdf5 -lrt -lz -ldl -lm -Wl,-rpath -Wl,$with_hdf5_path/lib"
 +          hdf5_libs="-L$with_hdf5_path/lib -lhdf5_fortran -lhdf5_hl -lhdf5 -lrt -lz -ldl -lm -Wl,-rpath -Wl,$with_hdf5_path/lib"
@@ -1012,57 +1012,34 @@ diff -W 205 -urN qe-6.2.1_original/install/configure qe-6.2.1_updated/install/co
        fi
  
        hdf5_line="HDF5_LIBS=$hdf5_libs"
-diff -W 205 -urN qe-6.2.1_original/Modules/qeh5_module.f90 qe-6.2.1_updated/Modules/qeh5_module.f90
---- qe-6.2.1_original/Modules/qeh5_module.f90	2017-12-11 10:53:17.000000000 -0600
-+++ qe-6.2.1_updated/Modules/qeh5_module.f90	2018-04-25 13:54:45.813746859 -0500
-@@ -163,13 +163,12 @@
-        CASE default 
-          ierr =1 
-     END SELECT
--    IF ( ierr /=0 ) THEN 
--       IF (present (error)) then
--          error = ierr
--       ELSE 
--          CALL H5Eprint_f( jerr ) 
--          stop
--       END IF
-+    IF (present (error)) then
-+       ! success=0, fail=-1. QE error handling needs a positive error code.
-+       error = abs(ierr)
-+    ELSE IF ( ierr /=0 ) THEN
-+       CALL H5Eprint_f( jerr )
-+       stop
-     END IF
-     ! //' with action '// trim(action), 1 )  
-   END SUBROUTINE  qeh5_openfile  
-diff -W 205 -urN qe-6.2.1_original/PP/src/Makefile qe-6.2.1_updated/PP/src/Makefile
---- qe-6.2.1_original/PP/src/Makefile	2017-12-11 10:51:58.000000000 -0600
-+++ qe-6.2.1_updated/PP/src/Makefile	2018-04-25 13:54:45.813746859 -0500
-@@ -61,7 +61,7 @@
-       pawplot.x sumpdos.x pw2wannier90.x pw_export.x pw2gw.x \
+diff -W 205 -urN qe-6.4_original/PP/src/Makefile qe-6.4_updated/PP/src/Makefile
+--- qe-6.4_original/PP/src/Makefile	2019-03-04 07:51:39.000000000 -0600
++++ qe-6.4_updated/PP/src/Makefile	2019-03-04 13:29:02.000000000 -0600
+@@ -63,7 +63,7 @@
+       plan_avg.x plotband.x plotproj.x plotrho.x pmw.x pp.x projwfc.x \
+       pawplot.x sumpdos.x pw2wannier90.x pw2critic.x pw2gw.x \
        wannier_ham.x wannier_plot.x molecularpdos.x \
-       pw2bgw.x bgw2pw.x wfck2r.x importexport_binary.x \
--      fermi_velocity.x fermi_proj.x
-+      fermi_velocity.x fermi_proj.x pw2qmcpack.x
+-      pw2bgw.x wfck2r.x fermi_velocity.x fermi_proj.x ppacf.x
++      pw2bgw.x wfck2r.x fermi_velocity.x fermi_proj.x ppacf.x pw2qmcpack.x
  
  
  libpp.a : $(PPOBJS) 
-@@ -204,6 +204,11 @@
- 		fermisurface.o libpp.a $(MODULES) $(LIBOBJS) $(LIBS)
+@@ -205,6 +205,11 @@
+ 		fermisurface.o libpp.a $(MODULES) $(LIBOBJS) $(QELIBS)
  	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
  
 +pw2qmcpack.x : pw2qmcpack.o libpp.a $(MODULES) $(LIBOBJS)
 +	$(LD) $(LDFLAGS) -o $@ \
-+		pw2qmcpack.o libpp.a $(MODULES) $(LIBOBJS) $(LIBS)
++		pw2qmcpack.o libpp.a $(MODULES) $(LIBOBJS) $(QELIBS)
 +	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
 +
  tldeps :
  	if test -n "$(TLDEPS)" ; then \
  	( cd ../.. ; $(MAKE) $(TLDEPS) || exit 1 ) ; fi
-diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src/pw2qmcpack.f90
---- qe-6.2.1_original/PP/src/pw2qmcpack.f90	1969-12-31 18:00:00.000000000 -0600
-+++ qe-6.2.1_updated/PP/src/pw2qmcpack.f90	2018-04-25 13:55:23.133771005 -0500
-@@ -0,0 +1,1338 @@
+diff -W 205 -urN qe-6.4_original/PP/src/pw2qmcpack.f90 qe-6.4_updated/PP/src/pw2qmcpack.f90
+--- qe-6.4_original/PP/src/pw2qmcpack.f90	1969-12-31 18:00:00.000000000 -0600
++++ qe-6.4_updated/PP/src/pw2qmcpack.f90	2019-03-04 13:29:02.000000000 -0600
+@@ -0,0 +1,1340 @@
 +!
 +! Copyright (C) 2004 PWSCF group 
 +! This file is distributed under the terms of the
@@ -1081,7 +1058,7 @@ diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src
 +  USE io_global, ONLY : stdout, ionode, ionode_id
 +  USE mp,        ONLY : mp_bcast
 +  USE mp_global,  ONLY : mp_startup, npool, nimage, nproc_pool, nproc_file, nproc_pool_file
-+  USE control_flags, ONLY : twfcollect, gamma_only
++  USE control_flags, ONLY : gamma_only
 +  USE mp_world,   ONLY : world_comm, nproc
 +  USE environment,ONLY : environment_start, environment_end
 +  USE KINDS, ONLY : DP
@@ -1138,10 +1115,6 @@ diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src
 +  CALL start_clock ( 'read_file' )
 +  CALL read_file
 +  CALL stop_clock ( 'read_file' )
-+  IF ( ( nproc /= nproc_file .or. nproc_pool /= nproc_pool_file) .and. .not. twfcollect)  &
-+    CALL errore('pw2qmcpack', 'pw.x run with different numbers of procs and pools. &
-+                             & Rerun pw2qmcpack.x with the same procs and pools as pw.x. &
-+                             & Or use wf_collect=.true. in pw.x input file.',1)
 +  IF ( gamma_only ) &
 +    CALL errore('pw2qmcpack', 'Using gamma trick results a reduced G space that is not supported by QMCPACK &
 +                             & though pw2qmcpack itself still can convert the WF to an h5 file in this case (experts only). &
@@ -1171,6 +1144,7 @@ diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src
 +    CALL print_clock ( 'glue_h5' )
 +  ENDIF
 +#else
++#error HDF5 flag neither enabled during configure nor added manually in make.inc
 +  CALL errore('pw2qmcpack', ' HDF5 flag not enabled during configure',1)
 +#endif
 +  CALL environment_end ( 'pw2qmcpack' )
@@ -1231,7 +1205,6 @@ diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src
 +  USE constants, ONLY: tpi
 +  USE run_info,  ONLY: title
 +  USE gvect, ONLY: ngm, ngm_g, g, ig_l2g
-+  USE gvecs, ONLY : nls, nlsm
 +  USE klist , ONLY: nks, nelec, nelup, neldw, wk, xk, nkstot
 +  USE lsda_mod, ONLY: lsda, nspin, isk
 +  USE scf, ONLY: rho, rho_core, rhog_core, vnew
@@ -1243,7 +1216,7 @@ diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src
 +  USE io_global, ONLY: stdout, ionode,  ionode_id
 +  USE mp_world, ONLY: world_comm, mpime
 +  USE io_files, ONLY: nd_nmbr, nwordwfc, iunwfc, iun => iunsat, tmp_dir, prefix
-+  USE wavefunctions_module, ONLY : evc, psic
++  USE wavefunctions, ONLY : evc, psic
 +  use iotk_module
 +  use iotk_xtox_interf
 +  USE mp_global,            ONLY: inter_pool_comm, intra_pool_comm, nproc_pool, kunit
@@ -1544,11 +1517,17 @@ diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src
 +
 +  CALL iotk_write_attr (attr,"name",TRIM(atm(na)),first=.true.)
 +  CALL iotk_write_begin(iun, "group",ATTR=attr)
++  ! charge
 +  CALL iotk_write_attr (attr,"name","charge",first=.true.)
 +  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
-+  write(iun,*) zv(na)
++  write(iun,"(8X, F3.1)") zv(na)
 +  CALL iotk_write_end(iun, "parameter")
-+
++  ! atomic number
++  CALL iotk_write_attr (attr,"name","atomicnumber",first=.true.)
++  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
++  write(iun,"(8X, I3)") atomic_number(TRIM(atm(na)))
++  CALL iotk_write_end(iun, "parameter")
++  !
 +  CALL iotk_write_end(iun, "group")
 +  ENDDO
 +
@@ -1836,7 +1815,7 @@ diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src
 +    DO ik = 1, nktot
 +      !! evaluate the phase
 +      !phase(:) = (0.d0,0.d0)
-+      !if ( ig_(ik,ib)>0) phase( nls(ig_(ik,ib)) ) = (1.d0,0.d0)
++      !if ( ig_(ik,ib)>0) phase( dffts%nl(ig_(ik,ib)) ) = (1.d0,0.d0)
 +      g_red(1)=at(1,1)*xk_full_list(1,ik)+at(2,1)*xk_full_list(2,ik)+at(3,1)*xk_full_list(3,ik)
 +      g_red(2)=at(1,2)*xk_full_list(1,ik)+at(2,2)*xk_full_list(2,ik)+at(3,2)*xk_full_list(3,ik)
 +      g_red(3)=at(1,3)*xk_full_list(1,ik)+at(2,3)*xk_full_list(2,ik)+at(3,3)*xk_full_list(3,ik)
@@ -2042,7 +2021,7 @@ diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src
 +             tmp_evc(:) = (0.d0,0.d0) 
 +             IF(nproc_pool > 1) THEN
 +               ! 
-+               psic(nls(ig_l2g(igk_k(1:npw,ik))))=evc(1:npw,ibnd)
++               psic(dffts%nl(ig_l2g(igk_k(1:npw,ik))))=evc(1:npw,ibnd)
 +               
 +!                call errore ('pw2qmcpack','parallel version not fully implemented.',2)
 +               if(gamma_only) then
@@ -2062,11 +2041,11 @@ diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src
 +               ! 
 +               CALL fwfft ('Wave', psic, dffts)
 +               !
-+               tmp_evc(1:npw_sym)=psic(nls(ig_l2g(igk_sym(1:npw_sym))))
++               tmp_evc(1:npw_sym)=psic(dffts%nl(ig_l2g(igk_sym(1:npw_sym))))
 +               ! 
 +             ELSE ! nproc_pool <= 1
 +               ! 
-+               psic(nls(ig_l2g(igk_k(1:npw,ik))))=evc(1:npw,ibnd)
++               psic(dffts%nl(ig_l2g(igk_k(1:npw,ik))))=evc(1:npw,ibnd)
 +               if(gamma_only) then
 +                      call errore ('pw2qmcpack','problems with gamma_only, not fully implemented.',2)
 +               endif
@@ -2083,7 +2062,7 @@ diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src
 +               !
 +               CALL fwfft ('Wave', psitr, dffts)
 +               !
-+               tmp_evc(1:npw_sym)=psitr(nls(ig_l2g(igk_sym(1:npw_sym))))
++               tmp_evc(1:npw_sym)=psitr(dffts%nl(ig_l2g(igk_sym(1:npw_sym))))
 +               ! 
 +             ENDIF ! nprocpool 
 +
@@ -2123,8 +2102,8 @@ diff -W 205 -urN qe-6.2.1_original/PP/src/pw2qmcpack.f90 qe-6.2.1_updated/PP/src
 +
 +           IF (write_psir) THEN
 +              psic(:)=(0.d0,0.d0)
-+              psic(nls(ig_l2g(igk_sym(1:npw_sym))))=tmp_evc(1:npw_sym)
-+              if(gamma_only) psic(nlsm(ig_l2g(igk_sym(1:npw_sym)))) = CONJG(tmp_evc(1:npw_sym))
++              psic(dffts%nl(ig_l2g(igk_sym(1:npw_sym))))=tmp_evc(1:npw_sym)
++              if(gamma_only) psic(dffts%nlm(ig_l2g(igk_sym(1:npw_sym)))) = CONJG(tmp_evc(1:npw_sym))
 +              !
 +              CALL invfft ('Wave', psic, dffts)
 +              !

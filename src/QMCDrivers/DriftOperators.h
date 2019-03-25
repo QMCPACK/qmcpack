@@ -20,12 +20,11 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 namespace qmcplusplus
 {
-
 template<class T, class TG, unsigned D>
-inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<TG,D> >& ga)
+inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<TG, D>>& ga)
 {
-  T vsq=Dot(ga,ga);
-  return (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  T vsq = Dot(ga, ga);
+  return (vsq < std::numeric_limits<T>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * tau * vsq)) / vsq);
 }
 
 /** evaluate a drift with a real force
@@ -34,14 +33,14 @@ inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<TG,D> >& ga)
  * @param drift
  */
 template<class Tt, class TG, class T, unsigned D>
-inline void getScaledDrift(Tt tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& drift)
+inline void getScaledDrift(Tt tau, const TinyVector<TG, D>& qf, TinyVector<T, D>& drift)
 {
   //We convert the complex gradient to real and temporarily store in drift.
-  convert(qf,drift);
-  T vsq=dot(drift,drift);
-  T sc = (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  convert(qf, drift);
+  T vsq = dot(drift, drift);
+  T sc  = (vsq < std::numeric_limits<T>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * tau * vsq)) / vsq);
   //Apply the umrigar scaled drift.
-  drift*=sc;
+  drift *= sc;
 }
 
 /** scale drift
@@ -54,20 +53,20 @@ inline void getScaledDrift(Tt tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& 
  */
 template<class T, class T1, unsigned D>
 inline T setScaledDriftPbyPandNodeCorr(T tau,
-                                       const ParticleAttrib<TinyVector<T1,D> >& qf,
-                                       ParticleAttrib<TinyVector<T,D> >& drift)
+                                       const ParticleAttrib<TinyVector<T1, D>>& qf,
+                                       ParticleAttrib<TinyVector<T, D>>& drift)
 {
-  T norm=0.0, norm_scaled=0.0, tau2=tau*tau;
-  for(int iat=0; iat<qf.size(); ++iat)
+  T norm = 0.0, norm_scaled = 0.0, tau2 = tau * tau;
+  for (int iat = 0; iat < qf.size(); ++iat)
   {
-    convert(qf[iat],drift[iat]);
-    T vsq=dot(drift[iat],drift[iat]);
-    T sc=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
-    norm_scaled+=vsq*sc*sc;
-    norm+=vsq*tau2;
-    drift[iat]*=sc;
+    convert(qf[iat], drift[iat]);
+    T vsq = dot(drift[iat], drift[iat]);
+    T sc  = (vsq < std::numeric_limits<T>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * tau * vsq)) / vsq);
+    norm_scaled += vsq * sc * sc;
+    norm += vsq * tau2;
+    drift[iat] *= sc;
   }
-  return std::sqrt(norm_scaled/norm);
+  return std::sqrt(norm_scaled / norm);
 }
 
 /** scale drift
@@ -98,28 +97,30 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
  * D should be the number of spatial dimensions (int)
  */
 template<class T, class T1, unsigned D>
-inline T setScaledDriftPbyPandNodeCorr(T tau_au, const std::vector<T>& massinv,
-                                       const ParticleAttrib<TinyVector<T1,D> >& qf,
-                                       ParticleAttrib<TinyVector<T,D> >& drift)
+inline T setScaledDriftPbyPandNodeCorr(T tau_au,
+                                       const std::vector<T>& massinv,
+                                       const ParticleAttrib<TinyVector<T1, D>>& qf,
+                                       ParticleAttrib<TinyVector<T, D>>& drift)
 {
   // Umrigar eq. (34) "a" parameter is set to 1.0
-  T norm=0.0, norm_scaled=0.0; // variables to be accumulated
-  for(int iat=0; iat<massinv.size(); ++iat)
+  T norm = 0.0, norm_scaled = 0.0; // variables to be accumulated
+  for (int iat = 0; iat < massinv.size(); ++iat)
   {
     // !!!! assume timestep is scaled by mass
-    T tau_over_mass = tau_au*massinv[iat]; 
+    T tau_over_mass = tau_au * massinv[iat];
     // save real part of wf log derivative in drift
-    convert(qf[iat],drift[iat]);
-    T vsq = dot(drift[iat],drift[iat]);
+    convert(qf[iat], drift[iat]);
+    T vsq = dot(drift[iat], drift[iat]);
     // calculate drift scalar "sc" of Umrigar, JCP 99, 2865 (1993); eq. (34) * tau
     // use naive drift if vsq may cause numerical instability in the denominator
-    T sc  = (vsq < std::numeric_limits<T>::epsilon()) ? tau_over_mass : (-1.0+std::sqrt(1.0+2.0*tau_over_mass*vsq))/vsq;
+    T sc = (vsq < std::numeric_limits<T>::epsilon()) ? tau_over_mass
+                                                     : (-1.0 + std::sqrt(1.0 + 2.0 * tau_over_mass * vsq)) / vsq;
     drift[iat] *= sc;
 
-    norm_scaled+=vsq*sc*sc;
-    norm+=vsq*tau_over_mass*tau_over_mass;
+    norm_scaled += vsq * sc * sc;
+    norm += vsq * tau_over_mass * tau_over_mass;
   }
-  return std::sqrt(norm_scaled/norm);
+  return std::sqrt(norm_scaled / norm);
 }
 
 //NOTE: While poorly named, setScaledDrift is the all-electron analogue of
@@ -131,12 +132,10 @@ inline T setScaledDriftPbyPandNodeCorr(T tau_au, const std::vector<T>& massinv,
  * @param drift drift
  */
 template<class T, class TG, unsigned D>
-inline void setScaledDrift(T tau,
-                           const ParticleAttrib<TinyVector<TG,D> >& qf,
-                           ParticleAttrib<TinyVector<T,D> >& drift)
+inline void setScaledDrift(T tau, const ParticleAttrib<TinyVector<TG, D>>& qf, ParticleAttrib<TinyVector<T, D>>& drift)
 {
-  T s = getDriftScale(tau,qf);
-  PAOps<T,D,TG>::scale(s,qf,drift);
+  T s = getDriftScale(tau, qf);
+  PAOps<T, D, TG>::scale(s, qf, drift);
 }
 
 /** da = scaled(tau)*ga
@@ -145,11 +144,10 @@ inline void setScaledDrift(T tau,
  * @param drift drift
  */
 template<class T, unsigned D>
-inline void setScaledDrift(T tau,
-                           ParticleAttrib<TinyVector<T,D> >& drift)
+inline void setScaledDrift(T tau, ParticleAttrib<TinyVector<T, D>>& drift)
 {
-  T s = getDriftScale(tau,drift);
-  drift *=s;
+  T s = getDriftScale(tau, drift);
+  drift *= s;
 }
 
 
@@ -160,46 +158,45 @@ inline void setScaledDrift(T tau,
  */
 template<class T, class TG, unsigned D>
 inline void setScaledDrift(T tau,
-                           const ParticleAttrib<TinyVector<std::complex<TG>,D> >& qf,
-                           ParticleAttrib<TinyVector<T,D> >& drift)
+                           const ParticleAttrib<TinyVector<std::complex<TG>, D>>& qf,
+                           ParticleAttrib<TinyVector<T, D>>& drift)
 {
-  for(int iat=0; iat<qf.size(); ++iat)
-    convert(qf[iat],drift[iat]);
+  for (int iat = 0; iat < qf.size(); ++iat)
+    convert(qf[iat], drift[iat]);
 
-  T s = getDriftScale(tau,drift);
-  drift*=s;
+  T s = getDriftScale(tau, drift);
+  drift *= s;
+}
+
+template<class T, class TG, unsigned D>
+inline void assignDrift(T s, const ParticleAttrib<TinyVector<TG, D>>& ga, ParticleAttrib<TinyVector<T, D>>& da)
+{
+  PAOps<T, D, TG>::scale(s, ga, da);
 }
 
 template<class T, class TG, unsigned D>
 inline void assignDrift(T s,
-                        const ParticleAttrib<TinyVector<TG,D> >& ga,
-                        ParticleAttrib<TinyVector<T,D> >& da)
-{
-  PAOps<T,D,TG>::scale(s,ga,da);
-}
-
-template<class T, class TG, unsigned D>
-inline void assignDrift(T s,
-                        const ParticleAttrib<TinyVector<std::complex<TG>,D> >& ga,
-                        ParticleAttrib<TinyVector<T,D> >& da)
+                        const ParticleAttrib<TinyVector<std::complex<TG>, D>>& ga,
+                        ParticleAttrib<TinyVector<T, D>>& da)
 {
   //This operation does s*ga, and takes the real part.
-  PAOps<T,D,TG>::scale(s,ga,da);
+  PAOps<T, D, TG>::scale(s, ga, da);
 }
 
 //Assign drift does pbyp calculation of the scaled drift on all drift components.
 template<class T, class T1, unsigned D>
-inline void assignDrift(T tau_au, const std::vector<T>& massinv,
-                                       const ParticleAttrib<TinyVector<T1,D> >& qf,
-                                       ParticleAttrib<TinyVector<T,D> >& drift)
+inline void assignDrift(T tau_au,
+                        const std::vector<T>& massinv,
+                        const ParticleAttrib<TinyVector<T1, D>>& qf,
+                        ParticleAttrib<TinyVector<T, D>>& drift)
 {
-  for(int iat=0; iat<massinv.size(); ++iat)
+  for (int iat = 0; iat < massinv.size(); ++iat)
   {
-    T tau_over_mass=tau_au*massinv[iat];
+    T tau_over_mass = tau_au * massinv[iat];
     // naive drift "tau/mass*qf" can diverge
-    getScaledDrift(tau_over_mass,qf[iat],drift[iat]);
+    getScaledDrift(tau_over_mass, qf[iat], drift[iat]);
   }
 }
 
-}
+} // namespace qmcplusplus
 #endif

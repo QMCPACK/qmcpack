@@ -85,7 +85,7 @@ QMCMain::QMCMain(Communicate* c)
   qmc_common.print_options(app_log());
   app_summary()
 #if !defined(HAVE_MPI)
-      << "\n  This binary is built without MPI" << std::endl
+      << "\n  Built without MPI. Running in serial or with OMP threading only." << std::endl
 #endif
       << "\n  Total number of MPI ranks = " << OHMMS::Controller->size()
       << "\n  Number of MPI groups      = " << myComm->getNumGroups()
