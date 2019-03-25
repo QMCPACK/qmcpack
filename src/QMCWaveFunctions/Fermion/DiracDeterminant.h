@@ -25,9 +25,13 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
+#if defined(ENABLE_CUDA)
+#include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
+#endif
 
 namespace qmcplusplus
 {
+template<typename DU_TYPE = DelayedUpdate<QMCTraits::ValueType>>
 class DiracDeterminant : public DiracDeterminantBase
 {
 protected:
@@ -52,9 +56,6 @@ public:
    *@param first index of the first particle
    */
   DiracDeterminant(SPOSetPtr const spos, int first = 0);
-
-  ///default destructor
-  ~DiracDeterminant();
 
   // copy constructor and assign operator disabled
   DiracDeterminant(const DiracDeterminant& s) = delete;
@@ -169,7 +170,7 @@ public:
   /// temporal matrix in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
   DiracMatrix<mValueType> detEng;
-  DelayedUpdate<ValueType> updateEng;
+  DU_TYPE updateEng;
 
   /// the row of up-to-date inverse matrix
   ValueVector_t invRow;

@@ -42,11 +42,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("DMC", "[drivers][dmc]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -72,27 +70,27 @@ TEST_CASE("DMC", "[drivers][dmc]")
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx) = -1;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
+  tspecies(massIdx, upIdx)     = 1.0;
+  tspecies(massIdx, downIdx)   = 1.0;
 
 #ifdef ENABLE_SOA
-  elec.addTable(ions,DT_SOA);
+  elec.addTable(ions, DT_SOA);
 #else
-  elec.addTable(ions,DT_AOS);
+  elec.addTable(ions, DT_AOS);
 #endif
   elec.update();
 
   CloneManager::clear_for_unit_tests();
 
   TrialWaveFunction psi = TrialWaveFunction(c);
-  ConstantOrbital *orb = new ConstantOrbital;
+  ConstantOrbital* orb  = new ConstantOrbital;
   psi.addOrbital(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
@@ -100,7 +98,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(new BareKineticEnergy<double>(elec),"Kinetic");
+  h.addOperator(new BareKineticEnergy<double>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -114,15 +112,14 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   DMC dmc_omp(elec, psi, h, wpool, c);
 
-  const char *dmc_input= \
-  "<qmc method=\"dmc\"> \
+  const char* dmc_input = "<qmc method=\"dmc\"> \
    <parameter name=\"steps\">1</parameter> \
    <parameter name=\"blocks\">1</parameter> \
    <parameter name=\"timestep\">0.1</parameter> \
   </qmc> \
   ";
-  Libxml2Document *doc = new Libxml2Document;
-  bool okay = doc->parseFromString(dmc_input);
+  Libxml2Document* doc  = new Libxml2Document;
+  bool okay             = doc->parseFromString(dmc_input);
   REQUIRE(okay);
   xmlNodePtr root = doc->getRoot();
 
@@ -145,7 +142,5 @@ TEST_CASE("DMC", "[drivers][dmc]")
   REQUIRE(elec.R[1][0] == Approx(0.0));
   REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
   REQUIRE(elec.R[1][2] == Approx(1.0));
-
 }
-}
-
+} // namespace qmcplusplus

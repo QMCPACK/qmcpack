@@ -37,7 +37,7 @@ class Communicate;
 namespace qmcplusplus
 {
 
-///forward declaraton of BsplineReaderBase
+///forward declaration of BsplineReaderBase
 class BsplineReaderBase;
 
 // Helper needed for TwistMap

@@ -47,33 +47,34 @@ namespace qmcplusplus
 
 using namespace afqmc;
 
-TEST_CASE("back_propagated_rdm", "[estimators]")
+TEST_CASE("reduced_density_matrix", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
 
-  if(not file_exists("./wfn.dat") ) {
-    app_log()<<" Skipping back_propagated_rdm. ./wfn.dat files not found. \n";
+  if(not file_exists(UTEST_HAMIL) ||
+     not file_exists(UTEST_WFN) ) {
+    app_log()<<" Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
+    app_log()<<" Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
   } else {
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
-    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc.h5");
-    int NMO = file_data.NMO;
-    int NAEA = file_data.NAEA;
-    int NAEB = file_data.NAEB;
+    int NMO,NAEA,NAEB;
+    std::tie(NMO,NAEA,NAEB) = read_info_from_hdf(UTEST_HAMIL);
 
     std::map<std::string,AFQMCInfo> InfoMap;
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
     HamiltonianFactory HamFac(InfoMap);
-    const char *ham_xml_block =
+    std::string hamil_xml =
 "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-    <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"filename\">./afqmc.h5</parameter> \
-    <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-  </Hamiltonian> \
+<parameter name=\"filetype\">hdf5</parameter> \
+<parameter name=\"filename\">"+UTEST_HAMIL+"</parameter> \
+<parameter name=\"cutoff_decomposition\">1e-5</parameter> \
+</Hamiltonian> \
 ";
+    const char *ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
     REQUIRE(okay);
@@ -81,37 +82,50 @@ TEST_CASE("back_propagated_rdm", "[estimators]")
     HamFac.push(ham_name,doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
+    WALKER_TYPES type = afqmc::getWalkerType(UTEST_WFN);
+    const char *wlk_xml_block_closed =
+    "<WalkerSet name=\"wset0\">  \
+      <parameter name=\"walker_type\">closed</parameter>  \
+      <parameter name=\"back_propagation_steps\">10</parameter>  \
+    </WalkerSet> \
+    ";
+    const char *wlk_xml_block_coll =
+    "<WalkerSet name=\"wset0\">  \
+      <parameter name=\"walker_type\">collinear</parameter>  \
+      <parameter name=\"back_propagation_steps\">10</parameter>  \
+    </WalkerSet> \
+    ";
+    const char *wlk_xml_block_noncol =
+    "<WalkerSet name=\"wset0\">  \
+      <parameter name=\"walker_type\">noncollinear</parameter>  \
+      <parameter name=\"back_propagation_steps\">10</parameter>  \
+    </WalkerSet> \
+    ";
 
-    auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
-    int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
-    RandomGenerator_t rng;
+    const char *wlk_xml_block = ( (type==CLOSED)?(wlk_xml_block_closed):
+                                  (type==COLLINEAR?wlk_xml_block_coll:wlk_xml_block_noncol) );
+    Libxml2Document doc3;
+    okay = doc3.parseFromString(wlk_xml_block);
+    REQUIRE(okay);
 
-const char *wfn_xml_block =
-"<Wavefunction name=\"wfn0\" type=\"NOMSD\" info=\"info0\"> \
-  <parameter name=\"filetype\">ascii</parameter> \
-  <parameter name=\"filename\">./wfn.dat</parameter> \
-  <parameter name=\"cutoff\">1e-6</parameter> \
-</Wavefunction> \
+    std::string wfn_xml =
+"<Wavefunction name=\"wfn0\" info=\"info0\"> \
+      <parameter name=\"filetype\">ascii</parameter> \
+      <parameter name=\"filename\">"+UTEST_WFN+"</parameter> \
+      <parameter name=\"cutoff\">1e-6</parameter> \
+  </Wavefunction> \
 ";
-    WALKER_TYPES walker_type = COLLINEAR;
+    const char *wfn_xml_block = wfn_xml.c_str();
+    auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
+    int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
+    RandomGenerator_t rng;
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
     REQUIRE(okay);
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
-    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,walker_type,&ham,1e-6,nwalk);
-
-const char *wlk_xml_block =
-"<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">collinear</parameter>  \
-  <parameter name=\"back_propagation_steps\">10</parameter>  \
-</WalkerSet> \
-";
-    Libxml2Document doc3;
-    okay = doc3.parseFromString(wlk_xml_block);
-    REQUIRE(okay);
-
+    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,type,&ham,1e-6,nwalk);
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
@@ -124,6 +138,7 @@ const char *wlk_xml_block =
     const char *est_xml_block =
 "<Estimator name=\"back_propagation\"> \
       <parameter name=\"block_size\">2</parameter> \
+      <parameter name=\"path_restoration\">true</parameter> \
   </Estimator> \
 ";
     Libxml2Document doc4;
@@ -132,7 +147,7 @@ const char *wlk_xml_block =
     bool impsamp = true;
     Wavefunction* wfn0 = &wfn;
     estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TG,InfoMap["info0"],"none",doc4.getRoot(),
-                                                                                            walker_type,*wfn0,impsamp)));
+                                                                                            type,*wfn0,impsamp)));
     hdf_archive dump;
     std::ofstream out;
     dump.create("estimates.h5");
@@ -143,30 +158,55 @@ const char *wlk_xml_block =
     }
     dump.close();
     std::vector<ComplexType> read_data(2*NMO*NMO);
+    ComplexType denom;
     hdf_archive reader;
     // Read from a particular block.
     if(!reader.open("estimates.h5",H5F_ACC_RDONLY)) {
       app_error()<<" Error opening estimates.h5. \n";
       APP_ABORT("");
     }
-    reader.read(read_data, "BackPropagated/one_rdm_4");
+    reader.read(read_data, "BackPropagated/one_rdm_000000004");
+    reader.read(denom, "BackPropagated/one_rdm_denom_000000004");
+    // Test EstimatorHandler eventually.
+    //int NAEA_READ, NAEB_READ, NMO_READ, WALKER_TYPE_READ;
+    //reader.read(NAEA_READ, "Metadata/NAEA");
+    //REQUIRE(NAEA_READ==NAEA);
+    //reader.read(NAEB_READ, "Metadata/NAEB");
+    //REQUIRE(NAEB_READ==NAEB);
+    //reader.read(NMO_READ, "Metadata/NMO");
+    //REQUIRE(NMO_READ==NMO);
+    //reader.read(WALKER_TYPE_READ, "Metadata/WALKER_TYPE");
+    //REQUIRE(WALKER_TYPE_READ==type);
     reader.close();
-    boost::multi::array_ref<ComplexType,3> BPRDM(read_data.data(), {2,NMO,NMO});
-    ComplexType trace = ComplexType(0.0);
-    for(int i = 0; i < NMO; i++) trace += BPRDM[0][i][i] + BPRDM[1][i][i];
-    REQUIRE(trace.real()==(NAEA+NAEB));
     // Test the RDM. Since no back propagation has been performed the RDM should be
     // identical to the mixed estimate.
-    boost::multi::array<ComplexType,3> OrbMat;
-    readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
-    SlaterDetOperations_shared<ComplexType> SDet(NMO,NAEA);
-    boost::multi::array<ComplexType,2> G;
-    G.reextent({NMO,NMO});
-    ComplexType Ovlp;
-    SDet.MixedDensityMatrix_noHerm(OrbMat[0],OrbMat[0],G,&Ovlp);
-    verify_approx(G, BPRDM[0]);
-    SDet.MixedDensityMatrix_noHerm(OrbMat[1],OrbMat[1],G,&Ovlp);
-    verify_approx(G, BPRDM[1]);
+    if(type == CLOSED) {
+      boost::multi::array_ref<ComplexType,2> BPRDM(read_data.data(), {NMO,NMO});
+      ma::scal(1.0/denom, BPRDM);
+      ComplexType trace = ComplexType(0.0);
+      for(int i = 0; i < NMO; i++) trace += BPRDM[i][i];
+      REQUIRE(trace.real() == Approx(NAEA));
+      boost::multi::array<ComplexType,2> Gw;
+      Gw.reextent({1,NMO*NMO});
+      wfn.MixedDensityMatrix(wset, Gw, false, true);
+      boost::multi::array_ref<ComplexType,2> G(Gw.origin(), {NMO,NMO});
+      verify_approx(G, BPRDM);
+    } else if(type == COLLINEAR) {
+      boost::multi::array_ref<ComplexType,3> BPRDM(read_data.data(), {2,NMO,NMO});
+      ma::scal(1.0/denom, BPRDM[0]);
+      ma::scal(1.0/denom, BPRDM[1]);
+      ComplexType trace = ComplexType(0.0);
+      for(int i = 0; i < NMO; i++)
+        trace += BPRDM[0][i][i] + BPRDM[1][i][i];
+      REQUIRE(trace.real() == Approx(NAEA+NAEB));
+      boost::multi::array<ComplexType,2> Gw;
+      Gw.reextent({1,2*NMO*NMO});
+      wfn.MixedDensityMatrix(wset, Gw, false, true);
+      boost::multi::array_ref<ComplexType,3> G(Gw.origin(), {2,NMO,NMO});
+      verify_approx(G, BPRDM);
+    } else {
+      APP_ABORT(" NONCOLLINEAR Wavefunction found.\n");
+    }
 
   }
 }

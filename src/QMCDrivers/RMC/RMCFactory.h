@@ -9,8 +9,6 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_RMC_FACTORY_H
@@ -19,22 +17,26 @@
 
 namespace qmcplusplus
 {
-  class ParticleSetPool;
-  class HamiltonianPool;
+class ParticleSetPool;
+class HamiltonianPool;
 
-  class RMCFactory
-  {
-    private:
-    int RMCMode;
-    xmlNodePtr myNode;
+class RMCFactory
+{
+private:
+  int RMCMode;
+  xmlNodePtr myNode;
 
-    public:
-    RMCFactory (int vmode, xmlNodePtr cur):RMCMode (vmode), myNode (cur) { }
+public:
+  RMCFactory(int vmode, xmlNodePtr cur) : RMCMode(vmode), myNode(cur) {}
 
-    QMCDriver *create (MCWalkerConfiguration & w, TrialWaveFunction & psi,
-		       QMCHamiltonian & h, ParticleSetPool & ptclpool,
-		       HamiltonianPool & hpool, WaveFunctionPool & ppool, Communicate* comm);
-  };
-}
+  QMCDriver* create(MCWalkerConfiguration& w,
+                    TrialWaveFunction& psi,
+                    QMCHamiltonian& h,
+                    ParticleSetPool& ptclpool,
+                    HamiltonianPool& hpool,
+                    WaveFunctionPool& ppool,
+                    Communicate* comm);
+};
+} // namespace qmcplusplus
 
 #endif
