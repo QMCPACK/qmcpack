@@ -163,21 +163,6 @@ public:
                                    hstream),
                    "cudaMemcpyAsync failed!");
     extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), hstream);
-    cudaErrorCheck(cudaMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T), cudaMemcpyDeviceToHost,
-                                   hstream),
-                   "cudaMemcpyAsync failed!");
-    // check LU success
-    waitStream();
-    if(ipiv[0]!=0)
-    {
-      std::ostringstream err;
-      err << "cusolver::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
-      std::cerr << err.str();
-      throw std::runtime_error(err.str());
-    }
-    make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, hstream);
-    cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat1_gpu.data(), norb,
-                    ipiv_gpu.data()+1, Mat2_gpu.data(), norb, ipiv_gpu.data());
 #else
     cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T),
                                    cudaMemcpyHostToDevice, hstream),
@@ -189,6 +174,7 @@ public:
                                    hstream),
                    "cudaMemcpyAsync failed!");
     extract_matrix_diagonal_cuda(norb, Mat2_gpu.data(), norb, LU_diag_gpu.data(), hstream);
+#endif
     cudaErrorCheck(cudaMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync failed!");
@@ -197,10 +183,15 @@ public:
     if(ipiv[0]!=0)
     {
       std::ostringstream err;
-      err << "cusolver::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
+      err << "cusolver::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
+#if !defined(MIXED_PRECISION)
+    make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, hstream);
+    cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat1_gpu.data(), norb,
+                    ipiv_gpu.data()+1, Mat2_gpu.data(), norb, ipiv_gpu.data());
+#else
     make_identity_matrix_cuda(norb, Mat1_gpu.data(), norb, hstream);
     cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat2_gpu.data(), norb,
                     ipiv_gpu.data()+1, Mat1_gpu.data(), norb, ipiv_gpu.data());
@@ -220,7 +211,7 @@ public:
     if(ipiv[0]!=0)
     {
       std::ostringstream err;
-      err << "cusolverDnDgetrs calculation failed with devInfo = " << ipiv[0] << std::endl;
+      err << "cusolver::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
