@@ -45,7 +45,7 @@ template<class T,
         typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type 
         >
 MultiArray1D axpy(char TA, T a, SparseArray1D&& x, MultiArray1D&& y){
-        using std::conj;
+        using ma::conj;
         assert(x.size(0) == y.size(0));
         auto vals = x.non_zero_values_data();
         auto cols = x.non_zero_indices2_data();
@@ -73,7 +73,7 @@ template<class T,
         typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type
         >
 MultiArray1D axpby(char TA, T a, SparseArray1D&& x, T b, MultiArray1D&& y){
-        using std::conj;
+        using ma::conj;
         assert(x.size(0) == y.size(0));
         auto vals = x.non_zero_values_data();
         auto cols = x.non_zero_indices2_data();
@@ -256,14 +256,17 @@ void CSR2MA(char TA, CSR const& A, MultiArray2D& M, Vector const& occups)
 
 namespace shm{
 
-template<class csr_matrix,
-        typename = typename std::enable_if<std::decay<csr_matrix>::type::sparse>::type,
-        typename = typename std::enable_if<std::decay<csr_matrix>::type::dimensionality == -2>::type
+template<class csr_matrix_out,
+         class csr_matrix_in,
+         typename = typename std::enable_if<std::decay<csr_matrix_in>::type::sparse>::type,
+         typename = typename std::enable_if<std::decay<csr_matrix_in>::type::dimensionality == -2>::type,
+         typename = typename std::enable_if<std::decay<csr_matrix_out>::type::sparse>::type,
+         typename = typename std::enable_if<std::decay<csr_matrix_out>::type::dimensionality == -2>::type
         >
-auto transpose(csr_matrix&& A) 
+csr_matrix_out transpose(csr_matrix_in&& A) 
 {
-  using integer = typename std::decay<csr_matrix>::type::index_type;
-  using MatrixType = typename std::decay<csr_matrix>::type;
+  using integer = typename std::decay<csr_matrix_in>::type::index_type;
+  using value_type = typename std::decay<csr_matrix_out>::type::value_type;
   auto& comm = A.getAlloc().comm_;
   std::vector<std::size_t> sz_per_row(A.size(1));
   integer r0, rN, ncols = integer(A.size(1));
@@ -284,7 +287,7 @@ auto transpose(csr_matrix&& A)
       ++sz_per_row[*c0];
   }
   comm.all_reduce_in_place_n(sz_per_row.begin(),sz_per_row.size(),std::plus<>());
-  MatrixType csr( std::tuple<std::size_t,std::size_t>{A.size(1), A.size(0)},std::tuple<std::size_t,std::size_t>{0,0},sz_per_row,A.getAlloc());
+  csr_matrix_out csr( std::tuple<std::size_t,std::size_t>{A.size(1), A.size(0)},std::tuple<std::size_t,std::size_t>{0,0},sz_per_row,A.getAlloc());
     for(integer i=0; i<integer(A.size(0)); i++) {
     auto pbi = *(A.pointers_begin(i));
     auto pei = *(A.pointers_end(i));
@@ -298,7 +301,7 @@ auto transpose(csr_matrix&& A)
                             c0);
     auto v0 = A.non_zero_values_data() + dn;
     for(; c0!=cN; ++c0,++v0)
-      csr.emplace_back( {*c0,i}, *v0); 
+      csr.emplace_back( {*c0,i}, static_cast<value_type>(*v0)); 
   }
   comm.barrier();
   return csr;
@@ -307,7 +310,6 @@ auto transpose(csr_matrix&& A)
 template<class csr_matrix,
         class MultiArray2D,
         typename = typename std::enable_if<std::decay<csr_matrix>::type::sparse>::type,
-        typename = typename std::enable_if<not std::decay<MultiArray2D>::type::sparse>::type,
         typename = typename std::enable_if<std::decay<csr_matrix>::type::dimensionality == -2>::type,
         typename = typename std::enable_if<std::decay<MultiArray2D>::type::dimensionality == 2>::type
         >

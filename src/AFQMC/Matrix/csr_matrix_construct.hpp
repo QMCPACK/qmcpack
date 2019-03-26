@@ -34,6 +34,7 @@
 #include "mpi3/shm/mutex.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Utilities/myTimer.h"
+#include "AFQMC/Numerics/detail/utilities.hpp"
 
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
@@ -54,7 +55,6 @@ template<class CSR,
 CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
                          boost::mpi3::shared_communicator& comm) {
 
-  using std::conj;
   assert(TA == 'N' || TA == 'T' || TA == 'H');
   std::vector<std::size_t> counts;
   using int_type = typename CSR::index_type;
@@ -101,7 +101,7 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA,
       for(int_type i=0; i<M.size(1); i++)
         for(int_type j=0; j<M.size(0); j++)
           if(std::abs(M[j][i]) > cutoff)
-            csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(conj(M[j][i])));
+            csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(ma::conj(M[j][i])));
     }
   }
   csr_mat.remove_empty_spaces();
@@ -124,7 +124,6 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
   Timer.start("G0");
 
   assert(TA == 'N' || TA == 'T' || TA == 'H');
-  using std::conj;
   using std::get;
   using VType = typename CSR::value_type;
   using IType = typename CSR::index_type;
@@ -159,7 +158,7 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
           ucsr_mat.emplace( {get<1>(v),get<0>(v)}, get<2>(v));
       else if(TA=='H') 
         for(auto& v: M) 
-          ucsr_mat.emplace( {get<1>(v),get<0>(v)}, conj(get<2>(v)));
+          ucsr_mat.emplace( {get<1>(v),get<0>(v)}, ma::conj(get<2>(v)));
     }
     comm.barrier();
   }

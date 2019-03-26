@@ -51,7 +51,7 @@ namespace HamHelper
                             bool reserve_to_fit_=true, bool global_reserve = true,
                             RealType const cut=1e-6)
   {
-    using std::conj;
+    using ma::conj;
     using std::abs;
     using std::sqrt;
 

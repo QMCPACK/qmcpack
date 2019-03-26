@@ -181,7 +181,7 @@ class KP3IndexFactorization
       TG.TG().all_reduce_in_place_n(P1D.origin(),P1D.num_elements(),std::plus<>());
 
       // add H1 + vn0 and symmetrize
-      using std::conj;
+      using ma::conj;
 
       for(int K=0, nk0=0; K<nkpts; ++K) {
         for(int i=0, I=nk0; i<nopk[K]; i++, I++) {
@@ -403,7 +403,8 @@ class KP3IndexFactorization
                 SpMatrix_ref Lank(to_address(LQKank[nd*nspin*nkpts+Q][Ka].origin()),
                                                  {na*nchol,nk});
                 auto bnl_ptr(to_address(LQKank[nd*nspin*nkpts+Qm][Kb].origin()));
-                if( Qmap[Q] > 0 ) bnl_ptr = to_address(LQKbnl[nd*nspin*number_of_symmetric_Q+Qmap[Q]-1][Kb].origin());
+                if( Qmap[Q] > 0 ) bnl_ptr = to_address(LQKbnl[nd*nspin*number_of_symmetric_Q+
+                                                    Qmap[Q]-1][Kb].origin());
                 SpMatrix_ref Lbnl(bnl_ptr,{nb*nchol,nl});
 
                 SpMatrix_ref Twban(TMats.origin()+cnt,{nwalk*nb,na*nchol});
@@ -1221,7 +1222,20 @@ class KP3IndexFactorization
           }
           if(walker_type==COLLINEAR) {
             if((nqk++)%comm->size() == comm->rank()) {
-                APP_ABORT(" Error: Finish UHF vbias.\n");
+              haveV=true;
+              int nchol = ncholpQ[Q];
+              int na = nelpk[nd][nkpts+K];
+              int na0 = std::accumulate(nelpk[nd].begin()+nkpts,nelpk[nd].begin()+nkpts+K,0);
+              int nk = nopk[QKToK2[Q][K]];
+              int nk0 = std::accumulate(nopk.begin(),nopk.begin()+QKToK2[Q][K],0);
+              auto&& v1 = vlocal({0,nchol},{0,nwalk});
+
+              Sp3Tensor_ref Lank(to_address(LQKank[(nd*nspin+1)*nkpts+Q][K].origin()),
+                                                 {na,nchol,nk});
+
+              // v1[Q][n][nw] += sum_K sum_a_k LQK[a][n][k] G[a][k][nw]
+              for(int a=0; a<na; ++a)
+                ma::product(one,Lank[a],G3Db[na0+a]({nk0,nk0+nk},{0,nwalk}),one,v1);
             }
           }
           if(haveV) {
@@ -1271,7 +1285,20 @@ class KP3IndexFactorization
             }
             if(walker_type==COLLINEAR) {
               if((nqk++)%comm->size() == comm->rank()) {
-                APP_ABORT(" Error: Finish UHF vbias.\n");
+                haveV=true;
+                int nchol = ncholpQ[Q];
+                int na = nelpk[nd][nkpts+K];
+                int na0 = std::accumulate(nelpk[nd].begin()+nkpts,nelpk[nd].begin()+nkpts+K,0);
+                int nk = nopk[QKToK2[Q][K]];
+                int nk0 = std::accumulate(nopk.begin(),nopk.begin()+QKToK2[Q][K],0);
+                auto&& v1 = vlocal({0,nchol},{0,nwalk});
+  
+                Sp3Tensor_ref Lbnl(to_address(LQKbnl[(nd*nspin+1)*number_of_symmetric_Q+
+                        Qmap[Q]-1][K].origin()),{na,nchol,nk});
+
+                // v1[Q][n][nw] += sum_K sum_a_k LQK[b][n][l] G[b][l][nw]
+                for(int a=0; a<na; ++a)
+                  ma::product(one,Lbnl[a],G3Db[na0+a]({nk0,nk0+nk},{0,nwalk}),one,v1);
               }
             }
             if(haveV) {
@@ -1391,8 +1418,8 @@ class KP3IndexFactorization
       int nspin = (walker_type==COLLINEAR?2:1);
       int nwalk = GKaKj.size(1);
       int nkpts = nopk.size();
-      assert(GKaKj.num_elements() == nocca_tot*nmo_tot*nwalk);
-      assert(GKKaj.num_elements() == nkpts*nkpts*akmax*nwalk);
+      assert(GKaKj.num_elements() == (nocca_tot+noccb_tot)*nmo_tot*nwalk);
+      assert(GKKaj.num_elements() == nspin*nkpts*nkpts*akmax*nwalk);
       boost::multi::array_cref<ComplexType,3> Gca(to_address(GKaKj.origin()),
                                                        {nocca_tot,nmo_tot,nwalk} );
       boost::multi::array_cref<ComplexType,3> Gcb(to_address(GKaKj.origin())+

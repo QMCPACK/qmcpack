@@ -81,7 +81,7 @@ class dummy_Hamiltonian
   {
     throw std::runtime_error("calling visitor on dummy object");
     using Alloc = shared_allocator<SPComplexType>;
-    return SpCType_shm_csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,Alloc(TGprop.Node()));
+    return SpVType_shm_csr_matrix(tp_ul_ul{0,0},tp_ul_ul{0,0},0,Alloc(TGprop.Node()));
   }
 
   template<class... Args>
