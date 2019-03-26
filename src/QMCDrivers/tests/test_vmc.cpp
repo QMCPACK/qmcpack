@@ -40,11 +40,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -70,26 +68,26 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx) = -1;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
+  tspecies(massIdx, upIdx)     = 1.0;
+  tspecies(massIdx, downIdx)   = 1.0;
 
 #ifdef ENABLE_SOA
-  elec.addTable(ions,DT_SOA);
+  elec.addTable(ions, DT_SOA);
 #else
-  elec.addTable(ions,DT_AOS);
+  elec.addTable(ions, DT_AOS);
 #endif
   elec.update();
 
 
   TrialWaveFunction psi = TrialWaveFunction(c);
-  ConstantOrbital *orb = new ConstantOrbital;
+  ConstantOrbital* orb  = new ConstantOrbital;
   psi.addOrbital(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
@@ -97,8 +95,8 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(new BareKineticEnergy<double>(elec),"Kinetic");
-  h.addObservables(elec); // get double free error on 'h.Observables' w/o this 
+  h.addOperator(new BareKineticEnergy<double>(elec), "Kinetic");
+  h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
@@ -110,7 +108,7 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   vmc.startBlock(1);
 
   VMCUpdatePbyP::WalkerIter_t begin = elec.begin();
-  VMCUpdatePbyP::WalkerIter_t end = elec.end();
+  VMCUpdatePbyP::WalkerIter_t end   = elec.end();
   vmc.advanceWalkers(begin, end, true);
 
   // With the constant wavefunction, no moves should be rejected
@@ -127,7 +125,5 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   REQUIRE(elec.R[1][0] == Approx(0.0));
   REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
   REQUIRE(elec.R[1][2] == Approx(1.0));
-
 }
-}
-
+} // namespace qmcplusplus

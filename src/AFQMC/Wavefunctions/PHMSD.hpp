@@ -61,16 +61,37 @@ namespace afqmc
 class PHMSD: public AFQMCInfo
 {
 
-  using CVector = boost::multi::array<ComplexType,1>;  
-  using CMatrix = boost::multi::array<ComplexType,2>;  
-  using shared_mutex = boost::mpi3::shm::mutex;  
-  using shared_CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
-  using shared_C3Tensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
-  using shared_C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
-  using shmCVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;
+  // allocators
+  using Allocator = std::allocator<ComplexType>; //device_allocator<ComplexType>;
+  using Allocator_shared = shared_allocator<ComplexType>; //localTG_allocator<ComplexType>;
+
+  // type defs
+  using pointer = typename Allocator::pointer;
+  using const_pointer = typename Allocator::const_pointer;
+  using pointer_shared = typename Allocator_shared::pointer;
+  using const_pointer_shared = typename Allocator_shared::const_pointer;
+
+  using CVector = boost::multi::array<ComplexType,1,Allocator>;
+  using CMatrix = boost::multi::array<ComplexType,2,Allocator>;
+  using CTensor = boost::multi::array<ComplexType,3,Allocator>;
+  using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;
+  using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;
+  using CMatrix_cref = boost::multi::array_ref<const ComplexType,2,const_pointer>;
+  using CTensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;
+  using CTensor_cref = boost::multi::array_ref<const ComplexType,3,const_pointer>;
+  using shmCVector = boost::multi::array<ComplexType,1,Allocator_shared>;
+  using shmCMatrix = boost::multi::array<ComplexType,2,Allocator_shared>;
+  using shmC3Tensor = boost::multi::array<ComplexType,3,Allocator_shared>;
+  using shmC4Tensor = boost::multi::array<ComplexType,4,Allocator_shared>;
+  using shared_mutex = boost::mpi3::shm::mutex;
   using index_aos = ma::sparse::array_of_sequences<int,int,
                                                    shared_allocator<int>,
                                                    ma::sparse::is_root>;
+
+  using stdCVector = boost::multi::array<ComplexType,1>;
+  using stdCMatrix = boost::multi::array<ComplexType,2>;
+  using stdCTensor = boost::multi::array<ComplexType,3>;
+  using mpi3CVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;
 
   public:
 
@@ -293,7 +314,7 @@ class PHMSD: public AFQMCInfo
      */
     template<class WlkSet, class Mat, class TVec> 
     void Energy(const WlkSet& wset, Mat&& E, TVec&& Ov) {
-      if(TG.getNNodesPerTG() > 1)
+      if(TG.getNGroupsPerTG() > 1)
         Energy_distributed(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
       else
         Energy_shared(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
@@ -319,7 +340,7 @@ class PHMSD: public AFQMCInfo
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
     template<class WlkSet, class MatG, class CVec>
-    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false);
+    void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false, bool back_propagated=false);
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
      *   with a format consistent with (and expected by) the vbias routine.
@@ -430,12 +451,12 @@ class PHMSD: public AFQMCInfo
     size_t maxnactive;   // maximum number of states in active space
     size_t max_exct_n;   // maximum excitation number (number of electrons excited simultaneously)
     // used by OVerlap and MixedDensityMatrix
-    shared_CMatrix unique_overlaps;
-    shared_CMatrix unique_Etot;
-    shared_CMatrix QQ0inv0;  // Q * inv(Q0) 
-    shared_CMatrix QQ0inv1;  // Q * inv(Q0) 
-    shared_CMatrix GA2D0_shm;  
-    shared_CMatrix GB2D0_shm; 
+    shmCMatrix unique_overlaps;
+    shmCMatrix unique_Etot;
+    shmCMatrix QQ0inv0;  // Q * inv(Q0) 
+    shmCMatrix QQ0inv1;  // Q * inv(Q0) 
+    shmCMatrix GA2D0_shm;  
+    shmCMatrix GB2D0_shm; 
     boost::multi::array<ComplexType,2> local_ov;
     boost::multi::array<ComplexType,2> local_etot;
     boost::multi::array<ComplexType,2> local_QQ0inv0;
@@ -445,14 +466,14 @@ class PHMSD: public AFQMCInfo
     // used by Energy_shared 
     boost::multi::array<ComplexType,1> wgt; 
     boost::multi::array<ComplexType,1> opSpinEJ; 
-    shared_C3Tensor Ovmsd;   // [nspins][maxn_unique_confg][nwalk]
-    shared_C4Tensor Emsd;    // [nspins][maxn_unique_confg][nwalk][3]
-    shared_C3Tensor QQ0A;    // [nwalk][NAOA][NAEA]
-    shared_C3Tensor QQ0B;    // [nwalk][NAOB][NAEB]
-    shared_C3Tensor GrefA;     // [nwalk][NAOA][NMO]
-    shared_C3Tensor GrefB;     // [nwalk][NAOB][NMO]
-    shared_C3Tensor KEright;   
-    shared_CMatrix KEleft;     
+    shmC3Tensor Ovmsd;   // [nspins][maxn_unique_confg][nwalk]
+    shmC4Tensor Emsd;    // [nspins][maxn_unique_confg][nwalk][3]
+    shmC3Tensor QQ0A;    // [nwalk][NAOA][NAEA]
+    shmC3Tensor QQ0B;    // [nwalk][NAOB][NAEB]
+    shmC3Tensor GrefA;     // [nwalk][NAOA][NMO]
+    shmC3Tensor GrefB;     // [nwalk][NAOB][NMO]
+    shmC3Tensor KEright;   
+    shmCMatrix KEleft;     
      
 
     // array of sequence structure storing the list of connected alpha/beta configurations

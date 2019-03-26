@@ -35,7 +35,7 @@ template<typename T1, typename T2>
 SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
 {
 
-#if defined(AFQMC_SP)
+#if defined(AFQMC_MIXED_PRECISION)
   using SpT1 = typename to_single_precision<T1>::value_type;
   using SpT2 = typename to_single_precision<T2>::value_type;
 #else
@@ -153,7 +153,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   dump.pop();
 
   // rotated 1 body hamiltonians
-  std::vector<boost::multi::array<SpT1,1>> hij;
+  std::vector<boost::multi::array<ComplexType,1>> hij;
   hij.reserve(ndet);
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
@@ -171,28 +171,36 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   auto Spvnview(csr::shm::local_balanced_partition(Spvn,TGprop));
 
   if(ndet==1) {
-    std::vector<SpCType_shm_csr_matrix> SpvnT;
-    using matrix_view = typename SpCType_shm_csr_matrix::template matrix_view<int>;
+    std::vector<T2_shm_csr_matrix> SpvnT;
+// MAM: chech that T2 is SpComplexType
+    //std::vector<SpCType_shm_csr_matrix> SpvnT;
+    using matrix_view = typename T2_shm_csr_matrix::template matrix_view<int>;
     std::vector<matrix_view> SpvnTview;
-    SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
-                              &PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0])),
+#if AFQMC_MIXED_PRECISION
+    auto PsiTsp(csr::shm::CSRvector_to_single_precision<PsiT_Matrix_t<SPComplexType>>(PsiT));
+#else
+    auto& PsiTsp(PsiT);
+#endif
+    SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias<T2>(type,TGprop,
+                              &PsiTsp[0],((type==COLLINEAR)?(&PsiTsp[1]):(&PsiTsp[0])),
                               Spvn,cutv2));
     SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
 
-    return SparseTensor<T1,T2>(type,std::move(H1),std::move(hij),std::move(V2),
+    return SparseTensor<T1,T2>(TGwfn.TG_local(),type,std::move(H1),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
             std::move(v0),std::move(SpvnT),std::move(SpvnTview),E0,Spvn_ncols);
   } else {
     // problem here!!!!!
     // don't know how to tell if this is NOMSD or PHMSD!!!
     // whether to rotate or not! That's the question!
-    std::vector<SpVType_shm_csr_matrix> SpvnT;
-    using matrix_view = typename SpVType_shm_csr_matrix::template matrix_view<int>;
+    std::vector<T2_shm_csr_matrix> SpvnT;
+    //std::vector<SpVType_shm_csr_matrix> SpvnT;
+    using matrix_view = typename T2_shm_csr_matrix::template matrix_view<int>;
     std::vector<matrix_view> SpvnTview;
-    SpvnT.emplace_back(csr::shm::transpose(Spvn));
+    SpvnT.emplace_back(csr::shm::transpose<T2_shm_csr_matrix>(Spvn));
     SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
 
-    return SparseTensor<T1,T2>(type,std::move(H1),std::move(hij),std::move(V2),
+    return SparseTensor<T1,T2>(TGwfn.TG_local(),type,std::move(H1),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
             std::move(v0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs);
   }

@@ -199,7 +199,6 @@ namespace afqmc
         auto ip = getHead();
         if(ip < 0 || ip >= desc[3])
           APP_ABORT("error: Index out of bounds.\n");
-// problems on GPU
         *get_(HEAD) = element((ip+1)%desc[3],0);
       }
       void decrementBMatrix() {
@@ -209,7 +208,6 @@ namespace afqmc
         auto ip = getHead();
         if(ip < 0 || ip >= desc[3])
           APP_ABORT("error: Index out of bounds.\n");
-// problems on GPU
         *get_(HEAD) = element((ip-1+desc[3])%desc[3],0);
       }
       bool isBMatrixBufferFull() const {
@@ -234,7 +232,6 @@ namespace afqmc
         setSlaterMatrixN();
       }
       // Weight factors for partial path restoration approximation.
-// problems on GPU
       pointer BPWeightFactor() {
         if(indx[WEIGHT_FAC] < 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
@@ -257,7 +254,10 @@ namespace afqmc
 
     private:
 
-      int getHead() const { return static_cast<int>(get_(HEAD)->real()); }
+      int getHead() const { 
+        element v(*get_(HEAD)); 
+        return static_cast<int>(v.real()); 
+      }
 
       boost::multi::array_ref<element,1,Ptr> w_;
       const wlk_indices& indx;

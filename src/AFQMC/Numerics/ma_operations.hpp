@@ -39,7 +39,7 @@ using qmcplusplus::afqmc::to_address;
 
 template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::dimensionality > 1)>::type>
 bool is_hermitian(MultiArray2D const& A){
-	using std::conj;
+	using ma::conj;
 	using ma::conj;
 	if(A.size(0) != A.size(1)) return false;
 	for(int i = 0; i != A.size(0); ++i)
@@ -157,9 +157,9 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
         using elementA = typename SparseMatrixA::element; 
         using elementB = typename MultiArray1DB::element; 
         using elementC = typename std::decay<MultiArray1DC>::type::element;
-        static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
-        static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");
-        static_assert(std::is_convertible<T,elementC>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_convertible<T,elementC>::value,"Problems with sparse dispatch");
         assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T');
         assert(op_tag<MultiArray1DB>::value == 'N');
         if(op_tag<SparseMatrixA>::value == 'N') {
@@ -172,12 +172,12 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
 
         csrmv( op_tag<SparseMatrixA>::value,
             arg(A).size(0), arg(A).size(1),
-            elementC(alpha), "GxxCxx",
+            elementA(alpha), "GxxCxx",
             pointer_dispatch(arg(A).non_zero_values_data()),
             pointer_dispatch(arg(A).non_zero_indices2_data()),
             pointer_dispatch(arg(A).pointers_begin()), 
             pointer_dispatch(arg(A).pointers_end()),
-            pointer_dispatch(arg(B).origin()), elementC(beta), 
+            pointer_dispatch(arg(B).origin()), elementA(beta), 
             pointer_dispatch(C.origin()));
 
         return std::forward<MultiArray1DC>(C);
@@ -192,7 +192,7 @@ template<class MultiArray2DA, class MultiArray1DB, class MultiArray1DC,
         >::type, typename = void // TODO change to use dispatch 
 >
 MultiArray1DC product(MultiArray2DA const& A, MultiArray1DB const& B, MultiArray1DC&& C){
-        using Type = typename std::decay<MultiArray1DC>::type::element;
+        using Type = typename std::decay<MultiArray2DA>::type::element;
         return product(Type(1.), A, B, Type(0.), std::forward<MultiArray1DC>(C));
 }
 //*/
@@ -227,9 +227,9 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
         using elementA = std::remove_cv_t<typename SparseMatrixA::element>; 
         using elementB = std::remove_cv_t<typename MultiArray2DB::element>; 
         using elementC = typename std::decay<MultiArray2DC>::type::element;
-        static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
-        static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");
-        static_assert(std::is_convertible<T,elementC>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");
+        //static_assert(std::is_convertible<T,elementC>::value,"Problems with sparse dispatch");
         assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T'); 
         assert(op_tag<MultiArray2DB>::value == 'N');
         assert( arg(B).stride(1) == 1 );
@@ -246,13 +246,13 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
 
         csrmm( op_tag<SparseMatrixA>::value, 
             arg(A).size(0), arg(B).size(1), arg(A).size(1), 
-            elementC(alpha), "GxxCxx", 
+            elementA(alpha), "GxxCxx", 
             pointer_dispatch(arg(A).non_zero_values_data()), 
             pointer_dispatch(arg(A).non_zero_indices2_data()),
             pointer_dispatch(arg(A).pointers_begin()),  
             pointer_dispatch(arg(A).pointers_end()),
             pointer_dispatch(arg(B).origin()), arg(B).stride(0), 
-            elementC(beta), 
+            elementA(beta), 
             pointer_dispatch(C.origin()), 
             C.stride(0));
 
@@ -267,7 +267,7 @@ template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
         >::type
 >
 MultiArray2DC product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArray2DC&& C){
-        using Type = typename std::decay<MultiArray2DC>::type::element;
+        using Type = typename std::decay<MultiArray2DA>::type::element;
         return product(Type(1.), A, B, Type(0.), std::forward<MultiArray2DC>(C));
 }
 
@@ -369,6 +369,7 @@ T invert(MultiArray2D&& m){
         using allocator_type = typename std::decay<MultiArray2D>::type::allocator_type;
         using iallocator_type = typename allocator_type::template rebind<int>::other;
         using extensions = typename boost::multi::layout_t<1u>::extensions_type;
+        using qmcplusplus::afqmc::fill2D;
         size_t bufferSize(invert_optimal_workspace_size(std::forward<MultiArray2D>(m)));
         boost::multi::array<element,1,allocator_type> WORK(extensions{bufferSize},
                                                             m.get_allocator()); 
@@ -377,7 +378,10 @@ T invert(MultiArray2D&& m){
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         T detvalue = determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()));
-        getri(std::forward<MultiArray2D>(m), pivot, WORK);
+        if( std::abs(detvalue) == 0.0 ) 
+          fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),element(0.0));    
+        else 
+          getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
 }
 
@@ -385,10 +389,15 @@ template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typenam
 T invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK){
         assert(m.size(0) == m.size(1));
         assert(pivot.size() >= m.size(0)+1);
+        using element = typename std::decay<MultiArray2D>::type::element;
+        using qmcplusplus::afqmc::fill2D;
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         T detvalue = determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()));
-        getri(std::forward<MultiArray2D>(m), pivot, WORK);
+        if( std::abs(detvalue) == 0.0 )
+          fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),element(0.0));
+        else
+          getri(std::forward<MultiArray2D>(m), pivot, WORK);
         return detvalue;
 }
 
@@ -396,10 +405,15 @@ template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typenam
 void invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T* detvalue){
         assert(m.size(0) == m.size(1));
         assert(pivot.size() >= m.size(0)+1);
+        using element = typename std::decay<MultiArray2D>::type::element;
+        using qmcplusplus::afqmc::fill2D;
 
         getrf(std::forward<MultiArray2D>(m), pivot, WORK);
         determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()), detvalue);
-        getri(std::forward<MultiArray2D>(m), pivot, WORK);
+//        if( std::abs(T(*detvalue)) == 0.0 )
+//          fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),element(0.0));
+//        else
+          getri(std::forward<MultiArray2D>(m), pivot, WORK);
 }
 
 template<class MultiArray2D, class MultiArray1D, class Buffer, class T = typename std::decay<MultiArray2D>::type::element>

@@ -43,14 +43,18 @@ int TagMaker::CurrentTag = 1000;
 Communicate* OHMMS::Controller = new Communicate;
 
 //default constructor: ready for a serial execution
-Communicate::Communicate():
-  myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
+Communicate::Communicate()
+  : d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1),
+#ifdef HAVE_MPI
+    myMPI_destroy_helper(myMPI),
+#endif
+    myMPI(MPI_COMM_NULL), GroupLeaderComm(nullptr)
 {
 }
 
 #ifdef HAVE_MPI
-Communicate::Communicate(const mpi3::environment &env):
-  GroupLeaderComm(nullptr)
+Communicate::Communicate(const mpi3::environment &env)
+  : myMPI_destroy_helper(myMPI), GroupLeaderComm(nullptr)
 {
   initialize(env);
 }
@@ -58,18 +62,14 @@ Communicate::Communicate(const mpi3::environment &env):
 
 Communicate::~Communicate()
 {
-#ifdef HAVE_MPI
-  myComm.~OOMPI_Intra_comm();
-  if(myMPI!=MPI_COMM_NULL) MPI_Comm_free(&myMPI);
-#endif
   if(GroupLeaderComm!=nullptr) delete GroupLeaderComm;
 }
 
 //exclusive:  OOMPI, MPI or Serial
 #ifdef HAVE_OOMPI
 
-Communicate::Communicate(const mpi_comm_type comm_input):
-  d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
+Communicate::Communicate(const mpi_comm_type comm_input)
+  : myMPI_destroy_helper(myMPI), d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
 {
   MPI_Comm_dup(comm_input, &myMPI);
   myComm = OOMPI_Intra_comm(myMPI);
@@ -80,6 +80,7 @@ Communicate::Communicate(const mpi_comm_type comm_input):
 
 
 Communicate::Communicate(const Communicate& in_comm, int nparts)
+  : myMPI_destroy_helper(myMPI)
 {
   std::vector<int> nplist(nparts+1);
   int p=FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group

@@ -109,7 +109,7 @@ template<class Array1D,
 inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index_aos& couplings,
                         MatA&& T, MatB&& Qwork, Array1D&& ov, ComplexType ov0, MatC& R)
 {
-  using std::conj;
+  using ma::conj;
   using std::get;
   std::vector<int> IWORK(abij.maximum_excitation_number()[spin]);
   std::vector<ComplexType> WORK(abij.maximum_excitation_number()[spin]*abij.maximum_excitation_number()[spin]);
@@ -202,7 +202,7 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
                      ph_excitations<int,ComplexType> const& abij,
                      std::array<index_aos,2> const& det_couplings) 
 {
-  using std::conj;
+  using ma::conj;
   using std::get;
 /*
   std::vector<int> IWORK(abij.maximum_excitation_number()[spin]);

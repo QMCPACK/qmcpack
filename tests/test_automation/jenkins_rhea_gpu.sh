@@ -24,6 +24,9 @@ module load git/2.18.0
 module load cmake/3.13.4
 module load boost/1.67.0
 
+// this is a workaround for picking up the exact libstdc++
+export LD_PRELOAD=/ccs/compilers/gcc/rhel7-x86_64/6.2.0/lib64/libstdc++.so.6
+
 env
 module list
 

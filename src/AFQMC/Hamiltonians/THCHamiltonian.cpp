@@ -87,13 +87,13 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
   // setup partition, in general matrices are partitioned asize_t 'u'
   {
-    int node_number = TGwfn.getLocalNodeNumber();
-    int nnodes_prt_TG = TGwfn.getNNodesPerTG();
+    int node_number = TGwfn.getLocalGroupNumber();
+    int nnodes_prt_TG = TGwfn.getNGroupsPerTG();
     std::tie(rotnmu0,rotnmuN) = FairDivideBoundary(size_t(node_number),grotnmu,size_t(nnodes_prt_TG));
     rotnmu = rotnmuN-rotnmu0;
 
-    node_number = TGprop.getLocalNodeNumber();
-    nnodes_prt_TG = TGprop.getNNodesPerTG();
+    node_number = TGprop.getLocalGroupNumber();
+    nnodes_prt_TG = TGprop.getNGroupsPerTG();
     std::tie(nmu0,nmuN) = FairDivideBoundary(size_t(node_number),gnmu,size_t(nnodes_prt_TG));
     nmu = nmuN-nmu0;
   }
@@ -104,18 +104,18 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   // INCONSISTENT IN REAL BUILD!!!!!! FIX FIX FIX
   // Until I figure something else, rotPiu and rotcPua are not distributed because a full copy is needed
   size_t nel_ = PsiT[0].size(0) + ((type==CLOSED)?0:(PsiT[1].size(0)));
-  shm_Cmatrix rotMuv(TG.Node(),{rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0});
+  shm_Vmatrix rotMuv(TG.Node(),{rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0});
   shm_Cmatrix rotPiu(TG.Node(),{size_t(NMO),grotnmu});
   std::vector<shm_Cmatrix> rotcPua;
   rotcPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
     rotcPua.emplace_back(shm_Cmatrix(TG.Node(),{grotnmu,nel_}));
-  shm_Vmatrix Piu(TG.Node(),{size_t(NMO),nmu},{size_t(NMO),gnmu},{0,nmu0});
+  shm_Cmatrix Piu(TG.Node(),{size_t(NMO),nmu},{size_t(NMO),gnmu},{0,nmu0});
   shm_Vmatrix Luv(TG.Node(),{nmu,gnmu},{gnmu,gnmu},{nmu0,0});
   // right now only 1 reader. Use hyperslabs and parallel io later
   // read Half transformed first
   if(TG.Node().root()) {
-    using std::conj;
+    using ma::conj;
     if(not test_Luv) {
       /***************************************/
       // read full matrix, not distributed for now
@@ -126,8 +126,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
         APP_ABORT("");
       }
       /***************************************/
-      typename shm_Cmatrix::ma_type muv_(rotMuv.get());
-      hyperslab_proxy<typename shm_Cmatrix::ma_type,2> hslab(muv_,
+      typename shm_Vmatrix::ma_type muv_(rotMuv.get());
+      hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab(muv_,
                                                            rotMuv.global_size(),
                                                            rotMuv.shape(),
                                                            rotMuv.global_offset());
@@ -143,8 +143,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
   if(TG.Node().root()) {
     /***************************************/
-    typename shm_Vmatrix::ma_type piu_(Piu.get());
-    hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab(piu_,
+    typename shm_Cmatrix::ma_type piu_(Piu.get());
+    hyperslab_proxy<typename shm_Cmatrix::ma_type,2> hslab(piu_,
                                                          Piu.global_size(),
                                                          Piu.shape(),
                                                          Piu.global_offset());
@@ -169,11 +169,11 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   TG.global_barrier();
 
   boost::multi::array<ComplexType,2> v0({Piu.size(0),Piu.size(0)});
-  if(TGprop.getNNodesPerTG() > 1)
+  if(TGprop.getNGroupsPerTG() > 1)
   {
 
     // TOO MUCH MEMORY, FIX FIX FIX!!!
-    shm_Vmatrix Piu__(TG.Node(),{size_t(NMO),gnmu});
+    shm_Cmatrix Piu__(TG.Node(),{size_t(NMO),gnmu});
     shm_Vmatrix Luv__(TG.Node(),{gnmu,gnmu});
     if(TG.Node().root()) {
       auto luv_ = Luv__.get();
@@ -193,11 +193,11 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
     using ma::H;
     using ma::T;
-    using std::conj;
+    using ma::conj;
     size_t c0,cN,nc;
     std::tie(c0,cN) = FairDivideBoundary(size_t(TG.Global().rank()),gnmu,size_t(TG.Global().size()));
     nc = cN-c0;
-    boost::multi::array<ValueType,2> Tuv({gnmu,nc});
+    boost::multi::array<ComplexType,2> Tuv({gnmu,nc});
     boost::multi::array<ValueType,2> Muv({gnmu,nc});
 
     // Muv = Luv * H(Luv)
@@ -222,7 +222,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = conj(*itT)*(*itM);
-    boost::multi::array<ValueType,2> T_({Tuv.size(1),size_t(NMO)});
+    boost::multi::array<ComplexType,2> T_({Tuv.size(1),size_t(NMO)});
     ma::product(T(Tuv),H(Piu__.get()),T_);
     ma::product(-0.5,T(T_),T(Piu__.get()({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
 
@@ -233,11 +233,11 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     // very simple partitioning until something more sophisticated is in place!!!
     using ma::H;
     using ma::T;
-    using std::conj;
+    using ma::conj;
     size_t c0,cN,nc;
     std::tie(c0,cN) = FairDivideBoundary(size_t(TG.Global().rank()),nmu,size_t(TG.Global().size()));
     nc = cN-c0;
-    boost::multi::array<ValueType,2> Tuv({gnmu,nc});
+    boost::multi::array<ComplexType,2> Tuv({gnmu,nc});
     boost::multi::array<ValueType,2> Muv({gnmu,nc});
 
     // Muv = Luv * H(Luv)
@@ -262,7 +262,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = conj(*itT)*(*itM);
-    boost::multi::array<ValueType,2> T_({Tuv.size(1),size_t(NMO)});
+    boost::multi::array<ComplexType,2> T_({Tuv.size(1),size_t(NMO)});
     ma::product(T(Tuv),H(Piu.get()),T_);
     ma::product(-0.5,T(T_),T(Piu.get()({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
 
@@ -321,7 +321,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   ValueType E0 = OneBodyHamiltonian::NuclearCoulombEnergy +
                  OneBodyHamiltonian::FrozenCoreEnergy;
 
-  std::vector<boost::multi::array<SPComplexType,1>> hij;
+  std::vector<boost::multi::array<ComplexType,1>> hij;
   hij.reserve(ndet);
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {

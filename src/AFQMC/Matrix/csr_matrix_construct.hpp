@@ -34,6 +34,7 @@
 #include "mpi3/shm/mutex.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Utilities/myTimer.h"
+#include "AFQMC/Numerics/detail/utilities.hpp"
 
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
@@ -54,7 +55,6 @@ template<class CSR,
 CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
                          boost::mpi3::shared_communicator& comm) {
 
-  using std::conj;
   assert(TA == 'N' || TA == 'T' || TA == 'H');
   std::vector<std::size_t> counts;
   using int_type = typename CSR::index_type;
@@ -101,7 +101,7 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA,
       for(int_type i=0; i<M.size(1); i++)
         for(int_type j=0; j<M.size(0); j++)
           if(std::abs(M[j][i]) > cutoff)
-            csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(conj(M[j][i])));
+            csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(ma::conj(M[j][i])));
     }
   }
   csr_mat.remove_empty_spaces();
@@ -124,7 +124,6 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
   Timer.start("G0");
 
   assert(TA == 'N' || TA == 'T' || TA == 'H');
-  using std::conj;
   using std::get;
   using VType = typename CSR::value_type;
   using IType = typename CSR::index_type;
@@ -159,7 +158,7 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
           ucsr_mat.emplace( {get<1>(v),get<0>(v)}, get<2>(v));
       else if(TA=='H') 
         for(auto& v: M) 
-          ucsr_mat.emplace( {get<1>(v),get<0>(v)}, conj(get<2>(v)));
+          ucsr_mat.emplace( {get<1>(v),get<0>(v)}, ma::conj(get<2>(v)));
     }
     comm.barrier();
   }
@@ -318,8 +317,8 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
     return CSR(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},0,typename CSR::alloc_type(TG.Node()));
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
-  int node_number = TG.getLocalNodeNumber();
-  int nnodes_per_TG = TG.getNNodesPerTG();  
+  int node_number = TG.getLocalGroupNumber();
+  int nnodes_per_TG = TG.getNGroupsPerTG();  
 
   // 1. Define new communicator for equivalent cores
   boost::mpi3::communicator eq_cores(TG.Cores().split(node_number,TG.Cores().rank())); 
@@ -558,6 +557,19 @@ typename CSR::template matrix_view<integer> local_balanced_partition(CSR& M, tas
     //return M[array_{0,M.size(0),0,M.size(1)}];
   }
 } 
+
+/*
+ * Constructs a vector of csr_matrix as a copy from a given csr_matrix but casted to single precision
+ */ 
+template<class CSRsp, class CSR>
+std::vector<CSRsp> CSRvector_to_single_precision(std::vector<CSR> const& A) 
+{
+  using Alloc = typename CSRsp::alloc_type;
+  std::vector<CSRsp> B;
+  B.reserve(A.size());
+  for(auto& v: A) B.emplace_back( CSRsp(v,Alloc{v.getAlloc()}) );
+  return B;
+}
 
 }
 

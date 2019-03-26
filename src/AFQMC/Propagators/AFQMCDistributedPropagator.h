@@ -59,7 +59,7 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
 //            ,core_comm()
     {
 //      core_comm = std::move(tg_.TG().split(tg_.getLocalTGRank()));
-      assert(TG.getNNodesPerTG() > 1);
+      assert(TG.getNGroupsPerTG() > 1);
     }
 
     ~AFQMCDistributedPropagator() {}

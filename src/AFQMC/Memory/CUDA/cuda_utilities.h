@@ -25,7 +25,7 @@
 #include<stdexcept>
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
-#include "cublasXt.h"
+//#include "cublasXt.h"
 #include "cusparse.h"
 #include "cusolverDn.h"
 #include "curand.h"
@@ -58,13 +58,13 @@ namespace qmc_cuda {
 
   struct gpu_handles {
     cublasHandle_t* cublas_handle;
-    cublasXtHandle_t* cublasXt_handle;
+//    cublasXtHandle_t* cublasXt_handle;
     cusparseHandle_t* cusparse_handle;
     cusolverDnHandle_t* cusolverDn_handle; 
     curandGenerator_t* curand_generator;
     bool operator==(gpu_handles const& other) const {
       return (cublas_handle==other.cublas_handle &&
-              cublasXt_handle==other.cublasXt_handle &&
+//              cublasXt_handle==other.cublasXt_handle &&
               cusparse_handle==other.cusparse_handle &&  
               cusolverDn_handle==other.cusolverDn_handle &&
               curand_generator==other.curand_generator);
