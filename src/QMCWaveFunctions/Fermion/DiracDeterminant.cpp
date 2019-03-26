@@ -19,10 +19,8 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
-#include "Numerics/BlasThreadingEnv.h"
 #include "Numerics/MatrixOperators.h"
 #include "simd/simd.hpp"
-#include <typeinfo>
 
 namespace qmcplusplus
 {
@@ -53,22 +51,7 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
-  {
-    BlasThreadingEnv knob(getNumThreadsNested());
-#ifdef MIXED_PRECISION
-    simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(), psiM_hp.data(), NumOrbitals, psiM_hp.cols());
-    detEng.invert(psiM_hp, true);
-    LogValue   = static_cast<RealType>(detEng.LogDet);
-    PhaseValue = static_cast<RealType>(detEng.Phase);
-    invMat     = psiM_hp;
-#else
-    simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(), invMat.data(), NumOrbitals, invMat.cols());
-    detEng.invert(invMat, true);
-    LogValue   = detEng.LogDet;
-    PhaseValue = detEng.Phase;
-#endif
-  } // end of BlasThreadingEnv
-  updateEng.initializeInv(invMat);
+  updateEng.invert_transpose(logdetT, invMat, LogValue, PhaseValue);
   InverseTimer.stop();
 }
 
@@ -87,8 +70,6 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   psiV.resize(norb);
   invRow.resize(norb);
   psiM_temp.resize(nel, norb);
-  if (typeid(ValueType) != typeid(mValueType))
-    psiM_hp.resize(nel, norb);
   LastIndex   = FirstIndex + nel;
   NumPtcls    = nel;
   NumOrbitals = norb;
@@ -647,9 +628,11 @@ DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) co
 }
 
 typedef QMCTraits::ValueType ValueType;
-template class DiracDeterminant<DelayedUpdate<ValueType>>;
+typedef QMCTraits::QTFull::ValueType mValueType;
+
+template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
-template class DiracDeterminant<DelayedUpdateCUDA<ValueType>>;
+template class DiracDeterminant<DelayedUpdateCUDA<ValueType, mValueType>>;
 #endif
 
 } // namespace qmcplusplus

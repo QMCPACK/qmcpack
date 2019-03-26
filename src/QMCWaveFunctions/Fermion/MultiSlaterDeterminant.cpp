@@ -51,7 +51,7 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
 
 WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
-  typedef DiracDeterminant<DelayedUpdate<ValueType>> SingleDet_t;
+  typedef DiracDeterminant<> SingleDet_t;
   SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
   SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
   spo_up_C->occup             = spo_up->occup;
