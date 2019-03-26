@@ -26,8 +26,16 @@ namespace afqmc
 class BackPropagatedEstimator: public EstimatorBase
 {
 
-  using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;
-  using CVector = boost::multi::array<ComplexType,1>;
+  // allocators
+  using Allocator = device_allocator<ComplexType>;
+
+  // type defs
+  using pointer = typename Allocator::pointer;
+  using const_pointer = typename Allocator::const_pointer;
+
+  using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;
+  using CVector = boost::multi::array<ComplexType,1,Allocator>;
+  using stdCVector = boost::multi::array<ComplexType,1>;
   public:
 
   BackPropagatedEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
@@ -73,8 +81,9 @@ class BackPropagatedEstimator: public EstimatorBase
     if(DMAverage.size() < dm_size) {
       DMAverage.reextent(iextensions<1u>{dm_size});
     }
-    std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
-    std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
+    using std::fill_n;
+    fill_n(DMBuffer.origin(), DMBuffer.num_elements(), ComplexType(0.0,0.0));
+    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0,0.0));
     denom.reextent({1});
     denom_average.reextent({1});
     denom_average[0] = 0;
@@ -89,10 +98,11 @@ class BackPropagatedEstimator: public EstimatorBase
     // check to see whether we should be accumulating estimates.
     bool back_propagate = wset[0].isBMatrixBufferFull();
     if(back_propagate) {
-      CMatrix_ref BackPropDM(DMBuffer.data(), {dm_dims.first,dm_dims.second});
+      CMatrix_ref BackPropDM(DMBuffer.origin(), {dm_dims.first,dm_dims.second});
       // Computes GBP(i,j)
-      denom[0] = ComplexType(0.0,0.0);
-      std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
+      using std::fill_n;
+      fill_n(denom.origin(),1,ComplexType(0.0,0.0));
+      fill_n(DMBuffer.origin(), DMBuffer.num_elements(), ComplexType(0.0,0.0));
       wfn0.WalkerAveragedDensityMatrix(wset, BackPropDM, denom, path_restoration, !importanceSampling, back_propagate);
       for(int iw = 0; iw < wset.size(); iw++) {
         // Resets B matrix buffer to identity, copies current wavefunction and resets weight
@@ -120,9 +130,17 @@ class BackPropagatedEstimator: public EstimatorBase
       }
       bool write = wset[0].isBMatrixBufferFull();
       if(write) {
-        for(int i = 0; i < DMBuffer.size(); i++)
-          DMAverage[i] += DMBuffer[i];
-        denom_average[0] += denom[0];
+//        for(int i = 0; i < DMBuffer.size(); i++)
+//          DMAverage[i] += DMBuffer[i];
+// MAM: make a wrapper for this type of operation
+// e.g. auto reference_or_copy<stdCVector>(DMBuffer);
+#ifdef QMC_CUDA
+        stdCVector buff(DMBuffer);
+#else
+        CVector& buff(DMBuffer);
+#endif
+        ma::axpy(ComplexType(1.0),buff,DMAverage);
+        denom_average[0] += ComplexType(*denom.origin());
         if(iblock%block_size == 0) {
           for(int i = 0; i < DMAverage.size(); i++)
             DMAverage[i] /= block_size;
@@ -132,8 +150,9 @@ class BackPropagatedEstimator: public EstimatorBase
           dump.write(DMAverage, "one_rdm_"+padded_iblock);
           dump.write(denom_average, "one_rdm_denom_"+padded_iblock);
           dump.pop();
-          std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
-          std::fill(denom_average.begin(), denom_average.end(), ComplexType(0.0,0.0));
+          using std::fill;  
+          fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
+          fill(denom_average.begin(), denom_average.end(), ComplexType(0.0,0.0));
         }
       }
     }
@@ -150,7 +169,8 @@ class BackPropagatedEstimator: public EstimatorBase
   // The first element of data stores the denominator of the estimator (i.e., the total
   // walker weight including rescaling factors etc.). The rest of the elements store the
   // averages of the various elements of the green's function.
-  CVector DMBuffer, DMAverage;
+  CVector DMBuffer;
+  stdCVector DMAverage;
 
   RealType weight, weight_sub;
   RealType targetW = 1;
@@ -172,7 +192,8 @@ class BackPropagatedEstimator: public EstimatorBase
   std::vector<ComplexType> weights;
   int dm_size;
   std::pair<int,int> dm_dims;
-  CVector denom, denom_average;
+  CVector denom;
+  stdCVector denom_average;
   bool write_metadata = true;
 
 };

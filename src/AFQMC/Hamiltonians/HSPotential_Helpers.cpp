@@ -17,6 +17,7 @@
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/csr_blas.hpp"
+#include "AFQMC/Numerics/detail/utilities.hpp"
 
 /********************************************************************
 *  You get 2 potentials per Cholesky std::vector
@@ -36,8 +37,8 @@ namespace HamHelper
 namespace
 {
 
-inline double const& conj(double const& d){return d;}
-inline float const& conj(float const& f){return f;}
+//inline double const& conj(double const& d){return d;}
+//inline float const& conj(float const& f){return f;}
 
 void count_over_cholvec(double cut, std::vector<std::size_t>& count, int c0, int c1, SpVType_shm_csr_matrix::reference const& Lik, SpVType_shm_csr_matrix::reference const& Lki)
 {
@@ -66,7 +67,7 @@ void count_over_cholvec(double cut, std::vector<std::size_t>& count, int c0, int
                     std::distance(to_address(Lki.non_zero_indices2_data()),cki);
 
   // ignoring factor of 0.5 to keep it consistent with the old code for now
-  using std::conj;
+  using ma::conj;
   using std::abs;
   using std::size_t;
   while( cik!=cik_end && cki!=cki_end ) {
@@ -136,7 +137,7 @@ void count_over_cholvec(double cut, std::vector<std::size_t>& count, int c0, int
                     std::distance(to_address(Lii.non_zero_indices2_data()),ci);
 
   // ignoring factor of 0.5 to keep it consistent with the old code for now
-  using std::conj;
+  using ma::conj;
   using std::abs;
   using std::size_t;
   while( ci!=ci_end ) {
@@ -152,7 +153,7 @@ void count_over_cholvec(double cut, std::vector<std::size_t>& count, int c0, int
 // In this case, c0/c1 refer to the ranges in the expanded list of CVs, e.g. 2*n/2*n+1
 void count_nnz(double cut, std::size_t& nik, std::size_t& nki, int c0, int c1, SpVType_shm_csr_matrix::reference const& Lik, SpVType_shm_csr_matrix::reference const& Lki)
 {
-  using std::conj;
+  using ma::conj;
   using std::abs;
   using std::size_t;
   assert(c1>=c0);
@@ -245,7 +246,7 @@ void count_nnz(double cut, std::size_t& nik, std::size_t& nki, int c0, int c1, S
 
 void count_nnz(double cut, size_t& ni, int c0, int c1, SpVType_shm_csr_matrix::reference const& Lii)
 {
-  using std::conj;
+  using ma::conj;
   using std::abs;
   using std::size_t;
   assert(c1>=c0);
@@ -275,7 +276,7 @@ void count_nnz(double cut, size_t& ni, int c0, int c1, SpVType_shm_csr_matrix::r
 
 void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double cut, int ik, int c0, int c1, SpVType_shm_csr_matrix::reference const& Lii)
 {
-  using std::conj;
+  using ma::conj;
   using std::abs;
   using std::size_t;
   assert(c1>=c0);
@@ -316,7 +317,7 @@ void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double 
 
 void add_to_vn(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double cut, int ik, int ki, int c0, int c1, SpVType_shm_csr_matrix::reference const& Lik, SpVType_shm_csr_matrix::reference const& Lki)
 {
-  using std::conj;
+  using ma::conj;
   using std::abs;
   using std::size_t;
   assert(c1>=c0);

@@ -64,14 +64,14 @@ class THCOps
            int nmo_, int naoa_, int naob_,
            WALKER_TYPES type,
            CMatrix&& hij_,
-           std::vector<TVector>&& h1,
-           shmCMatrix&& rotmuv_,
+           std::vector<CVector>&& h1,
+           shmVMatrix&& rotmuv_,
            shmCMatrix&& rotpiu_,
            std::vector<shmCMatrix>&& rotpau_,
            shmVMatrix&& luv_,
-           shmVMatrix&& piu_,
+           shmCMatrix&& piu_,
            std::vector<shmCMatrix>&& pau_,
-           TMatrix&& v0_,
+           CMatrix&& v0_,
            ValueType e0_,
            bool verbose=false ):
                 comm(std::addressof(c_)),
@@ -152,7 +152,7 @@ std::cout<<"\n";
       TG.TG().all_reduce_in_place_n(H1D.origin(),H1D.num_elements(),std::plus<>());
 
       // add hij + v0 and symmetrize
-      using std::conj;
+      using ma::conj;
       for(int i=0; i<NMO; i++) {
         H1[i][i] += hij[i][i] + v0[i][i];
         for(int j=i+1; j<NMO; j++) {
@@ -609,7 +609,7 @@ std::cout<<"\n";
         for(int i=k0; i<kN; i++) {
           auto p_ = Piu.get()[i].origin();
           for(int u=0; u<nu; u++, ++p_)
-            Qiu[i][u] = Tuw[u][wi]*std::conj(*p_);
+            Qiu[i][u] = Tuw[u][wi]*ma::conj(*p_);
         }
         boost::multi::array_ref<ComplexType,2> v_(to_address(v[wi].origin()),{nmo_,nmo_});
         // this can benefit significantly from 2-D partition of work
@@ -951,7 +951,7 @@ std::cout<<"\n";
     CMatrix hij;
 
     // (potentially half rotated) one body hamiltonian
-    std::vector<TVector> haj;
+    std::vector<CVector> haj;
 
     /************************************************/
     // Used in the calculation of the energy
@@ -959,7 +959,7 @@ std::cout<<"\n";
     shmVMatrix rotMuv;
 
     // Orbitals at interpolating points
-    shmVMatrix rotPiu;
+    shmCMatrix rotPiu;
 
     // Half-rotated Orbitals at interpolating points
     std::vector<shmCMatrix> rotcPua;
@@ -971,14 +971,14 @@ std::cout<<"\n";
     shmVMatrix Luv;
 
     // Orbitals at interpolating points
-    shmVMatrix Piu;
+    shmCMatrix Piu;
 
     // Half-rotated Orbitals at interpolating points
     std::vector<shmCMatrix> cPua;
     /************************************************/
 
     // one-body piece of Hamiltonian factorization
-    TMatrix v0;
+    CMatrix v0;
 
     ValueType E0;
 

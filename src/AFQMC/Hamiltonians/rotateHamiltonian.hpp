@@ -266,7 +266,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
 #else
     if(sparseRl) {
       if(sparseQk) {
-        SpRl = std::move(csr::shm::transpose(SpQk));
+        SpRl = std::move(csr::shm::transpose<SpCType_shm_csr_matrix>(SpQk));
         SpRl.remove_empty_spaces();  // just in case
       } else {
         app_error()<<" Error: Incorrect matrix setup in createHamiltonianForGeneralDeterminant. sparseRl=True, sparseQk=False."
@@ -282,7 +282,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
         int n0_,n1_,sz_ = Qk.size(0);
         std::tie(n0_, n1_) = FairDivideBoundary(coreid,sz_,ncores);
         if(n1_-n0_>0)
-          ma::tranpose(Qk.sliced(n0_,n1_),Rl(Rl.extension(0),{n0_,n1_}));
+          ma::transpose(Qk.sliced(n0_,n1_),Rl(Rl.extension(0),{n0_,n1_}));
       }
     }
 #endif
@@ -695,7 +695,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
       int n0_,n1_,sz_ = Qk.size(0);
       std::tie(n0_, n1_) = FairDivideBoundary(coreid,sz_,ncores);
       if(n1_-n0_>0)
-        ma::tranpose(Qk.sliced(n0_,n1_),Rl(Rl.extension(0),{n0_,n1_}));
+        ma::transpose(Qk.sliced(n0_,n1_),Rl(Rl.extension(0),{n0_,n1_}));
     }
 #endif
   }
