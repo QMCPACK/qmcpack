@@ -133,7 +133,7 @@ class DiracMatrix
   aligned_vector<T_FP> m_work;
   aligned_vector<int> m_pivot;
   int Lwork;
-  /// scartch space used for mixed precision
+  /// scratch space used for mixed precision
   Matrix<T_FP> psiM_fp;
   /// LU diagonal elements
   aligned_vector<T_FP> LU_diag;
