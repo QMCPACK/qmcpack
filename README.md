@@ -254,7 +254,17 @@ should be made on problem sizes that are representative of actual
 research calculations. As described in the manual, performance tests
 are provided to aid in monitoring performance.
 
+## Run the unit tests
+
+From the build directory, invoke ctest specifying only the unit tests
+```
+ctest -R unit
+```
+All of these tests should pass.
+
 ## Run the deterministic tests
+
+**Under development - some tests will fail**
 
 From the build directory, invoke ctest specifying only tests
 that are deterministic and known to be reliable.

@@ -1343,18 +1343,25 @@ that are unstable are labeled with the ctest label
 ``unstable''. e.g. They are unreliable, unsupported, or known to fail
 due to partial implementation or bugs.
 
-When installing QMCPACK you should run at least the deterministic
-tests
+When installing QMCPACK you should run at least the unit tests
 
 \begin{shade}
-checkit
-\end{shade}
-% \begin{shade}
-% ctest -R deterministic -LE unstable
-% \end{shade}
-
+ ctest -R unit
+ \end{shade}
+ 
 These currently take only a few seconds to run. All should pass. A
 failure here may indicate a major problem with the installation.
+
+Currently under development is a wider range of deterministic integration
+tests. The goal is to test much more of QMCPACK than the unit tests
+currently do, and to do so in a manner that is completely reproducible
+across platforms. All of these should eventually pass 100\% reliably
+and quickly. Currently some fail on some platforms and for certain
+build types.
+
+ \begin{shade}
+ ctest -R deterministic -LE unstable
+ \end{shade}
 
 If time allows, the ``short'' stochastic tests should also be run.
 The ``short'' tests each take a few minutes each on a 16
