@@ -1038,7 +1038,6 @@ Then using the following command
 mkdir build_armclang
 cd build_armclang
 cmake -DCMAKE_C_COMPILER=armclang -DCMAKE_CXX_COMPILER=armclang++ -DQMC_MPI=0 \
-      -DCMAKE_C_FLAGS="-march=armv8-a" -DCMAKE_CXX_FLAGS="-march=armv8-a" \
       -DLAPACK_LIBRARIES="-L$ARMPL_DIR/lib -larmpl_mp" \
       -DFFTW_INCLUDE_DIR="$ARMPL_DIR/include" \
       -DFFTW_LIBRARIES="$ARMPL_DIR/lib/libarmpl_mp.a" \
