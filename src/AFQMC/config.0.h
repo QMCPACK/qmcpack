@@ -43,11 +43,7 @@ namespace afqmc
   typedef OHMMS_INDEXTYPE                 IndexType;
   typedef OHMMS_INDEXTYPE                 OrbitalType;
   typedef OHMMS_PRECISION_FULL            RealType;
-#if defined(ENABLE_CUDA)
-  typedef CUDA_PRECISION                 SPRealType;
-#else
   typedef OHMMS_PRECISION                 SPRealType;
-#endif
 
 #if defined(QMC_COMPLEX)
   typedef std::complex<RealType>         ValueType;
