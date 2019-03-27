@@ -2702,7 +2702,7 @@ momentum.defaults.set(
 
 linear.defaults.set(
      method = 'linear',move='pbyp',checkpoint=-1,
-     estimators = classcollection(localenergy)
+     #estimators = classcollection(localenergy)
 #  #jtk
 #    method='linear',move='pbyp',checkpoint=-1,gpu=True,
 #    energy=0, reweightedvariance=0, unreweightedvariance=0,
@@ -2725,7 +2725,7 @@ linear.defaults.set(
     )
 cslinear.defaults.set(
     method='cslinear', move='pbyp', checkpoint=-1,
-    estimators = classcollection(localenergy)
+    #estimators = classcollection(localenergy)
   #jtk
     #method='cslinear',move='pbyp',checkpoint=-1,gpu=True,
     #energy=0,reweightedvariance=0,unreweightedvariance=1.,
@@ -2785,14 +2785,14 @@ vmc.defaults.set(
     #substeps    = 3,
     #usedrift    = True,
     #timestep    = .5,
-    estimators = classcollection(localenergy)
+    #estimators = classcollection(localenergy)
     )
 dmc.defaults.set(
     method='dmc',move='pbyp',
     #warmupsteps   = 20,
     #timestep      = .01,
     #nonlocalmoves = True,
-    estimators = classcollection(localenergy)
+    #estimators = classcollection(localenergy)
     )
 
 
@@ -6138,10 +6138,10 @@ def generate_basic_input(**kwargs):
         else:
             estimators = collection()
         #end if
-        if not has_localenergy:
-            estimators.localenergy = localenergy(name='LocalEnergy')
-            calc.estimators = estimators
-        #end if
+        #if not has_localenergy:
+        #    estimators.localenergy = localenergy(name='LocalEnergy')
+        #    calc.estimators = estimators
+        ##end if
     #end for
     sim.calculations = make_collection(kw.calculations).copy()
 
