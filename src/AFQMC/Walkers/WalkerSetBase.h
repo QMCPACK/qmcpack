@@ -40,7 +40,7 @@ namespace afqmc
  * Implements communication, load balancing, and I/O operations.   
  * Walkers are always accessed through the handler.
  */
-template<class Alloc, typename Ptr>
+template<class Alloc, class BPAlloc, typename Ptr>
 class WalkerSetBase: public AFQMCInfo 
 {
   protected:
@@ -53,7 +53,14 @@ class WalkerSetBase: public AFQMCInfo
   using const_pointer = const Ptr; 
   using Allocator = Alloc;
 
+  using bp_element = typename std::pointer_traits<Ptr>::element_type;
+  using bp_pointer = Ptr;
+  using const_bp_element = const element;
+  using const_bp_pointer = const Ptr;
+  using BPAllocator = BPAlloc;
+
   using CMatrix = boost::multi::array<element,2,Allocator>;
+  using BPCMatrix = boost::multi::array<bp_element,2,BPAllocator>;
 
   public:
 
@@ -72,10 +79,12 @@ class WalkerSetBase: public AFQMCInfo
 
   /// constructor
   WalkerSetBase(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 
-        RandomGenerator_t* r, Allocator alloc_ = {}):
+        RandomGenerator_t* r, Allocator alloc_ = {}, BPAllocator bpalloc_ = {}):
                 TG(tg_),AFQMCInfo(info),rng(r),
                 walker_memory_usage(0),tot_num_walkers(0),
+                bp_walker_memory_usage(0),
 		walker_buffer({0,1},alloc_),
+		bp_buffer({0,1},bpalloc_),
                 load_balance(UNDEFINED_LOAD_BALANCE),
                 pop_control(UNDEFINED_BRANCHING),min_weight(0.05),max_weight(4.0),
                 walkerType(UNDEFINED_WALKER_TYPE),nback_prop(0)
@@ -105,6 +114,25 @@ class WalkerSetBase: public AFQMCInfo
   int capacity() const{ 
     return int(walker_buffer.size(0)); 
   } 
+
+  /*
+   * Returns the maximum number of fields in the set that can be stored without reallocation. 
+   */	
+  int NumBackProp() const {
+    return desc[3];
+  }
+  /*
+   * Returns the maximum number of cholesky vectors in the set that can be stored without reallocation. 
+   */	
+  int NumCholVecs() const {
+    return desc[4];
+  }
+  /*
+   * Returns the maximum number of references in the set that can be stored without reallocation. 
+   */	
+  int NumReferences() const {
+    return desc[5];
+  }
 
   /*
    * Returns iterator to the first walker in the set
@@ -490,8 +518,9 @@ class WalkerSetBase: public AFQMCInfo
 
   int nback_prop;
   int walker_size, walker_memory_usage;
+  int bp_walker_size, bp_walker_memory_usage;
 
-  // wlk_descriptor: {nmo, naea, naeb, nback_prop} 
+  // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs} 
   wlk_descriptor wlk_desc; 
   wlk_indices data_displ; 
 
@@ -505,7 +534,11 @@ class WalkerSetBase: public AFQMCInfo
 
   afqmc::TaskGroup_& TG;  
 
+  // Contains main walker data needed for propagation
   CMatrix walker_buffer;
+ 
+  // Contains stack of fields and slater matrix references for back propagation
+  BPCMatrix bp_buffer;
 
   // reads xml and performs setup
   void parse(xmlNodePtr cur); 

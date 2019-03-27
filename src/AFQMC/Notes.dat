@@ -17,5 +17,7 @@
 -- There is something strange with cuda's RNG. Not sure if this is a bug or a problem with my use.
    Right now I'm using QMCPACK's RNG on the host and copying the values to the device.
 
+-- add equilibration to the estimators. It can be read in the executoion block and pass to all estimators and each estimator can redefine it inside their block. Then estimators simply don't execute if within equilibration time.
+
 
 - Remember to add missing overloads for shm_ptr_raw_ptr_dispatch to iterator based copy in boost::multi.

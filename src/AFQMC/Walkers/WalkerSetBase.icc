@@ -128,14 +128,14 @@ void WalkerSetBase<Alloc,Ptr>::setup()
   int nrow=NMO;
   int ndim_bp = NMO;
   if(walkerType == CLOSED)  {
-    // wlk_descriptor: {nmo, naea, naeb, nback_prop} from the point of view of a single spin SM 
+    // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs} from the point of view of a single spin SM 
     wlk_desc = {NMO,NAEA,0,nback_prop};
   } else if(walkerType == COLLINEAR) {
-    // wlk_descriptor: {nmo, naea, naeb, nback_prop} from the point of view of a single spin SM 
+    // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs} from the point of view of a single spin SM 
     wlk_desc = {NMO,NAEA,NAEB,nback_prop};
     ncol += NAEB;
   } else if(walkerType == NONCOLLINEAR) {
-    // wlk_descriptor: {nmo, naea, naeb, nback_prop} from the point of view of a single spin SM 
+    // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs} from the point of view of a single spin SM 
     wlk_desc = {2*NMO,NAEA+NAEB,0,nback_prop};
     nrow += NMO;
     ncol += NAEB;

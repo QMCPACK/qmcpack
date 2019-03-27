@@ -28,98 +28,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-/*
-  template<class Ptr>
-  struct const_walker {
-
-    public:
-
-      using pointer = const typename std::decay<Ptr>::type; 
-      using element = typename std::pointer_traits<typename std::decay<Ptr>::type>::element_type;
-//      using element = __element;
-      using SMType = boost::multi::array_ref<element,2,pointer>;
-    
-      template<class ma>
-      const_walker(ma const& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi::array_ref<element,1,pointer>(a.origin(),iextensions<1u>{a.size()})),indx(i_),desc(d_) 
-      {
-	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
-	assert(stride(w_)==1);
-      }
-      
-      ~const_walker() {}
-
-      const_walker(const_walker&& other) = default;  
-      const_walker(const_walker const& other) = default;  
-      const_walker& operator=(const_walker&& other) = delete;  
-      const_walker& operator=(const_walker const& other) = delete; 
-
-      pointer base() const {return w_.origin(); }
-      int size() const {return w_.size(0); }
-      SMType SlaterMatrix(SpinTypes s) const{ 
-	if(desc[2] <= 0 && s!=Alpha)
-	  APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
-	return (s==Alpha)?(SMType(get_(SM),{desc[0],desc[1]})):
-			  (SMType(get_(SM)+desc[0]*desc[1],{desc[0],desc[2]}));
-      }
-      SMType SlaterMatrixN(SpinTypes s) const {
-        if(indx[SMN] < 0)
-          APP_ABORT("error: access to uninitialized BP sector. \n");
-        if(desc[2] <= 0 && s!=Alpha)
-          APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
-        return (s==Alpha)?(SMType(get_(SMN),{desc[0],desc[1]})):
-                          (SMType(get_(SMN)+desc[0]*desc[1],{desc[0],desc[2]}));
-      }
-      pointer weight() const { return get_(WEIGHT); } 
-      pointer phase() const { return get_(PHASE); } 
-      pointer pseudo_energy() const { return get_(PSEUDO_ELOC_); } 
-      pointer onebody_energy() const { return get_(E1_); } 
-      pointer exchange_energy() const { return get_(EXX_); } 
-      pointer coulomb_energy() const { return get_(EJ_); } 
-      pointer E1() const { return get_(E1_); } 
-      pointer EXX() const { return get_(EXX_); } 
-      pointer EJ() const { return get_(EJ_); } 
-      element energy() const { return *get_(E1_)+*get_(EXX_)+*get_(EJ_); } 
-      pointer overlap() const { return get_(OVLP); } 
-      // propagators can not be spin dependent
-      SMType BMatrix(int ip) const {
-        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0)
-          APP_ABORT("error: access to uninitialized BP sector. \n");
-        if(ip < 0 || ip >= desc[3])
-          APP_ABORT("error: Index out of bounds.\n");
-        return SMType( get_(PROPAGATORS) + desc[0]*desc[0]*ip ,
-                                                        {desc[0],desc[0]});
-      }
-      bool isBMatrixBufferFull() const {
-        return getHead()==0;
-      }
-      int NumBackProp() const {
-        return desc[3];
-      }
-      pointer BPWeightFactor() const {
-        if(indx[WEIGHT_FAC] < 0) {
-          APP_ABORT("error: access to uninitialized BP sector. \n");
-        }
-        return get_(WEIGHT_FAC);
-      }
-      void copy_to_buffer(Ptr data) const {
-        copy(base(),base()+size(),data);
-      }	
-
-    private:
-
-      // needs new strategy for gpu!!!
-      int getHead() const { return static_cast<int>(*get_(HEAD).real()); }
-
-      boost::multi::array_ref<element,1,pointer> w_;
-      const wlk_indices& indx;
-      const wlk_descriptor& desc;	 
-
-      pointer get_(int P) const { return w_.origin() + indx[P]; }   
-  };
-*/
-
-  template<class Ptr>
+  template<class Ptr, class BPPtr>
   struct walker {
 
     public:
@@ -127,14 +36,23 @@ namespace afqmc
       using pointer = Ptr;
       using element = typename std::pointer_traits<pointer>::element_type;
       using SMType = boost::multi::array_ref<element,2,pointer>;
-      using StridedSMType = boost::multi::array_ref<element,3,pointer>;
+
+      using bp_pointer = BPPtr;
+      using bp_element = typename std::pointer_traits<bp_pointer>::element_type;
+      using BPSMType = boost::multi::array_ref<bp_element,2,bp_pointer>;
+      using BPVector = boost::multi::array_ref<bp_element,1,bp_pointer>;
     
-      template<class ma>
-      walker(ma&& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi::array_ref<element,1,Ptr>(a.origin(),iextensions<1u>{a.size()})),indx(i_),desc(d_) 
+      template<class ma, class bp_ma>
+      walker(ma&& a, bp_ma&& bp_a, const wlk_indices& i_, const wlk_descriptor& d_): 
+        w_(boost::multi::array_ref<element,1,pointer>(a.origin(),iextensions<1u>{a.size()})),
+        bp_(boost::multi::array_ref<bp_element,1,bp_pointer>(bp_a.origin(),
+                                                             iextensions<1u>{bp_a.size()})),
+        indx(i_),desc(d_) 
       {
 	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
+	static_assert(std::decay<bp_ma>::type::dimensionality == 1, "Wrong dimensionality");
 	assert(stride(w_)==1);
+	assert(stride(bp_)==1);
       }
       
       ~walker() {}
@@ -146,110 +64,70 @@ namespace afqmc
 
       pointer base() {return w_.origin(); }
       int size() const {return w_.size(0); }
+      int bp_size() const {return bp_.size(0); }
       SMType SlaterMatrix(SpinTypes s) {
         if(desc[2] <= 0 && s!=Alpha)
           APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
-        return (s==Alpha)?(SMType(get_(SM),{desc[0],desc[1]})):
-              (SMType(get_(SM)+desc[0]*desc[1],{desc[0],desc[2]}));
+        return (s==Alpha)?(SMType(getw_(SM),{desc[0],desc[1]})):
+              (SMType(getw_(SM)+desc[0]*desc[1],{desc[0],desc[2]}));
       }
       SMType SlaterMatrixN(SpinTypes s) {
         if(indx[SMN] < 0)
           APP_ABORT("error: access to uninitialized BP sector. \n");
         if(desc[2] <= 0 && s!=Alpha)
           APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
-        return (s==Alpha)?(SMType(get_(SMN),{desc[0],desc[1]})):
-                          (SMType(get_(SMN)+desc[0]*desc[1],{desc[0],desc[2]}));
+        return (s==Alpha)?(SMType(getw_(SMN),{desc[0],desc[1]})):
+                          (SMType(getw_(SMN)+desc[0]*desc[1],{desc[0],desc[2]}));
       }
-      pointer weight() { return get_(WEIGHT); } 
-      pointer phase() { return get_(PHASE); } 
-      pointer pseudo_energy() { return get_(PSEUDO_ELOC_); } 
-      pointer onebody_energy() { return get_(E1_); } 
-      pointer exchange_energy() { return get_(EXX_); } 
-      pointer coulomb_energy() { return get_(EJ_); } 
-      pointer E1() { return get_(E1_); } 
-      pointer EXX() { return get_(EXX_); } 
-      pointer EJ() { return get_(EJ_); } 
-      element energy() { return *get_(E1_)+*get_(EXX_)+*get_(EJ_); } 
-      pointer overlap() { return get_(OVLP); } 
-      // propagators can not be spin dependent
-      SMType BMatrix() {
-        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
-          APP_ABORT("error: access to uninitialized BP sector. \n");
-        }
-        auto ip = getHead();
-        if(ip < 0 || ip >= desc[3]) {
-          APP_ABORT("error: Index out of bounds.\n");
-        }
-        return SMType(get_(PROPAGATORS)+desc[0]*desc[0]*ip,
-                      {desc[0],desc[0]});
-      }
-      SMType BMatrix(int ip) const {
-        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0)
-          APP_ABORT("error: access to uninitialized BP sector. \n");
-        if(ip < 0 || ip >= desc[3])
-          APP_ABORT("error: Index out of bounds.\n");
-        return SMType( get_(PROPAGATORS) + desc[0]*desc[0]*ip ,
-                                                        {desc[0],desc[0]});
-      }
+      pointer weight() { return getw_(WEIGHT); } 
+      pointer phase() { return getw_(PHASE); } 
+      pointer pseudo_energy() { return getw_(PSEUDO_ELOC_); } 
+      pointer onebody_energy() { return getw_(E1_); } 
+      pointer exchange_energy() { return getw_(EXX_); } 
+      pointer coulomb_energy() { return getw_(EJ_); } 
+      pointer E1() { return getw_(E1_); } 
+      pointer EXX() { return getw_(EXX_); } 
+      pointer EJ() { return getw_(EJ_); } 
+      element energy() { return *getw_(E1_)+*getw_(EXX_)+*getw_(EJ_); } 
+      pointer overlap() { return getw_(OVLP); } 
       int NumBackProp() const {
         return desc[3];
       }
-      void incrementBMatrix() {
-        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
+      int NumCholVecs() const {
+        return desc[4];
+      }
+      int NumReferences() const {
+        return desc[5];
+      }
+      BPVector getField(int ip) {
+        if(indx[FIELDS] < 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         }
-        auto ip = getHead();
-        if(ip < 0 || ip >= desc[3])
+        if(ip < 0 || ip >= desc[3]) {
           APP_ABORT("error: Index out of bounds.\n");
-        *get_(HEAD) = element((ip+1)%desc[3],0);
+        }
+        return BPVector(getbp_(FIELDS)+desc[4]*ip,iextensions<1u>{desc[4]});
       }
-      void decrementBMatrix() {
-        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
+      template<class CVec>
+      void setField(CVec&& X, int ip) {
+	static_assert(std::decay<CVec>::type::dimensionality == 1, "Wrong dimensionality");
+        if(indx[FIELDS] < 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         }
-        auto ip = getHead();
-        if(ip < 0 || ip >= desc[3])
+        if(ip < 0) {
           APP_ABORT("error: Index out of bounds.\n");
-        *get_(HEAD) = element((ip-1+desc[3])%desc[3],0);
-      }
-      bool isBMatrixBufferFull() const {
-        return getHead() == 0;
-      }
-      // Reset back propagation information. B = I, weight factors = 1.0.
-      void resetForBackPropagation() {
-        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
-          APP_ABORT("error: access to uninitialized BP sector. \n");
         }
-        int nbp = desc[3];
-/*
-        for(int ip = 0; ip < nbp; ip++) {
-          SMType B(get_(PROPAGATORS)+desc[0]*desc[0]*ip,
-                            {desc[0],desc[0]});
-          for(int i = 0; i < desc[0]; i++) {
-            for(int j = 0; j < desc[0]; j++) {
-              B[i][j] = ((i==j)?element(1.0):element(0.0));
-            }
-          }
-        }
-*/
-        StridedSMType B(get_(PROPAGATORS),{nbp,desc[0],desc[0]});
-        ma::set_identity(B);
-        *BPWeightFactor() = element(1.0);
-        setSlaterMatrixN();
+        if( ip >= desc[3]) return;  // don't store if outside buffer length
+        BPVector V(getbp_(FIELDS)+desc[4]*ip,iextensions<1u>{desc[4]});
+        V = X;
       }
       // Weight factors for partial path restoration approximation.
-      pointer BPWeightFactor() {
+      bp_pointer BPWeightFactor() {
         if(indx[WEIGHT_FAC] < 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         }
         return get_(WEIGHT_FAC);
       }
-      void copy_to_buffer(Ptr data) {
-        copy(base(),base()+size(),data);
-      }	
-      void copy_from_buffer(Ptr data) {
-        copy(data,data+size(),base());
-      }	
       // replaces Slater Matrix at timestep M+N to timestep N for back propagation.
       void setSlaterMatrixN() {
         SlaterMatrixN(Alpha) = SlaterMatrix(Alpha);
@@ -257,19 +135,58 @@ namespace afqmc
           SlaterMatrixN(Beta) = SlaterMatrix(Beta);
         }
       }
+      BPSMType getReference(int ip, SpinTypes s) {
+        if(indx[SM_REFS] < 0) {
+          APP_ABORT("error: access to uninitialized BP sector. \n");
+        }
+        if(ip < 0 || ip >= desc[5]) {
+          APP_ABORT("error: Index out of bounds.\n");
+        }
+        if(desc[2] <= 0 && s!=Alpha)
+          APP_ABORT("error:walker spin out of range in getReference(ip,SpinType).\n");
+        int skip(ip*desc[0]*(desc[1]+desc[2]);
+        return (s==Alpha)?(BPSMType(getbp_(SM_REFS)+skip,{desc[0],desc[1]})):
+              (BPSMType(getbp_(SM_REFS)+skip+desc[0]*desc[1],{desc[0],desc[2]}));
+      }
+      template<class CMat>
+      void setReference(int ip, SpinTypes s, CMat&& A) {
+        if(indx[SM_REFS] < 0) {
+          APP_ABORT("error: access to uninitialized BP sector. \n");
+        }
+        if(ip < 0 || ip >= desc[5]) {
+          APP_ABORT("error: Index out of bounds.\n");
+        }
+        if(desc[2] <= 0 && s!=Alpha)
+          APP_ABORT("error:walker spin out of range in getReference(ip,SpinType).\n");
+        int skip(ip*desc[0]*(desc[1]+desc[2]);
+        return (s==Alpha)?(BPSMType(getbp_(SM_REFS)+skip,{desc[0],desc[1]})):
+              (BPSMType(getbp_(SM_REFS)+skip+desc[0]*desc[1],{desc[0],desc[2]}));
+      }
+
+
+      template<class CVec>
+      void setField(CVec&& X, int ip) {
+        static_assert(std::decay<CVec>::type::dimensionality == 1, "Wrong dimensionality");
+        if(indx[FIELDS] < 0) {
+          APP_ABORT("error: access to uninitialized BP sector. \n");
+        }
+        if(ip < 0) {
+          APP_ABORT("error: Index out of bounds.\n");
+        }
+        if( ip >= desc[3]) return;  // don't store if outside buffer length
+        BPVector V(getbp_(FIELDS)+desc[4]*ip,iextensions<1u>{desc[4]});
+        V = X;
+      }
 
     private:
 
-      int getHead() const { 
-        element v(*get_(HEAD)); 
-        return static_cast<int>(v.real()); 
-      }
-
-      boost::multi::array_ref<element,1,Ptr> w_;
+      boost::multi::array_ref<element,1,pointer> w_;
+      boost::multi::array_ref<bp_element,1,bp_pointer> bp_;
       const wlk_indices& indx;
       const wlk_descriptor& desc;	 
 
-      pointer get_(int P) const { return w_.origin() + indx[P]; }   
+      pointer getw_(int P) const { return w_.origin() + indx[P]; }   
+      bp_pointer getbp_(int P) const { return bp_.origin() + indx[P]; }   
 
   };
 
@@ -311,45 +228,6 @@ namespace afqmc
     difference_type distance_to(walker_iterator other) const{ return other.pos - pos; }
   };
 
-/*
-  template<class Ptr>
-  struct const_walker_iterator:
-        public boost::iterator_facade<
-          const_walker_iterator<Ptr>,
-          void,
-          std::random_access_iterator_tag,
-          const_walker<Ptr>,
-          std::ptrdiff_t
-        >
-  {
-    public:
-    template<class WBuff>
-    const_walker_iterator(int k, WBuff&& w_, const wlk_indices& i_, const wlk_descriptor& d_):
-        pos(k),W(to_address(w_.origin()),w_.extensions()),indx(&i_),desc(&d_)  {}
-
-    using pointer = const Ptr;
-    using element = typename std::pointer_traits<pointer>::element_type;
-    using Wlk_Buff = boost::multi::array_ref<element,2,pointer>;
-    using difference_type = std::ptrdiff_t;
-    using reference = const_walker<Ptr>;
-
-    private:
-
-    int pos;
-    Wlk_Buff W;
-    wlk_indices const* indx;
-    wlk_descriptor const* desc;
-
-    friend class boost::iterator_core_access;
-
-    void increment(){++pos;}
-    void decrement(){--pos;}
-    bool equal(const_walker_iterator const& other) const{  return pos == other.pos;  }
-    reference dereference() const { return reference(W[pos],*indx,*desc);}
-    void advance(difference_type n){pos += n;}
-    difference_type distance_to(const_walker_iterator other) const{ return other.pos - pos; }
-  };
-*/
 }
 
 }
