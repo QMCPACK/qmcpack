@@ -5500,17 +5500,19 @@ def generate_opts(opt_reqs,**kwargs):
 
 
 opt_defaults = obj(
-    method      = 'linear',
-    minmethod   = 'quartic',
-    cost        = 'variance',
-    cycles      = 12,
-    var_cycles  = 4,
-    var_samples = None,
+    method          = 'linear',
+    minmethod       = 'quartic',
+    cost            = 'variance',
+    cycles          = 12,
+    var_cycles      = 0,
+    var_samples     = None,
+    init_cycles     = 0,
+    init_samples    = None,
+    init_minwalkers = 1e-4,
     )
 
 shared_opt_defaults = obj(
     samples     = 204800,
-    minwalkers  = 0.3,
     nonlocalpp  = True,
     warmupsteps = 300,                
     blocks      = 100,                
@@ -5521,6 +5523,7 @@ shared_opt_defaults = obj(
     )
 
 linear_quartic_defaults = obj(
+    minwalkers        = 0.3,
     usebuffer         = True,
     exp0              = -6,
     bigchange         = 10.0,
@@ -5530,11 +5533,13 @@ linear_quartic_defaults = obj(
     **shared_opt_defaults
     )
 linear_oneshift_defaults = obj(
-    shift_i = 0.01,
-    shift_s = 1.00,
+    minwalkers = 0.5,
+    #shift_i    = 0.01,
+    #shift_s    = 1.00,
     **shared_opt_defaults
     )
 linear_adaptive_defaults = obj(
+    minwalkers          = 0.3,
     max_relative_change = 10.0,
     max_param_change    = 0.3,
     shift_i             = 0.01,
@@ -5648,6 +5653,9 @@ def generate_opt_calculations(
     cycles     ,
     var_cycles ,
     var_samples,
+    init_cycles,
+    init_samples,
+    init_minwalkers,
     loc        = 'generate_opt_calculations',
     **opt_inputs
     ):
@@ -5660,11 +5668,13 @@ def generate_opt_calculations(
 
     opt_inputs = obj(opt_inputs)
     invalid = set(opt_inputs.keys())-allowed_opt_method_inputs
+    oneshift = False
     if len(invalid)>0:
         error('invalid optimization inputs provided\ninvalid inputs: {}\nvalid options are: {}'.format(sorted(invalid),sorted(allowed_opt_method_inputs)))
     #end if
     if 'minmethod' in opt_inputs and opt_inputs.minmethod.lower().startswith('oneshift'):
         opt_inputs.minmethod = 'OneShiftOnly'
+        oneshift = True
     #end if
 
     if cost=='variance':
@@ -5679,7 +5689,7 @@ def generate_opt_calculations(
         error('invalid optimization cost function encountered\ninvalid cost fuction: {0}\nvalid options are: variance, energy, (0.95,0.05), etc'.format(cost),loc)
     #end if
     opt_calcs = []
-    if abs(cost[0])>1e-6 and var_cycles>0:
+    if var_cycles>0:
         vmin_opt = opt(
             energy               = 0.0,
             unreweightedvariance = 1.0,
@@ -5691,12 +5701,27 @@ def generate_opt_calculations(
         #end if
         opt_calcs.append(loop(max=var_cycles,qmc=vmin_opt))
     #end if
-    cost_opt = opt(
-        energy               = cost[0],
-        unreweightedvariance = cost[1],
-        reweightedvariance   = cost[2],
-        **opt_inputs
-        )
+    if init_cycles>0:
+        init_opt = opt(**opt_inputs)
+        if init_samples is not None:
+            init_opt.samples = init_samples
+        #end if
+        init_opt.minwalkers = init_minwalkers
+        if not oneshift:
+            init_opt.energy               = cost[0]
+            init_opt.unreweightedvariance = cost[1]
+            init_opt.reweightedvariance   = cost[2]
+        #end if
+        opt_calcs.append(loop(max=init_cycles,qmc=init_opt))
+    #end if
+
+    cost_opt = opt(**opt_inputs)
+    if not oneshift:
+        cost_opt.energy               = cost[0]
+        cost_opt.unreweightedvariance = cost[1]
+        cost_opt.reweightedvariance   = cost[2]
+    #end if
+
     opt_calcs.append(loop(max=cycles,qmc=cost_opt))
     return opt_calcs
 #end def generate_opt_calculations
