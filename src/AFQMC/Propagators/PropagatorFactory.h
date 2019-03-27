@@ -112,7 +112,7 @@ class PropagatorFactory
     oAttrib.put(cur);
 
     app_log()<<"\n****************************************************\n"
-           <<"               Initializating Propagator \n"
+           <<"               Initializing Propagator \n"
            <<"****************************************************\n"
            <<std::endl;
 

@@ -243,11 +243,11 @@ QMC_MIXED_PRECISION   Build the mixed precision (mixing double/float) version
                       The GPU support is quite mature.
                       Use always double for host side base and full precision
                       and use float and double for CUDA base and full precision.
+ENABLE_SOA            Enable data layout and algorithm optimizations using  
+                      Structure-of-Array (SoA) datatypes (1:yes (default), 0:no).  
 ENABLE_TIMERS         Enable fine-grained timers (1:yes, 0:no (default)).
                       Timers are off by default to avoid potential slowdown in small
                       systems. For large systems (100+ electrons) there is no risk.
-ENABLE_SOA            (Experimental) Enable CPU optimization and GPU support using
-                      Structure-of-Array (SoA) datatypes (1:yes, 0:no (default)).
 \end{shade}
 
 \item General build options
@@ -1343,18 +1343,25 @@ that are unstable are labeled with the ctest label
 ``unstable''. e.g. They are unreliable, unsupported, or known to fail
 due to partial implementation or bugs.
 
-When installing QMCPACK you should run at least the deterministic
-tests
+When installing QMCPACK you should run at least the unit tests
 
 \begin{shade}
-checkit
-\end{shade}
-% \begin{shade}
-% ctest -R deterministic -LE unstable
-% \end{shade}
-
+ ctest -R unit
+ \end{shade}
+ 
 These currently take only a few seconds to run. All should pass. A
 failure here may indicate a major problem with the installation.
+
+Currently under development is a wider range of deterministic integration
+tests. The goal is to test much more of QMCPACK than the unit tests
+currently do, and to do so in a manner that is completely reproducible
+across platforms. All of these should eventually pass 100\% reliably
+and quickly. Currently some fail on some platforms and for certain
+build types.
+
+ \begin{shade}
+ ctest -R deterministic -LE unstable
+ \end{shade}
 
 If time allows, the ``short'' stochastic tests should also be run.
 The ``short'' tests each take a few minutes each on a 16

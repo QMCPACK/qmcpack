@@ -243,7 +243,7 @@ class Settings(NexusCore):
     def process_command_line_settings(self,script_settings):
         from optparse import OptionParser
         usage = '''usage: %prog [options]'''
-        parser = OptionParser(usage=usage,add_help_option=True,version='%prog 1.6.0')
+        parser = OptionParser(usage=usage,add_help_option=True,version='%prog 1.7.0')
 
         parser.add_option('--status_only',dest='status_only',
                           action='store_true',default=False,

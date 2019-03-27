@@ -125,7 +125,7 @@ class WavefunctionFactory
     m_param.put(cur);
 
     app_log()<<"\n****************************************************\n"
-           <<"               Initializating Wavefunction \n"
+           <<"               Initializing Wavefunction \n"
            <<"****************************************************\n"
            <<std::endl;
 
