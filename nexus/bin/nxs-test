@@ -3564,7 +3564,6 @@ if __name__=='__main__':
     ued['failures_filename'] = 'test_failures.txt'
     ued['failures_filepath'] = os.path.join(ued['test_path'],ued['failures_filename'])
     ued['failures_file']     = None
-    del ued
 
     # If requested, regenerate reference data and exit
     update_modes = ('new','failed','all')
@@ -3581,6 +3580,12 @@ if __name__=='__main__':
         regenerate_reference(update=True)
         exit()
     #end if
+
+    # remove failures file prior to testing
+    if os.path.exists(ued['failures_filepath']):
+        os.remove(ued['failures_filepath'])
+    #end if
+    del ued
 
     # identify test list to run
     tests = []

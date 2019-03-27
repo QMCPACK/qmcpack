@@ -67,23 +67,21 @@
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
       <parameter name="walkers"             >    1               </parameter>
+      <parameter name="warmupSteps"         >    100             </parameter>
       <parameter name="blocks"              >    1               </parameter>
       <parameter name="subSteps"            >    5               </parameter>
       <parameter name="timestep"            >    1.0             </parameter>
       <parameter name="useDrift"            >    no              </parameter>
-      <parameter name="warmupSteps"         >    100             </parameter>
       <parameter name="stepsbetweensamples" >    1               </parameter>
       <parameter name="samplesperthread"    >    64              </parameter>
-      <estimator name="LocalEnergy" hdf5="yes"/>
    </qmc>
    <qmc method="dmc" move="pbyp">
+      <parameter name="warmupSteps"         >    100             </parameter>
       <parameter name="blocks"              >    200             </parameter>
       <parameter name="steps"               >    10              </parameter>
       <parameter name="timestep"            >    0.005           </parameter>
       <parameter name="nonlocalmoves"       >    yes             </parameter>
-      <parameter name="warmupSteps"         >    100             </parameter>
       <parameter name="reconfiguration"     >    yes             </parameter>
       <parameter name="minimumtargetwalkers">    128             </parameter>
-      <estimator name="LocalEnergy" hdf5="yes"/>
    </qmc>
 </simulation>
