@@ -118,7 +118,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
-    auto HOps(ham.getHamiltonianOperations(false,true,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
 // NOTE: Make small factory routine!
