@@ -71,7 +71,7 @@ echo ""
 echo "building qmcpack for cpu real"
 mkdir build$suffix
 cd build$suffix
-cmake $CMAKE_FLAGS ..
+cmake -D ENABLE_SOA=0 $CMAKE_FLAGS ..
 make -j 32
 cd ..
 ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
@@ -83,7 +83,7 @@ echo ""
 echo "building qmcpack for cpu complex"
 mkdir build$suffix
 cd build$suffix
-cmake $CMAKE_FLAGS -D QMC_COMPLEX=1 ..
+cmake -D ENABLE_SOA=0 $CMAKE_FLAGS -D QMC_COMPLEX=1 ..
 make -j 32
 cd ..
 ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
@@ -124,8 +124,8 @@ echo ""
 echo "building qmcpack for gpu real"
 mkdir build$suffix
 cd build$suffix
-cmake -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
-cmake -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
+cmake -D ENABLE_SOA=0 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
+cmake -D ENABLE_SOA=0 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
 make -j 32
 cd ..
 ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
@@ -137,8 +137,8 @@ echo ""
 echo "building qmcpack for gpu real"
 mkdir build$suffix
 cd build$suffix
-cmake -D QMC_COMPLEX=1 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
-cmake -D QMC_COMPLEX=1 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
+cmake -D ENABLE_SOA=0 -D QMC_COMPLEX=1 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
+cmake -D ENABLE_SOA=0 -D QMC_COMPLEX=1 -D QMC_CUDA=1 -DCUDA_HOST_COMPILER=$(which CC) ..
 make -j 32
 cd ..
 ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
