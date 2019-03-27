@@ -1514,6 +1514,7 @@ class GaussianProcessOptimizer(DevBase):
         if self.mode not in self.allowed_modes:
             self.error('mode {0} is not allowed\nallowed modes are: {1}'.format(self.mode,self.allowed_modes))
         #end if
+        self.state_hist = obj()
     #end def __init__
 
 
@@ -1555,6 +1556,7 @@ class GaussianProcessOptimizer(DevBase):
                 self.vlog('incorporating new energies',n=2)
                 state.update_energies(energies,errors)
             #end if
+            self.state_hist[i] = state.copy()
         #end for
         return state.optimal_trajectory()
     #end def optimize_stateless
@@ -1588,8 +1590,11 @@ class GaussianProcessOptimizer(DevBase):
                     energies,errors = self.energy_function(params,state)
                     state.update_energies(energies,errors)
                     self.save_energies(energies,errors)
+                #else: # wrong, temporary, only for completed nexus runs
+                #    energies,errors = self.energy_function(params,state)
                 #end if
             #end if
+            self.state_hist[i] = state.copy()            
         #end for
         return state.optimal_trajectory()
     #end def optimize_stateful
