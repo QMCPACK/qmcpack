@@ -1045,7 +1045,11 @@ cmake -DCMAKE_C_COMPILER=armclang -DCMAKE_CXX_COMPILER=armclang++ -DQMC_MPI=0 \
       ..
 make -j 56
 \end{shade}
-Note that armclang is recognized as an `unknown' compiler by cmake v3.13.* and below. In this case, we need to force it as clang (use (\ishell{-DCMAKE_\{C,CXX\}_COMPILER_ID}) to apply necessary flags.
+Note that armclang is recognized as an `unknown' compiler by cmake v3.13.* and below. In this case, we need to force it as clang to apply necessary flags. To do so, pass the following additionals option to cmake:
+\begin{shade}
+      -DCMAKE_C_COMPILER_ID=Clang -DCMAKE_CXX_COMPILER_ID=Clang \
+      -DCMAKE_CXX_COMPILER_VERSION=5.0 -DCMAKE_CXX_STANDARD_COMPUTED_DEFAULT=98 \
+\end{shade}      
 
 \subsection{Installing on Windows}
 Install the Windows Subsystem for Linux and Bash on Windows.
