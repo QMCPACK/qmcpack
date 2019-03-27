@@ -17,6 +17,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
+#include "simd/simd.hpp"
 
 #include <stdio.h>
 #include <string>
@@ -25,6 +26,8 @@ using std::string;
 
 namespace qmcplusplus
 {
+
+typedef QMCTraits::RealType RealType;
 typedef QMCTraits::ValueType ValueType;
 
 template<typename T1, typename T2>
@@ -44,14 +47,17 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
 {
   DiracMatrix<ValueType> dm;
 
-  Matrix<ValueType> m;
+  Matrix<ValueType> m, m_invT;
+  RealType LogValue, PhaseValue;
   m.resize(3, 3);
+  m_invT.resize(3, 3);
+
   m(0, 0) = 1.0;
   m(1, 1) = 1.0;
   m(2, 2) = 1.0;
 
-  dm.invert(m, true);
-  REQUIRE(dm.LogDet == ValueApprox(0.0));
+  dm.invert_transpose(m, m_invT, LogValue, PhaseValue);
+  REQUIRE(LogValue == ValueApprox(0.0));
 
   Matrix<ValueType> eye;
   eye.resize(3, 3);
@@ -59,15 +65,18 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
   eye(1, 1) = 1.0;
   eye(2, 2) = 1.0;
 
-  check_matrix(m, eye);
+  check_matrix(m_invT, eye);
 }
 
 TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
 {
   DiracMatrix<ValueType> dm;
 
-  Matrix<ValueType> a;
+  Matrix<ValueType> a, a_T, a_inv;
+  RealType LogValue, PhaseValue;
   a.resize(3, 3);
+  a_T.resize(3, 3);
+  a_inv.resize(3, 3);
 
   a(0, 0) = 2.3;
   a(0, 1) = 4.5;
@@ -79,8 +88,9 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
   a(2, 1) = 4.4;
   a(2, 2) = 4.9;
 
-  dm.invert(a, true);
-  REQUIRE(dm.LogDet == ValueApprox(3.78518913425));
+  simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
+  dm.invert_transpose(a_T, a_inv, LogValue, PhaseValue);
+  REQUIRE(LogValue == ValueApprox(3.78518913425));
 
   Matrix<ValueType> b;
   b.resize(3, 3);
@@ -95,18 +105,21 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
   b(2, 1) = -0.04586322768;
   b(2, 2) = 0.3927890292;
 
-  check_matrix(a, b);
+  check_matrix(a_inv, b);
 }
 
 
 TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
 {
   DiracMatrix<ValueType> dm;
-  DelayedUpdate<ValueType> updateEng;
+  DelayedUpdate<ValueType, QMCTraits::QTFull::ValueType> updateEng;
   updateEng.resize(3, 1);
 
-  Matrix<ValueType> a;
+  Matrix<ValueType> a, a_T, a_inv;
+  RealType LogValue, PhaseValue;
   a.resize(3, 3);
+  a_T.resize(3, 3);
+  a_inv.resize(3, 3);
 
   a(0, 0) = 2.3;
   a(0, 1) = 4.5;
@@ -118,7 +131,8 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   a(2, 1) = 4.4;
   a(2, 2) = 4.9;
 
-  dm.invert(a, false);
+  simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
+  dm.invert_transpose(a_T, a_inv, LogValue, PhaseValue);
 
   // new row
   Vector<ValueType> v(3), invRow(3);
@@ -126,12 +140,12 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   v[1] = 2.0;
   v[2] = 3.1;
 
-  updateEng.getInvRow(a, 0, invRow);
+  updateEng.getInvRow(a_inv, 0, invRow);
   ValueType det_ratio1 = simd::dot(v.data(), invRow.data(), invRow.size());
 
   ValueType det_ratio = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
-  updateEng.acceptRow(a, 0, v);
+  updateEng.acceptRow(a_inv, 0, v);
 
   Matrix<ValueType> b;
   b.resize(3, 3);
@@ -146,7 +160,7 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   b(2, 1) = 0.7119205298;
   b(2, 2) = 0.9105960265;
 
-  check_matrix(a, b);
+  check_matrix(a_inv, b);
 }
 
 

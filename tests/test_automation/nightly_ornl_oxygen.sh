@@ -2,8 +2,9 @@
 
 echo --- Script START `date`
 
-export LONGCFG="-E long --timeout 1800"
-#export LONGCFG="--timeout 7200"
+export GLOBALTCFG="-E long --timeout 1800"
+#export GLOBALTCFG="--timeout 7200"
+export DONLY="-R deterministic -LE unstable"
 
 # Directory in which to run tests. Should be an absolute path and fastest usable filesystem
 test_path=/scratch/${USER}   # RAID FLASH on oxygen
@@ -44,8 +45,7 @@ export OXYGEN_KEPLER=GPU-224da96d-fb1a-955e-b082-a0f2214877e3,GPU-229b6777-2095-
 export OXYGEN_VOLTA=GPU-6bf1c875-b5de-2486-fd0e-ed4bca724ba1
 export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
 
-#for sys in build_intel2019 build_intel2019_nompi  build_intel2019_soa build_intel2019_complex build_intel2019_complex_soa  build_intel2019_mixed build_intel2019_mixed_soa build_intel2019_complex_mixed build_intel2019_complex_mixed_soa build_intel2019_nompi_soa build_clang6 build_clang6_cuda build_volta_clang6_cuda build_clang6_cuda_complex build_clang6_cuda_full build_clang6_cuda_complex_full build_clang6 build_clang7 build_gcc8 build_gcc8_mkl build_gcc8_mkl_soa build_gcc8_complex build_gcc8_mkl_complex
-for sys in build_intel2019 build_intel2019_soa build_intel2019_nompi build_intel2019_nompi_soa build_gcc8_nompi build_clang7_nompi build_clang6_cuda build_volta_clang6_cuda build_gcc8_mkl build_gcc8_mkl_soa build_gcc8_complex build_gcc8_mkl_complex build_clang7 build_pgi2018_nompi_mkl build_pgi2018_nompi_soa_mkl
+for sys in build_gcc5_mkl build_gcc5_mkl_complex build_gcc5_mkl_soa build_gcc5_mkl_complex_soa build_intel2018 build_intel2018_soa build_intel2018_complex_soa build_intel2018_nompi build_intel2018_nompi_soa build_clang7_nompi build_gcc8_mkl build_gcc8_mkl_complex build_pgi2018_nompi_mkl build_clang6_cuda build_clang6_cuda_complex
 do
 
 echo --- START $sys `date`
@@ -58,14 +58,20 @@ fi
 mkdir $sys
 cd $sys
 
+#CUDA 10 setup
 export CUDAVER=10.0
 export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda-${CUDAVER}/bin/:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64
 
+# PGI2018  setup
 export PGI=/opt/pgi
 export MANPATH=$MANPATH:$PGI/linux86-64/2018/man
 export LM_LICENSE_FILE=$PGI/license.dat
 export PATH=$PGI/linux86-64/2018/bin:$PATH
+
+# Intel2019.1 MPI configure setting to avoid MPI crash
+# via https://software.intel.com/en-us/forums/intel-clusters-and-hpc-technology/topic/799716
+export FI_PROVIDER=sockets
 
 module() { eval `/usr/bin/modulecmd bash $*`; }
 
@@ -86,19 +92,15 @@ case $sys in
         spack load gcc@8.2.0
         compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
         if [ $compilerversion = "8.2.0" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3~cuda%gcc@8.2.0
         export OMPI_CC=gcc
         export OMPI_CXX=g++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC8-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload openmpi%gcc@8.2.0
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         else
         echo "Did not find expected gcc 8.2.0"
         fi
@@ -108,15 +110,11 @@ case $sys in
         spack load gcc@8.2.0
         compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
         if [ $compilerversion = "8.2.0" ]; then
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC8-NoMPI-Release
-	export CTCFG="-DQMC_MPI=0 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
+	export CTCFG="-DENABLE_SOA=0 -DQMC_MPI=0 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
         else
         echo "Did not find expected gcc 8.2.0"
         fi
@@ -127,19 +125,15 @@ case $sys in
         spack load llvm@6.0.1
         compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
         if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3~cuda%gcc@8.2.0
         export OMPI_CC=clang
         export OMPI_CXX=clang++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload openmpi%gcc@8.2.0
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         spack unload llvm@6.0.1
         else
         echo "Did not find expected clang 6.0.1"
@@ -151,22 +145,18 @@ case $sys in
         spack load llvm@6.0.1
         compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
         if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3~cuda%gcc@8.2.0
         export OMPI_CC=clang
         export OMPI_CXX=clang++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Release
 	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DQMC_CUDA=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
+	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
 	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-        spack unload openmpi%gcc@8.2.0
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         spack unload llvm@6.0.1
         else
         echo "Did not find expected clang 6.0.1"
@@ -177,22 +167,18 @@ case $sys in
         spack load llvm@6.0.1
         compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
         if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3+cuda%gcc@8.2.0
         export OMPI_CC=clang
         export OMPI_CXX=clang++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=Volta-CLANG6-CUDA-Release
 	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 	export CUDA_VISIBLE_DEVICES=$OXYGEN_VOLTA
-	export CTCFG="-DQMC_CUDA=1 -DCUDA_ARCH="sm_70" -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
+	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DCUDA_ARCH="sm_70" -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
 	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-        spack unload openmpi%gcc@8.2.0
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3+cuda%gcc@8.2.0
         spack unload llvm@6.0.1
         else
         echo "Did not find expected clang 6.0.1"
@@ -204,23 +190,19 @@ case $sys in
         spack load llvm@6.0.1
         compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
         if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3+cuda%gcc@8.2.0
         export OMPI_CC=clang
         export OMPI_CXX=clang++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-SoA-Release
 	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
 	ctest   -R 'deterministic|performance|short.*diamondC_.x1x1_pp-.mc_.*' -E 'long' --timeout 1800
-	export CTCFG="-DQMC_CUDA=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
+	export CTCFG="-DQMC_CUDA=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
 	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-        spack unload openmpi%gcc@8.2.0
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3+cuda%gcc@8.2.0
         spack unload llvm@6.0.1
         else
         echo "Did not find expected clang 6.0.1"
@@ -232,22 +214,18 @@ case $sys in
         spack load llvm@6.0.1
         compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
         if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3+cuda%gcc@8.2.0
         export OMPI_CC=clang
         export OMPI_CXX=clang++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Complex-Release
 	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DQMC_CUDA=1 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
+	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
 	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-        spack unload openmpi%gcc@8.2.0
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3+cuda%gcc@8.2.0
         spack unload llvm@6.0.1
         else
         echo "Did not find expected clang 6.0.1"
@@ -259,22 +237,18 @@ case $sys in
         spack load llvm@6.0.1
         compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
         if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3+cuda%gcc@8.2.0
         export OMPI_CC=clang
         export OMPI_CXX=clang++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Full-Release
 	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DQMC_CUDA=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
+	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
 	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-        spack unload openmpi%gcc@8.2.0
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3+cuda%gcc@8.2.0
         spack unload llvm@6.0.1
         else
         echo "Did not find expected clang 6.0.1"
@@ -286,22 +260,18 @@ case $sys in
         spack load llvm@6.0.1
         compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
         if [ $compilerversion = "6.0.1" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3+cuda%gcc@8.2.0
         export OMPI_CC=clang
         export OMPI_CXX=clang++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Complex-Full-Release
 	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DQMC_CUDA=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
+	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
 	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
-        spack unload openmpi%gcc@8.2.0
+        spack unload openmpi@3.1.3+cuda%gcc@8.2.0
         spack unload llvm@6.0.1
         else
         echo "Did not find expected clang 6.0.1"
@@ -315,16 +285,11 @@ case $sys in
         spack load openmpi%gcc@4.8.5
         export OMPI_CC=clang
         export OMPI_CXX=clang++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG7-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-	export CTCFG="-DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV" 
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
         spack unload openmpi%gcc@4.8.5
         spack unload llvm@7.0.0
         else
@@ -335,15 +300,11 @@ case $sys in
         spack load llvm@7.0.0
         compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version//g' -e 's/(.*//g'`
         if [ $compilerversion = "7.0.0" ]; then
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG7-NoMPI-Release
-	export CTCFG="-DQMC_MPI=0 DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
+	export CTCFG="-DENABLE_SOA=0 -DQMC_MPI=0 DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
         spack unload llvm@7.0.0
         else
         echo "Did not find expected clang 7.0.0"
@@ -357,23 +318,19 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/mkl/bin/mklvars.sh intel64
+	source /opt/intel2018/mkl/bin/mklvars.sh intel64
         spack load gcc@8.2.0
         compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
         if [ $compilerversion = "8.2.0" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3~cuda%gcc@8.2.0
         export OMPI_CC=gcc
         export OMPI_CXX=g++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC8-MKL-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload openmpi%gcc@8.2.0
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         else
         echo "Did not find expected gcc 8.2.0"
         fi
@@ -394,23 +351,19 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/mkl/bin/mklvars.sh intel64
+	source /opt/intel2018/mkl/bin/mklvars.sh intel64
         spack load gcc@8.2.0
         compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
         if [ $compilerversion = "8.2.0" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3~cuda%gcc@8.2.0
         export OMPI_CC=gcc
         export OMPI_CXX=g++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC8-MKL-SoA-Release
 	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DENABLE_SOA=1 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload openmpi%gcc@8.2.0
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         else
         echo "Did not find expected gcc 8.2.0"
         fi
@@ -423,7 +376,7 @@ case $sys in
 	export LIBRARY_PATH=$OLD_LIBRARY_PATH
 	export MKLROOT=$OLD_MKLROOT
 	;;
-    "build_intel2019")
+    "build_gcc5_mkl")
 	export OLD_PATH=$PATH
 	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 	export OLD_MANPATH=$MANPATH
@@ -431,11 +384,144 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/bin/compilervars.sh intel64
-        spack load gcc@8.2.0
+	source /opt/intel2018/mkl/bin/mklvars.sh intel64
+        spack load gcc@5.5.0
+        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
+        if [ $compilerversion = "5.5.0" ]; then
+        spack load openmpi@3.1.3~cuda%gcc@8.2.0
+        export OMPI_CC=gcc
+        export OMPI_CXX=g++
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-Release
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${DONLY}
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
+        else
+        echo "Did not find expected gcc 5.5.0"
+        fi
+        spack unload gcc@5.5.0
+	export PATH=$OLD_PATH
+	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
+	export MANPATH=$OLD_MANPATH
+	export NLSPATH=$OLD_NLSPATH
+	export CPATH=$OLD_CPATH
+	export LIBRARY_PATH=$OLD_LIBRARY_PATH
+	export MKLROOT=$OLD_MKLROOT
+	;;
+    "build_gcc5_mkl_complex")
+	export OLD_PATH=$PATH
+	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export OLD_MANPATH=$MANPATH
+	export OLD_NLSPATH=$NLSPATH
+	export OLD_CPATH=$CPATH
+	export OLD_LIBRARY_PATH=$LIBRARY_PATH
+	export OLD_MKLROOT=$MKLROOT
+	source /opt/intel2018/mkl/bin/mklvars.sh intel64
+        spack load gcc@5.5.0
+        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
+        if [ $compilerversion = "5.5.0" ]; then
+        spack load openmpi@3.1.3~cuda%gcc@8.2.0
+        export OMPI_CC=gcc
+        export OMPI_CXX=g++
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-Complex-Release
+	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DBUILD_AFQMC-1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${DONLY}
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
+        else
+        echo "Did not find expected gcc 5.5.0"
+        fi
+        spack unload gcc@5.5.0
+	export PATH=$OLD_PATH
+	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
+	export MANPATH=$OLD_MANPATH
+	export NLSPATH=$OLD_NLSPATH
+	export CPATH=$OLD_CPATH
+	export LIBRARY_PATH=$OLD_LIBRARY_PATH
+	export MKLROOT=$OLD_MKLROOT
+	;;
+    "build_gcc5_mkl_soa")
+	export OLD_PATH=$PATH
+	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export OLD_MANPATH=$MANPATH
+	export OLD_NLSPATH=$NLSPATH
+	export OLD_CPATH=$CPATH
+	export OLD_LIBRARY_PATH=$LIBRARY_PATH
+	export OLD_MKLROOT=$MKLROOT
+	source /opt/intel2018/mkl/bin/mklvars.sh intel64
+        spack load gcc@5.5.0
+        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
+        if [ $compilerversion = "5.5.0" ]; then
+        spack load openmpi@3.1.3~cuda%gcc@8.2.0
+        export OMPI_CC=gcc
+        export OMPI_CXX=g++
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-SoA-Release
+	export CTCFG="-DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${DONLY}
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
+        else
+        echo "Did not find expected gcc 5.5.0"
+        fi
+        spack unload gcc@5.5.0
+	export PATH=$OLD_PATH
+	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
+	export MANPATH=$OLD_MANPATH
+	export NLSPATH=$OLD_NLSPATH
+	export CPATH=$OLD_CPATH
+	export LIBRARY_PATH=$OLD_LIBRARY_PATH
+	export MKLROOT=$OLD_MKLROOT
+	;;
+    "build_gcc5_mkl_complex_soa")
+	export OLD_PATH=$PATH
+	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export OLD_MANPATH=$MANPATH
+	export OLD_NLSPATH=$NLSPATH
+	export OLD_CPATH=$CPATH
+	export OLD_LIBRARY_PATH=$LIBRARY_PATH
+	export OLD_MKLROOT=$MKLROOT
+	source /opt/intel2018/mkl/bin/mklvars.sh intel64
+        spack load gcc@5.5.0
+        compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
+        if [ $compilerversion = "5.5.0" ]; then
+        spack load openmpi@3.1.3~cuda%gcc@8.2.0
+        export OMPI_CC=gcc
+        export OMPI_CXX=g++
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-Complex-SoA-Release
+	export CTCFG="-DENABLE_SOA=1 -DQMC_COMPLEX=1 -DBUILD_AFQMC-1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${DONLY}
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
+        else
+        echo "Did not find expected gcc 5.5.0"
+        fi
+        spack unload gcc@5.5.0
+	export PATH=$OLD_PATH
+	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
+	export MANPATH=$OLD_MANPATH
+	export NLSPATH=$OLD_NLSPATH
+	export CPATH=$OLD_CPATH
+	export LIBRARY_PATH=$OLD_LIBRARY_PATH
+	export MKLROOT=$OLD_MKLROOT
+	;;
+    "build_intel2018")
+	export OLD_PATH=$PATH
+	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export OLD_MANPATH=$MANPATH
+	export OLD_NLSPATH=$NLSPATH
+	export OLD_CPATH=$CPATH
+	export OLD_LIBRARY_PATH=$LIBRARY_PATH
+	export OLD_MKLROOT=$MKLROOT
+	source /opt/intel2018/bin/compilervars.sh intel64
+        spack load gcc@7.2.0
+	spack load boost@1.61.0
 
-	#For Intel2019 we also setup QE
-	export QE_VERSION=6.3
+	#For Intel2018 we also setup QE
+	export QE_VERSION=6.4
         # QE version 6.x unpacks to qe-; Older versions 5.x uses espresso-
         export QE_PREFIX=qe-
 	export QE_BIN=${test_dir}/${sys}_QE/${QE_PREFIX}${QE_VERSION}/bin
@@ -458,16 +544,11 @@ case $sys in
 	else
 	    echo -- Found existing QE ${QE_VERSION} executable
 	fi
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2019-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -DBUILD_AFQMC=1 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload gcc@8.2.0
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Release
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload gcc@7.2.0
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -476,7 +557,7 @@ case $sys in
 	export LIBRARY_PATH=$OLD_LIBRARY_PATH
 	export MKLROOT=$OLD_MKLROOT
 	;;
-    "build_intel2019_soa")
+    "build_intel2018_soa")
 	export OLD_PATH=$PATH
 	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 	export OLD_MANPATH=$MANPATH
@@ -484,18 +565,14 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/bin/compilervars.sh intel64
-        spack load gcc@8.2.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2019-SoA-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_AFQMC=1 -DENABLE_SOA=1 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload gcc@8.2.0
+	source /opt/intel2018/bin/compilervars.sh intel64
+        spack load gcc@7.2.0
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-SoA-Release
+	export CTCFG="-DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_AFQMC=0 -DENABLE_SOA=1 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload gcc@7.2.0
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -504,7 +581,7 @@ case $sys in
 	export LIBRARY_PATH=$OLD_LIBRARY_PATH
 	export MKLROOT=$OLD_MKLROOT
 	;;
-    "build_intel2019_nompi")
+    "build_intel2018_nompi")
 	export OLD_PATH=$PATH
 	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 	export OLD_MANPATH=$MANPATH
@@ -512,18 +589,14 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/bin/compilervars.sh intel64
-        spack load gcc@8.2.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2019-NoMPI-Release
-	export CTCFG="-DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DQMC_MPI=0 -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload gcc@8.2.0
+	source /opt/intel2018/bin/compilervars.sh intel64
+        spack load gcc@7.2.0
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-NoMPI-Release
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DQMC_MPI=0 -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload gcc@7.2.0
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -532,7 +605,7 @@ case $sys in
 	export LIBRARY_PATH=$OLD_LIBRARY_PATH
 	export MKLROOT=$OLD_MKLROOT
 	;;
-    "build_intel2019_nompi_soa")
+    "build_intel2018_nompi_soa")
 	export OLD_PATH=$PATH
 	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 	export OLD_MANPATH=$MANPATH
@@ -540,18 +613,14 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/bin/compilervars.sh intel64
-        spack load gcc@8.2.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2019-NoMPI-SoA-Release
-	export CTCFG="-DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DQMC_MPI=0 -DENABLE_SOA=1 -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel/ -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload gcc@8.2.0
+	source /opt/intel2018/bin/compilervars.sh intel64
+        spack load gcc@7.2.0
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-NoMPI-SoA-Release
+	export CTCFG="-DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DQMC_MPI=0 -DENABLE_SOA=1 -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload gcc@7.2.0
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -564,19 +633,15 @@ case $sys in
         spack load gcc@8.2.0
         compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
         if [ $compilerversion = "8.2.0" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3~cuda%gcc@8.2.0
         export OMPI_CC=gcc
         export OMPI_CXX=g++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC8-Complex-Release
-	export CTCFG="-DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload openmpi%gcc@8.2.0
+	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         else
         echo "Did not find expected gcc 8.2.0"
         fi
@@ -590,23 +655,19 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/mkl/bin/mklvars.sh intel64
+	source /opt/intel2018/mkl/bin/mklvars.sh intel64
         spack load gcc@8.2.0
         compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
         if [ $compilerversion = "8.2.0" ]; then
-        spack load openmpi%gcc@8.2.0
+        spack load openmpi@3.1.3~cuda%gcc@8.2.0
         export OMPI_CC=gcc
         export OMPI_CXX=g++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC8-MKL-Complex-Release
-	export CTCFG="-DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload openmpi%gcc@8.2.0
+	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         else
         echo "Did not find expected gcc 8.2.0"
         fi
@@ -619,7 +680,7 @@ case $sys in
 	export LIBRARY_PATH=$OLD_LIBRARY_PATH
 	export MKLROOT=$OLD_MKLROOT
 	;;
-    "build_intel2019_complex")
+    "build_intel2018_complex")
 	export OLD_PATH=$PATH
 	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 	export OLD_MANPATH=$MANPATH
@@ -627,18 +688,14 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/bin/compilervars.sh intel64
-        spack load gcc@8.2.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2019-Complex-Release
-	export CTCFG="-DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload gcc@8.2.0
+	source /opt/intel2018/bin/compilervars.sh intel64
+        spack load gcc@7.2.0
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Complex-Release
+	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=0 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload gcc@7.2.0
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -647,7 +704,7 @@ case $sys in
 	export LIBRARY_PATH=$OLD_LIBRARY_PATH
 	export MKLROOT=$OLD_MKLROOT
 	;;
-    "build_intel2019_complex_soa")
+    "build_intel2018_complex_soa")
 	export OLD_PATH=$PATH
 	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 	export OLD_MANPATH=$MANPATH
@@ -655,18 +712,14 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/bin/compilervars.sh intel64
-        spack load gcc@8.2.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2019-Complex-SoA-Release
-	export CTCFG="-DQMC_COMPLEX=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload gcc@8.2.0
+	source /opt/intel2018/bin/compilervars.sh intel64
+        spack load gcc@7.2.0
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Complex-SoA-Release
+	export CTCFG="-DQMC_COMPLEX=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=0 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload gcc@7.2.0
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -675,7 +728,7 @@ case $sys in
 	export LIBRARY_PATH=$OLD_LIBRARY_PATH
 	export MKLROOT=$OLD_MKLROOT
 	;;
-    "build_intel2019_mixed")
+    "build_intel2018_mixed")
 	export OLD_PATH=$PATH
 	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 	export OLD_MANPATH=$MANPATH
@@ -683,18 +736,14 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/bin/compilervars.sh intel64
-        spack load gcc@8.2.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2019-Mixed-Release
-	export CTCFG="-DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload gcc@8.2.0
+	source /opt/intel2018/bin/compilervars.sh intel64
+        spack load gcc@7.2.0
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Mixed-Release
+	export CTCFG="-DENABLE_SOA=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload gcc@7.2.0
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -703,7 +752,7 @@ case $sys in
 	export LIBRARY_PATH=$OLD_LIBRARY_PATH
 	export MKLROOT=$OLD_MKLROOT
 	;;
-    "build_intel2019_mixed_soa")
+    "build_intel2018_mixed_soa")
 	export OLD_PATH=$PATH
 	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 	export OLD_MANPATH=$MANPATH
@@ -711,18 +760,14 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/bin/compilervars.sh intel64
-        spack load gcc@8.2.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2019-Mixed-SoA-Release
+	source /opt/intel2018/bin/compilervars.sh intel64
+        spack load gcc@7.2.0
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Mixed-SoA-Release
 	export CTCFG="-DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload gcc@8.2.0
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload gcc@7.2.0
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -731,7 +776,7 @@ case $sys in
 	export LIBRARY_PATH=$OLD_LIBRARY_PATH
 	export MKLROOT=$OLD_MKLROOT
 	;;
-    "build_intel2019_complex_mixed")
+    "build_intel2018_complex_mixed")
 	export OLD_PATH=$PATH
 	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 	export OLD_MANPATH=$MANPATH
@@ -739,18 +784,14 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/bin/compilervars.sh intel64
-        spack load gcc@8.2.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2019-Complex-Mixed-Release
-	export CTCFG="-DQMC_MIXED_PRECISION=1 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload gcc@8.2.0
+	source /opt/intel2018/bin/compilervars.sh intel64
+        spack load gcc@7.2.0
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Complex-Mixed-Release
+	export CTCFG="-DENABLE_SOA=0 -DQMC_MIXED_PRECISION=1 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload gcc@7.2.0
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -759,7 +800,7 @@ case $sys in
 	export LIBRARY_PATH=$OLD_LIBRARY_PATH
 	export MKLROOT=$OLD_MKLROOT
 	;;
-    "build_intel2019_complex_mixed_soa")
+    "build_intel2018_complex_mixed_soa")
 	export OLD_PATH=$PATH
 	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 	export OLD_MANPATH=$MANPATH
@@ -767,18 +808,14 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/bin/compilervars.sh intel64
-        spack load gcc@8.2.0
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2019-Complex-Mixed-SoA-Release
+	source /opt/intel2018/bin/compilervars.sh intel64
+        spack load gcc@7.2.0
+	spack load boost@1.61.0
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Complex-Mixed-SoA-Release
 	export CTCFG="-DQMC_MIXED_PRECISION=1 -DQMC_COMPLEX=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short.*diamondC_.x1x1_pp-.mc_.*' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-        spack unload gcc@8.2.0
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+        spack unload gcc@7.2.0
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -796,24 +833,20 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/mkl/bin/mklvars.sh intel64
+	source /opt/intel2018/mkl/bin/mklvars.sh intel64
         spack load gcc@7.2.0
         compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
         if [ $compilerversion = "7.2.0" ]; then
-#        spack load openmpi%gcc@8.2.0
+#        spack load openmpi@3.1.3~cuda%gcc@8.2.0
 #        export OMPI_CC=gcc
 #        export OMPI_CXX=g++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=PGI2018-NoMPI-MKL-Release
 #	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
-	export CTCFG="-DCMAKE_C_COMPILER=pgcc -DCMAKE_CXX_COMPILER=pgc++ -DQMC_MPI=0 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-#        spack unload openmpi%gcc@8.2.0
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=pgcc -DCMAKE_CXX_COMPILER=pgc++ -DQMC_MPI=0 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+#        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
+	spack unload boost@1.61.0
         else
         echo "Did not find expected gcc 7.2.0"
         fi
@@ -835,24 +868,20 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	source /opt/intel2019/mkl/bin/mklvars.sh intel64
+	source /opt/intel2018/mkl/bin/mklvars.sh intel64
         spack load gcc@7.2.0
         compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'`
         if [ $compilerversion = "7.2.0" ]; then
-#        spack load openmpi%gcc@8.2.0
+#        spack load openmpi@3.1.3~cuda%gcc@8.2.0
 #        export OMPI_CC=gcc
 #        export OMPI_CXX=g++
+	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=PGI2018-NoMPI-SoA-MKL-Release
 #	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
 	export CTCFG="-DCMAKE_C_COMPILER=pgcc -DCMAKE_CXX_COMPILER=pgc++ -DENABLE_SOA=1 -DQMC_MPI=0 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
- 	ctest ${CTCFG} -R deterministic ${LONGCFG} --track Deterministic
-        sed -i "s/Deterministic/Short/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'short' -LE unstable ${LONGCFG} --track Short
-        sed -i "s/Short/Performance/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R 'performance' -LE unstable ${LONGCFG} --track Performance
-        sed -i "s/Performance/Unstable/g" Testing/TAG  # Hack to change cached track
-	ctest ${CTCFG} -R short -L unstable ${LONGCFG} --track Unstable
-#        spack unload openmpi%gcc@8.2.0
+ 	ctest ${CTCFG} ${GLOBALTCFG}
+	spack unload boost@1.61.0
+#        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
         else
         echo "Did not find expected gcc 7.2.0"
         fi

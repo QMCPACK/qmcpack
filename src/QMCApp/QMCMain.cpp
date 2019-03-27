@@ -21,6 +21,7 @@
  * @brief Implments QMCMain operators.
  */
 #include "QMCApp/QMCMain.h"
+#include "Platforms/accelerators.hpp"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/HamiltonianPool.h"
@@ -82,15 +83,23 @@ QMCMain::QMCMain(Communicate* c)
   qmc_common.print_git_info_if_present(app_summary());
   app_summary() << "=====================================================\n";
   qmc_common.print_options(app_log());
-  app_summary() << "\n  MPI Ranks             = " << OHMMS::Controller->size()
-                << "\n  MPI Ranks per group   = " << myComm->size()
-                << "\n  MPI Group ID          = " << myComm->getGroupID()
-                << "\n  MPI Ranks per node    = " << NodeComm.size() << std::endl;
+  app_summary()
+#if !defined(HAVE_MPI)
+      << "\n  Built without MPI. Running in serial or with OMP threading only." << std::endl
+#endif
+      << "\n  Total number of MPI ranks = " << OHMMS::Controller->size()
+      << "\n  Number of MPI groups      = " << myComm->getNumGroups()
+      << "\n  MPI group ID              = " << myComm->getGroupID()
+      << "\n  Number of ranks in group  = " << myComm->size()
+      << "\n  MPI ranks per node        = " << NodeComm.size()
+      << std::endl;
+  // assign accelerators within a node
+  assignAccelerators(NodeComm);
 #pragma omp parallel
   {
     const int L1_tid = omp_get_thread_num();
     if (L1_tid == 0)
-      app_summary() << "  OMP 1st level threads = " << omp_get_num_threads() << std::endl;
+      app_summary() << "  OMP 1st level threads     = " << omp_get_num_threads() << std::endl;
 #pragma omp parallel
     {
       const int L2_tid         = omp_get_thread_num();
@@ -100,7 +109,7 @@ QMCMain::QMCMain(Communicate* c)
         if (L2_num_threads == 1)
           app_summary() << "  OMP nested threading disabled or only 1 thread on the 2nd level" << std::endl;
         else
-          app_summary() << "  OMP 2nd level threads = " << L2_num_threads << std::endl;
+          app_summary() << "  OMP 2nd level threads     = " << L2_num_threads << std::endl;
       }
     }
   }

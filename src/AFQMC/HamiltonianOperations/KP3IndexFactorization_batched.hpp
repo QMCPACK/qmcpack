@@ -291,7 +291,7 @@ class KP3IndexFactorization_batched
       copy_n(P1D.origin(),NMO*NMO,P1.origin());
 
       // add H1 + vn0 and symmetrize
-      using std::conj;
+      using ma::conj;
 
       for(int K=0, nk0=0; K<nkpts; ++K) {
         for(int i=0, I=nk0; i<nopk[K]; i++, I++) {
@@ -526,60 +526,63 @@ class KP3IndexFactorization_batched
         cnt += dev_scl_factors.num_elements();
         SPRealType scl = (walker_type==CLOSED?2.0:1.0);
         size_t nqk=1;  
-        for(int Q=0; Q<nkpts; ++Q) {
-          if( Qmap[Q] < 0 ) continue;
-          bool haveKE=false;
+        for(int spin=0; spin<nspin; ++spin) {
+          nqk=1;  
+          for(int Q=0; Q<nkpts; ++Q) {
+            if( Qmap[Q] < 0 ) continue;
+            bool haveKE=false;
 
-          // simple implementation for now
-          Aarray.clear();
-          Barray.clear();
-          Carray.clear();
-          scl_factors.clear();  
-          kdiag.clear();  
-          batch_cnt=0;
-          Sp3Tensor_ref T1(dev_scl_factors.origin()+dev_scl_factors.num_elements(),
+            // simple implementation for now
+            Aarray.clear();
+            Barray.clear();
+            Carray.clear();
+            scl_factors.clear();  
+            kdiag.clear();  
+            batch_cnt=0;
+            Sp3Tensor_ref T1(dev_scl_factors.origin()+dev_scl_factors.num_elements(),
                                 {batch_size,nwalk*nocc_max,nocc_max*nchol_max});
 
-          for(int Ka=0; Ka<nkpts; ++Ka) {
-            int K0 = ((Qmap[Q]>0)?0:Ka);
-            for(int Kb=K0; Kb<nkpts; ++Kb) {
-              int Qm = kminus[Q];
-              int Kl_ = QKToK2[Qm][Kb];
-              int Kk = QKToK2[Q][Ka];
+            for(int Ka=0; Ka<nkpts; ++Ka) {
+              int K0 = ((Qmap[Q]>0)?0:Ka);
+              for(int Kb=K0; Kb<nkpts; ++Kb) {
+                int Qm = kminus[Q];
+                int Kl_ = QKToK2[Qm][Kb];
+                int Kk = QKToK2[Q][Ka];
 
-              if(addEJ && Ka==Kb) 
-                kdiag.push_back(batch_cnt);  
+                if(addEJ && Ka==Kb) 
+                  kdiag.push_back(batch_cnt);  
 
-              if( Qmap[Q] > 0 )
-                Aarray.push_back(sp_pointer(LQKbnl[nd*nspin*number_of_symmetric_Q+Qmap[Q]-1][Kb].origin()));
-              else  
-                Aarray.push_back(sp_pointer(LQKank[nd*nspin*nkpts+Qm][Kb].origin()));
-              Barray.push_back(GKK[0][Ka][Kl_].origin());
-              Carray.push_back(T1[batch_cnt++].origin());
-              Aarray.push_back(sp_pointer(LQKank[nd*nspin*nkpts+Q][Ka].origin()));
-              Barray.push_back(GKK[0][Kb][Kk].origin());
-              Carray.push_back(T1[batch_cnt++].origin());
+                if( Qmap[Q] > 0 )
+                  Aarray.push_back(sp_pointer(LQKbnl[nd*nspin*number_of_symmetric_Q+
+                                            spin*number_of_symmetric_Q+Qmap[Q]-1][Kb].origin()));
+                else  
+                  Aarray.push_back(sp_pointer(LQKank[nd*nspin*nkpts+spin*nkpts+Qm][Kb].origin()));
+                Barray.push_back(GKK[spin][Ka][Kl_].origin());
+                Carray.push_back(T1[batch_cnt++].origin());
+                Aarray.push_back(sp_pointer(LQKank[nd*nspin*nkpts+spin*nkpts+Q][Ka].origin()));
+                Barray.push_back(GKK[spin][Kb][Kk].origin());
+                Carray.push_back(T1[batch_cnt++].origin());
+ 
+                if(Qmap[Q]>0 || Ka==Kb)
+                  scl_factors.push_back(SPComplexType(-scl*0.5));
+                else
+                  scl_factors.push_back(SPComplexType(-scl));
 
-              if(Qmap[Q]>0 || Ka==Kb)
-                scl_factors.push_back(SPComplexType(-scl*0.5));
-              else
-                scl_factors.push_back(SPComplexType(-scl));
-
-              if( batch_cnt >= batch_size ) {
-                gemmBatched('T','N',nocc_max*nchol_max,nwalk*nocc_max,nmo_max,
+                if( batch_cnt >= batch_size ) {
+                  gemmBatched('T','N',nocc_max*nchol_max,nwalk*nocc_max,nmo_max,
                                             SPComplexType(1.0),Aarray.data(),nmo_max,
                                                                           Barray.data(),nmo_max,
                                             SPComplexType(0.0),Carray.data(),nocc_max*nchol_max,
                                                                           Aarray.size());
 
-                copy_n(scl_factors.data(),scl_factors.size(),dev_scl_factors.origin());
-                using ma::batched_dot_wabn_wban; 
-                batched_dot_wabn_wban(scl_factors.size(),nwalk,nocc_max,nchol_max,
+                  copy_n(scl_factors.data(),scl_factors.size(),dev_scl_factors.origin());
+                  using ma::batched_dot_wabn_wban; 
+                  batched_dot_wabn_wban(scl_factors.size(),nwalk,nocc_max,nchol_max,
                                          dev_scl_factors.origin(),   
                                          T1.origin(),   
                                          to_address(E[0].origin())+1,E.stride(0));
 
-                if(addEJ) {
+                  if(addEJ) {
                     int nc0 = Q2vbias[Q]/2; //std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
                     copy_n(kdiag.data(),kdiag.size(),IMats.origin());
                     using ma::batched_Tab_to_Klr;
@@ -589,34 +592,34 @@ class KP3IndexFactorization_batched
                                         T1.origin(),
                                         Kl.origin(),
                                         Kr.origin());
-                }    
+                  }    
 
-                // reset
-                Aarray.clear();
-                Barray.clear();
-                Carray.clear();
-                scl_factors.clear();
-                kdiag.clear();
-                batch_cnt=0;
+                  // reset
+                  Aarray.clear();
+                  Barray.clear();
+                  Carray.clear();
+                  scl_factors.clear();
+                  kdiag.clear();
+                  batch_cnt=0;
+                }
               }
-            }
-          }  
+            }  
 
-          if( batch_cnt > 0 ) {
-            gemmBatched('T','N',nocc_max*nchol_max,nwalk*nocc_max,nmo_max,
+            if( batch_cnt > 0 ) {
+              gemmBatched('T','N',nocc_max*nchol_max,nwalk*nocc_max,nmo_max,
                                             SPComplexType(1.0),Aarray.data(),nmo_max,
                                                                           Barray.data(),nmo_max,
                                             SPComplexType(0.0),Carray.data(),nocc_max*nchol_max,
                                                                           Aarray.size());
 
-            copy_n(scl_factors.data(),scl_factors.size(),dev_scl_factors.origin());
-            using ma::batched_dot_wabn_wban;
-            batched_dot_wabn_wban(scl_factors.size(),nwalk,nocc_max,nchol_max,
+              copy_n(scl_factors.data(),scl_factors.size(),dev_scl_factors.origin());
+              using ma::batched_dot_wabn_wban;
+              batched_dot_wabn_wban(scl_factors.size(),nwalk,nocc_max,nchol_max,
                                          dev_scl_factors.origin(),
                                          T1.origin(),
                                          to_address(E[0].origin())+1,E.stride(0));
 
-            if(addEJ) {
+              if(addEJ) {
                 int nc0 = Q2vbias[Q]/2; //std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
                 copy_n(kdiag.data(),kdiag.size(),IMats.origin());
                 using ma::batched_Tab_to_Klr;
@@ -626,11 +629,10 @@ class KP3IndexFactorization_batched
                                         T1.origin(),
                                         Kl.origin(),
                                         Kr.origin());
+              }
             }
-          }
-        } // Q
-        if(walker_type==COLLINEAR) 
-          APP_ABORT("Error: Not implemented.\n");
+          } // Q
+        } // COLLINEAR 
       }  
 
       if(addEJ) {

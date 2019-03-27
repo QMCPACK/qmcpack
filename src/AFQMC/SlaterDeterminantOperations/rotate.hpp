@@ -231,7 +231,10 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
  *  Since we only rotate the "local" cholesky matrix, the algorithm is only parallelized
  *  over a node. In principle, it is possible to spread this over equivalent nodes.
  */ 
-template<class task_group, class PsiT_Type>
+template<typename T, class task_group, class PsiT_Type, 
+         typename = typename std::enable_if_t<std::is_same<T,std::complex<double>>::value or
+                                              std::is_same<T,std::complex<float>>::value>
+         >
 SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_group& TG, PsiT_Type *Alpha, PsiT_Type *Beta, SpVType_shm_csr_matrix const& CholMat, double cutoff=1e-6)
 {
   int NAEA = Alpha->size(0); 
@@ -343,6 +346,21 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_g
   }
   ucsr_wrapper.push_buffer();
   return SpCType_shm_csr_matrix(std::move(ucsr)); 
+}
+
+// This is needed to allow generic implementation of SparseTensorIO while catching errors at compile time.
+template<typename T, class task_group, class PsiT_Type, 
+         typename = typename std::enable_if_t<not( std::is_same<T,std::complex<double>>::value or
+                                              std::is_same<T,std::complex<float>>::value)>,
+         typename = void   
+         >
+SpVType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type, task_group& TG, PsiT_Type *Alpha, PsiT_Type *Beta, SpVType_shm_csr_matrix const& CholMat, double cutoff=1e-6)
+{
+  print_stacktrace
+  throw std::runtime_error("Error: Incorrect template parameter in halfRotateCholeskyMatrixForBias. \n"); 
+  using Alloc = shared_allocator<SPRealType>;
+  SpVType_shm_csr_matrix csr(tp_ul_ul{1,1},tp_ul_ul{0,0},1,Alloc(TG.Node()));
+  return csr;
 }
 
 }

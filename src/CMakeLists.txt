@@ -160,6 +160,7 @@ ENDIF(HAVE_OOMPI)
     Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
     Platforms/sysutil.cpp
+    Platforms/accelerators.cpp
     QMCFactory/OneDimGridFactory.cpp
     Message/Communicate.cpp 
     Message/MPIObjectBase.cpp 
@@ -193,7 +194,11 @@ ENDIF()
   ELSE(QMC_CUDA)
     ADD_LIBRARY(qmcutil ${UTILITIES} ${ADIOS})
   ENDIF(QMC_CUDA)
-  
+
+  IF(HAVE_CUDA)
+    TARGET_LINK_LIBRARIES(qmcutil ${CUDA_LIBRARIES})
+  ENDIF(HAVE_CUDA)
+
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
     TARGET_COMPILE_DEFINITIONS(${TARGET} PRIVATE "USE_FAKE_RNG")
@@ -345,12 +350,12 @@ ENDIF()
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
     SUBDIRS(type_traits/tests)
-  
     SUBDIRS(ParticleBase/tests)
     SUBDIRS(Estimators/tests)
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
+    SUBDIRS(OpenMP/tests)
   endif() #}
 
 endif() #}}}

@@ -40,7 +40,7 @@ namespace afqmc
   void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
     using std::get;
-    using std::conj;
+    using ma::conj;
     int nspins = 2; //(walker_type==COLLINEAR?2:1);
     size_t nkev = HamOp.number_of_ke_vectors();
     assert(E.dimensionality==2);
@@ -484,7 +484,7 @@ namespace afqmc
         ov0 *= ov_;
         calculate_overlaps(0,1,1,abij,local_QQ0inv1,Qwork,local_ov[1]);
         for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) 
-          Ov[iw] += std::conj(std::get<2>(*it))*ov0*
+          Ov[iw] += ma::conj(std::get<2>(*it))*ov0*
                     local_ov[0][std::get<0>(*it)]*
                     local_ov[1][std::get<1>(*it)];
 
@@ -605,7 +605,7 @@ namespace afqmc
           size_t ic=0;
           for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it,++ic) 
             if(ic%local_group_comm.size()==local_group_comm.rank())
-              Ov[iw] += std::conj(std::get<2>(*it))*ov0*
+              Ov[iw] += ma::conj(std::get<2>(*it))*ov0*
                       unique_overlaps[0][std::get<0>(*it)]*
                       unique_overlaps[1][std::get<1>(*it)];
 
@@ -736,7 +736,7 @@ namespace afqmc
    * TODO: Implement.
    */
   template<class WlkSet, class MatG, class CVec>
-  void PHMSD::BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVec &denom, bool path_restoration, bool free_projection)
+  void PHMSD::WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec &denom, bool path_restoration, bool free_projection, bool back_propagated)
   {
     APP_ABORT(" Error: Back Propagation not implemented for PHMSD. \n");
   }
@@ -780,7 +780,7 @@ namespace afqmc
 	local_ov[0][0] = 1.0;
         calculate_overlaps(0,1,0,abij,local_QQ0inv0,Qwork,local_ov[0]);
 	for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) { 
-          Ov[iw] += std::conj(std::get<2>(*it))*
+          Ov[iw] += ma::conj(std::get<2>(*it))*
                     ov0*local_ov[0][std::get<0>(*it)]*
                     ((walker_type==CLOSED)?(ov0*local_ov[0][std::get<0>(*it)]):(ComplexType(1.0,0.0)));
         }
@@ -825,7 +825,7 @@ namespace afqmc
           int cnt=0;
           for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it, cnt++) 
             if(cnt%local_group_comm.size()==local_group_comm.rank())
-              Ov[iw] += std::conj(std::get<2>(*it))*ov*
+              Ov[iw] += ma::conj(std::get<2>(*it))*ov*
                     unique_overlaps[0][std::get<0>(*it)]*
                     ((walker_type==CLOSED)?(ov*unique_overlaps[0][std::get<0>(*it)]):(ComplexType(1.0,0.0)));
         }
@@ -853,7 +853,7 @@ namespace afqmc
         ov0 *= ov_;
         calculate_overlaps(0,1,1,abij,local_QQ0inv1,Qwork,local_ov[1]);
         for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) {
-          Ov[iw] += std::conj(std::get<2>(*it))*ov0*
+          Ov[iw] += ma::conj(std::get<2>(*it))*ov0*
                     local_ov[0][std::get<0>(*it)]*
                     local_ov[1][std::get<1>(*it)];
         }
@@ -918,7 +918,7 @@ namespace afqmc
           size_t cnt=0;
           for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it, cnt++) {
             if(cnt%local_group_comm.size()==local_group_comm.rank())
-              Ov[iw] += std::conj(std::get<2>(*it))*ov*
+              Ov[iw] += ma::conj(std::get<2>(*it))*ov*
                     unique_overlaps[0][std::get<0>(*it)]*
                     unique_overlaps[1][std::get<1>(*it)];
           }
@@ -1047,7 +1047,7 @@ namespace afqmc
 
     using std::get;
     using ma::T;
-    using std::conj;
+    using ma::conj;
     using std::norm;
     assert(v.num_elements() == local_number_of_cholesky_vectors());
     std::fill_n(v.origin(),v.num_elements(),ComplexType(0));  

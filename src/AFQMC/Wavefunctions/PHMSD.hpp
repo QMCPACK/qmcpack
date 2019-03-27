@@ -340,7 +340,7 @@ class PHMSD: public AFQMCInfo
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
     template<class WlkSet, class MatG, class CVec>
-    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false);
+    void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false, bool back_propagated=false);
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
      *   with a format consistent with (and expected by) the vbias routine.
