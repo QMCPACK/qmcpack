@@ -102,7 +102,7 @@ class HamiltonianFactory
     m_param.put(cur);
 
     app_log()<<"\n****************************************************\n"
-           <<"               Initializating Hamiltonian \n"
+           <<"               Initializing Hamiltonian \n"
            <<"****************************************************\n"
            <<std::endl;
 
