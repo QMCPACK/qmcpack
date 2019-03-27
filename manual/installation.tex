@@ -243,11 +243,11 @@ QMC_MIXED_PRECISION   Build the mixed precision (mixing double/float) version
                       The GPU support is quite mature.
                       Use always double for host side base and full precision
                       and use float and double for CUDA base and full precision.
+ENABLE_SOA            Enable data layout and algorithm optimizations using  
+                      Structure-of-Array (SoA) datatypes (1:yes (default), 0:no).  
 ENABLE_TIMERS         Enable fine-grained timers (1:yes, 0:no (default)).
                       Timers are off by default to avoid potential slowdown in small
                       systems. For large systems (100+ electrons) there is no risk.
-ENABLE_SOA            (Experimental) Enable CPU optimization and GPU support using
-                      Structure-of-Array (SoA) datatypes (1:yes, 0:no (default)).
 \end{shade}
 
 \item General build options
