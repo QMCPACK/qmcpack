@@ -1071,6 +1071,21 @@ def gp_opt(E,dE,mol_pos,GP_info):
             plt.xlabel('Local Minimum')
             plt.ylabel('E')
             plt.show()
+            if d == 1:
+                npts = 100
+                plot_points = np.reshape(np.linspace(GP_info.hyper_cube[0,0],\
+                    GP_info.hyper_cube[0,1],num=npts),[npts,1])
+                #Et = np.reshape(opt_surface_f(plot_points,GP_info.opt_fun),[npts,1])
+                
+                plot_points_norm = norm_pos(plot_points,GP_info.hyper_cube)
+                
+                gp_E = np.matmul(np.exp(2.0*hyp_parm[1])*cmgp(plot_points_norm,\
+                    mol_pos_norm,np.exp(-2.0*hyp_parm[0])),Co_GP)
+                gp_E_inv,gp_E_dE = inv_multiscale_E(E_parm,gp_E,0*gp_E) 
+                plt.figure()
+                #plt.plot(plot_points,gp_E_inv,'y-',plot_points,Et,'g-',mol_pos,E,'b.',best_pos, best_E,'ro')
+                plt.plot(plot_points,gp_E_inv,'y-',mol_pos,E,'b.',best_pos, best_E,'ro')
+                plt.show()
             
             
          
