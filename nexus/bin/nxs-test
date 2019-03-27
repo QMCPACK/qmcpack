@@ -304,6 +304,30 @@ def nlog_restore():
 #end def nlog_restore
 
 
+# logging functions for tests
+def nlog(msg,n=0,indent='  '):
+    if len(msg)>0:
+        indent = n*indent
+        msg=indent+msg.replace('\n','\n'+indent)+'\n'
+    #end if
+    sys.stdout.write(msg)
+#end def nlog
+
+def nmessage(msg,header=None,n=0):
+    if header is None:
+        nlog(msg,n=n)
+    else:
+        nlog(header,n=n)
+        nlog(msg,n=n+1)
+    #end if
+#end def nmessage
+
+def nerror(msg,header='nexus test',n=0):
+    nmessage(msg,header+' error:',n=n)
+    sys.exit(1)
+#end def nerror
+
+
 # enter the current testing directory
 def nenter(path=None,preserve=False,relative=False):
     if not relative:
@@ -2346,7 +2370,7 @@ def machines():
             if global_data['job_ref_table']:
                 sname = "'{0}'".format(name)
                 stype = "'{0}'".format(jtype)
-                print "        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command)
+                nlog("        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command))
                 continue
             #end if
             ref_command = job_run_ref[name,jtype]
@@ -3287,11 +3311,11 @@ def execute(command,verbose=False,skip=False):
     out,err = '',''
     if skip:
         if verbose:
-            print 'Would have executed:\n  '+command
+            print('Would have executed:\n  '+command)
         #end if
     else:
         if verbose:
-            print 'Executing:\n  '+command
+            print('Executing:\n  '+command)
         #end if
         process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
         out,err = process.communicate()
@@ -3309,7 +3333,7 @@ def regenerate_reference(update=False,overwrite=True):
     #end if
     os.makedirs(refgen_dir)
 
-    print 'generating reference data in {0}'.format(refgen_dir)
+    nlog('generating reference data in {0}'.format(refgen_dir))
 
     # create directory for example reference generation
     refgen_example_dir = os.path.join(refgen_dir,'user_examples')
@@ -3320,23 +3344,27 @@ def regenerate_reference(update=False,overwrite=True):
     # copy over nexus user examples into reference generation directory
     out,err,rc = execute('rsync -av {0}/* {1}/'.format(example_dir,refgen_example_dir))
     if rc>0:
-        print '  rsync of example directory failed, exiting'
-        exit(1)
+        nerror('rsync of example directory failed, exiting',n=1)
     #end if
 
     # execute all example scripts in generate_only mode
     for label,einfo in example_information.iteritems():
         for script_path in einfo['scripts']:
-            print '  generating reference data for '+script_path
+            nlog('generating reference data for '+script_path,n=1)
             path,script = os.path.split(script_path)
             path = os.path.join(refgen_example_dir,path)
             cwd = os.getcwd()
+            nlog('current directory: '+cwd,n=2)
+            nlog('entering directory: '+path,n=2)
             os.chdir(path)
+            if not os.path.exists('./'+script):
+                nerror('script file {} does not exist'.format(script),n=2)
+            #end if
             command = './'+script+' --generate_only --sleep=0.1'
+            nlog('executing command: '+command,n=2)
             out,err,rc = execute(command)
             if rc>0:
-                print('example script failed to run\nattempted command: {0}\nlocation: {1}'.format(command,script_path))
-                exit(1)
+                nerror('example script failed to run',n=2)
             #end if
             os.chdir(cwd)
         #end for
@@ -3467,9 +3495,9 @@ if __name__=='__main__':
         #end if
     #end for
     if options.list:
-        print 'Test list:'
+        print('Test list:')
         for test in tests:
-            print ' ',test.name
+            print(' ',test.name)
         #end for
         exit()
     #end if
@@ -3490,7 +3518,7 @@ if __name__=='__main__':
 
     # run each test and print the test outcome
     if not ctest:
-        print
+        print('')
     #end if
     n=0
     npassed = 0
@@ -3524,14 +3552,14 @@ if __name__=='__main__':
             if len(sn)<len(slt):
                 sn = (len(slt)-len(sn))*' '+sn
             #end if
-            print ' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(sn,slt,title,status,t2-t1)
+            print(' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(sn,slt,title,status,t2-t1))
         #end if
         
         # print more information if failed
         msg = test.message()
         if test.failed:
             if not ctest:
-                print msg
+                print(msg)
             else:
                 exit_fail(msg)
             #end if
@@ -3544,9 +3572,9 @@ if __name__=='__main__':
 
     # print pass/fail and timing summary
     if not ctest:
-        print
-        print '{0}% tests passed, {1} tests failed out of {2}'.format(int(100*float(npassed)/(1e-16+len(tests))),nfailed,len(tests))
-        print
-        print 'Total test time = {0:3.2f} sec'.format(tstop_all-tstart_all)
+        print('')
+        print('{0}% tests passed, {1} tests failed out of {2}'.format(int(100*float(npassed)/(1e-16+len(tests))),nfailed,len(tests)))
+        print('')
+        print('Total test time = {0:3.2f} sec'.format(tstop_all-tstart_all))
     #end if
 #end if
