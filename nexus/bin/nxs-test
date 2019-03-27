@@ -3033,10 +3033,10 @@ example_information = dict(
             'relax_vs_kpoints_example.py',
             ],
         files = [
-            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_111/relax.in'),
-            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_222/relax.in'),
-            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_444/relax.in'),
-            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_666/relax.in'),
+            ('pwscf'     ,'input','runs/relax/kgrid_111/relax.in'),
+            ('pwscf'     ,'input','runs/relax/kgrid_222/relax.in'),
+            ('pwscf'     ,'input','runs/relax/kgrid_444/relax.in'),
+            ('pwscf'     ,'input','runs/relax/kgrid_666/relax.in'),
             ],
         ),
     gamess_H2O = dict(
@@ -3047,11 +3047,11 @@ example_information = dict(
             'h2o_pp_casscf.py',
             ],
         files = [
-            ('gamess'    ,'input','gamess/H2O/runs/pp_hf/rhf.inp'),
-            ('gamess'    ,'input','gamess/H2O/runs/pp_cisd/rhf.inp'),
-            ('gamess'    ,'input','gamess/H2O/runs/pp_cisd/cisd.inp'),
-            ('gamess'    ,'input','gamess/H2O/runs/pp_casscf/rhf.inp'),
-            ('gamess'    ,'input','gamess/H2O/runs/pp_casscf/cas.inp'),
+            ('gamess'    ,'input','runs/pp_hf/rhf.inp'),
+            ('gamess'    ,'input','runs/pp_cisd/rhf.inp'),
+            ('gamess'    ,'input','runs/pp_cisd/cisd.inp'),
+            ('gamess'    ,'input','runs/pp_casscf/rhf.inp'),
+            ('gamess'    ,'input','runs/pp_casscf/cas.inp'),
             ],
         ),
     qmcpack_H2O = dict(
@@ -3060,10 +3060,10 @@ example_information = dict(
             'H2O.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/H2O/runs/scf.in'),
-            ('pw2qmcpack','input','qmcpack/H2O/runs/p2q.in'),
-            ('qmcpack'   ,'input','qmcpack/H2O/runs/opt.in.xml'),
-            ('qmcpack'   ,'input','qmcpack/H2O/runs/dmc.in.xml'),
+            ('pwscf'     ,'input','runs/scf.in'),
+            ('pw2qmcpack','input','runs/p2q.in'),
+            ('qmcpack'   ,'input','runs/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/dmc.in.xml'),
             ],
         ),
     qmcpack_LiH = dict(
@@ -3072,11 +3072,11 @@ example_information = dict(
             'LiH.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/LiH/runs/scf.in'),
-            ('pwscf'     ,'input','qmcpack/LiH/runs/nscf.in'),
-            ('pw2qmcpack','input','qmcpack/LiH/runs/p2q.in'),
-            ('qmcpack'   ,'input','qmcpack/LiH/runs/opt.in.xml'),
-            ('qmcpack'   ,'input','qmcpack/LiH/runs/dmc.in.xml'),
+            ('pwscf'     ,'input','runs/scf.in'),
+            ('pwscf'     ,'input','runs/nscf.in'),
+            ('pw2qmcpack','input','runs/p2q.in'),
+            ('qmcpack'   ,'input','runs/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/dmc.in.xml'),
             ],
         ),
     qmcpack_c20 = dict(
@@ -3085,10 +3085,10 @@ example_information = dict(
             'c20.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/c20/runs/c20/scf/scf.in'),
-            ('pw2qmcpack','input','qmcpack/c20/runs/c20/nscf/p2q.in'),
-            ('qmcpack'   ,'input','qmcpack/c20/runs/c20/opt/opt.in.xml'),
-            ('qmcpack'   ,'input','qmcpack/c20/runs/c20/qmc/qmc.in.xml'),
+            ('pwscf'     ,'input','runs/c20/scf/scf.in'),
+            ('pw2qmcpack','input','runs/c20/nscf/p2q.in'),
+            ('qmcpack'   ,'input','runs/c20/opt/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/c20/qmc/qmc.in.xml'),
             ],
         ),
     qmcpack_diamond = dict(
@@ -3098,11 +3098,11 @@ example_information = dict(
             'diamond_vacancy.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond/scf/scf.in'),
-            ('pw2qmcpack','input','qmcpack/diamond/runs/diamond/scf/conv.in'),
-            ('qmcpack'   ,'input','qmcpack/diamond/runs/diamond/vmc/vmc.in.xml'),
-            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond_vacancy/relax/relax.in'),
-            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond_vacancy/scf/scf.in'),
+            ('pwscf'     ,'input','runs/diamond/scf/scf.in'),
+            ('pw2qmcpack','input','runs/diamond/scf/conv.in'),
+            ('qmcpack'   ,'input','runs/diamond/vmc/vmc.in.xml'),
+            ('pwscf'     ,'input','runs/diamond_vacancy/relax/relax.in'),
+            ('pwscf'     ,'input','runs/diamond_vacancy/scf/scf.in'),
             ],
         ),
     qmcpack_graphene = dict(
@@ -3111,13 +3111,13 @@ example_information = dict(
             'graphene.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/scf/scf.in'),
-            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/nscf/nscf.in'),
-            ('pw2qmcpack','input','qmcpack/graphene/runs/graphene/nscf/p2q.in'),
-            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/nscf_opt/nscf.in'),
-            ('pw2qmcpack','input','qmcpack/graphene/runs/graphene/nscf_opt/p2q.in'),
-            ('qmcpack'   ,'input','qmcpack/graphene/runs/graphene/opt/opt.in.xml'),
-            ('qmcpack'   ,'input','qmcpack/graphene/runs/graphene/qmc/qmc.in.xml'),
+            ('pwscf'     ,'input','runs/graphene/scf/scf.in'),
+            ('pwscf'     ,'input','runs/graphene/nscf/nscf.in'),
+            ('pw2qmcpack','input','runs/graphene/nscf/p2q.in'),
+            ('pwscf'     ,'input','runs/graphene/nscf_opt/nscf.in'),
+            ('pw2qmcpack','input','runs/graphene/nscf_opt/p2q.in'),
+            ('qmcpack'   ,'input','runs/graphene/opt/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/graphene/qmc/qmc.in.xml'),
             ],
         ),
     qmcpack_oxygen_dimer = dict(
@@ -3126,10 +3126,10 @@ example_information = dict(
             'oxygen_dimer.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/oxygen_dimer/scale_1.0/scf.in'),
-            ('pw2qmcpack','input','qmcpack/oxygen_dimer/scale_1.0/p2q.in'),
-            ('qmcpack'   ,'input','qmcpack/oxygen_dimer/scale_1.0/opt.in.xml'),
-            ('qmcpack'   ,'input','qmcpack/oxygen_dimer/scale_1.0/qmc.in.xml'),
+            ('pwscf'     ,'input','scale_1.0/scf.in'),
+            ('pw2qmcpack','input','scale_1.0/p2q.in'),
+            ('qmcpack'   ,'input','scale_1.0/opt.in.xml'),
+            ('qmcpack'   ,'input','scale_1.0/qmc.in.xml'),
             ],
         ),
     )
@@ -3191,9 +3191,10 @@ def user_examples(label):
         gamess     = GamessInput,
         qmcpack    = QmcpackInput,
         )
+    example_path = einfo['path']
     for code,filetype,filepath in einfo['files']:
-        ref_filepath = os.path.join(ref_example_dir,filepath)
-        gen_filepath = os.path.join(test_dir,filepath)
+        ref_filepath = os.path.join(ref_example_dir,example_path,filepath)
+        gen_filepath = os.path.join(test_dir,example_path,filepath)
         # check that the reference file exists
         if not os.path.exists(ref_filepath):
             nfail('reference file is missing\nfile should be located at: {0}'.format(ref_filepath))
@@ -3325,7 +3326,7 @@ def execute(command,verbose=False,skip=False):
 
 
 
-def regenerate_reference(update=False,overwrite=True):
+def regenerate_reference(update=False):
     # create directory for reference file generation
     refgen_dir = './reference_regen'
     if os.path.exists(refgen_dir):
@@ -3349,10 +3350,10 @@ def regenerate_reference(update=False,overwrite=True):
 
     # execute all example scripts in generate_only mode
     for label,einfo in example_information.iteritems():
-        for script_path in einfo['scripts']:
-            nlog('generating reference data for '+script_path,n=1)
-            path,script = os.path.split(script_path)
-            path = os.path.join(refgen_example_dir,path)
+        example_path = einfo['path']
+        for script in einfo['scripts']:
+            nlog('generating reference data for '+script,n=1)
+            path = os.path.join(refgen_example_dir,example_path)
             cwd = os.getcwd()
             nlog('current directory: '+cwd,n=2)
             nlog('entering directory: '+path,n=2)
@@ -3375,9 +3376,10 @@ def regenerate_reference(update=False,overwrite=True):
         overwrite = False
         ref_example_dir = os.path.join(reference_dir,'user_examples')
         for label,einfo in example_information.iteritems():
+            example_path = einfo['path']
             for code,filetype,filepath in einfo['files']:
-                ref_filepath = os.path.join(ref_example_dir,filepath)
-                gen_filepath = os.path.join(refgen_example_dir,filepath)
+                ref_filepath = os.path.join(ref_example_dir,example_path,filepath)
+                gen_filepath = os.path.join(refgen_example_dir,example_path,filepath)
                 if overwrite or not os.path.exists(ref_filepath):
                     path,file = os.path.split(ref_filepath)
                     if not os.path.exists(path):
@@ -3443,7 +3445,11 @@ if __name__=='__main__':
                       )
     parser.add_option('--update_reference',dest='update_reference',
                       action='store_true',default=False,
-                      help='Regenerate reference data and overwrite existing reference files.  Intended for developer use (default=%default).'
+                      help='Regenerate reference data and update existing reference files.  Intended for developer use (default=%default).'
+                      )
+    parser.add_option('--update_mode',dest='update_mode',
+                      default='new',
+                      help='Modes of operation when updating reference files.  Intended for developer use.  Options are "new", "failed", "all" (default=%default).'
                       )
     parser.add_option('--job_ref_table',dest='job_ref_table',
                       action='store_true',default=False,
@@ -3458,6 +3464,11 @@ if __name__=='__main__':
     #end if
 
     # Regenerate reference data and exit
+    update_modes = ('new','failed','all')
+    if options.update_mode is not in update_modes:
+        msg = 'command line option "--update_mode" must be {}, received {}'.format(update_modes,options.update_mode)
+        exit_fail(msg)
+    #end if
     if options.generate_reference:
         regenerate_reference(update=False)
         exit()
