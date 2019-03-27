@@ -48,10 +48,12 @@ SET( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fs
 #     x86_64: -march
 #     powerpc: -mpcu
 #     arm: -mpcu
-#     default: none
+#     default or cray: none
 #--------------------------------------
-IF (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+IF ($ENV{CRAYPE_VERSION} MATCHES ".")
+ #it's a cray machine. Don't do anything
 
+ELSEIF (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
  #check if the user has already specified -march=XXXX option for cross-compiling.
  if(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
    # make sure that the user specifies -march= for both CMAKE_CXX_FLAGS and CMAKE_C_FLAGS.
