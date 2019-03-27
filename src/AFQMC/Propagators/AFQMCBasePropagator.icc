@@ -187,6 +187,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
       }
     }
     AFQMCTimers[propagate_timer]->stop();
+//std::cout<<" propg " <<std::endl;
 
     // 6. Calculate local energy/overlap
     AFQMCTimers[pseudo_energy_timer]->start();
@@ -197,6 +198,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     }
     TG.local_barrier();
     AFQMCTimers[pseudo_energy_timer]->stop();
+//std::cout<<" pseudo energy " <<std::endl;
 
     // 7. update weights/energy/etc, apply constrains/bounds/etc 
     AFQMCTimers[extra_timer]->start();
@@ -215,6 +217,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     }
     TG.local_barrier();
     AFQMCTimers[extra_timer]->stop();
+//std::cout<<" update " <<std::endl;
 
   }  
 }

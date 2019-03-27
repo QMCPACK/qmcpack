@@ -147,10 +147,27 @@ MultiArray1D setVector(T alpha, MultiArray1D&& a){
 }
 
 template<class MultiArray1D,
-        typename = typename std::enable_if< std::decay<MultiArray1D>::type::dimensionality == 1 >
+        typename = std::enable_if_t< std::decay<MultiArray1D>::type::dimensionality == 1 >
 >
 void zero_complex_part(MultiArray1D&& a){
         zero_complex_part(a.num_elements(),pointer_dispatch(a.origin()));
+}
+
+template<class MultiArray2D,
+        typename = std::enable_if_t< std::decay<MultiArray2D>::type::dimensionality == 2 >
+        >
+MultiArray2D set_identity(MultiArray2D&& m){
+        set_identity(m.size(1),m.size(0),pointer_dispatch(m.origin()),m.stride(0));
+        return std::forward<MultiArray2D>(m);
+}
+
+template<class MultiArray3D,
+        typename = std::enable_if_t< std::decay<MultiArray3D>::type::dimensionality == 3 >,
+        typename = void
+        >
+MultiArray3D set_identity(MultiArray3D&& m){
+        set_identity_strided(m.size(0),m.stride(0),m.size(2),m.size(1),pointer_dispatch(m.origin()),m.stride(1));
+        return std::forward<MultiArray3D>(m);
 }
 
 }

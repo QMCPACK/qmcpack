@@ -1180,9 +1180,8 @@ namespace afqmc
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         if( std::abs(ComplexType(*wset[iw].weight())) < 1e-10 ) continue;
-        using std::fill;
-        fill(GA21D_.begin(), GA21D_.end(), ComplexType(0.0));
-        fill(GB21D_.begin(), GB21D_.end(), ComplexType(0.0));
+        fill_n(GA21D_.origin(), GA21D_.num_elements(), ComplexType(0.0));
+        fill_n(GB21D_.origin(), GB21D_.num_elements(), ComplexType(0.0));
         ComplexType factor;
         if(path_restoration) {
           factor = *wset[iw].BPWeightFactor();

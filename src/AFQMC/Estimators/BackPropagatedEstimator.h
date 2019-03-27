@@ -13,6 +13,7 @@
 #include "io/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/NewTimer.h"
+#include "Utilities/Timer.h"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
@@ -103,7 +104,7 @@ class BackPropagatedEstimator: public EstimatorBase
       using std::fill_n;
       fill_n(denom.origin(),1,ComplexType(0.0,0.0));
       fill_n(DMBuffer.origin(), DMBuffer.num_elements(), ComplexType(0.0,0.0));
-      wfn0.WalkerAveragedDensityMatrix(wset, BackPropDM, denom, path_restoration, !importanceSampling, back_propagate);
+      wfn0.WalkerAveragedDensityMatrix(wset, BackPropDM, denom, path_restoration, !importanceSampling, back_propagate); 
       for(int iw = 0; iw < wset.size(); iw++) {
         // Resets B matrix buffer to identity, copies current wavefunction and resets weight
         // factor.

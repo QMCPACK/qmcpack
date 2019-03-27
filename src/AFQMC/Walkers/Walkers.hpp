@@ -19,6 +19,7 @@
 #include "Configuration.h"
 
 #include "AFQMC/config.h"
+#include "AFQMC/Numerics/ma_blas_extensions.hpp"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
 namespace qmcplusplus
@@ -126,6 +127,7 @@ namespace afqmc
       using pointer = Ptr;
       using element = typename std::pointer_traits<pointer>::element_type;
       using SMType = boost::multi::array_ref<element,2,pointer>;
+      using StridedSMType = boost::multi::array_ref<element,3,pointer>;
     
       template<class ma>
       walker(ma&& a, const wlk_indices& i_, const wlk_descriptor& d_): 
@@ -219,8 +221,9 @@ namespace afqmc
           APP_ABORT("error: access to uninitialized BP sector. \n");
         }
         int nbp = desc[3];
+/*
         for(int ip = 0; ip < nbp; ip++) {
-          SMType B = SMType(get_(PROPAGATORS)+desc[0]*desc[0]*ip,
+          SMType B(get_(PROPAGATORS)+desc[0]*desc[0]*ip,
                             {desc[0],desc[0]});
           for(int i = 0; i < desc[0]; i++) {
             for(int j = 0; j < desc[0]; j++) {
@@ -228,6 +231,9 @@ namespace afqmc
             }
           }
         }
+*/
+        StridedSMType B(get_(PROPAGATORS),{nbp,desc[0],desc[0]});
+        ma::set_identity(B);
         *BPWeightFactor() = element(1.0);
         setSlaterMatrixN();
       }

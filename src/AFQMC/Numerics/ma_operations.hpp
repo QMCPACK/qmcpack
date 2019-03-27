@@ -481,15 +481,6 @@ MultiArray2D cholesky(MultiArray2D&& A){
         }
 }
 
-template<class MultiArray2D>
-MultiArray2D set_identity(MultiArray2D&& m){
-	assert(m.size(0) == m.size(1));
-	for(int i = 0; i != m.size(0); ++i)
-		for(int j = 0; j != m.size(1); ++j)
-			m[i][j] = ((i==j)?1:0);
-	return std::forward<MultiArray2D>(m);
-}
-
 template<class MultiArray2DA, class MultiArray2DB, class T>
 bool equal(MultiArray2DB const& a, MultiArray2DA const& b, T tol = 0){
 	if(a.size(0) != b.size(0) or a.size(0) != b.size(0)) return false; 
@@ -677,21 +668,6 @@ int main(){
 	assert(C == AtBt);
 
 	
-	}
-	{
-		std::vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
-		boost::multi::array_ref<double, 2> A(a.data(), {3,3});
-		assert(A.num_elements() == a.size());
-		boost::multi::array<double, 2> B = A;
-		ma::invert(A);
-
-		boost::multi::array<double, 2> Id({3,3});
-		ma::set_identity(Id);
-
-		boost::multi::array<double, 2> Id2({3,3});
-		ma::product(A, B, Id2);
-						
-		assert( ma::equal(Id, Id2, 1e-14) );
 	}
 
 	cout << "test ended" << std::endl;

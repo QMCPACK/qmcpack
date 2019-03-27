@@ -99,7 +99,7 @@ namespace qmc_cuda
       throw std::runtime_error("Error: cudaMalloc returned error code.");
     }
 
-    kernels::setIdentity(n,to_address(work),n);
+    kernels::set_identity(n,n,to_address(work),n);
     if(CUSOLVER_STATUS_SUCCESS != cusolver::cusolver_getrs(*a.handles.cusolverDn_handle, CUBLAS_OP_N, n, n,
                    to_address(a), lda, to_address(piv), to_address(work), n, info))    
       throw std::runtime_error("Error: cusolver_getrs returned error code."); 
