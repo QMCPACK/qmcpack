@@ -43,7 +43,7 @@ echo ""
 echo "building QMCPACK for cpu AoS real for CADES SHPC Condo"
 mkdir -p build_cades_cpu_real
 cd build_cades_cpu_real
-cmake $CMAKE_FLAGS ..
+cmake -DENABLE_SOA=0 $CMAKE_FLAGS ..
 make -j 16
 cd ..
 ln -sf ./build_cades_cpu_real/bin/qmcpack ./qmcpack_cades_cpu_real
@@ -54,7 +54,7 @@ echo ""
 echo "building QMCPACK for cpu AoS complex for CADES SHPC Condo"
 mkdir -p build_cades_cpu_comp
 cd build_cades_cpu_comp
-cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
+cmake -DENABLE_SOA=0 -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
 make -j 16
 cd ..
 ln -sf ./build_cades_cpu_comp/bin/qmcpack ./qmcpack_cades_cpu_comp
