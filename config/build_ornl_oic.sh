@@ -31,7 +31,7 @@ echo ""
 echo "building qmcpack for cpu AoS real for oic5"
 mkdir -p build_oic_cpu_real
 cd build_oic_cpu_real
-cmake $CMAKE_FLAGS ..
+cmake -DENABLE_SOA=0 $CMAKE_FLAGS ..
 make -j 32 
 cd ..
 ln -sf ./build_oic_cpu_real/bin/qmcpack ./qmcpack_oic_cpu_real
@@ -42,7 +42,7 @@ echo ""
 echo "building qmcpack for cpu AoS complex for oic5"
 mkdir -p build_oic_cpu_comp
 cd build_oic_cpu_comp
-cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
+cmake -DENABLE_SOA=0 -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
 make -j 32 
 cd ..
 ln -sf ./build_oic_cpu_comp/bin/qmcpack ./qmcpack_oic_cpu_comp
