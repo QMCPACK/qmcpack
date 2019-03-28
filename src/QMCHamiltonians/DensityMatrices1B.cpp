@@ -97,7 +97,8 @@ namespace qmcplusplus
     metric     = 1.0;
     write_acceptance_ratio = false;
     write_rstats  = false;
-    normalized    = false;
+    normalized    = true;
+    volume_normed = true;
     check_overlap = false;
     check_derivatives = false;
     // trace data is required
@@ -147,7 +148,8 @@ namespace qmcplusplus
     std::string arstr="no";
     std::string udstr="no";
     std::string wrstr="no";
-    std::string nmstr="no";
+    std::string nmstr="yes";
+    std::string vnstr="yes";
     std::vector<std::string> sposets;
 
     xmlNodePtr element = cur->xmlChildrenNode;
@@ -192,6 +194,8 @@ namespace qmcplusplus
           putContent(wrstr,element);     
         else if(name=="normalized") 
           putContent(nmstr,element);     
+        else if(name=="volume_normed") 
+          putContent(vnstr,element);     
       }
       element = element->next;
     }
@@ -243,6 +247,7 @@ namespace qmcplusplus
       APP_ABORT("DensityMatrices1B::set_state  invalid evaluator\n  valid options are: loop, matrix");
 
     normalized        = nmstr=="yes";
+    volume_normed     = vnstr=="yes";
     use_drift         = udstr=="yes";
     check_overlap     = costr=="yes";
     check_derivatives = cdstr=="yes";
@@ -274,22 +279,23 @@ namespace qmcplusplus
   void DensityMatrices1B::set_state(DensityMatrices1B& master)
   {
     app_log()<<"dm1b set_state master"<< std::endl;
-    basis_size = master.basis_size;
-    energy_mat = master.energy_mat;
-    integrator = master.integrator;
-    evaluator  = master.evaluator;
-    sampling   = master.sampling;
-    scale      = master.scale;
-    points     = master.points;
-    samples    = master.samples;
-    warmup     = master.warmup;
-    timestep   = master.timestep;
-    use_drift  = master.use_drift;
-    volume     = master.volume;
-    periodic   = master.periodic;
-    metric     = master.metric;
-    rcorner    = master.rcorner;
-    normalized = master.normalized;
+    basis_size    = master.basis_size;
+    energy_mat    = master.energy_mat;
+    integrator    = master.integrator;
+    evaluator     = master.evaluator;
+    sampling      = master.sampling;
+    scale         = master.scale;
+    points        = master.points;
+    samples       = master.samples;
+    warmup        = master.warmup;
+    timestep      = master.timestep;
+    use_drift     = master.use_drift;
+    volume        = master.volume;
+    periodic      = master.periodic;
+    metric        = master.metric;
+    rcorner       = master.rcorner;
+    normalized    = master.normalized;
+    volume_normed = master.volume_normed;
     for(int d=0;d<DIM;++d)
       ind_dims[d] = master.ind_dims[d];
     app_log()<<"dm1b end set_state master"<< std::endl;
@@ -318,8 +324,8 @@ namespace qmcplusplus
     integrated_values.resize(basis_size);
     basis_norms.resize(basis_size);
     RealType bn_standard = 1.0;
-    //if(periodic)
-    //  bn_standard = 1.0/std::sqrt(volume);
+    if(volume_normed)
+      bn_standard = 1.0/std::sqrt(volume);
     for(int i=0;i<basis_size;++i)
       basis_norms[i] = bn_standard;
 
@@ -432,34 +438,36 @@ namespace qmcplusplus
 
     out<<pad<<"DensityMatrices1B"<< std::endl;
 
-    out<<pad<<"  integrator  = "<< integrator_list[(int)integrator] << std::endl; 
-    out<<pad<<"  sampling    = "<< sampling_list[  (int)sampling  ] << std::endl; 
-    out<<pad<<"  evaluator   = "<< evaluator_list[ (int)evaluator ] << std::endl; 
-    out<<pad<<"  periodic    = "<< periodic    << std::endl;
+    out<<pad<<"  integrator    = "<< integrator_list[(int)integrator] << std::endl; 
+    out<<pad<<"  sampling      = "<< sampling_list[  (int)sampling  ] << std::endl; 
+    out<<pad<<"  evaluator     = "<< evaluator_list[ (int)evaluator ] << std::endl; 
+    out<<pad<<"  periodic      = "<< periodic    << std::endl;
     if(sampling==volume_based)
     {
       PosType rmax = rcorner + 2*scale*Lattice.Center;
-      out<<pad<<"  points      = "<< points      << std::endl;
-      out<<pad<<"  scale       = "<< scale       << std::endl;
-      out<<pad<<"  center      = "<< center      << std::endl;
-      out<<pad<<"  rmin        = "<< rcorner     << std::endl;
-      out<<pad<<"  rmax        = "<< rmax        << std::endl;
-      out<<pad<<"  volume      = "<< volume      << std::endl;
+      out<<pad<<"  points        = "<< points      << std::endl;
+      out<<pad<<"  scale         = "<< scale       << std::endl;
+      out<<pad<<"  center        = "<< center      << std::endl;
+      out<<pad<<"  rmin          = "<< rcorner     << std::endl;
+      out<<pad<<"  rmax          = "<< rmax        << std::endl;
+      out<<pad<<"  volume        = "<< volume      << std::endl;
     }
     else if(sampling==metropolis)
     {
-      out<<pad<<"  warmup      = "<< warmup      << std::endl;
-      out<<pad<<"  timestep    = "<< timestep    << std::endl;
+      out<<pad<<"  warmup        = "<< warmup      << std::endl;
+      out<<pad<<"  timestep      = "<< timestep    << std::endl;
     }
-    out<<pad<<"  metric      = "<< metric      << std::endl;
-    out<<pad<<"  nparticles  = "<< nparticles  << std::endl;
-    out<<pad<<"  nspecies    = "<< nspecies    << std::endl;
+    out<<pad<<"  metric        = "<< metric      << std::endl;
+    out<<pad<<"  nparticles    = "<< nparticles  << std::endl;
+    out<<pad<<"  nspecies      = "<< nspecies    << std::endl;
     for(int s=0;s<nspecies;++s)
-      out<<pad<<"    species "<<s<<" = "<< species_size[s] << std::endl;
-    out<<pad<<"  basis_size  = "<< basis_size  << std::endl;
-    out<<pad<<"  samples     = "<< samples     << std::endl;
-    out<<pad<<"  energy_mat  = "<< energy_mat  << std::endl;
-    out<<pad<<"  initialized = "<< initialized << std::endl;
+      out<<pad<<"    species "<<s<<"   = "<< species_size[s] << std::endl;
+    out<<pad<<"  basis_size    = "<< basis_size  << std::endl;
+    out<<pad<<"  samples       = "<< samples     << std::endl;
+    out<<pad<<"  energy_mat    = "<< energy_mat  << std::endl;
+    out<<pad<<"  initialized   = "<< initialized << std::endl;
+    out<<pad<<"  normalized    = "<< normalized  << std::endl;
+    out<<pad<<"  volume_normed = "<< volume_normed  << std::endl;
     out<<pad<<"  rsamples : "<< rsamples.size()<< std::endl;
     if(evaluator==matrix)
     {
@@ -1293,6 +1301,7 @@ if(energy_mat)
 
   inline void DensityMatrices1B::normalize()
   {
+    app_log()<<"dm1b normalize"<< std::endl;
     int   ngrid = std::max(200,points);
     int   ngtot = pow(ngrid,DIM);
     RealType du = scale/ngrid;

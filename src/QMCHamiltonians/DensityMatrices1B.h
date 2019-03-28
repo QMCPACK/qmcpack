@@ -76,6 +76,7 @@ class DensityMatrices1B : public QMCHamiltonianBase
 
   bool initialized;
   bool normalized;
+  bool volume_normed;
   int basis_size;
   int samples;
   int nparticles;
