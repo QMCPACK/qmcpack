@@ -80,6 +80,8 @@ class NOMSD: public AFQMCInfo
   using stdCMatrix = boost::multi::array<ComplexType,2>;  
   using stdCTensor = boost::multi::array<ComplexType,3>;  
   using mpi3CVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;  
+  using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;  
+  using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;  
 
   public:
 
@@ -94,6 +96,7 @@ class NOMSD: public AFQMCInfo
                 SDetOp( std::move(sdet_) ), 
                 HamOp(std::move(hop_)),ci(std::move(ci_)),
                 OrbMats(move_vector<devPsiT_Matrix>(std::move(orbs_))),
+                RefOrbMats({0,0},shared_allocator<ComplexType>{TG.Node()}),
                 walker_type(wlk),nbatch(nbatch_),NuclearCoulombEnergy(nce),
                 shmbuff_for_E(iextensions<1u>{1},alloc_shared_),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
@@ -166,6 +169,8 @@ class NOMSD: public AFQMCInfo
     { return HamOp.local_number_of_cholesky_vectors(); }
     int global_number_of_cholesky_vectors() const 
     { return HamOp.global_number_of_cholesky_vectors(); }
+    int global_origin_cholesky_vector() const 
+    { return HamOp.global_origin_cholesky_vector(); }
     bool distribution_over_cholesky_vectors() const 
     { return HamOp.distribution_over_cholesky_vectors(); }
 
@@ -296,16 +301,13 @@ class NOMSD: public AFQMCInfo
     /*
      * Calculates the walker averaged density matrix.
      * Options:
-     *  - path_restoration: If false (default), performs traditional back propagation
-     *                        algorithm without any path restoration, otherwise restores
-     *                        phases and cosine factors along path.
      *  - free_projection: If false (default), assumes using phaseless approximation
      *                       otherwise assumes using free projection.
      *  - back_propagation: If false (default), compute mixed estimate of the density
      *                        matrix.
      */
     template<class WlkSet, class MatG, class CVec>
-    void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false, bool back_propagated=false);
+    void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool free_projection=false);
 
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
@@ -372,11 +374,55 @@ class NOMSD: public AFQMCInfo
     template<class Mat>
     void OrthogonalizeExcited(Mat&& A, SpinTypes spin);
 
+    
     /*
-     * Back Propagates the trial wavefunction.
-    */
-    template<class MatA, class Wlk, class MatB>
-    ComplexType BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP);
+     * Returns the number of reference Slater Matrices needed for back propagation.  
+     */
+    int number_of_references_for_back_propagation() const {
+      return ((walker_type==COLLINEAR)?OrbMats.size()/2:OrbMats.size());
+    }
+
+    /*
+     * Returns the reference Slater Matrices needed for back propagation.  
+     */
+    template<class Mat>
+    void getReferencesForBackPropagation(Mat&& A) {
+      static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
+      int ndet = number_of_references_for_back_propagation(); 
+      assert(A.size(0) == ndet); 
+      if(RefOrbMats.size(0) == 0) {
+        TG.Node().barrier(); // for safety
+        int nrow(NMO*((walker_type==NONCOLLINEAR)?2:1));
+        int ncol(NAEA+((walker_type==CLOSED)?0:NAEB));//careful here, spins are stored contiguously
+        RefOrbMats.reextent({ndet,nrow*ncol}); 
+        TG.Node().barrier(); // for safety
+        if(TG.Node().root()) {
+          if(walker_type!=COLLINEAR) {
+            for(int i=0; i<ndet; ++i) {
+              boost::multi::array_ref<ComplexType,2> A_(to_address(RefOrbMats[i].origin()),
+                                                        {nrow,ncol});  
+              csr::CSR2MAREF('H',OrbMats[i],A_);
+            }
+          } else {
+            for(int i=0; i<ndet; ++i) {
+              boost::multi::array_ref<ComplexType,2> A_(to_address(RefOrbMats[i].origin()),
+                                                        {NMO,NAEA});  
+              csr::CSR2MAREF('H',OrbMats[2*i],A_);
+              boost::multi::array_ref<ComplexType,2> B_(A_.origin()+A.num_elements(),
+                                                        {NMO,NAEB});  
+              csr::CSR2MAREF('H',OrbMats[2*i+1],B_);
+            }
+          }
+        } // TG.Node().root()
+        TG.Node().barrier(); // for safety
+      } 
+      assert(RefOrbMats.size(0) == ndet);
+      assert(RefOrbMats.size(1) == A.size(1));
+      auto&& RefOrbMats_(boost::multi::static_array_cast<ComplexType, ComplexType*>(RefOrbMats));  
+      using std::copy_n;
+      for(int i=0; i<ndet; i++) 
+        A[i]=RefOrbMats_[i];
+    }
 
   protected: 
 
@@ -394,8 +440,7 @@ class NOMSD: public AFQMCInfo
 
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<devPsiT_Matrix> OrbMats;
-    // Buffers for back propagation.
-    CMatrix T1ForBP, T2ForBP, T3ForBP;
+    mpi3CMatrix RefOrbMats;
 
     shmCVector shmbuff_for_E;
 

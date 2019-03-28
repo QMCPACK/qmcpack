@@ -31,6 +31,8 @@
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Estimators/EstimatorBase.h"
+#include "AFQMC/Propagators/PropagatorFactory.h"
+#include "AFQMC/Propagators/Propagator.hpp"
 #include "AFQMC/Estimators/BackPropagatedEstimator.h"
 #include "AFQMC/Utilities/test_utils.hpp"
 
@@ -128,6 +130,18 @@ void reduced_density_matrix(boost::mpi3::communicator & world)
     WfnFac.push(wfn_name,doc2.getRoot());
     Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,type,&ham,1e-6,nwalk);
 
+const char *propg_xml_block =
+"<Propagator name=\"prop0\">  \
+</Propagator> \
+";
+    Libxml2Document doc5;
+    okay = doc5.parseFromString(propg_xml_block);
+    REQUIRE(okay);
+    std::string prop_name("prop0");
+    PropagatorFactory PropgFac(InfoMap);
+    PropgFac.push(prop_name,doc5.getRoot());
+    Propagator& prop = PropgFac.getPropagator(TG,prop_name,wfn,&rng);
+
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0)==2);
@@ -146,9 +160,10 @@ void reduced_density_matrix(boost::mpi3::communicator & world)
     okay = doc4.parseFromString(est_xml_block);
     REQUIRE(okay);
     bool impsamp = true;
-    Wavefunction* wfn0 = &wfn;
-    estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TG,InfoMap["info0"],"none",doc4.getRoot(),
-                                                                                            type,*wfn0,impsamp)));
+    estimators.emplace_back(static_cast<EstimPtr>(
+                    std::make_shared<BackPropagatedEstimator>(
+                            TG,InfoMap["info0"],"none",doc4.getRoot(),type,
+                            wset,wfn,prop,impsamp)));
     hdf_archive dump;
     std::ofstream out;
     dump.create("estimates.h5");

@@ -57,6 +57,11 @@ class dummy_Propagator
     return false;
   }
 
+  int global_number_of_cholesky_vectors() const{
+    throw std::runtime_error("calling visitor on dummy_Propagator object");
+    return 0;
+  }
+
 };
 }
 
@@ -102,6 +107,13 @@ class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCBasePropaga
     bool free_propagation() {
         return boost::apply_visitor(
             [&](auto&& a){return a.free_propagation();},
+            *this
+        );
+    }
+
+    int global_number_of_cholesky_vectors() const{
+        return boost::apply_visitor(
+            [&](auto&& a){return a.global_number_of_cholesky_vectors();},
             *this
         );
     }

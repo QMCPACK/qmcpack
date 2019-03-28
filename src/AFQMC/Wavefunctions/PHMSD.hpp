@@ -219,6 +219,8 @@ class PHMSD: public AFQMCInfo
     { return HamOp.local_number_of_cholesky_vectors(); }
     int global_number_of_cholesky_vectors() const 
     { return HamOp.global_number_of_cholesky_vectors(); }
+    int global_origin_cholesky_vector() const
+    { return HamOp.global_origin_cholesky_vector(); }
     bool distribution_over_cholesky_vectors() const 
     { return HamOp.distribution_over_cholesky_vectors(); }
 
@@ -340,7 +342,7 @@ class PHMSD: public AFQMCInfo
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
     template<class WlkSet, class MatG, class CVec>
-    void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false, bool back_propagated=false);
+    void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool free_projection=false);
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
      *   with a format consistent with (and expected by) the vbias routine.
@@ -398,10 +400,19 @@ class PHMSD: public AFQMCInfo
     void OrthogonalizeExcited(Mat&& A, SpinTypes spin);
 
     /*
-     * Back Propagates the trial wavefunction.
-    */
-    template<class MatA, class Wlk, class MatB>
-    ComplexType BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP);
+     * Returns the number of reference Slater Matrices needed for back propagation.  
+     */
+    int number_of_references_for_back_propagation() const {
+      return 0; 
+    }
+
+    /*
+     * Returns the reference Slater Matrices needed for back propagation.  
+     */
+    template<class Mat>
+    void getReferencesForBackPropagation(Mat&& A) {
+      APP_ABORT(" Error: getReferencesForBackPropagation not implemented with PHMSD wavefunctions.\n"); 
+    }
 
   protected: 
 

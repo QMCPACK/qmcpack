@@ -122,11 +122,13 @@ class KP3IndexFactorization_batched
                  int nsampleQ_,
                  ValueType e0_,
                  Allocator const& alloc_,
+                 int cv0,
                  int gncv): 
         allocator_(alloc_),
         sp_allocator_(alloc_),
         walker_type(type),
         global_nCV(gncv),
+        global_origin(cv0),
         E0(e0_),
         H1(std::move(hij_)),
         haj(std::move(h1)),
@@ -1305,6 +1307,7 @@ class KP3IndexFactorization_batched
     int number_of_ke_vectors() const{ return local_nCV; }
     int local_number_of_cholesky_vectors() const{ return 2*local_nCV; } 
     int global_number_of_cholesky_vectors() const{ return global_nCV; }
+    int global_origin_cholesky_vector() const{ return global_origin; }
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
     bool transposed_G_for_vbias() const{return false;}
@@ -1325,6 +1328,7 @@ class KP3IndexFactorization_batched
 
     int global_nCV;
     int local_nCV;
+    int global_origin;
 
     ValueType E0;
 

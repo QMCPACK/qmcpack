@@ -79,7 +79,7 @@ void hybrid_walker_update(Wlk&& w, RealType dt, bool apply_constrain, bool imp_s
   if(work.size(0) < 7 || work.size(1) < nwalk)
     work.reextent({7,nwalk});
   
-  bool BackProp = (w.getNBackProp()>0);
+  bool BackProp = (w.NumBackProp()>0);
 
   w.getProperty(WEIGHT,work[0]);
   w.getProperty(PSEUDO_ELOC_,work[1]);
@@ -161,7 +161,7 @@ void local_energy_walker_update(Wlk&& w, RealType dt, bool apply_constrain, Real
   if(work.size(0) < 12 || work.size(1) < nwalk)
     work.reextent({12,nwalk});
 
-  bool BackProp = (w.getNBackProp()>0);
+  bool BackProp = (w.NumBackProp()>0);
 
   w.getProperty(WEIGHT,work[0]);
   w.getProperty(PSEUDO_ELOC_,work[1]);

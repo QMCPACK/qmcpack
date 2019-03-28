@@ -403,6 +403,7 @@ class SparseTensor
     int number_of_ke_vectors() const{ return Spvn.size(1); }
     int local_number_of_cholesky_vectors() const{ return Spvn.size(1); }
     int global_number_of_cholesky_vectors() const{ return global_nCV; }
+    int global_origin_cholesky_vector() const{ return Spvn.global_origin()[1];}
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
     bool transposed_G_for_vbias() const{return false;}

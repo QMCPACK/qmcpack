@@ -241,8 +241,6 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   // From here on is similar to Shared 
   int nx = 1;
   if(walker_type == COLLINEAR) nx=2;
-  // Only parallelise over walkers.
-  if(wset.getNBackProp() > 0) nx = 1;
 
   // from now on, individual work on each walker/step
   const int ntasks_per_core = int(nx*nwalk)/TG.getNCoresPerTG();
@@ -262,17 +260,9 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     // 5. Propagate walkers
     AFQMCTimers[propagate_timer]->start();
     if(nbatched_propagation != 0) {
-      if (wset.getNBackProp() > 0) {
-        apply_propagators_construct_propagator_batched(wset,ni,vHS3D);
-      } else {
-        apply_propagators_batched(wset,ni,vHS3D);
-      }
+      apply_propagators_batched(wset,ni,vHS3D);
     } else {
-      if (wset.getNBackProp() > 0) {
-        apply_propagators_construct_propagator(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
-      } else {
-        apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
-      }
+      apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
     }
     AFQMCTimers[propagate_timer]->stop();
 

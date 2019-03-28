@@ -16,6 +16,7 @@
 #include "Utilities/Timer.h"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
+#include "AFQMC/Propagators/Propagator.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 
@@ -40,9 +41,10 @@ class BackPropagatedEstimator: public EstimatorBase
   public:
 
   BackPropagatedEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
-        std::string title, xmlNodePtr cur, WALKER_TYPES wlk, Wavefunction& wfn, bool impsamp_=true) :
-                                            EstimatorBase(info),TG(tg_), wfn0(wfn),
-                                            greens_function(false),
+        std::string title, xmlNodePtr cur, WALKER_TYPES wlk, WalkerSet& wset, 
+        Wavefunction& wfn, Propagator& prop, bool impsamp_=true) :
+                                            EstimatorBase(info),TG(tg_), wfn0(wfn), prop0(prop),
+                                            greens_function(false),nback_prop(10),
                                             nStabalize(1), path_restoration(false), block_size(1),
                                             writer(false), importanceSampling(impsamp_)
   {
@@ -51,6 +53,7 @@ class BackPropagatedEstimator: public EstimatorBase
       ParameterSet m_param;
       std::string restore_paths;
       m_param.add(nStabalize, "ortho", "int");
+      m_param.add(nback_prop, "nsteps", "int");
       m_param.add(restore_paths, "path_restoration", "std::string");
       m_param.add(block_size, "block_size", "int");
       m_param.put(cur);
@@ -60,6 +63,16 @@ class BackPropagatedEstimator: public EstimatorBase
         path_restoration = false;
       }
     }
+
+    if(nback_prop <= 0)
+      APP_ABORT("nback_prop == 0 is not allowed.\n");
+
+    int ncv(prop0.global_number_of_cholesky_vectors());
+    int nref(wfn0.number_of_references_for_back_propagation());
+    wset.resize_bp(nback_prop,ncv,nref);
+    // set SMN in case BP begins right away
+    for(auto it=wset.begin(); it<wset.end(); ++it)
+      it->setSlaterMatrixN(); 
 
     ncores_per_TG = TG.getNCoresPerTG();
     if(ncores_per_TG > 1)
@@ -96,6 +109,7 @@ class BackPropagatedEstimator: public EstimatorBase
 
   void accumulate_block(WalkerSet& wset)
   {
+/*
     // check to see whether we should be accumulating estimates.
     bool back_propagate = wset[0].isBMatrixBufferFull();
     if(back_propagate) {
@@ -113,6 +127,7 @@ class BackPropagatedEstimator: public EstimatorBase
       }
       iblock++;
     }
+*/
   }
 
   void tags(std::ofstream& out) {}
@@ -124,12 +139,11 @@ class BackPropagatedEstimator: public EstimatorBase
     if(writer) {
       if(write_metadata) {
         dump.push("Metadata");
-        int nback_prop = wset.getNBackProp();
         dump.write(nback_prop, "NumBackProp");
         dump.pop();
         write_metadata = false;
       }
-      bool write = wset[0].isBMatrixBufferFull();
+      bool write = false; //wset[0].isBMatrixBufferFull();
       if(write) {
 //        for(int i = 0; i < DMBuffer.size(); i++)
 //          DMAverage[i] += DMBuffer[i];
@@ -165,7 +179,11 @@ class BackPropagatedEstimator: public EstimatorBase
 
   bool writer;
 
+  int nback_prop;
+
   Wavefunction& wfn0;
+
+  Propagator& prop0;
 
   // The first element of data stores the denominator of the estimator (i.e., the total
   // walker weight including rescaling factors etc.). The rest of the elements store the

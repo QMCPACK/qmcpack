@@ -186,7 +186,7 @@ const char *xml_block =
   REQUIRE(wset.get_global_target_population() == nwalkers*TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == nwalkers*TG.getNumberOfTGs());
   REQUIRE(wset.GlobalPopulation() == wset.get_global_target_population());
-  REQUIRE(wset.getNBackProp() == 0);
+  REQUIRE(wset.NumBackProp() == 0);
   REQUIRE(wset.GlobalWeight() == tot_weight*TG.getNumberOfTGs());
 
   wset.scaleWeight(2.0);

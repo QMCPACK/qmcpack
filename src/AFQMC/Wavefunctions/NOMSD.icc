@@ -1068,7 +1068,7 @@ namespace afqmc
   // where wfac is the walker's weight potentially multiplied by various factors if doing
   // back propagation or free projection.
   template<class WlkSet, class MatG, class CVec>
-  void NOMSD::WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec &denom, bool path_restoration, bool free_projection, bool back_propagated)
+  void NOMSD::WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec &denom, bool free_projection)
   {
     using std::fill_n;
     using std::copy_n;
@@ -1087,12 +1087,6 @@ namespace afqmc
     auto wlk_dims = wset.walker_dims();
     // Transposed temporaries for back propagation.
     int max_nel = std::max(NAEA,NAEB);
-    if((T1ForBP.size(0) != max_nel || T1ForBP.size(1) != wlk_dims.first))
-      T1ForBP.reextent({max_nel,wlk_dims.first});
-    if((T2ForBP.size(0) != wlk_dims.first || T2ForBP.size(1) != max_nel))
-      T2ForBP.reextent({wlk_dims.first,max_nel});
-    if((T3ForBP.size(0) != max_nel || T3ForBP.size(1) != wlk_dims.first))
-      T3ForBP.reextent({max_nel,wlk_dims.first});
     if(walker_type != COLLINEAR) {
       auto Gdims = dm_dims(not compact,Alpha);
       // Temporaries for determinant component of walker rdm function.
@@ -1108,10 +1102,7 @@ namespace afqmc
         fill_n(G21D_.origin(), G21D_.num_elements(), ComplexType(0.0));
         ComplexType overlap = ComplexType(0.0,0.0);
         ComplexType factor;
-        if(path_restoration) {
-          // Path restoration
-          factor = *wset[iw].BPWeightFactor();
-        } else if(free_projection) {
+        if(free_projection) {
           // Free projection.
           factor = *wset[iw].phase();
         }
@@ -1122,30 +1113,15 @@ namespace afqmc
         ComplexType wfac = (*wset[iw].weight()) * factor;
         for(int id=0; id<ndet; id++) {
           // We construct PsiBP^{\dagger}
-          CMatrix_ref PsiBP = CMatrix_ref(T3ForBP.origin(), {NAEA,NMO});
-          ComplexType detR = ComplexType(1.0,0.0);
-          if (back_propagated) {
-            detR = BackPropagateOrbMat(OrbMats[id], wset[iw], PsiBP);
-            SDetOp.MixedDensityMatrix(PsiBP,wset[iw].SlaterMatrixN(Alpha),
+          // Mixed density matrix.
+          SDetOp.MixedDensityMatrix(OrbMats[id],wset[iw].SlaterMatrix(Alpha),
                                       G2D_,to_address(ov_),compact);
-#if defined(__AFQMC_DEBUG_VERBOSE__)
-            ComplexType trace = 0.0;
-            for(int i = 0; i < NMO; i++) trace += G2D_[i][i];
-            std::cout << "TRACE[GA]: " << trace  << "\n";
-#endif
-          } else {
-            // Mixed density matrix.
-            SDetOp.MixedDensityMatrix(OrbMats[id],wset[iw].SlaterMatrix(Alpha),
-                                      G2D_,to_address(ov_),compact);
-          }
           // Construct RDM with Slater Matrix from beginning of path.
           ComplexType ov(*ov_);
           if(walker_type==CLOSED) {
             ov *= ov;
-            detR *= detR;
           }
-          // By construction detR is real (so no complex conjugation needed).
-          ov *= detR * ma::conj(ci[id]);
+          ov *= ma::conj(ci[id]);
           overlap += ov;
           ma::axpy(ov,G1D_,G21D_);
         }
@@ -1183,9 +1159,7 @@ namespace afqmc
         fill_n(GA21D_.origin(), GA21D_.num_elements(), ComplexType(0.0));
         fill_n(GB21D_.origin(), GB21D_.num_elements(), ComplexType(0.0));
         ComplexType factor;
-        if(path_restoration) {
-          factor = *wset[iw].BPWeightFactor();
-        } else if(free_projection) {
+        if(free_projection) {
           factor = *wset[iw].phase();
         } else {
           factor = ComplexType(1.0,0.0);
@@ -1193,40 +1167,15 @@ namespace afqmc
         ComplexType wfac = (*wset[iw].weight()) * factor;
         ComplexType overlap = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
-          ComplexType detR = ComplexType(1.0,0.0);
           ComplexType ov(1.0,0.0);
-          if (back_propagated) {
-            CMatrix_ref PsiBPAlpha = CMatrix_ref(T3ForBP.origin(), {NAEA,NMO});
-            detR = BackPropagateOrbMat(OrbMats[2*id], wset[iw], PsiBPAlpha);
-#if defined(__AFQMC_DEBUG_VERBOSE__)
-            ComplexType trace = 0.0;
-            for(int i = 0; i < NMO; i++) trace += GA2D_[i][i];
-            std::cout << "TRACE[GA]: " << trace  << "\n";
-#endif
-            SDetOp.MixedDensityMatrix(PsiBPAlpha,wset[iw].SlaterMatrixN(Alpha),
-                                      GA2D_,to_address(ov_),compact);
-            ov *= ComplexType(*ov_);
-#if defined(__AFQMC_DEBUG_VERBOSE__)
-            trace = 0.0;
-            for(int i = 0; i < NMO; i++) trace += GA2D_[i][i];
-            std::cout << "TRACE[GB]: " << trace  << "\n";
-#endif
-            CMatrix_ref PsiBPBeta = CMatrix_ref(T3ForBP.origin(), {NAEB,NMO});
-            detR *= BackPropagateOrbMat(OrbMats[2*id+1], wset[iw], PsiBPBeta);
-            SDetOp.MixedDensityMatrix(PsiBPBeta,wset[iw].SlaterMatrixN(Beta),
-                                      GB2D_,to_address(ov_),compact);
-            ov *= ComplexType(*ov_);
-          } else {
-            // Mixed density matrix.
-            SDetOp.MixedDensityMatrix(OrbMats[2*id],wset[iw].SlaterMatrix(Alpha),
-                                                        GA2D_,to_address(ov_),compact);
-            ov *= ComplexType(*ov_);
+          // Mixed density matrix.
+          SDetOp.MixedDensityMatrix(OrbMats[2*id],wset[iw].SlaterMatrix(Alpha),
+                                                      GA2D_,to_address(ov_),compact);
+          ov *= ComplexType(*ov_);
 
-            SDetOp.MixedDensityMatrix(OrbMats[2*id+1],wset[iw].SlaterMatrix(Beta),
-                                             GB2D_,to_address(ov_),compact);
-            ov *= ComplexType(*ov_);
-          }
-          ov *= detR * ma::conj(ci[id]);
+          SDetOp.MixedDensityMatrix(OrbMats[2*id+1],wset[iw].SlaterMatrix(Beta),
+                                           GB2D_,to_address(ov_),compact);
+          ov *= ComplexType(*ov_)*ma::conj(ci[id]);
           overlap += ov;
           ma::axpy(ov,GA1D_,GA21D_);
           ma::axpy(ov,GB1D_,GB21D_);
@@ -1576,39 +1525,6 @@ namespace afqmc
     //       Set it to zero.
     for(int i=0; i<v.num_elements(); i++)
       v[i] = ComplexType(real(v[i]),0.0); 
-  }
-
-  template <class MatA, class Wlk, class MatB>
-  ComplexType NOMSD::BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP)
-  {
-    // temporary runtime check for incompatible memory spaces
-    {
-      auto dev_ptr_(make_device_ptr(PsiBP.origin()));
-    }
-    ComplexType detR = ComplexType(1.0, 0.0);
-    if(localGbuff.size() < 1)
-      localGbuff.reextent(iextensions<1u>{1});
-    auto Gsize = size_t(dm_size(true));
-    pointer d_(localGbuff.origin()+2*Gsize);
-    const int nbp = walker.NumBackProp();
-    int ip = nbp - 1;
-    auto B(walker.BMatrix(ip));
-    CMatrix_ref T1 = CMatrix_ref(T1ForBP.origin(), {PsiBP.size(0),PsiBP.size(1)});
-    CMatrix_ref T2 = CMatrix_ref(T2ForBP.origin(), {PsiBP.size(1),PsiBP.size(0)});
-    ma::product(OrbMat, B, T1);
-    for(int i = 0; i < nbp-1; i++) {
-      ip -= 1;
-      auto B_(walker.BMatrix(ip));
-      ma::product(T1, B_, PsiBP);
-      if((i != 0) && (i%10 == 0)) {
-        ma::transpose(PsiBP, T2);
-        SDetOp.Orthogonalize(T2,to_address(d_));
-        detR *= ComplexType(*d_);
-        ma::transpose(T2, PsiBP);
-      }
-      T1 = PsiBP;
-    }
-    return detR;
   }
 
 }

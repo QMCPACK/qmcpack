@@ -174,6 +174,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   TG.Node().barrier();
 
   int number_of_symmetric_Q=0;
+  int global_origin(0);
   // Defines behavior over Q vector:
   //   <0: Ignore (handled by another TG)
   //    0: Calculate, without rho^+ contribution
@@ -187,20 +188,19 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
       if(kminus[Q]==Q) { 
         if( work%ngrp == ig )
           Qmap[Q] = 1 + (number_of_symmetric_Q++);
+        if( work%ngrp < ig )
+          global_origin += 2*nchol_per_kp[Q];  
         work++;
       } else if(Q < kminus[Q]) { 
         if( work%ngrp == ig ) {
           Qmap[Q] = 0;
           Qmap[kminus[Q]] = 0;
         }
+        if( work%ngrp < ig )
+          global_origin += 4*nchol_per_kp[Q];  
         work++;
       }  
     }
-//  for(int Q=0; Q<nkpts; Q++) 
-//    if(kminus[Q]==Q) 
-//      Qmap[Q] = 1+ (number_of_symmetric_Q++);
-//    else 
-//      Qmap[Q] = 0;
   }
   // new communicator over nodes that share the same set of Q 
   auto Qcomm(TG.Global().split(TGwfn.getLocalGroupNumber(),TG.Global().rank()));
@@ -677,7 +677,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
             std::move(nchol_per_kp),std::move(kminus),std::move(nocc_per_kp),
             std::move(QKtok2),std::move(H1),std::move(haj),std::move(LQKikn),
             std::move(LQKank),std::move(LQKbnl),std::move(Qmap),
-            std::move(vn0),std::move(gQ),nsampleQ,E0,global_ncvecs));
+            std::move(vn0),std::move(gQ),nsampleQ,E0,global_origin,global_ncvecs));
 
 }
 
@@ -825,6 +825,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   //    0: Calculate, without rho^+ contribution
   //   >0: Calculate, with rho^+ contribution. LQKbln data located at Qmap[Q]-1
   int number_of_symmetric_Q=0;
+  int global_origin(0);
   std::fill_n(Qmap.origin(),Qmap.num_elements(),-1);
   {
     int ngrp(TGwfn.getNGroupsPerTG());
@@ -834,12 +835,16 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
       if(kminus[Q]==Q) {
         if( work%ngrp == ig )
           Qmap[Q] = 1 + (number_of_symmetric_Q++);
+        if( work%ngrp < ig )
+          global_origin += 2*nchol_per_kp[Q];
         work++;
       } else if(Q < kminus[Q]) {
         if( work%ngrp == ig ) {
           Qmap[Q] = 0;
           Qmap[kminus[Q]] = 0;
         }
+        if( work%ngrp < ig )
+          global_origin += 4*nchol_per_kp[Q];
         work++;
       }
     }
@@ -1376,7 +1381,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             std::move(LQKbnl),std::move(LQKbln),std::move(Qmap),
             std::move(vn0),
             std::move(gQ),nsampleQ,E0,device_allocator<ComplexType>{},
-            global_ncvecs));
+            global_origin,global_ncvecs));
 
 }
 

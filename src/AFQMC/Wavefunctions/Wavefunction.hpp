@@ -58,6 +58,14 @@ class dummy_wavefunction
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
     return 0; 
   }
+  int global_origin_cholesky_vector() const{
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");
+    return 0;
+  }
+  int number_of_references_for_back_propagation() const{
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");
+    return 0;
+  }
   bool distribution_over_cholesky_vectors() const {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
     return false; 
@@ -122,13 +130,8 @@ class dummy_wavefunction
   }
 
   template<class WlkSet, class MatG, class CVec>
-  void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false, bool back_propagate=false) {
+  void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool free_projection=false) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
-  }
-
-  template<class MatA, class Wlk, class MatB>
-  void BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP) {
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
   template<class WlkSet, class MatG>
@@ -148,6 +151,11 @@ class dummy_wavefunction
 
   template<class WlkSet>
   void Orthogonalize(WlkSet& wset, bool impSamp) {
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
+  }
+
+  template<class Mat>
+  void getReferencesForBackPropagation(Mat&& A) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
@@ -193,6 +201,20 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     int global_number_of_cholesky_vectors() const{
         return boost::apply_visitor(
             [&](auto&& a){return a.global_number_of_cholesky_vectors();},
+            *this
+        );
+    }
+
+    int global_origin_cholesky_vector() const{
+        return boost::apply_visitor(
+            [&](auto&& a){return a.global_origin_cholesky_vector();},
+            *this
+        );
+    }
+
+    int number_of_references_for_back_propagation() const{
+        return boost::apply_visitor(
+            [&](auto&& a){return a.number_of_references_for_back_propagation();},
             *this
         );
     }
@@ -305,17 +327,17 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     }
 
     template<class... Args>
-    void WalkerAveragedDensityMatrix(Args&&... args) {
+    void getReferencesForBackPropagation(Args&&... args) {
         boost::apply_visitor(
-              [&](auto&& a){a.WalkerAveragedDensityMatrix(std::forward<Args>(args)...);},
-              *this
+            [&](auto&& a){a.getReferencesForBackPropagation(std::forward<Args>(args)...);},
+            *this
         );
     }
 
     template<class... Args>
-    void BackPropagateOrbMat(Args&&... args) {
+    void WalkerAveragedDensityMatrix(Args&&... args) {
         boost::apply_visitor(
-              [&](auto&& a){a.BackPropagateOrbMat(std::forward<Args>(args)...);},
+              [&](auto&& a){a.WalkerAveragedDensityMatrix(std::forward<Args>(args)...);},
               *this
         );
     }

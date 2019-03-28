@@ -74,7 +74,6 @@ class AFQMCBasePropagator: public AFQMCInfo
             SDetOp(wfn.getSlaterDetOperations()),
             //SDetOp(2*NMO,NAEA+NAEB),
             //SDetOp(SlaterDetOperations_shared<ComplexType>(2*NMO,NAEA+NAEB)),
-            TSM({2*NMO,NAEA+NAEB},alloc_), // safe for now, since I don't know walker_type
             buffer(iextensions<1u>{1},aux_alloc_),
             local_group_comm(),
             last_nextra(-1),
@@ -115,6 +114,10 @@ class AFQMCBasePropagator: public AFQMCInfo
     bool hybrid_propagation() { return hybrid; }
 
     bool free_propagation() { return free_projection; }
+
+    int global_number_of_cholesky_vectors() const{
+      return wfn.global_number_of_cholesky_vectors(); 
+    }
 
   protected: 
 
@@ -170,8 +173,6 @@ class AFQMCBasePropagator: public AFQMCInfo
     CMatrix hybrid_weight;  
 
     CVector vMF;  
-    // Temporary for propagating with constructed B matrix.
-    CMatrix TSM;
 
     boost::multi::array<ComplexType,2> work; 
  
@@ -192,13 +193,6 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     template<class WSet>
     void apply_propagators_batched(WSet& wset, int ni, C3Tensor_ref& vHS3D);
-
-    template<class WSet>
-    void apply_propagators_construct_propagator(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
-                                                C3Tensor_ref& vHS3D);
-
-    template<class WSet>
-    void apply_propagators_construct_propagator_batched(WSet& wset, int ni, C3Tensor_ref& vHS3D);
 
     ComplexType apply_bound_vbias(ComplexType v, RealType sqrtdt)
     {

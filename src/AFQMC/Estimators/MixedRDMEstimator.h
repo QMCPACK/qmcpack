@@ -75,12 +75,11 @@ class MixedRDMEstimator: public EstimatorBase
 
   void accumulate_block(WalkerSet& wset)
   {
-    bool back_propagation = false, path_restoration = false;
     // check to see whether we should be accumulating estimates.
     CMatrix_ref OneRDM(DMBuffer.data(), {dm_dims.first,dm_dims.second});
     denom[0] = ComplexType(0.0,0.0);
     std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
-    wfn0.WalkerAveragedDensityMatrix(wset, OneRDM, denom, path_restoration, !importanceSampling, back_propagation);
+    wfn0.WalkerAveragedDensityMatrix(wset, OneRDM, denom, !importanceSampling);
     iblock++;
   }
 

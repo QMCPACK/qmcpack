@@ -41,12 +41,18 @@ namespace afqmc
  * Walkers are always accessed through the handler.
  */
 class SerialWalkerSet: public WalkerSetBase<device_allocator<ComplexType>,
-                                            device_ptr<ComplexType>>
+                                            device_ptr<ComplexType>,
+                                            std::allocator<ComplexType>,
+                                            ComplexType*
+                                           >
                                              
 {
 
   using Base = WalkerSetBase<device_allocator<ComplexType>,
-                             device_ptr<ComplexType>>;
+                             device_ptr<ComplexType>,
+                             std::allocator<ComplexType>,
+                             ComplexType*
+                            >;
 
   public:
 
