@@ -10,6 +10,7 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
+IF(ENABLE_OFFLOAD)
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
@@ -23,3 +24,4 @@ TARGET_LINK_LIBRARIES(${UTEST_EXE} ${QMC_UTIL_LIBS})
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 
+ENDIF(ENABLE_OFFLOAD)

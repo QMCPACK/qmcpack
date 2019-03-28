@@ -40,10 +40,12 @@ TEST_CASE("OMPdeepcopy", "[OMP]")
     foo->data[i] = i;
 
   auto* data_ptr = foo->data;
-  PRAGMA_OFFLOAD("omp target update to(data_ptr[0:foo->size])")
-  //PRAGMA_OFFLOAD("omp target enter data map(to:foo[0:1])")
+
   PRAGMA_OFFLOAD("omp target enter data map(alloc:foo[0:1])")
-  PRAGMA_OFFLOAD("omp target update to(foo[0:1])")
+  PRAGMA_OFFLOAD("omp target map(always, to: foo[0:1], data_ptr[0:foo->size])")
+  {
+    foo->data = data_ptr;
+  }
 
   int check_size(0);
   double check_data1(0);
@@ -76,6 +78,7 @@ TEST_CASE("OMPdeepcopy", "[OMP]")
   REQUIRE(data_ptr[1] == 2.0);
 
   myAlloc.deallocate(foo->data,MAX);
+  PRAGMA_OFFLOAD("omp target exit data map(delete:foo[0:1])")
   delete foo;
 }
 
