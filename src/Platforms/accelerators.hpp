@@ -25,5 +25,5 @@ namespace qmcplusplus
  * This routine also initialze the device runtime library.
  */
 void assignAccelerators(Communicate& NodeComm);
-}
+} // namespace qmcplusplus
 #endif
