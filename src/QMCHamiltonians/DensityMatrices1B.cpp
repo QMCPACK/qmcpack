@@ -41,14 +41,12 @@ namespace qmcplusplus
   DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi) 
     : QMCHamiltonianBase(master), Lattice(P.Lattice),Pq(P),Psi(psi),Pc(master.Pc)
   {
-    app_log()<<"dm1b deepcopy"<< std::endl;
     reset();
     set_state(master);
     basis_functions.clone_from(master.basis_functions);
     initialize();
     for(int i=0;i<basis_size;++i)
       basis_norms[i] = master.basis_norms[i];
-    app_log()<<"dm1b end deepcopy"<< std::endl;
   }
 
 
@@ -116,8 +114,6 @@ namespace qmcplusplus
 
   bool DensityMatrices1B::put(xmlNodePtr cur)
   {
-    app_log()<<"dm1b put"<< std::endl;
-
     // read in parameters from the input xml
     set_state(cur);
 
@@ -130,15 +126,12 @@ namespace qmcplusplus
     if(check_overlap)
       test_overlap();
 
-    app_log()<<"dm1b end put"<< std::endl;
     return true;
   }
 
 
   void DensityMatrices1B::set_state(xmlNodePtr cur)
   {
-    app_log()<<"dm1b set_state"<< std::endl;
-
     bool center_defined=false;
     std::string emstr="no";
     std::string igstr="uniform_grid";
@@ -261,24 +254,18 @@ namespace qmcplusplus
 
     for(int i=0;i<sposets.size();++i)
     {
-      app_log()<<"  sposets requested "<<sposets.size()<<" "<<i<<" "<<sposets[i]<< std::endl;
-      app_log()<<"  size before "<<basis_functions.size()<< std::endl;
       basis_functions.add(get_sposet(sposets[i]));
-      app_log()<<"  size after  "<<basis_functions.size()<< std::endl;
     }
     basis_size = basis_functions.size();
 
     if(basis_size<1)
       APP_ABORT("DensityMatrices1B::put  basis_size must be greater than one");
 
-
-    app_log()<<"dm1b end set_state"<< std::endl;
   }
 
 
   void DensityMatrices1B::set_state(DensityMatrices1B& master)
   {
-    app_log()<<"dm1b set_state master"<< std::endl;
     basis_size    = master.basis_size;
     energy_mat    = master.energy_mat;
     integrator    = master.integrator;
@@ -298,13 +285,11 @@ namespace qmcplusplus
     volume_normed = master.volume_normed;
     for(int d=0;d<DIM;++d)
       ind_dims[d] = master.ind_dims[d];
-    app_log()<<"dm1b end set_state master"<< std::endl;
   }
 
 
   void DensityMatrices1B::initialize()
   {
-    app_log()<<"dm1b initialize"<< std::endl;
     // get particle information
     SpeciesSet& species = Pq.getSpeciesSet();
     nparticles = Pq.getTotalNum();
@@ -319,7 +304,6 @@ namespace qmcplusplus
       species_name.push_back(species.speciesName[s]);
 
     // allocate space
-    app_log()<<"  dm1b init  allocate basis"<< std::endl;
     basis_values.resize(basis_size);
     integrated_values.resize(basis_size);
     basis_norms.resize(basis_size);
@@ -334,18 +318,13 @@ namespace qmcplusplus
 
     if(evaluator==matrix)
     {
-      app_log()<<"  dm1b init  alloc Phi_MB"<< std::endl;
       Phi_MB.resize(samples,basis_size);
       for(int s=0;s<nspecies;++s)
       {
         int specs_size = species_size[s];
-        app_log()<<"  dm1b init  alloc Phi_NB"<< std::endl;
         Phi_NB.push_back(    new Matrix_t(specs_size,basis_size));
-        app_log()<<"  dm1b init  alloc Psi_NM"<< std::endl;
         Psi_NM.push_back(    new Matrix_t(specs_size,samples   ));
-        app_log()<<"  dm1b init  alloc Phi_Psi_NB"<< std::endl;
         Phi_Psi_NB.push_back(new Matrix_t(specs_size,basis_size));
-        app_log()<<"  dm1b init  alloc N_BB"<< std::endl;
         N_BB.push_back(      new Matrix_t(basis_size,basis_size));
         if(energy_mat)
         {
@@ -380,13 +359,10 @@ namespace qmcplusplus
 
     if(!normalized)
     {
-      app_log()<<"  dm1b init  normalize"<< std::endl;
       normalize();
     }
 
     initialized = true;
-
-    app_log()<<"dm1b end initialize"<< std::endl;
   }
 
 
@@ -433,8 +409,8 @@ namespace qmcplusplus
     sampling_list.push_back("metropolis");
     sampling_list.push_back("no_sampling");
 
-    //ostream& out = app_log();
-    std::ostream& out = std::cout;
+    std::ostream& out = app_log();
+    //std::ostream& out = std::cout;
 
     out<<pad<<"DensityMatrices1B"<< std::endl;
 
@@ -496,7 +472,6 @@ if(energy_mat)
 
   void DensityMatrices1B::get_required_traces(TraceManager& tm)
   {
-    app_log()<<"dm1b get_required_traces"<< std::endl;
     w_trace = tm.get_real_trace("weight");
     if(energy_mat)
     {
@@ -514,21 +489,17 @@ if(energy_mat)
 
     } 
     have_required_traces = true;
-    app_log()<<"dm1b end get_required_traces"<< std::endl;
   }
 
 
   void DensityMatrices1B::setRandomGenerator(RandomGenerator_t* rng)
   {
-    app_log()<<"dm1b setRandomGenerator"<< std::endl;
     uniform_random = rng;
-    app_log()<<"dm1b end setRandomGenerator"<< std::endl;
   }
 
 
   void DensityMatrices1B::addObservables(PropertySetType& plist,BufferType& collectables)
   {
-    app_log()<<"dm1b addObservables"<< std::endl;
 #if defined(QMC_COMPLEX)
     int nentries = 2*basis_size*basis_size*nspecies;
 #else
@@ -544,13 +515,11 @@ if(energy_mat)
       std::vector<RealType> etmp(nentries);
       collectables.add(etmp.begin(),etmp.end());
     }
-    app_log()<<"dm1b end addObservables"<< std::endl;
   }
 
 
   void DensityMatrices1B::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const 
   {
-    app_log()<<"dm1b registerCollectables"<< std::endl;
 #if defined(QMC_COMPLEX)
     std::vector<int> ng(3);
     ng[0] = basis_size;
@@ -591,7 +560,6 @@ if(energy_mat)
         h5desc.push_back(oh);
       }
     }
-    app_log()<<"dm1b end registerCollectables"<< std::endl;
   }
 
 
@@ -616,45 +584,6 @@ if(energy_mat)
 
   DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P)
   {
-    app_log()<<"jtk dm1b evaluate"<<have_required_traces<<" "<<energy_mat<<"\n";
-
-    //if(omp_get_thread_num()==0)
-    //{
-    //  app_log()<<"\ntesting basis functions (sposets)\n";
-    //  
-    //  app_log()<<"\ntests with omp critical enabled\n";
-    //}
-    //#pragma omp barrier
-    //#pragma omp critical
-    //{
-    //  std::cout << "\ntests for thread: "<<omp_get_thread_num()<<"\n";
-    //  app_log()<<"  basis_functions address:"<<&basis_functions<<"\n";
-    //  app_log()<<"  basis_function components addresses:\n";
-    //  for(int i=0;i<basis_functions.components.size();i++)
-    //    app_log()<<"    "<<i<<"  "<<basis_functions.components[i]<<"\n";
-    //
-    //  app_log()<<"  basis function values\n";
-    //  PosType r;
-    //  r[0]=r[1]=r[2]=0.1;
-    //  update_basis(r);
-    //  for(int i=0;i<basis_values.size();i++)
-    //    app_log()<<"    "<<i<<"  "<<basis_values[i]<<"\n";
-    //  
-    //  app_log()<<"  basis function norms\n";
-    //  for(int i=0;i<basis_norms.size();i++)
-    //    app_log()<<"    "<<i<<"  "<<basis_norms[i]<<"\n";
-    //  
-    //  test_overlap();
-    //}
-    //#pragma omp barrier
-    //
-    //if(omp_get_thread_num()==0)
-    //{
-    //  app_log()<<"\ndone testing basis functions\ncalling app abort\n";
-    //}
-    //APP_ABORT("sposet cloning test");
-
-
     if(have_required_traces || !energy_mat)
     {
       if(check_derivatives)
@@ -672,9 +601,6 @@ if(energy_mat)
 
   DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
   {
-    app_log()<<"jtk dm1b evaluate matrix\n";
-
-
     //perform warmup sampling the first time
     if(!warmed_up)
       warmup_sampling();
@@ -896,8 +822,6 @@ if(energy_mat)
 
   DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
   {
-    app_log()<<"jtk dm1b evaluate loop\n";
-
     const int basis_size2 = basis_size*basis_size;
     if(!warmed_up)
       warmup_sampling();
@@ -1301,7 +1225,6 @@ if(energy_mat)
 
   inline void DensityMatrices1B::normalize()
   {
-    app_log()<<"dm1b normalize"<< std::endl;
     int   ngrid = std::max(200,points);
     int   ngtot = pow(ngrid,DIM);
     RealType du = scale/ngrid;
@@ -1393,7 +1316,7 @@ if(energy_mat)
         app_log()<<std::abs(omat(i,j))/std::abs(omat(0,0))<<" ";
     }
     app_log()<< std::endl;
-    //APP_ABORT("DensityMatrices1B::test_overlap");
+    APP_ABORT("DensityMatrices1B::test_overlap");
   }
 
 
