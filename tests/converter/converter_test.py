@@ -88,19 +88,14 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
 	else:
             if (code != 'pyscf'): 
                 if '-hdf5' in extra_cmd_args:
-                   ret = os.system(h5diff_exe + ' gold.orbs.h5 test.orbs.h5')
+                   ret = os.system(h5diff_exe + ' -d 0.000001 gold.orbs.h5 test.orbs.h5')
                    if ret==0:
                       print("  pass")
                       return True
                    else:
-                      ret = os.system(h5diff_exe + '-d 0.000001 gold_MP.orbs.h5 test.orbs.h5')
-                      if ret==0:
-                         print("  pass")
-                         return True
-                      else:
-                         print("h5diff reported a difference")
-                         print("  FAIL")
-                         return False
+                      print("h5diff reported a difference")
+                      print("  FAIL")
+                      return False
             test_file = gold_file.replace('gold', 'test')
             okay = compare(gold_file, test_file)
 
