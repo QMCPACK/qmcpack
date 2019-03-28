@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign 
+// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //
-// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign 
+// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -18,9 +18,9 @@
 #include "OhmmsPETE/TinyVector.h"
 #include <vector>
 
-using std::vector;
-using std::endl;
 using std::cerr;
+using std::endl;
+using std::vector;
 #include "ParticleBase/RandomSeqGenerator.h"
 
 #include <stdio.h>
@@ -30,7 +30,6 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("gaussian random array length 1", "[particle_base]")
 {
   FakeRandom rg;
@@ -70,7 +69,7 @@ TEST_CASE("gaussian random array length 3", "[particle_base]")
 TEST_CASE("gaussian random particle attrib array length 1", "[particle_base]")
 {
   FakeRandom rg;
-  ParticleAttrib<TinyVector<double, 1> > PA;
+  ParticleAttrib<TinyVector<double, 1>> PA;
   PA.resize(1);
   makeGaussRandomWithEngine(PA, rg);
 
@@ -103,4 +102,4 @@ TEST_CASE("gaussian random input zero", "[particle_base]")
   REQUIRE(a[0] == Approx(0.0));
   REQUIRE(a[1] == Approx(0.0));
 }
-}
+} // namespace qmcplusplus
