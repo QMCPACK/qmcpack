@@ -531,10 +531,8 @@ class Qmcpack(Simulation):
 def generate_qmcpack(**kwargs):
     sim_args,inp_args = Qmcpack.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
-        input_type = inp_args.input_type
-        del inp_args.input_type
-        sim_args.input = generate_qmcpack_input(input_type,**inp_args)
+    if 'input' not in sim_args:
+        sim_args.input = generate_qmcpack_input(**inp_args)
     #end if
     qmcpack = Qmcpack(**sim_args)
 
