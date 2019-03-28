@@ -46,13 +46,13 @@ See [list of open bugs](https://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+i
 ### NEXUS
 
 * A collection of training material is at https://github.com/QMCPACK/nexus_training
-* Improved generation of QMCPACK inputs [\#1471](https://github.com/QMCPACK/qmcpack/pull/1471)
-* Improved Gaussian Process optimization [\#1498](https://github.com/QMCPACK/qmcpack/pull/1498)
-* Updated Cori support [\#1463](https://github.com/QMCPACK/qmcpack/pull/1463)
-* Supercell tiling is more robust [\#1432](https://github.com/QMCPACK/qmcpack/pull/1432)
-* Summit support [\#1394](https://github.com/QMCPACK/qmcpack/pull/1394)
-* Improved handling of excited state calculations [\#1365](https://github.com/QMCPACK/qmcpack/pull/1365)
-* Fixed CHGCAR conversion [\#1351](https://github.com/QMCPACK/qmcpack/pull/1351)
+* Improved generation of QMCPACK inputs. [\#1471](https://github.com/QMCPACK/qmcpack/pull/1471)
+* Improved Gaussian Process optimization. [\#1498](https://github.com/QMCPACK/qmcpack/pull/1498)
+* Updated Cori support. [\#1463](https://github.com/QMCPACK/qmcpack/pull/1463)
+* Supercell tiling is more robust. [\#1432](https://github.com/QMCPACK/qmcpack/pull/1432)
+* Summit support. [\#1394](https://github.com/QMCPACK/qmcpack/pull/1394)
+* Improved handling of excited state calculations. [\#1365](https://github.com/QMCPACK/qmcpack/pull/1365)
+* Fixed CHGCAR conversion. [\#1351](https://github.com/QMCPACK/qmcpack/pull/1351)
 
 ## [3.6.0]  2018-12-19
 
