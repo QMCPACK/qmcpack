@@ -93,9 +93,14 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
                       print("  pass")
                       return True
                    else:
-                      print("h5diff reported a difference")
-                      print("  FAIL")
-                      return False
+                      ret = os.system(h5diff_exe + ' gold_MP.orbs.h5 test.orbs.h5')
+                      if ret==0:
+                         print("  pass")
+                         return True
+                      else:
+                         print("h5diff reported a difference")
+                         print("  FAIL")
+                         return False
             test_file = gold_file.replace('gold', 'test')
             okay = compare(gold_file, test_file)
 
