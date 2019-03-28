@@ -40,7 +40,7 @@ namespace qmcplusplus
 
     void deallocate(value_type* pt, std::size_t n)
     {
-      PRAGMA_OFFLOAD("omp target exit data map(delete:pt)")
+      PRAGMA_OFFLOAD("omp target exit data map(delete:pt[0:n])")
       HostAllocator::deallocate(pt,n);
     }
   };
