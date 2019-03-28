@@ -217,7 +217,7 @@ TEST_CASE("reduced_density_matrix", "[estimators]")
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
   qmc_cuda::CUDA_INIT(node);
   using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;

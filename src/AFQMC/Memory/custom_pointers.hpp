@@ -16,7 +16,7 @@
 #define AFQMC_CUSTOM_POINTERS_HPP
 
 #include "AFQMC/Memory/raw_pointers.hpp" 
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #endif

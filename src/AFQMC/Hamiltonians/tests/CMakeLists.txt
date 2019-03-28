@@ -31,7 +31,7 @@ IF (QMC_COMPLEX)
   ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
               "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/ham_chol_uc.h5")
   SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit;afqmc" WORKING_DIRECTORY ${UTEST_DIR})
-  IF (NOT QMC_CUDA)
+  IF (NOT ENABLE_CUDA)
     SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol_sc)
     ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
                   "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5")

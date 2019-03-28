@@ -67,7 +67,7 @@ namespace afqmc
   using tp_ul_ul = std::tuple<std::size_t,std::size_t>;
 
   enum WALKER_TYPES {UNDEFINED_WALKER_TYPE, CLOSED, COLLINEAR, NONCOLLINEAR};
-  // when QMC_CUDA is not set, DEVICE and TG_LOCAL are the same
+  // when ENABLE_CUDA is not set, DEVICE and TG_LOCAL are the same
   enum ALLOCATOR_TYPES {STD,NODE,STD_DEVICE,SHARED_LOCAL_DEVICE,SHARED_DEVICE};
 
   template<typename T> using s1D = std::tuple<IndexType,T>;
@@ -83,7 +83,7 @@ namespace afqmc
   template<class T>
   using shm_pointer = typename shared_allocator<T>::pointer; 
 
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
   template<class T>  using device_allocator = qmc_cuda::cuda_gpu_allocator<T>;
   template<class T>  using device_ptr = qmc_cuda::cuda_gpu_ptr<T>;
   template<class T>  using localTG_allocator = device_allocator<T>;
@@ -168,7 +168,7 @@ namespace afqmc
                                 shared_allocator<T>,
                                 ma::sparse::is_root>;
   using PsiT_Matrix = PsiT_Matrix_t<ComplexType>;
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   using devPsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
                                 device_allocator<ComplexType>>; 
 #else
@@ -182,7 +182,7 @@ namespace afqmc
 //#endif
 
 
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
   using P1Type = ma::sparse::csr_matrix<ComplexType,int,int,
                                  localTG_allocator<ComplexType>>;
 #else

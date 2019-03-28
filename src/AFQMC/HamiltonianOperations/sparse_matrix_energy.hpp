@@ -70,7 +70,7 @@ inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const Sp
 
   for(int i=0, iend=Gc.size(0); i<iend; i++)
     for(int n=0; n<nwalk; n++)
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
       locV[n][1] += static_cast<Type>(Gc[i][n]*Gcloc[i][n]);
 #else
       locV[n][1] += Gc[i][n]*Gcloc[i][n];
@@ -125,7 +125,7 @@ inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const Sp
   int r0 = Vakbl.local_origin()[0];
   for(int i=0, iend=Gcloc.size(0); i<iend; i++)
     for(int n=0; n<nwalk; n++)
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
       locV[n][1] += static_cast<Type>(Gc[i+r0][n]*Gcloc[i][n]);
 #else
       locV[n][1] += Gc[i+r0][n]*Gcloc[i][n];

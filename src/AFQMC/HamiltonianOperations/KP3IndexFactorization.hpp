@@ -248,7 +248,7 @@ class KP3IndexFactorization
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
       size_t cnt(0);
       if(addEJ) {
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         mem_needs += 2*nwalk*local_nCV;
 #else
         if(not getKr) mem_needs += nwalk*local_nCV;
@@ -264,7 +264,7 @@ class KP3IndexFactorization
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
@@ -280,7 +280,7 @@ class KP3IndexFactorization
           Krptr = to_address(SM_TMats.origin());
           cnt += nwalk*local_nCV;
         }
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
@@ -330,7 +330,7 @@ class KP3IndexFactorization
         for(int n=0; n<nwalk; n++)
           E[n][0] = E0;
         for(int K=0; K<nkpts; ++K) {
-#ifdef AFQMC_MIXED_PRECISION 
+#ifdef MIXED_PRECISION 
           boost::multi::array_ref<ComplexType,2> haj_K(to_address(haj[nd*nkpts+K].origin()),
                                                       {nelpk[nd][K],nopk[K]});
           for(int a=0; a<nelpk[nd][K]; ++a)
@@ -524,7 +524,7 @@ class KP3IndexFactorization
             }
           }
         }
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         if(getKl) {
           size_t i0, iN;
           std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(KEleft->num_elements()),size_t(comm->size()));
@@ -569,7 +569,7 @@ class KP3IndexFactorization
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
       size_t cnt(0);
       if(addEJ) {
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         mem_needs += 2*nwalk*local_nCV;
 #else
         if(not getKr) mem_needs += nwalk*local_nCV;
@@ -585,7 +585,7 @@ class KP3IndexFactorization
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
@@ -601,7 +601,7 @@ class KP3IndexFactorization
           Krptr = to_address(SM_TMats.origin());
           cnt += nwalk*local_nCV;
         }
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
@@ -650,7 +650,7 @@ class KP3IndexFactorization
         for(int n=0; n<nwalk; n++)
           E[n][0] = E0;
         for(int K=0; K<nkpts; ++K) {
-#ifdef AFQMC_MIXED_PRECISION 
+#ifdef MIXED_PRECISION 
           boost::multi::array_ref<ComplexType,2> haj_K(to_address(haj[nd*nkpts+K].origin()),
                                                       {nelpk[nd][K],nopk[K]});
           for(int a=0; a<nelpk[nd][K]; ++a)
@@ -906,7 +906,7 @@ class KP3IndexFactorization
             }
           }
         }
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
         if(getKl) {
           size_t i0, iN;
           std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(KEleft->num_elements()),size_t(comm->size()));
@@ -966,7 +966,7 @@ class KP3IndexFactorization
       using vType = typename std::decay<MatB>::type::element; 
       boost::multi::array_ref<vType,3>  v3D(to_address(v.origin()),{nwalk,nmo_tot,nmo_tot});
 
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
       size_t mem_needs = Xw.num_elements();
       set_shm_buffer(mem_needs);
 
@@ -1065,7 +1065,7 @@ class KP3IndexFactorization
                 for(int i=0; i<ni; i++) {
                   auto v3D_ni(to_address(v3D[nw][ni0+i].origin()) + nk0);
                   for(int k=0; k<nk; k++, ++v3D_ni)
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
                     *v3D_ni += static_cast<vType>(vki_n[k][i]);
 #else
                     *v3D_ni += vki_n[k][i];
@@ -1101,7 +1101,7 @@ class KP3IndexFactorization
                 for(int k=0; k<nk; k++) {
                   auto v3D_nk = to_address(v3D[nw][nk0+k].origin()) + ni0;
                   for(int i=0; i<ni; i++, ++v3D_nk)
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
                     *v3D_nk += static_cast<vType>(vik3D_n[i][k]);
 #else
                     *v3D_nk += vik3D_n[i][k];
@@ -1167,7 +1167,7 @@ class KP3IndexFactorization
       SpMatrix_ref Gl(TMats.origin()+vlocal.num_elements(),{std::max(nocca_max,noccb_max),nwalk});
 
       assert(Gw.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
       size_t mem_needs = Gw.num_elements();
       set_shm_buffer(mem_needs);
 
@@ -1443,7 +1443,7 @@ class KP3IndexFactorization
             auto Gc_( to_address(Gca[na0+a][nj0].origin()) );
             for(int j=0; j<nj; j++, aj++) {
               for(int w=0, waj=0; w<nwalk; w++, ++Gc_, waj+=naj)
-#ifdef AFQMC_MIXED_PRECISION 
+#ifdef MIXED_PRECISION 
                 G_[waj+aj] = static_cast<SPComplexType>(*Gc_);
 #else
                 G_[waj+aj] = (*Gc_);
@@ -1471,7 +1471,7 @@ class KP3IndexFactorization
               auto Gc_( to_address(Gcb[na0+a][nj0].origin()) );
               for(int j=0; j<nj; j++, aj++) {
                 for(int w=0, waj=0; w<nwalk; w++, ++Gc_, waj+=naj)
-#ifdef AFQMC_MIXED_PRECISION 
+#ifdef MIXED_PRECISION 
                   G_[waj+aj] = static_cast<SPComplexType>(*Gc_);
 #else
                   G_[waj+aj] = (*Gc_);
