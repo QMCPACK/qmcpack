@@ -97,16 +97,18 @@ try:
 except:
     Delaunay = unavailable('scipy.spatial','Delaunay')
 #end try
+try:
+    from scipy.linalg import logm
+except:
+    logm = unavailable('scipy.linalg','logm')
+#end try
 
 
-class GParmFlags(DevBase):
+class GParmFlags:
     """
     Define an empty class to store GP parameters and information
     """
     pass
-#end class GParmFlags
-
-
 
 def lhs(n, samples=None, iterations=None):
     """
@@ -145,16 +147,14 @@ def lhs(n, samples=None, iterations=None):
     
     if samples is None:
         samples = n
-    #end if
     
     if iterations is None:
         iterations = 5
-    #end if
-
+    
     H = _lhsmaximin(n, samples, iterations)
     
+    
     return H
-#end def lhs
 
 ###############################################################################
 
@@ -169,15 +169,15 @@ def _lhsclassic(n, samples):
     rdpoints = np.zeros_like(u)
     for j in range(n):
         rdpoints[:, j] = u[:, j]*(b-a) + a
-    #end for
+    
     # Make the random pairings
     H = np.zeros_like(rdpoints)
     for j in range(n):
         order = np.random.permutation(range(samples))
         H[:, j] = rdpoints[order, j]
-    #end for
+    
     return H
-#end def _lhsclassic
+    
     
 ###############################################################################
 
@@ -192,10 +192,9 @@ def _lhsmaximin(n, samples, iterations):
         if maxdist<np.min(d):
             maxdist = np.min(d)
             H = Hcandidate.copy()
-        #end if
+    
     return H
-#end def _lhsmaximin
-
+    
 ###############################################################################
 
 def _pdist(x):
@@ -235,20 +234,20 @@ def _pdist(x):
     m, n = x.shape
     if m<2:
         return []
-    #end if
+    
     d = np.zeros((m**2-m)/2)
     c_v = 0
     for i in range(m - 1):
         d[0+c_v:m-i-1+c_v]=np.sqrt(np.sum((np.repeat(np.reshape(x[i, :],\
                         [1,n]),m-i-1,axis=0)-x[i+1:m+1, :])**2,axis=1))
         c_v = c_v+m-i-1
-    #end for
+    
     return d
-#end def _pdist
 
 ###############################################################################
     
 def _fdist(x):
+
     """
     Calculate Distance between all points
     
@@ -269,21 +268,20 @@ def _fdist(x):
     for jn in range(n):
         Dm[jn,:] = np.sqrt(np.sum((np.repeat(np.reshape(x[jn,:],[1,d]),\
              n,axis=0)-x)**2,axis=1))
-    #end for
+    
     
     return Dm
-#end def _fdist
-
 ###############################################################################
     
-def opt_surface_f(x):
+def opt_surface_f(x,opt_fun):
 
     """
     Optimization Surface Function 
         
     Parameters
     ----------
-    x : 1 x d-array, x \in [-1,1]^d
+    x:          n x d-array, x \in Hyper cube
+    opt_fun:    Optimization Function case
     
     Returns
     -------
@@ -291,15 +289,96 @@ def opt_surface_f(x):
     
     """
     [n,d] = x.shape
-    y = np.reshape(2.0*np.sin(np.pi*np.sum(x**2,1)/2)-1,[n,1])
-    #y = np.reshape(np.prod(np.sin(2*np.pi*x**2),axis=1),[n,1])
+      
+    if opt_fun == 1:
+        y = np.zeros([n,1])
+        for jp in range(n):
+            y[jp,0] = lennard_jones(x[jp,:])
+    elif opt_fun == 2:
+        y = np.zeros([n,1])
+        for jp in range(n):
+            y[jp,0] = beale(x[jp,:])
+    elif opt_fun == 3:
+        y = np.zeros([n,1])
+        for jp in range(n):
+            y[jp,0] = rosenbrock(x[jp,:])
+    elif opt_fun == 4:
+        y = np.zeros([n,1])
+        for jp in range(n):
+            y[jp,0] = goldstein_price(x[jp,:])       
+    else:
+        y = np.reshape(2.0*np.sin(np.pi*np.sum(x**2,1)/2)-1,[n,1])
+            
 
     return y
-#end def opt_surface
+
+
+###############################################################################
+def lennard_jones(x):
+    # parameters, 1+2+3*nx
+    x = x.ravel()
+    nparams = len(x)
+    if nparams!=1 and nparams%3!=0 or nparams==0:
+        print 'invalid number of parameters for lennard jones'
+        exit()
+    #end if
+    r = [[   0,0,0],
+         [x[0],0,0]]
+    if nparams>1:
+        r.append([x[1],x[2],0])
+    #end if
+    if nparams>3:
+        i=3
+        while i+2<nparams:
+            r.append([x[i],x[i+1],x[i+2]])
+            i+=3
+        #end while
+    #end if
+    r = np.array(r,dtype=float)
+    npoints = len(r)
+    E1 = 1.0
+    rm = 1.0
+    E = 0.0
+    for i in range(npoints):
+        for j in range(i+1,npoints):
+            d = np.linalg.norm(r[i]-r[j])
+            ELJ = E1*((rm/d)**12-2*(rm/d)**6)
+            E += ELJ
+        #end for
+    #end for
+    return E
+#end def lennard_jones
+
+###############################################################################
+def rosenbrock(x):
+    """
+    Global minimum in dim 3-7 at (1,1,...,1), local min at (-1,1,...,1)
+    """
+    x = x.ravel()
+    return ( (1-x[0:-1])**2+100*(x[1:]-x[0:-1]**2)**2 ).sum()
+
+###############################################################################
+def beale(x):
+    """
+    2D function, global minimum at (3,.5)
+    """
+    x,y = x.ravel()
+    return (1.5-x+x*y)**2+(2.25-x+x*y**2)**2+(2.625-x+x*y**3)**2
+
+
+###############################################################################
+
+def goldstein_price(x):
+    """
+    2D function, global minimum at (0,-1)
+    """
+    x,y = x.ravel()
+    return (1.+(x+y+1.)**2*(19.-14*x+3*x**2-14*y+6*x*y+3*y**2))*(30+(2*x-3*y)**2*(18.-32*x+12*x**2+48*y-36*x*y+27*y**2))
 
 ###############################################################################
 
 def cfgp(r,ep):
+
     """
     Calculate correlation function for Gaussian Process
     
@@ -318,11 +397,11 @@ def cfgp(r,ep):
     y = np.exp(-ep*r**2)
     
     return y
-#end def cfgp
 
 ###############################################################################
     
 def cmgp(S1,S2,ep):
+
     """
     Calculate correlation matrix for Gaussian Process
     
@@ -347,15 +426,15 @@ def cmgp(S1,S2,ep):
     for jn in range(n):
         K[jn,:] = np.sqrt(np.sum((np.repeat(np.reshape(S1[jn,:],[1,d]),\
              m,axis=0)-S2)**2,axis=1))
-    #end for
+    
     K = cfgp(K,ep)
     
     return K
-#end def cmgp
 
 ###############################################################################
 
 def find_hyperparameters(mol_pos,E,dE):
+
     """
     Finds best Gaussian Process hyperparameters
     
@@ -368,7 +447,7 @@ def find_hyperparameters(mol_pos,E,dE):
     
     Returns
     -------
-    ep,sigma:   GP hyperparameters
+    hyp_parm:   GP hyperparameters
     Co_GP:      GP coefficents
     """
     [Nc,d] = mol_pos.shape
@@ -376,143 +455,69 @@ def find_hyperparameters(mol_pos,E,dE):
     W = np.diag(dE[:,0])
     
     D =_fdist(mol_pos)
-    ep = .5/np.max(np.min(D+np.max(D)*np.eye(Nc),axis=1))**2
-    ep_ceil = 10*ep
-    d_ep = 1e-2*ep
-    tol = 1e-3*ep
     
-    sigma = 1.0
-    d_sigma = 1e-2*sigma
-    tol_sigma = 1e-3*sigma
-    ep_c = ep
+    hyp_parm = np.zeros(2)
     
-    K = cfgp(D,ep_c)
-    Kw_inv = np.linalg.pinv(K+ sigma*W)
+    hyp_parm[0] = np.log(np.max(np.min(D+np.max(D)*np.eye(Nc),axis=1)))/2.0
+    dhyp_parm = np.zeros(2)
+    dhyp_parm[:] = 1e-1*abs(hyp_parm[0])
+    tol = 1e-2*abs(hyp_parm[0])
+    
+    K = np.exp(2.0*hyp_parm[1])*cfgp(D,np.exp(-2.0*hyp_parm[0]))
+    Kw_inv = np.linalg.pinv(K+W)
     Co_GP = np.matmul(Kw_inv,E)
-    loocv = Co_GP/np.reshape(np.diag(Kw_inv),[Nc,1])
     
-    if sigma == 0:
-        b_loocv_err = np.sum(-(loocv**2))
-        d_sigma = 0
-    else:
-        sigma_calc = 1-np.diag(np.matmul(K,np.matmul(Kw_inv,np.transpose(K))))
-        sigma_calc = np.reshape(np.maximum(sigma_calc,(sigma/10)**2),[Nc,1])
-        b_loocv_err = np.sum(-(loocv**2)/sigma_calc-np.log(sigma_calc)/2)- \
-            Nc*np.sum(np.abs(np.abs(E-np.matmul(K,Co_GP))-dE)/dE)
-    #end if
-            
-    while d_ep>tol and d_sigma>tol_sigma:
-        did_move = 0;
-        ep_c = min(ep+d_ep,ep_ceil)
-        K = cfgp(D,ep_c)
-        Kw_inv = np.linalg.pinv(K+ sigma*W)
-        Co_GP = np.matmul(Kw_inv,E)
-        loocv = Co_GP/np.reshape(np.diag(Kw_inv),[Nc,1])
-        if sigma == 0:
-            sigma_calc = 1;
-            c_loocv_err = np.sum(-(loocv**2))
-        else:
-            sigma_calc = 1-np.diag(np.matmul(K,np.matmul(Kw_inv,np.transpose(K))))
-            sigma_calc = np.reshape(np.maximum(sigma_calc,(sigma/10)**2),[Nc,1])
-            c_loocv_err = np.sum(-(loocv**2)/sigma_calc-np.log(sigma_calc)/2)- \
-                Nc*np.sum(np.abs(np.abs(E-np.matmul(K,Co_GP))-dE)/dE)
-        #end if 
-            
-        if c_loocv_err>b_loocv_err:
-            b_loocv_err = c_loocv_err
-            ep = ep_c
-            did_move = 1
-        #end if
-
-        ep_c = ep-d_ep
-        if ep_c<=0:
-            ep_c = ep
-        #end if
-
-        K = cfgp(D,ep_c)
-        Kw_inv = np.linalg.pinv(K+ sigma*W)
-        Co_GP = np.matmul(Kw_inv,E)
-        loocv = Co_GP/np.reshape(np.diag(Kw_inv),[Nc,1])
-        if sigma == 0:
-            sigma_calc = 1;
-            c_loocv_err = np.sum(-(loocv**2))
-        else:
-            sigma_calc = 1-np.diag(np.matmul(K,np.matmul(Kw_inv,np.transpose(K))))
-            sigma_calc = np.reshape(np.maximum(sigma_calc,(sigma/10)**2),[Nc,1])
-            c_loocv_err = np.sum(-(loocv**2)/sigma_calc-np.log(sigma_calc)/2)- \
-                Nc*np.sum(np.abs(np.abs(E-np.matmul(K,Co_GP))-dE)/dE)
-        #end if
-            
-        if c_loocv_err>b_loocv_err:
-            b_loocv_err = c_loocv_err
-            ep = ep_c
-            did_move = 1
-        #end if
-
-        if did_move == 1:
-            d_ep = 1.25*d_ep
-        else:
-            d_ep = .75*d_ep
-        #end if
-
-        if sigma>0:
+    b_loocv_err = np.matmul(np.transpose(E),Co_GP)+np.trace(logm(K+W))
+     
+    while max(dhyp_parm)>tol:
+        for jp in range(hyp_parm.shape[0]):
             did_move = 0;
-            sigma_c = sigma+d_sigma
-            K = cfgp(D,ep)
-            Kw_inv = np.linalg.pinv(K+ sigma_c*W)
+            chyp_parm = np.copy(hyp_parm)
+            chyp_parm[jp] = chyp_parm[jp]+dhyp_parm[jp]
+            K = np.exp(2.0*chyp_parm[1])*cfgp(D,np.exp(-2.0*chyp_parm[0]))
+            Kw_inv = np.linalg.pinv(K+W)
             Co_GP = np.matmul(Kw_inv,E)
-            loocv = Co_GP/np.reshape(np.diag(Kw_inv),[Nc,1])
-
-            sigma_calc = 1-np.diag(np.matmul(K,np.matmul(Kw_inv,np.transpose(K))))
-            sigma_calc = np.reshape(np.maximum(sigma_calc,(sigma/10)**2),[Nc,1])
-            c_loocv_err = np.sum(-(loocv**2)/sigma_calc-np.log(sigma_calc)/2)- \
-                Nc*np.sum(np.abs(np.abs(E-np.matmul(K,Co_GP))-dE)/dE)
+            
+            c_loocv_err = np.matmul(np.transpose(E),Co_GP)+np.trace(logm(K+W))
                 
-                
-            if c_loocv_err>b_loocv_err:
+            if c_loocv_err<b_loocv_err:
                 b_loocv_err = c_loocv_err
-                sigma = sigma_c
+                hyp_parm = np.copy(chyp_parm)
                 did_move = 1
-            #end if
- 
-            sigma_c = sigma-d_sigma
-            if sigma_c<=0:
-                sigma_c = sigma
-            #end if
-
-            Kw_inv = np.linalg.pinv(K+ sigma_c*W)
+            
+            chyp_parm = np.copy(hyp_parm)
+            chyp_parm[jp] = chyp_parm[jp]-dhyp_parm[jp]
+            K = np.exp(2.0*chyp_parm[1])*cfgp(D,np.exp(-2.0*chyp_parm[0]))
+            Kw_inv = np.linalg.pinv(K+W)
             Co_GP = np.matmul(Kw_inv,E)
-            loocv = Co_GP/np.reshape(np.diag(Kw_inv),[Nc,1])
-
-            sigma_calc = 1-np.diag(np.matmul(K,np.matmul(Kw_inv,np.transpose(K))))
-            sigma_calc = np.reshape(np.maximum(sigma_calc,(sigma/10)**2),[Nc,1])
-            c_loocv_err = np.sum(-(loocv**2)/sigma_calc-np.log(sigma_calc)/2)- \
-                Nc*np.sum(np.abs(np.abs(E-np.matmul(K,Co_GP))-dE)/dE)
+            
+            c_loocv_err = np.matmul(np.transpose(E),Co_GP)+np.trace(logm(K+W))
                 
-                
-            if c_loocv_err>b_loocv_err:
+            if c_loocv_err<b_loocv_err:
                 b_loocv_err = c_loocv_err
-                sigma = sigma_c
+                hyp_parm = np.copy(chyp_parm)
                 did_move = 1
-            #end if
 
+            
             if did_move == 1:
-                d_sigma = 1.25*d_sigma
+                dhyp_parm[jp] = 1.25*dhyp_parm[jp]
             else:
-                d_sigma = .75*d_sigma
-            #end if
-        #end if
-        K = cfgp(D,ep)
-        Kw_inv = np.linalg.pinv(K+ sigma*W)
-        Co_GP = np.matmul(Kw_inv,E)
-    #end while
+                dhyp_parm[jp] = .75*dhyp_parm[jp]
+            
+        
+        
+        
+    K = np.exp(2.0*hyp_parm[1])*cfgp(D,np.exp(-2.0*hyp_parm[0]))
+    Kw_inv = np.linalg.pinv(K+W)
+    Co_GP = np.matmul(Kw_inv,E)
+        
+    return hyp_parm,Co_GP 
 
-    return ep,sigma,Co_GP 
-#end def find_hyperparameters
 
 ###############################################################################
 
-def find_min(Co_GP,mol_pos,E,dE,ep):
+def find_min(Co_GP,mol_pos,E,dE,hyp_parm):
+
     """
     Finds local minimum of Gaussian Process
     
@@ -523,125 +528,201 @@ def find_min(Co_GP,mol_pos,E,dE,ep):
     E:          Energy for GP centers
     dE:         Uncertainty in energy for GP centers
     Co_GP:      GP coefficents
-    ep:         GP exponential parameter
+    hyp_parm:   GP hyperparameters
     
     Returns
     -------
-    best_pos:   Estimated local minimum
-    best_E:     Estimated local energies
-    neig_data:  Neighborhood Data
+    best_pos:       Estimated local minimum
+    best_E:         Estimated local energies
+    neig_data_ind:  Neighborhood Data indexes 
     """
     [Nc,d] = mol_pos.shape
     
-    T = Delaunay(mol_pos)
+    if d>1:
+        T = Delaunay(mol_pos)
+        us_ind = np.setdiff1d(np.arange(Nc),np.unique(T.convex_hull))
+        if us_ind.shape[0] == 0:
+            us_ind = np.zeros(1, dtype=int)
+            us_ind[0] = np.argmin(E)
+    else:
+        us_ind = np.arange(Nc)
+        
     D =_fdist(mol_pos)
     best_pos = mol_pos
     ref_dis = np.min(np.min(D+np.max(D)*np.eye(Nc),axis=1))/10
-    K = cfgp(D,ep)
-    
+    K = np.exp(2.0*hyp_parm[1])*cfgp(D,np.exp(-2.0*hyp_parm[0]))
+    W = np.diag(dE[:,0])
+    Kw_inv = np.linalg.pinv(K+W)
+
+    cnum =  np.linalg.cond(K+W)
+    if cnum>1e16:
+        print 'Warning high condition number results may suffer'
+ 
     delta_pos = ref_dis+np.zeros([Nc,d])
     tol_pos = ref_dis/10
     best_E = np.matmul(K,Co_GP)
+    Nc_search = us_ind.shape[0]
+    
+    
+    delta_pos = delta_pos[us_ind,:]
+    best_E = best_E[us_ind,:]
+    best_pos = best_pos[us_ind,:]
+    
     
     while np.max(delta_pos)>tol_pos:
-        for jp in range(Nc):
+        for jp in range(Nc_search):
             for jd in range(d):
                 did_move = 0
                 c_pos = np.copy(best_pos)
-                c_pos[jp,jd]= best_pos[jp,jd]+delta_pos[jp,jd]
-                ind_T = T.find_simplex(c_pos[jp,:])
-                if ind_T == -1:
-                    c_pos[jp,jd]= best_pos[jp,jd]
-                #end if
-
-                Kc = cmgp(np.reshape(c_pos[jp,:],[1,d]),mol_pos,ep)
+                c_pos[jp,jd]= min(best_pos[jp,jd]+delta_pos[jp,jd],1.0)
+                    
+                Kc = np.exp(2.0*hyp_parm[1])*cmgp(np.reshape(c_pos[jp,:],[1,d]),mol_pos,np.exp(-2.0*hyp_parm[0]))
                 c_E = np.matmul(Kc,Co_GP)
                 if c_E<best_E[jp]:
                     best_E[jp] = c_E
                     best_pos = np.copy(c_pos)
                     did_move = 1
-                #end if
-
+                    
                 c_pos = np.copy(best_pos)
-                c_pos[jp,jd]=best_pos[jp,jd]-delta_pos[jp,jd]
-                ind_T = T.find_simplex(c_pos[jp,:])
-                if ind_T == -1:
-                    c_pos[jp,jd]= best_pos[jp,jd]
-                #end if
-                Kc = cmgp(np.reshape(c_pos[jp,:],[1,d]),mol_pos,ep)
+                c_pos[jp,jd]=max(best_pos[jp,jd]-delta_pos[jp,jd],0.0)
+                
+                        
+                Kc = np.exp(2.0*hyp_parm[1])*cmgp(np.reshape(c_pos[jp,:],[1,d]),mol_pos,np.exp(-2.0*hyp_parm[0]))
                 c_E = np.matmul(Kc,Co_GP)
                 if c_E<best_E[jp]:
                     best_E[jp] = c_E
                     best_pos = np.copy(c_pos)
                     did_move = 1
-                #end if
-
+                    
                 if did_move == 1:
                     delta_pos[jp,jd] = 1.25*delta_pos[jp,jd]
                 else:
                     delta_pos[jp,jd] = 0.75*delta_pos[jp,jd]
-                #end if
-            #end for
-        #end for
-    #end while
-     
-    ## Remove in same simplex ##
-    jp = 0
-    ind_T = T.find_simplex(best_pos)
-    ind_T = np.reshape(ind_T,[ind_T.shape[0],1])
-    while jp<best_pos.shape[0]:
-        us_ind = np.argwhere(ind_T==ind_T[jp])
-        if us_ind.shape[0]>1:
-            min_ind = np.argmin(best_E[us_ind[:,0],0])
-            best_E[us_ind[0,0],0] = best_E[us_ind[min_ind,0],0]
-            best_pos[us_ind[0,0],:] = best_pos[us_ind[min_ind,0],:]
-            best_E = np.delete(best_E,us_ind[1:us_ind.shape[0],0],0)
-            best_pos = np.delete(best_pos,us_ind[1:us_ind.shape[0],0],0)
-            ind_T = np.delete(ind_T,us_ind[1:us_ind.shape[0],0],0)
-        #end if
-        jp += 1
-    #end while
-    jp = 0
-    while jp<best_pos.shape[0]:
-        c_dis = np.sqrt(np.sum((np.repeat(np.reshape(best_pos[jp,:],[1,d]),\
-             best_pos.shape[0],axis=0)-best_pos)**2,axis=1))
-        us_ind = np.argwhere(c_dis<ref_dis)
-        if us_ind.shape[0]>1:
-            min_ind = np.argmin(best_E[us_ind[:,0],0])
-            best_E[us_ind[0,0],0] = best_E[us_ind[min_ind,0],0]
-            best_pos[us_ind[0,0],:] = best_pos[us_ind[min_ind,0],:]
-            best_E = np.delete(best_E,us_ind[1:us_ind.shape[0],0],0)
-            best_pos = np.delete(best_pos,us_ind[1:us_ind.shape[0],0],0)
-        #end if
-        jp += 1
-    #end while
-    ind_T = T.find_simplex(best_pos)
-    ind_T = np.reshape(ind_T,[ind_T.shape[0],1])
+                
+    ## Remove Points on Convex Haul
     
-    if best_E.shape[0] > 1:
-        ind_sort = np.argsort(best_E[:,0])
-        ind_rm = np.argwhere(best_E[ind_sort,0]>np.mean(E)-np.std(E))
-        if ind_rm.shape[0]>0:
-            if ind_rm[0,0] == 0:
-                ind_rm = 1
-            else:
-                ind_rm = ind_rm[0,0]
-            #end if  
-            ind_sort = ind_sort[0:ind_rm]
-        #end if
-        best_E = best_E[ind_sort,:]
-        best_pos = best_pos[ind_sort,:]
-        ind_T = ind_T[ind_sort,:]
-    #end if
-    neig_data = E[T.simplices[ind_T[:,0],:],0]
-    neig_data = np.append(neig_data,dE[T.simplices[ind_T[:,0],:],0],axis=0)
+    if d>1:
+        us_ind = np.argwhere(T.find_simplex(best_pos)>-1)
+        if us_ind.shape[0] == 0:
+            us_ind = np.argwhere(T.simplices==np.argmin(E))
+            c_E = np.zeros([us_ind.shape[0],1])
+            for jp in range(us_ind.shape[0]): 
+                c_E[jp] = np.mean(E[T.simplices[us_ind[jp,0],:],:])
+            
+            best_ind = np.argmin(c_E[:,0])
+            best_E = np.reshape(c_E[best_ind,:],[1,1])
+            best_pos = np.mean(mol_pos[T.simplices[us_ind[best_ind,0],:],:],axis=0)
+        else:
+            best_E = best_E[us_ind[:,0],:]
+            best_pos = best_pos[us_ind[:,0],:]      
+    else:
+        us_ind = np.union1d(np.argwhere(best_pos[:,0]>min(mol_pos)),np.argwhere(best_pos[:,0]<max(mol_pos)))
+        us_ind = np.reshape(us_ind,[us_ind.shape[0],1])
+        best_E = best_E[us_ind[:,0],:]
+        best_pos = best_pos[us_ind[:,0],:]
         
-    return best_pos,best_E,neig_data
-#end def find_min
+    best_E = np.reshape(best_E,[best_E.shape[0],1])    
+    best_pos = np.reshape(best_pos,[best_E.shape[0],d]) 
+    
+    ## Remove in same simplex ##
+    if d>1:
+        jp = 0
+        ind_T = T.find_simplex(best_pos)
+        ind_T = np.reshape(ind_T,[ind_T.shape[0],1])
+        while jp<best_pos.shape[0]:
+            us_ind = np.argwhere(ind_T==ind_T[jp])
+            if us_ind.shape[0]>1:
+                min_ind = np.argmin(best_E[us_ind[:,0],0])
+                best_E[us_ind[0,0],0] = best_E[us_ind[min_ind,0],0]
+                best_pos[us_ind[0,0],:] = best_pos[us_ind[min_ind,0],:]
+                best_E = np.delete(best_E,us_ind[1:us_ind.shape[0],0],0)
+                best_pos = np.delete(best_pos,us_ind[1:us_ind.shape[0],0],0)
+                ind_T = np.delete(ind_T,us_ind[1:us_ind.shape[0],0],0)
+                
+            jp += 1
+            
+        jp = 0
+        while jp<best_pos.shape[0]:
+            c_dis = np.sqrt(np.sum((np.repeat(np.reshape(best_pos[jp,:],[1,d]),\
+                 best_pos.shape[0],axis=0)-best_pos)**2,axis=1))
+            us_ind = np.argwhere(c_dis<ref_dis)
+            if us_ind.shape[0]>1:
+                min_ind = np.argmin(best_E[us_ind[:,0],0])
+                best_E[us_ind[0,0],0] = best_E[us_ind[min_ind,0],0]
+                best_pos[us_ind[0,0],:] = best_pos[us_ind[min_ind,0],:]
+                best_E = np.delete(best_E,us_ind[1:us_ind.shape[0],0],0)
+                best_pos = np.delete(best_pos,us_ind[1:us_ind.shape[0],0],0)
+                
+            jp += 1
+        
+        ind_T = T.find_simplex(best_pos)
+        ind_T = np.reshape(ind_T,[ind_T.shape[0],1])
+        
+        if best_E.shape[0] > 1:
+            ind_sort = np.argsort(best_E[:,0])
+            ind_rm = np.argwhere(best_E[ind_sort,0]>np.mean(E)-np.std(E))
+            if ind_rm.shape[0]>0:
+                if ind_rm[0,0] == 0:
+                    ind_rm = 1
+                else:
+                    ind_rm = min(ind_rm[0,0],d+1)
+                    
+                ind_sort = ind_sort[0:ind_rm]
+            
+            best_E = best_E[ind_sort,:]
+            best_pos = best_pos[ind_sort,:]
+            ind_T = ind_T[ind_sort,:]
+                
+        neig_data_ind = T.simplices[ind_T[:,0],:]
+    else:
+        
+        jp = 0
+        while jp<best_pos.shape[0]:
+            c_dis = np.sqrt(np.sum((np.repeat(np.reshape(best_pos[jp,:],[1,d]),\
+                 best_pos.shape[0],axis=0)-best_pos)**2,axis=1))
+            us_ind = np.argwhere(c_dis<10*ref_dis)
+            if us_ind.shape[0]>1:
+                min_ind = np.argmin(best_E[us_ind[:,0],0])
+                best_E[us_ind[0,0],0] = best_E[us_ind[min_ind,0],0]
+                best_pos[us_ind[0,0],:] = best_pos[us_ind[min_ind,0],:]
+                best_E = np.delete(best_E,us_ind[1:us_ind.shape[0],0],0)
+                best_pos = np.delete(best_pos,us_ind[1:us_ind.shape[0],0],0)
+                
+            jp += 1
+            
+        if best_E.shape[0] > 1:
+            ind_sort = np.argsort(best_E[:,0])
+            ind_rm = np.argwhere(best_E[ind_sort,0]>np.mean(E)-np.std(E))
+            if ind_rm.shape[0]>0:
+                if ind_rm[0,0] == 0:
+                    ind_rm = 1
+                else:
+                    ind_rm = ind_rm[0,0]
+                    
+                ind_sort = ind_sort[0:ind_rm]
+            
+            best_E = best_E[ind_sort,:]
+            best_pos = best_pos[ind_sort,:]    
+        
+        neig_data_ind = np.zeros([best_pos.shape[0],2], dtype=int)
+        for jp in range(best_pos.shape[0]):
+            c_dis = np.sqrt(np.sum((np.repeat(np.reshape(best_pos[jp,:],[1,d]),\
+                 mol_pos.shape[0],axis=0)-mol_pos)**2,axis=1))
+            sort_ind = np.argsort(c_dis)
+            neig_data_ind[jp,0]=sort_ind[0]
+            neig_data_ind[jp,1]=sort_ind[1]
+            
+    ## Estimate Error
+    K_res = np.exp(2.0*hyp_parm[1])*cmgp(best_pos,mol_pos,np.exp(-2.0*hyp_parm[0]))
+    best_dE = np.reshape(2*abs(np.exp(2.0*hyp_parm[1])-\
+        np.diag(np.matmul(K_res,np.matmul(Kw_inv,np.transpose(K_res))))),[best_pos.shape[0],1])
+          
+    return best_pos,best_E,best_dE,neig_data_ind
+
 
 ###############################################################################
-
 def find_new_points(mol_pos,best_pos,delta_r,Nc0):
+
     """
     Estimate optimal new points for Gaussian Process
     
@@ -659,6 +740,10 @@ def find_new_points(mol_pos,best_pos,delta_r,Nc0):
     """
     
     [Nc,d] = mol_pos.shape
+    
+    if best_pos.shape[0]>Nc0:
+        best_pos = best_pos[0:Nc0,:]
+    
     new_points = np.zeros([Nc0,d])
     n_clusters = best_pos.shape[0]
     ind_clusters = np.round(np.linspace(0,n_clusters,n_clusters+1)*Nc0/(n_clusters))
@@ -670,39 +755,50 @@ def find_new_points(mol_pos,best_pos,delta_r,Nc0):
         n_pnts = ind_clusters[jc+1]-ind_clusters[jc]
         shyper_cube[:,0] = np.maximum(best_pos[jc,:]-delta_r,0)
         shyper_cube[:,1] = np.minimum(best_pos[jc,:]+delta_r,1)
-        test_points = np.repeat(np.reshape(shyper_cube[:,1]-shyper_cube[:,0],[1,d]) \
-            ,n_pnts,axis=0)*lhs(d,n_pnts)+ \
-            np.repeat(np.reshape(shyper_cube[:,0],[1,d]),n_pnts,axis=0)
-        test_points[0,:] = best_pos[jc,:]   
-        new_points[ind_clusters[jc]:ind_clusters[jc]+n_pnts,:] = test_points
+        c_dis = min(np.sqrt(np.sum((np.repeat(np.reshape(best_pos[jc,:],[1,d]),\
+             mol_pos.shape[0],axis=0)-mol_pos)**2,axis=1)))
         
-        D =_fdist(np.append(mol_pos,new_points[0:ind_clusters[jc]+n_pnts,:],axis=0))
-        b_mes = np.sum(np.min(D+np.max(D)*np.eye(Nc+ind_clusters[jc]+n_pnts),axis=1))
+        test_points = np.repeat(np.reshape(shyper_cube[:,1]-shyper_cube[:,0],[1,d]) \
+            ,n_pnts,axis=0)*lhs(d,n_pnts)+np.repeat(np.reshape(shyper_cube[:,0],[1,d]),n_pnts,axis=0)
+        
+        D =_fdist(np.append(mol_pos,new_points[0:ind_clusters[jc]+n_pnts,:],axis=0))   
+        b_mes_v = np.min(D+np.max(D)*np.eye(Nc+ind_clusters[jc]+n_pnts),axis=1)
+        
+        ## Only includes best_pos if it is significantly different from mol_pos ##
+        if c_dis>min(b_mes_v):
+            test_points[0,:] = best_pos[jc,:]
+            b_mes_v[0] = c_dis
+            
+        b_mes = np.sum(b_mes_v)   
+        new_points[ind_clusters[jc]:ind_clusters[jc]+n_pnts,:] = test_points
         
         for jit in range(n_min_d):
             cnew_points = np.copy(new_points)
             test_points = np.repeat(np.reshape(shyper_cube[:,1]-shyper_cube[:,0],[1,d]) \
                 ,n_pnts,axis=0)*lhs(d,n_pnts)+ \
                 np.repeat(np.reshape(shyper_cube[:,0],[1,d]),n_pnts,axis=0)
-            test_points[0,:] = best_pos[jc,:]      
+                                
+            D =_fdist(np.append(mol_pos,cnew_points[0:ind_clusters[jc]+n_pnts,:],axis=0))    
+            c_mes_v = np.min(D+np.max(D)*np.eye(Nc+ind_clusters[jc]+n_pnts),axis=1)
+            ## Only includes best_pos if it is significantly different from mol_pos ##
+            if c_dis>min(c_mes_v):
+                test_points[0,:] = best_pos[jc,:]
+                c_mes_v[0] = c_dis
+                
             cnew_points[ind_clusters[jc]:ind_clusters[jc]+n_pnts,:] = test_points
-            
-            D =_fdist(np.append(mol_pos,cnew_points[0:ind_clusters[jc]+n_pnts,:],axis=0))
-            c_mes = np.sum(np.min(D+np.max(D)*np.eye(Nc+ind_clusters[jc]+n_pnts),axis=1))
+            c_mes = np.sum(c_mes_v)
             
             if c_mes>b_mes:
                 new_points = np.copy(cnew_points)
                 b_mes = c_mes
-            #end if
-        #end for
-    #end for
+            
     
     return new_points
-#end def find_new_points
     
 ###############################################################################
 
-def multiscale_E(E,dE,scale_thres):
+def multiscale_E(E,dE):
+
     """
     Multiscale normalization of E
     
@@ -711,102 +807,71 @@ def multiscale_E(E,dE,scale_thres):
     ----------
     E:              Energy
     dE:             Uncertainty in Energy
-    scale_thres:    Scale parameter
     
     Returns
     -------
-    E_a:        Scale parameters
-    E_b:        Scale parameters
-    E_scaled:   Scaled energies
-    dE_scaled:  Scaled uncertainties in energies
+    E_parm:    Scale parameters
+    E_scaled:       Scaled energies
+    dE_scaled:      Scaled uncertainties in energies
     """
     
-    E_a = min(E)
-    E_scaled = (E-E_a)/scale_thres
-    dE_scaled = dE/scale_thres
-    us_ind = np.argwhere(E_scaled[:,0]>1)
-    if us_ind.shape[0]>0:   
-        E_scaled[us_ind[:,0],0] = np.log(E_scaled[us_ind[:,0],0])+1
-        dE_scaled[us_ind[:,0],0] = max(dE_scaled)
-        E_b = max(E_scaled[us_ind[:,0],0])
-        if E_b>2*scale_thres:
-            E_scaled[us_ind[:,0],0] = scale_thres*(E_scaled[us_ind[:,0],0]-1)/(E_b-1)+1
-        else:
-            E_b= 0
-        #end if
-    else:
-        E_scaled = E
-        dE_scaled = dE
-        E_a = 0
-        E_b= 0
-    #end if
+    E_parm = np.zeros(3)
+    E_parm[0] = min(E)
+    us_ind = np.argsort(E, axis=0)
+    E_parm[1] = E[us_ind[np.int(np.round(E.shape[0]/4.0)),0],0]
+    E_parm[1] = min(max(E_parm[1],E_parm[0]+100*np.mean(dE[np.argwhere(E<=E_parm[1])])),max(E))
+    if E_parm[1] == E_parm[0]:
+        E_parm[1] = min(E_parm[0]+1,max(E))
         
-    return E_a,E_b,E_scaled,dE_scaled
-#end def multiscale_E
+    E_scaled = (np.copy(E)-E_parm[0])/(E_parm[1]-E_parm[0])
+    dE_scaled = np.copy(dE)/(E_parm[1]-E_parm[0])
+    us_ind = np.argwhere(E_scaled[:,0]>1.0)
+    
+    if us_ind.shape[0]>0:
+        dE_scaled[us_ind[:,0],:] = np.log(1+dE_scaled[us_ind[:,0],:]/E_scaled[us_ind[:,0],:])
+        E_scaled[us_ind[:,0],:] = np.log(E_scaled[us_ind[:,0],:])+1
+        E_parm[2] = max(E_scaled)
+        E_scaled[us_ind[:,0],:] = 9.0*(E_scaled[us_ind[:,0],:]-1)/(E_parm[2]-1) +1
+        dE_scaled[us_ind[:,0],:] = 9.0*dE_scaled[us_ind[:,0],:]/(E_parm[2]-1)
+        dE_scaled[us_ind[:,0],:] = np.maximum(dE_scaled[us_ind[:,0],:],np.mean(dE_scaled[np.argwhere(E<=E_parm[1])]))
+
+
+        
+    return E_parm,E_scaled,dE_scaled
 
 ###############################################################################
 
-def inv_multiscale_E(E_a,E_b,E_scaled,scale_thres):
+def inv_multiscale_E(E_parm,E_scaled,dE_scaled):
+
     """
     Reverses Multiscale normalization of E
     
     
     Parameters
     ----------
-    E_a:            Scale parameters
-    E_b:            Scale parameters
+    E_parm:         Scale parameters
     E_scaled:       Scaled energies
-    scale_thres:    Scale parameter
     
     Returns
     -------
     E:          Energy
     """
-    if E_a == 0:
-        E = E_scaled
-    else:
-        us_ind = np.argwhere(E_scaled[:,0]>1)
+    E = np.copy(E_scaled)
+    dE = np.copy(dE_scaled)
+    if E_parm[2]>0:
+        us_ind = np.argwhere(E[:,0]>1.0)
         if us_ind.shape[0]>0:
-            if E_b!=0:
-                E_scaled[us_ind[:,0],0] = (E_scaled[us_ind[:,0],0]-1)*(E_b-1)/scale_thres+1
-            #end if
-            E_scaled[us_ind[:,0],0] = np.exp(E_scaled[us_ind[:,0],0]-1)
-        #end if
-        E = scale_thres*E_scaled+E_a
-    #end if
+            E[us_ind[:,0],:] = np.exp((E[us_ind[:,0],:]-1)*(E_parm[2]-1)/9.0)
+    
+    E = E*(E_parm[1]-E_parm[0])+E_parm[0]
+    dE = dE*(E_parm[1]-E_parm[0])
         
-    return E
-#end def inv_multiscale_E
-
-###############################################################################
-    
-def norm_pos(mol_pos,hyper_cube):
-    """
-    Normalizes molecular positions to unit hyper cube
-    
-    
-    Parameters
-    ----------
-    hyper_cube:     Hyper cube
-    mol_pos_norm:   Normalized GP centers
-    
-    
-    Returns
-    -------
-    mol_pos:        GP centers
-    """
-    
-    [n,d] = mol_pos.shape
-    mol_pos_norm = (mol_pos-np.repeat(np.reshape(hyper_cube[:,0],[1,d]),n,axis=0))/ \
-        np.repeat(np.reshape(hyper_cube[:,1]-hyper_cube[:,0],[1,d]),n,axis=0)
-
-        
-    return mol_pos_norm
-#end def norm_pos
+    return E,dE
 
 ###############################################################################
     
 def inv_norm_pos(mol_pos_norm,hyper_cube):
+
     """
     Reverses normalization of molecular positions to unit hyper cube
     
@@ -827,8 +892,35 @@ def inv_norm_pos(mol_pos_norm,hyper_cube):
                 ,n,axis=0)*mol_pos_norm+ \
                 np.repeat(np.reshape(hyper_cube[:,0],[1,d]),n,axis=0)
 
+        
     return mol_pos
-#end def inv_norm_pos
+
+
+###############################################################################
+    
+def norm_pos(mol_pos,hyper_cube):
+
+    """
+    Reverses normalization of molecular positions to unit hyper cube
+    
+    
+    Parameters
+    ----------
+    hyper_cube:     Hyper cube
+    mol_pos_norm:   Normalized GP centers
+    
+    
+    Returns
+    -------
+    mol_pos:        GP centers
+    """
+    
+    [n,d] = mol_pos.shape
+    mol_pos_norm = (mol_pos-np.repeat(np.reshape(hyper_cube[:,0],[1,d]),n,axis=0))/ \
+        np.repeat(np.reshape(hyper_cube[:,1]-hyper_cube[:,0],[1,d]),n,axis=0)
+
+        
+    return mol_pos_norm
 
 ###############################################################################
 
@@ -858,26 +950,40 @@ def gp_opt_setup(GP_info):
     best_pos =[]
     best_E = []
     
-    if 'hyper_cube' not in GP_info:
-        error('Please Define GP_info.hyper_cube')
-    #end if
-
     d = GP_info.hyper_cube.shape[0]
-
-    GP_info.set_optional(
-        n_its           = 5,          # Number of maximum iterations
-        jits            = 0,          # Current iteration index
-        do_vis          = 0,          # Visualize Error
-        do_scale_energy = 0,          # Scale energy
-        scale_thres     = 0.,         # Energy scale parameter
-        Nc0             = (d+2)*(d+1),# Number of points to add per iteration
-        delta_r         = 1.0,        # Initial Radius of Convergence
-        delta_r_s       = 2.0,        # Radius shrink factor
-        n_min_d         = 5,          # Number of times to resample LHC
-        )
-
+    try:
+        GP_info.n_its
+    except:
+        GP_info.n_its = 5               # Number of maximum iterations
+        
+    try:
+        GP_info.do_vis
+    except:
+        GP_info.do_vis = 0              # Visualize Error
+        
+        
+    try:
+        GP_info.Nc0
+    except:
+        GP_info.Nc0 = (d+2)*(d+1)       # Number of points to add per iteration  
+        
+    try:
+        GP_info.delta_r
+    except:
+        GP_info.delta_r = 0.5           # Initial Radius of Convergence     
+    
+    try:
+        GP_info.delta_r_s
+    except:
+        GP_info.delta_r_s = 1.25         # Radius shrink factor
+    
+    
+    try:
+        GP_info.n_min_d
+    except:
+        GP_info.n_min_d = 10             # Number of times to resample LHC 
+    
     return E,dE,mol_pos,best_pos,best_E,GP_info
-#end def gp_opt_setup
 
 ###############################################################################
 
@@ -914,30 +1020,30 @@ def gp_opt(E,dE,mol_pos,GP_info):
         new_points = inv_norm_pos(mol_pos_norm,GP_info.hyper_cube)
         best_pos = []
         best_E =[]
+        best_dE = []
+        neig_data = []
     else:
         GP_info.delta_r = GP_info.delta_r/GP_info.delta_r_s
         mol_pos_norm = norm_pos(mol_pos,GP_info.hyper_cube)
         
-        if GP_info.do_scale_energy == 1:
-            E_a,E_b,E_scaled,dE_scaled = multiscale_E(E,dE,GP_info.scale_thres)
-            ## Best Approximation of Optimization Surface ##
-            ep,sigma,Co_GP = find_hyperparameters(mol_pos_norm,E_scaled,dE_scaled)
-            ## Find Global Min ##
-            best_pos_norm,best_E_scaled,neig_data = find_min(Co_GP,mol_pos_norm,E_scaled,dE_scaled,ep)
-            best_E = inv_multiscale_E(E_a,E_b,best_E_scaled,GP_info.scale_thres)
             
-        else:
-            ep,sigma,Co_GP = find_hyperparameters(mol_pos_norm,E,dE)
-            best_pos_norm,best_E,neig_data = find_min(Co_GP,mol_pos_norm,E,dE,ep)
-        #end if
-
+        E_parm,E_scaled,dE_scaled = multiscale_E(E,dE)
+        ## Best Approximation of Optimization Surface ##
+        hyp_parm,Co_GP = find_hyperparameters(mol_pos_norm,E_scaled,dE_scaled)
+        ## Find Global Min ##
+        best_pos_norm,best_E_scaled,best_dE_scaled,neig_data_ind = find_min(Co_GP,mol_pos_norm,E_scaled,dE_scaled,hyp_parm)
+        best_E,best_dE = inv_multiscale_E(E_parm,best_E_scaled,best_dE_scaled) 
         best_pos = inv_norm_pos(best_pos_norm,GP_info.hyper_cube)
         
         new_points = find_new_points(mol_pos_norm,best_pos_norm,GP_info.delta_r,GP_info.Nc0)
-        
         new_points = inv_norm_pos(new_points,GP_info.hyper_cube)
         
-        if GP_info.do_vis == 1 and available(plt):
+        neig_data = E[neig_data_ind,0]
+        neig_data = np.append(neig_data,dE[neig_data_ind,0],axis=0)
+        
+        if GP_info.do_vis == 1:
+            
+            
             neig_bool = neig_data[0:best_E.shape[0],:]- \
                 2*neig_data[best_E.shape[0]:2*best_E.shape[0],:]
             neig_bool = neig_bool<np.repeat(best_E,d+1,axis=1)
@@ -945,35 +1051,46 @@ def gp_opt(E,dE,mol_pos,GP_info):
             for jx in range(neig_bool.shape[0]):
                 for jy in range(neig_bool.shape[1]):
                     neig_percent[jx,jy] = float(neig_bool[jx,jy])
-                #end for
-            #end for
+                
             neig_percent = 100*np.mean(neig_percent,axis=1)
             x = np.zeros((d+1)*best_E.shape[0])
             y = np.zeros((d+1)*best_E.shape[0])
             dy = np.zeros((d+1)*best_E.shape[0])
             Ex = np.zeros(best_E.shape[0])
             for jx in range(best_E.shape[0]):
-                x[jx*(d+1):(jx+1)*(d+1)] = jx
+                x[jx*(d+1):(jx+1)*(d+1)] = jx+1
                 y[jx*(d+1):(jx+1)*(d+1)] = neig_data[jx,:]
                 dy[jx*(d+1):(jx+1)*(d+1)]= neig_data[jx+best_E.shape[0],:]
-                Ex[jx] = jx
-            #end for
-
+                Ex[jx] = jx+1
+                
             plt.figure()
             plt.errorbar(x, y, yerr=dy, fmt='o',label='sampled point with uncertainty')
-            plt.plot(Ex,best_E[:,0], 'r+',label='estimated minumum')
+            plt.errorbar(Ex,best_E[:,0], yerr=best_dE[:,0],fmt='+',label='estimated minumum')
             plt.legend()
             plt.title('Neigborhood Information')
             plt.xlabel('Local Minimum')
             plt.ylabel('E')
             plt.show()
-        elif GP_info.do_vis == 1:
-            warn('visualization requested but matplotlib is not available\nplotting suppressed')
-        #end if
-    #end if
+            if d == 1:
+                npts = 100
+                plot_points = np.reshape(np.linspace(GP_info.hyper_cube[0,0],\
+                    GP_info.hyper_cube[0,1],num=npts),[npts,1])
+                #Et = np.reshape(opt_surface_f(plot_points,GP_info.opt_fun),[npts,1])
+                
+                plot_points_norm = norm_pos(plot_points,GP_info.hyper_cube)
+                
+                gp_E = np.matmul(np.exp(2.0*hyp_parm[1])*cmgp(plot_points_norm,\
+                    mol_pos_norm,np.exp(-2.0*hyp_parm[0])),Co_GP)
+                gp_E_inv,gp_E_dE = inv_multiscale_E(E_parm,gp_E,0*gp_E) 
+                plt.figure()
+                #plt.plot(plot_points,gp_E_inv,'y-',plot_points,Et,'g-',mol_pos,E,'b.',best_pos, best_E,'ro')
+                plt.plot(plot_points,gp_E_inv,'y-',mol_pos,E,'b.',best_pos, best_E,'ro')
+                plt.show()
+            
+            
+         
         
-    return new_points,best_pos,best_E,GP_info
-#end def gp_opt
+    return new_points,best_pos,best_E,best_dE,GP_info,neig_data
 
 ###############################################################################
     
@@ -983,32 +1100,100 @@ def gp_opt_example():
     Example using Gaussian Process optimization for noisy data and multiple mins
 
     """
+    plt.close('all')
 
     ## Required to define is hypercube  ##
-    d = 4                                       # Dimension of problem
-    GP_info = GParmFlags()
-    GP_info.hyper_cube = np.ones([d,2])/2       # Upper and lower bound for each dimension
-    GP_info.hyper_cube[:,0] = -GP_info.hyper_cube[:,0]/2
 
+
+    d = 3                                       # Dimension of problem
+    opt_fun = 5                                 # Define type of optimization function
+
+    d = 2
+    opt_fun = 4
 
     ## Parameters Used for Optimization Function Defining Range of Errors in Energy##
-    sigma_a = 1e-3;
-    sigma_b = 1e-1;
+    sigma_a = 1e-4;
+    sigma_b = 5e-2;
 
+
+    ## Set Hypercube for each type of optimization function and check for proper dim ##
+    GP_info = GParmFlags()
+
+    if opt_fun == 1:     
+        ## Do LJ Potential ##
+        GP_info.hyper_cube = 2*np.ones([d,2])       # Upper and lower bound for each dimension
+        GP_info.hyper_cube[:,0] = .2*GP_info.hyper_cube[:,0]
+        if d>1:
+            GP_info.hyper_cube[1:d,0] = 0
+            GP_info.n_its = 5
+
+            if d == 3:
+                print 'True min: f(x) = -3, x = [1 .5 sqrt(3)/2]'
+        else:
+            print 'True min: f(x) = -1, x = 1'
+
+    elif opt_fun == 2: 
+        d = 2
+        GP_info.hyper_cube = np.ones([d,2])       # Upper and lower bound for each dimension
+        GP_info.hyper_cube[0,0] = 2
+        GP_info.hyper_cube[1,0] = -.5
+        GP_info.hyper_cube[0,1] = 4
+        GP_info.hyper_cube[1,1] = 1
+
+        print 'Only defined for d=2'
+        print '2D function, global minimum at (3,.5)'   
+
+    elif opt_fun == 3: 
+
+        if d>7:
+            d = 2
+        elif d<3:
+            d = 3
+
+
+        GP_info.Nc0 = 2*(d+2)*(d+1)    
+        GP_info.hyper_cube = 1.5*np.ones([d,2])       # Upper and lower bound for each dimension
+        GP_info.hyper_cube[:,0] = 0.5     
+
+        print 'Only defined for d=3-7'
+        print 'Global minimum at (1,1,...,1)'
+
+    elif opt_fun == 4: 
+        d = 2
+        GP_info.hyper_cube = np.ones([d,2])       # Upper and lower bound for each dimension
+        GP_info.hyper_cube[0,0] = -1
+        GP_info.hyper_cube[1,0] = -2
+        GP_info.hyper_cube[0,1] = 1
+        GP_info.hyper_cube[1,1] = 0
+
+        print 'Only defined for d=2'
+        print '2D function, global minimum at (0,-1)'  
+
+    else:
+        GP_info.hyper_cube = np.ones([d,2])/2       # Upper and lower bound for each dimension
+        GP_info.hyper_cube[:,0] = -GP_info.hyper_cube[:,0]
+
+        GP_info.n_its = 4
+
+        print 'True min: f(x) = -1, x = 0'
 
     ## Setup Gausian Process Structure ##
-    E,dE,mol_pos,best_pos,best_E,GP_info = gp_opt_setup(GP_info)
+    try:
+        GP_info.hyper_cube
+        E,dE,mol_pos,best_pos,best_E,GP_info = gp_opt_setup(GP_info)
+    except:
+        print 'Please Define GP_info.hyper_cube'
+        exit
 
-    ## Do Gaussian Process Iteration ##
+    ## Do Gausian Process Iteration ##
+
     for jits in range(GP_info.n_its):
         GP_info.jits = jits
-        new_points,best_pos,best_E,GP_info = gp_opt(E,dE,mol_pos,GP_info)
-        print jits,'best_P',best_pos
-        print jits,'best_E',best_E
+        new_points,best_pos,best_E,best_dE,GP_info,neig_data = gp_opt(E,dE,mol_pos,GP_info) 
         if jits < GP_info.n_its-1:
             ## Simulate random uncertainty in optimization function
             new_dE = (sigma_b-sigma_a)*np.random.rand(GP_info.Nc0,1)+sigma_a
-            new_E = opt_surface_f(new_points)+new_dE*np.random.randn(GP_info.Nc0, 1)
+            new_E = opt_surface_f(new_points,opt_fun)+new_dE*np.random.randn(GP_info.Nc0, 1)
             if jits == 0:
                 mol_pos = np.copy(new_points)
                 E = np.copy(new_E)
@@ -1017,10 +1202,14 @@ def gp_opt_example():
                 mol_pos = np.append(mol_pos,new_points,axis=0)
                 E = np.append(E,new_E,axis=0)
                 dE = np.append(dE,new_dE,axis=0)
-            #end if
-        #end if
-    #end for
-#end def gp_opt_example
+
+
+    print 'Best Guess in position: '
+    print best_pos
+    print 'Best Guess in energy: '
+    print best_E
+#end def gp_opt_example        
+
 
 ###############################################################################
 
@@ -1082,9 +1271,10 @@ class GPState(DevBase):
             hyper_cube[:,0] = param_lower
             hyper_cube[:,1] = param_upper
             Pdomain = hyper_cube.copy()
-            # Setup Gausian Process data structure 
+            # Setup Gaussian Process data structure 
             GP_info = GParmFlags()
             GP_info.n_its = niterations
+            GP_info.Nc0 = 2*(dim+2)*(dim+1)
             GP_info.hyper_cube = hyper_cube
             E,dE,P,Popt,Eopt,GP_info = gp_opt_setup(GP_info)
         #end if
@@ -1099,6 +1289,7 @@ class GPState(DevBase):
         self.GP_info   = GP_info
         self.iteration = -1
         self.Pnew      = None
+        self.neig_data = None
         self.Popt_hist = []
         self.Eopt_hist = []
     #end def __init__
@@ -1116,10 +1307,12 @@ class GPState(DevBase):
         """
         Stores outputs from the gp_opt_function.
         """
-        self.Pnew    = gp_opt_outputs[0]
-        self.Popt    = gp_opt_outputs[1]
-        self.Eopt    = gp_opt_outputs[2]
-        self.GP_info = gp_opt_outputs[3]
+        self.Pnew      = gp_opt_outputs[0]
+        self.Popt      = gp_opt_outputs[1]
+        self.Eopt      = gp_opt_outputs[2]
+        self.dEopt     = gp_opt_outputs[3]
+        self.GP_info   = gp_opt_outputs[4]
+        self.neig_data = gp_opt_outputs[5]
     #end def update_gp
     
 
@@ -1336,6 +1529,7 @@ class GaussianProcessOptimizer(DevBase):
         if self.mode not in self.allowed_modes:
             self.error('mode {0} is not allowed\nallowed modes are: {1}'.format(self.mode,self.allowed_modes))
         #end if
+        self.state_hist = obj()
     #end def __init__
 
 
@@ -1377,6 +1571,7 @@ class GaussianProcessOptimizer(DevBase):
                 self.vlog('incorporating new energies',n=2)
                 state.update_energies(energies,errors)
             #end if
+            self.state_hist[i] = state.copy()
         #end for
         return state.optimal_trajectory()
     #end def optimize_stateless
@@ -1410,8 +1605,11 @@ class GaussianProcessOptimizer(DevBase):
                     energies,errors = self.energy_function(params,state)
                     state.update_energies(energies,errors)
                     self.save_energies(energies,errors)
+                #else: # wrong, temporary, only for completed nexus runs
+                #    energies,errors = self.energy_function(params,state)
                 #end if
             #end if
+            self.state_hist[i] = state.copy()            
         #end for
         return state.optimal_trajectory()
     #end def optimize_stateful
@@ -2005,14 +2203,14 @@ if __name__=='__main__':
         #plot          = True,
         )
 
-    lennardjones2 = GPTestFunction(
-        name          = 'lennardjones2',
+    lennardjones3 = GPTestFunction(
+        name          = 'lennardjones3',
         niterations   = 5,
         #param_lower   = [ 0, 0, 0],
         param_lower   = [ 0.4, 0.4, 0.4],
         param_upper   = [ 2, 2, 2],
-        #function      = lennard_jones,
-        function      = trunc_log_lennard_jones,
+        function      = lennard_jones,
+        #function      = trunc_log_lennard_jones,
         Pmin          = [1.0,0.5,sqrt(3.)/2],
         deterministic = True,
         sigma         = 1e-6,
@@ -2045,7 +2243,7 @@ if __name__=='__main__':
         exit_on_save  = False,
         )
 
-    sphere2.test()
+    #sphere2.test()
     #ackley2.test()
     #ackley4.test()
     #rosenbrock2.test()
@@ -2053,8 +2251,8 @@ if __name__=='__main__':
     #goldstein_price2.test()
     #himmelblau2.test()
     #holdertable2.test()
-    #lennardjones1.test()
-    #lennardjones2.test()
+    lennardjones1.test()
+    #lennardjones3.test()
     #lennardjones6.test()
 
     #sphere2_save_state.test()

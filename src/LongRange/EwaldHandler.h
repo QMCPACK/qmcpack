@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /** @file LRHandlerTemp.h
@@ -25,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 /* LR breakup for the standard Ewald method
  *
  * Quasi-2D Ewald method : J. Phys.: Condens. Matter 16, 891 (2004)
@@ -34,9 +30,8 @@ namespace qmcplusplus
  * It is possible to use 3D Ewald but for the bulk system, the optimal breakup method
  * is used.
  */
-class EwaldHandler: public LRHandlerBase
+class EwaldHandler : public LRHandlerBase
 {
-
 public:
   ///type of supercell
   int SuperCellEnum;
@@ -54,15 +49,14 @@ public:
    * PreFactors[2] = \f$ \frac{2\pi}{A}\frac{1}{\sigma\pi}\f$
    * PreFactors[3] = \f$ 2\frac{\sqrt{\pi}}{A*\sigma}-\frac{2\pi}{k*A} erfc(\frac{k}{2\sigma}\f$
    */
-  TinyVector<mRealType,4> PreFactors;
+  TinyVector<mRealType, 4> PreFactors;
   ///store |k|
   std::vector<mRealType> kMag;
   /// Constructor
-  EwaldHandler(ParticleSet& ref, mRealType kc_in=-1.0)
-    : LRHandlerBase(kc_in)
+  EwaldHandler(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in)
   {
-    LRHandlerBase::ClassName="EwaldHandler";
-    Sigma=LR_kc=ref.Lattice.LR_kc;
+    LRHandlerBase::ClassName = "EwaldHandler";
+    Sigma = LR_kc = ref.Lattice.LR_kc;
   }
 
   /** "copy" constructor
@@ -74,58 +68,39 @@ public:
    */
   EwaldHandler(const EwaldHandler& aLR, ParticleSet& ref);
 
-  LRHandlerBase* makeClone(ParticleSet& ref)
-  {
-    return new EwaldHandler(*this,ref);
-  }
+  LRHandlerBase* makeClone(ParticleSet& ref) { return new EwaldHandler(*this, ref); }
 
   void initBreakup(ParticleSet& ref);
 
-  void Breakup(ParticleSet& ref, mRealType rs_in)
-  {
-    initBreakup(ref);
-  }
+  void Breakup(ParticleSet& ref, mRealType rs_in) { initBreakup(ref); }
 
-  void resetTargetParticleSet(ParticleSet& ref) { }
+  void resetTargetParticleSet(ParticleSet& ref) {}
 
-  inline mRealType evaluate(mRealType r, mRealType rinv)
-  {
-    return erfc(r*Sigma)*rinv;
-  }
+  inline mRealType evaluate(mRealType r, mRealType rinv) { return erfc(r * Sigma) * rinv; }
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r)
-  {
-    return -erf(r*Sigma)/r;
-  }
+  inline mRealType evaluateLR(mRealType r) { return -erf(r * Sigma) / r; }
 
-  inline mRealType evaluateSR_k0()
-  {
-    return 0.0;
-  }
+  inline mRealType evaluateSR_k0() { return 0.0; }
 
-  inline mRealType evaluateLR_r0()
-  {
-    return 2.0*Sigma/std::sqrt(M_PI)+PreFactors[3];
-  }
+  inline mRealType evaluateLR_r0() { return 2.0 * Sigma / std::sqrt(M_PI) + PreFactors[3]; }
 
   /**  evaluate the first derivative of the short range part at r
    *
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv)
-  {
-    return 0.0;
-  }
+  inline mRealType srDf(mRealType r, mRealType rinv) { return 0.0; }
 
   void fillFk(KContainer& KList);
 
   /** evaluate k-dependent
    */
-  mRealType evaluate_slab(mRealType z, const std::vector<int>& kshell
-                         , const pComplexType* restrict rk1, const pComplexType* restrict rk2);
+  mRealType evaluate_slab(mRealType z,
+                          const std::vector<int>& kshell,
+                          const pComplexType* restrict rk1,
+                          const pComplexType* restrict rk2);
 
   /** evaluate k=0 term at z
    * @param z distance in the slab direction
@@ -136,7 +111,7 @@ public:
    */
   inline mRealType SlabFunc0(mRealType z, mRealType zp)
   {
-    return PreFactors[0]*z*erf(zp)+PreFactors[1]*std::exp(-zp*zp);
+    return PreFactors[0] * z * erf(zp) + PreFactors[1] * std::exp(-zp * zp);
   }
 
   /** evaluate k!=0 term at z
@@ -146,10 +121,10 @@ public:
    */
   inline mRealType SlabFuncK(int ks, mRealType z, mRealType zp)
   {
-    mRealType expkz=std::exp(kMag[ks]*z);
-    mRealType kz0=PreFactors[2]*kMag[ks];//could save this
-    return erfc(kz0-zp)/expkz+erfc(kz0+zp)*expkz;
+    mRealType expkz = std::exp(kMag[ks] * z);
+    mRealType kz0   = PreFactors[2] * kMag[ks]; //could save this
+    return erfc(kz0 - zp) / expkz + erfc(kz0 + zp) * expkz;
   }
 };
-}
+} // namespace qmcplusplus
 #endif

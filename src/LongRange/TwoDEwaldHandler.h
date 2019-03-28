@@ -9,9 +9,6 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /** @file LRHandlerTemp.h
@@ -24,7 +21,6 @@
 
 namespace qmcplusplus
 {
-
 /* LR breakup for the standard Ewald method
  *
  * Quasi-2D Ewald method : J. Phys.: Condens. Matter 16, 891 (2004)
@@ -33,9 +29,8 @@ namespace qmcplusplus
  * It is possible to use 3D Ewald but for the bulk system, the optimal breakup method
  * is used.
  */
-class TwoDEwaldHandler: public LRHandlerBase
+class TwoDEwaldHandler : public LRHandlerBase
 {
-
 public:
   /// Related to the Gaussian width: \f$ v_l = v(r)erf(\sigma r)\f$
   RealType Sigma;
@@ -43,10 +38,9 @@ public:
   ///store |k|
   std::vector<RealType> kMag;
   /// Constructor
-  TwoDEwaldHandler(ParticleSet& ref, RealType kc_in=-1.0)
-    : LRHandlerBase(kc_in)
+  TwoDEwaldHandler(ParticleSet& ref, RealType kc_in = -1.0) : LRHandlerBase(kc_in)
   {
-    Sigma=LR_kc=ref.Lattice.LR_kc;
+    Sigma = LR_kc = ref.Lattice.LR_kc;
   }
 
   /** "copy" constructor
@@ -58,54 +52,32 @@ public:
    */
   TwoDEwaldHandler(const TwoDEwaldHandler& aLR, ParticleSet& ref);
 
-  LRHandlerBase* makeClone(ParticleSet& ref)
-  {
-    return new TwoDEwaldHandler(*this,ref);
-  }
+  LRHandlerBase* makeClone(ParticleSet& ref) { return new TwoDEwaldHandler(*this, ref); }
 
   void initBreakup(ParticleSet& ref);
 
-  void Breakup(ParticleSet& ref, RealType rs_in)
-  {
-    initBreakup(ref);
-  }
+  void Breakup(ParticleSet& ref, RealType rs_in) { initBreakup(ref); }
 
-  void resetTargetParticleSet(ParticleSet& ref) { }
+  void resetTargetParticleSet(ParticleSet& ref) {}
 
-  inline RealType evaluate(RealType r, RealType rinv)
-  {
-    return erfc(r*Sigma)*rinv;
-  }
+  inline RealType evaluate(RealType r, RealType rinv) { return erfc(r * Sigma) * rinv; }
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline RealType evaluateLR(RealType r)
-  {
-    return -erf(r*Sigma)/r;
-  }
+  inline RealType evaluateLR(RealType r) { return -erf(r * Sigma) / r; }
 
-  inline RealType evaluateSR_k0()
-  {
-    return 2.0*std::sqrt(M_PI)/(Sigma*Volume);
-  }
+  inline RealType evaluateSR_k0() { return 2.0 * std::sqrt(M_PI) / (Sigma * Volume); }
 
-  inline RealType evaluateLR_r0()
-  {
-    return 2.0*Sigma/std::sqrt(M_PI);
-  }
+  inline RealType evaluateLR_r0() { return 2.0 * Sigma / std::sqrt(M_PI); }
 
   /**  evaluate the first derivative of the short range part at r
    *
    * @param r  radius
    * @param rinv 1/r
    */
-  inline RealType srDf(RealType r, RealType rinv)
-  {
-    return 0.0;
-  }
+  inline RealType srDf(RealType r, RealType rinv) { return 0.0; }
 
   void fillFk(KContainer& KList);
-
 };
-}
+} // namespace qmcplusplus
 #endif

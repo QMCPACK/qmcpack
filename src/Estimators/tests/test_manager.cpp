@@ -25,11 +25,9 @@
 
 namespace qmcplusplus
 {
-
 class FakeEstimator : public ScalarEstimatorBase
 {
-  virtual void accumulate(const MCWalkerConfiguration& W
-                  , WalkerIterator first, WalkerIterator last , RealType wgt) {}
+  virtual void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) {}
 
   virtual void add2Record(RecordNamedProperty<RealType>& record) {}
 
@@ -41,19 +39,19 @@ class FakeEstimator : public ScalarEstimatorBase
 TEST_CASE("EstimatorManagerBase", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
   EstimatorManagerBase em(c);
 
   REQUIRE(em.size() == 0);
 
   // Must create on heap since the EstimatorManager destructor deletes all estimators
-  FakeEstimator *fake_est = new FakeEstimator;
+  FakeEstimator* fake_est = new FakeEstimator;
 
   em.add(fake_est, "fake");
 
-  ScalarEstimatorBase *est2 = em.getEstimator("fake");
-  FakeEstimator *fake_est2 = dynamic_cast<FakeEstimator *>(est2);
+  ScalarEstimatorBase* est2 = em.getEstimator("fake");
+  FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
   REQUIRE(fake_est2 != NULL);
   REQUIRE(fake_est2 == fake_est);
 
@@ -67,7 +65,6 @@ TEST_CASE("EstimatorManagerBase", "[estimators]")
   // compute averages over threads
   //em.stop();
   em.reset();
-
 }
 
-}
+} // namespace qmcplusplus
