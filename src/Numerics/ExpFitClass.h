@@ -179,8 +179,8 @@ void ExpFitClass<M>::eval(double r, double& u, double& du, double& d2u)
   double P = 0.0, dP = 0.0, d2P = 0.0;
   for (int j = 0; j < M; j++)
   {
-    P += Coefs[j] * r2j;
-    dP += dCoefs[j] * r2j;
+    P   += Coefs[j] * r2j;
+    dP  += dCoefs[j] * r2j;
     d2P += d2Coefs[j] * r2j;
     r2j *= r;
   }
@@ -272,8 +272,8 @@ void ComplexExpFitClass<M>::eval(double r, std::complex<double>& u, std::complex
   P = dP = d2P = std::complex<double>();
   for (int j = 0; j < M; j++)
   {
-    P += Coefs[j] * r2j;
-    dP += dCoefs[j] * r2j;
+    P   += Coefs[j] * r2j;
+    dP  += dCoefs[j] * r2j;
     d2P += d2Coefs[j] * r2j;
     r2j *= r;
   }
