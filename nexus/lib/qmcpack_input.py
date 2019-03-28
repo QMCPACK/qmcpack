@@ -142,7 +142,7 @@ from StringIO import StringIO
 from superstring import string2val
 from generic import obj,hidden
 from xmlreader import XMLreader,XMLelement
-from developer import DevBase
+from developer import DevBase,error
 from periodic_table import is_element
 from structure import Structure,Jellium
 from physical_system import PhysicalSystem
@@ -216,6 +216,14 @@ def yesno(var):
         return 'no'
     #end if
 #end def yesno
+
+def yesnostr(var):
+    if isinstance(var,str):
+        return var
+    else:
+        return yesno(var)
+    #end if
+#end def yesnostr
 
 def onezero(var):
     if var:
@@ -2388,16 +2396,20 @@ class linear(QIxml):
     tag = 'qmc'
     attributes = ['method','move','checkpoint','gpu','trace']
     elements   = ['estimator']
-    parameters = ['blocks','warmupsteps','stepsbetweensamples','timestep',
-                  'samples','minwalkers','maxweight','usedrift','minmethod',
-                  'beta','exp0','bigchange','alloweddifference','stepsize',
-                  'stabilizerscale','nstabilizers','max_its','cgsteps','eigcg',
-                  'walkers','nonlocalpp','usebuffer','gevmethod','steps','substeps',
-                  'stabilizermethod','rnwarmupsteps','walkersperthread','minke',
-                  'gradtol','alpha','tries','min_walkers','samplesperthread',
-                  'use_nonlocalpp_deriv']
+    parameters = ['walkers','warmupsteps','blocks','steps','substeps','timestep',
+                  'usedrift','stepsbetweensamples','samples','minmethod',
+                  'minwalkers','maxweight','nonlocalpp','usebuffer',
+                  'alloweddifference','gevmethod','beta','exp0','bigchange',
+                  'stepsize','stabilizerscale','nstabilizers','max_its',
+                  'cgsteps','eigcg','stabilizermethod','rnwarmupsteps',
+                  'walkersperthread','minke','gradtol','alpha','tries',
+                  'min_walkers','samplesperthread','use_nonlocalpp_deriv',
+                  'shift_i','shift_s','max_relative_change','max_param_change',
+                  'chase_lowest','chase_closest','block_lm','nblocks','nolds',
+                  'nkept',
+                  ]
     costs      = ['energy','unreweightedvariance','reweightedvariance','variance','difference']
-    write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno)
+    write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno,chase_lowest=yesno,chase_closest=yesno,block_lm=yesno)
 #end class linear
 
 class cslinear(QIxml):
@@ -2405,11 +2417,13 @@ class cslinear(QIxml):
     tag = 'qmc'
     attributes = ['method','move','checkpoint','gpu','trace']
     elements   = ['estimator']
-    parameters = ['blocks','warmupsteps','stepsbetweensamples','steps','samples','timestep','usedrift',
-                  'minmethod','gevmethod','exp0','nstabilizers','stabilizerscale',
-                  'stepsize','alloweddifference','beta','bigchange','minwalkers',
-                  'usebuffer','maxweight','nonlocalpp','max_its','walkers','substeps',
-                  'stabilizermethod','cswarmupsteps','alpha_error','gevsplit','beta_error']
+    parameters = ['walkers','warmupsteps','blocks','steps','substeps','timestep',
+                  'usedrift','stepsbetweensamples','samples','minmethod',
+                  'minwalkers','maxweight','nonlocalpp','usebuffer',
+                  'alloweddifference','gevmethod','beta','exp0','bigchange',
+                  'stepsize','stabilizerscale','nstabilizers','max_its',
+                  'stabilizermethod','cswarmupsteps','alpha_error','gevsplit',
+                  'beta_error']
     costs      = ['energy','unreweightedvariance','reweightedvariance']
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno)
 #end class cslinear
@@ -2419,7 +2433,7 @@ class vmc(QIxml):
     tag = 'qmc'
     attributes = ['method','multiple','warp','move','gpu','checkpoint','trace','target','completed','id']
     elements   = ['estimator','record']
-    parameters = ['walkers','blocks','steps','substeps','timestep','usedrift','warmupsteps','samples','nonlocalpp','stepsbetweensamples','samplesperthread','tau','walkersperthread','reconfiguration','dmcwalkersperthread','current','ratio','firststep','minimumtargetwalkers']
+    parameters = ['walkers','warmupsteps','blocks','steps','substeps','timestep','usedrift','stepsbetweensamples','samples','samplesperthread','nonlocalpp','tau','walkersperthread','reconfiguration','dmcwalkersperthread','current','ratio','firststep','minimumtargetwalkers']
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,reconfiguration=yesno,ratio=yesno,completed=yesno)
 #end class vmc
 
@@ -2428,8 +2442,8 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace','target','completed','id','continue']
     elements   = ['estimator']
-    parameters = ['walkers','blocks','steps','timestep','nonlocalmove','nonlocalmoves','warmupsteps','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger']
-    write_types = obj(gpu=yesno,nonlocalmoves=yesno,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno)
+    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger']
+    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno)
 #end class dmc
 
 class rmc(QIxml):
@@ -2688,7 +2702,7 @@ momentum.defaults.set(
 
 linear.defaults.set(
      method = 'linear',move='pbyp',checkpoint=-1,
-     estimators = classcollection(localenergy)
+     #estimators = classcollection(localenergy)
 #  #jtk
 #    method='linear',move='pbyp',checkpoint=-1,gpu=True,
 #    energy=0, reweightedvariance=0, unreweightedvariance=0,
@@ -2711,7 +2725,7 @@ linear.defaults.set(
     )
 cslinear.defaults.set(
     method='cslinear', move='pbyp', checkpoint=-1,
-    estimators = classcollection(localenergy)
+    #estimators = classcollection(localenergy)
   #jtk
     #method='cslinear',move='pbyp',checkpoint=-1,gpu=True,
     #energy=0,reweightedvariance=0,unreweightedvariance=1.,
@@ -2771,32 +2785,17 @@ vmc.defaults.set(
     #substeps    = 3,
     #usedrift    = True,
     #timestep    = .5,
-    estimators = classcollection(localenergy)
+    #estimators = classcollection(localenergy)
     )
 dmc.defaults.set(
     method='dmc',move='pbyp',
     #warmupsteps   = 20,
     #timestep      = .01,
     #nonlocalmoves = True,
-    estimators = classcollection(localenergy)
+    #estimators = classcollection(localenergy)
     )
 
 
-
-opt_defaults = obj(
-    linear = obj(
-        jmm = linear(
-            warmupsteps         = 100,
-            timestep            = 0.5,
-            stepsbetweensamples = 10,
-            minwalkers          = 0.0,
-            bigchange           = 15.0,
-            alloweddifference   = 1.e-4
-            )
-        ),
-    cslinear = obj(
-        )
-    )
 
 
 
@@ -4832,6 +4831,90 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
 
 
 
+def generate_jastrows_alt(
+    J1           = False,
+    J2           = False,
+    J3           = False,
+    J1_size      = None,
+    J1_rcut      = None,
+    J1_dr        = 0.5,
+    J2_size      = None,
+    J2_rcut      = None,
+    J2_dr        = 0.5,
+    J2_init      = 'zero',
+    J3_isize     = 3,
+    J3_esize     = 3,
+    J3_rcut      = 5.0,
+    J1_rcut_open = 5.0,
+    J2_rcut_open = 10.0,
+    system       = None,
+    ):
+    if system is None:
+        QmcpackInput.class_error('input variable "system" is required to generate jastrows','generate_jastrows_alt')
+    elif system.structure.units!='B':
+        system = system.copy()
+        system.structure.change_units('B')
+    #end if
+
+    openbc = system.structure.is_open()
+
+    jastrows = []
+    J2 |= J3
+    J1 |= J2
+    if not J1 and not J2 and not J3:
+        J1 = True
+        J2 = True
+    #end if
+    rwigner = None
+    if J1:
+        if J1_rcut is None:
+            if openbc:
+                J1_rcut = J1_rcut_open
+            else:
+                if rwigner is None:
+                    rwigner = system.structure.rwigner(1)
+                #end if
+                J1_rcut = rwigner 
+            #end if
+        #end if
+        if J1_size is None:
+            J1_size = int(ceil(J1_rcut/J1_dr))
+        #end if
+        J = generate_jastrow('J1','bspline',J1_size,J1_rcut,system=system)
+        jastrows.append(J)
+    #end if
+    if J2:
+        if J2_rcut is None:
+            if openbc:
+                J2_rcut = J2_rcut_open
+            else:
+                if rwigner is None:
+                    rwigner = system.structure.rwigner(1)
+                #end if
+                J2_rcut = rwigner
+            #end if
+        #end if
+        if J2_size is None:
+            J2_size = int(ceil(J2_rcut/J2_dr))
+        #end if
+        J = generate_jastrow('J2','bspline',J2_size,J2_rcut,init=J2_init,system=system)
+        jastrows.append(J)
+    #end if
+    if J3:
+        if not openbc:
+            if rwigner is None:
+                rwigner = system.structure.rwigner(1)
+            #end if
+            J3_rcut = min(J3_rcut,rwigner)
+        #end if
+        J = generate_jastrow('J3','polynomial',J3_esize,J3_isize,J3_rcut,system=system)
+        jastrows.append(J)
+    #end if
+
+    return jastrows
+#end def generate_jastrows_alt
+
+
 def generate_jastrow(descriptor,*args,**kwargs):
     keywords = set(['function','size','rcut','elements','coeff','cusp','ename',
                     'iname','spins','density','Buu','Bud','system','isize','esize','init'])
@@ -5416,18 +5499,358 @@ def generate_opts(opt_reqs,**kwargs):
 
 
 
-def generate_qmcpack_input(selector,*args,**kwargs):
-    QIcollections.clear()
-    if 'system' in kwargs:
-        system = kwargs['system']
-        if isinstance(system,PhysicalSystem):
-            system.update_particles()
-        #end if
+opt_defaults = obj(
+    method          = 'linear',
+    minmethod       = 'quartic',
+    cost            = 'variance',
+    cycles          = 12,
+    var_cycles      = 0,
+    var_samples     = None,
+    init_cycles     = 0,
+    init_samples    = None,
+    init_minwalkers = 1e-4,
+    )
+
+shared_opt_defaults = obj(
+    samples     = 204800,
+    nonlocalpp  = True,
+    warmupsteps = 300,                
+    blocks      = 100,                
+    steps       = 1,                  
+    substeps    = 10,                 
+    timestep    = 0.3,
+    usedrift    = False,  
+    )
+
+linear_quartic_defaults = obj(
+    minwalkers        = 0.3,
+    usebuffer         = True,
+    exp0              = -6,
+    bigchange         = 10.0,
+    alloweddifference = 1e-04,
+    stepsize          = 0.15,
+    nstabilizers      = 1,
+    **shared_opt_defaults
+    )
+linear_oneshift_defaults = obj(
+    minwalkers = 0.5,
+    #shift_i    = 0.01,
+    #shift_s    = 1.00,
+    **shared_opt_defaults
+    )
+linear_adaptive_defaults = obj(
+    minwalkers          = 0.3,
+    max_relative_change = 10.0,
+    max_param_change    = 0.3,
+    shift_i             = 0.01,
+    shift_s             = 1.00,
+    **shared_opt_defaults
+    )
+
+opt_method_defaults = obj({
+    ('linear'  ,'quartic' ) : linear_quartic_defaults,
+    ('linear'  ,'rescale' ) : linear_quartic_defaults,
+    ('linear'  ,'linemin' ) : linear_quartic_defaults,
+    ('cslinear','quartic' ) : linear_quartic_defaults,
+    ('cslinear','rescale' ) : linear_quartic_defaults,
+    ('cslinear','linemin' ) : linear_quartic_defaults,
+    ('linear'  ,'adaptive') : linear_adaptive_defaults,
+    ('linear'  ,'oneshift') : linear_oneshift_defaults,
+    ('linear'  ,'oneshiftonly') : linear_oneshift_defaults,
+    })
+del shared_opt_defaults
+del linear_quartic_defaults
+del linear_oneshift_defaults
+del linear_adaptive_defaults
+
+allowed_opt_method_inputs = set(linear.attributes+linear.parameters
+                                +cslinear.attributes+cslinear.parameters)
+
+vmc_defaults = obj(
+    walkers     = 1,
+    warmupsteps = 50,
+    blocks      = 800,
+    steps       = 10,
+    substeps    = 3,
+    timestep    = 0.3,
+    checkpoint  = -1,
+    )
+vmc_test_defaults = obj(
+    warmupsteps = 10,
+    blocks      = 20,
+    steps       =  4,
+    ).set_optional(**vmc_defaults)
+vmc_noJ_defaults = obj(
+    warmupsteps = 200,
+    blocks      = 800,
+    steps       = 100,
+    ).set_optional(**vmc_defaults)
+
+dmc_defaults = obj(
+    warmupsteps          = 20,
+    blocks               = 200,
+    steps                = 10,
+    timestep             = 0.01,
+    checkpoint           = -1,
+    vmc_samples          = 2048,
+    vmc_samplesperthread = None, 
+    vmc_walkers          = 1,
+    vmc_warmupsteps      = 30,
+    vmc_blocks           = 40,
+    vmc_steps            = 10,
+    vmc_substeps         = 3,
+    vmc_timestep         = 0.3,
+    vmc_checkpoint       = -1,
+    eq_dmc               = False,
+    eq_warmupsteps       = 20,
+    eq_blocks            = 20,
+    eq_steps             = 5,
+    eq_timestep          = 0.02,
+    eq_checkpoint        = -1,
+    ntimesteps           = 1,
+    timestep_factor      = 0.5,    
+    nonlocalmoves        = None,
+    )
+dmc_test_defaults = obj(
+    vmc_warmupsteps = 10,
+    vmc_blocks      = 20,
+    vmc_steps       =  4,
+    eq_warmupsteps  =  2,
+    eq_blocks       =  5,
+    eq_steps        =  2,
+    warmupsteps     =  2,
+    blocks          = 10,
+    steps           =  2,
+    ).set_optional(**dmc_defaults)
+dmc_noJ_defaults = obj(
+    warmupsteps     =  40,
+    blocks          = 400,
+    steps           =  20,
+    ).set_optional(**dmc_defaults)
+
+qmc_defaults = obj(
+    opt      = opt_defaults,
+    vmc      = vmc_defaults,
+    vmc_test = vmc_test_defaults,
+    vmc_noJ  = vmc_noJ_defaults,
+    dmc      = dmc_defaults,
+    dmc_test = dmc_test_defaults,
+    dmc_noJ  = dmc_noJ_defaults,
+    )
+del opt_defaults
+del vmc_defaults
+del vmc_test_defaults
+del vmc_noJ_defaults
+del dmc_defaults
+del dmc_test_defaults
+del dmc_noJ_defaults
+
+
+
+def generate_opt_calculations(
+    method     ,
+    cost       ,
+    cycles     ,
+    var_cycles ,
+    var_samples,
+    init_cycles,
+    init_samples,
+    init_minwalkers,
+    loc        = 'generate_opt_calculations',
+    **opt_inputs
+    ):
+
+    methods = obj(linear=linear,cslinear=cslinear)
+    if method not in methods:
+        error('invalid optimization method requested\ninvalid method: {0}\nvalid options are: {1}'.format(method,sorted(methods.keys())),loc)
     #end if
+    opt = methods[method]
+
+    opt_inputs = obj(opt_inputs)
+    invalid = set(opt_inputs.keys())-allowed_opt_method_inputs
+    oneshift = False
+    if len(invalid)>0:
+        error('invalid optimization inputs provided\ninvalid inputs: {}\nvalid options are: {}'.format(sorted(invalid),sorted(allowed_opt_method_inputs)))
+    #end if
+    if 'minmethod' in opt_inputs and opt_inputs.minmethod.lower().startswith('oneshift'):
+        opt_inputs.minmethod = 'OneShiftOnly'
+        oneshift = True
+    #end if
+
+    if cost=='variance':
+        cost = (0.0,1.0,0.0)
+    elif cost=='energy':
+        cost = (1.0,0.0,0.0)
+    elif isinstance(cost,(tuple,list)) and (len(cost)==2 or len(cost)==3):
+        if len(cost)==2:
+            cost = (cost[0],0.0,cost[1])
+        #end if
+    else:
+        error('invalid optimization cost function encountered\ninvalid cost fuction: {0}\nvalid options are: variance, energy, (0.95,0.05), etc'.format(cost),loc)
+    #end if
+    opt_calcs = []
+    if var_cycles>0:
+        vmin_opt = opt(
+            energy               = 0.0,
+            unreweightedvariance = 1.0,
+            reweightedvariance   = 0.0,
+            **opt_inputs
+            )
+        if var_samples is not None:
+            vmin_opt.samples = var_samples
+        #end if
+        opt_calcs.append(loop(max=var_cycles,qmc=vmin_opt))
+    #end if
+    if init_cycles>0:
+        init_opt = opt(**opt_inputs)
+        if init_samples is not None:
+            init_opt.samples = init_samples
+        #end if
+        init_opt.minwalkers = init_minwalkers
+        if not oneshift:
+            init_opt.energy               = cost[0]
+            init_opt.unreweightedvariance = cost[1]
+            init_opt.reweightedvariance   = cost[2]
+        #end if
+        opt_calcs.append(loop(max=init_cycles,qmc=init_opt))
+    #end if
+
+    cost_opt = opt(**opt_inputs)
+    if not oneshift:
+        cost_opt.energy               = cost[0]
+        cost_opt.unreweightedvariance = cost[1]
+        cost_opt.reweightedvariance   = cost[2]
+    #end if
+
+    opt_calcs.append(loop(max=cycles,qmc=cost_opt))
+    return opt_calcs
+#end def generate_opt_calculations
+
+
+
+def generate_vmc_calculations(
+    walkers    ,
+    warmupsteps,
+    blocks     ,
+    steps      ,
+    substeps   ,
+    timestep   ,
+    checkpoint ,
+    loc        = 'generate_vmc_calculations',
+    ):
+    vmc_calcs = [
+        vmc(
+            walkers     = walkers,
+            warmupsteps = warmupsteps,
+            blocks      = blocks,
+            steps       = steps,
+            substeps    = substeps,
+            timestep    = timestep,
+            checkpoint  = checkpoint,
+            )
+        ]
+    return vmc_calcs
+#end def generate_vmc_calculations
+
+
+
+def generate_dmc_calculations(
+    warmupsteps         ,
+    blocks              ,
+    steps               ,
+    timestep            ,
+    checkpoint          ,
+    vmc_samples         ,
+    vmc_samplesperthread, 
+    vmc_walkers         ,
+    vmc_warmupsteps     ,
+    vmc_blocks          ,
+    vmc_steps           ,
+    vmc_substeps        ,
+    vmc_timestep        ,
+    vmc_checkpoint      ,
+    eq_dmc              ,
+    eq_warmupsteps      ,
+    eq_blocks           ,
+    eq_steps            ,
+    eq_timestep         ,
+    eq_checkpoint       ,
+    ntimesteps          ,
+    timestep_factor     ,    
+    nonlocalmoves       ,
+    loc                 = 'generate_dmc_calculations',
+    ):
+
+    if vmc_samples is None and vmc_samplesperthread is None:
+        error('vmc samples (dmc walkers) not specified\nplease provide one of the following keywords: vmc_samples, vmc_samplesperthread',loc)
+    #end if
+
+    vmc_calc = vmc(
+        walkers     = vmc_walkers,
+        warmupsteps = vmc_warmupsteps,
+        blocks      = vmc_blocks,
+        steps       = vmc_steps,
+        substeps    = vmc_substeps,
+        timestep    = vmc_timestep,
+        checkpoint  = vmc_checkpoint,
+        )
+    if vmc_samplesperthread is not None:
+        vmc_calc.samplesperthread = vmc_samplesperthread
+    elif vmc_samples is not None:
+        vmc_calc.samples = vmc_samples
+    #end if
+
+    dmc_calcs = [vmc_calc]
+    if eq_dmc:
+        dmc_calcs.append(
+            dmc(
+                warmupsteps   = eq_warmupsteps,
+                blocks        = eq_blocks,
+                steps         = eq_steps,
+                timestep      = eq_timestep,
+                checkpoint    = eq_checkpoint,
+                )
+            )
+    #end if
+    tfac = 1.0
+    for n in range(ntimesteps):
+        sfac = 1.0/tfac
+        dmc_calcs.append(
+            dmc(
+                warmupsteps   = int(sfac*warmupsteps),
+                blocks        = blocks,
+                steps         = int(sfac*steps),
+                timestep      = tfac*timestep,
+                checkpoint    = checkpoint,
+                )
+            )
+        tfac *= timestep_factor
+    #end for
+
+    if nonlocalmoves is not None:
+        for calc in dmc_calcs:
+            if isinstance(calc,dmc):
+                calc.nonlocalmoves = nonlocalmoves
+            #end if
+        #end for
+    #end if
+    
+    return dmc_calcs
+#end def generate_dmc_calculations
+
+
+
+def generate_qmcpack_input(**kwargs):
+    QIcollections.clear()
+    system = kwargs.get('system',None)
+    if isinstance(system,PhysicalSystem):
+        system.update_particles()
+    #end if
+    selector = kwargs.pop('input_type','basic')
     if selector=='basic':
         inp = generate_basic_input(**kwargs)
     elif selector=='opt_jastrow':
-        inp = generate_opt_jastrow_input(*args,**kwargs)
+        inp = generate_opt_jastrow_input(**kwargs)
     else:
         QmcpackInput.class_error('selection '+str(selector)+' has not been implemented for qmcpack input generation')
     #end if
@@ -5436,178 +5859,213 @@ def generate_qmcpack_input(selector,*args,**kwargs):
 
 
 
+gen_basic_input_defaults = obj(
+    id             = 'qmc',            
+    series         = 0,                
+    purpose        = '',               
+    seed           = None,             
+    bconds         = None,             
+    truncate       = False,            
+    buffer         = None,             
+    lr_dim_cutoff  = 15,               
+    remove_cell    = False,            
+    randomsrc      = False,            
+    meshfactor     = 1.0,              
+    orbspline      = None,             
+    precision      = 'float',          
+    twistnum       = None,             
+    twist          = None,             
+    spin_polarized = None,             
+    partition      = None,             
+    partition_mf   = None,             
+    hybridrep      = None,             
+    hybrid_rcut    = None,             
+    hybrid_lmax    = None,             
+    orbitals_h5    = 'MISSING.h5',     
+    excitation     = None,             
+    system         = 'missing',        
+    pseudos        = None,             
+    jastrows       = 'generateJ12',    
+    interactions   = 'all',            
+    corrections    = 'default',        
+    observables    = None,             
+    estimators     = None,             
+    traces         = None,             
+    calculations   = None,             
+    det_format     = 'new',            
+    J1             = False,            
+    J2             = False,            
+    J3             = False,            
+    J1_size        = None,             
+    J1_rcut        = None,             
+    J1_dr          = 0.5,              
+    J2_size        = None,             
+    J2_rcut        = None,             
+    J2_dr          = 0.5,              
+    J2_init        = 'zero',           
+    J3_isize       = 3,                
+    J3_esize       = 3,                
+    J3_rcut        = 5.0,              
+    J1_rcut_open   = 5.0,              
+    J2_rcut_open   = 10.0,
+    qmc            = None, # opt,vmc,vmc_test,dmc,dmc_test
+    )
 
-def generate_basic_input(id             = 'qmc',
-                         series         = 0,
-                         purpose        = '',
-                         seed           = None,
-                         bconds         = None,
-                         truncate       = False,
-                         buffer         = None,
-                         lr_dim_cutoff  = 15,
-                         remove_cell    = False,
-                         randomsrc      = False,
-                         meshfactor     = 1.0,
-                         orbspline      = None,
-                         precision      = 'float',
-                         twistnum       = None, 
-                         twist          = None,
-                         spin_polarized = None,
-                         partition      = None,
-                         partition_mf   = None,
-                         hybridrep      = None,
-                         hybrid_rcut    = None,
-                         hybrid_lmax    = None,
-                         orbitals_h5    = 'MISSING.h5',
-                         excitation     = None,
-                         system         = 'missing',
-                         pseudos        = None,
-                         jastrows       = 'generateJ12',
-                         interactions   = 'all',
-                         corrections    = 'default',
-                         observables    = None,
-                         estimators     = None,
-                         traces         = None,
-                         calculations   = None,
-                         det_format     = 'new',
-                         **invalid_kwargs
-                         ):
-
+def generate_basic_input(**kwargs):
+    # capture inputs
+    kw = obj(kwargs)
+    # apply general defaults
+    kw.set_optional(**gen_basic_input_defaults)
+    valid = set(gen_basic_input_defaults.keys())
+    # apply method specific defaults
+    if kw.qmc is not None:
+        if kw.qmc not in qmc_defaults:
+            QmcpackInput.class_error('invalid input for argument "qmc"\ninvalid input: {}\nvalid options are: {}'.format(kw.qmc,sorted(qmc_defaults.keys())),'generate_basic_input')
+        #end if
+        qmc_keys = []
+        kw.set_optional(**qmc_defaults[kw.qmc])
+        qmc_keys += list(qmc_defaults[kw.qmc].keys())
+        if kw.qmc=='opt':
+            key = (kw.method,kw.minmethod.lower())
+            if key not in opt_method_defaults:
+                QmcpackInput.class_error('invalid input for arguments "method,minmethod"\ninvalid input: {}\nvalid options are: {}'.format(key,sorted(opt_method_defaults.keys())),'generate_basic_input')
+            #end if
+            kw.set_optional(**opt_method_defaults[key])
+            qmc_keys += list(opt_method_defaults[key].keys())
+            del key
+        #end if
+        valid |= set(qmc_keys)
+    #end if
+    # screen for invalid keywords
+    invalid_kwargs = set(kw.keys())-valid
     if len(invalid_kwargs)>0:
-        valid = ['id','series','purpose','seed','bconds','truncate',
-                 'buffer','lr_dim_cutoff','remove_cell','randomsrc',
-                 'meshfactor','orbspline','precision','twistnum',
-                 'twist','spin_polarized','partition','orbitals_h5',
-                 'system','pseudos','jastrows','interactions',
-                 'corrections','observables','estimators','traces',
-                 'calculations','det_format']
-        QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs.keys()),sorted(valid)),'generate_qmcpack_input')
+        QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs),sorted(valid)),'generate_qmcpack_input')
     #end if
 
-    if system=='missing':
-        QmcpackInput.class_error('generate_basic_input argument system is missing\n  if you really do not want particlesets to be generated, set system to None')
+    if kw.system=='missing':
+        QmcpackInput.class_error('generate_basic_input argument system is missing\nif you really do not want particlesets to be generated, set system to None')
     #end if
-    if bconds is None:
-        if system is not None:
-            s = system.structure
-            bconds = s.bconds
-            if len(bconds)==0 or not s.has_axes():
-                bconds = 'nnn'
+    if kw.bconds is None:
+        if kw.system is not None:
+            s = kw.system.structure
+            kw.bconds = s.bconds
+            if len(kw.bconds)==0 or not s.has_axes():
+                kw.bconds = 'nnn'
             #end if
         else:
-            bconds = 'ppp'
+            kw.bconds = 'ppp'
         #end if
     #end if
-    if corrections=='default' and tuple(bconds)==tuple('ppp'):
-        corrections = ['mpc','chiesa']
-    elif isinstance(corrections,(list,tuple)):
+    if kw.corrections=='default' and tuple(kw.bconds)==tuple('ppp'):
+        kw.corrections = ['mpc','chiesa']
+    elif isinstance(kw.corrections,(list,tuple)):
         None
     else:
-        corrections = []
+        kw.corrections = []
     #end if
-    if observables is None:
+    if kw.observables is None:
         #observables = ['localenergy']
-        observables = []
+        kw.observables = []
     #end if
-    if estimators is None:
-        estimators = []
+    if kw.estimators is None:
+        kw.estimators = []
     #end if
-    estimators = estimators + observables + corrections
-    if calculations is None:
-        calculations = []
+    kw.estimators = kw.estimators + kw.observables + kw.corrections
+    if kw.calculations is None:
+        kw.calculations = []
     #end if
-    if spin_polarized is None:
-        spin_polarized = system.net_spin>0
+    if kw.spin_polarized is None:
+        kw.spin_polarized = kw.system.net_spin>0
     #end if
-    if partition!=None:
-        det_format = 'new'
+    if kw.partition is not None:
+        kw.det_format = 'new'
     #end if
-    if hybrid_rcut is not None or hybrid_lmax is not None:
-        hybridrep = True
+    if kw.hybrid_rcut is not None or kw.hybrid_lmax is not None:
+        kw.hybridrep = True
     #end if
 
     metadata = QmcpackInput.default_metadata.copy()
 
     proj = project(
-        id          = id,
-        series      = series,
-        application = application()
+        id          = kw.id,
+        series      = kw.series,
+        application = application(),
         )
 
     simcell = generate_simulationcell(
-        bconds        = bconds,
-        lr_dim_cutoff = lr_dim_cutoff,
-        system        = system
+        bconds        = kw.bconds,
+        lr_dim_cutoff = kw.lr_dim_cutoff,
+        system        = kw.system,
         )
 
-    if system!=None:
-        system.structure.set_bconds(bconds)
+    if kw.system is not None:
+        kw.system.structure.set_bconds(kw.bconds)
         particlesets = generate_particlesets(
-            system      = system,
-            randomsrc   = randomsrc or tuple(bconds)!=('p','p','p'),
-            hybrid_rcut = hybrid_rcut,
-            hybrid_lmax = hybrid_lmax,
+            system      = kw.system,
+            randomsrc   = kw.randomsrc or tuple(kw.bconds)!=('p','p','p'),
+            hybrid_rcut = kw.hybrid_rcut,
+            hybrid_lmax = kw.hybrid_lmax,
             )
     #end if
 
 
-    if det_format=='new':
-        if excitation is not None:
+    if kw.det_format=='new':
+        if kw.excitation is not None:
             QmcpackInput.class_error('user provided "excitation" input argument with new style determinant format\nplease add det_format="old" and try again')
         #end if
-        if system!=None and isinstance(system.structure,Jellium):
+        if kw.system is not None and isinstance(kw.system.structure,Jellium):
             ssb = generate_sposet_builder(
                 type           = 'heg',
-                twist          = twist,
-                spin_polarized = spin_polarized,
-                system         = system
+                twist          = kw.twist,
+                spin_polarized = kw.spin_polarized,
+                system         = kw.system,
                 )
         else:
-            if orbspline is None:
-                orbspline = 'bspline'
+            if kw.orbspline is None:
+                kw.orbspline = 'bspline'
             #end if
             ssb = generate_sposet_builder(
-                type           = orbspline,
-                twist          = twist,
-                twistnum       = twistnum,
-                meshfactor     = meshfactor,
-                precision      = precision,
-                truncate       = truncate,
-                buffer         = buffer,
-                hybridrep      = hybridrep,
-                href           = orbitals_h5,
-                spin_polarized = spin_polarized,
-                system         = system
+                type           = kw.orbspline,
+                twist          = kw.twist,
+                twistnum       = kw.twistnum,
+                meshfactor     = kw.meshfactor,
+                precision      = kw.precision,
+                truncate       = kw.truncate,
+                buffer         = kw.buffer,
+                hybridrep      = kw.hybridrep,
+                href           = kw.orbitals_h5,
+                spin_polarized = kw.spin_polarized,
+                system         = kw.system,
                 )
         #end if
-        if partition is None:
+        if kw.partition is None:
             spobuilders = [ssb]
         else:
             spobuilders = partition_sposets(
                 sposet_builder = ssb,
-                partition      = partition,
-                partition_meshfactors = partition_mf,
+                partition      = kw.partition,
+                partition_meshfactors = kw.partition_mf,
                 )
         #end if
 
         dset = generate_determinantset(
-            spin_polarized = spin_polarized,
-            system         = system
+            spin_polarized = kw.spin_polarized,
+            system         = kw.system,
             )
-    elif det_format=='old':
+    elif kw.det_format=='old':
         spobuilders = None
-        if orbspline is None:
-            orbspline = 'einspline'
+        if kw.orbspline is None:
+            kw.orbspline = 'einspline'
         #end if
         dset = generate_determinantset_old(
-            type           = orbspline,
-            twistnum       = twistnum,
-            meshfactor     = meshfactor,
-            precision      = precision,
-            href           = orbitals_h5,
-            spin_polarized = spin_polarized,
-            excitation     = excitation,
-            system         = system,
+            type           = kw.orbspline,
+            twistnum       = kw.twistnum,
+            meshfactor     = kw.meshfactor,
+            precision      = kw.precision,
+            href           = kw.orbitals_h5,
+            spin_polarized = kw.spin_polarized,
+            excitation     = kw.excitation,
+            system         = kw.system,
             )
     else:
         QmcpackInput.class_error('generate_basic_input argument det_format is invalid\n  received: {0}\n  valid options are: new,old'.format(det_format))
@@ -5617,49 +6075,78 @@ def generate_basic_input(id             = 'qmc',
     wfn = wavefunction(        
         name           = 'psi0',
         target         = 'e',
-        determinantset = dset
+        determinantset = dset,
         )
 
-
-    if jastrows!=None:
-        wfn.jastrows = generate_jastrows(jastrows,system,check_ions=True)
+    if kw.J1 or kw.J2 or kw.J3:
+        kw.jastrows = generate_jastrows_alt(
+            J1           = kw.J1          ,
+            J2           = kw.J2          ,
+            J3           = kw.J3          ,
+            J1_size      = kw.J1_size     ,
+            J1_rcut      = kw.J1_rcut     ,
+            J1_dr        = kw.J1_dr       ,
+            J2_size      = kw.J2_size     ,
+            J2_rcut      = kw.J2_rcut     ,
+            J2_dr        = kw.J2_dr       ,
+            J2_init      = kw.J2_init     ,
+            J3_isize     = kw.J3_isize    ,
+            J3_esize     = kw.J3_esize    ,
+            J3_rcut      = kw.J3_rcut     ,
+            J1_rcut_open = kw.J1_rcut_open,
+            J2_rcut_open = kw.J2_rcut_open,
+            system       = kw.system      ,
+            )
+    #end if
+    if kw.jastrows is not None:
+        wfn.jastrows = generate_jastrows(kw.jastrows,kw.system,check_ions=True)
     #end if
 
     hmltn = generate_hamiltonian(
-        system       = system,
-        pseudos      = pseudos,
-        interactions = interactions,
-        estimators   = estimators
+        system       = kw.system,
+        pseudos      = kw.pseudos,
+        interactions = kw.interactions,
+        estimators   = kw.estimators,
         )
 
-    if spobuilders!=None:
+    if spobuilders is not None:
         wfn.sposet_builders = make_collection(spobuilders)
     #end if
 
     qmcsys = qmcsystem(
         simulationcell  = simcell,
         wavefunction    = wfn,
-        hamiltonian     = hmltn
+        hamiltonian     = hmltn,
         )
 
-    if system!=None:
+    if kw.system is not None:
         qmcsys.particlesets = particlesets
     #end if
 
     sim = simulation(
         project   = proj,
-        qmcsystem = qmcsys
+        qmcsystem = qmcsys,
         )
 
-    if seed!=None:
-        sim.random = random(seed=seed)
+    if kw.seed is not None:
+        sim.random = random(seed=kw.seed)
     #end if
 
-    if traces!=None:
-        sim.traces = traces
+    if kw.traces is not None:
+        sim.traces = kw.traces
     #end if
 
-    for calculation in calculations:
+    if len(kw.calculations)==0 and kw.qmc is not None:
+        qmc_inputs = kw.obj(*qmc_keys)
+        if kw.qmc=='opt':
+            kw.calculations = generate_opt_calculations(**qmc_inputs)
+        elif 'vmc' in kw.qmc:
+            kw.calculations = generate_vmc_calculations(**qmc_inputs)
+        elif 'dmc' in kw.qmc:
+            kw.calculations = generate_dmc_calculations(**qmc_inputs)
+        #end if
+    #end if
+    for calculation in kw.calculations:
         if isinstance(calculation,loop):
             calc = calculation.qmc
         else:
@@ -5676,18 +6163,18 @@ def generate_basic_input(id             = 'qmc',
         else:
             estimators = collection()
         #end if
-        if not has_localenergy:
-            estimators.localenergy = localenergy(name='LocalEnergy')
-            calc.estimators = estimators
-        #end if
+        #if not has_localenergy:
+        #    estimators.localenergy = localenergy(name='LocalEnergy')
+        #    calc.estimators = estimators
+        ##end if
     #end for
-    sim.calculations = make_collection(calculations).copy()
+    sim.calculations = make_collection(kw.calculations).copy()
 
     qi = QmcpackInput(metadata,sim)
 
     qi.incorporate_defaults(elements=False,overwrite=False,propagate=True)
 
-    if remove_cell:
+    if kw.remove_cell:
         qi.remove_physical_system()
     #end if
 
