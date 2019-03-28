@@ -83,13 +83,21 @@ IF (BUILD_UNIT_TESTS)
       ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/ham_chol_uc.h5
       ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/wfn_rhf.dat
       )
-  IF (QMC_CUDA)
+  SET(AFQMC_UNIT_TEST_INPUT_REAL
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/ham_chol.h5
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/wfn_rhf.dat
+      )
+  IF (QMC_COMPLEX)
+    IF (QMC_CUDA)
       SET(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_SYM})
-  ELSE()
+    ELSE()
       SET(AFQMC_UNIT_TEST_INPUTS
           ${AFQMC_UNIT_TEST_INPUT_SYM}
           ${AFQMC_UNIT_TEST_INPUT_NOSYM}
           )
+    ENDIF()
+  ELSE()
+    SET(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_REAL})
   ENDIF()
   SUBDIRS(Matrix/tests)
   SUBDIRS(Numerics/tests)

@@ -72,13 +72,13 @@ namespace afqmc
 
     for(int nd=0; nd<ci.size(); nd++) {
       MixedDensityMatrix_for_E(wset,G,ov_,nd);
-      ma::axpy(std::conj(ci[nd]),ov_,Ov);
+      ma::axpy(ma::conj(ci[nd]),ov_,Ov);
       HamOp.energy(eloc2,G,nd,TG.TG_local().root());  
       //TG.TG_local().all_reduce_in_place_n(eloc2.origin(),3*nwalk,std::plus<>());
       for(int i=0; i<nwalk; ++i) 
         for(int k=0; k<3; ++k) 
 // TO GPU
-          E[i][k] += std::conj(ci[nd])*ov_[i]*eloc2[i][k];  
+          E[i][k] += ma::conj(ci[nd])*ov_[i]*eloc2[i][k];  
     }     
 
     if(TG.TG_local().size() > 1) 
@@ -188,7 +188,8 @@ namespace afqmc
       TG.local_barrier();
 
     }
-    TG.TG().all_reduce_in_place_n(to_address(eloc2.origin()),3*ngroups*nwalk,std::plus<>());
+    if(TG.TG().size() > 1)
+      TG.TG().all_reduce_in_place_n(to_address(eloc2.origin()),3*ngroups*nwalk,std::plus<>());
     TG.local_barrier();    
     copy_n(eloc2[node_number*nwalk].origin(),3*nwalk,E.origin());
     copy_n(overlaps.origin(),nwalk,Ov.origin());
@@ -305,18 +306,18 @@ namespace afqmc
       for(int nd=0; nd<ci.size(); nd++) {
         MixedDensityMatrix_for_E_from_SM(SMwork,Gwork,overlaps,nd);
         if(k==0)  
-          ma::axpy(std::conj(ci[nd]),overlaps,Ov);
+          ma::axpy(ma::conj(ci[nd]),overlaps,Ov);
         HamOp.energy(eloc3,Gwork,nd,TG.TG_local().root()&&k==0);
         for(int i=0; i<nwalk; ++i) 
           for(int k=0; k<3; k++)
 // TO GPU
-            eloc2[q*nwalk+i][k] += std::conj(ci[nd])*overlaps[i]*eloc3[i][k];
+            eloc2[q*nwalk+i][k] += ma::conj(ci[nd])*overlaps[i]*eloc3[i][k];
       }
       TG.local_barrier();
 
     }
-
-    TG.TG().all_reduce_in_place_n(to_address(eloc2.origin()),3*nnodes*nwalk,std::plus<>());
+    if(TG.TG().size() > 1)
+      TG.TG().all_reduce_in_place_n(to_address(eloc2.origin()),3*nnodes*nwalk,std::plus<>());
     TG.local_barrier();    
     auto elocal = eloc2.sliced(node_number*nwalk,(node_number+1)*nwalk);
     for(int i=0; i<nwalk; i++) {
@@ -413,7 +414,8 @@ namespace afqmc
       }
       // CHECK: I don't need all_reduce here, but the current version of mpi3 
       //        fails if I use reduce_in_place_n  
-      TG.TG_local().all_reduce_in_place_n(to_address(ovlp2.origin()),2*nw,std::plus<>());  
+      if(TG.TG_local().size() > 1 )  
+        TG.TG_local().all_reduce_in_place_n(to_address(ovlp2.origin()),2*nw,std::plus<>());  
       if(TG.TG_local().root())
         for(int iw=0; iw<nw; ++iw)
 // to GPU
@@ -575,7 +577,7 @@ namespace afqmc
 // to GPU???
         ComplexType ov(*ov_);
         if(walker_type==CLOSED) ov *= ov;
-        ov *= std::conj(ci[nd]);
+        ov *= ma::conj(ci[nd]);
         // if the overhead of the mutex is too much, invert the loop order (make iw the fast index)
         // and have a mutex for each walker index 
         if(transpose) {
@@ -619,7 +621,7 @@ namespace afqmc
           SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
                                          G2D_2,std::addressof(ov),local_group_comm,compact);
           if(walker_type==CLOSED) ov *= ov;
-          ov *= std::conj(ci[nd]);
+          ov *= ma::conj(ci[nd]);
 
           if(local_group_comm.rank()==0) {
             if(transpose) {
@@ -663,7 +665,7 @@ namespace afqmc
         ov = ComplexType(*ov_);
         SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),
                                          GB2D_,to_address(ov_),compact);
-        ov *= ComplexType(*ov_)*std::conj(ci[nd]);
+        ov *= ComplexType(*ov_)*ma::conj(ci[nd]);
         if(transpose) {
           std::lock_guard<shared_mutex> guard(*mutex);
           ma::axpy(ov,GA1D_,G[iw].sliced(0,GAdims.first*GAdims.second));
@@ -716,7 +718,7 @@ namespace afqmc
           ov = ComplexType(*ov_);
           SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),
                                            GB2D_2,to_address(ov_),local_group_comm,compact);
-          ov *= ComplexType(*ov_)*std::conj(ci[nd]);
+          ov *= ComplexType(*ov_)*ma::conj(ci[nd]);
           if(local_group_comm.root()) {
             if(transpose) {
               std::lock_guard<shared_mutex> guard(*mutex);
@@ -733,7 +735,8 @@ namespace afqmc
       }
     }
     // normalize G
-    TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
+    if(TG.TG_local().size() > 1 )
+      TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
     if(transpose) {
       for(size_t iw=0; iw<G.size(0); ++iw) 
         if( iw%TG.TG_local().size() == TG.TG_local().rank() ) {
@@ -811,7 +814,7 @@ namespace afqmc
           for(int ib=0; ib<nb; ++ib) {
             ComplexType ov(hvec[ib]);
             if(walker_type==CLOSED) ov *= ov;
-            ov *= std::conj(ci[idet]);
+            ov *= ma::conj(ci[idet]);
             if(transpose) {
               ma::axpy(ov,G2D_[ib],G[iw+ib]);   
             } else {
@@ -845,7 +848,7 @@ namespace afqmc
 // this could be batched, which would be faster and would avoid data movement to cpu
           copy_n(ovlp2.origin(),2*nb,hvec.origin());
           for(int ib=0; ib<nb; ++ib) {
-            ComplexType ov = hvec[ib]*hvec[nb+ib]*std::conj(ci[idet]);
+            ComplexType ov = hvec[ib]*hvec[nb+ib]*ma::conj(ci[idet]);
             if(transpose) {
               ma::axpy(ov,GA2D_[ib],G[iw+ib].sliced(0,GAdims.first*GAdims.second));
               ma::axpy(ov,GB2D_[ib],G[iw+ib].sliced(GAdims.first*GAdims.second,G.size(1)));
@@ -894,7 +897,7 @@ namespace afqmc
     fill_n(Ov.origin(),nw,0);
     if(ovlp2.size(0) < 3*nw) ovlp2.reextent(iextensions<1u>{3*nw});
     fill_n(ovlp2.origin(),ovlp2.num_elements(),ComplexType(0.0));
-    stdCVector hvec(iextensions<1u>{2*nw});
+    stdCVector hvec(iextensions<1u>{3*nw});
     fill_n(hvec.origin(),hvec.num_elements(),ComplexType(0.0));
     TG.local_barrier();
     std::vector<CMatrix_ref> Ai;
@@ -908,7 +911,7 @@ namespace afqmc
         copy_n(ovlp2.origin(),nw,hvec.origin());
 // this could be batched, which would be faster and would avoid data movement to cpu
         for(int ib=0; ib<nw; ++ib) 
-            hvec[nw+ib] += std::conj(ci[idet])*hvec[ib]*
+            hvec[nw+ib] += ma::conj(ci[idet])*hvec[ib]*
                              ((walker_type==CLOSED)?(hvec[ib]):(ComplexType(1.0,0.0)));
       }
       copy_n(hvec.origin()+nw,nw,Ov.origin());
@@ -923,7 +926,7 @@ namespace afqmc
 // this could be batched, which would be faster and would avoid data movement to cpu
         copy_n(ovlp2.origin(),2*nw,hvec.origin());
         for(int ib=0; ib<nw; ++ib) 
-            hvec[2*nw+ib] += std::conj(ci[idet])*hvec[ib]*hvec[nw+ib];
+            hvec[2*nw+ib] += ma::conj(ci[idet])*hvec[ib]*hvec[nw+ib];
       }
       copy_n(hvec.origin()+2*nw,nw,Ov.origin());
     }
@@ -965,7 +968,7 @@ namespace afqmc
         int nd = tk%ndet;
         SDetOp.Overlap(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),to_address(ov_));
         ComplexType ov(*ov_);
-        Ov[iw] += std::conj(ci[nd])*ov*((walker_type==CLOSED)?(ov):(ComplexType(1.0,0.0)));
+        Ov[iw] += ma::conj(ci[nd])*ov*((walker_type==CLOSED)?(ov):(ComplexType(1.0,0.0)));
       }
 
       // all remaining overlaps are performed in parallel with blocks of cores
@@ -995,7 +998,7 @@ namespace afqmc
           ComplexType ov;
           SDetOp.Overlap(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),std::addressof(ov),local_group_comm);
           if(local_group_comm.rank()==0)
-            Ov[iw] += std::conj(ci[nd])*ov*((walker_type==CLOSED)?(ov):(ComplexType(1.0,0.0)));
+            Ov[iw] += ma::conj(ci[nd])*ov*((walker_type==CLOSED)?(ov):(ComplexType(1.0,0.0)));
   
         }
       }
@@ -1017,7 +1020,7 @@ namespace afqmc
         SDetOp.Overlap(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),to_address(ov_));
         ComplexType ov(*ov_);
         SDetOp.Overlap(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),to_address(ov_));
-        Ov[iw] += std::conj(ci[nd])*ov*ComplexType(*ov_); 
+        Ov[iw] += ma::conj(ci[nd])*ov*ComplexType(*ov_); 
       }
 
       // all remaining overlaps are performed in parallel with blocks of cores
@@ -1052,11 +1055,12 @@ namespace afqmc
                                           std::addressof(ov2_),local_group_comm);
           ov_ *= ov2_;
           if(local_group_comm.root())
-            Ov[iw] += std::conj(ci[nd])*ov_; 
+            Ov[iw] += ma::conj(ci[nd])*ov_; 
         }
       }
     }
-    TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
+    if(TG.TG_local().size() > 1) 
+      TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nw,std::plus<>());
   }
 
   // Computes walker averaged density matrix:
@@ -1141,7 +1145,7 @@ namespace afqmc
             detR *= detR;
           }
           // By construction detR is real (so no complex conjugation needed).
-          ov *= detR * std::conj(ci[id]);
+          ov *= detR * ma::conj(ci[id]);
           overlap += ov;
           ma::axpy(ov,G1D_,G21D_);
         }
@@ -1191,6 +1195,7 @@ namespace afqmc
         ComplexType overlap = ComplexType(0.0,0.0);
         for(int id=0; id<ndet; id++) {
           ComplexType detR = ComplexType(1.0,0.0);
+          ComplexType ov(1.0,0.0);
           if (back_propagated) {
             CMatrix_ref PsiBPAlpha = CMatrix_ref(T3ForBP.origin(), {NAEA,NMO});
             detR = BackPropagateOrbMat(OrbMats[2*id], wset[iw], PsiBPAlpha);
@@ -1201,6 +1206,7 @@ namespace afqmc
 #endif
             SDetOp.MixedDensityMatrix(PsiBPAlpha,wset[iw].SlaterMatrixN(Alpha),
                                       GA2D_,to_address(ov_),compact);
+            ov *= ComplexType(*ov_);
 #if defined(__AFQMC_DEBUG_VERBOSE__)
             trace = 0.0;
             for(int i = 0; i < NMO; i++) trace += GA2D_[i][i];
@@ -1210,16 +1216,18 @@ namespace afqmc
             detR *= BackPropagateOrbMat(OrbMats[2*id+1], wset[iw], PsiBPBeta);
             SDetOp.MixedDensityMatrix(PsiBPBeta,wset[iw].SlaterMatrixN(Beta),
                                       GB2D_,to_address(ov_),compact);
+            ov *= ComplexType(*ov_);
           } else {
             // Mixed density matrix.
             SDetOp.MixedDensityMatrix(OrbMats[2*id],wset[iw].SlaterMatrix(Alpha),
                                                         GA2D_,to_address(ov_),compact);
+            ov *= ComplexType(*ov_);
 
             SDetOp.MixedDensityMatrix(OrbMats[2*id+1],wset[iw].SlaterMatrix(Beta),
                                              GB2D_,to_address(ov_),compact);
+            ov *= ComplexType(*ov_);
           }
-          ComplexType ov(*ov_);
-          ov *= detR * std::conj(ci[id]);
+          ov *= detR * ma::conj(ci[id]);
           overlap += ov;
           ma::axpy(ov,GA1D_,GA21D_);
           ma::axpy(ov,GB1D_,GB21D_);
@@ -1237,8 +1245,10 @@ namespace afqmc
       }
     }
     // Average over walker's
-    TG.Global().all_reduce_in_place_n(to_address(denom.origin()),1,std::plus<>());
-    TG.Global().all_reduce_in_place_n(to_address(G.origin()),Gsize,std::plus<>());
+    if(TG.Global().size() > 1) {
+      TG.Global().all_reduce_in_place_n(to_address(denom.origin()),1,std::plus<>());
+      TG.Global().all_reduce_in_place_n(to_address(G.origin()),Gsize,std::plus<>());
+    }
     TG.local_barrier();
   }
 
@@ -1457,7 +1467,7 @@ namespace afqmc
     pointer ov_(localGbuff.origin());
  
     bool found=false;
-    using std::conj;
+    using ma::conj;
     if(ndets == 1) {
       CMatrix G;
       size_t Gsize = dm_size(false);
@@ -1549,7 +1559,8 @@ namespace afqmc
           }
         }
       }  
-      TG.Global().all_reduce_in_place_n(to_address(G1D.origin()),G1D.num_elements(),std::plus<>());  
+      if(TG.Global().size() > 1) 
+        TG.Global().all_reduce_in_place_n(to_address(G1D.origin()),G1D.num_elements(),std::plus<>());  
       ComplexType ov1 = ( TG.Global() += ov );
       ma::scal(ComplexType(1.0,0.0)/ov1,G1D);
       HamOp.vbias(G1D.sliced(0,Gdims.first*Gdims.second),
