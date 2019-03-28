@@ -9,10 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
-
 
 
 #ifndef OHMMS_TAG_MAKER_H
@@ -23,19 +19,12 @@
 class TagMaker
 {
 public:
-
-  TagMaker()
-  {
-    MyTag = (++CurrentTag);
-  }
+  TagMaker() { MyTag = (++CurrentTag); }
   ~TagMaker() {}
-  int operator()()const
-  {
-    return MyTag;
-  }
+  int operator()() const { return MyTag; }
+
 private:
   int MyTag;
   static int CurrentTag;
 };
 #endif // OHMMS_TAG_MAKER_H
-

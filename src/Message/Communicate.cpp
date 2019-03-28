@@ -13,10 +13,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
-
 
 
 #include <Configuration.h>
@@ -44,17 +40,19 @@ Communicate* OHMMS::Controller = new Communicate;
 
 //default constructor: ready for a serial execution
 Communicate::Communicate()
-  : d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1),
+    : d_mycontext(0),
+      d_ncontexts(1),
+      d_groupid(0),
+      d_ngroups(1),
 #ifdef HAVE_MPI
-    myMPI_destroy_helper(myMPI),
+      myMPI_destroy_helper(myMPI),
 #endif
-    myMPI(MPI_COMM_NULL), GroupLeaderComm(nullptr)
-{
-}
+      myMPI(MPI_COMM_NULL),
+      GroupLeaderComm(nullptr)
+{}
 
 #ifdef HAVE_MPI
-Communicate::Communicate(const mpi3::environment &env)
-  : myMPI_destroy_helper(myMPI), GroupLeaderComm(nullptr)
+Communicate::Communicate(const mpi3::environment& env) : myMPI_destroy_helper(myMPI), GroupLeaderComm(nullptr)
 {
   initialize(env);
 }
@@ -62,14 +60,15 @@ Communicate::Communicate(const mpi3::environment &env)
 
 Communicate::~Communicate()
 {
-  if(GroupLeaderComm!=nullptr) delete GroupLeaderComm;
+  if (GroupLeaderComm != nullptr)
+    delete GroupLeaderComm;
 }
 
 //exclusive:  OOMPI, MPI or Serial
 #ifdef HAVE_OOMPI
 
 Communicate::Communicate(const mpi_comm_type comm_input)
-  : myMPI_destroy_helper(myMPI), d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
+    : myMPI_destroy_helper(myMPI), d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
 {
   MPI_Comm_dup(comm_input, &myMPI);
   myComm = OOMPI_Intra_comm(myMPI);
@@ -79,26 +78,25 @@ Communicate::Communicate(const mpi_comm_type comm_input)
 }
 
 
-Communicate::Communicate(const Communicate& in_comm, int nparts)
-  : myMPI_destroy_helper(myMPI)
+Communicate::Communicate(const Communicate& in_comm, int nparts) : myMPI_destroy_helper(myMPI)
 {
-  std::vector<int> nplist(nparts+1);
-  int p=FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
-  int q=in_comm.rank()-nplist[p]; //rank within a group
-  MPI_Comm_split(in_comm.getMPI(),p,q,&myMPI);
-  myComm=OOMPI_Intra_comm(myMPI);
+  std::vector<int> nplist(nparts + 1);
+  int p = FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
+  int q = in_comm.rank() - nplist[p];                                    //rank within a group
+  MPI_Comm_split(in_comm.getMPI(), p, q, &myMPI);
+  myComm = OOMPI_Intra_comm(myMPI);
   // TODO: mpi3 needs to define comm
-  d_mycontext=myComm.Rank();
-  d_ncontexts=myComm.Size();
-  d_groupid=p;
-  d_ngroups=nparts;
+  d_mycontext = myComm.Rank();
+  d_ncontexts = myComm.Size();
+  d_groupid   = p;
+  d_ngroups   = nparts;
   // create a communicator among group leaders.
   MPI_Group parent_group, leader_group;
   MPI_Comm_group(in_comm.getMPI(), &parent_group);
   MPI_Group_incl(parent_group, nparts, nplist.data(), &leader_group);
   MPI_Comm leader_comm;
   MPI_Comm_create(in_comm.getMPI(), leader_group, &leader_comm);
-  if(isGroupLeader())
+  if (isGroupLeader())
     GroupLeaderComm = new Communicate(leader_comm);
   else
     GroupLeaderComm = nullptr;
@@ -113,34 +111,32 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 //================================================================
 
 #ifdef HAVE_MPI
-void Communicate::initialize(const mpi3::environment &env)
+void Communicate::initialize(const mpi3::environment& env)
 {
   comm = env.world();
   MPI_Comm_dup(&comm, &myMPI);
-  myComm = OOMPI_Intra_comm(myMPI);
+  myComm      = OOMPI_Intra_comm(myMPI);
   d_mycontext = myComm.Rank();
   d_ncontexts = myComm.Size();
-  d_groupid=0;
-  d_ngroups=1;
+  d_groupid   = 0;
+  d_ngroups   = 1;
 #ifdef __linux__
-  for (int proc=0; proc<OHMMS::Controller->size(); proc++)
+  for (int proc = 0; proc < OHMMS::Controller->size(); proc++)
   {
     if (OHMMS::Controller->rank() == proc)
     {
-      fprintf (stderr, "Rank = %4d  Free Memory = %5zu MB\n", proc, freemem());
+      fprintf(stderr, "Rank = %4d  Free Memory = %5zu MB\n", proc, freemem());
     }
     barrier();
   }
   barrier();
 #endif
-  std::string when="qmc."+getDateAndTime("%Y%m%d_%H%M");
+  std::string when = "qmc." + getDateAndTime("%Y%m%d_%H%M");
 }
 #endif
 
 // For unit tests until they can be changed and this will be removed.
-void Communicate::initialize(int argc, char **argv)
-{
-}
+void Communicate::initialize(int argc, char** argv) {}
 
 void Communicate::initializeAsNodeComm(const Communicate& parent)
 {
@@ -153,33 +149,26 @@ void Communicate::initializeAsNodeComm(const Communicate& parent)
 
 void Communicate::finalize()
 {
-  static bool has_finalized=false;
+  static bool has_finalized = false;
 
-  if(!has_finalized)
+  if (!has_finalized)
   {
 #ifdef HAVE_ADIOS
-    if(ADIOS::get_adios_init()){
+    if (ADIOS::get_adios_init())
+    {
       adios_read_finalize_method(ADIOS_READ_METHOD_BP);
       adios_finalize(OHMMS::Controller->rank());
     }
 #endif
-    has_finalized=true;
+    has_finalized = true;
   }
 }
 
-void Communicate::cleanupMessage(void*)
-{
-}
+void Communicate::cleanupMessage(void*) {}
 
-void Communicate::abort()
-{
-  myComm.Abort();
-}
+void Communicate::abort() { myComm.Abort(); }
 
-void Communicate::barrier()
-{
-  myComm.Barrier();
-}
+void Communicate::barrier() { myComm.Barrier(); }
 
 void Communicate::abort(const char* msg)
 {
@@ -190,23 +179,13 @@ void Communicate::abort(const char* msg)
 
 #else
 
-void Communicate::initialize(int argc, char **argv)
-{
-  std::string when="qmc."+getDateAndTime("%Y%m%d_%H%M");
-}
+void Communicate::initialize(int argc, char** argv) { std::string when = "qmc." + getDateAndTime("%Y%m%d_%H%M"); }
 
-void Communicate::initializeAsNodeComm(const Communicate& parent)
-{
-}
+void Communicate::initializeAsNodeComm(const Communicate& parent) {}
 
-void Communicate::finalize()
-{
-}
+void Communicate::finalize() {}
 
-void Communicate::abort()
-{
-  std::abort();
-}
+void Communicate::abort() { std::abort(); }
 
 void Communicate::abort(const char* msg)
 {
@@ -214,16 +193,12 @@ void Communicate::abort(const char* msg)
   std::abort();
 }
 
-void Communicate::barrier()
-{
-}
+void Communicate::barrier() {}
 
-void Communicate::cleanupMessage(void*)
-{
-}
+void Communicate::cleanupMessage(void*) {}
 
 Communicate::Communicate(const Communicate& in_comm, int nparts)
-  : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0)
+    : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0)
 {
   GroupLeaderComm = new Communicate();
 }
