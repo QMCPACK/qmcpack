@@ -20,7 +20,6 @@
 
 namespace qmcplusplus
 {
-
 template<typename T>
 struct maptest
 {
@@ -31,7 +30,7 @@ struct maptest
   inline void set_value(const T* restrict array, size_t size, T* restrict data)
   {
     PRAGMA_OFFLOAD("omp for")
-    for(int i=0; i<size; i++)
+    for (int i = 0; i < size; i++)
       data[i] = array[i];
   }
   PRAGMA_OFFLOAD("omp end declare target")
@@ -39,7 +38,7 @@ struct maptest
   void run()
   {
     PRAGMA_OFFLOAD("omp target enter data map(alloc:data[0:6])")
-    T newdata[size] = {0,1,2,3,4,5};
+    T newdata[size] = {0, 1, 2, 3, 4, 5};
     PRAGMA_OFFLOAD("omp target map(to:newdata[0:6]) map(from:data[0:6])")
     {
       PRAGMA_OFFLOAD("omp parallel")
@@ -56,4 +55,4 @@ TEST_CASE("OMPclass member", "[OMP]")
   tester.run();
 }
 
-}
+} // namespace qmcplusplus

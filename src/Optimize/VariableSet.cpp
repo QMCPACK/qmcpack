@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include "Optimize/VariableSet.h"
@@ -34,7 +32,7 @@ namespace optimize
 
 void VariableSet::clear()
 {
-  num_active_vars=0;
+  num_active_vars = 0;
   Index.clear();
   NameAndValue.clear();
   Recompute.clear();
@@ -59,10 +57,10 @@ void VariableSet::clear()
 
 void VariableSet::insertFrom(const VariableSet& input)
 {
-  for(int i=0; i<input.size(); ++i)
+  for (int i = 0; i < input.size(); ++i)
   {
-    iterator loc=find(input.name(i));
-    if(loc==NameAndValue.end())
+    iterator loc = find(input.name(i));
+    if (loc == NameAndValue.end())
     {
       Index.push_back(input.Index[i]);
       NameAndValue.push_back(input.NameAndValue[i]);
@@ -70,9 +68,9 @@ void VariableSet::insertFrom(const VariableSet& input)
       Recompute.push_back(input.Recompute[i]);
     }
     else
-      (*loc).second=input.NameAndValue[i].second;
+      (*loc).second = input.NameAndValue[i].second;
   }
-  num_active_vars=input.num_active_vars;
+  num_active_vars = input.num_active_vars;
 }
 
 void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& input_2)
@@ -86,7 +84,7 @@ void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& i
     throw std::runtime_error("Inconsistent number of parameters in two provided "
                              "variable sets.");
 
-  for(int i=0; i<input_1.size(); ++i)
+  for (int i = 0; i < input_1.size(); ++i)
   {
     // Check that each of the equivalent variables in both VariableSet objects
     // have the same name - otherwise we certainly shouldn't be adding them.
@@ -96,8 +94,8 @@ void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& i
 
     sum_val = input_1.NameAndValue[i].second + input_2.NameAndValue[i].second;
 
-    iterator loc=find(input_1.name(i));
-    if(loc==NameAndValue.end())
+    iterator loc = find(input_1.name(i));
+    if (loc == NameAndValue.end())
     {
       Index.push_back(input_1.Index[i]);
       ParameterType.push_back(input_1.ParameterType[i]);
@@ -110,9 +108,9 @@ void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& i
       NameAndValue.push_back(pair_type(vname, sum_val));
     }
     else
-      (*loc).second=sum_val;
+      (*loc).second = sum_val;
   }
-  num_active_vars=input_1.num_active_vars;
+  num_active_vars = input_1.num_active_vars;
 }
 
 void VariableSet::insertFromDiff(const VariableSet& input_1, const VariableSet& input_2)
@@ -126,7 +124,7 @@ void VariableSet::insertFromDiff(const VariableSet& input_1, const VariableSet& 
     throw std::runtime_error("Inconsistent number of parameters in two provided "
                              "variable sets.");
 
-  for(int i=0; i<input_1.size(); ++i)
+  for (int i = 0; i < input_1.size(); ++i)
   {
     // Check that each of the equivalent variables in both VariableSet objects
     // have the same name - otherwise we certainly shouldn't be subtracting them.
@@ -136,8 +134,8 @@ void VariableSet::insertFromDiff(const VariableSet& input_1, const VariableSet& 
 
     diff_val = input_1.NameAndValue[i].second - input_2.NameAndValue[i].second;
 
-    iterator loc=find(input_1.name(i));
-    if(loc==NameAndValue.end())
+    iterator loc = find(input_1.name(i));
+    if (loc == NameAndValue.end())
     {
       Index.push_back(input_1.Index[i]);
       ParameterType.push_back(input_1.ParameterType[i]);
@@ -150,35 +148,35 @@ void VariableSet::insertFromDiff(const VariableSet& input_1, const VariableSet& 
       NameAndValue.push_back(pair_type(vname, diff_val));
     }
     else
-      (*loc).second=diff_val;
+      (*loc).second = diff_val;
   }
-  num_active_vars=input_1.num_active_vars;
+  num_active_vars = input_1.num_active_vars;
 }
 
 void VariableSet::activate(const variable_map_type& selected)
 {
   //activate the variables
-  variable_map_type::const_iterator it(selected.begin()),it_end(selected.end());
-  while(it != it_end)
+  variable_map_type::const_iterator it(selected.begin()), it_end(selected.end());
+  while (it != it_end)
   {
-    iterator loc=find((*it++).first);
-    if(loc != NameAndValue.end())
+    iterator loc = find((*it++).first);
+    if (loc != NameAndValue.end())
     {
-      int i=loc-NameAndValue.begin();
-      if(Index[i]<0)
-        Index[i]=num_active_vars++;
+      int i = loc - NameAndValue.begin();
+      if (Index[i] < 0)
+        Index[i] = num_active_vars++;
     }
   }
 }
 
 void VariableSet::disable(const variable_map_type& selected)
 {
-  variable_map_type::const_iterator it(selected.begin()),it_end(selected.end());
-  while(it != it_end)
+  variable_map_type::const_iterator it(selected.begin()), it_end(selected.end());
+  while (it != it_end)
   {
-    int loc=find((*it++).first)-NameAndValue.begin();
-    if(loc<NameAndValue.size())
-      Index[loc]=-1;
+    int loc = find((*it++).first) - NameAndValue.begin();
+    if (loc < NameAndValue.size())
+      Index[loc] = -1;
   }
 }
 
@@ -188,14 +186,14 @@ void VariableSet::removeInactive()
   std::vector<int> valid(Index);
   std::vector<pair_type> acopy(NameAndValue);
   std::vector<indx_pair_type> bcopy(Recompute), ccopy(ParameterType);
-  num_active_vars=0;
+  num_active_vars = 0;
   Index.clear();
   NameAndValue.clear();
   Recompute.clear();
   ParameterType.clear();
-  for(int i=0; i<valid.size(); ++i)
+  for (int i = 0; i < valid.size(); ++i)
   {
-    if(valid[i]>-1)
+    if (valid[i] > -1)
     {
       Index.push_back(num_active_vars++);
       NameAndValue.push_back(acopy[i]);
@@ -207,39 +205,40 @@ void VariableSet::removeInactive()
 
 void VariableSet::resetIndex()
 {
-  num_active_vars=0;
-  for(int i=0; i<Index.size(); ++i)
+  num_active_vars = 0;
+  for (int i = 0; i < Index.size(); ++i)
   {
-    Index[i]=(Index[i]<0)?-1:num_active_vars++;
+    Index[i] = (Index[i] < 0) ? -1 : num_active_vars++;
   }
 }
 
 void VariableSet::getIndex(const VariableSet& selected)
 {
-  for(int i=0; i<NameAndValue.size(); ++i)
+  for (int i = 0; i < NameAndValue.size(); ++i)
   {
-    Index[i]=selected.getIndex(NameAndValue[i].first);
-    if(Index[i]>=0)
+    Index[i] = selected.getIndex(NameAndValue[i].first);
+    if (Index[i] >= 0)
       num_active_vars++;
   }
 }
 
 void VariableSet::setDefaults(bool optimize_all)
 {
-  for(int i=0; i<Index.size(); ++i)
-    Index[i]=optimize_all?i:-1;
+  for (int i = 0; i < Index.size(); ++i)
+    Index[i] = optimize_all ? i : -1;
 }
 
 void VariableSet::print(std::ostream& os)
 {
-  for(int i=0; i<NameAndValue.size(); ++i)
+  for (int i = 0; i < NameAndValue.size(); ++i)
   {
-    os <<NameAndValue[i].first << " " << NameAndValue[i].second << " " << ParameterType[i].second << " " << Recompute[i].second << " " ;
-    if(Index[i]<0)
+    os << NameAndValue[i].first << " " << NameAndValue[i].second << " " << ParameterType[i].second << " "
+       << Recompute[i].second << " ";
+    if (Index[i] < 0)
       os << " OFF" << std::endl;
     else
       os << " ON " << Index[i] << std::endl;
   }
 }
 
-}
+} // namespace optimize

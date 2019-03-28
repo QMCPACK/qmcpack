@@ -10,9 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-
-
-
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
 
@@ -33,23 +30,21 @@ int main(int argc, char* argv[])
   Catch::Session session;
   using namespace Catch::clara;
   // Build command line parser.
-  auto cli = session.cli()
-             | Opt(UTEST_HAMIL, "UTEST_HAMIL")
-                  ["--hamil"]
-                  ("Hamiltonian file to be used by unit test if applicable.")
-             | Opt(UTEST_WFN, "UTEST_WFN")
-                  ["--wfn"]
-                  ("Wavefunction file to be used by unit test if applicable.");
+  auto cli = session.cli() |
+      Opt(UTEST_HAMIL, "UTEST_HAMIL")["--hamil"]("Hamiltonian file to be used by unit test if applicable.") |
+      Opt(UTEST_WFN, "UTEST_WFN")["--wfn"]("Wavefunction file to be used by unit test if applicable.");
   session.cli(cli);
   // Parse arguments.
   int parser_err = session.applyCommandLine(argc, argv);
   // Run the tests.
   int result = session.run(argc, argv);
   OHMMS::Controller->finalize();
-  if (parser_err != 0) {
+  if (parser_err != 0)
+  {
     return parser_err;
-  } else {
+  }
+  else
+  {
     return result;
   }
 }
-
