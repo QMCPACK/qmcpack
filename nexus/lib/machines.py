@@ -227,6 +227,8 @@ class Job(NexusCore):
                  constraint         = None, # slurm specific, Cori
                  core_spec          = None, # slurm specific, Cori
                  alloc_flags        = None, # lsf specific, Summit
+                 qos                = None,
+                 group_list         = None,
                  fake               = False,
                  ):
 
@@ -274,6 +276,8 @@ class Job(NexusCore):
         self.constraint         = constraint
         self.core_spec          = core_spec
         self.alloc_flags        = alloc_flags
+        self.qos                = qos
+        self.group_list         = group_list
         self.internal_id        = None
         self.system_id          = None
         self.tot_cores          = None
@@ -3051,7 +3055,7 @@ class Cades(Supercomputer):
             job.qos = 'std'
         #end if
         if job.group_list is None:
-            job.group_list = 'cades-qmc'
+            job.group_list = 'cades-'+job.account
         #end if
         c= '#!/bin/bash\n'
         c+='#PBS -A {0}\n'.format(job.account)
