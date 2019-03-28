@@ -20,7 +20,7 @@
 #include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
 #include<cuda_runtime.h>
-#define QMC_CUDA 1
+#define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace kernels 

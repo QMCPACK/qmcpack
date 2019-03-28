@@ -123,7 +123,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     // Calculates Overlap, G
 // NOTE: Make small factory routine!
     //SlaterDetOperations SDet( SlaterDetOperations_serial<Alloc>(NMO,NAEA) );
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
     auto SDet( SlaterDetOperations_serial<Alloc>(NMO,NAEA) );
 #else
     auto SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
@@ -212,7 +212,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
 
   qmc_cuda::CUDA_INIT(node);

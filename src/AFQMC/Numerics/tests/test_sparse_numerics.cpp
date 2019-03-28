@@ -59,7 +59,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
     A_[2][1] = 3.;
     A_[0][1] = 9.;
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
     A_.remove_empty_spaces();
     ma::sparse::csr_matrix<double,int,int,Allocator> A(A_);
 #else
@@ -136,7 +136,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
         verify_approx(C,D2);
    }
 
-#ifndef QMC_CUDA
+#ifndef ENABLE_CUDA
     // test that everything is fine after this
     A.remove_empty_spaces();
     // matrix-matrix
@@ -213,7 +213,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
 
 TEST_CASE("sparse_ma_operations", "[matrix_operations]")
 {
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());

@@ -16,7 +16,7 @@
 #include "multi/array_ref.hpp"
 
 #ifdef BUILD_AFQMC
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #endif
 #endif
@@ -138,7 +138,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
 
 
 #ifdef BUILD_AFQMC
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
 // Specializations for cuda_gpu_allocator
 // Need buffered I/O and copies to gpu
 template<typename T>

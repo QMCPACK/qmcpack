@@ -27,7 +27,7 @@
 #include "AFQMC/config.0.h"
 
 #include "AFQMC/Memory/custom_pointers.hpp"
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
 #include "AFQMC/Numerics/detail/CUDA/Kernels/sampleGaussianRNG.cuh"
 #include "cuda_runtime.h"
 #endif
@@ -336,7 +336,7 @@ inline void memory_report()
 {
   qmcplusplus::app_log()<<"\n --> CPU Memory Available: "
                           <<freemem() <<std::endl;
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   size_t free_,tot_;
   cudaMemGetInfo(&free_,&tot_);
   qmcplusplus::app_log()<<" --> GPU Memory Available,  Total in MB: "
@@ -344,7 +344,7 @@ inline void memory_report()
 #endif
 }
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
 template<class T,
         class Dummy>
 void sampleGaussianFields_n(qmc_cuda::cuda_gpu_ptr<T> V, int n, Dummy &r) 

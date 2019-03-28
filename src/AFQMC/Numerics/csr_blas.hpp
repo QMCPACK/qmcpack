@@ -174,7 +174,7 @@ void CSR2MA(char TA, CSR const& A, MultiArray2D& M)
   int_type p0(pbegin[0]);
   auto v0 = A.non_zero_values_data();
   auto c0 = A.non_zero_indices2_data();
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
 qmcplusplus::app_log()<<" /**********************************\n";
 qmcplusplus::app_log()<<" Warning: write kernel in CSR2MA. \n";
 qmcplusplus::app_log()<<" /**********************************\n";

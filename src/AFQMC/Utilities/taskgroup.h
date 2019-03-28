@@ -34,7 +34,7 @@ class GlobalTaskGroup
 
   GlobalTaskGroup(communicator& comm):
             global_(comm),
-//#ifdef QMC_CUDA
+//#ifdef ENABLE_CUDA
 // PAMI_DISABLE_IPC issue
 //            node_(comm.split_shared(boost::mpi3::communicator_type::socket,comm.rank())),
 //#else
@@ -126,7 +126,7 @@ class TaskGroup_
   TaskGroup_(GlobalTaskGroup& gTG, std::string name, int nn, int nc):
         tgname(name),global_(gTG.Global()),
         node_(gTG.Node()),core_(gTG.Cores()),
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
         local_tg_(node_.split(node_.rank(),node_.rank())),
         tgrp_(),
         tg_heads_(global_.split(0,global_.rank()))     
@@ -136,10 +136,10 @@ class TaskGroup_
         tg_heads_(global_.split(node_.rank()%((nc<1)?(1):(std::min(nc,node_.size()))),global_.rank()))     
 #endif
   {
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
     if(nc != 1) {
       nc=1;
-      app_log()<<" WARNING: Code was compiled with QMC_CUDA, setting ncores=1. \n";
+      app_log()<<" WARNING: Code was compiled with ENABLE_CUDA, setting ncores=1. \n";
     }
 #endif
     setup(nn,nc);
@@ -148,7 +148,7 @@ class TaskGroup_
   TaskGroup_(TaskGroup_& other, std::string name, int nn, int nc):
         tgname(name),global_(other.Global()),
         node_(other.Node()),core_(other.Cores()),
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
         local_tg_(node_.split(node_.rank(),node_.rank())),
         tgrp_(),
         tg_heads_(global_.split(0,global_.rank()))     
@@ -158,10 +158,10 @@ class TaskGroup_
         tg_heads_(global_.split(node_.rank()%((nc<1)?(1):(std::min(nc,node_.size()))),global_.rank()))     
 #endif
   {
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
     if(nc != 1) {
       nc=1;
-      app_log()<<" WARNING: Code was compiled with QMC_CUDA, setting ncores=1. \n";
+      app_log()<<" WARNING: Code was compiled with ENABLE_CUDA, setting ncores=1. \n";
     }
 #endif
     setup(nn,nc);
@@ -217,7 +217,7 @@ class TaskGroup_
   int getNGroupsPerTG() const { return nnodes_per_TG; }
 
 // THIS NEEDS TO CHANGE IN GPU CODE!
-#if QMC_CUDA
+#if ENABLE_CUDA
   int getLocalGroupNumber() const { return getTGRank(); } 
 #else
   int getLocalGroupNumber() const { return core_.rank()%nnodes_per_TG; }
@@ -388,7 +388,7 @@ class TaskGroupHandler {
       APP_ABORT(" Error: Calling TaskGroupHandler::getTG() before setting ncores. \n\n\n");
     auto t = TGMap.find(nn);
     if(t == TGMap.end()) {
-#ifndef QMC_CUDA
+#ifndef ENABLE_CUDA
       if( gTG_.getTotalNodes()%nn != 0)
         APP_ABORT("Error: nnodes must divide the total number of processors. \n\n\n");
 #endif
