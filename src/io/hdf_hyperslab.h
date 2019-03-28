@@ -107,14 +107,8 @@ struct h5data_proxy<hyperslab_proxy<CT, MAXDIM>>
   {
     if (ref_.use_slab)
     {
-      return h5d_read(grp,
-                      aname.c_str(),
-                      ref_.slab_rank,
-                      ref_.slab_dims.data(),
-                      ref_.slab_dims_local.data(),
-                      ref_.slab_offset.data(),
-                      ref_.data(),
-                      xfer_plist);
+      return h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
+                      ref_.slab_offset.data(), ref_.data(), xfer_plist);
     }
     else
     {
@@ -130,14 +124,8 @@ struct h5data_proxy<hyperslab_proxy<CT, MAXDIM>>
   {
     if (ref_.use_slab)
     {
-      return h5d_write(grp,
-                       aname.c_str(),
-                       ref_.slab_rank,
-                       ref_.slab_dims.data(),
-                       ref_.slab_dims_local.data(),
-                       ref_.slab_offset.data(),
-                       ref_.data(),
-                       xfer_plist);
+      return h5d_write(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
+                       ref_.slab_offset.data(), ref_.data(), xfer_plist);
     }
     else
     {
@@ -161,14 +149,8 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu
       // later on specialize h5d_read for fancy pointers
       std::size_t sz = ref_.ref.num_elements();
       boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
-      auto ret = h5d_read(grp,
-                          aname.c_str(),
-                          ref_.slab_rank,
-                          ref_.slab_dims.data(),
-                          ref_.slab_dims_local.data(),
-                          ref_.slab_offset.data(),
-                          buf.origin(),
-                          xfer_plist);
+      auto ret = h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
+                          ref_.slab_offset.data(), buf.origin(), xfer_plist);
       qmc_cuda::copy_n(buf.data(), sz, ref_.ref.origin());
       return ret;
     }
@@ -203,14 +185,8 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda
       // later on specialize h5d_read for fancy pointers
       std::size_t sz = ref_.ref.num_elements();
       boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
-      auto ret = h5d_read(grp,
-                          aname.c_str(),
-                          ref_.slab_rank,
-                          ref_.slab_dims.data(),
-                          ref_.slab_dims_local.data(),
-                          ref_.slab_offset.data(),
-                          buf.origin(),
-                          xfer_plist);
+      auto ret = h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
+                          ref_.slab_offset.data(), buf.origin(), xfer_plist);
       qmc_cuda::copy_n(buf.data(), sz, ref_.ref.origin());
       return ret;
     }
