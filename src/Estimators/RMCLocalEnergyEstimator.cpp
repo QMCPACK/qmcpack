@@ -10,30 +10,22 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #include "Estimators/RMCLocalEnergyEstimator.h"
 
 namespace qmcplusplus
 {
-
-RMCLocalEnergyEstimator::RMCLocalEnergyEstimator(QMCHamiltonian& h, int nobs)
-  :refH(h), NObs(nobs)
+RMCLocalEnergyEstimator::RMCLocalEnergyEstimator(QMCHamiltonian& h, int nobs) : refH(h), NObs(nobs)
 {
   SizeOfHamiltonians = h.sizeOfObservables();
-  FirstHamiltonian = h.startIndex();
-  RMCSpecificTerms=8;
-  scalars.resize(2*SizeOfHamiltonians+RMCSpecificTerms);
-  scalars_saved.resize(2*SizeOfHamiltonians+RMCSpecificTerms);
+  FirstHamiltonian   = h.startIndex();
+  RMCSpecificTerms   = 8;
+  scalars.resize(2 * SizeOfHamiltonians + RMCSpecificTerms);
+  scalars_saved.resize(2 * SizeOfHamiltonians + RMCSpecificTerms);
 }
 
-ScalarEstimatorBase* RMCLocalEnergyEstimator::clone()
-{
-  return new RMCLocalEnergyEstimator(*this);
-}
+ScalarEstimatorBase* RMCLocalEnergyEstimator::clone() { return new RMCLocalEnergyEstimator(*this); }
 
 /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
  * @param record storage of scalar records (name,value)
@@ -48,24 +40,24 @@ void RMCLocalEnergyEstimator::add2Record(RecordListType& record)
   record.add("LocalEnergy_sq_cross");
   record.add("LocalPotential");
   record.add("LocalPotential_pure");
-  
+
   record.add("OldestBead");
   //for(int j=0; j <= NObs; j++)
-  for(int i=0; i < SizeOfHamiltonians; i++)
+  for (int i = 0; i < SizeOfHamiltonians; i++)
   {
     std::ostringstream ss;
-    ss << refH.getObservableName(i)<<"_m";
+    ss << refH.getObservableName(i) << "_m";
     record.add(ss.str());
   }
-  for(int i=0; i < SizeOfHamiltonians; i++)
+  for (int i = 0; i < SizeOfHamiltonians; i++)
   {
     std::ostringstream ss;
-    ss << refH.getObservableName(i)<<"_p";
+    ss << refH.getObservableName(i) << "_p";
     // app_log()<<"Registering observable "<<ss.str()<< std::endl;
     record.add(ss.str());
   }
-  LastIndex=record.size();
+  LastIndex = record.size();
   clear();
 }
 
-}
+} // namespace qmcplusplus

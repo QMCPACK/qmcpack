@@ -155,7 +155,7 @@ struct h5data_proxy<boost::multi::array<T, 1, qmc_cuda::cuda_gpu_allocator<T>>> 
   {
     if (!get_space(grp, aname, this->size(), dims))
       ref_.reextent({dims[0]});
-    std::size_t sz = ref_.num_elements();
+    std::size_t sz    = ref_.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
@@ -186,7 +186,7 @@ struct h5data_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>> 
   {
     if (!get_space(grp, aname, this->size(), dims))
       ref_.reextent({dims[0], dims[1]});
-    std::size_t sz   = ref_.num_elements();
+    std::size_t sz    = ref_.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
@@ -221,7 +221,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, qmc_cuda::cuda_gpu_ptr<T>>> : 
       }
       return false;
     }
-    std::size_t sz   = ref_.num_elements();
+    std::size_t sz    = ref_.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
@@ -259,7 +259,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>> : 
       }
       return false;
     }
-    std::size_t sz = ref_.num_elements();
+    std::size_t sz    = ref_.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
