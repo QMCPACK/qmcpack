@@ -2,6 +2,58 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [Unreleased]
+
+
+This release includes GPU support for the AFQMC implementation,
+Quantum Espresso v6.4 support, and in the real-space code makes the
+structure-of-arrays (SoA) code path the default. A large number of
+feature refinements, bugfixes, testing improvements and source code
+cleanup have been performed.
+
+### QMCPACK
+
+* The improved structures of arrays (SoA) build is now the
+  default. This is generally significantly faster and uses less memory
+  than the AoS build due to better algorithms, but does not yet have
+  the full range of functionality. The older AoS build can be selected
+  with -DENABLE_SOA=0.
+* AFQMC code fully supports GPU acceleration via NVIDIA CUDA.
+* Quantum Espresso v6.4 is supported.  [\#1457](https://github.com/QMCPACK/qmcpack/pull/1457)
+* Better error handling e.g.  [\#1423](https://github.com/QMCPACK/qmcpack/issues/1423)
+* Workarounds for MPI support on Summit.  [\#1479](https://github.com/QMCPACK/qmcpack/pull/1479)
+* ppconvert should be more reliable.  [\#891](https://github.com/QMCPACK/qmcpack/issues/891)
+* Delayed update implementation on GPUs.  [\#1279](https://github.com/QMCPACK/qmcpack/pull/1279) 
+* Continued improvements to the testing system and test coverage. While still under
+  development, a new set of deterministic tests is intended to rapidly
+  and reliably test the code, with good coverage. Tests pass for real
+  and complex, but not yet mixed-precision or GPU builds.
+* Source code has been formatted with clang-format for consistency throughout. 
+
+### Notable Bugs
+
+See [list of open bugs](https://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
+
+* QMCPACK should not be built with CUDA v9.1 with Kepler GPUs
+  due to a probable code generation bug resulting in an incorrect local
+  electron-ion pseudopotential energy. This is still being
+  investigated. [\#1440](https://github.com/QMCPACK/qmcpack/issues/1440)
+
+* QMCPACK will not build with OpenMPI v4 due to use of deprecated
+  functions. This will be addressed when the new MPI wrappers are
+  fully adopted. Older OpenMPI libraries are fully capable.
+
+### NEXUS
+
+* A collection of training material is at https://github.com/QMCPACK/nexus_training
+* Improved generation of QMCPACK inputs [\#1471](https://github.com/QMCPACK/qmcpack/pull/1471)
+* Improved Gaussian Process optimization [\#1498](https://github.com/QMCPACK/qmcpack/pull/1498)
+* Updated Cori support [\#1463](https://github.com/QMCPACK/qmcpack/pull/1463)
+* Supercell tiling is more robust [\#1432](https://github.com/QMCPACK/qmcpack/pull/1432)
+* Summit support [\#1394](https://github.com/QMCPACK/qmcpack/pull/1394)
+* Improved handling of excited state calculations [\#1365](https://github.com/QMCPACK/qmcpack/pull/1365)
+* Fixed CHGCAR conversion [\#1351](https://github.com/QMCPACK/qmcpack/pull/1351)
+
 ## [3.6.0]  2018-12-19
 
 ### Notes
