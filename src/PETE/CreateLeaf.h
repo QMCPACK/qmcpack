@@ -42,8 +42,7 @@ namespace qmcplusplus
 
 #ifdef PETE_USER_DEFINED_EXPRESSION
 
-template<class T>
-class Expression;
+template<class T> class Expression;
 
 #else
 
@@ -57,11 +56,15 @@ public:
 
   // Construct from an expression.
 
-  Expression(const T& expr) : expr_m(expr) {}
+  Expression(const T& expr) : expr_m(expr)
+  { }
 
   // Accessor that returns the expression.
 
-  const Expression_t& expression() const { return expr_m; }
+  const Expression_t& expression() const
+  {
+    return expr_m;
+  }
 
 private:
   // Store the expression by value since it is a temporary produced
@@ -94,7 +97,11 @@ struct CreateLeaf
 {
   typedef Scalar<T> Leaf_t;
 
-  inline static Leaf_t make(const T& a) { return Scalar<T>(a); }
+  inline static
+  Leaf_t make(const T &a)
+  {
+    return Scalar<T>(a);
+  }
 };
 
 #ifndef PETE_USER_DEFINED_EXPRESSION
@@ -104,11 +111,15 @@ struct CreateLeaf
 // becomes Expression<BinaryNode<OpAdd,Scalar<>,BinaryNode<>>>)
 
 template<class T>
-struct CreateLeaf<Expression<T>>
+struct CreateLeaf<Expression<T> >
 {
   typedef typename Expression<T>::Expression_t Leaf_t;
 
-  inline static const Leaf_t& make(const Expression<T>& a) { return a.expression(); }
+  inline static
+  const Leaf_t &make(const Expression<T> &a)
+  {
+    return a.expression();
+  }
 };
 
 #endif // !PETE_USER_DEFINED_EXPRESSION
@@ -129,10 +140,14 @@ template<class T>
 struct MakeReturn
 {
   typedef Expression<T> Expression_t;
-  inline static Expression_t make(const T& a) { return Expression_t(a); }
+  inline static
+  Expression_t make(const T &a)
+  {
+    return Expression_t(a);
+  }
 };
 
-} // namespace qmcplusplus
+}
 
 #endif // PETE_PETE_CREATELEAF_H
 
