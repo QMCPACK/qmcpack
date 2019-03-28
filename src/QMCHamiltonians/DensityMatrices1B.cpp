@@ -46,6 +46,8 @@ namespace qmcplusplus
     set_state(master);
     basis_functions.clone_from(master.basis_functions);
     initialize();
+    for(int i=0;i<basis_size;++i)
+      basis_norms[i] = master.basis_norms[i];
     app_log()<<"dm1b end deepcopy"<< std::endl;
   }
 
@@ -311,24 +313,33 @@ namespace qmcplusplus
       species_name.push_back(species.speciesName[s]);
 
     // allocate space
+    app_log()<<"  dm1b init  allocate basis"<< std::endl;
     basis_values.resize(basis_size);
     integrated_values.resize(basis_size);
     basis_norms.resize(basis_size);
+    RealType bn_standard = 1.0;
+    //if(periodic)
+    //  bn_standard = 1.0/std::sqrt(volume);
     for(int i=0;i<basis_size;++i)
-      basis_norms[i] = 1.0;
+      basis_norms[i] = bn_standard;
 
     rsamples.resize(samples);
     sample_weights.resize(samples);
 
     if(evaluator==matrix)
     {
+      app_log()<<"  dm1b init  alloc Phi_MB"<< std::endl;
       Phi_MB.resize(samples,basis_size);
       for(int s=0;s<nspecies;++s)
       {
         int specs_size = species_size[s];
+        app_log()<<"  dm1b init  alloc Phi_NB"<< std::endl;
         Phi_NB.push_back(    new Matrix_t(specs_size,basis_size));
+        app_log()<<"  dm1b init  alloc Psi_NM"<< std::endl;
         Psi_NM.push_back(    new Matrix_t(specs_size,samples   ));
+        app_log()<<"  dm1b init  alloc Phi_Psi_NB"<< std::endl;
         Phi_Psi_NB.push_back(new Matrix_t(specs_size,basis_size));
+        app_log()<<"  dm1b init  alloc N_BB"<< std::endl;
         N_BB.push_back(      new Matrix_t(basis_size,basis_size));
         if(energy_mat)
         {
@@ -362,7 +373,10 @@ namespace qmcplusplus
     }
 
     if(!normalized)
+    {
+      app_log()<<"  dm1b init  normalize"<< std::endl;
       normalize();
+    }
 
     initialized = true;
 
@@ -454,12 +468,14 @@ namespace qmcplusplus
       {
         out<<pad<<"  matrices/vectors for species "<<s<< std::endl;
         if(energy_mat)
+if(energy_mat)
           out<<pad<<"    E_N        : "<< E_N[s]->size()<< std::endl;
         out<<pad<<"    Phi_NB     : "<< Phi_NB[s]->rows()<<" "<<Phi_NB[s]->cols()<< std::endl;
         out<<pad<<"    Psi_NM     : "<< Psi_NM[s]->rows()<<" "<<Psi_NM[s]->cols()<< std::endl;
         out<<pad<<"    Phi_Psi_NB : "<< Phi_Psi_NB[s]->rows()<<" "<<Phi_Psi_NB[s]->cols()<< std::endl;
         out<<pad<<"    N_BB       : "<< N_BB[s]->rows()<<" "<<N_BB[s]->cols()<< std::endl;
         if(energy_mat)
+if(energy_mat)
           out<<pad<<"    E_BB       : "<< E_BB[s]->rows()<<" "<<E_BB[s]->cols()<< std::endl;
       }
     }
@@ -592,6 +608,45 @@ namespace qmcplusplus
 
   DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P)
   {
+    app_log()<<"jtk dm1b evaluate"<<have_required_traces<<" "<<energy_mat<<"\n";
+
+    //if(omp_get_thread_num()==0)
+    //{
+    //  app_log()<<"\ntesting basis functions (sposets)\n";
+    //  
+    //  app_log()<<"\ntests with omp critical enabled\n";
+    //}
+    //#pragma omp barrier
+    //#pragma omp critical
+    //{
+    //  std::cout << "\ntests for thread: "<<omp_get_thread_num()<<"\n";
+    //  app_log()<<"  basis_functions address:"<<&basis_functions<<"\n";
+    //  app_log()<<"  basis_function components addresses:\n";
+    //  for(int i=0;i<basis_functions.components.size();i++)
+    //    app_log()<<"    "<<i<<"  "<<basis_functions.components[i]<<"\n";
+    //
+    //  app_log()<<"  basis function values\n";
+    //  PosType r;
+    //  r[0]=r[1]=r[2]=0.1;
+    //  update_basis(r);
+    //  for(int i=0;i<basis_values.size();i++)
+    //    app_log()<<"    "<<i<<"  "<<basis_values[i]<<"\n";
+    //  
+    //  app_log()<<"  basis function norms\n";
+    //  for(int i=0;i<basis_norms.size();i++)
+    //    app_log()<<"    "<<i<<"  "<<basis_norms[i]<<"\n";
+    //  
+    //  test_overlap();
+    //}
+    //#pragma omp barrier
+    //
+    //if(omp_get_thread_num()==0)
+    //{
+    //  app_log()<<"\ndone testing basis functions\ncalling app abort\n";
+    //}
+    //APP_ABORT("sposet cloning test");
+
+
     if(have_required_traces || !energy_mat)
     {
       if(check_derivatives)
@@ -609,6 +664,9 @@ namespace qmcplusplus
 
   DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
   {
+    app_log()<<"jtk dm1b evaluate matrix\n";
+
+
     //perform warmup sampling the first time
     if(!warmed_up)
       warmup_sampling();
@@ -618,14 +676,15 @@ namespace qmcplusplus
       weight=w_trace->sample[0]*metric;
     else
       weight=tWalker->Weight*metric;
+
     if(energy_mat)
       get_energies(E_N);               // energies        : particles x 1
     // compute sample positions (monte carlo or deterministic)
     generate_samples(weight);
     // compute basis and wavefunction ratio values in matrix form 
     generate_sample_basis(Phi_MB);     // basis           : samples   x basis_size
-    generate_sample_ratios(Psi_NM);    // qmcplusplus::conj(Psi ratio) : particles x samples
-    generate_particle_basis(P,Phi_NB); // qmcplusplus::conj(basis)     : particles x basis_size
+    generate_sample_ratios(Psi_NM);    // conj(Psi ratio) : particles x samples
+    generate_particle_basis(P,Phi_NB); // conj(basis)     : particles x basis_size
     // perform integration via matrix products
     for(int s=0;s<nspecies;++s)
     {
@@ -633,13 +692,13 @@ namespace qmcplusplus
       Matrix_t& Phi_Psi_nb = *Phi_Psi_NB[s];
       Matrix_t& Phi_nb     = *Phi_NB[s];
       diag_product(Psi_nm,sample_weights,Psi_nm);
-      product(Psi_nm,Phi_MB,Phi_Psi_nb);       // ratio*basis : particles x basis_size
-      product_AtB(Phi_nb,Phi_Psi_nb,*N_BB[s]);  // qmcplusplus::conj(basis)^T*ratio*basis : basis_size^2
+      product(Psi_nm,Phi_MB,Phi_Psi_nb);        // ratio*basis : particles x basis_size
+      product_AtB(Phi_nb,Phi_Psi_nb,*N_BB[s]);  // conj(basis)^T*ratio*basis : basis_size^2
       if(energy_mat)
       {
         Vector_t& E = *E_N[s];
-        diag_product(E,Phi_nb,Phi_nb);         // diag(energies)*qmcplusplus::conj(basis)
-        product_AtB(Phi_nb,Phi_Psi_nb,*E_BB[s]);// (energies*qmcplusplus::conj(basis))^T*ratio*basis
+        diag_product(E,Phi_nb,Phi_nb);          // diag(energies)*qmcplusplus::conj(basis)
+        product_AtB(Phi_nb,Phi_Psi_nb,*E_BB[s]);// (energies*conj(basis))^T*ratio*basis
       }
     }
     // accumulate data into collectables
@@ -740,8 +799,9 @@ namespace qmcplusplus
       compare("    Phi_NB    ", *Phi_NB[s]    , *Phi_NBtmp[s]);    
       compare("    Psi_NM    ", *Psi_NM[s]    , *Psi_NMtmp[s]);    
       compare("    Phi_Psi_NB", *Phi_Psi_NB[s], *Phi_Psi_NBtmp[s],true);
-      compare("    N_BB      ", *N_BB[s]      , *N_BBtmp[s],true);      
-      compare("    E_BB      ", *E_BB[s]      , *E_BBtmp[s],true);       
+      compare("    N_BB      ", *N_BB[s]      , *N_BBtmp[s],true);
+      if(energy_mat)
+        compare("    E_BB      ", *E_BB[s]      , *E_BBtmp[s],true);    
     }
     app_log()<<"end DM Check"<< std::endl;
     APP_ABORT("DM Check");
@@ -828,6 +888,8 @@ namespace qmcplusplus
 
   DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
   {
+    app_log()<<"jtk dm1b evaluate loop\n";
+
     const int basis_size2 = basis_size*basis_size;
     if(!warmed_up)
       warmup_sampling();
@@ -1268,7 +1330,8 @@ namespace qmcplusplus
 
   inline void DensityMatrices1B::test_overlap()
   {
-    int ngrid = std::max(200,points);
+    //int ngrid = std::max(200,points);
+    int ngrid = std::max(50,points);
     int ngtot = pow(ngrid,DIM);
 
     PosType rp;
@@ -1321,8 +1384,7 @@ namespace qmcplusplus
         app_log()<<std::abs(omat(i,j))/std::abs(omat(0,0))<<" ";
     }
     app_log()<< std::endl;
-    
-    APP_ABORT("DensityMatrices1B::test_overlap");
+    //APP_ABORT("DensityMatrices1B::test_overlap");
   }
 
 

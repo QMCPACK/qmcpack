@@ -4627,6 +4627,9 @@ def generate_hamiltonian(name         = 'h0',
     ests = []
     if estimators!=None:
         for estimator in estimators:
+            if isinstance(estimator,QIxml):
+                estimator = estimator.copy()
+            #end if
             est=estimator
             if isinstance(estimator,str):
                 estname = estimator.lower().replace(' ','_').replace('-','_').replace('__','_')
