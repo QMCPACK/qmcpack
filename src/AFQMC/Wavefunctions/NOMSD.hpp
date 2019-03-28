@@ -294,16 +294,18 @@ class NOMSD: public AFQMCInfo
     }
 
     /*
-     * Calculates the back propagated density matrix for all walkers in the walker set.
+     * Calculates the walker averaged density matrix.
      * Options:
      *  - path_restoration: If false (default), performs traditional back propagation
      *                        algorithm without any path restoration, otherwise restores
      *                        phases and cosine factors along path.
      *  - free_projection: If false (default), assumes using phaseless approximation
      *                       otherwise assumes using free projection.
+     *  - back_propagation: If false (default), compute mixed estimate of the density
+     *                        matrix.
      */
     template<class WlkSet, class MatG, class CVec>
-    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false);
+    void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool path_restoration=false, bool free_projection=false, bool back_propagated=false);
 
     /*
      * Calculates the mixed density matrix for all walkers in the walker set

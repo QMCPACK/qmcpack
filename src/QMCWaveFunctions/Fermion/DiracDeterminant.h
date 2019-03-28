@@ -23,11 +23,14 @@
 #define QMCPLUSPLUS_DIRACDETERMINANT_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
+#if defined(ENABLE_CUDA)
+#include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
+#endif
 
 namespace qmcplusplus
 {
+template<typename DU_TYPE = DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 class DiracDeterminant : public DiracDeterminantBase
 {
 protected:
@@ -43,7 +46,7 @@ public:
   typedef SPOSet::HessVector_t HessVector_t;
   typedef SPOSet::HessType HessType;
 
-  typedef ParticleSet::SingleParticleValue_t mValueType;
+  typedef QMCTraits::QTFull::ValueType mValueType;
   typedef OrbitalSetTraits<mValueType>::ValueMatrix_t ValueMatrix_hp_t;
   typedef TinyVector<mValueType, DIM> mGradType;
 
@@ -52,9 +55,6 @@ public:
    *@param first index of the first particle
    */
   DiracDeterminant(SPOSetPtr const spos, int first = 0);
-
-  ///default destructor
-  ~DiracDeterminant();
 
   // copy constructor and assign operator disabled
   DiracDeterminant(const DiracDeterminant& s) = delete;
@@ -166,10 +166,8 @@ public:
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 
-  /// temporal matrix in higher precision for the accurate inversion.
-  ValueMatrix_hp_t psiM_hp;
-  DiracMatrix<mValueType> detEng;
-  DelayedUpdate<ValueType> updateEng;
+  /// delayed update engine
+  DU_TYPE updateEng;
 
   /// the row of up-to-date inverse matrix
   ValueVector_t invRow;

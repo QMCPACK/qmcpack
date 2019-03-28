@@ -121,7 +121,7 @@ struct Gvectors
       ST s, c;
       sincos(dot(gvecs_cart[ig], pos), &s, &c);
       ValueType pw0(c, s);
-      phi   += cG[ig] * pw0;
+      phi += cG[ig] * pw0;
       d2phi += cG[ig] * pw0 * (-dot(gvecs_cart[ig], gvecs_cart[ig]));
     }
   }
@@ -256,11 +256,8 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
       for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
       {
         AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
-        oneCenter.set_info(ACInfo.ion_pos[center_idx],
-                           ACInfo.cutoff[center_idx],
-                           ACInfo.inner_cutoff[center_idx],
-                           ACInfo.spline_radius[center_idx],
-                           ACInfo.non_overlapping_radius[center_idx],
+        oneCenter.set_info(ACInfo.ion_pos[center_idx], ACInfo.cutoff[center_idx], ACInfo.inner_cutoff[center_idx],
+                           ACInfo.spline_radius[center_idx], ACInfo.non_overlapping_radius[center_idx],
                            ACInfo.spline_npoints[center_idx]);
         centers.push_back(oneCenter);
       }
@@ -287,10 +284,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
 
     // prepare Gvecs Ylm(G)
     typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
-    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0],
-                                         mybuilder->PrimCell,
-                                         bspline->HalfG,
-                                         gvec_first,
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG, gvec_first,
                                          gvec_last);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
 
@@ -493,7 +487,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
                 }
                 const double real_tmp = 4.0 * M_PI * i_power[lm].real();
                 const double imag_tmp = 4.0 * M_PI * i_power[lm].imag();
-                vals[lm]          += vals_th_r * real_tmp - vals_th_i * imag_tmp;
+                vals[lm] += vals_th_r * real_tmp - vals_th_i * imag_tmp;
                 vals[lm + lm_tot] += vals_th_i * real_tmp + vals_th_r * imag_tmp;
               }
           }
@@ -514,11 +508,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
           UBspline_1d_d* atomic_spline_r;
           for (size_t ip = 0; ip < spline_npoints; ip++)
             splineData_r[ip] = all_vals[idx][ip][lm];
-          atomic_spline_r = einspline::create(atomic_spline_r,
-                                              0.0,
-                                              spline_radius,
-                                              spline_npoints,
-                                              splineData_r.data(),
+          atomic_spline_r = einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, splineData_r.data(),
                                               ((lm == 0) || (lm > 3)));
           if (!bspline->is_complex)
           {
@@ -531,12 +521,8 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
             UBspline_1d_d* atomic_spline_i;
             for (size_t ip = 0; ip < spline_npoints; ip++)
               splineData_i[ip] = all_vals[idx][ip][lm + lm_tot];
-            atomic_spline_i = einspline::create(atomic_spline_i,
-                                                0.0,
-                                                spline_radius,
-                                                spline_npoints,
-                                                splineData_i.data(),
-                                                ((lm == 0) || (lm > 3)));
+            atomic_spline_i = einspline::create(atomic_spline_i, 0.0, spline_radius, spline_npoints,
+                                                splineData_i.data(), ((lm == 0) || (lm > 3)));
             mycenter.set_spline(atomic_spline_r, lm, iorb * 2);
             mycenter.set_spline(atomic_spline_i, lm, iorb * 2 + 1);
             einspline::destroy(atomic_spline_r);
@@ -570,21 +556,13 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
         fprintf(fout_spline_l, "%15.10lf  ", r);
         for (int lm = 0; lm < lm_tot; lm++)
         {
-          fprintf(fout_pw,
-                  "%15.10lf  %15.10lf  ",
-                  all_vals[center_idx][ip][lm].real(),
+          fprintf(fout_pw, "%15.10lf  %15.10lf  ", all_vals[center_idx][ip][lm].real(),
                   all_vals[center_idx][ip][lm].imag());
-          fprintf(fout_spline_v,
-                  "%15.10lf  %15.10lf  ",
-                  mycenter.localV[lm * mycenter.Npad + iorb * 2],
+          fprintf(fout_spline_v, "%15.10lf  %15.10lf  ", mycenter.localV[lm * mycenter.Npad + iorb * 2],
                   mycenter.localV[lm * mycenter.Npad + iorb * 2 + 1]);
-          fprintf(fout_spline_g,
-                  "%15.10lf  %15.10lf  ",
-                  mycenter.localG[lm * mycenter.Npad + iorb * 2],
+          fprintf(fout_spline_g, "%15.10lf  %15.10lf  ", mycenter.localG[lm * mycenter.Npad + iorb * 2],
                   mycenter.localG[lm * mycenter.Npad + iorb * 2 + 1]);
-          fprintf(fout_spline_l,
-                  "%15.10lf  %15.10lf  ",
-                  mycenter.localL[lm * mycenter.Npad + iorb * 2],
+          fprintf(fout_spline_l, "%15.10lf  %15.10lf  ", mycenter.localL[lm * mycenter.Npad + iorb * 2],
                   mycenter.localL[lm * mycenter.Npad + iorb * 2 + 1]);
         }
         fprintf(fout_pw, "\n");

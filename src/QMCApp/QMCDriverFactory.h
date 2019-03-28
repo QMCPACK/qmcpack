@@ -13,9 +13,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_QMCDRIVER_FACTORY_H
@@ -29,25 +26,24 @@ class Communicate;
 
 namespace qmcplusplus
 {
-
 //forward declaration
 class MCWalkerConfiguration;
 class QMCDriver;
 class WaveFunctionPool;
 class HamiltonianPool;
 
-struct QMCDriverFactory: public MPIObjectBase
+struct QMCDriverFactory : public MPIObjectBase
 {
   /*! enum for QMC Run Type */
   enum QMCRunType
   {
     DUMMY_RUN, /*!< dummy */
-    VMC_RUN, /**< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
+    VMC_RUN,   /**< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
     CSVMC_RUN,
-    DMC_RUN, /**< DMC type: dmc, dmc-ptcl*/
-    RMC_RUN, /**< RMC type: rmc, rmc-ptcl */
-    OPTIMIZE_RUN,/*!< Optimization */
-    VMC_OPT_RUN, /*!< Optimization with vmc blocks */
+    DMC_RUN,      /**< DMC type: dmc, dmc-ptcl*/
+    RMC_RUN,      /**< RMC type: rmc, rmc-ptcl */
+    OPTIMIZE_RUN, /*!< Optimization */
+    VMC_OPT_RUN,  /*!< Optimization with vmc blocks */
     LINEAR_OPTIMIZE_RUN,
     CS_LINEAR_OPTIMIZE_RUN,
     WF_TEST_RUN
@@ -56,12 +52,12 @@ struct QMCDriverFactory: public MPIObjectBase
   /*! enum to set the bit to determine the QMC mode */
   enum QMCModeEnum
   {
-    UPDATE_MODE,  /**< bit for move: walker or pbyp */
-    MULTIPLE_MODE, /**< bit for multple configuration */
+    UPDATE_MODE,    /**< bit for move: walker or pbyp */
+    MULTIPLE_MODE,  /**< bit for multple configuration */
     SPACEWARP_MODE, /**< bit for space-warping */
     ALTERNATE_MODE, /**< bit for performing various analysis and weird qmc methods */
-    GPU_MODE,     /**< bit to use GPU driver */
-    QMC_MODE_MAX=8
+    GPU_MODE,       /**< bit to use GPU driver */
+    QMC_MODE_MAX = 8
   };
 
   ///current QMC mode determined by curQmcModeBits
@@ -78,11 +74,11 @@ struct QMCDriverFactory: public MPIObjectBase
 
   /** current MCWalkerConfiguration
    */
-  MCWalkerConfiguration *qmcSystem;
+  MCWalkerConfiguration* qmcSystem;
 
   /** current QMCDriver
    */
-  QMCDriver *qmcDriver;
+  QMCDriver* qmcDriver;
 
   /** ParticleSet Pool
    */
@@ -112,6 +108,5 @@ struct QMCDriverFactory: public MPIObjectBase
   /** virtual destructor **/
   virtual ~QMCDriverFactory();
 };
-}
+} // namespace qmcplusplus
 #endif
-

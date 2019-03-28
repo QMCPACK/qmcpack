@@ -243,11 +243,11 @@ QMC_MIXED_PRECISION   Build the mixed precision (mixing double/float) version
                       The GPU support is quite mature.
                       Use always double for host side base and full precision
                       and use float and double for CUDA base and full precision.
+ENABLE_SOA            Enable data layout and algorithm optimizations using  
+                      Structure-of-Array (SoA) datatypes (1:yes (default), 0:no).  
 ENABLE_TIMERS         Enable fine-grained timers (1:yes, 0:no (default)).
                       Timers are off by default to avoid potential slowdown in small
                       systems. For large systems (100+ electrons) there is no risk.
-ENABLE_SOA            (Experimental) Enable CPU optimization and GPU support using
-                      Structure-of-Array (SoA) datatypes (1:yes, 0:no (default)).
 \end{shade}
 
 \item General build options
@@ -278,11 +278,15 @@ INSTALL_NEXUS        Install Nexus alongside QMCPACK (if using the optional inst
 \item Additional QMCPACK build options
 
 \begin{shade}
-QMC_INCLUDE         Add extra include paths
-QMC_EXTRA_LIBS      Add extra link libraries
-QMC_BUILD_STATIC    Add -static flags to build
-QMC_DATA            Specify data directory for QMCPACK performance and integration tests
-QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
+QMC_INCLUDE            Add extra include paths
+QMC_EXTRA_LIBS         Add extra link libraries
+QMC_BUILD_STATIC       Add -static flags to build
+QMC_DATA               Specify data directory for QMCPACK performance and integration tests
+QE_BIN                 Location of Quantum Espresso binaries including pw2qmcpack.x
+QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
+                       saving default use of symbolic links for test files. Useful
+                       if the build is on a separate filesystem from the source, as
+                       required on some HPC systems.
 \end{shade}
 
 \item Intel MKL related
@@ -1034,17 +1038,17 @@ Then using the following command
 mkdir build_armclang
 cd build_armclang
 cmake -DCMAKE_C_COMPILER=armclang -DCMAKE_CXX_COMPILER=armclang++ -DQMC_MPI=0 \
-      -DCMAKE_C_COMPILER_ID=Clang -DCMAKE_CXX_COMPILER_ID=Clang \
-      -DCMAKE_CXX_COMPILER_VERSION=5.0 -DCMAKE_CXX_STANDARD_COMPUTED_DEFAULT=98 \
-      -DCMAKE_C_FLAGS="-march=armv8-a" -DCMAKE_CXX_FLAGS="-march=armv8-a" \
       -DLAPACK_LIBRARIES="-L$ARMPL_DIR/lib -larmpl_mp" \
       -DFFTW_INCLUDE_DIR="$ARMPL_DIR/include" \
       -DFFTW_LIBRARIES="$ARMPL_DIR/lib/libarmpl_mp.a" \
       ..
 make -j 56
 \end{shade}
-Note that armclang is recognized as an `unknown' compiler by cmake (v3.12.4) and we need to force it as clang to apply necessary flags.
-This workaround will not be necessary in the near future.
+Note that armclang is recognized as an `unknown' compiler by cmake v3.13.* and below. In this case, we need to force it as clang to apply necessary flags. To do so, pass the following additionals option to cmake:
+\begin{shade}
+      -DCMAKE_C_COMPILER_ID=Clang -DCMAKE_CXX_COMPILER_ID=Clang \
+      -DCMAKE_CXX_COMPILER_VERSION=5.0 -DCMAKE_CXX_STANDARD_COMPUTED_DEFAULT=98 \
+\end{shade}      
 
 \subsection{Installing on Windows}
 Install the Windows Subsystem for Linux and Bash on Windows.
@@ -1339,18 +1343,25 @@ that are unstable are labeled with the ctest label
 ``unstable''. e.g. They are unreliable, unsupported, or known to fail
 due to partial implementation or bugs.
 
-When installing QMCPACK you should run at least the deterministic
-tests
+When installing QMCPACK you should run at least the unit tests
 
 \begin{shade}
-checkit
-\end{shade}
-% \begin{shade}
-% ctest -R deterministic -LE unstable
-% \end{shade}
-
+ ctest -R unit
+ \end{shade}
+ 
 These currently take only a few seconds to run. All should pass. A
 failure here may indicate a major problem with the installation.
+
+Currently under development is a wider range of deterministic integration
+tests. The goal is to test much more of QMCPACK than the unit tests
+currently do, and to do so in a manner that is completely reproducible
+across platforms. All of these should eventually pass 100\% reliably
+and quickly. Currently some fail on some platforms and for certain
+build types.
+
+ \begin{shade}
+ ctest -R deterministic -LE unstable
+ \end{shade}
 
 If time allows, the ``short'' stochastic tests should also be run.
 The ``short'' tests each take a few minutes each on a 16

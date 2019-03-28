@@ -121,7 +121,7 @@ namespace afqmc
     // 2. check for repeated and remove
     // 3. apply symmetry elimination
 
-    using std::conj;
+    using ma::conj;
 
     v.reserve(24);
 

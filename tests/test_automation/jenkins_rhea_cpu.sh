@@ -23,6 +23,9 @@ module load git/2.18.0
 module load cmake/3.13.4
 module load boost/1.67.0
 
+#// this is a workaround for picking up the exact libstdc++
+#export LD_PRELOAD=/ccs/compilers/gcc/rhel7-x86_64/6.2.0/lib64/libstdc++.so.6
+
 env
 module list
 
@@ -47,7 +50,7 @@ echo ""
 mkdir -p /tmp/${BUILD_TAG}-build
 cd /tmp/${BUILD_TAG}-build
 
-cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 # hacky way to check on cmake. works for now
 if ! ( grep -- '-- The C compiler identification is GNU 6.2.0' cmake.out && \
@@ -73,7 +76,7 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 make -j 24
 ctest -L unit --output-on-failure
@@ -90,7 +93,7 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 make -j 24
 ctest -L unit --output-on-failure
@@ -107,7 +110,7 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 make -j 24
 ctest -L unit --output-on-failure

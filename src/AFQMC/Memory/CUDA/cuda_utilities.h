@@ -12,7 +12,7 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_CUDA_UTILITIES_HPP 
+#ifndef AFQMC_CUDA_UTILITIES_HPP
 #define AFQMC_CUDA_UTILITIES_HPP
 
 #define GPU_MEMORY_POINTER_TYPE      1001

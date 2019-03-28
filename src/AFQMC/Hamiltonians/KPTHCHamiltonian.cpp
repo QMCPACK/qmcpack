@@ -248,7 +248,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
     for(int Q=0; Q<nkpts; Q++) {
       int nG = *std::max_element(QKtoG[Q].begin(),QKtoG[Q].end())+1;
 #ifdef SYMMETRIZE_LQ
-      using std::conj;
+      using ma::conj;
       if(kminus[Q] < Q) {
         int Qm = kminus[Q];
         int nGm = *std::max_element(QKtoG[Qm].begin(),QKtoG[Qm].end())+1;
@@ -509,7 +509,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
     auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],K);
     for(int a=0; a<nocc_per_kp[0][K]; a++)
       for(int j=0; j<nmo_per_kp[K]; j++)
-        Gc[K][a][j] = std::conj(Psi[a][j]);
+        Gc[K][a][j] = ma::conj(Psi[a][j]);
   }
   for(int K=0; K<nkpts; K++) {
     auto&& G_=G[K];
@@ -994,7 +994,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
     }
     for(int Q=0; Q<nkpts; Q++) {
       std::cout<<" reading: " <<Q <<std::endl;
-      using std::conj;
+      using ma::conj;
       if(kminus[Q]==Q) {
         if(!dump_.readEntry(LQKikn_[Q],std::string("L")+std::to_string(Q))) {
           app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"

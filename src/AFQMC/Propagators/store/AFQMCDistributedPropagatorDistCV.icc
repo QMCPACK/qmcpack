@@ -90,7 +90,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   if(comm_buffer.num_elements() < memory_needs ) {
     app_log()<<" Resizing communication buffer space in AFQMCDistributedPropagatorDistCV to " <<memory_needs*sizeof(ComplexType)/1024.0/1024.0 <<" MBs. \n";
     {
-#ifdef QMC_CUDA    
+#ifdef ENABLE_CUDA
       comm_buffer = std::move(stdCVector(iextensions<1u>{memory_needs}));
 #else
       comm_buffer = std::move(sharedCVector(iextensions<1u>{memory_needs},aux_alloc_));
@@ -243,7 +243,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
     // 6. add local contribution to vsend
     using ma::axpy;
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
     copy_n(vHS.origin()+vak0,vakN-vak0,vrecv.origin()+vak0);   // using vrecv as temporary space, since it is free now
     axpy(vakN-vak0,one,vrecv.origin()+vak0,1,vsend.origin()+vak0,1);
 #else

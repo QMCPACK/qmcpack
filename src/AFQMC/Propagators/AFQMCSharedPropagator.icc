@@ -136,7 +136,9 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
   AFQMCTimers[vHS_timer]->stop();
 
   int nx = 1;
-  if(walker_type == COLLINEAR) nx=2;
+  if(walker_type == COLLINEAR) nx = 2;
+  // Only parallelise over walkers.
+  if(wset.getNBackProp() > 0) nx = 1;
 
   // from now on, individual work on each walker/step
   const int ntasks_per_core = int(nx*nwalk)/TG.getNCoresPerTG();
@@ -285,111 +287,66 @@ void AFQMCSharedPropagator::apply_propagators_construct_propagator(WSet& wset, i
   auto TBeta(TSM({0,NMO},{0,NAEB})); 
   if(transposed_vHS_) {
     // vHS3D[nstep*nwalk][M][M]
-    if(walker_type == COLLINEAR) {
-      // in this case, tk corresponds to 2x the walker number
-      for(int tk=tk0; tk<tkN; ++tk) {
-        int nt = ni*nwalk+tk/2;
-        auto B(wset[tk/2].BMatrix());
-        SDetOp.Propagate(B,P1,vHS3D[nt],order);
-        if(tk%2==0) {
-          TAlpha = wset[tk/2].SlaterMatrix(Alpha);
-          ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
-        } else {
-          TBeta = wset[tk/2].SlaterMatrix(Beta);
-          ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
-        }
-        wset[tk/2].incrementBMatrix();
+    // in this case, tk corresponds to the walker number
+    for(int tk=tk0; tk<tkN; ++tk) {
+      int nt = ni*nwalk+tk;
+      auto B(wset[tk].BMatrix());
+      std::cout << B[0][0] << std::endl;
+      SDetOp.Propagate(B,P1,vHS3D[nt],order);
+      TAlpha = wset[tk].SlaterMatrix(Alpha);
+      ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
+      if(walker_type == COLLINEAR) {
+        TBeta = wset[tk].SlaterMatrix(Beta);
+        ma::product(B, TBeta, wset[tk].SlaterMatrix(Beta));
       }
-      if(last_nextra > 0) {
-        int tk = (ntasks_total_serial+last_task_index);
-        int nt = ni*nwalk+tk/2;
-        auto B(wset[tk/2].BMatrix());
-        SDetOp.Propagate(B,P1,vHS3D[nt],order);
-        if(tk%2==0) {
-          TAlpha = wset[tk/2].SlaterMatrix(Alpha);
-          ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
-        } else {
-          TBeta = wset[tk/2].SlaterMatrix(Beta);
-          ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
-        }
-        wset[tk/2].incrementBMatrix();
+      wset[tk].incrementBMatrix();
+    }
+    if(last_nextra > 0) {
+      int tk = (ntasks_total_serial+last_task_index);
+      int nt = ni*nwalk+tk;
+      auto B(wset[tk].BMatrix());
+      SDetOp.Propagate(B,P1,vHS3D[nt],order);
+      TAlpha = wset[tk].SlaterMatrix(Alpha);
+      ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
+      if(walker_type == COLLINEAR) {
+        TBeta = wset[tk].SlaterMatrix(Beta);
+        ma::product(B, TBeta, wset[tk].SlaterMatrix(Beta));
       }
-    } else {
-      // in this case, tk corresponds to walker number
-      for(int tk=tk0; tk<tkN; ++tk) {
-        int nt = ni*nwalk+tk;
-        auto B(wset[tk].BMatrix());
-        SDetOp.Propagate(B,P1,vHS3D[nt],order);
-        TAlpha = wset[tk].SlaterMatrix(Alpha);
-        ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
-        wset[tk/2].incrementBMatrix();
-      }
-      if(last_nextra > 0) {
-        int iw = ntasks_total_serial+last_task_index;
-        int nt = ni*nwalk+iw;
-        auto B(wset[iw].BMatrix());
-        SDetOp.Propagate(B,P1,vHS3D[nt],order);
-        TAlpha = wset[iw].SlaterMatrix(Alpha);
-        ma::product(B, TAlpha, wset[iw].SlaterMatrix(Alpha));
-      }
+      wset[tk].incrementBMatrix();
     }
   } else {
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
-    if(walker_type == COLLINEAR) {
       int oldw=-1;
       // in this case, tk corresponds to 2x the walker number
       for(int tk=tk0; tk<tkN; ++tk) {
-        int nt = ni*nwalk+tk/2;
-        if(oldw != tk/2) {
+        int nt = ni*nwalk+tk;
+        if(oldw != tk) {
           local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-          oldw=tk/2;
+          oldw=tk;
         }
-        auto B(wset[tk/2].BMatrix());
+        auto B(wset[tk].BMatrix());
         SDetOp.Propagate(B,P1,local_vHS,order);
-        if(tk%2==0) {
-          TAlpha = wset[tk/2].SlaterMatrix(Alpha);
-          ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
-        } else {
-          TBeta = wset[tk/2].SlaterMatrix(Beta);
-          ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
+        TAlpha = wset[tk].SlaterMatrix(Alpha);
+        ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
+        if(walker_type == COLLINEAR) {
+          TBeta = wset[tk].SlaterMatrix(Beta);
+          ma::product(B, TBeta, wset[tk].SlaterMatrix(Beta));
         }
-        wset[tk/2].incrementBMatrix();
+        wset[tk].incrementBMatrix();
       }
       if(last_nextra > 0) {
         int tk = (ntasks_total_serial+last_task_index);
-        int nt = ni*nwalk+tk/2;
-        local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        auto B(wset[tk/2].BMatrix());
-        SDetOp.Propagate(B,P1,local_vHS,order);
-        if(tk%2==0) {
-          TAlpha = wset[tk/2].SlaterMatrix(Alpha);
-          ma::product(B, TAlpha, wset[tk/2].SlaterMatrix(Alpha));
-        } else {
-          TBeta = wset[tk/2].SlaterMatrix(Beta);
-          ma::product(B, TBeta, wset[tk/2].SlaterMatrix(Beta));
-        }
-        wset[tk/2].incrementBMatrix();
-      }
-    } else {
-      // in this case, tk corresponds to walker number
-      for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk;
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
         auto B(wset[tk].BMatrix());
         SDetOp.Propagate(B,P1,local_vHS,order);
         TAlpha = wset[tk].SlaterMatrix(Alpha);
         ma::product(B, TAlpha, wset[tk].SlaterMatrix(Alpha));
+        if(walker_type == COLLINEAR) {
+          TBeta = wset[tk].SlaterMatrix(Beta);
+          ma::product(B, TBeta, wset[tk].SlaterMatrix(Beta));
+        }
         wset[tk].incrementBMatrix();
-      }
-      if(last_nextra > 0) {
-        int iw = ntasks_total_serial+last_task_index;
-        int nt = ni*nwalk+iw;
-        local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        auto B(wset[iw].BMatrix());
-        SDetOp.Propagate(B,P1,local_vHS,order);
-        TAlpha = wset[iw].SlaterMatrix(Alpha);
-        ma::product(B, TAlpha, wset[iw].SlaterMatrix(Alpha));
-        wset[iw].incrementBMatrix();
       }
     }
   }

@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file ParticleSetPool.h
@@ -27,7 +24,6 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup qmcapp
  * @brief Manage a collection of ParticleSet objects
  *
@@ -36,10 +32,8 @@ namespace qmcplusplus
  */
 class ParticleSetPool : public MPIObjectBase
 {
-
 public:
-
-  typedef std::map<std::string,ParticleSet*> PoolType;
+  typedef std::map<std::string, ParticleSet*> PoolType;
 
   /** constructor
    * @param aname xml tag
@@ -50,7 +44,7 @@ public:
   bool get(std::ostream& os) const;
   void reset();
 
-  void output_particleset_info(Libxml2Document &doc, xmlNodePtr root);
+  void output_particleset_info(Libxml2Document& doc, xmlNodePtr root);
 
   ///assign TileMatrix
   bool putTileMatrix(xmlNodePtr cur);
@@ -59,10 +53,7 @@ public:
    */
   bool putLattice(xmlNodePtr cur);
   ///return true, if the pool is empty
-  inline bool empty() const
-  {
-    return myPool.empty();
-  }
+  inline bool empty() const { return myPool.empty(); }
 
   ///add a ParticleSet* to the pool
   void addParticleSet(ParticleSet* p);
@@ -84,10 +75,7 @@ public:
 
   /** get the Pool object
    */
-  inline PoolType& getPool()
-  {
-    return myPool;
-  }
+  inline PoolType& getPool() { return myPool; }
 
   /** create a target particleset and other associated particlesets
    * @param cur xml node
@@ -103,7 +91,7 @@ public:
 
   /**  Access to TileMatrix for testing
    */
-  Tensor<int, OHMMS_DIM> &getTileMatrix() { return TileMatrix; }
+  Tensor<int, OHMMS_DIM>& getTileMatrix() { return TileMatrix; }
 
 private:
   /** global SimulationCell
@@ -115,17 +103,17 @@ private:
   ParticleSet::ParticleLayout_t* SimulationCell;
   /** tiling matrix
    */
-  Tensor<int,OHMMS_DIM> TileMatrix;
+  Tensor<int, OHMMS_DIM> TileMatrix;
   /** List of ParticleSet
    *
    * Each ParticleSet has to have a unique name which is used as a key for the map
    */
-  std::map<std::string,ParticleSet*> myPool;
+  std::map<std::string, ParticleSet*> myPool;
   /** xml node for random initialization.
    *
    * randomize() process initializations just before starting qmc sections
    */
   std::vector<xmlNodePtr> randomize_nodes;
 };
-}
+} // namespace qmcplusplus
 #endif

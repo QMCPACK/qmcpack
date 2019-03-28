@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_CS_VMC_UPDATEPBYP_H
@@ -20,18 +18,16 @@
 #include "QMCDrivers/CorrelatedSampling/CSUpdateBase.h"
 namespace qmcplusplus
 {
-
 /** @ingroup QMCDrivers MultiplePsi ParticleByParticle
  * @brief Implements the VMC algorithm
  */
-class CSVMCUpdatePbyP: public CSUpdateBase
+class CSVMCUpdatePbyP : public CSUpdateBase
 {
-
 public:
   /// Constructor.
   CSVMCUpdatePbyP(MCWalkerConfiguration& w,
-                   std::vector<TrialWaveFunction*>& psi,
-                   std::vector<QMCHamiltonian*>& h,
+                  std::vector<TrialWaveFunction*>& psi,
+                  std::vector<QMCHamiltonian*>& h,
                   RandomGenerator_t& rg);
 
   ~CSVMCUpdatePbyP();
@@ -44,15 +40,14 @@ private:
  *
  * @brief Implements the VMC algorithm with drift.  
  */
-class CSVMCUpdatePbyPWithDriftFast: public CSUpdateBase
+class CSVMCUpdatePbyPWithDriftFast : public CSUpdateBase
 {
-
 public:
   /// Constructor.
   CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w,
-                   std::vector<TrialWaveFunction*>& psi,
-                   std::vector<QMCHamiltonian*>& h,
-                  RandomGenerator_t& rg);
+                               std::vector<TrialWaveFunction*>& psi,
+                               std::vector<QMCHamiltonian*>& h,
+                               RandomGenerator_t& rg);
 
   ~CSVMCUpdatePbyPWithDriftFast();
 
@@ -60,6 +55,6 @@ public:
 
 private:
 };
-}
+} // namespace qmcplusplus
 
 #endif

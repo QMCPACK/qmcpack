@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #include "Configuration.h"
@@ -20,14 +17,11 @@
 
 namespace qmcplusplus
 {
-
-QMCAppBase::QMCAppBase()
-{
-}
+QMCAppBase::QMCAppBase() {}
 
 QMCAppBase::~QMCAppBase()
 {
-  while(!XmlDocStack.empty())
+  while (!XmlDocStack.empty())
   {
     popDocument();
   }
@@ -35,9 +29,9 @@ QMCAppBase::~QMCAppBase()
 
 bool QMCAppBase::pushDocument(const std::string& infile)
 {
-  Libxml2Document* adoc= new Libxml2Document();
-  bool success = adoc->parse(infile);
-  if(success)
+  Libxml2Document* adoc = new Libxml2Document();
+  bool success          = adoc->parse(infile);
+  if (success)
   {
     XmlDocStack.push(adoc);
   }
@@ -51,10 +45,10 @@ bool QMCAppBase::pushDocument(const std::string& infile)
 
 void QMCAppBase::popDocument()
 {
-  if(!XmlDocStack.empty())
-    //Check if the stack is empty
+  if (!XmlDocStack.empty())
+  //Check if the stack is empty
   {
-    Libxml2Document* adoc=XmlDocStack.top();
+    Libxml2Document* adoc = XmlDocStack.top();
     delete adoc;
     XmlDocStack.pop();
   }
@@ -75,7 +69,7 @@ bool QMCAppBase::parse(const std::string& infile)
 
 void QMCAppBase::saveXml()
 {
-  if(!XmlDocStack.empty())
+  if (!XmlDocStack.empty())
   {
     std::string newxml(myProject.CurrentMainRoot());
     //string newxml(myProject.CurrentRoot());
@@ -88,8 +82,5 @@ void QMCAppBase::saveXml()
   }
 }
 
-std::string &QMCAppBase::getTitle()
-{
-  return myProject.m_title;
-}
-}
+std::string& QMCAppBase::getTitle() { return myProject.m_title; }
+} // namespace qmcplusplus

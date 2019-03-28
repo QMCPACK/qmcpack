@@ -16,8 +16,7 @@
 #define AFQMC_NUMERICS_HELPERS_HPP
 
 #include<cassert>
-#if defined(QMC_CUDA)
-#include <boost/stacktrace.hpp>
+#if defined(ENABLE_CUDA)
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/determinant.cuh"
 #endif
@@ -85,7 +84,7 @@ namespace ma
 
 }
 
-#if defined(QMC_CUDA)
+#if defined(ENABLE_CUDA)
 namespace qmc_cuda{
   // using thrust for now to avoid kernels!!!
   template<class T>
@@ -121,7 +120,7 @@ namespace qmc_cuda{
   template<class ptrA, class ptrB>
   inline void scale_columns(int n, int m, ptrA A, int lda, ptrB scl)
   {
-    std::cout << boost::stacktrace::stacktrace();
+    print_stacktrace;
     throw std::runtime_error("Error: Calling qmc_cuda::scale_columns atch all.");
   }
 

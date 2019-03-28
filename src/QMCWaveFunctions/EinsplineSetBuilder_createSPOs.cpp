@@ -33,18 +33,10 @@
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+#include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 
 namespace qmcplusplus
 {
-
-  ///create R2R, real wavefunction in double
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create R2R, real wavefunction in float
-  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create C2C or C2R, complex wavefunction in double
-  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create C2C or C2R, complex wavefunction in single
-  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep);
 
 void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
 {
@@ -132,7 +124,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string truncate("no");
   std::string hybrid_rep("no");
   std::string use_einspline_set_extended("no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
-#if defined(QMC_CUDA)
+#if defined(QMC_CUDA) || defined(ENABLE_OFFLOAD)
   std::string useGPU="yes";
 #else
   std::string useGPU="no";
@@ -317,9 +309,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if(MixedSplineReader==0)
     {
       if(use_single)
-        MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes", useGPU);
       else
-        MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes", useGPU);
     }
   }
   else
@@ -328,9 +320,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if(MixedSplineReader==0)
     {
       if(use_single)
-        MixedSplineReader= createBsplineComplexSingle(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineComplexSingle(this, hybrid_rep=="yes", useGPU);
       else
-        MixedSplineReader= createBsplineComplexDouble(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineComplexDouble(this, hybrid_rep=="yes", useGPU);
     }
   }
 

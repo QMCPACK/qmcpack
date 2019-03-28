@@ -9,7 +9,6 @@
 
 namespace qmcplusplus
 {
-
 TEST_CASE("stdlib round", "[numerics]")
 {
   REQUIRE(round(0.4f) == 0.0f);
@@ -19,4 +18,4 @@ TEST_CASE("stdlib round", "[numerics]")
   REQUIRE(round(-1.4f) == -1.0f);
 }
 
-}
+} // namespace qmcplusplus

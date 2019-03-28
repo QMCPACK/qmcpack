@@ -23,22 +23,18 @@
 #include <sstream>
 
 
-
 namespace qmcplusplus
 {
-
 TEST_CASE("ParticleSetPool", "[qmcapp]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSetPool pp(c);
 
-// See ParticleIO/tests/test_xml_io.cpp for particle parsing
-const char *particles = \
-" \
+  // See ParticleIO/tests/test_xml_io.cpp for particle parsing
+  const char* particles = " \
 <particleset name=\"ion0\" size=\"1\"> \
   <group name=\"He\"> \
     <parameter name=\"charge\">2</parameter> \
@@ -56,16 +52,16 @@ const char *particles = \
 
   pp.put(root);
 
-  ParticleSet *ions = pp.getParticleSet("ion0");
+  ParticleSet* ions = pp.getParticleSet("ion0");
   REQUIRE(ions != NULL);
 
-  ParticleSet *not_here = pp.getParticleSet("does_not_exist");
+  ParticleSet* not_here = pp.getParticleSet("does_not_exist");
   REQUIRE(not_here == NULL);
 
-  ParticleSet *ws = pp.getWalkerSet("ion0");
+  ParticleSet* ws = pp.getWalkerSet("ion0");
   REQUIRE(ws != NULL);
 
-  ParticleSet *ps2 = new ParticleSet();
+  ParticleSet* ps2 = new ParticleSet();
   ps2->setName("particle_set_2");
   pp.addParticleSet(ps2);
 
@@ -80,16 +76,14 @@ const char *particles = \
 
 TEST_CASE("ParticleSetPool random", "[qmcapp]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSetPool pp(c);
 
-// See ParticleIO/tests/test_xml_io.cpp for particle parsing
-const char *particles = \
-" \
+  // See ParticleIO/tests/test_xml_io.cpp for particle parsing
+  const char* particles = " \
 <tmp> \
 <particleset name=\"ion0\" size=\"1\"> \
   <group name=\"He\"> \
@@ -116,10 +110,10 @@ const char *particles = \
   pp.put(part_ion);
   pp.put(xmlNextElementSibling(part_ion));
 
-  ParticleSet *ions = pp.getParticleSet("ion0");
+  ParticleSet* ions = pp.getParticleSet("ion0");
   REQUIRE(ions != NULL);
 
-  ParticleSet *elec = pp.getParticleSet("elec");
+  ParticleSet* elec = pp.getParticleSet("elec");
   REQUIRE(ions != NULL);
   REQUIRE(elec->R.size() == 4);
 
@@ -131,13 +125,13 @@ const char *particles = \
 
 TEST_CASE("ParticleSetPool putTileMatrix", "[qmcapp]")
 {
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSetPool pp(c);
 
-  const char *tile_matrix = "<tmp tilematrix='1 0 0 1 1 0 2 1 1'/>";
+  const char* tile_matrix = "<tmp tilematrix='1 0 0 1 1 0 2 1 1'/>";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(tile_matrix);
@@ -161,13 +155,13 @@ TEST_CASE("ParticleSetPool putTileMatrix", "[qmcapp]")
 
 TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
 {
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSetPool pp(c);
 
-  const char *lattice = "<parameter name='lattice'> </parameter>";
+  const char* lattice = "<parameter name='lattice'> </parameter>";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(lattice);
@@ -175,6 +169,5 @@ TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
 
   xmlNodePtr root = doc.getRoot();
   pp.putLattice(root);
-
 }
-}
+} // namespace qmcplusplus

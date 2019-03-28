@@ -42,7 +42,7 @@ template<class T1, class T2=T1>
 class SparseTensor
 {
 
-#if defined(AFQMC_MIXED_PRECISION)
+#if defined(MIXED_PRECISION)
   using SpT1 = typename to_single_precision<T1>::value_type;
   using SpT2 = typename to_single_precision<T2>::value_type;
 #else
@@ -75,7 +75,7 @@ class SparseTensor
     SparseTensor(communicator& c_, 
                  WALKER_TYPES type,
                  CMatrix&& hij_,
-                 std::vector<T1Vector>&& h1,
+                 std::vector<CVector>&& h1,
                  std::vector<T1shm_csr_matrix>&& v2,
                  std::vector<T1shm_csr_matrix_view>&& v2view,
                  Vshm_csr_matrix&& vn,
@@ -144,7 +144,7 @@ class SparseTensor
       TG.TG().all_reduce_in_place_n(H1D.origin(),H1D.num_elements(),std::plus<>());
 
       // add hij + vn0 and symmetrize
-      using std::conj;
+      using ma::conj;
 
       for(int i=0; i<NMO; i++) {
         H1[i][i] += hij[i][i] + vn0[i][i];
@@ -197,7 +197,7 @@ class SparseTensor
       if(addEJ and getKr)
         assert(Kr->size(0) == nwalk && Kr->size(1) == SpvnT[k].size(0));
 
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
       size_t mem_needs = Gc.num_elements();
       set_buffer(mem_needs);
       boost::multi::array_ref<SPComplexType,2> Gsp(to_address(SM_TMats.origin()), Gc.extensions());
@@ -229,7 +229,7 @@ class SparseTensor
         assert(SpvnT_view[k].size(1) == Gc.size(0));
         RealType scl = (walker_type==CLOSED?4.0:1.0);
         // SpvnT*G
-        boost::multi::array_ref<SpT2,2> v_(Gcloc.origin()+
+        boost::multi::array_ref<SPComplexType,2> v_(Gcloc.origin()+
                                             SpvnT_view[k].local_origin()[0]*Gc.size(1),
                                         {long(SpvnT_view[k].size(0)),long(Gc.size(1))});
         ma::product(SpvnT_view[k], Gsp, v_);
@@ -251,7 +251,7 @@ class SparseTensor
         for(int wi=0; wi<Gc.size(1); wi++)
           E[wi][2] = 0.5*scl*static_cast<ComplexType>(ma::dot(v_(v_.extension(0),wi),v_(v_.extension(0),wi)));
       }
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
 #endif
 
     }
@@ -271,7 +271,7 @@ class SparseTensor
       assert( Spvn.size(1) == X.size(0) );
       assert( Spvn.size(0) == v.size(0) );
 
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
       size_t mem_needs = X.num_elements()+v.num_elements();  
       set_buffer(mem_needs);
       boost::multi::array_ref<SPComplexType,1> vsp(to_address(SM_TMats.origin()), v.extensions());  
@@ -302,7 +302,7 @@ class SparseTensor
       assert( Spvn.size(1) == X.size(0) );
       assert( Spvn.size(0) == v.size(0) );
       assert( X.size(1) == v.size(1) );
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
       size_t mem_needs = X.num_elements()+v.num_elements();
       set_buffer(mem_needs);
       boost::multi::array_ref<SPComplexType,2> vsp(to_address(SM_TMats.origin()), v.extensions());
@@ -336,7 +336,7 @@ class SparseTensor
       assert( SpvnT[k].size(1) == G.size(0) );
       assert( SpvnT[k].size(0) == v.size(0) );
 
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
       size_t mem_needs = G.num_elements()+v.num_elements();
       set_buffer(mem_needs);
       boost::multi::array_ref<SPComplexType,1> vsp(to_address(SM_TMats.origin()), v.extensions());
@@ -373,7 +373,7 @@ class SparseTensor
       assert( SpvnT[k].size(0) == v.size(0) );
       assert( G.size(1) == v.size(1) );
 
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
       size_t mem_needs = G.num_elements()+v.num_elements();
       set_buffer(mem_needs);
       boost::multi::array_ref<SPComplexType,2> vsp(to_address(SM_TMats.origin()), v.extensions());
@@ -428,7 +428,7 @@ class SparseTensor
     CMatrix hij;
 
     // (potentially half rotated) one body hamiltonian
-    std::vector<T1Vector> haj;
+    std::vector<CVector> haj;
 
     // sparse 2-body 2-electron integrals in matrix form
     std::vector<T1shm_csr_matrix> Vakbl;

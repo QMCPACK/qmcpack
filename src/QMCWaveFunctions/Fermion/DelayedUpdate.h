@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2017 QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -14,16 +14,23 @@
 
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include <simd/simd.hpp>
 #include "Numerics/OhmmsBlas.h"
+#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Numerics/BlasThreadingEnv.h"
 #include "config.h"
 
 namespace qmcplusplus
 {
-template<typename T>
+
+/** implements delayed update on CPU using BLAS
+ * @tparam T base precision for most computation
+ * @tparam T_FP high precision for matrix inversion, T_FP >= T
+ */
+template<typename T, typename T_FP>
 class DelayedUpdate
 {
+  /// define real type
+  using real_type = typename scalar_traits<T>::real_type;
   /// orbital values of delayed electrons
   Matrix<T> U;
   /// rows of Ainv corresponding to delayed electrons
@@ -40,16 +47,17 @@ class DelayedUpdate
   std::vector<int> delay_list;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
+  /// matrix inversion engine
+  DiracMatrix<T_FP, T> detEng;
 
 public:
   /// default constructor
   DelayedUpdate() : delay_count(0) {}
 
-  ///resize the internal storage
   /** resize the internal storage
-       * @param norb number of electrons/orbitals
-       * @param delay, maximum delay 0<delay<=norb
-       */
+   * @param norb number of electrons/orbitals
+   * @param delay, maximum delay 0<delay<=norb
+   */
   inline void resize(int norb, int delay)
   {
     V.resize(delay, norb);
@@ -61,10 +69,30 @@ public:
     delay_list.resize(delay);
   }
 
+  /** compute the inverse of the transpose of matrix A
+   * @param logdetT orbital value matrix
+   * @param Ainv inverse matrix
+   */
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, real_type& LogValue, real_type& PhaseValue)
+  {
+    detEng.invert_transpose(logdetT, Ainv, LogValue, PhaseValue);
+    // safe mechanism
+    delay_count = 0;
+  }
+
+  /** initialize internal objects when Ainv is refreshed
+   * @param Ainv inverse matrix
+   */
+  inline void initializeInv(const Matrix<T>& Ainv)
+  {
+    // safe mechanism
+    delay_count = 0;
+  }
+
   /** compute the row of up-to-date Ainv
-       * @param Ainv inverse matrix
-       * @param rowchanged the row id corresponding to the proposed electron
-       */
+   * @param Ainv inverse matrix
+   * @param rowchanged the row id corresponding to the proposed electron
+   */
   template<typename VVT>
   inline void getInvRow(const Matrix<T>& Ainv, int rowchanged, VVT& invRow)
   {
@@ -87,12 +115,12 @@ public:
   }
 
   /** accept a move with the update delayed
-       * @param Ainv inverse matrix
-       * @param rowchanged the row id corresponding to the proposed electron
-       * @param psiV new orbital values
-       *
-       * Before delay_count reaches the maximum delay, only Binv is updated with a recursive algorithm
-       */
+   * @param Ainv inverse matrix
+   * @param rowchanged the row id corresponding to the proposed electron
+   * @param psiV new orbital values
+   *
+   * Before delay_count reaches the maximum delay, only Binv is updated with a recursive algorithm
+   */
   template<typename VVT>
   inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
   {
@@ -111,27 +139,11 @@ public:
       y += Binv[delay_count][i] * p[i];
     Binv[delay_count][delay_count] = y = T(1) / y;
     // Y
-    BLAS::gemv('T',
-               delay_count,
-               delay_count,
-               y,
-               Binv.data(),
-               lda_Binv,
-               p.data(),
-               1,
-               czero,
-               Binv.data() + delay_count,
+    BLAS::gemv('T', delay_count, delay_count, y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data() + delay_count,
                lda_Binv);
     // X
-    BLAS::ger(delay_count,
-              delay_count,
-              cminusone,
-              Binv[delay_count],
-              1,
-              Binv.data() + delay_count,
-              lda_Binv,
-              Binv.data(),
-              lda_Binv);
+    BLAS::ger(delay_count, delay_count, cminusone, Binv[delay_count], 1, Binv.data() + delay_count, lda_Binv,
+              Binv.data(), lda_Binv);
     // Z
     for (int i = 0; i < delay_count; i++)
       Binv[delay_count][i] *= -y;
@@ -142,8 +154,8 @@ public:
   }
 
   /** update the full Ainv and reset delay_count
-       * @param Ainv inverse matrix
-       */
+   * @param Ainv inverse matrix
+   */
   inline void updateInvMat(Matrix<T>& Ainv)
   {
     if (delay_count == 0)
@@ -170,51 +182,18 @@ public:
       {
         // threading depends on BLAS
         BlasThreadingEnv knob(use_serial ? 1 : num_threads_nested);
-        BLAS::gemm('T',
-                   'N',
-                   delay_count,
-                   norb,
-                   norb,
-                   cone,
-                   U.data(),
-                   norb,
-                   Ainv.data(),
-                   norb,
-                   czero,
-                   tempMat.data(),
+        BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(),
                    lda_Binv);
         for (int i = 0; i < delay_count; i++)
           tempMat(delay_list[i], i) -= cone;
-        BLAS::gemm('N',
-                   'N',
-                   norb,
-                   delay_count,
-                   delay_count,
-                   cone,
-                   V.data(),
-                   norb,
-                   Binv.data(),
-                   lda_Binv,
-                   czero,
-                   U.data(),
-                   norb);
-        BLAS::gemm('N',
-                   'N',
-                   norb,
-                   norb,
-                   delay_count,
-                   -cone,
-                   U.data(),
-                   norb,
-                   tempMat.data(),
-                   lda_Binv,
-                   cone,
-                   Ainv.data(),
-                   norb);
+        BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero,
+                   U.data(), norb);
+        BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone,
+                   Ainv.data(), norb);
       }
       else
       {
-// manually threaded version of the above GEMM calls
+        // manually threaded version of the above GEMM calls
 #pragma omp parallel
         {
           const int block_size = getAlignedSize<T>((norb + num_threads_nested - 1) / num_threads_nested);
@@ -223,19 +202,8 @@ public:
           for (int ix = 0; ix < num_block; ix++)
           {
             int x_offset = ix * block_size;
-            BLAS::gemm('T',
-                       'N',
-                       delay_count,
-                       std::min(norb - x_offset, block_size),
-                       norb,
-                       cone,
-                       U.data(),
-                       norb,
-                       Ainv[x_offset],
-                       norb,
-                       czero,
-                       tempMat[x_offset],
-                       lda_Binv);
+            BLAS::gemm('T', 'N', delay_count, std::min(norb - x_offset, block_size), norb, cone, U.data(), norb,
+                       Ainv[x_offset], norb, czero, tempMat[x_offset], lda_Binv);
           }
 #pragma omp master
           for (int i = 0; i < delay_count; i++)
@@ -244,19 +212,8 @@ public:
           for (int iy = 0; iy < num_block; iy++)
           {
             int y_offset = iy * block_size;
-            BLAS::gemm('N',
-                       'N',
-                       std::min(norb - y_offset, block_size),
-                       delay_count,
-                       delay_count,
-                       cone,
-                       V.data() + y_offset,
-                       norb,
-                       Binv.data(),
-                       lda_Binv,
-                       czero,
-                       U.data() + y_offset,
-                       norb);
+            BLAS::gemm('N', 'N', std::min(norb - y_offset, block_size), delay_count, delay_count, cone,
+                       V.data() + y_offset, norb, Binv.data(), lda_Binv, czero, U.data() + y_offset, norb);
           }
 #pragma omp for collapse(2) nowait
           for (int iy = 0; iy < num_block; iy++)
@@ -264,19 +221,9 @@ public:
             {
               int x_offset = ix * block_size;
               int y_offset = iy * block_size;
-              BLAS::gemm('N',
-                         'N',
-                         std::min(norb - y_offset, block_size),
-                         std::min(norb - x_offset, block_size),
-                         delay_count,
-                         -cone,
-                         U.data() + y_offset,
-                         norb,
-                         tempMat[x_offset],
-                         lda_Binv,
-                         cone,
-                         Ainv[x_offset] + y_offset,
-                         norb);
+              BLAS::gemm('N', 'N', std::min(norb - y_offset, block_size), std::min(norb - x_offset, block_size),
+                         delay_count, -cone, U.data() + y_offset, norb, tempMat[x_offset], lda_Binv, cone,
+                         Ainv[x_offset] + y_offset, norb);
             }
         }
       }

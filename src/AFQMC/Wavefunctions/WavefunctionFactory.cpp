@@ -269,7 +269,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         APP_ABORT(" Error: initial_configuration > ndets_to_read \n"); 
       if(!newg.second)
         APP_ABORT(" Error: Problems adding new initial guess. \n"); 
-      using std::conj;
+      using ma::conj;
       std::fill_n((newg.first)->second.origin(),2*NMO*NAEA,ComplexType(0.0,0.0));
       {  
         auto pbegin = PsiT[iC].pointers_begin(); 
@@ -501,7 +501,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
       int iC = initial_configuration;
       if( iC >= abij.number_of_configurations() )
         APP_ABORT(" Error: initial_configuration > ndets \n");
-      using std::conj;
+      using ma::conj;
       std::fill_n((newg.first)->second.origin(),2*NMO*NAEA,ComplexType(0.0,0.0));
       //auto refc = abij.reference_configuration();
       {  
@@ -737,7 +737,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
                 std::make_pair(name,boost::multi::array<ComplexType,3>({2,NMO,NAEA})));
       if(!newg.second)
         APP_ABORT(" Error: Problems adding new initial guess. \n");
-      using std::conj;
+      using ma::conj;
       std::fill_n((newg.first)->second.origin(),2*NMO*NAEA,ComplexType(0.0,0.0));
       {
         auto pbegin = PsiT[0].pointers_begin();
@@ -803,7 +803,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
                 std::make_pair(name,boost::multi::array<ComplexType,3>({2,NMO,NAEA})));
       if(!newg.second)
         APP_ABORT(" Error: Problems adding new initial guess. \n");
-      using std::conj;
+      using ma::conj;
       std::fill_n((newg.first)->second.origin(),2*NMO*NAEA,ComplexType(0.0,0.0));
       {
         auto pbegin = PsiT[0].pointers_begin();

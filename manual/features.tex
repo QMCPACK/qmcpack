@@ -1,6 +1,6 @@
 \chapter{Features of QMCPACK}
 \label{chap:features}
-\section{Features in production}
+\section{Production-level features}
 The following lists the main production level features of QMCPACK. If
 you do not see a specific feature that you are interested in listed,
 see the remainder of this manual and ask to see if specific feature is
@@ -35,7 +35,36 @@ available or can be made full production level quickly.
   python-based with graphs produced via matplotlib (included with Nexus).
 \end{itemize}
 
-\subsection{Supported GPU features}
+\section{SoA optimizations and improved algorithms}
+The Structure-of-Arrays (SoA) optimizations \cite{IPCC_SC17} are a set
+of improved data layouts facilitating vectorization on modern CPUs
+with wide SIMD units.  \textbf{For many calculations and
+  architectures, the SoA implementation more than doubles the speed of
+  the code.}  This so-called SoA implementation replaces the older, less efficient
+Array-of-Structures (AoS) code and can be enabled or disabled at compile time. The memory footprint is
+also reduced in the SoA implementation by better
+algorithms, enabling more systems to be run.
+
+The SoA build was made the default for QMCPACK v3.7.0. As described in \ref{sec:cmakeoptions}, the SoA
+implementation can be disabled by configuring with \ishell{-DENABLE_SOA=0}.
+
+SoA code path currently does NOT support:
+\begin{itemize}
+\item Backflow wavefunctions
+\item Many observables
+\end{itemize}
+  
+The code should abort with a message referring to AoS vs SoA features
+if any unsupported feature is invoked. In this case the AoS build
+should be used by configuring with \ishell{-DENABLE_SOA=0}. In
+addition, please inform the developers via GitHub or Google Groups so
+that porting these features can be prioritized.
+
+Core features are heavily tested in both SoA and AoS versions. If
+using untested and non-core features in the SoA code,
+please compare the AoS and SoA results carefully.
+
+\section{Supported GPU features}
 
 The GPU implementation supports multiple GPUs per node, with MPI tasks assigned
 in a round-robin order to the GPUs. Currently, for large runs, 1 MPI task should
@@ -56,37 +85,13 @@ MPI tasks per GPU may yield improved performance.
   \item Semilocal (nonlocal and local) pseudopotentials, Coulomb interaction (electron-electron, electron-ion) and Model periodic Coulomb (MPC) interaction.
 \end{itemize}
 
-\section{Beta test teatures}
+\section{Beta test features}
 
 This section describes developmental features in QMCPACK that might be
 ready for production, but require additional testing, features or
 documentation to be ready for general use. We describe them here
 because they offer significant benefits and are well tested in
 specific cases.
-
-\subsection{High performance CPU SoA optimizations}
-The Structure-of-Arrays (SoA) optimizations \cite{IPCC_SC17} are a set
-of improved data layouts facilitating vectorization on modern CPUs
-with wide SIMD units. \textbf{For many calculations and architectures, the SoA
-  implementation at least doubles the speed of the code.}  Meanwhile,
-the memory footprint is dramatically reduced by better algorithms. For full benefit, modern
-compilers supporting OpenMP 4.0 SIMD are recommended, e.g. GCC version
-$\ge$4.9 and Intel compiler versions $\ge 15.0$. \textbf{Users should
-  check what is currently tested on cdash/ctest and make specific
-  requests to expand the functionality that they need.}
-
-As described in \ref{sec:cmakeoptions}, to enable the SoA
-implementation, QMCPACK should be configured with \ishell{-DENABLE_SOA=1}.
-
-SoA code path currently does NOT support:
-\begin{itemize}
-  \item Backflow wavefunctions
-  \item All electron calculations requiring cusp corrected orbitals
-  \item Many observables
-  %\item Orbital optimization via rotation
-\end{itemize}
-
-If using any non-core feature with the SoA code, please check carefully vs the conventional AoS (non-SOA enabled) code.
 
 \subsection{Auxiliary-Field Quantum Monte Carlo}
 

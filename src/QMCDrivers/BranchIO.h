@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
@@ -35,7 +33,7 @@ struct BranchIO
 
   SimpleFixedNodeBranch& ref;
   Communicate* myComm;
-  BranchIO(SimpleFixedNodeBranch& source, Communicate* c): ref(source),myComm(c) {}
+  BranchIO(SimpleFixedNodeBranch& source, Communicate* c) : ref(source), myComm(c) {}
 #ifdef HAVE_ADIOS
   int64_t get_Checkpoint_size();
   void adios_checkpoint(int64_t adios_handle);
@@ -54,7 +52,5 @@ struct BranchIO
 
   static void initAttributes();
 };
-}
+} // namespace qmcplusplus
 #endif
-
-
