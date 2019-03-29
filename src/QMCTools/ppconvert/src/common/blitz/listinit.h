@@ -39,75 +39,65 @@
 BZ_NAMESPACE(blitz)
 
 template<typename T_numtype, typename T_iterator>
-class ListInitializer {
-
+class ListInitializer
+{
 public:
-    ListInitializer(T_iterator iter)
-        : iter_(iter)
-    {
-    }
+  ListInitializer(T_iterator iter) : iter_(iter) {}
 
-    ListInitializer<T_numtype, T_iterator> operator,(T_numtype x)
-    {
-        *iter_ = x;
-        return ListInitializer<T_numtype, T_iterator>(iter_ + 1);
-    }
+  ListInitializer<T_numtype, T_iterator> operator,(T_numtype x)
+  {
+    *iter_ = x;
+    return ListInitializer<T_numtype, T_iterator>(iter_ + 1);
+  }
 
 private:
-    ListInitializer();
+  ListInitializer();
 
 protected:
-    T_iterator iter_;
+  T_iterator iter_;
 };
 
 template<typename T_array, typename T_iterator = _bz_typename T_array::T_numtype*>
-class ListInitializationSwitch {
-
+class ListInitializationSwitch
+{
 public:
-    typedef _bz_typename T_array::T_numtype T_numtype;
+  typedef _bz_typename T_array::T_numtype T_numtype;
 
-    ListInitializationSwitch(const ListInitializationSwitch<T_array>& lis)
-        : array_(lis.array_), value_(lis.value_), 
-          wipeOnDestruct_(true)
-    {
-        lis.disable();
-    }
+  ListInitializationSwitch(const ListInitializationSwitch<T_array>& lis)
+      : array_(lis.array_), value_(lis.value_), wipeOnDestruct_(true)
+  {
+    lis.disable();
+  }
 
-    ListInitializationSwitch(T_array& array, T_numtype value)
-        : array_(array), value_(value), wipeOnDestruct_(true)
-    { }
+  ListInitializationSwitch(T_array& array, T_numtype value) : array_(array), value_(value), wipeOnDestruct_(true) {}
 
-    ~ListInitializationSwitch()
-    {
-        if (wipeOnDestruct_)
-            array_.initialize(value_);
-    }
+  ~ListInitializationSwitch()
+  {
+    if (wipeOnDestruct_)
+      array_.initialize(value_);
+  }
 
-    ListInitializer<T_numtype, T_iterator> operator,(T_numtype x)
-    {
-        wipeOnDestruct_ = false;
-        T_iterator iter = array_.getInitializationIterator();
-        *iter = value_;
-        T_iterator iter2 = iter + 1;
-        *iter2 = x;
-        return ListInitializer<T_numtype, T_iterator>(iter2 + 1);
-    }
+  ListInitializer<T_numtype, T_iterator> operator,(T_numtype x)
+  {
+    wipeOnDestruct_  = false;
+    T_iterator iter  = array_.getInitializationIterator();
+    *iter            = value_;
+    T_iterator iter2 = iter + 1;
+    *iter2           = x;
+    return ListInitializer<T_numtype, T_iterator>(iter2 + 1);
+  }
 
-    void disable() const
-    {
-        wipeOnDestruct_ = false;
-    }
+  void disable() const { wipeOnDestruct_ = false; }
 
 private:
-    ListInitializationSwitch();
+  ListInitializationSwitch();
 
 protected:
-    T_array& array_;
-    T_numtype value_;
-    mutable bool wipeOnDestruct_;
+  T_array& array_;
+  T_numtype value_;
+  mutable bool wipeOnDestruct_;
 };
 
 BZ_NAMESPACE_END
 
 #endif // BZ_LISTINIT_H
-

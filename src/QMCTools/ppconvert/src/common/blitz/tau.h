@@ -28,22 +28,22 @@
 #define BZ_TAU_H
 
 #ifdef BZ_TAU_PROFILING
- #define TAU_BLITZ  TAU_USER1
- #include <Profile/Profiler.h>
+#define TAU_BLITZ TAU_USER1
+#include <Profile/Profiler.h>
 
 #else
- #define TYPE_STRING(profileString, str)
- #define PROFILED_BLOCK(name, type)
- #define TAU_TYPE_STRING(profileString, str)
- #define TAU_PROFILE(name, type, group)
- #define TAU_PROFILE_TIMER(var, name, type, group)
- #define TAU_PROFILE_START(var)
- #define TAU_PROFILE_STOP(var)
- #define TAU_PROFILE_STMT(stmt)
- #define TAU_PROFILE_EXIT(msg)
- #define TAU_PROFILE_INIT(argc, argv)
- #define TAU_PROFILE_SET_NODE(node)
- #define CT(obj)
+#define TYPE_STRING(profileString, str)
+#define PROFILED_BLOCK(name, type)
+#define TAU_TYPE_STRING(profileString, str)
+#define TAU_PROFILE(name, type, group)
+#define TAU_PROFILE_TIMER(var, name, type, group)
+#define TAU_PROFILE_START(var)
+#define TAU_PROFILE_STOP(var)
+#define TAU_PROFILE_STMT(stmt)
+#define TAU_PROFILE_EXIT(msg)
+#define TAU_PROFILE_INIT(argc, argv)
+#define TAU_PROFILE_SET_NODE(node)
+#define CT(obj)
 #endif // ! BZ_TAU_PROFILING
 
 #endif // BZ_TAU_H

@@ -27,12 +27,12 @@
 #define BZ_DEBUG_H
 
 #ifdef BZ_HAVE_STDLIB_H
- #include <stdlib.h>
+#include <stdlib.h>
 #endif
 #include <assert.h>
 
 #ifdef BZ_HAVE_RTTI
- #include <typeinfo>
+#include <typeinfo>
 #endif
 
 BZ_NAMESPACE(blitz)
@@ -43,13 +43,13 @@ BZ_NAMESPACE(blitz)
  * "extern" elsewhere.
  */
 
-_bz_global bool assertFailMode     BZ_GLOBAL_INIT(false);
-_bz_global int  assertFailCount    BZ_GLOBAL_INIT(0);
-_bz_global int  assertSuccessCount BZ_GLOBAL_INIT(0);
+_bz_global bool assertFailMode BZ_GLOBAL_INIT(false);
+_bz_global int assertFailCount BZ_GLOBAL_INIT(0);
+_bz_global int assertSuccessCount BZ_GLOBAL_INIT(0);
 
 
 #if defined(BZ_TESTSUITE)
-  /*
+/*
    * In testsuite mode, these routines allow a test suite to check
    * that precondition checking is being done properly.  A typical
    * use looks like this:
@@ -68,132 +68,137 @@ _bz_global int  assertSuccessCount BZ_GLOBAL_INIT(0);
    * to halt and issue an error code.   -- TV 980226
    */
 
-  inline void checkAssert(bool condition, const char* where=0, 
-    int line=0)
+inline void checkAssert(bool condition, const char* where = 0, int line = 0)
+{
+  if (assertFailMode == true)
   {
-    if (assertFailMode == true)
-    {
-      if (condition == true)
-        ++assertSuccessCount;
-      else
-        ++assertFailCount;
-    }
-    else {
-      if (!condition)
-      {
-        std::cerr << "Unexpected assert failure!" << std::endl;
-        if (where)
-            std::cerr << where << ":" << line << std::endl;
-        cerr.flush();
-        assert(0);
-      }
-    }
+    if (condition == true)
+      ++assertSuccessCount;
+    else
+      ++assertFailCount;
   }
-
-  inline void beginCheckAssert()
+  else
   {
-    assertFailMode = true;
-    assertSuccessCount = 0;
-    assertFailCount = 0;
-  }
-
-  inline void endCheckAssert()
-  {
-    assert(assertFailMode == true);
-    assertFailMode = false;
-    if (assertFailCount == 0)
+    if (!condition)
     {
-      std::cerr << "Assert check failed!" << std::endl;
+      std::cerr << "Unexpected assert failure!" << std::endl;
+      if (where)
+        std::cerr << where << ":" << line << std::endl;
+      cerr.flush();
       assert(0);
     }
   }
+}
 
-    #define BZASSERT(X)        checkAssert(X, __FILE__, __LINE__)
-    #define BZPRECONDITION(X)  checkAssert(X, __FILE__, __LINE__)
-    #define BZPOSTCONDITION(X) checkAssert(X, __FILE__, __LINE__)
-    #define BZSTATECHECK(X,Y)  checkAssert(X == Y, __FILE__, __LINE__)
-    #define BZPRECHECK(X,Y)                                    \
-        {                                                      \
-            if ((assertFailMode == false) && (!(X)))       \
-                std::cerr << Y << std::endl;                             \
-            checkAssert(X, __FILE__, __LINE__);                \
-        }
+inline void beginCheckAssert()
+{
+  assertFailMode     = true;
+  assertSuccessCount = 0;
+  assertFailCount    = 0;
+}
 
-    #define BZ_DEBUG_MESSAGE(X)                                          \
-        {                                                                \
-            if (assertFailMode == false)                             \
-            {                                                            \
-                std::cout << __FILE__ << ":" << __LINE__ << " " << X << std::endl; \
-            }                                                            \
-        }
+inline void endCheckAssert()
+{
+  assert(assertFailMode == true);
+  assertFailMode = false;
+  if (assertFailCount == 0)
+  {
+    std::cerr << "Assert check failed!" << std::endl;
+    assert(0);
+  }
+}
 
-    #define BZ_DEBUG_PARAM(X) X
-    #define BZ_PRE_FAIL        checkAssert(0)
-    #define BZ_ASM_DEBUG_MARKER
+#define BZASSERT(X) checkAssert(X, __FILE__, __LINE__)
+#define BZPRECONDITION(X) checkAssert(X, __FILE__, __LINE__)
+#define BZPOSTCONDITION(X) checkAssert(X, __FILE__, __LINE__)
+#define BZSTATECHECK(X, Y) checkAssert(X == Y, __FILE__, __LINE__)
+#define BZPRECHECK(X, Y)                     \
+  {                                          \
+    if ((assertFailMode == false) && (!(X))) \
+      std::cerr << Y << std::endl;           \
+    checkAssert(X, __FILE__, __LINE__);      \
+  }
+
+#define BZ_DEBUG_MESSAGE(X)                                              \
+  {                                                                      \
+    if (assertFailMode == false)                                         \
+    {                                                                    \
+      std::cout << __FILE__ << ":" << __LINE__ << " " << X << std::endl; \
+    }                                                                    \
+  }
+
+#define BZ_DEBUG_PARAM(X) X
+#define BZ_PRE_FAIL checkAssert(0)
+#define BZ_ASM_DEBUG_MARKER
 
 #elif defined(BZ_DEBUG)
 
-    #define BZASSERT(X)        assert(X)
-    #define BZPRECONDITION(X)  assert(X)
-    #define BZPOSTCONDITION(X) assert(X)
-    #define BZSTATECHECK(X,Y)  assert(X == Y)
-    #define BZPRECHECK(X,Y)                                                 \
-        { if (!(X))                                                         \
-          { std::cerr << "[Blitz++] Precondition failure: Module " << __FILE__   \
-               << " line " << __LINE__ << std::endl                              \
-               << Y << std::endl;                                                \
-            cerr.flush();                                                   \
-            assert(0);                                                      \
-          }                                                                 \
-        }
+#define BZASSERT(X) assert(X)
+#define BZPRECONDITION(X) assert(X)
+#define BZPOSTCONDITION(X) assert(X)
+#define BZSTATECHECK(X, Y) assert(X == Y)
+#define BZPRECHECK(X, Y)                                                                                      \
+  {                                                                                                           \
+    if (!(X))                                                                                                 \
+    {                                                                                                         \
+      std::cerr << "[Blitz++] Precondition failure: Module " << __FILE__ << " line " << __LINE__ << std::endl \
+                << Y << std::endl;                                                                            \
+      cerr.flush();                                                                                           \
+      assert(0);                                                                                              \
+    }                                                                                                         \
+  }
 
-    #define BZ_DEBUG_MESSAGE(X) \
-        { std::cout << __FILE__ << ":" << __LINE__ << " " << X << std::endl; }
+#define BZ_DEBUG_MESSAGE(X)                                            \
+  {                                                                    \
+    std::cout << __FILE__ << ":" << __LINE__ << " " << X << std::endl; \
+  }
 
-    #define BZ_DEBUG_PARAM(X) X
-    #define BZ_PRE_FAIL      assert(0)
+#define BZ_DEBUG_PARAM(X) X
+#define BZ_PRE_FAIL assert(0)
 
 // This routine doesn't exist anywhere; it's used to mark a
 // position of interest in assembler (.s) files
-    void _bz_debug_marker();
-    #define BZ_ASM_DEBUG_MARKER   _bz_debug_marker();
+void _bz_debug_marker();
+#define BZ_ASM_DEBUG_MARKER _bz_debug_marker();
 
-#else   // !BZ_TESTSUITE && !BZ_DEBUG
+#else // !BZ_TESTSUITE && !BZ_DEBUG
 
-    #define BZASSERT(X)
-    #define BZPRECONDITION(X)
-    #define BZPOSTCONDITION(X)
-    #define BZSTATECHECK(X,Y)
-    #define BZPRECHECK(X,Y)
-    #define BZ_DEBUG_MESSAGE(X)
-    #define BZ_DEBUG_PARAM(X)
-    #define BZ_PRE_FAIL
-    #define BZ_ASM_DEBUG_MARKER
+#define BZASSERT(X)
+#define BZPRECONDITION(X)
+#define BZPOSTCONDITION(X)
+#define BZSTATECHECK(X, Y)
+#define BZPRECHECK(X, Y)
+#define BZ_DEBUG_MESSAGE(X)
+#define BZ_DEBUG_PARAM(X)
+#define BZ_PRE_FAIL
+#define BZ_ASM_DEBUG_MARKER
 
-#endif  // !BZ_TESTSUITE && !BZ_DEBUG
+#endif // !BZ_TESTSUITE && !BZ_DEBUG
 
-#define BZ_NOT_IMPLEMENTED()   { std::cerr << "[Blitz++] Not implemented: module " \
-    << __FILE__ << " line " << __LINE__ << std::endl;                \
-    exit(1); }
+#define BZ_NOT_IMPLEMENTED()                                                                            \
+  {                                                                                                     \
+    std::cerr << "[Blitz++] Not implemented: module " << __FILE__ << " line " << __LINE__ << std::endl; \
+    exit(1);                                                                                            \
+  }
 
 #ifdef BZ_HAVE_RTTI
-#define BZ_DEBUG_TEMPLATE_AS_STRING_LITERAL(X)  typeid(X).name()
+#define BZ_DEBUG_TEMPLATE_AS_STRING_LITERAL(X) typeid(X).name()
 #else
 
 template<typename T>
-class _bz_stringLiteralForNumericType {
+class _bz_stringLiteralForNumericType
+{
 public:
-    static const char* std::string()
-    { return "unknown"; }
+  static const char* std::string() { return "unknown"; }
 };
 
-#define BZ_DECL_SLFNT(X,Y) \
- template<>                 \
- class _bz_stringLiteralForNumericType< X > {  \
- public:                                       \
-     static const char* std::string()               \
-     { return Y; }                             \
- }
+#define BZ_DECL_SLFNT(X, Y)                        \
+  template<>                                       \
+  class _bz_stringLiteralForNumericType<X>         \
+  {                                                \
+  public:                                          \
+    static const char* std::string() { return Y; } \
+  }
 
 #ifdef BZ_HAVE_BOOL
 BZ_DECL_SLFNT(bool, "bool");
@@ -217,8 +222,7 @@ BZ_DECL_SLFNT(std::complex<double>, "complex<double>");
 BZ_DECL_SLFNT(std::complex<long double>, "complex<long double>");
 #endif
 
-#define BZ_DEBUG_TEMPLATE_AS_STRING_LITERAL(X) \
-    _bz_stringLiteralForNumericType<X>::string()
+#define BZ_DEBUG_TEMPLATE_AS_STRING_LITERAL(X) _bz_stringLiteralForNumericType<X>::string()
 
 #endif // !BZ_HAVE_RTTI
 

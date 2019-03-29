@@ -29,58 +29,71 @@
 
 BZ_NAMESPACE(blitz)
 
-template<int N, int I> 
-class _bz_meta_vecAssign {
+template<int N, int I>
+class _bz_meta_vecAssign
+{
 public:
-    static const int loopFlag = (I < N-1) ? 1 : 0;
+  static const int loopFlag = (I < N - 1) ? 1 : 0;
 
-    template<typename T_vector, typename T_expr, typename T_updater>
-    static inline void fastAssign(T_vector& vec, T_expr expr, T_updater u)
-    {
-        u.update(vec[I], expr._bz_fastAccess(I));
-        _bz_meta_vecAssign<N * loopFlag, (I+1) * loopFlag>
-           ::fastAssign(vec,expr,u);
-    }
+  template<typename T_vector, typename T_expr, typename T_updater>
+  static inline void fastAssign(T_vector& vec, T_expr expr, T_updater u)
+  {
+    u.update(vec[I], expr._bz_fastAccess(I));
+    _bz_meta_vecAssign<N * loopFlag, (I + 1) * loopFlag>::fastAssign(vec, expr, u);
+  }
 
-    template<typename T_vector, typename T_expr, typename T_updater>
-    static inline void assign(T_vector& vec, T_expr expr, T_updater u)
-    {
-        u.update(vec[I], expr[I]);
-        _bz_meta_vecAssign<N * loopFlag, (I+1) * loopFlag>
-           ::assign(vec,expr,u);
-    }
+  template<typename T_vector, typename T_expr, typename T_updater>
+  static inline void assign(T_vector& vec, T_expr expr, T_updater u)
+  {
+    u.update(vec[I], expr[I]);
+    _bz_meta_vecAssign<N * loopFlag, (I + 1) * loopFlag>::assign(vec, expr, u);
+  }
 
-    template<typename T_vector, typename T_numtype, typename T_updater>
-    static inline void assignWithArgs(T_vector& vec, T_updater u,
-        T_numtype x0, T_numtype x1=0, T_numtype x2=0, T_numtype x3=0,
-        T_numtype x4=0, T_numtype x5=0, T_numtype x6=0, T_numtype x7=0,
-        T_numtype x8=0, T_numtype x9=0)
-    {
-        u.update(vec[I], x0);
-        _bz_meta_vecAssign<N * loopFlag, (I+1) * loopFlag>
-            ::assignWithArgs(vec, u, x1, x2, x3, x4, x5, x6, x7, x8, x9);
-    }
-        
+  template<typename T_vector, typename T_numtype, typename T_updater>
+  static inline void assignWithArgs(T_vector& vec,
+                                    T_updater u,
+                                    T_numtype x0,
+                                    T_numtype x1 = 0,
+                                    T_numtype x2 = 0,
+                                    T_numtype x3 = 0,
+                                    T_numtype x4 = 0,
+                                    T_numtype x5 = 0,
+                                    T_numtype x6 = 0,
+                                    T_numtype x7 = 0,
+                                    T_numtype x8 = 0,
+                                    T_numtype x9 = 0)
+  {
+    u.update(vec[I], x0);
+    _bz_meta_vecAssign<N * loopFlag, (I + 1) * loopFlag>::assignWithArgs(vec, u, x1, x2, x3, x4, x5, x6, x7, x8, x9);
+  }
 };
 
 template<>
-class _bz_meta_vecAssign<0,0> {
+class _bz_meta_vecAssign<0, 0>
+{
 public:
-    template<typename T_vector, typename T_expr, typename T_updater>
-    static inline void fastAssign(T_vector&, T_expr, T_updater)
-    { }
+  template<typename T_vector, typename T_expr, typename T_updater>
+  static inline void fastAssign(T_vector&, T_expr, T_updater)
+  {}
 
-    template<typename T_vector, typename T_expr, typename T_updater>
-    static inline void assign(T_vector&, T_expr, T_updater)
-    { }
+  template<typename T_vector, typename T_expr, typename T_updater>
+  static inline void assign(T_vector&, T_expr, T_updater)
+  {}
 
-    template<typename T_vector, typename T_numtype, typename T_updater>
-    static inline void assignWithArgs(T_vector&, T_updater,
-        T_numtype, T_numtype =0, T_numtype =0, T_numtype =0,
-        T_numtype =0, T_numtype =0, T_numtype =0, T_numtype =0,
-        T_numtype =0, T_numtype =0)
-    {
-    }
+  template<typename T_vector, typename T_numtype, typename T_updater>
+  static inline void assignWithArgs(T_vector&,
+                                    T_updater,
+                                    T_numtype,
+                                    T_numtype = 0,
+                                    T_numtype = 0,
+                                    T_numtype = 0,
+                                    T_numtype = 0,
+                                    T_numtype = 0,
+                                    T_numtype = 0,
+                                    T_numtype = 0,
+                                    T_numtype = 0,
+                                    T_numtype = 0)
+  {}
 };
 
 BZ_NAMESPACE_END

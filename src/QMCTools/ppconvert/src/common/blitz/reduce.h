@@ -29,764 +29,668 @@
 #define BZ_REDUCE_H
 
 #ifndef BZ_BLITZ_H
- #include <blitz/blitz.h>
+#include <blitz/blitz.h>
 #endif
 
 #ifndef BZ_NUMTRAIT_H
- #include <blitz/numtrait.h>
+#include <blitz/numtrait.h>
 #endif
 
 #ifndef BZ_NUMINQUIRE_H
- #include <blitz/numinquire.h>
+#include <blitz/numinquire.h>
 #endif
 
 BZ_NAMESPACE(blitz)
 
 template<typename P_sourcetype, typename P_resulttype = BZ_SUMTYPE(P_sourcetype)>
-class ReduceSum {
-
+class ReduceSum
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef P_resulttype T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef P_resulttype T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = false, canProvideInitialValue = true;
+  static const bool needIndex = false, canProvideInitialValue = true;
 
-    ReduceSum()
-    { reset(); }
+  ReduceSum() { reset(); }
 
-    ReduceSum(T_resulttype initialValue)
-    { sum_ = initialValue; }
+  ReduceSum(T_resulttype initialValue) { sum_ = initialValue; }
 
-    bool operator()(T_sourcetype x)
-    { 
-        sum_ += x; 
-        return true;
-    }
+  bool operator()(T_sourcetype x)
+  {
+    sum_ += x;
+    return true;
+  }
 
-    bool operator()(T_sourcetype x, int)
-    { 
-        sum_ += x; 
-        return true;
-    }
+  bool operator()(T_sourcetype x, int)
+  {
+    sum_ += x;
+    return true;
+  }
 
-    T_resulttype result(int)
-    { return sum_; }
+  T_resulttype result(int) { return sum_; }
 
-    void reset()
-    { sum_ = zero(T_resulttype()); }
+  void reset() { sum_ = zero(T_resulttype()); }
 
-    void reset(T_resulttype initialValue)
-    { sum_ = initialValue; }
- 
-    static const char* name()
-    { return "sum"; }
- 
+  void reset(T_resulttype initialValue) { sum_ = initialValue; }
+
+  static const char* name() { return "sum"; }
+
 protected:
-    T_resulttype sum_;
+  T_resulttype sum_;
 };
 
 template<typename P_sourcetype, typename P_resulttype = BZ_FLOATTYPE(P_sourcetype)>
-class ReduceMean {
-
+class ReduceMean
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef P_resulttype T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef P_resulttype T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = false, canProvideInitialValue = false;
+  static const bool needIndex = false, canProvideInitialValue = false;
 
-    ReduceMean()
-    { reset(); }
+  ReduceMean() { reset(); }
 
-    ReduceMean(T_resulttype)
-    { 
-        BZPRECHECK(0, "Provided an initial value for ReduceMean");
-        reset();
-    }
+  ReduceMean(T_resulttype)
+  {
+    BZPRECHECK(0, "Provided an initial value for ReduceMean");
+    reset();
+  }
 
-    bool operator()(T_sourcetype x)
-    { 
-        sum_ += x; 
-        return true;
-    }
+  bool operator()(T_sourcetype x)
+  {
+    sum_ += x;
+    return true;
+  }
 
-    bool operator()(T_sourcetype x, int)
-    { 
-        sum_ += x; 
-        return true;
-    }
+  bool operator()(T_sourcetype x, int)
+  {
+    sum_ += x;
+    return true;
+  }
 
-    T_resulttype result(int count)
-    { return sum_ / count; }
+  T_resulttype result(int count) { return sum_ / count; }
 
-    void reset()
-    { sum_ = zero(T_resulttype()); }
+  void reset() { sum_ = zero(T_resulttype()); }
 
-    void reset(T_resulttype)
-    { 
-        BZPRECHECK(0, "Provided an initial value for ReduceMean");
-        reset();
-    }
+  void reset(T_resulttype)
+  {
+    BZPRECHECK(0, "Provided an initial value for ReduceMean");
+    reset();
+  }
 
-    static const char* name() 
-    { return "mean"; }
+  static const char* name() { return "mean"; }
 
 protected:
-    T_resulttype sum_;
+  T_resulttype sum_;
 };
 
 template<typename P_sourcetype>
-class ReduceMin {
-
+class ReduceMin
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef P_sourcetype T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef P_sourcetype T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = false, canProvideInitialValue = false;
+  static const bool needIndex = false, canProvideInitialValue = false;
 
-    ReduceMin()
-    { reset(); }
+  ReduceMin() { reset(); }
 
-    ReduceMin(T_resulttype min)
-    {
-        min_ = min;
-    }
+  ReduceMin(T_resulttype min) { min_ = min; }
 
-    bool operator()(T_sourcetype x)
-    { 
-        if (x < min_)
-            min_ = x;
-        return true;
-    }
+  bool operator()(T_sourcetype x)
+  {
+    if (x < min_)
+      min_ = x;
+    return true;
+  }
 
-    bool operator()(T_sourcetype x, int)
-    {
-        if (x < min_)
-            min_ = x;
-        return true;
-    }
+  bool operator()(T_sourcetype x, int)
+  {
+    if (x < min_)
+      min_ = x;
+    return true;
+  }
 
-    T_resulttype result(int)
-    { return min_; }
+  T_resulttype result(int) { return min_; }
 
-    void reset()
-    { min_ = huge(P_sourcetype()); }
+  void reset() { min_ = huge(P_sourcetype()); }
 
-    void reset(T_resulttype initialValue)
-    { min_ = initialValue; }
+  void reset(T_resulttype initialValue) { min_ = initialValue; }
 
-    static const char* name()
-    { return "min"; }
+  static const char* name() { return "min"; }
 
 protected:
-    T_resulttype min_;
+  T_resulttype min_;
 };
 
 template<typename P_sourcetype>
-class ReduceMax {
-
+class ReduceMax
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef P_sourcetype T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef P_sourcetype T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = false, canProvideInitialValue = true;
+  static const bool needIndex = false, canProvideInitialValue = true;
 
-    ReduceMax()
-    { reset(); }
+  ReduceMax() { reset(); }
 
-    ReduceMax(T_resulttype max)
-    {
-        max_ = max;
-    }
+  ReduceMax(T_resulttype max) { max_ = max; }
 
-    bool operator()(T_sourcetype x)
-    {
-        if (x > max_)
-            max_ = x;
-        return true;
-    }
+  bool operator()(T_sourcetype x)
+  {
+    if (x > max_)
+      max_ = x;
+    return true;
+  }
 
-    bool operator()(T_sourcetype x, int)
-    {
-        if (x > max_)
-            max_ = x;
-        return true;
-    }
+  bool operator()(T_sourcetype x, int)
+  {
+    if (x > max_)
+      max_ = x;
+    return true;
+  }
 
-    T_resulttype result(int)
-    { return max_; }
+  T_resulttype result(int) { return max_; }
 
-    void reset()
-    { max_ = neghuge(P_sourcetype()); }
+  void reset() { max_ = neghuge(P_sourcetype()); }
 
-    void reset(T_resulttype initialValue)
-    { max_ = initialValue; }
+  void reset(T_resulttype initialValue) { max_ = initialValue; }
 
-    static const char* name()
-    { return "max"; }
+  static const char* name() { return "max"; }
 
 protected:
-    T_resulttype max_;
+  T_resulttype max_;
 };
 
 template<typename P_sourcetype>
-class ReduceMinIndex {
-
+class ReduceMinIndex
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef int          T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef int T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = true, canProvideInitialValue = false;
+  static const bool needIndex = true, canProvideInitialValue = false;
 
-    ReduceMinIndex()
-    { reset(); }
+  ReduceMinIndex() { reset(); }
 
-    ReduceMinIndex(T_resulttype min)
+  ReduceMinIndex(T_resulttype min) { reset(min); }
+
+  bool operator()(T_sourcetype x)
+  {
+    BZPRECONDITION(0);
+    return false;
+  }
+
+  bool operator()(T_sourcetype x, int index)
+  {
+    if (x < min_)
     {
-        reset(min);
+      min_   = x;
+      index_ = index;
     }
+    return true;
+  }
 
-    bool operator()(T_sourcetype x)
-    {
-        BZPRECONDITION(0);
-        return false;
-    }
+  T_resulttype result(int) { return index_; }
 
-    bool operator()(T_sourcetype x, int index)
-    {
-        if (x < min_)
-        {
-            min_ = x;
-            index_ = index;
-        }
-        return true;
-    }
+  void reset()
+  {
+    min_   = huge(T_sourcetype());
+    index_ = tiny(int());
+  }
 
-    T_resulttype result(int)
-    { return index_; }
+  void reset(T_resulttype)
+  {
+    BZPRECHECK(0, "Provided initial value for ReduceMinIndex");
+    reset();
+  }
 
-    void reset()
-    { 
-        min_ = huge(T_sourcetype());
-        index_ = tiny(int());        
-    }
-
-    void reset(T_resulttype)
-    { 
-        BZPRECHECK(0, "Provided initial value for ReduceMinIndex");
-        reset();
-    }
-
-    static const char* name()
-    { return "minIndex"; }
+  static const char* name() { return "minIndex"; }
 
 protected:
-    T_sourcetype min_;
-    int index_;
+  T_sourcetype min_;
+  int index_;
 };
 
 template<typename P_sourcetype, int N>
-class ReduceMinIndexVector {
-
+class ReduceMinIndexVector
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef TinyVector<int,N> T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef TinyVector<int, N> T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool canProvideInitialValue = false;
+  static const bool canProvideInitialValue = false;
 
-    ReduceMinIndexVector()
-    { reset(); }
+  ReduceMinIndexVector() { reset(); }
 
-    ReduceMinIndexVector(T_resulttype min)
+  ReduceMinIndexVector(T_resulttype min) { reset(min); }
+
+  bool operator()(T_sourcetype x)
+  {
+    BZPRECONDITION(0);
+    return false;
+  }
+
+  bool operator()(T_sourcetype, int)
+  {
+    BZPRECONDITION(0);
+    return false;
+  }
+
+  bool operator()(T_sourcetype x, const TinyVector<int, N>& index)
+  {
+    if (x < min_)
     {
-        reset(min);
+      min_   = x;
+      index_ = index;
     }
+    return true;
+  }
 
-    bool operator()(T_sourcetype x)
-    {
-        BZPRECONDITION(0);
-        return false;
-    }
+  T_resulttype result(int) { return index_; }
 
-    bool operator()(T_sourcetype, int)
-    {
-        BZPRECONDITION(0);
-        return false;
-    }
-   
-    bool operator()(T_sourcetype x, const TinyVector<int,N>& index)
-    {
-        if (x < min_)
-        {
-            min_ = x;
-            index_ = index;
-        }
-        return true;
-    }
+  void reset()
+  {
+    min_   = huge(T_sourcetype());
+    index_ = tiny(int());
+  }
 
-    T_resulttype result(int)
-    { return index_; }
+  void reset(T_resulttype)
+  {
+    BZPRECHECK(0, "Provided initial value for ReduceMinIndex");
+    reset();
+  }
 
-    void reset()
-    {
-        min_ = huge(T_sourcetype());
-        index_ = tiny(int());
-    }
-
-    void reset(T_resulttype)
-    {
-        BZPRECHECK(0, "Provided initial value for ReduceMinIndex");
-        reset();
-    }
-
-    static const char* name()
-    { return "minIndex"; }
+  static const char* name() { return "minIndex"; }
 
 protected:
-    T_sourcetype min_;
-    TinyVector<int,N> index_;
+  T_sourcetype min_;
+  TinyVector<int, N> index_;
 };
 
 template<typename P_sourcetype>
-class ReduceMaxIndex {
-
+class ReduceMaxIndex
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef int          T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef int T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = true, canProvideInitialValue = false;
+  static const bool needIndex = true, canProvideInitialValue = false;
 
-    ReduceMaxIndex()
-    { reset(); }
+  ReduceMaxIndex() { reset(); }
 
-    ReduceMaxIndex(T_resulttype max)
+  ReduceMaxIndex(T_resulttype max) { reset(max); }
+
+  bool operator()(T_sourcetype x)
+  {
+    BZPRECONDITION(0);
+    return false;
+  }
+
+  bool operator()(T_sourcetype x, int index)
+  {
+    if (x > max_)
     {
-        reset(max);
+      max_   = x;
+      index_ = index;
     }
+    return true;
+  }
 
-    bool operator()(T_sourcetype x)
-    {
-        BZPRECONDITION(0);
-        return false;
-    }
+  T_resulttype result(int) { return index_; }
 
-    bool operator()(T_sourcetype x, int index)
-    {
-        if (x > max_)
-        {
-            max_ = x;
-            index_ = index;
-        }
-        return true;
-    }
+  void reset()
+  {
+    max_   = neghuge(T_sourcetype());
+    index_ = tiny(int());
+  }
 
-    T_resulttype result(int)
-    { return index_; }
+  void reset(T_resulttype)
+  {
+    BZPRECHECK(0, "Provided initial value for ReduceMaxIndex");
+    reset();
+  }
 
-    void reset()
-    {
-        max_ = neghuge(T_sourcetype());
-        index_ = tiny(int());
-    }
-
-    void reset(T_resulttype)
-    {
-        BZPRECHECK(0, "Provided initial value for ReduceMaxIndex");
-        reset();
-    }
-
-    static const char* name()
-    { return "maxIndex"; }
+  static const char* name() { return "maxIndex"; }
 
 protected:
-    T_sourcetype max_;
-    int index_;
+  T_sourcetype max_;
+  int index_;
 };
 
 template<typename P_sourcetype, int N_rank>
-class ReduceMaxIndexVector {
-
+class ReduceMaxIndexVector
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef TinyVector<int,N_rank> T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef TinyVector<int, N_rank> T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool canProvideInitialValue = false;
+  static const bool canProvideInitialValue = false;
 
-    ReduceMaxIndexVector()
-    { reset(); }
+  ReduceMaxIndexVector() { reset(); }
 
-    ReduceMaxIndexVector(T_resulttype max)
+  ReduceMaxIndexVector(T_resulttype max) { reset(max); }
+
+  bool operator()(T_sourcetype x)
+  {
+    BZPRECONDITION(0);
+    return false;
+  }
+
+  bool operator()(T_sourcetype x, const TinyVector<int, N_rank>& index)
+  {
+    if (x > max_)
     {
-        reset(max);
+      max_   = x;
+      index_ = index;
     }
+    return true;
+  }
 
-    bool operator()(T_sourcetype x)
-    {
-        BZPRECONDITION(0);
-        return false;
-    }
+  T_resulttype result(int) { return index_; }
 
-    bool operator()(T_sourcetype x, const TinyVector<int,N_rank>& index)
-    {
-        if (x > max_)
-        {
-            max_ = x;
-            index_ = index;
-        }
-        return true;
-    }
+  void reset()
+  {
+    max_   = neghuge(T_sourcetype());
+    index_ = tiny(int());
+  }
 
-    T_resulttype result(int)
-    { return index_; }
+  void reset(T_resulttype)
+  {
+    BZPRECHECK(0, "Provided initial value for ReduceMaxIndex");
+    reset();
+  }
 
-    void reset()
-    {
-        max_ = neghuge(T_sourcetype());
-        index_ = tiny(int());
-    }
-
-    void reset(T_resulttype)
-    {
-        BZPRECHECK(0, "Provided initial value for ReduceMaxIndex");
-        reset();
-    }
-
-    static const char* name()
-    { return "maxIndex"; }
+  static const char* name() { return "maxIndex"; }
 
 protected:
-    T_sourcetype max_;
-    TinyVector<int,N_rank> index_;
+  T_sourcetype max_;
+  TinyVector<int, N_rank> index_;
 };
 
 template<typename P_sourcetype>
-class ReduceFirst {
-
+class ReduceFirst
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef int          T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef int T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = true, canProvideInitialValue = false;
+  static const bool needIndex = true, canProvideInitialValue = false;
 
-    ReduceFirst()
-    { reset(); }
+  ReduceFirst() { reset(); }
 
-    ReduceFirst(T_resulttype)
+  ReduceFirst(T_resulttype) { BZPRECONDITION(0); }
+
+  bool operator()(T_sourcetype x)
+  {
+    BZPRECONDITION(0);
+    return false;
+  }
+
+  bool operator()(T_sourcetype x, int index)
+  {
+    if (x)
     {
-        BZPRECONDITION(0);
+      index_ = index;
+      return false;
     }
+    else
+      return true;
+  }
 
-    bool operator()(T_sourcetype x)
-    {
-        BZPRECONDITION(0);
-        return false;
-    }
+  T_resulttype result(int) { return index_; }
 
-    bool operator()(T_sourcetype x, int index)
-    {
-        if (x)
-        {
-            index_ = index;
-            return false;
-        }
-        else
-            return true;
-    }
+  void reset() { index_ = tiny(int()); }
 
-    T_resulttype result(int)
-    { return index_; }
+  void reset(T_resulttype)
+  {
+    BZPRECHECK(0, "Provided initial value for ReduceFirst");
+    reset();
+  }
 
-    void reset()
-    {
-        index_ = tiny(int());
-    }
-
-    void reset(T_resulttype)
-    {
-        BZPRECHECK(0, "Provided initial value for ReduceFirst");
-        reset();
-    }
-
-    static const char* name()
-    { return "first"; }
+  static const char* name() { return "first"; }
 
 protected:
-    int index_;
+  int index_;
 };
 
 template<typename P_sourcetype>
-class ReduceLast {
-
+class ReduceLast
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef int          T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef int T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = true, canProvideInitialValue = false;
+  static const bool needIndex = true, canProvideInitialValue = false;
 
-    ReduceLast()
-    { reset(); }
+  ReduceLast() { reset(); }
 
-    ReduceLast(T_resulttype)
+  ReduceLast(T_resulttype) { BZPRECONDITION(0); }
+
+  bool operator()(T_sourcetype x)
+  {
+    BZPRECONDITION(0);
+    return false;
+  }
+
+  bool operator()(T_sourcetype x, int index)
+  {
+    if (x)
     {
-        BZPRECONDITION(0);
+      index_ = index;
+      return true;
     }
+    else
+      return true;
+  }
 
-    bool operator()(T_sourcetype x)
-    {
-        BZPRECONDITION(0);
-        return false;
-    }
+  T_resulttype result(int) { return index_; }
 
-    bool operator()(T_sourcetype x, int index)
-    {
-        if (x)
-        {
-            index_ = index;
-            return true;
-        }
-        else
-            return true;
-    }
+  void reset() { index_ = huge(int()); }
 
-    T_resulttype result(int)
-    { return index_; }
+  void reset(T_resulttype)
+  {
+    BZPRECHECK(0, "Provided initial value for ReduceFirst");
+    reset();
+  }
 
-    void reset()
-    {
-        index_ = huge(int());
-    }
-
-    void reset(T_resulttype)
-    {
-        BZPRECHECK(0, "Provided initial value for ReduceFirst");
-        reset();
-    }
-
-    static const char* name()
-    { return "last"; }
+  static const char* name() { return "last"; }
 
 protected:
-    int index_;
+  int index_;
 };
 
 template<typename P_sourcetype, typename P_resulttype = BZ_SUMTYPE(P_sourcetype)>
-class ReduceProduct {
-
+class ReduceProduct
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef P_resulttype T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef P_resulttype T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = false, canProvideInitialValue = true;
+  static const bool needIndex = false, canProvideInitialValue = true;
 
-    ReduceProduct()
-    { product_ = one(T_resulttype()); }
+  ReduceProduct() { product_ = one(T_resulttype()); }
 
-    ReduceProduct(T_resulttype initialValue)
-    { product_ = initialValue; }
+  ReduceProduct(T_resulttype initialValue) { product_ = initialValue; }
 
-    bool operator()(T_sourcetype x)
-    { 
-        product_ *= x; 
-        return true;
-    }
+  bool operator()(T_sourcetype x)
+  {
+    product_ *= x;
+    return true;
+  }
 
-    bool operator()(T_sourcetype x, int)
-    { 
-        product_ *= x; 
-        return true;
-    }
+  bool operator()(T_sourcetype x, int)
+  {
+    product_ *= x;
+    return true;
+  }
 
-    T_resulttype result(int)
-    { return product_; }
+  T_resulttype result(int) { return product_; }
 
-    void reset()
-    { product_ = one(T_resulttype()); }
+  void reset() { product_ = one(T_resulttype()); }
 
-    void reset(T_resulttype initialValue)
-    { product_ = initialValue; }
+  void reset(T_resulttype initialValue) { product_ = initialValue; }
 
-    static const char* name()
-    { return "product"; }
+  static const char* name() { return "product"; }
 
 protected:
-    T_resulttype product_;
+  T_resulttype product_;
 };
 
 template<typename P_sourcetype>
-class ReduceCount {
-
+class ReduceCount
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef int          T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef int T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = false, canProvideInitialValue = true;
+  static const bool needIndex = false, canProvideInitialValue = true;
 
-    ReduceCount()
-    { reset(); }
+  ReduceCount() { reset(); }
 
-    ReduceCount(T_resulttype count)
-    {
-        count_ = count;
-    }
+  ReduceCount(T_resulttype count) { count_ = count; }
 
-    bool operator()(T_sourcetype x)
-    {
-        if (x)
-            ++count_;
-        return true;
-    }
+  bool operator()(T_sourcetype x)
+  {
+    if (x)
+      ++count_;
+    return true;
+  }
 
-    bool operator()(T_sourcetype x, int)
-    {
-        if (x)
-            ++count_;
-        return true;
-    }
+  bool operator()(T_sourcetype x, int)
+  {
+    if (x)
+      ++count_;
+    return true;
+  }
 
-    T_resulttype result(int)
-    { return count_; }
+  T_resulttype result(int) { return count_; }
 
-    void reset()
-    { count_ = zero(T_resulttype()); }
+  void reset() { count_ = zero(T_resulttype()); }
 
-    void reset(T_resulttype initialValue)
-    { count_ = initialValue; }
+  void reset(T_resulttype initialValue) { count_ = initialValue; }
 
-    static const char* name()
-    { return "count"; }
+  static const char* name() { return "count"; }
 
 protected:
-    T_resulttype count_;
+  T_resulttype count_;
 };
 
 template<typename P_sourcetype>
-class ReduceAny {
-
+class ReduceAny
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef bool     T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef bool T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = false, canProvideInitialValue = false;
+  static const bool needIndex = false, canProvideInitialValue = false;
 
-    ReduceAny()
-    { reset(); }
+  ReduceAny() { reset(); }
 
-    ReduceAny(T_resulttype initialValue)
+  ReduceAny(T_resulttype initialValue) { reset(initialValue); }
+
+  bool operator()(T_sourcetype x)
+  {
+    if (x)
     {
-        reset(initialValue);
+      any_ = true;
+      return false;
     }
 
-    bool operator()(T_sourcetype x)
+    return true;
+  }
+
+  bool operator()(T_sourcetype x, int)
+  {
+    if (x)
     {
-        if (x)
-        {
-            any_ = true;
-            return false;
-        }
-
-        return true;
+      any_ = true;
+      return false;
     }
 
-    bool operator()(T_sourcetype x, int)
-    {
-        if (x)
-        {
-            any_ = true;
-            return false;
-        }
+    return true;
+  }
 
-        return true;
-    }
+  T_resulttype result(int) { return any_; }
 
-    T_resulttype result(int)
-    { return any_; }
+  void reset() { any_ = false; }
 
-    void reset()
-    { any_ = false; }
+  void reset(T_resulttype)
+  {
+    BZPRECHECK(0, "Provided initial value for ReduceAny");
+    reset();
+  }
 
-    void reset(T_resulttype)
-    { 
-        BZPRECHECK(0, "Provided initial value for ReduceAny");
-        reset();
-    }
-
-    static const char* name()
-    { return "any"; }
+  static const char* name() { return "any"; }
 
 protected:
-    T_resulttype any_;
+  T_resulttype any_;
 };
 
 template<typename P_sourcetype>
-class ReduceAll {
-
+class ReduceAll
+{
 public:
-    typedef P_sourcetype T_sourcetype;
-    typedef bool     T_resulttype;
-    typedef T_resulttype T_numtype;
+  typedef P_sourcetype T_sourcetype;
+  typedef bool T_resulttype;
+  typedef T_resulttype T_numtype;
 
-    static const bool needIndex = false, canProvideInitialValue = false;
+  static const bool needIndex = false, canProvideInitialValue = false;
 
-    ReduceAll()
-    { reset(); }
+  ReduceAll() { reset(); }
 
-    ReduceAll(T_resulttype initialValue)
+  ReduceAll(T_resulttype initialValue) { reset(initialValue); }
+
+  bool operator()(T_sourcetype x)
+  {
+    if (!bool(x))
     {
-        reset(initialValue);
+      all_ = false;
+      return false;
     }
+    else
+      return true;
+  }
 
-    bool operator()(T_sourcetype x)
+  bool operator()(T_sourcetype x, int)
+  {
+    if (!bool(x))
     {
-        if (!bool(x))
-        {
-            all_ = false;
-            return false;
-        }
-        else
-            return true;
+      all_ = false;
+      return false;
     }
+    else
+      return true;
+  }
 
-    bool operator()(T_sourcetype x, int)
-    {
-        if (!bool(x))
-        {
-            all_ = false;
-            return false;
-        }
-        else
-            return true;
-    }
+  T_resulttype result(int) { return all_; }
 
-    T_resulttype result(int)
-    { return all_; }
+  void reset() { all_ = true; }
 
-    void reset()
-    { all_ = true; }
+  void reset(T_resulttype)
+  {
+    BZPRECHECK(0, "Provided initial value for ReduceAll");
+    reset();
+  }
 
-    void reset(T_resulttype)
-    {
-        BZPRECHECK(0, "Provided initial value for ReduceAll");
-        reset();
-    }
-
-    static const char* name()
-    { return "all"; }
+  static const char* name() { return "all"; }
 
 protected:
-    T_resulttype all_;
-}; 
+  T_resulttype all_;
+};
 
 BZ_NAMESPACE_END
 
