@@ -16,10 +16,14 @@
 
 namespace qmcplusplus
 {
-  struct MemorySpace
+struct MemorySpace
+{
+  enum
   {
-    enum { HOST = 0, CUDA };
+    HOST = 0,
+    CUDA
   };
-}
+};
+} // namespace qmcplusplus
 
 #endif
