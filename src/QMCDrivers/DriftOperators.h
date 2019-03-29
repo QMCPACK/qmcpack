@@ -43,6 +43,14 @@ inline void getScaledDrift(Tt tau, const TinyVector<TG, D>& qf, TinyVector<T, D>
   drift *= sc;
 }
 
+template<class Tt, class TG, class T, unsigned D>
+inline void getUnscaledDrift(Tt tau, const TinyVector<TG, D>& qf, TinyVector<T, D>& drift)
+{
+  //We convert the complex gradient to real and temporarily store in drift.
+  convert(qf, drift);
+  drift *= tau;
+}
+
 /** scale drift
  * @param tau_au timestep au
  * @param qf quantum forces
