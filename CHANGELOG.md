@@ -18,7 +18,7 @@ cleanup have been performed.
   than the AoS build due to better algorithms, but does not yet have
   the full range of functionality. The older AoS build can be selected
   with -DENABLE_SOA=0.
-* AFQMC code fully supports GPU acceleration via NVIDIA CUDA.
+* AFQMC code fully supports GPU acceleration via NVIDIA CUDA. Use -DENABLE_CUDA=1.
 * Quantum Espresso v6.4 is supported.  [\#1457](https://github.com/QMCPACK/qmcpack/pull/1457)
 * Better error handling e.g.  [\#1423](https://github.com/QMCPACK/qmcpack/issues/1423)
 * Workarounds for MPI support on Summit.  [\#1479](https://github.com/QMCPACK/qmcpack/pull/1479)
