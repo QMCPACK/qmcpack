@@ -53,6 +53,8 @@ DMCUpdatePbyPVMC::~DMCUpdatePbyPVMC() {}
 
 void DMCUpdatePbyPVMC::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
+  bool accept_reject=false;
+
   myTimers[DMC_buffer]->start();
   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
   W.loadWalker(thisWalker, true);
@@ -81,67 +83,76 @@ void DMCUpdatePbyPVMC::advanceWalker(Walker_t& thisWalker, bool recompute)
       GradType grad_iat = Psi.evalGrad(W, iat);
       mPosType dr;
       // VMC directly from sampling, use bare unscaled drift
-      //getScaledDrift(tauovermass, grad_iat, dr);
-      getUnscaledDrift(tauovermass, grad_iat, dr);
+      if(accept_reject)
+        getScaledDrift(tauovermass, grad_iat, dr);
+      else
+        getUnscaledDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
       //RealType rr=dot(dr,dr);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
       // VMC directly from sampling, no accept/reject
-      //if (rr > m_r2max)
-      //{
-      //  ++nRejectTemp;
-      //  continue;
-      //}
+      if(accept_reject)
+        if (rr > m_r2max)
+        {
+          ++nRejectTemp;
+          continue;
+        }
       
       // VMC directly from sampling, force makeMoveAndCheck to always take action and return true
-      W.UseBoundBox=false;
+      if(!accept_reject)
+        W.UseBoundBox=false;
       if (!W.makeMoveAndCheck(iat, dr))
         continue;
       RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
 
       // VMC directly from sampling, no accept/reject (i.e. always accept)
-      ++nAcceptTemp;
-      Psi.acceptMove(W, iat);
-      W.acceptMove(iat);
-      rr_accepted += rr;
-      gf_acc *= 1.0; //acceptance ratio is 1.0
-
-      ////node is crossed reject the move
-      ////if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
-      ////if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
-      //if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
-      //{
-      //  ++nRejectTemp;
-      //  ++nNodeCrossing;
-      //  W.rejectMove(iat);
-      //  Psi.rejectMove(iat);
-      //}
-      //else
-      //{
-      //  EstimatorRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
-      //  //Use the force of the particle iat
-      //  //RealType scale=getDriftScale(m_tauovermass,grad_iat);
-      //  //dr = W.R[iat]-W.activePos-scale*real(grad_iat);
-      //  getScaledDrift(tauovermass, grad_iat, dr);
-      //  dr                      = W.R[iat] - W.activePos - dr;
-      //  EstimatorRealType logGb = -oneover2tau * dot(dr, dr);
-      //  RealType prob           = ratio * ratio * std::exp(logGb - logGf);
-      //  if (RandomGen() < prob)
-      //  {
-      //    ++nAcceptTemp;
-      //    Psi.acceptMove(W, iat);
-      //    W.acceptMove(iat);
-      //    rr_accepted += rr;
-      //    gf_acc *= prob; //accumulate the ratio
-      //  }
-      //  else
-      //  {
-      //    ++nRejectTemp;
-      //    W.rejectMove(iat);
-      //    Psi.rejectMove(iat);
-      //  }
-      //}
+      if(!accept_reject)
+      {
+        ++nAcceptTemp;
+        Psi.acceptMove(W, iat);
+        W.acceptMove(iat);
+        rr_accepted += rr;
+        gf_acc *= 1.0; //acceptance ratio is 1.0
+      }
+      else
+      {
+        //node is crossed reject the move
+        //if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
+        //if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
+        if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
+        {
+          ++nRejectTemp;
+          ++nNodeCrossing;
+          W.rejectMove(iat);
+          Psi.rejectMove(iat);
+        }
+        else
+        {
+          EstimatorRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
+          //Use the force of the particle iat
+          //RealType scale=getDriftScale(m_tauovermass,grad_iat);
+          //dr = W.R[iat]-W.activePos-scale*real(grad_iat);
+          getScaledDrift(tauovermass, grad_iat, dr);
+          dr                      = W.R[iat] - W.activePos - dr;
+          EstimatorRealType logGb = -oneover2tau * dot(dr, dr);
+          RealType prob           = ratio * ratio * std::exp(logGb - logGf);
+          if (RandomGen() < prob)
+          {
+            ++nAcceptTemp;
+            Psi.acceptMove(W, iat);
+            W.acceptMove(iat);
+            rr_accepted += rr;
+            gf_acc *= prob; //accumulate the ratio
+          }
+          else
+          {
+            ++nRejectTemp;
+            W.rejectMove(iat);
+            Psi.rejectMove(iat);
+          }
+        }
+      }
     }
   }
   Psi.completeUpdates();
