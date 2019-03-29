@@ -115,15 +115,15 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     }
 
     template<class Mat, class MatP1, class MatV>
-    void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order=6) {
+    void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order=6, char TA='N') {
 #ifdef QMC_CUDA
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
-      Base::Propagate(std::forward<Mat>(A),P1,V,order);
+      Base::Propagate(std::forward<Mat>(A),P1,V,order,TA);
     }
 
     template<class MatA, class MatP1, class MatV>
-    void BatchedPropagate(std::vector<MatA> &Ai, const MatP1& P1, const MatV& V, int order=6) {
+    void BatchedPropagate(std::vector<MatA> &Ai, const MatP1& P1, const MatV& V, int order=6, char TA='N') {
       static_assert( std::decay<MatA>::type::dimensionality == 2, " dimenionality == 2" );
       static_assert( std::decay<MatV>::type::dimensionality == 3, " dimenionality == 3" );
       if(Ai.size() == 0) return;
@@ -137,12 +137,28 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       TTensor_ref TMN(TBuff.data(), {nbatch,NMO,NAEA});
       TTensor_ref T1(TMN.data()+TMN.num_elements(), {nbatch,NMO,NAEA});
       TTensor_ref T2(T1.data()+T1.num_elements(), {nbatch,NMO,NAEA});
+      using ma::T;
+      using ma::H;
       // could be batched when csrmm is batched  
-      for(int ib=0; ib<nbatch; ib++) 
-        ma::product(P1,Ai[ib],TMN[ib]);
-      SlaterDeterminantOperations::batched::apply_expM(V,TMN,T1,T2,order);
-      for(int ib=0; ib<nbatch; ib++) 
-        ma::product(P1,TMN[ib],Ai[ib]);
+      if(TA=='H' || TA=='h') {
+        for(int ib=0; ib<nbatch; ib++)
+          ma::product(ma::H(P1),Ai[ib],TMN[ib]);
+        SlaterDeterminantOperations::batched::apply_expM(V,TMN,T1,T2,order,TA);
+        for(int ib=0; ib<nbatch; ib++)
+          ma::product(ma::H(P1),TMN[ib],Ai[ib]);
+      } else if(TA=='T' || TA=='t') {
+        for(int ib=0; ib<nbatch; ib++)
+          ma::product(ma::T(P1),Ai[ib],TMN[ib]);
+        SlaterDeterminantOperations::batched::apply_expM(V,TMN,T1,T2,order,TA);
+        for(int ib=0; ib<nbatch; ib++)
+          ma::product(ma::T(P1),TMN[ib],Ai[ib]);
+      } else {
+        for(int ib=0; ib<nbatch; ib++) 
+          ma::product(P1,Ai[ib],TMN[ib]);
+        SlaterDeterminantOperations::batched::apply_expM(V,TMN,T1,T2,order);
+        for(int ib=0; ib<nbatch; ib++) 
+          ma::product(P1,TMN[ib],Ai[ib]);
+      }
     }
 
     // C[nwalk, M, N]

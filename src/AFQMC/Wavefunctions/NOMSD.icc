@@ -1086,7 +1086,6 @@ namespace afqmc
     int nrow = NMO*((walker_type==NONCOLLINEAR)?2:1);  
     int ncol = NAEA+((walker_type==CLOSED)?0:NAEB);  
     assert(wgt.size(0) >= nwalk);
-    assert(wgt.size(1) >= ndet);
     if(localGbuff.size() < 2*Gsize+1)
       localGbuff.reextent(iextensions<1u>{2*Gsize+1});
     pointer ov_(localGbuff.origin()+2*Gsize);

@@ -599,7 +599,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
     dump.close();
   }
 
-  int global_ncvecs = std::accumulate(nchol_per_kp.begin(),nchol_per_kp.end(),0);
+  int global_ncvecs = 2*std::accumulate(nchol_per_kp.begin(),nchol_per_kp.end(),0);
 
   std::vector<RealType> gQ(nkpts);
   if(nsampleQ>0) {
@@ -1300,7 +1300,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     dump.close();
   }
 
-  int global_ncvecs = std::accumulate(nchol_per_kp.begin(),nchol_per_kp.end(),0);
+  int global_ncvecs = 2*std::accumulate(nchol_per_kp.begin(),nchol_per_kp.end(),0);
 
   std::vector<RealType> gQ(nkpts);
   if(nsampleQ>0) {

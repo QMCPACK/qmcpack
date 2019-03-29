@@ -238,9 +238,9 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     // 5. Propagate walkers
     AFQMCTimers[propagate_timer]->start();
     if(nbatched_propagation != 0) {
-      apply_propagators_batched(wset,ni,vHS3D);
+      apply_propagators_batched('N',wset,ni,vHS3D);
     } else {
-      apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+      apply_propagators('N',wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
     }
     AFQMCTimers[propagate_timer]->stop();
 

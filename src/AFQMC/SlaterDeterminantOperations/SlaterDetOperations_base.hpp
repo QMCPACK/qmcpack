@@ -196,16 +196,28 @@ class SlaterDetOperations_base
     }    
 
     template<class Mat, class MatP1, class MatV>
-    void Propagate(Mat&& A, const MatP1& P1, const MatV& V, int order=6) {
+    void Propagate(Mat&& A, const MatP1& P1, const MatV& V, int order=6, char TA='N') {
       int NMO = A.size(0);
       int NAEA = A.size(1);
       set_buffer(3*NMO*NAEA);
       TMatrix_ref TMN(TBuff.data(), {NMO,NAEA});
       TMatrix_ref T1(TMN.data()+TMN.num_elements(), {NMO,NAEA});
       TMatrix_ref T2(T1.data()+T1.num_elements(), {NMO,NAEA});
-      ma::product(P1,std::forward<Mat>(A),TMN);
-      SlaterDeterminantOperations::base::apply_expM(V,TMN,T1,T2,order);
-      ma::product(P1,TMN,std::forward<Mat>(A));
+      using ma::T;
+      using ma::H;
+      if(TA=='H' || TA=='h') {
+        ma::product(ma::H(P1),std::forward<Mat>(A),TMN);
+        SlaterDeterminantOperations::base::apply_expM(V,TMN,T1,T2,order,TA);
+        ma::product(ma::H(P1),TMN,std::forward<Mat>(A));
+      } else if(TA=='T' || TA=='t') {
+        ma::product(ma::T(P1),std::forward<Mat>(A),TMN);
+        SlaterDeterminantOperations::base::apply_expM(V,TMN,T1,T2,order,TA);
+        ma::product(ma::T(P1),TMN,std::forward<Mat>(A));
+      } else {
+        ma::product(P1,std::forward<Mat>(A),TMN);
+        SlaterDeterminantOperations::base::apply_expM(V,TMN,T1,T2,order);
+        ma::product(P1,TMN,std::forward<Mat>(A));
+      }  
     }
 
 // NOTE: Move to a single buffer for all TNXs, to be able to reuse buffers 

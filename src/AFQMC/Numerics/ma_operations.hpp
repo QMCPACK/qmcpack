@@ -230,7 +230,8 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
         //static_assert(std::is_same<elementA,elementB>::value,"Problems with sparse dispatch");
         //static_assert(std::is_same<elementA,elementC>::value,"Problems with sparse dispatch");
         //static_assert(std::is_convertible<T,elementC>::value,"Problems with sparse dispatch");
-        assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T'); 
+        assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T' ||
+               op_tag<SparseMatrixA>::value == 'C' || op_tag<SparseMatrixA>::value == 'H' ); 
         assert(op_tag<MultiArray2DB>::value == 'N');
         assert( arg(B).stride(1) == 1 );
         assert( std::forward<MultiArray2DC>(C).stride(1) == 1 );

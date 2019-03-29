@@ -213,8 +213,6 @@ void CSR2MAREF(char TA, CSR const& A, MultiArray2D& M)
     throw std::runtime_error(" Error: Wrong dimensions in CSR2MAREF.\n");
   else if( (TA=='T' || TA=='H') && ( (M.size(0)!=A.size(1)) || (M.size(1)!=A.size(0)) ) )
     throw std::runtime_error(" Error: Wrong dimensions in CSR2MAREF.\n");
-  else
-    throw std::runtime_error(" Error: Unknown operation in CSR2MAREF.\n");
   using std::fill_n;
   fill_n(M.origin(),M.num_elements(),Type(0));
   auto pbegin = A.pointers_begin();

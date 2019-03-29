@@ -413,7 +413,7 @@ class NOMSD: public AFQMCInfo
               boost::multi::array_ref<ComplexType,2> A_(to_address(RefOrbMats[i].origin()),
                                                         {NMO,NAEA});  
               csr::CSR2MAREF('H',OrbMats[2*i],A_);
-              boost::multi::array_ref<ComplexType,2> B_(A_.origin()+A.num_elements(),
+              boost::multi::array_ref<ComplexType,2> B_(A_.origin()+A_.num_elements(),
                                                         {NMO,NAEB});  
               csr::CSR2MAREF('H',OrbMats[2*i+1],B_);
             }

@@ -189,11 +189,11 @@ class AFQMCBasePropagator: public AFQMCInfo
     void parse(xmlNodePtr cur);
 
     template<class WSet>
-    void apply_propagators(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
+    void apply_propagators(char TA, WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
                            C3Tensor_ref& vHS3D);
 
     template<class WSet>
-    void apply_propagators_batched(WSet& wset, int ni, C3Tensor_ref& vHS3D);
+    void apply_propagators_batched(char TA, WSet& wset, int ni, C3Tensor_ref& vHS3D);
 
     ComplexType apply_bound_vbias(ComplexType v, RealType sqrtdt)
     {

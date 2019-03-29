@@ -136,12 +136,13 @@ class BackPropagatedEstimator: public EstimatorBase
     int nrefs = wfn0.number_of_references_for_back_propagation();
     int nrow(NMO*((walker_type==NONCOLLINEAR)?2:1));
     int ncol(NAEA+((walker_type==CLOSED)?0:NAEB));
+    int nx((walker_type==COLLINEAR)?2:1);
 
     // 1. check structures
     if(Refs.size(0) != wset.size() || Refs.size(1) != nrefs || Refs.size(2) !=nrow*ncol) 
       Refs = std::move(mpi3CTensor({wset.size(),nrefs,nrow*ncol},Refs.get_allocator()));
-    if(detR.size(0) != wset.size() || detR.size(1) != nrefs)
-      detR.reextent({wset.size(),nrefs}); 
+    if(detR.size(0) != wset.size() || detR.size(1) != nx*nrefs)
+      detR.reextent({wset.size(),nrefs*nx}); 
 
     // 2. setup back propagated references
     boost::multi::array_ref<ComplexType,3> Refs_(to_address(Refs.origin()),Refs.extensions());
@@ -158,7 +159,7 @@ class BackPropagatedEstimator: public EstimatorBase
 
     //4. calculate properties, only rdm now but make a list or properties later
     // adjust weights here is path restoration
-    stdCVector wgt(wset.getWeightHistory()[nback_prop]);
+    stdCVector wgt(wset.getWeightHistory()[nback_prop-1]);
     if(path_restoration) {
       auto&& factors(wset.getWeightFactors());
       for(int k=0; k<nback_prop; k++)  
@@ -166,12 +167,13 @@ class BackPropagatedEstimator: public EstimatorBase
           wgt[i] *= factors[k][i];
     } else if(!importanceSampling) {
       stdCVector phase(iextensions<1u>{wset.size()});
-      wset.getProperty(PHASE,wgt);
+      wset.getProperty(PHASE,phase);
       for(int i=0; i<wgt.size(); i++) wgt[i] *= phase[i];
     }
     fill_n(denom.origin(),1,ComplexType(0.0,0.0));
     fill_n(DMBuffer.origin(), DMBuffer.num_elements(), ComplexType(0.0,0.0));
     CMatrix_ref BackPropDM(DMBuffer.origin(), {dm_dims.first,dm_dims.second});
+
     wfn0.WalkerAveragedDensityMatrix(wset, wgt, BackPropDM, denom, 
                                      !importanceSampling, std::addressof(Refs_),
                                      std::addressof(detR));
@@ -205,32 +207,25 @@ class BackPropagatedEstimator: public EstimatorBase
         dump.pop();
         write_metadata = false;
       }
-      bool write = false; //wset[0].isBMatrixBufferFull();
-      if(write) {
-//        for(int i = 0; i < DMBuffer.size(); i++)
-//          DMAverage[i] += DMBuffer[i];
-// MAM: make a wrapper for this type of operation
-// e.g. auto reference_or_copy<stdCVector>(DMBuffer);
 #ifdef QMC_CUDA
-        stdCVector buff(DMBuffer);
+      stdCVector buff(DMBuffer);
 #else
-        CVector& buff(DMBuffer);
+      CVector& buff(DMBuffer);
 #endif
-        ma::axpy(ComplexType(1.0),buff,DMAverage);
-        denom_average[0] += ComplexType(*denom.origin());
-        if(iblock%block_size == 0) {
-          for(int i = 0; i < DMAverage.size(); i++)
-            DMAverage[i] /= block_size;
-          denom_average[0] /= block_size;
-          dump.push("BackPropagated");
-          std::string padded_iblock = std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
-          dump.write(DMAverage, "one_rdm_"+padded_iblock);
-          dump.write(denom_average, "one_rdm_denom_"+padded_iblock);
-          dump.pop();
-          using std::fill;  
-          fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
-          fill(denom_average.begin(), denom_average.end(), ComplexType(0.0,0.0));
-        }
+      ma::axpy(ComplexType(1.0),buff,DMAverage);
+      denom_average[0] += ComplexType(*denom.origin());
+      if(iblock%block_size == 0) {
+        for(int i = 0; i < DMAverage.size(); i++)
+          DMAverage[i] /= block_size;
+        denom_average[0] /= block_size;
+        dump.push("BackPropagated");
+        std::string padded_iblock = std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
+        dump.write(DMAverage, "one_rdm_"+padded_iblock);
+        dump.write(denom_average, "one_rdm_denom_"+padded_iblock);
+        dump.pop();
+        using std::fill;  
+        fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
+        fill(denom_average.begin(), denom_average.end(), ComplexType(0.0,0.0));
       }
     }
   }

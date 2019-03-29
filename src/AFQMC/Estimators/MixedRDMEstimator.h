@@ -84,7 +84,7 @@ class MixedRDMEstimator: public EstimatorBase
     wset.getProperty(WEIGHT,wgt);
     if(!importanceSampling) {
       stdCVector phase(iextensions<1u>{wset.size()}); 
-      wset.getProperty(PHASE,wgt);
+      wset.getProperty(PHASE,phase);
       for(int i=0; i<wgt.size(); i++) wgt[i] *= phase[i];
     }
     wfn0.WalkerAveragedDensityMatrix(wset, wgt, OneRDM, denom, !importanceSampling);

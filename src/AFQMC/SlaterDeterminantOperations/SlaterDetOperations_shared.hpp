@@ -137,7 +137,7 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
     }
 
     template<class Mat, class MatP1, class MatV>
-    void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order=6) {
+    void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order=6, char TA='N') {
       int NMO = A.size(0);
       int NAEA = A.size(1);
       set_shm_buffer(comm,3*NAEA*NMO);
@@ -145,13 +145,27 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       boost::multi::array_ref<T,2> T0(to_address(SM_TMats->origin()), {NMO,NAEA});
       boost::multi::array_ref<T,2> T1(to_address(SM_TMats->origin())+NMO*NAEA, {NMO,NAEA});
       boost::multi::array_ref<T,2> T2(to_address(SM_TMats->origin())+2*NMO*NAEA, {NMO,NAEA});
-      if(comm.root()) 
-        ma::product(P1,std::forward<Mat>(A),T0);
+      using ma::T;
+      using ma::H;
+      if(comm.root()) { 
+        if(TA=='H' || TA=='h') 
+          ma::product(ma::H(P1),std::forward<Mat>(A),T0);
+        else if(TA=='T' || TA=='t') 
+          ma::product(ma::T(P1),std::forward<Mat>(A),T0);
+        else 
+          ma::product(P1,std::forward<Mat>(A),T0);
+      }  
       comm.barrier();
-      SlaterDeterminantOperations::shm::apply_expM(V,T0,T1,T2,comm,order);
+      SlaterDeterminantOperations::shm::apply_expM(V,T0,T1,T2,comm,order,TA);
       comm.barrier();
-      if(comm.root()) 
-        ma::product(P1,T0,std::forward<Mat>(A));
+      if(comm.root()) {
+        if(TA=='H' || TA=='h') 
+          ma::product(ma::H(P1),std::forward<Mat>(A),T0);
+        else if(TA=='T' || TA=='t') 
+          ma::product(ma::T(P1),std::forward<Mat>(A),T0);
+        else 
+          ma::product(P1,std::forward<Mat>(A),T0);
+      }
       comm.barrier();
     }
 
@@ -167,7 +181,7 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
     }
 
     template<class MatA, class MatP1, class MatV>
-    void BatchedPropagate(std::vector<MatA> &Ai, const MatP1& P1, const MatV& V, int order=6) {
+    void BatchedPropagate(std::vector<MatA> &Ai, const MatP1& P1, const MatV& V, int order=6, char TA='N') {
       APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedPropagate \n");
     }
 

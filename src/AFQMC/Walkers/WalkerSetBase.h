@@ -143,6 +143,9 @@ class WalkerSetBase: public AFQMCInfo
   int setBPPos(int p) {
     bp_pos=p; 
   }
+  int advanceBPPos() {
+    bp_pos++; 
+  }
 
 
   /*
