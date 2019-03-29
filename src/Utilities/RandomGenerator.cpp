@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #include "Utilities/RandomGenerator.h"
@@ -72,4 +69,3 @@ qmcplusplus::RandomGenerator_t qmcplusplus::Random;
 //     Return_t gauss0, gauss1, Sigma2, Center;
 
 //   };
-

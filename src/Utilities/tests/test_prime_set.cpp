@@ -21,8 +21,8 @@
 
 using std::string;
 using std::vector;
-namespace qmcplusplus {
-
+namespace qmcplusplus
+{
 TEST_CASE("prime number set 32 bit", "[utilities]")
 {
   PrimeNumberSet<uint32_t> pns;
@@ -40,7 +40,6 @@ TEST_CASE("prime number set 32 bit", "[utilities]")
   pns.get(4098, 2, more_primes);
   REQUIRE(more_primes.size() == 4);
   REQUIRE(more_primes[2] > pns[4096]);
-
 }
 
 TEST_CASE("prime number set 64 bit", "[utilities]")
@@ -62,4 +61,4 @@ TEST_CASE("prime number set 64 bit", "[utilities]")
   REQUIRE(more_primes[2] > pns[55108]);
 }
 
-}
+} // namespace qmcplusplus

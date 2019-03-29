@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_RANDOMGENERATOR_IO_H
@@ -23,12 +20,11 @@ namespace qmcplusplus
 {
 /** Specialization for Random Generator */
 template<>
-struct HDFAttribIO<RandomGenerator_t>: public HDFAttribIOBase
+struct HDFAttribIO<RandomGenerator_t> : public HDFAttribIOBase
 {
-
   RandomGenerator_t& ref;
 
-  HDFAttribIO<RandomGenerator_t>(RandomGenerator_t& a): ref(a) { }
+  HDFAttribIO<RandomGenerator_t>(RandomGenerator_t& a) : ref(a) {}
 
   /** write the state to a hdf5 group
    * @param gid group id
@@ -39,7 +35,7 @@ struct HDFAttribIO<RandomGenerator_t>: public HDFAttribIOBase
     std::ostringstream a;
     ref.write(a);
     qmcplusplus::HDFAttribIO<std::ostringstream> o(a);
-    o.write(grp,ref.EngineName.c_str());
+    o.write(grp, ref.EngineName.c_str());
   }
 
   /** read the state from a hdf5 group
@@ -49,10 +45,10 @@ struct HDFAttribIO<RandomGenerator_t>: public HDFAttribIOBase
   {
     std::string s;
     HDFAttribIO<std::string> r(s);
-    r.read(grp,ref.EngineName.c_str());
+    r.read(grp, ref.EngineName.c_str());
     std::istringstream is(s);
     ref.read(is);
   }
 };
-}
+} // namespace qmcplusplus
 #endif
