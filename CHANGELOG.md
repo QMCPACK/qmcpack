@@ -34,9 +34,8 @@ cleanup have been performed.
 
 See [list of open bugs](https://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
 
-* QMCPACK should not be built with CUDA v9.1 with Kepler GPUs
-  due to a probable code generation bug resulting in an incorrect local
-  electron-ion pseudopotential energy. This is still being
+* Theres is a bug that could result in an incorrect local
+  electron-ion pseudopotential energy with CUDA v9.1 and Kepler GPUs. This is still being
   investigated. [\#1440](https://github.com/QMCPACK/qmcpack/issues/1440)
 
 * QMCPACK will not build with OpenMPI v4 due to use of deprecated
