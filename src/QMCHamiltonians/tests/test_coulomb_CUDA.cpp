@@ -8,8 +8,7 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #include "catch.hpp"
 
@@ -34,13 +33,11 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
 {
-
   LRCoulombSingleton::CoulombHandler = 0;
 
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -59,9 +56,9 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
 
-  SpeciesSet &ion_species =  ions.getSpeciesSet();
-  int pIdx = ion_species.addSpecies("H");
-  int pChargeIdx = ion_species.addAttribute("charge");
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
   ions.Lattice.copy(grid);
   ions.createSK();
@@ -74,15 +71,15 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   elec.R[0][1] = 0.5;
   elec.R[0][2] = 0.0;
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx) = -1;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
+  tspecies(massIdx, upIdx)     = 1.0;
+  tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
 
@@ -102,16 +99,13 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   double val = cab.evaluate(elec);
   //cout << "CUDA val = " << val << std::endl;
   REQUIRE(val == Approx(-0.005314032183)); // not validated
-
-
 }
 
 TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 {
-
   LRCoulombSingleton::CoulombHandler = 0;
 
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -134,9 +128,9 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   ions.R[1][1] = 1.88972614;
   ions.R[1][2] = 1.88972614;
 
-  SpeciesSet &ion_species =  ions.getSpeciesSet();
-  int pIdx = ion_species.addSpecies("H");
-  int pChargeIdx = ion_species.addAttribute("charge");
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
   ions.Lattice.copy(grid);
   ions.createSK();
@@ -153,15 +147,15 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   elec.R[1][2] = 0.0;
   elec.createWalkers(1);
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx) = -1;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
+  tspecies(massIdx, upIdx)     = 1.0;
+  tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
 
@@ -184,27 +178,24 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 
   double val = cab.evaluate(elec);
   //cout << "CUDA BCC H val = " << val << std::endl;
-  REQUIRE(val == Approx(-2.219665062));  // not validated
+  REQUIRE(val == Approx(-2.219665062)); // not validated
 
   // actual code path use addEnergy
   std::vector<double> local_energy(1);
   cab.addEnergy(elec, local_energy);
   //cout << "addEnergy = " << local_energy[0] << std::endl;
 
-  // not validated, which means it is just copied from the QMCPACK output, and has not been 
+  // not validated, which means it is just copied from the QMCPACK output, and has not been
   // computed independently.  It should be the same as results of the call to 'evaluate' above,
   //  which use the CPU code path.
   REQUIRE(local_energy[0] == Approx(-2.219665062));
-
-
 }
 
 TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
 {
-
   LRCoulombSingleton::CoulombHandler = 0;
 
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -232,11 +223,11 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   ions.R[1][2] = 1.88972614;
   ions.createWalkers(1);
 
-  SpeciesSet &ion_species =  ions.getSpeciesSet();
-  int pIdx = ion_species.addSpecies("H");
-  int pChargeIdx = ion_species.addAttribute("charge");
-  int pIonMembersizeIdx = ion_species.addAttribute("membersize");
-  ion_species(pChargeIdx, pIdx) = 1;
+  SpeciesSet& ion_species              = ions.getSpeciesSet();
+  int pIdx                             = ion_species.addSpecies("H");
+  int pChargeIdx                       = ion_species.addAttribute("charge");
+  int pIonMembersizeIdx                = ion_species.addAttribute("membersize");
+  ion_species(pChargeIdx, pIdx)        = 1;
   ion_species(pIonMembersizeIdx, pIdx) = 2;
   ions.Lattice.copy(grid);
   ions.createSK();
@@ -246,7 +237,6 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   ions.allocateGPU(10000);
   ions.copyWalkersToGPU();
   ions.updateLists_GPU();
-
 
 
   CoulombPBCAA_CUDA caa = CoulombPBCAA_CUDA(ions, true);
@@ -264,9 +254,7 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   caa.addEnergy(ions, local_energy);
   //cout << "addEnergy = " << local_energy[0] << std::endl;
   REQUIRE(local_energy[0] == Approx(-0.9628996199)); // not validated
-
 }
 
 
-}
-
+} // namespace qmcplusplus

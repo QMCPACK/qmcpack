@@ -9,8 +9,8 @@
 //
 // File created by: Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include "QMCHamiltonians/StressPBCAA.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
@@ -19,30 +19,29 @@
 
 namespace qmcplusplus
 {
-
-StressPBCAA::StressPBCAA(ParticleSet& ref, bool active) :
-  AA(0), myGrid(0), rVs(0), FirstTime(true), myConst(0.0), ForceBase(ref,ref), Ps(ref), is_active(active)
+StressPBCAA::StressPBCAA(ParticleSet& ref, bool active)
+    : AA(0), myGrid(0), rVs(0), FirstTime(true), myConst(0.0), ForceBase(ref, ref), Ps(ref), is_active(active)
 {
-  ReportEngine PRE("StressPBCAA","StressPBCAA");
+  ReportEngine PRE("StressPBCAA", "StressPBCAA");
   //save source tag
-  SourceID=ref.tag();
+  SourceID = ref.tag();
   //create a distance table: just to get the table name
-  DistanceTableData *d_aa = DistanceTable::add(ref);
-  PtclRefName=d_aa->Name;
+  DistanceTableData* d_aa = DistanceTable::add(ref);
+  PtclRefName             = d_aa->Name;
   initBreakup(ref);
-  prefix="S_"+PtclRefName;
+  prefix = "S_" + PtclRefName;
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
-  if(!is_active)
+  if (!is_active)
   {
     d_aa->evaluate(ref);
     update_source(ref);
-   app_log()<<"Evaluating Stress SymTensor::Long Range\n"; 
-    sLR=evalLR(ref);
-   app_log()<<"Short Range...\n";
-    sSR=evalSR(ref);
-    stress=sLR+sSR+myConst;
-    
+    app_log() << "Evaluating Stress SymTensor::Long Range\n";
+    sLR = evalLR(ref);
+    app_log() << "Short Range...\n";
+    sSR    = evalSR(ref);
+    stress = sLR + sSR + myConst;
+
     //RealType eL(0.0), eS(0.0);
     //if (computeForces)
     //{
@@ -61,22 +60,22 @@ StressPBCAA::StressPBCAA(ParticleSet& ref, bool active) :
     //app_log() << "  Fixed Coulomb potential for " << ref.getName();
     //app_log() << "\n    e-e Madelung Const. =" << MC0
     //          << "\n    Vtot     =" << Value << std::endl;
-    
   }
   app_log() << "  Stress SymTensor components for  " << ref.getName();
-  app_log() << "\n    e-e Madelung Const. =\n" << MC0
-            << "\n    Stot     =\n" << stress 
-            << "\n    S_SR     =\n" << sSR   
-            << "\n    S_LR     =\n" << sLR
-            << "\n    S_Const  =\n" << myConst<< std::endl;
+  app_log() << "\n    e-e Madelung Const. =\n"
+            << MC0 << "\n    Stot     =\n"
+            << stress << "\n    S_SR     =\n"
+            << sSR << "\n    S_LR     =\n"
+            << sLR << "\n    S_Const  =\n"
+            << myConst << std::endl;
 }
 
-StressPBCAA:: ~StressPBCAA() { }
+StressPBCAA::~StressPBCAA() {}
 
 
 void StressPBCAA::update_source(ParticleSet& s)
 {
- /* if(s.tag() == SourceID || s.parent() == SourceID)
+  /* if(s.tag() == SourceID || s.parent() == SourceID)
   {
     RealType eL(0.0), eS(0.0);
     if (ComputeForces)
@@ -96,9 +95,9 @@ void StressPBCAA::update_source(ParticleSet& s)
 
 void StressPBCAA::resetTargetParticleSet(ParticleSet& P)
 {
-  if(is_active)
+  if (is_active)
   {
-    PtclRefName=P.DistTables[0]->Name;
+    PtclRefName = P.DistTables[0]->Name;
     AA->resetTargetParticleSet(P);
   }
 }
@@ -117,17 +116,16 @@ void StressPBCAA::delete_particle_arrays()
 }
 */
 
-StressPBCAA::Return_t
-StressPBCAA::evaluate(ParticleSet& P)
+StressPBCAA::Return_t StressPBCAA::evaluate(ParticleSet& P)
 {
-  if(is_active)
+  if (is_active)
   {
-  //  if(tracing_particle_quantities)
- //     Value = spevaluate(P);
-      stress = evalLR(P)+evalSR(P)+myConst;
+    //  if(tracing_particle_quantities)
+    //     Value = spevaluate(P);
+    stress = evalLR(P) + evalSR(P) + myConst;
   }
- // return Value;
- return 0.0;
+  // return Value;
+  return 0.0;
 }
 
 /*
@@ -247,30 +245,30 @@ void StressPBCAA::initBreakup(ParticleSet& P)
   //Things that don't change with lattice are done here instead of InitBreakup()
   ChargeAttribIndx = tspecies.addAttribute("charge");
   MemberAttribIndx = tspecies.addAttribute("membersize");
-  NumCenters = P.getTotalNum();
-  NumSpecies = tspecies.TotalNum;
- // V_const.resize(NumCenters);
+  NumCenters       = P.getTotalNum();
+  NumSpecies       = tspecies.TotalNum;
+  // V_const.resize(NumCenters);
   Zat.resize(NumCenters);
   Zspec.resize(NumSpecies);
   NofSpecies.resize(NumSpecies);
-  for(int spec=0; spec<NumSpecies; spec++)
+  for (int spec = 0; spec < NumSpecies; spec++)
   {
-    Zspec[spec] = tspecies(ChargeAttribIndx,spec);
-    NofSpecies[spec] = static_cast<int>(tspecies(MemberAttribIndx,spec));
+    Zspec[spec]      = tspecies(ChargeAttribIndx, spec);
+    NofSpecies[spec] = static_cast<int>(tspecies(MemberAttribIndx, spec));
   }
   SpeciesID.resize(NumCenters);
-  for(int iat=0; iat<NumCenters; iat++)
+  for (int iat = 0; iat < NumCenters; iat++)
   {
-    SpeciesID[iat]=P.GroupID[iat];
-    Zat[iat] = Zspec[P.GroupID[iat]];
+    SpeciesID[iat] = P.GroupID[iat];
+    Zat[iat]       = Zspec[P.GroupID[iat]];
   }
   AA = LRCoulombSingleton::getDerivHandler(P);
   //AA->initBreakup(*PtclRef);
-  myConst=evalConsts();
-  myRcut=AA->get_rc();//Basis.get_rc();
-  if(rVs==0)
+  myConst = evalConsts();
+  myRcut  = AA->get_rc(); //Basis.get_rc();
+  if (rVs == 0)
   {
-    rVs = LRCoulombSingleton::createSpline4RbyVs(AA,myRcut,myGrid);
+    rVs = LRCoulombSingleton::createSpline4RbyVs(AA, myRcut, myGrid);
   }
 }
 
@@ -292,7 +290,6 @@ StressPBCAA::evalLRwithForces(ParticleSet& P)
   } //spec2
   return evalLR(P);
 }*/
-
 
 
 /*StressPBCAA::Return_t
@@ -331,117 +328,108 @@ StressPBCAA::evalSRwithForces(ParticleSet& P)
  * \endhtmlonly
  * CoulombPBCABTemp contributes additional background term which completes the background term
  */
-SymTensor<StressPBCAA::RealType, OHMMS_DIM>
-StressPBCAA::evalConsts(bool report)
+SymTensor<StressPBCAA::RealType, OHMMS_DIM> StressPBCAA::evalConsts(bool report)
 {
-  SymTensor<RealType, OHMMS_DIM> Consts=0.0; // constant term
-  RealType v1; //single particle energy
- // V_const = 0.0;
+  SymTensor<RealType, OHMMS_DIM> Consts = 0.0; // constant term
+  RealType v1;                                 //single particle energy
+                                               // V_const = 0.0;
   //v_l(r=0) including correction due to the non-periodic direction
   SymTensor<RealType, OHMMS_DIM> vl_r0 = AA->evaluateLR_r0_dstrain();
-  app_log()<<"   PBCAA vl_r0 = \n"<<vl_r0<< std::endl;
-  for(int ipart=0; ipart<NumCenters; ipart++)
+  app_log() << "   PBCAA vl_r0 = \n" << vl_r0 << std::endl;
+  for (int ipart = 0; ipart < NumCenters; ipart++)
   {
-    Consts += -.5*Zat[ipart]*Zat[ipart]*vl_r0;
+    Consts += -.5 * Zat[ipart] * Zat[ipart] * vl_r0;
   }
-  
-  if(report)
+
+  if (report)
     app_log() << "   PBCAA self-interaction term\n " << Consts << std::endl;
   //Compute Madelung constant: this is not correct for general cases
   MC0 = 0.0;
 
   const StructFact& PtclRhoK(*(Ps.SK));
-  const std::vector<PosType> &kpts = PtclRhoK.KLists.kpts_cart;
-  for(int ks=0; ks<AA->dFk_dstrain.size(); ks++)
-    {
-        MC0+=AA->dFk_dstrain[ks];
-    }
-  app_log()<<"   PBCAA MC0 = "<< MC0<< std::endl;
-  MC0 = 0.5*(MC0 - vl_r0);
+  const std::vector<PosType>& kpts = PtclRhoK.KLists.kpts_cart;
+  for (int ks = 0; ks < AA->dFk_dstrain.size(); ks++)
+  {
+    MC0 += AA->dFk_dstrain[ks];
+  }
+  app_log() << "   PBCAA MC0 = " << MC0 << std::endl;
+  MC0 = 0.5 * (MC0 - vl_r0);
   //Neutraling background term
-  SymTensor<RealType, OHMMS_DIM> vs_k0=AA->evaluateSR_k0_dstrain(); //v_s(k=0)
-  app_log()<<"    PBCAA Background Term:\n"<<vs_k0<< std::endl;
-  for(int ipart=0; ipart<NumCenters; ipart++)
+  SymTensor<RealType, OHMMS_DIM> vs_k0 = AA->evaluateSR_k0_dstrain(); //v_s(k=0)
+  app_log() << "    PBCAA Background Term:\n" << vs_k0 << std::endl;
+  for (int ipart = 0; ipart < NumCenters; ipart++)
   {
     v1 = 0.0;
-    for(int spec=0; spec<NumSpecies; spec++)
-      v1 += -.5*Zat[ipart]*NofSpecies[spec]*Zspec[spec];
- //   v1 *= -.5*Zat[ipart]*vs_k0;
- //   V_const(ipart) += v1;
-    Consts += v1*vs_k0;
+    for (int spec = 0; spec < NumSpecies; spec++)
+      v1 += -.5 * Zat[ipart] * NofSpecies[spec] * Zspec[spec];
+    //   v1 *= -.5*Zat[ipart]*vs_k0;
+    //   V_const(ipart) += v1;
+    Consts += v1 * vs_k0;
   }
-  if(report)
+  if (report)
     app_log() << "   PBCAA total constant \n" << Consts << std::endl;
   //app_log() << "   MC0 of PBCAA " << MC0 << std::endl;
   return Consts;
 }
 
 
-
-
-
-SymTensor<StressPBCAA::RealType, OHMMS_DIM>
-StressPBCAA::evalSR(ParticleSet& P)
+SymTensor<StressPBCAA::RealType, OHMMS_DIM> StressPBCAA::evalSR(ParticleSet& P)
 {
-  const DistanceTableData &d_aa(*P.DistTables[0]);
-  SymTensor<RealType, OHMMS_DIM> SR=0.0;
-  for(int ipart=0; ipart<NumCenters; ipart++)
+  const DistanceTableData& d_aa(*P.DistTables[0]);
+  SymTensor<RealType, OHMMS_DIM> SR = 0.0;
+  for (int ipart = 0; ipart < NumCenters; ipart++)
   {
-    SymTensor<RealType, OHMMS_DIM> esum=0.0;
-    for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+    SymTensor<RealType, OHMMS_DIM> esum = 0.0;
+    for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
     {
-      esum += Zat[jpart]* AA->evaluateSR_dstrain(d_aa.dr(nn), d_aa.r(nn));
+      esum += Zat[jpart] * AA->evaluateSR_dstrain(d_aa.dr(nn), d_aa.r(nn));
       //app_log()<<"ipart = "<<ipart<<" nn="<<nn<< " dr = "<< d_aa.dr(nn)<< std::endl;
       //app_log()<<"srDf(r) = "<<AA->srDf(d_aa.r(nn),1.0/d_aa.r(nn))<< " part stress = \n"<<Zat[jpart]* AA->evaluateSR_dstrain(d_aa.dr(nn), d_aa.r(nn))<< std::endl;
     }
     //Accumulate pair sums...species charge for atom i.
-    SR += Zat[ipart]*esum;
+    SR += Zat[ipart] * esum;
     //app_log()<<" SRpartsum=\n"<<Zat[ipart]*esum<< std::endl<< std::endl;
   }
   return SR;
-  
 }
 
-SymTensor<StressPBCAA::RealType, OHMMS_DIM>
-StressPBCAA::evalLR(ParticleSet& P)
+SymTensor<StressPBCAA::RealType, OHMMS_DIM> StressPBCAA::evalLR(ParticleSet& P)
 {
-
   SymTensor<RealType, OHMMS_DIM> res;
   const StructFact& PtclRhoK(*(P.SK));
-  
+
   SymTensor<RealType, OHMMS_DIM> temp;
-    for(int spec1=0; spec1<NumSpecies; spec1++)
+  for (int spec1 = 0; spec1 < NumSpecies; spec1++)
+  {
+    RealType Z1 = Zspec[spec1];
+    for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
     {
-      RealType Z1 = Zspec[spec1];
-      for(int spec2=spec1; spec2<NumSpecies; spec2++)
-      {
-		//temp=0;
- #if !defined(USE_REAL_STRUCT_FACTOR)
-        SymTensor<RealType, OHMMS_DIM> temp = AA->evaluateStress(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
- #else      
-        SymTensor<RealType, OHMMS_DIM> temp = AA->evaluateStress(PtclRhoK.KLists.kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1], PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
- #endif       
-       // app_log()<<"WEEEE "<<temp<< std::endl;ls
-       
-        if(spec2==spec1)
-          temp*=0.5;
-        res += Z1*Zspec[spec2]*temp;
-      } //spec2
-    }//spec1
-  
+      //temp=0;
+#if !defined(USE_REAL_STRUCT_FACTOR)
+      SymTensor<RealType, OHMMS_DIM> temp =
+          AA->evaluateStress(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+#else
+      SymTensor<RealType, OHMMS_DIM> temp =
+          AA->evaluateStress(PtclRhoK.KLists.kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
+                             PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
+#endif
+      // app_log()<<"WEEEE "<<temp<< std::endl;ls
+
+      if (spec2 == spec1)
+        temp *= 0.5;
+      res += Z1 * Zspec[spec2] * temp;
+    } //spec2
+  }   //spec1
+
   return res;
 }
 
 
-
-
 QMCHamiltonianBase* StressPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  if(is_active)
+  if (is_active)
     return new StressPBCAA(qp, is_active);
   else
-    return new StressPBCAA(*this);//nothing needs to be re-evaluated
+    return new StressPBCAA(*this); //nothing needs to be re-evaluated
 }
-}
-
-
+} // namespace qmcplusplus

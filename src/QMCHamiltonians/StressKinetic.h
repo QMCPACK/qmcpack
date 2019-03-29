@@ -9,8 +9,8 @@
 //
 // File created by: Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_STRESSKINETIC_TEMP_H
 #define QMCPLUSPLUS_STRESSKINETIC_TEMP_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
@@ -19,16 +19,14 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup hamiltonian
  *\brief Calculates the AA Coulomb potential using PBCs
  *
  * Functionally identical to StressKinetic but uses a templated version of
  * LRHandler.
  */
-struct StressKinetic: public QMCHamiltonianBase, public ForceBase
+struct StressKinetic : public QMCHamiltonianBase, public ForceBase
 {
-
   bool FirstTime;
   int SourceID;
   int NumSpecies;
@@ -37,10 +35,10 @@ struct StressKinetic: public QMCHamiltonianBase, public ForceBase
   int NumCenters;
   RealType myRcut;
   std::string PtclRefName;
-  std::vector<RealType> Zat,Zspec;
+  std::vector<RealType> Zat, Zspec;
   std::vector<int> NofSpecies;
   std::vector<int> SpeciesID;
-  
+
   TrialWaveFunction& Psi;
 
   ParticleSet& Ps;
@@ -48,20 +46,17 @@ struct StressKinetic: public QMCHamiltonianBase, public ForceBase
 
   /** constructor */
   StressKinetic(ParticleSet& els, TrialWaveFunction& Psi0);
-  
+
 
   ~StressKinetic();
-  
+
   Return_t evaluate(ParticleSet& P);
-  
+
   SymTensor<RealType, OHMMS_DIM> evaluateKineticSymTensor(ParticleSet& P);
 
 
   /** Do nothing */
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
   bool get(std::ostream& os) const
   {
@@ -71,35 +66,20 @@ struct StressKinetic: public QMCHamiltonianBase, public ForceBase
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-  SymTensor<RealType, OHMMS_DIM> evaluateStress(){return stress;}
+  SymTensor<RealType, OHMMS_DIM> evaluateStress() { return stress; }
   void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
   {
-    registerObservablesF(h5list,gid);
+    registerObservablesF(h5list, gid);
   }
 
-  void addObservables(PropertySetType& plist, BufferType& collectables)
-  {
-    addObservablesStress(plist);
-  }
+  void addObservables(PropertySetType& plist, BufferType& collectables) { addObservablesStress(plist); }
 
-  void setObservables(PropertySetType& plist)
-  {
-    setObservablesStress(plist);
-  }
+  void setObservables(PropertySetType& plist) { setObservablesStress(plist); }
 
-  void resetTargetParticleSet(ParticleSet& P)
-  {
-  }
+  void resetTargetParticleSet(ParticleSet& P) {}
 
-  void setParticlePropertyList(PropertySetType& plist, int offset)
-  {
-    setParticleSetStress(plist, offset);
-  }
-
-
+  void setParticlePropertyList(PropertySetType& plist, int offset) { setParticleSetStress(plist, offset); }
 };
 
-}
+} // namespace qmcplusplus
 #endif
-
-

@@ -13,15 +13,14 @@
 //
 // File created by: John R. Gergely,  University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_FORCE_BASE_HAMILTONIAN_H
 #define QMCPLUSPLUS_FORCE_BASE_HAMILTONIAN_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
 namespace qmcplusplus
 {
-
 struct ForceBase
 {
   /** cheat, need to use virtual inheriance to clean up*/
@@ -38,10 +37,10 @@ struct ForceBase
   ParticleSet& Ions;
   ParticleSet::ParticlePos_t forces;
   ParticleSet::ParticlePos_t forces_IonIon;
-  SymTensor<real_type,OHMMS_DIM> stress_IonIon;
-  SymTensor<real_type,OHMMS_DIM> stress_ee;
-  SymTensor<real_type,OHMMS_DIM> stress;
-  
+  SymTensor<real_type, OHMMS_DIM> stress_IonIon;
+  SymTensor<real_type, OHMMS_DIM> stress_ee;
+  SymTensor<real_type, OHMMS_DIM> stress;
+
   std::string prefix;
   std::string pairName;
 
@@ -54,11 +53,11 @@ struct ForceBase
   {
     if (r > Rcut)
       return 1.0;
-    real_type sum=0.0;
+    real_type sum      = 0.0;
     real_type r2kplusm = r;
-    for (int i=0; i<m; i++)
+    for (int i = 0; i < m; i++)
       r2kplusm *= r;
-    for (int k=0; k<ck.size(); k++)
+    for (int k = 0; k < ck.size(); k++)
     {
       sum += ck[k] * r2kplusm;
       r2kplusm *= r;
@@ -67,7 +66,7 @@ struct ForceBase
   }
 
 
-  void InitVarReduction (real_type Rcut, int m, int numFuncs);
+  void InitVarReduction(real_type Rcut, int m, int numFuncs);
 
 
   ForceBase(ParticleSet& ions, ParticleSet& elns);
@@ -83,7 +82,7 @@ struct ForceBase
   void setParticleSetStress(QMCTraits::PropertySetType& plist, int offset);
 };
 
-struct BareForce: public QMCHamiltonianBase, public ForceBase
+struct BareForce : public QMCHamiltonianBase, public ForceBase
 {
   BareForce(ParticleSet& ions, ParticleSet& elns);
   void resetTargetParticleSet(ParticleSet& P);
@@ -92,7 +91,7 @@ struct BareForce: public QMCHamiltonianBase, public ForceBase
 
   void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
   {
-    registerObservablesF(h5list,gid);
+    registerObservablesF(h5list, gid);
   }
 
   /** default implementation to add named values to  the property list
@@ -101,15 +100,9 @@ struct BareForce: public QMCHamiltonianBase, public ForceBase
    */
   void addObservables(PropertySetType& plist, BufferType& collectables);
 
-  void setObservables(PropertySetType& plist)
-  {
-    setObservablesF(plist);
-  }
+  void setObservables(PropertySetType& plist) { setObservablesF(plist); }
 
-  void setParticlePropertyList(PropertySetType& plist, int offset)
-  {
-    setParticleSetF(plist, offset);
-  }
+  void setParticlePropertyList(PropertySetType& plist, int offset) { setParticleSetF(plist, offset); }
 
   /** Do nothing */
   bool put(xmlNodePtr cur);
@@ -123,6 +116,5 @@ struct BareForce: public QMCHamiltonianBase, public ForceBase
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };
 
-}
+} // namespace qmcplusplus
 #endif
-
