@@ -27,168 +27,142 @@
 #define BZ_MATGEN_H
 
 #ifndef BZ_MSTRUCT_H
- #error <blitz/matgen.h> must be included via <blitz/mstruct.h>
+#error <blitz/matgen.h> must be included via <blitz/mstruct.h>
 #endif // BZ_MSTRUCT_H
 
 BZ_NAMESPACE(blitz)
 
-class GeneralMatrix : public AsymmetricMatrix {
-
+class GeneralMatrix : public AsymmetricMatrix
+{
 public:
-    GeneralMatrix()
-    { }
+  GeneralMatrix() {}
 
-    GeneralMatrix(unsigned rows, unsigned cols)
-        : AsymmetricMatrix(rows, cols)
-    {
-    }
+  GeneralMatrix(unsigned rows, unsigned cols) : AsymmetricMatrix(rows, cols) {}
 
-    unsigned firstInRow(unsigned i) const
-    { return 0; }
+  unsigned firstInRow(unsigned i) const { return 0; }
 
-    unsigned lastInRow(unsigned i) const
-    { return cols_ - 1; }
+  unsigned lastInRow(unsigned i) const { return cols_ - 1; }
 
-    unsigned firstInCol(unsigned j) const
-    { return 0; }
+  unsigned firstInCol(unsigned j) const { return 0; }
 
-    unsigned lastInCol(unsigned j) const
-    { return rows_ - 1; }
+  unsigned lastInCol(unsigned j) const { return rows_ - 1; }
 
-    unsigned numElements() const
-    { return rows_ * cols_; }
+  unsigned numElements() const { return rows_ * cols_; }
 };
 
-class GeneralIterator {
+class GeneralIterator
+{
 public:
-    GeneralIterator(unsigned rows, unsigned cols)
-    {
-        rows_ = rows;
-        cols_ = cols;
-        i_ = 0;
-        j_ = 0;
-        offset_ = 0;
-        good_ = true;
-    }
+  GeneralIterator(unsigned rows, unsigned cols)
+  {
+    rows_   = rows;
+    cols_   = cols;
+    i_      = 0;
+    j_      = 0;
+    offset_ = 0;
+    good_   = true;
+  }
 
-    unsigned offset() const { return offset_; }
-    operator bool()   const { return good_; }
-    unsigned row()    const { return i_; }
-    unsigned col()    const { return j_; }
- 
+  unsigned offset() const { return offset_; }
+  operator bool() const { return good_; }
+  unsigned row() const { return i_; }
+  unsigned col() const { return j_; }
+
 protected:
-    unsigned rows_, cols_;
-    unsigned offset_;
-    unsigned i_, j_;
-    bool     good_;
+  unsigned rows_, cols_;
+  unsigned offset_;
+  unsigned i_, j_;
+  bool good_;
 };
 
-class RowMajorIterator : public GeneralIterator {
+class RowMajorIterator : public GeneralIterator
+{
 public:
-    RowMajorIterator(unsigned rows, unsigned cols)
-        : GeneralIterator(rows, cols)
-    { }
+  RowMajorIterator(unsigned rows, unsigned cols) : GeneralIterator(rows, cols) {}
 
-    void operator++()
+  void operator++()
+  {
+    ++offset_;
+    ++j_;
+    if (j_ == cols_)
     {
-        ++offset_;
-        ++j_;
-        if (j_ == cols_)
-        {
-            j_ = 0;
-            ++i_;
-            if (i_ == rows_)
-                good_ = false;
-        }
+      j_ = 0;
+      ++i_;
+      if (i_ == rows_)
+        good_ = false;
     }
+  }
 };
 
-class RowMajor : public GeneralMatrix {
-
+class RowMajor : public GeneralMatrix
+{
 public:
-    typedef RowMajorIterator T_iterator;
+  typedef RowMajorIterator T_iterator;
 
-    RowMajor()
-    { }
+  RowMajor() {}
 
-    RowMajor(unsigned rows, unsigned cols)
-        : GeneralMatrix(rows, cols)
-    { }
+  RowMajor(unsigned rows, unsigned cols) : GeneralMatrix(rows, cols) {}
 
-    unsigned coordToOffset(unsigned i, unsigned j) const
-    {
-        return i*cols_+j;
-    }
+  unsigned coordToOffset(unsigned i, unsigned j) const { return i * cols_ + j; }
 
-    template<typename T_numtype>
-    T_numtype get(const T_numtype * restrict data,
-        unsigned i, unsigned j) const
-    {
-        BZPRECONDITION(inRange(i,j));
-        return data[coordToOffset(i,j)];
-    }
+  template<typename T_numtype>
+  T_numtype get(const T_numtype* restrict data, unsigned i, unsigned j) const
+  {
+    BZPRECONDITION(inRange(i, j));
+    return data[coordToOffset(i, j)];
+  }
 
-    template<typename T_numtype>
-    T_numtype& get(T_numtype * restrict data, unsigned i, unsigned j)
-    {
-        BZPRECONDITION(inRange(i,j));
-        return data[coordToOffset(i,j)];
-    }
+  template<typename T_numtype>
+  T_numtype& get(T_numtype* restrict data, unsigned i, unsigned j)
+  {
+    BZPRECONDITION(inRange(i, j));
+    return data[coordToOffset(i, j)];
+  }
 };
 
-class ColumnMajorIterator : public GeneralIterator {
+class ColumnMajorIterator : public GeneralIterator
+{
 public:
-    ColumnMajorIterator(unsigned rows, unsigned cols)
-        : GeneralIterator(rows, cols)
-    {
-    }
+  ColumnMajorIterator(unsigned rows, unsigned cols) : GeneralIterator(rows, cols) {}
 
-    void operator++()
+  void operator++()
+  {
+    ++offset_;
+    ++i_;
+    if (i_ == rows_)
     {
-        ++offset_;
-        ++i_;
-        if (i_ == rows_)
-        {
-            i_ = 0;
-            ++j_;
-            if (j_ == cols_)
-                good_ = false;
-        }
+      i_ = 0;
+      ++j_;
+      if (j_ == cols_)
+        good_ = false;
     }
+  }
 };
 
-class ColumnMajor : public GeneralMatrix {
-
+class ColumnMajor : public GeneralMatrix
+{
 public:
-    ColumnMajor()
-    { }
+  ColumnMajor() {}
 
-    ColumnMajor(unsigned rows, unsigned cols)
-        : GeneralMatrix(rows, cols)
-    { }
+  ColumnMajor(unsigned rows, unsigned cols) : GeneralMatrix(rows, cols) {}
 
-    unsigned coordToOffset(unsigned i, unsigned j) const
-    {
-        return j*rows_ + i;
-    }
+  unsigned coordToOffset(unsigned i, unsigned j) const { return j * rows_ + i; }
 
-    template<typename T_numtype>
-    T_numtype get(const T_numtype * restrict data,
-        unsigned i, unsigned j) const
-    {
-        BZPRECONDITION(inRange(i,j));
-        return data[coordToOffset(i,j)];
-    }
+  template<typename T_numtype>
+  T_numtype get(const T_numtype* restrict data, unsigned i, unsigned j) const
+  {
+    BZPRECONDITION(inRange(i, j));
+    return data[coordToOffset(i, j)];
+  }
 
-    template<typename T_numtype>
-    T_numtype& get(T_numtype * restrict data, unsigned i, unsigned j)
-    {
-        BZPRECONDITION(inRange(i,j));
-        return data[coordToOffset(i,j)];
-    }
+  template<typename T_numtype>
+  T_numtype& get(T_numtype* restrict data, unsigned i, unsigned j)
+  {
+    BZPRECONDITION(inRange(i, j));
+    return data[coordToOffset(i, j)];
+  }
 };
 
 BZ_NAMESPACE_END
 
 #endif // BZ_MATGEN_H
-
