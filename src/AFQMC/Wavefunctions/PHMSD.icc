@@ -735,8 +735,8 @@ namespace afqmc
   /*
    * TODO: Implement.
    */
-  template<class WlkSet, class MatG, class CVec>
-  void PHMSD::WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec &denom, bool free_projection)
+  template<class WlkSet, class MatG, class CVec1, class CVec2>
+  void PHMSD::WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2 &denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR)
   {
     APP_ABORT(" Error: Back Propagation not implemented for PHMSD. \n");
   }

@@ -47,6 +47,11 @@ class dummy_Propagator
     throw std::runtime_error("calling visitor on dummy object");
   } 
 
+  template<class WlkSet, class CTens, class CMat>
+  void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR){
+    throw std::runtime_error("calling visitor on dummy object");
+  } 
+
   bool hybrid_propagation() { 
     throw std::runtime_error("calling visitor on dummy_Propagator object");
     return false;
@@ -93,6 +98,14 @@ class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCBasePropaga
     void Propagate(Args&&... args) {
         boost::apply_visitor(
             [&](auto&& a){a.Propagate(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
+    void BackPropagate(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.BackPropagate(std::forward<Args>(args)...);},
             *this
         );
     }

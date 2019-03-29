@@ -28,6 +28,7 @@ class MixedRDMEstimator: public EstimatorBase
 
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;
   using CVector = boost::multi::array<ComplexType,1>;
+  using stdCVector = boost::multi::array<ComplexType,1>;
   public:
 
   MixedRDMEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
@@ -79,7 +80,14 @@ class MixedRDMEstimator: public EstimatorBase
     CMatrix_ref OneRDM(DMBuffer.data(), {dm_dims.first,dm_dims.second});
     denom[0] = ComplexType(0.0,0.0);
     std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
-    wfn0.WalkerAveragedDensityMatrix(wset, OneRDM, denom, !importanceSampling);
+    stdCVector wgt(iextensions<1u>{wset.size()}); 
+    wset.getProperty(WEIGHT,wgt);
+    if(!importanceSampling) {
+      stdCVector phase(iextensions<1u>{wset.size()}); 
+      wset.getProperty(PHASE,wgt);
+      for(int i=0; i<wgt.size(); i++) wgt[i] *= phase[i];
+    }
+    wfn0.WalkerAveragedDensityMatrix(wset, wgt, OneRDM, denom, !importanceSampling);
     iblock++;
   }
 

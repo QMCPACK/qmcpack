@@ -58,6 +58,7 @@ class AFQMCBasePropagator: public AFQMCInfo
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;  
   using C3Tensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;  
   using sharedCVector = ComplexVector<aux_allocator>; 
+  using stdCVector = boost::multi::array<ComplexType,1>;  
 
   public:
 
@@ -72,8 +73,6 @@ class AFQMCBasePropagator: public AFQMCInfo
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(wfn.getSlaterDetOperations()),
-            //SDetOp(2*NMO,NAEA+NAEB),
-            //SDetOp(SlaterDetOperations_shared<ComplexType>(2*NMO,NAEA+NAEB)),
             buffer(iextensions<1u>{1},aux_alloc_),
             local_group_comm(),
             last_nextra(-1),
@@ -107,6 +106,9 @@ class AFQMCBasePropagator: public AFQMCInfo
       TG.local_barrier();
     }
 
+    template<class WlkSet, class CTens, class CMat>
+    void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR); 
+
     // reset shared memory buffers
     // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
     void reset() { buffer.reextent(iextensions<1u>{0}); }
@@ -137,7 +139,6 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     RandomGenerator_t* rng;
 
-    //SlaterDetOperations_shared<ComplexType> SDetOp;
     SlaterDetOperations* SDetOp;
 
     sharedCVector buffer;    
@@ -199,6 +200,13 @@ class AFQMCBasePropagator: public AFQMCInfo
       return (std::abs(v)>vbias_bound*sqrtdt)?
                 (v/(std::abs(v)/static_cast<ValueType>(vbias_bound*sqrtdt))):(v);
     }
+
+    // taken from NOMSD 
+    template<class WlkSet, class CMat>
+    void Orthogonalize_batched(WlkSet& wset, CMat&& detR);
+
+    template<class WlkSet, class CMat>
+    void Orthogonalize_shared(WlkSet& wset, CMat&& detR);
 
 };
 

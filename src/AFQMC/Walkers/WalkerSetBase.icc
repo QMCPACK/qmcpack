@@ -21,8 +21,8 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-template<class Alloc, typename Ptr, class BPAlloc, class BPPtr>
-void WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::parse(xmlNodePtr cur)
+template<class Alloc, typename Ptr>
+void WalkerSetBase<Alloc,Ptr>::parse(xmlNodePtr cur)
 {
 
     if(cur == NULL)
@@ -111,8 +111,8 @@ void WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::parse(xmlNodePtr cur)
     app_log()<<std::endl;
 }
 
-template<class Alloc, typename Ptr, class BPAlloc, class BPPtr>
-void WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::setup()
+template<class Alloc, typename Ptr>
+void WalkerSetBase<Alloc,Ptr>::setup()
 {
 
   TimerNameList_t<WalkerSetBaseTimers> WalkerSetBaseTimerNames =
@@ -176,8 +176,8 @@ void WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::setup()
   min_weight = std::max(std::abs(min_weight),1e-2);
 }
 
-template<class Alloc, typename Ptr, class BPAlloc, class BPPtr>
-bool WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::clean()
+template<class Alloc, typename Ptr>
+bool WalkerSetBase<Alloc,Ptr>::clean()
 {
   walker_buffer.reextent({0,walker_size});
   bp_buffer.reextent({bp_walker_size,0});
@@ -188,8 +188,8 @@ bool WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::clean()
 /*
  * Increases the capacity of the containers to n.
  */
-template<class Alloc, typename Ptr, class BPAlloc, class BPPtr>
-void WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::reserve(int n)
+template<class Alloc, typename Ptr>
+void WalkerSetBase<Alloc,Ptr>::reserve(int n)
 {
   if(walker_buffer.size(0) < n || walker_buffer.size(1) != walker_size)
     walker_buffer.reextent({n,walker_size});
@@ -206,8 +206,8 @@ void WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::reserve(int n)
  * Capacity is increased if necessary.
  * Target Populations are set to n.
  */
-template<class Alloc, typename Ptr, class BPAlloc, class BPPtr>
-void WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::resize(int n) {
+template<class Alloc, typename Ptr>
+void WalkerSetBase<Alloc,Ptr>::resize(int n) {
   if(tot_num_walkers==0)
     APP_ABORT("error: empty set in resize(n).\n");
 
@@ -240,8 +240,8 @@ void WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::resize(int n) {
 //  4: sum_i abs(<psi_T|phi_i>)
 //  5: total number of walkers  
 //  6: total number of "healthy" walkers (those with weight > 1e-6, ovlp>1e-8, etc) 
-template<class Alloc, typename Ptr, class BPAlloc, class BPPtr>
-void WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::popControl(std::vector<ComplexType>& curData)
+template<class Alloc, typename Ptr>
+void WalkerSetBase<Alloc,Ptr>::popControl(std::vector<ComplexType>& curData)
 {
   Timers[Branching_t]->start();
   ComplexType minus = ComplexType(-1.0,0.0);
@@ -299,8 +299,8 @@ void WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::popControl(std::vector<ComplexType>
 
 }
 
-template<class Alloc, typename Ptr, class BPAlloc, class BPPtr>
-void WalkerSetBase<Alloc,Ptr,BPAlloc,BPPtr>::benchmark(std::string& blist,int maxnW,int delnW,int repeat)
+template<class Alloc, typename Ptr>
+void WalkerSetBase<Alloc,Ptr>::benchmark(std::string& blist,int maxnW,int delnW,int repeat)
 {
 
   if(blist.find("comm")!=std::string::npos) {

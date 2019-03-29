@@ -41,17 +41,13 @@ namespace afqmc
  * Walkers are always accessed through the handler.
  */
 class SerialWalkerSet: public WalkerSetBase<device_allocator<ComplexType>,
-                                            device_ptr<ComplexType>,
-                                            std::allocator<ComplexType>,
-                                            ComplexType*
+                                            device_ptr<ComplexType>
                                            >
                                              
 {
 
   using Base = WalkerSetBase<device_allocator<ComplexType>,
-                             device_ptr<ComplexType>,
-                             std::allocator<ComplexType>,
-                             ComplexType*
+                             device_ptr<ComplexType>
                             >;
 
   public:
@@ -59,7 +55,7 @@ class SerialWalkerSet: public WalkerSetBase<device_allocator<ComplexType>,
   /// constructor
   SerialWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 
         RandomGenerator_t* r):
-                Base(tg_,cur,info,r,device_allocator<ComplexType>{})
+                Base(tg_,cur,info,r,device_allocator<ComplexType>{},shared_allocator<ComplexType>{tg_.TG_local()})
   {
   }
 

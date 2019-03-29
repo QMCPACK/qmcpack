@@ -88,6 +88,12 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
       TG.local_barrier();
     }
 
+    template<class WlkSet, class CTens, class CMat>
+    void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR)
+    {
+      APP_ABORT(" Error: Finish BackPropagate.\n");
+    }
+
   protected: 
 
     // new communicator over similar cores in a TG

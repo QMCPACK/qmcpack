@@ -83,6 +83,8 @@ class NOMSD: public AFQMCInfo
   using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;  
   using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;  
 
+  using stdCMatrix_ref = boost::multi::array_ref<ComplexType,2>;  
+
   public:
 
     NOMSD(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
@@ -303,11 +305,14 @@ class NOMSD: public AFQMCInfo
      * Options:
      *  - free_projection: If false (default), assumes using phaseless approximation
      *                       otherwise assumes using free projection.
-     *  - back_propagation: If false (default), compute mixed estimate of the density
-     *                        matrix.
      */
-    template<class WlkSet, class MatG, class CVec>
-    void WalkerAveragedDensityMatrix(const WlkSet& wset, MatG& G, CVec& denom, bool free_projection=false);
+    template<class WlkSet, class MatG, class CVec1, class CVec2>
+    void WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection=false, boost::multi::array_ref<ComplexType,3>* Refs=nullptr, boost::multi::array<ComplexType,2>* detR=nullptr) {
+//      if(nbatch < 0 || nbatch > 1)
+//        WalkerAveragedDensityMatrix_batched(wset,wgt,G,denom,free_projection,Refs,detR);
+//      else  
+        WalkerAveragedDensityMatrix_shared(wset,wgt,G,denom,free_projection,Refs,detR);
+    }
 
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
@@ -385,7 +390,7 @@ class NOMSD: public AFQMCInfo
     /*
      * Returns the reference Slater Matrices needed for back propagation.  
      */
-    template<class Mat>
+    template<class Mat, class Ptr=ComplexType*>
     void getReferencesForBackPropagation(Mat&& A) {
       static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
       int ndet = number_of_references_for_back_propagation(); 
@@ -419,9 +424,13 @@ class NOMSD: public AFQMCInfo
       assert(RefOrbMats.size(0) == ndet);
       assert(RefOrbMats.size(1) == A.size(1));
       auto&& RefOrbMats_(boost::multi::static_array_cast<ComplexType, ComplexType*>(RefOrbMats));  
+      auto&& A_(boost::multi::static_array_cast<ComplexType, Ptr>(A));  
       using std::copy_n;
+      int n0,n1;
+      std::tie(n0,n1) = FairDivideBoundary(TG.getLocalTGRank(),int(A.size(1)),TG.getNCoresPerTG());
       for(int i=0; i<ndet; i++) 
-        A[i]=RefOrbMats_[i];
+        copy_n(RefOrbMats_[i].origin()+n0,n1-n0,A_[i].origin()+n0);
+      TG.TG_local().barrier();
     }
 
   protected: 
@@ -532,6 +541,12 @@ class NOMSD: public AFQMCInfo
       else
         Energy_distributed_multiDet(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
     }
+
+    template<class WlkSet, class MatG, class CVec1, class CVec2>
+    void WalkerAveragedDensityMatrix_batched(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
+
+    template<class WlkSet, class MatG, class CVec1, class CVec2>
+    void WalkerAveragedDensityMatrix_shared(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
 
     template<class WlkSet, class Mat, class TVec>
     void Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, TVec&& Ov);

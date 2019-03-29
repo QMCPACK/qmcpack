@@ -40,7 +40,7 @@ namespace afqmc
  * Implements communication, load balancing, and I/O operations.   
  * Walkers are always accessed through the handler.
  */
-template<class Alloc, class Ptr, class BPAlloc, class BPPtr>
+template<class Alloc, class Ptr> //, class BPAlloc, class BPPtr>
 class WalkerSetBase: public AFQMCInfo 
 {
   protected:
@@ -53,16 +53,21 @@ class WalkerSetBase: public AFQMCInfo
   using const_pointer = const Ptr; 
   using Allocator = Alloc;
 
-  using bp_element = typename std::pointer_traits<BPPtr>::element_type;
-  using bp_pointer = BPPtr;
+  using bp_element = ComplexType; //typename std::pointer_traits<BPPtr>::element_type;
+  using bp_pointer = ComplexType*; //BPPtr;
   using const_bp_element = const bp_element;
-  using const_bp_pointer = const BPPtr;
-  using BPAllocator = BPAlloc;
+  using const_bp_pointer = const bp_pointer; 
+  using BPAllocator = shared_allocator<bp_element>;//BPAlloc;
 
   using CMatrix = boost::multi::array<element,2,Allocator>;
   using BPCMatrix = boost::multi::array<bp_element,2,BPAllocator>;
   using BPCVector_ref = boost::multi::array_ref<bp_element,1,bp_pointer>;
   using BPCMatrix_ref = boost::multi::array_ref<bp_element,2,bp_pointer>;
+  using BPCTensor_ref = boost::multi::array_ref<bp_element,3,bp_pointer>;
+
+  using stdCVector_ref = boost::multi::array_ref<bp_element,1>;
+  using stdCMatrix_ref = boost::multi::array_ref<bp_element,2>;
+  using stdCTensor_ref = boost::multi::array_ref<bp_element,3>;
 
   public:
 
@@ -128,12 +133,6 @@ class WalkerSetBase: public AFQMCInfo
    */	
   int NumCholVecs() const {
     return wlk_desc[4];
-  }
-  /*
-   * Returns the maximum number of references in the set that can be stored without reallocation. 
-   */	
-  int NumReferences() const {
-    return wlk_desc[5];
   }
   /*
    * Returns the position of the insertion point in the BP stack. 
@@ -596,19 +595,42 @@ class WalkerSetBase: public AFQMCInfo
   }
 
   // Careful!!! This matrix returns an array_ref, NOT a copy!!!
-  BPCMatrix_ref getFields(int ip)
+  stdCMatrix_ref getFields(int ip)
   {
     if(ip < 0 || ip > wlk_desc[3])
       APP_ABORT(" Error: index out of bounds in getFields. \n");
     int skip = (data_displ[FIELDS] + ip*wlk_desc[4])*bp_buffer.size(1); 
-    return BPCMatrix_ref(to_address(bp_buffer.origin())+skip,{wlk_desc[4],bp_buffer.size(1)});
+    return stdCMatrix_ref(to_address(bp_buffer.origin())+skip,{wlk_desc[4],bp_buffer.size(1)});
   } 
 
-  template<class Mat>  
-  void setFields(int ip, Mat&& V)
+  stdCTensor_ref getFields()
   {
-    auto&& A(getFields(ip));
-    A = V;
+    return stdCTensor_ref(to_address(bp_buffer.origin())+data_displ[FIELDS]*bp_buffer.size(1),
+                            {wlk_desc[3],wlk_desc[4],bp_buffer.size(1)});
+  }
+
+  template<class Mat>  
+  void storeFields(int ip, Mat&& V)
+  {
+    static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
+    auto&& F(getFields(ip));
+    if(V.stride(0) == V.size(1)) {
+      using std::copy_n;
+      copy_n(V.origin(),F.num_elements(),F.origin());
+    } else 
+      F = V;
+  }
+
+  stdCMatrix_ref getWeightFactors()
+  {
+    return stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_FAC]*bp_buffer.size(1),
+                                {wlk_desc[3],bp_buffer.size(1)});
+  }
+
+  stdCMatrix_ref getWeightHistory()
+  {
+    return stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_HISTORY]*bp_buffer.size(1),
+                                {wlk_desc[3],bp_buffer.size(1)});
   }
 
   protected:

@@ -91,6 +91,12 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
       TG.local_barrier();
     }
 
+    template<class WlkSet, class CTens, class CMat>
+    void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR)
+    {
+      APP_ABORT(" Error: Finish BackPropagate.\n");
+    }
+
   protected: 
 
     MPI_Request req_Gsend, req_Grecv;
