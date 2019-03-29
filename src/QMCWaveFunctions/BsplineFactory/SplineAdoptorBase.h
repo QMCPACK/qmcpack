@@ -11,8 +11,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file SplineAdoptorBase.h
  *
  * Base class for SplineAdoptor's used for BsplineSet<SplineAdoptor>
@@ -34,7 +34,6 @@
 
 namespace qmcplusplus
 {
-
 /** base class any SplineAdoptor
  *
  * This handles SC and twist and declare storage for einspline
@@ -42,15 +41,9 @@ namespace qmcplusplus
 template<typename ST, unsigned D>
 struct SplineAdoptorBase
 {
-#if (__cplusplus >= 201103L)
-  using PointType=TinyVector<ST,D>;
-  using SingleSplineType=UBspline_3d_d;
-  using DataType=ST; 
-#else
-  typedef TinyVector<ST,D> PointType;
-  typedef UBspline_3d_d SingleSplineType;
-  typedef ST DataType;
-#endif
+  using PointType        = TinyVector<ST, D>;
+  using SingleSplineType = UBspline_3d_d;
+  using DataType         = ST;
   ///true if the computed values are complex
   bool is_complex;
   ///true, if it has only one k point and Gamma
@@ -66,15 +59,15 @@ struct SplineAdoptorBase
   ///last index of the SPOs this Spline handles
   size_t last_spo;
   ///sign bits at the G/2 boundaries
-  TinyVector<int,D>          HalfG;
+  TinyVector<int, D> HalfG;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
-  Tensor<ST,D>               GGt;
-  CrystalLattice<ST,D>       SuperLattice;
-  CrystalLattice<ST,D>       PrimLattice;
+  Tensor<ST, D> GGt;
+  CrystalLattice<ST, D> SuperLattice;
+  CrystalLattice<ST, D> PrimLattice;
   /// flags to unpack sin/cos
-  std::vector<bool>               MakeTwoCopies;
+  std::vector<bool> MakeTwoCopies;
   ///kpoints for each unique orbitals
-  std::vector<TinyVector<ST,D> >  kPoints;
+  std::vector<TinyVector<ST, D>> kPoints;
   ///remap splines to orbitals
   aligned_vector<int> BandIndexMap;
   /// band offsets used for communication
@@ -85,52 +78,57 @@ struct SplineAdoptorBase
   std::string KeyWord;
 
   SplineAdoptorBase()
-    :is_complex(false),is_gamma_only(false), is_soa_ready(false),
-    MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
-  { }
+      : is_complex(false),
+        is_gamma_only(false),
+        is_soa_ready(false),
+        MyIndex(0),
+        nunique_orbitals(0),
+        first_spo(0),
+        last_spo(0)
+  {}
 
-#if (__cplusplus >= 201103L)
-  SplineAdoptorBase(const SplineAdoptorBase& rhs)=default;
-#endif
+  SplineAdoptorBase(const SplineAdoptorBase& rhs) = default;
 
   inline void init_base(int n)
   {
-    nunique_orbitals=n;
-    GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
+    nunique_orbitals = n;
+    GGt              = dot(transpose(PrimLattice.G), PrimLattice.G);
     kPoints.resize(n);
     MakeTwoCopies.resize(n);
     BandIndexMap.resize(n);
-    for(int i=0; i<n; i++)
-      BandIndexMap[i]=i;
+    for (int i = 0; i < n; i++)
+      BandIndexMap[i] = i;
   }
 
   ///remap kpoints to group general kpoints & special kpoints
   int remap_kpoints()
   {
-    std::vector<TinyVector<ST,D> >  k_copy(kPoints);
-    const int nk=kPoints.size();
-    int nCB=0;
+    std::vector<TinyVector<ST, D>> k_copy(kPoints);
+    const int nk = kPoints.size();
+    int nCB      = 0;
     //two pass
-    for(int i=0; i<nk; ++i)
+    for (int i = 0; i < nk; ++i)
     {
-      if(MakeTwoCopies[i]) 
+      if (MakeTwoCopies[i])
       {
-        kPoints[nCB]=k_copy[i];
-        BandIndexMap[nCB++]=i;
+        kPoints[nCB]        = k_copy[i];
+        BandIndexMap[nCB++] = i;
       }
     }
-    int nRealBands=nCB;
-    for(int i=0; i<nk; ++i)
+    int nRealBands = nCB;
+    for (int i = 0; i < nk; ++i)
     {
-      if(!MakeTwoCopies[i]) 
+      if (!MakeTwoCopies[i])
       {
-        kPoints[nRealBands]=k_copy[i];
-        BandIndexMap[nRealBands++]=i;
+        kPoints[nRealBands]        = k_copy[i];
+        BandIndexMap[nRealBands++] = i;
       }
     }
     return nCB; //return the number of complex bands
   }
+
+  virtual void finalizeConstruction() {}
 };
 
-}
+} // namespace qmcplusplus
 #endif

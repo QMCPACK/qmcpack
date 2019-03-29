@@ -12,7 +12,7 @@
 
 
 
-def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
+def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],cas_idx=None):
   import h5py, re, sys
   from collections import defaultdict
   from pyscf.pbc import gto, scf, df, dft
@@ -24,7 +24,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
 
   PBC=False
   Gamma=False
-  UnRestricted=False
+  Restricted=True
   Complex=False
   Python3=False
   Python2=False
@@ -45,7 +45,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
   SizeMode=len(ComputeMode)
   for i in range(SizeMode):
      if ComputeMode[i] in ("UHF","KUHF","UKS"):
-           UnRestricted=True
+           Restricted=False
            sys.exit("Unrestricted calculations not supported")
 
      if ComputeMode[i]=="pbc":
@@ -55,9 +55,9 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
         #sys.exit("You need to specify explicit the list of K-point (including gamma)")
         Gamma=True
 
-  def get_supercell(cell,kmesh):
+  def get_supercell(cell,kmesh=[]):
     latt_vec = cell.lattice_vectors()
-    if kmesh is None:
+    if len(kmesh)==0:
         # Guess kmesh
         scaled_k = cell.get_scaled_kpts(kpts).round(8)
         kmesh = (len(numpy.unique(scaled_k[:,0])),
@@ -73,9 +73,9 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
 
     # R_rel_mesh has to be construct exactly same to the Ts in super_cell function
     scell = tools.super_cell(cell, kmesh)
-    return scell
+    return scell, kmesh
 
-  def get_phase(cell, kpts, kmesh=None):
+  def get_phase(cell, kpts, kmesh=[]):
         '''
         The unitary transformation that transforms the supercell basis k-mesh
         adapted basis.
@@ -117,11 +117,12 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
         C_gamma = C_gamma.reshape(Nao*NR, Nk*Nmo)
  
         E_sort_idx = numpy.argsort(E_g)
+        E_desort_idx=numpy.argsort(  E_sort_idx )
         E_g = E_g[E_sort_idx]
         C_gamma = C_gamma[:,E_sort_idx]
         s = scell.pbc_intor('int1e_ovlp')
-        assert(abs(reduce(numpy.dot, (C_gamma.conj().T, s, C_gamma))
-                   - numpy.eye(Nmo*Nk)).max() < 1e-7)
+        #assert(abs(reduce(numpy.dot, (C_gamma.conj().T, s, C_gamma))
+        #           - numpy.eye(Nmo*Nk)).max() < 1e-7)
  
         # Transform MO indices
         E_k_degen = abs(E_g[1:] - E_g[:-1]).max() < 1e-5
@@ -130,22 +131,24 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
             shift = min(E_g[degen_mask]) - .1
             f = numpy.dot(C_gamma[:,degen_mask] * (E_g[degen_mask] - shift),
                        C_gamma[:,degen_mask].conj().T)
-            assert(abs(f.imag).max() < 1e-5)
+            #assert(abs(f.imag).max() < 1e-5)
  
             e, na_orb = la.eigh(f.real, s, type=2)
             C_gamma[:,degen_mask] = na_orb[:, e>0]
  
-        assert(abs(C_gamma.imag).max() < 1e-2)
+        #assert(abs(C_gamma.imag).max() < 1e-2)
         C_gamma = C_gamma.real
-        assert(abs(reduce(numpy.dot, (C_gamma.conj().T, s, C_gamma))
-                   - numpy.eye(Nmo*Nk)).max() < 1e-2)
+        #assert(abs(reduce(numpy.dot, (C_gamma.conj().T, s, C_gamma))
+        #           - numpy.eye(Nmo*Nk)).max() < 1e-2)
  
         s_k = cell.pbc_intor('int1e_ovlp', kpts=kpts)
         # overlap between k-point unitcell and gamma-point supercell
         s_k_g = numpy.einsum('kuv,Rk->kuRv', s_k, phase.conj()).reshape(Nk,Nao,NR*Nao)
         # The unitary transformation from k-adapted orbitals to gamma-point orbitals
         mo_phase = lib.einsum('kum,kuv,vi->kmi', C_k.conj(), s_k_g, C_gamma)
-        return E_g, C_gamma, 
+        C_gamma_unsorted=C_gamma[:,E_desort_idx]
+        E_g_unsorted=E_g[E_desort_idx]
+        return E_g_unsorted, C_gamma_unsorted, 
 
 
   IonName=dict([('H',1),  ('He',2),  ('Li',3),('Be',4),  ('B', 5),  ('C', 6),  ('N', 7),('O', 8),  ('F', 9),   ('Ne',10),   ('Na',11),('Mg',12),   ('Al',13),   ('Si',14),   ('P', 15),   ('S', 16),('Cl',17),   ('Ar',18),   ('K', 19),   ('Ca',20),   ('Sc',21),   ('Ti',22),   ('V', 23),   ('Cr',24),   ('Mn',25),   ('Fe',26),   ('Co',27),   ('Ni',28),   ('Cu',29),   ('Zn',30),   ('Ga',31),   ('Ge',32),   ('As',33),   ('Se',34),   ('Br',35),   ('Kr',36),   ('Rb',37),   ('Sr',38),   ('Y', 39),  ('Zr',40),   ('Nb',41),   ('Mo',42),   ('Tc',43),   ('Ru',44),   ('Rh',45),   ('Pd',46),   ('Ag',47),   ('Cd',48),   ('In',49),   ('Sn',50),   ('Sb',51),   ('Te',52),   ('I', 53),   ('Xe',54),   ('Cs',55),   ('Ba',56),   ('La',57),   ('Ce',58), ('Pr',59),   ('Nd',60),   ('Pm',61),   ('Sm',62),   ('Eu',63),   ('Gd',64),   ('Tb',65),   ('Dy',66),   ('Ho',67),  ('Er',68),   ('Tm',69),   ('Yb',70),   ('Lu',71),   ('Hf',72),   ('Ta',73),   ('W', 74),   ('Re',75),   ('Os',76),   ('Ir',77),   ('Pt',78),   ('Au',79),   ('Hg',80), ('Tl',81),   ('Pb',82),  ('Bi',83),   ('Po',84),   ('At',85),   ('Rn',86),   ('Fr',87),   ('Ra',88),   ('Ac',89),   ('Th',90),   ('Pa',91),   ('U', 92),   ('Np',93)]) 
@@ -170,7 +173,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
   GroupPBC=H5_qmcpack.create_group("PBC")
   GroupPBC.create_dataset("PBC",(1,),dtype="b1",data=PBC)
   if len(kpts)!= 0:
-     loc_cell=get_supercell(cell,kmesh)
+     loc_cell,kmesh=get_supercell(cell,kmesh)
   else:
      loc_cell=cell
   
@@ -489,14 +492,14 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
   GroupParameter.create_dataset("IsComplex",(1,),dtype="b1",data=Complex)
 
  
-  GroupParameter.create_dataset("SpinUnResticted",(1,),dtype="b1",data=UnRestricted)
+  GroupParameter.create_dataset("SpinRestricted",(1,),dtype="b1",data=Restricted)
   GroupNbkpts=H5_qmcpack.create_group("Nb_KPTS")
   if not PBC:
     Nbkpts=1
     GroupNbkpts.create_dataset("Nbkpts",(1,),dtype="i4",data=Nbkpts)
     
     GroupDet=H5_qmcpack.create_group("KPTS_0")
-    if UnRestricted==False:
+    if Restricted==True:
       NbMO=len(mo_coeff)
       NbAO=len(mo_coeff[0])
       if loc_cell.cart==True:
@@ -520,7 +523,11 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
        NbAO=len(mo_coeff[0][0])
        E_g=mf.mo_energy
     else: 
-       E_g, C_gamma = mo_k2gamma(cell, mf.mo_energy, mf.mo_coeff, kpts,kmesh)
+
+       mo_k = numpy.array([c[:,cas_idx] for c in mf.mo_coeff] if cas_idx is not None else mf.mo_coeff)
+       e_k =  numpy.array([e[cas_idx] for e in mf.mo_energy] if cas_idx is not None else mf.mo_energy)
+       E_g, C_gamma = mo_k2gamma(cell, e_k, mo_k, kpts,kmesh)
+       #E_g, C_gamma = mo_k2gamma(cell, mf.mo_energy, mf.mo_coeff, kpts,kmesh)
        mo_coeff=C_gamma
        NbAO, NbMO =mo_coeff.shape 
 

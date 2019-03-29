@@ -15,7 +15,7 @@ using std::cout;
 
 int mpi3::main(int, char*[], mpi3::communicator world){
 	assert( world.size() > 1 );
-	
+
 	switch(world.rank()){
 		case 0: {
 			std::list<int> b = {3, 4, 5};

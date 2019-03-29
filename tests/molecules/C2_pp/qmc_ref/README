@@ -1,0 +1,135 @@
+#C2_PP test targets the Multideterminant route of the code. The wavefunction data is  stored in a XML format AND HDF5 Format. Both files should be run
+Energy from QP:-10.9015995458600 Ha
+
+0- The trial wavefunction was generated using quantum Package as described in tests/molecules/C2_pp/QuantumPackage/script.sh 
+This will generate 202 determinants. 
+The wavefunction is then dumped from QP as follow:
+  > qp_run save_for_qmcpack C2.ezfio > C2
+The C2 file is a txt format recognized by convert4qmc.  Also, a fully QMCPACK compatible HDF5 is now produced by QP (named QMC.h5). It contains all information to run. 
+
+
+For Both routes,  a Jastrow (J1, J2 and J3) optimization is performed outside of this test. Jastrow parameters are provided in the wfj.xml files. 
+
+VMC energy is computed to evaluate the local energy and variance.
+The long VMC reference run used to extrapolate the short run reference used the following VMC blocks:
+
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="samplesperthread">1</parameter>
+    <parameter name="stepsbetweensamples">100</parameter>
+    <parameter name="substeps">5</parameter>
+    <parameter name="warmupSteps">20</parameter>
+    <parameter name="blocks">65500</parameter>
+    <parameter name="timestep">0.5</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+
+However, In order to keep the size of the files small in the reference directory, an equivalent VMC block was used using 1 sample per thread and 4096 threads
+
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="samplesperthread">1</parameter>
+    <parameter name="stepsbetweensamples">32800</parameter>
+    <parameter name="substeps">5</parameter>
+    <parameter name="warmupSteps">20</parameter>
+    <parameter name="blocks">200</parameter>
+    <parameter name="timestep">0.5</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+
+
+1- XML route. 
+
+Inputs (C2.structure.xml and C2.wfj-XML.xml were generated from the text file (C2) from Quantum_Package)
+
+> convert4qmc -QP C2 -production
+> mv C2.wfj.xml C2.wfj-XML.xml 
+
+Input file name is  qmc_ref_xml_msdj.xml 
+
+The long VMC run leads to the following statistics:
+  LocalEnergy           =        -11.059755 +/-         0.000013 
+  Variance              =           0.16251 +/-          0.00046 
+  Kinetic               =           7.72378 +/-          0.00016 
+  LocalPotential        =         -18.78354 +/-          0.00016 
+  ElecElec              =         12.142072 +/-         0.000083 
+  LocalECP              =         -39.43847 +/-          0.00024 
+  NonLocalECP           =           1.69867 +/-          0.00011 
+  IonIon                =              6.81 +/-             0.00 
+  LocalEnergy_sq        =         122.48071 +/-          0.00055 
+  BlockWeight           =          16384.00 +/-             0.00 
+  BlockCPU              =       0.009885908 +/-      0.000000061 
+  AcceptRatio           =         0.4704575 +/-        0.0000027 
+  Efficiency            =        2004402.19 +/-             0.00 
+  TotalTime             =            647.37 +/-             0.00 
+  TotalSamples          =        1072889856 +/-                0 
+
+
+
+
+
+The equivalent run  leads to the following statistics:
+
+  LocalEnergy           =        -11.059771 +/-         0.000020 
+  Variance              =           0.16235 +/-          0.00027 
+  Kinetic               =           7.72351 +/-          0.00026 
+  LocalPotential        =         -18.78328 +/-          0.00025 
+  ElecElec              =          12.14210 +/-          0.00013 
+  LocalECP              =         -39.43834 +/-          0.00038 
+  NonLocalECP           =           1.69877 +/-          0.00017 
+  IonIon                =              6.81 +/-             0.00 
+  LocalEnergy_sq        =         122.48089 +/-          0.00051 
+  BlockWeight           =        2686976.00 +/-             0.00 
+  BlockCPU              =          1.633350 +/-         0.000015 
+  AcceptRatio           =         0.4704575 +/-        0.0000043 
+  Efficiency            =          12259.38 +/-             0.00 
+  TotalTime             =            277.67 +/-             0.00 
+  TotalSamples          =         456785920 +/-                0 
+
+
+
+2- HDF5 route
+
+Input file name is  qmc_ref_h5_msdj.xml 
+
+The long VMC run leads to the following statistics:
+
+  LocalEnergy           =        -11.059757 +/-         0.000013 
+  Variance              =           0.16251 +/-          0.00043 
+  Kinetic               =           7.72336 +/-          0.00016 
+  LocalPotential        =         -18.78311 +/-          0.00016 
+  ElecElec              =         12.142051 +/-         0.000086 
+  LocalECP              =         -39.43812 +/-          0.00025 
+  NonLocalECP           =           1.69877 +/-          0.00011 
+  IonIon                =              6.81 +/-             0.00 
+  LocalEnergy_sq        =         122.48076 +/-          0.00050 
+  BlockWeight           =          16384.00 +/-             0.00 
+  BlockCPU              =       0.009946695 +/-      0.000000061 
+  AcceptRatio           =         0.4704592 +/-        0.0000028 
+  Efficiency            =        2047542.99 +/-             0.00 
+  TotalTime             =            651.51 +/-             0.00 
+  TotalSamples          =        1073152000 +/-                0 
+
+
+
+
+
+The equivalent run  leads to the following statistics:
+
+  LocalEnergy           =        -11.059791 +/-         0.000019 
+  Variance              =           0.16245 +/-          0.00034 
+  Kinetic               =           7.72404 +/-          0.00024 
+  LocalPotential        =         -18.78383 +/-          0.00026 
+  ElecElec              =          12.14216 +/-          0.00012 
+  LocalECP              =         -39.43875 +/-          0.00035 
+  NonLocalECP           =           1.69857 +/-          0.00017 
+  IonIon                =              6.81 +/-             0.00 
+  LocalEnergy_sq        =         122.48142 +/-          0.00052 
+  BlockWeight           =        2686976.00 +/-             0.00 
+  BlockCPU              =          1.635521 +/-         0.000015 
+  AcceptRatio           =         0.4704577 +/-        0.0000047 
+  Efficiency            =          13010.96 +/-             0.00 
+  TotalTime             =            282.95 +/-             0.00 
+  TotalSamples          =         464846848 +/-                0 
+
+

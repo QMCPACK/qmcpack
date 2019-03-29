@@ -6,7 +6,7 @@
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 //#undef NDEBUG
@@ -31,18 +31,15 @@
 #include <iomanip>
 
 #include "AFQMC/config.h"
-#include "boost/multi_array.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
-#include "AFQMC/Utilities/myTimer.h"
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Utilities/test_utils.hpp"
 
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Numerics/ma_blas.hpp"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 
 using std::string;
 using std::complex;
@@ -52,30 +49,33 @@ using std::endl;
 using std::ifstream;
 using std::setprecision;
 
-using boost::extents;
-using boost::indices;
-using range_t = boost::multi_array_types::index_range;
-
 namespace qmcplusplus
 {
 
 using namespace afqmc;
 
-TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
+template<class Alloc>
+void ham_ops_basic_serial(boost::mpi3::communicator & world)
 {
 
-  if(not file_exists("./afqmc.h5") ||
-     not file_exists("./wfn.dat") ) {
-    app_log()<<" Skipping ham_ops_collinear_sdet text. afqmc.h5 and ./wfn.dat files not found. \n";
-  } else {
+  using pointer = device_ptr<ComplexType>;
 
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
+  if(not file_exists(UTEST_HAMIL) ||
+     not file_exists(UTEST_WFN) ) {
+    app_log()<<" Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
+    app_log()<<" Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
+  } else {
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
-    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc.h5");
+    // Determine wavefunction type for test results from wavefunction file name which is
+    // has the naming convention wfn_(wfn_type).dat.
+    // First strip path of filename.
+    std::string base_name = UTEST_WFN.substr(UTEST_WFN.find_last_of("\\/")+1);
+    // Remove file extension.
+    std::string test_wfn = base_name.substr(0, base_name.find_last_of("."));
+    auto file_data = read_test_results_from_hdf<ValueType>(UTEST_HAMIL, test_wfn);
     int NMO=file_data.NMO;
     int NAEA=file_data.NAEA;
     int NAEB=file_data.NAEB;
@@ -83,14 +83,14 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     std::map<std::string,AFQMCInfo> InfoMap;
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
     HamiltonianFactory HamFac(InfoMap);
-    const char *xml_block =
-"<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
+    std::string hamil_xml =
+"<Hamiltonian name=\"ham0\" info=\"info0\"> \
     <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"version\">new</parameter> \
-    <parameter name=\"filename\">./afqmc.h5</parameter> \
+    <parameter name=\"filename\">"+UTEST_HAMIL+"</parameter> \
     <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
   </Hamiltonian> \
 ";
+    const char *xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_block);
     REQUIRE(okay);
@@ -99,9 +99,9 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    boost::multi_array<ComplexType,3> OrbMat;
-    int walker_type = readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
+    using CMatrix = ComplexMatrix<Alloc>;
+    boost::multi::array<ComplexType,3> OrbMat;
+    int walker_type = readWfn(std::string(UTEST_WFN),OrbMat,NMO,NAEA,NAEB);
     int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
     WALKER_TYPES WTYPE = CLOSED;
     if(walker_type==1) WTYPE = COLLINEAR;
@@ -113,33 +113,46 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
                                         OrbMat[0],1e-8,'H',gTG.Node()));
     if(walker_type>0)
       PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
                                         1e-8,'H',gTG.Node()));
 
     hdf_archive dummy;
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
+    auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
+// NOTE: Make small factory routine!
+    //SlaterDetOperations SDet( SlaterDetOperations_serial<Alloc>(NMO,NAEA) );
+#ifdef ENABLE_CUDA
+    auto SDet( SlaterDetOperations_serial<Alloc>(NMO,NAEA) );
+#else
+    auto SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
+#endif
 
-    using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
-    SHM_Buffer Gbuff(TG.TG_local(),NMO*NEL);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[NEL][NMO]);
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
-        G[indices[range_t(0,NAEA)][range_t()]],true);
-    if(WTYPE==COLLINEAR)
-      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
-        G[indices[range_t(NAEA,NAEA+NAEB)][range_t()]],true);
-    REQUIRE( real(Ovlp) == Approx(1.0) );
-    REQUIRE( imag(Ovlp) == Approx(0.0) );
+    Alloc alloc_(make_localTG_allocator<ComplexType>(TG));
+    boost::multi::array<ComplexType,3,Alloc> devOrbMat(OrbMat, alloc_);
+    std::vector<devPsiT_Matrix> devPsiT(move_vector<devPsiT_Matrix>(std::move(PsiT)));
 
-    boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
-    boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[NEL*NMO][1]);
+    CMatrix G({NEL,NMO},alloc_);
+    typename Alloc::pointer Ovlp = alloc_.allocate(1);
+    SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0],
+        G.sliced(0,NAEA),to_address(Ovlp),true);
+    if(WTYPE==COLLINEAR) {
+      typename Alloc::pointer Ovlp_ = alloc_.allocate(1);
+      SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}),
+        G.sliced(NAEA,NAEA+NAEB),to_address(Ovlp_),true);
+      (*Ovlp) *= (*Ovlp_); 
+      alloc_.deallocate(Ovlp_,1);
+    }
+    REQUIRE( real(*Ovlp) == Approx(1.0) );
+    REQUIRE( imag(*Ovlp) == Approx(0.0) );
+
+    boost::multi::array<ComplexType,2,Alloc> Eloc({1,3},alloc_);
+    boost::multi::array_ref<ComplexType,2,pointer> Gw(make_device_ptr(G.origin()),{NEL*NMO,1});
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
+    Eloc[0][0] = ( TG.Node() += ComplexType(Eloc[0][0]) );
+    Eloc[0][1] = ( TG.Node() += ComplexType(Eloc[0][1]) );
+    Eloc[0][2] = ( TG.Node() += ComplexType(Eloc[0][2]) );
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
@@ -147,8 +160,8 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
       app_log()<<" E1: " <<setprecision(12) <<Eloc[0][0] <<std::endl;
     }
     if(std::abs(file_data.E2)>1e-8) {
-      REQUIRE( real(Eloc[0][1]) == Approx(real(file_data.E1+file_data.E2)));
-      REQUIRE( imag(Eloc[0][1]) == Approx(imag(file_data.E1+file_data.E2)));
+      REQUIRE( real(Eloc[0][1]+Eloc[0][2]) == Approx(real(file_data.E2)));
+      REQUIRE( imag(Eloc[0][1]+Eloc[0][2]) == Approx(imag(file_data.E2)));
     } else {
       app_log()<<" EJ: " <<setprecision(12) <<Eloc[0][2] <<std::endl;
       app_log()<<" EXX: " <<setprecision(12) <<Eloc[0][1] <<std::endl;
@@ -157,8 +170,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     double sqrtdt = std::sqrt(0.01);
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
-    SHM_Buffer Xbuff(TG.TG_local(),nCV);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][1]);
+    CMatrix X({nCV,1},alloc_);
     HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
     ComplexType Xsum=0;
@@ -171,600 +183,45 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
     }
 
-    SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[NMO*NMO][1]);
+    int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
+    int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
+    CMatrix vHS({vdim1,vdim2},alloc_);
     TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
     HOps.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
     ComplexType Vsum=0;
-    for(int i=0; i<vHS.size(); i++)
+    if(HOps.transposed_vHS()) {
+      for(int i=0; i<vHS.size(1); i++)
+        Vsum += vHS[0][i];
+    } else {
+      for(int i=0; i<vHS.size(0); i++)
         Vsum += vHS[i][0];
+    }
     if(std::abs(file_data.Vsum)>1e-8) {
       REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
       REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
     } else {
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
+    alloc_.deallocate(Ovlp,1);
   }
 }
 
-TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
+TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 {
-
-  if(not file_exists("./afqmc.h5") ||
-     not file_exists("./wfn.dat") ) {
-    app_log()<<" Skipping ham_ops_collinear_sdet text. afqmc.h5 and ./wfn.dat files not found. \n";
-  } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
-
-    // Global Task Group
-    afqmc::GlobalTaskGroup gTG(world);
-
-    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc.h5");
-    int NMO=file_data.NMO;
-    int NAEA=file_data.NAEA;
-    int NAEB=file_data.NAEB;
-
-    std::map<std::string,AFQMCInfo> InfoMap;
-    InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
-    HamiltonianFactory HamFac(InfoMap);
-    const char *xml_block =
-"<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
-    <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"version\">new</parameter> \
-    <parameter name=\"filename\">./afqmc.h5</parameter> \
-    <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-  </Hamiltonian> \
-";
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_block);
-    REQUIRE(okay);
-    std::string ham_name("ham0");
-    HamFac.push(ham_name,doc.getRoot());
-
-    Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
-
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    boost::multi_array<ComplexType,3> OrbMat;
-    int walker_type = readWfn(std::string("./wfn.dat"),OrbMat,NMO,NAEA,NAEB);
-    int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
-    WALKER_TYPES WTYPE = CLOSED;
-    if(walker_type==1) WTYPE = COLLINEAR;
-    if(walker_type==2) WTYPE = NONCOLLINEAR;
-
-    std::vector<PsiT_Matrix> PsiT;
-    PsiT.reserve(2);
-    PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[0],1e-8,'H',gTG.Node()));
-    if(WTYPE==COLLINEAR)
-      PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
-                                        1e-8,'H',gTG.Node()));
-
-    hdf_archive dummy;
-    auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
-
-    // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
-
-    using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
-    SHM_Buffer Gbuff(TG.TG_local(),NMO*NEL);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[NEL][NMO]);
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],
-        G[indices[range_t(0,NAEA)][range_t()]],true);
-    if(WTYPE==COLLINEAR)
-      Ovlp *= SDet.MixedDensityMatrix(PsiT[1],OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
-        G[indices[range_t(NAEA,NAEA+NAEB)][range_t()]],true);
-    REQUIRE( real(Ovlp) == Approx(1.0) );
-    REQUIRE( imag(Ovlp) == Approx(0.0) );
-
-    boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
-    boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[NEL*NMO][1]);
-    HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
-    if(std::abs(file_data.E0+file_data.E1)>1e-8) {
-      REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
-      REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
-    } else {
-      app_log()<<" E1: " <<setprecision(12) <<Eloc[0][0] <<std::endl;
-    }
-    if(std::abs(file_data.E2)>1e-8) {
-      REQUIRE( real(Eloc[0][1]) == Approx(real(file_data.E1+file_data.E2)));
-      REQUIRE( imag(Eloc[0][1]) == Approx(imag(file_data.E1+file_data.E2)));
-    } else {
-      app_log()<<" EJ: " <<setprecision(12) <<Eloc[0][2] <<std::endl;
-      app_log()<<" EXX: " <<setprecision(12) <<Eloc[0][1] <<std::endl;
-    }
-
-    double sqrtdt = std::sqrt(0.01);
-    auto nCV = HOps.local_number_of_cholesky_vectors();
-
-    SHM_Buffer Xbuff(TG.TG_local(),nCV);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][1]);
-    HOps.vbias(Gw,X,sqrtdt);
-    TG.local_barrier();
-    ComplexType Xsum=0;
-    for(int i=0; i<X.size(); i++)
-        Xsum += X[i][0];
-    if(std::abs(file_data.Xsum)>1e-8) {
-      REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
-      REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
-    } else {
-      app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
-    }
-
-    SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[NMO*NMO][1]);
-    TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
-    HOps.vHS(X,vHS,sqrtdt);
-    TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
-    ComplexType Vsum=0;
-    for(int i=0; i<vHS.size(); i++)
-        Vsum += vHS[i][0];
-    if(std::abs(file_data.Vsum)>1e-8) {
-      REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-      REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
-    } else {
-      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
-    }
-  }
-}
-
-TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
-{
-
-  if(not file_exists("./thc.h5") ||
-     not file_exists("./wfn_thc.dat") ) {
-    app_log()<<" Skipping test_thc_simple test. thc.h5 and ./wfn.dat files not found. \n";
-  } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
-
-    // Global Task Group
-    afqmc::GlobalTaskGroup gTG(world);
-
-    auto file_data = read_test_results_from_hdf<ValueType>("./thc.h5");
-    int NMO=file_data.NMO;
-    int NAEA=file_data.NAEA;
-    int NAEB=file_data.NAEB;
-
-    std::map<std::string,AFQMCInfo> InfoMap;
-    InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
-    HamiltonianFactory HamFac(InfoMap);
-    const char *xml_block =
-"<Hamiltonian name=\"ham0\" type=\"THC\" info=\"info0\"> \
-    <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"filename\">./thc.h5</parameter> \
-    <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-  </Hamiltonian> \
-";
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_block);
-    REQUIRE(okay);
-    std::string ham_name("ham0");
-    HamFac.push(ham_name,doc.getRoot());
-
-    Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
-
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    boost::multi_array<ComplexType,3> OrbMat;
-    int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);
-    int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
-    WALKER_TYPES WTYPE = CLOSED;
-    if(walker_type==1) WTYPE = COLLINEAR;
-    if(walker_type==2) WTYPE = NONCOLLINEAR;
-
-    std::vector<PsiT_Matrix> PsiT;
-    PsiT.reserve(2);
-    PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[0],1e-8,'H',gTG.Node()));
-    if(WTYPE==COLLINEAR)
-      PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
-                                        1e-8,'H',gTG.Node()));
-
-    hdf_archive dummy;
-    auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,1);
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
-
-    // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
-
-    int nw=1;
-
-    using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
-    SHM_Buffer Gbuff(TG.TG_local(),nw*NMO*NEL);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[NEL][NMO]);
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
-    REQUIRE( real(Ovlp) == Approx(1.0) );
-    REQUIRE( imag(Ovlp) == Approx(0.0) );
-
-    boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[nw][NEL*NMO]);
-    boost::multi_array<ComplexType,2> Eloc(extents[nw][3]);
-
-    if(TG.Node().root())
-      for(int i=1; i<nw; i++)
-        Gw[i] = Gw[0];
-
-    Timer.reset("Generic");
-    Timer.start("Generic");
-    HOps.energy(Eloc,Gw,0,true);
-    TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
-    if(std::abs(file_data.E0+file_data.E1)>1e-8) {
-      REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
-      REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
-    } else {
-      app_log()<<" E1: " <<setprecision(12) <<Eloc[0][0] <<std::endl;
-    }
-    if(std::abs(file_data.E2)>1e-8) {
-      auto E_ = Eloc[0][1]+Eloc[0][2];
-      REQUIRE( real(E_) == Approx(real(file_data.E2)) );
-      REQUIRE( imag(E_) == Approx(imag(file_data.E2)) );
-    } else {
-      app_log()<<" EXX, EJ: " <<setprecision(12) <<Eloc[0][1] <<" " <<Eloc[0][2] <<std::endl;
-    }
-
-    double sqrtdt = std::sqrt(0.01);
-    auto nCV = HOps.local_number_of_cholesky_vectors();
-
-    SHM_Buffer Xbuff(TG.TG_local(),nCV*nw);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][nw]);
-    Timer.reset("Generic");
-    Timer.start("Generic");
-    HOps.vbias(Gw,X,sqrtdt);
-    TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vbias: " <<Timer.total("Generic") <<std::endl;
-    ComplexType Xsum=0;
-    for(int i=0; i<X.size(); i++)
-        Xsum += X[i][0];
-    if(std::abs(file_data.Xsum)>1e-8) {
-      REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
-      REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
-    } else {
-      app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
-    }
-
-    SHM_Buffer vHSbuff(TG.TG_local(),nw*NMO*NMO);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[nw][NMO*NMO]);
-    // doing twice to get reasonable timing estimate
-    HOps.vHS(X,vHS,sqrtdt);
-    TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
-    HOps.vHS(X,vHS,sqrtdt);
-    TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
-    ComplexType Vsum=0;
-    for(int i=0; i<vHS.shape()[1]; i++)
-        Vsum += vHS[0][i];
-    if(std::abs(file_data.Vsum)>1e-8) {
-      REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-      REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
-    } else {
-      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
-    }
-
-
-  }
-
-}
-
-TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
-{
-
-  if(not file_exists("./thc.h5") ||
-     not file_exists("./wfn_thc.dat") ) {
-    app_log()<<" Skipping test_thc_simple test. thc.h5 and ./wfn.dat files not found. \n";
-  } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
-
-    // Global Task Group
-    afqmc::GlobalTaskGroup gTG(world);
-
-    auto file_data = read_test_results_from_hdf<ValueType>("./thc.h5");
-    int NMO=file_data.NMO;
-    int NAEA=file_data.NAEA;
-    int NAEB=file_data.NAEB;
-
-    std::map<std::string,AFQMCInfo> InfoMap;
-    InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
-    HamiltonianFactory HamFac(InfoMap);
-    const char *xml_block =
-"<Hamiltonian name=\"ham0\" type=\"THC\" info=\"info0\"> \
-    <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"filename\">./thc.h5</parameter> \
-  </Hamiltonian> \
-";
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_block);
-    REQUIRE(okay);
-    std::string ham_name("ham0");
-    HamFac.push(ham_name,doc.getRoot());
-
-    Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
-
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    boost::multi_array<ComplexType,3> OrbMat;
-    int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);
-    int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
-    WALKER_TYPES WTYPE = CLOSED;
-    if(walker_type==1) WTYPE = COLLINEAR;
-    if(walker_type==2) WTYPE = NONCOLLINEAR;
-
-    std::vector<PsiT_Matrix> PsiT;
-    PsiT.reserve(2);
-    PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[0],1e-8,'H',gTG.Node()));
-    if(WTYPE==COLLINEAR)
-      PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
-                                        1e-8,'H',gTG.Node()));
-
-    int ncores = gTG.getTotalCores();
-    if(file_exists("ncores.txt")) {
-      ifstream in("ncores.txt");
-      in>>ncores;
-      in.close();  
-    }
-
-    hdf_archive dummy;
-    auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,ncores);
-    auto HOps(ham.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
-
-    // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
-
-    using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
-    SHM_Buffer Gbuff(TG.TG_local(),NMO*NEL);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[NEL][NMO]);
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
-    REQUIRE( real(Ovlp) == Approx(1.0) );
-    REQUIRE( imag(Ovlp) == Approx(0.0) );
-
-    boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[1][NEL*NMO]);
-    boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
-    Timer.reset("Generic");
-    Timer.start("Generic");
-    HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
-    TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
-    if(std::abs(file_data.E0+file_data.E1)>1e-8) {
-      REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
-      REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
-    } else {
-      app_log()<<" E1: " <<setprecision(12) <<Eloc[0][0] <<std::endl;
-    }
-    if(std::abs(file_data.E2)>1e-8) {
-      auto E_ = Eloc[0][1]+Eloc[0][2];
-      REQUIRE( real(E_) == Approx(real(file_data.E2)) );
-      REQUIRE( imag(E_) == Approx(imag(file_data.E2)) );
-    } else {
-      app_log()<<" EXX, EJ: " <<setprecision(12) <<Eloc[0][1] <<" " <<Eloc[0][2] <<std::endl;
-    }
-
-    double sqrtdt = std::sqrt(0.01);
-    auto nCV = HOps.local_number_of_cholesky_vectors();
-
-    SHM_Buffer Xbuff(TG.TG_local(),nCV);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][1]);
-    Timer.reset("Generic");
-    Timer.start("Generic");
-    HOps.vbias(Gw,X,sqrtdt);
-    TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vbias: " <<Timer.total("Generic") <<std::endl;
-    ComplexType Xsum=0,X2sum=0;
-    for(int i=0; i<X.size(); i++)
-        Xsum += X[i][0];
-    for(int i=0; i<X.size(); i++)
-        X2sum += X[i][0]*X[i][0];
-    if(std::abs(file_data.Xsum)>1e-8) {
-      REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
-      REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
-    } else {
-      app_log()<<" Xsum, EJ: " <<setprecision(12) <<Xsum <<" " <<X2sum/0.01/2.0 <<std::endl;
-    }
-
-    SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[1][NMO*NMO]);
-    // doing twice to get reasonable timing estimate
-    HOps.vHS(X,vHS,sqrtdt);
-    TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
-    HOps.vHS(X,vHS,sqrtdt);
-    TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
-    ComplexType Vsum=0;
-    for(int i=0; i<vHS.shape()[1]; i++)
-        Vsum += vHS[0][i];
-    if(std::abs(file_data.Vsum)>1e-8) {
-      REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-      REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
-    } else {
-      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
-    }
-
-
-  }
-
-}
-
-TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
-{
-
-  if(not file_exists("./thc.h5") ||
-     not file_exists("./wfn_thc.dat") ) {
-    app_log()<<" Skipping test_thc_simple test. thc.h5 and ./wfn.dat files not found. \n";
-  } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
-
-    // Global Task Group
-    afqmc::GlobalTaskGroup gTG(world);
-
-    auto file_data = read_test_results_from_hdf<ValueType>("./thc.h5");
-    int NMO=file_data.NMO;
-    int NAEA=file_data.NAEA;
-    int NAEB=file_data.NAEB;
-
-    std::map<std::string,AFQMCInfo> InfoMap;
-    InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
-    HamiltonianFactory HamFac(InfoMap);
-    const char *xml_block =
-"<Hamiltonian name=\"ham0\" type=\"THC\" info=\"info0\"> \
-    <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"filename\">./thc.h5</parameter> \
-    <parameter name=\"useHalfRotatedMuv\">no</parameter> \
-  </Hamiltonian> \
-";
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_block);
-    REQUIRE(okay);
-    std::string ham_name("ham0");
-    HamFac.push(ham_name,doc.getRoot());
-
-    Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
-
-    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-    boost::multi_array<ComplexType,3> OrbMat;
-    int walker_type = readWfn(std::string("./wfn_thc.dat"),OrbMat,NMO,NAEA,NAEB);
-    int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
-    WALKER_TYPES WTYPE = CLOSED;
-    if(walker_type==1) WTYPE = COLLINEAR;
-    if(walker_type==2) WTYPE = NONCOLLINEAR;
-
-    std::vector<PsiT_Matrix> PsiT;
-    PsiT.reserve(2);
-    PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[0],1e-8,'H',gTG.Node()));
-    if(WTYPE==COLLINEAR)
-      PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1][indices[range_t()][range_t(0,NAEB)]],
-                                        1e-8,'H',gTG.Node()));
-
-    int ncores = gTG.getTotalCores();
-    if(file_exists("ncores.txt")) {
-      ifstream in("ncores.txt");
-      in>>ncores;
-      in.close();  
-    }
-
-    hdf_archive dummy;
-    auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,ncores);
-    // NOTE: This will force the replacement of HalfRotatedLuv by Luv to test the energy of the 
-    //       non-rotated factorization
-    THCHamiltonian& thcHam = boost::get<THCHamiltonian>(ham);
-    auto HOps(thcHam.getHamiltonianOperations(false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
-
-    // Calculates Overlap, G
-    SlaterDetOperations<ComplexType> SDet(NMO,NAEA);
-
-    using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
-    SHM_Buffer Gbuff(TG.TG_local(),NMO*NEL);
-    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[NEL][NMO]);
-    auto Ovlp = SDet.MixedDensityMatrix(PsiT[0],OrbMat[0],G,true);
-    REQUIRE( real(Ovlp) == Approx(1.0) );
-    REQUIRE( imag(Ovlp) == Approx(0.0) );
-
-    boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[1][NEL*NMO]);
-    boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
-    Timer.reset("Generic");
-    Timer.start("Generic");
-    HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
-    TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
-    if(std::abs(file_data.E0+file_data.E1)>1e-8) {
-      REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
-      REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
-    } else {
-      app_log()<<" E1: " <<setprecision(12) <<Eloc[0][0] <<std::endl;
-    }
-    if(std::abs(file_data.E2)>1e-8) {
-      auto E_ = Eloc[0][1]+Eloc[0][2];
-      REQUIRE( real(E_) == Approx(real(file_data.E2)) );
-      REQUIRE( imag(E_) == Approx(imag(file_data.E2)) );
-    } else {
-      app_log()<<" EXX, EJ: " <<setprecision(12) <<Eloc[0][1] <<" " <<Eloc[0][2] <<std::endl;
-    }
-
-    double sqrtdt = std::sqrt(0.01);
-    auto nCV = HOps.local_number_of_cholesky_vectors();
-
-    SHM_Buffer Xbuff(TG.TG_local(),nCV);
-    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][1]);
-    Timer.reset("Generic");
-    Timer.start("Generic");
-    HOps.vbias(Gw,X,sqrtdt);
-    TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vbias: " <<Timer.total("Generic") <<std::endl;
-    ComplexType Xsum=0,X2sum=0;
-    for(int i=0; i<X.size(); i++)
-        Xsum += X[i][0];
-    for(int i=0; i<X.size(); i++)
-        X2sum += X[i][0]*X[i][0];
-    if(std::abs(file_data.Xsum)>1e-8) {
-      REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
-      REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
-    } else {
-      app_log()<<" Xsum, EJ: " <<setprecision(12) <<Xsum <<" " <<X2sum/0.01/2.0 <<std::endl;
-    }
-
-    SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO);
-    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[1][NMO*NMO]);
-    // doing twice to get reasonable timing estimate
-    HOps.vHS(X,vHS,sqrtdt);
-    TG.local_barrier();
-    Timer.reset("Generic");
-    Timer.start("Generic");
-    HOps.vHS(X,vHS,sqrtdt);
-    TG.local_barrier();
-    Timer.stop("Generic");
-    app_log()<<" Time in vHS: " <<Timer.total("Generic") <<std::endl;
-    ComplexType Vsum=0;
-    for(int i=0; i<vHS.shape()[1]; i++)
-        Vsum += vHS[0][i];
-    if(std::abs(file_data.Vsum)>1e-8) {
-      REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-      REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
-    } else {
-      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
-    }
-
-
-  }
-
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+
+#ifdef ENABLE_CUDA
+  auto node = world.split_shared(world.rank());
+
+  qmc_cuda::CUDA_INIT(node);
+  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+#else
+  using Alloc = shared_allocator<ComplexType>;
+#endif
+
+  ham_ops_basic_serial<Alloc>(world);
 }
 
 }

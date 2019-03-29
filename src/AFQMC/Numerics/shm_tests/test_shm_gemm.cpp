@@ -19,23 +19,18 @@
 #include <vector>
 #include<iostream>
 
-#include<boost/multi_array.hpp>
 #include "mpi3/communicator.hpp"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 #include <Utilities/FairDivide.h>
 #include "AFQMC/Utilities/myTimer.h"
 
 using std::cout;
 using std::endl;
 using std::vector;
-using boost::extents;
-using boost::indices;
-using range_t = boost::multi_array_types::index_range;
-using boost::multi_array;
-using boost::multi_array_ref;
+using boost::multi::array;
+using boost::multi::array_ref;
 
 using namespace qmcplusplus;
 using namespace afqmc;
@@ -44,19 +39,19 @@ void timing_shm_blas(int c)
 {
   using Type = double; 
   using communicator = boost::mpi3::communicator;
-  using shm_Alloc = boost::mpi3::intranode::allocator<Type>;
-  using SHM_Buffer = mpi3_SHMBuffer<Type>;
-  using Matrix = boost::multi_array_ref<Type,2>;
+  using shm_Alloc = shared_allocator<Type>;
+  using Matrix = boost::multi::array_ref<Type,2>;
 
   myTimer Timer;
   int n0=64, npower=6, nmax = n0*std::pow(2,npower-1);
   int ntimes=5;
 
-  communicator& world = OHMMS::Controller->comm;
+  auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared();
 
   int memory_needs = nmax*(c*c*nmax + 2*c*nmax);
-  SHM_Buffer buff(node,memory_needs);
+  boost::multi::array<Type,1,shared_allocator<Type>> buff(iextensions<1u>{memory_needs},
+                                    shared_allocator<Type>{node});
 
   std::vector<std::pair<int,int>> pairs;
   {
@@ -70,9 +65,9 @@ void timing_shm_blas(int c)
   for(int p=0; p<npower; p++) {
     int n = n0*std::pow(2,p);
     int nu = c*n; 
-    Matrix A(buff.data(),extents[nu][nu]);
-    Matrix B(buff.data()+nu*nu,extents[nu][n]);
-    Matrix C(buff.data()+nu*nu+nu*n,extents[nu][n]);
+    Matrix A(buff.data(),{nu,nu});
+    Matrix B(buff.data()+nu*nu,{nu,n});
+    Matrix C(buff.data()+nu*nu+nu*n,{nu,n});
 
     for(auto& v: pairs) {
       int nr = v.first;
@@ -87,17 +82,17 @@ void timing_shm_blas(int c)
       std::tie(c0,cN) = FairDivideBoundary(mycol,n,nc); 
 
 
-      ma::product(A[indices[range_t(r0,rN)][range_t()]],
-                  B[indices[range_t()][range_t(c0,cN)]],
-                  C[indices[range_t(r0,rN)][range_t(c0,cN)]]); 
+      ma::product(A.sliced(r0,rN),
+                  B(B.extension(0),{c0,cN}),
+                  C({r0,rN},{c0,cN})); 
 
       Timer.reset("Gen");
       node.barrier();
       Timer.start("Gen");
       for(int t=0; t<ntimes; t++) {
-        ma::product(A[indices[range_t(r0,rN)][range_t()]],
-                    B[indices[range_t()][range_t(c0,cN)]],
-                    C[indices[range_t(r0,rN)][range_t(c0,cN)]]); 
+        ma::product(A.sliced(r0,rN),
+                    B(B.extension(0),{c0,cN}),
+                    C({r0,rN},{c0,cN})); 
         node.barrier();
       }
       Timer.stop("Gen");
@@ -110,8 +105,9 @@ void timing_shm_blas(int c)
 
 int main(int argc, char* argv[])
 {
-  mpi3::environment env(argc, argv);
-  OHMMS::Controller->initialize(env);
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
   int c=10;
   if(argc>1) c = atoi(argv[1]);
   timing_shm_blas(c);

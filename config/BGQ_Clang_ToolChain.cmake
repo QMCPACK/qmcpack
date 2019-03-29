@@ -14,7 +14,6 @@ set(CMAKE_C_FLAGS "${GNU_FLAGS} ${GNU_OPTS} -std=c99"  CACHE STRING "" FORCE)
 SET(CMAKE_EXE_LINKER_FLAGS  "-Wl,--allow-multiple-definition" CACHE STRING "" FORCE)
 
 SET(QMC_CUDA 0)
-#SET(QMC_COMPLEX 0)
 SET(ENABLE_OPENMP 1)
 SET(HAVE_MPI 1)
 set(HAVE_CUDA 0)
@@ -24,13 +23,14 @@ SET(HAVE_EINSPLINE 1)
 SET(HAVE_EINSPLINE_EXT 0)
 SET(HAVE_ADIOS 0)
 SET(BUILD_QMCTOOLS 1)
+SET(BUILD_AFQMC 0 CACHE STRING "Turn off AFQMC" FORCE)
 #SET(BUILD_SANDBOX 1)
 
 SET(MPIEXEC "sh")
 SET(MPIEXEC_NUMPROC_FLAG "${qmcpack_SOURCE_DIR}/tests/scripts/bgrunjobhelper.sh")
 SET(QE_BIN /soft/applications/quantum_espresso/5.3.0-bgq-omp/bin)
 
-SET(BOOST_ROOT /soft/libraries/boost/1.62.0/cnk-bgclang++11/current/)
+SET(BOOST_ROOT /home/projects/qmcpack/boost_1_66_0/)
 
 SET(CMAKE_FIND_ROOT_PATH
      /home/projects/qmcpack/libXML2-2.9.1

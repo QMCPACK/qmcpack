@@ -107,7 +107,7 @@ protected:
   /// reference to the particle set on which targetPsi is defined
   ParticleSet& targetPtcl;
 
-  /// reference to the many-body wavefucntion to which each derived class add a term
+  /// reference to the many-body wavefunction to which each derived class add a term
   TrialWaveFunction& targetPsi;
 
   /// xmlNode operated by this object

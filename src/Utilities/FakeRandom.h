@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-
 #ifndef FAKERANDOM_H
 #define FAKERANDOM_H
 
@@ -23,6 +22,7 @@ public:
   typedef unsigned int uint_type;
   double operator()();
   void set_value(double val);
+
 private:
   double m_val;
 };

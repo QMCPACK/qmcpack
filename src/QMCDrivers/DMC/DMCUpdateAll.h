@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_DMC_ALLPARTICLE_UPDATE_H
@@ -18,12 +16,9 @@
 #include "QMCDrivers/QMCUpdateBase.h"
 namespace qmcplusplus
 {
-
-class DMCUpdateAllWithRejection: public QMCUpdateBase
+class DMCUpdateAllWithRejection : public QMCUpdateBase
 {
-
 public:
-
   /// Constructor.
   DMCUpdateAllWithRejection(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
   ///destructor
@@ -31,23 +26,15 @@ public:
 
   void advanceWalker(Walker_t& thisWalker, bool recompute);
 
-#if (__cplusplus >= 201103L)
-  DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection& a)=delete;
-  DMCUpdateAllWithRejection& operator=(const DMCUpdateAllWithRejection&)=delete;
-#else
-private:
   /// Copy Constructor (disabled)
-  DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection &) = delete;
+  DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection&) = delete;
   /// Copy operator (disabled).
-  DMCUpdateAllWithRejection & operator=(const DMCUpdateAllWithRejection &) = delete;
-#endif
+  DMCUpdateAllWithRejection& operator=(const DMCUpdateAllWithRejection&) = delete;
 };
 
-class DMCUpdateAllWithKill: public QMCUpdateBase
+class DMCUpdateAllWithKill : public QMCUpdateBase
 {
-
 public:
-
   /// Constructor.
   DMCUpdateAllWithKill(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
   ///destructor
@@ -55,17 +42,11 @@ public:
 
   void advanceWalker(Walker_t& thisWalker, bool recompute);
 
-#if (__cplusplus >= 201103L)
-  DMCUpdateAllWithKill(const DMCUpdateAllWithKill& a)=delete;
-  DMCUpdateAllWithKill& operator=(const DMCUpdateAllWithKill&)=delete;
-#else
-private:
   /// Copy Constructor (disabled)
-  DMCUpdateAllWithKill(const DMCUpdateAllWithKill &) = delete;
+  DMCUpdateAllWithKill(const DMCUpdateAllWithKill&) = delete;
   /// Copy operator (disabled).
-  DMCUpdateAllWithKill & operator=(const DMCUpdateAllWithKill &) = delete;
-#endif
+  DMCUpdateAllWithKill& operator=(const DMCUpdateAllWithKill&) = delete;
 };
-}
+} // namespace qmcplusplus
 
 #endif

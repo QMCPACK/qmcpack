@@ -29,9 +29,8 @@ fi
 module load PrgEnv-gnu
 module load cray-hdf5-parallel
 module load fftw
-module load boost
-module load subversion
-module load cmake3/3.6.1
+module load boost/1.67.0 # Default 1.60.0 on 2019-03-22 is too old
+module load cmake3
 
 # always dynamic linking
 export CRAYPE_LINK_TYPE=dynamic
@@ -57,6 +56,7 @@ mkdir -p build_titan_cpu_real
 cd build_titan_cpu_real
 cmake -D CMAKE_C_FLAGS="$XT_FLAGS" \
       -D CMAKE_CXX_FLAGS="$XT_FLAGS" \
+      -D ENABLE_SOA=0 \
       $CMAKE_FLAGS ..
 make -j 32
 cd ..
@@ -71,6 +71,7 @@ mkdir -p build_titan_cpu_comp
 cd build_titan_cpu_comp
 cmake -D CMAKE_C_FLAGS="$XT_FLAGS" \
       -D CMAKE_CXX_FLAGS="$XT_FLAGS" \
+      -D ENABLE_SOA=0 \
       -D QMC_COMPLEX=1 $CMAKE_FLAGS ..
 make -j 32
 cd ..
@@ -115,7 +116,7 @@ echo ""
 echo "building qmcpack for gpu real for titan"
 mkdir -p build_titan_gpu_real
 cd build_titan_gpu_real
-cmake -D QMC_CUDA=1 ..
+cmake -D QMC_CUDA=1 -D ENABLE_SOA=0 ..
 make -j 32
 cd ..
 ln -sf ./build_titan_gpu_real/bin/qmcpack ./qmcpack_titan_gpu_real
@@ -126,7 +127,7 @@ echo ""
 echo "building qmcpack for gpu complex for titan"
 mkdir -p build_titan_gpu_comp
 cd build_titan_gpu_comp
-cmake -D QMC_CUDA=1 -D QMC_COMPLEX=1 ..
+cmake -D QMC_CUDA=1 -D QMC_COMPLEX=1 -D ENABLE_SOA=0 ..
 make -j 32
 cd ..
 ln -sf ./build_titan_gpu_comp/bin/qmcpack ./qmcpack_titan_gpu_comp

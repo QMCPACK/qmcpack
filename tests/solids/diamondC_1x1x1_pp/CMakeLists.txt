@@ -7,6 +7,7 @@
   LIST(APPEND DIAMOND_SCALARS "localecp" "-7.046740 0.020")
   LIST(APPEND DIAMOND_SCALARS "nonlocalecp" "0.597119 0.0056")
   LIST(APPEND DIAMOND_SCALARS "samples" "128000 0.0")
+  LIST(APPEND DIAMOND_SCALARS "mpc" "-2.453044 0.004431")
 #  LIST(APPEND DIAMOND_SCALARS "flux" "0.0 0.4")
 
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj
@@ -84,6 +85,7 @@ ENDIF()
   LIST(APPEND DIAMOND_DMC_SCALARS "localecp"     "-7.1518 0.0323")
   LIST(APPEND DIAMOND_DMC_SCALARS "nonlocalecp"  "0.62688 0.0080")
   LIST(APPEND DIAMOND_DMC_SCALARS "eeenergy"    "-2.71641 0.0073")
+  LIST(APPEND DIAMOND_DMC_SCALARS "mpc"    "-2.47994 0.00779")
 
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-dmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -148,6 +150,7 @@ ENDIF()
   LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.491445 0.000065")
   LIST(APPEND LONG_DIAMOND_SCALARS "samples" "122880000 0.0")
   LIST(APPEND LONG_DIAMOND_SCALARS "flux" "0.0 0.03")
+  LIST(APPEND LONG_DIAMOND_SCALARS "mpc" "-2.453044 0.000143")
 
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -176,6 +179,7 @@ IF(NOT QMC_CUDA)
   LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "ionion" "-12.77566752 0.0004")
   LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "localecp" "-7.046740 0.0065")
   LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "nonlocalecp" "0.597119 0.0019")
+  LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "mpc" "-2.453044 0.0014")
   LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "samples" "1280000 0.0")
   #DMC ref
   LIST(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "totenergy"   "-10.5316 0.0008")
@@ -184,6 +188,7 @@ IF(NOT QMC_CUDA)
   LIST(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "localecp"     "-7.1518 0.0108")
   LIST(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "nonlocalecp"  "0.62688 0.0027")
   LIST(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "eeenergy"    "-2.71641 0.0028")
+  LIST(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "mpc" "-2.47943 0.00268")
 
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -210,6 +215,8 @@ ENDIF()
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
   LIST(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-10.531583 0.000815")
+  LIST(APPEND LONG_DIAMOND_DMC_SCALARS "mpc" "-2.47994 0.00246")
+
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-dmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_long_vmc_dmc
@@ -402,3 +409,87 @@ if (add_tests)
 
 
 endif()
+
+#
+# Deterministic tests
+#
+
+  LIST(APPEND DET_DIAMOND_SCALARS "totenergy" "-10.65156025 0.000001")
+  LIST(APPEND DET_DIAMOND_SCALARS "kinetic" "16.03245759 0.000001")
+  LIST(APPEND DET_DIAMOND_SCALARS "potential" "-26.68401784 0.000001")
+  LIST(APPEND DET_DIAMOND_SCALARS "eeenergy" "-1.64876057 0.000001")
+  LIST(APPEND DET_DIAMOND_SCALARS "ionion" "-12.77566756 0.000001")
+  LIST(APPEND DET_DIAMOND_SCALARS "localecp" "-13.45055710 0.000001")
+  LIST(APPEND DET_DIAMOND_SCALARS "nonlocalecp" "1.19096740 0.000001")
+  LIST(APPEND DET_DIAMOND_SCALARS "mpc" "-1.45236706 0.000001")
+  LIST(APPEND DET_DIAMOND_SCALARS "samples" "9 0.0")
+  LIST(APPEND DET_DIAMOND_SCALARS "flux" "-14.25663001 0.000001")
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_1x1x1_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    det_qmc_short
+                    det_qmc_short.in.xml
+                    1 1
+                    TRUE
+                    0 DET_DIAMOND_SCALARS # VMC
+                    )
+
+  LIST(APPEND DET_DIAMOND_MESHF_SCALARS "totenergy" "-10.65617656 0.000001")
+  LIST(APPEND DET_DIAMOND_MESHF_SCALARS "kinetic" "12.60316496 0.000001")
+  LIST(APPEND DET_DIAMOND_MESHF_SCALARS "potential" "-23.25934152 0.000001")
+  LIST(APPEND DET_DIAMOND_MESHF_SCALARS "eeenergy" "-3.48893469 0.000001")
+  LIST(APPEND DET_DIAMOND_MESHF_SCALARS "ionion" "-12.77566756 0.000001")
+  LIST(APPEND DET_DIAMOND_MESHF_SCALARS "localecp" "-8.52555807 0.000001")
+  LIST(APPEND DET_DIAMOND_MESHF_SCALARS "nonlocalecp" "1.53081881 0.000001")
+  LIST(APPEND DET_DIAMOND_MESHF_SCALARS "mpc" "-3.34182165 0.000001")
+  LIST(APPEND DET_DIAMOND_MESHF_SCALARS "samples" "9 0.0")
+  LIST(APPEND DET_DIAMOND_MESHF_SCALARS "flux" "13.85780746 0.000001")
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_1x1x1_pp-vmc_sdj-meshf
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    det_qmc_short-meshf
+                    det_qmc_short-meshf.in.xml
+                    1 1
+                    TRUE
+                    0 DET_DIAMOND_MESHF_SCALARS # VMC
+                    )
+
+  LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "totenergy" "-10.42800966 0.000001")
+  LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "kinetic" "11.79557948 0.000001")
+  LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "potential" "-22.22358913 0.000001")
+  LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "eeenergy" "-1.30357077 0.000001")
+  LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "ionion" "-12.77566756 0.000001")
+  LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "localecp" "-9.17380267 0.000001")
+  LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "nonlocalecp" "1.02945187 0.000001")
+  LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "mpc" "-1.00378421 0.000001")
+  LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "samples" "9 0.0")
+  LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "flux" "-10.16222139 0.000001")
+  
+  QMC_RUN_AND_CHECK(deterministic-diamondC_1x1x1_pp-vmc_sdj_kspace
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    det_qmc_short_kspace
+                    det_qmc_short_kspace.in.xml
+                    1 1
+                    TRUE
+                    0 DET_DIAMOND_KSPACE_SCALARS # VMC
+                    )
+
+ 
+  LIST(APPEND DET_DIAMOND_DMC_SCALARS "totenergy" "-10.52335525 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_SCALARS "kinetic" "4.49059156 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_SCALARS "potential" "-15.01394682 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_SCALARS "eeenergy" "0.83205797 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_SCALARS "ionion" "-12.77566756 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_SCALARS "localecp" "-4.00159889 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_SCALARS "nonlocalecp" "0.93126167 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_SCALARS "mpc" "1.40050042 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_SCALARS "samples" "9 0.0")
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_1x1x1_pp-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    det_qmc_short_vmc_dmc
+                    det_qmc_short_vmc_dmc.in.xml
+                    1 1
+                    TRUE
+                    1 DET_DIAMOND_DMC_SCALARS # DMC
+                    )

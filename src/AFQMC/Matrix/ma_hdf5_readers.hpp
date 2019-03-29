@@ -51,31 +51,31 @@ inline void write_distributed_MA(MultiArray & A, std::array<size_t,2> offset, st
 {
   using value_type = typename MultiArray::element;
 // serial hdf for now
-  if(TG.getNNodesPerTG() == 1) {
+  if(TG.getNGroupsPerTG() == 1) {
     if(TG.Global().root()) dump.write(A,name);
   } else {
-    size_t nnodes_per_TG = TG.getNNodesPerTG();
+    size_t nnodes_per_TG = TG.getNGroupsPerTG();
     if(TG.Global().root()) {
       std::vector<size_t> ndim(4*nnodes_per_TG);
       ndim[4*TG.Cores().rank()] = offset[0]; 
       ndim[4*TG.Cores().rank()+1] = offset[1]; 
-      ndim[4*TG.Cores().rank()+2] = A.shape()[0];
-      ndim[4*TG.Cores().rank()+3] = A.shape()[1];
+      ndim[4*TG.Cores().rank()+2] = A.size(0);
+      ndim[4*TG.Cores().rank()+3] = A.size(1);
       TG.Cores().all_reduce_in_place_n(ndim.begin(),ndim.size(),std::plus<>());
 
       // write local piece
       {
         hyperslab_proxy<typename std::decay<MultiArray>::type,2> slab(A,
                                          gdim, 
-                                         std::array<size_t,2>{A.shape()[0],A.shape()[1]},
+                                         std::array<size_t,2>{size_t(A.size(0)),size_t(A.size(1))},
                                          offset); 
         dump.write(slab,name); 
       }
 
       std::vector<size_t>::iterator it = ndim.begin()+4;
       for(size_t i=1; i<nnodes_per_TG; i++, it+=4) {
-        using Mat = boost::multi_array<value_type,2>;
-        Mat T(extents[*(it+2)][*(it+3)]);
+        using Mat = boost::multi::array<value_type,2>;
+        Mat T({*(it+2),*(it+3)});
         TG.Cores().receive_n(T.origin(),T.num_elements(),i,i);
         hyperslab_proxy<Mat,2> slab(T,
                                     gdim,  
@@ -89,8 +89,8 @@ inline void write_distributed_MA(MultiArray & A, std::array<size_t,2> offset, st
       if(TG.Cores().rank() < nnodes_per_TG) {
         ndim[4*TG.Cores().rank()] = offset[0];
         ndim[4*TG.Cores().rank()+1] = offset[1];
-        ndim[4*TG.Cores().rank()+2] = A.shape()[0];
-        ndim[4*TG.Cores().rank()+3] = A.shape()[1];
+        ndim[4*TG.Cores().rank()+2] = A.size(0);
+        ndim[4*TG.Cores().rank()+3] = A.size(1);
       }
       TG.Cores().all_reduce_in_place_n(ndim.begin(),ndim.size(),std::plus<>());
       if(TG.Cores().rank() < nnodes_per_TG) 

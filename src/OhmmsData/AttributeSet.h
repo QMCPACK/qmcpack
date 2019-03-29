@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_XMLATTRIBUTESET_H
@@ -27,20 +25,20 @@
  */
 struct OhmmsAttributeSet
 {
-  typedef std::map<std::string, OhmmsElementBase*>  Container_t;
+  typedef std::map<std::string, OhmmsElementBase*> Container_t;
   typedef Container_t::iterator iterator;
   typedef Container_t::const_iterator const_iterator;
 
   xmlNodePtr myNode;
   Container_t m_param;
 
-  inline OhmmsAttributeSet(): myNode(0) {}
+  inline OhmmsAttributeSet() : myNode(0) {}
 
   ~OhmmsAttributeSet()
   {
     iterator it(m_param.begin());
     iterator it_end(m_param.end());
-    while(it!=it_end)
+    while (it != it_end)
     {
       delete (*it).second;
       ++it;
@@ -51,7 +49,7 @@ struct OhmmsAttributeSet
   {
     const_iterator it(m_param.begin());
     const_iterator it_end(m_param.end());
-    while(it != it_end)
+    while (it != it_end)
     {
       (*it).second->get(os);
       ++it;
@@ -72,9 +70,9 @@ struct OhmmsAttributeSet
   void add(PDT& aparam, const std::string& aname)
   {
     iterator it(m_param.find(aname));
-    if(it == m_param.end())
+    if (it == m_param.end())
     {
-      m_param[aname] = new OhmmsParameter<PDT>(aparam,aname.c_str(),"none");
+      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname.c_str(), "none");
     }
   }
 
@@ -85,16 +83,16 @@ struct OhmmsAttributeSet
   bool put(xmlNodePtr cur)
   {
     xmlAttrPtr att = cur->properties;
-    while(att != NULL)
+    while (att != NULL)
     {
       std::string aname((const char*)(att->name));
       iterator it = m_param.find(aname);
-      if(it != m_param.end())
+      if (it != m_param.end())
       {
         std::istringstream stream((const char*)(att->children->content));
-        (*it).second->put( stream);
+        (*it).second->put(stream);
       }
-      att=att->next;
+      att = att->next;
     }
     return true;
   }

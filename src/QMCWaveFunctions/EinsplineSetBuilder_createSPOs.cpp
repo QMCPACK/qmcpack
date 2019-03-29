@@ -33,18 +33,10 @@
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+#include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 
 namespace qmcplusplus
 {
-
-  ///create R2R, real wavefunction in double
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create R2R, real wavefunction in float
-  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create C2C or C2R, complex wavefunction in double
-  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create C2C or C2R, complex wavefunction in single
-  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep);
 
 void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
 {
@@ -132,7 +124,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string truncate("no");
   std::string hybrid_rep("no");
   std::string use_einspline_set_extended("no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
-#if defined(QMC_CUDA)
+#if defined(QMC_CUDA) || defined(ENABLE_OFFLOAD)
   std::string useGPU="yes";
 #else
   std::string useGPU="no";
@@ -317,9 +309,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if(MixedSplineReader==0)
     {
       if(use_single)
-        MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes", useGPU);
       else
-        MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes", useGPU);
     }
   }
   else
@@ -328,22 +320,19 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if(MixedSplineReader==0)
     {
       if(use_single)
-        MixedSplineReader= createBsplineComplexSingle(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineComplexSingle(this, hybrid_rep=="yes", useGPU);
       else
-        MixedSplineReader= createBsplineComplexDouble(this, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineComplexDouble(this, hybrid_rep=="yes", useGPU);
     }
   }
 
   MixedSplineReader->setCommon(XMLRoot);
-  size_t delta_mem=qmc_common.memory_allocated;
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
   HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
   SPOSet* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
   if(!bspline_zd)
     APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSet*");
-  delta_mem=qmc_common.memory_allocated-delta_mem;
-  app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << std::endl;
   OrbitalSet = bspline_zd;
 #if defined(MIXED_PRECISION)
   if(use_einspline_set_extended=="yes")
@@ -399,6 +388,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     OrbitalSet = new_OrbitalSet;
   }
 #endif
+  app_log() <<  "Time spent in creating B-spline SPOs " << mytimer.elapsed() << "sec" << std::endl;
 #ifdef Ye_debug
 #ifndef QMC_COMPLEX
   if (myComm->rank()==0 && OrbitalSet->MuffinTins.size() > 0)
@@ -436,8 +426,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
 #endif
-  app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands " << mytimer.elapsed() << std::endl;
-  SPOSetMap[aset] = OrbitalSet;
   //if (sourceName.size() && (ParticleSets.find(sourceName) == ParticleSets.end()))
   //{
   //  app_log() << "  EinsplineSetBuilder creates a ParticleSet " << sourceName << std::endl;
@@ -461,7 +449,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #ifdef QMC_CUDA
   if (useGPU == "yes" || useGPU == "1")
   {
-    app_log() << "Initializing GPU data structures.\n";
     if ((GPUsharing == "yes" || GPUsharing == "1"))
     {
       if (!gpu::cudamps)
@@ -479,9 +466,10 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         app_log() << "Full GPU spline data stored per rank.\n";
       gpu::device_group_size=1;
     }
-    OrbitalSet->initGPU();
   }
 #endif
+  OrbitalSet->finalizeConstruction();
+  SPOSetMap[aset] = OrbitalSet;
   spo_timer->stop();
   return OrbitalSet;
 }

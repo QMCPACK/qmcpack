@@ -27,16 +27,12 @@
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
-#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
 namespace qmcplusplus
 {
 
 namespace afqmc
 {
-
-// keep a std::map<*AFQMCInfo,SlaterDetOperations> to construct Wfns, and route all determinant operations through this object in Wfn classes
-
 
 class WavefunctionFactory
 {
@@ -96,7 +92,7 @@ class WavefunctionFactory
   }
 
   // returns the xmlNodePtr associated with ID
-  boost::multi_array<ComplexType,3>& getInitialGuess(const std::string& ID)
+  boost::multi::array<ComplexType,3>& getInitialGuess(const std::string& ID)
   {
     auto mat = initial_guess.find(ID);
     if(mat == initial_guess.end()) { 
@@ -129,7 +125,7 @@ class WavefunctionFactory
     m_param.put(cur);
 
     app_log()<<"\n****************************************************\n"
-           <<"               Initializating Wavefunction \n"
+           <<"               Initializing Wavefunction \n"
            <<"****************************************************\n"
            <<std::endl;
 
@@ -155,9 +151,7 @@ class WavefunctionFactory
 
   std::map<std::string,Wavefunction> wavefunctions;
 
-  std::map<std::string,boost::multi_array<ComplexType,3>> initial_guess; 
-
-  //std::map<AFQMCInfo,SlaterDetOperations>
+  std::map<std::string,boost::multi::array<ComplexType,3>> initial_guess; 
 
 };
 }

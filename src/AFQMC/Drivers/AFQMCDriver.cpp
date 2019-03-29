@@ -13,41 +13,20 @@
 #include "AFQMC/Drivers/AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
 
-namespace qmcplusplus 
+namespace qmcplusplus
 {
 
-namespace afqmc 
+namespace afqmc
 {
-
-enum AFQMCTimers {
-  BlockTotal,
-  SubstepPropagate,
-  StepPopControl,
-  StepLoadBalance,
-  StepOrthogonalize
-};
-
-TimerNameList_t<AFQMCTimers> AFQMCTimerNames =
-{
-  {BlockTotal, "Block::Total"},
-  {SubstepPropagate, "Substep::Propagate"},
-  {StepPopControl, "Step:PopControl"},
-  {StepLoadBalance, "Step::LoadBalance"},
-  {StepOrthogonalize, "Step::Orthogonalize"}
-};
 
 bool AFQMCDriver::run(WalkerSet& wset)
 {
-  TimerList_t Timers;
-  setup_timers(Timers, AFQMCTimerNames, timer_level_medium);
-
-
   std::vector<ComplexType> curData;
 
   RealType w0 = wset.GlobalWeight();
   int nwalk_ini = wset.GlobalPopulation();
 
-  app_log()<<"Initial weighti and number of walkers: " <<w0 <<" " <<nwalk_ini <<"\n"
+  app_log()<<"Initial weight and number of walkers: " <<w0 <<" " <<nwalk_ini <<"\n"
            <<"Initial Eshift: " <<Eshift <<std::endl;
 
   // problems with using step_tot to do ortho and load balance
@@ -55,25 +34,25 @@ bool AFQMCDriver::run(WalkerSet& wset)
   int step_tot=step0, iBlock ;
   for (iBlock=block0; iBlock<nBlock; ++iBlock) {
 
-    Timers[BlockTotal]->start();
     for (int iStep=0; iStep<nStep; ++iStep, ++step_tot) {
 
-      // propagate nSubstep 
-      Timers[SubstepPropagate]->start();
+      // propagate nSubstep
       prop0.Propagate(nSubstep,wset,Eshift,dt,fix_bias);
       total_time += nSubstep*dt;
-      Timers[SubstepPropagate]->stop();
-  
+
       if (step_tot != 0 && step_tot % nStabilize == 0) {
-        Timers[StepOrthogonalize]->start();
-        wfn0.Orthogonalize(wset,true);
-        Timers[StepOrthogonalize]->stop();
+        AFQMCTimers[ortho_timer]->start();
+        wfn0.Orthogonalize(wset,!prop0.free_propagation());
+        AFQMCTimers[ortho_timer]->stop();
       }
 
+      if(total_time < weight_reset_period && !prop0.free_propagation()) 
+        wset.resetWeights();
+
       {
-        Timers[StepPopControl]->start();
+        AFQMCTimers[popcont_timer]->start();
         wset.popControl(curData);
-        Timers[StepPopControl]->stop();
+        AFQMCTimers[popcont_timer]->stop();
         estim0.accumulate_step(wset,curData);
       }
 
@@ -84,7 +63,7 @@ bool AFQMCDriver::run(WalkerSet& wset)
 
     }
 
-    // checkpoint 
+    // checkpoint
     if(nCheckpoint > 0 && iBlock != 0 && iBlock % nCheckpoint == 0)
       if(!checkpoint(wset,iBlock,step_tot)) {
         app_error()<<" Error in AFQMCDriver::checkpoint(). \n" <<std::endl;
@@ -101,18 +80,13 @@ bool AFQMCDriver::run(WalkerSet& wset)
     // quantities that are measured once per block
     estim0.accumulate_block(wset);
 
-    Timers[BlockTotal]->stop();
-
     estim0.print(iBlock+1,total_time,Eshift,wset);
 
   }
 
-  checkpoint(wset,iBlock,step_tot);
-
-  app_log()<<"----------------------------------------------------------------\n";
-  app_log()<<" Timer: \n";
-  Timer.print_average_all(app_log());
-  app_log()<<"----------------------------------------------------------------\n";
+  if(nCheckpoint > 0) {
+    checkpoint(wset,iBlock,step_tot);
+  }
 
   return true;
 }
@@ -140,6 +114,7 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   m_param.add(nStabilize,"ortho","int");
   m_param.add(nCheckpoint,"checkpoint","int");
   m_param.add(samplePeriod,"samplePeriod","int");
+  m_param.add(weight_reset_period,"weight_reset","double");
   m_param.add(dt,"dt","double");
   m_param.add(dt,"timestep","double");
   m_param.add(dShift,"dshift","double");
@@ -150,14 +125,14 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   // write all the choices here ...
 
   fix_bias = std::min(fix_bias,nSubstep);
-  if(fix_bias>1) 
+  if(fix_bias>1)
     app_log()<<" Keeping the bias potential fixed for " <<fix_bias <<" steps. \n";
 
   return true;
 }
 
 // writes checkpoint file
-bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step) 
+bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step)
 {
   // hack until hdf_archive works with mpi3
   hdf_archive dump(globalComm,false);
@@ -165,10 +140,10 @@ bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step)
     std::string file;
     char fileroot[128];
     int nproc = globalComm.size();
-    if(hdf_write_restart != std::string("")) 
+    if(hdf_write_restart != std::string(""))
       file = hdf_write_restart;
     else
-      file = project_title+std::string(".chk.h5"); 
+      file = project_title+std::string(".chk.h5");
 
     if(!dump.create(file)) {
       app_error()<<" Error opening checkpoint file for write. \n";
@@ -183,8 +158,8 @@ bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step)
     Idata[0]=block;
     Idata[1]=step;
 
-    // always write driver data and walkers 
-    dump.push("AFQMCDriver"); 
+    // always write driver data and walkers
+    dump.push("AFQMCDriver");
     dump.write(Idata,"DriverInts");
     dump.write(Rdata,"DriverReals");
     dump.pop();
@@ -223,7 +198,7 @@ bool AFQMCDriver::writeSamples(WalkerSet& wset)
 
   int nwtowrite=-1;
   if(!dumpSamplesHDF5(wset,dump,nwtowrite) ) {
-    app_error()<<" Problems writting checkpoint file in Driver/AFQMCDriver::writeSample(). \n";
+    app_error()<<" Problems writing checkpoint file in Driver/AFQMCDriver::writeSample(). \n";
     return false;
   }
 

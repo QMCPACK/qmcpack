@@ -1,8 +1,7 @@
 
 #include "Configuration.h"
-#include "Numerics/OhmmsBlas.h" 
 #include <Utilities/FairDivide.h>
-#include "AFQMC/Utilities/Utils.h"
+#include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/config.h" 
 #include "AFQMC/Propagators/AFQMCSharedPropagator.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
@@ -22,7 +21,6 @@ void AFQMCSharedPropagator::parse(xmlNodePtr cur)
 
   // defaults
   vbias_bound=50.0;
-  nback_prop_steps=0;
   free_projection=false;
   hybrid=true;
   importance_sampling=true;
@@ -41,7 +39,6 @@ void AFQMCSharedPropagator::parse(xmlNodePtr cur)
   m_param.add(impsam,"importance_sampling","std::string");
   m_param.add(hyb,"hybrid","std::string");
   m_param.add(freep,"free_projection","std::string");
-  m_param.add(nback_prop_steps,"back_propagation", "int");
 
   //m_param.add(sz_pin_field_file,"sz_pinning_field_file","std::string");
   //m_param.add(sz_pin_field_mag,"sz_pinning_field","double");
@@ -60,26 +57,24 @@ void AFQMCSharedPropagator::parse(xmlNodePtr cur)
     app_log()<<"\n\n --------------- Parsing Propagator input ------------------ \n\n";
 
   if(free_projection) {
-    APP_ABORT(" Error: Free propagation not yet fully implemented. \n");
-/*
-    if (tau_release > 0) {
-      app_log()<<" AFQMC with free projection after tau = " << tau_release << "\n"
-             <<" WARNING: Will Set: \n"
-             <<"               -apply_constrain     = no \n"
-             <<"               -importance_sampling = no \n"
-             <<" after this time.\n"
-             <<" Setting: \n"
-             <<"               -hybrid       = yes \n"
-             <<"               -importance_sampling = yes\n"
-             <<"               -apply_constrain     = yes\n"
-             <<"               -free_projection     = no\n"
-             <<" now.\n";
-      importance_sampling = true;
-      apply_constrain = true;
-      hybrid = true;
-      free_projection = false;
-    } else {
-*/
+
+    //if (tau_release > 0) {
+      //app_log()<<" AFQMC with free projection after tau = " << tau_release << "\n"
+             //<<" WARNING: Will Set: \n"
+             //<<"               -apply_constrain     = no \n"
+             //<<"               -importance_sampling = no \n"
+             //<<" after this time.\n"
+             //<<" Setting: \n"
+             //<<"               -hybrid       = yes \n"
+             //<<"               -importance_sampling = yes\n"
+             //<<"               -apply_constrain     = yes\n"
+             //<<"               -free_projection     = no\n"
+             //<<" now.\n";
+      //importance_sampling = true;
+      //apply_constrain = true;
+      //hybrid = true;
+      //free_projection = false;
+    //} else {
       app_log()<<" AFQMC with free projection. \n"
              <<" WARNING: Setting: \n"
              <<"               -apply_constrain     = no \n"
@@ -88,7 +83,7 @@ void AFQMCSharedPropagator::parse(xmlNodePtr cur)
       importance_sampling=false;
       hybrid=true;
       apply_constrain=false;
-//    }
+    //}
 
   } else { 
 
@@ -119,7 +114,7 @@ void AFQMCSharedPropagator::reset_nextra(int nextra)
         break;
       }
     }
-    local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index)));
+    local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,TG.TG_local().rank())));
   }
   if(last_task_index < 0 || last_task_index >= nextra)
     APP_ABORT("Error: Problems in AFQMCSharedPropagator::reset_nextra()\n");
@@ -140,8 +135,8 @@ void AFQMCSharedPropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqr
   TG.local_barrier();
   ComplexType im(0.0,1.0);
   ComplexType halfim(0.0,0.5);
-  int nCV = int(X.shape()[0]);
-  boost::multi_array_ref<ComplexType,3> X3D(X.origin(),extents[X.shape()[0]][nsteps][nwalk]);
+  int nCV = int(X.size(0));
+  boost::multi::array_ref<ComplexType,3> X3D(X.origin(),{long(X.size(0)),long(nsteps),long(nwalk)});
   // generate random numbers
   if(addRAND)
   {
@@ -170,7 +165,8 @@ void AFQMCSharedPropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqr
       auto hws_ = HWs[ni].origin();
       auto mf_ = MF[ni].origin();
       for(int iw=0; iw<nwalk; iw++) {
-        ComplexType vdiff = im * ( vb_[iw] - vmf_t );
+        // No force bias term when doing free projection.
+        ComplexType vdiff = free_projection?ComplexType(0.0, 0.0):(im*(vb_[iw]-vmf_t));
         X_[iw] += vdiff; 
         hws_[iw] -= vdiff * ( X_[iw] - 0.5*vdiff );
         mf_[iw] += im * X_[iw] * vmf_;

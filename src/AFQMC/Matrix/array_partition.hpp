@@ -150,7 +150,7 @@ struct simple_matrix_partition
   // this breaks a matrix dimension over TG.nnodes, assuming homogeneous blocks 
   inline void partition(const task_group& TG, bool byRow, std::vector<IType>& sets)
   {
-    int nnodes = TG.getNNodesPerTG();
+    int nnodes = TG.getNGroupsPerTG();
     IType cnt=0;
     int nblk; 
     if(byRow)
@@ -162,7 +162,7 @@ struct simple_matrix_partition
     sets[0] = 0;
     if(nnodes > 1) {
       FairDivide(nblk,nnodes,sets);
-      int node_number = TG.getLocalNodeNumber(); 
+      int node_number = TG.getLocalGroupNumber(); 
       if(byRow) {
         r0=sets[node_number];
         r1=sets[node_number+1];
@@ -186,7 +186,7 @@ struct simple_matrix_partition
   // this breaks a matrix dimension over TG.nnodes 
   inline void partition(const task_group& TG, bool byRow, const std::vector<IType>& counts, std::vector<IType>& sets)
   {
-    int nnodes = TG.getNNodesPerTG();
+    int nnodes = TG.getNGroupsPerTG();
     int nblk = counts.size();
     IType cnt=0;
     assert(nblk >= nnodes);
@@ -205,7 +205,7 @@ struct simple_matrix_partition
         (*itn)=cnt;
       }
       balance_partition_ordered_set(counts.size(),nv.data(),sets);
-      int node_number = TG.getLocalNodeNumber(); 
+      int node_number = TG.getLocalGroupNumber(); 
       if(byRow) {
         r0=sets[node_number];
         r1=sets[node_number+1];

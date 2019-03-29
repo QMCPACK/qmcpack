@@ -5,12 +5,12 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_HAMILTONIAN_UTILITIES_H
@@ -100,7 +100,7 @@ namespace afqmc
 
   inline bool goodSpinSector(const IndexType& i, const IndexType& j, const IndexType& k, const IndexType& l, int NT) {
     if(i < NT) {
-      if(j < NT) // <alpha,alpha | alpha,alpha> 
+      if(j < NT) // <alpha,alpha | alpha,alpha>
         return (k<NT&&l<NT);
       else        // <alpha,beta  | alpha,beta >
         return (k<NT&&l>=NT);
@@ -136,8 +136,8 @@ namespace afqmc
     if(  std::forward_as_tuple(std::get<2>(val),std::get<3>(val) ) < std::forward_as_tuple(std::get<0>(val),std::get<1>(val) )  ) {
       std::swap(std::get<0>(val),std::get<2>(val));
       std::swap(std::get<1>(val),std::get<3>(val));
-      std::get<4>(val) = std::conj(std::get<4>(val));
-      // jl < ik again since ij<->kl swap occured  
+      std::get<4>(val) = ma::conj(std::get<4>(val));
+      // jl < ik again since ij<->kl swap occured
       if(  std::forward_as_tuple(std::get<1>(val),std::get<3>(val) ) < std::forward_as_tuple(std::get<0>(val),std::get<2>(val) )  ) {
         std::swap(std::get<0>(val),std::get<1>(val));
         std::swap(std::get<2>(val),std::get<3>(val));
@@ -145,11 +145,11 @@ namespace afqmc
       return true;
     } else {
       // only possibility is that l < i, since I know that the current i is smaller than j and k
-      // 
+      //
       if( std::forward_as_tuple(std::get<3>(val),std::get<2>(val) ) < std::forward_as_tuple(std::get<0>(val),std::get<1>(val) )  ) {
         std::swap(std::get<0>(val),std::get<3>(val));
         std::swap(std::get<2>(val),std::get<1>(val));
-        std::get<4>(val) = std::conj(std::get<4>(val));
+        std::get<4>(val) = ma::conj(std::get<4>(val));
         return true;
       }
       return false;

@@ -27,13 +27,17 @@
 
 #include "Configuration.h"
 #include <Utilities/FairDivide.h>
+#include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "mpi3/shared_window.hpp"
 #include "mpi3/shm/mutex.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
-#include "boost/multi_array.hpp"
 #include "AFQMC/Utilities/myTimer.h"
+#include "AFQMC/Numerics/detail/utilities.hpp"
+
+#include "multi/array.hpp"
+#include "multi/array_ref.hpp"
 
 namespace csr
 {
@@ -42,7 +46,7 @@ namespace shm
 {
 
 /*
- * Constructs a csr_matrix from the elements of the multi_array M applying a truncation.
+ * Constructs a csr_matrix from the elements of the multi::array M applying a truncation.
  * The input matrix is only meaningful in the core with rank 0
  */ 
 template<class CSR,
@@ -51,26 +55,25 @@ template<class CSR,
 CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
                          boost::mpi3::shared_communicator& comm) {
 
-  using std::conj;
   assert(TA == 'N' || TA == 'T' || TA == 'H');
   std::vector<std::size_t> counts;
   using int_type = typename CSR::index_type;
   int_type nr, nc;
   if(comm.rank()==0) {
     if(TA == 'N') {
-      nr = M.shape()[0];
-      nc = M.shape()[1];
+      nr = M.size(0);
+      nc = M.size(1);
       counts.resize(nr);
       for(int_type i=0; i<nr; i++)
         for(int_type j=0; j<nc; j++)
           if(std::abs(M[i][j]) > cutoff)
             ++counts[i];
     } else {
-      nr = M.shape()[1];
-      nc = M.shape()[0];
+      nr = M.size(1);
+      nc = M.size(0);
       counts.resize(nr);
-      for(int_type i=0; i<M.shape()[0]; i++)
-        for(int_type j=0; j<M.shape()[1]; j++)
+      for(int_type i=0; i<M.size(0); i++)
+        for(int_type j=0; j<M.size(1); j++)
           if(std::abs(M[i][j]) > cutoff)
             ++counts[j];
     }
@@ -80,7 +83,8 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA,
   if(comm.rank()!=0) counts.resize(nr);
   comm.broadcast_n(counts.begin(),counts.size());
   
-  CSR csr_mat({nr,nc},{0,0},counts,boost::mpi3::intranode::allocator<typename CSR::value_type>(comm));
+  CSR csr_mat(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},counts,
+                            qmcplusplus::afqmc::shared_allocator<typename CSR::value_type>(comm));
 
   if(comm.rank()==0) {
     if(TA == 'N') {
@@ -89,17 +93,18 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA,
           if(std::abs(M[i][j]) > cutoff)
             csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(M[i][j]));
     } else if(TA == 'T') {
-      for(int_type i=0; i<M.shape()[1]; i++)
-        for(int_type j=0; j<M.shape()[0]; j++)
+      for(int_type i=0; i<M.size(1); i++)
+        for(int_type j=0; j<M.size(0); j++)
           if(std::abs(M[j][i]) > cutoff)
             csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(M[j][i]));
     } else if(TA == 'H') {
-      for(int_type i=0; i<M.shape()[1]; i++)
-        for(int_type j=0; j<M.shape()[0]; j++)
+      for(int_type i=0; i<M.size(1); i++)
+        for(int_type j=0; j<M.size(0); j++)
           if(std::abs(M[j][i]) > cutoff)
-            csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(conj(M[j][i])));
+            csr_mat.emplace_back({i,j},static_cast<typename CSR::value_type>(ma::conj(M[j][i])));
     }
   }
+  csr_mat.remove_empty_spaces();
   comm.barrier();
 
   return csr_mat;
@@ -119,13 +124,11 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
   Timer.start("G0");
 
   assert(TA == 'N' || TA == 'T' || TA == 'H');
-  using std::conj;
   using std::get;
   using VType = typename CSR::value_type;
   using IType = typename CSR::index_type;
   using PType = typename CSR::int_type;
   using UCSR = typename CSR::base; 
-  //using UCSR = ucsr_matrix<VType,IType,PType,boost::mpi3::intranode::allocator<VType>,ma::sparse::is_root>;
 
   std::vector<std::size_t> counts(nr);
   if(TA=='N') 
@@ -141,7 +144,8 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
   Timer.reset("G0");
   Timer.start("G0");
 
-  UCSR ucsr_mat({nr, nc}, {0,0}, counts, boost::mpi3::intranode::allocator<VType>(comm));
+  UCSR ucsr_mat(std::tuple<std::size_t,std::size_t>{nr, nc}, std::tuple<std::size_t,std::size_t>{0,0}, counts, 
+                    qmcplusplus::afqmc::shared_allocator<VType>(comm));
 
   for(std::size_t r=0; r<comm.size(); r++) {
     comm.barrier();
@@ -154,7 +158,7 @@ CSR construct_csr_matrix_multiple_input(Container const& M, std::size_t nr, std:
           ucsr_mat.emplace( {get<1>(v),get<0>(v)}, get<2>(v));
       else if(TA=='H') 
         for(auto& v: M) 
-          ucsr_mat.emplace( {get<1>(v),get<0>(v)}, conj(get<2>(v)));
+          ucsr_mat.emplace( {get<1>(v),get<0>(v)}, ma::conj(get<2>(v)));
     }
     comm.barrier();
   }
@@ -175,15 +179,15 @@ template<class CSR,
          class task_group>
 CSR construct_csr_matrix_from_distributed_ucsr(typename CSR::base && ucsr, task_group &TG) { 
 
-  if(ucsr.shape()[0]==0 || ucsr.shape()[1]==0) return CSR(std::move(ucsr));; 
+  if(ucsr.size(0)==0 || ucsr.size(1)==0) return CSR(std::move(ucsr));; 
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
 
   std::size_t ak0,ak1;
-  std::tie(ak0, ak1) = FairDivideBoundary(std::size_t(coreid),ucsr.shape()[0],std::size_t(ncores));
+  std::tie(ak0, ak1) = FairDivideBoundary(std::size_t(coreid),ucsr.size(0),std::size_t(ncores));
 
   std::vector<std::size_t> counts_local(ak1-ak0);
-  std::vector<std::size_t> counts_global(ucsr.shape()[0]);
+  std::vector<std::size_t> counts_global(ucsr.size(0));
   for(std::size_t r=ak0, r0=0; r<ak1; ++r, ++r0) {
     counts_local[r0] = std::size_t(*ucsr.pointers_end(r)-*ucsr.pointers_begin(r));     
     counts_global[r] = counts_local[r0]; 
@@ -208,8 +212,8 @@ CSR construct_csr_matrix_from_distributed_ucsr(typename CSR::base && ucsr, task_
       auto c0 = cols.begin();
       std::copy(counts_local.begin(),counts_local.end(),counts.begin());
       for(std::size_t r=ak0, r0=0; r<ak1; ++r,++r0) {
-        v0 = std::copy_n( std::addressof(*ucsr.non_zero_values_data(r)), counts[r0], v0); 
-        c0 = std::copy_n( std::addressof(*ucsr.non_zero_indices2_data(r)), counts[r0], c0); 
+        v0 = std::copy_n( to_address(ucsr.non_zero_values_data(r)), counts[r0], v0); 
+        c0 = std::copy_n( to_address(ucsr.non_zero_indices2_data(r)), counts[r0], c0); 
       }
     }
     TG.Cores().broadcast_n(vals.begin(),sz_per_node[ni],ni);
@@ -243,7 +247,7 @@ CSR construct_csr_matrix_from_distributed_containers(Container const& Q, std::si
   using std::get;
   using Type = typename Container::value_type;
   if(nr==0 || nc==0)
-    return CSR({nr,nc},{0,0},0,typename CSR::alloc_type(TG.Node()));
+    return CSR(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},0,typename CSR::alloc_type(TG.Node()));
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
 
@@ -253,9 +257,9 @@ CSR construct_csr_matrix_from_distributed_containers(Container const& Q, std::si
   TG.Global().all_reduce_in_place_n(counts_global.begin(),counts_global.size(),std::plus<>());
 
   if(std::accumulate(counts_global.begin(),counts_global.end(),std::size_t(0))==0) 
-    return CSR({nr,nc},{0,0},0,typename CSR::alloc_type(TG.Node()));
+    return CSR(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},0,typename CSR::alloc_type(TG.Node()));
 
-  typename CSR::base ucsr({nr,nc},{0,0},counts_global,typename CSR::alloc_type(TG.Node()));  
+  typename CSR::base ucsr(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},counts_global,typename CSR::alloc_type(TG.Node()));  
 
   std::size_t nterms = Q.size();
   auto sz_per_node = TG.Cores().all_gather_value(nterms);
@@ -269,7 +273,7 @@ CSR construct_csr_matrix_from_distributed_containers(Container const& Q, std::si
         std::copy_n(Q.begin(),sz_per_node[ni],Qc.begin());
     //TG.Cores().broadcast_n(Qc.begin(),sz_per_node[ni],ni);
     // replace when tuples can me communicated directly
-    MPI_Bcast(Qc.data(),sz_per_node[ni]*sizeof(Type),MPI_CHAR,ni,&TG.Cores());
+    MPI_Bcast(Qc.data(),sz_per_node[ni]*sizeof(Type),MPI_CHAR,ni,&(TG.Cores()));
     if(needs_lock) {
       std::lock_guard<boost::mpi3::shm::mutex> guard(m);  
       for(auto& v : Qc) 
@@ -310,20 +314,20 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
   using std::get;
   using Type = typename Container::value_type;
   if(nr==0 || nc==0)
-    return CSR({nr,nc},{0,0},0,typename CSR::alloc_type(TG.Node()));
+    return CSR(std::tuple<std::size_t,std::size_t>{nr,nc},std::tuple<std::size_t,std::size_t>{0,0},0,typename CSR::alloc_type(TG.Node()));
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
   int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
-  int node_number = TG.getLocalNodeNumber();
-  int nnodes_per_TG = TG.getNNodesPerTG();  
+  int node_number = TG.getLocalGroupNumber();
+  int nnodes_per_TG = TG.getNGroupsPerTG();  
 
   // 1. Define new communicator for equivalent cores
-  boost::mpi3::communicator eq_cores(TG.Cores().split(node_number)); 
+  boost::mpi3::communicator eq_cores(TG.Cores().split(node_number,TG.Cores().rank())); 
   // this comm is similar to TG.TG, but includes all the cores in the node in the same comm
   // it is used to balance the distribution within the nodes on each TG.TG
-  boost::mpi3::communicator eq_node_group(TG.Global().split(nodeid/nnodes_per_TG)); 
+  boost::mpi3::communicator eq_node_group(TG.Global().split(nodeid/nnodes_per_TG,TG.Global().rank())); 
   
   // 2. count elements
-  long nterms_total = TG.Global().all_reduce_value(Q.size(),std::plus<>());
+  long nterms_total = (TG.Global() += Q.size());
   auto nterms_per_core = eq_cores.all_gather_value(Q.size());
   long nterms_in_local_core = std::accumulate(nterms_per_core.begin(),
                                                 nterms_per_core.end(),long(0)); 
@@ -381,14 +385,14 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container & Q, 
   long nterms_final = bounds[node_number+1]-bounds[node_number];
   // nterms_node_before_loadbalance: # of terms in local node before final exchange 
   // bounds[node_number+1]-bounds[node_number]: # of terms after load balance
-  boost::multi_array<long,2> counts_per_core(boost::extents[nnodes_per_TG][ncores]);
+  boost::multi::array<long,2> counts_per_core({nnodes_per_TG,ncores});
   std::fill_n(counts_per_core.origin(),ncores*nnodes_per_TG,long(0));
   counts_per_core[node_number][coreid] = nterms_in_local_core;
   eq_node_group.all_reduce_in_place_n(counts_per_core.origin(),ncores*nnodes_per_TG,std::plus<>());
 
   // calculate how many terms each core is potentially sending 
   // when algorithm works, make nplus a vector of pairs to save space, no need to store mostly zeros
-  boost::multi_array<long,2> nplus(boost::extents[nnodes_per_TG][ncores]);
+  boost::multi::array<long,2> nplus({nnodes_per_TG,ncores});
   std::fill_n(nplus.origin(),ncores*nnodes_per_TG,long(0));
   auto tgrank = eq_node_group.rank();
   // number of terms I'm sending
@@ -503,8 +507,9 @@ std::ofstream out((std::string("debug.")+std::to_string(TG.Global().rank())).c_s
   Timer.start("G0");
 
 
-  long final_nterms_node = TG.Node().all_reduce_value(Q.size(),std::plus<>());
-  std::vector<long> final_counts = TG.Cores().all_gather_value(final_nterms_node);
+  long final_nterms_node = (TG.Node() += Q.size());
+  std::vector<long> final_counts(TG.Cores().size());
+  TG.Cores().gather_n(&final_nterms_node,1,final_counts.data(),0);
   if(TG.Global().root()) {
     qmcplusplus::app_log()<<" In construct_distributed_csr_matrix_from_distributed_containers: \n"; 
     qmcplusplus::app_log()<<" Partitioning of CSR matrix over TG (nnz per node): ";
@@ -525,13 +530,13 @@ typename CSR::template matrix_view<integer> local_balanced_partition(CSR& M, tas
   using std::size_t;
   using array_ = std::array<size_t,4>;
   if(TG.getNCoresPerTG() == 1) {
-    return M[array_{0,M.shape()[0],0,M.shape()[1]}]; 
+    return M[array_{0,M.size(0),0,M.size(1)}]; 
   } else {
     std::vector<size_t> bounds(TG.getNCoresPerTG()+1);
     if(TG.getCoreID()==0) {
-      std::vector<size_t> indx(M.shape()[0]+1);
+      std::vector<size_t> indx(M.size(0)+1);
       indx[0] = size_t(0);
-      for(size_t i=0, cnt=0; i<M.shape()[0]; i++) {
+      for(size_t i=0, cnt=0; i<M.size(0); i++) {
         cnt += size_t(M.pointers_end()[i]-M.pointers_begin()[i]);
         indx[i+1] = cnt;
       }  
@@ -548,10 +553,23 @@ typename CSR::template matrix_view<integer> local_balanced_partition(CSR& M, tas
       }
     }
     TG.Node().broadcast_n(bounds.begin(),bounds.size());
-    return M[array_{bounds[TG.getLocalTGRank()],bounds[TG.getLocalTGRank()+1],0,M.shape()[1]}]; 
-    //return M[array_{0,M.shape()[0],0,M.shape()[1]}];
+    return M[array_{bounds[TG.getLocalTGRank()],bounds[TG.getLocalTGRank()+1],0,M.size(1)}]; 
+    //return M[array_{0,M.size(0),0,M.size(1)}];
   }
 } 
+
+/*
+ * Constructs a vector of csr_matrix as a copy from a given csr_matrix but casted to single precision
+ */ 
+template<class CSRsp, class CSR>
+std::vector<CSRsp> CSRvector_to_single_precision(std::vector<CSR> const& A) 
+{
+  using Alloc = typename CSRsp::alloc_type;
+  std::vector<CSRsp> B;
+  B.reserve(A.size());
+  for(auto& v: A) B.emplace_back( CSRsp(v,Alloc{v.getAlloc()}) );
+  return B;
+}
 
 }
 

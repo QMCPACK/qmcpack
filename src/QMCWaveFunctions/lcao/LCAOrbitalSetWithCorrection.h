@@ -34,7 +34,7 @@ struct LCAOrbitalSetWithCorrection : public LCAOrbitalSet
      * @param bs pointer to the BasisSet
      * @param rl report level
      */
-  LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs = nullptr, int rl = 0);
+  LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs = nullptr);
 
   LCAOrbitalSetWithCorrection(const LCAOrbitalSetWithCorrection& in) = default;
 
@@ -48,12 +48,14 @@ struct LCAOrbitalSetWithCorrection : public LCAOrbitalSet
 
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
-  void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem);
-
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi);
 
-  void evaluate_notranspose(
-      const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            ValueMatrix_t& d2logdet);
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,

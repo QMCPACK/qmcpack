@@ -9,9 +9,9 @@
 #include<ctype.h>
 
 #include "Utilities/SimpleParser.h"
+#include "AFQMC/Utilities/readWfn.h"
 
 #include "AFQMC/config.h"
-#include "boost/multi_array.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 
@@ -91,7 +91,7 @@ void read_header(std::ifstream& in, std::string& type, int& wfn_type,  bool& ful
 void skip_determinant(std::ifstream& in, bool Cstyle, bool fullMOMat, int NMO, int NAEA)
 {
       int nread;
-      ComplexType dummy;
+      afqmc::ComplexType dummy;
       if(Cstyle) {
         nread = fullMOMat?NMO:NAEA;
         for(int i=0; i<NMO; i++)
@@ -123,7 +123,7 @@ template<class Mat>
 void read_mat(std::ifstream& in, Mat&& OrbMat, bool Cstyle, bool fullMOMat, int NMO, int NAEA)
 {
       int nread;
-      ComplexType dummy;
+      afqmc::ComplexType dummy;
       if(Cstyle) {
         nread = fullMOMat?NMO:NAEA;
         for(int i=0; i<NMO; i++)
@@ -182,26 +182,33 @@ WALKER_TYPES getWalkerType(std::string filename)
   else return UNDEFINED_WALKER_TYPE;
 }
 
+std::string getWfnType(std::ifstream& in)
+{
+  in.clear();
+  in.seekg(0, std::ios::beg);  
+
+  bool fullMOMat = false;
+  bool Cstyle = true;
+  int wfn_type=0;
+  int ndet_in_file=-1;
+  std::string type;
+  read_header(in,type,wfn_type,fullMOMat,Cstyle,ndet_in_file);
+
+  return type;  
+}
+
 /*
  * Reads ndets from the ascii file. 
- * If pureSD == false, PsiT contains the Slater Matrices of all the terms in the expansion.
- *      For walker_type==1, PsiT contains 2*ndets terms including both Alpha/Beta components.
- * If pureSD == true, PsiT contains only the reference determinant and excitations contains
- *      the occupation strings of all the determinants in the expansion, including the reference.  
  */ 
-void read_wavefunction(std::string filename, int& ndets, std::string& type, WALKER_TYPES walker_type,
+void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walker_type,
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
-        std::vector<PsiT_Matrix>& PsiT, std::vector<ComplexType>& ci,
-        std::vector<int>& excitations) 
+        std::vector<PsiT_Matrix>& PsiT, std::vector<ComplexType>& ci)
 {
-  assert(walker_type!=UNDEFINED_WALKER_TYPE);
-  std::ifstream in;
-  in.open(filename.c_str());
-  if(in.fail()) {
-     app_error()<<"Problems opening file:  " <<filename <<std::endl;
-     APP_ABORT("Problems opening file. \n");
-  }
+  in.clear();
+  in.seekg(0, std::ios::beg);  
 
+  assert(walker_type!=UNDEFINED_WALKER_TYPE);
+  std::string type;
   bool fullMOMat = false;
   bool Cstyle = true;
   int wfn_type=0;
@@ -211,10 +218,7 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
 
   /*
    * type:
-   *   - occ: All determinants are specified with occupation numbers 
    *   - matrix: Slater matrix for all terms in the expansion
-   *   - mixed: mixed representation. Reference determinant in matrix form, 
-   *            determinant list (including reference) in occupation numbers. 
    */ 
   read_header(in,type,wfn_type,fullMOMat,Cstyle,ndet_in_file);
 
@@ -223,7 +227,6 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
   /*
    * Expected order of inputs and tags:
    * Coefficients: 
-   * Occupations: 
    * Determinant: 
    */
 
@@ -231,8 +234,8 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
   
   if(ndet_in_file < ndets) 
     APP_ABORT("Error: Requesting too many determinants from wfn file.\n");
-  if(type != "occ" && type != "matrix" && type != "mixed") 
-    APP_ABORT("Error: Unknown wavefunction type in file.\n"); 
+  if(type != "matrix") 
+    APP_ABORT("Error: Expects type=matrix in read_general_wavefunction.\n"); 
   if(wfn_type == 1 && walker_type == CLOSED) 
     APP_ABORT("Error in read_wavefunction: walker_type < wfn_type. \n");
   if(wfn_type == 2 && (walker_type == CLOSED || walker_type == COLLINEAR)) 
@@ -243,7 +246,6 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
              <<"           Consider doing a closed shell calculation ( walker_type=closed in WalkerSet)\n"; 
 
   ci.reserve(ndets);
-  excitations.clear();
 
   std::string tag;
   in>>tag;
@@ -255,63 +257,12 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
     if(i<ndets) ci.emplace_back(dummy);
   }
   
-  if(type == "occ" || type == "mixed") {
-    in>>tag;
-    if(tag != "Occupations:")  
-      APP_ABORT(" Error: Expecting Occupations: tag in wavefunction file. \n");
-    excitations.reserve(NEL*ndets);
-    if(walker_type == NONCOLLINEAR)
-      APP_ABORT(" Error: walker_type==NONCOLLINEAR not yet implemented in read_wavefunction.\n");
-    for(int i=0; i<ndet_in_file; i++) {
-      if(i<ndets) {
-        for(int k=0, q=0; k<NAEA; k++) {
-          in>>q;
-          if(q < 1 || q > NMO)
-            APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
-          excitations.emplace_back(q-1);
-        }  
-        if(walker_type == COLLINEAR) {
-          if(wfn_type==0) {
-            for(int k=0, q=0; k<NAEB; k++) {
-              q = *(excitations.rbegin()+NAEA-1)+NMO;
-              excitations.emplace_back(q);
-            }
-          } else {
-            for(int k=0, q=0; k<NAEB; k++) {
-              in>>q;
-              if(q <= NMO || q > 2*NMO)
-                APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
-              excitations.emplace_back(q-1);
-            } 
-          }    
-        }
-      } else { 
-        int nel_ = NAEA;
-        if(wfn_type > 0) nel_+=NAEB; 
-        for(int k=0, q=0; k<nel_; k++) in>>q; 
-      }
-    }
-    // sort excitations
-    auto it = excitations.begin();
-    for(int i=0; i<ndets; i++) {
-      std::sort(it,(it+=NAEA));
-      if(walker_type == COLLINEAR) std::sort(it,(it+=NAEB));
-    }
-  }
-  
-  if(type == "occ")  {
-    // empty PsiT in this case
-  } else if(type == "mixed") {
-    // what you read into PsiT is the orbital set from which  
-    // slater matrices are built
-    //PsiT.reserve( (walker_type!=1)?1:2 );
-    APP_ABORT(" FINISH implementation of read_wavefunction \n\n\n");
-  } else if(type == "matrix") {
+  if(type == "matrix") {
     PsiT.reserve( (walker_type!=COLLINEAR)?ndets:2*ndets );
 
     if(wfn_type == 0) {
 
-      boost::multi_array<ComplexType,2> OrbMat(extents[NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat({NMO,NAEA});
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -323,13 +274,13 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
                                         OrbMat,1e-8,'H',comm));
         if(walker_type==COLLINEAR)
           PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat(OrbMat.extension(0),{0,NAEB}),
                                         1e-8,'H',comm));
       }  
 
     } else if(wfn_type == 1) {
 
-      boost::multi_array<ComplexType,2> OrbMat(extents[NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat({NMO,NAEA});
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -339,16 +290,16 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
         }
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         OrbMat,1e-8,'H',comm));
-        if(comm.rank()==0)  read_mat(in,OrbMat[indices[range_t()][range_t(0,NAEB)]],
+        if(comm.rank()==0)  read_mat(in,OrbMat(OrbMat.extension(0),{0,NAEB}),
                 Cstyle,fullMOMat,NMO,NAEB);
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat(OrbMat.extension(0),{0,NAEB}),
                                         1e-8,'H',comm));
       }
 
     } else if(wfn_type == 2) {
 
-      boost::multi_array<ComplexType,2> OrbMat(extents[2*NMO][NAEA]);
+      boost::multi::array<ComplexType,2> OrbMat({2*NMO,NAEA});
       for(int i=0,q=0; i<ndets; i++) {
         if(comm.rank()==0) {
           in>>tag >>q;
@@ -358,208 +309,244 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
         }
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         OrbMat,1e-8,'H',comm));
-        if(comm.rank()==0)  read_mat(in,OrbMat[indices[range_t()][range_t(0,NAEB)]],
+        if(comm.rank()==0)  read_mat(in,OrbMat(OrbMat.extension(0),{0,NAEB}),
                                         Cstyle,fullMOMat,NMO,NAEB);
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[indices[range_t()][range_t(0,NAEB)]],
+                                        OrbMat(OrbMat.extension(0),{0,NAEB}),
                                         1e-8,'H',comm));
       }
 
     } //type 
  
   } else {
-    APP_ABORT("Error: Unknown wavefunction type in file.\n");
+    APP_ABORT("Error: Unknown wavefunction type in file. Expected type matrix .\n");
   }
-
-  in.close();
 }
 
-
-// old routine
-bool readWfn( std::string fileName, ComplexMatrix& OrbMat, int NMO, int NAEA, int NAEB)
+// only root reads
+/*
+ * The number of terms returned by this routine in PsiT depends on wfn_type, NOT on walker_type.
+ */
+ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walker_type,
+        boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
+        std::vector<PsiT_Matrix>& PsiT)
 {
-
-  std::ifstream in;
-  in.open(fileName.c_str());
-  if(in.fail()) {
-     app_error()<<"Problems opening ASCII integral file:  " <<fileName <<std::endl;
-     APP_ABORT("Problems opening ASCII file in readWfn.hpp.  \n");  
+  if(comm.root()) { 
+    in.clear();
+    in.seekg(0, std::ios::beg);
   }
 
+  assert(walker_type!=UNDEFINED_WALKER_TYPE);
+  std::string type;
   bool fullMOMat = false;
   bool Cstyle = true;
-  int wfn_type;
-  int ndet;
-  std::string type;
+  int wfn_type=0;
+  int ndet_in_file=-1;
+  int NEL = NAEA;
+  bool mixed=false;
+  if(walker_type!=CLOSED) NEL+=NAEB;
 
-  read_header(in,type,wfn_type,fullMOMat,Cstyle,ndet);
+  /*
+   * Expected order of inputs and tags:
+   * Reference: 
+   * Configurations: 
+   */
 
-    int ncols = NAEA;
-    //int nrows = NMO;
-    if(wfn_type == 2)
-      ncols = NAEA+NAEB;
+  /*
+   * type:
+   *   - occ: All determinants are specified with occupation numbers 
+   *   - mixed: mixed representation. Reference determinant in matrix form, 
+   *            determinant list (including reference) in occupation numbers. 
+   *
+   * wfn_type:
+   *   - 0: excitations out of a RHF reference  
+   *          NOTE: Does not mean perfect pairing, means excitations from a single reference
+   *   - 1: excitations out of a UHF reference  
+   */ 
+  if(comm.root()) {
+    read_header(in,type,wfn_type,fullMOMat,Cstyle,ndet_in_file);
 
-    ComplexType dummy;
-    int nread;
+    std::transform(type.begin(),type.end(),type.begin(),(int (*)(int)) tolower);
 
-    if (wfn_type == 0 ) {
 
-      OrbMat.resize(2*NMO,ncols);
-      if(Cstyle) {
-        nread = fullMOMat?NMO:NAEA;
-        for(int i=0; i<NMO; i++)
-          for(int j=0; j<nread; j++) {
-            in>>dummy;
-            if(j<NAEA) OrbMat(i,j) = dummy;
-            if(j<NAEB) OrbMat(i+NMO,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in readWfn.hpp.  \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              APP_ABORT("Problems reading wfn in readWfn.hpp.\n"); 
-            }
-          }
-      } else {
-        nread = fullMOMat?NMO:NAEA;
-        for(int j=0; j<nread; j++)
-          for(int i=0; i<NMO; i++) {
-            in>>dummy;
-            if(j<NAEA) OrbMat(i,j) = dummy;
-            if(j<NAEB) OrbMat(i+NMO,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in readWfn.hpp. \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              APP_ABORT("Problems reading wfn in readWfn.hpp.\n");
-            }
-          }
-      }
+    if(walker_type != COLLINEAR)
+      APP_ABORT(" Error: walker_type!=COLLINEAR not yet implemented in read_ph_wavefunction.\n");
+  
+    if(ndet_in_file < ndets) 
+      APP_ABORT("Error: Requesting too many determinants from wfn file.\n");
+    if(type != "occ" && type != "mixed") 
+      APP_ABORT("Error: Expect type=occ or type==mixed in read_ph_wavefunction.\n"); 
+    if(wfn_type == 1 && walker_type == CLOSED) 
+      APP_ABORT("Error in read_wavefunction: walker_type < wfn_type. \n");
+    if(wfn_type == 2 && (walker_type == CLOSED || walker_type == COLLINEAR)) 
+      APP_ABORT("Error in read_wavefunction: walker_type < wfn_type. \n");
 
-    } else if(wfn_type == 1) {
+    if(type == "mixed" ) mixed=true;
 
-      OrbMat.resize(2*NMO,ncols);
-      if(Cstyle) {
-        nread = fullMOMat?NMO:NAEA;
-        for(int i=0; i<NMO; i++)
-          for(int j=0; j<nread; j++) {
-            in>>dummy;
-            if(j<NAEA) OrbMat(i,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (alpha) \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              APP_ABORT("Problems reading ASCII file in PureSingleDeterminant. (alpha) \n");
-            }
-          }
-        nread = fullMOMat?NMO:NAEB;
-        for(int i=0; i<NMO; i++)
-          for(int j=0; j<nread; j++) {
-            in>>dummy;
-            if(j<NAEB) OrbMat(i+NMO,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (beta) \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              return false;
-            }
-          }
-      } else {
-        nread = fullMOMat?NMO:NAEA;
-        for(int j=0; j<nread; j++)
-          for(int i=0; i<NMO; i++) {
-            in>>dummy;
-            if(j<NAEA) OrbMat(i,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (alpha) \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              return false;
-            }
-          }
-        nread = fullMOMat?NMO:NAEB;
-        for(int j=0; j<nread; j++)
-          for(int i=0; i<NMO; i++) {
-            in>>dummy;
-            if(j<NAEB) OrbMat(i+NMO,j) = dummy;
-            if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (beta) \n";
-              app_error()<<i <<" " <<j <<std::endl;
-              in.close();
-              return false;
-            }
-          }
-      }
-    } else if(wfn_type == 2) {
+    comm.broadcast_n(&mixed,1,0); 
+    comm.broadcast_n(&ndet_in_file,1,0); 
+    comm.broadcast_n(&wfn_type,1,0); 
+    comm.broadcast_n(&fullMOMat,1,0); 
+  } else {
+    comm.broadcast_n(&mixed,1,0); 
+    comm.broadcast_n(&ndet_in_file,1,0); 
+    comm.broadcast_n(&wfn_type,1,0); 
+    comm.broadcast_n(&fullMOMat,1,0); 
+  }
 
-      if(Cstyle) {
+  if(ndets <= 0) ndets = ndet_in_file; 
 
-       nread = fullMOMat?NMO:NAEA;
-       int nread2 = fullMOMat?NMO:NAEB;
-       for(int i=0; i<NMO; i++) {
-        for(int j=0; j<nread; j++) {
-          in>>dummy;
-          if(j<NAEA) OrbMat(i,j) = dummy;
-          if(in.fail()) {
-            app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
-            in.close();
-            return false;
-          }
-        }
-        for(int j=0; j<nread2; j++) {
-          in>>dummy;
-          if(j<NAEB) OrbMat(i,j+NAEA) = dummy;
-          if(in.fail()) {
-            app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
-            in.close();
-            return false;
-          }
-        }
-       }
-       for(int i=0; i<NMO; i++) {
-        for(int j=0; j<nread; j++) {
-          in>>dummy;
-          if(j<NAEA) OrbMat(i+NMO,j) = dummy;
-          if(in.fail()) {
-            app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
-            in.close();
-            return false;
-          }
-        }
-        for(int j=0; j<nread2; j++) {
-          in>>dummy;
-          if(j<NAEB) OrbMat(i+NMO,j+NAEA) = dummy;
-          if(in.fail()) {
-            app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
-            in.close();
-            return false;
-          }
-        }
-       }
+  if(mixed) { // read reference
+    int nmo_ = (walker_type==NONCOLLINEAR?2*NMO:NMO);
+    if(not comm.root()) nmo_=0; // only root reads matrices
+    if(not fullMOMat)
+      APP_ABORT("Error: Wavefunction type mixed requires fullMOMat=true.\n");
+    PsiT.reserve( (wfn_type!=1)?1:2 );
 
-     } else {
-
-      nread = fullMOMat?2*NMO:NAEA+NAEB;
-      for(int j=0; j<nread; j++) {
-        for(int i=0; i<2*NMO; i++) {
-         in>>dummy;
-         if(j<NAEA+NAEB) OrbMat(i,j) = dummy;
-         if(in.fail()) {
-           app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
-           in.close();
-           return false;
-         }
-       }
-      }
-
-     } // Cstyle
+    boost::multi::array<ComplexType,2> OrbMat({nmo_,nmo_});
+    if(comm.root()) {
+      std::string tag;
+      in>>tag;
+      if(tag != "Reference:")
+        APP_ABORT(" Error: Expecting Reference tag in wavefunction file. \n");
+      read_mat(in,OrbMat,Cstyle,fullMOMat,nmo_,nmo_);
     }
+    PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        OrbMat,1e-8,'H',comm));
+    if(wfn_type == 1) {
+      if(comm.root())  read_mat(in,OrbMat,Cstyle,fullMOMat,NMO,NMO);
+      PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        OrbMat,1e-8,'H',comm));
+    }
+  }
 
-  in.close();
+  if(comm.root()) {
+    std::string tag;
+    in>>tag;
+    if(tag != "Configurations:") {
+      app_error()<<" tag: " <<tag <<std::endl;
+      APP_ABORT(" Error: Expecting Configurations: tag in wavefunction file. \n");
+    }
+  }
 
+  ComplexType ci;
+  // count number of k-particle excitations
+  // counts[0] has special meaning, it must be equal to NAEA+NAEB.
+  std::vector<size_t> counts_alpha(NAEA+1);
+  std::vector<size_t> counts_beta(NAEB+1);
+  // ugly but need dynamic memory allocation
+  std::vector<std::vector<int>> unique_alpha(NAEA+1);
+  std::vector<std::vector<int>> unique_beta(NAEB+1);
+  // reference configuration, taken as the first one right now
+  std::vector<int> refa;
+  std::vector<int> refb;
+  // space to read configurations
+  std::vector<int> confg;
+  // space for excitation string identifying the current configuration 
+  std::vector<int> exct;
+  // record file position to come back
+  std::vector<int> Iwork; // work arrays for permutation calculation
+  std::streampos start;
+  if(comm.root()) {
+    confg.reserve(NAEA);
+    Iwork.resize(2*NAEA);
+    exct.reserve(2*NAEA);
+    start = in.tellg();
+    for(int i=0; i<ndets; i++) {
+      in>>ci; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+      // alpha
+      confg.clear();
+      for(int k=0, q=0; k<NAEA; k++) {
+        in>>q; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+        if(q < 1 || q > NMO)
+          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        confg.emplace_back(q-1);
+      }  
+      if(i==0) {
+        refa=confg;
+      } else {
+        int np = get_excitation_number(true,refa,confg,exct,ci,Iwork);
+        push_excitation(exct,unique_alpha[np]);  
+      }
+      // beta
+      confg.clear();
+      for(int k=0, q=0; k<NAEB; k++) {
+        in>>q; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+        if(q <= NMO || q > 2*NMO)
+          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        confg.emplace_back(q-1);
+      } 
+      if(i==0) {
+        refb=confg;
+      } else {
+        int np = get_excitation_number(true,refb,confg,exct,ci,Iwork);
+        push_excitation(exct,unique_beta[np]);  
+      }
+    }
+    // now that we have all unique configurations, count  
+    for(int i=1; i<=NAEA; i++) counts_alpha[i] = unique_alpha[i].size();
+    for(int i=1; i<=NAEB; i++) counts_beta[i] = unique_beta[i].size();
+  }
+  comm.broadcast_n(counts_alpha.begin(),counts_alpha.size());
+  comm.broadcast_n(counts_beta.begin(),counts_beta.size());
+  // using int for now, but should move to short later when everything works well
+  // ph_struct stores the reference configuration on the index [0]
+  ph_excitations<int,ComplexType> ph_struct(ndets,NAEA,NAEB,counts_alpha,counts_beta,
+                                            shared_allocator<int>(comm));
+  
+  if(comm.root()) {
+    in.clear();
+    in.seekg(start);
+    std::map<int,int> refa2loc;
+    for(int i=0; i<NAEA; i++) refa2loc[refa[i]] = i;    
+    std::map<int,int> refb2loc;
+    for(int i=0; i<NAEB; i++) refb2loc[refb[i]] = i;    
+    // add reference
+    ph_struct.add_reference(refa,refb);
+    // add unique configurations
+    // alpha    
+    for(int n=1; n<unique_alpha.size(); n++) 
+      for(std::vector<int>::iterator it=unique_alpha[n].begin(); it<unique_alpha[n].end(); it+=(2*n) )
+        ph_struct.add_alpha(n,it); 
+    // beta
+    for(int n=1; n<unique_beta.size(); n++) 
+      for(std::vector<int>::iterator it=unique_beta[n].begin(); it<unique_beta[n].end(); it+=(2*n) )
+        ph_struct.add_beta(n,it); 
+    // read configurations
+    int alpha_index;
+    int beta_index;
+    int np;
+    for(int i=0; i<ndets; i++) {
+      in>>ci; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+      confg.clear();
+      for(int k=0, q=0; k<NAEA; k++) {
+        in>>q; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+        if(q < 1 || q > NMO)
+          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        confg.emplace_back(q-1);
+      }
+      np = get_excitation_number(true,refa,confg,exct,ci,Iwork);
+      alpha_index = ((np==0)?(0):(find_excitation(exct,unique_alpha[np]) + 
+                                  ph_struct.number_of_unique_smaller_than(np)[0])); 
+      confg.clear();
+      for(int k=0, q=0; k<NAEB; k++) {
+        in>>q; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+        if(q <= NMO || q > 2*NMO)
+          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        confg.emplace_back(q-1);
+      }
+      np = get_excitation_number(true,refb,confg,exct,ci,Iwork);
+      beta_index = ((np==0)?(0):(find_excitation(exct,unique_beta[np]) + 
+                                  ph_struct.number_of_unique_smaller_than(np)[1])); 
+      ph_struct.add_configuration(alpha_index,beta_index,ci);
+    }
+  }
+  comm.barrier();
+  return ph_struct;
 }
 
 // modify for multideterminant case based on type
-int readWfn( std::string fileName, boost::multi_array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det = 0)
+int readWfn( std::string fileName, boost::multi::array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det)
 {
   std::ifstream in;
   in.open(fileName.c_str());
@@ -594,20 +581,18 @@ int readWfn( std::string fileName, boost::multi_array<ComplexType,3>& OrbMat, in
 
   if (wfn_type == 0 ) {
 
-     OrbMat.resize(extents[1][NMO][NAEA]);
+     OrbMat.reextent({1,NMO,NAEA});
      read_mat(in,OrbMat[0],Cstyle,fullMOMat,NMO,NAEA);
 
   } else if(wfn_type == 1) {
 
-    OrbMat.resize(extents[2][NMO][NAEA]);
+    OrbMat.reextent({2,NMO,NAEA});
     read_mat(in,OrbMat[0],Cstyle,fullMOMat,NMO,NAEA);
     read_mat(in,OrbMat[1],Cstyle,fullMOMat,NMO,NAEB);
 
   } else if(wfn_type == 2) {
 
-    OrbMat.resize(extents[1][2*NMO][NAEA+NAEB]);
-    read_mat(in,OrbMat[0][indices[range_t()][range_t(0,NAEA)]],Cstyle,fullMOMat,2*NMO,NAEA);
-    read_mat(in,OrbMat[0][indices[range_t()][range_t(NAEA,NAEA+NAEB)]],Cstyle,fullMOMat,2*NMO,NAEB);
+    APP_ABORT(" Error: wfn_type == 2 not implemented. \n"); 
 
   } //type 
 

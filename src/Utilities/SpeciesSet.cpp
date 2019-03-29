@@ -11,10 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
-
 
 
 #include "Utilities/SpeciesSet.h"
@@ -30,7 +26,7 @@ SpeciesSet::~SpeciesSet()
 {
   AttribList_t::iterator it(d_attrib.begin());
   AttribList_t::iterator it_end(d_attrib.end());
-  while(it != it_end)
+  while (it != it_end)
   {
     delete *it;
     ++it;
@@ -40,11 +36,11 @@ SpeciesSet::~SpeciesSet()
 
 void SpeciesSet::create(unsigned m)
 {
-  if(m > 0)
+  if (m > 0)
   {
     speciesName.insert(speciesName.end(), m, std::string("none"));
     AttribList_t::iterator dit = d_attrib.begin();
-    for(; dit != d_attrib.end(); ++dit)
+    for (; dit != d_attrib.end(); ++dit)
       (*dit)->insert((*dit)->end(), m, 0);
     TotalNum += m;
   }
@@ -53,8 +49,8 @@ void SpeciesSet::create(unsigned m)
 int SpeciesSet::addSpecies(const std::string& aname)
 {
   int i = findSpecies(aname); // check if the name is registered
-  if(i == TotalNum)
-    // if not found, add a new species
+  if (i == TotalNum)
+  // if not found, add a new species
   {
     create(1);
     speciesName[i] = aname;
@@ -65,9 +61,9 @@ int SpeciesSet::addSpecies(const std::string& aname)
 int SpeciesSet::addAttribute(const std::string& aname)
 {
   int i = 0;
-  while(i< attribName.size())
+  while (i < attribName.size())
   {
-    if(attribName[i] == aname)
+    if (attribName[i] == aname)
       return i;
     i++;
   }
@@ -79,22 +75,20 @@ int SpeciesSet::addAttribute(const std::string& aname)
 
 int SpeciesSet::getAttribute(const std::string& aname)
 {
-  for (int i=0; i<attribName.size(); i++)
+  for (int i = 0; i < attribName.size(); i++)
   {
-	if (attribName[i]== aname)
-	  return i;  
+    if (attribName[i] == aname)
+      return i;
   }
   return attribName.size();
 }
 
-SpeciesSet::SpeciesSet(const SpeciesSet& species):
-  TotalNum(species.TotalNum),
-  speciesName(species.speciesName),
-  attribName(species.attribName)
+SpeciesSet::SpeciesSet(const SpeciesSet& species)
+    : TotalNum(species.TotalNum), speciesName(species.speciesName), attribName(species.attribName)
 {
   AttribList_t::const_iterator dit(species.d_attrib.begin());
   AttribList_t::const_iterator dit_end(species.d_attrib.end());
-  while(dit != dit_end)
+  while (dit != dit_end)
   {
     d_attrib.push_back(new SpeciesAttrib_t(**dit));
     ++dit;
@@ -103,14 +97,14 @@ SpeciesSet::SpeciesSet(const SpeciesSet& species):
 
 SpeciesSet& SpeciesSet::operator=(const SpeciesSet& species)
 {
-  if(this != &species)
+  if (this != &species)
   {
-    TotalNum = species.TotalNum;
+    TotalNum    = species.TotalNum;
     speciesName = species.speciesName;
-    attribName = species.attribName;
+    attribName  = species.attribName;
     AttribList_t::iterator it(d_attrib.begin());
     AttribList_t::iterator it_end(d_attrib.end());
-    while(it != it_end)
+    while (it != it_end)
     {
       delete *it;
       ++it;
@@ -118,7 +112,7 @@ SpeciesSet& SpeciesSet::operator=(const SpeciesSet& species)
     d_attrib.clear();
     AttribList_t::const_iterator dit(species.d_attrib.begin());
     AttribList_t::const_iterator dit_end(species.d_attrib.end());
-    while(dit != dit_end)
+    while (dit != dit_end)
     {
       d_attrib.push_back(new SpeciesAttrib_t(**dit));
       ++dit;
@@ -126,5 +120,3 @@ SpeciesSet& SpeciesSet::operator=(const SpeciesSet& species)
   }
   return *this;
 }
-
-

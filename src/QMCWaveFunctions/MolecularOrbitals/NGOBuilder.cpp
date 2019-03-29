@@ -27,29 +27,26 @@
 
 namespace qmcplusplus
 {
-
 OptimizableFunctorBase* NGOrbital::makeClone() const
 {
-  NGOrbital *myclone=new NGOrbital(*this);
-  myclone->myFunc.m_grid=myFunc.m_grid->makeClone();
+  NGOrbital* myclone     = new NGOrbital(*this);
+  myclone->myFunc.m_grid = myFunc.m_grid->makeClone();
   myclone->setGridManager(true);
   return myclone;
 }
 
 NGOBuilder::NGOBuilder(xmlNodePtr cur)
-  : Normalized(true),m_orbitals(0),input_grid(0)
-  ,m_rcut(-1.0), m_infunctype("Gaussian")
-  , m_fileid(-1)
+    : Normalized(true), m_orbitals(0), input_grid(0), m_rcut(-1.0), m_infunctype("Gaussian"), m_fileid(-1)
 {
-  if(cur != NULL)
+  if (cur != NULL)
     putCommon(cur);
 }
 
 NGOBuilder::~NGOBuilder()
 {
-  if(m_fileid>-1)
+  if (m_fileid > -1)
     H5Fclose(m_fileid);
-  if(input_grid)
+  if (input_grid)
     delete input_grid;
 }
 
@@ -58,42 +55,41 @@ bool NGOBuilder::putCommon(xmlNodePtr cur)
   std::string normin("yes");
   std::string afilename("0");
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(normin,"normalized");
-  aAttrib.add(m_infunctype,"type");
-  aAttrib.add(afilename,"href");
-  aAttrib.add(afilename,"src");
-  bool success=aAttrib.put(cur);
+  aAttrib.add(normin, "normalized");
+  aAttrib.add(m_infunctype, "type");
+  aAttrib.add(afilename, "href");
+  aAttrib.add(afilename, "src");
+  bool success = aAttrib.put(cur);
   //set the noramlization
-  Normalized=(normin=="yes");
-  if(afilename.find("h5")<afilename.size())
+  Normalized = (normin == "yes");
+  if (afilename.find("h5") < afilename.size())
   {
-    m_fileid = H5Fopen(afilename.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+    m_fileid = H5Fopen(afilename.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
     //current version
-    HDFVersion res_version(0,1);
-    HDFVersion in_version(0,0); //start using major=0 and minor=4
+    HDFVersion res_version(0, 1);
+    HDFVersion in_version(0, 0); //start using major=0 and minor=4
     herr_t status = H5Eset_auto(NULL, NULL);
-    in_version.read(m_fileid,hdf::version);
-    if(in_version<res_version)
+    in_version.read(m_fileid, hdf::version);
+    if (in_version < res_version)
     {
       APP_ABORT("NGOBuilder::putCommon Old format is not supported. Please rerun SQD if the output is produced by it");
     }
-    app_log() << "  " << afilename <<  " version " << in_version << std::endl;
+    app_log() << "  " << afilename << " version " << in_version << std::endl;
   }
   else
-    m_fileid=-1;
+    m_fileid = -1;
   return success;
 }
 
-void
-NGOBuilder::setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter)
+void NGOBuilder::setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter)
 {
   m_orbitals = oset;
-  m_species = acenter;
+  m_species  = acenter;
 }
 
-bool NGOBuilder::addGridH5(hdf_archive &hin)
+bool NGOBuilder::addGridH5(hdf_archive& hin)
 {
-  if(!m_orbitals)
+  if (!m_orbitals)
   {
     APP_ABORT("NGOBuilder::addGrid SphericalOrbitals<ROT,GT>*, is not initialized");
   }
@@ -101,29 +97,31 @@ bool NGOBuilder::addGridH5(hdf_archive &hin)
   app_log() << "   Grid is created by the input paremters in h5" << std::endl;
 
 
-
   std::string gridtype;
 
-  if(hin.myComm->rank()==0){
-     if(!hin.read(gridtype, "grid_type")){
-         std::cerr<<"Could not read grid_type in H5; Probably Corrupt H5 file"<<std::endl;
-         exit(0);
-     }
+  if (hin.myComm->rank() == 0)
+  {
+    if (!hin.readEntry(gridtype, "grid_type"))
+    {
+      std::cerr << "Could not read grid_type in H5; Probably Corrupt H5 file" << std::endl;
+      exit(0);
+    }
   }
   hin.myComm->bcast(gridtype);
 
-  int npts=0;
-  RealType ri=0.0,rf=10.0,rmax_safe=10;
+  int npts    = 0;
+  RealType ri = 0.0, rf = 10.0, rmax_safe = 10;
 
-  if(hin.myComm->rank()==0){
-      double tt=0;
-      hin.read(tt,"grid_ri");
-      ri=tt;
-      hin.read(tt,"grid_rf");
-      rf=tt;
-      hin.read(tt,"rmax_safe");
-      rmax_safe=tt;
-      hin.read(npts,"grid_npts");
+  if (hin.myComm->rank() == 0)
+  {
+    double tt = 0;
+    hin.read(tt, "grid_ri");
+    ri = tt;
+    hin.read(tt, "grid_rf");
+    rf = tt;
+    hin.read(tt, "rmax_safe");
+    rmax_safe = tt;
+    hin.read(npts, "grid_npts");
   }
   hin.myComm->bcast(ri);
   hin.myComm->bcast(rf);
@@ -131,84 +129,82 @@ bool NGOBuilder::addGridH5(hdf_archive &hin)
   hin.myComm->bcast(npts);
 
 
-  if(gridtype.empty())
+  if (gridtype.empty())
   {
     APP_ABORT("Grid type is not specified.");
   }
-  if(gridtype == "log")
+  if (gridtype == "log")
   {
     app_log() << "    Using log grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
     input_grid = new LogGrid<RealType>;
-    input_grid->set(ri,rf,npts);
+    input_grid->set(ri, rf, npts);
     m_orbitals->Grids.push_back(input_grid);
-    input_grid=0;
+    input_grid = 0;
   }
-  else
-    if(gridtype == "linear")
-    {
-      app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
-      input_grid = new LinearGrid<RealType>;
-      input_grid->set(ri,rf,npts);
-      m_orbitals->Grids.push_back(input_grid);
-      input_grid=0;
-    }
+  else if (gridtype == "linear")
+  {
+    app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
+    input_grid = new LinearGrid<RealType>;
+    input_grid->set(ri, rf, npts);
+    m_orbitals->Grids.push_back(input_grid);
+    input_grid = 0;
+  }
   return true;
 }
 
 bool NGOBuilder::addGrid(xmlNodePtr cur)
 {
-  if(!m_orbitals)
+  if (!m_orbitals)
   {
     APP_ABORT("NGOBuilder::addGrid SphericalOrbitals<ROT,GT>*, is not initialized");
   }
-  if(m_fileid<0)
+  if (m_fileid < 0)
   {
-    GridType *agrid = OneDimGridFactory::createGrid(cur);
+    GridType* agrid = OneDimGridFactory::createGrid(cur);
     m_orbitals->Grids.push_back(agrid);
   }
   else
   {
     app_log() << "   Grid is created by the input paremters in h5" << std::endl;
-    hid_t gid = H5Gopen(m_fileid,"radial_basis_states/grid");
+    hid_t gid = H5Gopen(m_fileid, "radial_basis_states/grid");
     std::string gridtype;
     HDFAttribIO<std::string> gtypestr(gridtype);
-    gtypestr.read(gid,"type");
-    int npts=0;
-    RealType ri=0.0,rf=10.0,rmax_safe=10;
-    double tt=0;
+    gtypestr.read(gid, "type");
+    int npts    = 0;
+    RealType ri = 0.0, rf = 10.0, rmax_safe = 10;
+    double tt = 0;
     HDFAttribIO<double> ri_in(tt);
-    ri_in.read(gid,"ri");
-    ri=tt;
-    ri_in.read(gid,"rf");
-    rf=tt;
-    ri_in.read(gid,"rmax_safe");
-    rmax_safe=tt;
+    ri_in.read(gid, "ri");
+    ri = tt;
+    ri_in.read(gid, "rf");
+    rf = tt;
+    ri_in.read(gid, "rmax_safe");
+    rmax_safe = tt;
     HDFAttribIO<int> n_in(npts);
-    n_in.read(gid,"npts");
-    if(gridtype.empty())
+    n_in.read(gid, "npts");
+    if (gridtype.empty())
     {
       APP_ABORT("Grid type is not specified.");
     }
-    if(gridtype == "log")
+    if (gridtype == "log")
     {
       app_log() << "    Using log grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
       input_grid = new LogGrid<RealType>;
-      input_grid->set(ri,rf,npts);
+      input_grid->set(ri, rf, npts);
       //GridType *agrid = new LinearGrid<RealType>;
       //agrid->set(0.0,rmax_safe,rmax_safe/0.01);
       //m_orbitals->Grids.push_back(agrid);
       m_orbitals->Grids.push_back(input_grid);
-      input_grid=0;
+      input_grid = 0;
     }
-    else
-      if(gridtype == "linear")
-      {
-        app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
-        input_grid = new LinearGrid<RealType>;
-        input_grid->set(ri,rf,npts);
-        m_orbitals->Grids.push_back(input_grid);
-        input_grid=0;
-      }
+    else if (gridtype == "linear")
+    {
+      app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
+      input_grid = new LinearGrid<RealType>;
+      input_grid->set(ri, rf, npts);
+      m_orbitals->Grids.push_back(input_grid);
+      input_grid = 0;
+    }
     //if(!input_grid)
     //{
     //  APP_ABORT("Grid is not defined.");
@@ -230,10 +226,9 @@ bool NGOBuilder::addGrid(xmlNodePtr cur)
  \f[ f(r) = \frac{R(r)}{r^l}, \f] where \f$ R(r) \f$ is the usual
  radial orbital and \f$ l \f$ is the angular momentum.
 */
-bool
-NGOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
+bool NGOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
 {
-  if(!m_orbitals)
+  if (!m_orbitals)
   {
     ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
     return false;
@@ -241,37 +236,35 @@ NGOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
   std::string radtype(m_infunctype);
   std::string dsname("0");
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(radtype,"type");
-  aAttrib.add(m_rcut,"rmax");
-  aAttrib.add(dsname,"ds");
+  aAttrib.add(radtype, "type");
+  aAttrib.add(m_rcut, "rmax");
+  aAttrib.add(dsname, "ds");
   aAttrib.put(cur);
   //const xmlChar *tptr = xmlGetProp(cur,(const xmlChar*)"type");
   //if(tptr) radtype = (const char*)tptr;
   //tptr = xmlGetProp(cur,(const xmlChar*)"rmax");
   //if(tptr) m_rcut = atof((const char*)tptr);
   int lastRnl = m_orbitals->Rnl.size();
-  m_nlms = nlms;
-  if(radtype == "Gaussian" || radtype == "GTO")
+  m_nlms      = nlms;
+  if (radtype == "Gaussian" || radtype == "GTO")
   {
     addGaussian(cur);
   }
+  else if (radtype == "Slater" || radtype == "STO")
+  {
+    addSlater(cur);
+  }
+  else if (radtype == "Pade")
+  {
+    app_error() << "  Any2GridBuilder::addPade is disabled." << std::endl;
+    APP_ABORT("NGOBuilder::addRadialOrbital");
+    //addPade(cur);
+  }
   else
-    if(radtype == "Slater" || radtype == "STO")
-    {
-      addSlater(cur);
-    }
-    else
-      if(radtype == "Pade")
-      {
-        app_error() << "  Any2GridBuilder::addPade is disabled." << std::endl;
-        APP_ABORT("NGOBuilder::addRadialOrbital");
-        //addPade(cur);
-      }
-      else
-      {
-        addNumerical(cur,dsname);
-      }
-  if(lastRnl && m_orbitals->Rnl.size()> lastRnl)
+  {
+    addNumerical(cur, dsname);
+  }
+  if (lastRnl && m_orbitals->Rnl.size() > lastRnl)
   {
     app_log() << "\tSetting GridManager of " << lastRnl << " radial orbital to false" << std::endl;
     m_orbitals->Rnl[lastRnl]->setGridManager(false);
@@ -279,10 +272,9 @@ NGOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
   return true;
 }
 
-bool
-NGOBuilder::addRadialOrbitalH5(hdf_archive & hin, const QuantumNumberType& nlms)
+bool NGOBuilder::addRadialOrbitalH5(hdf_archive& hin, const QuantumNumberType& nlms)
 {
-  if(!m_orbitals)
+  if (!m_orbitals)
   {
     ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
     return false;
@@ -290,17 +282,17 @@ NGOBuilder::addRadialOrbitalH5(hdf_archive & hin, const QuantumNumberType& nlms)
   std::string radtype(m_infunctype);
   std::string dsname("0");
   int lastRnl = m_orbitals->Rnl.size();
-  m_nlms = nlms;
-  if(radtype == "Gaussian" || radtype == "GTO")
+  m_nlms      = nlms;
+  if (radtype == "Gaussian" || radtype == "GTO")
   {
     addGaussianH5(hin);
   }
   else
   {
-    app_log()<<" RadType other than Gaussian not implemented to be read from H5 format"<<std::endl;
+    app_log() << " RadType other than Gaussian not implemented to be read from H5 format" << std::endl;
     exit(0);
   }
-  if(lastRnl && m_orbitals->Rnl.size()> lastRnl)
+  if (lastRnl && m_orbitals->Rnl.size() > lastRnl)
   {
     app_log() << "\tSetting GridManager of " << lastRnl << " radial orbital to false" << std::endl;
     m_orbitals->Rnl[lastRnl]->setGridManager(false);
@@ -311,31 +303,31 @@ NGOBuilder::addRadialOrbitalH5(hdf_archive & hin, const QuantumNumberType& nlms)
 
 void NGOBuilder::addGaussian(xmlNodePtr cur)
 {
-  int L= m_nlms[1];
-  GaussianCombo<RealType> gset(L,Normalized);
+  int L = m_nlms[1];
+  GaussianCombo<RealType> gset(L, Normalized);
   gset.putBasisGroup(cur);
-  GridType* agrid = m_orbitals->Grids[0];
-  RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
-  if(m_rcut<0)
+  GridType* agrid           = m_orbitals->Grids[0];
+  RadialOrbitalType* radorb = new RadialOrbitalType(agrid);
+  if (m_rcut < 0)
     m_rcut = agrid->rmax();
-  Transform2GridFunctor<GaussianCombo<RealType>,RadialOrbitalType> transform(gset, *radorb);
-  transform.generate(agrid->rmin(),m_rcut,agrid->size());
+  Transform2GridFunctor<GaussianCombo<RealType>, RadialOrbitalType> transform(gset, *radorb);
+  transform.generate(agrid->rmin(), m_rcut, agrid->size());
   m_orbitals->Rnl.push_back(radorb);
   m_orbitals->RnlID.push_back(m_nlms);
 }
 
-void NGOBuilder::addGaussianH5(hdf_archive &hin)
+void NGOBuilder::addGaussianH5(hdf_archive& hin)
 {
-  int L= m_nlms[1];
+  int L = m_nlms[1];
 
-  GaussianCombo<RealType> gset(L,Normalized);
+  GaussianCombo<RealType> gset(L, Normalized);
   gset.putBasisGroupH5(hin);
-  GridType* agrid = m_orbitals->Grids[0];
-  RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
-  if(m_rcut<0)
+  GridType* agrid           = m_orbitals->Grids[0];
+  RadialOrbitalType* radorb = new RadialOrbitalType(agrid);
+  if (m_rcut < 0)
     m_rcut = agrid->rmax();
-  Transform2GridFunctor<GaussianCombo<RealType>,RadialOrbitalType> transform(gset, *radorb);
-  transform.generate(agrid->rmin(),m_rcut,agrid->size());
+  Transform2GridFunctor<GaussianCombo<RealType>, RadialOrbitalType> transform(gset, *radorb);
+  transform.generate(agrid->rmin(), m_rcut, agrid->size());
   m_orbitals->Rnl.push_back(radorb);
   m_orbitals->RnlID.push_back(m_nlms);
 }
@@ -344,13 +336,13 @@ void NGOBuilder::addGaussianH5(hdf_archive &hin)
 void NGOBuilder::addSlater(xmlNodePtr cur)
 {
   ////pointer to the grid
-  GridType* agrid = m_orbitals->Grids[0];
-  RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
-  SlaterCombo<RealType> sto(m_nlms[1],Normalized);
+  GridType* agrid           = m_orbitals->Grids[0];
+  RadialOrbitalType* radorb = new RadialOrbitalType(agrid);
+  SlaterCombo<RealType> sto(m_nlms[1], Normalized);
   sto.putBasisGroup(cur);
   //spline the slater type orbital
-  Transform2GridFunctor<SlaterCombo<RealType>,RadialOrbitalType> transform(sto, *radorb);
-  transform.generate(agrid->rmin(), agrid->rmax(),agrid->size());
+  Transform2GridFunctor<SlaterCombo<RealType>, RadialOrbitalType> transform(sto, *radorb);
+  transform.generate(agrid->rmin(), agrid->rmax(), agrid->size());
   //transform.generate(agrid->rmax());
   //add the radial orbital to the list
   m_orbitals->Rnl.push_back(radorb);
@@ -361,20 +353,20 @@ void NGOBuilder::addNumerical(xmlNodePtr cur, const std::string& dsname)
 {
   int imin = 0;
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(imin,"imin");
+  aAttrib.add(imin, "imin");
   aAttrib.put(cur);
   char grpname[128];
-  sprintf(grpname,"radial_basis_states/%s",dsname.c_str());
-  hid_t group_id_orb=H5Gopen(m_fileid,grpname);
-  double cusp_cond=0.0;
+  sprintf(grpname, "radial_basis_states/%s", dsname.c_str());
+  hid_t group_id_orb = H5Gopen(m_fileid, grpname);
+  double cusp_cond   = 0.0;
   HDFAttribIO<double> r_in(cusp_cond);
-  r_in.read(group_id_orb,"cusp");
+  r_in.read(group_id_orb, "cusp");
   //int rinv_p=0;
   //HDFAttribIO<int> ir(rinv_p);
   //ir.read(group_id_orb,"power");
   Vector<double> rad_orb;
-  HDFAttribIO<Vector<double> > rin(rad_orb);
-  rin.read(group_id_orb,"radial_orbital");
+  HDFAttribIO<Vector<double>> rin(rad_orb);
+  rin.read(group_id_orb, "radial_orbital");
   H5Gclose(group_id_orb);
   //if(input_grid)
   //{
@@ -391,12 +383,12 @@ void NGOBuilder::addNumerical(xmlNodePtr cur, const std::string& dsname)
   //}
   //else
   {
-    GridType* agrid = m_orbitals->Grids[0];
-    int imax = rad_orb.size()-1;
-    RadialOrbitalType *radorb = new RadialOrbitalType(agrid,rad_orb);
+    GridType* agrid           = m_orbitals->Grids[0];
+    int imax                  = rad_orb.size() - 1;
+    RadialOrbitalType* radorb = new RadialOrbitalType(agrid, rad_orb);
     //calculate boundary condition, assume derivates at endpoint are 0.0
-    RealType yprime_i = (rad_orb[imin+1]-rad_orb[imin])/((agrid->r(imin+1)-agrid->r(imin)));
-    radorb->spline(imin,yprime_i,imax,0.0);
+    RealType yprime_i = (rad_orb[imin + 1] - rad_orb[imin]) / ((agrid->r(imin + 1) - agrid->r(imin)));
+    radorb->spline(imin, yprime_i, imax, 0.0);
     m_orbitals->Rnl.push_back(radorb);
   }
   m_orbitals->RnlID.push_back(m_nlms);
@@ -420,67 +412,57 @@ void NGOBuilder::addNumerical(xmlNodePtr cur, const std::string& dsname)
 }
 
 template<class T>
-struct PadeOrbital: public OptimizableFunctorBase
+struct PadeOrbital : public OptimizableFunctorBase
 {
-
   typedef T value_type;
-  real_type a0,a1,a2,a3,rcut;
-  std::string  nodeName;
+  real_type a0, a1, a2, a3, rcut;
+  std::string nodeName;
 
-  explicit
-  PadeOrbital(const char* node_name="radfunc"):
-    a0(1.0),a1(-0.5),a2(0.0),a3(-0.2),rcut(4.0),nodeName(node_name) {}
+  explicit PadeOrbital(const char* node_name = "radfunc")
+      : a0(1.0), a1(-0.5), a2(0.0), a3(-0.2), rcut(4.0), nodeName(node_name)
+  {}
 
-  ~PadeOrbital() { }
+  ~PadeOrbital() {}
 
-  OptimizableFunctorBase* makeClone() const
-  {
-    return new PadeOrbital<T>(*this);
-  }
+  OptimizableFunctorBase* makeClone() const { return new PadeOrbital<T>(*this); }
 
   void reset() {}
 
-  inline real_type f(real_type r)
-  {
-    return a0*std::exp((a1+a2*r)*r/(1.0e0+a3*r));
-  }
+  inline real_type f(real_type r) { return a0 * std::exp((a1 + a2 * r) * r / (1.0e0 + a3 * r)); }
 
   inline real_type df(real_type r)
   {
-    value_type t = 1.0/(1.0e0+a3*r);
-    value_type z=(a1+a2*r)*r*t;
-    value_type res = a0*std::exp(z);
-    return res*(a1+2.0*a2*r-z*a3)*t;
+    value_type t   = 1.0 / (1.0e0 + a3 * r);
+    value_type z   = (a1 + a2 * r) * r * t;
+    value_type res = a0 * std::exp(z);
+    return res * (a1 + 2.0 * a2 * r - z * a3) * t;
   }
 
   bool putBasisGroup(xmlNodePtr cur)
   {
     cur = cur->children;
-    while(cur != NULL)
+    while (cur != NULL)
     {
       std::string cname((const char*)cur->name);
-      if(cname == nodeName)
+      if (cname == nodeName)
       {
         OhmmsAttributeSet radAttrib;
-        radAttrib.add(a0,"a0");
-        radAttrib.add(a1,"a1");
-        radAttrib.add(a2,"a2");
-        radAttrib.add(a3,"a3");
+        radAttrib.add(a0, "a0");
+        radAttrib.add(a1, "a1");
+        radAttrib.add(a2, "a2");
+        radAttrib.add(a3, "a3");
         radAttrib.put(cur);
-        rcut = -1.0/a3-std::numeric_limits<T>::epsilon();
+        rcut = -1.0 / a3 - std::numeric_limits<T>::epsilon();
         LOGMSG("Pade compoenent (a0,a1,a2,a3,rcut) = " << a0 << " " << a1 << " " << a2 << " " << a3 << " " << rcut)
       }
-      cur=cur->next;
+      cur = cur->next;
     }
     return true;
   }
 
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
-  void addOptimizables( VarRegistry<real_type>& vlist) {}
+  void addOptimizables(VarRegistry<real_type>& vlist) {}
 };
 
 void NGOBuilder::addPade(xmlNodePtr cur)
@@ -499,4 +481,4 @@ void NGOBuilder::addPade(xmlNodePtr cur)
   //m_orbitals->Rnl.push_back(radorb);
   //m_orbitals->RnlID.push_back(m_nlms);
 }
-}
+} // namespace qmcplusplus

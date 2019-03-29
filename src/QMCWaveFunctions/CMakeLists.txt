@@ -52,6 +52,7 @@ SET(JASTROW_SRCS
   Jastrow/kSpaceJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
   Jastrow/RadialJastrowBuilder.cpp
+  Jastrow/CountingJastrowBuilder.cpp
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
   OptimizableSPOBuilder.cpp
@@ -76,24 +77,33 @@ IF(OHMMS_DIM MATCHES 3)
 
   SET(JASTROW_SRCS ${JASTROW_SRCS}
     Jastrow/eeI_JastrowBuilder.cpp
+    Jastrow/CountingJastrowBuilder.cpp
     )
 
-  IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
-    SET(FERMION_SRCS ${FERMION_SRCS}
-      MolecularOrbitals/STOBuilder.cpp
-      MolecularOrbitals/GTOBuilder.cpp
-      MolecularOrbitals/NGOBuilder.cpp
-      )
-  ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
-
-  IF(NOT QMC_COMPLEX AND ENABLE_SOA)
-    #lcao is deigned for localized orbitals in bulk and complex
-    SET(FERMION_SRCS ${FERMION_SRCS}  lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp lcao/CuspCorrection.cpp lcao/LCAOrbitalSetWithCorrection.cpp)
-  ENDIF(NOT QMC_COMPLEX AND ENABLE_SOA)
+  IF(ENABLE_SOA)
+    SET(FERMION_SRCS ${FERMION_SRCS} lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp)
+    IF(NOT QMC_COMPLEX)
+      #lcao cusp correction is not ready for complex
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        lcao/CuspCorrection.cpp
+        lcao/LCAOrbitalSetWithCorrection.cpp
+        lcao/CuspCorrectionConstruction.cpp
+        )
+    ENDIF(NOT QMC_COMPLEX)
+  ELSE(ENABLE_SOA)
+    IF(NOT QMC_COMPLEX)
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        MolecularOrbitals/STOBuilder.cpp
+        MolecularOrbitals/GTOBuilder.cpp
+        MolecularOrbitals/NGOBuilder.cpp
+        )
+    ENDIF(NOT QMC_COMPLEX)
+  ENDIF(ENABLE_SOA)
 
   IF(QMC_CUDA)
     SET(FERMION_SRCS ${FERMION_SRCS}
-      Fermion/determinant_update.cu 
+      Fermion/determinant_update.cu
+      Fermion/delayed_update.cu
       Fermion/DiracDeterminantCUDA.cpp
       Fermion/SlaterDetCUDA.cpp
       TrialWaveFunction_CUDA.cpp
@@ -121,7 +131,6 @@ IF(OHMMS_DIM MATCHES 3)
         )
     ENDIF(HAVE_EINSPLINE)
   ENDIF(QMC_CUDA)
-
 
   IF(HAVE_EINSPLINE)
     IF(NOT MIXED_PRECISION)
@@ -166,20 +175,16 @@ IF(OHMMS_DIM MATCHES 3)
     )
   ENDIF(QMC_COMPLEX)
 
-  #only experimental version
-  IF(QMC_BUILD_LEVEL GREATER 2)
-    IF(NOT QMC_COMPLEX)
-    SET(FERMION_SRCS ${FERMION_SRCS}
-      AGPDeterminant.cpp AGPDeterminantBuilder.cpp
-      )
-    ENDIF(NOT QMC_COMPLEX)
-  ENDIF(QMC_BUILD_LEVEL GREATER 2)
+  IF(NOT QMC_COMPLEX)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    AGPDeterminant.cpp AGPDeterminantBuilder.cpp
+    )
+  ENDIF(NOT QMC_COMPLEX)
 
 ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminant.cpp
-  Fermion/DiracDeterminantOpt.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
   Fermion/MultiSlaterDeterminant.cpp
@@ -195,6 +200,10 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   WaveFunctionFactory.cpp
   )
 
+IF(ENABLE_CUDA)
+  SET(FERMION_SRCS ${FERMION_SRCS} Fermion/delayed_update_helper.cu)
+ENDIF(ENABLE_CUDA)
+
 IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
   SET(FERMION_SRCS ${FERMION_SRCS}
     Fermion/SlaterDetOpt.cpp
@@ -204,11 +213,17 @@ ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
 ####################################
 # create libqmcwfs
 ####################################
-IF(QMC_CUDA)
+IF(QMC_CUDA OR ENABLE_CUDA)
   CUDA_ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
-ELSE(QMC_CUDA)
+ELSE(QMC_CUDA OR ENABLE_CUDA)
   ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
-ENDIF(QMC_CUDA)
+ENDIF(QMC_CUDA OR ENABLE_CUDA)
+
+IF(HAVE_CUDA)
+  CUDA_ADD_CUBLAS_TO_TARGET(qmcwfs)
+  TARGET_LINK_LIBRARIES( qmcwfs ${CUDA_cusolver_LIBRARY} )
+ENDIF(HAVE_CUDA)
+
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcwfs STATIC ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
 #ELSE(QMC_BUILD_STATIC)

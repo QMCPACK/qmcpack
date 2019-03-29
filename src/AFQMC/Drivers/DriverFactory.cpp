@@ -49,9 +49,9 @@ bool DriverFactory::executeDriver(std::string title, int m_series, xmlNodePtr cu
 
 }
 
-bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodePtr cur) 
+bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodePtr cur)
 {
-  if(cur==NULL) 
+  if(cur==NULL)
     APP_ABORT(" Error: Null xml node in DriverFactory::executeAFQMCDriver(). \n ");
 
   std::string ham_name("ham0");
@@ -75,13 +75,13 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   int NMO = AFinfo.NMO;
   int NAEA = AFinfo.NAEA;
   int NAEB = AFinfo.NAEB;
- 
+
   std::string hdf_read_restart(""),str1("no");
 
   bool set_nWalker_target = false;
   double dt = 0.01;
   int ncores_per_TG=1;
-  int nWalkers = 10;  
+  int nWalkers = 10;
   ParameterSet m_param;
   m_param.add(nWalkers,"nWalkers","int");
   m_param.add(ncores_per_TG,"ncores_per_TG","int");
@@ -95,7 +95,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   m_param.put(cur);
 
   // hard restriction for now
-  if(ncores<0) 
+  if(ncores<0)
     ncores = ncores_per_TG;
   else if(ncores != ncores_per_TG)
     APP_ABORT(" Error: Current implementation requires the same ncores in all execution blocks. \n");
@@ -136,14 +136,14 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
 
       if(read.open(hdf_read_restart,H5F_ACC_RDONLY)) {
 
-        // always write driver data and walkers 
+        // always write driver data and walkers
         if(!read.push("AFQMCDriver",false)) return false;
 
         std::vector<IndexType> Idata(2);
         std::vector<RealType> Rdata(2);
 
-        if(!read.read(Idata,"DriverInts")) return false;
-        if(!read.read(Rdata,"DriverReals")) return false;
+        if(!read.readEntry(Idata,"DriverInts")) return false;
+        if(!read.readEntry(Rdata,"DriverReals")) return false;
 
         Eshift = Rdata[0];
 
@@ -151,11 +151,11 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
         step0=Idata[1];
 
         read.pop();
-        restarted = true; 
+        restarted = true;
+        read.close();
       }
 
       if(!restarted) {
-        read.close();
         app_log()<<" WARNING: Problems restarting simulation. Starting from default settings. \n";
       }
 
@@ -173,7 +173,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   /*
    * to do:
    *  - move all parameters related to HamiltonianOperations to wfn xml, e.g. cutvn
-   *  - add logic for estimators, e.g. whether to evaluate energy, which wfn to use, etc. 
+   *  - add logic for estimators, e.g. whether to evaluate energy, which wfn to use, etc.
    */
 
   // check that factories have registered objects.
@@ -191,29 +191,28 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   int nnodes_wfn = std::max(1,get_parameter<int>(WfnFac,wfn_name,"nnodes",1));
   RealType cutvn = get_parameter<RealType>(PropFac,prop_name,"cutoff",1e-6);
   std::string wfn_filetype =  get_parameter<std::string>(WfnFac,wfn_name,"filetype","");
-  int back_propagation = get_parameter<int>(PropFac,prop_name,"back_propagation",0);
 
   // setup task groups
   auto& TGprop = TGHandler.getTG(nnodes_propg);
   auto& TGwfn = TGHandler.getTG(nnodes_wfn);
 
   // walker set and type
-  WalkerSet& wset = WSetFac.getWalkerSet(TGHandler.getTG(1),wset_name,rng,back_propagation);
+  WalkerSet& wset = WSetFac.getWalkerSet(TGHandler.getTG(1),wset_name,rng);
   WALKER_TYPES walker_type = wset.getWalkerType();
 
-  if(not WfnFac.is_constructed(wfn_name) && wfn_filetype != "hdf5") { 
-  
+  if(not WfnFac.is_constructed(wfn_name) && wfn_filetype != "hdf5") {
+
     // hamiltonian
-    Hamiltonian& ham0 = HamFac.getHamiltonian(gTG,ham_name); 
+    Hamiltonian& ham0 = HamFac.getHamiltonian(gTG,ham_name);
 
     // build wavefunction
     Wavefunction& wfn0 = WfnFac.getWavefunction(TGprop,TGwfn,wfn_name,walker_type,
-						&ham0,cutvn,nWalkers); 	      	
+						&ham0,cutvn,nWalkers);
   }
 
   // wfn builder should not use Hamiltonian pointer now
   Wavefunction& wfn0 = WfnFac.getWavefunction(TGprop,TGwfn,wfn_name,walker_type,
-						nullptr,cutvn,nWalkers); 	      	
+						nullptr,cutvn,nWalkers);
 
   // propagator
   Propagator& prop0 = PropFac.getPropagator(TGprop,prop_name,wfn0,rng);
@@ -221,34 +220,34 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
 
   // resize walker set
   if(restarted) {
-    restartFromHDF5(wset,nWalkers,read,set_nWalker_target);
+    restartFromHDF5(wset,nWalkers,hdf_read_restart,read,set_nWalker_target);
     wfn0.Energy(wset);
   } else {
-    auto initial_guess = WfnFac.getInitialGuess(wfn_name);	
+    auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     wset.resize(nWalkers,initial_guess[0],
-                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+                         initial_guess[1]({0,NMO},{0,NAEB}));
     wfn0.Energy(wset);
-    app_log()<<" Energy of starting determinant - E1, EJ, EXX: " 
-             <<std::setprecision(12) <<wset[0].E1() <<" " 
-             <<wset[0].EJ() <<" " 
-             <<wset[0].EXX() <<std::endl; 
+    app_log()<<" Energy of starting determinant - E1, EJ, EXX: "
+             <<std::setprecision(12) <<*wset[0].E1() <<" "
+             <<*wset[0].EJ() <<" "
+             <<*wset[0].EXX() <<std::endl;
     if(hybrid)
       Eshift=0.0;
     else
-      Eshift=real(wset[0].energy()); 
+      Eshift=real(wset[0].energy());
   }
 
   if(gTG.getGlobalRank() == 0)
     read.close();
 
   // is this run using importance sampling?
-  bool impsamp = true;
+  bool free_proj = prop0.free_propagation();
   // if hybrid calculation, set to true
-  bool addEnergyEstim = hybrid; 
+  bool addEnergyEstim = hybrid;
 
   // estimator setup
   // FIX issue with Hamiltonian object expected by estimator handler
-  EstimatorHandler estim0(TGHandler,AFinfo,title,cur,WfnFac,wfn0,nullptr,addEnergyEstim, impsamp);
+  EstimatorHandler estim0(TGHandler,AFinfo,title,cur,WfnFac,wfn0,walker_type,HamFac,ham_name,dt,addEnergyEstim,!free_proj);
 
   app_log()<<"\n****************************************************\n"
            <<"****************************************************\n"
@@ -276,7 +275,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   return true;
 }
 
-bool DriverFactory::executeBenchmarkDriver(std::string title, int m_series, xmlNodePtr cur) 
+bool DriverFactory::executeBenchmarkDriver(std::string title, int m_series, xmlNodePtr cur)
 {
   return false;
 }

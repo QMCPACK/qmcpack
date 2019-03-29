@@ -28,13 +28,11 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 #include "mpi3/shm/mutex.hpp"
-#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 
-#include "AFQMC/Propagators/AFQMCSharedPropagator.h"
+#include "AFQMC/Propagators/AFQMCBasePropagator.h"
 
 namespace qmcplusplus
 {
@@ -48,21 +46,21 @@ namespace afqmc
  *   - Specialized algorithm for case when vbias doesn't need to be reduced over 
  *     nodes in a TG.
  */
-class AFQMCDistributedPropagatorDistCV: public AFQMCSharedPropagator
+class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
 {
-  using base = AFQMCSharedPropagator;
+  using base = AFQMCBasePropagator;
   public:
 
     AFQMCDistributedPropagatorDistCV(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
                           Wavefunction& wfn_, CMatrix&& h1_, CVector&& vmf_, 
                           RandomGenerator_t* r): 
-            AFQMCSharedPropagator(info,cur,tg_,wfn_,std::move(h1_),std::move(vmf_),r),
+            base(info,cur,tg_,wfn_,std::move(h1_),std::move(vmf_),r),
             req_Gsend(MPI_REQUEST_NULL),
             req_Grecv(MPI_REQUEST_NULL),
             req_vsend(MPI_REQUEST_NULL),
             req_vrecv(MPI_REQUEST_NULL)
     {
-      assert(TG.getNNodesPerTG() > 1);
+      assert(TG.getNGroupsPerTG() > 1);
     }
 
     ~AFQMCDistributedPropagatorDistCV() {

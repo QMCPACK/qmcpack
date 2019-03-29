@@ -49,18 +49,17 @@ To build QMCPACK:
 \begin{enumerate}
 \item Download the latest QMCPACK distribution from
   \url{http://www.qmcpack.org}
-\item Untar the archive, e.g., \texttt{tar xvf
+\item Untar the archive, e.g., \ishell{tar xvf
     qmcpack\_v1.3.tar.gz}
 \item Check the instructions in the README
 \item Run CMake in a suitable build directory to configure QMCPACK for
-  your system: \texttt{cd
-    qmcpack/build; cmake ..}
+  your system: \ishell{cd qmcpack/build; cmake ..}
 \item If CMake is unable to find all needed libraries, see Chapter
   \ref{chap:obtaininginstalling} for instructions and specific build
   instructions for common systems.
-\item Build QMCPACK: \texttt{make} or \texttt{make -j 16}, the latter
+\item Build QMCPACK: \ishell{make} or \ishell{make -j 16}, the latter
   for a faster parallel build on a system using, e.g., 16 processes.
-\item The QMCPACK executable is \texttt{bin/qmcpack}
+\item The QMCPACK executable is \ishell{bin/qmcpack}
 \end{enumerate}
 
 QMCPACK is distributed with examples illustrating different
@@ -69,11 +68,11 @@ modest resources. We'll run a short diffusion Monte Carlo calculation
 of a water molecule:
 
 \begin{enumerate}
-\item Go to the appropriate example directory: \texttt{cd
-    ../examples/molecules}
-\item (Optional) Put the QMCPACK binary on your path:\\ \texttt{export PATH=\$PATH:location-of-qmcpack/build/bin}
-\item Run QMCPACK: \texttt{../../build/bin/qmcpack simple-H2O.xml} or
-  \texttt{qmcpack simple-H2O.xml} if you followed the step above.
+\item Go to the appropriate example directory: \ishell{cd
+    ../examples/molecules/H2O}
+\item (Optional) Put the QMCPACK binary on your path:\\ \ishell{export PATH=\$PATH:location-of-qmcpack/build/bin}
+\item Run QMCPACK: \ishell{../../../build/bin/qmcpack simple-H2O.xml} or
+  \ishell{qmcpack simple-H2O.xml} if you followed the step above.
 \item The run will output to the screen and generate a number of files:
 \begin{verbatim}
 $ls H2O*
@@ -86,11 +85,11 @@ H2O.s001.stat.h5    H2O.s002.dmc.dat    H2O.s002.scalar.dat
 \end{enumerate}
 
 If you have python and matplotlib installed, you can use the
-\texttt{qmca} analysis utility to produce statistics and plots of the
+\ishell{qmca} analysis utility to produce statistics and plots of the
 data. See Chapter \ref{chap:analyzing} for information on analyzing
 QMCPACK data.
 \begin{verbatim}
-export PATH=$PATH:location-of-qmcpack/nexus/executables 
+export PATH=$PATH:location-of-qmcpack/nexus/bin 
 export PYTHONPATH=$PYTHONPATH:location-of-qmcpack/nexus/library
 qmca H2O.s002.scalar.dat         # For statistical analysis of the DMC data
 qmca -t -q e H2O.s002.scalar.dat # Graphical plot of DMC energy

@@ -160,13 +160,12 @@ ENDIF(HAVE_OOMPI)
     Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
     Platforms/sysutil.cpp
+    Platforms/accelerators.cpp
     QMCFactory/OneDimGridFactory.cpp
     Message/Communicate.cpp 
     Message/MPIObjectBase.cpp 
     Optimize/VariableSet.cpp
     io/hdf_archive.cpp
-    spline2/einspline_allocator.c
-    spline2/bspline_allocator.cpp
     spline2/MultiBsplineData.cpp
     )
 IF (IS_GIT_PROJECT)
@@ -195,7 +194,11 @@ ENDIF()
   ELSE(QMC_CUDA)
     ADD_LIBRARY(qmcutil ${UTILITIES} ${ADIOS})
   ENDIF(QMC_CUDA)
-  
+
+  IF(HAVE_CUDA)
+    TARGET_LINK_LIBRARIES(qmcutil ${CUDA_LIBRARIES})
+  ENDIF(HAVE_CUDA)
+
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
     TARGET_COMPILE_DEFINITIONS(${TARGET} PRIVATE "USE_FAKE_RNG")
@@ -248,11 +251,6 @@ ENDIF()
     SET(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
   ENDIF(OHMMS_DIM MATCHES 2)
 
-  # IF(QMC_BUILD_LEVEL GREATER 2)
-  #   IF(NOT QMC_COMPLEX)
-  #     SET(PARTICLE ${PARTICLE} Particle/Bead_ParticleSet.cpp )
-  #   ENDIF(NOT QMC_COMPLEX)
-  # ENDIF(QMC_BUILD_LEVEL GREATER 2)
 
   SET(PARTICLEIO
     ParticleTags.cpp 
@@ -280,7 +278,7 @@ ENDIF()
   ENDIF(HAVE_LIBHDF5 OR HAVE_ADIOS)
 
   #Need to add this if nothing else but miniapps is compiled
-  if(QMC_BUILD_LEVEL GREATER 4)
+  if(QMC_BUILD_SANDBOX_ONLY)
     set(PARTICLE  ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
   endif()
 
@@ -293,7 +291,7 @@ ENDIF()
   #ENDIF(QMC_BUILD_STATIC)
   #SUBDIRS(einspline)
 
-  if(QMC_BUILD_LEVEL GREATER 4)
+  if(QMC_BUILD_SANDBOX_ONLY)
 
     MESSAGE(STATUS "Minimal build: only Sandbox")
     SUBDIRS(Sandbox)
@@ -339,6 +337,7 @@ ENDIF()
     INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
     INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
     SUBDIRS(OhmmsPETE/tests)
+    SUBDIRS(OhmmsSoA/tests)
     SUBDIRS(Numerics/tests)
     SUBDIRS(Utilities/tests)
     SUBDIRS(einspline/tests)
@@ -351,12 +350,12 @@ ENDIF()
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
     SUBDIRS(type_traits/tests)
-  
     SUBDIRS(ParticleBase/tests)
     SUBDIRS(Estimators/tests)
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
+    SUBDIRS(OpenMP/tests)
   endif() #}
 
 endif() #}}}

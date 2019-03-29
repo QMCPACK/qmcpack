@@ -397,27 +397,46 @@ public:
                             ComplexHessMatrix_t& grad_grad_psi,
                             ComplexGGGMatrix_t& grad_grad_grad_logdet);
 #ifdef QMC_CUDA
-  GPU_XRAY_TRACE void  initGPU();
+   void  finalizeConstruction();
 
   // Vectorized evaluation functions
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
+   void  evaluate (std::vector<Walker_t*> &walkers, int iat,
                  gpu::device_vector<CTS::RealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
+   void  evaluate (std::vector<Walker_t*> &walkers, int iat,
 				 gpu::device_vector<CTS::ComplexType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+   void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CTS::RealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+   void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
 				 gpu::device_vector<CTS::ComplexType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+  inline
+  void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+                  gpu::device_vector<CTS::RealType*> &phi,
+                  gpu::device_vector<CTS::RealType*> &grad_lapl,
+                  int row_stride)
+  {
+    evaluate(walkers,newpos,phi,grad_lapl,row_stride,0,false);
+  }
+   void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CTS::RealType*> &phi,
                  gpu::device_vector<CTS::RealType*> &grad_lapl,
-                 int row_stride);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-				 gpu::device_vector<CTS::ComplexType*> &phi,
-				 gpu::device_vector<CTS::ComplexType*> &grad_lapl,
-                 int row_stride);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi);
+                 int row_stride, int k, bool klinear);
+
+  inline
+  void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+                  gpu::device_vector<CTS::ComplexType*> &phi,
+                  gpu::device_vector<CTS::ComplexType*> &grad_lapl,
+                  int row_stride)
+  {
+#ifdef QMC_COMPLEX
+    evaluate(walkers,newpos,phi,grad_lapl,row_stride,0,false);
+#endif
+  }
+   void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+                  gpu::device_vector<CTS::ComplexType*> &phi,
+                  gpu::device_vector<CTS::ComplexType*> &grad_lapl,
+                  int row_stride, int k, bool klinear);
+   void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);
+   void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi);
 #endif
 
   void resetParameters(const opt_variables_type& active);
@@ -551,40 +570,40 @@ protected:
   ////////////
   // Data for vectorized evaluations
 
-  GPU_XRAY_TRACE void  sort_electrons(std::vector<PosType> &pos);
+   void  sort_electrons(std::vector<PosType> &pos);
 
 public:
-  GPU_XRAY_TRACE void  initGPU();
+   void  finalizeConstruction();
   //    void registerTimers();
 
   // Resize cuda objects
-  GPU_XRAY_TRACE void  resize_cuda(int numwalkers);
+   void  resize_cuda(int numwalkers);
 
   // Vectorized evaluation functions
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
+   void  evaluate (std::vector<Walker_t*> &walkers, int iat,
                  gpu::device_vector<CTS::RealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
+   void  evaluate (std::vector<Walker_t*> &walkers, int iat,
 				 gpu::device_vector<CTS::ComplexType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+   void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CTS::RealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+   void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
 				 gpu::device_vector<CTS::ComplexType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+   void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CTS::RealType*> &phi,
                  gpu::device_vector<CTS::RealType*> &grad_lapl,
                  int row_stride);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+   void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
 				 gpu::device_vector<CTS::ComplexType*> &phi,
 				 gpu::device_vector<CTS::ComplexType*> &grad_lapl,
                  int row_stride);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi);
+   void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);
+   void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi);
 
   std::string Type();
 
-  GPU_XRAY_TRACE SPOSet* makeClone() const;
+   SPOSet* makeClone() const;
 
-  GPU_XRAY_TRACE EinsplineSetHybrid();
+   EinsplineSetHybrid();
 };
 
 #endif

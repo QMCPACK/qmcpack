@@ -8,8 +8,7 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #include "catch.hpp"
 
@@ -34,11 +33,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -69,26 +66,26 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.R[1][2] = 0.0;
 
 
-  // BCC H 
-  elec.Lattice.R(0,0) = 3.77945227;
-  elec.Lattice.R(0,1) = 0.0;
-  elec.Lattice.R(0,2) = 0.0;
-  elec.Lattice.R(1,0) = 0.0;
-  elec.Lattice.R(1,1) = 3.77945227;
-  elec.Lattice.R(1,2) = 0.0;
-  elec.Lattice.R(2,0) = 0.0;
-  elec.Lattice.R(2,1) = 0.0;
-  elec.Lattice.R(2,2) = 3.77945227;
+  // BCC H
+  elec.Lattice.R(0, 0) = 3.77945227;
+  elec.Lattice.R(0, 1) = 0.0;
+  elec.Lattice.R(0, 2) = 0.0;
+  elec.Lattice.R(1, 0) = 0.0;
+  elec.Lattice.R(1, 1) = 3.77945227;
+  elec.Lattice.R(1, 2) = 0.0;
+  elec.Lattice.R(2, 0) = 0.0;
+  elec.Lattice.R(2, 1) = 0.0;
+  elec.Lattice.R(2, 2) = 3.77945227;
   elec.Lattice.reset();
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx) = -1;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec.addTable(ions,DT_AOS);
+  elec.addTable(ions, DT_AOS);
   elec.resetGroups();
   elec.update();
 
@@ -100,9 +97,8 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   ptcl.addParticleSet(&elec);
   ptcl.addParticleSet(&ions);
 
-//diamondC_1x1x1
-const char *particles = 
-"<tmp> \
+  //diamondC_1x1x1
+  const char* particles = "<tmp> \
 <determinantset type=\"PW\" href=\"bccH.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\"> \
    <slaterdeterminant> \
      <determinant id=\"updet\" size=\"1\"> \
@@ -129,8 +125,8 @@ const char *particles =
   pw_builder.put(pw1);
 
   REQUIRE(psi.getOrbitals().size() == 1);
-  WaveFunctionComponent *orb = psi.getOrbitals()[0];
-  SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
+  WaveFunctionComponent* orb = psi.getOrbitals()[0];
+  SlaterDet* sd              = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
   SPOSetPtr spo = sd->mySPOSet.begin()->second;
@@ -138,7 +134,7 @@ const char *particles =
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
 
-  int orbSize= spo->getOrbitalSetSize();
+  int orbSize = spo->getOrbitalSetSize();
   elec.update();
   SPOSet::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
@@ -179,14 +175,12 @@ const char *particles =
   }
   fclose(fspo);
 #endif
-
 }
 
 
 TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -224,25 +218,25 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 
 
   // LiH
-  elec.Lattice.R(0,0) = -3.55;
-  elec.Lattice.R(0,1) = 0.0;
-  elec.Lattice.R(0,2) = 3.55;
-  elec.Lattice.R(1,0) = 0.0;
-  elec.Lattice.R(1,1) = 3.55;
-  elec.Lattice.R(1,2) = 3.55;
-  elec.Lattice.R(2,0) = -3.55;
-  elec.Lattice.R(2,1) = 3.55;
-  elec.Lattice.R(2,2) = 0.0;
+  elec.Lattice.R(0, 0) = -3.55;
+  elec.Lattice.R(0, 1) = 0.0;
+  elec.Lattice.R(0, 2) = 3.55;
+  elec.Lattice.R(1, 0) = 0.0;
+  elec.Lattice.R(1, 1) = 3.55;
+  elec.Lattice.R(1, 2) = 3.55;
+  elec.Lattice.R(2, 0) = -3.55;
+  elec.Lattice.R(2, 1) = 3.55;
+  elec.Lattice.R(2, 2) = 0.0;
   elec.Lattice.reset();
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx) = -1;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec.addTable(ions,DT_AOS);
+  elec.addTable(ions, DT_AOS);
   elec.resetGroups();
   elec.update();
 
@@ -254,9 +248,8 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   ptcl.addParticleSet(&elec);
   ptcl.addParticleSet(&ions);
 
-//diamondC_1x1x1
-const char *particles = 
-"<tmp> \
+  //diamondC_1x1x1
+  const char* particles = "<tmp> \
 <determinantset type=\"PW\" href=\"LiH-arb.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\"> \
    <slaterdeterminant> \
      <determinant id=\"updet\" size=\"2\"> \
@@ -283,8 +276,8 @@ const char *particles =
   pw_builder.put(pw1);
 
   REQUIRE(psi.getOrbitals().size() == 1);
-  WaveFunctionComponent *orb = psi.getOrbitals()[0];
-  SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
+  WaveFunctionComponent* orb = psi.getOrbitals()[0];
+  SlaterDet* sd              = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
   SPOSetPtr spo = sd->mySPOSet.begin()->second;
@@ -292,7 +285,7 @@ const char *particles =
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
 
-  int orbSize= spo->getOrbitalSetSize();
+  int orbSize = spo->getOrbitalSetSize();
   elec.update();
   SPOSet::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
@@ -333,7 +326,5 @@ const char *particles =
   }
   fclose(fspo);
 #endif
-
 }
-}
-
+} // namespace qmcplusplus

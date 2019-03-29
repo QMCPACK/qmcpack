@@ -11,38 +11,51 @@ cat > $BUILD_TAG.pbs << EOF
 #PBS -d $BUILD_DIR
 #PBS -l partition=gpu
 
-cd $BUILD_DIR
+source /sw/rhea/lmod/7.8.2/rhel7.5_4.8.5/lmod/7.8.2/init/bash
 
-source /sw/rhea/environment-modules/3.2.10/rhel6.7_gnu4.4.7/init/bash
+module unload intel
+module load gcc/6.2.0
+module load openblas/0.3.5
+module load cuda/10.0.130
+module load fftw/3.3.8
+export FFTW_HOME=\$OLCF_FFTW_ROOT
+module load hdf5/1.10.3
+module load git/2.18.0
+module load cmake/3.13.4
+module load boost/1.67.0
 
-module unload PE-intel
-module load PE-gnu/5.3.0-1.10.2
-module load fftw
-export FFTW_HOME=\$FFTW3_DIR
-module load hdf5
-module load git
-module load cudatoolkit/8.0.44
-module load cmake/3.6.1
-module load boost/1.61.0
+#// this is a workaround for picking up the exact libstdc++
+#export LD_PRELOAD=/ccs/compilers/gcc/rhel7-x86_64/6.2.0/lib64/libstdc++.so.6
 
 env
 module list
+
+echo ""
+echo ""
+echo "cache source in tmpfs"
+echo "at $(date)"
+echo ""
+echo ""
+
+rm -rf /tmp/${BUILD_TAG}-src
+cp -R ${BUILD_DIR} /tmp/${BUILD_TAG}-src
 
 
 echo ""
 echo ""
 echo "starting new test for real full precision"
+echo "at $(date)"
 echo ""
 echo ""
 
-mkdir -p build
-cd build
+mkdir -p /tmp/${BUILD_TAG}-build
+cd /tmp/${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 # hacky way to check on cmake. works for now
-if ! ( grep -- '-- The C compiler identification is GNU 5.3.0' cmake.out && \
-       grep -- '-- The CXX compiler identification is GNU 5.3.0' cmake.out ) ;
+if ! ( grep -- '-- The C compiler identification is GNU 6.2.0' cmake.out && \
+       grep -- '-- The CXX compiler identification is GNU 6.2.0' cmake.out ) ;
 then
   echo "compiler version mismatch. exiting."
   exit 1
@@ -59,15 +72,16 @@ time ctest -L unit --output-on-failure
 echo ""
 echo ""
 echo "starting new test for real mixed precision"
+echo "at $(date)"
 echo ""
 echo ""
 
 cd ../
-rm -rf ./build
-mkdir -p build
-cd build
+rm -rf ./${BUILD_TAG}-build
+mkdir -p ${BUILD_TAG}-build
+cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 time make -j 24
 time make -j 24
@@ -79,15 +93,16 @@ time ctest -L unit --output-on-failure
 echo ""
 echo ""
 echo "starting new test for complex full precision"
+echo "at $(date)"
 echo ""
 echo ""
 
 cd ../
-rm -rf ./build
-mkdir -p build
-cd build
+rm -rf ./${BUILD_TAG}-build
+mkdir -p ${BUILD_TAG}-build
+cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 time make -j 24
 time make -j 24
@@ -98,21 +113,26 @@ time ctest -L unit --output-on-failure
 echo ""
 echo ""
 echo "starting new test for complex mixed precision"
+echo "at $(date)"
 echo ""
 echo ""
 
 cd ../
-rm -rf ./build
-mkdir -p build
-cd build
+rm -rf ./${BUILD_TAG}-build
+mkdir -p ${BUILD_TAG}-build
+cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DQMC_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 time make -j 24
 time make -j 24
 
 time ctest -L unit --output-on-failure
 
+# final cleanup of tmpfs
+cd ../
+rm -rf ./${BUILD_TAG}-build
+rm -rf ./${BUILD_TAG}-src
 
 EOF
 

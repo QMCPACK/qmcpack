@@ -19,10 +19,18 @@
 #include<fstream>
 #include<complex>
 
+#include "Platforms/sysutil.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "AFQMC/Utilities/type_conversion.hpp"
+#include "AFQMC/config.0.h"
+
+#include "AFQMC/Memory/custom_pointers.hpp"
+#ifdef ENABLE_CUDA
+#include "AFQMC/Numerics/detail/CUDA/Kernels/sampleGaussianRNG.cuh"
+#include "cuda_runtime.h"
+#endif
 
 namespace qmcplusplus 
 { 
@@ -273,6 +281,77 @@ void balance_partition_ordered_set_wcounts(std::vector<IType> const& counts,
   for(auto& v:counts) *it++ = (cnt+=v);
   balance_partition_ordered_set(counts.size(),indx.data(),subsets);
 }
+
+template<class Vec,
+        class RandomNumberGenerator_,
+        typename = typename std::enable_if_t<std::decay<Vec>::type::dimensionality==1>
+        >
+void sampleGaussianFields(Vec&& V, RandomNumberGenerator_& rng)
+{
+  size_t n = V.size();
+  for (int i=0; i+1<n; i+=2)
+  {
+    RealType temp1=1-0.9999999999*rng(), temp2=rng();
+    RealType mag = std::sqrt(-2.0*std::log(temp1));
+    V[i]  =mag*std::cos(6.283185306*temp2);
+    V[i+1]=mag*std::sin(6.283185306*temp2);
+  }
+  if (n%2==1)
+  {
+    RealType temp1=1-0.9999999999*rng(), temp2=rng();
+    V[n-1]=std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2);
+  }
+}
+
+template<class Mat,
+        class RandomNumberGenerator_,
+        typename = typename std::enable_if_t<(std::decay<Mat>::type::dimensionality>1)>,
+        typename = void
+        >
+void sampleGaussianFields(Mat&& M, RandomNumberGenerator_& rng)
+{
+  for(int i=0, iend=M.size(0); i<iend; ++i)
+    sampleGaussianFields(M[i],rng);
+}
+
+template<class T,
+        class RandomNumberGenerator_>
+void sampleGaussianFields_n(T* V, int n, RandomNumberGenerator_& rng)
+{
+  for (int i=0; i+1<n; i+=2)
+  {
+    RealType temp1=1-0.9999999999*rng(), temp2=rng();
+    RealType mag = std::sqrt(-2.0*std::log(temp1));
+    V[i]  =mag*std::cos(6.283185306*temp2);
+    V[i+1]=mag*std::sin(6.283185306*temp2);
+  }
+  if (n%2==1)
+  {
+    RealType temp1=1-0.9999999999*rng(), temp2=rng();
+    V[n-1]=std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2);
+  }
+}
+
+inline void memory_report()
+{
+  qmcplusplus::app_log()<<"\n --> CPU Memory Available: "
+                          <<freemem() <<std::endl;
+#ifdef ENABLE_CUDA
+  size_t free_,tot_;
+  cudaMemGetInfo(&free_,&tot_);
+  qmcplusplus::app_log()<<" --> GPU Memory Available,  Total in MB: "
+                          <<free_/1024.0/1024.0 <<" " <<tot_/1024.0/1024.0 <<"\n" <<std::endl;
+#endif
+}
+
+#ifdef ENABLE_CUDA
+template<class T,
+        class Dummy>
+void sampleGaussianFields_n(qmc_cuda::cuda_gpu_ptr<T> V, int n, Dummy &r) 
+{
+  kernels::sampleGaussianRNG(to_address(V),n,qmc_cuda::afqmc_curand_generator);
+}
+#endif
 
 }
 

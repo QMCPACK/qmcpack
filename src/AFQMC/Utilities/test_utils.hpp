@@ -43,7 +43,7 @@ inline std::tuple<int,int,int> read_info_from_hdf(std::string fileName)
     }
 
     std::vector<int> Idata(8);
-    if(!dump.read(Idata,"dims")) {
+    if(!dump.readEntry(Idata,"dims")) {
       std::cerr<<" Error in HamiltonianFactory::fromHDF5(): Problems reading dims. \n";
       APP_ABORT("");
     }
@@ -54,7 +54,7 @@ inline std::tuple<int,int,int> read_info_from_hdf(std::string fileName)
 }
 
 template<typename T>
-TEST_DATA<T>  read_test_results_from_hdf(std::string fileName)
+TEST_DATA<T>  read_test_results_from_hdf(std::string fileName, std::string wfn_type="")
 {
     hdf_archive dump;
     if(!dump.open(fileName,H5F_ACC_RDONLY)) {
@@ -67,7 +67,7 @@ TEST_DATA<T>  read_test_results_from_hdf(std::string fileName)
     }
 
     std::vector<int> Idata(8);
-    if(!dump.read(Idata,"dims")) {
+    if(!dump.readEntry(Idata,"dims")) {
       std::cerr<<" Error in HamiltonianFactory::fromHDF5(): Problems reading dims. \n";
       APP_ABORT("");
     }
@@ -76,11 +76,11 @@ TEST_DATA<T>  read_test_results_from_hdf(std::string fileName)
     T E0(0),E1(0),E2(0),Xsum(0),Vsum(0);
 
     if(dump.push("TEST_RESULTS",false)) {
-      dump.read(E0,"E0");
-      dump.read(E1,"E1");
-      dump.read(E2,"E2");
-      dump.read(Xsum,"Xsum");
-      dump.read(Vsum,"Vsum");
+      dump.read(E0,wfn_type+"_E0");
+      dump.read(E1,wfn_type+"_E1");
+      dump.read(E2,wfn_type+"_E2");
+      dump.read(Xsum,wfn_type+"_Xsum");
+      dump.read(Vsum,wfn_type+"_Vsum");
       dump.pop();
     }
 

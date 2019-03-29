@@ -9,7 +9,8 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "qmc_common.h"
+
+#include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 #include <Utilities/ProgressReportEngine.h>
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
@@ -23,14 +24,13 @@
 
 namespace qmcplusplus
 {
-
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep)
-  {
-    BsplineReaderBase* aReader=nullptr;
-    if(hybrid_rep)
-      aReader= new SplineHybridAdoptorReader<HybridRealSoA<SplineR2RSoA<double,OHMMS_PRECISION> > >(e);
-    else
-      aReader= new SplineAdoptorReader<SplineR2RSoA<double,OHMMS_PRECISION> >(e);
-    return aReader;
-  }
+BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep, const std::string& useGPU)
+{
+  BsplineReaderBase* aReader = nullptr;
+  if (hybrid_rep)
+    aReader = new SplineHybridAdoptorReader<HybridRealSoA<SplineR2RSoA<double, OHMMS_PRECISION>>>(e);
+  else
+    aReader = new SplineAdoptorReader<SplineR2RSoA<double, OHMMS_PRECISION>>(e);
+  return aReader;
 }
+} // namespace qmcplusplus

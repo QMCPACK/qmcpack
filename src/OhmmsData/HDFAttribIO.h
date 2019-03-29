@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_HDF_BASE_INTERAFCE_H
@@ -24,7 +22,7 @@
 #else
 typedef int hid_t;
 typedef std::size_t hsize_t;
-const int H5P_DEFAULT=0;
+const int H5P_DEFAULT = 0;
 #endif
 
 #include <string>
@@ -37,7 +35,6 @@ namespace qmcplusplus
  */
 struct HDFAttribIOBase
 {
-
   ///hdf node to which a dataset belongs
   hid_t my_loc;
 
@@ -45,14 +42,11 @@ struct HDFAttribIOBase
   hid_t xfer_plist;
 
   ///default constructor
-  HDFAttribIOBase():my_loc(-1),xfer_plist(H5P_DEFAULT) {}
+  HDFAttribIOBase() : my_loc(-1), xfer_plist(H5P_DEFAULT) {}
 
-  virtual ~HDFAttribIOBase() { }
+  virtual ~HDFAttribIOBase() {}
 
-  inline void setTransferProperty(hid_t xfer_mode)
-  {
-    xfer_plist=xfer_mode;
-  }
+  inline void setTransferProperty(hid_t xfer_mode) { xfer_plist = xfer_mode; }
 
   //\fn void write(fileid, name)
   //\param fileid hid_t, file id
@@ -68,12 +62,11 @@ struct HDFAttribIOBase
 
 // generic templated class for type T and is not used in reality
 template<class T>
-struct HDFAttribIO: public HDFAttribIOBase
+struct HDFAttribIO : public HDFAttribIOBase
 {
-
-  void write(hid_t, const char*) { }
-  void read(hid_t, const char*) { }
+  void write(hid_t, const char*) {}
+  void read(hid_t, const char*) {}
 };
 
-}
+} // namespace qmcplusplus
 #endif

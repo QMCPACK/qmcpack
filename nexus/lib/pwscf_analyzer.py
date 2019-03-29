@@ -86,6 +86,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             path = sim.locdir
             infile_name = sim.infile
             outfile_name= sim.outfile
+            self.input_structure = sim.system.structure
         elif arg0!=None:
             if infile_name!=None:
                 path = arg0
@@ -109,7 +110,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.info = obj(xml=xml,warn=warn)
 
         self.input = PwscfInput(os.path.join(self.path,self.infile_name))
-        self.input_structure = sim.system.structure
         if analyze:
             self.analyze()
         #end if
@@ -157,8 +157,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             nfound = 0
             index = -1
             bands = obj()
-            bands.up = []
-            bands.down = []
+            bands.up = obj()
+            bands.down = obj()
             polarized = False
             if self.input.system.nspin > 1:
                 polarized = True
@@ -209,15 +209,26 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         soccs+= lines[j]
                     #end for
                     occs   = array(soccs.split(),dtype=float)
+                    bk = obj(
+                        index           = index,
+                        kpoint_2pi_alat = kpoints_2pi_alat[index],
+                        kpoint_rel      = kpoints_rel[index],
+                        eigs            = eigs,
+                        occs            = occs,
+                        pol             = 'none',
+                        )
+                    band_channel = bands.up
                     if polarized:                  
                         if up_spin:
-                            bands.up.append({'index':index, 'kpoint_2pi_alat':kpoints_2pi_alat[index], 'kpoint_rel':kpoints_rel[index], 'eigs':eigs, 'occs':occs, 'pol':'up'})
+                            bk.pol = 'up'
                         elif not up_spin:
-                            bands.down.append({'index':index, 'kpoint_2pi_alat':kpoints_2pi_alat[index], 'kpoint_rel':kpoints_rel[index], 'eigs':eigs, 'occs':occs, 'pol':'up'})
+                            bk.pol = 'down'
+                            band_channel = bands.down
                         #end if
                     else:
                         index = nfound -1 
-                        bands.up.append({'index':index, 'kpoint_2pi_alat':kpoints_2pi_alat[index], 'kpoint_rel':kpoints_rel[index], 'eigs':eigs, 'occs':occs, 'pol':'none'})
+                    #end if
+                    band_channel.append(bk)
                     #if nfound==1:
                     #    bands.up = obj(
                     #        eigs = eigs,
@@ -234,33 +245,35 @@ class PwscfAnalyzer(SimulationAnalyzer):
             vbm        = obj(energy=-1.0e6)
             cbm        = obj(energy=1.0e6)
             direct_gap = obj(energy=1.0e6)
-            for b in bands.up + bands.down:
-                e_val  = max(b['eigs'][b['occs'] > 0.5])
-                e_cond = min(b['eigs'][b['occs'] < 0.5])
-                                              
-                if e_val > vbm.energy:
-                    vbm.energy          = e_val
-                    vbm.kpoint_rel      = b['kpoint_rel']
-                    vbm.kpoint_2pi_alat = b['kpoint_2pi_alat']
-                    vbm.index           = b['index']
-                    vbm.pol             = b['pol']
-                    vbm.band_number     = max(where(b['occs'] > 0.5))
-                #end if
-                if e_cond < cbm.energy:
-                    cbm.energy          = e_cond
-                    cbm.kpoint_rel      = b['kpoint_rel']
-                    cbm.kpoint_2pi_alat = b['kpoint_2pi_alat']
-                    cbm.index           = b['index']
-                    cbm.pol             = b['pol']
-                    cbm.band_number     = min(where(b['occs'] < 0.5))
-                #end if
-                if (e_cond - e_val) < direct_gap.energy:
-                    direct_gap.energy          = e_cond - e_val
-                    direct_gap.kpoint_rel      = b['kpoint_rel']
-                    direct_gap.kpoint_2pi_alat = b['kpoint_2pi_alat']
-                    direct_gap.index           = b['index']
-                    direct_gap.pol             = [vbm.pol, cbm.pol]
-                #end if
+            for band_channel in bands:
+                for b in band_channel:
+                    e_val  = max(b.eigs[b.occs > 0.5])
+                    e_cond = min(b.eigs[b.occs < 0.5])
+
+                    if e_val > vbm.energy:
+                        vbm.energy          = e_val
+                        vbm.kpoint_rel      = b.kpoint_rel
+                        vbm.kpoint_2pi_alat = b.kpoint_2pi_alat
+                        vbm.index           = b.index
+                        vbm.pol             = b.pol
+                        vbm.band_number     = max(where(b.occs > 0.5))
+                    #end if
+                    if e_cond < cbm.energy:
+                        cbm.energy          = e_cond
+                        cbm.kpoint_rel      = b.kpoint_rel
+                        cbm.kpoint_2pi_alat = b.kpoint_2pi_alat
+                        cbm.index           = b.index
+                        cbm.pol             = b.pol
+                        cbm.band_number     = min(where(b.occs < 0.5))
+                    #end if
+                    if (e_cond - e_val) < direct_gap.energy:
+                        direct_gap.energy          = e_cond - e_val
+                        direct_gap.kpoint_rel      = b.kpoint_rel
+                        direct_gap.kpoint_2pi_alat = b.kpoint_2pi_alat
+                        direct_gap.index           = b.index
+                        direct_gap.pol             = [vbm.pol, cbm.pol]
+                    #end if
+                #end for
             #end for
             electronic_structure = ''
             if (vbm.energy +0.025) >= cbm.energy:
@@ -425,11 +438,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     #end if
                     forces.append(aforces)
                     i+=1
-                    if i<nlines:
-                        tokens = lines[i].split()
-                        if len(tokens)==9 and tokens[1]=='force':
-                            tot_forces.append(float(tokens[3]))
-                        #end if
+                elif 'Total force' in l:
+                    tokens = l.split()
+                    if len(tokens)==9 and tokens[1]=='force':
+                        tot_forces.append(float(tokens[3]))
                     #end if
                 #end if
                 i+=1

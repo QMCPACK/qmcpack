@@ -82,7 +82,7 @@ inline SparseArray2D HDF2CSR(hdf_archive& dump, shared_communicator& node) //, A
   size_type nrows, ncols, nnz; 
   std::vector<size_type> dims(3);
   if(node.root()) {
-    if(!dump.read(dims,"dims")) 
+    if(!dump.readEntry(dims,"dims")) 
       APP_ABORT("Problems reading dims in csr_from_hdf5. \n");
     assert(dims.size()==3);
   }
@@ -95,9 +95,9 @@ inline SparseArray2D HDF2CSR(hdf_archive& dump, shared_communicator& node) //, A
   std::vector<int_type> ptrb;
   std::vector<int_type> ptre;
   if(node.root()) {
-    if(!dump.read(ptrb,"pointers_begin_")) 
+    if(!dump.readEntry(ptrb,"pointers_begin_")) 
       APP_ABORT("Problems reading pointers_begin_ in csr_from_hdf5. \n");
-    if(!dump.read(ptre,"pointers_end_")) 
+    if(!dump.readEntry(ptre,"pointers_end_")) 
       APP_ABORT("Problems reading pointers_end_ in csr_from_hdf5. \n");
     assert(ptrb.size()==nrows);
     assert(ptre.size()==nrows);
@@ -106,14 +106,14 @@ inline SparseArray2D HDF2CSR(hdf_archive& dump, shared_communicator& node) //, A
   }
 
   node.broadcast_n(nnz_per_row.begin(),nnz_per_row.size());
-  SparseArray2D SpM({nrows,ncols},{0,0},nnz_per_row,Alloc(node));
+  SparseArray2D SpM(std::tuple<std::size_t,std::size_t>{nrows,ncols},std::tuple<std::size_t,std::size_t>{0,0},nnz_per_row,Alloc(node));
 
   if(node.root()) {
     std::vector<value_type> data;
     std::vector<index_type> jdata;
-    if(!dump.read(data,"data_"))
+    if(!dump.readEntry(data,"data_"))
       APP_ABORT("Problems reading data_ in csr_from_hdf5. \n");
-    if(!dump.read(jdata,"jdata_"))
+    if(!dump.readEntry(jdata,"jdata_"))
       APP_ABORT("Problems reading jdata_ in csr_from_hdf5. \n");
     if(data.size() != nnz)
       APP_ABORT("Problems with data_ array in csr_from_hdf5. \n");
@@ -151,8 +151,8 @@ inline void CSR2HDF(hdf_archive& dump, SparseArray2D const& SpM)
 
   using size_type = ma::sparse::size_type;
   size_type nnz = SpM.num_non_zero_elements();
-  size_type nrows = SpM.shape()[0];
-  size_type ncols = SpM.shape()[1];
+  size_type nrows = SpM.size(0);
+  size_type ncols = SpM.size(1);
   {
     std::vector<size_type> dims{nrows,ncols,nnz};
     dump.write(dims,"dims"); 
@@ -162,7 +162,7 @@ inline void CSR2HDF(hdf_archive& dump, SparseArray2D const& SpM)
     size_type cnt=0;
     for(size_type i = 0; i<nrows; i++) {
         size_type nt = SpM.num_non_zero_elements(i); 
-        std::copy_n( std::addressof(*SpM.non_zero_values_data(i)), nt, data.data() + cnt ); 
+        std::copy_n( to_address(SpM.non_zero_values_data(i)), nt, data.data() + cnt ); 
         cnt+=nt;
     }    
     dump.write(data,"data_"); 
@@ -172,7 +172,7 @@ inline void CSR2HDF(hdf_archive& dump, SparseArray2D const& SpM)
     size_type cnt=0;
     for(size_type i = 0; i<nrows; i++) {
         size_type nt = SpM.num_non_zero_elements(i); 
-        std::copy_n( std::addressof(*SpM.non_zero_indices2_data(i)), nt, jdata.data() + cnt ); 
+        std::copy_n( to_address(SpM.non_zero_indices2_data(i)), nt, jdata.data() + cnt ); 
         cnt+=nt;
     }
     dump.write(jdata,"jdata_");
@@ -206,7 +206,7 @@ inline void multiple_reader_hdf5_csr(container& Q, matrix_map_ const& map_, hdf_
   if( coreid < n_working_cores ) {
 
     std::vector<int> block_size;
-    if(!dump.read(block_size,std::string("block_sizes"))) {
+    if(!dump.readEntry(block_size,std::string("block_sizes"))) {
       app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading block_sizes dataset. \n";
       APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading block_sizes dataset. \n");
     }
@@ -236,11 +236,11 @@ inline void multiple_reader_hdf5_csr(container& Q, matrix_map_ const& map_, hdf_
       if(myblock_number < last_local_block) {
         ivec.resize(2*block_size[myblock_number]);
         vvec.resize(block_size[myblock_number]);
-        if(!dump.read(ivec,std::string("index_")+std::to_string(myblock_number))) {
+        if(!dump.readEntry(ivec,std::string("index_")+std::to_string(myblock_number))) {
           app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading index_" <<myblock_number <<" dataset. \n";
           APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading index_ dataset. \n");
         }
-        if(!dump.read(vvec,std::string("vals_")+std::to_string(myblock_number))) {
+        if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(myblock_number))) {
           app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading vals_" <<myblock_number <<" dataset. \n";
           APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading vals_ dataset. \n");
         }
@@ -285,7 +285,7 @@ inline void read_csr_matrix_from_hdf_into_distributed_container(container& Q, ma
   int size = TG.Global().size();
 
   std::vector<int> block_size;
-  if(!dump.read(block_size,std::string("block_sizes"))) {
+  if(!dump.readEntry(block_size,std::string("block_sizes"))) {
     app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading block_sizes dataset. \n";
     APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading block_sizes dataset. \n");
   }
@@ -305,11 +305,11 @@ inline void read_csr_matrix_from_hdf_into_distributed_container(container& Q, ma
   for(int k=first_block,ipr=0; k<last_block; k++,ipr++) {
     ivec.resize(2*block_size[k]);
     vvec.resize(block_size[k]);
-    if(!dump.read(ivec,std::string("index_")+std::to_string(k))) {
+    if(!dump.readEntry(ivec,std::string("index_")+std::to_string(k))) {
       app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading index_" <<k <<" dataset. \n";
       APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading index_ dataset. \n");
     }
-    if(!dump.read(vvec,std::string("vals_")+std::to_string(k))) {
+    if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(k))) {
       app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading vals_" <<k <<" dataset. \n";
       APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading vals_ dataset. \n");
     }
@@ -344,7 +344,7 @@ inline void multiple_reader_local_count(hdf_archive& dump, matrix_partition cons
   if( coreid < n_working_cores ) {
 
     std::vector<int> block_size;
-    if(!dump.read(block_size,std::string("block_sizes"))) {
+    if(!dump.readEntry(block_size,std::string("block_sizes"))) {
       app_error()<<" Error in multiple_reader_count_entries: Problems reading block_sizes dataset. \n";
       APP_ABORT(" Error in multiple_reader_count_entries: Problems reading block_sizes dataset. \n");
     }
@@ -374,11 +374,11 @@ inline void multiple_reader_local_count(hdf_archive& dump, matrix_partition cons
       if(myblock_number < last_local_block) {
         ivec.resize(2*block_size[myblock_number]);
         vvec.resize(block_size[myblock_number]);
-        if(!dump.read(ivec,std::string("index_")+std::to_string(myblock_number))) {
+        if(!dump.readEntry(ivec,std::string("index_")+std::to_string(myblock_number))) {
           app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading index_" <<myblock_number <<" dataset. \n";
           APP_ABORT(" Error in multiple_reader_hdf5_SpMat: Problems reading index dataset. \n");
         }
-        if(!dump.read(vvec,std::string("vals_")+std::to_string(myblock_number))) {
+        if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(myblock_number))) {
           app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading vals_" <<myblock_number <<" dataset. \n";
           APP_ABORT(" Error in multiple_reader_hdf5_SpMat: Problems reading vals_ dataset. \n");
         }
@@ -428,7 +428,7 @@ inline void multiple_reader_global_count(hdf_archive& dump, matrix_partition con
   if( coreid < n_working_cores ) {
 
     std::vector<int> block_size;
-    if(!dump.read(block_size,std::string("block_sizes"))) {
+    if(!dump.readEntry(block_size,std::string("block_sizes"))) {
       app_error()<<" Error in multiple_reader_count_entries: Problems reading ***_block_sizes dataset. \n";
       APP_ABORT(" Error in multiple_reader_count_entries: Problems reading ***_block_sizes dataset. \n");
     }
@@ -451,17 +451,18 @@ inline void multiple_reader_global_count(hdf_archive& dump, matrix_partition con
       if( ib%nnodes != nodeid ) continue;
       ivec.resize(2*block_size[ib]);
       vvec.resize(block_size[ib]);
-      if(!dump.read(ivec,std::string("index_")+std::to_string(ib))) {
+      if(!dump.readEntry(ivec,std::string("index_")+std::to_string(ib))) {
         app_error()<<" Error in multiple_reader_count_entries: Problems reading index_" <<ib <<" dataset. \n";
         APP_ABORT(" Error in multiple_reader_count_entries: Problems reading index_  dataset. \n");
       }
-      if(!dump.read(vvec,std::string("vals_")+std::to_string(ib))) {
+      if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(ib))) {
         app_error()<<" Error in multiple_reader_count_entries: Problems reading vals_" <<ib <<" dataset. \n";
         APP_ABORT(" Error in multiple_reader_count_entries: Problems reading vals_ dataset. \n");
       } 
       for(int ik=0, ikend=block_size[ib]; ik<ikend; ik++) {
         int ip = split.map(ivec[2*ik],ivec[2*ik+1], vvec[ik]);
-        assert( ip < counts.size() );
+        if( ip > 0 )
+          assert( ip < counts.size() );
         if( ip >= 0 ) counts[ip]++;
       }
     }
@@ -486,23 +487,23 @@ inline SparseArray2D column_distributed_CSR_from_HDF(hdf_archive& dump, task_gro
   using counter =  qmcplusplus::afqmc::sparse_matrix_element_counter;
   using mat_map =  qmcplusplus::afqmc::matrix_map;
   // Take Alloc and is_root from SparseArray2D itself
-  using Alloc = boost::mpi3::intranode::allocator<value_type>;
+  using Alloc = shared_allocator<value_type>;
   using ucsr_matrix = ma::sparse::ucsr_matrix<value_type,index_type,int_type,
-                                boost::mpi3::intranode::allocator<value_type>,
+                                shared_allocator<value_type>,
                                 ma::sparse::is_root>;
 
   // if not specified, every core reads
   if(nread <= 0) nread = TG.Node().size();
 
   int c0,cN;
-  bool distribute_Ham = (TG.getNNodesPerTG() > 1); 
+  bool distribute_Ham = (TG.getNGroupsPerTG() > 1); 
   std::vector<int> row_counts(nrows);
 
   // calculate column range that belong to this node
   if(distribute_Ham) {
     // count number of non-zero elements along each column (Chol Vec)
     std::vector<IndexType> col_counts(ncols);
-    std::vector<IndexType> sets(TG.getNNodesPerTG()+1);
+    std::vector<IndexType> sets(TG.getNGroupsPerTG()+1);
     csr_hdf5::multiple_reader_global_count(dump,
                                counter(false,nrows,ncols,0,nrows,0,ncols,cutoff1bar),
                                col_counts,TG,nread);
@@ -512,18 +513,18 @@ inline SparseArray2D column_distributed_CSR_from_HDF(hdf_archive& dump, task_gro
       split.partition(TG,false,col_counts,sets);
 
       app_log()<<" Partitioning of columns in column_distributed_CSR_from_HDF: ";
-      for(int i=0; i<=TG.getNNodesPerTG(); i++)
+      for(int i=0; i<=TG.getNGroupsPerTG(); i++)
         app_log()<<sets[i] <<" ";
       app_log()<<std::endl;
       app_log()<<" Number of terms in each partitioning: ";
-      for(int i=0; i<TG.getNNodesPerTG(); i++)
+      for(int i=0; i<TG.getNGroupsPerTG(); i++)
         app_log()<<accumulate(col_counts.begin()+sets[i],col_counts.begin()+sets[i+1],0) <<" ";
       app_log()<<std::endl;
     }
 
     TG.Global().broadcast(sets.begin(),sets.end());
-    c0 = sets[TG.getLocalNodeNumber()];
-    cN = sets[TG.getLocalNodeNumber()+1];
+    c0 = sets[TG.getLocalGroupNumber()];
+    cN = sets[TG.getLocalGroupNumber()+1];
 
     csr_hdf5::multiple_reader_local_count(dump,
                              counter(true,nrows,ncols,0,nrows,c0,cN,cutoff1bar),
@@ -541,7 +542,7 @@ inline SparseArray2D column_distributed_CSR_from_HDF(hdf_archive& dump, task_gro
 
   }
 
-  ucsr_matrix ucsr({nrows,cN-c0},{0,c0},row_counts,Alloc(TG.Node()));
+  ucsr_matrix ucsr(tp_ul_ul{nrows,cN-c0},tp_ul_ul{0,c0},row_counts,Alloc(TG.Node()));
   csr::matrix_emplace_wrapper<ucsr_matrix> csr_wrapper(ucsr,TG.Node());
 
   csr_hdf5::multiple_reader_hdf5_csr<value_type,index_type>(csr_wrapper,
@@ -568,12 +569,12 @@ inline SparseArray2D unstructured_distributed_CSR_from_HDF(hdf_archive& dump, ta
 
   using mat_map =  qmcplusplus::afqmc::matrix_map;
   // Take Alloc and is_root from SparseArray2D itself
-  using Alloc = boost::mpi3::intranode::allocator<value_type>;
+  using Alloc = shared_allocator<value_type>;
   using ucsr_matrix = ma::sparse::ucsr_matrix<value_type,index_type,int_type,
-                                boost::mpi3::intranode::allocator<value_type>,
+                                shared_allocator<value_type>,
                                 ma::sparse::is_root>;
 
-  bool distribute_Ham = (TG.getNNodesPerTG() > 1);
+  bool distribute_Ham = (TG.getNGroupsPerTG() > 1);
 
   if(distribute_Ham) {
 
@@ -613,7 +614,7 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
   size_t nnz = SpM.num_non_zero_elements();
   if(nnz == size_t(0)) return;
 
-  if(TG.getNNodesPerTG() > 1) {
+  if(TG.getNGroupsPerTG() > 1) {
     if(TG.Global().root()) {
       std::vector<int> block_sizes;
       block_sizes.reserve( (nnz-size_t(1))/CSR_HDF_BLOCK_SIZE + 1);
@@ -622,7 +623,7 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
       std::vector<index_type> ivec;
       ivec.reserve(2*CSR_HDF_BLOCK_SIZE);
       size_t cnt = 0;
-      for(size_t r = 0; r<SpM.shape()[0]; ++r) {      
+      for(size_t r = 0; r<SpM.size(0); ++r) {      
         size_t nzr = SpM.num_non_zero_elements(r);
         auto val = SpM.non_zero_values_data(r);
         auto col = SpM.non_zero_indices2_data(r);
@@ -647,7 +648,7 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
         vvec.clear();
       }
 
-      int nnodes_per_TG = TG.getNNodesPerTG();
+      int nnodes_per_TG = TG.getNGroupsPerTG();
       for(int core=1; core<nnodes_per_TG; ++core) {
         size_t nnz_;
         TG.Cores().receive_n(&nnz_,1,core,core);
@@ -667,17 +668,17 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
       }    
 
       dump.write(block_sizes,"block_sizes");
-    } else if(TG.Node().root() && TG.Cores().rank() < TG.getNNodesPerTG()) { // only one TG writes
-      int nnodes_per_TG = TG.getNNodesPerTG();
+    } else if(TG.Node().root() && TG.Cores().rank() < TG.getNGroupsPerTG()) { // only one TG writes
+      int nnodes_per_TG = TG.getNGroupsPerTG();
       int rank = TG.Cores().rank();
-      TG.Cores().send_value(nnz,0,rank);
+      TG.Cores().send_n(&nnz,1,0,rank);
       std::vector<value_type> vvec;
       vvec.reserve(CSR_HDF_BLOCK_SIZE);
       std::vector<index_type> ivec;
       ivec.reserve(2*CSR_HDF_BLOCK_SIZE);
       index_type offset_r = index_type(SpM.global_origin()[0]);
       index_type offset_c = index_type(SpM.global_origin()[1]);
-      for(size_t r = 0; r<SpM.shape()[0]; ++r) {
+      for(size_t r = 0; r<SpM.size(0); ++r) {
         size_t nzr = SpM.num_non_zero_elements(r);
         auto val = SpM.non_zero_values_data(r);
         auto col = SpM.non_zero_indices2_data(r);
@@ -707,7 +708,7 @@ inline void write_distributed_CSR_to_HDF(SparseArray2D const& SpM, hdf_archive& 
       std::vector<index_type> ivec;
       ivec.reserve(2*CSR_HDF_BLOCK_SIZE);
       size_t cnt = 0;
-      for(size_t r = 0; r<SpM.shape()[0]; ++r) { 
+      for(size_t r = 0; r<SpM.size(0); ++r) { 
         size_t nzr = SpM.num_non_zero_elements(r);
         auto val = SpM.non_zero_values_data(r);
         auto col = SpM.non_zero_indices2_data(r);

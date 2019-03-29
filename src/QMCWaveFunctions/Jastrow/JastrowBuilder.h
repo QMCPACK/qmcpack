@@ -11,24 +11,21 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_GENERALIZED_JASTROWBUILDER_H
 #define QMCPLUSPLUS_GENERALIZED_JASTROWBUILDER_H
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus
 {
-
 class OrbitalConstraintsBase;
 
 /** Jastrow Jastrow Builder with constraints
  */
-class JastrowBuilder: public WaveFunctionComponentBuilder
+class JastrowBuilder : public WaveFunctionComponentBuilder
 {
-
 public:
-
   JastrowBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets);
 
   bool put(xmlNodePtr cur);
@@ -57,10 +54,12 @@ private:
   ///add two-body term
   bool addTwoBody(xmlNodePtr cur);
   /// add electron-electron ion term
-  bool add_eeI (xmlNodePtr cur);
+  bool add_eeI(xmlNodePtr cur);
   ///add k-Space term
   bool addkSpace(xmlNodePtr cur);
+  // add number-counting term
+  bool addCounting(xmlNodePtr cur);
 };
 
-}
+} // namespace qmcplusplus
 #endif

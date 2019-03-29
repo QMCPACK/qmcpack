@@ -2,6 +2,7 @@
 #define QMCPLUSPLUS_AFQMC_BENCHMARKDRIVER_H
 
 #include<Message/MPIObjectBase.h>
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 
 #include "AFQMC/config.h"
@@ -37,7 +38,7 @@ class BenchmarkDriver
 
     bool run();
 
-    bool parse(xmlNodePtr); 
+    bool parse(xmlNodePtr);
 
     bool setup(HamPtr,WSetPtr,PropPtr,WfnPtr);
 
@@ -47,9 +48,9 @@ class BenchmarkDriver
 
     bool clear() { return true; }
 
-  protected:  
+  protected:
 
-    int maxnW,delnW,nrepeat; 
+    int maxnW,delnW,nrepeat;
 
     RealType dt;
 

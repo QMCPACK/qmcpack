@@ -31,6 +31,7 @@ struct matrix_emplace_wrapper {
 
   using value_type = typename Matrix::value_type;
   using index_type = typename Matrix::index_type;
+  using shm_mutex = boost::mpi3::shm::mutex;
 
   public:
     matrix_emplace_wrapper():M(nullptr),m(nullptr) {}
@@ -38,23 +39,31 @@ struct matrix_emplace_wrapper {
     matrix_emplace_wrapper(Matrix& mat_, boost::mpi3::shared_communicator& node, std::size_t sz = MAXIMUM_EMPLACE_BUFFER_SIZE):
             M(std::addressof(mat_)),m(nullptr)
     {
-        m = std::move(std::make_unique<boost::mpi3::shm::mutex>(node));
+        m = std::move(std::make_unique<shm_mutex>(node));
         buff.reserve(std::max(sz,std::size_t(0)));
     } 
 
     // not sure this makes sense, but needed for TTI
     matrix_emplace_wrapper(matrix_emplace_wrapper const& other):M(other.M),m(nullptr)
     {
-        m = std::move(std::make_unique<boost::mpi3::shm::mutex>(other.m->scomm_));
+        m = std::move(std::make_unique<shm_mutex>(other.m->scomm_));
         buff.reserve(other.buff.size());
     }
     matrix_emplace_wrapper operator=(matrix_emplace_wrapper const& other) = delete;
-    matrix_emplace_wrapper(matrix_emplace_wrapper && other) = delete;
+    matrix_emplace_wrapper(matrix_emplace_wrapper && other) {
+        APP_ABORT(" Error: matrix_emplace_wrapper move constructor has been disabled. \n");
+    }
     matrix_emplace_wrapper operator=(matrix_emplace_wrapper && other) = delete;
 
     std::array<std::size_t, 2> shape() { 
       if(not M) return {0,0};
       return M->shape();
+    }
+
+    template<typename Size>
+    std::size_t size(Size d) {
+      if(not M) return 0;
+      return M->size(d);
     }
 
     template<typename integer_type>
@@ -140,7 +149,7 @@ struct matrix_emplace_wrapper {
         if(not M) return;
         if(buff.size()==0) return;
         {
-          std::lock_guard<boost::mpi3::shm::mutex> guard(*m);
+          std::lock_guard<shm_mutex> guard(*m);
           for(auto& t: buff) 
               M->emplace({get<0>(t),get<1>(t)},get<2>(t));
           buff.clear(); 
@@ -151,7 +160,7 @@ struct matrix_emplace_wrapper {
 
     Matrix *M;
     std::vector<std::tuple<index_type,index_type,value_type>> buff;
-    std::unique_ptr<boost::mpi3::shm::mutex> m;
+    std::unique_ptr<shm_mutex> m;
 
 };
 

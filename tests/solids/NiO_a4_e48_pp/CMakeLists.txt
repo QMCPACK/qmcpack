@@ -33,6 +33,59 @@ IF (EXISTS ${H5_FULL_PATH})
                     1 NIO_A4_E48_SCALARS # VMC
                     )
 
+#  LocalEnergy           =  -371.320817 +/- 0.000430   13.153990 +/- 0.007166
+#  LocalEnergy           =  -371.288648 +/- 0.000530   13.352353 +/- 0.006475
+#  LocalEnergy           =  -371.283531 +/- 0.000519   13.590739 +/- 0.008039
+#  LocalEnergy           =  -371.283912 +/- 0.000493   13.588468 +/- 0.007902
+  LIST(APPEND NIO_A4_E48_DMC_SCALARS    "totenergy" "-371.320817 0.023")
+  LIST(APPEND NIO_A4_E48_DMC_V0_SCALARS "totenergy" "-371.288648 0.018")
+  LIST(APPEND NIO_A4_E48_DMC_V1_SCALARS "totenergy" "-371.283531 0.018")
+  LIST(APPEND NIO_A4_E48_DMC_V3_SCALARS "totenergy" "-371.283912 0.018")
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc-dmc
+                    NiO-vmc-dmc-short.in.xml
+                    1 16
+                    TRUE
+                    2 NIO_A4_E48_DMC_SCALARS # DMC no Tmove
+                    3 NIO_A4_E48_DMC_V0_SCALARS # DMC Tmove v0
+                    )
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-delayed_update-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc-dmc
+                    NiO-delayedupdate-vmc-dmc-short.in.xml
+                    1 16
+                    TRUE
+                    2 NIO_A4_E48_DMC_SCALARS # DMC no Tmove
+                    3 NIO_A4_E48_DMC_V0_SCALARS # DMC Tmove v0
+                    )
+
+IF(NOT QMC_CUDA)
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-dmc-TMv1v3_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc-dmc
+                    NiO-vmc-dmc-TMv1v3-short.in.xml
+                    1 16
+                    TRUE
+                    2 NIO_A4_E48_DMC_V1_SCALARS # DMC Tmove v1
+                    3 NIO_A4_E48_DMC_V3_SCALARS # DMC Tmove v3
+                    )
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-delayed_update-dmc-TMv1v3_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc-dmc
+                    NiO-delayedupdate-vmc-dmc-TMv1v3-short.in.xml
+                    1 16
+                    TRUE
+                    2 NIO_A4_E48_DMC_V1_SCALARS # DMC Tmove v1
+                    3 NIO_A4_E48_DMC_V3_SCALARS # DMC Tmove v3
+                    )
+ELSE()
+  MESSAGE("Skipping NiO_a4_e48 Tmove v1/v3 tests on GPU")
+ENDIF()
+
 #  LocalEnergy           =        -370.88498 +/-          0.00088
 #  Variance              =            11.118 +/-            0.031
 #  Kinetic               =           230.555 +/-            0.020
@@ -45,6 +98,7 @@ IF (EXISTS ${H5_FULL_PATH})
   LIST(APPEND NIO_A4_E48_J3_SCALARS "kinetic" "230.555 0.46")
   LIST(APPEND NIO_A4_E48_J3_SCALARS "samples" "32000 0.0")
 
+IF(NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj3
                     "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc
@@ -65,6 +119,9 @@ IF (EXISTS ${H5_FULL_PATH})
                     1 NIO_A4_E48_J3_SCALARS # VMC
                     )
 
+ELSE()
+  MESSAGE("Skipping NiO_a4_e48 J3 tests on GPU")
+ENDIF()
 
 
 IF(NOT QMC_CUDA)
@@ -89,7 +146,7 @@ IF(NOT QMC_CUDA)
                     1 NIO_A4_E48_L2_SCALARS # VMC
                     )
 ELSE()
-  MESSAGE("Skipping NiO_a4_e48-l2 tests on gpu")
+  MESSAGE("Skipping NiO_a4_e48 L2 tests on GPU")
 ENDIF()
 
 
@@ -170,7 +227,7 @@ IF(NOT QMC_CUDA)
                     1 LONG_NIO_A4_E48_L2_SCALARS # VMC
                     )
 ELSE()
-  MESSAGE("Skipping NiO_a4_e48-l2 tests on gpu")
+  MESSAGE("Skipping NiO_a4_e48 L2 tests on GPU")
 ENDIF()
 
 

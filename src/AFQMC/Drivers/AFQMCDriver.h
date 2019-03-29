@@ -1,6 +1,7 @@
 #ifndef QMCPLUSPLUS_AFQMC_AFQMCDRIVER_H
 #define QMCPLUSPLUS_AFQMC_AFQMCDRIVER_H
 
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 #include "mpi3/communicator.hpp"
 
@@ -22,8 +23,8 @@ class AFQMCDriver: public AFQMCInfo
 
   public:
 
-    AFQMCDriver(boost::mpi3::communicator& comm, AFQMCInfo& info, 
-        std::string& title, int mser, int blk0, int stp0, double eshft_, xmlNodePtr cur, 
+    AFQMCDriver(boost::mpi3::communicator& comm, AFQMCInfo& info,
+        std::string& title, int mser, int blk0, int stp0, double eshft_, xmlNodePtr cur,
         Wavefunction& wfn_, Propagator& prpg_, EstimatorHandler& estim_):
                 AFQMCInfo(info),
 		globalComm(comm),
@@ -34,7 +35,8 @@ class AFQMCDriver: public AFQMCInfo
 		estim0(estim_),
                 block0(blk0),
 		step0(stp0),
-		Eshift(eshft_)
+		Eshift(eshft_),
+                weight_reset_period(0.0)
     {
       name = "AFQMCDriver";
 
@@ -46,13 +48,13 @@ class AFQMCDriver: public AFQMCInfo
 
     bool run(WalkerSet&);
 
-    bool parse(xmlNodePtr); 
+    bool parse(xmlNodePtr);
 
     bool checkpoint(WalkerSet&,int,int);
 
     bool clear();
 
-  protected:  
+  protected:
 
     boost::mpi3::communicator& globalComm;
 
@@ -60,8 +62,6 @@ class AFQMCDriver: public AFQMCInfo
 
     int m_series;
     std::string project_title;
-
-    myTimer LocalTimer;
 
     std::string hdf_write_restart;
 
@@ -85,7 +85,9 @@ class AFQMCDriver: public AFQMCInfo
 
     int samplePeriod;
 
-    RealType dShift; 
+    double weight_reset_period;
+
+    RealType dShift;
     RealType Eshift;
     RealType Etav;
 

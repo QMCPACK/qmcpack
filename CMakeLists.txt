@@ -30,7 +30,7 @@ ENDIF(COMMAND cmake_policy)
 # Version
 ######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 6)
+SET(QMCPACK_VERSION_MINOR 7)
 SET(QMCPACK_VERSION_PATCH 0)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
@@ -60,8 +60,8 @@ MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_M
 ######################################################################
 # Build level
 ######################################################################
-SET(QMC_BUILD_LEVEL 3 CACHE INTEGER
-  "QMC Build Level: 1=bare, 2=developer, 3=experimental, 4=minimal")
+
+SET(QMC_BUILD_SANDBOX_ONLY OFF CACHE BOOLEAN "Build only applications in Sandbox directory")
 IF ( NOT CMAKE_BUILD_TYPE AND NOT CMAKE_TOOLCHAIN_FILE)
   SET( CMAKE_BUILD_TYPE Release )
 ENDIF()
@@ -140,7 +140,13 @@ SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
-SET(ENABLE_SOA 0 CACHE BOOL "Enable/disable SoA optimization")
+SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)")
+SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
+SET(ENABLE_OFFLOAD 0 CACHE BOOL "Enable OpenMP offload")
+
+IF(ENABLE_CUDA AND QMC_CUDA)
+  MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
+ENDIF(ENABLE_CUDA AND QMC_CUDA)
 
 ######################################################################
 # set debug printout
@@ -180,12 +186,10 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # Build options
 # QMC_BUILD_STATIC build static/dynamic  libraries
 # BUILD_QMCTOOLS   build utility programs
-# BUILD_SANDBOX    build test programs and miniapps
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
 SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
-SET(BUILD_SANDBOX 1 CACHE BOOL "Build sandbox tests and miniapps")
 SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
 IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
   MESSAGE(STATUS "LMY engine is not compatible with CUDA build! Disabling LMY engine")
@@ -196,6 +200,13 @@ IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
   SET(BUILD_LMYENGINE_INTERFACE 0)
 ENDIF()
 SET(BUILD_AFQMC 0 CACHE BOOL "Build with AFQMC")
+# AFQMC requires MPI.
+If (BUILD_AFQMC AND NOT QMC_MPI)
+  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
+ENDIF()
+If (BUILD_AFQMC AND ENABLE_CUDA AND NOT QMC_COMPLEX)
+  MESSAGE(FATAL_ERROR "AFQMC only works on GPUs if QMC_COMPLEX=1.")
+ENDIF()
 SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
 #SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
@@ -232,8 +243,6 @@ SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 SET(MAC_VECLIB 0)
-set(ENABLE_TAU_PROFILE 0 CACHE BOOL "Enable tau for profiling")
-set(TAU_HOME $ENV{TAU_HOME})
 
 ######################################################
 # Directory where customize cmake files reside
@@ -399,6 +408,11 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ENDIF()
 
 
+  #--------------------------------------------------------------------------
+  # Check that a C++ compiler is compatiable with the underlying libstdc++
+  #--------------------------------------------------------------------------
+  include(CMake/Testlibstdc++.cmake)
+
   #---------------------------------------------------
   # Check that a C++ 14 standard library is configured
   #---------------------------------------------------
@@ -515,16 +529,6 @@ IF (BUILD_AFQMC AND NOT MKL_FOUND)
   MESSAGE(WARNING "AFQMC - MKL not found, using simple sparse matrix routines.  Link with MKL sparse libraries for better performance.")
 ENDIF()
 
-# AFQMC requires MPI
-If (BUILD_AFQMC AND NOT QMC_MPI)
-  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
-ENDIF()
-
-# AFQMC does not work with real builds for now
-If (BUILD_AFQMC AND NOT QMC_COMPLEX)
-  MESSAGE(FATAL_ERROR "AFQMC requires building with QMC_COMPLEX=1 for now.")
-ENDIF()
-
 IF (BUILD_AFQMC AND NOT APPLE)
   LINK_LIBRARIES("rt")
 ENDIF()
@@ -635,9 +639,7 @@ IF(HDF5_FOUND)
     ENDIF(ENABLE_PHDF5)
   ENDIF(HDF5_IS_PARALLEL)
 ELSE(HDF5_FOUND)
-  if(NOT QMC_PHI)
-    MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_ROOT")
-  endif()
+  MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr
@@ -652,7 +654,7 @@ ELSE()
 ENDIF()
 
 SET(HAVE_CUDA 0)
-IF(QMC_CUDA)
+IF(QMC_CUDA OR ENABLE_CUDA)
   IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CUDA_PROPAGATE_HOST_FLAGS ON)
   ELSE(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -680,11 +682,12 @@ IF(QMC_CUDA)
     SET( CUDA_ARCH sm_35 CACHE STRING "CUDA architecture sm_XX")
     SET(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
+  INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
   set(HAVE_CUDA 1)
   MESSAGE("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
-ELSE(QMC_CUDA)
+ELSE(QMC_CUDA OR ENABLE_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
-ENDIF(QMC_CUDA)
+ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
 SET(USE_NVTX_API 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
 IF(USE_NVTX_API)
@@ -700,48 +703,6 @@ IF(USE_NVTX_API)
     LINK_LIBRARIES(${NVTX_API_LIB})
   ENDIF(HAVE_CUDA)
 ENDIF(USE_NVTX_API)
-
-#INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
-##################################################################
-# TODO:use profile tools
-##################################################################
-#IF(MPIP_PROFILE)
-#  LINK_LIBRARIES("/usr/apps/tools/mpip/lib/cmpi/libmpiP.a")
-#  LINK_LIBRARIES("/usr/lib/libbfd.a")
-#  LINK_LIBRARIES("/usr/lib/libiberty.a")
-#ENDIF(MPIP_PROFILE)
-#if(ENABLE_TAU_PROFILE)
-#  INCLUDE(${PROJECT_CMAKE}/FindTau.cmake)
-#endif(ENABLE_TAU_PROFILE)
-#    #add tau stuff
-#    IF(FOUND_TAU)
-#      ADD_DEFINITIONS(
-#        -DTAU_MPI
-#        -DTAU_MPI_THREADED
-#        -DTAU_MPIGREQUEST
-#        -DTAU_MPIDATAREP
-#        -DTAU_MPIERRHANDLER
-#        -DTAU_MPIATTRFUNCTION
-#        -DTAU_MPITYPEEX
-#        -DTAU_MPIADDERROR
-#      )
-#      #build libtau
-#      subdirs(src/tau)
-#      LINK_LIBRARIES(tau)
-#    ENDIF(FOUND_TAU)
-#IF(FOUND_TAU)
-#  INCLUDE_DIRECTORIES(${TAU_INCLUDE_DIR})
-#  ADD_DEFINITIONS (-DPROFILING_ON
-#      -DTAU_STDCXXLIB
-#      -DTAU_DOT_H_LESS_HEADERS
-#      -DTAU_CALLPATH
-#      -DTAU_LARGEFILE64_SOURCE
-#      -DTAU_BFD
-#      )
-#  if(ENABLE_OPENMP)
-#    ADD_DEFINITIONS(-DTAU_OPENMP)
-#  endif(ENABLE_OPENMP)
-#ENDIF(FOUND_TAU)
 
 ######################################################
 # Add optional macros
@@ -911,7 +872,7 @@ ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)
 
-IF(NOT(QMC_BUILD_LEVEL GREATER 4))
+IF(NOT QMC_BUILD_SANDBOX_ONLY)
   SUBDIRS(tests)
   SUBDIRS(examples)
   IF(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus")
