@@ -8,8 +8,8 @@
 //
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file ACForce.h
  *@brief Declaration of ACForce, Assaraf-Caffarel ZVZB style force estimation.
  */
@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-struct ACForce: public QMCHamiltonianBase
+struct ACForce : public QMCHamiltonianBase
 {
   typedef ParticleSet::ParticlePos_t Force_t;
   /** Constructor **/
@@ -31,17 +31,17 @@ struct ACForce: public QMCHamiltonianBase
   ~ACForce(){};
   /** Copy constructor **/
   //ACForce(const ACForce& ac)  {};
- 
+
   /** I/O Routines */
-  bool put(xmlNodePtr cur){return true;};
-  bool get(std::ostream& os) const {return true;};
+  bool put(xmlNodePtr cur) { return true; };
+  bool get(std::ostream& os) const { return true; };
 
   /** Cloning **/
-  //We don't actually use this makeClone method.  We just put an APP_ABORT here 
+  //We don't actually use this makeClone method.  We just put an APP_ABORT here
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
   //Not derived from base class.  But we need it to properly set the Hamiltonian reference.
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
-  
+
   /** Initialization/assignment **/
   void resetTargetParticleSet(ParticleSet& P){};
   void addObservables(PropertySetType& plist, BufferType& collectables);
@@ -52,10 +52,10 @@ struct ACForce: public QMCHamiltonianBase
  *  isn't sufficient.  We override it here. **/
   void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH);
   /** Evaluate **/
-  Return_t evaluate(ParticleSet& P);  
+  Return_t evaluate(ParticleSet& P);
 
   //** Internal variables **/
-  //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this 
+  //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this
   //  instantiation.  Making sure no crosstalk happens is the job of whatever clones this.
   TrialWaveFunction& psi;
   ParticleSet& ions;
@@ -65,7 +65,7 @@ struct ACForce: public QMCHamiltonianBase
   //For indexing observables
   IndexType FirstForceIndex;
   IndexType Nions;
-  
+
   //Temporary Nion x 3 dimensional arrays for force storage.
   Force_t hf_force;
   Force_t pulay_force;
@@ -75,9 +75,7 @@ struct ACForce: public QMCHamiltonianBase
   std::string prefix;
   //We also set the following from the QMCHamiltonianBase class.
   //std::string myName;
-
 };
 
-}
+} // namespace qmcplusplus
 #endif
-
