@@ -31,7 +31,7 @@ ENDIF(COMMAND cmake_policy)
 ######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
 SET(QMCPACK_VERSION_MINOR 7)
-SET(QMCPACK_VERSION_PATCH 0)
+SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
 ######################################################################
