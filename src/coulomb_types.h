@@ -15,11 +15,11 @@
 #include <config.h>
 //model to implement the mixed precision
 
-#define DECLARE_COULOMB_TYPES \
-  using pRealType=OHMMS_PRECISION;              \
-  using mRealType=OHMMS_PRECISION_FULL;                       \
-  using pComplexType=std::complex<pRealType>;   \
-  using mComplexType=std::complex<OHMMS_PRECISION_FULL>;      \
-  using PosType=TinyVector<pRealType,OHMMS_DIM>; 
+#define DECLARE_COULOMB_TYPES                              \
+  using pRealType    = OHMMS_PRECISION;                    \
+  using mRealType    = OHMMS_PRECISION_FULL;               \
+  using pComplexType = std::complex<pRealType>;            \
+  using mComplexType = std::complex<OHMMS_PRECISION_FULL>; \
+  using PosType      = TinyVector<pRealType, OHMMS_DIM>;
 
 #endif
