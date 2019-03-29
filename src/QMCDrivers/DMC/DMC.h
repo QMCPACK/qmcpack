@@ -58,6 +58,9 @@ private:
   ///input to control maximum age allowed for walkers.
   IndexType mover_MaxAge;
 
+  std::string vmc;
+  std::string L2;
+
   void resetUpdateEngines();
   /// Copy Constructor (disabled)
   DMC(const DMC&) = delete;

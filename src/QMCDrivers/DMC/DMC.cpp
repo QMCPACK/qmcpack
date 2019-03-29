@@ -19,6 +19,7 @@
 
 #include "QMCDrivers/DMC/DMC.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
+#include "QMCDrivers/DMC/DMCUpdatePbyPVMC.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
@@ -48,7 +49,9 @@ DMC::DMC(MCWalkerConfiguration& w,
       KillNodeCrossing(0),
       Reconfiguration("no"),
       BranchInterval(-1),
-      mover_MaxAge(-1)
+      mover_MaxAge(-1),
+      vmc("no"),
+      L2("no")
 {
   RootName = "dmc";
   QMCType  = "DMC";
@@ -61,6 +64,9 @@ DMC::DMC(MCWalkerConfiguration& w,
   m_param.add(mover_MaxAge, "MaxAge", "double");
   //DMC overwrites ConstPopulation
   ConstPopulation = false;
+
+  m_param.add(vmc,"vmc","string");
+  m_param.add(L2,"L2","string");
 }
 
 void DMC::resetComponents(xmlNodePtr cur)
@@ -99,7 +105,18 @@ void DMC::resetComponents(xmlNodePtr cur)
   {
     if (QMCDriverMode[QMC_UPDATE_MODE])
     {
-      Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+      bool do_vmc = vmc=="yes";
+      bool do_L2  = L2=="yes";
+      if(!do_vmc && !do_L2)
+      {
+        app_log()<<"Using DMCUpdatePbyPWithRejectionFast\n";
+        Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+      }
+      else if(do_vmc)
+      {
+        app_log()<<"Using DMCUpdatePbyPVMC\n";
+        Movers[ip] = new DMCUpdatePbyPVMC(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+      }
       Movers[ip]->put(cur);
       Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
@@ -172,7 +189,18 @@ void DMC::resetUpdateEngines()
 #endif
       if (QMCDriverMode[QMC_UPDATE_MODE])
       {
-        Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+        bool do_vmc = vmc=="yes";
+        bool do_L2  = L2=="yes";
+        if(!do_vmc && !do_L2)
+        {
+          app_log()<<"Using DMCUpdatePbyPWithRejectionFast\n";
+          Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+        }
+        else if(do_vmc)
+        {
+          app_log()<<"Using DMCUpdatePbyPVMC\n";
+          Movers[ip] = new DMCUpdatePbyPVMC(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+        }
         Movers[ip]->put(qmcNode);
         Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
         Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);

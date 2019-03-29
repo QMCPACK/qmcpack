@@ -40,6 +40,7 @@ SET(QMCDRIVERS
   DMC/DMC.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyPFast.cpp
+  DMC/DMCUpdatePbyPVMC.cpp
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
