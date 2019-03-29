@@ -5,7 +5,7 @@
    Then you can decide to initialize arrays in host memory in factories and the constructor
    takes care of initializing the object's array in the appropriate memory space during construction!
 
--- when more of the cuda code is complete, guard cpu only code with ifndef QMC_CUDA
+-- when more of the cuda code is complete, guard cpu only code with ifndef ENABLE_CUDA
 
 
 -- right now the use of csr_matrix in cuda code is unsafe and generally difficult.

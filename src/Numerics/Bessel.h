@@ -42,9 +42,9 @@ void bessel_steed_array_cpu(const int lmax, const T x, T* jl)
     {
       jl[l]            = x_l * inv_accumuated;
       const double inv = cone / (2 * l + 3);
-      jl[l] *= cone - 0.5 * x * x * inv;
+      jl[l]          *= cone - 0.5 * x * x * inv;
       inv_accumuated *= inv;
-      x_l *= x;
+      x_l            *= x;
     }
   }
   else

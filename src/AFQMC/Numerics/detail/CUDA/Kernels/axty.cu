@@ -18,7 +18,7 @@
 #include <thrust/device_ptr.h>
 #include <thrust/transform.h>
 #include <thrust/functional.h>
-#define QMC_CUDA 1
+#define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace kernels 

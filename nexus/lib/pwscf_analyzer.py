@@ -86,6 +86,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             path = sim.locdir
             infile_name = sim.infile
             outfile_name= sim.outfile
+            self.input_structure = sim.system.structure
         elif arg0!=None:
             if infile_name!=None:
                 path = arg0
@@ -109,7 +110,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.info = obj(xml=xml,warn=warn)
 
         self.input = PwscfInput(os.path.join(self.path,self.infile_name))
-        self.input_structure = sim.system.structure
         if analyze:
             self.analyze()
         #end if
@@ -438,11 +438,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     #end if
                     forces.append(aforces)
                     i+=1
-                    if i<nlines:
-                        tokens = lines[i].split()
-                        if len(tokens)==9 and tokens[1]=='force':
-                            tot_forces.append(float(tokens[3]))
-                        #end if
+                elif 'Total force' in l:
+                    tokens = l.split()
+                    if len(tokens)==9 and tokens[1]=='force':
+                        tot_forces.append(float(tokens[3]))
                     #end if
                 #end if
                 i+=1

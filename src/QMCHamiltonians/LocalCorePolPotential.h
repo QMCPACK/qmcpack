@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_LOCAL_COREPOLPOTENTIAL_H
 #define QMCPLUSPLUS_LOCAL_COREPOLPOTENTIAL_H
 #include "Particle/ParticleSet.h"
@@ -21,7 +21,6 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup hamiltonian
  @brief The effective core polarization potential.
 
@@ -52,29 +51,26 @@ namespace qmcplusplus
    \right|^2 \;\;\; \right\}
    \f}
 */
-struct LocalCorePolPotential: public QMCHamiltonianBase
+struct LocalCorePolPotential : public QMCHamiltonianBase
 {
-
   /** core-polarization parameters for each species
    */
   struct CPP_Param
   {
-    RealType alpha, C,
-             r_b, one_over_rr;
-    inline CPP_Param(RealType a=1.0, RealType r=1.0):
-      alpha(a),C(-0.5*a),r_b(r),one_over_rr(1/r/r) {}
+    RealType alpha, C, r_b, one_over_rr;
+    inline CPP_Param(RealType a = 1.0, RealType r = 1.0) : alpha(a), C(-0.5 * a), r_b(r), one_over_rr(1 / r / r) {}
 
     inline void set(RealType a, RealType r)
     {
-      alpha=a;
-      C=-0.5*a;
-      r_b=r;
-      one_over_rr=1/r/r;
+      alpha       = a;
+      C           = -0.5 * a;
+      r_b         = r;
+      one_over_rr = 1 / r / r;
     }
     inline RealType operator()(RealType r)
     {
-      RealType z=1.0-std::exp(-r*r*one_over_rr);
-      return z*z;
+      RealType z = 1.0 - std::exp(-r * r * one_over_rr);
+      return z * z;
     }
     bool put(xmlNodePtr cur);
   };
@@ -129,9 +125,6 @@ struct LocalCorePolPotential: public QMCHamiltonianBase
   //inline RealType fcpp(RealType z) {
   //  return pow((1.0-exp(-1.0*z*z)),2);
   //}
-
 };
-}
+} // namespace qmcplusplus
 #endif
-
-

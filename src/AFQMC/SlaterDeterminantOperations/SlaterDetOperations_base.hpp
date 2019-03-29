@@ -214,7 +214,7 @@ class SlaterDetOperations_base
     // need to check if this is equivalent to QR!!!
     template<class Mat>
     void Orthogonalize(Mat&& A, T* res=nullptr) {
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
       // QR on the transpose
       int NMO = A.size(0);
       int NAEA = A.size(1);

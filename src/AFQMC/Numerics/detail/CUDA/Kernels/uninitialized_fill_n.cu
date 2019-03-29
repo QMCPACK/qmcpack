@@ -22,7 +22,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/uninitialized_fill.h>
 */
-#define QMC_CUDA 1
+#define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace kernels 

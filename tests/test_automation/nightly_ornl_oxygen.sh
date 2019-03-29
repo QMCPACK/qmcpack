@@ -97,7 +97,7 @@ case $sys in
         export OMPI_CXX=g++
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC8-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload openmpi@3.1.3~cuda%gcc@8.2.0
@@ -112,7 +112,7 @@ case $sys in
         if [ $compilerversion = "8.2.0" ]; then
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC8-NoMPI-Release
-	export CTCFG="-DQMC_MPI=0 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_MPI=0 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         else
@@ -130,7 +130,7 @@ case $sys in
         export OMPI_CXX=clang++
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload openmpi@3.1.3~cuda%gcc@8.2.0
@@ -152,7 +152,7 @@ case $sys in
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Release
 	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DQMC_CUDA=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
 	spack unload boost@1.61.0
@@ -174,7 +174,7 @@ case $sys in
 	export QMCPACK_TEST_SUBMIT_NAME=Volta-CLANG6-CUDA-Release
 	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 	export CUDA_VISIBLE_DEVICES=$OXYGEN_VOLTA
-	export CTCFG="-DQMC_CUDA=1 -DCUDA_ARCH="sm_70" -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DCUDA_ARCH="sm_70" -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
 	spack unload boost@1.61.0
@@ -221,7 +221,7 @@ case $sys in
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Complex-Release
 	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DQMC_CUDA=1 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
 	spack unload boost@1.61.0
@@ -244,7 +244,7 @@ case $sys in
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Full-Release
 	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DQMC_CUDA=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
 	spack unload boost@1.61.0
@@ -267,7 +267,7 @@ case $sys in
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG6-CUDA-Complex-Full-Release
 	export OLD_CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 	export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
-	export CTCFG="-DQMC_CUDA=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_CUDA=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
 	export CUDA_VISIBLE_DEVICES=$OLD_CUDA_VISIBLE_DEVICES	
@@ -287,7 +287,7 @@ case $sys in
         export OMPI_CXX=clang++
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG7-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload openmpi%gcc@4.8.5
@@ -302,7 +302,7 @@ case $sys in
         if [ $compilerversion = "7.0.0" ]; then
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=CLANG7-NoMPI-Release
-	export CTCFG="-DQMC_MPI=0 DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_MPI=0 DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DBUILD_AFQMC=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload llvm@7.0.0
@@ -327,7 +327,7 @@ case $sys in
         export OMPI_CXX=g++
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC8-MKL-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload openmpi@3.1.3~cuda%gcc@8.2.0
@@ -393,7 +393,7 @@ case $sys in
         export OMPI_CXX=g++
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${DONLY}
 	spack unload boost@1.61.0
         spack unload openmpi@3.1.3~cuda%gcc@8.2.0
@@ -426,7 +426,7 @@ case $sys in
         export OMPI_CXX=g++
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC5-MKL-Complex-Release
-	export CTCFG="-DQMC_COMPLEX=1 -DBUILD_AFQMC-1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DBUILD_AFQMC-1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${DONLY}
 	spack unload boost@1.61.0
         spack unload openmpi@3.1.3~cuda%gcc@8.2.0
@@ -545,7 +545,7 @@ case $sys in
 	    echo -- Found existing QE ${QE_VERSION} executable
 	fi
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Release
-	export CTCFG="-DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload gcc@7.2.0
@@ -593,7 +593,7 @@ case $sys in
         spack load gcc@7.2.0
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-NoMPI-Release
-	export CTCFG="-DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DQMC_MPI=0 -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DQMC_MPI=0 -DBUILD_AFQMC=0 -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload gcc@7.2.0
@@ -638,7 +638,7 @@ case $sys in
         export OMPI_CXX=g++
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC8-Complex-Release
-	export CTCFG="-DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload openmpi@3.1.3~cuda%gcc@8.2.0
@@ -664,7 +664,7 @@ case $sys in
         export OMPI_CXX=g++
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=GCC8-MKL-Complex-Release
-	export CTCFG="-DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload openmpi@3.1.3~cuda%gcc@8.2.0
@@ -692,7 +692,7 @@ case $sys in
         spack load gcc@7.2.0
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Complex-Release
-	export CTCFG="-DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=0 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DBUILD_AFQMC=0 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload gcc@7.2.0
@@ -740,7 +740,7 @@ case $sys in
         spack load gcc@7.2.0
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Mixed-Release
-	export CTCFG="-DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload gcc@7.2.0
@@ -788,7 +788,7 @@ case $sys in
         spack load gcc@7.2.0
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2018-Complex-Mixed-Release
-	export CTCFG="-DQMC_MIXED_PRECISION=1 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DQMC_MIXED_PRECISION=1 -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_LMYENGINE_INTERFACE=1 -DHDF5_ROOT=/home/pk7/apps/hdf5-1.10.1-intel-mpi/ -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 	spack unload boost@1.61.0
         spack unload gcc@7.2.0
@@ -843,7 +843,7 @@ case $sys in
 	spack load boost@1.61.0
 	export QMCPACK_TEST_SUBMIT_NAME=PGI2018-NoMPI-MKL-Release
 #	export CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
-	export CTCFG="-DCMAKE_C_COMPILER=pgcc -DCMAKE_CXX_COMPILER=pgc++ -DQMC_MPI=0 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
+	export CTCFG="-DENABLE_SOA=0 -DCMAKE_C_COMPILER=pgcc -DCMAKE_CXX_COMPILER=pgc++ -DQMC_MPI=0 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV"
  	ctest ${CTCFG} ${GLOBALTCFG}
 #        spack unload openmpi@3.1.3~cuda%gcc@8.2.0
 	spack unload boost@1.61.0

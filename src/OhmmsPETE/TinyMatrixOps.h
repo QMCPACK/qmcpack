@@ -471,15 +471,8 @@ struct OTBinary<TinyMatrix<T1, 3, 3>, TinyMatrix<T2, 3, 3>, OP>
   typedef TinyMatrix<Type_t, 3, 3> Return_t;
   inline static Return_t apply(const TinyMatrix<T1, 3, 3>& lhs, const TinyMatrix<T2, 3, 3>& rhs, OP op)
   {
-    return Return_t(op(lhs[0], rhs[0]),
-                    op(lhs[1], rhs[1]),
-                    op(lhs[2], rhs[2]),
-                    op(lhs[3], rhs[3]),
-                    op(lhs[4], rhs[4]),
-                    op(lhs[5], rhs[5]),
-                    op(lhs[6], rhs[6]),
-                    op(lhs[7], rhs[7]),
-                    op(lhs[8], rhs[8]));
+    return Return_t(op(lhs[0], rhs[0]), op(lhs[1], rhs[1]), op(lhs[2], rhs[2]), op(lhs[3], rhs[3]), op(lhs[4], rhs[4]),
+                    op(lhs[5], rhs[5]), op(lhs[6], rhs[6]), op(lhs[7], rhs[7]), op(lhs[8], rhs[8]));
   }
 };
 
@@ -490,15 +483,8 @@ struct OTBinary<TinyMatrix<T1, 3, 3>, T2, OP>
   typedef TinyMatrix<Type_t, 3, 3> Return_t;
   inline static Return_t apply(const TinyMatrix<T1, 3, 3>& lhs, T2 rhs, OP op)
   {
-    return Return_t(op(lhs[0], rhs),
-                    op(lhs[1], rhs),
-                    op(lhs[2], rhs),
-                    op(lhs[3], rhs),
-                    op(lhs[4], rhs),
-                    op(lhs[5], rhs),
-                    op(lhs[6], rhs),
-                    op(lhs[7], rhs),
-                    op(lhs[8], rhs));
+    return Return_t(op(lhs[0], rhs), op(lhs[1], rhs), op(lhs[2], rhs), op(lhs[3], rhs), op(lhs[4], rhs),
+                    op(lhs[5], rhs), op(lhs[6], rhs), op(lhs[7], rhs), op(lhs[8], rhs));
   }
 };
 
@@ -509,15 +495,8 @@ struct OTBinary<T1, TinyMatrix<T2, 3, 3>, OP>
   typedef TinyMatrix<Type_t, 3, 3> Return_t;
   inline static Return_t apply(T1 lhs, const TinyMatrix<T2, 3, 3>& rhs, OP op)
   {
-    return Return_t(op(lhs, rhs[0]),
-                    op(lhs, rhs[1]),
-                    op(lhs, rhs[2]),
-                    op(lhs, rhs[3]),
-                    op(lhs, rhs[4]),
-                    op(lhs, rhs[5]),
-                    op(lhs, rhs[6]),
-                    op(lhs, rhs[7]),
-                    op(lhs, rhs[8]));
+    return Return_t(op(lhs, rhs[0]), op(lhs, rhs[1]), op(lhs, rhs[2]), op(lhs, rhs[3]), op(lhs, rhs[4]),
+                    op(lhs, rhs[5]), op(lhs, rhs[6]), op(lhs, rhs[7]), op(lhs, rhs[8]));
   }
 };
 
@@ -531,22 +510,10 @@ struct OTBinary<TinyMatrix<T1, 4, 4>, TinyMatrix<T2, 4, 4>, OP>
   typedef TinyMatrix<Type_t, 4, 4> Return_t;
   inline static Return_t apply(const TinyMatrix<T1, 4, 4>& lhs, const TinyMatrix<T2, 4, 4>& rhs, OP op)
   {
-    return Return_t(op(lhs[0], rhs[0]),
-                    op(lhs[1], rhs[1]),
-                    op(lhs[2], rhs[2]),
-                    op(lhs[3], rhs[3]),
-                    op(lhs[4], rhs[4]),
-                    op(lhs[5], rhs[5]),
-                    op(lhs[6], rhs[6]),
-                    op(lhs[7], rhs[7]),
-                    op(lhs[8], rhs[8]),
-                    op(lhs[9], rhs[9]),
-                    op(lhs[10], rhs[10]),
-                    op(lhs[11], rhs[11]),
-                    op(lhs[12], rhs[12]),
-                    op(lhs[13], rhs[13]),
-                    op(lhs[14], rhs[14]),
-                    op(lhs[15], rhs[15]));
+    return Return_t(op(lhs[0], rhs[0]), op(lhs[1], rhs[1]), op(lhs[2], rhs[2]), op(lhs[3], rhs[3]), op(lhs[4], rhs[4]),
+                    op(lhs[5], rhs[5]), op(lhs[6], rhs[6]), op(lhs[7], rhs[7]), op(lhs[8], rhs[8]), op(lhs[9], rhs[9]),
+                    op(lhs[10], rhs[10]), op(lhs[11], rhs[11]), op(lhs[12], rhs[12]), op(lhs[13], rhs[13]),
+                    op(lhs[14], rhs[14]), op(lhs[15], rhs[15]));
   }
 };
 
@@ -557,21 +524,9 @@ struct OTBinary<TinyMatrix<T1, 4, 4>, T2, OP>
   typedef TinyMatrix<Type_t, 4, 4> Return_t;
   inline static Return_t apply(const TinyMatrix<T1, 4, 4>& lhs, T2 rhs, OP op)
   {
-    return Return_t(op(lhs[0], rhs),
-                    op(lhs[1], rhs),
-                    op(lhs[2], rhs),
-                    op(lhs[3], rhs),
-                    op(lhs[4], rhs),
-                    op(lhs[5], rhs),
-                    op(lhs[6], rhs),
-                    op(lhs[7], rhs),
-                    op(lhs[8], rhs),
-                    op(lhs[9], rhs),
-                    op(lhs[10], rhs),
-                    op(lhs[11], rhs),
-                    op(lhs[12], rhs),
-                    op(lhs[13], rhs),
-                    op(lhs[14], rhs),
+    return Return_t(op(lhs[0], rhs), op(lhs[1], rhs), op(lhs[2], rhs), op(lhs[3], rhs), op(lhs[4], rhs),
+                    op(lhs[5], rhs), op(lhs[6], rhs), op(lhs[7], rhs), op(lhs[8], rhs), op(lhs[9], rhs),
+                    op(lhs[10], rhs), op(lhs[11], rhs), op(lhs[12], rhs), op(lhs[13], rhs), op(lhs[14], rhs),
                     op(lhs[15], rhs));
   }
 };
@@ -583,21 +538,9 @@ struct OTBinary<T1, TinyMatrix<T2, 4, 4>, OP>
   typedef TinyMatrix<Type_t, 4, 4> Return_t;
   inline static Return_t apply(T1 lhs, const TinyMatrix<T2, 4, 4>& rhs, OP op)
   {
-    return Return_t(op(lhs, rhs[0]),
-                    op(lhs, rhs[1]),
-                    op(lhs, rhs[2]),
-                    op(lhs, rhs[3]),
-                    op(lhs, rhs[4]),
-                    op(lhs, rhs[5]),
-                    op(lhs, rhs[6]),
-                    op(lhs, rhs[7]),
-                    op(lhs, rhs[8]),
-                    op(lhs, rhs[9]),
-                    op(lhs, rhs[10]),
-                    op(lhs, rhs[11]),
-                    op(lhs, rhs[12]),
-                    op(lhs, rhs[13]),
-                    op(lhs, rhs[14]),
+    return Return_t(op(lhs, rhs[0]), op(lhs, rhs[1]), op(lhs, rhs[2]), op(lhs, rhs[3]), op(lhs, rhs[4]),
+                    op(lhs, rhs[5]), op(lhs, rhs[6]), op(lhs, rhs[7]), op(lhs, rhs[8]), op(lhs, rhs[9]),
+                    op(lhs, rhs[10]), op(lhs, rhs[11]), op(lhs, rhs[12]), op(lhs, rhs[13]), op(lhs, rhs[14]),
                     op(lhs, rhs[15]));
   }
 };
@@ -632,22 +575,8 @@ inline TinyMatrix<T1, 3, 3> operator!(const TinyMatrix<T1, 3, 3>& a)
 template<class T1>
 inline TinyMatrix<T1, 4, 4> operator!(const TinyMatrix<T1, 4, 4>& a)
 {
-  return TinyMatrix<T1, 4, 4>(a(0, 0),
-                              a(1, 0),
-                              a(2, 0),
-                              a(3, 0),
-                              a(0, 1),
-                              a(1, 1),
-                              a(2, 1),
-                              a(3, 1),
-                              a(0, 2),
-                              a(1, 2),
-                              a(2, 2),
-                              a(3, 2),
-                              a(0, 3),
-                              a(1, 3),
-                              a(2, 3),
-                              a(3, 3));
+  return TinyMatrix<T1, 4, 4>(a(0, 0), a(1, 0), a(2, 0), a(3, 0), a(0, 1), a(1, 1), a(2, 1), a(3, 1), a(0, 2), a(1, 2),
+                              a(2, 2), a(3, 2), a(0, 3), a(1, 3), a(2, 3), a(3, 3));
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -143,7 +143,7 @@ TEST_CASE("ham_factory", "[hamiltonian_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
   int ngrp(world.size());
 
@@ -165,7 +165,7 @@ TEST_CASE("ham_generation_timing_hdf", "[hamiltonian_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
   int ngrp(world.size());
 

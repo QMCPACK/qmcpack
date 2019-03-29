@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_PARTICLEUTILITY_H
@@ -128,20 +126,20 @@ namespace qmcplusplus
 template<class PL, class PV>
 void convert(const PL& lat, const PV& pin, PV& pout)
 {
-  if(pin.InUnit == pout.InUnit)
+  if (pin.InUnit == pout.InUnit)
   {
     pout = pin;
     return;
   }
-  if(pin.InUnit)
+  if (pin.InUnit)
   {
-    for(int i=0; i<pin.size(); i++)
+    for (int i = 0; i < pin.size(); i++)
       pout[i] = lat.toCart(pin[i]);
     return;
   }
   else
   {
-    for(int i=0; i<pin.size(); i++)
+    for (int i = 0; i < pin.size(); i++)
       pout[i] = lat.toUnit(pin[i]);
     return;
   }
@@ -153,12 +151,12 @@ void convert(const PL& lat, const PV& pin, PV& pout)
 template<class PL, class PV>
 void convert2Cart(const PL& lat, PV& pin)
 {
-  if(pin.InUnit)
+  if (pin.InUnit)
   {
     PV tmp(pin.size());
-    tmp = pin;
+    tmp        = pin;
     pin.InUnit = false;
-    for(int i=0; i<pin.size(); i++)
+    for (int i = 0; i < pin.size(); i++)
       pin[i] = lat.toCart(pin[i]);
   }
 }
@@ -166,12 +164,12 @@ void convert2Cart(const PL& lat, PV& pin)
 template<class PL, class PV>
 void convert2Unit(const PL& lat, PV& pin)
 {
-  if(!pin.InUnit)
+  if (!pin.InUnit)
   {
     PV tmp(pin.size());
-    tmp = pin;
+    tmp        = pin;
     pin.InUnit = true;
-    for(int i=0; i<pin.size(); i++)
+    for (int i = 0; i < pin.size(); i++)
       pin[i] = lat.toUnit(pin[i]);
   }
 }
@@ -182,32 +180,32 @@ void convert2Unit(const PL& lat, PV& pin)
 template<class PL, class PV>
 void wrapAroundBox(const PL& lat, const PV& pin, PV& pout)
 {
-  if(pin.InUnit)
+  if (pin.InUnit)
   {
-    if(pout.InUnit)
+    if (pout.InUnit)
     {
-      for(int i=0; i<pin.size(); i++)
+      for (int i = 0; i < pin.size(); i++)
       {
-        pout[i] = lat.BConds.wrap(pin[i]);            //unit -> unit
+        pout[i] = lat.BConds.wrap(pin[i]); //unit -> unit
       }
     }
     else
     {
-      for(int i=0; i<pin.size(); i++)
-        pout[i] = lat.toCart(lat.BConds.wrap(pin[i]));//unit -> cart
+      for (int i = 0; i < pin.size(); i++)
+        pout[i] = lat.toCart(lat.BConds.wrap(pin[i])); //unit -> cart
     }
   }
   else
   {
-    if(pout.InUnit)
+    if (pout.InUnit)
     {
-      for(int i=0; i<pin.size(); i++)
-        pout[i] = lat.BConds.wrap(lat.toUnit(pin[i]));//cart -> unit
+      for (int i = 0; i < pin.size(); i++)
+        pout[i] = lat.BConds.wrap(lat.toUnit(pin[i])); //cart -> unit
     }
     else
     {
-      for(int i=0; i<pin.size(); i++)
-        pout[i] = lat.toCart(lat.BConds.wrap(lat.toUnit(pin[i])));//cart -> cart
+      for (int i = 0; i < pin.size(); i++)
+        pout[i] = lat.toCart(lat.BConds.wrap(lat.toUnit(pin[i]))); //cart -> cart
     }
   }
 }
@@ -220,22 +218,21 @@ void wrapAroundBox(const PL& lat, const PV& pin, PV& pout)
  */
 /////////////////////////////////////////////////////////////////
 template<typename T, unsigned D>
-inline T Dot(const ParticleAttrib<TinyVector<T, D> >& pa,
-                  const ParticleAttrib<TinyVector<T, D> >& pb)
+inline T Dot(const ParticleAttrib<TinyVector<T, D>>& pa, const ParticleAttrib<TinyVector<T, D>>& pb)
 {
   T sum = 0;
-  for(int i=0; i<pa.size(); i++)
+  for (int i = 0; i < pa.size(); i++)
   {
-    sum += dot(pa[i],pb[i]);
+    sum += dot(pa[i], pb[i]);
   }
   return sum;
 }
 
 template<typename T>
-inline T Sum (const ParticleAttrib<T>& pa)
+inline T Sum(const ParticleAttrib<T>& pa)
 {
   T sum = 0;
-  for(int i=0; i<pa.size(); i++)
+  for (int i = 0; i < pa.size(); i++)
   {
     sum += pa[i];
   }
@@ -243,13 +240,12 @@ inline T Sum (const ParticleAttrib<T>& pa)
 }
 
 template<class T, unsigned D>
-void  normalize(ParticleAttrib<TinyVector<T, D> >& pa)
+void normalize(ParticleAttrib<TinyVector<T, D>>& pa)
 {
-  T factor = Dot(pa,pa);
-  factor = 1.0/sqrt(factor);
+  T factor = Dot(pa, pa);
+  factor   = 1.0 / sqrt(factor);
   pa *= factor;
 }
 
-}
+} // namespace qmcplusplus
 #endif
-

@@ -26,10 +26,12 @@ TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil
                       ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol_uc)
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
+
+IF (QMC_COMPLEX)
+  ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
               "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/ham_chol_uc.h5")
-SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit;afqmc" WORKING_DIRECTORY ${UTEST_DIR})
-IF (NOT QMC_CUDA)
+  SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit;afqmc" WORKING_DIRECTORY ${UTEST_DIR})
+  IF (NOT ENABLE_CUDA)
     SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol_sc)
     ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
                   "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5")
@@ -37,5 +39,11 @@ IF (NOT QMC_CUDA)
     SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_thc_sc)
     ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
                   "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_szv/ham_thc_sc.h5")
+    SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit;afqmc" WORKING_DIRECTORY ${UTEST_DIR})
+  ENDIF()
+ELSE()
+    SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol)
+    ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
+      "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/ham_chol.h5")
     SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit;afqmc" WORKING_DIRECTORY ${UTEST_DIR})
 ENDIF()

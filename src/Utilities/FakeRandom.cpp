@@ -14,13 +14,6 @@
 
 FakeRandom::FakeRandom() : m_val(0.5) {}
 
-void FakeRandom::set_value(double val)
-{
-  m_val = val;
-}
+void FakeRandom::set_value(double val) { m_val = val; }
 
-double FakeRandom::operator()()
-{
-  return m_val;
-}
-
+double FakeRandom::operator()() { return m_val; }

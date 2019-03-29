@@ -1130,7 +1130,8 @@ For VMC, FN-DMC, FP-DMC, and RN-DMC the formula above represents an exact sampli
    &\texttt{check\_derivatives}$^o$& boolean   &  yes/no          & no                  & Check density derivatives \\
    &\texttt{acceptance\_ratio}$^o$&  boolean   &  yes/no          & no                  & Print accept ratio    \\
    &\texttt{rstats}$^o$        &  boolean      &  yes/no          & no                  & Print spatial stats   \\
-   &\texttt{normalized}$^o$    &  boolean      &  yes/no          & no                  & \texttt{basis} comes norm'ed \\
+   &\texttt{normalized}$^o$    &  boolean      &  yes/no          & yes                 & \texttt{basis} comes norm'ed \\
+   &\texttt{volume\_normed}$^o$&  boolean      &  yes/no          & yes                 & \texttt{basis} norm is volume \\
    &\texttt{energy\_matrix}$^o$&  boolean      & yes/no           & no                  & Energy density matrix \\
   \hline
 \end{tabularx}
@@ -1156,6 +1157,7 @@ Additional information
   \item{\texttt{acceptance\_ratio:} Print the acceptance ratio of the density sampling to the log each step.}
   \item{\texttt{rstats:} Print statistical information about the spatial motion of the sampled points to the log each step.}
   \item{\texttt{normalized:} Declare whether the inputted orbitals are normalized or not.  If \texttt{normalized=no}, direct Riemann integration over a 200x200x200 grid will be used to compute the normalizations prior to use.}
+  \item{\texttt{volume\_normed:} Declare whether the inputted orbitals are normalized to the cell volume (default) or not (a norm of 1.0 is assumed in this case).  Currently, B-spline orbitals coming from Quantum Espresso and HEG planewave orbitals native to QMCPACK are known to be volume normalized.}
   \item{\texttt{energy\_matrix:} Also accumulate the one body reduced energy density matrix and write it to \texttt{stat.h5}.  This matrix is not covered in any detail here; the interested reader is referred to Ref. \cite{Krogel2014}.}
 \end{itemize}
 

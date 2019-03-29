@@ -22,7 +22,7 @@ SET (AFQMC_SRCS
   Hamiltonians/THCHamiltonian.cpp
   )
 
-IF(QMC_CUDA)
+IF(ENABLE_CUDA)
   SET(AFQMC_SRCS ${AFQMC_SRCS} 
     Memory/CUDA/cuda_utilities.cpp
     Numerics/detail/CUDA/Kernels/determinant.cu 
@@ -52,17 +52,17 @@ IF(QMC_CUDA)
     Numerics/detail/CUDA/Kernels/term_by_term_matrix_vec.cu
 #    Numerics/detail/CUDA/Kernels/myAtomicAdd.cu
   )
-ENDIF(QMC_CUDA)
+ENDIF(ENABLE_CUDA)
 
-IF(QMC_CUDA)
+IF(ENABLE_CUDA)
   CUDA_ADD_LIBRARY(afqmc ${AFQMC_SRCS})
   CUDA_ADD_CUBLAS_TO_TARGET(afqmc)
   target_link_libraries( afqmc ${CUDA_cusparse_LIBRARY} )
   target_link_libraries( afqmc ${CUDA_cusolver_LIBRARY} )
   target_link_libraries( afqmc ${CUDA_curand_LIBRARY} )
-ELSE(QMC_CUDA)
+ELSE(ENABLE_CUDA)
   ADD_LIBRARY(afqmc ${AFQMC_SRCS})
-ENDIF(QMC_CUDA)
+ENDIF(ENABLE_CUDA)
 
 
 IF (BUILD_UNIT_TESTS)
@@ -83,13 +83,21 @@ IF (BUILD_UNIT_TESTS)
       ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/ham_chol_uc.h5
       ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/wfn_rhf.dat
       )
-  IF (QMC_CUDA)
+  SET(AFQMC_UNIT_TEST_INPUT_REAL
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/ham_chol.h5
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/wfn_rhf.dat
+      )
+  IF (QMC_COMPLEX)
+    IF (ENABLE_CUDA)
       SET(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_SYM})
-  ELSE()
+    ELSE()
       SET(AFQMC_UNIT_TEST_INPUTS
           ${AFQMC_UNIT_TEST_INPUT_SYM}
           ${AFQMC_UNIT_TEST_INPUT_NOSYM}
           )
+    ENDIF()
+  ELSE()
+    SET(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_REAL})
   ENDIF()
   SUBDIRS(Matrix/tests)
   SUBDIRS(Numerics/tests)

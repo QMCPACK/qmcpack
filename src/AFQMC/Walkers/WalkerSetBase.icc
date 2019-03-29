@@ -29,7 +29,7 @@ void WalkerSetBase<Alloc,Ptr>::parse(xmlNodePtr cur)
       APP_ABORT(" Error: Empty Walker xml-node pointer. \n");
 
     app_log()<<"\n****************************************************\n";
-    app_log()<<"           Initializating Walker Set \n";
+    app_log()<<"           Initializing Walker Set \n";
     app_log()<<"****************************************************\n";
 
     xmlNodePtr curRoot=cur;
