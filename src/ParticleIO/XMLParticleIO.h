@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_PARTICLE_INPUTOUTPUT_XML_UTILITY_H
@@ -23,16 +21,14 @@
 
 namespace qmcplusplus
 {
-
-class AttribListType: public ParticleTags
+class AttribListType : public ParticleTags
 {
-  std::map<std::string,int>             AttribTypeMap;
-  std::map<std::string,OhmmsObject*>    AttribList;
+  std::map<std::string, int> AttribTypeMap;
+  std::map<std::string, OhmmsObject*> AttribList;
   ///** objects created by getXYZAttrib(aname) */
   //std::vector<OhmmsObject*>             AllocatedList;
 
-  public:
-
+public:
   AttribListType()
   {
     //map[type-name] to enum
@@ -55,27 +51,24 @@ class AttribListType: public ParticleTags
    * @tparm AT any element type, int, double, float ...
    */
   template<typename AT>
-    int add(ParticleAttrib<AT>& pa)
+  int add(ParticleAttrib<AT>& pa)
   {
-    int oid=AttribList.size();
-    std::map<std::string,OhmmsObject*>::iterator it= AttribList.find(pa.objName());
-    if(it == AttribList.end())
+    int oid                                          = AttribList.size();
+    std::map<std::string, OhmmsObject*>::iterator it = AttribList.find(pa.objName());
+    if (it == AttribList.end())
     {
-      AttribList[pa.objName()]=&pa;
+      AttribList[pa.objName()] = &pa;
       pa.setID(oid);
     }
     else
     {
-      oid=(*it).second->id();
+      oid = (*it).second->id();
     }
     return oid;
   }
 
   ///return a type id: one of the enum values
-  inline int getAttribType(const std::string& tname)
-  {
-    return AttribTypeMap[tname];
-  }
+  inline int getAttribType(const std::string& tname) { return AttribTypeMap[tname]; }
 
   /** generic get function attribute function
    * @param tname attribute type name
@@ -84,19 +77,19 @@ class AttribListType: public ParticleTags
    * @return pointer to the attribute
    */
   template<typename AT>
-    ParticleAttrib<AT>* getAttribute(const std::string& tname, const std::string& oname, ParticleAttrib<AT>*  pa)
+  ParticleAttrib<AT>* getAttribute(const std::string& tname, const std::string& oname, ParticleAttrib<AT>* pa)
   {
     typedef ParticleAttrib<AT> attrib_type;
-    int oid=AttribList.size();
-    std::map<std::string,OhmmsObject*>::iterator it= AttribList.find(oname);
-    if(it != AttribList.end())
+    int oid                                          = AttribList.size();
+    std::map<std::string, OhmmsObject*>::iterator it = AttribList.find(oname);
+    if (it != AttribList.end())
     {
-      OhmmsObject* o=(*it).second;
+      OhmmsObject* o = (*it).second;
       return dynamic_cast<attrib_type*>(o);
     }
     else
     {
-      APP_ABORT("AttribListType::getAttribute Unknown attribute "+oname+"\n");
+      APP_ABORT("AttribListType::getAttribute Unknown attribute " + oname + "\n");
       /*
       if(pa == nullptr) //only
       {
@@ -111,22 +104,20 @@ class AttribListType: public ParticleTags
     }
     return pa;
   }
-
 };
 
-class XMLParticleParser: public ParticleTags
+class XMLParticleParser : public ParticleTags
 {
-
-  typedef ParticleSet                  Particle_t;
-  typedef Particle_t::ParticleIndex_t  ParticleIndex_t;
+  typedef ParticleSet Particle_t;
+  typedef Particle_t::ParticleIndex_t ParticleIndex_t;
   typedef Particle_t::ParticleScalar_t ParticleScalar_t;
-  typedef Particle_t::ParticlePos_t    ParticlePos_t;
+  typedef Particle_t::ParticlePos_t ParticlePos_t;
   typedef Particle_t::ParticleTensor_t ParticleTensor_t;
 
   bool AssignmentOnly;
   Particle_t& ref_;
   AttribListType ref_AttribList;
-  Tensor<int,OHMMS_DIM>& TileMatrix;
+  Tensor<int, OHMMS_DIM>& TileMatrix;
 
   bool putSpecial(xmlNodePtr cur);
 
@@ -138,13 +129,11 @@ class XMLParticleParser: public ParticleTags
   void getPtclAttrib(xmlNodePtr cur, int nat, int nloc);
 
 public:
-
   /**constructor
    *@param aptcl the particleset to be initialized
    *@param donotresize if true, only assignment is done
    */
-  XMLParticleParser(Particle_t& aptcl, Tensor<int,OHMMS_DIM>& tmat
-                    , bool donotresize=false);
+  XMLParticleParser(Particle_t& aptcl, Tensor<int, OHMMS_DIM>& tmat, bool donotresize = false);
 
   ///reading from a file
   bool put(const std::string& fname_in, const std::string& fext_in);
@@ -154,18 +143,14 @@ public:
   /** reset the properties of a particle set
    */
   bool reset(xmlNodePtr cur);
-
 };
 
-class XMLSaveParticle:
-  public ParticleTags,
-  public RecordProperty
+class XMLSaveParticle : public ParticleTags, public RecordProperty
 {
-
-  typedef ParticleSet                  Particle_t;
-  typedef Particle_t::ParticleIndex_t  ParticleIndex_t;
+  typedef ParticleSet Particle_t;
+  typedef Particle_t::ParticleIndex_t ParticleIndex_t;
   typedef Particle_t::ParticleScalar_t ParticleScalar_t;
-  typedef Particle_t::ParticlePos_t    ParticlePos_t;
+  typedef Particle_t::ParticlePos_t ParticlePos_t;
   typedef Particle_t::ParticleTensor_t ParticleTensor_t;
 
   Particle_t& ref_;
@@ -174,16 +159,15 @@ class XMLSaveParticle:
   std::vector<std::string> SpeciesName;
 
 public:
-
   XMLSaveParticle(Particle_t& pin);
 
   ~XMLSaveParticle();
 
-  void reset(const char* fileroot, bool append=false);
+  void reset(const char* fileroot, bool append = false);
 
   void report(int iter);
 
-  void finalize() { }
+  void finalize() {}
 
   bool put(xmlNodePtr cur);
 
@@ -192,9 +176,7 @@ public:
   xmlNodePtr createNode(bool addlattice);
 
 private:
-
 };
-}
+} // namespace qmcplusplus
 
 #endif
-

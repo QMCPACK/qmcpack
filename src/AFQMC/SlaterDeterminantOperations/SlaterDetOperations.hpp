@@ -25,7 +25,7 @@ namespace afqmc
 {
 
 class SlaterDetOperations:
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
         public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<device_allocator<ComplexType>>>
 #else
         public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<std::allocator<ComplexType>>>
@@ -42,7 +42,7 @@ class SlaterDetOperations:
 
     explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType> const& other) = delete;
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
     explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>> const& other) = delete;
     explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>>&& other) : variant(std::move(other)) {}
 #else

@@ -711,12 +711,8 @@ void MCWalkerConfiguration::acceptMove_GPU(std::vector<bool>& toAccept, int k)
     std::cerr << "Error in Rnew_GPU size.\n";
   if (AcceptList_GPU.size() != WalkerList.size())
     std::cerr << "Error in AcceptList_GPU size.\n";
-  accept_move_GPU_cuda(RList_GPU.data(),
-                       (CUDA_PRECISION*)Rnew_GPU.data(),
-                       AcceptList_GPU.data(),
-                       CurrentParticle++,
-                       WalkerList.size(),
-                       k);
+  accept_move_GPU_cuda(RList_GPU.data(), (CUDA_PRECISION*)Rnew_GPU.data(), AcceptList_GPU.data(), CurrentParticle++,
+                       WalkerList.size(), k);
 }
 
 
