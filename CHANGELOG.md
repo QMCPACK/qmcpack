@@ -2,16 +2,15 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [Unreleased]
+## [3.7.0] - 2019-03-29
 
+### Notes
 
 This release includes GPU support for the AFQMC implementation,
 Quantum Espresso v6.4 support, and in the real-space code makes the
 structure-of-arrays (SoA) code path the default. A large number of
 feature refinements, bugfixes, testing improvements and source code
 cleanup have been performed.
-
-### QMCPACK
 
 * The improved structures of arrays (SoA) build is now the
   default. This is generally significantly faster and uses less memory
@@ -30,7 +29,7 @@ cleanup have been performed.
   and complex, but not yet mixed-precision or GPU builds.
 * Source code has been formatted with clang-format for consistency throughout. 
 
-### Notable Bugs
+### Known Bugs
 
 See [list of open bugs](https://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
 
@@ -53,7 +52,7 @@ See [list of open bugs](https://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+i
 * Improved handling of excited state calculations. [\#1365](https://github.com/QMCPACK/qmcpack/pull/1365)
 * Fixed CHGCAR conversion. [\#1351](https://github.com/QMCPACK/qmcpack/pull/1351)
 
-## [3.6.0]  2018-12-19
+## [3.6.0] - 2018-12-19
 
 ### Notes
 
