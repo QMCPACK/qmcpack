@@ -925,9 +925,11 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
       PRE.error("You must specify a positive number for \"isize\"", true);
     if (N_ee == 0)
       PRE.error("You must specify a positive number for \"esize\"", true);
-    // app_log() << " esize = " << NumParams_ee << " parameters " << std::endl;
-    // app_log() << " isize = " << NumParams_eI << " parameters " << std::endl;
-    // app_log() << " rcut = " << cutoff_radius << std::endl;
+    app_log() << "     Ion : " << iSpecies << "   e-e : " << eSpecies1 << " - " << eSpecies2 << std::endl;
+    app_log() << "      Number of e-e parameters : " << N_ee << std::endl;
+    app_log() << "      Number of e-I parameters : " << N_eI << std::endl;
+    app_log() << "      Cutoff radius : " << cutoff_radius << std::endl;
+    app_log() << std::endl;
     resize(N_eI, N_ee);
     // Now read coefficents
     xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
