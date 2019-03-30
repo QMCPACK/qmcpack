@@ -251,7 +251,10 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
         RealType qq = species(chargeInd, ia) * species(chargeInd, ib);
         cusp        = (ia == ib) ? -0.25 * qq : -0.5 * qq;
       }
-      app_log() << "  RadialJastrowBuilder adds a functor with cusp = " << cusp << std::endl;
+      app_summary() << "    Radial function" << std::endl;
+      app_summary() << "    ---------------" << std::endl;
+      app_summary() << "    Species : " << spA << " - " << spB << std::endl;
+      app_debug() << "    RadialJastrowBuilder adds a functor with cusp = " << cusp << std::endl;
 
       auto* functor = new RadFuncType();
       functor->setCusp(cusp);
@@ -262,6 +265,8 @@ bool RadialJastrowBuilder::createJ2(xmlNodePtr cur)
       {
         initTwoBodyFunctor(*functor, -cusp / 0.5);
       }
+
+      app_summary() << std::endl;
 
       J2->addFunc(ia, ib, functor);
       dJ2->addFunc(ia, ib, functor);
@@ -348,7 +353,11 @@ bool RadialJastrowBuilder::createJ1(xmlNodePtr cur)
                       targetPtcl.getName(),
                   true);
       }
+      app_summary() << "    Radial function" << std::endl;
+      app_summary() << "    ---------------" << std::endl;
+      app_summary() << "    Element: " << speciesA << std::endl;
       functor->put(kids);
+      app_summary() << std::endl;
       J1->addFunc(ig, functor, jg);
       dJ1->addFunc(ig, functor, jg);
       success = true;

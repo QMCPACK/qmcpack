@@ -979,8 +979,8 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
         //     }
         if (!notOpt)
         {
-          app_log() << "Parameter     Name      Value\n";
-          myVars.print(app_log());
+          app_debug() << "Parameter     Name      Value\n";
+          myVars.print(app_debug_stream());
         }
       }
       xmlCoefs = xmlCoefs->next;
