@@ -26,8 +26,8 @@ namespace optimize
 //     for(int i=0; i<Index.size(); ++i) Index[i]=i;
 //
 //     ParameterType.resize(0); Recompute.resize(0);
-//     for(int i=0; i<Index.size(); ++i) ParameterType.push_back(indx_pair_type(NameAndValue[i].first,0));
-//     for(int i=0; i<Index.size(); ++i) Recompute.push_back(indx_pair_type(NameAndValue[i].first,1));
+//     for(int i=0; i<Index.size(); ++i) ParameterType.push_back(index_pair_type(NameAndValue[i].first,0));
+//     for(int i=0; i<Index.size(); ++i) Recompute.push_back(index_pair_type(NameAndValue[i].first,1));
 //   }
 
 void VariableSet::clear()
@@ -185,7 +185,7 @@ void VariableSet::removeInactive()
 {
   std::vector<int> valid(Index);
   std::vector<pair_type> acopy(NameAndValue);
-  std::vector<indx_pair_type> bcopy(Recompute), ccopy(ParameterType);
+  std::vector<index_pair_type> bcopy(Recompute), ccopy(ParameterType);
   num_active_vars = 0;
   Index.clear();
   NameAndValue.clear();
