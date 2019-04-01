@@ -259,7 +259,7 @@ void WalkerSetBase<Alloc,Ptr>::popControl(std::vector<ComplexType>& curData)
   if(TG.TG_local().root()) {
     afqmc::BasicWalkerData(*this,curData,TG.TG_heads());
     RealType scl = 1.0/curData[0].real();
-    scaleWeight(scl);
+    scaleWeight(scl,true);
   }
   if(TG.TG_local().size() > 1) TG.TG_local().broadcast_n(curData.data(),curData.size());
 

@@ -201,7 +201,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
       apply_propagators('N',wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
     }
     AFQMCTimers[propagate_timer]->stop();
-//std::cout<<" propg " <<std::endl;
+//std::cout<<" propg wfn " <<std::end; //: " <<ma::sum(wset[0].SlaterMatrix(Alpha)) <<std::endl;
 
     // 6. Calculate local energy/overlap
     AFQMCTimers[pseudo_energy_timer]->start();

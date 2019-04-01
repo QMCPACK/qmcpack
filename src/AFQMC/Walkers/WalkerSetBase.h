@@ -507,11 +507,16 @@ class WalkerSetBase: public AFQMCInfo
   }
 
   template<class T>
-  void scaleWeight(const T& w0) {
+  void scaleWeight(const T& w0, bool scale_last_history=false) {
     if(!TG.TG_local().root()) return;
     assert(walker_buffer.size(1) == walker_size);
     auto W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
     ma::scal(ComplexType(w0),W({0,tot_num_walkers},data_displ[WEIGHT]));
+    if(scale_last_history) 
+      if(bp_pos-1 >= 0 && bp_pos-1 < wlk_desc[3]) { 
+        auto BPW( boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer) );
+        ma::scal(ComplexType(w0),BPW[data_displ[WEIGHT_HISTORY]+bp_pos-1]);
+      }
   } 
 
   void scaleWeightsByOverlap() {
