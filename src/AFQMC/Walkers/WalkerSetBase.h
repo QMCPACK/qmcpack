@@ -482,6 +482,9 @@ class WalkerSetBase: public AFQMCInfo
         // need synthetic references to make this easier!!!
         using std::fill_n;
         fill_n(W[pos].origin()+data_displ[WEIGHT],1,ComplexType(itbegin->first,0.0));
+        if(bp_pos-1 >= 0 && bp_pos-1 < wlk_desc[3]) 
+          fill_n(BPW[data_displ[WEIGHT_HISTORY]+bp_pos-1].origin()+pos,1,
+                 ComplexType(itbegin->first,0.0));
       } else {
         // if there is space, branch within walker set
         // otherwise send excess to M
@@ -490,6 +493,9 @@ class WalkerSetBase: public AFQMCInfo
         // need synthetic references to make this easier!!!
         using std::fill_n;
         fill_n(W[pos].origin()+data_displ[WEIGHT],1,ComplexType(itbegin->first,0.0));
+        if(bp_pos-1 >= 0 && bp_pos-1 < wlk_desc[3]) 
+          fill_n(BPW[data_displ[WEIGHT_HISTORY]+bp_pos-1].origin()+pos,1,
+                 ComplexType(itbegin->first,0.0));
         for(int i=0; i<n; i++) { 
           W[tot_num_walkers] = W[pos];
           if(wlk_desc[3]>0)

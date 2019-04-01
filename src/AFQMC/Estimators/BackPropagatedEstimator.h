@@ -120,6 +120,14 @@ class BackPropagatedEstimator: public EstimatorBase
 
   void accumulate_block(WalkerSet& wset)
   {
+    accumulated_in_last_block=false;
+    int bp_step = wset.getBPPos();
+    if(bp_step <=0)
+      APP_ABORT(" Error: Found bp_step <=0 in BackPropagate::accumulate_block. \n"); 
+    if(bp_step > nback_prop)
+      APP_ABORT(" Error: nback_prop in back propagation estimator must be conmensuate with nStep*nSubStep.\n");
+    if(bp_step < nback_prop) return;
+    accumulated_in_last_block=true;
     AFQMCTimers[back_propagate_timer]->start();
     using std::fill_n;
     if(nback_prop > wset.NumBackProp())
@@ -201,6 +209,8 @@ class BackPropagatedEstimator: public EstimatorBase
       out<<std::setprecision(5)
                     <<AFQMCTimers[back_propagate_timer]->get_total() <<" ";
       AFQMCTimers[back_propagate_timer]->reset();  
+    }
+    if(writer && accumulated_in_last_block) {
       if(write_metadata) {
         dump.push("Metadata");
         dump.write(nback_prop, "NumBackProp");
@@ -237,6 +247,7 @@ class BackPropagatedEstimator: public EstimatorBase
   WALKER_TYPES walker_type;
 
   bool writer;
+  bool accumulated_in_last_block;
 
   int nback_prop;
 
