@@ -198,19 +198,20 @@ void DMCUpdatePbyPVMC::advanceWalker(Walker_t& thisWalker, bool recompute)
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
 #endif
-  myTimers[DMC_tmoves]->start();
-  const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
-  if (NonLocalMoveAcceptedTemp > 0)
-  {
-    RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
-    // debugging lines
-    //W.update(true);
-    //RealType logpsi2 = Psi.evaluateLog(W);
-    //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
-    W.saveWalker(thisWalker);
-    NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
-  }
-  myTimers[DMC_tmoves]->stop();
+  // VMC directly from sampling, no T-moves
+  //myTimers[DMC_tmoves]->start();
+  //const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+  //if (NonLocalMoveAcceptedTemp > 0)
+  //{
+  //  RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
+  //  // debugging lines
+  //  //W.update(true);
+  //  //RealType logpsi2 = Psi.evaluateLog(W);
+  //  //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
+  //  W.saveWalker(thisWalker);
+  //  NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
+  //}
+  //myTimers[DMC_tmoves]->stop();
   nAccept += nAcceptTemp;
   nReject += nRejectTemp;
 
