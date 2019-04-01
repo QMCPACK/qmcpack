@@ -83,10 +83,10 @@ void DMCUpdatePbyPVMC::advanceWalker(Walker_t& thisWalker, bool recompute)
       GradType grad_iat = Psi.evalGrad(W, iat);
       mPosType dr;
       // VMC directly from sampling, use bare unscaled drift
-      if(accept_reject)
+      //if(accept_reject)
         getScaledDrift(tauovermass, grad_iat, dr);
-      else
-        getUnscaledDrift(tauovermass, grad_iat, dr);
+      //else
+      //  getUnscaledDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
       //RealType rr=dot(dr,dr);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
