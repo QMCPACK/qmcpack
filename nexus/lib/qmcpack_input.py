@@ -2442,8 +2442,8 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace','target','completed','id','continue']
     elements   = ['estimator']
-    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger']
-    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno)
+    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','vmc']
+    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno,vmc=yesno)
 #end class dmc
 
 class rmc(QIxml):
