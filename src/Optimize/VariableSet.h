@@ -43,7 +43,7 @@ struct VariableSet
 {
   typedef OHMMS_PRECISION real_type;
   typedef std::pair<std::string, real_type> pair_type;
-  typedef std::pair<std::string, int> indx_pair_type;
+  typedef std::pair<std::string, int> index_pair_type;
   typedef std::vector<pair_type>::iterator iterator;
   typedef std::vector<pair_type>::const_iterator const_iterator;
   typedef std::vector<pair_type>::size_type size_type;
@@ -57,8 +57,8 @@ struct VariableSet
    */
   std::vector<int> Index;
   std::vector<pair_type> NameAndValue;
-  std::vector<indx_pair_type> ParameterType;
-  std::vector<indx_pair_type> Recompute;
+  std::vector<index_pair_type> ParameterType;
+  std::vector<index_pair_type> Recompute;
 
   ///default constructor
   inline VariableSet() : num_active_vars(0) {}
@@ -127,8 +127,8 @@ struct VariableSet
     {
       Index.push_back(ind_loc);
       NameAndValue.push_back(pair_type(vname, v));
-      ParameterType.push_back(indx_pair_type(vname, type));
-      Recompute.push_back(indx_pair_type(vname, 1));
+      ParameterType.push_back(index_pair_type(vname, type));
+      Recompute.push_back(index_pair_type(vname, 1));
     }
     //disable it if enable == false
     if (!enable)
@@ -137,7 +137,7 @@ struct VariableSet
 
   inline void setParameterType(int type)
   {
-    std::vector<indx_pair_type>::iterator PTit(ParameterType.begin()), PTend(ParameterType.end());
+    std::vector<index_pair_type>::iterator PTit(ParameterType.begin()), PTend(ParameterType.end());
     while (PTit != PTend)
     {
       (*PTit).second = type;
@@ -147,7 +147,7 @@ struct VariableSet
 
   inline void getParameterTypeList(std::vector<int>& types)
   {
-    std::vector<indx_pair_type>::iterator PTit(ParameterType.begin()), PTend(ParameterType.end());
+    std::vector<index_pair_type>::iterator PTit(ParameterType.begin()), PTend(ParameterType.end());
     types.resize(PTend - PTit);
     std::vector<int>::iterator tit(types.begin());
     while (PTit != PTend)
@@ -164,8 +164,8 @@ struct VariableSet
     {
       Index.push_back(-1);
       NameAndValue.push_back(pair_type(vname, 0));
-      ParameterType.push_back(indx_pair_type(vname, 0));
-      Recompute.push_back(indx_pair_type(vname, 1));
+      ParameterType.push_back(index_pair_type(vname, 0));
+      Recompute.push_back(index_pair_type(vname, 1));
       return NameAndValue.back().second;
     }
     return (*loc).second;
