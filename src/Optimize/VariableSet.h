@@ -329,7 +329,7 @@ struct VariableSet
    */
   void setDefaults(bool optimize_all);
 
-  void print(std::ostream& os);
+  void print(std::ostream& os, int leftPadSpaces = 0, bool printHeader = false);
 };
 } // namespace optimize
 

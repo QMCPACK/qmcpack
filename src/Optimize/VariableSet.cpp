@@ -15,6 +15,11 @@
 #include "Optimize/VariableSet.h"
 #include <map>
 #include <stdexcept>
+#include <iomanip>
+#include <ios>
+#include <algorithm>
+
+using std::setw;
 
 namespace optimize
 {
@@ -228,16 +233,54 @@ void VariableSet::setDefaults(bool optimize_all)
     Index[i] = optimize_all ? i : -1;
 }
 
-void VariableSet::print(std::ostream& os)
+void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader)
 {
+  std::string pad_str = std::string(leftPadSpaces, ' ');
+  int max_name_len    = 0;
+  max_name_len =
+      std::max_element(NameAndValue.begin(), NameAndValue.end(),
+                       [](const pair_type& e1, const pair_type& e2) { return e1.first.length() < e2.first.length(); })
+          ->first.length();
+
+  int max_value_len     = 13; // 6 for the precision and 7 for minus sign, leading value, period, and exponent.
+  int max_type_len      = 1;
+  int max_recompute_len = 1;
+  int max_use_len       = 3;
+  int max_index_len     = 1;
+  if (printHeader)
+  {
+    max_name_len      = std::max(max_name_len, 4); // size of "Name" header
+    max_type_len      = 4;
+    max_recompute_len = 9;
+    max_index_len     = 5;
+    os << pad_str << setw(max_name_len) << "Name"
+       << " " << setw(max_value_len) << "Value"
+       << " " << setw(max_type_len) << "Type"
+       << " " << setw(max_recompute_len) << "Recompute"
+       << " " << setw(max_use_len) << "Use"
+       << " " << setw(max_index_len) << "Index" << std::endl;
+    os << pad_str << std::setfill('-') << setw(max_name_len) << ""
+       << " " << setw(max_value_len) << ""
+       << " " << setw(max_type_len) << ""
+       << " " << setw(max_recompute_len) << ""
+       << " " << setw(max_use_len) << ""
+       << " " << setw(max_index_len) << "" << std::endl;
+    os << std::setfill(' ');
+  }
+
   for (int i = 0; i < NameAndValue.size(); ++i)
   {
-    os << NameAndValue[i].first << " " << NameAndValue[i].second << " " << ParameterType[i].second << " "
-       << Recompute[i].second << " ";
+    os << pad_str << setw(max_name_len) << NameAndValue[i].first << " " << std::setprecision(6) << std::scientific
+       << setw(max_value_len) << NameAndValue[i].second << " " << setw(max_type_len) << ParameterType[i].second << " "
+       << setw(max_recompute_len) << Recompute[i].second << " ";
+
+    os << std::defaultfloat;
+
     if (Index[i] < 0)
-      os << " OFF" << std::endl;
+      os << setw(max_use_len) << "OFF" << std::endl;
     else
-      os << " ON " << Index[i] << std::endl;
+      os << setw(max_use_len) << "ON"
+         << " " << setw(max_index_len) << Index[i] << std::endl;
   }
 }
 
