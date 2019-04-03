@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/L2Potential.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
 #endif
@@ -46,6 +47,8 @@ public:
   typedef QMCHamiltonianBase::PropertySetType PropertySetType;
   typedef QMCHamiltonianBase::BufferType BufferType;
   typedef QMCHamiltonianBase::Walker_t Walker_t;
+  typedef QMCHamiltonianBase::PosType PosType;
+  typedef QMCHamiltonianBase::TensorType TensorType;
 
   enum
   {
@@ -271,6 +274,34 @@ public:
       return nlpp_ptr->makeNonLocalMovesPbyP(P);
   }
 
+  /** determine if L2 potential is present
+   */
+  bool has_L2()
+  {
+    return l2_ptr!=nullptr;
+  }
+
+  /** compute D matrix and K vector for L2 potential propagator
+    * @param r single particle coordinate
+    * @param D diffusion matrix (outputted)
+    * @param K drift modification vector (outputted)
+    */
+  void computeL2DK(ParticleSet& P, int iel, TensorType& D, PosType& K)
+  {
+    if(l2_ptr != nullptr)
+      l2_ptr->evaluateDK(P,iel,D,K);
+  }
+
+  /** compute D matrix for L2 potential propagator
+    * @param r single particle coordinate
+    * @param D diffusion matrix (outputted)
+    */
+  void computeL2D(ParticleSet& P, int iel, TensorType& D)
+  {
+    if(l2_ptr != nullptr)
+      l2_ptr->evaluateD(P,iel,D);    
+  }
+
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable
@@ -335,6 +366,8 @@ private:
   std::vector<QMCHamiltonianBase*> H;
   ///pointer to NonLocalECP
   NonLocalECPotential* nlpp_ptr;
+  ///pointer to L2Potential
+  L2Potential* l2_ptr;
   ///vector of Hamiltonians
   std::vector<QMCHamiltonianBase*> auxH;
   ///timers

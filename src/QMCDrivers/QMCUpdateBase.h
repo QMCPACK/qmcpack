@@ -42,8 +42,10 @@ public:
   typedef SimpleFixedNodeBranch BranchEngineType;
 #ifdef MIXED_PRECISION
   typedef TinyVector<OHMMS_PRECISION_FULL, DIM> mPosType;
+  typedef Tensor<OHMMS_PRECISION_FULL, DIM> mTensorType;
 #else
   typedef PosType mPosType;
+  typedef TensorType mTensorType;
 #endif
 
   ///If true, terminate the simulation

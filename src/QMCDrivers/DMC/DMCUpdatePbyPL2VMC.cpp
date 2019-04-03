@@ -70,40 +70,107 @@ void DMCUpdatePbyPL2VMC::advanceWalker(Walker_t& thisWalker, bool recompute)
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
   RealType gf_acc      = 1.0;
+  mPosType K;
+  mTensorType D;
+  mTensorType Dchol;
+  PosType Ktmp;
+  TensorType Dtmp;
+  bool L2_proj = H.has_L2();
+  if(L2_proj)
+  {
+    Ktmp = 0.0;
+    Dtmp = 0.0;
+    for(int d=0;d<DIM;d++)
+      Dtmp(d,d) = 1.0;
+  }
   myTimers[DMC_movePbyP]->start();
+
+  // VMC directly from sampling, force makeMoveAndCheck to always take action and return true
+  if(!accept_reject)
+    W.UseBoundBox=false;
+
   for (int ig = 0; ig < W.groups(); ++ig) //loop over species
   {
     RealType tauovermass = Tau * MassInvS[ig];
     RealType oneover2tau = 0.5 / (tauovermass);
     RealType sqrttau     = std::sqrt(tauovermass);
+    RealType rr;
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
       W.setActive(iat);
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       mPosType dr;
-      // VMC directly from sampling, use bare unscaled drift
-      //if(accept_reject)
+      mPosType dr_diff = deltaR[iat];
+      // VMC directly from sampling, scaled drift is OK
+      if(!L2_proj) // normal projector
+      {
         getScaledDrift(tauovermass, grad_iat, dr);
-      //else
-      //  getUnscaledDrift(tauovermass, grad_iat, dr);
-      dr += sqrttau * deltaR[iat];
-      //RealType rr=dot(dr,dr);
-      RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
-      rr_proposed += rr;
-      // VMC directly from sampling, no accept/reject
-      if(accept_reject)
-        if (rr > m_r2max)
-        {
-          ++nRejectTemp;
+        dr += sqrttau * dr_diff;
+
+        rr = tauovermass * dot(dr_diff, dr_diff);
+        rr_proposed += rr;
+        // VMC directly from sampling, no accept/reject
+        if(accept_reject)
+          if (rr > m_r2max)
+          {
+            ++nRejectTemp;
+            continue;
+          }
+        if (!W.makeMoveAndCheck(iat, dr))
           continue;
-        }
-      
-      // VMC directly from sampling, force makeMoveAndCheck to always take action and return true
-      if(!accept_reject)
-        W.UseBoundBox=false;
-      if (!W.makeMoveAndCheck(iat, dr))
-        continue;
+      }
+      else // projector including L2 potential
+      {
+        //app_log()<<std::endl;
+        //app_log()<<std::endl;
+
+        H.computeL2DK(W,iat,Dtmp,Ktmp);
+        D = Dtmp; // upcast for mixed precision
+        K = Ktmp;
+        getScaledDriftL2(tauovermass,grad_iat,D,K,dr);
+
+        //app_log()<<"dr after scaled drift L2: "<<dr<<std::endl;
+        //mPosType dr_tmp;
+        //getScaledDrift(tauovermass, grad_iat, dr_tmp);
+        //app_log()<<"dr after scaled drift   : "<<dr_tmp<<std::endl;
+        //dr_tmp += sqrttau * dr_diff;
+
+        rr = tauovermass * dot(dr_diff, dr_diff);
+        rr_proposed += rr;
+        // VMC directly from sampling, no accept/reject
+        if(accept_reject)
+          if (rr > m_r2max)
+          {
+            ++nRejectTemp;
+            continue;
+          }
+
+        // move with just drift to update distance tables
+        if (!W.makeMoveAndCheck(iat, dr))
+          continue;
+
+        // compute diffusion step 
+        H.computeL2D(W,iat,Dtmp);
+        D = Dtmp; // upcast for mixed precision
+        Dchol = cholesky(D);
+        dr_diff = dot(Dchol,dr_diff);
+        dr += sqrttau * dr_diff;
+
+        // reverse the intermediate drift move
+        W.rejectMove(iat);
+        // move with drift and diffusion together
+        if (!W.makeMoveAndCheck(iat, dr))
+          continue;
+
+        //app_log()<<std::endl;
+        //app_log()<<"dr after diffusion L2: "<<dr<<std::endl;
+        //app_log()<<"dr after diffusion   : "<<dr_tmp<<std::endl;
+        //app_log()<<std::endl;
+        //app_log()<<std::endl;
+        //APP_ABORT("L2 check");
+
+      }
       RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
 
       // VMC directly from sampling, no accept/reject (i.e. always accept)
@@ -129,7 +196,7 @@ void DMCUpdatePbyPL2VMC::advanceWalker(Walker_t& thisWalker, bool recompute)
         }
         else
         {
-          EstimatorRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
+          EstimatorRealType logGf = -0.5 * dot(dr_diff, dr_diff);
           //Use the force of the particle iat
           //RealType scale=getDriftScale(m_tauovermass,grad_iat);
           //dr = W.R[iat]-W.activePos-scale*real(grad_iat);

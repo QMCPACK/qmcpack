@@ -130,6 +130,16 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
 }
 
 
+void L2Potential::evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K)
+{
+}
+
+
+void L2Potential::evaluateD(ParticleSet& P, int iel, TensorType& D)
+{
+}
+
+
 QMCHamiltonianBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   L2Potential* myclone = new L2Potential(IonConfig, qp, psi);
