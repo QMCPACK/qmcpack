@@ -925,11 +925,10 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
       PRE.error("You must specify a positive number for \"isize\"", true);
     if (N_ee == 0)
       PRE.error("You must specify a positive number for \"esize\"", true);
-    app_log() << "     Ion : " << iSpecies << "   e-e : " << eSpecies1 << " - " << eSpecies2 << std::endl;
-    app_log() << "      Number of e-e parameters : " << N_ee << std::endl;
-    app_log() << "      Number of e-I parameters : " << N_eI << std::endl;
-    app_log() << "      Cutoff radius : " << cutoff_radius << std::endl;
-    app_log() << std::endl;
+    app_summary() << "     Ion: " << iSpecies << "   electron-electron: " << eSpecies1 << " - " << eSpecies2 << std::endl;
+    app_summary() << "      Number of parameters for e-e: " << N_ee << ", for e-I: " << N_eI << std::endl;
+    app_summary() << "      Cutoff radius: " << cutoff_radius << std::endl;
+    app_summary() << std::endl;
     resize(N_eI, N_ee);
     // Now read coefficents
     xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
@@ -981,8 +980,9 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
         //     }
         if (!notOpt)
         {
-          app_debug() << "Parameter     Name      Value\n";
-          myVars.print(app_debug_stream());
+          int left_pad_spaces = 6;
+          myVars.print(app_log(), left_pad_spaces, true);
+          app_log() << std::endl;
         }
       }
       xmlCoefs = xmlCoefs->next;

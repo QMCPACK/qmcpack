@@ -422,9 +422,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
     {
       PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.", true);
     }
-    app_summary() << "    Number of parameters : " << NumParams << std::endl;
-    app_log() << "    Cusp : " << CuspValue << std::endl;
-    app_log() << "    Cutoff radius : " << cutoff_radius << std::endl;
+    app_summary() << "     Number of parameters: " << NumParams << std::endl;
+    app_summary() << "     Cusp: " << CuspValue << std::endl;
+    app_summary() << "     Cutoff radius: " << cutoff_radius << std::endl;
     resize(NumParams);
     // Now read coefficents
     xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
@@ -491,8 +491,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
           sstr << id << "_" << i;
           myVars.insert(sstr.str(), Parameters[i], !notOpt, optimize::LOGLINEAR_P);
         }
-        app_debug() << "Parameter     Name      Value\n";
-        myVars.print(app_debug_stream());
+        int left_pad_space = 5;
+        app_log() << std::endl;
+        myVars.print(app_log(), left_pad_space, true);
       }
       xmlCoefs = xmlCoefs->next;
     }
@@ -553,7 +554,6 @@ struct BsplineFunctor : public OptimizableFunctorBase
         sstr << id << "_" << i;
         myVars.insert(sstr.str(), Parameters[i], true, optimize::LOGLINEAR_P);
       }
-      app_log() << "Parameter     Name      Value\n";
       myVars.print(app_log());
     }
     else
