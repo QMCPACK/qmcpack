@@ -29,6 +29,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+#if QMC_COMPLEX
 HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pureSD,
 	     bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
 	     double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
@@ -239,7 +240,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
       APP_ABORT("");
     }
     for(int Q=0; Q<nkpts; Q++) {
-      using std::conj;
+      using ma::conj;
       if(Qmap[Q] >= 0 && Q <= kminus[Q]) {
         if(!dump.readEntry(LQKikn[Q],std::string("L")+std::to_string(Q))) {
           app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
@@ -551,7 +552,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           boost::multi::array_ref<SPComplexType,2> Likn(to_address(LQKikn[Q][K].origin()),
                                                    {nmo_per_kp[K],nmo_per_kp[QK]*nchol_per_kp[Q]});
           using ma::H;
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
           boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
           ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(1.0),v1_);
           boost::multi::array<ComplexType,2> v2_(v1_);
@@ -566,7 +567,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           boost::multi::array_ref<SPComplexType,3> Lkin(to_address(LQKikn[Qm][QK].origin()),
                                                    {nmo_per_kp[QK],nmo_per_kp[K],nchol_per_kp[Qm]});
           boost::multi::array<SPComplexType,3> buff3D({nmo_per_kp[K],nmo_per_kp[QK],nchol_per_kp[Qm]});
-          using std::conj;
+          using ma::conj;
           for(int i=0; i<nmo_per_kp[K]; i++)
           for(int k=0; k<nmo_per_kp[QK]; k++)
           for(int n=0; n<nchol_per_kp[Qm]; n++)
@@ -574,7 +575,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           boost::multi::array_ref<SPComplexType,2> L_(to_address(buff3D.origin()),
                                                    {nmo_per_kp[K],nmo_per_kp[QK]*nchol_per_kp[Qm]});
           using ma::H;
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
           boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
           ma::product(SPComplexType(-0.5),L_,H(L_),SPComplexType(1.0),v1_);
           boost::multi::array<ComplexType,2> v2_(v1_);
@@ -882,7 +883,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     // read in compact form and transform to padded 
     SpMatrix L_({1,1});
     for(int Q=0; Q<nkpts; Q++) {
-      using std::conj;
+      using ma::conj;
       int nchol = nchol_per_kp[Q];
       if(Qmap[Q] >= 0 && Q <= kminus[Q]) {
         if(!dump.readEntry(L_,std::string("L")+std::to_string(Q))) {
@@ -1243,23 +1244,21 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           boost::multi::array_ref<SPComplexType,2> Likn(to_address(LQKikn[Q][K].origin()),
                                                    {nmo_max,nmo_max*nchol_max});
           using ma::H;
-#if AFQMC_MIXED_PRECISION
-          boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
+#if MIXED_PRECISION
+          boost::multi::array<SPComplexType,2> v1_({nmo_max,nmo_max});
           ma::product(SPComplexType(-0.5),Likn,H(Likn),SPComplexType(1.0),v1_);
           using std::copy_n;
           boost::multi::array<ComplexType,2> v2_(v1_); 
-          ma::add(ComplexType(1.0),v2_,
-                  ComplexType(1.0),vn0_[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
-                  vn0_[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+          ma::add(ComplexType(1.0),v2_,ComplexType(1.0),vn0_[K],vn0_[K]);
 #else
-          ma::product(-0.5,Likn,H(Likn),1.0,vn0_[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+          ma::product(-0.5,Likn,H(Likn),1.0,vn0_[K]);
 #endif
         } else {
           int QmK = QKtok2[Qm][K];
           boost::multi::array_ref<SPComplexType,3> Lkin(to_address(LQKikn[Qm][QK].origin()),
                                                    {nmo_max,nmo_max,nchol_max});
           boost::multi::array<SPComplexType,3> buff3D({nmo_max,nmo_max,nchol_max});
-          using std::conj;
+          using ma::conj;
           for(int i=0; i<nmo_max; i++)
           for(int k=0; k<nmo_max; k++)
           for(int n=0; n<nchol_max; n++)
@@ -1267,14 +1266,12 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           boost::multi::array_ref<SPComplexType,2> L_(to_address(buff3D.origin()),
                                                    {nmo_max,nmo_max*nchol_max});
           using ma::H;
-#if AFQMC_MIXED_PRECISION
-          boost::multi::array<SPComplexType,2> v1_({nmo_per_kp[K],nmo_per_kp[K]});
+#if MIXED_PRECISION
+          boost::multi::array<SPComplexType,2> v1_({nmo_max,nmo_max});
           ma::product(SPComplexType(-0.5),L_,H(L_),
                       SPComplexType(1.0),v1_);
           boost::multi::array<ComplexType,2> v2_(v1_); 
-          ma::add(ComplexType(1.0),v2_,
-                  ComplexType(1.0),vn0_[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}),
-                  vn0_[K]({0,nmo_per_kp[K]},{0,nmo_per_kp[K]}));
+          ma::add(ComplexType(1.0),v2_,ComplexType(1.0),vn0_[K],vn0_[K]);
 #else
           ma::product(-0.5,L_,H(L_),1.0,vn0_[K]);
 #endif
@@ -1378,6 +1375,35 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             global_ncvecs));
 
 }
+
+#else
+
+HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pureSD,
+             bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
+             double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
+             hdf_archive& hdf_restart) {
+  APP_ABORT(" Error: KPFactorizedHamiltonian requires complex build (QMC_COMPLEX=1). \n"); 
+  return HamiltonianOperations();
+}
+
+HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(bool pureSD,
+             bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
+             double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
+             hdf_archive& hdf_restart) {
+  APP_ABORT(" Error: KPFactorizedHamiltonian requires complex build (QMC_COMPLEX=1). \n"); 
+  return HamiltonianOperations();
+}
+
+HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(bool pureSD,
+             bool addCoulomb, WALKER_TYPES type, std::vector<PsiT_Matrix>& PsiT,
+             double cutvn, double cutv2, TaskGroup_& TGprop, TaskGroup_& TGwfn,
+             hdf_archive& hdf_restart) {
+  APP_ABORT(" Error: KPFactorizedHamiltonian requires complex build (QMC_COMPLEX=1). \n");
+  return HamiltonianOperations();
+}
+
+
+#endif
 
 }
 }

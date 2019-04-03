@@ -561,13 +561,13 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     else if (useGPU == "yes")
     {
       app_log() << "Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
-      adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType>>(psi,firstIndex);
+      adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(psi,firstIndex);
     }
 #endif
     else
     {
       app_log() << "Using DiracDeterminant with DelayedUpdate engine" << std::endl;
-      adet = new DiracDeterminant<DelayedUpdate<ValueType>>(psi, firstIndex);
+      adet = new DiracDeterminant<>(psi, firstIndex);
     }
 #endif
   }
@@ -869,7 +869,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
     }
     else
     {
-      adet = new DiracDeterminant<DelayedUpdate<ValueType>>((SPOSetPtr)spo, 0);
+      adet = new DiracDeterminant<>((SPOSetPtr)spo, 0);
     }
     adet->set(multiSD->FirstIndex_up, multiSD->nels_up);
     multiSD->dets_up.push_back(adet);
@@ -894,7 +894,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
     }
     else
     {
-      adet = new DiracDeterminant<DelayedUpdate<ValueType>>((SPOSetPtr)spo, 0);
+      adet = new DiracDeterminant<>((SPOSetPtr)spo, 0);
     }
     adet->set(multiSD->FirstIndex_dn, multiSD->nels_dn);
     multiSD->dets_dn.push_back(adet);

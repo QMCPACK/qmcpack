@@ -59,7 +59,6 @@ namespace qmcplusplus
 
 using namespace afqmc;
 
-//template<class Allocator>
 void propg_fac_shared(boost::mpi3::communicator & world)
 {
   if(not file_exists(UTEST_HAMIL) ||
@@ -98,8 +97,6 @@ void propg_fac_shared(boost::mpi3::communicator & world)
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
-
-//    Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
     WALKER_TYPES type = afqmc::getWalkerType(UTEST_WFN);
     const char *wlk_xml_block_closed =
@@ -411,13 +408,9 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
-
   qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
-#else
-  using Alloc = shared_allocator<ComplexType>;
 #endif
 
   propg_fac_shared(world);
@@ -430,16 +423,13 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
   int ngrp(world.size());
-
   qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
 #else
   auto node = world.split_shared(world.rank());
   int ngrp(world.size()/node.size());
-  using Alloc = shared_allocator<ComplexType>;
 #endif
 
   propg_fac_distributed(world,ngrp);

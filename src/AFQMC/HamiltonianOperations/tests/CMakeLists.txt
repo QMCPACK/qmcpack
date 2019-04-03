@@ -21,7 +21,14 @@ EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 ADD_EXECUTABLE(${UTEST_EXE} test_hamiltonian_operations.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil
                       ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol_uc_wfn_rhf)
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
-              "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/ham_chol_uc.h5"
-              "--wfn ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/wfn_rhf.dat")
+IF (QMC_COMPLEX)
+  SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol_uc_wfn_rhf)
+  ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
+                "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/ham_chol_uc.h5"
+                "--wfn ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/wfn_rhf.h5")
+ELSE()
+  SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol_wfn_rhf)
+  ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
+      "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/ham_chol.h5"
+      "--wfn ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/wfn_rhf.dat")
+ENDIF()

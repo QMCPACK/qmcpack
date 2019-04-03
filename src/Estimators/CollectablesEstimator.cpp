@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #include <Estimators/CollectablesEstimator.h>
@@ -20,27 +17,21 @@
 
 namespace qmcplusplus
 {
-
-CollectablesEstimator::CollectablesEstimator(QMCHamiltonian& h)
-  : refH(h)
+CollectablesEstimator::CollectablesEstimator(QMCHamiltonian& h) : refH(h)
 {
   scalars.resize(h.sizeOfCollectables());
   scalars_saved.resize(h.sizeOfCollectables());
 }
 
-void CollectablesEstimator::registerObservables(std::vector<observable_helper*>& h5desc
-    , hid_t gid)
+void CollectablesEstimator::registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid)
 {
-  int loc=h5desc.size();
-  refH.registerCollectables(h5desc,gid);
-  for(int i=loc; i<h5desc.size(); ++i)
+  int loc = h5desc.size();
+  refH.registerCollectables(h5desc, gid);
+  for (int i = loc; i < h5desc.size(); ++i)
     h5desc[i]->lower_bound += FirstIndex;
 }
 
-CollectablesEstimator* CollectablesEstimator::clone()
-{
-  return new CollectablesEstimator(*this);
-}
+CollectablesEstimator* CollectablesEstimator::clone() { return new CollectablesEstimator(*this); }
 
 /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
  * @param record storage of scalar records (name,value)
@@ -49,8 +40,8 @@ CollectablesEstimator* CollectablesEstimator::clone()
  */
 void CollectablesEstimator::add2Record(RecordListType& record)
 {
-  FirstIndex=record.size();
-  LastIndex=FirstIndex+scalars.size();
+  FirstIndex = record.size();
+  LastIndex  = FirstIndex + scalars.size();
   //FirstIndex = record.size();
   //for(int i=0; i<refH.sizeOfCollectables(); ++i)
   //{
@@ -68,4 +59,4 @@ void CollectablesEstimator::add2Record(RecordListType& record)
 //  for(int i=0; i<refH.sizeOfCollectables(); ++i)
 //    scalars[i](W.Collectables[i],wgt);
 //}
-}
+} // namespace qmcplusplus

@@ -96,8 +96,8 @@ struct SlaterCombo : public OptimizableFunctorBase
     typename std::vector<Component_t>::iterator it(sset.begin()), it_end(sset.end());
     while (it != it_end)
     {
-      Y += (*it).evaluate(r, rinv, du, d2u);
-      dY += du;
+      Y   += (*it).evaluate(r, rinv, du, d2u);
+      dY  += du;
       d2Y += d2u;
       ++it;
     }
@@ -113,8 +113,8 @@ struct SlaterCombo : public OptimizableFunctorBase
     typename std::vector<Component_t>::iterator it(sset.begin()), it_end(sset.end());
     while (it != it_end)
     {
-      Y += (*it).evaluate(r, rinv, du, d2u, d3u);
-      dY += du;
+      Y   += (*it).evaluate(r, rinv, du, d2u, d3u);
+      dY  += du;
       d2Y += d2u;
       d3Y += d3u;
       ++it;

@@ -17,91 +17,101 @@
 
 namespace spline2offload
 {
+/** define evaluate: common to any implementation */
+template<typename T>
+inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
+                            T x,
+                            T y,
+                            T z,
+                            T* restrict vals,
+                            int first,
+                            int last)
+{
+  x -= spline_m->x_grid.start;
+  y -= spline_m->y_grid.start;
+  z -= spline_m->z_grid.start;
+  T tx, ty, tz;
+  int ix, iy, iz;
+  spline2::getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 1);
+  spline2::getSplineBound(y * spline_m->y_grid.delta_inv, ty, iy, spline_m->y_grid.num - 1);
+  spline2::getSplineBound(z * spline_m->z_grid.delta_inv, tz, iz, spline_m->z_grid.num - 1);
+  T a[4], b[4], c[4];
 
-  /** define evaluate: common to any implementation */
-  template<typename T>
-    inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *restrict spline_m,
-                                T x, T y, T z, T* restrict vals, int first, int last)
+  spline2::MultiBsplineData<T>::compute_prefactors(a, tx);
+  spline2::MultiBsplineData<T>::compute_prefactors(b, ty);
+  spline2::MultiBsplineData<T>::compute_prefactors(c, tz);
+
+  const intptr_t xs = spline_m->x_stride;
+  const intptr_t ys = spline_m->y_stride;
+  const intptr_t zs = spline_m->z_stride;
+
+  const int num_splines = last - first;
+  OMPstd::fill_n(vals, num_splines, T());
+
+  for (int i = 0; i < 4; i++)
+    for (int j = 0; j < 4; j++)
     {
-      x -= spline_m->x_grid.start;
-      y -= spline_m->y_grid.start;
-      z -= spline_m->z_grid.start;
-      T tx,ty,tz;
-      int ix,iy,iz;
-      spline2::getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
-      spline2::getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
-      spline2::getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
-      T a[4], b[4], c[4];
-
-      spline2::MultiBsplineData<T>::compute_prefactors(a, tx);
-      spline2::MultiBsplineData<T>::compute_prefactors(b, ty);
-      spline2::MultiBsplineData<T>::compute_prefactors(c, tz);
-
-      const intptr_t xs = spline_m->x_stride;
-      const intptr_t ys = spline_m->y_stride;
-      const intptr_t zs = spline_m->z_stride;
-
-      const int num_splines=last-first;
-      OMPstd::fill_n(vals,num_splines,T());
-
-      for (int i=0; i<4; i++)
-        for (int j=0; j<4; j++)
-        {
-          const T pre00 =  a[i]*b[j];
-          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
-          const T* restrict coefszs  = coefs+zs;
-          const T* restrict coefs2zs = coefs+2*zs;
-          const T* restrict coefs3zs = coefs+3*zs;
+      const T pre00              = a[i] * b[j];
+      const T* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
+      const T* restrict coefszs  = coefs + zs;
+      const T* restrict coefs2zs = coefs + 2 * zs;
+      const T* restrict coefs3zs = coefs + 3 * zs;
 #ifdef ENABLE_OFFLOAD
-          #pragma omp for
+#pragma omp for
 #else
-          #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,vals)
+#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals)
 #endif
-          for(int n=0; n<num_splines; n++)
-            vals[n] += pre00*(c[0]*coefs[n] + c[1]*coefszs[n] + c[2]*coefs2zs[n] + c[3]*coefs3zs[n]);
-        }
+      for (int n = 0; n < num_splines; n++)
+        vals[n] += pre00 * (c[0] * coefs[n] + c[1] * coefszs[n] + c[2] * coefs2zs[n] + c[3] * coefs3zs[n]);
     }
-
-  template<typename T>
-    inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T,3>::SplineType *restrict spline_m,
-                                T x, T y, T z, T* restrict vals, int first, int last)
-    {
-      x -= spline_m->x_grid.start;
-      y -= spline_m->y_grid.start;
-      z -= spline_m->z_grid.start;
-      T tx,ty,tz;
-      int ix,iy,iz;
-      spline2::getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
-      spline2::getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
-      spline2::getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
-      T a[4], b[4], c[4];
-
-      spline2::MultiBsplineData<T>::compute_prefactors(a, tx);
-      spline2::MultiBsplineData<T>::compute_prefactors(b, ty);
-      spline2::MultiBsplineData<T>::compute_prefactors(c, tz);
-
-      const intptr_t xs = spline_m->x_stride;
-      const intptr_t ys = spline_m->y_stride;
-      const intptr_t zs = spline_m->z_stride;
-
-      const int num_splines=last-first;
-#ifdef ENABLE_OFFLOAD
-      #pragma omp for
-#else
-      #pragma omp simd aligned(vals)
-#endif
-      for(int n=0; n<num_splines; n++)
-      {
-        T val = T();
-        for (int i=0; i<4; i++)
-          for (int j=0; j<4; j++)
-          {
-            const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
-            val += a[i] * b[j] * (c[0]*coefs[n] + c[1]*coefs[n+zs] + c[2]*coefs[n+zs*2] + c[3]*coefs[n+zs*3]);
-          }
-        vals[n] = val;
-      }
-    }
-
 }
+
+template<typename T>
+inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
+                               T x,
+                               T y,
+                               T z,
+                               T* restrict vals,
+                               int first,
+                               int last)
+{
+  x -= spline_m->x_grid.start;
+  y -= spline_m->y_grid.start;
+  z -= spline_m->z_grid.start;
+  T tx, ty, tz;
+  int ix, iy, iz;
+  spline2::getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 1);
+  spline2::getSplineBound(y * spline_m->y_grid.delta_inv, ty, iy, spline_m->y_grid.num - 1);
+  spline2::getSplineBound(z * spline_m->z_grid.delta_inv, tz, iz, spline_m->z_grid.num - 1);
+  T a[4], b[4], c[4];
+
+  spline2::MultiBsplineData<T>::compute_prefactors(a, tx);
+  spline2::MultiBsplineData<T>::compute_prefactors(b, ty);
+  spline2::MultiBsplineData<T>::compute_prefactors(c, tz);
+
+  const intptr_t xs = spline_m->x_stride;
+  const intptr_t ys = spline_m->y_stride;
+  const intptr_t zs = spline_m->z_stride;
+
+  const int num_splines = last - first;
+#ifdef ENABLE_OFFLOAD
+#pragma omp for
+#else
+#pragma omp simd aligned(vals)
+#endif
+  for (int n = 0; n < num_splines; n++)
+  {
+    T val = T();
+    for (int i = 0; i < 4; i++)
+      for (int j = 0; j < 4; j++)
+      {
+        const T* restrict coefs = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
+        val += a[i] * b[j] *
+            (c[0] * coefs[n] + c[1] * coefs[n + zs] + c[2] * coefs[n + zs * 2] + c[3] * coefs[n + zs * 3]);
+      }
+    vals[n] = val;
+  }
+}
+
+} // namespace spline2offload
 #endif

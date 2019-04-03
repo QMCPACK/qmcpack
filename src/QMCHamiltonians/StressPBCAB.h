@@ -9,8 +9,8 @@
 //
 // File created by: Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_STRESSPBCAB_TEMP_H
 #define QMCPLUSPLUS_STRESSPBCAB_TEMP_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
@@ -21,20 +21,18 @@
 #include "Numerics/OneDimCubicSpline.h"
 namespace qmcplusplus
 {
-
 /** @ingroup hamiltonian
  *\brief Calculates the AA Coulomb potential using PBCs
  *
  * Functionally identical to StressPBCAB but uses a templated version of
  * LRHandler.
  */
-struct StressPBCAB: public QMCHamiltonianBase, public ForceBase
+struct StressPBCAB : public QMCHamiltonianBase, public ForceBase
 {
-
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
   typedef LRCoulombSingleton::GridType GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
-  
+
   bool is_active;
 
   ///source particle set
@@ -52,7 +50,7 @@ struct StressPBCAB: public QMCHamiltonianBase, public ForceBase
   ///number of particles of B
   int NptclB;
   ///const energy after breakup
-  SymTensor<RealType,OHMMS_DIM> myConst;
+  SymTensor<RealType, OHMMS_DIM> myConst;
   ///cutoff radius of the short-range part
   RealType myRcut;
   ///radial grid
@@ -87,9 +85,9 @@ struct StressPBCAB: public QMCHamiltonianBase, public ForceBase
   ///long-range part for the moved particle
   RealType LRtmp;
   ///short-range per particle
- // Vector<RealType> SRpart;
+  // Vector<RealType> SRpart;
   ///long-range per particle
- // Vector<RealType> LRpart;
+  // Vector<RealType> LRpart;
   /*@}*/
 
   //This is set to true if the K_c of structure-factors are different
@@ -97,14 +95,14 @@ struct StressPBCAB: public QMCHamiltonianBase, public ForceBase
   RealType minkc;
 
   //particle trace samples
- // Array<TraceReal,1>* Ve_sample;
- // Array<TraceReal,1>* Vi_sample;
- // Array<TraceReal,1>  Ve_const;
-//  Array<TraceReal,1>  Vi_const;
+  // Array<TraceReal,1>* Ve_sample;
+  // Array<TraceReal,1>* Vi_sample;
+  // Array<TraceReal,1>  Ve_const;
+  //  Array<TraceReal,1>  Vi_const;
   ParticleSet& Peln;
   ParticleSet& Pion;
 
-  StressPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces=false);
+  StressPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces = false);
 
   ///// copy constructor
   //StressPBCAB(const StressPBCAB& c);
@@ -113,22 +111,19 @@ struct StressPBCAB: public QMCHamiltonianBase, public ForceBase
 
   void resetTargetParticleSet(ParticleSet& P);
 
- // virtual void checkout_particle_arrays(TraceManager& tm);
- // virtual void delete_particle_arrays();
+  // virtual void checkout_particle_arrays(TraceManager& tm);
+  // virtual void delete_particle_arrays();
 
   Return_t evaluate(ParticleSet& P);
 
- // Return_t spevaluate(ParticleSet& P);
+  // Return_t spevaluate(ParticleSet& P);
 
   /** Do nothing */
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
   bool get(std::ostream& os) const
   {
-    os << "StressPBCAB potential source: " << PtclA.getName() ;
+    os << "StressPBCAB potential source: " << PtclA.getName();
     return true;
   }
 
@@ -136,38 +131,24 @@ struct StressPBCAB: public QMCHamiltonianBase, public ForceBase
 
   void initBreakup(ParticleSet& P);
 
- // Return_t evalConsts_orig(bool report=true);
- // Return_t evalSR_old(ParticleSet& P);
- // Return_t evalLR_old(ParticleSet& P);
- // Return_t evalConsts_old(bool report=true);
+  // Return_t evalConsts_orig(bool report=true);
+  // Return_t evalSR_old(ParticleSet& P);
+  // Return_t evalLR_old(ParticleSet& P);
+  // Return_t evalConsts_old(bool report=true);
 
-  SymTensor<RealType, OHMMS_DIM> evaluateStress(){return stress;}
+  SymTensor<RealType, OHMMS_DIM> evaluateStress() { return stress; }
   SymTensor<RealType, OHMMS_DIM> evalSR(ParticleSet& P);
   SymTensor<RealType, OHMMS_DIM> evalLR(ParticleSet& P);
- // Return_t evalSRwithForces(ParticleSet& P);
- // Return_t evalLRwithForces(ParticleSet& P);
-  SymTensor<RealType, OHMMS_DIM> evalConsts(bool report=true);
- // void add(int groupID, RadFunctorType* ppot);
-  void addObservables(PropertySetType& plist, BufferType& collectables)
-  {
-     addObservablesStress(plist);
-  }
+  // Return_t evalSRwithForces(ParticleSet& P);
+  // Return_t evalLRwithForces(ParticleSet& P);
+  SymTensor<RealType, OHMMS_DIM> evalConsts(bool report = true);
+  // void add(int groupID, RadFunctorType* ppot);
+  void addObservables(PropertySetType& plist, BufferType& collectables) { addObservablesStress(plist); }
 
-  void setObservables(PropertySetType& plist)
-  {
+  void setObservables(PropertySetType& plist) { setObservablesStress(plist); }
 
-      setObservablesStress(plist);
-  }
-
-  void setParticlePropertyList(PropertySetType& plist, int offset)
-  {
-
-     setParticleSetStress(plist, offset);
-  }
-
+  void setParticlePropertyList(PropertySetType& plist, int offset) { setParticleSetStress(plist, offset); }
 };
 
-}
+} // namespace qmcplusplus
 #endif
-
-

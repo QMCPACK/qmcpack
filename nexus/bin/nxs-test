@@ -249,6 +249,12 @@ class NexusTestBase(object):
         return testpath
     #end def test_path
         
+    @staticmethod
+    def test_path_from_dir(test_dir):
+        ntdir  = NexusTestBase.nexus_test_dir
+        nlpath = NexusTestBase.launch_path
+        return os.path.join(nlpath,ntdir,test_dir)
+    #end def test_path_from_dir
 #end class NexusTestBase
 
 
@@ -302,6 +308,30 @@ def nlog_restore():
     generic_settings.devlog   = logging_storage['devlog']
     object_interface._logfile = logging_storage['devlog']
 #end def nlog_restore
+
+
+# logging functions for tests
+def nlog(msg,n=0,indent='  '):
+    if len(msg)>0:
+        indent = n*indent
+        msg=indent+msg.replace('\n','\n'+indent)+'\n'
+    #end if
+    sys.stdout.write(msg)
+#end def nlog
+
+def nmessage(msg,header=None,n=0):
+    if header is None:
+        nlog(msg,n=n)
+    else:
+        nlog(header,n=n)
+        nlog(msg,n=n+1)
+    #end if
+#end def nmessage
+
+def nerror(msg,header='nexus test',n=0):
+    nmessage(msg,header+' error:',n=n)
+    sys.exit(1)
+#end def nerror
 
 
 # enter the current testing directory
@@ -2346,7 +2376,7 @@ def machines():
             if global_data['job_ref_table']:
                 sname = "'{0}'".format(name)
                 stype = "'{0}'".format(jtype)
-                print "        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command)
+                nlog("        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command))
                 continue
             #end if
             ref_command = job_run_ref[name,jtype]
@@ -3009,10 +3039,10 @@ example_information = dict(
             'relax_vs_kpoints_example.py',
             ],
         files = [
-            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_111/relax.in'),
-            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_222/relax.in'),
-            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_444/relax.in'),
-            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_666/relax.in'),
+            ('pwscf'     ,'input','runs/relax/kgrid_111/relax.in'),
+            ('pwscf'     ,'input','runs/relax/kgrid_222/relax.in'),
+            ('pwscf'     ,'input','runs/relax/kgrid_444/relax.in'),
+            ('pwscf'     ,'input','runs/relax/kgrid_666/relax.in'),
             ],
         ),
     gamess_H2O = dict(
@@ -3023,11 +3053,11 @@ example_information = dict(
             'h2o_pp_casscf.py',
             ],
         files = [
-            ('gamess'    ,'input','gamess/H2O/runs/pp_hf/rhf.inp'),
-            ('gamess'    ,'input','gamess/H2O/runs/pp_cisd/rhf.inp'),
-            ('gamess'    ,'input','gamess/H2O/runs/pp_cisd/cisd.inp'),
-            ('gamess'    ,'input','gamess/H2O/runs/pp_casscf/rhf.inp'),
-            ('gamess'    ,'input','gamess/H2O/runs/pp_casscf/cas.inp'),
+            ('gamess'    ,'input','runs/pp_hf/rhf.inp'),
+            ('gamess'    ,'input','runs/pp_cisd/rhf.inp'),
+            ('gamess'    ,'input','runs/pp_cisd/cisd.inp'),
+            ('gamess'    ,'input','runs/pp_casscf/rhf.inp'),
+            ('gamess'    ,'input','runs/pp_casscf/cas.inp'),
             ],
         ),
     qmcpack_H2O = dict(
@@ -3036,10 +3066,10 @@ example_information = dict(
             'H2O.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/H2O/runs/scf.in'),
-            ('pw2qmcpack','input','qmcpack/H2O/runs/p2q.in'),
-            ('qmcpack'   ,'input','qmcpack/H2O/runs/opt.in.xml'),
-            ('qmcpack'   ,'input','qmcpack/H2O/runs/dmc.in.xml'),
+            ('pwscf'     ,'input','runs/scf.in'),
+            ('pw2qmcpack','input','runs/p2q.in'),
+            ('qmcpack'   ,'input','runs/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/dmc.in.xml'),
             ],
         ),
     qmcpack_LiH = dict(
@@ -3048,11 +3078,11 @@ example_information = dict(
             'LiH.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/LiH/runs/scf.in'),
-            ('pwscf'     ,'input','qmcpack/LiH/runs/nscf.in'),
-            ('pw2qmcpack','input','qmcpack/LiH/runs/p2q.in'),
-            ('qmcpack'   ,'input','qmcpack/LiH/runs/opt.in.xml'),
-            ('qmcpack'   ,'input','qmcpack/LiH/runs/dmc.in.xml'),
+            ('pwscf'     ,'input','runs/scf.in'),
+            ('pwscf'     ,'input','runs/nscf.in'),
+            ('pw2qmcpack','input','runs/p2q.in'),
+            ('qmcpack'   ,'input','runs/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/dmc.in.xml'),
             ],
         ),
     qmcpack_c20 = dict(
@@ -3061,10 +3091,10 @@ example_information = dict(
             'c20.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/c20/runs/c20/scf/scf.in'),
-            ('pw2qmcpack','input','qmcpack/c20/runs/c20/nscf/p2q.in'),
-            ('qmcpack'   ,'input','qmcpack/c20/runs/c20/opt/opt.in.xml'),
-            ('qmcpack'   ,'input','qmcpack/c20/runs/c20/qmc/qmc.in.xml'),
+            ('pwscf'     ,'input','runs/c20/scf/scf.in'),
+            ('pw2qmcpack','input','runs/c20/nscf/p2q.in'),
+            ('qmcpack'   ,'input','runs/c20/opt/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/c20/qmc/qmc.in.xml'),
             ],
         ),
     qmcpack_diamond = dict(
@@ -3074,11 +3104,11 @@ example_information = dict(
             'diamond_vacancy.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond/scf/scf.in'),
-            ('pw2qmcpack','input','qmcpack/diamond/runs/diamond/scf/conv.in'),
-            ('qmcpack'   ,'input','qmcpack/diamond/runs/diamond/vmc/vmc.in.xml'),
-            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond_vacancy/relax/relax.in'),
-            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond_vacancy/scf/scf.in'),
+            ('pwscf'     ,'input','runs/diamond/scf/scf.in'),
+            ('pw2qmcpack','input','runs/diamond/scf/conv.in'),
+            ('qmcpack'   ,'input','runs/diamond/vmc/vmc.in.xml'),
+            ('pwscf'     ,'input','runs/diamond_vacancy/relax/relax.in'),
+            ('pwscf'     ,'input','runs/diamond_vacancy/scf/scf.in'),
             ],
         ),
     qmcpack_graphene = dict(
@@ -3087,13 +3117,13 @@ example_information = dict(
             'graphene.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/scf/scf.in'),
-            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/nscf/nscf.in'),
-            ('pw2qmcpack','input','qmcpack/graphene/runs/graphene/nscf/p2q.in'),
-            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/nscf_opt/nscf.in'),
-            ('pw2qmcpack','input','qmcpack/graphene/runs/graphene/nscf_opt/p2q.in'),
-            ('qmcpack'   ,'input','qmcpack/graphene/runs/graphene/opt/opt.in.xml'),
-            ('qmcpack'   ,'input','qmcpack/graphene/runs/graphene/qmc/qmc.in.xml'),
+            ('pwscf'     ,'input','runs/graphene/scf/scf.in'),
+            ('pwscf'     ,'input','runs/graphene/nscf/nscf.in'),
+            ('pw2qmcpack','input','runs/graphene/nscf/p2q.in'),
+            ('pwscf'     ,'input','runs/graphene/nscf_opt/nscf.in'),
+            ('pw2qmcpack','input','runs/graphene/nscf_opt/p2q.in'),
+            ('qmcpack'   ,'input','runs/graphene/opt/opt.in.xml'),
+            ('qmcpack'   ,'input','runs/graphene/qmc/qmc.in.xml'),
             ],
         ),
     qmcpack_oxygen_dimer = dict(
@@ -3102,13 +3132,15 @@ example_information = dict(
             'oxygen_dimer.py',
             ],
         files = [
-            ('pwscf'     ,'input','qmcpack/oxygen_dimer/scale_1.0/scf.in'),
-            ('pw2qmcpack','input','qmcpack/oxygen_dimer/scale_1.0/p2q.in'),
-            ('qmcpack'   ,'input','qmcpack/oxygen_dimer/scale_1.0/opt.in.xml'),
-            ('qmcpack'   ,'input','qmcpack/oxygen_dimer/scale_1.0/qmc.in.xml'),
+            ('pwscf'     ,'input','scale_1.0/scf.in'),
+            ('pw2qmcpack','input','scale_1.0/p2q.in'),
+            ('qmcpack'   ,'input','scale_1.0/opt.in.xml'),
+            ('qmcpack'   ,'input','scale_1.0/qmc.in.xml'),
             ],
         ),
     )
+
+user_examples_data = dict()
 
 def user_examples(label):
 
@@ -3125,6 +3157,15 @@ def user_examples(label):
 
     # create local directory for these tests
     test_dir = nenter(preserve=True)
+
+    # create a local file to track any test failures
+    #   this is optionally used when updating reference files automatically
+    example_failures_filename = 'test_failures.txt'
+    test_failures_file = user_examples_data['failures_file']
+    if test_failures_file is None:
+        test_failures_file = open(user_examples_data['failures_filepath'],'w')
+        user_examples_data['failures_file'] = test_failures_file
+    #end if
 
     # copy over nexus user examples into reference generation directory
     #   only do this the first time as all user example tests share a test directory
@@ -3167,9 +3208,10 @@ def user_examples(label):
         gamess     = GamessInput,
         qmcpack    = QmcpackInput,
         )
+    example_path = einfo['path']
     for code,filetype,filepath in einfo['files']:
-        ref_filepath = os.path.join(ref_example_dir,filepath)
-        gen_filepath = os.path.join(test_dir,filepath)
+        ref_filepath = os.path.join(ref_example_dir,example_path,filepath)
+        gen_filepath = os.path.join(test_dir,example_path,filepath)
         # check that the reference file exists
         if not os.path.exists(ref_filepath):
             nfail('reference file is missing\nfile should be located at: {0}'.format(ref_filepath))
@@ -3215,6 +3257,9 @@ def user_examples(label):
                     #end try
                 #end if
                 if failed:
+                    # store failing reference files
+                    test_failures_file.write(ref_filepath+'\n')
+                    # report on failures
                     from generic import obj
                     dgen = obj(dgen)
                     dref = obj(dref)
@@ -3287,11 +3332,11 @@ def execute(command,verbose=False,skip=False):
     out,err = '',''
     if skip:
         if verbose:
-            print 'Would have executed:\n  '+command
+            print('Would have executed:\n  '+command)
         #end if
     else:
         if verbose:
-            print 'Executing:\n  '+command
+            print('Executing:\n  '+command)
         #end if
         process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
         out,err = process.communicate()
@@ -3301,7 +3346,7 @@ def execute(command,verbose=False,skip=False):
 
 
 
-def regenerate_reference(update=False,overwrite=True):
+def regenerate_reference(update=False):
     # create directory for reference file generation
     refgen_dir = './reference_regen'
     if os.path.exists(refgen_dir):
@@ -3309,10 +3354,11 @@ def regenerate_reference(update=False,overwrite=True):
     #end if
     os.makedirs(refgen_dir)
 
-    print 'generating reference data in {0}'.format(refgen_dir)
+    nlog('generating reference data in {0}'.format(refgen_dir))
 
     # create directory for example reference generation
-    refgen_example_dir = os.path.join(refgen_dir,'user_examples')
+    exdir = user_examples_data['dir']
+    refgen_example_dir = os.path.join(refgen_dir,exdir)
     if not os.path.exists(refgen_example_dir):
         os.makedirs(refgen_example_dir)
     #end if
@@ -3320,23 +3366,27 @@ def regenerate_reference(update=False,overwrite=True):
     # copy over nexus user examples into reference generation directory
     out,err,rc = execute('rsync -av {0}/* {1}/'.format(example_dir,refgen_example_dir))
     if rc>0:
-        print '  rsync of example directory failed, exiting'
-        exit(1)
+        nerror('rsync of example directory failed, exiting',n=1)
     #end if
 
     # execute all example scripts in generate_only mode
     for label,einfo in example_information.iteritems():
-        for script_path in einfo['scripts']:
-            print '  generating reference data for '+script_path
-            path,script = os.path.split(script_path)
-            path = os.path.join(refgen_example_dir,path)
+        example_path = einfo['path']
+        for script in einfo['scripts']:
+            nlog('generating reference data for '+script,n=1)
+            path = os.path.join(refgen_example_dir,example_path)
             cwd = os.getcwd()
+            nlog('current directory: '+cwd,n=2)
+            nlog('entering directory: '+path,n=2)
             os.chdir(path)
+            if not os.path.exists('./'+script):
+                nerror('script file {} does not exist'.format(script),n=2)
+            #end if
             command = './'+script+' --generate_only --sleep=0.1'
+            nlog('executing command: '+command,n=2)
             out,err,rc = execute(command)
             if rc>0:
-                print('example script failed to run\nattempted command: {0}\nlocation: {1}'.format(command,script_path))
-                exit(1)
+                nerror('example script failed to run',n=2)
             #end if
             os.chdir(cwd)
         #end for
@@ -3344,20 +3394,72 @@ def regenerate_reference(update=False,overwrite=True):
 
     # update the reference set of example files
     if update:
-        overwrite = False
-        ref_example_dir = os.path.join(reference_dir,'user_examples')
-        for label,einfo in example_information.iteritems():
-            for code,filetype,filepath in einfo['files']:
-                ref_filepath = os.path.join(ref_example_dir,filepath)
-                gen_filepath = os.path.join(refgen_example_dir,filepath)
-                if overwrite or not os.path.exists(ref_filepath):
-                    path,file = os.path.split(ref_filepath)
-                    if not os.path.exists(path):
-                        os.makedirs(path)
-                    #end if
-                    shutil.copy2(gen_filepath,path)
-                #end if
+        nlog('\nupdating reference data')
+        if options.update_dryrun:
+            nlog('performing a dryrun, no files will be updated',n=1)
+        #end if
+        failures_filepath = user_examples_data['failures_filepath']
+        nlog('attempting to load example failures file',n=1)
+        nlog('file location: {}'.format(failures_filepath),n=2)
+        failures_list = []
+        if os.path.exists(failures_filepath):
+            f = open(failures_filepath,'r')
+            failures_list.extend(f.read().splitlines())
+            f.close()
+            nlog('file read successfully',n=2)
+            nlog('files for previously failed examples:',n=2)
+            for filepath in failures_list:
+                nlog(filepath,n=3)
             #end for
+        else:
+            nlog('file does not exist, skipping',n=2)
+        #end if
+        nlog('collecting file transfer information',n=1)
+        new_examples = []
+        failed_examples = []
+        all_examples = []
+        ref_example_dir = os.path.join(reference_dir,exdir)
+        for label,einfo in example_information.iteritems():
+            example_path = einfo['path']
+            for code,filetype,filepath in einfo['files']:
+                ref_filepath = os.path.join(ref_example_dir,example_path,filepath)
+                gen_filepath = os.path.join(refgen_example_dir,example_path,filepath)
+                ref_path,ref_file = os.path.split(ref_filepath)
+                transfer = label,gen_filepath,ref_filepath
+                if not os.path.exists(ref_filepath):
+                    new_examples.append(transfer)
+                elif ref_filepath in failures_list:
+                    failed_examples.append(transfer)
+                #end if
+                all_examples.append(transfer)
+            #end for
+        #end for
+        if options.update_mode=='new':
+            nlog('only new examples will be updated',n=1)
+            update_examples = new_examples
+        elif options.update_mode=='failed':
+            nlog('both failed and new examples will be updated',n=1)
+            update_examples = failed_examples + new_examples
+        elif options.update_mode=='all':
+            nlog('all examples will be updated',n=1)
+            update_examples = all_examples
+        #end if
+        if len(update_examples)==0:
+            nlog('no examples selected for update!',n=1)
+        for label,gen_filepath,ref_filepath in update_examples:
+            ref_path,ref_file = os.path.split(ref_filepath)
+            nlog('update for '+label,n=2)
+            nlog('ref file: '+ref_filepath,n=3)
+            nlog('gen file: '+gen_filepath,n=3)
+            if options.update_dryrun:
+                nlog('reference file not updated',n=3)
+            else:
+                if not os.path.exists(ref_path):
+                    os.makedirs(ref_path)
+                #end if
+                shutil.copy2(gen_filepath,ref_path)
+                nlog('reference file updated',n=3)
+            #end if
         #end for
     #end if
 
@@ -3415,7 +3517,15 @@ if __name__=='__main__':
                       )
     parser.add_option('--update_reference',dest='update_reference',
                       action='store_true',default=False,
-                      help='Regenerate reference data and overwrite existing reference files.  Intended for developer use (default=%default).'
+                      help='Regenerate reference data and update existing reference files.  Intended for developer use (default=%default).'
+                      )
+    parser.add_option('--update_mode',dest='update_mode',
+                      default='new',
+                      help='Modes of operation when updating reference files.  Intended for developer use.  Options are "new", "failed", "all" (default=%default).'
+                      )
+    parser.add_option('--update_dryrun',dest='update_dryrun',
+                      action='store_true',default=False,
+                      help='Perform a dryrun of updating reference files, reporting on files that will be update in a non-dryrun.  Intended for developer use (default=%default).'
                       )
     parser.add_option('--job_ref_table',dest='job_ref_table',
                       action='store_true',default=False,
@@ -3429,16 +3539,6 @@ if __name__=='__main__':
         exit()
     #end if
 
-    # Regenerate reference data and exit
-    if options.generate_reference:
-        regenerate_reference(update=False)
-        exit()
-    #end if
-    if options.update_reference:
-        #exit_fail('Automatic update of reference data is not yet supported.')
-        regenerate_reference(update=True)
-        exit()
-    #end if
     global_data['job_ref_table'] = options.job_ref_table
 
     if options.regex!='none':
@@ -3457,6 +3557,36 @@ if __name__=='__main__':
     # clear out old test data
     NexusTest.setup()
 
+    # initialize user example data
+    ued = user_examples_data
+    ued['dir']               = 'user_examples'
+    ued['test_path']         = NexusTestBase.test_path_from_dir(ued['dir'])
+    ued['failures_filename'] = 'test_failures.txt'
+    ued['failures_filepath'] = os.path.join(ued['test_path'],ued['failures_filename'])
+    ued['failures_file']     = None
+
+    # If requested, regenerate reference data and exit
+    update_modes = ('new','failed','all')
+    if options.update_mode not in update_modes:
+        msg = 'command line option "--update_mode" must be {}, received {}'.format(update_modes,options.update_mode)
+        exit_fail(msg)
+    #end if
+    if options.generate_reference:
+        regenerate_reference(update=False)
+        exit()
+    #end if
+    if options.update_reference:
+        #exit_fail('Automatic update of reference data is not yet supported.')
+        regenerate_reference(update=True)
+        exit()
+    #end if
+
+    # remove failures file prior to testing
+    if os.path.exists(ued['failures_filepath']):
+        os.remove(ued['failures_filepath'])
+    #end if
+    del ued
+
     # identify test list to run
     tests = []
     for test in NexusTest.test_list:
@@ -3467,9 +3597,9 @@ if __name__=='__main__':
         #end if
     #end for
     if options.list:
-        print 'Test list:'
+        print('Test list:')
         for test in tests:
-            print ' ',test.name
+            print(' ',test.name)
         #end for
         exit()
     #end if
@@ -3490,7 +3620,7 @@ if __name__=='__main__':
 
     # run each test and print the test outcome
     if not ctest:
-        print
+        print('')
     #end if
     n=0
     npassed = 0
@@ -3524,14 +3654,14 @@ if __name__=='__main__':
             if len(sn)<len(slt):
                 sn = (len(slt)-len(sn))*' '+sn
             #end if
-            print ' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(sn,slt,title,status,t2-t1)
+            print(' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(sn,slt,title,status,t2-t1))
         #end if
         
         # print more information if failed
         msg = test.message()
         if test.failed:
             if not ctest:
-                print msg
+                print(msg)
             else:
                 exit_fail(msg)
             #end if
@@ -3544,9 +3674,14 @@ if __name__=='__main__':
 
     # print pass/fail and timing summary
     if not ctest:
-        print
-        print '{0}% tests passed, {1} tests failed out of {2}'.format(int(100*float(npassed)/(1e-16+len(tests))),nfailed,len(tests))
-        print
-        print 'Total test time = {0:3.2f} sec'.format(tstop_all-tstart_all)
+        print('')
+        print('{0}% tests passed, {1} tests failed out of {2}'.format(int(100*float(npassed)/(1e-16+len(tests))),nfailed,len(tests)))
+        print('')
+        print('Total test time = {0:3.2f} sec'.format(tstop_all-tstart_all))
+    #end if
+
+    # cleanup
+    if user_examples_data['failures_file'] is not None:
+        user_examples_data['failures_file'].close()
     #end if
 #end if

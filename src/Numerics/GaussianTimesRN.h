@@ -86,7 +86,7 @@ struct GaussianTimesRN : public OptimizableFunctorBase
       T v = exp(MinusSigma * rr);
       if (Power == 0)
       {
-        du += CoeffP * r * v;
+        du  += CoeffP * r * v;
         d2u += (CoeffP + CoeffPP * rr) * v;
         return Coeff * v;
       }

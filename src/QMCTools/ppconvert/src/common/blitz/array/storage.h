@@ -47,95 +47,78 @@ BZ_NAMESPACE(blitz)
  */
 
 template<int N_rank>
-class GeneralArrayStorage {
+class GeneralArrayStorage
+{
 public:
-    class noInitializeFlag { };
+  class noInitializeFlag
+  {};
 
-    GeneralArrayStorage(noInitializeFlag)
-    { }
+  GeneralArrayStorage(noInitializeFlag) {}
 
-    GeneralArrayStorage()
-    {
-        for (int i=0; i < N_rank; ++i)
-          ordering_(i) = N_rank - 1 - i;
-        ascendingFlag_ = true;
-        base_ = 0;
-    }
+  GeneralArrayStorage()
+  {
+    for (int i = 0; i < N_rank; ++i)
+      ordering_(i) = N_rank - 1 - i;
+    ascendingFlag_ = true;
+    base_          = 0;
+  }
 
-    GeneralArrayStorage(const GeneralArrayStorage<N_rank>& x)
-        : ordering_(x.ordering_), ascendingFlag_(x.ascendingFlag_),
-          base_(x.base_)
-    { 
-    }
+  GeneralArrayStorage(const GeneralArrayStorage<N_rank>& x)
+      : ordering_(x.ordering_), ascendingFlag_(x.ascendingFlag_), base_(x.base_)
+  {}
 
-    GeneralArrayStorage(TinyVector<int,N_rank> ordering,
-        TinyVector<bool,N_rank> ascendingFlag)
+  GeneralArrayStorage(TinyVector<int, N_rank> ordering, TinyVector<bool, N_rank> ascendingFlag)
       : ordering_(ordering), ascendingFlag_(ascendingFlag)
-    {
-        base_ = 0;
-    }
+  {
+    base_ = 0;
+  }
 
-    ~GeneralArrayStorage()
-    { }
+  ~GeneralArrayStorage() {}
 
-    GeneralArrayStorage<N_rank>& operator=(
-        const GeneralArrayStorage<N_rank>& rhs)
-    {
-        ordering_ = rhs.ordering();
-        ascendingFlag_ = rhs.ascendingFlag();
-        base_ = rhs.base();
-        return *this;
-    }
+  GeneralArrayStorage<N_rank>& operator=(const GeneralArrayStorage<N_rank>& rhs)
+  {
+    ordering_      = rhs.ordering();
+    ascendingFlag_ = rhs.ascendingFlag();
+    base_          = rhs.base();
+    return *this;
+  }
 
-    TinyVector<int, N_rank>& ordering()
-    { return ordering_; }
+  TinyVector<int, N_rank>& ordering() { return ordering_; }
 
-    const TinyVector<int, N_rank>& ordering() const
-    { return ordering_; }
+  const TinyVector<int, N_rank>& ordering() const { return ordering_; }
 
-    int ordering(int i) const
-    { return ordering_[i]; }
+  int ordering(int i) const { return ordering_[i]; }
 
-    void setOrdering(int i, int order) 
-    { ordering_[i] = order; }
+  void setOrdering(int i, int order) { ordering_[i] = order; }
 
-    bool allRanksStoredAscending() const
-    {
-        bool result = true;
-        for (int i=0; i < N_rank; ++i)
-            result &= ascendingFlag_[i];
-        return result;
-    }
+  bool allRanksStoredAscending() const
+  {
+    bool result = true;
+    for (int i = 0; i < N_rank; ++i)
+      result &= ascendingFlag_[i];
+    return result;
+  }
 
-    bool isRankStoredAscending(int i) const
-    { return ascendingFlag_[i]; }
+  bool isRankStoredAscending(int i) const { return ascendingFlag_[i]; }
 
-    TinyVector<bool, N_rank>& ascendingFlag() 
-    { return ascendingFlag_; }
+  TinyVector<bool, N_rank>& ascendingFlag() { return ascendingFlag_; }
 
-    const TinyVector<bool, N_rank>& ascendingFlag() const
-    { return ascendingFlag_; }
+  const TinyVector<bool, N_rank>& ascendingFlag() const { return ascendingFlag_; }
 
-    void setAscendingFlag(int i, bool ascendingFlag) 
-    { ascendingFlag_[i] = ascendingFlag; }
+  void setAscendingFlag(int i, bool ascendingFlag) { ascendingFlag_[i] = ascendingFlag; }
 
-    TinyVector<int, N_rank>& base()
-    { return base_; }
+  TinyVector<int, N_rank>& base() { return base_; }
 
-    const TinyVector<int, N_rank>& base() const
-    { return base_; }
+  const TinyVector<int, N_rank>& base() const { return base_; }
 
-    int base(int i) const
-    { return base_[i]; }
+  int base(int i) const { return base_[i]; }
 
-    void setBase(int i, int base)
-    { base_[i] = base; }
+  void setBase(int i, int base) { base_[i] = base; }
 
-    void setBase(const TinyVector<int, N_rank>& base)
-    { base_ = base; }
+  void setBase(const TinyVector<int, N_rank>& base) { base_ = base; }
 
 protected:
-    /*
+  /*
      * ordering_[] specifies the order in which the array is stored in
      * memory.  For a newly allocated array, ordering_(0) will give the
      * rank with unit stride, and ordering_(N_rank-1) will be the rank
@@ -156,9 +139,9 @@ protected:
      * Array<float,2> A(Range(30,40),Range(23,33));
      * will create an array with base_[] = { 30, 23 }.
      */
-    TinyVector<int,  N_rank> ordering_;
-    TinyVector<bool, N_rank> ascendingFlag_;
-    TinyVector<int,  N_rank> base_;
+  TinyVector<int, N_rank> ordering_;
+  TinyVector<bool, N_rank> ascendingFlag_;
+  TinyVector<int, N_rank> base_;
 };
 
 /*
@@ -169,22 +152,23 @@ protected:
  */
 
 template<int N_rank>
-class FortranArray : public GeneralArrayStorage<N_rank> {
+class FortranArray : public GeneralArrayStorage<N_rank>
+{
 private:
-    typedef GeneralArrayStorage<N_rank> T_base;
-    typedef _bz_typename T_base::noInitializeFlag noInitializeFlag;
-    using T_base::ordering_;
-    using T_base::ascendingFlag_;
-    using T_base::base_;
+  typedef GeneralArrayStorage<N_rank> T_base;
+  typedef _bz_typename T_base::noInitializeFlag noInitializeFlag;
+  using T_base::ascendingFlag_;
+  using T_base::base_;
+  using T_base::ordering_;
+
 public:
-    FortranArray()
-        : GeneralArrayStorage<N_rank>(noInitializeFlag())
-    {
-        for (int i=0; i < N_rank; ++i)
-          ordering_(i) = i;
-        ascendingFlag_ = true;
-        base_ = 1;
-    }
+  FortranArray() : GeneralArrayStorage<N_rank>(noInitializeFlag())
+  {
+    for (int i = 0; i < N_rank; ++i)
+      ordering_(i) = i;
+    ascendingFlag_ = true;
+    base_          = 1;
+  }
 };
 
 
@@ -195,40 +179,30 @@ public:
 //     Array<int,2> A(3, 3, fortranArray);
 // where fortranArray is an object of type _bz_fortranTag.
 
-class _bz_fortranTag {
+class _bz_fortranTag
+{
 public:
-    operator GeneralArrayStorage<1>()
-    { return FortranArray<1>(); }
+  operator GeneralArrayStorage<1>() { return FortranArray<1>(); }
 
-    operator GeneralArrayStorage<2>()
-    { return FortranArray<2>(); }
+  operator GeneralArrayStorage<2>() { return FortranArray<2>(); }
 
-    operator GeneralArrayStorage<3>()
-    { return FortranArray<3>(); }
+  operator GeneralArrayStorage<3>() { return FortranArray<3>(); }
 
-    operator GeneralArrayStorage<4>()
-    { return FortranArray<4>(); }
+  operator GeneralArrayStorage<4>() { return FortranArray<4>(); }
 
-    operator GeneralArrayStorage<5>()
-    { return FortranArray<5>(); }
+  operator GeneralArrayStorage<5>() { return FortranArray<5>(); }
 
-    operator GeneralArrayStorage<6>()
-    { return FortranArray<6>(); }
+  operator GeneralArrayStorage<6>() { return FortranArray<6>(); }
 
-    operator GeneralArrayStorage<7>()
-    { return FortranArray<7>(); }
+  operator GeneralArrayStorage<7>() { return FortranArray<7>(); }
 
-    operator GeneralArrayStorage<8>()
-    { return FortranArray<8>(); }
+  operator GeneralArrayStorage<8>() { return FortranArray<8>(); }
 
-    operator GeneralArrayStorage<9>()
-    { return FortranArray<9>(); }
+  operator GeneralArrayStorage<9>() { return FortranArray<9>(); }
 
-    operator GeneralArrayStorage<10>()
-    { return FortranArray<10>(); }
+  operator GeneralArrayStorage<10>() { return FortranArray<10>(); }
 
-    operator GeneralArrayStorage<11>()
-    { return FortranArray<11>(); }
+  operator GeneralArrayStorage<11>() { return FortranArray<11>(); }
 };
 
 // A global instance of this class will be placed in
@@ -243,24 +217,24 @@ _bz_global _bz_fortranTag fortranArray;
  */
 
 template<int N_rank>
-class ColumnMajorArray : public GeneralArrayStorage<N_rank> {
+class ColumnMajorArray : public GeneralArrayStorage<N_rank>
+{
 private:
-    typedef GeneralArrayStorage<N_rank> T_base;
-    typedef _bz_typename T_base::noInitializeFlag noInitializeFlag;
-    using T_base::ordering_;
-    using T_base::ascendingFlag_;
-    using T_base::base_;
+  typedef GeneralArrayStorage<N_rank> T_base;
+  typedef _bz_typename T_base::noInitializeFlag noInitializeFlag;
+  using T_base::ascendingFlag_;
+  using T_base::base_;
+  using T_base::ordering_;
+
 public:
-    ColumnMajorArray()
-        : GeneralArrayStorage<N_rank>(noInitializeFlag())
-    {
-        ordering_ = Range(0, N_rank - 1);
-        ascendingFlag_ = true;
-        base_ = 0;
-    }
+  ColumnMajorArray() : GeneralArrayStorage<N_rank>(noInitializeFlag())
+  {
+    ordering_      = Range(0, N_rank - 1);
+    ascendingFlag_ = true;
+    base_          = 0;
+  }
 };
 
 BZ_NAMESPACE_END
 
 #endif // BZ_ARRAY_STORAGE_H
-

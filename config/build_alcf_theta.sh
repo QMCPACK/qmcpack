@@ -22,6 +22,8 @@ fi
 
 if [[ $name == *"_SoA"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_SOA=1"
+else
+  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_SOA=0"
 fi
 
 if [[ $name == *"_MP"* ]]; then

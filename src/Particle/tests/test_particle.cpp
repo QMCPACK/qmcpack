@@ -66,15 +66,8 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
   Uniform3DGridLayout grid;
   grid.BoxBConds = true; // periodic
-  grid.R         = ParticleSet::Tensor_t(6.74632230,
-                                 6.74632230,
-                                 0.00000000,
-                                 0.00000000,
-                                 3.37316115,
-                                 3.37316115,
-                                 3.37316115,
-                                 0.00000000,
-                                 3.37316115);
+  grid.R = ParticleSet::Tensor_t(6.74632230, 6.74632230, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
+                                 0.00000000, 3.37316115);
   grid.reset();
 
   source.setName("electrons");

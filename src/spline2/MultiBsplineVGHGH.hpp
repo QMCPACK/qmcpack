@@ -150,15 +150,15 @@ inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T, 3>
         gh_yzz[n] += pre01 * sum2;
         gh_zzz[n] += pre00 * sum3;
 
-        hxx[n] += pre20 * sum0;
-        hxy[n] += pre11 * sum0;
-        hxz[n] += pre10 * sum1;
-        hyy[n] += pre02 * sum0;
-        hyz[n] += pre01 * sum1;
-        hzz[n] += pre00 * sum2;
-        gx[n] += pre10 * sum0;
-        gy[n] += pre01 * sum0;
-        gz[n] += pre00 * sum1;
+        hxx[n]  += pre20 * sum0;
+        hxy[n]  += pre11 * sum0;
+        hxz[n]  += pre10 * sum1;
+        hyy[n]  += pre02 * sum0;
+        hyz[n]  += pre01 * sum1;
+        hzz[n]  += pre00 * sum2;
+        gx[n]   += pre10 * sum0;
+        gy[n]   += pre01 * sum0;
+        gz[n]   += pre00 * sum1;
         vals[n] += pre00 * sum0;
       }
     }
@@ -188,9 +188,9 @@ inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T, 3>
                          gh_yyy, gh_yyz, gh_yzz, gh_zzz)
   for (int n = 0; n < num_splines; n++)
   {
-    gx[n] *= dxInv;
-    gy[n] *= dyInv;
-    gz[n] *= dzInv;
+    gx[n]  *= dxInv;
+    gy[n]  *= dyInv;
+    gz[n]  *= dzInv;
     hxx[n] *= dxx;
     hyy[n] *= dyy;
     hzz[n] *= dzz;

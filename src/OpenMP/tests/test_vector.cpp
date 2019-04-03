@@ -20,7 +20,6 @@
 
 namespace qmcplusplus
 {
-
 TEST_CASE("OMPvector", "[OMP]")
 {
   typedef std::vector<double, OMPallocator<double>> vec_t;
@@ -28,15 +27,16 @@ TEST_CASE("OMPvector", "[OMP]")
 
   // iterator
   vec_t::iterator ia = A.begin();
-  for (; ia != A.end(); ia++) {
+  for (; ia != A.end(); ia++)
+  {
     *ia = 3.1;
   }
 
   auto* A_ptr = A.data();
   PRAGMA_OFFLOAD("omp target teams distribute map(always, tofrom:A_ptr[0:2])")
-  for(int i=0; i<2; i++)
+  for (int i = 0; i < 2; i++)
   {
-    A_ptr[i]+=i;
+    A_ptr[i] += i;
   }
 
   REQUIRE(A[0] == Approx(3.1));
@@ -45,11 +45,10 @@ TEST_CASE("OMPvector", "[OMP]")
   A.resize(256);
   A_ptr = A.data();
   PRAGMA_OFFLOAD("omp target teams distribute map(always, tofrom:A_ptr[0:2])")
-  for(int i=0; i<2; i++)
+  for (int i = 0; i < 2; i++)
   {
-    A_ptr[i]+=i;
+    A_ptr[i] += i;
   }
-
 }
 
-}
+} // namespace qmcplusplus

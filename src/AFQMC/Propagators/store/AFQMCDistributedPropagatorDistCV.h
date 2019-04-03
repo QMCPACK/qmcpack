@@ -101,7 +101,7 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_vsend, req_vrecv;
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
     stdCVector comm_buffer;
 #else
     sharedCVector comm_buffer;

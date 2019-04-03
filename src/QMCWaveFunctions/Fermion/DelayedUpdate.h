@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2017 QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -15,14 +15,22 @@
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include "Numerics/OhmmsBlas.h"
+#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Numerics/BlasThreadingEnv.h"
 #include "config.h"
 
 namespace qmcplusplus
 {
-template<typename T>
+
+/** implements delayed update on CPU using BLAS
+ * @tparam T base precision for most computation
+ * @tparam T_FP high precision for matrix inversion, T_FP >= T
+ */
+template<typename T, typename T_FP>
 class DelayedUpdate
 {
+  /// define real type
+  using real_type = typename scalar_traits<T>::real_type;
   /// orbital values of delayed electrons
   Matrix<T> U;
   /// rows of Ainv corresponding to delayed electrons
@@ -39,15 +47,17 @@ class DelayedUpdate
   std::vector<int> delay_list;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
+  /// matrix inversion engine
+  DiracMatrix<T_FP, T> detEng;
 
 public:
   /// default constructor
   DelayedUpdate() : delay_count(0) {}
 
   /** resize the internal storage
-       * @param norb number of electrons/orbitals
-       * @param delay, maximum delay 0<delay<=norb
-       */
+   * @param norb number of electrons/orbitals
+   * @param delay, maximum delay 0<delay<=norb
+   */
   inline void resize(int norb, int delay)
   {
     V.resize(delay, norb);
@@ -57,6 +67,17 @@ public:
     tempMat.resize(norb, delay);
     Binv.resize(delay, delay);
     delay_list.resize(delay);
+  }
+
+  /** compute the inverse of the transpose of matrix A
+   * @param logdetT orbital value matrix
+   * @param Ainv inverse matrix
+   */
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, real_type& LogValue, real_type& PhaseValue)
+  {
+    detEng.invert_transpose(logdetT, Ainv, LogValue, PhaseValue);
+    // safe mechanism
+    delay_count = 0;
   }
 
   /** initialize internal objects when Ainv is refreshed
@@ -94,12 +115,12 @@ public:
   }
 
   /** accept a move with the update delayed
-       * @param Ainv inverse matrix
-       * @param rowchanged the row id corresponding to the proposed electron
-       * @param psiV new orbital values
-       *
-       * Before delay_count reaches the maximum delay, only Binv is updated with a recursive algorithm
-       */
+   * @param Ainv inverse matrix
+   * @param rowchanged the row id corresponding to the proposed electron
+   * @param psiV new orbital values
+   *
+   * Before delay_count reaches the maximum delay, only Binv is updated with a recursive algorithm
+   */
   template<typename VVT>
   inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
   {
@@ -133,8 +154,8 @@ public:
   }
 
   /** update the full Ainv and reset delay_count
-       * @param Ainv inverse matrix
-       */
+   * @param Ainv inverse matrix
+   */
   inline void updateInvMat(Matrix<T>& Ainv)
   {
     if (delay_count == 0)
@@ -172,7 +193,7 @@ public:
       }
       else
       {
-// manually threaded version of the above GEMM calls
+        // manually threaded version of the above GEMM calls
 #pragma omp parallel
         {
           const int block_size = getAlignedSize<T>((norb + num_threads_nested - 1) / num_threads_nested);

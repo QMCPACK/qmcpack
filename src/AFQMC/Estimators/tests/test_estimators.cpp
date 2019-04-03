@@ -47,10 +47,10 @@ namespace qmcplusplus
 
 using namespace afqmc;
 
-TEST_CASE("reduced_density_matrix", "[estimators]")
+template<class Allocator>
+void reduced_density_matrix(boost::mpi3::communicator & world)
 {
-  OHMMS::Controller->initialize(0, NULL);
-  auto world = boost::mpi3::environment::get_world_instance();
+  using pointer = typename Allocator::pointer;
 
   if(not file_exists(UTEST_HAMIL) ||
      not file_exists(UTEST_WFN) ) {
@@ -117,6 +117,7 @@ TEST_CASE("reduced_density_matrix", "[estimators]")
 ";
     const char *wfn_xml_block = wfn_xml.c_str();
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
+    Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
     int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
     Libxml2Document doc2;
@@ -157,7 +158,8 @@ TEST_CASE("reduced_density_matrix", "[estimators]")
       estimators[0]->print(out,dump,wset);
     }
     dump.close();
-    std::vector<ComplexType> read_data(2*NMO*NMO);
+    boost::multi::array<ComplexType,1,Allocator> read_data(boost::multi::iextensions<1u>{2*NMO*NMO},alloc_);
+    
     ComplexType denom;
     hdf_archive reader;
     // Read from a particular block.
@@ -181,34 +183,50 @@ TEST_CASE("reduced_density_matrix", "[estimators]")
     // Test the RDM. Since no back propagation has been performed the RDM should be
     // identical to the mixed estimate.
     if(type == CLOSED) {
-      boost::multi::array_ref<ComplexType,2> BPRDM(read_data.data(), {NMO,NMO});
+      boost::multi::array_ref<ComplexType,2,pointer> BPRDM(read_data.origin(), {NMO,NMO});
       ma::scal(1.0/denom, BPRDM);
       ComplexType trace = ComplexType(0.0);
       for(int i = 0; i < NMO; i++) trace += BPRDM[i][i];
       REQUIRE(trace.real() == Approx(NAEA));
-      boost::multi::array<ComplexType,2> Gw;
-      Gw.reextent({1,NMO*NMO});
+      boost::multi::array<ComplexType,2,Allocator> Gw({1,NMO*NMO},alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
-      boost::multi::array_ref<ComplexType,2> G(Gw.origin(), {NMO,NMO});
+      boost::multi::array_ref<ComplexType,2,pointer> G(Gw.origin(), {NMO,NMO});
       verify_approx(G, BPRDM);
     } else if(type == COLLINEAR) {
-      boost::multi::array_ref<ComplexType,3> BPRDM(read_data.data(), {2,NMO,NMO});
+      boost::multi::array_ref<ComplexType,3,pointer> BPRDM(read_data.origin(), {2,NMO,NMO});
       ma::scal(1.0/denom, BPRDM[0]);
       ma::scal(1.0/denom, BPRDM[1]);
       ComplexType trace = ComplexType(0.0);
       for(int i = 0; i < NMO; i++)
         trace += BPRDM[0][i][i] + BPRDM[1][i][i];
       REQUIRE(trace.real() == Approx(NAEA+NAEB));
-      boost::multi::array<ComplexType,2> Gw;
-      Gw.reextent({1,2*NMO*NMO});
+      boost::multi::array<ComplexType,2,Allocator> Gw({1,2*NMO*NMO},alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
-      boost::multi::array_ref<ComplexType,3> G(Gw.origin(), {2,NMO,NMO});
+      boost::multi::array_ref<ComplexType,3,pointer> G(Gw.origin(), {2,NMO,NMO});
       verify_approx(G, BPRDM);
     } else {
       APP_ABORT(" NONCOLLINEAR Wavefunction found.\n");
     }
 
   }
+}
+
+TEST_CASE("reduced_density_matrix", "[estimators]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  auto world = boost::mpi3::environment::get_world_instance();
+  if(not world.root()) infoLog.pause();
+
+#ifdef ENABLE_CUDA
+  auto node = world.split_shared(world.rank());
+  qmc_cuda::CUDA_INIT(node);
+  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+#else
+  using Alloc = shared_allocator<ComplexType>;
+#endif
+
+  reduced_density_matrix<Alloc>(world);
+
 }
 
 }

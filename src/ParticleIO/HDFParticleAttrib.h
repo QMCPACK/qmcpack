@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_HDF_PARTICLEATTRIBIO_H
@@ -21,97 +19,86 @@ namespace qmcplusplus
 {
 // specialization for ParticleAttrib<int> type
 template<>
-struct HDFAttribIO<ParticleAttrib<int> >: public HDFAttribIOBase
+struct HDFAttribIO<ParticleAttrib<int>> : public HDFAttribIOBase
 {
-
   typedef ParticleAttrib<int> ArrayType_t;
-  ArrayType_t&  ref;
+  ArrayType_t& ref;
 
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
 
-  void write(hid_t  hdfFile, const char* name)
+  void write(hid_t hdfFile, const char* name)
   {
-    hsize_t dim = ref.size();
-    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset =
-      H5Dcreate(hdfFile, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
-    hid_t ret =
-      H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref[0]);
+    hsize_t dim     = ref.size();
+    hid_t dataspace = H5Screate_simple(1, &dim, NULL);
+    hid_t dataset   = H5Dcreate(hdfFile, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+    hid_t ret       = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref[0]);
     H5Sclose(dataspace);
     H5Dclose(dataset);
   }
 
-  void read(hid_t  grp, const char* name)
+  void read(hid_t grp, const char* name)
   {
-    hid_t h1 = H5Dopen(grp, name);
+    hid_t h1  = H5Dopen(grp, name);
     hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref[0]);
     H5Dclose(h1);
   }
 };
 // specialization for double type
 template<>
-struct HDFAttribIO<ParticleAttrib<double> >: public HDFAttribIOBase
+struct HDFAttribIO<ParticleAttrib<double>> : public HDFAttribIOBase
 {
-
   typedef ParticleAttrib<double> ArrayType_t;
-  ArrayType_t&  ref;
+  ArrayType_t& ref;
 
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
 
-  void write(hid_t  hdfFile, const char* name)
+  void write(hid_t hdfFile, const char* name)
   {
-    hsize_t dim = ref.size();
-    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset =
-      H5Dcreate(hdfFile, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-    hid_t ret =
-      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref[0]);
+    hsize_t dim     = ref.size();
+    hid_t dataspace = H5Screate_simple(1, &dim, NULL);
+    hid_t dataset   = H5Dcreate(hdfFile, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+    hid_t ret       = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref[0]);
     H5Sclose(dataspace);
     H5Dclose(dataset);
   }
 
-  void read(hid_t  grp, const char* name)
+  void read(hid_t grp, const char* name)
   {
-    hid_t h1 = H5Dopen(grp, name);
+    hid_t h1  = H5Dopen(grp, name);
     hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref[0]);
     H5Dclose(h1);
   }
-
 };
 
 // specialization for ParticleAttrib<double,3> vector type
 template<unsigned D>
-struct HDFAttribIO<ParticleAttrib<TinyVector<double,D> > >: public HDFAttribIOBase
+struct HDFAttribIO<ParticleAttrib<TinyVector<double, D>>> : public HDFAttribIOBase
 {
-
-  typedef TinyVector<double,D> SingleParticlePos_t;
+  typedef TinyVector<double, D> SingleParticlePos_t;
   typedef ParticleAttrib<SingleParticlePos_t> ArrayType_t;
 
-  ArrayType_t&  ref;
+  ArrayType_t& ref;
 
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
 
-  ~HDFAttribIO<ParticleAttrib<TinyVector<double,D> > > () { }
+  ~HDFAttribIO<ParticleAttrib<TinyVector<double, D>>>() {}
 
-  void write(hid_t  hdfFile, const char* name)
+  void write(hid_t hdfFile, const char* name)
   {
     hsize_t dims[2];
-    dims[0] = ref.size();
-    dims[1] = D;
-    hid_t dataspace  = H5Screate_simple(2, dims, NULL);
-    hid_t dataset =
-      H5Dcreate(hdfFile, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-    hid_t ret =
-      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0][0]));
+    dims[0]         = ref.size();
+    dims[1]         = D;
+    hid_t dataspace = H5Screate_simple(2, dims, NULL);
+    hid_t dataset   = H5Dcreate(hdfFile, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+    hid_t ret       = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0][0]));
     H5Sclose(dataspace);
     H5Dclose(dataset);
   }
 
-  void read(hid_t  grp, const char* name)
+  void read(hid_t grp, const char* name)
   {
-    hid_t h1 = H5Dopen(grp, name);
-    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
-                        &(ref[0][0]));
+    hid_t h1  = H5Dopen(grp, name);
+    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0][0]));
     H5Dclose(h1);
   }
 };
@@ -153,5 +140,5 @@ struct HDFAttribIO<ParticleAttrib<TinyVector<double,D> > >: public HDFAttribIOBa
 //   }
 // };
 
-}
+} // namespace qmcplusplus
 #endif
