@@ -19,19 +19,22 @@
 #include <stdexcept>
 #include <cuda_runtime_api.h>
 
-#define cudaErrorCheck(ans, cause) { cudaAssert((ans), cause, __FILE__, __LINE__); }
+#define cudaErrorCheck(ans, cause)                \
+  {                                               \
+    cudaAssert((ans), cause, __FILE__, __LINE__); \
+  }
 /// prints CUDA error messages. Always use cudaErrorCheck macro.
-inline void cudaAssert(cudaError_t code, const std::string& cause, const char *filename, int line, bool abort=true)
+inline void cudaAssert(cudaError_t code, const std::string& cause, const char* filename, int line, bool abort = true)
 {
-  if (code != cudaSuccess) 
+  if (code != cudaSuccess)
   {
     std::ostringstream err;
-    err << "cudaAssert: " << cudaGetErrorName(code)
-        << " " << cudaGetErrorString(code)
-        << ", file " << filename << ", line " << line << std::endl
+    err << "cudaAssert: " << cudaGetErrorName(code) << " " << cudaGetErrorString(code) << ", file " << filename
+        << ", line " << line << std::endl
         << cause << std::endl;
     std::cerr << err.str();
-    if (abort) throw std::runtime_error(cause);
+    if (abort)
+      throw std::runtime_error(cause);
   }
 }
 

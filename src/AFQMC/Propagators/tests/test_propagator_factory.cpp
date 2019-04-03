@@ -408,7 +408,7 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
   qmc_cuda::CUDA_INIT(node);
 #endif
@@ -423,7 +423,7 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
   int ngrp(world.size());
   qmc_cuda::CUDA_INIT(node);

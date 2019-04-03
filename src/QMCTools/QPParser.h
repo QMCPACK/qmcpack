@@ -9,9 +9,6 @@
 //
 // File created by: Anouar Benali, benali@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 //#ifndef QMCPLUSPLUS_TOOLS_GAMESS_OUT_H
@@ -24,12 +21,9 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class QPParser: public QMCGaussianParserBase,
-  public OhmmsAsciiParser
+class QPParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
-
 public:
-
   QPParser();
 
   QPParser(int argc, char** argv);
@@ -48,10 +42,8 @@ public:
 
   void getMO(std::istream& is);
 
-  void getMO_single_set(std::istream& is, Matrix<double> &CartMat, std::vector<value_type>& EigVal_alpha);
+  void getMO_single_set(std::istream& is, Matrix<double>& CartMat, std::vector<value_type>& EigVal_alpha);
 
   void getQPCI(std::istream& is);
-
-
 };
 //#endif

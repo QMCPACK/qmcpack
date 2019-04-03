@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign 
+// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //
-// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign 
+// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -25,7 +25,6 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("particle_attrib_scalar", "[particle_base]")
 {
   OHMMS::Controller->initialize(0, NULL);
@@ -56,7 +55,7 @@ TEST_CASE("particle_attrib_vector", "[particle_base]")
 {
   OHMMS::Controller->initialize(0, NULL);
 
-  ParticleAttrib<TinyVector<double, 2> > PA1;
+  ParticleAttrib<TinyVector<double, 2>> PA1;
   REQUIRE(PA1.size() == 0);
 
   PA1.resize(3);
@@ -69,4 +68,4 @@ TEST_CASE("particle_attrib_vector", "[particle_base]")
   REQUIRE(PA1[1][0] == 0.0);
 }
 
-}
+} // namespace qmcplusplus

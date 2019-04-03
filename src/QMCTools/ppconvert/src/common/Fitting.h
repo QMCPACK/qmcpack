@@ -8,8 +8,8 @@
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 //           http://pathintegrals.info                     //
 /////////////////////////////////////////////////////////////
 
@@ -21,20 +21,27 @@
 
 /// LitFit performs a least-squares fit to data given in y with the
 /// errors given by sigma.  It performs a fit to a function of the
-/// form \f[ y_{\mathrm{fit}}(x) \approx \sum_{j=0}^M a_j F_j(x) \f]. 
-/// \f$ F_{ij} = F_j(x_i) \f$.  
-void LinFitLU (Array<double,1> &y, Array<double,1> &sigma,   // inputs
-	       Array<double,2> &F,                           // input
-	       Array<double,1> &a, Array<double,1> &errors); // outputs
+/// form \f[ y_{\mathrm{fit}}(x) \approx \sum_{j=0}^M a_j F_j(x) \f].
+/// \f$ F_{ij} = F_j(x_i) \f$.
+void LinFitLU(Array<double, 1>& y,
+              Array<double, 1>& sigma, // inputs
+              Array<double, 2>& F,     // input
+              Array<double, 1>& a,
+              Array<double, 1>& errors); // outputs
 
-void LinFitSVD (Array<double,1> &y, Array<double,1> &sigma,   // inputs
-		Array<double,2> &F,                           // input
-		Array<double,1> &a, Array<double,1> &error,   // outputs
-		double tolerance);
+void LinFitSVD(Array<double, 1>& y,
+               Array<double, 1>& sigma, // inputs
+               Array<double, 2>& F,     // input
+               Array<double, 1>& a,
+               Array<double, 1>& error, // outputs
+               double tolerance);
 
-double LinFitSVD (Array<double,1> &y, Array<double,1> &sigma,   // inputs
-		  Array<double,2> &F, Array<bool,1> &adjust,    // inputs
-		  Array<double,1> &a, Array<double,1> &error,   // outputs
-		  double tolerance);
+double LinFitSVD(Array<double, 1>& y,
+                 Array<double, 1>& sigma, // inputs
+                 Array<double, 2>& F,
+                 Array<bool, 1>& adjust, // inputs
+                 Array<double, 1>& a,
+                 Array<double, 1>& error, // outputs
+                 double tolerance);
 
 #endif

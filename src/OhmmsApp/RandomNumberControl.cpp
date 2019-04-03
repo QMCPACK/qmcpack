@@ -133,7 +133,7 @@ void RandomNumberControl::test()
     for (int i = 0; i < n; ++i)
     {
       double r = myrand.rand();
-      sum += r;
+      sum  += r;
       sum2 += r * r;
     }
     avg[ip]  = sum / static_cast<double>(n);
@@ -150,11 +150,11 @@ void RandomNumberControl::test()
     {
       app_log() << "RNGTest " << std::setw(4) << i << std::setw(4) << ip << std::setw(20) << avg_tot[ii]
                 << std::setw(20) << avg2_tot[ii] - avg_tot[ii] * avg_tot[ii] << std::endl;
-      avg_g += avg_tot[ii];
+      avg_g  += avg_tot[ii];
       avg2_g += avg2_tot[ii];
     }
   }
-  avg_g /= static_cast<double>(nthreads * OHMMS::Controller->size());
+  avg_g  /= static_cast<double>(nthreads * OHMMS::Controller->size());
   avg2_g /= static_cast<double>(nthreads * OHMMS::Controller->size());
   app_log() << "RNGTest " << std::setw(4) << OHMMS::Controller->size() << std::setw(4) << nthreads << std::setw(20)
             << avg_g << std::setw(20) << avg2_g - avg_g * avg_g << std::endl;

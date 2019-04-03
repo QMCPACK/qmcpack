@@ -638,15 +638,8 @@ struct OuterProduct<TinyVector<T1, 3>, TinyVector<T2, 3>>
   typedef Tensor<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, 3> Return_t;
   inline static Return_t apply(const TinyVector<T1, 3>& a, const TinyVector<T2, 3>& b)
   {
-    return Return_t(a[0] * b[0],
-                    a[0] * b[1],
-                    a[0] * b[2],
-                    a[1] * b[0],
-                    a[1] * b[1],
-                    a[1] * b[2],
-                    a[2] * b[0],
-                    a[2] * b[1],
-                    a[2] * b[2]);
+    return Return_t(a[0] * b[0], a[0] * b[1], a[0] * b[2], a[1] * b[0], a[1] * b[1], a[1] * b[2], a[2] * b[0],
+                    a[2] * b[1], a[2] * b[2]);
   }
 };
 

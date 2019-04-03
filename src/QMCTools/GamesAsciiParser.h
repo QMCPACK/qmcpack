@@ -11,9 +11,6 @@
 //
 // File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_TOOLS_GAMESS_OUT_H
@@ -27,12 +24,9 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 
-class GamesAsciiParser: public QMCGaussianParserBase,
-  public OhmmsAsciiParser
+class GamesAsciiParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
-
 public:
-
   GamesAsciiParser();
 
   GamesAsciiParser(int argc, char** argv);
@@ -53,7 +47,7 @@ public:
 
   void getMO(std::istream& is);
 
-  void getMO_single_set(std::istream& is, Matrix<double> &CartMat, std::vector<value_type>& EigVal_alpha);
+  void getMO_single_set(std::istream& is, Matrix<double>& CartMat, std::vector<value_type>& EigVal_alpha);
 
   void getCI(std::istream& is);
 
@@ -62,6 +56,5 @@ public:
   void getCSF(std::istream& is);
 
   double getCSFSign(std::vector<int>&);
-
 };
 #endif

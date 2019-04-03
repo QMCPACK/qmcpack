@@ -163,7 +163,7 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
 
 // leaving compiler switch until I decide how to do this better
 // basically hide this decision somewhere based on the value of pointer!!!
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
   kernels::construct_X(nCV,nsteps,nwalk,free_projection,sqrtdt,vbias_bound,
                        to_address(vMF.origin()),
                        to_address(vbias.origin()),

@@ -134,7 +134,7 @@ class BackPropagatedEstimator: public EstimatorBase
 //          DMAverage[i] += DMBuffer[i];
 // MAM: make a wrapper for this type of operation
 // e.g. auto reference_or_copy<stdCVector>(DMBuffer);
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
         stdCVector buff(DMBuffer);
 #else
         CVector& buff(DMBuffer);

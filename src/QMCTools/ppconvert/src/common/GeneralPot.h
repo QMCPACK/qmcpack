@@ -8,8 +8,8 @@
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 //           http://pathintegrals.info                     //
 /////////////////////////////////////////////////////////////
 
@@ -22,16 +22,17 @@
 class GeneralPot : public Potential
 {
 protected:
-  Grid *PotGrid;
+  Grid* PotGrid;
   CubicSplineCommon PotSpline;
   double Z;
-public:
-  double V      (double r);
-  double dVdr   (double r);
-  double d2Vdr2 (double r);
 
-  void Write (IOSectionClass &out);
-  void Read (IOSectionClass &in);
+public:
+  double V(double r);
+  double dVdr(double r);
+  double d2Vdr2(double r);
+
+  void Write(IOSectionClass& out);
+  void Read(IOSectionClass& in);
   GeneralPot();
   ~GeneralPot();
 };

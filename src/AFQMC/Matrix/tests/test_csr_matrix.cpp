@@ -23,7 +23,7 @@
 #include "AFQMC/Memory/SharedMemory/shm_ptr_with_raw_ptr_dispatch.hpp"
 
 #include "AFQMC/Matrix/csr_matrix.hpp"
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
 #include "AFQMC/Memory/custom_pointers.hpp"
 #endif
 
@@ -263,7 +263,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                   }
                 }
 
-#ifdef QMC_CUDA
+#ifdef ENABLE_CUDA
                 {
                   using dev_csr_matrix = ma::sparse::csr_matrix<Type,IndxType,IntType,
                                                               qmc_cuda::cuda_gpu_allocator<Type>>;
