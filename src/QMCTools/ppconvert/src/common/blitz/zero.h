@@ -55,42 +55,41 @@
 #define BZ_ZERO_H
 
 #ifndef BZ_BLITZ_H
- #include <blitz/blitz.h>
+#include <blitz/blitz.h>
 #endif
 
 BZ_NAMESPACE(blitz)
 
 template<typename P_numtype>
-class ZeroElement {
+class ZeroElement
+{
 public:
-    typedef P_numtype T_numtype;
+  typedef P_numtype T_numtype;
 
-    static T_numtype& zero()
-    { 
-        return zero_; 
-    }
+  static T_numtype& zero() { return zero_; }
 
 private:
-    static T_numtype zero_;
+  static T_numtype zero_;
 };
 
 // Specialization of ZeroElement for std::complex<float>, std::complex<double>,
 // and std::complex<long double>
 
-#define BZZERO_DECLARE(T)            \
-  template<>                         \
-  class ZeroElement<T > {            \
-  public:                            \
-    static T& zero()                 \
-    { return zero_; }                \
-  private:                           \
-    static T zero_;                  \
+#define BZZERO_DECLARE(T)              \
+  template<>                           \
+  class ZeroElement<T>                 \
+  {                                    \
+  public:                              \
+    static T& zero() { return zero_; } \
+                                       \
+  private:                             \
+    static T zero_;                    \
   }
 
 #ifdef BZ_HAVE_COMPLEX
-  BZZERO_DECLARE(std::complex<float>);
-  BZZERO_DECLARE(std::complex<double>);
-  BZZERO_DECLARE(std::complex<long double>);
+BZZERO_DECLARE(std::complex<float>);
+BZZERO_DECLARE(std::complex<double>);
+BZZERO_DECLARE(std::complex<long double>);
 #endif // BZ_HAVE_COMPLEX
 
 // initialization of static data member for general class template
@@ -101,4 +100,3 @@ P_numtype ZeroElement<P_numtype>::zero_ = 0;
 BZ_NAMESPACE_END
 
 #endif // BZ_ZERO_H
-

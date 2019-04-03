@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_TOOLS_CASINOPARSER_H
@@ -24,14 +21,11 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class CasinoParser: public QMCGaussianParserBase,
-  public OhmmsAsciiParser
+class CasinoParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
-
   std::vector<double> BasisCorrection;
 
 public:
-
   CasinoParser();
 
   CasinoParser(int argc, char** argv);

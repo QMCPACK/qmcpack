@@ -27,7 +27,6 @@
 #define BZ_TINYVEC_ET_H
 
 #include <blitz/tinyvec.h>
-#include <blitz/vector-et.h>     // vector expressions
+#include <blitz/vector-et.h> // vector expressions
 
-#endif  // BZ_TINYVEC_ET_H
-
+#endif // BZ_TINYVEC_ET_H
