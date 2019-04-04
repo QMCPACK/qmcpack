@@ -260,7 +260,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   //  shared buffer used for:
   //  X:               [ globalnCV * nwalk ]
   //  vHS:             [ NMO*NMO * nwalk ]      
-  // memory_needs: nwalk * ( 2*nsteps + Gsize + globalnCV*(nstep+1) + NMO*NMO*nstep )
+  // memory_needs: nwalk * ( globalnCV + NMO*NMO )
   size_t memory_needs = nwalk * ( globalnCV + NMO*NMO );
 
   // 0. Allocate memory and set shared memory structures

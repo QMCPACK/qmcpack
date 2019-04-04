@@ -55,10 +55,17 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
                           Wavefunction& wfn_, CMatrix&& h1_, CVector&& vmf_, 
                           RandomGenerator_t* r): 
             base(info,cur,tg_,wfn_,std::move(h1_),std::move(vmf_),r),
+            bpX(iextensions<1u>{1},shared_allocator<ComplexType>{TG.TG_local()}),
             req_Gsend(MPI_REQUEST_NULL),
             req_Grecv(MPI_REQUEST_NULL),
             req_vsend(MPI_REQUEST_NULL),
-            req_vrecv(MPI_REQUEST_NULL)
+            req_vrecv(MPI_REQUEST_NULL),
+            req_X2send(MPI_REQUEST_NULL),
+            req_X2recv(MPI_REQUEST_NULL),
+            req_Xsend(MPI_REQUEST_NULL),
+            req_Xrecv(MPI_REQUEST_NULL),
+            req_bpvsend(MPI_REQUEST_NULL),
+            req_bpvrecv(MPI_REQUEST_NULL)
     {
       assert(TG.getNGroupsPerTG() > 1);
     }
@@ -72,6 +79,18 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
           MPI_Request_free(&req_vrecv);
       if(req_vsend!=MPI_REQUEST_NULL)
           MPI_Request_free(&req_vsend);
+      if(req_X2recv!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_X2recv);
+      if(req_X2send!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_X2send);
+      if(req_Xrecv!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_Xrecv);
+      if(req_Xsend!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_Xsend);
+      if(req_bpvrecv!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_bpvrecv);
+      if(req_bpvsend!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_bpvsend);
     }
 
     AFQMCDistributedPropagatorDistCV(AFQMCDistributedPropagatorDistCV const& other) = delete;
@@ -92,15 +111,21 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
     }
 
     template<class WlkSet, class CTens, class CMat>
-    void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR)
-    {
-      APP_ABORT(" Error: Finish BackPropagate.\n");
-    }
+    void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR);
 
   protected: 
 
+    bool buffer_reallocated=false;
+    bool buffer_reallocated_bp=false;
+
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_vsend, req_vrecv;
+
+    MPI_Request req_Xsend, req_Xrecv;
+    MPI_Request req_X2send, req_X2recv;
+    MPI_Request req_bpvsend, req_bpvrecv;
+
+    mpi3CVector bpX;
 
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);

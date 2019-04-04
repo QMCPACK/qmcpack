@@ -29,9 +29,6 @@ bool AFQMCDriver::run(WalkerSet& wset)
   app_log()<<"Initial weight and number of walkers: " <<w0 <<" " <<nwalk_ini <<"\n"
            <<"Initial Eshift: " <<Eshift <<std::endl;
 
-  if(wset.NumBackProp() > nStep*nSubstep)
-    APP_ABORT(" Error: nback_prop > nStep*nSubstep \n");
-
   // problems with using step_tot to do ortho and load balance
   double total_time = step0*nSubstep*dt;
   int step_tot=step0, iBlock ;
