@@ -27,15 +27,15 @@
 #define BZ_APPLICS_H
 
 #ifndef BZ_BLITZ_H
- #include <blitz/blitz.h>
+#include <blitz/blitz.h>
 #endif
 
 #ifndef BZ_PROMOTE_H
- #include <blitz/promote.h>
+#include <blitz/promote.h>
 #endif
 
 #ifndef BZ_NUMTRAIT_H
- #include <blitz/numtrait.h>
+#include <blitz/numtrait.h>
 #endif
 
 BZ_NAMESPACE(blitz)
@@ -43,285 +43,287 @@ BZ_NAMESPACE(blitz)
 // These base classes are included for no other reason than to keep
 // the applicative templates clustered together in a graphical
 // class browser.
-class ApplicativeTemplatesBase { };
-class TwoOperandApplicativeTemplatesBase : public ApplicativeTemplatesBase { };
-class OneOperandApplicativeTemplatesBase : public ApplicativeTemplatesBase { };
+class ApplicativeTemplatesBase
+{};
+class TwoOperandApplicativeTemplatesBase : public ApplicativeTemplatesBase
+{};
+class OneOperandApplicativeTemplatesBase : public ApplicativeTemplatesBase
+{};
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_Add : public TwoOperandApplicativeTemplatesBase {
+class _bz_Add : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote; 
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x + y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x + y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_Subtract : public TwoOperandApplicativeTemplatesBase {
+class _bz_Subtract : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote;
-    typedef T_promote  T_numtype;
- 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x - y; }
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
+
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x - y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_Multiply : public TwoOperandApplicativeTemplatesBase {
+class _bz_Multiply : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x * y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x * y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_Divide : public TwoOperandApplicativeTemplatesBase {
+class _bz_Divide : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x / y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x / y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_Mod : public TwoOperandApplicativeTemplatesBase {
+class _bz_Mod : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x % y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x % y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_BitwiseXOR : public TwoOperandApplicativeTemplatesBase {
+class _bz_BitwiseXOR : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x ^ y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x ^ y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_BitwiseAnd : public TwoOperandApplicativeTemplatesBase {
+class _bz_BitwiseAnd : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x & y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x & y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_BitwiseOr : public TwoOperandApplicativeTemplatesBase {
+class _bz_BitwiseOr : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x | y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x | y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_ShiftRight : public TwoOperandApplicativeTemplatesBase {
+class _bz_ShiftRight : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x >> y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x >> y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_ShiftLeft : public TwoOperandApplicativeTemplatesBase {
+class _bz_ShiftLeft : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x << y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x << y; }
 };
 
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_Min : public TwoOperandApplicativeTemplatesBase {
+class _bz_Min : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return (x < y ? x : y); }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return (x < y ? x : y); }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_Max : public TwoOperandApplicativeTemplatesBase {
+class _bz_Max : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef BZ_PROMOTE(T_numtype1,T_numtype2) T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef BZ_PROMOTE(T_numtype1, T_numtype2) T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return (x > y ? x : y); }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return (x > y ? x : y); }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_Greater : public TwoOperandApplicativeTemplatesBase {
+class _bz_Greater : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef bool       T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef bool T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x > y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x > y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_Less : public TwoOperandApplicativeTemplatesBase {
+class _bz_Less : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef bool       T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef bool T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x < y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x < y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_GreaterOrEqual : public TwoOperandApplicativeTemplatesBase {
+class _bz_GreaterOrEqual : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef bool       T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef bool T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x >= y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x >= y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_LessOrEqual : public TwoOperandApplicativeTemplatesBase {
+class _bz_LessOrEqual : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef bool       T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef bool T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x <= y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x <= y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_Equal : public TwoOperandApplicativeTemplatesBase {
+class _bz_Equal : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef bool       T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef bool T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x == y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x == y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_NotEqual : public TwoOperandApplicativeTemplatesBase {
+class _bz_NotEqual : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef bool       T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef bool T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x != y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x != y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_LogicalAnd : public TwoOperandApplicativeTemplatesBase {
+class _bz_LogicalAnd : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef bool       T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef bool T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x && y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x && y; }
 };
 
 template<typename P_numtype1, typename P_numtype2>
-class _bz_LogicalOr : public TwoOperandApplicativeTemplatesBase {
+class _bz_LogicalOr : public TwoOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype1 T_numtype1;
-    typedef P_numtype2 T_numtype2;
-    typedef bool       T_promote;
-    typedef T_promote  T_numtype;
+  typedef P_numtype1 T_numtype1;
+  typedef P_numtype2 T_numtype2;
+  typedef bool T_promote;
+  typedef T_promote T_numtype;
 
-    static inline T_promote apply(P_numtype1 x, P_numtype2 y)
-    { return x || y; }
+  static inline T_promote apply(P_numtype1 x, P_numtype2 y) { return x || y; }
 };
 
 
 template<typename P_numtype_in, typename P_numtype_out>
-class _bz_Cast : public OneOperandApplicativeTemplatesBase {
+class _bz_Cast : public OneOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype_in T_numtype1;
-    typedef P_numtype_out T_promote;
-    typedef T_promote     T_numtype;
+  typedef P_numtype_in T_numtype1;
+  typedef P_numtype_out T_promote;
+  typedef T_promote T_numtype;
 
-    static inline P_numtype_out apply(P_numtype_in x)
-    { return P_numtype_out(x); }
+  static inline P_numtype_out apply(P_numtype_in x) { return P_numtype_out(x); }
 };
 
 template<typename P_numtype>
-class _bz_LogicalNot : public OneOperandApplicativeTemplatesBase {
+class _bz_LogicalNot : public OneOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype T_numtype1;
-    typedef bool      T_promote;
-    typedef T_promote T_numtype;
+  typedef P_numtype T_numtype1;
+  typedef bool T_promote;
+  typedef T_promote T_numtype;
 
-    static inline P_numtype apply(P_numtype x)
-    { return !x; }
+  static inline P_numtype apply(P_numtype x) { return !x; }
 };
 
 template<typename P_numtype>
-class _bz_BitwiseNot : public OneOperandApplicativeTemplatesBase {
+class _bz_BitwiseNot : public OneOperandApplicativeTemplatesBase
+{
 public:
-    typedef P_numtype     T_numtype1;
-    typedef T_numtype1    T_promote;
-    typedef T_promote     T_numtype;
+  typedef P_numtype T_numtype1;
+  typedef T_numtype1 T_promote;
+  typedef T_promote T_numtype;
 
-    static inline P_numtype apply(P_numtype x)
-    { return ~x; }
+  static inline P_numtype apply(P_numtype x) { return ~x; }
 };
-
 
 
 /*****************************************************************************
@@ -347,7 +349,7 @@ public:
 // copysign(d,d)                       Return 1st arg with same sign as 2nd
 // drem(x,x)                           IEEE remainder
 // exp(d), expl(ld)                    Exponential
-// expm1(d)                            Exp(x)-1     
+// expm1(d)                            Exp(x)-1
 // erf(d), erfl(ld)                    Error function
 // erfc(d), erfcl(ld)                  Complementary error function
 // std::abs(d), fabsl(ld)                  Floating point absolute value
@@ -356,7 +358,7 @@ public:
 // fmod(d,d), fmodl(ld,ld)             Floating point remainder
 // frexp(d, int* e)                    Break into mantissa/exponent  (*)
 // frexpl(ld, int* e)                  Break into mantissa/exponent  (*)
-// gammaFunc(d)                        Gamma function (** needs special 
+// gammaFunc(d)                        Gamma function (** needs special
 //                                     implementation using lgamma)
 // hypot(d,d)                          Hypotenuse: sqrt(x*x+y*y)
 // int ilogb(d)                        Integer unbiased exponent
@@ -380,7 +382,7 @@ public:
 // d rint(d)                           Round to f-integer (depends on mode)
 // d rsqrt(d)                          Reciprocal square root
 // d scalb(d,d)                        Return x * (2^y)
-// sin(d), sinl(ld)                    Sine 
+// sin(d), sinl(ld)                    Sine
 // sinh(d), sinhl(ld)                  Hyperbolic sine
 // sqr(x)                              Return x * x
 // sqrt(d), sqrtl(ld)                  Square root
@@ -397,11 +399,11 @@ public:
 BZ_NAMESPACE_END
 
 #ifndef BZ_MATHFUNC_H
- #include <blitz/mathfunc.h>
+#include <blitz/mathfunc.h>
 #endif
 
 #ifndef BZ_MATHF2_H
- #include <blitz/mathf2.h>
+#include <blitz/mathf2.h>
 #endif
 
 #endif // BZ_APPLICS_H

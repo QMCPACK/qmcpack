@@ -28,51 +28,59 @@
 #define BZ_NUMTRAIT_H
 
 #ifndef BZ_BLITZ_H
- #include <blitz/blitz.h>
+#include <blitz/blitz.h>
 #endif
 
 BZ_NAMESPACE(blitz)
 
 #ifndef BZ_USE_NUMTRAIT
-  #define BZ_SUMTYPE(X)    X
-  #define BZ_DIFFTYPE(X)   X
-  #define BZ_FLOATTYPE(X)  X
-  #define BZ_SIGNEDTYPE(X) X
+#define BZ_SUMTYPE(X) X
+#define BZ_DIFFTYPE(X) X
+#define BZ_FLOATTYPE(X) X
+#define BZ_SIGNEDTYPE(X) X
 #else
 
-#define BZ_SUMTYPE(X)   _bz_typename NumericTypeTraits<X>::T_sumtype
-#define BZ_DIFFTYPE(X)  _bz_typename NumericTypeTraits<X>::T_difftype
+#define BZ_SUMTYPE(X) _bz_typename NumericTypeTraits<X>::T_sumtype
+#define BZ_DIFFTYPE(X) _bz_typename NumericTypeTraits<X>::T_difftype
 #define BZ_FLOATTYPE(X) _bz_typename NumericTypeTraits<X>::T_floattype
 #define BZ_SIGNEDTYPE(X) _bz_typename NumericTypeTraits<X>::T_signedtype
 
 template<typename P_numtype>
-class NumericTypeTraits {
+class NumericTypeTraits
+{
 public:
-    typedef P_numtype T_sumtype;    // Type to be used for summing
-    typedef P_numtype T_difftype;   // Type to be used for difference
-    typedef P_numtype T_floattype;  // Type to be used for floating-point
-                                    // calculations
-    typedef P_numtype T_signedtype; // Type to be used for signed calculations
-    enum { hasTrivialCtor = 0 };    // Assume the worst
+  typedef P_numtype T_sumtype;    // Type to be used for summing
+  typedef P_numtype T_difftype;   // Type to be used for difference
+  typedef P_numtype T_floattype;  // Type to be used for floating-point
+                                  // calculations
+  typedef P_numtype T_signedtype; // Type to be used for signed calculations
+  enum
+  {
+    hasTrivialCtor = 0
+  }; // Assume the worst
 };
 
-#define BZDECLNUMTRAIT(X,Y,Z,W,U)                                   \
-    template<>                                                      \
-    class NumericTypeTraits<X> {                                    \
-    public:                                                         \
-        typedef Y T_sumtype;                                        \
-        typedef Z T_difftype;                                       \
-        typedef W T_floattype;                                      \
-        typedef U T_signedtype;                                     \
-        enum { hasTrivialCtor = 1 };                                \
-    }                                                               
+#define BZDECLNUMTRAIT(X, Y, Z, W, U) \
+  template<>                          \
+  class NumericTypeTraits<X>          \
+  {                                   \
+  public:                             \
+    typedef Y T_sumtype;              \
+    typedef Z T_difftype;             \
+    typedef W T_floattype;            \
+    typedef U T_signedtype;           \
+    enum                              \
+    {                                 \
+      hasTrivialCtor = 1              \
+    };                                \
+  }
 
 #ifdef BZ_HAVE_BOOL
-    BZDECLNUMTRAIT(bool,unsigned,int,float,int);
+BZDECLNUMTRAIT(bool, unsigned, int, float, int);
 #endif
 
-BZDECLNUMTRAIT(char,int,int,float,char);
-BZDECLNUMTRAIT(unsigned char, unsigned, int, float,int);
+BZDECLNUMTRAIT(char, int, int, float, char);
+BZDECLNUMTRAIT(unsigned char, unsigned, int, float, int);
 BZDECLNUMTRAIT(short int, int, int, float, short int);
 BZDECLNUMTRAIT(short unsigned int, unsigned int, int, float, int);
 BZDECLNUMTRAIT(int, long, int, float, int);

@@ -28,11 +28,11 @@
 #define BZ_MSTRUCT_H
 
 #ifndef BZ_BLITZ_H
- #include <blitz/blitz.h>
+#include <blitz/blitz.h>
 #endif
 
 #ifndef BZ_ZERO_H
- #include <blitz/zero.h>
+#include <blitz/zero.h>
 #endif
 
 /*
@@ -76,35 +76,32 @@
 
 BZ_NAMESPACE(blitz)
 
-class MatrixStructure { };
+class MatrixStructure
+{};
 
-class AsymmetricMatrix : public MatrixStructure {
+class AsymmetricMatrix : public MatrixStructure
+{
 public:
-    AsymmetricMatrix()
-        : rows_(0), cols_(0)
-    { }
+  AsymmetricMatrix() : rows_(0), cols_(0) {}
 
-    AsymmetricMatrix(unsigned rows, unsigned cols)
-        : rows_(rows), cols_(cols)
-    { }
+  AsymmetricMatrix(unsigned rows, unsigned cols) : rows_(rows), cols_(cols) {}
 
-    unsigned columns() const { return cols_; }
+  unsigned columns() const { return cols_; }
 
-    unsigned cols() const { return cols_; }
+  unsigned cols() const { return cols_; }
 
-    bool inRange(const unsigned i,const unsigned j) const {
-        return (i<rows_) && (j<cols_);
-    }
+  bool inRange(const unsigned i, const unsigned j) const { return (i < rows_) && (j < cols_); }
 
-    void resize(unsigned rows, unsigned cols) {
-        rows_ = rows;
-        cols_ = cols;
-    }
+  void resize(unsigned rows, unsigned cols)
+  {
+    rows_ = rows;
+    cols_ = cols;
+  }
 
-    unsigned rows() const { return rows_; }
+  unsigned rows() const { return rows_; }
 
 protected:
-    unsigned rows_, cols_;
+  unsigned rows_, cols_;
 };
 
 // Still to be implemented:
@@ -119,11 +116,11 @@ protected:
 
 BZ_NAMESPACE_END
 
-#include <blitz/matgen.h>         // RowMajor and ColumnMajor general matrices
-#include <blitz/matsymm.h>        // Symmetric
-#include <blitz/matdiag.h>        // Diagonal
-#include <blitz/mattoep.h>        // Toeplitz
-#include <blitz/matltri.h>        // Lower triangular
-#include <blitz/matutri.h>        // Upper triangular
+#include <blitz/matgen.h>  // RowMajor and ColumnMajor general matrices
+#include <blitz/matsymm.h> // Symmetric
+#include <blitz/matdiag.h> // Diagonal
+#include <blitz/mattoep.h> // Toeplitz
+#include <blitz/matltri.h> // Lower triangular
+#include <blitz/matutri.h> // Upper triangular
 
 #endif // BZ_MSTRUCT_H

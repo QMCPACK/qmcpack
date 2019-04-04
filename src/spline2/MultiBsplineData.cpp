@@ -80,5 +80,4 @@ PRAGMA_OFFLOAD("omp declare target")
      0.0, 0.0,  0.0,  1.0 };
 PRAGMA_OFFLOAD("omp end declare target")
 // clang-format on
-}
-
+} // namespace spline2
