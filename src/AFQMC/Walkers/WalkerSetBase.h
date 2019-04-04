@@ -284,14 +284,16 @@ class WalkerSetBase: public AFQMCInfo
     wlk_desc[5]=nref;
     int ncol=NAEA;
     int nrow=NMO;
-    if(walkerType == COLLINEAR) {
-      ncol += NAEB;
-    } else if(walkerType == NONCOLLINEAR) {
-      nrow += NMO;
-      ncol += NAEB;
-    } else {
-      app_error()<<" Error: Incorrect walker_type on WalkerSetBase::setup \n";
-      APP_ABORT("");
+    if(walkerType != CLOSED) {
+      if (walkerType == COLLINEAR) {
+        ncol += NAEB;
+      } else if(walkerType == NONCOLLINEAR) {
+        nrow += NMO;
+        ncol += NAEB;
+      } else {
+        app_error()<<" Error: Incorrect walker_type on WalkerSetBase::setup \n";
+        APP_ABORT("");
+      }
     }
     int cnt=0;
     data_displ[FIELDS] = cnt;          cnt+=nbp*nCV;

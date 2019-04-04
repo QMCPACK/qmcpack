@@ -538,7 +538,7 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
 }
 
   /*
-   * Orthogonalizes the Slater matrices of all walkers in the set.  
+   * Orthogonalizes the Slater matrices of all walkers in the set.
    */
   template<class WlkSet, class CMat>
   void AFQMCBasePropagator::Orthogonalize_shared(WlkSet& wset, CMat&& detR) {
@@ -548,11 +548,11 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
     int nwalk = wset.size();
     auto walker_type = wset.getWalkerType();
     if(walker_type != COLLINEAR) {
-      int cnt=0;
-      for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
-        if( (cnt++)%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
+      int iw=0;
+      for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it, ++iw) {
+        if( iw%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
           SDetOp->Orthogonalize(it->SlaterMatrix(Alpha),to_address(d_));
-          detR[cnt][0] *= ComplexType(*d_);
+          detR[iw][0] *= ComplexType(*d_);
         }
       }
     } else {
