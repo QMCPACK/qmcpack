@@ -172,6 +172,8 @@ struct J2OrbitalSoA : public WaveFunctionComponent
 
   RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
+  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
+
   /** recompute internal data assuming distance table is fully ready */
   void recompute(ParticleSet& P);
 
@@ -598,6 +600,39 @@ void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
 
   constexpr valT mhalf(-0.5);
   LogValue = mhalf * LogValue;
+}
+
+template<typename FT>
+void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P,
+                                       HessVector_t& grad_grad_psi)
+{
+  LogValue = 0.0;
+  const DistanceTableData& d_ee(*(P.DistTables[0]));
+  valT dudr, d2udr2;
+
+  Tensor<valT, DIM> ident;
+  grad_grad_psi = 0.0;
+  ident.diagonal(1.0);
+
+  for (int i=1; i<N; ++i)
+  {
+    const valT* dist          = d_ee.Distances[i];
+    const RowContainer& displ = d_ee.Displacements[i];
+    auto ig = P.GroupID[i];
+    const int igt = ig * NumGroups;
+    for (int j = 0; j < i; ++j)
+    {
+      auto r    = dist[j];
+      auto rinv = 1.0 / r;
+      auto dr   = displ[j];
+      auto jg   = P.GroupID[j];
+      auto uij  = F[igt + jg]->evaluate(r, dudr, d2udr2);
+      LogValue -= uij;
+      auto hess = rinv * rinv * outerProduct(dr, dr) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
+      grad_grad_psi[i] -= hess;
+      grad_grad_psi[j] -= hess;
+    }
+  }
 }
 
 } // namespace qmcplusplus
