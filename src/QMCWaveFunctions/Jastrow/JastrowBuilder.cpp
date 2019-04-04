@@ -61,6 +61,12 @@ bool JastrowBuilder::put(xmlNodePtr cur)
     app_warning() << "  JastrowBuilder::put does not have name " << std::endl;
     return false;
   }
+  app_summary() << std::endl;
+  app_summary() << "   Jastrow" << std::endl;
+  app_summary() << "   -------" << std::endl;
+  app_summary() << "    Name: " << nameOpt << "   Type: " << typeOpt << "   Function: " << funcOpt << std::endl;
+  app_summary() << std::endl;
+
   if (typeOpt.find("One") < typeOpt.size())
     return addOneBody(cur);
   if (typeOpt.find("Two") < typeOpt.size())

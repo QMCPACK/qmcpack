@@ -33,56 +33,56 @@
  */
 
 #ifdef BZ_ENABLE_XOPEN_SOURCE
- #ifndef _ALL_SOURCE
-  #define _ALL_SOURCE
- #endif
- #ifndef _XOPEN_SOURCE
-  #define _XOPEN_SOURCE
- #endif
- #ifndef _XOPEN_SOURCE_EXTENDED
-  #define _XOPEN_SOURCE_EXTENDED 1
- #endif
+#ifndef _ALL_SOURCE
+#define _ALL_SOURCE
+#endif
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE
+#endif
+#ifndef _XOPEN_SOURCE_EXTENDED
+#define _XOPEN_SOURCE_EXTENDED 1
+#endif
 #endif
 
-#include <blitz/compiler.h>          // Compiler-specific directives
-#include <blitz/tuning.h>            // Performance tuning
-#include <blitz/tau.h>               // Profiling
+#include <blitz/compiler.h> // Compiler-specific directives
+#include <blitz/tuning.h>   // Performance tuning
+#include <blitz/tau.h>      // Profiling
 
 #include <string>
-#include <stdio.h>                   // sprintf, etc.
+#include <stdio.h> // sprintf, etc.
 
 #ifdef BZ_HAVE_STD
-  #include <iostream>
-  #include <iomanip>
+#include <iostream>
+#include <iomanip>
 #else
-  #include <iostream.h>
-  #include <iomanip.h>
+#include <iostream.h>
+#include <iomanip.h>
 #endif
 
-#ifdef BZ_MATH_FN_IN_NAMESPACE_STD 
-  #include <cmath>
+#ifdef BZ_MATH_FN_IN_NAMESPACE_STD
+#include <cmath>
 #else
-  #include <math.h>
+#include <math.h>
 #endif
 
 #ifdef BZ_HAVE_COMPLEX
-  #include <complex>
+#include <complex>
 #endif
 
-#define BZ_THROW                     // Needed in <blitz/numinquire.h>
+#define BZ_THROW // Needed in <blitz/numinquire.h>
 
 BZ_NAMESPACE(blitz)
 
 #ifdef BZ_HAVE_STD
- BZ_USING_NAMESPACE(std)
+BZ_USING_NAMESPACE(std)
 #endif
 
 #ifdef BZ_GENERATE_GLOBAL_INSTANCES
- #define _bz_global
- #define BZ_GLOBAL_INIT(X)   =X
+#define _bz_global
+#define BZ_GLOBAL_INIT(X) = X
 #else
- #define _bz_global extern
- #define BZ_GLOBAL_INIT(X) 
+#define _bz_global extern
+#define BZ_GLOBAL_INIT(X)
 #endif
 
 BZ_NAMESPACE_END
@@ -93,9 +93,9 @@ BZ_NAMESPACE_END
  * should automatically turn on BZ_THREADSAFE.
  */
 #ifdef _REENTRANT
- #ifndef BZ_THREADSAFE
-  #define BZ_THREADSAFE
- #endif
+#ifndef BZ_THREADSAFE
+#define BZ_THREADSAFE
+#endif
 #endif
 
 /*
@@ -107,21 +107,21 @@ BZ_NAMESPACE_END
 #endif
 
 #ifdef BZ_THREADSAFE_USE_PTHREADS
- #include <pthread.h>
+#include <pthread.h>
 
- #define BZ_MUTEX_DECLARE(name)   mutable pthread_mutex_t name;
- #define BZ_MUTEX_INIT(name)      pthread_mutex_init(&name,NULL);
- #define BZ_MUTEX_LOCK(name)      pthread_mutex_lock(&name);
- #define BZ_MUTEX_UNLOCK(name)    pthread_mutex_unlock(&name);
- #define BZ_MUTEX_DESTROY(name)   pthread_mutex_destroy(&name);
+#define BZ_MUTEX_DECLARE(name) mutable pthread_mutex_t name;
+#define BZ_MUTEX_INIT(name) pthread_mutex_init(&name, NULL);
+#define BZ_MUTEX_LOCK(name) pthread_mutex_lock(&name);
+#define BZ_MUTEX_UNLOCK(name) pthread_mutex_unlock(&name);
+#define BZ_MUTEX_DESTROY(name) pthread_mutex_destroy(&name);
 #else
- #define BZ_MUTEX_DECLARE(name)
- #define BZ_MUTEX_INIT(name)
- #define BZ_MUTEX_LOCK(name)
- #define BZ_MUTEX_UNLOCK(name)
- #define BZ_MUTEX_DESTROY(name)
+#define BZ_MUTEX_DECLARE(name)
+#define BZ_MUTEX_INIT(name)
+#define BZ_MUTEX_LOCK(name)
+#define BZ_MUTEX_UNLOCK(name)
+#define BZ_MUTEX_DESTROY(name)
 #endif
 
-#include <blitz/bzdebug.h>           // Debugging macros
+#include <blitz/bzdebug.h> // Debugging macros
 
 #endif // BZ_BLITZ_H
