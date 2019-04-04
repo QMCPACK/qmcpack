@@ -309,6 +309,12 @@ bool ParticleSet::get(std::ostream& os) const
     os << "    (... and " << (TotalNum - numToPrint) << " more particle positions ...)" << std::endl;
   }
 
+  for (DistanceTableData* dt : DistTables)
+  {
+    os << std::endl;
+    os << dt->description.str();
+  }
+
   return true;
 }
 

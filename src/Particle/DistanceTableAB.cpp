@@ -168,12 +168,8 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   p << s.getName() << "_" << t.getName();
   dt->Name = p.str(); //assign the table name
 
-  if (omp_get_thread_num() == 0)
-  {
-    app_log() << std::endl;
-    app_log() << o.str() << std::endl;
-    app_log().flush();
-  }
+  dt->description << o.str() << std::endl;
+
   return dt;
 }
 
