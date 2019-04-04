@@ -80,7 +80,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   if(ndet > 1)
     APP_ABORT("Error: ndet > 1 not yet implemented in THCHamiltonian::getHamiltonianOperations.\n");
 
-  long nkpts, Qbeg=0, Qend, nQ;
+  long nkpts;
   hdf_archive dump(TGwfn.Global());
   // right now only Node.root() reads
   if( TG.Node().root() ) {
@@ -104,12 +104,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
     }
   }
   TG.Global().broadcast_n(Idata.begin(),8,0);
-  nkpts = Qend = Idata[2];
+  nkpts = Idata[2];
   app_log()<<" nkpts: " <<nkpts <<std::endl;
 
   // partition Q over nodes if distributed Q
-
-  nQ = Qend-Qbeg;
 
   IVector nmo_per_kp(iextensions<1u>{nkpts});
   IVector nchol_per_kp(iextensions<1u>{nkpts});
@@ -183,8 +181,9 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   {
     int ngrp(TGwfn.getNGroupsPerTG());
     int ig(TGwfn.getLocalGroupNumber());
+    int work(0);
     // assign Q/Qm pairs of vectors to groups round-robin
-    for(int Q=0, work=0; Q<nkpts; Q++) { 
+    for(int Q=0; Q<nkpts; Q++) { 
       if(kminus[Q]==Q) { 
         if( work%ngrp == ig )
           Qmap[Q] = 1 + (number_of_symmetric_Q++);
@@ -201,6 +200,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
         work++;
       }  
     }
+    if(work < ngrp)
+      APP_ABORT(" Error: Too many nodes in group (nnodes) for given number of kpoints. \n");
   }
   // new communicator over nodes that share the same set of Q 
   auto Qcomm(TG.Global().split(TGwfn.getLocalGroupNumber(),TG.Global().rank()));
@@ -727,7 +728,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   auto distNode(TG.Node().split(TGwfn.getLocalGroupNumber(),TG.Node().rank())); 
   auto Qcomm_roots(Qcomm.split(distNode.rank(),Qcomm.rank()));
 
-  long nkpts, Qbeg=0, Qend, nQ;
+  long nkpts;
   hdf_archive dump(TGwfn.Global());
   // right now only Node.root() reads
   if( distNode.root() ) {
@@ -751,12 +752,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     }
   }
   TG.Global().broadcast_n(Idata.begin(),8,0);
-  nkpts = Qend = Idata[2];
+  nkpts = Idata[2];
   app_log()<<" nkpts: " <<nkpts <<std::endl;
 
   // partition Q over nodes if distributed Q
-
-  nQ = Qend-Qbeg;
 
   IVector nmo_per_kp(iextensions<1u>{nkpts});
   IVector nchol_per_kp(iextensions<1u>{nkpts});
@@ -830,8 +829,9 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   {
     int ngrp(TGwfn.getNGroupsPerTG());
     int ig(TGwfn.getLocalGroupNumber());
+    int work(0);
     // assign Q/Qm pairs of vectors to groups round-robin
-    for(int Q=0, work=0; Q<nkpts; Q++) {
+    for(int Q=0; Q<nkpts; Q++) {
       if(kminus[Q]==Q) {
         if( work%ngrp == ig )
           Qmap[Q] = 1 + (number_of_symmetric_Q++);
@@ -848,6 +848,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
         work++;
       }
     }
+    if(work < ngrp)
+      APP_ABORT(" Error: Too many nodes in group (nnodes) for given number of kpoints. \n");
   }
 
   int nmo_max = *std::max_element(nmo_per_kp.begin(),nmo_per_kp.end());
