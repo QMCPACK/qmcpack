@@ -27,7 +27,7 @@ namespace qmcplusplus
  *\param s source/target particle set
  *\return index of the distance table with the name
  */
-DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type)
+DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description)
 {
   typedef OHMMS_PRECISION RealType;
   enum
@@ -168,7 +168,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   p << s.getName() << "_" << t.getName();
   dt->Name = p.str(); //assign the table name
 
-  dt->description << o.str() << std::endl;
+  description << o.str() << std::endl;
 
   return dt;
 }

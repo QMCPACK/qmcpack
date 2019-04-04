@@ -399,14 +399,6 @@ struct DistanceTableData
     }
   }
 
-  /// Description generated during creation, to be printed later
-  std::ostringstream description;
-
-  void output_description(std::ostream& os)
-  {
-    os << std::endl;
-    os << description.str();
-  }
 };
 } // namespace qmcplusplus
 #endif
