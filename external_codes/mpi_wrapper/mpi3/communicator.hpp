@@ -118,6 +118,10 @@ enum class communicator_type : int{
 	cluster = OMPI_COMM_TYPE_CLUSTER 
 };
 
+//enum constant{
+//	undefined = MPI_UNDEFINED;
+//};
+
 template<int N = 10> struct overload_priority : overload_priority<N-1>{
 //	using overload_priority<N-1>::overload_priority;
 };
@@ -421,14 +425,14 @@ public:
 		MPI_Comm_group(impl_, &old_g);
 		MPI_Group new_g;
 		MPI_Group_incl(old_g, v.size(), v.data(), &new_g);
-		communicator ret;
-		MPI_Comm_create(impl_, new_g, &ret.impl_);
+		communicator ret; MPI_Comm_create(impl_, new_g, &ret.impl_);
+		MPI_Group_free(&new_g);
+		MPI_Group_free(&old_g);
 		return ret;
 	}
 	communicator subcomm(std::initializer_list<int> l) const{
 		return subcomm(std::vector<int>(l));
 	}
-
 	enum class topology{undefined = MPI_UNDEFINED, graph = MPI_GRAPH, cartesian = MPI_CART};
 //	topology topo() const{return static_cast<topology>(call<&MPI_Topo_test>());}
 	int rank() const{
@@ -496,13 +500,11 @@ public:
 		if(s != MPI_SUCCESS) throw std::runtime_error{"cannot call error handler"};
 	}
 
-	communicator operator/(int n) const{
-		int color = rank()*n/size();
-		return split(color);
-	}
-	communicator operator%(int n) const{
-		int color = rank()%n;
-		return split(color);
+	communicator operator/(int n) const{return split(rank()/n);}
+	communicator operator%(int n) const{return split(rank()%n);}
+	communicator operator/(double nn) const{
+		int n = nn;
+		return split(2*(rank()%n) > n?MPI_UNDEFINED:rank()/n);
 	}
 	communicator operator<(int n) const{return split((rank() < n)?0:MPI_UNDEFINED);}
 	communicator operator<=(int n) const{return split((rank() <= n)?0:MPI_UNDEFINED);}
@@ -1682,7 +1684,7 @@ public:
 			first,
 				detail::iterator_category_t<It>{},
 				detail::value_category_t<typename std::iterator_traits<It>::value_type>{},
-			count, 
+			count,
 			root
 		);
 	}
