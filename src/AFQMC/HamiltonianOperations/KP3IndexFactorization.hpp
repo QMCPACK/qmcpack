@@ -180,7 +180,8 @@ class KP3IndexFactorization
       boost::multi::array_ref<ComplexType,1> P1D(to_address(P1.origin()),{NMO*NMO});
       std::fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));
       vHS(vMF_, P1D);
-      TG.TG().all_reduce_in_place_n(P1D.origin(),P1D.num_elements(),std::plus<>());
+      if(TG.TG().size() > 1)
+        TG.TG().all_reduce_in_place_n(P1D.origin(),P1D.num_elements(),std::plus<>());
 
       // add H1 + vn0 and symmetrize
       using ma::conj;
@@ -192,9 +193,13 @@ class KP3IndexFactorization
             P1[I][J] += H1[K][i][j] + vn0[K][i][j];
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
             // This is really cutoff dependent!!!
-            if( std::abs( P1[I][J] - conj(P1[J][I]) ) > 1e-6 ) {
+#if AFQMC_MIXED_PRECISION
+            if( std::abs(P1[I][J]-conj(P1[J][I]))*2.0 > 1e-5 ) {
+#else
+            if( std::abs(P1[I][J]-conj(P1[J][I]))*2.0 > 1e-6 ) {
+#endif
               app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
-              app_error()<<I <<" " <<J <<" " <<P1[I][J] <<" " <<P1[j][i] <<" "
+              app_error()<<I <<" " <<J <<" " <<P1[I][J] <<" " <<P1[J][I] <<" "
                          <<H1[K][i][j] <<" " <<H1[K][j][i] <<" "
                          <<vn0[K][i][j] <<" " <<vn0[K][j][i] <<std::endl;
               //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");

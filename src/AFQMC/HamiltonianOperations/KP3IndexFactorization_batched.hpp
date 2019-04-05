@@ -302,9 +302,13 @@ class KP3IndexFactorization_batched
             P1[I][J] += H1[K][i][j] + vn0[K][i][j];
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
             // This is really cutoff dependent!!!
-            if( std::abs( P1[I][J] - conj(P1[J][I]) ) > 1e-6 ) {
+#if AFQMC_MIXED_PRECISION
+            if( std::abs(P1[I][J]-conj(P1[J][I]))*2.0 > 1e-5 ) {
+#else
+            if( std::abs(P1[I][J]-conj(P1[J][I]))*2.0 > 1e-6 ) {
+#endif
               app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
-              app_error()<<I <<" " <<J <<" " <<P1[I][J] <<" " <<P1[j][i] <<" "
+              app_error()<<I <<" " <<J <<" " <<P1[I][J] <<" " <<P1[J][I] <<" "
                          <<H1[K][i][j] <<" " <<H1[K][j][i] <<" "
                          <<vn0[K][i][j] <<" " <<vn0[K][j][i] <<std::endl;
               //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
@@ -1115,7 +1119,7 @@ class KP3IndexFactorization_batched
         // assuming contiguous
         ma::scal(c,v);
       }
-        
+
       using ma::gemmBatched;
       std::vector<sp_pointer> Aarray;
       std::vector<sp_pointer> Barray;
@@ -1153,7 +1157,6 @@ class KP3IndexFactorization_batched
             Barray.push_back(XQnw[Q][0].origin());
             Carray.push_back(vKK[K][QK].origin());
           }
-// } else if( Qmap[Q] > 0 ) {
         } else if(Qmap[Q]>0) { // rho(Q)^+ term 
           for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (i,k)
             int QK = QKToK2[Q][K];
