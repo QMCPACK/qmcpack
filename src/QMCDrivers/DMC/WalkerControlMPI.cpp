@@ -241,7 +241,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
         }
 
       // send the number of copies to the target
-      myComm->getComm()[minus[ic]].Send(OOMPI_Message(nsentcopy));
+      myComm->comm.send_value(nsentcopy, minus[ic]);
       job_list.push_back(job(ncopy_pairs.back().second, minus[ic]));
 #ifdef MCWALKERSET_MPI_DEBUG
       fout << "rank " << plus[ic] << " sends a walker with " << nsentcopy << " copies to rank " << minus[ic]
@@ -275,7 +275,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 
       int nsentcopy = 0;
       // recv the number of copies from the target
-      myComm->getComm()[plus[ic]].Recv(OOMPI_Message(nsentcopy));
+      myComm->comm.receive_n(&nsentcopy, 1, plus[ic]);
       job_list.push_back(job(newW.size(), plus[ic]));
       if (plus[ic] != plus[ic + nsentcopy] || minus[ic] != minus[ic + nsentcopy])
         APP_ABORT("WalkerControlMPI::swapWalkersSimple send/recv pair checking failed!");
@@ -294,7 +294,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 
   if (nsend > 0)
   {
-    std::vector<OOMPI_Request> requests;
+    std::vector<mpi3::request> requests;
     // mark all walkers not in send
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
       good_w[jobit->walkerID]->SendInProgress = false;
@@ -308,13 +308,12 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
         awalker->updateBuffer();
         awalker->SendInProgress = true;
       }
-      OOMPI_Message sendBuffer(awalker->DataSet.data(), byteSize);
       if (use_nonblocking)
-        requests.push_back(myComm->getComm()[jobit->target].Isend(sendBuffer));
+        requests.push_back(myComm->comm.isend_n(awalker->DataSet.data(), byteSize, jobit->target));
       else
       {
         myTimers[DMC_MPI_send]->start();
-        myComm->getComm()[jobit->target].Send(sendBuffer);
+        myComm->comm.send_n(awalker->DataSet.data(), byteSize, jobit->target);
         myTimers[DMC_MPI_send]->stop();
       }
     }
@@ -324,7 +323,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
       for (int im = 0; im < requests.size(); im++)
       {
         myTimers[DMC_MPI_send]->start();
-        requests[im].Wait();
+        requests[im].wait();
         myTimers[DMC_MPI_send]->stop();
       }
       requests.clear();
@@ -332,7 +331,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   }
   else
   {
-    std::vector<OOMPI_Request> requests;
+    std::vector<mpi3::request> requests;
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
     {
       // recv and unpack data
@@ -340,13 +339,12 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
       if (!awalker)
         awalker = new Walker_t(wRef);
       size_t byteSize = awalker->byteSize();
-      OOMPI_Message recvBuffer(awalker->DataSet.data(), byteSize);
       if (use_nonblocking)
-        requests.push_back(myComm->getComm()[jobit->target].Irecv(recvBuffer));
+        requests.push_back(myComm->comm.ireceive_n(awalker->DataSet.data(), byteSize, jobit->target));
       else
       {
         myTimers[DMC_MPI_recv]->start();
-        myComm->getComm()[jobit->target].Recv(recvBuffer);
+        myComm->comm.receive_n(awalker->DataSet.data(), byteSize, jobit->target);
         awalker->copyFromBuffer();
         myTimers[DMC_MPI_recv]->stop();
       }
@@ -357,12 +355,11 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
       bool completed = false;
       while (!completed)
       {
-        OOMPI_Status status;
         completed = true;
         for (int im = 0; im < requests.size(); im++)
           if (not_completed[im])
           {
-            if (requests[im].Test(status))
+            if (requests[im].completed())
             {
               newW[job_list[im].walkerID]->copyFromBuffer();
               not_completed[im] = false;

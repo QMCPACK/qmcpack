@@ -124,6 +124,35 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     return LogValue;
   }
 
+  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+  {
+    const DistanceTableData& d_ie(*(P.DistTables[myTableID]));
+    valT dudr, d2udr2;
+
+    Tensor<valT, DIM> ident;
+    grad_grad_psi = 0.0;
+    ident.diagonal(1.0);
+
+    for (int iel = 0; iel < Nelec; ++iel)
+    {
+      const valT* dist          = d_ie.Distances[iel];
+      const RowContainer& displ = d_ie.Displacements[iel];
+      for (int iat = 0; iat < Nions; iat++)
+      {
+        int gid    = Ions.GroupID[iat];
+        auto* func = F[gid];
+        if( func != nullptr)
+        {
+           RealType r    = dist[iat];
+           RealType rinv = 1.0 / r;
+           PosType dr    = displ[iat];
+           func->evaluate(r, dudr, d2udr2);
+           grad_grad_psi[iel] -= rinv * rinv * outerProduct(dr, dr) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
+        }
+      }
+    }
+  }
+
   ValueType ratio(ParticleSet& P, int iat)
   {
     UpdateMode = ORB_PBYP_RATIO;
