@@ -143,6 +143,43 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   REQUIRE(KE == Approx(-0.1616624771)); // note: number not validated
 
 
+  // now test evaluateHessian
+  WaveFunctionComponent::HessVector_t grad_grad_psi;
+  grad_grad_psi.resize(elec_.getTotalNum());
+  grad_grad_psi = 0.0;
+  
+  std::cout<<"eval hess"<<std::endl;
+  j2->evaluateHessian(elec_,grad_grad_psi);
+  std::vector<double> hess_values = {
+    -0.0627236,
+    0,
+    0,
+    0,
+    0.10652,
+    0,
+    0,
+    0,
+    0.10652,
+    -0.0627236,
+    0,
+    0,
+    0,
+    0.10652,
+    0,
+    0,
+    0,
+    0.10652,
+  };
+
+  int m=0;
+  for(int n=0; n<elec_.getTotalNum(); n++)
+    for(int i=0; i<OHMMS_DIM; i++)
+      for(int j=0; j<OHMMS_DIM; j++,m++)
+        {
+          REQUIRE(grad_grad_psi[n](i,j) == ComplexApprox(hess_values[m]).compare_real_only());
+        }
+
+
   struct JValues
   {
     double r;
@@ -251,6 +288,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   REQUIRE(ratio_1 == ComplexApprox(0.9871985577).compare_real_only());
   REQUIRE(j2->LogValue == Approx(0.0883791773));
+
 }
 
 TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
@@ -391,6 +429,46 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   REQUIRE(lapl_grad_source[1][1] == ComplexApprox(0.0000000000).compare_real_only());
   REQUIRE(lapl_grad_source[2][0] == ComplexApprox(0.0000000000).compare_real_only());
   REQUIRE(lapl_grad_source[2][1] == ComplexApprox(0.0000000000).compare_real_only());
+
+
+  // now test evaluateHessian
+  WaveFunctionComponent::HessVector_t grad_grad_psi;
+  grad_grad_psi.resize(elec_.getTotalNum());
+  grad_grad_psi = 0.0;
+
+  psi.evaluateHessian(elec_,grad_grad_psi);
+  
+  std::vector<double> hess_values = {
+    0.00888367,
+    0,
+    0,
+    0,
+    -0.0284893,
+    0,
+    0,
+    0,
+    -0.0284893,
+    0.00211188,
+    0,
+    0,
+    0,
+    -0.00923137,
+    0,
+    0,
+    0,
+    -0.00923137,
+  };
+
+  int m=0;
+  for(int n=0; n<elec_.getTotalNum(); n++)
+    for(int i=0; i<OHMMS_DIM; i++)
+      for(int j=0; j<OHMMS_DIM; j++,m++)
+        {
+          REQUIRE(grad_grad_psi[n](i,j) == ComplexApprox(hess_values[m]).compare_real_only());
+        }
+
+  psi.evaluateLog(elec_); // evaluateHessian has side effects
+
 
   struct JValues
   {
