@@ -638,7 +638,7 @@ struct HybridAdoptorBase
       return cone;
     const RealType scale  = cone / (cutoff - cutoff_buffer);
     const RealType x      = (r - cutoff_buffer) * scale;
-    const RealType f      = smooth_func_tanh(x, df_dr, d2f_dr2);
+    const RealType f      = smooth_func_coscos(x, df_dr, d2f_dr2);
 
     df_dr   *= scale;
     d2f_dr2 *= scale*scale;

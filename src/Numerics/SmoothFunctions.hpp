@@ -44,6 +44,33 @@ T smooth_func_tanh(T x, T& dx, T& d2x)
   }
 }
 
+/// (1+cos(PI*(1-cos(PI*x))/2))/2
+template<typename T>
+T smooth_func_coscos(T x, T& dx, T& d2x)
+{
+  if(x<0)
+  {
+    dx = d2x = T(0);
+    return T(1);
+  }
+  else if(x>=1)
+  {
+    dx = d2x = T(0);
+    return T(0);
+  }
+  else
+  {
+    const T chalf(0.5), cone(1), pihalf(M_PI*chalf), pipihalf(M_PI*M_PI*chalf);
+    T s, c, scos, ccos;
+    sincos(M_PI*x, &s, &c);
+    sincos(pihalf * (cone - c), &scos, &ccos);
+
+    dx = - chalf * pipihalf * scos * s;
+    d2x = - pihalf * pipihalf * ( ccos * pihalf * s * s + scos * c );
+    return chalf * (cone + ccos);
+  }
+}
+
 } // namespace qmcplusplus
 
 #if defined(DEBUG_MAIN)
@@ -58,7 +85,7 @@ int main()
   {
     RealType x = RealType(i)/num_grid;
     RealType f, df, d2f;
-    f = qmcplusplus::smooth_func_tanh(x, df, d2f);
+    f = qmcplusplus::smooth_func_coscos(x, df, d2f);
     std::cout << x << " " << f << " " << df << " " << d2f << std::endl;
   }
   return 0;
