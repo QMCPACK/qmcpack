@@ -20,6 +20,7 @@
 #include <Particle/DistanceTableData.h>
 #include <QMCWaveFunctions/lcao/SoaSphericalTensor.h>
 #include <spline2/MultiBspline1D.hpp>
+#include <Numerics/SmoothFunctions.hpp>
 
 namespace qmcplusplus
 {
@@ -632,16 +633,16 @@ struct HybridAdoptorBase
 
   inline RealType smooth_function(const ST& cutoff_buffer, const ST& cutoff, RealType r)
   {
-    const RealType cone(1), ctwo(2), chalf(0.5);
+    const RealType cone(1);
     if (r < cutoff_buffer)
       return cone;
-    const RealType scale  = ctwo / (cutoff - cutoff_buffer);
-    const RealType x      = (r - cutoff_buffer) * scale - cone;
-    const RealType cosh_x = std::cosh(x);
-    const RealType tanh_x = std::tanh(x);
-    df_dr                 = -chalf / (cosh_x * cosh_x) * scale;
-    d2f_dr2               = -ctwo * tanh_x * df_dr * scale;
-    return chalf * (cone - tanh_x);
+    const RealType scale  = cone / (cutoff - cutoff_buffer);
+    const RealType x      = (r - cutoff_buffer) * scale;
+    const RealType f      = smooth_func_tanh(x, df_dr, d2f_dr2);
+
+    df_dr   *= scale;
+    d2f_dr2 *= scale*scale;
+    return f;
   }
 };
 
