@@ -1086,7 +1086,8 @@ def generic_extensions():
     nassert(isinstance(o2,obj))
     nassert(id(o2)!=id(o))
     nassert(object_eq(o2,o))
-
+    o2 = o.copy().to_obj()
+    nassert(object_eq(o2,o))
     
     # test list extensions
     nlabel('list_extensions')
