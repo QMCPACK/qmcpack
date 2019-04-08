@@ -96,10 +96,10 @@ public:
   ///constructor from mpi3 environment
 #ifdef HAVE_MPI
   Communicate(const mpi3::environment& env);
-#endif
 
   ///constructor with communicator
-  Communicate(const mpi_comm_type comm_input);
+  Communicate(const mpi3::communicator &in_comm);
+#endif
 
   ///constructor with communicator
   //Communicate(const intra_comm_type& c);
@@ -272,8 +272,6 @@ protected:
     }
   } myMPI_destroy_helper;
 #endif
-  /// OOMPI communicator
-  intra_comm_type myComm;
   /// Communicator name
   std::string myName;
   /// Rank
@@ -293,6 +291,12 @@ public:
   /// mpi3 communicator wrapper
   mpi3::communicator comm;
 #endif
+  // Move here temporarily so the destructors of myComm and comm run
+  // in the right order
+protected:
+  /// OOMPI communicator
+  intra_comm_type myComm;
+
 };
 
 
