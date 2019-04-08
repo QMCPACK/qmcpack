@@ -342,18 +342,6 @@ class QuantumPackageInput(SimulationInput):
         write_rsdft_h_read_ints 
         '''.split())
 
-    slave_allowed = set('''
-        scf
-        cis
-        fci
-        '''.split())
-
-    integral_write_allowed = set('''
-        scf
-        cis
-        fci
-        '''.split())
-
 
     def __init__(self,filepath=None):
         self.structure   = None
@@ -366,7 +354,7 @@ class QuantumPackageInput(SimulationInput):
 
     def present(self,name):
         if name not in known_variables:
-            self.error('attempted to check presence of unknown variable "{0}"valid options are: {1}'.format(name,sorted(known_variables)))
+            self.error('attempted to check presence of unknown variable "{0}"\nvalid options are: {1}'.format(name,sorted(known_variables)))
         #end if
         secname = variable_section[name]
         return secname in self and name in self[secname]
@@ -542,7 +530,7 @@ class QuantumPackageInput(SimulationInput):
     #end def incorporate_system
 
 
-    def check_valid(self,sections=True,variables=True,types=True,exit=True):
+    def check_valid(self,sections=True,variables=True,types=True,run_type=True,exit=True):
         msg = ''
 
         extra = self.extract_added_keys()
@@ -587,12 +575,22 @@ class QuantumPackageInput(SimulationInput):
                 #end if
             #end for
         #end if
+        self.restore_added_keys(extra)
+        if run_type:
+            if 'run_control' not in self:
+                msg = 'input is invalid\ninput must have section "run_control"'
+            else:
+                rc = self.run_control
+                if 'run_type' not in rc:
+                    msg = 'input is invalid\nsection "run_control" must have variable "run_type"'
+                elif rc.run_type not in QuantumPackageInput.run_types:
+                    msg = 'input is invalid\nvariable "run_type" in section "run_control" has an invalid value\nvalue provided: {}\nvalid options are: {}'.format(rc.run_type,sorted(QuantumPackageInput.run_types))
+                #end if
+            #end if
         is_valid = len(msg)==0
         if not is_valid and exit:
             self.error(msg)
         #end if
-
-        self.restore_added_keys(extra)
 
         return is_valid
     #end check_valid

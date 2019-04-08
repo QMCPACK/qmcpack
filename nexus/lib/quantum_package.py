@@ -277,10 +277,10 @@ class QuantumPackage(Simulation):
                 #end for
                 fc+='\n'
                 integrals = [
-                    'integrals_monoelec/disk_access_ao_one_integrals',
-                    'integrals_monoelec/disk_access_mo_one_integrals',
-                    'integrals_bielec/disk_access_ao_integrals',
-                    'integrals_bielec/disk_access_mo_integrals',
+                    'ao_one_e_ints/io_ao_one_e_integrals',
+                    'mo_one_e_ints/io_mo_one_e_integrals',
+                    'ao_two_e_ints/io_ao_two_e_integrals',
+                    'mo_two_e_ints/io_mo_two_e_integrals',
                     ]
                 cl = ''
                 for integral in integrals:
