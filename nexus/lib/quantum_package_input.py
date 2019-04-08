@@ -473,7 +473,7 @@ class QuantumPackageInput(SimulationInput):
             prefix = edir.rsplit('.',1)[0]
             struct_file = prefix+'.xyz'
             self.structure.write_xyz(struct_file)
-            command = 'qp_create_ezfio_from_xyz'
+            command = 'qp_create_ezfio'
             if self.path_exists('ao_basis/ao_basis'):
                 command += ' -b '+self.ao_basis.ao_basis
             #end if
@@ -506,7 +506,7 @@ class QuantumPackageInput(SimulationInput):
             if 'frozen_core' in rc and rc.frozen_core:
                 cwd = os.getcwd()
                 os.chdir(path)
-                execute('qp_set_frozen_core.py '+edir)
+                execute('qp_set_frozen_core '+edir)
                 os.chdir(cwd)
             #end if
         #end if
