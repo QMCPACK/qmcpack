@@ -289,90 +289,69 @@ class QuantumPackageInput(SimulationInput):
         run_control
         '''.split()
 
+    # get these by running
+    #   qp_run -h
     run_types = set('''
-        Gen_Ezfio_from_integral.sh
-        H_CORE_guess
-        Huckel_guess
-        SCF
-        SCF_old
-        analyze_wf
-        check_orthonormality
-        cis
-        create_ezfio.py
-        davidson_slave
-        densify_coefmatrix
-        diagonalize_restart_and_save_all_states
-        diagonalize_restart_and_save_lowest_state
-        diagonalize_restart_and_save_one_state
-        diagonalize_restart_and_save_two_states
-        dump_nto
-        dump_one_body_mos
-        fci_zmq
-        fci_zmq_nos
-        four_idx_transform
-        guess_doublet
-        guess_lowest_state
-        guess_singlet
-        guess_triplet
-        localize_mos
-        mo_permutation
-        overwrite_with_cas
-        print_H_matrix_restart
-        print_aos
-        print_bitmask
-        print_energy
-        print_hcc
-        print_holes_particles
-        print_integrals_ao
-        print_integrals_mo
-        print_mo_in_space
-        print_mulliken
-        print_spin_density
-        print_wf
-        provide_deltarho
-        pt2_slave
-        pt2_stoch
-        pyscf.main
-        qmc_create_wf
-        qmc_e_curve
-        qp_ao_ints
-        qp_convert_qmcpack_to_ezfio.py
-        read_ao_eri_chunk
-        read_integrals_achocol
-        read_integrals_achocol2
-        read_integrals_ao
-        read_integrals_mo
-        read_integrals_mo_chocol
-        save_HF_determinant
-        save_for_qmcchem
-        save_for_qmcpack
-        save_natorb
-        save_only_singles
-        save_ortho_mos
-        selection_davidson_slave
-        selection_slave
-        super_ci
-        swap_mos
-        target_pt2_qmc
-        target_pt2_ratio_zmq
-        target_pt2_zmq
-        test_integrals
-        test_two_body_dm
-        truncate_wf
-        truncate_wf_spin
-        write_integrals_restart_dft_no_ecmd
+        cis 
+        cisd 
+        diagonalize_h 
+        fci 
+        fcidump 
+        four_idx_transform 
+        install 
+        ks_scf 
+        molden 
+        print_ci_vectors 
+        print_e_conv 
+        print_ecmd_pbe_ontop 
+        print_h0j 
+        print_h0j 
+        print_pgm 
+        print_pgm 
+        print_rsdft_variational_energy 
+        print_wf 
+        pt2 
+        qmc_create_wf 
+        qmc_create_wf 
+        qmc_e_curve 
+        qmc_e_curve 
+        qp_ao_ijkl_r3_ints 
+        qp_cipsi_rsh 
+        qp_convert_qmcpack_to_ezfio.py 
+        qp_convert_qmcpack_to_ezfio.py 
+        reorder_dets 
+        reorder_dets 
+        rs_ks_scf 
+        save_for_qmcpack 
+        save_for_qmcpack 
+        save_natorb 
+        save_one_e_dm 
+        save_ortho_mos 
+        scf 
+        target_pt2_qmc 
+        target_pt2_qmc 
+        truncate_wf_spin 
+        truncate_wf_spin 
+        truncate_wf_spin_no_H 
+        two_body_dm.main 
+        uninstall 
+        write_2_body_dm_fci_dump 
+        write_effective_rsdft_hamiltonian 
+        write_erf_and_regular_ints 
+        write_integrals_erf 
+        write_rsdft_h_read_ints 
         '''.split())
 
     slave_allowed = set('''
-        SCF
+        scf
         cis
-        fci_zmq
+        fci
         '''.split())
 
     integral_write_allowed = set('''
-        SCF
+        scf
         cis
-        fci_zmq
+        fci
         '''.split())
 
 
