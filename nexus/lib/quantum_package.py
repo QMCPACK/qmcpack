@@ -189,8 +189,8 @@ class QuantumPackage(Simulation):
         # get the run type
         input = self.input
         rc = self.input.run_control
-        scf    = rc.run_type=='SCF'
-        sel_ci = rc.run_type=='fci_zmq'
+        scf    = rc.run_type=='scf'
+        sel_ci = rc.run_type=='fci'
 
         # assess successful completion of the run
         #   currently a check only exists for HF/SCF runs
@@ -201,7 +201,7 @@ class QuantumPackage(Simulation):
             f = open(outfile,'r')
             output = f.read()
             f.close()
-            hf_not_converged = '* Hartree-Fock energy' not in output
+            hf_not_converged = '* SCF energy' not in output
             failed |= hf_not_converged
         #end if
         self.failed = failed
@@ -317,7 +317,7 @@ class QuantumPackage(Simulation):
             fc += 'sleep {0}\n'.format(self.input.run_control.sleep)
             fc += job2.run_command()+' >{0} 2>{1}\n'.format(slave_outfile,slave_errfile)
 
-            if 'davidson' in slave and not input.present('distributed_davidson'):
+            if 'fci' in slave and not input.present('distributed_davidson'):
                 input.set(distributed_davidson=True)
             #end if
         elif len(fc)>0:
