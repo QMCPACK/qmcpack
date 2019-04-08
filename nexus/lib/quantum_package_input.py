@@ -617,10 +617,6 @@ run_inputs = set('''
 gen_inputs = set('''
     system
     defaults
-    save_ao_one_integrals
-    save_mo_one_integrals
-    save_ao_integrals
-    save_mo_integrals
     validate
     '''.split())
 added_inputs = run_inputs | gen_inputs
@@ -637,10 +633,6 @@ added_types = obj(
     # gen inputs
     system                = PhysicalSystem,
     defaults              = str,
-    save_ao_one_integrals = bool,
-    save_mo_one_integrals = bool,
-    save_ao_integrals     = bool,
-    save_mo_integrals     = bool,
     validate              = bool,
     )
 added_required = set('''
@@ -654,10 +646,6 @@ shared_defaults = obj(
     # run inputs
     postprocess           = [],
     # gen inputs
-    save_ao_one_integrals = False,
-    save_mo_one_integrals = False,
-    save_ao_integrals     = False,
-    save_mo_integrals     = False,
     validate              = True,
     )
 qp_defaults = obj(
@@ -671,18 +659,6 @@ qp_defaults = obj(
         n_det_max      = 5000,
         **shared_defaults
         ),
-    )
-save_ints_map = obj(
-    save_ao_one_integrals = 'disk_access_ao_one_integrals',
-    save_mo_one_integrals = 'disk_access_mo_one_integrals',
-    save_ao_integrals     = 'disk_access_ao_integrals'    ,
-    save_mo_integrals     = 'disk_access_mo_integrals'    ,
-    )
-save_ints_defaults = obj(
-    disk_access_ao_one_integrals = 'Write',
-    disk_access_mo_one_integrals = 'Write',
-    disk_access_ao_integrals     = 'Write',
-    disk_access_mo_integrals     = 'Write',
     )
 
 def generate_quantum_package_input(**kwargs):
@@ -723,13 +699,6 @@ def generate_quantum_package_input(**kwargs):
 
     # separate generation inputs from input file variables
     gen_kw = kw.extract_optional(gen_inputs)
-
-    # save integrals, if requested
-    for gk,qk in save_ints_map.iteritems():
-        if gen_kw[gk] and qk not in kw:
-            kw[qk] = 'Write'
-        #end if
-    #end for
 
     # partition inputs into sections and variables
     sections = obj()
