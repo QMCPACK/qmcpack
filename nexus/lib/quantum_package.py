@@ -153,17 +153,17 @@ class QuantumPackage(Simulation):
                 command = 'cp {0} {1}'.format(gms_out,loc_out)
                 out,err,rc = execute(command)
                 if rc!=0:
-                    self.warn('copying GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
+                    self.warn('copying GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted command: {2}'.format(self.identifier,self.locdir,command))
                     self.failed = True
                     self.block_dependents()
                 #end if
-                command = 'qp_convert_output_to_ezfio.py '+loc_file
+                command = 'qp_convert_output_to_ezfio '+loc_file
                 cwd = os.getcwd()
                 os.chdir(self.locdir)
                 out,err,rc = execute(command)
                 os.chdir(cwd)
                 if rc!=0:
-                    self.warn('creation of ezfio file from GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
+                    self.warn('creation of ezfio file from GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted command: {2}'.format(self.identifier,self.locdir,command))
                     self.failed = True
                     self.block_dependents()
                 #end if
