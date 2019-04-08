@@ -48,15 +48,12 @@ Communicate::Communicate()
       d_ncontexts(1),
       d_groupid(0),
       d_ngroups(1),
-#ifdef HAVE_MPI
-      myMPI_destroy_helper(myMPI),
-#endif
       myMPI(MPI_COMM_NULL),
       GroupLeaderComm(nullptr)
 {}
 
 #ifdef HAVE_MPI
-Communicate::Communicate(const mpi3::environment& env) : myMPI_destroy_helper(myMPI), GroupLeaderComm(nullptr)
+Communicate::Communicate(const mpi3::environment& env) : GroupLeaderComm(nullptr)
 {
   initialize(env);
 }
@@ -73,7 +70,7 @@ Communicate::~Communicate()
 
 #ifdef HAVE_MPI
 Communicate::Communicate(const mpi3::communicator &in_comm)
-    : myMPI_destroy_helper(myMPI), d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
+    : d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
 {
   comm = mpi3::communicator(in_comm);
   myMPI = &comm;
@@ -84,7 +81,7 @@ Communicate::Communicate(const mpi3::communicator &in_comm)
 #endif
 
 
-Communicate::Communicate(const Communicate& in_comm, int nparts) : myMPI_destroy_helper(myMPI)
+Communicate::Communicate(const Communicate& in_comm, int nparts)
 {
   std::vector<int> nplist(nparts + 1);
   int p = FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
