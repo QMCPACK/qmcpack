@@ -42,8 +42,8 @@ class QuantumPackage(Simulation):
     qprc = None
 
     slave_partners = obj(
-        SCF     = 'qp_ao_ints',
-        fci_zmq = 'selection_davidson_slave',
+        scf = 'scf',
+        fci = 'fci',
         )
 
     @staticmethod
