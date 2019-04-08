@@ -1054,7 +1054,7 @@ Note that armclang is recognized as an `unknown' compiler by cmake v3.13.* and b
 Install the Windows Subsystem for Linux and Bash on Windows.
 Open a bash shell and follow the install directions for Ubuntu in Section \ref{sec:buildubuntu}.
 
-\section{Installing via Spack (Beta)}
+\section{Installing via Spack}
 Spack is a package manager for scientific software.
 One of the primary goals of Spack is to reduce the barrier for the users to install scientific
 software. Spack is intended to work on everything from laptop
@@ -1068,7 +1068,6 @@ and patch Quantum Espresso automatically. In principle QMCPACK may be installed 
 a single Spack command.
 
 \subsection{Known Limitations}
-
 The QMCPACK Spack package inherits the limitations of the underlying
 Spack infrastructure and its dependencies. The main limitation to be
 aware of is that installation typically fails when building a
@@ -1085,8 +1084,8 @@ will get resolved in future releases:
 \item Due to a conflict in QE 6.3 package, the QE variant cannot build
   in serial. In other words, \verb|qmcpack install qmcpack~mpi| will issue
   a conflict.  This will not be a problem with the next release of QE.
-\item CUDA support is not leveraging the Spack CUDA infrastructure,
-  thus compiler conflicts will not be caught until a build is attempt.
+\item Robust CUDA support in Spack is a work-in-progress.  It will
+  catch only some compiler-CUDA conflicts.
 \item AFQMC is not part of the Spack package at this time.
 \item The Spack package will install Nexus as part of the
   installation, but actual use of Nexus from within the Spack
@@ -1125,17 +1124,44 @@ to add one:
 your-laptop> spack compiler add <path-to-compiler>
 \end{shade}
 
+The Intel compiler that requires checkout a license is particular
+tricky. FIrst go add ahead the compiler, but you will have to modify
+\ishell{\~/.spack/linux/compilers.yaml}, here is an example of a typical configuration:
+\begin{shade}
+- compiler:
+    environment:
+      set:
+        INTEL_LICENSE_FILE: server@national-lab.doe.gov
+    extra_rpaths:  ['/soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/compiler/lib/intel64',
+    '/soft/apps/packages/gcc/gcc-6.2.0/lib64']
+    flags: 
+      cflags: -gcc-name=/soft/apps/packages/gcc/gcc-6.2.0/bin/gcc
+      fflags: -gcc-name=/soft/apps/packages/gcc/gcc-6.2.0/bin/gcc
+      cxxflags: -gxx-name=/soft/apps/packages/gcc/gcc-6.2.0/bin/g++
+    modules: []
+    operating_system: ubuntu14.04
+    paths:
+      cc: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/icc
+      cxx: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/icpc
+      f77: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/ifort
+      fc: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/ifort
+    spec: intel@18.0.3
+    target: x86_64
+\end{shade}
+
+
 This last step is the most troublesome. Pre-installed packages are not
-automatically detected. If vendor optimized libraries and already installed,
-you will need to manually add them to your
-\ishell{\~/.spack/packages.yaml}. For example, this works on Mac OS X for the Intel MKL package.
+automatically detected. If vendor optimized libraries are already
+installed, you will need to manually add them to your
+\ishell{\~/.spack/packages.yaml}. For example, this works on Mac OS X
+for the Intel MKL package.
 
 \begin{shade}
 your-laptop> cat \~/.spack/packages.yaml
 packages:
     intel-mkl:
         paths:
-            intel-mkl@2018.0.128: /opt/intel/compilers_and_libraries_2018.0.104/mac
+            intel-mkl@2018.0.128: /opt/intel/compilers_and_libraries_2018.0.104/mac/mkl
         buildable: False
 \end{shade}
 
@@ -1165,7 +1191,7 @@ Preferred version:
     3.6.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.6.0
 
 Safe versions:
-    develop    [git] https://github.com/QMCPACK/qmcpack.git
+    develop  [git] https://github.com/QMCPACK/qmcpack.git
     3.6.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.6.0
     3.5.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.5.0
     3.4.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.4.0
@@ -1248,6 +1274,20 @@ will run the unit and short tests. The current behavior of the QMCPACK
 Spack package is to completed the install as long as all the unit tests
 pass. If the short tests fail, a warning is issued at the command prompt.
 
+For CUDA, you will need to specify and extra \ishell{cuda_arch}
+parameter otherwise, it will default to \ishell{cuda_arch=61}.
+\begin{shade}
+your-laptop> spack install qmcpack+cuda%intel@18.0.3 cuda_arch=61 ^intel-mkl
+\end{shade}
+
+Due to limitations in the Spack CUDA package, if your compiler and
+CUDA combination give you a conflict you will need to specify a
+specific verison of CUDA that is compatible with your compiler on the
+command line. For example,
+\begin{shade}
+your-laptop> spack install qmcpack+cuda%intel@18.0.3 cuda_arch=61 ^cuda@10.0.130 ^intel-mkl
+\end{shade}
+
 \subsection{Loading QMCPACK into your environment}
 Spack does not set-up an environment to find its packages
 automatically. A few additional steps are needed. First, install the
@@ -1303,8 +1343,11 @@ contributors are working to fix these problems. We will update this
 section once we have a recipe that works reliably.
 
 \subsection{Reporting Bugs}
-Bugs with the QMCPACK Spack package should be filed as a GitHub issue
-against this fork \url{https://github.com/naromero77/spack}
+Bugs with the QMCPACK Spack package should be filed at the main GitHub
+Spack repo \url{https://github.com/spack/spack/issues}
+
+In the GitHub issue, include \ishell{@naromero77} to get the attention
+of our developer.
 
 \section{Testing and validation of QMCPACK}
 \label{sec:testing}
