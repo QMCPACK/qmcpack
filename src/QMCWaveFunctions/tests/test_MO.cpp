@@ -561,7 +561,11 @@ void test_HCN(bool transform)
     REQUIRE(d2psi[6] == Approx(0));
 
     //==========Hessian and Grad Hessian Test==========
-    /*
+    SPOSet::HessVector_t dhpsi;
+    dhpsi.resize(7);
+   
+    sposet->evaluate(elec, 0, values, dpsi, dhpsi);
+    
     // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
     REQUIRE(values[0] == Approx( 0.009452265234));
     REQUIRE(dpsi[0][0] == Approx( -0.05400764372));
@@ -574,6 +578,7 @@ void test_HCN(bool transform)
     REQUIRE(dhpsi[0][3] == Approx( -0.04958838002));
     REQUIRE(dhpsi[0][4] == Approx(              0));
     REQUIRE(dhpsi[0][5] == Approx( -0.04958838002));
+    /*
     //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
     REQUIRE(dghpsi[0][0] == Approx(   -2.241965465));
     REQUIRE(dghpsi[0][1] == Approx(              0));
