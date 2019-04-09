@@ -25,6 +25,7 @@ SET (AFQMC_SRCS
 IF(ENABLE_CUDA)
   SET(AFQMC_SRCS ${AFQMC_SRCS} 
     Memory/CUDA/cuda_utilities.cpp
+    Memory/CUDA/cuda_init.cpp
     Numerics/detail/CUDA/Kernels/determinant.cu 
     Numerics/detail/CUDA/Kernels/adotpby.cu
     Numerics/detail/CUDA/Kernels/fill_n.cu
