@@ -65,20 +65,17 @@ Communicate::~Communicate()
     delete GroupLeaderComm;
 }
 
-//exclusive:  OOMPI, MPI or Serial
-#ifdef HAVE_OOMPI
-
+//exclusive:  MPI or Serial
 #ifdef HAVE_MPI
+
 Communicate::Communicate(const mpi3::communicator &in_comm)
     : d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
 {
   comm = mpi3::communicator(in_comm);
   myMPI = &comm;
-  myComm = OOMPI_Intra_comm(myMPI);
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
 }
-#endif
 
 
 Communicate::Communicate(const Communicate& in_comm, int nparts)
@@ -87,7 +84,6 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
   int p = FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
   comm = in_comm.comm.split(p, in_comm.rank());
   myMPI = &comm;
-  myComm = OOMPI_Intra_comm(myMPI);
   // TODO: mpi3 needs to define comm
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
@@ -104,16 +100,10 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 }
 
 
-//================================================================
-// Implements Communicate with OOMPI library
-//================================================================
-
-#ifdef HAVE_MPI
 void Communicate::initialize(const mpi3::environment& env)
 {
   comm = env.world();
   myMPI = &comm;
-  myComm      = OOMPI_Intra_comm(myMPI);
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
   d_groupid   = 0;
@@ -131,7 +121,6 @@ void Communicate::initialize(const mpi3::environment& env)
 #endif
   std::string when = "qmc." + getDateAndTime("%Y%m%d_%H%M");
 }
-#endif
 
 // For unit tests until they can be changed and this will be removed.
 void Communicate::initialize(int argc, char** argv) {}
@@ -140,7 +129,6 @@ void Communicate::initializeAsNodeComm(const Communicate& parent)
 {
   comm = parent.comm.split_shared();
   myMPI = &comm;
-  myComm = OOMPI_Intra_comm(myMPI);
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
 }
@@ -164,14 +152,14 @@ void Communicate::finalize()
 
 void Communicate::cleanupMessage(void*) {}
 
-void Communicate::abort() { myComm.Abort(); }
+void Communicate::abort() { comm.abort(); }
 
-void Communicate::barrier() { myComm.Barrier(); }
+void Communicate::barrier() { comm.barrier(); }
 
 void Communicate::abort(const char* msg)
 {
   std::cerr << msg << std::endl;
-  myComm.Abort();
+  comm.abort();
 }
 
 
@@ -202,4 +190,4 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 }
 
 
-#endif // !HAVE_OOMPI
+#endif // !HAVE_MPI
