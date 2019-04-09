@@ -122,9 +122,9 @@ void DMCUpdatePbyPL2VMC::advanceWalker(Walker_t& thisWalker, bool recompute)
       }
       else // projector including L2 potential
       {
-        //app_log()<<std::endl;
-        //app_log()<<std::endl;
-
+        // do a fake move (zero distance)
+        // this ensures the temporary distance data is correct 
+        // will need to remove this later, but requires reimplementation of computeL2DK
         dr = 0.0;
         if (!W.makeMoveAndCheck(iat, dr))
           continue;
@@ -135,13 +135,6 @@ void DMCUpdatePbyPL2VMC::advanceWalker(Walker_t& thisWalker, bool recompute)
         getScaledDriftL2(tauovermass,grad_iat,D,K,dr);
 
         W.rejectMove(iat);
-
-        //app_log()<<"dr after scaled drift L2: "<<dr<<std::endl;
-        //mPosType dr_tmp;
-        //getScaledDrift(tauovermass, grad_iat, dr_tmp);
-        //app_log()<<"dr after scaled drift   : "<<dr_tmp<<std::endl;
-        //dr_tmp += sqrttau * dr_diff;
-
         rr = tauovermass * dot(dr_diff, dr_diff);
         rr_proposed += rr;
         // VMC directly from sampling, no accept/reject
@@ -168,13 +161,6 @@ void DMCUpdatePbyPL2VMC::advanceWalker(Walker_t& thisWalker, bool recompute)
         // move with drift and diffusion together
         if (!W.makeMoveAndCheck(iat, dr))
           continue;
-
-        //app_log()<<std::endl;
-        //app_log()<<"dr after diffusion L2: "<<dr<<std::endl;
-        //app_log()<<"dr after diffusion   : "<<dr_tmp<<std::endl;
-        //app_log()<<std::endl;
-        //app_log()<<std::endl;
-        //APP_ABORT("L2 check");
 
       }
       RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
