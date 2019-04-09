@@ -210,6 +210,7 @@ void generateCuspInfo(int orbital_set_size,
 
   int start_mo = offset[Comm->rank()];
   int end_mo   = offset[Comm->rank() + 1];
+  app_log() << "  Number of molecular orbitals to compute correction on this rank: " << end_mo - start_mo << std::endl;
   for (int mo_idx = start_mo; mo_idx < end_mo; mo_idx++)
   {
     app_log() << "   Working on MO: " << mo_idx << std::endl;
