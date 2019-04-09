@@ -212,6 +212,7 @@ void generateCuspInfo(int orbital_set_size,
   int end_mo   = offset[Comm->rank() + 1];
   for (int mo_idx = start_mo; mo_idx < end_mo; mo_idx++)
   {
+    app_log() << "   Working on MO: " << mo_idx << std::endl;
     for (int center_idx = 0; center_idx < num_centers; center_idx++)
     {
       *(eta.C) = *(lcwc.C);
