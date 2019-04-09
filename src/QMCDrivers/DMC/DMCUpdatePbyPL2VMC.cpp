@@ -125,10 +125,16 @@ void DMCUpdatePbyPL2VMC::advanceWalker(Walker_t& thisWalker, bool recompute)
         //app_log()<<std::endl;
         //app_log()<<std::endl;
 
+        dr = 0.0;
+        if (!W.makeMoveAndCheck(iat, dr))
+          continue;
+
         H.computeL2DK(W,iat,Dtmp,Ktmp);
         D = Dtmp; // upcast for mixed precision
         K = Ktmp;
         getScaledDriftL2(tauovermass,grad_iat,D,K,dr);
+
+        W.rejectMove(iat);
 
         //app_log()<<"dr after scaled drift L2: "<<dr<<std::endl;
         //mPosType dr_tmp;
