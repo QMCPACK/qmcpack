@@ -51,7 +51,7 @@ echo ""
 mkdir -p /tmp/${BUILD_TAG}-build
 cd /tmp/${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DENABLE_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DENABLE_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 # hacky way to check on cmake. works for now
 if ! ( grep -- '-- The C compiler identification is GNU 6.2.0' cmake.out && \
@@ -81,7 +81,7 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DENABLE_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DENABLE_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 time make -j 24
 time make -j 24
@@ -102,7 +102,7 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DENABLE_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DENABLE_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 time make -j 24
 time make -j 24
@@ -122,7 +122,7 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DENABLE_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DENABLE_CUDA=1 /tmp/${BUILD_TAG}-src 2>&1 | tee cmake.out
 
 time make -j 24
 time make -j 24
