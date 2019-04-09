@@ -1143,6 +1143,8 @@ namespace afqmc
           ma::axpy(ov,G1D_,G21D_);
         }
         ComplexType ov_denom;
+// NOTE: 1/overlap has a risk of producing 0.0 (underflow) if the projection time is long.
+//       FIX THIS!!! 
         if(free_projection) {
           ov_denom = wgt[iw]; 
           denom[0] += wgt[iw]*overlap;
@@ -1208,6 +1210,8 @@ namespace afqmc
           ma::axpy(ov,GB1D_,GB21D_);
         }
         ComplexType ov_denom;
+// NOTE: 1/overlap has a risk of producing 0.0 (underflow) if the projection time is long.
+//       FIX THIS!!! 
         if(free_projection) {
           ov_denom = wgt[iw];
           denom[0] += wgt[iw]*overlap;
@@ -1217,6 +1221,152 @@ namespace afqmc
         }
         ma::axpy(ov_denom, GA21D_, GA1D);
         ma::axpy(ov_denom, GB21D_, GB1D);
+      }
+    }
+    // Average over walker's
+    if(TG.Global().size() > 1) {
+      TG.Global().all_reduce_in_place_n(to_address(denom.origin()),1,std::plus<>());
+      TG.Global().all_reduce_in_place_n(to_address(G.origin()),Gsize,std::plus<>());
+    }
+    TG.local_barrier();
+  }
+
+  // this version is customized for single determinant runs and doesn't have underflow problem
+  template<class WlkSet, class MatG, class CVec1, class CVec2>
+  void NOMSD::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
+  {
+    using std::fill_n;
+    using std::copy_n;
+    // temporary runtime check for incompatible memory spaces
+    {
+      auto dev_ptr_(make_device_ptr(G.origin()));
+      auto dev_ptr(make_device_ptr(denom.origin()));
+    }
+    const int nwalk = wset.size();
+    const int ndet = ci.size();
+    assert(ndet==1);
+    bool compact = false;
+    auto Gsize = size_t(dm_size(not compact));
+    int nrow = NMO*((walker_type==NONCOLLINEAR)?2:1);  
+    int ncol = NAEA+((walker_type==CLOSED)?0:NAEB);  
+    assert(wgt.size(0) >= nwalk);
+    if(localGbuff.size() < Gsize+1)
+      localGbuff.reextent(iextensions<1u>{Gsize+1});
+    pointer ov_(localGbuff.origin()+Gsize);
+    auto wlk_dims = wset.walker_dims();
+    // Transposed temporaries for back propagation.
+    int max_nel = std::max(NAEA,NAEB);
+    if(G.size(1) != G.stride(0))
+      APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
+    using std::fill_n;
+    if(TG.TG_local().root())
+      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+    TG.TG_local().barrier();
+    if(Refs!=nullptr) {
+      assert(detR!=nullptr);
+      assert(wset.size() <= (*Refs).size(0));
+      assert(ci.size() <= (*Refs).size(1));
+      assert(nrow*ncol == (*Refs).size(2));
+      assert(wset.size() == (*detR).size(0));
+      assert(OrbMats.size() == (*detR).size(1));
+    }
+    if(walker_type != COLLINEAR) {
+      auto Gdims = dm_dims(not compact,Alpha);
+      // Temporaries for determinant component of walker rdm function.
+      CMatrix_ref G2D_(localGbuff.origin(), {Gdims.first,Gdims.second});
+      CVector_ref G1D_(localGbuff.origin(), iextensions<1u>{Gsize});
+      // 1D view of walker averaged RDM
+      CVector_ref G1D(make_device_ptr(G.origin()),iextensions<1u>{Gsize});
+      for(int iw=0; iw<nwalk; iw++) {
+        if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
+        if( std::abs(wgt[iw]) < 1e-10 ) continue;
+        ComplexType overlap = ComplexType(1.0,0.0);
+
+        // Mixed density matrix.
+        if(Refs!=nullptr) {
+          stdCMatrix_ref Orb(to_address((*Refs)[iw][0].origin()),{nrow,ncol});  
+          auto&& SM(wset[iw].SlaterMatrixAux(Alpha));
+          using std::copy_n; 
+          copy_n(Orb.origin(),Orb.num_elements(),SM.origin());
+          SDetOp.MixedDensityMatrix_noHerm(SM,wset[iw].SlaterMatrixN(Alpha),
+                                    G2D_,to_address(ov_),compact);
+          overlap *= ComplexType(*ov_) * ((*detR)[iw][0]);
+        } else {
+          SDetOp.MixedDensityMatrix(OrbMats[0],wset[iw].SlaterMatrix(Alpha),
+                                     G2D_,to_address(ov_),compact);
+           overlap *= ComplexType(*ov_);
+        }  
+        if(walker_type==CLOSED) 
+          overlap *= overlap;
+        overlap *= ma::conj(ci[0]);
+
+        ComplexType ov_denom;
+        if(free_projection) {
+          // has overflow problem, remove a constant factor from both numerator and denominator???
+          ov_denom = wgt[iw]*overlap; 
+          denom[0] += wgt[iw]*overlap;
+        } else {
+          ov_denom = wgt[iw];
+          denom[0] += wgt[iw];
+        }
+        ma::axpy(ov_denom, G1D_, G1D);
+      }
+    } else {
+      auto GAdims = dm_dims(not compact,Alpha);
+      auto GBdims = dm_dims(not compact,Beta);
+      CMatrix_ref GA2D_(localGbuff.origin(),
+                                   {GAdims.first,GAdims.second});
+      CMatrix_ref GB2D_(localGbuff.origin()+GAdims.first*GAdims.second,
+                                   {GBdims.first,GBdims.second});
+      CVector_ref GA1D_(localGbuff.origin(),
+                                   iextensions<1u>{GAdims.first*GAdims.second});
+      CVector_ref GB1D_(localGbuff.origin()+GAdims.first*GAdims.second,
+                                   iextensions<1u>{GBdims.first*GBdims.second});
+      CVector_ref GA1D(make_device_ptr(G.origin()), iextensions<1u>{GAdims.first*GAdims.second});
+      CVector_ref GB1D(make_device_ptr(G.origin())+GAdims.first*GAdims.second,
+                       iextensions<1u>{GBdims.first*GBdims.second});
+      for(int iw=0; iw<nwalk; iw++) {
+        if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
+        if( std::abs(wgt[iw]) < 1e-10 ) continue;
+        ComplexType overlap = ComplexType(1.0,0.0);
+
+        // Mixed density matrix.
+        if(Refs!=nullptr) {
+          stdCMatrix_ref OrbA(to_address((*Refs)[iw][0].origin()),{NMO,NAEA});     
+          stdCMatrix_ref OrbB(OrbA.origin()+OrbA.num_elements(),{NMO,NAEB});     
+          auto&& SMA(wset[iw].SlaterMatrixAux(Alpha));
+          auto&& SMB(wset[iw].SlaterMatrixAux(Beta));
+          using std::copy_n;
+          copy_n(OrbA.origin(),OrbA.num_elements(),SMA.origin());
+          copy_n(OrbB.origin(),OrbB.num_elements(),SMB.origin());
+          SDetOp.MixedDensityMatrix_noHerm(SMA,wset[iw].SlaterMatrixN(Alpha),
+                                    GA2D_,to_address(ov_),compact);
+          overlap *= ComplexType(*ov_) * ((*detR)[iw][0]);
+          SDetOp.MixedDensityMatrix_noHerm(SMB,wset[iw].SlaterMatrixN(Beta),
+                                    GB2D_,to_address(ov_),compact);
+          overlap *= ComplexType(*ov_) * ((*detR)[iw][1]);
+        } else {
+          SDetOp.MixedDensityMatrix(OrbMats[0],wset[iw].SlaterMatrix(Alpha),
+                                                      GA2D_,to_address(ov_),compact);
+          overlap *= ComplexType(*ov_);
+
+          SDetOp.MixedDensityMatrix(OrbMats[1],wset[iw].SlaterMatrix(Beta),
+                                           GB2D_,to_address(ov_),compact);
+          overlap *= ComplexType(*ov_);
+        }
+        overlap *= ma::conj(ci[0]);
+
+        ComplexType ov_denom;
+        if(free_projection) {
+          // has overflow problem, remove a constant factor from both numerator and denominator???
+          ov_denom = wgt[iw]*overlap;
+          denom[0] += wgt[iw]*overlap;
+        } else {
+          ov_denom = wgt[iw];
+          denom[0] += wgt[iw];
+        }
+        ma::axpy(ov_denom, GA1D_, GA1D);
+        ma::axpy(ov_denom, GB1D_, GB1D);
       }
     }
     // Average over walker's

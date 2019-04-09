@@ -119,7 +119,14 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     using P1shm = ma::sparse::csr_matrix<ComplexType,int,int,
                                 shared_allocator<ComplexType>,
                                 ma::sparse::is_root>;
-    P1 = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1)); 
+    if(spin_dependent_P1) {
+      if(walker_type!=COLLINEAR)
+        APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
+      P1[0] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1,H1ext[0])); 
+      P1[1] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1,H1ext[1])); 
+    } else {
+      P1[0] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1)); 
+    }
   }
   AFQMCTimers[setup_timer]->stop();
 
@@ -409,6 +416,13 @@ void AFQMCBasePropagator::apply_propagators(char TA, WSet& wset, int ni, int tk0
   int nwalk = wset.size();
   auto walker_type = wset.getWalkerType();
 
+  int spin(0);
+  if(spin_dependent_P1) {
+    spin=1;
+    if(walker_type!=COLLINEAR)
+      APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
+  }  
+
   if(transposed_vHS_) {
     // vHS3D[nstep*nwalk][M][M]
     if(walker_type == COLLINEAR) {
@@ -416,28 +430,28 @@ void AFQMCBasePropagator::apply_propagators(char TA, WSet& wset, int ni, int tk0
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk/2;
         if(tk%2==0)
-          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Alpha),P1,vHS3D[nt],order,TA);
+          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Alpha),P1[0],vHS3D[nt],order,TA);
         else
-          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Beta),P1,vHS3D[nt],order,TA);
+          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Beta),P1[spin],vHS3D[nt],order,TA);
       }
       if(last_nextra > 0) {
         int tk = (ntasks_total_serial+last_task_index);
         int nt = ni*nwalk+tk/2;
         if(tk%2==0)
-          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Alpha),P1,vHS3D[nt],local_group_comm,order,TA);
+          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Alpha),P1[0],vHS3D[nt],local_group_comm,order,TA);
         else
-          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Beta),P1,vHS3D[nt],local_group_comm,order,TA);
+          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Beta),P1[spin],vHS3D[nt],local_group_comm,order,TA);
       }
     } else {
       // in this case, tk corresponds to walker number  
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk;
-        SDetOp->Propagate(wset[tk].SlaterMatrix(Alpha),P1,vHS3D[nt],order,TA);
+        SDetOp->Propagate(wset[tk].SlaterMatrix(Alpha),P1[0],vHS3D[nt],order,TA);
       }
       if(last_nextra > 0) {
         int iw = ntasks_total_serial+last_task_index;
         int nt = ni*nwalk+iw;
-        SDetOp->Propagate(wset[iw].SlaterMatrix(Alpha),P1,vHS3D[nt],local_group_comm,order,TA);
+        SDetOp->Propagate(wset[iw].SlaterMatrix(Alpha),P1[0],vHS3D[nt],local_group_comm,order,TA);
       }
     }
   } else {  
@@ -459,31 +473,31 @@ void AFQMCBasePropagator::apply_propagators(char TA, WSet& wset, int ni, int tk0
           oldw=tk/2;
         }
         if(tk%2==0)
-          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Alpha),P1,local_vHS,order,TA);
+          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Alpha),P1[0],local_vHS,order,TA);
         else
-          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Beta),P1,local_vHS,order,TA);
+          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Beta),P1[spin],local_vHS,order,TA);
       }
       if(last_nextra > 0) {
         int tk = (ntasks_total_serial+last_task_index);
         int nt = ni*nwalk+tk/2;
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
         if(tk%2==0)
-          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Alpha),P1,local_vHS,local_group_comm,order,TA);
+          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Alpha),P1[0],local_vHS,local_group_comm,order,TA);
         else
-          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Beta),P1,local_vHS,local_group_comm,order,TA);
+          SDetOp->Propagate(wset[tk/2].SlaterMatrix(Beta),P1[spin],local_vHS,local_group_comm,order,TA);
       }
     } else {
       // in this case, tk corresponds to walker number  
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk;
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        SDetOp->Propagate(wset[tk].SlaterMatrix(Alpha),P1,local_vHS,order,TA);
+        SDetOp->Propagate(wset[tk].SlaterMatrix(Alpha),P1[0],local_vHS,order,TA);
       }
       if(last_nextra > 0) {
         int iw = ntasks_total_serial+last_task_index;
         int nt = ni*nwalk+iw;
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
-        SDetOp->Propagate(wset[iw].SlaterMatrix(Alpha),P1,local_vHS,local_group_comm,order,TA);
+        SDetOp->Propagate(wset[iw].SlaterMatrix(Alpha),P1[0],local_vHS,local_group_comm,order,TA);
       }
     }
   }
@@ -496,6 +510,14 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
   int nwalk = wset.size();
   auto walker_type = wset.getWalkerType();
   int nbatch = (nbatched_propagation<0?nwalk:nbatched_propagation); 
+
+  int spin(0);
+  if(spin_dependent_P1) {
+    spin=1;
+    if(walker_type!=COLLINEAR)
+      APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
+  }
+
   std::vector<CMatrix_ref> Ai; 
   Ai.reserve(nbatch);
   if(transposed_vHS_) {
@@ -506,11 +528,11 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
       int nb = std::min(nbatch,nwalk-iw);
       Ai.clear();
       for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
-      SDetOp->BatchedPropagate(Ai,P1,vHS3D.sliced(nt,nt+nb),order,TA);
+      SDetOp->BatchedPropagate(Ai,P1[0],vHS3D.sliced(nt,nt+nb),order,TA);
       if(walker_type == COLLINEAR) { 
         Ai.clear();
         for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
-        SDetOp->BatchedPropagate(Ai,P1,vHS3D.sliced(nt,nt+nb),order,TA);
+        SDetOp->BatchedPropagate(Ai,P1[spin],vHS3D.sliced(nt,nt+nb),order,TA);
       }  
     }
   } else {  
@@ -527,11 +549,11 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
       ma::transpose(vHS2D(vHS2D.extension(0),{nt,nt+nb}),local_vHS.sliced(0,nb));  
       Ai.clear();
       for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
-      SDetOp->BatchedPropagate(Ai,P1,local3D.sliced(0,nb),order,TA);
+      SDetOp->BatchedPropagate(Ai,P1[0],local3D.sliced(0,nb),order,TA);
       if(walker_type == COLLINEAR) {
         Ai.clear();
         for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
-        SDetOp->BatchedPropagate(Ai,P1,local3D.sliced(0,nb),order,TA);
+        SDetOp->BatchedPropagate(Ai,P1[spin],local3D.sliced(0,nb),order,TA);
       }  
     }
   }

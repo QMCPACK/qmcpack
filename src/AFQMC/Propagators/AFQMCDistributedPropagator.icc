@@ -141,7 +141,14 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     using P1shm = ma::sparse::csr_matrix<ComplexType,int,int,
                                 shared_allocator<ComplexType>,
                                 ma::sparse::is_root>;
-    P1 = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1)); 
+    if(spin_dependent_P1) {
+      if(walker_type!=COLLINEAR)
+        APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
+      P1[0] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1,H1ext[0]));
+      P1[1] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1,H1ext[1]));
+    } else {
+      P1[0] = std::move(generate1BodyPropagator<P1shm>(TG,1e-8,dt,H1));
+    }
   }
 
   TG.local_barrier();

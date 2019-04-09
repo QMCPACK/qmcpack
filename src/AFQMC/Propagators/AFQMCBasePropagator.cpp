@@ -39,11 +39,13 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   std::string hyb("yes");
   std::string freep("no");
   std::string impsam("yes");
+  std::string external_field("");
   ParameterSet m_param;
   m_param.add(vbias_bound,"vbias_bound","double");
   m_param.add(constrain,"apply_constrain","std::string");
   m_param.add(impsam,"importance_sampling","std::string");
   m_param.add(hyb,"hybrid","std::string");
+  m_param.add(external_field,"external_field","std::string");
   if(TG.TG_local().size() == 1)
     m_param.add(nbatched_propagation,"nbatch","int");
   m_param.add(freep,"free_projection","std::string");
@@ -107,6 +109,30 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
       app_log()<<" Using hybrid method to calculate the weights during the propagation." <<"\n";
     else
       app_log()<<" Using local energy method to calculate the weights during the propagation." <<"\n";
+
+  }
+
+  if(external_field != std::string("")) {
+
+//    read_external_field(H1ext);
+
+    // add placeholder for beta component
+    P1.emplace_back(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,aux_alloc_));
+
+    spin_dependent_P1=true;
+    H1ext.reextent({2,NMO,NMO});
+    if(TG.Node().root()) {
+        std::ifstream in(external_field.c_str());
+        for(int i=0; i<NMO; i++)
+          for(int j=0; j<NMO; j++)
+            in>>H1ext[0][i][j];
+        for(int i=0; i<NMO; i++)
+          for(int j=0; j<NMO; j++)
+            in>>H1ext[1][i][j];
+        if(in.fail())
+            APP_ABORT(" Error: Problems with external field.");
+    }
+    TG.Node().barrier();
 
   }
 

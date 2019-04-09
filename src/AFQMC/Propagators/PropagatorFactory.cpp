@@ -90,8 +90,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
              <<vmax <<" " <<vbias_bound <<std::endl;
 
   // assemble H1(i,j) = h(i,j) + vn0(i,j) + sum_n vMF[n]*Spvn(i,j,n) 
-  // Note: H1 matrix is being copied to the device if necessary
-  CMatrix H1(wfn.getOneBodyPropagatorMatrix(TG,vMF_));
+  auto H1(wfn.getOneBodyPropagatorMatrix(TG,vMF_));
   // assemble H1(i,j) = h(i,j) + vn0(i,j) + sum_n vMF[n]*Spvn(i,j,n) 
 
   if(TG.getNGroupsPerTG() == 1) 

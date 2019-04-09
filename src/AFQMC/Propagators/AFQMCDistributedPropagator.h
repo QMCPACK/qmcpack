@@ -52,7 +52,7 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
   public:
 
     AFQMCDistributedPropagator(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
-                          Wavefunction& wfn_, CMatrix&& h1_, CVector&& vmf_, 
+                          Wavefunction& wfn_, stdCMatrix&& h1_, CVector&& vmf_, 
                           RandomGenerator_t* r): 
             base(info,cur,tg_,wfn_,std::move(h1_),std::move(vmf_),r)
             ,core_comm(tg_.TG().split(tg_.getLocalTGRank(),tg_.TG().rank()))

@@ -59,22 +59,25 @@ class AFQMCBasePropagator: public AFQMCInfo
   using C3Tensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;  
   using sharedCVector = ComplexVector<aux_allocator>; 
   using stdCVector = boost::multi::array<ComplexType,1>;  
+  using stdCMatrix = boost::multi::array<ComplexType,2>;  
   using stdCVector_ref = boost::multi::array_ref<ComplexType,1>;  
   using stdCMatrix_ref = boost::multi::array_ref<ComplexType,2>;  
   using stdC3Tensor_ref = boost::multi::array_ref<ComplexType,3>;  
 
   using mpi3CVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;  
+  using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;  
+  using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;  
 
   public:
 
     AFQMCBasePropagator(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
                           Wavefunction& wfn_, 
-                          CMatrix&& h1_, CVector&& vmf_, 
+                          stdCMatrix&& h1_, CVector&& vmf_, 
                           RandomGenerator_t* r):
             AFQMCInfo(info),TG(tg_),
             alloc_(),aux_alloc_(make_localTG_allocator<ComplexType>(TG)),wfn(wfn_),
-            H1(std::move(h1_)),
-            P1(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,aux_alloc_)),
+            H1(std::move(h1_),shared_allocator<ComplexType>{TG.Node()}),
+            H1ext({2,1,1},shared_allocator<ComplexType>{TG.Node()}),
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(wfn.getSlaterDetOperations()),
@@ -84,8 +87,11 @@ class AFQMCBasePropagator: public AFQMCInfo
             last_task_index(-1),
             old_dt(-123456.789),
             order(6),
-            nbatched_propagation(0)
+            nbatched_propagation(0),
+            spin_dependent_P1(false)
     {
+      P1.reserve(2);  
+      P1.emplace_back(P1Type(tp_ul_ul{0,0},tp_ul_ul{0,0},0,aux_alloc_));
       transposed_vHS_ = wfn.transposed_vHS();
       transposed_G_ = wfn.transposed_G_for_vbias();
       parse(cur);  
@@ -138,9 +144,10 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     // P1 = exp(-0.5*dt*H1), so H1 includes terms from MF substraction 
     //                       and the exchange term from the cholesky decomposition (e.g. vn0) 
-    CMatrix H1;
+    mpi3CMatrix H1;
+    mpi3CTensor H1ext;
 
-    P1Type P1;
+    std::vector<P1Type> P1;
 
     RandomGenerator_t* rng;
 
@@ -155,6 +162,7 @@ class AFQMCBasePropagator: public AFQMCInfo
     int last_task_index;
     int order;
     int nbatched_propagation;
+    bool spin_dependent_P1;
 
     RealType vbias_bound;
 

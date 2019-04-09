@@ -311,7 +311,13 @@ class NOMSD: public AFQMCInfo
 //      if(nbatch < 0 || nbatch > 1)
 //        WalkerAveragedDensityMatrix_batched(wset,wgt,G,denom,free_projection,Refs,detR);
 //      else  
-        WalkerAveragedDensityMatrix_shared(wset,wgt,G,denom,free_projection,Refs,detR);
+        // having problems with underflow with large (back) projection times and multidets, 
+        // mainly from the normalization coming out of the orthonormalization (detR)
+        // writing specialized version for single det which doesn;t have this issues
+        if(ci.size()==1)
+          WalkerAveragedDensityMatrix_shared_single_det(wset,wgt,G,denom,free_projection,Refs,detR);
+        else
+          WalkerAveragedDensityMatrix_shared(wset,wgt,G,denom,free_projection,Refs,detR);
     }
 
     /*
@@ -547,6 +553,9 @@ class NOMSD: public AFQMCInfo
 
     template<class WlkSet, class MatG, class CVec1, class CVec2>
     void WalkerAveragedDensityMatrix_shared(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
+
+    template<class WlkSet, class MatG, class CVec1, class CVec2>
+    void WalkerAveragedDensityMatrix_shared_single_det(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
 
     template<class WlkSet, class Mat, class TVec>
     void Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, TVec&& Ov);

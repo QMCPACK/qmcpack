@@ -275,6 +275,7 @@ class KP3IndexFactorization_batched
     KP3IndexFactorization_batched& operator=(KP3IndexFactorization_batched&& other) = default;
 
     // must have the same signature as shared classes, so keeping it with std::allocator
+    // NOTE: THIS SHOULD USE mpi3::shm!!!
     boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi::array<ComplexType,1> const& vMF) {
 
       int nkpts = nopk.size();
