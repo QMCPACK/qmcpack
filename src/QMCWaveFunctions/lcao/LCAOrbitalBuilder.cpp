@@ -454,10 +454,27 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     int orbital_set_size = lcos->OrbitalSetSize;
     Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
 
-    bool valid = readCuspInfo(cusp_file, id, orbital_set_size, info);
+    bool valid = false;
+    if (myComm->rank() == 0)
+    {
+      valid = readCuspInfo(cusp_file, id, orbital_set_size, info);
+    }
+#ifdef HAVE_MPI
+    myComm->comm.broadcast_value(valid);
+    if (valid)
+    {
+      for (int orb_idx = 0; orb_idx < orbital_set_size; orb_idx++)
+      {
+        for (int center_idx = 0; center_idx < num_centers; center_idx++)
+        {
+          broadcastCuspInfo(info(center_idx, orb_idx), myComm, 0);
+        }
+      }
+    }
+#endif
     if (!valid)
     {
-      generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, *lcwc, id);
+      generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, *lcwc, id, myComm);
     }
 
     applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
