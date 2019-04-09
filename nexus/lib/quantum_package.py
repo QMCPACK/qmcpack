@@ -42,8 +42,8 @@ class QuantumPackage(Simulation):
     qprc = None
 
     slave_partners = obj(
-        SCF     = 'qp_ao_ints',
-        fci_zmq = 'selection_davidson_slave',
+        scf = 'scf',
+        fci = 'fci',
         )
 
     @staticmethod
@@ -153,17 +153,17 @@ class QuantumPackage(Simulation):
                 command = 'cp {0} {1}'.format(gms_out,loc_out)
                 out,err,rc = execute(command)
                 if rc!=0:
-                    self.warn('copying GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
+                    self.warn('copying GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted command: {2}'.format(self.identifier,self.locdir,command))
                     self.failed = True
                     self.block_dependents()
                 #end if
-                command = 'qp_convert_output_to_ezfio.py '+loc_file
+                command = 'qp_convert_output_to_ezfio '+loc_file
                 cwd = os.getcwd()
                 os.chdir(self.locdir)
                 out,err,rc = execute(command)
                 os.chdir(cwd)
                 if rc!=0:
-                    self.warn('creation of ezfio file from GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
+                    self.warn('creation of ezfio file from GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted command: {2}'.format(self.identifier,self.locdir,command))
                     self.failed = True
                     self.block_dependents()
                 #end if
@@ -189,8 +189,8 @@ class QuantumPackage(Simulation):
         # get the run type
         input = self.input
         rc = self.input.run_control
-        scf    = rc.run_type=='SCF'
-        sel_ci = rc.run_type=='fci_zmq'
+        scf    = rc.run_type=='scf'
+        sel_ci = rc.run_type=='fci'
 
         # assess successful completion of the run
         #   currently a check only exists for HF/SCF runs
@@ -201,7 +201,7 @@ class QuantumPackage(Simulation):
             f = open(outfile,'r')
             output = f.read()
             f.close()
-            hf_not_converged = '* Hartree-Fock energy' not in output
+            hf_not_converged = '* SCF energy' not in output
             failed |= hf_not_converged
         #end if
         self.failed = failed
@@ -277,10 +277,10 @@ class QuantumPackage(Simulation):
                 #end for
                 fc+='\n'
                 integrals = [
-                    'integrals_monoelec/disk_access_ao_one_integrals',
-                    'integrals_monoelec/disk_access_mo_one_integrals',
-                    'integrals_bielec/disk_access_ao_integrals',
-                    'integrals_bielec/disk_access_mo_integrals',
+                    'ao_one_e_ints/io_ao_one_e_integrals',
+                    'mo_one_e_ints/io_mo_one_e_integrals',
+                    'ao_two_e_ints/io_ao_two_e_integrals',
+                    'mo_two_e_ints/io_mo_two_e_integrals',
                     ]
                 cl = ''
                 for integral in integrals:
@@ -317,7 +317,7 @@ class QuantumPackage(Simulation):
             fc += 'sleep {0}\n'.format(self.input.run_control.sleep)
             fc += job2.run_command()+' >{0} 2>{1}\n'.format(slave_outfile,slave_errfile)
 
-            if 'davidson' in slave and not input.present('distributed_davidson'):
+            if 'fci' in slave and not input.present('distributed_davidson'):
                 input.set(distributed_davidson=True)
             #end if
         elif len(fc)>0:
