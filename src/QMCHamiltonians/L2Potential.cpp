@@ -132,11 +132,104 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
 
 void L2Potential::evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K)
 {
+  K = 0.0;
+  D = 0.0;
+  D.diagonal(1.0);
+
+  const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
+
+  if (d_table.DTType == DT_SOA)
+  {
+    for (int iat = 0; iat < NumIons; iat++)
+    {
+      L2RadialPotential* ppot = PP[iat];
+      if (ppot == nullptr)
+        continue;
+      RealType r  = d_table.Temp_r[iat];
+      if (r < ppot->rcut)
+      {
+        PosType  rv = d_table.Temp_dr[iat];
+        RealType vL2 = ppot->evaluate(r);
+        K += 2*rv*vL2;
+        for (int i = 0; i < DIM; ++i)
+          D(i,i) += 2*vL2*r*r;
+        for (int i = 0; i < DIM; ++i)
+          for (int j = 0; j < DIM; ++j)
+            D(i,j) -= 2*vL2*rv[i]*rv[j];
+      }
+    }
+  }
+  else
+  {
+    for (int iat = 0; iat < NumIons; iat++)
+    {
+      L2RadialPotential* ppot = PP[iat];
+      if (ppot == nullptr)
+        continue;
+      RealType r  = d_table.Temp[iat].r1;
+      if (r < ppot->rcut)
+      {
+        PosType  rv = d_table.Temp[iat].dr1;
+        RealType vL2 = ppot->evaluate(r);
+        K += 2*rv*vL2;
+        for (int i = 0; i < DIM; ++i)
+          D(i,i) += 2*vL2*r*r;
+        for (int i = 0; i < DIM; ++i)
+          for (int j = 0; j < DIM; ++j)
+            D(i,j) -= 2*vL2*rv[i]*rv[j];
+      }
+    }
+  }
 }
 
 
 void L2Potential::evaluateD(ParticleSet& P, int iel, TensorType& D)
 {
+  D = 0.0;
+  D.diagonal(1.0);
+
+  const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
+
+  if (d_table.DTType == DT_SOA)
+  {
+    for (int iat = 0; iat < NumIons; iat++)
+    {
+      L2RadialPotential* ppot = PP[iat];
+      if (ppot == nullptr)
+        continue;
+      RealType r  = d_table.Temp_r[iat];
+      if (r < ppot->rcut)
+      {
+        PosType  rv = d_table.Temp_dr[iat];
+        RealType vL2 = ppot->evaluate(r);
+        for (int i = 0; i < DIM; ++i)
+          D(i,i) += 2*vL2*r*r;
+        for (int i = 0; i < DIM; ++i)
+          for (int j = 0; j < DIM; ++j)
+            D(i,j) -= 2*vL2*rv[i]*rv[j];
+      }
+    }
+  }
+  else
+  {
+    for (int iat = 0; iat < NumIons; iat++)
+    {
+      L2RadialPotential* ppot = PP[iat];
+      if (ppot == nullptr)
+        continue;
+      RealType r  = d_table.Temp[iat].r1;
+      if (r < ppot->rcut)
+      {
+        PosType  rv = d_table.Temp[iat].dr1;
+        RealType vL2 = ppot->evaluate(r);
+        for (int i = 0; i < DIM; ++i)
+          D(i,i) += 2*vL2*r*r;
+        for (int i = 0; i < DIM; ++i)
+          for (int j = 0; j < DIM; ++j)
+            D(i,j) -= 2*vL2*rv[i]*rv[j];
+      }
+    }
+  }
 }
 
 
