@@ -27,6 +27,7 @@ qp_shared = dict(
     path   = 'O_dimer_selected_CI',
     job    = qp_job,
     system = dimer,
+    prefix = 'fci', # single shared ezfio
     )
 
 # run Hartree-Fock
@@ -34,15 +35,8 @@ scf = generate_quantum_package(
     identifier            = 'scf',
     run_type              = 'scf',
     ao_basis              = 'cc-pvtz',
-    io_mo_two_e_integrals = 'Write',
-    **qp_shared
-    )
-
-fit = generate_quantum_package(
-    identifier    = 'fit',
-    run_type      = 'four_idx_transform',
-    prefix        = 'fci',
-    dependencies  = (scf,'other'),
+    io_ao_two_e_integrals = 'Write',
+    four_idx_transform    = True,
     **qp_shared
     )
 
@@ -53,25 +47,18 @@ cis = generate_quantum_package(
     cis_loop              = True,
     frozen_core           = True,
     io_mo_two_e_integrals = 'Write',
-    prefix                = 'fci',
-    dependencies          = (fit,'other'),
+    dependencies          = (scf,'other'),
     **qp_shared
     )
 
 # initial selected CI run
 fci0 = generate_quantum_package(
-    identifier    = 'fci0',
-    run_type      = 'fci',
-    converge_dets = True,
-    dependencies  = (cis,'other'),
-    **qp_shared
-    )
-
-# save natural orbitals from selCI run
-sno = generate_quantum_package(
-    identifier    = 'sno',
-    run_type      = 'save_natorb',
-    dependencies  = (fci0,'other'),
+    identifier         = 'fci0',
+    run_type           = 'fci',
+    n_det_max          = 5000,
+    save_natorb        = True,
+    four_idx_transform = True,
+    dependencies       = (cis,'other'),
     **qp_shared
     )
 
@@ -79,8 +66,8 @@ sno = generate_quantum_package(
 fci = generate_quantum_package(
     identifier    = 'fci',
     run_type      = 'fci',
-    converge_dets = True,
-    dependencies  = (sno,'other'),
+    n_det_max     = 5000,
+    dependencies  = (fci0,'other'),
     **qp_shared
     )
 
