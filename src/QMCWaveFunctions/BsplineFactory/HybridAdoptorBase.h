@@ -393,6 +393,21 @@ struct AtomicOrbitalSoA
     //Needed to do tensor product here
     APP_ABORT("AtomicOrbitalSoA::evaluate_vgh");
   }
+
+  template<typename RT>
+  inline RT smooth_function(RT r, RT& df_dr, RT& d2f_dr2) const
+  {
+    const RT cone(1);
+    if (r < cutoff_buffer)
+      return cone;
+    const RT scale  = cone / (cutoff - cutoff_buffer);
+    const RT x      = (r - cutoff_buffer) * scale;
+    const RT f      = smooth_func_coscos(x, df_dr, d2f_dr2);
+
+    df_dr   *= scale;
+    d2f_dr2 *= scale*scale;
+    return f;
+  }
 };
 
 /** adoptor class to match
@@ -531,7 +546,7 @@ struct HybridAdoptorBase
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
       r_image = myCenter.pos + dr;
       myCenter.evaluate_v(dist_r, dr, myV);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
     }
     return RealType(-1);
   }
@@ -562,7 +577,7 @@ struct HybridAdoptorBase
     if (dist_r < myCenter.cutoff)
     {
       myCenter.evaluateValues(VP.DistTables[myTableID]->Displacements, center_idx, dist_r, multi_myV);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
     }
     return RealType(-1);
   }
@@ -588,7 +603,7 @@ struct HybridAdoptorBase
         ;
       }
       myCenter.evaluateValues(displ, center_idx, dist_r, multi_myV);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
     }
     return RealType(-1);
   }
@@ -607,7 +622,7 @@ struct HybridAdoptorBase
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
       r_image = myCenter.pos + dr;
       myCenter.evaluate_vgl(dist_r, dr, myV, myG, myL);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
     }
     return RealType(-1);
   }
@@ -626,23 +641,9 @@ struct HybridAdoptorBase
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
       r_image = myCenter.pos + dr;
       myCenter.evaluate_vgh(dist_r, dr, myV, myG, myH);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
     }
     return RealType(-1);
-  }
-
-  inline RealType smooth_function(const ST& cutoff_buffer, const ST& cutoff, RealType r)
-  {
-    const RealType cone(1);
-    if (r < cutoff_buffer)
-      return cone;
-    const RealType scale  = cone / (cutoff - cutoff_buffer);
-    const RealType x      = (r - cutoff_buffer) * scale;
-    const RealType f      = smooth_func_coscos(x, df_dr, d2f_dr2);
-
-    df_dr   *= scale;
-    d2f_dr2 *= scale*scale;
-    return f;
   }
 };
 
