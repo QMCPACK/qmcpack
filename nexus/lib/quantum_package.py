@@ -35,7 +35,7 @@ class QuantumPackage(Simulation):
     infile_extension   = '.ezfio'
     application        = 'qp_run'
     application_properties = set(['serial','mpi'])
-    application_results    = set([]) 
+    application_results    = set(['orbitals']) 
 
     allow_overlapping_files = True
 
@@ -134,12 +134,23 @@ class QuantumPackage(Simulation):
 
 
     def check_result(self,result_name,sim):
-        return False
+        calculating_result = False
+        rc = self.input.run_control
+        if result_name=='orbitals':
+            calculating_result = rc.run_type=='save_for_qmcpack'
+        #end if
+        return calculating_result
     #end def check_result
 
 
     def get_result(self,result_name,sim):
-        self.not_implemented()
+        result = obj()
+        if result_name=='orbitals':
+            result.outfile = os.path.join(self.locdir,self.outfile)
+        else:
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if
+        return result
     #end def get_result
 
 
@@ -174,7 +185,7 @@ class QuantumPackage(Simulation):
             not_implemented = True
         #end if
         if not_implemented:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
+            self.error('ability to incorporate result "{}" from {} has not been implemented',result_name,sim.__class__.__name__)
         #end if
     #end def incorporate_result
 
