@@ -101,8 +101,7 @@ struct HybridCplxSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
       psi_AO.resize(psi.size());
       BaseAdoptor::assign_v(r, myV, psi_AO, 0, myV.size() / 2);
       BaseAdoptor::evaluate_v(P, iat, psi);
-      for (size_t i = 0; i < psi.size(); i++)
-        psi[i] = psi_AO[i] * smooth_factor + psi[i] * (cone - smooth_factor);
+      HybridBase::interpolate_buffer_v(psi, psi_AO);
     }
   }
 

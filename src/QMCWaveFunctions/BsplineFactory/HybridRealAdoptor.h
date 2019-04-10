@@ -105,8 +105,7 @@ struct HybridRealSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
       int bc_sign = HybridBase::get_bc_sign(r, PrimLattice, HalfG);
       BaseAdoptor::assign_v(bc_sign, myV, psi_AO, 0, myV.size());
       BaseAdoptor::evaluate_v(P, iat, psi);
-      for (size_t i = 0; i < psi.size(); i++)
-        psi[i] = psi_AO[i] * smooth_factor + psi[i] * (cone - smooth_factor);
+      HybridBase::interpolate_buffer_v(psi, psi_AO);
     }
   }
 
