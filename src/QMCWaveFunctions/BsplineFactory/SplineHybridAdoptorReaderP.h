@@ -241,6 +241,13 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
                         << std::endl;
             success = false;
           }
+
+          // check smooth function
+          if (success && (ACInfo.smooth_function_id[center_idx] < 0 || ACInfo.smooth_function_id[center_idx] >= SmoothFunctions::MAX))
+          {
+            app_error() << "Unknown smooth function for the buffer region of hybrid orbital representation!" << std::endl;
+            success = false;
+          }
         }
         else
         {
@@ -251,14 +258,14 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
         }
       }
       if (!success)
-        abort();
+        APP_ABORT("initialize_hybridrep_atomic_centers Failed to initialize atomic centers in hybrid orbital representation!");
 
       for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
       {
         AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
         oneCenter.set_info(ACInfo.ion_pos[center_idx], ACInfo.cutoff[center_idx], ACInfo.inner_cutoff[center_idx],
                            ACInfo.spline_radius[center_idx], ACInfo.non_overlapping_radius[center_idx],
-                           ACInfo.spline_npoints[center_idx]);
+                           ACInfo.spline_npoints[center_idx], ACInfo.smooth_function_id[center_idx]);
         centers.push_back(oneCenter);
       }
     }

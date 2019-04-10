@@ -216,6 +216,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     const int spline_radius_ind=SourcePtcl->mySpecies.findAttribute("spline_radius");
     const int spline_npoints_ind=SourcePtcl->mySpecies.findAttribute("spline_npoints");
     const int lmax_ind=SourcePtcl->mySpecies.findAttribute("lmax");
+    const int smooth_func_ind=SourcePtcl->mySpecies.findAttribute("smooth_function");
 
     for(int center_idx=0; center_idx<AtomicCentersInfo.Ncenters; center_idx++)
     {
@@ -230,6 +231,8 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
         AtomicCentersInfo.spline_npoints[center_idx] = SourcePtcl->mySpecies(spline_npoints_ind, my_GroupID);
       if(lmax_ind>=0)
         AtomicCentersInfo.lmax[center_idx] = SourcePtcl->mySpecies(lmax_ind, my_GroupID);
+      if(smooth_func_ind>=0)
+        AtomicCentersInfo.smooth_function_id[center_idx] = SourcePtcl->mySpecies(smooth_func_ind, my_GroupID);
     }
   }
   /////////////////////////////////////

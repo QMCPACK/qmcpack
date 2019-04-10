@@ -42,6 +42,8 @@ struct AtomicOrbitalSoA
   ST rmin_sqrt;
   ST cutoff, cutoff_buffer, spline_radius, non_overlapping_radius;
   int spline_npoints, BaseN;
+  // smooth function selection
+  int smooth_func_id;
   int NumBands, Npad;
   PointType pos;
   const int lmax, lm_tot;
@@ -94,7 +96,8 @@ struct AtomicOrbitalSoA
                        const VT& cutoff_buffer_in,
                        const VT& spline_radius_in,
                        const VT& non_overlapping_radius_in,
-                       const int& spline_npoints_in)
+                       const int spline_npoints_in,
+                       const int smooth_func_id_in)
   {
     pos[0]                 = R[0];
     pos[1]                 = R[1];
@@ -105,6 +108,7 @@ struct AtomicOrbitalSoA
     spline_npoints         = spline_npoints_in;
     non_overlapping_radius = non_overlapping_radius_in;
     BaseN                  = spline_npoints + 2;
+    smooth_func_id         = smooth_func_id_in;
   }
 
   inline void create_spline()
@@ -402,8 +406,13 @@ struct AtomicOrbitalSoA
       return cone;
     const RT scale  = cone / (cutoff - cutoff_buffer);
     const RT x      = (r - cutoff_buffer) * scale;
-    const RT f      = smooth_func_coscos(x, df_dr, d2f_dr2);
-
+    RT f;
+    if(smooth_func_id == SmoothFunctions::YE2018)
+      f = SmoothFunctions::func_tanh(x, df_dr, d2f_dr2);
+    else if(smooth_func_id == SmoothFunctions::COSCOS)
+      f = SmoothFunctions::func_coscos(x, df_dr, d2f_dr2);
+    else
+      throw std::runtime_error("Unknown smooth function!");
     df_dr   *= scale;
     d2f_dr2 *= scale*scale;
     return f;
