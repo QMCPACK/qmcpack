@@ -523,44 +523,42 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],cas_idx=N
     GroupCell=H5_qmcpack.create_group("Cell")
     GroupCell.create_dataset("LatticeVectors",(3,3),dtype="f8",data=loc_cell.lattice_vectors())
 
+    def get_mo(mo_coeff, cart):
+        return order_mo_coef(mo_coeff) if cart else zip(*mo_coeff)
+
+
+
+    GroupDet=H5_qmcpack.create_group("Super_Twist")
+    GroupDet.create_dataset("Coord",(1,3),dtype="f8",data=sp_twist)
 
     if Gamma:  
        E_g=mf.mo_energy
        E_g_unsorted=E_g
+       mo_coeff_ = get_mo(mo_coeff, loc_cell.cart) 
+       mo_coeff_unsorted = mo_coeff_ 
+       NbAO, NbMO =mo_coeff.shape 
     else: 
       mo_k = numpy.array([c[:,cas_idx] for c in mf.mo_coeff] if cas_idx is not None else mf.mo_coeff)
       e_k =  numpy.array([e[cas_idx] for e in mf.mo_energy] if cas_idx is not None else mf.mo_energy)
       E_g, C_gamma,E_g_unsorted,C_unsorted = mo_k2gamma(cell, e_k, mo_k, kpts,kmesh)
       mo_coeff=C_gamma
-    
-    NbAO, NbMO =mo_coeff.shape 
+      NbAO, NbMO =mo_coeff.shape 
 
-
-    def get_mo(mo_coeff, cart):
-        return order_mo_coef(mo_coeff) if cart else zip(*mo_coeff)
-
-
-#    GroupNbkpts.create_dataset("Nbkpts",(1,),dtype="i4",data=Nbkpts)
-    if Gamma:
-      mo_coeff_ = get_mo(mo_coeff, loc_cell.cart) 
-      mo_coeff_imag = get_mo(mo_coeff, loc_cell.cart) 
-      mo_coeff_unsorted = mo_coeff_ 
-      mo_coeff_unsorted_imag = mo_coeff_imag
-    else:    
       mo_coeff_ = get_mo(mo_coeff.real, loc_cell.cart) 
       mo_coeff_imag = get_mo(mo_coeff.imag, loc_cell.cart) 
       mo_coeff_unsorted = get_mo(C_unsorted.real, loc_cell.cart) 
       mo_coeff_unsorted_imag = get_mo(C_unsorted.imag, loc_cell.cart) 
+      eigenset_imag=GroupDet.create_dataset("eigenset_0_imag",(NbMO,NbAO),dtype="f8",data=mo_coeff_imag) 
+      eigenset_unsorted_imag=GroupDet.create_dataset("eigenset_unsorted_0_imag",(NbMO,NbAO),dtype="f8",data=mo_coeff_unsorted_imag) 
 
-    GroupDet=H5_qmcpack.create_group("Super_Twist")
-    GroupDet.create_dataset("Coord",(1,3),dtype="f8",data=sp_twist)
+
+
+
     eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=mo_coeff_) 
-    eigenset_imag=GroupDet.create_dataset("eigenset_0_imag",(NbMO,NbAO),dtype="f8",data=mo_coeff_imag) 
     eigenvalue=GroupDet.create_dataset("eigenval_0",(1,NbMO),dtype="f8",data=E_g)
  
     #Unsorted Mo_coeffs for Multideterminants order matching QP
     eigenset_unsorted=GroupDet.create_dataset("eigenset_unsorted_0",(NbMO,NbAO),dtype="f8",data=mo_coeff_unsorted) 
-    eigenset_unsorted_imag=GroupDet.create_dataset("eigenset_unsorted_0_imag",(NbMO,NbAO),dtype="f8",data=mo_coeff_unsorted_imag) 
     eigenvalue_unsorted=GroupDet.create_dataset("eigenval_unsorted_0",(1,NbMO),dtype="f8",data=E_g_unsorted)
  
     
