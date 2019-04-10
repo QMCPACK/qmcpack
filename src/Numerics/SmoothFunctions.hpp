@@ -23,8 +23,7 @@ struct SmoothFunctions
   {
     YE2018 = 0,
     COSCOS,
-    LINEAR,
-    MAX
+    LINEAR
   };
 
   /// 1/2 - 1/2 tanh(alpha * (x - 1/2))

@@ -424,8 +424,7 @@ struct HybridAdoptorBase
   {
     CONSISTENT = 0,
     SMOOTHALL,
-    SMOOTHPARTIAL,
-    MAX
+    SMOOTHPARTIAL
   } smooth_scheme;
   /// smoothing function
   int smooth_func_id;
