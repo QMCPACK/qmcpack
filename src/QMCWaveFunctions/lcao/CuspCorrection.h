@@ -70,7 +70,9 @@ struct CuspCorrectionParameters
   CuspCorrectionParameters() : Rc(0.0), C(0.0), sg(1.0), redo(0), alpha(0.0) {}
 };
 
-void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate* Comm, int root);
+
+/// Broadcast cusp correction parameters
+void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int root);
 
 class OneMolecularOrbital
 {

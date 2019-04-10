@@ -597,7 +597,7 @@ TEST_CASE("broadcastCuspInfo", "[wavefunction]")
     cp.redo     = 1;
   }
 
-  broadcastCuspInfo(cp, c, root);
+  broadcastCuspInfo(cp, *c, root);
 
   REQUIRE(cp.Rc == Approx(2.0));
   REQUIRE(cp.C == Approx(3.0));

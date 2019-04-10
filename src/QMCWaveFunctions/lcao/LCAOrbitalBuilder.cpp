@@ -467,14 +467,14 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
       {
         for (int center_idx = 0; center_idx < num_centers; center_idx++)
         {
-          broadcastCuspInfo(info(center_idx, orb_idx), myComm, 0);
+          broadcastCuspInfo(info(center_idx, orb_idx), *myComm, 0);
         }
       }
     }
 #endif
     if (!valid)
     {
-      generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, *lcwc, id, myComm);
+      generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, *lcwc, id, *myComm);
     }
 
     applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);

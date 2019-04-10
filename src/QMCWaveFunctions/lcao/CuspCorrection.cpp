@@ -125,7 +125,7 @@ bool readCuspInfo(const std::string& cuspInfoFile,
   return success;
 }
 
-void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate* Comm, int root)
+void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int root)
 {
 #ifdef HAVE_MPI
   std::vector<double> buffer(9);
@@ -139,7 +139,7 @@ void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate* Comm, int r
   buffer[7] = param.alpha[4];
   buffer[8] = param.redo;
 
-  Comm->comm.broadcast(buffer.begin(), buffer.end(), root);
+  Comm.comm.broadcast(buffer.begin(), buffer.end(), root);
 
   param.Rc       = buffer[0];
   param.C        = buffer[1];

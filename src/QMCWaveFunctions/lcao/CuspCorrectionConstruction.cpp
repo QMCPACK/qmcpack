@@ -184,7 +184,7 @@ void generateCuspInfo(int orbital_set_size,
                       ParticleSet& sourcePtcl,
                       LCAOrbitalSetWithCorrection& lcwc,
                       std::string id,
-                      Communicate* Comm)
+                      Communicate& Comm)
 {
   typedef QMCTraits::RealType RealType;
 
@@ -206,10 +206,10 @@ void generateCuspInfo(int orbital_set_size,
 
   // Parallelize correction of MO's across MPI ranks
   std::vector<int> offset;
-  FairDivideLow(orbital_set_size, Comm->size(), offset);
+  FairDivideLow(orbital_set_size, Comm.size(), offset);
 
-  int start_mo = offset[Comm->rank()];
-  int end_mo   = offset[Comm->rank() + 1];
+  int start_mo = offset[Comm.rank()];
+  int end_mo   = offset[Comm.rank() + 1];
   app_log() << "  Number of molecular orbitals to compute correction on this rank: " << end_mo - start_mo << std::endl;
   for (int mo_idx = start_mo; mo_idx < end_mo; mo_idx++)
   {
@@ -264,7 +264,7 @@ void generateCuspInfo(int orbital_set_size,
     }
   }
 
-  for (int root = 0; root < Comm->size(); root++)
+  for (int root = 0; root < Comm.size(); root++)
   {
     int start_mo = offset[root];
     int end_mo   = offset[root + 1];
@@ -277,7 +277,7 @@ void generateCuspInfo(int orbital_set_size,
     }
   }
 
-  if (Comm->rank() == 0)
+  if (Comm.rank() == 0)
   {
     saveCusp(orbital_set_size, num_centers, info, id);
   }

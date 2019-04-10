@@ -39,7 +39,7 @@ void generateCuspInfo(int orbital_set_size,
                       ParticleSet& sourcePtcl,
                       LCAOrbitalSetWithCorrection& lcwc,
                       std::string id,
-                      Communicate *Comm);
+                      Communicate& Comm);
 } // namespace qmcplusplus
 
 #endif
