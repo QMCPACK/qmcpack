@@ -281,7 +281,6 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   cibuffer.add(Super2Prim.begin(),Super2Prim.end());
   cibuffer.add(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
   cibuffer.add(AtomicCentersInfo.GroupID.begin(), AtomicCentersInfo.GroupID.end());
-  cibuffer.add(AtomicCentersInfo.smooth_function_id.begin(), AtomicCentersInfo.smooth_function_id.end());
   cibuffer.add(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
   myComm->bcast(cbuffer);
   myComm->bcast(cibuffer);
@@ -296,7 +295,6 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
     cibuffer.get(Super2Prim.begin(),Super2Prim.end());
     cibuffer.get(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
     cibuffer.get(AtomicCentersInfo.GroupID.begin(), AtomicCentersInfo.GroupID.end());
-    cibuffer.get(AtomicCentersInfo.smooth_function_id.begin(), AtomicCentersInfo.smooth_function_id.end());
     cibuffer.get(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
     for (int i=0; i<numIons; i++)
       AtomicCentersInfo.ion_pos[i]=IonPos[i];

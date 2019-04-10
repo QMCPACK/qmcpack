@@ -42,8 +42,6 @@ struct AtomicOrbitalSoA
   ST rmin_sqrt;
   ST cutoff, cutoff_buffer, spline_radius, non_overlapping_radius;
   int spline_npoints, BaseN;
-  // smooth function selection
-  int smooth_func_id;
   int NumBands, Npad;
   PointType pos;
   const int lmax, lm_tot;
@@ -96,8 +94,7 @@ struct AtomicOrbitalSoA
                        const VT& cutoff_buffer_in,
                        const VT& spline_radius_in,
                        const VT& non_overlapping_radius_in,
-                       const int spline_npoints_in,
-                       const int smooth_func_id_in)
+                       const int spline_npoints_in)
   {
     pos[0]                 = R[0];
     pos[1]                 = R[1];
@@ -108,7 +105,6 @@ struct AtomicOrbitalSoA
     spline_npoints         = spline_npoints_in;
     non_overlapping_radius = non_overlapping_radius_in;
     BaseN                  = spline_npoints + 2;
-    smooth_func_id         = smooth_func_id_in;
   }
 
   inline void create_spline()
@@ -398,27 +394,6 @@ struct AtomicOrbitalSoA
     APP_ABORT("AtomicOrbitalSoA::evaluate_vgh");
   }
 
-  template<typename RT>
-  inline RT smooth_function(RT r, RT& df_dr, RT& d2f_dr2) const
-  {
-    const RT cone(1);
-    if (r < cutoff_buffer)
-      return cone;
-    const RT scale  = cone / (cutoff - cutoff_buffer);
-    const RT x      = (r - cutoff_buffer) * scale;
-    RT f;
-    if(smooth_func_id == SmoothFunctions::YE2018)
-      f = SmoothFunctions::func_tanh(x, df_dr, d2f_dr2);
-    else if(smooth_func_id == SmoothFunctions::COSCOS)
-      f = SmoothFunctions::func_coscos(x, df_dr, d2f_dr2);
-    else if(smooth_func_id == SmoothFunctions::LINEAR)
-      f = SmoothFunctions::func_linear(x, df_dr, d2f_dr2);
-    else
-      throw std::runtime_error("Unknown smooth function!");
-    df_dr   *= scale;
-    d2f_dr2 *= scale*scale;
-    return f;
-  }
 };
 
 /** adoptor class to match
@@ -430,14 +405,6 @@ struct HybridAdoptorBase
   static const int D = 3;
   using PointType    = typename AtomicOrbitalSoA<ST>::PointType;
   using RealType     = typename DistanceTableData::RealType;
-
-  enum
-  {
-    CONSISTENT = 0,
-    SMOOTHALL,
-    SMOOTHPARTIAL,
-    MAX
-  } smooth_scheme;
 
   // atomic centers
   std::vector<AtomicOrbitalSoA<ST>> AtomicCenters;
@@ -452,6 +419,16 @@ struct HybridAdoptorBase
   PointType r_image;
   // smooth function derivatives
   RealType f, df_dr, d2f_dr2;
+  /// smoothing schemes
+  enum
+  {
+    CONSISTENT = 0,
+    SMOOTHALL,
+    SMOOTHPARTIAL,
+    MAX
+  } smooth_scheme;
+  /// smoothing function
+  int smooth_func_id;
 
   HybridAdoptorBase() {}
 
@@ -565,7 +542,7 @@ struct HybridAdoptorBase
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
       r_image = myCenter.pos + dr;
       myCenter.evaluate_v(dist_r, dr, myV);
-      return f = myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
+      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
     return RealType(-1);
   }
@@ -596,7 +573,7 @@ struct HybridAdoptorBase
     if (dist_r < myCenter.cutoff)
     {
       myCenter.evaluateValues(VP.DistTables[myTableID]->Displacements, center_idx, dist_r, multi_myV);
-      return f = myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
+      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
     return RealType(-1);
   }
@@ -622,7 +599,7 @@ struct HybridAdoptorBase
         ;
       }
       myCenter.evaluateValues(displ, center_idx, dist_r, multi_myV);
-      return f = myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
+      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
     return RealType(-1);
   }
@@ -641,7 +618,7 @@ struct HybridAdoptorBase
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
       r_image = myCenter.pos + dr;
       myCenter.evaluate_vgl(dist_r, dr, myV, myG, myL);
-      return f = myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
+      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
     return RealType(-1);
   }
@@ -660,7 +637,7 @@ struct HybridAdoptorBase
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
       r_image = myCenter.pos + dr;
       myCenter.evaluate_vgh(dist_r, dr, myV, myG, myH);
-      return f = myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
+      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
     return RealType(-1);
   }
@@ -707,6 +684,26 @@ struct HybridAdoptorBase
       }
     else
       throw std::runtime_error("Unknown smooth scheme!");
+  }
+
+  inline RealType smooth_function(const ST& cutoff_buffer, const ST& cutoff, const RealType r)
+  {
+    const RealType cone(1);
+    if (r < cutoff_buffer)
+      return cone;
+    const RealType scale  = cone / (cutoff - cutoff_buffer);
+    const RealType x      = (r - cutoff_buffer) * scale;
+    if(smooth_func_id == SmoothFunctions::YE2018)
+      f = SmoothFunctions::func_tanh(x, df_dr, d2f_dr2);
+    else if(smooth_func_id == SmoothFunctions::COSCOS)
+      f = SmoothFunctions::func_coscos(x, df_dr, d2f_dr2);
+    else if(smooth_func_id == SmoothFunctions::LINEAR)
+      f = SmoothFunctions::func_linear(x, df_dr, d2f_dr2);
+    else
+      throw std::runtime_error("Unknown smooth function!");
+    df_dr   *= scale;
+    d2f_dr2 *= scale*scale;
+    return f;
   }
 };
 

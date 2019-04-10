@@ -158,7 +158,9 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
   {
     OhmmsAttributeSet a;
     std::string scheme_name("Consistent");
-    a.add(scheme_name, "smooth_scheme");
+    std::string s_function_name("Ye2018");
+    a.add(scheme_name, "smoothing_scheme");
+    a.add(s_function_name, "smoothing_function");
     a.put(mybuilder->XMLRoot);
     // assign smooth_scheme
     if ( scheme_name == "Consistent" )
@@ -168,7 +170,16 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
     else if ( scheme_name == "SmoothPartial" )
       bspline->smooth_scheme = SA::SMOOTHPARTIAL;
     else
-      APP_ABORT("setCommon wrong smooth_scheme name! Only allows Consistent, SmoothAll or SmoothPartial.");
+      APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_scheme name! Only allows Consistent, SmoothAll or SmoothPartial.");
+    // assign smooth_function
+    if ( s_function_name == "Ye2018" )
+      bspline->smooth_func_id = SmoothFunctions::YE2018;
+    else if ( s_function_name == "coscos" )
+      bspline->smooth_func_id = SmoothFunctions::COSCOS;
+    else if ( s_function_name == "linear" )
+      bspline->smooth_func_id = SmoothFunctions::LINEAR;
+    else
+      APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_function name! Only allows Ye2018, coscos or linear.");
 
     bspline->set_info(*(mybuilder->SourcePtcl), mybuilder->TargetPtcl, mybuilder->Super2Prim);
     auto& centers = bspline->AtomicCenters;
@@ -257,12 +268,6 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
             success = false;
           }
 
-          // check smooth function
-          if (success && (ACInfo.smooth_function_id[center_idx] < 0 || ACInfo.smooth_function_id[center_idx] >= SmoothFunctions::MAX))
-          {
-            app_error() << "Unknown smooth function for the buffer region of hybrid orbital representation!" << std::endl;
-            success = false;
-          }
         }
         else
         {
@@ -280,7 +285,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
         AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
         oneCenter.set_info(ACInfo.ion_pos[center_idx], ACInfo.cutoff[center_idx], ACInfo.inner_cutoff[center_idx],
                            ACInfo.spline_radius[center_idx], ACInfo.non_overlapping_radius[center_idx],
-                           ACInfo.spline_npoints[center_idx], ACInfo.smooth_function_id[center_idx]);
+                           ACInfo.spline_npoints[center_idx]);
         centers.push_back(oneCenter);
       }
     }

@@ -291,7 +291,7 @@ public:
 
   struct CenterInfo
   {
-    std::vector<int> lmax, spline_npoints, GroupID, smooth_function_id;
+    std::vector<int> lmax, spline_npoints, GroupID;
     std::vector<double> spline_radius, cutoff, inner_cutoff, non_overlapping_radius;
     std::vector<TinyVector<double,OHMMS_DIM> > ion_pos;
     int Ncenters;
@@ -304,7 +304,6 @@ public:
       lmax.resize(ncenters, -1);
       spline_npoints.resize(ncenters, -1);
       GroupID.resize(ncenters, 0);
-      smooth_function_id.resize(ncenters, 0);
       spline_radius.resize(ncenters, -1.0);
       inner_cutoff.resize(ncenters, -1.0);
       non_overlapping_radius.resize(ncenters, -1.0);
