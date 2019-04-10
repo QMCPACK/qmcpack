@@ -31,6 +31,7 @@ struct LCAOrbitalSet : public SPOSet
 public:
   typedef SoaBasisSetBase<ValueType> basis_type;
   typedef basis_type::vgl_type vgl_type;
+  typedef basis_type::vgh_type vgh_type;
 
   ///pointer to the basis set
   basis_type* myBasisSet;
@@ -56,6 +57,9 @@ public:
   vgl_type Temp;
   ///Tempv(OrbitalSetSize) Tempv=C*Temp
   vgl_type Tempv;
+
+  vgh_type Temph;
+  vgh_type Temphv;
   //vector that contains active orbital rotation parameter indices
   std::vector<std::pair<int, int>> m_act_rot_inds;
   /** constructor
@@ -147,6 +151,7 @@ public:
   {
     OrbitalSetSize = norbs;
     Tempv.resize(OrbitalSetSize);
+    Temphv.resize(OrbitalSetSize);
   }
 
   /** set the basis set
@@ -209,6 +214,15 @@ private:
                          ValueMatrix_t& logdet,
                          GradMatrix_t& dlogdet,
                          ValueMatrix_t& d2logdet) const;
+
+  void evaluate_vgh_impl(const vgh_type& temp, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi) const;
+
+  void evaluate_vgh_impl(const vgh_type& temp,
+                         int i,
+                         ValueMatrix_t& logdet,
+                         GradMatrix_t& dlogdet,
+                         HessMatrix_t& dhlogdet) const;
+
 
 #if !defined(QMC_COMPLEX)
   //function to perform orbital rotations

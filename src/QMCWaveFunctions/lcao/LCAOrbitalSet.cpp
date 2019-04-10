@@ -34,6 +34,7 @@ void LCAOrbitalSet::setBasisSet(basis_type* bs)
   myBasisSet   = bs;
   BasisSetSize = myBasisSet->getBasisSetSize();
   Temp.resize(BasisSetSize);
+  Temph.resize(BasisSetSize);
 }
 
 bool LCAOrbitalSet::setIdentity(bool useIdentity)
@@ -109,6 +110,25 @@ inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
   std::copy_n(temp.data(4), OrbitalSetSize, d2psi.data());
 }
 
+inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
+                                             ValueVector_t& psi,
+                                             GradVector_t& dpsi,
+                                             HessVector_t& d2psi) const
+{
+  APP_ABORT("evaluate_vgh_impl( ... Vector ...) not implemented yet\n");
+  std::copy_n(temp.data(0), OrbitalSetSize, psi.data());
+  const ValueType* restrict gx = temp.data(1);
+  const ValueType* restrict gy = temp.data(2);
+  const ValueType* restrict gz = temp.data(3);
+  for (size_t j = 0; j < OrbitalSetSize; j++)
+  {
+    dpsi[j][0] = gx[j];
+    dpsi[j][1] = gy[j];
+    dpsi[j][2] = gz[j];
+  }
+  std::copy_n(temp.data(4), OrbitalSetSize, d2psi.data());
+}
+
 void LCAOrbitalSet::evaluate(const ParticleSet& P,
                              int iat,
                              ValueVector_t& psi,
@@ -147,8 +167,17 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P,
                              int iat,
                              ValueVector_t& psi,
                              GradVector_t& dpsi,
-                             HessVector_t& grad_grad_psi)
+                             HessVector_t& dhpsi)
 {
+  //TAKE CARE OF IDENTITY
+  myBasisSet->evaluateVGH(P, iat, Temph);
+  if (Identity)
+    evaluate_vgh_impl(Temph, psi, dpsi, dhpsi);
+  else
+  {
+    Product_ABt(Temph, *C, Temphv);
+    evaluate_vgh_impl(Temphv, psi, dpsi, dhpsi);
+  }
 #if 0
         myBasisSet->evaluateForPtclMoveWithHessian(P,iat);
         simd::gemv(C,myBasisSet->Phi.data(),psi.data());
@@ -164,6 +193,26 @@ inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
                                              GradMatrix_t& dlogdet,
                                              ValueMatrix_t& d2logdet) const
 {
+  std::copy_n(temp.data(0), OrbitalSetSize, logdet[i]);
+  const ValueType* restrict gx = temp.data(1);
+  const ValueType* restrict gy = temp.data(2);
+  const ValueType* restrict gz = temp.data(3);
+  for (size_t j = 0; j < OrbitalSetSize; j++)
+  {
+    dlogdet[i][j][0] = gx[j];
+    dlogdet[i][j][1] = gy[j];
+    dlogdet[i][j][2] = gz[j];
+  }
+  std::copy_n(temp.data(4), OrbitalSetSize, d2logdet[i]);
+}
+
+inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
+                                             int i,
+                                             ValueMatrix_t& logdet,
+                                             GradMatrix_t& dlogdet,
+                                             HessMatrix_t& d2logdet) const
+{
+  APP_ABORT("evaluate_vgh_impli(...matrix) not implemented\n");
   std::copy_n(temp.data(0), OrbitalSetSize, logdet[i]);
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
