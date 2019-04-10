@@ -411,6 +411,8 @@ struct AtomicOrbitalSoA
       f = SmoothFunctions::func_tanh(x, df_dr, d2f_dr2);
     else if(smooth_func_id == SmoothFunctions::COSCOS)
       f = SmoothFunctions::func_coscos(x, df_dr, d2f_dr2);
+    else if(smooth_func_id == SmoothFunctions::LINEAR)
+      f = SmoothFunctions::func_linear(x, df_dr, d2f_dr2);
     else
       throw std::runtime_error("Unknown smooth function!");
     df_dr   *= scale;

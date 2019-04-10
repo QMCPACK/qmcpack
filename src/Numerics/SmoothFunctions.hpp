@@ -79,6 +79,28 @@ struct SmoothFunctions
       return chalf * (cone + ccos);
     }
   }
+
+  /// 1-x
+  template<typename T>
+  static T func_linear(T x, T& dx, T& d2x)
+  {
+    if (x < 0)
+    {
+      dx = d2x = T(0);
+      return T(1);
+    }
+    else if (x >= 1)
+    {
+      dx = d2x = T(0);
+      return T(0);
+    }
+    else
+    {
+      dx  = T(-1);
+      d2x = T(0);
+      return T(1) - x;
+    }
+  }
 };
 
 } // namespace qmcplusplus
