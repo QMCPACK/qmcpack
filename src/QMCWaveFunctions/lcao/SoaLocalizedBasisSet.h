@@ -181,8 +181,8 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    */
   inline void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
   {
-    APP_ABORT("SoaLocalizedBasisSet::evaluateVGH() not implemented\n");
-    /*
+   // APP_ABORT("SoaLocalizedBasisSet::evaluateVGH() not implemented\n");
+    
     const DistanceTableData* d_table = P.DistTables[myTableIndex];
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
@@ -190,7 +190,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     {
       LOBasisSet[IonID[c]]->evaluateVGH(P.Lattice, dist[c], displ[c], BasisOffset[c], vgh);
     }
-    */
+    
   }
 
   /** compute values for the iat-paricle move

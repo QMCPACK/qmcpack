@@ -240,18 +240,18 @@ struct SoaAtomicBasisSet
     RealType* restrict phi   = tempS.data(0);
     RealType* restrict dphi  = tempS.data(1);
     RealType* restrict d2phi = tempS.data(2);
-/*
+
     //V,Gx,Gy,Gz,L
-    auto* restrict psi      = vgl.data(0) + offset;
+    auto* restrict psi      = vgh.data(0) + offset;
     const T* restrict ylm_v = Ylm[0]; //value
-    auto* restrict dpsi_x   = vgl.data(1) + offset;
+    auto* restrict dpsi_x   = vgh.data(1) + offset;
     const T* restrict ylm_x = Ylm[1]; //gradX
-    auto* restrict dpsi_y   = vgl.data(2) + offset;
+    auto* restrict dpsi_y   = vgh.data(2) + offset;
     const T* restrict ylm_y = Ylm[2]; //gradY
-    auto* restrict dpsi_z   = vgl.data(3) + offset;
+    auto* restrict dpsi_z   = vgh.data(3) + offset;
     const T* restrict ylm_z = Ylm[3]; //gradZ
-    auto* restrict d2psi    = vgl.data(4) + offset;
-    const T* restrict ylm_l = Ylm[4]; //lap
+//    auto* restrict d2psi    = vgh.data(4) + offset;
+//    const T* restrict ylm_l = Ylm[4]; //lap
 
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
     {
@@ -259,7 +259,7 @@ struct SoaAtomicBasisSet
       dpsi_x[ib] = 0;
       dpsi_y[ib] = 0;
       dpsi_z[ib] = 0;
-      d2psi[ib]  = 0;
+//      d2psi[ib]  = 0;
     }
 
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
@@ -309,13 +309,13 @@ struct SoaAtomicBasisSet
             dpsi_x[ib] += ang * gr_x + vr * ang_x;
             dpsi_y[ib] += ang * gr_y + vr * ang_y;
             dpsi_z[ib] += ang * gr_z + vr * ang_z;
-            d2psi[ib] += ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
-                vr * ylm_l[lm];
+//            d2psi[ib] += ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
+//                vr * ylm_l[lm];
           }
         }
       }
     }
-  */
+  
   }
 
   template<typename LAT, typename T, typename PosType, typename VT>

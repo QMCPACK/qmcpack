@@ -115,18 +115,31 @@ inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
                                              GradVector_t& dpsi,
                                              HessVector_t& d2psi) const
 {
-  APP_ABORT("evaluate_vgh_impl( ... Vector ...) not implemented yet\n");
+ // APP_ABORT("evaluate_vgh_impl( ... Vector ...) not implemented yet\n");
   std::copy_n(temp.data(0), OrbitalSetSize, psi.data());
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
+  const ValueType* restrict hxx = temp.data(4);
+  const ValueType* restrict hxy = temp.data(5);
+  const ValueType* restrict hxz = temp.data(6);
+  const ValueType* restrict hyy = temp.data(7);
+  const ValueType* restrict hyz = temp.data(8);
+  const ValueType* restrict hzz = temp.data(9);
+
   for (size_t j = 0; j < OrbitalSetSize; j++)
   {
     dpsi[j][0] = gx[j];
     dpsi[j][1] = gy[j];
     dpsi[j][2] = gz[j];
+    
+    d2psi[j][0] = hxx[j]; 
+    d2psi[j][1] = hxy[j]; 
+    d2psi[j][2] = hxz[j]; 
+    d2psi[j][3] = hyy[j]; 
+    d2psi[j][4] = hyz[j]; 
+    d2psi[j][5] = hzz[j]; 
   }
-  std::copy_n(temp.data(4), OrbitalSetSize, d2psi.data());
 }
 
 void LCAOrbitalSet::evaluate(const ParticleSet& P,
