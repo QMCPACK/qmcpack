@@ -137,7 +137,8 @@ class QuantumPackage(Simulation):
         calculating_result = False
         rc = self.input.run_control
         if result_name=='orbitals':
-            calculating_result = rc.run_type=='save_for_qmcpack'
+            calculating_result  = rc.run_type=='save_for_qmcpack'
+            calculating_result |= rc.save_for_qmcpack
         #end if
         return calculating_result
     #end def check_result
@@ -145,8 +146,15 @@ class QuantumPackage(Simulation):
 
     def get_result(self,result_name,sim):
         result = obj()
+        rc = self.input.run_control
         if result_name=='orbitals':
-            result.outfile = os.path.join(self.locdir,self.outfile)
+            if rc.run_type=='save_for_qmcpack':
+                result.outfile = os.path.join(self.locdir,self.outfile)
+            elif rc.save_for_qmcpack:
+                result.outfile = os.path.join(self.locdir,'{0}_savewf.out'.format(self.identifier))
+            else:
+                self.error("cannot get orbitals\ntracking of save_for_qmcpack is somehow corrupted\nthis is a developer error")
+            #end if
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if
@@ -307,6 +315,23 @@ class QuantumPackage(Simulation):
             #end if
         #end if
 
+        # check for post-processing operations and save the job in current state
+        postprocessors = ['save_natorb',
+                          'four_idx_transform',
+                          'save_for_qmcpack']
+        postprocess = obj()
+        jpost = None
+        for pp in postprocessors:
+            if pp in rc and rc[pp]:
+                postprocess[pp] = True
+                if jpost is None:
+                    jpost = job.clone()
+                #end if
+            else:
+                postprocess[pp] = False
+            #end if
+        #end for
+
         # perform master-slave job splitting if necessary
         slave = self.get_slave()
         split_nodes  = job.nodes>1 and job.full_command is None
@@ -331,10 +356,32 @@ class QuantumPackage(Simulation):
             if 'fci' in slave and not input.present('distributed_davidson'):
                 input.set(distributed_davidson=True)
             #end if
-        elif len(fc)>0:
+        elif len(fc)>0 or jpost is not None:
             job.divert_out_err()
             job.app_command = app_command
             fc += job.run_command()+' >{0} 2>{1}\n'.format(self.outfile,self.errfile)
+        #end if
+
+        if postprocess.save_natorb:
+            jno = jpost.clone()
+            fc += '\n'
+            jno.app_command = self.app_name+' save_natorb '+self.infile
+            fc += jno.run_command()+' >{0}_natorb.out 2>{0}_natorb.err\n'.format(self.identifier)
+        #end if
+
+        if postprocess.four_idx_transform:
+            jfit = jpost.clone()
+            fc += '\n'
+            fc += 'echo "Write" > {}/mo_two_e_ints/io_mo_two_e_integrals\n'.format(self.infile)
+            jfit.app_command = self.app_name+' four_idx_transform '+self.infile
+            fc += jfit.run_command()+' >{0}_fit.out 2>{0}_fit.err\n'.format(self.identifier)
+        #end if
+
+        if postprocess.save_for_qmcpack:
+            jsq = jpost.clone()
+            fc += '\n'
+            jsq.app_command = self.app_name+' save_for_qmcpack '+self.infile
+            fc += jsq.run_command()+' >{0}_savewf.out 2>{0}_savewf.err\n'.format(self.identifier)
         #end if
 
         if len(fc)>0:

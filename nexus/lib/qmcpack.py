@@ -554,9 +554,7 @@ def generate_cusp_correction(**kwargs):
 
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    input_type = inp_args.input_type
-    del inp_args.input_type
-    input = generate_qmcpack_input(input_type,**inp_args)
+    input = generate_qmcpack_input(**inp_args)
 
     wf = input.get('wavefunction')
     if not 'determinantset' in wf:
