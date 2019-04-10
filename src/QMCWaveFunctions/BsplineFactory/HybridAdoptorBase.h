@@ -431,6 +431,14 @@ struct HybridAdoptorBase
   using PointType    = typename AtomicOrbitalSoA<ST>::PointType;
   using RealType     = typename DistanceTableData::RealType;
 
+  enum
+  {
+    CONSISTENT = 0,
+    SMOOTHALL,
+    SMOOTHPARTIAL,
+    MAX
+  } smoothing_scheme;
+
   // atomic centers
   std::vector<AtomicOrbitalSoA<ST>> AtomicCenters;
   ///table index
@@ -443,7 +451,7 @@ struct HybridAdoptorBase
   // for APBC
   PointType r_image;
   // smooth function derivatives
-  RealType df_dr, d2f_dr2;
+  RealType f, df_dr, d2f_dr2;
 
   HybridAdoptorBase() {}
 
@@ -557,7 +565,7 @@ struct HybridAdoptorBase
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
       r_image = myCenter.pos + dr;
       myCenter.evaluate_v(dist_r, dr, myV);
-      return myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
+      return f = myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
     }
     return RealType(-1);
   }
@@ -588,7 +596,7 @@ struct HybridAdoptorBase
     if (dist_r < myCenter.cutoff)
     {
       myCenter.evaluateValues(VP.DistTables[myTableID]->Displacements, center_idx, dist_r, multi_myV);
-      return myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
+      return f = myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
     }
     return RealType(-1);
   }
@@ -614,7 +622,7 @@ struct HybridAdoptorBase
         ;
       }
       myCenter.evaluateValues(displ, center_idx, dist_r, multi_myV);
-      return myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
+      return f = myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
     }
     return RealType(-1);
   }
@@ -633,7 +641,7 @@ struct HybridAdoptorBase
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
       r_image = myCenter.pos + dr;
       myCenter.evaluate_vgl(dist_r, dr, myV, myG, myL);
-      return myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
+      return f = myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
     }
     return RealType(-1);
   }
@@ -652,9 +660,53 @@ struct HybridAdoptorBase
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
       r_image = myCenter.pos + dr;
       myCenter.evaluate_vgh(dist_r, dr, myV, myG, myH);
-      return myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
+      return f = myCenter.smooth_function(dist_r, df_dr, d2f_dr2);
     }
     return RealType(-1);
+  }
+
+  // interpolate buffer region, value only
+  template<typename VV>
+  inline void interpolate_buffer_v(VV& psi, const VV& psi_AO) const
+  {
+    const RealType cone(1), ctwo(2);
+    for (size_t i = 0; i < psi.size(); i++)
+      psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
+  }
+
+  // interpolate buffer region, value, gradients and laplacian
+  template<typename VV, typename GV>
+  inline void interpolate_buffer_vgl(VV& psi, GV& dpsi, VV& d2psi, const VV& psi_AO, const GV& dpsi_AO, const VV& d2psi_AO) const
+  {
+    const RealType cone(1), ctwo(2);
+    const RealType rinv(1.0 / dist_r);
+    if(smoothing_scheme == CONSISTENT)
+      for (size_t i = 0; i < psi.size(); i++)
+      { // psi, dpsi, d2psi are all consistent
+        d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) +
+            df_dr * rinv * ctwo * dot(dpsi[i] - dpsi_AO[i], dist_dr) +
+            (psi_AO[i] - psi[i]) * (d2f_dr2 + ctwo * rinv * df_dr);
+        dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f) +
+            df_dr * rinv * dist_dr * (psi[i] - psi_AO[i]);
+        psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
+      }
+    else if(smoothing_scheme == SMOOTHALL)
+      for (size_t i = 0; i < psi.size(); i++)
+      {
+        d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f);
+        dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f);
+        psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
+      }
+    else if(smoothing_scheme == SMOOTHPARTIAL)
+      for (size_t i = 0; i < psi.size(); i++)
+      { // dpsi, d2psi are consistent but psi is not.
+        d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) +
+            df_dr * rinv * ctwo * dot(dpsi[i] - dpsi_AO[i], dist_dr);
+        dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f);
+        psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
+      }
+    else
+      throw std::runtime_error("Unknown smooth scheme!");
   }
 };
 

@@ -134,8 +134,7 @@ struct HybridCplxSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
           Vector<ST, aligned_allocator<ST>> myV_one(multi_myV[iat], myV.size());
           BaseAdoptor::assign_v(r, myV_one, psi_AO, 0, myV.size() / 2);
           BaseAdoptor::evaluate_v(VP, iat, psi);
-          for (size_t i = 0; i < psi.size(); i++)
-            psi[i] = psi_AO[i] * smooth_factor + psi[i] * (cone - smooth_factor);
+          HybridBase::interpolate_buffer_v(psi, psi_AO);
         }
         ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
       }
@@ -167,22 +166,12 @@ struct HybridCplxSoA : public BaseAdoptor, public HybridAdoptorBase<typename Bas
     else
     {
       const PointType& r = P.activeR(iat);
-      const RealType ctwo(2);
-      const RealType rinv(1.0 / dist_r);
       psi_AO.resize(psi.size());
       dpsi_AO.resize(psi.size());
       d2psi_AO.resize(psi.size());
       BaseAdoptor::assign_vgl_from_l(r, psi_AO, dpsi_AO, d2psi_AO);
       BaseAdoptor::evaluate_vgl(P, iat, psi, dpsi, d2psi);
-      for (size_t i = 0; i < psi.size(); i++)
-      {
-        d2psi[i] = d2psi_AO[i] * smooth_factor + d2psi[i] * (cone - smooth_factor) +
-            df_dr * rinv * ctwo * dot(dpsi[i] - dpsi_AO[i], dist_dr) +
-            (psi_AO[i] - psi[i]) * (d2f_dr2 + ctwo * rinv * df_dr);
-        dpsi[i] = dpsi_AO[i] * smooth_factor + dpsi[i] * (cone - smooth_factor) +
-            df_dr * rinv * dist_dr * (psi[i] - psi_AO[i]);
-        psi[i] = psi_AO[i] * smooth_factor + psi[i] * (cone - smooth_factor);
-      }
+      HybridBase::interpolate_buffer_vgl(psi, dpsi, d2psi, psi_AO, dpsi_AO, d2psi_AO);
     }
   }
 
