@@ -37,6 +37,8 @@ class BackPropagatedEstimator: public EstimatorBase
 
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;
   using CVector = boost::multi::array<ComplexType,1,Allocator>;
+  using CMatrix = boost::multi::array<ComplexType,2,Allocator>;
+  using stdCVector_ref = boost::multi::array_ref<ComplexType,1>;
   using stdCVector = boost::multi::array<ComplexType,1>;
   using stdCMatrix = boost::multi::array<ComplexType,2>;
   using stdCTensor = boost::multi::array<ComplexType,3>;
@@ -52,16 +54,18 @@ class BackPropagatedEstimator: public EstimatorBase
                                           EstimatorBase(info),TG(tg_), walker_type(wlk),
                                           Refs({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                                           wfn0(wfn), prop0(prop),
-                                          greens_function(false),nback_prop(10),
+                                          greens_function(false),max_nback_prop(10),
                                           nStabalize(10), path_restoration(false), block_size(1),
                                           writer(false), importanceSampling(impsamp_)
   {
 
+    int nave(1);
     if(cur != NULL) {
       ParameterSet m_param;
       std::string restore_paths;
       m_param.add(nStabalize, "ortho", "int");
-      m_param.add(nback_prop, "nsteps", "int");
+      m_param.add(max_nback_prop, "nsteps", "int");
+      m_param.add(nave, "naverages", "int");
       m_param.add(restore_paths, "path_restoration", "std::string");
       m_param.add(block_size, "block_size", "int");
       m_param.add(nblocks_skip, "nskip", "int");
@@ -73,12 +77,20 @@ class BackPropagatedEstimator: public EstimatorBase
       }
     }
 
-    if(nback_prop <= 0)
-      APP_ABORT("nback_prop == 0 is not allowed.\n");
+    if(nave <= 0)
+      APP_ABORT("naverages <= 0 is not allowed.\n");
+
+    nback_prop_steps.reserve(nave);
+    for(int i=1; i<nave; i++)
+      nback_prop_steps.push_back(i*max_nback_prop/nave);
+    nback_prop_steps.push_back(max_nback_prop);
+
+    if(max_nback_prop <= 0)
+      APP_ABORT("max_nback_prop <= 0 is not allowed.\n");
 
     int ncv(prop0.global_number_of_cholesky_vectors());
     int nref(wfn0.number_of_references_for_back_propagation());
-    wset.resize_bp(nback_prop,ncv,nref);
+    wset.resize_bp(max_nback_prop,ncv,nref);
     wset.setBPPos(0);
     // set SMN in case BP begins right away
     if(nblocks_skip==0)
@@ -100,18 +112,16 @@ class BackPropagatedEstimator: public EstimatorBase
       dm_size = 4*NMO*NMO;
       dm_dims = {2*NMO,2*NMO};
     }
-    if(DMBuffer.size() < dm_size) {
-      DMBuffer.reextent(iextensions<1u>{dm_size});
-    }
-    if(DMAverage.size() < dm_size) {
-      DMAverage.reextent(iextensions<1u>{dm_size});
-    }
+    if(DMBuffer.size(0) != nave || DMBuffer.size(1) != dm_size) 
+      DMBuffer.reextent({nave,dm_size});
+    if(DMAverage.size(0) != nave || DMAverage.size(1) != dm_size) 
+      DMAverage.reextent({nave,dm_size});
     using std::fill_n;
     fill_n(DMBuffer.origin(), DMBuffer.num_elements(), ComplexType(0.0,0.0));
     fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0,0.0));
-    denom.reextent({1});
-    denom_average.reextent({1});
-    denom_average[0] = 0;
+    denom.reextent({nave,1});
+    denom_average.reextent({nave,1});
+    fill_n(denom_average.origin(), nave, ComplexType(0.0)); 
   }
 
   ~BackPropagatedEstimator() {}
@@ -124,14 +134,14 @@ class BackPropagatedEstimator: public EstimatorBase
     int bp_step = wset.getBPPos();
     if(bp_step <=0)
       APP_ABORT(" Error: Found bp_step <=0 in BackPropagate::accumulate_block. \n"); 
-    if(bp_step > nback_prop)
-      APP_ABORT(" Error: nback_prop in back propagation estimator must be conmensuate with nStep*nSubStep.\n");
-    if(bp_step < nback_prop) return;
+    if(bp_step > max_nback_prop)
+      APP_ABORT(" Error: max_nback_prop in back propagation estimator must be conmensuate with nStep*nSubStep.\n");
+    if(bp_step < max_nback_prop) return;
     accumulated_in_last_block=true;
     AFQMCTimers[back_propagate_timer]->start();
     using std::fill_n;
-    if(nback_prop > wset.NumBackProp())
-      APP_ABORT(" Error: nback_prop > wset.NumBackProp() \n");
+    if(max_nback_prop > wset.NumBackProp())
+      APP_ABORT(" Error: max_nback_prop > wset.NumBackProp() \n");
     // 0. skip if requested 
     if(iblock < nblocks_skip) {
       if( iblock+1 == nblocks_skip )
@@ -152,39 +162,45 @@ class BackPropagatedEstimator: public EstimatorBase
     if(detR.size(0) != wset.size() || detR.size(1) != nx*nrefs)
       detR.reextent({wset.size(),nrefs*nx}); 
 
-    // 2. setup back propagated references
-    boost::multi::array_ref<ComplexType,3> Refs_(to_address(Refs.origin()),Refs.extensions());
-    wfn0.getReferencesForBackPropagation(Refs_[0]);
+    int nave(nback_prop_steps.size());
     int n0,n1;
     std::tie(n0,n1) = FairDivideBoundary(TG.getLocalTGRank(),int(Refs.size(2)),TG.getNCoresPerTG());
-    for(int iw=1; iw<wset.size(); ++iw)
-      for(int ref=0; ref<nrefs; ++ref)
-       copy_n(Refs_[0][ref].origin()+n0,n1-n0,Refs_[iw][ref].origin()+n0);
-    TG.TG_local().barrier();
-
-    //3. propagate backwards the references
-    prop0.BackPropagate(nback_prop,nStabalize,wset,Refs_,detR);
-
-    //4. calculate properties, only rdm now but make a list or properties later
-    // adjust weights here is path restoration
-    stdCVector wgt(wset.getWeightHistory()[nback_prop-1]);
-    if(path_restoration) {
-      auto&& factors(wset.getWeightFactors());
-      for(int k=0; k<nback_prop; k++)  
-        for(int i=0; i<wgt.size(); i++) 
-          wgt[i] *= factors[k][i];
-    } else if(!importanceSampling) {
-      stdCVector phase(iextensions<1u>{wset.size()});
-      wset.getProperty(PHASE,phase);
-      for(int i=0; i<wgt.size(); i++) wgt[i] *= phase[i];
-    }
-    fill_n(denom.origin(),1,ComplexType(0.0,0.0));
+    boost::multi::array_ref<ComplexType,3> Refs_(to_address(Refs.origin()),Refs.extensions());
+    fill_n(denom.origin(),denom.num_elements(),ComplexType(0.0,0.0));
     fill_n(DMBuffer.origin(), DMBuffer.num_elements(), ComplexType(0.0,0.0));
-    CMatrix_ref BackPropDM(DMBuffer.origin(), {dm_dims.first,dm_dims.second});
+    for(int iav=0; iav<nave; ++iav) { 
 
-    wfn0.WalkerAveragedDensityMatrix(wset, wgt, BackPropDM, denom, 
+      int nback_prop = nback_prop_steps[iav];
+      // 2. setup back propagated references
+      wfn0.getReferencesForBackPropagation(Refs_[0]);
+      for(int iw=1; iw<wset.size(); ++iw)
+        for(int ref=0; ref<nrefs; ++ref)
+         copy_n(Refs_[0][ref].origin()+n0,n1-n0,Refs_[iw][ref].origin()+n0);
+      TG.TG_local().barrier();
+
+      //3. propagate backwards the references
+      prop0.BackPropagate(nback_prop,nStabalize,wset,Refs_,detR);
+
+      //4. calculate properties, only rdm now but make a list or properties later
+      // adjust weights here is path restoration
+      stdCVector wgt(wset.getWeightHistory()[nback_prop-1]);
+      if(path_restoration) {
+        auto&& factors(wset.getWeightFactors());
+        for(int k=0; k<nback_prop; k++)  
+          for(int i=0; i<wgt.size(); i++) 
+            wgt[i] *= factors[k][i];
+      } else if(!importanceSampling) {
+        stdCVector phase(iextensions<1u>{wset.size()});
+        wset.getProperty(PHASE,phase);
+        for(int i=0; i<wgt.size(); i++) wgt[i] *= phase[i];
+      }
+      CMatrix_ref BackPropDM(DMBuffer[iav].origin(), {dm_dims.first,dm_dims.second});
+      stdCVector_ref denom_(denom[iav].origin(), iextensions<1u>{denom.size(1)});
+      
+      wfn0.WalkerAveragedDensityMatrix(wset, wgt, BackPropDM, denom_, 
                                      !importanceSampling, std::addressof(Refs_),
                                      std::addressof(detR));
+    }
 
     // 5. setup for next block 
     for(auto it=wset.begin(); it<wset.end(); ++it)
@@ -211,31 +227,42 @@ class BackPropagatedEstimator: public EstimatorBase
       AFQMCTimers[back_propagate_timer]->reset();  
     }
     if(writer && accumulated_in_last_block) {
+      int nave(nback_prop_steps.size());
       if(write_metadata) {
         dump.push("Metadata");
-        dump.write(nback_prop, "NumBackProp");
+        dump.write(max_nback_prop, "NumBackProp");
+        dump.write(nave, "NumAverages");
         dump.pop();
         write_metadata = false;
       }
 #ifdef QMC_CUDA
-      stdCVector buff(DMBuffer);
+      stdCMatrix buff(DMBuffer);
 #else
-      CVector& buff(DMBuffer);
+      CMatrix& buff(DMBuffer);
 #endif
       ma::axpy(ComplexType(1.0),buff,DMAverage);
-      denom_average[0] += ComplexType(*denom.origin());
+      for(int i=0; i<nave; ++i)  
+        denom_average[i][0] += denom[i][0];
       if(iblock%block_size == 0) {
-        for(int i = 0; i < DMAverage.size(); i++)
-          DMAverage[i] /= block_size;
-        denom_average[0] /= block_size;
+//        for(int i = 0; i < DMAverage.size(); i++)
+//          DMAverage[i] /= block_size;
+//        denom_average[0] /= block_size;
+        ma::scal(ComplexType(1.0/block_size),DMAverage);
+        ma::scal(ComplexType(1.0/block_size),denom_average);
         dump.push("BackPropagated");
-        std::string padded_iblock = std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
-        dump.write(DMAverage, "one_rdm_"+padded_iblock);
-        dump.write(denom_average, "one_rdm_denom_"+padded_iblock);
+        for(int i=0; i<nave; ++i) {
+          dump.push(std::string("NumBackProp_")+std::to_string(nback_prop_steps[i]));
+          std::string padded_iblock = std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
+          stdCVector_ref DMAverage_( DMAverage[i].origin(), {DMAverage.size(1)}); 
+          stdCVector_ref denom_average_( denom_average[i].origin(), {denom_average.size(1)}); 
+          dump.write(DMAverage_, "one_rdm_"+padded_iblock);
+          dump.write(denom_average_, "one_rdm_denom_"+padded_iblock);
+          dump.pop();
+        }
         dump.pop();
-        using std::fill;  
-        fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
-        fill(denom_average.begin(), denom_average.end(), ComplexType(0.0,0.0));
+        using std::fill_n;  
+        fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0,0.0));
+        fill_n(denom_average.origin(), denom_average.num_elements(), ComplexType(0.0,0.0));
       }
     }
   }
@@ -249,7 +276,8 @@ class BackPropagatedEstimator: public EstimatorBase
   bool writer;
   bool accumulated_in_last_block;
 
-  int nback_prop;
+  int max_nback_prop;
+  std::vector<int> nback_prop_steps;  
 
   Wavefunction& wfn0;
 
@@ -258,8 +286,8 @@ class BackPropagatedEstimator: public EstimatorBase
   // The first element of data stores the denominator of the estimator (i.e., the total
   // walker weight including rescaling factors etc.). The rest of the elements store the
   // averages of the various elements of the green's function.
-  CVector DMBuffer;
-  stdCVector DMAverage;
+  CMatrix DMBuffer;
+  stdCMatrix DMAverage;
   mpi3CTensor Refs;
   boost::multi::array<ComplexType,2> detR;
 
@@ -284,8 +312,8 @@ class BackPropagatedEstimator: public EstimatorBase
   std::vector<ComplexType> weights;
   int dm_size;
   std::pair<int,int> dm_dims;
-  CVector denom;
-  stdCVector denom_average;
+  stdCMatrix denom;
+  stdCMatrix denom_average;
   bool write_metadata = true;
 
 };

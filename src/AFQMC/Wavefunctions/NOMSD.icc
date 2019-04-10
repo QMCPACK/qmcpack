@@ -1077,7 +1077,6 @@ namespace afqmc
     // temporary runtime check for incompatible memory spaces
     {
       auto dev_ptr_(make_device_ptr(G.origin()));
-      auto dev_ptr(make_device_ptr(denom.origin()));
     }
     const int nwalk = wset.size();
     const int ndet = ci.size();
@@ -1240,7 +1239,6 @@ namespace afqmc
     // temporary runtime check for incompatible memory spaces
     {
       auto dev_ptr_(make_device_ptr(G.origin()));
-      auto dev_ptr(make_device_ptr(denom.origin()));
     }
     const int nwalk = wset.size();
     const int ndet = ci.size();
