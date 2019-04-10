@@ -437,7 +437,7 @@ struct HybridAdoptorBase
     SMOOTHALL,
     SMOOTHPARTIAL,
     MAX
-  } smoothing_scheme;
+  } smooth_scheme;
 
   // atomic centers
   std::vector<AtomicOrbitalSoA<ST>> AtomicCenters;
@@ -680,7 +680,7 @@ struct HybridAdoptorBase
   {
     const RealType cone(1), ctwo(2);
     const RealType rinv(1.0 / dist_r);
-    if(smoothing_scheme == CONSISTENT)
+    if(smooth_scheme == CONSISTENT)
       for (size_t i = 0; i < psi.size(); i++)
       { // psi, dpsi, d2psi are all consistent
         d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) +
@@ -690,14 +690,14 @@ struct HybridAdoptorBase
             df_dr * rinv * dist_dr * (psi[i] - psi_AO[i]);
         psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
       }
-    else if(smoothing_scheme == SMOOTHALL)
+    else if(smooth_scheme == SMOOTHALL)
       for (size_t i = 0; i < psi.size(); i++)
       {
         d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f);
         dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f);
         psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
       }
-    else if(smoothing_scheme == SMOOTHPARTIAL)
+    else if(smooth_scheme == SMOOTHPARTIAL)
       for (size_t i = 0; i < psi.size(); i++)
       { // dpsi, d2psi are consistent but psi is not.
         d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) +

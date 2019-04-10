@@ -25,6 +25,7 @@
 #include <Numerics/Quadrature.h>
 #include <Numerics/Bessel.h>
 #include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
+#include "OhmmsData/AttributeSet.h"
 
 //#include <QMCHamiltonians/Ylm.h>
 //#define PRINT_RADIAL
@@ -155,6 +156,20 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
   /** initialize basic parameters of atomic orbitals */
   void initialize_hybridrep_atomic_centers() override
   {
+    OhmmsAttributeSet a;
+    std::string scheme_name("Consistent");
+    a.add(scheme_name, "smooth_scheme");
+    a.put(mybuilder->XMLRoot);
+    // assign smooth_scheme
+    if ( scheme_name == "Consistent" )
+      bspline->smooth_scheme = SA::CONSISTENT;
+    else if ( scheme_name == "SmoothAll" )
+      bspline->smooth_scheme = SA::SMOOTHALL;
+    else if ( scheme_name == "SmoothPartial" )
+      bspline->smooth_scheme = SA::SMOOTHPARTIAL;
+    else
+      APP_ABORT("setCommon wrong smooth_scheme name! Only allows Consistent, SmoothAll or SmoothPartial.");
+
     bspline->set_info(*(mybuilder->SourcePtcl), mybuilder->TargetPtcl, mybuilder->Super2Prim);
     auto& centers = bspline->AtomicCenters;
     auto& ACInfo  = mybuilder->AtomicCentersInfo;
