@@ -78,6 +78,9 @@ struct SoaSphericalTensor
   ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
   void evaluateVGH(T x, T y, T z);
 
+  ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
+  void evaluateVGHGH(T x, T y, T z);
+
   ///returns the index/locator for (\f$l,m\f$) combo, \f$ l(l+1)+m \f$
   inline int index(int l, int m) const { return (l * (l + 1)) + m; }
 
@@ -355,6 +358,12 @@ template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGH(T x, T y, T z)
 {
   APP_ABORT("SoaSphericalTensor<T>::evaluateVGH(x,y,z):  Not implemented\n");
+}
+
+template<typename T>
+inline void SoaSphericalTensor<T>::evaluateVGHGH(T x, T y, T z)
+{
+  APP_ABORT("SoaSphericalTensor<T>::evaluateVGHGH(x,y,z):  Not implemented\n");
 }
 
 } // namespace qmcplusplus

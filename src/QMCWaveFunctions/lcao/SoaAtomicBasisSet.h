@@ -483,7 +483,7 @@ struct SoaAtomicBasisSet
 
           //SIGN Change!!
           const T x = -dr_new[0], y = -dr_new[1], z = -dr_new[2];
-          Ylm.evaluateVGH(x, y, z);
+          Ylm.evaluateVGHGH(x, y, z);
 
           MultiRnl->evaluate(r_new, phi, dphi, d2phi, d3phi);
 
