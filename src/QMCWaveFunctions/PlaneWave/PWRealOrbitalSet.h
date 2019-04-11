@@ -105,7 +105,14 @@ public:
 
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& gg_psi)
   {
-    APP_ABORT("Need specialization of evaluate(iat) for HessVector. \n");
+    APP_ABORT("PWRealOrbitalSet::evaluate(P,iat,psi,dpsi,dhpsi) not implemented. \n");
+  }
+
+  void evaluate(const ParticleSet& P, int iat, 
+                ValueVector_t& psi, GradVector_t& dpsi, 
+                HessVector_t& gg_psi, GGGVector_t& ggg_psi)
+  {
+    APP_ABORT("PWRealOrbitalSet::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented. \n");
   }
   void evaluate_notranspose(const ParticleSet& P,
                             int first,

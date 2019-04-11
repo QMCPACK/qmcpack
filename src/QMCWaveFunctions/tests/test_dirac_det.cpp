@@ -75,6 +75,13 @@ public:
                         GradVector_t& dpsi,
                         HessVector_t& grad_grad_psi);
 
+  virtual void evaluate(const ParticleSet& P,
+                        int iat,
+                        ValueVector_t& psi,
+                        GradVector_t& dpsi,
+                        HessVector_t& grad_grad_psi,
+                        GGGVector_t& grad_grad_grad_psi);
+
   virtual void evaluate_notranspose(const ParticleSet& P,
                                     int first,
                                     int last,
@@ -168,6 +175,20 @@ void FakeSPO::evaluate(const ParticleSet& P,
     psi[i] = a(iat, i);
   }
 }
+
+void FakeSPO::evaluate(const ParticleSet& P,
+                       int iat,
+                       ValueVector_t& psi,
+                       GradVector_t& dpsi,
+                       HessVector_t& grad_grad_psi,
+                       GGGVector_t& grad_grad_grad_psi)
+{
+  for (int i = 0; i < 3; i++)
+  {
+    psi[i] = a(iat, i);
+  }
+}
+
 void FakeSPO::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   if (OrbitalSetSize == 3)

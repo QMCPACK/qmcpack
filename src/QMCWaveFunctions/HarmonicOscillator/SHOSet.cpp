@@ -548,6 +548,13 @@ void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVec
   not_implemented("evaluate(P,iat,psi,dpsi,ddpsi)");
 }
 
+void SHOSet::evaluate(const ParticleSet& P, int iat, 
+                      ValueVector_t& psi, GradVector_t& dpsi, 
+                      HessVector_t& ddpsi, GGGVector_t& dghpsi)
+{
+  not_implemented("evaluate(P,iat,psi,dpsi,ddpsi,dghpsi)");
+}
+
 void SHOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
 {
   not_implemented("evaluateThirdDeriv(P,first,last,dddlogdet)");

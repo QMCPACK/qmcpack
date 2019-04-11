@@ -133,12 +133,12 @@ inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
     dpsi[j][1] = gy[j];
     dpsi[j][2] = gz[j];
     
-    d2psi[j][0] = hxx[j]; 
-    d2psi[j][1] = hxy[j]; 
-    d2psi[j][2] = hxz[j]; 
-    d2psi[j][3] = hyy[j]; 
-    d2psi[j][4] = hyz[j]; 
-    d2psi[j][5] = hzz[j]; 
+    d2psi[j](0,0)                 = hxx[j]; 
+    d2psi[j](0,1) = d2psi[j](1,0) = hxy[j]; 
+    d2psi[j](0,2) = d2psi[j](2,0) = hxz[j]; 
+    d2psi[j](1,1)                 = hyy[j]; 
+    d2psi[j](2,1) = d2psi[j](1,2) = hyz[j]; 
+    d2psi[j](2,2)                 = hzz[j]; 
   }
 }
 
@@ -191,12 +191,27 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P,
     Product_ABt(Temph, *C, Temphv);
     evaluate_vgh_impl(Temphv, psi, dpsi, dhpsi);
   }
-#if 0
-        myBasisSet->evaluateForPtclMoveWithHessian(P,iat);
-        simd::gemv(C,myBasisSet->Phi.data(),psi.data());
-        simd::gemv(C,myBasisSet->dPhi.data(),dpsi.data());
-        simd::gemv(C,myBasisSet->grad_grad_Phi.data(),grad_grad_psi.data());
-#endif
+}
+
+void LCAOrbitalSet::evaluate(const ParticleSet& P,
+                             int iat,
+                             ValueVector_t& psi,
+                             GradVector_t& dpsi,
+                             HessVector_t& dhpsi,
+                             GGGVector_t& dghpsi)
+{
+  APP_ABORT("LCAORbitalSet::evaluate(psi,gpsi,hpsi,ghpsi) not implemented\n");
+  /*
+  //TAKE CARE OF IDENTITY
+  myBasisSet->evaluateVGH(P, iat, Temph);
+  if (Identity)
+    evaluate_vgh_impl(Temph, psi, dpsi, dhpsi);
+  else
+  {
+    Product_ABt(Temph, *C, Temphv);
+    evaluate_vgh_impl(Temphv, psi, dpsi, dhpsi);
+  }
+  */
 }
 
 /* implement using gemm algorithm */

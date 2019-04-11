@@ -352,6 +352,9 @@ public:
                 RealGradVector_t& dpsi, RealValueVector_t& d2psi);
   void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi,
                 RealGradVector_t& dpsi, RealHessVector_t& grad_grad_psi);
+  void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi,
+                RealGradVector_t& dpsi, RealHessVector_t& grad_grad_psi,
+                RealGGGVector_t& grad_grad_grad_psi);
   void evaluate_notranspose(const ParticleSet& P, int first, int last,
                             RealValueMatrix_t& psi, RealGradMatrix_t& dpsi,
                             RealValueMatrix_t& d2psi);
@@ -386,6 +389,9 @@ public:
                 ComplexGradVector_t& dpsi, ComplexValueVector_t& d2psi);
   void evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi,
                 ComplexGradVector_t& dpsi, ComplexHessVector_t& grad_grad_psi);
+  void evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi,
+                ComplexGradVector_t& dpsi, ComplexHessVector_t& grad_grad_psi, 
+                ComplexGGGVector_t& grad_grad_grad_psi);
   void evaluate_notranspose(const ParticleSet& P, int first, int last,
                             ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi,
                             ComplexValueMatrix_t& d2psi);

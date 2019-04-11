@@ -451,6 +451,14 @@ OptimizableSPOSet::evaluate(const ParticleSet& P, int iat,
 }
 
 void
+OptimizableSPOSet::evaluate(const ParticleSet& P, int iat,
+                            ValueVector_t& psi, GradVector_t& dpsi,
+                            HessVector_t& gg_psi, GGGVector_t& ggg_psi)
+{
+  APP_ABORT("Need specialization for OptimizableSPOSet::evaluate(...GGGVector_t)  Abort.\n");
+}
+
+void
 OptimizableSPOSet::evaluateBasis (const ParticleSet &P, int first, int last,
                                   ValueMatrix_t &basis_val, GradMatrix_t &basis_grad,
                                   ValueMatrix_t &basis_lapl)
