@@ -250,6 +250,20 @@ struct SoaAtomicBasisSet
     const T* restrict ylm_y = Ylm[2]; //gradY
     auto* restrict dpsi_z   = vgh.data(3) + offset;
     const T* restrict ylm_z = Ylm[3]; //gradZ
+  
+    auto* restrict dhpsi_xx = vgh.data(4) + offset;
+    const T* restrict ylm_xx = Ylm[4];
+    auto* restrict dhpsi_xy = vgh.data(5) + offset;
+    const T* restrict ylm_xy = Ylm[5];
+    auto* restrict dhpsi_xz = vgh.data(6) + offset;
+    const T* restrict ylm_xz = Ylm[6];
+    auto* restrict dhpsi_yy = vgh.data(7) + offset;
+    const T* restrict ylm_yy = Ylm[7];
+    auto* restrict dhpsi_yz = vgh.data(8) + offset;
+    const T* restrict ylm_yz = Ylm[8];
+    auto* restrict dhpsi_zz = vgh.data(9) + offset;
+    const T* restrict ylm_zz = Ylm[9];
+
 //    auto* restrict d2psi    = vgh.data(4) + offset;
 //    const T* restrict ylm_l = Ylm[4]; //lap
 
@@ -259,6 +273,12 @@ struct SoaAtomicBasisSet
       dpsi_x[ib] = 0;
       dpsi_y[ib] = 0;
       dpsi_z[ib] = 0;
+      dhpsi_xx[ib] = 0;
+      dhpsi_xy[ib] = 0;
+      dhpsi_xz[ib] = 0;
+      dhpsi_yy[ib] = 0;
+      dhpsi_yz[ib] = 0;
+      dhpsi_zz[ib] = 0;
 //      d2psi[ib]  = 0;
     }
 
@@ -285,11 +305,12 @@ struct SoaAtomicBasisSet
 
           //SIGN Change!!
           const T x = -dr_new[0], y = -dr_new[1], z = -dr_new[2];
-          Ylm.evaluateVGL(x, y, z);
+          Ylm.evaluateVGH(x, y, z);
 
           MultiRnl->evaluate(r_new, phi, dphi, d2phi);
 
           const T rinv = cone / r_new;
+          
 
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
           {
@@ -300,17 +321,45 @@ struct SoaAtomicBasisSet
             const T gr_x      = drnloverr * x;
             const T gr_y      = drnloverr * y;
             const T gr_z      = drnloverr * z;
+
+            //The non-strictly diagonal term in \partial_i \partial_j R_{nl} is
+            // \frac{x_i x_j}{r^2}\left(\frac{\partial^2 R_{nl}}{\partial r^2} - \frac{1}{r}\frac{\partial R_{nl}}{\partial r})        
+            // To save recomputation, I evaluate everything except the x_i*x_j term once, and store it in
+            // gr2_tmp.  The full term is obtained by x_i*x_j*gr2_tmp.  
+            const T gr2_tmp = rinv*rinv*(d2phi[nl] - drnloverr);
+            const T gr_xx     = x*x*gr2_tmp + drnloverr;
+            const T gr_xy     = x*y*gr2_tmp; 
+            const T gr_xz     = x*y*gr2_tmp; 
+            const T gr_yy     = x*y*gr2_tmp + drnloverr; 
+            const T gr_yz     = x*y*gr2_tmp; 
+            const T gr_zz     = x*y*gr2_tmp + drnloverr; 
+
             const T ang_x     = ylm_x[lm];
             const T ang_y     = ylm_y[lm];
             const T ang_z     = ylm_z[lm];
+            const T ang_xx    = ylm_xx[lm];
+            const T ang_xy    = ylm_xy[lm];
+            const T ang_xz    = ylm_xz[lm];
+            const T ang_yy    = ylm_yy[lm];
+            const T ang_yz    = ylm_yz[lm];
+            const T ang_zz    = ylm_zz[lm];
+
             const T vr        = phi[nl];
 
             psi[ib] += ang * vr;
             dpsi_x[ib] += ang * gr_x + vr * ang_x;
             dpsi_y[ib] += ang * gr_y + vr * ang_y;
             dpsi_z[ib] += ang * gr_z + vr * ang_z;
-//            d2psi[ib] += ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +
-//                vr * ylm_l[lm];
+
+            
+            // \partial_i \partial_j (R*Y) = Y \partial_i \partial_j R + R \partial_i \partial_j Y
+            //                             + (\partial_i R) (\partial_j Y) + (\partial_j R)(\partial_i Y)
+            dhpsi_xx[ib] += gr_xx*ang + ang_xx*vr + 2.0*gr_x*ang_x;
+            dhpsi_xy[ib] += gr_xy*ang + ang_xy*vr + gr_x*ang_y + gr_y*ang_x;
+            dhpsi_xz[ib] += gr_xz*ang + ang_xz*vr + gr_x*ang_z + gr_z*ang_x;
+            dhpsi_yy[ib] += gr_yy*ang + ang_yy*vr + 2.0*gr_y*ang_y; 
+            dhpsi_yz[ib] += gr_yz*ang + ang_yz*vr + gr_y*ang_z + gr_z*ang_y; 
+            dhpsi_zz[ib] += gr_zz*ang + ang_zz*vr + 2.0*gr_z*ang_z; 
           }
         }
       }

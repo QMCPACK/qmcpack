@@ -578,6 +578,14 @@ void test_HCN(bool transform)
     REQUIRE(dhpsi[0][3] == Approx( -0.04958838002));
     REQUIRE(dhpsi[0][4] == Approx(              0));
     REQUIRE(dhpsi[0][5] == Approx( -0.04958838002));
+
+    
+ //   SPOSet::ValueMatrix_t psiM(elec.R.size(), spo->getOrbitalSetSize());
+ //   SPOSet::GradMatrix_t dpsiM(elec.R.size(), spo->getOrbitalSetSize());
+ //   SPOSet::ValueMatrix_t d2psiM(elec.R.size(), spo->getOrbitalSetSize());
+ //   SPOSet::HessMatrix_t hesspsiV(elec.R.size(), spo->getOrbitalSetSize());
+ //   SPOSet::GGGMatrix_t d3psiV(elec.R.size(), spo->getOrbitalSetSize());
+ //   spo->evaluate_notranspose(elec, 0, elec.R.size(), psiM, dpsiM, hesspsiV, d3psiV);
     /*
     //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
     REQUIRE(dghpsi[0][0] == Approx(   -2.241965465));
