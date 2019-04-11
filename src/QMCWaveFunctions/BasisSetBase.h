@@ -145,7 +145,8 @@ struct SoaBasisSetBase
 {
   typedef T value_type;
   typedef VectorSoaContainer<T,OHMMS_DIM+2> vgl_type;
-  typedef VectorSoaContainer<T,OHMMS_DIM+7> vgh_type;
+  typedef VectorSoaContainer<T,10> vgh_type;
+  typedef VectorSoaContainer<T,20> vghgh_type;
   ///size of the basis set
   int BasisSetSize;
 

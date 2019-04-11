@@ -32,7 +32,7 @@ public:
   typedef SoaBasisSetBase<ValueType> basis_type;
   typedef basis_type::vgl_type vgl_type;
   typedef basis_type::vgh_type vgh_type;
-
+  typedef basis_type::vghgh_type vghgh_type;
   ///pointer to the basis set
   basis_type* myBasisSet;
   ///number of Single-particle orbitals
@@ -60,6 +60,10 @@ public:
 
   vgh_type Temph;
   vgh_type Temphv;
+
+  vghgh_type Tempgh;
+  vghgh_type Tempghv;
+
   //vector that contains active orbital rotation parameter indices
   std::vector<std::pair<int, int>> m_act_rot_inds;
   /** constructor
@@ -152,6 +156,7 @@ public:
     OrbitalSetSize = norbs;
     Tempv.resize(OrbitalSetSize);
     Temphv.resize(OrbitalSetSize);
+    Tempghv.resize(OrbitalSetSize);
   }
 
   /** set the basis set
@@ -230,8 +235,19 @@ private:
                          GradMatrix_t& dlogdet,
                          HessMatrix_t& dhlogdet) const;
   
-  void evaluate_vghgh_impl(const vgh_type& temp, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi) const;
+  void evaluate_vghgh_impl(const vghgh_type& temp, 
+                           ValueVector_t& psi, 
+                           GradVector_t& dpsi, 
+                           HessVector_t& d2psi,
+                           GGGVector_t& dghpsi) const;
 
+  void evaluate_vghgh_impl(const vghgh_type& temp,
+                         int i,
+                         ValueMatrix_t& logdet,
+                         GradMatrix_t& dlogdet,
+                         HessMatrix_t& dhlogdet,
+                         GGGMatrix_t& dghlogdet) const;
+  
 
 #if !defined(QMC_COMPLEX)
   //function to perform orbital rotations
