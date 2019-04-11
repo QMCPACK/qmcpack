@@ -81,7 +81,6 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
       mPosType dr;
       getScaledDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
-      //RealType rr=dot(dr,dr);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
       if (rr > m_r2max)
@@ -93,8 +92,6 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
         continue;
       RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
       //node is crossed reject the move
-      //if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
-      //if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
         ++nRejectTemp;
@@ -106,8 +103,6 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
       {
         EstimatorRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
-        //RealType scale=getDriftScale(m_tauovermass,grad_iat);
-        //dr = W.R[iat]-W.activePos-scale*real(grad_iat);
         getScaledDrift(tauovermass, grad_iat, dr);
         dr                      = W.R[iat] - W.activePos - dr;
         EstimatorRealType logGb = -oneover2tau * dot(dr, dr);
@@ -175,10 +170,6 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
   if (NonLocalMoveAcceptedTemp > 0)
   {
     RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
-    // debugging lines
-    //W.update(true);
-    //RealType logpsi2 = Psi.evaluateLog(W);
-    //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
     W.saveWalker(thisWalker);
     NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
   }
