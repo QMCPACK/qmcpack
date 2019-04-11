@@ -71,6 +71,19 @@ struct MultiFunctorAdapter
       d2u[i] = Rnl[i]->d2Y;
     }
   }
+  inline void evaluate(RealType r, RealType* restrict u, RealType* restrict du, 
+                       RealType* restrict d2u, RealType* restrict d3u)
+  {
+    const RealType rinv = RealType(1) / r;
+    for (size_t i = 0, n = Rnl.size(); i < n; ++i)
+    {
+      Rnl[i]->evaluateAll(r, rinv);
+      u[i]   = Rnl[i]->Y;
+      du[i]  = Rnl[i]->dY;
+      d2u[i] = Rnl[i]->d2Y;
+      d3u[i] = Rnl[i]->d3Y;
+    }
+  }
 };
 
 template<typename FN, typename SH>
