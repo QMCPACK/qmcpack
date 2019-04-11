@@ -590,12 +590,12 @@ void test_HCN(bool transform)
     REQUIRE(dpsi[0][1] == Approx(              0));
     REQUIRE(dpsi[0][2] == Approx(              0));
     //Hessian (xx,xy,xz,yy,yz,zz) 
-    REQUIRE(dhpsi[0][0] == Approx(   0.3523924743));
-    REQUIRE(dhpsi[0][1] == Approx(              0));
-    REQUIRE(dhpsi[0][2] == Approx(              0));
-    REQUIRE(dhpsi[0][3] == Approx( -0.04958838002));
-    REQUIRE(dhpsi[0][4] == Approx(              0));
-    REQUIRE(dhpsi[0][5] == Approx( -0.04958838002));
+    REQUIRE(dhpsi[0](0,0) == Approx(   0.3523924743));
+    REQUIRE(dhpsi[0](0,1) == Approx(              0));
+    REQUIRE(dhpsi[0](0,2) == Approx(              0));
+    REQUIRE(dhpsi[0](1,1) == Approx( -0.04958838002));
+    REQUIRE(dhpsi[0](1,2) == Approx(              0));
+    REQUIRE(dhpsi[0](2,2) == Approx( -0.04958838002));
 
     //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
     REQUIRE(dghpsi[0][0][0] == Approx(   -2.241965465));
