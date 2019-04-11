@@ -30,12 +30,6 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
-TimerNameList_t<DMCTimers> DMCTimerNames = {{DMC_buffer, "DMCUpdatePbyP::Buffer"},
-                                            {DMC_movePbyP, "DMCUpdatePbyP::movePbyP"},
-                                            {DMC_hamiltonian, "DMCUpdatePbyP::Hamiltonian"},
-                                            {DMC_collectables, "DMCUpdatePbyP::Collectables"},
-                                            {DMC_tmoves, "DMCUpdatePbyP::Tmoves"}};
-
 
 /// Constructor.
 DMCUpdatePbyPL2::DMCUpdatePbyPL2(MCWalkerConfiguration& w,

@@ -21,6 +21,7 @@
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyPVMC.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyPL2VMC.h"
+#include "QMCDrivers/DMC/DMCUpdatePbyPL2.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
@@ -123,6 +124,11 @@ void DMC::resetComponents(xmlNodePtr cur)
         app_log()<<"Using DMCUpdatePbyPL2VMC\n";
         Movers[ip] = new DMCUpdatePbyPL2VMC(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
       }
+      else if(!do_vmc && do_L2)
+      {
+        app_log()<<"Using DMCUpdatePbyPL2\n";
+        Movers[ip] = new DMCUpdatePbyPL2(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+      }
       Movers[ip]->put(cur);
       Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
@@ -211,6 +217,11 @@ void DMC::resetUpdateEngines()
         {
           app_log()<<"Using DMCUpdatePbyPL2VMC\n";
           Movers[ip] = new DMCUpdatePbyPL2VMC(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+        }
+        else if(!do_vmc && do_L2)
+        {
+          app_log()<<"Using DMCUpdatePbyPL2\n";
+          Movers[ip] = new DMCUpdatePbyPL2(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         }
         Movers[ip]->put(qmcNode);
         Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
