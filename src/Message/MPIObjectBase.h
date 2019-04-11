@@ -27,7 +27,6 @@ class MPIObjectBase
 {
 public:
   typedef Communicate::mpi_comm_type mpi_comm_type;
-  typedef Communicate::intra_comm_type intra_comm_type;
 
   ///constructor with communicator
   MPIObjectBase(Communicate* c);

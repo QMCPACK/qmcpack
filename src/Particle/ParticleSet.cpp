@@ -309,6 +309,12 @@ bool ParticleSet::get(std::ostream& os) const
     os << "    (... and " << (TotalNum - numToPrint) << " more particle positions ...)" << std::endl;
   }
 
+  for (const std::string& description : distTableDescriptions)
+  {
+    os << std::endl;
+    os << description;
+  }
+
   return true;
 }
 
@@ -363,12 +369,14 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
   if (DistTables.empty())
   {
     DistTables.reserve(4);
+    std::ostringstream description;
 #if defined(ENABLE_SOA)
-    DistTables.push_back(createDistanceTable(*this, DT_SOA));
+    DistTables.push_back(createDistanceTable(*this, DT_SOA, description));
 #else
     //if(dt_type==DT_SOA_PREFERRED) dt_type=DT_AOS; //safety
-    DistTables.push_back(createDistanceTable(*this, dt_type));
+    DistTables.push_back(createDistanceTable(*this, dt_type, description));
 #endif
+    distTableDescriptions.push_back(description.str());
     //add  this-this pair
     myDistTableMap.clear();
     myDistTableMap[myName] = 0;
@@ -390,8 +398,10 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
   std::map<std::string, int>::iterator tit(myDistTableMap.find(psrc.getName()));
   if (tit == myDistTableMap.end())
   {
+    std::ostringstream description;
     tid = DistTables.size();
-    DistTables.push_back(createDistanceTable(psrc, *this, dt_type));
+    DistTables.push_back(createDistanceTable(psrc, *this, dt_type, description));
+    distTableDescriptions.push_back(description.str());
     myDistTableMap[psrc.getName()] = tid;
     DistTables[tid]->ID            = tid;
     app_debug() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name << std::endl;

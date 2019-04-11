@@ -50,10 +50,10 @@ DistanceTableData* add(const ParticleSet& s, ParticleSet& t, int dt_type);
 } // namespace DistanceTable
 
 ///free function to create a distable table of s-s
-DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type);
+DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream& description);
 
 ///free function create a distable table of s-t
-DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type);
+DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description);
 
 } // namespace qmcplusplus
 #endif
