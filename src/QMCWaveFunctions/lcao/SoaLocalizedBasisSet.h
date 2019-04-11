@@ -40,6 +40,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   typedef SoaBasisSetBase<ORBT> BaseType;
   typedef typename BaseType::vgl_type vgl_type;
   typedef typename BaseType::vgh_type vgh_type;
+  typedef typename BaseType::vghgh_type vghgh_type;
 
   using BaseType::BasisSetSize;
 
@@ -176,7 +177,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   /** compute VGH 
    * @param P quantum particleset
    * @param iat active particle
-   * @param vgl Matrix(5,BasisSetSize)
+   * @param vgl Matrix(10,BasisSetSize)
    * @param trialMove if true, use Temp_r/Temp_dr
    */
   inline void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
@@ -189,6 +190,26 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     for (int c = 0; c < NumCenters; c++)
     {
       LOBasisSet[IonID[c]]->evaluateVGH(P.Lattice, dist[c], displ[c], BasisOffset[c], vgh);
+    }
+    
+  }
+
+  /** compute VGHGH 
+   * @param P quantum particleset
+   * @param iat active particle
+   * @param vghgh Matrix(20,BasisSetSize)
+   * @param trialMove if true, use Temp_r/Temp_dr
+   */
+  inline void evaluateVGHGH(const ParticleSet& P, int iat, vghgh_type& vghgh)
+  {
+   // APP_ABORT("SoaLocalizedBasisSet::evaluateVGH() not implemented\n");
+    
+    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
+    const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    for (int c = 0; c < NumCenters; c++)
+    {
+      LOBasisSet[IonID[c]]->evaluateVGHGH(P.Lattice, dist[c], displ[c], BasisOffset[c], vghgh);
     }
     
   }

@@ -279,7 +279,7 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P,
 // APP_ABORT("LCAORbitalSet::evaluate(psi,gpsi,hpsi,ghpsi) not implemented\n");
   
   //TAKE CARE OF IDENTITY
-//  myBasisSet->evaluateVGH(P, iat, Temph);
+  myBasisSet->evaluateVGHGH(P, iat, Tempgh);
   if (Identity)
     evaluate_vghgh_impl(Tempgh, psi, dpsi, dhpsi, dghpsi);
   else
