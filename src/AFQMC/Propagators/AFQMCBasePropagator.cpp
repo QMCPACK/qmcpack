@@ -40,12 +40,14 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   std::string freep("no");
   std::string impsam("yes");
   std::string external_field("");
+  double extfield_scale(1.0);
   ParameterSet m_param;
   m_param.add(vbias_bound,"vbias_bound","double");
   m_param.add(constrain,"apply_constrain","std::string");
   m_param.add(impsam,"importance_sampling","std::string");
   m_param.add(hyb,"hybrid","std::string");
   m_param.add(external_field,"external_field","std::string");
+  m_param.add(extfield_scale,"external_field_scale","double");
   if(TG.TG_local().size() == 1)
     m_param.add(nbatched_propagation,"nbatch","int");
   m_param.add(freep,"free_projection","std::string");
@@ -122,15 +124,17 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
     spin_dependent_P1=true;
     H1ext.reextent({2,NMO,NMO});
     if(TG.Node().root()) {
-        std::ifstream in(external_field.c_str());
-        for(int i=0; i<NMO; i++)
-          for(int j=0; j<NMO; j++)
-            in>>H1ext[0][i][j];
-        for(int i=0; i<NMO; i++)
-          for(int j=0; j<NMO; j++)
-            in>>H1ext[1][i][j];
-        if(in.fail())
-            APP_ABORT(" Error: Problems with external field.");
+      std::ifstream in(external_field.c_str());
+      for(int i=0; i<NMO; i++)
+        for(int j=0; j<NMO; j++)
+          in>>H1ext[0][i][j];
+      for(int i=0; i<NMO; i++)
+        for(int j=0; j<NMO; j++)
+          in>>H1ext[1][i][j];
+      if(in.fail())
+          APP_ABORT(" Error: Problems with external field.");
+      ma::scal(ComplexType(extfield_scale),H1ext[0]);
+      ma::scal(ComplexType(extfield_scale),H1ext[1]);
     }
     TG.Node().barrier();
 

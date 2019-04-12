@@ -85,6 +85,9 @@ class BackPropagatedEstimator: public EstimatorBase
       nback_prop_steps.push_back(i*max_nback_prop/nave);
     nback_prop_steps.push_back(max_nback_prop);
 
+    // sort the requested number of steps
+    std::sort(nback_prop_steps.begin(),nback_prop_steps.end());
+
     if(max_nback_prop <= 0)
       APP_ABORT("max_nback_prop <= 0 is not allowed.\n");
 
@@ -136,14 +139,22 @@ class BackPropagatedEstimator: public EstimatorBase
       APP_ABORT(" Error: Found bp_step <=0 in BackPropagate::accumulate_block. \n"); 
     if(bp_step > max_nback_prop)
       APP_ABORT(" Error: max_nback_prop in back propagation estimator must be conmensuate with nStep*nSubStep.\n");
-    if(bp_step < max_nback_prop) return;
-    accumulated_in_last_block=true;
-    AFQMCTimers[back_propagate_timer]->start();
-    using std::fill_n;
     if(max_nback_prop > wset.NumBackProp())
       APP_ABORT(" Error: max_nback_prop > wset.NumBackProp() \n");
+
+    // check if measurement is needed 
+    int iav(-1);
+    for(int i=0; i<nback_prop_steps.size(); i++) {
+      if(bp_step == nback_prop_steps[i]) {
+        iav = i; 
+        break;
+      }    
+    }
+    if(iav < 0) return;
+
+    using std::fill_n;
     // 0. skip if requested 
-    if(iblock < nblocks_skip) {
+    if(bp_step == max_nback_prop && iblock < nblocks_skip) {
       if( iblock+1 == nblocks_skip )
         for(auto it=wset.begin(); it<wset.end(); ++it)
           it->setSlaterMatrixN(); 
@@ -151,6 +162,8 @@ class BackPropagatedEstimator: public EstimatorBase
       wset.setBPPos(0);
       return;
     }
+
+    AFQMCTimers[back_propagate_timer]->start();
     int nrefs = wfn0.number_of_references_for_back_propagation();
     int nrow(NMO*((walker_type==NONCOLLINEAR)?2:1));
     int ncol(NAEA+((walker_type==CLOSED)?0:NAEB));
@@ -162,53 +175,53 @@ class BackPropagatedEstimator: public EstimatorBase
     if(detR.size(0) != wset.size() || detR.size(1) != nx*nrefs)
       detR.reextent({wset.size(),nrefs*nx}); 
 
-    int nave(nback_prop_steps.size());
     int n0,n1;
     std::tie(n0,n1) = FairDivideBoundary(TG.getLocalTGRank(),int(Refs.size(2)),TG.getNCoresPerTG());
     boost::multi::array_ref<ComplexType,3> Refs_(to_address(Refs.origin()),Refs.extensions());
-    fill_n(denom.origin(),denom.num_elements(),ComplexType(0.0,0.0));
-    fill_n(DMBuffer.origin(), DMBuffer.num_elements(), ComplexType(0.0,0.0));
-    for(int iav=0; iav<nave; ++iav) { 
+    fill_n(denom[iav].origin(),denom[iav].num_elements(),ComplexType(0.0,0.0));
+    fill_n(DMBuffer[iav].origin(), DMBuffer[iav].num_elements(), ComplexType(0.0,0.0));
 
-      int nback_prop = nback_prop_steps[iav];
-      // 2. setup back propagated references
-      wfn0.getReferencesForBackPropagation(Refs_[0]);
-      for(int iw=1; iw<wset.size(); ++iw)
-        for(int ref=0; ref<nrefs; ++ref)
-         copy_n(Refs_[0][ref].origin()+n0,n1-n0,Refs_[iw][ref].origin()+n0);
-      TG.TG_local().barrier();
+    // 2. setup back propagated references
+    wfn0.getReferencesForBackPropagation(Refs_[0]);
+    for(int iw=1; iw<wset.size(); ++iw)
+      for(int ref=0; ref<nrefs; ++ref)
+       copy_n(Refs_[0][ref].origin()+n0,n1-n0,Refs_[iw][ref].origin()+n0);
+    TG.TG_local().barrier();
 
-      //3. propagate backwards the references
-      prop0.BackPropagate(nback_prop,nStabalize,wset,Refs_,detR);
+    //3. propagate backwards the references
+    prop0.BackPropagate(bp_step,nStabalize,wset,Refs_,detR);
 
-      //4. calculate properties, only rdm now but make a list or properties later
-      // adjust weights here is path restoration
-      stdCVector wgt(wset.getWeightHistory()[nback_prop-1]);
-      if(path_restoration) {
-        auto&& factors(wset.getWeightFactors());
-        for(int k=0; k<nback_prop; k++)  
-          for(int i=0; i<wgt.size(); i++) 
-            wgt[i] *= factors[k][i];
-      } else if(!importanceSampling) {
-        stdCVector phase(iextensions<1u>{wset.size()});
-        wset.getProperty(PHASE,phase);
-        for(int i=0; i<wgt.size(); i++) wgt[i] *= phase[i];
-      }
-      CMatrix_ref BackPropDM(DMBuffer[iav].origin(), {dm_dims.first,dm_dims.second});
-      stdCVector_ref denom_(denom[iav].origin(), iextensions<1u>{denom.size(1)});
-      
-      wfn0.WalkerAveragedDensityMatrix(wset, wgt, BackPropDM, denom_, 
-                                     !importanceSampling, std::addressof(Refs_),
-                                     std::addressof(detR));
+    //4. calculate properties, only rdm now but make a list or properties later
+    // adjust weights here is path restoration
+    stdCVector wgt(iextensions<1u>{wset.size()});
+    wset.getProperty(WEIGHT,wgt);
+    if(path_restoration) {
+      auto&& factors(wset.getWeightFactors());
+      for(int k=0; k<bp_step; k++)  
+        for(int i=0; i<wgt.size(); i++) 
+          wgt[i] *= factors[k][i];
+    } else if(!importanceSampling) {
+      stdCVector phase(iextensions<1u>{wset.size()});
+      wset.getProperty(PHASE,phase);
+      for(int i=0; i<wgt.size(); i++) wgt[i] *= phase[i];
     }
+    CMatrix_ref BackPropDM(DMBuffer[iav].origin(), {dm_dims.first,dm_dims.second});
+    stdCVector_ref denom_(denom[iav].origin(), iextensions<1u>{denom.size(1)});
+    
+    wfn0.WalkerAveragedDensityMatrix(wset, wgt, BackPropDM, denom_, 
+                                   !importanceSampling, std::addressof(Refs_),
+                                   std::addressof(detR));
 
-    // 5. setup for next block 
-    for(auto it=wset.begin(); it<wset.end(); ++it)
-      it->setSlaterMatrixN(); 
-    wset.setBPPos(0);
+    if(bp_step == max_nback_prop) {
+      // 5. setup for next block 
+      for(auto it=wset.begin(); it<wset.end(); ++it)
+        it->setSlaterMatrixN(); 
+      wset.setBPPos(0);
 
-    // 6. increase block counter
-    iblock++;
+      // 6. increase block counter
+      iblock++;
+      accumulated_in_last_block=true;
+    }
     AFQMCTimers[back_propagate_timer]->stop();
   }
 
