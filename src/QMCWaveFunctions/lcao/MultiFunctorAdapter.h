@@ -77,7 +77,7 @@ struct MultiFunctorAdapter
     const RealType rinv = RealType(1) / r;
     for (size_t i = 0, n = Rnl.size(); i < n; ++i)
     {
-      Rnl[i]->evaluateAll(r, rinv);
+      Rnl[i]->evaluateWithThirdDeriv(r,rinv);
       u[i]   = Rnl[i]->Y;
       du[i]  = Rnl[i]->dY;
       d2u[i] = Rnl[i]->d2Y;
