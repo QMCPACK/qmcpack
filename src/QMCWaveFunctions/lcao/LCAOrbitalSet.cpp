@@ -183,36 +183,36 @@ inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
     d2psi[j](1,1)                 = hyy[j]; 
     d2psi[j](2,1) = d2psi[j](1,2) = hyz[j]; 
     d2psi[j](2,2)                 = hzz[j]; 
-
-    dghpsi[j][0][0] = gh_xxx[j];  //x|xx  
-    dghpsi[j][0][1] = gh_xxy[j];  //x|xy
-    dghpsi[j][0][2] = gh_xxz[j];  //x|xz
-    dghpsi[j][0][3] = gh_xxy[j];  //x|yx = xxy
-    dghpsi[j][0][4] = gh_xyy[j];  //x|yy
-    dghpsi[j][0][5] = gh_xyz[j];  //x|yz
-    dghpsi[j][0][6] = gh_xxz[j];  //x|zx = xxz
-    dghpsi[j][0][7] = gh_xyz[j];  //x|zy = xyz
-    dghpsi[j][0][8] = gh_xzz[j];  //x|zz
     
-    dghpsi[j][1][0] = gh_xxy[j];  //y|xx = xxy
-    dghpsi[j][1][1] = gh_xyy[j];  //y|xy = xyy
-    dghpsi[j][1][2] = gh_xyz[j];  //y|xz = xyz
-    dghpsi[j][1][3] = gh_xyy[j];  //y|yx = xyy
-    dghpsi[j][1][4] = gh_yyy[j];  //y|yy
-    dghpsi[j][1][5] = gh_yyz[j];  //y|yz 
-    dghpsi[j][1][6] = gh_xyz[j];  //y|zx = xyz
-    dghpsi[j][1][7] = gh_xyy[j];  //y|xy = xyy
-    dghpsi[j][1][8] = gh_yzz[j];  //y|zz 
+    dghpsi[j][0](0,0) = gh_xxx[j];  //x|xx  
+    dghpsi[j][0](0,1) = gh_xxy[j];  //x|xy
+    dghpsi[j][0](0,2) = gh_xxz[j];  //x|xz
+    dghpsi[j][0](1,0) = gh_xxy[j];  //x|yx = xxy
+    dghpsi[j][0](1,1) = gh_xyy[j];  //x|yy
+    dghpsi[j][0](1,2) = gh_xyz[j];  //x|yz
+    dghpsi[j][0](2,0) = gh_xxz[j];  //x|zx = xxz
+    dghpsi[j][0](2,1) = gh_xyz[j];  //x|zy = xyz
+    dghpsi[j][0](2,2) = gh_xzz[j];  //x|zz
+    
+    dghpsi[j][1](0,0) = gh_xxy[j];  //y|xx = xxy
+    dghpsi[j][1](0,1) = gh_xyy[j];  //y|xy = xyy
+    dghpsi[j][1](0,2) = gh_xyz[j];  //y|xz = xyz
+    dghpsi[j][1](1,0) = gh_xyy[j];  //y|yx = xyy
+    dghpsi[j][1](1,1) = gh_yyy[j];  //y|yy
+    dghpsi[j][1](1,2) = gh_yyz[j];  //y|yz 
+    dghpsi[j][1](2,0) = gh_xyz[j];  //y|zx = xyz
+    dghpsi[j][1](2,1) = gh_xyy[j];  //y|xy = xyy
+    dghpsi[j][1](2,2) = gh_yzz[j];  //y|zz 
    
-    dghpsi[j][2][0] = gh_xzz[j];  //z|xx = xzz
-    dghpsi[j][2][1] = gh_xyz[j];  //z|xy = xyz
-    dghpsi[j][2][2] = gh_xzz[j];  //z|xz = xzz
-    dghpsi[j][2][3] = gh_xyz[j];  //z|yx = xyz
-    dghpsi[j][2][4] = gh_yyz[j];  //z|yy = yyz
-    dghpsi[j][2][5] = gh_yzz[j];  //z|yz = yzz
-    dghpsi[j][2][6] = gh_xzz[j];  //z|zx = xzz
-    dghpsi[j][2][7] = gh_yzz[j];  //z|zy = yzz
-    dghpsi[j][2][8] = gh_zzz[j];  //z|zz
+    dghpsi[j][2](0,0) = gh_xzz[j];  //z|xx = xzz
+    dghpsi[j][2](0,1) = gh_xyz[j];  //z|xy = xyz
+    dghpsi[j][2](0,2) = gh_xzz[j];  //z|xz = xzz
+    dghpsi[j][2](1,0) = gh_xyz[j];  //z|yx = xyz
+    dghpsi[j][2](1,1) = gh_yyz[j];  //z|yy = yyz
+    dghpsi[j][2](1,2) = gh_yzz[j];  //z|yz = yzz
+    dghpsi[j][2](2,0) = gh_xzz[j];  //z|zx = xzz
+    dghpsi[j][2](2,1) = gh_yzz[j];  //z|zy = yzz
+    dghpsi[j][2](2,2) = gh_zzz[j];  //z|zz
    
    
   }
