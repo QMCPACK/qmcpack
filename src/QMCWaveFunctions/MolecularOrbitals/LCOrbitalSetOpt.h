@@ -779,6 +779,16 @@ public:
     throw std::runtime_error("LCOrbitalSetOpt::evaluate(P, iat, psi, dpsi, grad_grad_psi) not implemented");
   }
 
+  inline void evaluate(const ParticleSet& P,
+                       int iat,
+                       ValueVector_t& psi,
+                       GradVector_t& dpsi,
+                       HessVector_t& grad_grad_psi,
+                       GGGVector_t& grad_grad_grad_psi)
+  {
+    APP_ABORT("LCOrbitalSetOpt::evaluate(P, iat, psi, dpsi, grad_grad_psi, grad_grad_grad_psi) not implemented");
+  }
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  An evaluate function that has not yet been implemented.
   ///

@@ -137,7 +137,15 @@ public:
       grad_grad_psi[j] = myBasisSet->grad_grad_Phi[j];
   }
 
-
+  inline void evaluate(const ParticleSet& P,
+                       int iat,
+                       ValueVector_t& psi,
+                       GradVector_t& dpsi,
+                       HessVector_t& grad_grad_psi,
+                       GGGVector_t& grad_grad_grad_psi)
+  {
+    APP_ABORT("LCOrbitalSetWithCorrection::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented.\n");
+  }
   ///** evaluate everything for the walker move
   // *
   // * Using gemm can improve the performance for a larger problem
@@ -185,8 +193,7 @@ public:
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& grad_grad_logdet)
   {
-    APP_ABORT(
-        "Need specialization of LCOrbitalSetWithCorrection<BS,true>::evaluate_notranspose() for grad_grad_logdet. \n");
+    APP_ABORT("Need specialization of LCOrbitalSetWithCorrection<BS,true>::evaluate_notranspose() for grad_grad_logdet. \n");
   }
 
   void evaluate_notranspose(const ParticleSet& P,
@@ -586,6 +593,16 @@ public:
   {
     evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
     MatrixOperators::transpose(logdet);
+  }
+
+  inline void evaluate(const ParticleSet& P,
+                       int iat,
+                       ValueVector_t& psi,
+                       GradVector_t& dpsi,
+                       HessVector_t& grad_grad_psi,
+                       GGGVector_t& grad_grad_grad_psi)
+  {
+    APP_ABORT("LCOrbitalSetWithCorrection::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented.\n");
   }
 
   void evaluate_notranspose(const ParticleSet& P,

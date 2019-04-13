@@ -96,6 +96,11 @@ public:
     APP_ABORT("Need specialization of evaluate(iat) for HessVector. \n");
   }
 
+  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& gg_psi, GGGVector_t& ggg_psi)
+  {
+    APP_ABORT("Need specialization of evaluate(iat) for GGGVector. \n");
+  }
+
   /** boolean
    *
    * If true, this has to delete the BasisSet

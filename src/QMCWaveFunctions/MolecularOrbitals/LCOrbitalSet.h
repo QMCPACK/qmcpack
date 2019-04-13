@@ -121,6 +121,16 @@ public:
       grad_grad_psi[j] = myBasisSet->grad_grad_Phi[j];
   }
 
+  inline void evaluate(const ParticleSet& P,
+                       int iat,
+                       ValueVector_t& psi,
+                       GradVector_t& dpsi,
+                       HessVector_t& grad_grad_psi,
+                       GGGVector_t& grad_grad_grad_psi)
+  {
+    APP_ABORT("LCOrbitalSet::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented\n");
+  }
+
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
@@ -323,6 +333,16 @@ public:
     //        psi[j]=res; dpsi[j]=dres; grad_grad_psi[j]=hess;
     //      }
     //#endif
+  }
+
+  inline void evaluate(const ParticleSet& P,
+                       int iat,
+                       ValueVector_t& psi,
+                       GradVector_t& dpsi,
+                       HessVector_t& grad_grad_psi,
+                       GGGVector_t& grad_grad_grad_psi)
+  {
+    APP_ABORT("LCOrbitalSet::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented\n");
   }
 
   void evaluate_notranspose(const ParticleSet& P,
