@@ -290,12 +290,12 @@ void ParticleSet::randomizeFromSource(ParticleSet& src)
 bool ParticleSet::get(std::ostream& os) const
 {
   os << "  ParticleSet '" << getName() << "' contains " << TotalNum << " particles : ";
-  for (int i = 0; i < SubPtcl.size()-1; i++)
-    os << " " << mySpecies.speciesName[i] << "(" << SubPtcl[i+1]-SubPtcl[i] << ")";
+  if (SubPtcl.size() > 0)
+    for (int i = 0; i < SubPtcl.size() - 1; i++)
+      os << " " << mySpecies.speciesName[i] << "(" << SubPtcl[i + 1] - SubPtcl[i] << ")";
   os << std::endl;
   if (!IsGrouped)
-    os << "    Particles are not grouped by species in the input file. Algorithms may not be optimal!"
-       << std::endl;
+    os << "    Particles are not grouped by species in the input file. Algorithms may not be optimal!" << std::endl;
   os << std::endl;
 
   const int maxParticlesToPrint = 10;
