@@ -51,7 +51,7 @@ bool InitMolecularSystem::put(xmlNodePtr cur)
   ParticleSet* ions = ptclPool->getParticleSet(source);
   if (ions == 0)
   {
-    ERRORMSG("No target particle " << target << " exists.")
+    ERRORMSG("No source particle " << source << " exists.")
     return false;
   }
 
