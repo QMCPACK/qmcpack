@@ -191,13 +191,16 @@ bool ParticleSetPool::put(xmlNodePtr cur)
 void ParticleSetPool::randomize()
 {
   app_log() << "ParticleSetPool::randomize " << std::endl;
+  bool success = true;
   for (int i = 0; i < randomize_nodes.size(); ++i)
   {
     InitMolecularSystem moinit(this);
-    moinit.put(randomize_nodes[i]);
+    success &= moinit.put(randomize_nodes[i]);
     xmlFreeNode(randomize_nodes[i]);
   }
   randomize_nodes.clear();
+  if(!success)
+    APP_ABORT("ParticleSePool::randomize failed to randomize some Particlesets!");
 }
 
 bool ParticleSetPool::get(std::ostream& os) const
