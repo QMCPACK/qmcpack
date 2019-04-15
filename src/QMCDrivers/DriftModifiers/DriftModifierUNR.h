@@ -10,14 +10,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_DRIFTMODIFIER_UMR_H
-#define QMCPLUSPLUS_DRIFTMODIFIER_UMR_H
+#ifndef QMCPLUSPLUS_DRIFTMODIFIER_UNR_H
+#define QMCPLUSPLUS_DRIFTMODIFIER_UNR_H
 
 #include "QMCDrivers/DriftModifiers/DriftModifierBase.h"
 
 namespace qmcplusplus
 {
-class DriftModifierUMR : public DriftModifierBase
+class DriftModifierUNR : public DriftModifierBase
 {
 public:
   using RealType = QMCTraits::RealType;

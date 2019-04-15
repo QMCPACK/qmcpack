@@ -10,11 +10,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DriftModifiers/DriftModifierUMR.h"
+#include "QMCDrivers/DriftModifiers/DriftModifierUNR.h"
 
 namespace qmcplusplus
 {
-void DriftModifierUMR::getScaledDrift(const ParticleSet& P,
+void DriftModifierUNR::getScaledDrift(const ParticleSet& P,
                                       const TrialWaveFunction& W,
                                       const QMCHamiltonian& H,
                                       RealType tau,

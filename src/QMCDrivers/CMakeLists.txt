@@ -35,7 +35,7 @@ SET(QMCDRIVERS
   CloneManager.cpp
   QMCUpdateBase.cpp
   DriftModifiers/DriftModifierBuilder.cpp
-  DriftModifiers/DriftModifierUMR.cpp
+  DriftModifiers/DriftModifierUNR.cpp
   VMC/VMCUpdatePbyP.cpp
   VMC/VMCUpdateAll.cpp
   VMC/VMCFactory.cpp

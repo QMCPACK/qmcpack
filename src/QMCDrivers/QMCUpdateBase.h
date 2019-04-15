@@ -23,8 +23,10 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
+#include "QMCDrivers/DriftModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "Estimators/EstimatorManagerBase.h"
+
 namespace qmcplusplus
 {
 class TraceManager;
@@ -254,6 +256,8 @@ protected:
   RandomGenerator_t& RandomGen;
   ///branch engine
   const BranchEngineType* branchEngine;
+  /// drift modifer
+  DriftModifierBase* DriftModifier;
   ///estimator
   EstimatorManagerBase* Estimators;
   ///parameters

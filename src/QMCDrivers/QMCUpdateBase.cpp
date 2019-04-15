@@ -16,6 +16,7 @@
 
 #include "Platforms/sysutil.h"
 #include "QMCDrivers/QMCUpdateBase.h"
+#include "QMCDrivers/DriftModifiers/DriftModifierBuilder.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -35,14 +36,14 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              TrialWaveFunction& guide,
                              QMCHamiltonian& h,
                              RandomGenerator_t& rg)
-    : W(w), Psi(psi), Guide(guide), H(h), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+    : W(w), Psi(psi), Guide(guide), H(h), RandomGen(rg), DriftModifier(0), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-    : W(w), Psi(psi), H(h), Guide(psi), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+    : W(w), Psi(psi), H(h), Guide(psi), RandomGen(rg), DriftModifier(0), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
@@ -79,6 +80,8 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
 {
   H.setNonLocalMoves(cur);
   bool s = myParams.put(cur);
+  if (DriftModifier) delete DriftModifier;
+  DriftModifier = createDriftModifier(cur);
   return s;
 }
 
