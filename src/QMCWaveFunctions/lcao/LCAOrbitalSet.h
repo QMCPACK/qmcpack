@@ -77,7 +77,7 @@ public:
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi,
                            const ValueType& psiCurrent,
-                           const std::vector<RealType>& Coeff,
+                           const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
                            const std::vector<size_t>& C2node_dn,
                            const ValueVector_t& detValues_up,
