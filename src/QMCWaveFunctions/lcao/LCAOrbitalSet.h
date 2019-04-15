@@ -58,10 +58,18 @@ public:
   ///Tempv(OrbitalSetSize) Tempv=C*Temp
   vgl_type Tempv;
 
+  //These are temporary VectorSoAContainers to hold value, gradient, and hessian for
+  //all basis or SPO functions evaluated at a given point.
+  //Nbasis x [1(value)+3(gradient)+6(hessian)]
   vgh_type Temph;
+  //Norbitals x [1(value)+3(gradient)+6(hessian)]
   vgh_type Temphv;
 
+  //These are temporary VectorSoAContainers to hold value, gradient, hessian, and
+  // gradient hessian for all basis or SPO functions evaluated at a given point.
+  //Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
   vghgh_type Tempgh;
+  //Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
   vghgh_type Tempghv;
 
   //vector that contains active orbital rotation parameter indices
@@ -226,15 +234,18 @@ private:
                          ValueMatrix_t& logdet,
                          GradMatrix_t& dlogdet,
                          ValueMatrix_t& d2logdet) const;
-
+  //These two functions unpack the data in vgh_type temp object into wavefunction friendly data structures.
+  //This unpacks temp into vectors psi, dpsi, and d2psi.
   void evaluate_vgh_impl(const vgh_type& temp, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi) const;
 
+  //Unpacks temp into the ith row (or electron index) of logdet, dlogdet, dhlogdet.
   void evaluate_vgh_impl(const vgh_type& temp,
                          int i,
                          ValueMatrix_t& logdet,
                          GradMatrix_t& dlogdet,
                          HessMatrix_t& dhlogdet) const;
-  
+  //Unpacks data in vghgh_type temp object into wavefunction friendly data structures for value, gradient, hessian
+  //and gradient hessian.  
   void evaluate_vghgh_impl(const vghgh_type& temp, 
                            ValueVector_t& psi, 
                            GradVector_t& dpsi, 
