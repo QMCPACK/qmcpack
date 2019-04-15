@@ -42,11 +42,6 @@ public:
   typedef MCWalkerConfiguration::Walker_t Walker_t;
   typedef MCWalkerConfiguration::iterator WalkerIter_t;
   typedef SimpleFixedNodeBranch BranchEngineType;
-#ifdef MIXED_PRECISION
-  typedef TinyVector<OHMMS_PRECISION_FULL, DIM> mPosType;
-#else
-  typedef PosType mPosType;
-#endif
 
   ///If true, terminate the simulation
   bool BadState;

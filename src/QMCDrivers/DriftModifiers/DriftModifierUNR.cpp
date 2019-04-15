@@ -18,9 +18,9 @@ void DriftModifierUNR::getScaledDrift(const ParticleSet& P,
                                       const TrialWaveFunction& W,
                                       const QMCHamiltonian& H,
                                       RealType tau,
-                                      GradType qf,
+                                      const GradType& qf,
                                       int iat,
-                                      PosType drift) const
+                                      PosType& drift) const
 {
   // convert the complex WF gradient to real and temporarily store in drift.
   convert(qf, drift);

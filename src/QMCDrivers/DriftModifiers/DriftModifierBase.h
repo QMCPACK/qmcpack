@@ -30,15 +30,15 @@ public:
   /** evaluate a drift with a real force
    * @param tau timestep
    * @param qf quantum force
-   * @param drift
+   * @param drift output
    */
   virtual void getScaledDrift(const ParticleSet& P,
                               const TrialWaveFunction& W,
                               const QMCHamiltonian& H,
                               RealType tau,
-                              GradType qf,
+                              const GradType& qf,
                               int iat,
-                              PosType drift) const = 0;
+                              PosType& drift) const = 0;
 
   virtual bool parseXML(xmlNodePtr cur){};
 

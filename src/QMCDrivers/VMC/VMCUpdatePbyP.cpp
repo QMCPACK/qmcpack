@@ -64,11 +64,11 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
         W.setActive(iat);
-        mPosType dr;
+        PosType dr;
         if (UseDrift)
         {
           GradType grad_now = Psi.evalGrad(W, iat);
-          getScaledDrift(tauovermass, grad_now, dr);
+          DriftModifier->getScaledDrift(W, Psi, H, tauovermass, grad_now, iat, dr);
           dr += sqrttau * deltaR[iat];
         }
         else
@@ -87,7 +87,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           RealType ratio = Psi.ratioGrad(W, iat, grad_new);
           prob           = ratio * ratio;
           logGf          = mhalf * dot(deltaR[iat], deltaR[iat]);
-          getScaledDrift(tauovermass, grad_new, dr);
+          DriftModifier->getScaledDrift(W, Psi, H, tauovermass, grad_new, iat, dr);
           dr    = W.R[iat] - W.activePos - dr;
           logGb = -oneover2tau * dot(dr, dr);
         }

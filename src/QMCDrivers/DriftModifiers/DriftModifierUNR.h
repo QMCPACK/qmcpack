@@ -27,9 +27,9 @@ public:
                       const TrialWaveFunction& W,
                       const QMCHamiltonian& H,
                       RealType tau,
-                      GradType qf,
+                      const GradType& qf,
                       int iat,
-                      PosType drift) const final;
+                      PosType& drift) const final;
 
   bool parseXML(xmlNodePtr cur) final { return true; };
 };

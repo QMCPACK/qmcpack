@@ -78,7 +78,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       W.setActive(iat);
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
-      mPosType dr;
+      PosType dr;
       getScaledDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
       //RealType rr=dot(dr,dr);
