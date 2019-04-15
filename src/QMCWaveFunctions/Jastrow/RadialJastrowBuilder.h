@@ -46,8 +46,6 @@ private:
   std::string TypeOpt;
   ///jastrow/@function
   std::string Jastfunction;
-  ///jastrow/@source
-  std::string SourceOpt;
   ///jastrow/@spin
   std::string SpinOpt;
   ///particle set for source particle

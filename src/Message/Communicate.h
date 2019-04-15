@@ -119,7 +119,7 @@ public:
   void initializeAsNodeComm(const Communicate& parent);
   void finalize();
   void abort();
-  void abort(const char* msg);
+  void barrier_and_abort(const std::string& msg);
   void set_world();
 
 #if defined(HAVE_MPI)
