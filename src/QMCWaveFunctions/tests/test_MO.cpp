@@ -486,7 +486,6 @@ void test_HCN(bool transform)
     bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
-    //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
     SPOSet::ValueVector_t values;
     SPOSet::GradVector_t dpsi;
@@ -500,12 +499,6 @@ void test_HCN(bool transform)
 
     sposet->evaluate(elec, 0, values);
 
-    //typedef LCOrbitalSet<LocalizedBasisSet<SphericalBasisSet<GaussianCombo<double>>>, false> OrbType;
-    //OrbType *lcob = dynamic_cast<OrbType *>(sposet);
-    //REQUIRE(lcob != NULL);
-
-    //std::cout << "atomic orbs = " << lcob->myBasisSet->Phi << std::endl;
-    //std::cout << "values = " << values << std::endl;
     REQUIRE(values[0] == Approx(0.009452265234));
     REQUIRE(values[1] == Approx(0.02008357407));
     REQUIRE(values[2] == Approx(0.4163749594));
@@ -579,92 +572,92 @@ void test_HCN(bool transform)
     REQUIRE(dhpsi[0](1,2) == Approx(              0));
     REQUIRE(dhpsi[0](2,2) == Approx( -0.04958838002));
 
-    SPOSet::GGGVector_t dghpsi;
-    dghpsi.resize(7);
+    /////////////////////////////////////////////////////////////////////////////
+    //Now we're going to test the API's called by SPOSet for higher derivatives//
+    /////////////////////////////////////////////////////////////////////////////
+    SPOSet::ValueMatrix_t psiM(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::GradMatrix_t dpsiM(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::HessMatrix_t hesspsiV(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::GGGMatrix_t d3psiV(elec.R.size(), sposet->getOrbitalSetSize());
+   
+    sposet->evaluate_notranspose(elec, 0, elec.R.size(), psiM, dpsiM, hesspsiV, d3psiV);
     
-    sposet->evaluate(elec,0,values,dpsi,dhpsi,dghpsi);
-    
-    // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
-    REQUIRE(values[0] == Approx( 0.009452265234));
-    REQUIRE(dpsi[0][0] == Approx( -0.05400764372));
-    REQUIRE(dpsi[0][1] == Approx(              0));
-    REQUIRE(dpsi[0][2] == Approx(              0));
-    //Hessian (xx,xy,xz,yy,yz,zz) 
-    REQUIRE(dhpsi[0](0,0) == Approx(   0.3523924743));
-    REQUIRE(dhpsi[0](0,1) == Approx(              0));
-    REQUIRE(dhpsi[0](0,2) == Approx(              0));
-    REQUIRE(dhpsi[0](1,1) == Approx( -0.04958838002));
-    REQUIRE(dhpsi[0](1,2) == Approx(              0));
-    REQUIRE(dhpsi[0](2,2) == Approx( -0.04958838002));
-
-    //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
-    REQUIRE(dghpsi[0][0](0,0) == Approx(   -2.241965465));
-    REQUIRE(dghpsi[0][0](0,1) == Approx(              0));
-    REQUIRE(dghpsi[0][0](0,2) == Approx(              0));
-    REQUIRE(dghpsi[0][0](1,1) == Approx(   0.3714481861));
-    REQUIRE(dghpsi[0][0](1,2) == Approx(              0));
-    REQUIRE(dghpsi[0][0](2,2) == Approx(   0.3714481861));
-    REQUIRE(dghpsi[0][1](1,1) == Approx(              0));
-    REQUIRE(dghpsi[0][1](1,2) == Approx(              0));
-    REQUIRE(dghpsi[0][1](2,2) == Approx(              0));
-    REQUIRE(dghpsi[0][2](2,2) == Approx(              0)); 
-
- //   SPOSet::ValueMatrix_t psiM(elec.R.size(), spo->getOrbitalSetSize());
- //   SPOSet::GradMatrix_t dpsiM(elec.R.size(), spo->getOrbitalSetSize());
- //   SPOSet::ValueMatrix_t d2psiM(elec.R.size(), spo->getOrbitalSetSize());
- //   SPOSet::HessMatrix_t hesspsiV(elec.R.size(), spo->getOrbitalSetSize());
- //   SPOSet::GGGMatrix_t d3psiV(elec.R.size(), spo->getOrbitalSetSize());
- //   spo->evaluate_notranspose(elec, 0, elec.R.size(), psiM, dpsiM, hesspsiV, d3psiV);
     
     // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
-    REQUIRE(values[1] == Approx(  0.02008357407));
-    REQUIRE(dpsi[1][0] == Approx(   0.1009262252));
-    REQUIRE(dpsi[1][1] == Approx(              0));
-    REQUIRE(dpsi[1][2] == Approx(              0));
+    REQUIRE(psiM[0][0] == Approx( 0.009452265234));
+    REQUIRE(dpsiM[0][0][0] == Approx( -0.05400764372));
+    REQUIRE(dpsiM[0][0][1] == Approx(              0));
+    REQUIRE(dpsiM[0][0][2] == Approx(              0));
     //Hessian (xx,xy,xz,yy,yz,zz) 
-    REQUIRE(dhpsi[1](0,0) == Approx(   0.5298289497));
-    REQUIRE(dhpsi[1](0,1) == Approx(              0));
-    REQUIRE(dhpsi[1](0,2) == Approx(              0));
-    REQUIRE(dhpsi[1](1,1) == Approx( -0.09373846794));
-    REQUIRE(dhpsi[1](1,2) == Approx(              0));
-    REQUIRE(dhpsi[1](2,2) == Approx( -0.09373846794));
+    REQUIRE(hesspsiV[0][0](0,0) == Approx(   0.3523924743));
+    REQUIRE(hesspsiV[0][0](0,1) == Approx(              0));
+    REQUIRE(hesspsiV[0][0](0,2) == Approx(              0));
+    REQUIRE(hesspsiV[0][0](1,1) == Approx( -0.04958838002));
+    REQUIRE(hesspsiV[0][0](1,2) == Approx(              0));
+    REQUIRE(hesspsiV[0][0](2,2) == Approx( -0.04958838002));
 
     //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
-    REQUIRE(dghpsi[1][0](0,0) == Approx(    2.594787656));
-    REQUIRE(dghpsi[1][0](0,1) == Approx(              0));
-    REQUIRE(dghpsi[1][0](0,2) == Approx(              0));
-    REQUIRE(dghpsi[1][0](1,1) == Approx(  -0.5720485625));
-    REQUIRE(dghpsi[1][0](1,2) == Approx(              0));
-    REQUIRE(dghpsi[1][0](2,2) == Approx(  -0.5720485625));
-    REQUIRE(dghpsi[1][1](1,1) == Approx(              0));
-    REQUIRE(dghpsi[1][1](1,2) == Approx(              0));
-    REQUIRE(dghpsi[1][1](2,2) == Approx(              0));
-    REQUIRE(dghpsi[1][2](2,2) == Approx(              0)); 
-/*
+    REQUIRE(d3psiV[0][0][0](0,0) == Approx(   -2.241965465));
+    REQUIRE(d3psiV[0][0][0](0,1) == Approx(              0));
+    REQUIRE(d3psiV[0][0][0](0,2) == Approx(              0));
+    REQUIRE(d3psiV[0][0][0](1,1) == Approx(   0.3714481861));
+    REQUIRE(d3psiV[0][0][0](1,2) == Approx(              0));
+    REQUIRE(d3psiV[0][0][0](2,2) == Approx(   0.3714481861));
+    REQUIRE(d3psiV[0][0][1](1,1) == Approx(              0));
+    REQUIRE(d3psiV[0][0][1](1,2) == Approx(              0));
+    REQUIRE(d3psiV[0][0][1](2,2) == Approx(              0));
+    REQUIRE(d3psiV[0][0][2](2,2) == Approx(              0)); 
+
     // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
-    REQUIRE(values[2] == Approx(   0.4163749594));
-    REQUIRE(dpsi[2][0] == Approx(  -0.1202256419));
-    REQUIRE(dpsi[2][1] == Approx(              0));
-    REQUIRE(dpsi[2][2] == Approx(              0));
+    REQUIRE(psiM[0][1] == Approx(  0.02008357407));
+    REQUIRE(dpsiM[0][1][0] == Approx(   0.1009262252));
+    REQUIRE(dpsiM[0][1][1] == Approx(              0));
+    REQUIRE(dpsiM[0][1][2] == Approx(              0));
     //Hessian (xx,xy,xz,yy,yz,zz) 
-    REQUIRE(dhpsi[2][0] == Approx( -0.02607695984));
-    REQUIRE(dhpsi[2][1] == Approx(              0));
-    REQUIRE(dhpsi[2][2] == Approx(              0));
-    REQUIRE(dhpsi[2][3] == Approx(  -0.5760364698));
-    REQUIRE(dhpsi[2][4] == Approx(              0));
-    REQUIRE(dhpsi[2][5] == Approx(  -0.5760364698));
+    REQUIRE(hesspsiV[0][1](0,0) == Approx(   0.5298289497));
+    REQUIRE(hesspsiV[0][1](0,1) == Approx(              0));
+    REQUIRE(hesspsiV[0][1](0,2) == Approx(              0));
+    REQUIRE(hesspsiV[0][1](1,1) == Approx( -0.09373846794));
+    REQUIRE(hesspsiV[0][1](1,2) == Approx(              0));
+    REQUIRE(hesspsiV[0][1](2,2) == Approx( -0.09373846794));
+
     //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
-    REQUIRE(dghpsi[2][0] == Approx(   -0.227147312));
-    REQUIRE(dghpsi[2][1] == Approx(              0));
-    REQUIRE(dghpsi[2][2] == Approx(              0));
-    REQUIRE(dghpsi[2][3] == Approx(   0.2992015499));
-    REQUIRE(dghpsi[2][4] == Approx(              0));
-    REQUIRE(dghpsi[2][5] == Approx(   0.2992015499));
-    REQUIRE(dghpsi[2][6] == Approx(              0));
-    REQUIRE(dghpsi[2][7] == Approx(              0));
-    REQUIRE(dghpsi[2][8] == Approx(              0));
-    REQUIRE(dghpsi[2][9] == Approx(              0));
-    */
+    REQUIRE(d3psiV[0][1][0](0,0) == Approx(    2.594787656));
+    REQUIRE(d3psiV[0][1][0](0,1) == Approx(              0));
+    REQUIRE(d3psiV[0][1][0](0,2) == Approx(              0));
+    REQUIRE(d3psiV[0][1][0](1,1) == Approx(  -0.5720485625));
+    REQUIRE(d3psiV[0][1][0](1,2) == Approx(              0));
+    REQUIRE(d3psiV[0][1][0](2,2) == Approx(  -0.5720485625));
+    REQUIRE(d3psiV[0][1][1](1,1) == Approx(              0));
+    REQUIRE(d3psiV[0][1][1](1,2) == Approx(              0));
+    REQUIRE(d3psiV[0][1][1](2,2) == Approx(              0));
+    REQUIRE(d3psiV[0][1][2](2,2) == Approx(              0)); 
+   // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
+    REQUIRE(psiM[0][2] == Approx(   0.4163749594));
+    REQUIRE(dpsiM[0][2][0] == Approx(  -0.1202256419));
+    REQUIRE(dpsiM[0][2][1] == Approx(              0));
+    REQUIRE(dpsiM[0][2][2] == Approx(              0));
+    //Hessian (xx,xy,xz,yy,yz,zz) 
+    REQUIRE(hesspsiV[0][2](0,0) == Approx( -0.02607695984));
+    REQUIRE(hesspsiV[0][2](0,1) == Approx(              0));
+    REQUIRE(hesspsiV[0][2](0,2) == Approx(              0));
+    REQUIRE(hesspsiV[0][2](1,1) == Approx(  -0.5760364698));
+    REQUIRE(hesspsiV[0][2](1,2) == Approx(              0));
+    REQUIRE(hesspsiV[0][2](2,2) == Approx(  -0.5760364698));
+    //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) 
+    REQUIRE(d3psiV[0][2][0](0,0) == Approx(   -0.227147312));
+    REQUIRE(d3psiV[0][2][0](0,1) == Approx(              0));
+    REQUIRE(d3psiV[0][2][0](0,2) == Approx(              0));
+    REQUIRE(d3psiV[0][2][0](1,1) == Approx(   0.2992015499));
+    REQUIRE(d3psiV[0][2][0](1,2) == Approx(              0));
+    REQUIRE(d3psiV[0][2][0](2,2) == Approx(   0.2992015499));
+    REQUIRE(d3psiV[0][2][1](1,1) == Approx(              0));
+    REQUIRE(d3psiV[0][2][1](1,2) == Approx(              0));
+    REQUIRE(d3psiV[0][2][1](2,2) == Approx(              0));
+    REQUIRE(d3psiV[0][2][2](2,2) == Approx(              0));
+ 
+    
+
     SPOSetBuilderFactory::clear();
   }
 }
