@@ -200,10 +200,10 @@ inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
     dghpsi[i][j][1](1,1) = gh_yyy[j];  //y|yy
     dghpsi[i][j][1](1,2) = gh_yyz[j];  //y|yz 
     dghpsi[i][j][1](2,0) = gh_xyz[j];  //y|zx = xyz
-    dghpsi[i][j][1](2,1) = gh_xyy[j];  //y|xy = xyy
+    dghpsi[i][j][1](2,1) = gh_yyz[j];  //y|zy = yyz
     dghpsi[i][j][1](2,2) = gh_yzz[j];  //y|zz 
    
-    dghpsi[i][j][2](0,0) = gh_xzz[j];  //z|xx = xzz
+    dghpsi[i][j][2](0,0) = gh_xxz[j];  //z|xx = xxz
     dghpsi[i][j][2](0,1) = gh_xyz[j];  //z|xy = xyz
     dghpsi[i][j][2](0,2) = gh_xzz[j];  //z|xz = xzz
     dghpsi[i][j][2](1,0) = gh_xyz[j];  //z|yx = xyz
