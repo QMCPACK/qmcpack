@@ -156,13 +156,6 @@ void Communicate::abort() { comm.abort(); }
 
 void Communicate::barrier() { comm.barrier(); }
 
-void Communicate::abort(const char* msg)
-{
-  std::cerr << msg << std::endl;
-  comm.abort();
-}
-
-
 #else
 
 void Communicate::initialize(int argc, char** argv) { std::string when = "qmc." + getDateAndTime("%Y%m%d_%H%M"); }
@@ -172,12 +165,6 @@ void Communicate::initializeAsNodeComm(const Communicate& parent) {}
 void Communicate::finalize() {}
 
 void Communicate::abort() { std::abort(); }
-
-void Communicate::abort(const char* msg)
-{
-  std::cerr << msg << std::endl;
-  std::abort();
-}
 
 void Communicate::barrier() {}
 
@@ -189,5 +176,11 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
   GroupLeaderComm = new Communicate();
 }
 
-
 #endif // !HAVE_MPI
+
+void Communicate::barrier_and_abort(const std::string& msg)
+{
+  if(!rank()) std::cerr << "Fatal Error. Aborting at " << msg << std::endl;
+  Communicate::barrier();
+  Communicate::abort();
+}
