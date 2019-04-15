@@ -329,10 +329,10 @@ struct SoaAtomicBasisSet
             const T gr2_tmp = rinv*rinv*(d2phi[nl] - drnloverr);
             const T gr_xx     = x*x*gr2_tmp + drnloverr;
             const T gr_xy     = x*y*gr2_tmp; 
-            const T gr_xz     = x*y*gr2_tmp; 
-            const T gr_yy     = x*y*gr2_tmp + drnloverr; 
-            const T gr_yz     = x*y*gr2_tmp; 
-            const T gr_zz     = x*y*gr2_tmp + drnloverr; 
+            const T gr_xz     = x*z*gr2_tmp; 
+            const T gr_yy     = y*y*gr2_tmp + drnloverr; 
+            const T gr_yz     = y*z*gr2_tmp; 
+            const T gr_zz     = z*z*gr2_tmp + drnloverr; 
 
             const T ang_x     = ylm_x[lm];
             const T ang_y     = ylm_y[lm];
