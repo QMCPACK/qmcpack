@@ -40,7 +40,7 @@ public:
                               int iat,
                               PosType& drift) const = 0;
 
-  virtual bool parseXML(xmlNodePtr cur){};
+  virtual bool parseXML(xmlNodePtr cur){}
 
 protected:
   // modifer name

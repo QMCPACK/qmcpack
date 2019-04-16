@@ -11,6 +11,7 @@
 
 
 #include "QMCDrivers/DriftModifiers/DriftModifierUNR.h"
+#include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus
 {
@@ -29,6 +30,14 @@ void DriftModifierUNR::getScaledDrift(const ParticleSet& P,
       (vsq < std::numeric_limits<RealType>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * tau * vsq)) / vsq);
   //Apply the umrigar scaled drift.
   drift *= sc;
+}
+
+bool DriftModifierUNR::parseXML(xmlNodePtr cur)
+{
+  ParameterSet m_param;
+  m_param.add(a, "drift_modifier_UNR_a", "double");
+  m_param.put(cur);
+  app_log() << "  Set drift_modifier UNR parameter a = " << a << std::endl;
 }
 
 } // namespace qmcplusplus

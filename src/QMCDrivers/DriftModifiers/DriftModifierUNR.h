@@ -31,7 +31,13 @@ public:
                       int iat,
                       PosType& drift) const final;
 
-  bool parseXML(xmlNodePtr cur) final { return true; };
+  bool parseXML(xmlNodePtr cur) final;
+
+  DriftModifierUNR(): a(1.0) {}
+
+private:
+  /// JCP1993 Umrigar et eq. (34) "a" parameter is set to 1.0
+  RealType a;
 };
 
 } // namespace qmcplusplus
