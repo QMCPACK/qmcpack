@@ -159,13 +159,6 @@ namespace qmcplusplus
     }
   }
 
-  void CompositeSPOSet::evaluate(
-      const ParticleSet& P, int iat,ValueVector_t& psi, GradVector_t& dpsi, 
-      HessVector_t& grad_grad_psi)
-  {
-    not_implemented("evaluate(P,iat,psi,dpsi,ddpsi)");
-  }
-
   void CompositeSPOSet::evaluate( const ParticleSet& P, PosType &r, ValueVector_t &psi)
   {
     not_implemented("evaluate(P,r,psi)");
