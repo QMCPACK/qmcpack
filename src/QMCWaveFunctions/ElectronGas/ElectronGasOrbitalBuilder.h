@@ -158,13 +158,6 @@ struct RealEGOSet : public SPOSet
     }
   }
 
-  inline void evaluate(const ParticleSet& P, int iat, 
-                       ValueVector_t& psi, GradVector_t& dpsi, 
-                       HessVector_t& hess, GGGVector_t& dghpsi)
-  {
-    APP_ABORT("RealEGOSet::evaluate(P,iat,psi,dpsi,ddpsi,dghpsi) not implemented");
-  }
-
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,

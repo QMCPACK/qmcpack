@@ -70,16 +70,6 @@ struct EGOSet : public SPOSet
     }
   }
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
-  {
-    APP_ABORT("Incomplete implementation EGOSet::evaluate(P,iat,psi,dpsi,grad_grad_psi)");
-  }
-
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi, GGGVector_t& ggg_psi)
-  {
-    APP_ABORT("Incomplete implementation EGOSet::evaluate(P,iat,psi,dpsi,grad_grad_psi,grad_grad_grad_psi)");
-  }
-
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,

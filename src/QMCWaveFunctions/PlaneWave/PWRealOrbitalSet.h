@@ -51,7 +51,10 @@ public:
 
   /** default constructor
   */
-  PWRealOrbitalSet() : OwnBasisSet(false), BasisSetSize(0), myBasisSet(nullptr) {}
+  PWRealOrbitalSet() : OwnBasisSet(false), BasisSetSize(0), myBasisSet(nullptr)
+  {
+    className="PWRealOrbitalSet";
+  }
 
   /** delete BasisSet only it owns this
    *
@@ -103,17 +106,6 @@ public:
                             GradMatrix_t& dlogdet,
                             ValueMatrix_t& d2logdet);
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& gg_psi)
-  {
-    APP_ABORT("PWRealOrbitalSet::evaluate(P,iat,psi,dpsi,dhpsi) not implemented. \n");
-  }
-
-  void evaluate(const ParticleSet& P, int iat, 
-                ValueVector_t& psi, GradVector_t& dpsi, 
-                HessVector_t& gg_psi, GGGVector_t& ggg_psi)
-  {
-    APP_ABORT("PWRealOrbitalSet::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented. \n");
-  }
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,

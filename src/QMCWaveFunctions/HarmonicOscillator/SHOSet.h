@@ -116,13 +116,6 @@ struct SHOSet : public SPOSet
   //methods to be implemented in the future (possibly)
   void resetParameters(const opt_variables_type& optVariables);
   void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi);
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& ddpsi);
-  void evaluate(const ParticleSet& P, 
-                int iat, 
-                ValueVector_t& psi, 
-                GradVector_t& dpsi, 
-                HessVector_t& ddpsi,
-                GGGVector_t& dghpsi);
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& dddlogdet);
   void evaluate_notranspose(const ParticleSet& P,
                             int first,

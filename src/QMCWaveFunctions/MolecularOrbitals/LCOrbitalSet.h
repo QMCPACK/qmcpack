@@ -44,6 +44,7 @@ public:
    */
   LCOrbitalSet(BS* bs = 0, int rl = 0) : myBasisSet(0), ReportLevel(rl)
   {
+    className = "LCOrbitalSet<BS,true>";
     if (bs)
       setBasisSet(bs);
   }
@@ -121,16 +122,6 @@ public:
       grad_grad_psi[j] = myBasisSet->grad_grad_Phi[j];
   }
 
-  inline void evaluate(const ParticleSet& P,
-                       int iat,
-                       ValueVector_t& psi,
-                       GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi,
-                       GGGVector_t& grad_grad_grad_psi)
-  {
-    APP_ABORT("LCOrbitalSet::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented\n");
-  }
-
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
@@ -201,6 +192,7 @@ public:
    */
   LCOrbitalSet(BS* bs = 0, int rl = 0, std::string algorithm = "") : myBasisSet(0), ReportLevel(rl)
   {
+    className="LCOrbitalSet<BS,false>";
     if (algorithm == "legacy_gemv")
     {
       Algo = 0;
@@ -333,16 +325,6 @@ public:
     //        psi[j]=res; dpsi[j]=dres; grad_grad_psi[j]=hess;
     //      }
     //#endif
-  }
-
-  inline void evaluate(const ParticleSet& P,
-                       int iat,
-                       ValueVector_t& psi,
-                       GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi,
-                       GGGVector_t& grad_grad_grad_psi)
-  {
-    APP_ABORT("LCOrbitalSet::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented\n");
   }
 
   void evaluate_notranspose(const ParticleSet& P,

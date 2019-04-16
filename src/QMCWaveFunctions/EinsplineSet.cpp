@@ -598,7 +598,7 @@ EinsplineSetExtended<StorageType>::evaluate
 
 
 // Value, gradient, and laplacian
-template<typename StorageType> void
+/*template<typename StorageType> void
 EinsplineSetExtended<StorageType>::evaluate
 (const ParticleSet& P, int iat, RealValueVector_t& psi,
  RealGradVector_t& dpsi, RealHessVector_t& grad_grad_psi)
@@ -613,7 +613,7 @@ EinsplineSetExtended<StorageType>::evaluate
 {
   APP_ABORT("EinsplineSetExtended::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented");
 }
-
+*/
 
 // Value, gradient, and laplacian
 template<typename StorageType> void
@@ -700,13 +700,13 @@ EinsplineSetExtended<StorageType>::evaluate
   VGLTimer.stop();
 }
 
-template<typename StorageType> void
-EinsplineSetExtended<StorageType>::evaluate
-(const ParticleSet& P, int iat, ComplexValueVector_t& psi,
- ComplexGradVector_t& dpsi, ComplexHessVector_t& grad_grad_psi, ComplexGGGVector_t& grad_grad_grad_psi)
-{
-  APP_ABORT("EinsplineSetExtended::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented)\n");
-}
+//template<typename StorageType> void
+//EinsplineSetExtended<StorageType>::evaluate
+//(const ParticleSet& P, int iat, ComplexValueVector_t& psi,
+// ComplexGradVector_t& dpsi, ComplexHessVector_t& grad_grad_psi, ComplexGGGVector_t& grad_grad_grad_psi)
+//{
+//  APP_ABORT("EinsplineSetExtended::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented)\n");
+//}
 
 template<> void
 EinsplineSetExtended<double>::evaluate

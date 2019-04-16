@@ -268,6 +268,7 @@ public:
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   LCOrbitalSetOpt(BS* const bs = 0, const int rl = 0) : m_spo_set(0), m_basis_set(0), m_report_level(rl), m_omixfac(0)
   {
+    className = "LCOrbitalSetOpt";
     // set the basis set
     if (bs)
       this->setBasisSet(bs);
@@ -764,29 +765,6 @@ public:
 
     // evaluate the first psi.size() orbitals and derivatives for the particle with index iat
     this->evaluate_notranspose_ranges(P, 'p', 0, psi.size(), iat, iat + 1, psi.data(), dpsi.data(), d2psi.data());
-  }
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  /// \brief  An evaluate function that has not yet been implemented.
-  ///
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  inline void evaluate(const ParticleSet& P,
-                       int iat,
-                       ValueVector_t& psi,
-                       GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi)
-  {
-    throw std::runtime_error("LCOrbitalSetOpt::evaluate(P, iat, psi, dpsi, grad_grad_psi) not implemented");
-  }
-
-  inline void evaluate(const ParticleSet& P,
-                       int iat,
-                       ValueVector_t& psi,
-                       GradVector_t& dpsi,
-                       HessVector_t& grad_grad_psi,
-                       GGGVector_t& grad_grad_grad_psi)
-  {
-    APP_ABORT("LCOrbitalSetOpt::evaluate(P, iat, psi, dpsi, grad_grad_psi, grad_grad_grad_psi) not implemented");
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////

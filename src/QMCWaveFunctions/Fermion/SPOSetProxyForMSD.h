@@ -65,16 +65,6 @@ struct SPOSetProxyForMSD : public SPOSet
   void setOrbitalSetSize(int norbs);
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi)
-  {
-    APP_ABORT("SPOSetProxyForMSD::evaluate(P,iat,psi,dpsi,dhpsi) not implemented. \n");
-  }
-  inline void evaluate(const ParticleSet& P, int iat, 
-                       ValueVector_t& psi, GradVector_t& dpsi, 
-                       HessVector_t& d2psi, GGGVector_t& dghpsi)
-  {
-    APP_ABORT("SPOSetProxyForMSD::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented. \n");
-  }
   void evaluate(const ParticleSet& P,
                 int first,
                 int last,
