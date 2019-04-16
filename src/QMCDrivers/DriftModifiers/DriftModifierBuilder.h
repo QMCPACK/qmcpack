@@ -14,10 +14,11 @@
 #define QMCPLUSPLUS_DRIFTMODIFIER_BUILDER_H
 
 #include "QMCDrivers/DriftModifiers/DriftModifierBase.h"
+#include "Message/Communicate.h"
 
 namespace qmcplusplus
 {
-DriftModifierBase* createDriftModifier(xmlNodePtr cur);
+DriftModifierBase* createDriftModifier(xmlNodePtr cur, const Communicate* myComm);
 } // namespace qmcplusplus
 
 #endif

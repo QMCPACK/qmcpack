@@ -217,7 +217,7 @@ void QMCDriver::process(xmlNodePtr cur)
     branchEngine->read(h5FileRoot);
   }
   if (DriftModifier != 0) delete DriftModifier;
-  DriftModifier = createDriftModifier(cur);
+  DriftModifier = createDriftModifier(cur, myComm);
 #if !defined(REMOVE_TRACEMANAGER)
   //create and initialize traces
   if (Traces == 0)

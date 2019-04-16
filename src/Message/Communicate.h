@@ -118,8 +118,9 @@ public:
   /// initialize this as a node/shared-memory communicator
   void initializeAsNodeComm(const Communicate& parent);
   void finalize();
-  void abort();
-  void barrier_and_abort(const std::string& msg);
+  void barrier() const;
+  void abort() const;
+  void barrier_and_abort(const std::string& msg) const;
   void set_world();
 
 #if defined(HAVE_MPI)
@@ -144,8 +145,6 @@ public:
   void cleanupMessage(void*);
   inline void setNodeID(int i) { d_mycontext = i; }
   inline void setNumNodes(int n) { d_ncontexts = n; }
-
-  void barrier();
 
   inline void setName(const std::string& aname) { myName = aname; }
   inline const std::string& getName() const { return myName; }

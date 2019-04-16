@@ -16,17 +16,17 @@
 
 namespace qmcplusplus
 {
-DriftModifierBase* createDriftModifier(xmlNodePtr cur)
+DriftModifierBase* createDriftModifier(xmlNodePtr cur, const Communicate* myComm)
 {
-  DriftModifierBase *DriftModifier;
+  DriftModifierBase* DriftModifier;
   std::string ModifierName("UNR");
   ParameterSet m_param;
   m_param.add(ModifierName, "drift_modifier", "string");
   m_param.put(cur);
-  if (ModifierName=="UNR")
+  if (ModifierName == "UNR")
     DriftModifier = new DriftModifierUNR;
   else
-    APP_ABORT("createDriftModifier unknown drift_modifier " + ModifierName);
+    myComm->barrier_and_abort("createDriftModifier unknown drift_modifier " + ModifierName);
   DriftModifier->parseXML(cur);
   return DriftModifier;
 }

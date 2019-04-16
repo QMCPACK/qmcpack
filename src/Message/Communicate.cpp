@@ -152,9 +152,9 @@ void Communicate::finalize()
 
 void Communicate::cleanupMessage(void*) {}
 
-void Communicate::abort() { comm.abort(); }
+void Communicate::abort() const { comm.abort(); }
 
-void Communicate::barrier() { comm.barrier(); }
+void Communicate::barrier() const { comm.barrier(); }
 
 #else
 
@@ -164,9 +164,9 @@ void Communicate::initializeAsNodeComm(const Communicate& parent) {}
 
 void Communicate::finalize() {}
 
-void Communicate::abort() { std::abort(); }
+void Communicate::abort() const { std::abort(); }
 
-void Communicate::barrier() {}
+void Communicate::barrier() const {}
 
 void Communicate::cleanupMessage(void*) {}
 
@@ -178,7 +178,7 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 
 #endif // !HAVE_MPI
 
-void Communicate::barrier_and_abort(const std::string& msg)
+void Communicate::barrier_and_abort(const std::string& msg) const
 {
   if(!rank()) std::cerr << "Fatal Error. Aborting at " << msg << std::endl;
   Communicate::barrier();
