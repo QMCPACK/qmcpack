@@ -29,6 +29,7 @@
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
+#include "QMCDrivers/DriftModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 class Communicate;
@@ -198,6 +199,8 @@ public:
 protected:
   ///branch engine
   BranchEngineType* branchEngine;
+  ///drift modifer
+  DriftModifierBase* DriftModifier;
   ///randomize it
   bool ResetRandom;
   ///flag to append or restart the run

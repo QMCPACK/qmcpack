@@ -85,9 +85,7 @@ public:
    *
    * Update time-step variables to move walkers
    */
-  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est);
-
-  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces);
+  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces, const DriftModifierBase* driftmodifer);
 
   inline RealType getTau()
   {
@@ -249,10 +247,10 @@ protected:
   QMCHamiltonian& H;
   ///random number generator
   RandomGenerator_t& RandomGen;
-  ///branch engine
+  ///branch engine, stateless reference to the one in QMCDriver
   const BranchEngineType* branchEngine;
-  /// drift modifer
-  DriftModifierBase* DriftModifier;
+  ///drift modifer, stateless reference to the one in QMCDriver
+  const DriftModifierBase* DriftModifier;
   ///estimator
   EstimatorManagerBase* Estimators;
   ///parameters

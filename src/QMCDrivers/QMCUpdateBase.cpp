@@ -16,7 +16,6 @@
 
 #include "Platforms/sysutil.h"
 #include "QMCDrivers/QMCUpdateBase.h"
-#include "QMCDrivers/DriftModifiers/DriftModifierBuilder.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -80,15 +79,16 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
 {
   H.setNonLocalMoves(cur);
   bool s = myParams.put(cur);
-  if (DriftModifier) delete DriftModifier;
-  DriftModifier = createDriftModifier(cur);
   return s;
 }
 
-void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* est)
+void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces, const DriftModifierBase* driftmodifer)
 {
   Estimators   = est;
   branchEngine = brancher;
+  DriftModifier = driftmodifer;
+  Traces = traces;
+
   NumPtcl      = W.getTotalNum();
   deltaR.resize(NumPtcl);
   drift.resize(NumPtcl);
@@ -112,13 +112,6 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* e
   if (m_r2max < 0)
     m_r2max = W.Lattice.LR_rc * W.Lattice.LR_rc;
   //app_log() << "  Setting the bound for the displacement std::max(r^2) = " <<  m_r2max << std::endl;
-}
-
-
-void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces)
-{
-  resetRun(brancher, est);
-  Traces = traces;
 }
 
 void QMCUpdateBase::startRun(int blocks, bool record)

@@ -22,7 +22,6 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "OhmmsData/AttributeSet.h"
-#include "QMCDrivers/DriftOperators.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
@@ -37,6 +36,7 @@
 #include "Particle/AdiosWalkerInput.h"
 #include <ADIOS/ADIOS_profile.h>
 #endif
+#include "QMCDrivers/DriftModifiers/DriftModifierBuilder.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
@@ -55,6 +55,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      Communicate* comm)
     : MPIObjectBase(comm),
       branchEngine(0),
+      DriftModifier(0),
       W(w),
       Psi(psi),
       H(h),
@@ -161,7 +162,11 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
 }
 
-QMCDriver::~QMCDriver() { delete_iter(Rng.begin(), Rng.end()); }
+QMCDriver::~QMCDriver()
+{
+  delete_iter(Rng.begin(), Rng.end());
+  if (DriftModifier) delete DriftModifier;
+}
 
 void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
 {
@@ -211,6 +216,8 @@ void QMCDriver::process(xmlNodePtr cur)
     branchEngine->setEstimatorManager(Estimators);
     branchEngine->read(h5FileRoot);
   }
+  if (DriftModifier != 0) delete DriftModifier;
+  DriftModifier = createDriftModifier(cur);
 #if !defined(REMOVE_TRACEMANAGER)
   //create and initialize traces
   if (Traces == 0)
