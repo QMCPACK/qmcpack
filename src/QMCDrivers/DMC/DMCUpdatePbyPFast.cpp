@@ -79,9 +79,8 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       PosType dr;
-      getScaledDrift(tauovermass, grad_iat, dr);
+      DriftModifier->getScaledDrift(W, Psi, H, tauovermass, grad_iat, iat, dr);
       dr += sqrttau * deltaR[iat];
-      //RealType rr=dot(dr,dr);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
       if (rr > m_r2max)
@@ -93,8 +92,6 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         continue;
       RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
       //node is crossed reject the move
-      //if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
-      //if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
         ++nRejectTemp;
@@ -106,9 +103,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       {
         EstimatorRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
-        //RealType scale=getDriftScale(m_tauovermass,grad_iat);
-        //dr = W.R[iat]-W.activePos-scale*real(grad_iat);
-        getScaledDrift(tauovermass, grad_iat, dr);
+        DriftModifier->getScaledDrift(W, Psi, H, tauovermass, grad_iat, iat, dr);
         dr                      = W.R[iat] - W.activePos - dr;
         EstimatorRealType logGb = -oneover2tau * dot(dr, dr);
         RealType prob           = ratio * ratio * std::exp(logGb - logGf);

@@ -14,7 +14,10 @@
 
 #include "Particle/ParticleSet.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCDrivers/DriftOperators.h"
+#include "QMCDrivers/DriftModifiers/DriftModifierUNR.h"
 
 namespace qmcplusplus
 {
@@ -126,10 +129,13 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
   double gradx = -xtot / 2.;
   double dx    = xtot / nx;
 
+  TrialWaveFunction Psi(c);
+  QMCHamiltonian H;
+  DriftModifierUNR DM;
   for (int ix = 0; ix < nx; ix++)
   {
     elec.G[0][0] = gradx;
-    getScaledDrift(tau / mass, elec.G[0], drift);
+    DM.getScaledDrift(elec, Psi, H, tau / mass, elec.G[0], ix, drift);
     double dval = drift[0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
@@ -165,12 +171,16 @@ TEST_CASE("get scaled drift complex", "[drivers][drift]")
   double gradx = -xtot / 2.;
   double dx    = xtot / nx;
 
+  TrialWaveFunction Psi(c);
+  QMCHamiltonian H;
+  DriftModifierUNR DM;
+
   // imaginary component of wf gradient should NOT affect drift
   std::complex<double> myi(0, 1.9);
   for (int ix = 0; ix < nx; ix++)
   {
     elec.G[0][0] = gradx + myi;
-    getScaledDrift(tau / mass, elec.G[0], drift);
+    DM.getScaledDrift(elec, Psi, H tau / mass, elec.G[0], ix, drift);
     double dval = drift[0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
