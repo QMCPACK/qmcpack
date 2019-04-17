@@ -363,14 +363,14 @@ class QuantumPackage(Simulation):
         #end if
 
         if postprocess.save_natorb:
-            jno = jpost.clone()
+            jno = jpost.serial_clone()
             fc += '\n'
             jno.app_command = self.app_name+' save_natorb '+self.infile
             fc += jno.run_command()+' >{0}_natorb.out 2>{0}_natorb.err\n'.format(self.identifier)
         #end if
 
         if postprocess.four_idx_transform:
-            jfit = jpost.clone()
+            jfit = jpost.serial_clone()
             fc += '\n'
             fc += 'echo "Write" > {}/mo_two_e_ints/io_mo_two_e_integrals\n'.format(self.infile)
             jfit.app_command = self.app_name+' four_idx_transform '+self.infile
@@ -378,7 +378,7 @@ class QuantumPackage(Simulation):
         #end if
 
         if postprocess.save_for_qmcpack:
-            jsq = jpost.clone()
+            jsq = jpost.serial_clone()
             fc += '\n'
             jsq.app_command = self.app_name+' save_for_qmcpack '+self.infile
             fc += jsq.run_command()+' >{0}_savewf.out 2>{0}_savewf.err\n'.format(self.identifier)

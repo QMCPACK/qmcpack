@@ -179,8 +179,8 @@ job_defaults = obj(
     alloc_flags        = None, # lsf specific, Summit
     qos                = None,
     group_list         = None,
-    fake               = False,
     # these are not assigned directly
+    fake               = False,
     app                = None, # name of/path to application
     machine            = None,
     options            = None,
@@ -657,6 +657,13 @@ class Job(NexusCore):
         job.set_id()
         return job
     #end def clone
+
+
+    def serial_clone(self):
+        kw = self.init_info.copy()
+        kw.serial=True
+        return Job(**kw)
+    #end def serial_clone
 
 
     def split_nodes(self,n):
