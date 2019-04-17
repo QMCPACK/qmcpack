@@ -60,6 +60,7 @@ public:
    */
   LCOrbitalSetWithCorrection(BS* bs = 0, int rl = 0) : myBasisSet(0), ReportLevel(rl)
   {
+    className = "LCOrbitalSetWithCorrection";
     if (bs)
       setBasisSet(bs);
   }
@@ -137,21 +138,6 @@ public:
       grad_grad_psi[j] = myBasisSet->grad_grad_Phi[j];
   }
 
-
-  ///** evaluate everything for the walker move
-  // *
-  // * Using gemm can improve the performance for a larger problem
-  // */
-  //void evaluate(const ParticleSet& P, int first, int last,
-  //    ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
-  //  for(int i=0, iat=first; iat<last; i++,iat++){
-  //    myBasisSet->evaluateForWalkerMove(P,iat);
-  //    for(int j=0; j<OrbitalSetSize; j++) logdet(j,i)=myBasisSet->Phi[j];
-  //    for(int j=0; j<OrbitalSetSize; j++) dlogdet(i,j)=myBasisSet->dPhi[j];
-  //    for(int j=0; j<OrbitalSetSize; j++) d2logdet(i,j)=myBasisSet->d2Phi[j];
-  //  }
-  //}
-
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
@@ -185,8 +171,7 @@ public:
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& grad_grad_logdet)
   {
-    APP_ABORT(
-        "Need specialization of LCOrbitalSetWithCorrection<BS,true>::evaluate_notranspose() for grad_grad_logdet. \n");
+    APP_ABORT("Need specialization of LCOrbitalSetWithCorrection<BS,true>::evaluate_notranspose() for grad_grad_logdet. \n");
   }
 
   void evaluate_notranspose(const ParticleSet& P,
@@ -586,6 +571,16 @@ public:
   {
     evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
     MatrixOperators::transpose(logdet);
+  }
+
+  inline void evaluate(const ParticleSet& P,
+                       int iat,
+                       ValueVector_t& psi,
+                       GradVector_t& dpsi,
+                       HessVector_t& grad_grad_psi,
+                       GGGVector_t& grad_grad_grad_psi)
+  {
+    APP_ABORT("LCOrbitalSetWithCorrection::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) not implemented.\n");
   }
 
   void evaluate_notranspose(const ParticleSet& P,

@@ -234,7 +234,7 @@ void VMC::resetRun()
   {
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
+    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
     if (QMCDriverMode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
     else

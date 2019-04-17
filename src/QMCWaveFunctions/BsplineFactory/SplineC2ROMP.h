@@ -736,10 +736,10 @@ struct SplineC2ROMP : public SplineAdoptorBase<ST, 3>
 
     const auto padded_size = myV.size();
     if (offload_scratch.size() < padded_size * 10)
-      offload_scratch.resize(padded_size * 50); // temporal solution putting 5x
+      offload_scratch.resize(padded_size * 10);
     const auto orb_size = psi.size();
     if (results_scratch.size() < orb_size * 5)
-      results_scratch.resize(orb_size * 50); // temporal solution putting 10x
+      results_scratch.resize(orb_size * 5);
 
     // Ye: need to extract sizes and pointers before entering target region
     const auto* spline_ptr    = SplineInst->spline_m;
