@@ -34,20 +34,9 @@ qp_shared = dict(
 scf = generate_quantum_package(
     identifier            = 'scf',
     run_type              = 'scf',
-    ao_basis              = 'cc-pvtz',
+    ao_basis              = 'aug-cc-pvdz',
     io_ao_two_e_integrals = 'Write',
     four_idx_transform    = True,
-    **qp_shared
-    )
-
-# singles calcs in case HF converged to wrong state
-cis = generate_quantum_package(
-    identifier            = 'cis',
-    run_type              = 'cis',
-    cis_loop              = True,
-    frozen_core           = True,
-    io_mo_two_e_integrals = 'Write',
-    dependencies          = (scf,'other'),
     **qp_shared
     )
 
@@ -58,7 +47,7 @@ fci0 = generate_quantum_package(
     n_det_max          = 5000,
     save_natorb        = True,
     four_idx_transform = True,
-    dependencies       = (cis,'other'),
+    dependencies       = (scf,'other'),
     **qp_shared
     )
 

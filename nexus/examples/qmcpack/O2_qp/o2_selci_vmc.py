@@ -38,20 +38,9 @@ qp_shared = dict(
 scf = generate_quantum_package(
     identifier            = 'scf',
     run_type              = 'scf',
-    ao_basis              = 'cc-pvtz',
+    ao_basis              = 'aug-cc-pvdz',
     io_ao_two_e_integrals = 'Write',
     four_idx_transform    = True,
-    **qp_shared
-    )
-
-# singles calcs in case HF converged to wrong state
-cis = generate_quantum_package(
-    identifier            = 'cis',
-    run_type              = 'cis',
-    cis_loop              = True,
-    frozen_core           = True,
-    io_mo_two_e_integrals = 'Write',
-    dependencies          = (scf,'other'),
     **qp_shared
     )
 
@@ -62,7 +51,7 @@ fci0 = generate_quantum_package(
     n_det_max          = 5000,
     save_natorb        = True,
     four_idx_transform = True,
-    dependencies       = (cis,'other'),
+    dependencies       = (scf,'other'),
     **qp_shared
     )
 
@@ -96,35 +85,37 @@ cc = generate_cusp_correction(
 
 # optimize 2-body Jastrow
 optJ2 = generate_qmcpack(
-    identifier   = 'opt',
-    path         = 'O_dimer/optJ2',
-    job          = qmc_job,
-    system       = dimer,
-    J2           = True,
-    qmc          = 'opt',
-    minmethod    = 'oneshiftonly',
-    init_cycles  = 3,
-    cycles       = 3,
-    samples      = 25600,
-    dependencies = [(c4q,'orbitals'),
-                    (cc,'cuspcorr')],
+    identifier      = 'opt',
+    path            = 'O_dimer/optJ2',
+    job             = qmc_job,
+    system          = dimer,
+    J2              = True,
+    qmc             = 'opt',
+    minmethod       = 'oneshiftonly',
+    init_cycles     = 3,
+    init_minwalkers = 0.1,
+    cycles          = 3,
+    samples         = 25600,
+    dependencies    = [(c4q,'orbitals'),
+                       (cc,'cuspcorr')],
     )
 
 # optimize 3-body Jastrow
 optJ3 = generate_qmcpack(
-    identifier   = 'opt',
-    path         = 'O_dimer/optJ3',
-    job          = qmc_job,
-    system       = dimer,
-    J3           = True,
-    qmc          = 'opt',
-    minmethod    = 'oneshiftonly',
-    init_cycles  = 3,
-    cycles       = 3,
-    samples      = 51200,
-    dependencies = [(c4q,'orbitals'),
-                    (cc,'cuspcorr'),
-                    (optJ2,'jastrow')],
+    identifier      = 'opt',
+    path            = 'O_dimer/optJ3',
+    job             = qmc_job,
+    system          = dimer,
+    J3              = True,
+    qmc             = 'opt',
+    minmethod       = 'oneshiftonly',
+    init_cycles     = 3,
+    init_minwalkers = 0.1,
+    cycles          = 3,
+    samples         = 51200,
+    dependencies    = [(c4q,'orbitals'),
+                       (cc,'cuspcorr'),
+                       (optJ2,'jastrow')],
     )
 
 # run VMC with QMCPACK
@@ -135,6 +126,21 @@ qmc = generate_qmcpack(
     system       = dimer,
     jastrows     = [],
     qmc          = 'vmc',
+    dependencies = [(c4q,'orbitals'),
+                    (cc,'cuspcorr'),
+                    (optJ3,'jastrow')],
+    )
+
+# run DMC with QMCPACK
+qmc = generate_qmcpack(
+    identifier   = 'dmc',
+    path         = 'O_dimer/dmc',
+    job          = qmc_job,
+    system       = dimer,
+    jastrows     = [],
+    qmc          = 'dmc',
+    vmc_samples  = 1024, # dmc walkers drawn from vmc
+    eq_dmc       = True, # run intermediate dmc w/ larger timestep
     dependencies = [(c4q,'orbitals'),
                     (cc,'cuspcorr'),
                     (optJ3,'jastrow')],
