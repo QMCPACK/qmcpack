@@ -14,8 +14,6 @@
 
 #include "Particle/ParticleSet.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "QMCDrivers/DriftModifiers/DriftModifierUNR.h"
 
@@ -129,8 +127,6 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
   double gradx = -xtot / 2.;
   double dx    = xtot / nx;
 
-  TrialWaveFunction Psi(c);
-  QMCHamiltonian H;
   DriftModifierUNR DM;
   for (int ix = 0; ix < nx; ix++)
   {
@@ -171,8 +167,6 @@ TEST_CASE("get scaled drift complex", "[drivers][drift]")
   double gradx = -xtot / 2.;
   double dx    = xtot / nx;
 
-  TrialWaveFunction Psi(c);
-  QMCHamiltonian H;
   DriftModifierUNR DM;
 
   // imaginary component of wf gradient should NOT affect drift
