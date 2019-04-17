@@ -604,6 +604,9 @@ run_inputs = set('''
     sleep
     slave
     postprocess
+    save_natorb
+    four_idx_transform
+    save_for_qmcpack
     '''.split())
 gen_inputs = set('''
     system
@@ -621,6 +624,9 @@ added_types = obj(
     sleep                 = (int,float),
     slave                 = str,
     postprocess           = (tuple,list),
+    four_idx_transform    = bool,
+    save_natorb           = bool,
+    save_for_qmcpack      = bool,
     # gen inputs
     system                = PhysicalSystem,
     defaults              = str,
@@ -636,6 +642,9 @@ qp_defaults_version = 'v1'
 shared_defaults = obj(
     # run inputs
     postprocess           = [],
+    four_idx_transform    = False,
+    save_natorb           = False,
+    save_for_qmcpack      = False,
     # gen inputs
     validate              = True,
     )
