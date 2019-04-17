@@ -777,7 +777,7 @@ namespace afqmc
     else
       assert(G.size(1) == wset.size() && G.size(0) == size_t(dm_size(not compact)));
     const int nw = wset.size(); 
-    int nbatch__ = std::min(nw,(nbatch>1?nbatch:nw));
+    int nbatch__ = std::min(nw,(nbatch<0?nw:nbatch));
     const int ndet = ci.size();
     assert(Ov.size() >= nw);  
     fill_n(Ov.origin(),nw,0);
@@ -1396,7 +1396,7 @@ namespace afqmc
     }
     assert(G.stride(1)==1);
     const int nw = wset.size(); 
-    int nbatch__ = std::min(nw,(nbatch>1?nbatch:nw));
+    int nbatch__ = std::min(nw,(nbatch<0?nw:nbatch)); 
     const int ndet = ci.size();
     int nrow = NMO*((walker_type==NONCOLLINEAR)?2:1);
     int ncol = NAEA+((walker_type==CLOSED)?0:NAEB);
@@ -1569,7 +1569,7 @@ namespace afqmc
     using std::fill_n;
     using std::copy_n;
     const int nw = wset.size();
-    int nbatch__ = std::min(nw,(nbatch>1?nbatch:nw));
+    int nbatch__ = std::min(nw,(nbatch<0?nw:nbatch));
     if(!impSamp) {
       if(localGbuff.size() < nbatch__)
         localGbuff.reextent(iextensions<1u>{nbatch__});

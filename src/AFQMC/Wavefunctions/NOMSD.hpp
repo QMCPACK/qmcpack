@@ -294,7 +294,7 @@ class NOMSD: public AFQMCInfo
 
     template<class WlkSet, class MatG, class TVec>
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false) {
-      if(nbatch < 0 || nbatch > 1)
+      if(nbatch != 0)
         MixedDensityMatrix_batched(wset,std::forward<MatG>(G),std::forward<TVec>(Ov),compact,transpose);
       else
         MixedDensityMatrix_shared(wset,std::forward<MatG>(G),std::forward<TVec>(Ov),compact,transpose);
@@ -308,7 +308,7 @@ class NOMSD: public AFQMCInfo
      */
     template<class WlkSet, class MatG, class CVec1, class CVec2>
     void WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection=false, boost::multi::array_ref<ComplexType,3>* Refs=nullptr, boost::multi::array<ComplexType,2>* detR=nullptr) {
-//      if(nbatch < 0 || nbatch > 1)
+//      if(nbatch != 0)
 //        WalkerAveragedDensityMatrix_batched(wset,wgt,G,denom,free_projection,Refs,detR);
 //      else  
         // having problems with underflow with large (back) projection times and multidets, 
@@ -339,7 +339,7 @@ class NOMSD: public AFQMCInfo
      */
     template<class WlkSet, class TVec>
     void Overlap(const WlkSet& wset, TVec&& Ov) {
-      if(nbatch < 0 || nbatch > 1)
+      if(nbatch != 0)
         Overlap_batched(wset,std::forward<TVec>(Ov));
       else
         Overlap_shared(wset,std::forward<TVec>(Ov));
@@ -373,7 +373,7 @@ class NOMSD: public AFQMCInfo
     template<class WlkSet>
     void Orthogonalize(WlkSet& wset, bool impSamp)
     {
-      if(not excitedState && (nbatch < 0 || nbatch > 1))
+      if(not excitedState && (nbatch != 0))
         Orthogonalize_batched(wset,impSamp);
       else
         Orthogonalize_shared(wset,impSamp);

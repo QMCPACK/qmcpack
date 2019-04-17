@@ -163,6 +163,7 @@ class AFQMCBasePropagator: public AFQMCInfo
     int order;
     int nbatched_propagation;
     bool spin_dependent_P1;
+    bool printP1eV=false;
 
     RealType vbias_bound;
 

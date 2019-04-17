@@ -50,8 +50,10 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG, xmlNodePtr cu
 
   RealType vbias_bound=50.0;
   std::string sub("yes");
+  std::string printP1eV("no");
   ParameterSet m_param;
   m_param.add(sub,"substractMF","std::string");
+  m_param.add(printP1eV,"printP1eigval","std::string");
   m_param.add(vbias_bound,"vbias_bound","double");
 
   bool substractMF=true;

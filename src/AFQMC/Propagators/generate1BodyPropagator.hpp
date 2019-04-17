@@ -40,7 +40,7 @@ namespace afqmc
   // Input H1(i,j) = h(i,j) + sum_n vMF(n)*CholMat(i,j,n) + vn0(i,j)  
   // Output: sparse 1 body propagator = exp(-0.5*dt*H1) 
   template<class P_Type, class MultiArray2D>  
-  P_Type generate1BodyPropagator(TaskGroup_& TG, RealType cut, RealType dt, MultiArray2D const& H1)
+  P_Type generate1BodyPropagator(TaskGroup_& TG, RealType cut, RealType dt, MultiArray2D const& H1, bool printP1eV=false)
   {
     assert(H1.dimensionality==2);
     assert(H1.size(0) == H1.size(1));
@@ -56,7 +56,7 @@ namespace afqmc
       for(int i=0; i<NMO; i++) 
         ma::axpy(-0.5*dt,h1_[i],v[i]);
 
-      boost::multi::array<ComplexType,2> P = ma::exp(v);
+      boost::multi::array<ComplexType,2> P = ma::exp(v,printP1eV);
 
 // need a version of this that works with gpu_ptr!!!
       return csr::shm::construct_csr_matrix_single_input<P_Type>(P,cut,'N',TG.TG_local());
@@ -70,7 +70,7 @@ namespace afqmc
   // Output: sparse 1 body propagator = exp(-0.5*dt*H1) 
   template<class P_Type, class MultiArray2D, class MultiArray2DB>
   P_Type generate1BodyPropagator(TaskGroup_& TG, RealType cut, RealType dt, MultiArray2D const& H1, 
-                                 MultiArray2DB const& H1ext)
+                                 MultiArray2DB const& H1ext, bool printP1eV=false)
   {
     assert(H1.dimensionality==2);
     assert(H1.size(0) == H1.size(1));
@@ -93,7 +93,7 @@ namespace afqmc
 //      for(int i=0; i<NMO; i++)
 //        ma::axpy(-0.5*dt,h1_[i],v[i]);
 
-      boost::multi::array<ComplexType,2> P = ma::exp(h1_);
+      boost::multi::array<ComplexType,2> P = ma::exp(h1_,printP1eV);
 
 // need a version of this that works with gpu_ptr!!!
       return csr::shm::construct_csr_matrix_single_input<P_Type>(P,cut,'N',TG.TG_local());

@@ -438,7 +438,7 @@ void determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T* detva
 template<class MultiArray2D,
          typename = typename std::enable_if_t<MultiArray2D::dimensionality == 2>
         >
-MultiArray2D exp(MultiArray2D const& A) { 
+MultiArray2D exp(MultiArray2D const& A, bool printeV=false) { 
         using Type = typename MultiArray2D::element;
         using RealType = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
         using TVec = boost::multi::array<RealType,1>;
@@ -457,8 +457,16 @@ MultiArray2D exp(MultiArray2D const& A) {
 
           // exp(A) = V*exp(M)*H(Z) 
           MultiArray2D TA({N,N});
+          if(printeV) {
+            qmcplusplus::app_log()<<"***********************  Eigenvalues of exponentiated matrix *********************** \n";
+            qmcplusplus::app_log()<<" i    eigV[i]    exp(eigV[i]) \n";
+            for(int j=0; j<N; j++) 
+              qmcplusplus::app_log()<<std::setprecision(16)  <<j <<" " <<V.first[j] <<" " <<std::exp(V.first[j]) <<"\n"; 
+            qmcplusplus::app_log()<<"************************************************************************************ \n";
+            qmcplusplus::app_log()<<"\n\n" <<std::endl;
+          }  
           for(int i=0; i<N; i++)
-            for(int j=0; j<N; j++)
+            for(int j=0; j<N; j++) 
               TA[i][j] = V.second[i][j] * std::exp(V.first[j]);
           product(TA,H(V.second),ExpA);
 
