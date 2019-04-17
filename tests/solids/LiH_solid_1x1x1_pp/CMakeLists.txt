@@ -98,8 +98,7 @@ ENDIF()
 # multi-slater determinant requires complex build to run. Ensure fails with real/non-complex build
   LIST(APPEND LIH_MD_GAMMA_SCALARS "totenergy" "-8.489858484145001 0.004")
   IF (QMC_COMPLEX)
-    MESSAGE("Skipping LiH_solid_1x1x1_pp-gamma-vmc_md_rc_j test because QMC_COMPLEX is 1")
-    QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_md_cc_j
+    QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
                       "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                       md_cc_vmc_LiH_gamma
                       md_cc_vmc_LiH_gamma.xml
@@ -109,8 +108,7 @@ ENDIF()
                       )
 
   ELSE()
-    MESSAGE("Skipping LiH_solid_1x1x1_pp-gamma-vmc_md_cc_j test because QMC_COMPLEX is 0")
-    QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_md_rc_j
+    QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
                       "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                       md_rc_vmc_LiH_gamma
                       md_rc_vmc_LiH_gamma.xml

@@ -22,16 +22,14 @@ p p p
     </parameter>
   </simulationcell>
   </qmcsystem>
-   <particleset name="ion0" size="2">
+   <particleset name="i" size="2">
     <group name="H">
-      <parameter name="charge">
-   1.00000000000000     
-      </parameter>
+      <parameter name="charge">       1.0     </parameter>
+      <parameter name="atomicnumber"> 1.0     </parameter>
     </group>
     <group name="Li">
-      <parameter name="charge">
-   3.00000000000000     
-      </parameter>
+      <parameter name="charge">       3.0     </parameter>
+      <parameter name="atomicnumber"> 3.0     </parameter>
     </group>
     <attrib name="ionid" datatype="stringArray">
 Li
@@ -42,7 +40,7 @@ H
     0.500000000000000    0.500000000000000    0.500000000000000
     </attrib>
   </particleset>
-  <particleset name="e" random="yes" random_source="ion0">
+  <particleset name="e" random="yes" random_source="i">
     <group name="u" size="2">
       <parameter name="charge">
           -1
@@ -105,11 +103,10 @@ H
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="walkers">    16 </parameter>
     <parameter name="substeps">  5 </parameter>
-    <parameter name="warmupSteps">  5000 </parameter>
+    <parameter name="warmupSteps">  100 </parameter>
     <parameter name="steps">  100 </parameter>
     <parameter name="blocks">  100 </parameter>
     <parameter name="timestep">  1.0 </parameter>
     <parameter name="usedrift">   no </parameter>
-    <parameter name="samples"> 1600000 </parameter>
   </qmc>
 </simulation>
