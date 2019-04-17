@@ -370,7 +370,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
 
       if(ni>0 && ni%nStabalize==0) {
         // orthogonalize
-        if(nbatched_propagation != 0) {
+        if(nbatched_qr != 0) {
           if(walker_type!=COLLINEAR)
             Orthogonalize_batched(wset,detR(detR.extension(0),{nr,nr+1}));
           else
@@ -609,7 +609,7 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
     using std::fill_n;
     using std::copy_n;
     const int nw = wset.size();
-    int nbatch = std::min(nw,(nbatched_propagation<0?nw:nbatched_propagation));
+    int nbatch = std::min(nw,(nbatched_qr<0?nw:nbatched_qr));
     if(local_vHS.num_elements() < nbatch)
       local_vHS.reextent({nbatch,1});
     stdCVector detR_(iextensions<1u>{nbatch});

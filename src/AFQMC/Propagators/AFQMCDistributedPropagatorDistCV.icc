@@ -597,7 +597,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
 
       if(ni>0 && ni%nStabalize==0) {
         // orthogonalize
-        if(nbatched_propagation != 0) {
+        if(nbatched_qr != 0) {
           if(walker_type!=COLLINEAR)
             Orthogonalize_batched(wset,detR(detR.extension(0),{nr,nr+1}));
           else

@@ -88,6 +88,7 @@ class AFQMCBasePropagator: public AFQMCInfo
             old_dt(-123456.789),
             order(6),
             nbatched_propagation(0),
+            nbatched_qr(0),
             spin_dependent_P1(false)
     {
       P1.reserve(2);  
@@ -162,6 +163,7 @@ class AFQMCBasePropagator: public AFQMCInfo
     int last_task_index;
     int order;
     int nbatched_propagation;
+    int nbatched_qr;
     bool spin_dependent_P1;
     bool printP1eV=false;
 

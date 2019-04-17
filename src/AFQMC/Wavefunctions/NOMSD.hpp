@@ -91,7 +91,7 @@ class NOMSD: public AFQMCInfo
           SlaterDetOperations&& sdet_,  
           HamiltonianOperations&& hop_, 
           std::vector<ComplexType>&& ci_, std::vector<PsiT_Matrix>&& orbs_, 
-          WALKER_TYPES wlk, int nbatch_, ValueType nce, int targetNW=1):
+          WALKER_TYPES wlk, int nbatch_, int nbatch_qr_, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
                 alloc_(),  // right now device_allocator is default constructible 
                 alloc_shared_(make_localTG_allocator<ComplexType>(TG)),
@@ -99,7 +99,8 @@ class NOMSD: public AFQMCInfo
                 HamOp(std::move(hop_)),ci(std::move(ci_)),
                 OrbMats(move_vector<devPsiT_Matrix>(std::move(orbs_))),
                 RefOrbMats({0,0},shared_allocator<ComplexType>{TG.Node()}),
-                walker_type(wlk),nbatch(nbatch_),NuclearCoulombEnergy(nce),
+                walker_type(wlk),nbatch(nbatch_),nbatch_qr(nbatch_qr_),
+                NuclearCoulombEnergy(nce),
                 shmbuff_for_E(iextensions<1u>{1},alloc_shared_),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
                 last_number_extra_tasks(-1),last_task_index(-1),
@@ -373,7 +374,7 @@ class NOMSD: public AFQMCInfo
     template<class WlkSet>
     void Orthogonalize(WlkSet& wset, bool impSamp)
     {
-      if(not excitedState && (nbatch != 0))
+      if(not excitedState && (nbatch_qr != 0))
         Orthogonalize_batched(wset,impSamp);
       else
         Orthogonalize_shared(wset,impSamp);
@@ -465,6 +466,7 @@ class NOMSD: public AFQMCInfo
     WALKER_TYPES walker_type;
 
     int nbatch;
+    int nbatch_qr;
 
     bool compact_G_for_vbias;
 

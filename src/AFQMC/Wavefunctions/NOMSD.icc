@@ -1569,7 +1569,7 @@ namespace afqmc
     using std::fill_n;
     using std::copy_n;
     const int nw = wset.size();
-    int nbatch__ = std::min(nw,(nbatch<0?nw:nbatch));
+    int nbatch__ = std::min(nw,(nbatch_qr<0?nw:nbatch_qr));
     if(!impSamp) {
       if(localGbuff.size() < nbatch__)
         localGbuff.reextent(iextensions<1u>{nbatch__});

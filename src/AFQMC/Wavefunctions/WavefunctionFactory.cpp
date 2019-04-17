@@ -64,6 +64,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   int initial_configuration=0;  
   double randomize_guess(0.0);
   int nbatch = ((number_of_devices()>0)?-1:0);
+  int nbatch_qr = ((number_of_devices()>0)?-1:0);
   std::string starting_det("");
   std::string str("false");
   std::string filename("");
@@ -79,6 +80,8 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   m_param.add(ndets_to_read,"ndet","int");
   if(TGwfn.TG_local().size() == 1)
     m_param.add(nbatch,"nbatch","int");
+  if(TGwfn.TG_local().size() == 1)
+    m_param.add(nbatch_qr,"nbatch_qr","int");
   m_param.add(initial_configuration,"initial_configuration","int");
   m_param.add(randomize_guess,"randomize_guess","double");
   m_param.put(cur);
@@ -89,6 +92,8 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   int NMO = AFinfo.NMO;
   int NAEA = AFinfo.NAEA;
   int NAEB = AFinfo.NAEB;
+
+  if(NMO > 1024 || NAEA > 512) nbatch_qr=0;  
 
   std::ifstream in;
   in.open(filename.c_str());
@@ -302,7 +307,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
       return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
                         std::move(ci),std::move(PsiT),
-                        walker_type,0,NCE,targetNW)); 
+                        walker_type,0,0,NCE,targetNW)); 
     } else 
     {
       SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
@@ -310,7 +315,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
       return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
                         std::move(ci),std::move(PsiT),
-                        walker_type,nbatch,NCE,targetNW));
+                        walker_type,nbatch,nbatch_qr,NCE,targetNW));
     }
 
   } else if(type == "phmsd") {
@@ -622,6 +627,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   int initialDet(1);
   int ndets_to_read(-1); // if not set, read the entire file
   int nbatch = ((number_of_devices()>0)?-1:0);
+  int nbatch_qr = ((number_of_devices()>0)?-1:0);
   std::string starting_det("");
   std::string str("false");
   std::string filename("");
@@ -636,6 +642,8 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   m_param.add(ndets_to_read,"ndet","int");
   if(TGwfn.TG_local().size() == 1)
     m_param.add(nbatch,"nbatch","int");
+  if(TGwfn.TG_local().size() == 1)
+    m_param.add(nbatch_qr,"nbatch_qr","int");
   m_param.put(cur);
 
   if(omp_get_num_threads() > 1 && (nbatch == 0)) {
@@ -649,6 +657,8 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   int NMO = AFinfo.NMO;
   int NAEA = AFinfo.NAEA;
   int NAEB = AFinfo.NAEB;
+
+  if(NMO > 1024 || NAEA > 512) nbatch_qr=0;  
 
   std::vector<ComplexType> ci;
   std::vector<PsiT_Matrix> PsiT;
@@ -770,7 +780,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
       return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
                         std::move(ci),std::move(PsiT),
-                        walker_type,0,NCE,targetNW));
+                        walker_type,0,0,0,NCE,targetNW));
     } else
     {
       SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
@@ -778,7 +788,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
       return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
                         std::move(ci),std::move(PsiT),
-                        walker_type,nbatch,NCE,targetNW));
+                        walker_type,nbatch,nbatch_qr,NCE,targetNW));
     }
 
 

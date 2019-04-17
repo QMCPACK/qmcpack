@@ -30,7 +30,12 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   apply_constrain=true;
 // this is wrong!!! must get batched capability from SDet, not from input
   nbatched_propagation=0;
+  nbatched_qr=0;
   if(number_of_devices() > 0) nbatched_propagation=-1;
+  if(number_of_devices() > 0) { 
+    // get better bounds later on
+    if(NMO < 1024 && NAEA < 512) nbatched_qr=-1;
+  }
 
   xmlNodePtr curRoot=cur;
 
@@ -52,6 +57,8 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   m_param.add(P1ev,"printP1eigval","std::string");
   if(TG.TG_local().size() == 1)
     m_param.add(nbatched_propagation,"nbatch","int");
+  if(TG.TG_local().size() == 1)
+    m_param.add(nbatched_qr,"nbatch_qr","int");
   m_param.add(freep,"free_projection","std::string");
 
   //m_param.add(sz_pin_field_file,"sz_pinning_field_file","std::string");
@@ -76,6 +83,10 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
     app_log()<<" Using batched propagation with a batch size: " <<nbatched_propagation <<"\n";
   else
     app_log()<<" Using sequential propagation. \n";
+  if(nbatched_qr != 0)
+    app_log()<<" Using batched orthogonalization in back propagation with a batch size: " <<nbatched_qr <<"\n";
+  else
+    app_log()<<" Using sequential orthogonalization in back propagation. \n";
 
   if(free_projection) {
 
