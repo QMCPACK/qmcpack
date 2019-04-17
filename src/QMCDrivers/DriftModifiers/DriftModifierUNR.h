@@ -23,12 +23,8 @@ public:
   using RealType = QMCTraits::RealType;
   using PosType  = QMCTraits::PosType;
 
-  void getScaledDrift(const ParticleSet& P,
-                      const TrialWaveFunction& W,
-                      const QMCHamiltonian& H,
-                      RealType tau,
+  void getScaledDrift(RealType tau,
                       const GradType& qf,
-                      int iat,
                       PosType& drift) const final;
 
   bool parseXML(xmlNodePtr cur) final;

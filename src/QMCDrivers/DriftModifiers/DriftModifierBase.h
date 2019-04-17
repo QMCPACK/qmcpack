@@ -32,12 +32,8 @@ public:
    * @param qf quantum force
    * @param drift output
    */
-  virtual void getScaledDrift(const ParticleSet& P,
-                              const TrialWaveFunction& W,
-                              const QMCHamiltonian& H,
-                              RealType tau,
+  virtual void getScaledDrift(RealType tau,
                               const GradType& qf,
-                              int iat,
                               PosType& drift) const = 0;
 
   virtual bool parseXML(xmlNodePtr cur){}

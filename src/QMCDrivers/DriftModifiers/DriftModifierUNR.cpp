@@ -15,12 +15,8 @@
 
 namespace qmcplusplus
 {
-void DriftModifierUNR::getScaledDrift(const ParticleSet& P,
-                                      const TrialWaveFunction& W,
-                                      const QMCHamiltonian& H,
-                                      RealType tau,
+void DriftModifierUNR::getScaledDrift(RealType tau,
                                       const GradType& qf,
-                                      int iat,
                                       PosType& drift) const
 {
   // convert the complex WF gradient to real and temporarily store in drift.

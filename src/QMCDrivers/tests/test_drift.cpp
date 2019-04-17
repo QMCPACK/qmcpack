@@ -135,7 +135,7 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
   for (int ix = 0; ix < nx; ix++)
   {
     elec.G[0][0] = gradx;
-    DM.getScaledDrift(elec, Psi, H, tau / mass, elec.G[0], ix, drift);
+    DM.getScaledDrift(tau / mass, elec.G[0], drift);
     double dval = drift[0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
@@ -180,7 +180,7 @@ TEST_CASE("get scaled drift complex", "[drivers][drift]")
   for (int ix = 0; ix < nx; ix++)
   {
     elec.G[0][0] = gradx + myi;
-    DM.getScaledDrift(elec, Psi, H, tau / mass, elec.G[0], ix, drift);
+    DM.getScaledDrift(tau / mass, elec.G[0], drift);
     double dval = drift[0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);

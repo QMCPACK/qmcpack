@@ -363,7 +363,7 @@ void VMCcuda::advanceWalkersWithDrift()
       {
         PosType dr;
         delpos[iw] *= m_sqrttau;
-        DriftModifier->getScaledDrift(W, Psi, H, m_tauovermass, oldG[iw], iat, dr);
+        DriftModifier->getScaledDrift(m_tauovermass, oldG[iw], dr);
         newpos[iw] = W[iw]->R[iat] + delpos[iw] + dr;
         ratios[iw] = 1.0;
         acc[iw]    = true;
@@ -393,7 +393,7 @@ void VMCcuda::advanceWalkersWithDrift()
       for (int iw = 0; iw < nw; ++iw)
       {
         PosType drNew;
-        DriftModifier->getScaledDrift(W, Psi, H, m_tauovermass, newG[iw], iat, drNew);
+        DriftModifier->getScaledDrift(m_tauovermass, newG[iw], drNew);
         drNew += newpos[iw] - W[iw]->R[iat];
         // if (dot(drNew, drNew) > 25.0)
         //   std::cerr << "Large drift encountered!  Drift = " << drNew << std::endl;
