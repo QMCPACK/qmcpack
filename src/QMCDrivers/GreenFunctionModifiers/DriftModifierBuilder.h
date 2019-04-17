@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_DRIFTMODIFIER_BUILDER_H
 #define QMCPLUSPLUS_DRIFTMODIFIER_BUILDER_H
 
-#include "QMCDrivers/DriftModifiers/DriftModifierBase.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus

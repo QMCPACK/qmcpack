@@ -30,7 +30,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
-#include "QMCDrivers/DriftModifiers/DriftModifierUNR.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 
 
 #include <stdio.h>

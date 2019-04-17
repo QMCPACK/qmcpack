@@ -34,8 +34,8 @@ SET(QMCDRIVERS
   WalkerControlBase.cpp
   CloneManager.cpp
   QMCUpdateBase.cpp
-  DriftModifiers/DriftModifierBuilder.cpp
-  DriftModifiers/DriftModifierUNR.cpp
+  GreenFunctionModifiers/DriftModifierBuilder.cpp
+  GreenFunctionModifiers/DriftModifierUNR.cpp
   VMC/VMCUpdatePbyP.cpp
   VMC/VMCUpdateAll.cpp
   VMC/VMCFactory.cpp

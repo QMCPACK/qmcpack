@@ -15,7 +15,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "QMCDrivers/DriftModifiers/DriftModifierUNR.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 
 namespace qmcplusplus
 {

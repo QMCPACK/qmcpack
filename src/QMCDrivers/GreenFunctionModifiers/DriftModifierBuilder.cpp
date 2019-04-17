@@ -10,8 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DriftModifiers/DriftModifierBuilder.h"
-#include "QMCDrivers/DriftModifiers/DriftModifierUNR.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 #include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus

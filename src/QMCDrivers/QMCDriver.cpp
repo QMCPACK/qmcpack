@@ -36,7 +36,7 @@
 #include "Particle/AdiosWalkerInput.h"
 #include <ADIOS/ADIOS_profile.h>
 #endif
-#include "QMCDrivers/DriftModifiers/DriftModifierBuilder.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else

@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_DRIFTMODIFIER_UNR_H
 #define QMCPLUSPLUS_DRIFTMODIFIER_UNR_H
 
-#include "QMCDrivers/DriftModifiers/DriftModifierBase.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 
 namespace qmcplusplus
 {
