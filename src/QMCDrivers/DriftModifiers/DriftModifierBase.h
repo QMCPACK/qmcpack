@@ -20,6 +20,7 @@
 
 namespace qmcplusplus
 {
+/// this class implements drift modification
 class DriftModifierBase
 {
 public:

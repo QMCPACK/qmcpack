@@ -18,6 +18,7 @@
 
 namespace qmcplusplus
 {
+/// create DriftModifier
 DriftModifierBase* createDriftModifier(xmlNodePtr cur, const Communicate* myComm);
 } // namespace qmcplusplus
 
