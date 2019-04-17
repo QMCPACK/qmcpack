@@ -26,14 +26,12 @@
 namespace mpi3 = boost::mpi3;
 #endif
 
-#ifdef HAVE_OOMPI
-#include "oompi.h"
+#ifdef HAVE_MPI
 struct CommunicatorTraits
 {
   typedef MPI_Comm mpi_comm_type;
   typedef MPI_Status status;
   typedef MPI_Request request;
-  typedef OOMPI_Intra_comm intra_comm_type;
 };
 #define APP_ABORT(msg)                                            \
   {                                                               \
@@ -53,7 +51,6 @@ struct CommunicatorTraits
   typedef int mpi_comm_type;
   typedef int status;
   typedef int request;
-  typedef int intra_comm_type;
   static const int MPI_COMM_NULL    = 0;
   static const int MPI_REQUEST_NULL = 1;
 };
@@ -102,7 +99,6 @@ public:
 #endif
 
   ///constructor with communicator
-  //Communicate(const intra_comm_type& c);
   Communicate(const Communicate& in_comm, int nparts);
 
   /**destructor
@@ -123,7 +119,7 @@ public:
   void initializeAsNodeComm(const Communicate& parent);
   void finalize();
   void abort();
-  void abort(const char* msg);
+  void barrier_and_abort(const std::string& msg);
   void set_world();
 
 #if defined(HAVE_MPI)
@@ -133,9 +129,6 @@ public:
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
   inline mpi_comm_type getMPI() const { return myMPI; }
-
-  inline intra_comm_type& getComm() { return myComm; }
-  inline const intra_comm_type& getComm() const { return myComm; }
 
   ///return the rank
   inline int rank() const { return d_mycontext; }
@@ -274,12 +267,6 @@ public:
   /// mpi3 communicator wrapper
   mpi3::communicator comm;
 #endif
-  // Move here temporarily so the destructors of myComm and comm run
-  // in the right order
-protected:
-  /// OOMPI communicator
-  intra_comm_type myComm;
-
 };
 
 

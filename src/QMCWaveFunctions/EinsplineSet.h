@@ -350,8 +350,6 @@ public:
   void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi);
   void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi,
                 RealGradVector_t& dpsi, RealValueVector_t& d2psi);
-  void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi,
-                RealGradVector_t& dpsi, RealHessVector_t& grad_grad_psi);
   void evaluate_notranspose(const ParticleSet& P, int first, int last,
                             RealValueMatrix_t& psi, RealGradMatrix_t& dpsi,
                             RealValueMatrix_t& d2psi);

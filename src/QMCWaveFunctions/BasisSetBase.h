@@ -145,6 +145,8 @@ struct SoaBasisSetBase
 {
   typedef T value_type;
   typedef VectorSoaContainer<T,OHMMS_DIM+2> vgl_type;
+  typedef VectorSoaContainer<T,10> vgh_type;
+  typedef VectorSoaContainer<T,20> vghgh_type;
   ///size of the basis set
   int BasisSetSize;
 
@@ -156,6 +158,8 @@ struct SoaBasisSetBase
   virtual SoaBasisSetBase<T>* makeClone() const = 0;
   virtual void setBasisSetSize(int nbs)=0;
   virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)=0;
+  virtual void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)=0;
+  virtual void evaluateVGHGH(const ParticleSet& P, int iat, vghgh_type& vghgh)=0;
   virtual void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals)=0;
   virtual bool is_S_orbital(int mo_idx, int ao_idx) { return false;}
 

@@ -47,7 +47,10 @@ public:
 
   /** default constructor
   */
-  PWOrbitalSet() : OwnBasisSet(false), BasisSetSize(0), IsCloned(false), myBasisSet(nullptr), C(nullptr) {}
+  PWOrbitalSet() : OwnBasisSet(false), BasisSetSize(0), IsCloned(false), myBasisSet(nullptr), C(nullptr) 
+  {
+    className = "PWOrbitalSet";
+  }
 
   /** delete BasisSet only it owns this
    *
@@ -90,11 +93,6 @@ public:
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             ValueMatrix_t& d2logdet);
-
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& gg_psi)
-  {
-    APP_ABORT("Need specialization of evaluate(iat) for HessVector. \n");
-  }
 
   /** boolean
    *
