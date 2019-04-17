@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
-  <project id="md_rc_vmc_LiH_gamma" series="1">
+  <project id="md_cc_vmc_LiH-gamma" series="1">
     <application name="qmcapp" role="molecu" class="serial" version="0.2">
       Simple Example of solid LiH
     </application>
@@ -64,10 +64,10 @@ H
 
       <multideterminant optimize="yes" spo_up="spo-up" spo_dn="spo-dn">
         <detlist size="2" type="CSF" nca="0" ncb="0" nea="2" neb="2" nstates="4" cutoff="0.0">
-          <csf id="CSFcoeff_0" exctLvl="0" coeff="0.89" qchem_coeff="0.99" occ="2200">
+          <csf id="CSFcoeff_0" exctLvl="0" coeff_real="0.89" coeff_imag="0.01" qchem_coeff="0.99" occ="2200">
             <det id="csf_0-0" coeff="1" alpha="1100" beta="1100"/>
           </csf>
-          <csf id="CSFcoeff_1" exctLvl="2" coeff="0.10" qchem_coeff="0.99" occ="2020">
+          <csf id="CSFcoeff_1" exctLvl="2" coeff_real="0.10" coeff_imag="0.01" qchem_coeff="0.99" occ="2020">
             <det id="csf_0-0" coeff="1" alpha="1010" beta="1010"/>
           </csf>
         </detlist>

@@ -100,8 +100,8 @@ ENDIF()
   IF (QMC_COMPLEX)
     QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
                       "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-                      md_cc_vmc_LiH_gamma
-                      md_cc_vmc_LiH_gamma.xml
+                      md_cc_vmc_LiH-gamma
+                      md_cc_vmc_LiH-gamma.xml
                       1 16
                       TRUE
                       1 LIH_MD_GAMMA_SCALARS # VMC
@@ -110,8 +110,8 @@ ENDIF()
   ELSE()
     QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
                       "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-                      md_rc_vmc_LiH_gamma
-                      md_rc_vmc_LiH_gamma.xml
+                      md_rc_vmc_LiH-gamma
+                      md_rc_vmc_LiH-gamma.xml
                       1 16
                       TRUE                  
                       1 LIH_MD_GAMMA_SCALARS # VMC
