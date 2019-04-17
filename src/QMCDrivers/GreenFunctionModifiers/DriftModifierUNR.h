@@ -23,7 +23,7 @@ public:
   using RealType = QMCTraits::RealType;
   using PosType  = QMCTraits::PosType;
 
-  void getScaledDrift(RealType tau,
+  void getDrift(RealType tau,
                       const GradType& qf,
                       PosType& drift) const final;
 

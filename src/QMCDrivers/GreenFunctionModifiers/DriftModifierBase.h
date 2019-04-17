@@ -33,7 +33,7 @@ public:
    * @param qf quantum force
    * @param drift output
    */
-  virtual void getScaledDrift(RealType tau,
+  virtual void getDrift(RealType tau,
                               const GradType& qf,
                               PosType& drift) const = 0;
 

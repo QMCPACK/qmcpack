@@ -79,7 +79,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       PosType dr;
-      DriftModifier->getScaledDrift(tauovermass, grad_iat, dr);
+      DriftModifier->getDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
@@ -103,7 +103,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       {
         EstimatorRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
-        DriftModifier->getScaledDrift(tauovermass, grad_iat, dr);
+        DriftModifier->getDrift(tauovermass, grad_iat, dr);
         dr                      = W.R[iat] - W.activePos - dr;
         EstimatorRealType logGb = -oneover2tau * dot(dr, dr);
         RealType prob           = ratio * ratio * std::exp(logGb - logGf);

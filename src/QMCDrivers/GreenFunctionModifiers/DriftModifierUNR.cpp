@@ -15,7 +15,7 @@
 
 namespace qmcplusplus
 {
-void DriftModifierUNR::getScaledDrift(RealType tau,
+void DriftModifierUNR::getDrift(RealType tau,
                                       const GradType& qf,
                                       PosType& drift) const
 {
