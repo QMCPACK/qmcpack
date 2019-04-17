@@ -7,19 +7,22 @@ from nexus import generate_convert4qmc
 from nexus import generate_cusp_correction
 from nexus import generate_qmcpack
 
+# note: you will must source the QP config file before running this script
+#   source /your/path/to/quantum_package.rc
+
 settings(
     results       = '',
     status_only   = 0,
     generate_only = 0,
     sleep         = 3,
-    machine       = 'ws12',
-    qprc          = '/home/j1k/apps/quantum_package/qp2-2.0.0-beta/quantum_package.rc',
+    machine       = 'ws16',
+    qprc          = '/your/path/to/quantum_package.rc',
     )
 
 # define run details
-qp_job  = job(cores=12,threads=12)
+qp_job  = job(cores=16,threads=16)
 c4q_job = job(cores=1)
-qmc_job = job(cores=12,threads=12)
+qmc_job = job(cores=16,threads=16)
 
 # read in structure for oxygen dimer
 dimer = generate_physical_system(
