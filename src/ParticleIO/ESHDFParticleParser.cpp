@@ -88,6 +88,7 @@ bool ESHDFIonsParser::put(xmlNodePtr cur)
   pbuffer.add(lat.begin(), lat.end());
   pbuffer.add(get_first_address(ref_.R), get_last_address(ref_.R));
   pbuffer.add(ref_.GroupID.begin(), ref_.GroupID.end());
+  pbuffer.add(ref_.ID.begin(), ref_.ID.end());
   myComm->bcast(pbuffer);
   ref_.R.InUnit = PosUnit::CartesianUnit;
   if (myComm->rank())
@@ -98,6 +99,7 @@ bool ESHDFIonsParser::put(xmlNodePtr cur)
     pbuffer.get(lat.begin(), lat.end());
     pbuffer.get(get_first_address(ref_.R), get_last_address(ref_.R));
     pbuffer.get(ref_.GroupID.begin(), ref_.GroupID.end());
+    pbuffer.get(ref_.ID.begin(), ref_.ID.end());
     ref_.Lattice.set(lat);
   }
   return true;

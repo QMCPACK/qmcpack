@@ -286,7 +286,7 @@ void CSVMC::resetRun()
         app_log() << os.str() << std::endl;
 
       CSMovers[ip]->put(qmcNode);
-      CSMovers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
+      CSMovers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
     }
   }
 #if !defined(REMOVE_TRACEMANAGER)
@@ -311,7 +311,7 @@ void CSVMC::resetRun()
   {
     //int ip=omp_get_thread_num();
     CSMovers[ip]->put(qmcNode);
-    CSMovers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
+    CSMovers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
     if (QMCDriverMode[QMC_UPDATE_MODE])
       CSMovers[ip]->initCSWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], nWarmupSteps > 0);
     else

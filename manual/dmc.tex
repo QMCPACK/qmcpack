@@ -41,13 +41,13 @@
    &   \texttt{scaleweight         } &  string  & yes/other & yes   & scale weights (CUDA only)  \\
    &   \texttt{MaxAge              } &  double  & $\ge 0$ & 10   & kill persistent walkers  \\
     &   \texttt{MaxCopy             } &  double  & $\ge 0$ &2   & limit population growth \\
-   &   \texttt{fastgrad            } &  text  & yes/other & yes   & fast gradients  \\
  %  &   \texttt{printderivs         } &  text  & $\ge 0$ & 0   & number of samples per  thread  \\
  %  &   \texttt{wlen                } &  integer  & $\ge 0$ & 0   & number of samples per  thread  \\
    &   \texttt{maxDisplSq      } &  real  & all values & -1   & maximum particle move  \\
    &   \texttt{storeconfigs        } &  integer  & all values & 0   & store configurations  \\
    &   \texttt{use\_nonblocking    } &  string  & yes/no & yes   & using non-blocking send/recv \\
    &   \texttt{blocks\_between\_recompute} &  integer  & $\ge 0$ & dep.  & wavefunction recompute frequency  \\
+   &   \texttt{drift\_modifier} &  string  & UNR & UNR  & drift modification scheme  \\
   \hline
 \end{tabularx}
 \end{center}
@@ -126,6 +126,8 @@ The v1 and v3 algorithms are size-consistent and important advances over the pre
 \item \texttt{storeconfigs}. If storeconfigs is set to a non-zero value, then electron configurations during the DMC run will be saved. This option is disabled for the OpenMP version of DMC.
 
 \item \texttt{blocks\_between\_recompute}. See details in VMC section~\ref{sec:vmc}.
+
+\item \texttt{drift\_modifier}. Drift modification schemes. `UNR' corresponds to eq.~(35) in~\cite{Umrigar1993}. The parameter `a' can be modified by setting \texttt{drift\_modifier\_UNR\_a} (default 1.0).
 
 %\item \texttt{recordwalkers}. In VMC this is equivalent for \texttt{stepsbetweensamples}. \textit{This input is not used in DMC.}
 

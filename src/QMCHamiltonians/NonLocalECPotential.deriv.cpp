@@ -106,6 +106,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
                                                                                  const std::vector<RealType>& dlogpsi,
                                                                                  std::vector<RealType>& dhpsioverpsi)
 {
+#if defined(ENABLE_SOA)
+  APP_ABORT("NonLocalECPComponent::evaluateValueAndDerivatives(W,iat,psi.opt.dlogpsi,dhpsioverpsi) not implemented for SoA.\n");
+#endif
   Matrix<RealType> dratio(optvars.num_active_vars, nknot);
   std::vector<RealType> dlogpsi_t(dlogpsi.size(), 0.0);
   std::vector<RealType> dhlogpsi_t(dlogpsi.size(), 0.0);
