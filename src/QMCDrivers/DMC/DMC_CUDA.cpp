@@ -165,7 +165,7 @@ bool DMCcuda::run()
         {
           delpos[iw] *= m_sqrttau;
           PosType dr;
-          getScaledDrift(m_tauovermass, oldG[iw], dr);
+          DriftModifier->getDrift(m_tauovermass, oldG[iw], dr);
           newpos[iw] = W[iw]->R[iat] + delpos[iw] + dr;
           ratios[iw] = 1.0;
 #ifdef QMC_COMPLEX
@@ -196,7 +196,7 @@ bool DMCcuda::run()
         for (int iw = 0; iw < nw; ++iw)
         {
           PosType drNew;
-          getScaledDrift(m_tauovermass, newG[iw], drNew);
+          DriftModifier->getDrift(m_tauovermass, newG[iw], drNew);
           drNew += newpos[iw] - W[iw]->R[iat];
           RealType logGb = -m_oneover2tau * dot(drNew, drNew);
           RealType x     = logGb - logGf_v[iw];
@@ -283,7 +283,7 @@ bool DMCcuda::run()
         for (int iat = 0; iat < nat; iat++)
         {
           PosType wG_scaled;
-          getScaledDrift(m_tauovermass, W.G[iat], wG_scaled);
+          DriftModifier->getDrift(m_tauovermass, W.G[iat], wG_scaled);
           v2bar += dot(wG_scaled, wG_scaled);
 #ifdef QMC_COMPLEX
           PosType wG_real;
@@ -351,7 +351,7 @@ void DMCcuda::resetUpdateEngine()
     W.loadEnsemble();
     branchEngine->initWalkerController(W, false, false);
     Mover = new DMCUpdatePbyPWithRejectionFast(W, Psi, H, Random);
-    Mover->resetRun(branchEngine, Estimators);
+    Mover->resetRun(branchEngine, Estimators, nullptr, DriftModifier);
     //Mover->initWalkersForPbyP(W.begin(),W.end());
   }
   else

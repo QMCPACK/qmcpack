@@ -30,6 +30,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 
 
 #include <stdio.h>
@@ -104,7 +105,8 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   EstimatorManagerBase EM;
   SimpleFixedNodeBranch branch(0.1, 1);
   TraceManager TM;
-  vmc.resetRun(&branch, &EM, &TM);
+  DriftModifierUNR DM;
+  vmc.resetRun(&branch, &EM, &TM, &DM);
   vmc.startBlock(1);
 
   VMCUpdatePbyP::WalkerIter_t begin = elec.begin();

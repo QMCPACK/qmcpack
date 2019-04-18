@@ -35,14 +35,14 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              TrialWaveFunction& guide,
                              QMCHamiltonian& h,
                              RandomGenerator_t& rg)
-    : W(w), Psi(psi), Guide(guide), H(h), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+    : W(w), Psi(psi), Guide(guide), H(h), RandomGen(rg), DriftModifier(0), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-    : W(w), Psi(psi), H(h), Guide(psi), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+    : W(w), Psi(psi), H(h), Guide(psi), RandomGen(rg), DriftModifier(0), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
@@ -82,10 +82,13 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
   return s;
 }
 
-void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* est)
+void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces, const DriftModifierBase* driftmodifer)
 {
   Estimators   = est;
   branchEngine = brancher;
+  DriftModifier = driftmodifer;
+  Traces = traces;
+
   NumPtcl      = W.getTotalNum();
   deltaR.resize(NumPtcl);
   drift.resize(NumPtcl);
@@ -109,13 +112,6 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* e
   if (m_r2max < 0)
     m_r2max = W.Lattice.LR_rc * W.Lattice.LR_rc;
   //app_log() << "  Setting the bound for the displacement std::max(r^2) = " <<  m_r2max << std::endl;
-}
-
-
-void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces)
-{
-  resetRun(brancher, est);
-  Traces = traces;
 }
 
 void QMCUpdateBase::startRun(int blocks, bool record)
