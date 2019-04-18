@@ -158,7 +158,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
   {
     OhmmsAttributeSet a;
     std::string scheme_name("Consistent");
-    std::string s_function_name("Ye2018");
+    std::string s_function_name("LEKS2018");
     a.add(scheme_name, "smoothing_scheme");
     a.add(s_function_name, "smoothing_function");
     a.put(mybuilder->XMLRoot);
@@ -173,14 +173,14 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
       APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_scheme name! Only allows Consistent, SmoothAll or SmoothPartial.");
 
     // assign smooth_function
-    if ( s_function_name == "Ye2018" )
+    if ( s_function_name == "LEKS2018" )
       bspline->smooth_func_id = SmoothFunctions::YE2018;
     else if ( s_function_name == "coscos" )
       bspline->smooth_func_id = SmoothFunctions::COSCOS;
     else if ( s_function_name == "linear" )
       bspline->smooth_func_id = SmoothFunctions::LINEAR;
     else
-      APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_function name! Only allows Ye2018, coscos or linear.");
+      APP_ABORT("initialize_hybridrep_atomic_centers wrong smoothing_function name! Only allows LEKS2018, coscos or linear.");
     app_log() << "Hybrid orbital representation uses " << scheme_name << " smoothing scheme and " << s_function_name << " smoothing function." << std::endl;
 
     bspline->set_info(*(mybuilder->SourcePtcl), mybuilder->TargetPtcl, mybuilder->Super2Prim);
