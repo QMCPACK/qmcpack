@@ -70,7 +70,7 @@ struct SmoothFunctions
     {
       const T chalf(0.5), cone(1), pihalf(M_PI * chalf), pipihalf(M_PI * M_PI * chalf);
       T s, c, scos, ccos;
-      sincos(M_PI * x, &s, &c);
+      sincos(T(M_PI) * x, &s, &c);
       sincos(pihalf * (cone - c), &scos, &ccos);
 
       dx  = -chalf * pipihalf * scos * s;
