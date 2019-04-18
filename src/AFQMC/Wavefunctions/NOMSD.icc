@@ -1069,8 +1069,8 @@ namespace afqmc
   // potentially multiplied by various factors if doing
   // back propagation or free projection.
   // if Refs != nullptr, we assume that back propagation is being performed
-  template<class WlkSet, class MatG, class CVec1, class CVec2>
-  void NOMSD::WalkerAveragedDensityMatrix_shared(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
+  template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+  void NOMSD::WalkerAveragedDensityMatrix_shared(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
   {
     using std::fill_n;
     using std::copy_n;
@@ -1231,8 +1231,8 @@ namespace afqmc
   }
 
   // this version is customized for single determinant runs and doesn't have underflow problem
-  template<class WlkSet, class MatG, class CVec1, class CVec2>
-  void NOMSD::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
+  template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+  void NOMSD::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
   {
     using std::fill_n;
     using std::copy_n;
@@ -1268,6 +1268,10 @@ namespace afqmc
       assert(wset.size() == (*detR).size(0));
       assert(OrbMats.size() == (*detR).size(1));
     }
+
+    fill_n(Ovlp.origin(),Ovlp.num_elements(),ComplexType(0.0));
+    fill_n(DMsum.origin(),DMsum.num_elements(),ComplexType(0.0));
+
     if(walker_type != COLLINEAR) {
       auto Gdims = dm_dims(not compact,Alpha);
       // Temporaries for determinant component of walker rdm function.
@@ -1339,20 +1343,39 @@ namespace afqmc
           copy_n(OrbB.origin(),OrbB.num_elements(),SMB.origin());
           SDetOp.MixedDensityMatrix_noHerm(SMA,wset[iw].SlaterMatrixN(Alpha),
                                     GA2D_,to_address(ov_),compact);
-          overlap *= ComplexType(*ov_) * ((*detR)[iw][0]);
+          ComplexType ov1(*ov_);
+          Ovlp[iw][0] = ov1; 
+          DMsum[iw][0] = ma::sum(GA1D_);
+          overlap *= ov1 * ((*detR)[iw][0]);
           SDetOp.MixedDensityMatrix_noHerm(SMB,wset[iw].SlaterMatrixN(Beta),
                                     GB2D_,to_address(ov_),compact);
-          overlap *= ComplexType(*ov_) * ((*detR)[iw][1]);
+          ComplexType ov2(*ov_);
+          Ovlp[iw][1] = ov2; 
+          DMsum[iw][1] = ma::sum(GB1D_);
+          overlap *= ov2 * ((*detR)[iw][1]);
         } else {
           SDetOp.MixedDensityMatrix(OrbMats[0],wset[iw].SlaterMatrix(Alpha),
                                                       GA2D_,to_address(ov_),compact);
-          overlap *= ComplexType(*ov_);
+          ComplexType ov1(*ov_);
+          Ovlp[iw][0] = ov1; 
+          DMsum[iw][0] = ma::sum(GA1D_);
+          overlap *= ov1; 
 
           SDetOp.MixedDensityMatrix(OrbMats[1],wset[iw].SlaterMatrix(Beta),
                                            GB2D_,to_address(ov_),compact);
-          overlap *= ComplexType(*ov_);
+
+          ComplexType ov2(*ov_);
+          Ovlp[iw][1] = ov2; 
+          DMsum[iw][1] = ma::sum(GB1D_);
+          overlap *= ov2; 
         }
         overlap *= ma::conj(ci[0]);
+
+//        if( not ( std::isfinite(real(Ovlp[iw][0])) && std::isfinite(imag(Ovlp[iw][0])) && 
+//                  std::isfinite(real(Ovlp[iw][1])) && std::isfinite(imag(Ovlp[iw][1])) &&
+        if( not ( std::isfinite(real(DMsum[iw][0])) && std::isfinite(imag(DMsum[iw][0])) &&
+                  std::isfinite(real(DMsum[iw][1])) && std::isfinite(imag(DMsum[iw][1]))
+                                     ) ) continue;
 
         ComplexType ov_denom;
         if(free_projection) {
@@ -1381,8 +1404,8 @@ namespace afqmc
   // potentially multiplied by various factors if doing
   // back propagation or free projection.
   // if Refs != nullptr, we assume that back propagation is being performed
-  template<class WlkSet, class MatG, class CVec1, class CVec2>
-  void NOMSD::WalkerAveragedDensityMatrix_batched(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
+  template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+  void NOMSD::WalkerAveragedDensityMatrix_batched(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
   {
 /*
     if(TG.TG_local().size() > 1) 

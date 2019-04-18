@@ -595,7 +595,8 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
         apply_propagators('H',wset,0,tk0,tkN,ntasks_total_serial,vHS3D);
       TG.local_barrier();
 
-      if(ni>0 && ni%nStabalize==0) {
+      // always end (ni==0) with orthogonalization
+      if(ni==0 || ni%nStabalize==0) {
         // orthogonalize
         if(nbatched_qr != 0) {
           if(walker_type!=COLLINEAR)

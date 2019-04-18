@@ -129,8 +129,8 @@ class dummy_wavefunction
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
-  template<class WlkSet, class MatG, class CVec1, class CVec2>
-  void WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection=false, boost::multi::array_ref<ComplexType,3>* Refs=nullptr, boost::multi::array<ComplexType,2>* detR=nullptr) {
+  template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+  void WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection=false, boost::multi::array_ref<ComplexType,3>* Refs=nullptr, boost::multi::array<ComplexType,2>* detR=nullptr) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
   }
 

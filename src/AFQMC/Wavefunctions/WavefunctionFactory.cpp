@@ -780,7 +780,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
       return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
                         std::move(ci),std::move(PsiT),
-                        walker_type,0,0,0,NCE,targetNW));
+                        walker_type,0,0,NCE,targetNW));
     } else
     {
       SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(

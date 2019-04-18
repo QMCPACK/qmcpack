@@ -307,8 +307,8 @@ class NOMSD: public AFQMCInfo
      *  - free_projection: If false (default), assumes using phaseless approximation
      *                       otherwise assumes using free projection.
      */
-    template<class WlkSet, class MatG, class CVec1, class CVec2>
-    void WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection=false, boost::multi::array_ref<ComplexType,3>* Refs=nullptr, boost::multi::array<ComplexType,2>* detR=nullptr) {
+    template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+    void WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection=false, boost::multi::array_ref<ComplexType,3>* Refs=nullptr, boost::multi::array<ComplexType,2>* detR=nullptr) {
 //      if(nbatch != 0)
 //        WalkerAveragedDensityMatrix_batched(wset,wgt,G,denom,free_projection,Refs,detR);
 //      else  
@@ -316,9 +316,9 @@ class NOMSD: public AFQMCInfo
         // mainly from the normalization coming out of the orthonormalization (detR)
         // writing specialized version for single det which doesn;t have this issues
         if(ci.size()==1)
-          WalkerAveragedDensityMatrix_shared_single_det(wset,wgt,G,denom,free_projection,Refs,detR);
+          WalkerAveragedDensityMatrix_shared_single_det(wset,wgt,G,denom,Ovlp,DMsum,free_projection,Refs,detR);
         else
-          WalkerAveragedDensityMatrix_shared(wset,wgt,G,denom,free_projection,Refs,detR);
+          WalkerAveragedDensityMatrix_shared(wset,wgt,G,denom,Ovlp,DMsum,free_projection,Refs,detR);
     }
 
     /*
@@ -550,14 +550,14 @@ class NOMSD: public AFQMCInfo
         Energy_distributed_multiDet(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
     }
 
-    template<class WlkSet, class MatG, class CVec1, class CVec2>
-    void WalkerAveragedDensityMatrix_batched(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
+    template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+    void WalkerAveragedDensityMatrix_batched(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
 
-    template<class WlkSet, class MatG, class CVec1, class CVec2>
-    void WalkerAveragedDensityMatrix_shared(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
+    template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+    void WalkerAveragedDensityMatrix_shared(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
 
-    template<class WlkSet, class MatG, class CVec1, class CVec2>
-    void WalkerAveragedDensityMatrix_shared_single_det(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
+    template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+    void WalkerAveragedDensityMatrix_shared_single_det(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
 
     template<class WlkSet, class Mat, class TVec>
     void Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, TVec&& Ov);

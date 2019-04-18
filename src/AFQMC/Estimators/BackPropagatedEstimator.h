@@ -175,6 +175,17 @@ class BackPropagatedEstimator: public EstimatorBase
     if(detR.size(0) != wset.size() || detR.size(1) != nx*nrefs)
       detR.reextent({wset.size(),nrefs*nx}); 
 
+    // temporary!
+    int wpop = wset.GlobalPopulation();
+    int nw = wset.size();  // assuming all groups have the same size
+    int iw0 = wset.getTG().getTGNumber()*nw;
+    if(wdetR.size(0) != nback_prop_steps.size() ||  wdetR.size(1) !=  wpop || wdetR.size(2) != nx*nrefs)
+      wdetR.reextent({nback_prop_steps.size(),wpop,nrefs*nx}); 
+    if(wDMsum.size(0) != nback_prop_steps.size() ||  wDMsum.size(1) !=  wpop || wDMsum.size(2) != nx*nrefs)
+      wDMsum.reextent({nback_prop_steps.size(),wpop,nrefs*nx}); 
+    if(wOvlp.size(0) != nback_prop_steps.size() ||  wOvlp.size(1) !=  wpop || wOvlp.size(2) != nx*nrefs)
+      wOvlp.reextent({nback_prop_steps.size(),wpop,nrefs*nx}); 
+
     int n0,n1;
     std::tie(n0,n1) = FairDivideBoundary(TG.getLocalTGRank(),int(Refs.size(2)),TG.getNCoresPerTG());
     boost::multi::array_ref<ComplexType,3> Refs_(to_address(Refs.origin()),Refs.extensions());
@@ -190,6 +201,10 @@ class BackPropagatedEstimator: public EstimatorBase
 
     //3. propagate backwards the references
     prop0.BackPropagate(bp_step,nStabalize,wset,Refs_,detR);
+
+    // MAM:
+    using std::copy_n;
+    copy_n(detR.origin(),detR.num_elements(),wdetR[iav][iw0].origin());
 
     //4. calculate properties, only rdm now but make a list or properties later
     // adjust weights here is path restoration
@@ -208,7 +223,7 @@ class BackPropagatedEstimator: public EstimatorBase
     CMatrix_ref BackPropDM(DMBuffer[iav].origin(), {dm_dims.first,dm_dims.second});
     stdCVector_ref denom_(denom[iav].origin(), iextensions<1u>{denom.size(1)});
     
-    wfn0.WalkerAveragedDensityMatrix(wset, wgt, BackPropDM, denom_, 
+    wfn0.WalkerAveragedDensityMatrix(wset, wgt, BackPropDM, denom_, wOvlp[iav].sliced(iw0,iw0+nw), wDMsum[iav].sliced(iw0,iw0+nw), 
                                    !importanceSampling, std::addressof(Refs_),
                                    std::addressof(detR));
 
@@ -239,12 +254,20 @@ class BackPropagatedEstimator: public EstimatorBase
                     <<AFQMCTimers[back_propagate_timer]->get_total() <<" ";
       AFQMCTimers[back_propagate_timer]->reset();  
     }
+    if(accumulated_in_last_block) {
+      TG.Global().reduce_in_place_n(wDMsum.origin(),wDMsum.num_elements(),std::plus<>());
+      TG.Global().reduce_in_place_n(wOvlp.origin(),wOvlp.num_elements(),std::plus<>());
+      // not correct with ncores>1  
+      TG.Global().reduce_in_place_n(wdetR.origin(),wdetR.num_elements(),std::plus<>());
+    }
     if(writer && accumulated_in_last_block) {
       int nave(nback_prop_steps.size());
+      int nref(detR.size(1));
       if(write_metadata) {
         dump.push("Metadata");
         dump.write(max_nback_prop, "NumBackProp");
         dump.write(nave, "NumAverages");
+        dump.write(nref, "NumReferences");
         dump.pop();
         write_metadata = false;
       }
@@ -268,14 +291,23 @@ class BackPropagatedEstimator: public EstimatorBase
           std::string padded_iblock = std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
           stdCVector_ref DMAverage_( DMAverage[i].origin(), {DMAverage.size(1)}); 
           stdCVector_ref denom_average_( denom_average[i].origin(), {denom_average.size(1)}); 
+          stdCVector_ref wOvlp_( wOvlp[i].origin(), {wOvlp.size(1)*wOvlp.size(2)}); 
+          stdCVector_ref wDMsum_( wDMsum[i].origin(), {wDMsum.size(1)*wDMsum.size(2)}); 
+          stdCVector_ref wdetR_( wdetR[i].origin(), {wdetR.size(1)*wdetR.size(2)}); 
           dump.write(DMAverage_, "one_rdm_"+padded_iblock);
           dump.write(denom_average_, "one_rdm_denom_"+padded_iblock);
+          dump.write(wOvlp_, "one_rdm_walker_overlaps_"+padded_iblock);
+          dump.write(wDMsum_, "one_rdm_walker_dm_sums_"+padded_iblock);
+          dump.write(wdetR_, "one_rdm_detR_"+padded_iblock);
           dump.pop();
         }
         dump.pop();
         using std::fill_n;  
         fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0,0.0));
         fill_n(denom_average.origin(), denom_average.num_elements(), ComplexType(0.0,0.0));
+        fill_n(wdetR.origin(),wdetR.num_elements(),ComplexType(0.0));
+        fill_n(wOvlp.origin(),wOvlp.num_elements(),ComplexType(0.0));
+        fill_n(wDMsum.origin(),wDMsum.num_elements(),ComplexType(0.0));
       }
     }
   }
@@ -303,6 +335,9 @@ class BackPropagatedEstimator: public EstimatorBase
   stdCMatrix DMAverage;
   mpi3CTensor Refs;
   boost::multi::array<ComplexType,2> detR;
+  boost::multi::array<ComplexType,3> wdetR;
+  boost::multi::array<ComplexType,3> wDMsum;
+  boost::multi::array<ComplexType,3> wOvlp;
 
   RealType weight, weight_sub;
   RealType targetW = 1;
