@@ -280,7 +280,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
         }
       }
       if (!success)
-        APP_ABORT("initialize_hybridrep_atomic_centers Failed to initialize atomic centers in hybrid orbital representation!");
+        BaseReader::myComm->barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers in hybrid orbital representation!");
 
       for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
       {
