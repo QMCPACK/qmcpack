@@ -179,6 +179,9 @@ def gen_HCN_force():
 
   Natom=ionpos.shape[0];
   norb=7
+
+  print '  // Generated from gen_mo.py for position %s'%str(pos)
+
   for iat in xrange(0,Natom):
     for idim in xrange(0,3):
       ionpos_p=np.array(ionpos)
