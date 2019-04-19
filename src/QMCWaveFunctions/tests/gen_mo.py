@@ -211,11 +211,11 @@ def gen_HCN_force():
       dmo_l = 2.0*deltainv*(mo_l_p-mo_l_m)
       print "//============== Ion ",iat," Component ",idim,"==================="
       for iorb in xrange(0,norb):
-        print ' d %d v = %15.10g  '%(iorb,dmo_v[iorb])
-        print ' d %d gx = %15.10g '%(iorb,dmo_g[iorb][0])
-        print ' d %d gy = %15.10g '%(iorb,dmo_g[iorb][1])
-        print ' d %d gz = %15.10g '%(iorb,dmo_g[iorb][2])
-        print ' d %d l  = %15.10g '%(iorb,dmo_l[iorb])
+        print '  REQUIRE( dv[%d][%d]    == Approx(%15.10g) );  '%(idim,iorb,dmo_v[iorb])
+        print '  REQUIRE( dg[%d][%d][0] == Approx(%15.10g) );  '%(idim,iorb,dmo_g[iorb][0])
+        print '  REQUIRE( dg[%d][%d][1] == Approx(%15.10g) );  '%(idim,iorb,dmo_g[iorb][0])
+        print '  REQUIRE( dg[%d][%d][2] == Approx(%15.10g) );  '%(idim,iorb,dmo_g[iorb][0])
+        print '  REQUIRE( dl[%d][%d]    == Approx(%15.10g) );  '%(idim,iorb,dmo_v[iorb])
     
   print '  // Generated from gen_mo.py for position %s'%str(pos)
  # for i in range(7):
