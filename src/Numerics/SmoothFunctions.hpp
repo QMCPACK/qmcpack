@@ -21,7 +21,7 @@ struct SmoothFunctions
 {
   enum
   {
-    YE2018 = 0,
+    LEKS2018 = 0,
     COSCOS,
     LINEAR
   };

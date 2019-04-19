@@ -174,7 +174,7 @@ struct SplineHybridAdoptorReader : public SplineAdoptorReader<SA>
 
     // assign smooth_function
     if ( s_function_name == "LEKS2018" )
-      bspline->smooth_func_id = SmoothFunctions::YE2018;
+      bspline->smooth_func_id = SmoothFunctions::LEKS2018;
     else if ( s_function_name == "coscos" )
       bspline->smooth_func_id = SmoothFunctions::COSCOS;
     else if ( s_function_name == "linear" )
