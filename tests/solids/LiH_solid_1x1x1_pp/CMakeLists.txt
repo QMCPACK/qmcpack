@@ -95,6 +95,30 @@ ENDIF()
                     0 LIH_ARB_SCALARS # VMC
                     )
 
+# multi-slater determinant requires complex build to run. Ensure fails with real/non-complex build
+  LIST(APPEND LIH_MD_GAMMA_SCALARS "totenergy" "-8.489858484145001 0.004")
+  IF (QMC_COMPLEX)
+    QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
+                      "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                      md_cc_vmc_LiH-gamma
+                      md_cc_vmc_LiH-gamma.xml
+                      1 16
+                      TRUE
+                      1 LIH_MD_GAMMA_SCALARS # VMC
+                      )
+
+  ELSE()
+    QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
+                      "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                      md_rc_vmc_LiH-gamma
+                      md_rc_vmc_LiH-gamma.xml
+                      1 16
+                      TRUE                  
+                      1 LIH_MD_GAMMA_SCALARS # VMC
+                      )
+  ENDIF()
+
+
 # DMC tests for LiH, locality and non-local (t-moves) variants
 
   LIST(APPEND LIH_GAMMA_DMC_SCALARS "totenergy" "-8.54823 0.004")
