@@ -23,7 +23,7 @@ void DriftModifierUNR::getDrift(RealType tau,
   convert(qf, drift);
   RealType vsq = dot(drift, drift);
   RealType sc =
-      (vsq < std::numeric_limits<RealType>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * tau * vsq)) / vsq);
+      (vsq < std::numeric_limits<RealType>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * a * tau * vsq)) / ( a * vsq ) );
   //Apply the umrigar scaled drift.
   drift *= sc;
 }
