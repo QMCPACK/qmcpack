@@ -692,14 +692,7 @@ struct HybridAdoptorBase
       return cone;
     const RealType scale  = cone / (cutoff - cutoff_buffer);
     const RealType x      = (r - cutoff_buffer) * scale;
-    if(smooth_func_id == SmoothFunctions::LEKS2018)
-      f = SmoothFunctions::func_tanh(x, df_dr, d2f_dr2);
-    else if(smooth_func_id == SmoothFunctions::COSCOS)
-      f = SmoothFunctions::func_coscos(x, df_dr, d2f_dr2);
-    else if(smooth_func_id == SmoothFunctions::LINEAR)
-      f = SmoothFunctions::func_linear(x, df_dr, d2f_dr2);
-    else
-      throw std::runtime_error("Unknown smooth function!");
+    f = SmoothFunctions::func(smooth_func_id, x, df_dr, d2f_dr2);
     df_dr   *= scale;
     d2f_dr2 *= scale*scale;
     return f;
