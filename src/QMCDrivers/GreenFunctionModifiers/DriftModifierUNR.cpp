@@ -34,6 +34,7 @@ bool DriftModifierUNR::parseXML(xmlNodePtr cur)
   m_param.add(a, "drift_UNR_a", "double");
   m_param.put(cur);
   app_log() << "  Set drift_modifier UNR parameter a = " << a << std::endl;
+  return true;
 }
 
 } // namespace qmcplusplus
