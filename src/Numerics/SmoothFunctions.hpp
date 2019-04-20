@@ -17,9 +17,8 @@
 
 namespace qmcplusplus
 {
-namespace SmoothFunctions
-{
-enum
+
+enum class smoothing_functions
 {
   LEKS2018 = 0,
   COSCOS,
@@ -27,7 +26,7 @@ enum
 };
 
 template<typename T>
-T func(int smooth_func_id, T x, T& dx, T& d2x)
+T smoothing(smoothing_functions func_id, T x, T& dx, T& d2x)
 {
   if (x < 0)
   {
@@ -39,7 +38,7 @@ T func(int smooth_func_id, T x, T& dx, T& d2x)
     dx = d2x = T(0);
     return T(0);
   }
-  else if (smooth_func_id == LEKS2018)
+  else if (func_id == smoothing_functions::LEKS2018)
   {
     /// 1/2 - 1/2 tanh(alpha * (x - 1/2))
     const T cone(1), chalf(0.5), alpha(2);
@@ -50,7 +49,7 @@ T func(int smooth_func_id, T x, T& dx, T& d2x)
     d2x = alpha * alpha * tanh_x * dtanhx_dx;
     return chalf * (cone - tanh_x);
   }
-  else if (smooth_func_id == COSCOS)
+  else if (func_id == smoothing_functions::COSCOS)
   {
     /// (1+cos(PI*(1-cos(PI*x))/2))/2
     const T chalf(0.5), cone(1), pihalf(M_PI * chalf), pipihalf(M_PI * M_PI * chalf);
@@ -62,7 +61,7 @@ T func(int smooth_func_id, T x, T& dx, T& d2x)
     d2x = -pihalf * pipihalf * (ccos * pihalf * s * s + scos * c);
     return chalf * (cone + ccos);
   }
-  else if (smooth_func_id == LINEAR)
+  else if (func_id == smoothing_functions::LINEAR)
   {
     /// 1-x
     dx  = T(-1);
@@ -72,7 +71,6 @@ T func(int smooth_func_id, T x, T& dx, T& d2x)
   else
     throw std::runtime_error("Unknown smooth function!");
 }
-} // namespace SmoothFunctions
 
 } // namespace qmcplusplus
 

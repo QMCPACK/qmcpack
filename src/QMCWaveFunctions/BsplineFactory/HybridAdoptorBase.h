@@ -420,14 +420,14 @@ struct HybridAdoptorBase
   // smooth function derivatives
   RealType f, df_dr, d2f_dr2;
   /// smoothing schemes
-  enum
+  enum class smoothing_schemes
   {
     CONSISTENT = 0,
     SMOOTHALL,
     SMOOTHPARTIAL
   } smooth_scheme;
   /// smoothing function
-  int smooth_func_id;
+  smoothing_functions smooth_func_id;
 
   HybridAdoptorBase() {}
 
@@ -656,7 +656,7 @@ struct HybridAdoptorBase
   {
     const RealType cone(1), ctwo(2);
     const RealType rinv(1.0 / dist_r);
-    if(smooth_scheme == CONSISTENT)
+    if(smooth_scheme == smoothing_schemes::CONSISTENT)
       for (size_t i = 0; i < psi.size(); i++)
       { // psi, dpsi, d2psi are all consistent
         d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) +
@@ -666,14 +666,14 @@ struct HybridAdoptorBase
             df_dr * rinv * dist_dr * (psi[i] - psi_AO[i]);
         psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
       }
-    else if(smooth_scheme == SMOOTHALL)
+    else if(smooth_scheme == smoothing_schemes::SMOOTHALL)
       for (size_t i = 0; i < psi.size(); i++)
       {
         d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f);
         dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f);
         psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
       }
-    else if(smooth_scheme == SMOOTHPARTIAL)
+    else if(smooth_scheme == smoothing_schemes::SMOOTHPARTIAL)
       for (size_t i = 0; i < psi.size(); i++)
       { // dpsi, d2psi are consistent but psi is not.
         d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) +
@@ -692,7 +692,7 @@ struct HybridAdoptorBase
       return cone;
     const RealType scale  = cone / (cutoff - cutoff_buffer);
     const RealType x      = (r - cutoff_buffer) * scale;
-    f = SmoothFunctions::func(smooth_func_id, x, df_dr, d2f_dr2);
+    f = smoothing(smooth_func_id, x, df_dr, d2f_dr2);
     df_dr   *= scale;
     d2f_dr2 *= scale*scale;
     return f;
