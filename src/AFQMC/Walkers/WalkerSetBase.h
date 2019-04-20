@@ -650,16 +650,19 @@ class WalkerSetBase: public AFQMCInfo
   }
 
   double getLogOverlapFactor() const { return LogOverlapFactor; }
-  // before: w_full = exp( LogOverlapFactor ) * wold
-  // after: w_full = exp( f ) * wnew
-  // wnew = wold * exp( LogOverlapFactor-f ) 
+  // nx= {2:CLOSED&&COLLINEAR, 1:NONCOLLINEAR }  
+  // before: OV_full = exp( nx*LogOverlapFactor ) * OVold
+  // after: OV_full = exp( nx*LogOverlapFactor+f ) * OVnew
+  // OVnew = OVold * exp( -f ) 
+  // LogOverlapFactor_new = LogOverlapFactor + f/nx  
   void adjustLogOverlapFactor(const double f) { 
     assert(walker_buffer.size(1) == walker_size);
+    double nx = (walkerType==NONCOLLINEAR?1.0:2.0);
     if(TG.TG_local().root()) {
       auto W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
-      ma::scal(ComplexType(std::exp(LogOverlapFactor-f)),W({0,tot_num_walkers},data_displ[OVLP]));
+      ma::scal(ComplexType(std::exp(-f)),W({0,tot_num_walkers},data_displ[OVLP]));
     }
-    LogOverlapFactor=f; 
+    LogOverlapFactor+=f/nx; 
     TG.TG_local().barrier();
   }
 
@@ -688,6 +691,7 @@ class WalkerSetBase: public AFQMCInfo
   // independent of this value.
   // If this value is changed, the overlaps of the walkers must be adjusted 
   // This is needed for stability reasons in large systems
+  // Note that this is stored on a "per spin" capacity
   double LogOverlapFactor = 0.0;
 
   TimerList_t Timers;

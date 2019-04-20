@@ -54,28 +54,28 @@ namespace ma
   inline static void gesvd(char jobu, char jobvt, int m, int n,
                     std::complex<float> *a, int lda, float *s, std::complex<float> *u, int ldu,
                     std::complex<float> *vt, int ldvt, std::complex<float> *work, int lwork, 
-                    int &info)
+                    float* rwork, int &info)
   {
-    cgesvd(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, &info);
-    //cgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
+    cgesvd(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, &info);
+    //cgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
   }
 
   inline static void gesvd(char jobu, char jobvt, int m, int n, 
                     std::complex<double> *a, int lda, double *s, std::complex<double> *u, int ldu,   
                     std::complex<double> *vt, int ldvt, std::complex<double> *work, int lwork, 
-                    int &info)
+                    double* rwork, int &info)
   {
-    zgesvd(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, &info);
-    //zgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
+    zgesvd(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, &info);
+    //zgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
   }
 
   template<typename T>
   inline static void gesvd_bufferSize (const int m, const int n, T* a, int& lwork)
   {
-    T work;
+    T work, S;
     int status;
     lwork = -1;
-    gesvd('A','A', m, n, a, m , nullptr, nullptr, m, nullptr, m, &work, lwork, status);
+    gesvd('A','A', m, n, a, m , nullptr, nullptr, m, nullptr, m, &work, lwork, nullptr, status);
     lwork = int(work);
   }
 
@@ -83,9 +83,10 @@ namespace ma
   inline static void gesvd_bufferSize (const int m, const int n, std::complex<T>* a, int& lwork)
   {
     std::complex<T> work;
+    T S;
     int status;
     lwork = -1;
-    gesvd('A','A', m, n, a, m , nullptr, nullptr, m, nullptr, m, &work, lwork, status);
+    gesvd('A','A', m, n, a, m , nullptr, nullptr, m, nullptr, m, &work, lwork, nullptr, status);
     lwork = int(real(work));
   }
 

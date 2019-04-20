@@ -623,11 +623,10 @@ namespace cusolver {
     int ldvt,
     float *work,
     int lwork,
-    float *rwork,
     int *devInfo)
   {
     cusolverStatus_t sucess =
-              cusolverDnSgesvd(handle,jobu,jobvt,m,n,A,lda,S,U,ldu,VT,ldvt,work,lwork,rwork,devInfo);
+              cusolverDnSgesvd(handle,jobu,jobvt,m,n,A,lda,S,U,ldu,VT,ldvt,work,lwork,nullptr,devInfo);
     cudaDeviceSynchronize ();
     return sucess;
   }
@@ -647,11 +646,10 @@ namespace cusolver {
     int ldvt,
     double *work,
     int lwork,
-    double *rwork,
     int *devInfo)
   {
     cusolverStatus_t sucess =
-              cusolverDnDgesvd(handle,jobu,jobvt,m,n,A,lda,S,U,ldu,VT,ldvt,work,lwork,rwork,devInfo);
+              cusolverDnDgesvd(handle,jobu,jobvt,m,n,A,lda,S,U,ldu,VT,ldvt,work,lwork,nullptr,devInfo);
     cudaDeviceSynchronize ();
     return sucess;
   }
@@ -671,7 +669,6 @@ namespace cusolver {
     int ldvt,
     std::complex<float> *work,
     int lwork,
-    float *rwork,
     int *devInfo)
   {
     cusolverStatus_t sucess =
@@ -680,7 +677,7 @@ namespace cusolver {
                                reinterpret_cast<cuComplex *>(U),ldu,
                                reinterpret_cast<cuComplex *>(VT),ldvt,
                                reinterpret_cast<cuComplex *>(work),lwork,
-                               rwork,devInfo);
+                               nullptr,devInfo);
     cudaDeviceSynchronize ();
     return sucess;
   }
@@ -700,7 +697,6 @@ namespace cusolver {
     int ldvt,
     std::complex<double> *work,
     int lwork,
-    double *rwork,
     int *devInfo)
   { 
     cusolverStatus_t sucess =
@@ -709,7 +705,7 @@ namespace cusolver {
                                reinterpret_cast<cuDoubleComplex *>(U),ldu,
                                reinterpret_cast<cuDoubleComplex *>(VT),ldvt,
                                reinterpret_cast<cuDoubleComplex *>(work),lwork,
-                               rwork,devInfo);
+                               nullptr,devInfo);
     cudaDeviceSynchronize ();
     return sucess;
   }

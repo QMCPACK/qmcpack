@@ -333,6 +333,29 @@ namespace qmc_cuda
     }
     cudaFree(devSt);
   }
+
+  template<typename T, typename R>
+  inline static void gesvd (char jobU, char jobVT, const int m, const int n,
+                            cuda_gpu_ptr<T> && A, int lda, cuda_gpu_ptr<R> && S,
+                            cuda_gpu_ptr<T> && U, int ldu,
+                            cuda_gpu_ptr<T> && VT, int ldvt,
+                            cuda_gpu_ptr<T> && W, int lw,
+                            cuda_gpu_ptr<R> && RW,
+                            int &st)
+  {
+    int *devSt;
+    cudaMalloc((void **)&devSt,  sizeof(int));
+    cusolverStatus_t status = cusolver::cusolver_gesvd(*A.handles.cusolverDn_handle,
+                    jobU, jobVT, m, n, to_address(A), lda, to_address(S),
+                    to_address(U), ldu, to_address(VT), ldvt, to_address(W), lw,
+                    devSt);
+    cudaMemcpy(&st,devSt,sizeof(int),cudaMemcpyDeviceToHost);
+    if(CUSOLVER_STATUS_SUCCESS != status) {
+      std::cerr<<" cublas_gesvd status, info: " <<status <<" " <<st <<std::endl; std::cerr.flush();
+      throw std::runtime_error("Error: cublas_gesvd returned error code.");
+    }
+    cudaFree(devSt);
+  }
   
 
 }

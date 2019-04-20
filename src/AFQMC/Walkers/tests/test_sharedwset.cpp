@@ -203,7 +203,7 @@ const char *xml_block =
   REQUIRE(wset.GlobalWeight() == Approx(static_cast<RealType>(wset.get_global_target_population())));
   for(int i=0; i<wset.size(); i++) {
     auto w = wset[i];
-    REQUIRE( *w.overlap() == *w.E1());
+    myREQUIRE( std::exp(wset.getLogOverlapFactor())*ComplexType(*w.overlap()), ComplexType(*w.E1()));
     REQUIRE( *w.EXX() == *w.E1());
     REQUIRE( *w.EJ() == *w.E1());
   }

@@ -546,6 +546,7 @@ extern "C"
               int* LDVT,
               std::complex<double>* work,
               int* LWORK,
+              double* RWORK,
               int* INFO);
 
   void cgesvd(char* JOBU,
@@ -561,6 +562,7 @@ extern "C"
               int* LDVT,
               std::complex<float>* work,
               int* LWORK,
+              float* RWORK,
               int* INFO);
 
   void dgeev(char* JOBVL,

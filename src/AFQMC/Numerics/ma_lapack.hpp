@@ -218,8 +218,8 @@ int gesvd_optimal_workspace_size(MultiArray2D && A){
         return res;
 }
 
-template<class MultiArray2D, class Array1D, class MultiArray2DU, class MultiArray2DV, class Buffer>
-MultiArray2D gesvd(char jobU, char jobVT, MultiArray2D&& A, Array1D&& S, MultiArray2DU&& U, MultiArray2DV&& VT, Buffer&& WORK){
+template<class MultiArray2D, class Array1D, class MultiArray2DU, class MultiArray2DV, class Buffer, class RBuffer>
+MultiArray2D gesvd(char jobU, char jobVT, MultiArray2D&& A, Array1D&& S, MultiArray2DU&& U, MultiArray2DV&& VT, Buffer&& WORK, RBuffer&& RWORK){
         assert(A.stride(1) > 0);
         assert(A.stride(1) == 1);
 
@@ -234,6 +234,7 @@ MultiArray2D gesvd(char jobU, char jobVT, MultiArray2D&& A, Array1D&& S, MultiAr
                 pointer_dispatch(VT.origin()), VT.stride(0),    // !!! 
                 pointer_dispatch(U.origin()), U.stride(0),      // !!!
                 pointer_dispatch(WORK.data()), WORK.size(),
+                pointer_dispatch(RWORK.data()), 
                 status
         );
         assert(status==0);
