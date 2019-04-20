@@ -234,7 +234,7 @@ MultiArray2D gesvd(char jobU, char jobVT, MultiArray2D&& A, Array1D&& S, MultiAr
                 pointer_dispatch(VT.origin()), VT.stride(0),    // !!! 
                 pointer_dispatch(U.origin()), U.stride(0),      // !!!
                 pointer_dispatch(WORK.data()), WORK.size(),
-                pointer_dispatch(RWORK.data()), 
+                pointer_dispatch(RWORK.origin()), 
                 status
         );
         assert(status==0);

@@ -15,6 +15,7 @@
 #include<fstream>
 
 #include "AFQMC/config.h"
+#include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/SlaterDeterminantOperations/mixed_density_matrix.hpp"
@@ -35,12 +36,16 @@ class SlaterDetOperations_base
 
     using Alloc = AllocType;
     using T = typename Alloc::value_type;
+    using R = typename remove_complex<T>::value_type; 
     using pointer = typename Alloc::pointer;
     using const_pointer = typename Alloc::const_pointer;
-    using IAlloc = typename Alloc::template rebind<int>::other;;
+    using IAlloc = typename Alloc::template rebind<int>::other;
+    using RAlloc = typename Alloc::template rebind<R>::other;
+    using Rpointer = typename RAlloc::pointer;
 
     using IVector = boost::multi::array<int,1,IAlloc>;  
     using TVector = boost::multi::array<T,1,Alloc>;  
+    using RVector = boost::multi::array<R,1,RAlloc>;  
     using TVector_ref = boost::multi::array_ref<T,1,pointer>;  
     using TMatrix = boost::multi::array<T,2,Alloc>;  
     using TMatrix_ref = boost::multi::array_ref<T,2,pointer>;  
@@ -59,8 +64,10 @@ class SlaterDetOperations_base
     SlaterDetOperations_base(int NMO, int NAEA, Alloc alloc_={}):
       allocator_(alloc_),
       iallocator_(alloc_),
+      rallocator_(alloc_),
       WORK(iextensions<1u>{0},allocator_),  
       IWORK(iextensions<1u>{NMO+1},iallocator_),  
+      RWORK(iextensions<1u>{NMO+1},rallocator_),  
       TAU(iextensions<1u>{NMO},allocator_),  
       TBuff(iextensions<1u>{NMO*NMO},allocator_)
     {
@@ -122,10 +129,13 @@ class SlaterDetOperations_base
       int NMO = A.size(0);
       int NAEA = A.size(1);
       if(useSVD) {
-        set_buffer(NAEA*NAEA + NAEA*NMO);
-        TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
-        TMatrix_ref TNM(TBuff.data()+TNN.num_elements(), {NAEA,NMO});
-        SlaterDeterminantOperations::base::MixedDensityMatrix_noHerm_wSVD<T>(A,B,std::forward<MatC>(C),LogOverlapFactor,res,TNN,TNM,IWORK,WORK,compact);
+        if( RWORK.num_elements() < 6*NAEA+1 ) RWORK.reextent(iextensions<1u>{6*NAEA+1});
+        set_buffer(2*NAEA*NAEA + 2*NAEA*NMO);
+        TMatrix_ref TNN1(TBuff.data(), {NAEA,NAEA});
+        TMatrix_ref TNN2(TNN1.origin()+TNN1.num_elements(), {NAEA,NAEA});
+        TMatrix_ref TNM(TNN2.origin()+TNN2.num_elements(), {NAEA,NMO});
+        TMatrix_ref TMN(TNM.origin()+TNM.num_elements(), {NMO,NAEA});
+        SlaterDeterminantOperations::base::MixedDensityMatrix_noHerm_wSVD<T>(A,B,std::forward<MatC>(C),LogOverlapFactor,res,RWORK,TNN1,TNN2,TMN,TNM,IWORK,WORK,compact);
       } else {
         set_buffer(NAEA*NAEA + NAEA*NMO);
         TMatrix_ref TNN(TBuff.data(), {NAEA,NAEA});
@@ -286,9 +296,11 @@ class SlaterDetOperations_base
 
     Alloc allocator_;
     IAlloc iallocator_;
+    RAlloc rallocator_;
 
     TVector WORK;
     IVector IWORK;
+    RVector RWORK;
 
     // Vector used in QR routines 
     TVector TAU;

@@ -1135,7 +1135,7 @@ namespace afqmc
             using std::copy_n; 
             copy_n(Orb.origin(),Orb.num_elements(),SM.origin());
             SDetOp.MixedDensityMatrix_noHerm(SM,wset[iw].SlaterMatrixN(Alpha),
-                                      G2D_,LogOverlapFactor,to_address(ov_),compact);
+                                      G2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
             ov *= ComplexType(*ov_) * ((*detR)[iw][id]);
           } else {
             SDetOp.MixedDensityMatrix(OrbMats[id],wset[iw].SlaterMatrix(Alpha),
@@ -1196,10 +1196,10 @@ namespace afqmc
             copy_n(OrbA.origin(),OrbA.num_elements(),SMA.origin());
             copy_n(OrbB.origin(),OrbB.num_elements(),SMB.origin());
             SDetOp.MixedDensityMatrix_noHerm(SMA,wset[iw].SlaterMatrixN(Alpha),
-                                      GA2D_,LogOverlapFactor,to_address(ov_),compact);
+                                      GA2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
             ov *= ComplexType(*ov_) * ((*detR)[iw][2*id]);
             SDetOp.MixedDensityMatrix_noHerm(SMB,wset[iw].SlaterMatrixN(Beta),
-                                      GB2D_,LogOverlapFactor,to_address(ov_),compact);
+                                      GB2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
             ov *= ComplexType(*ov_) * ((*detR)[iw][2*id+1]);
           } else {
             SDetOp.MixedDensityMatrix(OrbMats[2*id],wset[iw].SlaterMatrix(Alpha),
@@ -1299,7 +1299,7 @@ namespace afqmc
           using std::copy_n; 
           copy_n(Orb.origin(),Orb.num_elements(),SM.origin());
           SDetOp.MixedDensityMatrix_noHerm(SM,wset[iw].SlaterMatrixN(Alpha),
-                                    G2D_,LogOverlapFactor,to_address(ov_),compact);
+                                    G2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
           overlap *= ComplexType(*ov_) * ((*detR)[iw][0]);
         } else {
           SDetOp.MixedDensityMatrix(OrbMats[0],wset[iw].SlaterMatrix(Alpha),
@@ -1350,13 +1350,13 @@ namespace afqmc
           copy_n(OrbA.origin(),OrbA.num_elements(),SMA.origin());
           copy_n(OrbB.origin(),OrbB.num_elements(),SMB.origin());
           SDetOp.MixedDensityMatrix_noHerm(SMA,wset[iw].SlaterMatrixN(Alpha),
-                                    GA2D_,LogOverlapFactor,to_address(ov_),compact);
+                                    GA2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
           ComplexType ov1(*ov_);
           Ovlp[iw][0] = ov1; 
           DMsum[iw][0] = ma::sum(GA1D_);
           overlap *= ov1 * ((*detR)[iw][0]);
           SDetOp.MixedDensityMatrix_noHerm(SMB,wset[iw].SlaterMatrixN(Beta),
-                                    GB2D_,LogOverlapFactor,to_address(ov_),compact);
+                                    GB2D_,LogOverlapFactor,to_address(ov_),compact,useSVD_in_Gfull);
           ComplexType ov2(*ov_);
           Ovlp[iw][1] = ov2; 
           DMsum[iw][1] = ma::sum(GB1D_);

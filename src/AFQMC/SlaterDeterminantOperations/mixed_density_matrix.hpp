@@ -21,6 +21,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
+#include "AFQMC/Numerics/tensor_operations.hpp"
 #include <Utilities/FairDivide.h>
 
 namespace qmcplusplus
@@ -301,49 +302,102 @@ template< class Tp,
           class MatB,
           class MatC,
           class Mat1,
-          class Mat2,
-          class IBuffer,
+          class RVec,
+          class IBuffer, 
           class TBuffer 
         >
-inline void MixedDensityMatrix_noHerm_wSVD(const MatA& A, const MatB& B, MatC&& C, Tp LogOverlapFactor, Tp* ovlp, Mat1&& T1, Mat2&& T2, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
+inline void MixedDensityMatrix_noHerm_wSVD(const MatA& A, const MatB& B, MatC&& C, Tp LogOverlapFactor, Tp* ovlp, RVec&& S, Mat1&& U, Mat1&& VT, Mat1&& BV, Mat1&& UA, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
 {
   // check dimensions are consistent
   assert( A.size(0) == B.size(0) );
   assert( A.size(1) == B.size(1) );
-  assert( A.size(1) == T1.size(0) );
-  assert( B.size(1) == T1.size(1) );
+  assert( A.size(1) == U.size(0) );   // [U] = [NxN]
+  assert( A.size(1) == U.size(1) );
+  assert( A.size(1) == VT.size(0) );  // [V] = [NxN]
+  assert( A.size(1) == VT.size(1) );
+  assert( A.size(1) <= (6*S.size(0)+1) );   // [S] = [N+1]
+  assert( A.size(1) == UA.size(0) );  // [UA] = [NxM]
+  assert( A.size(0) == UA.size(1) );
   if(compact) {
-    assert( C.size(0) == T1.size(1) );
+    assert( C.size(0) == B.size(1) );
     assert( C.size(1) == B.size(0) );
   } else {
-    assert( T2.size(1) == B.size(0) );
-    assert( T2.size(0) == T1.size(1) );
+    assert( A.size(0) == BV.size(0) );  // [BV] = [MxN]
+    assert( A.size(1) == BV.size(1) );
     assert( C.size(0) == A.size(0) );
-    assert( C.size(1) == T2.size(1) );
+    assert( C.size(1) == A.size(0) );
   }
 
   using ma::T;
   using ma::H;
 
-  // T1 = H(A)*B
-  ma::product(H(A),B,std::forward<Mat1>(T1));  
+  int N(U.size(0));
 
-  // NOTE: Using C as temporary 
-  // T1 = T1^(-1)
-  ma::invert(std::forward<Mat1>(T1),IWORK,WORK,LogOverlapFactor,ovlp);
+  // T1 = H(A)*B
+  ma::product(H(A),B,std::forward<Mat1>(U));  
+
+  // keep a copy of U in UA temporarily
+  using std::copy_n; 
+  copy_n(U.origin(),U.num_elements(),UA.origin());  
+
+  // get determinant, since you can't get the phase trivially from SVD
+  ma::determinant(U,IWORK,WORK,LogOverlapFactor,ovlp);
+
+  // restore U
+  copy_n(UA.origin(),U.num_elements(),U.origin());  
+
+  // H(A)*B = AtB = U * S * VT
+  // inv(H(A)*B) = inv(AtB) = H(VT) * inv(S) * H(U)
+  ma::gesvd('O','A',U,S.sliced(0,N),U,VT,WORK,S.sliced(N,6*N));
+
+  // testing
+  boost::multi::array<double,1> Sh(S.sliced(0,N));
+  double ov_(0.0);
+  for(int i=0; i<N; i++)
+    ov_ += std::log(Sh[i]);
+  ov_ = std::exp(ov_ - std::abs(LogOverlapFactor));
+  double ov0(std::abs(ComplexType(*ovlp)));
+  std::cout<<" SVD: " <<ov0 <<" " <<ov_ <<" " <<ov0/ov_ <<" " <<Sh[0] <<" " <<Sh[N-1] <<" " <<Sh[0]/Sh[N-1] <<std::endl;
+
+  // mod Sh
+  // S = Sh;
 
   if(compact) {
 
-    // C = T(T1) * T(B)
-    ma::product(T(T1),T(B),std::forward<MatC>(C)); 
+    // G = T( B * inv(AtB) )
+    //   = T( B * H(VT) * inv(S) * H(U) )   
+    //   = T(H(VT) * inv(S) * H(U)) * T(B)
+
+
+    // VT = VT * inv(S), which works since S is diagonal and real
+    ma::term_by_term_matrix_vector(ma::TOp_DIV,0,VT.size(0),VT.size(1),ma::pointer_dispatch(VT.origin()),
+                VT.stride(0),ma::pointer_dispatch(S.origin()),1);
+
+    // BV = H(VT) * H(U)
+    ma::product(H(VT),H(U),BV.sliced(0,N));
+
+    // G = T(BV) * T(B) 
+    product(T(BV.sliced(0,N)),T(B),C);
 
   } else {
 
-    // T2 = T1 * H(A) 
-    ma::product(T1,H(A),std::forward<Mat2>(T2)); 
+    // G = T( B * inv(AtB) * H(A) )
+    //   = T( B * H(VT) * inv(S) * H(U) * H(A) )   
+    //   = T( BV * inv(S) * UA )
+    //   = T(UA) * T(BV * inv(S))
+  
+    // BV = B * H(VT)
+    ma::product(B,H(VT),BV);
 
-    // C = T( B * T2) = T(T2) * T(B)
-    ma::product(T(T2),T(B),std::forward<MatC>(C));
+    // BV = BV * inv(S), which works since S is diagonal and real
+    ma::term_by_term_matrix_vector(ma::TOp_DIV,1,BV.size(0),BV.size(1),ma::pointer_dispatch(BV.origin()),
+                BV.stride(0),ma::pointer_dispatch(S.origin()),1);
+
+    // UA = H(U) * H(A)
+    ma::product(H(U),H(A),UA);
+    
+    // G = T(UA) * T(BV * inv(S))
+    product(T(UA),T(BV),C);
 
   }
 }

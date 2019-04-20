@@ -91,7 +91,7 @@ class NOMSD: public AFQMCInfo
           SlaterDetOperations&& sdet_,  
           HamiltonianOperations&& hop_, 
           std::vector<ComplexType>&& ci_, std::vector<PsiT_Matrix>&& orbs_, 
-          WALKER_TYPES wlk, int nbatch_, int nbatch_qr_, ValueType nce, int targetNW=1):
+          WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
                 alloc_(),  // right now device_allocator is default constructible 
                 alloc_shared_(make_localTG_allocator<ComplexType>(TG)),
@@ -99,7 +99,7 @@ class NOMSD: public AFQMCInfo
                 HamOp(std::move(hop_)),ci(std::move(ci_)),
                 OrbMats(move_vector<devPsiT_Matrix>(std::move(orbs_))),
                 RefOrbMats({0,0},shared_allocator<ComplexType>{TG.Node()}),
-                walker_type(wlk),nbatch(nbatch_),nbatch_qr(nbatch_qr_),
+                walker_type(wlk),
                 NuclearCoulombEnergy(nce),
                 shmbuff_for_E(iextensions<1u>{1},alloc_shared_),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
@@ -118,13 +118,39 @@ class NOMSD: public AFQMCInfo
 
       excitedState = false;  
       std::string excited_file("");  
+      std::string svd_Gf("no");
+      std::string svd_O("no");
+      std::string svd_Gm("no");
       int i_=-1,a_=-1;  
+      nbatch = ((number_of_devices()>0)?-1:0);
+      nbatch_qr = ((number_of_devices()>0)?-1:0);
+      if(NMO > 1024 || NAEA > 512) nbatch_qr=0;
+
       ParameterSet m_param;
       m_param.add(excited_file,"excited","std::string");
       // generalize this to multi-particle excitations, how do I read a list of integers???
       m_param.add(i_,"i","int");
       m_param.add(a_,"a","int");
+      m_param.add(svd_Gf,"svd_with_Gfull","std::string");
+      m_param.add(svd_Gm,"svd_with_Gmix","std::string");
+      m_param.add(svd_O,"svd_with_Ovlp","std::string");
+      if(TG.TG_local().size() == 1)
+        m_param.add(nbatch,"nbatch","int");
+      if(TG.TG_local().size() == 1)
+        m_param.add(nbatch_qr,"nbatch_qr","int");
       m_param.put(cur);
+
+      if(omp_get_num_threads() > 1 && (nbatch == 0)) {
+        app_log()<<" WARNING!!!: Found OMP_NUM_THREADS > 1 with nbatch=0.\n"
+             <<"             This will lead to low performance. Set nbatch. \n";
+      }
+      std::transform(svd_Gf.begin(),svd_Gf.end(),svd_Gf.begin(),(int (*)(int)) tolower);
+       if(svd_Gf=="yes" || svd_Gf=="true") useSVD_in_Gfull=true;
+      std::transform(svd_Gm.begin(),svd_Gm.end(),svd_Gm.begin(),(int (*)(int)) tolower);
+       if(svd_Gm=="yes" || svd_Gm=="true") useSVD_in_Gmix=true;
+      std::transform(svd_O.begin(),svd_O.end(),svd_O.begin(),(int (*)(int)) tolower);
+       if(svd_O=="yes" || svd_O=="true") useSVD_in_Ovlp=true;
+
 
       if(excited_file != "" && 
          i_ >= 0 &&
@@ -467,6 +493,9 @@ class NOMSD: public AFQMCInfo
 
     int nbatch;
     int nbatch_qr;
+    bool useSVD_in_Ovlp=false;
+    bool useSVD_in_Gmix=false;
+    bool useSVD_in_Gfull=false;
 
     bool compact_G_for_vbias;
 
