@@ -25,6 +25,7 @@
 #include "AFQMC/Matrix/csr_hdf5_readers.hpp"
 
 #include "AFQMC/HamiltonianOperations/SparseTensor.hpp"
+#include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
 
 namespace qmcplusplus
 {

@@ -262,6 +262,9 @@ void WalkerSetBase<Alloc,Ptr>::popControl(std::vector<ComplexType>& curData)
     scaleWeight(scl,true);
   }
   if(TG.TG_local().size() > 1) TG.TG_local().broadcast_n(curData.data(),curData.size());
+  // by default, LogOverlapFactor is set to the walker mean in popControl  
+  // this comes at no extra cost and keeps the values of overlaps stable  
+  adjustLogOverlapFactor(std::abs(curData[4]));
 
   // matrix to hold walkers beyond targetN_per_TG
   // doing this to avoid resizing SHMBuffer, instead use local memory

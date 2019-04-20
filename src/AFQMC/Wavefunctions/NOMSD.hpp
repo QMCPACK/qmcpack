@@ -384,7 +384,7 @@ class NOMSD: public AFQMCInfo
      * Orthogonalizes the Slater matrix of a walker in an excited state calculation.
      */
     template<class Mat>
-    void OrthogonalizeExcited(Mat&& A, SpinTypes spin);
+    void OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOverlapFactor);
 
     
     /*
@@ -511,7 +511,7 @@ class NOMSD: public AFQMCInfo
     void MixedDensityMatrix_for_E(const WlkSet& wset, MatG&& G, TVec&& Ov, int nd);
 
     template<class MatSM, class MatG, class TVec>
-    void MixedDensityMatrix_for_E_from_SM(const MatSM& SM, MatG&& G, TVec&& Ov, int nd); 
+    void MixedDensityMatrix_for_E_from_SM(const MatSM& SM, MatG&& G, TVec&& Ov, int nd, double LogOverlapFactor); 
 
     /*
      * Calculates the local energy and overlaps of all the walkers in the set and 

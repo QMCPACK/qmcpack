@@ -60,6 +60,8 @@
 #define cgetri cgetri_
 #define dgesvd dgesvd_
 #define sgesvd sgesvd_
+#define cgesvd cgesvd_
+#define zgesvd zgesvd_
 #define dgeev dgeev_
 #define sgeev sgeev_
 #define dggev dggev_
@@ -528,6 +530,36 @@ extern "C"
               float* VT,
               int* LDVT,
               float* work,
+              int* LWORK,
+              int* INFO);
+
+  void zgesvd(char* JOBU,
+              char* JOBVT,
+              int* M,
+              int* N,
+              std::complex<double>* A,
+              int* LDA,
+              double* S,
+              std::complex<double>* U,
+              int* LDU,
+              std::complex<double>* VT,
+              int* LDVT,
+              std::complex<double>* work,
+              int* LWORK,
+              int* INFO);
+
+  void cgesvd(char* JOBU,
+              char* JOBVT,
+              int* M,
+              int* N,
+              std::complex<float>* A,
+              int* LDA,
+              float* S,
+              std::complex<float>* U,
+              int* LDU,
+              std::complex<float>* VT,
+              int* LDVT,
+              std::complex<float>* work,
               int* LWORK,
               int* INFO);
 

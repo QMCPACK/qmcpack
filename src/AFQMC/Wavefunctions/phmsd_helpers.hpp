@@ -91,7 +91,7 @@ inline void calculate_overlaps(int rank, int ngrp, int spin, PH_EXCT const& abij
           for(int p=0; p<nex; p++)
             for(int q=0; q<nex; q++)
               Qwork_[p][q] = T[exct[p+nex]][exct[q]];
-          ov[nd] = ma::determinant(Qwork_,IWORK,Qwork2_);
+          ov[nd] = ma::determinant<ComplexType>(Qwork_,IWORK,Qwork2_,0.0);
         }
     }
   }
@@ -157,7 +157,7 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
           for(int p=0; p<nex; p++)
             for(int q=0; q<nex; q++)
               Q[p][q] = T[e[p+nex]][e[q]];
-          ov_a = ma::invert(Q,IWORK,WORK);
+          ov_a = ma::invert<ComplexType>(Q,IWORK,WORK,0.0);
         }
         ComplexType w(0.0);
         auto it = to_address(couplings.values()) + (*couplings.pointers_begin(nd));  
@@ -251,7 +251,7 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
           for(int p=0; p<nex; p++)
             for(int q=0; q<nex; q++)
               Q[p][q] = T[e[p+nex]][e[q]];
-          ov_a = ma::invert(Q,IWORK,WORK);
+          ov_a = ma::invert(Q,IWORK,WORK,0.0);
         }
         ComplexType w(0.0);
         auto it = to_address(couplings.values()) + (*couplings.pointers_begin(nd));

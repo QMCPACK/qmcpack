@@ -423,21 +423,21 @@ void SDetOps_complex_serial(Allocator alloc)
 
   /**** Overlaps ****/
   typename Allocator::pointer ov_ = alloc.allocate(1);  
-  SDet.Overlap(A,B,to_address(ov_)); myREQUIRE(Type(*ov_),ov);
-  SDet.Overlap(Aref,B,to_address(ov_)); myREQUIRE(Type(*ov_),ov);
-  SDet.Overlap(A,Bref,to_address(ov_)); myREQUIRE(Type(*ov_),ov);
-  SDet.Overlap(Aref,Bref,to_address(ov_)); myREQUIRE(Type(*ov_),ov);
+  SDet.Overlap(A,B,0.0,to_address(ov_)); myREQUIRE(Type(*ov_),ov);
+  SDet.Overlap(Aref,B,0.0,to_address(ov_)); myREQUIRE(Type(*ov_),ov);
+  SDet.Overlap(A,Bref,0.0,to_address(ov_)); myREQUIRE(Type(*ov_),ov);
+  SDet.Overlap(Aref,Bref,0.0,to_address(ov_)); myREQUIRE(Type(*ov_),ov);
 
   // Test array_view
-  SDet.Overlap(A(A.extension(0),A.extension(1)),B,to_address(ov_)); myREQUIRE(Type(*ov_),ov);
-  SDet.Overlap(A,B(B.extension(0),B.extension(1)),to_address(ov_)); myREQUIRE(Type(*ov_),ov);
+  SDet.Overlap(A(A.extension(0),A.extension(1)),B,0.0,to_address(ov_)); myREQUIRE(Type(*ov_),ov);
+  SDet.Overlap(A,B(B.extension(0),B.extension(1)),0.0,to_address(ov_)); myREQUIRE(Type(*ov_),ov);
 
 // copy not yet working with cuda_gpu_ptr
   array A_ = A({0,2},{0,3});
   array B_ = B({0,3},{0,2});
-  SDet.Overlap(A({0,2},{0,3}),B({0,3},{0,2}),to_address(ov_)); myREQUIRE(Type(*ov_),ov2);
-  SDet.Overlap(A({0,2},{0,3}),B_,to_address(ov_)); myREQUIRE(Type(*ov_),ov2);
-  SDet.Overlap(A_,B({0,3},{0,2}),to_address(ov_)); myREQUIRE(Type(*ov_),ov2);
+  SDet.Overlap(A({0,2},{0,3}),B({0,3},{0,2}),0.0,to_address(ov_)); myREQUIRE(Type(*ov_),ov2);
+  SDet.Overlap(A({0,2},{0,3}),B_,0.0,to_address(ov_)); myREQUIRE(Type(*ov_),ov2);
+  SDet.Overlap(A_,B({0,3},{0,2}),0.0,to_address(ov_)); myREQUIRE(Type(*ov_),ov2);
 
   /**** Density Matrices *****/
   vector v_ref = {
@@ -487,47 +487,47 @@ void SDetOps_complex_serial(Allocator alloc)
 
   array G({NMO,NMO},alloc);
   array Gc({NEL,NMO},alloc);
-  SDet.MixedDensityMatrix(A,B,G,to_address(ov_),false); check(G,g_ref);
-  SDet.MixedDensityMatrix(Aref,B,G,to_address(ov_),false); check(G,g_ref);
-  SDet.MixedDensityMatrix(A,Bref,G,to_address(ov_),false); check(G,g_ref);
-  SDet.MixedDensityMatrix(Aref,Bref,G,to_address(ov_),false); check(G,g_ref); 
+  SDet.MixedDensityMatrix(A,B,G,0.0,to_address(ov_),false); check(G,g_ref);
+  SDet.MixedDensityMatrix(Aref,B,G,0.0,to_address(ov_),false); check(G,g_ref);
+  SDet.MixedDensityMatrix(A,Bref,G,0.0,to_address(ov_),false); check(G,g_ref);
+  SDet.MixedDensityMatrix(Aref,Bref,G,0.0,to_address(ov_),false); check(G,g_ref); 
 
   SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B({0,3},{0,2}),
-                          G({0,3},{0,3}),to_address(ov_),false);
+                          G({0,3},{0,3}),0.0,to_address(ov_),false);
   check(G({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(A_,
                           B({0,3},{0,2}),
-                          G({0,3},{0,3}),to_address(ov_),false);
+                          G({0,3},{0,3}),0.0,to_address(ov_),false);
   check(G({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          G({0,3},{0,3}),to_address(ov_),false);
+                          G({0,3},{0,3}),0.0,to_address(ov_),false);
   check(G({0,3},{0,3}),g_ref_2);
 
-  SDet.MixedDensityMatrix(A,B,Gc,to_address(ov_),true); check(Gc,gc_ref); 
-  SDet.MixedDensityMatrix(Aref,B,Gc,to_address(ov_),true); check(Gc,gc_ref);
-  SDet.MixedDensityMatrix(A,Bref,Gc,to_address(ov_),true); check(Gc,gc_ref);
-  SDet.MixedDensityMatrix(Aref,Bref,Gc,to_address(ov_),true); check(Gc,gc_ref);
+  SDet.MixedDensityMatrix(A,B,Gc,0.0,to_address(ov_),true); check(Gc,gc_ref); 
+  SDet.MixedDensityMatrix(Aref,B,Gc,0.0,to_address(ov_),true); check(Gc,gc_ref);
+  SDet.MixedDensityMatrix(A,Bref,Gc,0.0,to_address(ov_),true); check(Gc,gc_ref);
+  SDet.MixedDensityMatrix(Aref,Bref,Gc,0.0,to_address(ov_),true); check(Gc,gc_ref);
 
   SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B({0,3},{0,2}),
-                          Gc({0,2},{0,3}),to_address(ov_),true);
+                          Gc({0,2},{0,3}),0.0,to_address(ov_),true);
   check(Gc({0,2},{0,3}),gc_ref_2);
   SDet.MixedDensityMatrix(A_,
                           B({0,3},{0,2}),
-                          Gc({0,2},{0,3}),to_address(ov_),true);
+                          Gc({0,2},{0,3}),0.0,to_address(ov_),true);
   check(Gc({0,2},{0,3}),gc_ref_2);
   SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          Gc({0,2},{0,3}),to_address(ov_),true);
+                          Gc({0,2},{0,3}),0.0,to_address(ov_),true);
   check(Gc({0,2},{0,3}),gc_ref_2);
 
   array Q=B;
 
   // Orthogonalize
-  SDet.Orthogonalize(Q,to_address(ov_));
-  SDet.Overlap_noHerm(Q,Q,to_address(ov_));
+  SDet.Orthogonalize(Q,0.0,to_address(ov_));
+  SDet.Overlap_noHerm(Q,Q,0.0,to_address(ov_));
   myREQUIRE( Type(*ov_), std::complex<double>(1.,0.));
 
   alloc.deallocate(ov_,1);  
@@ -590,26 +590,26 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
 
   /**** Overlaps ****/
   Type ov_;
-  SDet.Overlap(A,B,std::addressof(ov_),node); myREQUIRE(ov_,ov);
-  SDet.Overlap(Aref,B,std::addressof(ov_),node); myREQUIRE(ov_,ov);
-  SDet.Overlap(A,Bref,std::addressof(ov_),node); myREQUIRE(ov_,ov);
-  SDet.Overlap(Aref,Bref,std::addressof(ov_),node); myREQUIRE(ov_,ov);
+  SDet.Overlap(A,B,0.0,std::addressof(ov_),node); myREQUIRE(ov_,ov);
+  SDet.Overlap(Aref,B,0.0,std::addressof(ov_),node); myREQUIRE(ov_,ov);
+  SDet.Overlap(A,Bref,0.0,std::addressof(ov_),node); myREQUIRE(ov_,ov);
+  SDet.Overlap(Aref,Bref,0.0,std::addressof(ov_),node); myREQUIRE(ov_,ov);
 
   // Test array_view
-  SDet.Overlap(A(A.extension(0),A.extension(1)),B,std::addressof(ov_),node); myREQUIRE(ov_,ov);
-  SDet.Overlap(A,B(B.extension(0),B.extension(1)),std::addressof(ov_),node); myREQUIRE(ov_,ov);
+  SDet.Overlap(A(A.extension(0),A.extension(1)),B,0.0,std::addressof(ov_),node); myREQUIRE(ov_,ov);
+  SDet.Overlap(A,B(B.extension(0),B.extension(1)),0.0,std::addressof(ov_),node); myREQUIRE(ov_,ov);
 
   array A_ = A({0,2},{0,3});
   array B_ = B({0,3},{0,2});
   SDet.Overlap(A({0,2},{0,3}),
-                       B({0,3},{0,2}),std::addressof(ov_),node); myREQUIRE(ov_,ov2);
-  SDet.Overlap(A({0,2},{0,3}),B_,std::addressof(ov_)); myREQUIRE(ov_,ov2);
-  SDet.Overlap(A_,B({0,3},{0,2}),std::addressof(ov_),node); myREQUIRE(ov_,ov2);
+                       B({0,3},{0,2}),0.0,std::addressof(ov_),node); myREQUIRE(ov_,ov2);
+  SDet.Overlap(A({0,2},{0,3}),B_,0.0,std::addressof(ov_)); myREQUIRE(ov_,ov2);
+  SDet.Overlap(A_,B({0,3},{0,2}),0.0,std::addressof(ov_),node); myREQUIRE(ov_,ov2);
 
   shared_communicator node_ = node.split(node.rank()%2,node.rank());
-  SDet.Overlap(A,B,std::addressof(ov_),node_); myREQUIRE(ov_,ov);
+  SDet.Overlap(A,B,0.0,std::addressof(ov_),node_); myREQUIRE(ov_,ov);
   SDet.Overlap(A({0,2},{0,3}),
-                       B({0,3},{0,2}),std::addressof(ov_),node_); myREQUIRE(ov_,ov2);
+                       B({0,3},{0,2}),0.0,std::addressof(ov_),node_); myREQUIRE(ov_,ov2);
 
   /**** Density Matrices *****/
   vector v_ref = {
@@ -663,40 +663,40 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   array_ref G(to_address(SMbuff.origin()),{NMO,NMO});
   array_ref Gc(to_address(SMbuff.origin())+NMO*NMO,{NEL,NMO});
 
-  SDet.MixedDensityMatrix(A,B,G,std::addressof(ov_),node,false); check(G,g_ref);
-  SDet.MixedDensityMatrix(Aref,B,G,std::addressof(ov_),node,false); check(G,g_ref);
-  SDet.MixedDensityMatrix(A,Bref,G,std::addressof(ov_),node,false); check(G,g_ref);
-  SDet.MixedDensityMatrix(Aref,Bref,G,std::addressof(ov_),node,false); check(G,g_ref);
+  SDet.MixedDensityMatrix(A,B,G,0.0,std::addressof(ov_),node,false); check(G,g_ref);
+  SDet.MixedDensityMatrix(Aref,B,G,0.0,std::addressof(ov_),node,false); check(G,g_ref);
+  SDet.MixedDensityMatrix(A,Bref,G,0.0,std::addressof(ov_),node,false); check(G,g_ref);
+  SDet.MixedDensityMatrix(Aref,Bref,G,0.0,std::addressof(ov_),node,false); check(G,g_ref);
 
   SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B({0,3},{0,2}),
-                          G({0,3},{0,3}),std::addressof(ov_),node,false);
+                          G({0,3},{0,3}),0.0,std::addressof(ov_),node,false);
   check(G({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(A_,
                           B({0,3},{0,2}),
-                          G({0,3},{0,3}),std::addressof(ov_),node,false);
+                          G({0,3},{0,3}),0.0,std::addressof(ov_),node,false);
   check(G({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          G({0,3},{0,3}),std::addressof(ov_),node,false);
+                          G({0,3},{0,3}),0.0,std::addressof(ov_),node,false);
   check(G({0,3},{0,3}),g_ref_2);
 
-  SDet.MixedDensityMatrix(A,B,Gc,std::addressof(ov_),node,true); check(Gc,gc_ref);
-  SDet.MixedDensityMatrix(Aref,B,Gc,std::addressof(ov_),node,true); check(Gc,gc_ref);
-  SDet.MixedDensityMatrix(A,Bref,Gc,std::addressof(ov_),node,true); check(Gc,gc_ref);
-  SDet.MixedDensityMatrix(Aref,Bref,Gc,std::addressof(ov_),node,true); check(Gc,gc_ref);
+  SDet.MixedDensityMatrix(A,B,Gc,0.0,std::addressof(ov_),node,true); check(Gc,gc_ref);
+  SDet.MixedDensityMatrix(Aref,B,Gc,0.0,std::addressof(ov_),node,true); check(Gc,gc_ref);
+  SDet.MixedDensityMatrix(A,Bref,Gc,0.0,std::addressof(ov_),node,true); check(Gc,gc_ref);
+  SDet.MixedDensityMatrix(Aref,Bref,Gc,0.0,std::addressof(ov_),node,true); check(Gc,gc_ref);
 
   SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B({0,3},{0,2}),
-                          Gc({0,2},{0,3}),std::addressof(ov_),node,true);
+                          Gc({0,2},{0,3}),0.0,std::addressof(ov_),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
   SDet.MixedDensityMatrix(A_,
                           B({0,3},{0,2}),
-                          Gc({0,2},{0,3}),std::addressof(ov_),node,true);
+                          Gc({0,2},{0,3}),0.0,std::addressof(ov_),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
   SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B_,
-                          Gc({0,2},{0,3}),std::addressof(ov_),node,true);
+                          Gc({0,2},{0,3}),0.0,std::addressof(ov_),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
 
   boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO*(NMO+NEL)},
@@ -706,15 +706,15 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   array_ref Gc2(to_address(SMbuff2.origin())+NMO*NMO,{NEL,NMO});
 
   // switch comm
-  SDet.MixedDensityMatrix(A,B,G2,std::addressof(ov_),node_,false); check(G2,g_ref);
+  SDet.MixedDensityMatrix(A,B,G2,0.0,std::addressof(ov_),node_,false); check(G2,g_ref);
   SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B({0,3},{0,2}),
-                          G2({0,3},{0,3}),std::addressof(ov_),node_,false);
+                          G2({0,3},{0,3}),0.0,std::addressof(ov_),node_,false);
   check(G2({0,3},{0,3}),g_ref_2);
-  SDet.MixedDensityMatrix(A,B,Gc2,std::addressof(ov_),node_,true); check(Gc2,gc_ref);
+  SDet.MixedDensityMatrix(A,B,Gc2,0.0,std::addressof(ov_),node_,true); check(Gc2,gc_ref);
   SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B({0,3},{0,2}),
-                          Gc2({0,2},{0,3}),std::addressof(ov_),node_,true);
+                          Gc2({0,2},{0,3}),0.0,std::addressof(ov_),node_,true);
   check(Gc2({0,2},{0,3}),gc_ref_2);
 
 }
@@ -778,22 +778,22 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 
   /**** Overlaps ****/
   Type ov_;
-  SDet.Overlap(Acsr,B,std::addressof(ov_),node); myREQUIRE(ov_,ov);
-  SDet.Overlap(Acsr,Bref,std::addressof(ov_),node); myREQUIRE(ov_,ov);
+  SDet.Overlap(Acsr,B,0.0,std::addressof(ov_),node); myREQUIRE(ov_,ov);
+  SDet.Overlap(Acsr,Bref,0.0,std::addressof(ov_),node); myREQUIRE(ov_,ov);
 
-  SDet.Overlap(Acsr,B,std::addressof(ov_)); myREQUIRE(ov_,ov);
-  SDet.Overlap(Acsr,Bref,std::addressof(ov_)); myREQUIRE(ov_,ov);
+  SDet.Overlap(Acsr,B,0.0,std::addressof(ov_)); myREQUIRE(ov_,ov);
+  SDet.Overlap(Acsr,Bref,0.0,std::addressof(ov_)); myREQUIRE(ov_,ov);
 
   // Test array_view
-  SDet.Overlap(Acsr,B(B.extension(0),B.extension(1)),std::addressof(ov_),node); myREQUIRE(ov_,ov);
-  SDet.Overlap(Acsr,B(B.extension(0),B.extension(1)),std::addressof(ov_)); myREQUIRE(ov_,ov);
+  SDet.Overlap(Acsr,B(B.extension(0),B.extension(1)),0.0,std::addressof(ov_),node); myREQUIRE(ov_,ov);
+  SDet.Overlap(Acsr,B(B.extension(0),B.extension(1)),0.0,std::addressof(ov_)); myREQUIRE(ov_,ov);
 
   shared_communicator node_ = node.split(node.rank()%2,node.rank());
-  SDet.Overlap(Acsr,B,std::addressof(ov_),node_); myREQUIRE(ov_,ov);
+  SDet.Overlap(Acsr,B,0.0,std::addressof(ov_),node_); myREQUIRE(ov_,ov);
 
   array B_ = B({0,3},{0,2});
 
-  SDet.Overlap(Acsr[{0,2,0,3}],B_,std::addressof(ov_)); myREQUIRE(ov_,ov2);
+  SDet.Overlap(Acsr[{0,2,0,3}],B_,0.0,std::addressof(ov_)); myREQUIRE(ov_,ov2);
 
   /**** Density Matrices *****/
   vector v_ref = {
@@ -847,28 +847,28 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   array_ref G(to_address(SMbuff.origin()),{NMO,NMO});
   array_ref Gc(to_address(SMbuff.origin())+NMO*NMO,{NEL,NMO});
 
-  SDet.MixedDensityMatrix(Acsr,B,G,std::addressof(ov_),node,false); check(G,g_ref);
-  SDet.MixedDensityMatrix(Acsr,Bref,G,std::addressof(ov_),node,false); check(G,g_ref);
+  SDet.MixedDensityMatrix(Acsr,B,G,0.0,std::addressof(ov_),node,false); check(G,g_ref);
+  SDet.MixedDensityMatrix(Acsr,Bref,G,0.0,std::addressof(ov_),node,false); check(G,g_ref);
 
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
                           B({0,3},{0,2}),
-                          G({0,3},{0,3}),std::addressof(ov_),node,false);
+                          G({0,3},{0,3}),0.0,std::addressof(ov_),node,false);
   check(G({0,3},{0,3}),g_ref_2);
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
                           B_,
-                          G({0,3},{0,3}),std::addressof(ov_),node,false);
+                          G({0,3},{0,3}),0.0,std::addressof(ov_),node,false);
   check(G({0,3},{0,3}),g_ref_2);
 
-  SDet.MixedDensityMatrix(Acsr,B,Gc,std::addressof(ov_),node,true); check(Gc,gc_ref);
-  SDet.MixedDensityMatrix(Acsr,Bref,Gc,std::addressof(ov_),node,true); check(Gc,gc_ref);
+  SDet.MixedDensityMatrix(Acsr,B,Gc,0.0,std::addressof(ov_),node,true); check(Gc,gc_ref);
+  SDet.MixedDensityMatrix(Acsr,Bref,Gc,0.0,std::addressof(ov_),node,true); check(Gc,gc_ref);
 
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
                           B({0,3},{0,2}),
-                          Gc({0,2},{0,3}),std::addressof(ov_),node,true);
+                          Gc({0,2},{0,3}),0.0,std::addressof(ov_),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
                           B_,
-                          Gc({0,2},{0,3}),std::addressof(ov_),node,true);
+                          Gc({0,2},{0,3}),0.0,std::addressof(ov_),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
 
   boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO*(NMO+NEL)},
@@ -884,16 +884,16 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 // not sure why!!! Will fix soon!
 // This is probably a bug in the native implementation of csrmm!!!
 /*
-  SDet.MixedDensityMatrix(Acsr,B,G2,std::addressof(ov_),node_,false); 
+  SDet.MixedDensityMatrix(Acsr,B,G2,0.0,std::addressof(ov_),node_,false); 
   check(G2,g_ref);
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
                           B({0,3},{0,2}),
-                          G2({0,3},{0,3}),std::addressof(ov_),node_,false);
+                          G2({0,3},{0,3}),0.0,std::addressof(ov_),node_,false);
   check(G2({0,3},{0,3}),g_ref_2);
-  SDet.MixedDensityMatrix(Acsr,B,Gc2,std::addressof(ov_),node_,true); check(Gc2,gc_ref);
+  SDet.MixedDensityMatrix(Acsr,B,Gc2,0.0,std::addressof(ov_),node_,true); check(Gc2,gc_ref);
   SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
                           B({0,3},{0,2}),
-                          Gc2({0,2},{0,3}),std::addressof(ov_),node_,true);
+                          Gc2({0,2},{0,3}),0.0,std::addressof(ov_),node_,true);
   check(Gc2({0,2},{0,3}),gc_ref_2);
 */
 

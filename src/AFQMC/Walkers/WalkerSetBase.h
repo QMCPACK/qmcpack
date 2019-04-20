@@ -649,6 +649,20 @@ class WalkerSetBase: public AFQMCInfo
                                 {wlk_desc[3],bp_buffer.size(1)});
   }
 
+  double getLogOverlapFactor() const { return LogOverlapFactor; }
+  // before: w_full = exp( LogOverlapFactor ) * wold
+  // after: w_full = exp( f ) * wnew
+  // wnew = wold * exp( LogOverlapFactor-f ) 
+  void adjustLogOverlapFactor(const double f) { 
+    assert(walker_buffer.size(1) == walker_size);
+    if(TG.TG_local().root()) {
+      auto W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
+      ma::scal(ComplexType(std::exp(LogOverlapFactor-f)),W({0,tot_num_walkers},data_displ[OVLP]));
+    }
+    LogOverlapFactor=f; 
+    TG.TG_local().barrier();
+  }
+
   protected:
 
   RandomGenerator_t* rng;
@@ -666,6 +680,15 @@ class WalkerSetBase: public AFQMCInfo
   int targetN_per_TG;
   int targetN;
   int tot_num_walkers;
+
+  // Stores an overall scaling factor for walker weights (assumed to be 
+  // consistent over all walker groups). 
+  // The actual overlap of a walker is exp(OverlapFactor)*wset[i].weight()  
+  // Notice that overlap ratios (which are always what matters) are
+  // independent of this value.
+  // If this value is changed, the overlaps of the walkers must be adjusted 
+  // This is needed for stability reasons in large systems
+  double LogOverlapFactor = 0.0;
 
   TimerList_t Timers;
 

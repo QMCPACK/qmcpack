@@ -81,37 +81,37 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     // C must live in shared memory for this routine to work as expected
     template<class MatA, class MatB, class MatC>
-    void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T* res, communicator& comm, bool compact=false) {
+    void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, T* res, communicator& comm, bool compact=false) {
 #ifdef QMC_CUDA
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
-      Base::MixedDensityMatrix(hermA,B,C,res,compact);
+      Base::MixedDensityMatrix(hermA,B,C,LogOverlapFactor,res,compact);
     }
 
     template<class integer, class MatA, class MatB, class MatC, class MatQ>
-    void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, T* res,
+    void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, T* res,
                                     integer* ref, MatQ&& QQ0, communicator& comm, bool compact=false) {
 #ifdef QMC_CUDA
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
-      Base::MixedDensityMatrixForWoodbury(hermA,B,std::forward<MatC>(C),res,ref,std::forward<MatQ>(QQ0),
+      Base::MixedDensityMatrixForWoodbury(hermA,B,std::forward<MatC>(C),LogOverlapFactor,res,ref,std::forward<MatQ>(QQ0),
                                     compact);
     }
 
     template<class MatA, class MatB>
-    void Overlap(const MatA& hermA, const MatB& B, T* res, communicator& comm) { 
+    void Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor, T* res, communicator& comm) { 
 #ifdef QMC_CUDA
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
-      Base::Overlap(hermA,B,res);
+      Base::Overlap(hermA,B,LogOverlapFactor,res);
     }
 
     template<typename integer, class MatA, class MatB, class MatC>
-    void OverlapForWoodbury(const MatA& hermA, const MatB& B, T* res, integer* ref, MatC&& QQ0, communicator& comm) {
+    void OverlapForWoodbury(const MatA& hermA, const MatB& B, T LogOverlapFactor, T* res, integer* ref, MatC&& QQ0, communicator& comm) {
 #ifdef QMC_CUDA
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
-      Base::OverlapForWoodbury(hermA,B,res,ref,std::forward<MatC>(QQ0));
+      Base::OverlapForWoodbury(hermA,B,LogOverlapFactor,res,ref,std::forward<MatC>(QQ0));
     }
 
     template<class Mat, class MatP1, class MatV>
@@ -163,7 +163,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     // C[nwalk, M, N]
     template<class MatA, class MatB, class MatC, class TVec>
-    void BatchedMixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& C, TVec&& ovlp, bool compact=false) {
+    void BatchedMixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false) {
       if(Bi.size()==0) return;
       static_assert(std::decay<MatC>::type::dimensionality == 3, "Wrong dimensionality");
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
@@ -185,11 +185,11 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       if(IWORK.num_elements() < nbatch*(NMO+1))
         IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
       SlaterDeterminantOperations::batched::MixedDensityMatrix(hermA,Bi,
-                std::forward<MatC>(C),std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,WORK,compact);
+                std::forward<MatC>(C),LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,WORK,compact);
     }
 
     template<class MatA, class MatB, class TVec>
-    void BatchedOverlap(const MatA& hermA, std::vector<MatB> &Bi, TVec&& ovlp) {
+    void BatchedOverlap(const MatA& hermA, std::vector<MatB> &Bi, T LogOverlapFactor, TVec&& ovlp) {
       if(Bi.size()==0) return;
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
       int NMO = hermA.size(1);
@@ -200,12 +200,12 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       TTensor_ref TNN3D(TBuff.origin(), {nbatch,NAEA,NAEA});
       if(IWORK.num_elements() < nbatch*(NMO+1))
         IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
-      SlaterDeterminantOperations::batched::Overlap(hermA,Bi,
+      SlaterDeterminantOperations::batched::Overlap(hermA,Bi,LogOverlapFactor,
                 std::forward<TVec>(ovlp),TNN3D,IWORK);
     }
 
     template<class MatA>
-    void BatchedOrthogonalize(std::vector<MatA> &Ai, T* detR=nullptr) {
+    void BatchedOrthogonalize(std::vector<MatA> &Ai, T LogOverlapFactor, T* detR=nullptr) {
 /*
       if(detR == nullptr)
         for(int i=0; i<Ai.size(); i++)
@@ -241,7 +241,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 // needs batched
       for(int i=0; i<nbatch; i++) {
         if(detR != nullptr)
-          determinant_from_geqrf(NAEA,AT[i].origin(),NMO,scl[i].origin(),detR+i);
+          determinant_from_geqrf(NAEA,AT[i].origin(),NMO,scl[i].origin(),LogOverlapFactor,detR+i);
         else 
           determinant_from_geqrf(NAEA,AT[i].origin(),NMO,scl[i].origin());
       }
@@ -255,7 +255,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 #else
       int nw=Ai.size();
       for(int i=0; i<nw; i++) 
-        Orthogonalize(Ai[i], detR+i);
+        Orthogonalize(Ai[i], LogOverlapFactor, detR+i);
 #endif
     }
 

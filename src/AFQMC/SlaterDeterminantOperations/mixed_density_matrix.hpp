@@ -62,7 +62,7 @@ template< class Tp,
           class IBuffer,
           class TBuffer 
         >
-inline void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Tp* ovlp, Mat1&& T1, Mat2&& T2, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
+inline void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Tp LogOverlapFactor, Tp* ovlp, Mat1&& T1, Mat2&& T2, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
 {
   // check dimensions are consistent
   assert( hermA.size(1) == B.size(0) );
@@ -86,7 +86,7 @@ inline void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Tp* o
 
   // NOTE: Using C as temporary 
   // T1 = T1^(-1)
-  ma::invert(std::forward<Mat1>(T1),IWORK,WORK,ovlp);
+  ma::invert(std::forward<Mat1>(T1),IWORK,WORK,LogOverlapFactor,ovlp);
 
   if(compact) {
 
@@ -116,7 +116,7 @@ template< class Tp,
           class IBuffer,
           class TBuffer 
         >
-inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, Tp* ovlp, MatD&& QQ0, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
+inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, Tp LogOverlapFactor, Tp* ovlp, MatD&& QQ0, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
 {
   // check dimensions are consistent
   int NEL = B.size(1);
@@ -147,7 +147,7 @@ inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC
     std::copy_n(to_address(TAB[*(ref+i)].origin()),NEL,to_address(TNN[i].origin()));
 
   // TNN = TNN^(-1)
-  ma::invert(std::forward<Mat1>(TNN),IWORK,WORK,ovlp);
+  ma::invert(std::forward<Mat1>(TNN),IWORK,WORK,LogOverlapFactor,ovlp);
 
   // QQ0 = TAB * inv(TNN) 
   ma::product(TAB,TNN,std::forward<MatD>(QQ0));
@@ -179,7 +179,7 @@ template< class Tp,
           class IBuffer,
           class TBuffer 
         >
-inline void MixedDensityMatrixFromConfiguration(const MatA& hermA, const MatB& B, MatC&& C, Tp* ovlp, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
+inline void MixedDensityMatrixFromConfiguration(const MatA& hermA, const MatB& B, MatC&& C, Tp LogOverlapFactor, Tp* ovlp, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
 {
   // check dimensions are consistent
   int NEL = B.size(1);
@@ -208,7 +208,7 @@ inline void MixedDensityMatrixFromConfiguration(const MatA& hermA, const MatB& B
     std::copy_n(to_address(TAB[*(ref+i)].origin()),NEL,to_address(TNN[i].origin()));
 
   // TNN = TNN^(-1)
-  ma::invert(std::forward<Mat1>(TNN),IWORK,WORK,ovlp);
+  ma::invert(std::forward<Mat1>(TNN),IWORK,WORK,LogOverlapFactor,ovlp);
 
   if(compact) {
 
@@ -253,7 +253,7 @@ template< class Tp,
           class IBuffer,
           class TBuffer 
         >
-inline void MixedDensityMatrix_noHerm(const MatA& A, const MatB& B, MatC&& C, Tp* ovlp, Mat1&& T1, Mat2&& T2, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
+inline void MixedDensityMatrix_noHerm(const MatA& A, const MatB& B, MatC&& C, Tp LogOverlapFactor, Tp* ovlp, Mat1&& T1, Mat2&& T2, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
 {
   // check dimensions are consistent
   assert( A.size(0) == B.size(0) );
@@ -278,7 +278,7 @@ inline void MixedDensityMatrix_noHerm(const MatA& A, const MatB& B, MatC&& C, Tp
 
   // NOTE: Using C as temporary 
   // T1 = T1^(-1)
-  ma::invert(std::forward<Mat1>(T1),IWORK,WORK,ovlp);
+  ma::invert(std::forward<Mat1>(T1),IWORK,WORK,LogOverlapFactor,ovlp);
 
   if(compact) {
 
@@ -296,6 +296,57 @@ inline void MixedDensityMatrix_noHerm(const MatA& A, const MatB& B, MatC&& C, Tp
   }
 }
 
+template< class Tp,
+          class MatA,
+          class MatB,
+          class MatC,
+          class Mat1,
+          class Mat2,
+          class IBuffer,
+          class TBuffer 
+        >
+inline void MixedDensityMatrix_noHerm_wSVD(const MatA& A, const MatB& B, MatC&& C, Tp LogOverlapFactor, Tp* ovlp, Mat1&& T1, Mat2&& T2, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
+{
+  // check dimensions are consistent
+  assert( A.size(0) == B.size(0) );
+  assert( A.size(1) == B.size(1) );
+  assert( A.size(1) == T1.size(0) );
+  assert( B.size(1) == T1.size(1) );
+  if(compact) {
+    assert( C.size(0) == T1.size(1) );
+    assert( C.size(1) == B.size(0) );
+  } else {
+    assert( T2.size(1) == B.size(0) );
+    assert( T2.size(0) == T1.size(1) );
+    assert( C.size(0) == A.size(0) );
+    assert( C.size(1) == T2.size(1) );
+  }
+
+  using ma::T;
+  using ma::H;
+
+  // T1 = H(A)*B
+  ma::product(H(A),B,std::forward<Mat1>(T1));  
+
+  // NOTE: Using C as temporary 
+  // T1 = T1^(-1)
+  ma::invert(std::forward<Mat1>(T1),IWORK,WORK,LogOverlapFactor,ovlp);
+
+  if(compact) {
+
+    // C = T(T1) * T(B)
+    ma::product(T(T1),T(B),std::forward<MatC>(C)); 
+
+  } else {
+
+    // T2 = T1 * H(A) 
+    ma::product(T1,H(A),std::forward<Mat2>(T2)); 
+
+    // C = T( B * T2) = T(T2) * T(B)
+    ma::product(T(T2),T(B),std::forward<MatC>(C));
+
+  }
+}
 
 /*
  * Returns the overlap of 2 Slater determinants:  <A|B> = det[ T(B) * conj(A) ]  
@@ -315,7 +366,7 @@ template< class Tp,
           class Buffer,
           class IBuffer
         >
-inline void Overlap(const MatA& hermA, const MatB& B, Tp* ovlp, Mat&& T1, IBuffer& IWORK, Buffer& WORK)
+inline void Overlap(const MatA& hermA, const MatB& B, Tp LogOverlapFactor, Tp* ovlp, Mat&& T1, IBuffer& IWORK, Buffer& WORK)
 {
   // check dimensions are consistent
   assert( hermA.size(1) == B.size(0) );
@@ -328,7 +379,7 @@ inline void Overlap(const MatA& hermA, const MatB& B, Tp* ovlp, Mat&& T1, IBuffe
   // T(B)*conj(A) 
   ma::product(hermA,B,std::forward<Mat>(T1));   
 
-  ma::determinant(std::forward<Mat>(T1),IWORK,WORK,ovlp);
+  ma::determinant(std::forward<Mat>(T1),IWORK,WORK,LogOverlapFactor,ovlp);
 }
 
 template< class Tp,
@@ -341,7 +392,7 @@ template< class Tp,
           class IBuffer,
           class TBuffer
         >
-inline void OverlapForWoodbury(const MatA& hermA, const MatB& B, Tp* ovlp, MatC&& QQ0, integer *ref, 
+inline void OverlapForWoodbury(const MatA& hermA, const MatB& B, Tp LogOverlapFactor, Tp* ovlp, MatC&& QQ0, integer *ref, 
                              MatD && TNN, MatE && TMN, IBuffer& IWORK, TBuffer& WORK)
 {
   // check dimensions are consistent
@@ -364,7 +415,7 @@ inline void OverlapForWoodbury(const MatA& hermA, const MatB& B, Tp* ovlp, MatC&
     std::copy_n(to_address(TMN[*(ref+i)].origin()),NEL,to_address(TNN[i].origin())); 
  
   // TNN -> inv(TNN)
-  ma::invert(std::forward<MatD>(TNN),IWORK,WORK,ovlp);
+  ma::invert(std::forward<MatD>(TNN),IWORK,WORK,LogOverlapFactor,ovlp);
 
   // QQ0 = TMN * inv(TNN) 
   ma::product(TMN,TNN,std::forward<MatC>(QQ0));  
@@ -388,7 +439,7 @@ template< class Tp,
           class Buffer,
           class IBuffer
         >
-inline void Overlap_noHerm(const MatA& A, const MatB& B, Tp* ovlp, Mat&& T1, IBuffer& IWORK, Buffer& WORK)
+inline void Overlap_noHerm(const MatA& A, const MatB& B, Tp LogOverlapFactor, Tp* ovlp, Mat&& T1, IBuffer& IWORK, Buffer& WORK)
 {
   // check dimensions are consistent
   assert( A.size(0) == B.size(0) );
@@ -402,7 +453,7 @@ inline void Overlap_noHerm(const MatA& A, const MatB& B, Tp* ovlp, Mat&& T1, IBu
   // T(B)*conj(A) 
   ma::product(H(A),B,std::forward<Mat>(T1));    
 
-  ma::determinant(std::forward<Mat>(T1),IWORK,WORK,ovlp);
+  ma::determinant(std::forward<Mat>(T1),IWORK,WORK,LogOverlapFactor,ovlp);
 }
 
 } // namespace base
@@ -437,7 +488,7 @@ template< class Tp,
           class TBuffer,
           class communicator 
         >
-inline void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Tp* ovlp, Mat&& T1, Mat&& T2, IBuffer& IWORK, TBuffer& WORK, communicator& comm, bool compact=true)
+inline void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Tp LogOverlapFactor, Tp* ovlp, Mat&& T1, Mat&& T2, IBuffer& IWORK, TBuffer& WORK, communicator& comm, bool compact=true)
 {
   // check dimensions are consistent
   assert( hermA.size(1) == B.size(0) );
@@ -470,7 +521,7 @@ inline void MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Tp* o
   // NOTE: Using C as temporary 
   // T1 = T1^(-1)
   if(comm.rank()==0)
-   ma::invert(std::forward<Mat>(T1),IWORK,WORK,ovlp);
+   ma::invert(std::forward<Mat>(T1),IWORK,WORK,LogOverlapFactor,ovlp);
   comm.broadcast_n(ovlp,1,0);  
 
   if(compact) {
@@ -530,7 +581,7 @@ template< class Tp,
           class Buffer,
           class communicator
         >
-inline void Overlap(const MatA& hermA, const MatB& B, Tp* ovlp, Mat&& T1, IBuffer& IWORK, Buffer& WORK, communicator& comm)
+inline void Overlap(const MatA& hermA, const MatB& B, Tp LogOverlapFactor, Tp* ovlp, Mat&& T1, IBuffer& IWORK, Buffer& WORK, communicator& comm)
 {
   // check dimensions are consistent
   assert( hermA.size(1) == B.size(0) );
@@ -552,7 +603,7 @@ inline void Overlap(const MatA& hermA, const MatB& B, Tp* ovlp, Mat&& T1, IBuffe
   comm.barrier();
 
   if(comm.rank()==0)
-   ma::determinant(std::forward<Mat>(T1),IWORK,WORK,ovlp);
+   ma::determinant(std::forward<Mat>(T1),IWORK,WORK,LogOverlapFactor,ovlp);
   comm.broadcast_n(ovlp,1,0);  
 }
 
@@ -568,7 +619,7 @@ template< class Tp,
           class TBuffer,
           class communicator
         >
-inline void OverlapForWoodbury(const MatA& hermA, const MatB& B, Tp* ovlp, MatC&& QQ0, integer *ref, MatD&& TNN, MatE& TMN, IBuffer& IWORK, TBuffer& WORK, communicator& comm)
+inline void OverlapForWoodbury(const MatA& hermA, const MatB& B, Tp LogOverlapFactor, Tp* ovlp, MatC&& QQ0, integer *ref, MatD&& TNN, MatE& TMN, IBuffer& IWORK, TBuffer& WORK, communicator& comm)
 {
   // check dimensions are consistent
   int NEL = B.size(1);
@@ -594,7 +645,7 @@ inline void OverlapForWoodbury(const MatA& hermA, const MatB& B, Tp* ovlp, MatC&
   if(comm.rank()==0) {
     for(int i=0; i<NEL; i++)
       std::copy_n(to_address(TMN[*(ref+i)].origin()),NEL,to_address(TNN[i].origin()));
-    ma::invert(std::forward<MatD>(TNN),IWORK,WORK,ovlp);
+    ma::invert(std::forward<MatD>(TNN),IWORK,WORK,LogOverlapFactor,ovlp);
   }
   comm.broadcast_n(ovlp,1,0);
 
@@ -622,7 +673,7 @@ template< class Tp,
           class TBuffer,
           class communicator 
         >
-inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, Tp* ovlp, MatD&& QQ0, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, communicator& comm, bool compact=true)
+inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, Tp LogOverlapFactor, Tp* ovlp, MatD&& QQ0, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, communicator& comm, bool compact=true)
 {
   // check dimensions are consistent
   int NEL = B.size(1);
@@ -663,7 +714,7 @@ inline void MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC
 
   // TNN = TNN^(-1)
   if(comm.rank()==0)
-    ma::invert(std::forward<Mat1>(TNN),IWORK,WORK,ovlp);
+    ma::invert(std::forward<Mat1>(TNN),IWORK,WORK,LogOverlapFactor,ovlp);
   comm.broadcast_n(ovlp,1,0);
 
   int P0,Pn;
@@ -716,9 +767,10 @@ template< class MatA,
           class Mat,
           class TVec,
           class IBuffer,
-          class TBuffer
+          class TBuffer,
+          class Tp
         >
-inline void MixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& C, TVec&& ovlp, Mat&& TNN3D, Mat&& TNM3D, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
+inline void MixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& C, Tp LogOverlapFactor, TVec&& ovlp, Mat&& TNN3D, Mat&& TNM3D, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
 {
   static_assert( std::decay<TVec>::type::dimensionality == 1, " TVec::dimensionality == 1" );
   static_assert( std::decay<MatB>::type::dimensionality == 2, " MatB::dimensionality == 2" );
@@ -788,7 +840,7 @@ inline void MixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& 
     for(int i=0; i<nbatch; i++) {
 
       using ma::determinant_from_getrf;
-      determinant_from_getrf(NEL, NNarray[i], ldN, IWORK.origin()+i*NEL,
+      determinant_from_getrf(NEL, NNarray[i], ldN, IWORK.origin()+i*NEL,LogOverlapFactor,
                              to_address(ovlp.origin())+i); 
 
     }
@@ -832,9 +884,10 @@ template< class MatA,
           class MatB,
           class Mat,
           class TVec,
-          class IBuffer
+          class IBuffer,
+          class Tp
         >
-inline void Overlap(const MatA& hermA, std::vector<MatB> &Bi, TVec&& ovlp, Mat&& TNN3D, IBuffer& IWORK)
+inline void Overlap(const MatA& hermA, std::vector<MatB> &Bi, Tp LogOverlapFactor, TVec&& ovlp, Mat&& TNN3D, IBuffer& IWORK)
 {
   static_assert( std::decay<TVec>::type::dimensionality == 1, " TVec::dimensionality == 1" );
   static_assert( std::decay<MatB>::type::dimensionality == 2, " MatB::dimensionality == 2" );
@@ -882,7 +935,7 @@ inline void Overlap(const MatA& hermA, std::vector<MatB> &Bi, TVec&& ovlp, Mat&&
     for(int i=0; i<nbatch; i++) {
 
       using ma::determinant_from_getrf;
-      determinant_from_getrf(NEL, NNarray[i], ldN, IWORK.origin()+i*NEL,
+      determinant_from_getrf(NEL, NNarray[i], ldN, IWORK.origin()+i*NEL,LogOverlapFactor,
                              to_address(ovlp.origin())+i); 
 
     }

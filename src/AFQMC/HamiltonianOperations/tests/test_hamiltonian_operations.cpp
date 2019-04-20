@@ -136,11 +136,11 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     CMatrix G({NEL,NMO},alloc_);
     typename Alloc::pointer Ovlp = alloc_.allocate(1);
     SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0],
-        G.sliced(0,NAEA),to_address(Ovlp),true);
+        G.sliced(0,NAEA),0.0,to_address(Ovlp),true);
     if(WTYPE==COLLINEAR) {
       typename Alloc::pointer Ovlp_ = alloc_.allocate(1);
       SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}),
-        G.sliced(NAEA,NAEA+NAEB),to_address(Ovlp_),true);
+        G.sliced(NAEA,NAEA+NAEB),0.0,to_address(Ovlp_),true);
       (*Ovlp) *= (*Ovlp_); 
       alloc_.deallocate(Ovlp_,1);
     }

@@ -20,6 +20,7 @@
 #include "AFQMC/Hamiltonians/HSPotential_Helpers.h"
 #include "AFQMC/Hamiltonians/generateHijkl.hpp"
 #include "AFQMC/Matrix/array_partition.hpp"
+#include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
 #include "AFQMC/SlaterDeterminantOperations/rotate.hpp"
 #include "AFQMC/HamiltonianOperations/SparseTensorIO.hpp"
 
@@ -28,6 +29,11 @@ namespace qmcplusplus
 
 namespace afqmc
 {
+
+boost::multi::array<ComplexType,1> FactorizedSparseHamiltonian::halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta) {
+  check_wavefunction_consistency(type,Alpha,Beta,NMO,NAEA,NAEB);
+  return rotateHij(type,Alpha,Beta,OneBodyHamiltonian::H1);
+}
 
 SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double cut,
         TaskGroup_& TGprop, boost::multi::array<ComplexType,2>& vn0) {

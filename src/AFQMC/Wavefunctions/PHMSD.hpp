@@ -398,7 +398,7 @@ class PHMSD: public AFQMCInfo
      * Orthogonalizes the Slater matrix of a walker in an excited state calculation.
      */
     template<class Mat>
-    void OrthogonalizeExcited(Mat&& A, SpinTypes spin);
+    void OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOverlapFactor);
 
     /*
      * Returns the number of reference Slater Matrices needed for back propagation.  
