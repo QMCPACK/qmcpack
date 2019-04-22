@@ -232,13 +232,26 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   //These are going to use the vghgh containers as temporary arrays.  The main difference between
   //replacing an ion derivative with an electron derivative is the -1 factor incurred.  This will be taken care of
   //in LCAO orbital set.   
-  inline void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vghgh_type& vghgh)
+  inline void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl)
   {
+
+    auto* restrict gx  = vgl.data(1);
+    auto* restrict gy  = vgl.data(2);
+    auto* restrict gz  = vgl.data(3);
+
+    for(int ib=0; ib<BasisSetSize; ib++)
+    {
+      gx[ib]=0;
+      gy[ib]=0;
+      gz[ib]=0;
+    }
+
     const DistanceTableData* d_table = P.DistTables[myTableIndex];
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
     
-    LOBasisSet[IonID[jion]]->evaluateVGH(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vghgh);
+    LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl);
+
   }
 
   inline void evaluateGradSourceVGL(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vghgh_type& vghgh)

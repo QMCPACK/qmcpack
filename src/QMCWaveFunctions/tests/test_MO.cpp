@@ -667,6 +667,38 @@ void test_HCN(bool transform)
     REQUIRE( diongradpsi[0][6](2,1) == Approx(-2.048666792e-06) );  
     REQUIRE( diongradpsi[0][6](2,2) == Approx(2.967709412e-06) );  
     REQUIRE( dionlaplpsi[0][6][2]  == Approx(-0.0002018111858) );  
+
+   //Same tests as before, but for the gradient only.
+
+    sposet->evaluateGradSource(elec, 0, elec.R.size(),ions,0, dionpsi);
+  //============== Ion  0  Component  0 ===================
+    REQUIRE( dionpsi[0][0][0]       == Approx(   0.0453112082) );  
+    REQUIRE( dionpsi[0][1][0]       == Approx(-0.0006473819623) );  
+    REQUIRE( dionpsi[0][2][0]       == Approx(    0.265578336) );  
+    REQUIRE( dionpsi[0][3][0]       == Approx( -0.06444305979) );  
+    REQUIRE( dionpsi[0][4][0]       == Approx(   0.1454357726) );  
+    REQUIRE( dionpsi[0][5][0]       == Approx( -0.04329985085) );  
+    REQUIRE( dionpsi[0][6][0]       == Approx(  0.01207541177) );  
+   
+    sposet->evaluateGradSource(elec, 0, elec.R.size(),ions,1, dionpsi);
+  //============== Ion  1  Component  1 ===================
+    REQUIRE( dionpsi[0][0][1]       == Approx(0.0001412373768) );  
+    REQUIRE( dionpsi[0][1][1]       == Approx( -0.01029290716) );  
+    REQUIRE( dionpsi[0][2][1]       == Approx(  -0.0230872583) );  
+    REQUIRE( dionpsi[0][3][1]       == Approx(  0.01850231814) );  
+    REQUIRE( dionpsi[0][4][1]       == Approx( -0.02136209962) );  
+    REQUIRE( dionpsi[0][5][1]       == Approx(  -0.1942343714) );  
+    REQUIRE( dionpsi[0][6][1]       == Approx( -0.03930992259) );  
+  
+    sposet->evaluateGradSource(elec, 0, elec.R.size(),ions,2, dionpsi);
+  //============== Ion  2  Component  2 ===================
+    REQUIRE( dionpsi[0][0][2]       == Approx(1.302648961e-06) );  
+    REQUIRE( dionpsi[0][1][2]       == Approx(3.248738084e-07) );  
+    REQUIRE( dionpsi[0][2][2]       == Approx(3.264249981e-06) );  
+    REQUIRE( dionpsi[0][3][2]       == Approx(0.0001288974413) );  
+    REQUIRE( dionpsi[0][4][2]       == Approx(-7.300043903e-05) );  
+    REQUIRE( dionpsi[0][5][2]       == Approx(2.910525987e-06) );  
+    REQUIRE( dionpsi[0][6][2]       == Approx(-1.56074936e-05) );  
 #endif
  
     SPOSetBuilderFactory::clear();

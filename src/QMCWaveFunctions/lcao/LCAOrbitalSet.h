@@ -275,6 +275,10 @@ private:
                          HessMatrix_t& dhlogdet,
                          GGGMatrix_t& dghlogdet) const;
   
+  void evaluate_ionderiv_v_impl(const vgl_type& temp,
+                         int i,
+                         GradMatrix_t& dlogdet) const;
+  
   void evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
                          int i,
                          GradMatrix_t& dlogdet,
