@@ -490,6 +490,21 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
   }
 }
 
+void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P, int first, int last, 
+                                       const ParticleSet& source, int iat_src, 
+                                       GradMatrix_t& gradphi)
+{
+
+}
+
+void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P, int first, int last,
+                                       const ParticleSet& source, int iat_src,
+                                       GradMatrix_t& grad_phi, HessMatrix_t& grad_grad_phi, 
+                                       GradMatrix_t& grad_lapl_phi)
+{
+
+}
+
 void LCAOrbitalSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
 {
   APP_ABORT("LCAOrbitalSet::evaluateThirdDeriv(P,istart,istop,ggg_logdet) not implemented\n");

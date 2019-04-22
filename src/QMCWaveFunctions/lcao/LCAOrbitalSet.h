@@ -223,6 +223,22 @@ public:
                             HessMatrix_t& grad_grad_logdet,
                             GGGMatrix_t& grad_grad_grad_logdet);
 
+  void evaluateGradSource(const ParticleSet& P,
+                          int first,
+                          int last,
+                          const ParticleSet& source,
+                          int iat_src,
+                          GradMatrix_t& gradphi);
+
+  void evaluateGradSource(const ParticleSet& P,
+                          int first,
+                          int last,
+                          const ParticleSet& source,
+                          int iat_src,
+                          GradMatrix_t& grad_phi,
+                          HessMatrix_t& grad_grad_phi,
+                          GradMatrix_t& grad_lapl_phi);
+
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet);
 
 private:

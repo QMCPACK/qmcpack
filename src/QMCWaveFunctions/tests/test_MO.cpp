@@ -539,7 +539,48 @@ void test_HCN(bool transform)
     REQUIRE(d3psiV[0][2][1](2,2) == Approx(              0));
     REQUIRE(d3psiV[0][2][2](2,2) == Approx(              0));
  
+    SPOSet::GradMatrix_t dionpsi(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::HessMatrix_t diongradpsi(elec.R.size(), sposet->getOrbitalSetSize());
+    SPOSet::GradMatrix_t dionlaplpsi(elec.R.size(), sposet->getOrbitalSetSize());
+
+    sposet->evaluateGradSource(elec, 0, elec.R.size(),ions,0, dionpsi,diongradpsi,dionlaplpsi);
     
+    //============== Ion  0  Component  0 ===================
+    REQUIRE( dionpsi[0][0][0]       == Approx(   0.1812448328) );
+    REQUIRE( diongradpsi[0][0](0,0) == Approx(   -1.177405598) );
+    REQUIRE( diongradpsi[0][0](0,1) == Approx(   -1.177405598) );
+    REQUIRE( diongradpsi[0][0](0,2) == Approx(   -1.177405598) );
+    REQUIRE( dionlaplpsi[0][0][0]  == Approx(   0.1812448328) );
+    REQUIRE( dionpsi[0][1][0]       == Approx(-0.002589527849) );
+    REQUIRE( diongradpsi[0][1](0,0) == Approx( 0.001885363005) );
+    REQUIRE( diongradpsi[0][1](0,1) == Approx( 0.001885363005) );
+    REQUIRE( diongradpsi[0][1](0,2) == Approx( 0.001885363005) );
+    REQUIRE( dionlaplpsi[0][1][0]  == Approx(-0.002589527849) );
+    REQUIRE( dionpsi[0][2][0]       == Approx(    1.062313344) );
+    REQUIRE( diongradpsi[0][2](0,0) == Approx(  -0.3474321646) );
+    REQUIRE( diongradpsi[0][2](0,1) == Approx(  -0.3474321646) );
+    REQUIRE( diongradpsi[0][2](0,2) == Approx(  -0.3474321646) );
+    REQUIRE( dionlaplpsi[0][2][0]  == Approx(    1.062313344) );
+    REQUIRE( dionpsi[0][3][0]       == Approx(  -0.2577722392) );
+    REQUIRE( diongradpsi[0][3](0,0) == Approx(-0.008052607692) );
+    REQUIRE( diongradpsi[0][3](0,1) == Approx(-0.008052607692) );
+    REQUIRE( diongradpsi[0][3](0,2) == Approx(-0.008052607692) );
+    REQUIRE( dionlaplpsi[0][3][0]  == Approx(  -0.2577722392) );
+    REQUIRE( dionpsi[0][4][0]       == Approx(   0.5817430905) );
+    REQUIRE( diongradpsi[0][4](0,0) == Approx(  -0.9321997722) );
+    REQUIRE( diongradpsi[0][4](0,1) == Approx(  -0.9321997722) );
+    REQUIRE( diongradpsi[0][4](0,2) == Approx(  -0.9321997722) );
+    REQUIRE( dionlaplpsi[0][4][0]  == Approx(   0.5817430905) );
+    REQUIRE( dionpsi[0][5][0]       == Approx(  -0.1731994034) );
+    REQUIRE( diongradpsi[0][5](0,0) == Approx(   0.3620797322) );
+    REQUIRE( diongradpsi[0][5](0,1) == Approx(   0.3620797322) );
+    REQUIRE( diongradpsi[0][5](0,2) == Approx(   0.3620797322) );
+    REQUIRE( dionlaplpsi[0][5][0]  == Approx(  -0.1731994034) );
+    REQUIRE( dionpsi[0][6][0]       == Approx(   0.0483016471) );
+    REQUIRE( diongradpsi[0][6](0,0) == Approx(  -0.1009762174) );
+    REQUIRE( diongradpsi[0][6](0,1) == Approx(  -0.1009762174) );
+    REQUIRE( diongradpsi[0][6](0,2) == Approx(  -0.1009762174) );
+    REQUIRE( dionlaplpsi[0][6][0]  == Approx(   0.0483016471) );
 
     SPOSetBuilderFactory::clear();
   }
