@@ -160,6 +160,8 @@ struct SoaBasisSetBase
   virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)=0;
   virtual void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)=0;
   virtual void evaluateVGHGH(const ParticleSet& P, int iat, vghgh_type& vghgh)=0;
+  virtual void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vghgh_type& vghgh)=0;
+  virtual void evaluateGradSourceVGL(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vghgh_type& vghgh)=0;
   virtual void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals)=0;
   virtual bool is_S_orbital(int mo_idx, int ao_idx) { return false;}
 

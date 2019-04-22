@@ -494,7 +494,23 @@ void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P, int first, int last
                                        const ParticleSet& source, int iat_src, 
                                        GradMatrix_t& gradphi)
 {
-
+  if (Identity)
+  {
+    for (size_t i = 0, iat = first; iat < last; i++, iat++)
+    {
+      myBasisSet->evaluateVGHGH(P, iat, Tempgh);
+  //    evaluate_vghgh_impl(Tempgh, i, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet);
+    }
+  }
+  else
+  {
+    for (size_t i = 0, iat = first; iat < last; i++, iat++)
+    {
+    //  myBasisSet->evaluateVGHGH(P, iat, Tempgh);
+      Product_ABt(Tempgh, *C, Tempghv);
+    //  evaluate_vghgh_impl(Tempghv, i, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet);
+    }
+  }
 }
 
 void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P, int first, int last,
@@ -502,7 +518,23 @@ void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P, int first, int last
                                        GradMatrix_t& grad_phi, HessMatrix_t& grad_grad_phi, 
                                        GradMatrix_t& grad_lapl_phi)
 {
-
+  if (Identity)
+  {
+    for (size_t i = 0, iat = first; iat < last; i++, iat++)
+    {
+    //  myBasisSet->evaluateVGHGH(P, iat, Tempgh);
+    //  evaluate_vghgh_impl(Tempgh, i, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet);
+    }
+  }
+  else
+  {
+    for (size_t i = 0, iat = first; iat < last; i++, iat++)
+    {
+    //  myBasisSet->evaluateVGHGH(P, iat, Tempgh);
+      Product_ABt(Tempgh, *C, Tempghv);
+    //  evaluate_vghgh_impl(Tempghv, i, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet);
+    }
+  }
 }
 
 void LCAOrbitalSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)

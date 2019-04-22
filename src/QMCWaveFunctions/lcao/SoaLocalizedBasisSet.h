@@ -228,7 +228,17 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c]);
     }
   }
+  
+  
+  inline void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vghgh_type& vghgh)
+  {
 
+  }
+
+  inline void evaluateGradSourceVGL(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vghgh_type& vghgh)
+  {
+
+  }
   /** add a new set of Centered Atomic Orbitals
    * @param icenter the index of the center
    * @param aos a set of Centered Atomic Orbitals
