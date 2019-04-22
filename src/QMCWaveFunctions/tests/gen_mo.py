@@ -216,9 +216,9 @@ def gen_HCN_force():
       for iorb in xrange(0,norb):
         print '  REQUIRE( dionpsi[0][%d][%d]       == Approx(%15.10g) );  '%(iorb,idim,dmo_v[iorb])
         print '  REQUIRE( diongradpsi[0][%d](%d,0) == Approx(%15.10g) );  '%(iorb,idim,dmo_g[iorb][0])
-        print '  REQUIRE( diongradpsi[0][%d](%d,1) == Approx(%15.10g) );  '%(iorb,idim,dmo_g[iorb][0])
-        print '  REQUIRE( diongradpsi[0][%d](%d,2) == Approx(%15.10g) );  '%(iorb,idim,dmo_g[iorb][0])
-        print '  REQUIRE( dionlaplpsi[0][%d][%d]  == Approx(%15.10g) );  '%(iorb,idim,dmo_v[iorb])
+        print '  REQUIRE( diongradpsi[0][%d](%d,1) == Approx(%15.10g) );  '%(iorb,idim,dmo_g[iorb][1])
+        print '  REQUIRE( diongradpsi[0][%d](%d,2) == Approx(%15.10g) );  '%(iorb,idim,dmo_g[iorb][2])
+        print '  REQUIRE( dionlaplpsi[0][%d][%d]  == Approx(%15.10g) );  '%(iorb,idim,dmo_l[iorb])
     
   print '  // Generated from gen_mo.py for position %s'%str(pos)
  # for i in range(7):
