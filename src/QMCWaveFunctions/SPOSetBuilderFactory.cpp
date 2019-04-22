@@ -150,12 +150,14 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   aAttrib.add(cuspInfo,"cuspInfo");
   aAttrib.add(MOH5Ref,"href");
 
+  
+  
   if(rootNode != NULL)
     aAttrib.put(rootNode);
 
   std::string type_in=type;
   tolower(type);
-
+  app_log()<<"name=" <<name<<"   type="<<type<<std::endl;
   //when name is missing, type becomes the input
   if(name.empty()) name=type_in;
 

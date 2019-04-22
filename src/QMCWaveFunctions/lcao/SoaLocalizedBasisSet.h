@@ -97,6 +97,18 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     for (int i = 0; i < LOBasisSet.size(); ++i)
       LOBasisSet[i]->setPBCImages(PBCImages);
   }
+
+  /** Set Supertwist in PBC to value in Input. 
+      Set to 0 for non-PBC.
+  */
+  void setStwist(const TinyVector<double, 3>& Stwist)
+  {
+    for (int i = 0; i < LOBasisSet.size(); ++i)
+      LOBasisSet[i]->setStwist(Stwist);
+  }
+
+
+
   /** set BasisSetSize and allocate mVGL container
    */
   void setBasisSetSize(int nbs)

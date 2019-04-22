@@ -34,6 +34,8 @@ struct SoaAtomicBasisSet
   int BasisSetSize;
   ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
   TinyVector<int, 3> PBCImages;
+  ///Coordinates of Super twist to compute phase factor. If No PBC, should be 0;
+  TinyVector<double, 3> Stwist;
   ///maximum radius of this center
   RealType Rmax;
   ///spherical harmonics
@@ -91,8 +93,12 @@ struct SoaAtomicBasisSet
     return BasisSetSize;
   }
 
-  // Set the number of periodic image for the evaluation of the orbitals.
+  /// Set the number of periodic image for the evaluation of the orbitals.
   void setPBCImages(const TinyVector<int, 3>& pbc_images) { PBCImages = pbc_images; }
+
+
+  /// Set the number of periodic image for the evaluation of the orbitals.
+  void setStwist(const TinyVector<double, 3>& stwist) { Stwist = stwist; }
 
   /** implement a BasisSetBase virtual function
        *

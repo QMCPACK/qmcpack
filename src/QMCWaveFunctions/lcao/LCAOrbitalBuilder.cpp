@@ -121,6 +121,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   aAttrib.add(cuspC, "cuspCorrection");
   aAttrib.add(cuspInfo, "cuspInfo");
   aAttrib.add(h5_path, "href");
+  aAttrib.add(Stwist, "twist");
   aAttrib.add(PBCImages, "PBCimages");
   aAttrib.put(cur);
 
@@ -331,6 +332,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
 
   mBasisSet->setBasisSetSize(-1);
   mBasisSet->setPBCImages(PBCImages);
+  mBasisSet->setStwist(Stwist);
   return mBasisSet;
 }
 
@@ -730,7 +732,9 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 
     hin.close();
   }
+#ifdef HAVE_MPI
   myComm->comm.broadcast_n(spo.C->data(), spo.C->size());
+#endif
 #else
   APP_ABORT("LCAOrbitalBuilder::putFromH5 HDF5 is disabled.")
 #endif

@@ -42,6 +42,7 @@ public:
   void loadBasisSetFromXML(xmlNodePtr cur);
   SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 
+
 private:
   ///target ParticleSet
   ParticleSet& targetPtcl;
@@ -57,6 +58,8 @@ private:
   std::string h5_path;
   ///Number of periodic Images for Orbital evaluation
   TinyVector<int, 3> PBCImages;
+  ///Coordinates of Supertwist (for phase Factor purpose
+  TinyVector<double, 3> Stwist;
 
   /// Enable cusp correction
   bool doCuspCorrection;
@@ -80,6 +83,8 @@ private:
   bool putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
+  bool LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs);
+  bool LoadCMatrix(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs);
 };
 } // namespace qmcplusplus
 #endif
