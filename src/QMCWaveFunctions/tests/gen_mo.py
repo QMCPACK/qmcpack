@@ -209,9 +209,9 @@ def gen_HCN_force():
       mo_g_m = np.dot(MO_matrix, g_m)
       mo_l_m = np.dot(MO_matrix, l_m)
 
-      dmo_v = 2.0*deltainv*(mo_v_p-mo_v_m)
-      dmo_g = 2.0*deltainv*(mo_g_p-mo_g_m)
-      dmo_l = 2.0*deltainv*(mo_l_p-mo_l_m)
+      dmo_v = 0.5*deltainv*(mo_v_p-mo_v_m)
+      dmo_g = 0.5*deltainv*(mo_g_p-mo_g_m)
+      dmo_l = 0.5*deltainv*(mo_l_p-mo_l_m)
       print "//============== Ion ",iat," Component ",idim,"==================="
       for iorb in xrange(0,norb):
         print '  REQUIRE( dionpsi[0][%d][%d]       == Approx(%15.10g) );  '%(iorb,idim,dmo_v[iorb])
