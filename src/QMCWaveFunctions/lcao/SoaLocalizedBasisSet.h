@@ -182,8 +182,6 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    */
   inline void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
   {
-   // APP_ABORT("SoaLocalizedBasisSet::evaluateVGH() not implemented\n");
-    
     const DistanceTableData* d_table = P.DistTables[myTableIndex];
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
@@ -229,12 +227,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     }
   }
   
-  //These are going to use the vghgh containers as temporary arrays.  The main difference between
-  //replacing an ion derivative with an electron derivative is the -1 factor incurred.  This will be taken care of
-  //in LCAO orbital set.   
   inline void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl)
   {
-
+    //We need to zero out the temporary array vgl.  
     auto* restrict gx  = vgl.data(1);
     auto* restrict gy  = vgl.data(2);
     auto* restrict gz  = vgl.data(3);
@@ -249,13 +244,17 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const DistanceTableData* d_table = P.DistTables[myTableIndex];
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
-    
+  
+    //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
+    //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
+    //derivative by -1.0.  Handling this sign is left to LCAOrbitalSet.  For now, just note this is the electron VGL function.
     LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl);
 
   }
 
   inline void evaluateGradSourceVGL(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vghgh_type& vghgh)
   {
+    //We need to zero out the temporary array vghgh.
     auto* restrict gx  = vghgh.data(1);
     auto* restrict gy  = vghgh.data(2);
     auto* restrict gz  = vghgh.data(3);
@@ -303,10 +302,14 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       gyzz[ib]=0;
       gzzz[ib]=0;
     }
+
     const DistanceTableData* d_table = P.DistTables[myTableIndex];
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
     
+    //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
+    //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
+    //derivative by -1.0.  Handling this sign is left to LCAOrbitalSet.  For now, just note this is the electron VGL function.
     LOBasisSet[IonID[jion]]->evaluateVGHGH(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vghgh);
     
   }
