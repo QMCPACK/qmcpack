@@ -229,15 +229,73 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     }
   }
   
-  
+  //These are going to use the vghgh containers as temporary arrays.  The main difference between
+  //replacing an ion derivative with an electron derivative is the -1 factor incurred.  This will be taken care of
+  //in LCAO orbital set.   
   inline void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vghgh_type& vghgh)
   {
-
+    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
+    const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    
+    LOBasisSet[IonID[jion]]->evaluateVGH(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vghgh);
   }
 
   inline void evaluateGradSourceVGL(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vghgh_type& vghgh)
   {
+    auto* restrict gx  = vghgh.data(1);
+    auto* restrict gy  = vghgh.data(2);
+    auto* restrict gz  = vghgh.data(3);
 
+    auto* restrict hxx = vghgh.data(4);
+    auto* restrict hxy = vghgh.data(5);
+    auto* restrict hxz = vghgh.data(6);
+    auto* restrict hyy = vghgh.data(7);
+    auto* restrict hyz = vghgh.data(8);
+    auto* restrict hzz = vghgh.data(9);
+    
+    auto* restrict gxxx = vghgh.data(10);
+    auto* restrict gxxy = vghgh.data(11);
+    auto* restrict gxxz = vghgh.data(12);
+    auto* restrict gxyy = vghgh.data(13);
+    auto* restrict gxyz = vghgh.data(14);
+    auto* restrict gxzz = vghgh.data(15);
+    auto* restrict gyyy = vghgh.data(16);
+    auto* restrict gyyz = vghgh.data(17);
+    auto* restrict gyzz = vghgh.data(18);
+    auto* restrict gzzz = vghgh.data(19);
+
+
+    for(int ib=0; ib<BasisSetSize; ib++)
+    {
+      gx[ib]=0;
+      gy[ib]=0;
+      gz[ib]=0;
+
+      hxx[ib]=0;
+      hxy[ib]=0;
+      hxz[ib]=0;
+      hyy[ib]=0;
+      hyz[ib]=0;
+      hzz[ib]=0;
+
+      gxxx[ib]=0;
+      gxxy[ib]=0;
+      gxxz[ib]=0;
+      gxyy[ib]=0;
+      gxyz[ib]=0;
+      gxzz[ib]=0;
+      gyyy[ib]=0;
+      gyyz[ib]=0;
+      gyzz[ib]=0;
+      gzzz[ib]=0;
+    }
+    const DistanceTableData* d_table = P.DistTables[myTableIndex];
+    const RealType* restrict dist    = (P.activePtcl == iat) ? d_table->Temp_r.data() : d_table->Distances[iat];
+    const auto& displ                = (P.activePtcl == iat) ? d_table->Temp_dr : d_table->Displacements[iat];
+    
+    LOBasisSet[IonID[jion]]->evaluateVGHGH(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vghgh);
+    
   }
   /** add a new set of Centered Atomic Orbitals
    * @param icenter the index of the center
