@@ -12,7 +12,7 @@
 
 
 
-def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],cas_idx=None):
+def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.0,cas_idx=None):
   import h5py, re, sys
   from collections import defaultdict
   from pyscf.pbc import gto, scf, df, dft
@@ -491,23 +491,20 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],cas_idx=N
           return ll_new
   
   mo_coeff = mf.mo_coeff
-#  if len(kpts)==0:
-#     Complex=False
-#  else:
-#     Complex=True
+  if len(kpts)==0:
+     Complex=False
+  else:
+     Complex=True
   GroupParameter.create_dataset("IsComplex",(1,),dtype="b1",data=Complex)
 
  
   GroupParameter.create_dataset("SpinRestricted",(1,),dtype="b1",data=Restricted)
-  #GroupNbkpts=H5_qmcpack.create_group("Nb_KPTS")
+  GroupDet=H5_qmcpack.create_group("Super_Twist")
   if not PBC:
-    Nbkpts=1
-    GroupNbkpts.create_dataset("Nbkpts",(1,),dtype="i4",data=Nbkpts)
-    
-    GroupDet=H5_qmcpack.create_group("KPTS_0")
     if Restricted==True:
-      NbMO=len(mo_coeff)
-      NbAO=len(mo_coeff[0])
+      NbAO, NbMO =mo_coeff.shape 
+      #NbMO=len(mo_coeff)
+      #NbAO=len(mo_coeff[0])
       if loc_cell.cart==True:
         eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff))
       else:
@@ -526,9 +523,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],cas_idx=N
     def get_mo(mo_coeff, cart):
         return order_mo_coef(mo_coeff) if cart else zip(*mo_coeff)
 
-
-
-    GroupDet=H5_qmcpack.create_group("Super_Twist")
+    #Supertwist Coordinate
     GroupDet.create_dataset("Coord",(1,3),dtype="f8",data=sp_twist)
 
     if Gamma:  

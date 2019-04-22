@@ -439,6 +439,8 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet);
   else
     lcos = new LCAOrbitalSet(myBasisSet);
+#else
+  lcos = new LCAOrbitalSet(myBasisSet);
 #endif
   loadMO(*lcos, cur);
 
@@ -631,12 +633,19 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 
     Matrix<RealType> Ctemp(neigs, spo.getBasisSetSize());
     char name[72];
-    sprintf(name, "%s%d", "/KPTS_0/eigenset_", setVal);
+
+    //This is to make sure of Backward compatibility with previous tags. 
+    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
     setname = name;
     if (!hin.readEntry(Ctemp, setname))
     {
-      setname = "LCAOrbitalBuilder::putFromH5 Missing " + setname + " from HDF5 File.";
-      APP_ABORT(setname.c_str());
+        sprintf(name, "%s%d", "/KPTS_0/eigenset_", setVal);
+        setname = name;
+        if (!hin.readEntry(Ctemp, setname))
+        {
+           setname = "LCAOrbitalBuilder::putFromH5 Missing " + setname + " from HDF5 File.";
+           APP_ABORT(setname.c_str());
+        }
     }
     hin.close();
 
@@ -670,8 +679,6 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   int norbs  = spo.getOrbitalSetSize();
   int neigs  = spo.getBasisSetSize();
   int setVal = -1;
-  int NbKpts;
-  int KptIdx     = 0;
   bool IsComplex = false;
   PosType twist(0.0);
   PosType twistH5(0.0);
@@ -695,56 +702,35 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     hin.push("parameters");
     hin.read(IsComplex, "IsComplex");
     hin.pop();
-    hin.push("Nb_KPTS");
-    hin.read(NbKpts, "Nbkpts");
-    hin.pop();
-    for (int i = 0; i < NbKpts; i++)
-    {
+
+#if not defined(QMC_COMPLEX)
+    //  if(IsComplex)
+       //  APP_ABORT("HDF5 contains a complex Wavefunction. You are not running QMCPACK with Complex capabilities. Please run QMCPACK compiled with QMC_COMPLEX=1");
+#endif
+
       char name[72];
-      sprintf(name, "%s%d%s", "/KPTS_", i, "/Coord");
-      setname = name;
+      setname="/Super_Twist/Coord";
+      //setname = name;
       hin.read(twistH5, setname);
-      if (std::abs(twistH5[0] - twist[0]) < 1e-6 && std::abs(twistH5[1] - twist[1]) < 1e-6 &&
-          std::abs(twistH5[2] - twist[2]) < 1e-6)
+      if (std::abs(twistH5[0] - twist[0]) > 1e-6 || std::abs(twistH5[1] - twist[1]) > 1e-6 ||
+          std::abs(twistH5[2] - twist[2]) > 1e-6)
       {
-        KptIdx = i;
-        break;
+         app_log()<<"Super Twist in XML : "<<twist[0]<<"    In H5:"<<twistH5[0]<<std::endl;
+         app_log()<<"                     "<<twist[1]<<"          "<<twistH5[1]<<std::endl;
+         app_log()<<"                     "<<twist[2]<<"          "<<twistH5[2]<<std::endl;
+         app_log()<<"Diff in Coord     x :"<<std::abs(twistH5[0] - twist[0])<<std::endl;
+         app_log()<<"                  y :"<<std::abs(twistH5[1] - twist[1])<<std::endl;
+         app_log()<<"                  z :"<<std::abs(twistH5[2] - twist[2])<<std::endl;
+         APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting."); 
       }
-    }
+   if(IsComplex)
+       LoadCMatrix_cplx(spo,hin,neigs,setVal,norbs);
+   else
+       LoadCMatrix(spo,hin,neigs,setVal,norbs);
 
-    Matrix<RealType> Ctemp(neigs, spo.getBasisSetSize());
-
-    char name[72];
-    if (IsComplex)
-      sprintf(name, "%s%d%s%d%s", "/KPTS_", KptIdx, "/eigenset_", setVal, "_real");
-    else
-      sprintf(name, "%s%d%s%d", "/KPTS_", KptIdx, "/eigenset_", setVal);
-
-
-    setname = name;
-    if (!hin.readEntry(Ctemp, setname))
-    {
-      setname = "LCAOrbitalBuilder::putFromH5 Missing " + setname + " from HDF5 File.";
-      APP_ABORT(setname.c_str());
-    }
-
-#if defined(QMC_COMPLEX)
-    APP_ABORT("Complex Wavefunction not implemented yet. Please contact Developers");
-#endif //COMPLEX
     hin.close();
-
-    int n = 0, i = 0;
-    while (i < norbs)
-    {
-      if (Occ[n] > 0.0)
-      {
-        std::copy(Ctemp[n], Ctemp[n + 1], (*spo.C)[i]);
-        i++;
-      }
-      n++;
-    }
   }
-  myComm->bcast(spo.C->data(), spo.C->size());
+  myComm->comm.broadcast_n(spo.C->data(), spo.C->size());
 #else
   APP_ABORT("LCAOrbitalBuilder::putFromH5 HDF5 is disabled.")
 #endif
@@ -793,5 +779,85 @@ bool LCAOrbitalBuilder::putOccupation(LCAOrbitalSet& spo, xmlNodePtr occ_ptr)
     putContent(Occ, occ_ptr);
   }
   return true;
+}
+///////SHOULD BE TEMPLATED I GUESS//// 
+bool LCAOrbitalBuilder::LoadCMatrix_cplx(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs)
+{
+    bool success=false;
+    char name[72];
+    std::string setname;
+    Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
+    Matrix<RealType> Creal(neigs, spo.getBasisSetSize());
+    Matrix<RealType> Ccmplx(neigs, spo.getBasisSetSize());
+    
+    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
+    setname = name;
+    if (!hin.readEntry(Creal, setname))
+    {
+       setname = "LCAOrbitalBuilder::putFromH5 Missing " + setname + " from HDF5 File.";
+       APP_ABORT(setname.c_str());
+        
+    }
+     
+    
+    sprintf(name, "%s%d%s", "/Super_Twist/eigenset_", setVal,"_imag");
+    setname = name;
+    if (!hin.readEntry(Ccmplx, setname))
+    {
+        setname = "LCAOrbitalBuilder::putFromH5 Missing " + setname + " from HDF5 File.";
+        APP_ABORT(setname.c_str());
+    }
+
+    for (int i=0; i<neigs; i++)
+       for (int j=0; j<spo.getBasisSetSize(); j++){
+          ValueType temp(Creal[i][j],Ccmplx[i][j]);
+          Ctemp[i][j]=temp;
+       }
+
+    int n = 0, i = 0;
+    while (i < norbs)
+    {
+      if (Occ[n] > 0.0)
+      {
+        std::copy(Ctemp[n], Ctemp[n + 1], (*spo.C)[i]);
+        i++;
+      }
+      n++;
+    }
+    return success;
+}
+
+
+bool LCAOrbitalBuilder::LoadCMatrix(LCAOrbitalSet& spo,hdf_archive hin, int neigs,int setVal,int norbs)
+{
+    bool success=false;
+    char name[72];
+    std::string setname;
+    Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
+    
+    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
+    setname = name;
+    if (!hin.readEntry(Ctemp, setname))
+    {
+        sprintf(name, "%s%d", "/KPTS_0/eigenset_", setVal);
+        setname = name;
+        if (!hin.readEntry(Ctemp, setname))
+        {
+           setname = "LCAOrbitalBuilder::putFromH5 Missing " + setname + " from HDF5 File.";
+           APP_ABORT(setname.c_str());
+        }
+    }
+     
+    int n = 0, i = 0;
+    while (i < norbs)
+    {
+      if (Occ[n] > 0.0)
+      {
+        std::copy(Ctemp[n], Ctemp[n + 1], (*spo.C)[i]);
+        i++;
+      }
+      n++;
+    }
+    return success;
 }
 } // namespace qmcplusplus
