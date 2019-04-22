@@ -545,7 +545,7 @@ void test_HCN(bool transform)
     elec.makeMove(0, disp);
 
 
- 
+#if defined(ENABLE_SOA) 
     SPOSet::GradMatrix_t dionpsi(elec.R.size(), sposet->getOrbitalSetSize());
     SPOSet::HessMatrix_t diongradpsi(elec.R.size(), sposet->getOrbitalSetSize());
     SPOSet::GradMatrix_t dionlaplpsi(elec.R.size(), sposet->getOrbitalSetSize());
@@ -667,6 +667,7 @@ void test_HCN(bool transform)
     REQUIRE( diongradpsi[0][6](2,1) == Approx(-2.048666792e-06) );  
     REQUIRE( diongradpsi[0][6](2,2) == Approx(2.967709412e-06) );  
     REQUIRE( dionlaplpsi[0][6][2]  == Approx(-0.0002018111858) );  
+#endif
  
     SPOSetBuilderFactory::clear();
   }
