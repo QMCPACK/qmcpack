@@ -275,6 +275,12 @@ private:
                          HessMatrix_t& dhlogdet,
                          GGGMatrix_t& dghlogdet) const;
   
+  void evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
+                         int i,
+                         GradMatrix_t& dlogdet,
+                         HessMatrix_t& dglogdet,
+                         GradMatrix_t& dllogdet) const;
+  
 
 #if !defined(QMC_COMPLEX)
   //function to perform orbital rotations
