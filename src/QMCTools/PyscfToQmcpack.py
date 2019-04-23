@@ -503,8 +503,6 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   if not PBC:
     if Restricted==True:
       NbAO, NbMO =mo_coeff.shape 
-      #NbMO=len(mo_coeff)
-      #NbAO=len(mo_coeff[0])
       if loc_cell.cart==True:
         eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff))
       else:
