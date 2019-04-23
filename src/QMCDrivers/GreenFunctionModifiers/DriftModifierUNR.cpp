@@ -23,7 +23,7 @@ void DriftModifierUNR::getDrift(RealType tau,
   convert(qf, drift);
   RealType vsq = dot(drift, drift);
   RealType sc =
-      (vsq < std::numeric_limits<RealType>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * tau * vsq)) / vsq);
+      (vsq < std::numeric_limits<RealType>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * a * tau * vsq)) / ( a * vsq ) );
   //Apply the umrigar scaled drift.
   drift *= sc;
 }
@@ -34,6 +34,7 @@ bool DriftModifierUNR::parseXML(xmlNodePtr cur)
   m_param.add(a, "drift_UNR_a", "double");
   m_param.put(cur);
   app_log() << "  Set drift_modifier UNR parameter a = " << a << std::endl;
+  return true;
 }
 
 } // namespace qmcplusplus

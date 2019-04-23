@@ -37,7 +37,9 @@ public:
                               const GradType& qf,
                               PosType& drift) const = 0;
 
-  virtual bool parseXML(xmlNodePtr cur){}
+  virtual bool parseXML(xmlNodePtr cur) { return true; }
+
+  virtual ~DriftModifierBase() {}
 
 protected:
   // modifer name
